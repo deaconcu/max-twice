@@ -10,6 +10,7 @@ import com.prosper.learn.persistence.mapper.NodeMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -18,6 +19,7 @@ public class CourseService {
 
     private final CourseMapper courseMapper;
     private final NodeMapper nodeMapper;
+    private final CourseRankingService courseRankingService;
 
     public boolean exist(int id) {
         CourseDO courseDO = courseMapper.getById(id);
@@ -163,5 +165,41 @@ public class CourseService {
 
         subCourse.setRootNode(nodeDO.getId());
         courseMapper.update(subCourse);
+    }
+
+    // 获取热门课程（使用Redis排行榜）
+    public List<CourseDTOV4> getHotCourses(int limit) {
+        try {
+            // 从Redis获取热门课程ID列表
+            List<Integer> hotCourseIds = courseRankingService.getHotCourseIds(limit);
+            
+            if (hotCourseIds.isEmpty()) {
+                return new ArrayList<>();
+            }
+            
+            // 根据ID列表获取课程详情
+            List<CourseDO> courseDOList = courseMapper.getByCourseIds(hotCourseIds);
+            
+            // 转换为DTO并附加统计信息
+            List<CourseDTOV4> result = new ArrayList<>();
+            for (CourseDO courseDO : courseDOList) {
+                CourseDTOV4 courseDTO = Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseMapper);
+                
+                // 从Redis获取统计数据
+                CourseRankingService.CourseStats stats = courseRankingService.getCourseStats(courseDO.getId());
+                
+                // 将统计数据添加到DTO中（需要在DTO中添加相应字段）
+                // 这里暂时使用description字段存储统计信息，实际项目中应该在DTO中添加专门的字段
+                courseDTO.setLearnerCount((int) stats.getLearningCount());
+                courseDTO.setSubscriptionCount((int) stats.getSubscriptionCount());
+                
+                result.add(courseDTO);
+            }
+            
+            return result;
+            
+        } catch (Exception e) {
+            throw new RuntimeException("获取热门课程失败: " + e.getMessage());
+        }
     }
 }

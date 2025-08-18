@@ -34,6 +34,10 @@ public interface CourseClient {
     @GetMapping(value = "/course/list", params = {"parentId"})
     Response<Object> getListByParent(@RequestParam int parentId);
 
+    // 获取热门课程（按收藏和正在学习人数排行）
+    @GetMapping("/course/hot")
+    Response<Object> getHotCourses(@RequestParam(value = "limit", defaultValue = "10") int limit);
+
     // 课程状态操作接口（批准、拒绝、屏蔽）
     @PostMapping("/course/operate")
     Response<Object> operate(@RequestParam int id, @RequestParam String action, @RequestParam(required = false) String rejectedReason);

@@ -630,4 +630,12 @@ export const learnService = {
     console.log("delete /profession, params: ", params);
     return apiClient.delete('/profession', { params });
   },
+
+  // 获取热门课程（按收藏和正在学习人数排行）
+  getHotCourses(limit = 10) {
+    console.log("get hot courses, limit: ", limit);
+    return apiClient.get('/course/hot', {
+      params: { limit: limit }
+    });
+  },
 };

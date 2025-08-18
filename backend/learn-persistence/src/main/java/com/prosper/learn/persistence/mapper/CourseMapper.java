@@ -64,6 +64,18 @@ public interface CourseMapper {
                                   @Param("subCategory") int subCategory,
                                   @Param("lastId") int lastId);
 
+    // 简单获取热门课程，使用Redis排行榜
+    @Select("SELECT * FROM course WHERE id IN " +
+            "<foreach item='id' collection='courseIds' open='(' separator=',' close=')'>" +
+            "#{id}" +
+            "</foreach> " +
+            "AND state = 'APPROVED' " +
+            "ORDER BY FIELD(id, " +
+            "<foreach item='id' collection='courseIds' separator=','>" +
+            "#{id}" +
+            "</foreach>)")
+    List<CourseDO> getByCourseIds(@Param("courseIds") List<Integer> courseIds);
+
     @Insert("INSERT INTO course(name, description, creator, parent, state, rootNode, main_category, sub_category) " +
             "VALUES (#{name}, #{description}, #{creator}, #{parent}, #{state}, #{rootNode}, #{mainCategory}, #{subCategory})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")

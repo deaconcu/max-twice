@@ -131,4 +131,14 @@ public class CourseController implements CourseClient {
         List<CourseDO> courseList = courseMapper.searchByName(name, 20);
         return new Response<>(Converter.INSTANCE.toCourseDTOV3(courseList));
     }
+
+    @Override
+    public Response<Object> getHotCourses(@RequestParam(value = "limit", defaultValue = "10") int limit) {
+        try {
+            List<CourseDTOV4> hotCourses = courseService.getHotCourses(limit);
+            return new Response<>(hotCourses);
+        } catch (Exception e) {
+            return new Response<>(Response.FAILED, "获取热门课程失败: " + e.getMessage());
+        }
+    }
 }

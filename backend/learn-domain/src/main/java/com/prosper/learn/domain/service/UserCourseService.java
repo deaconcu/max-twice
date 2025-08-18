@@ -22,6 +22,7 @@ public class UserCourseService {
 
     private final UserCourseMapper userCourseMapper;
     private final CourseMapper courseMapper;
+    private final CourseRankingService courseRankingService;
 
     /**
      * 用户开始学习课程
@@ -34,8 +35,10 @@ public class UserCourseService {
         UserCourseDO existing = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
 
         if (existing != null) {
-            // 如果已存在，直接返回
+            // 如果已存在，删除记录并更新Redis
             userCourseMapper.deleteByUserAndCourse(userId, courseId);
+            // 减少学习人数
+            courseRankingService.decrementLearning(courseId.intValue());
             return false;
         }
 
@@ -48,6 +51,9 @@ public class UserCourseService {
         progressDO.setStartedAt(LocalDateTime.now());
 
         userCourseMapper.insert(progressDO);
+        
+        // 增加学习人数
+        courseRankingService.incrementLearning(courseId.intValue());
 
         return true;
     }
@@ -159,5 +165,7 @@ public class UserCourseService {
      */
     public void delete(Long userId, Long courseId) {
         userCourseMapper.deleteByUserAndCourse(userId, courseId);
+        // 减少学习人数
+        courseRankingService.decrementLearning(courseId.intValue());
     }
 }

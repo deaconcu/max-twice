@@ -39,7 +39,7 @@ import javax.annotation.processing.Generated;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-08-16T22:07:51+0800",
+    date = "2025-08-18T20:30:50+0800",
     comments = "version: 1.6.1, compiler: javac, environment: Java 17.0.13 (BellSoft)"
 )
 public class ConverterImpl implements Converter {

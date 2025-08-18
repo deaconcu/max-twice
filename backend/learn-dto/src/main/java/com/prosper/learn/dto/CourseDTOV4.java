@@ -29,4 +29,9 @@ public class CourseDTOV4 {
     private String cTime;
 
     private String uTime;
+
+    // 新增：热门课程统计字段
+    private Integer learnerCount; // 学习人数
+
+    private Integer subscriptionCount; // 收藏人数
 }

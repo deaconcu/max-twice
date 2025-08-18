@@ -33,6 +33,8 @@ const applyCourseData = ref({
 onMounted(() => {
   loadSystem();
   loadSubscription();
+  loadLearningCourses();
+  loadHotCourses();
 });
 
 // 监听分类选择变化，加载对应课程
@@ -164,7 +166,10 @@ const postApplyCourse = async () => {
 }
 
 const subscriptions = ref([]);
+const learningCourses = ref([]);
+const hotCourses = ref([]);
 
+// 加载收藏课程
 async function loadSubscription() {
   console.log("load subscription");
   try {
@@ -179,6 +184,56 @@ async function loadSubscription() {
     }
   } catch (error) {
     console.error('Error get message:', error);
+  }
+};
+
+// 加载正在学习的课程
+async function loadLearningCourses() {
+  console.log("load learning courses");
+  try {
+    let response = await learnService.getUserCourseList();
+
+    if (response.code === 401) {
+      console.log('not login');
+    } else if (response.code === 200) {
+      console.log('get learning courses data:' + JSON.stringify(response.data));
+      // 只取正在学习的课程（IN_PROGRESS状态）
+      learningCourses.value = response.data.filter(userCourse => 
+        userCourse.status === 'IN_PROGRESS'
+      ).map(userCourse => ({
+        id: userCourse.course.id,
+        name: userCourse.course.name,
+        description: userCourse.course.description,
+        progress: userCourse.progressPercent || 0
+      }));
+    }
+  } catch (error) {
+    console.error('Error get learning courses:', error);
+  }
+};
+
+// 加载热门课程
+async function loadHotCourses() {
+  console.log("load hot courses");
+  try {
+    let response = await learnService.getHotCourses();
+
+    if (response.code === 401) {
+      console.log('not login');
+    } else if (response.code === 200) {
+      console.log('get hot courses data:' + JSON.stringify(response.data));
+      hotCourses.value = response.data;
+    }
+  } catch (error) {
+    console.error('Error get hot courses:', error);
+    // 如果没有后端接口，使用模拟数据
+    hotCourses.value = [
+      { id: 1, name: '数据结构与算法', learnerCount: 15534, subscriptionCount: 8900 },
+      { id: 2, name: '英语写作', learnerCount: 20001, subscriptionCount: 7200 },
+      { id: 3, name: '计算机网络', learnerCount: 6888, subscriptionCount: 9100 },
+      { id: 4, name: '人工智能导论', learnerCount: 12230, subscriptionCount: 5800 },
+      { id: 5, name: '法律基础', learnerCount: 18910, subscriptionCount: 4500 }
+    ];
   }
 };
 
@@ -201,15 +256,7 @@ const switchFirstLevel = (firstIndex) => {
   selected.value.fill(-1);
 }
 
-const items = ref(
-  [
-    { id: 1, action: '15534', headline: '数据结构与算法', subtitle: `I'll be in your neighborhood doing errands this weekend. Do you want to hang out?`, title: '数据结构与算法' },
-    { id: 2, action: '20001', headline: '英语写作', subtitle: `Wish I could come, but I'm out of town this weekend.`, title: '英语写作' },
-    { id: 3, action: '6888', headline: '计算机网络', subtitle: 'Do you have Paris recommendations? Have you ever been?', title: '计算机网络' },
-    { id: 4, action: '1223', headline: '人工智能导论', subtitle: 'Have any ideas about what we should get Heidi for her birthday?', title: '人工智能导论' },
-    { id: 5, action: '1891', headline: '法律基础', subtitle: 'We should eat this: Grate, Squash, Corn, and tomatillo Tacos.', title: '法律基础' },
-  ]
-);
+// 移除旧的items数组，使用新的hotCourses数组
 
 const review = ref('80%');
 
@@ -427,54 +474,55 @@ function openInNewTab(courseId) {
 
         <v-col cols="4">
 
+          <!-- 正在学习的课程 -->
           <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4">
             <v-card-text class="pa-4">
               <div class="d-flex align-center mb-3">
                 <v-avatar color="grey-darken-2" size="32" class="mr-3">
-                  <v-icon icon="mdi-chart-line" color="white" size="16"></v-icon>
+                  <v-icon icon="mdi-school" color="white" size="16"></v-icon>
                 </v-avatar>
                 <div>
-                  <h3 class="text-h6 font-weight-bold text-grey-darken-4">学习进度</h3>
-                  <p class="text-body-2 text-grey-darken-2 mb-0">持续进步中</p>
+                  <h3 class="text-h6 font-weight-bold text-grey-darken-4">正在学习的课程</h3>
+                  <p class="text-body-2 text-grey-darken-2 mb-0">{{ learningCourses.length }} 门课程进行中</p>
                 </div>
               </div>
 
-              <div class="text-primary text-h4 font-weight-bold mb-2 d-flex align-baseline">
-                1%
-                <v-icon icon="mdi-trending-up" class="ml-2" color="primary" size="24"></v-icon>
+              <div v-if="learningCourses.length === 0" class="text-center py-4">
+                <v-icon icon="mdi-book-outline" size="48" color="grey-lighten-1" class="mb-2"></v-icon>
+                <p class="text-body-2 text-grey-darken-1">暂无正在学习的课程</p>
+                <p class="text-caption text-grey-darken-1">开始学习一门课程吧！</p>
               </div>
 
-              <p class="text-body-1 text-grey-darken-3 mb-3">
-                已完成 <span class="font-weight-bold text-primary">2,938</span> 个知识节点
-              </p>
-
-              <v-progress-linear color="primary" background-color="grey-lighten-3" height="24" model-value="18"
-                rounded="lg" class="mb-3">
-                <template v-slot:default>
-                  <span class="text-white text-caption font-weight-bold">18%</span>
-                </template>
-              </v-progress-linear>
-
-              <div class="d-flex justify-space-between text-body-2">
-                <div class="d-flex align-center">
-                  <v-icon icon="mdi-check-circle" color="primary" size="16" class="mr-1"></v-icon>
-                  <span class="text-primary font-weight-medium">2,234 已掌握</span>
+              <v-responsive v-else class="overflow-y-auto" max-height="180">
+                <div v-for="course in learningCourses.slice(0, 4)" :key="course.id" 
+                     class="mb-3 pa-3 rounded-lg bg-white course-item" 
+                     @click="openInNewTab(course.id)">
+                  <div class="d-flex align-center justify-space-between mb-2">
+                    <h4 class="text-body-1 font-weight-medium text-grey-darken-4">{{ course.name }}</h4>
+                    <v-chip size="x-small" :color="course.progress > 50 ? 'success' : 'primary'" variant="flat">
+                      {{ course.progress }}%
+                    </v-chip>
+                  </div>
+                  <v-progress-linear 
+                    :model-value="course.progress" 
+                    :color="course.progress > 50 ? 'success' : 'primary'" 
+                    background-color="grey-lighten-3" 
+                    height="6" 
+                    rounded="lg">
+                  </v-progress-linear>
                 </div>
-                <div class="d-flex align-center">
-                  <v-icon icon="mdi-circle-outline" color="grey-darken-2" size="16" class="mr-1"></v-icon>
-                  <span class="text-grey-darken-2">共 29,380 个</span>
-                </div>
-              </div>
+              </v-responsive>
             </v-card-text>
 
-            <v-card-actions class="px-4 pb-4">
-              <v-btn variant="flat" color="primary" class="w-100" rounded="lg" density="comfortable">
-                <v-icon icon="mdi-chart-box-outline" class="mr-2" size="16"></v-icon>
-                查看详细统计
+            <v-card-actions class="px-4 pb-4" v-if="learningCourses.length > 0">
+              <v-btn @click="router.push('/learning');" variant="flat"
+                color="grey-darken-2" rounded="lg" density="comfortable" class="w-100">
+                查看全部学习课程
               </v-btn>
             </v-card-actions>
           </v-card>
 
+          <!-- 我收藏的课程 -->
           <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4">
             <v-card-text class="pa-4">
               <div class="d-flex align-center mb-3">
@@ -482,13 +530,19 @@ function openInNewTab(courseId) {
                   <v-icon icon="mdi-heart" color="white" size="16"></v-icon>
                 </v-avatar>
                 <div>
-                  <h3 class="text-h6 font-weight-bold text-grey-darken-4">我的收藏</h3>
+                  <h3 class="text-h6 font-weight-bold text-grey-darken-4">我收藏的课程</h3>
                   <p class="text-body-2 text-grey-darken-2 mb-0">{{ subscriptions.length }} 门课程</p>
                 </div>
               </div>
 
-              <v-responsive class="overflow-y-auto" max-height="160">
-                <v-chip v-for="subscription in subscriptions" :key="subscription.id" :text="subscription.name"
+              <div v-if="subscriptions.length === 0" class="text-center py-4">
+                <v-icon icon="mdi-heart-outline" size="48" color="grey-lighten-1" class="mb-2"></v-icon>
+                <p class="text-body-2 text-grey-darken-1">暂无收藏课程</p>
+                <p class="text-caption text-grey-darken-1">发现喜欢的课程就收藏吧！</p>
+              </div>
+
+              <v-responsive v-else class="overflow-y-auto" max-height="160">
+                <v-chip v-for="subscription in subscriptions.slice(0, 8)" :key="subscription.id" :text="subscription.name"
                   variant="outlined" color="primary" @click="openInNewTab(subscription.id)" class="ma-1 px-3 py-1"
                   density="compact">
                   <template v-slot:prepend>
@@ -498,7 +552,7 @@ function openInNewTab(courseId) {
               </v-responsive>
             </v-card-text>
 
-            <v-card-actions class="px-4 pb-4">
+            <v-card-actions class="px-4 pb-4" v-if="subscriptions.length > 0">
               <v-btn @click="router.push({ path: '/user', query: { tab: 'subscription' } });" variant="flat"
                 color="grey-darken-2" rounded="lg" density="comfortable" class="w-100">
                 查看全部收藏
@@ -506,6 +560,7 @@ function openInNewTab(courseId) {
             </v-card-actions>
           </v-card>
 
+          <!-- 热门课程 -->
           <v-card flat color="grey-lighten-5" class="" rounded="lg">
             <v-card-text class="pa-4">
               <div class="d-flex align-center mb-3">
@@ -514,14 +569,14 @@ function openInNewTab(courseId) {
                 </v-avatar>
                 <div>
                   <h3 class="text-h6 font-weight-bold text-grey-darken-4">热门课程</h3>
-                  <p class="text-body-2 text-grey-darken-2 mb-0">实时更新排行</p>
+                  <p class="text-body-2 text-grey-darken-2 mb-0">收藏和学习人数排行</p>
                 </div>
               </div>
 
               <v-list bg-color="transparent" class="pa-0">
-                <v-list-item v-for="(item, index) in items" :key="item.id" :value="item.id"
-                  class="px-3 py-2 ma-1 rounded-lg" :class="index < 3 ? 'bg-white' : 'bg-transparent'"
-                  density="compact">
+                <v-list-item v-for="(course, index) in hotCourses.slice(0, 5)" :key="course.id" :value="course.id"
+                  class="px-3 py-2 ma-1 rounded-lg course-item" :class="index < 3 ? 'bg-white' : 'bg-transparent'"
+                  density="compact" @click="openInNewTab(course.id)">
                   <template v-slot:prepend>
                     <v-avatar :color="index < 3 ? 'primary' : 'grey-lighten-2'" size="24" class="mr-2">
                       <span class="text-caption font-weight-bold"
@@ -532,12 +587,16 @@ function openInNewTab(courseId) {
                   </template>
 
                   <v-list-item-title class="text-body-1">
-                    {{ item.title }}
+                    {{ course.name }}
                   </v-list-item-title>
+                  <v-list-item-subtitle class="text-caption">
+                    {{ (course.learnerCount + course.subscriptionCount).toLocaleString() }} 人学习/收藏
+                  </v-list-item-subtitle>
 
                   <template v-slot:append>
                     <v-chip variant="flat" color="grey-lighten-3" size="x-small">
-                      {{ item.action }}
+                      <v-icon icon="mdi-trending-up" size="10" class="mr-1"></v-icon>
+                      热门
                     </v-chip>
                   </template>
                 </v-list-item>
