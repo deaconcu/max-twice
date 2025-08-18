@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragment :: head(~{::title},~{})">
+  <title>Hello, world!</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<header th:replace="fragment :: header"></header>
+<div class="container">
+  <div class="row align-items-start" style="padding-top:5.3em">
+    <div class="col-9 pb-5">
+      <div class="pb-2">
+        <span class="fs-5"><i class="bi-book"></i> JAVA - 面试准备</span>
+        <hr>
+      </div>
+      <div class="row align-items-start">
+        <div class="col-3">
+          <ul class="list-unstyled ps-0">
+            <li class="mb-1">
+              <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#home-collapse" aria-expanded="true">
+                Home
+              </button>
+              <a href="" class=""> <span class="badge bg-dark"><i class="bi-pencil-square"></i> 195  </span></a>
+              <div class="collapse show" id="home-collapse">
+                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1">
+                  <li> <a href="#" class="link-dark rounded me-0">Updates</a> </li>
+                  <li><a href="#" class="link-dark rounded">Reports</a> </li>
+                  <li><a href="#" class="link-dark rounded">Home</a> </li>
+                </ul>
+              </div>
+            </li>
+            <li class="mb-1">
+              <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#dashboard-collapse" aria-expanded="false">
+                Dashboard
+              </button>
+              <div class="collapse" id="dashboard-collapse">
+                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1">
+                  <li>
+                    <button class="btn btn-toggle btn-toggle-1 align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#bb-collapse" aria-expanded="true">
+                      <span class="">Home</span>
+                    </button>
+                    <div class="collapse" id="bb-collapse">
+                      <ul class="btn-toggle-nav-1 list-unstyled fw-normal pb-1">
+                        <li><a href="#" class="link-dark rounded">Overview</a></li>
+                        <li><a href="#" class="link-dark rounded">Updates</a></li>
+                        <li><a href="#" class="link-dark rounded">Reports</a></li>
+                      </ul>
+                    </div>
+                  </li>
+                  <li><a href="#" class="link-dark rounded">Weekly</a></li>
+                  <li><a href="#" class="link-dark rounded">Monthly</a></li>
+                  <li><a href="#" class="link-dark rounded">Annually</a></li>
+                </ul>
+              </div>
+            </li>
+            <li class="mb-1">
+              <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#orders-collapse" aria-expanded="false">
+                Orders
+              </button>
+              <div class="collapse" id="orders-collapse">
+                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1">
+                  <li><a href="#" class="link-dark rounded">New</a></li>
+                  <li><a href="#" class="link-dark rounded">Processed</a></li>
+                  <li><a href="#" class="link-dark rounded">Shipped</a></li>
+                  <li><a href="#" class="link-dark rounded">Returned</a></li>
+                </ul>
+              </div>
+            </li>
+            <li class="border-top my-3"></li>
+            <li class="mb-1">
+              <button class="btn btn-toggle align-items-center rounded collapsed" data-bs-toggle="collapse" data-bs-target="#account-collapse" aria-expanded="false">
+                Account
+              </button>
+              <div class="collapse" id="account-collapse">
+                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                  <li><a href="#" class="link-dark rounded">New...</a></li>
+                  <li><a href="#" class="link-dark rounded">Profile</a></li>
+                  <li><a href="#" class="link-dark rounded">Settings</a></li>
+                  <li><a href="#" class="link-dark rounded">Sign out</a></li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="col-9">
+          <div class="text-muted small">基础 > 领域驱动 > 建模 </div>
+          <div class="my-2 d-flex flex-row align-items-center justify-content-between">
+            <div>
+              <h4 class="mb-0" th:text="${node.name}">详解DDD系列 第三讲 - Repository模式</h4>
+            </div>
+            <div class="">
+              <a th:href="|/subcourse/node-${node.id}/nodeTable/create|" target="_blank" class="btn btn-light"><i class="bi-plus"></i> 添加</a>
+            </div>
+          </div>
+          <ul class="list-group list-group-flush">
+            <li th:each="nodeTable,itStat : ${nodeTables}" class="list-group-item p-0">
+              <div th:if="${nodeTable.nodes.size} == 0">
+                <div class="d-flex align-items-center pt-3">
+                  <div class="col-1"><img src="/assets/common/img/icon/person-bounding-box.svg" width="36" height="36"></div>
+                  <div class="col-11 p2 small">
+                    <a href="" class="text-decoration-none text-dark">SYSTEM</a> <br />
+                    <span class="text-muted">2021-11-11 21:18:15</span>
+                  </div>
+                </div>
+                <div class="py-3 medium text-dark lh-lbase">
+                  使用该节点为内容节点
+                </div>
+                <div class="d-flex align-items-center pb-4">
+                  <button type="button" class="btn btn-danger btn-sm py-1 px-3"><span class="fw-bolder"><i class="bi-hand-thumbs-up"></i> 168</span></button>
+                </div>
+              </div>
+              <div th:if="${nodeTable.nodes.size} > 0">
+                <div class="d-flex align-items-center pt-3">
+                  <div class="col-1"><img src="/assets/common/img/icon/person-bounding-box.svg" width="36" height="36"></div>
+                  <div class="col-11 p2 small">
+                    <a href="" class="text-decoration-none text-dark">李自成</a> <br />
+                    <span class="text-muted">2021-10-12 22:08:17</span>
+                  </div>
+                </div>
+                <div class="py-3 medium text-dark lh-lbase">
+                  使用该节点为目录节点。节点编辑理由：xxx必须包含其中，否则内容不完整
+                  <ul class="list-group list-group-flush">
+                    <li th:each="node,itStat : ${nodeTable.nodes}" th:text="${node.name}" class="list-group-item">An item</li>
+                  </ul>
+                </div>
+                <div class="d-flex align-items-center pb-4">
+                  <button type="button" class="btn btn-danger btn-sm py-1 px-3"><span class="fw-bolder"><i class="bi-hand-thumbs-up"></i> 112</span></button>
+                </div>
+              </div>
+            </li>
+            <!--
+          <li class="list-group-item p-0">
+            <div class="d-flex align-items-center pt-3">
+              <div class="col-1"><img src="/assets/common/img/icon/person-bounding-box.svg" width="36" height="36"></div>
+              <div class="col-11 p2 small">
+                <a href="" class="text-decoration-none text-dark">李自成</a> <br />
+                <span class="text-muted">2021-10-12 22:08:17</span>
+              </div>
+            </div>
+            <div class="py-3 medium text-dark lh-lbase">
+              使用该节点为目录节点。节点编辑理由：xxx必须包含其中，否则内容不完整
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item">An item</li>
+                <li class="list-group-item">A second item</li>
+                <li class="list-group-item">A third item</li>
+                <li class="list-group-item">A fourth item</li>
+                <li class="list-group-item">And a fifth one</li>
+              </ul>
+
+            </div>
+            <div class="d-flex align-items-center pb-4">
+              <button type="button" class="btn btn-danger btn-sm py-1 px-3"><span class="fw-bolder"><i class="bi-hand-thumbs-up"></i> 112</span></button>
+
+            </div>
+          </li>
+          -->
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="col-3 ps-5 pt-3">
+      <div class="card text-center shadow-ct">
+        <div class="card-header">
+          <ul class="nav nav-pills card-header-pills">
+            <li class="nav-item">
+              <a class="nav-link active" href="#">Active</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">Link</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
+            </li>
+          </ul>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">Special title treatment</h5>
+          <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
+          <a href="#" class="btn btn-primary">Go somewhere</a>
+        </div>
+      </div>
+      <div class="mt-5">
+        <h6 class="px-3"> 相关课程 </h6>
+        <nav class="nav small flex-column lh-1">
+          <a class="nav-link active" aria-current="page" href="#">Active</a>
+          <a class="nav-link" href="#">Link</a>
+          <a class="nav-link" href="#">Link</a>
+          <a class="nav-link" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+<footer th:replace="fragment :: footer"></footer>
+</body>
+</html>

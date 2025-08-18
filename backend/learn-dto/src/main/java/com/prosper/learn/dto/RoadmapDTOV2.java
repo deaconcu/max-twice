@@ -1,0 +1,29 @@
+package com.prosper.learn.dto;
+
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+public class RoadmapDTOV2 {
+
+    private Integer id;
+
+    private String content;
+
+    private ProfessionDTO profession;
+
+    private String description;
+
+    private int vote;
+
+    private int comment;
+
+    private boolean upvoted;
+
+    private UserDTOV4 creator;
+
+    private LocalDateTime updatedAt;
+
+    private LocalDateTime createdAt;
+}

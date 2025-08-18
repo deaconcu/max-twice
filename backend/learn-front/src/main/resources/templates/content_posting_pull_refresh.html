@@ -1,0 +1,71 @@
+<th:block  th:if="${postings!= null && postings.size() > 0}" th:include="this::renderPosting(${postings}, 3)"></th:block >
+<span id="lastId" style="display: none;" th:text="${lastId}"></span>
+
+<th:block th:fragment="renderPosting(postings, type)" th:if="false">
+  <ul class="list-group list-group-flush" th:classappend="${type != 3} ? 'border-bottom' : ''">
+    <li class="list-group-item px-0 py-3" th:each="posting,itStat : ${postings}">
+      <div class="d-flex align-items-center pt-3">
+        <div class="col-1"><img src="/assets/common/img/icon/person-bounding-box.svg" width="36" height="36">
+        </div>
+        <div class="col-9 p2 small">
+          <a href="" class="text-decoration-none text-dark">一条小鲤鱼</a> <br/>
+          <span class="text-muted">2021-11-11 21:18:15</span>
+        </div>
+        <div class="col-2 text-end small">
+          <span th:if="${type == 1}" class="badge text-bg-danger">已设置为目录</span>
+          <span th:if="${type == 2}" class="badge text-bg-secondary">已置顶</span>
+          <br /> <br />
+        </div>
+      </div>
+      <div class="py-3 medium text-dark lh-lbase">
+        <div th:if="${posting.type == 1}">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item dash-border ps-0" th:each="item : ${#strings.arraySplit(posting.getContent(), ',')}">
+              <span th:text="${item}"></span>
+            </li>
+          </ul>
+        </div>
+        <div th:if="${posting.type == 2}">
+          <p class="" th:utext="${posting.content}">
+        </div>
+      </div>
+      <div class="d-flex align-items-center pb-4">
+        <button type="button" class="btn btn-sm py-1 px-3 me-3 rounded-3 fw-semibold"
+                th:classappend="${upvotedPostingIds.contains(posting.id) ? 'bg-danger text-white' : 'bg-light border border-dark-subtle '}"
+                th:onclick="'upvote(' + ${posting.id} + ')'">
+          <i class="bi-hand-thumbs-up me-2"></i><span th:id="'upvote-' + ${posting.id}" th:text="${posting.vote}"></span>
+        </button>
+        <span class="d-flex align-items-center ms-3 ms-2">
+                    <i class="bi bi-chat text-muted"></i>
+                    <button class="btn btn-sm btn-link text-decoration-none link-offset-2 ps-1 text-muted">添加评论</button>
+                  </span>
+        <form action="/contents" method="post" onsubmit="handleSubmit(event)">
+          <input type="hidden" name="postingId" th:value="${posting.id}">
+
+          <input th:if="${type==3 && posting.type == 1}" type="hidden" name="action" value="1">
+          <span th:if="${type==3 && posting.type == 1}" class="d-flex align-items-center ms-3">
+                      <i class="bi bi-list-task"></i>
+                      <button type="submit" class="btn btn-sm btn-link text-decoration-none link-offset-2 ps-1 py-1 px-2 rounded-3 text-muted">设置为目录</button>
+                    </span>
+          <input th:if="${type==1}" type="hidden" name="action" value="2">
+          <span th:if="${type==1}" class="d-flex align-items-center ms-3">
+                      <i class="bi bi-list-task"></i>
+                      <button type="submit" class="btn btn-sm btn-link text-decoration-none link-offset-2 ps-1 py-1 px-2 rounded-3 text-muted">取消设置为目录</button>
+                    </span>
+
+          <input th:if="${type==3 && posting.type == 2}" type="hidden" name="action" value="3">
+          <span th:if="${type==3 && posting.type == 2}" class="d-flex align-items-center ms-3">
+                      <i class="bi bi-arrow-up-circle"></i>
+                      <button type="submit" class="btn btn-sm btn-link text-decoration-none link-offset-2 ps-1 py-1 px-2 rounded-3 text-muted">置顶</button>
+                    </span>
+          <input th:if="${type==2}" type="hidden" name="action" value="4">
+          <span th:if="${type==2}" class="d-flex align-items-center ms-3">
+                      <i class="bi bi-arrow-up-circle"></i>
+                      <button type="submit" class="btn btn-sm btn-link text-decoration-none link-offset-2 ps-1 py-1 px-2 rounded-3 text-muted">取消置顶</button>
+                    </span>
+        </form>
+        </button>
+      </div>
+    </li>
+  </ul>
+</th:block>

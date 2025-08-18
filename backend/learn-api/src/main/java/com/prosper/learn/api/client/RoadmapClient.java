@@ -1,0 +1,46 @@
+package com.prosper.learn.api.client;
+
+import com.prosper.learn.dto.Response;
+import com.prosper.learn.dto.RoadmapDTO;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@FeignClient(value = "learn-service", contextId = "roadmap")
+public interface RoadmapClient {
+
+    /**
+     * 根据职业ID获取课程列表
+     */
+    @GetMapping("/roadmap/list/{professionId}")
+    Response<List<RoadmapDTO>> getListByProfession(
+            @PathVariable("professionId") Integer professionId, @RequestParam("lastId") Integer lastId);
+
+    /**
+     * 更新课程信息
+     */
+    @PutMapping("/roadmap/{id}")
+    Response<Void> putById(@PathVariable("id") Long id, @RequestParam("content") String content);
+
+    @PutMapping("/roadmap/{id}/upvote")
+    Response<Object> upvote(@PathVariable("id") Long id);
+    /**
+     * 创建新课程
+     */
+    @PostMapping("/roadmap")
+    Response<Long> post(@RequestParam Long professionId, @RequestParam String content, @RequestParam String description);
+
+    /**
+     * 获取课程详情
+     */
+    @GetMapping("/roadmap/{id}")
+    Response<RoadmapDTO> getById(@PathVariable("id") Long id);
+
+    /**
+     * 置顶用户课程
+     */
+    @PostMapping("/roadmap/pin")
+    Response<Object> pin(@RequestParam int professionId, @RequestParam int roadmapId);
+
+}

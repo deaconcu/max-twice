@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragment :: head(~{::title},~{})">
+  <title>Hello, world!</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+  <header th:replace="fragment :: header"></header>
+  <div class="container">
+    <div class="row align-items-start" style="padding-top:5.3em">
+      <div class="col-9">
+        <span class="fs-5"><i class="bi-list"></i> 课程</span>
+        <img src="/assets/common/img/java-banner.png" class="card-img-top shadow-ct mt-3" alt="...">
+        <div class="d-flex align-items-center pt-5 pb-3">
+          <div class="flex-grow-1">
+            <h4 class="mb-0" th:text="${course.name}">JAVA</h4>
+          </div>
+          <div class="px-2"><a href="" class="text-decoration-none">订阅</a></div>
+          <div class="px-2"><a th:href="|/node/${course.rootNode}/posting?path=1-${course.rootNode}|" target="_blank" class="text-decoration-none">学习</a></div>
+        </div>
+        <div><span th:text="${course.description}" /></div>
+
+        <div class="py-5">
+          <div class="mb-3"> 
+            <div class="d-flex align-items-center border-bottom py-2">
+              <div class="flex-grow-1"><h6 class="text-muted">子课程: </h6> </div>
+              <div class="px-2 flex-shrink-0"><a href="" class="text-decoration-none"><i class="bi-info-circle" style="font-size: 1.5rem; color: cornflowerblue;"></i></a></div>
+              <div class="px-2 flex-shrink-0">
+                <a href="" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#staticBackdrop"><i class="bi-plus-circle" style="font-size: 1.5rem; color: cornflowerblue;"></i></a>
+              </div>
+            </div>
+            <ul class="list-group list-group-flush small text-muted">
+              <li class="list-group-item px-0 py-4" th:each="subcourse, itStat : ${subcourseList}">
+                <div class="d-flex align-items-center">
+                  <div class="flex-grow-1">
+                    <h6><a th:href="|/subcourse/${subcourse.id}|" target="_blank" class="fw-bold text-decoration-none text-body" th:text="${subcourse.name}" /></h6>
+                  </div>
+                  <div class="px-2 flex-shrink-0"><a href="" class="text-decoration-none">订阅</a></div>
+                  <div class="px-2 flex-shrink-0"><a th:href="|/node/${subcourse.rootNode}/posting?path=1-${course.rootNode}|" target="_blank" class="text-decoration-none">学习</a></div>
+                </div>
+                <span class="text-muted" th:text="${subcourse.description}" />
+              </li>
+            </ul>
+          </div>
+        </div>
+        <!--
+        <div class="my-4">
+          <nav class="nav small">
+            <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true"><h6>切面: </h6></a>
+            <a class="nav-link text-body" href="#">能干什么</a>
+            <a class="nav-link text-body" href="#">入门</a>
+            <a class="nav-link text-body" href="#">普通</a>
+            <a class="nav-link text-body" href="#">精通</a>
+            <a class="nav-link text-body" href="#">预备考试</a>
+          </nav>
+        </div>
+        -->
+        <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+              <form action="#" th:action="@{/course}" th:object="${newSubcourse}" method="post">
+                <div class="modal-header">
+                  <h1 class="modal-title fs-5" id="staticBackdropLabel">创建子课程</h1>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label for="courseName" class="form-label">课程名</label>
+                    <input type="text" th:field="*{name}" class="form-control" id="courseName" aria-describedby="courseNameTip">
+                    <div id="courseNameTip" class="form-text">课程名称要求不能重复</div>
+                  </div>
+                  <div class="mb-3">
+                    <label for="courseDesc" class="form-label">课程介绍</label>
+                    <textarea class="form-control" id="courseDesc" th:field="*{description}" rows="4"></textarea>
+                    <div id="courseDescTip" class="form-text">简略介绍该课程的一些内容</div>
+                  </div>
+                  <input type="hidden" th:field="*{parent}" />
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <button type="submit" class="btn btn-outline-success">提交审核</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+    </div>
+    <div class="col-3 ps-5 pt-3">
+      <div class="card text-center shadow-ct">
+        <div class="card-header">
+          <ul class="nav nav-pills card-header-pills">
+            <li class="nav-item">
+              <a class="nav-link active" href="#">Active</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">Link</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
+            </li>
+          </ul>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">Special title treatment</h5>
+          <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
+          <a href="#" class="btn btn-primary">Go somewhere</a>
+        </div>
+      </div>
+      <div class="mt-5">
+        <h6 class="px-3"> 相关课程 </h6>
+        <nav class="nav small flex-column lh-1">
+          <a class="nav-link active" aria-current="page" href="#">Active</a>
+          <a class="nav-link" href="#">Link</a>
+          <a class="nav-link" href="#">Link</a>
+          <a class="nav-link" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+<footer th:replace="fragment :: footer"></footer>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Annotation profile for Learn" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.34/lombok-1.18.34.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct-processor/1.6.1/mapstruct-processor-1.6.1.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct/1.6.1/mapstruct-1.6.1.jar" />
+        </processorPath>
+        <module name="learn-front" />
+        <module name="learn-common" />
+        <module name="learn-dto" />
+        <module name="learn-domain" />
+        <module name="learn-persistence" />
+        <module name="learn-external" />
+        <module name="learn-user" />
+        <module name="learn-api" />
+      </profile>
+    </annotationProcessing>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="Learn" options="-parameters" />
+      <module name="learn-api" options="-parameters" />
+      <module name="learn-common" options="-parameters" />
+      <module name="learn-domain" options="-parameters" />
+      <module name="learn-dto" options="-parameters" />
+      <module name="learn-external" options="-parameters" />
+      <module name="learn-front" options="-parameters" />
+      <module name="learn-persistence" options="-parameters" />
+      <module name="learn-user" options="-parameters" />
+    </option>
+  </component>
+</project>

@@ -1,0 +1,53 @@
+package com.prosper.learn.persistence.mapper;
+
+import com.prosper.learn.persistence.dataobject.NodeDO;
+import org.apache.ibatis.annotations.*;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+public interface NodeMapper {
+
+
+    @Select("SELECT * FROM node WHERE id = #{id}")
+    NodeDO getById(@Param("id") int id);
+
+    @Select({"<script>SELECT * FROM node where id in " +
+                 "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
+             "</script>"})
+    List<NodeDO> getByIds(@Param("ids") List<Integer> ids);
+
+    @Select({"<script>SELECT * FROM node where id in " +
+            "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
+            "</script>"})
+    @MapKey("id")
+    Map<Integer, NodeDO> getMapByIds(@Param("ids") Collection<Integer> ids);
+
+    @Select("SELECT * FROM node where parent = #{parentId}")
+    List<NodeDO> getByParent(int parentId);
+
+    /*
+    @Select("SELECT * FROM node limit #{offset}, #{limit}")
+    List<NodeDO> list(@Param("limit") int limit, @Param("offset") int offset);
+     */
+
+    @Select("SELECT * FROM node where courseId = #{courseId}")
+    List<NodeDO> listBySubcourse(@Param("courseId") int courseId);
+
+    /*
+    @Select("SELECT * FROM node order by ctime desc limit #{offset}, #{limit}") // TODO
+    List<NodeDO> listByUser(int userId, int limit, int offset);
+     */
+
+    @Insert("INSERT INTO node(name, description, courseId, root, creator) " +
+            "VALUES (#{name}, #{description}, #{courseId}, #{root}, #{creator})")
+    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
+    int insert(NodeDO Node);
+
+    @Update("UPDATE node SET name = #{name}, description = #{description}, " +
+            "creator = #{creator}, courseId = #{courseId}, root = #{root}, " +
+            "comment_count = #{commentCount} where id = #{id}")
+    void update(NodeDO Node);
+
+}

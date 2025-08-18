@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragment :: head(~{::title},~{})">
+    <title>Hello, world!</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<header th:replace="fragment :: header"></header>
+<div class="container">
+    <div class="d-flex align-items-start" style="padding-top:5.3em">
+        <div class="flex-grow-1">
+            <span class="fs-5"><i class="bi-list"></i> 课程列表</span>
+        </div>
+        <div class="col-5">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="搜索您需要的课程" aria-label="搜索您需要的课程" aria-describedby="button-addon2" >
+                <button class="btn btn-outline-secondary" type="button" id="button-addon2"><i class="bi-search"></i></button>
+            </div>
+        </div>
+        <div>
+            <button type="button" class="btn btn-success ms-3" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">
+                <i class="bi-plus"></i> 添加课程
+            </button>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+        <div class="offcanvas-header">
+            <h5 id="offcanvasRightLabel"><i class="bi-plus"></i> 添加课程</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <form action="#" th:action="@{/course}" th:object="${course}" method="post">
+                <div class="mb-3">
+                    <label for="courseName" class="form-label">课程名</label>
+                    <input type="text" th:field="*{name}" class="form-control" id="courseName" aria-describedby="courseNameTip">
+                    <div id="courseNameTip" class="form-text">课程名称要求不能重复</div>
+                </div>
+                <div class="mb-3">
+                    <label for="courseDesc" class="form-label">课程介绍</label>
+                    <textarea class="form-control" id="courseDesc" th:field="*{description}" rows="4"></textarea>
+                    <div id="courseDescTip" class="form-text">简略介绍该课程的一些内容</div>
+                </div>
+
+                <!--
+                <div class="mb-3">
+                    <label for="exampleInputEmail1" class="form-label">副标题</label>
+                    <select class="form-select form-select-sm" size="5" multiple aria-label="multiple select example">
+                        <option selected>能干什么</option>
+                        <option value="1">入门</option>
+                        <option value="2">普通</option>
+                        <option value="3">精通</option>
+                        <option value="4">自定义</option>
+                    </select>
+                    <div id="emailHelp" class="form-text">副标题表示本课程的着重点</div>
+                </div>
+                <div class="mb-3">
+                    <label for="courseName" class="form-label">自定义子课程</label>
+                    <input type="text" th:field="*{subcourseName}" class="form-control" id="subcourseName" aria-describedby="courseNameTip">
+                    <div id="subcourseNameTip" class="form-text">名称要求不能重复</div>
+                </div>
+                <div class="mb-3">
+                    <label for="courseDesc" class="form-label">子课程介绍</label>
+                    <textarea class="form-control" id="subcourseDesc" th:field="*{subcourseDesc}" rows="4"></textarea>
+                    <div id="subcourseDescTip" class="form-text">简略介绍该课程的一些内容</div>
+                </div>
+                -->
+
+
+                <button type="submit" class="btn btn-outline-success">提交审核</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row justify-content-between mt-4">
+
+        <nav class="nav">
+            <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">TAGS: </a>
+            <a class="nav-link text-body active" aria-current="page" href="#">计算机</a>
+            <a class="nav-link text-body" href="#">金融</a>
+            <a class="nav-link text-body" href="#">理科</a>
+            <a class="nav-link text-body" href="#">文学</a>
+            <a class="nav-link text-body" href="#">法律</a>
+            <a class="nav-link text-body" href="#">心理学</a>
+            <a class="nav-link text-body" href="#">驾驶</a>
+            <a class="nav-link text-body" href="#">金融</a>
+            <a class="nav-link text-body" href="#">理科</a>
+            <a class="nav-link text-body" href="#">文学</a>
+            <a class="nav-link text-body" href="#">法律</a>
+            <a class="nav-link text-body" href="#">心理学</a>
+            <a class="nav-link text-body" href="#">驾驶</a>
+            <a class="nav-link text-body" href="#">金融</a>
+            <a class="nav-link text-body" href="#">理科</a>
+            <a class="nav-link text-body" href="#">文学</a>
+            <a class="nav-link text-body" href="#">法律</a>
+            <a class="nav-link text-body" href="#">心理学</a>
+            <a class="nav-link text-body" href="#">驾驶</a>
+            <a class="nav-link text-body" href="#">金融</a>
+            <a class="nav-link text-body" href="#">理科</a>
+            <a class="nav-link text-body" href="#">文学</a>
+            <a class="nav-link text-body" href="#">法律</a>
+            <a class="nav-link text-body" href="#">心理学</a>
+            <a class="nav-link text-body" href="#">驾驶</a>
+            <a class="nav-link text-body" href="#">金融</a>
+            <a class="nav-link text-body" href="#">理科</a>
+            <a class="nav-link text-body" href="#">文学</a>
+            <a class="nav-link text-body" href="#">法律</a>
+            <a class="nav-link text-body" href="#">心理学</a>
+            <a class="nav-link text-body" href="#">驾驶</a>
+        </nav>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-4 g-4 my-2">
+        <div class="col" th:each="course,itStat : ${courseList}">
+            <div class="card shadow-ct" style="width: 19rem; cursor: pointer;" th:onclick="|javascript:window.open('/course/${course.id}', '_blank')|">
+                <img src="/assets/common/img/c++.jpeg" class="card-img-top" alt="...">
+                <div class="card-body">
+                    <a class="card-title text-success text-decoration-none" th:text="${course.name}" th:href="|/course/${course.id}|">JAVA</a>
+                    <p class="small card-text text-black-50" th:text="${course.description}">一种广泛使用的计算机编程语言，拥有跨平台、面向对象、泛型编程的特性，广泛应用于企业级Web应用开发和移动应用开发。任职于Sun微系统的詹姆斯·高斯林等人于90年代初开发Java语言的雏形，最初被命名为Oak </p>
+                </div>
+                <div class="d-flex mx-3 mb-3 align-items-center">
+                    <div class="flex-grow-1">
+                        <span class="small text-muted pe-2"><i class="bi-file-text"></i> 20</span>
+                        <span class="small text-muted pe-2"><i class="bi-person-fill"></i> 108</span>
+                    </div>
+                    <div class=""><button type="button" class="btn btn-outline-success btn-sm"><i class="bi-plus"></i> 添加</button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-12 g-4 my-5">
+        <nav aria-label="Page navigation example ">
+            <ul class="pagination justify-content-center">
+                <li class="page-item">
+                    <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item"><a class="page-link" href="#">4</a></li>
+                <li class="page-item"><a class="page-link" href="#">5</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+</div>
+<footer th:replace="fragment :: footer"></footer>
+</body>
+</html>

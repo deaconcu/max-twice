@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragment :: head(~{::title},~{})">
+  <title>Hello, world!</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<header th:replace="fragment :: header"></header>
+<div class="container min-vh-100 d-flex justify-content-center align-items-center">
+  <!----------------------------- main ----------------------------->
+  <div class="row w-100 align-items-center">
+    <div class="col">
+      <img src="/assets/common/img/big.png" width="700">
+    </div>
+    <div class="col">
+      <div class="d-grid mx-5 px-4 gap-1">
+
+        <span class="fs-4 fw-bold mb-2">我不懂的问题，</span>
+        <span class="fs-5 fw-bold">能 <span class="fs-2 fw-bold text-dark">一次</span> 教会我吗？ 最多 <span class="fs-2 fw-bold text-dark">两次</span>，不能再多了。^_^</span><br>
+        <span class="fs-5">现在就加入，或者先<a href="" class="link-dark link-offset-2">逛逛</a> </span>
+        <button type="button" class="btn btn-success fw-bold text-white" data-bs-toggle="modal" data-bs-target="#exampleModalToggle">注 册</button>
+        <small>注册即表示同意服务条款及隐私政策，其中包括 Cookie 使用条款。</small>
+        <br/>
+        已有账号？
+        <button type="button" class="btn btn-outline-secondary rounded-1 fw-bold" data-bs-toggle="modal" data-bs-target="#loginToggle">登 陆</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!--------------------------- Modal --------------------------->
+  <div class="modal fade" id="exampleModalToggle" aria-hidden="true" aria-labelledby="exampleModalToggleLabel" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="register-form-step1" method="post">
+          <div class="modal-header border-bottom-1">
+            <h1 class="modal-title fs-5" id="exampleModalToggleLabel">创建账号</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body px-5 py-4 ">
+            <label class="form-label mb-4 fs-5">基本信息</label>
+            <div class="form-floating mb-4">
+              <input type="text" name="userName" class="form-control" id="floatingName" placeholder="name@example.com">
+              <label for="floatingName">请输入用户名</label>
+              <div id="userNameHelp" class="form-text">1. 用户名由大写字母，小写字母和下划线组成<br>2. 必须是唯一的</div>
+            </div>
+            <div class="form-floating mb-5">
+              <input type="email" name="email" class="form-control" id="email-step1" placeholder="name@example.com">
+              <label for="email-step1">请输入电子邮件</label>
+              <div id="emailHelp" class="form-text">我们不会向其他人透露您的邮箱地址</div>
+            </div>
+            <label class="form-label mb-4 fs-5">密码</label>
+            <div class="form-floating mb-4">
+              <input type="password" name="password" class="form-control" id="floatingPassword" placeholder="Password">
+              <label for="floatingPassword">请输入密码</label>
+            </div>
+            <div class="form-floating mb-4">
+              <input type="password" class="form-control" id="floatingPassword" placeholder="Password">
+              <label for="floatingPassword">请重复输入密码</label>
+            </div>
+            <div id="emailHelp" class="form-text"><a href="" class="link-dark link-offset-2">显示密码</a></div>
+          </div>
+          <div class="modal-footer border-0 my-2 justify-content-center">
+            <button type="button" id="submitRegisterBtn" class="btn btn-success w-50">下一步</button>
+            <button type="button" class="d-none" id="TurnToValidateEmailBtn" data-bs-target="#exampleModalToggle2" data-bs-toggle="modal"></button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal fade" id="exampleModalToggle2" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="register-form-step2" method="post">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">邮箱验证</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body  px-5 py-5 ">
+            <div class="mb-3">我们向您的邮箱发送了一封邮件，请将邮件内的验证码输入下面的输入框进行验证。<a href="" class="link-dark link-offset-2">重新发送邮件</a> </div>
+            <div class="form-floating mb-4">
+              <input type="hidden" name="email" id="email-step2">
+              <input type="text" name="code" class="form-control" id="floatingCode" placeholder="name@example.com">
+              <label for="floatingCode">请输入校验码</label>
+            </div>
+          </div>
+          <div class="modal-footer border-0 justify-content-center">
+            <button type="button" id="validateBtn" class="btn btn-success w-50 mb-3" data-bs-target="#exampleModalToggle2" data-bs-toggle="modal">校 验</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="loginToggle" aria-hidden="true" aria-labelledby="exampleModalToggleLabel" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="login-form" method="post" action="/login">
+          <div class="modal-header mb-2">
+            <h1 class="modal-title fs-5" id="">登陆</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body px-5 py-5 ">
+            <div class="form-floating mb-4">
+              <input type="email" name="email" class="form-control" id="login-email" placeholder="name@example.com">
+              <label for="email-step1">请输入电子邮件</label>
+            </div>
+            <div class="form-floating mb-4">
+              <input type="password" name="password" class="form-control" id="loginPassword" placeholder="Password">
+              <label for="floatingPassword">请输入密码</label>
+            </div>
+            <div id="loginEmailHelp" class="form-text"><a href="" class="link-dark link-offset-2">显示密码</a></div>
+          </div>
+          <div class="modal-footer border-0 my-2 justify-content-center">
+            <button type="button" id="submitLoginBtn" class="btn btn-success w-50">登 陆</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="top-alert" class="alert alert-warning custom-alert small" role="alert">
+    <i class="bi bi-check-circle-fill me-2"></i>
+    操作成功！正在跳转 ...
+  </div>
+
+</div>
+<footer th:replace="fragment :: footer"></footer>
+<script>
+  document.getElementById("submitRegisterBtn").addEventListener("click", function () {
+    const form = document.getElementById("register-form-step1");
+    const formData = new FormData(form);
+
+    // 使用 fetch 提交表单
+    fetch('/register', {
+      method: 'POST',
+      body: formData
+    }).then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    }).then(data => {
+      // 处理服务器返回的数据
+      //alert('Form submitted successfully: ' + JSON.stringify(data));
+      document.getElementById("TurnToValidateEmailBtn").click();
+      //showAlert();
+    }).catch(error => {
+      // 处理错误
+      console.error('There was a problem with the fetch operation:', error);
+      alert('Form submission failed: ' + error.message);
+    });
+  });
+
+  document.getElementById("validateBtn").addEventListener("click", function () {
+    const emailInput1 = document.getElementById("email-step1");
+    const emailInput2 = document.getElementById("email-step2");
+    emailInput2.value = emailInput1.value;
+
+    const form = document.getElementById("register-form-step2");
+    const formData = new FormData(form);
+
+    // 使用 fetch 提交表单
+    fetch('/validate', {
+      method: 'POST',
+      body: formData
+    }).then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    }).then(data => {
+      // 处理服务器返回的数据
+      //alert('Form submitted successfully: ' + JSON.stringify(data));
+      //document.getElementById("TurnToValidateEmailBtn").click();
+      showMsg();
+    }).catch(error => {
+      // 处理错误
+      console.error('There was a problem with the fetch operation:', error);
+      alert('Form submission failed: ' + error.message);
+    });
+  });
+
+  document.getElementById("submitLoginBtn").addEventListener("click", function () {
+    const form = document.getElementById("login-form");
+    const formData = new FormData(form);
+
+    // 使用 fetch 提交表单
+    fetch('/login', {
+      method: 'POST',
+      body: formData
+    }).then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    }).then(data => {
+      // 处理服务器返回的数据
+      //alert('Form submitted successfully: ' + JSON.stringify(data));
+      //document.getElementById("TurnToValidateEmailBtn").click();
+
+      const modalElement = document.getElementById('loginToggle');
+      const modalInstance = bootstrap.Modal.getInstance(modalElement);
+      modalInstance.hide();
+
+      setTimeout(() => {
+        showMsg();
+      }, 500);
+    }).catch(error => {
+      // 处理错误
+      console.error('There was a problem with the fetch operation:', error);
+      alert('Form submission failed: ' + error.message);
+    });
+  });
+
+  function showMsg() {
+    // 获取 Alert 元素
+    const alertElement = document.getElementById('top-alert');
+    // 显示 Alert
+    alertElement.style.display = 'block';
+    alertElement.classList.add('show');
+
+    // 设置 1.5 秒后自动刷新页面
+    setTimeout(() => {
+      //location.reload(); // 刷新页面
+      window.location.href = "/course/list";
+    }, 2000);
+  }
+
+</script>
+</body>
+</html>
