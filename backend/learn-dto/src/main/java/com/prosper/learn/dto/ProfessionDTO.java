@@ -28,6 +28,8 @@ public class ProfessionDTO {
 
     private Long creator; // 创建者 ID
 
+    private Integer learnerCount; // 学习人数
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

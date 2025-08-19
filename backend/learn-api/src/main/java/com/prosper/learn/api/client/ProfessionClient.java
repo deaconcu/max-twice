@@ -35,4 +35,8 @@ public interface ProfessionClient {
 
     @DeleteMapping("/profession")
     Response<Object> delete(@RequestParam int id);
+
+    // 获取热门职业（按学习人数排行）
+    @GetMapping("/profession/hot")
+    Response<Object> getHotProfessions(@RequestParam(value = "limit", defaultValue = "10") int limit);
 }

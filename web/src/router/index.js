@@ -14,7 +14,7 @@ import TestDraw from '../views/TestDraw.vue'
 import RoadmapFlow from '../views/RoadmapFlow.vue'
 import CareerCenter from '../views/CareerCenter.vue'
 import Learning from '../views/Learning.vue'
-import HotCoursesRanking from '../views/HotCoursesRanking.vue'
+import HotRanking from '../views/HotRanking.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -46,7 +46,7 @@ const router = createRouter({
       children: [
         { path: 'admin', name:"admin", component: Admin},
         { path: 'course/list', name: "courseList", component: CourseList },
-        { path: 'course/ranking', name: "hotCoursesRanking", component: HotCoursesRanking },
+        { path: 'ranking', name: "hotRanking", component: HotRanking },
         { path: 'course/:id', name: "course", component: Course },
         { path: 'read', name: "read", component: Read },
         { path: 'user', name:"user", component: User },

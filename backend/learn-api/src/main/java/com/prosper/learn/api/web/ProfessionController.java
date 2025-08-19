@@ -2,18 +2,23 @@ package com.prosper.learn.api.web;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.client.ProfessionClient;
 import com.prosper.learn.domain.service.ProfessionService;
+import com.prosper.learn.domain.service.ProfessionRankingScheduler;
 import com.prosper.learn.dto.ProfessionDTO;
 import com.prosper.learn.dto.Response;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class ProfessionController implements ProfessionClient {
 
     private final ProfessionService professionService;
+    private final ProfessionRankingScheduler professionRankingScheduler;
 
     @Override
     public Response<Object> listByPage(int page) {
@@ -180,6 +185,25 @@ public class ProfessionController implements ProfessionClient {
             return new Response<>(professionList);
         } catch (Exception e) {
             return new Response<>(Response.FAILED, "获取已批准专业列表失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Response<Object> getHotProfessions(int limit) {
+        List<ProfessionDTO> hotProfessions = professionService.getHotProfessions(limit);
+        return new Response<>(hotProfessions);
+    }
+
+    // 手动同步职业统计数据的管理接口
+    @PostMapping("/profession/sync-stats")
+    public Response<Object> syncProfessionStats() {
+        try {
+            log.info("手动触发职业统计数据同步...");
+            professionRankingScheduler.manualSync();
+            return new Response<>("职业统计数据同步成功");
+        } catch (Exception e) {
+            log.error("手动同步职业统计数据失败", e);
+            return new Response<>(Response.FAILED, "同步失败: " + e.getMessage());
         }
     }
 }

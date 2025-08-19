@@ -548,7 +548,7 @@ const getStatusText = (status) => {
   <v-container fluid>
     <v-row class="mt-2">
       
-      <v-col cols="8" class="pr-8">
+      <v-col cols="9" class="pr-8">
         <div class="mb-8">
           <!-- 页面标题区域 -->
           <v-row justify="start" class="mb-4">
@@ -926,7 +926,7 @@ const getStatusText = (status) => {
       </v-col>
 
       <!-- 右侧边栏 -->
-      <v-col cols="4">
+      <v-col cols="3">
         <!-- 总体学习进度 -->
         <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4">
           <v-card-text class="pa-4">

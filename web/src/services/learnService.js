@@ -631,6 +631,14 @@ export const learnService = {
     return apiClient.delete('/profession', { params });
   },
 
+  // 获取热门职业（按学习人数排行）
+  getHotProfessions(limit = 10) {
+    console.log("get hot professions, limit: ", limit);
+    return apiClient.get('/profession/hot', {
+      params: { limit: limit }
+    });
+  },
+
   // 获取热门课程（按收藏和正在学习人数排行）
   getHotCourses(limit = 10) {
     console.log("get hot courses, limit: ", limit);

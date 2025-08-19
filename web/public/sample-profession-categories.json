@@ -2,27 +2,33 @@
   "mainCategories": [
     {
       "value": "all",
-      "title": "全部分类"
+      "title": "全部分类",
+      "icon": "mdi-view-grid"
     },
     {
       "value": 1,
-      "title": "技术开发"
+      "title": "技术开发",
+      "icon": "mdi-code-tags"
     },
     {
       "value": 2,
-      "title": "产品设计"
+      "title": "产品设计",
+      "icon": "mdi-palette"
     },
     {
       "value": 3,
-      "title": "市场运营"
+      "title": "市场运营",
+      "icon": "mdi-bullhorn"
     },
     {
       "value": 4,
-      "title": "商务管理"
+      "title": "商务管理",
+      "icon": "mdi-briefcase"
     },
     {
       "value": 5,
-      "title": "金融财务"
+      "title": "金融财务",
+      "icon": "mdi-cash-multiple"
     }
   ],
   "categoryMapping": [

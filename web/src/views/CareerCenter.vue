@@ -17,6 +17,9 @@ const selectedCategory = ref('all');
 const selectedDifficulty = ref('all');
 const selectedNavTab = ref('career'); // 导航栏当前选中项
 
+// 热门职业数据
+const hotProfessions = ref([]);
+
 // 动态加载的分类数据
 const categories = ref([]);
 const categoryMapping = ref([]);
@@ -500,16 +503,36 @@ const clearSearch = () => {
   filterCareers();
 };
 
+// 加载热门职业
+const loadHotProfessions = async () => {
+  try {
+    console.log("加载热门职业数据");
+    const response = await learnService.getHotProfessions(5);
+    
+    if (response.code === 200) {
+      console.log('获取热门职业数据:', response.data);
+      hotProfessions.value = response.data || [];
+    } else {
+      console.error('获取热门职业失败:', response);
+      hotProfessions.value = [];
+    }
+  } catch (error) {
+    console.error('Error loading hot professions:', error);
+    hotProfessions.value = [];
+  }
+};
+
 onMounted(() => {
   loadProfessionCategories();
   loadCareerData(true);
+  loadHotProfessions();
 });
 </script>
 
 <template>
   <v-container fluid>
     <v-row class="mt-2">
-      <v-col cols="12" lg="9" class="pr-lg-8">
+      <v-col cols="12" md="9" lg="9" class="pr-lg-8">
           <!-- 页面头部 -->
           <div class="mb-8">
             <v-row justify="start" class="mb-4">
@@ -652,7 +675,7 @@ onMounted(() => {
                             :color="activeSecondLvl === subcategoryIndex ? 'white' : 'blue-grey-darken-2'">
                           </v-icon>
                           <span :class="activeSecondLvl === subcategoryIndex ? 'text-white' : 'text-blue-grey-darken-3'">
-                            {{ subcategory.name }}
+                            {{ subcategory.title }}
                           </span>
                         </v-btn>
                       </div>
@@ -676,7 +699,7 @@ onMounted(() => {
                         color="grey-darken-2"
                         @click="goBackToSecondLevel"></v-btn>
                       <h4 class="text-subtitle-1 font-weight-bold text-grey-darken-3 ml-2">
-                        {{ getSubcategoriesByMainCategory(activeFirstLvl)[activeSecondLvl]?.name }} 
+                        {{ getSubcategoriesByMainCategory(activeFirstLvl)[activeSecondLvl]?.title }} 
                         - 共 {{ currentCareers.length }} 个职业
                       </h4>
                     </div>
@@ -881,7 +904,7 @@ onMounted(() => {
       </v-col>
 
       <!-- 右侧边栏 -->
-      <v-col cols="12" lg="3" class="d-none d-lg-block">
+      <v-col cols="12" md="3" lg="3" class="d-none d-md-block">
         <div class="sticky-sidebar">
           <!-- 热门职业 -->
           <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4">
@@ -897,11 +920,11 @@ onMounted(() => {
               </div>
 
               <v-list bg-color="transparent" class="pa-0">
-                <v-list-item v-for="(career, index) in careers.slice(0, 5)" :key="career.id"
+                <v-list-item v-for="(profession, index) in hotProfessions" :key="profession.id"
                              class="px-3 py-2 ma-1 rounded-lg cursor-pointer hover-item" 
                              :class="index < 3 ? 'bg-white' : 'bg-transparent'"
                              density="compact"
-                             @click="goToCareerDetail(career)">
+                             @click="goToCareerDetail(profession)">
                   <template v-slot:prepend>
                     <v-avatar :color="index < 3 ? 'primary' : 'grey-lighten-2'" size="24" class="mr-2">
                       <span class="text-caption font-weight-bold"
@@ -912,48 +935,27 @@ onMounted(() => {
                   </template>
 
                   <v-list-item-title class="text-body-2 font-weight-medium">
-                    {{ career.title }}
+                    {{ profession.name }}
                   </v-list-item-title>
                   <v-list-item-subtitle class="text-caption">
-                    {{ career.learnerCount }} 人学习
+                    {{ profession.learnerCount || 0 }} 人学习
                   </v-list-item-subtitle>
 
                   <template v-slot:append>
                     <v-chip variant="flat" color="grey-lighten-3" size="x-small">
-                      {{ career.salary }}
+                      <v-icon icon="mdi-trending-up" size="10" class="mr-1"></v-icon>
+                      热门
                     </v-chip>
                   </template>
                 </v-list-item>
               </v-list>
             </v-card-text>
-          </v-card>
 
-          <!-- 职业统计 -->
-          <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4">
-            <v-card-text class="pa-4">
-              <div class="d-flex align-center mb-3">
-                <v-avatar color="grey-darken-2" size="32" class="mr-3">
-                  <v-icon icon="mdi-chart-pie" color="white" size="16"></v-icon>
-                </v-avatar>
-                <div>
-                  <h3 class="text-h6 font-weight-bold text-grey-darken-4">职业分布</h3>
-                  <p class="text-body-2 text-grey-darken-2 mb-0">各类别统计</p>
-                </div>
-              </div>
-
-              <div v-for="category in categories.slice(1)" :key="category.value" 
-                   class="d-flex align-center justify-space-between py-2">
-                <div class="d-flex align-center">
-                  <v-icon :icon="category.icon" color="primary" size="16" class="mr-2"></v-icon>
-                  <span class="text-body-2 text-grey-darken-3">{{ category.title }}</span>
-                </div>
-                <v-chip variant="flat" color="grey-lighten-3" size="x-small">
-                  <span class="text-grey-darken-3 font-weight-bold">
-                    {{ careers.filter(c => c.category === category.value).length }}
-                  </span>
-                </v-chip>
-              </div>
-            </v-card-text>
+            <v-card-actions class="px-4 pb-4">
+              <v-btn @click="router.push('/ranking?tab=professions')" variant="tonal" color="grey-darken-2" rounded="lg" density="comfortable" class="w-100">
+                查看全部热门职业
+              </v-btn>
+            </v-card-actions>
           </v-card>
 
           <!-- 学习建议 -->

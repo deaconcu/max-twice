@@ -7,6 +7,7 @@ import com.prosper.learn.persistence.mapper.ProfessionMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -14,6 +15,7 @@ import java.util.List;
 public class ProfessionService {
 
     private final ProfessionMapper professionMapper;
+    private final ProfessionRankingService professionRankingService;
 
     public ProfessionDTO getById(int id) {
         ProfessionDO professionDO = professionMapper.get(id);
@@ -94,5 +96,38 @@ public class ProfessionService {
 
     public void delete(int id) {
         professionMapper.delete(id);
+    }
+
+    // 获取热门职业（使用Redis排行榜，按学习人数排序）
+    public List<ProfessionDTO> getHotProfessions(int limit) {
+        try {
+            // 从Redis获取热门职业ID列表
+            List<Integer> hotProfessionIds = professionRankingService.getHotProfessionIds(limit);
+            
+            if (hotProfessionIds.isEmpty()) {
+                return new ArrayList<>();
+            }
+            
+            // 根据ID列表获取职业详情
+            List<ProfessionDO> professionDOList = professionMapper.getByIds(hotProfessionIds);
+            
+            // 转换为DTO并附加学习人数统计
+            List<ProfessionDTO> result = new ArrayList<>();
+            for (ProfessionDO professionDO : professionDOList) {
+                ProfessionDTO professionDTO = Converter.INSTANCE.toProfessionDTO(professionDO);
+                
+                // 从Redis获取学习人数统计
+                long learningCount = professionRankingService.getProfessionLearningCount(professionDO.getId());
+                professionDTO.setLearnerCount((int) learningCount);
+                
+                result.add(professionDTO);
+            }
+            
+            return result;
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("获取热门职业失败: " + e.getMessage(), e);
+        }
     }
 }
