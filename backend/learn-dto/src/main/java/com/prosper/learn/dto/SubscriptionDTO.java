@@ -9,6 +9,10 @@ public class SubscriptionDTO {
 
     private String name;
 
+    public SubscriptionDTO() {
+        // 默认构造函数，供Jackson反序列化使用
+    }
+
     public SubscriptionDTO(int id, String name) {
         this.id = id;
         this.name = name;

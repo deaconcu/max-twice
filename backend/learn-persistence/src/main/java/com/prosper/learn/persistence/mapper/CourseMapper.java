@@ -1,6 +1,7 @@
 package com.prosper.learn.persistence.mapper;
 
 import com.prosper.learn.persistence.dataobject.CourseDO;
+import com.prosper.learn.persistence.dataobject.PostDO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -12,8 +13,6 @@ public interface CourseMapper {
 
     @Select({"<script>SELECT * FROM course where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
-            "ORDER BY FIELD(id " +
-            ", <foreach item='id' collection='ids'  separator=', '>#{id}</foreach>)" +
             "</script>"})
     List<CourseDO> getByIds(@Param("ids") List<Integer> ids);
 
@@ -63,18 +62,6 @@ public interface CourseMapper {
     List<CourseDO> listByCategory(@Param("mainCategory") int mainCategory,
                                   @Param("subCategory") int subCategory,
                                   @Param("lastId") int lastId);
-
-    // 简单获取热门课程，使用Redis排行榜
-    @Select("SELECT * FROM course WHERE id IN " +
-            "<foreach item='id' collection='courseIds' open='(' separator=',' close=')'>" +
-            "#{id}" +
-            "</foreach> " +
-            "AND state = 'APPROVED' " +
-            "ORDER BY FIELD(id, " +
-            "<foreach item='id' collection='courseIds' separator=','>" +
-            "#{id}" +
-            "</foreach>)")
-    List<CourseDO> getByCourseIds(@Param("courseIds") List<Integer> courseIds);
 
     @Insert("INSERT INTO course(name, description, creator, parent, state, rootNode, main_category, sub_category) " +
             "VALUES (#{name}, #{description}, #{creator}, #{parent}, #{state}, #{rootNode}, #{mainCategory}, #{subCategory})")

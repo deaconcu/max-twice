@@ -83,21 +83,21 @@ public class UserController implements UserClient {
         UserDTOV2 userDTOV2 = Converter.INSTANCE.toUserDTOV2(userDO);
 
         UserProfileDO userProfileDO = userProfileMapper.getById(userDO.getId());
-
-        int[] ids = Arrays.stream(userProfileDO.getSubscription().split(",")).mapToInt(Integer::parseInt).toArray();
-        /*
-        List<Integer> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
-                .map(Integer::parseInt).collect(Collectors.toCollection(ArrayList::new));
-        List<CourseDO> courseDOList = courseMapper.getByIds(ids);
-        SubscriptionDTO[] subscriptionDTOS = new SubscriptionDTO[courseDOList.size()];
-        int[] subscription = new int[courseDOList.size()];
-        int i = 0;
-        for (CourseDO courseDO : courseDOList) {
-            subscription[i] = courseDO.getId();
-            //subscriptionDTOS[i++] = new SubscriptionDTO(courseDO.getId(), courseDO.getName());
+        
+        if (userProfileDO != null && userProfileDO.getSubscription() != null && !userProfileDO.getSubscription().trim().isEmpty()) {
+            List<Integer> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
+                    .map(Integer::parseInt).collect(Collectors.toCollection(ArrayList::new));
+            List<CourseDO> courseDOList = courseMapper.getByIds(ids);
+            SubscriptionDTO[] subscriptionDTOS = new SubscriptionDTO[courseDOList.size()];
+            int i = 0;
+            for (CourseDO courseDO : courseDOList) {
+                subscriptionDTOS[i++] = new SubscriptionDTO(courseDO.getId(), courseDO.getName());
+            }
+            userDTOV2.setSubscriptions(subscriptionDTOS);
+        } else {
+            userDTOV2.setSubscriptions(new SubscriptionDTO[0]);
         }
-         */
-        userDTOV2.setSubscriptions(ids);
+        
         return new Response<>(userDTOV2);
     }
 
@@ -175,11 +175,30 @@ public class UserController implements UserClient {
         if (userDO == null) return new Response(USER_NOT_EXIST);
 
         UserProfileDO userProfileDO = userProfileMapper.getById(userDO.getId());
-        List<Integer> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
-                .mapToInt(Integer::parseInt).boxed().toList();
+        if (userProfileDO == null || userProfileDO.getSubscription() == null || userProfileDO.getSubscription().trim().isEmpty()) {
+            return new Response(new ArrayList<>());
+        }
+        
+        try {
+            List<Integer> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
+                    .filter(s -> !s.trim().isEmpty()) // 过滤空字符串
+                    .map(String::trim)
+                    .mapToInt(Integer::parseInt)
+                    .boxed()
+                    .toList();
 
-        List<CourseDO> courseDOList = courseMapper.getByIds(ids);
-        return new Response(Converter.INSTANCE.toCourseDTOV2(courseDOList));
+            if (ids.isEmpty()) {
+                return new Response(new ArrayList<>());
+            }
+
+            List<CourseDO> courseDOList = courseMapper.getByIds(ids);
+            log.info("查询到{}个收藏课程，课程信息: {}", courseDOList.size(), 
+                    courseDOList.stream().map(c -> "id=" + c.getId() + ",name=" + c.getName()).collect(Collectors.toList()));
+            return new Response(Converter.INSTANCE.toCourseDTOV2(courseDOList));
+        } catch (Exception e) {
+            log.error("获取用户{}收藏课程时出错: {}", userId, e.getMessage());
+            return new Response(new ArrayList<>());
+        }
     }
 
     @Override

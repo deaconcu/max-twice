@@ -9,6 +9,6 @@ public class UserDTOV2 {
 
     private String name;
 
-    private int[] subscriptions;
+    private SubscriptionDTO[] subscriptions;
 
 }

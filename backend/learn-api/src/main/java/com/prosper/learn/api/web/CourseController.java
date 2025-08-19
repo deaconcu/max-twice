@@ -7,6 +7,7 @@ import com.prosper.learn.dto.Response;
 import com.prosper.learn.api.client.CourseClient;
 import com.prosper.learn.dto.CourseDTOV3;
 import com.prosper.learn.domain.service.CourseService;
+import com.prosper.learn.domain.service.CourseRankingScheduler;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.mapper.CourseMapper;
@@ -24,6 +25,7 @@ public class CourseController implements CourseClient {
 
     private final CourseMapper courseMapper;
     private final CourseService courseService;
+    private final CourseRankingScheduler courseRankingScheduler;
 
     @Override
     public Response<CourseDTOV4> get(int id) {
@@ -135,10 +137,34 @@ public class CourseController implements CourseClient {
     @Override
     public Response<Object> getHotCourses(@RequestParam(value = "limit", defaultValue = "10") int limit) {
         try {
+            log.info("开始获取热门课程，limit: {}", limit);
             List<CourseDTOV4> hotCourses = courseService.getHotCourses(limit);
+            log.info("成功获取热门课程数量: {}", hotCourses.size());
             return new Response<>(hotCourses);
         } catch (Exception e) {
+            log.error("获取热门课程失败: ", e);
             return new Response<>(Response.FAILED, "获取热门课程失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Response<Object> getHotCoursesRanking() {
+        log.info("开始获取热门课程完整排行榜");
+        List<CourseDTOV4> hotCoursesRanking = courseService.getHotCoursesRanking();
+        log.info("成功获取热门课程排行榜数量: {}", hotCoursesRanking.size());
+        return new Response<>(hotCoursesRanking);
+    }
+
+    // 手动同步课程统计数据的管理接口
+    @PostMapping("/course/sync-stats")
+    public Response<Object> syncCourseStats() {
+        try {
+            log.info("手动触发课程统计数据同步...");
+            courseRankingScheduler.manualSync();
+            return new Response<>("课程统计数据同步成功");
+        } catch (Exception e) {
+            log.error("手动同步课程统计数据失败", e);
+            return new Response<>(Response.FAILED, "同步失败: " + e.getMessage());
         }
     }
 }

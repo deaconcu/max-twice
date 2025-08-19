@@ -151,6 +151,31 @@ public class CourseRankingService {
     }
 
     /**
+     * 清空所有统计数据（用于重新同步）
+     */
+    public void clearAllStats() {
+        try {
+            // 清空热门课程排行榜
+            redisTemplate.delete(HOT_COURSES_KEY);
+            
+            // 删除所有课程的统计数据
+            Set<String> subscriptionKeys = redisTemplate.keys(COURSE_SUBSCRIPTION_PREFIX + "*");
+            Set<String> learningKeys = redisTemplate.keys(COURSE_LEARNING_PREFIX + "*");
+            
+            if (subscriptionKeys != null && !subscriptionKeys.isEmpty()) {
+                redisTemplate.delete(subscriptionKeys);
+            }
+            if (learningKeys != null && !learningKeys.isEmpty()) {
+                redisTemplate.delete(learningKeys);
+            }
+            
+            log.info("Cleared all course stats from Redis");
+        } catch (Exception e) {
+            log.error("Failed to clear course stats", e);
+        }
+    }
+
+    /**
      * 课程统计数据类
      */
     public static class CourseStats {

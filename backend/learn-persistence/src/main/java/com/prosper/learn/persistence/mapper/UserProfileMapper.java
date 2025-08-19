@@ -27,4 +27,7 @@ public interface UserProfileMapper {
     @Update("UPDATE user_profile SET roadmap_pin = #{roadmapPin} where id = #{id}")
     void updateRoadmapPin(@Param("id") int id, @Param("roadmapPin") String roadmapPin);
 
+    @Select("SELECT id, subscription FROM user_profile LIMIT #{offset}, #{limit}")
+    List<UserProfileDO> getSubscriptionDataByPage(@Param("offset") int offset, @Param("limit") int limit);
+
 }

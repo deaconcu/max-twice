@@ -173,17 +173,38 @@ const hotCourses = ref([]);
 async function loadSubscription() {
   console.log("load subscription");
   try {
-    let response = '';
-    response = await userService.getSubscription();
-
-    if (response.code === 401) {
-      console.log('not login');
-    } else if (response.code === 200) {
-      console.log('get data:' + JSON.stringify(response.data));
-      subscriptions.value = response.data;
+    const userId = user.userId;
+    if (userId) {
+      let response = await userService.getSubscription(userId);
+      
+      if (response.code === 401) {
+        console.log('not login');
+        subscriptions.value = [];
+      } else if (response.code === 200) {
+        console.log('收藏课程API响应完整数据:', JSON.stringify(response, null, 2));
+        console.log('response.data类型:', typeof response.data);
+        console.log('response.data内容:', response.data);
+        if (Array.isArray(response.data)) {
+          console.log('数组长度:', response.data.length);
+          response.data.forEach((item, index) => {
+            console.log(`收藏课程[${index}]:`, item);
+            console.log(`- id: ${item.id} (${typeof item.id})`);
+            console.log(`- name: ${item.name} (${typeof item.name})`);
+            console.log(`- 完整对象:`, JSON.stringify(item, null, 2));
+          });
+        }
+        subscriptions.value = response.data || [];
+      } else {
+        console.log('获取收藏课程失败:', response);
+        subscriptions.value = [];
+      }
+    } else {
+      console.log('没有用户ID，无法加载收藏课程');
+      subscriptions.value = [];
     }
   } catch (error) {
-    console.error('Error get message:', error);
+    console.error('Error get subscription:', error);
+    subscriptions.value = [];
   }
 };
 
@@ -475,7 +496,7 @@ function openInNewTab(courseId) {
         <v-col cols="4">
 
           <!-- 正在学习的课程 -->
-          <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4">
+          <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4" style="border-top: 4px solid #eee;">
             <v-card-text class="pa-4">
               <div class="d-flex align-center mb-3">
                 <v-avatar color="grey-darken-2" size="32" class="mr-3">
@@ -515,15 +536,15 @@ function openInNewTab(courseId) {
             </v-card-text>
 
             <v-card-actions class="px-4 pb-4" v-if="learningCourses.length > 0">
-              <v-btn @click="router.push('/learning');" variant="flat"
-                color="grey-darken-2" rounded="lg" density="comfortable" class="w-100">
+              <v-btn @click="router.push({ path: '/self', query: { tab: 'learning', learningTab: 'courses' } });"
+                variant="tonal" color="grey-darken-2" rounded="lg" density="comfortable" class="w-100">
                 查看全部学习课程
               </v-btn>
             </v-card-actions>
           </v-card>
 
           <!-- 我收藏的课程 -->
-          <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4">
+          <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4" style="border-top: 4px solid #eee;">
             <v-card-text class="pa-4">
               <div class="d-flex align-center mb-3">
                 <v-avatar color="grey-darken-2" size="32" class="mr-3">
@@ -542,18 +563,19 @@ function openInNewTab(courseId) {
               </div>
 
               <v-responsive v-else class="overflow-y-auto" max-height="160">
-                <v-chip v-for="subscription in subscriptions.slice(0, 8)" :key="subscription.id" :text="subscription.name"
-                  variant="outlined" color="primary" @click="openInNewTab(subscription.id)" class="ma-1 px-3 py-1"
-                  density="compact">
+                <v-chip v-for="(subscription, index) in subscriptions.slice(0, 8)" :key="subscription.id || index"
+                  variant="tonal" color="primary" @click="console.log('点击的subscription对象:', subscription); openInNewTab(subscription.id)" class="my-2 me-3 px-3 py-1"
+                  density="comfortable">
                   <template v-slot:prepend>
-                    <v-icon icon="mdi-bookmark" size="12" color="primary"></v-icon>
+                    <v-icon icon="mdi-bookmark" size="12" color="primary" class="mr-2"></v-icon>
                   </template>
+                  {{ subscription.name || '课程信息异常' }}
                 </v-chip>
               </v-responsive>
             </v-card-text>
 
             <v-card-actions class="px-4 pb-4" v-if="subscriptions.length > 0">
-              <v-btn @click="router.push({ path: '/user', query: { tab: 'subscription' } });" variant="flat"
+              <v-btn @click="router.push({ path: '/self', query: { tab: 'subscription' } });" variant="tonal"
                 color="grey-darken-2" rounded="lg" density="comfortable" class="w-100">
                 查看全部收藏
               </v-btn>
@@ -561,7 +583,7 @@ function openInNewTab(courseId) {
           </v-card>
 
           <!-- 热门课程 -->
-          <v-card flat color="grey-lighten-5" class="" rounded="lg">
+          <v-card flat color="grey-lighten-5" class="" rounded="lg" style="border-top: 4px solid #eee;">
             <v-card-text class="pa-4">
               <div class="d-flex align-center mb-3">
                 <v-avatar color="grey-darken-2" size="32" class="mr-3">
@@ -604,7 +626,7 @@ function openInNewTab(courseId) {
             </v-card-text>
 
             <v-card-actions class="px-4 pb-4">
-              <v-btn variant="flat" color="grey-darken-2" rounded="lg" density="comfortable" class="w-100">
+              <v-btn @click="router.push('/course/ranking')" variant="tonal" color="grey-darken-2" rounded="lg" density="comfortable" class="w-100">
                 查看完整排行榜
               </v-btn>
             </v-card-actions>

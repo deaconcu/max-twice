@@ -638,4 +638,10 @@ export const learnService = {
       params: { limit: limit }
     });
   },
+
+  // 获取热门课程完整排行榜（前100名）
+  getHotCoursesRanking() {
+    console.log("get hot courses ranking");
+    return apiClient.get('/course/ranking');
+  },
 };

@@ -34,4 +34,6 @@ public class CourseDTOV4 {
     private Integer learnerCount; // 学习人数
 
     private Integer subscriptionCount; // 收藏人数
+
+    private boolean subscribed; // 是否已收藏
 }

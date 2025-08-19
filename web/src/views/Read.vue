@@ -271,15 +271,23 @@ const subscript = async (courseId, action) => {
 
     if (response.code === 401) {
       console.log('not login');
+      showSnackbar('请先登录', 'error');
     } else if (response.code === 200) {
       console.log("data:" + response.data);
       console.log('done');
-      //showSnackbar("操作成功！")
+      // 更新parentCourseInfo的订阅状态
+      if (parentCourseInfo.value) {
+        parentCourseInfo.value.subscribed = action;
+      }
+      // 同时更新用户store中的数据
       user.setSubscription(response.data);
+      showSnackbar(action ? '收藏成功' : '已取消收藏', 'success');
+    } else {
+      showSnackbar('操作失败，请稍后重试', 'error');
     }
   } catch (error) {
-    console.error('Error verifying login status:', error);
-    isLoggedIn.value = false; // 如果请求失败，认为用户未登录
+    console.error('Error updating subscription:', error);
+    showSnackbar('操作失败，请稍后重试', 'error');
   }
 }
 
@@ -359,7 +367,7 @@ const startCourse = async () => {
                 
                 <!-- 订阅按钮 -->
                 <v-btn
-                  v-if="user.subscription.includes(parentCourseInfo ? parentCourseInfo.id : data.course.id)" 
+                  v-if="parentCourseInfo && parentCourseInfo.subscribed" 
                   @click="subscript(parentCourseInfo ? parentCourseInfo.id : data.course.id, false)"
                   prepend-icon="mdi-heart" 
                   variant="text" 

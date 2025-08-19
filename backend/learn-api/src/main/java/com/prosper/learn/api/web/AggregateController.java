@@ -25,6 +25,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.prosper.learn.common.Enums.ObjectType.comment;
 import static com.prosper.learn.common.Enums.ObjectType.post;
@@ -50,6 +51,7 @@ public class AggregateController implements AggregateClient {
     private final UserMapper userMapper;
     private final CommentMapper commentMapper;
     private final UserCourseMapper userCourseMapper;
+    private final UserProfileMapper userProfileMapper;
 
     @Override
     public Response<Object> readByComment(int commentId) {
@@ -245,12 +247,33 @@ public class AggregateController implements AggregateClient {
         UserCourseDO userCourseDo = userCourseMapper.getByUserIdAndCourseId((long)userId, (long)courseDO.getId());
         boolean learning = userCourseDo != null ?  true : false;
 
-        CourseDTOV2 parentCourse = null;
+        CourseDTOV4 parentCourse = null;
         if (courseDO.getParent() != 0) {
-            parentCourse = Converter.INSTANCE.toCourseDTOV2(courseMapper.getById(courseDO.getParent()));
+            CourseDO parentCourseDO = courseMapper.getById(courseDO.getParent());
+            parentCourse = Converter.INSTANCE.toCourseDTOV4(parentCourseDO, false); // 先设置为false，后面会更新
         } else {
-            parentCourse = Converter.INSTANCE.toCourseDTOV2(courseDO);
+            parentCourse = Converter.INSTANCE.toCourseDTOV4(courseDO, false); // 先设置为false，后面会更新
         }
+
+        // 检查父课程收藏状态
+        boolean subscribed = false;
+        try {
+            UserProfileDO userProfileDO = userProfileMapper.getById(userId);
+            if (userProfileDO != null && userProfileDO.getSubscription() != null && !userProfileDO.getSubscription().trim().isEmpty()) {
+                List<Integer> subscriptionIds = Arrays.stream(userProfileDO.getSubscription().split(","))
+                        .filter(s -> !s.trim().isEmpty())
+                        .map(String::trim)
+                        .mapToInt(Integer::parseInt)
+                        .boxed()
+                        .collect(Collectors.toList());
+                subscribed = subscriptionIds.contains(parentCourse.getId());
+            }
+        } catch (Exception e) {
+            subscribed = false;
+        }
+
+        // 更新父课程的订阅状态
+        parentCourse.setSubscribed(subscribed);
 
         List<CourseDTOV2> subCourseList = Converter.INSTANCE.toCourseDTOV2(
                 courseMapper.listByParentAndState("APPROVED", parentCourse.getId()));
@@ -258,7 +281,7 @@ public class AggregateController implements AggregateClient {
         Map<String, Object> data = new HashMap<>();
         data.put("node", Converter.INSTANCE.toNodeDTO(nodeDO));
         data.put("parentCourse", parentCourse);
-        data.put("course", Converter.INSTANCE.toCourseDTOV2(courseDO));
+        data.put("course", Converter.INSTANCE.toCourseDTOV4(courseDO, subscribed));
         data.put("subCourseList", subCourseList);
         data.put("chosenPosting", chosenPosting);
         data.put("fixedPostings", fixedPostings);

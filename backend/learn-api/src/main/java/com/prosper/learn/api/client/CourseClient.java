@@ -38,6 +38,10 @@ public interface CourseClient {
     @GetMapping("/course/hot")
     Response<Object> getHotCourses(@RequestParam(value = "limit", defaultValue = "10") int limit);
 
+    // 获取热门课程完整排行榜（前100名）
+    @GetMapping("/course/ranking")
+    Response<Object> getHotCoursesRanking();
+
     // 课程状态操作接口（批准、拒绝、屏蔽）
     @PostMapping("/course/operate")
     Response<Object> operate(@RequestParam int id, @RequestParam String action, @RequestParam(required = false) String rejectedReason);

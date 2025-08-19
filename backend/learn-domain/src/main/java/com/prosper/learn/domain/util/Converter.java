@@ -195,6 +195,16 @@ public interface Converter {
         return dto;
     }
 
+    // 自定义方法来处理 subscribed 字段的转换
+    default CourseDTOV4 toCourseDTOV4(CourseDO item, boolean subscribed) {
+        if (item == null) {
+            return null;
+        }
+        CourseDTOV4 dto = toCourseDTOV4(item);
+        dto.setSubscribed(subscribed);
+        return dto;
+    }
+
     default int map(Enums.CourseState state) {
         return state.value;
     }

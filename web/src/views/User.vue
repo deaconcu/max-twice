@@ -8,6 +8,11 @@ import { useUserStore } from "@/stores/user";
 import UserPosting from '../components/UserPosting.vue';
 import Comment from '../components/Comment.vue';
 import Tiptap from '../components/Tiptap.vue'
+import { VueFlow } from '@vue-flow/core'
+import { Background } from '@vue-flow/background'
+import { Controls } from '@vue-flow/controls'
+import RoadmapDetail from '@/components/RoadmapDetail.vue';
+import dagre from 'dagre';
 
 
 //const isLoggedIn = ref(false);
@@ -203,151 +208,87 @@ async function saveSubscription() {
 
 const loadLearningProgress = async () => {
   try {
-    // 模拟加载学习数据 - 这里应该调用后端API获取用户收藏的roadmap posts和课程
+    // 并行加载用户学习的路线图数据和课程数据
+    const [roadmapResponse, courseResponse] = await Promise.all([
+      learnService.getUserRoadmaps(),
+      learnService.getUserCourseList()
+    ]);
+    
+    console.log('获取用户学习路线图数据:', roadmapResponse);
+    console.log('获取用户学习课程数据:', courseResponse);
+    
+    let roadmaps = [];
+    let courses = [];
+    
+    // 处理路线图数据
+    if (roadmapResponse.code === 200 && Array.isArray(roadmapResponse.data)) {
+      roadmaps = roadmapResponse.data.map(userRoadmap => {
+        const roadmap = userRoadmap.roadmap;
+        const { nodes, edges } = parseRoadmapContent(roadmap.content);
+        
+        // 首先进行布局计算
+        const layoutedNodes = applyAutoLayout(nodes, edges, 'BT');
+        
+        // 计算完成的节点数和总节点数
+        const completedNodes = nodes.filter(node => node.data.completed).length;
+        const totalNodes = nodes.length;
+        const progress = totalNodes > 0 ? Math.round((completedNodes / totalNodes) * 100) : 0;
+        
+        return {
+          id: roadmap.id,
+          title: roadmap.description || `学习路线图 ${roadmap.id}`,
+          description: roadmap.description || '暂无描述',
+          author: roadmap.creator?.name || '未知用户',
+          createdAt: roadmap.createdAt,
+          addedDate: formatDate(userRoadmap.startedAt),
+          vote: roadmap.vote || 0,
+          upvoted: roadmap.upvoted || false,
+          progress: userRoadmap.progressPercent || progress,
+          completedNodes: completedNodes,
+          totalNodes: totalNodes,
+          lastActivity: getRelativeTime(userRoadmap.updatedAt),
+          status: userRoadmap.status,
+          startedAt: userRoadmap.startedAt,
+          completedAt: userRoadmap.completedAt,
+          tags: extractTags(roadmap.description),
+          profession: roadmap.profession,
+          nodes: layoutedNodes,
+          edges: edges,
+          content: generateRoadmapHTML(nodes) // 保留HTML内容以防需要
+        };
+      });
+    }
+    
+    // 处理课程数据
+    if (courseResponse.code === 200 && Array.isArray(courseResponse.data)) {
+      courses = courseResponse.data.map(userCourse => {
+        return {
+          id: userCourse.id,
+          courseId: userCourse.course.id,
+          title: userCourse.course.name,
+          description: userCourse.course.description,
+          progress: userCourse.progressPercent || 0,
+          totalLessons: calculateTotalLessons(userCourse.course),
+          completedLessons: calculateCompletedLessons(userCourse),
+          category: getCategoryFromDescription(userCourse.course.description),
+          difficulty: getDifficultyFromStatus(userCourse.status),
+          estimatedTime: getEstimatedTime(userCourse.course.description),
+          lastActivity: getRelativeTime(userCourse.updatedAt),
+          instructor: userCourse.course.creator?.name || '未知讲师'
+        };
+      });
+    }
+    
     learningData.value = {
-      totalProgress: 18,
-      completedNodes: 2938,
-      totalNodes: 29380,
-      roadmaps: [
-        {
-          id: 1,
-          title: '前端开发完整学习路线',
-          author: '张老师',
-          content: `
-            <h3>前端开发学习路径</h3>
-            <div class="learning-path">
-              <div class="path-step completed">
-                <div class="step-number">1</div>
-                <div class="step-content">
-                  <h4>HTML 基础</h4>
-                  <p>学习HTML标签、语义化、表单等基础知识</p>
-                  <div class="step-duration">预计时间: 2周</div>
-                </div>
-              </div>
-              <div class="path-step completed">
-                <div class="step-number">2</div>
-                <div class="step-content">
-                  <h4>CSS 样式设计</h4>
-                  <p>掌握CSS选择器、布局、动画等技能</p>
-                  <div class="step-duration">预计时间: 3周</div>
-                </div>
-              </div>
-              <div class="path-step current">
-                <div class="step-number">3</div>
-                <div class="step-content">
-                  <h4>JavaScript 编程</h4>
-                  <p>学习JS基础语法、DOM操作、事件处理</p>
-                  <div class="step-duration">预计时间: 4周</div>
-                </div>
-              </div>
-              <div class="path-step">
-                <div class="step-number">4</div>
-                <div class="step-content">
-                  <h4>Vue.js 框架</h4>
-                  <p>掌握现代前端框架开发</p>
-                  <div class="step-duration">预计时间: 6周</div>
-                </div>
-              </div>
-              <div class="path-step">
-                <div class="step-number">5</div>
-                <div class="step-content">
-                  <h4>项目实战</h4>
-                  <p>完成完整的前端项目开发</p>
-                  <div class="step-duration">预计时间: 8周</div>
-                </div>
-              </div>
-            </div>
-          `,
-          progress: 40, // 当前完成的步骤百分比
-          currentStep: 3,
-          totalSteps: 5,
-          addedDate: '2024-01-15',
-          lastActivity: '2小时前',
-          tags: ['前端', 'JavaScript', 'Vue.js']
-        },
-        {
-          id: 2,
-          title: '数据科学入门路线图',
-          author: '李教授',
-          content: `
-            <h3>数据科学学习路径</h3>
-            <div class="learning-path">
-              <div class="path-step completed">
-                <div class="step-number">1</div>
-                <div class="step-content">
-                  <h4>Python 基础</h4>
-                  <p>学习Python语法和基础编程</p>
-                  <div class="step-duration">预计时间: 3周</div>
-                </div>
-              </div>
-              <div class="path-step current">
-                <div class="step-number">2</div>
-                <div class="step-content">
-                  <h4>数据处理与分析</h4>
-                  <p>掌握Pandas、NumPy等数据处理库</p>
-                  <div class="step-duration">预计时间: 4周</div>
-                </div>
-              </div>
-              <div class="path-step">
-                <div class="step-number">3</div>
-                <div class="step-content">
-                  <h4>数据可视化</h4>
-                  <p>学习Matplotlib、Seaborn等可视化工具</p>
-                  <div class="step-duration">预计时间: 3周</div>
-                </div>
-              </div>
-              <div class="path-step">
-                <div class="step-number">4</div>
-                <div class="step-content">
-                  <h4>机器学习基础</h4>
-                  <p>了解机器学习算法和应用</p>
-                  <div class="step-duration">预计时间: 6周</div>
-                </div>
-              </div>
-            </div>
-          `,
-          progress: 25,
-          currentStep: 2,
-          totalSteps: 4,
-          addedDate: '2024-02-01',
-          lastActivity: '1天前',
-          tags: ['数据科学', 'Python', '机器学习']
-        }
-      ],
-      courses: [
-        {
-          id: 1,
-          title: 'Vue.js 3 组合式API',
-          description: '现代Vue.js开发实践',
-          progress: 80,
-          totalLessons: 24,
-          completedLessons: 19,
-          category: 'frontend',
-          difficulty: 'intermediate',
-          estimatedTime: '4周',
-          lastActivity: '30分钟前',
-          instructor: '张老师'
-        },
-        {
-          id: 2,
-          title: 'Python数据分析基础',
-          description: '使用Pandas和NumPy进行数据处理',
-          progress: 45,
-          totalLessons: 32,
-          completedLessons: 14,
-          category: 'datascience',
-          difficulty: 'beginner',
-          estimatedTime: '6周',
-          lastActivity: '2小时前',
-          instructor: '李老师'
-        }
-      ],
-      recentActivities: [
-        { type: 'course', title: 'Vue.js 3 组合式API', action: '完成了第19课', time: '30分钟前' },
-        { type: 'roadmap', title: '前端开发完整学习路线', action: '进入第3步：JavaScript编程', time: '2小时前' },
-        { type: 'achievement', title: '连续学习7天', action: '获得成就徽章', time: '1天前' }
-      ]
+      totalProgress: calculateOverallProgress(roadmaps, courses),
+      completedNodes: calculateCompletedNodes(roadmaps),
+      totalNodes: calculateTotalNodes(roadmaps),
+      roadmaps: roadmaps,
+      courses: courses,
+      recentActivities: generateRecentActivities([...roadmaps, ...courses])
     };
+
+    console.log("learningData:", learningData.value);
   } catch (error) {
     console.error('Error loading learning data:', error);
     showSnackbar('加载学习数据失败');
@@ -450,6 +391,363 @@ const getCategoryIcon = (category) => {
     case 'ai': return 'mdi-brain';
     default: return 'mdi-book';
   }
+};
+
+// 解析路线图内容 - 参考 Learning.vue 的实现
+const parseRoadmapContent = (content) => {
+  try {
+    const data = typeof content === 'string' ? JSON.parse(content) : content;
+    console.log('解析路线图内容数据:', data);
+    
+    if (!data || typeof data !== 'object') {
+      console.warn('路线图内容数据无效:', data);
+      return { nodes: [], edges: [] };
+    }
+    
+    const nodes = (data.nodes || []).map((node, index) => {
+      return {
+        id: String(node.id || index),
+        type: 'default',
+        data: {
+          label: node.label || node.data?.label || `节点 ${node.id || index}`,
+          link: '/read?courseId=' + (node.id || index),
+          completed: node.completed || node.data?.completed || false,
+          current: node.current || node.data?.current || false,
+          ...node.data
+        },
+        position: node.position || { x: 0, y: 0 },
+        sourcePosition: 'top',
+        targetPosition: 'bottom'
+      };
+    });
+
+    const edges = (data.edges || []).map((edge, index) => ({
+      id: `${edge.source}-${edge.target}`,
+      source: String(edge.source),
+      target: String(edge.target),
+      type: edge.type || 'bezier',
+      animated: edge.animated || true,
+      label: edge.label
+    }));
+
+    return { nodes, edges };
+  } catch (err) {
+    console.error('解析路线图内容失败:', err, '原始内容:', content);
+    return { nodes: [], edges: [] };
+  }
+};
+
+// 自动布局函数 - 参考 Learning.vue 的实现
+const applyAutoLayout = (nodeList, edgeList, direction = 'BT') => {
+  console.log("Applying auto layout with direction:", direction);
+  const dagreGraph = new dagre.graphlib.Graph()
+  dagreGraph.setDefaultEdgeLabel(() => ({}))
+  dagreGraph.setGraph({
+    rankdir: direction,
+    nodesep: 180,
+    ranksep: 80,
+    marginx: 20,
+    marginy: 20
+  })
+
+  const nodeWidth = 100
+  const nodeHeight = 36
+
+  nodeList.forEach((node) => {
+    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight })
+  })
+  edgeList.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target)
+  })
+
+  dagre.layout(dagreGraph)
+
+  return nodeList.map((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id)
+    return {
+      ...node,
+      position: {
+        x: nodeWithPosition.x - nodeWidth / 2,
+        y: nodeWithPosition.y - nodeHeight / 2
+      }
+    }
+  })
+};
+
+// 生成路线图HTML内容 - 基于节点生成步骤HTML
+const generateRoadmapHTML = (nodes) => {
+  if (!nodes || nodes.length === 0) {
+    return '<p>暂无学习路径内容</p>';
+  }
+  
+  const stepsHTML = nodes.map((node, index) => {
+    const isCompleted = node.data.completed || false;
+    const isCurrent = node.data.current || false;
+    const stepClass = isCompleted ? 'completed' : isCurrent ? 'current' : '';
+    
+    return `
+      <div class="path-step ${stepClass}">
+        <div class="step-number">${index + 1}</div>
+        <div class="step-content">
+          <h4>${node.data.label || `步骤 ${index + 1}`}</h4>
+          <p>${node.data.description || '学习相关内容'}</p>
+          <div class="step-duration">预计时间: 1-2周</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  return `
+    <h3>学习路径</h3>
+    <div class="learning-path">
+      ${stepsHTML}
+    </div>
+  `;
+};
+
+// 计算当前步骤
+const calculateCurrentStep = (progressPercent) => {
+  if (!progressPercent) return 1;
+  return Math.max(1, Math.ceil(progressPercent / 20));
+};
+
+// 计算总课时数
+const calculateTotalLessons = (course) => {
+  const description = course.description || '';
+  return Math.max(10, Math.floor(description.length / 10));
+};
+
+// 计算已完成课时数
+const calculateCompletedLessons = (userCourse) => {
+  const totalLessons = calculateTotalLessons(userCourse.course);
+  const progress = userCourse.progressPercent || 0;
+  return Math.floor((progress / 100) * totalLessons);
+};
+
+// 计算总体进度
+const calculateOverallProgress = (roadmaps, courses) => {
+  const allItems = [...roadmaps, ...courses];
+  if (allItems.length === 0) return 0;
+  
+  const totalProgress = allItems.reduce((sum, item) => sum + (item.progress || 0), 0);
+  return Math.round(totalProgress / allItems.length);
+};
+
+// 计算已完成节点数
+const calculateCompletedNodes = (roadmaps) => {
+  return roadmaps.reduce((sum, roadmap) => {
+    const progress = roadmap.progress || 0;
+    const totalSteps = roadmap.totalSteps || 5;
+    return sum + Math.floor((progress / 100) * totalSteps);
+  }, 0);
+};
+
+// 计算总节点数
+const calculateTotalNodes = (roadmaps) => {
+  return roadmaps.reduce((sum, roadmap) => sum + (roadmap.totalSteps || 5), 0);
+};
+
+// 生成最近活动
+const generateRecentActivities = (items) => {
+  const activities = [];
+  
+  items.forEach(item => {
+    if (item.progress > 0) {
+      activities.push({
+        type: item.totalSteps ? 'roadmap' : 'course',
+        title: item.title,
+        action: item.progress === 100 ? '已完成学习' : '正在学习中',
+        time: item.lastActivity
+      });
+    }
+  });
+  
+  return activities.slice(0, 5);
+};
+
+// 获取相对时间
+const getRelativeTime = (dateString) => {
+  if (!dateString) return '未知时间';
+  
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 60) {
+    return `${diffMins}分钟前`;
+  } else if (diffHours < 24) {
+    return `${diffHours}小时前`;
+  } else {
+    return `${diffDays}天前`;
+  }
+};
+
+// 格式化日期
+const formatDate = (dateString) => {
+  if (!dateString) return '未知日期';
+  return new Date(dateString).toLocaleDateString('zh-CN');
+};
+
+// 从描述中提取标签
+const extractTags = (description) => {
+  if (!description) return [];
+  
+  const commonTags = ['前端', 'Vue.js', 'JavaScript', 'React', 'Python', '数据科学', '机器学习', 'Java', 'Spring'];
+  return commonTags.filter(tag => description.includes(tag)).slice(0, 3);
+};
+
+// 根据描述推断分类
+const getCategoryFromDescription = (description) => {
+  if (!description) return 'other';
+  const desc = description.toLowerCase();
+  
+  if (desc.includes('前端') || desc.includes('vue') || desc.includes('react') || desc.includes('javascript')) return 'frontend';
+  if (desc.includes('数据') || desc.includes('python') || desc.includes('分析')) return 'datascience';
+  if (desc.includes('ai') || desc.includes('机器学习') || desc.includes('深度学习')) return 'ai';
+  if (desc.includes('java') || desc.includes('spring') || desc.includes('后端')) return 'backend';
+  
+  return 'other';
+};
+
+// 根据状态推断难度
+const getDifficultyFromStatus = (status) => {
+  switch (status) {
+    case 'NOT_STARTED': return 'beginner';
+    case 'IN_PROGRESS': return 'intermediate';
+    case 'COMPLETED': return 'advanced';
+    default: return 'beginner';
+  }
+};
+
+// 根据描述估算学习时间
+const getEstimatedTime = (description) => {
+  if (!description) return '未知';
+  
+  const length = description.length;
+  if (length < 50) return '1-2小时';
+  if (length < 100) return '3-5小时';
+  if (length < 200) return '1-2天';
+  return '3-7天';
+};
+
+// 根据用户名获取头像颜色 - 从 Learning.vue 复制
+const getAvatarColor = (name) => {
+  const colors = ['primary', 'success', 'info', 'warning', 'orange', 'purple', 'pink', 'indigo'];
+  if (!name) return 'primary';
+  
+  const charCode = name.charCodeAt(0);
+  return colors[charCode % colors.length];
+};
+
+// 格式化日期时间 - 从 Learning.vue 复制
+const formatDateTime = (dateString) => {
+  if (!dateString) return '未知时间'
+  return new Date(dateString).toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+// 计算学习时长 - 从 Learning.vue 复制
+const calculateDuration = (startTime) => {
+  if (!startTime) return '未知'
+  
+  const start = new Date(startTime)
+  const now = new Date()
+  const diffMs = now - start
+  const diffDays = Math.floor(diffMs / 86400000)
+  const diffHours = Math.floor((diffMs % 86400000) / 3600000)
+  
+  if (diffDays > 0) {
+    return `${diffDays}天${diffHours}小时`
+  } else {
+    return `${diffHours}小时`
+  }
+};
+
+// 获取状态颜色 - 从 Learning.vue 复制
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'NOT_STARTED': return 'grey'
+    case 'IN_PROGRESS': return 'primary'
+    case 'COMPLETED': return 'success'
+    default: return 'grey'
+  }
+};
+
+// 获取状态图标 - 从 Learning.vue 复制
+const getStatusIcon = (status) => {
+  switch (status) {
+    case 'NOT_STARTED': return 'mdi-circle-outline'
+    case 'IN_PROGRESS': return 'mdi-play-circle'
+    case 'COMPLETED': return 'mdi-check-circle'
+    default: return 'mdi-circle-outline'
+  }
+};
+
+// 获取状态文本 - 从 Learning.vue 复制
+const getStatusText = (status) => {
+  switch (status) {
+    case 'NOT_STARTED': return '未开始'
+    case 'IN_PROGRESS': return '进行中'
+    case 'COMPLETED': return '已完成'
+    default: return '未知状态'
+  }
+};
+
+// 处理节点点击 - 从 Learning.vue 复制
+const handleNodeClick = ({event, node}) => {
+  console.log('Node clicked:', event, node);
+  // 不阻止事件冒泡，让卡片点击事件也能触发浮层
+  
+  if (node.id === '0') {
+    return
+  }
+  
+  if (node.data.link) {
+    window.open(node.data.link, '_blank')
+  }
+};
+
+// 路线图投票功能 - 从 Learning.vue 复制
+const handleVoteRoadmap = async (roadmap, event) => {
+  if (event) {
+    event.stopPropagation();
+  }
+  try {
+    roadmap.upvoted = !roadmap.upvoted;
+    roadmap.vote += roadmap.upvoted ? 1 : -1;
+    showSnackbar(roadmap.upvoted ? '点赞成功！' : '取消点赞');
+  } catch (error) {
+    console.error('投票失败:', error);
+    showSnackbar('操作失败，请重试');
+  }
+};
+
+// 关闭/退出学习路线图 - 从 Learning.vue 复制
+const closeRoadmap = (roadmap, event) => {
+  if (event) {
+    event.stopPropagation();
+  }
+  if (confirm('确定要退出这个学习路线图吗？')) {
+    showSnackbar('已退出学习路线图');
+  }
+};
+
+// RoadmapDetail 浮层状态
+const showRoadmapDetail = ref(false);
+const selectedRoadmap = ref(null);
+
+// 打开路线图详情浮层
+const openRoadmapDetail = (roadmap) => {
+  selectedRoadmap.value = roadmap;
+  showRoadmapDetail.value = true;
 };
 
 const openCourse = (courseId) => {
@@ -704,43 +1002,124 @@ async function loadFollowee({ done }) {
                 </div>
 
                 <div v-else>
-                  <v-card v-for="roadmap in learningData.roadmaps" :key="roadmap.id" flat color="grey-lighten-5" rounded="lg" class="mb-4">
-                    <v-card-text class="pa-0">
-                      <!-- 路线图头部信息 -->
-                      <div class="pa-4 border-b">
-                        <div class="d-flex align-start justify-space-between mb-3">
-                          <div class="flex-grow-1">
-                            <h3 class="text-h6 font-weight-bold text-grey-darken-4 mb-1">{{ roadmap.title }}</h3>
-                            <p class="text-body-2 text-grey-darken-2 mb-2">作者：{{ roadmap.author }}</p>
-                            <div class="d-flex align-center mb-2">
-                              <v-chip v-for="tag in roadmap.tags" :key="tag" variant="flat" color="grey-lighten-3" size="small" class="mr-1">
+                  <div v-for="roadmap in learningData.roadmaps" :key="roadmap.id" class="mb-4">
+                    <v-card @click="openRoadmapDetail(roadmap)" variant="flat" class="flat-card roadmap-card position-relative">
+                      
+                      <div class="d-flex align-stretch" style="min-height: 240px;">
+                        <!-- 左侧信息区域 -->
+                        <div class="d-flex flex-column flex-grow-1 pt-2" style="min-width: 0; flex: 1;">
+                          <!-- 标题 -->
+                          <div class="px-4 pt-2 pb-1">
+                            <h3 class="text-h5 font-weight-normal mb-3 text-grey-darken-2">{{ roadmap.profession?.name || roadmap.title }}</h3>
+                          </div>
+
+                          <v-card-text class="text-body-2 flex-grow-1 pt-1 pb-2">
+                            
+                            <!-- 学习进度信息 -->
+                            <div class="mb-3">
+                              <div class="d-flex justify-space-between text-body-2 mb-2">
+                                <span class="text-grey-darken-3">完成进度</span>
+                                <span class="text-primary font-weight-bold">{{ roadmap.progress }}%</span>
+                              </div>
+                              <v-progress-linear 
+                                :model-value="roadmap.progress" 
+                                color="primary" 
+                                background-color="grey-lighten-3" 
+                                height="8" 
+                                rounded="lg">
+                              </v-progress-linear>
+                            </div>
+
+                            <div class="d-flex flex-wrap align-center mb-3">
+                              <v-chip size="small" color="success" variant="tonal" class="mr-2 mb-1">
+                                <v-icon icon="mdi-check-circle" size="14" class="mr-1"></v-icon>
+                                {{ roadmap.completedNodes }}/{{ roadmap.totalNodes }} 节点
+                              </v-chip>
+                              <v-chip size="small" color="info" variant="tonal" class="mr-2 mb-1">
+                                <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
+                                {{ roadmap.lastActivity }}
+                              </v-chip>
+                              <v-chip v-for="tag in roadmap.tags" :key="tag" size="small" color="grey-lighten-1" variant="tonal" class="mr-2 mb-1">
                                 {{ tag }}
                               </v-chip>
                             </div>
-                          </div>
-                          <div class="text-end">
-                            <div class="text-primary text-h6 font-weight-bold mb-1">{{ roadmap.progress }}%</div>
-                            <p class="text-body-2 text-grey-darken-2 mb-1">第{{ roadmap.currentStep }}/{{ roadmap.totalSteps }}步</p>
-                            <p class="text-caption text-grey-darken-1">{{ roadmap.lastActivity }}</p>
+
+                            <!-- 时间信息 -->
+                            <div class="time-info text-caption text-grey-darken-2">
+                              <div v-if="roadmap.startedAt" class="mb-1">
+                                <v-icon icon="mdi-calendar-start" size="12" class="mr-1"></v-icon>
+                                开始时间: {{ formatDateTime(roadmap.startedAt) }}
+                              </div>
+                              <div v-if="roadmap.completedAt" class="mb-1">
+                                <v-icon icon="mdi-calendar-check" size="12" class="mr-1"></v-icon>
+                                完成时间: {{ formatDateTime(roadmap.completedAt) }}
+                              </div>
+                              <div v-if="!roadmap.completedAt && roadmap.startedAt" class="mb-1">
+                                <v-icon icon="mdi-timer-sand" size="12" class="mr-1"></v-icon>
+                                学习时长: {{ calculateDuration(roadmap.startedAt) }}
+                              </div>
+                            </div>
+                          </v-card-text>
+
+                          <!-- 操作按钮区域 -->
+                          <div class="px-4 py-2 d-flex justify-space-between border-t">
+                            <div class="d-flex align-center">
+                              <v-btn variant="text" size="small" class="flat-action-icon" 
+                                :color="roadmap.upvoted ? 'red-darken-2' : 'primary'"
+                                @click="handleVoteRoadmap(roadmap, $event)">
+                                <v-icon size="20" :class="{ 'vote-animation': roadmap.upvoted }">
+                                  {{ roadmap.upvoted ? 'mdi-thumb-up' : 'mdi-thumb-up-outline' }}
+                                </v-icon>
+                                <span class="ml-1 text-body-2">{{ roadmap.vote || 0 }}</span>
+                                <v-tooltip activator="parent" location="top">
+                                  {{ roadmap.upvoted ? '已点赞' : '投票支持' }}
+                                </v-tooltip>
+                              </v-btn>
+
+                              <v-btn variant="text" size="small" class="flat-action-icon" color="info">
+                                <v-icon size="20">mdi-comment-outline</v-icon>
+                                <span class="ml-1 text-body-2">{{ roadmap.comment || 0 }}</span>
+                                <v-tooltip activator="parent" location="top">查看评论</v-tooltip>
+                              </v-btn>
+                            </div>
                           </div>
                         </div>
-                        
-                        <!-- 进度条 -->
-                        <v-progress-linear 
-                          :model-value="roadmap.progress" 
-                          color="primary" 
-                          background-color="grey-lighten-3" 
-                          height="8" 
-                          rounded="lg">
-                        </v-progress-linear>
-                      </div>
 
-                      <!-- 路线图内容 -->
-                      <div class="pa-4">
-                        <div v-html="roadmap.content" class="roadmap-content"></div>
+                        <!-- 右侧VueFlow图表区域 -->
+                        <div class="d-flex align-center" style="width: 400px; min-width: 400px; ">
+                          <div class="vue-flow-preview" style="width: 100%; height: 100%;">
+                            <VueFlow 
+                              v-if="roadmap.nodes && roadmap.nodes.length > 0"
+                              :nodes="roadmap.nodes" 
+                              :edges="roadmap.edges || []" 
+                              fit-view-on-init 
+                              :min-zoom="0.3"
+                              :max-zoom="0.8" 
+                              :snap-to-grid="true" 
+                              :snap-grid="[20, 20]" 
+                              :zoom-on-scroll="false"
+                              :pan-on-scroll="false" 
+                              :pan-on-drag="false" 
+                              :nodes-draggable="false" 
+                              :nodes-connectable="false"
+                              :elements-selectable="true" 
+                              @node-click="handleNodeClick"
+                              @click="openRoadmapDetail(roadmap)"
+                              class="vue-flow-readonly"
+                              >
+                              <Background pattern-color="#aaa" :gap="20" />
+                            </VueFlow>
+                            <div v-else class="d-flex align-center justify-center h-100 text-grey-darken-2">
+                              <div class="text-center">
+                                <v-icon icon="mdi-map-outline" size="48" class="mb-2"></v-icon>
+                                <div class="text-body-2">暂无学习路径</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </v-card-text>
-                  </v-card>
+                    </v-card>
+                  </div>
                 </div>
               </div>
 
@@ -1114,6 +1493,13 @@ async function loadFollowee({ done }) {
       </v-col>
     </v-row>
   </v-container>
+
+  <!-- RoadmapDetail 浮层 -->
+  <RoadmapDetail 
+    v-if="selectedRoadmap"
+    v-model="showRoadmapDetail" 
+    :roadmap="selectedRoadmap"
+    @close="showRoadmapDetail = false" />
 </template>
 
 
@@ -1134,13 +1520,235 @@ async function loadFollowee({ done }) {
 .roadmap-card,
 .course-card {
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .roadmap-card:hover,
 .course-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  border-color: #4db6ac !important;
+}
+
+/* 状态标签样式 - 从 Learning.vue 复制 */
+.status-badge-container {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+}
+
+.status-badge {
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* 关闭按钮样式 - 从 Learning.vue 复制 */
+.close-btn {
+  min-width: auto !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  transition: all 0.2s ease !important;
+}
+
+.close-btn:hover {
+  background: rgba(0, 0, 0, 0.08) !important;
+  transform: scale(1.1) !important;
+}
+
+/* 时间信息样式 - 从 Learning.vue 复制 */
+.time-info {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 8px;
+}
+
+/* 描述文字样式 - 最多三行 - 从 Learning.vue 复制 */
+.description-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+  max-height: calc(1.4em * 3);
+}
+
+/* Flat 卡片样式 - 从 Learning.vue 复制 */
+.flat-card {
+  box-shadow: none !important;
+  border: 1px solid #b2dfdb !important;
+  background: white !important;
+  transition: all 0.3s ease !important;
+  border-radius: 12px !important;
+}
+
+.flat-card:hover {
+  border-color: #4db6ac !important;
+  transform: translateY(-4px) !important;
+  box-shadow: none !important;
+}
+
+.flat-avatar {
+  box-shadow: none !important;
+}
+
+.flat-action-icon {
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+  min-width: auto !important;
+  padding: 6px 8px !important;
+  height: 32px !important;
+}
+
+.flat-action-icon :deep(.v-btn__content) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  height: 100% !important;
+}
+
+.flat-action-icon :deep(.v-icon) {
+  margin: 0 !important;
+  vertical-align: middle !important;
+}
+
+.flat-action-icon:hover {
+  background: rgba(178, 223, 219, 0.15) !important;
+  transform: scale(1.05) !important;
+}
+
+.border-b {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Vue Flow 预览样式 - 从 Learning.vue 完全复制 */
+.vue-flow-preview {
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  border: none !important;
+  background: linear-gradient(135deg, #fafafa 0%, #f5f7ff 100%) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 只读模式下隐藏连接点 - 从 Learning.vue 复制 */
+.vue-flow-readonly :deep(.vue-flow__handle) {
+  width: 0 !important;
+  height: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* 只读模式下美化默认节点 - 从 Learning.vue 复制 */
+.vue-flow-readonly :deep(.vue-flow__node) {
+  border-radius: 12px !important;
+  background: #fafafa  !important;
+  border: 3px solid #1976d2 !important;
+  color: #1976d2 !important;
+  font-weight: 500 !important;
+  font-size: 0.85rem !important;
+  transition: all 0.2s ease;
+  cursor: pointer !important;
+  padding: 6px 8px !important;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 根节点特殊样式 - 从 Learning.vue 复制 */
+.vue-flow-readonly :deep(.vue-flow__node[data-id="0"]) {
+  background: #1976d2  !important;
+  border: 3px solid #1976d2 !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.vue-flow-readonly :deep(.vue-flow__node[data-id="0"]:hover) {
+  background: #1976d2  !important;
+  border: 3px solid #1976d2 !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.vue-flow-readonly :deep(.vue-flow__node:hover) {
+  background: #e3f2fd  !important;
+  border-color: #1976d2 !important;
+  transform: translateY(-5px);
+  color: #0d47a1 !important;
+}
+
+/* VueFlow 节点样式覆盖 - 从 Learning.vue 复制 */
+:deep(.vue-flow__node) {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+:deep(.vue-flow__node-default) {
+  background: white;
+  border: 2px solid #e0e0e0;
+  padding: 8px 12px;
+  min-width: 120px;
+  text-align: center;
+}
+
+:deep(.vue-flow__node.selected) {
+  border-color: #1976d2;
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+/* 边样式 - 从 Learning.vue 复制 */
+:deep(.vue-flow__edge-path) {
+  stroke: #9e9e9e;
+  stroke-width: 2px;
+}
+
+:deep(.vue-flow__edge.selected .vue-flow__edge-path) {
+  stroke: #1976d2;
+  stroke-width: 3px;
+}
+
+/* 确保节点和边可以被选中 - 从 Learning.vue 复制 */
+:deep(.vue-flow__node) {
+  cursor: pointer !important;
+}
+
+:deep(.vue-flow__edge) {
+  cursor: pointer !important;
+}
+
+:deep(.vue-flow__controls) {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.vue-flow__controls-button) {
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  transition: background-color 0.2s;
+}
+
+:deep(.vue-flow__controls-button:hover) {
+  background: #f5f5f5;
+}
+
+/* 投票动画效果 - 从 Learning.vue 复制 */
+.vote-animation {
+  animation: voteUp 0.3s ease;
+}
+
+@keyframes voteUp {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
 }
 
 /* 路线图内容样式 */

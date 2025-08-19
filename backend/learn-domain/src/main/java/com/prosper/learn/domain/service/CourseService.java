@@ -178,7 +178,7 @@ public class CourseService {
             }
             
             // 根据ID列表获取课程详情
-            List<CourseDO> courseDOList = courseMapper.getByCourseIds(hotCourseIds);
+            List<CourseDO> courseDOList = courseMapper.getByIds(hotCourseIds);
             
             // 转换为DTO并附加统计信息
             List<CourseDTOV4> result = new ArrayList<>();
@@ -199,7 +199,43 @@ public class CourseService {
             return result;
             
         } catch (Exception e) {
-            throw new RuntimeException("获取热门课程失败: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("获取热门课程失败: " + e.getMessage(), e);
+        }
+    }
+    
+    // 获取热门课程完整排行榜（前100名）
+    public List<CourseDTOV4> getHotCoursesRanking() {
+        try {
+            // 获取前100名热门课程
+            List<Integer> hotCourseIds = courseRankingService.getHotCourseIds(100);
+            
+            if (hotCourseIds.isEmpty()) {
+                return new ArrayList<>();
+            }
+            
+            // 根据ID列表获取课程详情
+            List<CourseDO> courseDOList = courseMapper.getByIds(hotCourseIds);
+            
+            // 转换为DTO并附加统计信息
+            List<CourseDTOV4> result = new ArrayList<>();
+            for (CourseDO courseDO : courseDOList) {
+                CourseDTOV4 courseDTO = Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseMapper);
+                
+                // 从Redis获取统计数据
+                CourseRankingService.CourseStats stats = courseRankingService.getCourseStats(courseDO.getId());
+                
+                courseDTO.setLearnerCount((int) stats.getLearningCount());
+                courseDTO.setSubscriptionCount((int) stats.getSubscriptionCount());
+                
+                result.add(courseDTO);
+            }
+            
+            return result;
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("获取热门课程排行榜失败: " + e.getMessage(), e);
         }
     }
 }
