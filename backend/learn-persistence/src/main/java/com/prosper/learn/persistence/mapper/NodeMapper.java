@@ -49,5 +49,9 @@ public interface NodeMapper {
             "creator = #{creator}, courseId = #{courseId}, root = #{root}, " +
             "comment_count = #{commentCount} where id = #{id}")
     void update(NodeDO Node);
+    
+    // 平台统计相关方法
+    @Select("SELECT COUNT(*) FROM node WHERE courseId > 0")
+    Long countActiveNodes();
 
 }

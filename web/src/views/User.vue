@@ -12,6 +12,7 @@ import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import RoadmapDetail from '@/components/RoadmapDetail.vue';
+import RightSidebar from '@/components/RightSidebar.vue';
 import dagre from 'dagre';
 
 
@@ -1386,110 +1387,7 @@ async function loadFollowee({ done }) {
       </v-col>
 
       <v-col cols="3" class="ps-12 pt-6">
-        <!-- 参考消息页面设计的右侧边栏 -->
-        <div class="sticky-right" style="position: sticky; top: 90px;">
-          
-          <!-- 用户统计卡片 -->
-          <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4">
-            <v-card-text class="pa-4">
-              <div class="d-flex align-center mb-3">
-                <v-avatar color="grey-darken-2" size="32" class="mr-3">
-                  <v-icon icon="mdi-account-circle" color="white" size="16"></v-icon>
-                </v-avatar>
-                <div>
-                  <h3 class="text-h6 font-weight-bold text-grey-darken-4">用户信息</h3>
-                  <p class="text-body-2 text-grey-darken-2 mb-0">该用户的基本数据</p>
-                </div>
-              </div>
-
-              <div class="d-flex justify-space-between align-center mb-2">
-                <span class="text-body-2 text-grey-darken-3">关注课程</span>
-                <span class="text-h6 font-weight-bold text-primary">{{ subscriptions?.length || 0 }}</span>
-              </div>
-              <div class="d-flex justify-space-between align-center mb-2">
-                <span class="text-body-2 text-grey-darken-3">创建内容</span>
-                <span class="text-h6 font-weight-bold text-primary">{{ postings?.length || 0 }}</span>
-              </div>
-              <div class="d-flex justify-space-between align-center mb-2">
-                <span class="text-body-2 text-grey-darken-3">学习进度</span>
-                <span class="text-h6 font-weight-bold text-success">{{ learningData.totalProgress }}%</span>
-              </div>
-              <div class="d-flex justify-space-between align-center">
-                <span class="text-body-2 text-grey-darken-3">活跃状态</span>
-                <span class="text-h6 font-weight-bold text-warning">在线</span>
-              </div>
-            </v-card-text>
-
-            <v-card-actions class="px-4 pb-4">
-              <v-btn variant="flat" color="grey-darken-2" rounded="lg" density="comfortable" class="w-100">
-                <v-icon icon="mdi-account-plus" class="mr-2" size="16"></v-icon>
-                关注用户
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-
-          <!-- 互动操作卡片 -->
-          <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4">
-            <v-card-text class="pa-4">
-              <div class="d-flex align-center mb-3">
-                <v-avatar color="grey-darken-2" size="32" class="mr-3">
-                  <v-icon icon="mdi-message-text" color="white" size="16"></v-icon>
-                </v-avatar>
-                <div>
-                  <h3 class="text-h6 font-weight-bold text-grey-darken-4">互动操作</h3>
-                  <p class="text-body-2 text-grey-darken-2 mb-0">与用户交流</p>
-                </div>
-              </div>
-
-              <div class="d-flex flex-column gap-2">
-                <v-btn variant="tonal" color="primary" rounded="lg" density="default" class="justify-start mb-2">
-                  <v-icon icon="mdi-message" class="mr-2" size="16"></v-icon>
-                  发送私信
-                </v-btn>
-                <v-btn variant="tonal" color="info" rounded="lg" density="default" class="justify-start mb-2">
-                  <v-icon icon="mdi-share" class="mr-2" size="16"></v-icon>
-                  分享用户
-                </v-btn>
-                <v-btn variant="tonal" color="success" rounded="lg" density="default" class="justify-start">
-                  <v-icon icon="mdi-flag" class="mr-2" size="16"></v-icon>
-                  举报用户
-                </v-btn>
-              </div>
-            </v-card-text>
-          </v-card>
-
-          <!-- 相关用户 -->
-          <v-card flat color="grey-lighten-5" rounded="lg">
-            <v-card-text class="pa-4">
-              <div class="d-flex align-center mb-3">
-                <v-avatar color="grey-darken-2" size="32" class="mr-3">
-                  <v-icon icon="mdi-account-group" color="white" size="16"></v-icon>
-                </v-avatar>
-                <div>
-                  <h3 class="text-h6 font-weight-bold text-grey-darken-4">相似用户</h3>
-                  <p class="text-body-2 text-grey-darken-2 mb-0">您可能感兴趣的用户</p>
-                </div>
-              </div>
-
-              <v-list class="bg-transparent pa-0" density="compact">
-                <v-list-item 
-                  v-for="user in relatedUsers" 
-                  :key="user.id"
-                  class="px-2 py-1 ma-0 rounded course-item" 
-                  density="compact"
-                  @click="router.push({ query: { tab: 'info', id: user.id } })">
-                  <template v-slot:prepend>
-                    <v-avatar size="24" class="mr-2">
-                      <v-img :src="`https://picsum.photos/48/48?random=${user.id}`"></v-img>
-                    </v-avatar>
-                  </template>
-                  <v-list-item-title class="text-body-2 text-grey-darken-3">{{ user.name }}</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption text-grey-darken-1">{{ user.description }}</v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-            </v-card-text>
-          </v-card>
-        </div>
+        <RightSidebar />
       </v-col>
     </v-row>
   </v-container>

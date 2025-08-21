@@ -7,11 +7,16 @@ import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import RoadmapDetail from '@/components/RoadmapDetail.vue';
+import RightSidebar from '@/components/RightSidebar.vue';
 import dagre from 'dagre';
+import { usePlatformStats } from '@/composables/usePlatformStats';
 
 const showSnackbar = inject('showSnackbar');
 const user = useUserStore();
 const router = useRouter();
+
+// 使用平台统计数据
+const { stats: platformStats, isLoading: statsLoading, error: statsError, refresh: refreshStats } = usePlatformStats();
 
 // 响应式数据
 const learningData = ref({
@@ -927,139 +932,10 @@ const getStatusText = (status) => {
 
       <!-- 右侧边栏 -->
       <v-col cols="3">
-        <!-- 总体学习进度 -->
-        <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4">
-          <v-card-text class="pa-4">
-            <div class="d-flex align-center mb-3">
-              <v-avatar color="grey-darken-2" size="32" class="mr-3">
-                <v-icon icon="mdi-chart-line" color="white" size="16"></v-icon>
-              </v-avatar>
-              <div>
-                <h3 class="text-h6 font-weight-bold text-grey-darken-4">总体进度</h3>
-                <p class="text-body-2 text-grey-darken-2 mb-0">全平台学习统计</p>
-              </div>
-            </div>
-
-            <div class="text-primary text-h4 font-weight-bold mb-2 d-flex align-baseline">
-              {{ learningData.totalProgress }}%
-              <v-icon icon="mdi-trending-up" class="ml-2" color="primary" size="24"></v-icon>
-            </div>
-
-            <p class="text-body-1 text-grey-darken-3 mb-3">
-              已完成 <span class="font-weight-bold text-primary">{{ learningData.completedNodes.toLocaleString() }}</span> 个知识节点
-            </p>
-
-            <v-progress-linear 
-              color="primary" 
-              background-color="grey-lighten-3" 
-              height="24" 
-              :model-value="learningData.totalProgress"
-              rounded="lg" 
-              class="mb-3">
-              <template v-slot:default>
-                <span class="text-white text-caption font-weight-bold">{{ learningData.totalProgress }}%</span>
-              </template>
-            </v-progress-linear>
-
-            <div class="d-flex justify-space-between text-body-2">
-              <div class="d-flex align-center">
-                <v-icon icon="mdi-check-circle" color="primary" size="16" class="mr-1"></v-icon>
-                <span class="text-primary font-weight-medium">{{ learningData.completedNodes.toLocaleString() }} 已掌握</span>
-              </div>
-              <div class="d-flex align-center">
-                <v-icon icon="mdi-circle-outline" color="grey-darken-2" size="16" class="mr-1"></v-icon>
-                <span class="text-grey-darken-2">共 {{ learningData.totalNodes.toLocaleString() }} 个</span>
-              </div>
-            </div>
-          </v-card-text>
-
-          <v-card-actions class="px-4 pb-4">
-            <v-btn variant="flat" color="primary" class="w-100" rounded="lg" density="comfortable">
-              <v-icon icon="mdi-chart-box-outline" class="mr-2" size="16"></v-icon>
-              查看详细统计
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-
-        <!-- 学习统计 -->
-        <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4">
-          <v-card-text class="pa-4">
-            <div class="d-flex align-center mb-3">
-              <v-avatar color="grey-darken-2" size="32" class="mr-3">
-                <v-icon icon="mdi-chart-donut" color="white" size="16"></v-icon>
-              </v-avatar>
-              <div>
-                <h3 class="text-h6 font-weight-bold text-grey-darken-4">学习统计</h3>
-                <p class="text-body-2 text-grey-darken-2 mb-0">本月学习概况</p>
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <div class="d-flex justify-space-between align-center mb-2">
-                <span class="text-body-2 text-grey-darken-3">正在学习的路线图</span>
-                <span class="text-h6 font-weight-bold text-primary">{{ learningData.roadmaps.length }}</span>
-              </div>
-              <div class="d-flex justify-space-between align-center mb-2">
-                <span class="text-body-2 text-grey-darken-3">正在学习的课程</span>
-                <span class="text-h6 font-weight-bold text-primary">{{ learningData.courses.length }}</span>
-              </div>
-              <div class="d-flex justify-space-between align-center mb-2">
-                <span class="text-body-2 text-grey-darken-3">本月学习时长</span>
-                <span class="text-h6 font-weight-bold text-primary">48h</span>
-              </div>
-              <div class="d-flex justify-space-between align-center">
-                <span class="text-body-2 text-grey-darken-3">连续学习天数</span>
-                <span class="text-h6 font-weight-bold text-primary">7天</span>
-              </div>
-            </div>
-          </v-card-text>
-        </v-card>
-
-        <!-- 最近活动 -->
-        <v-card flat color="grey-lighten-5" rounded="lg">
-          <v-card-text class="pa-4">
-            <div class="d-flex align-center mb-3">
-              <v-avatar color="grey-darken-2" size="32" class="mr-3">
-                <v-icon icon="mdi-clock-outline" color="white" size="16"></v-icon>
-              </v-avatar>
-              <div>
-                <h3 class="text-h6 font-weight-bold text-grey-darken-4">最近活动</h3>
-                <p class="text-body-2 text-grey-darken-2 mb-0">您的学习轨迹</p>
-              </div>
-            </div>
-
-            <v-list class="bg-transparent pa-0">
-              <v-list-item 
-                v-for="(activity, index) in learningData.recentActivities" 
-                :key="index"
-                class="px-0 py-2"
-                density="compact">
-                
-                <template v-slot:prepend>
-                  <v-avatar color="grey-lighten-3" size="24" class="mr-2">
-                    <v-icon :icon="getActivityIcon(activity.type)" color="grey-darken-2" size="12"></v-icon>
-                  </v-avatar>
-                </template>
-
-                <v-list-item-title class="text-body-2 font-weight-medium text-grey-darken-4">
-                  {{ activity.title }}
-                </v-list-item-title>
-                <v-list-item-subtitle class="text-caption text-grey-darken-2">
-                  {{ activity.action }} · {{ activity.time }}
-                </v-list-item-subtitle>
-              </v-list-item>
-            </v-list>
-          </v-card-text>
-
-          <v-card-actions class="px-4 pb-4">
-            <v-btn variant="flat" color="grey-darken-2" rounded="lg" density="comfortable" class="w-100">
-              查看全部活动
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-        </v-col>
-      </v-row>
-    </v-container>
+        <RightSidebar exclude-modules="learning"/>
+      </v-col>
+    </v-row>
+  </v-container>
 
     <!-- RoadmapDetail 浮层 -->
     <RoadmapDetail 
@@ -1070,6 +946,10 @@ const getStatusText = (status) => {
 </template>
 
 <style scoped>
+.text-h7 {
+  font-size: 1.15rem;
+}
+
 /* 状态标签样式 */
 .status-badge-container {
   position: absolute;
@@ -1147,6 +1027,145 @@ const getStatusText = (status) => {
   border-radius: 50% !important;
   padding: 0 !important;
   transition: all 0.2s ease !important;
+}
+
+/* 渐变背景样式 */
+.gradient-primary {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%) !important;
+}
+
+/* 排名徽章颜色 */
+.v-chip.text-gold {
+  background: #ffd700 !important;
+  color: #8b6914 !important;
+}
+
+.v-chip.text-silver {
+  background: #c0c0c0 !important;
+  color: #6a6a6a !important;
+}
+
+.v-chip.text-bronze {
+  background: #cd7f32 !important;
+  color: #8b5a2b !important;
+}
+
+/* 新增样式 */
+.data-item {
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.data-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 跳转图标样式 */
+.jump-icon {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.data-item-clickable:hover .jump-icon {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+/* 可点击的数据项样式 */
+.data-item-clickable {
+  cursor: pointer;
+}
+
+/* 静态数据项样式 - 覆盖默认悬停效果 */
+.data-item-static:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.vision-card {
+  border: 2px solid #ffebee;
+}
+
+.vision-content {
+  background: linear-gradient(135deg, #ffebee 0%, #fce4ec 100%);
+  border: 1px solid #f8bbd9;
+}
+
+.stat-card {
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.stat-card:hover {
+  transform: translateX(4px);
+  border-color: rgba(76, 175, 80, 0.3);
+}
+
+.progress-item {
+  transition: all 0.2s ease;
+}
+
+.progress-item:hover {
+  transform: scale(1.05);
+}
+
+.ranking-item {
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.ranking-item:hover {
+  transform: translateX(4px);
+  border-color: rgba(25, 118, 210, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rank-chip {
+  min-width: 50px !important;
+}
+
+/* 滚动列表样式 */
+.scrollable-career-list,
+.scrollable-course-list {
+  max-height: 140px; /* 约2.5个项目的高度：每项50px * 2.5 + 间距 */
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox 隐藏滚动条 */
+  -ms-overflow-style: none; /* IE 隐藏滚动条 */
+}
+
+/* Webkit 浏览器隐藏滚动条 */
+.scrollable-career-list::-webkit-scrollbar,
+.scrollable-course-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* 学习项目样式 */
+.career-item,
+.course-item {
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.career-item:hover,
+.course-item:hover {
+  transform: translateX(2px);
+  border-color: rgba(76, 175, 80, 0.3);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.text-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 紧凑间距样式 */
+.pa-0-5 {
+  padding: 2px !important;
 }
 
 .course-close-btn:hover {
@@ -1475,5 +1494,20 @@ h6 {
 :deep(.v-responsive)::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #fafafa 25%, #f0f0f0 50%, #fafafa 75%);
+  background-size: 200px 100%;
+  animation: shimmer 2.5s infinite;
 }
 </style>

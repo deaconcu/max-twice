@@ -1,19 +1,36 @@
 <script setup>
-import { ref, onMounted, inject, watch } from 'vue';
+import { ref, onMounted, onUnmounted, inject, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { learnService } from '@/services/learnService';
 import TreeNode from '../components/TreeNode.vue';
 import PostingList from '../components/PostingList.vue';
 import ConfigContents from '../components/ConfigContents.vue';
+import RightSidebar from '@/components/RightSidebar.vue';
 
 import { useUserStore } from "@/stores/user";
+import { usePlatformStats } from '@/composables/usePlatformStats';
+import { useStudyTimeTracker } from '@/composables/useStudyTimeTracker';
 
 const showSnackbar = inject('showSnackbar');
 
 const route = useRoute();
 const router = useRouter();
 const user = useUserStore();
+
+// 使用平台统计数据
+const { stats: platformStats, isLoading: statsLoading, error: statsError, refresh: refreshStats } = usePlatformStats();
+
+// 使用学习时间追踪
+const { 
+  isTracking, 
+  isActive, 
+  currentDuration, 
+  todayTotal, 
+  startTracking, 
+  stopTracking, 
+  formatDuration 
+} = useStudyTimeTracker();
 
 console.log("sub: " + user.userId);
 console.log("sub: " + user.subscription);
@@ -46,6 +63,11 @@ const applyCourseData = ref({
 
 onMounted(() => {
   loadData([])
+});
+
+onUnmounted(() => {
+  // 页面卸载时停止学习时间追踪
+  stopTracking();
 });
 
 window.addEventListener("scroll", () => {
@@ -118,6 +140,20 @@ async function loadData(parts) {
           
           // 初始化学习状态
           isLearning.value = response.data.learning || false;
+
+          // 启动学习时间追踪
+          if (response.data.course && response.data.course.id) {
+            const courseId = response.data.course.id;
+            const nodeId = response.data.node ? response.data.node.id : null;
+            
+            // 停止之前的追踪（如果有）
+            stopTracking();
+            
+            // 开始新的学习会话追踪
+            startTracking(courseId, nodeId);
+            
+            console.log('Started study time tracking for course:', courseId, 'node:', nodeId);
+          }
 
           path.value = data.value.path;
           
@@ -675,114 +711,76 @@ const startCourse = async () => {
 
       <!-- right -->
       <v-col cols="3" class="pl-8">
-        <div class="sidebar-container">
-          <!-- 推荐课程卡片 -->
-          <v-card flat color="grey-lighten-4" rounded="lg" class="featured-card">
-            <v-img 
-              height="180" 
-              src="https://cdn.vuetifyjs.com/images/cards/cooking.png" 
-              cover
-              class="featured-image"
-            >
-              <v-chip 
-                color="warning" 
-                size="small" 
-                variant="flat"
-                class="featured-badge"
-              >
-                <v-icon icon="mdi-fire" size="14" start></v-icon>
-                热门推荐
-              </v-chip>
-            </v-img>
-
-            <v-card-item class="pb-2">
-              <v-card-title class="featured-title">高效学习方法指南</v-card-title>
-              <v-card-subtitle class="featured-subtitle">
-                掌握科学的学习技巧，提高学习效率
-              </v-card-subtitle>
-            </v-card-item>
-
-            <v-card-text class="pt-0 pb-3">
-              <div class="featured-meta">
-                <div class="">
-                  <v-rating 
-                    :model-value="4.8" 
-                    color="amber" 
-                    density="compact" 
-                    size="16" 
-                    half-increments
-                    readonly
-                  ></v-rating>
-                  <span class="rating-text ms-3">4.8</span>
-                </div>
-                <div class="featured-stats">
-                  <span class="stat-item">
-                    <v-icon icon="mdi-account-multiple" size="14"></v-icon>
-                    1.2k 学员
-                  </span>
-                  <span class="stat-item">
-                    <v-icon icon="mdi-clock-outline" size="14"></v-icon>
-                    3.5 小时
-                  </span>
-                </div>
-              </div>
-              <v-btn 
-                color="grey-darken-2" 
-                variant="flat" 
-                block 
-                rounded="lg" 
-                size="small"
-                class="mt-3"
-              >
-                <span class="text-white">立即学习</span>
-              </v-btn>
-            </v-card-text>
-          </v-card>
-
-          <!-- 相关课程列表 -->
-          <div class="related-courses">
-            <h3 class="related-title">相关课程</h3>
-            <div class="related-list">
-              <div v-for="(link, index) in relatedLinks" :key="index" class="related-item">
-                <router-link to="/" class="related-link">
-                  <div class="related-content">
-                    <span class="related-name">{{ link }}</span>
-                    <v-icon icon="mdi-arrow-right" size="16" class="related-arrow"></v-icon>
-                  </div>
-                </router-link>
-              </div>
-            </div>
-          </div>
-
-          <!-- 学习进度统计 -->
-          <v-card flat color="grey-lighten-5" rounded="lg" class="stats-card">
-            <v-card-item class="pb-2">
-              <v-card-title class="stats-title">学习统计</v-card-title>
-            </v-card-item>
-            <v-card-text>
-              <div class="stats-grid">
-                <div class="stat-box">
-                  <div class="stat-value">126</div>
-                  <div class="stat-label">已完成</div>
-                </div>
-                <div class="stat-box">
-                  <div class="stat-value">47</div>
-                  <div class="stat-label">进行中</div>
-                </div>
-                <div class="stat-box">
-                  <div class="stat-value">23h</div>
-                  <div class="stat-label">学习时长</div>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </div>
+        <RightSidebar :learning-data="{ roadmaps: [], courses: [] }" />
       </v-col>
+        
     </v-row>
   </v-container>
 </template>
 
 <style scoped>
+.text-h7 {
+  font-size: 1.15rem;
+}
+
+/* 新增样式 */
+.data-item {
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.data-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.vision-card {
+  border: 2px solid #ffebee;
+}
+
+.vision-content {
+  background: linear-gradient(135deg, #ffebee 0%, #fce4ec 100%);
+  border: 1px solid #f8bbd9;
+}
+
+.stat-card {
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.stat-card:hover {
+  transform: translateX(4px);
+  border-color: rgba(76, 175, 80, 0.3);
+}
+
+.progress-item {
+  transition: all 0.2s ease;
+}
+
+.progress-item:hover {
+  transform: scale(1.05);
+}
+
+.ranking-item {
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.ranking-item:hover {
+  transform: translateX(4px);
+  border-color: rgba(25, 118, 210, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rank-chip {
+  min-width: 50px !important;
+}
+
+/* 紧凑间距样式 */
+.pa-0-5 {
+  padding: 2px !important;
+}
+
 /* 课程头部 - 简洁版 */
 .course-header {
   border-radius: 16px;
@@ -1361,5 +1359,20 @@ const startCourse = async () => {
 
 .empty-subcourses p {
   margin: 4px 0;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #fafafa 25%, #f0f0f0 50%, #fafafa 75%);
+  background-size: 200px 100%;
+  animation: shimmer 2.5s infinite;
 }
 </style>

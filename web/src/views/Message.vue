@@ -5,6 +5,7 @@ import { learnService } from '@/services/learnService'
 import draggable from 'vuedraggable';
 import { useUserStore } from "@/stores/user";
 import apiClient from '@/services/apiClient';
+import RightSidebar from '@/components/RightSidebar.vue';
 
 const user = useUserStore();
 console.log("user id: " + JSON.stringify(user));
@@ -337,7 +338,7 @@ const getDatePart = (time, index) => {
                         </div>
                       </div>
                       <div class="ps-6 w-100">
-                        <v-badge class="w-100" color="error" dot offset-x="-2" offset-y="-2" :model-value="showDot(message.createdAt)">
+                        <v-badge class="w-100" color="error" dot offset-x="3" offset-y="2" :model-value="showDot(message.createdAt)">
                           <div class="d-flex align-center px-3 py-3 rounded-lg d-inline-flex bg-grey-lighten-5 w-100" 
                                :class="{ 'border-primary bg-blue-lighten-5 shadow-sm': showDot(message.createdAt) }">
                             <v-avatar image="https://pica.zhimg.com/v2-b12a03a32cf776765897927720acb3bf_xll.jpg"
@@ -539,8 +540,8 @@ const getDatePart = (time, index) => {
       <v-col cols="3" class="ps-8 pt-9">
         <!-- 参考学习页面设计的右侧边栏 -->
         <div class="sticky-right" style="position: sticky; top: 90px;">
-          
-          <!-- 消息统计卡片 -->
+          <RightSidebar 
+            :learning-data="{ roadmaps: [], courses: [] }" />
           <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4">
             <v-card-text class="pa-4">
               <div class="d-flex align-center mb-3">

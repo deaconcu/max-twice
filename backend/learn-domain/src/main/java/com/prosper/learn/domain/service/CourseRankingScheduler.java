@@ -5,7 +5,6 @@ import com.prosper.learn.persistence.mapper.UserProfileMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,10 +20,8 @@ public class CourseRankingScheduler {
     private final UserProfileMapper userProfileMapper;
 
     /**
-     * 每小时同步一次课程统计数据到Redis
-     * cron表达式: 每小时的第0分钟执行
+     * 每小时同步一次课程统计数据到Redis（业务逻辑）
      */
-    @Scheduled(cron = "0 0 * * * ?")
     public void syncCourseStats() {
         log.info("开始同步课程统计数据到Redis...");
         
@@ -99,9 +96,8 @@ public class CourseRankingScheduler {
     }
 
     /**
-     * 应用启动时执行一次初始化
+     * 应用启动时执行一次初始化（业务逻辑）
      */
-    @Scheduled(initialDelay = 5000) // 启动5秒后执行
     public void initializeCourseStats() {
         log.info("初始化课程统计数据...");
         syncCourseStats();

@@ -50,4 +50,10 @@ public interface UserRoadmapMapper {
              "<foreach item='id' collection='roadmapIds' open='(' separator=',' close=')'>#{id}</foreach>",
              "</script>"})
     List<Integer> getBatchLearningStatus(@Param("userId") Long userId, @Param("roadmapIds") List<Integer> roadmapIds);
+    
+    /**
+     * 统计用户正在学习的路线图数量
+     */
+    @Select("SELECT COUNT(*) FROM user_roadmap WHERE user_id = #{userId} AND status = 'IN_PROGRESS'")
+    Integer countActiveRoadmapsByUserId(Long userId);
 }

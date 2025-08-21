@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { learnService } from '@/services/learnService';
 import CareerCard from '@/components/CareerCard.vue';
 import CategorySelector from '@/components/CategorySelector.vue';
+import RightSidebar from '@/components/RightSidebar.vue';
 
 const showSnackbar = inject('showSnackbar');
 const router = useRouter();
@@ -904,100 +905,8 @@ onMounted(() => {
       </v-col>
 
       <!-- 右侧边栏 -->
-      <v-col cols="12" md="3" lg="3" class="d-none d-md-block">
-        <div class="sticky-sidebar">
-          <!-- 热门职业 -->
-          <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4">
-            <v-card-text class="pa-4">
-              <div class="d-flex align-center mb-3">
-                <v-avatar color="grey-darken-2" size="32" class="mr-3">
-                  <v-icon icon="mdi-fire" color="white" size="16"></v-icon>
-                </v-avatar>
-                <div>
-                  <h3 class="text-h6 font-weight-bold text-grey-darken-4">热门职业</h3>
-                  <p class="text-body-2 text-grey-darken-2 mb-0">实时更新排行</p>
-                </div>
-              </div>
-
-              <v-list bg-color="transparent" class="pa-0">
-                <v-list-item v-for="(profession, index) in hotProfessions" :key="profession.id"
-                             class="px-3 py-2 ma-1 rounded-lg cursor-pointer hover-item" 
-                             :class="index < 3 ? 'bg-white' : 'bg-transparent'"
-                             density="compact"
-                             @click="goToCareerDetail(profession)">
-                  <template v-slot:prepend>
-                    <v-avatar :color="index < 3 ? 'primary' : 'grey-lighten-2'" size="24" class="mr-2">
-                      <span class="text-caption font-weight-bold"
-                            :class="index < 3 ? 'text-white' : 'text-grey-darken-2'">
-                        {{ index + 1 }}
-                      </span>
-                    </v-avatar>
-                  </template>
-
-                  <v-list-item-title class="text-body-2 font-weight-medium">
-                    {{ profession.name }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle class="text-caption">
-                    {{ profession.learnerCount || 0 }} 人学习
-                  </v-list-item-subtitle>
-
-                  <template v-slot:append>
-                    <v-chip variant="flat" color="grey-lighten-3" size="x-small">
-                      <v-icon icon="mdi-trending-up" size="10" class="mr-1"></v-icon>
-                      热门
-                    </v-chip>
-                  </template>
-                </v-list-item>
-              </v-list>
-            </v-card-text>
-
-            <v-card-actions class="px-4 pb-4">
-              <v-btn @click="router.push('/ranking?tab=professions')" variant="tonal" color="grey-darken-2" rounded="lg" density="comfortable" class="w-100">
-                查看全部热门职业
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-
-          <!-- 学习建议 -->
-          <v-card flat color="grey-lighten-5" rounded="lg">
-            <v-card-text class="pa-4">
-              <div class="d-flex align-center mb-3">
-                <v-avatar color="grey-darken-2" size="32" class="mr-3">
-                  <v-icon icon="mdi-lightbulb-outline" color="white" size="16"></v-icon>
-                </v-avatar>
-                <div>
-                  <h3 class="text-h6 font-weight-bold text-grey-darken-4">学习建议</h3>
-                  <p class="text-body-2 text-grey-darken-2 mb-0">职业规划指导</p>
-                </div>
-              </div>
-
-              <p class="text-body-2 text-grey-darken-2 mb-3">
-                选择职业时建议考虑个人兴趣、能力特长以及市场需求。
-              </p>
-              
-              <v-list density="compact" class="bg-transparent pa-0">
-                <v-list-item density="compact" class="px-0 py-1">
-                  <template v-slot:prepend>
-                    <v-icon icon="mdi-check-circle" color="success" size="16" class="mr-2"></v-icon>
-                  </template>
-                  <v-list-item-title class="text-body-2">了解职业要求</v-list-item-title>
-                </v-list-item>
-                <v-list-item density="compact" class="px-0 py-1">
-                  <template v-slot:prepend>
-                    <v-icon icon="mdi-check-circle" color="success" size="16" class="mr-2"></v-icon>
-                  </template>
-                  <v-list-item-title class="text-body-2">制定学习计划</v-list-item-title>
-                </v-list-item>
-                <v-list-item density="compact" class="px-0 py-1">
-                  <template v-slot:prepend>
-                    <v-icon icon="mdi-check-circle" color="success" size="16" class="mr-2"></v-icon>
-                  </template>
-                  <v-list-item-title class="text-body-2">持续技能提升</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-card-text>
-          </v-card>
-        </div>
+      <v-col cols="3" class="pl-0">
+        <RightSidebar />
       </v-col>
     </v-row>
 

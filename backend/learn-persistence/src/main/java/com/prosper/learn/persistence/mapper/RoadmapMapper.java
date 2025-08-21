@@ -101,4 +101,8 @@ public interface RoadmapMapper {
                                                             @Param("lastId") int lastId,
                                                             @Param("limit") int limit,
                                                             @Param("excludeIds") List<Integer> excludeIds);
+    
+    // 平台统计相关方法
+    @Select("SELECT COUNT(*) FROM roadmap WHERE vote >= 0")
+    Long countPublicRoadmaps();
 }

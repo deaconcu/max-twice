@@ -40,4 +40,10 @@ public interface UserCourseMapper {
 
     @Delete("DELETE FROM user_course WHERE user_id = #{userId} AND course_id = #{courseId}")
     void deleteByUserAndCourse(Long userId, Long courseId);
+    
+    /**
+     * 统计用户正在学习的课程数量
+     */
+    @Select("SELECT COUNT(*) FROM user_course WHERE user_id = #{userId} AND status = 'IN_PROGRESS'")
+    Integer countActiveCoursesByUserId(Long userId);
 }

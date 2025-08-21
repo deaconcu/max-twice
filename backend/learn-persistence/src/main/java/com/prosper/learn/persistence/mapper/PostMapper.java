@@ -78,4 +78,12 @@ public interface PostMapper {
 
     @Select("SELECT * FROM post where state = #{state} order by id limit #{count}")
     List<PostDO> getListByState(int state, int count);
+    
+    /**
+     * 统计活跃文章数量（state=1表示已发布状态）
+     * 
+     * @return 文章总数
+     */
+    @Select("SELECT COUNT(*) FROM post WHERE state = 1")
+    Long countActiveArticles();
 }

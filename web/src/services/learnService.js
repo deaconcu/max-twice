@@ -652,4 +652,10 @@ export const learnService = {
     console.log("get hot courses ranking");
     return apiClient.get('/course/ranking');
   },
+
+  // 获取平台统计数据
+  getPlatformStats() {
+    console.log("get platform stats");
+    return apiClient.get('/platform/stats');
+  },
 };

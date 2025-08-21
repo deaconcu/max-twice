@@ -66,4 +66,8 @@ public interface ProfessionMapper {
 
     @Delete("DELETE FROM profession WHERE id = #{id}")
     void delete(@Param("id") int id);
+    
+    // 平台统计相关方法
+    @Select("SELECT COUNT(*) FROM profession WHERE state = 'APPROVED'")
+    Long countActiveProfessions();
 }

@@ -3,6 +3,7 @@ import { ref, onMounted, inject, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { learnService, userService } from '@/services/learnService';
 import { useUserStore } from "@/stores/user";
+import RightSidebar from '@/components/RightSidebar.vue';
 
 const showSnackbar = inject('showSnackbar');
 
@@ -467,96 +468,7 @@ function openInNewTab(courseId) {
         </v-col>
 
         <v-col cols="3">
-
-          <!-- 热门课程 -->
-          <v-card flat color="grey-lighten-5" class="mb-4" rounded="lg" style="border-top: 4px solid #eee;">
-            <v-card-text class="pa-4">
-              <div class="d-flex align-center mb-3">
-                <v-avatar color="grey-darken-2" size="32" class="mr-3">
-                  <v-icon icon="mdi-fire" color="white" size="16"></v-icon>
-                </v-avatar>
-                <div>
-                  <h3 class="text-h6 font-weight-bold text-grey-darken-4">热门课程</h3>
-                  <p class="text-body-2 text-grey-darken-2 mb-0">收藏和学习人数排行</p>
-                </div>
-              </div>
-
-              <v-list bg-color="transparent" class="pa-0">
-                <v-list-item v-for="(course, index) in hotCourses.slice(0, 5)" :key="course.id" :value="course.id"
-                  class="px-3 py-2 ma-1 rounded-lg course-item" :class="index < 3 ? 'bg-white' : 'bg-transparent'"
-                  density="compact" @click="openInNewTab(course.id)">
-                  <template v-slot:prepend>
-                    <v-avatar :color="index < 3 ? 'primary' : 'grey-lighten-2'" size="24" class="mr-2">
-                      <span class="text-caption font-weight-bold"
-                        :class="index < 3 ? 'text-white' : 'text-grey-darken-2'">
-                        {{ index + 1 }}
-                      </span>
-                    </v-avatar>
-                  </template>
-
-                  <v-list-item-title class="text-body-1">
-                    {{ course.name }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle class="text-caption">
-                    {{ (course.learnerCount + course.subscriptionCount).toLocaleString() }} 人学习/收藏
-                  </v-list-item-subtitle>
-
-                  <template v-slot:append>
-                    <v-chip variant="flat" color="grey-lighten-3" size="x-small">
-                      <v-icon icon="mdi-trending-up" size="10" class="mr-1"></v-icon>
-                      热门
-                    </v-chip>
-                  </template>
-                </v-list-item>
-              </v-list>
-            </v-card-text>
-
-            <v-card-actions class="px-4 pb-4">
-              <v-btn @click="router.push('/ranking?tab=courses')" variant="tonal" color="grey-darken-2" rounded="lg" density="comfortable" class="w-100">
-                查看完整排行榜
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-
-          <!-- 我收藏的课程 -->
-          <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4" style="border-top: 4px solid #eee;">
-            <v-card-text class="pa-4">
-              <div class="d-flex align-center mb-3">
-                <v-avatar color="grey-darken-2" size="32" class="mr-3">
-                  <v-icon icon="mdi-heart" color="white" size="16"></v-icon>
-                </v-avatar>
-                <div>
-                  <h3 class="text-h6 font-weight-bold text-grey-darken-4">我收藏的课程</h3>
-                  <p class="text-body-2 text-grey-darken-2 mb-0">{{ subscriptions.length }} 门课程</p>
-                </div>
-              </div>
-
-              <div v-if="subscriptions.length === 0" class="text-center py-4">
-                <v-icon icon="mdi-heart-outline" size="48" color="grey-lighten-1" class="mb-2"></v-icon>
-                <p class="text-body-2 text-grey-darken-1">暂无收藏课程</p>
-                <p class="text-caption text-grey-darken-1">发现喜欢的课程就收藏吧！</p>
-              </div>
-
-              <v-responsive v-else class="overflow-y-auto" max-height="160">
-                <v-chip v-for="(subscription, index) in subscriptions.slice(0, 8)" :key="subscription.id || index"
-                  variant="tonal" color="primary" @click="console.log('点击的subscription对象:', subscription); openInNewTab(subscription.id)" class="my-2 me-3 px-3 py-1"
-                  density="comfortable">
-                  <template v-slot:prepend>
-                    <v-icon icon="mdi-bookmark" size="12" color="primary" class="mr-2"></v-icon>
-                  </template>
-                  {{ subscription.name || '课程信息异常' }}
-                </v-chip>
-              </v-responsive>
-            </v-card-text>
-
-            <v-card-actions class="px-4 pb-4" v-if="subscriptions.length > 0">
-              <v-btn @click="router.push({ path: '/self', query: { tab: 'subscription' } });" variant="tonal"
-                color="grey-darken-2" rounded="lg" density="comfortable" class="w-100">
-                查看全部收藏
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-
+          <RightSidebar />
         </v-col>
       </v-row>
 

@@ -1,0 +1,737 @@
+<script setup>
+import { ref, computed, onMounted, inject } from 'vue';
+import { useRouter } from 'vue-router';
+import { usePlatformStats } from '@/composables/usePlatformStats';
+import { learnService } from '@/services/learnService';
+import dagre from 'dagre';
+
+const router = useRouter();
+const showSnackbar = inject('showSnackbar');
+
+// 定义 props
+const props = defineProps({
+  enabledModules: {
+    type: Array,
+    default: () => ['platform', 'learning', 'tips', 'careers', 'courses']
+  },
+  excludeModules: {
+    type: Array,
+    default: () => []
+  }
+});
+
+// 计算实际启用的模块
+const actualEnabledModules = computed(() => {
+  return props.enabledModules.filter(module => !props.excludeModules.includes(module));
+});
+
+// 使用平台统计数据
+const { stats: platformStats, isLoading: statsLoading, error: statsError, refresh: refreshStats } = usePlatformStats();
+
+// 热门数据
+const hotProfessions = ref([]);
+const hotCourses = ref([]);
+
+// 独立的学习数据
+const learningData = ref({
+  totalProgress: 18,
+  completedNodes: 2938,
+  totalNodes: 29380,
+  roadmaps: [],
+  courses: [],
+  recentActivities: []
+});
+
+// 加载热门职业数据
+const loadHotProfessions = async () => {
+  if (!actualEnabledModules.value.includes('careers')) return;
+  
+  try {
+    const response = await learnService.getHotProfessions();
+    if (response && response.data) {
+      hotProfessions.value = response.data.slice(0, 3) || [];
+    }
+  } catch (error) {
+    console.error('Error loading hot professions:', error);
+    // 使用默认数据
+    hotProfessions.value = [
+      { id: 1, name: '全栈开发工程师', learnerCount: 2100 },
+      { id: 2, name: '前端开发工程师', learnerCount: 1800 },
+      { id: 3, name: '数据科学家', learnerCount: 1500 }
+    ];
+  }
+};
+
+// 加载热门课程数据
+const loadHotCourses = async () => {
+  if (!actualEnabledModules.value.includes('courses')) return;
+  
+  try {
+    const response = await learnService.getHotCourses();
+    if (response && response.data) {
+      hotCourses.value = response.data.slice(0, 3) || [];
+    }
+  } catch (error) {
+    console.error('Error loading hot courses:', error);
+    // 使用默认数据
+    hotCourses.value = [
+      { id: 1, name: 'Vue.js 完整教程', learnerCount: 2800, subscriptionCount: 400 },
+      { id: 2, name: 'Python 数据分析', learnerCount: 2300, subscriptionCount: 500 },
+      { id: 3, name: 'Java 核心技术', learnerCount: 2000, subscriptionCount: 500 }
+    ];
+  }
+};
+
+// 加载学习数据
+const loadLearningData = async () => {
+  if (!actualEnabledModules.value.includes('learning')) return;
+  
+  try {
+    const [roadmapResponse, courseResponse] = await Promise.all([
+      learnService.getUserRoadmaps(),
+      learnService.getUserCourseList()
+    ]);
+    
+    let roadmaps = [];
+    let courses = [];
+    
+    if (roadmapResponse.code === 200 && Array.isArray(roadmapResponse.data)) {
+      roadmaps = roadmapResponse.data.map(userRoadmap => ({
+        id: userRoadmap.roadmap.id,
+        title: userRoadmap.roadmap.description || `学习路线图 ${userRoadmap.roadmap.id}`,
+        progress: userRoadmap.progressPercent || 0,
+        status: userRoadmap.status,
+        lastActivity: getRelativeTime(userRoadmap.updatedAt),
+        profession: userRoadmap.roadmap.profession
+      }))
+    }
+    
+    if (courseResponse.code === 200 && Array.isArray(courseResponse.data)) {
+      courses = courseResponse.data.map(userCourse => ({
+        id: userCourse.id,
+        title: userCourse.course.name,
+        progress: userCourse.progressPercent || 0,
+        status: userCourse.status,
+        lastActivity: getRelativeTime(userCourse.updatedAt)
+      }))
+    }
+    
+    learningData.value = {
+      roadmaps,
+      courses
+    };
+  } catch (error) {
+    console.error('Error loading learning data:', error);
+  }
+};
+
+// 获取相对时间
+function getRelativeTime(dateString) {
+  if (!dateString) return '未知时间'
+  
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffMs = now - date
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+  
+  if (diffMins < 60) {
+    return `${diffMins}分钟前`
+  } else if (diffHours < 24) {
+    return `${diffHours}小时前`
+  } else {
+    return `${diffDays}天前`
+  }
+}
+
+onMounted(() => {
+  loadHotProfessions();
+  loadHotCourses();
+  loadLearningData();
+});
+
+// 获取状态颜色
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'NOT_STARTED': return 'grey'
+    case 'IN_PROGRESS': return 'primary'
+    case 'COMPLETED': return 'success'
+    default: return 'grey'
+  }
+};
+
+// 获取状态文本
+const getStatusText = (status) => {
+  switch (status) {
+    case 'NOT_STARTED': return '未开始'
+    case 'IN_PROGRESS': return '进行中'
+    case 'COMPLETED': return '已完成'
+    default: return '未知状态'
+  }
+};
+
+// 获取排名芯片颜色
+const getRankChipColor = (index) => {
+  switch (index) {
+    case 0: return 'gold'
+    case 1: return 'grey-lighten-1'
+    case 2: return 'orange-lighten-2'
+    default: return 'grey-lighten-2'
+  }
+};
+
+// 获取排名图标
+const getRankIcon = (index) => {
+  switch (index) {
+    case 0: return 'mdi-crown'
+    case 1: return 'mdi-medal'
+    case 2: return 'mdi-medal-outline'
+    default: return 'mdi-numeric'
+  }
+};
+
+// 跳转到职业详情
+const goToCareerDetail = (profession) => {
+  router.push(`/career/${profession.id}`);
+};
+
+// 跳转到课程详情
+const openInNewTab = (courseId) => {
+  const url = router.resolve({ path: '/read', query: { courseId: courseId } }).href;
+  window.open(url, '_blank');
+};
+</script>
+
+<template>
+  <!-- 网站愿景 -->
+  <v-card flat color="white" rounded="lg" class="mb-4 vision-card">
+    <v-card-text class="pa-4">
+      <div class="d-flex align-center mb-3">
+        <v-avatar color="red-lighten-1" size="24" class="mr-3">
+          <v-icon icon="mdi-heart" color="white" size="13"></v-icon>
+        </v-avatar>
+        <div>
+          <h3 class="text-h7 font-weight-bold text-grey-darken-4">我们的愿景</h3>
+        </div>
+      </div>
+
+      <div class="vision-content pa-3 rounded-lg">
+        <p class="text-body-2 text-grey-darken-3 mb-0 text-start">
+          如果职业是对世界的体验，那世界会更美好一点
+        </p>
+      </div>
+    </v-card-text>
+  </v-card>
+  
+  <!-- 网站数据统计 -->
+  <v-card v-if="actualEnabledModules.includes('platform')" flat color="grey-lighten-5" rounded="lg" class="mb-4">
+    <v-card-text class="pa-4">
+      <div class="d-flex align-center justify-space-between mb-3">
+        <div class="d-flex align-center">
+          <v-avatar color="primary" size="24" class="mr-3">
+            <v-icon icon="mdi-chart-box" color="white" size="13"></v-icon>
+          </v-avatar>
+          <div>
+            <h3 class="text-h7 font-weight-bold text-grey-darken-4">平台数据</h3>
+          </div>
+        </div>
+        <!-- 刷新按钮 -->
+        <v-btn 
+          v-if="!platformStats || statsError"
+          variant="text" 
+          size="small" 
+          color="primary"
+          :loading="statsLoading"
+          @click="refreshStats"
+          :disabled="statsLoading"
+        >
+          <v-icon icon="mdi-refresh" size="16"></v-icon>
+        </v-btn>
+      </div>
+
+      <!-- 加载状态骨架屏 -->
+      <div v-if="statsLoading && !platformStats">
+        <v-row dense>
+          <v-col cols="6" class="pa-0-5">
+            <div class="data-item pa-1 rounded bg-white text-center">
+              <div class="d-flex flex-column align-center justify-center" style="min-height: 40px;">
+                <div class="skeleton-line skeleton-shimmer mb-1" style="width: 60%; height: 12px; border-radius: 6px;"></div>
+                <div class="skeleton-line skeleton-shimmer" style="width: 60%; height: 12px; border-radius: 6px;"></div>
+              </div>
+            </div>
+          </v-col>
+          <v-col cols="6" class="pa-0-5">
+            <div class="data-item pa-1 rounded bg-white text-center">
+              <div class="d-flex flex-column align-center justify-center" style="min-height: 40px;">
+                <div class="skeleton-line skeleton-shimmer mb-1" style="width: 60%; height: 12px; border-radius: 6px;"></div>
+                <div class="skeleton-line skeleton-shimmer" style="width: 60%; height: 12px; border-radius: 6px;"></div>
+              </div>
+            </div>
+          </v-col>
+          <v-col cols="6" class="pa-0-5">
+            <div class="data-item pa-1 rounded bg-white text-center">
+              <div class="d-flex flex-column align-center justify-center" style="min-height: 40px;">
+                <div class="skeleton-line skeleton-shimmer mb-1" style="width: 60%; height: 12px; border-radius: 6px;"></div>
+                <div class="skeleton-line skeleton-shimmer" style="width: 60%; height: 12px; border-radius: 6px;"></div>
+              </div>
+            </div>
+          </v-col>
+          <v-col cols="6" class="pa-0-5">
+            <div class="data-item pa-1 rounded bg-white text-center">
+              <div class="d-flex flex-column align-center justify-center" style="min-height: 40px;">
+                <div class="skeleton-line skeleton-shimmer mb-1" style="width: 60%; height: 12px; border-radius: 6px;"></div>
+                <div class="skeleton-line skeleton-shimmer" style="width: 60%; height: 12px; border-radius: 6px;"></div>
+              </div>
+            </div>
+          </v-col>
+        </v-row>
+      </div>
+
+      <!-- 数据展示 -->
+      <div v-else>
+        <!-- 上2下3网格布局 -->
+        <v-row dense>
+          <v-col cols="6" class="pa-0-5">
+            <div class="data-item pa-1 rounded bg-white text-center data-item-clickable" @click="router.push('/course/list')">
+              <div class="position-relative">
+                <v-icon 
+                  icon="mdi-open-in-new" 
+                  size="12" 
+                  color="primary" 
+                  class="jump-icon"
+                  @click.stop="router.push('/course/list')">
+                </v-icon>
+                <div class="text-subtitle-1 font-weight-bold text-primary mb-0">
+                  {{ platformStats?.courseCount || '1,247' }}
+                </div>
+                <div class="text-caption text-grey-darken-3" style="font-size: 10px;">课程总数</div>
+              </div>
+            </div>
+          </v-col>
+          <v-col cols="6" class="pa-0-5">
+            <div class="data-item pa-1 rounded bg-white text-center data-item-clickable" @click="router.push('/career')">
+              <div class="position-relative">
+                <v-icon 
+                  icon="mdi-open-in-new" 
+                  size="12" 
+                  color="teal" 
+                  class="jump-icon"
+                  @click.stop="router.push('/career')">
+                </v-icon>
+                <div class="text-subtitle-1 font-weight-bold text-teal mb-0">
+                  {{ platformStats?.careerPathCount || '156' }}
+                </div>
+                <div class="text-caption text-grey-darken-3" style="font-size: 10px;">职业路径</div>
+              </div>
+            </div>
+          </v-col>
+          <v-col cols="4" class="pa-0-5">
+            <div class="data-item pa-1 rounded bg-white text-center data-item-static">
+              <div class="text-subtitle-1 font-weight-bold text-orange mb-0">
+                {{ platformStats?.roadmapCount || '324' }}
+              </div>
+              <div class="text-caption text-grey-darken-3" style="font-size: 10px;">学习路线</div>
+            </div>
+          </v-col>
+          <v-col cols="4" class="pa-0-5">
+            <div class="data-item pa-1 rounded bg-white text-center data-item-static">
+              <div class="text-subtitle-1 font-weight-bold text-purple mb-0">
+                {{ platformStats?.knowledgeNodeCount || '12.5k' }}
+              </div>
+              <div class="text-caption text-grey-darken-3" style="font-size: 10px;">知识节点</div>
+            </div>
+          </v-col>
+          <v-col cols="4" class="pa-0-5">
+            <div class="data-item pa-1 rounded bg-white text-center data-item-static">
+              <div class="text-subtitle-1 font-weight-bold text-indigo mb-0">
+                {{ platformStats?.articleCount || '2.8k' }}
+              </div>
+              <div class="text-caption text-grey-darken-3" style="font-size: 10px;">文章数量</div>
+            </div>
+          </v-col>
+        </v-row>
+      </div>
+    </v-card-text>
+  </v-card>
+
+  <!-- 用户学习统计 -->
+  <v-card v-if="actualEnabledModules.includes('learning')" flat color="grey-lighten-5" rounded="lg" class="mb-4">
+    <v-card-text class="pa-4">
+      <div class="d-flex align-center mb-3">
+        <v-avatar color="green-darken-1" size="24" class="mr-3">
+          <v-icon icon="mdi-account-school" color="white" size="13"></v-icon>
+        </v-avatar>
+        <div>
+          <h3 class="text-h7 font-weight-bold text-grey-darken-4">我的学习</h3>
+        </div>
+      </div>
+
+      <!-- 我想成为 -->
+      <div class="mb-3">
+        <div class="d-flex align-center justify-space-between mb-2">
+          <div class="d-flex align-center">
+            <v-icon icon="mdi-briefcase-outline" color="teal-darken-1" size="14" class="mr-1"></v-icon>
+            <span class="text-body-2 font-weight-bold text-grey-darken-3">我想成为</span>
+          </div>
+          <v-btn variant="text" size="small" color="teal-darken-1" @click="router.push('/learning?tab=roadmaps')">
+            查看全部
+            <v-icon icon="mdi-chevron-right" size="16" class="ml-1"></v-icon>
+          </v-btn>
+        </div>
+        
+        <div v-if="learningData.roadmaps && learningData.roadmaps.length > 0" class="scrollable-career-list">
+          <div v-for="(roadmap, index) in learningData.roadmaps.slice(0, 10)" :key="roadmap.id" 
+            class="career-item pa-2 rounded bg-white mb-1 d-flex align-center">
+            <v-avatar color="teal-lighten-4" size="20" class="mr-2">
+              <v-icon icon="mdi-account-tie" color="teal-darken-2" size="12"></v-icon>
+            </v-avatar>
+            <div class="flex-grow-1 min-width-0">
+              <div class="text-body-2 font-weight-medium text-grey-darken-4 text-truncate">
+                {{ roadmap.profession?.name || roadmap.title }}
+              </div>
+              <div class="text-caption text-grey-darken-2">
+                进度 {{ roadmap.progress }}% · {{ roadmap.lastActivity }}
+              </div>
+            </div>
+            <v-chip 
+              :color="getStatusColor(roadmap.status)" 
+              variant="flat" 
+              size="x-small"
+              class="ml-2">
+              {{ getStatusText(roadmap.status) }}
+            </v-chip>
+          </div>
+        </div>
+        
+        <div v-else class="text-center py-2">
+          <v-icon icon="mdi-briefcase-search" color="grey-lighten-1" size="20" class="mb-1"></v-icon>
+          <div class="text-caption text-grey-darken-2">暂无学习职业</div>
+        </div>
+      </div>
+
+      <!-- 我在学习 -->
+      <div class="mb-1">
+        <div class="d-flex align-center justify-space-between mb-2">
+          <div class="d-flex align-center">
+            <v-icon icon="mdi-book-open-outline" color="primary" size="14" class="mr-1"></v-icon>
+            <span class="text-body-2 font-weight-bold text-grey-darken-3">我在学习</span>
+          </div>
+          <v-btn variant="text" size="small" color="primary" @click="router.push('/learning?tab=courses')">
+            查看全部
+            <v-icon icon="mdi-chevron-right" size="16" class="ml-1"></v-icon>
+          </v-btn>
+        </div>
+        
+        <div v-if="learningData.courses && learningData.courses.length > 0" class="scrollable-course-list">
+          <div v-for="(course, index) in learningData.courses.slice(0, 10)" :key="course.id" 
+            class="course-item pa-2 rounded bg-white mb-1 d-flex align-center">
+            <v-avatar color="blue-lighten-4" size="20" class="mr-2">
+              <v-icon icon="mdi-book" color="primary" size="12"></v-icon>
+            </v-avatar>
+            <div class="flex-grow-1 min-width-0">
+              <div class="text-body-2 font-weight-medium text-grey-darken-4 text-truncate">
+                {{ course.title }}
+              </div>
+              <div class="text-caption text-grey-darken-2">
+                进度 {{ course.progress }}% · {{ course.lastActivity }}
+              </div>
+            </div>
+            <v-chip 
+              :color="getStatusColor(course.status)" 
+              variant="flat" 
+              size="x-small"
+              class="ml-2">
+              {{ getStatusText(course.status) }}
+            </v-chip>
+          </div>
+        </div>
+        
+        <div v-else class="text-center py-2">
+          <v-icon icon="mdi-book-search" color="grey-lighten-1" size="20" class="mb-1"></v-icon>
+          <div class="text-caption text-grey-darken-2">暂无学习课程</div>
+        </div>
+      </div>
+    </v-card-text>
+  </v-card>
+
+  <!-- 学习小贴士 -->
+  <v-card v-if="actualEnabledModules.includes('tips')" flat color="amber-lighten-5" rounded="lg" class="mb-4">
+    <v-card-text class="pa-4">
+      <div class="d-flex align-center mb-3">
+        <v-avatar color="amber-darken-1" size="24" class="mr-3">
+          <v-icon icon="mdi-lightbulb-outline" color="white" size="13"></v-icon>
+        </v-avatar>
+        <div>
+          <h3 class="text-h7 font-weight-bold text-grey-darken-4">学习小贴士</h3>
+        </div>
+      </div>
+
+      <div class="tip-item pa-3 rounded-lg bg-amber-lighten-4 mb-2 d-flex align-center">
+        <v-icon icon="mdi-lightbulb" color="amber-darken-2" size="16" class="mr-2 flex-shrink-0"></v-icon>
+        <div class="flex-grow-1">
+          <div class="text-body-2 text-grey-darken-4">学而时习之，不亦说乎</div>
+        </div>
+      </div>
+
+      <div class="tip-item pa-3 rounded-lg bg-amber-lighten-4 mb-2 d-flex align-center">
+        <v-icon icon="mdi-lightbulb" color="amber-darken-2" size="16" class="mr-2 flex-shrink-0"></v-icon>
+        <div class="flex-grow-1">
+          <div class="text-body-2 text-grey-darken-4">活到老，学到老</div>
+        </div>
+      </div>
+
+      <div class="tip-item pa-3 rounded-lg bg-amber-lighten-4 d-flex align-center">
+        <v-icon icon="mdi-lightbulb" color="amber-darken-2" size="16" class="mr-2 flex-shrink-0"></v-icon>
+        <div class="flex-grow-1">
+          <div class="text-body-2 text-grey-darken-4">知识就是力量</div>
+        </div>
+      </div>
+    </v-card-text>
+  </v-card>
+
+  <!-- 快捷链接 -->
+  <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4">
+    <v-card-text class="pa-4">
+      <div class="d-flex align-center mb-3">
+        <v-avatar color="grey-darken-2" size="24" class="mr-3">
+          <v-icon icon="mdi-lightning-bolt" color="white" size="13"></v-icon>
+        </v-avatar>
+        <div>
+          <h3 class="text-h7 font-weight-bold text-grey-darken-4">快捷操作</h3>
+        </div>
+      </div>
+
+      <div class="d-flex flex-wrap" style="gap: 8px;">
+        <v-btn variant="tonal" color="primary" size="small" rounded="lg" @click="router.push('/course/list')">
+          <v-icon icon="mdi-book-open" size="14" class="mr-1"></v-icon>
+          课程中心
+        </v-btn>
+        <v-btn variant="tonal" color="teal" size="small" rounded="lg" @click="router.push('/career')">
+          <v-icon icon="mdi-briefcase" size="14" class="mr-1"></v-icon>
+          职业中心
+        </v-btn>
+        <v-btn variant="tonal" color="purple" size="small" rounded="lg">
+          <v-icon icon="mdi-account" size="14" class="mr-1"></v-icon>
+          个人中心
+        </v-btn>
+        <v-btn variant="tonal" color="orange" size="small" rounded="lg">
+          <v-icon icon="mdi-heart" size="14" class="mr-1"></v-icon>
+          我的收藏
+        </v-btn>
+      </div>
+    </v-card-text>
+  </v-card>
+
+  <!-- 职业排名 -->
+  <v-card v-if="actualEnabledModules.includes('careers')" flat color="grey-lighten-5" rounded="lg" class="mb-4">
+    <v-card-text class="pa-4">
+      <div class="d-flex align-center justify-space-between mb-3">
+        <div class="d-flex align-center">
+          <v-avatar color="teal-darken-1" size="24" class="mr-3">
+            <v-icon icon="mdi-trophy" color="white" size="13"></v-icon>
+          </v-avatar>
+          <div>
+            <h3 class="text-h7 font-weight-bold text-grey-darken-4">热门职业</h3>
+          </div>
+        </div>
+        <v-btn variant="text" size="small" color="teal-darken-1" @click="router.push('/career')">
+          查看全部
+          <v-icon icon="mdi-chevron-right" size="16" class="ml-1"></v-icon>
+        </v-btn>
+      </div>
+
+      <!-- 职业排名卡片 -->
+      <div v-for="(profession, index) in hotProfessions" :key="profession.id" 
+        class="ranking-item pa-3 rounded-lg bg-white mb-2 d-flex align-center cursor-pointer"
+        @click="goToCareerDetail(profession)">
+        <v-chip :color="getRankChipColor(index)" size="small" class="mr-3 rank-chip">
+          <v-icon :icon="getRankIcon(index)" size="12" class="mr-1"></v-icon>
+          {{ index + 1 }}
+        </v-chip>
+        <div class="flex-grow-1">
+          <div class="text-body-2 font-weight-bold text-grey-darken-4">{{ profession.name }}</div>
+          <div class="text-caption text-grey-darken-2">{{ (profession.learnerCount || 0).toLocaleString() }}人正在学习</div>
+        </div>
+      </div>
+    </v-card-text>
+  </v-card>
+
+  <!-- 课程排名 -->
+  <v-card v-if="actualEnabledModules.includes('courses')" flat color="grey-lighten-5" rounded="lg">
+    <v-card-text class="pa-4">
+      <div class="d-flex align-center justify-space-between mb-3">
+        <div class="d-flex align-center">
+          <v-avatar color="blue-darken-1" size="24" class="mr-3">
+            <v-icon icon="mdi-fire" color="white" size="13"></v-icon>
+          </v-avatar>
+          <div>
+            <h3 class="text-h7 font-weight-bold text-grey-darken-4">热门课程</h3>
+          </div>
+        </div>
+        <v-btn variant="text" size="small" color="blue-darken-1" @click="router.push('/course/list')">
+          查看全部
+          <v-icon icon="mdi-chevron-right" size="16" class="ml-1"></v-icon>
+        </v-btn>
+      </div>
+
+      <!-- 课程排名卡片 -->
+      <div v-for="(course, index) in hotCourses" :key="course.id" 
+        class="ranking-item pa-3 rounded-lg bg-white mb-2 d-flex align-center cursor-pointer"
+        @click="openInNewTab(course.id)">
+        <v-chip :color="getRankChipColor(index)" size="small" class="mr-3 rank-chip">
+          <v-icon :icon="getRankIcon(index)" size="12" class="mr-1"></v-icon>
+          {{ index + 1 }}
+        </v-chip>
+        <div class="flex-grow-1">
+          <div class="text-body-2 font-weight-bold text-grey-darken-4">{{ course.name }}</div>
+          <div class="text-caption text-grey-darken-2">{{ ((course.learnerCount || 0) + (course.subscriptionCount || 0)).toLocaleString() }}人收藏</div>
+        </div>
+      </div>
+    </v-card-text>
+  </v-card>
+</template>
+
+<style scoped>
+.text-h7 {
+  font-size: 1.15rem;
+}
+
+/* 鼠标指针样式 */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* 新增样式 */
+.data-item {
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.data-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 跳转图标样式 */
+.jump-icon {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.data-item-clickable:hover .jump-icon {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+/* 可点击的数据项样式 */
+.data-item-clickable {
+  cursor: pointer;
+}
+
+/* 静态数据项样式 - 覆盖默认悬停效果 */
+.data-item-static:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.vision-card {
+  border: 2px solid #ffebee;
+}
+
+.vision-content {
+  background: linear-gradient(135deg, #ffebee 0%, #fce4ec 100%);
+  border: 1px solid #f8bbd9;
+}
+
+.stat-card {
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.stat-card:hover {
+  transform: translateX(4px);
+  border-color: rgba(76, 175, 80, 0.3);
+}
+
+.progress-item {
+  transition: all 0.2s ease;
+}
+
+.progress-item:hover {
+  transform: scale(1.05);
+}
+
+.ranking-item {
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.ranking-item:hover {
+  transform: translateX(4px);
+  border-color: rgba(25, 118, 210, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rank-chip {
+  min-width: 50px !important;
+}
+
+/* 滚动列表样式 */
+.scrollable-career-list,
+.scrollable-course-list {
+  max-height: 140px; /* 约2.5个项目的高度：每项50px * 2.5 + 间距 */
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox 隐藏滚动条 */
+  -ms-overflow-style: none; /* IE 隐藏滚动条 */
+}
+
+/* Webkit 浏览器隐藏滚动条 */
+.scrollable-career-list::-webkit-scrollbar,
+.scrollable-course-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* 学习项目样式 */
+.career-item,
+.course-item {
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.career-item:hover,
+.course-item:hover {
+  transform: translateX(2px);
+  border-color: rgba(76, 175, 80, 0.3);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.text-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 紧凑间距样式 */
+.pa-0-5 {
+  padding: 2px !important;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #fafafa 25%, #f0f0f0 50%, #fafafa 75%);
+  background-size: 200px 100%;
+  animation: shimmer 2.5s infinite;
+}
+</style>

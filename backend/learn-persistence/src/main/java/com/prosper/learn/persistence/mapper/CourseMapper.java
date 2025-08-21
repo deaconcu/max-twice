@@ -81,4 +81,8 @@ public interface CourseMapper {
 
     @Delete("DELETE FROM course WHERE id = #{id}")
     int delete(@Param("id") int id);
+    
+    // 平台统计相关方法
+    @Select("SELECT COUNT(*) FROM course WHERE state = 'APPROVED'")
+    Long countActiveCourses();
 }
