@@ -357,7 +357,7 @@ const startCourse = async () => {
   <v-container v-if="data" fluid>
     <!-- 页面主内容 -->
     <v-row class="mt-0">
-      <v-col cols="9" class="pr-0">
+      <v-col cols="9" class="pr-6">
         <div class="course-header">
           <div class="d-flex align-center">
             <div class="course-info">
@@ -710,8 +710,8 @@ const startCourse = async () => {
       </v-col>
 
       <!-- right -->
-      <v-col cols="3" class="pl-8">
-        <RightSidebar :learning-data="{ roadmaps: [], courses: [] }" />
+      <v-col cols="3" class="">
+        <RightSidebar/>
       </v-col>
         
     </v-row>

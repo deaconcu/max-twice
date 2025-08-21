@@ -932,7 +932,7 @@ const getStatusText = (status) => {
 
       <!-- 右侧边栏 -->
       <v-col cols="3">
-        <RightSidebar exclude-modules="learning"/>
+        <RightSidebar :exclude-modules="['learning']"/>
       </v-col>
     </v-row>
   </v-container>

@@ -3,7 +3,6 @@ import { ref, computed, onMounted, inject } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePlatformStats } from '@/composables/usePlatformStats';
 import { learnService } from '@/services/learnService';
-import dagre from 'dagre';
 
 const router = useRouter();
 const showSnackbar = inject('showSnackbar');
@@ -44,8 +43,6 @@ const learningData = ref({
 
 // 加载热门职业数据
 const loadHotProfessions = async () => {
-  if (!actualEnabledModules.value.includes('careers')) return;
-  
   try {
     const response = await learnService.getHotProfessions();
     if (response && response.data) {
@@ -64,8 +61,6 @@ const loadHotProfessions = async () => {
 
 // 加载热门课程数据
 const loadHotCourses = async () => {
-  if (!actualEnabledModules.value.includes('courses')) return;
-  
   try {
     const response = await learnService.getHotCourses();
     if (response && response.data) {
@@ -84,8 +79,6 @@ const loadHotCourses = async () => {
 
 // 加载学习数据
 const loadLearningData = async () => {
-  if (!actualEnabledModules.value.includes('learning')) return;
-  
   try {
     const [roadmapResponse, courseResponse] = await Promise.all([
       learnService.getUserRoadmaps(),
@@ -146,9 +139,16 @@ function getRelativeTime(dateString) {
 }
 
 onMounted(() => {
-  loadHotProfessions();
-  loadHotCourses();
-  loadLearningData();
+  // 直接检查而不依赖函数内部的检查
+  if (actualEnabledModules.value.includes('careers')) {
+    loadHotProfessions();
+  }
+  if (actualEnabledModules.value.includes('courses')) {
+    loadHotCourses();
+  }
+  if (actualEnabledModules.value.includes('learning')) {
+    loadLearningData();
+  }
 });
 
 // 获取状态颜色
@@ -204,25 +204,13 @@ const openInNewTab = (courseId) => {
 </script>
 
 <template>
+  <div>
   <!-- 网站愿景 -->
-  <v-card flat color="white" rounded="lg" class="mb-4 vision-card">
-    <v-card-text class="pa-4">
-      <div class="d-flex align-center mb-3">
-        <v-avatar color="red-lighten-1" size="24" class="mr-3">
-          <v-icon icon="mdi-heart" color="white" size="13"></v-icon>
-        </v-avatar>
-        <div>
-          <h3 class="text-h7 font-weight-bold text-grey-darken-4">我们的愿景</h3>
-        </div>
-      </div>
-
-      <div class="vision-content pa-3 rounded-lg">
-        <p class="text-body-2 text-grey-darken-3 mb-0 text-start">
-          如果职业是对世界的体验，那世界会更美好一点
-        </p>
-      </div>
-    </v-card-text>
-  </v-card>
+  <v-alert icon="mdi-bell-outline" color="success" lines="one" variant="tonal" rounded="lg" class="text-body-1 mb-4 d-flex align-center">
+    <span class="font-weight-medium">
+      如果职业是对世界的体验，那世界会更好
+    </span>
+  </v-alert>
   
   <!-- 网站数据统计 -->
   <v-card v-if="actualEnabledModules.includes('platform')" flat color="grey-lighten-5" rounded="lg" class="mb-4">
@@ -490,39 +478,6 @@ const openInNewTab = (courseId) => {
     </v-card-text>
   </v-card>
 
-  <!-- 快捷链接 -->
-  <v-card flat color="grey-lighten-5" rounded="lg" class="mb-4">
-    <v-card-text class="pa-4">
-      <div class="d-flex align-center mb-3">
-        <v-avatar color="grey-darken-2" size="24" class="mr-3">
-          <v-icon icon="mdi-lightning-bolt" color="white" size="13"></v-icon>
-        </v-avatar>
-        <div>
-          <h3 class="text-h7 font-weight-bold text-grey-darken-4">快捷操作</h3>
-        </div>
-      </div>
-
-      <div class="d-flex flex-wrap" style="gap: 8px;">
-        <v-btn variant="tonal" color="primary" size="small" rounded="lg" @click="router.push('/course/list')">
-          <v-icon icon="mdi-book-open" size="14" class="mr-1"></v-icon>
-          课程中心
-        </v-btn>
-        <v-btn variant="tonal" color="teal" size="small" rounded="lg" @click="router.push('/career')">
-          <v-icon icon="mdi-briefcase" size="14" class="mr-1"></v-icon>
-          职业中心
-        </v-btn>
-        <v-btn variant="tonal" color="purple" size="small" rounded="lg">
-          <v-icon icon="mdi-account" size="14" class="mr-1"></v-icon>
-          个人中心
-        </v-btn>
-        <v-btn variant="tonal" color="orange" size="small" rounded="lg">
-          <v-icon icon="mdi-heart" size="14" class="mr-1"></v-icon>
-          我的收藏
-        </v-btn>
-      </div>
-    </v-card-text>
-  </v-card>
-
   <!-- 职业排名 -->
   <v-card v-if="actualEnabledModules.includes('careers')" flat color="grey-lighten-5" rounded="lg" class="mb-4">
     <v-card-text class="pa-4">
@@ -590,6 +545,7 @@ const openInNewTab = (courseId) => {
       </div>
     </v-card-text>
   </v-card>
+  </div>
 </template>
 
 <style scoped>
