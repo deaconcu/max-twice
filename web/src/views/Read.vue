@@ -973,9 +973,9 @@ const startCourse = async () => {
 /* 原有样式保持 */
 .sticky-left {
   position: sticky;
-  top: 68px;
+  top: 15px;
   z-index: 10;
-  height: 90vh;
+  height: 100vh;
   overflow-y: auto;
 }
 
@@ -997,7 +997,7 @@ const startCourse = async () => {
 /* 右侧栏样式优化 */
 .sidebar-container {
   position: sticky;
-  top: 70px;
+  top: 0px;
   z-index: 10;
   display: flex;
   flex-direction: column;

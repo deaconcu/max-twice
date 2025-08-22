@@ -29,6 +29,7 @@ public class UpvoteService {
     private final CommentMapper commentMapper;
     private final MessageService messageService;
     private final UpvoteStatsService upvoteStatsService;
+    private final RedisStatsService redisStatsService;
     private final ScoreCalculationService scoreCalculationService;
 
     /**
@@ -64,6 +65,9 @@ public class UpvoteService {
 
             // 记录取消点赞统计
             upvoteStatsService.removeUpvote("POST", (long) postDO.getId(), upvoteTypeName);
+            
+            // 记录到Redis统计
+            redisStatsService.removeUpvote((long) postDO.getId(), userId, upvoteTypeName);
 
             postMapper.update(postDO);
 
@@ -94,6 +98,9 @@ public class UpvoteService {
 
             // 记录原类型取消统计
             upvoteStatsService.removeUpvote("POST", (long) postDO.getId(), oldUpvoteTypeName);
+            
+            // 记录到Redis统计
+            redisStatsService.removeUpvote((long) postDO.getId(), userId, oldUpvoteTypeName);
 
             upvoteDO.setType(type);
             upvoteMapper.update(upvoteDO);
@@ -116,6 +123,9 @@ public class UpvoteService {
 
         // 记录新的点赞统计
         upvoteStatsService.recordUpvote("POST", (long) postDO.getId(), upvoteTypeName);
+        
+        // 记录到Redis统计
+        redisStatsService.recordUpvote((long) postDO.getId(), userId, upvoteTypeName);
 
         postMapper.update(postDO);
 

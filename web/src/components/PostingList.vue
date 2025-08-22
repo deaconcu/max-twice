@@ -166,8 +166,8 @@ const tab1 = ref(null);
 
 <template>
 
-  <div v-if="tab == 'list' || tab == 'addArticle' || tab == 'comment'" class="mb-4">
-    <v-row class="ma-0 text-grey text-body-2">
+  <template v-if="tab == 'list' || tab == 'addArticle' || tab == 'comment'" class="mb-4">
+    <v-row class="ma-0 text-grey text-body-2 pb-2">
       <div v-if="!('nodeId' in route.query)" class="d-flex align-center">
         <template v-for="item in nodes">
           <div class="d-flex align-center">
@@ -184,7 +184,7 @@ const tab1 = ref(null);
       </div>
     </v-row>
 
-    <div class="px-0 pt-6 pb-1 ma-0 mb-0" style="position: sticky; top: 43px; background-color: #fff;z-index: 1;">
+    <div class="px-0 pb-1 pt-4 ma-0 mb-0" style="position: sticky; top: 0px; background-color: #fff;z-index: 1;">
       <div class="d-flex align-center mb-2">
           <v-icon icon="mdi-list-box-outline" color="primary-darken-1" size="24"></v-icon>
           <h2 class="text-h5 font-weight-bold text-grey-darken-4 ms-3">{{ data.node.name }}</h2>
@@ -227,7 +227,7 @@ const tab1 = ref(null);
         <Invite :nodeId="props.currNodeId" v-model="inviteDialog"></Invite>
       </div>
     </v-row>
-  </div>
+  </template>
 
   <!-- list -->
   <template v-if="tab === 'list'">
@@ -291,7 +291,7 @@ const tab1 = ref(null);
 <style scoped>
 :deep(.sticky-top) {
   position: sticky;
-  top: 49px;
+  top: 0px;
   z-index: 10;
   height: 3.8vh;
   overflow-y: auto;

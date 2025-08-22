@@ -1,11 +1,44 @@
 <script setup>
-import { ref, computed, onMounted, inject } from 'vue';
+import { ref, computed, onMounted, onUnmounted, inject, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePlatformStats } from '@/composables/usePlatformStats';
 import { learnService } from '@/services/learnService';
 
 const router = useRouter();
 const showSnackbar = inject('showSnackbar');
+
+// 侧边栏定位控制
+const sidebarRef = ref(null);
+const isFixed = ref(false);
+const sidebarWidth = ref('auto');
+let sidebarOriginalTop = 110;
+
+const handleScroll = () => {
+  if (!sidebarRef.value) return;
+  
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+  const windowHeight = window.innerHeight;
+
+  console.log(windowHeight + " " + scrollTop + " " + sidebarRef.value.offsetHeight)
+  
+  // 当滚动超过(侧边栏高度 - 视窗高度)时，才固定在底部
+  if (scrollTop > sidebarRef.value.offsetHeight - windowHeight + sidebarOriginalTop) {
+    isFixed.value = true;
+  } else {
+    isFixed.value = false;
+  }
+};
+
+const initSidebar = () => {
+  if (!sidebarRef.value) return;
+  
+  // 记录侧边栏的原始高度和位置
+  //sidebarOriginalTop = sidebarRef.value.offsetTop;
+  sidebarWidth.value = sidebarRef.value.offsetWidth + 'px';
+  
+  // 初始检查
+  //handleScroll();
+};
 
 // 定义 props
 const props = defineProps({
@@ -149,6 +182,18 @@ onMounted(() => {
   if (actualEnabledModules.value.includes('learning')) {
     loadLearningData();
   }
+  
+  // 等DOM更新完成后初始化侧边栏
+  nextTick(() => {
+    initSidebar();
+    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('resize', initSidebar);
+  });
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll);
+  window.removeEventListener('resize', initSidebar);
 });
 
 // 获取状态颜色
@@ -204,11 +249,12 @@ const openInNewTab = (courseId) => {
 </script>
 
 <template>
-  <div>
+  <div ref="sidebarRef" :class="{ 'sidebar-fixed': isFixed }" :style="{ width: isFixed ? sidebarWidth : 'auto' }">
   <!-- 网站愿景 -->
-  <v-alert icon="mdi-bell-outline" color="success" lines="one" variant="tonal" rounded="lg" class="text-body-1 mb-4 d-flex align-center">
+  <v-alert icon="mdi-head-question-outline" color="success" lines="one" variant="tonal" rounded="lg" 
+    class="text-body-1 mb-4 d-flex align-center justify-start">
     <span class="font-weight-medium">
-      如果职业是对世界的体验，那世界会更好
+      如果职业是对世界的探索和体验，不是一种深度绑定
     </span>
   </v-alert>
   
@@ -549,6 +595,13 @@ const openInNewTab = (courseId) => {
 </template>
 
 <style scoped>
+/* 固定在底部的样式 */
+.sidebar-fixed {
+  position: sticky;
+  top: -300px;
+  z-index: 1000;
+}
+
 .text-h7 {
   font-size: 1.15rem;
 }
