@@ -79,14 +79,14 @@ public class StatsMonitorService {
             // 检查昨天的数据是否已同步
             String yesterday = java.time.LocalDate.now().minusDays(1).toString();
             String userKey = "stats:" + yesterday + ":user";
-            String articleKey = "stats:" + yesterday + ":article";
+            String postKey = "stats:" + yesterday + ":post";
             
             boolean hasUserData = redisTemplate.hasKey(userKey);
-            boolean hasArticleData = redisTemplate.hasKey(articleKey);
+            boolean hasPostData = redisTemplate.hasKey(postKey);
             
-            if (hasUserData || hasArticleData) {
+            if (hasUserData || hasPostData) {
                 log.warn("发现昨天({})的数据未同步完成，用户数据存在:{}, 文章数据存在:{}", 
-                    yesterday, hasUserData, hasArticleData);
+                    yesterday, hasUserData, hasPostData);
             } else {
                 log.info("昨天({})的数据同步正常", yesterday);
             }

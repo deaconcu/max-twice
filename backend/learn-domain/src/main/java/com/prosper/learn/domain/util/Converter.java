@@ -175,22 +175,8 @@ public interface Converter {
     List<ProfessionDTO> toProfessionDTO(List<ProfessionDO> list);
     ProfessionDO toProfessionDO(ProfessionDTO professionDTO);
 
-    // user stats
-    @Mapping(target = "period", ignore = true)
-    @Mapping(target = "startDate", ignore = true)
-    @Mapping(target = "endDate", ignore = true)
-    @Mapping(target = "dailyStats", ignore = true)
-    UserStatsDTO toUserStatsDTO(UserStatsDO item);
-
-    @Mapping(source = "statDate", target = "date")
-    @Mapping(source = "totalViews", target = "views")
-    @Mapping(source = "totalTwice", target = "twice")
-    @Mapping(source = "totalHelpful", target = "helpful")
-    @Mapping(source = "totalComments", target = "comments")
-    DailyStatsDTO toDailyStatsDTO(UserStatsDO item);
-
-    List<DailyStatsDTO> toDailyStatsDTO(List<UserStatsDO> list);
-
+    // user stats (removed compatibility methods)
+    
     // mapping method
 
     // 自定义方法来处理 parent 字段的转换

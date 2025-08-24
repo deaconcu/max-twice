@@ -23,10 +23,10 @@ public class RedisStatsService {
         
         try {
             // 文章维度统计
-            String articleKey = "stats:" + today + ":article";
-            String articleField = articleId + ":view";
-            redisTemplate.opsForHash().increment(articleKey, articleField, 1);
-            redisTemplate.expire(articleKey, Duration.ofDays(3));
+            String postKey = "stats:" + today + ":post";
+            String postField = articleId + ":view";
+            redisTemplate.opsForHash().increment(postKey, postField, 1);
+            redisTemplate.expire(postKey, Duration.ofDays(3));
             
             // 用户维度统计
             if (userId != null) {
@@ -50,10 +50,10 @@ public class RedisStatsService {
         
         try {
             // 文章维度统计
-            String articleKey = "stats:" + today + ":article";
-            String articleField = articleId + ":" + upvoteType;
-            redisTemplate.opsForHash().increment(articleKey, articleField, 1);
-            redisTemplate.expire(articleKey, Duration.ofDays(3));
+            String postKey = "stats:" + today + ":post";
+            String postField = articleId + ":" + upvoteType;
+            redisTemplate.opsForHash().increment(postKey, postField, 1);
+            redisTemplate.expire(postKey, Duration.ofDays(3));
             
             // 用户维度统计
             String userKey = "stats:" + today + ":user";
@@ -75,9 +75,9 @@ public class RedisStatsService {
         
         try {
             // 文章维度统计
-            String articleKey = "stats:" + today + ":article";
-            String articleField = articleId + ":" + upvoteType;
-            redisTemplate.opsForHash().increment(articleKey, articleField, -1);
+            String postKey = "stats:" + today + ":post";
+            String postField = articleId + ":" + upvoteType;
+            redisTemplate.opsForHash().increment(postKey, postField, -1);
             
             // 用户维度统计
             String userKey = "stats:" + today + ":user";
@@ -98,10 +98,10 @@ public class RedisStatsService {
         
         try {
             // 文章维度统计
-            String articleKey = "stats:" + today + ":article";
-            String articleField = articleId + ":comment";
-            redisTemplate.opsForHash().increment(articleKey, articleField, 1);
-            redisTemplate.expire(articleKey, Duration.ofDays(3));
+            String postKey = "stats:" + today + ":post";
+            String postField = articleId + ":comment";
+            redisTemplate.opsForHash().increment(postKey, postField, 1);
+            redisTemplate.expire(postKey, Duration.ofDays(3));
             
             // 用户维度统计
             String userKey = "stats:" + today + ":user";
@@ -123,9 +123,9 @@ public class RedisStatsService {
         
         try {
             // 文章维度统计
-            String articleKey = "stats:" + today + ":article";
-            String articleField = articleId + ":comment";
-            redisTemplate.opsForHash().increment(articleKey, articleField, -1);
+            String postKey = "stats:" + today + ":post";
+            String postField = articleId + ":comment";
+            redisTemplate.opsForHash().increment(postKey, postField, -1);
             
             // 用户维度统计
             String userKey = "stats:" + today + ":user";

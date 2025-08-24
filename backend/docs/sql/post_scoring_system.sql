@@ -3,7 +3,7 @@ CREATE TABLE upvote_stats (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     type VARCHAR(20) NOT NULL COMMENT '对象类型：POST, COMMENT等',
     object_id BIGINT NOT NULL COMMENT '对象ID',
-    stats JSON NOT NULL COMMENT '点赞统计数据，格式：{"1-1":{"once": 5, "twice": 3, "helpful": 2}, ...}',
+    stats JSON NOT NULL COMMENT '点赞统计数据，格式：{"1-1":{"twice": 3, "helpful": 2}, ...}',
     stat_year INT NOT NULL COMMENT '统计年份',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

@@ -13,7 +13,7 @@ public class PostStatsDO {
 
     private Long objectId;
 
-    private String stats;  // JSON格式存储点赞数据，格式：{"1-1":{"once": 5, "twice": 3, "helpful": 2}, ...}
+    private String stats;  // JSON格式存储点赞数据，格式：{"1-1":{"twice": 3, "helpful": 2, "views": 100, "comments": 8}, ...}
 
     private Integer statYear;
 

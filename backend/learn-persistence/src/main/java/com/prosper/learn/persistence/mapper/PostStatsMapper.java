@@ -8,6 +8,8 @@ import java.util.List;
 @Mapper
 public interface PostStatsMapper {
 
+    // ===== 基础CRUD操作 =====
+    
     @Insert("INSERT INTO post_stats (type, object_id, stats, stat_year, created_at, updated_at) " +
             "VALUES (#{type}, #{objectId}, #{stats}, #{statYear}, NOW(), NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id")
@@ -31,44 +33,75 @@ public interface PostStatsMapper {
     @Select("SELECT DISTINCT object_id FROM post_stats WHERE type = #{type}")
     List<Long> getAllObjectIdsByType(@Param("type") String type);
 
-    // 使用MySQL JSON函数直接增加计数
+    // ===== 实时统计操作（增量更新）=====
+    
+    // 使用MySQL JSON函数直接增加计数（用于实时统计）
     @Update("UPDATE post_stats SET " +
             "stats = JSON_SET(" +
             "  COALESCE(stats, JSON_OBJECT()), " +
             "  CONCAT('$.\"', #{dayKey}, '\"'), " +
             "  JSON_SET(" +
-            "    COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\"')), JSON_OBJECT('once', 0, 'twice', 0, 'helpful', 0)), " +
-            "    CONCAT('$.', #{upvoteType}), " +
-            "    CAST(COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\".', #{upvoteType})), 0) AS SIGNED) + 1" +
+            "    COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\"')), JSON_OBJECT('twice', 0, 'helpful', 0, 'views', 0, 'comments', 0)), " +
+            "    CONCAT('$.', #{statType}), " +
+            "    CAST(COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\".', #{statType})), 0) AS SIGNED) + #{count}" +
             "  )" +
             "), " +
             "updated_at = NOW() " +
             "WHERE type = #{type} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    int incrementUpvoteCount(@Param("type") String type,
-                            @Param("objectId") Long objectId,
-                            @Param("statYear") Integer statYear,
-                            @Param("dayKey") String dayKey,
-                            @Param("upvoteType") String upvoteType);
+    int incrementStatsCount(@Param("type") String type,
+                           @Param("objectId") Long objectId,
+                           @Param("statYear") Integer statYear,
+                           @Param("dayKey") String dayKey,
+                           @Param("statType") String statType,
+                           @Param("count") Integer count);
 
-    // 使用MySQL JSON函数直接减少计数
+    // 使用MySQL JSON函数直接减少计数（用于撤销操作）
     @Update("UPDATE post_stats SET " +
             "stats = JSON_SET(" +
             "  stats, " +
-            "  CONCAT('$.\"', #{dayKey}, '\".', #{upvoteType}), " +
-            "  GREATEST(0, CAST(COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\".', #{upvoteType})), 0) AS SIGNED) - 1)" +
+            "  CONCAT('$.\"', #{dayKey}, '\".', #{statType}), " +
+            "  GREATEST(0, CAST(COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\".', #{statType})), 0) AS SIGNED) - #{count})" +
             "), " +
             "updated_at = NOW() " +
             "WHERE type = #{type} AND object_id = #{objectId} AND stat_year = #{statYear} " +
             "AND JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\"')) IS NOT NULL")
-    int decrementUpvoteCount(@Param("type") String type,
-                            @Param("objectId") Long objectId,
-                            @Param("statYear") Integer statYear,
-                            @Param("dayKey") String dayKey,
-                            @Param("upvoteType") String upvoteType);
+    int decrementStatsCount(@Param("type") String type,
+                           @Param("objectId") Long objectId,
+                           @Param("statYear") Integer statYear,
+                           @Param("dayKey") String dayKey,
+                           @Param("statType") String statType,
+                           @Param("count") Integer count);
 
+    // ===== 同步操作（直接覆盖）=====
+    
+    // 直接设置当天完整统计数据（用于同步）
+    @Update("UPDATE post_stats SET " +
+            "stats = JSON_SET(" +
+            "  COALESCE(stats, JSON_OBJECT()), " +
+            "  CONCAT('$.\"', #{dayKey}, '\"'), " +
+            "  JSON_OBJECT(" +
+            "    'views', #{views}, " +
+            "    'twice', #{twice}, " +
+            "    'helpful', #{helpful}, " +
+            "    'comments', #{comments}" +
+            "  )" +
+            "), " +
+            "updated_at = NOW() " +
+            "WHERE type = #{type} AND object_id = #{objectId} AND stat_year = #{statYear}")
+    int setDayStats(@Param("type") String type,
+                   @Param("objectId") Long objectId,
+                   @Param("statYear") Integer statYear,
+                   @Param("dayKey") String dayKey,
+                   @Param("views") Integer views,
+                   @Param("twice") Integer twice,
+                   @Param("helpful") Integer helpful,
+                   @Param("comments") Integer comments);
+
+    // ===== 查询操作 =====
+    
     // 获取指定日期的统计数据
     @Select("SELECT JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\"')) " +
-            "FROM upvote_stats " +
+            "FROM post_stats " +
             "WHERE type = #{type} AND object_id = #{objectId} AND stat_year = #{statYear}")
     String getDayStats(@Param("type") String type,
                       @Param("objectId") Long objectId,

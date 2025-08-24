@@ -26,12 +26,11 @@ import java.util.Map;
  * 支持Post和Roadmap两种类型的评分计算
  *
  * 1. 加权得分 S
- * 公式：S = 1.0×C1 + 0.6×C2 + 0.3×C3
+ * 公式：S = 0.6×C1 + 0.3×C2
  * 含义：根据用户反馈的类型，给每种反馈赋予不同的权重：
- * C1（一次读懂）：权重最高，表示内容非常易懂。
- * C2（两次读懂）：权重较低，表示内容需要更多努力才能理解。
- * C3（有帮助）：权重最低，表示内容有一定价值但不够易懂。
- * 通过加权计算出一个总分 S，反映内容的"易懂度"。
+ * C1（两次能懂）：权重较高，表示内容需要用户思考才能理解。
+ * C2（有帮助）：权重较低，表示内容有一定价值但不够易懂。
+ * 通过加权计算出一个总分 S，反映内容的"理解难度"。
  *
  * 2. 时间加权
  * 点赞越久远，权重越低。保证当前的点赞数据更能反映内容的实际易懂度。
@@ -79,8 +78,7 @@ public class ScoreCalculationService {
 
     private static final int MAX_DAYS_HISTORY = 720;  // 最多考虑30天的历史数据
 
-    private static final double p1 = 1.0;  // 一次读懂的权重
-    private static final double p2 = 0.6;  // 两次读懂的权重
+    private static final double p2 = 0.6;  // 两次能懂的权重
     private static final double p3 = 0.3;  // 有帮助的权重
 
     // 时间权重参数
@@ -237,14 +235,13 @@ public class ScoreCalculationService {
                         Map<String, Integer> dayStats = yearlyData.get(dayKey);
 
                         if (dayStats != null) {
-                            int once = dayStats.getOrDefault("once", 0);
                             int twice = dayStats.getOrDefault("twice", 0);
                             int helpful = dayStats.getOrDefault("helpful", 0);
 
-                            // 计算当天的加权分数
-                            double dayScore = once * p1 + twice * p2 + helpful * p3;
+                            // 计算当天的加权分数 (移除once，只保留twice和helpful)
+                            double dayScore = twice * p2 + helpful * p3;
                             // 计算当天的样本数（总点赞次数）
-                            int daySampleCount = (once + twice + helpful);
+                            int daySampleCount = (twice + helpful);
 
                             if (daySampleCount > 0) {
                                 dailyData.put(currentDate, new DailyData(dayScore, daySampleCount));
