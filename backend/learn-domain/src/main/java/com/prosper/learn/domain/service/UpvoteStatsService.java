@@ -2,8 +2,8 @@ package com.prosper.learn.domain.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.prosper.learn.persistence.dataobject.UpvoteStatsDO;
-import com.prosper.learn.persistence.mapper.UpvoteStatsMapper;
+import com.prosper.learn.persistence.dataobject.PostStatsDO;
+import com.prosper.learn.persistence.mapper.PostStatsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,7 +17,7 @@ import java.util.Map;
 public class UpvoteStatsService {
 
     @Autowired
-    private UpvoteStatsMapper upvoteStatsMapper;
+    private PostStatsMapper postStatsMapper;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -34,7 +34,7 @@ public class UpvoteStatsService {
             String dayKey = today.getMonthValue() + "-" + today.getDayOfMonth();
 
             // 使用MySQL JSON操作直接更新
-            int updated = upvoteStatsMapper.incrementUpvoteCount(type, objectId, currentYear, dayKey, upvoteType);
+            int updated = postStatsMapper.incrementUpvoteCount(type, objectId, currentYear, dayKey, upvoteType);
 
             if (updated == 0) {
                 // 记录不存在，创建新记录
@@ -46,13 +46,13 @@ public class UpvoteStatsService {
                 dayData.put(upvoteType, 1);
                 yearlyData.put(dayKey, dayData);
 
-                UpvoteStatsDO yearStats = new UpvoteStatsDO();
+                PostStatsDO yearStats = new PostStatsDO();
                 yearStats.setType(type);
                 yearStats.setObjectId(objectId);
                 yearStats.setStatYear(currentYear);
                 yearStats.setStats(objectMapper.writeValueAsString(yearlyData));
 
-                upvoteStatsMapper.insert(yearStats);
+                postStatsMapper.insert(yearStats);
                 log.debug("创建新的年度统计记录: type={}, objectId={}, year={}", type, objectId, currentYear);
             } else {
                 log.debug("更新年度统计记录: type={}, objectId={}, year={}", type, objectId, currentYear);
@@ -73,7 +73,7 @@ public class UpvoteStatsService {
             String dayKey = today.getMonthValue() + "-" + today.getDayOfMonth();
 
             // 使用MySQL JSON操作直接减少计数
-            upvoteStatsMapper.decrementUpvoteCount(type, objectId, currentYear, dayKey, upvoteType);
+            postStatsMapper.decrementUpvoteCount(type, objectId, currentYear, dayKey, upvoteType);
             log.debug("撤销点赞统计: type={}, objectId={}, upvoteType={}", type, objectId, upvoteType);
 
         } catch (Exception e) {
@@ -89,7 +89,7 @@ public class UpvoteStatsService {
             int year = date.getYear();
             String dayKey = date.getMonthValue() + "-" + date.getDayOfMonth();
 
-            String dayStatsJson = upvoteStatsMapper.getDayStats(type, objectId, year, dayKey);
+            String dayStatsJson = postStatsMapper.getDayStats(type, objectId, year, dayKey);
 
             if (dayStatsJson != null) {
                 return objectMapper.readValue(dayStatsJson, new TypeReference<Map<String, Integer>>() {});

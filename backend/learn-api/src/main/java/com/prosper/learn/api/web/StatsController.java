@@ -1,7 +1,7 @@
 package com.prosper.learn.api.web;
 
 import com.prosper.learn.domain.service.ArticleViewService;
-import com.prosper.learn.domain.service.DailyStatsSyncService;
+import com.prosper.learn.domain.service.DailyStatsService;
 import com.prosper.learn.domain.service.StatsMonitorService;
 import com.prosper.learn.dto.Response;
 import com.prosper.learn.dto.UserStatsDTO;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class StatsController {
 
-    private final DailyStatsSyncService dailyStatsSyncService;
+    private final DailyStatsService dailyStatsService;
     private final ArticleViewService articleViewService;
     private final StatsMonitorService statsMonitorService;
 
@@ -41,7 +41,7 @@ public class StatsController {
     @GetMapping("/user/{userId}/today")
     public Response<UserStatsDTO> getUserTodayStats(@PathVariable Integer userId) {
         try {
-            UserStatsDTO stats = dailyStatsSyncService.getUserTodayStats(userId);
+            UserStatsDTO stats = dailyStatsService.getUserTodayStats(userId);
             return new Response<>(stats);
         } catch (Exception e) {
             log.error("获取用户今日统计失败", e);
@@ -55,7 +55,7 @@ public class StatsController {
     @GetMapping("/user/{userId}/yesterday")
     public Response<UserStatsDTO> getUserYesterdayStats(@PathVariable Integer userId) {
         try {
-            UserStatsDTO stats = dailyStatsSyncService.getUserYesterdayStats(userId);
+            UserStatsDTO stats = dailyStatsService.getUserYesterdayStats(userId);
             return new Response<>(stats);
         } catch (Exception e) {
             log.error("获取用户昨日统计失败", e);
@@ -70,7 +70,7 @@ public class StatsController {
     public Response<UserStatsDTO> getUserHistoryStats(@PathVariable Integer userId,
                                                       @RequestParam(defaultValue = "7") int days) {
         try {
-            UserStatsDTO stats = dailyStatsSyncService.getUserHistoryStats(userId, days);
+            UserStatsDTO stats = dailyStatsService.getUserHistoryStats(userId, days);
             return new Response<>(stats);
         } catch (Exception e) {
             log.error("获取用户历史统计失败", e);
@@ -85,7 +85,7 @@ public class StatsController {
     public Response<UserStatsDTO> getUserPeriodStats(@PathVariable Integer userId,
                                                      @RequestParam(defaultValue = "7") int days) {
         try {
-            UserStatsDTO stats = dailyStatsSyncService.getUserPeriodStatsWithDaily(userId, days);
+            UserStatsDTO stats = dailyStatsService.getUserPeriodStatsWithDaily(userId, days);
             return new Response<>(stats);
         } catch (Exception e) {
             log.error("获取用户时间段统计失败", e);
@@ -99,7 +99,7 @@ public class StatsController {
     @PostMapping("/sync/manual")
     public Response<Void> manualSync() {
         try {
-            dailyStatsSyncService.syncYesterdayStats();
+            dailyStatsService.syncYesterdayStats();
             return new Response<>(Response.SUCCESS, "同步成功", null);
         } catch (Exception e) {
             log.error("手动同步失败", e);
@@ -127,7 +127,7 @@ public class StatsController {
     @PostMapping("/sync/compensation")
     public Response<Void> compensationSync() {
         try {
-            dailyStatsSyncService.compensationSync();
+            dailyStatsService.compensationSync();
             return new Response<>(Response.SUCCESS, "补偿同步成功", null);
         } catch (Exception e) {
             log.error("补偿同步失败", e);

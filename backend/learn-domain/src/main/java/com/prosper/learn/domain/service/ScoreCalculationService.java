@@ -2,11 +2,11 @@ package com.prosper.learn.domain.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.prosper.learn.persistence.dataobject.UpvoteStatsDO;
+import com.prosper.learn.persistence.dataobject.PostStatsDO;
 import com.prosper.learn.persistence.dataobject.PostDO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
 import com.prosper.learn.persistence.dataobject.CommentDO;
-import com.prosper.learn.persistence.mapper.UpvoteStatsMapper;
+import com.prosper.learn.persistence.mapper.PostStatsMapper;
 import com.prosper.learn.persistence.mapper.PostMapper;
 import com.prosper.learn.persistence.mapper.RoadmapMapper;
 import com.prosper.learn.persistence.mapper.CommentMapper;
@@ -60,7 +60,7 @@ import java.util.Map;
 public class ScoreCalculationService {
 
     @Autowired
-    private UpvoteStatsMapper upvoteStatsMapper;
+    private PostStatsMapper postStatsMapper;
 
     @Autowired
     private PostMapper postMapper;
@@ -220,7 +220,7 @@ public class ScoreCalculationService {
         int endYear = endDate.getYear();
 
         for (int year = startYear; year <= endYear; year++) {
-            UpvoteStatsDO yearStats = upvoteStatsMapper.getByTypeAndObjectIdAndYear(
+            PostStatsDO yearStats = postStatsMapper.getByTypeAndObjectIdAndYear(
                 objectType, (long) objectId, year);
 
             if (yearStats != null) {

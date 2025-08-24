@@ -8,8 +8,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-
 @Slf4j
 @Component
 public class StatsMonitorService {
@@ -18,7 +16,7 @@ public class StatsMonitorService {
     private RedisTemplate<String, String> redisTemplate;
 
     @Autowired
-    private DailyStatsSyncService dailyStatsSyncService;
+    private DailyStatsService dailyStatsService;
 
     private volatile boolean redisHealthy = true;
 
@@ -111,7 +109,7 @@ public class StatsMonitorService {
                 log.warn("发现{}个未同步的统计数据，开始强制同步", pendingCount);
                 
                 // 触发补偿同步
-                dailyStatsSyncService.compensationSync();
+                dailyStatsService.compensationSync();
                 
                 log.info("强制同步完成");
             } else {

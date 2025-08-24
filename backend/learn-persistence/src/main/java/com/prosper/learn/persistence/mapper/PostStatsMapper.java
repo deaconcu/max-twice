@@ -1,38 +1,38 @@
 package com.prosper.learn.persistence.mapper;
 
-import com.prosper.learn.persistence.dataobject.UpvoteStatsDO;
+import com.prosper.learn.persistence.dataobject.PostStatsDO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
 @Mapper
-public interface UpvoteStatsMapper {
+public interface PostStatsMapper {
 
-    @Insert("INSERT INTO upvote_stats (type, object_id, stats, stat_year, created_at, updated_at) " +
+    @Insert("INSERT INTO post_stats (type, object_id, stats, stat_year, created_at, updated_at) " +
             "VALUES (#{type}, #{objectId}, #{stats}, #{statYear}, NOW(), NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    int insert(UpvoteStatsDO stats);
+    int insert(PostStatsDO stats);
 
-    @Update("UPDATE upvote_stats SET stats = #{stats}, updated_at = NOW() " +
+    @Update("UPDATE post_stats SET stats = #{stats}, updated_at = NOW() " +
             "WHERE type = #{type} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    int updateStats(UpvoteStatsDO stats);
+    int updateStats(PostStatsDO stats);
 
-    @Select("SELECT * FROM upvote_stats WHERE type = #{type} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    UpvoteStatsDO getByTypeAndObjectIdAndYear(@Param("type") String type,
-                                                   @Param("objectId") Long objectId,
-                                                   @Param("statYear") Integer statYear);
+    @Select("SELECT * FROM post_stats WHERE type = #{type} AND object_id = #{objectId} AND stat_year = #{statYear}")
+    PostStatsDO getByTypeAndObjectIdAndYear(@Param("type") String type,
+                                            @Param("objectId") Long objectId,
+                                            @Param("statYear") Integer statYear);
 
-    @Select("SELECT * FROM upvote_stats WHERE type = #{type} AND object_id = #{objectId} " +
+    @Select("SELECT * FROM post_stats WHERE type = #{type} AND object_id = #{objectId} " +
             "AND stat_year >= #{startYear} ORDER BY stat_year DESC")
-    List<UpvoteStatsDO> getStatsInYearRange(@Param("type") String type,
-                                                 @Param("objectId") Long objectId,
-                                                 @Param("startYear") Integer startYear);
+    List<PostStatsDO> getStatsInYearRange(@Param("type") String type,
+                                          @Param("objectId") Long objectId,
+                                          @Param("startYear") Integer startYear);
 
-    @Select("SELECT DISTINCT object_id FROM upvote_stats WHERE type = #{type}")
+    @Select("SELECT DISTINCT object_id FROM post_stats WHERE type = #{type}")
     List<Long> getAllObjectIdsByType(@Param("type") String type);
 
     // 使用MySQL JSON函数直接增加计数
-    @Update("UPDATE upvote_stats SET " +
+    @Update("UPDATE post_stats SET " +
             "stats = JSON_SET(" +
             "  COALESCE(stats, JSON_OBJECT()), " +
             "  CONCAT('$.\"', #{dayKey}, '\"'), " +
@@ -51,7 +51,7 @@ public interface UpvoteStatsMapper {
                             @Param("upvoteType") String upvoteType);
 
     // 使用MySQL JSON函数直接减少计数
-    @Update("UPDATE upvote_stats SET " +
+    @Update("UPDATE post_stats SET " +
             "stats = JSON_SET(" +
             "  stats, " +
             "  CONCAT('$.\"', #{dayKey}, '\".', #{upvoteType}), " +

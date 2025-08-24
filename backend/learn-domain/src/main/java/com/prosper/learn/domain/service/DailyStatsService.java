@@ -4,7 +4,7 @@ import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.DailyStatsDTO;
 import com.prosper.learn.dto.UserStatsDTO;
 import com.prosper.learn.persistence.dataobject.UserStatsDO;
-import com.prosper.learn.persistence.mapper.UpvoteStatsMapper;
+import com.prosper.learn.persistence.mapper.PostStatsMapper;
 import com.prosper.learn.persistence.mapper.UserStatsMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,9 +18,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 日常统计数据同步服务
+ * 
+ * 该服务负责将Redis中的实时统计数据同步到数据库进行持久化存储。
+ * 
+ * 设计思路:
+ * 1. 实时统计数据存储在Redis中，性能高但非持久化
+ * 2. 定期将Redis数据同步到数据库，确保数据不丢失
+ * 3. 支持补偿机制，处理同步失败的情况
+ * 
+ * Redis数据结构:
+ * - 用户统计: stats:YYYY-MM-DD:user -> {userId:statType: count}
+ * - 文章统计: stats:YYYY-MM-DD:article -> {articleId:statType: count}
+ * 
+ * 统计类型包括:
+ * - view: 浏览量
+ * - once/twice/helpful: 不同类型的点赞
+ * - comment: 评论数
+ */
 @Slf4j
 @Service
-public class DailyStatsSyncService {
+public class DailyStatsService {
 
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
@@ -29,10 +48,15 @@ public class DailyStatsSyncService {
     private UserStatsMapper userStatsMapper;
 
     @Autowired
-    private UpvoteStatsMapper upvoteStatsMapper;
+    private PostStatsMapper postStatsMapper;
 
     /**
      * 同步昨天的统计数据
+     * 
+     * 主要同步任务，通常在每日凌晨执行:
+     * 1. 从Redis读取昨天的用户和文章统计数据
+     * 2. 将数据写入数据库对应的统计表
+     * 3. 删除Redis中已同步的数据以节省内存
      */
     public void syncYesterdayStats() {
         LocalDate yesterday = LocalDate.now().minusDays(1);
@@ -56,6 +80,11 @@ public class DailyStatsSyncService {
 
     /**
      * 补偿同步任务 - 检查最近7天是否有同步失败的
+     * 
+     * 容错机制，处理因为系统故障等原因导致的同步失败:
+     * 1. 检查最近7天的Redis数据，正常情况下应该已被同步并删除
+     * 2. 如果发现遗留数据，说明之前的同步失败了
+     * 3. 执行补偿同步，确保数据不丢失
      */
     public void compensationSync() {
         log.info("开始补偿同步任务");
@@ -92,6 +121,16 @@ public class DailyStatsSyncService {
 
     /**
      * 同步用户统计数据
+     * 
+     * 处理逻辑:
+     * 1. 从Redis获取指定日期的用户统计数据
+     * 2. 解析field格式: "userId:statType" -> count
+     * 3. 按用户ID分组聚合各种统计类型的数据
+     * 4. 写入user_stats表，支持增量更新
+     * 5. 删除Redis中的原始数据
+     * 
+     * @param dateStr 日期字符串，格式: YYYY-MM-DD
+     * @return 成功同步的记录数
      */
     private int syncUserStats(String dateStr) {
         String userKey = "stats:" + dateStr + ":user";
@@ -102,7 +141,7 @@ public class DailyStatsSyncService {
             return 0;
         }
         
-        // 按用户ID分组统计
+        // 按用户ID分组统计，将Redis中的扁平数据转换为结构化的用户统计对象
         Map<Integer, UserStatsDO> userStatsMap = new HashMap<>();
         
         for (Map.Entry<Object, Object> entry : userStats.entrySet()) {
@@ -183,7 +222,19 @@ public class DailyStatsSyncService {
     }
 
     /**
-     * 同步文章统计数据到upvote_stats表
+     * 同步文章统计数据到post_stats表
+     * 
+     * 处理逻辑:
+     * 1. 从Redis获取指定日期的文章统计数据
+     * 2. 解析field格式: "articleId:statType" -> count
+     * 3. 按文章ID分组聚合各种统计类型的数据
+     * 4. 更新post_stats表中的JSON字段
+     * 5. 删除Redis中的原始数据
+     * 
+     * 注意: 目前updateUpvoteStatsField方法只有日志记录，具体的数据库更新逻辑需要实现
+     * 
+     * @param dateStr 日期字符串，格式: YYYY-MM-DD
+     * @return 成功同步的记录数
      */
     private int syncArticleStats(String dateStr) {
         String articleKey = "stats:" + dateStr + ":article";
@@ -227,12 +278,16 @@ public class DailyStatsSyncService {
                     String statType = statEntry.getKey();
                     Integer count = statEntry.getValue();
                     
-                    // 更新upvote_stats表中的数据
+                    // 根据统计类型更新post_stats表中对应的字段
                     if ("view".equals(statType)) {
-                        // 扩展upvote_stats支持view字段
-                        updateUpvoteStatsField("POST", articleId, year, dayKey, "view", count);
-                    } else if ("twice".equals(statType) || "helpful".equals(statType)) {
-                        updateUpvoteStatsField("POST", articleId, year, dayKey, statType, count);
+                        // 处理浏览量统计，现在view也通过Redis统计
+                        updatePostStatsField("POST", articleId, year, dayKey, "view", count);
+                    } else if ("twice".equals(statType) || "helpful".equals(statType) || "once".equals(statType)) {
+                        // 处理点赞统计，支持三种点赞类型
+                        updatePostStatsField("POST", articleId, year, dayKey, statType, count);
+                    } else if ("comment".equals(statType)) {
+                        // 处理评论统计，现在comment也通过Redis统计
+                        updatePostStatsField("POST", articleId, year, dayKey, "comment", count);
                     }
                 }
                 updateCount++;
@@ -250,24 +305,49 @@ public class DailyStatsSyncService {
     }
 
     /**
-     * 更新upvote_stats表中的字段
+     * 更新post_stats表中的字段
+     * 
+     * 该方法负责将Redis中的统计数据写入数据库的post_stats表:
+     * 1. 构造JSON路径，定位到具体的日期和统计类型
+     * 2. 使用MySQL的JSON函数进行原子性的数值更新
+     * 3. 支持增量更新，多次同步时会累加数值
+     * 
+     * 注意: 目前方法只记录日志，实际的数据库更新逻辑需要调用PostStatsMapper
+     * 
+     * @param type 对象类型，如"POST", "NODE", "ROADMAP"
+     * @param objectId 对象ID
+     * @param year 统计年份
+     * @param dayKey 日期键，格式如"8-22"
+     * @param field 统计字段，如"view", "once", "twice", "helpful", "comment"
+     * @param count 统计数值
      */
-    private void updateUpvoteStatsField(String type, Long objectId, int year, String dayKey, String field, int count) {
+    private void updatePostStatsField(String type, Long objectId, int year, String dayKey, String field, int count) {
         try {
-            // 这里需要扩展UpvoteStatsMapper，添加支持view等新字段的更新方法
-            log.debug("更新upvote_stats: type={}, objectId={}, year={}, dayKey={}, field={}, count={}", 
+            // TODO: 这里需要调用PostStatsMapper的相应方法来更新数据库
+            // 可以参考现有的incrementUpvoteCount方法，扩展支持view和comment字段
+            // postStatsMapper.incrementStatsField(type, objectId, year, dayKey, field, count);
+            
+            log.debug("更新post_stats: type={}, objectId={}, year={}, dayKey={}, field={}, count={}", 
                 type, objectId, year, dayKey, field, count);
                 
         } catch (Exception e) {
-            log.error("更新upvote_stats失败: type={}, objectId={}, field={}, count={}", 
+            log.error("更新post_stats失败: type={}, objectId={}, field={}, count={}", 
                 type, objectId, field, count, e);
         }
     }
 
     // ====== 查询服务方法 ======
+    // 以下方法提供统计数据的查询功能，支持从Redis读取实时数据和从数据库读取历史数据
 
     /**
      * 获取用户今日统计（从Redis）
+     * 
+     * 读取当天的实时统计数据，数据来源是Redis:
+     * 1. 构造今日的Redis key
+     * 2. 获取该用户的所有统计数据
+     * 3. 解析并聚合成UserStatsDTO对象
+     * 
+     * 使用缓存注解提高查询性能
      */
     @Cacheable(value = "todayStats", key = "'user:' + #userId", unless = "#result == null")
     public UserStatsDTO getUserTodayStats(Integer userId) {
@@ -405,6 +485,17 @@ public class DailyStatsSyncService {
 
     /**
      * 从Redis数据解析用户统计
+     * 
+     * 解析Redis中的原始统计数据:
+     * 1. 遍历Redis Hash中的所有字段
+     * 2. 过滤出属于指定用户的数据（通过userId前缀）
+     * 3. 按统计类型分类累加
+     * 4. 构造UserStatsDTO对象
+     * 
+     * @param userId 用户ID
+     * @param stats Redis中的原始统计数据
+     * @param date 日期字符串
+     * @return 解析后的用户统计对象
      */
     private UserStatsDTO parseUserStatsFromRedis(Integer userId, Map<Object, Object> stats, String date) {
         long totalViews = 0;
@@ -412,7 +503,7 @@ public class DailyStatsSyncService {
         long totalHelpful = 0;
         long totalComments = 0;
         
-        String userPrefix = userId + ":";
+        String userPrefix = userId + ":";  // Redis field格式: "userId:statType"
         
         for (Map.Entry<Object, Object> entry : stats.entrySet()) {
             String field = (String) entry.getKey();

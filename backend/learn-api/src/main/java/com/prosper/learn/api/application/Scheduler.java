@@ -1,7 +1,7 @@
 package com.prosper.learn.api.application;
 
 import com.prosper.learn.domain.service.CourseRankingScheduler;
-import com.prosper.learn.domain.service.DailyStatsSyncService;
+import com.prosper.learn.domain.service.DailyStatsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -16,7 +16,7 @@ public class Scheduler {
     private CourseRankingScheduler courseRankingScheduler;
     
     @Autowired
-    private DailyStatsSyncService dailyStatsSyncService;
+    private DailyStatsService dailyStatsService;
     
     /**
      * 每小时同步一次课程统计数据到Redis
@@ -39,7 +39,7 @@ public class Scheduler {
      */
     @Scheduled(cron = "0 30 2 * * ?")
     public void syncYesterdayStats() {
-        dailyStatsSyncService.syncYesterdayStats();
+        dailyStatsService.syncYesterdayStats();
     }
     
     /**
@@ -47,6 +47,6 @@ public class Scheduler {
      */
     @Scheduled(cron = "0 0 4 * * ?")
     public void compensationSync() {
-        dailyStatsSyncService.compensationSync();
+        dailyStatsService.compensationSync();
     }
 }

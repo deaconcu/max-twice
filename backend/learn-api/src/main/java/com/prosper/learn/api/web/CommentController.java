@@ -5,6 +5,7 @@ import com.prosper.learn.api.client.CommentClient;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.service.MessageService;
 import com.prosper.learn.domain.service.ScoreCalculationService;
+import com.prosper.learn.domain.service.RedisStatsService;
 import com.prosper.learn.dto.CommentDTO;
 import com.prosper.learn.dto.CommentDTOV1;
 import com.prosper.learn.dto.Response;
@@ -34,6 +35,7 @@ public class CommentController implements CommentClient {
     private final RoadmapMapper roadmapMapper;
     private final MessageService messageService;
     private final ScoreCalculationService scoreCalculationService;
+    private final RedisStatsService redisStatsService;
 
     @SneakyThrows
     @Override
@@ -95,14 +97,26 @@ public class CommentController implements CommentClient {
         if (commentDTO.getType() == Enums.ObjectType.post.value && postDO != null) {
             postDO.setCommentCount(postDO.getCommentCount() + 1);
             postMapper.update(postDO);
+            
+            // 记录到Redis统计
+            redisStatsService.recordComment((long) postDO.getId(), userId);
+            
             messageService.createCommentMessage(postDO.getCreator(), fromUser.getId(), postDO.getNodeId(), commentDO.getId(), postComment.value);
         } else if (commentDTO.getType() == Enums.ObjectType.node.value && nodeDO != null) {
             nodeDO.setCommentCount(nodeDO.getCommentCount() + 1);
             nodeMapper.update(nodeDO);
+            
+            // 记录到Redis统计
+            redisStatsService.recordComment((long) nodeDO.getId(), userId);
+            
             messageService.createCommentMessage(nodeDO.getCreator(), fromUser.getId(), nodeDO.getId(), commentDO.getId(), nodeComment.value);
         } else if (commentDTO.getType() == Enums.ObjectType.roadmap.value && roadmapDO != null) {
             roadmapDO.setComment(roadmapDO.getComment() + 1);
             roadmapMapper.update(roadmapDO);
+            
+            // 记录到Redis统计
+            redisStatsService.recordComment((long) roadmapDO.getId(), userId);
+            
             messageService.createCommentMessage(roadmapDO.getCreatorId(), fromUser.getId(), roadmapDO.getId(), commentDO.getId(), roadmapComment.value);
         }
 

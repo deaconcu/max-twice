@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class UpvoteStatsDO {
+public class PostStatsDO {
 
     private Long id;
 

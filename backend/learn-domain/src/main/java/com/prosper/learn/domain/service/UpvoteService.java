@@ -28,7 +28,6 @@ public class UpvoteService {
     private final PostMapper postMapper;
     private final CommentMapper commentMapper;
     private final MessageService messageService;
-    private final UpvoteStatsService upvoteStatsService;
     private final RedisStatsService redisStatsService;
     private final ScoreCalculationService scoreCalculationService;
 
@@ -63,9 +62,6 @@ public class UpvoteService {
                 postDO.setHelpful(postDO.getHelpful() - 1);
             }
 
-            // 记录取消点赞统计
-            upvoteStatsService.removeUpvote("POST", (long) postDO.getId(), upvoteTypeName);
-            
             // 记录到Redis统计
             redisStatsService.removeUpvote((long) postDO.getId(), userId, upvoteTypeName);
 
@@ -96,9 +92,6 @@ public class UpvoteService {
                 postDO.setHelpful(postDO.getHelpful() - 1);
             }
 
-            // 记录原类型取消统计
-            upvoteStatsService.removeUpvote("POST", (long) postDO.getId(), oldUpvoteTypeName);
-            
             // 记录到Redis统计
             redisStatsService.removeUpvote((long) postDO.getId(), userId, oldUpvoteTypeName);
 
@@ -121,9 +114,6 @@ public class UpvoteService {
                     postDO.getCreator(), fromUserDO.getId(), postDO.getNodeId(), postDO.getId(), ObjectType.post.value, 3);
         }
 
-        // 记录新的点赞统计
-        upvoteStatsService.recordUpvote("POST", (long) postDO.getId(), upvoteTypeName);
-        
         // 记录到Redis统计
         redisStatsService.recordUpvote((long) postDO.getId(), userId, upvoteTypeName);
 
@@ -206,9 +196,6 @@ public class UpvoteService {
             // 如果已经投过票，则取消投票
             upvoteMapper.delete(existingUpvote.getId());
 
-            // 记录取消投票的统计
-            upvoteStatsService.removeUpvote("ROADMAP", (long) roadmapId, "once");
-
             return false; // 返回false表示取消投票
         } else {
             // 如果没有投过票，则投票
@@ -218,9 +205,6 @@ public class UpvoteService {
             upvoteDO.setObjectType(ObjectType.roadmap.value);
             upvoteDO.setType(0); // roadmap投票类型设为0，对应"once"
             upvoteMapper.insert(upvoteDO);
-
-            // 记录投票统计
-            upvoteStatsService.recordUpvote("ROADMAP", (long) roadmapId, "once");
 
             return true; // 返回true表示投票成功
         }
