@@ -43,10 +43,11 @@ public class Scheduler {
     }
     
     /**
-     * 每天凌晨4:00执行补偿同步任务
+     * 每天凌晨4:00检查今天是否有遗留的Redis数据需要同步
      */
     @Scheduled(cron = "0 0 4 * * ?")
-    public void compensationSync() {
-        dailyStatsService.compensationSync();
+    public void checkTodayRedisData() {
+        // 检查今天是否有Redis数据需要同步（通常不应该有，除非系统异常）
+        dailyStatsService.syncSpecificDate(java.time.LocalDate.now());
     }
 }

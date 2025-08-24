@@ -8,6 +8,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+
 @Slf4j
 @Component
 public class StatsMonitorService {
@@ -108,10 +110,9 @@ public class StatsMonitorService {
             if (pendingCount > 0) {
                 log.warn("发现{}个未同步的统计数据，开始强制同步", pendingCount);
                 
-                // 触发补偿同步
-                dailyStatsService.compensationSync();
-                
-                log.info("强制同步完成");
+                // 触发今天的数据同步
+                String result = dailyStatsService.syncSpecificDate(LocalDate.now());
+                log.info("强制同步结果: {}", result);
             } else {
                 log.info("没有未同步的数据");
             }

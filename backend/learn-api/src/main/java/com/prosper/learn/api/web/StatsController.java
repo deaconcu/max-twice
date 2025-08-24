@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+
 @RestController
 @RequestMapping("/api/stats")
 @Slf4j
@@ -122,16 +124,30 @@ public class StatsController {
     }
 
     /**
-     * 手动触发补偿同步
+     * 手动触发指定日期的数据同步
+     * 
+     * 安全机制：
+     * - 如果Redis中没有指定日期的数据，直接跳过，不覆盖数据库
+     * - 如果同步的是今天的数据，保留Redis数据以继续收集统计
+     * - 如果同步的是历史数据，同步后删除Redis数据释放内存
      */
-    @PostMapping("/sync/compensation")
-    public Response<Void> compensationSync() {
+    @PostMapping("/sync/date")
+    public Response<String> syncSpecificDate(@RequestParam(required = false) String date) {
         try {
-            dailyStatsService.compensationSync();
-            return new Response<>(Response.SUCCESS, "补偿同步成功", null);
+            LocalDate targetDate = null;
+            if (date != null && !date.isEmpty()) {
+                try {
+                    targetDate = LocalDate.parse(date);
+                } catch (Exception e) {
+                    return new Response<>(Response.FAILED, "日期格式错误，请使用 YYYY-MM-DD 格式", null);
+                }
+            }
+            
+            String result = dailyStatsService.syncSpecificDate(targetDate);
+            return new Response<>(Response.SUCCESS, result, result);
         } catch (Exception e) {
-            log.error("补偿同步失败", e);
-            return new Response<>(Response.FAILED, "补偿同步失败", null);
+            log.error("手动同步失败", e);
+            return new Response<>(Response.FAILED, "同步失败: " + e.getMessage(), null);
         }
     }
 }

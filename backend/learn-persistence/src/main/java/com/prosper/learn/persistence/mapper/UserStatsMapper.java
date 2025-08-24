@@ -82,16 +82,4 @@ public interface UserStatsMapper {
                       @Param("statYear") Integer statYear,
                       @Param("dayKey") String dayKey);
 
-    // ===== 管理方法 =====
-    
-    @Delete("DELETE FROM user_stats WHERE stat_year < #{beforeYear}")
-    int deleteOldStats(@Param("beforeYear") Integer beforeYear);
-
-    @Select("SELECT DISTINCT user_id FROM user_stats WHERE stat_year = #{statYear}")
-    List<Integer> getUserIdsByYear(@Param("statYear") Integer statYear);
-
-    @Update("UPDATE user_stats SET " +
-            "stats = COALESCE(stats, JSON_OBJECT()) " +
-            "WHERE user_id = #{userId} AND stat_year = #{statYear} AND stats IS NULL")
-    int initializeStatsIfNull(@Param("userId") Integer userId, @Param("statYear") Integer statYear);
 }

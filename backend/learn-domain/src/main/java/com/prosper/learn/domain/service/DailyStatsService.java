@@ -89,43 +89,60 @@ public class DailyStatsService {
     }
 
     /**
-     * 补偿同步任务 - 检查最近7天是否有同步失败的
+     * 同步指定日期的统计数据
      * 
-     * 容错机制，处理因为系统故障等原因导致的同步失败:
-     * 1. 检查最近7天的Redis数据，正常情况下应该已被同步并删除
-     * 2. 如果发现遗留数据，说明之前的同步失败了
-     * 3. 执行补偿同步，确保数据不丢失
+     * 手动触发同步任务，用于重新处理指定日期的数据:
+     * 1. 检查Redis中是否有指定日期的数据
+     * 2. 如果有数据，则重新同步到数据库
+     * 3. 如果没有数据，直接退出，不覆盖数据库中的现有数据
+     * 
+     * @param date 要同步的日期，如果为null则默认为今天
+     * @return 同步结果信息
      */
-    public void compensationSync() {
-        log.info("开始补偿同步任务");
+    public String syncSpecificDate(LocalDate date) {
+        if (date == null) {
+            date = LocalDate.now();
+        }
         
-        for (int i = 1; i <= 7; i++) {
-            LocalDate date = LocalDate.now().minusDays(i);
-            String dateStr = date.toString();
-            
-            // 检查Redis中是否还有这个日期的数据
+        String dateStr = date.toString();
+        log.info("开始同步{}的统计数据", dateStr);
+        
+        try {
+            // 检查Redis中是否有这个日期的数据
             String userKey = "stats:" + dateStr + ":user";
             String postKey = "stats:" + dateStr + ":post";
             
             boolean hasUserData = redisTemplate.hasKey(userKey);
             boolean hasPostData = redisTemplate.hasKey(postKey);
             
-            if (hasUserData || hasPostData) {
-                log.warn("发现{}的数据未同步，开始补偿同步", dateStr);
-                try {
-                    if (hasUserData) {
-                        int userCount = syncUserStats(dateStr);
-                        log.info("补偿同步{}的用户数据: {}条", dateStr, userCount);
-                    }
-                    
-                    if (hasPostData) {
-                        int postCount = syncPostStats(dateStr);
-                        log.info("补偿同步{}的文章数据: {}条", dateStr, postCount);
-                    }
-                } catch (Exception e) {
-                    log.error("补偿同步{}失败", dateStr, e);
-                }
+            if (!hasUserData && !hasPostData) {
+                String message = String.format("Redis中没有%s的统计数据，跳过同步", dateStr);
+                log.info(message);
+                return message;
             }
+            
+            int userStatsCount = 0;
+            int postStatsCount = 0;
+            
+            if (hasUserData) {
+                userStatsCount = syncUserStats(dateStr);
+                log.info("同步{}的用户数据: {}条", dateStr, userStatsCount);
+            }
+            
+            if (hasPostData) {
+                postStatsCount = syncPostStats(dateStr);
+                log.info("同步{}的文章数据: {}条", dateStr, postStatsCount);
+            }
+            
+            String message = String.format("同步%s的数据完成: 用户统计%d条, 文章统计%d条", 
+                dateStr, userStatsCount, postStatsCount);
+            log.info(message);
+            return message;
+            
+        } catch (Exception e) {
+            String message = String.format("同步%s的数据失败: %s", dateStr, e.getMessage());
+            log.error(message, e);
+            return message;
         }
     }
 
@@ -221,9 +238,15 @@ public class DailyStatsService {
             }
         }
         
-        // 删除Redis数据，释放内存空间
-        redisTemplate.delete(userKey);
-        log.info("完成{}的用户统计数据同步，共更新{}个用户", dateStr, updateCount);
+        // 删除Redis数据，释放内存空间（只有非当天的数据才删除）
+        LocalDate today = LocalDate.now();
+        LocalDate syncDate = LocalDate.parse(dateStr);
+        if (!syncDate.equals(today)) {
+            redisTemplate.delete(userKey);
+            log.info("删除Redis中{}的用户统计数据", dateStr);
+        } else {
+            log.info("当天数据同步完成，保留Redis中{}的用户统计数据以继续收集", dateStr);
+        }
         
         return updateCount;
     }
@@ -318,9 +341,15 @@ public class DailyStatsService {
             }
         }
         
-        // 同步成功后删除Redis数据
-        redisTemplate.delete(postKey);
-        log.info("删除Redis中{}的文章统计数据", dateStr);
+        // 同步成功后删除Redis数据（只有非当天的数据才删除）
+        LocalDate today = LocalDate.now();
+        LocalDate syncDate = LocalDate.parse(dateStr);
+        if (!syncDate.equals(today)) {
+            redisTemplate.delete(postKey);
+            log.info("删除Redis中{}的文章统计数据", dateStr);
+        } else {
+            log.info("当天数据同步完成，保留Redis中{}的文章统计数据以继续收集", dateStr);
+        }
         
         return updateCount;
     }
@@ -615,47 +644,6 @@ public class DailyStatsService {
             .build();
     }
 
-    // ====== 用户统计服务方法 ======
-    // 以下方法提供用户统计数据的管理功能，支持实时统计和查询
-
-    /**
-     * 记录用户统计事件（实时增量更新）
-     * 
-     * 用于实时记录用户行为统计，直接更新数据库中的JSON数据
-     * 适用场景：用户实时操作，如点赞、评论等需要立即反映的统计
-     * 
-     * 工作原理：
-     * 1. 确保用户的年度统计记录存在
-     * 2. 使用MySQL JSON函数进行原子性的增量更新
-     * 3. 直接修改数据库，不经过Redis
-     * 
-     * @param userId 用户ID
-     * @param statType 统计类型 (views, twice, helpful, comments)
-     * @param count 增加的数量，通常为1
-     */
-    public void recordUserStats(Integer userId, String statType, int count) {
-        try {
-            LocalDate today = LocalDate.now();
-            int currentYear = today.getYear();
-            String dayKey = today.getMonthValue() + "-" + today.getDayOfMonth();
-
-            // 确保用户年度记录存在
-            ensureUserYearRecord(userId, currentYear);
-
-            // 使用MySQL JSON操作直接更新，支持并发安全
-            int updated = userStatsMapper.incrementUserStatsCount(userId, currentYear, dayKey, statType, count);
-
-            if (updated > 0) {
-                log.debug("实时更新用户{}的{}统计: +{}", userId, statType, count);
-            } else {
-                log.warn("更新用户{}统计失败，年度记录可能不存在: year={}", userId, currentYear);
-            }
-
-        } catch (Exception e) {
-            log.error("记录用户实时统计失败: userId={}, statType={}, count={}", userId, statType, count, e);
-        }
-    }
-
     /**
      * 获取用户指定日期的统计数据
      * 
@@ -799,41 +787,6 @@ public class DailyStatsService {
         }
     }
 
-    /**
-     * 删除用户指定年份之前的旧统计数据
-     * 
-     * 用于数据清理，删除过期的统计记录以节省存储空间
-     * 
-     * @param beforeYear 删除此年份之前的数据
-     * @return 删除的记录数
-     */
-    public int deleteOldUserStats(int beforeYear) {
-        try {
-            int deleted = userStatsMapper.deleteOldStats(beforeYear);
-            log.info("删除{}年之前的用户统计数据: {}条", beforeYear, deleted);
-            return deleted;
-        } catch (Exception e) {
-            log.error("删除旧用户统计数据失败: beforeYear={}", beforeYear, e);
-            return 0;
-        }
-    }
-
-    /**
-     * 获取指定年份的所有用户ID列表
-     * 
-     * 用于数据分析和批量处理
-     * 
-     * @param year 查询年份
-     * @return 该年份有统计数据的用户ID列表
-     */
-    public java.util.List<Integer> getUserIdsByYear(int year) {
-        try {
-            return userStatsMapper.getUserIdsByYear(year);
-        } catch (Exception e) {
-            log.error("获取年度用户ID列表失败: year={}", year, e);
-            return java.util.List.of();
-        }
-    }
 
     // ====== 私有辅助方法 ======
 
