@@ -94,7 +94,7 @@ public class PostController implements PostClient {
     @Override
     public List<PostDTO> getPostings(int nodeId) {
         int count = 3;
-        List<PostDO> postings = postMapper.getListByNode(nodeId, count, Enums.PostState.submited.value);
+        List<PostDO> postings = postMapper.getListByNode(nodeId, count, Enums.PostState.approved.value);
         postings.forEach(postingDO -> postService.idToName(postingDO));
         return Converter.INSTANCE.toPostDTO(postings);
     }
@@ -102,7 +102,7 @@ public class PostController implements PostClient {
     @Override
     public List<PostDTO> getByLastId(int nodeId, int lastPostingId) {
         int count = 2;
-        List<PostDO> postings = postMapper.getListByLastId(nodeId, lastPostingId, count, Enums.PostState.submited.value);
+        List<PostDO> postings = postMapper.getListByLastId(nodeId, lastPostingId, count, Enums.PostState.approved.value);
         postings.forEach(postingDO -> postService.idToName(postingDO));
         return Converter.INSTANCE.toPostDTO(postings);
     }
@@ -115,7 +115,7 @@ public class PostController implements PostClient {
             return new Response<>(Converter.INSTANCE.toPostDTO(postings));
         } else if (nodeId > 0){
             int count = 2;
-            List<PostDO> postings = postMapper.getListByLastId(nodeId, lastPostingId, count, Enums.PostState.submited.value);
+            List<PostDO> postings = postMapper.getListByLastId(nodeId, lastPostingId, count, Enums.PostState.approved.value);
             postings.forEach(postingDO -> postService.idToName(postingDO));
             return new Response<>(Converter.INSTANCE.toPostDTO(postings));
         }
@@ -124,7 +124,7 @@ public class PostController implements PostClient {
 
     @Override
     public Response<List<PostDTO>> getCensorList() {
-        List<PostDO> postDOList = postMapper.getListByState(Enums.PostState.submited.value, 200);
+        List<PostDO> postDOList = postMapper.getListByState(Enums.PostState.approved.value, 200);
         for (PostDO postDO : postDOList) {
             if (postDO.getType() == Enums.PostType.contents.value) {
                 postService.idToName(postDO);

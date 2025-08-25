@@ -1,7 +1,5 @@
 package com.prosper.learn.domain.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.NodeDTO;
@@ -11,28 +9,28 @@ import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class PostingService {
 
-    private final NodeMapper nodeMapper;
-    private final PostMapper postMapper;
-    private final CourseMapper courseMapper;
-    private final UpvoteMapper upvoteMapper;
-    private final UserMapper userMapper;
-    private final PostStatsMapper postStatsMapper;
-    private final ObjectMapper objectMapper;
-    private final RedisTemplate<String, Object> redisTemplate;
+    @Autowired
+    private NodeMapper nodeMapper;
+    @Autowired
+    private PostMapper postMapper;
+    @Autowired
+    private CourseMapper courseMapper;
+    @Autowired
+    private UpvoteMapper upvoteMapper;
+    @Autowired
+    private UserMapper userMapper;
+    @Autowired
+    private DailyStatsService dailyStatsService;
 
     public PostDO get(int id) {
         PostDO posting = postMapper.get(id);
@@ -49,14 +47,14 @@ public class PostingService {
 
     public List<PostDO> getList(int nodeId) {
         int count = 2;
-        List<PostDO> postings = postMapper.getListByNodeAndScore(nodeId, count, Enums.PostState.submited.value);
+        List<PostDO> postings = postMapper.getListByNodeAndScore(nodeId, count, Enums.PostState.approved.value);
         postings.forEach(postingDO -> idToName(postingDO));
         return postings;
     }
 
     public List<PostDO> getList(int nodeId, int lastPostingId) {
         int count = 2;
-        List<PostDO> postings = postMapper.getListByLastId(nodeId, lastPostingId, count, Enums.PostState.submited.value);
+        List<PostDO> postings = postMapper.getListByLastId(nodeId, lastPostingId, count, Enums.PostState.approved.value);
         postings.forEach(postingDO -> idToName(postingDO));
         return postings;
     }
@@ -170,7 +168,7 @@ public class PostingService {
      * @return 按分数排序的文章列表
      */
     public List<PostDO> getListByScore(int nodeId, int limit) {
-        List<PostDO> postings = postMapper.getListByNodeAndScore(nodeId, limit, Enums.PostState.submited.value);
+        List<PostDO> postings = postMapper.getListByNodeAndScore(nodeId, limit, Enums.PostState.approved.value);
         postings.forEach(this::idToName);
         return postings;
     }
@@ -189,7 +187,7 @@ public class PostingService {
         }
 
         List<PostDO> postings = postMapper.getListByNodeAndScoreAndPaginated(
-                nodeId, lastScore, lastId, limit, Enums.PostState.submited.value);
+                nodeId, lastScore, lastId, limit, Enums.PostState.approved.value);
         postings.forEach(this::idToName);
         return postings;
     }
@@ -304,104 +302,8 @@ public class PostingService {
      * 为文章列表设置阅读量（历史数据 + 今日实时数据）
      */
     private void setViewsForPosts(List<PostDTOV2> postDTOList) {
-        log.info("Setting views for {} posts", postDTOList.size());
-        
-        for (PostDTOV2 postDTO : postDTOList) {
-            try {
-                log.info("Processing views for post {}", postDTO.getId());
-                
-                // 获取历史阅读量（昨天以前的数据，带缓存）
-                int historicalViews = getHistoricalViews(postDTO.getId());
-                
-                // 获取今日实时阅读量
-                int todayViews = getTodayViews(postDTO.getId());
-                
-                // 总阅读量 = 历史数据 + 今日数据
-                int totalViews = historicalViews + todayViews;
-                postDTO.setViews(totalViews);
-                
-                log.info("Post {} views: historical={}, today={}, total={}", 
-                    postDTO.getId(), historicalViews, todayViews, totalViews);
-            } catch (Exception e) {
-                log.error("Failed to get views for post {}: {}", postDTO.getId(), e.getMessage(), e);
-                postDTO.setViews(0);
-            }
-        }
+        // 使用DailyStatsService来设置阅读量
+        dailyStatsService.setViewsForPosts(postDTOList);
     }
 
-    /**
-     * 获取历史阅读量（昨天以前的数据，每天最多计算一次）
-     */
-    @Cacheable(value = "postHistoricalViews", key = "#postId + '_' + T(java.time.LocalDate).now().toString()")
-    private int getHistoricalViews(Integer postId) {
-        try {
-            int totalViews = 0;
-            LocalDate today = LocalDate.now();
-            LocalDate yesterday = today.minusDays(1);
-            int currentYear = today.getYear();
-            
-            // 获取所有年份的统计数据
-            List<PostStatsDO> statsList = postStatsMapper.getStatsInYearRange("POST", 
-                Long.valueOf(postId), currentYear - 1); // 查询最近2年的数据
-            
-            for (PostStatsDO stats : statsList) {
-                if (stats.getStats() != null && !stats.getStats().isEmpty()) {
-                    try {
-                        Map<String, Map<String, Integer>> yearStats = objectMapper.readValue(
-                            stats.getStats(), new TypeReference<Map<String, Map<String, Integer>>>() {});
-                        
-                        for (Map.Entry<String, Map<String, Integer>> entry : yearStats.entrySet()) {
-                            String dayKey = entry.getKey(); // 格式: "M-d"
-                            Map<String, Integer> dayStats = entry.getValue();
-                            
-                            // 解析日期，只计算昨天以前的数据
-                            try {
-                                String[] parts = dayKey.split("-");
-                                int month = Integer.parseInt(parts[0]);
-                                int day = Integer.parseInt(parts[1]);
-                                LocalDate statDate = LocalDate.of(stats.getStatYear(), month, day);
-                                
-                                // 只统计昨天以前的数据
-                                if (statDate.isBefore(today)) {
-                                    totalViews += dayStats.getOrDefault("views", 0);
-                                }
-                            } catch (Exception e) {
-                                log.warn("Failed to parse date key {} for post {}", dayKey, postId);
-                            }
-                        }
-                    } catch (Exception e) {
-                        log.warn("Failed to parse stats for post {}: {}", postId, e.getMessage());
-                    }
-                }
-            }
-            
-            log.debug("Post {} historical views: {}", postId, totalViews);
-            return totalViews;
-        } catch (Exception e) {
-            log.error("Failed to get historical views for post {}: {}", postId, e.getMessage());
-            return 0;
-        }
-    }
-
-    /**
-     * 获取今日实时阅读量（从Redis获取）
-     */
-    private int getTodayViews(Integer postId) {
-        try {
-            String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            String redisKey = "stats:" + today + ":post";
-            String fieldKey = postId + ":view";
-            
-            Object viewCount = redisTemplate.opsForHash().get(redisKey, fieldKey);
-            
-            if (viewCount != null) {
-                return Integer.parseInt(viewCount.toString());
-            }
-            
-            return 0;
-        } catch (Exception e) {
-            log.warn("Failed to get today views for post {} from Redis: {}", postId, e.getMessage());
-            return 0;
-        }
-    }
 }

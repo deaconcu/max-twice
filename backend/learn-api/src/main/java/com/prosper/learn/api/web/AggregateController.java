@@ -311,7 +311,7 @@ public class AggregateController implements AggregateClient {
             postDOList = postMapper.getByIds(ids);
         } else if (nodeId > 0) {
             int count = 2;
-            postDOList = postMapper.getListByNodeAndScoreAndPaginated(nodeId, lastScore, lastPostingId, count, Enums.PostState.submited.value);
+            postDOList = postMapper.getListByNodeAndScoreAndPaginated(nodeId, lastScore, lastPostingId, count, Enums.PostState.approved.value);
         }
 
         if (postDOList == null) {

@@ -252,14 +252,14 @@ const openInNewTab = (courseId) => {
   <div ref="sidebarRef" :class="{ 'sidebar-fixed': isFixed }" :style="{ width: isFixed ? sidebarWidth : 'auto' }">
   <!-- 网站愿景 -->
   <v-alert icon="mdi-head-question-outline" color="success" lines="one" variant="tonal" rounded="lg" 
-    class="text-body-1 mb-4 d-flex align-center justify-start">
+    class="text-body-1 mb-6 d-flex align-center justify-start">
     <span class="font-weight-medium">
       如果职业是对世界的探索和体验，不是一种深度绑定
     </span>
   </v-alert>
   
   <!-- 网站数据统计 -->
-  <v-card v-if="actualEnabledModules.includes('platform')" flat color="grey-lighten-5" rounded="lg" class="mb-4">
+  <v-card v-if="actualEnabledModules.includes('platform')" flat color="grey-lighten-5" rounded="lg" class="mb-6">
     <v-card-text class="pa-4">
       <div class="d-flex align-center justify-space-between mb-3">
         <div class="d-flex align-center">
@@ -390,7 +390,7 @@ const openInNewTab = (courseId) => {
   </v-card>
 
   <!-- 用户学习统计 -->
-  <v-card v-if="actualEnabledModules.includes('learning')" flat color="grey-lighten-5" rounded="lg" class="mb-4">
+  <v-card v-if="actualEnabledModules.includes('learning')" flat color="grey-lighten-5" rounded="lg" class="mb-6">
     <v-card-text class="pa-4">
       <div class="d-flex align-center mb-3">
         <v-avatar color="green-darken-1" size="24" class="mr-3">
@@ -490,7 +490,7 @@ const openInNewTab = (courseId) => {
   </v-card>
 
   <!-- 学习小贴士 -->
-  <v-card v-if="actualEnabledModules.includes('tips')" flat color="amber-lighten-5" rounded="lg" class="mb-4">
+  <v-card v-if="actualEnabledModules.includes('tips')" flat color="amber-lighten-5" rounded="lg" class="mb-6">
     <v-card-text class="pa-4">
       <div class="d-flex align-center mb-3">
         <v-avatar color="amber-darken-1" size="24" class="mr-3">
@@ -525,7 +525,7 @@ const openInNewTab = (courseId) => {
   </v-card>
 
   <!-- 职业排名 -->
-  <v-card v-if="actualEnabledModules.includes('careers')" flat color="grey-lighten-5" rounded="lg" class="mb-4">
+  <v-card v-if="actualEnabledModules.includes('careers')" flat color="grey-lighten-5" rounded="lg" class="mb-6">
     <v-card-text class="pa-4">
       <div class="d-flex align-center justify-space-between mb-3">
         <div class="d-flex align-center">

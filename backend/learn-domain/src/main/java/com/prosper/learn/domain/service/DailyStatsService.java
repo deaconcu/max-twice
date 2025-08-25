@@ -3,6 +3,7 @@ package com.prosper.learn.domain.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.dto.DailyStatsDTO;
+import com.prosper.learn.dto.PostDTOV2;
 import com.prosper.learn.dto.UserStatsDTO;
 import com.prosper.learn.persistence.dataobject.UserStatsDO;
 import com.prosper.learn.persistence.dataobject.PostStatsDO;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 日常统计数据同步服务
@@ -503,7 +505,10 @@ public class DailyStatsService {
     public UserStatsDTO getUserTodayStats(Integer userId) {
         String today = LocalDate.now().toString();
         String userKey = "stats:" + today + ":user";
-        
+
+        String uKey = "stats:" + today + ":post";
+        Map<Object, Object> s2tats = redisTemplate.opsForHash().entries(uKey);
+
         try {
             Map<Object, Object> stats = redisTemplate.opsForHash().entries(userKey);
             return parseUserStatsFromRedis(userId, stats, today);
@@ -971,5 +976,138 @@ public class DailyStatsService {
             log.warn("解析dayKey失败: year={}, dayKey={}", year, dayKey, e);
         }
         return null;
+    }
+
+    // ====== 文章阅读量查询方法 ======
+
+    /**
+     * 获取文章的总阅读量（历史数据 + 今日实时数据）
+     * 
+     * @param postId 文章ID
+     * @return 总阅读量
+     */
+    public int getPostTotalViews(Integer postId) {
+        try {
+            // 获取历史阅读量（昨天以前的数据，带缓存）
+            int historicalViews = getHistoricalViews(postId);
+            
+            // 获取今日实时阅读量
+            int todayViews = getTodayViews(postId);
+            
+            // 总阅读量 = 历史数据 + 今日数据
+            int totalViews = historicalViews + todayViews;
+            
+            log.debug("Post {} views: historical={}, today={}, total={}", 
+                postId, historicalViews, todayViews, totalViews);
+                
+            return totalViews;
+        } catch (Exception e) {
+            log.error("Failed to get total views for post {}: {}", postId, e.getMessage(), e);
+            return 0;
+        }
+    }
+
+    /**
+     * 获取历史阅读量（昨天以前的数据，每天最多计算一次）
+     */
+    @Cacheable(value = "postHistoricalViews", key = "#postId + '_' + T(java.time.LocalDate).now().toString()")
+    private int getHistoricalViews(Integer postId) {
+        try {
+            int totalViews = 0;
+            LocalDate today = LocalDate.now();
+            int currentYear = today.getYear();
+            
+            // 获取所有年份的统计数据
+            List<PostStatsDO> statsList = postStatsMapper.getStatsInYearRange("POST", 
+                Long.valueOf(postId), currentYear - 1); // 查询最近2年的数据
+            
+            for (PostStatsDO stats : statsList) {
+                if (stats.getStats() != null && !stats.getStats().isEmpty()) {
+                    try {
+                        Map<String, Map<String, Integer>> yearStats = objectMapper.readValue(
+                            stats.getStats(), new TypeReference<Map<String, Map<String, Integer>>>() {});
+                        
+                        for (Map.Entry<String, Map<String, Integer>> entry : yearStats.entrySet()) {
+                            String dayKey = entry.getKey(); // 格式: "M-d"
+                            Map<String, Integer> dayStats = entry.getValue();
+                            
+                            // 解析日期，只计算昨天以前的数据
+                            try {
+                                String[] parts = dayKey.split("-");
+                                int month = Integer.parseInt(parts[0]);
+                                int day = Integer.parseInt(parts[1]);
+                                LocalDate statDate = LocalDate.of(stats.getStatYear(), month, day);
+                                
+                                // 只统计昨天以前的数据
+                                if (statDate.isBefore(today)) {
+                                    totalViews += dayStats.getOrDefault("views", 0);
+                                }
+                            } catch (Exception e) {
+                                log.warn("Failed to parse date key {} for post {}", dayKey, postId);
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to parse stats for post {}: {}", postId, e.getMessage());
+                    }
+                }
+            }
+            
+            log.debug("Post {} historical views: {}", postId, totalViews);
+            return totalViews;
+        } catch (Exception e) {
+            log.error("Failed to get historical views for post {}: {}", postId, e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * 获取今日实时阅读量（从Redis获取）
+     */
+    public int getTodayViews(Integer postId) {
+        try {
+            String today = LocalDate.now().toString();
+            String redisKey = "stats:" + today + ":post";
+            String fieldKey = postId + ":view";
+            
+            // 首先检查这个key是否存在
+            Boolean keyExists = redisTemplate.hasKey(redisKey);
+
+            if (keyExists) {
+                Object viewCount = redisTemplate.opsForHash().get(redisKey, fieldKey); // postId:view
+                if (viewCount != null) {
+                    return Integer.parseInt(viewCount.toString());
+                }
+            }
+            return 0;
+        } catch (Exception e) {
+            log.error("Failed to get today views for post {} from Redis: {}", postId, e.getMessage(), e);
+            return 0;
+        }
+    }
+
+    /**
+     * 为文章列表设置阅读量（历史数据 + 今日实时数据）
+     * 
+     * @param postList 需要设置阅读量的文章列表
+     */
+    public void setViewsForPosts(List<PostDTOV2> postList) {
+        if (postList == null || postList.isEmpty()) {
+            return;
+        }
+        
+        log.debug("Setting views for {} posts", postList.size());
+        
+        for (PostDTOV2 postObj : postList) {
+            try {
+                // 使用反射获取postId和设置views
+                Integer postId = postObj.getId();
+                if (postId != null) {
+                    int totalViews = getPostTotalViews(postId);
+                    postObj.setViews(totalViews);
+                }
+            } catch (Exception e) {
+                log.error("Failed to set views for post: {}", e.getMessage(), e);
+            }
+        }
     }
 }
