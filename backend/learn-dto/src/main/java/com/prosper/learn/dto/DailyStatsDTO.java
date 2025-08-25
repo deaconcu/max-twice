@@ -5,15 +5,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class DailyStatsDTO {
     
-    private LocalDate date;
+    private String date; // 格式: yyyy-MM-dd
     
     private Long views;
     

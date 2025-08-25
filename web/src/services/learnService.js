@@ -658,4 +658,70 @@ export const learnService = {
     console.log("get platform stats");
     return apiClient.get('/platform/stats');
   },
+
+  // 获取用户今日统计
+  getUserTodayStats(userId) {
+    console.log("get user today stats, userId:", userId);
+    return apiClient.get(`/api/stats/user/${userId}/today`);
+  },
+
+  // 获取用户昨日统计
+  getUserYesterdayStats(userId) {
+    console.log("get user yesterday stats, userId:", userId);
+    return apiClient.get(`/api/stats/user/${userId}/yesterday`);
+  },
+
+  // 获取用户历史统计（支持7天、15天、30天等）
+  getUserHistoryStats(userId, days = 7) {
+    console.log("get user history stats, userId:", userId, "days:", days);
+    return apiClient.get(`/api/stats/user/${userId}/history`, {
+      params: { days: days }
+    });
+  },
+
+  // 获取用户时间段统计（包含每日明细）
+  getUserPeriodStats(userId, days = 7) {
+    console.log("get user period stats, userId:", userId, "days:", days);
+    return apiClient.get(`/api/stats/user/${userId}/period`, {
+      params: { days: days }
+    });
+  },
+
+  // 获取用户全部时间统计
+  getUserAllTimeStats(userId) {
+    console.log("get user all time stats, userId:", userId);
+    return apiClient.get(`/api/stats/user/${userId}/all-time`);
+  },
+
+  // 记录文章访问
+  recordView(articleId, userId = null, ipAddress = null) {
+    const params = { articleId: articleId };
+    if (userId) params.userId = userId;
+    if (ipAddress) params.ipAddress = ipAddress;
+    
+    console.log("record view, params:", params);
+    return apiClient.post('/api/stats/view', null, { params });
+  },
+
+  // 获取系统健康状态
+  getStatsHealth() {
+    console.log("get stats health");
+    return apiClient.get('/api/stats/health');
+  },
+
+  // 手动触发Redis统计数据同步到数据库
+  syncStatsManual() {
+    console.log("manual sync stats");
+    return apiClient.post('/api/stats/sync/manual');
+  },
+
+  // 手动触发指定日期的数据同步
+  syncStatsSpecificDate(date = null) {
+    console.log("sync specific date stats, date:", date);
+    const params = {};
+    if (date) {
+      params.date = date;
+    }
+    return apiClient.post('/api/stats/sync/date', null, { params });
+  },
 };

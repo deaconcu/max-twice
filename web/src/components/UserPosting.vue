@@ -147,6 +147,14 @@ const deletePosting = async (postingId) => {
           <template v-slot:prepend><v-icon size="16"></v-icon></template>
           {{ posting.commentCount }}
         </v-btn>
+
+        <!-- 阅读量显示 -->
+        <v-btn variant="plain" class="px-3" :ripple="false">
+          <template v-slot:prepend>
+            <v-icon size="16">mdi-eye</v-icon>
+          </template>
+          {{ posting.views || 0 }}
+        </v-btn>
       </div>
       <div class="">
         <v-btn variant="flat" rounded="lg" color="grey-lighten-3"

@@ -2,7 +2,7 @@ package com.prosper.learn.user;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.common.JwtUtil;
-import com.prosper.learn.common.ResponseResult;
+import com.prosper.learn.dto.Response;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -44,7 +44,7 @@ public class TokenInterceptor implements HandlerInterceptor {
         String authorization = request.getHeader(jwtUtil.getHeader());
         if(!StringUtils.hasText(authorization)){
             log.info("token无效");
-            response.getWriter().write(objectMapper.writeValueAsString(ResponseResult.unauthorized()));
+            response.getWriter().write(objectMapper.writeValueAsString(Response.notLogin));
             return false;
         }
         //获取TOKEN,注意要清除前缀"Bearer "
@@ -53,14 +53,14 @@ public class TokenInterceptor implements HandlerInterceptor {
         Claims claims = jwtUtil.parseToken(token);
         if(claims == null){
             log.info("token无效");
-            response.getWriter().write(objectMapper.writeValueAsString(ResponseResult.unauthorized()));
+            response.getWriter().write(objectMapper.writeValueAsString(Response.notLogin));
             return false;
         }
         //校验是否过期
         boolean flag = jwtUtil.isExpired(claims.getExpiration());
         if(flag){
             log.error("token过期");
-            response.getWriter().write(objectMapper.writeValueAsString(ResponseResult.unauthorized()));
+            response.getWriter().write(objectMapper.writeValueAsString(Response.notLogin));
             return false;
         }
         //token正常，获取用户信息，比如这里的subject存的是用户id

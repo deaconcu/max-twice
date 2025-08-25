@@ -14,6 +14,7 @@ import UserPosting from '../components/UserPosting.vue';
 import Comment from '../components/Comment.vue';
 import Tiptap from '../components/Tiptap.vue'
 import RightSidebar from '@/components/RightSidebar.vue';
+import UserStatsComponent from '@/components/UserStatsComponent.vue';
 
 
 //const isLoggedIn = ref(false);
@@ -26,6 +27,7 @@ const showSnackbar = inject('showSnackbar');
 const items = ref([
   { text: '个人信息', icon: 'mdi-information-outline', value: "info" },
   { text: '正在学习', icon: 'mdi-school-outline', value: "learning" },
+  { text: '数据统计', icon: 'mdi-chart-line', value: "stats" },
   { text: '我关注的课程', icon: 'mdi-book-multiple-outline', value: "subscription" },
   { text: '我关注的人', icon: 'mdi-account-heart', value: "follow" },
   { text: '我创建的目录', icon: 'mdi-format-list-group', value: "contents" },
@@ -63,6 +65,12 @@ const learningData = ref({
 });
 
 const selectedLearningTab = ref('roadmaps'); // 默认显示路线图
+
+// 统计数据相关状态
+const selectedStatsPeriod = ref('7');
+const statsData = ref(null);
+const statsLoading = ref(false);
+const statsError = ref(null);
 
 // RoadmapDetail 浮层状态
 const showRoadmapDetail = ref(false);
@@ -818,7 +826,7 @@ const openRoadmap = (roadmapId) => {
     <v-row no-gutters>
       <v-col cols="auto" class="pr-4 pt-6" style="width: 320px;">
         <!-- 更美观的左侧导航栏设计 -->
-        <div class="sticky-left" style="position: sticky; top: 90px;">
+        <div class="sticky-left" style="position: sticky; top: 30px;">
           <!-- 用户信息卡片 -->
           <v-card class="user-profile-card mb-4" rounded="xl" elevation="0" color="grey-lighten-5">
             <v-card-text class="pa-5">
@@ -1236,6 +1244,13 @@ const openRoadmap = (roadmapId) => {
                   </v-row>
                 </div>
               </div>
+            </div>
+          </v-slide-y-reverse-transition>
+
+          <v-slide-y-reverse-transition hide-on-leave>
+            <!-- stats -->
+            <div v-if="selected == 'stats'">
+              <UserStatsComponent />
             </div>
           </v-slide-y-reverse-transition>
 

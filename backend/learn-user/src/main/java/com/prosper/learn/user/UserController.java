@@ -1,7 +1,7 @@
 package com.prosper.learn.user;
 
 import com.prosper.learn.common.JwtUtil;
-import com.prosper.learn.common.ResponseResult;
+import com.prosper.learn.dto.Response;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,27 +25,27 @@ public class UserController {
 
     @PostMapping()
     @PassLogin
-    public ResponseResult register(@RequestBody User user) {
+    public Response register(@RequestBody User user) {
         try {
             userMapper.insert(user);
             log.info("user created, id: " + user.getId());
-            return ResponseResult.ok();
+            return Response.success();
         } catch (DuplicateKeyException e) {
-            return ResponseResult.invalid_request();
+            return Response.fail();
         }
     }
 
     @PostMapping(path = "login")
     @PassLogin
-    public ResponseResult login(@RequestBody User user, HttpServletResponse response) {
+    public Response login(@RequestBody User user, HttpServletResponse response) {
         if (isUserExist(user)) {
             String token = jwtUtil.createToken("1");
             log.info("登录成功, token: " + token);
             response.setHeader(jwtUtil.getHeader(), "Bearer " + token);
-            return ResponseResult.ok();
+            return Response.success();
         } else {
             log.info("登录失败");
-            return ResponseResult.invalid_request();
+            return Response.fail();
         }
     }
 

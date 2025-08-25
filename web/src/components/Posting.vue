@@ -9,6 +9,9 @@ import AddContents from '../components/AddContents.vue';
 import Comment from '../components/Comment.vue';
 import UserCard from '../components/UserCard.vue';
 
+// 🔴 导入Post浏览量跟踪服务
+import postViewTracking from '@/services/postViewTracking'
+
 
 const props = defineProps(['data', 'posting', 'currNode', 'detail']);
 const emit = defineEmits(['loadData', 'switchTab']);
@@ -86,10 +89,32 @@ const upvote = async (posting, type) => {
   }
 }
 
+/**
+ * 处理"查看全部内容"按钮点击
+ * 在切换到详情页面的同时记录浏览量
+ */
+const handleViewFullContent = () => {
+  // 🔴 记录查看全部内容的浏览量
+  const success = postViewTracking.recordManualView(props.posting.id, 'view_full_content')
+  
+  if (success) {
+    console.log(`[Posting] 记录"查看全部内容"浏览: Post ${props.posting.id}`)
+  } else {
+    console.log(`[Posting] 跳过重复浏览记录: Post ${props.posting.id}`)
+  }
+  
+  // 切换到详情页面
+  emit('switchTab', 'two', props.posting)
+}
+
 </script>
 
 <template>
-  <div>
+  <!-- 🔴 Post容器：添加data-post-id属性用于浏览量跟踪 -->
+  <div 
+    :data-post-id="posting.id"
+    class="posting-container"
+  >
     <v-row class="ma-0 pb-0 d-flex align-center" :class="props.detail ? 'sticky-top' : ''"
       style="background-color: white;" :style="props.detail ? 'transform: translateX(-37px); width: 110%;' : ''">
       <v-btn v-if="props.detail" variant="flat" class="me-2" color="" density="comfortable" icon="mdi-chevron-left"
@@ -122,7 +147,7 @@ const upvote = async (posting, type) => {
         </div>
         
         <v-btn v-if="isOverflow" variant="text" density="comfortable" class="px-0 mt-3 text-body-2 text-primary"
-          @click="!props.detail ? emit('switchTab', 'two', posting) : ''">
+          @click="!props.detail ? handleViewFullContent() : ''">
           <v-icon icon="mdi-chevron-down" size="16" class="mr-1"></v-icon>
           查看全部内容
         </v-btn>

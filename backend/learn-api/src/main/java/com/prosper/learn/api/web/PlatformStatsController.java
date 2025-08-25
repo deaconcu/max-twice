@@ -1,7 +1,7 @@
 package com.prosper.learn.api.web;
 
-import com.prosper.learn.api.client.PlatformStatsApi;
-import com.prosper.learn.common.ResponseResult;
+import com.prosper.learn.api.client.PlatformStatsClient;
+import com.prosper.learn.dto.Response;
 import com.prosper.learn.domain.service.PlatformStatsService;
 import com.prosper.learn.dto.PlatformStatsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
  * @since 2024-01-20
  */
 @RestController
-public class PlatformStatsController implements PlatformStatsApi {
+public class PlatformStatsController implements PlatformStatsClient {
     
     @Autowired
     private PlatformStatsService platformStatsService;
@@ -25,13 +25,12 @@ public class PlatformStatsController implements PlatformStatsApi {
      * @return 平台统计数据
      */
     @Override
-    public ResponseResult<PlatformStatsDTO> getPlatformStats() {
+    public Response<PlatformStatsDTO> getPlatformStats() {
         try {
             PlatformStatsDTO stats = platformStatsService.getPlatformStats();
-            return ResponseResult.ok(stats);
+            return new Response<>(stats);
         } catch (Exception e) {
-            ResponseResult<PlatformStatsDTO> result = ResponseResult.internal_server_error();
-            return result.setMsg("获取平台统计数据失败: " + e.getMessage());
+            return new Response<>(Response.FAILED, "获取平台统计数据失败: " + e.getMessage(), null);
         }
     }
     
@@ -41,13 +40,12 @@ public class PlatformStatsController implements PlatformStatsApi {
      * @return 刷新后的统计数据
      */
     @Override
-    public ResponseResult<PlatformStatsDTO> refreshPlatformStats() {
+    public Response<PlatformStatsDTO> refreshPlatformStats() {
         try {
             PlatformStatsDTO stats = platformStatsService.refreshPlatformStats();
-            return ResponseResult.ok(stats);
+            return new Response<>(stats);
         } catch (Exception e) {
-            ResponseResult<PlatformStatsDTO> result = ResponseResult.internal_server_error();
-            return result.setMsg("刷新平台统计数据失败: " + e.getMessage());
+            return new Response<>(Response.FAILED, "刷新平台统计数据失败: " + e.getMessage(), null);
         }
     }
 }

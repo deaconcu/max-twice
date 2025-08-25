@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { learnService } from '@/services/learnService';
 import ProfessionManagement from '@/components/admin/ProfessionManagement.vue';
 import SystemConfiguration from '@/components/admin/SystemConfiguration.vue';
+import SystemOperations from '@/components/admin/SystemOperations.vue';
 import CourseManagement from '@/components/admin/CourseManagement.vue';
 
 //const isLoggedIn = ref(false);
@@ -187,6 +188,8 @@ const approveComment = async (comment, action) => {
         <v-tabs v-model="tab" color="teal" direction="vertical" class="px-2" flat>
           <v-tab prepend-icon="mdi-cog-outline" text="系统配置" value="option-1"
             class="text-body-1 text-grey-darken-2 my-2 rounded-lg justify-start"></v-tab>
+          <v-tab prepend-icon="mdi-cog-sync" text="系统操作" value="system-operations"
+            class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"></v-tab>
 
           <div class="px-3 py-3">
             <div class="text-caption text-grey-darken-1 font-weight-medium mb-2">课程管理</div>
@@ -223,6 +226,11 @@ const approveComment = async (comment, action) => {
         <!-- 系统配置 -->
         <v-card v-if="tab == 'option-1'" flat class="pa-6" rounded="lg">
           <SystemConfiguration />
+        </v-card>
+        
+        <!-- 系统操作 -->
+        <v-card v-if="tab == 'system-operations'" flat class="pa-6" rounded="lg">
+          <SystemOperations />
         </v-card>
 
         <!-- 职业申请管理 -->

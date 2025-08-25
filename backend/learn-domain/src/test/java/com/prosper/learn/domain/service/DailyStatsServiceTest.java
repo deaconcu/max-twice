@@ -571,8 +571,8 @@ class DailyStatsServiceTest {
         System.out.println("实际返回结果: [" + result + "]");
         assertNotNull(result);
         assertTrue(result.contains("同步") && result.contains("数据完成"));
-        // 验证 setDayStats 被调用了 4 次（每种统计类型一次）
-        verify(postStatsMapper, times(4)).setDayStats(eq("POST"), eq(TEST_POST_ID), eq(2024), eq("08-24"), anyInt(), anyInt(), anyInt(), anyInt());
+        // 验证 setDayStats 被调用了 1 次（每个文章一次，包含所有统计类型）
+        verify(postStatsMapper, times(1)).setDayStats(eq("POST"), eq(TEST_POST_ID), eq(2024), eq("08-24"), anyInt(), anyInt(), anyInt(), anyInt());
     }
 
     @Test

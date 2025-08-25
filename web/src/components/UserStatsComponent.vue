@@ -1,0 +1,731 @@
+<template>
+  <div class="user-stats-container">
+    <!-- 页面标题 -->
+    <div class="page-header mb-5">
+      <div class="d-flex justify-space-between align-center">
+        <div>
+          <h2 class="page-title mb-2">学习数据统计</h2>
+          <p class="page-subtitle">查看您的学习活动数据和成长轨迹</p>
+        </div>
+        <v-btn
+          color="primary"
+          variant="tonal"
+          @click="refreshData"
+          :loading="loading || totalStatsLoading"
+          icon
+        >
+          <v-icon>mdi-refresh</v-icon>
+          <v-tooltip activator="parent" location="bottom">
+            刷新数据
+          </v-tooltip>
+        </v-btn>
+      </div>
+    </div>
+
+    <!-- 全部时间统计概览 -->
+    <div class="total-stats-overview mb-6">
+      <div class="flat-card pa-4">
+        <div class="d-flex align-center mb-3">
+          <v-icon color="primary" size="20" class="mr-2">mdi-chart-timeline-variant</v-icon>
+          <h3 class="text-subtitle-1 text-primary font-weight-bold">全部时间统计</h3>
+          <v-spacer></v-spacer>
+          <v-chip color="primary" variant="tonal" size="small">
+            实时数据
+          </v-chip>
+        </div>
+        
+        <div v-if="totalStatsLoading" class="text-center py-6">
+          <v-progress-circular indeterminate color="primary" size="32"></v-progress-circular>
+          <p class="text-body-2 text-grey mt-3 mb-0">正在加载总体数据...</p>
+        </div>
+        
+        <v-row v-else-if="totalStatsData" class="mt-1">
+          <v-col cols="6" sm="3">
+            <div class="text-center py-3">
+              <v-icon icon="mdi-eye" color="blue" size="20" class="mb-1"></v-icon>
+              <h4 class="text-h5 font-weight-bold text-blue mb-1">{{ formatNumber(totalStatsData.totalViews) }}</h4>
+              <p class="text-body-2 text-grey-darken-2 mb-0">总阅读量</p>
+            </div>
+          </v-col>
+          <v-col cols="6" sm="3">
+            <div class="text-center py-3">
+              <v-icon icon="mdi-thumb-up" color="green" size="20" class="mb-1"></v-icon>
+              <h4 class="text-h5 font-weight-bold text-green mb-1">{{ formatNumber(totalStatsData.totalTwice) }}</h4>
+              <p class="text-body-2 text-grey-darken-2 mb-0">总Twice点赞</p>
+            </div>
+          </v-col>
+          <v-col cols="6" sm="3">
+            <div class="text-center py-3">
+              <v-icon icon="mdi-heart" color="red" size="20" class="mb-1"></v-icon>
+              <h4 class="text-h5 font-weight-bold text-red mb-1">{{ formatNumber(totalStatsData.totalHelpful) }}</h4>
+              <p class="text-body-2 text-grey-darken-2 mb-0">总有帮助点赞</p>
+            </div>
+          </v-col>
+          <v-col cols="6" sm="3">
+            <div class="text-center py-3">
+              <v-icon icon="mdi-comment" color="orange" size="20" class="mb-1"></v-icon>
+              <h4 class="text-h5 font-weight-bold text-orange mb-1">{{ formatNumber(totalStatsData.totalComments) }}</h4>
+              <p class="text-body-2 text-grey-darken-2 mb-0">总评论数</p>
+            </div>
+          </v-col>
+        </v-row>
+        
+        <div v-else-if="totalStatsError" class="text-center py-3">
+          <v-icon color="warning" size="20" class="mr-1">mdi-alert-circle</v-icon>
+          <span class="text-body-2 text-warning">{{ totalStatsError }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 分隔线和提示 -->
+    <div class="section-divider mb-6">
+      <div class="text-center">
+        <v-chip color="blue-grey-lighten-2" variant="tonal" size="default" class="px-4 py-2 mt-4">
+          <v-icon icon="mdi-calendar-range" size="16" class="mr-2"></v-icon>
+          <span class="font-weight-bold">按时间段统计</span>
+        </v-chip>
+      </div>
+    </div>
+
+    <!-- 时间选择器和数据概览并排布局 -->
+    <div class="period-stats-section">
+      <!-- 时间选择器和概览标题 -->
+      <div class="d-flex justify-space-between align-center mb-4">
+        <!-- 左侧：时间选择器 -->
+        <div class="time-selector-container">
+          <div class="text-body-2 text-grey-darken-2 mb-2">选择时间范围</div>
+          <v-btn-toggle 
+            v-model="selectedPeriod" 
+            color="primary" 
+            rounded="lg" 
+            mandatory
+            class="flat-btn-toggle"
+            density="comfortable"
+            @update:model-value="onPeriodChange"
+          >
+            <v-btn value="7" size="small" variant="outlined">
+              <v-icon class="mr-1" size="16">mdi-calendar-week</v-icon>
+              7天
+            </v-btn>
+            <v-btn value="30" size="small" variant="outlined">
+              <v-icon class="mr-1" size="16">mdi-calendar-month</v-icon>
+              30天
+            </v-btn>
+            <v-btn value="180" size="small" variant="outlined">
+              <v-icon class="mr-1" size="16">mdi-calendar-month-outline</v-icon>
+              半年
+            </v-btn>
+            <v-btn value="365" size="small" variant="outlined">
+              <v-icon class="mr-1" size="16">mdi-calendar</v-icon>
+              一年
+            </v-btn>
+          </v-btn-toggle>
+        </div>
+
+        <!-- 右侧：数据概览标题 -->
+        <div class="overview-title-container text-right">
+          <h3 class="section-title mb-0">{{ getPeriodText() }}数据概览</h3>
+          <p class="text-body-2 text-grey-darken-2 mb-0">查看指定时间段的详细数据</p>
+        </div>
+      </div>
+
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading-container">
+      <v-progress-circular 
+        indeterminate 
+        color="primary" 
+        size="48"
+        class="mb-3"
+      ></v-progress-circular>
+      <p class="loading-text">正在加载{{ getPeriodText() }}数据...</p>
+    </div>
+
+    <!-- 错误状态 -->
+    <v-alert
+      v-if="error && !loading"
+      type="warning"
+      variant="tonal"
+      class="mb-6"
+      closable
+      @click:close="error = null"
+    >
+      <template #prepend>
+        <v-icon>mdi-alert-circle</v-icon>
+      </template>
+      <div class="alert-content">
+        <div class="alert-title">数据加载失败</div>
+        <div class="alert-text">{{ error }}</div>
+        <v-btn 
+          size="small" 
+          variant="outlined" 
+          color="warning"
+          class="mt-2"
+          @click="refreshData"
+        >
+          重试
+        </v-btn>
+      </div>
+    </v-alert>
+
+    <!-- 统计数据展示 -->
+    <div v-if="!loading && !error && statsData" class="stats-content">
+      <!-- 概览卡片 -->
+      <div class="overview-cards mb-5">
+        <v-row>
+          <v-col cols="12" sm="6" md="3">
+            <div class="flat-stats-card">
+              <div class="text-center pa-3">
+                <h3 class="text-h5 font-weight-bold text-blue mb-1">{{ formatNumber(statsData.totalViews) }}</h3>
+                <p class="text-body-2 text-grey-darken-2 mb-0">文章阅读量</p>
+              </div>
+            </div>
+          </v-col>
+          <v-col cols="12" sm="6" md="3">
+            <div class="flat-stats-card">
+              <div class="text-center pa-3">
+                <h3 class="text-h5 font-weight-bold text-green mb-1">{{ formatNumber(statsData.totalTwice) }}</h3>
+                <p class="text-body-2 text-grey-darken-2 mb-0">Max Twice 点赞</p>
+              </div>
+            </div>
+          </v-col>
+          <v-col cols="12" sm="6" md="3">
+            <div class="flat-stats-card">
+              <div class="text-center pa-3">
+                <h3 class="text-h5 font-weight-bold text-red mb-1">{{ formatNumber(statsData.totalHelpful) }}</h3>
+                <p class="text-body-2 text-grey-darken-2 mb-0">有帮助点赞</p>
+              </div>
+            </div>
+          </v-col>
+          <v-col cols="12" sm="6" md="3">
+            <div class="flat-stats-card">
+              <div class="text-center pa-3">
+                <h3 class="text-h5 font-weight-bold text-orange mb-1">{{ formatNumber(statsData.totalComments) }}</h3>
+                <p class="text-body-2 text-grey-darken-2 mb-0">评论数</p>
+              </div>
+            </div>
+          </v-col>
+        </v-row>
+      </div>
+
+      <!-- 趋势图表 -->
+      <div v-if="showTrendChart" class="trend-chart-container mb-5">
+        <div class="flat-card pa-4">
+          <div class="text-subtitle-1 d-flex align-center mb-3">
+            <v-icon class="mr-2" color="primary" size="20">mdi-chart-line-variant</v-icon>
+            {{ getPeriodText() }}数据趋势
+          </div>
+          <div class="pa-1">
+            <TrendChart 
+              :daily-stats="statsData?.dailyStats || []"
+              :period="selectedPeriod"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- 每日明细表格 -->
+      <div v-if="showDailyDetails" class="daily-details-container">
+        <div class="flat-card pa-4">
+          <div class="text-subtitle-1 d-flex align-center mb-3">
+            <v-icon class="mr-2" color="primary" size="20">mdi-calendar-multiple</v-icon>
+            每日数据明细
+          </div>
+          <div class="pa-1">
+            <v-data-table
+              :headers="tableHeaders"
+              :items="dailyStatsItems"
+              :loading="loading"
+              item-value="date"
+              class="flat-table"
+              :items-per-page="15"
+              :sort-by="[{ key: 'date', order: 'desc' }]"
+            >
+              <template #item.date="{ item }">
+                <span class="date-cell">
+                  {{ formatDate(item.date) }}
+                </span>
+              </template>
+              
+              <template #item.views="{ item }">
+                <v-chip 
+                  size="small" 
+                  :color="item.views > 0 ? 'blue' : 'grey-lighten-3'"
+                  variant="tonal"
+                >
+                  {{ item.views }}
+                </v-chip>
+              </template>
+              
+              <template #item.twice="{ item }">
+                <v-chip 
+                  size="small" 
+                  :color="item.twice > 0 ? 'green' : 'grey-lighten-3'"
+                  variant="tonal"
+                >
+                  {{ item.twice }}
+                </v-chip>
+              </template>
+              
+              <template #item.helpful="{ item }">
+                <v-chip 
+                  size="small" 
+                  :color="item.helpful > 0 ? 'red' : 'grey-lighten-3'"
+                  variant="tonal"
+                >
+                  {{ item.helpful }}
+                </v-chip>
+              </template>
+              
+              <template #item.comments="{ item }">
+                <v-chip 
+                  size="small" 
+                  :color="item.comments > 0 ? 'orange' : 'grey-lighten-3'"
+                  variant="tonal"
+                >
+                  {{ item.comments }}
+                </v-chip>
+              </template>
+
+              <template #no-data>
+                <div class="no-data-placeholder">
+                  <v-icon size="48" color="grey-lighten-1">mdi-calendar-blank</v-icon>
+                  <p>暂无数据</p>
+                </div>
+              </template>
+            </v-data-table>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <!-- 空状态 -->
+    <div v-if="!loading && !error && !statsData" class="empty-state">
+      <v-icon size="80" color="grey-lighten-1">mdi-chart-pie</v-icon>
+      <h3 class="empty-title">暂无统计数据</h3>
+      <p class="empty-subtitle">开始学习后，这里将显示您的学习数据统计</p>
+      <v-btn 
+        color="primary" 
+        variant="outlined"
+        rounded="lg"
+        @click="refreshData"
+      >
+        刷新数据
+      </v-btn>
+    </div>
+  </div>
+</template>
+
+<script>
+import { ref, computed, onMounted, watch } from 'vue'
+import { useUserStore } from '@/stores/user'
+import { learnService } from '@/services/learnService'
+import TrendChart from './TrendChart.vue'
+
+export default {
+  name: 'UserStatsComponent',
+  components: {
+    TrendChart
+  },
+  setup() {
+    const userStore = useUserStore()
+    
+    // 响应式数据
+    const selectedPeriod = ref('7')  // 默认选择7天
+    const statsData = ref(null)
+    const loading = ref(false)
+    const error = ref(null)
+    
+    // 全部时间统计数据
+    const totalStatsData = ref(null)
+    const totalStatsLoading = ref(false)
+    const totalStatsError = ref(null)
+
+    // 计算属性
+    const showTrendChart = computed(() => {
+      return ['7', '30', '180', '365'].includes(selectedPeriod.value)
+    })
+
+    const showDailyDetails = computed(() => {
+      return statsData.value && statsData.value.dailyStats && statsData.value.dailyStats.length > 0
+    })
+
+    const dailyStatsItems = computed(() => {
+      if (!statsData.value || !statsData.value.dailyStats) return []
+      
+      return statsData.value.dailyStats.map(day => ({
+        date: day.date,
+        views: day.views || 0,
+        twice: day.twice || 0,
+        helpful: day.helpful || 0,
+        comments: day.comments || 0
+      }))
+    })
+
+    // 表格头部配置
+    const tableHeaders = [
+      { title: '日期', key: 'date', align: 'start', width: '120px' },
+      { title: '阅读量', key: 'views', align: 'center', width: '100px' },
+      { title: 'Max Twice', key: 'twice', align: 'center', width: '100px' },
+      { title: '有帮助', key: 'helpful', align: 'center', width: '100px' },
+      { title: '评论数', key: 'comments', align: 'center', width: '100px' }
+    ]
+
+    // 工具方法
+    const formatNumber = (num) => {
+      if (num == null || isNaN(num)) return '--'
+      const number = Number(num)
+      if (number >= 10000) {
+        return (number / 1000).toFixed(1) + 'k'
+      }
+      return number.toLocaleString()
+    }
+
+    const formatDate = (dateString) => {
+      try {
+        const date = new Date(dateString)
+        const today = new Date()
+        const yesterday = new Date(today)
+        yesterday.setDate(yesterday.getDate() - 1)
+        
+        if (date.toDateString() === today.toDateString()) {
+          return '今天'
+        } else if (date.toDateString() === yesterday.toDateString()) {
+          return '昨天'
+        } else {
+          return date.toLocaleDateString('zh-CN', { 
+            month: 'numeric', 
+            day: 'numeric'
+          })
+        }
+      } catch (e) {
+        return dateString
+      }
+    }
+
+    const getPeriodText = () => {
+      switch (selectedPeriod.value) {
+        case 'today': return '今日'
+        case 'yesterday': return '昨日'
+        case '7': return '近7天'
+        case '15': return '近15天'
+        case '30': return '近30天'
+        case '365': return '近一年'
+        default: return '自定义'
+      }
+    }
+
+    // 数据加载方法
+    const loadStatsData = async () => {
+      if (!userStore.userId) {
+        error.value = '用户信息获取失败，请重新登录'
+        return
+      }
+
+      loading.value = true
+      error.value = null
+
+      try {
+        const userId = userStore.userId
+        let response
+
+        switch (selectedPeriod.value) {
+          case 'today':
+            response = await learnService.getUserTodayStats(userId)
+            break
+          case 'yesterday':
+            response = await learnService.getUserYesterdayStats(userId)
+            break
+          default:
+            const days = parseInt(selectedPeriod.value)
+            response = await learnService.getUserPeriodStats(userId, days)
+            break
+        }
+
+        if (response.code === 200) {
+          statsData.value = response.data
+        } else {
+          throw new Error(response.msg || '获取统计数据失败')
+        }
+      } catch (err) {
+        console.error('Error loading stats:', err)
+        error.value = err.message || '网络错误，请稍后重试'
+        statsData.value = null
+      } finally {
+        loading.value = false
+      }
+    }
+
+    // 加载全部时间统计数据
+    const loadTotalStatsData = async () => {
+      if (!userStore.userId) {
+        totalStatsError.value = '用户信息获取失败'
+        return
+      }
+
+      totalStatsLoading.value = true
+      totalStatsError.value = null
+
+      try {
+        const userId = userStore.userId
+        const response = await learnService.getUserAllTimeStats(userId)
+
+        if (response.code === 200) {
+          totalStatsData.value = response.data
+        } else {
+          throw new Error(response.msg || '获取全部时间统计失败')
+        }
+      } catch (err) {
+        console.error('Error loading total stats:', err)
+        totalStatsError.value = err.message || '加载失败'
+        totalStatsData.value = null
+      } finally {
+        totalStatsLoading.value = false
+      }
+    }
+
+    // 事件处理
+    const onPeriodChange = () => {
+      loadStatsData()
+    }
+
+    const refreshData = () => {
+      loadStatsData()
+      loadTotalStatsData()  // 同时刷新全部时间数据
+    }
+
+    // 生命周期
+    onMounted(() => {
+      loadStatsData()
+      loadTotalStatsData()  // 页面加载时同时加载全部时间数据
+    })
+
+    // 监听用户状态变化
+    watch(() => userStore.userId, (newUserId) => {
+      if (newUserId) {
+        loadStatsData()
+        loadTotalStatsData()  // 用户变化时也重新加载全部时间数据
+      }
+    })
+
+    return {
+      selectedPeriod,
+      statsData,
+      loading,
+      error,
+      totalStatsData,
+      totalStatsLoading,
+      totalStatsError,
+      showTrendChart,
+      showDailyDetails,
+      dailyStatsItems,
+      tableHeaders,
+      formatNumber,
+      formatDate,
+      getPeriodText,
+      onPeriodChange,
+      refreshData
+    }
+  }
+}
+</script>
+
+<style scoped>
+.user-stats-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.page-header {
+  text-align: left;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.page-subtitle {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1976d2;
+  text-align: left;
+}
+
+.time-range-selector {
+  display: flex;
+  justify-content: center;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.loading-text {
+  color: #666;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.alert-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.alert-title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.alert-text {
+  color: #666;
+}
+
+.stats-content {
+  animation: fadeIn 0.5s ease-in;
+}
+
+.stats-card {
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* Flat风格统计卡片 */
+.flat-stats-card {
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.flat-stats-card:hover {
+  border-color: #bdbdbd;
+  transform: translateY(-1px);
+}
+
+/* Flat风格卡片 */
+.flat-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.flat-card:hover {
+  border-color: #bdbdbd;
+}
+
+/* Flat风格按钮组 */
+.flat-btn-toggle {
+  border: 1px solid #e0e0e0 !important;
+  box-shadow: none !important;
+}
+
+/* Flat风格表格 */
+.flat-table {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+/* 分隔线样式 */
+.section-divider {
+  position: relative;
+}
+
+/* 时间选择器容器 */
+.time-selector-container {
+  min-width: 400px;
+}
+
+/* 概览标题容器 */
+.overview-title-container {
+  max-width: 300px;
+}
+
+/* 时间段统计区域 */
+.period-stats-section {
+  background: rgba(25, 118, 210, 0.01);
+  border-radius: 12px;
+  border: 1px solid #e3f2fd;
+  padding: 20px;
+}
+
+.date-cell {
+  font-weight: 500;
+  color: #1976d2;
+}
+
+.no-data-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: #666;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+}
+
+.empty-title {
+  font-size: 1.25rem;
+  color: #666;
+  margin: 16px 0 8px 0;
+}
+
+.empty-subtitle {
+  color: #999;
+  margin: 0 0 24px 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .user-stats-container {
+    padding: 16px;
+  }
+  
+  .page-title {
+    font-size: 1.5rem;
+  }
+  
+  .time-range-selector .v-btn-toggle {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+</style>

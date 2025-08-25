@@ -34,14 +34,14 @@ public interface PostMapper {
     List<PostDO> getListByLastId(@Param("nodeId") int nodeId, @Param("lastId") int lastId, int limit, @Param("state") int state);
 
     @Select("SELECT * FROM post " +
-            "WHERE creator = #{userId} and type = 2 and id < #{lastId} and state = #{state} " +
+            "WHERE creator = #{userId} and type = 2 and id < #{lastId} " +
             "order by id desc limit #{count}")
-    List<PostDO> getArticleListByUser(int userId, int lastId, int count, @Param("state") int state);
+    List<PostDO> getArticleListByUser(int userId, int lastId, int count);
 
     @Select("SELECT * FROM post " +
-            "WHERE creator = #{userId} and type = 1 and id < #{lastId} and state = #{state} " +
+            "WHERE creator = #{userId} and type = 1 and id < #{lastId} " +
             "order by id desc limit #{count}")
-    List<PostDO> getContentsListByUser(int userId, int lastId, int count, @Param("state") int state);
+    List<PostDO> getContentsListByUser(int userId, int lastId, int count);
 
     @Insert("INSERT INTO post" +
             "(nodeId, creator, type, content, once, twice, helpful, commentCount, state, score) " +

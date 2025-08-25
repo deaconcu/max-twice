@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, nextTick, watch, toRef } from 'vue';
+import { ref, onMounted, nextTick, watch, toRef, onUnmounted } from 'vue';
 import { learnService } from '@/services/learnService';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -9,6 +9,14 @@ import Invite from '../components/Invite.vue';
 import Comment from '../components/Comment.vue';
 import Posting from './Posting.vue';
 import Tiptap from '../components/Tiptap.vue'
+
+// 导入Post浏览量跟踪服务
+import postViewTracking from '@/services/postViewTracking'
+
+// 在开发环境导入调试工具
+if (import.meta.env.DEV) {
+  import('@/services/postViewTrackingDebug')
+}
 
 const route = useRoute();
 const router = useRouter();
@@ -48,6 +56,39 @@ onMounted(() => {
   if (!("post" in props.data) && "commentId" in route.query) {
     switchTab('comment', '');
   }
+
+  // 🔴 初始化Post浏览量跟踪
+  initializePostViewTracking();
+});
+
+/**
+ * 初始化Post浏览量跟踪功能
+ * 为当前页面上的所有posts设置浏览量统计
+ */
+function initializePostViewTracking() {
+  // 等待DOM渲染完成后开始跟踪
+  nextTick(() => {
+    // 自动扫描并开始跟踪页面上的posts
+    postViewTracking.autoObserve();
+    
+    console.log('[PostingList] Post浏览量跟踪已初始化');
+    
+    // 在开发环境下输出跟踪状态（用于调试）
+    if (import.meta.env.DEV) {
+      const status = postViewTracking.getStatus();
+      console.log('[PostingList] 跟踪状态:', status);
+    }
+  });
+}
+
+/**
+ * 组件卸载时的清理工作
+ */
+onUnmounted(() => {
+  // 提交剩余的浏览记录
+  postViewTracking.flush();
+  
+  console.log('[PostingList] 组件卸载，已提交剩余浏览记录');
 });
 
 const restoreScrollPosition = () => {
@@ -61,7 +102,34 @@ watch(dataRef, (newItems, oldItems) => {
   scrollKey.value++;
   updateLastPostingId();
   console.log("path text: " + props.pathText);
+  
+  // 🔴 数据更新后重新扫描新的posts进行跟踪
+  handleDataUpdate();
 })
+
+/**
+ * 处理数据更新
+ * 当posts数据发生变化时（如加载更多），重新扫描新的posts
+ */
+function handleDataUpdate() {
+  // 等待DOM更新完成后重新扫描
+  nextTick(() => {
+    // 重新扫描并跟踪新加载的posts
+    postViewTracking.autoObserve();
+    
+    console.log('[PostingList] 数据更新，重新扫描Posts');
+    
+    // 在开发环境下输出更新后的状态
+    if (import.meta.env.DEV) {
+      const status = postViewTracking.getStatus();
+      console.log('[PostingList] 更新后跟踪状态:', {
+        observedPosts: status.observedPostsCount,
+        currentlyTracking: status.currentlyTracking,
+        pendingSubmissions: status.pendingSubmissions
+      });
+    }
+  });
+}
 
 watch(() => route.fullPath, () => {
   tab.value = 'list';
@@ -277,7 +345,7 @@ const tab1 = ref(null);
 
   <!-- detail -->
   <template v-else>
-    <Posting :posting="currPosting" :currNode="currNode" :detail="true" @loadData="loadData" @switchTab="switchTab" :path="path">
+    <Posting :data="props.data" :posting="currPosting" :currNode="currNode" :detail="true" @loadData="loadData" @switchTab="switchTab">
     </Posting>
 
     <v-row class="pa-0 ma-0 my-5">

@@ -1,17 +1,26 @@
 package com.prosper.learn.domain.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.NodeDTO;
 import com.prosper.learn.dto.PostDTO;
+import com.prosper.learn.dto.PostDTOV2;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PostingService {
@@ -21,6 +30,9 @@ public class PostingService {
     private final CourseMapper courseMapper;
     private final UpvoteMapper upvoteMapper;
     private final UserMapper userMapper;
+    private final PostStatsMapper postStatsMapper;
+    private final ObjectMapper objectMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     public PostDO get(int id) {
         PostDO posting = postMapper.get(id);
@@ -60,7 +72,7 @@ public class PostingService {
 
     public List<PostDTO> getUserArticle(int userId, int lastId) {
         int count = 10;
-        List<PostDO> postings = postMapper.getArticleListByUser(userId, lastId, count, Enums.PostState.submited.value);
+        List<PostDO> postings = postMapper.getArticleListByUser(userId, lastId, count);
         if (postings == null || postings.size() == 0) return new ArrayList<>();
 
         List<PostDTO> postDTOList = Converter.INSTANCE.toPostDTO(postings);
@@ -88,7 +100,7 @@ public class PostingService {
 
     public List<PostDTO> getUserContents(int userId, int lastId) {
         int count = 10;
-        List<PostDO> postings = postMapper.getContentsListByUser(userId, lastId, count, Enums.PostState.submited.value);
+        List<PostDO> postings = postMapper.getContentsListByUser(userId, lastId, count);
         if (postings == null || postings.size() == 0) return new ArrayList<>();
 
         List<Integer> nodeIds = postings.stream()
@@ -180,5 +192,216 @@ public class PostingService {
                 nodeId, lastScore, lastId, limit, Enums.PostState.submited.value);
         postings.forEach(this::idToName);
         return postings;
+    }
+
+    /**
+     * 获取用户文章列表（包含阅读量）
+     */
+    public List<PostDTOV2> getUserArticleWithViews(int userId, int lastId) {
+        int count = 10;
+        List<PostDO> postings = postMapper.getArticleListByUser(userId, lastId, count);
+        if (postings == null || postings.size() == 0) return new ArrayList<>();
+
+        List<PostDTOV2> postDTOList = Converter.INSTANCE.toPostDTOV2(postings);
+
+        // 设置views字段
+        setViewsForPosts(postDTOList);
+
+        // get all user
+        List<Integer> userIds = postDTOList.stream().map(PostDTOV2::getCreatorId).collect(Collectors.toList());
+        List<UserDO> userList = userMapper.getByIds(userIds);
+        Map<Integer, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
+
+        // get all node
+        List<Integer> nodeIds = postDTOList.stream().map(PostDTOV2::getNodeId).collect(Collectors.toList());
+        List<NodeDO> nodeList = nodeMapper.getByIds(nodeIds);
+        Map<Integer, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
+
+        for (PostDTOV2 postDTO : postDTOList) {
+            postDTO.setNode(Converter.INSTANCE.toNodeDTO(nodeMap.get(postDTO.getNodeId())));
+            NodeDTO node = postDTO.getNode();
+            node.setCourse(Converter.INSTANCE.toCourseDTOV4(courseMapper.getById(node.getCourseId())));
+
+            postDTO.setCreator(Converter.INSTANCE.toUserDTOV1(userMap.get(postDTO.getCreatorId())));
+        }
+
+        return postDTOList;
+    }
+
+    /**
+     * 获取用户目录列表（包含阅读量）
+     */
+    public List<PostDTOV2> getUserContentsWithViews(int userId, int lastId) {
+        int count = 10;
+        List<PostDO> postings = postMapper.getContentsListByUser(userId, lastId, count);
+        if (postings == null || postings.size() == 0) return new ArrayList<>();
+
+        List<Integer> nodeIds = postings.stream()
+                .map(PostDO::getContent)
+                .flatMap(s -> Arrays.stream(s.split(",")).map(Integer::parseInt)).toList();
+        List<NodeDO> nodeList = nodeMapper.getByIds(nodeIds);
+
+        Map<Integer, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
+
+        for (PostDO postDO : postings) {
+            String content = postDO.getContent();
+            String[] contents = content.split(",");
+            StringBuilder newContent = new StringBuilder();
+            for (int i = 0; i < contents.length; i++) {
+                int id = Integer.parseInt(contents[i]);
+                NodeDO node = nodeMap.get(id);
+                if (node == null) {
+                    continue;
+                }
+                if (i < contents.length - 1) {
+                    newContent.append(node.getName()).append(",");
+                } else {
+                    newContent.append(node.getName());
+                }
+            }
+            postDO.setContent(newContent.toString());
+        }
+
+        List<PostDTOV2> postDTOList = Converter.INSTANCE.toPostDTOV2(postings);
+        
+        // 设置views字段
+        setViewsForPosts(postDTOList);
+        
+        nodeIds = postDTOList.stream().map(PostDTOV2::getNodeId).collect(Collectors.toList());
+        nodeList = nodeMapper.getByIds(nodeIds);
+        nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
+
+        List<Integer> allPostingIds = new LinkedList<>();
+        if (postings != null) postings.stream().forEach(item -> allPostingIds.add(item.getId()));
+
+        Map<Integer, Integer> types = new HashMap<>();
+        if (allPostingIds.size() > 0) {
+            List<UpvoteDO> upvotes = upvoteMapper.getList(userId, allPostingIds, Enums.ObjectType.post.value);
+            for (UpvoteDO upvote : upvotes) {
+                types.put(upvote.getObjectId(), upvote.getType());
+            }
+        }
+
+        // get all user
+        List<Integer> userIds = postDTOList.stream().map(PostDTOV2::getCreatorId).collect(Collectors.toList());
+        List<UserDO> userList = userMapper.getByIds(userIds);
+        Map<Integer, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
+
+        for (PostDTOV2 postDTO : postDTOList) {
+            postDTO.setNode(Converter.INSTANCE.toNodeDTO(nodeMap.get(postDTO.getNodeId())));
+            NodeDTO node = postDTO.getNode();
+            node.setCourse(Converter.INSTANCE.toCourseDTOV4(courseMapper.getById(node.getCourseId())));
+
+            if (types.containsKey(postDTO.getId()))
+                postDTO.setVoteType(types.get(postDTO.getId()));
+
+            postDTO.setCreator(Converter.INSTANCE.toUserDTOV1(userMap.get(postDTO.getCreatorId())));
+        }
+        return postDTOList;
+    }
+
+    /**
+     * 为文章列表设置阅读量（历史数据 + 今日实时数据）
+     */
+    private void setViewsForPosts(List<PostDTOV2> postDTOList) {
+        log.info("Setting views for {} posts", postDTOList.size());
+        
+        for (PostDTOV2 postDTO : postDTOList) {
+            try {
+                log.info("Processing views for post {}", postDTO.getId());
+                
+                // 获取历史阅读量（昨天以前的数据，带缓存）
+                int historicalViews = getHistoricalViews(postDTO.getId());
+                
+                // 获取今日实时阅读量
+                int todayViews = getTodayViews(postDTO.getId());
+                
+                // 总阅读量 = 历史数据 + 今日数据
+                int totalViews = historicalViews + todayViews;
+                postDTO.setViews(totalViews);
+                
+                log.info("Post {} views: historical={}, today={}, total={}", 
+                    postDTO.getId(), historicalViews, todayViews, totalViews);
+            } catch (Exception e) {
+                log.error("Failed to get views for post {}: {}", postDTO.getId(), e.getMessage(), e);
+                postDTO.setViews(0);
+            }
+        }
+    }
+
+    /**
+     * 获取历史阅读量（昨天以前的数据，每天最多计算一次）
+     */
+    @Cacheable(value = "postHistoricalViews", key = "#postId + '_' + T(java.time.LocalDate).now().toString()")
+    private int getHistoricalViews(Integer postId) {
+        try {
+            int totalViews = 0;
+            LocalDate today = LocalDate.now();
+            LocalDate yesterday = today.minusDays(1);
+            int currentYear = today.getYear();
+            
+            // 获取所有年份的统计数据
+            List<PostStatsDO> statsList = postStatsMapper.getStatsInYearRange("POST", 
+                Long.valueOf(postId), currentYear - 1); // 查询最近2年的数据
+            
+            for (PostStatsDO stats : statsList) {
+                if (stats.getStats() != null && !stats.getStats().isEmpty()) {
+                    try {
+                        Map<String, Map<String, Integer>> yearStats = objectMapper.readValue(
+                            stats.getStats(), new TypeReference<Map<String, Map<String, Integer>>>() {});
+                        
+                        for (Map.Entry<String, Map<String, Integer>> entry : yearStats.entrySet()) {
+                            String dayKey = entry.getKey(); // 格式: "M-d"
+                            Map<String, Integer> dayStats = entry.getValue();
+                            
+                            // 解析日期，只计算昨天以前的数据
+                            try {
+                                String[] parts = dayKey.split("-");
+                                int month = Integer.parseInt(parts[0]);
+                                int day = Integer.parseInt(parts[1]);
+                                LocalDate statDate = LocalDate.of(stats.getStatYear(), month, day);
+                                
+                                // 只统计昨天以前的数据
+                                if (statDate.isBefore(today)) {
+                                    totalViews += dayStats.getOrDefault("views", 0);
+                                }
+                            } catch (Exception e) {
+                                log.warn("Failed to parse date key {} for post {}", dayKey, postId);
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to parse stats for post {}: {}", postId, e.getMessage());
+                    }
+                }
+            }
+            
+            log.debug("Post {} historical views: {}", postId, totalViews);
+            return totalViews;
+        } catch (Exception e) {
+            log.error("Failed to get historical views for post {}: {}", postId, e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * 获取今日实时阅读量（从Redis获取）
+     */
+    private int getTodayViews(Integer postId) {
+        try {
+            String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            String redisKey = "stats:" + today + ":post";
+            String fieldKey = postId + ":view";
+            
+            Object viewCount = redisTemplate.opsForHash().get(redisKey, fieldKey);
+            
+            if (viewCount != null) {
+                return Integer.parseInt(viewCount.toString());
+            }
+            
+            return 0;
+        } catch (Exception e) {
+            log.warn("Failed to get today views for post {} from Redis: {}", postId, e.getMessage());
+            return 0;
+        }
     }
 }

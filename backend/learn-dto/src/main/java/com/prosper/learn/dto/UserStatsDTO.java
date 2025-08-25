@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -18,9 +17,9 @@ public class UserStatsDTO {
     
     private String period; // "today", "7days", "15days", "30days", "1year", "all"
     
-    private LocalDate startDate;
+    private String startDate; // 格式: yyyy-MM-dd
     
-    private LocalDate endDate;
+    private String endDate; // 格式: yyyy-MM-dd
     
     private Long totalViews;        // 总阅读量
     

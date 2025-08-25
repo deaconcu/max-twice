@@ -19,7 +19,7 @@ const handleScroll = () => {
   const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
   const windowHeight = window.innerHeight;
 
-  console.log(windowHeight + " " + scrollTop + " " + sidebarRef.value.offsetHeight)
+  //console.log(windowHeight + " " + scrollTop + " " + sidebarRef.value.offsetHeight)
   
   // 当滚动超过(侧边栏高度 - 视窗高度)时，才固定在底部
   if (scrollTop > sidebarRef.value.offsetHeight - windowHeight + sidebarOriginalTop) {

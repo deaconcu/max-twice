@@ -58,7 +58,8 @@ public class DailyStatsService {
     @Autowired
     private PostStatsMapper postStatsMapper;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper objectMapper;
 
     /**
      * 同步昨天的统计数据
@@ -262,6 +263,16 @@ public class DailyStatsService {
     }
     
     /**
+     * 文章单日统计数据结构
+     */
+    private static class PostDayStats {
+        int views = 0;
+        int twice = 0;
+        int helpful = 0;
+        int comments = 0;
+    }
+    
+    /**
      * 确保用户的年度统计记录存在
      */
     private void ensureUserYearRecord(Integer userId, int year) {
@@ -282,7 +293,7 @@ public class DailyStatsService {
      * 处理逻辑:
      * 1. 从Redis获取指定日期的文章统计数据
      * 2. 解析field格式: "postId:statType" -> count
-     * 3. 按文章ID分组聚合各种统计类型的数据
+     * 3. 按文章ID分组聚合各种统计类型的数据，同时进行字段名映射
      * 4. 更新post_stats表中的JSON字段
      * 5. 删除Redis中的原始数据
      * 
@@ -298,8 +309,8 @@ public class DailyStatsService {
             return 0;
         }
         
-        // 按文章ID分组
-        Map<Long, Map<String, Integer>> postStatsMap = new HashMap<>();
+        // 按文章ID分组，使用数据库字段名
+        Map<Long, PostDayStats> postStatsMap = new HashMap<>();
         
         for (Map.Entry<Object, Object> entry : postStats.entrySet()) {
             String field = (String) entry.getKey();
@@ -311,31 +322,54 @@ public class DailyStatsService {
             if (parts.length != 2) continue;
             
             Long postId = Long.parseLong(parts[0]);
-            String statType = parts[1];
+            String redisStatType = parts[1];
             
-            postStatsMap.computeIfAbsent(postId, k -> new HashMap<>())
-                .put(statType, count);
+            PostDayStats dayStats = postStatsMap.computeIfAbsent(postId, k -> new PostDayStats());
+            
+            // 🔴 修复字段名映射：Redis使用单数，数据库使用复数
+            switch (redisStatType) {
+                case "view":
+                    dayStats.views += count;
+                    break;
+                case "twice":
+                    dayStats.twice += count;
+                    break;
+                case "helpful":
+                    dayStats.helpful += count;
+                    break;
+                case "comment":
+                    dayStats.comments += count;
+                    break;
+                default:
+                    log.debug("忽略未知的统计类型: {}", redisStatType);
+            }
         }
         
-        // 更新post_stats表
+        // 更新post_stats表，直接覆盖当天的完整数据
         int updateCount = 0;
         int year = LocalDate.parse(dateStr).getYear();
         String dayKey = dateStr.substring(5).replace("-", "-"); // "08-22"
         
-        for (Map.Entry<Long, Map<String, Integer>> entry : postStatsMap.entrySet()) {
+        for (Map.Entry<Long, PostDayStats> entry : postStatsMap.entrySet()) {
             Long postId = entry.getKey();
-            Map<String, Integer> stats = entry.getValue();
+            PostDayStats dayStats = entry.getValue();
             
             try {
-                for (Map.Entry<String, Integer> statEntry : stats.entrySet()) {
-                    String statType = statEntry.getKey();
-                    Integer count = statEntry.getValue();
-                    
-                    // 使用PostStatsMapper更新数据库
-                    updatePostStatsField("POST", postId, year, dayKey, statType, count);
+                // 确保post_stats年度记录存在
+                ensurePostYearRecord("POST", postId, year);
+                
+                // 直接设置当天的完整数据（覆盖而非增量）
+                int updated = postStatsMapper.setDayStats("POST", postId, year, dayKey,
+                        dayStats.views, dayStats.twice, dayStats.helpful, dayStats.comments);
+                
+                if (updated > 0) {
+                    log.debug("覆盖文章{}在{}的统计数据: views={}, twice={}, helpful={}, comments={}", 
+                        postId, dateStr, dayStats.views, dayStats.twice, dayStats.helpful, dayStats.comments);
+                    updateCount++;
+                } else {
+                    log.warn("文章{}的{}年度记录不存在，无法更新统计", postId, year);
                 }
-                updateCount++;
-                log.debug("更新文章{}在{}的统计数据", postId, dateStr);
+                
             } catch (Exception e) {
                 log.error("同步文章{}在{}的统计数据失败", postId, dateStr, e);
             }
@@ -376,7 +410,20 @@ public class DailyStatsService {
             
             // 使用PostStatsMapper直接设置当天的统计值
             Map<String, Integer> dayStats = getCurrentPostDayStats(type, objectId, year, dayKey);
-            dayStats.put(field, count);
+            
+            // 🔴 字段名映射：Redis使用单数，数据库使用复数
+            String dbField = field;
+            switch (field) {
+                case "view":
+                    dbField = "views";
+                    break;
+                case "comment":
+                    dbField = "comments";
+                    break;
+                // twice 和 helpful 保持不变
+            }
+            
+            dayStats.put(dbField, count);
             
             int updated = postStatsMapper.setDayStats(type, objectId, year, dayKey,
                     dayStats.getOrDefault("views", 0),
@@ -385,8 +432,8 @@ public class DailyStatsService {
                     dayStats.getOrDefault("comments", 0));
             
             if (updated > 0) {
-                log.debug("设置post_stats: type={}, objectId={}, dayKey={}, field={}, count={}", 
-                    type, objectId, dayKey, field, count);
+                log.debug("设置post_stats: type={}, objectId={}, dayKey={}, field={}->{}, count={}", 
+                    type, objectId, dayKey, field, dbField, count);
             } else {
                 log.warn("post_stats记录不存在: type={}, objectId={}, year={}", type, objectId, year);
             }
@@ -445,9 +492,14 @@ public class DailyStatsService {
      * 2. 获取该用户的所有统计数据
      * 3. 解析并聚合成UserStatsDTO对象
      * 
-     * 使用缓存注解提高查询性能
+     * 缓存策略：按用户ID+日期缓存，避免跨日期数据污染
      */
-    @Cacheable(value = "todayStats", key = "'user:' + #userId", unless = "#result == null")
+
+    /*
+    @Cacheable(value = "todayStats",
+               key = "'user:' + #userId + ':' + T(java.time.LocalDate).now().toString()",
+               unless = "#result == null")
+     */
     public UserStatsDTO getUserTodayStats(Integer userId) {
         String today = LocalDate.now().toString();
         String userKey = "stats:" + today + ":user";
@@ -463,8 +515,12 @@ public class DailyStatsService {
 
     /**
      * 获取用户昨日统计（从数据库）
+     * 
+     * 缓存策略：按用户ID+昨日日期缓存，确保不同日期的"昨日"数据独立
      */
-    @Cacheable(value = "yesterdayStats", key = "'user:' + #userId", unless = "#result == null")
+    @Cacheable(value = "yesterdayStats", 
+               key = "'user:' + #userId + ':' + T(java.time.LocalDate).now().minusDays(1).toString()", 
+               unless = "#result == null")
     public UserStatsDTO getUserYesterdayStats(Integer userId) {
         LocalDate yesterday = LocalDate.now().minusDays(1);
         
@@ -474,8 +530,8 @@ public class DailyStatsService {
             UserStatsDTO dto = UserStatsDTO.builder()
                 .userId(userId)
                 .period("yesterday")
-                .startDate(yesterday)
-                .endDate(yesterday)
+                .startDate(yesterday.toString())
+                .endDate(yesterday.toString())
                 .totalViews(stats.get("views").longValue())
                 .totalTwice(stats.get("twice").longValue())
                 .totalHelpful(stats.get("helpful").longValue())
@@ -491,8 +547,12 @@ public class DailyStatsService {
 
     /**
      * 获取用户历史统计（从数据库）
+     * 
+     * 缓存策略：按用户ID+天数+结束日期缓存，确保不同时间窗口的历史数据独立
      */
-    @Cacheable(value = "historyStats", key = "'user:' + #userId + ':' + #days", unless = "#result == null")
+    @Cacheable(value = "historyStats", 
+               key = "'user:' + #userId + ':' + #days + ':' + T(java.time.LocalDate).now().minusDays(1).toString()", 
+               unless = "#result == null")
     public UserStatsDTO getUserHistoryStats(Integer userId, int days) {
         LocalDate endDate = LocalDate.now().minusDays(1); // 不包括今天
         LocalDate startDate = endDate.minusDays(days - 1);
@@ -503,8 +563,8 @@ public class DailyStatsService {
             UserStatsDTO dto = UserStatsDTO.builder()
                 .userId(userId)
                 .period(days + "days")
-                .startDate(startDate)
-                .endDate(endDate)
+                .startDate(startDate.toString())
+                .endDate(endDate.toString())
                 .totalViews(totalStats.get("views").longValue())
                 .totalTwice(totalStats.get("twice").longValue())
                 .totalHelpful(totalStats.get("helpful").longValue())
@@ -541,7 +601,7 @@ public class DailyStatsService {
                     // 今日数据从Redis获取
                     UserStatsDTO todayStats = getUserTodayStats(userId);
                     dailyStat = DailyStatsDTO.builder()
-                        .date(date)
+                        .date(date.toString())
                         .views(todayStats.getTotalViews())
                         .twice(todayStats.getTotalTwice())
                         .helpful(todayStats.getTotalHelpful())
@@ -552,7 +612,7 @@ public class DailyStatsService {
                     Map<String, Integer> dayStats = getUserDayStats(userId, date);
                         
                     dailyStat = DailyStatsDTO.builder()
-                        .date(date)
+                        .date(date.toString())
                         .views(dayStats.get("views").longValue())
                         .twice(dayStats.get("twice").longValue())
                         .helpful(dayStats.get("helpful").longValue())
@@ -572,8 +632,8 @@ public class DailyStatsService {
             return UserStatsDTO.builder()
                 .userId(userId)
                 .period(days + "days")
-                .startDate(startDate)
-                .endDate(endDate)
+                .startDate(startDate.toString())
+                .endDate(endDate.toString())
                 .totalViews(totalViews)
                 .totalTwice(totalTwice)
                 .totalHelpful(totalHelpful)
@@ -635,8 +695,8 @@ public class DailyStatsService {
         return UserStatsDTO.builder()
             .userId(userId)
             .period("today")
-            .startDate(LocalDate.parse(date))
-            .endDate(LocalDate.parse(date))
+            .startDate(date)
+            .endDate(date)
             .totalViews(totalViews)
             .totalTwice(totalTwice)
             .totalHelpful(totalHelpful)
@@ -735,6 +795,90 @@ public class DailyStatsService {
         } catch (Exception e) {
             log.error("获取用户月度统计失败: userId={}, year={}, month={}", userId, year, month, e);
             return createEmptyUserStatsMap();
+        }
+    }
+
+    /**
+     * 获取用户全部时间统计（历史数据 + 今日实时数据）
+     * 
+     * 设计思路：
+     * 1. 昨天以前的所有历史数据 - 从缓存获取，一天最多计算一次
+     * 2. 今天的实时数据 - 从Redis获取最新数据
+     * 3. 两部分数据合并返回
+     * 
+     * 缓存策略：历史汇总数据按用户ID+截止日期缓存，避免重复计算
+     * 
+     * @param userId 用户ID
+     * @return 全部时间的统计数据
+     */
+    @Cacheable(value = "allTimeStats", 
+               key = "'user:' + #userId + ':' + T(java.time.LocalDate).now().minusDays(1).toString()", 
+               unless = "#result == null")
+    public UserStatsDTO getUserAllTimeStats(Integer userId) {
+        try {
+            // 1. 获取昨天以前的所有历史数据（带缓存）
+            UserStatsDTO historicalStats = getUserHistoricalStats(userId);
+            
+            // 2. 获取今天的实时数据
+            UserStatsDTO todayStats = getUserTodayStats(userId);
+            
+            // 3. 合并数据
+            long totalViews = historicalStats.getTotalViews() + todayStats.getTotalViews();
+            long totalTwice = historicalStats.getTotalTwice() + todayStats.getTotalTwice();
+            long totalHelpful = historicalStats.getTotalHelpful() + todayStats.getTotalHelpful();
+            long totalComments = historicalStats.getTotalComments() + todayStats.getTotalComments();
+            
+            return UserStatsDTO.builder()
+                .userId(userId)
+                .period("all_time")
+                .startDate("2020-01-01") // 系统开始日期
+                .endDate(LocalDate.now().toString())
+                .totalViews(totalViews)
+                .totalTwice(totalTwice)
+                .totalHelpful(totalHelpful)
+                .totalComments(totalComments)
+                .build();
+                
+        } catch (Exception e) {
+            log.error("获取用户{}全部时间统计失败", userId, e);
+            return UserStatsDTO.empty();
+        }
+    }
+
+    /**
+     * 获取用户昨天以前的所有历史数据汇总
+     * 
+     * 该方法会被缓存，每天最多计算一次，避免重复的数据库查询和计算
+     * 缓存key包含截止日期，确保每天的历史汇总数据独立
+     * 
+     * @param userId 用户ID
+     * @return 历史数据汇总
+     */
+    @Cacheable(value = "historicalStats", 
+               key = "'user:' + #userId + ':until:' + T(java.time.LocalDate).now().minusDays(1).toString()", 
+               unless = "#result == null")
+    public UserStatsDTO getUserHistoricalStats(Integer userId) {
+        try {
+            LocalDate yesterday = LocalDate.now().minusDays(1);
+            LocalDate startDate = LocalDate.of(2020, 1, 1); // 系统开始日期
+            
+            // 使用现有的日期范围统计方法
+            Map<String, Integer> totalStats = getUserDateRangeStats(userId, startDate, yesterday);
+            
+            return UserStatsDTO.builder()
+                .userId(userId)
+                .period("historical")
+                .startDate(startDate.toString())
+                .endDate(yesterday.toString())
+                .totalViews(totalStats.get("views").longValue())
+                .totalTwice(totalStats.get("twice").longValue())
+                .totalHelpful(totalStats.get("helpful").longValue())
+                .totalComments(totalStats.get("comments").longValue())
+                .build();
+                
+        } catch (Exception e) {
+            log.error("获取用户{}历史统计数据失败", userId, e);
+            return UserStatsDTO.empty();
         }
     }
 

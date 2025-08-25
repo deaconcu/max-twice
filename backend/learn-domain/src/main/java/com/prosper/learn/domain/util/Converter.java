@@ -62,6 +62,15 @@ public interface Converter {
     List<PostDTO> toPostDTO(List<PostDO> list);
 
     @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(source = "creator", target="creatorId")
+    @Mapping(target = "creator", ignore = true)
+    PostDTOV2 toPostDTOV2(PostDO item);
+    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(source = "creator", target="creatorId")
+    @Mapping(target = "creator", ignore = true)
+    List<PostDTOV2> toPostDTOV2(List<PostDO> list);
+
+    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(source = "creatorId", target="creator")
     PostDO toPostDO(PostDTO item);
 

@@ -158,14 +158,14 @@ public class UserController implements UserClient {
     public Response getSelfArticle(int userId, int lastId) {
         UserDO userDO = userMapper.getById(userId);
         if (userDO == null) return new Response(USER_NOT_EXIST);
-        return new Response(postingService.getUserArticle(userDO.getId(), lastId));
+        return new Response(postingService.getUserArticleWithViews(userDO.getId(), lastId));
     }
 
     @Override
     public Response getSelfContents(int userId, int lastId) {
         UserDO userDO = userMapper.getById(userId);
         if (userDO == null) return new Response(USER_NOT_EXIST);
-        return new Response(postingService.getUserContents(userDO.getId(), lastId));
+        return new Response(postingService.getUserContentsWithViews(userDO.getId(), lastId));
     }
 
     @Override
