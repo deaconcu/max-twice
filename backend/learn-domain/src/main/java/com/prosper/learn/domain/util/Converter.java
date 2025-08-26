@@ -42,6 +42,17 @@ public interface Converter {
     @Mapping(target = "UTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
     NodeDTO toNodeDTO(NodeDO item);
     NodeDTOV1 toNodeDTOV1(NodeDO item);
+    NodeDTOV2 toNodeDTOV2(NodeDO item);
+    
+    // 带完成状态参数的重载方法
+    default NodeDTOV2 toNodeDTOV2(NodeDO item, boolean isCompleted) {
+        if (item == null) {
+            return null;
+        }
+        NodeDTOV2 dto = toNodeDTOV2(item);
+        dto.setIsCompleted(isCompleted);
+        return dto;
+    }
 
     @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(target = "UTime", dateFormat = "yyyy-MM-dd HH:mm:ss")

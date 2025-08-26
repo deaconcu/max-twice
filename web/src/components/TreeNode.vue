@@ -10,6 +10,8 @@ const props = defineProps({
   depth: { type: Number }
 });
 
+const emit = defineEmits(['getNextNode']);
+
 const expandedNodes = ref([]);
 const expanded = ref(false);
 
@@ -44,6 +46,63 @@ Object.keys(props.nodeData).forEach((key) => {
   if (props.path.startsWith(props.currPath + "-" + key)) {
     toggleNode(key)
   }
+});
+
+// 获取下一个节点信息
+const getNextNode = (currentPath) => {
+  try {
+    // 解析当前路径，例如 "1-2-3"
+    const pathParts = currentPath.split('-').map(Number);
+    
+    // 递归函数检查节点是否存在
+    const checkNodeExists = (nodeData, pathSegments) => {
+      if (pathSegments.length === 0) {
+        return true;
+      }
+      
+      const [currentSegment, ...remainingSegments] = pathSegments;
+      const nodeKey = currentSegment.toString();
+      
+      if (nodeData[nodeKey] && typeof nodeData[nodeKey] === 'object') {
+        return checkNodeExists(nodeData[nodeKey], remainingSegments);
+      }
+      
+      return false;
+    };
+    
+    // 尝试找到下一个同级节点
+    const findNextSibling = (pathParts, depth = pathParts.length - 1) => {
+      if (depth <= 0) return null;
+      
+      const testPathParts = [...pathParts];
+      testPathParts[depth]++;
+      
+      // 构建测试路径的节点检查路径
+      const checkPath = testPathParts.slice(1); // 移除第一个元素（通常是根路径）
+      
+      if (checkNodeExists(props.nodeData, checkPath)) {
+        const nextPath = testPathParts.join('-');
+        const nodeName = props.nodeNames[testPathParts[depth]];
+        return {
+          path: nextPath,
+          name: nodeName || `节点 ${testPathParts[depth]}`
+        };
+      }
+      
+      // 如果没有同级节点，尝试上一级的下一个节点
+      return findNextSibling(pathParts, depth - 1);
+    };
+    
+    return findNextSibling(pathParts);
+  } catch (error) {
+    console.error('Error getting next node:', error);
+    return null;
+  }
+};
+
+// 暴露方法给父组件
+defineExpose({
+  getNextNode
 });
 </script>
 

@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.client.UserClient;
 import com.prosper.learn.domain.service.MessageService;
 import com.prosper.learn.domain.service.PostingService;
+import com.prosper.learn.domain.service.LearningProgressService;
 import com.prosper.learn.dto.*;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.common.Utils;
@@ -35,6 +36,7 @@ public class UserController implements UserClient {
     private final JavaMailSender mailSender;
     private final PostingService postingService;
     private final MessageService messageService;
+    private final LearningProgressService learningProgressService;
 
     @Override
     public Response getSelf() {
@@ -354,5 +356,72 @@ public class UserController implements UserClient {
         }
 
         return new Response(followeeDTOList);
+    }
+
+    @Override
+    public Response markNodeCompleted(Integer nodeId) {
+        try {
+            int userId = StpUtil.getLoginIdAsInt();
+            
+            boolean isNewlyCompleted = learningProgressService.markNodeCompleted(userId, nodeId);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("nodeId", nodeId);
+            result.put("completed", true);
+            result.put("isNewlyCompleted", isNewlyCompleted);
+            
+            // 返回用户最新的完成统计
+            long totalCompleted = learningProgressService.getUserCompletedCount(userId);
+            result.put("totalCompletedNodes", totalCompleted);
+
+            return Response.success(result);
+
+        } catch (Exception e) {
+            log.error("Error marking node {} as completed: {}", nodeId, e.getMessage(), e);
+            return Response.failed;
+        }
+    }
+
+    @Override
+    public Response unmarkNodeCompleted(Integer nodeId) {
+        try {
+            int userId = StpUtil.getLoginIdAsInt();
+            
+            boolean wasRemoved = learningProgressService.unmarkNodeCompleted(userId, nodeId);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("nodeId", nodeId);
+            result.put("completed", false);
+            result.put("wasRemoved", wasRemoved);
+            
+            // 返回用户最新的完成统计
+            long totalCompleted = learningProgressService.getUserCompletedCount(userId);
+            result.put("totalCompletedNodes", totalCompleted);
+
+            return Response.success(result);
+
+        } catch (Exception e) {
+            log.error("Error unmarking node {} as completed: {}", nodeId, e.getMessage(), e);
+            return Response.failed;
+        }
+    }
+
+    @Override
+    public Response isNodeCompleted(Integer nodeId) {
+        try {
+            int userId = StpUtil.getLoginIdAsInt();
+            
+            boolean isCompleted = learningProgressService.isNodeCompleted(userId, nodeId);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("nodeId", nodeId);
+            result.put("completed", isCompleted);
+
+            return Response.success(result);
+
+        } catch (Exception e) {
+            log.error("Error checking if node {} is completed: {}", nodeId, e.getMessage(), e);
+            return Response.failed;
+        }
     }
 }

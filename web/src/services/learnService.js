@@ -724,4 +724,22 @@ export const learnService = {
     }
     return apiClient.post('/api/stats/sync/date', null, { params });
   },
+
+  // 标记节点完成
+  markNodeCompleted(nodeId) {
+    console.log("mark node completed, nodeId:", nodeId);
+    return apiClient.post(`/user/complete/${nodeId}`);
+  },
+
+  // 取消标记节点完成
+  unmarkNodeCompleted(nodeId) {
+    console.log("unmark node completed, nodeId:", nodeId);
+    return apiClient.delete(`/user/complete/${nodeId}`);
+  },
+
+  // 检查节点是否已完成
+  isNodeCompleted(nodeId) {
+    console.log("check if node completed, nodeId:", nodeId);
+    return apiClient.get(`/user/complete/${nodeId}`);
+  },
 };

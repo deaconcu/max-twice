@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, nextTick, watch, toRef, onUnmounted } from 'vue';
+import { ref, onMounted, nextTick, watch, toRef, onUnmounted, inject } from 'vue';
 import { learnService } from '@/services/learnService';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -21,9 +21,11 @@ if (import.meta.env.DEV) {
 const route = useRoute();
 const router = useRouter();
 
+const showSnackbar = inject('showSnackbar');
+
 const emit = defineEmits(['loadData']);
 
-const props = defineProps(['data', 'nodes', 'currNodeId', 'currNode', 'pathText']);
+const props = defineProps(['data', 'nodes', 'currNodeId', 'currNode', 'pathText', 'getNextNodeInfo']);
 
 const lastPostingId = ref(0);
 const lastScore = ref(0);
@@ -38,6 +40,8 @@ const editorRef = ref(null);
 const vote = ref(null)
 
 const currPosting = ref(null);
+const nextNodeDialog = ref(false);
+const nextNodeInfo = ref(null);
 
 onMounted(() => {
   window.addEventListener('popstate', restoreScrollPosition);
@@ -230,6 +234,97 @@ const submitAddArticle = async () => {
 }
 
 const tab1 = ref(null);
+
+// 切换节点完成状态
+const toggleNodeCompletion = async () => {
+  try {
+    if (props.data.node.isCompleted) {
+      // 取消完成
+      const response = await learnService.unmarkNodeCompleted(props.currNodeId);
+      console.log('Unmark node completed response:', response);
+      
+      if (response.code === 200) {
+        props.data.node.isCompleted = false;
+        showSnackbar && showSnackbar('已取消完成状态', 'info');
+      } else {
+        console.error('Failed to unmark node as completed:', response.msg);
+        showSnackbar && showSnackbar('取消完成失败，请重试', 'error');
+      }
+    } else {
+      // 标记完成
+      const response = await learnService.markNodeCompleted(props.currNodeId);
+      console.log('Mark node completed response:', response);
+      
+      if (response.code === 200) {
+        props.data.node.isCompleted = true;
+        showSnackbar && showSnackbar('节点学习已完成！', 'success');
+        
+        // 检查是否有下一个节点
+        checkNextNode();
+      } else {
+        console.error('Failed to mark node as completed:', response.msg);
+        showSnackbar && showSnackbar('标记完成失败，请重试', 'error');
+      }
+    }
+  } catch (error) {
+    console.error('Error toggling node completion:', error);
+    showSnackbar && showSnackbar('操作失败，请重试', 'error');
+  }
+};
+
+// 检查下一个节点并弹出确认对话框
+const checkNextNode = () => {
+  try {
+    if (props.getNextNodeInfo) {
+      const nextNode = props.getNextNodeInfo();
+      if (nextNode) {
+        nextNodeInfo.value = nextNode;
+        nextNodeDialog.value = true;
+      }
+    }
+  } catch (error) {
+    console.error('Error checking next node:', error);
+  }
+};
+
+// 跳转到下一个节点
+const goToNextNode = () => {
+  if (nextNodeInfo.value && nextNodeInfo.value.path) {
+    const courseId = route.query.courseId;
+    const nextPath = nextNodeInfo.value.path;
+    const url = `/read?courseId=${courseId}&path=${nextPath}`;
+    router.push(url);
+  }
+  nextNodeDialog.value = false;
+};
+
+// 处理从Posting组件发出的markNodeCompleted事件
+const handleMarkNodeCompleted = async () => {
+  if (props.data.node.isCompleted) {
+    // 如果已经完成了，不需要重复执行
+    return;
+  }
+  
+  try {
+    // 标记完成
+    const response = await learnService.markNodeCompleted(props.currNodeId);
+    console.log('Mark node completed from posting response:', response);
+    
+    if (response.code === 200) {
+      props.data.node.isCompleted = true;
+      showSnackbar && showSnackbar('看两遍就懂！节点学习已完成！', 'success');
+      
+      // 检查是否有下一个节点
+      checkNextNode();
+    } else {
+      console.error('Failed to mark node as completed from posting:', response.msg);
+      showSnackbar && showSnackbar('标记完成失败，请重试', 'error');
+    }
+  } catch (error) {
+    console.error('Error marking node completed from posting:', error);
+    showSnackbar && showSnackbar('操作失败，请重试', 'error');
+  }
+};
 </script>
 
 <template>
@@ -253,9 +348,24 @@ const tab1 = ref(null);
     </v-row>
 
     <div class="px-0 pb-1 pt-4 ma-0 mb-0" style="position: sticky; top: 0px; background-color: #fff;z-index: 1;">
-      <div class="d-flex align-center mb-2">
-          <v-icon icon="mdi-list-box-outline" color="primary-darken-1" size="24"></v-icon>
-          <h2 class="text-h5 font-weight-bold text-grey-darken-4 ms-3">{{ data.node.name }}</h2>
+      <div class="d-flex align-center justify-space-between mb-2">
+          <div class="d-flex align-center">
+            <v-icon icon="mdi-list-box-outline" color="primary-darken-1" size="24"></v-icon>
+            <h2 class="text-h5 font-weight-bold text-grey-darken-4 ms-3">{{ data.node.name }}</h2>
+          </div>
+          <v-btn
+            @click="toggleNodeCompletion"
+            :color="data.node.isCompleted ? 'grey-lighten-2' : 'success'"
+            :variant="data.node.isCompleted ? 'outlined' : 'flat'"
+            rounded="lg"
+            size="small"
+            class="px-4"
+            :prepend-icon="data.node.isCompleted ? 'mdi-check-circle' : 'mdi-circle-outline'"
+          >
+            <span class="font-weight-medium" :class="data.node.isCompleted ? 'text-grey-darken-2' : 'text-white'">
+              {{ data.node.isCompleted ? '已完成' : '完成学习' }}
+            </span>
+          </v-btn>
       </div>
     </div>
     <p class="text-body-1 text-grey-darken-2 mb-0">{{ data.node.description }}</p>
@@ -280,6 +390,7 @@ const tab1 = ref(null);
         </v-btn>
         <AddContents :nodeId="props.currNodeId" :pathText="props.pathText" v-model="createContentsDialog"
           @loadData="loadData"></AddContents>
+
         <v-btn @click="createArticleDialog = true" variant="flat" color="grey-lighten-4" rounded="lg" 
           density="comfortable" class="px-3 me-2">
           <v-icon icon="mdi-note-plus-outline" size="14" class="mr-2" color="grey-darken-3"></v-icon>
@@ -301,13 +412,13 @@ const tab1 = ref(null);
   <template v-if="tab === 'list'">
     <div>
       <div v-if="data.chosenPosting" class="pt-8">
-        <Posting :posting="data.chosenPosting" :currNode="currNode" @loadData="loadData" @switchTab="switchTab" :data="data">
+        <Posting :posting="data.chosenPosting" :currNode="currNode" @loadData="loadData" @switchTab="switchTab" :data="data" @markNodeCompleted="handleMarkNodeCompleted">
         </Posting>
         <v-divider class="mt-11" color="grey-darken-2"></v-divider>
       </div>
 
       <div v-for="(posting, key) in data.fixedPostings" :key="key" class="pt-8">
-        <Posting :posting="posting" :currNode="currNode" @loadData="loadData" @switchTab="switchTab" :data="data"></Posting>
+        <Posting :posting="posting" :currNode="currNode" @loadData="loadData" @switchTab="switchTab" :data="data" @markNodeCompleted="handleMarkNodeCompleted"></Posting>
         <v-divider class="mt-11" color="grey-darken-2"></v-divider>
       </div>
 
@@ -315,7 +426,7 @@ const tab1 = ref(null);
         class="">
         <div v-for="(posting, index) in data.otherPostings" :class="index == 0 ? 'pt-4' : 'pt-8'"
           v-show="!((currNode['+'] && currNode['+'] == posting.id) || (currNode['^'] && currNode['^'].includes(posting.id)))">
-          <Posting :posting="posting" :currNode="currNode" @loadData="loadData" @switchTab="switchTab" :data="data"></Posting>
+          <Posting :posting="posting" :currNode="currNode" @loadData="loadData" @switchTab="switchTab" :data="data" @markNodeCompleted="handleMarkNodeCompleted"></Posting>
           <v-divider class="mt-11" color="grey-darken-2"></v-divider>
         </div>
         <template v-slot:empty>
@@ -345,13 +456,69 @@ const tab1 = ref(null);
 
   <!-- detail -->
   <template v-else>
-    <Posting :data="props.data" :posting="currPosting" :currNode="currNode" :detail="true" @loadData="loadData" @switchTab="switchTab">
+    <Posting :data="props.data" :posting="currPosting" :currNode="currNode" :detail="true" @loadData="loadData" @switchTab="switchTab" @markNodeCompleted="handleMarkNodeCompleted">
     </Posting>
 
     <v-row class="pa-0 ma-0 my-5">
       <Comment :object="currPosting" :type="0"></Comment>
     </v-row>
   </template>
+
+  <!-- 跳转下一节点确认对话框 -->
+  <v-dialog v-model="nextNodeDialog" width="400" persistent>
+    <v-card rounded="xl" elevation="8">
+      <!-- 头部 -->
+      <div class="d-flex align-center justify-space-between pa-6 pb-4">
+        <div class="d-flex align-center">
+          <div class="pa-3 rounded-lg bg-success-lighten-5 mr-3">
+            <v-icon icon="mdi-arrow-right-circle" color="success-darken-1" size="20"></v-icon>
+          </div>
+          <div>
+            <h3 class="text-h6 font-weight-bold text-grey-darken-3">学习完成</h3>
+            <p class="text-body-2 text-grey-darken-1 mb-0">恭喜完成当前节点学习！</p>
+          </div>
+        </div>
+      </div>
+      
+      <v-divider></v-divider>
+      
+      <!-- 内容 -->
+      <v-card-text class="pa-6">
+        <p class="text-body-1 mb-4">
+          您已经完成了当前节点的学习，是否继续学习下一个节点？
+        </p>
+        <div v-if="nextNodeInfo" class="d-flex align-center pa-4 bg-grey-lighten-5 rounded-lg">
+          <v-icon icon="mdi-book-open-page-variant" color="primary" class="mr-3"></v-icon>
+          <div>
+            <div class="font-weight-medium text-grey-darken-3">下一个节点</div>
+            <div class="text-body-2 text-primary">{{ nextNodeInfo.name }}</div>
+          </div>
+        </div>
+      </v-card-text>
+      
+      <!-- 底部操作按钮 -->
+      <v-card-actions class="pa-6 pt-0">
+        <v-spacer></v-spacer>
+        <v-btn
+          variant="outlined"
+          rounded="lg"
+          @click="nextNodeDialog = false"
+          class="mr-3"
+        >
+          稍后再学
+        </v-btn>
+        <v-btn
+          color="success"
+          variant="flat"
+          rounded="lg"
+          @click="goToNextNode"
+        >
+          <v-icon icon="mdi-arrow-right" size="16" class="mr-2"></v-icon>
+          继续学习
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 
 
 </template>

@@ -55,6 +55,7 @@ const isLearning = ref(false); // 课程学习状态
 const parentCourseInfo = ref(null); // 父课程信息
 const subCourseList = ref([]); // 子课程列表
 const isMainCourse = ref(true); // 是否为主课程
+const treeNodeRefs = ref([]);
 
 const applyCourseData = ref({
   name: "",
@@ -257,6 +258,22 @@ const goToParentCourse = () => {
 }
 
 const relatedLinks = ['高等数学', '概率论', 'C++编程实现', '软件测试']
+
+// 获取下一个节点信息的方法
+const getNextNodeInfo = () => {
+  try {
+    if (treeNodeRefs.value && treeNodeRefs.value[currContentsIndex.value]) {
+      const treeNodeRef = treeNodeRefs.value[currContentsIndex.value];
+      if (treeNodeRef && treeNodeRef.getNextNode) {
+        return treeNodeRef.getNextNode(data.value.path);
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting next node info:', error);
+    return null;
+  }
+};
 
 // 注意：subcourses 变量已被 subCourseList 替代
 
@@ -691,8 +708,13 @@ const startCourse = async () => {
               <!-- three -->
               <v-tabs-window v-model="currContentsIndex" class="pt-4">
                 <v-tabs-window-item v-for="(item, index) in data.contents" :value="index">
-                  <TreeNode :nodeData="data.contents[index]" :nodeNames="data.contentsNames"
-                    :course-id="data.course.id" :path="data.path" :curr-path="String(index + 1)"
+                  <TreeNode 
+                    ref="treeNodeRefs"
+                    :nodeData="data.contents[index]" 
+                    :nodeNames="data.contentsNames"
+                    :course-id="data.course.id" 
+                    :path="data.path" 
+                    :curr-path="String(index + 1)"
                     :depth="1" />
                 </v-tabs-window-item>
               </v-tabs-window>
@@ -702,8 +724,14 @@ const startCourse = async () => {
           <!-- list -->
           <v-col cols="9" class="pr-0 pt-4 d-flex justify-center">
             <v-col cols="10">
-              <PostingList :data="data" :nodes="nodes" :currNodeId="currNodeId" :currNode="lastPathNode" 
-                :pathText="pathText" @loadData="loadData" />
+              <PostingList 
+                :data="data" 
+                :nodes="nodes" 
+                :currNodeId="currNodeId" 
+                :currNode="lastPathNode" 
+                :pathText="pathText" 
+                :getNextNodeInfo="getNextNodeInfo"
+                @loadData="loadData" />
             </v-col>
           </v-col>
         </v-row>

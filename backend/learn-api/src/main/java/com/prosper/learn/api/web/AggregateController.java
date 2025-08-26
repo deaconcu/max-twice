@@ -52,6 +52,7 @@ public class AggregateController implements AggregateClient {
     private final CommentMapper commentMapper;
     private final UserCourseMapper userCourseMapper;
     private final UserProfileMapper userProfileMapper;
+    private final LearningProgressService learningProgressService;
 
     @Override
     public Response<Object> readByComment(int commentId) {
@@ -278,8 +279,11 @@ public class AggregateController implements AggregateClient {
         List<CourseDTOV2> subCourseList = Converter.INSTANCE.toCourseDTOV2(
                 courseMapper.listByParentAndState("APPROVED", parentCourse.getId()));
 
+        // 检查节点完成状态并创建DTO
+        boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
+
         Map<String, Object> data = new HashMap<>();
-        data.put("node", Converter.INSTANCE.toNodeDTO(nodeDO));
+        data.put("node", Converter.INSTANCE.toNodeDTOV2(nodeDO, nodeCompleted));
         data.put("parentCourse", parentCourse);
         data.put("course", Converter.INSTANCE.toCourseDTOV4(courseDO, subscribed));
         data.put("subCourseList", subCourseList);

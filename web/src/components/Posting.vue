@@ -14,7 +14,7 @@ import postViewTracking from '@/services/postViewTracking'
 
 
 const props = defineProps(['data', 'posting', 'currNode', 'detail']);
-const emit = defineEmits(['loadData', 'switchTab']);
+const emit = defineEmits(['loadData', 'switchTab', 'markNodeCompleted']);
 
 const showSnackbar = inject('showSnackbar');
 
@@ -82,6 +82,12 @@ const upvote = async (posting, type) => {
       posting.helpful = response.data.helpful;
       posting.voteType = response.data.voteType;
       if (posting.voteType == 0) posting.voteType = null;
+      
+      // 如果是"看两遍就懂"(type=2)，同时标记节点完成
+      if (type === 2 && response.data.voteType === 2) {
+        console.log('看两遍就懂被点击，同时标记节点完成');
+        emit('markNodeCompleted');
+      }
     }
   } catch (error) {
     // todo
