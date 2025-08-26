@@ -9,12 +9,12 @@ public class CourseTocDTO {
 
     private String contents;
 
-    // 课程id和课程名字的map
-    private Map<Integer, String> names;
+    // 课程id和节点信息的map (包含完成状态)
+    private Map<Integer, NodeDTOV2> nodeInfos;
 
-    public CourseTocDTO(String contents, Map<Integer, String> names) {
+    public CourseTocDTO(String contents, Map<Integer, NodeDTOV2> nodeInfos) {
         this.contents = contents;
-        this.names = names;
+        this.nodeInfos = nodeInfos;
     }
 
 }

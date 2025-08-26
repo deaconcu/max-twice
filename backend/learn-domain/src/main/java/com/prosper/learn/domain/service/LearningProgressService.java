@@ -1,13 +1,28 @@
 package com.prosper.learn.domain.service;
 
 import com.prosper.learn.persistence.dataobject.UserProgressDO;
+import com.prosper.learn.persistence.dataobject.UserCourseDO;
+import com.prosper.learn.persistence.dataobject.NodeDO;
+import com.prosper.learn.persistence.dataobject.CourseDO;
+import com.prosper.learn.persistence.dataobject.UserCourseTocDO;
+import com.prosper.learn.persistence.dataobject.CourseTocDO;
 import com.prosper.learn.persistence.mapper.UserProgressMapper;
+import com.prosper.learn.persistence.mapper.UserCourseMapper;
+import com.prosper.learn.persistence.mapper.NodeMapper;
+import com.prosper.learn.persistence.mapper.CourseMapper;
+import com.prosper.learn.persistence.mapper.UserCourseTocMapper;
+import com.prosper.learn.persistence.mapper.CourseTocMapper;
+import com.prosper.learn.dto.NodeDTOV2;
+import com.prosper.learn.common.Utils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,6 +38,11 @@ public class LearningProgressService {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final UserProgressMapper userProgressMapper;
+    private final UserCourseMapper userCourseMapper;
+    private final NodeMapper nodeMapper;
+    private final CourseMapper courseMapper;
+    private final ContentsService contentsService;
+    private final ObjectMapper objectMapper;
 
     private static final String USER_COMPLETED_KEY_PREFIX = "user:completed:";
     private static final String SYNC_FAILED_USERS_KEY = "sync:failed:users";
@@ -36,7 +56,7 @@ public class LearningProgressService {
      * @param nodeId 节点ID
      * @return 是否成功添加（如果已存在则返回false）
      */
-    public boolean markNodeCompleted(Integer userId, Integer nodeId) {
+    public boolean markNodeCompleted(Integer userId, Integer nodeId, Integer courseId) {
         try {
             String key = USER_COMPLETED_KEY_PREFIX + userId;
             
@@ -57,6 +77,9 @@ public class LearningProgressService {
                 // 2. 尝试同步更新数据库
                 try {
                     syncUserToDatabase(userId);
+                    
+                    // 3. 更新课程进度
+                    updateCourseProgress(userId, nodeId, courseId);
                 } catch (Exception dbException) {
                     // 数据库更新失败，记录到待补偿队列
                     log.warn("Database sync failed for user {}, added to retry queue: {}", 
@@ -84,7 +107,7 @@ public class LearningProgressService {
      * @param nodeId 节点ID
      * @return 是否成功移除（如果不存在则返回false）
      */
-    public boolean unmarkNodeCompleted(Integer userId, Integer nodeId) {
+    public boolean unmarkNodeCompleted(Integer userId, Integer nodeId, Integer courseId) {
         try {
             String key = USER_COMPLETED_KEY_PREFIX + userId;
             
@@ -104,6 +127,9 @@ public class LearningProgressService {
                 // 2. 尝试同步更新数据库
                 try {
                     syncUserToDatabase(userId);
+                    
+                    // 3. 更新课程进度
+                    updateCourseProgress(userId, nodeId, courseId);
                 } catch (Exception dbException) {
                     // 数据库更新失败，记录到待补偿队列
                     log.warn("Database sync failed for user {}, added to retry queue: {}", 
@@ -473,6 +499,60 @@ public class LearningProgressService {
     }
 
     /**
+     * 标记课程为已完成
+     * 
+     * @param userId 用户ID
+     * @param courseId 课程ID
+     * @return 是否成功标记
+     */
+    public boolean markCourseCompleted(Integer userId, Integer courseId) {
+        try {
+            log.info("Marking course {} as completed for user {}", courseId, userId);
+            
+            // 查找用户课程记录
+            UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId((long)userId, (long)courseId);
+            
+            if (userCourse == null) {
+                // 如果没有记录，创建新的用户课程记录
+                userCourse = new UserCourseDO();
+                userCourse.setUserId((long)userId);
+                userCourse.setCourseId((long)courseId);
+                userCourse.setProgressPercent(100);
+                userCourse.setStatus("COMPLETED");
+                userCourse.setStartedAt(java.time.LocalDateTime.now());
+                userCourse.setCompletedAt(java.time.LocalDateTime.now());
+                
+                int inserted = userCourseMapper.insert(userCourse);
+                if (inserted > 0) {
+                    log.info("Successfully created and marked course {} as completed for user {}", courseId, userId);
+                    return true;
+                } else {
+                    log.error("Failed to insert user course record for user {} course {}", userId, courseId);
+                    return false;
+                }
+            } else {
+                // 如果已有记录，更新完成状态
+                userCourse.setProgressPercent(100);
+                userCourse.setStatus("COMPLETED");
+                userCourse.setCompletedAt(java.time.LocalDateTime.now());
+                
+                int updated = userCourseMapper.update(userCourse);
+                if (updated > 0) {
+                    log.info("Successfully updated course {} as completed for user {}", courseId, userId);
+                    return true;
+                } else {
+                    log.error("Failed to update user course record for user {} course {}", userId, courseId);
+                    return false;
+                }
+            }
+            
+        } catch (Exception e) {
+            log.error("Error marking course {} as completed for user {}: {}", courseId, userId, e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
      * 获取当前失败队列中的用户数量（用于监控）
      * 
      * @return 失败队列大小
@@ -485,5 +565,117 @@ public class LearningProgressService {
             log.error("Error getting failed sync queue size: {}", e.getMessage(), e);
             return -1;
         }
+    }
+
+    /**
+     * 更新课程进度
+     * 基于用户目录1中的节点层级结构计算进度
+     * 
+     * @param userId 用户ID
+     * @param nodeId 节点ID（用于日志）
+     * @param courseId 课程ID
+     */
+    private void updateCourseProgress(Integer userId, Integer nodeId, Integer courseId) {
+        try {
+            // 1. 获取用户目录1的内容
+            String toc1Content = contentsService.getToc(userId, courseId, 1);
+            if (toc1Content == null) return;
+            
+            // 2. 解析目录结构
+            JsonNode tocNode = objectMapper.readTree(toc1Content);
+            
+            // 3. 获取用户已完成的节点
+            Set<Integer> userCompletedNodes = getUserCompletedNodes(userId);
+            
+            // 4. 递归计算层级进度
+            double progressPercent = calculateHierarchicalProgress(tocNode, userCompletedNodes) * 10000;
+            int finalProgress = (int) Math.floor(progressPercent);
+            
+            // 5. 更新或创建用户课程记录
+            UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId((long)userId, (long)courseId);
+            
+            if (userCourse == null) {
+                userCourse = new UserCourseDO();
+                userCourse.setUserId((long)userId);
+                userCourse.setCourseId((long)courseId);
+                userCourse.setProgressPercent(finalProgress);
+                userCourse.setStatus(finalProgress >= 10000 ? "COMPLETED" : "IN_PROGRESS");
+                userCourse.setStartedAt(LocalDateTime.now());
+                if (finalProgress >= 10000) {
+                    userCourse.setCompletedAt(LocalDateTime.now());
+                }
+                userCourseMapper.insert(userCourse);
+            } else {
+                userCourse.setProgressPercent(finalProgress);
+                userCourse.setStatus(finalProgress >= 10000 ? "COMPLETED" : "IN_PROGRESS");
+                if (finalProgress >= 10000 && userCourse.getCompletedAt() == null) {
+                    userCourse.setCompletedAt(LocalDateTime.now());
+                }
+                userCourseMapper.update(userCourse);
+            }
+            
+            log.info("Updated course {} hierarchical progress: {}%", courseId, finalProgress);
+                
+        } catch (Exception e) {
+            log.error("Error updating course progress: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * 递归计算层级进度
+     * 
+     * @param node 当前节点
+     * @param completedNodes 已完成的节点集合
+     * @return 当前节点的完成进度 (0.0 到 1.0)
+     */
+    private double calculateHierarchicalProgress(JsonNode node, Set<Integer> completedNodes) {
+        if (node == null || !node.isObject()) {
+            return 0.0;
+        }
+        
+        List<Integer> childNodeIds = new ArrayList<>();
+        List<JsonNode> childNodes = new ArrayList<>();
+        
+        // 遍历所有字段，收集子节点
+        node.fieldNames().forEachRemaining(fieldName -> {
+            // 跳过特殊字段
+            if ("+".equals(fieldName) || "^".equals(fieldName)) {
+                return;
+            }
+            
+            try {
+                // 尝试解析为节点ID
+                int nodeId = Integer.parseInt(fieldName);
+                childNodeIds.add(nodeId);
+                childNodes.add(node.get(fieldName));
+            } catch (NumberFormatException e) {
+                // 不是数字的字段名，跳过
+            }
+        });
+        
+        if (childNodeIds.isEmpty()) {
+            return 0.0;
+        }
+        
+        double totalProgress = 0.0;
+        
+        for (int i = 0; i < childNodeIds.size(); i++) {
+            Integer nodeId = childNodeIds.get(i);
+            JsonNode childNode = childNodes.get(i);
+            
+            if (childNode.isObject() && childNode.size() > 0) {
+                // 有子节点，递归计算
+                double childProgress = calculateHierarchicalProgress(childNode, completedNodes);
+                totalProgress += childProgress;
+            } else {
+                // 叶子节点，检查是否完成
+                if (completedNodes.contains(nodeId)) {
+                    totalProgress += 1.0;
+                }
+            }
+        }
+        
+        // 返回平均进度
+        return totalProgress / childNodeIds.size();
     }
 }

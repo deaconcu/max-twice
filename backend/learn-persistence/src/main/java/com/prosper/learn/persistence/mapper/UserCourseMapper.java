@@ -11,8 +11,8 @@ public interface UserCourseMapper {
     /**
      * 插入用户课程进度记录
      */
-    @Insert("INSERT INTO user_course(user_id, course_id, progress_percent, status, started_at) " +
-            "VALUES (#{userId}, #{courseId}, #{progressPercent}, #{status}, #{startedAt})")
+    @Insert("INSERT INTO user_course(user_id, course_id, progress_percent, status, started_at, completed_at, created_at, updated_at) " +
+            "VALUES (#{userId}, #{courseId}, #{progressPercent}, #{status}, #{startedAt}, #{completedAt}, NOW(), NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserCourseDO userCourseDO);
 

@@ -13,7 +13,7 @@ import UserCard from '../components/UserCard.vue';
 import postViewTracking from '@/services/postViewTracking'
 
 
-const props = defineProps(['data', 'posting', 'currNode', 'detail']);
+const props = defineProps(['data', 'posting', 'currNode', 'detail', 'isLearning']);
 const emit = defineEmits(['loadData', 'switchTab', 'markNodeCompleted']);
 
 const showSnackbar = inject('showSnackbar');
@@ -83,10 +83,15 @@ const upvote = async (posting, type) => {
       posting.voteType = response.data.voteType;
       if (posting.voteType == 0) posting.voteType = null;
       
-      // 如果是"看两遍就懂"(type=2)，同时标记节点完成
+      // 如果是"看两遍就懂"(type=2)，只有在学习模式下才标记节点完成
       if (type === 2 && response.data.voteType === 2) {
-        console.log('看两遍就懂被点击，同时标记节点完成');
-        emit('markNodeCompleted');
+        if (props.isLearning) {
+          console.log('看两遍就懂被点击，用户在学习模式下，标记节点完成');
+          emit('markNodeCompleted');
+        } else {
+          console.log('看两遍就懂被点击，但用户未在学习模式下，不标记节点完成');
+          //showSnackbar && showSnackbar('看两遍就懂！要完成节点请先开始学习课程', 'info');
+        }
       }
     }
   } catch (error) {

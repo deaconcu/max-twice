@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, nextTick, watch, toRef, onUnmounted, inject } from 'vue';
+import { ref, onMounted, nextTick, watch, toRef, onUnmounted, inject, computed } from 'vue';
 import { learnService } from '@/services/learnService';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -23,9 +23,9 @@ const router = useRouter();
 
 const showSnackbar = inject('showSnackbar');
 
-const emit = defineEmits(['loadData']);
+const emit = defineEmits(['loadData', 'nodeCompleted', 'startLearning']);
 
-const props = defineProps(['data', 'nodes', 'currNodeId', 'currNode', 'pathText', 'getNextNodeInfo']);
+const props = defineProps(['data', 'nodes', 'currNodeId', 'currNode', 'pathText', 'getNextNodeInfo', 'isLearning']);
 
 const lastPostingId = ref(0);
 const lastScore = ref(0);
@@ -42,6 +42,17 @@ const vote = ref(null)
 const currPosting = ref(null);
 const nextNodeDialog = ref(false);
 const nextNodeInfo = ref(null);
+
+// 计算当前节点是否有子节点
+const hasSubNodes = computed(() => {
+  if (!props.currNode || typeof props.currNode !== 'object') {
+    return false;
+  }
+  
+  // 过滤掉特殊键 '^'，检查是否有其他子节点
+  const childKeys = Object.keys(props.currNode).filter(key => key !== '^');
+  return childKeys.length > 0;
+});
 
 onMounted(() => {
   window.addEventListener('popstate', restoreScrollPosition);
@@ -237,14 +248,44 @@ const tab1 = ref(null);
 
 // 切换节点完成状态
 const toggleNodeCompletion = async () => {
+  // 检查是否在学习模式下
+  if (!props.isLearning) {
+    // 询问用户是否开始学习
+    const confirmed = confirm('您还未开始学习此课程，是否要开始学习并完成当前节点？');
+    if (!confirmed) {
+      return; // 用户取消
+    }
+    
+    // 用户确认，先开始学习
+    try {
+      // 这里需要调用开始学习的方法，通过事件通知父组件
+      emit('startLearning');
+    } catch (error) {
+      console.error('启动学习模式失败:', error);
+      showSnackbar && showSnackbar('启动学习模式失败，请重试', 'error');
+      return;
+    }
+  }
+
   try {
     if (props.data.node.isCompleted) {
       // 取消完成
-      const response = await learnService.unmarkNodeCompleted(props.currNodeId);
+      const response = await learnService.unmarkNodeCompleted(props.currNodeId, props.data.course.id);
       console.log('Unmark node completed response:', response);
       
       if (response.code === 200) {
         props.data.node.isCompleted = false;
+        
+        // 同时更新 tocNodeInfos 中的节点状态
+        if (props.data.tocNodeInfos && props.data.tocNodeInfos[props.currNodeId]) {
+          props.data.tocNodeInfos[props.currNodeId].isCompleted = false;
+        }
+        
+        // 更新课程进度（后端返回的是 progress*100 的值，直接使用）
+        if (response.data && response.data.courseProgress !== undefined) {
+          props.data.course.progress = response.data.courseProgress;
+        }
+        
         showSnackbar && showSnackbar('已取消完成状态', 'info');
       } else {
         console.error('Failed to unmark node as completed:', response.msg);
@@ -252,12 +293,35 @@ const toggleNodeCompletion = async () => {
       }
     } else {
       // 标记完成
-      const response = await learnService.markNodeCompleted(props.currNodeId);
+      const response = await learnService.markNodeCompleted(props.currNodeId, props.data.course.id);
       console.log('Mark node completed response:', response);
       
       if (response.code === 200) {
         props.data.node.isCompleted = true;
+        
+        console.log('节点标记完成成功，当前节点ID:', props.currNodeId);
+        console.log('更新前的tocNodeInfos:', props.data.tocNodeInfos);
+        
+        // 同时更新 tocNodeInfos 中的节点状态
+        if (props.data.tocNodeInfos && props.data.tocNodeInfos[props.currNodeId]) {
+          props.data.tocNodeInfos[props.currNodeId].isCompleted = true;
+          console.log('tocNodeInfos中的节点状态已更新:', props.data.tocNodeInfos[props.currNodeId]);
+        } else {
+          console.warn('tocNodeInfos中找不到节点ID:', props.currNodeId, '可用的节点IDs:', Object.keys(props.data.tocNodeInfos || {}));
+        }
+        
+        console.log('更新后的tocNodeInfos:', props.data.tocNodeInfos);
+        
+        // 更新课程进度（后端返回的是 progress*100 的值，直接使用）
+        if (response.data && response.data.courseProgress !== undefined) {
+          props.data.course.progress = response.data.courseProgress;
+        }
+        
         showSnackbar && showSnackbar('节点学习已完成！', 'success');
+        
+        // 通知父组件节点已完成，触发课程完成检查
+        console.log('发送节点完成事件，节点ID:', props.currNodeId);
+        emit('nodeCompleted', props.currNodeId);
         
         // 检查是否有下一个节点
         checkNextNode();
@@ -300,6 +364,12 @@ const goToNextNode = () => {
 
 // 处理从Posting组件发出的markNodeCompleted事件
 const handleMarkNodeCompleted = async () => {
+  // 检查当前节点是否有子节点，有子节点的不能标记完成
+  if (hasSubNodes.value) {
+    console.log('当前节点有子节点，不能标记为完成');
+    return;
+  }
+  
   if (props.data.node.isCompleted) {
     // 如果已经完成了，不需要重复执行
     return;
@@ -329,12 +399,12 @@ const handleMarkNodeCompleted = async () => {
 
 <template>
 
-  <template v-if="tab == 'list' || tab == 'addArticle' || tab == 'comment'" class="mb-4">
+  <template v-if="(tab == 'list' || tab == 'addArticle' || tab == 'comment') && data && data.tocNodeInfos" class="mb-4">
     <v-row class="ma-0 text-grey text-body-2 pb-2">
       <div v-if="!('nodeId' in route.query)" class="d-flex align-center">
-        <template v-for="item in nodes">
+        <template v-for="item in nodes" :key="item">
           <div class="d-flex align-center">
-            {{ data.contentsNames[item] }}
+            {{ data.tocNodeInfos?.[item]?.name || item }}
             <v-icon icon="mdi-chevron-right" class="px-5"></v-icon>
           </div>
         </template>
@@ -354,6 +424,7 @@ const handleMarkNodeCompleted = async () => {
             <h2 class="text-h5 font-weight-bold text-grey-darken-4 ms-3">{{ data.node.name }}</h2>
           </div>
           <v-btn
+            v-if="isLearning && !hasSubNodes"
             @click="toggleNodeCompletion"
             :color="data.node.isCompleted ? 'grey-lighten-2' : 'success'"
             :variant="data.node.isCompleted ? 'outlined' : 'flat'"
@@ -412,13 +483,13 @@ const handleMarkNodeCompleted = async () => {
   <template v-if="tab === 'list'">
     <div>
       <div v-if="data.chosenPosting" class="pt-8">
-        <Posting :posting="data.chosenPosting" :currNode="currNode" @loadData="loadData" @switchTab="switchTab" :data="data" @markNodeCompleted="handleMarkNodeCompleted">
+        <Posting :posting="data.chosenPosting" :currNode="currNode" @loadData="loadData" @switchTab="switchTab" :data="data" :isLearning="isLearning" @markNodeCompleted="handleMarkNodeCompleted">
         </Posting>
         <v-divider class="mt-11" color="grey-darken-2"></v-divider>
       </div>
 
       <div v-for="(posting, key) in data.fixedPostings" :key="key" class="pt-8">
-        <Posting :posting="posting" :currNode="currNode" @loadData="loadData" @switchTab="switchTab" :data="data" @markNodeCompleted="handleMarkNodeCompleted"></Posting>
+        <Posting :posting="posting" :currNode="currNode" @loadData="loadData" @switchTab="switchTab" :data="data" :isLearning="isLearning" @markNodeCompleted="handleMarkNodeCompleted"></Posting>
         <v-divider class="mt-11" color="grey-darken-2"></v-divider>
       </div>
 
@@ -426,7 +497,7 @@ const handleMarkNodeCompleted = async () => {
         class="">
         <div v-for="(posting, index) in data.otherPostings" :class="index == 0 ? 'pt-4' : 'pt-8'"
           v-show="!((currNode['+'] && currNode['+'] == posting.id) || (currNode['^'] && currNode['^'].includes(posting.id)))">
-          <Posting :posting="posting" :currNode="currNode" @loadData="loadData" @switchTab="switchTab" :data="data" @markNodeCompleted="handleMarkNodeCompleted"></Posting>
+          <Posting :posting="posting" :currNode="currNode" @loadData="loadData" @switchTab="switchTab" :data="data" :isLearning="isLearning" @markNodeCompleted="handleMarkNodeCompleted"></Posting>
           <v-divider class="mt-11" color="grey-darken-2"></v-divider>
         </div>
         <template v-slot:empty>
@@ -456,7 +527,7 @@ const handleMarkNodeCompleted = async () => {
 
   <!-- detail -->
   <template v-else>
-    <Posting :data="props.data" :posting="currPosting" :currNode="currNode" :detail="true" @loadData="loadData" @switchTab="switchTab" @markNodeCompleted="handleMarkNodeCompleted">
+    <Posting :data="props.data" :posting="currPosting" :currNode="currNode" :detail="true" :isLearning="isLearning" @loadData="loadData" @switchTab="switchTab" @markNodeCompleted="handleMarkNodeCompleted">
     </Posting>
 
     <v-row class="pa-0 ma-0 my-5">

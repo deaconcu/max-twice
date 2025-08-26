@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
+import com.prosper.learn.dto.NodeDTOV2;
+import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
@@ -31,9 +33,9 @@ public class ContentsService {
 
     /**
      * 返回用户在某一个课程下的目录
-     * @return (目录JSON, NodeMap<id, name>)
+     * @return (目录JSON, NodeMap<id, NodeDTOV2>)
      */
-    public Utils.Pair<String, Map<Integer, String>> getToc(int userId, int courseId, boolean create) {
+    public ArrayNode getToc(int userId, int courseId, boolean create) {
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {
             throw new RuntimeException("course is not exist");
@@ -82,13 +84,7 @@ public class ContentsService {
             }
         }
 
-        Set<Integer> keys = new HashSet<>();
-        Utils.collectKeys(arrayNode, keys);
-
-        List<NodeDO> nodeList = keys.isEmpty() ? new ArrayList<>() : nodeMapper.getByIds(keys.stream().toList());
-        Map<Integer, String> nodeNames = nodeList.stream()
-                .collect(Collectors.toMap(NodeDO::getId, NodeDO::getName));
-        return new Utils.Pair<>(arrayNode.toString(), nodeNames);
+        return arrayNode;
     }
 
     /**
@@ -116,7 +112,7 @@ public class ContentsService {
     }
 
 
-    public Utils.Pair<String, Map<Integer, String>> getContents(int userId, int courseId, boolean create) {;
+    public JsonNode getContents(int userId, int courseId, boolean create) {
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {
             throw new RuntimeException("course is not exist");
@@ -151,13 +147,7 @@ public class ContentsService {
                 contentsMapper.update(contentsDO);
             }
 
-            Set<Integer> keys = new HashSet<>();
-            Utils.collectKeys(jsonNode, keys);
-
-            List<NodeDO> nodeList = keys.isEmpty() ? new ArrayList<>() : nodeMapper.getByIds(keys.stream().toList());
-            Map<Integer, String> nodeNames = nodeList.stream()
-                    .collect(Collectors.toMap(NodeDO::getId, NodeDO::getName));
-            return new Utils.Pair<>(jsonNode.toString(), nodeNames);
+            return jsonNode;
         } catch (JsonProcessingException e) {
             return null;
         }

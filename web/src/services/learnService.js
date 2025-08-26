@@ -726,20 +726,30 @@ export const learnService = {
   },
 
   // 标记节点完成
-  markNodeCompleted(nodeId) {
-    console.log("mark node completed, nodeId:", nodeId);
-    return apiClient.post(`/user/complete/${nodeId}`);
+  markNodeCompleted(nodeId, courseId) {
+    console.log("mark node completed, nodeId:", nodeId, "courseId:", courseId);
+    return apiClient.post(`/user/complete/${nodeId}`, null, {
+      params: { courseId: courseId }
+    });
   },
 
   // 取消标记节点完成
-  unmarkNodeCompleted(nodeId) {
-    console.log("unmark node completed, nodeId:", nodeId);
-    return apiClient.delete(`/user/complete/${nodeId}`);
+  unmarkNodeCompleted(nodeId, courseId) {
+    console.log("unmark node completed, nodeId:", nodeId, "courseId:", courseId);
+    return apiClient.delete(`/user/complete/${nodeId}`, {
+      params: { courseId: courseId }
+    });
   },
 
   // 检查节点是否已完成
   isNodeCompleted(nodeId) {
     console.log("check if node completed, nodeId:", nodeId);
     return apiClient.get(`/user/complete/${nodeId}`);
+  },
+
+  // 标记课程完成
+  completeCourse(courseId) {
+    console.log("mark course completed, courseId:", courseId);
+    return apiClient.post(`/user/complete/course/${courseId}`);
   },
 };

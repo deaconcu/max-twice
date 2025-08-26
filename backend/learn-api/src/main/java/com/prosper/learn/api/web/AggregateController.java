@@ -53,6 +53,7 @@ public class AggregateController implements AggregateClient {
     private final UserCourseMapper userCourseMapper;
     private final UserProfileMapper userProfileMapper;
     private final LearningProgressService learningProgressService;
+    private final AggregateService aggregateService;
 
     @Override
     public Response<Object> readByComment(int commentId) {
@@ -128,7 +129,7 @@ public class AggregateController implements AggregateClient {
 
         int userId = StpUtil.getLoginIdAsInt();
         //Utils.Pair<String, Map<Integer, String>> response = contentsService.getContents(userId, courseDO.getId(), true);
-        Utils.Pair<String, Map<Integer, String>> response = contentsService.getToc(userId, courseDO.getId(), true);
+        Utils.Pair<String, Map<Integer, NodeDTOV2>> response = aggregateService.getToc(userId, courseDO.getId(), true);
         CourseTocDTO courseTocDTO = new CourseTocDTO(response.left(), response.right());
 
         //Map<String, Object> contents;
@@ -282,17 +283,21 @@ public class AggregateController implements AggregateClient {
         // 检查节点完成状态并创建DTO
         boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
 
+        // 获取课程进度
+        UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId((long)userId, (long)courseDO.getId());
+        Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
+
         Map<String, Object> data = new HashMap<>();
         data.put("node", Converter.INSTANCE.toNodeDTOV2(nodeDO, nodeCompleted));
         data.put("parentCourse", parentCourse);
-        data.put("course", Converter.INSTANCE.toCourseDTOV4(courseDO, subscribed));
+        data.put("course", Converter.INSTANCE.toCourseDTOV4(courseDO, subscribed, courseProgress));
         data.put("subCourseList", subCourseList);
         data.put("chosenPosting", chosenPosting);
         data.put("fixedPostings", fixedPostings);
         data.put("otherPostings", otherPostings);
         data.put("lastId", lastId);
-        data.put("contents", contents);
-        data.put("contentsNames", courseTocDTO.getNames());
+        data.put("toc", contents);
+        data.put("tocNodeInfos", courseTocDTO.getNodeInfos());
         data.put("path", path);
         data.put("users", userList);
         data.put("learning", learning);

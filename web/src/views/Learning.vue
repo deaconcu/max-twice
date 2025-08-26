@@ -187,10 +187,31 @@ const loadLearningData = async () => {
         // 首先进行布局计算 - 参考 RoadmapFlow
         const layoutedNodes = applyAutoLayout(nodes, edges, 'BT')
         
-        // 计算完成的节点数和总节点数
-        const completedNodes = nodes.filter(node => node.data.completed).length
-        const totalNodes = nodes.length
-        const progress = totalNodes > 0 ? Math.round((completedNodes / totalNodes) * 100) : 0
+        // 计算路线图的真实进度：已完成课程数 + 未完成课程的进度总和
+        const calculateRoadmapProgress = (nodes) => {
+          let totalProgress = 0;
+          let totalCourses = 0;
+          
+          nodes.forEach(node => {
+            if (node.data.type === 'course') {
+              totalCourses++;
+              if (node.data.completed) {
+                // 已完成课程贡献100%
+                totalProgress += 100;
+              } else if (node.data.progress) {
+                // 未完成课程贡献其当前进度
+                totalProgress += parseFloat(node.data.progress);
+              }
+            }
+          });
+          
+          return totalCourses > 0 ? totalProgress / totalCourses : 0;
+        };
+        
+        // 计算完成的节点数和总节点数（保持原有逻辑用于其他地方）
+        const completedNodes = nodes.filter(node => node.data.completed).length;
+        const totalNodes = nodes.length;
+        const realProgress = calculateRoadmapProgress(nodes);
         
         return {
           id: roadmap.id,
@@ -201,7 +222,7 @@ const loadLearningData = async () => {
           addedDate: userRoadmap.startedAt,
           vote: roadmap.vote || 0,
           upvoted: roadmap.upvoted || false,
-          progress: userRoadmap.progressPercent || progress,
+          progress: realProgress, // 已经是0-100的范围
           completedNodes: completedNodes,
           totalNodes: totalNodes,
           lastActivity: getRelativeTime(userRoadmap.updatedAt),
@@ -225,7 +246,7 @@ const loadLearningData = async () => {
           title: userCourse.course.name,
           name: userCourse.course.name,
           description: userCourse.course.description,
-          progress: userCourse.progressPercent || 0,
+          progress: userCourse.progressPercent ? userCourse.progressPercent / 100 : 0,
           status: userCourse.status, // NOT_STARTED, IN_PROGRESS, COMPLETED
           startedAt: userCourse.startedAt,
           completedAt: userCourse.completedAt,
@@ -719,7 +740,7 @@ const getStatusText = (status) => {
                       <div class="mb-3">
                         <div class="d-flex justify-space-between text-body-2 mb-2">
                           <span class="text-grey-darken-3">完成进度</span>
-                          <span class="text-primary font-weight-bold">{{ roadmap.progress }}%</span>
+                          <span class="text-primary font-weight-bold">{{ parseFloat(roadmap.progress.toFixed(2)) }}%</span>
                         </div>
                         <v-progress-linear 
                           :model-value="roadmap.progress" 
@@ -907,7 +928,7 @@ const getStatusText = (status) => {
                     <div class="mb-3">
                       <div class="d-flex justify-space-between text-body-2 mb-2">
                         <span class="text-grey-darken-3">课时进度</span>
-                        <span class="text-primary font-weight-bold">{{ course.progress }}%</span>
+                        <span class="text-primary font-weight-bold">{{ parseFloat(course.progress.toFixed(2)) }}%</span>
                       </div>
                       <v-progress-linear 
                         :model-value="course.progress" 

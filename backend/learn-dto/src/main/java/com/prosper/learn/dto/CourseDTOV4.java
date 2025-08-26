@@ -36,4 +36,6 @@ public class CourseDTOV4 {
     private Integer subscriptionCount; // 收藏人数
 
     private boolean subscribed; // 是否已收藏
+
+    private Integer progress; // 课程进度百分比 (0-100)
 }

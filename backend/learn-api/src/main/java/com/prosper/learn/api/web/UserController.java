@@ -37,6 +37,7 @@ public class UserController implements UserClient {
     private final PostingService postingService;
     private final MessageService messageService;
     private final LearningProgressService learningProgressService;
+    private final UserCourseMapper userCourseMapper;
 
     @Override
     public Response getSelf() {
@@ -359,16 +360,21 @@ public class UserController implements UserClient {
     }
 
     @Override
-    public Response markNodeCompleted(Integer nodeId) {
+    public Response markNodeCompleted(Integer nodeId, Integer courseId) {
         try {
             int userId = StpUtil.getLoginIdAsInt();
             
-            boolean isNewlyCompleted = learningProgressService.markNodeCompleted(userId, nodeId);
+            boolean isNewlyCompleted = learningProgressService.markNodeCompleted(userId, nodeId, courseId);
+            
+            // 获取更新后的课程进度
+            UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId((long)userId, (long)courseId);
+            Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
             
             Map<String, Object> result = new HashMap<>();
             result.put("nodeId", nodeId);
             result.put("completed", true);
             result.put("isNewlyCompleted", isNewlyCompleted);
+            result.put("courseProgress", courseProgress);
             
             // 返回用户最新的完成统计
             long totalCompleted = learningProgressService.getUserCompletedCount(userId);
@@ -383,16 +389,21 @@ public class UserController implements UserClient {
     }
 
     @Override
-    public Response unmarkNodeCompleted(Integer nodeId) {
+    public Response unmarkNodeCompleted(Integer nodeId, Integer courseId) {
         try {
             int userId = StpUtil.getLoginIdAsInt();
             
-            boolean wasRemoved = learningProgressService.unmarkNodeCompleted(userId, nodeId);
+            boolean wasRemoved = learningProgressService.unmarkNodeCompleted(userId, nodeId, courseId);
+            
+            // 获取更新后的课程进度
+            UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId((long)userId, (long)courseId);
+            Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
             
             Map<String, Object> result = new HashMap<>();
             result.put("nodeId", nodeId);
             result.put("completed", false);
             result.put("wasRemoved", wasRemoved);
+            result.put("courseProgress", courseProgress);
             
             // 返回用户最新的完成统计
             long totalCompleted = learningProgressService.getUserCompletedCount(userId);
@@ -421,6 +432,30 @@ public class UserController implements UserClient {
 
         } catch (Exception e) {
             log.error("Error checking if node {} is completed: {}", nodeId, e.getMessage(), e);
+            return Response.failed;
+        }
+    }
+
+    @Override
+    public Response markCourseCompleted(Integer courseId) {
+        try {
+            int userId = StpUtil.getLoginIdAsInt();
+            
+            boolean result = learningProgressService.markCourseCompleted(userId, courseId);
+            
+            if (result) {
+                Map<String, Object> responseData = new HashMap<>();
+                responseData.put("courseId", courseId);
+                responseData.put("completed", true);
+                responseData.put("message", "课程已标记为完成");
+                
+                return Response.success(responseData);
+            } else {
+                return Response.failed;
+            }
+
+        } catch (Exception e) {
+            log.error("Error marking course {} as completed: {}", courseId, e.getMessage(), e);
             return Response.failed;
         }
     }

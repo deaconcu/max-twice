@@ -6,7 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.api.client.ContentsClient;
+import com.prosper.learn.domain.service.AggregateService;
 import com.prosper.learn.dto.CourseTocDTO;
+import com.prosper.learn.dto.NodeDTOV2;
 import com.prosper.learn.dto.Response;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
@@ -32,10 +34,11 @@ public class ContentsController implements ContentsClient {
     private final PostMapper postMapper;
     private final CourseMapper courseMapper;
     private final ContentsService contentsService;
+    private final AggregateService aggregateService;
 
     @Override
     public Response<CourseTocDTO> get(int userId, int courseId, boolean create) {
-        Utils.Pair<String, Map<Integer, String>> pair = contentsService.getContents(userId, courseId, create);
+        Utils.Pair<String, Map<Integer, NodeDTOV2>> pair = aggregateService.getContents(userId, courseId, create);
         return new Response<>(new CourseTocDTO(pair.left(), pair.right()));
     }
 

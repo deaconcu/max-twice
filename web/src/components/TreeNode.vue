@@ -3,11 +3,12 @@ import { ref, onMounted, nextTick } from 'vue';
 
 const props = defineProps({
   nodeData: { type: Object, required: true },
-  nodeNames: { type: Object, required: true },
+  nodeInfos: { type: Object, required: true }, // 替换 nodeNames
   courseId: { type: Number},
   path: { type: String, required: true },
   currPath: { type: String },
-  depth: { type: Number }
+  depth: { type: Number },
+  isLearning: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['getNextNode']);
@@ -82,10 +83,10 @@ const getNextNode = (currentPath) => {
       
       if (checkNodeExists(props.nodeData, checkPath)) {
         const nextPath = testPathParts.join('-');
-        const nodeName = props.nodeNames[testPathParts[depth]];
+        const nodeInfo = props.nodeInfos[testPathParts[depth]];
         return {
           path: nextPath,
-          name: nodeName || `节点 ${testPathParts[depth]}`
+          name: nodeInfo?.name || `节点 ${testPathParts[depth]}`
         };
       }
       
@@ -115,19 +116,51 @@ defineExpose({
           style="font-size: 0.95em; margin-bottom: 0.38em;">
           <router-link :to="{ name: 'read', query: { courseId: courseId, path: calculatePath(currPath, key) } }"
             class="custom-link">
-            <span v-if="depth === 1 && calculatePath(currPath, key) == path" class="font-weight-black text-primary"
-              style="font-size: 1.1em;">
-              {{ nodeNames[key] }}
-            </span>
-            <span v-else-if="depth === 1" class="font-weight-black" style="font-size: 1.1em;">
-              {{ nodeNames[key] }}
-            </span>
-            <span v-else-if="calculatePath(currPath, key) == path" class="font-weight-bold text-teal">
-              {{ nodeNames[key] }}
-            </span>
-            <span v-else style="font-weight: 400;">
-              {{ nodeNames[key] }}
-            </span>
+            <div class="d-flex align-center">
+              <!-- 完成状态图标 - 只在学习模式下显示 -->
+              <template v-if="isLearning">
+                <!-- 有子节点的显示横线 -->
+                <template v-if="Object.keys(node).filter(key => key !== '^').length > 0">
+                  <v-icon 
+                    icon="mdi-minus" 
+                    color="grey-darken-1" 
+                    size="16" 
+                    class="mr-2"
+                  ></v-icon>
+                </template>
+                <!-- 叶子节点显示完成状态 -->
+                <template v-else>
+                  <v-icon 
+                    v-if="nodeInfos[key]?.isCompleted" 
+                    icon="mdi-check-circle" 
+                    color="success" 
+                    size="16" 
+                    class="mr-2"
+                  ></v-icon>
+                  <v-icon 
+                    v-else 
+                    icon="mdi-circle-outline" 
+                    color="grey-lighten-2" 
+                    size="16" 
+                    class="mr-2"
+                  ></v-icon>
+                </template>
+              </template>
+              
+              <span v-if="depth === 1 && calculatePath(currPath, key) == path" class="font-weight-black text-primary"
+                style="font-size: 1.1em;">
+                {{ nodeInfos[key]?.name || key }}
+              </span>
+              <span v-else-if="depth === 1" class="font-weight-black" style="font-size: 1.1em;">
+                {{ nodeInfos[key]?.name || key }}
+              </span>
+              <span v-else-if="calculatePath(currPath, key) == path" class="font-weight-bold text-teal">
+                {{ nodeInfos[key]?.name || key }}
+              </span>
+              <span v-else style="font-weight: 400;">
+                {{ nodeInfos[key]?.name || key }}
+              </span>
+            </div>
           </router-link>
           <template v-if="Object.keys(node).filter(key => key !== '^').length > 0">
             <v-btn icon="mdi-chevron-down" @click="toggleNode(key)" :class="{ flipped: expanded }" class="slow"
@@ -137,8 +170,8 @@ defineExpose({
         <template v-if="Object.keys(node).filter(key => key !== '^').length > 0">
           <v-scroll-x-transition>
             <div v-if="expandedNodes.includes(key)" :class="{ 'pl-4': depth > 1 }">
-              <TreeNode :nodeData="node" :nodeNames="nodeNames" :course-id="courseId" :path="path"
-                :currPath="calculatePath(currPath, key)" :depth="depth + 1" />
+              <TreeNode :nodeData="node" :nodeInfos="nodeInfos" :course-id="courseId" :path="path"
+                :currPath="calculatePath(currPath, key)" :depth="depth + 1" :isLearning="isLearning" />
             </div>
           </v-scroll-x-transition>
         </template>

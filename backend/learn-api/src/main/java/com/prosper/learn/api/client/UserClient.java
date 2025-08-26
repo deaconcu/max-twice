@@ -61,13 +61,16 @@ public interface UserClient {
     Response followee(@RequestParam int followerId, @RequestParam String lastCreateTime);
 
     @PostMapping("/user/complete/{nodeId}")
-    Response markNodeCompleted(@PathVariable Integer nodeId);
+    Response markNodeCompleted(@PathVariable Integer nodeId, @RequestParam Integer courseId);
 
     @DeleteMapping("/user/complete/{nodeId}")
-    Response unmarkNodeCompleted(@PathVariable Integer nodeId);
+    Response unmarkNodeCompleted(@PathVariable Integer nodeId, @RequestParam Integer courseId);
 
     @GetMapping("/user/complete/{nodeId}")
     Response isNodeCompleted(@PathVariable Integer nodeId);
+
+    @PostMapping("/user/complete/course/{courseId}")
+    Response markCourseCompleted(@PathVariable Integer courseId);
 }
 
 

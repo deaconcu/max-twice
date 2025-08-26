@@ -7,6 +7,7 @@ import TreeNode from '../components/TreeNode.vue';
 import PostingList from '../components/PostingList.vue';
 import ConfigContents from '../components/ConfigContents.vue';
 import RightSidebar from '@/components/RightSidebar.vue';
+import CourseCompletionDialog from '@/components/CourseCompletionDialog.vue';
 
 import { useUserStore } from "@/stores/user";
 import { usePlatformStats } from '@/composables/usePlatformStats';
@@ -56,6 +57,15 @@ const parentCourseInfo = ref(null); // 父课程信息
 const subCourseList = ref([]); // 子课程列表
 const isMainCourse = ref(true); // 是否为主课程
 const treeNodeRefs = ref([]);
+const showCongratulations = ref(false); // 恭喜完成课程弹窗
+
+// 课程进度相关状态
+const courseProgress = ref({
+  completedNodes: 0,
+  totalNodes: 0,
+  progressPercent: 0,
+  status: 'NOT_STARTED' // NOT_STARTED, IN_PROGRESS, COMPLETED
+});
 
 const applyCourseData = ref({
   name: "",
@@ -164,6 +174,18 @@ async function loadData(parts) {
             subCourseList: response.data.subCourseList,
             isMainCourse: isMainCourse.value
           });
+
+          // 检查课程完成状态
+          if (response.data.tocNodeInfos && response.data.course && response.data.toc) {
+            const allNodesCompleted = checkAllNodesCompleted(response.data.tocNodeInfos, response.data.toc);
+            const courseCompleted = response.data.course.isCompleted || false;
+            
+            // 如果第一组的所有节点都完成了，但课程还未完成，则设置课程为已完成并显示恭喜弹窗
+            if (allNodesCompleted && !courseCompleted) {
+              console.log('第一组所有节点已完成，自动设置课程为已完成');
+              completeCourse(response.data.course.id);
+            }
+          }
         } else {
           if (parts.includes('chosenPosting')) {
             data.value.chosenPosting = response.data.chosenPosting;
@@ -172,15 +194,15 @@ async function loadData(parts) {
             data.value.fixedPostings = response.data.fixedPostings;
           }
           if (parts.includes('contents')) {
-            data.value.contents = response.data.contents;
-            data.value.contentsNames = response.data.contentsNames;
+            data.value.toc = response.data.toc;
+            data.value.tocNodeInfos = response.data.tocNodeInfos;
           }
         }
 
 
         nodes.value = data.value.path.split("-");
         nodes.value[0]--;
-        lastPathNode.value = nodes.value.reduce((acc, key) => acc && acc[key], data.value.contents);
+        lastPathNode.value = nodes.value.reduce((acc, key) => acc && acc[key], data.value.toc);
 
         currContentsIndex.value = +nodes.value[0];
         nodes.value.shift();
@@ -189,9 +211,9 @@ async function loadData(parts) {
         nodes.value.forEach((item, index) => {
           if (index < 1) return;
           if (index < nodes.value.length - 1) {
-            pathText.value += data.value.contentsNames[item] + "/"
+            pathText.value += data.value.tocNodeInfos[item]?.name + "/"
           } else {
-            pathText.value += data.value.contentsNames[item];
+            pathText.value += data.value.tocNodeInfos[item]?.name;
           }
           console.log("path: " + pathText.value);
         });
@@ -258,6 +280,96 @@ const goToParentCourse = () => {
 }
 
 const relatedLinks = ['高等数学', '概率论', 'C++编程实现', '软件测试']
+
+// 检查第一组目录的所有节点是否已完成
+const checkAllNodesCompleted = (tocNodeInfos, toc = null) => {
+  if (!tocNodeInfos || Object.keys(tocNodeInfos).length === 0) {
+    return false;
+  }
+  
+  if (!toc || !toc[0]) {
+    return false;
+  }
+  
+  // 获取第一组目录中的所有节点ID
+  const firstTocNodes = toc[0];
+  const nodeIds = getAllNodeIdsFromToc(firstTocNodes);
+  
+  console.log('第一组目录节点IDs:', nodeIds);
+  
+  // 检查第一组的这些节点是否都已完成
+  return nodeIds.every(nodeId => {
+    const nodeInfo = tocNodeInfos[nodeId];
+    const isCompleted = nodeInfo?.isCompleted === true;
+    console.log(`节点${nodeId}完成状态:`, isCompleted, nodeInfo);
+    return isCompleted;
+  });
+};
+
+// 递归获取目录结构中的所有节点ID
+const getAllNodeIdsFromToc = (tocNode) => {
+  const nodeIds = [];
+  
+  const traverse = (node) => {
+    if (typeof node === 'object' && node !== null) {
+      Object.keys(node).forEach(key => {
+        // 跳过特殊键
+        if (key === '+' || key === '^') {
+          return;
+        }
+        
+        // 如果key是数字，说明是节点ID
+        const nodeId = parseInt(key);
+        if (!isNaN(nodeId)) {
+          nodeIds.push(nodeId);
+        }
+        
+        // 递归处理子节点
+        if (typeof node[key] === 'object') {
+          traverse(node[key]);
+        }
+      });
+    }
+  };
+  
+  traverse(tocNode);
+  return nodeIds;
+};
+
+// 设置课程为已完成
+const completeCourse = async (courseId) => {
+  try {
+    const response = await learnService.completeCourse(courseId);
+    if (response.code === 200) {
+      showCongratulations.value = true;
+      // 更新当前数据中的课程完成状态
+      if (data.value && data.value.course) {
+        data.value.course.isCompleted = true;
+      }
+    } else {
+      console.error('设置课程完成状态失败:', response.msg);
+    }
+  } catch (error) {
+    console.error('设置课程完成状态失败:', error);
+  }
+};
+
+// 处理节点完成事件
+const onNodeCompleted = (nodeId) => {
+  console.log('节点完成事件触发，nodeId:', nodeId);
+  
+  // 检查第一组目录的所有节点是否都已完成
+  if (data.value && data.value.tocNodeInfos && data.value.course && data.value.toc) {
+    const allNodesCompleted = checkAllNodesCompleted(data.value.tocNodeInfos, data.value.toc);
+    const courseCompleted = data.value.course.isCompleted || false;
+    
+    // 如果第一组的所有节点都完成了，但课程还未完成，则设置课程为已完成并显示恭喜弹窗
+    if (allNodesCompleted && !courseCompleted) {
+      console.log('第一组所有节点已完成，自动设置课程为已完成');
+      completeCourse(data.value.course.id);
+    }
+  }
+};
 
 // 获取下一个节点信息的方法
 const getNextNodeInfo = () => {
@@ -476,26 +588,34 @@ const startCourse = async () => {
                 </div>
               </div>
 
-              <!-- 学习按钮 -->
-              <v-btn
-                @click="startCourse"
-                color="grey-lighten-5"
-                variant="flat"
-                rounded="lg"
-                size="comfortable"
-                class="ml-4 px-4 learn-button"
-                style="height:65px"
-              >
-                <v-icon 
-                  :icon="isLearning ? 'mdi-check-circle' : 'mdi-play-circle'"
-                  size="20" 
-                  class="mr-1 "
-                  :color="isLearning ? 'success' : 'grey-darken-2'"
-                ></v-icon>
-                <span class="font-weight-bold" :class="isLearning ? 'text-success' : 'text-grey-darken-3'">
-                  {{ isLearning ? '正在学习' : '学习' }} 
-                </span>
-              </v-btn>
+              <!-- 学习状态区域 -->
+              <div class="learning-status-container clickable" :class="{ 'learning-active': isLearning }" @click="startCourse">
+                <!-- 第一行：状态信息 -->
+                <div class="d-flex justify-space-between align-center" :class="{ 'mb-1': isLearning }">
+                  <div class="d-flex align-center">
+                    <v-icon 
+                      :icon="!isLearning ? 'mdi-play-circle-outline' : ((data?.course?.progress || 0) >= 10000 ? 'mdi-check-circle' : 'mdi-play-circle')"
+                      size="16" 
+                      class="mr-1"
+                      :color="!isLearning ? 'grey-darken-2' : ((data?.course?.progress || 0) >= 10000 ? 'success' : 'primary')"
+                    ></v-icon>
+                    <span class="text-body-2 font-weight-bold" :class="!isLearning ? 'text-grey-darken-3' : ((data?.course?.progress || 0) >= 10000 ? 'text-success' : 'text-primary')">
+                      {{ !isLearning ? '点击开始学习' : ((data?.course?.progress || 0) >= 10000 ? '学习完成' : '正在学习') }}
+                    </span>
+                  </div>
+                  <!-- 只有在学习状态下才显示进度百分比 -->
+                  <span v-if="isLearning" class="text-caption font-weight-bold">{{ parseFloat(((data?.course?.progress || 0) / 100).toFixed(2)) }}%</span>
+                </div>
+                
+                <!-- 第二行：进度条（只有在学习状态下才显示） -->
+                <v-progress-linear 
+                  v-if="isLearning"
+                  :model-value="(data?.course?.progress || 0) / 100" 
+                  :color="(data?.course?.progress || 0) >= 10000 ? 'success' : 'primary'" 
+                  height="3"
+                  rounded
+                ></v-progress-linear>
+              </div>
             </div>
           </div>
 
@@ -672,50 +792,80 @@ const startCourse = async () => {
           <!-- left -->
           <v-col cols="3" class="pt-7">
             <div class="sticky-left hidden-scrollbar">
-              <div style="background-color: #f9f9f9; border-radius: 16px;" class="pa-3">
-
-                <!-- one -->
-                <v-row align-content="space-between" align="center">
-                  <v-col cols="auto" class="pe-0">
-                    <v-btn class="text-body-1 px-3 mb-2" size="small" color="grey-darken-2" variant="tonal" :ripple="false" rounded="lg" density="default"
+              <div class="toc-refined">
+                <div class="toc-header-refined border-b py-2">
+                  <div class="d-flex align-center">
+                    <v-icon icon="mdi-view-list" size="14" color="grey" class="mr-2"></v-icon>
+                    <span class="toc-title-text mr-2">课程目录</span>
+                  </div>
+                  
+                  <div class="toc-actions-refined">
+                    <v-btn
+                      icon="mdi-chevron-down"
+                      variant="text"
+                      size="small"
+                      density="compact"
+                      color="grey-darken-1"
+                      :class="{ 'rotate-180': openContentsList }"
+                      class="action-btn-refined"
                       @click="openContentsList = !openContentsList">
-                      <span class="font-weight-bold text-body-2">目录 {{ currContentsIndex + 1 }}</span>
-                      <v-icon icon="mdi-chevron-down" end :class="{ flipped: openContentsList }" class="slow"></v-icon>
                     </v-btn>
-                  </v-col>
+                    <v-btn
+                      icon="mdi-cog-outline"
+                      variant="text"
+                      size="small"
+                      density="compact"
+                      color="grey-darken-2"
+                      class="action-btn-refined"
+                      @click="configContents = true">
+                    </v-btn>
+                  </div>
+                </div>
 
-                  <v-spacer />
+                <v-expand-transition>
+                  <div v-if="openContentsList" class="toc-chips-refined">
+                    <div 
+                      v-for="(item, index) in data.toc" 
+                      :key="index"
+                      class="chip-refined"
+                      :class="{ 
+                        'chip-active': currContentsIndex === index,
+                        'chip-primary': index === 0 
+                      }"
+                      @click="currContentsIndex = index">
+                      
+                      <div class="chip-inner">
+                        <span class="chip-number">{{ index + 1 }}</span>
+                      </div>
+                      
+                      <!-- 特色图标设计 -->
+                      <div v-if="index === 0" class="corner-badge">
+                        <v-icon icon="mdi-chart-line-variant" size="8" color="white"></v-icon>
+                      </div>
+                      
+                      <v-tooltip v-if="index === 0" activator="parent" location="top">
+                        <span>主目录 - 用于计算课程完成进度</span>
+                      </v-tooltip>
+                    </div>
+                  </div>
+                </v-expand-transition>
 
-                  <v-col cols="auto" class="ps-0 pt-2">
-                    <v-icon @click="configContents = true" icon="mdi-file-cog-outline" class="text-primary"
-                      size="default" start></v-icon>
-                    <configContents v-model="configContents" :contents="data.contents" :courseId="data.course.id"
-                      @loadData="loadData"></configContents>
-                  </v-col>
-                </v-row>
-
-                <!-- two -->
-                <v-scroll-x-transition>
-                  <v-row v-if="openContentsList" class="px-0 pt-2 ma-0">
-                    <v-chip v-for="(item, index) in data.contents" @click="currContentsIndex = index" :value="index"
-                      class="ma-1" variant="text" :class="currContentsIndex == index ? 'text-primary bg-primary-lighten-5' : 'text-grey-darken-2'" border>
-                      {{ index + 1 }}
-                    </v-chip>
-                  </v-row>
-                </v-scroll-x-transition>
+                <configContents v-model="configContents" :contents="data.toc" :courseId="data.course.id"
+                  @loadData="loadData"></configContents>
               </div>
 
               <!-- three -->
               <v-tabs-window v-model="currContentsIndex" class="pt-4">
-                <v-tabs-window-item v-for="(item, index) in data.contents" :value="index">
+                <v-tabs-window-item v-for="(item, index) in data.toc" :value="index">
                   <TreeNode 
                     ref="treeNodeRefs"
-                    :nodeData="data.contents[index]" 
-                    :nodeNames="data.contentsNames"
+                    :nodeData="data.toc[index]" 
+                    :nodeInfos="data.tocNodeInfos"
                     :course-id="data.course.id" 
                     :path="data.path" 
                     :curr-path="String(index + 1)"
-                    :depth="1" />
+                    :depth="1"
+                    :isLearning="isLearning" />
                 </v-tabs-window-item>
               </v-tabs-window>
             </div>
@@ -731,7 +881,10 @@ const startCourse = async () => {
                 :currNode="lastPathNode" 
                 :pathText="pathText" 
                 :getNextNodeInfo="getNextNodeInfo"
-                @loadData="loadData" />
+                :isLearning="isLearning"
+                @loadData="loadData"
+                @nodeCompleted="onNodeCompleted"
+                @startLearning="startCourse" />
             </v-col>
           </v-col>
         </v-row>
@@ -743,6 +896,12 @@ const startCourse = async () => {
       </v-col>
         
     </v-row>
+
+    <!-- 恭喜完成课程弹窗 -->
+    <CourseCompletionDialog 
+      v-model="showCongratulations" 
+      :course-name="data?.course?.name || ''"
+    />
   </v-container>
 </template>
 
@@ -955,6 +1114,38 @@ const startCourse = async () => {
   transform: translateY(-1px);
 }
 
+/* 学习状态容器样式 */
+.learning-status-container {
+  background: #f8f9fa;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  min-width: 180px;
+  height: 65px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+}
+
+/* 未开始学习时居中显示 */
+.learning-status-container:not(.learning-active) {
+  justify-content: center;
+  align-items: center;
+}
+
+.learning-status-container.clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.learning-status-container.clickable:hover {
+  background: #e3f2fd;
+  border-color: #1976d2;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.2);
+}
+
 .subcourse-learn-btn {
   border: 1px solid #e0e0e0 !important;
 }
@@ -998,7 +1189,194 @@ const startCourse = async () => {
   }
 }
 
-/* 原有样式保持 */
+/* 精致目录设计 */
+.toc-refined {
+  background: linear-gradient(145deg, #ffffff, #f8f9fa);
+  border: 1px solid #e3e6eb;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+}
+
+.toc-refined::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(79, 172, 254, 0.3), transparent);
+}
+
+/* 精致标题栏 */
+.toc-header-refined {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 12px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+}
+
+.toc-title-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+
+
+.toc-title-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2c3e50;
+  letter-spacing: 0.3px;
+}
+
+.current-index-badge {
+  background: linear-gradient(135deg, #1976d2, #42a5f5);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.2;
+  box-shadow: 0 1px 3px rgba(25, 118, 210, 0.3);
+}
+
+.toc-actions-refined {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.action-btn-refined {
+  border-radius: 8px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.action-btn-refined:hover {
+  background: rgba(25, 118, 210, 0.08) !important;
+  transform: scale(1.05);
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+/* 精致chips区域 */
+.toc-chips-refined {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 14px 16px 12px 16px;
+  background: rgba(255, 255, 255, 0.6);
+  overflow: visible; /* 确保角标不被裁剪 */
+}
+
+.chip-refined {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  background: #efefef;
+  border-radius: 18px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  overflow: visible; /* 让角标显示出来 */
+}
+
+.chip-refined::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.chip-refined:hover::before {
+  opacity: 1;
+}
+
+.chip-refined:hover {
+  transform: translateY(-2px) scale(1.05);
+  border-color: #1976d2;
+}
+
+.chip-active {
+  background: #4c83cc;
+  border-color: #1976d2 !important;
+  transform: translateY(-1px) scale(1.02);
+}
+
+.chip-primary {
+  border-color: #4caf50;
+}
+
+.chip-primary:hover {
+  border-color: #4caf50;
+}
+
+.chip-primary.chip-active {
+  background: #4c83cc;
+  color: white;
+}
+
+.chip-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.chip-number {
+  font-size: 13px;
+  font-weight: 700;
+  color: #37474f;
+  line-height: 1;
+}
+
+.chip-active .chip-number {
+  color: white;
+}
+
+.chip-primary .chip-number {
+  color: #white;
+}
+
+/* 特色角标设计 */
+.corner-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: red;
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(76, 175, 80, 0.4);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.corner-badge .v-icon {
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));
+}
+
+
+/* 保持原有样式 */
 .sticky-left {
   position: sticky;
   top: 15px;
