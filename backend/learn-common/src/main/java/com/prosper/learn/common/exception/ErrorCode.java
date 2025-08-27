@@ -1,4 +1,4 @@
-package com.prosper.learn.domain.exception;
+package com.prosper.learn.common.exception;
 
 /**
  * 错误码枚举

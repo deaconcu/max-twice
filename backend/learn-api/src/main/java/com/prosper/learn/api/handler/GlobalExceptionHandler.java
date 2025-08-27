@@ -1,6 +1,6 @@
 package com.prosper.learn.api.handler;
 
-import com.prosper.learn.domain.exception.BusinessException;
+import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.dto.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;

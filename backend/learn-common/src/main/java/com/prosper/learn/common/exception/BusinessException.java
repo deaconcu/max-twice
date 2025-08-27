@@ -1,4 +1,4 @@
-package com.prosper.learn.domain.exception;
+package com.prosper.learn.common.exception;
 
 /**
  * 业务异常 - 用户可理解的错误

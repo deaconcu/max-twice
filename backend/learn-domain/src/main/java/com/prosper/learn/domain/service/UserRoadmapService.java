@@ -1,6 +1,6 @@
 package com.prosper.learn.domain.service;
 
-import com.prosper.learn.domain.exception.ErrorCode;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.ProfessionDTO;
 import com.prosper.learn.dto.RoadmapDTOV2;

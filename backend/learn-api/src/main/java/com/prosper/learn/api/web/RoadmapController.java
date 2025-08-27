@@ -1,7 +1,7 @@
 package com.prosper.learn.api.web;
 
 import com.prosper.learn.api.client.RoadmapClient;
-import com.prosper.learn.domain.exception.ErrorCode;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.RoadmapService;
 import com.prosper.learn.domain.service.ScoreCalculationService;
 import com.prosper.learn.domain.service.UpvoteService;
