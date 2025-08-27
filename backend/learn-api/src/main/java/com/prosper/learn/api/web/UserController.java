@@ -2,6 +2,7 @@ package com.prosper.learn.api.web;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.client.UserClient;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.MessageService;
 import com.prosper.learn.domain.service.PostingService;
 import com.prosper.learn.domain.service.LearningProgressService;
@@ -61,8 +62,11 @@ public class UserController implements UserClient {
         int selfId = StpUtil.getLoginIdAsInt();
         UserDO userDO = userMapper.getById(id);
 
+        if (userDO == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
+
         UserDTOV3 userDTOV3 = Converter.INSTANCE.toUserDTOV3(userDO);
-        if (userDO == null) return notFound;
 
         FollowDO followDO = followMapper.get(selfId, id);
         if (followDO != null) {
@@ -80,7 +84,9 @@ public class UserController implements UserClient {
     @Override
     public Response<UserDTOV2> login(String email, String password) {
         UserDO userDO = userMapper.getByEmail(email);
-        if (userDO == null) return new Response(USER_NOT_EXIST);
+        if (userDO == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
         //if (!userDO.getPassword().equals(Utils.md5(password))) return new Response(PASSWORD_IS_WRONG);
         StpUtil.login(userDO.getId());
         UserDTOV2 userDTOV2 = Converter.INSTANCE.toUserDTOV2(userDO);
@@ -126,14 +132,20 @@ public class UserController implements UserClient {
     public Response<UserDTO> validateMail(String email, String code) {
         // todo 5min
         VerificationDO verificationDO = verificationMapper.getByEmail(email, false);
-        if (verificationDO == null) return new Response(BAD_REQUEST);
-        if (!verificationDO.getCode().equals(code)) return new Response(BAD_REQUEST);
+        if (verificationDO == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
+        if (!verificationDO.getCode().equals(code)) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
 
         verificationDO.setUsed(true);
         verificationMapper.update(verificationDO);
 
         UserDO user = userMapper.getByEmail(email);
-        if (user == null) return new Response(BAD_REQUEST);
+        if (user == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
         if (user.isEmailValidated()) return new Response<>(SUCCESS);
 
         user.setEmailValidated(true);
@@ -160,14 +172,18 @@ public class UserController implements UserClient {
     @Override
     public Response getSelfArticle(int userId, int lastId) {
         UserDO userDO = userMapper.getById(userId);
-        if (userDO == null) return new Response(USER_NOT_EXIST);
+        if (userDO == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
         return new Response(postingService.getUserArticleWithViews(userDO.getId(), lastId));
     }
 
     @Override
     public Response getSelfContents(int userId, int lastId) {
         UserDO userDO = userMapper.getById(userId);
-        if (userDO == null) return new Response(USER_NOT_EXIST);
+        if (userDO == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
         return new Response(postingService.getUserContentsWithViews(userDO.getId(), lastId));
     }
 
@@ -175,7 +191,9 @@ public class UserController implements UserClient {
     public Response getSubscription(int userId) {
         //int self = StpUtil.getLoginIdAsInt();
         UserDO userDO = userMapper.getById(userId);
-        if (userDO == null) return new Response(USER_NOT_EXIST);
+        if (userDO == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
 
         UserProfileDO userProfileDO = userProfileMapper.getById(userDO.getId());
         if (userProfileDO == null || userProfileDO.getSubscription() == null || userProfileDO.getSubscription().trim().isEmpty()) {
@@ -207,7 +225,9 @@ public class UserController implements UserClient {
     @Override
     public Response subscript(int courseId) {
         CourseDO courseDO = courseMapper.getById(courseId);
-        if (courseDO == null) return new Response(BAD_REQUEST);
+        if (courseDO == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
 
         int self = StpUtil.getLoginIdAsInt();
         UserProfileDO userProfileDO = userProfileMapper.getById(self);
@@ -267,7 +287,9 @@ public class UserController implements UserClient {
     @Override
     public Response unsubscript(int courseId) {
         CourseDO courseDO = courseMapper.getById(courseId);
-        if (courseDO == null) return new Response(BAD_REQUEST);
+        if (courseDO == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
 
         int self = StpUtil.getLoginIdAsInt();
         UserProfileDO userProfileDO = userProfileMapper.getById(self);
@@ -290,7 +312,9 @@ public class UserController implements UserClient {
     public Response follow(int followeeId) {
         int followerId = StpUtil.getLoginIdAsInt();
         UserDO userDO = userMapper.getById(followeeId);
-        if (userDO == null) return new Response(BAD_REQUEST);
+        if (userDO == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
 
         FollowDO followDO = followMapper.get(followerId, followeeId);
         if (followDO == null) {
@@ -308,7 +332,9 @@ public class UserController implements UserClient {
     public Response unfollow(int followeeId) {
         int followerId = StpUtil.getLoginIdAsInt();
         UserDO  userDO = userMapper.getById(followeeId);
-        if (userDO == null) return new Response(BAD_REQUEST);
+        if (userDO == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
 
         FollowDO followDO = followMapper.get(followerId, followeeId);
         if (followDO != null) {
@@ -323,7 +349,9 @@ public class UserController implements UserClient {
         LocalDateTime time = LocalDateTime.parse(lastCreateTime, formatter);
 
         UserDO followerDO = userMapper.getById(followerId);
-        if (followerDO == null) return new Response(userNotExist);
+        if (followerDO == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
 
         //int followerId = StpUtil.getLoginIdAsInt();
         int pageSize = 10;
@@ -361,102 +389,78 @@ public class UserController implements UserClient {
 
     @Override
     public Response markNodeCompleted(Integer nodeId, Integer courseId) {
-        try {
-            int userId = StpUtil.getLoginIdAsInt();
-            
-            boolean isNewlyCompleted = learningProgressService.markNodeCompleted(userId, nodeId, courseId);
-            
-            // 获取更新后的课程进度
-            UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId((long)userId, (long)courseId);
-            Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("nodeId", nodeId);
-            result.put("completed", true);
-            result.put("isNewlyCompleted", isNewlyCompleted);
-            result.put("courseProgress", courseProgress);
-            
-            // 返回用户最新的完成统计
-            long totalCompleted = learningProgressService.getUserCompletedCount(userId);
-            result.put("totalCompletedNodes", totalCompleted);
+        int userId = StpUtil.getLoginIdAsInt();
+        
+        boolean isNewlyCompleted = learningProgressService.markNodeCompleted(userId, nodeId, courseId);
+        
+        // 获取更新后的课程进度
+        UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId((long)userId, (long)courseId);
+        Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("nodeId", nodeId);
+        result.put("completed", true);
+        result.put("isNewlyCompleted", isNewlyCompleted);
+        result.put("courseProgress", courseProgress);
+        
+        // 返回用户最新的完成统计
+        long totalCompleted = learningProgressService.getUserCompletedCount(userId);
+        result.put("totalCompletedNodes", totalCompleted);
 
-            return Response.success(result);
-
-        } catch (Exception e) {
-            log.error("Error marking node {} as completed: {}", nodeId, e.getMessage(), e);
-            return Response.failed;
-        }
+        return Response.success(result);
     }
 
     @Override
     public Response unmarkNodeCompleted(Integer nodeId, Integer courseId) {
-        try {
-            int userId = StpUtil.getLoginIdAsInt();
-            
-            boolean wasRemoved = learningProgressService.unmarkNodeCompleted(userId, nodeId, courseId);
-            
-            // 获取更新后的课程进度
-            UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId((long)userId, (long)courseId);
-            Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("nodeId", nodeId);
-            result.put("completed", false);
-            result.put("wasRemoved", wasRemoved);
-            result.put("courseProgress", courseProgress);
-            
-            // 返回用户最新的完成统计
-            long totalCompleted = learningProgressService.getUserCompletedCount(userId);
-            result.put("totalCompletedNodes", totalCompleted);
+        int userId = StpUtil.getLoginIdAsInt();
+        
+        boolean wasRemoved = learningProgressService.unmarkNodeCompleted(userId, nodeId, courseId);
+        
+        // 获取更新后的课程进度
+        UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId((long)userId, (long)courseId);
+        Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("nodeId", nodeId);
+        result.put("completed", false);
+        result.put("wasRemoved", wasRemoved);
+        result.put("courseProgress", courseProgress);
+        
+        // 返回用户最新的完成统计
+        long totalCompleted = learningProgressService.getUserCompletedCount(userId);
+        result.put("totalCompletedNodes", totalCompleted);
 
-            return Response.success(result);
-
-        } catch (Exception e) {
-            log.error("Error unmarking node {} as completed: {}", nodeId, e.getMessage(), e);
-            return Response.failed;
-        }
+        return Response.success(result);
     }
 
     @Override
     public Response isNodeCompleted(Integer nodeId) {
-        try {
-            int userId = StpUtil.getLoginIdAsInt();
-            
-            boolean isCompleted = learningProgressService.isNodeCompleted(userId, nodeId);
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("nodeId", nodeId);
-            result.put("completed", isCompleted);
+        int userId = StpUtil.getLoginIdAsInt();
+        
+        boolean isCompleted = learningProgressService.isNodeCompleted(userId, nodeId);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("nodeId", nodeId);
+        result.put("completed", isCompleted);
 
-            return Response.success(result);
-
-        } catch (Exception e) {
-            log.error("Error checking if node {} is completed: {}", nodeId, e.getMessage(), e);
-            return Response.failed;
-        }
+        return Response.success(result);
     }
 
     @Override
     public Response markCourseCompleted(Integer courseId) {
-        try {
-            int userId = StpUtil.getLoginIdAsInt();
+        int userId = StpUtil.getLoginIdAsInt();
+        
+        boolean result = learningProgressService.markCourseCompleted(userId, courseId);
+        
+        if (result) {
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("courseId", courseId);
+            responseData.put("completed", true);
+            responseData.put("message", "课程已标记为完成");
             
-            boolean result = learningProgressService.markCourseCompleted(userId, courseId);
-            
-            if (result) {
-                Map<String, Object> responseData = new HashMap<>();
-                responseData.put("courseId", courseId);
-                responseData.put("completed", true);
-                responseData.put("message", "课程已标记为完成");
-                
-                return Response.success(responseData);
-            } else {
-                return Response.failed;
-            }
-
-        } catch (Exception e) {
-            log.error("Error marking course {} as completed: {}", courseId, e.getMessage(), e);
-            return Response.failed;
+            return Response.success(responseData);
+        } else {
+            throw ErrorCode.SYSTEM_ERROR.exception();
         }
     }
 }

@@ -3,6 +3,7 @@ package com.prosper.learn.api.web;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.api.client.SystemClient;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.dto.Response;
 import com.prosper.learn.persistence.dataobject.SystemDO;
 import com.prosper.learn.persistence.mapper.SystemMapper;
@@ -16,7 +17,7 @@ import java.io.IOException;
 //@SaCheckLogin
 @Slf4j
 @RequiredArgsConstructor
-public class SystemControll implements SystemClient {
+public class SystemController implements SystemClient {
 
     private final SystemMapper systemMapper;
     private final ObjectMapper mapper;
@@ -26,14 +27,14 @@ public class SystemControll implements SystemClient {
         try {
             return new Response<>(mapper.readTree(systemMapper.get(0).getConfig()));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw ErrorCode.JSON_PARSE_ERROR.exception(e);
         }
     }
 
     @Override
     public Response<JsonNode> getPart(String part) {
         if (part == null || part.isEmpty()) {
-            return new Response<>(Response.BAD_REQUEST, "参数错误: part不能为空", null);
+            throw ErrorCode.SYSTEM_ERROR.exception();
         }
 
         try {
@@ -41,12 +42,11 @@ public class SystemControll implements SystemClient {
             JsonNode jsonNode = mapper.readTree(config);
             JsonNode partNode = jsonNode.get(part);
             if (partNode == null) {
-                return new Response<>(Response.NOT_FOUND, "未找到指定部分: " + part, null);
+                throw ErrorCode.SYSTEM_ERROR.exception();
             }
             return new Response<>(partNode);
         } catch (IOException e) {
-            log.error("获取系统配置部分失败", e);
-            return new Response<>(Response.FAILED, "获取系统配置部分失败: " + e.getMessage(), null);
+            throw ErrorCode.JSON_PARSE_ERROR.exception(e);
         }
     }
 

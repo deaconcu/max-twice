@@ -58,10 +58,10 @@ public class AggregateController implements AggregateClient {
     @Override
     public Response<Object> readByComment(int commentId) {
         Map<String, Object> data = new HashMap<>();
-        if (commentId <= 0) return Response.badRequest;
+        if (commentId <= 0) throw new IllegalArgumentException("评论ID必须大于0");
 
         CommentDO commentDO = commentMapper.get(commentId);
-        if (commentDO == null) return Response.badRequest;
+        if (commentDO == null) throw new IllegalArgumentException("评论不存在");
 
         if (commentDO.getReplyTo() != 0) {
             data.put("commentId", commentDO.getReplyTo());
@@ -91,10 +91,10 @@ public class AggregateController implements AggregateClient {
 
     @Override
     public Response<Object> readByPost(int postId) {
-        if (postId <= 0) return Response.badRequest;
+        if (postId <= 0) throw new IllegalArgumentException("帖子ID必须大于0");
 
         PostDO postDO = postingService.get(postId);
-        if (postDO == null) return Response.badRequest;
+        if (postDO == null) throw new IllegalArgumentException("帖子不存在");
 
         NodeDO nodeDO = nodeMapper.getById(postDO.getNodeId());
         CourseDO courseDO = courseMapper.getById(nodeDO.getCourseId());
@@ -324,7 +324,7 @@ public class AggregateController implements AggregateClient {
         }
 
         if (postDOList == null) {
-            return Response.badRequest;
+            throw new IllegalArgumentException("不能获取帖子列表");
         }
 
         List<Integer> allPostingIds = new ArrayList<>();
@@ -391,8 +391,9 @@ public class AggregateController implements AggregateClient {
                 commentDTO.setUpvoted(1);
             }
             return new Response<>(commentDTO);
+        } else {
+            throw new IllegalArgumentException("不支持的对象类型");
         }
-        return Response.badRequest;
     }
 
     @Override

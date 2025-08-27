@@ -28,18 +28,39 @@ public class MessageController implements MessageClient {
 
     @Override
     public Response create(String content, int senderId, int receiverId) {
+        if (content == null || content.trim().isEmpty()) {
+            throw new IllegalArgumentException("消息内容不能为空");
+        }
+        if (senderId <= 0) {
+            throw new IllegalArgumentException("发送者ID无效");
+        }
+        if (receiverId <= 0) {
+            throw new IllegalArgumentException("接收者ID无效");
+        }
+        
         messageService.create(content, senderId, receiverId, Enums.MessageType.other);
         return Response.success;
     }
 
     @Override
     public Response<MessageDTO> get(int id) {
+        if (id <= 0) {
+            throw new IllegalArgumentException("消息ID无效");
+        }
+        
         MessageDTO messageDTO = messageService.get(id);
         return new Response<>(messageDTO);
     }
 
     @Override
     public Response<Map<String, Object>> getSystemList(int type, int receiverId, int lastId) {
+        if (receiverId <= 0) {
+            throw new IllegalArgumentException("接收者ID无效");
+        }
+        if (lastId < 0) {
+            throw new IllegalArgumentException("lastId不能为负数");
+        }
+        
         List<MessageDTO> messageDTOList = messageService.getSystemList(type, receiverId, lastId);
 
         int userId = StpUtil.getLoginIdAsInt();
@@ -56,6 +77,13 @@ public class MessageController implements MessageClient {
 
     @Override
     public Response<Map<String, Object>> getCourseApplyList(int senderId, int lastId) {
+        if (senderId <= 0) {
+            throw new IllegalArgumentException("发送者ID无效");
+        }
+        if (lastId < 0) {
+            throw new IllegalArgumentException("lastId不能为负数");
+        }
+        
         List<MessageDTO> messageDTOList = messageService.getCourseApplyList(senderId, lastId);
         Map<String, Object> result = new HashMap<>();
         result.put("messages", messageDTOList);
@@ -65,8 +93,17 @@ public class MessageController implements MessageClient {
 
     @Override
     public Response Invite(int userId, int nodeId) {
+        if (userId <= 0) {
+            throw new IllegalArgumentException("用户ID无效");
+        }
+        if (nodeId <= 0) {
+            throw new IllegalArgumentException("节点ID无效");
+        }
+        
         UserDO userDO = userMapper.getById(userId);
-        if (userDO == null) return Response.badRequest;
+        if (userDO == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
 
         int inviterId = StpUtil.getLoginIdAsInt();
 
@@ -75,6 +112,16 @@ public class MessageController implements MessageClient {
     }
 
     public Response<List<MessageDTO>> getList(int type, int senderId, int receiverId, int lastId, int conversation) {
+        if (senderId <= 0) {
+            throw new IllegalArgumentException("发送者ID无效");
+        }
+        if (receiverId <= 0) {
+            throw new IllegalArgumentException("接收者ID无效");
+        }
+        if (lastId < 0) {
+            throw new IllegalArgumentException("lastId不能为负数");
+        }
+        
         List<MessageDTO> messageDTOList = messageService.getList(type, senderId, receiverId, lastId, conversation);
         return new Response<>(messageDTOList);
     }

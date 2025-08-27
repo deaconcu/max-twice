@@ -1,6 +1,7 @@
 package com.prosper.learn.api.web;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.dto.CourseDTO;
 import com.prosper.learn.dto.CourseDTOV4;
 import com.prosper.learn.dto.Response;
@@ -35,69 +36,48 @@ public class CourseController implements CourseClient {
 
     @Override
     public Response<Object> getListByState(String state, int lastId) {
-        try {
-            List<CourseDTOV4> courseList = courseService.getListByStateAndLastId(state, lastId);
-            return new Response<>(courseList);
-        } catch (Exception e) {
-            return new Response<>(Response.FAILED, "获取课程列表失败: " + e.getMessage());
-        }
+        List<CourseDTOV4> courseList = courseService.getListByStateAndLastId(state, lastId);
+        return new Response<>(courseList);
     }
 
     @Override
     public Response<Object> getListByCategory(int mainCategory, int subCategory) {
-        try {
-            List<CourseDTOV4> courseList = courseService.getListByCategory(mainCategory, subCategory);
-            return new Response<>(courseList);
-        } catch (Exception e) {
-            return new Response<>(Response.FAILED, "获取课程列表失败: " + e.getMessage());
-        }
+        List<CourseDTOV4> courseList = courseService.getListByCategory(mainCategory, subCategory);
+        return new Response<>(courseList);
     }
 
     @Override
     public Response<Object> getApprovedListByParent(int parentId) {
-        try {
-            List<CourseDTOV4> courseList = courseService.getListByParent(parentId, "APPROVED");
-            return new Response<>(courseList);
-        } catch (Exception e) {
-            return new Response<>(Response.FAILED, "获取子课程列表失败: " + e.getMessage());
-        }
+        List<CourseDTOV4> courseList = courseService.getListByParent(parentId, "APPROVED");
+        return new Response<>(courseList);
     }
 
     public Response<Object> getListByParent(int parentId) {
-        try {
-            List<CourseDTOV4> courseList = courseService.getListByParent(parentId, "ALL");
-            return new Response<>(courseList);
-        } catch (Exception e) {
-            return new Response<>(Response.FAILED, "获取子课程列表失败: " + e.getMessage());
-        }
+        List<CourseDTOV4> courseList = courseService.getListByParent(parentId, "ALL");
+        return new Response<>(courseList);
     }
 
     @Override
     public Response<Object> operate(int id, String action, String rejectedReason) {
-        try {
-            // 检查课程是否存在
-            if (!courseService.exist(id)) {
-                return new Response<>(Response.NOT_FOUND, "课程不存在");
-            }
-
-            return switch (action.toLowerCase()) {
-                case "approve" -> {
-                    courseService.approve(id);
-                    yield new Response<>("批准成功");
-                }
-                case "reject" -> {
-                    courseService.reject(id, rejectedReason);
-                    yield new Response<>("拒绝成功");
-                }
-                case "delete" -> {
-                    courseService.delete(id);
-                    yield new Response<>("删除成功");
-                }
-                default -> new Response<>(Response.BAD_REQUEST, "不支持的操作类型: " + action);
-            };
-        } catch (Exception e) {
-            return new Response<>(Response.FAILED, "操作失败: " + e.getMessage());
+        if (!courseService.exist(id)) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
         }
+
+        return switch (action.toLowerCase()) {
+            case "approve" -> {
+                courseService.approve(id);
+                yield new Response<>("批准成功");
+            }
+            case "reject" -> {
+                courseService.reject(id, rejectedReason);
+                yield new Response<>("拒绝成功");
+            }
+            case "delete" -> {
+                courseService.delete(id);
+                yield new Response<>("删除成功");
+            }
+            default -> throw ErrorCode.SYSTEM_ERROR.exception();
+        };
     }
 
     @Override
@@ -119,7 +99,9 @@ public class CourseController implements CourseClient {
     @Override
     public Response<Object> put(@PathVariable int id, CourseDTO course) {
         CourseDO courseDo = courseMapper.getById(id);
-        if (courseDo == null) return new Response<>(404, "课程不存在");
+        if (courseDo == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
 
         courseDo.setName(course.getName());
         courseDo.setDescription(course.getDescription());
@@ -136,15 +118,10 @@ public class CourseController implements CourseClient {
 
     @Override
     public Response<Object> getHotCourses(@RequestParam(value = "limit", defaultValue = "10") int limit) {
-        try {
-            log.info("开始获取热门课程，limit: {}", limit);
-            List<CourseDTOV4> hotCourses = courseService.getHotCourses(limit);
-            log.info("成功获取热门课程数量: {}", hotCourses.size());
-            return new Response<>(hotCourses);
-        } catch (Exception e) {
-            log.error("获取热门课程失败: ", e);
-            return new Response<>(Response.FAILED, "获取热门课程失败: " + e.getMessage());
-        }
+        log.info("开始获取热门课程，limit: {}", limit);
+        List<CourseDTOV4> hotCourses = courseService.getHotCourses(limit);
+        log.info("成功获取热门课程数量: {}", hotCourses.size());
+        return new Response<>(hotCourses);
     }
 
     @Override
@@ -158,13 +135,8 @@ public class CourseController implements CourseClient {
     // 手动同步课程统计数据的管理接口
     @PostMapping("/course/sync-stats")
     public Response<Object> syncCourseStats() {
-        try {
-            log.info("手动触发课程统计数据同步...");
-            courseRankingScheduler.manualSync();
-            return new Response<>("课程统计数据同步成功");
-        } catch (Exception e) {
-            log.error("手动同步课程统计数据失败", e);
-            return new Response<>(Response.FAILED, "同步失败: " + e.getMessage());
-        }
+        log.info("手动触发课程统计数据同步...");
+        courseRankingScheduler.manualSync();
+        return new Response<>("课程统计数据同步成功");
     }
 }

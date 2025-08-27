@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.api.client.TocClient;
 import com.prosper.learn.common.Utils;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.dto.Response;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.CourseTocDO;
@@ -29,7 +30,9 @@ public class TocController implements TocClient {
 
     @Override
     public Response<Object> get(int courseId) {
-        if (courseMapper.getById(courseId) == null) return Response.badRequest;
+        if (courseMapper.getById(courseId) == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
 
         UserCourseTocDO userCourseTocDO = userCourseTocMapper.getByUserAndCourse(StpUtil.getLoginIdAsInt(), courseId);
         String toc = userCourseTocDO.getToc();
@@ -40,22 +43,28 @@ public class TocController implements TocClient {
     @Override
     public Response<Object> post(int courseId, String indexArray) {
         CourseDO courseDO = courseMapper.getById(courseId);
-        if (courseDO == null) return Response.badRequest;
+        if (courseDO == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
 
         UserCourseTocDO userCourseTocDO = userCourseTocMapper.getByUserAndCourse(StpUtil.getLoginIdAsInt(), courseId);
         String toc = userCourseTocDO.getToc();
         String[] tocHashes = toc.split(",");
 
         String[] indexStrings = indexArray.split(",");
-        if (indexStrings.length > 9) return Response.badRequest;
+        if (indexStrings.length > 9) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
 
         int[] indexes = new int[indexStrings.length];
         for (int i = 0; i < indexStrings.length; i++) {
             try {
                 indexes[i] = Integer.parseInt(indexStrings[i]);
-                if (Math.abs(indexes[i]) > tocHashes.length) return Response.badRequest;
+                if (Math.abs(indexes[i]) > tocHashes.length) {
+                    throw ErrorCode.SYSTEM_ERROR.exception();
+                }
             } catch (NumberFormatException e) {
-                return Response.badRequest;
+                throw ErrorCode.SYSTEM_ERROR.exception();
             }
         }
 

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.api.client.ContentsClient;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.AggregateService;
 import com.prosper.learn.dto.CourseTocDTO;
 import com.prosper.learn.dto.NodeDTOV2;
@@ -45,7 +46,9 @@ public class ContentsController implements ContentsClient {
     @Transactional
     public Response<Object> choose(int userId, String path, int courseId, int postingId) {
         PostDO postDO = postMapper.get(postingId);
-        if (postDO == null || postDO.getType() == Enums.PostType.article.value) return Response.badRequest;
+        if (postDO == null || postDO.getType() == Enums.PostType.article.value) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
 
         // 创建childNode
         ObjectNode childNode = objectMapper.createObjectNode();
@@ -100,12 +103,16 @@ public class ContentsController implements ContentsClient {
             String[] pathParts = path.split("-");
             String courseIdStr = Integer.toString(courseId);
             // 不存在课程对应的目录
-            if (!node.has(courseIdStr)) throw new RuntimeException();
+            if (!node.has(courseIdStr)) {
+                throw ErrorCode.SYSTEM_ERROR.exception();
+            }
 
             ArrayNode arrayNode = (ArrayNode) node.get(courseIdStr);
             int index = Integer.parseInt(pathParts[0]);
             // 不存在给定index的目录
-            if (index > arrayNode.size()) throw new RuntimeException();
+            if (index > arrayNode.size()) {
+                throw ErrorCode.SYSTEM_ERROR.exception();
+            }
 
             node = (ObjectNode) arrayNode.get(index - 1);
             for (int i = 1; i < pathParts.length - 1; i++) {
@@ -126,7 +133,7 @@ public class ContentsController implements ContentsClient {
             node.set(finalPart, newNode);
             return objectMapper.writeValueAsString(rootNode);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw ErrorCode.JSON_PARSE_ERROR.exception(e);
         }
     }
 
@@ -141,12 +148,16 @@ public class ContentsController implements ContentsClient {
             String[] pathParts = path.split("-");
             String courseIdStr = Integer.toString(courseId);
             // 不存在课程对应的目录
-            if (!node.has(courseIdStr)) throw new RuntimeException();
+            if (!node.has(courseIdStr)) {
+                throw ErrorCode.SYSTEM_ERROR.exception();
+            }
 
             ArrayNode arrayNode = (ArrayNode) node.get(courseIdStr);
             int index = Integer.parseInt(pathParts[0]);
             // 不存在给定index的目录
-            if (index > arrayNode.size()) throw new RuntimeException();
+            if (index > arrayNode.size()) {
+                throw ErrorCode.SYSTEM_ERROR.exception();
+            }
 
             node = (ObjectNode) arrayNode.get(index - 1);
             for (int i = 1; i <= pathParts.length - 1; i++) {
@@ -170,7 +181,9 @@ public class ContentsController implements ContentsClient {
                         exist = true;
                     }
                 }
-                if (pinedArray.size() >= 10) throw new RuntimeException();
+                if (pinedArray.size() >= 10) {
+                    throw ErrorCode.SYSTEM_ERROR.exception();
+                }
                 if (!exist) pinedArray.add(value);
             } else {
                 for (int i = 0; i < pinedArray.size(); i++) {
@@ -182,7 +195,7 @@ public class ContentsController implements ContentsClient {
             }
             return objectMapper.writeValueAsString(rootNode);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw ErrorCode.JSON_PARSE_ERROR.exception(e);
         }
     }
 

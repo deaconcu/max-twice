@@ -35,12 +35,17 @@ public class NodeController implements NodeClient {
     }
 
     public List<NodeDTO> getNodes(String ids) {
+        if (ids == null || ids.trim().isEmpty()) {
+            throw new IllegalArgumentException("节点ID列表不能为空");
+        }
+        
         List<Integer> idList = new LinkedList<>();
         String[] idArray = ids.split(",");
         for(String s: idArray) {
             try {
-                idList.add(Integer.parseInt(s));
-            } catch (Exception e) {
+                idList.add(Integer.parseInt(s.trim()));
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("无效的节点ID格式: " + s);
             }
         }
         List<NodeDO> nodes = nodeMapper.getByIds(idList);

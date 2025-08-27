@@ -1,6 +1,7 @@
 package com.prosper.learn.api.web;
 
 import com.prosper.learn.api.client.StatsClient;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.ArticleViewService;
 import com.prosper.learn.domain.service.DailyStatsService;
 import com.prosper.learn.domain.service.StatsMonitorService;
@@ -26,13 +27,8 @@ public class StatsController implements StatsClient {
      */
     @Override
     public Response<Void> recordView(Long articleId, Integer userId, String ipAddress) {
-        try {
-            articleViewService.recordView(articleId, userId, ipAddress);
-            return new Response<>(Response.SUCCESS, "success", null);
-        } catch (Exception e) {
-            log.error("记录访问失败", e);
-            return new Response<>(Response.FAILED, "记录访问失败", null);
-        }
+        articleViewService.recordView(articleId, userId, ipAddress);
+        return new Response<>(Response.SUCCESS, "success", null);
     }
 
     /**
@@ -40,13 +36,8 @@ public class StatsController implements StatsClient {
      */
     @Override
     public Response<UserStatsDTO> getUserTodayStats(Integer userId) {
-        try {
-            UserStatsDTO stats = dailyStatsService.getUserTodayStats(userId);
-            return new Response<>(stats);
-        } catch (Exception e) {
-            log.error("获取用户今日统计失败", e);
-            return new Response<>(Response.FAILED, "获取统计失败", null);
-        }
+        UserStatsDTO stats = dailyStatsService.getUserTodayStats(userId);
+        return new Response<>(stats);
     }
 
     /**
@@ -54,13 +45,8 @@ public class StatsController implements StatsClient {
      */
     @Override
     public Response<UserStatsDTO> getUserYesterdayStats(Integer userId) {
-        try {
-            UserStatsDTO stats = dailyStatsService.getUserYesterdayStats(userId);
-            return new Response<>(stats);
-        } catch (Exception e) {
-            log.error("获取用户昨日统计失败", e);
-            return new Response<>(Response.FAILED, "获取统计失败", null);
-        }
+        UserStatsDTO stats = dailyStatsService.getUserYesterdayStats(userId);
+        return new Response<>(stats);
     }
 
     /**
@@ -68,13 +54,8 @@ public class StatsController implements StatsClient {
      */
     @Override
     public Response<UserStatsDTO> getUserHistoryStats(Integer userId, int days) {
-        try {
-            UserStatsDTO stats = dailyStatsService.getUserHistoryStats(userId, days);
-            return new Response<>(stats);
-        } catch (Exception e) {
-            log.error("获取用户历史统计失败", e);
-            return new Response<>(Response.FAILED, "获取统计失败", null);
-        }
+        UserStatsDTO stats = dailyStatsService.getUserHistoryStats(userId, days);
+        return new Response<>(stats);
     }
 
     /**
@@ -82,13 +63,8 @@ public class StatsController implements StatsClient {
      */
     @Override
     public Response<UserStatsDTO> getUserPeriodStats(Integer userId, int days) {
-        try {
-            UserStatsDTO stats = dailyStatsService.getUserPeriodStatsWithDaily(userId, days);
-            return new Response<>(stats);
-        } catch (Exception e) {
-            log.error("获取用户时间段统计失败", e);
-            return new Response<>(Response.FAILED, "获取统计失败", null);
-        }
+        UserStatsDTO stats = dailyStatsService.getUserPeriodStatsWithDaily(userId, days);
+        return new Response<>(stats);
     }
 
     /**
@@ -96,13 +72,8 @@ public class StatsController implements StatsClient {
      */
     @Override
     public Response<UserStatsDTO> getUserAllTimeStats(Integer userId) {
-        try {
-            UserStatsDTO stats = dailyStatsService.getUserAllTimeStats(userId);
-            return new Response<>(stats);
-        } catch (Exception e) {
-            log.error("获取用户全部时间统计失败", e);
-            return new Response<>(Response.FAILED, "获取统计失败", null);
-        }
+        UserStatsDTO stats = dailyStatsService.getUserAllTimeStats(userId);
+        return new Response<>(stats);
     }
 
     /**
@@ -110,13 +81,8 @@ public class StatsController implements StatsClient {
      */
     @Override
     public Response<Void> manualSync() {
-        try {
-            dailyStatsService.syncYesterdayStats();
-            return new Response<>(Response.SUCCESS, "同步成功", null);
-        } catch (Exception e) {
-            log.error("手动同步失败", e);
-            return new Response<>(Response.FAILED, "同步失败", null);
-        }
+        dailyStatsService.syncYesterdayStats();
+        return new Response<>(Response.SUCCESS, "同步成功", null);
     }
 
     /**
@@ -124,13 +90,8 @@ public class StatsController implements StatsClient {
      */
     @Override
     public Response<String> getHealthStatus() {
-        try {
-            String status = statsMonitorService.getSystemStatus();
-            return new Response<>(status);
-        } catch (Exception e) {
-            log.error("获取健康状态失败", e);
-            return new Response<>(Response.FAILED, "获取状态失败", null);
-        }
+        String status = statsMonitorService.getSystemStatus();
+        return new Response<>(status);
     }
 
     /**
@@ -138,21 +99,16 @@ public class StatsController implements StatsClient {
      */
     @Override
     public Response<String> syncSpecificDate(String date) {
-        try {
-            LocalDate targetDate = null;
-            if (date != null && !date.isEmpty()) {
-                try {
-                    targetDate = LocalDate.parse(date);
-                } catch (Exception e) {
-                    return new Response<>(Response.FAILED, "日期格式错误，请使用 YYYY-MM-DD 格式", null);
-                }
+        LocalDate targetDate = null;
+        if (date != null && !date.isEmpty()) {
+            try {
+                targetDate = LocalDate.parse(date);
+            } catch (Exception e) {
+                throw ErrorCode.SYSTEM_ERROR.exception();
             }
-            
-            String result = dailyStatsService.syncSpecificDate(targetDate);
-            return new Response<>(Response.SUCCESS, result, result);
-        } catch (Exception e) {
-            log.error("手动同步失败", e);
-            return new Response<>(Response.FAILED, "同步失败: " + e.getMessage(), null);
         }
+        
+        String result = dailyStatsService.syncSpecificDate(targetDate);
+        return new Response<>(Response.SUCCESS, result, result);
     }
 }

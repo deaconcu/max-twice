@@ -12,7 +12,6 @@
         <module>learn-user</module>
         <module>learn-api</module>
         <module>learn-common</module>
-        <module>learn-front</module>
         <module>learn-external</module>
         <module>learn-domain</module>
         <module>learn-persistence</module>

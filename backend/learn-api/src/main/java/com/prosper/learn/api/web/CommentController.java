@@ -37,7 +37,6 @@ public class CommentController implements CommentClient {
     private final ScoreCalculationService scoreCalculationService;
     private final RedisStatsService redisStatsService;
 
-    @SneakyThrows
     @Override
     @Transactional
     public Response<Object> create(CommentDTO commentDTO) {
@@ -52,15 +51,15 @@ public class CommentController implements CommentClient {
 
         if (commentDTO.getType() == Enums.ObjectType.post.value) {
             postDO = postMapper.get(commentDTO.getObjectId());
-            if (postDO == null) return Response.badRequest;
+            if (postDO == null) throw new IllegalArgumentException("帖子不存在");
         } else if (commentDTO.getType() == Enums.ObjectType.node.value) {
             nodeDO = nodeMapper.getById(commentDTO.getObjectId());
-            if (nodeDO == null) return Response.badRequest;
+            if (nodeDO == null) throw new IllegalArgumentException("节点不存在");
         } else if (commentDTO.getType() == Enums.ObjectType.roadmap.value) {
             roadmapDO = roadmapMapper.get(commentDTO.getObjectId());
-            if (roadmapDO == null) return Response.badRequest;
+            if (roadmapDO == null) throw new IllegalArgumentException("路线图不存在");
         } else {
-            return Response.badRequest;
+            throw new IllegalArgumentException("评论类型不正确");
         }
 
         // insert comment
@@ -72,7 +71,7 @@ public class CommentController implements CommentClient {
         // update parent comment reply count
         if (commentDTO.getReplyTo() != 0) {
             CommentDO parentCommentDO = commentMapper.get(commentDTO.getReplyTo());
-            if (parentCommentDO == null) return Response.badRequest;
+            if (parentCommentDO == null) throw new IllegalArgumentException("父评论不存在");
             parentCommentDO.setReplyCount(parentCommentDO.getReplyCount() + 1);
 
             // 更新父评论分数（由于回复数增加）
@@ -224,7 +223,7 @@ public class CommentController implements CommentClient {
     @Override
     public Response<Object> approve(int id, boolean approve) {
         CommentDO commentDO = commentMapper.get(id);
-        if (commentDO == null) return Response.badRequest;
+        if (commentDO == null) throw new IllegalArgumentException("评论不存在");
 
         if (approve && commentDO.getState() != Enums.CommentState.approved.value) {
             commentDO.setState(Enums.CommentState.approved.value);

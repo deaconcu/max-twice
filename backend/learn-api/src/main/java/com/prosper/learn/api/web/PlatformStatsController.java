@@ -1,6 +1,7 @@
 package com.prosper.learn.api.web;
 
 import com.prosper.learn.api.client.PlatformStatsClient;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.dto.Response;
 import com.prosper.learn.domain.service.PlatformStatsService;
 import com.prosper.learn.dto.PlatformStatsDTO;
@@ -26,12 +27,8 @@ public class PlatformStatsController implements PlatformStatsClient {
      */
     @Override
     public Response<PlatformStatsDTO> getPlatformStats() {
-        try {
-            PlatformStatsDTO stats = platformStatsService.getPlatformStats();
-            return new Response<>(stats);
-        } catch (Exception e) {
-            return new Response<>(Response.FAILED, "获取平台统计数据失败: " + e.getMessage(), null);
-        }
+        PlatformStatsDTO stats = platformStatsService.getPlatformStats();
+        return new Response<>(stats);
     }
     
     /**
@@ -41,11 +38,7 @@ public class PlatformStatsController implements PlatformStatsClient {
      */
     @Override
     public Response<PlatformStatsDTO> refreshPlatformStats() {
-        try {
-            PlatformStatsDTO stats = platformStatsService.refreshPlatformStats();
-            return new Response<>(stats);
-        } catch (Exception e) {
-            return new Response<>(Response.FAILED, "刷新平台统计数据失败: " + e.getMessage(), null);
-        }
+        PlatformStatsDTO stats = platformStatsService.refreshPlatformStats();
+        return new Response<>(stats);
     }
 }

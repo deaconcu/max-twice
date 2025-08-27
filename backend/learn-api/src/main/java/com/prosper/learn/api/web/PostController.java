@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.api.client.PostClient;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.dto.PostDTO;
 import com.prosper.learn.dto.Response;
 import com.prosper.learn.domain.util.Converter;
@@ -53,8 +54,8 @@ public class PostController implements PostClient {
                 posting.setContent(String.join(",", ids));
 
             } catch (JsonProcessingException e) {
-                // todo
-                throw new RuntimeException(e);
+                log.error("Failed to process JSON content", e);
+                throw ErrorCode.JSON_PARSE_ERROR.exception(e);
             }
         }
 
@@ -67,7 +68,9 @@ public class PostController implements PostClient {
     @Override
     public Response modify(PostDTO posting) {
         PostDO postDO = postMapper.get(posting.getId());
-        if (postDO == null) return Response.notFound;
+        if (postDO == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
 
         postDO.setContent(posting.getContent());
         postDO.setUTime(Utils.getLocalDateTime());
@@ -78,7 +81,9 @@ public class PostController implements PostClient {
     @Override
     public Response delete(int id) {
         PostDO postDO = postMapper.get(id);
-        if (postDO == null) return Response.notFound;
+        if (postDO == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
 
         postDO.setState(Enums.PostState.deleted.value);
         postDO.setUTime(Utils.getLocalDateTime());
@@ -119,7 +124,7 @@ public class PostController implements PostClient {
             postings.forEach(postingDO -> postService.idToName(postingDO));
             return new Response<>(Converter.INSTANCE.toPostDTO(postings));
         }
-        return Response.badRequest;
+        throw ErrorCode.SYSTEM_ERROR.exception();
     }
 
     @Override
@@ -136,7 +141,9 @@ public class PostController implements PostClient {
     @Override
     public Response<Object> approve(int id, boolean approve) {
         PostDO postDO = postMapper.get(id);
-        if (postDO == null) return Response.badRequest;
+        if (postDO == null) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
 
         if (approve && postDO.getState() != Enums.PostState.approved.value) {
             postDO.setState(Enums.CommentState.approved.value);
@@ -152,9 +159,6 @@ public class PostController implements PostClient {
     // 选择一个目录
     @Override
     public Response choose(int postingId, int courseId, String currentPath, int userId) {
-        // todo
-        //int userId = 1;
-
         ContentsDO contentsDO = contentsMapper.getByUser(1);
         PostDO postDO = postMapper.get(postingId);
 
@@ -169,7 +173,8 @@ public class PostController implements PostClient {
             try {
                 jsonString = objectMapper.writeValueAsString(node);
             } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
+                log.error("Failed to serialize JSON", e);
+                throw ErrorCode.JSON_PARSE_ERROR.exception(e);
             }
 
             if (contentsDO == null) {
@@ -183,13 +188,10 @@ public class PostController implements PostClient {
                 contentsDO.setContents(jsonString);
                 contentsMapper.update(contentsDO);
             }
-            // todo
             return Response.success;
         }
 
-        // get contents
         if (contentsDO == null) {
-            // todo 不可能存在当前路径，但是数据库中没有值，需要写个warning
             return Response.success;
         }
 
@@ -199,7 +201,6 @@ public class PostController implements PostClient {
             JsonNode rootNode = objectMapper.readTree(contentsStr);
             JsonNode currNode = rootNode.at(currentPath);
             if (currNode.isObject()) {
-                // 转换为 ObjectNode
                 ObjectNode obj = (ObjectNode) currNode;
                 obj.removeAll();
 
@@ -213,7 +214,8 @@ public class PostController implements PostClient {
             contentsDO.setContents(jsonString);
             contentsMapper.update(contentsDO);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            log.error("Failed to serialize JSON content", e);
+            throw ErrorCode.JSON_PARSE_ERROR.exception(e);
         }
         return Response.success;
     }
