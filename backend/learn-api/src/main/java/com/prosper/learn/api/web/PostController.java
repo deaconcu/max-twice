@@ -30,7 +30,6 @@ public class PostController implements PostClient {
     private final PostMapper postMapper;
     private final ObjectMapper objectMapper;
     private final NodeMapper nodeMapper;
-    private final ContentsMapper contentsMapper;
     private final PostingService postService;
 
     @Override
@@ -157,6 +156,7 @@ public class PostController implements PostClient {
     }
 
     // 选择一个目录
+    /*
     @Override
     public Response choose(int postingId, int courseId, String currentPath, int userId) {
         ContentsDO contentsDO = contentsMapper.getByUser(1);
@@ -219,6 +219,7 @@ public class PostController implements PostClient {
         }
         return Response.success;
     }
+    */
 
     /**
      * 获取基于分数排序的文章列表

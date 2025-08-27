@@ -44,12 +44,14 @@ public interface PostClient {
     @PutMapping("/post")
     Response<Object> approve(@RequestParam(value="id") int id, @RequestParam(value="action") boolean approve);
 
+    /*
     // 选择某一个帖子作为目录
     @PostMapping("/posting/{postingId}/choose")
     Response choose(@PathVariable int postingId,
                     @RequestParam int courseId,
                     @RequestParam String currentPath,
                     @RequestParam int userId);
+     */
 
 
 

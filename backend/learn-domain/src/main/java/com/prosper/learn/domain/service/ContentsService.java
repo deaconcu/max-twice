@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ContentsService {
 
-    private final ContentsMapper contentsMapper;
     private final CourseMapper courseMapper;
     private final ObjectMapper objectMapper;
     private final NodeMapper nodeMapper;
@@ -111,47 +110,6 @@ public class ContentsService {
         return courseTocDO.getToc();
     }
 
-
-    public JsonNode getContents(int userId, int courseId, boolean create) {
-        CourseDO courseDO = courseMapper.getById(courseId);
-        if (courseDO == null) {
-            throw new RuntimeException("course is not exist");
-        }
-
-        ContentsDO contentsDO = contentsMapper.getByUser(userId);
-        if (contentsDO == null) {
-
-            contentsDO = new ContentsDO();
-            contentsDO.setUserId(userId);
-
-            ObjectNode node = objectMapper.createObjectNode();
-
-            node.set(Integer.toString(courseId), createDefaultContents(courseDO.getRootNode()));
-            contentsDO.setContents(node.toString());
-
-            contentsDO.setCTime(Utils.getLocalDateTime());
-            contentsDO.setUTime(Utils.getLocalDateTime());
-
-            contentsMapper.insert(contentsDO);
-        }
-
-        ObjectNode rootNode = null;
-        try {
-            rootNode = (ObjectNode) objectMapper.readTree(contentsDO.getContents());
-            JsonNode jsonNode = rootNode.get(Integer.toString(courseId));
-
-            if (jsonNode == null) {
-                jsonNode = createDefaultContents(courseDO.getRootNode());
-                rootNode.set(Integer.toString(courseId), jsonNode);
-                contentsDO.setContents(rootNode.toString());
-                contentsMapper.update(contentsDO);
-            }
-
-            return jsonNode;
-        } catch (JsonProcessingException e) {
-            return null;
-        }
-    }
 
     private ArrayNode createDefaultContents(int rootNodeId) {
         ArrayNode arrayNode = objectMapper.createArrayNode();
@@ -275,46 +233,6 @@ public class ContentsService {
         userCourseTocMapper.update(userCourseTocDO);
     }
 
-    /*
-    @Transactional
-    public void choose(int userId, String path, int courseId, int postId) {
-        PostDO postDO = postMapper.getById(postId);
-        if (postDO == null || postDO.getType() == Enums.PostingType.article.value) return;
-
-        // 创建childNode
-        ObjectNode childNode = objectMapper.createObjectNode();
-        Arrays.stream(postDO.getContent().split(",")).forEach(id->childNode.putObject((id)));
-        childNode.put("+", postId);
-
-        // 用childNode更新目录
-        ContentsDO contentsDO = contentsMapper.getByUser(userId);
-        String contents = updateContents(contentsDO.getContents(), courseId, path, childNode);
-        contentsDO.setContents(contents);
-        contentsMapper.update(contentsDO);
-    }
-
-    public void unchoose(int userId, int courseId, String path) {
-        ContentsDO contentsDO = contentsMapper.getByUser(userId);
-        String contents = updateContents(contentsDO.getContents(), courseId, path, objectMapper.createObjectNode());
-        contentsDO.setContents(contents);
-        contentsMapper.update(contentsDO);
-    }
-
-    public void pin(int userId, int courseId, String path, int postingId) {
-        ContentsDO contentsDO = contentsMapper.getByUser(userId);
-        String contents = insertContents(contentsDO.getContents(), courseId, path, postingId, true);
-        contentsDO.setContents(contents);
-        contentsMapper.update(contentsDO);
-    }
-
-    public void unpin(int userId, int courseId, String path, int postingId) {
-        ContentsDO contentsDO = contentsMapper.getByUser(userId);
-        String contents = insertContents(contentsDO.getContents(), courseId, path, postingId, false);
-        contentsDO.setContents(contents);
-        contentsMapper.update(contentsDO);
-    }
-     */
-
     /**
      * 更新某个课程的某个路径下的目录节点，并返回字符串
      * @param contents 用户目录
@@ -389,146 +307,6 @@ public class ContentsService {
                 }
             }
             return objectMapper.writeValueAsString(rootNode);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 更新某个课程的某个路径下的目录节点，并返回字符串
-     * @param contents 用户目录
-     */
-    private String updateContents(String contents, int courseId, String path, ObjectNode newNode) {
-        try {
-            ObjectNode rootNode = (ObjectNode)objectMapper.readTree(contents);
-            ObjectNode node = rootNode;
-
-            String[] pathParts = path.split("-");
-            String courseIdStr = Integer.toString(courseId);
-
-            // 不存在课程对应的目录
-            if (!node.has(courseIdStr)) throw new RuntimeException();
-
-            ArrayNode arrayNode = (ArrayNode) node.get(courseIdStr);
-            int index = Integer.parseInt(pathParts[0]);
-
-            // 不存在给定index的目录
-            if (index > arrayNode.size()) throw new RuntimeException();
-
-            node = (ObjectNode) arrayNode.get(index - 1);
-            for (int i = 1; i < pathParts.length - 1; i++) {
-                String part = pathParts[i];
-                if (!node.has(part)) {
-                    node.set(part, objectMapper.createObjectNode()); // 如果路径不存在，创建
-                }
-                node = (ObjectNode) node.get(part);
-            }
-
-            // 设置或替换目标节点
-            String finalPart = pathParts[pathParts.length - 1];
-            // 设置之前置顶的帖子
-            JsonNode finalNode = node.get(finalPart);
-            if (finalNode.has("^")) {
-                newNode.put("^", node.get(finalPart).get("^"));
-            }
-            node.set(finalPart, newNode);
-            return objectMapper.writeValueAsString(rootNode);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 设置置顶
-     */
-    private String insertContents(String contents, int courseId, String path, int value, boolean add) {
-        try {
-            ObjectNode rootNode = (ObjectNode)objectMapper.readTree(contents);
-            ObjectNode node = rootNode;
-
-            String[] pathParts = path.split("-");
-            String courseIdStr = Integer.toString(courseId);
-            // 不存在课程对应的目录
-            if (!node.has(courseIdStr)) throw new RuntimeException();
-
-            ArrayNode arrayNode = (ArrayNode) node.get(courseIdStr);
-            int index = Integer.parseInt(pathParts[0]);
-            // 不存在给定index的目录
-            if (index > arrayNode.size()) throw new RuntimeException();
-
-            node = (ObjectNode) arrayNode.get(index - 1);
-            for (int i = 1; i <= pathParts.length - 1; i++) {
-                String part = pathParts[i];
-                if (!node.has(part)) {
-                    node.set(part, objectMapper.createObjectNode()); // 如果路径不存在，创建
-                }
-                node = (ObjectNode) node.get(part);
-            }
-
-            // 设置或替换目标节点
-            ArrayNode pinedArray = ((ArrayNode)node.get("^"));
-            if (pinedArray == null) {
-                pinedArray = objectMapper.createArrayNode();
-                node.put("^", pinedArray);
-            }
-            if (add) {
-                boolean exist = false;
-                for (int i = 0; i < pinedArray.size(); i++) {
-                    if (pinedArray.get(i).asInt() == value) {
-                        exist = true;
-                    }
-                }
-                if (pinedArray.size() >= 10) throw new RuntimeException();
-                if (!exist) pinedArray.add(value);
-            } else {
-                for (int i = 0; i < pinedArray.size(); i++) {
-                    if (pinedArray.get(i).asInt() == value) {
-                        pinedArray.remove(i);
-                        break;
-                    }
-                }
-            }
-            return objectMapper.writeValueAsString(rootNode);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void updateContentsList(int courseId, int userId, String list) {
-        int[] arr = Arrays.stream(list.split(",")).mapToInt(Integer::parseInt).toArray();
-
-        try {
-
-            ContentsDO contentsDO = contentsMapper.getByUser(userId);
-            String contents = contentsDO.getContents();
-            ObjectNode rootNode = (ObjectNode)objectMapper.readTree(contents);
-
-            CourseDO courseDO = courseMapper.getById(courseId);
-            if (courseDO == null) throw new RuntimeException();
-
-            String courseIdStr = Integer.toString(courseId);
-            // 不存在课程对应的目录
-            if (!rootNode.has(courseIdStr)) throw new RuntimeException();
-
-            ObjectNode objectNode = objectMapper.createObjectNode();
-            objectNode.put(Integer.toString(courseId), objectMapper.createObjectNode());
-
-            ArrayNode arrayNode = (ArrayNode) rootNode.get(courseIdStr);
-
-            ArrayNode newArrayNode = objectMapper.createArrayNode();
-            for (int index: arr) {
-                index = Math.abs(index);
-                if (index == 0) {
-                    newArrayNode.add(objectNode);
-                } else if (arrayNode.has(index - 1)) {
-                    newArrayNode.add(arrayNode.get(index - 1));
-                }
-            }
-
-            rootNode.set(courseIdStr, newArrayNode);
-            contents = objectMapper.writeValueAsString(rootNode);
-            contentsDO.setContents(contents);
-            contentsMapper.update(contentsDO);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

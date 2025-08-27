@@ -286,15 +286,6 @@ export const learnService = {
     return apiClient.post('/toc', formData);
   },
 
-
-  postContentsList(courseId, list) {
-    let formData = new FormData();
-    formData.append('courseId', courseId);
-    formData.append('list', list);
-    console.log("post /contents-list: " + new URLSearchParams(formData).toString());
-    return apiClient.post('/contents-list', formData);
-  },
-
   getComments(objectId, type, offsetId) {
     const params = {
       objectId: objectId,

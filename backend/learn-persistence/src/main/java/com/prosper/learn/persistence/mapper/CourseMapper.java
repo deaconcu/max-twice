@@ -16,24 +16,8 @@ public interface CourseMapper {
             "</script>"})
     List<CourseDO> getByIds(@Param("ids") List<Integer> ids);
 
-    @Select("SELECT * FROM course WHERE name = #{name}")
-    CourseDO getByName(String s);
-
     @Select("SELECT * FROM course WHERE name LIKE CONCAT('%', #{name}, '%') limit #{limit}")
     List<CourseDO> searchByName(@Param("name") String name, @Param("limit") int limit);
-
-    @Select("SELECT * FROM course ORDER BY ctime DESC LIMIT #{offset}, #{limit}")
-    List<CourseDO> listAll(@Param("limit") int limit, @Param("offset") int offset);
-
-    @Select("SELECT * FROM course where state = #{state} ORDER BY ctime DESC LIMIT #{offset}, #{limit}")
-    List<CourseDO> listByState(@Param("state") String state,
-                               @Param("limit") int limit,
-                               @Param("offset") int offset);
-
-    @Select("SELECT * FROM course where creator = #{creator} ORDER BY ctime DESC LIMIT #{offset}, #{limit}")
-    List<CourseDO> listByCreator(@Param("creator") int creator,
-                        @Param("limit") int limit,
-                        @Param("offset") int offset);
 
     @Select("SELECT * FROM course where state = #{state} and parent = #{parent} ORDER BY ctime DESC")
     List<CourseDO> listByParentAndState(@Param("state") String state,
@@ -56,12 +40,6 @@ public interface CourseMapper {
     @Select("SELECT * FROM course WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} " +
             "AND state = 'APPROVED' AND parent = 0 ORDER BY id ASC LIMIT 20")
     List<CourseDO> listRootByCategory(@Param("mainCategory") int mainCategory, @Param("subCategory") int subCategory);
-
-    @Select("SELECT * FROM course WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} " +
-            "AND state = 'APPROVED' AND id > #{lastId} ORDER BY id ASC LIMIT 20")
-    List<CourseDO> listByCategory(@Param("mainCategory") int mainCategory,
-                                  @Param("subCategory") int subCategory,
-                                  @Param("lastId") int lastId);
 
     @Insert("INSERT INTO course(name, description, creator, parent, state, rootNode, main_category, sub_category) " +
             "VALUES (#{name}, #{description}, #{creator}, #{parent}, #{state}, #{rootNode}, #{mainCategory}, #{subCategory})")

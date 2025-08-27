@@ -421,13 +421,6 @@ public class AggregateController implements AggregateClient {
     }
 
     @Override
-    public Response<Object> postContentsList(int courseId, String list) {
-        int userId = StpUtil.getLoginIdAsInt();
-        contentsService.updateContentsList(courseId, userId, list);
-        return Response.success;
-    }
-
-    @Override
     public Response<Object> chatWithGPT(String prompt, String model) throws Exception {
         // 构建 JSON 请求体
         ObjectNode requestBody = objectMapper.createObjectNode();

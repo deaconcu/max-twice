@@ -38,11 +38,6 @@ public interface AggregateClient {
                                   @RequestParam("action") int action,
                                   Model model);
 
-    @PostMapping("/contents-list")
-    @ResponseBody
-    public Response<Object> postContentsList(@RequestParam("courseId") int courseId,
-                                             @RequestParam("list") String list);
-
     @PostMapping("/upvote")
     @ResponseBody
     Response<Object> upvote(@RequestParam("objectId") int postingId,

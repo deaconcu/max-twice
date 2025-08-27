@@ -43,23 +43,4 @@ public class AggregateService {
 
         return new Utils.Pair<>(arrayNode.toString(), nodeInfos);
     }
-
-    public Utils.Pair<String, Map<Integer, NodeDTOV2>> getContents(int userId, int courseId, boolean create) {
-        JsonNode jsonNode = contentsService.getContents(userId, courseId, create);
-
-        Set<Integer> keys = new HashSet<>();
-        Utils.collectKeys(jsonNode, keys);
-
-        List<NodeDO> nodeList = keys.isEmpty() ? new ArrayList<>() : nodeMapper.getByIds(keys.stream().toList());
-        // 获取用户完成的节点集合
-        Set<Integer> completedNodes = learningProgressService.getUserCompletedNodes(userId);
-
-        // 构建包含完成状态的节点信息
-        Map<Integer, NodeDTOV2> nodeInfos = nodeList.stream()
-                .collect(Collectors.toMap(
-                        NodeDO::getId,
-                        node -> Converter.INSTANCE.toNodeDTOV2(node, completedNodes.contains(node.getId()))
-                ));
-        return new Utils.Pair<>(jsonNode.toString(), nodeInfos);
-    }
 }
