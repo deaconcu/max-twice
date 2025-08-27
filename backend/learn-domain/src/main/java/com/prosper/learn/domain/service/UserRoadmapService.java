@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service;
 
+import com.prosper.learn.domain.exception.ErrorCode;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.ProfessionDTO;
 import com.prosper.learn.dto.RoadmapDTOV2;
@@ -12,15 +13,18 @@ import com.prosper.learn.persistence.mapper.RoadmapMapper;
 import com.prosper.learn.persistence.mapper.UserRoadmapMapper;
 import com.prosper.learn.persistence.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserRoadmapService {
 
     private final UserRoadmapMapper userRoadmapMapper;
@@ -112,6 +116,30 @@ public class UserRoadmapService {
         // 批量查询 profession 信息
         Map<Integer, ProfessionDO> professionMap = professionMapper.getMapByIds(professionIds);
 
+        // 需要更新的路线图记录列表
+        List<UserRoadmapDO> toUpdateList = new ArrayList<>();
+        
+        // 先批量检查和收集所有需要更新的路线图状态
+        for (UserRoadmapDO progressDO : userRoadmapList) {
+            RoadmapDO roadmapDO = roadmapMap.get(progressDO.getRoadmapId().intValue());
+            if (roadmapDO != null) {
+                try {
+                    String parsedContent = roadmapService.parseContentToGraphFormat(roadmapDO.getContent(), userId.intValue());
+                    checkAndCollectRoadmapUpdate(progressDO, parsedContent, toUpdateList);
+                    // 将解析后的内容设置回去，避免重复解析
+                    roadmapDO.setContent(parsedContent);
+                } catch (Exception e) {
+                    // 解析失败时继续处理其他路线图
+                    log.error("Failed to parse roadmap content: roadmapId={}", progressDO.getRoadmapId(), e);
+                }
+            }
+        }
+        
+        // 批量更新数据库
+        if (!toUpdateList.isEmpty()) {
+            userRoadmapMapper.updateBatch(toUpdateList);
+        }
+
         // 转换为 DTO 并填充 roadmap 信息
         return userRoadmapList.stream()
                 .map(progressDO -> {
@@ -119,12 +147,7 @@ public class UserRoadmapService {
                     RoadmapDO roadmapDO = roadmapMap.get(progressDO.getRoadmapId().intValue());
 
                     if (roadmapDO != null) {
-                        try {
-                            roadmapDO.setContent(roadmapService.parseContentToGraphFormat(roadmapDO.getContent(), userId.intValue()));
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-
+                        // 这里的content已经在上面解析过了
                         RoadmapDTOV2 roadmapDTO = Converter.INSTANCE.toRoadmapDTOV2WithUser(roadmapDO, userMapper);
 
                         // 设置 profession 信息
@@ -137,8 +160,77 @@ public class UserRoadmapService {
                         dto.setRoadmap(roadmapDTO);
                     }
                     return dto;
-                })
-                .collect(Collectors.toList());
+                }).collect(Collectors.toList());
+    }
+
+    /**
+     * 检查路线图完成状态并收集需要更新的记录
+     * @param userRoadmapDO 用户路线图进度记录
+     * @param content 已解析的路线图内容（包含课程进度信息）
+     * @param toUpdateList 需要更新的记录列表
+     * @return 是否有状态更新
+     */
+    private boolean checkAndCollectRoadmapUpdate(UserRoadmapDO userRoadmapDO, String content, List<UserRoadmapDO> toUpdateList) {
+        try {
+            // 如果已经是COMPLETED状态，无需再检查
+            if ("COMPLETED".equals(userRoadmapDO.getStatus())) {
+                return false;
+            }
+            
+            // 解析content获取节点信息
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.JsonNode rootNode = mapper.readTree(content);
+            com.fasterxml.jackson.databind.JsonNode nodesNode = rootNode.get("nodes");
+            
+            if (nodesNode != null && nodesNode.isArray()) {
+                int totalCourses = 0;
+                int completedCourses = 0;
+                double totalProgress = 0.0;
+                
+                for (com.fasterxml.jackson.databind.JsonNode node : nodesNode) {
+                    totalCourses++;
+                    boolean finished = node.get("finished").asBoolean(false);
+                    double progress = node.get("progress").asDouble(0.0);
+                    
+                    if (finished) {
+                        completedCourses++;
+                        totalProgress += 100.0;
+                    } else {
+                        totalProgress += progress;
+                    }
+                }
+                
+                // 计算整体完成度
+                double overallProgress = totalCourses > 0 ? totalProgress / totalCourses : 0.0;
+                
+                boolean needUpdate = false;
+                
+                // 如果完成度达到100%，更新状态为COMPLETED
+                if (overallProgress >= 100.0) {
+                    userRoadmapDO.setStatus("COMPLETED");
+                    userRoadmapDO.setProgressPercent(100);
+                    if (userRoadmapDO.getCompletedAt() == null) {
+                        userRoadmapDO.setCompletedAt(LocalDateTime.now());
+                    }
+                    needUpdate = true;
+                } else if (overallProgress > 0 && "NOT_STARTED".equals(userRoadmapDO.getStatus())) {
+                    // 如果有进度但状态还是NOT_STARTED，更新为IN_PROGRESS
+                    userRoadmapDO.setStatus("IN_PROGRESS");
+                    userRoadmapDO.setProgressPercent((int) Math.round(overallProgress));
+                    needUpdate = true;
+                }
+                
+                if (needUpdate) {
+                    toUpdateList.add(userRoadmapDO);
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            // 解析失败时不抛出异常，避免影响正常流程
+            log.warn("Failed to parse roadmap content for completion check: roadmapId={}", 
+                    userRoadmapDO.getRoadmapId(), e);
+        }
+        return false;
     }
 
     /**
@@ -152,7 +244,7 @@ public class UserRoadmapService {
         UserRoadmapDO progressDO = userRoadmapMapper.getByUserAndRoadmap(userId, roadmapId);
 
         if (progressDO == null) {
-            throw new RuntimeException("路线图学习记录不存在");
+            throw ErrorCode.USER_ROADMAP_NOT_FOUND.exception();
         }
 
         progressDO.setProgressPercent(progressPercent);

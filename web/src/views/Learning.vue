@@ -90,6 +90,9 @@ function parseContent(content) {
     }
     
     const nodes = (data.nodes || []).map((node, index) => {
+      const completed = node.finished || node.completed || false;
+      const progress = node.progress || 0;
+      
       return {
         id: String(node.id || index),
         type: 'default',
@@ -97,8 +100,8 @@ function parseContent(content) {
           type: 'course', // 标记为课程节点
           label: node.name || node.label || `节点 ${node.id || index}`, // 适配新的name字段
           link: '/read?courseId=' + (node.id || index),
-          completed: node.finished || node.completed || false, // 适配新的finished字段
-          progress: node.progress || 0, // 使用新的progress字段
+          completed: completed, // 适配新的finished字段
+          progress: progress, // 使用新的progress字段
           current: node.current || node.data?.current || false,
           courseId: node.id, // 保存课程ID
           ...node.data
@@ -107,7 +110,10 @@ function parseContent(content) {
         position: node.position || { x: 0, y: 0 },
         // 设置连接点位置 - 参考 RoadmapFlow
         sourcePosition: 'top',    // source 在上面
-        targetPosition: 'bottom'  // target 在下面
+        targetPosition: 'bottom',  // target 在下面
+        // 为节点添加自定义class和样式
+        class: completed ? 'completed-course' : (progress > 0 ? 'progress-course' : ''),
+        style: progress > 0 ? { '--progress': `${progress}%` } : {}
       }
     })
 
@@ -1353,6 +1359,40 @@ const getStatusText = (status) => {
   border: 3px solid #1976d2 !important;
   color: #ffffff !important;
   font-weight: 600 !important;
+}
+
+/* 已完成课程样式 */
+.vue-flow-readonly :deep(.vue-flow__node.completed-course) {
+  background: #e8f5e9 !important;
+  border-color: #4caf50 !important;
+  color: #2e7d32 !important;
+}
+
+/* 已完成课程标识 */
+.vue-flow-readonly :deep(.vue-flow__node.completed-course::after) {
+  content: '✓';
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  background: #4caf50;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* 有进度课程的背景进度填充 */
+.vue-flow-readonly :deep(.vue-flow__node.progress-course) {
+  background: linear-gradient(to right, #88ee76 var(--progress, 0%), #fafafa var(--progress, 0%)) !important;
+  border: 3px solid #2fae19 !important;
+  color: #333 !important;
 }
 
 .vue-flow-readonly :deep(.vue-flow__node[data-id="0"]:hover) {

@@ -382,4 +382,37 @@ function formatDate(date) {
   background: linear-gradient(transparent, white);
   pointer-events: none;
 }
+
+/* 已完成课程样式 */
+.vue-flow-readonly :deep(.vue-flow__node.completed-course) {
+  background: #e8f5e9 !important;
+  border-color: #4caf50 !important;
+  color: #2e7d32 !important;
+}
+
+/* 已完成课程标识 */
+.vue-flow-readonly :deep(.vue-flow__node.completed-course::after) {
+  content: '✓';
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  background: #4caf50;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* 有进度课程的背景进度填充 */
+.vue-flow-readonly :deep(.vue-flow__node.progress-course) {
+  background: linear-gradient(to right, #beffb4 var(--progress, 0%), #fafafa var(--progress, 0%)) !important;
+  color: #333 !important;
+}
 </style>

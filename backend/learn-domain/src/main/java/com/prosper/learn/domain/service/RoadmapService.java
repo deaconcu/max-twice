@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.prosper.learn.common.UnionFind;
 import com.prosper.learn.common.Utils;
+import com.prosper.learn.domain.exception.ErrorCode;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.RoadmapDTO;
 import com.prosper.learn.dto.UserCourseDTO;
@@ -17,6 +18,7 @@ import com.prosper.learn.persistence.mapper.CourseMapper;
 import com.prosper.learn.persistence.mapper.RoadmapMapper;
 import com.prosper.learn.persistence.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -26,6 +28,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RoadmapService {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -53,7 +56,7 @@ public class RoadmapService {
             // 解析JSON
             JsonNode rootNode = objectMapper.readTree(content);
             if (!rootNode.isArray() || rootNode.size() != 2) {
-                throw new IllegalArgumentException("Content format error: expected [edges, nodes]");
+                throw ErrorCode.ROADMAP_CONTENT_INVALID.exception();
             }
 
             // 获取edges和nodes
@@ -106,7 +109,7 @@ public class RoadmapService {
             return Utils.md5(standardizedString);
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to calculate content hash", e);
+            throw ErrorCode.CONTENT_HASH_ERROR.exception(e);
         }
     }
 
@@ -123,7 +126,7 @@ public class RoadmapService {
             }
             return sb.toString();
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("MD5 algorithm not available", e);
+            throw ErrorCode.CONTENT_HASH_ERROR.exception(e);
         }
     }
 
@@ -173,6 +176,7 @@ public class RoadmapService {
             return isValidTree(edges, nodeSet);
 
         } catch (Exception e) {
+            log.warn("Failed to validate content format", e);
             return false;
         }
     }
@@ -223,67 +227,72 @@ public class RoadmapService {
         return uf.getComponentCount() == 1;
     }
 
-    public String parseContentToGraphFormat(String content, int userId) throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
+    public String parseContentToGraphFormat(String content, int userId) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
 
-        // 解析 content: [[[1,2],[2,3]],[1,2,3]]
-        // 第一个数组是edges，第二个数组是nodes
-        List<List<Object>> contentData = mapper.readValue(content, new TypeReference<>() {});
+            // 解析 content: [[[1,2],[2,3]],[1,2,3]]
+            // 第一个数组是edges，第二个数组是nodes
+            List<List<Object>> contentData = mapper.readValue(content, new TypeReference<>() {});
 
-        Map<String, Object> graphData = new HashMap<>();
-        List<Map<String, String>> edges = new ArrayList<>();
-        List<Map<String, Object>> nodes = new ArrayList<>();
+            Map<String, Object> graphData = new HashMap<>();
+            List<Map<String, String>> edges = new ArrayList<>();
+            List<Map<String, Object>> nodes = new ArrayList<>();
 
-        if (contentData.size() >= 2) {
-            // 解析edges - 格式: [[1,2],[2,3]]
-            List<Object> edgeDataRaw = contentData.get(0);
-            for (Object edgeObj : edgeDataRaw) {
-                if (edgeObj instanceof List) {
-                    List<Object> edge = (List<Object>) edgeObj;
-                    if (edge.size() >= 2) {
-                        Map<String, String> edgeMap = new HashMap<>();
-                        edgeMap.put("source", String.valueOf(edge.get(0)));
-                        edgeMap.put("target", String.valueOf(edge.get(1)));
-                        edges.add(edgeMap);
+            if (contentData.size() >= 2) {
+                // 解析edges - 格式: [[1,2],[2,3]]
+                List<Object> edgeDataRaw = contentData.get(0);
+                for (Object edgeObj : edgeDataRaw) {
+                    if (edgeObj instanceof List) {
+                        List<Object> edge = (List<Object>) edgeObj;
+                        if (edge.size() >= 2) {
+                            Map<String, String> edgeMap = new HashMap<>();
+                            edgeMap.put("source", String.valueOf(edge.get(0)));
+                            edgeMap.put("target", String.valueOf(edge.get(1)));
+                            edges.add(edgeMap);
+                        }
                     }
                 }
-            }
 
-            // 解析nodes - 格式: [1,2,3]
-            List<Object> nodeIdsRaw = contentData.get(1);
-            List<Integer> nodeIds = new ArrayList<>();
-            for (Object nodeIdObj : nodeIdsRaw) {
-                if (nodeIdObj instanceof Number) {
-                    nodeIds.add(((Number) nodeIdObj).intValue());
+                // 解析nodes - 格式: [1,2,3]
+                List<Object> nodeIdsRaw = contentData.get(1);
+                List<Integer> nodeIds = new ArrayList<>();
+                for (Object nodeIdObj : nodeIdsRaw) {
+                    if (nodeIdObj instanceof Number) {
+                        nodeIds.add(((Number) nodeIdObj).intValue());
+                    }
+                }
+
+                // 获取课程名称
+                Map<Integer, String> courseNames = getCourseNames(nodeIds);
+
+                // 批量查询用户对这些课程的学习进度
+                Map<Long, UserCourseDO> userCourseMap = userCourseService.getUserCoursesBatch(userId, new ArrayList<>(nodeIds));
+
+                for (Integer nodeId : nodeIds) {
+                    String courseName = courseNames.getOrDefault(nodeId, "课程" + nodeId);
+
+                    UserCourseDO userCourse = userCourseMap.get((long)nodeId);
+                    boolean finished = userCourse != null && userCourse.getProgressPercent() >= 10000;
+                    double progress = userCourse != null ? userCourse.getProgressPercent() / 100.0 : 0.0;
+
+                    Map<String, Object> nodeMap = new HashMap<>();
+                    nodeMap.put("id", String.valueOf(nodeId));
+                    nodeMap.put("name", courseName);
+                    nodeMap.put("finished", finished);
+                    nodeMap.put("progress", progress);
+                    nodes.add(nodeMap);
                 }
             }
 
-            // 获取课程名称
-            Map<Integer, String> courseNames = getCourseNames(nodeIds);
+            graphData.put("edges", edges);
+            graphData.put("nodes", nodes);
 
-            // 批量查询用户对这些课程的学习进度
-            Map<Long, UserCourseDO> userCourseMap = userCourseService.getUserCoursesBatch(userId, new ArrayList<>(nodeIds));
-            
-            for (Integer nodeId : nodeIds) {
-                String courseName = courseNames.getOrDefault(nodeId, "课程" + nodeId);
-                
-                UserCourseDO userCourse = userCourseMap.get((long)nodeId);
-                boolean finished = userCourse != null && userCourse.getProgressPercent() >= 10000;
-                double progress = userCourse != null ? userCourse.getProgressPercent() / 100.0 : 0.0;
-                
-                Map<String, Object> nodeMap = new HashMap<>();
-                nodeMap.put("id", String.valueOf(nodeId));
-                nodeMap.put("name", courseName);
-                nodeMap.put("finished", finished);
-                nodeMap.put("progress", progress);
-                nodes.add(nodeMap);
-            }
+            return mapper.writeValueAsString(graphData);
+        } catch (Exception e) {
+            log.error("Failed to parse content to graph format", e);
+            throw new RuntimeException("Content parsing failed", e);
         }
-
-        graphData.put("edges", edges);
-        graphData.put("nodes", nodes);
-
-        return mapper.writeValueAsString(graphData);
     }
 
     private Map<Integer, String> getCourseNames(List<Integer> courseIds) {
@@ -298,6 +307,7 @@ public class RoadmapService {
                 courseNames.put(course.getId(), course.getName());
             }
         } catch (Exception e) {
+            log.error("Failed to get course names for courseIds: {}", courseIds, e);
             // 如果查询失败，使用默认名称
             for (Integer id : courseIds) {
                 courseNames.put(id, "课程" + id);
