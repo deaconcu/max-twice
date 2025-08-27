@@ -1,10 +1,12 @@
 <script setup>
 import { ref, onMounted, inject, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { learnService, userService } from '@/services/learnService';
 import { useUserStore } from "@/stores/user";
 import RightSidebar from '@/components/RightSidebar.vue';
 
+const { t } = useI18n();
 const showSnackbar = inject('showSnackbar');
 
 const user = useUserStore();
@@ -117,19 +119,19 @@ const postApplyCourse = async () => {
   try {
     // 验证必填字段
     if (!applyCourseData.value.name.trim()) {
-      showSnackbar("请输入课程名称！", "error");
+      showSnackbar(t('validation.required.courseName'), "error");
       return;
     }
     if (!applyCourseData.value.description.trim()) {
-      showSnackbar("请输入课程描述！", "error");
+      showSnackbar(t('validation.required.courseDescription'), "error");
       return;
     }
     if (!applyCourseData.value.mainCategoryId) {
-      showSnackbar("请选择主分类！", "error");
+      showSnackbar(t('validation.required.mainCategory'), "error");
       return;
     }
     if (!applyCourseData.value.subCategoryId) {
-      showSnackbar("请选择子分类！", "error");
+      showSnackbar(t('validation.required.subCategory'), "error");
       return;
     }
 
@@ -155,7 +157,7 @@ const postApplyCourse = async () => {
         mainCategoryId: "",
         subCategoryId: ""
       };
-      showSnackbar("课程创建成功！");
+      showSnackbar(t('message.courseCreateSuccess'));
     } else {
       showSnackbar(response.message || "创建失败，请重试！", "error");
     }
@@ -276,7 +278,7 @@ function openInNewTab(courseId) {
                       <v-icon icon="mdi-book-multiple" color="teal-darken-2" size="20"></v-icon>
                     </v-avatar>
                     <div>
-                      <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-1">课程中心</h1>
+                      <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-1">{{ t('course.center') }}</h1>
                       <p class="text-body-2 text-grey-darken-2 mb-0">探索知识，成就未来</p>
                     </div>
                   </div>
@@ -291,7 +293,7 @@ function openInNewTab(courseId) {
                         职业中心
                       </v-btn>
                       <v-btn value="courses" class="nav-btn" :class="{ 'nav-btn-active': selectedNavTab === 'courses' }">
-                        课程中心
+                        {{ t('course.center') }}
                       </v-btn>
                     </v-btn-toggle>
                   </div>
@@ -301,7 +303,7 @@ function openInNewTab(courseId) {
             <v-row justify="start" align="center">
               <v-col cols="6">
                 <v-text-field hide-details="auto" density="compact" class="search-input" rounded="lg"
-                  placeholder="搜索感兴趣的课程..." variant="outlined" @click:append-inner="sendMessage">
+                  :placeholder="t('course.search')" variant="outlined" @click:append-inner="sendMessage">
                   <template v-slot:prepend-inner>
                     <v-icon icon="mdi-magnify" color="grey-lighten-1" size="18"></v-icon>
                   </template>
@@ -311,21 +313,21 @@ function openInNewTab(courseId) {
                 <v-btn @click="applyCourseDialog = true" variant="flat" color="grey-darken-2" class="px-4 text-white" rounded="lg"
                   density="default">
                   <v-icon icon="mdi-plus" class="mr-2" size="16"></v-icon>
-                  创建新课程
+                  {{ t('course.createNew') }}
                 </v-btn>
                 <v-dialog v-model="applyCourseDialog" width="800" height="620" content-class="fix-dialog">
                   <v-card class="px-1 py-2" rounded="lg">
                     <v-card-title class="d-flex align-center">
                       <v-icon icon="mdi-file-cog-outline" size="small" class=""></v-icon>
-                      <span class="ps-2">创建新课程</span>
+                      <span class="ps-2">{{ t('course.createNew') }}</span>
                     </v-card-title>
                     <v-card-subtitle>
-                      请填写课程信息并选择合适的分类
+                      {{ t('course.fillInfo') }}
                     </v-card-subtitle>
                     <v-card-text class="px-4 py-8">
                       <v-text-field 
                         v-model="applyCourseData.name" 
-                        label="课程名称" 
+                        :label="t('course.name')" 
                         variant="outlined"
                         density="compact"
                         class="mb-4"
@@ -334,7 +336,7 @@ function openInNewTab(courseId) {
                       
                       <v-textarea 
                         v-model="applyCourseData.description" 
-                        label="课程描述" 
+                        :label="t('course.description')" 
                         variant="outlined" 
                         density="compact"
                         rows="4"
@@ -347,7 +349,7 @@ function openInNewTab(courseId) {
                         :items="config.courses || []"
                         item-title="name"
                         item-value="id"
-                        label="主分类"
+                        :label="t('course.mainCategory')"
                         variant="outlined"
                         density="compact"
                         class="mb-4"
@@ -360,7 +362,7 @@ function openInNewTab(courseId) {
                         :items="getSubCategories()"
                         item-title="name"
                         item-value="id"
-                        label="子分类"
+                        :label="t('course.subCategory')"
                         variant="outlined"
                         density="compact"
                         class="mb-4"
@@ -370,7 +372,7 @@ function openInNewTab(courseId) {
                     </v-card-text>
                     <v-card-actions class="justify-center">
                       <v-btn text="取消" @click="applyCourseDialog = false" class="px-4" variant="outlined"></v-btn>
-                      <v-btn text="创建课程" @click="postApplyCourse" class="px-4" color="primary"></v-btn>
+                      <v-btn :text="t('course.create')" @click="postApplyCourse" class="px-4" color="primary"></v-btn>
                     </v-card-actions>
                   </v-card>
                 </v-dialog>
@@ -424,7 +426,7 @@ function openInNewTab(courseId) {
                             <!-- 加载状态 -->
                             <div v-if="loading" class="text-center py-4">
                               <v-progress-circular indeterminate color="primary" size="32"></v-progress-circular>
-                              <p class="text-body-2 text-grey-darken-2 mt-2">正在加载课程...</p>
+                              <p class="text-body-2 text-grey-darken-2 mt-2">{{ t('course.loading') }}</p>
                             </div>
                             
                             <!-- 课程列表 -->
@@ -452,8 +454,8 @@ function openInNewTab(courseId) {
                             <!-- 无课程提示 -->
                             <div v-else class="text-center py-6">
                               <v-icon icon="mdi-book-outline" size="48" color="grey-lighten-1" class="mb-3"></v-icon>
-                              <p class="text-body-1 text-grey-darken-2 mb-2">该分类下暂无课程</p>
-                              <p class="text-body-2 text-grey-darken-1">请选择其他分类或申请添加新课程</p>
+                              <p class="text-body-1 text-grey-darken-2 mb-2">{{ t('course.noCourses') }}</p>
+                              <p class="text-body-2 text-grey-darken-1">{{ t('course.selectOther') }}</p>
                             </div>
                           </div>
                         </v-tabs-window-item>

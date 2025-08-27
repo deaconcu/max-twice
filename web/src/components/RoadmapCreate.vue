@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, inject, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
@@ -7,10 +8,11 @@ import { learnService } from '@/services/learnService'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import dagre from 'dagre'
 
+const { t } = useI18n()
 const showSnackbar = inject('showSnackbar');
 
 // 职业名称常量 - 根节点显示用
-const PROFESSION_NAME = 'JAVA初级程序员'
+const PROFESSION_NAME = t('roadmapCreate.rootNodeTitle')
 
 // 创建根节点的通用函数
 function createRootNode(position = { x: 400, y: 100 }) {
@@ -113,14 +115,14 @@ const showEmptyAreaTip = ref(true)
 function handleSave() {
   // 先进行基本验证
   if (internalNodes.value.length === 0) {
-    showSnackbar('请先添加课程节点')
+    showSnackbar(t('roadmapCreate.messages.addNodesFirst'))
     return
   }
   
   // 确保有根节点
   const hasRootNode = internalNodes.value.some(node => node.id === '0')
   if (!hasRootNode) {
-    showSnackbar('课程表必须包含根节点')
+    showSnackbar(t('roadmapCreate.messages.rootNodeRequired'))
     return
   }
 
@@ -162,7 +164,7 @@ function cancelSaveConfirm() {
 // 重置相关方法
 function handleReset() {
   if (internalNodes.value.length === 0 && internalEdges.value.length === 0) {
-    showSnackbar('编辑区域已为空，无需重置')
+    showSnackbar(t('roadmapCreate.messages.alreadyEmpty'))
     return
   }
   
@@ -182,7 +184,7 @@ function confirmReset() {
   // 重置后也要添加根节点
   internalNodes.value.push(createRootNode())
   
-  showSnackbar('课程表编辑区域已重置')
+  showSnackbar(t('roadmapCreate.messages.resetSuccess'))
 }
 
 // 取消重置
@@ -199,7 +201,7 @@ async function loadAvailableCourses(searchName = '') {
   } catch (err) {
     console.error('获取课程数据失败:', err);
     availableCourses.value = [];
-    showSnackbar('获取课程数据失败: ' + (err.message || '未知错误'));
+    showSnackbar(t('roadmapCreate.messages.loadCoursesError', { error: err.message || t('roadmapCreate.messages.unknownError') }));
   }
 }
 
@@ -313,7 +315,7 @@ function onEdgesChange(changes) {
 function deleteNode(nodeId) {
   // 不允许删除根节点
   if (nodeId === '0' || nodeId === 0) {
-    showSnackbar('根节点不能删除')
+    showSnackbar(t('roadmapCreate.messages.cannotDeleteRoot'))
     return
   }
   
@@ -404,7 +406,7 @@ function validateTreeStructure() {
   const edges = internalEdges.value
 
   if (nodes.length === 0) {
-    return { valid: false, message: '课程表不能为空' }
+    return { valid: false, message: t('roadmapCreate.validation.emptyRoadmap') }
   }
 
   // 单个节点的情况是有效的树
@@ -460,12 +462,12 @@ function validateTreeStructure() {
   // 从第一个节点开始DFS
   const startNode = nodeIds[0]
   if (hasCycle(startNode, null)) {
-    return { valid: false, message: '课程表中存在环路，不能形成树结构' }
+    return { valid: false, message: t('roadmapCreate.validation.circularDependency') }
   }
 
   // 检查是否所有节点都被访问到（连通性）
   if (visited.size !== nodes.length) {
-    return { valid: false, message: '课程表不是连通的，存在孤立的节点或子图' }
+    return { valid: false, message: t('roadmapCreate.validation.disconnectedGraph') }
   }
 
   return { valid: true }
@@ -559,12 +561,12 @@ function initializeEditor() {
         
         showEmptyAreaTip.value = false
         console.log('成功复制课程表数据')
-        showSnackbar('课程表复制成功，可以开始编辑')
+        showSnackbar(t('roadmapCreate.messages.copySuccess'))
         return
       }
     } catch (error) {
       console.error('解析复制的课程表数据失败:', error)
-      showSnackbar('复制课程表数据失败，将创建空白课程表')
+      showSnackbar(t('roadmapCreate.messages.copyFailed'))
     }
   }
   
@@ -597,7 +599,7 @@ watch(() => props.modelValue, (newValue) => {
       <v-toolbar color="grey-lighten-5" flat class="flat-toolbar" density="compact">
         <v-toolbar-title class="grey-teal-darken-2">
           <v-icon class="mr-1" size="small" color="grey-darken-2">mdi-book</v-icon>
-          创建新课程表
+          {{ t('roadmapCreate.title') }}
         </v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn icon variant="flat" @click="$emit('close')" class="flat-icon-button">
@@ -614,7 +616,7 @@ watch(() => props.modelValue, (newValue) => {
                 <div class="d-flex align-center mb-2">
                   <v-text-field 
                     v-model="searchText" 
-                    label="搜索课程" 
+                    :label="t('roadmapCreate.searchCourses')" 
                     append-inner-icon="mdi-magnify" 
                     variant="outlined"
                     density="compact" 
@@ -642,17 +644,17 @@ watch(() => props.modelValue, (newValue) => {
 
                 <!-- 无搜索结果提示 -->
                 <v-alert v-if="availableCourses.length === 0 && searchText.trim()" color="grey-darken-1" type="info" variant="tonal" density="compact">
-                  未找到相关课程，请尝试其他关键词
+                  {{ t('roadmapCreate.noCoursesFound') }}
                 </v-alert>
                 
                 <!-- 初始状态提示 -->
                 <v-alert v-if="availableCourses.length === 0 && !searchText.trim()" color="grey-darken-1" type="info" variant="tonal" density="compact">
-                  请输入课程名称进行搜索
+                  {{ t('roadmapCreate.searchPrompt') }}
                 </v-alert>
                 
                 <!-- 有搜索结果时的提示 -->
                 <v-alert v-if="availableCourses.length > 0" color="grey-darken-1" type="info" variant="tonal" density="compact">
-                  点击课程添加到右侧编辑区域
+                  {{ t('roadmapCreate.addCourseHint') }}
                 </v-alert>
               </v-card-text>
             </v-card>
@@ -666,20 +668,20 @@ watch(() => props.modelValue, (newValue) => {
                   <div class="d-flex align-center border-e pr-4">
                     <v-btn color="red-darken-1" variant="tonal" class="flat-button mr-2" @click="deleteSelected">
                       <v-icon class="me-1" left>mdi-delete</v-icon>
-                      删除选中
+                      {{ t('roadmapCreate.deleteSelected') }}
                     </v-btn>
                     <v-btn color="blue-darken-4" variant="tonal" class="flat-button mr-2" @click="handleReset">
                       <v-icon class="me-1" left>mdi-refresh</v-icon>
-                      重置
+                      {{ t('roadmapCreate.reset') }}
                     </v-btn>
                     <v-btn color="blue-darken-4" variant="tonal" class="flat-button" @click="recalculateLayout">
                       <v-icon class="me-1" left>mdi-autorenew</v-icon>
-                      自动布局
+                      {{ t('roadmapCreate.autoLayout') }}
                     </v-btn>
                   </div>
                   <v-btn color="teal-darken-1" variant="tonal" class="flat-button ml-4" @click="handleSave">
                     <v-icon class="me-1" left>mdi-content-save</v-icon>
-                    编写描述并保存课程表
+                    {{ t('roadmapCreate.saveWithDescription') }}
                   </v-btn>
                 </div>
               </v-card-title>
@@ -710,9 +712,9 @@ watch(() => props.modelValue, (newValue) => {
                 <div v-show="internalNodes.length === 1" class="empty-area-tip">
                   <div class="tip-content">
                     <v-icon size="48" color="teal-lighten-2" class="mb-3">mdi-vector-arrange-above</v-icon>
-                    <h3 class="text-teal-darken-1 mb-4">课程表编辑区域</h3>
-                    <p class="text-grey-darken-1 mb-2">从左侧搜索并点击课程来添加节点</p>
-                    <p class="text-grey-darken-1 mb-0">拖拽节点连接线来建立学习路径</p>
+                    <h3 class="text-teal-darken-1 mb-4">{{ t('roadmapCreate.editorTitle') }}</h3>
+                    <p class="text-grey-darken-1 mb-2">{{ t('roadmapCreate.editorDescription') }}</p>
+                    <p class="text-grey-darken-1 mb-0">{{ t('roadmapCreate.editorInstructions') }}</p>
                   </div>
                 </div>
               </v-card-text>

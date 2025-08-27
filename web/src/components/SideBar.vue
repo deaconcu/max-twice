@@ -1,3 +1,9 @@
+<script setup>
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
+</script>
+
 <template>
   <v-col cols="3" class="sidebar-container">
     <!-- 广告区域 -->
@@ -5,16 +11,16 @@
       <v-img src="/images/big.png" height="200" cover class="ad-image">
         <div class="ad-overlay">
           <v-card-title class="text-white text-center">
-            专业课程推荐
+            {{ t('sidebar.adTitle') }}
           </v-card-title>
           <v-card-subtitle class="text-white text-center">
-            提升技能，成就未来
+            {{ t('sidebar.adSubtitle') }}
           </v-card-subtitle>
         </div>
       </v-img>
       <v-card-actions class="justify-center">
         <v-btn color="teal-darken-1" variant="flat" class="flat-button">
-          了解更多
+          {{ t('sidebar.learnMore') }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -23,7 +29,7 @@
     <v-card variant="flat" class="flat-card">
       <v-card-title class="text-teal-darken-3 d-flex align-center">
         <v-icon class="mr-2" color="teal-darken-1">mdi-help-circle</v-icon>
-        操作指南
+        {{ t('sidebar.operationGuide') }}
       </v-card-title>
       <v-card-text>
         <v-list density="compact" class="operation-guide">
@@ -31,21 +37,21 @@
             <template v-slot:prepend>
               <v-icon size="20" color="teal-darken-1">mdi-mouse</v-icon>
             </template>
-            <v-list-item-title class="text-body-2">点击课程表查看详情</v-list-item-title>
+            <v-list-item-title class="text-body-2">{{ t('sidebar.clickCourse') }}</v-list-item-title>
           </v-list-item>
 
           <v-list-item class="px-0">
             <template v-slot:prepend>
               <v-icon size="20" color="teal-darken-1">mdi-thumb-up</v-icon>
             </template>
-            <v-list-item-title class="text-body-2">投票支持优质课程表</v-list-item-title>
+            <v-list-item-title class="text-body-2">{{ t('sidebar.voteCourse') }}</v-list-item-title>
           </v-list-item>
 
           <v-list-item class="px-0">
             <template v-slot:prepend>
               <v-icon size="20" color="orange-darken-1">mdi-arrow-up-thick</v-icon>
             </template>
-            <v-list-item-title class="text-body-2">置顶重要课程表</v-list-item-title>
+            <v-list-item-title class="text-body-2">{{ t('sidebar.pinCourse') }}</v-list-item-title>
           </v-list-item>
 
           <v-list-item class="px-0">

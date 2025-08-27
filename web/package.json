@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "dev:zh": "VITE_LOCALE=zh vite",
+    "dev:en": "VITE_LOCALE=en vite",
+    "build": "npm run build:zh && npm run build:en",
+    "build:zh": "VITE_LOCALE=zh vite build",
+    "build:en": "VITE_LOCALE=en vite build",
     "preview": "vite preview",
     "test:unit": "vitest"
   },
@@ -53,6 +57,7 @@
     "three": "^0.179.1",
     "vue": "3.5.13",
     "vue-chartjs": "^5.3.2",
+    "vue-i18n": "^9.14.5",
     "vue-router": "4.5.0",
     "vuedraggable": "4.1.0",
     "vuetify": "3.7.6"

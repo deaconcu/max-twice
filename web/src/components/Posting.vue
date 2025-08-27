@@ -2,6 +2,7 @@
 import { ref, onMounted, nextTick, watch, toRef, inject } from 'vue';
 import { learnService, userService } from '@/services/learnService';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github.css'; // 选择你的高亮主题
 
@@ -17,6 +18,7 @@ const props = defineProps(['data', 'posting', 'currNode', 'detail', 'isLearning'
 const emit = defineEmits(['loadData', 'switchTab', 'markNodeCompleted']);
 
 const showSnackbar = inject('showSnackbar');
+const { t } = useI18n();
 
 const route = useRoute();
 const router = useRouter();
@@ -54,7 +56,7 @@ const modifyContents = async (postingId, action) => {
 
     if (response.code === 200) {
       console.log('Form submitted successfully');
-      showSnackbar('操作成功');
+      showSnackbar(t('posting.operationSuccess'));
 
       if (action === 1 || action === 2) {
         emit('loadData', ['contents', 'chosenPosting']);
@@ -160,7 +162,7 @@ const handleViewFullContent = () => {
         <v-btn v-if="isOverflow" variant="text" density="comfortable" class="px-0 mt-3 text-body-2 text-primary"
           @click="!props.detail ? handleViewFullContent() : ''">
           <v-icon icon="mdi-chevron-down" size="16" class="mr-1"></v-icon>
-          查看全部内容
+          {{ t('posting.viewFullContent') }}
         </v-btn>
       </template>
     </v-row>
@@ -173,7 +175,7 @@ const handleViewFullContent = () => {
           :color="posting.voteType === 3 ? 'green-lighten-4' : 'grey-lighten-3'" class="px-4" @click="upvote(posting, 3)">
           <v-icon v-if="posting.voteType === 3" icon="mdi-check" size="16" class="mr-2" color="green-darken-2"></v-icon>
           <v-icon v-else icon="mdi-thumb-up-outline" size="16" class="mr-2" :color="posting.voteType === 3 ? 'green-darken-2' : 'grey-darken-2'"></v-icon>
-          <span :class="posting.voteType === 3 ? 'font-weight-medium text-green-darken-2' : 'font-weight-medium text-grey-darken-2'">赞同 {{ posting.helpful }}</span>
+          <span :class="posting.voteType === 3 ? 'font-weight-medium text-green-darken-2' : 'font-weight-medium text-grey-darken-2'">{{ t('posting.agree') }} {{ posting.helpful }}</span>
         </v-btn>
       </template>
 
@@ -186,7 +188,7 @@ const handleViewFullContent = () => {
             <v-icon v-if="posting.voteType === 2" icon="mdi-check" size="14" class="mr-2" color="teal-darken-2"></v-icon>
             <v-icon v-else icon="mdi-lightbulb-outline" size="14" class="mr-2" :color="posting.voteType === 2 ? 'teal-darken-2' : 'grey-darken-2'"></v-icon>
             <span :class="posting.voteType === 2 ? 'font-weight-medium text-teal-darken-3' : 'font-weight-medium text-grey-darken-2'">
-              看两遍就懂 {{ posting.twice }}
+              {{ t('posting.twiceUnderstand') }} {{ posting.twice }}
             </span>
           </v-btn>
 
@@ -194,7 +196,7 @@ const handleViewFullContent = () => {
             :color="posting.voteType === 3 ? 'brown-lighten-4' : 'grey-lighten-3'" class="px-3 ms-3" @click="upvote(posting, 3)">
             <v-icon v-if="posting.voteType === 3" icon="mdi-check" size="14" class="mr-2" color="brown-darken-2"></v-icon>
             <v-icon v-else icon="mdi-thumb-up-outline" size="14" class="mr-2" :color="posting.voteType === 3 ? 'brown-darken-2' : 'grey-darken-2'"></v-icon>
-            <span :class="posting.voteType === 3 ? 'font-weight-medium text-brown-darken-2' : 'font-weight-medium text-grey-darken-2'">有帮助 {{ posting.helpful }}</span>
+            <span :class="posting.voteType === 3 ? 'font-weight-medium text-brown-darken-2' : 'font-weight-medium text-grey-darken-2'">{{ t('posting.helpful') }} {{ posting.helpful }}</span>
           </v-btn>
         </div>
       </template>
@@ -222,10 +224,10 @@ const handleViewFullContent = () => {
             size="14" class="mr-2" :color="props.currNode['+'] && props.currNode['+'] === posting.id ? 'red-darken-2' : 'grey-darken-2'"></v-icon>
           <span :class="props.currNode['+'] && props.currNode['+'] === posting.id ? 'font-weight-medium text-red-darken-2' : 'font-weight-medium text-grey-darken-2'">
             <template v-if="props.currNode['+'] && props.currNode['+'] === posting.id">
-              取消设置为目录
+              {{ t('posting.cancelSetAsCatalog') }}
             </template>
             <template v-else>
-              设置为目录
+              {{ t('posting.setAsCatalog') }}
             </template>
           </span>
         </v-btn>
@@ -240,10 +242,10 @@ const handleViewFullContent = () => {
             size="14" class="mr-2" :color="props.currNode['^'] && props.currNode['^'].includes(posting.id) ? 'orange-darken-2' : 'grey-darken-2'"></v-icon>
           <span :class="props.currNode['^'] && props.currNode['^'].includes(posting.id) ? 'font-weight-medium text-orange-darken-2' : 'font-weight-medium text-grey-darken-2'">
             <template v-if="props.currNode['^'] && props.currNode['^'].includes(posting.id)">
-              取消置顶
+              {{ t('posting.unpin') }}
             </template>
             <template v-else>
-              置顶
+              {{ t('posting.pin') }}
             </template>
           </span>
         </v-btn>

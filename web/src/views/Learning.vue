@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, inject, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { learnService, userService } from '@/services/learnService';
 import { useUserStore } from "@/stores/user";
 import { VueFlow } from '@vue-flow/core'
@@ -11,6 +12,7 @@ import RightSidebar from '@/components/RightSidebar.vue';
 import dagre from 'dagre';
 import { usePlatformStats } from '@/composables/usePlatformStats';
 
+const { t } = useI18n();
 const showSnackbar = inject('showSnackbar');
 const user = useUserStore();
 const router = useRouter();
@@ -283,7 +285,7 @@ const loadLearningData = async () => {
     console.log("learningData:", learningData.value) // 调试信息
   } catch (error) {
     console.error('Error loading learning data:', error);
-    showSnackbar('加载学习数据失败');
+    showSnackbar(t('learning.loadFailed'));
   }
 };
 
@@ -296,7 +298,7 @@ function calculateOverallProgress(roadmaps) {
 
 // 获取相对时间
 function getRelativeTime(dateString) {
-  if (!dateString) return '未知时间'
+  if (!dateString) return t('learning.timeAgo.unknownTime')
   
   const date = new Date(dateString)
   const now = new Date()
@@ -306,11 +308,11 @@ function getRelativeTime(dateString) {
   const diffDays = Math.floor(diffMs / 86400000)
   
   if (diffMins < 60) {
-    return `${diffMins}分钟前`
+    return t('learning.timeAgo.minutesAgo', { minutes: diffMins })
   } else if (diffHours < 24) {
-    return `${diffHours}小时前`
+    return t('learning.timeAgo.hoursAgo', { hours: diffHours })
   } else {
-    return `${diffDays}天前`
+    return t('learning.timeAgo.daysAgo', { days: diffDays })
   }
 }
 
@@ -332,7 +334,7 @@ function generateRecentActivities(items) {
       activities.push({
         type: item.nodes ? 'roadmap' : 'course', // 有nodes的是roadmap，否则是course
         title: item.title || item.name,
-        action: '正在学习中',
+        action: t('learning.inProgress'),
         time: item.lastActivity
       })
     }
@@ -341,7 +343,7 @@ function generateRecentActivities(items) {
       activities.push({
         type: item.nodes ? 'roadmap' : 'course',
         title: item.title || item.name,
-        action: '已完成学习',
+        action: t('learning.completed'),
         time: getRelativeTime(item.completedAt)
       })
     }
@@ -375,14 +377,14 @@ function getDifficultyFromStatus(status) {
 
 // 根据描述估算学习时间
 function getEstimatedTime(description) {
-  if (!description) return '未知'
+  if (!description) return t('learning.estimatedTime.unknown')
   
   // 简单的估算逻辑，可根据实际需求调整
   const length = description.length
-  if (length < 50) return '1-2小时'
-  if (length < 100) return '3-5小时'
-  if (length < 200) return '1-2天'
-  return '3-7天'
+  if (length < 50) return t('learning.estimatedTime.shortTime')
+  if (length < 100) return t('learning.estimatedTime.mediumTime')
+  if (length < 200) return t('learning.estimatedTime.longTime')
+  return t('learning.estimatedTime.veryLongTime')
 }
 
 const getDifficultyColor = (difficulty) => {
@@ -456,10 +458,10 @@ const handleVoteRoadmap = async (roadmap, event) => {
     // 这里应该调用后端API
     roadmap.upvoted = !roadmap.upvoted;
     roadmap.vote += roadmap.upvoted ? 1 : -1;
-    showSnackbar(roadmap.upvoted ? '点赞成功！' : '取消点赞');
+    showSnackbar(roadmap.upvoted ? t('learning.votedSuccess') : t('learning.unvotedSuccess'));
   } catch (error) {
     console.error('投票失败:', error);
-    showSnackbar('操作失败，请重试');
+    showSnackbar(t('learning.operationFailed'));
   }
 };
 
@@ -469,7 +471,7 @@ const moveRoadmapUp = (roadmap, event) => {
     event.stopPropagation();
   }
   // TODO: 实现上移逻辑
-  showSnackbar('路线图上移');
+  showSnackbar(t('learning.roadmapMoveUp'));
 };
 
 // 下移路线图
@@ -478,7 +480,7 @@ const moveRoadmapDown = (roadmap, event) => {
     event.stopPropagation();
   }
   // TODO: 实现下移逻辑
-  showSnackbar('路线图下移');
+  showSnackbar(t('learning.roadmapMoveDown'));
 };
 
 // 关闭/退出学习路线图
@@ -487,9 +489,9 @@ const closeRoadmap = (roadmap, event) => {
     event.stopPropagation();
   }
   // TODO: 实现关闭逻辑，例如显示确认对话框
-  if (confirm('确定要退出这个学习路线图吗？')) {
+  if (confirm(t('learning.confirmExit'))) {
     // 这里可以调用后端API来退出学习
-    showSnackbar('已退出学习路线图');
+    showSnackbar(t('learning.exitedRoadmap'));
   }
 };
 
@@ -499,9 +501,9 @@ const closeCourse = (course, event) => {
     event.stopPropagation();
   }
   // TODO: 实现关闭逻辑，例如显示确认对话框
-  if (confirm('确定要退出这个课程吗？')) {
+  if (confirm(t('learning.exitCourseConfirm'))) {
     // 这里可以调用后端API来退出学习
-    showSnackbar('已退出学习课程');
+    showSnackbar(t('learning.exitedCourse'));
   }
 };
 
@@ -522,7 +524,7 @@ const formatDate = (dateString) => {
 
 // 格式化日期时间
 const formatDateTime = (dateString) => {
-  if (!dateString) return '未知时间'
+  if (!dateString) return t('learning.timeAgo.unknownTime')
   return new Date(dateString).toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: '2-digit',
@@ -534,7 +536,7 @@ const formatDateTime = (dateString) => {
 
 // 计算学习时长
 const calculateDuration = (startTime) => {
-  if (!startTime) return '未知'
+  if (!startTime) return t('learning.duration.unknown')
   
   const start = new Date(startTime)
   const now = new Date()
@@ -543,9 +545,9 @@ const calculateDuration = (startTime) => {
   const diffHours = Math.floor((diffMs % 86400000) / 3600000)
   
   if (diffDays > 0) {
-    return `${diffDays}天${diffHours}小时`
+    return t('learning.duration.daysHours', { days: diffDays, hours: diffHours })
   } else {
-    return `${diffHours}小时`
+    return t('learning.duration.hours', { hours: diffHours })
   }
 };
 
@@ -572,10 +574,10 @@ const getStatusIcon = (status) => {
 // 获取状态文本
 const getStatusText = (status) => {
   switch (status) {
-    case 'NOT_STARTED': return '未开始'
-    case 'IN_PROGRESS': return '进行中'
-    case 'COMPLETED': return '已完成'
-    default: return '未知状态'
+    case 'NOT_STARTED': return t('learning.notStarted')
+    case 'IN_PROGRESS': return t('learning.inProgress')
+    case 'COMPLETED': return t('learning.completed')
+    default: return t('learning.unknownStatus', '未知状态')
   }
 };
 </script>
@@ -595,8 +597,8 @@ const getStatusText = (status) => {
                     <v-icon icon="mdi-school" color="teal-darken-2" size="20"></v-icon>
                   </v-avatar>
                   <div>
-                    <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-1">正在学习</h1>
-                    <p class="text-body-2 text-grey-darken-2 mb-0">继续您的学习之旅</p>
+                    <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-1">{{ t('learning.title') }}</h1>
+                    <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('learning.subtitle') }}</p>
                   </div>
                 </div>
                 
@@ -604,13 +606,13 @@ const getStatusText = (status) => {
                 <div class="d-flex align-center">
                   <v-btn-toggle v-model="selectedNavTab" variant="text" color="primary" class="nav-toggle">
                     <v-btn value="learning" class="nav-btn" :class="{ 'nav-btn-active': selectedNavTab === 'learning' }">
-                      正在学习
+                      {{ t('learning.title') }}
                     </v-btn>
                     <v-btn value="career" class="nav-btn" @click="router.push('/career')">
-                      职业中心
+                      {{ t('learning.careerCenter') }}
                     </v-btn>
                     <v-btn value="courses" class="nav-btn" @click="router.push('/course/list')">
-                      课程中心
+                      {{ t('learning.courseCenter') }}
                     </v-btn>
                   </v-btn-toggle>
                 </div>
@@ -624,11 +626,11 @@ const getStatusText = (status) => {
               <v-btn-toggle v-model="selectedTab" variant="outlined" color="primary" rounded="lg" density="comfortable">
                 <v-btn value="roadmaps" size="default">
                   <v-icon icon="mdi-map" class="mr-2" size="16"></v-icon>
-                  学习路线图
+                  {{ t('learning.roadmaps') }}
                 </v-btn>
                 <v-btn value="courses" size="default">
                   <v-icon icon="mdi-book-multiple" class="mr-2" size="16"></v-icon>
-                  课程
+                  {{ t('learning.courses') }}
                 </v-btn>
               </v-btn-toggle>
             </v-col>
@@ -639,19 +641,19 @@ const getStatusText = (status) => {
                 density="compact" mandatory class="status-filter">
                 <v-btn value="all" size="small" class="me-1 rounded-lg text-body-2">
                   <v-icon icon="mdi-format-list-bulleted" class="mr-1" size="14"></v-icon>
-                  全部
+                  {{ t('learning.all') }}
                 </v-btn>
                 <v-btn value="NOT_STARTED" size="small" class="me-1 rounded-lg text-body-2">
                   <v-icon icon="mdi-circle-outline" class="mr-1" size="14"></v-icon>
-                  未开始
+                  {{ t('learning.notStarted') }}
                 </v-btn>
                 <v-btn value="IN_PROGRESS" size="small" class="me-1 rounded-lg text-body-2">
                   <v-icon icon="mdi-play-circle" class="mr-1" size="14"></v-icon>
-                  正在学习
+                  {{ t('learning.inProgress') }}
                 </v-btn>
                 <v-btn value="COMPLETED" size="small" class="me-1 rounded-lg text-body-2">
                   <v-icon icon="mdi-check-circle" class="mr-1" size="14"></v-icon>
-                  已完成
+                  {{ t('learning.completed') }}
                 </v-btn>
               </v-btn-toggle>
             </v-col>
@@ -662,7 +664,7 @@ const getStatusText = (status) => {
                 density="compact" 
                 class="search-input" 
                 rounded="lg"
-                placeholder="搜索学习内容..." 
+                :placeholder="t('learning.searchPlaceholder')" 
                 variant="outlined">
                 <template v-slot:prepend-inner>
                   <v-icon icon="mdi-magnify" color="grey-lighten-1" size="18"></v-icon>
@@ -679,14 +681,14 @@ const getStatusText = (status) => {
               <v-card-text class="py-8">
                 <v-icon icon="mdi-map-search" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
                 <h3 class="text-h6 text-grey-darken-2 mb-2">
-                  {{ selectedStatus === 'all' ? '暂无学习路线图' : `暂无${getStatusText(selectedStatus)}的学习路线图` }}
+                  {{ selectedStatus === 'all' ? t('learning.noRoadmaps') : t('learning.noStatusRoadmaps', { status: getStatusText(selectedStatus) }) }}
                 </h3>
                 <p class="text-body-2 text-grey-darken-1">
-                  {{ selectedStatus === 'all' ? '去课程路线页面添加感兴趣的学习路线图吧！' : '尝试切换其他状态或去添加新的学习路线图' }}
+                  {{ selectedStatus === 'all' ? t('learning.browseRoadmapsDesc') : t('learning.tryOtherStatus') }}
                 </p>
                 <v-btn color="primary" variant="flat" rounded="lg" class="mt-4" @click="router.push('/roadmap')">>
                   <v-icon icon="mdi-plus" class="mr-2" size="16"></v-icon>
-                  浏览路线图
+                  {{ t('learning.browseRoadmaps') }}
                 </v-btn>
               </v-card-text>
             </v-card>
@@ -749,7 +751,7 @@ const getStatusText = (status) => {
                       <!-- 学习进度信息 -->
                       <div class="mb-3">
                         <div class="d-flex justify-space-between text-body-2 mb-2">
-                          <span class="text-grey-darken-3">完成进度</span>
+                          <span class="text-grey-darken-3">{{ t('learning.completionProgress') }}</span>
                           <span class="text-primary font-weight-bold">{{ parseFloat(roadmap.progress.toFixed(2)) }}%</span>
                         </div>
                         <v-progress-linear 
@@ -764,7 +766,7 @@ const getStatusText = (status) => {
                       <div class="d-flex flex-wrap align-center mb-3">
                         <v-chip size="small" color="success" variant="tonal" class="mr-2 mb-1">
                           <v-icon icon="mdi-check-circle" size="14" class="mr-1"></v-icon>
-                          {{ roadmap.completedNodes }}/{{ roadmap.totalNodes }} 节点
+                          {{ roadmap.completedNodes }}/{{ roadmap.totalNodes }} {{ t('learning.nodes') }}
                         </v-chip>
                         <v-chip size="small" color="info" variant="tonal" class="mr-2 mb-1">
                           <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
@@ -779,15 +781,15 @@ const getStatusText = (status) => {
                       <div class="time-info text-caption text-grey-darken-2">
                         <div v-if="roadmap.startedAt" class="mb-1">
                           <v-icon icon="mdi-calendar-start" size="12" class="mr-1"></v-icon>
-                          开始时间: {{ formatDateTime(roadmap.startedAt) }}
+                          {{ t('learning.startTime') }}: {{ formatDateTime(roadmap.startedAt) }}
                         </div>
                         <div v-if="roadmap.completedAt" class="mb-1">
                           <v-icon icon="mdi-calendar-check" size="12" class="mr-1"></v-icon>
-                          完成时间: {{ formatDateTime(roadmap.completedAt) }}
+                          {{ t('learning.completionTime') }}: {{ formatDateTime(roadmap.completedAt) }}
                         </div>
                         <div v-if="!roadmap.completedAt && roadmap.startedAt" class="mb-1">
                           <v-icon icon="mdi-timer-sand" size="12" class="mr-1"></v-icon>
-                          学习时长: {{ calculateDuration(roadmap.startedAt) }}
+                          {{ t('learning.studyDuration') }}: {{ calculateDuration(roadmap.startedAt) }}
                         </div>
                       </div>
                     </v-card-text>
@@ -803,34 +805,34 @@ const getStatusText = (status) => {
                           </v-icon>
                           <span class="ml-1 text-body-2">{{ roadmap.vote || 0 }}</span>
                           <v-tooltip activator="parent" location="top">
-                            {{ roadmap.upvoted ? '已点赞' : '投票支持' }}
+                            {{ roadmap.upvoted ? t('learning.voted') : t('learning.voteSupport') }}
                           </v-tooltip>
                         </v-btn>
 
                         <v-btn variant="text" size="small" class="flat-action-icon" color="info">
                           <v-icon size="20">mdi-comment-outline</v-icon>
                           <span class="ml-1 text-body-2">{{ roadmap.comment || 0 }}</span>
-                          <v-tooltip activator="parent" location="top">查看评论</v-tooltip>
+                          <v-tooltip activator="parent" location="top">{{ t('learning.viewComments') }}</v-tooltip>
                         </v-btn>
                       </div>
 
                       <div class="d-flex align-center">
                         <v-btn variant="text" size="small" class="flat-action-icon" color="success">
                           <v-icon size="20">mdi-school</v-icon>
-                          <v-tooltip activator="parent" location="top">继续学习</v-tooltip>
+                          <v-tooltip activator="parent" location="top">{{ t('learning.continueLearning') }}</v-tooltip>
                         </v-btn>
 
                         <!-- 上下移动按钮 -->
                         <v-btn variant="text" size="small" class="flat-action-icon ml-1" color="grey-darken-2"
                           @click="moveRoadmapUp(roadmap, $event)">
                           <v-icon size="18">mdi-arrow-up</v-icon>
-                          <v-tooltip activator="parent" location="top">上移</v-tooltip>
+                          <v-tooltip activator="parent" location="top">{{ t('learning.up') }}</v-tooltip>
                         </v-btn>
 
                         <v-btn variant="text" size="small" class="flat-action-icon ml-1" color="grey-darken-2"
                           @click="moveRoadmapDown(roadmap, $event)">
                           <v-icon size="18">mdi-arrow-down</v-icon>
-                          <v-tooltip activator="parent" location="top">下移</v-tooltip>
+                          <v-tooltip activator="parent" location="top">{{ t('learning.down') }}</v-tooltip>
                         </v-btn>
                       </div>
                     </div>
@@ -862,7 +864,7 @@ const getStatusText = (status) => {
                       <div v-else class="d-flex align-center justify-center h-100 text-grey-darken-2">
                         <div class="text-center">
                           <v-icon icon="mdi-map-outline" size="48" class="mb-2"></v-icon>
-                          <div class="text-body-2">暂无学习路径</div>
+                          <div class="text-body-2">{{ t('learning.noLearningPath') }}</div>
                         </div>
                       </div>
                     </div>
@@ -880,14 +882,14 @@ const getStatusText = (status) => {
               <v-card-text class="py-8">
                 <v-icon icon="mdi-book-search" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
                 <h3 class="text-h6 text-grey-darken-2 mb-2">
-                  {{ selectedStatus === 'all' ? '暂无学习课程' : `暂无${getStatusText(selectedStatus)}的课程` }}
+                  {{ selectedStatus === 'all' ? t('learning.noCourses') : t('learning.noStatusCourses', { status: getStatusText(selectedStatus) }) }}
                 </h3>
                 <p class="text-body-2 text-grey-darken-1">
-                  {{ selectedStatus === 'all' ? '去课程中心添加感兴趣的课程吧！' : '尝试切换其他状态或去添加新的课程' }}
+                  {{ selectedStatus === 'all' ? t('learning.browseCoursesDesc') : t('learning.tryOtherStatusCourse') }}
                 </p>
                 <v-btn color="primary" variant="flat" rounded="lg" class="mt-4" @click="router.push('/course/list')">
                   <v-icon icon="mdi-plus" class="mr-2" size="16"></v-icon>
-                  浏览课程
+                  {{ t('learning.browseCourses') }}
                 </v-btn>
               </v-card-text>
             </v-card>
@@ -919,7 +921,7 @@ const getStatusText = (status) => {
                           :color="getDifficultyColor(course.difficulty)"
                           size="small"
                           class="course-difficulty-chip mr-2">
-                          {{ course.difficulty === 'beginner' ? '初级' : course.difficulty === 'intermediate' ? '中级' : '高级' }}
+                          {{ t(`learning.difficulty.${course.difficulty}`) }}
                         </v-chip>
                         <v-btn 
                           variant="text" 
@@ -929,7 +931,7 @@ const getStatusText = (status) => {
                           @click="closeCourse(course, $event)">
                           <v-icon size="16">mdi-close</v-icon>
                           <v-tooltip activator="parent" location="bottom">
-                            退出学习
+                            {{ t('learning.exitLearning') }}
                           </v-tooltip>
                         </v-btn>
                       </div>
@@ -937,7 +939,7 @@ const getStatusText = (status) => {
 
                     <div class="mb-3">
                       <div class="d-flex justify-space-between text-body-2 mb-2">
-                        <span class="text-grey-darken-3">课时进度</span>
+                        <span class="text-grey-darken-3">{{ t('learning.courseProgress') }}</span>
                         <span class="text-primary font-weight-bold">{{ parseFloat(course.progress.toFixed(2)) }}%</span>
                       </div>
                       <v-progress-linear 

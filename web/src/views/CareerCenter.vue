@@ -1,13 +1,17 @@
 <script setup>
-import { ref, onMounted, inject } from 'vue';
+import { ref, onMounted, inject, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { learnService } from '@/services/learnService';
 import CareerCard from '@/components/CareerCard.vue';
 import CategorySelector from '@/components/CategorySelector.vue';
 import RightSidebar from '@/components/RightSidebar.vue';
+import { useToastMessage } from '@/composables/useToastMessage';
 
+const { t } = useI18n();
 const showSnackbar = inject('showSnackbar');
 const router = useRouter();
+const { getMessage } = useToastMessage();
 
 // 状态管理
 const careers = ref([]);
@@ -169,12 +173,12 @@ const addRandomIconsToCareers = (careerList) => {
   }));
 };
 
-// 难度等级
-const difficulties = ref([
-  { value: 'all', title: '全部难度' },
-  { value: 'beginner', title: '初级' },
-  { value: 'intermediate', title: '中级' },
-  { value: 'advanced', title: '高级' },
+// 难度等级 - 使用computed确保语言切换时更新
+const difficulties = computed(() => [
+  { value: 'all', title: t('careerCenter.difficulty.all') },
+  { value: 'beginner', title: t('careerCenter.difficulty.beginner') },
+  { value: 'intermediate', title: t('careerCenter.difficulty.intermediate') },
+  { value: 'advanced', title: t('careerCenter.difficulty.advanced') },
 ]);
 
 // 模拟职业数据
@@ -215,7 +219,7 @@ const loadCareerData = async (reset = true) => {
     }
   } catch (error) {
     console.error('加载职业数据失败:', error);
-    showSnackbar('加载职业数据失败', 'error');
+    showSnackbar(getMessage('careerCenter.errors.loadFailed'), 'error');
     // 如果API失败，设置为空数组
     if (reset) {
       careers.value = [];
@@ -261,7 +265,7 @@ const loadCareersByMainCategory = async (mainCategoryId, reset = true) => {
     
   } catch (error) {
     console.error('加载主分类职业失败:', error);
-    showSnackbar('加载职业数据失败', 'error');
+    showSnackbar(getMessage('careerCenter.errors.loadCategoryFailed'), 'error');
     // API失败时设置为空数组
     currentCareers.value = [];
     displayedCareers.value = [];
@@ -303,7 +307,7 @@ const loadCareersBySubCategory = async (mainCategoryId, subCategoryId, reset = t
     
   } catch (error) {
     console.error('加载子分类职业失败:', error);
-    showSnackbar('加载职业数据失败', 'error');
+    showSnackbar(getMessage('careerCenter.errors.loadSubcategoryFailed'), 'error');
     // API失败时设置为空数组
     currentCareers.value = [];
     displayedCareers.value = [];
@@ -485,12 +489,12 @@ const submitCareerApplication = async () => {
     const response = await learnService.submitCareerApplication(applicationData);
     console.log("response: " + JSON.stringify(response));
     
-    showSnackbar('职业申请已提交，我们将在3个工作日内审核', 'success');
+    showSnackbar(getMessage('careerCenter.application.submittedSuccess'), 'success');
     closeApplicationDialog();
     
   } catch (error) {
     console.error('提交职业申请失败:', error);
-    showSnackbar('提交申请失败，请稍后重试', 'error');
+    showSnackbar(getMessage('careerCenter.application.submitFailed'), 'error');
   } finally {
     submitting.value = false;
   }
@@ -544,8 +548,8 @@ onMounted(() => {
                       <v-icon icon="mdi-briefcase-variant" color="teal-darken-2" size="20"></v-icon>
                     </v-avatar>
                     <div>
-                      <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-1">职业中心</h1>
-                      <p class="text-body-2 text-grey-darken-2 mb-0">探索职业道路，规划美好未来</p>
+                      <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-1">{{ t('careerCenter.title') }}</h1>
+                      <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('careerCenter.subtitle') }}</p>
                     </div>
                   </div>
                   
@@ -553,13 +557,13 @@ onMounted(() => {
                   <div class="d-flex align-center">
                     <v-btn-toggle v-model="selectedNavTab" variant="text" color="primary" class="nav-toggle">
                       <v-btn value="learning" class="nav-btn" @click="router.push('/learning')">
-                        正在学习
+                        {{ t('careerCenter.navigation.learning') }}
                       </v-btn>
                       <v-btn value="career" class="nav-btn" :class="{ 'nav-btn-active': selectedNavTab === 'career' }">
-                        职业中心
+                        {{ t('careerCenter.navigation.career') }}
                       </v-btn>
                       <v-btn value="courses" class="nav-btn" @click="router.push('/course/list')">
-                        课程中心
+                        {{ t('careerCenter.navigation.courses') }}
                       </v-btn>
                     </v-btn-toggle>
                   </div>
@@ -576,7 +580,7 @@ onMounted(() => {
                     hide-details="auto" 
                     density="compact" 
                     class="search-input flex-grow-1" 
-                    placeholder="搜索你感兴趣的职业、技能或公司..." 
+                    :placeholder="t('careerCenter.search.placeholder')" 
                     variant="outlined"
                     color="primary"
                     @keyup.enter="performSearch"
@@ -593,7 +597,7 @@ onMounted(() => {
                     size="default"
                     @click="performSearch">
                     <v-icon icon="mdi-magnify" class="mr-2"></v-icon>
-                    搜索
+                    {{ t('careerCenter.search.button') }}
                   </v-btn>
                   <v-btn 
                   color="grey-darken-2" 
@@ -602,7 +606,7 @@ onMounted(() => {
                   size="default"
                   prepend-icon="mdi-plus-circle"
                   @click="openCareerApplicationDialog">
-                  申请添加职业
+                  {{ t('careerCenter.search.applyJob') }}
                 </v-btn>
                 </div>
               </v-col>
@@ -618,10 +622,10 @@ onMounted(() => {
                       <v-icon icon="mdi-briefcase-variant" color="blue-darken-2" size="24"></v-icon>
                     </div>
                     <div>
-                      <h3 class="text-h6 font-weight-bold text-blue-grey-darken-3 mb-1">职业领域筛选</h3>
+                      <h3 class="text-h6 font-weight-bold text-blue-grey-darken-3 mb-1">{{ t('careerCenter.category.title') }}</h3>
                       <p class="text-caption text-blue-grey-darken-1 mb-0">
                         <v-icon icon="mdi-filter-outline" size="12" class="mr-1"></v-icon>
-                        选择感兴趣的职业领域，进一步筛选具体方向
+                        {{ t('careerCenter.category.subtitle') }}
                       </p>
                     </div>
                   </div>
@@ -655,7 +659,7 @@ onMounted(() => {
                       <div class="d-flex align-center mb-3">
                         <v-icon icon="mdi-chevron-right" color="blue-darken-1" size="16" class="mr-2"></v-icon>
                         <h4 class="text-subtitle-1 font-weight-bold text-blue-grey-darken-3 mb-0">
-                          {{ categories.find(c => c.value === activeFirstLvl)?.title }} - 具体方向
+                          {{ categories.find(c => c.value === activeFirstLvl)?.title }} - {{ t('careerCenter.category.specificDirection') }}
                         </h4>
                       </div>
                       
@@ -701,15 +705,15 @@ onMounted(() => {
                         @click="goBackToSecondLevel"></v-btn>
                       <h4 class="text-subtitle-1 font-weight-bold text-grey-darken-3 ml-2">
                         {{ getSubcategoriesByMainCategory(activeFirstLvl)[activeSecondLvl]?.title }} 
-                        - 共 {{ currentCareers.length }} 个职业
+                        - {{ t('careerCenter.listing.specificJobs', { count: currentCareers.length }) }}
                       </h4>
                     </div>
                     
                     <!-- 空状态提示 -->
                     <div v-if="!loading && displayedCareers.length === 0" class="text-center py-12">
                       <v-icon icon="mdi-briefcase-search-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
-                      <h3 class="text-h6 text-grey-darken-1 mb-2">暂无相关职业</h3>
-                      <p class="text-body-2 text-grey mb-4">该分类下暂时没有职业信息</p>
+                      <h3 class="text-h6 text-grey-darken-1 mb-2">{{ t('careerCenter.empty.noRelatedJobs') }}</h3>
+                      <p class="text-body-2 text-grey mb-4">{{ t('careerCenter.empty.noRelatedJobsDesc') }}</p>
                     </div>
                     
                     <!-- 无限滚动容器 -->
@@ -741,14 +745,14 @@ onMounted(() => {
                             color="primary" 
                             size="24">
                           </v-progress-circular>
-                          <p class="text-body-2 text-grey mt-2">正在加载更多职业...</p>
+                          <p class="text-body-2 text-grey mt-2">{{ t('careerCenter.listing.loadingMore') }}</p>
                         </div>
                       </template>
                       
                       <!-- 没有更多数据时的提示 -->
                       <template v-slot:empty>
                         <div class="text-center pt-8 pb-4">
-                          <p class="text-body-2 text-grey"> - 已加载全部职业 - </p>
+                          <p class="text-body-2 text-grey">{{ t('careerCenter.listing.allLoaded') }}</p>
                         </div>
                       </template>
                     </v-infinite-scroll>
@@ -757,14 +761,14 @@ onMounted(() => {
                   <!-- 默认职业列表（未选择任何分类） -->
                   <div v-else-if="activeFirstLvl === -1">
                     <h4 class="text-subtitle-1 font-weight-bold text-grey-darken-3 mb-3">
-                      热门职业推荐（共 {{ careers.length }} 个职业）
+                      {{ t('careerCenter.listing.hotProfessions', { count: careers.length }) }}
                     </h4>
                     
                     <!-- 空状态提示 -->
                     <div v-if="!loading && displayedCareers.length === 0" class="text-center py-12">
                       <v-icon icon="mdi-briefcase-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
-                      <h3 class="text-h6 text-grey-darken-1 mb-2">暂无职业信息</h3>
-                      <p class="text-body-2 text-grey mb-4">请稍后再试或联系管理员</p>
+                      <h3 class="text-h6 text-grey-darken-1 mb-2">{{ t('careerCenter.empty.noJobs') }}</h3>
+                      <p class="text-body-2 text-grey mb-4">{{ t('careerCenter.empty.noJobsDesc') }}</p>
                     </div>
                     
                     <!-- 无限滚动容器 -->
@@ -796,14 +800,14 @@ onMounted(() => {
                             color="primary" 
                             size="24">
                           </v-progress-circular>
-                          <p class="text-body-2 text-grey mt-2">正在加载更多职业...</p>
+                          <p class="text-body-2 text-grey mt-2">{{ t('careerCenter.listing.loadingMore') }}</p>
                         </div>
                       </template>
                       
                       <!-- 没有更多数据时的提示 -->
                       <template v-slot:empty>
                         <div class="text-center pt-8 pb-4">
-                          <p class="text-body-2 text-grey"> - 已加载全部职业 - </p>
+                          <p class="text-body-2 text-grey">{{ t('careerCenter.listing.allLoaded') }}</p>
                         </div>
                       </template>
                     </v-infinite-scroll>
@@ -812,14 +816,17 @@ onMounted(() => {
                   <!-- 一级分类选中但二级未选中 -->
                   <div v-else-if="activeFirstLvl !== -1 && activeSecondLvl === -1">
                     <h4 class="text-subtitle-1 font-weight-bold text-grey-darken-3 mb-3">
-                      {{ categories.find(c => c.value === activeFirstLvl)?.title }} 职业（共 {{ currentCareers.length }} 个）
+                      {{ t('careerCenter.listing.categoryJobs', { 
+                        category: categories.find(c => c.value === activeFirstLvl)?.title, 
+                        count: currentCareers.length 
+                      }) }}
                     </h4>
                     
                     <!-- 空状态提示 -->
                     <div v-if="!loading && displayedCareers.length === 0" class="text-center py-12">
                       <v-icon icon="mdi-briefcase-search-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
-                      <h3 class="text-h6 text-grey-darken-1 mb-2">该分类下暂无职业</h3>
-                      <p class="text-body-2 text-grey mb-4">请选择具体的二级分类或等待更多职业上线</p>
+                      <h3 class="text-h6 text-grey-darken-1 mb-2">{{ t('careerCenter.empty.noCategoryJobs') }}</h3>
+                      <p class="text-body-2 text-grey mb-4">{{ t('careerCenter.empty.noCategoryJobsDesc') }}</p>
                     </div>
                     
                     <!-- 无限滚动容器 -->
@@ -851,14 +858,14 @@ onMounted(() => {
                             color="primary" 
                             size="24">
                           </v-progress-circular>
-                          <p class="text-body-2 text-grey mt-2">正在加载更多职业...</p>
+                          <p class="text-body-2 text-grey mt-2">{{ t('careerCenter.listing.loadingMore') }}</p>
                         </div>
                       </template>
                       
                       <!-- 没有更多数据时的提示 -->
                       <template v-slot:empty>
                         <div class="text-center pt-8 pb-4">
-                          <p class="text-body-2 text-grey"> - 已加载全部职业 - </p>
+                          <p class="text-body-2 text-grey">{{ t('careerCenter.listing.allLoaded') }}</p>
                         </div>
                       </template>
                     </v-infinite-scroll>
@@ -871,7 +878,7 @@ onMounted(() => {
         <!-- 加载状态 -->
         <div v-if="loading" class="text-center py-8">
           <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-          <p class="text-grey-darken-2 mt-4">正在加载职业信息...</p>
+          <p class="text-grey-darken-2 mt-4">{{ t('careerCenter.listing.loading') }}</p>
         </div>
 
         <!-- 搜索结果显示（保持原有的卡片模式） -->
@@ -896,8 +903,8 @@ onMounted(() => {
             <v-col cols="12">
               <v-card flat class="text-center py-12" color="grey-lighten-5" rounded="lg">
                 <v-icon icon="mdi-briefcase-search-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
-                <h3 class="text-h6 text-grey-darken-1 mb-2">未找到相关职业</h3>
-                <p class="text-body-2 text-grey mb-4">试试其他关键词或浏览分类</p>
+                <h3 class="text-h6 text-grey-darken-1 mb-2">{{ t('careerCenter.empty.noSearchResults') }}</h3>
+                <p class="text-body-2 text-grey mb-4">{{ t('careerCenter.empty.noSearchResultsDesc') }}</p>
               </v-card>
             </v-col>
           </v-row>
@@ -919,8 +926,8 @@ onMounted(() => {
               <v-icon icon="mdi-briefcase-plus" color="white"></v-icon>
             </v-avatar>
             <div>
-              <h3 class="text-h6 font-weight-bold">申请新职业</h3>
-              <p class="text-body-2 text-grey-darken-2 mb-0">提交职业申请，经审核后将添加到职业库</p>
+              <h3 class="text-h6 font-weight-bold">{{ t('careerCenter.application.title') }}</h3>
+              <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('careerCenter.application.subtitle') }}</p>
             </div>
           </div>
         </v-card-title>
@@ -929,12 +936,12 @@ onMounted(() => {
           <v-form ref="applicationForm" v-model="applicationValid">
             <v-text-field
               v-model="newCareerApplication.name"
-              label="职业名称"
+              :label="t('careerCenter.application.jobName')"
               variant="outlined"
               rounded="lg"
               class="mb-4"
               required
-              placeholder="例如：全栈开发工程师">
+              :placeholder="t('careerCenter.application.jobNamePlaceholder')">
               <template v-slot:prepend-inner>
                 <v-icon icon="mdi-briefcase" color="grey-darken-1"></v-icon>
               </template>
@@ -942,7 +949,7 @@ onMounted(() => {
 
             <!-- 使用新的分类选择器 -->
             <div class="mb-4">
-              <div class="text-body-2 font-weight-medium mb-2">职业分类</div>
+              <div class="text-body-2 font-weight-medium mb-2">{{ t('careerCenter.application.category') }}</div>
               <CategorySelector
                 v-model:model-main-category="newCareerApplication.mainCategory"
                 v-model:model-sub-category="newCareerApplication.subCategory"
@@ -951,21 +958,21 @@ onMounted(() => {
 
             <v-textarea
               v-model="newCareerApplication.description"
-              label="职业描述"
+              :label="t('careerCenter.application.description')"
               variant="outlined"
               rounded="lg"
               rows="3"
               required
               class="mb-4"
-              placeholder="详细描述这个职业的工作内容和职责...">
+              :placeholder="t('careerCenter.application.descriptionPlaceholder')">
             </v-textarea>
 
             <v-text-field
               v-model="newCareerApplication.skills"
-              label="核心技能 (选填，用逗号分隔)"
+              :label="t('careerCenter.application.skills')"
               variant="outlined"
               rounded="lg"
-              placeholder="例如：JavaScript, Vue.js, Node.js">
+              :placeholder="t('careerCenter.application.skillsPlaceholder')">
             </v-text-field>
           </v-form>
         </v-card-text>
@@ -975,7 +982,7 @@ onMounted(() => {
           <v-btn 
             variant="text" 
             @click="closeApplicationDialog">
-            取消
+            {{ t('careerCenter.application.cancel') }}
           </v-btn>
           <v-btn 
             color="success" 
@@ -983,7 +990,7 @@ onMounted(() => {
             :disabled="!applicationValid"
             :loading="submitting"
             @click="submitCareerApplication">
-            提交申请
+            {{ t('careerCenter.application.submit') }}
           </v-btn>
         </v-card-actions>
       </v-card>

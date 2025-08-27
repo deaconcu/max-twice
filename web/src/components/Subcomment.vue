@@ -1,8 +1,10 @@
 <script setup>
 import { ref, onMounted, nextTick} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { learnService } from '@/services/learnService';
 
+const { t } = useI18n();
 const route = useRoute();
 const props = defineProps(['commentId', 'comments', 'count', 'activeReplyId', 'offsetId']);
 const offsetId = ref(0);
@@ -100,7 +102,7 @@ const upvote = async (comment) => {
           </v-avatar>
         </div>
         <div style="width:90%">
-          <div class="text-body-2 mb-2 text-grey-darken-1">一条小鲤鱼 
+          <div class="text-body-2 mb-2 text-grey-darken-1">{{ t('subcomment.username') }} 
             <span class="ms-2 text-caption text-grey">{{ comment.ctime }}</span>
           </div>
           <div class="">{{ comment.content }} </div>
@@ -110,18 +112,18 @@ const upvote = async (comment) => {
               prepend-icon="mdi-arrow-up">{{ comment.upvoteCount }}</v-btn>
 
             <v-btn class="mx-3" variant="text" density="compact" prepend-icon="mdi-chat-outline"
-              @click="updateActiveReplayId(comment.id)">回复</v-btn>
+              @click="updateActiveReplayId(comment.id)">{{ t('subcomment.reply') }}</v-btn>
             
           </div>
           <div class="mt-2 mb-2">
             <v-text-field v-if="activeReplyId === comment.id" v-model="replyContent" variant="outlined"
               density="compact" append-inner-icon="mdi-email-fast-outline" @click:append-inner="sendComment"
-              placeholder="添加评论" class="w-100" hide-details></v-text-field>
+              :placeholder="t('subcomment.addComment')" class="w-100" hide-details></v-text-field>
           </div>
         </div>
       </v-row>
     </template>
-    <v-btn v-if="props.count>1 && displayLoadMore" variant="plain" @click="loadMore" class="pa-0 ma-0">查看更多评论</v-btn>
+    <v-btn v-if="props.count>1 && displayLoadMore" variant="plain" @click="loadMore" class="pa-0 ma-0">{{ t('subcomment.viewMoreComments') }}</v-btn>
     </div>
 </template>
 

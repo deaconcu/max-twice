@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, inject, watch, computed, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { learnService } from '@/services/learnService'
 import { userService } from '@/services/learnService'
 import draggable from 'vuedraggable';
@@ -16,6 +17,8 @@ import Tiptap from '../components/Tiptap.vue'
 import RightSidebar from '@/components/RightSidebar.vue';
 import UserStatsComponent from '@/components/UserStatsComponent.vue';
 
+const { t } = useI18n();
+
 
 //const isLoggedIn = ref(false);
 const route = useRoute();
@@ -25,13 +28,13 @@ const user = useUserStore();
 const showSnackbar = inject('showSnackbar');
 
 const items = ref([
-  { text: '个人信息', icon: 'mdi-information-outline', value: "info" },
-  { text: '正在学习', icon: 'mdi-school-outline', value: "learning" },
-  { text: '数据统计', icon: 'mdi-chart-line', value: "stats" },
-  { text: '我关注的课程', icon: 'mdi-book-multiple-outline', value: "subscription" },
-  { text: '我关注的人', icon: 'mdi-account-heart', value: "follow" },
-  { text: '我创建的目录', icon: 'mdi-format-list-group', value: "contents" },
-  { text: '我创建的文章', icon: 'mdi-file-document-outline', value: "article" },
+  { text: t('user.profile.personalInfo'), icon: 'mdi-information-outline', value: "info" },
+  { text: t('user.profile.learning'), icon: 'mdi-school-outline', value: "learning" },
+  { text: t('user.profile.statistics'), icon: 'mdi-chart-line', value: "stats" },
+  { text: t('user.profile.subscriptions'), icon: 'mdi-book-multiple-outline', value: "subscription" },
+  { text: t('user.profile.following'), icon: 'mdi-account-heart', value: "follow" },
+  { text: t('user.profile.myContents'), icon: 'mdi-format-list-group', value: "contents" },
+  { text: t('user.profile.myArticles'), icon: 'mdi-file-document-outline', value: "article" },
 ])
 
 const messages = ref([

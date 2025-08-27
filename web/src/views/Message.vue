@@ -1,12 +1,14 @@
 <script setup>
 import { ref, onMounted, inject, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { learnService } from '@/services/learnService'
 import draggable from 'vuedraggable';
 import { useUserStore } from "@/stores/user";
 import apiClient from '@/services/apiClient';
 import RightSidebar from '@/components/RightSidebar.vue';
 
+const { t } = useI18n();
 const user = useUserStore();
 console.log("user id: " + JSON.stringify(user));
 
@@ -17,8 +19,8 @@ const router = useRouter();
 const showSnackbar = inject('showSnackbar');
 
 const items = ref([
-  { text: '系统通知', icon: 'mdi-chat-outline', value: "system" },
-  { text: '课程申请', icon: 'mdi-chat-outline', value: "courseApply" },
+  { text: t('message.systemNotification'), icon: 'mdi-chat-outline', value: "system" },
+  { text: t('message.courseApplication'), icon: 'mdi-chat-outline', value: "courseApply" },
   //{ text: '用户私信', icon: 'mdi-chat-outline', value: "private" },
 ])
 
@@ -241,8 +243,8 @@ const getDatePart = (time, index) => {
                 <v-icon icon="mdi-message-reply-text" color="white" size="16"></v-icon>
               </v-avatar>
               <div>
-                <h3 class="text-h6 font-weight-bold text-grey-darken-4">消息中心</h3>
-                <p class="text-body-2 text-grey-darken-2 mb-0">查看您的通知和消息</p>
+                <h3 class="text-h6 font-weight-bold text-grey-darken-4">{{ t('message.center') }}</h3>
+                <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('message.subtitle') }}</p>
               </div>
             </div>
           </v-card-text>
@@ -273,11 +275,11 @@ const getDatePart = (time, index) => {
           <v-card-text class="pa-4 border-t">
             <div class="text-body-2 text-grey-darken-3 mb-2">
               <div class="d-flex justify-space-between align-center mb-1">
-                <span>未读消息</span>
+                <span>{{ t('message.unreadMessages') }}</span>
                 <span class="text-primary font-weight-bold">{{ unreadCount || 0 }}</span>
               </div>
               <div class="d-flex justify-space-between align-center">
-                <span>总消息数</span>
+                <span>{{ t('message.totalMessages') }}</span>
                 <span class="text-grey-darken-2 font-weight-medium">{{ totalMessages || 0 }}</span>
               </div>
             </div>
@@ -292,7 +294,7 @@ const getDatePart = (time, index) => {
             <v-row>
               <v-col>
                 <v-alert
-                  text="系统只保存30天内的消息，请及时查看"
+                  :text="t('message.systemRetention')"
                   type="warning"
                   variant="tonal"
                   density="compact"
@@ -301,11 +303,11 @@ const getDatePart = (time, index) => {
                 <div class="mb-4">
                   <div class="d-flex align-center mb-3">
                     <v-icon icon="mdi-filter-variant" color="grey-darken-2" size="16" class="mr-2"></v-icon>
-                    <span class="text-body-2 font-weight-medium text-grey-darken-3">消息筛选</span>
+                    <span class="text-body-2 font-weight-medium text-grey-darken-3">{{ t('message.messageFilter') }}</span>
                   </div>
                   <div class="d-flex justify-center">
                     <v-chip-group v-model="messageTypeSelected" selected-class="bg-orange text-white" mandatory class="my-2">
-                      <v-chip @click="systemMessageType = 99;" variant="tonal" rounded="lg">全部</v-chip>
+                      <v-chip @click="systemMessageType = 99;" variant="tonal" rounded="lg">{{ t('message.all') }}</v-chip>
                       <v-chip @click="systemMessageType = 2;" variant="tonal" rounded="lg">新增关注</v-chip>
                       <v-chip @click="systemMessageType = 3;" variant="tonal" rounded="lg">新点赞</v-chip>
                       <v-chip @click="systemMessageType = 4;" variant="tonal" rounded="lg">邀请回答</v-chip>
@@ -413,7 +415,7 @@ const getDatePart = (time, index) => {
                     </div>
                   </div>
                   <template v-slot:empty>
-                    <div class="text-body-2 text-grey py-9">已经到底了</div>
+                    <div class="text-body-2 text-grey py-9">{{ t('message.noMoreMessages') }}</div>
                   </template>
                 </v-infinite-scroll>
 
@@ -447,12 +449,12 @@ const getDatePart = (time, index) => {
               <v-col cols="" class="mt-0">
                 <div class="px-0 mx-0 pt-0">
                   <div class="px-8">
-                    <v-infinite-scroll :items="messageList" :onLoad="loadData" :no-more-text="'已经到底了'"
+                    <v-infinite-scroll :items="messageList" :onLoad="loadData" :no-more-text="t('message.noMoreMessages')"
                       style="position: relative;top:-12px">
                       <div v-for="message in messageList" class="mb-4">
                         <div class="pb-5 border-b d-flex justify-start">
                           <div class="px-3 py-2 rounded-lg d-inline-block flex-1-1 text-start text-body-1">
-                            <p class="text-subtitle-1 font-weight-bold pb-3 text-grey-darken-2">课程申请 <span
+                            <p class="text-subtitle-1 font-weight-bold pb-3 text-grey-darken-2">{{ t('message.courseApplicationTitle') }} <span
                                 v-if="message.content.parentId != '0'">(子课程)</span></p>
                             <p class="pb-2">
                               <span class="text-grey">名称：</span>{{ message.content.title }}
@@ -474,7 +476,7 @@ const getDatePart = (time, index) => {
                         </div>
                       </div>
                       <template v-slot:empty>
-                        <div class="text-body-2 text-grey py-5">已经到底了</div>
+                        <div class="text-body-2 text-grey py-5">{{ t('message.noMoreMessages') }}</div>
                       </template>
                     </v-infinite-scroll>
                   </div>

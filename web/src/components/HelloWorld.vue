@@ -1,17 +1,21 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
+
 defineProps({
   msg: {
     type: String,
     required: true,
   },
 })
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="greetings">
     <h1 class="green">{{ msg }}</h1>
     <h3>
-      You’ve successfully created a project with
+      {{ t('welcome.projectCreated') }}
       <a href="https://vite.dev/" target="_blank" rel="noopener">Vite</a> +
       <a href="https://vuejs.org/" target="_blank" rel="noopener">Vue 3</a>.
     </h3>

@@ -4,9 +4,11 @@ import { useRoute, useRouter } from 'vue-router';
 
 import draggable from 'vuedraggable'
 import { learnService } from '@/services/learnService';
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n()
 
 const emit = defineEmits(['loadData']);
 
@@ -76,10 +78,10 @@ const removeItem = (index) => {
     <v-card class="px-1 py-2" rounded="lg">
       <v-card-title class="d-flex align-center">
         <v-icon icon="mdi-file-cog-outline" size="small" class=""></v-icon>
-        <span class="ps-2">修改目录</span>
+        <span class="ps-2">{{ t('configContents.modifyContents') }}</span>
       </v-card-title>
       <v-card-subtitle>
-        可以在列表中删除，添加和拖动目录
+        {{ t('configContents.subtitle') }}
       </v-card-subtitle>
       <v-sheet height="500px" class="overflow-auto">
         <v-card-text>
@@ -87,18 +89,18 @@ const removeItem = (index) => {
             <template #item="{ element, index }">
               <div class="d-flex justify-space-between align-center mb-5 pb-1 text-body-1"
                 style="border-bottom: 1px dashed #ddd;">
-                <span v-if="element > 0">目录 {{ element }}</span>
-                <span v-if="element == 0" class="text-red-darken-3">新目录</span>
-                <span v-if="element < 0" class="text-red-darken-3">目录 {{ -element }} 的复制品</span>
+                <span v-if="element > 0">{{ t('configContents.contentItem', { number: element }) }}</span>
+                <span v-if="element == 0" class="text-red-darken-3">{{ t('configContents.newContent') }}</span>
+                <span v-if="element < 0" class="text-red-darken-3">{{ t('configContents.copyOfContent', { number: -element }) }}</span>
                 <v-spacer />
                 <div>
                   <v-btn v-if="element > 0" flat size="small" variant="text" v-ripple="false" elevation="0"
                     prepend-icon="mdi-content-copy" @click="copyItem(index, element)" class="me-1">
-                    复制
+                    {{ t('configContents.copy') }}
                   </v-btn>
                   <v-btn flat size="small" variant="text" v-ripple="false" elevation="0" prepend-icon="mdi-close"
                     @click="removeItem(index)">
-                    删除
+                    {{ t('configContents.delete') }}
                   </v-btn>
                 </div>
               </div>
@@ -108,9 +110,9 @@ const removeItem = (index) => {
       </v-sheet>
       <v-card-actions class="d-flex justify-end">
         <v-btn color="teal-lighten-1" variant="text" density="comfortable" size="large" class="rounded-lg"
-          @click="addItem()"><span class="font-weight-medium">添加目录</span></v-btn>
+          @click="addItem()"><span class="font-weight-medium">{{ t('configContents.addContent') }}</span></v-btn>
         <v-btn color="teal-lighten-1" variant="text" density="comfortable" size="large" class="rounded-lg"
-          @click="submit()"><span class="font-weight-medium">修改好了</span></v-btn>
+          @click="submit()"><span class="font-weight-medium">{{ t('configContents.done') }}</span></v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, inject, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { usePlatformStats } from '@/composables/usePlatformStats';
 import { learnService } from '@/services/learnService';
 
+const { t } = useI18n();
 const router = useRouter();
 const showSnackbar = inject('showSnackbar');
 
@@ -85,9 +87,9 @@ const loadHotProfessions = async () => {
     console.error('Error loading hot professions:', error);
     // 使用默认数据
     hotProfessions.value = [
-      { id: 1, name: '全栈开发工程师', learnerCount: 2100 },
-      { id: 2, name: '前端开发工程师', learnerCount: 1800 },
-      { id: 3, name: '数据科学家', learnerCount: 1500 }
+      { id: 1, name: t('rightSidebar.professions.fullStack'), learnerCount: 2100 },
+      { id: 2, name: t('rightSidebar.professions.frontend'), learnerCount: 1800 },
+      { id: 3, name: t('rightSidebar.professions.dataScientist'), learnerCount: 1500 }
     ];
   }
 };
@@ -103,9 +105,9 @@ const loadHotCourses = async () => {
     console.error('Error loading hot courses:', error);
     // 使用默认数据
     hotCourses.value = [
-      { id: 1, name: 'Vue.js 完整教程', learnerCount: 2800, subscriptionCount: 400 },
-      { id: 2, name: 'Python 数据分析', learnerCount: 2300, subscriptionCount: 500 },
-      { id: 3, name: 'Java 核心技术', learnerCount: 2000, subscriptionCount: 500 }
+      { id: 1, name: t('rightSidebar.courses.vueComplete'), learnerCount: 2800, subscriptionCount: 400 },
+      { id: 2, name: t('rightSidebar.courses.pythonData'), learnerCount: 2300, subscriptionCount: 500 },
+      { id: 3, name: t('rightSidebar.courses.javaCore'), learnerCount: 2000, subscriptionCount: 500 }
     ];
   }
 };
@@ -153,7 +155,7 @@ const loadLearningData = async () => {
 
 // 获取相对时间
 function getRelativeTime(dateString) {
-  if (!dateString) return '未知时间'
+  if (!dateString) return t('rightSidebar.time.unknown')
   
   const date = new Date(dateString)
   const now = new Date()
@@ -163,11 +165,11 @@ function getRelativeTime(dateString) {
   const diffDays = Math.floor(diffMs / 86400000)
   
   if (diffMins < 60) {
-    return `${diffMins}分钟前`
+    return t('rightSidebar.time.minutesAgo', { minutes: diffMins })
   } else if (diffHours < 24) {
-    return `${diffHours}小时前`
+    return t('rightSidebar.time.hoursAgo', { hours: diffHours })
   } else {
-    return `${diffDays}天前`
+    return t('rightSidebar.time.daysAgo', { days: diffDays })
   }
 }
 
@@ -209,10 +211,10 @@ const getStatusColor = (status) => {
 // 获取状态文本
 const getStatusText = (status) => {
   switch (status) {
-    case 'NOT_STARTED': return '未开始'
-    case 'IN_PROGRESS': return '进行中'
-    case 'COMPLETED': return '已完成'
-    default: return '未知状态'
+    case 'NOT_STARTED': return t('rightSidebar.status.notStarted')
+    case 'IN_PROGRESS': return t('rightSidebar.status.inProgress')
+    case 'COMPLETED': return t('rightSidebar.status.completed')
+    default: return t('rightSidebar.status.unknown')
   }
 };
 
@@ -254,7 +256,7 @@ const openInNewTab = (courseId) => {
   <v-alert icon="mdi-head-question-outline" color="success" lines="one" variant="tonal" rounded="lg" 
     class="text-body-1 mb-6 d-flex align-center justify-start">
     <span class="font-weight-medium">
-      如果职业是对世界的探索和体验，不是一种深度绑定
+      {{ t('rightSidebar.vision') }}
     </span>
   </v-alert>
   
@@ -267,7 +269,7 @@ const openInNewTab = (courseId) => {
             <v-icon icon="mdi-chart-box" color="white" size="13"></v-icon>
           </v-avatar>
           <div>
-            <h3 class="text-h7 font-weight-bold text-grey-darken-4">平台数据</h3>
+            <h3 class="text-h7 font-weight-bold text-grey-darken-4">{{ t('rightSidebar.platformData') }}</h3>
           </div>
         </div>
         <!-- 刷新按钮 -->
@@ -339,7 +341,7 @@ const openInNewTab = (courseId) => {
                 <div class="text-subtitle-1 font-weight-bold text-primary mb-0">
                   {{ platformStats?.courseCount || '1,247' }}
                 </div>
-                <div class="text-caption text-grey-darken-3" style="font-size: 10px;">课程总数</div>
+                <div class="text-caption text-grey-darken-3" style="font-size: 10px;">{{ t('rightSidebar.courseTotal') }}</div>
               </div>
             </div>
           </v-col>
@@ -356,7 +358,7 @@ const openInNewTab = (courseId) => {
                 <div class="text-subtitle-1 font-weight-bold text-teal mb-0">
                   {{ platformStats?.careerPathCount || '156' }}
                 </div>
-                <div class="text-caption text-grey-darken-3" style="font-size: 10px;">职业路径</div>
+                <div class="text-caption text-grey-darken-3" style="font-size: 10px;">{{ t('rightSidebar.careerPaths') }}</div>
               </div>
             </div>
           </v-col>
@@ -365,7 +367,7 @@ const openInNewTab = (courseId) => {
               <div class="text-subtitle-1 font-weight-bold text-orange mb-0">
                 {{ platformStats?.roadmapCount || '324' }}
               </div>
-              <div class="text-caption text-grey-darken-3" style="font-size: 10px;">学习路线</div>
+              <div class="text-caption text-grey-darken-3" style="font-size: 10px;">{{ t('rightSidebar.learningRoadmaps') }}</div>
             </div>
           </v-col>
           <v-col cols="4" class="pa-0-5">
@@ -373,7 +375,7 @@ const openInNewTab = (courseId) => {
               <div class="text-subtitle-1 font-weight-bold text-purple mb-0">
                 {{ platformStats?.knowledgeNodeCount || '12.5k' }}
               </div>
-              <div class="text-caption text-grey-darken-3" style="font-size: 10px;">知识节点</div>
+              <div class="text-caption text-grey-darken-3" style="font-size: 10px;">{{ t('rightSidebar.knowledgeNodes') }}</div>
             </div>
           </v-col>
           <v-col cols="4" class="pa-0-5">
@@ -381,7 +383,7 @@ const openInNewTab = (courseId) => {
               <div class="text-subtitle-1 font-weight-bold text-indigo mb-0">
                 {{ platformStats?.articleCount || '2.8k' }}
               </div>
-              <div class="text-caption text-grey-darken-3" style="font-size: 10px;">文章数量</div>
+              <div class="text-caption text-grey-darken-3" style="font-size: 10px;">{{ t('rightSidebar.articleCount') }}</div>
             </div>
           </v-col>
         </v-row>
@@ -397,7 +399,7 @@ const openInNewTab = (courseId) => {
           <v-icon icon="mdi-account-school" color="white" size="13"></v-icon>
         </v-avatar>
         <div>
-          <h3 class="text-h7 font-weight-bold text-grey-darken-4">我的学习</h3>
+          <h3 class="text-h7 font-weight-bold text-grey-darken-4">{{ t('rightSidebar.myLearning') }}</h3>
         </div>
       </div>
 
@@ -406,10 +408,10 @@ const openInNewTab = (courseId) => {
         <div class="d-flex align-center justify-space-between mb-2">
           <div class="d-flex align-center">
             <v-icon icon="mdi-briefcase-outline" color="teal-darken-1" size="14" class="mr-1"></v-icon>
-            <span class="text-body-2 font-weight-bold text-grey-darken-3">我想成为</span>
+            <span class="text-body-2 font-weight-bold text-grey-darken-3">{{ t('rightSidebar.wantToBe') }}</span>
           </div>
           <v-btn variant="text" size="small" color="teal-darken-1" @click="router.push('/learning?tab=roadmaps')">
-            查看全部
+            {{ t('rightSidebar.viewAll') }}
             <v-icon icon="mdi-chevron-right" size="16" class="ml-1"></v-icon>
           </v-btn>
         </div>
@@ -425,7 +427,7 @@ const openInNewTab = (courseId) => {
                 {{ roadmap.profession?.name || roadmap.title }}
               </div>
               <div class="text-caption text-grey-darken-2">
-                进度 {{ roadmap.progress }}% · {{ roadmap.lastActivity }}
+                {{ t('rightSidebar.progress') }} {{ roadmap.progress }}% · {{ roadmap.lastActivity }}
               </div>
             </div>
             <v-chip 
@@ -440,7 +442,7 @@ const openInNewTab = (courseId) => {
         
         <div v-else class="text-center py-2">
           <v-icon icon="mdi-briefcase-search" color="grey-lighten-1" size="20" class="mb-1"></v-icon>
-          <div class="text-caption text-grey-darken-2">暂无学习职业</div>
+          <div class="text-caption text-grey-darken-2">{{ t('rightSidebar.noLearningCareers') }}</div>
         </div>
       </div>
 
@@ -449,10 +451,10 @@ const openInNewTab = (courseId) => {
         <div class="d-flex align-center justify-space-between mb-2">
           <div class="d-flex align-center">
             <v-icon icon="mdi-book-open-outline" color="primary" size="14" class="mr-1"></v-icon>
-            <span class="text-body-2 font-weight-bold text-grey-darken-3">我在学习</span>
+            <span class="text-body-2 font-weight-bold text-grey-darken-3">{{ t('rightSidebar.studying') }}</span>
           </div>
           <v-btn variant="text" size="small" color="primary" @click="router.push('/learning?tab=courses')">
-            查看全部
+            {{ t('rightSidebar.viewAll') }}
             <v-icon icon="mdi-chevron-right" size="16" class="ml-1"></v-icon>
           </v-btn>
         </div>
@@ -468,7 +470,7 @@ const openInNewTab = (courseId) => {
                 {{ course.title }}
               </div>
               <div class="text-caption text-grey-darken-2">
-                进度 {{ course.progress }}% · {{ course.lastActivity }}
+                {{ t('rightSidebar.progress') }} {{ course.progress }}% · {{ course.lastActivity }}
               </div>
             </div>
             <v-chip 
@@ -483,7 +485,7 @@ const openInNewTab = (courseId) => {
         
         <div v-else class="text-center py-2">
           <v-icon icon="mdi-book-search" color="grey-lighten-1" size="20" class="mb-1"></v-icon>
-          <div class="text-caption text-grey-darken-2">暂无学习课程</div>
+          <div class="text-caption text-grey-darken-2">{{ t('rightSidebar.noLearningCourses') }}</div>
         </div>
       </div>
     </v-card-text>
@@ -497,28 +499,28 @@ const openInNewTab = (courseId) => {
           <v-icon icon="mdi-lightbulb-outline" color="white" size="13"></v-icon>
         </v-avatar>
         <div>
-          <h3 class="text-h7 font-weight-bold text-grey-darken-4">学习小贴士</h3>
+          <h3 class="text-h7 font-weight-bold text-grey-darken-4">{{ t('rightSidebar.learningTips') }}</h3>
         </div>
       </div>
 
       <div class="tip-item pa-3 rounded-lg bg-amber-lighten-4 mb-2 d-flex align-center">
         <v-icon icon="mdi-lightbulb" color="amber-darken-2" size="16" class="mr-2 flex-shrink-0"></v-icon>
         <div class="flex-grow-1">
-          <div class="text-body-2 text-grey-darken-4">学而时习之，不亦说乎</div>
+          <div class="text-body-2 text-grey-darken-4">{{ t('rightSidebar.learningQuotes.quote1') }}</div>
         </div>
       </div>
 
       <div class="tip-item pa-3 rounded-lg bg-amber-lighten-4 mb-2 d-flex align-center">
         <v-icon icon="mdi-lightbulb" color="amber-darken-2" size="16" class="mr-2 flex-shrink-0"></v-icon>
         <div class="flex-grow-1">
-          <div class="text-body-2 text-grey-darken-4">活到老，学到老</div>
+          <div class="text-body-2 text-grey-darken-4">{{ t('rightSidebar.learningQuotes.quote2') }}</div>
         </div>
       </div>
 
       <div class="tip-item pa-3 rounded-lg bg-amber-lighten-4 d-flex align-center">
         <v-icon icon="mdi-lightbulb" color="amber-darken-2" size="16" class="mr-2 flex-shrink-0"></v-icon>
         <div class="flex-grow-1">
-          <div class="text-body-2 text-grey-darken-4">知识就是力量</div>
+          <div class="text-body-2 text-grey-darken-4">{{ t('rightSidebar.learningQuotes.quote3') }}</div>
         </div>
       </div>
     </v-card-text>
@@ -533,11 +535,11 @@ const openInNewTab = (courseId) => {
             <v-icon icon="mdi-trophy" color="white" size="13"></v-icon>
           </v-avatar>
           <div>
-            <h3 class="text-h7 font-weight-bold text-grey-darken-4">热门职业</h3>
+            <h3 class="text-h7 font-weight-bold text-grey-darken-4">{{ t('rightSidebar.hotCareers') }}</h3>
           </div>
         </div>
         <v-btn variant="text" size="small" color="teal-darken-1" @click="router.push('/career')">
-          查看全部
+          {{ t('rightSidebar.viewAll') }}
           <v-icon icon="mdi-chevron-right" size="16" class="ml-1"></v-icon>
         </v-btn>
       </div>
@@ -552,7 +554,7 @@ const openInNewTab = (courseId) => {
         </v-chip>
         <div class="flex-grow-1">
           <div class="text-body-2 font-weight-bold text-grey-darken-4">{{ profession.name }}</div>
-          <div class="text-caption text-grey-darken-2">{{ (profession.learnerCount || 0).toLocaleString() }}人正在学习</div>
+          <div class="text-caption text-grey-darken-2">{{ t('rightSidebar.peopleStudying', { count: (profession.learnerCount || 0).toLocaleString() }) }}</div>
         </div>
       </div>
     </v-card-text>
@@ -567,11 +569,11 @@ const openInNewTab = (courseId) => {
             <v-icon icon="mdi-fire" color="white" size="13"></v-icon>
           </v-avatar>
           <div>
-            <h3 class="text-h7 font-weight-bold text-grey-darken-4">热门课程</h3>
+            <h3 class="text-h7 font-weight-bold text-grey-darken-4">{{ t('rightSidebar.hotCourses') }}</h3>
           </div>
         </div>
         <v-btn variant="text" size="small" color="blue-darken-1" @click="router.push('/course/list')">
-          查看全部
+          {{ t('rightSidebar.viewAll') }}
           <v-icon icon="mdi-chevron-right" size="16" class="ml-1"></v-icon>
         </v-btn>
       </div>
@@ -586,7 +588,7 @@ const openInNewTab = (courseId) => {
         </v-chip>
         <div class="flex-grow-1">
           <div class="text-body-2 font-weight-bold text-grey-darken-4">{{ course.name }}</div>
-          <div class="text-caption text-grey-darken-2">{{ ((course.learnerCount || 0) + (course.subscriptionCount || 0)).toLocaleString() }}人收藏</div>
+          <div class="text-caption text-grey-darken-2">{{ t('rightSidebar.peopleBookmarked', { count: ((course.learnerCount || 0) + (course.subscriptionCount || 0)).toLocaleString() }) }}</div>
         </div>
       </div>
     </v-card-text>

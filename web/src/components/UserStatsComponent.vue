@@ -4,8 +4,8 @@
     <div class="page-header mb-5">
       <div class="d-flex justify-space-between align-center">
         <div>
-          <h2 class="page-title mb-2">学习数据统计</h2>
-          <p class="page-subtitle">查看您的学习活动数据和成长轨迹</p>
+          <h2 class="page-title mb-2">{{ t('userStats.title') }}</h2>
+          <p class="page-subtitle">{{ t('userStats.subtitle') }}</p>
         </div>
         <v-btn
           color="primary"
@@ -16,7 +16,7 @@
         >
           <v-icon>mdi-refresh</v-icon>
           <v-tooltip activator="parent" location="bottom">
-            刷新数据
+            {{ t('userStats.refreshData') }}
           </v-tooltip>
         </v-btn>
       </div>
@@ -27,16 +27,16 @@
       <div class="flat-card pa-4">
         <div class="d-flex align-center mb-3">
           <v-icon color="primary" size="20" class="mr-2">mdi-chart-timeline-variant</v-icon>
-          <h3 class="text-subtitle-1 text-primary font-weight-bold">全部时间统计</h3>
+          <h3 class="text-subtitle-1 text-primary font-weight-bold">{{ t('userStats.allTimeStats') }}</h3>
           <v-spacer></v-spacer>
           <v-chip color="primary" variant="tonal" size="small">
-            实时数据
+            {{ t('userStats.realtimeData') }}
           </v-chip>
         </div>
         
         <div v-if="totalStatsLoading" class="text-center py-6">
           <v-progress-circular indeterminate color="primary" size="32"></v-progress-circular>
-          <p class="text-body-2 text-grey mt-3 mb-0">正在加载总体数据...</p>
+          <p class="text-body-2 text-grey mt-3 mb-0">{{ t('userStats.loadingTotalData') }}</p>
         </div>
         
         <v-row v-else-if="totalStatsData" class="mt-1">
@@ -44,28 +44,28 @@
             <div class="text-center py-3">
               <v-icon icon="mdi-eye" color="blue" size="20" class="mb-1"></v-icon>
               <h4 class="text-h5 font-weight-bold text-blue mb-1">{{ formatNumber(totalStatsData.totalViews) }}</h4>
-              <p class="text-body-2 text-grey-darken-2 mb-0">总阅读量</p>
+              <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.totalViews') }}</p>
             </div>
           </v-col>
           <v-col cols="6" sm="3">
             <div class="text-center py-3">
               <v-icon icon="mdi-thumb-up" color="green" size="20" class="mb-1"></v-icon>
               <h4 class="text-h5 font-weight-bold text-green mb-1">{{ formatNumber(totalStatsData.totalTwice) }}</h4>
-              <p class="text-body-2 text-grey-darken-2 mb-0">总Twice点赞</p>
+              <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.totalTwice') }}</p>
             </div>
           </v-col>
           <v-col cols="6" sm="3">
             <div class="text-center py-3">
               <v-icon icon="mdi-heart" color="red" size="20" class="mb-1"></v-icon>
               <h4 class="text-h5 font-weight-bold text-red mb-1">{{ formatNumber(totalStatsData.totalHelpful) }}</h4>
-              <p class="text-body-2 text-grey-darken-2 mb-0">总有帮助点赞</p>
+              <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.totalHelpful') }}</p>
             </div>
           </v-col>
           <v-col cols="6" sm="3">
             <div class="text-center py-3">
               <v-icon icon="mdi-comment" color="orange" size="20" class="mb-1"></v-icon>
               <h4 class="text-h5 font-weight-bold text-orange mb-1">{{ formatNumber(totalStatsData.totalComments) }}</h4>
-              <p class="text-body-2 text-grey-darken-2 mb-0">总评论数</p>
+              <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.totalComments') }}</p>
             </div>
           </v-col>
         </v-row>
@@ -82,7 +82,7 @@
       <div class="text-center">
         <v-chip color="blue-grey-lighten-2" variant="tonal" size="default" class="px-4 py-2 mt-4">
           <v-icon icon="mdi-calendar-range" size="16" class="mr-2"></v-icon>
-          <span class="font-weight-bold">按时间段统计</span>
+          <span class="font-weight-bold">{{ t('userStats.periodStats') }}</span>
         </v-chip>
       </div>
     </div>
@@ -93,7 +93,7 @@
       <div class="d-flex justify-space-between align-center mb-4">
         <!-- 左侧：时间选择器 -->
         <div class="time-selector-container">
-          <div class="text-body-2 text-grey-darken-2 mb-2">选择时间范围</div>
+          <div class="text-body-2 text-grey-darken-2 mb-2">{{ t('userStats.selectTimeRange') }}</div>
           <v-btn-toggle 
             v-model="selectedPeriod" 
             color="primary" 
@@ -105,27 +105,27 @@
           >
             <v-btn value="7" size="small" variant="outlined">
               <v-icon class="mr-1" size="16">mdi-calendar-week</v-icon>
-              7天
+              {{ t('userStats.days7') }}
             </v-btn>
             <v-btn value="30" size="small" variant="outlined">
               <v-icon class="mr-1" size="16">mdi-calendar-month</v-icon>
-              30天
+              {{ t('userStats.days30') }}
             </v-btn>
             <v-btn value="180" size="small" variant="outlined">
               <v-icon class="mr-1" size="16">mdi-calendar-month-outline</v-icon>
-              半年
+              {{ t('userStats.halfYear') }}
             </v-btn>
             <v-btn value="365" size="small" variant="outlined">
               <v-icon class="mr-1" size="16">mdi-calendar</v-icon>
-              一年
+              {{ t('userStats.oneYear') }}
             </v-btn>
           </v-btn-toggle>
         </div>
 
         <!-- 右侧：数据概览标题 -->
         <div class="overview-title-container text-right">
-          <h3 class="section-title mb-0">{{ getPeriodText() }}数据概览</h3>
-          <p class="text-body-2 text-grey-darken-2 mb-0">查看指定时间段的详细数据</p>
+          <h3 class="section-title mb-0">{{ getPeriodText() }}{{ t('userStats.dataOverview') }}</h3>
+          <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.viewDetailedData') }}</p>
         </div>
       </div>
 
@@ -137,7 +137,7 @@
         size="48"
         class="mb-3"
       ></v-progress-circular>
-      <p class="loading-text">正在加载{{ getPeriodText() }}数据...</p>
+      <p class="loading-text">{{ t('userStats.loadingData', { period: getPeriodText() }) }}</p>
     </div>
 
     <!-- 错误状态 -->
@@ -153,7 +153,7 @@
         <v-icon>mdi-alert-circle</v-icon>
       </template>
       <div class="alert-content">
-        <div class="alert-title">数据加载失败</div>
+        <div class="alert-title">{{ t('userStats.dataLoadFailed') }}</div>
         <div class="alert-text">{{ error }}</div>
         <v-btn 
           size="small" 
@@ -162,7 +162,7 @@
           class="mt-2"
           @click="refreshData"
         >
-          重试
+          {{ t('userStats.retry') }}
         </v-btn>
       </div>
     </v-alert>
@@ -176,7 +176,7 @@
             <div class="flat-stats-card">
               <div class="text-center pa-3">
                 <h3 class="text-h5 font-weight-bold text-blue mb-1">{{ formatNumber(statsData.totalViews) }}</h3>
-                <p class="text-body-2 text-grey-darken-2 mb-0">文章阅读量</p>
+                <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.articleViews') }}</p>
               </div>
             </div>
           </v-col>
@@ -184,7 +184,7 @@
             <div class="flat-stats-card">
               <div class="text-center pa-3">
                 <h3 class="text-h5 font-weight-bold text-green mb-1">{{ formatNumber(statsData.totalTwice) }}</h3>
-                <p class="text-body-2 text-grey-darken-2 mb-0">Max Twice 点赞</p>
+                <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.maxTwiceLikes') }}</p>
               </div>
             </div>
           </v-col>
@@ -192,7 +192,7 @@
             <div class="flat-stats-card">
               <div class="text-center pa-3">
                 <h3 class="text-h5 font-weight-bold text-red mb-1">{{ formatNumber(statsData.totalHelpful) }}</h3>
-                <p class="text-body-2 text-grey-darken-2 mb-0">有帮助点赞</p>
+                <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.helpfulLikes') }}</p>
               </div>
             </div>
           </v-col>
@@ -200,7 +200,7 @@
             <div class="flat-stats-card">
               <div class="text-center pa-3">
                 <h3 class="text-h5 font-weight-bold text-orange mb-1">{{ formatNumber(statsData.totalComments) }}</h3>
-                <p class="text-body-2 text-grey-darken-2 mb-0">评论数</p>
+                <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.comments') }}</p>
               </div>
             </div>
           </v-col>
@@ -212,7 +212,7 @@
         <div class="flat-card pa-4">
           <div class="text-subtitle-1 d-flex align-center mb-3">
             <v-icon class="mr-2" color="primary" size="20">mdi-chart-line-variant</v-icon>
-            {{ getPeriodText() }}数据趋势
+            {{ getPeriodText() }}{{ t('userStats.dataTrend') }}
           </div>
           <div class="pa-1">
             <TrendChart 
@@ -228,7 +228,7 @@
         <div class="flat-card pa-4">
           <div class="text-subtitle-1 d-flex align-center mb-3">
             <v-icon class="mr-2" color="primary" size="20">mdi-calendar-multiple</v-icon>
-            每日数据明细
+            {{ t('userStats.dailyDetails') }}
           </div>
           <div class="pa-1">
             <v-data-table
@@ -289,7 +289,7 @@
               <template #no-data>
                 <div class="no-data-placeholder">
                   <v-icon size="48" color="grey-lighten-1">mdi-calendar-blank</v-icon>
-                  <p>暂无数据</p>
+                  <p>{{ t('userStats.noData') }}</p>
                 </div>
               </template>
             </v-data-table>
@@ -302,15 +302,15 @@
     <!-- 空状态 -->
     <div v-if="!loading && !error && !statsData" class="empty-state">
       <v-icon size="80" color="grey-lighten-1">mdi-chart-pie</v-icon>
-      <h3 class="empty-title">暂无统计数据</h3>
-      <p class="empty-subtitle">开始学习后，这里将显示您的学习数据统计</p>
+      <h3 class="empty-title">{{ t('userStats.noStatsData') }}</h3>
+      <p class="empty-subtitle">{{ t('userStats.noStatsDesc') }}</p>
       <v-btn 
         color="primary" 
         variant="outlined"
         rounded="lg"
         @click="refreshData"
       >
-        刷新数据
+        {{ t('userStats.refreshData') }}
       </v-btn>
     </div>
   </div>
@@ -318,6 +318,7 @@
 
 <script>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { learnService } from '@/services/learnService'
 import TrendChart from './TrendChart.vue'
@@ -329,6 +330,7 @@ export default {
   },
   setup() {
     const userStore = useUserStore()
+    const { t } = useI18n()
     
     // 响应式数据
     const selectedPeriod = ref('7')  // 默认选择7天
@@ -363,13 +365,13 @@ export default {
     })
 
     // 表格头部配置
-    const tableHeaders = [
-      { title: '日期', key: 'date', align: 'start', width: '120px' },
-      { title: '阅读量', key: 'views', align: 'center', width: '100px' },
-      { title: 'Max Twice', key: 'twice', align: 'center', width: '100px' },
-      { title: '有帮助', key: 'helpful', align: 'center', width: '100px' },
-      { title: '评论数', key: 'comments', align: 'center', width: '100px' }
-    ]
+    const tableHeaders = computed(() => [
+      { title: t('userStats.date'), key: 'date', align: 'start', width: '120px' },
+      { title: t('userStats.views'), key: 'views', align: 'center', width: '100px' },
+      { title: t('userStats.maxTwice'), key: 'twice', align: 'center', width: '100px' },
+      { title: t('userStats.helpful'), key: 'helpful', align: 'center', width: '100px' },
+      { title: t('userStats.commentsCount'), key: 'comments', align: 'center', width: '100px' }
+    ])
 
     // 工具方法
     const formatNumber = (num) => {
@@ -389,9 +391,9 @@ export default {
         yesterday.setDate(yesterday.getDate() - 1)
         
         if (date.toDateString() === today.toDateString()) {
-          return '今天'
+          return t('userStats.today')
         } else if (date.toDateString() === yesterday.toDateString()) {
-          return '昨天'
+          return t('userStats.yesterday')
         } else {
           return date.toLocaleDateString('zh-CN', { 
             month: 'numeric', 
@@ -405,20 +407,20 @@ export default {
 
     const getPeriodText = () => {
       switch (selectedPeriod.value) {
-        case 'today': return '今日'
-        case 'yesterday': return '昨日'
-        case '7': return '近7天'
-        case '15': return '近15天'
-        case '30': return '近30天'
-        case '365': return '近一年'
-        default: return '自定义'
+        case 'today': return t('userStats.today_')
+        case 'yesterday': return t('userStats.yesterday_')
+        case '7': return t('userStats.recent7Days')
+        case '15': return t('userStats.recent15Days')
+        case '30': return t('userStats.recent30Days')
+        case '365': return t('userStats.recentYear')
+        default: return t('userStats.custom')
       }
     }
 
     // 数据加载方法
     const loadStatsData = async () => {
       if (!userStore.userId) {
-        error.value = '用户信息获取失败，请重新登录'
+        error.value = t('userStats.userInfoFailed')
         return
       }
 
@@ -449,7 +451,7 @@ export default {
         }
       } catch (err) {
         console.error('Error loading stats:', err)
-        error.value = err.message || '网络错误，请稍后重试'
+        error.value = err.message || t('userStats.networkError')
         statsData.value = null
       } finally {
         loading.value = false
@@ -459,7 +461,7 @@ export default {
     // 加载全部时间统计数据
     const loadTotalStatsData = async () => {
       if (!userStore.userId) {
-        totalStatsError.value = '用户信息获取失败'
+        totalStatsError.value = t('userStats.userInfoFailed')
         return
       }
 
@@ -524,7 +526,8 @@ export default {
       formatDate,
       getPeriodText,
       onPeriodChange,
-      refreshData
+      refreshData,
+      t
     }
   }
 }

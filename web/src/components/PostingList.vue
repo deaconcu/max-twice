@@ -2,6 +2,7 @@
 import { ref, onMounted, nextTick, watch, toRef, onUnmounted, inject, computed } from 'vue';
 import { learnService } from '@/services/learnService';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 
 import AddContents from '../components/AddContents.vue';
 import AddArticle from '../components/AddArticle.vue';
@@ -20,6 +21,7 @@ if (import.meta.env.DEV) {
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const showSnackbar = inject('showSnackbar');
 
@@ -251,7 +253,7 @@ const toggleNodeCompletion = async () => {
   // 检查是否在学习模式下
   if (!props.isLearning) {
     // 询问用户是否开始学习
-    const confirmed = confirm('您还未开始学习此课程，是否要开始学习并完成当前节点？');
+    const confirmed = confirm(t('postingList.startLearningConfirm'));
     if (!confirmed) {
       return; // 用户取消
     }
@@ -262,7 +264,7 @@ const toggleNodeCompletion = async () => {
       emit('startLearning');
     } catch (error) {
       console.error('启动学习模式失败:', error);
-      showSnackbar && showSnackbar('启动学习模式失败，请重试', 'error');
+      showSnackbar && showSnackbar(t('postingList.startLearningFailed'), 'error');
       return;
     }
   }
@@ -286,10 +288,10 @@ const toggleNodeCompletion = async () => {
           props.data.course.progress = response.data.courseProgress;
         }
         
-        showSnackbar && showSnackbar('已取消完成状态', 'info');
+        showSnackbar && showSnackbar(t('postingList.completionCancelled'), 'info');
       } else {
         console.error('Failed to unmark node as completed:', response.msg);
-        showSnackbar && showSnackbar('取消完成失败，请重试', 'error');
+        showSnackbar && showSnackbar(t('postingList.cancelCompletionFailed'), 'error');
       }
     } else {
       // 标记完成
@@ -317,7 +319,7 @@ const toggleNodeCompletion = async () => {
           props.data.course.progress = response.data.courseProgress;
         }
         
-        showSnackbar && showSnackbar('节点学习已完成！', 'success');
+        showSnackbar && showSnackbar(t('postingList.nodeCompleted'), 'success');
         
         // 通知父组件节点已完成，触发课程完成检查
         console.log('发送节点完成事件，节点ID:', props.currNodeId);
@@ -327,12 +329,12 @@ const toggleNodeCompletion = async () => {
         checkNextNode();
       } else {
         console.error('Failed to mark node as completed:', response.msg);
-        showSnackbar && showSnackbar('标记完成失败，请重试', 'error');
+        showSnackbar && showSnackbar(t('postingList.markCompletionFailed'), 'error');
       }
     }
   } catch (error) {
     console.error('Error toggling node completion:', error);
-    showSnackbar && showSnackbar('操作失败，请重试', 'error');
+    showSnackbar && showSnackbar(t('postingList.operationFailed'), 'error');
   }
 };
 
@@ -382,7 +384,7 @@ const handleMarkNodeCompleted = async () => {
     
     if (response.code === 200) {
       props.data.node.isCompleted = true;
-      showSnackbar && showSnackbar('看两遍就懂！节点学习已完成！', 'success');
+      showSnackbar && showSnackbar(t('postingList.nodeCompletedTwice'), 'success');
       
       // 检查是否有下一个节点
       checkNextNode();
@@ -392,7 +394,7 @@ const handleMarkNodeCompleted = async () => {
     }
   } catch (error) {
     console.error('Error marking node completed from posting:', error);
-    showSnackbar && showSnackbar('操作失败，请重试', 'error');
+    showSnackbar && showSnackbar(t('postingList.operationFailed'), 'error');
   }
 };
 </script>
@@ -411,7 +413,7 @@ const handleMarkNodeCompleted = async () => {
       </div>
       <div v-else>
         <div class="d-flex align-center">
-          课程节点
+          {{ t('postingList.courseNode') }}
           <v-icon icon="mdi-chevron-right" class="px-4"></v-icon>
         </div>
       </div>
@@ -434,7 +436,7 @@ const handleMarkNodeCompleted = async () => {
             :prepend-icon="data.node.isCompleted ? 'mdi-check-circle' : 'mdi-circle-outline'"
           >
             <span class="font-weight-medium" :class="data.node.isCompleted ? 'text-grey-darken-2' : 'text-white'">
-              {{ data.node.isCompleted ? '已完成' : '完成学习' }}
+              {{ data.node.isCompleted ? t('postingList.completed') : t('postingList.completeStudy') }}
             </span>
           </v-btn>
       </div>
@@ -445,11 +447,11 @@ const handleMarkNodeCompleted = async () => {
         <v-tabs density="compact" class="">
           <v-tab class="px-3" @click="switchTab('list', '')">
             <v-icon icon="mdi-list-box-outline" size="16" class="mr-2"></v-icon>
-            <span class="font-weight-medium text-grey-darken-3">文章列表</span>
+            <span class="font-weight-medium text-grey-darken-3">{{ t('postingList.articleList') }}</span>
           </v-tab>
           <v-tab class="px-3" @click="switchTab('comment', '')">
             <v-icon icon="mdi-comment-outline" size="16" class="mr-2"></v-icon>
-            <span class="font-weight-medium text-grey-darken-3">{{ data.node.commentCount }} 条评论</span>
+            <span class="font-weight-medium text-grey-darken-3">{{ data.node.commentCount }} {{ t('postingList.comments') }}</span>
           </v-tab>
         </v-tabs>
       </div>
@@ -457,7 +459,7 @@ const handleMarkNodeCompleted = async () => {
         <v-btn @click="createContentsDialog = true" variant="flat" color="grey-lighten-4" rounded="lg" class="px-3 me-2"
           density="comfortable">
           <v-icon icon="mdi-format-list-group-plus" size="14" class="mr-2" color="grey-darken-3"></v-icon>
-          <span class="font-weight-medium text-grey-darken-3">添加目录</span>
+          <span class="font-weight-medium text-grey-darken-3">{{ t('postingList.addContent') }}</span>
         </v-btn>
         <AddContents :nodeId="props.currNodeId" :pathText="props.pathText" v-model="createContentsDialog"
           @loadData="loadData"></AddContents>
@@ -465,14 +467,14 @@ const handleMarkNodeCompleted = async () => {
         <v-btn @click="createArticleDialog = true" variant="flat" color="grey-lighten-4" rounded="lg" 
           density="comfortable" class="px-3 me-2">
           <v-icon icon="mdi-note-plus-outline" size="14" class="mr-2" color="grey-darken-3"></v-icon>
-          <span class="font-weight-medium text-grey-darken-3">添加文章</span>
+          <span class="font-weight-medium text-grey-darken-3">{{ t('postingList.addArticle') }}</span>
         </v-btn>
         <AddArticle :nodeId="props.currNodeId" v-model="createArticleDialog" @loadData="loadData"></AddArticle>
 
         <v-btn @click="inviteDialog = true" variant="flat" color="grey-lighten-4" rounded="lg" class="px-3"
           density="comfortable">
           <v-icon icon="mdi-account-plus-outline" size="14" class="mr-2" color="grey-darken-3"></v-icon>
-          <span class="font-weight-medium text-grey-darken-3">邀请回答</span>
+          <span class="font-weight-medium text-grey-darken-3">{{ t('postingList.inviteAnswer') }}</span>
         </v-btn>
         <Invite :nodeId="props.currNodeId" v-model="inviteDialog"></Invite>
       </div>
@@ -493,7 +495,7 @@ const handleMarkNodeCompleted = async () => {
         <v-divider class="mt-11" color="grey-darken-2"></v-divider>
       </div>
 
-      <v-infinite-scroll :items="data.otherPostings" :onLoad="loadMore" :key="scrollKey" :no-more-text="'已经到底了'"
+      <v-infinite-scroll :items="data.otherPostings" :onLoad="loadMore" :key="scrollKey" :no-more-text="t('postingList.reachedEnd')"
         class="">
         <div v-for="(posting, index) in data.otherPostings" :class="index == 0 ? 'pt-4' : 'pt-8'"
           v-show="!((currNode['+'] && currNode['+'] == posting.id) || (currNode['^'] && currNode['^'].includes(posting.id)))">
@@ -501,7 +503,7 @@ const handleMarkNodeCompleted = async () => {
           <v-divider class="mt-11" color="grey-darken-2"></v-divider>
         </div>
         <template v-slot:empty>
-          <div class="text-body-2 text-grey py-8"> - 已经到底了 - </div>
+          <div class="text-body-2 text-grey py-8"> - {{ t('postingList.reachedEnd') }} - </div>
         </template>
       </v-infinite-scroll>
     </div>
@@ -513,7 +515,7 @@ const handleMarkNodeCompleted = async () => {
       <div class="pt-1 pb-2 px-0" style="position: sticky; bottom: 0px; background-color: #fff;">
         <v-btn variant="flat" color="grey-darken-2" size="large" class="rounded-lg" block
           @click="submitAddArticle">
-          <span class="text-white">写好了，提交</span>
+          <span class="text-white">{{ t('postingList.submitArticle') }}</span>
         </v-btn>
       </div>
     </div>
@@ -545,8 +547,8 @@ const handleMarkNodeCompleted = async () => {
             <v-icon icon="mdi-arrow-right-circle" color="success-darken-1" size="20"></v-icon>
           </div>
           <div>
-            <h3 class="text-h6 font-weight-bold text-grey-darken-3">学习完成</h3>
-            <p class="text-body-2 text-grey-darken-1 mb-0">恭喜完成当前节点学习！</p>
+            <h3 class="text-h6 font-weight-bold text-grey-darken-3">{{ t('postingList.studyCompleted') }}</h3>
+            <p class="text-body-2 text-grey-darken-1 mb-0">{{ t('postingList.congratulations') }}</p>
           </div>
         </div>
       </div>
@@ -556,12 +558,12 @@ const handleMarkNodeCompleted = async () => {
       <!-- 内容 -->
       <v-card-text class="pa-6">
         <p class="text-body-1 mb-4">
-          您已经完成了当前节点的学习，是否继续学习下一个节点？
+          {{ t('postingList.studyCompletedMessage') }}
         </p>
         <div v-if="nextNodeInfo" class="d-flex align-center pa-4 bg-grey-lighten-5 rounded-lg">
           <v-icon icon="mdi-book-open-page-variant" color="primary" class="mr-3"></v-icon>
           <div>
-            <div class="font-weight-medium text-grey-darken-3">下一个节点</div>
+            <div class="font-weight-medium text-grey-darken-3">{{ t('postingList.nextNode') }}</div>
             <div class="text-body-2 text-primary">{{ nextNodeInfo.name }}</div>
           </div>
         </div>
@@ -576,7 +578,7 @@ const handleMarkNodeCompleted = async () => {
           @click="nextNodeDialog = false"
           class="mr-3"
         >
-          稍后再学
+          {{ t('postingList.studyLater') }}
         </v-btn>
         <v-btn
           color="success"
@@ -585,7 +587,7 @@ const handleMarkNodeCompleted = async () => {
           @click="goToNextNode"
         >
           <v-icon icon="mdi-arrow-right" size="16" class="mr-2"></v-icon>
-          继续学习
+          {{ t('postingList.continueStudy') }}
         </v-btn>
       </v-card-actions>
     </v-card>

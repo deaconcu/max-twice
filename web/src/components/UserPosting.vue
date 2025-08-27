@@ -2,11 +2,13 @@
 import { ref, onMounted, nextTick, watch, toRef, inject } from 'vue';
 import { learnService } from '@/services/learnService';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/github.css'; // 选择你的高亮主题
+import 'highlight.js/styles/github.css';
 
 const props = defineProps(['posting', 'type']);
 const emit = defineEmits(['switchMainArea', 'deletePosting']);
+const { t } = useI18n();
 
 const contentRef = ref(null)
 const isOverflow = ref(false)
@@ -93,7 +95,7 @@ const deletePosting = async (postingId) => {
           <div ref="content" class="tiptap pt-3 pb-5 w-100" v-html="posting.content"></div>
         </div>
         <v-btn v-if="isOverflow" variant="text" class="px-0 mt-2 text-body-1" 
-        @click="props.type == 'list' ? emit('switchMainArea', 'detail', posting) : ''">查看全文 ...</v-btn>
+        @click="props.type == 'list' ? emit('switchMainArea', 'detail', posting) : ''">{{ t('userPosting.viewFullText') }}...</v-btn>
         <br />
       </template>
     </v-row>
@@ -108,7 +110,7 @@ const deletePosting = async (postingId) => {
             <template v-slot:prepend>
               <v-icon v-if="posting.voteType === 3">mdi-check</v-icon>
             </template>
-            <span :class="posting.voteType === 3 ? 'font-weight-medium' : ''">赞同 {{ posting.helpful }}</span>
+            <span :class="posting.voteType === 3 ? 'font-weight-medium' : ''">{{ t('userPosting.agree') }} {{ posting.helpful }}</span>
           </v-btn>
         </template>
 
@@ -120,7 +122,7 @@ const deletePosting = async (postingId) => {
               <template v-slot:prepend>
                 <v-icon v-if="posting.voteType === 1">mdi-check</v-icon>
               </template>
-              <span class="selected" :class="posting.voteType === 1 ? 'font-weight-medium' : ''">一次就懂
+              <span class="selected" :class="posting.voteType === 1 ? 'font-weight-medium' : ''">{{ t('userPosting.understandOnce') }}
                 {{ posting.once }}</span>
             </v-btn>
 
@@ -128,14 +130,14 @@ const deletePosting = async (postingId) => {
               <template v-slot:prepend>
                 <v-icon v-if="posting.voteType === 2">mdi-check</v-icon>
               </template>
-              <span class="" :class="posting.voteType === 2 ? 'font-weight-medium' : ''">两次能懂 {{ posting.twice }}</span>
+              <span class="" :class="posting.voteType === 2 ? 'font-weight-medium' : ''">{{ t('userPosting.understandTwice') }} {{ posting.twice }}</span>
             </v-btn>
 
             <v-btn :value="3" color="brown" class="px-3 border" @click="upvote(posting, 3)">
               <template v-slot:prepend>
                 <v-icon v-if="posting.voteType === 3">mdi-check</v-icon>
               </template>
-              <span class="" :class="posting.voteType === 3 ? 'font-weight-medium' : ''">有帮助 {{ posting.helpful
+              <span class="" :class="posting.voteType === 3 ? 'font-weight-medium' : ''">{{ t('userPosting.helpful') }} {{ posting.helpful
                 }}</span>
             </v-btn>
           </v-btn-toggle>
@@ -158,9 +160,9 @@ const deletePosting = async (postingId) => {
       </div>
       <div class="">
         <v-btn variant="flat" rounded="lg" color="grey-lighten-3"
-          @click="emit('switchMainArea', 'edit', posting)">修改</v-btn>
+          @click="emit('switchMainArea', 'edit', posting)">{{ t('userPosting.edit') }}</v-btn>
         <v-btn class="ms-4" variant="flat" rounded="lg" color="grey-lighten-3"
-          @click="deletePosting(posting.id)">删除</v-btn>
+          @click="deletePosting(posting.id)">{{ t('userPosting.delete') }}</v-btn>
       </div>
     </div>
 

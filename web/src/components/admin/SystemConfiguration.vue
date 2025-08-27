@@ -6,13 +6,13 @@
           <v-icon icon="mdi-cog-outline" color="teal-darken-1" size="20"></v-icon>
         </div>
         <div>
-          <h3 class="text-h6 font-weight-bold text-grey-darken-3">系统配置</h3>
-          <p class="text-body-2 text-grey-darken-1 mb-0">管理系统的核心配置参数</p>
+          <h3 class="text-h6 font-weight-bold text-grey-darken-3">{{ t('systemConfiguration.title') }}</h3>
+          <p class="text-body-2 text-grey-darken-1 mb-0">{{ t('systemConfiguration.subtitle') }}</p>
         </div>
       </div>
       <v-chip variant="flat" color="green-lighten-4" rounded="lg">
         <v-icon icon="mdi-check-circle" color="green-darken-2" size="16" class="mr-1"></v-icon>
-        <span class="text-green-darken-2 text-caption">配置有效</span>
+        <span class="text-green-darken-2 text-caption">{{ t('systemConfiguration.configValid') }}</span>
       </v-chip>
     </div>
 
@@ -22,17 +22,17 @@
         <v-card flat class="pa-4" rounded="lg" outlined>
           <div class="d-flex align-center mb-4">
             <v-icon icon="mdi-book-outline" color="blue-darken-1" class="mr-2"></v-icon>
-            <h4 class="text-h6 font-weight-bold text-grey-darken-3">课程类别配置</h4>
+            <h4 class="text-h6 font-weight-bold text-grey-darken-3">{{ t('systemConfiguration.courseCategories') }}</h4>
           </div>
           <v-textarea
             v-model="courseCategories"
-            label="课程类别 JSON"
+            :label="t('systemConfiguration.courseCategoriesJSON')"
             variant="outlined"
             rows="16"
             rounded="lg"
             bg-color="grey-lighten-5"
-            placeholder='请输入课程类别的JSON配置...'
-            hint="配置课程的分类结构和相关参数"
+            :placeholder="t('systemConfiguration.courseCategoriesPlaceholder')"
+            :hint="t('systemConfiguration.courseCategoriesHint')"
             persistent-hint
           ></v-textarea>
         </v-card>
@@ -43,17 +43,17 @@
         <v-card flat class="pa-4" rounded="lg" outlined>
           <div class="d-flex align-center mb-4">
             <v-icon icon="mdi-briefcase-outline" color="orange-darken-1" class="mr-2"></v-icon>
-            <h4 class="text-h6 font-weight-bold text-grey-darken-3">职业类别配置</h4>
+            <h4 class="text-h6 font-weight-bold text-grey-darken-3">{{ t('systemConfiguration.professionCategories') }}</h4>
           </div>
           <v-textarea
             v-model="professionCategories"
-            label="职业类别 JSON"
+            :label="t('systemConfiguration.professionCategoriesJSON')"
             variant="outlined"
             rows="16"
             rounded="lg"
             bg-color="grey-lighten-5"
-            placeholder='请输入职业类别的JSON配置...'
-            hint="配置职业的分类结构和相关参数"
+            :placeholder="t('systemConfiguration.professionCategoriesPlaceholder')"
+            :hint="t('systemConfiguration.professionCategoriesHint')"
             persistent-hint
           ></v-textarea>
         </v-card>
@@ -64,17 +64,17 @@
     <v-card flat class="pa-4 mt-4" rounded="lg" outlined>
       <div class="d-flex align-center mb-4">
         <v-icon icon="mdi-eye-outline" color="purple-darken-1" class="mr-2"></v-icon>
-        <h4 class="text-h6 font-weight-bold text-grey-darken-3">完整配置预览</h4>
+        <h4 class="text-h6 font-weight-bold text-grey-darken-3">{{ t('systemConfiguration.fullConfigPreview') }}</h4>
       </div>
       <v-textarea
         :model-value="mergedConfig"
-        label="合并后的完整配置"
+        :label="t('systemConfiguration.mergedConfig')"
         variant="outlined"
         rows="8"
         rounded="lg"
         bg-color="grey-lighten-5"
         readonly
-        hint="这是将课程类别和职业类别合并后的完整系统配置"
+        :hint="t('systemConfiguration.mergedConfigHint')"
         persistent-hint
       ></v-textarea>
     </v-card>
@@ -92,7 +92,7 @@
           :disabled="!isValidConfig"
         >
           <v-icon icon="mdi-content-save" class="mr-2"></v-icon>
-          保存配置
+          {{ t('systemConfiguration.saveConfig') }}
         </v-btn>
         <v-btn 
           variant="flat" 
@@ -101,11 +101,11 @@
           @click="formatConfig"
         >
           <v-icon icon="mdi-code-json" class="mr-2"></v-icon>
-          格式化
+          {{ t('systemConfiguration.format') }}
         </v-btn>
       </div>
       <div class="text-caption text-grey-darken-1">
-        最后更新：{{ lastUpdateTime }}
+        {{ t('systemConfiguration.lastUpdate') }}{{ lastUpdateTime }}
       </div>
     </div>
 
@@ -117,7 +117,7 @@
       class="mt-4"
       rounded="lg"
     >
-      <div class="font-weight-bold">配置格式错误</div>
+      <div class="font-weight-bold">{{ t('systemConfiguration.configFormatError') }}</div>
       <div class="text-body-2 mt-1">{{ configError }}</div>
     </v-alert>
   </div>
@@ -126,6 +126,9 @@
 <script setup>
 import { ref, computed, onMounted, inject, watch } from 'vue';
 import { learnService } from '@/services/learnService';
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 响应式数据
 const courseCategories = ref('');
@@ -171,7 +174,7 @@ const isValidConfig = computed(() => {
     configError.value = '';
     return true;
   } catch (error) {
-    configError.value = `JSON 格式错误: ${error.message}`;
+    configError.value = `${t('systemConfiguration.jsonFormatError')}: ${error.message}`;
     return false;
   }
 });
@@ -189,7 +192,7 @@ const formatConfig = () => {
       professionCategories.value = JSON.stringify(parsedProfession, null, 2);
     }
   } catch (error) {
-    configError.value = `格式化失败: ${error.message}`;
+    configError.value = `${t('systemConfiguration.formatFailed')}: ${error.message}`;
   }
 };
 
@@ -216,14 +219,14 @@ const saveConfiguration = async () => {
     const response = await learnService.postSystem(JSON.stringify(config));
     
     if (response.code === 200) {
-      showSnackbar("配置保存成功！")
+      showSnackbar(t('systemConfiguration.saveSuccess'))
       lastUpdateTime.value = new Date().toLocaleString('zh-CN');
       configError.value = '';
     } else {
-      configError.value = `保存失败: ${response.message || '未知错误'}`;
+      configError.value = `${t('systemConfiguration.saveFailed')}: ${response.message || t('common.error')}`;
     }
   } catch (error) {
-    configError.value = `保存失败: ${error.message}`;
+    configError.value = `${t('systemConfiguration.saveFailed')}: ${error.message}`;
   } finally {
     saving.value = false;
   }
@@ -256,7 +259,7 @@ const loadConfiguration = async () => {
       lastUpdateTime.value = new Date().toLocaleString('zh-CN');
     }
   } catch (error) {
-    configError.value = `加载配置失败: ${error.message}`;
+    configError.value = `${t('systemConfiguration.loadFailed')}: ${error.message}`;
   }
 };
 

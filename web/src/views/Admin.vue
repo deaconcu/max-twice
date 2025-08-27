@@ -1,12 +1,14 @@
 <script setup>
 import { ref, onMounted, inject, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { learnService } from '@/services/learnService';
 import ProfessionManagement from '@/components/admin/ProfessionManagement.vue';
 import SystemConfiguration from '@/components/admin/SystemConfiguration.vue';
 import SystemOperations from '@/components/admin/SystemOperations.vue';
 import CourseManagement from '@/components/admin/CourseManagement.vue';
 
+const { t } = useI18n();
 //const isLoggedIn = ref(false);
 const route = useRoute();
 const router = useRouter();
@@ -39,7 +41,7 @@ const postCourse = async () => {
       console.log('not login');
     } else if (response.code === 200) {
       console.log('done');
-      showSnackbar("添加成功！")
+      showSnackbar(t('admin.addSuccess'))
       cleanForm();
     }
   } catch (error) {
@@ -72,7 +74,7 @@ const postMessage = async (type, toUserId, reason) => {
       console.log('not login');
     } else if (response.code === 200) {
       console.log('done');
-      showSnackbar("操作成功！")
+      showSnackbar(t('admin.operationSuccess'))
     }
   } catch (error) {
     console.error('Error verifying login status:', error);
@@ -173,8 +175,8 @@ const approveComment = async (comment, action) => {
           <v-icon icon="mdi-cog" color="white" size="22"></v-icon>
         </v-avatar>
         <div>
-          <span class="text-h6 font-weight-bold text-grey-darken-3">管理中心</span> <br>
-          <span class="text-body-2 text-grey-darken-1">系统配置与内容审核管理</span>
+          <span class="text-h6 font-weight-bold text-grey-darken-3">{{ t('admin.title') }}</span> <br>
+          <span class="text-body-2 text-grey-darken-1">{{ t('admin.subtitle') }}</span>
         </div>
       </div>
     </div>
@@ -183,22 +185,22 @@ const approveComment = async (comment, action) => {
       <!-- 侧边栏 -->
       <div class="sidebar-container" style="min-width:260px;">
         <div class="pa-3 pb-2">
-          <h3 class="text-subtitle-1 font-weight-bold text-grey-darken-2 mb-3">功能模块</h3>
+          <h3 class="text-subtitle-1 font-weight-bold text-grey-darken-2 mb-3">{{ t('admin.modules') }}</h3>
         </div>
         <v-tabs v-model="tab" color="teal" direction="vertical" class="px-2" flat>
-          <v-tab prepend-icon="mdi-cog-outline" text="系统配置" value="option-1"
+          <v-tab prepend-icon="mdi-cog-outline" :text="t('admin.systemConfig')" value="option-1"
             class="text-body-1 text-grey-darken-2 my-2 rounded-lg justify-start"></v-tab>
-          <v-tab prepend-icon="mdi-cog-sync" text="系统操作" value="system-operations"
+          <v-tab prepend-icon="mdi-cog-sync" :text="t('admin.systemOperations')" value="system-operations"
             class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"></v-tab>
 
           <div class="px-3 py-3">
-            <div class="text-caption text-grey-darken-1 font-weight-medium mb-2">课程管理</div>
+            <div class="text-caption text-grey-darken-1 font-weight-medium mb-2">{{ t('admin.courseManagement') }}</div>
             <v-divider class="border-opacity-40"></v-divider>
           </div>
 
-          <v-tab prepend-icon="mdi-briefcase-check-outline" text="职业管理" value="option-7"
+          <v-tab prepend-icon="mdi-briefcase-check-outline" :text="t('admin.professionManagement')" value="option-7"
             class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"></v-tab>
-          <v-tab prepend-icon="mdi-email-outline" text="课程管理" value="option-6"
+          <v-tab prepend-icon="mdi-email-outline" :text="t('admin.courseManagement')" value="option-6"
             class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"></v-tab>
 
 
@@ -210,13 +212,13 @@ const approveComment = async (comment, action) => {
           -->
 
           <div class="px-3 py-3">
-            <div class="text-caption text-grey-darken-1 font-weight-medium mb-2">内容审核</div>
+            <div class="text-caption text-grey-darken-1 font-weight-medium mb-2">{{ t('admin.contentReview') }}</div>
             <v-divider class="border-opacity-40"></v-divider>
           </div>
 
-          <v-tab prepend-icon="mdi-note-check-outline" text="审核文章" value="post"
+          <v-tab prepend-icon="mdi-note-check-outline" :text="t('admin.reviewArticles')" value="post"
             class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"></v-tab>
-          <v-tab prepend-icon="mdi-comment-check-outline" text="审核评论" value="comment"
+          <v-tab prepend-icon="mdi-comment-check-outline" :text="t('admin.reviewComments')" value="comment"
             class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"></v-tab>
         </v-tabs>
       </div>
@@ -247,22 +249,22 @@ const approveComment = async (comment, action) => {
         <v-card v-if="tab == 'option-2'" flat class="pa-6" rounded="lg">
           <div class="d-flex align-center mb-4">
             <v-icon icon="mdi-book-plus-outline" color="teal" class="mr-3"></v-icon>
-            <h3 class="text-h6 font-weight-bold">创建课程</h3>
+            <h3 class="text-h6 font-weight-bold">{{ t('admin.createCourse') }}</h3>
           </div>
-          <v-text-field v-model="courseName" class="mb-4" label="课程名称" variant="outlined" rounded="lg"
+          <v-text-field v-model="courseName" class="mb-4" :label="t('admin.courseName')" variant="outlined" rounded="lg"
             bg-color="white"></v-text-field>
-          <v-textarea v-model="courseDesc" label="课程简介" variant="outlined" rows="5" class="mb-4" rounded="lg"
+          <v-textarea v-model="courseDesc" :label="t('admin.courseDescription')" variant="outlined" rows="5" class="mb-4" rounded="lg"
             bg-color="white"></v-textarea>
-          <v-text-field v-if="createCourseMessageId != 0" class="mb-4" label="课程请求ID" variant="outlined" disabled
+          <v-text-field v-if="createCourseMessageId != 0" class="mb-4" :label="t('admin.courseRequestId')" variant="outlined" disabled
             v-model="createCourseMessageId" rounded="lg" bg-color="white"></v-text-field>
           <div>
             <v-btn variant="flat" color="teal" class="mr-4" rounded="lg" @click="postCourse">
               <v-icon icon="mdi-plus" class="mr-2"></v-icon>
-              创建
+              {{ t('admin.create') }}
             </v-btn>
-            <v-btn variant="flat" color="grey-lighten-3" rounded="lg" @click="clearForm">
+            <v-btn variant="flat" color="grey-lighten-3" rounded="lg" @click="cleanForm">
               <v-icon icon="mdi-refresh" class="mr-2"></v-icon>
-              清除
+              {{ t('admin.clear') }}
             </v-btn>
           </div>
         </v-card>
@@ -270,24 +272,24 @@ const approveComment = async (comment, action) => {
         <v-card v-if="tab == 'option-3'" flat class="pa-6" rounded="lg">
           <div class="d-flex align-center mb-4">
             <v-icon icon="mdi-book-plus-multiple-outline" color="teal" class="mr-3"></v-icon>
-            <h3 class="text-h6 font-weight-bold">创建子课程</h3>
+            <h3 class="text-h6 font-weight-bold">{{ t('admin.createSubCourse') }}</h3>
           </div>
-          <v-text-field v-model="courseName" class="mb-4" label="子课程名称" variant="outlined" rounded="lg"
+          <v-text-field v-model="courseName" class="mb-4" :label="t('admin.subCourseName')" variant="outlined" rounded="lg"
             bg-color="white"></v-text-field>
-          <v-text-field v-model="parentCourseId" class="mb-4" label="父课程ID" variant="outlined" rounded="lg"
+          <v-text-field v-model="parentCourseId" class="mb-4" :label="t('admin.parentCourseId')" variant="outlined" rounded="lg"
             bg-color="white"></v-text-field>
-          <v-textarea v-model="courseDesc" label="子课程简介" variant="outlined" rows="5" class="mb-4" rounded="lg"
+          <v-textarea v-model="courseDesc" :label="t('admin.subCourseDescription')" variant="outlined" rows="5" class="mb-4" rounded="lg"
             bg-color="white"></v-textarea>
-          <v-text-field v-if="createCourseMessageId != 0" class="mb-4" label="课程请求ID" variant="outlined" disabled
+          <v-text-field v-if="createCourseMessageId != 0" class="mb-4" :label="t('admin.courseRequestId')" variant="outlined" disabled
             v-model="createCourseMessageId" rounded="lg" bg-color="white"></v-text-field>
           <div>
             <v-btn variant="flat" color="teal" class="mr-4" rounded="lg" @click="postCourse">
               <v-icon icon="mdi-plus" class="mr-2"></v-icon>
-              创建子课程
+              {{ t('admin.createSubCourse') }}
             </v-btn>
-            <v-btn variant="flat" color="grey-lighten-3" rounded="lg" @click="clearForm">
+            <v-btn variant="flat" color="grey-lighten-3" rounded="lg" @click="cleanForm">
               <v-icon icon="mdi-refresh" class="mr-2"></v-icon>
-              清除
+              {{ t('admin.clear') }}
             </v-btn>
           </div>
         </v-card>
@@ -299,19 +301,19 @@ const approveComment = async (comment, action) => {
                 <v-icon icon="mdi-note-check-outline" color="teal-darken-1" size="20"></v-icon>
               </div>
               <div>
-                <h3 class="text-h6 font-weight-bold text-grey-darken-3">文章审核</h3>
-                <p class="text-body-2 text-grey-darken-1 mb-0">审核用户提交的文章内容</p>
+                <h3 class="text-h6 font-weight-bold text-grey-darken-3">{{ t('admin.articleReview') }}</h3>
+                <p class="text-body-2 text-grey-darken-1 mb-0">{{ t('admin.reviewUserArticles') }}</p>
               </div>
             </div>
             <v-chip variant="flat" color="blue-lighten-4" rounded="lg">
               <v-icon icon="mdi-file-document-multiple" color="blue-darken-2" size="16" class="mr-1"></v-icon>
-              <span class="text-blue-darken-2 text-caption">{{ postList.length }} 篇待审核</span>
+              <span class="text-blue-darken-2 text-caption">{{ postList.length }} {{ t('admin.articlesAwaitingReview') }}</span>
             </v-chip>
           </div>
 
           <div v-if="postList.length === 0" class="text-center py-12">
             <v-icon icon="mdi-file-document-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
-            <p class="text-body-1 text-grey-darken-1">暂无待审核的文章</p>
+            <p class="text-body-1 text-grey-darken-1">{{ t('admin.noArticlesToReview') }}</p>
           </div>
 
           <div v-for="post in postList" :key="post.id" class="mb-4">
@@ -322,25 +324,25 @@ const approveComment = async (comment, action) => {
                   <div class="mb-3">
                     <v-chip v-if="post.state == 0" variant="flat" color="orange-lighten-4" rounded="lg" size="small">
                       <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
-                      待审核
+                      {{ t('admin.pending') }}
                     </v-chip>
                     <v-chip v-if="post.state == 1" variant="flat" color="green-lighten-4" rounded="lg" size="small">
                       <v-icon icon="mdi-check-circle" size="14" class="mr-1"></v-icon>
-                      已通过
+                      {{ t('admin.approved') }}
                     </v-chip>
                     <v-chip v-if="post.state == 2" variant="flat" color="red-lighten-4" rounded="lg" size="small">
                       <v-icon icon="mdi-close-circle" size="14" class="mr-1"></v-icon>
-                      已拒绝
+                      {{ t('admin.rejected') }}
                     </v-chip>
                   </div>
                   <div class="d-flex flex-column ga-2">
                     <v-btn variant="flat" color="green-lighten-4" rounded="lg" size="small" @click="approvePost(post, 1)">
                       <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
-                      通过
+                      {{ t('admin.approve') }}
                     </v-btn>
                     <v-btn variant="flat" color="red-lighten-4" rounded="lg" size="small" @click="approvePost(post, 0)">
                       <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
-                      拒绝
+                      {{ t('admin.reject') }}
                     </v-btn>
                   </div>
                 </div>
@@ -352,7 +354,7 @@ const approveComment = async (comment, action) => {
                       <v-icon icon="mdi-account" color="grey-darken-1" size="18"></v-icon>
                     </v-avatar>
                     <div>
-                      <div class="text-body-2 font-weight-medium text-grey-darken-2">文章ID: {{ post.id }}</div>
+                      <div class="text-body-2 font-weight-medium text-grey-darken-2">{{ t('admin.articleId') }}: {{ post.id }}</div>
                       <div class="text-caption text-grey-darken-1">{{ post.ctime }}</div>
                     </div>
                   </div>
@@ -360,7 +362,7 @@ const approveComment = async (comment, action) => {
                   <div class="bg-grey-lighten-5 rounded-lg pa-4">
                     <div v-if="post.type == 2" class="tiptap post-content" v-html="post.content"></div>
                     <div v-if="post.type == 1">
-                      <div class="text-caption text-grey-darken-1 mb-2">目录：</div>
+                      <div class="text-caption text-grey-darken-1 mb-2">{{ t('admin.directory') }}</div>
                       <div class="gap-2">
                         <v-chip v-for="(item, index) in post.content.split(',')" :key="index" style="display: block;"
                           variant="flat" color="grey-lighten-4" rounded="lg" class="my-2 py-1">
@@ -382,19 +384,19 @@ const approveComment = async (comment, action) => {
                 <v-icon icon="mdi-comment-check-outline" color="teal-darken-1" size="20"></v-icon>
               </div>
               <div>
-                <h3 class="text-h6 font-weight-bold text-grey-darken-3">评论审核</h3>
-                <p class="text-body-2 text-grey-darken-1 mb-0">审核用户提交的评论内容</p>
+                <h3 class="text-h6 font-weight-bold text-grey-darken-3">{{ t('admin.commentReview') }}</h3>
+                <p class="text-body-2 text-grey-darken-1 mb-0">{{ t('admin.reviewUserComments') }}</p>
               </div>
             </div>
             <v-chip variant="flat" color="purple-lighten-4" rounded="lg">
               <v-icon icon="mdi-comment-multiple" color="purple-darken-2" size="16" class="mr-1"></v-icon>
-              <span class="text-purple-darken-2 text-caption">{{ commentList.length }} 条待审核</span>
+              <span class="text-purple-darken-2 text-caption">{{ commentList.length }} {{ t('admin.commentsAwaitingReview') }}</span>
             </v-chip>
           </div>
 
           <div v-if="commentList.length === 0" class="text-center py-12">
             <v-icon icon="mdi-comment-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
-            <p class="text-body-1 text-grey-darken-1">暂无待审核的评论</p>
+            <p class="text-body-1 text-grey-darken-1">{{ t('admin.noCommentsToReview') }}</p>
           </div>
 
           <div v-for="comment in commentList" :key="comment.id" class="mb-4">
@@ -405,25 +407,25 @@ const approveComment = async (comment, action) => {
                   <div class="mb-3">
                     <v-chip v-if="comment.state == 0" variant="flat" color="orange-lighten-4" rounded="lg" size="small">
                       <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
-                      待审核
+                      {{ t('admin.pending') }}
                     </v-chip>
                     <v-chip v-if="comment.state == 1" variant="flat" color="green-lighten-4" rounded="lg" size="small">
                       <v-icon icon="mdi-check-circle" size="14" class="mr-1"></v-icon>
-                      已通过
+                      {{ t('admin.approved') }}
                     </v-chip>
                     <v-chip v-if="comment.state == 2" variant="flat" color="red-lighten-4" rounded="lg" size="small">
                       <v-icon icon="mdi-close-circle" size="14" class="mr-1"></v-icon>
-                      已拒绝
+                      {{ t('admin.rejected') }}
                     </v-chip>
                   </div>
                   <div class="d-flex flex-column ga-2">
                     <v-btn variant="flat" color="green-lighten-4" rounded="lg" size="small" @click="approveComment(comment, 1)">
                       <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
-                      通过
+                      {{ t('admin.approve') }}
                     </v-btn>
                     <v-btn variant="flat" color="red-lighten-4" rounded="lg" size="small" @click="approveComment(comment, 0)">
                       <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
-                      拒绝
+                      {{ t('admin.reject') }}
                     </v-btn>
                   </div>
                 </div>
@@ -436,19 +438,19 @@ const approveComment = async (comment, action) => {
                         <v-icon icon="mdi-account" color="grey-darken-1" size="18"></v-icon>
                       </v-avatar>
                       <div>
-                        <div class="text-body-2 font-weight-medium text-grey-darken-2">评论ID: {{ comment.id }}</div>
+                        <div class="text-body-2 font-weight-medium text-grey-darken-2">{{ t('admin.commentId') }}: {{ comment.id }}</div>
                         <div class="text-caption text-grey-darken-1">{{ comment.ctime }}</div>
                       </div>
                     </div>
                     <v-btn variant="outlined" color="teal" size="small" rounded="lg" 
                            :href="`/read?commentId=${comment.id}`" target="_blank">
                       <v-icon icon="mdi-open-in-new" size="14" class="mr-1"></v-icon>
-                      查看原文
+                      {{ t('admin.viewOriginal') }}
                     </v-btn>
                   </div>
 
                   <div class="bg-grey-lighten-5 rounded-lg pa-4">
-                    <div class="text-caption text-grey-darken-1 mb-2">评论内容：</div>
+                    <div class="text-caption text-grey-darken-1 mb-2">{{ t('admin.commentContent') }}</div>
                     <div class="text-body-1 text-grey-darken-2 line-height-relaxed">
                       {{ comment.content }}
                     </div>

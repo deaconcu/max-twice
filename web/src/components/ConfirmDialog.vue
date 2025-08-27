@@ -4,18 +4,18 @@
     <v-card rounded="lg">
       <v-card-title class="text-teal-darken-3 d-flex align-center">
         <v-icon class="mr-2" size="small">mdi-content-save</v-icon>
-        保存课程表
+        {{ t('confirmDialog.saveRoadmap') }}
       </v-card-title>
       
       <v-card-text class="pt-4">
         <v-alert color="grey" type="info" variant="tonal" class="mb-6" density="compact" rounded="lg">
-          请确认课程表描述信息。描述将帮助其他用户了解这个课程表的内容和学习路径。
+          {{ t('confirmDialog.saveDescription') }}
         </v-alert>
         
         <v-textarea
           v-model="description"
-          label="课程表描述（必填）"
-          placeholder="例如：这是一个完整的Java后端开发学习路径，涵盖从基础语法到企业级框架的全部内容，包括Spring Boot、MyBatis、Redis等核心技术栈..."
+          :label="t('confirmDialog.descriptionLabel')"
+          :placeholder="t('confirmDialog.descriptionPlaceholder')"
           variant="outlined"
           rows="6"
           class="flat-input"
@@ -33,7 +33,7 @@
           color="grey" 
           @click="$emit('cancel-save')"
           class="flat-button">
-          取消
+          {{ t('confirmDialog.cancel') }}
         </v-btn>   
         <v-btn 
           color="teal-darken-1" 
@@ -42,7 +42,7 @@
           :disabled="!description || description.trim().length === 0"
           class="flat-button ml-2">
           <v-icon class="me-1" left>mdi-content-save</v-icon>
-          确认保存
+          {{ t('confirmDialog.confirmSave') }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -53,11 +53,11 @@
     <v-card rounded="lg">
       <v-card-title class="text-orange-darken-2 d-flex align-center">
         <v-icon class="mr-2" size="small">mdi-alert-circle-outline</v-icon>
-        确认重置
+        {{ t('confirmDialog.confirmReset') }}
       </v-card-title>
       
       <v-card-text class="pt-4">
-        确定要重置编辑区域吗？这将清空所有节点、边和描述信息。
+        {{ t('confirmDialog.resetDescription') }}
       </v-card-text>
 
       <v-card-actions class="px-6 py-3">
@@ -67,7 +67,7 @@
           color="grey" 
           @click="$emit('cancel-reset')"
           class="flat-button">
-          取消
+          {{ t('confirmDialog.cancel') }}
         </v-btn>
         <v-btn 
           color="orange-darken-2" 
@@ -75,7 +75,7 @@
           @click="$emit('confirm-reset')"
           class="flat-button ml-2">
           <v-icon class="me-1" left>mdi-refresh</v-icon>
-          确认重置
+          {{ t('confirmDialog.confirmResetButton') }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -84,6 +84,9 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   showSaveDialog: {
@@ -115,7 +118,7 @@ const showReset = computed({
 })
 
 const rules = {
-  required: value => !!value || '请输入课程表描述',
+  required: value => !!value || t('confirmDialog.descriptionRequired'),
 }
 
 // 监听初始描述变化

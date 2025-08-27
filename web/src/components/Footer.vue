@@ -1,12 +1,15 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 const currentYear = new Date().getFullYear()
 
 const links = [
-  { title: '主页', route: '/' },
-  { title: '关于我们', route: '/about' },
-  { title: '联系我们', route: '/contact' },
-  { title: '隐私政策', route: '/privacy' },
-  { title: '服务条款', route: '/terms' }
+  { title: t('footer.home'), route: '/' },
+  { title: t('footer.aboutUs'), route: '/about' },
+  { title: t('footer.contactUs'), route: '/contact' },
+  { title: t('footer.privacyPolicy'), route: '/privacy' },
+  { title: t('footer.termsOfService'), route: '/terms' }
 ]
 </script>
 
@@ -34,7 +37,7 @@ const links = [
         <!-- 版权信息 -->
         <v-col cols="12" md="4" class="text-center text-md-end">
           <p class="text-body-2 text-grey-darken-2 mb-1">
-            职业应该是自我实现
+            {{ t('footer.careerPhilosophy') }}
           </p>
           <p class="text-body-2 text-grey-darken-1 mb-0">
             © {{ currentYear }} <strong>Max Twice</strong>

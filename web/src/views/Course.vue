@@ -1,8 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter} from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { learnService} from '@/services/learnService';
 
+const { t } = useI18n();
 //const isLoggedIn = ref(false);
 const route = useRoute();
 const router = useRouter();
@@ -50,8 +52,8 @@ const relatedLinks = ['高等数学', '概率论', 'C++编程实现', '软件测
             <v-row no-gutters justify="center" class="ma-0">
               <v-col class="text-h6" cols="9">{{ course.name }}</v-col>
               <v-col cols="3" class="d-flex justify-end">
-                <router-link to="/" class="px-0 mr-5">订阅</router-link>
-                <router-link :to="`/read?courseId=${course.id}&path=1-${course.rootNode}`" class="px-0">学习</router-link>
+                <router-link to="/" class="px-0 mr-5">{{ t('course.subscribe') }}</router-link>
+                <router-link :to="`/read?courseId=${course.id}&path=1-${course.rootNode}`" class="px-0">{{ t('course.startLearning') }}</router-link>
               </v-col>
             </v-row>
             <v-row class="mx-0 mt-5 mb-12">
@@ -59,7 +61,7 @@ const relatedLinks = ['高等数学', '概率论', 'C++编程实现', '软件测
             </v-row>
 
             <v-row no-gutters justify="space-between" align="center"  class="mb-0">
-              <div class="mb-0 ">子课程</div>
+              <div class="mb-0 ">{{ t('course.subcourses') }}</div>
               <div>
                 <v-btn variant="plain" density="comfortable" icon="mdi-plus-circle-outline" :ripple="false"></v-btn>
                 <v-btn variant="plain" density="comfortable" icon="mdi-information-outline" :ripple="false"></v-btn>
@@ -136,7 +138,7 @@ const relatedLinks = ['高等数学', '概率论', 'C++编程实现', '软件测
             </v-card-text>
           </v-card>
 
-          <div class="font-weight-bold mt-10">相关课程</div>
+          <div class="font-weight-bold mt-10">{{ t('course.related') }}</div>
           <v-list lines="one">
             <v-list-item
               v-for="link in relatedLinks"

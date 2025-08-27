@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, inject, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 
 import { learnService } from '@/services/learnService';
 import TreeNode from '../components/TreeNode.vue';
@@ -13,6 +14,7 @@ import { useUserStore } from "@/stores/user";
 import { usePlatformStats } from '@/composables/usePlatformStats';
 import { useStudyTimeTracker } from '@/composables/useStudyTimeTracker';
 
+const { t } = useI18n();
 const showSnackbar = inject('showSnackbar');
 
 const route = useRoute();
@@ -236,7 +238,7 @@ async function loadData(parts) {
 const postApplyCourse = async () => {
   try {
     if (!user.userId) {
-      showSnackbar("请先登录", "error")
+      showSnackbar(t('read.messages.pleaseLogin'), "error")
       return
     }
     
@@ -245,16 +247,16 @@ const postApplyCourse = async () => {
     const response = await learnService.createSubcourse(applyCourseData.value.name, applyCourseData.value.description, route.query.courseId)
     
     if (response.code === 200) {
-      showSnackbar("子课程申请成功！将会尽快审核", "success")
+      showSnackbar(t('read.subcourse.applySuccess'), "success")
       applyCourseDialog.value = false
       applyCourseData.value = { name: '', description: '' }
       // 重新加载子课程列表
     } else {
-      showSnackbar("创建失败: " + (response.msg || "未知错误"), "error")
+      showSnackbar(t('read.subcourse.createFailedWithMsg', { msg: response.msg || t('read.subcourse.unknownError') }), "error")
     }
   } catch (error) {
     console.error("创建子课程失败:", error)
-    showSnackbar("创建失败，请重试", "error")
+    showSnackbar(t('read.subcourse.applyFailed'), "error")
   } finally {
     isCreatingSubcourse.value = false
   }
@@ -436,7 +438,7 @@ const subscript = async (courseId, action) => {
 
     if (response.code === 401) {
       console.log('not login');
-      showSnackbar('请先登录', 'error');
+      showSnackbar(t('read.messages.pleaseLogin'), 'error');
     } else if (response.code === 200) {
       console.log("data:" + response.data);
       console.log('done');
@@ -446,9 +448,9 @@ const subscript = async (courseId, action) => {
       }
       // 同时更新用户store中的数据
       user.setSubscription(response.data);
-      showSnackbar(action ? '收藏成功' : '已取消收藏', 'success');
+      showSnackbar(action ? t('read.messages.favoriteSuccess') : t('read.messages.favoriteRemoved'), 'success');
     } else {
-      showSnackbar('操作失败，请稍后重试', 'error');
+      showSnackbar(t('read.messages.operationFailed'), 'error');
     }
   } catch (error) {
     console.error('Error updating subscription:', error);
@@ -463,20 +465,20 @@ const startCourse = async () => {
     
     if (response.code === 401) {
       console.log('not login');
-      showSnackbar('请先登录');
+      showSnackbar(t('read.messages.pleaseLogin'));
     } else if (response.code === 200) {
       isLearning.value = response.data;
       if (response.data) {
-        showSnackbar('开始学习成功！');
+        showSnackbar(t('read.messages.startLearningSuccess'));
       } else {
-        showSnackbar('已停止学习');
+        showSnackbar(t('read.messages.stopLearningSuccess'));
       }
     } else {
-      showSnackbar('操作失败，请稍后重试');
+      showSnackbar(t('read.messages.operationFailed'));
     }
   } catch (error) {
     console.error('Error starting course:', error);
-    showSnackbar('操作失败，请稍后重试');
+    showSnackbar(t('read.messages.operationFailed'));
   }
 }
 
@@ -508,7 +510,7 @@ const startCourse = async () => {
                   density="comfortable"
                   prepend-icon="mdi-bookmark-outline"
                 >
-                  <span class="font-weight-black text-body-1">子课程：{{ data.course.name }}</span>
+                  <span class="font-weight-black text-body-1">{{ t('read.course.subCourse', { name: data.course.name }) }}</span>
                 </v-chip>
               </div>
               
@@ -527,7 +529,7 @@ const startCourse = async () => {
                   size="small"
                   class="action-btn-inline "
                 >
-                  <span class="text-body-2">返回主课程</span>
+                  <span class="text-body-2">{{ t('read.course.backToMainCourse') }}</span>
                 </v-btn>
                 
                 <!-- 订阅按钮 -->
@@ -541,7 +543,7 @@ const startCourse = async () => {
                   size="small"
                   class="action-btn-inline"
                 >
-                  <span class="text-body-2">已订阅</span>
+                  <span class="text-body-2">{{ t('read.course.subscribed') }}</span>
                 </v-btn>
 
                 <v-btn 
@@ -565,7 +567,7 @@ const startCourse = async () => {
                   size="small"
                   class="expand-btn-inline"
                 >
-                  <span class="text-body-2">{{ displayCourseAll ? '收起' : '详情' }}</span>
+                  <span class="text-body-2">{{ displayCourseAll ? t('read.course.collapse') : t('read.course.details') }}</span>
                 </v-btn>
               </div>
             </div>
@@ -600,7 +602,7 @@ const startCourse = async () => {
                       :color="!isLearning ? 'grey-darken-2' : ((data?.course?.progress || 0) >= 10000 ? 'success' : 'primary')"
                     ></v-icon>
                     <span class="text-body-2 font-weight-bold" :class="!isLearning ? 'text-grey-darken-3' : ((data?.course?.progress || 0) >= 10000 ? 'text-success' : 'text-primary')">
-                      {{ !isLearning ? '点击开始学习' : ((data?.course?.progress || 0) >= 10000 ? '学习完成' : '正在学习') }}
+                      {{ !isLearning ? t('read.course.startLearning') : ((data?.course?.progress || 0) >= 10000 ? t('read.course.learningCompleted') : t('read.course.learningInProgress')) }}
                     </span>
                   </div>
                   <!-- 只有在学习状态下才显示进度百分比 -->
@@ -690,7 +692,7 @@ const startCourse = async () => {
                   <p class="text-grey d-flex align-center justify-center mb-1">
                     <v-icon icon="mdi-book-outline" size="18" color="grey-lighten-1" class="me-2"></v-icon>
                     <span class="font-weight-medium text-body-2">
-                      {{ isMainCourse ? '暂无子课程' : '暂无同级课程' }}
+                      {{ isMainCourse ? t('read.course.noSubCourses') : t('read.course.noSameLevelCourses') }}
                     </span>
                   </p>
                   <p v-if="isMainCourse" class="text-body-2 text-grey-lighten-1">点击上方 + 按钮创建第一个子课程</p>
@@ -733,11 +735,11 @@ const startCourse = async () => {
                   </label>
                   <v-text-field 
                     v-model="applyCourseData.name" 
-                    placeholder="请输入子课程名称"
+                    :placeholder="t('read.subcourse.namePlaceholder')"
                     variant="outlined"
                     rounded="lg"
                     density="comfortable"
-                    :rules="[v => !!v || '课程名称不能为空']"
+                    :rules="[v => !!v || t('read.subcourse.nameRequired')]"
                     hide-details="auto"
                   ></v-text-field>
                 </div>
@@ -748,12 +750,12 @@ const startCourse = async () => {
                   </label>
                   <v-textarea 
                     v-model="applyCourseData.description" 
-                    placeholder="请描述子课程的内容和目标..."
+                    :placeholder="t('read.subcourse.descriptionPlaceholder')"
                     variant="outlined"
                     rounded="lg"
                     rows="4"
                     density="comfortable"
-                    :rules="[v => !!v || '课程描述不能为空']"
+                    :rules="[v => !!v || t('read.subcourse.descriptionRequired')]"
                     hide-details="auto"
                   ></v-textarea>
                 </div>

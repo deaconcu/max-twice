@@ -1,11 +1,27 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
 import { ref, provide } from 'vue';
+import { useToastMessage } from '@/composables/useToastMessage';
 
 const snackbars = ref([]);
+const { getMessage } = useToastMessage();
 
-const showSnackbar = (message) => {
-  const newSnackbar = { text: message, visible: true };
+// 增强的showSnackbar函数，支持国际化
+const showSnackbar = (message, type = 'info', params = []) => {
+  let translatedMessage;
+  
+  if (typeof message === 'string') {
+    translatedMessage = getMessage(message, type, params);
+  } else {
+    // 处理错误对象
+    translatedMessage = getMessage(message.message || 'message.systemError', 'error');
+  }
+  
+  const newSnackbar = { 
+    text: translatedMessage, 
+    visible: true,
+    type: type
+  };
   snackbars.value.push(newSnackbar);
 
   setTimeout(() => {

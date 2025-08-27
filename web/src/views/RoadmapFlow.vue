@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, watch, computed, h, inject } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
@@ -11,6 +12,7 @@ import RoadmapDetail from '@/components/RoadmapDetail.vue'
 import RoadmapCreate from '@/components/RoadmapCreate.vue'
 import RightSidebar from '@/components/RightSidebar.vue';
 
+const { t } = useI18n();
 const showSnackbar = inject('showSnackbar');
 
 // 状态管理
@@ -95,7 +97,7 @@ function parseContent(content) {
         id: node.id,
         type: 'default', // 使用默认节点类型
         data: {
-          label: node.label, 
+          label: node.name, // 使用 name 字段
           link: '/read?courseId=' + node.id, // 默认链接
           ...node.data
         },
@@ -192,12 +194,12 @@ async function voteRoadmap(roadmap, event) {
       roadmap.vote = response.data.vote;
       roadmap.upvoted = response.data.upvoted; // 标记已投票
       if (roadmap.upvoted) {
-        showSnackbar('投票成功')
+        showSnackbar(t('roadmap.voteSuccess'))
       } else {
-        showSnackbar('已取消投票')
+        showSnackbar(t('roadmap.voteCancel'))
       }
     } else {
-      showSnackbar('投票失败，请稍后重试')
+      showSnackbar(t('roadmap.voteFailed'))
     }
   } catch (error) {
     console.error('Error voting roadmap:', error)
@@ -227,7 +229,7 @@ async function togglePin(roadmap, event) {
           roadmaps.value.unshift(pinnedRoadmap)
         }
         
-        showSnackbar('课程表置顶成功')
+        showSnackbar(t('roadmap.pinSuccess'))
       } else if (status === "unpinned") {
         // 取消置顶：更新课程状态，移动到非置顶区第一个
         roadmap.pinned = false
@@ -247,10 +249,10 @@ async function togglePin(roadmap, event) {
           roadmaps.value.splice(insertIndex, 0, unpinnedRoadmap)
         }
         
-        showSnackbar('已取消课程表置顶')
+        showSnackbar(t('roadmap.unpinSuccess'))
       }
     } else {
-      showSnackbar('置顶操作失败，请稍后重试')
+      showSnackbar(t('roadmap.pinFailed'))
     }
   } catch (error) {
     console.error('Error toggling pin roadmap:', error)
@@ -266,15 +268,15 @@ async function startLearning(roadmap, event) {
     const response = await learnService.startRoadmap(roadmap.id)
     
     if (response.code === 200) {
-      showSnackbar('操作成功')
+      showSnackbar(t('roadmap.startLearningSuccess'))
       roadmap.learning = response.data;
     } else {
-      showSnackbar('开始学习失败，请稍后重试')
+      showSnackbar(t('roadmap.startLearningFailed'))
       roadmap.learning = false
     }
   } catch (error) {
     console.error('Error starting roadmap:', error)
-    showSnackbar('开始学习失败，请稍后重试')
+    showSnackbar(t('roadmap.startLearningFailed'))
     roadmap.isLearning = false
   }
 }
@@ -308,7 +310,7 @@ function copyRoadmapToCreate(roadmap, event) {
 // 保存课程表功能
 async function saveRoadmap(saveData) {
   if (!saveData || !saveData.description) {
-    showSnackbar('请填写课程表描述')
+    showSnackbar(t('roadmap.fillDescription'))
     return
   }
   
@@ -334,20 +336,20 @@ async function performSave(description, content) {
     // 只有当 response.code === 200 时才算保存成功
     if (response.code === 200) {
       console.log('课程表保存成功:', response.data)
-      showSnackbar('课程表保存成功！')
+      showSnackbar(t('roadmap.saveSuccess'))
       
       // 重新加载课程表列表
       await loadRoadmaps()
     } else {
       // 如果 code 不是 200，视为保存失败
-      const errorMessage = response.msg || '保存失败，服务器返回异常状态'
+      const errorMessage = response.msg || t('roadmap.saveFailed')
       console.error('保存课程表失败，服务器响应码:', response.code, '错误信息:', errorMessage)
-      showSnackbar('保存课程表失败：' + errorMessage)
+      showSnackbar(t('roadmap.saveFailed') + '：' + errorMessage)
     }
     
   } catch (error) {
     console.error('保存课程表失败:', error)
-    showSnackbar('保存课程表失败：' + (error.response?.data?.message || error.message))
+    showSnackbar(t('roadmap.saveFailed') + '：' + (error.response?.data?.message || error.message))
   }
 }
 
@@ -390,7 +392,7 @@ onMounted(() => {
                 </v-avatar>
                 <div>
                   <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-1">JAVA初级程序员</h1>
-                  <p class="text-body-2 text-grey-darken-2 mb-0">系统化学习路径，助力职业发展</p>
+                  <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('roadmap.systematicLearning') }}</p>
                 </div>
 
               </div>
@@ -403,19 +405,19 @@ onMounted(() => {
               <div class="d-flex flex-wrap align-center">
                 <v-chip color="grey-lighten-3" variant="flat" class="mr-2 mb-2 skill-chip">
                   <v-icon icon="mdi-language-java" size="14" class="mr-1" color="grey-darken-2"></v-icon>
-                  <span class="text-grey-darken-3">Java基础语法</span>
+                  <span class="text-grey-darken-3">{{ t('roadmap.skills.javaBasics') }}</span>
                 </v-chip>
                 <v-chip color="grey-lighten-3" variant="flat" class="mr-2 mb-2 skill-chip">
                   <v-icon icon="mdi-cube-outline" size="14" class="mr-1" color="grey-darken-2"></v-icon>
-                  <span class="text-grey-darken-3">面向对象编程</span>
+                  <span class="text-grey-darken-3">{{ t('roadmap.skills.oop') }}</span>
                 </v-chip>
                 <v-chip color="grey-lighten-3" variant="flat" class="mr-2 mb-2 skill-chip">
                   <v-icon icon="mdi-database-outline" size="14" class="mr-1" color="grey-darken-2"></v-icon>
-                  <span class="text-grey-darken-3">数据结构</span>
+                  <span class="text-grey-darken-3">{{ t('roadmap.skills.dataStructures') }}</span>
                 </v-chip>
                 <v-chip color="grey-lighten-3" variant="flat" class="mr-2 mb-2 skill-chip">
                   <v-icon icon="mdi-web" size="14" class="mr-1" color="grey-darken-2"></v-icon>
-                  <span class="text-grey-darken-3">Web开发</span>
+                  <span class="text-grey-darken-3">{{ t('roadmap.skills.webDevelopment') }}</span>
                 </v-chip>
               </div>
             </v-col>
@@ -427,7 +429,7 @@ onMounted(() => {
                 rounded="lg"
                 class="create-btn">
                 <v-icon icon="mdi-plus" class="mr-2" size="16"></v-icon>
-                创建新课程表
+                {{ t('roadmap.createNew') }}
               </v-btn>
             </v-col>
           </v-row>
@@ -490,10 +492,10 @@ onMounted(() => {
               <v-card flat class="text-center py-12" color="grey-lighten-5" rounded="lg">
                 <v-icon icon="mdi-book-open-page-variant-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
                 <h3 class="text-h6 text-grey-darken-1 mb-2">暂无课程表</h3>
-                <p class="text-body-2 text-grey mb-4">成为第一个创建学习路径的人</p>
+                <p class="text-body-2 text-grey mb-4">{{ t('roadmap.firstToCreate') }}</p>
                 <v-btn variant="flat" color="primary" @click="openCreateModal">
                   <v-icon icon="mdi-plus" class="mr-2"></v-icon>
-                  创建第一个课程表
+                  {{ t('roadmap.createFirst') }}
                 </v-btn>
               </v-card>
             </v-col>

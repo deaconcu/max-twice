@@ -4,7 +4,7 @@
       <v-toolbar color="grey-lighten-5" flat class="flat-toolbar" density="compact">
         <v-toolbar-title class="text-grey-darken-4">
           <v-icon class="mr-1" size="small" color="grey-darken-2">mdi-book</v-icon>
-          学习路径
+          {{ t('roadmapDetail.learningPath') }}
         </v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn icon variant="text" size="small" @click="$emit('close')" class="flat-icon-button">
@@ -51,7 +51,7 @@
                     </v-icon>
                     <span class="ml-1 text-body-2">{{ roadmap.vote || 0 }}</span>
                     <v-tooltip activator="parent" location="bottom">
-                      {{ roadmap.upvoted ? '已点赞' : '点赞支持' }}
+                      {{ roadmap.upvoted ? t('roadmapDetail.upvoted') : t('roadmapDetail.upvote') }}
                     </v-tooltip>
                   </v-btn>
                 </div>
@@ -100,7 +100,7 @@
                     class="pa-0 mt-1"
                     @click="toggleDescription"
                   >
-                    {{ isDescriptionExpanded ? '收起' : '查看更多' }}
+                    {{ isDescriptionExpanded ? t('roadmapDetail.collapse') : t('roadmapDetail.viewMore') }}
                     <v-icon size="small" class="ml-1">
                       {{ isDescriptionExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
                     </v-icon>
@@ -122,10 +122,13 @@
 
 <script setup>
 import { computed, ref, nextTick, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import Comment from '../components/Comment.vue';
+
+const { t } = useI18n()
 
 const props = defineProps({
   modelValue: {

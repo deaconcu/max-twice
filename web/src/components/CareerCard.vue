@@ -52,7 +52,7 @@
 
         <!-- 核心技能 -->
         <div class="mb-3">
-          <div class="text-caption text-grey-darken-1 mb-2">核心技能</div>
+          <div class="text-caption text-grey-darken-1 mb-2">{{ t('careerCard.coreSkills') }}</div>
           <div class="d-flex flex-wrap gap-1">
             <v-chip 
               v-for="skill in career.skills.split(',').slice(0, 4)" 
@@ -78,11 +78,11 @@
         <div class="d-flex align-center justify-space-between w-100">
           <div class="d-flex align-center">
             <v-icon icon="mdi-book-multiple-outline" color="primary" size="16" class="mr-1"></v-icon>
-            <span class="text-caption text-grey-darken-2">11 门课程</span>
+            <span class="text-caption text-grey-darken-2">{{ t('careerCard.courses', { count: 11 }) }}</span>
           </div>
           <div class="d-flex align-center">
             <v-icon icon="mdi-account-group-outline" color="grey-darken-2" size="16" class="mr-1"></v-icon>
-            <span class="text-caption text-grey-darken-2">{{ formatLearnerCount(career.learnerCount) }} 人学习</span>
+            <span class="text-caption text-grey-darken-2">{{ formatLearnerCount(career.learnerCount) }} {{ t('careerCard.learnersCount') }}</span>
           </div>
         </div>
       </v-card-actions>
@@ -96,7 +96,7 @@
           size="small"
           class="explore-btn">
           <v-icon icon="mdi-arrow-right" class="mr-1" size="16"></v-icon>
-          探索职业
+          {{ t('careerCard.exploreCareer') }}
         </v-btn>
       </div>
     </div>
@@ -104,6 +104,10 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps({
   career: {
     type: Object,
@@ -130,11 +134,11 @@ const getCategoryColor = (category) => {
 // 获取难度名称
 const getDifficultyName = (difficulty) => {
   const difficultyMap = {
-    'beginner': '初级',
-    'intermediate': '中级',
-    'advanced': '高级',
+    'beginner': t('careerCard.difficulty.beginner'),
+    'intermediate': t('careerCard.difficulty.intermediate'),
+    'advanced': t('careerCard.difficulty.advanced'),
   };
-  return difficultyMap[difficulty] || '未知';
+  return difficultyMap[difficulty] || t('careerCard.difficulty.unknown');
 };
 
 // 获取难度颜色 - 保留语义化颜色

@@ -11,7 +11,7 @@
           :class="roadmap.learning ? 'learning' : ''"
           >
           <v-icon icon="mdi-play-circle" class="mr-1" size="16"></v-icon>
-          {{ roadmap.learning ? '正在学习' : '开始学习' }}
+          {{ roadmap.learning ? t('roadmapCard.learning') : t('roadmapCard.startLearning') }}
         </v-btn>
       </div>
       
@@ -24,7 +24,7 @@
                 <span class="text-white">{{ roadmap.creator?.name?.charAt(0) || 'U' }}</span>
               </v-avatar>
               <div>
-                <v-card-title class="pa-0 text-subtitle-1">{{ roadmap.creator?.name || '未知用户' }}</v-card-title>
+                <v-card-title class="pa-0 text-subtitle-1">{{ roadmap.creator?.name || t('roadmapCard.unknownUser') }}</v-card-title>
                 <v-card-subtitle class="pa-0 text-caption text-primary">{{ formatDate(roadmap.updatedAt) }}</v-card-subtitle>
               </div>
             </div>
@@ -35,15 +35,15 @@
             <div class="d-flex flex-wrap align-center mb-3">
               <v-chip size="small" color="grey-lighten-3" variant="flat" class="mr-2 mb-1">
                 <v-icon icon="mdi-account-group" size="14" class="mr-1" color="grey-darken-2"></v-icon>
-                <span class="text-grey-darken-3">{{ roadmap.learners || Math.floor(Math.random() * 1000) + 100 }} 学习者</span>
+                <span class="text-grey-darken-3">{{ roadmap.learners || Math.floor(Math.random() * 1000) + 100 }} {{ t('roadmapCard.learners') }}</span>
               </v-chip>
               <v-chip size="small" color="grey-lighten-3" variant="flat" class="mr-2 mb-1">
                 <v-icon icon="mdi-star" size="14" class="mr-1" color="grey-darken-2"></v-icon>
-                <span class="text-grey-darken-3">{{ (Math.random() * 2 + 3).toFixed(1) }} 评分</span>
+                <span class="text-grey-darken-3">{{ (Math.random() * 2 + 3).toFixed(1) }} {{ t('roadmapCard.rating') }}</span>
               </v-chip>
               <v-chip size="small" color="grey-lighten-3" variant="flat" class="mr-2 mb-1">
                 <v-icon icon="mdi-chart-line" size="14" class="mr-1" color="grey-darken-2"></v-icon>
-                <span class="text-grey-darken-3">{{ roadmap.nodes?.length || 0 }} 节点</span>
+                <span class="text-grey-darken-3">{{ roadmap.nodes?.length || 0 }} {{ t('roadmapCard.nodes') }}</span>
               </v-chip>
             </div>
           </v-card-text>
@@ -58,7 +58,7 @@
               </v-icon>
               <span class="ml-1 text-body-2">{{ roadmap.vote || 0 }}</span>
               <v-tooltip activator="parent" location="top">
-                {{ roadmap.upvoted ? '已点赞' : '投票支持' }}
+                {{ roadmap.upvoted ? t('roadmapCard.upvoted') : t('roadmapCard.vote') }}
               </v-tooltip>
             </v-btn>
 
@@ -66,7 +66,7 @@
               @click="$emit('open-detail', roadmap)">
               <v-icon size="20">mdi-comment-outline</v-icon>
               <span class="ml-1 text-body-2">{{ roadmap.comment || 0 }}</span>
-              <v-tooltip activator="parent" location="top">查看评论</v-tooltip>
+              <v-tooltip activator="parent" location="top">{{ t('roadmapCard.viewComments') }}</v-tooltip>
             </v-btn>
 
             <v-spacer></v-spacer>
@@ -74,7 +74,7 @@
             <v-btn variant="text" size="small" class="flat-action-icon" color="grey-darken-2"
               @click="$emit('copy', roadmap, $event)">
               <v-icon size="20">mdi-content-copy</v-icon>
-              <v-tooltip activator="parent" location="top">复制到编辑器</v-tooltip>
+              <v-tooltip activator="parent" location="top">{{ t('roadmapCard.copyToEditor') }}</v-tooltip>
             </v-btn>
 
             <v-btn variant="text" size="small" class="flat-action-icon"
@@ -82,7 +82,7 @@
               @click="$emit('toggle-pin', roadmap, $event)">
               <v-icon size="20">{{ roadmap.pined ? 'mdi-arrow-up-thick' : 'mdi-arrow-up-thick' }}</v-icon>
               <v-tooltip activator="parent" location="top">
-                {{ roadmap.pinned ? '取消置顶' : '置顶课程' }}
+                {{ roadmap.pinned ? t('roadmapCard.unpin') : t('roadmapCard.pin') }}
               </v-tooltip>
             </v-btn>
           </div>
@@ -119,6 +119,9 @@
 <script setup>
 import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   roadmap: {

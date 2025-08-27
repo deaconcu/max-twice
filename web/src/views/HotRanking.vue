@@ -1,7 +1,10 @@
 <script setup>
 import { ref, onMounted, inject } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { learnService } from '@/services/learnService';
+
+const { t } = useI18n();
 
 const showSnackbar = inject('showSnackbar');
 const router = useRouter();
@@ -10,8 +13,8 @@ const route = useRoute();
 // 选项卡相关
 const activeTab = ref('courses');
 const tabItems = ref([
-  { key: 'courses', title: '热门课程', icon: 'mdi-book-multiple' },
-  { key: 'professions', title: '热门职业', icon: 'mdi-briefcase-variant' }
+  { key: 'courses', title: t('hotRanking.tabs.courses'), icon: 'mdi-book-multiple' },
+  { key: 'professions', title: t('hotRanking.tabs.professions'), icon: 'mdi-briefcase-variant' }
 ]);
 
 // 课程相关数据
@@ -20,9 +23,9 @@ const coursesLoading = ref(false);
 const coursesSortBy = ref('total');
 
 const courseSortOptions = [
-  { value: 'total', title: '总热度' },
-  { value: 'learning', title: '学习人数' },
-  { value: 'subscription', title: '收藏人数' }
+  { value: 'total', title: t('hotRanking.sortOptions.total') },
+  { value: 'learning', title: t('hotRanking.sortOptions.learning') },
+  { value: 'subscription', title: t('hotRanking.sortOptions.subscription') }
 ];
 
 // 职业相关数据

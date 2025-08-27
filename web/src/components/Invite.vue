@@ -3,8 +3,10 @@
 import { ref, watch, inject } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { learnService, userService } from '@/services/learnService';
+import { useI18n } from 'vue-i18n'
 
 const showSnackbar = inject('showSnackbar');
+const { t } = useI18n()
 
 const props = defineProps(['nodeId']);
 const dialog = defineModel();
@@ -24,7 +26,7 @@ const searchUser = async () => {
       console.log('Form submitted successfully');
       users.value = response.data;
       if (users.value.length == 0) {
-        info.value = "没有这个用户";
+        info.value = t('invite.noUser');
       }
     }
   } catch (error) {
@@ -42,7 +44,7 @@ const inviteUser = async (event, user) => {
       console.log('Form submitted successfully');
       //event.currentTarget.disabled = true
       user.disabled = true;
-      showSnackbar('操作成功');
+      showSnackbar(t('invite.operationSuccess'));
     }
   } catch (error) {
     // todo
@@ -59,14 +61,14 @@ const closeDialog = () => {
 
 <template>
   <v-dialog v-model="dialog" width="800" height="800px" >
-    <v-card prepend-icon="mdi-account" title="邀请回答" rounded="lg">
+    <v-card prepend-icon="mdi-account" :title="t('invite.inviteToAnswer')" rounded="lg">
       <template v-slot:append>
         <v-btn icon="mdi-close" variant="text" size=""  :ripple="false" @click="closeDialog"></v-btn>
       </template>
       <v-card-text class="pa-0">
         <v-row class="ma-0 border-t-sm">
           <v-col class="px-7">
-            <v-text-field v-model="inputUserName" label="请输入邀请的用户名称" density="compact" variant="outlined" class="pt-5"
+            <v-text-field v-model="inputUserName" :label="t('invite.inputUsername')" density="compact" variant="outlined" class="pt-5"
               append-inner-icon="mdi-magnify" @click:append-inner="searchUser"
               @keyup.enter="searchUser"></v-text-field>
             <div v-if="users.length > 0" class="py-1">
@@ -74,7 +76,7 @@ const closeDialog = () => {
                 <div class="d-flex justify-space-between align-center py-4" style="border-bottom: 1px dashed #ddd;">
                   <a :href="`/user?id=${user.id}`" target="_blank">{{ user.name }}</a>
                   <v-btn density="comfortable" variant="flat" v-ripple="false" color="grey-darken-2" class="text-white" :disabled="user.disabled"
-                    @click="inviteUser($event, user)">邀请</v-btn>
+                    @click="inviteUser($event, user)">{{ t('invite.invite') }}</v-btn>
                 </div>
               </div>
             </div>

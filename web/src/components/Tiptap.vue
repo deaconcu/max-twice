@@ -26,6 +26,7 @@ import ts from 'highlight.js/lib/languages/typescript';
 import html from 'highlight.js/lib/languages/xml';
 import { learnService } from '@/services/learnService';
 import { marked } from 'marked';
+import { useI18n } from 'vue-i18n'
 
 const lowlight = createLowlight(all);
 lowlight.register('html', html);
@@ -34,6 +35,7 @@ lowlight.register('js', js);
 lowlight.register('ts', ts);
 
 const editor = ref(null);
+const { t } = useI18n()
 
 const props = defineProps(['pathText', 'content']);
 
@@ -44,7 +46,7 @@ onMounted(() => {
       Mathematics,
       TextStyle.configure({ types: [ListItem.name] }),
       StarterKit.configure({ codeBlock: false }),
-      Placeholder.configure({ placeholder: '请在这里输入内容' }),
+      Placeholder.configure({ placeholder: t('tiptap.placeholder') }),
       Underline,
       Superscript,
       Subscript,

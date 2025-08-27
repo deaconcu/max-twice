@@ -457,8 +457,10 @@
 import { ref, onMounted, inject } from 'vue'
 import { learnService } from '@/services/learnService'
 import CourseCard from './CourseCard.vue'
+import { useI18n } from 'vue-i18n'
 
 const showSnackbar = inject('showSnackbar')
+const { t } = useI18n()
 
 // 状态选项
 const stateOptions = [

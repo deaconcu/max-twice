@@ -13,7 +13,7 @@
         size="32"
         class="mb-2"
       ></v-progress-circular>
-      <p class="loading-text">加载图表数据...</p>
+      <p class="loading-text">{{ t('trendChart.loadingData') }}</p>
     </div>
   </div>
 </template>
@@ -32,6 +32,7 @@ import {
 } from 'chart.js'
 import { Line } from 'vue-chartjs'
 import { computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 ChartJS.register(
   CategoryScale,
@@ -60,6 +61,7 @@ export default {
     }
   },
   setup(props) {
+    const { t } = useI18n();
     const chartData = computed(() => {
       if (!props.dailyStats || props.dailyStats.length === 0) {
         return null
@@ -77,9 +79,9 @@ export default {
         yesterday.setDate(yesterday.getDate() - 1)
         
         if (date.toDateString() === today.toDateString()) {
-          return '今天'
+          return t('trendChart.today')
         } else if (date.toDateString() === yesterday.toDateString()) {
-          return '昨天'
+          return t('trendChart.yesterday')
         } else {
           return date.toLocaleDateString('zh-CN', { 
             month: 'numeric', 
@@ -97,7 +99,7 @@ export default {
         labels,
         datasets: [
           {
-            label: '阅读量',
+            label: t('trendChart.views'),
             data: viewsData,
             borderColor: '#2196F3',
             backgroundColor: 'rgba(33, 150, 243, 0.1)',
@@ -123,7 +125,7 @@ export default {
             pointBorderWidth: 2
           },
           {
-            label: '有帮助',
+            label: t('trendChart.helpful'),
             data: helpfulData,
             borderColor: '#F44336',
             backgroundColor: 'rgba(244, 67, 54, 0.1)',
@@ -136,7 +138,7 @@ export default {
             pointBorderWidth: 2
           },
           {
-            label: '评论数',
+            label: t('trendChart.comments'),
             data: commentsData,
             borderColor: '#FF9800',
             backgroundColor: 'rgba(255, 152, 0, 0.1)',

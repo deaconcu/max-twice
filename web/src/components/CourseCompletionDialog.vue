@@ -1,5 +1,8 @@
 <script setup>
 import { defineProps, defineEmits } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
   modelValue: {
@@ -30,9 +33,9 @@ const closeDialog = () => {
           <div class="celebration-icon-container mb-4">
             <v-icon icon="mdi-trophy" size="80" color="yellow-lighten-3" class="celebration-icon"></v-icon>
           </div>
-          <h2 class="text-h4 font-weight-bold text-white mb-2">🎉 恭喜完成课程！</h2>
+          <h2 class="text-h4 font-weight-bold text-white mb-2">{{ t('completion.congratulations') }}</h2>
           <p class="text-h6 text-white mb-4">
-            您已经完成了课程《{{ courseName }}》的所有学习内容
+            {{ t('completion.courseCompleted', { courseName }) }}
           </p>
         </div>
       </div>
@@ -42,7 +45,7 @@ const closeDialog = () => {
         <div class="achievement-stats">
           <div class="text-start mb-6">
             <p class="text-body-1 text-grey-darken-2 mb-4">
-              通过坚持不懈的努力，您已经掌握了本课程的所有知识点。这是一个值得庆祝的重要里程碑！
+              {{ t('completion.description') }}
             </p>
             
             <!-- 成就徽章 -->
@@ -56,7 +59,7 @@ const closeDialog = () => {
                 size="large"
                 class="px-4 me-8"
               >
-                <span class="font-weight-bold">课程完成</span>
+                <span class="font-weight-bold">{{ t('completion.courseCompletion') }}</span>
               </v-chip>
               <v-chip 
                 color="blue" 
@@ -66,7 +69,7 @@ const closeDialog = () => {
                 size="large"
                 class="px-4"
               >
-                <span class="font-weight-bold">知识掌握</span>
+                <span class="font-weight-bold">{{ t('completion.knowledgeMastery') }}</span>
               </v-chip>
             </div>-->
           </div>
@@ -85,7 +88,7 @@ const closeDialog = () => {
           prepend-icon="mdi-check"
           class="px-8"
         >
-          <span class="font-weight-bold">继续学习</span>
+          <span class="font-weight-bold">{{ t('completion.continueStudy') }}</span>
         </v-btn>
         <v-spacer></v-spacer>
       </v-card-actions>

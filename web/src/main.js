@@ -12,6 +12,8 @@ import * as directives from 'vuetify/directives'
 import { mdi } from 'vuetify/iconsets/mdi-svg'
 import '@mdi/font/css/materialdesignicons.css';
 
+// 国际化
+import i18n from './i18n'
 
 // Third-party
 
@@ -34,7 +36,6 @@ const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 
 app.use(pinia)
-
 app.use(router)
-
+app.use(i18n)
 app.use(vuetify).mount('#app')

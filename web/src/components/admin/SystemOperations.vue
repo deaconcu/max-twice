@@ -6,13 +6,13 @@
           <v-icon icon="mdi-cog-sync" color="purple-darken-1" size="20"></v-icon>
         </div>
         <div>
-          <h3 class="text-h6 font-weight-bold text-grey-darken-3">系统操作</h3>
-          <p class="text-body-2 text-grey-darken-1 mb-0">系统维护和数据管理操作</p>
+          <h3 class="text-h6 font-weight-bold text-grey-darken-3">{{ t('admin.systemOperations.title') }}</h3>
+          <p class="text-body-2 text-grey-darken-1 mb-0">{{ t('admin.systemOperations.subtitle') }}</p>
         </div>
       </div>
       <v-chip variant="flat" color="purple-lighten-4" rounded="lg">
         <v-icon icon="mdi-tools" color="purple-darken-2" size="16" class="mr-1"></v-icon>
-        <span class="text-purple-darken-2 text-caption">管理工具</span>
+        <span class="text-purple-darken-2 text-caption">{{ t('systemOperations.adminTools') }}</span>
       </v-chip>
     </div>
 
@@ -20,12 +20,12 @@
     <v-card flat class="pa-4 mb-4" rounded="lg" outlined>
       <div class="d-flex align-center mb-4">
         <v-icon icon="mdi-database-sync" color="red-darken-1" class="mr-2"></v-icon>
-        <h4 class="text-h6 font-weight-bold text-grey-darken-3">Redis 统计数据同步</h4>
+        <h4 class="text-h6 font-weight-bold text-grey-darken-3">{{ t('systemOperations.redisSync.title') }}</h4>
       </div>
       
       <div class="mb-4">
         <p class="text-body-2 text-grey-darken-1 mb-4">
-          将Redis中的统计数据同步到数据库中，确保数据的持久化和一致性。通常用于定期备份或故障恢复。
+          {{ t('systemOperations.redisSync.description') }}
         </p>
         
         <v-row class="mb-4">
@@ -34,10 +34,10 @@
             <v-card flat class="pa-4 bg-orange-lighten-5" rounded="lg" elevation="0">
               <div class="d-flex align-center mb-3">
                 <v-icon icon="mdi-sync" color="orange-darken-2" size="20" class="mr-2"></v-icon>
-                <h5 class="text-subtitle-1 font-weight-bold text-orange-darken-2">手动同步</h5>
+                <h5 class="text-subtitle-1 font-weight-bold text-orange-darken-2">{{ t('systemOperations.redisSync.manualSync') }}</h5>
               </div>
               <p class="text-body-2 text-grey-darken-1 mb-3">
-                立即同步Redis中的所有统计数据到数据库
+                {{ t('systemOperations.redisSync.manualSyncDesc') }}
               </p>
               <v-btn 
                 variant="flat" 
@@ -49,7 +49,7 @@
                 :disabled="syncingManual || syncingSpecific"
               >
                 <v-icon icon="mdi-play" size="16" class="mr-2"></v-icon>
-                立即同步
+                {{ t('systemOperations.redisSync.syncNow') }}
               </v-btn>
             </v-card>
           </v-col>
@@ -300,6 +300,9 @@
 <script setup>
 import { ref, inject } from 'vue';
 import { learnService } from '@/services/learnService';
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 响应式数据
 const syncDate = ref('');

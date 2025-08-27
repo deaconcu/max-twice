@@ -1,11 +1,13 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { learnService } from '@/services/learnService';
 import Subcomment from '../components/Subcomment.vue';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const props = defineProps(['object', 'type']);
 
 const comments = ref([]);
@@ -153,9 +155,9 @@ const upvote = async (comment) => {
 
 <template>
   <v-text-field v-model="inputComment" variant="outlined" density="compact" append-inner-icon="mdi-email-fast-outline"
-    @click:append-inner="sendComment" placeholder="添加评论" class="w-100"></v-text-field>
+    @click:append-inner="sendComment" :placeholder="t('comment.addComment')" class="w-100"></v-text-field>
   <a variant="text" v-if="'commentId' in route.query" @click="returnToAllComment" class="cursor-pointer"
-    ref="commentArea">... 查看全部评论</a>
+    ref="commentArea">... {{ t('comment.viewAllComments') }}</a>
   <v-infinite-scroll :items="comments" :onLoad="load" :key="scrollKey" class="w-100">
     <div v-for="(comment, key) in comments" :key="comment.id"
       :ref="comment.id == route.query.commentId ? setTargetRef : null">
@@ -166,7 +168,7 @@ const upvote = async (comment) => {
           </v-avatar>
         </div>
         <div style="width:90%">
-          <div class="text-body-2 mb-2 text-grey-darken-1">一条小鲤鱼 
+          <div class="text-body-2 mb-2 text-grey-darken-1">{{ t('comment.username') }} 
             <span class="ms-2 text-caption text-grey">{{ comment.ctime }}</span>
           </div>
           <div>{{ comment.content }} </div>
@@ -177,12 +179,12 @@ const upvote = async (comment) => {
 
             <v-btn class="mx-3" variant="text" density="compact" prepend-icon="mdi-chat-outline"
               :color="activeReplyId === comment.id ? 'grey-lighten-4' : ''"
-              @click="activeReplyId = (activeReplyId == comment.id) ? 0 : comment.id">回复</v-btn>
+              @click="activeReplyId = (activeReplyId == comment.id) ? 0 : comment.id">{{ t('comment.reply') }}</v-btn>
           </div>
           <div class="mt-2 mb-2">
             <v-text-field v-if="activeReplyId === comment.id" v-model="replyContent" variant="outlined"
               density="compact" append-inner-icon="mdi-email-fast-outline" @click:append-inner="sendSubcomment(comment)"
-              placeholder="添加评论" class="w-100" hide-details></v-text-field>
+              :placeholder="t('comment.addComment')" class="w-100" hide-details></v-text-field>
           </div>
           <Subcomment v-if="comment.children != null" v-model:activeReplyId="activeReplyId" :commentId="comment.id"
             :comments="comment.children" :count="comment.replyCount"
@@ -192,10 +194,10 @@ const upvote = async (comment) => {
       </v-row>
     </div>
     <template v-slot:empty>
-      <div v-if="comments.length > 0" class="text-grey py-4">- 已经到底了 -</div>
+      <div v-if="comments.length > 0" class="text-grey py-4">- {{ t('comment.endOfComments') }} -</div>
       <div v-else class="py-2 text-center">
         <v-icon size="50" color="grey-lighten-2" class="mb-2">mdi-comment-text-outline</v-icon>
-        <div class="text-grey-lighten-1 text-body-2 mb-2">暂无评论</div>
+        <div class="text-grey-lighten-1 text-body-2 mb-2">{{ t('comment.noComments') }}</div>
       </div>
     </template>
   </v-infinite-scroll>

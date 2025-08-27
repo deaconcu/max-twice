@@ -6,9 +6,11 @@ import draggable from 'vuedraggable'
 import { useRoute, useRouter } from 'vue-router';
 import { learnService } from '@/services/learnService';
 import Tiptap from '../components/Tiptap.vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps(['nodeId', 'pathText']);
 const emit = defineEmits(['loadData']);
+const { t } = useI18n()
 
 const dialog = defineModel();
 const editorRef = ref(null);
@@ -48,14 +50,14 @@ const submitAddArticle = async () => {
       <v-card-item class="border-b-sm">
         <v-card-title class="d-flex align-center">
           <v-icon size="small" class="px-4" icon="mdi-account"></v-icon> 
-          <span class="ps-2 font-weight-medium">创建文章</span>
+          <span class="ps-2 font-weight-medium">{{ t('addArticle.createArticle') }}</span>
         </v-card-title>
       </v-card-item>
       <div class="overflow-y-scroll" style="height:1200px;">
         <tiptap ref="editorRef" :pathText="props.pathText" class="px-6" />
         <div class="pt-1 pb-4 px-6" style="position: sticky; bottom: 0px; background-color: #fff;">
           <v-btn variant="flat" color="grey-darken-2" size="large" class="rounded-lg text-white" block
-            @click="submitAddArticle">写好了，提交</v-btn>
+            @click="submitAddArticle">{{ t('addArticle.submitArticle') }}</v-btn>
         </div>
       </div>
     </v-card>

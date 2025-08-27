@@ -1,13 +1,14 @@
 <script setup>
 
 import { ref, watch } from 'vue';
-//import { defineProps } from 'vue';
 import draggable from 'vuedraggable'
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { learnService } from '@/services/learnService';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const props = defineProps(['nodeId' , 'pathText']);
 
@@ -64,8 +65,7 @@ const addAIContents = async () => {
   try {
     console.log('begin get');
     const response = await learnService.openAI(
-      "我在写一本教材，我当前在[" + props.pathText + "]这个目录下，请给我一个一级目录，用[\"...\",\"...\",...]的格式，前后不要附加任何文字",
-      //"openrouter/auto"
+      t('addContents.aiPrompt', { pathText: props.pathText }),
       "openai/gpt-4o-mini"
     );
     console.log('response: ' + JSON.stringify(response));
@@ -81,24 +81,24 @@ const addAIContents = async () => {
 
 <template>
   <v-dialog v-model="dialog" width="1100" height="700px">
-    <v-card prepend-icon="mdi-account" title="创建目录">
+    <v-card prepend-icon="mdi-account" :title="t('addContents.title')">
       <v-row class="ma-0 border-t-sm">
 
         <v-col class="border-e-sm">
 
           <v-card-text>
             <v-tabs v-model="createContentsTab">
-              <v-tab value="one">创建目录节点</v-tab>
-              <v-tab value="two">在已创建的目录节点中选择</v-tab>
-              <v-tab value="three">我创建的目录节点</v-tab>
+              <v-tab value="one">{{ t('addContents.createNode') }}</v-tab>
+              <v-tab value="two">{{ t('addContents.selectExisting') }}</v-tab>
+              <v-tab value="three">{{ t('addContents.myNodes') }}</v-tab>
             </v-tabs>
 
             <v-card-text class="px-0">
               <v-tabs-window v-model="createContentsTab">
                 <v-tabs-window-item value="one">
-                  <v-text-field v-model="newContentsItem" label="节点名称" variant="outlined" class="pt-5"></v-text-field>
-                  <v-btn variant="tonal" class="me-4" @click="addContentsItem">提交</v-btn>
-                  <v-btn variant="plain" @click="addAIContents">AI生成目录</v-btn>
+                  <v-text-field v-model="newContentsItem" :label="t('addContents.nodeName')" variant="outlined" class="pt-5"></v-text-field>
+                  <v-btn variant="tonal" class="me-4" @click="addContentsItem">{{ t('addContents.submit') }}</v-btn>
+                  <v-btn variant="plain" @click="addAIContents">{{ t('addContents.aiGenerate') }}</v-btn>
                 </v-tabs-window-item>
                 <v-tabs-window-item value="two">
                   Two
@@ -128,8 +128,7 @@ const addAIContents = async () => {
         </v-col>
       </v-row>
       <v-card-actions class="d-flex justify-center py-5 border-t-sm">
-        <v-btn @click="submitAddContents" :style="{ backgroundColor: '#1976d2', color: '#fff', width: '100px' }">确
-          认</v-btn>
+        <v-btn @click="submitAddContents" :style="{ backgroundColor: '#1976d2', color: '#fff', width: '100px' }">{{ t('addContents.confirm') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

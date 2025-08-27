@@ -1,5 +1,8 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
   nodeData: { type: Object, required: true },
@@ -14,7 +17,6 @@ const props = defineProps({
 const emit = defineEmits(['getNextNode']);
 
 const expandedNodes = ref([]);
-const expanded = ref(false);
 
 // 处理子节点
 const extractSubNodes = (ids) => {
@@ -35,10 +37,8 @@ function calculatePath(currPath, key) {
 function toggleNode(key) {
   if (expandedNodes.value.includes(key)) {
     expandedNodes.value = expandedNodes.value.filter(node => node !== key);
-    expanded.value = false;
   } else {
     expandedNodes.value.push(key);
-    expanded.value = true;
   }
 }
 
@@ -86,7 +86,7 @@ const getNextNode = (currentPath) => {
         const nodeInfo = props.nodeInfos[testPathParts[depth]];
         return {
           path: nextPath,
-          name: nodeInfo?.name || `节点 ${testPathParts[depth]}`
+          name: nodeInfo?.name || `${t('treeNode.node')} ${testPathParts[depth]}`
         };
       }
       
@@ -163,7 +163,7 @@ defineExpose({
             </div>
           </router-link>
           <template v-if="Object.keys(node).filter(key => key !== '^').length > 0">
-            <v-btn icon="mdi-chevron-down" @click="toggleNode(key)" :class="{ flipped: expanded }" class="slow"
+            <v-btn icon="mdi-chevron-down" @click="toggleNode(key)" :class="{ flipped: expandedNodes.includes(key) }" class="slow"
               variant="text" size="small" density="compact"></v-btn>
           </template>
         </div>

@@ -6,7 +6,7 @@
       :items="formMainCategories"
       item-title="title"
       item-value="value"
-      label="主分类"
+      :label="t('categorySelector.mainCategory')"
       variant="outlined"
       rounded="lg"
       bg-color="grey-lighten-5"
@@ -18,7 +18,7 @@
           <template v-slot:prepend>
             <v-icon icon="mdi-folder-outline" class="mr-3"></v-icon>
           </template>
-          <v-list-item-title class="font-weight-bold">选择主分类</v-list-item-title>
+          <v-list-item-title class="font-weight-bold">{{ t('categorySelector.selectMainCategory') }}</v-list-item-title>
         </v-list-item>
         <v-divider></v-divider>
       </template>
@@ -30,7 +30,7 @@
       :items="availableSubCategories"
       item-title="name"
       item-value="id"
-      label="子分类"
+      :label="t('categorySelector.subCategory')"
       variant="outlined"
       rounded="lg"
       bg-color="grey-lighten-5"
@@ -42,7 +42,7 @@
           <template v-slot:prepend>
             <v-icon icon="mdi-folder-multiple-outline" class="mr-3"></v-icon>
           </template>
-          <v-list-item-title class="font-weight-bold">选择子分类</v-list-item-title>
+          <v-list-item-title class="font-weight-bold">{{ t('categorySelector.selectSubCategory') }}</v-list-item-title>
         </v-list-item>
         <v-divider></v-divider>
       </template>
@@ -53,6 +53,9 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { learnService } from '@/services/learnService';
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // Props
 const props = defineProps({

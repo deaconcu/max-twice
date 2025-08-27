@@ -3,6 +3,7 @@ import TheWelcome from '../components/TheWelcome.vue'
 //import { mdiAlphaMBox, mdiClose, mdiEmailOutline } from '@mdi/js'
 import { ref } from 'vue';
 import { useRoute, useRouter} from 'vue-router';
+import { useI18n } from 'vue-i18n';
 
 import Footer from '../components/Footer.vue';
 import { userService} from '@/services/learnService';
@@ -10,6 +11,7 @@ import { useUserStore } from "@/stores/user";
 
 const router = useRouter();
 const user = useUserStore();
+const { t } = useI18n();
 
 /* start other */
 const togglePasswordVisibility = (repeat) => {
@@ -208,7 +210,7 @@ const submitLogin = async() => {
                       v-bind="activatorProps"
                       class="font-weight-bold mb-4">
                       <v-icon icon="mdi-account-plus" class="mr-2"></v-icon>
-                      注 册
+                      {{ t('common.register') }}
                     </v-btn>
                   </template>
                   <template v-slot:default="{ isActive }">
@@ -219,8 +221,8 @@ const submitLogin = async() => {
                             <v-icon icon="mdi-account-plus" color="white" size="20"></v-icon>
                           </v-avatar>
                           <div>
-                            <h3 class="text-h6 font-weight-bold">欢迎加入</h3>
-                            <p class="text-body-2 text-grey-darken-2 mb-0">创建您的学习账户</p>
+                            <h3 class="text-h6 font-weight-bold">{{ t('user.register.title') }}</h3>
+                            <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('user.register.subtitle') }}</p>
                           </div>
                         </div>
                         <v-btn 
@@ -236,12 +238,12 @@ const submitLogin = async() => {
                       <v-card-text class="pa-6 pt-0">
                         <div class="mb-4 pa-3 bg-primary-lighten-5 rounded text-primary d-flex align-center">
                           <v-icon icon="mdi-information-outline" start size="16" class="mr-2"></v-icon>
-                          <span class="text-body-2">请填写基本信息完成注册</span>
+                          <span class="text-body-2">{{ t('user.register.instructions') }}</span>
                         </div>
 
                         <v-text-field 
                           v-model="registerForm.email" 
-                          label="邮箱地址" 
+                          :label="t('user.register.email')" 
                           variant="outlined" 
                           class="mb-4"
                           prepend-inner-icon="mdi-email-outline" 
@@ -255,7 +257,7 @@ const submitLogin = async() => {
 
                         <v-text-field 
                           v-model="registerForm.name" 
-                          label="用户名" 
+                          :label="t('user.register.username')" 
                           variant="outlined" 
                           class="mb-4"
                           prepend-inner-icon="mdi-account-outline" 
@@ -270,7 +272,7 @@ const submitLogin = async() => {
                         <v-text-field 
                           v-model="registerForm.password" 
                           :type="showPassword ? 'text' : 'password'" 
-                          label="密码" 
+                          :label="t('user.register.password')" 
                           variant="outlined" 
                           class="mb-4"
                           prepend-inner-icon="mdi-lock-outline"
@@ -287,7 +289,7 @@ const submitLogin = async() => {
                         <v-text-field 
                           v-model="registerForm.passwordRepeat" 
                           :type="showPasswordRepeat ? 'text' : 'password'"
-                          label="确认密码" 
+                          :label="t('user.register.confirmPassword')" 
                           variant="outlined" 
                           class="mb-6"
                           prepend-inner-icon="mdi-lock-check-outline"

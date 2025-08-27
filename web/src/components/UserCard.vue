@@ -1,8 +1,10 @@
 <script setup>
 import { ref, onMounted, nextTick, watch, toRef, inject } from 'vue';
 import { learnService, userService } from '@/services/learnService';
+import { useI18n } from 'vue-i18n'
 
 const ps = defineProps(['id', 'name']);
+const { t } = useI18n()
 
 const loadingUserInfo = ref(false)
 const userInfo = ref(null);
@@ -71,19 +73,19 @@ const unfollow = async (id) => {
       <span v-bind="props" class="text-body-2 text-grey-darken-4 font-weight-bold">{{ ps.name }}</span>
     </template>
     <v-card width="300" elevation="1" class="mt-3 ms-9 mx-auto">
-      <div v-if="loadingUserInfo">加载中...</div>
+      <div v-if="loadingUserInfo">{{ t('userCard.loading') }}</div>
       <div v-else>
 
         <v-card-title class="d-flex align-center text-body-1">
           <a :href="'/user?id=' + ps.id" target="_blank">{{ ps.name }}</a>
         </v-card-title>
         <v-card-subtitle>
-          发布5篇文章，获得202个赞
+          {{ t('userCard.stats', { articles: 5, likes: 202 }) }}
         </v-card-subtitle>
 
         <v-card-actions class="justify-left">
-          <v-btn v-if="userInfo.followed == 0" variant="text" @click="follow(userInfo.id)">关注</v-btn>
-          <v-btn v-if="userInfo.followed == 1" variant="text" @click="unfollow(userInfo.id)">取消关注</v-btn>
+          <v-btn v-if="userInfo.followed == 0" variant="text" @click="follow(userInfo.id)">{{ t('userCard.follow') }}</v-btn>
+          <v-btn v-if="userInfo.followed == 1" variant="text" @click="unfollow(userInfo.id)">{{ t('userCard.unfollow') }}</v-btn>
         </v-card-actions>
         
       </div>
