@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: learn-service
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 10
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      connection-timeout: 500
+      connection-test-query: SELECT 1
+      validation-timeout: 3000
+      keepalive-time: 15000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+  mail:
+    host: smtp.126.com
+    port: 25
+    username: deaconcc@126.com
+    password: SQvpYXGC6kaYKNqw
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+        debug: true
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+
+server:
+  port: ${PORT:9202}
+  servlet:
+    context-path: /
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://127.0.0.1:8761/eureka/
+  instance:
+    preferIpAddress: true
+    instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+
+sa-token:
+  timeout: 72000
+  token-name: token
+  storage-typee: cookie
+  cookie-http-only: true
+  cookie-secure: true
+
+logging:
+  level:
+    com.prosper.learn: INFO
+    org.springframework.web: DEBUG
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+    org.apache.ibatis: DEBUG
+    java.sql: DEBUG
+    org.mybatis.spring.SqlSessionFactoryBean: DEBUG

@@ -8,6 +8,10 @@ public enum ErrorCode {
     // 用户认证相关 A0xxx
     USER_NOT_LOGIN("A0001", "用户未登录"),
     PERMISSION_DENIED("A0002", "权限不足"),
+    USER_NOT_FOUND("A0003", "user.not.found"),
+    USER_ALREADY_EXISTS("A0004", "user.already.exists"),
+    USER_PASSWORD_WRONG("A0005", "user.password.wrong"),
+    USER_EMAIL_NOT_VALIDATED("A0006", "user.email.not.validated"),
     
     // 路线图相关 B0xxx
     ROADMAP_NOT_FOUND("B0001", "路线图不存在"),
@@ -48,6 +52,13 @@ public enum ErrorCode {
      */
     public BusinessException exception() {
         return new BusinessException(this.code, this.message);
+    }
+    
+    /**
+     * 创建支持国际化的业务异常
+     */
+    public BusinessException exception(String localizedMessage) {
+        return new BusinessException(this.code, localizedMessage);
     }
     
     /**

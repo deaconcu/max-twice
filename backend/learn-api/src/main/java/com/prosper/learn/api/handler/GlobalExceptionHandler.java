@@ -2,8 +2,10 @@ package com.prosper.learn.api.handler;
 
 import cn.dev33.satoken.exception.NotLoginException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.prosper.learn.api.util.MessageUtils;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.dto.Response;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,7 +16,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 @RestControllerAdvice
 @Slf4j
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private final MessageUtils messageUtils;
 
     @ExceptionHandler(NotLoginException.class)
     public Response<Object> handleNotLoginException(NotLoginException e) {
@@ -22,12 +27,21 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理业务异常
+     * 处理业务异常，支持国际化
      */
     @ExceptionHandler(BusinessException.class)
     public Response<Void> handleBusinessException(BusinessException e) {
         log.warn("业务异常: [{}] {}", e.getCode(), e.getMessage());
-        return Response.fail(e.getMessage());
+        
+        // 尝试获取国际化消息，如果失败则使用原消息
+        String localizedMessage;
+        try {
+            localizedMessage = messageUtils.getMessage(e.getMessage(), e.getMessage());
+        } catch (Exception ex) {
+            localizedMessage = e.getMessage();
+        }
+        
+        return Response.fail(localizedMessage);
     }
     
     /**

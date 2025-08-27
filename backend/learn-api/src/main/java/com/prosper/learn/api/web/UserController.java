@@ -2,6 +2,7 @@ package com.prosper.learn.api.web;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.client.UserClient;
+import com.prosper.learn.api.util.MessageUtils;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.MessageService;
 import com.prosper.learn.domain.service.PostingService;
@@ -29,6 +30,7 @@ import static com.prosper.learn.dto.Response.*;
 @RequiredArgsConstructor
 public class UserController implements UserClient {
 
+    private final MessageUtils messageUtils;
     private final UserProfileMapper userProfileMapper;
     private final CourseMapper courseMapper;
     private final UserMapper userMapper;
@@ -85,7 +87,7 @@ public class UserController implements UserClient {
     public Response<UserDTOV2> login(String email, String password) {
         UserDO userDO = userMapper.getByEmail(email);
         if (userDO == null) {
-            throw ErrorCode.SYSTEM_ERROR.exception();
+            throw ErrorCode.USER_NOT_FOUND.exception();
         }
         //if (!userDO.getPassword().equals(Utils.md5(password))) return new Response(PASSWORD_IS_WRONG);
         StpUtil.login(userDO.getId());
