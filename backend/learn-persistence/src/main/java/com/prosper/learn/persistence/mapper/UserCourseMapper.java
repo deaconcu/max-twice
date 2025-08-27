@@ -4,6 +4,7 @@ import com.prosper.learn.persistence.dataobject.UserCourseDO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface UserCourseMapper {
@@ -46,4 +47,16 @@ public interface UserCourseMapper {
      */
     @Select("SELECT COUNT(*) FROM user_course WHERE user_id = #{userId} AND status = 'IN_PROGRESS'")
     Integer countActiveCoursesByUserId(Long userId);
+
+    /**
+     * 批量查询用户对多个课程的学习进度，返回Map<courseId, UserCourseDO>
+     */
+    @MapKey("courseId") 
+    @Select("<script>" +
+            "SELECT * FROM user_course WHERE user_id = #{userId} AND course_id IN " +
+            "<foreach collection='courseIds' item='courseId' open='(' separator=',' close=')'>" +
+            "#{courseId}" +
+            "</foreach>" +
+            "</script>")
+    Map<Long, UserCourseDO> getByUserIdAndCourseIdsAsMap(@Param("userId") Long userId, @Param("courseIds") List<Long> courseIds);
 }

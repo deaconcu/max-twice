@@ -88,13 +88,13 @@ public class UserRoadmapService {
      * @return 用户所有路线图学习进度列表
      */
     public List<UserRoadmapDTO> getUserAllRoadmap(Long userId) {
-        List<UserRoadmapDO> progressList = userRoadmapMapper.getByUser(userId);
-        if (progressList.isEmpty()) {
+        List<UserRoadmapDO> userRoadmapList = userRoadmapMapper.getByUser(userId);
+        if (userRoadmapList.isEmpty()) {
             return List.of();
         }
 
         // 提取所有 roadmap IDs
-        List<Integer> roadmapIds = progressList.stream()
+        List<Integer> roadmapIds = userRoadmapList.stream()
                 .map(progress -> progress.getRoadmapId().intValue())
                 .collect(Collectors.toList());
 
@@ -113,14 +113,14 @@ public class UserRoadmapService {
         Map<Integer, ProfessionDO> professionMap = professionMapper.getMapByIds(professionIds);
 
         // 转换为 DTO 并填充 roadmap 信息
-        return progressList.stream()
+        return userRoadmapList.stream()
                 .map(progressDO -> {
                     UserRoadmapDTO dto = Converter.INSTANCE.toUserRoadmapDTO(progressDO);
                     RoadmapDO roadmapDO = roadmapMap.get(progressDO.getRoadmapId().intValue());
 
                     if (roadmapDO != null) {
                         try {
-                            roadmapDO.setContent(roadmapService.parseContentToGraphFormat(roadmapDO.getContent()));
+                            roadmapDO.setContent(roadmapService.parseContentToGraphFormat(roadmapDO.getContent(), userId.intValue()));
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }

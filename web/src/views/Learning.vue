@@ -94,10 +94,13 @@ function parseContent(content) {
         id: String(node.id || index),
         type: 'default',
         data: {
-          label: node.label || node.data?.label || `节点 ${node.id || index}`, 
-          link: '/read?courseId=' + (node.id || index), // 默认链接
-          completed: node.completed || node.data?.completed || false,
+          type: 'course', // 标记为课程节点
+          label: node.name || node.label || `节点 ${node.id || index}`, // 适配新的name字段
+          link: '/read?courseId=' + (node.id || index),
+          completed: node.finished || node.completed || false, // 适配新的finished字段
+          progress: node.progress || 0, // 使用新的progress字段
           current: node.current || node.data?.current || false,
+          courseId: node.id, // 保存课程ID
           ...node.data
         },
         // 先设置初始位置，稍后会用 dagre 重新计算
@@ -193,7 +196,8 @@ const loadLearningData = async () => {
           let totalCourses = 0;
           
           nodes.forEach(node => {
-            if (node.data.type === 'course') {
+            // 所有节点都是课程节点（后端返回的都是课程）
+            if (node.data && node.data.type === 'course') {
               totalCourses++;
               if (node.data.completed) {
                 // 已完成课程贡献100%

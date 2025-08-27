@@ -150,7 +150,7 @@ public class RoadmapController implements RoadmapClient {
             for (RoadmapDTO dto : dtoList) {
                 if (dto.getContent() != null) {
                     try {
-                        String formattedContent = roadmapService.parseContentToGraphFormat(dto.getContent());
+                        String formattedContent = roadmapService.parseContentToGraphFormat(dto.getContent(), userId);
                         dto.setContent(formattedContent);
                     } catch (Exception e) {
                         // 如果转换失败，保持原始内容
@@ -286,7 +286,7 @@ public class RoadmapController implements RoadmapClient {
             // 转换 content 格式
             if (roadmapDTO.getContent() != null) {
                 try {
-                    String formattedContent = roadmapService.parseContentToGraphFormat(roadmapDTO.getContent());
+                    String formattedContent = roadmapService.parseContentToGraphFormat(roadmapDTO.getContent(), userId);
                     roadmapDTO.setContent(formattedContent);
                 } catch (Exception e) {
                     // 如果转换失败，保持原始内容

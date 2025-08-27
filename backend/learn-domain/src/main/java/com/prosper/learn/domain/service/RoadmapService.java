@@ -9,8 +9,10 @@ import com.prosper.learn.common.UnionFind;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.RoadmapDTO;
+import com.prosper.learn.dto.UserCourseDTO;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
+import com.prosper.learn.persistence.dataobject.UserCourseDO;
 import com.prosper.learn.persistence.mapper.CourseMapper;
 import com.prosper.learn.persistence.mapper.RoadmapMapper;
 import com.prosper.learn.persistence.mapper.UserMapper;
@@ -31,6 +33,7 @@ public class RoadmapService {
     private final RoadmapMapper roadmapMapper;
     private final UserMapper userMapper;
     private final UpvoteService upvoteService;
+    private final UserCourseService userCourseService;
 
     public RoadmapDTO getById(int id, int userId) {
         RoadmapDO roadmapDO = roadmapMapper.get(id);
@@ -220,7 +223,7 @@ public class RoadmapService {
         return uf.getComponentCount() == 1;
     }
 
-    public String parseContentToGraphFormat(String content) throws Exception {
+    public String parseContentToGraphFormat(String content, int userId) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
         // 解析 content: [[[1,2],[2,3]],[1,2,3]]
@@ -229,7 +232,7 @@ public class RoadmapService {
 
         Map<String, Object> graphData = new HashMap<>();
         List<Map<String, String>> edges = new ArrayList<>();
-        List<Map<String, String>> nodes = new ArrayList<>();
+        List<Map<String, Object>> nodes = new ArrayList<>();
 
         if (contentData.size() >= 2) {
             // 解析edges - 格式: [[1,2],[2,3]]
@@ -258,11 +261,21 @@ public class RoadmapService {
             // 获取课程名称
             Map<Integer, String> courseNames = getCourseNames(nodeIds);
 
+            // 批量查询用户对这些课程的学习进度
+            Map<Long, UserCourseDO> userCourseMap = userCourseService.getUserCoursesBatch(userId, new ArrayList<>(nodeIds));
+            
             for (Integer nodeId : nodeIds) {
                 String courseName = courseNames.getOrDefault(nodeId, "课程" + nodeId);
-                Map<String, String> nodeMap = new HashMap<>();
+                
+                UserCourseDO userCourse = userCourseMap.get((long)nodeId);
+                boolean finished = userCourse != null && userCourse.getProgressPercent() >= 10000;
+                double progress = userCourse != null ? userCourse.getProgressPercent() / 100.0 : 0.0;
+                
+                Map<String, Object> nodeMap = new HashMap<>();
                 nodeMap.put("id", String.valueOf(nodeId));
-                nodeMap.put("label", courseName);
+                nodeMap.put("name", courseName);
+                nodeMap.put("finished", finished);
+                nodeMap.put("progress", progress);
                 nodes.add(nodeMap);
             }
         }

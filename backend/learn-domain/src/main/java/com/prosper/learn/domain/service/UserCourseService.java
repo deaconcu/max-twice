@@ -168,4 +168,25 @@ public class UserCourseService {
         // 减少学习人数
         courseRankingService.decrementLearning(courseId.intValue());
     }
+
+    /**
+     * 批量查询用户对多个课程的学习进度
+     * @param userId 用户ID
+     * @param courseIds 课程ID列表
+     * @return 课程ID到用户课程DTO的映射
+     */
+    public Map<Long, UserCourseDO> getUserCoursesBatch(int userId, List<Integer> courseIds) {
+        if (courseIds == null || courseIds.isEmpty()) {
+            return Map.of();
+        }
+        
+        // 转换为Long类型的课程ID列表
+        List<Long> longCourseIds = courseIds.stream()
+                .map(Integer::longValue)
+                .collect(Collectors.toList());
+        
+        // 批量查询用户课程记录，直接返回Map
+        Map<Long, UserCourseDO> userCourseMap = userCourseMapper.getByUserIdAndCourseIdsAsMap((long) userId, longCourseIds);
+        return userCourseMap;
+    }
 }
