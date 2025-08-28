@@ -11,7 +11,7 @@ public class ContentsDTO {
 
     private String contents;
 
-    private String cTime;
+    private String createdAt;
 
-    private String uTime;
+    private String updatedAt;
 }

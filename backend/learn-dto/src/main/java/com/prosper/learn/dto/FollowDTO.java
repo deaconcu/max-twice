@@ -9,5 +9,5 @@ public class FollowDTO {
 
     private int followeeId;
 
-    private String createTime;
+    private String createdAt;
 }

@@ -57,7 +57,7 @@ public class PostController implements PostClient {
         }
 
         posting.setCreatorId(0);
-        posting.setCTime(Utils.getTimeString());
+        posting.setCreatedAt(Utils.getTimeString());
         postMapper.insert(Converter.INSTANCE.toPostDO(posting));
         return Response.success;
     }

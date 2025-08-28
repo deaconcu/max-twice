@@ -31,9 +31,9 @@ public class PostDTO {
 
     private double score;
 
-    private String cTime;
+    private String createdAt;
 
-    private String uTime;
+    private String updatedAt;
 
     private int voteType;
 }

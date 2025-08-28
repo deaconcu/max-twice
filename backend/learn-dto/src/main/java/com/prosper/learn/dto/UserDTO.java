@@ -21,7 +21,7 @@ public class UserDTO {
 
 
 
-    private String cTime;
+    private String createdAt;
 
-    private String uTime;
+    private String updatedAt;
 }

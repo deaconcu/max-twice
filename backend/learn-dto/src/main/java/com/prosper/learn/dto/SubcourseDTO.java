@@ -17,7 +17,7 @@ public class SubcourseDTO {
 
     private int state;
 
-    private String cTime;
+    private String createdAt;
 
-    private String uTime;
+    private String updatedAt;
 }

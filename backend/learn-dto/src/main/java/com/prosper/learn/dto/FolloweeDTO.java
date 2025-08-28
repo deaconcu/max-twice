@@ -11,5 +11,5 @@ public class FolloweeDTO {
 
     private String biography;
 
-    private String createTime;
+    private String createdAt;
 }

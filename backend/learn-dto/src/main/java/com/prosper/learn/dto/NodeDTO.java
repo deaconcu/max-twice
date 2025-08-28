@@ -25,7 +25,7 @@ public class NodeDTO {
 
     private int commentCount;
 
-    private String cTime;
+    private String createdAt;
 
-    private String uTime;
+    private String updatedAt;
 }

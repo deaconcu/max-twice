@@ -26,9 +26,9 @@ public class CourseDTOV4 {
 
     private String rejectedReason; // 拒绝原因，默认为空字符串
 
-    private String cTime;
+    private String createdAt;
 
-    private String uTime;
+    private String updatedAt;
 
     // 新增：热门课程统计字段
     private Integer learnerCount; // 学习人数

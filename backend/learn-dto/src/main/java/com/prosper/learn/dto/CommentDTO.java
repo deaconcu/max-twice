@@ -28,7 +28,7 @@ public class CommentDTO {
 
     private int upvoted;
 
-    private String cTime;
+    private String createdAt;
 
     private List<CommentDTO> children;
 

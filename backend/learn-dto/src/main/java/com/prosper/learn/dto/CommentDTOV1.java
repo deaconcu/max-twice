@@ -2,9 +2,6 @@ package com.prosper.learn.dto;
 
 import lombok.Data;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Data
 public class CommentDTOV1 {
 
@@ -28,6 +25,6 @@ public class CommentDTOV1 {
 
     private int state;
 
-    private String cTime;
+    private String createdAt;
 
 }

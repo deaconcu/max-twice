@@ -33,9 +33,9 @@ public class PostDTOV2 {
 
     private double score;
 
-    private String cTime;
+    private String createdAt;
 
-    private String uTime;
+    private String updatedAt;
 
     private int voteType;
 }

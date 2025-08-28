@@ -25,7 +25,7 @@ public class CourseDTO {
 
     private String rejectedReason; // 拒绝原因，默认为空字符串
 
-    private String cTime;
+    private String createdAt;
 
-    private String uTime;
+    private String updatedAt;
 }

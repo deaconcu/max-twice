@@ -382,7 +382,7 @@ public class UserController implements UserClient {
             UserDO userDO = userDOMap.get(followDO.getFolloweeId());
             followeeDTO.setName(userDO.getName());
             followeeDTO.setBiography(userDO.getBiography());
-            followeeDTO.setCreateTime(Utils.getTimeString(followDO.getCreatedAt()));
+            followeeDTO.setCreatedAt(Utils.getTimeString(followDO.getCreatedAt()));
             followeeDTOList.add(followeeDTO);
         }
 
