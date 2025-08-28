@@ -62,7 +62,7 @@ public interface RoadmapMapper {
     int updateVoteCount(long id, int delta);
 
     @Update("UPDATE roadmap SET score = #{score}, score_calculated_at = NOW() WHERE id = #{id}")
-    int updateScore(long id, Double score);
+    int updateScore(long id, double score);
 
     @Select("SELECT * FROM roadmap WHERE id IN " +
             "(SELECT DISTINCT post_id FROM upvote WHERE post_type = 'roadmap') " +
@@ -90,7 +90,7 @@ public interface RoadmapMapper {
              " ORDER BY score DESC, id DESC LIMIT #{limit}",
              "</script>"})
     List<RoadmapDO> getListByProfessionAfterScoreExcluding(
-            long professionId, Double lastScore, long lastId, int limit, List<Long> excludeIds);
+            long professionId, double lastScore, long lastId, int limit, List<Long> excludeIds);
     
     // 平台统计相关方法
     @Select("SELECT COUNT(*) FROM roadmap WHERE vote >= 0")

@@ -16,13 +16,13 @@ public interface NodeMapper {
     @Select({"<script>SELECT * FROM node where id in " +
                  "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
              "</script>"})
-    List<NodeDO> getByIds(List<Integer> ids);
+    List<NodeDO> getByIds(List<Long> ids);
 
     @Select({"<script>SELECT * FROM node where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
     @MapKey("id")
-    Map<Integer, NodeDO> getMapByIds(Collection<Integer> ids);
+    Map<Integer, NodeDO> getMapByIds(Collection<Long> ids);
 
     @Select("SELECT * FROM node where parent = #{parentId}")
     List<NodeDO> getByParent(long parentId);

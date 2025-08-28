@@ -13,7 +13,7 @@ public class UserProgressDO {
     /**
      * 用户ID
      */
-    private Integer userId;
+    private Long userId;
     
     /**
      * 已完成的节点ID列表，逗号分隔

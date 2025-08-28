@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 @Data
 public class ProfessionDTO {
 
-    private Integer id;
+    private Long id;
 
     private String name;
 

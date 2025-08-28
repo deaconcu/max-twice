@@ -7,15 +7,15 @@ import lombok.Data;
 @Data
 public class MessageDTO {
 
-    private int id;
+    private Long id;
 
     private UserDTOV4 sender;
 
     private UserDTOV4 receiver;
 
-    private int type;
+    private Integer type;
 
-    private int isRead;
+    private Integer isRead;
 
     private String createdAt;
 

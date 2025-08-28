@@ -61,7 +61,7 @@ public interface UserRoadmapMapper {
              "SELECT roadmap_id FROM user_roadmap WHERE user_id = #{userId} AND roadmap_id IN ",
              "<foreach item='id' collection='roadmapIds' open='(' separator=',' close=')'>#{id}</foreach>",
              "</script>"})
-    List<Integer> getBatchLearningStatus(long userId, List<Integer> roadmapIds);
+    List<Integer> getBatchLearningStatus(long userId, List<Long> roadmapIds);
     
     /**
      * 统计用户正在学习的路线图数量

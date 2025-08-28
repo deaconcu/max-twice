@@ -5,13 +5,13 @@ import lombok.Data;
 @Data
 public class CourseDTOV2 {
 
-    private int id;
+    private Long id;
 
     private String name;
 
     private String description;
 
-    private int mainCategory; // 主分类 ID
+    private Integer mainCategory; // 主分类 ID
 
-    private int subCategory; // 子分类 ID
+    private Integer subCategory; // 子分类 ID
 }

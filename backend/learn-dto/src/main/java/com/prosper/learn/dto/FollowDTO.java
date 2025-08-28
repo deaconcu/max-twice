@@ -5,9 +5,9 @@ import lombok.Data;
 @Data
 public class FollowDTO {
 
-    private int followerId;
+    private Long followerId;
 
-    private int followeeId;
+    private Long followeeId;
 
     private String createdAt;
 }

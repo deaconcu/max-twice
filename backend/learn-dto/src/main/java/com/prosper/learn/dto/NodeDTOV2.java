@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NodeDTOV2 {
-    private Integer id;
+    private Long id;
     private String name;
     private Boolean isCompleted;
 }

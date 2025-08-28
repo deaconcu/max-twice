@@ -23,11 +23,11 @@ public class Response<T> {
     public static Response<Object> passwordIsWrong = new Response<>(PASSWORD_IS_WRONG);
     public static Response<Object> failed = new Response<>(FAILED);
 
-    public static <T> Response<T> instance(int code) {
+    public static <T> Response<T> instance(Integer code) {
         return new Response<>(code);
     }
 
-    private int code;
+    private Integer code;
 
     private String msg;
 
@@ -35,11 +35,11 @@ public class Response<T> {
 
     public Response() {}
 
-    public Response(int code) {
+    public Response(Integer code) {
         this(code, "", null);
     }
 
-    public Response(int code, String msg) {
+    public Response(Integer code, String msg) {
         this(code, "", null);
     }
 
@@ -47,7 +47,7 @@ public class Response<T> {
         this(200, "success", data);
     }
 
-    public Response(int code, String msg, T data) {
+    public Response(Integer code, String msg, T data) {
         this.code = code;
         this.msg = msg;
         this.data  = data;

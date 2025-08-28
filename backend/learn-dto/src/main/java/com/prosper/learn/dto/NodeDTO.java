@@ -7,23 +7,23 @@ import java.util.List;
 @Data
 public class NodeDTO {
 
-    private Integer id;
+    private Long id;
 
     private String name;
 
     private String description;
 
-    private int courseId;
+    private Long courseId;
 
     private CourseDTOV4 course;
 
-    private int root;
+    private Long root;
 
     private List<NodeDTO> children;
 
-    private int creator;
+    private Long creator;
 
-    private int commentCount;
+    private Integer commentCount;
 
     private String createdAt;
 

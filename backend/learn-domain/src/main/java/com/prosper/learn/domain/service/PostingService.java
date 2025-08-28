@@ -195,7 +195,7 @@ public class PostingService {
     /**
      * 获取用户文章列表（包含阅读量）
      */
-    public List<PostDTOV2> getUserArticleWithViews(int userId, int lastId) {
+    public List<PostDTOV2> getUserArticleWithViews(long userId, int lastId) {
         int count = 10;
         List<PostDO> postings = postMapper.getArticleListByUser(userId, lastId, count);
         if (postings == null || postings.size() == 0) return new ArrayList<>();
@@ -206,7 +206,7 @@ public class PostingService {
         setViewsForPosts(postDTOList);
 
         // get all user
-        List<Integer> userIds = postDTOList.stream().map(PostDTOV2::getCreatorId).collect(Collectors.toList());
+        List<Long> userIds = postDTOList.stream().map(PostDTOV2::getCreatorId).collect(Collectors.toList());
         List<UserDO> userList = userMapper.getByIds(userIds);
         Map<Integer, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
 

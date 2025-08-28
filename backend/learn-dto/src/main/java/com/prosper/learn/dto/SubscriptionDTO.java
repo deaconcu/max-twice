@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class SubscriptionDTO {
 
-    private int id;
+    private Long id;
 
     private String name;
 
@@ -13,7 +13,7 @@ public class SubscriptionDTO {
         // 默认构造函数，供Jackson反序列化使用
     }
 
-    public SubscriptionDTO(int id, String name) {
+    public SubscriptionDTO(Long id, String name) {
         this.id = id;
         this.name = name;
     }

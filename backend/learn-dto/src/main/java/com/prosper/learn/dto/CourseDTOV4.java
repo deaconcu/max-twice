@@ -5,17 +5,16 @@ import lombok.Data;
 @Data
 public class CourseDTOV4 {
 
-    private Integer id;
+    private Long id;
 
     private String name;
 
     private String description;
 
-    private Integer creator;
+    private Long creator;
 
-    private Integer rootNode;
+    private Long rootNode;
 
-    //private Integer parent;
     private CourseDTOV3 parent;
 
     private String state; // 修改为 String 类型，支持 SUMMITTED, APPROVED, REJECTED
@@ -35,7 +34,7 @@ public class CourseDTOV4 {
 
     private Integer subscriptionCount; // 收藏人数
 
-    private boolean subscribed; // 是否已收藏
+    private Boolean subscribed; // 是否已收藏
 
     private Integer progress; // 课程进度百分比 (0-100)
 }

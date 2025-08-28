@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class UserDTO {
 
-    private int id;
+    private Long id;
 
     private String name;
 
@@ -15,7 +15,7 @@ public class UserDTO {
 
     private String email;
 
-    private boolean emailValidated;
+    private Boolean emailValidated;
 
     private String biography;
 

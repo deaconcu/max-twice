@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 @Data
 public class RoadmapDTOV2 {
 
-    private Integer id;
+    private Long id;
 
     private String content;
 
@@ -15,11 +15,11 @@ public class RoadmapDTOV2 {
 
     private String description;
 
-    private int vote;
+    private Integer vote;
 
-    private int comment;
+    private Integer comment;
 
-    private boolean upvoted;
+    private Boolean upvoted;
 
     private UserDTOV4 creator;
 

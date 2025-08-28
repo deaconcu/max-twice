@@ -5,35 +5,35 @@ import lombok.Data;
 @Data
 public class PostDTO {
 
-    private Integer id;
+    private Long id;
 
     private String content;
 
-    private int nodeId;
+    private Long nodeId;
 
     private NodeDTO node;
 
-    private int creatorId;
+    private Long creatorId;
 
     private UserDTOV1 creator;
 
-    private int type;
+    private Integer type;
 
-    private int once;
+    private Integer once;
 
-    private int twice;
+    private Integer twice;
 
-    private int helpful;
+    private Integer helpful;
 
-    private int commentCount;
+    private Integer commentCount;
 
-    private int state;
+    private Integer state;
 
-    private double score;
+    private Double score;
 
     private String createdAt;
 
     private String updatedAt;
 
-    private int voteType;
+    private Integer voteType;
 }

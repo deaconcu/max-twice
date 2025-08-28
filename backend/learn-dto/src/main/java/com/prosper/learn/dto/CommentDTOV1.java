@@ -5,25 +5,25 @@ import lombok.Data;
 @Data
 public class CommentDTOV1 {
 
-    private int id;
+    private Long id;
 
     private String content;
 
-    private int type;
+    private Integer type;
 
-    private int objectId;
+    private Long objectId;
 
-    private int replyCount;
+    private Integer replyCount;
 
-    private int replyTo;
+    private Long replyTo;
 
-    private int fromUser;
+    private Long fromUser;
 
-    private int toUser;
+    private Long toUser;
 
-    private int upvoteCount;
+    private Integer upvoteCount;
 
-    private int state;
+    private Integer state;
 
     private String createdAt;
 

@@ -9,9 +9,9 @@ public class FollowMessageDTO extends MessageDTO {
 
     NodeDTOV1 node;
 
-    int postingId;
+    Long postingId;
 
-    int voteType;
+    Integer voteType;
 
     UserDTOV4 follower;
 }

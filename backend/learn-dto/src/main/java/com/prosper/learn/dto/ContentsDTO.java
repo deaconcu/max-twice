@@ -5,9 +5,9 @@ import lombok.Data;
 @Data
 public class ContentsDTO {
 
-    private int id;
+    private Long id;
 
-    private int userId;
+    private Long userId;
 
     private String contents;
 

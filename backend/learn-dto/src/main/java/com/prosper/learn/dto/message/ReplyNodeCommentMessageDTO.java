@@ -8,7 +8,7 @@ public class ReplyNodeCommentMessageDTO extends MessageDTO {
 
     NodeDTOV1 node;
 
-    int commentId;
+    Long commentId;
 
     UserDTOV4 commenter;
 }

@@ -11,6 +11,6 @@ public class CommentMessageDTO extends MessageDTO {
 
     UserDTOV4 commenter;
 
-    int commentId;
+    Long commentId;
 
 }

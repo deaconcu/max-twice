@@ -15,13 +15,13 @@ public interface PostMapper {
     @Select({"<script>SELECT * FROM post where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
-    List<PostDO> getByIds(List<Integer> ids);
+    List<PostDO> getByIds(List<Long> ids);
 
     @Select({"<script>SELECT * FROM post where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
     @MapKey("id")
-    Map<Integer, PostDO> getMapByIds(Collection<Integer> ids);
+    Map<Integer, PostDO> getMapByIds(Collection<Long> ids);
 
     @Select("SELECT * FROM post " +
             "WHERE node_id = #{nodeId} and state = #{state} " +
@@ -58,7 +58,7 @@ public interface PostMapper {
 
     // 新增分数相关方法
     @Update("UPDATE post SET score = #{score}, score_calculated_at = NOW() WHERE id = #{id}")
-    int updateScore(long id, Double score);
+    int updateScore(long id, double score);
 
     @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND state = #{state} " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
@@ -67,7 +67,7 @@ public interface PostMapper {
     @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND state = #{state} AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
-    List<PostDO> getListByNodeAndScoreAndPaginated(long nodeId, Double lastScore, long lastId, int limit, int state);
+    List<PostDO> getListByNodeAndScoreAndPaginated(long nodeId, double lastScore, long lastId, int limit, int state);
 
     @Select("SELECT id, once, twice, helpful, created_at FROM post WHERE state = #{state}")
     List<PostDO> getAllPostsForScoreCalculation(int state);

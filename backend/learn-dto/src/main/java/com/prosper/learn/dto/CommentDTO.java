@@ -8,25 +8,25 @@ import java.util.List;
 @Data
 public class CommentDTO {
 
-    private int id;
+    private Long id;
 
     private String content;
 
-    private int type;
+    private Integer type;
 
-    private int objectId;
+    private Long objectId;
 
-    private int replyCount;
+    private Integer replyCount;
 
-    private int replyTo;
+    private Long replyTo;
 
-    private int fromUser;
+    private Long fromUser;
 
-    private int toUser;
+    private Long toUser;
 
-    private int upvoteCount;
+    private Integer upvoteCount;
 
-    private int upvoted;
+    private Integer upvoted;
 
     private String createdAt;
 

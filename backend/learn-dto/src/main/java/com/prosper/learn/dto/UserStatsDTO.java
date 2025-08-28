@@ -13,7 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 public class UserStatsDTO {
     
-    private Integer userId;
+    private Long userId;
     
     private String period; // "today", "7days", "15days", "30days", "1year", "all"
     

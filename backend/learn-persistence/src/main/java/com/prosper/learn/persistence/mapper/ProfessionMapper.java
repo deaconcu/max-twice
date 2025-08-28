@@ -39,7 +39,7 @@ public interface ProfessionMapper {
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
     @MapKey("id")
-    Map<Integer, ProfessionDO> getMapByIds(Collection<Integer> ids);
+    Map<Integer, ProfessionDO> getMapByIds(Collection<Long> ids);
 
     @Insert("INSERT INTO profession(name, description, icon, price, skills, main_category, sub_category, " +
             "state, rejected_reason, creator) " +

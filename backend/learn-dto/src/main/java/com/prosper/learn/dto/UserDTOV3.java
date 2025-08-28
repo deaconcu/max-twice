@@ -5,12 +5,12 @@ import lombok.Data;
 @Data
 public class UserDTOV3 {
 
-    private int id;
+    private Long id;
 
     private String name;
 
     private String biography;
 
-    private int followed;
+    private Integer followed;
 
 }

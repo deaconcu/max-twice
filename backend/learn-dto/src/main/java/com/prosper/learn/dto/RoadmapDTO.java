@@ -6,23 +6,23 @@ import java.time.LocalDateTime;
 @Data
 public class RoadmapDTO {
 
-    private Integer id;
+    private Long id;
 
     private String content;
 
-    private Integer professionId;
+    private Long professionId;
 
     private String description;
 
-    private int vote;
+    private Integer vote;
 
-    private int comment;
+    private Integer comment;
 
-    private boolean upvoted;
+    private Boolean upvoted;
 
-    private boolean pinned;
+    private Boolean pinned;
 
-    private boolean learning;
+    private Boolean learning;
 
     private UserDTOV4 creator;
 

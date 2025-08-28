@@ -7,7 +7,7 @@ import java.util.List;
 @Data
 public class NodeDTOV1 {
 
-    private Integer id;
+    private Long id;
 
     private String name;
 }

@@ -96,8 +96,8 @@ public class UserController implements UserClient {
         UserProfileDO userProfileDO = userProfileMapper.getById(userDO.getId());
         
         if (userProfileDO != null && userProfileDO.getSubscription() != null && !userProfileDO.getSubscription().trim().isEmpty()) {
-            List<Integer> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
-                    .map(Integer::parseInt).collect(Collectors.toCollection(ArrayList::new));
+            List<Long> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
+                    .map(Long::parseLong).collect(Collectors.toCollection(ArrayList::new));
             List<CourseDO> courseDOList = courseMapper.getByIds(ids);
             SubscriptionDTO[] subscriptionDTOS = new SubscriptionDTO[courseDOList.size()];
             int i = 0;
@@ -148,7 +148,7 @@ public class UserController implements UserClient {
         if (user == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }
-        if (user.isEmailValidated()) return new Response<>(SUCCESS);
+        if (user.getEmailValidated()) return new Response<>(SUCCESS);
 
         user.setEmailValidated(true);
         StpUtil.login(user.getId());

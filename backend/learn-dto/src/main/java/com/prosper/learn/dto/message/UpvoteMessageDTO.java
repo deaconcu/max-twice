@@ -9,11 +9,11 @@ public class UpvoteMessageDTO extends MessageDTO {
 
     NodeDTOV1 node;
 
-    int objectId;
+    Long objectId;
 
-    int objectType;
+    Integer objectType;
 
-    int voteType;
+    Integer voteType;
 
     UserDTOV4 upvoter;
 }
