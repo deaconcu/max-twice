@@ -12,7 +12,6 @@ public interface UserStatsMapper {
     
     @Insert("INSERT INTO user_stats (user_id, stats, stat_year, created_at, updated_at) " +
             "VALUES (#{userId}, #{stats}, #{statYear}, NOW(), NOW())")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(UserStatsDO userStats);
 
     @Update("UPDATE user_stats SET stats = #{stats}, updated_at = NOW() " +

@@ -332,7 +332,7 @@ public class RoadmapController implements RoadmapClient {
         if (userProfile == null) {
             // 如果用户配置不存在，创建新的
             userProfile = new UserProfileDO();
-            userProfile.setId(userId);
+            userProfile.setUserId(userId);
             userProfile.setRoadmapPin(updatedPinJson);
             userProfile.setSubscription(""); // 设置默认值
             userProfileMapper.insert(userProfile);

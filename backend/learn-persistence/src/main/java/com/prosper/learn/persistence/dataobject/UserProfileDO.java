@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class UserProfileDO {
 
-    private Long id;
+    private Long userId;
 
     private String subscription;
 
@@ -13,8 +13,8 @@ public class UserProfileDO {
 
     public UserProfileDO() {}
 
-    public UserProfileDO(Long id, String subscription) {
-        this.id = id;
+    public UserProfileDO(Long userId, String subscription) {
+        this.userId = userId;
         this.subscription = subscription;
     }
 }

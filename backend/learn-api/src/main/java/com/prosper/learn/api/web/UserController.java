@@ -236,7 +236,7 @@ public class UserController implements UserClient {
         String idsStr;
         if (userProfileDO == null) {
             userProfileDO = new UserProfileDO();
-            userProfileDO.setId(self);
+            userProfileDO.setUserId(self);
             idsStr = String.valueOf(courseId);
             userProfileDO.setSubscription(idsStr);
             userProfileMapper.insert(userProfileDO);
