@@ -29,18 +29,6 @@ public class TocController implements TocClient {
     private final ObjectMapper objectMapper;
 
     @Override
-    public Response<Object> get(Long courseId) {
-        if (courseMapper.getById(courseId) == null) {
-            throw ErrorCode.SYSTEM_ERROR.exception();
-        }
-
-        UserCourseTocDO userCourseTocDO = userCourseTocMapper.getByUserAndCourse(StpUtil.getLoginIdAsInt(), courseId);
-        String toc = userCourseTocDO.getToc();
-
-        return new Response<>(toc.split(",").length);
-    }
-
-    @Override
     public Response<Object> post(Long courseId, String indexArray) {
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {

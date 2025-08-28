@@ -20,50 +20,5 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UpvoteController implements UpvoteClient {
 
-    private final UpvoteMapper upvoteMapper;
 
-    private final PostMapper postMapper;
-
-    private final UpvoteService upvoteService;
-
-    @Override
-    public List<Long> getUpvotedList(Long userId, List<Long> postingIds) {
-        // todo not used
-        return null;
-        //return upvoteMapper.getPostingIds(userId, postingIds);
-    }
-
-    @Override
-    public boolean isUpvoted(Long userId, Long postingId) {
-        UpvoteDO upvoteDO = upvoteMapper.get(userId, postingId, Enums.ObjectType.post.value());
-        if (upvoteDO == null) return false;
-        return true;
-    }
-
-    @Override
-    // not used
-    public Response upvote(Long id, Long userId, int type) {
-        PostDO postDO = postMapper.get(id);
-        if (postDO == null) return Response.notFound;
-
-        //upvoteService.upvote(postingDO, userId, type);
-        return Response.success;
-    }
-
-    @Override
-    public Response cancelVote(Long id) {
-        /*
-        PostingDO postingDO = postingMapper.getById(id);
-        if (postingDO == null) return Response.notFound;
-
-        // todo userId
-        int userId = 1;
-        UpvoteDO upvoteDO = upvoteMapper.get(userId, id);
-        if (upvoteDO == null)  return Response.success;
-
-        upvoteService.cancelVote(postingDO, upvoteDO);
-        return Response.success;
-         */
-        return Response.success;
-    }
 }
