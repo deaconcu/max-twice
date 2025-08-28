@@ -7,27 +7,27 @@ import java.time.LocalDateTime;
 @Data
 public class CommentDO {
 
-    private int id;
+    private Long id;
 
     private String content;
 
-    private int type;
+    private Integer type;
 
-    private int objectId;
+    private Long objectId;
 
-    private int replyCount;
+    private Integer replyCount;
 
-    private int replyTo;
+    private Integer replyTo;
 
-    private int fromUser;
+    private Integer fromUser;
 
-    private int toUser;
+    private Integer toUser;
 
-    private int upvoteCount;
+    private Integer upvoteCount;
 
-    private int state;
+    private Integer state;
 
-    private double score;
+    private Double score;
 
-    private LocalDateTime cTime;
+    private LocalDateTime createdAt;
 }

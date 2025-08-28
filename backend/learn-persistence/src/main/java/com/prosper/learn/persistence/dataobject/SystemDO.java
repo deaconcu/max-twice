@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class SystemDO {
 
-    private int id;
+    private Long id;
 
     private String config;
 

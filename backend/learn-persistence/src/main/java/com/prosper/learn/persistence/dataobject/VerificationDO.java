@@ -8,6 +8,16 @@ import java.time.LocalDateTime;
 @Data
 public class VerificationDO {
 
+    private Long id;
+
+    private String email;
+
+    private String code;
+
+    private LocalDateTime cTime;
+
+    private Boolean used;
+
     public VerificationDO(){}
 
     public VerificationDO(String email, String code) {
@@ -17,9 +27,4 @@ public class VerificationDO {
         this.used = false;
     }
 
-    private int id;
-    private String email;
-    private String code;
-    private LocalDateTime cTime;
-    private boolean used;
 }

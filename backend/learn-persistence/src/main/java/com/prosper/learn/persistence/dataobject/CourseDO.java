@@ -7,17 +7,17 @@ import java.time.LocalDateTime;
 @Data
 public class CourseDO {
 
-    private Integer id;
+    private Long id;
 
     private String name;
 
     private String description;
 
-    private Integer creator;
+    private Long creator;
 
-    private Integer rootNode;
+    private Long rootNode;
 
-    private Integer parent;
+    private Long parent;
 
     private String state; // 修改为 String 类型，支持 SUMMITTED, APPROVED, REJECTED
 

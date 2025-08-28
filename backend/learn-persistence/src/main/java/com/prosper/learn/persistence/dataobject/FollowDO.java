@@ -7,9 +7,9 @@ import java.time.LocalDateTime;
 @Data
 public class FollowDO {
 
-    private int followeeId;
+    private Long followeeId;
 
-    private int followerId;
+    private Long followerId;
 
     private LocalDateTime createTime;
 }

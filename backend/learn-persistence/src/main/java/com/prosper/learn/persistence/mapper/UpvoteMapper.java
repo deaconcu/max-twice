@@ -7,19 +7,19 @@ import java.util.List;
 
 public interface UpvoteMapper {
 
-    @Select("SELECT * FROM upvote where userId = #{userId} and object_id = #{objectId} and object_type = #{objectType}")
+    @Select("SELECT * FROM upvote where user_id = #{userId} and object_id = #{objectId} and object_type = #{objectType}")
     UpvoteDO get(int userId, int objectId, int objectType);
 
-    @Select({"<script>SELECT object_id, type FROM upvote where userId = #{userId} and object_type = #{objectType} and object_id in " +
+    @Select({"<script>SELECT object_id, type FROM upvote where user_id = #{userId} and object_type = #{objectType} and object_id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
     List<UpvoteDO> getList(int userId, List<Integer> ids, int objectType);
 
-    @Insert("INSERT INTO upvote(userId, object_id, object_type, type) VALUES (#{userId}, #{objectId}, #{objectType}, #{type})")
+    @Insert("INSERT INTO upvote(user_id, object_id, object_type, type) VALUES (#{userId}, #{objectId}, #{objectType}, #{type})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UpvoteDO upvoteDO);
 
-    @Update("UPDATE upvote SET userId = #{userId}, object_id = #{objectId}, object_type = #{objectType}, type = #{type} where id = #{id}")
+    @Update("UPDATE upvote SET user_id = #{userId}, object_id = #{objectId}, object_type = #{objectType}, type = #{type} where id = #{id}")
     void update(UpvoteDO upvoteDO);
 
     @Delete("DELETE FROM upvote where id = #{id}")

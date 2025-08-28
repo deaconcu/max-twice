@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 @Data
 public class ProfessionDO {
 
-    private int id;
+    private Long id;
 
     private String name;
 
@@ -16,9 +16,9 @@ public class ProfessionDO {
 
     private String skills;
 
-    private int mainCategory;
+    private Integer mainCategory;
 
-    private int subCategory;
+    private Integer subCategory;
 
     private String state; // SUBMITED, APPROVED, REJECTED
 

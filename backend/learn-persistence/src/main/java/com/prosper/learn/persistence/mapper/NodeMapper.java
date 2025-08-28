@@ -32,7 +32,7 @@ public interface NodeMapper {
     List<NodeDO> list(@Param("limit") int limit, @Param("offset") int offset);
      */
 
-    @Select("SELECT * FROM node where courseId = #{courseId}")
+    @Select("SELECT * FROM node where course_id = #{courseId}")
     List<NodeDO> listBySubcourse(@Param("courseId") int courseId);
 
     /*
@@ -40,18 +40,18 @@ public interface NodeMapper {
     List<NodeDO> listByUser(int userId, int limit, int offset);
      */
 
-    @Insert("INSERT INTO node(name, description, courseId, root, creator) " +
+    @Insert("INSERT INTO node(name, description, course_id, root, creator) " +
             "VALUES (#{name}, #{description}, #{courseId}, #{root}, #{creator})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(NodeDO Node);
 
     @Update("UPDATE node SET name = #{name}, description = #{description}, " +
-            "creator = #{creator}, courseId = #{courseId}, root = #{root}, " +
+            "creator = #{creator}, course_id = #{courseId}, root = #{root}, " +
             "comment_count = #{commentCount} where id = #{id}")
     void update(NodeDO Node);
     
     // 平台统计相关方法
-    @Select("SELECT COUNT(*) FROM node WHERE courseId > 0")
+    @Select("SELECT COUNT(*) FROM node WHERE course_id > 0")
     Long countActiveNodes();
 
 }

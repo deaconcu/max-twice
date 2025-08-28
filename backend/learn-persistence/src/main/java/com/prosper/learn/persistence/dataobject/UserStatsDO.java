@@ -9,7 +9,7 @@ public class UserStatsDO {
 
     private Long id;
 
-    private Integer userId;
+    private Long userId;
 
     private String stats;  // JSON格式存储统计数据，格式：{"1-1":{"views": 10, "twice": 3, "helpful": 2, "comments": 5}, ...}
 

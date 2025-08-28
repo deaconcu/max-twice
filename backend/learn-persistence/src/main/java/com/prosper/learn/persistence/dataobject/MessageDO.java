@@ -7,17 +7,17 @@ import java.time.LocalDateTime;
 @Data
 public class MessageDO {
 
-    private int id;
+    private Long id;
 
-    private int senderId;
+    private Long senderId;
 
-    private int receiverId;
+    private Long receiverId;
 
     private String content;
 
-    private int type;
+    private Integer type;
 
-    private int isRead;
+    private Integer isRead;
 
     private LocalDateTime createdAt;
 

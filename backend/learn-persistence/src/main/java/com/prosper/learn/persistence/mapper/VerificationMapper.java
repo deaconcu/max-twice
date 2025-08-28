@@ -12,11 +12,11 @@ public interface VerificationMapper {
     @Select("SELECT * FROM verification WHERE email = #{email} and used = #{used} order by id desc limit 1")
     VerificationDO getByEmail(@Param("email") String email, @Param("used") boolean used);
 
-    @Insert("INSERT INTO verification(email, code, cTime, used) VALUES (#{email}, #{code}, #{cTime}, #{used})")
+    @Insert("INSERT INTO verification(email, code, c_time, used) VALUES (#{email}, #{code}, #{cTime}, #{used})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(VerificationDO verificationDO);
 
-    @Update("UPDATE verification SET email = #{email}, code = #{code}, cTime = #{cTime}, used = #{used} " +
+    @Update("UPDATE verification SET email = #{email}, code = #{code}, c_time = #{cTime}, used = #{used} " +
             "where id = #{id}")
     void update(VerificationDO verificationDO);
 }

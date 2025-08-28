@@ -41,12 +41,12 @@ public interface CourseMapper {
             "AND state = 'APPROVED' AND parent = 0 ORDER BY id ASC LIMIT 20")
     List<CourseDO> listRootByCategory(@Param("mainCategory") int mainCategory, @Param("subCategory") int subCategory);
 
-    @Insert("INSERT INTO course(name, description, creator, parent, state, rootNode, main_category, sub_category) " +
+    @Insert("INSERT INTO course(name, description, creator, parent, state, root_node, main_category, sub_category) " +
             "VALUES (#{name}, #{description}, #{creator}, #{parent}, #{state}, #{rootNode}, #{mainCategory}, #{subCategory})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(CourseDO course);
 
-    @Update("UPDATE course SET name = #{name}, description = #{description}, creator = #{creator}, rootNode = #{rootNode}, " +
+    @Update("UPDATE course SET name = #{name}, description = #{description}, creator = #{creator}, root_node = #{rootNode}, " +
             "parent = #{parent}, state = #{state}, main_category = #{mainCategory}, sub_category = #{subCategory} where id = #{id}")
     void update(CourseDO course);
 

@@ -7,11 +7,11 @@ import java.time.LocalDateTime;
 @Data
 public class UserCourseTocDO {
 
-    private int id;
+    private Long id;
 
-    private int userId;
+    private Long userId;
 
-    private int courseId;
+    private Long courseId;
 
     private String toc;
 

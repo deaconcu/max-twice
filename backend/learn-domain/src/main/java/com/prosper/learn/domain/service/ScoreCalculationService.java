@@ -418,7 +418,7 @@ public class ScoreCalculationService {
             double replyScore = comment.getReplyCount() * 1.0;    // 回复权重
 
             // 时间正向增加因子：越新的评论权重越高
-            double timeWeight = calculateCommentTimeWeight(comment.getCTime());
+            double timeWeight = calculateCommentTimeWeight(comment.getCreatedAt());
 
             // 综合评分 = (点赞分数 + 回复分数) * 时间权重
             double finalScore = (upvoteScore + replyScore) * timeWeight;

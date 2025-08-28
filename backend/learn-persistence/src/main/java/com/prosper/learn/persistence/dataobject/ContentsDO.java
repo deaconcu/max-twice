@@ -7,9 +7,9 @@ import java.time.LocalDateTime;
 @Data
 public class ContentsDO {
 
-    private int id;
+    private Long id;
 
-    private int userId;
+    private Long userId;
 
     private String contents;
 

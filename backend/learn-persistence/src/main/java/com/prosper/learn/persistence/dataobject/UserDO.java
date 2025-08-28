@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 @Data
 public class UserDO {
 
-    private int id;
+    private Long id;
 
     private String password;
 
@@ -17,7 +17,7 @@ public class UserDO {
 
     private String name;
 
-    private boolean emailValidated;
+    private Boolean emailValidated;
 
     private String biography;
 

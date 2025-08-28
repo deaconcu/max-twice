@@ -7,27 +7,27 @@ import java.time.LocalDateTime;
 @Data
 public class PostDO {
 
-    private int id;
+    private Long id;
 
-    private int nodeId;
+    private Long nodeId;
 
-    private int creator;
+    private Long creator;
 
-    private int type;
+    private Integer type;
 
     private String content;
 
-    private int once;
+    private Integer once;
 
-    private int twice;
+    private Integer twice;
 
-    private int helpful;
+    private Integer helpful;
 
-    private int commentCount;
+    private Integer commentCount;
 
-    private int state;
+    private Integer state;
 
-    private double score;  // 计算出的排序分数
+    private Double score;  // 计算出的排序分数
 
     private LocalDateTime scoreCalculatedAt;  // 分数计算时间
 

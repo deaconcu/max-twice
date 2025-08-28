@@ -11,7 +11,7 @@ public class CourseTocDO {
 
     private String toc;
 
-    private int refCount;
+    private Integer refCount;
 
     private LocalDateTime createdAt;
 

@@ -5,13 +5,13 @@ import lombok.Data;
 @Data
 public class UpvoteDO {
 
-    private int id;
+    private Long id;
 
-    private int objectId;
+    private Long objectId;
 
-    private int objectType;
+    private Integer objectType;
 
-    private int userId;
+    private Long userId;
 
-    private int type;
+    private Integer type;
 }

@@ -8,6 +8,7 @@ import com.prosper.learn.persistence.dataobject.NodeDO;
 import com.prosper.learn.persistence.mapper.CourseMapper;
 import com.prosper.learn.persistence.mapper.NodeMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -20,6 +21,11 @@ public class CourseService {
     private final CourseMapper courseMapper;
     private final NodeMapper nodeMapper;
     private final CourseRankingService courseRankingService;
+
+    @Cacheable(value = "cs", key = "#id")
+    public CourseDO getCourseDOById(int id) {
+        return courseMapper.getById(id);
+    }
 
     public boolean exist(int id) {
         CourseDO courseDO = courseMapper.getById(id);

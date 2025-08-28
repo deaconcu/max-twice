@@ -8,33 +8,33 @@ import java.time.LocalDateTime;
 @Data
 public class NodeDO {
 
-    private int id;
+    private Long id;
 
     private String name;
 
     private String description;
 
-    private int courseId;
+    private Long courseId;
 
-    private int root;
+    private Long root;
 
-    private int creator;
+    private Long creator;
 
-    private int commentCount;
+    private Integer commentCount;
 
-    private int state;
+    private Integer state;
 
     private LocalDateTime cTime;
 
     private LocalDateTime uTime;
 
-    public static NodeDO createRoot(int creator, int courseId) {
+    public static NodeDO createRoot(Long creator, Long courseId) {
         NodeDO node = new NodeDO();
         node.setName("课程根目录");
         node.setDescription("");
         node.setCourseId(courseId);
         node.setCreator(creator);
-        node.setRoot(0);
+        node.setRoot(0L);
         node.setCTime(LocalDateTime.now());
         node.setUTime(LocalDateTime.now());
         return node;

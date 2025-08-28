@@ -5,12 +5,12 @@ import lombok.Data;
 @Data
 public class ChosenDO {
 
-    private int id;
+    private Long id;
 
-    private int userId;
+    private Long userId;
 
-    private int nodeId;
+    private Long nodeId;
 
-    private int postingId;
+    private Long postingId;
 
 }
