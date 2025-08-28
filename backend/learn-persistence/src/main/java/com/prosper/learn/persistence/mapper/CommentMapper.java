@@ -8,17 +8,17 @@ import java.util.List;
 public interface CommentMapper {
 
     @Select("SELECT * FROM comment where id = #{id}")
-    CommentDO get(int id);
+    CommentDO get(long id);
 
     // 首页加载评论，按分数排序
     @Select("SELECT * FROM comment where object_id = #{objectId} and type = #{type} and reply_to = 0 ORDER BY score DESC, id DESC limit #{count}")
-    List<CommentDO> getByObjectId(int objectId, int type, int count);
+    List<CommentDO> getByObjectId(long objectId, int type, int count);
 
     // 分页加载评论，处理分数相同的情况
     @Select("SELECT * FROM comment where object_id = #{objectId} and type = #{type} and reply_to = 0 AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, id DESC limit #{count}")
-    List<CommentDO> getByObjectIdPaginated(int objectId, int type, double lastScore, int lastId, int count);
+    List<CommentDO> getByObjectIdPaginated(long objectId, int type, double lastScore, long lastId, int count);
 
     @Select("<script>SELECT * " +
             "FROM comment c1 " +
@@ -35,13 +35,13 @@ public interface CommentMapper {
 
     // 首页加载话题回复，按分数排序
     @Select("SELECT * FROM comment where reply_to = #{commentId} ORDER BY score DESC, id DESC limit #{count}")
-    List<CommentDO> getByTopic(int commentId, int count);
+    List<CommentDO> getByTopic(long commentId, int count);
 
     // 分页加载话题回复，处理分数相同的情况
     @Select("SELECT * FROM comment where reply_to = #{commentId} AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, id DESC limit #{count}")
-    List<CommentDO> getByTopicPaginated(int commentId, double lastScore, int lastId, int count);
+    List<CommentDO> getByTopicPaginated(long commentId, double lastScore, long lastId, int count);
 
     @Select("SELECT * FROM comment where state = #{state} order by id limit #{count}")
     List<CommentDO> getListByState(int state, int count);
@@ -55,6 +55,6 @@ public interface CommentMapper {
     void update(CommentDO commentDO);
 
     @Delete("DELETE FROM comment where id = #{id}")
-    void delete(int id);
+    void delete(long id);
 
 }

@@ -27,5 +27,5 @@ public interface CourseTocMapper {
     void incrRef(String hash, int n);
 
     @Delete("DELETE FROM course_toc where id = #{id}")
-    void delete(int id);
+    void delete(long id);
 }

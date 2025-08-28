@@ -243,11 +243,11 @@
           <div class="course-timestamp d-flex align-center">
             <v-icon icon="mdi-clock-outline" size="14" color="grey-lighten-1" class="mr-2"></v-icon>
             <span class="text-caption text-grey-darken-1">
-              申请时间：{{ course.ctime }}
+              申请时间：{{ course.createdAt}}
             </span>
-            <span v-if="course.utime && course.utime !== course.ctime" class="mx-2 text-grey-lighten-1">|</span>
-            <span v-if="course.utime && course.utime !== course.ctime" class="text-caption text-grey-darken-1">
-              更新时间：{{ course.utime }}
+            <span v-if="course.updatedAt && course.updatedAt !== course.createdAt" class="mx-2 text-grey-lighten-1">|</span>
+            <span v-if="course.updatedAt && course.updatedAt !== course.createdAt" class="text-caption text-grey-darken-1">
+              更新时间：{{ course.updatedAt }}
             </span>
           </div>
         </div>

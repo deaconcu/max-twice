@@ -103,7 +103,7 @@ const upvote = async (comment) => {
         </div>
         <div style="width:90%">
           <div class="text-body-2 mb-2 text-grey-darken-1">{{ t('subcomment.username') }} 
-            <span class="ms-2 text-caption text-grey">{{ comment.ctime }}</span>
+            <span class="ms-2 text-caption text-grey">{{ comment.createdAt}}</span>
           </div>
           <div class="">{{ comment.content }} </div>
           <div class="ma-0 py-2 pb-1 d-flex align-center justify-start text-grey-darken-1">

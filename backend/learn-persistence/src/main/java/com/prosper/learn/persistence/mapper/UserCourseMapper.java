@@ -21,7 +21,7 @@ public interface UserCourseMapper {
      * 根据用户ID和课程ID查询进度
      */
     @Select("SELECT * FROM user_course WHERE user_id = #{userId} AND course_id = #{courseId}")
-    UserCourseDO getByUserIdAndCourseId(Long userId, Long courseId);
+    UserCourseDO getByUserIdAndCourseId(long userId, long courseId);
 
     /**
      * 更新用户课程进度
@@ -31,22 +31,22 @@ public interface UserCourseMapper {
     int update(UserCourseDO userCourseDO);
 
     @Select("SELECT * FROM user_course WHERE user_id = #{userId} and id < #{lastId} ORDER BY id DESC LIMIT 20")
-    List<UserCourseDO> getByUserId(Long userId, Long lastId);
+    List<UserCourseDO> getByUserId(long userId, long lastId);
 
     @Select("SELECT * FROM user_course WHERE course_id = #{courseId}")
-    List<UserCourseDO> getByCourseId(Long courseId);
+    List<UserCourseDO> getByCourseId(long courseId);
 
     @Delete("DELETE FROM user_course WHERE id = #{id}")
-    void delete(Long id);
+    void delete(long id);
 
     @Delete("DELETE FROM user_course WHERE user_id = #{userId} AND course_id = #{courseId}")
-    void deleteByUserAndCourse(Long userId, Long courseId);
+    void deleteByUserAndCourse(long userId, long courseId);
     
     /**
      * 统计用户正在学习的课程数量
      */
     @Select("SELECT COUNT(*) FROM user_course WHERE user_id = #{userId} AND status = 'IN_PROGRESS'")
-    Integer countActiveCoursesByUserId(Long userId);
+    Integer countActiveCoursesByUserId(long userId);
 
     /**
      * 批量查询用户对多个课程的学习进度，返回Map<courseId, UserCourseDO>
@@ -58,5 +58,5 @@ public interface UserCourseMapper {
             "#{courseId}" +
             "</foreach>" +
             "</script>")
-    Map<Long, UserCourseDO> getByUserIdAndCourseIdsAsMap(Long userId, List<Long> courseIds);
+    Map<Long, UserCourseDO> getByUserIdAndCourseIdsAsMap(long userId, List<Long> courseIds);
 }

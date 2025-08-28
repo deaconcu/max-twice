@@ -11,7 +11,7 @@ public interface NodeMapper {
 
 
     @Select("SELECT * FROM node WHERE id = #{id}")
-    NodeDO getById(int id);
+    NodeDO getById(long id);
 
     @Select({"<script>SELECT * FROM node where id in " +
                  "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
@@ -25,20 +25,10 @@ public interface NodeMapper {
     Map<Integer, NodeDO> getMapByIds(Collection<Integer> ids);
 
     @Select("SELECT * FROM node where parent = #{parentId}")
-    List<NodeDO> getByParent(int parentId);
-
-    /*
-    @Select("SELECT * FROM node limit #{offset}, #{limit}")
-    List<NodeDO> list(int limit, int offset);
-     */
+    List<NodeDO> getByParent(long parentId);
 
     @Select("SELECT * FROM node where course_id = #{courseId}")
-    List<NodeDO> listBySubcourse(int courseId);
-
-    /*
-    @Select("SELECT * FROM node order by created_at desc limit #{offset}, #{limit}") // TODO
-    List<NodeDO> listByUser(int userId, int limit, int offset);
-     */
+    List<NodeDO> listBySubcourse(long courseId);
 
     @Insert("INSERT INTO node(name, description, course_id, root, creator) " +
             "VALUES (#{name}, #{description}, #{courseId}, #{root}, #{creator})")

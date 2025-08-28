@@ -8,7 +8,7 @@ import org.apache.ibatis.annotations.Update;
 public interface SystemMapper {
 
     @Select("SELECT * FROM `system` WHERE id = #{id}")
-    SystemDO get(int id);
+    SystemDO get(long id);
 
     @Update("UPDATE `system` SET config = #{config} where id = #{id}")
     void update(SystemDO systemDO);

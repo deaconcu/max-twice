@@ -8,10 +8,10 @@ import org.apache.ibatis.annotations.*;
 public interface UserCourseTocMapper {
 
     @Select("SELECT * FROM user_course_toc WHERE id = #{id}")
-    UserCourseTocDO get(int id);
+    UserCourseTocDO get(long id);
 
     @Select("SELECT * FROM user_course_toc WHERE user_id = #{userId} and course_id = #{courseId}")
-    UserCourseTocDO getByUserAndCourse(int userId, int courseId);
+    UserCourseTocDO getByUserAndCourse(long userId, long courseId);
 
     @Insert("INSERT INTO user_course_toc(user_id, course_id, toc) " +
         "VALUES (#{userId}, #{courseId}, #{toc})")
@@ -22,5 +22,5 @@ public interface UserCourseTocMapper {
     void update(UserCourseTocDO userCourseTocDO);
 
     @Delete("DELETE FROM user_course_toc where id = #{id}")
-    void delete(int id);
+    void delete(long id);
 }

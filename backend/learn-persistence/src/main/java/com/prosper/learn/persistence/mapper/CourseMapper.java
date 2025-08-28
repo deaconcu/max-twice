@@ -9,28 +9,28 @@ import java.util.List;
 public interface CourseMapper {
 
     @Select("SELECT * FROM course WHERE id = #{id}")
-    CourseDO getById(int id);
+    CourseDO getById(long id);
 
     @Select({"<script>SELECT * FROM course where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
-    List<CourseDO> getByIds(List<Integer> ids);
+    List<CourseDO> getByIds(List<Long> ids);
 
     @Select("SELECT * FROM course WHERE name LIKE CONCAT('%', #{name}, '%') limit #{limit}")
     List<CourseDO> searchByName(String name, int limit);
 
     @Select("SELECT * FROM course where state = #{state} and parent = #{parent} ORDER BY created_at DESC")
-    List<CourseDO> listByParentAndState(String state, int parent);
+    List<CourseDO> listByParentAndState(String state, long parent);
 
     @Select("SELECT * FROM course where parent = #{parent} ORDER BY created_at DESC")
-    List<CourseDO> listByParent(int parent);
+    List<CourseDO> listByParent(long parent);
 
     @Select("SELECT * FROM course where state = #{state} and creator = #{creator} ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
-    List<CourseDO> list(String state, int creator, int limit, int offset);
+    List<CourseDO> list(String state, long creator, int limit, int offset);
 
     // 新增：根据状态和lastId获取列表
     @Select("SELECT * FROM course WHERE state = #{state} AND id > #{lastId} ORDER BY updated_at DESC LIMIT 20")
-    List<CourseDO> listByStateAndLastId(String state, int lastId);
+    List<CourseDO> listByStateAndLastId(String state, long lastId);
 
     // 新增：根据主分类和子分类获取已批准的课程列表
     @Select("SELECT * FROM course WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} " +
@@ -48,13 +48,13 @@ public interface CourseMapper {
 
     // 新增：课程状态操作方法
     @Update("UPDATE course SET state = 'APPROVED', rejected_reason = '', updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")
-    int approve(int id);
+    int approve(long id);
 
     @Update("UPDATE course SET state = 'REJECTED', rejected_reason = #{rejectedReason}, updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")
-    int reject(int id, String rejectedReason);
+    int reject(long id, String rejectedReason);
 
     @Delete("DELETE FROM course WHERE id = #{id}")
-    int delete(int id);
+    int delete(long id);
     
     // 平台统计相关方法
     @Select("SELECT COUNT(*) FROM course WHERE state = 'APPROVED'")

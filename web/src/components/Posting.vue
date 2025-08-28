@@ -137,7 +137,7 @@ const handleViewFullContent = () => {
       </v-avatar>
       <div class="pl-3">
         <UserCard :id="posting.creator.id" :name="posting.creator.name"></UserCard>
-        <div class="text-body-2 text-grey-darken-2 font-weight-medium">{{ posting.ctime }}</div>
+        <div class="text-body-2 text-grey-darken-2 font-weight-medium">{{ posting.createdAt}}</div>
       </div>
     </v-row>
 

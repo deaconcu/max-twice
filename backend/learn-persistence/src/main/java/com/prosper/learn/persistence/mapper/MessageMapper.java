@@ -12,7 +12,7 @@ public interface MessageMapper {
 
     @Select("SELECT * FROM message " +
             "WHERE id = #{id}")
-    MessageDO getById(int id);
+    MessageDO getById(long id);
 
     @Select("SELECT * FROM message " +
             "WHERE type = #{type} " +
@@ -24,31 +24,31 @@ public interface MessageMapper {
             "where (sender_id = #{userId1} and receiver_id = #{userId2}) or (sender_id = #{userId2} and receiver_id = #{userId1})" +
             "ORDER BY created_at DESC " +
             "LIMIT #{offset}, #{limit}")
-    List<MessageDO> getConversationByUser(int userId1, int userId2, int offset, int limit);
+    List<MessageDO> getConversationByUser(long userId1, long userId2, int offset, int limit);
 
     @Select("SELECT * FROM message " +
             "where type = #{type} and sender_id = #{sender} and receiver_id = #{receiver} " +
             "ORDER BY created_at DESC " +
             "LIMIT #{offset}, #{limit}")
-    List<MessageDO> getListByUser(int type, int sender, int receiver, int offset, int limit);
+    List<MessageDO> getListByUser(int type, long sender, long receiver, int offset, int limit);
 
     @Select("SELECT * FROM message " +
             "where (sender_id = 0 and receiver_id = #{userId}) and type in (2, 3, 4, 5, 6, 7, 8) and id < #{lastId} " +
             "ORDER BY created_at DESC " +
             "LIMIT #{limit}")
-    List<MessageDO> getSystemListByUser(int userId, int lastId, int limit);
+    List<MessageDO> getSystemListByUser(long userId, long lastId, int limit);
 
     @Select("SELECT * FROM message " +
             "where (sender_id = 0 and receiver_id = #{userId}) and type = #{type} and id < #{lastId} " +
             "ORDER BY created_at DESC " +
             "LIMIT #{limit}")
-    List<MessageDO> getSystemItemListByUser(int type, int userId, int lastId, int limit);
+    List<MessageDO> getSystemItemListByUser(int type, long userId, long lastId, int limit);
 
     @Select("SELECT * FROM message " +
             "where sender_id = #{userId} and type = 1 and id < #{lastId} " +
             "ORDER BY created_at DESC " +
             "LIMIT #{limit}")
-    List<MessageDO> getApplyCourseListByUser(int userId, int lastId, int limit);
+    List<MessageDO> getApplyCourseListByUser(long userId, long lastId, int limit);
 
     @Select("SELECT * FROM message " +
             "where receiver_id = 0 and type = 1 " +

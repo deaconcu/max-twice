@@ -41,12 +41,12 @@ public class PostController implements PostClient {
                     NodeDO node = new NodeDO();
                     node.setName(nodeNames.get(i));
                     node.setDescription("");
-                    node.setRoot(0);
+                    node.setRoot(0l);
                     node.setCourseId(nodeDO.getCourseId());
                     node.setCreatedAt(Utils.getLocalDateTime());
                     node.setUpdatedAt(Utils.getLocalDateTime());
                     nodeMapper.insert(node);
-                    ids[i] = Integer.toString(node.getId());
+                    ids[i] = Long.toString(node.getId());
                 }
                 posting.setContent(String.join(",", ids));
 

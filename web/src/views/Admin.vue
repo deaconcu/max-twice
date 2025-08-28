@@ -355,7 +355,7 @@ const approveComment = async (comment, action) => {
                     </v-avatar>
                     <div>
                       <div class="text-body-2 font-weight-medium text-grey-darken-2">{{ t('admin.articleId') }}: {{ post.id }}</div>
-                      <div class="text-caption text-grey-darken-1">{{ post.ctime }}</div>
+                      <div class="text-caption text-grey-darken-1">{{ post.createdAt}}</div>
                     </div>
                   </div>
 
@@ -439,7 +439,7 @@ const approveComment = async (comment, action) => {
                       </v-avatar>
                       <div>
                         <div class="text-body-2 font-weight-medium text-grey-darken-2">{{ t('admin.commentId') }}: {{ comment.id }}</div>
-                        <div class="text-caption text-grey-darken-1">{{ comment.ctime }}</div>
+                        <div class="text-caption text-grey-darken-1">{{ comment.createdAt}}</div>
                       </div>
                     </div>
                     <v-btn variant="outlined" color="teal" size="small" rounded="lg" 

@@ -72,7 +72,7 @@ const deletePosting = async (postingId) => {
       </v-avatar>
       <div class="pl-3">
         <div class="text-body-2 text-grey-darken-4 font-weight-bold">{{ posting.creator.name}}</div>
-        <div class="text-body-2 text-grey">{{ posting.ctime }}</div>
+        <div class="text-body-2 text-grey">{{ posting.createdAt}}</div>
       </div>
     </v-row>
 

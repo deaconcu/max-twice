@@ -47,7 +47,7 @@ public class ProfessionService {
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }
 
-    public int create(ProfessionDTO professionDTO) {
+    public Long create(ProfessionDTO professionDTO) {
         ProfessionDO professionDO = Converter.INSTANCE.toProfessionDO(professionDTO);
         professionDO.setState("SUBMITED");
         professionDO.setRejectedReason("");

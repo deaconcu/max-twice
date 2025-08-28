@@ -22,13 +22,13 @@ public interface Converter {
 
     // course
 
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    @Mapping(target = "UTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(target = "parent", ignore = true) // 自定义处理 parent 字段
     CourseDTOV4 toCourseDTOV4(CourseDO item);
 
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    @Mapping(target = "UTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(target = "parent", ignore = true) // 自定义处理 parent 字段
     List<CourseDTOV4> toCourseDTOV4(List<CourseDO> list);
     List<CourseDTOV2> toCourseDTOV2(List<CourseDO> list);
@@ -38,8 +38,8 @@ public interface Converter {
 
     // node
 
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    @Mapping(target = "UTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     NodeDTO toNodeDTO(NodeDO item);
     NodeDTOV1 toNodeDTOV1(NodeDO item);
     NodeDTOV2 toNodeDTOV2(NodeDO item);
@@ -54,34 +54,34 @@ public interface Converter {
         return dto;
     }
 
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    @Mapping(target = "UTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     NodeDO toNodeDO(NodeDTO itemDTO);
 
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    @Mapping(target = "UTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     List<NodeDTO> toNodeDTO(List<NodeDO> list);
 
     // posting
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(source = "creator", target="creatorId")
     @Mapping(target = "creator", ignore = true)
     PostDTO toPostDTO(PostDO item);
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(source = "creator", target="creatorId")
     @Mapping(target = "creator", ignore = true)
     List<PostDTO> toPostDTO(List<PostDO> list);
 
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(source = "creator", target="creatorId")
     @Mapping(target = "creator", ignore = true)
     PostDTOV2 toPostDTOV2(PostDO item);
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(source = "creator", target="creatorId")
     @Mapping(target = "creator", ignore = true)
     List<PostDTOV2> toPostDTOV2(List<PostDO> list);
 
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(source = "creatorId", target="creator")
     PostDO toPostDO(PostDTO item);
 
@@ -90,8 +90,8 @@ public interface Converter {
     List<FollowDTO> toFollowDTO(List<FollowDO> list);
 
     // user
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    @Mapping(target = "UTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     UserDTO toUserDTO(UserDO userDO);
     UserDTOV1 toUserDTOV1(UserDO userDO);
     UserDTOV4 toUserDTOV4(UserDO userDO);
@@ -100,21 +100,21 @@ public interface Converter {
     UserDTOV2 toUserDTOV2(UserDO userDO);
     UserDTOV3 toUserDTOV3(UserDO userDO);
 
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    @Mapping(target = "UTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     UserDO toUserDO(UserDTO userDTO);
 
     // comment
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     CommentDTO toCommentDTO(CommentDO item);
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     CommentDTOV1 toCommentDTOV1(CommentDO item);
 
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     List<CommentDTO> toCommentDTO(List<CommentDO> list);
     List<CommentDTOV1> toCommentDTOV1(List<CommentDO> list);
 
-    @Mapping(target = "CTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     CommentDO toCommentDO(CommentDTO item);
 
 

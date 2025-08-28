@@ -11,7 +11,7 @@ import java.util.Map;
 public interface UserMapper {
 
     @Select("SELECT * FROM user WHERE id = #{id}")
-    UserDO getById(int id);
+    UserDO getById(long id);
 
     @Select("SELECT * FROM user WHERE INSTR(name, #{name}) > 0 limit 20")
     List<UserDO> searchByName(String name);

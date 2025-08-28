@@ -12,7 +12,7 @@ public interface UserRoadmapMapper {
      * 根据用户ID和路线图ID查询学习进度
      */
     @Select("SELECT * FROM user_roadmap WHERE user_id = #{userId} AND roadmap_id = #{roadmapId}")
-    UserRoadmapDO getByUserAndRoadmap(Long userId, Long roadmapId);
+    UserRoadmapDO getByUserAndRoadmap(long userId, long roadmapId);
 
     /**
      * 插入新的学习进度记录
@@ -26,7 +26,7 @@ public interface UserRoadmapMapper {
      * 根据用户ID查询所有路线图学习进度
      */
     @Select("SELECT * FROM user_roadmap WHERE user_id = #{userId} ORDER BY created_at DESC")
-    List<UserRoadmapDO> getByUser(Long userId);
+    List<UserRoadmapDO> getByUser(long userId);
 
     /**
      * 更新学习进度
@@ -52,7 +52,7 @@ public interface UserRoadmapMapper {
      * 删除学习进度记录
      */
     @Delete("DELETE FROM user_roadmap WHERE user_id = #{userId} AND roadmap_id = #{roadmapId}")
-    void deleteByUserAndRoadmap(Long userId, Long roadmapId);
+    void deleteByUserAndRoadmap(long userId, long roadmapId);
 
     /**
      * 批量查询用户对多个路线图的学习状态
@@ -61,11 +61,11 @@ public interface UserRoadmapMapper {
              "SELECT roadmap_id FROM user_roadmap WHERE user_id = #{userId} AND roadmap_id IN ",
              "<foreach item='id' collection='roadmapIds' open='(' separator=',' close=')'>#{id}</foreach>",
              "</script>"})
-    List<Integer> getBatchLearningStatus(Long userId, List<Integer> roadmapIds);
+    List<Integer> getBatchLearningStatus(long userId, List<Integer> roadmapIds);
     
     /**
      * 统计用户正在学习的路线图数量
      */
     @Select("SELECT COUNT(*) FROM user_roadmap WHERE user_id = #{userId} AND status = 'IN_PROGRESS'")
-    Integer countActiveRoadmapsByUserId(Long userId);
+    Integer countActiveRoadmapsByUserId(long userId);
 }

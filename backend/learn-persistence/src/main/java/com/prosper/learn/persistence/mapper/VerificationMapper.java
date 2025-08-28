@@ -7,7 +7,7 @@ import org.apache.ibatis.annotations.*;
 public interface VerificationMapper {
 
     @Select("SELECT * FROM verification WHERE id = #{id}")
-    VerificationDO getById(int id);
+    VerificationDO getById(long id);
 
     @Select("SELECT * FROM verification WHERE email = #{email} and used = #{used} order by id desc limit 1")
     VerificationDO getByEmail(String email, boolean used);

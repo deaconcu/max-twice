@@ -10,7 +10,7 @@ import java.util.Map;
 public interface PostMapper {
 
     @Select("SELECT * FROM post WHERE id = #{id}")
-    PostDO get(int id);
+    PostDO get(long id);
 
     @Select({"<script>SELECT * FROM post where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
@@ -26,22 +26,22 @@ public interface PostMapper {
     @Select("SELECT * FROM post " +
             "WHERE node_id = #{nodeId} and state = #{state} " +
             "order by created_at desc limit #{limit}")
-    List<PostDO> getListByNode(int nodeId, int limit, int state);
+    List<PostDO> getListByNode(long nodeId, int limit, int state);
 
     @Select("SELECT * FROM post " +
             "WHERE node_id = #{nodeId} and id < #{lastId} and state = #{state} " +
             "order by id desc limit #{limit}")
-    List<PostDO> getListByLastId(int nodeId, int lastId, int limit, int state);
+    List<PostDO> getListByLastId(long nodeId, long lastId, int limit, int state);
 
     @Select("SELECT * FROM post " +
             "WHERE creator = #{userId} and type = 2 and id < #{lastId} " +
             "order by id desc limit #{count}")
-    List<PostDO> getArticleListByUser(int userId, int lastId, int count);
+    List<PostDO> getArticleListByUser(long userId, long lastId, int count);
 
     @Select("SELECT * FROM post " +
             "WHERE creator = #{userId} and type = 1 and id < #{lastId} " +
             "order by id desc limit #{count}")
-    List<PostDO> getContentsListByUser(int userId, int lastId, int count);
+    List<PostDO> getContentsListByUser(long userId, long lastId, int count);
 
     @Insert("INSERT INTO post" +
             "(node_id, creator, type, content, once, twice, helpful, comment_count, state, score) " +
@@ -58,16 +58,16 @@ public interface PostMapper {
 
     // 新增分数相关方法
     @Update("UPDATE post SET score = #{score}, score_calculated_at = NOW() WHERE id = #{id}")
-    int updateScore(int id, Double score);
+    int updateScore(long id, Double score);
 
     @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND state = #{state} " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
-    List<PostDO> getListByNodeAndScore(int nodeId, int limit, int state);
+    List<PostDO> getListByNodeAndScore(long nodeId, int limit, int state);
 
     @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND state = #{state} AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
-    List<PostDO> getListByNodeAndScoreAndPaginated(int nodeId, Double lastScore, int lastId, int limit, int state);
+    List<PostDO> getListByNodeAndScoreAndPaginated(long nodeId, Double lastScore, long lastId, int limit, int state);
 
     @Select("SELECT id, once, twice, helpful, created_at FROM post WHERE state = #{state}")
     List<PostDO> getAllPostsForScoreCalculation(int state);
