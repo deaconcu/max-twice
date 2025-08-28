@@ -183,11 +183,14 @@ public interface Converter {
 
     // user progress
     @Mapping(target = "course", ignore = true)
+    @Mapping(target = "state", source = "state") // status字段已重命名为state
     UserCourseDTO toUserCourseDTO(UserCourseDO item);
     @Mapping(target = "course", ignore = true)
+    @Mapping(target = "state", source = "state") // status字段已重命名为state
     List<UserCourseDTO> toUserCourseDTO(List<UserCourseDO> list);
 
     @Mapping(target = "roadmap", ignore = true)
+    @Mapping(target = "state", source = "state") // status字段已重命名为state
     UserRoadmapDTO toUserRoadmapDTO(UserRoadmapDO item);
 
     // profession

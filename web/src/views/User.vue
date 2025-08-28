@@ -15,6 +15,7 @@ import { Controls } from '@vue-flow/controls'
 import RoadmapDetail from '@/components/RoadmapDetail.vue';
 import RightSidebar from '@/components/RightSidebar.vue';
 import dagre from 'dagre';
+import { PROGRESS_STATE, PROGRESS_STATE_TEXT } from '@/constants/statusConstants';
 
 
 //const isLoggedIn = ref(false);
@@ -250,7 +251,7 @@ const loadLearningProgress = async () => {
           completedNodes: completedNodes,
           totalNodes: totalNodes,
           lastActivity: getRelativeTime(userRoadmap.updatedAt),
-          status: userRoadmap.status,
+          state: userRoadmap.state,
           startedAt: userRoadmap.startedAt,
           completedAt: userRoadmap.completedAt,
           tags: extractTags(roadmap.description),
@@ -274,7 +275,7 @@ const loadLearningProgress = async () => {
           totalLessons: calculateTotalLessons(userCourse.course),
           completedLessons: calculateCompletedLessons(userCourse),
           category: getCategoryFromDescription(userCourse.course.description),
-          difficulty: getDifficultyFromStatus(userCourse.status),
+          difficulty: getDifficultyFromStatus(userCourse.state),
           estimatedTime: getEstimatedTime(userCourse.course.description),
           lastActivity: getRelativeTime(userCourse.updatedAt),
           instructor: userCourse.course.creator?.name || '未知讲师'
@@ -616,11 +617,11 @@ const getCategoryFromDescription = (description) => {
 };
 
 // 根据状态推断难度
-const getDifficultyFromStatus = (status) => {
-  switch (status) {
-    case 'NOT_STARTED': return 'beginner';
-    case 'IN_PROGRESS': return 'intermediate';
-    case 'COMPLETED': return 'advanced';
+const getDifficultyFromStatus = (state) => {
+  switch (state) {
+    case PROGRESS_STATE.NOT_STARTED: return 'beginner';
+    case PROGRESS_STATE.IN_PROGRESS: return 'intermediate';
+    case PROGRESS_STATE.COMPLETED: return 'advanced';
     default: return 'beginner';
   }
 };
@@ -675,33 +676,28 @@ const calculateDuration = (startTime) => {
 };
 
 // 获取状态颜色 - 从 Learning.vue 复制
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'NOT_STARTED': return 'grey'
-    case 'IN_PROGRESS': return 'primary'
-    case 'COMPLETED': return 'success'
+const getStatusColor = (state) => {
+  switch (state) {
+    case PROGRESS_STATE.NOT_STARTED: return 'grey'
+    case PROGRESS_STATE.IN_PROGRESS: return 'primary'
+    case PROGRESS_STATE.COMPLETED: return 'success'
     default: return 'grey'
   }
 };
 
 // 获取状态图标 - 从 Learning.vue 复制
-const getStatusIcon = (status) => {
-  switch (status) {
-    case 'NOT_STARTED': return 'mdi-circle-outline'
-    case 'IN_PROGRESS': return 'mdi-play-circle'
-    case 'COMPLETED': return 'mdi-check-circle'
+const getStatusIcon = (state) => {
+  switch (state) {
+    case PROGRESS_STATE.NOT_STARTED: return 'mdi-circle-outline'
+    case PROGRESS_STATE.IN_PROGRESS: return 'mdi-play-circle'
+    case PROGRESS_STATE.COMPLETED: return 'mdi-check-circle'
     default: return 'mdi-circle-outline'
   }
 };
 
 // 获取状态文本 - 从 Learning.vue 复制
-const getStatusText = (status) => {
-  switch (status) {
-    case 'NOT_STARTED': return '未开始'
-    case 'IN_PROGRESS': return '进行中'
-    case 'COMPLETED': return '已完成'
-    default: return '未知状态'
-  }
+const getStatusText = (state) => {
+  return PROGRESS_STATE_TEXT[state] || '未知状态'
 };
 
 // 处理节点点击 - 从 Learning.vue 复制

@@ -1,6 +1,8 @@
 package com.prosper.learn.api.web;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.client.ProfessionClient;
+import com.prosper.learn.common.Enums;
+import static com.prosper.learn.common.Enums.ProfessionState;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.ProfessionService;
 import com.prosper.learn.domain.service.ProfessionRankingScheduler;
@@ -28,8 +30,12 @@ public class ProfessionController implements ProfessionClient {
     }
 
     @Override
-    public Response<Object> listByStateAndLastId(String state, Long lastId) {
-        List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(state, lastId);
+    public Response<Object> listByStateAndLastId(Byte state, Long lastId) {
+        ProfessionState professionState = ProfessionState.getStateByValue(state.intValue());
+        if (professionState == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("Invalid profession state: " + state);
+        }
+        List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(professionState, lastId);
         return new Response<>(professionList);
     }
 

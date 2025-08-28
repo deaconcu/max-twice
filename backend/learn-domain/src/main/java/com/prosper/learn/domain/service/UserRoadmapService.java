@@ -1,6 +1,8 @@
 package com.prosper.learn.domain.service;
 
 import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.common.Enums;
+import static com.prosper.learn.common.Enums.UserRoadmapState;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.ProfessionDTO;
 import com.prosper.learn.dto.RoadmapDTOV2;
@@ -55,7 +57,7 @@ public class UserRoadmapService {
         userRoadmapDO.setUserId(userId);
         userRoadmapDO.setRoadmapId(roadmapId);
         userRoadmapDO.setProgressPercent(0);
-        userRoadmapDO.setStatus("IN_PROGRESS");
+        userRoadmapDO.setState(UserRoadmapState.IN_PROGRESS.value);
         userRoadmapDO.setStartedAt(LocalDateTime.now());
 
         userRoadmapMapper.insert(userRoadmapDO);
@@ -173,7 +175,7 @@ public class UserRoadmapService {
     private boolean checkAndCollectRoadmapUpdate(UserRoadmapDO userRoadmapDO, String content, List<UserRoadmapDO> toUpdateList) {
         try {
             // 如果已经是COMPLETED状态，无需再检查
-            if ("COMPLETED".equals(userRoadmapDO.getStatus())) {
+            if (UserRoadmapState.COMPLETED.value == userRoadmapDO.getState()) {
                 return false;
             }
             
@@ -207,15 +209,15 @@ public class UserRoadmapService {
                 
                 // 如果完成度达到100%，更新状态为COMPLETED
                 if (overallProgress >= 100.0) {
-                    userRoadmapDO.setStatus("COMPLETED");
+                    userRoadmapDO.setState(UserRoadmapState.COMPLETED.value);
                     userRoadmapDO.setProgressPercent(100);
                     if (userRoadmapDO.getCompletedAt() == null) {
                         userRoadmapDO.setCompletedAt(LocalDateTime.now());
                     }
                     needUpdate = true;
-                } else if (overallProgress > 0 && "NOT_STARTED".equals(userRoadmapDO.getStatus())) {
+                } else if (overallProgress > 0 && UserRoadmapState.NOT_STARTED.value == userRoadmapDO.getState()) {
                     // 如果有进度但状态还是NOT_STARTED，更新为IN_PROGRESS
-                    userRoadmapDO.setStatus("IN_PROGRESS");
+                    userRoadmapDO.setState(UserRoadmapState.IN_PROGRESS.value);
                     userRoadmapDO.setProgressPercent((int) Math.round(overallProgress));
                     needUpdate = true;
                 }
@@ -251,10 +253,10 @@ public class UserRoadmapService {
 
         // 如果进度达到100%，标记为完成
         if (progressPercent >= 100) {
-            progressDO.setStatus("COMPLETED");
+            progressDO.setState(UserRoadmapState.COMPLETED.value);
             progressDO.setCompletedAt(LocalDateTime.now());
         } else if (progressPercent > 0) {
-            progressDO.setStatus("IN_PROGRESS");
+            progressDO.setState(UserRoadmapState.IN_PROGRESS.value);
         }
 
         userRoadmapMapper.update(progressDO);

@@ -11,7 +11,7 @@ public interface ProfessionClient {
 
     @GetMapping(value = "/profession/list", params = {"state"})
     Response<Object> listByStateAndLastId(
-            @RequestParam String state, @RequestParam(value = "lastId", defaultValue = "0") Long lastId);
+            @RequestParam Byte state, @RequestParam(value = "lastId", defaultValue = "0") Long lastId);
 
     @GetMapping(value = "/profession/list", params = {"mainCategory"})
     Response<Object> listByMainCategoryAndLastId(

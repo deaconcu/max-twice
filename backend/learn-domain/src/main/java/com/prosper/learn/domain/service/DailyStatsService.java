@@ -2,6 +2,8 @@ package com.prosper.learn.domain.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.common.Enums;
+import static com.prosper.learn.common.Enums.PostStatsType;
 import com.prosper.learn.dto.DailyStatsDTO;
 import com.prosper.learn.dto.PostDTOV2;
 import com.prosper.learn.dto.UserStatsDTO;
@@ -358,10 +360,10 @@ public class DailyStatsService {
             
             try {
                 // 确保post_stats年度记录存在
-                ensurePostYearRecord("POST", postId, year);
+                ensurePostYearRecord(PostStatsType.POST.value, postId, year);
                 
                 // 直接设置当天的完整数据（覆盖而非增量）
-                int updated = postStatsMapper.setDayStats("POST", postId, year, dayKey,
+                int updated = postStatsMapper.setDayStats(PostStatsType.POST.value, postId, year, dayKey,
                         dayStats.views, dayStats.twice, dayStats.helpful, dayStats.comments);
                 
                 if (updated > 0) {
@@ -405,7 +407,7 @@ public class DailyStatsService {
      * @param field 统计字段，如"view", "twice", "helpful", "comment"
      * @param count 统计数值
      */
-    private void updatePostStatsField(String type, Long objectId, int year, String dayKey, String field, int count) {
+    private void updatePostStatsField(byte type, Long objectId, int year, String dayKey, String field, int count) {
         try {
             // 确保post_stats年度记录存在
             ensurePostYearRecord(type, objectId, year);
@@ -449,7 +451,7 @@ public class DailyStatsService {
     /**
      * 确保post_stats的年度记录存在
      */
-    private void ensurePostYearRecord(String type, Long objectId, int year) {
+    private void ensurePostYearRecord(byte type, Long objectId, int year) {
         PostStatsDO existing = postStatsMapper.getByTypeAndObjectIdAndYear(type, objectId, year);
         if (existing == null) {
             PostStatsDO yearRecord = new PostStatsDO();
@@ -465,7 +467,7 @@ public class DailyStatsService {
     /**
      * 获取当前post指定日期的统计数据
      */
-    private Map<String, Integer> getCurrentPostDayStats(String type, Long objectId, int year, String dayKey) {
+    private Map<String, Integer> getCurrentPostDayStats(byte type, Long objectId, int year, String dayKey) {
         try {
             String dayStatsJson = postStatsMapper.getDayStats(type, objectId, year, dayKey);
             if (dayStatsJson != null) {
@@ -1018,7 +1020,7 @@ public class DailyStatsService {
             int currentYear = today.getYear();
             
             // 获取所有年份的统计数据
-            List<PostStatsDO> statsList = postStatsMapper.getStatsInYearRange("POST", 
+            List<PostStatsDO> statsList = postStatsMapper.getStatsInYearRange(PostStatsType.POST.value, 
                 Long.valueOf(postId), currentYear - 1); // 查询最近2年的数据
             
             for (PostStatsDO stats : statsList) {

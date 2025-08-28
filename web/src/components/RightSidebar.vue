@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { usePlatformStats } from '@/composables/usePlatformStats';
 import { learnService } from '@/services/learnService';
+import { PROGRESS_STATE, PROGRESS_STATE_TEXT } from '@/constants/statusConstants';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -199,23 +200,18 @@ onUnmounted(() => {
 });
 
 // 获取状态颜色
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'NOT_STARTED': return 'grey'
-    case 'IN_PROGRESS': return 'primary'
-    case 'COMPLETED': return 'success'
+const getStatusColor = (state) => {
+  switch (state) {
+    case PROGRESS_STATE.NOT_STARTED: return 'grey'
+    case PROGRESS_STATE.IN_PROGRESS: return 'primary'
+    case PROGRESS_STATE.COMPLETED: return 'success'
     default: return 'grey'
   }
 };
 
 // 获取状态文本
-const getStatusText = (status) => {
-  switch (status) {
-    case 'NOT_STARTED': return t('rightSidebar.status.notStarted')
-    case 'IN_PROGRESS': return t('rightSidebar.status.inProgress')
-    case 'COMPLETED': return t('rightSidebar.status.completed')
-    default: return t('rightSidebar.status.unknown')
-  }
+const getStatusText = (state) => {
+  return PROGRESS_STATE_TEXT[state] || t('rightSidebar.status.unknown')
 };
 
 // 获取排名芯片颜色

@@ -1,5 +1,7 @@
 package com.prosper.learn.domain.service;
 
+import com.prosper.learn.common.Enums;
+import static com.prosper.learn.common.Enums.ProfessionState;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.ProfessionDTO;
 import com.prosper.learn.persistence.dataobject.ProfessionDO;
@@ -22,8 +24,8 @@ public class ProfessionService {
         return professionDO != null ? Converter.INSTANCE.toProfessionDTO(professionDO) : null;
     }
 
-    public List<ProfessionDTO> getListByStateAndLastId(String state, long lastId) {
-        List<ProfessionDO> professionDOList = professionMapper.listByStateAndLastId(state, lastId);
+    public List<ProfessionDTO> getListByStateAndLastId(ProfessionState state, long lastId) {
+        List<ProfessionDO> professionDOList = professionMapper.listByStateAndLastId(state.value, lastId);
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }
 
@@ -49,7 +51,7 @@ public class ProfessionService {
 
     public Long create(ProfessionDTO professionDTO) {
         ProfessionDO professionDO = Converter.INSTANCE.toProfessionDO(professionDTO);
-        professionDO.setState("SUBMITED");
+        professionDO.setState(ProfessionState.SUBMITTED.value);
         professionDO.setRejectedReason("");
         professionMapper.insert(professionDO);
         return professionDO.getId();
@@ -66,7 +68,7 @@ public class ProfessionService {
         if (profession == null) {
             throw new RuntimeException("操作失败：专业不存在");
         }
-        if ("APPROVED".equals(profession.getState())) {
+        if (ProfessionState.APPROVED.value == profession.getState()) {
             throw new RuntimeException("操作失败：专业状态已是批准状态，无需重复操作");
         }
 
@@ -83,7 +85,7 @@ public class ProfessionService {
         if (profession == null) {
             throw new RuntimeException("操作失败：专业不存在");
         }
-        if ("REJECTED".equals(profession.getState())) {
+        if (ProfessionState.REJECTED.value == profession.getState()) {
             throw new RuntimeException("操作失败：专业状态已是拒绝状态，无需重复操作");
         }
 

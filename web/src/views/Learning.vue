@@ -11,6 +11,7 @@ import RoadmapDetail from '@/components/RoadmapDetail.vue';
 import RightSidebar from '@/components/RightSidebar.vue';
 import dagre from 'dagre';
 import { usePlatformStats } from '@/composables/usePlatformStats';
+import { PROGRESS_STATE, PROGRESS_STATE_TEXT } from '@/constants/statusConstants';
 
 const { t } = useI18n();
 const showSnackbar = inject('showSnackbar');
@@ -33,7 +34,7 @@ const learningData = ref({
 const selectedTab = ref('roadmaps'); // 默认显示学习路线图
 const searchQuery = ref('');
 const selectedNavTab = ref('learning'); // 导航栏当前选中项
-const selectedStatus = ref('all'); // 状态筛选: all, NOT_STARTED, IN_PROGRESS, COMPLETED
+const selectedStatus = ref('all'); // 状态筛选: all, PROGRESS_STATE.NOT_STARTED, PROGRESS_STATE.IN_PROGRESS, PROGRESS_STATE.COMPLETED
 
 // RoadmapDetail 浮层状态
 const showRoadmapDetail = ref(false);
@@ -142,7 +143,7 @@ const filteredLearningData = computed(() => {
     ...learningData.value,
     roadmaps: learningData.value.roadmaps.filter(roadmap => {
       // 状态筛选
-      if (selectedStatus.value !== 'all' && roadmap.status !== selectedStatus.value) {
+      if (selectedStatus.value !== 'all' && roadmap.state !== selectedStatus.value) {
         return false;
       }
       // 搜索筛选
@@ -156,7 +157,7 @@ const filteredLearningData = computed(() => {
     }),
     courses: learningData.value.courses.filter(course => {
       // 状态筛选
-      if (selectedStatus.value !== 'all' && course.status !== selectedStatus.value) {
+      if (selectedStatus.value !== 'all' && course.state !== selectedStatus.value) {
         return false;
       }
       // 搜索筛选
@@ -238,7 +239,7 @@ const loadLearningData = async () => {
           completedNodes: completedNodes,
           totalNodes: totalNodes,
           lastActivity: getRelativeTime(userRoadmap.updatedAt),
-          status: userRoadmap.status,
+          state: userRoadmap.state,
           startedAt: userRoadmap.startedAt,
           completedAt: userRoadmap.completedAt,
           tags: extractTags(roadmap.description),
@@ -259,7 +260,7 @@ const loadLearningData = async () => {
           name: userCourse.course.name,
           description: userCourse.course.description,
           progress: userCourse.progressPercent ? userCourse.progressPercent / 100 : 0,
-          status: userCourse.status, // NOT_STARTED, IN_PROGRESS, COMPLETED
+          state: userCourse.state, // PROGRESS_STATE.NOT_STARTED, PROGRESS_STATE.IN_PROGRESS, PROGRESS_STATE.COMPLETED
           startedAt: userCourse.startedAt,
           completedAt: userCourse.completedAt,
           createdAt: userCourse.createdAt,
@@ -267,7 +268,7 @@ const loadLearningData = async () => {
           lastActivity: getRelativeTime(userCourse.updatedAt),
           // 根据状态设置其他属性
           category: getCategoryFromDescription(userCourse.course.description),
-          difficulty: getDifficultyFromStatus(userCourse.status),
+          difficulty: getDifficultyFromStatus(userCourse.state),
           estimatedTime: getEstimatedTime(userCourse.course.description)
         }
       })
@@ -330,7 +331,7 @@ function generateRecentActivities(items) {
   const activities = []
   
   items.forEach(item => {
-    if (item.status === 'IN_PROGRESS') {
+    if (item.state === PROGRESS_STATE.IN_PROGRESS) {
       activities.push({
         type: item.nodes ? 'roadmap' : 'course', // 有nodes的是roadmap，否则是course
         title: item.title || item.name,
@@ -339,7 +340,7 @@ function generateRecentActivities(items) {
       })
     }
     
-    if (item.status === 'COMPLETED') {
+    if (item.state === PROGRESS_STATE.COMPLETED) {
       activities.push({
         type: item.nodes ? 'roadmap' : 'course',
         title: item.title || item.name,
@@ -366,8 +367,8 @@ function getCategoryFromDescription(description) {
 }
 
 // 根据状态推断难度
-function getDifficultyFromStatus(status) {
-  switch (status) {
+function getDifficultyFromStatus(state) {
+  switch (state) {
     case 'NOT_STARTED': return 'beginner'
     case 'IN_PROGRESS': return 'intermediate'
     case 'COMPLETED': return 'advanced'
@@ -552,33 +553,28 @@ const calculateDuration = (startTime) => {
 };
 
 // 获取状态颜色
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'NOT_STARTED': return 'grey'
-    case 'IN_PROGRESS': return 'primary'
-    case 'COMPLETED': return 'success'
+const getStatusColor = (state) => {
+  switch (state) {
+    case PROGRESS_STATE.NOT_STARTED: return 'grey'
+    case PROGRESS_STATE.IN_PROGRESS: return 'primary'
+    case PROGRESS_STATE.COMPLETED: return 'success'
     default: return 'grey'
   }
 };
 
 // 获取状态图标
-const getStatusIcon = (status) => {
-  switch (status) {
-    case 'NOT_STARTED': return 'mdi-circle-outline'
-    case 'IN_PROGRESS': return 'mdi-play-circle'
-    case 'COMPLETED': return 'mdi-check-circle'
+const getStatusIcon = (state) => {
+  switch (state) {
+    case PROGRESS_STATE.NOT_STARTED: return 'mdi-circle-outline'
+    case PROGRESS_STATE.IN_PROGRESS: return 'mdi-play-circle'
+    case PROGRESS_STATE.COMPLETED: return 'mdi-check-circle'
     default: return 'mdi-circle-outline'
   }
 };
 
 // 获取状态文本
-const getStatusText = (status) => {
-  switch (status) {
-    case 'NOT_STARTED': return t('learning.notStarted')
-    case 'IN_PROGRESS': return t('learning.inProgress')
-    case 'COMPLETED': return t('learning.completed')
-    default: return t('learning.unknownStatus', '未知状态')
-  }
+const getStatusText = (state) => {
+  return PROGRESS_STATE_TEXT[state] || t('learning.unknownStatus', '未知状态')
 };
 </script>
 
@@ -643,17 +639,17 @@ const getStatusText = (status) => {
                   <v-icon icon="mdi-format-list-bulleted" class="mr-1" size="14"></v-icon>
                   {{ t('learning.all') }}
                 </v-btn>
-                <v-btn value="NOT_STARTED" size="small" class="me-1 rounded-lg text-body-2">
+                <v-btn :value="PROGRESS_STATE.NOT_STARTED" size="small" class="me-1 rounded-lg text-body-2">
                   <v-icon icon="mdi-circle-outline" class="mr-1" size="14"></v-icon>
-                  {{ t('learning.notStarted') }}
+                  {{ PROGRESS_STATE_TEXT[PROGRESS_STATE.NOT_STARTED] }}
                 </v-btn>
-                <v-btn value="IN_PROGRESS" size="small" class="me-1 rounded-lg text-body-2">
+                <v-btn :value="PROGRESS_STATE.IN_PROGRESS" size="small" class="me-1 rounded-lg text-body-2">
                   <v-icon icon="mdi-play-circle" class="mr-1" size="14"></v-icon>
-                  {{ t('learning.inProgress') }}
+                  {{ PROGRESS_STATE_TEXT[PROGRESS_STATE.IN_PROGRESS] }}
                 </v-btn>
-                <v-btn value="COMPLETED" size="small" class="me-1 rounded-lg text-body-2">
+                <v-btn :value="PROGRESS_STATE.COMPLETED" size="small" class="me-1 rounded-lg text-body-2">
                   <v-icon icon="mdi-check-circle" class="mr-1" size="14"></v-icon>
-                  {{ t('learning.completed') }}
+                  {{ PROGRESS_STATE_TEXT[PROGRESS_STATE.COMPLETED] }}
                 </v-btn>
               </v-btn-toggle>
             </v-col>
@@ -701,17 +697,17 @@ const getStatusText = (status) => {
                 <div class="status-badge-container">
                   <div class="d-flex align-center">
                     <v-chip 
-                      :color="getStatusColor(roadmap.status)" 
+                      :color="getStatusColor(roadmap.state)" 
                       variant="flat" 
                       size="small"
                       class="status-badge">
-                      <v-icon :icon="getStatusIcon(roadmap.status)" class="mr-1" size="14"></v-icon>
-                      {{ getStatusText(roadmap.status) }}
+                      <v-icon :icon="getStatusIcon(roadmap.state)" class="mr-1" size="14"></v-icon>
+                      {{ getStatusText(roadmap.state) }}
                     </v-chip>
                     
                     <!-- 进行中状态的关闭按钮 -->
                     <v-btn 
-                      v-if="roadmap.status === 'IN_PROGRESS'"
+                      v-if="roadmap.state === PROGRESS_STATE.IN_PROGRESS"
                       variant="text" 
                       size="x-small" 
                       class="ml-2 close-btn"
@@ -952,7 +948,7 @@ const getStatusText = (status) => {
                     </div>
 
                     <div class="d-flex justify-space-between align-center text-body-2 text-grey-darken-2">
-                      <span>{{ getStatusText(course.status) }}</span>
+                      <span>{{ getStatusText(course.state) }}</span>
                       <span>{{ course.lastActivity }}</span>
                     </div>
                   </v-card-text>

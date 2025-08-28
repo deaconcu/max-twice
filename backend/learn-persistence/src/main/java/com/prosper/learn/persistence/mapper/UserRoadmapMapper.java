@@ -17,8 +17,8 @@ public interface UserRoadmapMapper {
     /**
      * 插入新的学习进度记录
      */
-    @Insert("INSERT INTO user_roadmap (user_id, roadmap_id, progress_percent, status, started_at) " +
-            "VALUES (#{userId}, #{roadmapId}, #{progressPercent}, #{status}, #{startedAt})")
+    @Insert("INSERT INTO user_roadmap (user_id, roadmap_id, progress_percent, state, started_at) " +
+            "VALUES (#{userId}, #{roadmapId}, #{progressPercent}, #{state}, #{startedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(UserRoadmapDO progressDO);
 
@@ -31,7 +31,7 @@ public interface UserRoadmapMapper {
     /**
      * 更新学习进度
      */
-    @Update("UPDATE user_roadmap SET progress_percent = #{progressPercent}, status = #{status}, " +
+    @Update("UPDATE user_roadmap SET progress_percent = #{progressPercent}, state = #{state}, " +
             "completed_at = #{completedAt}, updated_at = CURRENT_TIMESTAMP " +
             "WHERE user_id = #{userId} AND roadmap_id = #{roadmapId}")
     void update(UserRoadmapDO progressDO);
@@ -41,7 +41,7 @@ public interface UserRoadmapMapper {
      */
     @Update({"<script>",
              "<foreach collection='list' item='item' separator=';'>",
-             "UPDATE user_roadmap SET progress_percent = #{item.progressPercent}, status = #{item.status}, " +
+             "UPDATE user_roadmap SET progress_percent = #{item.progressPercent}, state = #{item.state}, " +
              "completed_at = #{item.completedAt}, updated_at = CURRENT_TIMESTAMP " +
              "WHERE user_id = #{item.userId} AND roadmap_id = #{item.roadmapId}",
              "</foreach>",
@@ -66,6 +66,6 @@ public interface UserRoadmapMapper {
     /**
      * 统计用户正在学习的路线图数量
      */
-    @Select("SELECT COUNT(*) FROM user_roadmap WHERE user_id = #{userId} AND status = 'IN_PROGRESS'")
+    @Select("SELECT COUNT(*) FROM user_roadmap WHERE user_id = #{userId} AND state = 1")
     Integer countActiveRoadmapsByUserId(long userId);
 }

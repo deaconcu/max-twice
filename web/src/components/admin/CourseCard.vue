@@ -39,7 +39,7 @@
             </v-btn>
 
             <!-- 待审核状态：批准和拒绝 -->
-            <template v-if="course.state === 'SUBMITTED'">
+            <template v-if="course.state === APPROVAL_STATE.SUBMITTED">
               <!-- 批准按钮 -->
               <v-btn
                 variant="flat"
@@ -69,7 +69,7 @@
             </template>
 
             <!-- 已通过状态：删除 -->
-            <template v-if="course.state === 'APPROVED'">
+            <template v-if="course.state === APPROVAL_STATE.APPROVED">
               <!-- 拒绝按钮 -->
               <v-btn
                 variant="flat"
@@ -99,7 +99,7 @@
             </template>
 
             <!-- 已拒绝状态：恢复和删除 -->
-            <template v-if="course.state === 'REJECTED'">
+            <template v-if="course.state === APPROVAL_STATE.REJECTED">
               <!-- 恢复按钮 -->
               <v-btn
                 variant="flat"
@@ -258,6 +258,7 @@
 
 <script setup>
 import { defineProps, defineEmits } from 'vue'
+import { APPROVAL_STATE, APPROVAL_STATE_TEXT } from '@/constants/statusConstants'
 
 // Props
 const props = defineProps({
@@ -281,9 +282,9 @@ const emit = defineEmits(['edit', 'approve', 'reject', 'delete', 'restore'])
 // 状态配置
 const getStateConfig = (state) => {
   const configs = {
-    'SUBMITTED': { text: '待审核', color: 'warning', icon: 'mdi-clock-outline' },
-    'APPROVED': { text: '已通过', color: 'success', icon: 'mdi-check-circle' },
-    'REJECTED': { text: '已拒绝', color: 'error', icon: 'mdi-close-circle' }
+    [APPROVAL_STATE.SUBMITTED]: { text: APPROVAL_STATE_TEXT[APPROVAL_STATE.SUBMITTED], color: 'warning', icon: 'mdi-clock-outline' },
+    [APPROVAL_STATE.APPROVED]: { text: APPROVAL_STATE_TEXT[APPROVAL_STATE.APPROVED], color: 'success', icon: 'mdi-check-circle' },
+    [APPROVAL_STATE.REJECTED]: { text: APPROVAL_STATE_TEXT[APPROVAL_STATE.REJECTED], color: 'error', icon: 'mdi-close-circle' }
   }
   return configs[state] || { text: '未知', color: 'grey', icon: 'mdi-help-circle' }
 }

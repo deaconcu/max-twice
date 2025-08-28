@@ -14,7 +14,7 @@ public class UserCourseDTO {
 
     private Integer progressPercent;
 
-    private String status; // NOT_STARTED, IN_PROGRESS, COMPLETED
+    private Byte state; // NOT_STARTED=0, IN_PROGRESS=1, COMPLETED=2
 
     private LocalDateTime startedAt;
 

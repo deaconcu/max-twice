@@ -27,6 +27,6 @@ public class Course implements Aggregate<Integer> {
         this.name = name;
         this.description = description;
         this.userId = userId;
-        state = Enums.CourseState.created;
+        state = Enums.CourseState.SUBMITTED;
     }
 }

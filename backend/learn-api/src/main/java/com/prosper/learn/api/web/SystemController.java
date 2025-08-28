@@ -38,7 +38,7 @@ public class SystemController implements SystemClient {
         }
 
         try {
-            String config = systemMapper.get(0).getConfig();
+            String config = systemMapper.get(1).getConfig();
             JsonNode jsonNode = mapper.readTree(config);
             JsonNode partNode = jsonNode.get(part);
             if (partNode == null) {
@@ -53,7 +53,7 @@ public class SystemController implements SystemClient {
     @Override
     public Response<Object> post(String config) {
         SystemDO systemDO = new SystemDO();
-        systemDO.setId(0L);
+        systemDO.setId(1L);
         systemDO.setConfig(config);
         systemMapper.update(systemDO);
         return Response.success;

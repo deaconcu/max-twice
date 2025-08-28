@@ -15,7 +15,7 @@ public class UserCourseDO {
 
     private Integer progressPercent;
 
-    private String status; // NOT_STARTED, IN_PROGRESS, COMPLETED
+    private Byte state; // 原status字段重命名为state，改为 tinyint 类型，支持 NOT_STARTED=0, IN_PROGRESS=1, COMPLETED=2
 
     private LocalDateTime startedAt;
 

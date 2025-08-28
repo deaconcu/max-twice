@@ -9,6 +9,7 @@ import PostingList from '../components/PostingList.vue';
 import ConfigContents from '../components/ConfigContents.vue';
 import RightSidebar from '@/components/RightSidebar.vue';
 import CourseCompletionDialog from '@/components/CourseCompletionDialog.vue';
+import { PROGRESS_STATE } from '@/constants/statusConstants';
 
 import { useUserStore } from "@/stores/user";
 import { usePlatformStats } from '@/composables/usePlatformStats';
@@ -66,7 +67,7 @@ const courseProgress = ref({
   completedNodes: 0,
   totalNodes: 0,
   progressPercent: 0,
-  status: 'NOT_STARTED' // NOT_STARTED, IN_PROGRESS, COMPLETED
+  status: PROGRESS_STATE.NOT_STARTED // PROGRESS_STATE.NOT_STARTED, PROGRESS_STATE.IN_PROGRESS, PROGRESS_STATE.COMPLETED
 });
 
 const applyCourseData = ref({

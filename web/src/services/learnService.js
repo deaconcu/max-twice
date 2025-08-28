@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import { APPROVAL_STATE, PROGRESS_STATE } from '@/constants/statusConstants';
 
 async function chatWithGPT(message) {
 }

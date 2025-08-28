@@ -53,7 +53,7 @@
         </div>
 
         <!-- 分类筛选 - 只在已通过状态显示 -->
-        <div v-if="getCurrentState() === 'APPROVED'" class="mb-6">
+        <div v-if="getCurrentState() === APPROVAL_STATE.APPROVED" class="mb-6">
           <v-card flat class="pa-4 bg-grey-lighten-5" rounded="lg">
             <h4 class="text-subtitle-2 text-grey-darken-2 mb-3 d-flex align-center">
               <v-icon icon="mdi-filter-variant" size="16" class="mr-2"></v-icon>
@@ -122,7 +122,7 @@
         <!-- 空状态 -->
         <div v-else-if="courseList.length === 0" class="text-center py-12">
           <!-- 分类筛选提示 -->
-          <div v-if="getCurrentState() === 'APPROVED' && selectedMainCategory && !selectedSubCategory">
+          <div v-if="getCurrentState() === APPROVAL_STATE.APPROVED && selectedMainCategory && !selectedSubCategory">
             <v-icon icon="mdi-filter-outline" size="48" color="orange-lighten-1" class="mb-4"></v-icon>
             <p class="text-body-1 text-grey-darken-1 mb-2">请选择子分类</p>
             <p class="text-body-2 text-grey-darken-2">已选择主分类，请继续选择子分类以查看课程列表</p>
@@ -137,7 +137,7 @@
         <!-- 课程申请列表 -->
         <div v-else>
           <!-- 使用分类筛选时不启用无限滚动 -->
-          <template v-if="getCurrentState() === 'APPROVED' && selectedMainCategory && selectedSubCategory">
+          <template v-if="getCurrentState() === APPROVAL_STATE.APPROVED && selectedMainCategory && selectedSubCategory">
             <CourseCard
               v-for="course in courseList"
               :key="course.id"
@@ -456,6 +456,7 @@
 <script setup>
 import { ref, onMounted, inject } from 'vue'
 import { learnService } from '@/services/learnService'
+import { APPROVAL_STATE, APPROVAL_STATE_TEXT } from '@/constants/statusConstants'
 import CourseCard from './CourseCard.vue'
 import { useI18n } from 'vue-i18n'
 
@@ -464,9 +465,9 @@ const { t } = useI18n()
 
 // 状态选项
 const stateOptions = [
-  { value: 'SUBMITTED', text: '待审核', color: 'orange-lighten-4', icon: 'mdi-clock-outline' },
-  { value: 'APPROVED', text: '已通过', color: 'green-lighten-4', icon: 'mdi-check-circle-outline' },
-  { value: 'REJECTED', text: '已拒绝', color: 'red-lighten-4', icon: 'mdi-close-circle-outline' },
+  { value: APPROVAL_STATE.SUBMITTED, text: APPROVAL_STATE_TEXT[APPROVAL_STATE.SUBMITTED], color: 'orange-lighten-4', icon: 'mdi-clock-outline' },
+  { value: APPROVAL_STATE.APPROVED, text: APPROVAL_STATE_TEXT[APPROVAL_STATE.APPROVED], color: 'green-lighten-4', icon: 'mdi-check-circle-outline' },
+  { value: APPROVAL_STATE.REJECTED, text: APPROVAL_STATE_TEXT[APPROVAL_STATE.REJECTED], color: 'red-lighten-4', icon: 'mdi-close-circle-outline' },
 ]
 
 // 响应式数据
@@ -562,7 +563,7 @@ const loadCourses = async (isLoadMore = false) => {
     let response;
 
     // 如果是已通过状态且选择了主分类但没有选择子分类，不加载
-    if (currentState === 'APPROVED' && selectedMainCategory.value && !selectedSubCategory.value) {
+    if (currentState === APPROVAL_STATE.APPROVED && selectedMainCategory.value && !selectedSubCategory.value) {
       courseList.value = []
       hasMore.value = false
       loading.value = false
@@ -571,7 +572,7 @@ const loadCourses = async (isLoadMore = false) => {
     }
 
     // 如果是已通过状态且选择了主分类和子分类，使用分类查询（不支持分页）
-    if (currentState === 'APPROVED' && selectedMainCategory.value && selectedSubCategory.value) {
+    if (currentState === APPROVAL_STATE.APPROVED && selectedMainCategory.value && selectedSubCategory.value) {
       response = await learnService.getCoursesByCategory(selectedMainCategory.value, selectedSubCategory.value)
       // 分类查询不支持下拉刷新
       hasMore.value = false
@@ -591,7 +592,7 @@ const loadCourses = async (isLoadMore = false) => {
       }
 
       // 更新lastId和hasMore状态（仅在状态查询时）
-      if (currentState !== 'APPROVED' || !selectedMainCategory.value || !selectedSubCategory.value) {
+      if (currentState !== APPROVAL_STATE.APPROVED || !selectedMainCategory.value || !selectedSubCategory.value) {
         if (newCourses.length > 0) {
           lastId.value = newCourses[newCourses.length - 1].id
           // 如果返回的数据少于期望的数量，说明没有更多数据了
@@ -713,7 +714,7 @@ const onStateChange = () => {
 
 // 分类变化处理
 const onCategoryChange = () => {
-  if (getCurrentState() === 'APPROVED') {
+  if (getCurrentState() === APPROVAL_STATE.APPROVED) {
     // 只有选择了主分类和子分类时才加载
     if (selectedMainCategory.value && selectedSubCategory.value) {
       loadCourses()
@@ -748,9 +749,9 @@ const onMainCategoryChange = (newValue) => {
   if (newValue) {
     updateSubCategories(newValue)
     // 如果有子分类且已选择第一个，直接加载课程
-    if (getCurrentState() === 'APPROVED' && selectedSubCategory.value) {
+    if (getCurrentState() === APPROVAL_STATE.APPROVED && selectedSubCategory.value) {
       loadCourses()
-    } else if (getCurrentState() === 'APPROVED') {
+    } else if (getCurrentState() === APPROVAL_STATE.APPROVED) {
       // 没有子分类，清空列表
       courseList.value = []
     }
@@ -758,7 +759,7 @@ const onMainCategoryChange = (newValue) => {
     subCategories.value = []
     selectedSubCategory.value = null
     // 清除主分类选择，重新加载全部数据
-    if (getCurrentState() === 'APPROVED') {
+    if (getCurrentState() === APPROVAL_STATE.APPROVED) {
       loadCourses()
     }
   }
@@ -773,26 +774,26 @@ const approveCourse = async (course) => {
     if (response.code === 200) {
       showSnackbar('课程已通过审核')
       // 从当前列表中移除（如果当前不是已通过状态）
-      if (getCurrentState() !== 'APPROVED') {
+      if (getCurrentState() !== APPROVAL_STATE.APPROVED) {
         const index = courseList.value.findIndex(c => c.id === course.id)
         if (index > -1) {
           courseList.value.splice(index, 1)
         }
       } else {
         // 更新状态
-        course.state = 'APPROVED'
+        course.state = APPROVAL_STATE.APPROVED
       }
       
       // 如果当前在ID查询tab且查询的是同一个课程，更新搜索结果
       if (activeTab.value === 1 && searchedCourse.value && searchedCourse.value.id === course.id) {
-        searchedCourse.value.state = 'APPROVED'
+        searchedCourse.value.state = APPROVAL_STATE.APPROVED
       }
       
       // 如果当前在子课程查询tab且列表中包含该课程，更新状态
       if (activeTab.value === 2) {
         const subcourseIndex = subcourseList.value.findIndex(c => c.id === course.id)
         if (subcourseIndex > -1) {
-          subcourseList.value[subcourseIndex].state = 'APPROVED'
+          subcourseList.value[subcourseIndex].state = APPROVAL_STATE.APPROVED
         }
       }
     } else {
@@ -857,19 +858,19 @@ const restoreCourse = async (course) => {
     if (response.code === 200) {
       showSnackbar('课程已恢复')
       // 从当前列表中移除（如果当前是拒绝状态）
-      if (getCurrentState() === 'REJECTED') {
+      if (getCurrentState() === APPROVAL_STATE.REJECTED) {
         const index = courseList.value.findIndex(c => c.id === course.id)
         if (index > -1) {
           courseList.value.splice(index, 1)
         }
       } else {
         // 更新状态（恢复后通常变为待审核状态）
-        course.state = 'SUBMITTED'
+        course.state = APPROVAL_STATE.SUBMITTED
       }
       
       // 如果当前在ID查询tab且查询的是同一个课程，更新搜索结果
       if (activeTab.value === 1 && searchedCourse.value && searchedCourse.value.id === course.id) {
-        searchedCourse.value.state = 'SUBMITTED'
+        searchedCourse.value.state = APPROVAL_STATE.SUBMITTED
         delete searchedCourse.value.rejectedReason
       }
       
@@ -877,7 +878,7 @@ const restoreCourse = async (course) => {
       if (activeTab.value === 2) {
         const subcourseIndex = subcourseList.value.findIndex(c => c.id === course.id)
         if (subcourseIndex > -1) {
-          subcourseList.value[subcourseIndex].state = 'SUBMITTED'
+          subcourseList.value[subcourseIndex].state = APPROVAL_STATE.SUBMITTED
           delete subcourseList.value[subcourseIndex].rejectedReason
         }
       }
@@ -1005,23 +1006,23 @@ const confirmReject = async () => {
     )
     
     if (response.code === 200) {
-      showSnackbar(selectedCourse.value.state === 'APPROVED' ? '已撤销通过' : '已拒绝申请')
+      showSnackbar(selectedCourse.value.state === APPROVAL_STATE.APPROVED ? '已撤销通过' : '已拒绝申请')
       
       // 从当前列表中移除（如果当前不是拒绝状态）
-      if (getCurrentState() !== 'REJECTED') {
+      if (getCurrentState() !== APPROVAL_STATE.REJECTED) {
         const index = courseList.value.findIndex(c => c.id === selectedCourse.value.id)
         if (index > -1) {
           courseList.value.splice(index, 1)
         }
       } else {
         // 更新状态
-        selectedCourse.value.state = 'REJECTED'
+        selectedCourse.value.state = APPROVAL_STATE.REJECTED
         selectedCourse.value.rejectedReason = rejectReason.value.trim()
       }
       
       // 如果当前在ID查询tab且查询的是同一个课程，更新搜索结果
       if (activeTab.value === 1 && searchedCourse.value && searchedCourse.value.id === selectedCourse.value.id) {
-        searchedCourse.value.state = 'REJECTED'
+        searchedCourse.value.state = APPROVAL_STATE.REJECTED
         searchedCourse.value.rejectedReason = rejectReason.value.trim()
       }
       
@@ -1029,7 +1030,7 @@ const confirmReject = async () => {
       if (activeTab.value === 2) {
         const subcourseIndex = subcourseList.value.findIndex(c => c.id === selectedCourse.value.id)
         if (subcourseIndex > -1) {
-          subcourseList.value[subcourseIndex].state = 'REJECTED'
+          subcourseList.value[subcourseIndex].state = APPROVAL_STATE.REJECTED
           subcourseList.value[subcourseIndex].rejectedReason = rejectReason.value.trim()
         }
       }

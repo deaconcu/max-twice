@@ -5,10 +5,9 @@ import java.util.Arrays;
 public class Enums {
 
     public enum CourseState {
-        all((byte)0),
-        created((byte)1),
-        proved((byte)2),
-        rejected((byte)3);
+        SUBMITTED((byte)0),  // 原created改为SUBMITTED
+        APPROVED((byte)1),   // 原proved改为APPROVED  
+        REJECTED((byte)2);   // 原rejected改为REJECTED，值改为2
 
         public final byte value;
 
@@ -19,6 +18,13 @@ public class Enums {
         public static CourseState getStateByValue(Integer value) {
             return Arrays.stream(CourseState.values())
                 .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        }
+        
+        public static boolean isValid(int value) {
+            for (CourseState s : CourseState.values()) {
+                if (s.value == value) return true;
+            }
+            return false;
         }
     }
 
@@ -237,6 +243,117 @@ public class Enums {
                 }
             }
             throw new IllegalArgumentException("Invalid main category name: " + name);
+        }
+    }
+
+    /**
+     * Profession表状态枚举
+     * SUBMITTED=0, APPROVED=1, REJECTED=2
+     */
+    public enum ProfessionState {
+        SUBMITTED((byte)0),
+        APPROVED((byte)1),
+        REJECTED((byte)2);
+
+        public final byte value;
+
+        ProfessionState(byte value) {
+            this.value = value;
+        }
+
+        public static ProfessionState getStateByValue(Integer value) {
+            return Arrays.stream(ProfessionState.values())
+                    .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        }
+
+        public static boolean isValid(int value) {
+            for (ProfessionState s : ProfessionState.values()) {
+                if (s.value == value) return true;
+            }
+            return false;
+        }
+    }
+
+    /**
+     * UserCourse表状态枚举 (原status字段，现改为state)
+     * NOT_STARTED=0, IN_PROGRESS=1, COMPLETED=2
+     */
+    public enum UserCourseState {
+        NOT_STARTED((byte)0),
+        IN_PROGRESS((byte)1),
+        COMPLETED((byte)2);
+
+        public final byte value;
+
+        UserCourseState(byte value) {
+            this.value = value;
+        }
+
+        public static UserCourseState getStateByValue(Integer value) {
+            return Arrays.stream(UserCourseState.values())
+                    .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        }
+
+        public static boolean isValid(int value) {
+            for (UserCourseState s : UserCourseState.values()) {
+                if (s.value == value) return true;
+            }
+            return false;
+        }
+    }
+
+    /**
+     * UserRoadmap表状态枚举 (原status字段，现改为state)
+     * NOT_STARTED=0, IN_PROGRESS=1, COMPLETED=2
+     */
+    public enum UserRoadmapState {
+        NOT_STARTED((byte)0),
+        IN_PROGRESS((byte)1),
+        COMPLETED((byte)2);
+
+        public final byte value;
+
+        UserRoadmapState(byte value) {
+            this.value = value;
+        }
+
+        public static UserRoadmapState getStateByValue(Integer value) {
+            return Arrays.stream(UserRoadmapState.values())
+                    .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        }
+
+        public static boolean isValid(int value) {
+            for (UserRoadmapState s : UserRoadmapState.values()) {
+                if (s.value == value) return true;
+            }
+            return false;
+        }
+    }
+
+    /**
+     * PostStats表类型枚举
+     * POST=0, ROADMAP=1
+     */
+    public enum PostStatsType {
+        POST((byte)0),
+        ROADMAP((byte)1);
+
+        public final byte value;
+
+        PostStatsType(byte value) {
+            this.value = value;
+        }
+
+        public static PostStatsType getStateByValue(Integer value) {
+            return Arrays.stream(PostStatsType.values())
+                    .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        }
+
+        public static boolean isValid(int value) {
+            for (PostStatsType s : PostStatsType.values()) {
+                if (s.value == value) return true;
+            }
+            return false;
         }
     }
 

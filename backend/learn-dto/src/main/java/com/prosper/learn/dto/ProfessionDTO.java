@@ -20,7 +20,7 @@ public class ProfessionDTO {
 
     private Integer subCategory;
 
-    private String state; // SUBMITED, APPROVED, REJECTED
+    private Byte state; // SUBMITTED=0, APPROVED=1, REJECTED=2
 
     private String rejectedReason; // 拒绝原因，默认为空字符串
 

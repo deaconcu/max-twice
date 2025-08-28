@@ -19,7 +19,7 @@ public class CourseDO {
 
     private Long parent;
 
-    private String state; // 修改为 String 类型，支持 SUMMITTED, APPROVED, REJECTED
+    private Byte state; // 改为 tinyint 类型，支持 SUBMITTED=0, APPROVED=1, REJECTED=2
 
     private Integer mainCategory; // 新增主分类字段
 
