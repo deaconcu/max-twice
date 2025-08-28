@@ -29,7 +29,7 @@ public class TocController implements TocClient {
     private final ObjectMapper objectMapper;
 
     @Override
-    public Response<Object> get(int courseId) {
+    public Response<Object> get(Long courseId) {
         if (courseMapper.getById(courseId) == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }
@@ -41,7 +41,7 @@ public class TocController implements TocClient {
     }
 
     @Override
-    public Response<Object> post(int courseId, String indexArray) {
+    public Response<Object> post(Long courseId, String indexArray) {
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -69,7 +69,7 @@ public class TocController implements TocClient {
         }
 
         ObjectNode s = objectMapper.createObjectNode();
-        s.put(Integer.toString(courseDO.getRootNode()), objectMapper.createObjectNode());
+        s.set(Long.toString(courseDO.getRootNode()), objectMapper.createObjectNode());
 
         String tocStr = s.toString();
         String defaultTosHash = Utils.hashSHA(tocStr);

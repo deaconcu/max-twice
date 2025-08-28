@@ -226,7 +226,7 @@ public class RoadmapService {
         return uf.getComponentCount() == 1;
     }
 
-    public String parseContentToGraphFormat(String content, int userId) {
+    public String parseContentToGraphFormat(String content, long userId) {
         try {
             ObjectMapper mapper = new ObjectMapper();
 

@@ -43,14 +43,14 @@ public class UserController implements UserClient {
     private final UserCourseMapper userCourseMapper;
 
     @Override
-    public Response getSelf() {
+    public Response<UserDTO> getSelf() {
         int id = StpUtil.getLoginIdAsInt();
         UserDO userDO = userMapper.getById(id);
-        return new Response(userDO);
+        return Response.success(Converter.INSTANCE.toUserDTO(userDO));
     }
 
     @Override
-    public Response modifySelf(String name, String biography) {
+    public Response<Object> modifySelf(String name, String biography) {
         int id = StpUtil.getLoginIdAsInt();
         UserDO userDO = userMapper.getById(id);
         userDO.setName(name);
@@ -60,7 +60,7 @@ public class UserController implements UserClient {
     }
 
     @Override
-    public Response getUser(int id) {
+    public Response<Object> getUser(Long id) {
         int selfId = StpUtil.getLoginIdAsInt();
         UserDO userDO = userMapper.getById(id);
 
@@ -74,7 +74,7 @@ public class UserController implements UserClient {
         if (followDO != null) {
             userDTOV3.setFollowed(1);
         }
-        return new Response(userDTOV3);
+        return Response.success(userDTOV3);
     }
 
     @Override
@@ -172,25 +172,25 @@ public class UserController implements UserClient {
     }
 
     @Override
-    public Response getSelfArticle(int userId, int lastId) {
+    public Response<Object> getSelfArticle(Long userId, Long lastId) {
         UserDO userDO = userMapper.getById(userId);
         if (userDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }
-        return new Response(postingService.getUserArticleWithViews(userDO.getId(), lastId));
+        return Response.success(postingService.getUserArticleWithViews(userDO.getId(), lastId));
     }
 
     @Override
-    public Response getSelfContents(int userId, int lastId) {
+    public Response<Object> getSelfContents(Long userId, Long lastId) {
         UserDO userDO = userMapper.getById(userId);
         if (userDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }
-        return new Response(postingService.getUserContentsWithViews(userDO.getId(), lastId));
+        return Response.success(postingService.getUserContentsWithViews(userDO.getId(), lastId));
     }
 
     @Override
-    public Response getSubscription(int userId) {
+    public Response<Object> getSubscription(Long userId) {
         //int self = StpUtil.getLoginIdAsInt();
         UserDO userDO = userMapper.getById(userId);
         if (userDO == null) {
@@ -199,41 +199,41 @@ public class UserController implements UserClient {
 
         UserProfileDO userProfileDO = userProfileMapper.getById(userDO.getId());
         if (userProfileDO == null || userProfileDO.getSubscription() == null || userProfileDO.getSubscription().trim().isEmpty()) {
-            return new Response(new ArrayList<>());
+            return Response.success(new ArrayList<>());
         }
         
         try {
-            List<Integer> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
-                    .filter(s -> !s.trim().isEmpty()) // 过滤空字符串
-                    .map(String::trim)
-                    .mapToInt(Integer::parseInt)
+            List<Long> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
+                    .map(String::trim) // 过滤空字符串
+                    .filter(trim -> !trim.isEmpty())
+                    .mapToLong(Long::parseLong)
                     .boxed()
                     .toList();
 
             if (ids.isEmpty()) {
-                return new Response(new ArrayList<>());
+                return Response.success(new ArrayList<>());
             }
 
             List<CourseDO> courseDOList = courseMapper.getByIds(ids);
             log.info("查询到{}个收藏课程，课程信息: {}", courseDOList.size(), 
                     courseDOList.stream().map(c -> "id=" + c.getId() + ",name=" + c.getName()).collect(Collectors.toList()));
-            return new Response(Converter.INSTANCE.toCourseDTOV2(courseDOList));
+            return Response.success(Converter.INSTANCE.toCourseDTOV2(courseDOList));
         } catch (Exception e) {
             log.error("获取用户{}收藏课程时出错: {}", userId, e.getMessage());
-            return new Response(new ArrayList<>());
+            return Response.success(new ArrayList<>());
         }
     }
 
     @Override
-    public Response subscript(int courseId) {
+    public Response<Object> subscript(Long courseId) {
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }
 
-        int self = StpUtil.getLoginIdAsInt();
+        long self = StpUtil.getLoginIdAsLong();
         UserProfileDO userProfileDO = userProfileMapper.getById(self);
-        String idsStr = "";
+        String idsStr;
         if (userProfileDO == null) {
             userProfileDO = new UserProfileDO();
             userProfileDO.setId(self);
@@ -241,8 +241,8 @@ public class UserController implements UserClient {
             userProfileDO.setSubscription(idsStr);
             userProfileMapper.insert(userProfileDO);
         } else {
-            List<Integer> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
-                    .map(Integer::parseInt).collect(Collectors.toCollection(ArrayList::new));
+            List<Long> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
+                    .map(Long::parseLong).collect(Collectors.toCollection(ArrayList::new));
             if (ids.contains(courseDO.getId())) return success;
             ids.add(courseDO.getId());
             idsStr = ids.stream().map(String::valueOf).collect(Collectors.joining(","));
@@ -251,28 +251,27 @@ public class UserController implements UserClient {
         }
 
         int[] idsArr = Arrays.stream(idsStr.split(",")).mapToInt(Integer::parseInt).toArray();
-        return new Response(idsArr);
+        return Response.success(idsArr);
     }
 
     @Override
-    public Response subscript(String subscription) {
-        int self = StpUtil.getLoginIdAsInt();
+    public Response<Object> subscript(String subscription) {
+        long self = StpUtil.getLoginIdAsLong();
 
-        List<Integer> ids = new ArrayList<>();
+        List<Long> ids = new ArrayList<>();
         String[] parts = subscription.split(",");
         for (String part : parts) {
             try {
-                ids.add(Integer.parseInt(part));
+                ids.add(Long.parseLong(part));
             } catch (Exception e) {
+                log.error("error", e);
             }
         }
         List<CourseDO> courseDOList = courseMapper.getByIds(ids);
 
-        int[] idsArr = new int[courseDOList.size()];
+        long[] idsArr = new long[courseDOList.size()];
         for (int i = 0; i < courseDOList.size(); i++) {
             idsArr[i] = courseDOList.get(i).getId();
-            //idsStr = idsStr + courseDOList.get(i).getId();
-            //if (i < courseDOList.size() - 1) idsStr = idsStr + ",";
         }
         String idsStr = Arrays.stream(idsArr).mapToObj(String::valueOf).collect(Collectors.joining(","));
         UserProfileDO userProfileDO = userProfileMapper.getById(self);
@@ -283,11 +282,11 @@ public class UserController implements UserClient {
             userProfileDO.setSubscription(idsStr);
             userProfileMapper.update(userProfileDO);
         }
-        return new Response(ids);
+        return Response.success(ids);
     }
 
     @Override
-    public Response unsubscript(int courseId) {
+    public Response<Object> unsubscript(Long courseId) {
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -295,23 +294,23 @@ public class UserController implements UserClient {
 
         int self = StpUtil.getLoginIdAsInt();
         UserProfileDO userProfileDO = userProfileMapper.getById(self);
-        List<Integer> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
-                .map(Integer::parseInt).collect(Collectors.toCollection(ArrayList::new));
+        List<Long> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
+                .map(Long::parseLong).collect(Collectors.toCollection(ArrayList::new));
         if (!ids.contains(courseDO.getId())) return success;
-        ids.remove(Integer.valueOf(courseDO.getId()));
+        ids.remove(courseDO.getId());
 
         String idsStr = "";
-        if (ids.size() != 0) {
+        if (!ids.isEmpty()) {
             idsStr = ids.stream().map(String::valueOf).collect(Collectors.joining(","));
         }
         userProfileDO.setSubscription(idsStr);
         userProfileMapper.update(userProfileDO);
         int[] idsArr = Arrays.stream(idsStr.split(",")).mapToInt(Integer::parseInt).toArray();
-        return new Response(idsArr);
+        return Response.success(idsArr);
     }
 
     @Override
-    public Response follow(int followeeId) {
+    public Response<Object> follow(Long followeeId) {
         int followerId = StpUtil.getLoginIdAsInt();
         UserDO userDO = userMapper.getById(followeeId);
         if (userDO == null) {
@@ -324,14 +323,12 @@ public class UserController implements UserClient {
             followMapper.insert(followerId, followeeId);
 
             messageService.createFollowMessage(followeeId, follower.getId());
-            //String content = "{\"id\":" + follower.getId() + ", \"name\": \"" + follower.getName() + "\"}";
-            //messageService.createSystemMessage(Enums.MessageType.follow.value, followeeId, content);
         }
         return success;
     }
 
     @Override
-    public Response unfollow(int followeeId) {
+    public Response<Object> unfollow(Long followeeId) {
         int followerId = StpUtil.getLoginIdAsInt();
         UserDO  userDO = userMapper.getById(followeeId);
         if (userDO == null) {
@@ -346,7 +343,7 @@ public class UserController implements UserClient {
     }
 
     @Override
-    public Response followee(int followerId, String lastCreateTime) {
+    public Response<Object> followee(Long followerId, String lastCreateTime) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         LocalDateTime time = LocalDateTime.parse(lastCreateTime, formatter);
 
@@ -360,17 +357,17 @@ public class UserController implements UserClient {
         List<FollowDO> followDOList = followMapper.getList(followerId, time, pageSize);
 
         // get all user
-        List<Integer> userIds = new ArrayList<>();
+        List<Long> userIds = new ArrayList<>();
         for (FollowDO followDO : followDOList) {
             userIds.add(followDO.getFolloweeId());
         }
 
-        if (userIds.size() == 0) {
-            return new Response(new LinkedList<>());
+        if (userIds.isEmpty()) {
+            return Response.success(new LinkedList<>());
         }
 
         List<UserDO> userDOList = userMapper.getByIds(userIds);
-        Map<Integer, UserDO> userDOMap = new HashMap<>();
+        Map<Long, UserDO> userDOMap = new HashMap<>();
         for (UserDO userDO : userDOList) {
             userDOMap.put(userDO.getId(), userDO);
         }
@@ -386,17 +383,17 @@ public class UserController implements UserClient {
             followeeDTOList.add(followeeDTO);
         }
 
-        return new Response(followeeDTOList);
+        return Response.success(followeeDTOList);
     }
 
     @Override
-    public Response markNodeCompleted(Integer nodeId, Integer courseId) {
-        int userId = StpUtil.getLoginIdAsInt();
+    public Response<Object> markNodeCompleted(Long nodeId, Long courseId) {
+        long userId = StpUtil.getLoginIdAsLong();
         
         boolean isNewlyCompleted = learningProgressService.markNodeCompleted(userId, nodeId, courseId);
         
         // 获取更新后的课程进度
-        UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId((long)userId, (long)courseId);
+        UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
         Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
         
         Map<String, Object> result = new HashMap<>();
@@ -413,13 +410,13 @@ public class UserController implements UserClient {
     }
 
     @Override
-    public Response unmarkNodeCompleted(Integer nodeId, Integer courseId) {
-        int userId = StpUtil.getLoginIdAsInt();
+    public Response<Object> unmarkNodeCompleted(Long nodeId, Long courseId) {
+        long userId = StpUtil.getLoginIdAsLong();
         
         boolean wasRemoved = learningProgressService.unmarkNodeCompleted(userId, nodeId, courseId);
         
         // 获取更新后的课程进度
-        UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId((long)userId, (long)courseId);
+        UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
         Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
         
         Map<String, Object> result = new HashMap<>();
@@ -436,8 +433,8 @@ public class UserController implements UserClient {
     }
 
     @Override
-    public Response isNodeCompleted(Integer nodeId) {
-        int userId = StpUtil.getLoginIdAsInt();
+    public Response<Object> isNodeCompleted(Long nodeId) {
+        long userId = StpUtil.getLoginIdAsLong();
         
         boolean isCompleted = learningProgressService.isNodeCompleted(userId, nodeId);
         
@@ -449,8 +446,8 @@ public class UserController implements UserClient {
     }
 
     @Override
-    public Response markCourseCompleted(Integer courseId) {
-        int userId = StpUtil.getLoginIdAsInt();
+    public Response<Object> markCourseCompleted(Long courseId) {
+        long userId = StpUtil.getLoginIdAsLong();
         
         boolean result = learningProgressService.markCourseCompleted(userId, courseId);
         

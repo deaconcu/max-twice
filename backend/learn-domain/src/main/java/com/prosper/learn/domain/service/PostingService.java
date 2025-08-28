@@ -32,20 +32,20 @@ public class PostingService {
     @Autowired
     private DailyStatsService dailyStatsService;
 
-    public PostDO get(int id) {
+    public PostDO get(long id) {
         PostDO posting = postMapper.get(id);
         idToName(posting);
         return posting;
     }
 
-    public List<PostDO> getList(List<Integer> ids) {
+    public List<PostDO> getList(List<Long> ids) {
         if (ids == null || ids.size() == 0) return new ArrayList<>();
         List<PostDO> postings = postMapper.getByIds(ids);
         postings.forEach(postingDO -> idToName(postingDO));
         return postings;
     }
 
-    public List<PostDO> getList(int nodeId) {
+    public List<PostDO> getList(long nodeId) {
         int count = 2;
         List<PostDO> postings = postMapper.getListByNodeAndScore(nodeId, count, Enums.PostState.approved.value);
         postings.forEach(postingDO -> idToName(postingDO));
@@ -195,7 +195,7 @@ public class PostingService {
     /**
      * 获取用户文章列表（包含阅读量）
      */
-    public List<PostDTOV2> getUserArticleWithViews(long userId, int lastId) {
+    public List<PostDTOV2> getUserArticleWithViews(long userId, long lastId) {
         int count = 10;
         List<PostDO> postings = postMapper.getArticleListByUser(userId, lastId, count);
         if (postings == null || postings.size() == 0) return new ArrayList<>();
@@ -229,7 +229,7 @@ public class PostingService {
     /**
      * 获取用户目录列表（包含阅读量）
      */
-    public List<PostDTOV2> getUserContentsWithViews(int userId, int lastId) {
+    public List<PostDTOV2> getUserContentsWithViews(long userId, long lastId) {
         int count = 10;
         List<PostDO> postings = postMapper.getContentsListByUser(userId, lastId, count);
         if (postings == null || postings.size() == 0) return new ArrayList<>();

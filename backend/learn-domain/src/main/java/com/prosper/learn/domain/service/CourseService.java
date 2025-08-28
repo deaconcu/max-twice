@@ -27,7 +27,7 @@ public class CourseService {
         return courseMapper.getById(id);
     }
 
-    public boolean exist(int id) {
+    public boolean exist(long id) {
         CourseDO courseDO = courseMapper.getById(id);
         return courseDO != null;
     }
@@ -38,7 +38,7 @@ public class CourseService {
     }
 
     // 新增：根据状态和lastId获取课程列表
-    public List<CourseDTOV4> getListByStateAndLastId(String state, int lastId) {
+    public List<CourseDTOV4> getListByStateAndLastId(String state, long lastId) {
         List<CourseDO> courseDOList = courseMapper.listByStateAndLastId(state, lastId);
         return courseDOList.stream()
                 .map(courseDO -> Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseMapper))
@@ -55,7 +55,7 @@ public class CourseService {
     }
 
     // 新增：根据父课程ID获取子课程列表
-    public List<CourseDTOV4> getListByParent(int parentId, String state) {
+    public List<CourseDTOV4> getListByParent(long parentId, String state) {
         List<CourseDO> courseDOList;
         if (state.equals("ALL")) {
             courseDOList = courseMapper.listByParent(parentId);
@@ -68,7 +68,7 @@ public class CourseService {
     }
 
     // 新增：课程批准操作
-    public void approve(int id) {
+    public void approve(long id) {
         // 先查询当前状态
         CourseDO courseDO = courseMapper.getById(id);
         if (courseDO == null) {
@@ -86,7 +86,7 @@ public class CourseService {
     }
 
     // 新增：课程拒绝操作
-    public void reject(int id, String rejectedReason) {
+    public void reject(long id, String rejectedReason) {
         // 先查询当前状态
         CourseDO courseDO = courseMapper.getById(id);
         if (courseDO == null) {
@@ -103,7 +103,7 @@ public class CourseService {
         }
     }
 
-    public void delete(int id) {
+    public void delete(long id) {
         CourseDO courseDO = courseMapper.getById(id);
         if (courseDO == null) {
             throw new RuntimeException("操作失败：课程不存在");
@@ -148,7 +148,7 @@ public class CourseService {
         courseMapper.update(course);
     }
 
-    public void createSubcourse(String name, String description, int parentId, int userId) {
+    public void createSubcourse(String name, String description, long parentId, long userId) {
         CourseDO parentCourse = courseMapper.getById(parentId);
         if (parentCourse == null) {
             throw new RuntimeException("Parent course does not exist");

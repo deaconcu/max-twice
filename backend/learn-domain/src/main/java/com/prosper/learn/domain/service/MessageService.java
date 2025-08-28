@@ -39,7 +39,7 @@ public class MessageService {
     private final UserMapper userMapper;
     private final ObjectMapper objectMapper;
 
-    public void create(String content, int senderId, int receiverId, MessageType messageType) {
+    public void create(String content, long senderId, long receiverId, MessageType messageType) {
         UserDO sender = userMapper.getById(senderId);
         if (sender == null) {
             throw new RuntimeException("Sender not found");
@@ -60,7 +60,7 @@ public class MessageService {
         messageMapper.insert(messageDO);
     }
 
-    public MessageDTO get(int id) {
+    public MessageDTO get(long id) {
         MessageDO messageDO = messageMapper.getById(id);
         UserDO sender = userMapper.getById(messageDO.getSenderId());
         UserDO receiver = userMapper.getById(messageDO.getReceiverId());
@@ -72,7 +72,7 @@ public class MessageService {
         return messageDTO;
     }
 
-    public List<MessageDTO> getList(int type, int senderId, int receiverId, int lastId, int conversation) {
+    public List<MessageDTO> getList(int type, long senderId, long receiverId, long lastId, int conversation) {
         List<MessageDO> messageDOList;
         if (type == applyCourse.value) {
             messageDOList = messageMapper.listAll(type, lastId, 20);
@@ -108,7 +108,7 @@ public class MessageService {
         return messageDTOList;
     }
 
-    public List<MessageDTO> getSystemList(int type, int receiverId, int lastId) {
+    public List<MessageDTO> getSystemList(int type, long receiverId, long lastId) {
         List<MessageDO> messageDOList;
         if (type == system.value) {
             messageDOList = messageMapper.getSystemListByUser(receiverId, lastId, 20);
@@ -211,7 +211,7 @@ public class MessageService {
         return messageDTO;
     }
 
-    public List<MessageDTO> getCourseApplyList(int senderId, int lastId) {
+    public List<MessageDTO> getCourseApplyList(long senderId, long lastId) {
         List<MessageDO> messageDOList = messageMapper.getApplyCourseListByUser(senderId, lastId, 20);
 
         Set<Integer> userIdSet = new HashSet<>();
@@ -250,7 +250,7 @@ public class MessageService {
         return messageMapper.getApplyCourseCount();
     }
 
-    public void createCommentMessage(int recieverId, int commenterId, int nodeId, int commentId, int type) {
+    public void createCommentMessage(long recieverId, long commenterId, long nodeId, long commentId, int type) {
         Map<String, Object> messageMap = new HashMap<>();
         messageMap.put("commenterId", commenterId);
         messageMap.put("nodeId", nodeId);
@@ -259,7 +259,7 @@ public class MessageService {
         createSystemMessage(type, recieverId, Util.toJson(messageMap));
     }
 
-    public void createFollowMessage(int recieverId, int followerId) {
+    public void createFollowMessage(long recieverId, long followerId) {
         Map<String, Object> messageMap = new HashMap<>();
         messageMap.put("followerId", followerId);
 
@@ -280,7 +280,7 @@ public class MessageService {
         createSystemMessage(upvote.value, recieverId, Util.toJson(messageMap));
     }
 
-    public void createInviteMessage(int recieverId, int InviterId, int nodeId) {
+    public void createInviteMessage(long recieverId, long InviterId, long nodeId) {
         Map<String, Object> messageMap = new HashMap<>();
         messageMap.put("inviterId", InviterId);
         messageMap.put("nodeId", nodeId);
@@ -288,16 +288,16 @@ public class MessageService {
         createSystemMessage(invite.value, recieverId, Util.toJson(messageMap));
     }
 
-    public void createSystemMessage(int type, int userId, String content) {
+    public void createSystemMessage(int type, long userId, String content) {
         MessageDO messageDO = new MessageDO();
         messageDO.setType(type);
-        messageDO.setSenderId(0);
+        messageDO.setSenderId(0L);
         messageDO.setReceiverId(userId);
         messageDO.setContent(content);
         messageMapper.insert(messageDO);
     }
 
-    public void modifyCourseApply(int messageId, String reply) {
+    public void modifyCourseApply(long messageId, String reply) {
         MessageDO messageDO = messageMapper.getById(messageId);
         if (messageDO == null) throw new RuntimeException("Message not found");
 

@@ -16,7 +16,7 @@ public interface NodeClient{
 
     // 获取一个对象
     @GetMapping("/node/{id}")
-    NodeDTO get(@PathVariable int id);
+    NodeDTO get(@PathVariable Long id);
 
     // 根据多个id同时获取多个对象
     @GetMapping("/node/ids-{ids}")
@@ -25,7 +25,7 @@ public interface NodeClient{
     /*
     // 根据多个id同时获取多个对象
     @GetMapping("/node/tree/{id}")
-    NodeDTO getNodeTree(@PathVariable int id);
+    NodeDTO getNodeTree(@PathVariable Long id);
      */
 
 

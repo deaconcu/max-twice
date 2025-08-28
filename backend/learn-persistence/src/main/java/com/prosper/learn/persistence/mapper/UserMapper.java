@@ -19,13 +19,13 @@ public interface UserMapper {
     @Select({"<script>SELECT * FROM user where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
-    List<UserDO> getByIds(Collection<Integer> ids);
+    List<UserDO> getByIds(Collection<Long> ids);
 
     @Select({"<script>SELECT * FROM user where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
     @MapKey("id")
-    Map<Integer, UserDO> getMapByIds(Collection<Integer> ids);
+    Map<Long, UserDO> getMapByIds(Collection<Long> ids);
 
     @Select("SELECT * FROM user WHERE email = #{email} limit 1")
     UserDO getByEmail(String email);

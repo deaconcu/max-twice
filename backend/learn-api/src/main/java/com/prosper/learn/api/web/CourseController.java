@@ -29,13 +29,13 @@ public class CourseController implements CourseClient {
     private final CourseRankingScheduler courseRankingScheduler;
 
     @Override
-    public Response<CourseDTOV4> get(int id) {
+    public Response<CourseDTOV4> get(Long id) {
         CourseDO course = courseMapper.getById(id);
         return new Response<>(Converter.INSTANCE.toCourseDTOV4(course));
     }
 
     @Override
-    public Response<Object> getListByState(String state, int lastId) {
+    public Response<Object> getListByState(String state, Long lastId) {
         List<CourseDTOV4> courseList = courseService.getListByStateAndLastId(state, lastId);
         return new Response<>(courseList);
     }
@@ -47,18 +47,18 @@ public class CourseController implements CourseClient {
     }
 
     @Override
-    public Response<Object> getApprovedListByParent(int parentId) {
+    public Response<Object> getApprovedListByParent(Long parentId) {
         List<CourseDTOV4> courseList = courseService.getListByParent(parentId, "APPROVED");
         return new Response<>(courseList);
     }
 
-    public Response<Object> getListByParent(int parentId) {
+    public Response<Object> getListByParent(Long parentId) {
         List<CourseDTOV4> courseList = courseService.getListByParent(parentId, "ALL");
         return new Response<>(courseList);
     }
 
     @Override
-    public Response<Object> operate(int id, String action, String rejectedReason) {
+    public Response<Object> operate(Long id, String action, String rejectedReason) {
         if (!courseService.exist(id)) {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }
@@ -82,22 +82,22 @@ public class CourseController implements CourseClient {
 
     @Override
     public Response<Object> post(CourseDTO course) {
-        int userId = StpUtil.getLoginIdAsInt();
+        long userId = StpUtil.getLoginIdAsLong();
         course.setCreator(userId);
         courseService.createCourse(course);
         return Response.success("课程创建成功");
     }
 
     @Override
-    public Response post(String name, String description, int parentId) {
-        int userId = StpUtil.getLoginIdAsInt();
+    public Response post(String name, String description, Long parentId) {
+        long userId = StpUtil.getLoginIdAsLong();
 
         courseService.createSubcourse(name, description, parentId, userId);
         return Response.success("课程创建成功");
     }
 
     @Override
-    public Response<Object> put(@PathVariable int id, CourseDTO course) {
+    public Response<Object> put(@PathVariable Long id, CourseDTO course) {
         CourseDO courseDo = courseMapper.getById(id);
         if (courseDo == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -117,7 +117,7 @@ public class CourseController implements CourseClient {
     }
 
     @Override
-    public Response<Object> getHotCourses(@RequestParam(value = "limit", defaultValue = "10") int limit) {
+    public Response<Object> getHotCourses(@RequestParam(value = "limit", defaultValue = "10") Integer limit) {
         log.info("开始获取热门课程，limit: {}", limit);
         List<CourseDTOV4> hotCourses = courseService.getHotCourses(limit);
         log.info("成功获取热门课程数量: {}", hotCourses.size());

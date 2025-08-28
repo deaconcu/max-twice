@@ -26,7 +26,7 @@ public class StatsController implements StatsClient {
      * 记录文章访问
      */
     @Override
-    public Response<Void> recordView(Long articleId, Integer userId, String ipAddress) {
+    public Response<Void> recordView(Long articleId, Long userId, String ipAddress) {
         articleViewService.recordView(articleId, userId, ipAddress);
         return new Response<>(Response.SUCCESS, "success", null);
     }
@@ -35,7 +35,7 @@ public class StatsController implements StatsClient {
      * 获取用户今日统计
      */
     @Override
-    public Response<UserStatsDTO> getUserTodayStats(Integer userId) {
+    public Response<UserStatsDTO> getUserTodayStats(Long userId) {
         UserStatsDTO stats = dailyStatsService.getUserTodayStats(userId);
         return new Response<>(stats);
     }
@@ -44,7 +44,7 @@ public class StatsController implements StatsClient {
      * 获取用户昨日统计
      */
     @Override
-    public Response<UserStatsDTO> getUserYesterdayStats(Integer userId) {
+    public Response<UserStatsDTO> getUserYesterdayStats(Long userId) {
         UserStatsDTO stats = dailyStatsService.getUserYesterdayStats(userId);
         return new Response<>(stats);
     }
@@ -53,7 +53,7 @@ public class StatsController implements StatsClient {
      * 获取用户历史统计
      */
     @Override
-    public Response<UserStatsDTO> getUserHistoryStats(Integer userId, int days) {
+    public Response<UserStatsDTO> getUserHistoryStats(Long userId, Integer days) {
         UserStatsDTO stats = dailyStatsService.getUserHistoryStats(userId, days);
         return new Response<>(stats);
     }
@@ -62,7 +62,7 @@ public class StatsController implements StatsClient {
      * 获取用户时间段统计（包含每日明细）
      */
     @Override
-    public Response<UserStatsDTO> getUserPeriodStats(Integer userId, int days) {
+    public Response<UserStatsDTO> getUserPeriodStats(Long userId, Integer days) {
         UserStatsDTO stats = dailyStatsService.getUserPeriodStatsWithDaily(userId, days);
         return new Response<>(stats);
     }
@@ -71,7 +71,7 @@ public class StatsController implements StatsClient {
      * 获取用户全部时间统计
      */
     @Override
-    public Response<UserStatsDTO> getUserAllTimeStats(Integer userId) {
+    public Response<UserStatsDTO> getUserAllTimeStats(Long userId) {
         UserStatsDTO stats = dailyStatsService.getUserAllTimeStats(userId);
         return new Response<>(stats);
     }

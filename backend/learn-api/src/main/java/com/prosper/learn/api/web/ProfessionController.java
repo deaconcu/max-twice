@@ -22,31 +22,31 @@ public class ProfessionController implements ProfessionClient {
     private final ProfessionRankingScheduler professionRankingScheduler;
 
     @Override
-    public Response<Object> listByPage(int page) {
+    public Response<Object> listByPage(Integer page) {
         List<ProfessionDTO> professionList = professionService.getListByPage(page);
         return new Response<>(professionList);
     }
 
     @Override
-    public Response<Object> listByStateAndLastId(String state, int lastId) {
+    public Response<Object> listByStateAndLastId(String state, Long lastId) {
         List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(state, lastId);
         return new Response<>(professionList);
     }
 
     @Override
-    public Response<Object> listByMainCategoryAndLastId(int mainCategory, int lastId) {
+    public Response<Object> listByMainCategoryAndLastId(Integer mainCategory, Long lastId) {
         List<ProfessionDTO> professionList = professionService.getListByMainCategoryAndLastId(mainCategory, lastId);
         return new Response<>(professionList);
     }
 
     @Override
-    public Response<Object> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, int lastId) {
+    public Response<Object> listByMainCategoryAndSubCategoryAndLastId(Integer mainCategory, Integer subCategory, Long lastId) {
         List<ProfessionDTO> professionList = professionService.getListByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
         return new Response<>(professionList);
     }
 
     @Override
-    public Response<Object> getById(int id) {
+    public Response<Object> getById(Long id) {
         ProfessionDTO profession = professionService.getById(id);
         if (profession == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -70,7 +70,7 @@ public class ProfessionController implements ProfessionClient {
         }
 
         professionDTO.setCreator(StpUtil.getLoginIdAsLong());
-        int id = professionService.create(professionDTO);
+        professionService.create(professionDTO);
         return Response.success;
     }
 
@@ -108,7 +108,7 @@ public class ProfessionController implements ProfessionClient {
     }
 
     @Override
-    public Response<Object> operate(int id, String action, String rejectedReason) {
+    public Response<Object> operate(Long id, String action, String rejectedReason) {
         ProfessionDTO existing = professionService.getById(id);
         if (existing == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -130,7 +130,7 @@ public class ProfessionController implements ProfessionClient {
     }
 
     @Override
-    public Response<Object> delete(int id) {
+    public Response<Object> delete(Long id) {
         ProfessionDTO existing = professionService.getById(id);
         if (existing == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -141,13 +141,13 @@ public class ProfessionController implements ProfessionClient {
     }
 
     @Override
-    public Response<Object> listApproved(int lastId) {
+    public Response<Object> listApproved(Long lastId) {
         List<ProfessionDTO> professionList = professionService.getListByStateAndLastId("APPROVED", lastId);
         return new Response<>(professionList);
     }
 
     @Override
-    public Response<Object> getHotProfessions(int limit) {
+    public Response<Object> getHotProfessions(Integer limit) {
         List<ProfessionDTO> hotProfessions = professionService.getHotProfessions(limit);
         return new Response<>(hotProfessions);
     }

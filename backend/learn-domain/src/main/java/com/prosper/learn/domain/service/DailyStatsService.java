@@ -502,7 +502,7 @@ public class DailyStatsService {
                key = "'user:' + #userId + ':' + T(java.time.LocalDate).now().toString()",
                unless = "#result == null")
      */
-    public UserStatsDTO getUserTodayStats(Integer userId) {
+    public UserStatsDTO getUserTodayStats(long userId) {
         String today = LocalDate.now().toString();
         String userKey = "stats:" + today + ":user";
 
@@ -526,7 +526,7 @@ public class DailyStatsService {
     @Cacheable(value = "yesterdayStats", 
                key = "'user:' + #userId + ':' + T(java.time.LocalDate).now().minusDays(1).toString()", 
                unless = "#result == null")
-    public UserStatsDTO getUserYesterdayStats(Integer userId) {
+    public UserStatsDTO getUserYesterdayStats(long userId) {
         LocalDate yesterday = LocalDate.now().minusDays(1);
         
         try {
@@ -558,7 +558,7 @@ public class DailyStatsService {
     @Cacheable(value = "historyStats", 
                key = "'user:' + #userId + ':' + #days + ':' + T(java.time.LocalDate).now().minusDays(1).toString()", 
                unless = "#result == null")
-    public UserStatsDTO getUserHistoryStats(Integer userId, int days) {
+    public UserStatsDTO getUserHistoryStats(long userId, int days) {
         LocalDate endDate = LocalDate.now().minusDays(1); // 不包括今天
         LocalDate startDate = endDate.minusDays(days - 1);
         
@@ -586,7 +586,7 @@ public class DailyStatsService {
     /**
      * 获取用户时间段统计（包含每日明细）
      */
-    public UserStatsDTO getUserPeriodStatsWithDaily(Integer userId, int days) {
+    public UserStatsDTO getUserPeriodStatsWithDaily(long userId, int days) {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(days - 1);
         
@@ -819,7 +819,7 @@ public class DailyStatsService {
     @Cacheable(value = "allTimeStats", 
                key = "'user:' + #userId + ':' + T(java.time.LocalDate).now().minusDays(1).toString()", 
                unless = "#result == null")
-    public UserStatsDTO getUserAllTimeStats(Integer userId) {
+    public UserStatsDTO getUserAllTimeStats(long userId) {
         try {
             // 1. 获取昨天以前的所有历史数据（带缓存）
             UserStatsDTO historicalStats = getUserHistoricalStats(userId);
@@ -862,7 +862,7 @@ public class DailyStatsService {
     @Cacheable(value = "historicalStats", 
                key = "'user:' + #userId + ':until:' + T(java.time.LocalDate).now().minusDays(1).toString()", 
                unless = "#result == null")
-    public UserStatsDTO getUserHistoricalStats(Integer userId) {
+    public UserStatsDTO getUserHistoricalStats(long userId) {
         try {
             LocalDate yesterday = LocalDate.now().minusDays(1);
             LocalDate startDate = LocalDate.of(2020, 1, 1); // 系统开始日期
@@ -897,7 +897,7 @@ public class DailyStatsService {
      * @param endDate 结束日期（包含）
      * @return 日期范围内的汇总统计数据
      */
-    public Map<String, Integer> getUserDateRangeStats(Integer userId, LocalDate startDate, LocalDate endDate) {
+    public Map<String, Integer> getUserDateRangeStats(long userId, LocalDate startDate, LocalDate endDate) {
         try {
             Map<String, Integer> total = createEmptyUserStatsMap();
 

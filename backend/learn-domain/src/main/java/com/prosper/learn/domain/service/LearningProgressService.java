@@ -56,7 +56,7 @@ public class LearningProgressService {
      * @param nodeId 节点ID
      * @return 是否成功添加（如果已存在则返回false）
      */
-    public boolean markNodeCompleted(Integer userId, Integer nodeId, Integer courseId) {
+    public boolean markNodeCompleted(long userId, long nodeId, long courseId) {
         try {
             String key = USER_COMPLETED_KEY_PREFIX + userId;
             
@@ -107,7 +107,7 @@ public class LearningProgressService {
      * @param nodeId 节点ID
      * @return 是否成功移除（如果不存在则返回false）
      */
-    public boolean unmarkNodeCompleted(Integer userId, Integer nodeId, Integer courseId) {
+    public boolean unmarkNodeCompleted(long userId, long nodeId, long courseId) {
         try {
             String key = USER_COMPLETED_KEY_PREFIX + userId;
             
@@ -213,7 +213,7 @@ public class LearningProgressService {
      * @param nodeId 节点ID
      * @return 是否已完成
      */
-    public boolean isNodeCompleted(Integer userId, Integer nodeId) {
+    public boolean isNodeCompleted(Long userId, Long nodeId) {
         try {
             String key = USER_COMPLETED_KEY_PREFIX + userId;
             
@@ -265,7 +265,7 @@ public class LearningProgressService {
      * @param userId 用户ID
      * @return 完成的节点总数
      */
-    public long getUserCompletedCount(Integer userId) {
+    public long getUserCompletedCount(long userId) {
         try {
             String key = USER_COMPLETED_KEY_PREFIX + userId;
             
@@ -287,7 +287,7 @@ public class LearningProgressService {
      * 
      * @param userId 用户ID
      */
-    private void loadUserDataToRedis(Integer userId) {
+    private void loadUserDataToRedis(Long userId) {
         try {
             log.debug("Loading user {} data from database to Redis", userId);
             
@@ -505,7 +505,7 @@ public class LearningProgressService {
      * @param courseId 课程ID
      * @return 是否成功标记
      */
-    public boolean markCourseCompleted(Integer userId, Integer courseId) {
+    public boolean markCourseCompleted(long userId, long courseId) {
         try {
             log.info("Marking course {} as completed for user {}", courseId, userId);
             

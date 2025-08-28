@@ -36,7 +36,7 @@ public class UpvoteService {
      * type 1 once 2 twice 3 helpful
      */
     @Transactional
-    public void upvotePost(int postingId, int userId, int type) {
+    public void upvotePost(long postingId, long userId, int type) {
         if (!Enums.VoteType.isValid(type)) return;
         UserDO fromUserDO = userMapper.getById(userId);
         if (fromUserDO == null) return;
@@ -136,7 +136,7 @@ public class UpvoteService {
         }
     }
 
-    public void upvoteComment(int commentId, int userId) {
+    public void upvoteComment(long commentId, long userId) {
         UserDO fromUserDO = userMapper.getById(userId);
         if (fromUserDO == null) return;
 
@@ -227,7 +227,7 @@ public class UpvoteService {
      * @param userId 用户ID
      * @return 已投票的课程ID集合
      */
-    public Set<Integer> getUpvotedRoadmapIds(List<Integer> roadmapIds, int userId) {
+    public Set<Long> getUpvotedRoadmapIds(List<Long> roadmapIds, long userId) {
         if (roadmapIds == null || roadmapIds.isEmpty() || userId <= 0) {
             return new HashSet<>();
         }

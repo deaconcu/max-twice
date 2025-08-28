@@ -15,7 +15,7 @@ public interface RoadmapClient {
      */
     @GetMapping("/roadmap/list/{professionId}")
     Response<List<RoadmapDTO>> getListByProfession(
-            @PathVariable("professionId") Integer professionId, @RequestParam("lastId") Integer lastId);
+            @PathVariable("professionId") Long professionId, @RequestParam("lastId") Long lastId);
 
     /**
      * 更新课程信息
@@ -41,6 +41,6 @@ public interface RoadmapClient {
      * 置顶用户课程
      */
     @PostMapping("/roadmap/pin")
-    Response<Object> pin(@RequestParam int professionId, @RequestParam int roadmapId);
+    Response<Object> pin(@RequestParam Long professionId, @RequestParam Long roadmapId);
 
 }

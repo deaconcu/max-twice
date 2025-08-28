@@ -34,7 +34,7 @@ public class ContentsService {
      * 返回用户在某一个课程下的目录
      * @return (目录JSON, NodeMap<id, NodeDTOV2>)
      */
-    public ArrayNode getToc(int userId, int courseId, boolean create) {
+    public ArrayNode getToc(long userId, long courseId, boolean create) {
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {
             throw new RuntimeException("course is not exist");
@@ -48,7 +48,7 @@ public class ContentsService {
         if (userCourseTocDO == null) {
             // create root toc
             ObjectNode s = objectMapper.createObjectNode();
-            s.put(Integer.toString(courseDO.getRootNode()), objectMapper.createObjectNode());
+            s.put(Long.toString(courseDO.getRootNode()), objectMapper.createObjectNode());
 
             tocStr = s.toString();
             String tosHash = Utils.hashSHA(tocStr);
@@ -122,7 +122,7 @@ public class ContentsService {
     }
 
     @Transactional
-    public void choose(int userId, String path, int courseId, int postId) {
+    public void choose(long userId, String path, long courseId, long postId) {
         // validate
         PostDO postDO = postMapper.get(postId);
         if (postDO == null || postDO.getType() == Enums.PostType.article.value) return;
@@ -165,7 +165,7 @@ public class ContentsService {
         userCourseTocMapper.update(userCourseTocDO);
     }
 
-    public void unchoose(int userId, int courseId, String path) {
+    public void unchoose(long userId, long courseId, String path) {
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {
             throw new RuntimeException("course is not exist");
@@ -199,7 +199,7 @@ public class ContentsService {
         userCourseTocMapper.update(userCourseTocDO);
     }
 
-    public void pin(int userId, int courseId, String path, int postId, boolean add) {
+    public void pin(long userId, long courseId, String path, long postId, boolean add) {
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {
             throw new RuntimeException("course is not exist");

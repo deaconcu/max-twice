@@ -11,11 +11,11 @@ public interface TocClient {
 
     // 获取某个用户某个课程的目录
     @GetMapping("/toc/size")
-    Response<Object> get(@RequestParam(value="courseId") int courseId);
+    Response<Object> get(@RequestParam(value="courseId") Long courseId);
 
     // 提交或修改用户目录
     @PostMapping("/toc")
-    Response<Object> post(@RequestParam(value = "courseId") int courseId,
+    Response<Object> post(@RequestParam(value = "courseId") Long courseId,
                           @RequestParam(value = "indexArray") String indexArray);
 
 }

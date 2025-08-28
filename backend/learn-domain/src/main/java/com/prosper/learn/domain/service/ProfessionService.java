@@ -17,17 +17,17 @@ public class ProfessionService {
     private final ProfessionMapper professionMapper;
     private final ProfessionRankingService professionRankingService;
 
-    public ProfessionDTO getById(int id) {
+    public ProfessionDTO getById(long id) {
         ProfessionDO professionDO = professionMapper.get(id);
         return professionDO != null ? Converter.INSTANCE.toProfessionDTO(professionDO) : null;
     }
 
-    public List<ProfessionDTO> getListByStateAndLastId(String state, int lastId) {
+    public List<ProfessionDTO> getListByStateAndLastId(String state, long lastId) {
         List<ProfessionDO> professionDOList = professionMapper.listByStateAndLastId(state, lastId);
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }
 
-    public List<ProfessionDTO> getListByMainCategoryAndLastId(int mainCategory, int lastId) {
+    public List<ProfessionDTO> getListByMainCategoryAndLastId(int mainCategory, long lastId) {
         List<ProfessionDO> professionDOList = professionMapper.listByMainCategoryAndLastId(mainCategory, lastId);
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }
@@ -37,7 +37,7 @@ public class ProfessionService {
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }
 
-    public List<ProfessionDTO> getListByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, int lastId) {
+    public List<ProfessionDTO> getListByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, long lastId) {
         List<ProfessionDO> professionDOList = professionMapper.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }
@@ -60,7 +60,7 @@ public class ProfessionService {
         professionMapper.update(professionDO);
     }
 
-    public void approve(int id) {
+    public void approve(long id) {
         // 先查询当前状态
         ProfessionDTO profession = getById(id);
         if (profession == null) {
@@ -77,7 +77,7 @@ public class ProfessionService {
         }
     }
 
-    public void reject(int id, String rejectedReason) {
+    public void reject(long id, String rejectedReason) {
         // 先查询当前状态
         ProfessionDTO profession = getById(id);
         if (profession == null) {
@@ -94,7 +94,7 @@ public class ProfessionService {
         }
     }
 
-    public void delete(int id) {
+    public void delete(long id) {
         professionMapper.delete(id);
     }
 

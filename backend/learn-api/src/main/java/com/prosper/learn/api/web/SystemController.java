@@ -53,7 +53,7 @@ public class SystemController implements SystemClient {
     @Override
     public Response<Object> post(String config) {
         SystemDO systemDO = new SystemDO();
-        systemDO.setId(0);
+        systemDO.setId(0L);
         systemDO.setConfig(config);
         systemMapper.update(systemDO);
         return Response.success;

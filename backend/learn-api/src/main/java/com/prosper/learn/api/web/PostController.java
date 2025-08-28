@@ -56,7 +56,7 @@ public class PostController implements PostClient {
             }
         }
 
-        posting.setCreatorId(0);
+        posting.setCreatorId(0l);
         posting.setCreatedAt(Utils.getTimeString());
         postMapper.insert(Converter.INSTANCE.toPostDO(posting));
         return Response.success;
@@ -76,7 +76,7 @@ public class PostController implements PostClient {
     }
 
     @Override
-    public Response delete(int id) {
+    public Response delete(Long id) {
         PostDO postDO = postMapper.get(id);
         if (postDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -89,12 +89,12 @@ public class PostController implements PostClient {
     }
 
     @Override
-    public PostDTO get(int id) {
+    public PostDTO get(Long id) {
         return Converter.INSTANCE.toPostDTO(postService.get(id));
     }
 
     @Override
-    public List<PostDTO> getPostings(int nodeId) {
+    public List<PostDTO> getPostings(Long nodeId) {
         int count = 3;
         List<PostDO> postings = postMapper.getListByNode(nodeId, count, Enums.PostState.approved.value);
         postings.forEach(postingDO -> postService.idToName(postingDO));
@@ -102,7 +102,7 @@ public class PostController implements PostClient {
     }
 
     @Override
-    public List<PostDTO> getByLastId(int nodeId, int lastPostingId) {
+    public List<PostDTO> getByLastId(Long nodeId, Long lastPostingId) {
         int count = 2;
         List<PostDO> postings = postMapper.getListByLastId(nodeId, lastPostingId, count, Enums.PostState.approved.value);
         postings.forEach(postingDO -> postService.idToName(postingDO));
@@ -110,7 +110,7 @@ public class PostController implements PostClient {
     }
 
     @Override
-    public Response<Object> get(List<Integer> ids, int nodeId, int lastPostingId) {
+    public Response<Object> get(List<Long> ids, Long nodeId, Long lastPostingId) {
         if (ids != null && ids.size() > 0) {
             List<PostDO> postings = postMapper.getByIds(ids);
             postings.forEach(postingDO -> postService.idToName(postingDO));
@@ -136,7 +136,7 @@ public class PostController implements PostClient {
     }
 
     @Override
-    public Response<Object> approve(int id, boolean approve) {
+    public Response<Object> approve(Long id, boolean approve) {
         PostDO postDO = postMapper.get(id);
         if (postDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();

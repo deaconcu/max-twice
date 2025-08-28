@@ -17,7 +17,7 @@ public class ArticleViewService {
      * @param userId 用户ID（可为null，表示匿名访问）
      * @param ipAddress IP地址（可选，用于防重复）
      */
-    public void recordView(Long articleId, Integer userId, String ipAddress) {
+    public void recordView(long articleId, long userId, String ipAddress) {
         try {
             // 记录到Redis统计
             redisStatsService.recordArticleView(articleId, userId);

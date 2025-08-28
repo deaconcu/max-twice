@@ -19,40 +19,40 @@ public interface StatsClient {
      */
     @PostMapping("/api/stats/view")
     Response<Void> recordView(@RequestParam Long articleId,
-                             @RequestParam(required = false) Integer userId,
+                             @RequestParam(required = false) Long userId,
                              @RequestParam(required = false) String ipAddress);
 
     /**
      * 获取用户今日统计
      */
     @GetMapping("/api/stats/user/{userId}/today")
-    Response<UserStatsDTO> getUserTodayStats(@PathVariable Integer userId);
+    Response<UserStatsDTO> getUserTodayStats(@PathVariable Long userId);
 
     /**
      * 获取用户昨日统计
      */
     @GetMapping("/api/stats/user/{userId}/yesterday")
-    Response<UserStatsDTO> getUserYesterdayStats(@PathVariable Integer userId);
+    Response<UserStatsDTO> getUserYesterdayStats(@PathVariable Long userId);
 
     /**
      * 获取用户历史统计
      */
     @GetMapping("/api/stats/user/{userId}/history")
-    Response<UserStatsDTO> getUserHistoryStats(@PathVariable Integer userId,
-                                              @RequestParam(defaultValue = "7") int days);
+    Response<UserStatsDTO> getUserHistoryStats(@PathVariable Long userId,
+                                              @RequestParam(defaultValue = "7") Integer days);
 
     /**
      * 获取用户时间段统计（包含每日明细）
      */
     @GetMapping("/api/stats/user/{userId}/period")
-    Response<UserStatsDTO> getUserPeriodStats(@PathVariable Integer userId,
-                                             @RequestParam(defaultValue = "7") int days);
+    Response<UserStatsDTO> getUserPeriodStats(@PathVariable Long userId,
+                                             @RequestParam(defaultValue = "7") Integer days);
 
     /**
      * 获取用户全部时间统计
      */
     @GetMapping("/api/stats/user/{userId}/all-time")
-    Response<UserStatsDTO> getUserAllTimeStats(@PathVariable Integer userId);
+    Response<UserStatsDTO> getUserAllTimeStats(@PathVariable Long userId);
 
     /**
      * 手动触发同步（仅用于测试）

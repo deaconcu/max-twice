@@ -5,12 +5,10 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.RoadmapService;
 import com.prosper.learn.domain.service.ScoreCalculationService;
 import com.prosper.learn.domain.service.UpvoteService;
-import com.prosper.learn.domain.service.UserRoadmapService;
 import com.prosper.learn.dto.Response;
 import com.prosper.learn.dto.RoadmapDTO;
 import com.prosper.learn.persistence.mapper.RoadmapMapper;
 import com.prosper.learn.persistence.mapper.UserProfileMapper;
-import com.prosper.learn.persistence.mapper.UpvoteMapper;
 import com.prosper.learn.persistence.mapper.UserRoadmapMapper;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
 import com.prosper.learn.persistence.dataobject.UserProfileDO;
@@ -40,14 +38,12 @@ public class RoadmapController implements RoadmapClient {
     private final ScoreCalculationService scoreCalculationService;
     private final RoadmapMapper roadmapMapper;
     private final UserProfileMapper userProfileMapper;
-    private final UpvoteMapper upvoteMapper;
     private final UserRoadmapMapper userRoadmapMapper;
     private final UpvoteService upvoteService;
-    private final UserRoadmapService userRoadmapService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public Response<List<RoadmapDTO>> getListByProfession(Integer professionId, Integer lastId) {
+    public Response<List<RoadmapDTO>> getListByProfession(Long professionId, Long lastId) {
         if (!StpUtil.isLogin()) {
             throw ErrorCode.USER_NOT_LOGIN.exception();
         }
@@ -55,7 +51,7 @@ public class RoadmapController implements RoadmapClient {
         List<RoadmapDO> roadmapList = new ArrayList<>();
         int limit = 20; // 默认每页20条
 
-        List<Integer> pinnedRoadmapIds = new ArrayList<>();
+        List<Long> pinnedRoadmapIds = new ArrayList<>();
         if (lastId == null || lastId == 0) {
             // 获取当前用户的置顶路线
             int userId = StpUtil.getLoginIdAsInt();
@@ -64,11 +60,11 @@ public class RoadmapController implements RoadmapClient {
             if (userProfile != null && userProfile.getRoadmapPin() != null) {
                 try {
                     // 解析 roadmapPin JSON: {"1": [26, 28, 27, 37, 15, 18, 19]}
-                    Map<String, List<Integer>> pinMap = objectMapper.readValue(
+                    Map<String, List<Long>> pinMap = objectMapper.readValue(
                         userProfile.getRoadmapPin(), new TypeReference<>() {}
                     );
 
-                    List<Integer> professionPins = pinMap.get(professionId.toString());
+                    List<Long> professionPins = pinMap.get(professionId.toString());
                     if (professionPins != null && !professionPins.isEmpty()) {
                         pinnedRoadmapIds = professionPins;
                     }
@@ -104,19 +100,19 @@ public class RoadmapController implements RoadmapClient {
         List<RoadmapDTO> dtoList = Converter.INSTANCE.toRoadMapDTO(roadmapList);
 
         // 获取当前用户ID，用于批量查询状态
-        int userId = StpUtil.getLoginIdAsInt();
+        long userId = StpUtil.getLoginIdAsLong();
 
         // 批量设置 upvoted 和 pinned 状态
         if (!dtoList.isEmpty()) {
             // 1. 批量查询点赞状态
-            List<Integer> roadmapIds = dtoList.stream()
-                .map(dto -> dto.getId())
+            List<Long> roadmapIds = dtoList.stream()
+                .map(RoadmapDTO::getId)
                 .collect(Collectors.toList());
 
-            Set<Integer> upvotedIds = upvoteService.getUpvotedRoadmapIds(roadmapIds, userId);
+            Set<Long> upvotedIds = upvoteService.getUpvotedRoadmapIds(roadmapIds, userId);
 
             // 2. 获取置顶状态
-            Set<Integer> pinnedIds = new HashSet<>();
+            Set<Long> pinnedIds = new HashSet<>();
             if (lastId == null || lastId == 0) {
                 // 首页时，pinnedRoadmapIds 就是置顶的ID
                 pinnedIds.addAll(pinnedRoadmapIds);
@@ -125,10 +121,10 @@ public class RoadmapController implements RoadmapClient {
                 UserProfileDO userProfile = userProfileMapper.getById(userId);
                 if (userProfile != null && userProfile.getRoadmapPin() != null) {
                     try {
-                        Map<String, List<Integer>> pinMap = objectMapper.readValue(
+                        Map<String, List<Long>> pinMap = objectMapper.readValue(
                             userProfile.getRoadmapPin(), new TypeReference<>() {}
                         );
-                        List<Integer> professionPins = pinMap.get(professionId.toString());
+                        List<Long> professionPins = pinMap.get(professionId.toString());
                         if (professionPins != null) {
                             pinnedIds.addAll(professionPins);
                         }
@@ -140,8 +136,8 @@ public class RoadmapController implements RoadmapClient {
             }
 
             // 3. 批量查询学习状态
-            List<Integer> learningRoadmapIds = userRoadmapMapper.getBatchLearningStatus((long) userId, roadmapIds);
-            Set<Integer> learningIds = new HashSet<>(learningRoadmapIds);
+            List<Long> learningRoadmapIds = userRoadmapMapper.getBatchLearningStatus(userId, roadmapIds);
+            Set<Long> learningIds = new HashSet<>(learningRoadmapIds);
 
             // 4. 设置状态
             for (RoadmapDTO dto : dtoList) {
@@ -238,11 +234,11 @@ public class RoadmapController implements RoadmapClient {
             throw ErrorCode.ROADMAP_CONTENT_INVALID.exception();
         }
 
-        int userId = StpUtil.getLoginIdAsInt();
+        long userId = StpUtil.getLoginIdAsLong();
 
         // 创建新的路线图
         RoadmapDO roadmapDO = new RoadmapDO();
-        roadmapDO.setProfessionId(professionId.intValue());
+        roadmapDO.setProfessionId(professionId);
         roadmapDO.setCreatorId(userId);
         roadmapDO.setContent(content);
         roadmapDO.setDescription(description);
@@ -253,7 +249,7 @@ public class RoadmapController implements RoadmapClient {
         roadmapDO.setUpdatedAt(LocalDateTime.now());
 
         roadmapMapper.insert(roadmapDO);
-        return Response.success((long) roadmapDO.getId());
+        return Response.success(roadmapDO.getId());
     }
 
     @Override
@@ -275,25 +271,22 @@ public class RoadmapController implements RoadmapClient {
     }
 
     @Override
-    public Response<Object> pin(int professionId, int roadmapId) {
+    public Response<Object> pin(Long professionId, Long roadmapId) {
         // 验证用户是否登录
         if (!StpUtil.isLogin()) {
             throw ErrorCode.USER_NOT_LOGIN.exception();
         }
 
-        int userId = StpUtil.getLoginIdAsInt();
+        long userId = StpUtil.getLoginIdAsLong();
 
         // 获取用户配置
         UserProfileDO userProfile = userProfileMapper.getById(userId);
-        Map<String, List<Integer>> pinMap = new HashMap<>();
+        Map<String, List<Long>> pinMap = new HashMap<>();
 
         // 解析现有的置顶配置
         if (userProfile != null && userProfile.getRoadmapPin() != null) {
             try {
-                pinMap = objectMapper.readValue(
-                    userProfile.getRoadmapPin(),
-                    new TypeReference<Map<String, List<Integer>>>() {}
-                );
+                pinMap = objectMapper.readValue(userProfile.getRoadmapPin(), new TypeReference<>() {});
             } catch (Exception e) {
                 // 如果解析失败，使用空的 Map
                 log.warn("Failed to parse roadmap pin config for userId: {}", userId, e);
@@ -302,14 +295,14 @@ public class RoadmapController implements RoadmapClient {
         }
 
         String professionKey = String.valueOf(professionId);
-        List<Integer> professionPins = pinMap.getOrDefault(professionKey, new ArrayList<>());
+        List<Long> professionPins = pinMap.getOrDefault(professionKey, new ArrayList<>());
 
         boolean isPinned = professionPins.contains(roadmapId);
         String message;
 
         if (isPinned) {
             // 如果已置顶，则取消置顶
-            professionPins.remove(Integer.valueOf(roadmapId));
+            professionPins.remove(roadmapId);
             message = "unpinned";
         } else {
             // 如果未置顶，则添加置顶（最多19个，保证加上至少1个非置顶的总共20个）

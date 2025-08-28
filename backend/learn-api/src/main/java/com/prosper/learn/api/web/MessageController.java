@@ -27,7 +27,7 @@ public class MessageController implements MessageClient {
     private final MessageService messageService;
 
     @Override
-    public Response create(String content, int senderId, int receiverId) {
+    public Response create(String content, Long senderId, Long receiverId) {
         if (content == null || content.trim().isEmpty()) {
             throw new IllegalArgumentException("消息内容不能为空");
         }
@@ -43,7 +43,7 @@ public class MessageController implements MessageClient {
     }
 
     @Override
-    public Response<MessageDTO> get(int id) {
+    public Response<MessageDTO> get(Long id) {
         if (id <= 0) {
             throw new IllegalArgumentException("消息ID无效");
         }
@@ -53,7 +53,7 @@ public class MessageController implements MessageClient {
     }
 
     @Override
-    public Response<Map<String, Object>> getSystemList(int type, int receiverId, int lastId) {
+    public Response<Map<String, Object>> getSystemList(int type, Long receiverId, Long lastId) {
         if (receiverId <= 0) {
             throw new IllegalArgumentException("接收者ID无效");
         }
@@ -76,7 +76,7 @@ public class MessageController implements MessageClient {
     }
 
     @Override
-    public Response<Map<String, Object>> getCourseApplyList(int senderId, int lastId) {
+    public Response<Map<String, Object>> getCourseApplyList(Long senderId, Long lastId) {
         if (senderId <= 0) {
             throw new IllegalArgumentException("发送者ID无效");
         }
@@ -92,7 +92,7 @@ public class MessageController implements MessageClient {
     }
 
     @Override
-    public Response Invite(int userId, int nodeId) {
+    public Response Invite(Long userId, Long nodeId) {
         if (userId <= 0) {
             throw new IllegalArgumentException("用户ID无效");
         }

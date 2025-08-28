@@ -15,16 +15,16 @@ public interface CommentClient {
     Response<Object> create(@RequestBody CommentDTO commentDTO);
 
     @PutMapping("/comment")
-    Response<Object> approve(@RequestParam(value="id") int id, @RequestParam(value="action") boolean approve);
+    Response<Object> approve(@RequestParam(value="id") Long id, @RequestParam(value="action") boolean approve);
 
     @GetMapping("/comment")
-    Response<List<CommentDTO>> getByObject(@RequestParam(value = "objectId") int objectId,
+    Response<List<CommentDTO>> getByObject(@RequestParam(value = "objectId") Long objectId,
                                            @RequestParam(value = "type") int type,
-                                           @RequestParam(value="offsetId") int offsetId);
+                                           @RequestParam(value="offsetId") Long offsetId);
 
     @GetMapping("/comment/{id}/reply")
-    Response<List<CommentDTO>> getByTopic(@PathVariable(value = "id") int commentId,
-                                          @RequestParam(value="offsetId") int offsetId);
+    Response<List<CommentDTO>> getByTopic(@PathVariable(value = "id") Long commentId,
+                                          @RequestParam(value="offsetId") Long offsetId);
 
     @GetMapping("/comment/censor")
     Response<List<CommentDTOV1>> getCensorList();

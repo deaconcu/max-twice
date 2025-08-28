@@ -30,7 +30,7 @@ public class NodeController implements NodeClient {
         return Response.success;
     }
 
-    public NodeDTO get(int id) {
+    public NodeDTO get(Long id) {
         return Converter.INSTANCE.toNodeDTO(nodeMapper.getById(id));
     }
 
@@ -39,11 +39,11 @@ public class NodeController implements NodeClient {
             throw new IllegalArgumentException("节点ID列表不能为空");
         }
         
-        List<Integer> idList = new LinkedList<>();
+        List<Long> idList = new LinkedList<>();
         String[] idArray = ids.split(",");
         for(String s: idArray) {
             try {
-                idList.add(Integer.parseInt(s.trim()));
+                idList.add(Long.parseLong(s.trim()));
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException("无效的节点ID格式: " + s);
             }

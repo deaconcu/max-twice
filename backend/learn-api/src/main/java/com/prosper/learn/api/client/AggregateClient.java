@@ -13,34 +13,34 @@ import java.util.Map;
 public interface AggregateClient {
 
     @GetMapping(value = "/read", params = {"courseId"})
-    Response<Object> readByPath(@RequestParam int courseId, @RequestParam(required = false) String path);
+    Response<Object> readByPath(@RequestParam Long courseId, @RequestParam(required = false) String path);
 
     @GetMapping(value = "/read", params = "nodeId")
-    Response<Object> readByNode(@RequestParam int nodeId);
+    Response<Object> readByNode(@RequestParam Long nodeId);
 
     @GetMapping(value = "/read", params = "postId")
-    Response<Object> readByPost(@RequestParam int postId);
+    Response<Object> readByPost(@RequestParam Long postId);
 
     @GetMapping(value = "/read", params = "commentId" )
-    Response<Object> readByComment(@RequestParam int commentId);
+    Response<Object> readByComment(@RequestParam Long commentId);
 
     @GetMapping("/postings")
-    Response<Object> getPostings(@RequestParam(value = "id", required = false) List<Integer> ids,
-                                 @RequestParam(value = "nodeId", required = false) int nodeId,
+    Response<Object> getPostings(@RequestParam(value = "id", required = false) List<Long> ids,
+                                 @RequestParam(value = "nodeId", required = false) Long nodeId,
                                  @RequestParam(value = "lastScore", required = false) double lastScore,
-                                 @RequestParam(value = "lastId", required = false) int lastPostingId);
+                                 @RequestParam(value = "lastId", required = false) Long lastId);
 
     @PostMapping("/contents")
     @ResponseBody
     Response<Object> postContents(@RequestParam("path") String path,
-                                  @RequestParam("courseId") int courseId,
-                                  @RequestParam("postingId") int postingId,
+                                  @RequestParam("courseId") Long courseId,
+                                  @RequestParam("postingId") Long postingId,
                                   @RequestParam("action") int action,
                                   Model model);
 
     @PostMapping("/upvote")
     @ResponseBody
-    Response<Object> upvote(@RequestParam("objectId") int postingId,
+    Response<Object> upvote(@RequestParam("objectId") Long postingId,
                             @RequestParam("objectType") int objectType,
                             @RequestParam("type") int type);
 
@@ -56,21 +56,21 @@ public interface AggregateClient {
     Response applyCourse(@RequestParam("title") String title,
                          @RequestParam("summary") String summary,
                          @RequestParam("explanation") String explanation,
-                         @RequestParam("parentId") int parentId);
+                         @RequestParam("parentId") Long parentId);
 
     @GetMapping("/message")
-    Response<List<MessageDTO>> getMessageList(@RequestParam int userId,
+    Response<List<MessageDTO>> getMessageList(@RequestParam Long userId,
                                               @RequestParam int type,
-                                              @RequestParam int lastId,
+                                              @RequestParam Long lastId,
                                               @RequestParam int conversation);
 
     @PostMapping("/message/system")
     Response postSystemMessage(@RequestParam("type") int type,
-                               @RequestParam("to") int userId,
+                               @RequestParam("to") Long userId,
                                @RequestParam("content") String content);
 
     @PutMapping("/message/system")
-    Response modifyCourseApply(@RequestParam("id") int id,
+    Response modifyCourseApply(@RequestParam("id") Long id,
                                @RequestParam("reply") String reply);
 
 }

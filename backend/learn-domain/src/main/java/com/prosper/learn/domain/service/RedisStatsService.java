@@ -172,7 +172,7 @@ public class RedisStatsService {
      * @param articleId 文章ID
      * @param userId 用户ID
      */
-    public void recordComment(Long articleId, Integer userId) {
+    public void recordComment(long articleId, long userId) {
         String today = LocalDate.now().toString();
         
         try {

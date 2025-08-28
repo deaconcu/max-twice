@@ -81,7 +81,7 @@ public class ProfessionRankingService {
     /**
      * 获取职业的学习人数
      */
-    public long getProfessionLearningCount(int professionId) {
+    public long getProfessionLearningCount(long professionId) {
         try {
             String learningKey = PROFESSION_LEARNING_PREFIX + professionId;
             String learningCountStr = redisTemplate.opsForValue().get(learningKey);

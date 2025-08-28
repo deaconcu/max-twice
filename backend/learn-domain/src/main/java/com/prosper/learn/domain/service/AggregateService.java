@@ -21,7 +21,7 @@ public class AggregateService {
     private final LearningProgressService learningProgressService;
     private final NodeMapper nodeMapper;
 
-    public Utils.Pair<String, Map<Integer, NodeDTOV2>> getToc(int userId, int courseId, boolean create) {
+    public Utils.Pair<String, Map<Integer, NodeDTOV2>> getToc(long userId, long courseId, boolean create) {
 
         ArrayNode arrayNode = contentsService.getToc(userId, courseId, create);
 

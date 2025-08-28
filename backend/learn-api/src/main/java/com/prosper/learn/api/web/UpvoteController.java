@@ -27,14 +27,14 @@ public class UpvoteController implements UpvoteClient {
     private final UpvoteService upvoteService;
 
     @Override
-    public List<Integer> getUpvotedList(int userId, List<Integer> postingIds) {
+    public List<Long> getUpvotedList(Long userId, List<Long> postingIds) {
         // todo not used
         return null;
         //return upvoteMapper.getPostingIds(userId, postingIds);
     }
 
     @Override
-    public boolean isUpvoted(int userId, int postingId) {
+    public boolean isUpvoted(Long userId, Long postingId) {
         UpvoteDO upvoteDO = upvoteMapper.get(userId, postingId, Enums.ObjectType.post.value);
         if (upvoteDO == null) return false;
         return true;
@@ -42,7 +42,7 @@ public class UpvoteController implements UpvoteClient {
 
     @Override
     // not used
-    public Response upvote(int id, int userId, int type) {
+    public Response upvote(Long id, Long userId, int type) {
         PostDO postDO = postMapper.get(id);
         if (postDO == null) return Response.notFound;
 
@@ -51,7 +51,7 @@ public class UpvoteController implements UpvoteClient {
     }
 
     @Override
-    public Response cancelVote(int id) {
+    public Response cancelVote(Long id) {
         /*
         PostingDO postingDO = postingMapper.getById(id);
         if (postingDO == null) return Response.notFound;

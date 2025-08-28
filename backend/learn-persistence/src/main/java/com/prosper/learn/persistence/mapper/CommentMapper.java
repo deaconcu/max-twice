@@ -31,7 +31,7 @@ public interface CommentMapper {
             "  ORDER BY c2.score DESC, c2.id DESC " +
             "  LIMIT 1" +
             ")</script>")
-    List<CommentDO> getChildren(List<Integer> ids);
+    List<CommentDO> getChildren(List<Long> ids);
 
     // 首页加载话题回复，按分数排序
     @Select("SELECT * FROM comment where reply_to = #{commentId} ORDER BY score DESC, id DESC limit #{count}")

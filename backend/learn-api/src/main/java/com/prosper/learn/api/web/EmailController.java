@@ -10,8 +10,6 @@ import java.util.Random;
 @Controller
 public class EmailController {
 
-
-
     public void sendVerificationEmail(String toEmail, String code) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(toEmail);

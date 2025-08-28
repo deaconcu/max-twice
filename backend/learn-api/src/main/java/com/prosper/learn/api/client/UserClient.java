@@ -13,19 +13,19 @@ import java.util.List;
 public interface UserClient {
 
     @GetMapping("/self")
-    Response getSelf();
+    Response<UserDTO> getSelf();
 
     @PostMapping("/self")
-    Response modifySelf(@RequestParam String name, @RequestParam String biography);
+    Response<Object> modifySelf(@RequestParam String name, @RequestParam String biography);
 
     @GetMapping("/user/{id}")
-    Response getUser(@PathVariable int id);
+    Response<Object> getUser(@PathVariable Long id);
 
     @GetMapping("/user")
     Response<List<UserDTOV4>> getUserByName(@RequestParam String name);
 
     @PostMapping("/user")
-    Response register(@RequestParam String userName, @RequestParam String email, @RequestParam String password);
+    Response<Object> register(@RequestParam String userName, @RequestParam String email, @RequestParam String password);
 
     @PostMapping("/login")
     Response<UserDTOV2> login(@RequestParam String email, @RequestParam String password);
@@ -34,43 +34,43 @@ public interface UserClient {
     Response<UserDTO> validateMail(@RequestParam String email, @RequestParam String code);
 
     @GetMapping("/user/article")
-    Response getSelfArticle(@RequestParam int userId, @RequestParam int lastId);
+    Response<Object> getSelfArticle(@RequestParam Long userId, @RequestParam Long lastId);
 
     @GetMapping("/user/contents")
-    Response getSelfContents(@RequestParam int userId, @RequestParam int lastId);
+    Response<Object> getSelfContents(@RequestParam Long userId, @RequestParam Long lastId);
 
     @GetMapping("/user/subscription")
-    Response getSubscription(@RequestParam int userId);
+    Response<Object> getSubscription(@RequestParam Long userId);
 
     @PostMapping("/user/subscription")
-    Response subscript(@RequestParam int courseId);
+    Response<Object> subscript(@RequestParam Long courseId);
 
     @PutMapping("/user/subscription")
-    Response subscript(@RequestParam String subscription);
+    Response<Object> subscript(@RequestParam String subscription);
 
     @DeleteMapping("/user/subscription")
-    Response unsubscript(@RequestParam int courseId);
+    Response<Object> unsubscript(@RequestParam Long courseId);
 
     @PostMapping("/user/follow")
-    Response follow(@RequestParam int followeeId);
+    Response<Object> follow(@RequestParam Long followeeId);
 
     @DeleteMapping("/user/follow")
-    Response unfollow(@RequestParam int followeeId);
+    Response<Object> unfollow(@RequestParam Long followeeId);
 
     @GetMapping("/user/followee")
-    Response followee(@RequestParam int followerId, @RequestParam String lastCreateTime);
+    Response<Object> followee(@RequestParam Long followerId, @RequestParam String lastCreateTime);
 
     @PostMapping("/user/complete/{nodeId}")
-    Response markNodeCompleted(@PathVariable Integer nodeId, @RequestParam Integer courseId);
+    Response<Object> markNodeCompleted(@PathVariable Long nodeId, @RequestParam Long courseId);
 
     @DeleteMapping("/user/complete/{nodeId}")
-    Response unmarkNodeCompleted(@PathVariable Integer nodeId, @RequestParam Integer courseId);
+    Response<Object> unmarkNodeCompleted(@PathVariable Long nodeId, @RequestParam Long courseId);
 
     @GetMapping("/user/complete/{nodeId}")
-    Response isNodeCompleted(@PathVariable Integer nodeId);
+    Response<Object> isNodeCompleted(@PathVariable Long nodeId);
 
     @PostMapping("/user/complete/course/{courseId}")
-    Response markCourseCompleted(@PathVariable Integer courseId);
+    Response<Object> markCourseCompleted(@PathVariable Long courseId);
 }
 
 

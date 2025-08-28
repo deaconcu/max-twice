@@ -56,7 +56,7 @@ public class AggregateController implements AggregateClient {
     private final AggregateService aggregateService;
 
     @Override
-    public Response<Object> readByComment(int commentId) {
+    public Response<Object> readByComment(Long commentId) {
         Map<String, Object> data = new HashMap<>();
         if (commentId <= 0) throw new IllegalArgumentException("评论ID必须大于0");
 
@@ -75,7 +75,7 @@ public class AggregateController implements AggregateClient {
         String path = "";
 
         if (commentDO.getType() == post.value) {
-            int postId = commentDO.getObjectId();
+            long postId = commentDO.getObjectId();
             postDO = postingService.get(postId);
             nodeDO = nodeMapper.getById(postDO.getNodeId());
             courseDO = courseMapper.getById(nodeDO.getCourseId());
@@ -90,7 +90,7 @@ public class AggregateController implements AggregateClient {
     }
 
     @Override
-    public Response<Object> readByPost(int postId) {
+    public Response<Object> readByPost(Long postId) {
         if (postId <= 0) throw new IllegalArgumentException("帖子ID必须大于0");
 
         PostDO postDO = postingService.get(postId);
@@ -104,7 +104,7 @@ public class AggregateController implements AggregateClient {
     }
 
     @Override
-    public Response<Object> readByNode(int nodeId) {
+    public Response<Object> readByNode(Long nodeId) {
         NodeDO nodeDO = nodeMapper.getById(nodeId);
         CourseDO courseDO = courseMapper.getById(nodeDO.getCourseId());
         String path = "1-" + courseDO.getRootNode();
@@ -113,7 +113,7 @@ public class AggregateController implements AggregateClient {
     }
 
     @Override
-    public Response<Object> readByPath(int courseId, String path) {
+    public Response<Object> readByPath(Long courseId, String path) {
         CourseDO courseDO = courseMapper.getById(courseId);
         return read(courseDO, path, null, null);
     }
@@ -127,7 +127,7 @@ public class AggregateController implements AggregateClient {
      */
     private Response<Object> read(CourseDO courseDO, String path, NodeDO nodeDO, PostDO postDO) {
 
-        int userId = StpUtil.getLoginIdAsInt();
+        long userId = StpUtil.getLoginIdAsLong();
         //Utils.Pair<String, Map<Integer, String>> response = contentsService.getContents(userId, courseDO.getId(), true);
         Utils.Pair<String, Map<Integer, NodeDTOV2>> response = aggregateService.getToc(userId, courseDO.getId(), true);
         CourseTocDTO courseTocDTO = new CourseTocDTO(response.left(), response.right());
@@ -136,8 +136,8 @@ public class AggregateController implements AggregateClient {
         List<Object> contents;
         List<PostDTO> fixedPostings = null;
         PostDTO chosenPosting = null;
-        List<Integer> fixedIds = null;
-        List<Integer> userIds = new LinkedList<>();
+        List<Long> fixedIds = null;
+        List<Long> userIds = new LinkedList<>();
 
         try {
             contents = objectMapper.readValue(courseTocDTO.getContents(), List.class);
@@ -191,7 +191,7 @@ public class AggregateController implements AggregateClient {
 
         // get all users
         List<UserDTOV1> userList = userIds.size() == 0 ? new ArrayList<>() : Converter.INSTANCE.toUserDTOV1(userMapper.getByIds(userIds));
-        Map<Integer, UserDTOV1> userMap = new HashMap<>();
+        Map<Long, UserDTOV1> userMap = new HashMap<>();
         for (UserDTOV1 user : userList) {
             userMap.put(user.getId(), user);
         }
@@ -202,7 +202,7 @@ public class AggregateController implements AggregateClient {
             postDTO.setCreator(userMap.get(postDTO.getCreatorId()));
         }
 
-        List<Integer> allPostingIds = new ArrayList<>();
+        List<Long> allPostingIds = new ArrayList<>();
         if (chosenPosting != null) {
             allPostingIds.add(chosenPosting.getId());
             chosenPosting.setCreator(userMap.get(chosenPosting.getCreatorId()));
@@ -218,7 +218,7 @@ public class AggregateController implements AggregateClient {
 
         if (allPostingIds.size() > 0) {
             List<UpvoteDO> upvotes = upvoteMapper.getList(userId, allPostingIds, post.value);
-            Map<Integer, Integer> types = new HashMap<>();
+            Map<Long, Integer> types = new HashMap<>();
             for (UpvoteDO upvote : upvotes) {
                 types.put(upvote.getObjectId(), upvote.getType());
             }
@@ -241,7 +241,7 @@ public class AggregateController implements AggregateClient {
             }
         }
 
-        int lastId = -1;
+        long lastId = -1;
         if (allPostingIds.size() > 0) {
             lastId = allPostingIds.get(allPostingIds.size() - 1);
         }
@@ -311,10 +311,10 @@ public class AggregateController implements AggregateClient {
     }
 
     @Override
-    public Response<Object> getPostings(@RequestParam(value = "ids", required = false) List<Integer> ids,
-                                        @RequestParam(value = "nodeId", required = false) int nodeId,
+    public Response<Object> getPostings(@RequestParam(value = "ids", required = false) List<Long> ids,
+                                        @RequestParam(value = "nodeId", required = false) Long nodeId,
                                         @RequestParam(value = "lastScore", required = false) double lastScore,
-                                        @RequestParam(value = "lastId", required = false) int lastPostingId) {
+                                        @RequestParam(value = "lastId", required = false) Long lastPostingId) {
         List<PostDO> postDOList = null;
         if (ids != null && ids.size() > 0) {
             postDOList = postMapper.getByIds(ids);
@@ -327,8 +327,8 @@ public class AggregateController implements AggregateClient {
             throw new IllegalArgumentException("不能获取帖子列表");
         }
 
-        List<Integer> allPostingIds = new ArrayList<>();
-        List<Integer> userIds = new LinkedList<>();
+        List<Long> allPostingIds = new ArrayList<>();
+        List<Long> userIds = new LinkedList<>();
         postDOList.forEach(postingDO -> {
             postingService.idToName(postingDO);
             allPostingIds.add(postingDO.getId());
@@ -338,7 +338,7 @@ public class AggregateController implements AggregateClient {
         // get all users
         List<UserDTOV1> userList = userIds.size() == 0 ?
                 new ArrayList<>() : Converter.INSTANCE.toUserDTOV1(userMapper.getByIds(userIds));
-        Map<Integer, UserDTOV1> userMap = new HashMap<>();
+        Map<Long, UserDTOV1> userMap = new HashMap<>();
         for (UserDTOV1 user : userList) {
             userMap.put(user.getId(), user);
         }
@@ -350,7 +350,7 @@ public class AggregateController implements AggregateClient {
 
         if (allPostingIds.size() > 0) {
             List<UpvoteDO> upvotes = upvoteMapper.getList(StpUtil.getLoginIdAsInt(), allPostingIds, post.value);
-            Map<Integer, Integer> types = new HashMap<>();
+            Map<Long, Integer> types = new HashMap<>();
             for (UpvoteDO upvote : upvotes) {
                 types.put(upvote.getObjectId(), upvote.getType());
             }
@@ -367,10 +367,10 @@ public class AggregateController implements AggregateClient {
     }
 
     @Override
-    public Response<Object> upvote(int objectId, int objectType, int type) {
+    public Response<Object> upvote(Long objectId, int objectType, int type) {
         if (objectType == post.value) {
-            int postId = objectId;
-            int userId = StpUtil.getLoginIdAsInt();
+            long postId = objectId;
+            long userId = StpUtil.getLoginIdAsLong();
             upvoteService.upvotePost(postId, userId, type);
 
             PostDTO postDTO = Converter.INSTANCE.toPostDTO(postMapper.get(postId));
@@ -380,8 +380,8 @@ public class AggregateController implements AggregateClient {
             }
             return new Response<>(postDTO);
         } else if (objectType == comment.value) {
-            int commentId = objectId;
-            int userId = StpUtil.getLoginIdAsInt();
+            long commentId = objectId;
+            long userId = StpUtil.getLoginIdAsLong();
             upvoteService.upvoteComment(commentId, userId);
 
             CommentDO commentDO = commentMapper.get(commentId);
@@ -398,8 +398,8 @@ public class AggregateController implements AggregateClient {
 
     @Override
     public Response<Object> postContents(@RequestParam("path") String path,
-                                         @RequestParam("courseId") int courseId,
-                                         @RequestParam("postingId") int postingId,
+                                         @RequestParam("courseId") Long courseId,
+                                         @RequestParam("postingId") Long postingId,
                                          @RequestParam("action") int action,
                                          Model model) {
         int userId = StpUtil.getLoginIdAsInt();
@@ -466,7 +466,7 @@ public class AggregateController implements AggregateClient {
 
 
     @Override
-    public Response applyCourse(String title, String summary, String explanation, int parentId) {
+    public Response applyCourse(String title, String summary, String explanation, Long parentId) {
         int userId = StpUtil.getLoginIdAsInt();
         CourseDO course = null;
         if (parentId != 0) {
@@ -481,7 +481,7 @@ public class AggregateController implements AggregateClient {
             data.put("title", title);
             data.put("summary", summary);
             data.put("explanation", explanation);
-            data.put("parentId", Integer.toString(parentId));
+            data.put("parentId", Long.toString(parentId));
             if (course != null) {
                 data.put("parentName", course.getName());
             }
@@ -521,20 +521,20 @@ public class AggregateController implements AggregateClient {
     }
 
     @Override
-    public Response<List<MessageDTO>> getMessageList(int userId, int type, int lastId, int conversation) {
+    public Response<List<MessageDTO>> getMessageList(Long userId, int type, Long lastId, int conversation) {
         int self = StpUtil.getLoginIdAsInt();
         List<MessageDTO> messageDTOList = messageService.getList(type, self, userId, lastId, conversation);
         return new Response<>(messageDTOList);
     }
 
     @Override
-    public Response postSystemMessage(int type, int userId, String content) {
+    public Response postSystemMessage(int type, Long userId, String content) {
         //messageService.createSystemMessage(type, userId, content);
         return Response.success;
     }
 
     @Override
-    public Response modifyCourseApply(int id, String reply) {
+    public Response modifyCourseApply(Long id, String reply) {
         messageService.modifyCourseApply(id, reply);
         return Response.success;
     }

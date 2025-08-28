@@ -40,7 +40,7 @@ public class CommentController implements CommentClient {
     @Override
     @Transactional
     public Response<Object> create(CommentDTO commentDTO) {
-        int userId = StpUtil.getLoginIdAsInt();
+        long userId = StpUtil.getLoginIdAsLong();
         commentDTO.setFromUser(userId);
         UserDO fromUser = userMapper.getById(userId);
 
@@ -124,7 +124,7 @@ public class CommentController implements CommentClient {
     }
 
     @Override
-    public Response<List<CommentDTO>> getByObject(int objectId, int type, int offsetId) {
+    public Response<List<CommentDTO>> getByObject(Long objectId, int type, Long offsetId) {
         List<CommentDO> commentDOList;
         if (offsetId == 0) {
             // 首页加载，直接按分数排序
@@ -142,7 +142,7 @@ public class CommentController implements CommentClient {
 
         int userId = StpUtil.getLoginIdAsInt();
 
-        List<Integer> ids = new ArrayList<>();
+        List<Long> ids = new ArrayList<>();
         for (CommentDO commentDO : commentDOList) {
             ids.add(commentDO.getId());
         }
@@ -150,7 +150,7 @@ public class CommentController implements CommentClient {
         if (!ids.isEmpty()) {
             List<CommentDO> children = commentMapper.getChildren(ids);
 
-            HashMap<Integer, CommentDTO> map = new HashMap<>();
+            HashMap<Long, CommentDTO> map = new HashMap<>();
             for (CommentDO commentDO : children) {
                 map.put(commentDO.getReplyTo(), Converter.INSTANCE.toCommentDTO(commentDO));
             }
@@ -165,7 +165,7 @@ public class CommentController implements CommentClient {
 
             List<UpvoteDO> upvoteList = upvoteMapper.getList(userId, ids, Enums.ObjectType.comment.value);
 
-            Set<Integer> set = new HashSet<>();
+            Set<Long> set = new HashSet<>();
             for (UpvoteDO upvoteDO : upvoteList) {
                 set.add(upvoteDO.getObjectId());
             }
@@ -183,7 +183,7 @@ public class CommentController implements CommentClient {
     }
 
     @Override
-    public Response<List<CommentDTO>> getByTopic(int commentId, int offsetId) {
+    public Response<List<CommentDTO>> getByTopic(Long commentId, Long offsetId) {
         int userId = StpUtil.getLoginIdAsInt();
         List<CommentDO> commentDOList;
         if (offsetId == 0) {
@@ -198,11 +198,11 @@ public class CommentController implements CommentClient {
             commentDOList = commentMapper.getByTopicPaginated(commentId, lastComment.getScore(), offsetId, 10);
         }
 
-        List<Integer> ids = commentDOList.stream().map(CommentDO::getId).toList();
+        List<Long> ids = commentDOList.stream().map(CommentDO::getId).toList();
 
         List<UpvoteDO> upvoteList = upvoteMapper.getList(userId, ids, Enums.ObjectType.comment.value);
 
-        Set<Integer> set = new HashSet<>();
+        Set<Long> set = new HashSet<>();
         for (UpvoteDO upvoteDO : upvoteList) {
             set.add(upvoteDO.getObjectId());
         }
@@ -221,7 +221,7 @@ public class CommentController implements CommentClient {
     }
 
     @Override
-    public Response<Object> approve(int id, boolean approve) {
+    public Response<Object> approve(Long id, boolean approve) {
         CommentDO commentDO = commentMapper.get(id);
         if (commentDO == null) throw new IllegalArgumentException("评论不存在");
 

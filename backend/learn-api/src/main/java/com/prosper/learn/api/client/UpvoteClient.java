@@ -10,19 +10,19 @@ import java.util.List;
 public interface UpvoteClient {
 
     @GetMapping("/upvotes")
-    List<Integer> getUpvotedList(
-            @RequestParam("userId") int userId,
-            @RequestParam("postingIds") List<Integer> postingIds);
+    List<Long> getUpvotedList(
+            @RequestParam("userId") Long userId,
+            @RequestParam("postingIds") List<Long> postingIds);
 
     @GetMapping("/upvote")
     boolean isUpvoted(
-            @RequestParam("userId") int userId,
-            @RequestParam("postingId") int postingId);
+            @RequestParam("userId") Long userId,
+            @RequestParam("postingId") Long postingId);
 
     @PostMapping("/posting/{id}/vote")
-    Response upvote(@PathVariable int id, @RequestParam("userId") int userId, @RequestParam("type") int type);
+    Response upvote(@PathVariable Long id, @RequestParam("userId") Long userId, @RequestParam("type") int type);
 
     @DeleteMapping("/posting/{id}/vote")
-    Response cancelVote(@PathVariable int id);
+    Response cancelVote(@PathVariable Long id);
 
 }
