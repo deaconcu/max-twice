@@ -242,11 +242,11 @@ public interface Converter {
     }
 
     default int map(Enums.CourseState state) {
-        return state.value;
+        return state.value();
     }
 
     default int map(Enums.CourseRequestState state) {
-        return state.value;
+        return state.value();
     }
 
     default List<Integer> map(String value) {

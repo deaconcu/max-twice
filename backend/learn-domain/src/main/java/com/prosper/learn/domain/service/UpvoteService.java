@@ -44,7 +44,7 @@ public class UpvoteService {
         PostDO postDO = postMapper.get(postingId);
         if (postDO == null) return;
 
-        UpvoteDO upvoteDO = upvoteMapper.get(userId, postDO.getId(), ObjectType.post.value);
+        UpvoteDO upvoteDO = upvoteMapper.get(userId, postDO.getId(), ObjectType.post.value());
 
         // 获取点赞类型名称
         String upvoteTypeName = getUpvoteTypeName(type);
@@ -54,9 +54,9 @@ public class UpvoteService {
             upvoteMapper.delete(upvoteDO.getId());
 
             // 减少对应点赞数
-            if (upvoteDO.getType() == Enums.VoteType.once.value) {
+            if (upvoteDO.getType() == Enums.VoteType.once.value()) {
                 postDO.setOnce(postDO.getOnce() - 1);
-            } else if (upvoteDO.getType() == Enums.VoteType.twice.value) {
+            } else if (upvoteDO.getType() == Enums.VoteType.twice.value()) {
                 postDO.setTwice(postDO.getTwice() - 1);
             } else {
                 postDO.setHelpful(postDO.getHelpful() - 1);
@@ -84,9 +84,9 @@ public class UpvoteService {
             String oldUpvoteTypeName = getUpvoteTypeName(upvoteDO.getType());
 
             // 减少原类型的点赞数
-            if (upvoteDO.getType() == Enums.VoteType.once.value) {
+            if (upvoteDO.getType() == Enums.VoteType.once.value()) {
                 postDO.setOnce(postDO.getOnce() - 1);
-            } else if (upvoteDO.getType() == Enums.VoteType.twice.value) {
+            } else if (upvoteDO.getType() == Enums.VoteType.twice.value()) {
                 postDO.setTwice(postDO.getTwice() - 1);
             } else {
                 postDO.setHelpful(postDO.getHelpful() - 1);
@@ -100,18 +100,18 @@ public class UpvoteService {
         }
 
         // 增加新类型的点赞数
-        if (type == Enums.VoteType.once.value) {
+        if (type == Enums.VoteType.once.value()) {
             postDO.setOnce(postDO.getOnce() + 1);
             messageService.createUpvoteMessage(
-                    postDO.getCreator(), fromUserDO.getId(), postDO.getNodeId(), postDO.getId(), ObjectType.post.value, 1);
-        } else if (type == Enums.VoteType.twice.value) {
+                    postDO.getCreator(), fromUserDO.getId(), postDO.getNodeId(), postDO.getId(), ObjectType.post.value(), 1);
+        } else if (type == Enums.VoteType.twice.value()) {
             postDO.setTwice(postDO.getTwice() + 1);
             messageService.createUpvoteMessage(
-                    postDO.getCreator(), fromUserDO.getId(), postDO.getNodeId(), postDO.getId(), ObjectType.post.value, 2);
+                    postDO.getCreator(), fromUserDO.getId(), postDO.getNodeId(), postDO.getId(), ObjectType.post.value(), 2);
         } else {
             postDO.setHelpful(postDO.getHelpful() + 1);
             messageService.createUpvoteMessage(
-                    postDO.getCreator(), fromUserDO.getId(), postDO.getNodeId(), postDO.getId(), ObjectType.post.value, 3);
+                    postDO.getCreator(), fromUserDO.getId(), postDO.getNodeId(), postDO.getId(), ObjectType.post.value(), 3);
         }
 
         // 记录到Redis统计
@@ -127,9 +127,9 @@ public class UpvoteService {
      * 获取点赞类型名称
      */
     private String getUpvoteTypeName(int type) {
-        if (type == Enums.VoteType.once.value) {
+        if (type == Enums.VoteType.once.value()) {
             return "once";
-        } else if (type == Enums.VoteType.twice.value) {
+        } else if (type == Enums.VoteType.twice.value()) {
             return "twice";
         } else {
             return "helpful";
@@ -145,16 +145,16 @@ public class UpvoteService {
 
         // get node id
         long nodeId = 0;
-        if (commentDO.getType() == ObjectType.node.value) {
+        if (commentDO.getType() == ObjectType.node.value()) {
             nodeId = commentDO.getObjectId();
-        } else if (commentDO.getType() == ObjectType.post.value) {
+        } else if (commentDO.getType() == ObjectType.post.value()) {
             PostDO postDO = postMapper.get(commentDO.getObjectId());
             nodeId = postDO.getNodeId();
         } else {
             throw new RuntimeException("Invalid comment type");
         }
 
-        UpvoteDO upvoteDO = upvoteMapper.get(userId, commentId, ObjectType.comment.value);
+        UpvoteDO upvoteDO = upvoteMapper.get(userId, commentId, ObjectType.comment.value());
         if (upvoteDO != null) {
             upvoteMapper.delete(upvoteDO.getId());
             commentDO.setUpvoteCount(commentDO.getUpvoteCount() - 1);
@@ -168,7 +168,7 @@ public class UpvoteService {
         upvoteDO = new UpvoteDO();
         upvoteDO.setUserId(userId);
         upvoteDO.setObjectId(commentDO.getId());
-        upvoteDO.setObjectType(Enums.ObjectType.comment.value);
+        upvoteDO.setObjectType(Enums.ObjectType.comment.value());
         upvoteDO.setType(0);
         upvoteMapper.insert(upvoteDO);
 
@@ -179,7 +179,7 @@ public class UpvoteService {
         commentMapper.update(commentDO);
 
         messageService.createUpvoteMessage(
-                commentDO.getFromUser(), userId, nodeId, commentId, ObjectType.comment.value, 1);
+                commentDO.getFromUser(), userId, nodeId, commentId, ObjectType.comment.value(), 1);
     }
 
     /**
@@ -190,7 +190,7 @@ public class UpvoteService {
     @Transactional
     public boolean upvoteRoadmap(long roadmapId, long userId) {
         // 检查是否已经投过票
-        UpvoteDO existingUpvote = upvoteMapper.get(userId, roadmapId, ObjectType.roadmap.value);
+        UpvoteDO existingUpvote = upvoteMapper.get(userId, roadmapId, ObjectType.roadmap.value());
 
         if (existingUpvote != null) {
             // 如果已经投过票，则取消投票
@@ -202,7 +202,7 @@ public class UpvoteService {
             UpvoteDO upvoteDO = new UpvoteDO();
             upvoteDO.setUserId(userId);
             upvoteDO.setObjectId(roadmapId);
-            upvoteDO.setObjectType(ObjectType.roadmap.value);
+            upvoteDO.setObjectType(ObjectType.roadmap.value());
             upvoteDO.setType(0); // roadmap投票类型设为0，对应"once"
             upvoteMapper.insert(upvoteDO);
 
@@ -217,7 +217,7 @@ public class UpvoteService {
      * @return true表示已投票，false表示未投票
      */
     public boolean hasUpvotedRoadmap(long roadmapId, int userId) {
-        UpvoteDO upvoteDO = upvoteMapper.get(userId, roadmapId, ObjectType.roadmap.value);
+        UpvoteDO upvoteDO = upvoteMapper.get(userId, roadmapId, ObjectType.roadmap.value());
         return upvoteDO != null;
     }
 
@@ -232,7 +232,7 @@ public class UpvoteService {
             return new HashSet<>();
         }
 
-        List<UpvoteDO> upvotes = upvoteMapper.getList(userId, roadmapIds, ObjectType.roadmap.value);
+        List<UpvoteDO> upvotes = upvoteMapper.getList(userId, roadmapIds, ObjectType.roadmap.value());
         return upvotes.stream()
                 .map(UpvoteDO::getObjectId)
                 .collect(Collectors.toSet());
@@ -245,7 +245,7 @@ public class UpvoteService {
      */
     @Transactional
     public void cancelVote(int postingId, int userId) {
-        UpvoteDO upvoteDO = upvoteMapper.get(userId, postingId, ObjectType.post.value);
+        UpvoteDO upvoteDO = upvoteMapper.get(userId, postingId, ObjectType.post.value());
         if (upvoteDO == null) return;
 
         PostDO postDO = postMapper.get(postingId);

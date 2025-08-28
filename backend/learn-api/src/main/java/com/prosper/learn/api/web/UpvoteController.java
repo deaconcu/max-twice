@@ -35,7 +35,7 @@ public class UpvoteController implements UpvoteClient {
 
     @Override
     public boolean isUpvoted(Long userId, Long postingId) {
-        UpvoteDO upvoteDO = upvoteMapper.get(userId, postingId, Enums.ObjectType.post.value);
+        UpvoteDO upvoteDO = upvoteMapper.get(userId, postingId, Enums.ObjectType.post.value());
         if (upvoteDO == null) return false;
         return true;
     }

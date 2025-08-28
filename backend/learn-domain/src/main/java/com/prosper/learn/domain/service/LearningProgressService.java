@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service;
 
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.persistence.dataobject.UserProgressDO;
 import com.prosper.learn.persistence.dataobject.UserCourseDO;
 import com.prosper.learn.persistence.dataobject.NodeDO;
@@ -518,7 +519,7 @@ public class LearningProgressService {
                 userCourse.setUserId((long)userId);
                 userCourse.setCourseId((long)courseId);
                 userCourse.setProgressPercent(100);
-                userCourse.setStatus("COMPLETED");
+                userCourse.setState(Enums.UserCourseState.COMPLETED.value());
                 userCourse.setStartedAt(java.time.LocalDateTime.now());
                 userCourse.setCompletedAt(java.time.LocalDateTime.now());
                 
@@ -533,7 +534,7 @@ public class LearningProgressService {
             } else {
                 // 如果已有记录，更新完成状态
                 userCourse.setProgressPercent(100);
-                userCourse.setStatus("COMPLETED");
+                userCourse.setState(Enums.UserCourseState.COMPLETED.value());
                 userCourse.setCompletedAt(java.time.LocalDateTime.now());
                 
                 int updated = userCourseMapper.update(userCourse);
@@ -599,7 +600,7 @@ public class LearningProgressService {
                 userCourse.setUserId((long)userId);
                 userCourse.setCourseId((long)courseId);
                 userCourse.setProgressPercent(finalProgress);
-                userCourse.setStatus(finalProgress >= 10000 ? "COMPLETED" : "IN_PROGRESS");
+                userCourse.setState(finalProgress >= 10000 ? Enums.UserCourseState.COMPLETED.value() : Enums.UserCourseState.IN_PROGRESS.value());
                 userCourse.setStartedAt(LocalDateTime.now());
                 if (finalProgress >= 10000) {
                     userCourse.setCompletedAt(LocalDateTime.now());
@@ -607,7 +608,7 @@ public class LearningProgressService {
                 userCourseMapper.insert(userCourse);
             } else {
                 userCourse.setProgressPercent(finalProgress);
-                userCourse.setStatus(finalProgress >= 10000 ? "COMPLETED" : "IN_PROGRESS");
+                userCourse.setState(finalProgress >= 10000 ? Enums.UserCourseState.COMPLETED.value() : Enums.UserCourseState.IN_PROGRESS.value());
                 if (finalProgress >= 10000 && userCourse.getCompletedAt() == null) {
                     userCourse.setCompletedAt(LocalDateTime.now());
                 }

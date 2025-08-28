@@ -74,7 +74,7 @@ public class AggregateController implements AggregateClient {
         CourseDO courseDO = null;
         String path = "";
 
-        if (commentDO.getType() == post.value) {
+        if (commentDO.getType() == post.value()) {
             long postId = commentDO.getObjectId();
             postDO = postingService.get(postId);
             nodeDO = nodeMapper.getById(postDO.getNodeId());
@@ -216,7 +216,7 @@ public class AggregateController implements AggregateClient {
         });
 
         if (allPostingIds.size() > 0) {
-            List<UpvoteDO> upvotes = upvoteMapper.getList(userId, allPostingIds, post.value);
+            List<UpvoteDO> upvotes = upvoteMapper.getList(userId, allPostingIds, post.value());
             Map<Long, Integer> types = new HashMap<>();
             for (UpvoteDO upvote : upvotes) {
                 types.put(upvote.getObjectId(), upvote.getType());
@@ -319,7 +319,7 @@ public class AggregateController implements AggregateClient {
             postDOList = postMapper.getByIds(ids);
         } else if (nodeId > 0) {
             int count = 2;
-            postDOList = postMapper.getListByNodeAndScoreAndPaginated(nodeId, lastScore, lastPostingId, count, Enums.PostState.approved.value);
+            postDOList = postMapper.getListByNodeAndScoreAndPaginated(nodeId, lastScore, lastPostingId, count, Enums.PostState.approved.value());
         }
 
         if (postDOList == null) {
@@ -348,7 +348,7 @@ public class AggregateController implements AggregateClient {
         });
 
         if (allPostingIds.size() > 0) {
-            List<UpvoteDO> upvotes = upvoteMapper.getList(StpUtil.getLoginIdAsInt(), allPostingIds, post.value);
+            List<UpvoteDO> upvotes = upvoteMapper.getList(StpUtil.getLoginIdAsInt(), allPostingIds, post.value());
             Map<Long, Integer> types = new HashMap<>();
             for (UpvoteDO upvote : upvotes) {
                 types.put(upvote.getObjectId(), upvote.getType());
@@ -367,25 +367,25 @@ public class AggregateController implements AggregateClient {
 
     @Override
     public Response<Object> upvote(Long objectId, int objectType, int type) {
-        if (objectType == post.value) {
+        if (objectType == post.value()) {
             long postId = objectId;
             long userId = StpUtil.getLoginIdAsLong();
             upvoteService.upvotePost(postId, userId, type);
 
             PostDTO postDTO = Converter.INSTANCE.toPostDTO(postMapper.get(postId));
-            UpvoteDO upvoteDO = upvoteMapper.get(userId, postId, post.value);
+            UpvoteDO upvoteDO = upvoteMapper.get(userId, postId, post.value());
             if (upvoteDO != null) {
                 postDTO.setVoteType(upvoteDO.getType());
             }
             return new Response<>(postDTO);
-        } else if (objectType == comment.value) {
+        } else if (objectType == comment.value()) {
             long commentId = objectId;
             long userId = StpUtil.getLoginIdAsLong();
             upvoteService.upvoteComment(commentId, userId);
 
             CommentDO commentDO = commentMapper.get(commentId);
             CommentDTO commentDTO = Converter.INSTANCE.toCommentDTO(commentDO);
-            UpvoteDO upvoteDO = upvoteMapper.get(userId, commentId, comment.value);
+            UpvoteDO upvoteDO = upvoteMapper.get(userId, commentId, comment.value());
             if (upvoteDO != null) {
                 commentDTO.setUpvoted(1);
             }

@@ -1,141 +1,183 @@
 package com.prosper.learn.common;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class Enums {
 
-    public enum CourseState {
-        SUBMITTED((byte)0),  // 原created改为SUBMITTED
-        APPROVED((byte)1),   // 原proved改为APPROVED  
-        REJECTED((byte)2);   // 原rejected改为REJECTED，值改为2
+    /**
+     * 基础枚举接口，用于减少重复代码
+     */
+    public interface ValueEnum<T> {
+        T value();
+        
+        static <E extends Enum<E> & ValueEnum<T>, T> E getByValue(Class<E> enumClass, T value) {
+            if (value == null) return null;
+            return Arrays.stream(enumClass.getEnumConstants())
+                .filter(e -> Objects.equals(e.value(), value))
+                .findFirst()
+                .orElse(null);
+        }
+        
+        static <E extends Enum<E> & ValueEnum<T>, T> boolean isValid(Class<E> enumClass, T value) {
+            return getByValue(enumClass, value) != null;
+        }
+    }
 
-        public final byte value;
+    public enum CourseState implements ValueEnum<Byte> {
+        SUBMITTED((byte)0),
+        APPROVED((byte)1),
+        REJECTED((byte)2);
+
+        private final byte value;
 
         CourseState(byte value) {
             this.value = value;
         }
 
-        public static CourseState getStateByValue(Integer value) {
-            return Arrays.stream(CourseState.values())
-                .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        @Override
+        public Byte value() {
+            return value;
+        }
+
+        public static CourseState getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(CourseState.class, value.byteValue());
         }
         
         public static boolean isValid(int value) {
-            for (CourseState s : CourseState.values()) {
-                if (s.value == value) return true;
-            }
-            return false;
+            return ValueEnum.isValid(CourseState.class, (byte)value);
         }
     }
 
-    public enum CourseRequestState {
+    public enum CourseRequestState implements ValueEnum<Integer> {
         submitted(1),
         proved(2),
         reject(3);
 
-        public final int value;
+        private final int value;
 
         CourseRequestState(int value) {
             this.value = value;
         }
 
-        public static CourseRequestState getStateByValue(Integer value) {
-            return Arrays.stream(CourseRequestState.values())
-                .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        @Override
+        public Integer value() {
+            return value;
+        }
+
+        public static CourseRequestState getByValue(Integer value) {
+            return ValueEnum.getByValue(CourseRequestState.class, value);
         }
     }
 
-    public enum PostType {
+    public enum PostType implements ValueEnum<Integer> {
         contents(1),
         article(2);
 
-        public final int value;
+        private final int value;
 
         PostType(int value) {
             this.value = value;
         }
 
-        public static PostType getStateByValue(Integer value) {
-            return Arrays.stream(PostType.values())
-                    .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        @Override
+        public Integer value() {
+            return value;
+        }
+
+        public static PostType getByValue(Integer value) {
+            return ValueEnum.getByValue(PostType.class, value);
         }
     }
 
-    public enum PostState {
+    public enum PostState implements ValueEnum<Integer> {
         submited(0),
         approved(1),
         deleted(2);
 
-        public final int value;
+        private final int value;
 
         PostState(int value) {
             this.value = value;
         }
 
-        public static PostState getStateByValue(Integer value) {
-            return Arrays.stream(PostState.values())
-                    .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        @Override
+        public Integer value() {
+            return value;
+        }
+
+        public static PostState getByValue(Integer value) {
+            return ValueEnum.getByValue(PostState.class, value);
         }
     }
 
-    public enum CommentState {
+    public enum CommentState implements ValueEnum<Integer> {
         submited(0),
         approved(1),
         deleted(2);
 
-        public final int value;
+        private final int value;
 
         CommentState(int value) {
             this.value = value;
         }
 
-        public static CommentState getStateByValue(Integer value) {
-            return Arrays.stream(CommentState.values())
-                    .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        @Override
+        public Integer value() {
+            return value;
+        }
+
+        public static CommentState getByValue(Integer value) {
+            return ValueEnum.getByValue(CommentState.class, value);
         }
     }
 
-    public enum VoteType {
+    public enum VoteType implements ValueEnum<Integer> {
         once(1),
         twice(2),
         helpful(3);
 
-        public final int value;
+        private final int value;
 
         VoteType(int value) {
             this.value = value;
         }
 
-        public static VoteType getStateByValue(Integer value) {
-            return Arrays.stream(VoteType.values())
-                    .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        @Override
+        public Integer value() {
+            return value;
+        }
+
+        public static VoteType getByValue(Integer value) {
+            return ValueEnum.getByValue(VoteType.class, value);
         }
 
         public static boolean isValid(int value) {
-            for (VoteType s : VoteType.values()) {
-                if (s.value == value) return true;
-            }
-            return false;
+            return ValueEnum.isValid(VoteType.class, value);
         }
     }
 
-    public enum Bool {
+    public enum Bool implements ValueEnum<Byte> {
         TRUE((byte)1),
         FALSE((byte)0);
 
-        public final byte value;
+        private final byte value;
 
         Bool(byte value) {
             this.value = value;
         }
 
-        public static Bool getStateByValue(Integer value) {
-            return Arrays.stream(Bool.values())
-                    .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        @Override
+        public Byte value() {
+            return value;
+        }
+
+        public static Bool getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(Bool.class, value.byteValue());
         }
     }
 
-    public enum MessageType {
+    public enum MessageType implements ValueEnum<Integer> {
         applyCourse(1),
         follow(2),
         upvote(3),
@@ -149,47 +191,49 @@ public class Enums {
         system(99),
         other(100);
 
-        public final int value;
+        private final int value;
 
         MessageType(int value) {
             this.value = value;
         }
 
-        public static MessageType getStateByValue(Integer value) {
-            return Arrays.stream(MessageType.values())
-                    .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        @Override
+        public Integer value() {
+            return value;
+        }
+
+        public static MessageType getByValue(Integer value) {
+            return ValueEnum.getByValue(MessageType.class, value);
         }
 
         public static boolean isValid(int value) {
-            for (MessageType s : MessageType.values()) {
-                if (s.value == value) return true;
-            }
-            return false;
+            return ValueEnum.isValid(MessageType.class, value);
         }
     }
 
-    public enum ObjectType {
+    public enum ObjectType implements ValueEnum<Integer> {
         post(0),
         node(1),
         comment(2),
         roadmap(3);
 
-        public final int value;
+        private final int value;
 
         ObjectType(int value) {
             this.value = value;
         }
 
-        public static ObjectType getStateByValue(Integer value) {
-            return Arrays.stream(ObjectType.values())
-                    .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        @Override
+        public Integer value() {
+            return value;
+        }
+
+        public static ObjectType getByValue(Integer value) {
+            return ValueEnum.getByValue(ObjectType.class, value);
         }
 
         public static boolean isValid(int value) {
-            for (ObjectType s : ObjectType.values()) {
-                if (s.value == value) return true;
-            }
-            return false;
+            return ValueEnum.isValid(ObjectType.class, value);
         }
     }
 
@@ -250,27 +294,28 @@ public class Enums {
      * Profession表状态枚举
      * SUBMITTED=0, APPROVED=1, REJECTED=2
      */
-    public enum ProfessionState {
+    public enum ProfessionState implements ValueEnum<Byte> {
         SUBMITTED((byte)0),
         APPROVED((byte)1),
         REJECTED((byte)2);
 
-        public final byte value;
+        private final byte value;
 
         ProfessionState(byte value) {
             this.value = value;
         }
 
-        public static ProfessionState getStateByValue(Integer value) {
-            return Arrays.stream(ProfessionState.values())
-                    .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        @Override
+        public Byte value() {
+            return value;
+        }
+
+        public static ProfessionState getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(ProfessionState.class, value.byteValue());
         }
 
         public static boolean isValid(int value) {
-            for (ProfessionState s : ProfessionState.values()) {
-                if (s.value == value) return true;
-            }
-            return false;
+            return ValueEnum.isValid(ProfessionState.class, (byte)value);
         }
     }
 
@@ -278,27 +323,28 @@ public class Enums {
      * UserCourse表状态枚举 (原status字段，现改为state)
      * NOT_STARTED=0, IN_PROGRESS=1, COMPLETED=2
      */
-    public enum UserCourseState {
+    public enum UserCourseState implements ValueEnum<Byte> {
         NOT_STARTED((byte)0),
         IN_PROGRESS((byte)1),
         COMPLETED((byte)2);
 
-        public final byte value;
+        private final byte value;
 
         UserCourseState(byte value) {
             this.value = value;
         }
 
-        public static UserCourseState getStateByValue(Integer value) {
-            return Arrays.stream(UserCourseState.values())
-                    .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        @Override
+        public Byte value() {
+            return value;
+        }
+
+        public static UserCourseState getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(UserCourseState.class, value.byteValue());
         }
 
         public static boolean isValid(int value) {
-            for (UserCourseState s : UserCourseState.values()) {
-                if (s.value == value) return true;
-            }
-            return false;
+            return ValueEnum.isValid(UserCourseState.class, (byte)value);
         }
     }
 
@@ -306,27 +352,28 @@ public class Enums {
      * UserRoadmap表状态枚举 (原status字段，现改为state)
      * NOT_STARTED=0, IN_PROGRESS=1, COMPLETED=2
      */
-    public enum UserRoadmapState {
+    public enum UserRoadmapState implements ValueEnum<Byte> {
         NOT_STARTED((byte)0),
         IN_PROGRESS((byte)1),
         COMPLETED((byte)2);
 
-        public final byte value;
+        private final byte value;
 
         UserRoadmapState(byte value) {
             this.value = value;
         }
 
-        public static UserRoadmapState getStateByValue(Integer value) {
-            return Arrays.stream(UserRoadmapState.values())
-                    .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        @Override
+        public Byte value() {
+            return value;
+        }
+
+        public static UserRoadmapState getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(UserRoadmapState.class, value.byteValue());
         }
 
         public static boolean isValid(int value) {
-            for (UserRoadmapState s : UserRoadmapState.values()) {
-                if (s.value == value) return true;
-            }
-            return false;
+            return ValueEnum.isValid(UserRoadmapState.class, (byte)value);
         }
     }
 
@@ -334,26 +381,27 @@ public class Enums {
      * PostStats表类型枚举
      * POST=0, ROADMAP=1
      */
-    public enum PostStatsType {
+    public enum PostStatsType implements ValueEnum<Byte> {
         POST((byte)0),
         ROADMAP((byte)1);
 
-        public final byte value;
+        private final byte value;
 
         PostStatsType(byte value) {
             this.value = value;
         }
 
-        public static PostStatsType getStateByValue(Integer value) {
-            return Arrays.stream(PostStatsType.values())
-                    .filter(enumStateValue -> enumStateValue.value == value).findFirst().orElse(null);
+        @Override
+        public Byte value() {
+            return value;
+        }
+
+        public static PostStatsType getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(PostStatsType.class, value.byteValue());
         }
 
         public static boolean isValid(int value) {
-            for (PostStatsType s : PostStatsType.values()) {
-                if (s.value == value) return true;
-            }
-            return false;
+            return ValueEnum.isValid(PostStatsType.class, (byte)value);
         }
     }
 

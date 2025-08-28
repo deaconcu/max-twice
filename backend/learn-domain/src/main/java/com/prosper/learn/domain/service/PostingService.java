@@ -47,20 +47,20 @@ public class PostingService {
 
     public List<PostDO> getList(long nodeId) {
         int count = 2;
-        List<PostDO> postings = postMapper.getListByNodeAndScore(nodeId, count, Enums.PostState.approved.value);
+        List<PostDO> postings = postMapper.getListByNodeAndScore(nodeId, count, Enums.PostState.approved.value());
         postings.forEach(postingDO -> idToName(postingDO));
         return postings;
     }
 
     public List<PostDO> getList(int nodeId, int lastPostingId) {
         int count = 2;
-        List<PostDO> postings = postMapper.getListByLastId(nodeId, lastPostingId, count, Enums.PostState.approved.value);
+        List<PostDO> postings = postMapper.getListByLastId(nodeId, lastPostingId, count, Enums.PostState.approved.value());
         postings.forEach(postingDO -> idToName(postingDO));
         return postings;
     }
 
     public void idToName(PostDO posting) {
-        if (posting.getType() == Enums.PostType.article.value) return;
+        if (posting.getType() == Enums.PostType.article.value()) return;
         if (posting.getContent().equals("")) return;
         List<Long> ids = Arrays.stream(posting.getContent().split(",")).map(Long::parseLong).toList();
         List<NodeDO> nodeList = nodeMapper.getByIds(ids);
@@ -137,7 +137,7 @@ public class PostingService {
 
         Map<Long, Integer> types = new HashMap<>();
         if (allPostingIds.size() > 0) {
-            List<UpvoteDO> upvotes = upvoteMapper.getList(userId, allPostingIds, Enums.ObjectType.post.value);
+            List<UpvoteDO> upvotes = upvoteMapper.getList(userId, allPostingIds, Enums.ObjectType.post.value());
             for (UpvoteDO upvote : upvotes) {
                 types.put(upvote.getObjectId(), upvote.getType());
             }
@@ -168,7 +168,7 @@ public class PostingService {
      * @return 按分数排序的文章列表
      */
     public List<PostDO> getListByScore(int nodeId, int limit) {
-        List<PostDO> postings = postMapper.getListByNodeAndScore(nodeId, limit, Enums.PostState.approved.value);
+        List<PostDO> postings = postMapper.getListByNodeAndScore(nodeId, limit, Enums.PostState.approved.value());
         postings.forEach(this::idToName);
         return postings;
     }
@@ -187,7 +187,7 @@ public class PostingService {
         }
 
         List<PostDO> postings = postMapper.getListByNodeAndScoreAndPaginated(
-                nodeId, lastScore, lastId, limit, Enums.PostState.approved.value);
+                nodeId, lastScore, lastId, limit, Enums.PostState.approved.value());
         postings.forEach(this::idToName);
         return postings;
     }
@@ -274,7 +274,7 @@ public class PostingService {
 
         Map<Long, Integer> types = new HashMap<>();
         if (allPostingIds.size() > 0) {
-            List<UpvoteDO> upvotes = upvoteMapper.getList(userId, allPostingIds, Enums.ObjectType.post.value);
+            List<UpvoteDO> upvotes = upvoteMapper.getList(userId, allPostingIds, Enums.ObjectType.post.value());
             for (UpvoteDO upvote : upvotes) {
                 types.put(upvote.getObjectId(), upvote.getType());
             }

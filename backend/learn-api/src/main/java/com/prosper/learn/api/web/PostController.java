@@ -32,7 +32,7 @@ public class PostController implements PostClient {
 
     @Override
     public Response create(PostDTO posting) {
-        if (posting.getType() == Enums.PostType.contents.value) {
+        if (posting.getType() == Enums.PostType.contents.value()) {
             try {
                 NodeDO nodeDO = nodeMapper.getById(posting.getNodeId());
                 List<String> nodeNames = objectMapper.readValue(posting.getContent(), new TypeReference<>() {});
@@ -82,7 +82,7 @@ public class PostController implements PostClient {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }
 
-        postDO.setState(Enums.PostState.deleted.value);
+        postDO.setState(Enums.PostState.deleted.value());
         postDO.setUpdatedAt(Utils.getLocalDateTime());
         postMapper.update(postDO);
         return Response.success;
@@ -96,7 +96,7 @@ public class PostController implements PostClient {
     @Override
     public List<PostDTO> getPostings(Long nodeId) {
         int count = 3;
-        List<PostDO> postings = postMapper.getListByNode(nodeId, count, Enums.PostState.approved.value);
+        List<PostDO> postings = postMapper.getListByNode(nodeId, count, Enums.PostState.approved.value());
         postings.forEach(postingDO -> postService.idToName(postingDO));
         return Converter.INSTANCE.toPostDTO(postings);
     }
@@ -104,7 +104,7 @@ public class PostController implements PostClient {
     @Override
     public List<PostDTO> getByLastId(Long nodeId, Long lastPostingId) {
         int count = 2;
-        List<PostDO> postings = postMapper.getListByLastId(nodeId, lastPostingId, count, Enums.PostState.approved.value);
+        List<PostDO> postings = postMapper.getListByLastId(nodeId, lastPostingId, count, Enums.PostState.approved.value());
         postings.forEach(postingDO -> postService.idToName(postingDO));
         return Converter.INSTANCE.toPostDTO(postings);
     }
@@ -117,7 +117,7 @@ public class PostController implements PostClient {
             return new Response<>(Converter.INSTANCE.toPostDTO(postings));
         } else if (nodeId > 0){
             int count = 2;
-            List<PostDO> postings = postMapper.getListByLastId(nodeId, lastPostingId, count, Enums.PostState.approved.value);
+            List<PostDO> postings = postMapper.getListByLastId(nodeId, lastPostingId, count, Enums.PostState.approved.value());
             postings.forEach(postingDO -> postService.idToName(postingDO));
             return new Response<>(Converter.INSTANCE.toPostDTO(postings));
         }
@@ -126,9 +126,9 @@ public class PostController implements PostClient {
 
     @Override
     public Response<List<PostDTO>> getCensorList() {
-        List<PostDO> postDOList = postMapper.getListByState(Enums.PostState.approved.value, 200);
+        List<PostDO> postDOList = postMapper.getListByState(Enums.PostState.approved.value(), 200);
         for (PostDO postDO : postDOList) {
-            if (postDO.getType() == Enums.PostType.contents.value) {
+            if (postDO.getType() == Enums.PostType.contents.value()) {
                 postService.idToName(postDO);
             }
         }
@@ -142,82 +142,16 @@ public class PostController implements PostClient {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }
 
-        if (approve && postDO.getState() != Enums.PostState.approved.value) {
-            postDO.setState(Enums.CommentState.approved.value);
+        if (approve && postDO.getState() != Enums.PostState.approved.value()) {
+            postDO.setState(Enums.CommentState.approved.value());
             postMapper.update(postDO);
         }
-        if (!approve && postDO.getState() != Enums.CommentState.deleted.value) {
-            postDO.setState(Enums.CommentState.deleted.value);
+        if (!approve && postDO.getState() != Enums.CommentState.deleted.value()) {
+            postDO.setState(Enums.CommentState.deleted.value());
             postMapper.update(postDO);
         }
         return new Response(Converter.INSTANCE.toPostDTO(postDO));
     }
-
-    // 选择一个目录
-    /*
-    @Override
-    public Response choose(int postingId, int courseId, String currentPath, int userId) {
-        ContentsDO contentsDO = contentsMapper.getByUser(1);
-        PostDO postDO = postMapper.get(postingId);
-
-        if (currentPath.isEmpty()) {
-            String contents = postDO.getContent();
-            ObjectNode node = objectMapper.createObjectNode();
-            ObjectNode emptyNode = objectMapper.createObjectNode();
-            for (String s : contents.split(",")) {
-                node.set(s, emptyNode);
-            }
-            String jsonString = "";
-            try {
-                jsonString = objectMapper.writeValueAsString(node);
-            } catch (JsonProcessingException e) {
-                log.error("Failed to serialize JSON", e);
-                throw ErrorCode.JSON_PARSE_ERROR.exception(e);
-            }
-
-            if (contentsDO == null) {
-                contentsDO = new ContentsDO();
-                contentsDO.setUserId(1);
-                contentsDO.setContents(jsonString);
-                contentsDO.setCTime(Utils.getLocalDateTime());
-                contentsDO.setUTime(Utils.getLocalDateTime());
-                contentsMapper.insert(contentsDO);
-            } else {
-                contentsDO.setContents(jsonString);
-                contentsMapper.update(contentsDO);
-            }
-            return Response.success;
-        }
-
-        if (contentsDO == null) {
-            return Response.success;
-        }
-
-        String contentsStr = contentsDO.getContents();
-
-        try {
-            JsonNode rootNode = objectMapper.readTree(contentsStr);
-            JsonNode currNode = rootNode.at(currentPath);
-            if (currNode.isObject()) {
-                ObjectNode obj = (ObjectNode) currNode;
-                obj.removeAll();
-
-                ObjectNode emptyNode = objectMapper.createObjectNode();
-                for (String s : postDO.getContent().split(",")) {
-                    obj.set(s, emptyNode);
-                }
-            }
-
-            String jsonString = objectMapper.writeValueAsString(rootNode);
-            contentsDO.setContents(jsonString);
-            contentsMapper.update(contentsDO);
-        } catch (JsonProcessingException e) {
-            log.error("Failed to serialize JSON content", e);
-            throw ErrorCode.JSON_PARSE_ERROR.exception(e);
-        }
-        return Response.success;
-    }
-    */
 
     /**
      * 获取基于分数排序的文章列表

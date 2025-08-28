@@ -125,7 +125,7 @@ public class ContentsService {
     public void choose(long userId, String path, long courseId, long postId) {
         // validate
         PostDO postDO = postMapper.get(postId);
-        if (postDO == null || postDO.getType() == Enums.PostType.article.value) return;
+        if (postDO == null || postDO.getType() == Enums.PostType.article.value()) return;
 
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {

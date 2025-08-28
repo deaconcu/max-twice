@@ -55,7 +55,7 @@ public class MessageService {
         MessageDO messageDO = new MessageDO();
         messageDO.setContent(content);
         messageDO.setSenderId(senderId);
-        messageDO.setType(messageType.value);
+        messageDO.setType(messageType.value());
         messageDO.setReceiverId(receiverId);
         messageMapper.insert(messageDO);
     }
@@ -74,7 +74,7 @@ public class MessageService {
 
     public List<MessageDTO> getList(int type, long senderId, long receiverId, long lastId, int conversation) {
         List<MessageDO> messageDOList;
-        if (type == applyCourse.value) {
+        if (type == applyCourse.value()) {
             messageDOList = messageMapper.listByPull(type, lastId, 20);
         }
         if (senderId == 0) {
@@ -111,7 +111,7 @@ public class MessageService {
 
     public List<MessageDTO> getSystemList(int type, long receiverId, long lastId) {
         List<MessageDO> messageDOList;
-        if (type == system.value) {
+        if (type == system.value()) {
             messageDOList = messageMapper.getSystemListByUser(receiverId, lastId, 20);
         } else {
             messageDOList = messageMapper.getSystemItemListByUser(type, receiverId, lastId, 20);
@@ -125,19 +125,19 @@ public class MessageService {
             userIdSet.add(messageDO.getReceiverId());
             Map<String, Object> map = Util.readValueToMap(messageDO.getContent());
 
-            if (messageDO.getType() == upvote.value) {
+            if (messageDO.getType() == upvote.value()) {
                 if (map.containsKey("postingId")) {
                     postingIdSet.add((Long) map.get("postingId"));
                 }
                 nodeIdSet.add((Long) map.get("nodeId"));
                 userIdSet.add((Long) map.get("upvoterId"));
-            } else if (messageDO.getType() == invite.value) {
+            } else if (messageDO.getType() == invite.value()) {
                 nodeIdSet.add((Long) map.get("nodeId"));
                 userIdSet.add((Long) map.get("InviterId"));
-            } else if (messageDO.getType() == follow.value) {
+            } else if (messageDO.getType() == follow.value()) {
                 userIdSet.add((Long) map.get("followerId"));
-            } else if (messageDO.getType() == postComment.value || messageDO.getType() == replyPostingComment.value ||
-                       messageDO.getType() == nodeComment.value || messageDO.getType() == replyNodeComment.value) {
+            } else if (messageDO.getType() == postComment.value() || messageDO.getType() == replyPostingComment.value() ||
+                       messageDO.getType() == nodeComment.value() || messageDO.getType() == replyNodeComment.value()) {
                 nodeIdSet.add((Long) map.get("nodeId"));
                 userIdSet.add((Long) map.get("commenterId"));
             }
@@ -163,8 +163,8 @@ public class MessageService {
                                       Map<Long, PostDO> postingDOMap, Map<Long, NodeDO> nodeDOMap) {
         MessageDTO messageDTO = null;
         Map<String, Object> content = Util.readValueToMap(messageDO.getContent());
-        if (messageDO.getType() == postComment.value || messageDO.getType() == replyPostingComment.value ||
-            messageDO.getType() == nodeComment.value || messageDO.getType() == replyNodeComment.value) {
+        if (messageDO.getType() == postComment.value() || messageDO.getType() == replyPostingComment.value() ||
+            messageDO.getType() == nodeComment.value() || messageDO.getType() == replyNodeComment.value()) {
 
             CommentMessageDTO m = new CommentMessageDTO();
             long nodeId = (Long) content.get("nodeId");
@@ -174,27 +174,27 @@ public class MessageService {
             m.setNode(Converter.INSTANCE.toNodeDTOV1(nodeDO));
             m.setCommenter(Converter.INSTANCE.toUserDTOV4(userDOMap.get(content.get("commenterId"))));
             messageDTO = m;
-        } else if (messageDO.getType() == upvote.value) {
+        } else if (messageDO.getType() == upvote.value()) {
             UpvoteMessageDTO m = new UpvoteMessageDTO();
             if (content.containsKey("postingId")) {
                 long postId = (Long) content.get("postingId");
                 m.setObjectId(postId);
-                m.setObjectType(Enums.ObjectType.post.value);
+                m.setObjectType(Enums.ObjectType.post.value());
             } else if (content.containsKey("commentId")) {
                 long commentId = (Long) content.get("commentId");
                 m.setObjectId(commentId);
-                m.setObjectType(Enums.ObjectType.comment.value);
+                m.setObjectType(Enums.ObjectType.comment.value());
             }
 
             m.setNode(Converter.INSTANCE.toNodeDTOV1(nodeDOMap.get((Integer)content.get("nodeId"))));
             m.setVoteType((Integer) content.get("type"));
             m.setUpvoter(Converter.INSTANCE.toUserDTOV4(userDOMap.get(content.get("upvoterId"))));
             messageDTO = m;
-        } else if (messageDO.getType() == follow.value) {
+        } else if (messageDO.getType() == follow.value()) {
             FollowMessageDTO m = new FollowMessageDTO();
             m.setFollower(Converter.INSTANCE.toUserDTOV4(userDOMap.get(content.get("followerId"))));
             messageDTO = m;
-        } else if (messageDO.getType() == invite.value) {
+        } else if (messageDO.getType() == invite.value()) {
             InviteMessageDTO m = new InviteMessageDTO();
             m.setInviter(Converter.INSTANCE.toUserDTOV4(userDOMap.get(content.get("inviterId"))));
             int nodeId = (Integer) content.get("nodeId");
@@ -264,7 +264,7 @@ public class MessageService {
         Map<String, Object> messageMap = new HashMap<>();
         messageMap.put("followerId", followerId);
 
-        createSystemMessage(follow.value, recieverId, Util.toJson(messageMap));
+        createSystemMessage(follow.value(), recieverId, Util.toJson(messageMap));
     }
 
     public void createUpvoteMessage(long recieverId, long voterId, long nodeId, long objectId, int objectType, int type) {
@@ -272,13 +272,13 @@ public class MessageService {
         messageMap.put("voterId", voterId);
         messageMap.put("type", type);
         messageMap.put("nodeId", nodeId);
-        if (objectType == Enums.ObjectType.post.value) {
+        if (objectType == Enums.ObjectType.post.value()) {
             messageMap.put("postingId", objectId);
-        } else if (objectType == Enums.ObjectType.comment.value) {
+        } else if (objectType == Enums.ObjectType.comment.value()) {
             messageMap.put("commentId", objectId);
         }
 
-        createSystemMessage(upvote.value, recieverId, Util.toJson(messageMap));
+        createSystemMessage(upvote.value(), recieverId, Util.toJson(messageMap));
     }
 
     public void createInviteMessage(long recieverId, long InviterId, long nodeId) {
@@ -286,7 +286,7 @@ public class MessageService {
         messageMap.put("inviterId", InviterId);
         messageMap.put("nodeId", nodeId);
 
-        createSystemMessage(invite.value, recieverId, Util.toJson(messageMap));
+        createSystemMessage(invite.value(), recieverId, Util.toJson(messageMap));
     }
 
     public void createSystemMessage(int type, long userId, String content) {

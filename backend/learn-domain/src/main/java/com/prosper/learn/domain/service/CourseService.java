@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service;
 
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.CourseDTO;
 import com.prosper.learn.dto.CourseDTOV4;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.prosper.learn.common.Enums.*;
 
 @Service
 @RequiredArgsConstructor
@@ -137,7 +140,7 @@ public class CourseService {
         course.setCreator(courseDTO.getCreator());
         course.setMainCategory(courseDTO.getMainCategory());
         course.setSubCategory(courseDTO.getSubCategory());
-        course.setState("SUBMITTED");
+        course.setState(CourseState.SUBMITTED.value());
         course.setRootNode(0L);
         courseMapper.insert(course);
 
@@ -159,7 +162,7 @@ public class CourseService {
         subCourse.setDescription(description);
         subCourse.setCreator(userId);
         subCourse.setParent(parentId);
-        subCourse.setState("SUBMITTED");
+        subCourse.setState(CourseState.SUBMITTED.value());
         subCourse.setRootNode(0L); // 子课程的 rootNode 初始为 0
         subCourse.setMainCategory(parentCourse.getMainCategory());
         subCourse.setSubCategory(parentCourse.getSubCategory());

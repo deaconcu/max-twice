@@ -28,8 +28,9 @@ public enum ErrorCode {
     
     // 系统错误 S0xxx
     SYSTEM_ERROR("S0001", "系统繁忙，请稍后重试"),
-    DATABASE_ERROR("S0002", "数据访问异常"),
-    EXTERNAL_SERVICE_ERROR("S0003", "外部服务调用失败");
+    INVALID_PARAMETER("S0001", "参数异常"),
+    DATABASE_ERROR("S0003", "数据访问异常"),
+    EXTERNAL_SERVICE_ERROR("S0004", "外部服务调用失败");
     
     private final String code;
     private final String message;

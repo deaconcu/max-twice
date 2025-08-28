@@ -31,7 +31,7 @@ public class ProfessionController implements ProfessionClient {
 
     @Override
     public Response<Object> listByStateAndLastId(Byte state, Long lastId) {
-        ProfessionState professionState = ProfessionState.getStateByValue(state.intValue());
+        ProfessionState professionState = ProfessionState.getByValue(state.intValue());
         if (professionState == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("Invalid profession state: " + state);
         }
@@ -148,7 +148,7 @@ public class ProfessionController implements ProfessionClient {
 
     @Override
     public Response<Object> listApproved(Long lastId) {
-        List<ProfessionDTO> professionList = professionService.getListByStateAndLastId("APPROVED", lastId);
+        List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(ProfessionState.APPROVED, lastId);
         return new Response<>(professionList);
     }
 

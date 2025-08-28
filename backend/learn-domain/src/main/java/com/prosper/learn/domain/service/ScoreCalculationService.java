@@ -2,6 +2,7 @@ package com.prosper.learn.domain.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.persistence.dataobject.PostStatsDO;
 import com.prosper.learn.persistence.dataobject.PostDO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
@@ -99,7 +100,7 @@ public class ScoreCalculationService {
     public double calculatePostScore(PostDO post) {
         try {
             // 1. 获取历史点赞数据并计算时间加权
-            Map<LocalDate, DailyData> dailyData = getDailyUpvoteHistory(post.getId(), "POST");
+            Map<LocalDate, DailyData> dailyData = getDailyUpvoteHistory(post.getId(), Enums.PostStatsType.POST);
             TimeWeightedData timeWeightedData = calculateTimeWeightedData(dailyData);
 
             // 2. 使用时间加权后的数据进行贝叶斯平滑
@@ -127,7 +128,7 @@ public class ScoreCalculationService {
     public double calculateRoadmapScore(RoadmapDO roadmap) {
         try {
             // 1. 获取历史点赞数据并计算时间加权
-            Map<LocalDate, DailyData> dailyData = getDailyUpvoteHistory(roadmap.getId(), "ROADMAP");
+            Map<LocalDate, DailyData> dailyData = getDailyUpvoteHistory(roadmap.getId(), Enums.PostStatsType.ROADMAP);
             TimeWeightedData timeWeightedData = calculateTimeWeightedData(dailyData);
 
             // 2. 使用时间加权后的数据进行贝叶斯平滑
@@ -207,7 +208,7 @@ public class ScoreCalculationService {
     /**
      * 获取文章或路线图的每日点赞历史数据，包含分数和样本数
      */
-    private Map<LocalDate, DailyData> getDailyUpvoteHistory(long objectId, String objectType) {
+    private Map<LocalDate, DailyData> getDailyUpvoteHistory(long objectId, Enums.PostStatsType objectType) {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(MAX_DAYS_HISTORY);
 
@@ -218,8 +219,7 @@ public class ScoreCalculationService {
         int endYear = endDate.getYear();
 
         for (int year = startYear; year <= endYear; year++) {
-            PostStatsDO yearStats = postStatsMapper.getByTypeAndObjectIdAndYear(
-                objectType, (long) objectId, year);
+            PostStatsDO yearStats = postStatsMapper.getByTypeAndObjectIdAndYear( objectType.value(), (long) objectId, year);
 
             if (yearStats != null) {
                 try {

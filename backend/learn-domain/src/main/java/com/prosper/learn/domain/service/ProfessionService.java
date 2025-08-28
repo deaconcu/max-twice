@@ -25,7 +25,7 @@ public class ProfessionService {
     }
 
     public List<ProfessionDTO> getListByStateAndLastId(ProfessionState state, long lastId) {
-        List<ProfessionDO> professionDOList = professionMapper.listByStateAndLastId(state.value, lastId);
+        List<ProfessionDO> professionDOList = professionMapper.listByStateAndLastId(state.value(), lastId);
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }
 
@@ -51,7 +51,7 @@ public class ProfessionService {
 
     public Long create(ProfessionDTO professionDTO) {
         ProfessionDO professionDO = Converter.INSTANCE.toProfessionDO(professionDTO);
-        professionDO.setState(ProfessionState.SUBMITTED.value);
+        professionDO.setState(ProfessionState.SUBMITTED.value());
         professionDO.setRejectedReason("");
         professionMapper.insert(professionDO);
         return professionDO.getId();
@@ -68,7 +68,7 @@ public class ProfessionService {
         if (profession == null) {
             throw new RuntimeException("操作失败：专业不存在");
         }
-        if (ProfessionState.APPROVED.value == profession.getState()) {
+        if (ProfessionState.APPROVED.value() == profession.getState()) {
             throw new RuntimeException("操作失败：专业状态已是批准状态，无需重复操作");
         }
 
@@ -85,7 +85,7 @@ public class ProfessionService {
         if (profession == null) {
             throw new RuntimeException("操作失败：专业不存在");
         }
-        if (ProfessionState.REJECTED.value == profession.getState()) {
+        if (ProfessionState.REJECTED.value() == profession.getState()) {
             throw new RuntimeException("操作失败：专业状态已是拒绝状态，无需重复操作");
         }
 

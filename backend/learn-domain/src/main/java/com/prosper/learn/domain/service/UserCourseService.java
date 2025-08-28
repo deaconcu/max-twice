@@ -49,7 +49,7 @@ public class UserCourseService {
         progressDO.setUserId(userId);
         progressDO.setCourseId(courseId);
         progressDO.setProgressPercent(0);
-        progressDO.setState(UserCourseState.IN_PROGRESS.value);
+        progressDO.setState(UserCourseState.IN_PROGRESS.value());
         progressDO.setStartedAt(LocalDateTime.now());
 
         userCourseMapper.insert(progressDO);
@@ -139,10 +139,10 @@ public class UserCourseService {
 
         // 如果进度达到100%，标记为完成
         if (progressPercent >= 100) {
-            progressDO.setState(UserCourseState.COMPLETED.value);
+            progressDO.setState(UserCourseState.COMPLETED.value());
             progressDO.setCompletedAt(LocalDateTime.now());
         } else if (progressPercent > 0) {
-            progressDO.setState(UserCourseState.IN_PROGRESS.value);
+            progressDO.setState(UserCourseState.IN_PROGRESS.value());
         }
 
         userCourseMapper.update(progressDO);
