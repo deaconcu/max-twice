@@ -128,8 +128,7 @@ public class AggregateController implements AggregateClient {
     private Response<Object> read(CourseDO courseDO, String path, NodeDO nodeDO, PostDO postDO) {
 
         long userId = StpUtil.getLoginIdAsLong();
-        //Utils.Pair<String, Map<Integer, String>> response = contentsService.getContents(userId, courseDO.getId(), true);
-        Utils.Pair<String, Map<Integer, NodeDTOV2>> response = aggregateService.getToc(userId, courseDO.getId(), true);
+        Utils.Pair<String, Map<Long, NodeDTOV2>> response = aggregateService.getToc(userId, courseDO.getId(), true);
         CourseTocDTO courseTocDTO = new CourseTocDTO(response.left(), response.right());
 
         //Map<String, Object> contents;

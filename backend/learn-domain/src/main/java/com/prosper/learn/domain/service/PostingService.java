@@ -62,7 +62,7 @@ public class PostingService {
     public void idToName(PostDO posting) {
         if (posting.getType() == Enums.PostType.article.value) return;
         if (posting.getContent().equals("")) return;
-        List<Integer> ids = Arrays.stream(posting.getContent().split(",")).map(Integer::parseInt).toList();
+        List<Long> ids = Arrays.stream(posting.getContent().split(",")).map(Long::parseLong).toList();
         List<NodeDO> nodeList = nodeMapper.getByIds(ids);
         String names = nodeList.stream().map(NodeDO::getName).collect(Collectors.joining(","));
         posting.setContent(names);
@@ -76,14 +76,14 @@ public class PostingService {
         List<PostDTO> postDTOList = Converter.INSTANCE.toPostDTO(postings);
 
         // get all user
-        List<Integer> userIds = postDTOList.stream().map(PostDTO::getCreatorId).collect(Collectors.toList());
+        List<Long> userIds = postDTOList.stream().map(PostDTO::getCreatorId).collect(Collectors.toList());
         List<UserDO> userList = userMapper.getByIds(userIds);
-        Map<Integer, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
+        Map<Long, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
 
         // get all node
-        List<Integer> nodeIds = postDTOList.stream().map(PostDTO::getNodeId).collect(Collectors.toList());
+        List<Long> nodeIds = postDTOList.stream().map(PostDTO::getNodeId).collect(Collectors.toList());
         List<NodeDO> nodeList = nodeMapper.getByIds(nodeIds);
-        Map<Integer, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
+        Map<Long, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
 
         for (PostDTO postDTO : postDTOList) {
             postDTO.setNode(Converter.INSTANCE.toNodeDTO(nodeMap.get(postDTO.getNodeId())));
@@ -101,12 +101,12 @@ public class PostingService {
         List<PostDO> postings = postMapper.getContentsListByUser(userId, lastId, count);
         if (postings == null || postings.size() == 0) return new ArrayList<>();
 
-        List<Integer> nodeIds = postings.stream()
+        List<Long> nodeIds = postings.stream()
                 .map(PostDO::getContent)
-                .flatMap(s -> Arrays.stream(s.split(",")).map(Integer::parseInt)).toList();
+                .flatMap(s -> Arrays.stream(s.split(",")).map(Long::parseLong)).toList();
         List<NodeDO> nodeList = nodeMapper.getByIds(nodeIds);
 
-        Map<Integer, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
+        Map<Long, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
 
         for (PostDO postDO : postings) {
             String content = postDO.getContent();
@@ -132,10 +132,10 @@ public class PostingService {
         nodeList = nodeMapper.getByIds(nodeIds);
         nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
 
-        List<Integer> allPostingIds = new LinkedList<>();
+        List<Long> allPostingIds = new LinkedList<>();
         if (postings != null) postings.stream().forEach(item -> allPostingIds.add(item.getId()));
 
-        Map<Integer, Integer> types = new HashMap<>();
+        Map<Long, Integer> types = new HashMap<>();
         if (allPostingIds.size() > 0) {
             List<UpvoteDO> upvotes = upvoteMapper.getList(userId, allPostingIds, Enums.ObjectType.post.value);
             for (UpvoteDO upvote : upvotes) {
@@ -144,9 +144,9 @@ public class PostingService {
         }
 
         // get all user
-        List<Integer> userIds = postDTOList.stream().map(PostDTO::getCreatorId).collect(Collectors.toList());
+        List<Long> userIds = postDTOList.stream().map(PostDTO::getCreatorId).collect(Collectors.toList());
         List<UserDO> userList = userMapper.getByIds(userIds);
-        Map<Integer, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
+        Map<Long, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
 
         for (PostDTO postDTO : postDTOList) {
             postDTO.setNode(Converter.INSTANCE.toNodeDTO(nodeMap.get(postDTO.getNodeId())));
@@ -208,12 +208,12 @@ public class PostingService {
         // get all user
         List<Long> userIds = postDTOList.stream().map(PostDTOV2::getCreatorId).collect(Collectors.toList());
         List<UserDO> userList = userMapper.getByIds(userIds);
-        Map<Integer, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
+        Map<Long, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
 
         // get all node
-        List<Integer> nodeIds = postDTOList.stream().map(PostDTOV2::getNodeId).collect(Collectors.toList());
+        List<Long> nodeIds = postDTOList.stream().map(PostDTOV2::getNodeId).collect(Collectors.toList());
         List<NodeDO> nodeList = nodeMapper.getByIds(nodeIds);
-        Map<Integer, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
+        Map<Long, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
 
         for (PostDTOV2 postDTO : postDTOList) {
             postDTO.setNode(Converter.INSTANCE.toNodeDTO(nodeMap.get(postDTO.getNodeId())));
@@ -234,12 +234,12 @@ public class PostingService {
         List<PostDO> postings = postMapper.getContentsListByUser(userId, lastId, count);
         if (postings == null || postings.size() == 0) return new ArrayList<>();
 
-        List<Integer> nodeIds = postings.stream()
+        List<Long> nodeIds = postings.stream()
                 .map(PostDO::getContent)
-                .flatMap(s -> Arrays.stream(s.split(",")).map(Integer::parseInt)).toList();
+                .flatMap(s -> Arrays.stream(s.split(",")).map(Long::parseLong)).toList();
         List<NodeDO> nodeList = nodeMapper.getByIds(nodeIds);
 
-        Map<Integer, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
+        Map<Long, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
 
         for (PostDO postDO : postings) {
             String content = postDO.getContent();
@@ -269,10 +269,10 @@ public class PostingService {
         nodeList = nodeMapper.getByIds(nodeIds);
         nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
 
-        List<Integer> allPostingIds = new LinkedList<>();
+        List<Long> allPostingIds = new LinkedList<>();
         if (postings != null) postings.stream().forEach(item -> allPostingIds.add(item.getId()));
 
-        Map<Integer, Integer> types = new HashMap<>();
+        Map<Long, Integer> types = new HashMap<>();
         if (allPostingIds.size() > 0) {
             List<UpvoteDO> upvotes = upvoteMapper.getList(userId, allPostingIds, Enums.ObjectType.post.value);
             for (UpvoteDO upvote : upvotes) {
@@ -281,9 +281,9 @@ public class PostingService {
         }
 
         // get all user
-        List<Integer> userIds = postDTOList.stream().map(PostDTOV2::getCreatorId).collect(Collectors.toList());
+        List<Long> userIds = postDTOList.stream().map(PostDTOV2::getCreatorId).collect(Collectors.toList());
         List<UserDO> userList = userMapper.getByIds(userIds);
-        Map<Integer, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
+        Map<Long, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
 
         for (PostDTOV2 postDTO : postDTOList) {
             postDTO.setNode(Converter.INSTANCE.toNodeDTO(nodeMap.get(postDTO.getNodeId())));

@@ -75,22 +75,23 @@ public class MessageService {
     public List<MessageDTO> getList(int type, long senderId, long receiverId, long lastId, int conversation) {
         List<MessageDO> messageDOList;
         if (type == applyCourse.value) {
-            messageDOList = messageMapper.listAll(type, lastId, 20);
+            messageDOList = messageMapper.listByPull(type, lastId, 20);
         }
         if (senderId == 0) {
-            messageDOList = messageMapper.listAll(type, lastId, 20);
+            messageDOList = messageMapper.listByPull(type, lastId, 20);
         } else if (conversation == 0) {
             messageDOList = messageMapper.getListByUser(type, senderId, receiverId, lastId, 20);
         } else {
             messageDOList = messageMapper.getConversationByUser(senderId, receiverId, lastId, 20);
         }
-        Set<Integer> userIdSet = new HashSet<>();
+
+        Set<Long> userIdSet = new HashSet<>();
         for (MessageDO messageDO : messageDOList) {
             userIdSet.add(messageDO.getSenderId());
             userIdSet.add(messageDO.getReceiverId());
         }
 
-        Map<Integer, UserDO> userMap = new HashMap<>();
+        Map<Long, UserDO> userMap = new HashMap<>();
         if (userIdSet.size() != 0) {
             List<UserDO> userDOList = userMapper.getByIds(userIdSet);
             for (UserDO userDO : userDOList) {
@@ -116,9 +117,9 @@ public class MessageService {
             messageDOList = messageMapper.getSystemItemListByUser(type, receiverId, lastId, 20);
         }
 
-        Set<Integer> userIdSet = new HashSet<>();
-        Set<Integer> nodeIdSet = new HashSet<>();
-        Set<Integer> postingIdSet = new HashSet<>();
+        Set<Long> userIdSet = new HashSet<>();
+        Set<Long> nodeIdSet = new HashSet<>();
+        Set<Long> postingIdSet = new HashSet<>();
 
         for (MessageDO messageDO : messageDOList) {
             userIdSet.add(messageDO.getReceiverId());
@@ -126,30 +127,30 @@ public class MessageService {
 
             if (messageDO.getType() == upvote.value) {
                 if (map.containsKey("postingId")) {
-                    postingIdSet.add((Integer) map.get("postingId"));
+                    postingIdSet.add((Long) map.get("postingId"));
                 }
-                nodeIdSet.add((Integer) map.get("nodeId"));
-                userIdSet.add((Integer) map.get("upvoterId"));
+                nodeIdSet.add((Long) map.get("nodeId"));
+                userIdSet.add((Long) map.get("upvoterId"));
             } else if (messageDO.getType() == invite.value) {
-                nodeIdSet.add((Integer) map.get("nodeId"));
-                userIdSet.add((Integer) map.get("InviterId"));
+                nodeIdSet.add((Long) map.get("nodeId"));
+                userIdSet.add((Long) map.get("InviterId"));
             } else if (messageDO.getType() == follow.value) {
-                userIdSet.add((Integer) map.get("followerId"));
+                userIdSet.add((Long) map.get("followerId"));
             } else if (messageDO.getType() == postComment.value || messageDO.getType() == replyPostingComment.value ||
                        messageDO.getType() == nodeComment.value || messageDO.getType() == replyNodeComment.value) {
-                nodeIdSet.add((Integer) map.get("nodeId"));
-                userIdSet.add((Integer) map.get("commenterId"));
+                nodeIdSet.add((Long) map.get("nodeId"));
+                userIdSet.add((Long) map.get("commenterId"));
             }
         }
 
-        Map<Integer, UserDO> userDOMap = userIdSet.size() == 0 ? new HashMap<>() : userMapper.getMapByIds(userIdSet);
-        Map<Integer, PostDO> postingDOMap = postingIdSet.size() == 0 ? new HashMap<>() : postMapper.getMapByIds(postingIdSet);
+        Map<Long, UserDO> userDOMap = userIdSet.size() == 0 ? new HashMap<>() : userMapper.getMapByIds(userIdSet);
+        Map<Long, PostDO> postingDOMap = postingIdSet.size() == 0 ? new HashMap<>() : postMapper.getMapByIds(postingIdSet);
 
         for (PostDO postDO : postingDOMap.values()) {
             nodeIdSet.add(postDO.getNodeId());
         }
 
-        Map<Integer, NodeDO> nodeDOMap = nodeIdSet.size() == 0 ? new HashMap<>() : nodeMapper.getMapByIds(nodeIdSet);
+        Map<Long, NodeDO> nodeDOMap = nodeIdSet.size() == 0 ? new HashMap<>() : nodeMapper.getMapByIds(nodeIdSet);
 
         List<MessageDTO> messageDTOList = new ArrayList<>();
         for (MessageDO messageDO : messageDOList) {
@@ -158,29 +159,29 @@ public class MessageService {
         return messageDTOList;
     }
 
-    private MessageDTO convertMessage(MessageDO messageDO, Map<Integer, UserDO> userDOMap,
-                                      Map<Integer, PostDO> postingDOMap, Map<Integer, NodeDO> nodeDOMap) {
+    private MessageDTO convertMessage(MessageDO messageDO, Map<Long, UserDO> userDOMap,
+                                      Map<Long, PostDO> postingDOMap, Map<Long, NodeDO> nodeDOMap) {
         MessageDTO messageDTO = null;
         Map<String, Object> content = Util.readValueToMap(messageDO.getContent());
         if (messageDO.getType() == postComment.value || messageDO.getType() == replyPostingComment.value ||
             messageDO.getType() == nodeComment.value || messageDO.getType() == replyNodeComment.value) {
 
             CommentMessageDTO m = new CommentMessageDTO();
-            int nodeId = (Integer) content.get("nodeId");
+            long nodeId = (Long) content.get("nodeId");
             NodeDO nodeDO = nodeDOMap.get(nodeId);
 
-            m.setCommentId((Integer)content.get("commentId"));
+            m.setCommentId((Long)content.get("commentId"));
             m.setNode(Converter.INSTANCE.toNodeDTOV1(nodeDO));
             m.setCommenter(Converter.INSTANCE.toUserDTOV4(userDOMap.get(content.get("commenterId"))));
             messageDTO = m;
         } else if (messageDO.getType() == upvote.value) {
             UpvoteMessageDTO m = new UpvoteMessageDTO();
             if (content.containsKey("postingId")) {
-                int postId = (Integer) content.get("postingId");
+                long postId = (Long) content.get("postingId");
                 m.setObjectId(postId);
                 m.setObjectType(Enums.ObjectType.post.value);
             } else if (content.containsKey("commentId")) {
-                int commentId = (Integer) content.get("commentId");
+                long commentId = (Long) content.get("commentId");
                 m.setObjectId(commentId);
                 m.setObjectType(Enums.ObjectType.comment.value);
             }
@@ -214,12 +215,12 @@ public class MessageService {
     public List<MessageDTO> getCourseApplyList(long senderId, long lastId) {
         List<MessageDO> messageDOList = messageMapper.getApplyCourseListByUser(senderId, lastId, 20);
 
-        Set<Integer> userIdSet = new HashSet<>();
+        Set<Long> userIdSet = new HashSet<>();
         for (MessageDO messageDO : messageDOList) {
             userIdSet.add(messageDO.getSenderId());
         }
 
-        Map<Integer, UserDO> userMap = new HashMap<>();
+        Map<Long, UserDO> userMap = new HashMap<>();
         if (userIdSet.size() != 0) {
             List<UserDO> userDOList = userMapper.getByIds(userIdSet);
             for (UserDO userDO : userDOList) {
@@ -266,7 +267,7 @@ public class MessageService {
         createSystemMessage(follow.value, recieverId, Util.toJson(messageMap));
     }
 
-    public void createUpvoteMessage(int recieverId, int voterId, int nodeId, int objectId, int objectType, int type) {
+    public void createUpvoteMessage(long recieverId, long voterId, long nodeId, long objectId, int objectType, int type) {
         Map<String, Object> messageMap = new HashMap<>();
         messageMap.put("voterId", voterId);
         messageMap.put("type", type);

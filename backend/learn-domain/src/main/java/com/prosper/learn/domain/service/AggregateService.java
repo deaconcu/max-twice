@@ -21,11 +21,11 @@ public class AggregateService {
     private final LearningProgressService learningProgressService;
     private final NodeMapper nodeMapper;
 
-    public Utils.Pair<String, Map<Integer, NodeDTOV2>> getToc(long userId, long courseId, boolean create) {
+    public Utils.Pair<String, Map<Long, NodeDTOV2>> getToc(long userId, long courseId, boolean create) {
 
         ArrayNode arrayNode = contentsService.getToc(userId, courseId, create);
 
-        Set<Integer> keys = new HashSet<>();
+        Set<Long> keys = new HashSet<>();
         Utils.collectKeys(arrayNode, keys);
 
         List<NodeDO> nodeList = keys.isEmpty() ? new ArrayList<>() : nodeMapper.getByIds(keys.stream().toList());
@@ -34,7 +34,7 @@ public class AggregateService {
         Set<Integer> completedNodes = learningProgressService.getUserCompletedNodes(userId);
 
         // 构建包含完成状态的节点信息
-        Map<Integer, NodeDTOV2> nodeInfos = nodeList.stream()
+        Map<Long, NodeDTOV2> nodeInfos = nodeList.stream()
                 .collect(Collectors.toMap(
                         NodeDO::getId,
                         node -> Converter.INSTANCE.toNodeDTOV2(node, completedNodes.contains(node.getId()))

@@ -66,7 +66,7 @@ public class LearningProgressService {
             }
             
             // 1. 立即更新Redis（用户立即看到结果）
-            Long added = redisTemplate.opsForSet().add(key, nodeId.toString());
+            Long added = redisTemplate.opsForSet().add(key, Long.toString(nodeId));
             redisTemplate.expire(key, CACHE_EXPIRE_TIME);
             
             boolean isNewlyAdded = added > 0;
@@ -84,7 +84,7 @@ public class LearningProgressService {
                     // 数据库更新失败，记录到待补偿队列
                     log.warn("Database sync failed for user {}, added to retry queue: {}", 
                         userId, dbException.getMessage());
-                    redisTemplate.opsForSet().add(SYNC_FAILED_USERS_KEY, userId.toString());
+                    redisTemplate.opsForSet().add(SYNC_FAILED_USERS_KEY, Long.toString(userId));
                 }
             } else {
                 log.debug("Node {} already completed by user {}", nodeId, userId);
@@ -117,7 +117,7 @@ public class LearningProgressService {
             }
             
             // 1. 立即更新Redis
-            Long removed = redisTemplate.opsForSet().remove(key, nodeId.toString());
+            Long removed = redisTemplate.opsForSet().remove(key, Long.toString(nodeId));
             
             boolean wasRemoved = removed > 0;
             
@@ -134,7 +134,7 @@ public class LearningProgressService {
                     // 数据库更新失败，记录到待补偿队列
                     log.warn("Database sync failed for user {}, added to retry queue: {}", 
                         userId, dbException.getMessage());
-                    redisTemplate.opsForSet().add(SYNC_FAILED_USERS_KEY, userId.toString());
+                    redisTemplate.opsForSet().add(SYNC_FAILED_USERS_KEY, Long.toString(userId));
                 }
             } else {
                 log.debug("Node {} was not completed by user {}", nodeId, userId);
@@ -157,7 +157,7 @@ public class LearningProgressService {
      * @param nodeId 节点ID
      * @return 是否成功移除
      */
-    private boolean fallbackUnmarkToDatabase(Integer userId, Integer nodeId) {
+    private boolean fallbackUnmarkToDatabase(long userId, long nodeId) {
         try {
             // 从数据库读取现有数据
             UserProgressDO record = userProgressMapper.getByUserId(userId);
@@ -166,7 +166,7 @@ public class LearningProgressService {
                 return false; // 没有完成记录
             }
             
-            Set<Integer> completedNodes = parseNodeIds(record.getNodeIds());
+            Set<Long> completedNodes = parseNodeIds(record.getNodeIds());
             
             // 检查是否存在
             if (!completedNodes.contains(nodeId)) {
@@ -236,7 +236,7 @@ public class LearningProgressService {
      * @param userId 用户ID
      * @return 已完成的节点ID集合
      */
-    public Set<Integer> getUserCompletedNodes(Integer userId) {
+    public Set<Integer> getUserCompletedNodes(long userId) {
         try {
             String key = USER_COMPLETED_KEY_PREFIX + userId;
             
@@ -325,7 +325,7 @@ public class LearningProgressService {
      * 
      * @param userId 用户ID
      */
-    private void syncUserToDatabase(Integer userId) {
+    private void syncUserToDatabase(long userId) {
         try {
             String key = USER_COMPLETED_KEY_PREFIX + userId;
             
@@ -367,12 +367,12 @@ public class LearningProgressService {
      * @param nodeId 节点ID
      * @return 是否成功添加
      */
-    private boolean fallbackToDatabase(Integer userId, Integer nodeId) {
+    private boolean fallbackToDatabase(long userId, long nodeId) {
         try {
             // 从数据库读取现有数据
             UserProgressDO record = userProgressMapper.getByUserId(userId);
             
-            Set<Integer> completedNodes = new HashSet<>();
+            Set<Long> completedNodes = new HashSet<>();
             if (record != null && record.getNodeIds() != null && !record.getNodeIds().isEmpty()) {
                 completedNodes = parseNodeIds(record.getNodeIds());
             }
@@ -462,7 +462,7 @@ public class LearningProgressService {
     /**
      * 解析逗号分隔的节点ID字符串
      */
-    private Set<Integer> parseNodeIds(String nodeIdsString) {
+    private Set<Long> parseNodeIds(String nodeIdsString) {
         if (nodeIdsString == null || nodeIdsString.trim().isEmpty()) {
             return new HashSet<>();
         }
@@ -471,7 +471,7 @@ public class LearningProgressService {
             return Arrays.stream(nodeIdsString.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .map(Integer::parseInt)
+                .map(Long::parseLong)
                 .collect(Collectors.toSet());
         } catch (NumberFormatException e) {
             log.error("Error parsing node IDs string: {}", nodeIdsString, e);
@@ -575,7 +575,7 @@ public class LearningProgressService {
      * @param nodeId 节点ID（用于日志）
      * @param courseId 课程ID
      */
-    private void updateCourseProgress(Integer userId, Integer nodeId, Integer courseId) {
+    private void updateCourseProgress(long userId, long nodeId, long courseId) {
         try {
             // 1. 获取用户目录1的内容
             String toc1Content = contentsService.getToc(userId, courseId, 1);

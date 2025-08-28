@@ -255,20 +255,20 @@ public class RoadmapService {
 
                 // 解析nodes - 格式: [1,2,3]
                 List<Object> nodeIdsRaw = contentData.get(1);
-                List<Integer> nodeIds = new ArrayList<>();
+                List<Long> nodeIds = new ArrayList<>();
                 for (Object nodeIdObj : nodeIdsRaw) {
                     if (nodeIdObj instanceof Number) {
-                        nodeIds.add(((Number) nodeIdObj).intValue());
+                        nodeIds.add(((Number) nodeIdObj).longValue());
                     }
                 }
 
                 // 获取课程名称
-                Map<Integer, String> courseNames = getCourseNames(nodeIds);
+                Map<Long, String> courseNames = getCourseNames(nodeIds);
 
                 // 批量查询用户对这些课程的学习进度
                 Map<Long, UserCourseDO> userCourseMap = userCourseService.getUserCoursesBatch(userId, new ArrayList<>(nodeIds));
 
-                for (Integer nodeId : nodeIds) {
+                for (long nodeId : nodeIds) {
                     String courseName = courseNames.getOrDefault(nodeId, "课程" + nodeId);
 
                     UserCourseDO userCourse = userCourseMap.get((long)nodeId);
@@ -294,8 +294,8 @@ public class RoadmapService {
         }
     }
 
-    private Map<Integer, String> getCourseNames(List<Integer> courseIds) {
-        Map<Integer, String> courseNames = new HashMap<>();
+    private Map<Long, String> getCourseNames(List<Long> courseIds) {
+        Map<Long, String> courseNames = new HashMap<>();
         if (courseIds.isEmpty()) {
             return courseNames;
         }
@@ -308,7 +308,7 @@ public class RoadmapService {
         } catch (Exception e) {
             log.error("Failed to get course names for courseIds: {}", courseIds, e);
             // 如果查询失败，使用默认名称
-            for (Integer id : courseIds) {
+            for (long id : courseIds) {
                 courseNames.put(id, "课程" + id);
             }
         }

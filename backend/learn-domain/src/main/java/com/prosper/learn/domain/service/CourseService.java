@@ -121,7 +121,7 @@ public class CourseService {
         course.setDescription(courseDTO.getDescription());
 
         // 修正：parent 现在是对象类型，需要获取其 id
-        Integer parentId = 0;
+        long parentId = 0;
         if (courseDTO.getParentId() != null && courseDTO.getParentId() <= 0) {
             parentId = courseDTO.getParentId();
         }
@@ -138,7 +138,7 @@ public class CourseService {
         course.setMainCategory(courseDTO.getMainCategory());
         course.setSubCategory(courseDTO.getSubCategory());
         course.setState("SUBMITTED");
-        course.setRootNode(0);
+        course.setRootNode(0L);
         courseMapper.insert(course);
 
         NodeDO nodeDO = NodeDO.createRoot(course.getCreator(), course.getId());
@@ -160,7 +160,7 @@ public class CourseService {
         subCourse.setCreator(userId);
         subCourse.setParent(parentId);
         subCourse.setState("SUBMITTED");
-        subCourse.setRootNode(0); // 子课程的 rootNode 初始为 0
+        subCourse.setRootNode(0L); // 子课程的 rootNode 初始为 0
         subCourse.setMainCategory(parentCourse.getMainCategory());
         subCourse.setSubCategory(parentCourse.getSubCategory());
 
@@ -177,7 +177,7 @@ public class CourseService {
     public List<CourseDTOV4> getHotCourses(int limit) {
         try {
             // 从Redis获取热门课程ID列表
-            List<Integer> hotCourseIds = courseRankingService.getHotCourseIds(limit);
+            List<Long> hotCourseIds = courseRankingService.getHotCourseIds(limit);
             
             if (hotCourseIds.isEmpty()) {
                 return new ArrayList<>();
@@ -214,7 +214,7 @@ public class CourseService {
     public List<CourseDTOV4> getHotCoursesRanking() {
         try {
             // 获取前100名热门课程
-            List<Integer> hotCourseIds = courseRankingService.getHotCourseIds(100);
+            List<Long> hotCourseIds = courseRankingService.getHotCourseIds(100);
             
             if (hotCourseIds.isEmpty()) {
                 return new ArrayList<>();

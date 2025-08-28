@@ -92,7 +92,7 @@ public class CourseRankingService {
     /**
      * 获取热门课程ID列表（按分数降序）
      */
-    public List<Integer> getHotCourseIds(int limit) {
+    public List<Long> getHotCourseIds(int limit) {
         try {
             Set<String> courseIds = redisTemplate.opsForZSet().reverseRange(HOT_COURSES_KEY, 0, limit - 1);
             if (courseIds == null || courseIds.isEmpty()) {
@@ -100,7 +100,7 @@ public class CourseRankingService {
             }
             
             return courseIds.stream()
-                    .map(Integer::parseInt)
+                    .map(Long::parseLong)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("Failed to get hot course ids", e);
@@ -111,7 +111,7 @@ public class CourseRankingService {
     /**
      * 获取课程的收藏数和学习数
      */
-    public CourseStats getCourseStats(int courseId) {
+    public CourseStats getCourseStats(long courseId) {
         try {
             String subscriptionKey = COURSE_SUBSCRIPTION_PREFIX + courseId;
             String learningKey = COURSE_LEARNING_PREFIX + courseId;

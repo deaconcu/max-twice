@@ -277,7 +277,7 @@ public class DailyStatsService {
     /**
      * 确保用户的年度统计记录存在
      */
-    private void ensureUserYearRecord(Integer userId, int year) {
+    private void ensureUserYearRecord(long userId, int year) {
         UserStatsDO existing = userStatsMapper.getByUserIdAndYear(userId, year);
         if (existing == null) {
             UserStatsDO yearRecord = new UserStatsDO();
@@ -666,7 +666,7 @@ public class DailyStatsService {
      * @param date 日期字符串
      * @return 解析后的用户统计对象
      */
-    private UserStatsDTO parseUserStatsFromRedis(Integer userId, Map<Object, Object> stats, String date) {
+    private UserStatsDTO parseUserStatsFromRedis(long userId, Map<Object, Object> stats, String date) {
         long totalViews = 0;
         long totalTwice = 0;
         long totalHelpful = 0;
@@ -718,7 +718,7 @@ public class DailyStatsService {
      * @param date 查询日期
      * @return 当日各项统计数据的映射，key为统计类型，value为数值
      */
-    public Map<String, Integer> getUserDayStats(Integer userId, LocalDate date) {
+    public Map<String, Integer> getUserDayStats(long userId, LocalDate date) {
         try {
             int year = date.getYear();
             String dayKey = date.getMonthValue() + "-" + date.getDayOfMonth();
@@ -748,7 +748,7 @@ public class DailyStatsService {
      * @param year 查询年份
      * @return 年度统计数据，外层key为dayKey（如"1-15"），内层key为统计类型
      */
-    public Map<String, Map<String, Integer>> getUserYearStats(Integer userId, int year) {
+    public Map<String, Map<String, Integer>> getUserYearStats(long userId, int year) {
         try {
             UserStatsDO yearStats = userStatsMapper.getByUserIdAndYear(userId, year);
             if (yearStats == null || yearStats.getStats() == null) {
@@ -986,7 +986,7 @@ public class DailyStatsService {
      * @param postId 文章ID
      * @return 总阅读量
      */
-    public int getPostTotalViews(Integer postId) {
+    public int getPostTotalViews(long postId) {
         try {
             // 获取历史阅读量（昨天以前的数据，带缓存）
             int historicalViews = getHistoricalViews(postId);
@@ -1011,7 +1011,7 @@ public class DailyStatsService {
      * 获取历史阅读量（昨天以前的数据，每天最多计算一次）
      */
     @Cacheable(value = "postHistoricalViews", key = "#postId + '_' + T(java.time.LocalDate).now().toString()")
-    private int getHistoricalViews(Integer postId) {
+    private int getHistoricalViews(long postId) {
         try {
             int totalViews = 0;
             LocalDate today = LocalDate.now();
@@ -1063,7 +1063,7 @@ public class DailyStatsService {
     /**
      * 获取今日实时阅读量（从Redis获取）
      */
-    public int getTodayViews(Integer postId) {
+    public int getTodayViews(long postId) {
         try {
             String today = LocalDate.now().toString();
             String redisKey = "stats:" + today + ":post";
@@ -1100,7 +1100,7 @@ public class DailyStatsService {
         for (PostDTOV2 postObj : postList) {
             try {
                 // 使用反射获取postId和设置views
-                Integer postId = postObj.getId();
+                Long postId = postObj.getId();
                 if (postId != null) {
                     int totalViews = getPostTotalViews(postId);
                     postObj.setViews(totalViews);

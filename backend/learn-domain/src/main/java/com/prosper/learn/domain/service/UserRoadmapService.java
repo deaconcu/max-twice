@@ -98,17 +98,17 @@ public class UserRoadmapService {
         }
 
         // 提取所有 roadmap IDs
-        List<Integer> roadmapIds = userRoadmapList.stream()
-                .map(progress -> progress.getRoadmapId().intValue())
+        List<Long> roadmapIds = userRoadmapList.stream()
+                .map(progress -> progress.getRoadmapId().longValue())
                 .collect(Collectors.toList());
 
         // 批量查询 roadmap 信息
         List<RoadmapDO> roadmapDOList = roadmapMapper.getByIds(roadmapIds);
-        Map<Integer, RoadmapDO> roadmapMap = roadmapDOList.stream()
+        Map<Long, RoadmapDO> roadmapMap = roadmapDOList.stream()
                 .collect(Collectors.toMap(RoadmapDO::getId, roadmap -> roadmap));
 
         // 提取所有 profession IDs
-        List<Integer> professionIds = roadmapDOList.stream()
+        List<Long> professionIds = roadmapDOList.stream()
                 .map(RoadmapDO::getProfessionId)
                 .distinct()
                 .collect(Collectors.toList());

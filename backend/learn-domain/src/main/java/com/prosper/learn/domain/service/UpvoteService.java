@@ -144,7 +144,7 @@ public class UpvoteService {
         if (commentDO == null) return;
 
         // get node id
-        int nodeId = 0;
+        long nodeId = 0;
         if (commentDO.getType() == ObjectType.node.value) {
             nodeId = commentDO.getObjectId();
         } else if (commentDO.getType() == ObjectType.post.value) {
@@ -188,7 +188,7 @@ public class UpvoteService {
      * @param userId 用户ID
      */
     @Transactional
-    public boolean upvoteRoadmap(int roadmapId, int userId) {
+    public boolean upvoteRoadmap(long roadmapId, long userId) {
         // 检查是否已经投过票
         UpvoteDO existingUpvote = upvoteMapper.get(userId, roadmapId, ObjectType.roadmap.value);
 
@@ -216,7 +216,7 @@ public class UpvoteService {
      * @param userId 用户ID
      * @return true表示已投票，false表示未投票
      */
-    public boolean hasUpvotedRoadmap(int roadmapId, int userId) {
+    public boolean hasUpvotedRoadmap(long roadmapId, int userId) {
         UpvoteDO upvoteDO = upvoteMapper.get(userId, roadmapId, ObjectType.roadmap.value);
         return upvoteDO != null;
     }

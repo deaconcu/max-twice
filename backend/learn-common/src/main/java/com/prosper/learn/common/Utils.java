@@ -87,13 +87,13 @@ public class Utils {
     /**
      * 获得json串的所有key
      */
-    public static void collectKeys(JsonNode node, Set<Integer> keys) {
+    public static void collectKeys(JsonNode node, Set<Long> keys) {
         if (node.isObject()) {  // 如果节点是对象
             Iterator<String> fieldNames = node.fieldNames();
             while (fieldNames.hasNext()) {
                 String fieldName = fieldNames.next();
                 if (fieldName.equals("+") || fieldName.equals("^")) continue;
-                keys.add(Integer.parseInt(fieldName));
+                keys.add(Long.parseLong(fieldName));
                 collectKeys(node.get(fieldName), keys);  // 递归遍历子节点
             }
         } else if (node.isArray()) {  // 如果节点是数组

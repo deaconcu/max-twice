@@ -22,7 +22,7 @@ public interface NodeMapper {
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
     @MapKey("id")
-    Map<Integer, NodeDO> getMapByIds(Collection<Long> ids);
+    Map<Long, NodeDO> getMapByIds(Collection<Long> ids);
 
     @Select("SELECT * FROM node where parent = #{parentId}")
     List<NodeDO> getByParent(long parentId);

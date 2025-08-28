@@ -52,7 +52,7 @@ public class RedisStatsService {
      * @param articleId 文章ID
      * @param userId 用户ID，可以为null（匿名访问）
      */
-    public void recordArticleView(Long articleId, Integer userId) {
+    public void recordArticleView(long articleId, long userId) {
         String today = LocalDate.now().toString();
         
         try {
@@ -63,13 +63,11 @@ public class RedisStatsService {
             redisTemplate.expire(postKey, Duration.ofDays(3));
             
             // 用户维度统计：记录用户访问了多少篇文章（只有登录用户才统计）
-            if (userId != null) {
-                String userKey = "stats:" + today + ":user";
-                String userField = userId + ":view";
-                redisTemplate.opsForHash().increment(userKey, userField, 1);
-                redisTemplate.expire(userKey, Duration.ofDays(3));
-            }
-            
+            String userKey = "stats:" + today + ":user";
+            String userField = userId + ":view";
+            redisTemplate.opsForHash().increment(userKey, userField, 1);
+            redisTemplate.expire(userKey, Duration.ofDays(3));
+
             log.debug("记录文章访问: articleId={}, userId={}", articleId, userId);
         } catch (Exception e) {
             log.error("记录文章访问失败: articleId={}, userId={}", articleId, userId, e);
@@ -94,7 +92,7 @@ public class RedisStatsService {
      * @param userId 用户ID
      * @param upvoteType 点赞类型（twice, helpful）
      */
-    public void recordUpvote(Long articleId, Integer userId, String upvoteType) {
+    public void recordUpvote(long articleId, long userId, String upvoteType) {
         String today = LocalDate.now().toString();
         
         try {
@@ -134,7 +132,7 @@ public class RedisStatsService {
      * @param userId 用户ID
      * @param upvoteType 点赞类型（twice, helpful）
      */
-    public void removeUpvote(Long articleId, Integer userId, String upvoteType) {
+    public void removeUpvote(long articleId, long userId, String upvoteType) {
         String today = LocalDate.now().toString();
         
         try {

@@ -96,8 +96,8 @@ public class UserCourseService {
         List<UserCourseDTO> dtoList = Converter.INSTANCE.toUserCourseDTO(userCourseDOList);
 
         // 批量加载课程信息
-        Set<Integer> courseIds = userCourseDOList.stream()
-            .map(progress -> progress.getCourseId().intValue())
+        Set<Long> courseIds = userCourseDOList.stream()
+            .map(progress -> progress.getCourseId().longValue())
             .collect(Collectors.toSet());
 
         if (!courseIds.isEmpty()) {
@@ -175,18 +175,13 @@ public class UserCourseService {
      * @param courseIds 课程ID列表
      * @return 课程ID到用户课程DTO的映射
      */
-    public Map<Long, UserCourseDO> getUserCoursesBatch(int userId, List<Integer> courseIds) {
+    public Map<Long, UserCourseDO> getUserCoursesBatch(long userId, List<Long> courseIds) {
         if (courseIds == null || courseIds.isEmpty()) {
             return Map.of();
         }
         
-        // 转换为Long类型的课程ID列表
-        List<Long> longCourseIds = courseIds.stream()
-                .map(Integer::longValue)
-                .collect(Collectors.toList());
-        
         // 批量查询用户课程记录，直接返回Map
-        Map<Long, UserCourseDO> userCourseMap = userCourseMapper.getByUserIdAndCourseIdsAsMap((long) userId, longCourseIds);
+        Map<Long, UserCourseDO> userCourseMap = userCourseMapper.getByUserIdAndCourseIdsAsMap((long) userId, courseIds);
         return userCourseMap;
     }
 }

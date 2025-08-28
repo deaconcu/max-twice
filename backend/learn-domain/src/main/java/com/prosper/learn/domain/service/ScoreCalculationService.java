@@ -207,7 +207,7 @@ public class ScoreCalculationService {
     /**
      * 获取文章或路线图的每日点赞历史数据，包含分数和样本数
      */
-    private Map<LocalDate, DailyData> getDailyUpvoteHistory(int objectId, String objectType) {
+    private Map<LocalDate, DailyData> getDailyUpvoteHistory(long objectId, String objectType) {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(MAX_DAYS_HISTORY);
 

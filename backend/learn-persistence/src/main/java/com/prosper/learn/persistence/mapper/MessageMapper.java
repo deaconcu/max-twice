@@ -21,16 +21,22 @@ public interface MessageMapper {
     List<MessageDO> listAll(int type, int limit, int offset);
 
     @Select("SELECT * FROM message " +
-            "where (sender_id = #{userId1} and receiver_id = #{userId2}) or (sender_id = #{userId2} and receiver_id = #{userId1})" +
+            "WHERE type = #{type} and id < #{lastId}" +
             "ORDER BY created_at DESC " +
-            "LIMIT #{offset}, #{limit}")
-    List<MessageDO> getConversationByUser(long userId1, long userId2, int offset, int limit);
+            "LIMIT #{limit}")
+    List<MessageDO> listByPull(int type, long lastId, int limit);
 
     @Select("SELECT * FROM message " +
-            "where type = #{type} and sender_id = #{sender} and receiver_id = #{receiver} " +
+            "where (sender_id = #{userId1} and receiver_id = #{userId2}) or (sender_id = #{userId2} and receiver_id = #{userId1}) and id < #{lastId}" +
             "ORDER BY created_at DESC " +
             "LIMIT #{offset}, #{limit}")
-    List<MessageDO> getListByUser(int type, long sender, long receiver, int offset, int limit);
+    List<MessageDO> getConversationByUser(long userId1, long userId2, long lastId, int limit);
+
+    @Select("SELECT * FROM message " +
+            "where type = #{type} and sender_id = #{sender} and receiver_id = #{receiver} and id < #{lastId} " +
+            "ORDER BY created_at DESC " +
+            "LIMIT #{limit}")
+    List<MessageDO> getListByUser(int type, long sender, long receiver, long lastId, int limit);
 
     @Select("SELECT * FROM message " +
             "where (sender_id = 0 and receiver_id = #{userId}) and type in (2, 3, 4, 5, 6, 7, 8) and id < #{lastId} " +

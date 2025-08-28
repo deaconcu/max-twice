@@ -21,7 +21,7 @@ public interface PostMapper {
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
     @MapKey("id")
-    Map<Integer, PostDO> getMapByIds(Collection<Long> ids);
+    Map<Long, PostDO> getMapByIds(Collection<Long> ids);
 
     @Select("SELECT * FROM post " +
             "WHERE node_id = #{nodeId} and state = #{state} " +

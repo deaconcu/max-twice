@@ -89,7 +89,7 @@ public class ContentsService {
     /**
      * 返回用户在某个课程下的目录JSON
      */
-    public String getToc(int userId, int courseId, int tocIndex) {
+    public String getToc(long userId, long courseId, int tocIndex) {
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {
             throw new RuntimeException("course is not exist");
@@ -268,7 +268,7 @@ public class ContentsService {
     /**
      * 设置置顶
      */
-    private String insertContents(String contents, String path, int value, boolean add) {
+    private String insertContents(String contents, String path, long value, boolean add) {
         try {
             ObjectNode rootNode = (ObjectNode)objectMapper.readTree(contents);
             ObjectNode node = rootNode;
