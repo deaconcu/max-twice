@@ -37,10 +37,6 @@ public class CacheConfig extends CachingConfigurerSupport {
         
         // 平台统计数据缓存：30分钟过期
         cacheConfigurations.put("platformStats", defaultConfig.entryTtl(Duration.ofMinutes(30)));
-        
-        // 可以在这里添加其他缓存的配置
-        // cacheConfigurations.put("userInfo", defaultConfig.entryTtl(Duration.ofHours(1)));
-        // cacheConfigurations.put("courseList", defaultConfig.entryTtl(Duration.ofMinutes(5)));
 
         return RedisCacheManager.builder(redisConnectionFactory)
                 .cacheDefaults(defaultConfig)
