@@ -9,37 +9,33 @@ import java.util.List;
 public interface CourseMapper {
 
     @Select("SELECT * FROM course WHERE id = #{id}")
-    CourseDO getById(@Param("id") int id);
+    CourseDO getById(int id);
 
     @Select({"<script>SELECT * FROM course where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
-    List<CourseDO> getByIds(@Param("ids") List<Integer> ids);
+    List<CourseDO> getByIds(List<Integer> ids);
 
     @Select("SELECT * FROM course WHERE name LIKE CONCAT('%', #{name}, '%') limit #{limit}")
-    List<CourseDO> searchByName(@Param("name") String name, @Param("limit") int limit);
+    List<CourseDO> searchByName(String name, int limit);
 
-    @Select("SELECT * FROM course where state = #{state} and parent = #{parent} ORDER BY ctime DESC")
-    List<CourseDO> listByParentAndState(@Param("state") String state,
-                                        @Param("parent") int parent);
+    @Select("SELECT * FROM course where state = #{state} and parent = #{parent} ORDER BY created_at DESC")
+    List<CourseDO> listByParentAndState(String state, int parent);
 
-    @Select("SELECT * FROM course where parent = #{parent} ORDER BY ctime DESC")
-    List<CourseDO> listByParent(@Param("parent") int parent);
+    @Select("SELECT * FROM course where parent = #{parent} ORDER BY created_at DESC")
+    List<CourseDO> listByParent(int parent);
 
-    @Select("SELECT * FROM course where state = #{state} and creator = #{creator} ORDER BY ctime DESC LIMIT #{offset}, #{limit}")
-    List<CourseDO> list(@Param("state") String state,
-                        @Param("creator") int creator,
-                        @Param("limit") int limit,
-                        @Param("offset") int offset);
+    @Select("SELECT * FROM course where state = #{state} and creator = #{creator} ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
+    List<CourseDO> list(String state, int creator, int limit, int offset);
 
     // 新增：根据状态和lastId获取列表
-    @Select("SELECT * FROM course WHERE state = #{state} AND id > #{lastId} ORDER BY utime DESC LIMIT 20")
-    List<CourseDO> listByStateAndLastId(@Param("state") String state, @Param("lastId") int lastId);
+    @Select("SELECT * FROM course WHERE state = #{state} AND id > #{lastId} ORDER BY updated_at DESC LIMIT 20")
+    List<CourseDO> listByStateAndLastId(String state, int lastId);
 
     // 新增：根据主分类和子分类获取已批准的课程列表
     @Select("SELECT * FROM course WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} " +
             "AND state = 'APPROVED' AND parent = 0 ORDER BY id ASC LIMIT 20")
-    List<CourseDO> listRootByCategory(@Param("mainCategory") int mainCategory, @Param("subCategory") int subCategory);
+    List<CourseDO> listRootByCategory(int mainCategory, int subCategory);
 
     @Insert("INSERT INTO course(name, description, creator, parent, state, root_node, main_category, sub_category) " +
             "VALUES (#{name}, #{description}, #{creator}, #{parent}, #{state}, #{rootNode}, #{mainCategory}, #{subCategory})")
@@ -51,14 +47,14 @@ public interface CourseMapper {
     void update(CourseDO course);
 
     // 新增：课程状态操作方法
-    @Update("UPDATE course SET state = 'APPROVED', rejected_reason = '', utime = CURRENT_TIMESTAMP WHERE id = #{id}")
-    int approve(@Param("id") int id);
+    @Update("UPDATE course SET state = 'APPROVED', rejected_reason = '', updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")
+    int approve(int id);
 
-    @Update("UPDATE course SET state = 'REJECTED', rejected_reason = #{rejectedReason}, utime = CURRENT_TIMESTAMP WHERE id = #{id}")
-    int reject(@Param("id") int id, @Param("rejectedReason") String rejectedReason);
+    @Update("UPDATE course SET state = 'REJECTED', rejected_reason = #{rejectedReason}, updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")
+    int reject(int id, String rejectedReason);
 
     @Delete("DELETE FROM course WHERE id = #{id}")
-    int delete(@Param("id") int id);
+    int delete(int id);
     
     // 平台统计相关方法
     @Select("SELECT COUNT(*) FROM course WHERE state = 'APPROVED'")

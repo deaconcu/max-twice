@@ -20,12 +20,11 @@ public interface UserStatsMapper {
     int updateStats(UserStatsDO userStats);
 
     @Select("SELECT * FROM user_stats WHERE user_id = #{userId} AND stat_year = #{statYear}")
-    UserStatsDO getByUserIdAndYear(@Param("userId") Integer userId, @Param("statYear") Integer statYear);
+    UserStatsDO getByUserIdAndYear(Integer userId, Integer statYear);
 
     @Select("SELECT * FROM user_stats WHERE user_id = #{userId} " +
             "AND stat_year >= #{startYear} ORDER BY stat_year DESC")
-    List<UserStatsDO> getStatsInYearRange(@Param("userId") Integer userId,
-                                          @Param("startYear") Integer startYear);
+    List<UserStatsDO> getStatsInYearRange(Integer userId, Integer startYear);
 
     // ===== 实时统计操作（增量更新）=====
     
@@ -42,11 +41,7 @@ public interface UserStatsMapper {
             "), " +
             "updated_at = NOW() " +
             "WHERE user_id = #{userId} AND stat_year = #{statYear}")
-    int incrementUserStatsCount(@Param("userId") Integer userId,
-                               @Param("statYear") Integer statYear,
-                               @Param("dayKey") String dayKey,
-                               @Param("statType") String statType,
-                               @Param("count") Integer count);
+    int incrementUserStatsCount(Integer userId, Integer statYear, String dayKey, String statType, Integer count);
 
     // ===== 同步操作（直接覆盖）=====
     
@@ -64,13 +59,8 @@ public interface UserStatsMapper {
             "), " +
             "updated_at = NOW() " +
             "WHERE user_id = #{userId} AND stat_year = #{statYear}")
-    int setUserDayStats(@Param("userId") Integer userId,
-                       @Param("statYear") Integer statYear,
-                       @Param("dayKey") String dayKey,
-                       @Param("views") Integer views,
-                       @Param("twice") Integer twice,
-                       @Param("helpful") Integer helpful,
-                       @Param("comments") Integer comments);
+    int setUserDayStats(Integer userId, Integer statYear, String dayKey, Integer views, Integer twice,
+                        Integer helpful, Integer comments);
 
     // ===== 查询操作 =====
     
@@ -78,8 +68,6 @@ public interface UserStatsMapper {
     @Select("SELECT JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\"')) " +
             "FROM user_stats " +
             "WHERE user_id = #{userId} AND stat_year = #{statYear}")
-    String getDayStats(@Param("userId") Integer userId,
-                      @Param("statYear") Integer statYear,
-                      @Param("dayKey") String dayKey);
+    String getDayStats(Integer userId, Integer statYear, String dayKey);
 
 }

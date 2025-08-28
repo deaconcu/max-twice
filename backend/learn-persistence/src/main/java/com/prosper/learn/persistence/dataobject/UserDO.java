@@ -23,7 +23,7 @@ public class UserDO {
 
     private LocalDateTime msgReadTime;
 
-    private LocalDateTime cTime;
+    private LocalDateTime createdAt;
 
-    private LocalDateTime uTime;
+    private LocalDateTime updatedAt;
 }

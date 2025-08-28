@@ -1,6 +1,5 @@
 package com.prosper.learn.persistence.dataobject;
 
-import com.prosper.learn.common.Utils;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -24,9 +23,9 @@ public class NodeDO {
 
     private Integer state;
 
-    private LocalDateTime cTime;
+    private LocalDateTime createdAt;
 
-    private LocalDateTime uTime;
+    private LocalDateTime updatedAt;
 
     public static NodeDO createRoot(Long creator, Long courseId) {
         NodeDO node = new NodeDO();
@@ -35,8 +34,8 @@ public class NodeDO {
         node.setCourseId(courseId);
         node.setCreator(creator);
         node.setRoot(0L);
-        node.setCTime(LocalDateTime.now());
-        node.setUTime(LocalDateTime.now());
+        node.setCreatedAt(LocalDateTime.now());
+        node.setUpdatedAt(LocalDateTime.now());
         return node;
     }
 }

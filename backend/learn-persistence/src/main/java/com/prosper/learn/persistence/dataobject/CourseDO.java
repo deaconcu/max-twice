@@ -27,7 +27,7 @@ public class CourseDO {
 
     private String rejectedReason; // 拒绝原因，默认为空字符串
 
-    private LocalDateTime cTime;
+    private LocalDateTime createdAt;
 
-    private LocalDateTime uTime;
+    private LocalDateTime updatedAt;
 }

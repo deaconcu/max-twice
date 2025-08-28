@@ -31,8 +31,8 @@ public class PostDO {
 
     private LocalDateTime scoreCalculatedAt;  // 分数计算时间
 
-    private LocalDateTime cTime;
+    private LocalDateTime createdAt;
 
-    private LocalDateTime uTime;
+    private LocalDateTime updatedAt;
 
 }

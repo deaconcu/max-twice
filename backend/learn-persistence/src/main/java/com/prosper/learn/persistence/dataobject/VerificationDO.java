@@ -14,16 +14,16 @@ public class VerificationDO {
 
     private String code;
 
-    private LocalDateTime cTime;
+    private LocalDateTime createdAt;
 
     private Boolean used;
 
-    public VerificationDO(){}
+    public VerificationDO() { }
 
     public VerificationDO(String email, String code) {
         this.email = email;
         this.code = code;
-        this.cTime = Utils.getLocalDateTime();
+        this.createdAt = Utils.getLocalDateTime();
         this.used = false;
     }
 

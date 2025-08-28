@@ -11,5 +11,5 @@ public class FollowDO {
 
     private Long followerId;
 
-    private LocalDateTime createTime;
+    private LocalDateTime createdAt;
 }

@@ -11,7 +11,7 @@ public interface UserCourseTocMapper {
     UserCourseTocDO get(int id);
 
     @Select("SELECT * FROM user_course_toc WHERE user_id = #{userId} and course_id = #{courseId}")
-    UserCourseTocDO getByUserAndCourse(@Param("userId") int userId, @Param("courseId") int courseId);
+    UserCourseTocDO getByUserAndCourse(int userId, int courseId);
 
     @Insert("INSERT INTO user_course_toc(user_id, course_id, toc) " +
         "VALUES (#{userId}, #{courseId}, #{toc})")

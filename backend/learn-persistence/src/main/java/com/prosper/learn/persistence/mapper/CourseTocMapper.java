@@ -17,14 +17,14 @@ public interface CourseTocMapper {
             "<foreach item='hash' collection='hashes' open='(' separator=', ' close=')'>#{hash}</foreach>" +
             "</script>"})
     @MapKey("hash")
-    Map<String, CourseTocDO> getByHashes(@Param("hashes") String[] hashes);
+    Map<String, CourseTocDO> getByHashes(String[] hashes);
 
     @Insert("INSERT INTO course_toc(hash, toc, ref_count) " +
         "VALUES (#{hash}, #{toc}, #{refCount})")
     int insert(CourseTocDO courseTocDO);
 
     @Update("UPDATE course_toc SET ref_count = ref_count + #{n} where hash = #{hash}")
-    void incrRef(@Param("hash") String hash, @Param("n") int n);
+    void incrRef(String hash, int n);
 
     @Delete("DELETE FROM course_toc where id = #{id}")
     void delete(int id);

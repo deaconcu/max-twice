@@ -13,7 +13,7 @@ public class ContentsDO {
 
     private String contents;
 
-    private LocalDateTime cTime;
+    private LocalDateTime createdAt;
 
-    private LocalDateTime uTime;
+    private LocalDateTime updatedAt;
 }

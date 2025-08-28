@@ -118,8 +118,8 @@ public class UserController implements UserClient {
         user.setName(userName);
         user.setEmail(email);
         user.setPassword(Utils.md5(password));
-        user.setCTime(Utils.getLocalDateTime());
-        user.setUTime(Utils.getLocalDateTime());
+        user.setCreatedAt(Utils.getLocalDateTime());
+        user.setUpdatedAt(Utils.getLocalDateTime());
         userMapper.insert(user);
 
         String code = generateVerificationCode();
@@ -382,7 +382,7 @@ public class UserController implements UserClient {
             UserDO userDO = userDOMap.get(followDO.getFolloweeId());
             followeeDTO.setName(userDO.getName());
             followeeDTO.setBiography(userDO.getBiography());
-            followeeDTO.setCreateTime(Utils.getTimeString(followDO.getCreateTime()));
+            followeeDTO.setCreateTime(Utils.getTimeString(followDO.getCreatedAt()));
             followeeDTOList.add(followeeDTO);
         }
 

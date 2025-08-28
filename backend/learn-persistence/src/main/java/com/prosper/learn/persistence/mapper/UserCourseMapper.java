@@ -58,5 +58,5 @@ public interface UserCourseMapper {
             "#{courseId}" +
             "</foreach>" +
             "</script>")
-    Map<Long, UserCourseDO> getByUserIdAndCourseIdsAsMap(@Param("userId") Long userId, @Param("courseIds") List<Long> courseIds);
+    Map<Long, UserCourseDO> getByUserIdAndCourseIdsAsMap(Long userId, List<Long> courseIds);
 }

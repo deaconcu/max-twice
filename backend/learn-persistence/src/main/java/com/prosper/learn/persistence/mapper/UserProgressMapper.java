@@ -13,7 +13,7 @@ public interface UserProgressMapper {
      * 根据用户ID查询学习记录
      */
     @Select("SELECT * FROM user_progress WHERE user_id = #{userId}")
-    UserProgressDO getByUserId(@Param("userId") Integer userId);
+    UserProgressDO getByUserId(Integer userId);
 
     /**
      * 插入新的学习记录
@@ -47,11 +47,11 @@ public interface UserProgressMapper {
      * 只获取用户完成的节点ID字符串
      */
     @Select("SELECT node_ids FROM user_progress WHERE user_id = #{userId}")
-    String getCompletedNodeIds(@Param("userId") Integer userId);
+    String getCompletedNodeIds(Integer userId);
 
     /**
      * 获取用户完成节点总数
      */
     @Select("SELECT count FROM user_progress WHERE user_id = #{userId}")
-    Integer getCompletedCount(@Param("userId") Integer userId);
+    Integer getCompletedCount(Integer userId);
 }

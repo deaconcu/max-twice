@@ -9,12 +9,12 @@ import java.util.List;
 public interface UserProfileMapper {
 
     @Select("SELECT * FROM user_profile WHERE id = #{id}")
-    UserProfileDO getById(@Param("id") int id);
+    UserProfileDO getById(int id);
 
     @Select({"<script>SELECT * FROM user_profile where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
-    List<UserProfileDO> getByIds(@Param("ids") Collection<Integer> ids);
+    List<UserProfileDO> getByIds(Collection<Integer> ids);
 
     @Insert("INSERT INTO user_profile(id, subscription, roadmap_pin) " +
             "VALUES (#{id}, #{subscription}, #{roadmapPin})")
@@ -25,9 +25,9 @@ public interface UserProfileMapper {
     void update(UserProfileDO user);
 
     @Update("UPDATE user_profile SET roadmap_pin = #{roadmapPin} where id = #{id}")
-    void updateRoadmapPin(@Param("id") int id, @Param("roadmapPin") String roadmapPin);
+    void updateRoadmapPin(int id, String roadmapPin);
 
     @Select("SELECT id, subscription FROM user_profile LIMIT #{offset}, #{limit}")
-    List<UserProfileDO> getSubscriptionDataByPage(@Param("offset") int offset, @Param("limit") int limit);
+    List<UserProfileDO> getSubscriptionDataByPage(int offset, int limit);
 
 }

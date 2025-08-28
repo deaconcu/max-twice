@@ -20,18 +20,14 @@ public interface PostStatsMapper {
     int updateStats(PostStatsDO stats);
 
     @Select("SELECT * FROM post_stats WHERE type = #{type} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    PostStatsDO getByTypeAndObjectIdAndYear(@Param("type") String type,
-                                            @Param("objectId") Long objectId,
-                                            @Param("statYear") Integer statYear);
+    PostStatsDO getByTypeAndObjectIdAndYear(String type, Long objectId, Integer statYear);
 
     @Select("SELECT * FROM post_stats WHERE type = #{type} AND object_id = #{objectId} " +
             "AND stat_year >= #{startYear} ORDER BY stat_year DESC")
-    List<PostStatsDO> getStatsInYearRange(@Param("type") String type,
-                                          @Param("objectId") Long objectId,
-                                          @Param("startYear") Integer startYear);
+    List<PostStatsDO> getStatsInYearRange(String type, Long objectId, Integer startYear);
 
     @Select("SELECT DISTINCT object_id FROM post_stats WHERE type = #{type}")
-    List<Long> getAllObjectIdsByType(@Param("type") String type);
+    List<Long> getAllObjectIdsByType(String type);
 
     // ===== 实时统计操作（增量更新）=====
     
@@ -48,12 +44,7 @@ public interface PostStatsMapper {
             "), " +
             "updated_at = NOW() " +
             "WHERE type = #{type} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    int incrementStatsCount(@Param("type") String type,
-                           @Param("objectId") Long objectId,
-                           @Param("statYear") Integer statYear,
-                           @Param("dayKey") String dayKey,
-                           @Param("statType") String statType,
-                           @Param("count") Integer count);
+    int incrementStatsCount(String type, Long objectId, Integer statYear, String dayKey, String statType, Integer count);
 
     // 使用MySQL JSON函数直接减少计数（用于撤销操作）
     @Update("UPDATE post_stats SET " +
@@ -65,12 +56,7 @@ public interface PostStatsMapper {
             "updated_at = NOW() " +
             "WHERE type = #{type} AND object_id = #{objectId} AND stat_year = #{statYear} " +
             "AND JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\"')) IS NOT NULL")
-    int decrementStatsCount(@Param("type") String type,
-                           @Param("objectId") Long objectId,
-                           @Param("statYear") Integer statYear,
-                           @Param("dayKey") String dayKey,
-                           @Param("statType") String statType,
-                           @Param("count") Integer count);
+    int decrementStatsCount(String type, Long objectId, Integer statYear, String dayKey, String statType, Integer count);
 
     // ===== 同步操作（直接覆盖）=====
     
@@ -88,14 +74,8 @@ public interface PostStatsMapper {
             "), " +
             "updated_at = NOW() " +
             "WHERE type = #{type} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    int setDayStats(@Param("type") String type,
-                   @Param("objectId") Long objectId,
-                   @Param("statYear") Integer statYear,
-                   @Param("dayKey") String dayKey,
-                   @Param("views") Integer views,
-                   @Param("twice") Integer twice,
-                   @Param("helpful") Integer helpful,
-                   @Param("comments") Integer comments);
+    int setDayStats(String type, Long objectId, Integer statYear, String dayKey, Integer views, Integer twice,
+                    Integer helpful, Integer comments);
 
     // ===== 查询操作 =====
     
@@ -103,8 +83,5 @@ public interface PostStatsMapper {
     @Select("SELECT JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\"')) " +
             "FROM post_stats " +
             "WHERE type = #{type} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    String getDayStats(@Param("type") String type,
-                      @Param("objectId") Long objectId,
-                      @Param("statYear") Integer statYear,
-                      @Param("dayKey") String dayKey);
+    String getDayStats(String type, Long objectId, Integer statYear, String dayKey);
 }

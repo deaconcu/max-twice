@@ -11,32 +11,32 @@ public interface NodeMapper {
 
 
     @Select("SELECT * FROM node WHERE id = #{id}")
-    NodeDO getById(@Param("id") int id);
+    NodeDO getById(int id);
 
     @Select({"<script>SELECT * FROM node where id in " +
                  "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
              "</script>"})
-    List<NodeDO> getByIds(@Param("ids") List<Integer> ids);
+    List<NodeDO> getByIds(List<Integer> ids);
 
     @Select({"<script>SELECT * FROM node where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
     @MapKey("id")
-    Map<Integer, NodeDO> getMapByIds(@Param("ids") Collection<Integer> ids);
+    Map<Integer, NodeDO> getMapByIds(Collection<Integer> ids);
 
     @Select("SELECT * FROM node where parent = #{parentId}")
     List<NodeDO> getByParent(int parentId);
 
     /*
     @Select("SELECT * FROM node limit #{offset}, #{limit}")
-    List<NodeDO> list(@Param("limit") int limit, @Param("offset") int offset);
+    List<NodeDO> list(int limit, int offset);
      */
 
     @Select("SELECT * FROM node where course_id = #{courseId}")
-    List<NodeDO> listBySubcourse(@Param("courseId") int courseId);
+    List<NodeDO> listBySubcourse(int courseId);
 
     /*
-    @Select("SELECT * FROM node order by ctime desc limit #{offset}, #{limit}") // TODO
+    @Select("SELECT * FROM node order by created_at desc limit #{offset}, #{limit}") // TODO
     List<NodeDO> listByUser(int userId, int limit, int offset);
      */
 

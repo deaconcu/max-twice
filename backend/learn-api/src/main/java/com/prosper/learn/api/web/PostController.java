@@ -2,9 +2,7 @@ package com.prosper.learn.api.web;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.api.client.PostClient;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.dto.PostDTO;
@@ -45,8 +43,8 @@ public class PostController implements PostClient {
                     node.setDescription("");
                     node.setRoot(0);
                     node.setCourseId(nodeDO.getCourseId());
-                    node.setCTime(Utils.getLocalDateTime());
-                    node.setUTime(Utils.getLocalDateTime());
+                    node.setCreatedAt(Utils.getLocalDateTime());
+                    node.setUpdatedAt(Utils.getLocalDateTime());
                     nodeMapper.insert(node);
                     ids[i] = Integer.toString(node.getId());
                 }
@@ -72,7 +70,7 @@ public class PostController implements PostClient {
         }
 
         postDO.setContent(posting.getContent());
-        postDO.setUTime(Utils.getLocalDateTime());
+        postDO.setUpdatedAt(Utils.getLocalDateTime());
         postMapper.update(postDO);
         return Response.success;
     }
@@ -85,7 +83,7 @@ public class PostController implements PostClient {
         }
 
         postDO.setState(Enums.PostState.deleted.value);
-        postDO.setUTime(Utils.getLocalDateTime());
+        postDO.setUpdatedAt(Utils.getLocalDateTime());
         postMapper.update(postDO);
         return Response.success;
     }
