@@ -9,7 +9,6 @@
     <packaging>pom</packaging>
     <version>0.0.1</version>
     <modules>
-        <module>learn-user</module>
         <module>learn-api</module>
         <module>learn-common</module>
         <module>learn-external</module>
