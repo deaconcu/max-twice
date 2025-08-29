@@ -16,7 +16,6 @@ import com.prosper.learn.dto.*;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
@@ -66,7 +65,7 @@ public class PagesController {
      * 映射: GET /read?commentId=123 → GET /api/v1/pages/read?commentId=123
      */
     @GetMapping("/pages/read")
-    public ResponseEntity<ApiResponse<Object>> read(
+    public ApiResponse<Object> read(
             @RequestParam(required = false) Long courseId,
             @RequestParam(required = false) String path,
             @RequestParam(required = false) Long nodeId,
@@ -87,7 +86,7 @@ public class PagesController {
         }
     }
 
-    private ResponseEntity<ApiResponse<Object>> readByComment(Long commentId) {
+    private ApiResponse<Object> readByComment(Long commentId) {
         Map<String, Object> data = new HashMap<>();
         if (commentId <= 0) throw new IllegalArgumentException("评论ID必须大于0");
 
@@ -97,7 +96,7 @@ public class PagesController {
         if (commentDO.getReplyTo() != 0) {
             data.put("commentId", commentDO.getReplyTo());
             data.put("subCommentId", commentDO.getId());
-            return ResponseEntity.ok(ApiResponse.success(data));
+            return ApiResponse.success(data);
         }
 
         PostDO postDO = null;
@@ -117,10 +116,10 @@ public class PagesController {
             path = "1-" + courseDO.getRootNode();
         }
 
-        return ResponseEntity.ok(ApiResponse.success(read(courseDO, path, nodeDO, postDO)));
+        return ApiResponse.success(read(courseDO, path, nodeDO, postDO));
     }
 
-    private ResponseEntity<ApiResponse<Object>> readByPost(Long postId) {
+    private ApiResponse<Object> readByPost(Long postId) {
         if (postId <= 0) throw new IllegalArgumentException("帖子ID必须大于0");
 
         PostDO postDO = postingService.get(postId);
@@ -130,10 +129,10 @@ public class PagesController {
         CourseDO courseDO = courseMapper.getById(nodeDO.getCourseId());
         String path = "1-" + courseDO.getRootNode();
 
-        return ResponseEntity.ok(ApiResponse.success(read(courseDO, path, nodeDO, postDO)));
+        return ApiResponse.success(read(courseDO, path, nodeDO, postDO));
     }
 
-    private ResponseEntity<ApiResponse<Object>> readByNode(Long nodeId) {
+    private ApiResponse<Object> readByNode(Long nodeId) {
         NodeDO nodeDO = nodeMapper.getById(nodeId);
         CourseDO courseDO = courseMapper.getById(nodeDO.getCourseId());
         String path = "1-" + courseDO.getRootNode();
@@ -141,7 +140,7 @@ public class PagesController {
         return ResponseEntity.ok(ApiResponse.success(read(courseDO, path, nodeDO, null)));
     }
 
-    private ResponseEntity<ApiResponse<Object>> readByPath(Long courseId, String path) {
+    private ApiResponse<Object> readByPath(Long courseId, String path) {
         CourseDO courseDO = courseMapper.getById(courseId);
         return ResponseEntity.ok(ApiResponse.success(read(courseDO, path, null, null)));
     }

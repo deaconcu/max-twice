@@ -14,7 +14,6 @@ import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.web.bind.annotation.*;
@@ -50,10 +49,10 @@ public class UsersController {
      * 映射: GET /self → GET /api/v1/users/current
      */
     @GetMapping("/users/current")
-    public ResponseEntity<ApiResponse<UserDTO>> getCurrentUser() {
+    public ApiResponse<UserDTO> getCurrentUser() {
         int id = StpUtil.getLoginIdAsInt();
         UserDO userDO = userMapper.getById(id);
-        return ResponseEntity.ok(ApiResponse.success(Converter.INSTANCE.toUserDTO(userDO)));
+        return ApiResponse.success(Converter.INSTANCE.toUserDTO(userDO));
     }
 
     /**
@@ -61,13 +60,13 @@ public class UsersController {
      * 映射: POST /self → PUT /api/v1/users/current
      */
     @PutMapping("/users/current")
-    public ResponseEntity<ApiResponse<Void>> updateCurrentUser(@RequestParam String name, @RequestParam String biography) {
+    public ApiResponse<Void> updateCurrentUser(@RequestParam String name, @RequestParam String biography) {
         int id = StpUtil.getLoginIdAsInt();
         UserDO userDO = userMapper.getById(id);
         userDO.setName(name);
         userDO.setBiography(biography);
         userMapper.update(userDO);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 
     /**
@@ -75,7 +74,7 @@ public class UsersController {
      * 映射: GET /user/{id} → GET /api/v1/users/{id}
      */
     @GetMapping("/users/{id}")
-    public ResponseEntity<ApiResponse<UserDTOV3>> getUser(@PathVariable Long id) {
+    public ApiResponse<UserDTOV3> getUser(@PathVariable Long id) {
         int selfId = StpUtil.getLoginIdAsInt();
         UserDO userDO = userMapper.getById(id);
 
@@ -89,7 +88,7 @@ public class UsersController {
         if (followDO != null) {
             userDTOV3.setFollowed(1);
         }
-        return ResponseEntity.ok(ApiResponse.success(userDTOV3));
+        return ApiResponse.success(userDTOV3);
     }
 
     /**
@@ -97,9 +96,9 @@ public class UsersController {
      * 映射: GET /user?name=xxx → GET /api/v1/users/search?name=xxx
      */
     @GetMapping("/users/search")
-    public ResponseEntity<ApiResponse<List<UserDTOV4>>> searchUsers(@RequestParam String name) {
+    public ApiResponse<List<UserDTOV4>> searchUsers(@RequestParam String name) {
         List<UserDO> userDOList = userMapper.searchByName(name);
-        return ResponseEntity.ok(ApiResponse.success(Converter.INSTANCE.toUserDTOV4(userDOList)));
+        return ApiResponse.success(Converter.INSTANCE.toUserDTOV4(userDOList));
     }
 
     /**
@@ -107,7 +106,7 @@ public class UsersController {
      * 映射: POST /user → POST /api/v1/auth/register
      */
     @PostMapping("/auth/register")
-    public ResponseEntity<ApiResponse<Void>> register(@RequestParam String userName, @RequestParam String email, @RequestParam String password) {
+    public ApiResponse<Void> register(@RequestParam String userName, @RequestParam String email, @RequestParam String password) {
         UserDO user = new UserDO();
         user.setName(userName);
         user.setEmail(email);
@@ -121,7 +120,7 @@ public class UsersController {
         verificationMapper.insert(verification);
 
         sendVerificationEmail(email, code);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 
     /**
@@ -129,7 +128,7 @@ public class UsersController {
      * 映射: POST /login → POST /api/v1/auth/login
      */
     @PostMapping("/auth/login")
-    public ResponseEntity<ApiResponse<UserDTOV2>> login(@RequestParam String email, @RequestParam String password) {
+    public ApiResponse<UserDTOV2> login(@RequestParam String email, @RequestParam String password) {
         UserDO userDO = userMapper.getByEmail(email);
         if (userDO == null) {
             throw ErrorCode.USER_NOT_FOUND.exception();
@@ -154,7 +153,7 @@ public class UsersController {
             userDTOV2.setSubscriptions(new SubscriptionDTO[0]);
         }
         
-        return ResponseEntity.ok(ApiResponse.success(userDTOV2));
+        return ApiResponse.success(userDTOV2);
     }
 
     /**
@@ -162,7 +161,7 @@ public class UsersController {
      * 映射: POST /user/validate → POST /api/v1/auth/validate-email
      */
     @PostMapping("/auth/validate-email")
-    public ResponseEntity<ApiResponse<UserDTO>> validateEmail(@RequestParam String email, @RequestParam String code) {
+    public ApiResponse<UserDTO> validateEmail(@RequestParam String email, @RequestParam String code) {
         // todo 5min
         VerificationDO verificationDO = verificationMapper.getByEmail(email, false);
         if (verificationDO == null) {
@@ -179,12 +178,12 @@ public class UsersController {
         if (user == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }
-        if (user.getEmailValidated()) return ResponseEntity.ok(ApiResponse.success(Converter.INSTANCE.toUserDTO(user)));
+        if (user.getEmailValidated()) return ApiResponse.success(Converter.INSTANCE.toUserDTO(user));
 
         user.setEmailValidated(true);
         StpUtil.login(user.getId());
         userMapper.update(user);
-        return ResponseEntity.ok(ApiResponse.success(Converter.INSTANCE.toUserDTO(user)));
+        return ApiResponse.success(Converter.INSTANCE.toUserDTO(user));
     }
 
     /**
@@ -193,7 +192,7 @@ public class UsersController {
      * 映射: GET /user/contents → GET /api/v1/users/{userId}/posts?type=content
      */
     @GetMapping("/users/{userId}/posts")
-    public ResponseEntity<ApiResponse<Object>> getUserPosts(
+    public ApiResponse<Object> getUserPosts(
             @PathVariable Long userId, 
             @RequestParam Long lastId,
             @RequestParam(required = false, defaultValue = "article") String type) {
@@ -204,10 +203,10 @@ public class UsersController {
         }
         
         if ("content".equals(type)) {
-            return ResponseEntity.ok(ApiResponse.success(postingService.getUserContentsWithViews(userDO.getId(), lastId)));
+            return ApiResponse.success(postingService.getUserContentsWithViews(userDO.getId(), lastId));
         } else {
             // 默认返回文章
-            return ResponseEntity.ok(ApiResponse.success(postingService.getUserArticleWithViews(userDO.getId(), lastId)));
+            return ApiResponse.success(postingService.getUserArticleWithViews(userDO.getId(), lastId));
         }
     }
 
@@ -216,7 +215,7 @@ public class UsersController {
      * 映射: GET /user/subscription → GET /api/v1/users/{userId}/subscriptions
      */
     @GetMapping("/users/{userId}/subscriptions")
-    public ResponseEntity<ApiResponse<Object>> getUserSubscriptions(@PathVariable Long userId) {
+    public ApiResponse<Object> getUserSubscriptions(@PathVariable Long userId) {
         UserDO userDO = userMapper.getById(userId);
         if (userDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -224,7 +223,7 @@ public class UsersController {
 
         UserProfileDO userProfileDO = userProfileMapper.getById(userDO.getId());
         if (userProfileDO == null || userProfileDO.getSubscription() == null || userProfileDO.getSubscription().trim().isEmpty()) {
-            return ResponseEntity.ok(ApiResponse.success(new ArrayList<>()));
+            return ApiResponse.success(new ArrayList<>());
         }
         
         try {
@@ -236,16 +235,16 @@ public class UsersController {
                     .toList();
 
             if (ids.isEmpty()) {
-                return ResponseEntity.ok(ApiResponse.success(new ArrayList<>()));
+                return ApiResponse.success(new ArrayList<>());
             }
 
             List<CourseDO> courseDOList = courseMapper.getByIds(ids);
             log.info("查询到{}个收藏课程，课程信息: {}", courseDOList.size(), 
                     courseDOList.stream().map(c -> "id=" + c.getId() + ",name=" + c.getName()).collect(Collectors.toList()));
-            return ResponseEntity.ok(ApiResponse.success(Converter.INSTANCE.toCourseDTOV2(courseDOList)));
+            return ApiResponse.success(Converter.INSTANCE.toCourseDTOV2(courseDOList));
         } catch (Exception e) {
             log.error("获取用户{}收藏课程时出错: {}", userId, e.getMessage());
-            return ResponseEntity.ok(ApiResponse.success(new ArrayList<>()));
+            return ApiResponse.success(new ArrayList<>());
         }
     }
 
@@ -254,7 +253,7 @@ public class UsersController {
      * 映射: POST /user/subscription → POST /api/v1/users/current/subscriptions
      */
     @PostMapping("/users/current/subscriptions")
-    public ResponseEntity<ApiResponse<Object>> subscribe(@RequestParam Long courseId) {
+    public ApiResponse<Object> subscribe(@RequestParam Long courseId) {
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -272,7 +271,7 @@ public class UsersController {
         } else {
             List<Long> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
                     .map(Long::parseLong).collect(Collectors.toCollection(ArrayList::new));
-            if (ids.contains(courseDO.getId())) return ResponseEntity.ok(ApiResponse.success());
+            if (ids.contains(courseDO.getId())) return ApiResponse.success();
             ids.add(courseDO.getId());
             idsStr = ids.stream().map(String::valueOf).collect(Collectors.joining(","));
             userProfileDO.setSubscription(idsStr);
@@ -280,7 +279,7 @@ public class UsersController {
         }
 
         int[] idsArr = Arrays.stream(idsStr.split(",")).mapToInt(Integer::parseInt).toArray();
-        return ResponseEntity.ok(ApiResponse.success(idsArr));
+        return ApiResponse.success(idsArr);
     }
 
     /**
@@ -288,7 +287,7 @@ public class UsersController {
      * 映射: PUT /user/subscription → PUT /api/v1/users/current/subscriptions
      */
     @PutMapping("/users/current/subscriptions")
-    public ResponseEntity<ApiResponse<Object>> updateSubscriptions(@RequestParam String subscription) {
+    public ApiResponse<Object> updateSubscriptions(@RequestParam String subscription) {
         long self = StpUtil.getLoginIdAsLong();
 
         List<Long> ids = new ArrayList<>();
@@ -315,7 +314,7 @@ public class UsersController {
             userProfileDO.setSubscription(idsStr);
             userProfileMapper.update(userProfileDO);
         }
-        return ResponseEntity.ok(ApiResponse.success(ids));
+        return ApiResponse.success(ids);
     }
 
     /**
@@ -323,7 +322,7 @@ public class UsersController {
      * 映射: DELETE /user/subscription → DELETE /api/v1/users/current/subscriptions/{courseId}
      */
     @DeleteMapping("/users/current/subscriptions/{courseId}")
-    public ResponseEntity<ApiResponse<Object>> unsubscribe(@PathVariable Long courseId) {
+    public ApiResponse<Object> unsubscribe(@PathVariable Long courseId) {
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -333,7 +332,7 @@ public class UsersController {
         UserProfileDO userProfileDO = userProfileMapper.getById(self);
         List<Long> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
                 .map(Long::parseLong).collect(Collectors.toCollection(ArrayList::new));
-        if (!ids.contains(courseDO.getId())) return ResponseEntity.ok(ApiResponse.success());
+        if (!ids.contains(courseDO.getId())) return ApiResponse.success();
         ids.remove(courseDO.getId());
 
         String idsStr = "";
@@ -343,7 +342,7 @@ public class UsersController {
         userProfileDO.setSubscription(idsStr);
         userProfileMapper.update(userProfileDO);
         int[] idsArr = Arrays.stream(idsStr.split(",")).mapToInt(Integer::parseInt).toArray();
-        return ResponseEntity.ok(ApiResponse.success(idsArr));
+        return ApiResponse.success(idsArr);
     }
 
     /**
@@ -351,7 +350,7 @@ public class UsersController {
      * 映射: POST /user/follow → POST /api/v1/follows
      */
     @PostMapping("/follows")
-    public ResponseEntity<ApiResponse<Void>> follow(@RequestParam Long followeeId) {
+    public ApiResponse<Void> follow(@RequestParam Long followeeId) {
         int followerId = StpUtil.getLoginIdAsInt();
         UserDO userDO = userMapper.getById(followeeId);
         if (userDO == null) {
@@ -365,7 +364,7 @@ public class UsersController {
 
             messageService.createFollowMessage(followeeId, follower.getId());
         }
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 
     /**
@@ -373,7 +372,7 @@ public class UsersController {
      * 映射: DELETE /user/follow → DELETE /api/v1/follows/{followeeId}
      */
     @DeleteMapping("/follows/{followeeId}")
-    public ResponseEntity<ApiResponse<Void>> unfollow(@PathVariable Long followeeId) {
+    public ApiResponse<Void> unfollow(@PathVariable Long followeeId) {
         int followerId = StpUtil.getLoginIdAsInt();
         UserDO  userDO = userMapper.getById(followeeId);
         if (userDO == null) {
@@ -384,7 +383,7 @@ public class UsersController {
         if (followDO != null) {
             followMapper.delete(followerId, followeeId);
         }
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 
     /**
@@ -392,7 +391,7 @@ public class UsersController {
      * 映射: GET /user/followee → GET /api/v1/users/{userId}/followees
      */
     @GetMapping("/users/{userId}/followees")
-    public ResponseEntity<ApiResponse<Object>> getFollowees(@PathVariable Long userId, @RequestParam String lastCreateTime) {
+    public ApiResponse<Object> getFollowees(@PathVariable Long userId, @RequestParam String lastCreateTime) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         LocalDateTime time = LocalDateTime.parse(lastCreateTime, formatter);
 
@@ -411,7 +410,7 @@ public class UsersController {
         }
 
         if (userIds.isEmpty()) {
-            return ResponseEntity.ok(ApiResponse.success(new LinkedList<>()));
+            return ApiResponse.success(new LinkedList<>());
         }
 
         List<UserDO> userDOList = userMapper.getByIds(userIds);
@@ -431,7 +430,7 @@ public class UsersController {
             followeeDTOList.add(followeeDTO);
         }
 
-        return ResponseEntity.ok(ApiResponse.success(followeeDTOList));
+        return ApiResponse.success(followeeDTOList);
     }
 
     /**
@@ -439,7 +438,7 @@ public class UsersController {
      * 映射: POST /user/complete/{nodeId} → POST /api/v1/progress/nodes/{nodeId}/complete
      */
     @PostMapping("/progress/nodes/{nodeId}/complete")
-    public ResponseEntity<ApiResponse<Object>> markNodeCompleted(@PathVariable Long nodeId, @RequestParam Long courseId) {
+    public ApiResponse<Object> markNodeCompleted(@PathVariable Long nodeId, @RequestParam Long courseId) {
         long userId = StpUtil.getLoginIdAsLong();
         
         boolean isNewlyCompleted = learningProgressService.markNodeCompleted(userId, nodeId, courseId);
@@ -458,7 +457,7 @@ public class UsersController {
         long totalCompleted = learningProgressService.getUserCompletedCount(userId);
         result.put("totalCompletedNodes", totalCompleted);
 
-        return ResponseEntity.ok(ApiResponse.success(result));
+        return ApiResponse.success(result);
     }
 
     /**
@@ -466,7 +465,7 @@ public class UsersController {
      * 映射: DELETE /user/complete/{nodeId} → DELETE /api/v1/progress/nodes/{nodeId}/complete
      */
     @DeleteMapping("/progress/nodes/{nodeId}/complete")
-    public ResponseEntity<ApiResponse<Object>> unmarkNodeCompleted(@PathVariable Long nodeId, @RequestParam Long courseId) {
+    public ApiResponse<Object> unmarkNodeCompleted(@PathVariable Long nodeId, @RequestParam Long courseId) {
         long userId = StpUtil.getLoginIdAsLong();
         
         boolean wasRemoved = learningProgressService.unmarkNodeCompleted(userId, nodeId, courseId);
@@ -485,7 +484,7 @@ public class UsersController {
         long totalCompleted = learningProgressService.getUserCompletedCount(userId);
         result.put("totalCompletedNodes", totalCompleted);
 
-        return ResponseEntity.ok(ApiResponse.success(result));
+        return ApiResponse.success(result);
     }
 
     /**
@@ -493,7 +492,7 @@ public class UsersController {
      * 映射: GET /user/complete/{nodeId} → GET /api/v1/progress/nodes/{nodeId}/status
      */
     @GetMapping("/progress/nodes/{nodeId}/status")
-    public ResponseEntity<ApiResponse<Object>> getNodeCompletionStatus(@PathVariable Long nodeId) {
+    public ApiResponse<Object> getNodeCompletionStatus(@PathVariable Long nodeId) {
         long userId = StpUtil.getLoginIdAsLong();
         
         boolean isCompleted = learningProgressService.isNodeCompleted(userId, nodeId);
@@ -502,7 +501,7 @@ public class UsersController {
         result.put("nodeId", nodeId);
         result.put("completed", isCompleted);
 
-        return ResponseEntity.ok(ApiResponse.success(result));
+        return ApiResponse.success(result);
     }
 
     /**
@@ -510,7 +509,7 @@ public class UsersController {
      * 映射: POST /user/complete/course/{courseId} → POST /api/v1/progress/courses/{courseId}/complete
      */
     @PostMapping("/progress/courses/{courseId}/complete")
-    public ResponseEntity<ApiResponse<Object>> markCourseCompleted(@PathVariable Long courseId) {
+    public ApiResponse<Object> markCourseCompleted(@PathVariable Long courseId) {
         long userId = StpUtil.getLoginIdAsLong();
         
         boolean result = learningProgressService.markCourseCompleted(userId, courseId);
@@ -521,7 +520,7 @@ public class UsersController {
             responseData.put("completed", true);
             responseData.put("message", "课程已标记为完成");
             
-            return ResponseEntity.ok(ApiResponse.success(responseData));
+            return ApiResponse.success(responseData);
         } else {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }

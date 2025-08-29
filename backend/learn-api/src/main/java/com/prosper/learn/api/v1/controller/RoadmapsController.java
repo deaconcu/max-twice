@@ -15,7 +15,6 @@ import com.prosper.learn.persistence.dataobject.UserProfileDO;
 import com.prosper.learn.domain.util.Converter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import cn.dev33.satoken.stp.StpUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -53,7 +52,7 @@ public class RoadmapsController {
      * 映射: GET /roadmap/list/{professionId} → GET /api/v1/professions/{professionId}/roadmaps?lastId=123
      */
     @GetMapping("/professions/{professionId}/roadmaps")
-    public ResponseEntity<ApiResponse<List<RoadmapDTO>>> getRoadmapsByProfession(
+    public ApiResponse<List<RoadmapDTO>> getRoadmapsByProfession(
             @PathVariable Long professionId, 
             @RequestParam(required = false, defaultValue = "0") Long lastId) {
         
@@ -149,7 +148,7 @@ public class RoadmapsController {
             }
         }
 
-        return ResponseEntity.ok(ApiResponse.success(dtoList));
+        return ApiResponse.success(dtoList);
     }
 
     /**
@@ -157,7 +156,7 @@ public class RoadmapsController {
      * 映射: PUT /roadmap/{id} → PUT /api/v1/roadmaps/{id}
      */
     @PutMapping("/roadmaps/{id}")
-    public ResponseEntity<ApiResponse<Void>> updateRoadmap(@PathVariable Long id, @RequestParam String content) {
+    public ApiResponse<Void> updateRoadmap(@PathVariable Long id, @RequestParam String content) {
         if (!StpUtil.isLogin()) {
             throw ErrorCode.USER_NOT_LOGIN.exception();
         }
@@ -181,7 +180,7 @@ public class RoadmapsController {
         roadmapDO.setUpdatedAt(LocalDateTime.now());
 
         roadmapMapper.update(roadmapDO);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 
     /**
@@ -189,7 +188,7 @@ public class RoadmapsController {
      * 映射: PUT /roadmap/{id}/upvote → PUT /api/v1/roadmaps/{id}/upvote
      */
     @PutMapping("/roadmaps/{id}/upvote")
-    public ResponseEntity<ApiResponse<Object>> upvoteRoadmap(@PathVariable Long id) {
+    public ApiResponse<Object> upvoteRoadmap(@PathVariable Long id) {
         if (!StpUtil.isLogin()) {
             throw ErrorCode.USER_NOT_LOGIN.exception();
         }
@@ -208,7 +207,7 @@ public class RoadmapsController {
         RoadmapDTO roadmapDTO = Converter.INSTANCE.toRoadMapDTO(roadmapDO);
         roadmapDTO.setUpvoted(voted);
 
-        return ResponseEntity.ok(ApiResponse.success(roadmapDTO));
+        return ApiResponse.success(roadmapDTO);
     }
 
     /**
@@ -216,7 +215,7 @@ public class RoadmapsController {
      * 映射: POST /roadmap → POST /api/v1/roadmaps
      */
     @PostMapping("/roadmaps")
-    public ResponseEntity<ApiResponse<Long>> createRoadmap(
+    public ApiResponse<Long> createRoadmap(
             @RequestParam Long professionId, 
             @RequestParam String content, 
             @RequestParam String description) {
@@ -243,7 +242,7 @@ public class RoadmapsController {
         roadmapDO.setUpdatedAt(LocalDateTime.now());
 
         roadmapMapper.insert(roadmapDO);
-        return ResponseEntity.ok(ApiResponse.success(roadmapDO.getId()));
+        return ApiResponse.success(roadmapDO.getId());
     }
 
     /**
@@ -251,7 +250,7 @@ public class RoadmapsController {
      * 映射: GET /roadmap/{id} → GET /api/v1/roadmaps/{id}
      */
     @GetMapping("/roadmaps/{id}")
-    public ResponseEntity<ApiResponse<RoadmapDTO>> getRoadmap(@PathVariable Long id) {
+    public ApiResponse<RoadmapDTO> getRoadmap(@PathVariable Long id) {
         int userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : 0;
         RoadmapDTO roadmapDTO = roadmapService.getById(id.intValue(), userId);
 
@@ -264,7 +263,7 @@ public class RoadmapsController {
             roadmapDTO.setContent(formattedContent);
         }
 
-        return ResponseEntity.ok(ApiResponse.success(roadmapDTO));
+        return ApiResponse.success(roadmapDTO);
     }
 
     /**
@@ -272,7 +271,7 @@ public class RoadmapsController {
      * 映射: POST /roadmap/pin → POST /api/v1/roadmaps/pin
      */
     @PostMapping("/roadmaps/pin")
-    public ResponseEntity<ApiResponse<Object>> pinRoadmap(@RequestParam Long professionId, @RequestParam Long roadmapId) {
+    public ApiResponse<Object> pinRoadmap(@RequestParam Long professionId, @RequestParam Long roadmapId) {
         if (!StpUtil.isLogin()) {
             throw ErrorCode.USER_NOT_LOGIN.exception();
         }
@@ -330,6 +329,6 @@ public class RoadmapsController {
             userProfileMapper.updateRoadmapPin(userId, updatedPinJson);
         }
 
-        return ResponseEntity.ok(ApiResponse.success(message));
+        return ApiResponse.success(message);
     }
 }

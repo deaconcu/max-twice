@@ -15,7 +15,6 @@ import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -44,7 +43,7 @@ public class PostsController {
      * 映射: GET /postings?ids=1,2,3 → GET /api/v1/posts?ids=1,2,3
      */
     @GetMapping("/posts")
-    public ResponseEntity<ApiResponse<Object>> getPosts(
+    public ApiResponse<Object> getPosts(
             @RequestParam(value = "ids", required = false) List<Long> ids,
             @RequestParam(value = "nodeId", required = false) Long nodeId,
             @RequestParam(value = "lastScore", required = false, defaultValue = "0") double lastScore,
@@ -95,7 +94,7 @@ public class PostsController {
             }
         }
 
-        return ResponseEntity.ok(ApiResponse.success(postDTOList));
+        return ApiResponse.success(postDTOList);
     }
 
     /**
@@ -103,7 +102,7 @@ public class PostsController {
      * 映射: POST /posting → POST /api/v1/posts
      */
     @PostMapping("/posts")
-    public ResponseEntity<ApiResponse<Object>> createPost(@RequestBody PostDTO posting) {
+    public ApiResponse<Object> createPost(@RequestBody PostDTO posting) {
         if (posting.getType() == Enums.PostType.contents.value()) {
             NodeDO nodeDO = nodeMapper.getById(posting.getNodeId());
             List<String> nodeNames;
@@ -131,7 +130,7 @@ public class PostsController {
         posting.setCreatorId(0l);
         posting.setCreatedAt(Utils.getTimeString());
         postMapper.insert(Converter.INSTANCE.toPostDO(posting));
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 
     /**
@@ -139,7 +138,7 @@ public class PostsController {
      * 映射: PUT /posting → PUT /api/v1/posts/{id}
      */
     @PutMapping("/posts/{id}")
-    public ResponseEntity<ApiResponse<Object>> updatePost(@PathVariable Long id, @RequestBody PostDTO posting) {
+    public ApiResponse<Object> updatePost(@PathVariable Long id, @RequestBody PostDTO posting) {
         PostDO postDO = postMapper.get(id);
         if (postDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -148,7 +147,7 @@ public class PostsController {
         postDO.setContent(posting.getContent());
         postDO.setUpdatedAt(Utils.getLocalDateTime());
         postMapper.update(postDO);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 
     /**
@@ -156,7 +155,7 @@ public class PostsController {
      * 映射: DELETE /posting → DELETE /api/v1/posts/{id}
      */
     @DeleteMapping("/posts/{id}")
-    public ResponseEntity<ApiResponse<Object>> deletePost(@PathVariable Long id) {
+    public ApiResponse<Object> deletePost(@PathVariable Long id) {
         PostDO postDO = postMapper.get(id);
         if (postDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -165,7 +164,7 @@ public class PostsController {
         postDO.setState(Enums.PostState.deleted.value());
         postDO.setUpdatedAt(Utils.getLocalDateTime());
         postMapper.update(postDO);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 
     /**
@@ -173,8 +172,8 @@ public class PostsController {
      * 映射: GET /posting/{id} → GET /api/v1/posts/{id}
      */
     @GetMapping("/posts/{id}")
-    public ResponseEntity<ApiResponse<PostDTO>> getPost(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success(Converter.INSTANCE.toPostDTO(postingService.get(id))));
+    public ApiResponse<PostDTO> getPost(@PathVariable Long id) {
+        return ApiResponse.success(Converter.INSTANCE.toPostDTO(postingService.get(id)));
     }
 
     /**
@@ -182,11 +181,11 @@ public class PostsController {
      * 映射: GET /node/{nodeId}/posting → GET /api/v1/nodes/{nodeId}/posts
      */
     @GetMapping("/nodes/{nodeId}/posts")
-    public ResponseEntity<ApiResponse<List<PostDTO>>> getNodePosts(@PathVariable Long nodeId) {
+    public ApiResponse<List<PostDTO>> getNodePosts(@PathVariable Long nodeId) {
         int count = 3;
         List<PostDO> postings = postMapper.getListByNode(nodeId, count, Enums.PostState.approved.value());
         postings.forEach(postingDO -> postingService.idToName(postingDO));
-        return ResponseEntity.ok(ApiResponse.success(Converter.INSTANCE.toPostDTO(postings)));
+        return ApiResponse.success(Converter.INSTANCE.toPostDTO(postings));
     }
 
     /**
@@ -194,14 +193,14 @@ public class PostsController {
      * 映射: GET /post/censor → GET /api/v1/admin/posts/pending
      */
     @GetMapping("/admin/posts/pending")
-    public ResponseEntity<ApiResponse<List<PostDTO>>> getPendingPosts() {
+    public ApiResponse<List<PostDTO>> getPendingPosts() {
         List<PostDO> postDOList = postMapper.getListByState(Enums.PostState.approved.value(), 200);
         for (PostDO postDO : postDOList) {
             if (postDO.getType() == Enums.PostType.contents.value()) {
                 postingService.idToName(postDO);
             }
         }
-        return ResponseEntity.ok(ApiResponse.success(Converter.INSTANCE.toPostDTO(postDOList)));
+        return ApiResponse.success(Converter.INSTANCE.toPostDTO(postDOList));
     }
 
     /**
@@ -209,7 +208,7 @@ public class PostsController {
      * 映射: PUT /post → PUT /api/v1/admin/posts/{id}/approve
      */
     @PutMapping("/admin/posts/{id}/approve")
-    public ResponseEntity<ApiResponse<Object>> approvePost(@PathVariable Long id, @RequestParam boolean approve) {
+    public ApiResponse<Object> approvePost(@PathVariable Long id, @RequestParam boolean approve) {
         PostDO postDO = postMapper.get(id);
         if (postDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -223,6 +222,6 @@ public class PostsController {
             postDO.setState(Enums.CommentState.deleted.value());
             postMapper.update(postDO);
         }
-        return ResponseEntity.ok(ApiResponse.success(Converter.INSTANCE.toPostDTO(postDO)));
+        return ApiResponse.success(Converter.INSTANCE.toPostDTO(postDO));
     }
 }

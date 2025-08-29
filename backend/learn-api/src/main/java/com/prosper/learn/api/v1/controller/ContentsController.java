@@ -4,7 +4,6 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.ContentsService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +23,7 @@ public class ContentsController {
      * 映射: POST /contents → POST /api/v1/contents
      */
     @PostMapping("/contents")
-    public ResponseEntity<ApiResponse<Void>> postContents(
+    public ApiResponse<Void> postContents(
             @RequestParam("path") String path,
             @RequestParam("courseId") Long courseId,
             @RequestParam("postingId") Long postingId,
@@ -46,6 +45,6 @@ public class ContentsController {
                 contentsService.pin(userId, courseId, path, postingId, false);
                 break;
         }
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 }

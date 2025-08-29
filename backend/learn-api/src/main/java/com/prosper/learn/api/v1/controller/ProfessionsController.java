@@ -10,7 +10,6 @@ import com.prosper.learn.domain.service.ProfessionRankingScheduler;
 import com.prosper.learn.dto.ProfessionDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,7 +32,7 @@ public class ProfessionsController {
      * 映射: GET /profession/list?page=1 → GET /api/v1/professions?page=0&size=20
      */
     @GetMapping("/professions")
-    public ResponseEntity<ApiResponse<Object>> getProfessionsByPage(
+    public ApiResponse<Object> getProfessionsByPage(
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false, defaultValue = "20") Integer size,
             @RequestParam(required = false) Byte state,
@@ -44,7 +43,7 @@ public class ProfessionsController {
         if (page != null) {
             // 分页获取职业
             List<ProfessionDTO> professionList = professionService.getListByPage(page);
-            return ResponseEntity.ok(ApiResponse.success(professionList));
+            return ApiResponse.success(professionList);
         } else if (state != null && lastId != null) {
             // 按状态获取职业
             ProfessionState professionState = ProfessionState.getByValue(state.intValue());
@@ -52,15 +51,15 @@ public class ProfessionsController {
                 throw ErrorCode.INVALID_PARAMETER.exception("Invalid profession state: " + state);
             }
             List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(professionState, lastId);
-            return ResponseEntity.ok(ApiResponse.success(professionList));
+            return ApiResponse.success(professionList);
         } else if (mainCategory != null && subCategory != null && lastId != null) {
             // 按分类获取
             List<ProfessionDTO> professionList = professionService.getListByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
-            return ResponseEntity.ok(ApiResponse.success(professionList));
+            return ApiResponse.success(professionList);
         } else if (mainCategory != null && lastId != null) {
             // 按主分类获取
             List<ProfessionDTO> professionList = professionService.getListByMainCategoryAndLastId(mainCategory, lastId);
-            return ResponseEntity.ok(ApiResponse.success(professionList));
+            return ApiResponse.success(professionList);
         } else {
             throw new IllegalArgumentException("缺少必要参数");
         }
@@ -71,9 +70,9 @@ public class ProfessionsController {
      * 映射: GET /profession/list/approved → GET /api/v1/professions/approved?lastId=123
      */
     @GetMapping("/professions/approved")
-    public ResponseEntity<ApiResponse<Object>> getApprovedProfessions(@RequestParam(required = false, defaultValue = "0") Long lastId) {
+    public ApiResponse<Object> getApprovedProfessions(@RequestParam(required = false, defaultValue = "0") Long lastId) {
         List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(ProfessionState.APPROVED, lastId);
-        return ResponseEntity.ok(ApiResponse.success(professionList));
+        return ApiResponse.success(professionList);
     }
 
     /**
@@ -81,9 +80,9 @@ public class ProfessionsController {
      * 映射: GET /profession?id=123 → GET /api/v1/professions/{id}
      */
     @GetMapping("/professions/{id}")
-    public ResponseEntity<ApiResponse<ProfessionDTO>> getProfession(@PathVariable Long id) {
+    public ApiResponse<ProfessionDTO> getProfession(@PathVariable Long id) {
         ProfessionDTO profession = professionService.getById(id);
-        return ResponseEntity.ok(ApiResponse.success(profession));
+        return ApiResponse.success(profession);
     }
 
     /**
@@ -91,7 +90,7 @@ public class ProfessionsController {
      * 映射: POST /profession → POST /api/v1/professions
      */
     @PostMapping("/professions")
-    public ResponseEntity<ApiResponse<Object>> createProfession(@RequestBody ProfessionDTO professionDTO) {
+    public ApiResponse<Object> createProfession(@RequestBody ProfessionDTO professionDTO) {
         if (professionDTO.getName() == null || professionDTO.getName().trim().isEmpty()) {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }
@@ -107,7 +106,7 @@ public class ProfessionsController {
 
         professionDTO.setCreator(StpUtil.getLoginIdAsLong());
         professionService.create(professionDTO);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 
     /**
@@ -115,7 +114,7 @@ public class ProfessionsController {
      * 映射: PUT /profession → PUT /api/v1/professions/{id}
      */
     @PutMapping("/professions/{id}")
-    public ResponseEntity<ApiResponse<Object>> updateProfession(@PathVariable Long id, @RequestBody ProfessionDTO professionDTO) {
+    public ApiResponse<Object> updateProfession(@PathVariable Long id, @RequestBody ProfessionDTO professionDTO) {
         professionDTO.setId(id);
         if (professionDTO.getName() == null || professionDTO.getName().trim().isEmpty()) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -133,7 +132,7 @@ public class ProfessionsController {
         }
 
         professionService.update(professionDTO);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 
     /**
@@ -141,7 +140,7 @@ public class ProfessionsController {
      * 映射: POST /profession/operate → POST /api/v1/professions/{id}/approve
      */
     @PostMapping("/professions/{id}/approve")
-    public ResponseEntity<ApiResponse<Object>> approveProfession(
+    public ApiResponse<Object> approveProfession(
             @PathVariable Long id, 
             @RequestParam String action, 
             @RequestParam(required = false) String rejectedReason) {
@@ -149,15 +148,15 @@ public class ProfessionsController {
         return switch (action.toLowerCase()) {
             case "approve" -> {
                 professionService.approve(id);
-                yield ResponseEntity.ok(ApiResponse.success("批准成功"));
+                yield ApiResponse.success("批准成功");
             }
             case "reject" -> {
                 professionService.reject(id, rejectedReason);
-                yield ResponseEntity.ok(ApiResponse.success("拒绝成功"));
+                yield ApiResponse.success("拒绝成功");
             }
             case "delete" -> {
                 professionService.delete(id);
-                yield ResponseEntity.ok(ApiResponse.success("删除成功"));
+                yield ApiResponse.success("删除成功");
             }
             default -> throw ErrorCode.SYSTEM_ERROR.exception();
         };
@@ -168,9 +167,9 @@ public class ProfessionsController {
      * 映射: DELETE /profession → DELETE /api/v1/professions/{id}
      */
     @DeleteMapping("/professions/{id}")
-    public ResponseEntity<ApiResponse<Object>> deleteProfession(@PathVariable Long id) {
+    public ApiResponse<Object> deleteProfession(@PathVariable Long id) {
         professionService.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("删除成功"));
+        return ApiResponse.success("删除成功");
     }
 
     /**
@@ -178,10 +177,10 @@ public class ProfessionsController {
      * 映射: GET /profession/hot → GET /api/v1/professions/hot?limit=10
      */
     @GetMapping("/professions/hot")
-    public ResponseEntity<ApiResponse<Object>> getHotProfessions(@RequestParam(value = "limit", defaultValue = "10") Integer limit) {
+    public ApiResponse<Object> getHotProfessions(@RequestParam(value = "limit", defaultValue = "10") Integer limit) {
         log.info("开始获取热门职业，limit: {}", limit);
         List<ProfessionDTO> hotProfessions = professionService.getHotProfessions(limit);
         log.info("成功获取热门职业数量: {}", hotProfessions.size());
-        return ResponseEntity.ok(ApiResponse.success(hotProfessions));
+        return ApiResponse.success(hotProfessions);
     }
 }

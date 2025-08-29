@@ -12,7 +12,6 @@ import com.prosper.learn.persistence.mapper.CommentMapper;
 import com.prosper.learn.persistence.mapper.PostMapper;
 import com.prosper.learn.persistence.mapper.UpvoteMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -40,7 +39,7 @@ public class UpvotesController {
      * 映射: POST /upvote → POST /api/v1/upvotes
      */
     @PostMapping("/upvotes")
-    public ResponseEntity<ApiResponse<Object>> upvote(
+    public ApiResponse<Object> upvote(
             @RequestParam Long objectId, 
             @RequestParam int objectType, 
             @RequestParam int type) {
@@ -55,7 +54,7 @@ public class UpvotesController {
             if (upvoteDO != null) {
                 postDTO.setVoteType(upvoteDO.getType());
             }
-            return ResponseEntity.ok(ApiResponse.success(postDTO));
+        return ApiResponse.success(postDTO);
         } else if (objectType == comment.value()) {
             long commentId = objectId;
             long userId = StpUtil.getLoginIdAsLong();
@@ -67,7 +66,7 @@ public class UpvotesController {
             if (upvoteDO != null) {
                 commentDTO.setUpvoted(1);
             }
-            return ResponseEntity.ok(ApiResponse.success(commentDTO));
+        return ApiResponse.success(commentDTO);
         } else {
             throw new IllegalArgumentException("不支持的对象类型");
         }
@@ -78,7 +77,7 @@ public class UpvotesController {
      * 映射: 新增接口 → GET /api/v1/upvotes/status?objectId=123&objectType=1
      */
     @GetMapping("/upvotes/status")
-    public ResponseEntity<ApiResponse<Object>> getUpvoteStatus(
+    public ApiResponse<Object> getUpvoteStatus(
             @RequestParam Long objectId, 
             @RequestParam int objectType) {
         
@@ -93,6 +92,6 @@ public class UpvotesController {
             result.put("type", upvoteDO.getType());
         }
         
-        return ResponseEntity.ok(ApiResponse.success(result));
+        return ApiResponse.success(result);
     }
 }

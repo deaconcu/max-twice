@@ -12,7 +12,6 @@ import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,7 +45,7 @@ public class CommentsController {
      */
     @PostMapping("/comments")
     @Transactional
-    public ResponseEntity<ApiResponse<Object>> createComment(@RequestBody CommentDTO commentDTO) {
+    public ApiResponse<Object> createComment(@RequestBody CommentDTO commentDTO) {
         long userId = StpUtil.getLoginIdAsLong();
         commentDTO.setFromUser(userId);
         UserDO fromUser = userMapper.getById(userId);
@@ -119,7 +118,7 @@ public class CommentsController {
         }
 
         commentDO = commentMapper.get(commentDO.getId());
-        return ResponseEntity.ok(ApiResponse.success(commentDO));
+        return ApiResponse.success(commentDO);
     }
 
     /**
@@ -127,7 +126,7 @@ public class CommentsController {
      * 映射: GET /comment → GET /api/v1/comments?objectId=123&type=1&offsetId=0
      */
     @GetMapping("/comments")
-    public ResponseEntity<ApiResponse<List<CommentDTO>>> getCommentsByObject(
+    public ApiResponse<List<CommentDTO>> getCommentsByObject(
             @RequestParam Long objectId, 
             @RequestParam int type, 
             @RequestParam Long offsetId) {
@@ -138,7 +137,7 @@ public class CommentsController {
         } else {
             CommentDO lastComment = commentMapper.get(offsetId);
             if (lastComment == null) {
-                return ResponseEntity.ok(ApiResponse.success(new ArrayList<>()));
+                return ApiResponse.success(new ArrayList<>());
             }
             commentDOList = commentMapper.getByObjectIdPaginated(objectId, type, lastComment.getScore(), offsetId, 10);
         }
@@ -184,7 +183,7 @@ public class CommentsController {
             }
         }
 
-        return ResponseEntity.ok(ApiResponse.success(commentDTOList));
+        return ApiResponse.success(commentDTOList);
     }
 
     /**
@@ -192,7 +191,7 @@ public class CommentsController {
      * 映射: GET /comment/{id}/reply → GET /api/v1/comments/{id}/replies?offsetId=0
      */
     @GetMapping("/comments/{id}/replies")
-    public ResponseEntity<ApiResponse<List<CommentDTO>>> getCommentReplies(
+    public ApiResponse<List<CommentDTO>> getCommentReplies(
             @PathVariable Long id, 
             @RequestParam Long offsetId) {
         
@@ -203,7 +202,7 @@ public class CommentsController {
         } else {
             CommentDO lastComment = commentMapper.get(offsetId);
             if (lastComment == null) {
-                return ResponseEntity.ok(ApiResponse.success(new ArrayList<>()));
+                return ApiResponse.success(new ArrayList<>());
             }
             commentDOList = commentMapper.getByTopicPaginated(id, lastComment.getScore(), offsetId, 10);
         }
@@ -221,7 +220,7 @@ public class CommentsController {
         for (CommentDTO commentDTO : commentDTOList) {
             commentDTO.setUpvoted(set.contains(commentDTO.getId()) ? 1 : 0);
         }
-        return ResponseEntity.ok(ApiResponse.success(commentDTOList));
+        return ApiResponse.success(commentDTOList);
     }
 
     /**
@@ -229,7 +228,7 @@ public class CommentsController {
      * 映射: GET /comment/censor → GET /api/v1/admin/comments/pending
      */
     @GetMapping("/admin/comments/pending")
-    public ResponseEntity<ApiResponse<List<CommentDTOV1>>> getPendingComments() {
+    public ApiResponse<List<CommentDTOV1>> getPendingComments() {
         List<CommentDO> commentDOList = commentMapper.getListByState(submited.value(), 50);
         return ResponseEntity.ok(ApiResponse.success(Converter.INSTANCE.toCommentDTOV1(commentDOList)));
     }
@@ -239,7 +238,7 @@ public class CommentsController {
      * 映射: PUT /comment → PUT /api/v1/admin/comments/{id}/approve
      */
     @PutMapping("/admin/comments/{id}/approve")
-    public ResponseEntity<ApiResponse<Object>> approveComment(@PathVariable Long id, @RequestParam boolean approve) {
+    public ApiResponse<Object> approveComment(@PathVariable Long id, @RequestParam boolean approve) {
         CommentDO commentDO = commentMapper.get(id);
         if (commentDO == null) throw new IllegalArgumentException("评论不存在");
 
@@ -251,6 +250,6 @@ public class CommentsController {
             commentDO.setState(Enums.CommentState.deleted.value());
             commentMapper.update(commentDO);
         }
-        return ResponseEntity.ok(ApiResponse.success(Converter.INSTANCE.toCommentDTOV1(commentDO)));
+        return ApiResponse.success(Converter.INSTANCE.toCommentDTOV1(commentDO));
     }
 }

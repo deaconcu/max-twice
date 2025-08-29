@@ -11,7 +11,6 @@ import com.prosper.learn.persistence.dataobject.UserDO;
 import com.prosper.learn.persistence.mapper.FollowMapper;
 import com.prosper.learn.persistence.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -36,7 +35,7 @@ public class FollowsController {
      * 映射: POST /user/follow → POST /api/v1/follows
      */
     @PostMapping("/follows")
-    public ResponseEntity<ApiResponse<Void>> follow(@RequestParam Long followeeId) {
+    public ApiResponse<Void> follow(@RequestParam Long followeeId) {
         int followerId = StpUtil.getLoginIdAsInt();
         UserDO userDO = userMapper.getById(followeeId);
         if (userDO == null) {
@@ -50,7 +49,7 @@ public class FollowsController {
 
             messageService.createFollowMessage(followeeId, follower.getId());
         }
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 
     /**
@@ -58,7 +57,7 @@ public class FollowsController {
      * 映射: DELETE /user/follow → DELETE /api/v1/follows/{followeeId}
      */
     @DeleteMapping("/follows/{followeeId}")
-    public ResponseEntity<ApiResponse<Void>> unfollow(@PathVariable Long followeeId) {
+    public ApiResponse<Void> unfollow(@PathVariable Long followeeId) {
         int followerId = StpUtil.getLoginIdAsInt();
         UserDO userDO = userMapper.getById(followeeId);
         if (userDO == null) {
@@ -69,7 +68,7 @@ public class FollowsController {
         if (followDO != null) {
             followMapper.delete(followerId, followeeId);
         }
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 
     /**
@@ -77,7 +76,7 @@ public class FollowsController {
      * 映射: GET /user/followee → GET /api/v1/users/{userId}/followees
      */
     @GetMapping("/users/{userId}/followees")
-    public ResponseEntity<ApiResponse<Object>> getFollowees(@PathVariable Long userId, @RequestParam String lastCreateTime) {
+    public ApiResponse<Object> getFollowees(@PathVariable Long userId, @RequestParam String lastCreateTime) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         LocalDateTime time = LocalDateTime.parse(lastCreateTime, formatter);
 
@@ -115,6 +114,6 @@ public class FollowsController {
             followeeDTOList.add(followeeDTO);
         }
 
-        return ResponseEntity.ok(ApiResponse.success(followeeDTOList));
+        return ApiResponse.success(followeeDTOList);
     }
 }

@@ -11,7 +11,6 @@ import com.prosper.learn.dto.message.MessageDTO;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.mapper.CourseMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -35,7 +34,7 @@ public class MessagesController {
      * 映射: POST /message/new-course → POST /api/v1/messages/course-applications
      */
     @PostMapping("/messages/course-applications")
-    public ResponseEntity<ApiResponse<Void>> applyCourse(
+    public ApiResponse<Void> applyCourse(
             @RequestParam String title, 
             @RequestParam String summary, 
             @RequestParam String explanation, 
@@ -68,7 +67,7 @@ public class MessagesController {
         }
 
         messageService.create(jsonString, userId, 0, Enums.MessageType.applyCourse);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 
     /**
@@ -76,7 +75,7 @@ public class MessagesController {
      * 映射: GET /message/new-course → GET /api/v1/messages/course-applications
      */
     @GetMapping("/messages/course-applications")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getApplCourseList(
+    public ApiResponse<Map<String, Object>> getApplCourseList(
             @RequestParam int page, 
             @RequestParam int length) {
         
@@ -97,7 +96,7 @@ public class MessagesController {
         pagination.put("currentPage", page);
         pagination.put("totalPages", totalPage);
         resultMap.put("pagination", pagination);
-        return ResponseEntity.ok(ApiResponse.success(resultMap));
+        return ApiResponse.success(resultMap);
     }
 
     /**
@@ -105,7 +104,7 @@ public class MessagesController {
      * 映射: GET /message → GET /api/v1/messages
      */
     @GetMapping("/messages")
-    public ResponseEntity<ApiResponse<List<MessageDTO>>> getMessageList(
+    public ApiResponse<List<MessageDTO>> getMessageList(
             @RequestParam Long userId, 
             @RequestParam int type, 
             @RequestParam Long lastId, 
@@ -113,7 +112,7 @@ public class MessagesController {
         
         int self = StpUtil.getLoginIdAsInt();
         List<MessageDTO> messageDTOList = messageService.getList(type, self, userId, lastId, conversation);
-        return ResponseEntity.ok(ApiResponse.success(messageDTOList));
+        return ApiResponse.success(messageDTOList);
     }
 
     /**
@@ -121,13 +120,13 @@ public class MessagesController {
      * 映射: POST /message/system → POST /api/v1/messages/system
      */
     @PostMapping("/messages/system")
-    public ResponseEntity<ApiResponse<Void>> postSystemMessage(
+    public ApiResponse<Void> postSystemMessage(
             @RequestParam int type, 
             @RequestParam Long userId, 
             @RequestParam String content) {
         
         //messageService.createSystemMessage(type, userId, content);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 
     /**
@@ -135,11 +134,11 @@ public class MessagesController {
      * 映射: PUT /message/system → PUT /api/v1/messages/course-applications/{id}
      */
     @PutMapping("/messages/course-applications/{id}")
-    public ResponseEntity<ApiResponse<Void>> modifyCourseApply(
+    public ApiResponse<Void> modifyCourseApply(
             @PathVariable Long id, 
             @RequestParam String reply) {
         
         messageService.modifyCourseApply(id, reply);
-        return ResponseEntity.ok(ApiResponse.success());
+        return ApiResponse.success();
     }
 }

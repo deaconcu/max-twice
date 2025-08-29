@@ -39,7 +39,7 @@ public class SubscriptionsController {
      * 映射: GET /user/subscription → GET /api/v1/users/{userId}/subscriptions
      */
     @GetMapping("/users/{userId}/subscriptions")
-    public ResponseEntity<ApiResponse<Object>> getUserSubscriptions(@PathVariable Long userId) {
+    public ApiResponse<Object> getUserSubscriptions(@PathVariable Long userId) {
         UserDO userDO = userMapper.getById(userId);
         if (userDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -47,7 +47,7 @@ public class SubscriptionsController {
 
         UserProfileDO userProfileDO = userProfileMapper.getById(userDO.getId());
         if (userProfileDO == null || userProfileDO.getSubscription() == null || userProfileDO.getSubscription().trim().isEmpty()) {
-            return ResponseEntity.ok(ApiResponse.success(new ArrayList<>()));
+            return ApiResponse.success(new ArrayList<>());
         }
         
         List<Long> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
@@ -58,13 +58,13 @@ public class SubscriptionsController {
                 .toList();
 
         if (ids.isEmpty()) {
-            return ResponseEntity.ok(ApiResponse.success(new ArrayList<>()));
+            return ApiResponse.success(new ArrayList<>());
         }
 
         List<CourseDO> courseDOList = courseMapper.getByIds(ids);
         log.info("查询到{}个收藏课程，课程信息: {}", courseDOList.size(), 
                 courseDOList.stream().map(c -> "id=" + c.getId() + ",name=" + c.getName()).collect(Collectors.toList()));
-        return ResponseEntity.ok(ApiResponse.success(Converter.INSTANCE.toCourseDTOV2(courseDOList)));
+        return ApiResponse.success(Converter.INSTANCE.toCourseDTOV2(courseDOList));
     }
 
     /**
@@ -72,7 +72,7 @@ public class SubscriptionsController {
      * 映射: POST /user/subscription → POST /api/v1/users/current/subscriptions
      */
     @PostMapping("/users/current/subscriptions")
-    public ResponseEntity<ApiResponse<Object>> subscribe(@RequestParam Long courseId) {
+    public ApiResponse<Object> subscribe(@RequestParam Long courseId) {
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -90,7 +90,7 @@ public class SubscriptionsController {
         } else {
             List<Long> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
                     .map(Long::parseLong).collect(Collectors.toCollection(ArrayList::new));
-            if (ids.contains(courseDO.getId())) return ResponseEntity.ok(ApiResponse.success());
+            if (ids.contains(courseDO.getId())) return ApiResponse.success();
             ids.add(courseDO.getId());
             idsStr = ids.stream().map(String::valueOf).collect(Collectors.joining(","));
             userProfileDO.setSubscription(idsStr);
@@ -98,7 +98,7 @@ public class SubscriptionsController {
         }
 
         int[] idsArr = Arrays.stream(idsStr.split(",")).mapToInt(Integer::parseInt).toArray();
-        return ResponseEntity.ok(ApiResponse.success(idsArr));
+        return ApiResponse.success(idsArr);
     }
 
     /**
@@ -106,7 +106,7 @@ public class SubscriptionsController {
      * 映射: PUT /user/subscription → PUT /api/v1/users/current/subscriptions
      */
     @PutMapping("/users/current/subscriptions")
-    public ResponseEntity<ApiResponse<Object>> updateSubscriptions(@RequestParam String subscription) {
+    public ApiResponse<Object> updateSubscriptions(@RequestParam String subscription) {
         long self = StpUtil.getLoginIdAsLong();
 
         List<Long> ids = new ArrayList<>();
@@ -129,7 +129,7 @@ public class SubscriptionsController {
             userProfileDO.setSubscription(idsStr);
             userProfileMapper.update(userProfileDO);
         }
-        return ResponseEntity.ok(ApiResponse.success(ids));
+        return ApiResponse.success(ids);
     }
 
     /**
@@ -137,7 +137,7 @@ public class SubscriptionsController {
      * 映射: DELETE /user/subscription → DELETE /api/v1/users/current/subscriptions/{courseId}
      */
     @DeleteMapping("/users/current/subscriptions/{courseId}")
-    public ResponseEntity<ApiResponse<Object>> unsubscribe(@PathVariable Long courseId) {
+    public ApiResponse<Object> unsubscribe(@PathVariable Long courseId) {
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -147,7 +147,7 @@ public class SubscriptionsController {
         UserProfileDO userProfileDO = userProfileMapper.getById(self);
         List<Long> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
                 .map(Long::parseLong).collect(Collectors.toCollection(ArrayList::new));
-        if (!ids.contains(courseDO.getId())) return ResponseEntity.ok(ApiResponse.success());
+        if (!ids.contains(courseDO.getId())) return ApiResponse.success();
         ids.remove(courseDO.getId());
 
         String idsStr = "";
@@ -157,6 +157,6 @@ public class SubscriptionsController {
         userProfileDO.setSubscription(idsStr);
         userProfileMapper.update(userProfileDO);
         int[] idsArr = Arrays.stream(idsStr.split(",")).mapToInt(Integer::parseInt).toArray();
-        return ResponseEntity.ok(ApiResponse.success(idsArr));
+        return ApiResponse.success(idsArr);
     }
 }

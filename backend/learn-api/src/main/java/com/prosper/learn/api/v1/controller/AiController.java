@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -36,7 +35,7 @@ public class AiController {
      * 映射: POST /openai → POST /api/v1/ai/chat
      */
     @PostMapping("/ai/chat")
-    public ResponseEntity<ApiResponse<Object>> chatWithGPT(
+    public ApiResponse<Object> chatWithGPT(
             @RequestParam String prompt, 
             @RequestParam String model) {
         
@@ -88,6 +87,6 @@ public class AiController {
         }
         String answer = root.path("choices").get(0).path("message").path("content").asText();
 
-        return ResponseEntity.ok(ApiResponse.success(answer));
+        return ApiResponse.success(answer);
     }
 }
