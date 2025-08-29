@@ -1,6 +1,5 @@
-package com.prosper.learn.domain.service;
+package com.prosper.learn.domain.service.basic;
 
-import com.prosper.learn.domain.service.basic.RedisStatsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -80,7 +79,7 @@ class RedisStatsServiceTest {
         String expectedPostField = TEST_ARTICLE_ID + ":view";
         
         // When
-        redisStatsService.recordArticleView(TEST_ARTICLE_ID, null);
+        redisStatsService.recordArticleView(TEST_ARTICLE_ID, 0);
         
         // Then
         // 验证只记录文章维度统计

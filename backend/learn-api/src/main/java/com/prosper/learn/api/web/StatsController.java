@@ -2,7 +2,7 @@ package com.prosper.learn.api.web;
 
 import com.prosper.learn.api.client.StatsClient;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.service.basic.ArticleViewService;
+import com.prosper.learn.domain.service.basic.RedisStatsService;
 import com.prosper.learn.domain.service.basic.DailyStatsService;
 import com.prosper.learn.domain.service.basic.StatsMonitorService;
 import com.prosper.learn.dto.Response;
@@ -18,7 +18,7 @@ import java.time.LocalDate;
 public class StatsController implements StatsClient {
 
     private final DailyStatsService dailyStatsService;
-    private final ArticleViewService articleViewService;
+    private final RedisStatsService redisStatsService;
     private final StatsMonitorService statsMonitorService;
 
     /**
@@ -26,7 +26,7 @@ public class StatsController implements StatsClient {
      */
     @Override
     public Response<Void> recordView(Long articleId, Long userId, String ipAddress) {
-        articleViewService.recordView(articleId, userId, ipAddress);
+        redisStatsService.recordArticleView(articleId, userId);
         return new Response<>(Response.SUCCESS, "success", null);
     }
 

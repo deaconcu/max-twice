@@ -13,9 +13,10 @@ public enum ErrorCode {
     USER_PASSWORD_WRONG("A0005", "user.password.wrong"),
     USER_EMAIL_NOT_VALIDATED("A0006", "user.email.not.validated"),
 
-    // 普通业务相关 B00xx
+    // 通用业务相关 B00xx
     NOT_SUPPORTED("B0001", "不支持的操作类型"),
     INVALID_PARAMETER("B0002", "参数异常"),
+    JSON_PROCESSING_ERROR("B0003", "JSON处理异常"),
 
     // 课程相关 B01xx
     COURSE_NOT_FOUND("B0101", "课程不存在"),
@@ -35,6 +36,16 @@ public enum ErrorCode {
 
     // 评论相关 B05xx
     COMMENT_NOT_FOUND("B0501", "评论不存在"),
+
+    // 内容管理相关 B06xx
+    CONTENTS_COURSE_NOT_FOUND("B0601", "课程不存在"),
+    CONTENTS_POST_NOT_FOUND("B0602", "帖子不存在"), 
+    CONTENTS_PINNED_ITEMS_LIMIT_EXCEEDED("B0603", "置顶帖子数量超限"),
+    CONTENTS_INVALID_POST_TYPE("B0604", "无效的帖子类型"),
+
+    // 目录管理相关 B07xx
+    TOC_USER_TOC_NOT_FOUND("B0701", "用户目录不存在"),
+    TOC_INDEX_OUT_OF_BOUNDS("B0702", "目录索引超出范围"),
 
     // 系统错误 S0xxx
     SYSTEM_ERROR("S0001", "系统繁忙，请稍后重试"),

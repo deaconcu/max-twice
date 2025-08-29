@@ -53,7 +53,7 @@ eureka:
       defaultZone: http://127.0.0.1:8761/eureka/
     register-with-eureka: false  # 不向注册中心注册自己
     fetch-registry: false        # 不从注册中心获取服务列表
-  instance:
+  instancen:
     preferIpAddress: true
     instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}
 
@@ -67,6 +67,18 @@ sa-token:
   storage-typee: cookie
   cookie-http-only: true
   cookie-secure: true
+
+app:
+  contents:
+    max-pinned-items: 10
+    pin-field: "^"
+    chosen-field: "+"
+  user:
+    max-username-length: 50
+    min-password-length: 6
+  course:
+    max-name-length: 100
+    default-page-size: 20
 
 logging:
   level:

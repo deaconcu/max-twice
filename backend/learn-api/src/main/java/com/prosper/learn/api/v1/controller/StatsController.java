@@ -1,7 +1,7 @@
 package com.prosper.learn.api.v1.controller;
 
 import com.prosper.learn.api.v1.dto.ApiResponse;
-import com.prosper.learn.domain.service.basic.ArticleViewService;
+import com.prosper.learn.domain.service.basic.RedisStatsService;
 import com.prosper.learn.domain.service.basic.DailyStatsService;
 import com.prosper.learn.domain.service.basic.StatsMonitorService;
 import com.prosper.learn.dto.UserStatsDTO;
@@ -22,7 +22,7 @@ import java.time.LocalDate;
 public class StatsController {
 
     private final DailyStatsService dailyStatsService;
-    private final ArticleViewService articleViewService;
+    private final RedisStatsService redisStatsService;
     private final StatsMonitorService statsMonitorService;
 
     /**
@@ -35,7 +35,7 @@ public class StatsController {
             @RequestParam Long userId, 
             @RequestParam String ipAddress) {
         
-        articleViewService.recordView(articleId, userId, ipAddress);
+        redisStatsService.recordArticleView(articleId, userId);
         return ApiResponse.success();
     }
 
