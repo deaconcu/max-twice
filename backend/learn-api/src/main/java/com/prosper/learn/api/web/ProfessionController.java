@@ -1,17 +1,16 @@
 package com.prosper.learn.api.web;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.client.ProfessionClient;
-import com.prosper.learn.common.Enums;
+
 import static com.prosper.learn.common.Enums.ProfessionState;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.service.ProfessionService;
-import com.prosper.learn.domain.service.ProfessionRankingScheduler;
+import com.prosper.learn.domain.service.business.ProfessionService;
+import com.prosper.learn.domain.service.scheduler.ProfessionRankingScheduler;
 import com.prosper.learn.dto.ProfessionDTO;
 import com.prosper.learn.dto.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 

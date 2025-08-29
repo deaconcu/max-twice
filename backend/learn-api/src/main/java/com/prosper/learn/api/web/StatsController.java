@@ -2,14 +2,13 @@ package com.prosper.learn.api.web;
 
 import com.prosper.learn.api.client.StatsClient;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.service.ArticleViewService;
-import com.prosper.learn.domain.service.DailyStatsService;
-import com.prosper.learn.domain.service.StatsMonitorService;
+import com.prosper.learn.domain.service.basic.ArticleViewService;
+import com.prosper.learn.domain.service.basic.DailyStatsService;
+import com.prosper.learn.domain.service.basic.StatsMonitorService;
 import com.prosper.learn.dto.Response;
 import com.prosper.learn.dto.UserStatsDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 

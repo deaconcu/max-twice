@@ -8,7 +8,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.api.client.AggregateClient;
 import com.prosper.learn.common.Enums;
-import com.prosper.learn.domain.service.*;
+import com.prosper.learn.domain.service.basic.ContentsService;
+import com.prosper.learn.domain.service.basic.MessageService;
+import com.prosper.learn.domain.service.business.*;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.dto.*;
@@ -18,7 +20,6 @@ import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -53,7 +54,7 @@ public class AggregateController implements AggregateClient {
     private final UserCourseMapper userCourseMapper;
     private final UserProfileMapper userProfileMapper;
     private final LearningProgressService learningProgressService;
-    private final AggregateService aggregateService;
+    private final PageService pageService;
 
     @Override
     public Response<Object> readByComment(Long commentId) {
@@ -128,7 +129,7 @@ public class AggregateController implements AggregateClient {
     private Response<Object> read(CourseDO courseDO, String path, NodeDO nodeDO, PostDO postDO) {
 
         long userId = StpUtil.getLoginIdAsLong();
-        Utils.Pair<String, Map<Long, NodeDTOV2>> response = aggregateService.getToc(userId, courseDO.getId(), true);
+        Utils.Pair<String, Map<Long, NodeDTOV2>> response = pageService.getToc(userId, courseDO.getId(), true);
         CourseTocDTO courseTocDTO = new CourseTocDTO(response.left(), response.right());
 
         //Map<String, Object> contents;

@@ -2,7 +2,7 @@ package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
-import com.prosper.learn.domain.service.MessageService;
+import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.dto.message.MessageDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

@@ -10,7 +10,7 @@ import com.prosper.learn.dto.Response;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
-import com.prosper.learn.domain.service.PostingService;
+import com.prosper.learn.domain.service.business.PostingService;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;

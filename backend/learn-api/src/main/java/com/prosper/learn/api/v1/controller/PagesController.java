@@ -3,7 +3,7 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.service.AggregateService;
+import com.prosper.learn.domain.service.business.PageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +18,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PagesController {
 
-    private final AggregateService aggregateService;
+    private final PageService pageService;
 
     /**
      * 根据不同参数读取页面数据
@@ -40,13 +40,13 @@ public class PagesController {
 
         // 参数优先级是 commentId > postId > nodeId > courseId + path
         if (commentId != null) {
-            result = aggregateService.readPageByComment(commentId, userId);
+            result = pageService.readPageByComment(commentId, userId);
         } else if (postId != null) {
-            result = aggregateService.readPageByPost(postId, userId);
+            result = pageService.readPageByPost(postId, userId);
         } else if (nodeId != null) {
-            result = aggregateService.readPageByNode(nodeId, userId);
+            result = pageService.readPageByNode(nodeId, userId);
         } else if (courseId != null) {
-            result = aggregateService.readPageByPath(courseId, path, userId);
+            result = pageService.readPageByPath(courseId, path, userId);
         } else {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }

@@ -2,11 +2,11 @@ package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
-import com.prosper.learn.common.Enums;
+
 import static com.prosper.learn.common.Enums.ProfessionState;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.service.ProfessionService;
-import com.prosper.learn.domain.service.ProfessionRankingScheduler;
+import com.prosper.learn.domain.service.business.ProfessionService;
+import com.prosper.learn.domain.service.scheduler.ProfessionRankingScheduler;
 import com.prosper.learn.dto.ProfessionDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,12 +1,10 @@
 package com.prosper.learn.api.web;
 
 import com.prosper.learn.api.client.PlatformStatsClient;
-import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.dto.Response;
-import com.prosper.learn.domain.service.PlatformStatsService;
+import com.prosper.learn.domain.service.basic.PlatformStatsService;
 import com.prosper.learn.dto.PlatformStatsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 
 /**
  * 平台统计数据控制器

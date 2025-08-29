@@ -2,7 +2,7 @@ package com.prosper.learn.api.v1.controller;
 
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.service.RoadmapService;
+import com.prosper.learn.domain.service.business.RoadmapService;
 import com.prosper.learn.dto.RoadmapDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

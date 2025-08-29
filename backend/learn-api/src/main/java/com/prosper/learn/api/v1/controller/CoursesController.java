@@ -6,7 +6,7 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.dto.CourseDTO;
 import com.prosper.learn.dto.CourseDTOV3;
 import com.prosper.learn.dto.CourseDTOV4;
-import com.prosper.learn.domain.service.CourseService;
+import com.prosper.learn.domain.service.business.CourseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;

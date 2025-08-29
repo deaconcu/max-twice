@@ -1,18 +1,17 @@
-package com.prosper.learn.api.web;
+package com.prosper.learn.domain.service.business;
 
-import cn.dev33.satoken.stp.StpUtil;
-import com.prosper.learn.api.client.CommentClient;
 import com.prosper.learn.common.Enums;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.basic.MessageService;
-import com.prosper.learn.domain.service.basic.ScoreCalculationService;
 import com.prosper.learn.domain.service.basic.RedisStatsService;
+import com.prosper.learn.domain.service.basic.ScoreCalculationService;
+import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.CommentDTO;
 import com.prosper.learn.dto.CommentDTOV1;
-import com.prosper.learn.dto.Response;
-import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -20,10 +19,9 @@ import java.util.*;
 import static com.prosper.learn.common.Enums.CommentState.submited;
 import static com.prosper.learn.common.Enums.MessageType.*;
 
-//@RestController
-//@SaCheckLogin
+@Service
 @RequiredArgsConstructor
-public class CommentController implements CommentClient {
+public class CommentService {
 
     private final UserMapper userMapper;
     private final UpvoteMapper upvoteMapper;
@@ -35,14 +33,11 @@ public class CommentController implements CommentClient {
     private final ScoreCalculationService scoreCalculationService;
     private final RedisStatsService redisStatsService;
 
-    @Override
     @Transactional
-    public Response<Object> create(CommentDTO commentDTO) {
-        long userId = StpUtil.getLoginIdAsLong();
+    public CommentDO createComment(CommentDTO commentDTO, Long userId) {
         commentDTO.setFromUser(userId);
         UserDO fromUser = userMapper.getById(userId);
 
-        // update posting comment count
         PostDO postDO = null;
         NodeDO nodeDO = null;
         RoadmapDO roadmapDO = null;
@@ -60,42 +55,51 @@ public class CommentController implements CommentClient {
             throw new IllegalArgumentException("评论类型不正确");
         }
 
-        // insert comment
         CommentDO commentDO = Converter.INSTANCE.toCommentDO(commentDTO);
-        // 初始化评论分数
         commentDO.setScore(scoreCalculationService.calculateCommentScore(commentDO));
         commentMapper.insert(commentDO);
 
-        // update parent comment reply count
         if (commentDTO.getReplyTo() != 0) {
-            CommentDO parentCommentDO = commentMapper.get(commentDTO.getReplyTo());
-            if (parentCommentDO == null) throw new IllegalArgumentException("父评论不存在");
-            parentCommentDO.setReplyCount(parentCommentDO.getReplyCount() + 1);
-
-            // 更新父评论分数（由于回复数增加）
-            if (scoreCalculationService.checkAndUpdateCommentScore(parentCommentDO)) {
-                commentMapper.update(parentCommentDO);
-            } else {
-                commentMapper.update(parentCommentDO);
-            }
-
-            if (commentDTO.getType() == Enums.ObjectType.node.value() && nodeDO != null) {
-                messageService.createCommentMessage(
-                        parentCommentDO.getFromUser(), fromUser.getId(), nodeDO.getId(), commentDO.getId(), replyNodeComment.value());
-            } else if (commentDTO.getType() == Enums.ObjectType.post.value() && postDO != null) {
-                messageService.createCommentMessage(
-                        parentCommentDO.getFromUser(), fromUser.getId(), postDO.getNodeId(), commentDO.getId(), replyPostingComment.value());
-            } else if (commentDTO.getType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
-                messageService.createCommentMessage(
-                        parentCommentDO.getFromUser(), fromUser.getId(), roadmapDO.getId(), commentDO.getId(), replyRoadmapComment.value());
-            }
+            handleReplyComment(commentDTO, commentDO, fromUser, postDO, nodeDO, roadmapDO);
         }
 
+        handleObjectComment(commentDTO, commentDO, fromUser, postDO, nodeDO, roadmapDO, userId);
+
+        commentDO = commentMapper.get(commentDO.getId());
+        return commentDO;
+    }
+
+    private void handleReplyComment(CommentDTO commentDTO, CommentDO commentDO, UserDO fromUser, 
+                                   PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO) {
+        CommentDO parentCommentDO = commentMapper.get(commentDTO.getReplyTo());
+        if (parentCommentDO == null) throw new IllegalArgumentException("父评论不存在");
+        
+        parentCommentDO.setReplyCount(parentCommentDO.getReplyCount() + 1);
+
+        if (scoreCalculationService.checkAndUpdateCommentScore(parentCommentDO)) {
+            commentMapper.update(parentCommentDO);
+        } else {
+            commentMapper.update(parentCommentDO);
+        }
+
+        if (commentDTO.getType() == Enums.ObjectType.node.value() && nodeDO != null) {
+            messageService.createCommentMessage(
+                    parentCommentDO.getFromUser(), fromUser.getId(), nodeDO.getId(), commentDO.getId(), replyNodeComment.value());
+        } else if (commentDTO.getType() == Enums.ObjectType.post.value() && postDO != null) {
+            messageService.createCommentMessage(
+                    parentCommentDO.getFromUser(), fromUser.getId(), postDO.getNodeId(), commentDO.getId(), replyPostingComment.value());
+        } else if (commentDTO.getType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
+            messageService.createCommentMessage(
+                    parentCommentDO.getFromUser(), fromUser.getId(), roadmapDO.getId(), commentDO.getId(), replyRoadmapComment.value());
+        }
+    }
+
+    private void handleObjectComment(CommentDTO commentDTO, CommentDO commentDO, UserDO fromUser,
+                                   PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO, Long userId) {
         if (commentDTO.getType() == Enums.ObjectType.post.value() && postDO != null) {
             postDO.setCommentCount(postDO.getCommentCount() + 1);
             postMapper.update(postDO);
             
-            // 记录到Redis统计
             redisStatsService.recordComment((long) postDO.getId(), userId);
             
             messageService.createCommentMessage(postDO.getCreator(), fromUser.getId(), postDO.getNodeId(), commentDO.getId(), postComment.value());
@@ -103,7 +107,6 @@ public class CommentController implements CommentClient {
             nodeDO.setCommentCount(nodeDO.getCommentCount() + 1);
             nodeMapper.update(nodeDO);
             
-            // 记录到Redis统计
             redisStatsService.recordComment((long) nodeDO.getId(), userId);
             
             messageService.createCommentMessage(nodeDO.getCreator(), fromUser.getId(), nodeDO.getId(), commentDO.getId(), nodeComment.value());
@@ -111,34 +114,25 @@ public class CommentController implements CommentClient {
             roadmapDO.setComment(roadmapDO.getComment() + 1);
             roadmapMapper.update(roadmapDO);
             
-            // 记录到Redis统计
             redisStatsService.recordComment((long) roadmapDO.getId(), userId);
             
             messageService.createCommentMessage(roadmapDO.getCreatorId(), fromUser.getId(), roadmapDO.getId(), commentDO.getId(), roadmapComment.value());
         }
-
-        commentDO = commentMapper.get(commentDO.getId());
-        return new Response<>(commentDO);
     }
 
-    @Override
-    public Response<List<CommentDTO>> getByObject(Long objectId, int type, Long offsetId) {
+    public List<CommentDTO> getCommentsByObject(Long objectId, int type, Long offsetId, Long userId) {
         List<CommentDO> commentDOList;
         if (offsetId == 0) {
-            // 首页加载，直接按分数排序
             commentDOList = commentMapper.getByObjectId(objectId, type, 10);
         } else {
-            // 分页加载，需要先获取最后一条评论的分数
             CommentDO lastComment = commentMapper.get(offsetId);
             if (lastComment == null) {
-                return new Response<>(new ArrayList<>());
+                return new ArrayList<>();
             }
             commentDOList = commentMapper.getByObjectIdPaginated(objectId, type, lastComment.getScore(), offsetId, 10);
         }
 
         List<CommentDTO> commentDTOList = Converter.INSTANCE.toCommentDTO(commentDOList);
-
-        int userId = StpUtil.getLoginIdAsInt();
 
         List<Long> ids = new ArrayList<>();
         for (CommentDO commentDO : commentDOList) {
@@ -146,59 +140,59 @@ public class CommentController implements CommentClient {
         }
 
         if (!ids.isEmpty()) {
-            List<CommentDO> children = commentMapper.getChildren(ids);
+            handleChildComments(commentDTOList, ids, userId);
+        }
 
-            HashMap<Long, CommentDTO> map = new HashMap<>();
-            for (CommentDO commentDO : children) {
-                map.put(commentDO.getReplyTo(), Converter.INSTANCE.toCommentDTO(commentDO));
-            }
+        return commentDTOList;
+    }
 
-            for (CommentDTO commentDTO: commentDTOList) {
-                if (map.containsKey(commentDTO.getId())) {
-                    CommentDTO childCommentDTO = map.get(commentDTO.getId());
-                    ids.add(childCommentDTO.getId());
-                    commentDTO.addChild(childCommentDTO);
-                }
-            }
+    private void handleChildComments(List<CommentDTO> commentDTOList, List<Long> ids, Long userId) {
+        List<CommentDO> children = commentMapper.getChildren(ids);
 
-            List<UpvoteDO> upvoteList = upvoteMapper.getList(userId, ids, Enums.ObjectType.comment.value());
+        HashMap<Long, CommentDTO> map = new HashMap<>();
+        for (CommentDO commentDO : children) {
+            map.put(commentDO.getReplyTo(), Converter.INSTANCE.toCommentDTO(commentDO));
+        }
 
-            Set<Long> set = new HashSet<>();
-            for (UpvoteDO upvoteDO : upvoteList) {
-                set.add(upvoteDO.getObjectId());
-            }
-
-            for (CommentDTO commentDTO : commentDTOList) {
-                commentDTO.setUpvoted(set.contains(commentDTO.getId()) ? 1 : 0);
-            }
-
-            for (CommentDTO commentDTO: map.values()) {
-                commentDTO.setUpvoted(set.contains(commentDTO.getId()) ? 1 : 0);
+        for (CommentDTO commentDTO: commentDTOList) {
+            if (map.containsKey(commentDTO.getId())) {
+                CommentDTO childCommentDTO = map.get(commentDTO.getId());
+                ids.add(childCommentDTO.getId());
+                commentDTO.addChild(childCommentDTO);
             }
         }
 
-        return new Response<>(commentDTOList);
+        List<UpvoteDO> upvoteList = upvoteMapper.getList(userId.intValue(), ids, Enums.ObjectType.comment.value());
+
+        Set<Long> set = new HashSet<>();
+        for (UpvoteDO upvoteDO : upvoteList) {
+            set.add(upvoteDO.getObjectId());
+        }
+
+        for (CommentDTO commentDTO : commentDTOList) {
+            commentDTO.setUpvoted(set.contains(commentDTO.getId()) ? 1 : 0);
+        }
+
+        for (CommentDTO commentDTO: map.values()) {
+            commentDTO.setUpvoted(set.contains(commentDTO.getId()) ? 1 : 0);
+        }
     }
 
-    @Override
-    public Response<List<CommentDTO>> getByTopic(Long commentId, Long offsetId) {
-        int userId = StpUtil.getLoginIdAsInt();
+    public List<CommentDTO> getCommentReplies(Long id, Long offsetId, Long userId) {
         List<CommentDO> commentDOList;
         if (offsetId == 0) {
-            // 首页加载话题回复，直接按分数排序
-            commentDOList = commentMapper.getByTopic(commentId, 10);
+            commentDOList = commentMapper.getByTopic(id, 10);
         } else {
-            // 分页加载话题回复，需要先获取最后一条评论的分数
             CommentDO lastComment = commentMapper.get(offsetId);
             if (lastComment == null) {
-                return new Response<>(new ArrayList<>());
+                return new ArrayList<>();
             }
-            commentDOList = commentMapper.getByTopicPaginated(commentId, lastComment.getScore(), offsetId, 10);
+            commentDOList = commentMapper.getByTopicPaginated(id, lastComment.getScore(), offsetId, 10);
         }
 
         List<Long> ids = commentDOList.stream().map(CommentDO::getId).toList();
 
-        List<UpvoteDO> upvoteList = upvoteMapper.getList(userId, ids, Enums.ObjectType.comment.value());
+        List<UpvoteDO> upvoteList = upvoteMapper.getList(userId.intValue(), ids, Enums.ObjectType.comment.value());
 
         Set<Long> set = new HashSet<>();
         for (UpvoteDO upvoteDO : upvoteList) {
@@ -209,19 +203,20 @@ public class CommentController implements CommentClient {
         for (CommentDTO commentDTO : commentDTOList) {
             commentDTO.setUpvoted(set.contains(commentDTO.getId()) ? 1 : 0);
         }
-        return new Response<>(commentDTOList);
+        return commentDTOList;
     }
 
-    @Override
-    public Response<List<CommentDTOV1>> getCensorList() {
+    public List<CommentDTOV1> getPendingComments() {
         List<CommentDO> commentDOList = commentMapper.getListByState(submited.value(), 50);
-        return new Response<>(Converter.INSTANCE.toCommentDTOV1(commentDOList));
+        return Converter.INSTANCE.toCommentDTOV1(commentDOList);
     }
 
-    @Override
-    public Response<Object> approve(Long id, boolean approve) {
+    @Transactional
+    public CommentDTOV1 approveComment(Long id, boolean approve) {
         CommentDO commentDO = commentMapper.get(id);
-        if (commentDO == null) throw new IllegalArgumentException("评论不存在");
+        if (commentDO == null) {
+            throw ErrorCode.COMMENT_NOT_FOUND.exception();
+        }
 
         if (approve && commentDO.getState() != Enums.CommentState.approved.value()) {
             commentDO.setState(Enums.CommentState.approved.value());
@@ -231,7 +226,6 @@ public class CommentController implements CommentClient {
             commentDO.setState(Enums.CommentState.deleted.value());
             commentMapper.update(commentDO);
         }
-        return new Response<>(Converter.INSTANCE.toCommentDTOV1(commentDO));
+        return Converter.INSTANCE.toCommentDTOV1(commentDO);
     }
 }
-

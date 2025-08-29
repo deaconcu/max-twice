@@ -4,7 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.client.MessageClient;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
-import com.prosper.learn.domain.service.MessageService;
+import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.dto.message.MessageDTO;
 import com.prosper.learn.dto.Response;
 import com.prosper.learn.persistence.dataobject.UserDO;
@@ -12,7 +12,6 @@ import com.prosper.learn.persistence.mapper.MessageMapper;
 import com.prosper.learn.persistence.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.util.*;
 

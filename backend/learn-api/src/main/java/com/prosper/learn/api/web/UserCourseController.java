@@ -2,11 +2,10 @@ package com.prosper.learn.api.web;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.client.UserCourseClient;
-import com.prosper.learn.domain.service.UserCourseService;
+import com.prosper.learn.domain.service.business.UserCourseService;
 import com.prosper.learn.dto.Response;
 import com.prosper.learn.dto.UserCourseDTO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 

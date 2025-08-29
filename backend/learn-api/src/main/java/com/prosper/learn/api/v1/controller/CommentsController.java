@@ -2,7 +2,7 @@ package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
-import com.prosper.learn.domain.service.CommentService;
+import com.prosper.learn.domain.service.business.CommentService;
 import com.prosper.learn.dto.CommentDTO;
 import com.prosper.learn.dto.CommentDTOV1;
 import com.prosper.learn.persistence.dataobject.CommentDO;

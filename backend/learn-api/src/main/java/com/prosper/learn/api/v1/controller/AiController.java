@@ -1,7 +1,7 @@
 package com.prosper.learn.api.v1.controller;
 
 import com.prosper.learn.api.v1.dto.ApiResponse;
-import com.prosper.learn.domain.service.AiService;
+import com.prosper.learn.domain.service.external.AiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
