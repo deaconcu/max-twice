@@ -32,7 +32,7 @@ public class MessagesController {
             @RequestParam String explanation, 
             @RequestParam Long parentId) {
         
-        int userId = StpUtil.getLoginIdAsInt();
+        long userId = StpUtil.getLoginIdAsLong();
         messageService.applyCourse(title, summary, explanation, parentId, userId);
         return ApiResponse.success();
     }
@@ -61,7 +61,7 @@ public class MessagesController {
             @RequestParam Long lastId, 
             @RequestParam int conversation) {
         
-        int self = StpUtil.getLoginIdAsInt();
+        long self = StpUtil.getLoginIdAsLong();
         List<MessageDTO> messageDTOList = messageService.getList(type, self, userId, lastId, conversation);
         return ApiResponse.success(messageDTOList);
     }

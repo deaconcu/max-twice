@@ -11,21 +11,21 @@ import java.util.List;
 @FeignClient(value = "learn-service", contextId = "comment")
 public interface CommentClient {
 
-    @PostMapping("/comment")
+    //@PostMapping("/comment")
     Response<Object> create(@RequestBody CommentDTO commentDTO);
 
-    @PutMapping("/comment")
+    //@PutMapping("/comment")
     Response<Object> approve(@RequestParam(value="id") Long id, @RequestParam(value="action") boolean approve);
 
-    @GetMapping("/comment")
+    //@GetMapping("/comment")
     Response<List<CommentDTO>> getByObject(@RequestParam(value = "objectId") Long objectId,
                                            @RequestParam(value = "type") int type,
                                            @RequestParam(value="offsetId") Long offsetId);
 
-    @GetMapping("/comment/{id}/reply")
+    //@GetMapping("/comment/{id}/reply")
     Response<List<CommentDTO>> getByTopic(@PathVariable(value = "id") Long commentId,
                                           @RequestParam(value="offsetId") Long offsetId);
 
-    @GetMapping("/comment/censor")
+    //@GetMapping("/comment/censor")
     Response<List<CommentDTOV1>> getCensorList();
 }

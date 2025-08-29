@@ -18,14 +18,14 @@ public interface MessageClient {
     //@GetMapping("/message/{id}")
     Response<MessageDTO> get(@PathVariable Long id);
 
-    @GetMapping("/message/system")
+    //@GetMapping("/message/system")
     Response<Map<String, Object>> getSystemList(
             @RequestParam int type, @RequestParam("userId") Long receiverId, @RequestParam Long lastId);
 
-    @GetMapping("/message/course-apply")
+    //@GetMapping("/message/course-apply")
     Response<Map<String, Object>> getCourseApplyList(@RequestParam("userId") Long senderId, @RequestParam Long lastId);
 
-    @PostMapping("/message/invite")
+    //@PostMapping("/message/invite")
     Response Invite(@RequestParam Long userId, @RequestParam Long nodeId);
 
 }

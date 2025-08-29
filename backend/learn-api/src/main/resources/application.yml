@@ -3,6 +3,9 @@ spring:
     name: learn-service
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
+    jdbc-url: jdbc:mysql://127.0.0.1:3307/learn?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true
+    username: root
+    password: root123
     hikari:
       minimum-idle: 5
       maximum-pool-size: 10
@@ -48,6 +51,8 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://127.0.0.1:8761/eureka/
+    register-with-eureka: false  # 不向注册中心注册自己
+    fetch-registry: false        # 不从注册中心获取服务列表
   instance:
     preferIpAddress: true
     instance-id: ${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}

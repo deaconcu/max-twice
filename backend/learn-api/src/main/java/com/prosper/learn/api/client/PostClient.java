@@ -11,24 +11,24 @@ import java.util.List;
 public interface PostClient {
 
     // 在某一个node下创建内容
-    @PostMapping("/posting")
+    //@PostMapping("/posting")
     Response create(@RequestBody PostDTO posting);
 
     // 修改
-    @PutMapping("/posting")
+    //@PutMapping("/posting")
     Response modify(@RequestBody PostDTO posting);
 
-    @DeleteMapping("/posting")
+    //@DeleteMapping("/posting")
     Response delete(@RequestParam Long id);
 
-    @GetMapping("/posting/{id}")
+    //@GetMapping("/posting/{id}")
     PostDTO get(@PathVariable Long id);
 
     // 获得某个node下的发帖
-    @GetMapping("/node/{nodeId}/posting")
+    //@GetMapping("/node/{nodeId}/posting")
     List<PostDTO> getPostings(@PathVariable Long nodeId);
 
-    @GetMapping("/node/{nodeId}/postings")
+    //@GetMapping("/node/{nodeId}/postings")
     List<PostDTO> getByLastId(@PathVariable Long nodeId, @RequestParam("lastId") Long lastPostingId);
 
     // todo not use
@@ -38,9 +38,9 @@ public interface PostClient {
                          @RequestParam(value = "lastId", required = false) Long lastPostingId);
 
     // 获得审核列表
-    @GetMapping("/post/censor")
+    //@GetMapping("/post/censor")
     Response<List<PostDTO>> getCensorList();
 
-    @PutMapping("/post")
+    //@PutMapping("/post")
     Response<Object> approve(@RequestParam(value="id") Long id, @RequestParam(value="action") boolean approve);
 }

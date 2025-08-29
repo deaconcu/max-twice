@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 
-@RestController
+//@RestController
 @Slf4j
 @RequiredArgsConstructor
 public class StatsController implements StatsClient {

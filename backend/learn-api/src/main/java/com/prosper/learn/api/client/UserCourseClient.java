@@ -13,31 +13,31 @@ public interface UserCourseClient {
     /**
      * 用户开始学习课程
      */
-    @PostMapping("/user/course")
+    //@PostMapping("/user/course")
     Response<Object> startCourse(@RequestParam("courseId") Long courseId);
 
     /**
      * 获取用户课程学习进度
      */
-    @GetMapping("/user/course")
+    //@GetMapping("/user/course")
     Response<UserCourseDTO> getUserCourse(@RequestParam("courseId") Long courseId);
 
     /**
      * 获取用户所有课程学习进度
      */
-    @GetMapping("/user/course/list")
+    //@GetMapping("/user/course/list")
     Response<List<UserCourseDTO>> getUserCourseList(Long lastId);
 
     /**
      * 更新课程学习进度
      */
-    @PutMapping("/user/course")
+    //@PutMapping("/user/course")
     Response<UserCourseDTO> updateUserCourse(@RequestParam("courseId") Long courseId,
                                              @RequestParam("progressPercent") Integer progressPercent);
 
     /**
      * 删除课程学习记录
      */
-    @DeleteMapping("/user/course")
+    //@DeleteMapping("/user/course")
     Response<Object> deleteUserCourse(@RequestParam("courseId") Long courseId);
 }

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Controller;
 
 import java.util.Random;
 
-@Controller
+//@Controller
 public class EmailController {
 
     public void sendVerificationEmail(String toEmail, String code) {

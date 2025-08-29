@@ -12,26 +12,35 @@ public enum ErrorCode {
     USER_ALREADY_EXISTS("A0004", "user.already.exists"),
     USER_PASSWORD_WRONG("A0005", "user.password.wrong"),
     USER_EMAIL_NOT_VALIDATED("A0006", "user.email.not.validated"),
+
+    // 普通业务相关 B00xx
+    NOT_SUPPORTED("B0001", "不支持的操作类型"),
+    INVALID_PARAMETER("B0002", "参数异常"),
+
+    // 课程相关 B01xx
+    COURSE_NOT_FOUND("B0101", "课程不存在"),
+
+    // 路线图相关 B02xx
+    ROADMAP_NOT_FOUND("B0201", "路线图不存在"),
+    ROADMAP_CONTENT_INVALID("B0202", "路线图内容格式不正确"),
+    ROADMAP_PIN_LIMIT_EXCEEDED("B0203", "最多只能置顶19个路线图"),
     
-    // 路线图相关 B0xxx
-    ROADMAP_NOT_FOUND("B0001", "路线图不存在"),
-    ROADMAP_CONTENT_INVALID("B0002", "路线图内容格式不正确"),
-    ROADMAP_PIN_LIMIT_EXCEEDED("B0003", "最多只能置顶19个路线图"),
+    // 学习进度相关 B03xx
+    USER_ROADMAP_NOT_FOUND("B0301", "学习记录不存在"),
+    USER_COURSE_NOT_FOUND("B0302", "课程学习记录不存在"),
     
-    // 学习进度相关 C0xxx
-    USER_ROADMAP_NOT_FOUND("C0001", "学习记录不存在"),
-    USER_COURSE_NOT_FOUND("C0002", "课程学习记录不存在"),
-    
-    // 数据解析相关 D0xxx
-    JSON_PARSE_ERROR("D0001", "数据格式解析失败"),
-    CONTENT_HASH_ERROR("D0002", "内容哈希计算失败"),
-    
+    // 数据解析相关 B04xx
+    JSON_PARSE_ERROR("B0401", "数据格式解析失败"),
+    CONTENT_HASH_ERROR("B0402", "内容哈希计算失败"),
+
+    // 评论相关 B05xx
+    COMMENT_NOT_FOUND("B0501", "评论不存在"),
+
     // 系统错误 S0xxx
     SYSTEM_ERROR("S0001", "系统繁忙，请稍后重试"),
-    INVALID_PARAMETER("S0001", "参数异常"),
-    DATABASE_ERROR("S0003", "数据访问异常"),
-    EXTERNAL_SERVICE_ERROR("S0004", "外部服务调用失败");
-    
+    DATABASE_ERROR("S0002", "数据访问异常"),
+    EXTERNAL_SERVICE_ERROR("S0003", "外部服务调用失败");
+
     private final String code;
     private final String message;
     

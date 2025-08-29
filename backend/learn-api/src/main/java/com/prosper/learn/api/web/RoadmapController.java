@@ -30,7 +30,7 @@ import java.util.HashSet;
 import java.util.stream.Collectors;
 
 @Slf4j
-@RestController
+//@RestController
 @RequiredArgsConstructor
 public class RoadmapController implements RoadmapClient {
 

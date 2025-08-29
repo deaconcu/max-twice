@@ -2,6 +2,7 @@ package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.AggregateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -47,7 +48,7 @@ public class PagesController {
         } else if (courseId != null) {
             result = aggregateService.readPageByPath(courseId, path, userId);
         } else {
-            throw new IllegalArgumentException("至少需要提供一个参数");
+            throw ErrorCode.INVALID_PARAMETER.exception();
         }
 
         return ApiResponse.success(result);

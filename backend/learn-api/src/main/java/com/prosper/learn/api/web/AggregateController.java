@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 import static com.prosper.learn.common.Enums.ObjectType.comment;
 import static com.prosper.learn.common.Enums.ObjectType.post;
 
-@RestController
+//@RestController
 //@SaCheckLogin
 @RequiredArgsConstructor
 public class AggregateController implements AggregateClient {

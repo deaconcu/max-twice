@@ -13,34 +13,34 @@ public interface RoadmapClient {
     /**
      * 根据职业ID获取课程列表
      */
-    @GetMapping("/roadmap/list/{professionId}")
+    //@GetMapping("/roadmap/list/{professionId}")
     Response<List<RoadmapDTO>> getListByProfession(
             @PathVariable("professionId") Long professionId, @RequestParam("lastId") Long lastId);
 
     /**
      * 更新课程信息
      */
-    @PutMapping("/roadmap/{id}")
+    //@PutMapping("/roadmap/{id}")
     Response<Void> putById(@PathVariable("id") Long id, @RequestParam("content") String content);
 
-    @PutMapping("/roadmap/{id}/upvote")
+    //@PutMapping("/roadmap/{id}/upvote")
     Response<Object> upvote(@PathVariable("id") Long id);
     /**
      * 创建新课程
      */
-    @PostMapping("/roadmap")
+    //@PostMapping("/roadmap")
     Response<Long> post(@RequestParam Long professionId, @RequestParam String content, @RequestParam String description);
 
     /**
      * 获取课程详情
      */
-    @GetMapping("/roadmap/{id}")
+    //@GetMapping("/roadmap/{id}")
     Response<RoadmapDTO> getById(@PathVariable("id") Long id);
 
     /**
      * 置顶用户课程
      */
-    @PostMapping("/roadmap/pin")
+    //@PostMapping("/roadmap/pin")
     Response<Object> pin(@RequestParam Long professionId, @RequestParam Long roadmapId);
 
 }

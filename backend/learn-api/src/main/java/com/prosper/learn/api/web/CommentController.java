@@ -22,7 +22,7 @@ import java.util.*;
 import static com.prosper.learn.common.Enums.CommentState.submited;
 import static com.prosper.learn.common.Enums.MessageType.*;
 
-@RestController
+//@RestController
 //@SaCheckLogin
 @RequiredArgsConstructor
 public class CommentController implements CommentClient {

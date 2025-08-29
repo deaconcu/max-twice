@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.*;
 
-@RestController
+//@RestController
 //@SaCheckLogin
 @Slf4j
 @RequiredArgsConstructor

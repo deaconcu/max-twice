@@ -2,6 +2,7 @@ package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.UpvoteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +38,7 @@ public class UpvotesController {
         } else if (objectType == comment.value()) {
             upvoteService.upvoteComment(objectId, userId);
         } else {
-            throw new IllegalArgumentException("不支持的对象类型");
+            throw ErrorCode.INVALID_PARAMETER.exception();
         }
         
         Object result = upvoteService.getUpvoteObjectWithStatus(objectId, objectType, userId);

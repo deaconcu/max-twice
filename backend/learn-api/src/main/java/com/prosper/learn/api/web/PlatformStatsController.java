@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
  * @author Claude
  * @since 2024-01-20
  */
-@RestController
+//@RestController
 public class PlatformStatsController implements PlatformStatsClient {
     
     @Autowired

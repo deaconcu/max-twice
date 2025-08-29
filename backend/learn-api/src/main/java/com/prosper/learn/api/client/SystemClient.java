@@ -10,14 +10,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 public interface SystemClient {
 
     // 获取单个对象
-    @GetMapping("/system")
+    //@GetMapping("/system")
     Response<JsonNode> get();
 
     // 获取单个对象
-    @GetMapping(value = "/system", params = "part")
+    //@GetMapping(value = "/system", params = "part")
     Response<JsonNode> getPart(String part);
 
     // 获取单个对象
-    @PostMapping("/system")
+    //@PostMapping("/system")
     Response<Object> post(String config);
 }

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface TocClient {
 
     // 提交或修改用户目录
-    @PostMapping("/toc")
+    //@PostMapping("/toc")
     Response<Object> post(@RequestParam(value = "courseId") Long courseId,
                           @RequestParam(value = "indexArray") String indexArray);
 

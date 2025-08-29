@@ -322,7 +322,7 @@ public class MessageService {
     /**
      * 申请课程（带完整业务逻辑）
      */
-    public void applyCourse(String title, String summary, String explanation, Long parentId, int userId) {
+    public void applyCourse(String title, String summary, String explanation, Long parentId, long userId) {
         CourseDO course = null;
         if (parentId != 0) {
             course = courseMapper.getById(parentId);

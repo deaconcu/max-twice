@@ -2,7 +2,12 @@ package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.ContentsService;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -24,13 +29,14 @@ public class ContentsController {
      */
     @PostMapping("/contents")
     public ApiResponse<Void> postContents(
-            @RequestParam("path") String path,
-            @RequestParam("courseId") Long courseId,
-            @RequestParam("postingId") Long postingId,
-            @RequestParam("action") int action,
+            @RequestParam("path") @NotBlank String path,
+            @RequestParam("courseId") @Positive Long courseId,
+            @RequestParam("postingId") @Positive Long postingId,
+            @RequestParam("action") @Min(1) @Max(4) int action,
             Model model) {
-        
-        int userId = StpUtil.getLoginIdAsInt();
+
+        long userId = StpUtil.getLoginIdAsLong();
+
         switch (action) {
             case 1:
                 contentsService.choose(userId, path, courseId, postingId);
@@ -44,6 +50,8 @@ public class ContentsController {
             case 4:
                 contentsService.pin(userId, courseId, path, postingId, false);
                 break;
+            default:
+                throw ErrorCode.NOT_SUPPORTED.exception();
         }
         return ApiResponse.success();
     }

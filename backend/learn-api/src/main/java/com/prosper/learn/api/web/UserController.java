@@ -25,12 +25,11 @@ import java.util.stream.Collectors;
 
 import static com.prosper.learn.dto.Response.*;
 
-@RestController
+//@RestController
 @Slf4j
 @RequiredArgsConstructor
 public class UserController implements UserClient {
 
-    private final MessageUtils messageUtils;
     private final UserProfileMapper userProfileMapper;
     private final CourseMapper courseMapper;
     private final UserMapper userMapper;

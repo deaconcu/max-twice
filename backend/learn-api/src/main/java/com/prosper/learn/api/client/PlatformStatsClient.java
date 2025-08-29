@@ -18,7 +18,7 @@ public interface PlatformStatsClient {
      * 
      * @return 平台统计数据
      */
-    @GetMapping("/platform/stats")
+    //@GetMapping("/platform/stats")
     Response<PlatformStatsDTO> getPlatformStats();
     
     /**
@@ -26,6 +26,6 @@ public interface PlatformStatsClient {
      * 
      * @return 刷新后的统计数据
      */
-    @PostMapping("/platform/stats/refresh")
+    //@PostMapping("/platform/stats/refresh")
     Response<PlatformStatsDTO> refreshPlatformStats();
 }
