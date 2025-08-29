@@ -63,7 +63,7 @@ public class ProgressController {
     @PostMapping("/progress/courses/{courseId}/start")
     public ApiResponse<Boolean> startCourse(@PathVariable Long courseId) {
         Long userId = StpUtil.getLoginIdAsLong();
-        boolean result = userCourseService.startCourseWithValidation(userId, courseId);
+        boolean result = userCourseService.startCourse(userId, courseId);
         return ApiResponse.success(result);
     }
 
@@ -74,7 +74,7 @@ public class ProgressController {
     @GetMapping("/progress/courses/{courseId}")
     public ApiResponse<UserCourseDTO> getCourseProgress(@PathVariable Long courseId) {
         Long userId = StpUtil.getLoginIdAsLong();
-        UserCourseDTO progress = userCourseService.getUserCourseWithValidation(userId, courseId);
+        UserCourseDTO progress = userCourseService.getUserCourse(userId, courseId);
         return ApiResponse.success(progress);
     }
 
@@ -85,7 +85,7 @@ public class ProgressController {
     @GetMapping("/progress/courses")
     public ApiResponse<List<UserCourseDTO>> getAllCoursesProgress(@RequestParam(required = false, defaultValue = "0") Long lastId) {
         Long userId = StpUtil.getLoginIdAsLong();
-        List<UserCourseDTO> progressList = userCourseService.getUserCourseListWithValidation(userId, lastId);
+        List<UserCourseDTO> progressList = userCourseService.getUserCourseList(userId, lastId);
         return ApiResponse.success(progressList);
     }
 
@@ -99,7 +99,7 @@ public class ProgressController {
             @RequestParam Integer progressPercent) {
         
         Long userId = StpUtil.getLoginIdAsLong();
-        UserCourseDTO progress = userCourseService.updateWithValidation(userId, courseId, progressPercent);
+        UserCourseDTO progress = userCourseService.update(userId, courseId, progressPercent);
         return ApiResponse.success(progress);
     }
 
@@ -110,7 +110,7 @@ public class ProgressController {
     @DeleteMapping("/progress/courses/{courseId}")
     public ApiResponse<String> deleteCourseProgress(@PathVariable Long courseId) {
         Long userId = StpUtil.getLoginIdAsLong();
-        userCourseService.deleteWithValidation(userId, courseId);
+        userCourseService.delete(userId, courseId);
         return ApiResponse.success("删除成功");
     }
 
