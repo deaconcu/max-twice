@@ -6,12 +6,9 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.LearningProgressService;
 import com.prosper.learn.domain.service.UserCourseService;
 import com.prosper.learn.dto.UserCourseDTO;
-import com.prosper.learn.persistence.dataobject.UserCourseDO;
-import com.prosper.learn.persistence.mapper.UserCourseMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,30 +23,15 @@ public class ProgressController {
 
     private final LearningProgressService learningProgressService;
     private final UserCourseService userCourseService;
-    private final UserCourseMapper userCourseMapper;
 
     /**
      * 标记节点完成
      * 映射: POST /user/complete/{nodeId} → POST /api/v1/progress/nodes/{nodeId}/complete
      */
     @PostMapping("/progress/nodes/{nodeId}/complete")
-    public ApiResponse<Object> markNodeCompleted(@PathVariable Long nodeId, @RequestParam Long courseId) {
+    public ApiResponse<Map<String, Object>> markNodeCompleted(@PathVariable Long nodeId, @RequestParam Long courseId) {
         long userId = StpUtil.getLoginIdAsLong();
-        
-        boolean isNewlyCompleted = learningProgressService.markNodeCompleted(userId, nodeId, courseId);
-        
-        UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
-        Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("nodeId", nodeId);
-        result.put("completed", true);
-        result.put("isNewlyCompleted", isNewlyCompleted);
-        result.put("courseProgress", courseProgress);
-        
-        long totalCompleted = learningProgressService.getUserCompletedCount(userId);
-        result.put("totalCompletedNodes", totalCompleted);
-
+        Map<String, Object> result = learningProgressService.markNodeCompletedWithResponse(userId, nodeId, courseId);
         return ApiResponse.success(result);
     }
 
@@ -58,23 +40,9 @@ public class ProgressController {
      * 映射: DELETE /user/complete/{nodeId} → DELETE /api/v1/progress/nodes/{nodeId}/complete
      */
     @DeleteMapping("/progress/nodes/{nodeId}/complete")
-    public ApiResponse<Object> unmarkNodeCompleted(@PathVariable Long nodeId, @RequestParam Long courseId) {
+    public ApiResponse<Map<String, Object>> unmarkNodeCompleted(@PathVariable Long nodeId, @RequestParam Long courseId) {
         long userId = StpUtil.getLoginIdAsLong();
-        
-        boolean wasRemoved = learningProgressService.unmarkNodeCompleted(userId, nodeId, courseId);
-        
-        UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
-        Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("nodeId", nodeId);
-        result.put("completed", false);
-        result.put("wasRemoved", wasRemoved);
-        result.put("courseProgress", courseProgress);
-        
-        long totalCompleted = learningProgressService.getUserCompletedCount(userId);
-        result.put("totalCompletedNodes", totalCompleted);
-
+        Map<String, Object> result = learningProgressService.unmarkNodeCompletedWithResponse(userId, nodeId, courseId);
         return ApiResponse.success(result);
     }
 
@@ -83,15 +51,9 @@ public class ProgressController {
      * 映射: GET /user/complete/{nodeId} → GET /api/v1/progress/nodes/{nodeId}/status
      */
     @GetMapping("/progress/nodes/{nodeId}/status")
-    public ApiResponse<Object> getNodeCompletionStatus(@PathVariable Long nodeId) {
+    public ApiResponse<Map<String, Object>> getNodeCompletionStatus(@PathVariable Long nodeId) {
         long userId = StpUtil.getLoginIdAsLong();
-        
-        boolean isCompleted = learningProgressService.isNodeCompleted(userId, nodeId);
-        
-        Map<String, Object> result = new HashMap<>();
-        result.put("nodeId", nodeId);
-        result.put("completed", isCompleted);
-
+        Map<String, Object> result = learningProgressService.getNodeCompletionStatusResponse(userId, nodeId);
         return ApiResponse.success(result);
     }
 
@@ -100,14 +62,9 @@ public class ProgressController {
      * 映射: POST /user/course → POST /api/v1/progress/courses/{courseId}/start
      */
     @PostMapping("/progress/courses/{courseId}/start")
-    public ApiResponse<Object> startCourse(@PathVariable Long courseId) {
+    public ApiResponse<Boolean> startCourse(@PathVariable Long courseId) {
         Long userId = StpUtil.getLoginIdAsLong();
-
-        if (courseId == null || courseId <= 0) {
-            throw new IllegalArgumentException("课程ID不能为空");
-        }
-
-        boolean result = userCourseService.startCourse(userId, courseId);
+        boolean result = userCourseService.startCourseWithValidation(userId, courseId);
         return ApiResponse.success(result);
     }
 
@@ -118,12 +75,7 @@ public class ProgressController {
     @GetMapping("/progress/courses/{courseId}")
     public ApiResponse<UserCourseDTO> getCourseProgress(@PathVariable Long courseId) {
         Long userId = StpUtil.getLoginIdAsLong();
-
-        if (courseId == null || courseId <= 0) {
-            throw new IllegalArgumentException("课程ID不能为空");
-        }
-
-        UserCourseDTO progress = userCourseService.getUserCourse(userId, courseId);
+        UserCourseDTO progress = userCourseService.getUserCourseWithValidation(userId, courseId);
         return ApiResponse.success(progress);
     }
 
@@ -133,10 +85,8 @@ public class ProgressController {
      */
     @GetMapping("/progress/courses")
     public ApiResponse<List<UserCourseDTO>> getAllCoursesProgress(@RequestParam(required = false, defaultValue = "0") Long lastId) {
-        if (lastId == null || lastId < 0) lastId = 0L;
         Long userId = StpUtil.getLoginIdAsLong();
-
-        List<UserCourseDTO> progressList = userCourseService.getUserCourseList(userId, lastId);
+        List<UserCourseDTO> progressList = userCourseService.getUserCourseListWithValidation(userId, lastId);
         return ApiResponse.success(progressList);
     }
 
@@ -150,16 +100,7 @@ public class ProgressController {
             @RequestParam Integer progressPercent) {
         
         Long userId = StpUtil.getLoginIdAsLong();
-
-        if (courseId == null || courseId <= 0) {
-            throw new IllegalArgumentException("课程ID不能为空");
-        }
-
-        if (progressPercent == null || progressPercent < 0 || progressPercent > 100) {
-            throw new IllegalArgumentException("进度百分比必须在0-100之间");
-        }
-
-        UserCourseDTO progress = userCourseService.update(userId, courseId, progressPercent);
+        UserCourseDTO progress = userCourseService.updateWithValidation(userId, courseId, progressPercent);
         return ApiResponse.success(progress);
     }
 
@@ -168,14 +109,9 @@ public class ProgressController {
      * 映射: DELETE /user/course → DELETE /api/v1/progress/courses/{courseId}
      */
     @DeleteMapping("/progress/courses/{courseId}")
-    public ApiResponse<Object> deleteCourseProgress(@PathVariable Long courseId) {
+    public ApiResponse<String> deleteCourseProgress(@PathVariable Long courseId) {
         Long userId = StpUtil.getLoginIdAsLong();
-
-        if (courseId == null || courseId <= 0) {
-            throw new IllegalArgumentException("课程ID不能为空");
-        }
-
-        userCourseService.delete(userId, courseId);
+        userCourseService.deleteWithValidation(userId, courseId);
         return ApiResponse.success("删除成功");
     }
 
@@ -184,20 +120,9 @@ public class ProgressController {
      * 映射: POST /user/complete/course/{courseId} → POST /api/v1/progress/courses/{courseId}/complete
      */
     @PostMapping("/progress/courses/{courseId}/complete")
-    public ApiResponse<Object> markCourseCompleted(@PathVariable Long courseId) {
+    public ApiResponse<Map<String, Object>> markCourseCompleted(@PathVariable Long courseId) {
         long userId = StpUtil.getLoginIdAsLong();
-        
-        boolean result = learningProgressService.markCourseCompleted(userId, courseId);
-        
-        if (result) {
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("courseId", courseId);
-            responseData.put("completed", true);
-            responseData.put("message", "课程已标记为完成");
-            
-            return ApiResponse.success(responseData);
-        } else {
-            throw ErrorCode.SYSTEM_ERROR.exception();
-        }
+        Map<String, Object> result = learningProgressService.markCourseCompletedWithResponse(userId, courseId);
+        return ApiResponse.success(result);
     }
 }

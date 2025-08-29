@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,17 +14,23 @@ import com.prosper.learn.dto.RoadmapDTO;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
 import com.prosper.learn.persistence.dataobject.UserCourseDO;
+import com.prosper.learn.persistence.dataobject.UserProfileDO;
 import com.prosper.learn.persistence.mapper.CourseMapper;
 import com.prosper.learn.persistence.mapper.RoadmapMapper;
 import com.prosper.learn.persistence.mapper.UserMapper;
+import com.prosper.learn.persistence.mapper.UserProfileMapper;
+import com.prosper.learn.persistence.mapper.UserRoadmapMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,8 +41,11 @@ public class RoadmapService {
     private final CourseMapper courseMapper;
     private final RoadmapMapper roadmapMapper;
     private final UserMapper userMapper;
+    private final UserProfileMapper userProfileMapper;
+    private final UserRoadmapMapper userRoadmapMapper;
     private final UpvoteService upvoteService;
     private final UserCourseService userCourseService;
+    private final ScoreCalculationService scoreCalculationService;
 
     public RoadmapDTO getById(int id, int userId) {
         RoadmapDO roadmapDO = roadmapMapper.get(id);
@@ -314,5 +324,244 @@ public class RoadmapService {
         }
 
         return courseNames;
+    }
+
+    /**
+     * 获取职业路线图列表（带置顶和状态信息）
+     */
+    public List<RoadmapDTO> getRoadmapsByProfession(Long professionId, Long lastId, long userId) {
+        List<RoadmapDO> roadmapList = new ArrayList<>();
+        int limit = 20;
+
+        List<Long> pinnedRoadmapIds = new ArrayList<>();
+        if (lastId == null || lastId == 0) {
+            UserProfileDO userProfile = userProfileMapper.getById(userId);
+
+            if (userProfile != null && userProfile.getRoadmapPin() != null) {
+                Map<String, List<Long>> pinMap = null;
+                try {
+                    pinMap = objectMapper.readValue(userProfile.getRoadmapPin(), new TypeReference<>() {});
+                } catch (JsonProcessingException e) {
+                    throw ErrorCode.SYSTEM_ERROR.exception(e);
+                }
+
+                List<Long> professionPins = pinMap.get(professionId.toString());
+                if (professionPins != null && !professionPins.isEmpty()) {
+                    pinnedRoadmapIds = professionPins;
+                }
+            }
+
+            if (!pinnedRoadmapIds.isEmpty()) {
+                List<RoadmapDO> pinnedRoadmaps = roadmapMapper.getByIds(pinnedRoadmapIds);
+                roadmapList.addAll(pinnedRoadmaps);
+            }
+
+            int remainingLimit = limit - roadmapList.size();
+            if (remainingLimit > 0) {
+                List<RoadmapDO> otherRoadmaps = roadmapMapper.getListByProfessionExcludingOrderByScore(
+                    professionId, 0, remainingLimit, pinnedRoadmapIds);
+                roadmapList.addAll(otherRoadmaps);
+            }
+        } else {
+            RoadmapDO lastRoadmap = roadmapMapper.get(lastId);
+            if (lastRoadmap != null) {
+                roadmapList = roadmapMapper.getListByProfessionAfterScoreExcluding(
+                        professionId, lastRoadmap.getScore(), lastId, limit, null);
+            }
+        }
+
+        List<RoadmapDTO> dtoList = Converter.INSTANCE.toRoadMapDTO(roadmapList);
+
+        if (!dtoList.isEmpty()) {
+            List<Long> roadmapIds = dtoList.stream()
+                .map(RoadmapDTO::getId)
+                .collect(Collectors.toList());
+
+            Set<Long> upvotedIds = upvoteService.getUpvotedRoadmapIds(roadmapIds, userId);
+
+            Set<Long> pinnedIds = new HashSet<>();
+            if (lastId == null || lastId == 0) {
+                pinnedIds.addAll(pinnedRoadmapIds);
+            } else {
+                UserProfileDO userProfile = userProfileMapper.getById(userId);
+                if (userProfile != null && userProfile.getRoadmapPin() != null) {
+                    Map<String, List<Long>> pinMap = null;
+                    try {
+                        pinMap = objectMapper.readValue(userProfile.getRoadmapPin(), new TypeReference<>() {});
+                    } catch (JsonProcessingException e) {
+                        throw ErrorCode.SYSTEM_ERROR.exception(e);
+                    }
+                    List<Long> professionPins = pinMap.get(professionId.toString());
+                    if (professionPins != null) {
+                        pinnedIds.addAll(professionPins);
+                    }
+                }
+            }
+
+            List<Long> learningRoadmapIds = userRoadmapMapper.getBatchLearningStatus(userId, roadmapIds);
+            Set<Long> learningIds = new HashSet<>(learningRoadmapIds);
+
+            for (RoadmapDTO dto : dtoList) {
+                dto.setUpvoted(upvotedIds.contains(dto.getId()));
+                dto.setPinned(pinnedIds.contains(dto.getId()));
+                dto.setLearning(learningIds.contains(dto.getId()));
+            }
+        }
+
+        for (RoadmapDTO dto : dtoList) {
+            if (dto.getContent() != null) {
+                String formattedContent = parseContentToGraphFormat(dto.getContent(), userId);
+                dto.setContent(formattedContent);
+            }
+        }
+
+        return dtoList;
+    }
+
+    /**
+     * 更新路线图
+     */
+    @Transactional
+    public void updateRoadmap(Long id, String content, long userId) {
+        if (!isValidContentFormat(content)) {
+            throw ErrorCode.ROADMAP_CONTENT_INVALID.exception();
+        }
+
+        RoadmapDO roadmapDO = roadmapMapper.get(id.intValue());
+        if (roadmapDO == null) {
+            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+        }
+
+        if (roadmapDO.getCreatorId() != userId) {
+            throw ErrorCode.PERMISSION_DENIED.exception();
+        }
+
+        roadmapDO.setContent(content);
+        roadmapDO.setContentHash(calculateContentHash(content));
+        roadmapDO.setUpdatedAt(LocalDateTime.now());
+
+        roadmapMapper.update(roadmapDO);
+    }
+
+    /**
+     * 路线图点赞
+     */
+    @Transactional
+    public RoadmapDTO upvoteRoadmap(Long id, long userId) {
+        boolean voted = upvoteService.upvoteRoadmap(id.intValue(), (int)userId);
+
+        int voteDelta = voted ? 1 : -1;
+        roadmapMapper.updateVoteCount(id.intValue(), voteDelta);
+
+        RoadmapDO roadmapDO = roadmapMapper.get(id.intValue());
+
+        scoreCalculationService.checkAndUpdateRoadmapScore(roadmapDO);
+        roadmapDO = roadmapMapper.get(id.intValue());
+
+        RoadmapDTO roadmapDTO = Converter.INSTANCE.toRoadMapDTO(roadmapDO);
+        roadmapDTO.setUpvoted(voted);
+
+        return roadmapDTO;
+    }
+
+    /**
+     * 创建路线图
+     */
+    @Transactional
+    public Long createRoadmap(Long professionId, String content, String description, long userId) {
+        if (!isValidContentFormat(content)) {
+            throw ErrorCode.ROADMAP_CONTENT_INVALID.exception();
+        }
+
+        RoadmapDO roadmapDO = new RoadmapDO();
+        roadmapDO.setProfessionId(professionId);
+        roadmapDO.setCreatorId(userId);
+        roadmapDO.setContent(content);
+        roadmapDO.setDescription(description);
+        roadmapDO.setContentHash(calculateContentHash(content));
+        roadmapDO.setVote(0);
+        roadmapDO.setComment(0);
+        roadmapDO.setCreatedAt(LocalDateTime.now());
+        roadmapDO.setUpdatedAt(LocalDateTime.now());
+
+        roadmapMapper.insert(roadmapDO);
+        return roadmapDO.getId();
+    }
+
+    /**
+     * 获取路线图详情（带格式化内容）
+     */
+    public RoadmapDTO getRoadmapWithContent(Long id, long userId) {
+        RoadmapDTO roadmapDTO = getById(id.intValue(), (int)userId);
+
+        if (roadmapDTO == null) {
+            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+        }
+
+        if (roadmapDTO.getContent() != null) {
+            String formattedContent = parseContentToGraphFormat(roadmapDTO.getContent(), userId);
+            roadmapDTO.setContent(formattedContent);
+        }
+
+        return roadmapDTO;
+    }
+
+    /**
+     * 置顶/取消置顶路线图
+     */
+    @Transactional
+    public String pinRoadmap(Long professionId, Long roadmapId, long userId) {
+        UserProfileDO userProfile = userProfileMapper.getById(userId);
+        Map<String, List<Long>> pinMap = new HashMap<>();
+
+        if (userProfile != null && userProfile.getRoadmapPin() != null) {
+            try {
+                pinMap = objectMapper.readValue(userProfile.getRoadmapPin(), new TypeReference<>() {});
+            } catch (JsonProcessingException e) {
+                throw ErrorCode.SYSTEM_ERROR.exception(e);
+            }
+        }
+
+        String professionKey = String.valueOf(professionId);
+        List<Long> professionPins = pinMap.getOrDefault(professionKey, new ArrayList<>());
+
+        boolean isPinned = professionPins.contains(roadmapId);
+        String message;
+
+        if (isPinned) {
+            professionPins.remove(roadmapId);
+            message = "unpinned";
+        } else {
+            if (professionPins.size() >= 19) {
+                throw ErrorCode.ROADMAP_PIN_LIMIT_EXCEEDED.exception();
+            }
+            professionPins.add(roadmapId);
+            message = "pinned";
+        }
+
+        if (professionPins.isEmpty()) {
+            pinMap.remove(professionKey);
+        } else {
+            pinMap.put(professionKey, professionPins);
+        }
+
+        String updatedPinJson = null;
+        try {
+            updatedPinJson = objectMapper.writeValueAsString(pinMap);
+        } catch (JsonProcessingException e) {
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
+        }
+
+        if (userProfile == null) {
+            userProfile = new UserProfileDO();
+            userProfile.setUserId(userId);
+            userProfile.setRoadmapPin(updatedPinJson);
+            userProfile.setSubscription("");
+            userProfileMapper.insert(userProfile);
+        } else {
+            userProfileMapper.updateRoadmapPin(userId, updatedPinJson);
+        }
+
+        return message;
     }
 }

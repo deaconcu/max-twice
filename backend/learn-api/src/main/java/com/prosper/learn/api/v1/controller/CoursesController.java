@@ -7,10 +7,6 @@ import com.prosper.learn.dto.CourseDTO;
 import com.prosper.learn.dto.CourseDTOV3;
 import com.prosper.learn.dto.CourseDTOV4;
 import com.prosper.learn.domain.service.CourseService;
-import com.prosper.learn.domain.service.CourseRankingScheduler;
-import com.prosper.learn.domain.util.Converter;
-import com.prosper.learn.persistence.dataobject.CourseDO;
-import com.prosper.learn.persistence.mapper.CourseMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -27,9 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CoursesController {
 
-    private final CourseMapper courseMapper;
     private final CourseService courseService;
-    private final CourseRankingScheduler courseRankingScheduler;
 
     /**
      * 获取课程详情
@@ -37,8 +31,8 @@ public class CoursesController {
      */
     @GetMapping("/courses/{id}")
     public ApiResponse<CourseDTOV4> getCourse(@PathVariable Long id) {
-        CourseDO course = courseMapper.getById(id);
-        return ApiResponse.success(Converter.INSTANCE.toCourseDTOV4(course));
+        CourseDTOV4 course = courseService.getCourseById(id);
+        return ApiResponse.success(course);
     }
 
     /**
@@ -47,8 +41,8 @@ public class CoursesController {
      */
     @GetMapping("/courses/search")
     public ApiResponse<List<CourseDTOV3>> searchCourses(@RequestParam String name) {
-        List<CourseDO> courseList = courseMapper.searchByName(name, 20);
-        return ApiResponse.success(Converter.INSTANCE.toCourseDTOV3(courseList));
+        List<CourseDTOV3> courseList = courseService.searchCoursesByName(name);
+        return ApiResponse.success(courseList);
     }
 
     /**
@@ -124,15 +118,7 @@ public class CoursesController {
      */
     @PutMapping("/courses/{id}")
     public ApiResponse<Object> updateCourse(@PathVariable Long id, @RequestBody CourseDTO course) {
-        CourseDO courseDo = courseMapper.getById(id);
-        if (courseDo == null) {
-            throw ErrorCode.SYSTEM_ERROR.exception();
-        }
-
-        courseDo.setName(course.getName());
-        courseDo.setDescription(course.getDescription());
-        courseMapper.update(courseDo);
-
+        courseService.updateCourse(id, course);
         return ApiResponse.success("更新成功");
     }
 

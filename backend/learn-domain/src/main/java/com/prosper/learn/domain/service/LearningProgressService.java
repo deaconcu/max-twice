@@ -679,4 +679,77 @@ public class LearningProgressService {
         // 返回平均进度
         return totalProgress / childNodeIds.size();
     }
+
+    /**
+     * 标记节点完成并返回完整的响应数据
+     */
+    public Map<String, Object> markNodeCompletedWithResponse(long userId, long nodeId, long courseId) {
+        boolean isNewlyCompleted = markNodeCompleted(userId, nodeId, courseId);
+        
+        UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
+        Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("nodeId", nodeId);
+        result.put("completed", true);
+        result.put("isNewlyCompleted", isNewlyCompleted);
+        result.put("courseProgress", courseProgress);
+        
+        long totalCompleted = getUserCompletedCount(userId);
+        result.put("totalCompletedNodes", totalCompleted);
+
+        return result;
+    }
+
+    /**
+     * 取消节点完成并返回完整的响应数据
+     */
+    public Map<String, Object> unmarkNodeCompletedWithResponse(long userId, long nodeId, long courseId) {
+        boolean wasRemoved = unmarkNodeCompleted(userId, nodeId, courseId);
+        
+        UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
+        Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("nodeId", nodeId);
+        result.put("completed", false);
+        result.put("wasRemoved", wasRemoved);
+        result.put("courseProgress", courseProgress);
+        
+        long totalCompleted = getUserCompletedCount(userId);
+        result.put("totalCompletedNodes", totalCompleted);
+
+        return result;
+    }
+
+    /**
+     * 获取节点完成状态响应数据
+     */
+    public Map<String, Object> getNodeCompletionStatusResponse(long userId, long nodeId) {
+        boolean isCompleted = isNodeCompleted(userId, nodeId);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("nodeId", nodeId);
+        result.put("completed", isCompleted);
+
+        return result;
+    }
+
+    /**
+     * 标记课程完成并返回完整的响应数据
+     */
+    public Map<String, Object> markCourseCompletedWithResponse(long userId, long courseId) {
+        boolean result = markCourseCompleted(userId, courseId);
+        
+        if (result) {
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("courseId", courseId);
+            responseData.put("completed", true);
+            responseData.put("message", "课程已标记为完成");
+            
+            return responseData;
+        } else {
+            throw new RuntimeException("标记课程完成失败");
+        }
+    }
 }

@@ -91,19 +91,6 @@ public class ProfessionsController {
      */
     @PostMapping("/professions")
     public ApiResponse<Object> createProfession(@RequestBody ProfessionDTO professionDTO) {
-        if (professionDTO.getName() == null || professionDTO.getName().trim().isEmpty()) {
-            throw ErrorCode.SYSTEM_ERROR.exception();
-        }
-        if (professionDTO.getPrice() == null || professionDTO.getPrice().trim().isEmpty()) {
-            professionDTO.setPrice("");
-        }
-        if (professionDTO.getSkills() == null || professionDTO.getSkills().trim().isEmpty()) {
-            professionDTO.setSkills("");
-        }
-        if (professionDTO.getIcon() == null || professionDTO.getIcon().trim().isEmpty()) {
-            professionDTO.setIcon("mdi-triangle-outline");
-        }
-
         professionDTO.setCreator(StpUtil.getLoginIdAsLong());
         professionService.create(professionDTO);
         return ApiResponse.success();

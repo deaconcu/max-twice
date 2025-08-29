@@ -2,6 +2,9 @@ package com.prosper.learn.domain.service;
 
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Enums.ObjectType;
+import com.prosper.learn.domain.util.Converter;
+import com.prosper.learn.dto.CommentDTO;
+import com.prosper.learn.dto.PostDTO;
 import com.prosper.learn.persistence.dataobject.CommentDO;
 import com.prosper.learn.persistence.dataobject.PostDO;
 import com.prosper.learn.persistence.dataobject.UpvoteDO;
@@ -14,8 +17,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -263,5 +268,63 @@ public class UpvoteService {
 
         //postingDO.setVote(postingDO.getVote() - 1);
         postMapper.update(postDO);
+    }
+
+    /**
+     * 获取完整的点赞对象信息(带用户点赞状态)
+     * @param objectId 对象ID
+     * @param objectType 对象类型
+     * @param userId 用户ID
+     * @return 返回完整的对象信息
+     */
+    public Object getUpvoteObjectWithStatus(Long objectId, int objectType, long userId) {
+        if (objectType == ObjectType.post.value()) {
+            PostDO postDO = postMapper.get(objectId);
+            if (postDO == null) {
+                throw new IllegalArgumentException("帖子不存在");
+            }
+            
+            PostDTO postDTO = Converter.INSTANCE.toPostDTO(postDO);
+            UpvoteDO upvoteDO = upvoteMapper.get(userId, objectId, ObjectType.post.value());
+            if (upvoteDO != null) {
+                postDTO.setVoteType(upvoteDO.getType());
+            }
+            return postDTO;
+        } else if (objectType == ObjectType.comment.value()) {
+            CommentDO commentDO = commentMapper.get(objectId);
+            if (commentDO == null) {
+                throw new IllegalArgumentException("评论不存在");
+            }
+            
+            CommentDTO commentDTO = Converter.INSTANCE.toCommentDTO(commentDO);
+            UpvoteDO upvoteDO = upvoteMapper.get(userId, objectId, ObjectType.comment.value());
+            if (upvoteDO != null) {
+                commentDTO.setUpvoted(1);
+            }
+            return commentDTO;
+        } else {
+            throw new IllegalArgumentException("不支持的对象类型");
+        }
+    }
+
+    /**
+     * 获取用户对指定对象的点赞状态
+     * @param objectId 对象ID
+     * @param objectType 对象类型
+     * @param userId 用户ID
+     * @return 包含点赞状态的Map
+     */
+    public Map<String, Object> getUpvoteStatus(Long objectId, int objectType, long userId) {
+        UpvoteDO upvoteDO = upvoteMapper.get(userId, objectId, objectType);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("objectId", objectId);
+        result.put("objectType", objectType);
+        result.put("upvoted", upvoteDO != null);
+        if (upvoteDO != null) {
+            result.put("type", upvoteDO.getType());
+        }
+        
+        return result;
     }
 }

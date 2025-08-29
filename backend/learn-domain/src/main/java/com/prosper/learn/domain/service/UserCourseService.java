@@ -186,4 +186,55 @@ public class UserCourseService {
         Map<Long, UserCourseDO> userCourseMap = userCourseMapper.getByUserIdAndCourseIdsAsMap((long) userId, courseIds);
         return userCourseMap;
     }
+
+    /**
+     * 开始学习课程（带参数验证）
+     */
+    public boolean startCourseWithValidation(Long userId, Long courseId) {
+        if (courseId == null || courseId <= 0) {
+            throw new IllegalArgumentException("课程ID不能为空");
+        }
+        return startCourse(userId, courseId);
+    }
+
+    /**
+     * 获取课程进度（带参数验证）
+     */
+    public UserCourseDTO getUserCourseWithValidation(Long userId, Long courseId) {
+        if (courseId == null || courseId <= 0) {
+            throw new IllegalArgumentException("课程ID不能为空");
+        }
+        return getUserCourse(userId, courseId);
+    }
+
+    /**
+     * 获取所有课程进度（带参数验证）
+     */
+    public List<UserCourseDTO> getUserCourseListWithValidation(Long userId, Long lastId) {
+        if (lastId == null || lastId < 0) lastId = 0L;
+        return getUserCourseList(userId, lastId);
+    }
+
+    /**
+     * 更新课程进度（带参数验证）
+     */
+    public UserCourseDTO updateWithValidation(Long userId, Long courseId, Integer progressPercent) {
+        if (courseId == null || courseId <= 0) {
+            throw new IllegalArgumentException("课程ID不能为空");
+        }
+        if (progressPercent == null || progressPercent < 0 || progressPercent > 100) {
+            throw new IllegalArgumentException("进度百分比必须在0-100之间");
+        }
+        return update(userId, courseId, progressPercent);
+    }
+
+    /**
+     * 删除课程进度（带参数验证）
+     */
+    public void deleteWithValidation(Long userId, Long courseId) {
+        if (courseId == null || courseId <= 0) {
+            throw new IllegalArgumentException("课程ID不能为空");
+        }
+        delete(userId, courseId);
+    }
 }

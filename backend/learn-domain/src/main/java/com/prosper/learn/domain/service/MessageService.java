@@ -5,13 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Enums.MessageType;
 import com.prosper.learn.common.Utils;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.domain.util.Util;
 import com.prosper.learn.dto.message.*;
+import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.MessageDO;
 import com.prosper.learn.persistence.dataobject.NodeDO;
 import com.prosper.learn.persistence.dataobject.PostDO;
 import com.prosper.learn.persistence.dataobject.UserDO;
+import com.prosper.learn.persistence.mapper.CourseMapper;
 import com.prosper.learn.persistence.mapper.MessageMapper;
 import com.prosper.learn.persistence.mapper.NodeMapper;
 import com.prosper.learn.persistence.mapper.PostMapper;
@@ -37,6 +40,7 @@ public class MessageService {
     private final NodeMapper nodeMapper;
     private final MessageMapper messageMapper;
     private final UserMapper userMapper;
+    private final CourseMapper courseMapper;
     private final ObjectMapper objectMapper;
 
     public void create(String content, long senderId, long receiverId, MessageType messageType) {
@@ -315,4 +319,58 @@ public class MessageService {
         }
     }
 
+    /**
+     * 申请课程（带完整业务逻辑）
+     */
+    public void applyCourse(String title, String summary, String explanation, Long parentId, int userId) {
+        CourseDO course = null;
+        if (parentId != 0) {
+            course = courseMapper.getById(parentId);
+            if (course == null) {
+                throw new RuntimeException("course not found");
+            }
+        }
+
+        Map<String, String> data = new HashMap<>();
+        data.put("title", title);
+        data.put("summary", summary);
+        data.put("explanation", explanation);
+        data.put("parentId", Long.toString(parentId));
+        if (course != null) {
+            data.put("parentName", course.getName());
+        }
+
+        String jsonString = null;
+        try {
+            jsonString = objectMapper.writeValueAsString(data);
+        } catch (JsonProcessingException e) {
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
+        }
+
+        create(jsonString, userId, 0, Enums.MessageType.applyCourse);
+    }
+
+    /**
+     * 获取课程申请列表（带分页信息）
+     */
+    public Map<String, Object> getApplyCourseListWithPagination(int page, int length) {
+        if (page < 1) page = 1;
+        if (length < 1) length = 1;
+        if (length > 100) length = 100;
+        int count = getApplyCourseCount();
+        int totalPage = count / length + 1;
+        if (page > totalPage) page = totalPage;
+
+        Map<String, Object> resultMap = new HashMap<>();
+        List<MessageDTO> messageDTOList = getApplyCourseMessage(page, length);
+        resultMap.put("messages", messageDTOList);
+
+        Map<String, Integer> pagination = new HashMap<>();
+        pagination.put("total", count);
+        pagination.put("pageSize", length);
+        pagination.put("currentPage", page);
+        pagination.put("totalPages", totalPage);
+        resultMap.put("pagination", pagination);
+        return resultMap;
+    }
 }

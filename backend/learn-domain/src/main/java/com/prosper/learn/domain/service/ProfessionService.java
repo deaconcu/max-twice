@@ -2,6 +2,8 @@ package com.prosper.learn.domain.service;
 
 import com.prosper.learn.common.Enums;
 import static com.prosper.learn.common.Enums.ProfessionState;
+
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.ProfessionDTO;
 import com.prosper.learn.persistence.dataobject.ProfessionDO;
@@ -50,6 +52,19 @@ public class ProfessionService {
     }
 
     public Long create(ProfessionDTO professionDTO) {
+        if (professionDTO.getName() == null || professionDTO.getName().trim().isEmpty()) {
+            throw ErrorCode.SYSTEM_ERROR.exception();
+        }
+        if (professionDTO.getPrice() == null || professionDTO.getPrice().trim().isEmpty()) {
+            professionDTO.setPrice("");
+        }
+        if (professionDTO.getSkills() == null || professionDTO.getSkills().trim().isEmpty()) {
+            professionDTO.setSkills("");
+        }
+        if (professionDTO.getIcon() == null || professionDTO.getIcon().trim().isEmpty()) {
+            professionDTO.setIcon("mdi-triangle-outline");
+        }
+
         ProfessionDO professionDO = Converter.INSTANCE.toProfessionDO(professionDTO);
         professionDO.setState(ProfessionState.SUBMITTED.value());
         professionDO.setRejectedReason("");

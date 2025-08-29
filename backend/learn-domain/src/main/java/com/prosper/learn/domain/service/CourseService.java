@@ -1,8 +1,10 @@
 package com.prosper.learn.domain.service;
 
 import com.prosper.learn.common.Enums;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.CourseDTO;
+import com.prosper.learn.dto.CourseDTOV3;
 import com.prosper.learn.dto.CourseDTOV4;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.NodeDO;
@@ -11,6 +13,7 @@ import com.prosper.learn.persistence.mapper.NodeMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +27,31 @@ public class CourseService {
     private final CourseMapper courseMapper;
     private final NodeMapper nodeMapper;
     private final CourseRankingService courseRankingService;
+
+    public CourseDTOV4 getCourseById(Long id) {
+        CourseDO course = courseMapper.getById(id);
+        if (course == null) {
+            throw ErrorCode.COURSE_NOT_FOUND.exception();
+        }
+        return Converter.INSTANCE.toCourseDTOV4(course);
+    }
+
+    public List<CourseDTOV3> searchCoursesByName(String name) {
+        List<CourseDO> courseList = courseMapper.searchByName(name, 20);
+        return Converter.INSTANCE.toCourseDTOV3(courseList);
+    }
+
+    @Transactional
+    public void updateCourse(Long id, CourseDTO courseDTO) {
+        CourseDO courseDO = courseMapper.getById(id);
+        if (courseDO == null) {
+            throw ErrorCode.COURSE_NOT_FOUND.exception();
+        }
+
+        courseDO.setName(courseDTO.getName());
+        courseDO.setDescription(courseDTO.getDescription());
+        courseMapper.update(courseDO);
+    }
 
     @Cacheable(value = "cs", key = "#id")
     public CourseDO getCourseDOById(int id) {
@@ -70,36 +98,30 @@ public class CourseService {
                 .collect(java.util.stream.Collectors.toList());
     }
 
-    // 新增：课程批准操作
     public void approve(long id) {
-        // 先查询当前状态
         CourseDO courseDO = courseMapper.getById(id);
         if (courseDO == null) {
-            throw new RuntimeException("操作失败：课程不存在");
+            throw ErrorCode.COURSE_NOT_FOUND.exception();
         }
         if ("APPROVED".equals(courseDO.getState())) {
             throw new RuntimeException("操作失败：课程状态已是批准状态，无需重复操作");
         }
 
-        // 执行数据库操作，再次验证状态（防止并发问题）
         int rowsAffected = courseMapper.approve(id);
         if (rowsAffected == 0) {
             throw new RuntimeException("操作失败：课程状态已被其他操作修改，请刷新后重试");
         }
     }
 
-    // 新增：课程拒绝操作
     public void reject(long id, String rejectedReason) {
-        // 先查询当前状态
         CourseDO courseDO = courseMapper.getById(id);
         if (courseDO == null) {
-            throw new RuntimeException("操作失败：课程不存在");
+            throw ErrorCode.COURSE_NOT_FOUND.exception();
         }
         if ("REJECTED".equals(courseDO.getState())) {
             throw new RuntimeException("操作失败：课程状态已是被屏蔽状态，无需重复操作");
         }
 
-        // 执行数据库操作，再次验证状态（防止并发问题）
         int rowsAffected = courseMapper.reject(id, rejectedReason);
         if (rowsAffected == 0) {
             throw new RuntimeException("操作失败：课程状态已被其他操作修改，请刷新后重试");
@@ -109,7 +131,7 @@ public class CourseService {
     public void delete(long id) {
         CourseDO courseDO = courseMapper.getById(id);
         if (courseDO == null) {
-            throw new RuntimeException("操作失败：课程不存在");
+            throw ErrorCode.COURSE_NOT_FOUND.exception();
         }
 
         int rowsAffected = courseMapper.delete(id);

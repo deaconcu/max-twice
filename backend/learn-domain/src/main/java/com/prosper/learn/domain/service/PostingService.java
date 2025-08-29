@@ -1,16 +1,22 @@
 package com.prosper.learn.domain.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.common.Enums;
+import com.prosper.learn.common.Utils;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.NodeDTO;
 import com.prosper.learn.dto.PostDTO;
 import com.prosper.learn.dto.PostDTOV2;
+import com.prosper.learn.dto.UserDTOV1;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -306,4 +312,171 @@ public class PostingService {
         dailyStatsService.setViewsForPosts(postDTOList);
     }
 
+    /**
+     * 批量获取帖子（带用户信息和投票状态）
+     */
+    public List<PostDTO> getPostsWithUserAndVoteInfo(List<Long> ids, Long nodeId, double lastScore, Long lastPostingId, long currentUserId) {
+        List<PostDO> postDOList = null;
+        if (ids != null && ids.size() > 0) {
+            postDOList = postMapper.getByIds(ids);
+        } else if (nodeId != null && nodeId > 0) {
+            int count = 2;
+            postDOList = postMapper.getListByNodeAndScoreAndPaginated(nodeId, lastScore, lastPostingId, count, Enums.PostState.approved.value());
+        }
+        
+        if (postDOList == null) {
+            throw new IllegalArgumentException("不能获取帖子列表");
+        }
+
+        List<Long> allPostingIds = new ArrayList<>();
+        List<Long> userIds = new LinkedList<>();
+        postDOList.forEach(postingDO -> {
+            idToName(postingDO);
+            allPostingIds.add(postingDO.getId());
+            userIds.add(postingDO.getCreator());
+        });
+
+        List<UserDTOV1> userList = userIds.size() == 0 ?
+                new ArrayList<>() : Converter.INSTANCE.toUserDTOV1(userMapper.getByIds(userIds));
+        Map<Long, UserDTOV1> userMap = new HashMap<>();
+        for (UserDTOV1 user : userList) {
+            userMap.put(user.getId(), user);
+        }
+
+        List<PostDTO> postDTOList = Converter.INSTANCE.toPostDTO(postDOList);
+        postDTOList.stream().forEach(item -> {
+            item.setCreator(userMap.get(item.getCreatorId()));
+        });
+
+        if (allPostingIds.size() > 0) {
+            List<UpvoteDO> upvotes = upvoteMapper.getList((int)currentUserId, allPostingIds, Enums.ObjectType.post.value());
+            Map<Long, Integer> types = new HashMap<>();
+            for (UpvoteDO upvote : upvotes) {
+                types.put(upvote.getObjectId(), upvote.getType());
+            }
+
+            for (PostDTO posting : postDTOList) {
+                if (types.containsKey(posting.getId()))
+                    posting.setVoteType(types.get(posting.getId()));
+            }
+        }
+
+        return postDTOList;
+    }
+
+    /**
+     * 创建帖子（处理contents类型的特殊逻辑）
+     */
+    @Transactional
+    public void createPost(PostDTO posting) {
+        if (posting.getType() == Enums.PostType.contents.value()) {
+            NodeDO nodeDO = nodeMapper.getById(posting.getNodeId());
+            List<String> nodeNames;
+            try {
+                ObjectMapper objectMapper = new ObjectMapper();
+                nodeNames = objectMapper.readValue(posting.getContent(), new TypeReference<>() {});
+            } catch (JsonProcessingException e) {
+                log.error("Failed to process JSON content", e);
+                throw new RuntimeException("JSON解析失败", e);
+            }
+            String[] ids = new String[nodeNames.size()];
+            for (int i = 0; i < nodeNames.size(); i ++) {
+                NodeDO node = new NodeDO();
+                node.setName(nodeNames.get(i));
+                node.setDescription("");
+                node.setRoot(0l);
+                node.setCourseId(nodeDO.getCourseId());
+                node.setCreatedAt(Utils.getLocalDateTime());
+                node.setUpdatedAt(Utils.getLocalDateTime());
+                nodeMapper.insert(node);
+                ids[i] = Long.toString(node.getId());
+            }
+            posting.setContent(String.join(",", ids));
+        }
+
+        posting.setCreatorId(0l);
+        posting.setCreatedAt(Utils.getTimeString());
+        postMapper.insert(Converter.INSTANCE.toPostDO(posting));
+    }
+
+    /**
+     * 更新帖子内容
+     */
+    @Transactional
+    public void updatePost(Long id, PostDTO posting) {
+        PostDO postDO = postMapper.get(id);
+        if (postDO == null) {
+            throw new RuntimeException("帖子不存在");
+        }
+
+        postDO.setContent(posting.getContent());
+        postDO.setUpdatedAt(Utils.getLocalDateTime());
+        postMapper.update(postDO);
+    }
+
+    /**
+     * 删除帖子（软删除）
+     */
+    @Transactional
+    public void deletePost(Long id) {
+        PostDO postDO = postMapper.get(id);
+        if (postDO == null) {
+            throw new RuntimeException("帖子不存在");
+        }
+
+        postDO.setState(Enums.PostState.deleted.value());
+        postDO.setUpdatedAt(Utils.getLocalDateTime());
+        postMapper.update(postDO);
+    }
+
+    /**
+     * 获取帖子详情（转换为DTO）
+     */
+    public PostDTO getPostDetail(Long id) {
+        return Converter.INSTANCE.toPostDTO(get(id));
+    }
+
+    /**
+     * 获取节点帖子列表
+     */
+    public List<PostDTO> getNodePostsList(Long nodeId) {
+        int count = 3;
+        List<PostDO> postings = postMapper.getListByNode(nodeId, count, Enums.PostState.approved.value());
+        postings.forEach(this::idToName);
+        return Converter.INSTANCE.toPostDTO(postings);
+    }
+
+    /**
+     * 获取待审核帖子列表
+     */
+    public List<PostDTO> getPendingPostsList() {
+        List<PostDO> postDOList = postMapper.getListByState(Enums.PostState.approved.value(), 200);
+        for (PostDO postDO : postDOList) {
+            if (postDO.getType() == Enums.PostType.contents.value()) {
+                idToName(postDO);
+            }
+        }
+        return Converter.INSTANCE.toPostDTO(postDOList);
+    }
+
+    /**
+     * 审核帖子
+     */
+    @Transactional
+    public PostDTO approvePost(Long id, boolean approve) {
+        PostDO postDO = postMapper.get(id);
+        if (postDO == null) {
+            throw new RuntimeException("帖子不存在");
+        }
+
+        if (approve && postDO.getState() != Enums.PostState.approved.value()) {
+            postDO.setState(Enums.CommentState.approved.value());
+            postMapper.update(postDO);
+        }
+        if (!approve && postDO.getState() != Enums.CommentState.deleted.value()) {
+            postDO.setState(Enums.CommentState.deleted.value());
+            postMapper.update(postDO);
+        }
+        return Converter.INSTANCE.toPostDTO(postDO);
+    }
 }
