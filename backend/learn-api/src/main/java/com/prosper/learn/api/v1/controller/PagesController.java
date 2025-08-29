@@ -137,12 +137,12 @@ public class PagesController {
         CourseDO courseDO = courseMapper.getById(nodeDO.getCourseId());
         String path = "1-" + courseDO.getRootNode();
 
-        return ResponseEntity.ok(ApiResponse.success(read(courseDO, path, nodeDO, null)));
+        return ApiResponse.success(read(courseDO, path, nodeDO, null));
     }
 
     private ApiResponse<Object> readByPath(Long courseId, String path) {
         CourseDO courseDO = courseMapper.getById(courseId);
-        return ResponseEntity.ok(ApiResponse.success(read(courseDO, path, null, null)));
+        return ApiResponse.success(read(courseDO, path, null, null));
     }
 
     private Object read(CourseDO courseDO, String path, NodeDO nodeDO, PostDO postDO) {

@@ -94,7 +94,7 @@ public class FollowsController {
         }
 
         if (userIds.isEmpty()) {
-            return ResponseEntity.ok(ApiResponse.success(new LinkedList<>()));
+            return ApiResponse.success(new LinkedList<>());
         }
 
         List<UserDO> userDOList = userMapper.getByIds(userIds);

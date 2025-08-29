@@ -230,7 +230,7 @@ public class CommentsController {
     @GetMapping("/admin/comments/pending")
     public ApiResponse<List<CommentDTOV1>> getPendingComments() {
         List<CommentDO> commentDOList = commentMapper.getListByState(submited.value(), 50);
-        return ResponseEntity.ok(ApiResponse.success(Converter.INSTANCE.toCommentDTOV1(commentDOList)));
+        return ApiResponse.success(Converter.INSTANCE.toCommentDTOV1(commentDOList));
     }
 
     /**
