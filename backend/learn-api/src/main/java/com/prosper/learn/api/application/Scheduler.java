@@ -29,7 +29,7 @@ public class Scheduler {
     /**
      * 应用启动时执行课程统计数据初始化
      */
-    @Scheduled(initialDelay = 5000)
+    @Scheduled(initialDelay = 5000, fixedDelay = Long.MAX_VALUE)
     public void initializeCourseStats() {
         courseRankingScheduler.initializeCourseStats();
     }

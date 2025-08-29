@@ -1,6 +1,7 @@
 package com.prosper.learn.domain.service.business;
 
 import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.CourseDTO;
@@ -27,27 +28,110 @@ public class CourseService {
     private final CourseMapper courseMapper;
     private final NodeMapper nodeMapper;
     private final CourseRankingService courseRankingService;
+    private final SystemProperties systemProperties;
 
-    public CourseDTOV4 getCourseById(Long id) {
-        CourseDO course = courseMapper.getById(id);
-        if (course == null) {
+    // 不变常量 - 课程状态
+    private static final String STATE_APPROVED = "APPROVED";
+    private static final String STATE_REJECTED = "REJECTED";
+    private static final String STATE_ALL = "ALL";
+
+    // ========== 私有辅助方法 ==========
+
+    /**
+     * 验证课程是否存在
+     */
+    private CourseDO validateCourseExists(long courseId) {
+        CourseDO courseDO = courseMapper.getById(courseId);
+        if (courseDO == null) {
             throw ErrorCode.COURSE_NOT_FOUND.exception();
         }
+        return courseDO;
+    }
+
+    /**
+     * 验证父课程是否存在
+     */
+    private void validateParentCourseExists(long parentId) {
+        if (!systemProperties.getCourse().isEnableParentValidation()) {
+            return;
+        }
+        if (parentId > 0) {
+            CourseDO parentCourse = courseMapper.getById(parentId);
+            if (parentCourse == null) {
+                throw ErrorCode.COURSE_PARENT_NOT_FOUND.exception();
+            }
+        }
+    }
+
+    /**
+     * 验证课程状态并检查重复操作
+     */
+    private void validateCourseStateForApproval(CourseDO courseDO) {
+        if (!systemProperties.getCourse().isEnableStateValidation()) {
+            return;
+        }
+        if (STATE_APPROVED.equals(courseDO.getState())) {
+            throw ErrorCode.COURSE_ALREADY_APPROVED.exception();
+        }
+    }
+
+    /**
+     * 验证课程状态并检查重复操作
+     */
+    private void validateCourseStateForRejection(CourseDO courseDO) {
+        if (!systemProperties.getCourse().isEnableStateValidation()) {
+            return;
+        }
+        if (STATE_REJECTED.equals(courseDO.getState())) {
+            throw ErrorCode.COURSE_ALREADY_REJECTED.exception();
+        }
+    }
+
+    /**
+     * 验证数据库操作结果
+     */
+    private void validateOperationResult(int rowsAffected) {
+        if (rowsAffected == 0) {
+            throw ErrorCode.COURSE_STATE_CONFLICT.exception();
+        }
+    }
+
+    /**
+     * 转换为DTO并附加统计信息
+     */
+    private CourseDTOV4 convertToDTOWithStats(CourseDO courseDO) {
+        CourseDTOV4 courseDTO = Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseMapper);
+        
+        try {
+            CourseRankingService.CourseStats stats = courseRankingService.getCourseStats(courseDO.getId());
+            courseDTO.setLearnerCount((int) stats.getLearningCount());
+            courseDTO.setSubscriptionCount((int) stats.getSubscriptionCount());
+        } catch (Exception e) {
+            // 统计信息获取失败时设置默认值
+            courseDTO.setLearnerCount(0);
+            courseDTO.setSubscriptionCount(0);
+        }
+        
+        return courseDTO;
+    }
+
+    // ========== 公共业务方法 ==========
+
+    public CourseDTOV4 getCourseById(Long id) {
+        CourseDO course = validateCourseExists(id);
         return Converter.INSTANCE.toCourseDTOV4(course);
     }
 
     public List<CourseDTOV3> searchCoursesByName(String name) {
-        List<CourseDO> courseList = courseMapper.searchByName(name, 20);
+        int searchLimit = systemProperties.getCourse().getSearchLimit();
+        List<CourseDO> courseList = courseMapper.searchByName(name, searchLimit);
         return Converter.INSTANCE.toCourseDTOV3(courseList);
     }
 
     @Transactional
     public void updateCourse(Long id, CourseDTO courseDTO) {
-        CourseDO courseDO = courseMapper.getById(id);
-        if (courseDO == null) {
-            throw ErrorCode.COURSE_NOT_FOUND.exception();
-        }
-
+        CourseDO courseDO = validateCourseExists(id);
+        
         courseDO.setName(courseDTO.getName());
         courseDO.setDescription(courseDTO.getDescription());
         courseMapper.update(courseDO);
@@ -88,7 +172,7 @@ public class CourseService {
     // 新增：根据父课程ID获取子课程列表
     public List<CourseDTOV4> getListByParent(long parentId, String state) {
         List<CourseDO> courseDOList;
-        if (state.equals("ALL")) {
+        if (STATE_ALL.equals(state)) {
             courseDOList = courseMapper.listByParent(parentId);
         } else {
             courseDOList = courseMapper.listByParentAndState(state, parentId);
@@ -99,44 +183,27 @@ public class CourseService {
     }
 
     public void approve(long id) {
-        CourseDO courseDO = courseMapper.getById(id);
-        if (courseDO == null) {
-            throw ErrorCode.COURSE_NOT_FOUND.exception();
-        }
-        if ("APPROVED".equals(courseDO.getState())) {
-            throw new RuntimeException("操作失败：课程状态已是批准状态，无需重复操作");
-        }
+        CourseDO courseDO = validateCourseExists(id);
+        validateCourseStateForApproval(courseDO);
 
         int rowsAffected = courseMapper.approve(id);
-        if (rowsAffected == 0) {
-            throw new RuntimeException("操作失败：课程状态已被其他操作修改，请刷新后重试");
-        }
+        validateOperationResult(rowsAffected);
     }
 
     public void reject(long id, String rejectedReason) {
-        CourseDO courseDO = courseMapper.getById(id);
-        if (courseDO == null) {
-            throw ErrorCode.COURSE_NOT_FOUND.exception();
-        }
-        if ("REJECTED".equals(courseDO.getState())) {
-            throw new RuntimeException("操作失败：课程状态已是被屏蔽状态，无需重复操作");
-        }
+        CourseDO courseDO = validateCourseExists(id);
+        validateCourseStateForRejection(courseDO);
 
         int rowsAffected = courseMapper.reject(id, rejectedReason);
-        if (rowsAffected == 0) {
-            throw new RuntimeException("操作失败：课程状态已被其他操作修改，请刷新后重试");
-        }
+        validateOperationResult(rowsAffected);
     }
 
     public void delete(long id) {
-        CourseDO courseDO = courseMapper.getById(id);
-        if (courseDO == null) {
-            throw ErrorCode.COURSE_NOT_FOUND.exception();
-        }
+        validateCourseExists(id);
 
         int rowsAffected = courseMapper.delete(id);
         if (rowsAffected == 0) {
-            throw new RuntimeException("删除失败");
+            throw ErrorCode.COURSE_DELETE_FAILED.exception();
         }
     }
 
@@ -145,19 +212,13 @@ public class CourseService {
         course.setName(courseDTO.getName());
         course.setDescription(courseDTO.getDescription());
 
-        // 修正：parent 现在是对象类型，需要获取其 id
         long parentId = 0;
-        if (courseDTO.getParentId() != null && courseDTO.getParentId() <= 0) {
+        if (courseDTO.getParentId() != null && courseDTO.getParentId() > 0) {
             parentId = courseDTO.getParentId();
         }
         course.setParent(parentId);
 
-        if (parentId > 0) {
-            CourseDO parentCourse = courseMapper.getById(parentId);
-            if (parentCourse == null) {
-                throw new RuntimeException("parent course is not exist");
-            }
-        }
+        validateParentCourseExists(parentId);
 
         course.setCreator(courseDTO.getCreator());
         course.setMainCategory(courseDTO.getMainCategory());
@@ -174,10 +235,8 @@ public class CourseService {
     }
 
     public void createSubcourse(String name, String description, long parentId, long userId) {
+        validateParentCourseExists(parentId);
         CourseDO parentCourse = courseMapper.getById(parentId);
-        if (parentCourse == null) {
-            throw new RuntimeException("Parent course does not exist");
-        }
 
         CourseDO subCourse = new CourseDO();
         subCourse.setName(name);
@@ -185,7 +244,7 @@ public class CourseService {
         subCourse.setCreator(userId);
         subCourse.setParent(parentId);
         subCourse.setState(CourseState.SUBMITTED.value());
-        subCourse.setRootNode(0L); // 子课程的 rootNode 初始为 0
+        subCourse.setRootNode(0L);
         subCourse.setMainCategory(parentCourse.getMainCategory());
         subCourse.setSubCategory(parentCourse.getSubCategory());
 
@@ -201,72 +260,47 @@ public class CourseService {
     // 获取热门课程（使用Redis排行榜）
     public List<CourseDTOV4> getHotCourses(int limit) {
         try {
-            // 从Redis获取热门课程ID列表
             List<Long> hotCourseIds = courseRankingService.getHotCourseIds(limit);
             
             if (hotCourseIds.isEmpty()) {
                 return new ArrayList<>();
             }
             
-            // 根据ID列表获取课程详情
             List<CourseDO> courseDOList = courseMapper.getByIds(hotCourseIds);
             
-            // 转换为DTO并附加统计信息
             List<CourseDTOV4> result = new ArrayList<>();
             for (CourseDO courseDO : courseDOList) {
-                CourseDTOV4 courseDTO = Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseMapper);
-                
-                // 从Redis获取统计数据
-                CourseRankingService.CourseStats stats = courseRankingService.getCourseStats(courseDO.getId());
-                
-                // 将统计数据添加到DTO中（需要在DTO中添加相应字段）
-                // 这里暂时使用description字段存储统计信息，实际项目中应该在DTO中添加专门的字段
-                courseDTO.setLearnerCount((int) stats.getLearningCount());
-                courseDTO.setSubscriptionCount((int) stats.getSubscriptionCount());
-                
-                result.add(courseDTO);
+                result.add(convertToDTOWithStats(courseDO));
             }
             
             return result;
             
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("获取热门课程失败: " + e.getMessage(), e);
+            throw ErrorCode.COURSE_OPERATION_FAILED.exception(e);
         }
     }
     
-    // 获取热门课程完整排行榜（前100名）
+    // 获取热门课程完整排行榜
     public List<CourseDTOV4> getHotCoursesRanking() {
         try {
-            // 获取前100名热门课程
-            List<Long> hotCourseIds = courseRankingService.getHotCourseIds(100);
+            int rankingLimit = systemProperties.getCourse().getHotCoursesRankingLimit();
+            List<Long> hotCourseIds = courseRankingService.getHotCourseIds(rankingLimit);
             
             if (hotCourseIds.isEmpty()) {
                 return new ArrayList<>();
             }
             
-            // 根据ID列表获取课程详情
             List<CourseDO> courseDOList = courseMapper.getByIds(hotCourseIds);
             
-            // 转换为DTO并附加统计信息
             List<CourseDTOV4> result = new ArrayList<>();
             for (CourseDO courseDO : courseDOList) {
-                CourseDTOV4 courseDTO = Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseMapper);
-                
-                // 从Redis获取统计数据
-                CourseRankingService.CourseStats stats = courseRankingService.getCourseStats(courseDO.getId());
-                
-                courseDTO.setLearnerCount((int) stats.getLearningCount());
-                courseDTO.setSubscriptionCount((int) stats.getSubscriptionCount());
-                
-                result.add(courseDTO);
+                result.add(convertToDTOWithStats(courseDO));
             }
             
             return result;
             
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("获取热门课程排行榜失败: " + e.getMessage(), e);
+            throw ErrorCode.COURSE_OPERATION_FAILED.exception(e);
         }
     }
 }

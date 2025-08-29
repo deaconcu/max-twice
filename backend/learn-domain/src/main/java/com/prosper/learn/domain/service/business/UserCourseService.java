@@ -2,6 +2,7 @@ package com.prosper.learn.domain.service.business;
 
 import static com.prosper.learn.common.Enums.UserCourseState;
 
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.CourseDTOV2;
@@ -27,6 +28,78 @@ public class UserCourseService {
     private final CourseMapper courseMapper;
     private final CourseRankingService courseRankingService;
 
+    // ========== 常量定义 ==========
+    private static final int MIN_PROGRESS = 0;
+    private static final int MAX_PROGRESS = 100;
+    private static final long DEFAULT_MAX_ID = Long.MAX_VALUE;
+
+    // ========== 私有验证方法 ==========
+    
+    /**
+     * 验证用户ID
+     */
+    private void validateUserId(Long userId) {
+        if (userId == null || userId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception();
+        }
+    }
+    
+    /**
+     * 验证课程ID
+     */
+    private void validateCourseId(Long courseId) {
+        if (courseId == null || courseId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception();
+        }
+    }
+    
+    /**
+     * 验证进度百分比
+     */
+    private void validateProgressPercent(Integer progressPercent) {
+        if (progressPercent == null || progressPercent < MIN_PROGRESS || progressPercent > MAX_PROGRESS) {
+            throw ErrorCode.USER_COURSE_PROGRESS_INVALID.exception();
+        }
+    }
+    
+    /**
+     * 验证并获取用户课程记录
+     */
+    private UserCourseDO validateAndGetUserCourse(Long userId, Long courseId) {
+        UserCourseDO userCourseDO = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
+        if (userCourseDO == null) {
+            throw ErrorCode.USER_COURSE_NOT_FOUND.exception();
+        }
+        return userCourseDO;
+    }
+    
+    /**
+     * 加载课程信息到DTO
+     */
+    private void loadCourseInfo(UserCourseDTO dto, Long courseId) {
+        CourseDO courseDO = courseMapper.getById(courseId.intValue());
+        if (courseDO != null) {
+            List<CourseDTOV2> courseList = Converter.INSTANCE.toCourseDTOV2(List.of(courseDO));
+            if (!courseList.isEmpty()) {
+                dto.setCourse(courseList.get(0));
+            }
+        }
+    }
+    
+    /**
+     * 更新学习状态
+     */
+    private void updateLearningState(UserCourseDO progressDO, Integer progressPercent) {
+        progressDO.setProgressPercent(progressPercent);
+        
+        if (progressPercent >= MAX_PROGRESS) {
+            progressDO.setState(UserCourseState.COMPLETED.value());
+            progressDO.setCompletedAt(LocalDateTime.now());
+        } else if (progressPercent > MIN_PROGRESS) {
+            progressDO.setState(UserCourseState.IN_PROGRESS.value());
+        }
+    }
+
     /**
      * 用户开始学习课程
      * @param userId 用户ID
@@ -34,6 +107,9 @@ public class UserCourseService {
      * @return 学习进度记录
      */
     public boolean startCourse(Long userId, Long courseId) {
+        validateUserId(userId);
+        validateCourseId(courseId);
+        
         // 检查是否已经存在学习记录
         UserCourseDO existing = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
 
@@ -49,7 +125,7 @@ public class UserCourseService {
         UserCourseDO progressDO = new UserCourseDO();
         progressDO.setUserId(userId);
         progressDO.setCourseId(courseId);
-        progressDO.setProgressPercent(0);
+        progressDO.setProgressPercent(MIN_PROGRESS);
         progressDO.setState(UserCourseState.IN_PROGRESS.value());
         progressDO.setStartedAt(LocalDateTime.now());
 
@@ -68,6 +144,9 @@ public class UserCourseService {
      * @return 学习进度记录，如果不存在返回null
      */
     public UserCourseDTO getUserCourse(Long userId, Long courseId) {
+        validateUserId(userId);
+        validateCourseId(courseId);
+        
         UserCourseDO userCourseDo = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
         if (userCourseDo == null) {
             return null;
@@ -75,13 +154,7 @@ public class UserCourseService {
 
         UserCourseDTO dto = Converter.INSTANCE.toUserCourseDTO(userCourseDo);
         // 加载课程信息
-        CourseDO courseDO = courseMapper.getById(userCourseDo.getCourseId().intValue());
-        if (courseDO != null) {
-            List<CourseDTOV2> courseList = Converter.INSTANCE.toCourseDTOV2(List.of(courseDO));
-            if (!courseList.isEmpty()) {
-                dto.setCourse(courseList.get(0));
-            }
-        }
+        loadCourseInfo(dto, userCourseDo.getCourseId());
 
         return dto;
     }
@@ -92,8 +165,10 @@ public class UserCourseService {
      * @return 用户所有课程学习进度列表
      */
     public List<UserCourseDTO> getUserCourseList(Long userId, Long lastId) {
+        validateUserId(userId);
+        
         if (lastId == null || lastId <= 0) {
-            lastId = Long.MAX_VALUE;
+            lastId = DEFAULT_MAX_ID;
         }
         List<UserCourseDO> userCourseDOList = userCourseMapper.getByUserId(userId, lastId);
         List<UserCourseDTO> dtoList = Converter.INSTANCE.toUserCourseDTO(userCourseDOList);
@@ -130,33 +205,18 @@ public class UserCourseService {
      * @return 更新后的学习进度记录
      */
     public UserCourseDTO update(Long userId, Long courseId, Integer progressPercent) {
-        UserCourseDO progressDO = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
+        validateUserId(userId);
+        validateCourseId(courseId);
+        validateProgressPercent(progressPercent);
+        
+        UserCourseDO progressDO = validateAndGetUserCourse(userId, courseId);
 
-        if (progressDO == null) {
-            throw new RuntimeException("课程学习记录不存在");
-        }
-
-        progressDO.setProgressPercent(progressPercent);
-
-        // 如果进度达到100%，标记为完成
-        if (progressPercent >= 100) {
-            progressDO.setState(UserCourseState.COMPLETED.value());
-            progressDO.setCompletedAt(LocalDateTime.now());
-        } else if (progressPercent > 0) {
-            progressDO.setState(UserCourseState.IN_PROGRESS.value());
-        }
-
+        updateLearningState(progressDO, progressPercent);
         userCourseMapper.update(progressDO);
 
         UserCourseDTO dto = Converter.INSTANCE.toUserCourseDTO(progressDO);
         // 加载课程信息
-        CourseDO courseDO = courseMapper.getById(courseId.intValue());
-        if (courseDO != null) {
-            List<CourseDTOV2> courseList = Converter.INSTANCE.toCourseDTOV2(List.of(courseDO));
-            if (!courseList.isEmpty()) {
-                dto.setCourse(courseList.get(0));
-            }
-        }
+        loadCourseInfo(dto, courseId);
 
         return dto;
     }
@@ -167,6 +227,9 @@ public class UserCourseService {
      * @param courseId 课程ID
      */
     public void delete(Long userId, Long courseId) {
+        validateUserId(userId);
+        validateCourseId(courseId);
+        
         userCourseMapper.deleteByUserAndCourse(userId, courseId);
         // 减少学习人数
         courseRankingService.decrementLearning(courseId.intValue());
@@ -179,6 +242,8 @@ public class UserCourseService {
      * @return 课程ID到用户课程DTO的映射
      */
     public Map<Long, UserCourseDO> getUserCoursesBatch(long userId, List<Long> courseIds) {
+        validateUserId(userId);
+        
         if (courseIds == null || courseIds.isEmpty()) {
             return Map.of();
         }
@@ -186,56 +251,5 @@ public class UserCourseService {
         // 批量查询用户课程记录，直接返回Map
         Map<Long, UserCourseDO> userCourseMap = userCourseMapper.getByUserIdAndCourseIdsAsMap((long) userId, courseIds);
         return userCourseMap;
-    }
-
-    /**
-     * 开始学习课程（带参数验证）
-     */
-    public boolean startCourseWithValidation(Long userId, Long courseId) {
-        if (courseId == null || courseId <= 0) {
-            throw new IllegalArgumentException("课程ID不能为空");
-        }
-        return startCourse(userId, courseId);
-    }
-
-    /**
-     * 获取课程进度（带参数验证）
-     */
-    public UserCourseDTO getUserCourseWithValidation(Long userId, Long courseId) {
-        if (courseId == null || courseId <= 0) {
-            throw new IllegalArgumentException("课程ID不能为空");
-        }
-        return getUserCourse(userId, courseId);
-    }
-
-    /**
-     * 获取所有课程进度（带参数验证）
-     */
-    public List<UserCourseDTO> getUserCourseListWithValidation(Long userId, Long lastId) {
-        if (lastId == null || lastId < 0) lastId = 0L;
-        return getUserCourseList(userId, lastId);
-    }
-
-    /**
-     * 更新课程进度（带参数验证）
-     */
-    public UserCourseDTO updateWithValidation(Long userId, Long courseId, Integer progressPercent) {
-        if (courseId == null || courseId <= 0) {
-            throw new IllegalArgumentException("课程ID不能为空");
-        }
-        if (progressPercent == null || progressPercent < 0 || progressPercent > 100) {
-            throw new IllegalArgumentException("进度百分比必须在0-100之间");
-        }
-        return update(userId, courseId, progressPercent);
-    }
-
-    /**
-     * 删除课程进度（带参数验证）
-     */
-    public void deleteWithValidation(Long userId, Long courseId) {
-        if (courseId == null || courseId <= 0) {
-            throw new IllegalArgumentException("课程ID不能为空");
-        }
-        delete(userId, courseId);
     }
 }

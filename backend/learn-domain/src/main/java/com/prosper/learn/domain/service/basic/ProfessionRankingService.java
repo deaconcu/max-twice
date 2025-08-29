@@ -1,5 +1,7 @@
 package com.prosper.learn.domain.service.basic;
 
+import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -15,6 +17,7 @@ import java.util.stream.Collectors;
 public class ProfessionRankingService {
 
     private final RedisTemplate<String, String> redisTemplate;
+    private final SystemProperties systemProperties;
     
     private static final String HOT_PROFESSIONS_KEY = "profession:hot:ranking";
     private static final String PROFESSION_LEARNING_PREFIX = "profession:learning:";
@@ -23,7 +26,8 @@ public class ProfessionRankingService {
      * 增加职业学习数
      */
     public void incrementLearning(int professionId) {
-        String key = PROFESSION_LEARNING_PREFIX + professionId;
+        validateProfessionId(professionId);
+        String key = generateLearningKey(professionId);
         redisTemplate.opsForValue().increment(key);
         updateProfessionRanking(professionId);
     }
@@ -32,7 +36,8 @@ public class ProfessionRankingService {
      * 减少职业学习数
      */
     public void decrementLearning(int professionId) {
-        String key = PROFESSION_LEARNING_PREFIX + professionId;
+        validateProfessionId(professionId);
+        String key = generateLearningKey(professionId);
         Long count = redisTemplate.opsForValue().decrement(key);
         if (count != null && count < 0) {
             redisTemplate.opsForValue().set(key, "0");
@@ -45,7 +50,7 @@ public class ProfessionRankingService {
      */
     private void updateProfessionRanking(int professionId) {
         try {
-            String learningKey = PROFESSION_LEARNING_PREFIX + professionId;
+            String learningKey = generateLearningKey(professionId);
             String learningCountStr = redisTemplate.opsForValue().get(learningKey);
             long learningCount = learningCountStr != null ? Long.parseLong(learningCountStr) : 0;
             
@@ -63,6 +68,7 @@ public class ProfessionRankingService {
      * 获取热门职业ID列表（按学习人数降序）
      */
     public List<Integer> getHotProfessionIds(int limit) {
+        validateLimit(limit);
         try {
             Set<String> professionIds = redisTemplate.opsForZSet().reverseRange(HOT_PROFESSIONS_KEY, 0, limit - 1);
             if (professionIds == null || professionIds.isEmpty()) {
@@ -73,8 +79,8 @@ public class ProfessionRankingService {
                     .map(Integer::parseInt)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("Failed to get hot profession ids", e);
-            return List.of();
+            log.error("Failed to get hot profession ids with limit: {}", limit, e);
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -82,13 +88,14 @@ public class ProfessionRankingService {
      * 获取职业的学习人数
      */
     public long getProfessionLearningCount(long professionId) {
+        validateProfessionId(professionId);
         try {
-            String learningKey = PROFESSION_LEARNING_PREFIX + professionId;
+            String learningKey = generateLearningKey(professionId);
             String learningCountStr = redisTemplate.opsForValue().get(learningKey);
             return learningCountStr != null ? Long.parseLong(learningCountStr) : 0;
         } catch (Exception e) {
             log.error("Failed to get profession learning count for professionId: {}", professionId, e);
-            return 0;
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -96,8 +103,9 @@ public class ProfessionRankingService {
      * 批量初始化职业统计数据（用于定时任务）
      */
     public void initializeProfessionStats(int professionId, long learningCount) {
+        validateProfessionId(professionId);
         try {
-            String learningKey = PROFESSION_LEARNING_PREFIX + professionId;
+            String learningKey = generateLearningKey(professionId);
             redisTemplate.opsForValue().set(learningKey, String.valueOf(learningCount));
             redisTemplate.opsForZSet().add(HOT_PROFESSIONS_KEY, String.valueOf(professionId), learningCount);
             
@@ -105,6 +113,7 @@ public class ProfessionRankingService {
                      professionId, learningCount);
         } catch (Exception e) {
             log.error("Failed to initialize profession stats for professionId: {}", professionId, e);
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -126,6 +135,34 @@ public class ProfessionRankingService {
             log.info("Cleared all profession stats from Redis");
         } catch (Exception e) {
             log.error("Failed to clear profession stats", e);
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
+        }
+    }
+
+    // ========== 私有辅助方法 ==========
+
+    /**
+     * 生成职业学习数Redis键名
+     */
+    private String generateLearningKey(long professionId) {
+        return PROFESSION_LEARNING_PREFIX + professionId;
+    }
+
+    /**
+     * 验证职业ID有效性
+     */
+    private void validateProfessionId(long professionId) {
+        if (professionId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception();
+        }
+    }
+
+    /**
+     * 验证限制数量有效性
+     */
+    private void validateLimit(int limit) {
+        if (limit <= 0 || limit > systemProperties.getCourseRanking().getMaxHotCoursesLimit()) {
+            throw ErrorCode.INVALID_PARAMETER.exception();
         }
     }
 }

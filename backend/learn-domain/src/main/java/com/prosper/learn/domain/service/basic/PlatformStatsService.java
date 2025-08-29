@@ -1,10 +1,10 @@
 package com.prosper.learn.domain.service.basic;
 
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.dto.PlatformStatsDTO;
 import com.prosper.learn.persistence.mapper.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -15,34 +15,28 @@ import org.springframework.stereotype.Service;
  * @author Claude
  * @since 2024-01-20
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class PlatformStatsService {
     
-    private static final Logger logger = LoggerFactory.getLogger(PlatformStatsService.class);
+    private final CourseMapper courseMapper;
+    private final ProfessionMapper professionMapper;
+    private final RoadmapMapper roadmapMapper;
+    private final NodeMapper nodeMapper;
+    private final PostMapper postMapper;
     
-    @Autowired
-    private CourseMapper courseMapper;
-    
-    @Autowired
-    private ProfessionMapper professionMapper;
-    
-    @Autowired
-    private RoadmapMapper roadmapMapper;
-    
-    @Autowired
-    private NodeMapper nodeMapper;
-    
-    @Autowired
-    private PostMapper postMapper;
+    // ========== 常量定义 ==========
+    private static final String CACHE_KEY = "stats";
     
     /**
      * 获取平台统计数据（带缓存）
      * 
      * @return 平台统计数据
      */
-    @Cacheable(value = "platformStats", key = "'stats'", sync = true)
+    @Cacheable(value = "platformStats", key = "T(com.prosper.learn.domain.service.basic.PlatformStatsService).CACHE_KEY", sync = true)
     public PlatformStatsDTO getPlatformStats() {
-        logger.info("开始计算平台统计数据");
+        log.info("开始计算平台统计数据");
         
         try {
             // 统计课程总数（只统计已发布的课程）
@@ -68,12 +62,12 @@ public class PlatformStatsService {
                 articleCount
             );
             
-            logger.info("平台统计数据计算完成: {}", stats);
+            log.info("平台统计数据计算完成: {}", stats);
             return stats;
             
         } catch (Exception e) {
-            logger.error("计算平台统计数据失败", e);
-            throw new RuntimeException("获取平台统计数据失败", e);
+            log.error("计算平台统计数据失败", e);
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
     }
     
@@ -82,9 +76,9 @@ public class PlatformStatsService {
      * 
      * @return 最新的平台统计数据
      */
-    @CacheEvict(value = "platformStats", key = "'stats'")
+    @CacheEvict(value = "platformStats", key = "T(com.prosper.learn.domain.service.basic.PlatformStatsService).CACHE_KEY")
     public PlatformStatsDTO refreshPlatformStats() {
-        logger.info("刷新平台统计数据缓存");
+        log.info("刷新平台统计数据缓存");
         return getPlatformStats();
     }
 }

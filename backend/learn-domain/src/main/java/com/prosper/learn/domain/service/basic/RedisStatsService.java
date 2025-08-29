@@ -1,7 +1,10 @@
 package com.prosper.learn.domain.service.basic;
 
+import com.prosper.learn.common.exception.BusinessException;
+import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.config.SystemProperties;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -33,10 +36,143 @@ import java.time.LocalDate;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class RedisStatsService {
 
-    @Autowired
-    private RedisTemplate<String, String> redisTemplate;
+    /** Redis键前缀常量 */
+    private static final String STATS_KEY_PREFIX = "stats:";
+    
+    /** 用户统计键后缀常量 */
+    private static final String USER_STATS_SUFFIX = ":user";
+    
+    /** 帖子统计键后缀常量 */
+    private static final String POST_STATS_SUFFIX = ":post";
+    
+    /** 统计类型常量 */
+    private static final String STAT_TYPE_VIEW = "view";
+    private static final String STAT_TYPE_TWICE = "twice";
+    private static final String STAT_TYPE_HELPFUL = "helpful";
+    private static final String STAT_TYPE_COMMENT = "comment";
+    
+    /** Redis过期时间（天数）常量 */
+    private static final int DEFAULT_EXPIRE_DAYS = 3;
+
+    /** Redis模板，用于统计数据的存储和操作 */
+    private final RedisTemplate<String, String> redisTemplate;
+    
+    /** 系统配置属性 */
+    private final SystemProperties systemProperties;
+
+    /**
+     * 验证文章ID有效性
+     * 
+     * @param articleId 文章ID
+     * @throws BusinessException 当文章ID无效时抛出异常
+     */
+    private void validateArticleId(long articleId) {
+        if (articleId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("文章ID无效: " + articleId);
+        }
+    }
+    
+    /**
+     * 验证用户ID有效性
+     * 
+     * @param userId 用户ID
+     * @throws BusinessException 当用户ID无效时抛出异常
+     */
+    private void validateUserId(long userId) {
+        if (userId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
+        }
+    }
+    
+    /**
+     * 验证点赞类型有效性
+     * 
+     * @param upvoteType 点赞类型
+     * @throws BusinessException 当点赞类型无效时抛出异常
+     */
+    private void validateUpvoteType(String upvoteType) {
+        if (upvoteType == null || upvoteType.trim().isEmpty()) {
+            throw ErrorCode.INVALID_PARAMETER.exception("点赞类型不能为空");
+        }
+        if (!STAT_TYPE_TWICE.equals(upvoteType) && !STAT_TYPE_HELPFUL.equals(upvoteType)) {
+            throw ErrorCode.INVALID_PARAMETER.exception("无效的点赞类型: " + upvoteType);
+        }
+    }
+    
+    /**
+     * 生成用户统计Redis键名
+     * 
+     * @param dateStr 日期字符串
+     * @return 用户统计键名
+     */
+    private String generateUserStatsKey(String dateStr) {
+        return STATS_KEY_PREFIX + dateStr + USER_STATS_SUFFIX;
+    }
+    
+    /**
+     * 生成帖子统计Redis键名
+     * 
+     * @param dateStr 日期字符串
+     * @return 帖子统计键名
+     */
+    private String generatePostStatsKey(String dateStr) {
+        return STATS_KEY_PREFIX + dateStr + POST_STATS_SUFFIX;
+    }
+    
+    /**
+     * 生成统计字段名
+     * 
+     * @param id 对象ID（文章ID或用户ID）
+     * @param statType 统计类型
+     * @return 统计字段名
+     */
+    private String generateStatField(long id, String statType) {
+        return id + ":" + statType;
+    }
+    
+    /**
+     * 安全地执行Redis操作并记录统计
+     * 
+     * @param articleId 文章ID
+     * @param userId 用户ID（可选）
+     * @param statType 统计类型
+     * @param increment 增量（正数为增加，负数为减少）
+     * @param operation 操作描述（用于日志）
+     */
+    private void performStatsOperation(long articleId, Long userId, String statType, int increment, String operation) {
+        String today = LocalDate.now().toString();
+        
+        try {
+            // 文章维度统计
+            String postKey = generatePostStatsKey(today);
+            String postField = generateStatField(articleId, statType);
+            redisTemplate.opsForHash().increment(postKey, postField, increment);
+            
+            // 设置过期时间（只在增加时设置，避免重置已有数据的过期时间）
+            if (increment > 0) {
+                redisTemplate.expire(postKey, Duration.ofDays(DEFAULT_EXPIRE_DAYS));
+            }
+            
+            // 用户维度统计（如果提供了用户ID）
+            if (userId != null && userId > 0) {
+                String userKey = generateUserStatsKey(today);
+                String userField = generateStatField(userId, statType);
+                redisTemplate.opsForHash().increment(userKey, userField, increment);
+                
+                if (increment > 0) {
+                    redisTemplate.expire(userKey, Duration.ofDays(DEFAULT_EXPIRE_DAYS));
+                }
+            }
+            
+            log.debug("{}: articleId={}, userId={}, type={}", operation, articleId, userId, statType);
+        } catch (Exception e) {
+            log.error("{}失败: articleId={}, userId={}, type={}", operation, articleId, userId, statType, e);
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
+        }
+    }
 
     /**
      * 记录文章访问统计
@@ -52,26 +188,22 @@ public class RedisStatsService {
      * @param articleId 文章ID
      * @param userId 用户ID，可以为null（匿名访问）
      */
+    /**
+     * 记录文章访问统计
+     * 
+     * @param articleId 文章ID
+     * @param userId 用户ID，可以为0（匿名访问）
+     * @throws BusinessException 当参数无效时抛出异常
+     */
     public void recordArticleView(long articleId, long userId) {
-        String today = LocalDate.now().toString();
-        
-        try {
-            // 文章维度统计：记录哪些文章被访问了多少次
-            String postKey = "stats:" + today + ":post";
-            String postField = articleId + ":view";
-            redisTemplate.opsForHash().increment(postKey, postField, 1);
-            redisTemplate.expire(postKey, Duration.ofDays(3));
-            
-            // 用户维度统计：记录用户访问了多少篇文章（只有登录用户才统计）
-            String userKey = "stats:" + today + ":user";
-            String userField = userId + ":view";
-            redisTemplate.opsForHash().increment(userKey, userField, 1);
-            redisTemplate.expire(userKey, Duration.ofDays(3));
-
-            log.debug("记录文章访问: articleId={}, userId={}", articleId, userId);
-        } catch (Exception e) {
-            log.error("记录文章访问失败: articleId={}, userId={}", articleId, userId, e);
+        validateArticleId(articleId);
+        // 用户ID为0表示匿名访问，不需要验证
+        if (userId != 0) {
+            validateUserId(userId);
         }
+        
+        Long userIdForStats = userId > 0 ? userId : null;
+        performStatsOperation(articleId, userIdForStats, STAT_TYPE_VIEW, 1, "记录文章访问");
     }
 
     /**
@@ -92,26 +224,20 @@ public class RedisStatsService {
      * @param userId 用户ID
      * @param upvoteType 点赞类型（twice, helpful）
      */
+    /**
+     * 记录点赞统计
+     * 
+     * @param articleId 文章ID
+     * @param userId 用户ID
+     * @param upvoteType 点赞类型（twice, helpful）
+     * @throws BusinessException 当参数无效时抛出异常
+     */
     public void recordUpvote(long articleId, long userId, String upvoteType) {
-        String today = LocalDate.now().toString();
+        validateArticleId(articleId);
+        validateUserId(userId);
+        validateUpvoteType(upvoteType);
         
-        try {
-            // 文章维度统计：统计文章获得的点赞数量
-            String postKey = "stats:" + today + ":post";
-            String postField = articleId + ":" + upvoteType;
-            redisTemplate.opsForHash().increment(postKey, postField, 1);
-            redisTemplate.expire(postKey, Duration.ofDays(3));
-            
-            // 用户维度统计：统计用户的点赞行为
-            String userKey = "stats:" + today + ":user";
-            String userField = userId + ":" + upvoteType;
-            redisTemplate.opsForHash().increment(userKey, userField, 1);
-            redisTemplate.expire(userKey, Duration.ofDays(3));
-            
-            log.debug("记录点赞: articleId={}, userId={}, type={}", articleId, userId, upvoteType);
-        } catch (Exception e) {
-            log.error("记录点赞失败: articleId={}, userId={}, type={}", articleId, userId, upvoteType, e);
-        }
+        performStatsOperation(articleId, userId, upvoteType, 1, "记录点赞");
     }
 
     /**
@@ -132,24 +258,20 @@ public class RedisStatsService {
      * @param userId 用户ID
      * @param upvoteType 点赞类型（twice, helpful）
      */
+    /**
+     * 撤销点赞统计
+     * 
+     * @param articleId 文章ID
+     * @param userId 用户ID
+     * @param upvoteType 点赞类型（twice, helpful）
+     * @throws BusinessException 当参数无效时抛出异常
+     */
     public void removeUpvote(long articleId, long userId, String upvoteType) {
-        String today = LocalDate.now().toString();
+        validateArticleId(articleId);
+        validateUserId(userId);
+        validateUpvoteType(upvoteType);
         
-        try {
-            // 文章维度统计：减少文章的点赞计数
-            String postKey = "stats:" + today + ":post";
-            String postField = articleId + ":" + upvoteType;
-            redisTemplate.opsForHash().increment(postKey, postField, -1);
-            
-            // 用户维度统计：减少用户的点赞计数
-            String userKey = "stats:" + today + ":user";
-            String userField = userId + ":" + upvoteType;
-            redisTemplate.opsForHash().increment(userKey, userField, -1);
-            
-            log.debug("撤销点赞: articleId={}, userId={}, type={}", articleId, userId, upvoteType);
-        } catch (Exception e) {
-            log.error("撤销点赞失败: articleId={}, userId={}, type={}", articleId, userId, upvoteType, e);
-        }
+        performStatsOperation(articleId, userId, upvoteType, -1, "撤销点赞");
     }
 
     /**
@@ -170,26 +292,18 @@ public class RedisStatsService {
      * @param articleId 文章ID
      * @param userId 用户ID
      */
+    /**
+     * 记录评论统计
+     * 
+     * @param articleId 文章ID
+     * @param userId 用户ID
+     * @throws BusinessException 当参数无效时抛出异常
+     */
     public void recordComment(long articleId, long userId) {
-        String today = LocalDate.now().toString();
+        validateArticleId(articleId);
+        validateUserId(userId);
         
-        try {
-            // 文章维度统计：增加文章的评论计数
-            String postKey = "stats:" + today + ":post";
-            String postField = articleId + ":comment";
-            redisTemplate.opsForHash().increment(postKey, postField, 1);
-            redisTemplate.expire(postKey, Duration.ofDays(3));
-            
-            // 用户维度统计：增加用户的评论计数
-            String userKey = "stats:" + today + ":user";
-            String userField = userId + ":comment";
-            redisTemplate.opsForHash().increment(userKey, userField, 1);
-            redisTemplate.expire(userKey, Duration.ofDays(3));
-            
-            log.debug("记录评论: articleId={}, userId={}", articleId, userId);
-        } catch (Exception e) {
-            log.error("记录评论失败: articleId={}, userId={}", articleId, userId, e);
-        }
+        performStatsOperation(articleId, userId, STAT_TYPE_COMMENT, 1, "记录评论");
     }
 
     /**
@@ -214,23 +328,25 @@ public class RedisStatsService {
      * @param articleId 文章ID
      * @param userId 用户ID
      */
+    /**
+     * 删除评论统计
+     * 
+     * @param articleId 文章ID
+     * @param userId 用户ID
+     * @throws BusinessException 当参数无效时抛出异常
+     */
     public void removeComment(Long articleId, Integer userId) {
-        String today = LocalDate.now().toString();
-        
-        try {
-            // 文章维度统计：减少文章的评论计数
-            String postKey = "stats:" + today + ":post";
-            String postField = articleId + ":comment";
-            redisTemplate.opsForHash().increment(postKey, postField, -1);
-            
-            // 用户维度统计：减少用户的评论计数
-            String userKey = "stats:" + today + ":user";
-            String userField = userId + ":comment";
-            redisTemplate.opsForHash().increment(userKey, userField, -1);
-            
-            log.debug("删除评论: articleId={}, userId={}", articleId, userId);
-        } catch (Exception e) {
-            log.error("删除评论失败: articleId={}, userId={}", articleId, userId, e);
+        // 参数类型转换和验证
+        if (articleId == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("文章ID不能为空");
         }
+        if (userId == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("用户ID不能为空");
+        }
+        
+        validateArticleId(articleId);
+        validateUserId(userId);
+        
+        performStatsOperation(articleId, userId.longValue(), STAT_TYPE_COMMENT, -1, "删除评论");
     }
 }

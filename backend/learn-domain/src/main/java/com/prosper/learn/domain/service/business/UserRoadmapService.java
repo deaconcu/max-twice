@@ -1,6 +1,7 @@
 package com.prosper.learn.domain.service.business;
 
 import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.config.SystemProperties;
 
 import static com.prosper.learn.common.Enums.UserRoadmapState;
 import com.prosper.learn.domain.util.Converter;
@@ -34,6 +35,57 @@ public class UserRoadmapService {
     private final UserMapper userMapper;
     private final RoadmapService roadmapService;
     private final ProfessionMapper professionMapper;
+    private final SystemProperties systemProperties;
+
+    // 不变常量 - 进度相关
+    private static final int INITIAL_PROGRESS = 0;
+    private static final double COMPLETE_PROGRESS = 100.0;
+    private static final double PROGRESS_PRECISION = 100.0;
+
+    // ========== 私有辅助方法 ==========
+
+    /**
+     * 验证用户ID
+     */
+    private void validateUserId(Long userId) {
+        if (userId == null || userId <= 0) {
+            throw ErrorCode.USER_NOT_FOUND.exception();
+        }
+    }
+
+    /**
+     * 验证路线图ID
+     */
+    private void validateRoadmapId(Long roadmapId) {
+        if (roadmapId == null || roadmapId <= 0) {
+            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+        }
+    }
+
+    /**
+     * 验证进度百分比
+     */
+    private void validateProgressPercent(int progressPercent) {
+        int threshold = systemProperties.getRoadmap().getCompletionThreshold();
+        if (progressPercent < 0 || progressPercent > threshold) {
+            throw ErrorCode.USER_COURSE_PROGRESS_INVALID.exception();
+        }
+    }
+
+    /**
+     * 创建初始用户路线图记录
+     */
+    private UserRoadmapDO createInitialUserRoadmap(Long userId, Long roadmapId) {
+        UserRoadmapDO userRoadmapDO = new UserRoadmapDO();
+        userRoadmapDO.setUserId(userId);
+        userRoadmapDO.setRoadmapId(roadmapId);
+        userRoadmapDO.setProgressPercent(INITIAL_PROGRESS);
+        userRoadmapDO.setState(UserRoadmapState.IN_PROGRESS.value());
+        userRoadmapDO.setStartedAt(LocalDateTime.now());
+        return userRoadmapDO;
+    }
+
+    // ========== 公共业务方法 ==========
 
     /**
      * 用户开始学习路线图
@@ -42,26 +94,30 @@ public class UserRoadmapService {
      * @return 学习进度记录
      */
     public boolean startRoadmap(Long userId, Long roadmapId) {
-        // 检查是否已经存在学习记录
-        UserRoadmapDO existing = userRoadmapMapper.getByUserAndRoadmap(userId, roadmapId);
+        validateUserId(userId);
+        validateRoadmapId(roadmapId);
+        
+        try {
+            // 检查是否已经存在学习记录
+            UserRoadmapDO existing = userRoadmapMapper.getByUserAndRoadmap(userId, roadmapId);
 
-        if (existing != null) {
-            // 如果已存在，直接返回
-            //return Converter.INSTANCE.userRoadmapProgressDOToDTO(existing);
-            userRoadmapMapper.deleteByUserAndRoadmap(userId, roadmapId);
-            return false;
+            if (existing != null) {
+                // 如果已存在，删除现有记录重新开始
+                userRoadmapMapper.deleteByUserAndRoadmap(userId, roadmapId);
+                return false;
+            }
+
+            // 创建新的学习记录
+            UserRoadmapDO userRoadmapDO = createInitialUserRoadmap(userId, roadmapId);
+            userRoadmapMapper.insert(userRoadmapDO);
+            
+            log.info("用户 {} 开始学习路线图 {}", userId, roadmapId);
+            return true;
+            
+        } catch (Exception e) {
+            log.error("用户开始学习路线图失败: userId={}, roadmapId={}", userId, roadmapId, e);
+            throw ErrorCode.USER_ROADMAP_NOT_FOUND.exception(e);
         }
-
-        // 创建新的学习记录
-        UserRoadmapDO userRoadmapDO = new UserRoadmapDO();
-        userRoadmapDO.setUserId(userId);
-        userRoadmapDO.setRoadmapId(roadmapId);
-        userRoadmapDO.setProgressPercent(0);
-        userRoadmapDO.setState(UserRoadmapState.IN_PROGRESS.value());
-        userRoadmapDO.setStartedAt(LocalDateTime.now());
-
-        userRoadmapMapper.insert(userRoadmapDO);
-        return true;
     }
 
     /**
@@ -71,21 +127,30 @@ public class UserRoadmapService {
      * @return 学习进度记录，如果不存在返回null
      */
     public UserRoadmapDTO getUserRoadmap(Long userId, Long roadmapId) {
-        UserRoadmapDO progressDO = userRoadmapMapper.getByUserAndRoadmap(userId, roadmapId);
-        if (progressDO == null) {
-            return null;
+        validateUserId(userId);
+        validateRoadmapId(roadmapId);
+        
+        try {
+            UserRoadmapDO progressDO = userRoadmapMapper.getByUserAndRoadmap(userId, roadmapId);
+            if (progressDO == null) {
+                return null;
+            }
+
+            UserRoadmapDTO dto = Converter.INSTANCE.toUserRoadmapDTO(progressDO);
+
+            // 批量查询 roadmap 信息
+            RoadmapDO roadmapDO = roadmapMapper.get(roadmapId.intValue());
+            if (roadmapDO != null) {
+                RoadmapDTOV2 roadmapDTO = Converter.INSTANCE.toRoadmapDTOV2WithUser(roadmapDO, userMapper);
+                dto.setRoadmap(roadmapDTO);
+            }
+
+            return dto;
+            
+        } catch (Exception e) {
+            log.error("获取用户路线图进度失败: userId={}, roadmapId={}", userId, roadmapId, e);
+            throw ErrorCode.USER_ROADMAP_NOT_FOUND.exception(e);
         }
-
-        UserRoadmapDTO dto = Converter.INSTANCE.toUserRoadmapDTO(progressDO);
-
-        // 批量查询 roadmap 信息
-        RoadmapDO roadmapDO = roadmapMapper.get(roadmapId.intValue());
-        if (roadmapDO != null) {
-            RoadmapDTOV2 roadmapDTO = Converter.INSTANCE.toRoadmapDTOV2WithUser(roadmapDO, userMapper);
-            dto.setRoadmap(roadmapDTO);
-        }
-
-        return dto;
     }
 
     /**

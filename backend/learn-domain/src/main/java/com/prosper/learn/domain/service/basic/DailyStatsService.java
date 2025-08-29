@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static com.prosper.learn.common.Enums.PostStatsType;
+import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.common.exception.BusinessException;
+import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.dto.DailyStatsDTO;
 import com.prosper.learn.dto.PostDTOV2;
 import com.prosper.learn.dto.UserStatsDTO;
@@ -11,6 +14,7 @@ import com.prosper.learn.persistence.dataobject.UserStatsDO;
 import com.prosper.learn.persistence.dataobject.PostStatsDO;
 import com.prosper.learn.persistence.mapper.PostStatsMapper;
 import com.prosper.learn.persistence.mapper.UserStatsMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
@@ -50,19 +54,14 @@ import java.util.Map;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DailyStatsService {
 
-    @Autowired
-    private RedisTemplate<String, String> redisTemplate;
-
-    @Autowired
-    private UserStatsMapper userStatsMapper;
-
-    @Autowired
-    private PostStatsMapper postStatsMapper;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final RedisTemplate<String, String> redisTemplate;
+    private final UserStatsMapper userStatsMapper;
+    private final PostStatsMapper postStatsMapper;
+    private final ObjectMapper objectMapper;
+    private final SystemProperties systemProperties;
 
     /**
      * 同步昨天的统计数据
@@ -113,8 +112,8 @@ public class DailyStatsService {
         
         try {
             // 检查Redis中是否有这个日期的数据
-            String userKey = "stats:" + dateStr + ":user";
-            String postKey = "stats:" + dateStr + ":post";
+            String userKey = generateUserStatsKey(dateStr);
+            String postKey = generatePostStatsKey(dateStr);
             
             boolean hasUserData = redisTemplate.hasKey(userKey);
             boolean hasPostData = redisTemplate.hasKey(postKey);
@@ -164,7 +163,7 @@ public class DailyStatsService {
      * @return 成功同步的记录数
      */
     private int syncUserStats(String dateStr) {
-        String userKey = "stats:" + dateStr + ":user";
+        String userKey = generateUserStatsKey(dateStr);
         Map<Object, Object> userStats = redisTemplate.opsForHash().entries(userKey);
         
         if (userStats.isEmpty()) {
@@ -175,7 +174,7 @@ public class DailyStatsService {
         // 解析日期信息
         LocalDate date = LocalDate.parse(dateStr);
         int year = date.getYear();
-        String dayKey = date.getMonthValue() + "-" + date.getDayOfMonth();
+        String dayKey = generateDayKey(date);
         
         // 按用户ID分组并聚合当天的完整统计数据
         Map<Integer, UserDayStats> userDayStatsMap = new HashMap<>();
@@ -304,7 +303,7 @@ public class DailyStatsService {
      * @return 成功同步的记录数
      */
     private int syncPostStats(String dateStr) {
-        String postKey = "stats:" + dateStr + ":post";
+        String postKey = generatePostStatsKey(dateStr);
         Map<Object, Object> postStats = redisTemplate.opsForHash().entries(postKey);
         
         if (postStats.isEmpty()) {
@@ -504,10 +503,11 @@ public class DailyStatsService {
                unless = "#result == null")
      */
     public UserStatsDTO getUserTodayStats(long userId) {
+        validateUserId(userId);
         String today = LocalDate.now().toString();
-        String userKey = "stats:" + today + ":user";
+        String userKey = generateUserStatsKey(today);
 
-        String uKey = "stats:" + today + ":post";
+        String uKey = generatePostStatsKey(today);
         Map<Object, Object> s2tats = redisTemplate.opsForHash().entries(uKey);
 
         try {
@@ -560,6 +560,8 @@ public class DailyStatsService {
                key = "'user:' + #userId + ':' + #days + ':' + T(java.time.LocalDate).now().minusDays(1).toString()", 
                unless = "#result == null")
     public UserStatsDTO getUserHistoryStats(long userId, int days) {
+        validateUserId(userId);
+        validateDaysRange(days);
         LocalDate endDate = LocalDate.now().minusDays(1); // 不包括今天
         LocalDate startDate = endDate.minusDays(days - 1);
         
@@ -720,23 +722,33 @@ public class DailyStatsService {
      * @return 当日各项统计数据的映射，key为统计类型，value为数值
      */
     public Map<String, Integer> getUserDayStats(long userId, LocalDate date) {
+        validateUserId(userId);
+        validateDate(date);
         try {
             int year = date.getYear();
-            String dayKey = date.getMonthValue() + "-" + date.getDayOfMonth();
+            String dayKey = generateDayKey(date);
 
             // 使用MySQL JSON_EXTRACT函数直接查询特定日期的数据
             String dayStatsJson = userStatsMapper.getDayStats(userId, year, dayKey);
 
             if (dayStatsJson != null) {
                 // 解析JSON字符串为Map对象
-                return objectMapper.readValue(dayStatsJson, new TypeReference<Map<String, Integer>>() {});
+                try {
+                    return objectMapper.readValue(dayStatsJson, new TypeReference<Map<String, Integer>>() {});
+                } catch (Exception jsonEx) {
+                    log.error("JSON解析失败: userId={}, date={}, json={}", userId, date, dayStatsJson, jsonEx);
+                    throw ErrorCode.JSON_PROCESSING_ERROR.exception(jsonEx);
+                }
             }
 
             // 返回空的统计数据，各项数值为0
             return createEmptyUserStatsMap();
         } catch (Exception e) {
+            if (e instanceof BusinessException) {
+                throw e; // 重新抛出业务异常（如JSON_PROCESSING_ERROR）
+            }
             log.error("获取用户日统计失败: userId={}, date={}", userId, date, e);
-            return createEmptyUserStatsMap();
+            throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -1065,9 +1077,10 @@ public class DailyStatsService {
      * 获取今日实时阅读量（从Redis获取）
      */
     public int getTodayViews(long postId) {
+        validatePostId(postId);
         try {
             String today = LocalDate.now().toString();
-            String redisKey = "stats:" + today + ":post";
+            String redisKey = generatePostStatsKey(today);
             String fieldKey = postId + ":view";
             
             // 首先检查这个key是否存在
@@ -1109,6 +1122,75 @@ public class DailyStatsService {
             } catch (Exception e) {
                 log.error("Failed to set views for post: {}", e.getMessage(), e);
             }
+        }
+    }
+
+    // ========== 常量定义 ==========
+
+    private static final String STATS_KEY_PREFIX = "stats:";
+    private static final String USER_STATS_SUFFIX = ":user";
+    private static final String POST_STATS_SUFFIX = ":post";
+
+    // ========== 私有辅助方法 ==========
+
+    /**
+     * 生成用户统计Redis键名
+     */
+    private String generateUserStatsKey(String dateStr) {
+        return STATS_KEY_PREFIX + dateStr + USER_STATS_SUFFIX;
+    }
+
+    /**
+     * 生成文章统计Redis键名
+     */
+    private String generatePostStatsKey(String dateStr) {
+        return STATS_KEY_PREFIX + dateStr + POST_STATS_SUFFIX;
+    }
+
+    /**
+     * 生成日期键（月-日格式）
+     */
+    private String generateDayKey(LocalDate date) {
+        return date.getMonthValue() + "-" + date.getDayOfMonth();
+    }
+
+    /**
+     * 验证用户ID有效性
+     */
+    private void validateUserId(long userId) {
+        if (userId <= 0) {
+            throw ErrorCode.USER_NOT_FOUND.exception();
+        }
+    }
+
+    /**
+     * 验证文章ID有效性
+     */
+    private void validatePostId(long postId) {
+        if (postId <= 0) {
+            throw ErrorCode.CONTENTS_POST_NOT_FOUND.exception();
+        }
+    }
+
+    /**
+     * 验证日期有效性
+     */
+    private void validateDate(LocalDate date) {
+        if (date == null) {
+            throw ErrorCode.INVALID_DATE.exception();
+        }
+        LocalDate systemStart = LocalDate.parse(systemProperties.getStats().getSystemStartDate());
+        if (date.isBefore(systemStart) || date.isAfter(LocalDate.now())) {
+            throw ErrorCode.INVALID_DATE.exception();
+        }
+    }
+
+    /**
+     * 验证天数范围有效性
+     */
+    private void validateDaysRange(int days) {
+        if (days <= 0 || days > systemProperties.getStats().getMaxQueryDaysRange()) {
+            throw ErrorCode.INVALID_DAYS_RANGE.exception();
         }
     }
 }

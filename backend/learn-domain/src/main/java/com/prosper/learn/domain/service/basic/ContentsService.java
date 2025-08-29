@@ -9,7 +9,7 @@ import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.config.ContentsProperties;
+import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
@@ -58,7 +58,7 @@ public class ContentsService {
     private final CourseTocMapper courseTocMapper;
     
     /** 内容管理相关配置属性 */
-    private final ContentsProperties contentsProperties;
+    private final SystemProperties systemProperties;
 
     /**
      * 验证课程存在性
@@ -293,7 +293,7 @@ public class ContentsService {
         // 创建childNode
         ObjectNode childNode = objectMapper.createObjectNode();
         Arrays.stream(postDO.getContent().split(",")).forEach(id->childNode.putObject((id)));
-        childNode.put(contentsProperties.getChosenField(), postId);
+        childNode.put(systemProperties.getContents().getChosenField(), postId);
 
         String[] pathParts = path.split("-", 2);
         int tocIndex = Integer.parseInt(pathParts[0]);
@@ -399,8 +399,8 @@ public class ContentsService {
             String finalPart = pathParts[pathParts.length - 1];
             // 设置之前置顶的帖子
             JsonNode finalNode = node.get(finalPart);
-            if (finalNode != null && finalNode.has(contentsProperties.getPinField())) {
-                newNode.put(contentsProperties.getPinField(), node.get(finalPart).get(contentsProperties.getPinField()));
+            if (finalNode != null && finalNode.has(systemProperties.getContents().getPinField())) {
+                newNode.put(systemProperties.getContents().getPinField(), node.get(finalPart).get(systemProperties.getContents().getPinField()));
             }
             node.set(finalPart, newNode);
             return objectMapper.writeValueAsString(rootNode);
@@ -438,10 +438,10 @@ public class ContentsService {
             }
 
             // 设置或替换目标节点
-            ArrayNode pinedArray = ((ArrayNode)node.get(contentsProperties.getPinField()));
+            ArrayNode pinedArray = ((ArrayNode)node.get(systemProperties.getContents().getPinField()));
             if (pinedArray == null) {
                 pinedArray = objectMapper.createArrayNode();
-                node.put(contentsProperties.getPinField(), pinedArray);
+                node.put(systemProperties.getContents().getPinField(), pinedArray);
             }
             if (add) {
                 boolean exist = false;
@@ -450,7 +450,7 @@ public class ContentsService {
                         exist = true;
                     }
                 }
-                if (pinedArray.size() >= contentsProperties.getMaxPinnedItems()) {
+                if (pinedArray.size() >= systemProperties.getContents().getMaxPinnedItems()) {
                     throw ErrorCode.CONTENTS_PINNED_ITEMS_LIMIT_EXCEEDED.exception();
                 }
                 if (!exist) pinedArray.add(value);

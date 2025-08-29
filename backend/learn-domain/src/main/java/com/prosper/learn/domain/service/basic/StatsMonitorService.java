@@ -1,7 +1,9 @@
 package com.prosper.learn.domain.service.basic;
 
+import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.config.SystemProperties;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -12,23 +14,95 @@ import java.time.LocalDate;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class StatsMonitorService {
 
-    @Autowired
-    private RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, String> redisTemplate;
+    private final DailyStatsService dailyStatsService;
+    private final SystemProperties systemProperties;
 
-    @Autowired
-    private DailyStatsService dailyStatsService;
+    // 不变常量 - Redis键名相关
+    private static final String STATS_KEY_PREFIX = "stats:";
+    private static final String USER_STATS_SUFFIX = ":user";
+    private static final String POST_STATS_SUFFIX = ":post";
+    private static final String HEALTH_CHECK_KEY = "health_check";
 
     private volatile boolean redisHealthy = true;
+
+    // ========== 私有辅助方法 ==========
+
+    /**
+     * 生成用户统计Redis键名
+     */
+    private String generateUserStatsKey(String dateStr) {
+        return STATS_KEY_PREFIX + dateStr + USER_STATS_SUFFIX;
+    }
+
+    /**
+     * 生成文章统计Redis键名
+     */
+    private String generatePostStatsKey(String dateStr) {
+        return STATS_KEY_PREFIX + dateStr + POST_STATS_SUFFIX;
+    }
+
+    /**
+     * 检查Redis连接健康状态
+     */
+    private void checkRedisConnection() {
+        try {
+            redisTemplate.opsForValue().get(HEALTH_CHECK_KEY);
+        } catch (Exception e) {
+            throw ErrorCode.REDIS_CONNECTION_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 获取待同步数据数量
+     */
+    private int getPendingDataCount() {
+        try {
+            return redisTemplate.keys(STATS_KEY_PREFIX + "*").size();
+        } catch (Exception e) {
+            log.debug("无法检查待同步数据量", e);
+            return 0;
+        }
+    }
+
+    /**
+     * 验证日期有效性
+     */
+    private void validateDate(LocalDate date) {
+        if (date == null) {
+            throw ErrorCode.INVALID_DATE.exception();
+        }
+        if (date.isAfter(LocalDate.now())) {
+            throw ErrorCode.INVALID_DATE.exception();
+        }
+    }
+
+    /**
+     * 检查待同步数据是否超过阈值
+     */
+    private void checkPendingDataThreshold(int pendingCount) {
+        int threshold = systemProperties.getStatsMonitor().getPendingDataThreshold();
+        if (pendingCount > threshold) {
+            log.warn("Redis中待同步的统计数据过多: {} 个key，阈值: {}", pendingCount, threshold);
+        }
+    }
+
+    // ========== 定时任务方法 ==========
 
     /**
      * 每分钟检查Redis健康状态
      */
     @Scheduled(fixedRate = 60000)
     public void checkRedisHealth() {
+        if (!systemProperties.getStatsMonitor().isEnableHealthMonitor()) {
+            return;
+        }
+        
         try {
-            redisTemplate.opsForValue().get("health_check");
+            checkRedisConnection();
             if (!redisHealthy) {
                 log.info("Redis连接恢复正常");
                 redisHealthy = true;
@@ -46,8 +120,11 @@ public class StatsMonitorService {
      */
     @Scheduled(fixedRate = 3600000)
     public void monitorRedisMemory() {
+        if (!systemProperties.getStatsMonitor().isEnableMemoryMonitor()) {
+            return;
+        }
+        
         try {
-            // 检查Redis内存使用情况
             String memoryInfo = redisTemplate.getConnectionFactory()
                 .getConnection()
                 .serverCommands()
@@ -56,19 +133,12 @@ public class StatsMonitorService {
                 
             log.debug("Redis内存使用情况: {}", memoryInfo);
             
-            // 检查待同步的数据量
-            int pendingDataCount = 0;
-            try {
-                pendingDataCount = redisTemplate.keys("stats:*").size();
-                if (pendingDataCount > 1000) {
-                    log.warn("Redis中待同步的统计数据过多: {} 个key", pendingDataCount);
-                }
-            } catch (Exception e) {
-                log.debug("无法检查待同步数据量", e);
-            }
+            int pendingDataCount = getPendingDataCount();
+            checkPendingDataThreshold(pendingDataCount);
             
         } catch (Exception e) {
             log.error("监控Redis内存失败", e);
+            throw ErrorCode.REDIS_OPERATION_ERROR.exception(e);
         }
     }
 
@@ -77,24 +147,31 @@ public class StatsMonitorService {
      */
     @Scheduled(cron = "0 0 8 * * ?") // 每天早上8点
     public void checkSyncStatus() {
+        if (!systemProperties.getStatsMonitor().isEnableSyncStatusCheck()) {
+            return;
+        }
+        
         try {
-            // 检查昨天的数据是否已同步
-            String yesterday = java.time.LocalDate.now().minusDays(1).toString();
-            String userKey = "stats:" + yesterday + ":user";
-            String postKey = "stats:" + yesterday + ":post";
+            LocalDate yesterday = LocalDate.now().minusDays(1);
+            validateDate(yesterday);
+            
+            String yesterdayStr = yesterday.toString();
+            String userKey = generateUserStatsKey(yesterdayStr);
+            String postKey = generatePostStatsKey(yesterdayStr);
             
             boolean hasUserData = redisTemplate.hasKey(userKey);
             boolean hasPostData = redisTemplate.hasKey(postKey);
             
             if (hasUserData || hasPostData) {
                 log.warn("发现昨天({})的数据未同步完成，用户数据存在:{}, 文章数据存在:{}", 
-                    yesterday, hasUserData, hasPostData);
+                    yesterdayStr, hasUserData, hasPostData);
             } else {
-                log.info("昨天({})的数据同步正常", yesterday);
+                log.info("昨天({})的数据同步正常", yesterdayStr);
             }
             
         } catch (Exception e) {
             log.error("检查同步状态失败", e);
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -103,15 +180,19 @@ public class StatsMonitorService {
      */
     @EventListener(ContextClosedEvent.class)
     public void onShutdown(ContextClosedEvent event) {
+        if (!systemProperties.getStatsMonitor().isEnableShutdownSync()) {
+            return;
+        }
+        
         log.info("应用关闭，开始同步Redis剩余数据");
         try {
-            // 检查是否有未同步的数据
-            int pendingCount = redisTemplate.keys("stats:*").size();
+            int pendingCount = getPendingDataCount();
             if (pendingCount > 0) {
                 log.warn("发现{}个未同步的统计数据，开始强制同步", pendingCount);
                 
-                // 触发今天的数据同步
-                String result = dailyStatsService.syncSpecificDate(LocalDate.now());
+                LocalDate today = LocalDate.now();
+                validateDate(today);
+                String result = dailyStatsService.syncSpecificDate(today);
                 log.info("强制同步结果: {}", result);
             } else {
                 log.info("没有未同步的数据");
@@ -136,12 +217,13 @@ public class StatsMonitorService {
             StringBuilder status = new StringBuilder();
             status.append("Redis状态: ").append(redisHealthy ? "正常" : "异常").append("\n");
             
-            int pendingCount = redisTemplate.keys("stats:*").size();
+            int pendingCount = getPendingDataCount();
             status.append("待同步数据: ").append(pendingCount).append(" 个key\n");
             
             return status.toString();
         } catch (Exception e) {
-            return "获取状态失败: " + e.getMessage();
+            log.error("获取系统状态失败", e);
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
     }
 }

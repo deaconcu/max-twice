@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Enums.MessageType;
 import com.prosper.learn.common.Utils;
+import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.domain.util.Util;
 import com.prosper.learn.dto.message.*;
@@ -26,34 +28,132 @@ import java.util.*;
 
 import static com.prosper.learn.common.Enums.MessageType.*;
 
+/**
+ * 消息管理服务
+ * 
+ * 负责管理系统中的各种消息类型，包括：
+ * - 用户之间的私信
+ * - 系统通知消息
+ * - 课程申请消息
+ * - 评论、点赞、关注等系统事件消息
+ * 
+ * 核心功能：
+ * - 消息的创建和查询
+ * - 不同类型消息的格式化和转换
+ * - 批量消息处理和分页查询
+ * 
+ * @author Claude
+ * @since 2024-01-20
+ */
 @Service
 @RequiredArgsConstructor
 public class MessageService {
 
-    private static Map<Integer, String> systemMessages = new HashMap<>();
+    /** 系统消息内容常量 - 固定内容，定义为静态常量 */
+    private static final Map<Integer, String> SYSTEM_MESSAGES = new HashMap<>();
+    
+    /** 默认分页大小常量 */
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    
+    /** 最大分页大小常量 */
+    private static final int MAX_PAGE_SIZE = 100;
 
     static {
-        systemMessages.put(1, "你的课程申请请求被拒绝了");
+        SYSTEM_MESSAGES.put(1, "你的课程申请请求被拒绝了");
     }
 
+    /** 帖子数据访问接口 */
     private final PostMapper postMapper;
+    
+    /** 节点数据访问接口 */
     private final NodeMapper nodeMapper;
+    
+    /** 消息数据访问接口 */
     private final MessageMapper messageMapper;
+    
+    /** 用户数据访问接口 */
     private final UserMapper userMapper;
+    
+    /** 课程数据访问接口 */
     private final CourseMapper courseMapper;
+    
+    /** JSON对象映射器，用于消息内容的序列化和反序列化 */
     private final ObjectMapper objectMapper;
+    
+    /** 系统配置属性 */
+    private final SystemProperties systemProperties;
 
-    public void create(String content, long senderId, long receiverId, MessageType messageType) {
-        UserDO sender = userMapper.getById(senderId);
-        if (sender == null) {
-            throw new RuntimeException("Sender not found");
+    /**
+     * 验证用户存在性
+     * 
+     * @param userId 用户ID
+     * @return 用户实体对象
+     * @throws BusinessException 当用户不存在时抛出异常
+     */
+    private UserDO validateUserExists(long userId) {
+        if (userId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
         }
+        UserDO userDO = userMapper.getById(userId);
+        if (userDO == null) {
+            throw ErrorCode.USER_NOT_FOUND.exception();
+        }
+        return userDO;
+    }
 
+    /**
+     * 验证消息存在性
+     * 
+     * @param messageId 消息ID
+     * @return 消息实体对象
+     * @throws BusinessException 当消息不存在时抛出异常
+     */
+    private MessageDO validateMessageExists(long messageId) {
+        if (messageId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("消息ID无效: " + messageId);
+        }
+        MessageDO messageDO = messageMapper.getById(messageId);
+        if (messageDO == null) {
+            throw ErrorCode.MESSAGE_NOT_FOUND.exception();
+        }
+        return messageDO;
+    }
+
+    /**
+     * 验证课程存在性
+     * 
+     * @param courseId 课程ID
+     * @return 课程实体对象
+     * @throws BusinessException 当课程不存在时抛出异常
+     */
+    private CourseDO validateCourseExists(long courseId) {
+        if (courseId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("课程ID无效: " + courseId);
+        }
+        CourseDO courseDO = courseMapper.getById(courseId);
+        if (courseDO == null) {
+            throw ErrorCode.COURSE_NOT_FOUND.exception();
+        }
+        return courseDO;
+    }
+
+    /**
+     * 创建消息
+     * 
+     * @param content 消息内容
+     * @param senderId 发送者ID（系统消息时为0）
+     * @param receiverId 接收者ID
+     * @param messageType 消息类型
+     */
+    public void create(String content, long senderId, long receiverId, MessageType messageType) {
+        // 验证发送者（系统消息发送者ID为0时跳过验证）
+        if (senderId != 0) {
+            validateUserExists(senderId);
+        }
+        
+        // 验证接收者
         if (receiverId != 0) {
-            UserDO receiver = userMapper.getById(receiverId);
-            if (receiver == null) {
-                throw new RuntimeException("Receiver not found");
-            }
+            validateUserExists(receiverId);
         }
 
         MessageDO messageDO = new MessageDO();
@@ -64,50 +164,93 @@ public class MessageService {
         messageMapper.insert(messageDO);
     }
 
+    /**
+     * 获取指定ID的消息详情
+     * 
+     * @param id 消息ID
+     * @return 消息DTO对象
+     */
     public MessageDTO get(long id) {
-        MessageDO messageDO = messageMapper.getById(id);
-        UserDO sender = userMapper.getById(messageDO.getSenderId());
-        UserDO receiver = userMapper.getById(messageDO.getReceiverId());
+        MessageDO messageDO = validateMessageExists(id);
+        
+        // 获取发送者和接收者信息（系统消息的发送者可能为null）
+        UserDO sender = messageDO.getSenderId() != 0 ? userMapper.getById(messageDO.getSenderId()) : null;
+        UserDO receiver = messageDO.getReceiverId() != 0 ? userMapper.getById(messageDO.getReceiverId()) : null;
 
         MessageDTO messageDTO = Converter.INSTANCE.toMessageDTO(messageDO);
-        messageDTO.setSender(Converter.INSTANCE.toUserDTOV4(sender));
-        messageDTO.setReceiver(Converter.INSTANCE.toUserDTOV4(receiver));
+        messageDTO.setSender(sender != null ? Converter.INSTANCE.toUserDTOV4(sender) : null);
+        messageDTO.setReceiver(receiver != null ? Converter.INSTANCE.toUserDTOV4(receiver) : null);
 
         return messageDTO;
     }
 
+    /**
+     * 获取消息列表
+     * 
+     * @param type 消息类型
+     * @param senderId 发送者ID
+     * @param receiverId 接收者ID  
+     * @param lastId 最后一条消息ID
+     * @param conversation 是否为对话模式
+     * @return 消息DTO列表
+     */
     public List<MessageDTO> getList(int type, long senderId, long receiverId, long lastId, int conversation) {
         List<MessageDO> messageDOList;
+        
         if (type == applyCourse.value()) {
-            messageDOList = messageMapper.listByPull(type, lastId, 20);
-        }
-        if (senderId == 0) {
-            messageDOList = messageMapper.listByPull(type, lastId, 20);
+            messageDOList = messageMapper.listByPull(type, lastId, DEFAULT_PAGE_SIZE);
+        } else if (senderId == 0) {
+            messageDOList = messageMapper.listByPull(type, lastId, DEFAULT_PAGE_SIZE);
         } else if (conversation == 0) {
-            messageDOList = messageMapper.getListByUser(type, senderId, receiverId, lastId, 20);
+            messageDOList = messageMapper.getListByUser(type, senderId, receiverId, lastId, DEFAULT_PAGE_SIZE);
         } else {
-            messageDOList = messageMapper.getConversationByUser(senderId, receiverId, lastId, 20);
+            messageDOList = messageMapper.getConversationByUser(senderId, receiverId, lastId, DEFAULT_PAGE_SIZE);
         }
-
+        
+        return convertMessagesToDTO(messageDOList);
+    }
+    
+    /**
+     * 将消息DO列表转换为DTO列表的通用方法
+     * 
+     * @param messageDOList 消息DO列表
+     * @return 消息DTO列表
+     */
+    private List<MessageDTO> convertMessagesToDTO(List<MessageDO> messageDOList) {
+        if (messageDOList.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // 收集所有涉及的用户ID
         Set<Long> userIdSet = new HashSet<>();
         for (MessageDO messageDO : messageDOList) {
-            userIdSet.add(messageDO.getSenderId());
-            userIdSet.add(messageDO.getReceiverId());
+            if (messageDO.getSenderId() != 0) {
+                userIdSet.add(messageDO.getSenderId());
+            }
+            if (messageDO.getReceiverId() != 0) {
+                userIdSet.add(messageDO.getReceiverId());
+            }
         }
 
+        // 批量获取用户信息
         Map<Long, UserDO> userMap = new HashMap<>();
-        if (userIdSet.size() != 0) {
+        if (!userIdSet.isEmpty()) {
             List<UserDO> userDOList = userMapper.getByIds(userIdSet);
             for (UserDO userDO : userDOList) {
                 userMap.put(userDO.getId(), userDO);
             }
         }
 
+        // 转换为DTO
         List<MessageDTO> messageDTOList = new ArrayList<>();
         for (MessageDO messageDO : messageDOList) {
             MessageDTO messageDTO = Converter.INSTANCE.toMessageDTO(messageDO);
-            messageDTO.setSender(Converter.INSTANCE.toUserDTOV4(userMap.get(messageDO.getSenderId())));
-            messageDTO.setReceiver(Converter.INSTANCE.toUserDTOV4(userMap.get(messageDO.getReceiverId())));
+            
+            UserDO sender = userMap.get(messageDO.getSenderId());
+            UserDO receiver = userMap.get(messageDO.getReceiverId());
+            
+            messageDTO.setSender(sender != null ? Converter.INSTANCE.toUserDTOV4(sender) : null);
+            messageDTO.setReceiver(receiver != null ? Converter.INSTANCE.toUserDTOV4(receiver) : null);
             messageDTOList.add(messageDTO);
         }
         return messageDTOList;

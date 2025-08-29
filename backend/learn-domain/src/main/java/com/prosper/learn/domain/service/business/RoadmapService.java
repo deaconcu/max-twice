@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.prosper.learn.common.UnionFind;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.RoadmapDTO;
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
 public class RoadmapService {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    
     private final CourseMapper courseMapper;
     private final RoadmapMapper roadmapMapper;
     private final UserMapper userMapper;
@@ -47,10 +49,22 @@ public class RoadmapService {
     private final UpvoteService upvoteService;
     private final UserCourseService userCourseService;
     private final ScoreCalculationService scoreCalculationService;
+    private final SystemProperties systemProperties;
+    
+    // ========== 常量定义 ==========
+    
+    private static final String DEFAULT_EMPTY_STRING = "";
+    
+    // ========== 公共方法 ==========
 
     public RoadmapDTO getById(int id, int userId) {
+        validateRoadmapId((long) id);
+        validateUserId((long) userId);
+        
         RoadmapDO roadmapDO = roadmapMapper.get(id);
-        if (roadmapDO == null) return null;
+        if (roadmapDO == null) {
+            return null;
+        }
 
         RoadmapDTO dto = Converter.INSTANCE.toRoadmapDTOWithUser(roadmapDO, userMapper);
         dto.setUpvoted(upvoteService.hasUpvotedRoadmap(dto.getId(), userId));
@@ -63,17 +77,14 @@ public class RoadmapService {
      */
     public static String calculateContentHash(String content) {
         try {
-            // 解析JSON
             JsonNode rootNode = objectMapper.readTree(content);
             if (!rootNode.isArray() || rootNode.size() != 2) {
                 throw ErrorCode.ROADMAP_CONTENT_INVALID.exception();
             }
 
-            // 获取edges和nodes
             JsonNode edgesNode = rootNode.get(0);
             JsonNode nodesNode = rootNode.get(1);
 
-            // 标准化edges（排序）
             List<List<Integer>> edges = new ArrayList<>();
             for (JsonNode edge : edgesNode) {
                 List<Integer> edgePair = new ArrayList<>();
@@ -81,23 +92,20 @@ public class RoadmapService {
                 edgePair.add(edge.get(1).asInt());
                 edges.add(edgePair);
             }
-            // 对edges进行排序，先按第一个元素排序，再按第二个元素排序
+            
             edges.sort((a, b) -> {
                 int firstCompare = Integer.compare(a.get(0), b.get(0));
                 return firstCompare != 0 ? firstCompare : Integer.compare(a.get(1), b.get(1));
             });
 
-            // 标准化nodes（排序）
             List<Integer> nodes = new ArrayList<>();
             for (JsonNode node : nodesNode) {
                 nodes.add(node.asInt());
             }
             Collections.sort(nodes);
 
-            // 构建标准化的JSON
             ArrayNode standardizedContent = JsonNodeFactory.instance.arrayNode();
             
-            // 添加标准化的edges
             ArrayNode standardizedEdges = JsonNodeFactory.instance.arrayNode();
             for (List<Integer> edge : edges) {
                 ArrayNode edgeArray = JsonNodeFactory.instance.arrayNode();
@@ -107,18 +115,17 @@ public class RoadmapService {
             }
             standardizedContent.add(standardizedEdges);
 
-            // 添加标准化的nodes
             ArrayNode standardizedNodes = JsonNodeFactory.instance.arrayNode();
             for (Integer node : nodes) {
                 standardizedNodes.add(node);
             }
             standardizedContent.add(standardizedNodes);
 
-            // 计算hash
             String standardizedString = standardizedContent.toString();
             return Utils.md5(standardizedString);
 
         } catch (Exception e) {
+            log.error("内容哈希计算失败: {}", content, e);
             throw ErrorCode.CONTENT_HASH_ERROR.exception(e);
         }
     }
@@ -153,7 +160,6 @@ public class RoadmapService {
             JsonNode edgesNode = rootNode.get(0);
             JsonNode nodesNode = rootNode.get(1);
 
-            // 验证edges格式
             if (!edgesNode.isArray()) {
                 return false;
             }
@@ -169,7 +175,6 @@ public class RoadmapService {
                 edges.add(new int[]{edge.get(0).asInt(), edge.get(1).asInt()});
             }
 
-            // 验证nodes格式
             if (!nodesNode.isArray()) {
                 return false;
             }
@@ -182,11 +187,10 @@ public class RoadmapService {
                 nodeSet.add(node.asInt());
             }
 
-            // 校验是否是树结构
             return isValidTree(edges, nodeSet);
 
         } catch (Exception e) {
-            log.warn("Failed to validate content format", e);
+            log.warn("内容格式验证失败", e);
             return false;
         }
     }
@@ -238,70 +242,28 @@ public class RoadmapService {
     }
 
     public String parseContentToGraphFormat(String content, long userId) {
+        validateContent(content);
+        validateUserId(userId);
+        
         try {
-            ObjectMapper mapper = new ObjectMapper();
-
-            // 解析 content: [[[1,2],[2,3]],[1,2,3]]
-            // 第一个数组是edges，第二个数组是nodes
-            List<List<Object>> contentData = mapper.readValue(content, new TypeReference<>() {});
+            List<List<Object>> contentData = objectMapper.readValue(content, new TypeReference<>() {});
 
             Map<String, Object> graphData = new HashMap<>();
             List<Map<String, String>> edges = new ArrayList<>();
             List<Map<String, Object>> nodes = new ArrayList<>();
 
             if (contentData.size() >= 2) {
-                // 解析edges - 格式: [[1,2],[2,3]]
-                List<Object> edgeDataRaw = contentData.get(0);
-                for (Object edgeObj : edgeDataRaw) {
-                    if (edgeObj instanceof List) {
-                        List<Object> edge = (List<Object>) edgeObj;
-                        if (edge.size() >= 2) {
-                            Map<String, String> edgeMap = new HashMap<>();
-                            edgeMap.put("source", String.valueOf(edge.get(0)));
-                            edgeMap.put("target", String.valueOf(edge.get(1)));
-                            edges.add(edgeMap);
-                        }
-                    }
-                }
-
-                // 解析nodes - 格式: [1,2,3]
-                List<Object> nodeIdsRaw = contentData.get(1);
-                List<Long> nodeIds = new ArrayList<>();
-                for (Object nodeIdObj : nodeIdsRaw) {
-                    if (nodeIdObj instanceof Number) {
-                        nodeIds.add(((Number) nodeIdObj).longValue());
-                    }
-                }
-
-                // 获取课程名称
-                Map<Long, String> courseNames = getCourseNames(nodeIds);
-
-                // 批量查询用户对这些课程的学习进度
-                Map<Long, UserCourseDO> userCourseMap = userCourseService.getUserCoursesBatch(userId, new ArrayList<>(nodeIds));
-
-                for (long nodeId : nodeIds) {
-                    String courseName = courseNames.getOrDefault(nodeId, "课程" + nodeId);
-
-                    UserCourseDO userCourse = userCourseMap.get((long)nodeId);
-                    boolean finished = userCourse != null && userCourse.getProgressPercent() >= 10000;
-                    double progress = userCourse != null ? userCourse.getProgressPercent() / 100.0 : 0.0;
-
-                    Map<String, Object> nodeMap = new HashMap<>();
-                    nodeMap.put("id", String.valueOf(nodeId));
-                    nodeMap.put("name", courseName);
-                    nodeMap.put("finished", finished);
-                    nodeMap.put("progress", progress);
-                    nodes.add(nodeMap);
-                }
+                edges = parseEdges(contentData.get(0));
+                nodes = parseNodes(contentData.get(1), userId);
             }
 
             graphData.put("edges", edges);
             graphData.put("nodes", nodes);
 
-            return mapper.writeValueAsString(graphData);
+            return objectMapper.writeValueAsString(graphData);
         } catch (Exception e) {
-            log.error("Failed to parse content to graph format", e);
-            throw new RuntimeException("Content parsing failed", e);
+            log.error("内容解析为图形格式失败", e);
+            throw ErrorCode.JSON_PROCESSING_ERROR.exception(e);
         }
     }
 
@@ -331,27 +293,16 @@ public class RoadmapService {
      * 获取职业路线图列表（带置顶和状态信息）
      */
     public List<RoadmapDTO> getRoadmapsByProfession(Long professionId, Long lastId, long userId) {
+        validateProfessionId(professionId);
+        validateUserId(userId);
+        
         List<RoadmapDO> roadmapList = new ArrayList<>();
-        int limit = 20;
+        int limit = systemProperties.getRoadmap().getDefaultPageSize();
 
         List<Long> pinnedRoadmapIds = new ArrayList<>();
         if (lastId == null || lastId == 0) {
-            UserProfileDO userProfile = userProfileMapper.getById(userId);
-
-            if (userProfile != null && userProfile.getRoadmapPin() != null) {
-                Map<String, List<Long>> pinMap = null;
-                try {
-                    pinMap = objectMapper.readValue(userProfile.getRoadmapPin(), new TypeReference<>() {});
-                } catch (JsonProcessingException e) {
-                    throw ErrorCode.SYSTEM_ERROR.exception(e);
-                }
-
-                List<Long> professionPins = pinMap.get(professionId.toString());
-                if (professionPins != null && !professionPins.isEmpty()) {
-                    pinnedRoadmapIds = professionPins;
-                }
-            }
-
+            pinnedRoadmapIds = getPinnedRoadmapIds(userId, professionId);
+            
             if (!pinnedRoadmapIds.isEmpty()) {
                 List<RoadmapDO> pinnedRoadmaps = roadmapMapper.getByIds(pinnedRoadmapIds);
                 roadmapList.addAll(pinnedRoadmaps);
@@ -371,52 +322,7 @@ public class RoadmapService {
             }
         }
 
-        List<RoadmapDTO> dtoList = Converter.INSTANCE.toRoadMapDTO(roadmapList);
-
-        if (!dtoList.isEmpty()) {
-            List<Long> roadmapIds = dtoList.stream()
-                .map(RoadmapDTO::getId)
-                .collect(Collectors.toList());
-
-            Set<Long> upvotedIds = upvoteService.getUpvotedRoadmapIds(roadmapIds, userId);
-
-            Set<Long> pinnedIds = new HashSet<>();
-            if (lastId == null || lastId == 0) {
-                pinnedIds.addAll(pinnedRoadmapIds);
-            } else {
-                UserProfileDO userProfile = userProfileMapper.getById(userId);
-                if (userProfile != null && userProfile.getRoadmapPin() != null) {
-                    Map<String, List<Long>> pinMap = null;
-                    try {
-                        pinMap = objectMapper.readValue(userProfile.getRoadmapPin(), new TypeReference<>() {});
-                    } catch (JsonProcessingException e) {
-                        throw ErrorCode.SYSTEM_ERROR.exception(e);
-                    }
-                    List<Long> professionPins = pinMap.get(professionId.toString());
-                    if (professionPins != null) {
-                        pinnedIds.addAll(professionPins);
-                    }
-                }
-            }
-
-            List<Long> learningRoadmapIds = userRoadmapMapper.getBatchLearningStatus(userId, roadmapIds);
-            Set<Long> learningIds = new HashSet<>(learningRoadmapIds);
-
-            for (RoadmapDTO dto : dtoList) {
-                dto.setUpvoted(upvotedIds.contains(dto.getId()));
-                dto.setPinned(pinnedIds.contains(dto.getId()));
-                dto.setLearning(learningIds.contains(dto.getId()));
-            }
-        }
-
-        for (RoadmapDTO dto : dtoList) {
-            if (dto.getContent() != null) {
-                String formattedContent = parseContentToGraphFormat(dto.getContent(), userId);
-                dto.setContent(formattedContent);
-            }
-        }
-
-        return dtoList;
+        return buildRoadmapDTOList(roadmapList, userId, professionId, lastId, pinnedRoadmapIds);
     }
 
     /**
@@ -424,16 +330,17 @@ public class RoadmapService {
      */
     @Transactional
     public void updateRoadmap(Long id, String content, long userId) {
-        if (!isValidContentFormat(content)) {
+        validateRoadmapId(id);
+        validateContent(content);
+        validateUserId(userId);
+        
+        if (systemProperties.getRoadmap().isEnableContentValidation() && !isValidContentFormat(content)) {
             throw ErrorCode.ROADMAP_CONTENT_INVALID.exception();
         }
 
-        RoadmapDO roadmapDO = roadmapMapper.get(id.intValue());
-        if (roadmapDO == null) {
-            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
-        }
-
-        if (roadmapDO.getCreatorId() != userId) {
+        RoadmapDO roadmapDO = validateRoadmapExists(id);
+        
+        if (systemProperties.getRoadmap().isEnablePermissionCheck() && roadmapDO.getCreatorId() != userId) {
             throw ErrorCode.PERMISSION_DENIED.exception();
         }
 
@@ -470,7 +377,11 @@ public class RoadmapService {
      */
     @Transactional
     public Long createRoadmap(Long professionId, String content, String description, long userId) {
-        if (!isValidContentFormat(content)) {
+        validateProfessionId(professionId);
+        validateContent(content);
+        validateUserId(userId);
+        
+        if (systemProperties.getRoadmap().isEnableContentValidation() && !isValidContentFormat(content)) {
             throw ErrorCode.ROADMAP_CONTENT_INVALID.exception();
         }
 
@@ -493,6 +404,9 @@ public class RoadmapService {
      * 获取路线图详情（带格式化内容）
      */
     public RoadmapDTO getRoadmapWithContent(Long id, long userId) {
+        validateRoadmapId(id);
+        validateUserId(userId);
+        
         RoadmapDTO roadmapDTO = getById(id.intValue(), (int)userId);
 
         if (roadmapDTO == null) {
@@ -564,5 +478,187 @@ public class RoadmapService {
         }
 
         return message;
+    }
+    
+    // ========== 私有辅助方法 ==========
+    
+    private void validateUserId(long userId) {
+        if (userId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception();
+        }
+    }
+    
+    private void validateRoadmapId(Long roadmapId) {
+        if (roadmapId == null || roadmapId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception();
+        }
+    }
+    
+    private void validateProfessionId(Long professionId) {
+        if (professionId == null || professionId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception();
+        }
+    }
+    
+    private void validateContent(String content) {
+        if (content == null || content.trim().isEmpty()) {
+            throw ErrorCode.INVALID_PARAMETER.exception();
+        }
+    }
+    
+    private RoadmapDO validateRoadmapExists(Long roadmapId) {
+        RoadmapDO roadmapDO = roadmapMapper.get(roadmapId.intValue());
+        if (roadmapDO == null) {
+            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+        }
+        return roadmapDO;
+    }
+    
+    private List<Map<String, String>> parseEdges(List<Object> edgeDataRaw) {
+        List<Map<String, String>> edges = new ArrayList<>();
+        for (Object edgeObj : edgeDataRaw) {
+            if (edgeObj instanceof List) {
+                List<Object> edge = (List<Object>) edgeObj;
+                if (edge.size() >= 2) {
+                    Map<String, String> edgeMap = new HashMap<>();
+                    edgeMap.put("source", String.valueOf(edge.get(0)));
+                    edgeMap.put("target", String.valueOf(edge.get(1)));
+                    edges.add(edgeMap);
+                }
+            }
+        }
+        return edges;
+    }
+    
+    private List<Map<String, Object>> parseNodes(List<Object> nodeIdsRaw, long userId) {
+        List<Long> nodeIds = new ArrayList<>();
+        for (Object nodeIdObj : nodeIdsRaw) {
+            if (nodeIdObj instanceof Number) {
+                nodeIds.add(((Number) nodeIdObj).longValue());
+            }
+        }
+
+        Map<Long, String> courseNames = getCourseNames(nodeIds);
+        Map<Long, UserCourseDO> userCourseMap = systemProperties.getRoadmap().isEnableBatchStatusQuery() 
+            ? userCourseService.getUserCoursesBatch(userId, new ArrayList<>(nodeIds))
+            : new HashMap<>();
+
+        List<Map<String, Object>> nodes = new ArrayList<>();
+        for (long nodeId : nodeIds) {
+            String courseName = courseNames.getOrDefault(nodeId, "课程" + nodeId);
+
+            UserCourseDO userCourse = userCourseMap.get(nodeId);
+            boolean finished = userCourse != null && userCourse.getProgressPercent() >= systemProperties.getRoadmap().getCompletionThreshold();
+            double progress = userCourse != null ? userCourse.getProgressPercent() / systemProperties.getRoadmap().getProgressPrecisionDivisor() : 0.0;
+
+            Map<String, Object> nodeMap = new HashMap<>();
+            nodeMap.put("id", String.valueOf(nodeId));
+            nodeMap.put("name", courseName);
+            nodeMap.put("finished", finished);
+            nodeMap.put("progress", progress);
+            nodes.add(nodeMap);
+        }
+        
+        return nodes;
+    }
+    
+    private List<Long> getPinnedRoadmapIds(long userId, Long professionId) {
+        UserProfileDO userProfile = userProfileMapper.getById(userId);
+        if (userProfile == null || userProfile.getRoadmapPin() == null) {
+            return new ArrayList<>();
+        }
+        
+        try {
+            Map<String, List<Long>> pinMap = objectMapper.readValue(userProfile.getRoadmapPin(), new TypeReference<>() {});
+            List<Long> professionPins = pinMap.get(professionId.toString());
+            return professionPins != null ? professionPins : new ArrayList<>();
+        } catch (JsonProcessingException e) {
+            log.error("解析置顶数据失败", e);
+            return new ArrayList<>();
+        }
+    }
+    
+    private List<RoadmapDTO> buildRoadmapDTOList(List<RoadmapDO> roadmapList, long userId, Long professionId, Long lastId, List<Long> pinnedRoadmapIds) {
+        List<RoadmapDTO> dtoList = Converter.INSTANCE.toRoadMapDTO(roadmapList);
+
+        if (!dtoList.isEmpty()) {
+            List<Long> roadmapIds = dtoList.stream()
+                .map(RoadmapDTO::getId)
+                .collect(Collectors.toList());
+
+            Set<Long> upvotedIds = upvoteService.getUpvotedRoadmapIds(roadmapIds, userId);
+            Set<Long> pinnedIds = getPinnedIdsForCurrentRequest(userId, professionId, lastId, pinnedRoadmapIds);
+            Set<Long> learningIds = getLearningIds(userId, roadmapIds);
+
+            for (RoadmapDTO dto : dtoList) {
+                dto.setUpvoted(upvotedIds.contains(dto.getId()));
+                dto.setPinned(pinnedIds.contains(dto.getId()));
+                dto.setLearning(learningIds.contains(dto.getId()));
+                
+                if (dto.getContent() != null) {
+                    String formattedContent = parseContentToGraphFormat(dto.getContent(), userId);
+                    dto.setContent(formattedContent);
+                }
+            }
+        }
+
+        return dtoList;
+    }
+    
+    private Set<Long> getPinnedIdsForCurrentRequest(long userId, Long professionId, Long lastId, List<Long> pinnedRoadmapIds) {
+        Set<Long> pinnedIds = new HashSet<>();
+        if (lastId == null || lastId == 0) {
+            pinnedIds.addAll(pinnedRoadmapIds);
+        } else {
+            List<Long> currentPinnedIds = getPinnedRoadmapIds(userId, professionId);
+            pinnedIds.addAll(currentPinnedIds);
+        }
+        return pinnedIds;
+    }
+    
+    private Set<Long> getLearningIds(long userId, List<Long> roadmapIds) {
+        if (systemProperties.getRoadmap().isEnableBatchStatusQuery()) {
+            List<Long> learningRoadmapIds = userRoadmapMapper.getBatchLearningStatus(userId, roadmapIds);
+            return new HashSet<>(learningRoadmapIds);
+        }
+        return new HashSet<>();
+    }
+    
+    private Map<String, List<Long>> parseExistingPinMap(UserProfileDO userProfile) {
+        Map<String, List<Long>> pinMap = new HashMap<>();
+        if (userProfile != null && userProfile.getRoadmapPin() != null) {
+            try {
+                pinMap = objectMapper.readValue(userProfile.getRoadmapPin(), new TypeReference<>() {});
+            } catch (JsonProcessingException e) {
+                log.error("解析置顶数据失败", e);
+                throw ErrorCode.JSON_PROCESSING_ERROR.exception(e);
+            }
+        }
+        return pinMap;
+    }
+    
+    private void updatePinMap(Map<String, List<Long>> pinMap, String professionKey, List<Long> professionPins, long userId, UserProfileDO userProfile) {
+        if (professionPins.isEmpty()) {
+            pinMap.remove(professionKey);
+        } else {
+            pinMap.put(professionKey, professionPins);
+        }
+
+        try {
+            String updatedPinJson = objectMapper.writeValueAsString(pinMap);
+            
+            if (userProfile == null) {
+                userProfile = new UserProfileDO();
+                userProfile.setUserId(userId);
+                userProfile.setRoadmapPin(updatedPinJson);
+                userProfile.setSubscription(DEFAULT_EMPTY_STRING);
+                userProfileMapper.insert(userProfile);
+            } else {
+                userProfileMapper.updateRoadmapPin(userId, updatedPinJson);
+            }
+        } catch (JsonProcessingException e) {
+            log.error("更新置顶数据失败", e);
+            throw ErrorCode.JSON_PROCESSING_ERROR.exception(e);
+        }
     }
 }

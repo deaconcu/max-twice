@@ -3,25 +3,36 @@ package com.prosper.learn.domain.service.business;
 import static com.prosper.learn.common.Enums.ProfessionState;
 
 import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ProfessionRankingService;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.ProfessionDTO;
 import com.prosper.learn.persistence.dataobject.ProfessionDO;
 import com.prosper.learn.persistence.mapper.ProfessionMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProfessionService {
 
     private final ProfessionMapper professionMapper;
     private final ProfessionRankingService professionRankingService;
+    private final SystemProperties systemProperties;
+    
+    // ========== 常量定义 ==========
+    
+    private static final String DEFAULT_EMPTY_STRING = "";
 
+    // ========== 公共方法 ==========
+    
     public ProfessionDTO getById(long id) {
+        validateProfessionId(id);
         ProfessionDO professionDO = professionMapper.get(id);
         return professionDO != null ? Converter.INSTANCE.toProfessionDTO(professionDO) : null;
     }
@@ -47,93 +58,82 @@ public class ProfessionService {
     }
 
     public List<ProfessionDTO> getListByPage(int page) {
-        List<ProfessionDO> professionDOList = professionMapper.listByPage((page - 1) * 20, 20);
+        validatePageNumber(page);
+        int pageSize = systemProperties.getProfession().getDefaultPageSize();
+        List<ProfessionDO> professionDOList = professionMapper.listByPage((page - 1) * pageSize, pageSize);
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }
 
     public Long create(ProfessionDTO professionDTO) {
-        if (professionDTO.getName() == null || professionDTO.getName().trim().isEmpty()) {
-            throw ErrorCode.SYSTEM_ERROR.exception();
-        }
-        if (professionDTO.getPrice() == null || professionDTO.getPrice().trim().isEmpty()) {
-            professionDTO.setPrice("");
-        }
-        if (professionDTO.getSkills() == null || professionDTO.getSkills().trim().isEmpty()) {
-            professionDTO.setSkills("");
-        }
-        if (professionDTO.getIcon() == null || professionDTO.getIcon().trim().isEmpty()) {
-            professionDTO.setIcon("mdi-triangle-outline");
-        }
-
+        validateProfessionForCreation(professionDTO);
+        
+        // 设置默认值
+        setDefaultValues(professionDTO);
+        
         ProfessionDO professionDO = Converter.INSTANCE.toProfessionDO(professionDTO);
         professionDO.setState(ProfessionState.SUBMITTED.value());
-        professionDO.setRejectedReason("");
+        professionDO.setRejectedReason(DEFAULT_EMPTY_STRING);
         professionMapper.insert(professionDO);
         return professionDO.getId();
     }
 
     public void update(ProfessionDTO professionDTO) {
+        validateProfessionForUpdate(professionDTO);
         ProfessionDO professionDO = Converter.INSTANCE.toProfessionDO(professionDTO);
         professionMapper.update(professionDO);
     }
 
     public void approve(long id) {
-        // 先查询当前状态
-        ProfessionDTO profession = getById(id);
-        if (profession == null) {
-            throw new RuntimeException("操作失败：专业不存在");
+        ProfessionDTO profession = validateProfessionExists(id);
+        
+        if (systemProperties.getProfession().isEnableStateValidation()) {
+            validateNotAlreadyApproved(profession);
         }
-        if (ProfessionState.APPROVED.value() == profession.getState()) {
-            throw new RuntimeException("操作失败：专业状态已是批准状态，无需重复操作");
-        }
-
-        // 执行数据库操作，再次验证状态（防止并发问题）
-        int rowsAffected = professionMapper.approve(id);
-        if (rowsAffected == 0) {
-            throw new RuntimeException("操作失败：专业状态已被其他操作修改，请刷新后重试");
+        
+        if (systemProperties.getProfession().isEnableConcurrencyCheck()) {
+            validateConcurrentStateChange(professionMapper.approve(id));
+        } else {
+            professionMapper.approve(id);
         }
     }
 
     public void reject(long id, String rejectedReason) {
-        // 先查询当前状态
-        ProfessionDTO profession = getById(id);
-        if (profession == null) {
-            throw new RuntimeException("操作失败：专业不存在");
+        ProfessionDTO profession = validateProfessionExists(id);
+        
+        if (systemProperties.getProfession().isEnableStateValidation()) {
+            validateNotAlreadyRejected(profession);
         }
-        if (ProfessionState.REJECTED.value() == profession.getState()) {
-            throw new RuntimeException("操作失败：专业状态已是拒绝状态，无需重复操作");
-        }
-
-        // 执行数据库操作，再次验证状态（防止并发问题）
-        int rowsAffected = professionMapper.reject(id, rejectedReason != null ? rejectedReason : "");
-        if (rowsAffected == 0) {
-            throw new RuntimeException("操作失败：专业状态已被其他操作修改，请刷新后重试");
+        
+        String reason = rejectedReason != null ? rejectedReason : DEFAULT_EMPTY_STRING;
+        
+        if (systemProperties.getProfession().isEnableConcurrencyCheck()) {
+            validateConcurrentStateChange(professionMapper.reject(id, reason));
+        } else {
+            professionMapper.reject(id, reason);
         }
     }
 
     public void delete(long id) {
+        validateProfessionId(id);
         professionMapper.delete(id);
     }
 
-    // 获取热门职业（使用Redis排行榜，按学习人数排序）
     public List<ProfessionDTO> getHotProfessions(int limit) {
+        validateHotProfessionsLimit(limit);
+        
         try {
-            // 从Redis获取热门职业ID列表
             List<Integer> hotProfessionIds = professionRankingService.getHotProfessionIds(limit);
             
             if (hotProfessionIds.isEmpty()) {
                 return new ArrayList<>();
             }
             
-            // 根据ID列表获取职业详情
             List<ProfessionDO> professionDOList = professionMapper.getByIds(hotProfessionIds);
             
-            // 转换为DTO并附加学习人数统计
             List<ProfessionDTO> result = new ArrayList<>();
             for (ProfessionDO professionDO : professionDOList) {
                 ProfessionDTO professionDTO = Converter.INSTANCE.toProfessionDTO(professionDO);
                 
-                // 从Redis获取学习人数统计
                 long learningCount = professionRankingService.getProfessionLearningCount(professionDO.getId());
                 professionDTO.setLearnerCount((int) learningCount);
                 
@@ -143,8 +143,86 @@ public class ProfessionService {
             return result;
             
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("获取热门职业失败: " + e.getMessage(), e);
+            log.error("获取热门专业失败，limit: {}", limit, e);
+            throw ErrorCode.PROFESSION_HOT_LIST_FAILED.exception(e);
+        }
+    }
+    
+    // ========== 私有辅助方法 ==========
+    
+    private void validateProfessionId(long id) {
+        if (id <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception();
+        }
+    }
+    
+    private void validatePageNumber(int page) {
+        if (page <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception();
+        }
+    }
+    
+    private ProfessionDTO validateProfessionExists(long id) {
+        validateProfessionId(id);
+        ProfessionDTO profession = getById(id);
+        if (profession == null) {
+            throw ErrorCode.PROFESSION_NOT_FOUND.exception();
+        }
+        return profession;
+    }
+    
+    private void validateProfessionForCreation(ProfessionDTO professionDTO) {
+        if (professionDTO == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception();
+        }
+        if (professionDTO.getName() == null || professionDTO.getName().trim().isEmpty()) {
+            throw ErrorCode.PROFESSION_NAME_REQUIRED.exception();
+        }
+    }
+    
+    private void validateProfessionForUpdate(ProfessionDTO professionDTO) {
+        if (professionDTO == null || professionDTO.getId() == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception();
+        }
+        validateProfessionId(professionDTO.getId());
+    }
+    
+    private void validateNotAlreadyApproved(ProfessionDTO profession) {
+        if (ProfessionState.APPROVED.value() == profession.getState()) {
+            throw ErrorCode.PROFESSION_ALREADY_APPROVED.exception();
+        }
+    }
+    
+    private void validateNotAlreadyRejected(ProfessionDTO profession) {
+        if (ProfessionState.REJECTED.value() == profession.getState()) {
+            throw ErrorCode.PROFESSION_ALREADY_REJECTED.exception();
+        }
+    }
+    
+    private void validateConcurrentStateChange(int rowsAffected) {
+        if (rowsAffected == 0) {
+            throw ErrorCode.PROFESSION_STATE_CONFLICT.exception();
+        }
+    }
+    
+    private void validateHotProfessionsLimit(int limit) {
+        if (limit <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception();
+        }
+        if (limit > systemProperties.getProfession().getMaxHotProfessionsLimit()) {
+            throw ErrorCode.PROFESSION_INVALID_LIMIT.exception();
+        }
+    }
+    
+    private void setDefaultValues(ProfessionDTO professionDTO) {
+        if (professionDTO.getPrice() == null || professionDTO.getPrice().trim().isEmpty()) {
+            professionDTO.setPrice(DEFAULT_EMPTY_STRING);
+        }
+        if (professionDTO.getSkills() == null || professionDTO.getSkills().trim().isEmpty()) {
+            professionDTO.setSkills(DEFAULT_EMPTY_STRING);
+        }
+        if (professionDTO.getIcon() == null || professionDTO.getIcon().trim().isEmpty()) {
+            professionDTO.setIcon(systemProperties.getProfession().getDefaultIcon());
         }
     }
 }

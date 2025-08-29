@@ -3,6 +3,9 @@ package com.prosper.learn.domain.service.basic;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.common.Enums;
+import com.prosper.learn.common.exception.BusinessException;
+import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.persistence.dataobject.PostStatsDO;
 import com.prosper.learn.persistence.dataobject.PostDO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
@@ -11,8 +14,8 @@ import com.prosper.learn.persistence.mapper.PostStatsMapper;
 import com.prosper.learn.persistence.mapper.PostMapper;
 import com.prosper.learn.persistence.mapper.RoadmapMapper;
 import com.prosper.learn.persistence.mapper.CommentMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -57,47 +60,127 @@ import java.util.Map;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ScoreCalculationService {
 
-    @Autowired
-    private PostStatsMapper postStatsMapper;
+    /** 帖子统计数据访问接口 */
+    private final PostStatsMapper postStatsMapper;
 
-    @Autowired
-    private PostMapper postMapper;
+    /** 帖子数据访问接口 */
+    private final PostMapper postMapper;
 
-    @Autowired
-    private RoadmapMapper roadmapMapper;
+    /** 路线图数据访问接口 */
+    private final RoadmapMapper roadmapMapper;
 
-    @Autowired
-    private CommentMapper commentMapper;
+    /** 评论数据访问接口 */
+    private final CommentMapper commentMapper;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    /** JSON对象映射器，用于统计数据的序列化和反序列化 */
+    private final ObjectMapper objectMapper;
+    
+    /** 系统配置属性 */
+    private final SystemProperties systemProperties;
 
-    // 算法参数
+    // 算法参数常量
     private static final double ALPHA = 1.5;  // 贝叶斯平滑参数
     private static final double BETA = 5.0;   // 贝叶斯平滑参数
 
-    private static final int MAX_DAYS_HISTORY = 720;  // 最多考虑30天的历史数据
+    private static final int MAX_DAYS_HISTORY = 720;  // 最多考虑历史数据天数
 
-    private static final double p2 = 0.6;  // 两次能懂的权重
-    private static final double p3 = 0.3;  // 有帮助的权重
+    private static final double TWICE_WEIGHT = 0.6;  // 两次能懂的权重
+    private static final double HELPFUL_WEIGHT = 0.3;  // 有帮助的权重
 
     // 时间权重参数
-    private static final double TIME_DECAY_HALF_LIFE = 30.0;  // 半衰期（天），30天后权重为0.5
-    private static final double MIN_TIME_WEIGHT = 0.1;        // 最小时间权重，防止过老数据权重为0
-    private static final double TIME_WEIGHT_TYPE = 2;         // 权重类型：1=指数衰减，2=线性衰减，3=对数衰减
+    private static final double TIME_DECAY_HALF_LIFE = 30.0;  // 半衰期（天）
+    private static final double MIN_TIME_WEIGHT = 0.1;        // 最小时间权重
+    private static final int TIME_WEIGHT_TYPE = 2;            // 权重类型
 
     // 贝叶斯平滑先验参数
-    private static final double priorMean = 0.6;  // 先验均值，表示在没有数据时的默认易懂度
-    private static final double priorStrength = 8.0; // 先验强度，表示先验的权重
+    private static final double PRIOR_MEAN = 0.6;     // 先验均值
+    private static final double PRIOR_STRENGTH = 8.0; // 先验强度
 
     // 分数更新间隔配置（分钟）
-    private static final int SCORE_UPDATE_INTERVAL_MINUTES = 1;  // 5分钟内不重复计算
+    private static final int SCORE_UPDATE_INTERVAL_MINUTES = 1;
+    
+    // 评论评分权重常量
+    private static final double COMMENT_UPVOTE_WEIGHT = 2.0;  // 评论点赞权重
+    private static final double COMMENT_REPLY_WEIGHT = 1.0;   // 评论回复权重
+    private static final double COMMENT_TIME_BASE_WEIGHT = 1.0; // 评论时间基础权重
+    
+    // 基准时间常量
+    private static final LocalDate BASELINE_DATE = LocalDate.of(2025, 1, 1);
+    private static final LocalDateTime COMMENT_BASE_TIME = LocalDateTime.of(2025, 1, 1, 0, 0, 0);
+
+    /**
+     * 验证帖子对象有效性
+     * 
+     * @param post 帖子对象
+     * @throws BusinessException 当帖子对象无效时抛出异常
+     */
+    private void validatePost(PostDO post) {
+        if (post == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("帖子对象不能为空");
+        }
+        if (post.getId() <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("帖子ID无效: " + post.getId());
+        }
+    }
+    
+    /**
+     * 验证路线图对象有效性
+     * 
+     * @param roadmap 路线图对象
+     * @throws BusinessException 当路线图对象无效时抛出异常
+     */
+    private void validateRoadmap(RoadmapDO roadmap) {
+        if (roadmap == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("路线图对象不能为空");
+        }
+        if (roadmap.getId() <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("路线图ID无效: " + roadmap.getId());
+        }
+    }
+    
+    /**
+     * 验证评论对象有效性
+     * 
+     * @param comment 评论对象
+     * @throws BusinessException 当评论对象无效时抛出异常
+     */
+    private void validateComment(CommentDO comment) {
+        if (comment == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("评论对象不能为空");
+        }
+        if (comment.getId() <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("评论ID无效: " + comment.getId());
+        }
+    }
+    
+    /**
+     * 安全地执行JSON处理
+     * 
+     * @param jsonStr JSON字符串
+     * @return 解析后的Map对象
+     * @throws BusinessException 当JSON处理失败时抛出异常
+     */
+    private Map<String, Map<String, Integer>> parseYearlyStatsJson(String jsonStr) {
+        try {
+            return objectMapper.readValue(jsonStr, new TypeReference<>() {});
+        } catch (Exception e) {
+            throw ErrorCode.JSON_PROCESSING_ERROR.exception( e);
+        }
+    }
 
     /**
      * 计算单个文章的分数
+     * 
+     * @param post 文章对象
+     * @return 文章分数
+     * @throws BusinessException 当参数无效或计算失败时抛出异常
      */
     public double calculatePostScore(PostDO post) {
+        validatePost(post);
+        
         try {
             // 1. 获取历史点赞数据并计算时间加权
             Map<LocalDate, DailyData> dailyData = getDailyUpvoteHistory(post.getId(), Enums.PostStatsType.POST);
@@ -118,14 +201,20 @@ public class ScoreCalculationService {
 
         } catch (Exception e) {
             log.error("计算文章分数失败, postId: {}", post.getId(), e);
-            return 0.0;
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
     }
 
     /**
      * 计算单个路线图的分数
+     * 
+     * @param roadmap 路线图对象
+     * @return 路线图分数
+     * @throws BusinessException 当参数无效或计算失败时抛出异常
      */
     public double calculateRoadmapScore(RoadmapDO roadmap) {
+        validateRoadmap(roadmap);
+        
         try {
             // 1. 获取历史点赞数据并计算时间加权
             Map<LocalDate, DailyData> dailyData = getDailyUpvoteHistory(roadmap.getId(), Enums.PostStatsType.ROADMAP);
@@ -146,7 +235,7 @@ public class ScoreCalculationService {
 
         } catch (Exception e) {
             log.error("计算路线图分数失败, roadmapId: {}", roadmap.getId(), e);
-            return 0.0;
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -239,7 +328,7 @@ public class ScoreCalculationService {
                             int helpful = dayStats.getOrDefault("helpful", 0);
 
                             // 计算当天的加权分数 (移除once，只保留twice和helpful)
-                            double dayScore = twice * p2 + helpful * p3;
+                            double dayScore = twice * TWICE_WEIGHT + helpful * HELPFUL_WEIGHT;
                             // 计算当天的样本数（总点赞次数）
                             int daySampleCount = (twice + helpful);
 
@@ -337,11 +426,11 @@ public class ScoreCalculationService {
      */
     private double calculateBayesianSmoothedRate(double score, double sampleCount) {
         if (sampleCount == 0) {
-            return priorMean;
+            return PRIOR_MEAN;
         }
 
         // 贝叶斯平滑公式：p = (S_weighted + n0×m0) / (T_weighted + n0)
-        return (score + priorStrength * priorMean) / (sampleCount + priorStrength);
+        return (score + PRIOR_STRENGTH * PRIOR_MEAN) / (sampleCount + PRIOR_STRENGTH);
     }
 
     /**
@@ -361,10 +450,14 @@ public class ScoreCalculationService {
 
     /**
      * 检查并更新文章分数（如果需要的话）
+     * 
      * @param post 文章对象
      * @return 是否进行了分数更新
+     * @throws BusinessException 当参数无效时抛出异常
      */
     public boolean checkAndUpdatePostScore(PostDO post) {
+        validatePost(post);
+        
         try {
             // 检查是否需要更新分数
             if (shouldUpdateScore(post)) {
@@ -376,16 +469,20 @@ public class ScoreCalculationService {
             return false;
         } catch (Exception e) {
             log.error("检查并更新文章分数失败: postId={}", post.getId(), e);
-            return false;
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
     }
 
     /**
      * 检查并更新路线图分数（如果需要的话）
+     * 
      * @param roadmap 路线图对象
      * @return 是否进行了分数更新
+     * @throws BusinessException 当参数无效时抛出异常
      */
     public boolean checkAndUpdateRoadmapScore(RoadmapDO roadmap) {
+        validateRoadmap(roadmap);
+        
         try {
             // 检查是否需要更新分数
             if (shouldUpdateScore(roadmap)) {
@@ -397,12 +494,13 @@ public class ScoreCalculationService {
             return false;
         } catch (Exception e) {
             log.error("检查并更新路线图分数失败: roadmapId={}", roadmap.getId(), e);
-            return false;
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
     }
 
     /**
      * 计算评论的综合评分
+     * 
      * 综合排序规则：
      * 1. 点赞数（降序）
      * 2. 回复数（降序）
@@ -410,12 +508,15 @@ public class ScoreCalculationService {
      *
      * @param comment 评论对象
      * @return 综合评分
+     * @throws BusinessException 当参数无效或计算失败时抛出异常
      */
     public double calculateCommentScore(CommentDO comment) {
+        validateComment(comment);
+        
         try {
             // 基础分数：点赞数 + 回复数权重
-            double upvoteScore = comment.getUpvoteCount() * 2.0;  // 点赞权重更高
-            double replyScore = comment.getReplyCount() * 1.0;    // 回复权重
+            double upvoteScore = comment.getUpvoteCount() * COMMENT_UPVOTE_WEIGHT;
+            double replyScore = comment.getReplyCount() * COMMENT_REPLY_WEIGHT;
 
             // 时间正向增加因子：越新的评论权重越高
             double timeWeight = calculateCommentTimeWeight(comment.getCreatedAt());
@@ -427,11 +528,11 @@ public class ScoreCalculationService {
                      comment.getId(), comment.getUpvoteCount(), comment.getReplyCount(),
                      timeWeight, finalScore);
 
-            return Math.max(0.0, finalScore);  // 确保分数不为负数
+            return Math.max(0.0, finalScore);
 
         } catch (Exception e) {
             log.error("计算评论分数失败, commentId: {}", comment.getId(), e);
-            return 0.0;
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -444,27 +545,28 @@ public class ScoreCalculationService {
      */
     private double calculateCommentTimeWeight(LocalDateTime createTime) {
         if (createTime == null) {
-            return 1.0;  // 默认权重
+            return COMMENT_TIME_BASE_WEIGHT;  // 使用常量默认权重
         }
 
-        // 固定基准时间：2025-1-1 00:00:00
-        LocalDateTime baseTime = LocalDateTime.of(2025, 1, 1, 0, 0, 0);
-        long hoursFromBase = ChronoUnit.HOURS.between(baseTime, createTime);
+        // 使用常量基准时间
+        long hoursFromBase = ChronoUnit.HOURS.between(COMMENT_BASE_TIME, createTime);
 
-        // 使用线性增长函数，无上限
-        // 基础权重 1.0，每过一小时增加 0.01
-        //double timeWeight = 1.0 + Math.max(0, hoursFromBase * 0.01);
-        double timeWeight = 1.0 + Math.log1p(Math.max(0, hoursFromBase * 0.0002));
+        // 使用对数增长函数，避免权重过大
+        double timeWeight = COMMENT_TIME_BASE_WEIGHT + Math.log1p(Math.max(0, hoursFromBase * 0.0002));
 
         return timeWeight;
     }
 
     /**
      * 检查并更新评论分数（如果需要的话）
+     * 
      * @param comment 评论对象
      * @return 是否进行了分数更新
+     * @throws BusinessException 当参数无效时抛出异常
      */
     public boolean checkAndUpdateCommentScore(CommentDO comment) {
+        validateComment(comment);
+        
         try {
             double score = calculateCommentScore(comment);
 
@@ -476,7 +578,7 @@ public class ScoreCalculationService {
             return false;
         } catch (Exception e) {
             log.error("检查并更新评论分数失败: commentId={}", comment.getId(), e);
-            return false;
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
     }
 

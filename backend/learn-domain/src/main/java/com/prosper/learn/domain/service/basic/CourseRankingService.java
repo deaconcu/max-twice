@@ -1,5 +1,7 @@
 package com.prosper.learn.domain.service.basic;
 
+import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -15,6 +17,7 @@ import java.util.stream.Collectors;
 public class CourseRankingService {
 
     private final RedisTemplate<String, String> redisTemplate;
+    private final SystemProperties systemProperties;
     
     private static final String HOT_COURSES_KEY = "course:hot:ranking";
     private static final String COURSE_SUBSCRIPTION_PREFIX = "course:subscription:";
@@ -24,6 +27,7 @@ public class CourseRankingService {
      * 增加课程收藏数
      */
     public void incrementSubscription(int courseId) {
+        validateCourseId(courseId);
         String key = COURSE_SUBSCRIPTION_PREFIX + courseId;
         redisTemplate.opsForValue().increment(key);
         updateCourseRanking(courseId);
@@ -33,6 +37,7 @@ public class CourseRankingService {
      * 减少课程收藏数
      */
     public void decrementSubscription(int courseId) {
+        validateCourseId(courseId);
         String key = COURSE_SUBSCRIPTION_PREFIX + courseId;
         Long count = redisTemplate.opsForValue().decrement(key);
         if (count != null && count < 0) {
@@ -45,6 +50,7 @@ public class CourseRankingService {
      * 增加课程学习数
      */
     public void incrementLearning(int courseId) {
+        validateCourseId(courseId);
         String key = COURSE_LEARNING_PREFIX + courseId;
         redisTemplate.opsForValue().increment(key);
         updateCourseRanking(courseId);
@@ -54,6 +60,7 @@ public class CourseRankingService {
      * 减少课程学习数
      */
     public void decrementLearning(int courseId) {
+        validateCourseId(courseId);
         String key = COURSE_LEARNING_PREFIX + courseId;
         Long count = redisTemplate.opsForValue().decrement(key);
         if (count != null && count < 0) {
@@ -92,6 +99,7 @@ public class CourseRankingService {
      * 获取热门课程ID列表（按分数降序）
      */
     public List<Long> getHotCourseIds(int limit) {
+        validateLimit(limit);
         try {
             Set<String> courseIds = redisTemplate.opsForZSet().reverseRange(HOT_COURSES_KEY, 0, limit - 1);
             if (courseIds == null || courseIds.isEmpty()) {
@@ -102,8 +110,8 @@ public class CourseRankingService {
                     .map(Long::parseLong)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("Failed to get hot course ids", e);
-            return List.of();
+            log.error("Failed to get hot course ids with limit: {}", limit, e);
+            throw ErrorCode.COURSE_RANKING_REDIS_OPERATION_FAILED.exception(e);
         }
     }
 
@@ -111,6 +119,7 @@ public class CourseRankingService {
      * 获取课程的收藏数和学习数
      */
     public CourseStats getCourseStats(long courseId) {
+        validateCourseId(courseId);
         try {
             String subscriptionKey = COURSE_SUBSCRIPTION_PREFIX + courseId;
             String learningKey = COURSE_LEARNING_PREFIX + courseId;
@@ -132,6 +141,7 @@ public class CourseRankingService {
      * 批量初始化课程统计数据（用于定时任务）
      */
     public void initializeCourseStats(int courseId, long subscriptionCount, long learningCount) {
+        validateCourseId(courseId);
         try {
             String subscriptionKey = COURSE_SUBSCRIPTION_PREFIX + courseId;
             String learningKey = COURSE_LEARNING_PREFIX + courseId;
@@ -171,6 +181,26 @@ public class CourseRankingService {
             log.info("Cleared all course stats from Redis");
         } catch (Exception e) {
             log.error("Failed to clear course stats", e);
+        }
+    }
+
+    // ========== 私有辅助方法 ==========
+
+    /**
+     * 验证课程ID有效性
+     */
+    private void validateCourseId(long courseId) {
+        if (courseId <= 0) {
+            throw ErrorCode.COURSE_NOT_FOUND.exception();
+        }
+    }
+
+    /**
+     * 验证限制数量有效性
+     */
+    private void validateLimit(int limit) {
+        if (limit <= 0 || limit > systemProperties.getCourseRanking().getMaxHotCoursesLimit()) {
+            throw ErrorCode.COURSE_RANKING_INVALID_LIMIT.exception();
         }
     }
 

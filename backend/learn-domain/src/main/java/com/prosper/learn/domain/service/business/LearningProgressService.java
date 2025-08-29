@@ -1,6 +1,8 @@
 package com.prosper.learn.domain.service.business;
 
 import com.prosper.learn.common.Enums;
+import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ContentsService;
 import com.prosper.learn.persistence.dataobject.UserProgressDO;
 import com.prosper.learn.persistence.dataobject.UserCourseDO;
@@ -37,10 +39,87 @@ public class LearningProgressService {
     private final CourseMapper courseMapper;
     private final ContentsService contentsService;
     private final ObjectMapper objectMapper;
+    private final SystemProperties systemProperties;
 
     private static final String USER_COMPLETED_KEY_PREFIX = "user:completed:";
     private static final String SYNC_FAILED_USERS_KEY = "sync:failed:users";
-    private static final Duration CACHE_EXPIRE_TIME = Duration.ofDays(365);
+    
+    // 不再使用硬编码的Duration，后面会使用配置
+    
+    // ========== 私有辅助方法 ==========
+
+    /**
+     * 获取Redis缓存过期时间
+     */
+    private Duration getCacheExpireTime() {
+        int days = systemProperties.getLearningProgress().getCacheExpireDays();
+        return Duration.ofDays(days);
+    }
+
+    /**
+     * 生成用户完成进度Redis键
+     */
+    private String generateUserCompletedKey(long userId) {
+        return USER_COMPLETED_KEY_PREFIX + userId;
+    }
+
+    /**
+     * 验证节点ID是否有效
+     */
+    private void validateNodeId(long nodeId) {
+        if (nodeId <= 0) {
+            throw ErrorCode.LEARNING_PROGRESS_INVALID_NODE_ID.exception();
+        }
+    }
+
+    /**
+     * 验证用户ID是否有效
+     */
+    private void validateUserId(long userId) {
+        if (userId <= 0) {
+            throw ErrorCode.USER_NOT_FOUND.exception();
+        }
+    }
+
+    /**
+     * 验证课程ID是否有效
+     */
+    private void validateCourseId(long courseId) {
+        if (courseId <= 0) {
+            throw ErrorCode.COURSE_NOT_FOUND.exception();
+        }
+    }
+
+    /**
+     * 验证进度百分比是否有效
+     */
+    private void validateProgressPercent(int progressPercent) {
+        int threshold = systemProperties.getLearningProgress().getCompletionThreshold();
+        if (progressPercent < 0 || progressPercent > threshold) {
+            throw ErrorCode.USER_COURSE_PROGRESS_INVALID.exception();
+        }
+    }
+
+    /**
+     * 确保Redis中有用户数据（懒加载）
+     */
+    private void ensureUserDataInRedis(long userId) {
+        String key = generateUserCompletedKey(userId);
+        if (!redisTemplate.hasKey(key)) {
+            loadUserDataToRedis(userId);
+        }
+    }
+
+    /**
+     * 验证数据库操作结果
+     */
+    private void validateDatabaseOperation(int rowsAffected, String operation) {
+        if (rowsAffected == 0) {
+            throw ErrorCode.LEARNING_PROGRESS_DATABASE_FAILED.exception();
+        }
+    }
+
+    // ========== 公共业务方法 ==========
 
     /**
      * 标记节点为已完成
@@ -51,17 +130,18 @@ public class LearningProgressService {
      * @return 是否成功添加（如果已存在则返回false）
      */
     public boolean markNodeCompleted(long userId, long nodeId, long courseId) {
+        validateUserId(userId);
+        validateNodeId(nodeId);
+        validateCourseId(courseId);
+        
         try {
-            String key = USER_COMPLETED_KEY_PREFIX + userId;
+            String key = generateUserCompletedKey(userId);
             
-            // 如果Redis中没有这个用户的数据，先加载
-            if (!redisTemplate.hasKey(key)) {
-                loadUserDataToRedis(userId);
-            }
+            ensureUserDataInRedis(userId);
             
             // 1. 立即更新Redis（用户立即看到结果）
             Long added = redisTemplate.opsForSet().add(key, Long.toString(nodeId));
-            redisTemplate.expire(key, CACHE_EXPIRE_TIME);
+            redisTemplate.expire(key, getCacheExpireTime());
             
             boolean isNewlyAdded = added > 0;
             
@@ -73,7 +153,9 @@ public class LearningProgressService {
                     syncUserToDatabase(userId);
                     
                     // 3. 更新课程进度
-                    updateCourseProgress(userId, nodeId, courseId);
+                    if (systemProperties.getLearningProgress().isEnableHierarchicalProgress()) {
+                        updateCourseProgress(userId, nodeId, courseId);
+                    }
                 } catch (Exception dbException) {
                     // 数据库更新失败，记录到待补偿队列
                     log.warn("Database sync failed for user {}, added to retry queue: {}", 
@@ -88,9 +170,13 @@ public class LearningProgressService {
             
         } catch (Exception redisException) {
             // Redis失败，降级到只写数据库
-            log.error("Redis update failed for user {} node {}, fallback to database only: {}", 
-                userId, nodeId, redisException.getMessage());
-            return fallbackToDatabase(userId, nodeId);
+            if (systemProperties.getLearningProgress().isEnableDatabaseFallback()) {
+                log.error("Redis update failed for user {} node {}, fallback to database only: {}", 
+                    userId, nodeId, redisException.getMessage());
+                return fallbackToDatabase(userId, nodeId);
+            } else {
+                throw ErrorCode.LEARNING_PROGRESS_REDIS_FAILED.exception(redisException);
+            }
         }
     }
 
@@ -303,7 +389,7 @@ public class LearningProgressService {
             if (trimmedNodeIds.length > 0) {
                 // 批量添加到Redis Set
                 redisTemplate.opsForSet().add(key, trimmedNodeIds);
-                redisTemplate.expire(key, CACHE_EXPIRE_TIME);
+                redisTemplate.expire(key, getCacheExpireTime());
                 
                 log.debug("Loaded {} completed nodes for user {} from database to Redis", 
                     trimmedNodeIds.length, userId);
