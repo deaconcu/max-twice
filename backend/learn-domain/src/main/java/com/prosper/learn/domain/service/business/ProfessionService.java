@@ -122,7 +122,7 @@ public class ProfessionService {
         validateHotProfessionsLimit(limit);
         
         try {
-            List<Integer> hotProfessionIds = professionRankingService.getHotProfessionIds(limit);
+            List<Long> hotProfessionIds = professionRankingService.getHotProfessionIds(limit);
             
             if (hotProfessionIds.isEmpty()) {
                 return new ArrayList<>();

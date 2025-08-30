@@ -67,7 +67,7 @@ public class ProfessionRankingService {
     /**
      * 获取热门职业ID列表（按学习人数降序）
      */
-    public List<Integer> getHotProfessionIds(int limit) {
+    public List<Long> getHotProfessionIds(int limit) {
         validateLimit(limit);
         try {
             Set<String> professionIds = redisTemplate.opsForZSet().reverseRange(HOT_PROFESSIONS_KEY, 0, limit - 1);
@@ -76,7 +76,7 @@ public class ProfessionRankingService {
             }
             
             return professionIds.stream()
-                    .map(Integer::parseInt)
+                    .map(Long::parseLong)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("Failed to get hot profession ids with limit: {}", limit, e);
