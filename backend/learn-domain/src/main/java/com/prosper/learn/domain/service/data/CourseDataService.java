@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service.data;
 
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.mapper.CourseMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -76,7 +77,7 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
             return courseMapper.listRootByCategory(mainCategory, subCategory);
         } catch (Exception e) {
             log.error("Error querying courses by category: {}, {}", mainCategory, subCategory, e);
-            throw new RuntimeException("Failed to query courses by category", e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
     
@@ -96,7 +97,7 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
             log.debug("Updated course {}", course.getId());
         } catch (Exception e) {
             log.error("Error updating course: {}", course.getId(), e);
-            throw new RuntimeException("Failed to update course: " + course.getId(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
     
@@ -118,7 +119,7 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
             return result > 0;
         } catch (Exception e) {
             log.error("Error approving course: {}", id, e);
-            throw new RuntimeException("Failed to approve course: " + id, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
     
@@ -132,7 +133,7 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
             return result > 0;
         } catch (Exception e) {
             log.error("Error rejecting course: {}", id, e);
-            throw new RuntimeException("Failed to reject course: " + id, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
 }

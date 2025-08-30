@@ -1,6 +1,8 @@
 spring:
   application:
     name: learn-service
+  cache:
+    type: ${app.cache.type:redis}  # 读取app.cache.type配置，默认redis
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     jdbc-url: jdbc:mysql://127.0.0.1:3307/learn?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true
@@ -200,6 +202,8 @@ app:
     enable-permission-check: true
     # 是否启用批量状态查询优化
     enable-batch-status-query: true
+  cache:
+    type: redis  # redis 启用缓存，none 关闭所有缓存
 
 logging:
   level:

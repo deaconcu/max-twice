@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service.data;
 
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import com.prosper.learn.persistence.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -78,7 +79,7 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
             return userMapper.getByEmail(email);
         } catch (Exception e) {
             log.error("Error querying user by email: {}", email, e);
-            throw new RuntimeException("Failed to query user by email: " + email, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
     
@@ -100,7 +101,7 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
             log.debug("Updated user {}", user.getId());
         } catch (Exception e) {
             log.error("Error updating user: {}", user.getId(), e);
-            throw new RuntimeException("Failed to update user: " + user.getId(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
     

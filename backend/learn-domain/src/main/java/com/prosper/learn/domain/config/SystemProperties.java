@@ -87,6 +87,11 @@ public class SystemProperties {
      */
     private Roadmap roadmap = new Roadmap();
 
+    /**
+     * 缓存相关配置
+     */
+    private Cache cache = new Cache();
+
     @Data
     public static class Contents {
         /**
@@ -535,5 +540,16 @@ public class SystemProperties {
          * 是否启用批量状态查询优化
          */
         private boolean enableBatchStatusQuery = true;
+    }
+
+    @Data
+    public static class Cache {
+        /**
+         * 缓存类型 - 控制Spring Cache的类型
+         * 值：redis（启用缓存）、none（关闭缓存）
+         * 影响：spring.cache.type配置，控制所有@Cacheable等注解是否生效
+         */
+        private String type = "redis";
+    }
     }
 }

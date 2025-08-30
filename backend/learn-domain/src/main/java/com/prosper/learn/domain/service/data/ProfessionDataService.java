@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service.data;
 
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.persistence.dataobject.ProfessionDO;
 import com.prosper.learn.persistence.mapper.ProfessionMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -79,7 +80,7 @@ public class ProfessionDataService extends AbstractDataService<ProfessionDO, Pro
             log.debug("Updated profession {}", profession.getId());
         } catch (Exception e) {
             log.error("Error updating profession: {}", profession.getId(), e);
-            throw new RuntimeException("Failed to update profession: " + profession.getId(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service.data;
 
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.persistence.dataobject.PostDO;
 import com.prosper.learn.persistence.mapper.PostMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -77,7 +78,7 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
             log.debug("Updated post {}", post.getId());
         } catch (Exception e) {
             log.error("Error updating post: {}", post.getId(), e);
-            throw new RuntimeException("Failed to update post: " + post.getId(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
     
@@ -91,7 +92,7 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
             return result > 0;
         } catch (Exception e) {
             log.error("Error updating post score: {}", id, e);
-            throw new RuntimeException("Failed to update post score: " + id, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
 }

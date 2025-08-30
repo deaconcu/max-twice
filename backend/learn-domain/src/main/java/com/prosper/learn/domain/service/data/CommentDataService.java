@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service.data;
 
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.persistence.dataobject.CommentDO;
 import com.prosper.learn.persistence.mapper.CommentMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -79,7 +80,7 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
             log.debug("Updated comment {}", comment.getId());
         } catch (Exception e) {
             log.error("Error updating comment: {}", comment.getId(), e);
-            throw new RuntimeException("Failed to update comment: " + comment.getId(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
 }

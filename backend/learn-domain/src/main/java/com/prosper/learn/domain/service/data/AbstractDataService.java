@@ -1,5 +1,7 @@
 package com.prosper.learn.domain.service.data;
 
+import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.config.SystemProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -23,6 +25,9 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
     
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
+    
+    @Autowired
+    private SystemProperties systemProperties;
     
     /**
      * 获取Mapper实例
@@ -73,6 +78,13 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
         return getCacheName() + "::" + id;
     }
     
+    /**
+     * 检查是否启用缓存
+     */
+    private boolean isCacheEnabled() {
+        return !"none".equals(systemProperties.getCache().getType());
+    }
+    
     @Override
     @Cacheable(value = "#{getCacheName()}", key = "#id", condition = "#id != null")
     public T getById(Y id) {
@@ -95,7 +107,7 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
             return result;
         } catch (Exception e) {
             log.error("Error querying {} with id: {}", getEntityName(), id, e);
-            throw new RuntimeException("Failed to query " + getEntityName() + " with id: " + id, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
     
@@ -113,6 +125,19 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
                 
         if (validIds.isEmpty()) {
             return new ArrayList<>();
+        }
+        
+        // 如果缓存未启用，直接查询数据库
+        if (!isCacheEnabled()) {
+            try {
+                List<T> result = getByIdsFromMapper(mapper(), validIds);
+                log.debug("Cache disabled, retrieved {} {} entities from DB", 
+                         result.size(), getEntityName());
+                return result;
+            } catch (Exception e) {
+                log.error("Error querying {} from DB when cache disabled", getEntityName(), e);
+                throw ErrorCode.DATABASE_ERROR.exception(e);
+            }
         }
         
         try {
@@ -160,7 +185,7 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
             
         } catch (Exception e) {
             log.error("Error batch querying {} with ids: {}", getEntityName(), validIds, e);
-            throw new RuntimeException("Failed to batch query " + getEntityName(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
     
@@ -184,7 +209,7 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
     private Map<Y, T> batchGetFromCache(List<Y> ids) {
         Map<Y, T> results = new HashMap<>();
         
-        if (ids.isEmpty()) {
+        if (ids.isEmpty() || !isCacheEnabled()) {
             return results;
         }
         
@@ -222,7 +247,7 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
      * 使用分批Pipeline批量写入缓存
      */
     private void batchPutToCache(Map<Y, T> entities) {
-        if (entities.isEmpty()) {
+        if (entities.isEmpty() || !isCacheEnabled()) {
             return;
         }
         
@@ -245,7 +270,7 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
     @Override
     @CacheEvict(value = "#{getCacheName()}", key = "#id")
     public void evictCache(Y id) {
-        if (id != null) {
+        if (id != null && isCacheEnabled()) {
             try {
                 redisTemplate.delete(buildCacheKey(id));
                 log.debug("Evicted cache for {} with id: {}", getEntityName(), id);
@@ -258,6 +283,10 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
     @Override
     @CacheEvict(value = "#{getCacheName()}", allEntries = true)
     public void evictAllCache() {
+        if (!isCacheEnabled()) {
+            return;
+        }
+        
         try {
             Set<String> keys = redisTemplate.keys(getCacheName() + "::*");
             if (keys != null && !keys.isEmpty()) {
@@ -292,7 +321,7 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
      * 预热缓存
      */
     public void warmUpCache(Collection<Y> ids) {
-        if (ids == null || ids.isEmpty()) {
+        if (ids == null || ids.isEmpty() || !isCacheEnabled()) {
             return;
         }
         
@@ -304,7 +333,7 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
      * 获取缓存统计信息
      */
     public Map<String, Object> getCacheStats(Collection<Y> ids) {
-        if (ids == null || ids.isEmpty()) {
+        if (ids == null || ids.isEmpty() || !isCacheEnabled()) {
             return Collections.emptyMap();
         }
         

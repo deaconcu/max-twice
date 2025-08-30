@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service.data;
 
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.persistence.dataobject.NodeDO;
 import com.prosper.learn.persistence.mapper.NodeMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -78,7 +79,7 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
             log.debug("Updated node {}", node.getId());
         } catch (Exception e) {
             log.error("Error updating node: {}", node.getId(), e);
-            throw new RuntimeException("Failed to update node: " + node.getId(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
 }

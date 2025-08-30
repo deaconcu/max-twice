@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service.data;
 
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
 import com.prosper.learn.persistence.mapper.RoadmapMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -79,7 +80,7 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
             log.debug("Updated roadmap {}", roadmap.getId());
         } catch (Exception e) {
             log.error("Error updating roadmap: {}", roadmap.getId(), e);
-            throw new RuntimeException("Failed to update roadmap: " + roadmap.getId(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
 }
