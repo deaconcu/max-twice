@@ -33,7 +33,7 @@ public class ProfessionService {
     
     public ProfessionDTO getById(long id) {
         validateProfessionId(id);
-        ProfessionDO professionDO = professionMapper.get(id);
+        ProfessionDO professionDO = professionMapper.getById(id);
         return professionDO != null ? Converter.INSTANCE.toProfessionDTO(professionDO) : null;
     }
 

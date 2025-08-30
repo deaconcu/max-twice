@@ -139,7 +139,7 @@ public class UserRoadmapService {
             UserRoadmapDTO dto = Converter.INSTANCE.toUserRoadmapDTO(progressDO);
 
             // 批量查询 roadmap 信息
-            RoadmapDO roadmapDO = roadmapMapper.get(roadmapId.intValue());
+            RoadmapDO roadmapDO = roadmapMapper.getById(roadmapId.intValue());
             if (roadmapDO != null) {
                 RoadmapDTOV2 roadmapDTO = Converter.INSTANCE.toRoadmapDTOV2WithUser(roadmapDO, userMapper);
                 dto.setRoadmap(roadmapDTO);

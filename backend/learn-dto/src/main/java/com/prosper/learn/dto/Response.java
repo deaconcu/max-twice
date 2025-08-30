@@ -62,8 +62,8 @@ public class Response<T> {
         return Response.success;
     }
 
-    public static <T> Response<T> fail(String msg) {
-        return new Response<>(FAILED, msg, null);
+    public static <T> Response<T> fail(int code, String msg) {
+        return new Response<>(code, msg, null);
     }
 
     public static <T> Response<Object> fail() {

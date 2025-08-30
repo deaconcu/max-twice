@@ -42,16 +42,4 @@ public interface UserProgressMapper {
             "count = VALUES(count), " +
             "updated_at = NOW()")
     int upsert(UserProgressDO record);
-
-    /**
-     * 只获取用户完成的节点ID字符串
-     */
-    @Select("SELECT node_ids FROM user_progress WHERE user_id = #{userId}")
-    String getCompletedNodeIds(long userId);
-
-    /**
-     * 获取用户完成节点总数
-     */
-    @Select("SELECT count FROM user_progress WHERE user_id = #{userId}")
-    Integer getCompletedCount(long userId);
 }

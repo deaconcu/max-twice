@@ -1,11 +1,11 @@
-package com.prosper.learn.domain.repository;
+package com.prosper.learn.domain.service.data;
 
 import com.prosper.learn.persistence.dataobject.ProfessionDO;
 import com.prosper.learn.persistence.mapper.ProfessionMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -19,13 +19,13 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-public class ProfessionDataService extends AbstractDataService<ProfessionDO, ProfessionMapper> {
+public class ProfessionDataService extends AbstractDataService<ProfessionDO, ProfessionMapper, Long> {
     
     @Autowired
     private ProfessionMapper professionMapper;
     
     @Override
-    protected ProfessionMapper getMapper() {
+    protected ProfessionMapper mapper() {
         return professionMapper;
     }
     

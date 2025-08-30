@@ -1,17 +1,16 @@
-package com.prosper.learn.domain.repository;
+package com.prosper.learn.domain.service.data;
 
 import com.prosper.learn.persistence.dataobject.PostDO;
 import com.prosper.learn.persistence.mapper.PostMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -19,13 +18,13 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-public class PostDataService extends AbstractDataService<PostDO, PostMapper> {
+public class PostDataService extends AbstractDataService<PostDO, PostMapper, Long> {
     
     @Autowired
     private PostMapper postMapper;
     
     @Override
-    protected PostMapper getMapper() {
+    protected PostMapper mapper() {
         return postMapper;
     }
     

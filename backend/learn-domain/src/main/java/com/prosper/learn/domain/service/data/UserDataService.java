@@ -1,4 +1,4 @@
-package com.prosper.learn.domain.repository;
+package com.prosper.learn.domain.service.data;
 
 import com.prosper.learn.persistence.dataobject.UserDO;
 import com.prosper.learn.persistence.mapper.UserMapper;
@@ -19,13 +19,13 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-public class UserDataService extends AbstractDataService<UserDO, UserMapper> {
+public class UserDataService extends AbstractDataService<UserDO, UserMapper, Long> {
     
     @Autowired
     private UserMapper userMapper;
     
     @Override
-    protected UserMapper getMapper() {
+    protected UserMapper mapper() {
         return userMapper;
     }
     
@@ -64,13 +64,7 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper> {
         // 用户信息缓存30分钟
         return Duration.ofMinutes(30);
     }
-    
-    @Override
-    protected int getBatchSize() {
-        // 用户查询使用较大的批次
-        return 200;
-    }
-    
+
     /**
      * 根据邮箱查询用户（带缓存）
      */

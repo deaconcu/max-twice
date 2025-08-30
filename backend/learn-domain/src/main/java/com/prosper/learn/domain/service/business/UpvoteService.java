@@ -138,7 +138,7 @@ public class UpvoteService {
         if (commentId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception("评论ID无效: " + commentId);
         }
-        CommentDO commentDO = commentMapper.get(commentId);
+        CommentDO commentDO = commentMapper.getById(commentId);
         if (commentDO == null) {
             throw ErrorCode.COMMENT_NOT_FOUND.exception();
         }
@@ -220,7 +220,7 @@ public class UpvoteService {
         UserDO fromUserDO = validateUserExists(userId);
         PostDO postDO = validatePostExists(postingId);
 
-        UpvoteDO upvoteDO = upvoteMapper.get(userId, postDO.getId(), ObjectType.post.value());
+        UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, postDO.getId(), ObjectType.post.value());
         String upvoteTypeName = getUpvoteTypeName(type);
 
         if (upvoteDO != null && upvoteDO.getType() == type) {
@@ -309,7 +309,7 @@ public class UpvoteService {
         // get node id
         long nodeId = getNodeIdFromComment(commentDO);
 
-        UpvoteDO upvoteDO = upvoteMapper.get(userId, commentId, ObjectType.comment.value());
+        UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, commentId, ObjectType.comment.value());
         if (upvoteDO != null) {
             upvoteMapper.delete(upvoteDO.getId());
             commentDO.setUpvoteCount(commentDO.getUpvoteCount() - 1);
@@ -351,7 +351,7 @@ public class UpvoteService {
         }
         
         // 检查是否已经投过票
-        UpvoteDO existingUpvote = upvoteMapper.get(userId, roadmapId, ObjectType.roadmap.value());
+        UpvoteDO existingUpvote = upvoteMapper.getByUserAndObject(userId, roadmapId, ObjectType.roadmap.value());
 
         if (existingUpvote != null) {
             // 如果已经投过票，则取消投票
@@ -383,7 +383,7 @@ public class UpvoteService {
             throw ErrorCode.INVALID_PARAMETER.exception("路线图ID无效: " + roadmapId);
         }
         
-        UpvoteDO upvoteDO = upvoteMapper.get(userId, roadmapId, ObjectType.roadmap.value());
+        UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, roadmapId, ObjectType.roadmap.value());
         return upvoteDO != null;
     }
 
@@ -417,7 +417,7 @@ public class UpvoteService {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子ID无效: " + postingId);
         }
         
-        UpvoteDO upvoteDO = upvoteMapper.get(userId, postingId, ObjectType.post.value());
+        UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, postingId, ObjectType.post.value());
         if (upvoteDO == null) return;
 
         PostDO postDO = validatePostExists(postingId);
@@ -454,7 +454,7 @@ public class UpvoteService {
             PostDO postDO = validatePostExists(objectId);
             
             PostDTO postDTO = Converter.INSTANCE.toPostDTO(postDO);
-            UpvoteDO upvoteDO = upvoteMapper.get(userId, objectId, ObjectType.post.value());
+            UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, objectId, ObjectType.post.value());
             if (upvoteDO != null) {
                 postDTO.setVoteType(upvoteDO.getType());
             }
@@ -463,7 +463,7 @@ public class UpvoteService {
             CommentDO commentDO = validateCommentExists(objectId);
             
             CommentDTO commentDTO = Converter.INSTANCE.toCommentDTO(commentDO);
-            UpvoteDO upvoteDO = upvoteMapper.get(userId, objectId, ObjectType.comment.value());
+            UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, objectId, ObjectType.comment.value());
             if (upvoteDO != null) {
                 commentDTO.setUpvoted(1);
             }
@@ -487,7 +487,7 @@ public class UpvoteService {
             throw ErrorCode.INVALID_PARAMETER.exception("对象ID无效: " + objectId);
         }
         
-        UpvoteDO upvoteDO = upvoteMapper.get(userId, objectId, objectType);
+        UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, objectId, objectType);
         
         Map<String, Object> result = new HashMap<>();
         result.put("objectId", objectId);

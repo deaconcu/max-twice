@@ -1,6 +1,7 @@
 package com.prosper.learn.persistence.mapper;
 
 import com.prosper.learn.persistence.dataobject.CommentDO;
+import com.prosper.learn.persistence.dataobject.PostDO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -8,7 +9,12 @@ import java.util.List;
 public interface CommentMapper {
 
     @Select("SELECT * FROM comment where id = #{id}")
-    CommentDO get(long id);
+    CommentDO getById(long id);
+
+    @Select({"<script>SELECT * FROM comment where id in " +
+            "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
+            "</script>"})
+    List<CommentDO> getByIds(List<Long> ids);
 
     // 首页加载评论，按分数排序
     @Select("SELECT * FROM comment where object_id = #{objectId} and type = #{type} and reply_to = 0 ORDER BY score DESC, id DESC limit #{count}")

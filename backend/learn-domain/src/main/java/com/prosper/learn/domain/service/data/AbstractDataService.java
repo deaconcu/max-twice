@@ -1,13 +1,10 @@
-package com.prosper.learn.domain.repository;
+package com.prosper.learn.domain.service.data;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.redis.connection.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.RedisSerializer;
-import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.*;
@@ -22,20 +19,15 @@ import java.util.stream.Collectors;
  * @param <M> Mapper类型
  */
 @Slf4j
-public abstract class AbstractDataService<T, M> implements BaseDataService<T, Long> {
+public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T, Y> {
     
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
     
     /**
-     * 批量操作的默认分批大小
-     */
-    private static final int DEFAULT_BATCH_SIZE = 100;
-    
-    /**
      * 获取Mapper实例
      */
-    protected abstract M getMapper();
+    protected abstract M mapper();
     
     /**
      * 获取缓存空间名称
@@ -50,22 +42,22 @@ public abstract class AbstractDataService<T, M> implements BaseDataService<T, Lo
     /**
      * 获取实体ID的方法
      */
-    protected abstract Long getEntityId(T entity);
+    protected abstract Y getEntityId(T entity);
     
     /**
      * 通过Mapper获取单个实体
      */
-    protected abstract T getByIdFromMapper(M mapper, Long id);
+    protected abstract T getByIdFromMapper(M mapper, Y id);
     
     /**
      * 通过Mapper批量获取实体列表
      */
-    protected abstract List<T> getByIdsFromMapper(M mapper, Collection<Long> ids);
+    protected abstract List<T> getByIdsFromMapper(M mapper, Collection<Y> ids);
     
     /**
      * 通过Mapper批量获取实体映射
      */
-    protected abstract Map<Long, T> getMapByIdsFromMapper(M mapper, Collection<Long> ids);
+    protected abstract Map<Y, T> getMapByIdsFromMapper(M mapper, Collection<Y> ids);
     
     /**
      * 获取缓存TTL（默认10分钟）
@@ -75,22 +67,15 @@ public abstract class AbstractDataService<T, M> implements BaseDataService<T, Lo
     }
     
     /**
-     * 获取批量操作大小
-     */
-    protected int getBatchSize() {
-        return DEFAULT_BATCH_SIZE;
-    }
-    
-    /**
      * 生成缓存key
      */
-    private String buildCacheKey(Long id) {
+    private String buildCacheKey(Y id) {
         return getCacheName() + "::" + id;
     }
     
     @Override
     @Cacheable(value = "#{getCacheName()}", key = "#id", condition = "#id != null")
-    public T getById(Long id) {
+    public T getById(Y id) {
         if (id == null) {
             log.warn("Attempt to query {} with null id", getEntityName());
             return null;
@@ -98,7 +83,7 @@ public abstract class AbstractDataService<T, M> implements BaseDataService<T, Lo
         
         try {
             long startTime = System.currentTimeMillis();
-            T result = getByIdFromMapper(getMapper(), id);
+            T result = getByIdFromMapper(mapper(), id);
             long duration = System.currentTimeMillis() - startTime;
             
             if (result == null) {
@@ -115,13 +100,13 @@ public abstract class AbstractDataService<T, M> implements BaseDataService<T, Lo
     }
     
     @Override
-    public List<T> getByIds(Collection<Long> ids) {
+    public List<T> getByIds(Collection<Y> ids) {
         if (ids == null || ids.isEmpty()) {
             return new ArrayList<>();
         }
         
         // 过滤null值并去重，保持顺序
-        List<Long> validIds = ids.stream()
+        List<Y> validIds = ids.stream()
                 .filter(Objects::nonNull)
                 .distinct()
                 .collect(Collectors.toList());
@@ -134,17 +119,17 @@ public abstract class AbstractDataService<T, M> implements BaseDataService<T, Lo
             long startTime = System.currentTimeMillis();
             
             // 1. 使用MGET批量从缓存获取
-            Map<Long, T> cachedResults = batchGetFromCache(validIds);
+            Map<Y, T> cachedResults = batchGetFromCache(validIds);
             
             // 2. 找出缓存未命中的ID
-            List<Long> missedIds = validIds.stream()
+            List<Y> missedIds = validIds.stream()
                     .filter(id -> !cachedResults.containsKey(id))
                     .collect(Collectors.toList());
             
             // 3. 从数据库查询未命中的数据
-            Map<Long, T> dbResults = new HashMap<>();
+            Map<Y, T> dbResults = new HashMap<>();
             if (!missedIds.isEmpty()) {
-                List<T> fromDB = getByIdsFromMapper(getMapper(), missedIds);
+                List<T> fromDB = getByIdsFromMapper(mapper(), missedIds);
                 dbResults = fromDB.stream()
                         .collect(Collectors.toMap(this::getEntityId, Function.identity()));
                 
@@ -157,7 +142,7 @@ public abstract class AbstractDataService<T, M> implements BaseDataService<T, Lo
             }
             
             // 5. 合并缓存和数据库结果
-            Map<Long, T> allResults = new HashMap<>(cachedResults);
+            Map<Y, T> allResults = new HashMap<>(cachedResults);
             allResults.putAll(dbResults);
             
             // 6. 按原始顺序返回结果
@@ -180,7 +165,7 @@ public abstract class AbstractDataService<T, M> implements BaseDataService<T, Lo
     }
     
     @Override
-    public Map<Long, T> getMapByIds(Collection<Long> ids) {
+    public Map<Y, T> getMapByIds(Collection<Y> ids) {
         if (ids == null || ids.isEmpty()) {
             return new HashMap<>();
         }
@@ -196,8 +181,8 @@ public abstract class AbstractDataService<T, M> implements BaseDataService<T, Lo
     /**
      * 使用Redis MGET批量从缓存获取数据
      */
-    private Map<Long, T> batchGetFromCache(List<Long> ids) {
-        Map<Long, T> results = new HashMap<>();
+    private Map<Y, T> batchGetFromCache(List<Y> ids) {
+        Map<Y, T> results = new HashMap<>();
         
         if (ids.isEmpty()) {
             return results;
@@ -236,77 +221,30 @@ public abstract class AbstractDataService<T, M> implements BaseDataService<T, Lo
     /**
      * 使用分批Pipeline批量写入缓存
      */
-    private void batchPutToCache(Map<Long, T> entities) {
+    private void batchPutToCache(Map<Y, T> entities) {
         if (entities.isEmpty()) {
             return;
         }
         
-        int batchSize = getBatchSize();
         Duration ttl = getCacheTtl();
-        List<Map.Entry<Long, T>> entries = new ArrayList<>(entities.entrySet());
         
-        for (int i = 0; i < entries.size(); i += batchSize) {
-            int end = Math.min(i + batchSize, entries.size());
-            List<Map.Entry<Long, T>> batch = entries.subList(i, end);
-            
+        // 简化实现：使用 RedisTemplate 的高级 API
+        // 避免底层序列化器的类型问题
+        entities.forEach((id, entity) -> {
             try {
-                redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
-                    RedisSerializer<String> keySerializer = redisTemplate.getStringSerializer();
-                    RedisSerializer<Object> valueSerializer = redisTemplate.getValueSerializer();
-                    
-                    batch.forEach(entry -> {
-                        try {
-                            String key = buildCacheKey(entry.getKey());
-                            byte[] keyBytes = keySerializer.serialize(key);
-                            byte[] valueBytes = valueSerializer.serialize(entry.getValue());
-                            
-                            if (keyBytes != null && valueBytes != null) {
-                                connection.setEx(keyBytes, ttl.getSeconds(), valueBytes);
-                            }
-                        } catch (Exception e) {
-                            log.warn("Failed to serialize cache entry for {} id: {}", 
-                                    getEntityName(), entry.getKey(), e);
-                        }
-                    });
-                    return null;
-                });
-                
-                log.debug("Pipeline cached batch {}-{} ({} entities) for {}", 
-                         i, end, batch.size(), getEntityName());
-                
+                String key = buildCacheKey(id);
+                redisTemplate.opsForValue().set(key, entity, ttl);
             } catch (Exception e) {
-                log.warn("Failed to cache batch {}-{} for {}: {}", 
-                        i, end, getEntityName(), e.getMessage());
-                
-                // 降级：逐个设置缓存
-                fallbackPutToCache(batch, ttl);
+                log.warn("Failed to cache {} with id: {}", getEntityName(), id, e);
             }
-        }
-    }
-    
-    /**
-     * 降级方案：逐个设置缓存
-     */
-    private void fallbackPutToCache(List<Map.Entry<Long, T>> batch, Duration ttl) {
-        try {
-            batch.forEach(entry -> {
-                try {
-                    String key = buildCacheKey(entry.getKey());
-                    redisTemplate.opsForValue().set(key, entry.getValue(), ttl);
-                } catch (Exception e) {
-                    log.warn("Failed to cache single entry for {} id: {}", 
-                            getEntityName(), entry.getKey(), e);
-                }
-            });
-            log.debug("Fallback cached {} entities for {}", batch.size(), getEntityName());
-        } catch (Exception e) {
-            log.error("Fallback cache also failed for {}: {}", getEntityName(), e.getMessage());
-        }
+        });
+        
+        log.debug("Cached {} entities for {}", entities.size(), getEntityName());
     }
     
     @Override
     @CacheEvict(value = "#{getCacheName()}", key = "#id")
-    public void evictCache(Long id) {
+    public void evictCache(Y id) {
         if (id != null) {
             try {
                 redisTemplate.delete(buildCacheKey(id));
@@ -334,7 +272,7 @@ public abstract class AbstractDataService<T, M> implements BaseDataService<T, Lo
     /**
      * 带降级的查询
      */
-    public T getByIdWithFallback(Long id) {
+    public T getByIdWithFallback(Y id) {
         try {
             return getById(id);
         } catch (Exception e) {
@@ -353,7 +291,7 @@ public abstract class AbstractDataService<T, M> implements BaseDataService<T, Lo
     /**
      * 预热缓存
      */
-    public void warmUpCache(Collection<Long> ids) {
+    public void warmUpCache(Collection<Y> ids) {
         if (ids == null || ids.isEmpty()) {
             return;
         }
@@ -365,17 +303,17 @@ public abstract class AbstractDataService<T, M> implements BaseDataService<T, Lo
     /**
      * 获取缓存统计信息
      */
-    public Map<String, Object> getCacheStats(Collection<Long> ids) {
+    public Map<String, Object> getCacheStats(Collection<Y> ids) {
         if (ids == null || ids.isEmpty()) {
             return Collections.emptyMap();
         }
         
-        List<Long> validIds = ids.stream()
+        List<Y> validIds = ids.stream()
                 .filter(Objects::nonNull)
                 .distinct()
                 .collect(Collectors.toList());
         
-        Map<Long, T> cached = batchGetFromCache(validIds);
+        Map<Y, T> cached = batchGetFromCache(validIds);
         
         Map<String, Object> stats = new HashMap<>();
         stats.put("total", validIds.size());

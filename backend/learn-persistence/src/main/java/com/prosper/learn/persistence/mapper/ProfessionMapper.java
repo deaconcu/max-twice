@@ -10,7 +10,7 @@ import java.util.Map;
 public interface ProfessionMapper {
 
     @Select("SELECT * FROM profession WHERE id = #{id}")
-    ProfessionDO get(long id);
+    ProfessionDO getById(long id);
 
     @Select("SELECT * FROM profession ORDER BY id DESC LIMIT #{size} OFFSET #{offset}")
     List<ProfessionDO> listByPage(int offset, int size);
@@ -33,7 +33,7 @@ public interface ProfessionMapper {
     @Select({"<script>SELECT * FROM profession where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
-    List<ProfessionDO> getByIds(Collection<Integer> ids);
+    List<ProfessionDO> getByIds(Collection<Long> ids);
 
     @Select({"<script>SELECT * FROM profession where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +

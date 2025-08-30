@@ -61,7 +61,7 @@ public class RoadmapService {
         validateRoadmapId((long) id);
         validateUserId((long) userId);
         
-        RoadmapDO roadmapDO = roadmapMapper.get(id);
+        RoadmapDO roadmapDO = roadmapMapper.getById(id);
         if (roadmapDO == null) {
             return null;
         }
@@ -315,7 +315,7 @@ public class RoadmapService {
                 roadmapList.addAll(otherRoadmaps);
             }
         } else {
-            RoadmapDO lastRoadmap = roadmapMapper.get(lastId);
+            RoadmapDO lastRoadmap = roadmapMapper.getById(lastId);
             if (lastRoadmap != null) {
                 roadmapList = roadmapMapper.getListByProfessionAfterScoreExcluding(
                         professionId, lastRoadmap.getScore(), lastId, limit, null);
@@ -361,10 +361,10 @@ public class RoadmapService {
         int voteDelta = voted ? 1 : -1;
         roadmapMapper.updateVoteCount(id.intValue(), voteDelta);
 
-        RoadmapDO roadmapDO = roadmapMapper.get(id.intValue());
+        RoadmapDO roadmapDO = roadmapMapper.getById(id.intValue());
 
         scoreCalculationService.checkAndUpdateRoadmapScore(roadmapDO);
-        roadmapDO = roadmapMapper.get(id.intValue());
+        roadmapDO = roadmapMapper.getById(id.intValue());
 
         RoadmapDTO roadmapDTO = Converter.INSTANCE.toRoadMapDTO(roadmapDO);
         roadmapDTO.setUpvoted(voted);
@@ -507,7 +507,7 @@ public class RoadmapService {
     }
     
     private RoadmapDO validateRoadmapExists(Long roadmapId) {
-        RoadmapDO roadmapDO = roadmapMapper.get(roadmapId.intValue());
+        RoadmapDO roadmapDO = roadmapMapper.getById(roadmapId.intValue());
         if (roadmapDO == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }

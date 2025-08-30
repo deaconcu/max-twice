@@ -8,7 +8,7 @@ import java.util.List;
 public interface RoadmapMapper {
 
     @Select("SELECT * FROM roadmap WHERE id = #{id}")
-    RoadmapDO get(long id);
+    RoadmapDO getById(long id);
 
     @Select("SELECT * FROM roadmap ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
     List<RoadmapDO> getList(int offset, int limit);

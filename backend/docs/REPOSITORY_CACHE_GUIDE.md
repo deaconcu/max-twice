@@ -489,3 +489,6 @@ Map<String, Object> stats = userRepository.getCacheStats(userIds);
 3. **及时清除缓存**: 数据更新时记得清除相关缓存
 4. **批量操作**: 尽量使用批量查询减少网络开销
 5. **监控缓存命中率**: 定期检查缓存效果，优化缓存策略
+6. **简化DataService实现**: 没有缓存操作需求的方法不需要在DataService中实现
+7. **优先使用注解**: 使用@Cacheable、@CacheEvict等注解来操作缓存，避免手动缓存操作
+8. **删除前先查询**: 删除操作需要清除缓存时，先查询获取完整信息，再执行删除和缓存清除

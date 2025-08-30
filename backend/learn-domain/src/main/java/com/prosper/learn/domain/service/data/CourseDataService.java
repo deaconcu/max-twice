@@ -1,4 +1,4 @@
-package com.prosper.learn.domain.repository;
+package com.prosper.learn.domain.service.data;
 
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.mapper.CourseMapper;
@@ -21,13 +21,13 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-public class CourseDataService extends AbstractDataService<CourseDO, CourseMapper> {
+public class CourseDataService extends AbstractDataService<CourseDO, CourseMapper, Long> {
     
     @Autowired
     private CourseMapper courseMapper;
     
     @Override
-    protected CourseMapper getMapper() {
+    protected CourseMapper mapper() {
         return courseMapper;
     }
     
@@ -65,11 +65,6 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
     @Override
     protected Duration getCacheTtl() {
         return Duration.ofMinutes(15);
-    }
-    
-    @Override
-    protected int getBatchSize() {
-        return 150;
     }
     
     /**

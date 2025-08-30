@@ -113,7 +113,7 @@ public class CommentService {
      */
     private RoadmapDO validateAndGetRoadmap(Long roadmapId) {
         validateObjectId(roadmapId);
-        RoadmapDO roadmapDO = roadmapMapper.get(roadmapId);
+        RoadmapDO roadmapDO = roadmapMapper.getById(roadmapId);
         if (roadmapDO == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
@@ -125,7 +125,7 @@ public class CommentService {
      */
     private CommentDO validateAndGetComment(Long commentId) {
         validateCommentId(commentId);
-        CommentDO commentDO = commentMapper.get(commentId);
+        CommentDO commentDO = commentMapper.getById(commentId);
         if (commentDO == null) {
             throw ErrorCode.COMMENT_NOT_FOUND.exception();
         }
@@ -177,7 +177,7 @@ public class CommentService {
 
         handleObjectComment(commentDTO, commentDO, fromUser, postDO, nodeDO, roadmapDO, userId);
 
-        commentDO = commentMapper.get(commentDO.getId());
+        commentDO = commentMapper.getById(commentDO.getId());
         return commentDO;
     }
 
@@ -319,7 +319,7 @@ public class CommentService {
         if (offsetId == 0) {
             commentDOList = commentMapper.getByObjectId(objectId, type, pageSize);
         } else {
-            CommentDO lastComment = commentMapper.get(offsetId);
+            CommentDO lastComment = commentMapper.getById(offsetId);
             if (lastComment == null) {
                 return new ArrayList<>();
             }
@@ -369,7 +369,7 @@ public class CommentService {
         if (offsetId == 0) {
             commentDOList = commentMapper.getByTopic(id, pageSize);
         } else {
-            CommentDO lastComment = commentMapper.get(offsetId);
+            CommentDO lastComment = commentMapper.getById(offsetId);
             if (lastComment == null) {
                 return new ArrayList<>();
             }

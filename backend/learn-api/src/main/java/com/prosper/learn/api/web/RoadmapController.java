@@ -89,7 +89,7 @@ public class RoadmapController implements RoadmapClient {
         } else {
             // 分页查询，按score排序
             // 根据lastId获取对应的score值
-            RoadmapDO lastRoadmap = roadmapMapper.get(lastId);
+            RoadmapDO lastRoadmap = roadmapMapper.getById(lastId);
             if (lastRoadmap != null) {
                 roadmapList = roadmapMapper.getListByProfessionAfterScoreExcluding(
                         professionId, lastRoadmap.getScore(), lastId, limit, null);
@@ -169,7 +169,7 @@ public class RoadmapController implements RoadmapClient {
             throw ErrorCode.ROADMAP_CONTENT_INVALID.exception();
         }
 
-        RoadmapDO roadmapDO = roadmapMapper.get(id.intValue());
+        RoadmapDO roadmapDO = roadmapMapper.getById(id.intValue());
         if (roadmapDO == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
@@ -203,13 +203,13 @@ public class RoadmapController implements RoadmapClient {
         roadmapMapper.updateVoteCount(id.intValue(), voteDelta);
 
         // 获取最新的roadmap数据
-        RoadmapDO roadmapDO = roadmapMapper.get(id.intValue());
+        RoadmapDO roadmapDO = roadmapMapper.getById(id.intValue());
 
         // 实时更新评分
         try {
             scoreCalculationService.checkAndUpdateRoadmapScore(roadmapDO);
             // 重新获取更新后的数据
-            roadmapDO = roadmapMapper.get(id.intValue());
+            roadmapDO = roadmapMapper.getById(id.intValue());
         } catch (Exception e) {
             // 评分更新失败不应该影响点赞操作
             log.warn("更新roadmap评分失败: roadmapId={}", id, e);

@@ -1,11 +1,11 @@
-package com.prosper.learn.domain.repository;
+package com.prosper.learn.domain.service.data;
 
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
 import com.prosper.learn.persistence.mapper.RoadmapMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -19,13 +19,13 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMapper> {
+public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMapper, Long> {
     
     @Autowired
     private RoadmapMapper roadmapMapper;
     
     @Override
-    protected RoadmapMapper getMapper() {
+    protected RoadmapMapper mapper() {
         return roadmapMapper;
     }
     

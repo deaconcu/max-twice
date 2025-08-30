@@ -1,4 +1,4 @@
-package com.prosper.learn.domain.repository;
+package com.prosper.learn.domain.service.data;
 
 import java.util.Collection;
 import java.util.List;

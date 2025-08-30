@@ -54,7 +54,7 @@ public class CommentController implements CommentClient {
             nodeDO = nodeMapper.getById(commentDTO.getObjectId());
             if (nodeDO == null) throw new IllegalArgumentException("节点不存在");
         } else if (commentDTO.getType() == Enums.ObjectType.roadmap.value()) {
-            roadmapDO = roadmapMapper.get(commentDTO.getObjectId());
+            roadmapDO = roadmapMapper.getById(commentDTO.getObjectId());
             if (roadmapDO == null) throw new IllegalArgumentException("路线图不存在");
         } else {
             throw new IllegalArgumentException("评论类型不正确");
@@ -68,7 +68,7 @@ public class CommentController implements CommentClient {
 
         // update parent comment reply count
         if (commentDTO.getReplyTo() != 0) {
-            CommentDO parentCommentDO = commentMapper.get(commentDTO.getReplyTo());
+            CommentDO parentCommentDO = commentMapper.getById(commentDTO.getReplyTo());
             if (parentCommentDO == null) throw new IllegalArgumentException("父评论不存在");
             parentCommentDO.setReplyCount(parentCommentDO.getReplyCount() + 1);
 
@@ -117,7 +117,7 @@ public class CommentController implements CommentClient {
             messageService.createCommentMessage(roadmapDO.getCreatorId(), fromUser.getId(), roadmapDO.getId(), commentDO.getId(), roadmapComment.value());
         }
 
-        commentDO = commentMapper.get(commentDO.getId());
+        commentDO = commentMapper.getById(commentDO.getId());
         return new Response<>(commentDO);
     }
 
@@ -129,7 +129,7 @@ public class CommentController implements CommentClient {
             commentDOList = commentMapper.getByObjectId(objectId, type, 10);
         } else {
             // 分页加载，需要先获取最后一条评论的分数
-            CommentDO lastComment = commentMapper.get(offsetId);
+            CommentDO lastComment = commentMapper.getById(offsetId);
             if (lastComment == null) {
                 return new Response<>(new ArrayList<>());
             }
@@ -189,7 +189,7 @@ public class CommentController implements CommentClient {
             commentDOList = commentMapper.getByTopic(commentId, 10);
         } else {
             // 分页加载话题回复，需要先获取最后一条评论的分数
-            CommentDO lastComment = commentMapper.get(offsetId);
+            CommentDO lastComment = commentMapper.getById(offsetId);
             if (lastComment == null) {
                 return new Response<>(new ArrayList<>());
             }
@@ -220,7 +220,7 @@ public class CommentController implements CommentClient {
 
     @Override
     public Response<Object> approve(Long id, boolean approve) {
-        CommentDO commentDO = commentMapper.get(id);
+        CommentDO commentDO = commentMapper.getById(id);
         if (commentDO == null) throw new IllegalArgumentException("评论不存在");
 
         if (approve && commentDO.getState() != Enums.CommentState.approved.value()) {

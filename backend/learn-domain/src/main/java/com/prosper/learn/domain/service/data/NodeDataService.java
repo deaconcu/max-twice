@@ -1,4 +1,4 @@
-package com.prosper.learn.domain.repository;
+package com.prosper.learn.domain.service.data;
 
 import com.prosper.learn.persistence.dataobject.NodeDO;
 import com.prosper.learn.persistence.mapper.NodeMapper;
@@ -19,13 +19,13 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper> {
+public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Long> {
     
     @Autowired
     private NodeMapper nodeMapper;
     
     @Override
-    protected NodeMapper getMapper() {
+    protected NodeMapper mapper() {
         return nodeMapper;
     }
     

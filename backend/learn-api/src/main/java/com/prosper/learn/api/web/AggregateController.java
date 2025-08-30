@@ -61,7 +61,7 @@ public class AggregateController implements AggregateClient {
         Map<String, Object> data = new HashMap<>();
         if (commentId <= 0) throw new IllegalArgumentException("评论ID必须大于0");
 
-        CommentDO commentDO = commentMapper.get(commentId);
+        CommentDO commentDO = commentMapper.getById(commentId);
         if (commentDO == null) throw new IllegalArgumentException("评论不存在");
 
         if (commentDO.getReplyTo() != 0) {
@@ -374,7 +374,7 @@ public class AggregateController implements AggregateClient {
             upvoteService.upvotePost(postId, userId, type);
 
             PostDTO postDTO = Converter.INSTANCE.toPostDTO(postMapper.get(postId));
-            UpvoteDO upvoteDO = upvoteMapper.get(userId, postId, post.value());
+            UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, postId, post.value());
             if (upvoteDO != null) {
                 postDTO.setVoteType(upvoteDO.getType());
             }
@@ -384,9 +384,9 @@ public class AggregateController implements AggregateClient {
             long userId = StpUtil.getLoginIdAsLong();
             upvoteService.upvoteComment(commentId, userId);
 
-            CommentDO commentDO = commentMapper.get(commentId);
+            CommentDO commentDO = commentMapper.getById(commentId);
             CommentDTO commentDTO = Converter.INSTANCE.toCommentDTO(commentDO);
-            UpvoteDO upvoteDO = upvoteMapper.get(userId, commentId, comment.value());
+            UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, commentId, comment.value());
             if (upvoteDO != null) {
                 commentDTO.setUpvoted(1);
             }

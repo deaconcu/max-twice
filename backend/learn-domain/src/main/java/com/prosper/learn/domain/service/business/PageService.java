@@ -227,7 +227,7 @@ public class PageService {
     }
     
     private CommentDO validateCommentExists(Long commentId) {
-        CommentDO commentDO = commentMapper.get(commentId);
+        CommentDO commentDO = commentMapper.getById(commentId);
         if (commentDO == null) {
             throw ErrorCode.COMMENT_NOT_FOUND.exception();
         }
