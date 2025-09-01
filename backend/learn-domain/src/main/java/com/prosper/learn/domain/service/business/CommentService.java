@@ -7,10 +7,10 @@ import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.basic.RedisStatsService;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
 import com.prosper.learn.domain.util.Converter;
-import com.prosper.learn.dto.CommentDTO;
-import com.prosper.learn.dto.CommentDTOV1;
+import com.prosper.learn.dto.response.CommentDTO;
+import com.prosper.learn.dto.response.CommentDTOV1;
 import com.prosper.learn.persistence.dataobject.*;
-import com.prosper.learn.persistence.mapper.*;
+import com.prosper.learn.domain.service.data.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,12 +24,12 @@ import static com.prosper.learn.common.Enums.MessageType.*;
 @RequiredArgsConstructor
 public class CommentService {
 
-    private final UserMapper userMapper;
-    private final UpvoteMapper upvoteMapper;
-    private final CommentMapper commentMapper;
-    private final PostMapper postMapper;
-    private final NodeMapper nodeMapper;
-    private final RoadmapMapper roadmapMapper;
+    private final UserDataService userDataService;
+    private final UpvoteDataService upvoteDataService;
+    private final CommentDataService commentDataService;
+    private final PostDataService postDataService;
+    private final NodeDataService nodeDataService;
+    private final RoadmapDataService roadmapDataService;
     private final MessageService messageService;
     private final ScoreCalculationService scoreCalculationService;
     private final RedisStatsService redisStatsService;
@@ -89,7 +89,7 @@ public class CommentService {
      */
     private PostDO validateAndGetPost(Long postId) {
         validateObjectId(postId);
-        PostDO postDO = postMapper.get(postId);
+        PostDO postDO = postDataService.getById(postId);
         if (postDO == null) {
             throw ErrorCode.CONTENTS_POST_NOT_FOUND.exception();
         }
@@ -101,7 +101,7 @@ public class CommentService {
      */
     private NodeDO validateAndGetNode(Long nodeId) {
         validateObjectId(nodeId);
-        NodeDO nodeDO = nodeMapper.getById(nodeId);
+        NodeDO nodeDO = nodeDataService.getById(nodeId);
         if (nodeDO == null) {
             throw ErrorCode.COMMENT_OBJECT_NOT_FOUND.exception();
         }
@@ -113,7 +113,7 @@ public class CommentService {
      */
     private RoadmapDO validateAndGetRoadmap(Long roadmapId) {
         validateObjectId(roadmapId);
-        RoadmapDO roadmapDO = roadmapMapper.getById(roadmapId);
+        RoadmapDO roadmapDO = roadmapDataService.getById(roadmapId);
         if (roadmapDO == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
@@ -125,7 +125,7 @@ public class CommentService {
      */
     private CommentDO validateAndGetComment(Long commentId) {
         validateCommentId(commentId);
-        CommentDO commentDO = commentMapper.getById(commentId);
+        CommentDO commentDO = commentDataService.getById(commentId);
         if (commentDO == null) {
             throw ErrorCode.COMMENT_NOT_FOUND.exception();
         }
@@ -137,7 +137,7 @@ public class CommentService {
      */
     private UserDO validateAndGetUser(Long userId) {
         validateUserId(userId);
-        UserDO userDO = userMapper.getById(userId);
+        UserDO userDO = userDataService.getById(userId);
         if (userDO == null) {
             throw ErrorCode.USER_NOT_FOUND.exception();
         }
@@ -169,7 +169,7 @@ public class CommentService {
 
         CommentDO commentDO = Converter.INSTANCE.toCommentDO(commentDTO);
         commentDO.setScore(scoreCalculationService.calculateCommentScore(commentDO));
-        commentMapper.insert(commentDO);
+        commentDataService.insert(commentDO);
 
         if (commentDTO.getReplyTo() != 0) {
             handleReplyComment(commentDTO, commentDO, fromUser, postDO, nodeDO, roadmapDO);
@@ -177,7 +177,7 @@ public class CommentService {
 
         handleObjectComment(commentDTO, commentDO, fromUser, postDO, nodeDO, roadmapDO, userId);
 
-        commentDO = commentMapper.getById(commentDO.getId());
+        commentDO = commentDataService.getById(commentDO.getId());
         return commentDO;
     }
 
@@ -187,15 +187,15 @@ public class CommentService {
     private void incrementCommentCount(CommentDTO commentDTO, PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO, Long userId) {
         if (commentDTO.getType() == Enums.ObjectType.post.value() && postDO != null) {
             postDO.setCommentCount(postDO.getCommentCount() + 1);
-            postMapper.update(postDO);
+            postDataService.update(postDO);
             redisStatsService.recordComment((long) postDO.getId(), userId);
         } else if (commentDTO.getType() == Enums.ObjectType.node.value() && nodeDO != null) {
             nodeDO.setCommentCount(nodeDO.getCommentCount() + 1);
-            nodeMapper.update(nodeDO);
+            nodeDataService.update(nodeDO);
             redisStatsService.recordComment((long) nodeDO.getId(), userId);
         } else if (commentDTO.getType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
             roadmapDO.setComment(roadmapDO.getComment() + 1);
-            roadmapMapper.update(roadmapDO);
+            roadmapDataService.update(roadmapDO);
             redisStatsService.recordComment((long) roadmapDO.getId(), userId);
         }
     }
@@ -242,7 +242,7 @@ public class CommentService {
 
         // 更新评论分数并保存
         scoreCalculationService.checkAndUpdateCommentScore(parentCommentDO);
-        commentMapper.update(parentCommentDO);
+        commentDataService.update(parentCommentDO);
 
         createReplyNotification(commentDTO, commentDO, fromUser, postDO, nodeDO, roadmapDO, parentCommentDO.getFromUser());
     }
@@ -262,7 +262,7 @@ public class CommentService {
         }
         
         List<Long> ids = commentDTOList.stream().map(CommentDTO::getId).toList();
-        List<UpvoteDO> upvoteList = upvoteMapper.getList(userId.intValue(), ids, Enums.ObjectType.comment.value());
+        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, ids, Enums.ObjectType.comment.value());
 
         Set<Long> upvotedSet = new HashSet<>();
         for (UpvoteDO upvoteDO : upvoteList) {
@@ -290,7 +290,7 @@ public class CommentService {
             return;
         }
 
-        List<UpvoteDO> upvoteList = upvoteMapper.getList(userId.intValue(), allIds, Enums.ObjectType.comment.value());
+        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, allIds, Enums.ObjectType.comment.value());
 
         Set<Long> upvotedSet = new HashSet<>();
         for (UpvoteDO upvoteDO : upvoteList) {
@@ -317,13 +317,13 @@ public class CommentService {
         List<CommentDO> commentDOList;
         int pageSize = systemProperties.getComment().getDefaultPageSize();
         if (offsetId == 0) {
-            commentDOList = commentMapper.getByObjectId(objectId, type, pageSize);
+            commentDOList = commentDataService.getByObjectId(objectId, type, pageSize);
         } else {
-            CommentDO lastComment = commentMapper.getById(offsetId);
+            CommentDO lastComment = commentDataService.getById(offsetId);
             if (lastComment == null) {
                 return new ArrayList<>();
             }
-            commentDOList = commentMapper.getByObjectIdPaginated(objectId, type, lastComment.getScore(), offsetId, pageSize);
+            commentDOList = commentDataService.getByObjectIdPaginated(objectId, type, lastComment.getScore(), offsetId, pageSize);
         }
 
         List<CommentDTO> commentDTOList = Converter.INSTANCE.toCommentDTO(commentDOList);
@@ -341,7 +341,7 @@ public class CommentService {
     }
 
     private void handleChildComments(List<CommentDTO> commentDTOList, List<Long> ids, Long userId) {
-        List<CommentDO> children = commentMapper.getChildren(ids);
+        List<CommentDO> children = commentDataService.getChildren(ids);
 
         HashMap<Long, CommentDTO> map = new HashMap<>();
         for (CommentDO commentDO : children) {
@@ -367,13 +367,13 @@ public class CommentService {
         List<CommentDO> commentDOList;
         int pageSize = systemProperties.getComment().getDefaultPageSize();
         if (offsetId == 0) {
-            commentDOList = commentMapper.getByTopic(id, pageSize);
+            commentDOList = commentDataService.getByTopic(id, pageSize);
         } else {
-            CommentDO lastComment = commentMapper.getById(offsetId);
+            CommentDO lastComment = commentDataService.getById(offsetId);
             if (lastComment == null) {
                 return new ArrayList<>();
             }
-            commentDOList = commentMapper.getByTopicPaginated(id, lastComment.getScore(), offsetId, pageSize);
+            commentDOList = commentDataService.getByTopicPaginated(id, lastComment.getScore(), offsetId, pageSize);
         }
 
         List<CommentDTO> commentDTOList = Converter.INSTANCE.toCommentDTO(commentDOList);
@@ -383,7 +383,7 @@ public class CommentService {
 
     public List<CommentDTOV1> getPendingComments() {
         int limit = systemProperties.getComment().getPendingCommentsLimit();
-        List<CommentDO> commentDOList = commentMapper.getListByState(submited.value(), limit);
+        List<CommentDO> commentDOList = commentDataService.getListByState(submited.value(), limit);
         return Converter.INSTANCE.toCommentDTOV1(commentDOList);
     }
 
@@ -395,11 +395,11 @@ public class CommentService {
 
         if (approve && commentDO.getState() != Enums.CommentState.approved.value()) {
             commentDO.setState(Enums.CommentState.approved.value());
-            commentMapper.update(commentDO);
+            commentDataService.update(commentDO);
         }
         if (!approve && commentDO.getState() != Enums.CommentState.deleted.value()) {
             commentDO.setState(Enums.CommentState.deleted.value());
-            commentMapper.update(commentDO);
+            commentDataService.update(commentDO);
         }
         return Converter.INSTANCE.toCommentDTOV1(commentDO);
     }

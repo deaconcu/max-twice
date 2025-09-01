@@ -5,7 +5,7 @@ import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import dagre from 'dagre'
-import { learnService } from '@/services/learnService'
+import { roadmapServiceV1, progressServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useRoute, useRouter } from 'vue-router'
 import RoadmapCard from '@/components/RoadmapCard.vue'
 import RoadmapDetail from '@/components/RoadmapDetail.vue'
@@ -129,7 +129,7 @@ async function loadRoadmaps() {
   try {
     loading.value = true
     error.value = null
-    const response = await learnService.getRoadmapsByProfession(professionId.value)
+    const response = await roadmapServiceV1.getProfessionRoadmaps(professionId.value)
 
     console.log("课程数据：response:", response);
 
@@ -187,7 +187,7 @@ async function voteRoadmap(roadmap, event) {
   event.stopPropagation() // 阻止卡片点击事件
   
   try {
-    const response = await learnService.upvoteRoadmap(roadmap.id)
+    const response = await roadmapServiceV1.upvoteRoadmap(roadmap.id)
     console.log('投票响应:', response)
     if (response.code === 200) {
       // 更新本地投票数
@@ -212,7 +212,7 @@ async function togglePin(roadmap, event) {
   event.stopPropagation() // 阻止卡片点击事件
   
   try {
-    const response = await learnService.pinRoadmap(professionId.value, roadmap.id)
+    const response = await roadmapServiceV1.pinRoadmap(professionId.value, roadmap.id)
     console.log('置顶响应:', response)
     
     if (response.code === 200) {
@@ -265,7 +265,7 @@ async function startLearning(roadmap, event) {
   event.stopPropagation() // 阻止卡片点击事件
   
   try {
-    const response = await learnService.startRoadmap(roadmap.id)
+    const response = await progressServiceV1.startRoadmap(roadmap.id)
     
     if (response.code === 200) {
       showSnackbar(t('roadmap.startLearningSuccess'))
@@ -325,7 +325,7 @@ async function performSave(description, content) {
     console.log('课程表描述:', description)
     
     // 调用接口保存，传入描述信息
-    const response = await learnService.postRoadmap(
+    const response = await roadmapServiceV1.createRoadmap(
       professionId.value, 
       content, 
       description.trim()

@@ -2,7 +2,7 @@
 
 import { ref, watch, inject } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { learnService, userService } from '@/services/learnService';
+import { learnService, userService } from '@/services/learnService'; // TODO: inviteUser 需要迁移到 V1 API
 import { useI18n } from 'vue-i18n'
 
 const showSnackbar = inject('showSnackbar');

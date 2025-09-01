@@ -4,8 +4,9 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.LearningProgressService;
 import com.prosper.learn.domain.service.business.UserCourseService;
-import com.prosper.learn.dto.UserCourseDTO;
+import com.prosper.learn.dto.response.UserCourseDTO;
 import lombok.RequiredArgsConstructor;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,7 +29,9 @@ public class ProgressController {
      * 映射: POST /user/complete/{nodeId} → POST /api/v1/progress/nodes/{nodeId}/complete
      */
     @PostMapping("/progress/nodes/{nodeId}/complete")
-    public ApiResponse<Map<String, Object>> markNodeCompleted(@PathVariable Long nodeId, @RequestParam Long courseId) {
+    public ApiResponse<Map<String, Object>> markNodeCompleted(
+            @PathVariable Long nodeId, 
+            @JsonParam("courseId") Long courseId) {
         long userId = StpUtil.getLoginIdAsLong();
         Map<String, Object> result = learningProgressService.markNodeCompletedWithResponse(userId, nodeId, courseId);
         return ApiResponse.success(result);
@@ -39,7 +42,9 @@ public class ProgressController {
      * 映射: DELETE /user/complete/{nodeId} → DELETE /api/v1/progress/nodes/{nodeId}/complete
      */
     @DeleteMapping("/progress/nodes/{nodeId}/complete")
-    public ApiResponse<Map<String, Object>> unmarkNodeCompleted(@PathVariable Long nodeId, @RequestParam Long courseId) {
+    public ApiResponse<Map<String, Object>> unmarkNodeCompleted(
+            @PathVariable Long nodeId, 
+            @JsonParam("courseId") Long courseId) {
         long userId = StpUtil.getLoginIdAsLong();
         Map<String, Object> result = learningProgressService.unmarkNodeCompletedWithResponse(userId, nodeId, courseId);
         return ApiResponse.success(result);
@@ -96,7 +101,7 @@ public class ProgressController {
     @PutMapping("/progress/courses/{courseId}")
     public ApiResponse<UserCourseDTO> updateCourseProgress(
             @PathVariable Long courseId, 
-            @RequestParam Integer progressPercent) {
+            @JsonParam("progressPercent") Integer progressPercent) {
         
         Long userId = StpUtil.getLoginIdAsLong();
         UserCourseDTO progress = userCourseService.update(userId, courseId, progressPercent);

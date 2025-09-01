@@ -50,8 +50,29 @@ public class CourseTocDataService extends AbstractDataService<CourseTocDO, Cours
     }
 
     @CacheEvict(value = "courseTocs", key = "#hash")
-    void incrRef(String hash, int n) {
+    public void incrRef(String hash, int n) {
         courseTocMapper.incrRef(hash, n);
+    }
+
+    /**
+     * 根据hash获取目录
+     */
+    public CourseTocDO get(String hash) {
+        return courseTocMapper.get(hash);
+    }
+
+    /**
+     * 插入目录
+     */
+    public void insert(CourseTocDO courseTocDO) {
+        courseTocMapper.insert(courseTocDO);
+    }
+
+    /**
+     * 根据hash数组获取目录映射
+     */
+    public Map<String, CourseTocDO> getByHashes(String[] hashes) {
+        return courseTocMapper.getByHashes(hashes);
     }
 
     @Override

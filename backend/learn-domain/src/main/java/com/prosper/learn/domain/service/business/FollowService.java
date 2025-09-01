@@ -5,11 +5,11 @@ import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.MessageService;
-import com.prosper.learn.dto.FolloweeDTO;
+import com.prosper.learn.dto.response.FolloweeDTO;
 import com.prosper.learn.persistence.dataobject.FollowDO;
 import com.prosper.learn.persistence.dataobject.UserDO;
-import com.prosper.learn.persistence.mapper.FollowMapper;
-import com.prosper.learn.persistence.mapper.UserMapper;
+import com.prosper.learn.domain.service.data.FollowDataService;
+import com.prosper.learn.domain.service.data.UserDataService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,10 +42,10 @@ public class FollowService {
     private static final int DEFAULT_PAGE_SIZE = 10;
 
     /** 关注数据访问接口 */
-    private final FollowMapper followMapper;
+    private final FollowDataService followDataService;
     
     /** 用户数据访问接口 */
-    private final UserMapper userMapper;
+    private final UserDataService userDataService;
     
     /** 消息服务，用于发送关注通知 */
     private final MessageService messageService;
@@ -74,7 +74,7 @@ public class FollowService {
      */
     private UserDO validateUserExists(Long userId) {
         validateUserId(userId);
-        UserDO userDO = userMapper.getById(userId);
+        UserDO userDO = userDataService.getById(userId);
         if (userDO == null) {
             throw ErrorCode.USER_NOT_FOUND.exception();
         }
@@ -108,7 +108,7 @@ public class FollowService {
             return new HashMap<>();
         }
         
-        List<UserDO> userDOList = userMapper.getByIds(userIds);
+        List<UserDO> userDOList = userDataService.getByIds(userIds);
         Map<Long, UserDO> userDOMap = new HashMap<>();
         for (UserDO userDO : userDOList) {
             userDOMap.put(userDO.getId(), userDO);
@@ -158,13 +158,13 @@ public class FollowService {
         UserDO followee = validateUserExists(followeeId);
         
         // 检查是否已经关注
-        FollowDO existingFollow = followMapper.get(followerId, followeeId);
+        FollowDO existingFollow = followDataService.get(followerId, followeeId);
         if (existingFollow == null) {
             // 验证关注者存在性
             UserDO follower = validateUserExists(followerId);
             
             // 创建关注记录
-            followMapper.insert(followerId, followeeId);
+            followDataService.insert(followerId, followeeId);
             
             // 发送关注通知消息
             messageService.createFollowMessage(followeeId, follower.getId());
@@ -188,10 +188,10 @@ public class FollowService {
         UserDO followee = validateUserExists(followeeId);
         
         // 检查关注关系是否存在
-        FollowDO existingFollow = followMapper.get(followerId, followeeId);
+        FollowDO existingFollow = followDataService.get(followerId, followeeId);
         if (existingFollow != null) {
             // 删除关注记录
-            followMapper.delete(followerId, followeeId);
+            followDataService.delete(followerId, followeeId);
         }
     }
 
@@ -210,7 +210,7 @@ public class FollowService {
         UserDO follower = validateUserExists(userId);
         
         // 获取关注记录列表
-        List<FollowDO> followDOList = followMapper.getList(userId, lastCreateTime, DEFAULT_PAGE_SIZE);
+        List<FollowDO> followDOList = followDataService.getList(userId, lastCreateTime, DEFAULT_PAGE_SIZE);
         
         if (followDOList.isEmpty()) {
             return new ArrayList<>();

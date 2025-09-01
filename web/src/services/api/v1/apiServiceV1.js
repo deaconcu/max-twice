@@ -1,0 +1,495 @@
+import apiClient from '../../apiClient';
+
+// API v1 统一服务模块，使用 JSON 格式
+const API_V1_PREFIX = '/api/v1';
+
+// 用户认证服务
+export const authServiceV1 = {
+  login(email, password) {
+    return apiClient.post(`${API_V1_PREFIX}/auth/login`, {
+      email,
+      password
+    });
+  },
+
+  register(userName, email, password) {
+    return apiClient.post(`${API_V1_PREFIX}/auth/register`, {
+      userName,
+      email,
+      password
+    });
+  },
+
+  validateEmail(email, code) {
+    return apiClient.post(`${API_V1_PREFIX}/auth/validate-email`, {
+      email,
+      code
+    });
+  },
+};
+
+// 用户管理服务
+export const userServiceV1 = {
+  getCurrentUser() {
+    return apiClient.get(`${API_V1_PREFIX}/users/current`);
+  },
+
+  updateCurrentUser(name, biography) {
+    return apiClient.put(`${API_V1_PREFIX}/users/current`, {
+      name,
+      biography
+    });
+  },
+
+  getUser(userId) {
+    return apiClient.get(`${API_V1_PREFIX}/users/${userId}`);
+  },
+
+  searchUser(name) {
+    return apiClient.get(`${API_V1_PREFIX}/users/search`, {
+      params: { name }
+    });
+  },
+
+  getUserPosts(userId, lastId, type = 'article') {
+    return apiClient.get(`${API_V1_PREFIX}/users/${userId}/posts`, {
+      params: { lastId, type }
+    });
+  },
+};
+
+// 关注服务
+export const followServiceV1 = {
+  follow(followeeId) {
+    return apiClient.post(`${API_V1_PREFIX}/follows`, {
+      followeeId
+    });
+  },
+
+  unfollow(followeeId) {
+    return apiClient.delete(`${API_V1_PREFIX}/follows/${followeeId}`);
+  },
+
+  getFollowees(userId, lastCreateTime) {
+    return apiClient.get(`${API_V1_PREFIX}/users/${userId}/followees`, {
+      params: { lastCreateTime }
+    });
+  },
+};
+
+// 订阅服务
+export const subscriptionServiceV1 = {
+  getUserSubscriptions(userId) {
+    return apiClient.get(`${API_V1_PREFIX}/users/${userId}/subscriptions`);
+  },
+
+  subscribe(courseId) {
+    return apiClient.post(`${API_V1_PREFIX}/users/current/subscriptions`, {
+      courseId
+    });
+  },
+
+  updateSubscriptions(subscription) {
+    return apiClient.put(`${API_V1_PREFIX}/users/current/subscriptions`, {
+      subscription
+    });
+  },
+
+  unsubscribe(courseId) {
+    return apiClient.delete(`${API_V1_PREFIX}/users/current/subscriptions/${courseId}`);
+  },
+};
+
+// 职业管理服务
+export const professionServiceV1 = {
+  getProfessions(page = 1, size = 20, state, lastId, mainCategory, subCategory) {
+    return apiClient.get(`${API_V1_PREFIX}/professions`, {
+      params: { page, size, state, lastId, mainCategory, subCategory }
+    });
+  },
+
+  getApprovedProfessions(lastId = 0) {
+    return apiClient.get(`${API_V1_PREFIX}/professions/approved`, {
+      params: { lastId }
+    });
+  },
+
+  getProfession(id) {
+    return apiClient.get(`${API_V1_PREFIX}/professions/${id}`);
+  },
+
+  createProfession(professionData) {
+    return apiClient.post(`${API_V1_PREFIX}/professions`, professionData);
+  },
+
+  updateProfession(id, professionData) {
+    return apiClient.put(`${API_V1_PREFIX}/professions/${id}`, professionData);
+  },
+
+  approveProfession(id, action, rejectedReason) {
+    return apiClient.post(`${API_V1_PREFIX}/professions/${id}/approve`, {
+      action,
+      rejectedReason
+    });
+  },
+
+  deleteProfession(id) {
+    return apiClient.delete(`${API_V1_PREFIX}/professions/${id}`);
+  },
+
+  getHotProfessions(limit = 10) {
+    return apiClient.get(`${API_V1_PREFIX}/professions/hot`, {
+      params: { limit }
+    });
+  },
+};
+
+// 课程管理服务
+export const courseServiceV1 = {
+  getCourse(id) {
+    return apiClient.get(`${API_V1_PREFIX}/courses/${id}`);
+  },
+
+  searchCourses(name) {
+    return apiClient.get(`${API_V1_PREFIX}/courses/search`, {
+      params: { name }
+    });
+  },
+
+  getCoursesByState(state, lastId) {
+    return apiClient.get(`${API_V1_PREFIX}/courses`, {
+      params: { state, lastId }
+    });
+  },
+
+  getHotCourses() {
+    return apiClient.get(`${API_V1_PREFIX}/courses/hot`);
+  },
+
+  getCoursesRanking() {
+    return apiClient.get(`${API_V1_PREFIX}/courses/ranking`);
+  },
+
+  createCourse(courseData) {
+    return apiClient.post(`${API_V1_PREFIX}/courses`, courseData);
+  },
+
+  updateCourse(id, courseData) {
+    return apiClient.put(`${API_V1_PREFIX}/courses/${id}`, courseData);
+  },
+
+  createSubcourse(parentId, name, description) {
+    return apiClient.post(`${API_V1_PREFIX}/courses/${parentId}/subcourses`, {
+      name,
+      description
+    });
+  },
+
+  approveCourse(id, action, rejectedReason) {
+    return apiClient.post(`${API_V1_PREFIX}/courses/${id}/approve`, {
+      action,
+      rejectedReason
+    });
+  },
+};
+
+// 帖子管理服务
+export const postServiceV1 = {
+  getPosts(ids, nodeId, lastScore, lastPostingId) {
+    return apiClient.get(`${API_V1_PREFIX}/posts`, {
+      params: { ids: ids?.join(','), nodeId, lastScore, lastId: lastPostingId }
+    });
+  },
+
+  createPost(postData) {
+    return apiClient.post(`${API_V1_PREFIX}/posts`, postData);
+  },
+
+  updatePost(id, postData) {
+    return apiClient.put(`${API_V1_PREFIX}/posts/${id}`, postData);
+  },
+
+  deletePost(id) {
+    return apiClient.delete(`${API_V1_PREFIX}/posts/${id}`);
+  },
+
+  getPost(id) {
+    return apiClient.get(`${API_V1_PREFIX}/posts/${id}`);
+  },
+
+  getNodePosts(nodeId) {
+    return apiClient.get(`${API_V1_PREFIX}/nodes/${nodeId}/posts`);
+  },
+
+  getPendingPosts() {
+    return apiClient.get(`${API_V1_PREFIX}/admin/posts/pending`);
+  },
+
+  approvePost(id, approve) {
+    return apiClient.put(`${API_V1_PREFIX}/admin/posts/${id}/approve`, null, {
+      params: { approve }
+    });
+  },
+};
+
+// 评论管理服务
+export const commentServiceV1 = {
+  createComment(objectId, type, replyTo, toUser, content) {
+    return apiClient.post(`${API_V1_PREFIX}/comments`, {
+      objectId,
+      type,
+      replyTo,
+      toUser,
+      content
+    });
+  },
+
+  getComments(objectId, type, offsetId = 0) {
+    return apiClient.get(`${API_V1_PREFIX}/comments`, {
+      params: { objectId, type, offsetId }
+    });
+  },
+
+  getCommentReplies(id, offsetId = 0) {
+    return apiClient.get(`${API_V1_PREFIX}/comments/${id}/replies`, {
+      params: { offsetId }
+    });
+  },
+
+  getPendingComments() {
+    return apiClient.get(`${API_V1_PREFIX}/admin/comments/pending`);
+  },
+
+  approveComment(id, action) {
+    return apiClient.put(`${API_V1_PREFIX}/admin/comments/${id}/approve`, {
+      action
+    });
+  },
+};
+
+// 路线图管理服务
+export const roadmapServiceV1 = {
+  getProfessionRoadmaps(professionId, lastId = 0) {
+    return apiClient.get(`${API_V1_PREFIX}/professions/${professionId}/roadmaps`, {
+      params: { lastId }
+    });
+  },
+
+  updateRoadmap(id, content) {
+    return apiClient.put(`${API_V1_PREFIX}/roadmaps/${id}`, {
+      content
+    });
+  },
+
+  upvoteRoadmap(id) {
+    return apiClient.put(`${API_V1_PREFIX}/roadmaps/${id}/upvote`);
+  },
+
+  createRoadmap(professionId, content, description) {
+    return apiClient.post(`${API_V1_PREFIX}/roadmaps`, {
+      professionId,
+      content,
+      description
+    });
+  },
+
+  getRoadmap(id) {
+    return apiClient.get(`${API_V1_PREFIX}/roadmaps/${id}`);
+  },
+
+  pinRoadmap(professionId, roadmapId) {
+    return apiClient.post(`${API_V1_PREFIX}/roadmaps/pin`, {
+      professionId,
+      roadmapId
+    });
+  },
+};
+
+// 点赞服务
+export const upvoteServiceV1 = {
+  upvote(objectId, objectType, type) {
+    return apiClient.post(`${API_V1_PREFIX}/upvotes`, {
+      objectId,
+      objectType,
+      type
+    });
+  },
+
+  getUpvoteStatus(objectId, objectType) {
+    return apiClient.get(`${API_V1_PREFIX}/upvotes/status`, {
+      params: { objectId, objectType }
+    });
+  },
+};
+
+// 消息管理服务
+export const messageServiceV1 = {
+  applyCourse(title, summary, explanation, parentId) {
+    return apiClient.post(`${API_V1_PREFIX}/messages/course-applications`, {
+      title,
+      summary,
+      explanation,
+      parentId
+    });
+  },
+
+  getCourseApplications() {
+    return apiClient.get(`${API_V1_PREFIX}/messages/course-applications`);
+  },
+
+  getMessages() {
+    return apiClient.get(`${API_V1_PREFIX}/messages`);
+  },
+
+  sendSystemMessage(type, to, content) {
+    return apiClient.post(`${API_V1_PREFIX}/messages/system`, {
+      type,
+      to,
+      content
+    });
+  },
+
+  updateCourseApplication(id, reply) {
+    return apiClient.put(`${API_V1_PREFIX}/messages/course-applications/${id}`, {
+      reply
+    });
+  },
+};
+
+// 学习进度服务
+export const progressServiceV1 = {
+  markNodeComplete(nodeId, courseId) {
+    return apiClient.post(`${API_V1_PREFIX}/progress/nodes/${nodeId}/complete`, {
+      courseId
+    });
+  },
+
+  unmarkNodeComplete(nodeId) {
+    return apiClient.delete(`${API_V1_PREFIX}/progress/nodes/${nodeId}/complete`);
+  },
+
+  getNodeStatus(nodeId) {
+    return apiClient.get(`${API_V1_PREFIX}/progress/nodes/${nodeId}/status`);
+  },
+
+  startCourse(courseId) {
+    return apiClient.post(`${API_V1_PREFIX}/progress/courses/${courseId}/start`, {
+      courseId
+    });
+  },
+
+  getCourseProgress(courseId) {
+    return apiClient.get(`${API_V1_PREFIX}/progress/courses/${courseId}`);
+  },
+
+  getAllCourseProgress(lastId) {
+    return apiClient.get(`${API_V1_PREFIX}/progress/courses`, {
+      params: { lastId }
+    });
+  },
+
+  updateCourseProgress(courseId, data) {
+    return apiClient.put(`${API_V1_PREFIX}/progress/courses/${courseId}`, data);
+  },
+
+  deleteCourseProgress(courseId) {
+    return apiClient.delete(`${API_V1_PREFIX}/progress/courses/${courseId}`);
+  },
+
+  completeCourse(courseId) {
+    return apiClient.post(`${API_V1_PREFIX}/progress/courses/${courseId}/complete`);
+  },
+};
+
+// 统计服务
+export const statsServiceV1 = {
+  recordView(articleId, userId, ipAddress) {
+    return apiClient.post(`${API_V1_PREFIX}/stats/views`, {
+      articleId,
+      userId,
+      ipAddress
+    });
+  },
+
+  getUserTodayStats(userId) {
+    return apiClient.get(`${API_V1_PREFIX}/stats/users/${userId}/today`);
+  },
+
+  getUserYesterdayStats(userId) {
+    return apiClient.get(`${API_V1_PREFIX}/stats/users/${userId}/yesterday`);
+  },
+
+  getUserHistoryStats(userId, days = 7) {
+    return apiClient.get(`${API_V1_PREFIX}/stats/users/${userId}/history`, {
+      params: { days }
+    });
+  },
+
+  getUserPeriodStats(userId, days = 7) {
+    return apiClient.get(`${API_V1_PREFIX}/stats/users/${userId}/period`, {
+      params: { days }
+    });
+  },
+
+  getUserAllTimeStats(userId) {
+    return apiClient.get(`${API_V1_PREFIX}/stats/users/${userId}/all-time`);
+  },
+
+  syncManual() {
+    return apiClient.post(`${API_V1_PREFIX}/stats/sync/manual`);
+  },
+
+  getHealth() {
+    return apiClient.get(`${API_V1_PREFIX}/stats/health`);
+  },
+
+  syncDate(date) {
+    return apiClient.post(`${API_V1_PREFIX}/stats/sync/date`, {
+      date
+    });
+  },
+};
+
+// 页面聚合服务
+export const pageServiceV1 = {
+  readByCoursePath(courseId, path) {
+    return apiClient.get(`${API_V1_PREFIX}/pages/read`, {
+      params: { courseId, path }
+    });
+  },
+
+  readByNode(nodeId) {
+    return apiClient.get(`${API_V1_PREFIX}/pages/read`, {
+      params: { nodeId }
+    });
+  },
+
+  readByPost(postId) {
+    return apiClient.get(`${API_V1_PREFIX}/pages/read`, {
+      params: { postId }
+    });
+  },
+
+  readByComment(commentId) {
+    return apiClient.get(`${API_V1_PREFIX}/pages/read`, {
+      params: { commentId }
+    });
+  },
+};
+
+// 内容管理服务
+export const contentServiceV1 = {
+  operateContent(data) {
+    return apiClient.post(`${API_V1_PREFIX}/contents`, data);
+  },
+};
+
+// AI服务
+export const aiServiceV1 = {
+  chat(prompt, model) {
+    return apiClient.post(`${API_V1_PREFIX}/ai/chat`, {
+      prompt,
+      model
+    });
+  },
+};

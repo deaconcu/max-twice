@@ -48,12 +48,12 @@ public class CourseRankingScheduler {
     /**
      * 验证和获取课程ID
      */
-    private Integer validateAndGetCourseId(Map<String, Object> row) {
+    private Long validateAndGetCourseId(Map<String, Object> row) {
         Number courseIdNum = (Number) row.get("course_id");
         if (courseIdNum == null) {
             return null;
         }
-        return courseIdNum.intValue();
+        return courseIdNum.longValue();
     }
 
     /**
@@ -100,7 +100,7 @@ public class CourseRankingScheduler {
                     String[] courseIds = subscription.split(",");
                     for (String courseIdStr : courseIds) {
                         try {
-                            int courseId = Integer.parseInt(courseIdStr.trim());
+                            long courseId = Long.parseLong(courseIdStr.trim());
                             courseRankingService.incrementSubscription(courseId);
                             subscriptionCount++;
                         } catch (NumberFormatException e) {
@@ -122,7 +122,7 @@ public class CourseRankingScheduler {
     private int processCourseLearningData(List<Map<String, Object>> learningData) {
         int processedCount = 0;
         for (Map<String, Object> row : learningData) {
-            Integer courseId = validateAndGetCourseId(row);
+            Long courseId = validateAndGetCourseId(row);
             Long count = validateAndGetCount(row);
             
             if (courseId != null && count != null) {

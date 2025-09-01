@@ -25,7 +25,7 @@ public class ProfessionRankingService {
     /**
      * 增加职业学习数
      */
-    public void incrementLearning(int professionId) {
+    public void incrementLearning(long professionId) {
         validateProfessionId(professionId);
         String key = generateLearningKey(professionId);
         redisTemplate.opsForValue().increment(key);
@@ -35,7 +35,7 @@ public class ProfessionRankingService {
     /**
      * 减少职业学习数
      */
-    public void decrementLearning(int professionId) {
+    public void decrementLearning(long professionId) {
         validateProfessionId(professionId);
         String key = generateLearningKey(professionId);
         Long count = redisTemplate.opsForValue().decrement(key);
@@ -48,7 +48,7 @@ public class ProfessionRankingService {
     /**
      * 更新职业排行榜
      */
-    private void updateProfessionRanking(int professionId) {
+    private void updateProfessionRanking(long professionId) {
         try {
             String learningKey = generateLearningKey(professionId);
             String learningCountStr = redisTemplate.opsForValue().get(learningKey);
@@ -102,7 +102,7 @@ public class ProfessionRankingService {
     /**
      * 批量初始化职业统计数据（用于定时任务）
      */
-    public void initializeProfessionStats(int professionId, long learningCount) {
+    public void initializeProfessionStats(long professionId, long learningCount) {
         validateProfessionId(professionId);
         try {
             String learningKey = generateLearningKey(professionId);

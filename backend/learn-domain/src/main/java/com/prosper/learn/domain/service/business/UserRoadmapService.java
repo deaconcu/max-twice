@@ -5,16 +5,16 @@ import com.prosper.learn.domain.config.SystemProperties;
 
 import static com.prosper.learn.common.Enums.UserRoadmapState;
 import com.prosper.learn.domain.util.Converter;
-import com.prosper.learn.dto.ProfessionDTO;
-import com.prosper.learn.dto.RoadmapDTOV2;
-import com.prosper.learn.dto.UserRoadmapDTO;
+import com.prosper.learn.dto.response.ProfessionDTO;
+import com.prosper.learn.dto.response.RoadmapDTOV2;
+import com.prosper.learn.dto.response.UserRoadmapDTO;
 import com.prosper.learn.persistence.dataobject.ProfessionDO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
 import com.prosper.learn.persistence.dataobject.UserRoadmapDO;
-import com.prosper.learn.persistence.mapper.ProfessionMapper;
-import com.prosper.learn.persistence.mapper.RoadmapMapper;
-import com.prosper.learn.persistence.mapper.UserRoadmapMapper;
-import com.prosper.learn.persistence.mapper.UserMapper;
+import com.prosper.learn.domain.service.data.ProfessionDataService;
+import com.prosper.learn.domain.service.data.RoadmapDataService;
+import com.prosper.learn.domain.service.data.UserRoadmapDataService;
+import com.prosper.learn.domain.service.data.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,11 +30,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class UserRoadmapService {
 
-    private final UserRoadmapMapper userRoadmapMapper;
-    private final RoadmapMapper roadmapMapper;
-    private final UserMapper userMapper;
+    private final UserRoadmapDataService userRoadmapDataService;
+    private final RoadmapDataService roadmapDataService;
+    private final UserDataService userDataService;
     private final RoadmapService roadmapService;
-    private final ProfessionMapper professionMapper;
+    private final ProfessionDataService professionDataService;
     private final SystemProperties systemProperties;
 
     // 不变常量 - 进度相关
@@ -99,17 +99,17 @@ public class UserRoadmapService {
         
         try {
             // 检查是否已经存在学习记录
-            UserRoadmapDO existing = userRoadmapMapper.getByUserAndRoadmap(userId, roadmapId);
+            UserRoadmapDO existing = userRoadmapDataService.getByUserAndRoadmap(userId, roadmapId);
 
             if (existing != null) {
                 // 如果已存在，删除现有记录重新开始
-                userRoadmapMapper.deleteByUserAndRoadmap(userId, roadmapId);
+                userRoadmapDataService.deleteByUserAndRoadmap(userId, roadmapId);
                 return false;
             }
 
             // 创建新的学习记录
             UserRoadmapDO userRoadmapDO = createInitialUserRoadmap(userId, roadmapId);
-            userRoadmapMapper.insert(userRoadmapDO);
+            userRoadmapDataService.insert(userRoadmapDO);
             
             log.info("用户 {} 开始学习路线图 {}", userId, roadmapId);
             return true;
@@ -131,7 +131,7 @@ public class UserRoadmapService {
         validateRoadmapId(roadmapId);
         
         try {
-            UserRoadmapDO progressDO = userRoadmapMapper.getByUserAndRoadmap(userId, roadmapId);
+            UserRoadmapDO progressDO = userRoadmapDataService.getByUserAndRoadmap(userId, roadmapId);
             if (progressDO == null) {
                 return null;
             }
@@ -139,9 +139,9 @@ public class UserRoadmapService {
             UserRoadmapDTO dto = Converter.INSTANCE.toUserRoadmapDTO(progressDO);
 
             // 批量查询 roadmap 信息
-            RoadmapDO roadmapDO = roadmapMapper.getById(roadmapId.intValue());
+            RoadmapDO roadmapDO = roadmapDataService.getById(roadmapId);
             if (roadmapDO != null) {
-                RoadmapDTOV2 roadmapDTO = Converter.INSTANCE.toRoadmapDTOV2WithUser(roadmapDO, userMapper);
+                RoadmapDTOV2 roadmapDTO = Converter.INSTANCE.toRoadmapDTOV2WithUser(roadmapDO, userDataService);
                 dto.setRoadmap(roadmapDTO);
             }
 
@@ -159,7 +159,7 @@ public class UserRoadmapService {
      * @return 用户所有路线图学习进度列表
      */
     public List<UserRoadmapDTO> getUserAllRoadmap(Long userId) {
-        List<UserRoadmapDO> userRoadmapList = userRoadmapMapper.getByUser(userId);
+        List<UserRoadmapDO> userRoadmapList = userRoadmapDataService.getByUser(userId);
         if (userRoadmapList.isEmpty()) {
             return List.of();
         }
@@ -170,7 +170,7 @@ public class UserRoadmapService {
                 .collect(Collectors.toList());
 
         // 批量查询 roadmap 信息
-        List<RoadmapDO> roadmapDOList = roadmapMapper.getByIds(roadmapIds);
+        List<RoadmapDO> roadmapDOList = roadmapDataService.getByIds(roadmapIds);
         Map<Long, RoadmapDO> roadmapMap = roadmapDOList.stream()
                 .collect(Collectors.toMap(RoadmapDO::getId, roadmap -> roadmap));
 
@@ -181,17 +181,17 @@ public class UserRoadmapService {
                 .collect(Collectors.toList());
 
         // 批量查询 profession 信息
-        Map<Integer, ProfessionDO> professionMap = professionMapper.getMapByIds(professionIds);
+        Map<Long, ProfessionDO> professionMap = professionDataService.getMapByIds(professionIds);
 
         // 需要更新的路线图记录列表
         List<UserRoadmapDO> toUpdateList = new ArrayList<>();
         
         // 先批量检查和收集所有需要更新的路线图状态
         for (UserRoadmapDO progressDO : userRoadmapList) {
-            RoadmapDO roadmapDO = roadmapMap.get(progressDO.getRoadmapId().intValue());
+            RoadmapDO roadmapDO = roadmapMap.get(progressDO.getRoadmapId());
             if (roadmapDO != null) {
                 try {
-                    String parsedContent = roadmapService.parseContentToGraphFormat(roadmapDO.getContent(), userId.intValue());
+                    String parsedContent = roadmapService.parseContentToGraphFormat(roadmapDO.getContent(), userId);
                     checkAndCollectRoadmapUpdate(progressDO, parsedContent, toUpdateList);
                     // 将解析后的内容设置回去，避免重复解析
                     roadmapDO.setContent(parsedContent);
@@ -204,18 +204,18 @@ public class UserRoadmapService {
         
         // 批量更新数据库
         if (!toUpdateList.isEmpty()) {
-            userRoadmapMapper.updateBatch(toUpdateList);
+            userRoadmapDataService.updateBatch(toUpdateList);
         }
 
         // 转换为 DTO 并填充 roadmap 信息
         return userRoadmapList.stream()
                 .map(progressDO -> {
                     UserRoadmapDTO dto = Converter.INSTANCE.toUserRoadmapDTO(progressDO);
-                    RoadmapDO roadmapDO = roadmapMap.get(progressDO.getRoadmapId().intValue());
+                    RoadmapDO roadmapDO = roadmapMap.get(progressDO.getRoadmapId());
 
                     if (roadmapDO != null) {
                         // 这里的content已经在上面解析过了
-                        RoadmapDTOV2 roadmapDTO = Converter.INSTANCE.toRoadmapDTOV2WithUser(roadmapDO, userMapper);
+                        RoadmapDTOV2 roadmapDTO = Converter.INSTANCE.toRoadmapDTOV2WithUser(roadmapDO, userDataService);
 
                         // 设置 profession 信息
                         ProfessionDO professionDO = professionMap.get(roadmapDO.getProfessionId());
@@ -308,7 +308,7 @@ public class UserRoadmapService {
      * @return 更新后的学习进度记录
      */
     public UserRoadmapDTO updateProgress(Long userId, Long roadmapId, Integer progressPercent) {
-        UserRoadmapDO progressDO = userRoadmapMapper.getByUserAndRoadmap(userId, roadmapId);
+        UserRoadmapDO progressDO = userRoadmapDataService.getByUserAndRoadmap(userId, roadmapId);
 
         if (progressDO == null) {
             throw ErrorCode.USER_ROADMAP_NOT_FOUND.exception();
@@ -324,7 +324,7 @@ public class UserRoadmapService {
             progressDO.setState(UserRoadmapState.IN_PROGRESS.value());
         }
 
-        userRoadmapMapper.update(progressDO);
+        userRoadmapDataService.update(progressDO);
 
         return Converter.INSTANCE.toUserRoadmapDTO(progressDO);
     }
@@ -335,6 +335,6 @@ public class UserRoadmapService {
      * @param roadmapId 路线图ID
      */
     public void deleteRoadmap(Long userId, Long roadmapId) {
-        userRoadmapMapper.deleteByUserAndRoadmap(userId, roadmapId);
+        userRoadmapDataService.deleteByUserAndRoadmap(userId, roadmapId);
     }
 }

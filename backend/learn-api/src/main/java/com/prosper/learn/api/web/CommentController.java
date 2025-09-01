@@ -6,9 +6,9 @@ import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
 import com.prosper.learn.domain.service.basic.RedisStatsService;
-import com.prosper.learn.dto.CommentDTO;
-import com.prosper.learn.dto.CommentDTOV1;
-import com.prosper.learn.dto.Response;
+import com.prosper.learn.dto.response.CommentDTO;
+import com.prosper.learn.dto.response.CommentDTOV1;
+import com.prosper.learn.dto.response.Response;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
@@ -138,7 +138,7 @@ public class CommentController implements CommentClient {
 
         List<CommentDTO> commentDTOList = Converter.INSTANCE.toCommentDTO(commentDOList);
 
-        int userId = StpUtil.getLoginIdAsInt();
+        long userId = StpUtil.getLoginIdAsLong();
 
         List<Long> ids = new ArrayList<>();
         for (CommentDO commentDO : commentDOList) {
@@ -182,7 +182,7 @@ public class CommentController implements CommentClient {
 
     @Override
     public Response<List<CommentDTO>> getByTopic(Long commentId, Long offsetId) {
-        int userId = StpUtil.getLoginIdAsInt();
+        long userId = StpUtil.getLoginIdAsLong();
         List<CommentDO> commentDOList;
         if (offsetId == 0) {
             // 首页加载话题回复，直接按分数排序

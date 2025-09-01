@@ -78,4 +78,11 @@ public class UserCourseTocDataService extends AbstractDataService<UserCourseTocD
     public void delete(UserCourseTocDO userCourseTocDO) {
         userCourseTocMapper.delete(userCourseTocDO.getId());
     }
+
+    /**
+     * 插入用户课程目录记录
+     */
+    public void insert(UserCourseTocDO userCourseTocDO) {
+        userCourseTocMapper.insert(userCourseTocDO);
+    }
 }

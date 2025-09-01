@@ -1,8 +1,8 @@
 package com.prosper.learn.domain.service.basic;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.prosper.learn.dto.DailyStatsDTO;
-import com.prosper.learn.dto.UserStatsDTO;
+import com.prosper.learn.dto.response.DailyStatsDTO;
+import com.prosper.learn.dto.response.UserStatsDTO;
 import com.prosper.learn.persistence.dataobject.PostStatsDO;
 import com.prosper.learn.persistence.dataobject.UserStatsDO;
 import com.prosper.learn.persistence.mapper.PostStatsMapper;

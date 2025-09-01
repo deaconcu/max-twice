@@ -27,12 +27,12 @@ public class Utils {
         return now;
     }
 
-    public static Pair<Integer, JsonNode> getNodeByPath(JsonNode rootNode, String path) {
+    public static Pair<Long, JsonNode> getNodeByPath(JsonNode rootNode, String path) {
         String[] keys = path.split("\\-");  // 使用 "." 分割路径
         JsonNode currentNode = rootNode;
 
         int index = 0;
-        int nodeId = 0;
+        long nodeId = 0;
         for (String key : keys) {
             if (index == 0) {
                 currentNode = ((ArrayNode) currentNode).get(Integer.parseInt(key) - 1);

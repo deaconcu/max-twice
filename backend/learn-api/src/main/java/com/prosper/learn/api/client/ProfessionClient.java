@@ -1,7 +1,7 @@
 package com.prosper.learn.api.client;
 
-import com.prosper.learn.dto.ProfessionDTO;
-import com.prosper.learn.dto.Response;
+import com.prosper.learn.dto.response.ProfessionDTO;
+import com.prosper.learn.dto.response.Response;
 import org.springframework.web.bind.annotation.*;
 
 public interface ProfessionClient {

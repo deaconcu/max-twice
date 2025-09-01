@@ -13,7 +13,7 @@ public class NodeTableRepositoryImpl { //implements NodeTableRepository {
     }
 
     @Override
-    public NodeTable find(Integer id) {
+    public NodeTable find(Long id) {
         return Converter.INSTANCE.nodeListToEntity(nodeTableMapper.getById(id));
     }
 
@@ -23,12 +23,12 @@ public class NodeTableRepositoryImpl { //implements NodeTableRepository {
     }
 
     @Override
-    public List<NodeTable> listByNode(int nodeId) {
+    public List<NodeTable> listByNode(long nodeId) {
         return Converter.INSTANCE.nodeListToEntity(nodeTableMapper.listByNode(nodeId));
     }
 
     @Override
-    public List<NodeTable> listWithNodeByNode(int nodeId) {
+    public List<NodeTable> listWithNodeByNode(long nodeId) {
         List<NodeTable> nodeTables = Converter.INSTANCE.nodeListToEntity(nodeTableMapper.listByNode(nodeId));
         List<Integer> nodeIds = new LinkedList<>();
         for (NodeTable nodeTable : nodeTables) {
@@ -49,7 +49,7 @@ public class NodeTableRepositoryImpl { //implements NodeTableRepository {
     }
 
     @Override
-    public List<NodeTable> listBySubcourse(int subcourseId) {
+    public List<NodeTable> listBySubcourse(long subcourseId) {
         return Converter.INSTANCE.nodeListToEntity(nodeTableMapper.listBySubcourse(subcourseId));
     }
 

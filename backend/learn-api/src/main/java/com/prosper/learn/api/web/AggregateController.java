@@ -13,8 +13,8 @@ import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.business.*;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.common.Utils;
-import com.prosper.learn.dto.*;
-import com.prosper.learn.dto.message.MessageDTO;
+import com.prosper.learn.dto.response.message.MessageDTO;
+import com.prosper.learn.dto.response.*;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
@@ -149,7 +149,7 @@ public class AggregateController implements AggregateClient {
                 path = "1-" + courseDO.getRootNode();
             }
 
-            Utils.Pair<Integer, JsonNode> pair = Utils.getNodeByPath(rootNode, path);
+            Utils.Pair<Long, JsonNode> pair = Utils.getNodeByPath(rootNode, path);
 
             // 目录不存在
             if (pair == null) {
@@ -158,7 +158,7 @@ public class AggregateController implements AggregateClient {
             }
 
             if (nodeDO == null) {
-                int nodeId = pair.left();
+                long nodeId = pair.left();
                 nodeDO = nodeMapper.getById(nodeId);
 
                 JsonNode currentNode = pair.right();
@@ -402,7 +402,7 @@ public class AggregateController implements AggregateClient {
                                          @RequestParam("postingId") Long postingId,
                                          @RequestParam("action") int action,
                                          Model model) {
-        int userId = StpUtil.getLoginIdAsInt();
+        long userId = StpUtil.getLoginIdAsLong();
         switch (action) {
             case 1:
                 contentsService.choose(userId, path, courseId, postingId);
@@ -467,7 +467,7 @@ public class AggregateController implements AggregateClient {
 
     @Override
     public Response applyCourse(String title, String summary, String explanation, Long parentId) {
-        int userId = StpUtil.getLoginIdAsInt();
+        long userId = StpUtil.getLoginIdAsLong();
         CourseDO course = null;
         if (parentId != 0) {
             course = courseMapper.getById(parentId);
@@ -502,7 +502,7 @@ public class AggregateController implements AggregateClient {
         if (page < 1) page = 1;
         if (length < 1) length = 1;
         if (length > 100) length = 100;
-        int count = messageService.getApplyCourseCount();
+        int count = (int)messageService.getApplyCourseCount();
         int totalPage = count / length + 1;
         if (page > totalPage) page = totalPage;
 

@@ -3,7 +3,8 @@ package com.prosper.learn.api.v1.controller;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.RoadmapService;
-import com.prosper.learn.dto.RoadmapDTO;
+import com.prosper.learn.dto.response.RoadmapDTO;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -47,7 +48,9 @@ public class RoadmapsController {
      * 映射: PUT /roadmap/{id} → PUT /api/v1/roadmaps/{id}
      */
     @PutMapping("/roadmaps/{id}")
-    public ApiResponse<Void> updateRoadmap(@PathVariable Long id, @RequestParam String content) {
+    public ApiResponse<Void> updateRoadmap(
+            @PathVariable Long id, 
+            @JsonParam("content") String content) {
         if (!StpUtil.isLogin()) {
             throw ErrorCode.USER_NOT_LOGIN.exception();
         }
@@ -79,9 +82,9 @@ public class RoadmapsController {
      */
     @PostMapping("/roadmaps")
     public ApiResponse<Long> createRoadmap(
-            @RequestParam Long professionId, 
-            @RequestParam String content, 
-            @RequestParam String description) {
+            @JsonParam("professionId") Long professionId,
+            @JsonParam("content") String content,
+            @JsonParam("description") String description) {
         
         if (!StpUtil.isLogin()) {
             throw ErrorCode.USER_NOT_LOGIN.exception();
@@ -109,7 +112,9 @@ public class RoadmapsController {
      * 映射: POST /roadmap/pin → POST /api/v1/roadmaps/pin
      */
     @PostMapping("/roadmaps/pin")
-    public ApiResponse<String> pinRoadmap(@RequestParam Long professionId, @RequestParam Long roadmapId) {
+    public ApiResponse<String> pinRoadmap(
+            @JsonParam("professionId") Long professionId,
+            @JsonParam("roadmapId") Long roadmapId) {
         if (!StpUtil.isLogin()) {
             throw ErrorCode.USER_NOT_LOGIN.exception();
         }

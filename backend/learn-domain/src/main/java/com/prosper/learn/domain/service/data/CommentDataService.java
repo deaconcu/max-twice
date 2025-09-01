@@ -83,4 +83,53 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
             throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
+    
+    /**
+     * 插入评论
+     */
+    public void insert(CommentDO comment) {
+        commentMapper.insert(comment);
+    }
+    
+    /**
+     * 根据对象ID获取评论列表（不缓存）
+     */
+    public List<CommentDO> getByObjectId(Long objectId, int type, int pageSize) {
+        return commentMapper.getByObjectId(objectId, type, pageSize);
+    }
+    
+    /**
+     * 根据对象ID分页获取评论列表（不缓存）
+     */
+    public List<CommentDO> getByObjectIdPaginated(Long objectId, int type, double score, Long offsetId, int pageSize) {
+        return commentMapper.getByObjectIdPaginated(objectId, type, score, offsetId, pageSize);
+    }
+    
+    /**
+     * 获取子评论列表（不缓存）
+     */
+    public List<CommentDO> getChildren(List<Long> ids) {
+        return commentMapper.getChildren(ids);
+    }
+    
+    /**
+     * 根据主题获取评论列表（不缓存）
+     */
+    public List<CommentDO> getByTopic(Long id, int pageSize) {
+        return commentMapper.getByTopic(id, pageSize);
+    }
+    
+    /**
+     * 根据主题分页获取评论列表（不缓存）
+     */
+    public List<CommentDO> getByTopicPaginated(Long id, double score, Long offsetId, int pageSize) {
+        return commentMapper.getByTopicPaginated(id, score, offsetId, pageSize);
+    }
+    
+    /**
+     * 根据状态获取评论列表（不缓存）
+     */
+    public List<CommentDO> getListByState(int state, int limit) {
+        return commentMapper.getListByState(state, limit);
+    }
 }

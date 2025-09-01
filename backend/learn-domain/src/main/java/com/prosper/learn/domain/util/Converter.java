@@ -1,8 +1,10 @@
 package com.prosper.learn.domain.util;
 
 import com.prosper.learn.common.Enums;
-import com.prosper.learn.dto.*;
-import com.prosper.learn.dto.message.MessageDTO;
+import com.prosper.learn.domain.service.data.CourseDataService;
+import com.prosper.learn.domain.service.data.UserDataService;
+import com.prosper.learn.dto.response.message.MessageDTO;
+import com.prosper.learn.dto.response.*;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.CourseMapper;
 import com.prosper.learn.persistence.mapper.UserMapper;
@@ -168,12 +170,39 @@ public interface Converter {
         return dto;
     }
 
+    default RoadmapDTO toRoadmapDTOWithUser(RoadmapDO item, UserDataService userDataService) {
+        if (item == null) {
+            return null;
+        }
+        RoadmapDTO dto = toRoadMapDTO(item);
+        UserDO creator = userDataService.getById(item.getCreatorId());
+        if (creator != null) {
+            dto.setCreator(toUserDTOV4(creator));
+        }
+        // voted字段需要在调用处设置，因为需要当前用户信息
+        dto.setUpvoted(false);
+        return dto;
+    }
+
     default RoadmapDTOV2 toRoadmapDTOV2WithUser(RoadmapDO item, UserMapper userMapper) {
         if (item == null) {
             return null;
         }
         RoadmapDTOV2 dto = toRoadmapDTOV2(item);
         UserDO creator = userMapper.getById(item.getCreatorId());
+        if (creator != null) {
+            dto.setCreator(toUserDTOV4(creator));
+        }
+        // professionDTO字段需要在调用处设置，因为需要profession信息
+        return dto;
+    }
+
+    default RoadmapDTOV2 toRoadmapDTOV2WithUser(RoadmapDO item, UserDataService userDataService) {
+        if (item == null) {
+            return null;
+        }
+        RoadmapDTOV2 dto = toRoadmapDTOV2(item);
+        UserDO creator = userDataService.getById(item.getCreatorId());
         if (creator != null) {
             dto.setCreator(toUserDTOV4(creator));
         }
@@ -212,6 +241,23 @@ public interface Converter {
         // 处理 parent 字段
         if (item.getParent() != null && item.getParent() > 0) {
             CourseDO parentCourse = courseMapper.getById(item.getParent());
+            if (parentCourse != null) {
+                dto.setParent(toCourseDTOV3(parentCourse));
+            }
+        }
+
+        return dto;
+    }
+
+    default CourseDTOV4 toCourseDTOWithParent(CourseDO item, CourseDataService courseDataService) {
+        if (item == null) {
+            return null;
+        }
+        CourseDTOV4 dto = toCourseDTOV4(item);
+
+        // 处理 parent 字段
+        if (item.getParent() != null && item.getParent() > 0) {
+            CourseDO parentCourse = courseDataService.getById(item.getParent());
             if (parentCourse != null) {
                 dto.setParent(toCourseDTOV3(parentCourse));
             }

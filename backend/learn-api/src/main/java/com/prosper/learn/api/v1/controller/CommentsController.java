@@ -3,10 +3,11 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.CommentService;
-import com.prosper.learn.dto.CommentDTO;
-import com.prosper.learn.dto.CommentDTOV1;
+import com.prosper.learn.dto.response.CommentDTO;
+import com.prosper.learn.dto.response.CommentDTOV1;
 import com.prosper.learn.persistence.dataobject.CommentDO;
 import lombok.RequiredArgsConstructor;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -77,7 +78,9 @@ public class CommentsController {
      * 映射: PUT /comment → PUT /api/v1/admin/comments/{id}/approve
      */
     @PutMapping("/admin/comments/{id}/approve")
-    public ApiResponse<CommentDTOV1> approveComment(@PathVariable Long id, @RequestParam boolean approve) {
+    public ApiResponse<CommentDTOV1> approveComment(
+            @PathVariable Long id, 
+            @JsonParam("approve") Boolean approve) {
         CommentDTOV1 result = commentService.approveComment(id, approve);
         return ApiResponse.success(result);
     }

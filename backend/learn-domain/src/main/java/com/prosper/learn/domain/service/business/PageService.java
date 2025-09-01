@@ -9,9 +9,9 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ContentsService;
 import com.prosper.learn.domain.util.Converter;
-import com.prosper.learn.dto.*;
+import com.prosper.learn.dto.response.*;
 import com.prosper.learn.persistence.dataobject.*;
-import com.prosper.learn.persistence.mapper.*;
+import com.prosper.learn.domain.service.data.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,16 +29,16 @@ public class PageService {
 
     private final ContentsService contentsService;
     private final LearningProgressService learningProgressService;
-    private final NodeMapper nodeMapper;
+    private final NodeDataService nodeDataService;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final PostingService postingService;
-    private final PostMapper postMapper;
-    private final UpvoteMapper upvoteMapper;
-    private final CourseMapper courseMapper;
-    private final UserMapper userMapper;
-    private final CommentMapper commentMapper;
-    private final UserCourseMapper userCourseMapper;
-    private final UserProfileMapper userProfileMapper;
+    private final PostDataService postDataService;
+    private final UpvoteDataService upvoteDataService;
+    private final CourseDataService courseDataService;
+    private final UserDataService userDataService;
+    private final CommentDataService commentDataService;
+    private final UserCourseDataService userCourseDataService;
+    private final UserProfileDataService userProfileDataService;
     private final SystemProperties systemProperties;
     
     // ========== 常量定义 ==========
@@ -59,7 +59,7 @@ public class PageService {
         Set<Long> keys = new HashSet<>();
         Utils.collectKeys(arrayNode, keys);
 
-        List<NodeDO> nodeList = keys.isEmpty() ? new ArrayList<>() : nodeMapper.getByIds(keys.stream().toList());
+        List<NodeDO> nodeList = keys.isEmpty() ? new ArrayList<>() : nodeDataService.getByIds(keys.stream().toList());
 
         // 获取用户完成的节点集合
         Set<Integer> completedNodes = learningProgressService.getUserCompletedNodes(userId);
@@ -162,15 +162,15 @@ public class PageService {
         JsonNode rootNode = parseJsonSafely(courseTocDTO.getContents());
         path = sanitizePath(path, courseDO.getRootNode());
         
-        Utils.Pair<Integer, JsonNode> pair = getNodeByPath(rootNode, path, courseDO.getRootNode());
+        Utils.Pair<Long, JsonNode> pair = getNodeByPath(rootNode, path, courseDO.getRootNode());
         
         List<Long> userIds = new LinkedList<>();
         PostDTO chosenPosting = extractChosenPosting(pair.right(), userIds);
         List<PostDTO> fixedPostings = extractFixedPostings(pair.right(), userIds);
         
         if (nodeDO == null) {
-            int nodeId = pair.left();
-            nodeDO = validateNodeExists((long) nodeId);
+            long nodeId = pair.left();
+            nodeDO = validateNodeExists(nodeId);
         }
         
         List<PostDTO> otherPostings = getOtherPostings(nodeDO.getId(), userIds);
@@ -227,7 +227,7 @@ public class PageService {
     }
     
     private CommentDO validateCommentExists(Long commentId) {
-        CommentDO commentDO = commentMapper.getById(commentId);
+        CommentDO commentDO = commentDataService.getById(commentId);
         if (commentDO == null) {
             throw ErrorCode.COMMENT_NOT_FOUND.exception();
         }
@@ -243,7 +243,7 @@ public class PageService {
     }
     
     private NodeDO validateNodeExists(Long nodeId) {
-        NodeDO nodeDO = nodeMapper.getById(nodeId);
+        NodeDO nodeDO = nodeDataService.getById(nodeId);
         if (nodeDO == null) {
             throw ErrorCode.POSTING_NODE_NOT_FOUND.exception();
         }
@@ -251,7 +251,7 @@ public class PageService {
     }
     
     private CourseDO validateCourseExists(Long courseId) {
-        CourseDO courseDO = courseMapper.getById(courseId);
+        CourseDO courseDO = courseDataService.getById(courseId);
         if (courseDO == null) {
             throw ErrorCode.COURSE_NOT_FOUND.exception();
         }
@@ -289,8 +289,8 @@ public class PageService {
         return path;
     }
     
-    private Utils.Pair<Integer, JsonNode> getNodeByPath(JsonNode rootNode, String path, Long rootNode2) {
-        Utils.Pair<Integer, JsonNode> pair = Utils.getNodeByPath(rootNode, path);
+    private Utils.Pair<Long, JsonNode> getNodeByPath(JsonNode rootNode, String path, Long rootNode2) {
+        Utils.Pair<Long, JsonNode> pair = Utils.getNodeByPath(rootNode, path);
         
         if (pair == null && systemProperties.getPage().isEnableAutoPathRepair()) {
             log.warn("路径{}不存在，自动修复为默认路径", path);
@@ -336,7 +336,7 @@ public class PageService {
             return new HashMap<>();
         }
         
-        List<UserDTOV1> userList = Converter.INSTANCE.toUserDTOV1(userMapper.getByIds(userIds));
+        List<UserDTOV1> userList = Converter.INSTANCE.toUserDTOV1(userDataService.getByIds(userIds));
         return userList.stream().collect(Collectors.toMap(UserDTOV1::getId, user -> user));
     }
     
@@ -365,7 +365,7 @@ public class PageService {
             return;
         }
         
-        List<UpvoteDO> upvotes = upvoteMapper.getList(userId, allPostingIds, post.value());
+        List<UpvoteDO> upvotes = upvoteDataService.getList(userId, allPostingIds, post.value());
         Map<Long, Integer> voteTypes = upvotes.stream()
             .collect(Collectors.toMap(UpvoteDO::getObjectId, UpvoteDO::getType));
         
@@ -415,14 +415,14 @@ public class PageService {
     }
     
     private boolean checkLearningStatus(long userId, Long courseId) {
-        UserCourseDO userCourseDo = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
+        UserCourseDO userCourseDo = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
         return userCourseDo != null;
     }
     
     private CourseDTOV4 buildParentCourse(CourseDO courseDO, long userId) {
         CourseDTOV4 parentCourse;
         if (courseDO.getParent() != 0) {
-            CourseDO parentCourseDO = courseMapper.getById(courseDO.getParent());
+            CourseDO parentCourseDO = courseDataService.getById(courseDO.getParent());
             parentCourse = Converter.INSTANCE.toCourseDTOV4(parentCourseDO, false);
         } else {
             parentCourse = Converter.INSTANCE.toCourseDTOV4(courseDO, false);
@@ -435,7 +435,7 @@ public class PageService {
     }
     
     private boolean checkSubscriptionStatus(long userId, long courseId) {
-        UserProfileDO userProfileDO = userProfileMapper.getById(userId);
+        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
         if (userProfileDO == null || userProfileDO.getSubscription() == null || userProfileDO.getSubscription().trim().isEmpty()) {
             return false;
         }
@@ -455,19 +455,19 @@ public class PageService {
     
     private List<CourseDTOV2> getSubCourses(long parentCourseId) {
         return Converter.INSTANCE.toCourseDTOV2(
-            courseMapper.listByParentAndState(APPROVED_COURSE_STATE, parentCourseId));
+            courseDataService.listByParentAndState(APPROVED_COURSE_STATE, parentCourseId));
     }
     
     private Integer getCourseProgress(long userId, Long courseId) {
-        UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
+        UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
         return userCourse != null ? userCourse.getProgressPercent() : 0;
     }
     
-    private Map<String, Object> buildPageDataResponse(CourseTocDTO courseTocDTO, NodeDO nodeDO, 
-            CourseDTOV4 parentCourse, CourseDO courseDO, List<CourseDTOV2> subCourseList,
-            PostDTO chosenPosting, List<PostDTO> fixedPostings, List<PostDTO> otherPostings,
-            long lastId, String path, Collection<UserDTOV1> users, boolean learning, 
-            PostDTO postDTO, boolean nodeCompleted, Integer courseProgress) {
+    private Map<String, Object> buildPageDataResponse(CourseTocDTO courseTocDTO, NodeDO nodeDO,
+                                                      CourseDTOV4 parentCourse, CourseDO courseDO, List<CourseDTOV2> subCourseList,
+                                                      PostDTO chosenPosting, List<PostDTO> fixedPostings, List<PostDTO> otherPostings,
+                                                      long lastId, String path, Collection<UserDTOV1> users, boolean learning,
+                                                      PostDTO postDTO, boolean nodeCompleted, Integer courseProgress) {
         
         Map<String, Object> data = new HashMap<>();
         

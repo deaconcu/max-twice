@@ -11,7 +11,7 @@ public class CourseRepository {
     }
 
     //@Override
-    public Course find(Integer id) {
+    public Course find(Long id) {
         return Converter.INSTANCE.courseToEntity(courseMapper.getById(id));
     }
 

@@ -26,7 +26,7 @@ public class CourseRankingService {
     /**
      * 增加课程收藏数
      */
-    public void incrementSubscription(int courseId) {
+    public void incrementSubscription(long courseId) {
         validateCourseId(courseId);
         String key = COURSE_SUBSCRIPTION_PREFIX + courseId;
         redisTemplate.opsForValue().increment(key);
@@ -36,7 +36,7 @@ public class CourseRankingService {
     /**
      * 减少课程收藏数
      */
-    public void decrementSubscription(int courseId) {
+    public void decrementSubscription(long courseId) {
         validateCourseId(courseId);
         String key = COURSE_SUBSCRIPTION_PREFIX + courseId;
         Long count = redisTemplate.opsForValue().decrement(key);
@@ -49,7 +49,7 @@ public class CourseRankingService {
     /**
      * 增加课程学习数
      */
-    public void incrementLearning(int courseId) {
+    public void incrementLearning(long courseId) {
         validateCourseId(courseId);
         String key = COURSE_LEARNING_PREFIX + courseId;
         redisTemplate.opsForValue().increment(key);
@@ -59,7 +59,7 @@ public class CourseRankingService {
     /**
      * 减少课程学习数
      */
-    public void decrementLearning(int courseId) {
+    public void decrementLearning(long courseId) {
         validateCourseId(courseId);
         String key = COURSE_LEARNING_PREFIX + courseId;
         Long count = redisTemplate.opsForValue().decrement(key);
@@ -72,7 +72,7 @@ public class CourseRankingService {
     /**
      * 更新课程排行榜
      */
-    private void updateCourseRanking(int courseId) {
+    private void updateCourseRanking(long courseId) {
         try {
             String subscriptionKey = COURSE_SUBSCRIPTION_PREFIX + courseId;
             String learningKey = COURSE_LEARNING_PREFIX + courseId;
@@ -140,7 +140,7 @@ public class CourseRankingService {
     /**
      * 批量初始化课程统计数据（用于定时任务）
      */
-    public void initializeCourseStats(int courseId, long subscriptionCount, long learningCount) {
+    public void initializeCourseStats(long courseId, long subscriptionCount, long learningCount) {
         validateCourseId(courseId);
         try {
             String subscriptionKey = COURSE_SUBSCRIPTION_PREFIX + courseId;

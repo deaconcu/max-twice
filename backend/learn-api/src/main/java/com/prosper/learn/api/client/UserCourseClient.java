@@ -1,7 +1,7 @@
 package com.prosper.learn.api.client;
 
-import com.prosper.learn.dto.Response;
-import com.prosper.learn.dto.UserCourseDTO;
+import com.prosper.learn.dto.response.Response;
+import com.prosper.learn.dto.response.UserCourseDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 

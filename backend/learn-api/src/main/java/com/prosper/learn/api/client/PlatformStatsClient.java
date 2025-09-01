@@ -1,9 +1,7 @@
 package com.prosper.learn.api.client;
 
-import com.prosper.learn.dto.Response;
-import com.prosper.learn.dto.PlatformStatsDTO;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
+import com.prosper.learn.dto.response.Response;
+import com.prosper.learn.dto.response.PlatformStatsDTO;
 
 /**
  * 平台统计数据接口

@@ -12,16 +12,12 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
 import com.prosper.learn.domain.util.Converter;
-import com.prosper.learn.dto.RoadmapDTO;
+import com.prosper.learn.dto.response.RoadmapDTO;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
 import com.prosper.learn.persistence.dataobject.UserCourseDO;
 import com.prosper.learn.persistence.dataobject.UserProfileDO;
-import com.prosper.learn.persistence.mapper.CourseMapper;
-import com.prosper.learn.persistence.mapper.RoadmapMapper;
-import com.prosper.learn.persistence.mapper.UserMapper;
-import com.prosper.learn.persistence.mapper.UserProfileMapper;
-import com.prosper.learn.persistence.mapper.UserRoadmapMapper;
+import com.prosper.learn.domain.service.data.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -41,11 +37,11 @@ public class RoadmapService {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
     
-    private final CourseMapper courseMapper;
-    private final RoadmapMapper roadmapMapper;
-    private final UserMapper userMapper;
-    private final UserProfileMapper userProfileMapper;
-    private final UserRoadmapMapper userRoadmapMapper;
+    private final CourseDataService courseDataService;
+    private final RoadmapDataService roadmapDataService;
+    private final UserDataService userDataService;
+    private final UserProfileDataService userProfileDataService;
+    private final UserRoadmapDataService userRoadmapDataService;
     private final UpvoteService upvoteService;
     private final UserCourseService userCourseService;
     private final ScoreCalculationService scoreCalculationService;
@@ -57,16 +53,16 @@ public class RoadmapService {
     
     // ========== 公共方法 ==========
 
-    public RoadmapDTO getById(int id, int userId) {
-        validateRoadmapId((long) id);
-        validateUserId((long) userId);
+    public RoadmapDTO getById(long id, long userId) {
+        validateRoadmapId(id);
+        validateUserId(userId);
         
-        RoadmapDO roadmapDO = roadmapMapper.getById(id);
+        RoadmapDO roadmapDO = roadmapDataService.getById(id);
         if (roadmapDO == null) {
             return null;
         }
 
-        RoadmapDTO dto = Converter.INSTANCE.toRoadmapDTOWithUser(roadmapDO, userMapper);
+        RoadmapDTO dto = Converter.INSTANCE.toRoadmapDTOWithUser(roadmapDO, userDataService);
         dto.setUpvoted(upvoteService.hasUpvotedRoadmap(dto.getId(), userId));
         return dto;
     }
@@ -274,7 +270,7 @@ public class RoadmapService {
         }
 
         try {
-            List<CourseDO> courses = courseMapper.getByIds(courseIds);
+            List<CourseDO> courses = courseDataService.getByIds(courseIds);
             for (CourseDO course : courses) {
                 courseNames.put(course.getId(), course.getName());
             }
@@ -304,20 +300,20 @@ public class RoadmapService {
             pinnedRoadmapIds = getPinnedRoadmapIds(userId, professionId);
             
             if (!pinnedRoadmapIds.isEmpty()) {
-                List<RoadmapDO> pinnedRoadmaps = roadmapMapper.getByIds(pinnedRoadmapIds);
+                List<RoadmapDO> pinnedRoadmaps = roadmapDataService.getByIds(pinnedRoadmapIds);
                 roadmapList.addAll(pinnedRoadmaps);
             }
 
             int remainingLimit = limit - roadmapList.size();
             if (remainingLimit > 0) {
-                List<RoadmapDO> otherRoadmaps = roadmapMapper.getListByProfessionExcludingOrderByScore(
+                List<RoadmapDO> otherRoadmaps = roadmapDataService.getListByProfessionExcludingOrderByScore(
                     professionId, 0, remainingLimit, pinnedRoadmapIds);
                 roadmapList.addAll(otherRoadmaps);
             }
         } else {
-            RoadmapDO lastRoadmap = roadmapMapper.getById(lastId);
+            RoadmapDO lastRoadmap = roadmapDataService.getById(lastId);
             if (lastRoadmap != null) {
-                roadmapList = roadmapMapper.getListByProfessionAfterScoreExcluding(
+                roadmapList = roadmapDataService.getListByProfessionAfterScoreExcluding(
                         professionId, lastRoadmap.getScore(), lastId, limit, null);
             }
         }
@@ -348,7 +344,7 @@ public class RoadmapService {
         roadmapDO.setContentHash(calculateContentHash(content));
         roadmapDO.setUpdatedAt(LocalDateTime.now());
 
-        roadmapMapper.update(roadmapDO);
+        roadmapDataService.update(roadmapDO);
     }
 
     /**
@@ -356,15 +352,15 @@ public class RoadmapService {
      */
     @Transactional
     public RoadmapDTO upvoteRoadmap(Long id, long userId) {
-        boolean voted = upvoteService.upvoteRoadmap(id.intValue(), (int)userId);
+        boolean voted = upvoteService.upvoteRoadmap(id, userId);
 
         int voteDelta = voted ? 1 : -1;
-        roadmapMapper.updateVoteCount(id.intValue(), voteDelta);
+        roadmapDataService.updateVoteCount(id, voteDelta);
 
-        RoadmapDO roadmapDO = roadmapMapper.getById(id.intValue());
+        RoadmapDO roadmapDO = roadmapDataService.getById(id);
 
         scoreCalculationService.checkAndUpdateRoadmapScore(roadmapDO);
-        roadmapDO = roadmapMapper.getById(id.intValue());
+        roadmapDO = roadmapDataService.getById(id);
 
         RoadmapDTO roadmapDTO = Converter.INSTANCE.toRoadMapDTO(roadmapDO);
         roadmapDTO.setUpvoted(voted);
@@ -396,7 +392,7 @@ public class RoadmapService {
         roadmapDO.setCreatedAt(LocalDateTime.now());
         roadmapDO.setUpdatedAt(LocalDateTime.now());
 
-        roadmapMapper.insert(roadmapDO);
+        roadmapDataService.insert(roadmapDO);
         return roadmapDO.getId();
     }
 
@@ -407,7 +403,7 @@ public class RoadmapService {
         validateRoadmapId(id);
         validateUserId(userId);
         
-        RoadmapDTO roadmapDTO = getById(id.intValue(), (int)userId);
+        RoadmapDTO roadmapDTO = getById(id, userId);
 
         if (roadmapDTO == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
@@ -426,7 +422,7 @@ public class RoadmapService {
      */
     @Transactional
     public String pinRoadmap(Long professionId, Long roadmapId, long userId) {
-        UserProfileDO userProfile = userProfileMapper.getById(userId);
+        UserProfileDO userProfile = userProfileDataService.getById(userId);
         Map<String, List<Long>> pinMap = new HashMap<>();
 
         if (userProfile != null && userProfile.getRoadmapPin() != null) {
@@ -472,9 +468,9 @@ public class RoadmapService {
             userProfile.setUserId(userId);
             userProfile.setRoadmapPin(updatedPinJson);
             userProfile.setSubscription("");
-            userProfileMapper.insert(userProfile);
+            userProfileDataService.insert(userProfile);
         } else {
-            userProfileMapper.updateRoadmapPin(userId, updatedPinJson);
+            userProfileDataService.updateRoadmapPin(userId, updatedPinJson);
         }
 
         return message;
@@ -507,7 +503,7 @@ public class RoadmapService {
     }
     
     private RoadmapDO validateRoadmapExists(Long roadmapId) {
-        RoadmapDO roadmapDO = roadmapMapper.getById(roadmapId.intValue());
+        RoadmapDO roadmapDO = roadmapDataService.getById(roadmapId);
         if (roadmapDO == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
@@ -563,7 +559,7 @@ public class RoadmapService {
     }
     
     private List<Long> getPinnedRoadmapIds(long userId, Long professionId) {
-        UserProfileDO userProfile = userProfileMapper.getById(userId);
+        UserProfileDO userProfile = userProfileDataService.getById(userId);
         if (userProfile == null || userProfile.getRoadmapPin() == null) {
             return new ArrayList<>();
         }
@@ -618,7 +614,7 @@ public class RoadmapService {
     
     private Set<Long> getLearningIds(long userId, List<Long> roadmapIds) {
         if (systemProperties.getRoadmap().isEnableBatchStatusQuery()) {
-            List<Long> learningRoadmapIds = userRoadmapMapper.getBatchLearningStatus(userId, roadmapIds);
+            List<Long> learningRoadmapIds = userRoadmapDataService.getBatchLearningStatus(userId, roadmapIds);
             return new HashSet<>(learningRoadmapIds);
         }
         return new HashSet<>();
@@ -652,9 +648,9 @@ public class RoadmapService {
                 userProfile.setUserId(userId);
                 userProfile.setRoadmapPin(updatedPinJson);
                 userProfile.setSubscription(DEFAULT_EMPTY_STRING);
-                userProfileMapper.insert(userProfile);
+                userProfileDataService.insert(userProfile);
             } else {
-                userProfileMapper.updateRoadmapPin(userId, updatedPinJson);
+                userProfileDataService.updateRoadmapPin(userId, updatedPinJson);
             }
         } catch (JsonProcessingException e) {
             log.error("更新置顶数据失败", e);

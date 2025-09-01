@@ -3,12 +3,13 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.dto.CourseDTO;
-import com.prosper.learn.dto.CourseDTOV3;
-import com.prosper.learn.dto.CourseDTOV4;
+import com.prosper.learn.dto.response.CourseDTO;
+import com.prosper.learn.dto.response.CourseDTOV3;
+import com.prosper.learn.dto.response.CourseDTOV4;
 import com.prosper.learn.domain.service.business.CourseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -129,8 +130,8 @@ public class CoursesController {
     @PostMapping("/courses/{parentId}/subcourses")
     public ApiResponse<Object> createSubcourse(
             @PathVariable Long parentId,
-            @RequestParam String name, 
-            @RequestParam String description) {
+            @JsonParam("name") String name, 
+            @JsonParam("description") String description) {
         
         long userId = StpUtil.getLoginIdAsLong();
         courseService.createSubcourse(name, description, parentId, userId);
@@ -144,8 +145,8 @@ public class CoursesController {
     @PostMapping("/courses/{id}/approve")
     public ApiResponse<Object> approveCourse(
             @PathVariable Long id, 
-            @RequestParam String action, 
-            @RequestParam(required = false) String rejectedReason) {
+            @JsonParam("action") String action, 
+            @JsonParam(value = "rejectedReason", required = false) String rejectedReason) {
         
         if (!courseService.exist(id)) {
             throw ErrorCode.SYSTEM_ERROR.exception();

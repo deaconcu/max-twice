@@ -3,8 +3,9 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.basic.MessageService;
-import com.prosper.learn.dto.message.MessageDTO;
+import com.prosper.learn.dto.response.message.MessageDTO;
 import lombok.RequiredArgsConstructor;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,10 +28,10 @@ public class MessagesController {
      */
     @PostMapping("/messages/course-applications")
     public ApiResponse<Void> applyCourse(
-            @RequestParam String title, 
-            @RequestParam String summary, 
-            @RequestParam String explanation, 
-            @RequestParam Long parentId) {
+            @JsonParam("title") String title, 
+            @JsonParam("summary") String summary, 
+            @JsonParam("explanation") String explanation, 
+            @JsonParam("parentId") Long parentId) {
         
         long userId = StpUtil.getLoginIdAsLong();
         messageService.applyCourse(title, summary, explanation, parentId, userId);
@@ -72,9 +73,9 @@ public class MessagesController {
      */
     @PostMapping("/messages/system")
     public ApiResponse<Void> postSystemMessage(
-            @RequestParam int type, 
-            @RequestParam Long userId, 
-            @RequestParam String content) {
+            @JsonParam("type") Integer type, 
+            @JsonParam("userId") Long userId, 
+            @JsonParam("content") String content) {
         
         //messageService.createSystemMessage(type, userId, content);
         return ApiResponse.success();
@@ -87,7 +88,7 @@ public class MessagesController {
     @PutMapping("/messages/course-applications/{id}")
     public ApiResponse<Void> modifyCourseApply(
             @PathVariable Long id, 
-            @RequestParam String reply) {
+            @JsonParam("reply") String reply) {
         
         messageService.modifyCourseApply(id, reply);
         return ApiResponse.success();

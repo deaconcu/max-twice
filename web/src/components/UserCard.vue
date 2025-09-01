@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, nextTick, watch, toRef, inject } from 'vue';
-import { learnService, userService } from '@/services/learnService';
+import { userServiceV1, followServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useI18n } from 'vue-i18n'
 
 const ps = defineProps(['id', 'name']);
@@ -20,7 +20,7 @@ const getUser = async (id) => {
   try {
     console.log("begin post");
 
-    const response = await userService.getUser(id);
+    const response = await userServiceV1.getUser(id);
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {
@@ -37,7 +37,7 @@ const follow = async (id) => {
   try {
     console.log("begin follow");
 
-    const response = await userService.follow(id);
+    const response = await followServiceV1.follow(id);
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {
@@ -53,7 +53,7 @@ const unfollow = async (id) => {
   try {
     console.log("begin follow");
 
-    const response = await userService.unfollow(id);
+    const response = await followServiceV1.unfollow(id);
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {

@@ -82,4 +82,18 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
             throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
+    
+    /**
+     * 统计活跃节点数量
+     */
+    public Long countActiveNodes() {
+        return nodeMapper.countActiveNodes();
+    }
+
+    /**
+     * 插入新节点
+     */
+    public void insert(NodeDO nodeDO) {
+        nodeMapper.insert(nodeDO);
+    }
 }

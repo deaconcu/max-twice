@@ -70,4 +70,18 @@ public class FollowDataService extends AbstractDataService<FollowDO, FollowMappe
     public void delete(long followerId, long followeeId) {
         followMapper.delete(followerId, followeeId);
     }
+    
+    /**
+     * 插入关注关系
+     */
+    public void insert(Long followerId, Long followeeId) {
+        followMapper.insert(followerId, followeeId);
+    }
+    
+    /**
+     * 获取关注列表
+     */
+    public List<FollowDO> getList(Long followerId, java.time.LocalDateTime lastCreateTime, int limit) {
+        return followMapper.getList(followerId, lastCreateTime, limit);
+    }
 }

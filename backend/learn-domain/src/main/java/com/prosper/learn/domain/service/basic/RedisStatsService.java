@@ -335,7 +335,7 @@ public class RedisStatsService {
      * @param userId 用户ID
      * @throws BusinessException 当参数无效时抛出异常
      */
-    public void removeComment(Long articleId, Integer userId) {
+    public void removeComment(Long articleId, Long userId) {
         // 参数类型转换和验证
         if (articleId == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("文章ID不能为空");

@@ -6,9 +6,9 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ProfessionRankingService;
 import com.prosper.learn.domain.util.Converter;
-import com.prosper.learn.dto.ProfessionDTO;
+import com.prosper.learn.dto.response.ProfessionDTO;
 import com.prosper.learn.persistence.dataobject.ProfessionDO;
-import com.prosper.learn.persistence.mapper.ProfessionMapper;
+import com.prosper.learn.domain.service.data.ProfessionDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProfessionService {
 
-    private final ProfessionMapper professionMapper;
+    private final ProfessionDataService professionDataService;
     private final ProfessionRankingService professionRankingService;
     private final SystemProperties systemProperties;
     
@@ -33,34 +33,34 @@ public class ProfessionService {
     
     public ProfessionDTO getById(long id) {
         validateProfessionId(id);
-        ProfessionDO professionDO = professionMapper.getById(id);
+        ProfessionDO professionDO = professionDataService.getById(id);
         return professionDO != null ? Converter.INSTANCE.toProfessionDTO(professionDO) : null;
     }
 
     public List<ProfessionDTO> getListByStateAndLastId(ProfessionState state, long lastId) {
-        List<ProfessionDO> professionDOList = professionMapper.listByStateAndLastId(state.value(), lastId);
+        List<ProfessionDO> professionDOList = professionDataService.listByStateAndLastId(state.value(), lastId);
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }
 
     public List<ProfessionDTO> getListByMainCategoryAndLastId(int mainCategory, long lastId) {
-        List<ProfessionDO> professionDOList = professionMapper.listByMainCategoryAndLastId(mainCategory, lastId);
+        List<ProfessionDO> professionDOList = professionDataService.listByMainCategoryAndLastId(mainCategory, lastId);
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }
 
-    public List<ProfessionDTO> getListBySubCategoryAndLastId(int subCategory, int lastId) {
-        List<ProfessionDO> professionDOList = professionMapper.listBySubCategoryAndLastId(subCategory, lastId);
+    public List<ProfessionDTO> getListBySubCategoryAndLastId(int subCategory, long lastId) {
+        List<ProfessionDO> professionDOList = professionDataService.listBySubCategoryAndLastId(subCategory, lastId);
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }
 
     public List<ProfessionDTO> getListByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, long lastId) {
-        List<ProfessionDO> professionDOList = professionMapper.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
+        List<ProfessionDO> professionDOList = professionDataService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }
 
     public List<ProfessionDTO> getListByPage(int page) {
         validatePageNumber(page);
         int pageSize = systemProperties.getProfession().getDefaultPageSize();
-        List<ProfessionDO> professionDOList = professionMapper.listByPage((page - 1) * pageSize, pageSize);
+        List<ProfessionDO> professionDOList = professionDataService.listByPage((page - 1) * pageSize, pageSize);
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }
 
@@ -73,14 +73,14 @@ public class ProfessionService {
         ProfessionDO professionDO = Converter.INSTANCE.toProfessionDO(professionDTO);
         professionDO.setState(ProfessionState.SUBMITTED.value());
         professionDO.setRejectedReason(DEFAULT_EMPTY_STRING);
-        professionMapper.insert(professionDO);
+        professionDataService.insert(professionDO);
         return professionDO.getId();
     }
 
     public void update(ProfessionDTO professionDTO) {
         validateProfessionForUpdate(professionDTO);
         ProfessionDO professionDO = Converter.INSTANCE.toProfessionDO(professionDTO);
-        professionMapper.update(professionDO);
+        professionDataService.update(professionDO);
     }
 
     public void approve(long id) {
@@ -91,9 +91,9 @@ public class ProfessionService {
         }
         
         if (systemProperties.getProfession().isEnableConcurrencyCheck()) {
-            validateConcurrentStateChange(professionMapper.approve(id));
+            validateConcurrentStateChange(professionDataService.approve(id));
         } else {
-            professionMapper.approve(id);
+            professionDataService.approve(id);
         }
     }
 
@@ -107,15 +107,15 @@ public class ProfessionService {
         String reason = rejectedReason != null ? rejectedReason : DEFAULT_EMPTY_STRING;
         
         if (systemProperties.getProfession().isEnableConcurrencyCheck()) {
-            validateConcurrentStateChange(professionMapper.reject(id, reason));
+            validateConcurrentStateChange(professionDataService.reject(id, reason));
         } else {
-            professionMapper.reject(id, reason);
+            professionDataService.reject(id, reason);
         }
     }
 
     public void delete(long id) {
         validateProfessionId(id);
-        professionMapper.delete(id);
+        professionDataService.delete(id);
     }
 
     public List<ProfessionDTO> getHotProfessions(int limit) {
@@ -128,7 +128,7 @@ public class ProfessionService {
                 return new ArrayList<>();
             }
             
-            List<ProfessionDO> professionDOList = professionMapper.getByIds(hotProfessionIds);
+            List<ProfessionDO> professionDOList = professionDataService.getByIds(hotProfessionIds);
             
             List<ProfessionDTO> result = new ArrayList<>();
             for (ProfessionDO professionDO : professionDOList) {

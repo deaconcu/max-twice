@@ -5,8 +5,8 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.RoadmapService;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
 import com.prosper.learn.domain.service.business.UpvoteService;
-import com.prosper.learn.dto.Response;
-import com.prosper.learn.dto.RoadmapDTO;
+import com.prosper.learn.dto.response.Response;
+import com.prosper.learn.dto.response.RoadmapDTO;
 import com.prosper.learn.persistence.mapper.RoadmapMapper;
 import com.prosper.learn.persistence.mapper.UserProfileMapper;
 import com.prosper.learn.persistence.mapper.UserRoadmapMapper;
@@ -53,7 +53,7 @@ public class RoadmapController implements RoadmapClient {
         List<Long> pinnedRoadmapIds = new ArrayList<>();
         if (lastId == null || lastId == 0) {
             // 获取当前用户的置顶路线
-            int userId = StpUtil.getLoginIdAsInt();
+            long userId = StpUtil.getLoginIdAsLong();
             UserProfileDO userProfile = userProfileMapper.getById(userId);
 
             if (userProfile != null && userProfile.getRoadmapPin() != null) {
@@ -169,13 +169,13 @@ public class RoadmapController implements RoadmapClient {
             throw ErrorCode.ROADMAP_CONTENT_INVALID.exception();
         }
 
-        RoadmapDO roadmapDO = roadmapMapper.getById(id.intValue());
+        RoadmapDO roadmapDO = roadmapMapper.getById(id);
         if (roadmapDO == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
 
         // 检查权限（简单起见，只允许创建者修改）
-        int currentUserId = StpUtil.getLoginIdAsInt();
+        long currentUserId = StpUtil.getLoginIdAsLong();
         if (roadmapDO.getCreatorId() != currentUserId) {
             throw ErrorCode.PERMISSION_DENIED.exception();
         }
@@ -195,21 +195,21 @@ public class RoadmapController implements RoadmapClient {
             throw ErrorCode.USER_NOT_LOGIN.exception();
         }
 
-        int userId = StpUtil.getLoginIdAsInt();
+        long userId = StpUtil.getLoginIdAsLong();
         // 使用点赞帖子的方法，类型为1（once）
-        boolean voted = upvoteService.upvoteRoadmap(id.intValue(), userId);
+        boolean voted = upvoteService.upvoteRoadmap(id, userId);
 
         int voteDelta = voted ? 1 : -1;
-        roadmapMapper.updateVoteCount(id.intValue(), voteDelta);
+        roadmapMapper.updateVoteCount(id, voteDelta);
 
         // 获取最新的roadmap数据
-        RoadmapDO roadmapDO = roadmapMapper.getById(id.intValue());
+        RoadmapDO roadmapDO = roadmapMapper.getById(id);
 
         // 实时更新评分
         try {
             scoreCalculationService.checkAndUpdateRoadmapScore(roadmapDO);
             // 重新获取更新后的数据
-            roadmapDO = roadmapMapper.getById(id.intValue());
+            roadmapDO = roadmapMapper.getById(id);
         } catch (Exception e) {
             // 评分更新失败不应该影响点赞操作
             log.warn("更新roadmap评分失败: roadmapId={}", id, e);
@@ -253,8 +253,8 @@ public class RoadmapController implements RoadmapClient {
 
     @Override
     public Response<RoadmapDTO> getById(Long id) {
-        int userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : 0;
-        RoadmapDTO roadmapDTO = roadmapService.getById(id.intValue(), userId);
+        long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : 0;
+        RoadmapDTO roadmapDTO = roadmapService.getById(id, userId);
 
         if (roadmapDTO == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();

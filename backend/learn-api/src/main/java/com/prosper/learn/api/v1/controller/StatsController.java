@@ -4,9 +4,10 @@ import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.basic.RedisStatsService;
 import com.prosper.learn.domain.service.basic.DailyStatsService;
 import com.prosper.learn.domain.service.basic.StatsMonitorService;
-import com.prosper.learn.dto.UserStatsDTO;
+import com.prosper.learn.dto.response.UserStatsDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -31,9 +32,9 @@ public class StatsController {
      */
     @PostMapping("/stats/views")
     public ApiResponse<Void> recordView(
-            @RequestParam Long articleId, 
-            @RequestParam Long userId, 
-            @RequestParam String ipAddress) {
+            @JsonParam("articleId") Long articleId, 
+            @JsonParam("userId") Long userId, 
+            @JsonParam("ipAddress") String ipAddress) {
         
         redisStatsService.recordArticleView(articleId, userId);
         return ApiResponse.success();
@@ -120,7 +121,7 @@ public class StatsController {
      * 映射: POST /api/stats/sync/date → POST /api/v1/stats/sync/date?date=xxx
      */
     @PostMapping("/stats/sync/date")
-    public ApiResponse<Object> syncByDate(@RequestParam String date) {
+    public ApiResponse<Object> syncByDate(@JsonParam("date") String date) {
         LocalDate targetDate = LocalDate.parse(date);
         dailyStatsService.syncSpecificDate(targetDate);
         return ApiResponse.success("指定日期统计数据同步成功");

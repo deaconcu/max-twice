@@ -3,7 +3,12 @@ import { ref, onMounted, onUnmounted, inject, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
-import { learnService } from '@/services/learnService';
+import { 
+  pageServiceV1, 
+  courseServiceV1, 
+  subscriptionServiceV1,
+  progressServiceV1 
+} from '@/services/api/v1/apiServiceV1';
 import TreeNode from '../components/TreeNode.vue';
 import PostingList from '../components/PostingList.vue';
 import ConfigContents from '../components/ConfigContents.vue';
@@ -104,13 +109,13 @@ async function loadData(parts) {
     //const response = await learnService.read(courseId, path, nodeId, postId, commentId);
     let response;
     if ('commentId' in route.query) {
-      response = await learnService.readByComment(route.query.commentId);
+      response = await pageServiceV1.readByComment(route.query.commentId);
     } else if ('postId' in route.query) {
-      response = await learnService.readByPost(route.query.postId);
+      response = await pageServiceV1.readByPost(route.query.postId);
     } else if ('nodeId' in route.query) {
-      response = await learnService.readByNode(route.query.nodeId);
+      response = await pageServiceV1.readByNode(route.query.nodeId);
     } else if ('courseId' in route.query) {
-      response = await learnService.readByPath(route.query.courseId, route.query.path);
+      response = await pageServiceV1.readByCoursePath(route.query.courseId, route.query.path);
     }
 
     console.log("response: " + JSON.stringify(response));
@@ -245,7 +250,7 @@ const postApplyCourse = async () => {
     
     isCreatingSubcourse.value = true
     console.log("courseId: " + route.params.courseId);
-    const response = await learnService.createSubcourse(applyCourseData.value.name, applyCourseData.value.description, route.query.courseId)
+    const response = await courseServiceV1.createSubcourse(route.query.courseId, applyCourseData.value.name, applyCourseData.value.description)
     
     if (response.code === 200) {
       showSnackbar(t('read.subcourse.applySuccess'), "success")
@@ -342,7 +347,7 @@ const getAllNodeIdsFromToc = (tocNode) => {
 // 设置课程为已完成
 const completeCourse = async (courseId) => {
   try {
-    const response = await learnService.completeCourse(courseId);
+    const response = await progressServiceV1.completeCourse(courseId);
     if (response.code === 200) {
       showCongratulations.value = true;
       // 更新当前数据中的课程完成状态
@@ -396,7 +401,7 @@ const getNextNodeInfo = () => {
 // 加载父课程信息
 // const loadParentCourseInfo = async (parentId) => {
 //   try {
-//     const response = await learnService.course(parentId)
+//     const response = await courseServiceV1.getCourse(parentId)
 //     if (response.code === 200) {
 //       parentCourseInfo.value = response.data
 //     } else {
@@ -432,9 +437,9 @@ const subscript = async (courseId, action) => {
   let response = null;
   try {
     if (action) {
-      response = await learnService.subscript(courseId);
+      response = await subscriptionServiceV1.subscribe(courseId);
     } else {
-      response = await learnService.unsubscript(courseId);
+      response = await subscriptionServiceV1.unsubscribe(courseId);
     }
 
     if (response.code === 401) {
@@ -462,7 +467,7 @@ const subscript = async (courseId, action) => {
 // 开始学习课程
 const startCourse = async () => {
   try {
-    const response = await learnService.startCourse(route.query.courseId);
+    const response = await progressServiceV1.startCourse(route.query.courseId);
     
     if (response.code === 401) {
       console.log('not login');

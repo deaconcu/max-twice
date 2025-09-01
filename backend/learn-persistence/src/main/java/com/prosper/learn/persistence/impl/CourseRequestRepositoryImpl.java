@@ -11,7 +11,7 @@ public class CourseRequestRepositoryImpl { //implements CourseRequestRepository 
     }
 
     @Override
-    public CourseRequest find(Integer id) {
+    public CourseRequest find(Long id) {
         return Converter.INSTANCE.requestToEntity(courseRequestMapper.getById(id));
     }
 
@@ -21,7 +21,7 @@ public class CourseRequestRepositoryImpl { //implements CourseRequestRepository 
         return Converter.INSTANCE.requestToEntity(courseRequestMapper.list(limit, offset));
     }
 
-    public List<CourseRequest> listByUser(int userId, int count, int offset) {
+    public List<CourseRequest> listByUser(long userId, int count, int offset) {
         return Converter.INSTANCE.requestToEntity(courseRequestMapper.listByUserId(userId, count, offset));
     }
 

@@ -95,4 +95,67 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
             throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
+    
+    /**
+     * 统计活跃文章数量
+     */
+    public Long countActiveArticles() {
+        return postMapper.countActiveArticles();
+    }
+    
+    /**
+     * 插入帖子
+     */
+    public void insert(PostDO post) {
+        postMapper.insert(post);
+    }
+    
+    /**
+     * 根据用户获取文章列表
+     */
+    public List<PostDO> getArticleListByUser(long userId, long lastId, int limit) {
+        return postMapper.getArticleListByUser(userId, lastId, limit);
+    }
+    
+    /**
+     * 根据用户获取内容列表
+     */
+    public List<PostDO> getContentsListByUser(long userId, long lastId, int limit) {
+        return postMapper.getContentsListByUser(userId, lastId, limit);
+    }
+    
+    /**
+     * 根据节点和分页获取帖子列表
+     */
+    public List<PostDO> getListByNodeAndScoreAndPaginated(Long nodeId, double score, Long offsetId, int limit, Integer type) {
+        return postMapper.getListByNodeAndScoreAndPaginated(nodeId, score, offsetId, limit, type);
+    }
+    
+    /**
+     * 根据节点获取帖子列表
+     */
+    public List<PostDO> getListByNode(Long nodeId, int limit, Integer type) {
+        return postMapper.getListByNode(nodeId, limit, type);
+    }
+    
+    /**
+     * 根据状态获取帖子列表
+     */
+    public List<PostDO> getListByState(Integer state, int limit) {
+        return postMapper.getListByState(state, limit);
+    }
+
+    /**
+     * 根据节点和分数获取帖子列表
+     */
+    public List<PostDO> getListByNodeAndScore(long nodeId, int limit, Integer state) {
+        return postMapper.getListByNodeAndScore(nodeId, limit, state);
+    }
+
+    /**
+     * 根据节点和分页获取帖子列表
+     */
+    public List<PostDO> getListByLastId(long nodeId, long lastId, int limit, Integer state) {
+        return postMapper.getListByLastId(nodeId, lastId, limit, state);
+    }
 }

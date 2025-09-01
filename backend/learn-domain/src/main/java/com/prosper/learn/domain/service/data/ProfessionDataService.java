@@ -83,4 +83,74 @@ public class ProfessionDataService extends AbstractDataService<ProfessionDO, Pro
             throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
+    
+    /**
+     * 统计活跃职业数量
+     */
+    public Long countActiveProfessions() {
+        return professionMapper.countActiveProfessions();
+    }
+    
+    /**
+     * 根据状态和最后ID查询
+     */
+    public List<ProfessionDO> listByStateAndLastId(Byte state, long lastId) {
+        return professionMapper.listByStateAndLastId(state, lastId);
+    }
+    
+    /**
+     * 根据主分类和最后ID查询
+     */
+    public List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, long lastId) {
+        return professionMapper.listByMainCategoryAndLastId(mainCategory, lastId);
+    }
+    
+    /**
+     * 根据子分类和最后ID查询
+     */
+    public List<ProfessionDO> listBySubCategoryAndLastId(int subCategory, long lastId) {
+        return professionMapper.listBySubCategoryAndLastId(subCategory, lastId);
+    }
+    
+    /**
+     * 根据主分类、子分类和最后ID查询
+     */
+    public List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, long lastId) {
+        return professionMapper.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
+    }
+
+    /**
+     * 插入新职业
+     */
+    public void insert(ProfessionDO professionDO) {
+        professionMapper.insert(professionDO);
+    }
+
+    /**
+     * 分页查询职业
+     */
+    public List<ProfessionDO> listByPage(int offset, int limit) {
+        return professionMapper.listByPage(offset, limit);
+    }
+
+    /**
+     * 审批通过职业
+     */
+    public int approve(long id) {
+        return professionMapper.approve(id);
+    }
+
+    /**
+     * 拒绝职业申请
+     */
+    public int reject(long id, String reason) {
+        return professionMapper.reject(id, reason);
+    }
+
+    /**
+     * 删除职业
+     */
+    public void delete(long id) {
+        professionMapper.delete(id);
+    }
 }

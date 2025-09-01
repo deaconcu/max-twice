@@ -455,7 +455,8 @@
 
 <script setup>
 import { ref, onMounted, inject } from 'vue'
-import { learnService } from '@/services/learnService'
+import { courseServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { learnService } from '@/services/learnService' // TODO: 临时保留，等待完整迁移
 import { APPROVAL_STATE, APPROVAL_STATE_TEXT } from '@/constants/statusConstants'
 import CourseCard from './CourseCard.vue'
 import { useI18n } from 'vue-i18n'
@@ -573,12 +574,12 @@ const loadCourses = async (isLoadMore = false) => {
 
     // 如果是已通过状态且选择了主分类和子分类，使用分类查询（不支持分页）
     if (currentState === APPROVAL_STATE.APPROVED && selectedMainCategory.value && selectedSubCategory.value) {
-      response = await learnService.getCoursesByCategory(selectedMainCategory.value, selectedSubCategory.value)
+      response = await learnService.getCoursesByCategory(selectedMainCategory.value, selectedSubCategory.value) // TODO: 需要迁移到V1
       // 分类查询不支持下拉刷新
       hasMore.value = false
     } else {
       // 使用lastId进行分页查询
-      response = await learnService.getCoursesByState(currentState, isLoadMore ? lastId.value : 0)
+      response = await courseServiceV1.getCoursesByState(currentState, isLoadMore ? lastId.value : 0)
     }
 
     if (response.code === 200) {
@@ -648,14 +649,14 @@ const searchCourseById = async () => {
   subcourseList.value = []
   
   try {
-    const response = await learnService.course(searchCourseId.value)
+    const response = await courseServiceV1.getCourse(searchCourseId.value)
     
     if (response.code === 200) {
       searchedCourse.value = response.data
       
       // 自动查询子课程（如果可能是父课程）
       try {
-        const subcourseResponse = await learnService.getSubcoursesByParent(searchCourseId.value)
+        const subcourseResponse = await learnService.getSubcoursesByParent(searchCourseId.value) // TODO: 需要迁移到V1
         if (subcourseResponse.code === 200) {
           subcourseList.value = subcourseResponse.data || []
         }
@@ -686,7 +687,7 @@ const searchCourseById = async () => {
 // 加载课程分类数据
 const loadCourseCategories = async () => {
   try {
-    const response = await learnService.getCourseCategories()
+    const response = await learnService.getCourseCategories() // TODO: 需要迁移到V1
     
     if (response.code === 200) {
       const { mainCategories: categories, categoryMapping: mapping } = response.data.courseCategories
@@ -769,7 +770,7 @@ const onMainCategoryChange = (newValue) => {
 const approveCourse = async (course) => {
   try {
     course.approving = true
-    const response = await learnService.operateCourse(course.id, 'approve')
+    const response = await courseServiceV1.approveCourse(course.id, 'approve')
     
     if (response.code === 200) {
       showSnackbar('课程已通过审核')
@@ -815,7 +816,7 @@ const deleteCourse = async (course) => {
 
   try {
     course.deleting = true
-    const response = await learnService.operateCourse(course.id, 'delete')
+    const response = await courseServiceV1.approveCourse(course.id, 'delete')
     
     if (response.code === 200) {
       showSnackbar('课程已删除')
@@ -853,7 +854,7 @@ const deleteCourse = async (course) => {
 const restoreCourse = async (course) => {
   try {
     course.restoring = true
-    const response = await learnService.operateCourse(course.id, 'restore')
+    const response = await courseServiceV1.approveCourse(course.id, 'restore')
     
     if (response.code === 200) {
       showSnackbar('课程已恢复')
@@ -939,7 +940,7 @@ const confirmEdit = async () => {
 
   try {
     editing.value = true
-    const response = await learnService.updateCourse(selectedCourse.value.id, {
+    const response = await courseServiceV1.updateCourse(selectedCourse.value.id, {
       name: editCourseData.value.name,
       description: editCourseData.value.description,
       mainCategory: editCourseData.value.mainCategory,
@@ -999,7 +1000,7 @@ const confirmReject = async () => {
   try {
     rejecting.value = true
     const action = 'reject'
-    const response = await learnService.operateCourse(
+    const response = await courseServiceV1.approveCourse(
       selectedCourse.value.id, 
       action, 
       rejectReason.value.trim()

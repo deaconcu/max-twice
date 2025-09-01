@@ -2,7 +2,8 @@
 import { ref, onMounted, inject, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { learnService, userService } from '@/services/learnService';
+import { progressServiceV1 } from '@/services/api/v1/apiServiceV1';
+import { learnService, userService } from '@/services/learnService'; // TODO: 临时保留，等待完整迁移
 import { useUserStore } from "@/stores/user";
 import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'

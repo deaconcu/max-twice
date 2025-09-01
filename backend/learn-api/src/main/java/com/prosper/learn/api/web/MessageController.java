@@ -5,8 +5,8 @@ import com.prosper.learn.api.client.MessageClient;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.domain.service.basic.MessageService;
-import com.prosper.learn.dto.message.MessageDTO;
-import com.prosper.learn.dto.Response;
+import com.prosper.learn.dto.response.message.MessageDTO;
+import com.prosper.learn.dto.response.Response;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import com.prosper.learn.persistence.mapper.MessageMapper;
 import com.prosper.learn.persistence.mapper.UserMapper;
@@ -62,7 +62,7 @@ public class MessageController implements MessageClient {
         
         List<MessageDTO> messageDTOList = messageService.getSystemList(type, receiverId, lastId);
 
-        int userId = StpUtil.getLoginIdAsInt();
+        long userId = StpUtil.getLoginIdAsLong();
         UserDO userDO = userMapper.getById(userId);
 
         Map<String, Object> result = new HashMap<>();
@@ -104,13 +104,13 @@ public class MessageController implements MessageClient {
             throw new IllegalArgumentException("用户不存在");
         }
 
-        int inviterId = StpUtil.getLoginIdAsInt();
+        long inviterId = StpUtil.getLoginIdAsLong();
 
         messageService.createInviteMessage(userId, inviterId, nodeId);
         return Response.success;
     }
 
-    public Response<List<MessageDTO>> getList(int type, int senderId, int receiverId, int lastId, int conversation) {
+    public Response<List<MessageDTO>> getList(int type, long senderId, long receiverId, long lastId, int conversation) {
         if (senderId <= 0) {
             throw new IllegalArgumentException("发送者ID无效");
         }

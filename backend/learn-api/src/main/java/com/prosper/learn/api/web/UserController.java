@@ -6,9 +6,9 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.business.PostingService;
 import com.prosper.learn.domain.service.business.LearningProgressService;
-import com.prosper.learn.dto.*;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.common.Utils;
+import com.prosper.learn.dto.response.*;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.prosper.learn.dto.Response.*;
+import static com.prosper.learn.dto.response.Response.*;
 
 //@RestController
 @Slf4j
@@ -41,14 +41,14 @@ public class UserController implements UserClient {
 
     @Override
     public Response<UserDTO> getSelf() {
-        int id = StpUtil.getLoginIdAsInt();
+        long id = StpUtil.getLoginIdAsLong();
         UserDO userDO = userMapper.getById(id);
         return Response.success(Converter.INSTANCE.toUserDTO(userDO));
     }
 
     @Override
     public Response<Object> modifySelf(String name, String biography) {
-        int id = StpUtil.getLoginIdAsInt();
+        long id = StpUtil.getLoginIdAsLong();
         UserDO userDO = userMapper.getById(id);
         userDO.setName(name);
         userDO.setBiography(biography);
@@ -58,7 +58,7 @@ public class UserController implements UserClient {
 
     @Override
     public Response<Object> getUser(Long id) {
-        int selfId = StpUtil.getLoginIdAsInt();
+        long selfId = StpUtil.getLoginIdAsLong();
         UserDO userDO = userMapper.getById(id);
 
         if (userDO == null) {
@@ -308,7 +308,7 @@ public class UserController implements UserClient {
 
     @Override
     public Response<Object> follow(Long followeeId) {
-        int followerId = StpUtil.getLoginIdAsInt();
+        long followerId = StpUtil.getLoginIdAsLong();
         UserDO userDO = userMapper.getById(followeeId);
         if (userDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -326,7 +326,7 @@ public class UserController implements UserClient {
 
     @Override
     public Response<Object> unfollow(Long followeeId) {
-        int followerId = StpUtil.getLoginIdAsInt();
+        long followerId = StpUtil.getLoginIdAsLong();
         UserDO  userDO = userMapper.getById(followeeId);
         if (userDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();

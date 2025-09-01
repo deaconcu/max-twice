@@ -2,11 +2,11 @@ package com.prosper.learn.api.web;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.dto.CourseDTO;
-import com.prosper.learn.dto.CourseDTOV4;
-import com.prosper.learn.dto.Response;
+import com.prosper.learn.dto.response.CourseDTO;
+import com.prosper.learn.dto.response.CourseDTOV4;
+import com.prosper.learn.dto.response.Response;
 import com.prosper.learn.api.client.CourseClient;
-import com.prosper.learn.dto.CourseDTOV3;
+import com.prosper.learn.dto.response.CourseDTOV3;
 import com.prosper.learn.domain.service.business.CourseService;
 import com.prosper.learn.domain.service.scheduler.CourseRankingScheduler;
 import com.prosper.learn.domain.util.Converter;

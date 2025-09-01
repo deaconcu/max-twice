@@ -7,16 +7,15 @@ import static com.prosper.learn.common.Enums.PostStatsType;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.domain.config.SystemProperties;
-import com.prosper.learn.dto.DailyStatsDTO;
-import com.prosper.learn.dto.PostDTOV2;
-import com.prosper.learn.dto.UserStatsDTO;
+import com.prosper.learn.dto.response.DailyStatsDTO;
+import com.prosper.learn.dto.response.PostDTOV2;
+import com.prosper.learn.dto.response.UserStatsDTO;
 import com.prosper.learn.persistence.dataobject.UserStatsDO;
 import com.prosper.learn.persistence.dataobject.PostStatsDO;
 import com.prosper.learn.persistence.mapper.PostStatsMapper;
 import com.prosper.learn.persistence.mapper.UserStatsMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -177,7 +176,7 @@ public class DailyStatsService {
         String dayKey = generateDayKey(date);
         
         // 按用户ID分组并聚合当天的完整统计数据
-        Map<Integer, UserDayStats> userDayStatsMap = new HashMap<>();
+        Map<Long, UserDayStats> userDayStatsMap = new HashMap<>();
         
         for (Map.Entry<Object, Object> entry : userStats.entrySet()) {
             String field = (String) entry.getKey();
@@ -188,7 +187,7 @@ public class DailyStatsService {
             String[] parts = field.split(":");
             if (parts.length != 2) continue;
             
-            Integer userId = Integer.parseInt(parts[0]);
+            Long userId = Long.parseLong(parts[0]);
             String statType = parts[1];
             
             UserDayStats dayStats = userDayStatsMap.computeIfAbsent(userId, k -> new UserDayStats());
@@ -214,8 +213,8 @@ public class DailyStatsService {
         
         // 直接覆盖数据库中当天的数据
         int updateCount = 0;
-        for (Map.Entry<Integer, UserDayStats> entry : userDayStatsMap.entrySet()) {
-            Integer userId = entry.getKey();
+        for (Map.Entry<Long, UserDayStats> entry : userDayStatsMap.entrySet()) {
+            Long userId = entry.getKey();
             UserDayStats dayStats = entry.getValue();
             
             try {
@@ -787,7 +786,7 @@ public class DailyStatsService {
      * @param month 月份 (1-12)
      * @return 月度汇总统计数据
      */
-    public Map<String, Integer> getUserMonthStats(Integer userId, int year, int month) {
+    public Map<String, Integer> getUserMonthStats(Long userId, int year, int month) {
         try {
             Map<String, Map<String, Integer>> yearStats = getUserYearStats(userId, year);
             Map<String, Integer> monthTotal = createEmptyUserStatsMap();

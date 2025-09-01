@@ -11,7 +11,7 @@ import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.persistence.dataobject.*;
-import com.prosper.learn.persistence.mapper.*;
+import com.prosper.learn.domain.service.data.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,22 +40,22 @@ import java.util.*;
 public class ContentsService {
 
     /** 课程数据访问接口 */
-    private final CourseMapper courseMapper;
+    private final CourseDataService courseDataService;
     
     /** JSON 对象映射器，用于目录结构的序列化和反序列化 */
     private final ObjectMapper objectMapper;
     
     /** 节点数据访问接口 */
-    private final NodeMapper nodeMapper;
+    private final NodeDataService nodeDataService;
     
     /** 帖子数据访问接口 */
-    private final PostMapper postMapper;
+    private final PostDataService postDataService;
     
     /** 用户课程目录数据访问接口 */
-    private final UserCourseTocMapper userCourseTocMapper;
+    private final UserCourseTocDataService userCourseTocDataService;
     
     /** 课程目录数据访问接口，管理目录内容和引用计数 */
-    private final CourseTocMapper courseTocMapper;
+    private final CourseTocDataService courseTocDataService;
     
     /** 内容管理相关配置属性 */
     private final SystemProperties systemProperties;
@@ -68,7 +68,7 @@ public class ContentsService {
      * @throws BusinessException 当课程不存在时抛出 CONTENTS_COURSE_NOT_FOUND 异常
      */
     private CourseDO validateCourseExists(long courseId) {
-        CourseDO courseDO = courseMapper.getById(courseId);
+        CourseDO courseDO = courseDataService.getById(courseId);
         if (courseDO == null) {
             throw ErrorCode.CONTENTS_COURSE_NOT_FOUND.exception();
         }
@@ -87,7 +87,7 @@ public class ContentsService {
      * @throws BusinessException 当帖子类型为文章时抛出 CONTENTS_INVALID_POST_TYPE 异常
      */
     private PostDO validatePostForContents(long postId) {
-        PostDO postDO = postMapper.get(postId);
+        PostDO postDO = postDataService.getById(postId);
         if (postDO == null) {
             throw ErrorCode.CONTENTS_POST_NOT_FOUND.exception();
         }
@@ -108,7 +108,7 @@ public class ContentsService {
      * @throws BusinessException 当用户目录不存在时抛出 TOC_USER_TOC_NOT_FOUND 异常
      */
     private UserCourseTocDO validateUserTocExists(long userId, long courseId) {
-        UserCourseTocDO userCourseTocDO = userCourseTocMapper.getByUserAndCourse(userId, courseId);
+        UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(userId, courseId);
         if (userCourseTocDO == null) {
             throw ErrorCode.TOC_USER_TOC_NOT_FOUND.exception();
         }
@@ -148,8 +148,8 @@ public class ContentsService {
     private void getCurrentTocAndUpdate(String[] tocHashArr, int tocIndex, UserCourseTocDO userCourseTocDO, 
                                        java.util.function.Function<String, String> contentUpdater) {
         // 1. 获取当前目录内容并减少引用计数
-        CourseTocDO courseTocDO = courseTocMapper.get(tocHashArr[tocIndex - 1]);
-        courseTocMapper.incrRef(courseTocDO.getHash(), -1);
+        CourseTocDO courseTocDO = courseTocDataService.get(tocHashArr[tocIndex - 1]);
+        courseTocDataService.incrRef(courseTocDO.getHash(), -1);
         String currentTocContent = courseTocDO.getToc();
         
         // 2. 应用内容更新操作
@@ -157,15 +157,15 @@ public class ContentsService {
         
         // 3. 保存新版本并增加引用计数
         String hash = Utils.hashSHA(newTocContent);
-        if (courseTocMapper.get(hash) == null) {
-            courseTocMapper.insert(new CourseTocDO(hash, newTocContent));
+        if (courseTocDataService.get(hash) == null) {
+            courseTocDataService.insert(new CourseTocDO(hash, newTocContent));
         }
-        courseTocMapper.incrRef(hash, 1);
+        courseTocDataService.incrRef(hash, 1);
 
         // 4. 更新用户目录指向
         tocHashArr[tocIndex - 1] = hash;
         userCourseTocDO.setToc(String.join(",", tocHashArr));
-        userCourseTocMapper.update(userCourseTocDO);
+        userCourseTocDataService.update(userCourseTocDO);
     }
 
     /**
@@ -185,7 +185,7 @@ public class ContentsService {
     public ArrayNode getToc(long userId, long courseId, boolean create) {
         CourseDO courseDO = validateCourseExists(courseId);
 
-        UserCourseTocDO userCourseTocDO = userCourseTocMapper.getByUserAndCourse(userId, courseId);
+        UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(userId, courseId);
         String tocStr = "";
 
         // 如果用户目录不存在且不需要创建，直接返回null
@@ -200,12 +200,12 @@ public class ContentsService {
             String tosHash = Utils.hashSHA(tocStr);
 
             // 检查是否已存在相同内容的目录，避免重复存储
-            CourseTocDO courseTocDO = courseTocMapper.get(tosHash);
+            CourseTocDO courseTocDO = courseTocDataService.get(tosHash);
             if (courseTocDO == null) {
                 CourseTocDO newToc = new CourseTocDO();
                 newToc.setHash(tosHash);
                 newToc.setToc(tocStr);
-                courseTocMapper.insert(newToc);
+                courseTocDataService.insert(newToc);
             }
 
             // 为用户创建目录记录，指向刚创建的目录版本
@@ -214,7 +214,7 @@ public class ContentsService {
             userCourseTocDO.setUserId(userId);
             userCourseTocDO.setToc(tosHash);
 
-            userCourseTocMapper.insert(userCourseTocDO);
+            userCourseTocDataService.insert(userCourseTocDO);
         } else {
             // 用户目录已存在，获取目录哈希列表
             tocStr = userCourseTocDO.getToc();
@@ -224,7 +224,7 @@ public class ContentsService {
         String[] tocHashArr = tocStr.split(",");
 
         // 批量获取所有目录版本的内容
-        Map<String, CourseTocDO> map = courseTocMapper.getByHashes(tocHashArr);
+        Map<String, CourseTocDO> map = courseTocDataService.getByHashes(tocHashArr);
         for(String tocHash: tocHashArr) {
             try {
                 CourseTocDO courseTocDO = map.get(tocHash);
@@ -253,7 +253,7 @@ public class ContentsService {
     public String getToc(long userId, long courseId, int tocIndex) {
         CourseDO courseDO = validateCourseExists(courseId);
 
-        UserCourseTocDO userCourseTocDO = userCourseTocMapper.getByUserAndCourse(userId, courseId);
+        UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(userId, courseId);
         String tocStr = "";
         if (userCourseTocDO == null) return null;
 
@@ -264,7 +264,7 @@ public class ContentsService {
 
         validateTocIndex(tocIndex, tocHashArr);
 
-        CourseTocDO courseTocDO = courseTocMapper.get(tocHashArr[tocIndex - 1]);
+        CourseTocDO courseTocDO = courseTocDataService.get(tocHashArr[tocIndex - 1]);
         return courseTocDO.getToc();
     }
 

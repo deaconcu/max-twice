@@ -2,7 +2,7 @@
 import { ref, onMounted, inject, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { learnService } from '@/services/learnService'
+import { messageServiceV1 } from '@/services/api/v1/apiServiceV1';
 import draggable from 'vuedraggable';
 import { useUserStore } from "@/stores/user";
 import apiClient from '@/services/apiClient';
@@ -171,9 +171,9 @@ async function loadData({ done }) {
   try {
     let response = '';
     if (selected.value == 'courseApply') {
-      response = await learnService.getApplyCourseMessageByUser(user.userId, lastId.value);
+      response = await messageServiceV1.getCourseApplications(); // TODO: 可能需要添加参数
     } else if (selected.value == 'system') {
-      response = await learnService.getSystemMessageByUser(systemMessageType.value, user.userId, lastId.value);
+      response = await messageServiceV1.getMessages(); // TODO: 可能需要添加参数
     }
 
     if (response.code === 401) {

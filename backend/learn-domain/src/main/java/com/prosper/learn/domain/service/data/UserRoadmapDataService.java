@@ -78,4 +78,34 @@ public class UserRoadmapDataService extends AbstractDataService<UserRoadmapDO, U
     public void deleteByUserAndRoadmap(long userId, long roadmapId) {
         userRoadmapMapper.deleteByUserAndRoadmap(userId, roadmapId);
     }
+
+    /**
+     * 插入新的学习记录
+     */
+    public void insert(UserRoadmapDO userRoadmapDO) {
+        userRoadmapMapper.insert(userRoadmapDO);
+    }
+
+    /**
+     * 批量更新学习记录
+     */
+    public void updateBatch(List<UserRoadmapDO> userRoadmapList) {
+        for (UserRoadmapDO userRoadmapDO : userRoadmapList) {
+            userRoadmapMapper.update(userRoadmapDO);
+        }
+    }
+
+    /**
+     * 根据用户ID查询学习记录
+     */
+    public List<UserRoadmapDO> getByUser(Long userId) {
+        return userRoadmapMapper.getByUser(userId);
+    }
+
+    /**
+     * 批量查询学习状态
+     */
+    public List<Long> getBatchLearningStatus(long userId, List<Long> roadmapIds) {
+        return userRoadmapMapper.getBatchLearningStatus(userId, roadmapIds);
+    }
 }

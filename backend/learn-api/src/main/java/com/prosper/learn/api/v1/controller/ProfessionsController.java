@@ -7,9 +7,10 @@ import static com.prosper.learn.common.Enums.ProfessionState;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.ProfessionService;
 import com.prosper.learn.domain.service.scheduler.ProfessionRankingScheduler;
-import com.prosper.learn.dto.ProfessionDTO;
+import com.prosper.learn.dto.response.ProfessionDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -129,8 +130,8 @@ public class ProfessionsController {
     @PostMapping("/professions/{id}/approve")
     public ApiResponse<Object> approveProfession(
             @PathVariable Long id, 
-            @RequestParam String action, 
-            @RequestParam(required = false) String rejectedReason) {
+            @JsonParam("action") String action, 
+            @JsonParam(value = "rejectedReason", required = false) String rejectedReason) {
         
         return switch (action.toLowerCase()) {
             case "approve" -> {

@@ -5,8 +5,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.api.client.PostClient;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.dto.PostDTO;
-import com.prosper.learn.dto.Response;
+import com.prosper.learn.dto.response.PostDTO;
+import com.prosper.learn.dto.response.Response;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
@@ -160,7 +160,7 @@ public class PostController implements PostClient {
      * @return 按分数排序的文章列表
      */
     @GetMapping("/post/list/by-score")
-    public Response<List<PostDTO>> getPostsByScore(@RequestParam int nodeId,
+    public Response<List<PostDTO>> getPostsByScore(@RequestParam long nodeId,
                                                   @RequestParam(defaultValue = "10") int limit) {
         List<PostDO> postings = postService.getListByScore(nodeId, limit);
         return new Response<>(Converter.INSTANCE.toPostDTO(postings));
@@ -175,9 +175,9 @@ public class PostController implements PostClient {
      * @return 按分数排序的文章列表
      */
     @GetMapping("/post/list/by-score/pagination")
-    public Response<List<PostDTO>> getPostsByScoreWithPagination(@RequestParam int nodeId,
+    public Response<List<PostDTO>> getPostsByScoreWithPagination(@RequestParam long nodeId,
                                                                 @RequestParam(required = false) Double lastScore,
-                                                                @RequestParam(defaultValue = "0") int lastId,
+                                                                @RequestParam(defaultValue = "0") long lastId,
                                                                 @RequestParam(defaultValue = "10") int limit) {
         List<PostDO> postings = postService.getListByScoreWithPagination(nodeId, lastScore, lastId, limit);
         return new Response<>(Converter.INSTANCE.toPostDTO(postings));

@@ -5,8 +5,8 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.basic.RedisStatsService;
 import com.prosper.learn.domain.service.basic.DailyStatsService;
 import com.prosper.learn.domain.service.basic.StatsMonitorService;
-import com.prosper.learn.dto.Response;
-import com.prosper.learn.dto.UserStatsDTO;
+import com.prosper.learn.dto.response.Response;
+import com.prosper.learn.dto.response.UserStatsDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

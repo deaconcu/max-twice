@@ -1,10 +1,8 @@
 package com.prosper.learn.api.client;
 
-import com.prosper.learn.dto.Response;
-import com.prosper.learn.dto.UserStatsDTO;
+import com.prosper.learn.dto.response.Response;
+import com.prosper.learn.dto.response.UserStatsDTO;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
 
 /**
  * 统计数据接口

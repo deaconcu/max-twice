@@ -3,8 +3,8 @@ package com.prosper.learn.api.web;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.client.UserCourseClient;
 import com.prosper.learn.domain.service.business.UserCourseService;
-import com.prosper.learn.dto.Response;
-import com.prosper.learn.dto.UserCourseDTO;
+import com.prosper.learn.dto.response.Response;
+import com.prosper.learn.dto.response.UserCourseDTO;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;

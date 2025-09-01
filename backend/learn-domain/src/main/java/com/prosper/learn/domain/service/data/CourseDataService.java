@@ -113,27 +113,72 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
      * 课程审批
      */
     @CacheEvict(value = "courses", key = "#id")
-    public boolean approve(long id) {
-        try {
-            int result = courseMapper.approve(id);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error approving course: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
-        }
+    public int approve(long id) {
+        return courseMapper.approve(id);
     }
     
     /**
      * 课程拒绝
      */
     @CacheEvict(value = "courses", key = "#id")
-    public boolean reject(long id, String rejectedReason) {
-        try {
-            int result = courseMapper.reject(id, rejectedReason);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error rejecting course: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
-        }
+    public int reject(long id, String rejectedReason) {
+        return courseMapper.reject(id, rejectedReason);
+    }
+    
+    /**
+     * 根据名称搜索课程（不缓存）
+     */
+    public List<CourseDO> searchByName(String name, int limit) {
+        return courseMapper.searchByName(name, limit);
+    }
+    
+    /**
+     * 根据状态和最后ID获取课程列表（不缓存）
+     */
+    public List<CourseDO> listByStateAndLastId(String state, Long lastId) {
+        return courseMapper.listByStateAndLastId(state, lastId);
+    }
+    
+    /**
+     * 根据主分类和子分类获取根课程列表（不缓存）
+     */
+    public List<CourseDO> listRootByCategory(int mainCategory, int subCategory) {
+        return courseMapper.listRootByCategory(mainCategory, subCategory);
+    }
+    
+    /**
+     * 根据父ID获取子课程列表（不缓存）
+     */
+    public List<CourseDO> listByParent(Long parentId) {
+        return courseMapper.listByParent(parentId);
+    }
+    
+    /**
+     * 根据父ID和状态获取子课程列表（不缓存）
+     */
+    public List<CourseDO> listByParentAndState(String state, Long parentId) {
+        return courseMapper.listByParentAndState(state, parentId);
+    }
+    
+    /**
+     * 删除课程
+     */
+    @CacheEvict(value = "courses", key = "#id")
+    public int delete(Long id) {
+        return courseMapper.delete(id);
+    }
+    
+    /**
+     * 插入课程（不清除缓存，新数据不影响现有缓存）
+     */
+    public void insert(CourseDO course) {
+        courseMapper.insert(course);
+    }
+    
+    /**
+     * 统计活跃课程数量
+     */
+    public Long countActiveCourses() {
+        return courseMapper.countActiveCourses();
     }
 }

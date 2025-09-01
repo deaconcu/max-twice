@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, nextTick, watch, toRef, inject } from 'vue';
-import { learnService, userService } from '@/services/learnService';
+import { contentServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import hljs from 'highlight.js';
@@ -51,7 +51,7 @@ const modifyContents = async (postingId, action) => {
     formData.append('postingId', postingId);
     formData.append('action', action);
 
-    const response = await learnService.postContents(formData);
+    const response = await contentServiceV1.operateContent(formData);
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {
@@ -74,7 +74,7 @@ const upvote = async (posting, type) => {
   try {
     console.log("begin post");
 
-    const response = await learnService.upvote(posting.id, 0, type);
+    const response = await upvoteServiceV1.upvote(posting.id, 0, type);
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {

@@ -3,6 +3,7 @@ package com.prosper.learn.api.v1.controller;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.external.AiService;
 import lombok.RequiredArgsConstructor;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -22,8 +23,8 @@ public class AiController {
      */
     @PostMapping("/ai/chat")
     public ApiResponse<String> chatWithGPT(
-            @RequestParam String prompt, 
-            @RequestParam String model) {
+            @JsonParam("prompt") String prompt,
+            @JsonParam("model") String model) {
         
         String answer = aiService.chatWithGPT(prompt, model);
         return ApiResponse.success(answer);

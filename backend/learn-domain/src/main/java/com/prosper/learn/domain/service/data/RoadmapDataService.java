@@ -83,4 +83,40 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
             throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
+    
+    /**
+     * 统计公开路线图数量
+     */
+    public Long countPublicRoadmaps() {
+        return roadmapMapper.countPublicRoadmaps();
+    }
+
+    /**
+     * 插入新路线图
+     */
+    public void insert(RoadmapDO roadmapDO) {
+        roadmapMapper.insert(roadmapDO);
+    }
+
+    /**
+     * 更新投票数
+     */
+    @CacheEvict(value = "roadmaps", key = "#roadmapId")
+    public void updateVoteCount(Long roadmapId, int voteDelta) {
+        roadmapMapper.updateVoteCount(roadmapId, voteDelta);
+    }
+
+    /**
+     * 根据职业和分数排序获取路线图列表（排除指定路线图）
+     */
+    public List<RoadmapDO> getListByProfessionExcludingOrderByScore(Long professionId, int offset, int limit, List<Long> excludeIds) {
+        return roadmapMapper.getListByProfessionExcludingOrderByScore(professionId, offset, limit, excludeIds);
+    }
+
+    /**
+     * 根据职业和分数分页获取路线图列表（排除指定路线图）
+     */
+    public List<RoadmapDO> getListByProfessionAfterScoreExcluding(Long professionId, Double lastScore, Long lastId, int limit, List<Long> excludeIds) {
+        return roadmapMapper.getListByProfessionAfterScoreExcluding(professionId, lastScore, lastId, limit, excludeIds);
+    }
 }

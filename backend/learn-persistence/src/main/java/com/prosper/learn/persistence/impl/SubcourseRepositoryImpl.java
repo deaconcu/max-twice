@@ -13,12 +13,12 @@ public class SubcourseRepositoryImpl { //implements SubcourseRepository {
     }
 
     @Override
-    public Subcourse find(Integer id) {
+    public Subcourse find(Long id) {
         return Converter.INSTANCE.subcourseToEntity(subcourseMapper.getById(id));
     }
 
     @Override
-    public List<Subcourse> findByCourse(int courseId) {
+    public List<Subcourse> findByCourse(long courseId) {
         return Converter.INSTANCE.subcourseToEntity(subcourseMapper.getByCourse(courseId));
     }
 

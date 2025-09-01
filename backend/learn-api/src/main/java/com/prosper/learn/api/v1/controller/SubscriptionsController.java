@@ -5,6 +5,7 @@ import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -34,7 +35,7 @@ public class SubscriptionsController {
      * 映射: POST /user/subscription → POST /api/v1/users/current/subscriptions
      */
     @PostMapping("/users/current/subscriptions")
-    public ApiResponse<Object> subscribe(@RequestParam Long courseId) {
+    public ApiResponse<Object> subscribe(@JsonParam("courseId") Long courseId) {
         long userId = StpUtil.getLoginIdAsLong();
         Object result = userService.subscribe(userId, courseId);
         return ApiResponse.success(result);
@@ -45,7 +46,7 @@ public class SubscriptionsController {
      * 映射: PUT /user/subscription → PUT /api/v1/users/current/subscriptions
      */
     @PutMapping("/users/current/subscriptions")
-    public ApiResponse<Object> updateSubscriptions(@RequestParam String subscription) {
+    public ApiResponse<Object> updateSubscriptions(@JsonParam("subscription") String subscription) {
         long userId = StpUtil.getLoginIdAsLong();
         Object result = userService.updateSubscriptions(userId, subscription);
         return ApiResponse.success(result);

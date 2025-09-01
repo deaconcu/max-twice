@@ -3,7 +3,8 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.FollowService;
-import com.prosper.learn.dto.FolloweeDTO;
+import com.prosper.learn.dto.response.FolloweeDTO;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +28,7 @@ public class FollowsController {
      * 映射: POST /user/follow → POST /api/v1/follows
      */
     @PostMapping("/follows")
-    public ApiResponse<Void> follow(@RequestParam Long followeeId) {
+    public ApiResponse<Void> follow(@JsonParam("followeeId") Long followeeId) {
         Long followerId = StpUtil.getLoginIdAsLong();
         followService.follow(followerId, followeeId);
         return ApiResponse.success();

@@ -2,7 +2,7 @@
 import { ref, onMounted, inject, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { learnService } from '@/services/learnService';
+import { courseServiceV1, messageServiceV1, postServiceV1, commentServiceV1 } from '@/services/api/v1/apiServiceV1';
 import ProfessionManagement from '@/components/admin/ProfessionManagement.vue';
 import SystemConfiguration from '@/components/admin/SystemConfiguration.vue';
 import SystemOperations from '@/components/admin/SystemOperations.vue';
@@ -35,7 +35,12 @@ onMounted(async () => {
 
 const postCourse = async () => {
   try {
-    const response = await learnService.postCourse(courseName.value, courseDesc.value, parentCourseId.value, createCourseMessageId.value);
+    const response = await courseServiceV1.createCourse({
+      name: courseName.value,
+      description: courseDesc.value,
+      parentId: parentCourseId.value,
+      messageId: createCourseMessageId.value
+    });
 
     if (response.code === 401) {
       console.log('not login');
@@ -68,7 +73,7 @@ watch(tab, (newValue, oldValue) => {
 
 const postMessage = async (type, toUserId, reason) => {
   try {
-    const response = await learnService.postSystemMessage(type, toUserId, reason)
+    const response = await messageServiceV1.sendSystemMessage(type, toUserId, reason)
 
     if (response.code === 401) {
       console.log('not login');
@@ -102,7 +107,7 @@ const postList = ref([]);
 
 const getPostSensorList = async () => {
   try {
-    const response = await learnService.postCensorList()
+    const response = await postServiceV1.getPendingPosts()
 
     if (response.code === 401) {
       console.log('not login');
@@ -117,7 +122,7 @@ const getPostSensorList = async () => {
 
 const approvePost = async (post, action) => {
   try {
-    const response = await learnService.approvePost(post.id, action)
+    const response = await postServiceV1.approvePost(post.id, action === 'approve')
 
     if (response.code === 401) {
       console.log('not login');
@@ -135,7 +140,7 @@ const commentList = ref([]);
 
 const getCommentSensorList = async () => {
   try {
-    const response = await learnService.commentCensorList()
+    const response = await commentServiceV1.getPendingComments()
 
     if (response.code === 401) {
       console.log('not login');
@@ -150,7 +155,7 @@ const getCommentSensorList = async () => {
 
 const approveComment = async (comment, action) => {
   try {
-    const response = await learnService.approveComment(comment.id, action)
+    const response = await commentServiceV1.approveComment(comment.id, action)
 
     if (response.code === 401) {
       console.log('not login');

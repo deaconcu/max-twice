@@ -3,9 +3,10 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.PostingService;
-import com.prosper.learn.dto.PostDTO;
+import com.prosper.learn.dto.response.PostDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -103,7 +104,9 @@ public class PostsController {
      * 映射: PUT /post → PUT /api/v1/admin/posts/{id}/approve
      */
     @PutMapping("/admin/posts/{id}/approve")
-    public ApiResponse<PostDTO> approvePost(@PathVariable Long id, @RequestParam boolean approve) {
+    public ApiResponse<PostDTO> approvePost(
+            @PathVariable Long id, 
+            @JsonParam("approve") Boolean approve) {
         PostDTO post = postingService.approvePost(id, approve);
         return ApiResponse.success(post);
     }

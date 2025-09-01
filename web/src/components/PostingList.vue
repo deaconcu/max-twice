@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, nextTick, watch, toRef, onUnmounted, inject, computed } from 'vue';
-import { learnService } from '@/services/learnService';
+import { postServiceV1, progressServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
@@ -193,7 +193,7 @@ async function loadMore({ done }) {
     }
     console.log("begin load: param: " + JSON.stringify(params));
 
-    const response = await learnService.getPosting(params);
+    const response = await postServiceV1.getPosts(params.ids, params.nodeId, params.lastScore, params.lastPostingId);
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {
@@ -231,7 +231,7 @@ const submitAddArticle = async () => {
     }
 
     console.log('request: ' + JSON.stringify(data));
-    const response = await learnService.addPosting(data);
+    const response = await postServiceV1.createPost(data);
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {
@@ -272,7 +272,7 @@ const toggleNodeCompletion = async () => {
   try {
     if (props.data.node.isCompleted) {
       // 取消完成
-      const response = await learnService.unmarkNodeCompleted(props.currNodeId, props.data.course.id);
+      const response = await progressServiceV1.unmarkNodeComplete(props.currNodeId);
       console.log('Unmark node completed response:', response);
       
       if (response.code === 200) {
@@ -295,7 +295,7 @@ const toggleNodeCompletion = async () => {
       }
     } else {
       // 标记完成
-      const response = await learnService.markNodeCompleted(props.currNodeId, props.data.course.id);
+      const response = await progressServiceV1.markNodeComplete(props.currNodeId, props.data.course.id);
       console.log('Mark node completed response:', response);
       
       if (response.code === 200) {
@@ -379,7 +379,7 @@ const handleMarkNodeCompleted = async () => {
   
   try {
     // 标记完成
-    const response = await learnService.markNodeCompleted(props.currNodeId);
+    const response = await progressServiceV1.markNodeComplete(props.currNodeId, props.data.course.id);
     console.log('Mark node completed from posting response:', response);
     
     if (response.code === 200) {

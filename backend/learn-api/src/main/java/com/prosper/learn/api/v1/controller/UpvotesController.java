@@ -5,6 +5,7 @@ import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.UpvoteService;
 import lombok.RequiredArgsConstructor;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
 import static com.prosper.learn.common.Enums.ObjectType.comment;
@@ -27,9 +28,9 @@ public class UpvotesController {
      */
     @PostMapping("/upvotes")
     public ApiResponse<Object> upvote(
-            @RequestParam Long objectId, 
-            @RequestParam int objectType, 
-            @RequestParam int type) {
+            @JsonParam("objectId") Long objectId,
+            @JsonParam("objectType") Integer objectType,
+            @JsonParam("type") Integer type) {
         
         long userId = StpUtil.getLoginIdAsLong();
         

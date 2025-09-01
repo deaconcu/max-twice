@@ -2,7 +2,7 @@
 import { ref, onMounted, nextTick} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { learnService } from '@/services/learnService';
+import { commentServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -51,7 +51,7 @@ onMounted(() => {
 
 const loadMore = async () => {
   try {
-    const response = await learnService.getCommentsByTopic(props.commentId, offsetId.value);
+    const response = await commentServiceV1.getCommentReplies(props.commentId, offsetId.value);
 
     if (response.code === 401) {
       console.log('not login');
@@ -77,7 +77,7 @@ const upvote = async (comment) => {
   try {
     console.log("begin post");
 
-    const response = await learnService.upvote(comment.id, 2, 2);
+    const response = await upvoteServiceV1.upvote(comment.id, 2, 2);
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {

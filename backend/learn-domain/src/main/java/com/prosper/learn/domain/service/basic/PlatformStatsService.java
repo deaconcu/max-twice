@@ -1,8 +1,8 @@
 package com.prosper.learn.domain.service.basic;
 
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.dto.PlatformStatsDTO;
-import com.prosper.learn.persistence.mapper.*;
+import com.prosper.learn.dto.response.PlatformStatsDTO;
+import com.prosper.learn.domain.service.data.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -20,11 +20,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PlatformStatsService {
     
-    private final CourseMapper courseMapper;
-    private final ProfessionMapper professionMapper;
-    private final RoadmapMapper roadmapMapper;
-    private final NodeMapper nodeMapper;
-    private final PostMapper postMapper;
+    private final CourseDataService courseDataService;
+    private final ProfessionDataService professionDataService;
+    private final RoadmapDataService roadmapDataService;
+    private final NodeDataService nodeDataService;
+    private final PostDataService postDataService;
     
     // ========== 常量定义 ==========
     private static final String CACHE_KEY = "stats";
@@ -40,19 +40,19 @@ public class PlatformStatsService {
         
         try {
             // 统计课程总数（只统计已发布的课程）
-            Long courseCount = courseMapper.countActiveCourses();
+            Long courseCount = courseDataService.countActiveCourses();
             
             // 统计职业路径总数（只统计已发布的职业）
-            Long careerPathCount = professionMapper.countActiveProfessions();
+            Long careerPathCount = professionDataService.countActiveProfessions();
             
             // 统计学习路线图总数（只统计公开的路线图）
-            Long roadmapCount = roadmapMapper.countPublicRoadmaps();
+            Long roadmapCount = roadmapDataService.countPublicRoadmaps();
             
             // 统计知识节点总数（所有有效节点）
-            Long knowledgeNodeCount = nodeMapper.countActiveNodes();
+            Long knowledgeNodeCount = nodeDataService.countActiveNodes();
             
             // 统计文章总数（只统计已发布的文章）
-            Long articleCount = postMapper.countActiveArticles();
+            Long articleCount = postDataService.countActiveArticles();
             
             PlatformStatsDTO stats = new PlatformStatsDTO(
                 courseCount, 

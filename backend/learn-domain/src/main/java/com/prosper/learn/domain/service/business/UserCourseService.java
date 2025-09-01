@@ -5,12 +5,12 @@ import static com.prosper.learn.common.Enums.UserCourseState;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
 import com.prosper.learn.domain.util.Converter;
-import com.prosper.learn.dto.CourseDTOV2;
-import com.prosper.learn.dto.UserCourseDTO;
+import com.prosper.learn.dto.response.CourseDTOV2;
+import com.prosper.learn.dto.response.UserCourseDTO;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.UserCourseDO;
-import com.prosper.learn.persistence.mapper.CourseMapper;
-import com.prosper.learn.persistence.mapper.UserCourseMapper;
+import com.prosper.learn.domain.service.data.CourseDataService;
+import com.prosper.learn.domain.service.data.UserCourseDataService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,8 +24,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserCourseService {
 
-    private final UserCourseMapper userCourseMapper;
-    private final CourseMapper courseMapper;
+    private final UserCourseDataService userCourseDataService;
+    private final CourseDataService courseDataService;
     private final CourseRankingService courseRankingService;
 
     // ========== 常量定义 ==========
@@ -66,7 +66,7 @@ public class UserCourseService {
      * 验证并获取用户课程记录
      */
     private UserCourseDO validateAndGetUserCourse(Long userId, Long courseId) {
-        UserCourseDO userCourseDO = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
+        UserCourseDO userCourseDO = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
         if (userCourseDO == null) {
             throw ErrorCode.USER_COURSE_NOT_FOUND.exception();
         }
@@ -77,7 +77,7 @@ public class UserCourseService {
      * 加载课程信息到DTO
      */
     private void loadCourseInfo(UserCourseDTO dto, Long courseId) {
-        CourseDO courseDO = courseMapper.getById(courseId.intValue());
+        CourseDO courseDO = courseDataService.getById(courseId);
         if (courseDO != null) {
             List<CourseDTOV2> courseList = Converter.INSTANCE.toCourseDTOV2(List.of(courseDO));
             if (!courseList.isEmpty()) {
@@ -111,13 +111,13 @@ public class UserCourseService {
         validateCourseId(courseId);
         
         // 检查是否已经存在学习记录
-        UserCourseDO existing = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
+        UserCourseDO existing = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
 
         if (existing != null) {
             // 如果已存在，删除记录并更新Redis
-            userCourseMapper.deleteByUserAndCourse(userId, courseId);
+            userCourseDataService.deleteByUserAndCourse(userId, courseId);
             // 减少学习人数
-            courseRankingService.decrementLearning(courseId.intValue());
+            courseRankingService.decrementLearning(courseId);
             return false;
         }
 
@@ -129,10 +129,10 @@ public class UserCourseService {
         progressDO.setState(UserCourseState.IN_PROGRESS.value());
         progressDO.setStartedAt(LocalDateTime.now());
 
-        userCourseMapper.insert(progressDO);
+        userCourseDataService.insert(progressDO);
         
         // 增加学习人数
-        courseRankingService.incrementLearning(courseId.intValue());
+        courseRankingService.incrementLearning(courseId);
 
         return true;
     }
@@ -147,7 +147,7 @@ public class UserCourseService {
         validateUserId(userId);
         validateCourseId(courseId);
         
-        UserCourseDO userCourseDo = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
+        UserCourseDO userCourseDo = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
         if (userCourseDo == null) {
             return null;
         }
@@ -170,7 +170,7 @@ public class UserCourseService {
         if (lastId == null || lastId <= 0) {
             lastId = DEFAULT_MAX_ID;
         }
-        List<UserCourseDO> userCourseDOList = userCourseMapper.getByUserId(userId, lastId);
+        List<UserCourseDO> userCourseDOList = userCourseDataService.getByUserId(userId, lastId);
         List<UserCourseDTO> dtoList = Converter.INSTANCE.toUserCourseDTO(userCourseDOList);
 
         // 批量加载课程信息
@@ -179,7 +179,7 @@ public class UserCourseService {
             .collect(Collectors.toSet());
 
         if (!courseIds.isEmpty()) {
-            List<CourseDO> courses = courseMapper.getByIds(courseIds.stream().toList());
+            List<CourseDO> courses = courseDataService.getByIds(courseIds.stream().toList());
             List<CourseDTOV2> courseDTOList = Converter.INSTANCE.toCourseDTOV2(courses);
 
             Map<Long, CourseDTOV2> courseMap = courseDTOList.stream()
@@ -212,7 +212,7 @@ public class UserCourseService {
         UserCourseDO progressDO = validateAndGetUserCourse(userId, courseId);
 
         updateLearningState(progressDO, progressPercent);
-        userCourseMapper.update(progressDO);
+        userCourseDataService.update(progressDO);
 
         UserCourseDTO dto = Converter.INSTANCE.toUserCourseDTO(progressDO);
         // 加载课程信息
@@ -230,9 +230,9 @@ public class UserCourseService {
         validateUserId(userId);
         validateCourseId(courseId);
         
-        userCourseMapper.deleteByUserAndCourse(userId, courseId);
+        userCourseDataService.deleteByUserAndCourse(userId, courseId);
         // 减少学习人数
-        courseRankingService.decrementLearning(courseId.intValue());
+        courseRankingService.decrementLearning(courseId);
     }
 
     /**
@@ -249,7 +249,7 @@ public class UserCourseService {
         }
         
         // 批量查询用户课程记录，直接返回Map
-        Map<Long, UserCourseDO> userCourseMap = userCourseMapper.getByUserIdAndCourseIdsAsMap((long) userId, courseIds);
+        Map<Long, UserCourseDO> userCourseMap = userCourseDataService.getByUserIdAndCourseIdsAsMap((long) userId, courseIds);
         return userCourseMap;
     }
 }

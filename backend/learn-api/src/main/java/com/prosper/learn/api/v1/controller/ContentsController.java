@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,10 +30,10 @@ public class ContentsController {
      */
     @PostMapping("/contents")
     public ApiResponse<Void> postContents(
-            @RequestParam("path") @NotBlank String path,
-            @RequestParam("courseId") @Positive Long courseId,
-            @RequestParam("postingId") @Positive Long postingId,
-            @RequestParam("action") @Min(1) @Max(4) int action,
+            @JsonParam("path") @NotBlank String path,
+            @JsonParam("courseId") @Positive Long courseId,
+            @JsonParam("postingId") @Positive Long postingId,
+            @JsonParam("action") @Min(1) @Max(4) Integer action,
             Model model) {
 
         long userId = StpUtil.getLoginIdAsLong();

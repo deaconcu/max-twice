@@ -2,7 +2,8 @@
 import { ref, onMounted, inject, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { learnService, userService } from '@/services/learnService';
+import { courseServiceV1, subscriptionServiceV1 } from '@/services/api/v1/apiServiceV1';
+import { learnService } from '@/services/learnService'; // 临时保留，用于尚未迁移的接口
 import { useUserStore } from "@/stores/user";
 import RightSidebar from '@/components/RightSidebar.vue';
 
@@ -53,7 +54,7 @@ watch([() => activeFirstLvl.value, () => selected.value], async ([newFirstLvl, n
 
 const loadSystem = async () => {
   try {
-    const response = await learnService.getCourseCategories();
+    const response = await learnService.getCourseCategories(); // TODO: 需要迁移到V1 API
 
     if (response.code === 401) {
       console.log('not login');
@@ -87,7 +88,7 @@ const loadCoursesByCategory = async (mainCategory, subCategory) => {
     loading.value = true;
     console.log(`Loading courses for mainCategory: ${mainCategory}, subCategory: ${subCategory}`);
     
-    const response = await learnService.getCoursesByCategory(mainCategory, subCategory);
+    const response = await learnService.getCoursesByCategory(mainCategory, subCategory); // TODO: 需要迁移到V1 API
     
     if (response.code === 200) {
       courses.value = response.data || [];
@@ -143,7 +144,7 @@ const postApplyCourse = async () => {
     };
 
     console.log("Creating course:", courseData);
-    const response = await learnService.createCourse(courseData);
+    const response = await courseServiceV1.createCourse(courseData);
 
     if (response.code === 401) {
       showSnackbar("请先登录！", "error");
@@ -176,7 +177,7 @@ async function loadSubscription() {
   try {
     const userId = user.userId;
     if (userId) {
-      let response = await userService.getSubscription(userId);
+      let response = await subscriptionServiceV1.getUserSubscriptions(userId);
       
       if (response.code === 401) {
         console.log('not login');
@@ -213,7 +214,7 @@ async function loadSubscription() {
 async function loadHotCourses() {
   console.log("load hot courses");
   try {
-    let response = await learnService.getHotCourses();
+    let response = await courseServiceV1.getHotCourses();
 
     if (response.code === 401) {
       console.log('not login');

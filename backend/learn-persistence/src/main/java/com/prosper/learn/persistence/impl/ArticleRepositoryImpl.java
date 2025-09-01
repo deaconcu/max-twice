@@ -22,7 +22,7 @@ public class ArticleRepositoryImpl { //implements ArticleRepository {
 
     /*
     @Override
-    public Article find(Integer id) {
+    public Article find(Long id) {
         //return Converter.INSTANCE.toEntity(contentsMapper.getById(id));
         // todo
         return null;

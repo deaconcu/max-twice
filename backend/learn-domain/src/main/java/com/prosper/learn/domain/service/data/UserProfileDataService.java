@@ -69,4 +69,11 @@ public class UserProfileDataService extends AbstractDataService<UserProfileDO, U
     public void updateRoadmapPin(long id, String roadmapPin) {
         userProfileMapper.updateRoadmapPin(id, roadmapPin);
     }
+
+    /**
+     * 插入新用户档案
+     */
+    public void insert(UserProfileDO userProfileDO) {
+        userProfileMapper.insert(userProfileDO);
+    }
 }

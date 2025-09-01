@@ -4,12 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.api.client.SystemClient;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.dto.Response;
+import com.prosper.learn.dto.response.Response;
 import com.prosper.learn.persistence.dataobject.SystemDO;
 import com.prosper.learn.persistence.mapper.SystemMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 

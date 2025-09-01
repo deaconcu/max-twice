@@ -6,7 +6,7 @@ import { useRoute, useRouter} from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
 import Footer from '../components/Footer.vue';
-import { userService} from '@/services/learnService';
+import { authServiceV1, userServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useUserStore } from "@/stores/user";
 
 const router = useRouter();
@@ -46,12 +46,11 @@ const loginDialog = ref(false);
 const submitRegisterFirstForm = async () => {
   try {
     console.log("begin post");
-    const formData = new FormData();
-    formData.append('email', registerForm.value.email);
-    formData.append('userName', registerForm.value.name);
-    formData.append('password', registerForm.value.password);
-
-    const response = await userService.register(formData);
+    const response = await authServiceV1.register(
+      registerForm.value.name,
+      registerForm.value.email,
+      registerForm.value.password
+    );
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {
@@ -68,11 +67,10 @@ const submitRegisterFirstForm = async () => {
 const submitRegisterSecondForm = async () => {
   try {
     console.log("begin post");
-    const formData = new FormData();
-    formData.append('email', registerForm.value.email);
-    formData.append('code', registerForm.value.validateCode);
-
-    const response = await userService.validateMail(formData);
+    const response = await authServiceV1.validateEmail(
+      registerForm.value.email,
+      registerForm.value.validateCode
+    );
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {
@@ -88,11 +86,10 @@ const submitRegisterSecondForm = async () => {
 const submitLogin = async() => {
   try {
     console.log("begin post");
-    const formData = new FormData();
-    formData.append('email', loginForm.value.email);
-    formData.append('password', loginForm.value.password);
-
-    const response = await userService.login(formData);
+    const response = await authServiceV1.login(
+      loginForm.value.email,
+      loginForm.value.password
+    );
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {

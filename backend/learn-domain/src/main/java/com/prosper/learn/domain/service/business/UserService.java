@@ -4,10 +4,10 @@ import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.MessageService;
+import com.prosper.learn.domain.service.data.*;
 import com.prosper.learn.domain.util.Converter;
-import com.prosper.learn.dto.*;
+import com.prosper.learn.dto.response.*;
 import com.prosper.learn.persistence.dataobject.*;
-import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
@@ -29,11 +29,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserMapper userMapper;
-    private final UserProfileMapper userProfileMapper;
-    private final CourseMapper courseMapper;
-    private final FollowMapper followMapper;
-    private final VerificationMapper verificationMapper;
+    private final UserDataService userDataService;
+    private final UserProfileDataService userProfileDataService;
+    private final CourseDataService courseDataService;
+    private final FollowDataService followDataService;
+    private final VerificationDataService verificationDataService;
     private final JavaMailSender mailSender;
     private final PostingService postingService;
     private final MessageService messageService;
@@ -55,7 +55,7 @@ public class UserService {
      */
     public UserDTO getCurrentUser(Long userId) {
         validateUserId(userId);
-        UserDO userDO = userMapper.getById(userId);
+        UserDO userDO = userDataService.getById(userId);
         return Converter.INSTANCE.toUserDTO(userDO);
     }
 
@@ -68,7 +68,7 @@ public class UserService {
         
         userDO.setName(name);
         userDO.setBiography(biography);
-        userMapper.update(userDO);
+        userDataService.update(userDO);
     }
 
     /**
@@ -80,7 +80,7 @@ public class UserService {
 
         UserDTOV3 userDTOV3 = Converter.INSTANCE.toUserDTOV3(userDO);
 
-        FollowDO followDO = followMapper.get(viewerId, userId);
+        FollowDO followDO = followDataService.get(viewerId, userId);
         if (followDO != null) {
             userDTOV3.setFollowed(1);
         }
@@ -92,7 +92,7 @@ public class UserService {
      */
     public List<UserDTOV4> searchUsers(String name) {
         validateSearchName(name);
-        List<UserDO> userDOList = userMapper.searchByName(name);
+        List<UserDO> userDOList = userDataService.searchByName(name);
         return Converter.INSTANCE.toUserDTOV4(userDOList);
     }
 
@@ -109,12 +109,12 @@ public class UserService {
         user.setPassword(Utils.md5(password));
         user.setCreatedAt(Utils.getLocalDateTime());
         user.setUpdatedAt(Utils.getLocalDateTime());
-        userMapper.insert(user);
+        userDataService.insert(user);
 
         if (systemProperties.getUser().isEnableEmailValidation()) {
             String code = generateVerificationCode();
             VerificationDO verification = new VerificationDO(email, code);
-            verificationMapper.insert(verification);
+            verificationDataService.insert(verification);
             sendVerificationEmail(email, code);
         }
     }
@@ -127,7 +127,7 @@ public class UserService {
         validateEmail(email);
         validatePassword(password);
         
-        UserDO userDO = userMapper.getByEmail(email);
+        UserDO userDO = userDataService.getByEmail(email);
         if (userDO == null) {
             throw ErrorCode.USER_NOT_FOUND.exception();
         }
@@ -150,7 +150,7 @@ public class UserService {
         validateEmail(email);
         validateVerificationCode(code);
         
-        VerificationDO verificationDO = verificationMapper.getByEmail(email, false);
+        VerificationDO verificationDO = verificationDataService.getByEmail(email, false);
         if (verificationDO == null) {
             throw ErrorCode.USER_VERIFICATION_CODE_NOT_FOUND.exception();
         }
@@ -159,9 +159,9 @@ public class UserService {
         }
 
         verificationDO.setUsed(true);
-        verificationMapper.update(verificationDO);
+        verificationDataService.update(verificationDO);
 
-        UserDO user = userMapper.getByEmail(email);
+        UserDO user = userDataService.getByEmail(email);
         if (user == null) {
             throw ErrorCode.USER_NOT_FOUND.exception();
         }
@@ -171,7 +171,7 @@ public class UserService {
         }
 
         user.setEmailValidated(true);
-        userMapper.update(user);
+        userDataService.update(user);
         return Converter.INSTANCE.toUserDTO(user);
     }
 
@@ -195,7 +195,7 @@ public class UserService {
     public Object getUserSubscriptions(Long userId) {
         validateUserExists(userId);
 
-        UserProfileDO userProfileDO = userProfileMapper.getById(userId);
+        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
         if (userProfileDO == null || isEmptySubscription(userProfileDO.getSubscription())) {
             return new ArrayList<>();
         }
@@ -211,14 +211,14 @@ public class UserService {
         validateCourseExists(courseId);
         validateUserId(userId);
 
-        UserProfileDO userProfileDO = userProfileMapper.getById(userId);
+        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
         String idsStr;
         if (userProfileDO == null) {
             userProfileDO = new UserProfileDO();
             userProfileDO.setUserId(userId);
             idsStr = String.valueOf(courseId);
             userProfileDO.setSubscription(idsStr);
-            userProfileMapper.insert(userProfileDO);
+            userProfileDataService.insert(userProfileDO);
         } else {
             List<Long> ids = parseSubscriptionIds(userProfileDO.getSubscription());
             if (systemProperties.getUser().isEnableDuplicateSubscriptionCheck() && ids.contains(courseId)) {
@@ -227,7 +227,7 @@ public class UserService {
             ids.add(courseId);
             idsStr = formatSubscriptionIds(ids);
             userProfileDO.setSubscription(idsStr);
-            userProfileMapper.update(userProfileDO);
+            userProfileDataService.update(userProfileDO);
         }
 
         return parseSubscriptionIdsToArray(idsStr);
@@ -242,7 +242,7 @@ public class UserService {
         validateSubscriptionString(subscription);
         
         List<Long> ids = parseAndValidateSubscriptionIds(subscription);
-        List<CourseDO> courseDOList = courseMapper.getByIds(ids);
+        List<CourseDO> courseDOList = courseDataService.getByIds(ids);
         
         List<Long> validIds = courseDOList.stream()
             .map(CourseDO::getId)
@@ -262,7 +262,7 @@ public class UserService {
         validateCourseExists(courseId);
         validateUserId(userId);
 
-        UserProfileDO userProfileDO = userProfileMapper.getById(userId);
+        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
         if (userProfileDO == null || isEmptySubscription(userProfileDO.getSubscription())) {
             throw ErrorCode.USER_COURSE_NOT_SUBSCRIBED.exception();
         }
@@ -275,7 +275,7 @@ public class UserService {
         ids.remove(courseId);
         String idsStr = formatSubscriptionIds(ids);
         userProfileDO.setSubscription(idsStr);
-        userProfileMapper.update(userProfileDO);
+        userProfileDataService.update(userProfileDO);
         
         return parseSubscriptionIdsToArray(idsStr);
     }
@@ -292,14 +292,14 @@ public class UserService {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }
 
-        FollowDO followDO = followMapper.get(followerId, followeeId);
+        FollowDO followDO = followDataService.get(followerId, followeeId);
         if (systemProperties.getUser().isEnableDuplicateFollowCheck() && followDO != null) {
             throw ErrorCode.USER_ALREADY_FOLLOWED.exception();
         }
         
         if (followDO == null) {
-            UserDO follower = userMapper.getById(followerId);
-            followMapper.insert(followerId, followeeId);
+            UserDO follower = userDataService.getById(followerId);
+            followDataService.insert(followerId, followeeId);
             messageService.createFollowMessage(followeeId, follower.getId());
         }
     }
@@ -312,9 +312,9 @@ public class UserService {
         validateUserId(followerId);
         validateUserExists(followeeId);
 
-        FollowDO followDO = followMapper.get(followerId, followeeId);
+        FollowDO followDO = followDataService.get(followerId, followeeId);
         if (followDO != null) {
-            followMapper.delete(followerId, followeeId);
+            followDataService.delete(followerId, followeeId);
         }
     }
 
@@ -329,7 +329,7 @@ public class UserService {
         LocalDateTime time = LocalDateTime.parse(lastCreateTime, DATE_TIME_FORMATTER);
         int pageSize = systemProperties.getUser().getFollowPageSize();
         
-        List<FollowDO> followDOList = followMapper.getList(userId, time, pageSize);
+        List<FollowDO> followDOList = followDataService.getList(userId, time, pageSize);
         List<Long> userIds = followDOList.stream()
             .map(FollowDO::getFolloweeId)
             .collect(Collectors.toList());
@@ -338,7 +338,7 @@ public class UserService {
             return new LinkedList<>();
         }
 
-        List<UserDO> userDOList = userMapper.getByIds(userIds);
+        List<UserDO> userDOList = userDataService.getByIds(userIds);
         Map<Long, UserDO> userDOMap = userDOList.stream()
             .collect(Collectors.toMap(UserDO::getId, userDO -> userDO));
 
@@ -377,7 +377,7 @@ public class UserService {
     
     private UserDO validateUserExists(Long userId) {
         validateUserId(userId);
-        UserDO userDO = userMapper.getById(userId);
+        UserDO userDO = userDataService.getById(userId);
         if (userDO == null) {
             throw ErrorCode.USER_NOT_FOUND.exception();
         }
@@ -388,7 +388,7 @@ public class UserService {
         if (courseId == null || courseId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }
-        CourseDO courseDO = courseMapper.getById(courseId);
+        CourseDO courseDO = courseDataService.getById(courseId);
         if (courseDO == null) {
             throw ErrorCode.COURSE_NOT_FOUND.exception();
         }
@@ -509,22 +509,22 @@ public class UserService {
     }
     
     private void updateUserProfile(Long userId, String subscription) {
-        UserProfileDO userProfileDO = userProfileMapper.getById(userId);
+        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
         if (userProfileDO == null) {
             userProfileDO = new UserProfileDO(userId, subscription);
-            userProfileMapper.insert(userProfileDO);
+            userProfileDataService.insert(userProfileDO);
         } else {
             userProfileDO.setSubscription(subscription);
-            userProfileMapper.update(userProfileDO);
+            userProfileDataService.update(userProfileDO);
         }
     }
     
     private void setUserSubscriptions(UserDTOV2 userDTOV2, Long userId) {
-        UserProfileDO userProfileDO = userProfileMapper.getById(userId);
+        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
         if (userProfileDO != null && !isEmptySubscription(userProfileDO.getSubscription())) {
             try {
                 List<Long> ids = parseSubscriptionIds(userProfileDO.getSubscription());
-                List<CourseDO> courseDOList = courseMapper.getByIds(ids);
+                List<CourseDO> courseDOList = courseDataService.getByIds(ids);
                 SubscriptionDTO[] subscriptionDTOS = courseDOList.stream()
                     .map(course -> new SubscriptionDTO(course.getId(), course.getName()))
                     .toArray(SubscriptionDTO[]::new);
@@ -550,7 +550,7 @@ public class UserService {
                 return new ArrayList<>();
             }
 
-            List<CourseDO> courseDOList = courseMapper.getByIds(ids);
+            List<CourseDO> courseDOList = courseDataService.getByIds(ids);
             log.info("查询到{}个收藏课程，课程信息: {}", courseDOList.size(), 
                 courseDOList.stream().map(c -> "id=" + c.getId() + ",name=" + c.getName()).collect(Collectors.toList()));
             return Converter.INSTANCE.toCourseDTOV2(courseDOList);

@@ -10,12 +10,12 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.DailyStatsService;
 import com.prosper.learn.domain.util.Converter;
-import com.prosper.learn.dto.NodeDTO;
-import com.prosper.learn.dto.PostDTO;
-import com.prosper.learn.dto.PostDTOV2;
-import com.prosper.learn.dto.UserDTOV1;
+import com.prosper.learn.dto.response.NodeDTO;
+import com.prosper.learn.dto.response.PostDTO;
+import com.prosper.learn.dto.response.PostDTOV2;
+import com.prosper.learn.dto.response.UserDTOV1;
 import com.prosper.learn.persistence.dataobject.*;
-import com.prosper.learn.persistence.mapper.*;
+import com.prosper.learn.domain.service.data.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -49,19 +49,19 @@ import java.util.stream.Collectors;
 public class PostingService {
 
     /** 节点数据访问接口 */
-    private final NodeMapper nodeMapper;
+    private final NodeDataService nodeDataService;
     
     /** 帖子数据访问接口 */
-    private final PostMapper postMapper;
+    private final PostDataService postDataService;
     
     /** 课程数据访问接口 */
-    private final CourseMapper courseMapper;
+    private final CourseDataService courseDataService;
     
     /** 点赞数据访问接口 */
-    private final UpvoteMapper upvoteMapper;
+    private final UpvoteDataService upvoteDataService;
     
     /** 用户数据访问接口 */
-    private final UserMapper userMapper;
+    private final UserDataService userDataService;
     
     /** 日常统计服务 */
     private final DailyStatsService dailyStatsService;
@@ -106,7 +106,7 @@ public class PostingService {
      */
     private PostDO validateAndGetPost(Long postId) {
         validatePostId(postId);
-        PostDO postDO = postMapper.get(postId);
+        PostDO postDO = postDataService.getById(postId);
         if (postDO == null) {
             throw ErrorCode.CONTENTS_POST_NOT_FOUND.exception();
         }
@@ -127,7 +127,7 @@ public class PostingService {
             return new HashMap<>();
         }
         
-        List<NodeDO> nodeList = nodeMapper.getByIds(nodeIds);
+        List<NodeDO> nodeList = nodeDataService.getByIds(nodeIds);
         return nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
     }
     
@@ -154,7 +154,7 @@ public class PostingService {
         
         Map<Long, CourseDO> courseMap = new HashMap<>();
         if (!courseIds.isEmpty()) {
-            List<CourseDO> courseList = courseMapper.getByIds(courseIds);
+            List<CourseDO> courseList = courseDataService.getByIds(courseIds);
             courseMap = courseList.stream().collect(Collectors.toMap(CourseDO::getId, course -> course));
         }
         
@@ -189,7 +189,7 @@ public class PostingService {
         List<Long> userIds = postDTOList.stream().map(PostDTOV2::getCreatorId).distinct().collect(Collectors.toList());
         Map<Long, UserDO> userMap = new HashMap<>();
         if (!userIds.isEmpty()) {
-            List<UserDO> userList = userMapper.getByIds(userIds);
+            List<UserDO> userList = userDataService.getByIds(userIds);
             userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, user -> user));
         }
         
@@ -197,7 +197,7 @@ public class PostingService {
         List<Long> nodeIds = postDTOList.stream().map(PostDTOV2::getNodeId).distinct().collect(Collectors.toList());
         Map<Long, NodeDO> nodeMap = new HashMap<>();
         if (!nodeIds.isEmpty()) {
-            List<NodeDO> nodeList = nodeMapper.getByIds(nodeIds);
+            List<NodeDO> nodeList = nodeDataService.getByIds(nodeIds);
             nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
         }
         
@@ -221,7 +221,7 @@ public class PostingService {
                 
                 // 设置课程信息
                 if (nodeDTO != null) {
-                    nodeDTO.setCourse(Converter.INSTANCE.toCourseDTOV4(courseMapper.getById(nodeDO.getCourseId())));
+                    nodeDTO.setCourse(Converter.INSTANCE.toCourseDTOV4(courseDataService.getById(nodeDO.getCourseId())));
                 }
             }
             
@@ -246,7 +246,7 @@ public class PostingService {
             return new HashMap<>();
         }
         
-        List<UserDO> userList = userMapper.getByIds(userIds);
+        List<UserDO> userList = userDataService.getByIds(userIds);
         return userList.stream().collect(Collectors.toMap(UserDO::getId, user -> user));
     }
     
@@ -258,7 +258,7 @@ public class PostingService {
             return new HashMap<>();
         }
         
-        List<UpvoteDO> upvotes = upvoteMapper.getList(userId.intValue(), postIds, Enums.ObjectType.post.value());
+        List<UpvoteDO> upvotes = upvoteDataService.getList(userId, postIds, Enums.ObjectType.post.value());
         Map<Long, Integer> types = new HashMap<>();
         for (UpvoteDO upvote : upvotes) {
             types.put(upvote.getObjectId(), upvote.getType());
@@ -303,7 +303,7 @@ public class PostingService {
         }
         
         // 批量查询节点信息
-        List<NodeDO> nodeList = nodeMapper.getByIds(allContentIds);
+        List<NodeDO> nodeList = nodeDataService.getByIds(allContentIds);
         Map<Long, NodeDO> nodeMap = nodeList.stream()
                 .collect(Collectors.toMap(NodeDO::getId, node -> node));
         
@@ -353,7 +353,7 @@ public class PostingService {
                 .toList();
             
             if (!ids.isEmpty()) {
-                List<NodeDO> nodeList = nodeMapper.getByIds(ids);
+                List<NodeDO> nodeList = nodeDataService.getByIds(ids);
                 String names = nodeList.stream().map(NodeDO::getName).collect(Collectors.joining(","));
                 posting.setContent(names);
             }
@@ -386,7 +386,7 @@ public class PostingService {
             return new ArrayList<>();
         }
         
-        List<PostDO> postings = postMapper.getByIds(ids);
+        List<PostDO> postings = postDataService.getByIds(ids);
         postings.forEach(this::processContentIdToName);
         return postings;
     }
@@ -400,7 +400,7 @@ public class PostingService {
      */
     public List<PostDO> getList(long nodeId) {
         validateNodeId(nodeId);
-        List<PostDO> postings = postMapper.getListByNodeAndScore(nodeId, systemProperties.getPosting().getDefaultNodePostCount(), Enums.PostState.approved.value());
+        List<PostDO> postings = postDataService.getListByNodeAndScore(nodeId, systemProperties.getPosting().getDefaultNodePostCount(), Enums.PostState.approved.value());
         postings.forEach(this::processContentIdToName);
         return postings;
     }
@@ -419,7 +419,7 @@ public class PostingService {
             throw ErrorCode.INVALID_PARAMETER.exception("最后帖子ID无效: " + lastPostingId);
         }
         
-        List<PostDO> postings = postMapper.getListByLastId(nodeId, lastPostingId, systemProperties.getPosting().getDefaultNodePostCount(), Enums.PostState.approved.value());
+        List<PostDO> postings = postDataService.getListByLastId(nodeId, lastPostingId, systemProperties.getPosting().getDefaultNodePostCount(), Enums.PostState.approved.value());
         postings.forEach(this::processContentIdToName);
         return postings;
     }
@@ -447,7 +447,7 @@ public class PostingService {
             throw ErrorCode.INVALID_PARAMETER.exception("最后帖子ID无效: " + lastId);
         }
         
-        List<PostDO> postings = postMapper.getArticleListByUser(userId, lastId, systemProperties.getPosting().getDefaultPageSize());
+        List<PostDO> postings = postDataService.getArticleListByUser(userId, lastId, systemProperties.getPosting().getDefaultPageSize());
         if (postings == null || postings.isEmpty()) {
             return new ArrayList<>();
         }
@@ -464,7 +464,7 @@ public class PostingService {
             postDTO.setNode(Converter.INSTANCE.toNodeDTO(nodeMap.get(postDTO.getNodeId())));
             NodeDTO node = postDTO.getNode();
             if (node != null) {
-                node.setCourse(Converter.INSTANCE.toCourseDTOV4(courseMapper.getById(node.getCourseId())));
+                node.setCourse(Converter.INSTANCE.toCourseDTOV4(courseDataService.getById(node.getCourseId())));
             }
 
             postDTO.setCreator(Converter.INSTANCE.toUserDTOV1(userMap.get(postDTO.getCreatorId())));
@@ -480,7 +480,7 @@ public class PostingService {
         }
         
         int count = systemProperties.getPosting().getUserContentsPageSize();
-        List<PostDO> postings = postMapper.getContentsListByUser(userId, lastId, count);
+        List<PostDO> postings = postDataService.getContentsListByUser(userId, lastId, count);
         if (postings == null || postings.size() == 0) return new ArrayList<>();
 
         // 使用提取的公共方法处理内容ID转名称
@@ -488,7 +488,7 @@ public class PostingService {
 
         List<PostDTO> postDTOList = Converter.INSTANCE.toPostDTO(postings);
         List<Long> nodeIds = postDTOList.stream().map(PostDTO::getNodeId).collect(Collectors.toList());
-        List<NodeDO> nodeList = nodeMapper.getByIds(nodeIds);
+        List<NodeDO> nodeList = nodeDataService.getByIds(nodeIds);
         Map<Long, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
 
         List<Long> allPostingIds = new LinkedList<>();
@@ -496,7 +496,7 @@ public class PostingService {
 
         Map<Long, Integer> types = new HashMap<>();
         if (allPostingIds.size() > 0) {
-            List<UpvoteDO> upvotes = upvoteMapper.getList(userId, allPostingIds, Enums.ObjectType.post.value());
+            List<UpvoteDO> upvotes = upvoteDataService.getList(userId, allPostingIds, Enums.ObjectType.post.value());
             for (UpvoteDO upvote : upvotes) {
                 types.put(upvote.getObjectId(), upvote.getType());
             }
@@ -504,13 +504,13 @@ public class PostingService {
 
         // get all user
         List<Long> userIds = postDTOList.stream().map(PostDTO::getCreatorId).collect(Collectors.toList());
-        List<UserDO> userList = userMapper.getByIds(userIds);
+        List<UserDO> userList = userDataService.getByIds(userIds);
         Map<Long, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
 
         for (PostDTO postDTO : postDTOList) {
             postDTO.setNode(Converter.INSTANCE.toNodeDTO(nodeMap.get(postDTO.getNodeId())));
             NodeDTO node = postDTO.getNode();
-            node.setCourse(Converter.INSTANCE.toCourseDTOV4(courseMapper.getById(node.getCourseId())));
+            node.setCourse(Converter.INSTANCE.toCourseDTOV4(courseDataService.getById(node.getCourseId())));
 
             if (types.containsKey(postDTO.getId()))
                 postDTO.setVoteType(types.get(postDTO.getId()));
@@ -526,8 +526,8 @@ public class PostingService {
      * @param limit 返回数量限制
      * @return 按分数排序的文章列表
      */
-    public List<PostDO> getListByScore(int nodeId, int limit) {
-        List<PostDO> postings = postMapper.getListByNodeAndScore(nodeId, limit, Enums.PostState.approved.value());
+    public List<PostDO> getListByScore(long nodeId, int limit) {
+        List<PostDO> postings = postDataService.getListByNodeAndScore(nodeId, limit, Enums.PostState.approved.value());
         postings.forEach(this::idToName);
         return postings;
     }
@@ -540,12 +540,12 @@ public class PostingService {
      * @param limit 返回数量限制
      * @return 按分数排序的文章列表
      */
-    public List<PostDO> getListByScoreWithPagination(int nodeId, Double lastScore, int lastId, int limit) {
+    public List<PostDO> getListByScoreWithPagination(long nodeId, Double lastScore, long lastId, int limit) {
         if (lastScore == null) {
             return getListByScore(nodeId, limit);
         }
 
-        List<PostDO> postings = postMapper.getListByNodeAndScoreAndPaginated(
+        List<PostDO> postings = postDataService.getListByNodeAndScoreAndPaginated(
                 nodeId, lastScore, lastId, limit, Enums.PostState.approved.value());
         postings.forEach(this::idToName);
         return postings;
@@ -556,7 +556,7 @@ public class PostingService {
      */
     public List<PostDTOV2> getUserArticleWithViews(long userId, long lastId) {
         int count = systemProperties.getPosting().getUserContentsPageSize();
-        List<PostDO> postings = postMapper.getArticleListByUser(userId, lastId, count);
+        List<PostDO> postings = postDataService.getArticleListByUser(userId, lastId, count);
         if (postings == null || postings.size() == 0) return new ArrayList<>();
 
         List<PostDTOV2> postDTOList = Converter.INSTANCE.toPostDTOV2(postings);
@@ -566,18 +566,18 @@ public class PostingService {
 
         // get all user
         List<Long> userIds = postDTOList.stream().map(PostDTOV2::getCreatorId).collect(Collectors.toList());
-        List<UserDO> userList = userMapper.getByIds(userIds);
+        List<UserDO> userList = userDataService.getByIds(userIds);
         Map<Long, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
 
         // get all node
         List<Long> nodeIds = postDTOList.stream().map(PostDTOV2::getNodeId).collect(Collectors.toList());
-        List<NodeDO> nodeList = nodeMapper.getByIds(nodeIds);
+        List<NodeDO> nodeList = nodeDataService.getByIds(nodeIds);
         Map<Long, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
 
         for (PostDTOV2 postDTO : postDTOList) {
             postDTO.setNode(Converter.INSTANCE.toNodeDTO(nodeMap.get(postDTO.getNodeId())));
             NodeDTO node = postDTO.getNode();
-            node.setCourse(Converter.INSTANCE.toCourseDTOV4(courseMapper.getById(node.getCourseId())));
+            node.setCourse(Converter.INSTANCE.toCourseDTOV4(courseDataService.getById(node.getCourseId())));
 
             postDTO.setCreator(Converter.INSTANCE.toUserDTOV1(userMap.get(postDTO.getCreatorId())));
         }
@@ -590,7 +590,7 @@ public class PostingService {
      */
     public List<PostDTOV2> getUserContentsWithViews(long userId, long lastId) {
         int count = systemProperties.getPosting().getUserContentsPageSize();
-        List<PostDO> postings = postMapper.getContentsListByUser(userId, lastId, count);
+        List<PostDO> postings = postDataService.getContentsListByUser(userId, lastId, count);
         if (postings == null || postings.size() == 0) return new ArrayList<>();
 
         // 使用提取的公共方法处理内容ID转名称
@@ -602,7 +602,7 @@ public class PostingService {
         setViewsForPosts(postDTOList);
         
         List<Long> nodeIds = postDTOList.stream().map(PostDTOV2::getNodeId).collect(Collectors.toList());
-        List<NodeDO> nodeList = nodeMapper.getByIds(nodeIds);
+        List<NodeDO> nodeList = nodeDataService.getByIds(nodeIds);
         Map<Long, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
 
         List<Long> allPostingIds = new LinkedList<>();
@@ -610,7 +610,7 @@ public class PostingService {
 
         Map<Long, Integer> types = new HashMap<>();
         if (allPostingIds.size() > 0) {
-            List<UpvoteDO> upvotes = upvoteMapper.getList(userId, allPostingIds, Enums.ObjectType.post.value());
+            List<UpvoteDO> upvotes = upvoteDataService.getList(userId, allPostingIds, Enums.ObjectType.post.value());
             for (UpvoteDO upvote : upvotes) {
                 types.put(upvote.getObjectId(), upvote.getType());
             }
@@ -618,13 +618,13 @@ public class PostingService {
 
         // get all user
         List<Long> userIds = postDTOList.stream().map(PostDTOV2::getCreatorId).collect(Collectors.toList());
-        List<UserDO> userList = userMapper.getByIds(userIds);
+        List<UserDO> userList = userDataService.getByIds(userIds);
         Map<Long, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
 
         for (PostDTOV2 postDTO : postDTOList) {
             postDTO.setNode(Converter.INSTANCE.toNodeDTO(nodeMap.get(postDTO.getNodeId())));
             NodeDTO node = postDTO.getNode();
-            node.setCourse(Converter.INSTANCE.toCourseDTOV4(courseMapper.getById(node.getCourseId())));
+            node.setCourse(Converter.INSTANCE.toCourseDTOV4(courseDataService.getById(node.getCourseId())));
 
             if (types.containsKey(postDTO.getId()))
                 postDTO.setVoteType(types.get(postDTO.getId()));
@@ -648,10 +648,10 @@ public class PostingService {
     public List<PostDTO> getPostsWithUserAndVoteInfo(List<Long> ids, Long nodeId, double lastScore, Long lastPostingId, long currentUserId) {
         List<PostDO> postDOList = null;
         if (ids != null && ids.size() > 0) {
-            postDOList = postMapper.getByIds(ids);
+            postDOList = postDataService.getByIds(ids);
         } else if (nodeId != null && nodeId > 0) {
             int count = 2;
-            postDOList = postMapper.getListByNodeAndScoreAndPaginated(nodeId, lastScore, lastPostingId, count, Enums.PostState.approved.value());
+            postDOList = postDataService.getListByNodeAndScoreAndPaginated(nodeId, lastScore, lastPostingId, count, Enums.PostState.approved.value());
         }
         
         if (postDOList == null) {
@@ -667,7 +667,7 @@ public class PostingService {
         });
 
         List<UserDTOV1> userList = userIds.size() == 0 ?
-                new ArrayList<>() : Converter.INSTANCE.toUserDTOV1(userMapper.getByIds(userIds));
+                new ArrayList<>() : Converter.INSTANCE.toUserDTOV1(userDataService.getByIds(userIds));
         Map<Long, UserDTOV1> userMap = new HashMap<>();
         for (UserDTOV1 user : userList) {
             userMap.put(user.getId(), user);
@@ -679,7 +679,7 @@ public class PostingService {
         });
 
         if (allPostingIds.size() > 0) {
-            List<UpvoteDO> upvotes = upvoteMapper.getList(currentUserId, allPostingIds, Enums.ObjectType.post.value());
+            List<UpvoteDO> upvotes = upvoteDataService.getList(currentUserId, allPostingIds, Enums.ObjectType.post.value());
             Map<Long, Integer> types = new HashMap<>();
             for (UpvoteDO upvote : upvotes) {
                 types.put(upvote.getObjectId(), upvote.getType());
@@ -708,7 +708,7 @@ public class PostingService {
         
         if (posting.getType() == Enums.PostType.contents.value()) {
             validateNodeId(posting.getNodeId());
-            NodeDO nodeDO = nodeMapper.getById(posting.getNodeId());
+            NodeDO nodeDO = nodeDataService.getById(posting.getNodeId());
             if (nodeDO == null) {
                 throw ErrorCode.POSTING_NODE_NOT_FOUND.exception();
             }
@@ -724,7 +724,7 @@ public class PostingService {
                 node.setCourseId(nodeDO.getCourseId());
                 node.setCreatedAt(Utils.getLocalDateTime());
                 node.setUpdatedAt(Utils.getLocalDateTime());
-                nodeMapper.insert(node);
+                nodeDataService.insert(node);
                 ids[i] = Long.toString(node.getId());
             }
             posting.setContent(String.join(",", ids));
@@ -732,7 +732,7 @@ public class PostingService {
 
         posting.setCreatorId(0L);
         posting.setCreatedAt(Utils.getTimeString());
-        postMapper.insert(Converter.INSTANCE.toPostDO(posting));
+        postDataService.insert(Converter.INSTANCE.toPostDO(posting));
     }
 
     /**
@@ -751,7 +751,7 @@ public class PostingService {
         PostDO postDO = validateAndGetPost(id);
         postDO.setContent(posting.getContent());
         postDO.setUpdatedAt(Utils.getLocalDateTime());
-        postMapper.update(postDO);
+        postDataService.update(postDO);
     }
 
     /**
@@ -765,7 +765,7 @@ public class PostingService {
         PostDO postDO = validateAndGetPost(id);
         postDO.setState(Enums.PostState.deleted.value());
         postDO.setUpdatedAt(Utils.getLocalDateTime());
-        postMapper.update(postDO);
+        postDataService.update(postDO);
     }
 
     /**
@@ -780,7 +780,7 @@ public class PostingService {
      */
     public List<PostDTO> getNodePostsList(Long nodeId) {
         int count = systemProperties.getPosting().getDefaultNodeListCount();
-        List<PostDO> postings = postMapper.getListByNode(nodeId, count, Enums.PostState.approved.value());
+        List<PostDO> postings = postDataService.getListByNode(nodeId, count, Enums.PostState.approved.value());
         postings.forEach(this::idToName);
         return Converter.INSTANCE.toPostDTO(postings);
     }
@@ -789,7 +789,7 @@ public class PostingService {
      * 获取待审核帖子列表
      */
     public List<PostDTO> getPendingPostsList() {
-        List<PostDO> postDOList = postMapper.getListByState(Enums.PostState.approved.value(), systemProperties.getPosting().getPendingPostsLimit());
+        List<PostDO> postDOList = postDataService.getListByState(Enums.PostState.approved.value(), systemProperties.getPosting().getPendingPostsLimit());
         for (PostDO postDO : postDOList) {
             if (postDO.getType() == Enums.PostType.contents.value()) {
                 idToName(postDO);
@@ -807,11 +807,11 @@ public class PostingService {
 
         if (approve && postDO.getState() != Enums.PostState.approved.value()) {
             postDO.setState(Enums.CommentState.approved.value());
-            postMapper.update(postDO);
+            postDataService.update(postDO);
         }
         if (!approve && postDO.getState() != Enums.CommentState.deleted.value()) {
             postDO.setState(Enums.CommentState.deleted.value());
-            postMapper.update(postDO);
+            postDataService.update(postDO);
         }
         return Converter.INSTANCE.toPostDTO(postDO);
     }

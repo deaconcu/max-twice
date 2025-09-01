@@ -1,9 +1,9 @@
 package com.prosper.learn.api.web;
 
 import com.prosper.learn.api.client.PlatformStatsClient;
-import com.prosper.learn.dto.Response;
+import com.prosper.learn.dto.response.Response;
 import com.prosper.learn.domain.service.basic.PlatformStatsService;
-import com.prosper.learn.dto.PlatformStatsDTO;
+import com.prosper.learn.dto.response.PlatformStatsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

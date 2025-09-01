@@ -10,17 +10,13 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.domain.util.Util;
-import com.prosper.learn.dto.message.*;
+import com.prosper.learn.dto.response.message.*;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.MessageDO;
 import com.prosper.learn.persistence.dataobject.NodeDO;
 import com.prosper.learn.persistence.dataobject.PostDO;
 import com.prosper.learn.persistence.dataobject.UserDO;
-import com.prosper.learn.persistence.mapper.CourseMapper;
-import com.prosper.learn.persistence.mapper.MessageMapper;
-import com.prosper.learn.persistence.mapper.NodeMapper;
-import com.prosper.learn.persistence.mapper.PostMapper;
-import com.prosper.learn.persistence.mapper.UserMapper;
+import com.prosper.learn.domain.service.data.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -63,19 +59,19 @@ public class MessageService {
     }
 
     /** 帖子数据访问接口 */
-    private final PostMapper postMapper;
+    private final PostDataService postDataService;
     
     /** 节点数据访问接口 */
-    private final NodeMapper nodeMapper;
+    private final NodeDataService nodeDataService;
     
     /** 消息数据访问接口 */
-    private final MessageMapper messageMapper;
+    private final MessageDataService messageDataService;
     
     /** 用户数据访问接口 */
-    private final UserMapper userMapper;
+    private final UserDataService userDataService;
     
     /** 课程数据访问接口 */
-    private final CourseMapper courseMapper;
+    private final CourseDataService courseDataService;
     
     /** JSON对象映射器，用于消息内容的序列化和反序列化 */
     private final ObjectMapper objectMapper;
@@ -94,7 +90,7 @@ public class MessageService {
         if (userId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
         }
-        UserDO userDO = userMapper.getById(userId);
+        UserDO userDO = userDataService.getById(userId);
         if (userDO == null) {
             throw ErrorCode.USER_NOT_FOUND.exception();
         }
@@ -112,7 +108,7 @@ public class MessageService {
         if (messageId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception("消息ID无效: " + messageId);
         }
-        MessageDO messageDO = messageMapper.getById(messageId);
+        MessageDO messageDO = messageDataService.getById(messageId);
         if (messageDO == null) {
             throw ErrorCode.MESSAGE_NOT_FOUND.exception();
         }
@@ -130,7 +126,7 @@ public class MessageService {
         if (courseId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception("课程ID无效: " + courseId);
         }
-        CourseDO courseDO = courseMapper.getById(courseId);
+        CourseDO courseDO = courseDataService.getById(courseId);
         if (courseDO == null) {
             throw ErrorCode.COURSE_NOT_FOUND.exception();
         }
@@ -161,7 +157,7 @@ public class MessageService {
         messageDO.setSenderId(senderId);
         messageDO.setType(messageType.value());
         messageDO.setReceiverId(receiverId);
-        messageMapper.insert(messageDO);
+        messageDataService.insert(messageDO);
     }
 
     /**
@@ -174,8 +170,8 @@ public class MessageService {
         MessageDO messageDO = validateMessageExists(id);
         
         // 获取发送者和接收者信息（系统消息的发送者可能为null）
-        UserDO sender = messageDO.getSenderId() != 0 ? userMapper.getById(messageDO.getSenderId()) : null;
-        UserDO receiver = messageDO.getReceiverId() != 0 ? userMapper.getById(messageDO.getReceiverId()) : null;
+        UserDO sender = messageDO.getSenderId() != 0 ? userDataService.getById(messageDO.getSenderId()) : null;
+        UserDO receiver = messageDO.getReceiverId() != 0 ? userDataService.getById(messageDO.getReceiverId()) : null;
 
         MessageDTO messageDTO = Converter.INSTANCE.toMessageDTO(messageDO);
         messageDTO.setSender(sender != null ? Converter.INSTANCE.toUserDTOV4(sender) : null);
@@ -198,13 +194,13 @@ public class MessageService {
         List<MessageDO> messageDOList;
         
         if (type == applyCourse.value()) {
-            messageDOList = messageMapper.listByPull(type, lastId, DEFAULT_PAGE_SIZE);
+            messageDOList = messageDataService.listByPull(type, lastId, DEFAULT_PAGE_SIZE);
         } else if (senderId == 0) {
-            messageDOList = messageMapper.listByPull(type, lastId, DEFAULT_PAGE_SIZE);
+            messageDOList = messageDataService.listByPull(type, lastId, DEFAULT_PAGE_SIZE);
         } else if (conversation == 0) {
-            messageDOList = messageMapper.getListByUser(type, senderId, receiverId, lastId, DEFAULT_PAGE_SIZE);
+            messageDOList = messageDataService.getListByUser(type, senderId, receiverId, lastId, DEFAULT_PAGE_SIZE);
         } else {
-            messageDOList = messageMapper.getConversationByUser(senderId, receiverId, lastId, DEFAULT_PAGE_SIZE);
+            messageDOList = messageDataService.getConversationByUser(senderId, receiverId, lastId, DEFAULT_PAGE_SIZE);
         }
         
         return convertMessagesToDTO(messageDOList);
@@ -235,7 +231,7 @@ public class MessageService {
         // 批量获取用户信息
         Map<Long, UserDO> userMap = new HashMap<>();
         if (!userIdSet.isEmpty()) {
-            List<UserDO> userDOList = userMapper.getByIds(userIdSet);
+            List<UserDO> userDOList = userDataService.getByIds(userIdSet);
             for (UserDO userDO : userDOList) {
                 userMap.put(userDO.getId(), userDO);
             }
@@ -259,9 +255,9 @@ public class MessageService {
     public List<MessageDTO> getSystemList(int type, long receiverId, long lastId) {
         List<MessageDO> messageDOList;
         if (type == system.value()) {
-            messageDOList = messageMapper.getSystemListByUser(receiverId, lastId, 20);
+            messageDOList = messageDataService.getSystemListByUser(receiverId, lastId, 20);
         } else {
-            messageDOList = messageMapper.getSystemItemListByUser(type, receiverId, lastId, 20);
+            messageDOList = messageDataService.getSystemItemListByUser(type, receiverId, lastId, 20);
         }
 
         Set<Long> userIdSet = new HashSet<>();
@@ -290,14 +286,14 @@ public class MessageService {
             }
         }
 
-        Map<Long, UserDO> userDOMap = userIdSet.size() == 0 ? new HashMap<>() : userMapper.getMapByIds(userIdSet);
-        Map<Long, PostDO> postingDOMap = postingIdSet.size() == 0 ? new HashMap<>() : postMapper.getMapByIds(postingIdSet);
+        Map<Long, UserDO> userDOMap = userIdSet.size() == 0 ? new HashMap<>() : userDataService.getMapByIds(userIdSet);
+        Map<Long, PostDO> postingDOMap = postingIdSet.size() == 0 ? new HashMap<>() : postDataService.getMapByIds(postingIdSet);
 
         for (PostDO postDO : postingDOMap.values()) {
             nodeIdSet.add(postDO.getNodeId());
         }
 
-        Map<Long, NodeDO> nodeDOMap = nodeIdSet.size() == 0 ? new HashMap<>() : nodeMapper.getMapByIds(nodeIdSet);
+        Map<Long, NodeDO> nodeDOMap = nodeIdSet.size() == 0 ? new HashMap<>() : nodeDataService.getMapByIds(nodeIdSet);
 
         List<MessageDTO> messageDTOList = new ArrayList<>();
         for (MessageDO messageDO : messageDOList) {
@@ -344,7 +340,7 @@ public class MessageService {
         } else if (messageDO.getType() == invite.value()) {
             InviteMessageDTO m = new InviteMessageDTO();
             m.setInviter(Converter.INSTANCE.toUserDTOV4(userDOMap.get(content.get("inviterId"))));
-            int nodeId = (Integer) content.get("nodeId");
+            long nodeId = ((Number) content.get("nodeId")).longValue();
             m.setNode(Converter.INSTANCE.toNodeDTOV1(nodeDOMap.get(nodeId)));
             messageDTO = m;
         }
@@ -360,7 +356,7 @@ public class MessageService {
     }
 
     public List<MessageDTO> getCourseApplyList(long senderId, long lastId) {
-        List<MessageDO> messageDOList = messageMapper.getApplyCourseListByUser(senderId, lastId, 20);
+        List<MessageDO> messageDOList = messageDataService.getApplyCourseListByUser(senderId, lastId, 20);
 
         Set<Long> userIdSet = new HashSet<>();
         for (MessageDO messageDO : messageDOList) {
@@ -369,7 +365,7 @@ public class MessageService {
 
         Map<Long, UserDO> userMap = new HashMap<>();
         if (userIdSet.size() != 0) {
-            List<UserDO> userDOList = userMapper.getByIds(userIdSet);
+            List<UserDO> userDOList = userDataService.getByIds(userIdSet);
             for (UserDO userDO : userDOList) {
                 userMap.put(userDO.getId(), userDO);
             }
@@ -386,16 +382,16 @@ public class MessageService {
 
     public List<MessageDTO> getApplyCourseMessage(int page, int length) {
         if (page < 1) return new ArrayList<>();
-        return Converter.INSTANCE.toMessageDTO(messageMapper.getApplyCourseList((page - 1) * length, length));
+        return Converter.INSTANCE.toMessageDTO(messageDataService.getApplyCourseList((page - 1) * length, length));
     }
 
     public List<MessageDTO> getSystemMessage(int page, int length) {
         if (page < 1) return new ArrayList<>();
-        return Converter.INSTANCE.toMessageDTO(messageMapper.getApplyCourseList((page - 1) * length, length));
+        return Converter.INSTANCE.toMessageDTO(messageDataService.getApplyCourseList((page - 1) * length, length));
     }
 
-    public int getApplyCourseCount() {
-        return messageMapper.getApplyCourseCount();
+    public long getApplyCourseCount() {
+        return messageDataService.getApplyCourseCount();
     }
 
     public void createCommentMessage(long recieverId, long commenterId, long nodeId, long commentId, int type) {
@@ -442,11 +438,11 @@ public class MessageService {
         messageDO.setSenderId(0L);
         messageDO.setReceiverId(userId);
         messageDO.setContent(content);
-        messageMapper.insert(messageDO);
+        messageDataService.insert(messageDO);
     }
 
     public void modifyCourseApply(long messageId, String reply) {
-        MessageDO messageDO = messageMapper.getById(messageId);
+        MessageDO messageDO = messageDataService.getById(messageId);
         if (messageDO == null) throw new RuntimeException("Message not found");
 
         String content = messageDO.getContent();
@@ -456,7 +452,7 @@ public class MessageService {
 
             content = objectMapper.writeValueAsString(map);
             messageDO.setContent(content);
-            messageMapper.update(messageDO);
+            messageDataService.update(messageDO);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -468,7 +464,7 @@ public class MessageService {
     public void applyCourse(String title, String summary, String explanation, Long parentId, long userId) {
         CourseDO course = null;
         if (parentId != 0) {
-            course = courseMapper.getById(parentId);
+            course = courseDataService.getById(parentId);
             if (course == null) {
                 throw new RuntimeException("course not found");
             }
@@ -500,7 +496,7 @@ public class MessageService {
         if (page < 1) page = 1;
         if (length < 1) length = 1;
         if (length > 100) length = 100;
-        int count = getApplyCourseCount();
+        int count = (int)getApplyCourseCount();
         int totalPage = count / length + 1;
         if (page > totalPage) page = totalPage;
 

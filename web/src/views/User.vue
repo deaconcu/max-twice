@@ -2,8 +2,13 @@
 import { ref, onMounted, inject, watch, computed, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { learnService } from '@/services/learnService'
-import { userService } from '@/services/learnService'
+import { 
+  userServiceV1, 
+  subscriptionServiceV1,
+  postServiceV1,
+  followServiceV1,
+  progressServiceV1
+} from '@/services/api/v1/apiServiceV1'
 import draggable from 'vuedraggable';
 import { useUserStore } from "@/stores/user";
 import UserPosting from '../components/UserPosting.vue';
@@ -159,7 +164,7 @@ async function loadUser() {
   console.log("load user");
   try {
     let response = '';
-    response = await userService.getUser(route.query.id);
+    response = await userServiceV1.getUser(route.query.id);
 
     if (response.code === 401) {
       console.log('not login');
@@ -177,7 +182,7 @@ async function loadSubscription() {
   console.log("user: " + JSON.stringify(user));
   try {
     let response = '';
-    response = await userService.getSubscription(route.query.id);
+    response = await subscriptionServiceV1.getUserSubscriptions(route.query.id);
 
     if (response.code === 401) {
       console.log('not login');
@@ -196,7 +201,7 @@ async function saveSubscription() {
   try {
     let response = '';
     const ids = subscriptions.value.map(item => item.id).join(',');
-    response = await userService.putSubscription(ids);
+    response = await subscriptionServiceV1.updateSubscriptions(ids);
 
     if (response.code === 401) {
       console.log('not login');
@@ -214,8 +219,8 @@ const loadLearningProgress = async () => {
   try {
     // 并行加载用户学习的路线图数据和课程数据
     const [roadmapResponse, courseResponse] = await Promise.all([
-      learnService.getUserRoadmaps(),
-      learnService.getUserCourseList()
+      progressServiceV1.getUserRoadmaps(),
+      progressServiceV1.getAllCourseProgress()
     ]);
     
     console.log('获取用户学习路线图数据:', roadmapResponse);
@@ -312,7 +317,7 @@ const lastArticleId = ref(0x7FFFFFFF);
 async function loadContents({ done }) {
   try {
     let response = '';
-    response = await learnService.getUserContents(route.query.id, lastContentsId.value);
+    response = await userServiceV1.getUserPosts(route.query.id, lastContentsId.value, 'content');
 
     if (response.code === 401) {
       console.log('not login');
@@ -335,7 +340,7 @@ async function loadContents({ done }) {
 async function loadArticle({ done }) {
   try {
     let response = '';
-    response = await learnService.getUserArticle(route.query.id, lastArticleId.value);
+    response = await userServiceV1.getUserPosts(route.query.id, lastArticleId.value, 'article');
 
     if (response.code === 401) {
       console.log('not login');
@@ -359,7 +364,7 @@ const modifyPosting = async () => {
   try {
     console.log("begin post");
 
-    const response = await learnService.putPosting(currPosting.value.id, editorRef.value.editor.getHTML());
+    const response = await postServiceV1.updatePost(currPosting.value.id, { content: editorRef.value.editor.getHTML() });
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {
@@ -780,7 +785,7 @@ const followeeList = ref([]);
 async function loadFollowee({ done }) {
   try {
     let response = '';
-    response = await userService.getFolloweeList(route.query.id, lastFolloweeId.value);
+    response = await followServiceV1.getFollowees(route.query.id, lastFolloweeId.value);
 
     if (response.code === 401) {
       console.log('not login');

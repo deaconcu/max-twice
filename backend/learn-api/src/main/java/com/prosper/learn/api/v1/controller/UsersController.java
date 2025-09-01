@@ -3,7 +3,12 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.UserService;
-import com.prosper.learn.dto.*;
+import com.prosper.learn.dto.response.*;
+import com.prosper.learn.dto.response.UserDTO;
+import com.prosper.learn.dto.response.UserDTOV2;
+import com.prosper.learn.dto.response.UserDTOV3;
+import com.prosper.learn.dto.response.UserDTOV4;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +42,9 @@ public class UsersController {
      * 映射: POST /self → PUT /api/v1/users/current
      */
     @PutMapping("/users/current")
-    public ApiResponse<Void> updateCurrentUser(@RequestParam String name, @RequestParam String biography) {
+    public ApiResponse<Void> updateCurrentUser(
+            @JsonParam("name") String name, 
+            @JsonParam("biography") String biography) {
         Long userId = StpUtil.getLoginIdAsLong();
         userService.updateCurrentUser(userId, name, biography);
         return ApiResponse.success();
@@ -69,7 +76,10 @@ public class UsersController {
      * 映射: POST /user → POST /api/v1/auth/register
      */
     @PostMapping("/auth/register")
-    public ApiResponse<Void> register(@RequestParam String userName, @RequestParam String email, @RequestParam String password) {
+    public ApiResponse<Void> register(
+            @JsonParam("userName") String userName,
+            @JsonParam("email") String email, 
+            @JsonParam("password") String password) {
         userService.register(userName, email, password);
         return ApiResponse.success();
     }
@@ -79,7 +89,9 @@ public class UsersController {
      * 映射: POST /login → POST /api/v1/auth/login
      */
     @PostMapping("/auth/login")
-    public ApiResponse<UserDTOV2> login(@RequestParam String email, @RequestParam String password) {
+    public ApiResponse<UserDTOV2> login(
+            @JsonParam("email") String email, 
+            @JsonParam("password") String password) {
         // Service 负责业务验证
         UserDTOV2 userDTO = userService.validateLogin(email, password);
         
@@ -94,7 +106,9 @@ public class UsersController {
      * 映射: POST /user/validate → POST /api/v1/auth/validate-email
      */
     @PostMapping("/auth/validate-email")
-    public ApiResponse<UserDTO> validateEmail(@RequestParam String email, @RequestParam String code) {
+    public ApiResponse<UserDTO> validateEmail(
+            @JsonParam("email") String email, 
+            @JsonParam("code") String code) {
         // Service 负责验证逻辑
         UserDTO userDTO = userService.validateEmail(email, code);
         

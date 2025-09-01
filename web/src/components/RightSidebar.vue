@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted, inject, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { usePlatformStats } from '@/composables/usePlatformStats';
-import { learnService } from '@/services/learnService';
+import { professionServiceV1, courseServiceV1, progressServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { PROGRESS_STATE, PROGRESS_STATE_TEXT } from '@/constants/statusConstants';
 
 const { t } = useI18n();
@@ -80,7 +80,7 @@ const learningData = ref({
 // 加载热门职业数据
 const loadHotProfessions = async () => {
   try {
-    const response = await learnService.getHotProfessions();
+    const response = await professionServiceV1.getHotProfessions();
     if (response && response.data) {
       hotProfessions.value = response.data.slice(0, 3) || [];
     }
@@ -98,7 +98,7 @@ const loadHotProfessions = async () => {
 // 加载热门课程数据
 const loadHotCourses = async () => {
   try {
-    const response = await learnService.getHotCourses();
+    const response = await courseServiceV1.getHotCourses();
     if (response && response.data) {
       hotCourses.value = response.data.slice(0, 3) || [];
     }
@@ -117,8 +117,8 @@ const loadHotCourses = async () => {
 const loadLearningData = async () => {
   try {
     const [roadmapResponse, courseResponse] = await Promise.all([
-      learnService.getUserRoadmaps(),
-      learnService.getUserCourseList()
+      progressServiceV1.getUserRoadmaps(),
+      progressServiceV1.getAllCourseProgress()
     ]);
     
     let roadmaps = [];

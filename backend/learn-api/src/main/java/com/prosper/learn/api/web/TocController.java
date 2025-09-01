@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.api.client.TocClient;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.dto.Response;
+import com.prosper.learn.dto.response.Response;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.CourseTocDO;
 import com.prosper.learn.persistence.dataobject.UserCourseTocDO;
@@ -15,7 +15,6 @@ import com.prosper.learn.persistence.mapper.CourseTocMapper;
 import com.prosper.learn.persistence.mapper.UserCourseTocMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.RestController;
 
 //@RestController
 //@SaCheckLogin

@@ -9,16 +9,13 @@ import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.basic.RedisStatsService;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
 import com.prosper.learn.domain.util.Converter;
-import com.prosper.learn.dto.CommentDTO;
-import com.prosper.learn.dto.PostDTO;
+import com.prosper.learn.dto.response.CommentDTO;
+import com.prosper.learn.dto.response.PostDTO;
 import com.prosper.learn.persistence.dataobject.CommentDO;
 import com.prosper.learn.persistence.dataobject.PostDO;
 import com.prosper.learn.persistence.dataobject.UpvoteDO;
 import com.prosper.learn.persistence.dataobject.UserDO;
-import com.prosper.learn.persistence.mapper.CommentMapper;
-import com.prosper.learn.persistence.mapper.PostMapper;
-import com.prosper.learn.persistence.mapper.UpvoteMapper;
-import com.prosper.learn.persistence.mapper.UserMapper;
+import com.prosper.learn.domain.service.data.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,16 +55,16 @@ public class UpvoteService {
     private static final String UPVOTE_TYPE_HELPFUL = "helpful";
 
     /** 用户数据访问接口 */
-    private final UserMapper userMapper;
+    private final UserDataService userDataService;
     
     /** 点赞数据访问接口 */
-    private final UpvoteMapper upvoteMapper;
+    private final UpvoteDataService upvoteDataService;
     
     /** 帖子数据访问接口 */
-    private final PostMapper postMapper;
+    private final PostDataService postDataService;
     
     /** 评论数据访问接口 */
-    private final CommentMapper commentMapper;
+    private final CommentDataService commentDataService;
     
     /** 消息服务，用于发送点赞通知 */
     private final MessageService messageService;
@@ -102,7 +99,7 @@ public class UpvoteService {
      */
     private UserDO validateUserExists(long userId) {
         validateUserId(userId);
-        UserDO userDO = userMapper.getById(userId);
+        UserDO userDO = userDataService.getById(userId);
         if (userDO == null) {
             throw ErrorCode.USER_NOT_FOUND.exception();
         }
@@ -120,7 +117,7 @@ public class UpvoteService {
         if (postId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子ID无效: " + postId);
         }
-        PostDO postDO = postMapper.get(postId);
+        PostDO postDO = postDataService.getById(postId);
         if (postDO == null) {
             throw ErrorCode.CONTENTS_POST_NOT_FOUND.exception();
         }
@@ -138,7 +135,7 @@ public class UpvoteService {
         if (commentId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception("评论ID无效: " + commentId);
         }
-        CommentDO commentDO = commentMapper.getById(commentId);
+        CommentDO commentDO = commentDataService.getById(commentId);
         if (commentDO == null) {
             throw ErrorCode.COMMENT_NOT_FOUND.exception();
         }
@@ -220,12 +217,12 @@ public class UpvoteService {
         UserDO fromUserDO = validateUserExists(userId);
         PostDO postDO = validatePostExists(postingId);
 
-        UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, postDO.getId(), ObjectType.post.value());
+        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, postDO.getId(), ObjectType.post.value());
         String upvoteTypeName = getUpvoteTypeName(type);
 
         if (upvoteDO != null && upvoteDO.getType() == type) {
             // 取消点赞
-            upvoteMapper.delete(upvoteDO.getId());
+            upvoteDataService.delete(upvoteDO.getId());
             
             // 减少对应点赞数
             updatePostVoteCount(postDO, upvoteDO.getType(), -1);
@@ -233,7 +230,7 @@ public class UpvoteService {
             // 记录到Redis统计
             redisStatsService.removeUpvote(postDO.getId(), userId, upvoteTypeName);
             
-            postMapper.update(postDO);
+            postDataService.update(postDO);
             
             // 智能更新文章分数
             scoreCalculationService.checkAndUpdatePostScore(postDO);
@@ -246,7 +243,7 @@ public class UpvoteService {
             upvoteDO.setUserId(userId);
             upvoteDO.setObjectId(postDO.getId());
             upvoteDO.setType(type);
-            upvoteMapper.insert(upvoteDO);
+            upvoteDataService.insert(upvoteDO);
         } else {
             // 切换点赞类型
             String oldUpvoteTypeName = getUpvoteTypeName(upvoteDO.getType());
@@ -258,7 +255,7 @@ public class UpvoteService {
             redisStatsService.removeUpvote(postDO.getId(), userId, oldUpvoteTypeName);
             
             upvoteDO.setType(type);
-            upvoteMapper.update(upvoteDO);
+            upvoteDataService.update(upvoteDO);
         }
 
         // 增加新类型的点赞数
@@ -270,7 +267,7 @@ public class UpvoteService {
         // 记录到Redis统计
         redisStatsService.recordUpvote(postDO.getId(), userId, upvoteTypeName);
         
-        postMapper.update(postDO);
+        postDataService.update(postDO);
         
         // 智能更新文章分数
         scoreCalculationService.checkAndUpdatePostScore(postDO);
@@ -309,14 +306,14 @@ public class UpvoteService {
         // get node id
         long nodeId = getNodeIdFromComment(commentDO);
 
-        UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, commentId, ObjectType.comment.value());
+        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, commentId, ObjectType.comment.value());
         if (upvoteDO != null) {
-            upvoteMapper.delete(upvoteDO.getId());
+            upvoteDataService.delete(upvoteDO.getId());
             commentDO.setUpvoteCount(commentDO.getUpvoteCount() - 1);
 
             // 更新评论分数
             scoreCalculationService.checkAndUpdateCommentScore(commentDO);
-            commentMapper.update(commentDO);
+            commentDataService.update(commentDO);
             return;
         }
 
@@ -325,13 +322,13 @@ public class UpvoteService {
         upvoteDO.setObjectId(commentDO.getId());
         upvoteDO.setObjectType(Enums.ObjectType.comment.value());
         upvoteDO.setType(0);
-        upvoteMapper.insert(upvoteDO);
+        upvoteDataService.insert(upvoteDO);
 
         commentDO.setUpvoteCount(commentDO.getUpvoteCount() + 1);
 
         // 更新评论分数
         scoreCalculationService.checkAndUpdateCommentScore(commentDO);
-        commentMapper.update(commentDO);
+        commentDataService.update(commentDO);
 
         messageService.createUpvoteMessage(
                 commentDO.getFromUser(), userId, nodeId, commentId, ObjectType.comment.value(), 1);
@@ -351,11 +348,11 @@ public class UpvoteService {
         }
         
         // 检查是否已经投过票
-        UpvoteDO existingUpvote = upvoteMapper.getByUserAndObject(userId, roadmapId, ObjectType.roadmap.value());
+        UpvoteDO existingUpvote = upvoteDataService.getByUserAndObject(userId, roadmapId, ObjectType.roadmap.value());
 
         if (existingUpvote != null) {
             // 如果已经投过票，则取消投票
-            upvoteMapper.delete(existingUpvote.getId());
+            upvoteDataService.delete(existingUpvote.getId());
 
             return false; // 返回false表示取消投票
         } else {
@@ -365,7 +362,7 @@ public class UpvoteService {
             upvoteDO.setObjectId(roadmapId);
             upvoteDO.setObjectType(ObjectType.roadmap.value());
             upvoteDO.setType(0); // roadmap投票类型设为0，对应"once"
-            upvoteMapper.insert(upvoteDO);
+            upvoteDataService.insert(upvoteDO);
 
             return true; // 返回true表示投票成功
         }
@@ -377,13 +374,13 @@ public class UpvoteService {
      * @param userId 用户ID
      * @return true表示已投票，false表示未投票
      */
-    public boolean hasUpvotedRoadmap(long roadmapId, int userId) {
+    public boolean hasUpvotedRoadmap(long roadmapId, long userId) {
         validateUserId(userId);
         if (roadmapId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception("路线图ID无效: " + roadmapId);
         }
         
-        UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, roadmapId, ObjectType.roadmap.value());
+        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, roadmapId, ObjectType.roadmap.value());
         return upvoteDO != null;
     }
 
@@ -398,7 +395,7 @@ public class UpvoteService {
             return new HashSet<>();
         }
 
-        List<UpvoteDO> upvotes = upvoteMapper.getList(userId, roadmapIds, ObjectType.roadmap.value());
+        List<UpvoteDO> upvotes = upvoteDataService.getList(userId, roadmapIds, ObjectType.roadmap.value());
         return upvotes.stream()
                 .map(UpvoteDO::getObjectId)
                 .collect(Collectors.toSet());
@@ -411,13 +408,13 @@ public class UpvoteService {
      * @throws BusinessException 当参数无效或对象不存在时抛出异常
      */
     @Transactional
-    public void cancelVote(int postingId, int userId) {
+    public void cancelVote(long postingId, long userId) {
         validateUserId(userId);
         if (postingId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子ID无效: " + postingId);
         }
         
-        UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, postingId, ObjectType.post.value());
+        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, postingId, ObjectType.post.value());
         if (upvoteDO == null) return;
 
         PostDO postDO = validatePostExists(postingId);
@@ -430,10 +427,10 @@ public class UpvoteService {
      */
     public void cancelVote(PostDO postDO, UpvoteDO upvoteDO) {
         if (postDO == null || upvoteDO == null) return;
-        upvoteMapper.delete(upvoteDO.getId());
+        upvoteDataService.delete(upvoteDO.getId());
 
         //postingDO.setVote(postingDO.getVote() - 1);
-        postMapper.update(postDO);
+        postDataService.update(postDO);
     }
 
     /**
@@ -454,7 +451,7 @@ public class UpvoteService {
             PostDO postDO = validatePostExists(objectId);
             
             PostDTO postDTO = Converter.INSTANCE.toPostDTO(postDO);
-            UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, objectId, ObjectType.post.value());
+            UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, objectId, ObjectType.post.value());
             if (upvoteDO != null) {
                 postDTO.setVoteType(upvoteDO.getType());
             }
@@ -463,7 +460,7 @@ public class UpvoteService {
             CommentDO commentDO = validateCommentExists(objectId);
             
             CommentDTO commentDTO = Converter.INSTANCE.toCommentDTO(commentDO);
-            UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, objectId, ObjectType.comment.value());
+            UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, objectId, ObjectType.comment.value());
             if (upvoteDO != null) {
                 commentDTO.setUpvoted(1);
             }
@@ -487,7 +484,7 @@ public class UpvoteService {
             throw ErrorCode.INVALID_PARAMETER.exception("对象ID无效: " + objectId);
         }
         
-        UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, objectId, objectType);
+        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, objectId, objectType);
         
         Map<String, Object> result = new HashMap<>();
         result.put("objectId", objectId);

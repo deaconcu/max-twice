@@ -484,7 +484,8 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { learnService } from '@/services/learnService';
+import { professionServiceV1 } from '@/services/api/v1/apiServiceV1';
+import { learnService } from '@/services/learnService'; // TODO: 临时保留，用于未迁移的接口
 import { APPROVAL_STATE, APPROVAL_STATE_TEXT, getApprovalStateClass } from '@/constants/statusConstants';
 import CategorySelector from '../CategorySelector.vue';
 
@@ -532,7 +533,7 @@ const getSubCategoryName = (mainCategoryId, subCategoryId) => {
 // 加载职业类别数据
 const loadProfessionCategories = async () => {
   try {
-    const data = await learnService.getProfessionCategories();
+    const data = await learnService.getProfessionCategories(); // TODO: 需要迁移到V1
     mainCategories.value = data.mainCategories || [];
     categoryMapping.value = data.categoryMapping || [];
   } catch (error) {
@@ -595,7 +596,7 @@ const loadProfessionList = async (reset = true) => {
     
     const currentLastId = reset ? 0 : lastId.value;
     const state = getCurrentState();
-    const response = await learnService.getProfessionByState(state, currentLastId);
+    const response = await professionServiceV1.getProfessions(1, 20, state, currentLastId);
     
     if (response.code === 200 && response.data) {
       const newData = Array.isArray(response.data) ? response.data : [];
@@ -668,7 +669,7 @@ const onStateChange = () => {
 // 操作职业申请
 const operateProfession = async (profession, action, reason = '') => {
   try {
-    const response = await learnService.operateProfession(profession.id, action, reason);
+    const response = await professionServiceV1.approveProfession(profession.id, action, reason);
     
     if (response.code === 200) {
       // 更新本地数据
@@ -816,7 +817,7 @@ const updateProfession = async () => {
       rejectedReason: editProfession.value.rejectedReason || ''
     };
     
-    const response = await learnService.updateProfession(updateData);
+    const response = await professionServiceV1.updateProfession(profession.id, updateData);
     
     if (response.code === 200) {
       // 更新本地数据
@@ -859,7 +860,7 @@ const deleteProfession = async () => {
   try {
     deleting.value = true;
     
-    const response = await learnService.deleteProfession(currentProfession.value.id);
+    const response = await professionServiceV1.deleteProfession(currentProfession.value.id);
     
     if (response.code === 200) {
       // 从本地列表中移除

@@ -45,12 +45,12 @@ public class ProfessionRankingScheduler {
     /**
      * 验证和获取职业ID
      */
-    private Integer validateAndGetProfessionId(Map<String, Object> row) {
+    private Long validateAndGetProfessionId(Map<String, Object> row) {
         Number professionIdNum = (Number) row.get("profession_id");
         if (professionIdNum == null) {
             return null;
         }
-        return professionIdNum.intValue();
+        return professionIdNum.longValue();
     }
 
     /**
@@ -84,7 +84,7 @@ public class ProfessionRankingScheduler {
     private int processProfessionLearningData(List<Map<String, Object>> learningData) {
         int updatedCount = 0;
         for (Map<String, Object> row : learningData) {
-            Integer professionId = validateAndGetProfessionId(row);
+            Long professionId = validateAndGetProfessionId(row);
             Long learningCount = validateAndGetCount(row);
             
             if (professionId != null) {

@@ -6,10 +6,10 @@ import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ContentsService;
 import com.prosper.learn.persistence.dataobject.UserProgressDO;
 import com.prosper.learn.persistence.dataobject.UserCourseDO;
-import com.prosper.learn.persistence.mapper.UserProgressMapper;
-import com.prosper.learn.persistence.mapper.UserCourseMapper;
-import com.prosper.learn.persistence.mapper.NodeMapper;
-import com.prosper.learn.persistence.mapper.CourseMapper;
+import com.prosper.learn.domain.service.data.UserProgressDataService;
+import com.prosper.learn.domain.service.data.UserCourseDataService;
+import com.prosper.learn.domain.service.data.NodeDataService;
+import com.prosper.learn.domain.service.data.CourseDataService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
@@ -33,10 +33,10 @@ import java.util.stream.Collectors;
 public class LearningProgressService {
 
     private final RedisTemplate<String, String> redisTemplate;
-    private final UserProgressMapper userProgressMapper;
-    private final UserCourseMapper userCourseMapper;
-    private final NodeMapper nodeMapper;
-    private final CourseMapper courseMapper;
+    private final UserProgressDataService userProgressDataService;
+    private final UserCourseDataService userCourseDataService;
+    private final NodeDataService nodeDataService;
+    private final CourseDataService courseDataService;
     private final ContentsService contentsService;
     private final ObjectMapper objectMapper;
     private final SystemProperties systemProperties;
@@ -240,7 +240,7 @@ public class LearningProgressService {
     private boolean fallbackUnmarkToDatabase(long userId, long nodeId) {
         try {
             // 从数据库读取现有数据
-            UserProgressDO record = userProgressMapper.getByUserId(userId);
+            UserProgressDO record = userProgressDataService.getByUserId(userId);
             
             if (record == null || record.getNodeIds() == null || record.getNodeIds().isEmpty()) {
                 return false; // 没有完成记录
@@ -268,7 +268,7 @@ public class LearningProgressService {
             newRecord.setNodeIds(nodeIdsString);
             newRecord.setCount(completedNodes.size());
             
-            int updated = userProgressMapper.upsert(newRecord);
+            int updated = userProgressDataService.upsert(newRecord);
             
             if (updated > 0) {
                 log.info("Fallback: Successfully unmarked node {} as completed for user {} in database", 
@@ -371,7 +371,7 @@ public class LearningProgressService {
         try {
             log.debug("Loading user {} data from database to Redis", userId);
             
-            UserProgressDO record = userProgressMapper.getByUserId(userId);
+            UserProgressDO record = userProgressDataService.getByUserId(userId);
             if (record == null || record.getNodeIds() == null || record.getNodeIds().isEmpty()) {
                 log.debug("No learning data found for user {} in database", userId);
                 return;
@@ -425,7 +425,7 @@ public class LearningProgressService {
             record.setNodeIds(completedNodeIds);
             record.setCount(nodeStrings.size());
             
-            int updated = userProgressMapper.upsert(record);
+            int updated = userProgressDataService.upsert(record);
             
             if (updated > 0) {
                 log.debug("Successfully synced {} completed nodes for user {} to database", 
@@ -450,7 +450,7 @@ public class LearningProgressService {
     private boolean fallbackToDatabase(long userId, long nodeId) {
         try {
             // 从数据库读取现有数据
-            UserProgressDO record = userProgressMapper.getByUserId(userId);
+            UserProgressDO record = userProgressDataService.getByUserId(userId);
             
             Set<Long> completedNodes = new HashSet<>();
             if (record != null && record.getNodeIds() != null && !record.getNodeIds().isEmpty()) {
@@ -474,7 +474,7 @@ public class LearningProgressService {
             newRecord.setNodeIds(nodeIdsString);
             newRecord.setCount(completedNodes.size());
             
-            int updated = userProgressMapper.upsert(newRecord);
+            int updated = userProgressDataService.upsert(newRecord);
             
             if (updated > 0) {
                 log.info("Fallback: Successfully marked node {} as completed for user {} in database", 
@@ -509,7 +509,7 @@ public class LearningProgressService {
             
             for (String userIdStr : failedUsers) {
                 try {
-                    Integer userId = Integer.parseInt(userIdStr);
+                    Long userId = Long.parseLong(userIdStr);
                     syncUserToDatabase(userId);
                     
                     // 同步成功，从失败队列移除
@@ -565,7 +565,7 @@ public class LearningProgressService {
      * @param userId 用户ID
      * @return 是否同步成功
      */
-    public boolean manualSync(Integer userId) {
+    public boolean manualSync(Long userId) {
         try {
             syncUserToDatabase(userId);
             // 同步成功后从失败队列移除（如果存在）
@@ -590,7 +590,7 @@ public class LearningProgressService {
             log.info("Marking course {} as completed for user {}", courseId, userId);
             
             // 查找用户课程记录
-            UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId((long)userId, (long)courseId);
+            UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId((long)userId, (long)courseId);
             
             if (userCourse == null) {
                 // 如果没有记录，创建新的用户课程记录
@@ -602,21 +602,16 @@ public class LearningProgressService {
                 userCourse.setStartedAt(java.time.LocalDateTime.now());
                 userCourse.setCompletedAt(java.time.LocalDateTime.now());
                 
-                int inserted = userCourseMapper.insert(userCourse);
-                if (inserted > 0) {
-                    log.info("Successfully created and marked course {} as completed for user {}", courseId, userId);
-                    return true;
-                } else {
-                    log.error("Failed to insert user course record for user {} course {}", userId, courseId);
-                    return false;
-                }
+                userCourseDataService.insert(userCourse);
+                log.info("Successfully created and marked course {} as completed for user {}", courseId, userId);
+                return true;
             } else {
                 // 如果已有记录，更新完成状态
                 userCourse.setProgressPercent(100);
                 userCourse.setState(Enums.UserCourseState.COMPLETED.value());
                 userCourse.setCompletedAt(java.time.LocalDateTime.now());
                 
-                int updated = userCourseMapper.update(userCourse);
+                int updated = userCourseDataService.update(userCourse);
                 if (updated > 0) {
                     log.info("Successfully updated course {} as completed for user {}", courseId, userId);
                     return true;
@@ -672,7 +667,7 @@ public class LearningProgressService {
             int finalProgress = (int) Math.floor(progressPercent);
             
             // 5. 更新或创建用户课程记录
-            UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId((long)userId, (long)courseId);
+            UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId((long)userId, (long)courseId);
             
             if (userCourse == null) {
                 userCourse = new UserCourseDO();
@@ -684,14 +679,14 @@ public class LearningProgressService {
                 if (finalProgress >= 10000) {
                     userCourse.setCompletedAt(LocalDateTime.now());
                 }
-                userCourseMapper.insert(userCourse);
+                userCourseDataService.insert(userCourse);
             } else {
                 userCourse.setProgressPercent(finalProgress);
                 userCourse.setState(finalProgress >= 10000 ? Enums.UserCourseState.COMPLETED.value() : Enums.UserCourseState.IN_PROGRESS.value());
                 if (finalProgress >= 10000 && userCourse.getCompletedAt() == null) {
                     userCourse.setCompletedAt(LocalDateTime.now());
                 }
-                userCourseMapper.update(userCourse);
+                userCourseDataService.update(userCourse);
             }
             
             log.info("Updated course {} hierarchical progress: {}%", courseId, finalProgress);
@@ -713,7 +708,7 @@ public class LearningProgressService {
             return 0.0;
         }
         
-        List<Integer> childNodeIds = new ArrayList<>();
+        List<Long> childNodeIds = new ArrayList<>();
         List<JsonNode> childNodes = new ArrayList<>();
         
         // 遍历所有字段，收集子节点
@@ -725,7 +720,7 @@ public class LearningProgressService {
             
             try {
                 // 尝试解析为节点ID
-                int nodeId = Integer.parseInt(fieldName);
+                long nodeId = Long.parseLong(fieldName);
                 childNodeIds.add(nodeId);
                 childNodes.add(node.get(fieldName));
             } catch (NumberFormatException e) {
@@ -740,7 +735,7 @@ public class LearningProgressService {
         double totalProgress = 0.0;
         
         for (int i = 0; i < childNodeIds.size(); i++) {
-            Integer nodeId = childNodeIds.get(i);
+            Long nodeId = childNodeIds.get(i);
             JsonNode childNode = childNodes.get(i);
             
             if (childNode.isObject() && childNode.size() > 0) {
@@ -765,7 +760,7 @@ public class LearningProgressService {
     public Map<String, Object> markNodeCompletedWithResponse(long userId, long nodeId, long courseId) {
         boolean isNewlyCompleted = markNodeCompleted(userId, nodeId, courseId);
         
-        UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
+        UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
         Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
         
         Map<String, Object> result = new HashMap<>();
@@ -786,7 +781,7 @@ public class LearningProgressService {
     public Map<String, Object> unmarkNodeCompletedWithResponse(long userId, long nodeId, long courseId) {
         boolean wasRemoved = unmarkNodeCompleted(userId, nodeId, courseId);
         
-        UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId(userId, courseId);
+        UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
         Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
         
         Map<String, Object> result = new HashMap<>();

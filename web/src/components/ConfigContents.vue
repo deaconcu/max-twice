@@ -3,7 +3,7 @@ import { ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import draggable from 'vuedraggable'
-import { learnService } from '@/services/learnService';
+import { learnService } from '@/services/learnService'; // TODO: postToc 需要迁移到 V1 API
 import { useI18n } from 'vue-i18n'
 
 const route = useRoute();

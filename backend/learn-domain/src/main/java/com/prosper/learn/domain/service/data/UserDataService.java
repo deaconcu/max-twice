@@ -114,4 +114,18 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
             log.debug("Evicted email cache for: {}", email);
         }
     }
+    
+    /**
+     * 根据名称搜索用户（不缓存）
+     */
+    public List<UserDO> searchByName(String name) {
+        return userMapper.searchByName(name);
+    }
+    
+    /**
+     * 插入用户
+     */
+    public int insert(UserDO user) {
+        return userMapper.insert(user);
+    }
 }

@@ -4,8 +4,8 @@ package com.prosper.learn.api.web;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.client.UserRoadmapClient;
 import com.prosper.learn.domain.service.business.UserRoadmapService;
-import com.prosper.learn.dto.Response;
-import com.prosper.learn.dto.UserRoadmapDTO;
+import com.prosper.learn.dto.response.Response;
+import com.prosper.learn.dto.response.UserRoadmapDTO;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;

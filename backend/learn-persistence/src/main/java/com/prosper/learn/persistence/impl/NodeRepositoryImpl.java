@@ -17,7 +17,7 @@ public class NodeRepositoryImpl { //implements NodeRepository {
     }
 
     @Override
-    public Node find(Integer id) {
+    public Node find(Long id) {
         return Converter.INSTANCE.nodeToEntity(nodeMapper.getById(id));
     }
 
@@ -33,12 +33,12 @@ public class NodeRepositoryImpl { //implements NodeRepository {
     }
 
     @Override
-    public List<Node> listBySubcourse(int subcourseId) {
+    public List<Node> listBySubcourse(long subcourseId) {
         return Converter.INSTANCE.nodeToEntity(nodeMapper.listBySubcourse(subcourseId));
     }
 
     @Override
-    public List<Node> listByUser(int userId, int count, int offset) {
+    public List<Node> listByUser(long userId, int count, int offset) {
         return Converter.INSTANCE.nodeToEntity(nodeMapper.listByUser(userId, count, offset));
     }
 

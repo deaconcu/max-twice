@@ -86,4 +86,25 @@ public class UserCourseDataService extends AbstractDataService<UserCourseDO, Use
     public void deleteByUserAndCourse(long userId, long courseId) {
         userCourseMapper.deleteByUserAndCourse(userId, courseId);
     }
+    
+    /**
+     * 插入用户课程记录
+     */
+    public void insert(UserCourseDO userCourseDO) {
+        userCourseMapper.insert(userCourseDO);
+    }
+
+    /**
+     * 根据用户ID获取课程列表
+     */
+    public List<UserCourseDO> getByUserId(long userId, long lastId) {
+        return userCourseMapper.getByUserId(userId, lastId);
+    }
+
+    /**
+     * 根据用户ID和课程ID列表获取课程映射
+     */
+    public Map<Long, UserCourseDO> getByUserIdAndCourseIdsAsMap(long userId, List<Long> courseIds) {
+        return userCourseMapper.getByUserIdAndCourseIdsAsMap(userId, courseIds);
+    }
 }

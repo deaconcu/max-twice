@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter} from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { learnService} from '@/services/learnService';
+import { courseServiceV1 } from '@/services/api/v1/apiServiceV1';
 
 const { t } = useI18n();
 //const isLoggedIn = ref(false);
@@ -17,7 +17,7 @@ const course = ref([]);
 
 onMounted(async () => {
   try {
-    const response = await learnService.course(route.params.id);
+    const response = await courseServiceV1.getCourse(route.params.id);
 
     if (response.code === 401) {
       console.log('not login');

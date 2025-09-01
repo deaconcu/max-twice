@@ -92,4 +92,18 @@ public class UpvoteDataService extends AbstractDataService<UpvoteDO, UpvoteMappe
     public void evictUserUpvoteCache(long userId, long objectId, int objectType) {
         // 缓存清除由注解自动处理
     }
+    
+    /**
+     * 获取用户的投票列表（不缓存）
+     */
+    public List<UpvoteDO> getList(long userId, List<Long> objectIds, int objectType) {
+        return upvoteMapper.getList(userId, objectIds, objectType);
+    }
+
+    /**
+     * 插入新的投票记录
+     */
+    public void insert(UpvoteDO upvoteDO) {
+        upvoteMapper.insert(upvoteDO);
+    }
 }

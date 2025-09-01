@@ -2,7 +2,7 @@
 import { ref, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { learnService } from '@/services/learnService';
+import { commentServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1';
 import Subcomment from '../components/Subcomment.vue';
 
 const route = useRoute();
@@ -40,7 +40,7 @@ async function load({ done }) {
     if ('commentId' in route.query && offsetId.value == 0) {
       offsetId.value = route.query.commentId - 4 > 0 ? route.query.commentId - 4 : 0;
     }
-    const response = await learnService.getComments(props.object.id, props.type, offsetId.value);
+    const response = await commentServiceV1.getComments(props.object.id, props.type, offsetId.value);
 
     if (response.code === 401) {
       console.log('not login');
@@ -77,7 +77,7 @@ const sendComment = async (content) => {
   try {
     console.log("begin post");
 
-    const response = await learnService.postComment(inputComment.value, props.object.id, props.type, 0, 0);
+    const response = await commentServiceV1.createComment(props.object.id, props.type, 0, 0, inputComment.value);
     inputComment.value = "";
     console.log('response: ' + JSON.stringify(response));
 
@@ -99,7 +99,7 @@ const sendSubcomment = async (comment) => {
   try {
     console.log("begin post");
 
-    const response = await learnService.postComment(replyContent.value, props.object.id, props.type, activeReplyId.value, 0);
+    const response = await commentServiceV1.createComment(props.object.id, props.type, activeReplyId.value, 0, replyContent.value);
     replyContent.value = "";
     console.log('response: ' + JSON.stringify(response));
 
@@ -138,7 +138,7 @@ const upvote = async (comment) => {
   try {
     console.log("begin post");
 
-    const response = await learnService.upvote(comment.id, 2, 2);
+    const response = await upvoteServiceV1.upvote(comment.id, 2, 2);
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {
