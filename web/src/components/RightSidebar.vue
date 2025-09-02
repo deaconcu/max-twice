@@ -597,7 +597,7 @@ const openInNewTab = (courseId) => {
 .sidebar-fixed {
   position: sticky;
   top: -300px;
-  z-index: 1000;
+  z-index: 900;
 }
 
 .text-h7 {

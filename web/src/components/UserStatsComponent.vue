@@ -320,7 +320,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
-import { learnService } from '@/services/learnService'
+import { statsServiceV1 } from '@/services/api/v1/apiServiceV1'
 import TrendChart from './TrendChart.vue'
 
 export default {
@@ -433,14 +433,14 @@ export default {
 
         switch (selectedPeriod.value) {
           case 'today':
-            response = await learnService.getUserTodayStats(userId)
+            response = await statsServiceV1.getUserTodayStats(userId)
             break
           case 'yesterday':
-            response = await learnService.getUserYesterdayStats(userId)
+            response = await statsServiceV1.getUserYesterdayStats(userId)
             break
           default:
             const days = parseInt(selectedPeriod.value)
-            response = await learnService.getUserPeriodStats(userId, days)
+            response = await statsServiceV1.getUserPeriodStats(userId, days)
             break
         }
 
@@ -470,7 +470,7 @@ export default {
 
       try {
         const userId = userStore.userId
-        const response = await learnService.getUserAllTimeStats(userId)
+        const response = await statsServiceV1.getUserAllTimeStats(userId)
 
         if (response.code === 200) {
           totalStatsData.value = response.data

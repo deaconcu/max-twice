@@ -27,14 +27,14 @@ public class PlatformStatsService {
     private final PostDataService postDataService;
     
     // ========== 常量定义 ==========
-    private static final String CACHE_KEY = "stats";
+    public static final String CACHE_KEY = "stats";
     
     /**
      * 获取平台统计数据（带缓存）
      * 
      * @return 平台统计数据
      */
-    @Cacheable(value = "platformStats", key = "T(com.prosper.learn.domain.service.basic.PlatformStatsService).CACHE_KEY", sync = true)
+    @Cacheable(value = "platformStats", key = "'stats'", sync = true)
     public PlatformStatsDTO getPlatformStats() {
         log.info("开始计算平台统计数据");
         
@@ -76,7 +76,7 @@ public class PlatformStatsService {
      * 
      * @return 最新的平台统计数据
      */
-    @CacheEvict(value = "platformStats", key = "T(com.prosper.learn.domain.service.basic.PlatformStatsService).CACHE_KEY")
+    @CacheEvict(value = "platformStats", key = "'stats'")
     public PlatformStatsDTO refreshPlatformStats() {
         log.info("刷新平台统计数据缓存");
         return getPlatformStats();

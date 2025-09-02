@@ -484,8 +484,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { professionServiceV1 } from '@/services/api/v1/apiServiceV1';
-import { learnService } from '@/services/learnService'; // TODO: 临时保留，用于未迁移的接口
+import { professionServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { APPROVAL_STATE, APPROVAL_STATE_TEXT, getApprovalStateClass } from '@/constants/statusConstants';
 import CategorySelector from '../CategorySelector.vue';
 
@@ -533,7 +532,7 @@ const getSubCategoryName = (mainCategoryId, subCategoryId) => {
 // 加载职业类别数据
 const loadProfessionCategories = async () => {
   try {
-    const data = await learnService.getProfessionCategories(); // TODO: 需要迁移到V1
+    const data = await systemServiceV1.getProfessionCategories();
     mainCategories.value = data.mainCategories || [];
     categoryMapping.value = data.categoryMapping || [];
   } catch (error) {
@@ -596,7 +595,7 @@ const loadProfessionList = async (reset = true) => {
     
     const currentLastId = reset ? 0 : lastId.value;
     const state = getCurrentState();
-    const response = await professionServiceV1.getProfessions(1, 20, state, currentLastId);
+    const response = await professionServiceV1.getProfessions(state, currentLastId);
     
     if (response.code === 200 && response.data) {
       const newData = Array.isArray(response.data) ? response.data : [];

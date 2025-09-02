@@ -1,5 +1,7 @@
 package com.prosper.learn.api.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.context.annotation.Bean;
@@ -17,20 +19,26 @@ import java.util.Map;
 
 /**
  * 缓存配置
+ * 只在缓存启用时生效
  * 
  * @author Claude
  * @since 2024-01-20
  */
 @Configuration
+@ConditionalOnProperty(name = "app.cache.type", havingValue = "redis", matchIfMissing = false)
 public class CacheConfig extends CachingConfigurerSupport {
 
     @Bean
-    public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
+    public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory, ObjectMapper objectMapper) {
+        // 使用已配置的 ObjectMapper 创建序列化器
+        GenericJackson2JsonRedisSerializer jsonRedisSerializer = 
+                new GenericJackson2JsonRedisSerializer(objectMapper);
+        
         // 默认缓存配置（10分钟）
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(10))
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonRedisSerializer));
 
         // 针对不同缓存空间的特定配置
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();

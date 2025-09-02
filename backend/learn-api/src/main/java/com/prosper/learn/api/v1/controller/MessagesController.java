@@ -4,6 +4,8 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.dto.response.message.MessageDTO;
+import com.prosper.learn.persistence.dataobject.UserDO;
+import com.prosper.learn.persistence.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,7 @@ import java.util.Map;
 public class MessagesController {
 
     private final MessageService messageService;
+    private final UserMapper userMapper;
 
     /**
      * 申请课程
@@ -91,6 +94,32 @@ public class MessagesController {
             @JsonParam("reply") String reply) {
         
         messageService.modifyCourseApply(id, reply);
+        return ApiResponse.success();
+    }
+
+    /**
+     * 邀请用户
+     * 映射: POST /message/invite → POST /api/v1/messages/invite
+     */
+    @PostMapping("/messages/invite")
+    public ApiResponse<Void> inviteUser(
+            @JsonParam("userId") Long userId, 
+            @JsonParam("nodeId") Long nodeId) {
+        
+        if (userId <= 0) {
+            throw new IllegalArgumentException("用户ID无效");
+        }
+        if (nodeId <= 0) {
+            throw new IllegalArgumentException("节点ID无效");
+        }
+        
+        UserDO userDO = userMapper.getById(userId);
+        if (userDO == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+
+        long inviterId = StpUtil.getLoginIdAsLong();
+        messageService.createInviteMessage(userId, inviterId, nodeId);
         return ApiResponse.success();
     }
 }

@@ -98,15 +98,8 @@ router.afterEach((to, from) => {
   loadData([]);
 });
 
-/*
-async function loadDataByRoute(parts) {
-  loadData(parts)
-}
-*/
-
 async function loadData(parts) {
   try {
-    //const response = await learnService.read(courseId, path, nodeId, postId, commentId);
     let response;
     if ('commentId' in route.query) {
       response = await pageServiceV1.readByComment(route.query.commentId);
@@ -394,44 +387,6 @@ const getNextNodeInfo = () => {
     return null;
   }
 };
-
-// 注意：subcourses 变量已被 subCourseList 替代
-
-// 注意：以下函数已被废弃，因为现在数据直接从 read 接口返回
-// 加载父课程信息
-// const loadParentCourseInfo = async (parentId) => {
-//   try {
-//     const response = await courseServiceV1.getCourse(parentId)
-//     if (response.code === 200) {
-//       parentCourseInfo.value = response.data
-//     } else {
-//       console.error('加载父课程信息失败:', response.msg)
-//       parentCourseInfo.value = null
-//     }
-//   } catch (error) {
-//     console.error('加载父课程信息失败:', error)
-//     parentCourseInfo.value = null
-//   }
-// }
-
-// 加载子课程列表
-// const loadSubcourses = async (courseId = null) => {
-//   const targetCourseId = courseId || route.query.courseId
-//   if (!targetCourseId) return
-//   
-//   try {
-//     const response = await learnService.getApprovedSubcoursesByParent(targetCourseId)
-//     if (response.code === 200) {
-//       subcourses.value = response.data || []
-//     } else {
-//       console.error('加载子课程失败:', response.msg)
-//       subcourses.value = []
-//     }
-//   } catch (error) {
-//     console.error('加载子课程失败:', error)
-//     subcourses.value = []
-//   }
-// }
 
 const subscript = async (courseId, action) => {
   let response = null;

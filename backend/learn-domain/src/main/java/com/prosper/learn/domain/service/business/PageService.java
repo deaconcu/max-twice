@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
@@ -20,6 +21,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.prosper.learn.common.Enums.*;
 import static com.prosper.learn.common.Enums.ObjectType.post;
 
 @Slf4j
@@ -47,7 +49,6 @@ public class PageService {
     private static final String PATH_SEPARATOR = "-";
     private static final String FIXED_POSTS_FIELD = "^";
     private static final String CHOSEN_POST_FIELD = "+";
-    private static final String APPROVED_COURSE_STATE = "APPROVED";
     private static final Pattern PATH_PATTERN = Pattern.compile("^\\d+(\\-\\d+)*$");
     
     // ========== 公共方法 ==========
@@ -455,7 +456,7 @@ public class PageService {
     
     private List<CourseDTOV2> getSubCourses(long parentCourseId) {
         return Converter.INSTANCE.toCourseDTOV2(
-            courseDataService.listByParentAndState(APPROVED_COURSE_STATE, parentCourseId));
+            courseDataService.listByParentAndState(CourseState.APPROVED, parentCourseId));
     }
     
     private Integer getCourseProgress(long userId, Long courseId) {

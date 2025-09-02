@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { learnService } from '@/services/learnService'
+import { statsServiceV1 } from '@/services/api/v1/apiServiceV1'
 
 // 缓存键和过期时间
 const CACHE_KEY = 'platform_stats'
@@ -81,7 +81,7 @@ const fetchPlatformStats = async (force = false) => {
   error.value = null
 
   try {
-    const response = await learnService.getPlatformStats()
+    const response = await statsServiceV1.getPlatformStats()
     
     if (response.code === 200) {
       const stats = response.data

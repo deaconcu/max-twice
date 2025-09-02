@@ -2,7 +2,7 @@
 import { ref, onMounted, inject, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { learnService } from '@/services/learnService';
+import { systemServiceV1, professionServiceV1 } from '@/services/api/v1/apiServiceV1';
 import CareerCard from '@/components/CareerCard.vue';
 import CategorySelector from '@/components/CategorySelector.vue';
 import RightSidebar from '@/components/RightSidebar.vue';
@@ -45,7 +45,7 @@ const lastId = ref(0); // 最后一个职业的ID，用于分页
 // 动态加载职业类别数据
 const loadProfessionCategories = async () => {
   try {
-    const response = await learnService.getProfessionCategories();
+    const response = await systemServiceV1.getProfessionCategories();
     console.log('Loaded profession categories:', response.data);
     
     if (response.data) {
@@ -69,29 +69,29 @@ const getSubcategoriesByMainCategory = (mainCategoryId) => {
 // 工具函数：获取子分类ID
 const getSubCategoryId = (mainCategoryId, subcategoryIndex) => {
   const subcategories = getSubcategoriesByMainCategory(mainCategoryId);
-  return subcategories[subcategoryIndex]?.value || null;
+  return subcategories[subcategoryIndex]?.id || null;
 };
 
 // 工具函数：根据ID获取分类名称
 const getCategoryName = (categoryId) => {
-  const category = categories.value.find(cat => cat.value === categoryId);
+  const category = categories.value.find(cat => cat.id === categoryId);
   return category?.title || '';
 };
 
 // 工具函数：根据主分类ID和子分类ID获取子分类名称
 const getSubCategoryName = (mainCategoryId, subCategoryId) => {
   const subcategories = getSubcategoriesByMainCategory(mainCategoryId);
-  const subcategory = subcategories.find(sub => sub.value === subCategoryId);
-  return subcategory?.title || '';
+  const subcategory = subcategories.find(sub => sub.id === subCategoryId);
+  return subcategory?.name || '';
 };
 
 // 工具函数：根据子分类ID获取子分类名称（用于CareerCard）
 const getSubCategoryNameById = (subCategoryId) => {
   // 遍历所有分类映射来查找子分类
   for (const mapping of categoryMapping.value) {
-    const subcategory = mapping.subcategories.find(sub => sub.value === subCategoryId);
+    const subcategory = mapping.subcategories.find(sub => sub.id === subCategoryId);
     if (subcategory) {
-      return subcategory.title;
+      return subcategory.name;
     }
   }
   return '';
@@ -194,7 +194,7 @@ const loadCareerData = async (reset = true) => {
     
     // 调用API获取所有职业数据
     const params = { lastId: lastId.value };
-    const response = await learnService.getProfessionList(params);
+    const response = await professionServiceV1.getApprovedProfessions(lastId.value);
     console.log("response", response.data);
     const newCareers = addRandomIconsToCareers(response.data || []);
     
@@ -244,7 +244,7 @@ const loadCareersByMainCategory = async (mainCategoryId, reset = true) => {
       currentQueryParams.value = { type: 'mainCategory', mainCategory: mainCategoryId, subCategory: null };
     }
     
-    const response = await learnService.getProfessionByMainCategory(mainCategoryId, lastId.value);
+    const response = await professionServiceV1.getProfessions(lastId.value, mainCategoryId, null);
     const newCareers = addRandomIconsToCareers(response.data || []);
     
     if (reset) {
@@ -286,7 +286,7 @@ const loadCareersBySubCategory = async (mainCategoryId, subCategoryId, reset = t
       currentQueryParams.value = { type: 'subCategory', mainCategory: mainCategoryId, subCategory: subCategoryId };
     }
     
-    const response = await learnService.getProfessionBySubCategory(mainCategoryId, subCategoryId, lastId.value);
+    const response = await professionServiceV1.getProfessions(lastId.value, mainCategoryId, subCategoryId);
     const newCareers = addRandomIconsToCareers(response.data || []);
     
     if (reset) {
@@ -375,8 +375,8 @@ const selectFirstLevel = async (categoryValue) => {
   activeFirstLvl.value = categoryValue;
   activeSecondLvl.value = -1; // 重置二级选择
   
-  // 直接使用categoryValue作为主分类ID
-  if (categoryValue !== 'all' && categoryValue !== undefined && categoryValue !== null) {
+  // 使用categoryValue作为主分类ID
+  if (categoryValue !== undefined && categoryValue !== null && categoryValue !== 0) {
     await loadCareersByMainCategory(categoryValue, true);
   }
 };
@@ -386,7 +386,7 @@ const selectSecondLevel = async (subcategoryIndex) => {
   if (activeSecondLvl.value === subcategoryIndex) {
     activeSecondLvl.value = -1;
     // 回到一级分类显示该类别下的所有职业
-    if (activeFirstLvl.value !== 'all' && activeFirstLvl.value !== undefined && activeFirstLvl.value !== null) {
+    if (activeFirstLvl.value !== undefined && activeFirstLvl.value !== null && activeFirstLvl.value !== 0) {
       await loadCareersByMainCategory(activeFirstLvl.value, true);
     }
     return;
@@ -396,7 +396,7 @@ const selectSecondLevel = async (subcategoryIndex) => {
   
   // 根据选中的一级和二级分类获取子分类ID
   const subCategoryId = getSubCategoryId(activeFirstLvl.value, subcategoryIndex);
-  if (activeFirstLvl.value !== 'all' && subCategoryId !== null && subCategoryId !== undefined) {
+  if (activeFirstLvl.value !== undefined && activeFirstLvl.value !== null && activeFirstLvl.value !== 0 && subCategoryId !== null && subCategoryId !== undefined) {
     await loadCareersBySubCategory(activeFirstLvl.value, subCategoryId, true);
   }
 };
@@ -406,7 +406,7 @@ const goBackToSecondLevel = async () => {
   activeSecondLvl.value = -1; // 重置二级选择
   
   // 回到一级分类显示该类别下的所有职业
-  if (activeFirstLvl.value !== 'all' && activeFirstLvl.value !== undefined && activeFirstLvl.value !== null) {
+  if (activeFirstLvl.value !== undefined && activeFirstLvl.value !== null && activeFirstLvl.value !== 0) {
     await loadCareersByMainCategory(activeFirstLvl.value, true);
   }
 };
@@ -486,7 +486,7 @@ const submitCareerApplication = async () => {
     };
 
     // 调用API提交申请
-    const response = await learnService.submitCareerApplication(applicationData);
+    const response = await professionServiceV1.createProfession(applicationData);
     console.log("response: " + JSON.stringify(response));
     
     showSnackbar(getMessage('careerCenter.application.submittedSuccess'), 'success');
@@ -512,7 +512,7 @@ const clearSearch = () => {
 const loadHotProfessions = async () => {
   try {
     console.log("加载热门职业数据");
-    const response = await learnService.getHotProfessions(5);
+    const response = await professionServiceV1.getHotProfessions(5);
     
     if (response.code === 200) {
       console.log('获取热门职业数据:', response.data);
@@ -633,20 +633,20 @@ onMounted(() => {
                   <!-- 一级分类按钮组 -->
                   <div class="d-flex flex-wrap mb-6" style="gap: 16px;">
                     <v-btn
-                      v-for="category in categories.filter(cat => cat.value !== 'all')"
-                      :key="category.value"
-                      :color="activeFirstLvl === category.value ? 'blue-darken-1' : 'white'"
+                      v-for="category in categories"
+                      :key="category.id"
+                      :color="activeFirstLvl === category.id? 'blue-darken-1' : 'white'"
                       variant="flat"
                       rounded="xl"
                       class="font-weight-medium category-btn-flat"
-                      @click="selectFirstLevel(category.value)">
+                      @click="selectFirstLevel(category.id)">
                       <v-icon 
                         :icon="category.icon" 
                         size="18" 
                         class="mr-2"
-                        :color="activeFirstLvl === category.value ? 'white' : 'blue-grey-darken-2'">
+                        :color="activeFirstLvl === category.id? 'white' : 'blue-grey-darken-2'">
                       </v-icon>
-                      <span :class="activeFirstLvl === category.value ? 'text-white' : 'text-blue-grey-darken-3'">
+                      <span :class="activeFirstLvl === category.id? 'text-white' : 'text-blue-grey-darken-3'">
                         {{ category.title }}
                       </span>
                     </v-btn>
@@ -659,7 +659,7 @@ onMounted(() => {
                       <div class="d-flex align-center mb-3">
                         <v-icon icon="mdi-chevron-right" color="blue-darken-1" size="16" class="mr-2"></v-icon>
                         <h4 class="text-subtitle-1 font-weight-bold text-blue-grey-darken-3 mb-0">
-                          {{ categories.find(c => c.value === activeFirstLvl)?.title }} - {{ t('careerCenter.category.specificDirection') }}
+                          {{ categories.find(c => c.id === activeFirstLvl)?.title }} - {{ t('careerCenter.category.specificDirection') }}
                         </h4>
                       </div>
                       
@@ -680,7 +680,7 @@ onMounted(() => {
                             :color="activeSecondLvl === subcategoryIndex ? 'white' : 'blue-grey-darken-2'">
                           </v-icon>
                           <span :class="activeSecondLvl === subcategoryIndex ? 'text-white' : 'text-blue-grey-darken-3'">
-                            {{ subcategory.title }}
+                            {{ subcategory.name }}
                           </span>
                         </v-btn>
                       </div>
@@ -704,7 +704,7 @@ onMounted(() => {
                         color="grey-darken-2"
                         @click="goBackToSecondLevel"></v-btn>
                       <h4 class="text-subtitle-1 font-weight-bold text-grey-darken-3 ml-2">
-                        {{ getSubcategoriesByMainCategory(activeFirstLvl)[activeSecondLvl]?.title }} 
+                        {{ getSubcategoriesByMainCategory(activeFirstLvl)[activeSecondLvl]?.name }} 
                         - {{ t('careerCenter.listing.specificJobs', { count: currentCareers.length }) }}
                       </h4>
                     </div>
@@ -817,7 +817,7 @@ onMounted(() => {
                   <div v-else-if="activeFirstLvl !== -1 && activeSecondLvl === -1">
                     <h4 class="text-subtitle-1 font-weight-bold text-grey-darken-3 mb-3">
                       {{ t('careerCenter.listing.categoryJobs', { 
-                        category: categories.find(c => c.value === activeFirstLvl)?.title, 
+                        category: categories.find(c => c.id === activeFirstLvl)?.title, 
                         count: currentCareers.length 
                       }) }}
                     </h4>

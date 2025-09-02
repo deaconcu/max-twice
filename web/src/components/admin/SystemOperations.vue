@@ -299,7 +299,7 @@
 
 <script setup>
 import { ref, inject } from 'vue';
-import { learnService } from '@/services/learnService';
+import { statsServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -348,7 +348,7 @@ const syncStatsManual = async () => {
   try {
     console.log('[SystemOperations] 开始手动同步Redis统计数据...');
     
-    const response = await learnService.syncStatsManual();
+    const response = await statsServiceV1.syncManual();
     
     if (response.code === 200) {
       syncResult.value = {
@@ -393,7 +393,7 @@ const syncStatsSpecificDate = async () => {
     const targetDate = syncDate.value || null;
     console.log('[SystemOperations] 开始同步指定日期的统计数据:', targetDate || '昨日');
     
-    const response = await learnService.syncStatsSpecificDate(targetDate);
+    const response = await statsServiceV1.syncDate(targetDate);
     
     if (response.code === 200) {
       const displayDate = targetDate || '昨日';
@@ -438,7 +438,7 @@ const checkSystemHealth = async () => {
   try {
     console.log('[SystemOperations] 开始系统健康检查...');
     
-    const response = await learnService.getStatsHealth();
+    const response = await statsServiceV1.getHealth();
     
     if (response.code === 200) {
       healthResult.value = {

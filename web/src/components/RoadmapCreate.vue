@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
-import { learnService } from '@/services/learnService'
+import { courseServiceV1 } from '@/services/api/v1/apiServiceV1'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import dagre from 'dagre'
 
@@ -195,7 +195,7 @@ function cancelReset() {
 // 搜索相关方法
 async function loadAvailableCourses(searchName = '') {
   try {
-    const response = await learnService.searchByName(searchName);
+    const response = await courseServiceV1.searchCourses(searchName);
     availableCourses.value = response.data || [];
     console.log('获取课程数据成功:', availableCourses.value);
   } catch (err) {

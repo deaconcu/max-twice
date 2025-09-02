@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, nextTick, watch, toRef, inject } from 'vue';
-import { learnService } from '@/services/learnService';
+import { upvoteServiceV1, postServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import hljs from 'highlight.js';
@@ -25,7 +25,7 @@ const upvote = async (posting, type) => {
   try {
     console.log("begin post");
 
-    const response = await learnService.upvote(posting.id, 0, type);
+    const response = await upvoteServiceV1.upvote(posting.id, 0, type);
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {
@@ -46,7 +46,7 @@ const deletePosting = async (postingId) => {
   try {
     console.log("begin post");
 
-    const response = await learnService.deletePosting(postingId);
+    const response = await postServiceV1.deletePost(postingId);
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {

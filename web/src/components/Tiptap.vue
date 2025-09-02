@@ -24,7 +24,7 @@ import css from 'highlight.js/lib/languages/css';
 import js from 'highlight.js/lib/languages/javascript';
 import ts from 'highlight.js/lib/languages/typescript';
 import html from 'highlight.js/lib/languages/xml';
-import { learnService } from '@/services/learnService';
+import { aiServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { marked } from 'marked';
 import { useI18n } from 'vue-i18n'
 
@@ -96,7 +96,7 @@ const addImage = () => {
 const generate = async () => {
   try {
     console.log('begin get');
-    const response = await learnService.openAI(
+    const response = await aiServiceV1.chat(
       "我在写一本教材，我当前在[" + props.pathText + "]这个目录下，请用容易让人理解的方式，给出一篇文章，返回的内容要带markdown的格式，不要有和内容无关的语言，请根据实际情况调整长度，文章要清楚明白",
       //"deepseek/deepseek-r1-distill-llama-70b:free"
       "openai/gpt-4o-mini"

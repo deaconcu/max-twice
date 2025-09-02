@@ -1,6 +1,7 @@
 package com.prosper.learn.api.web;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.dto.response.CourseDTO;
 import com.prosper.learn.dto.response.CourseDTOV4;
@@ -17,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static com.prosper.learn.common.Enums.*;
 
 //@RestController
 //@SaCheckLogin
@@ -35,8 +38,8 @@ public class CourseController implements CourseClient {
     }
 
     @Override
-    public Response<Object> getListByState(String state, Long lastId) {
-        List<CourseDTOV4> courseList = courseService.getListByStateAndLastId(state, lastId);
+    public Response<Object> getListByState(Integer state, Long lastId) {
+        List<CourseDTOV4> courseList = courseService.getListByStateAndLastId(CourseState.getByValue(state), lastId);
         return new Response<>(courseList);
     }
 
@@ -48,12 +51,12 @@ public class CourseController implements CourseClient {
 
     @Override
     public Response<Object> getApprovedListByParent(Long parentId) {
-        List<CourseDTOV4> courseList = courseService.getListByParent(parentId, "APPROVED");
+        List<CourseDTOV4> courseList = courseService.getListByParent(parentId, CourseState.APPROVED);
         return new Response<>(courseList);
     }
 
     public Response<Object> getListByParent(Long parentId) {
-        List<CourseDTOV4> courseList = courseService.getListByParent(parentId, "ALL");
+        List<CourseDTOV4> courseList = courseService.getListByParent(parentId, null);
         return new Response<>(courseList);
     }
 

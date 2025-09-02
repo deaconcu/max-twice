@@ -101,10 +101,23 @@ export const subscriptionServiceV1 = {
 };
 
 // 职业管理服务
+// TODO 这里为什么要分页
 export const professionServiceV1 = {
-  getProfessions(page = 1, size = 20, state, lastId, mainCategory, subCategory) {
+  getProfessions(page = 1) {
     return apiClient.get(`${API_V1_PREFIX}/professions`, {
-      params: { page, size, state, lastId, mainCategory, subCategory }
+      params: { page }
+    });
+  },
+
+  getProfessions(state, lastId) {
+    return apiClient.get(`${API_V1_PREFIX}/professions`, {
+      params: { state, lastId }
+    });
+  },
+
+  getProfessions(lastId, mainCategory, subCategory) {
+    return apiClient.get(`${API_V1_PREFIX}/professions`, {
+      params: { lastId, mainCategory, subCategory }
     });
   },
 
@@ -159,6 +172,12 @@ export const courseServiceV1 = {
   getCoursesByState(state, lastId) {
     return apiClient.get(`${API_V1_PREFIX}/courses`, {
       params: { state, lastId }
+    });
+  },
+
+  getCoursesByCategory(mainCategory, subCategory) {
+    return apiClient.get(`${API_V1_PREFIX}/courses`, {
+      params: { mainCategory, subCategory }
     });
   },
 
@@ -354,6 +373,14 @@ export const messageServiceV1 = {
       reply
     });
   },
+
+  // 邀请用户
+  inviteUser(userId, nodeId) {
+    return apiClient.post(`${API_V1_PREFIX}/messages/invite`, {
+      userId,
+      nodeId
+    });
+  },
 };
 
 // 学习进度服务
@@ -398,6 +425,29 @@ export const progressServiceV1 = {
 
   completeCourse(courseId) {
     return apiClient.post(`${API_V1_PREFIX}/progress/courses/${courseId}/complete`);
+  },
+
+  // 路线图进度相关方法
+  startRoadmap(roadmapId) {
+    return apiClient.post(`${API_V1_PREFIX}/progress/roadmaps/${roadmapId}/start`);
+  },
+
+  getRoadmapProgress(roadmapId) {
+    return apiClient.get(`${API_V1_PREFIX}/progress/roadmaps/${roadmapId}`);
+  },
+
+  getUserRoadmaps() {
+    return apiClient.get(`${API_V1_PREFIX}/progress/roadmaps`);
+  },
+
+  updateRoadmapProgress(roadmapId, progressPercent) {
+    return apiClient.put(`${API_V1_PREFIX}/progress/roadmaps/${roadmapId}`, {
+      progressPercent
+    });
+  },
+
+  deleteRoadmapProgress(roadmapId) {
+    return apiClient.delete(`${API_V1_PREFIX}/progress/roadmaps/${roadmapId}`);
   },
 };
 
@@ -448,6 +498,10 @@ export const statsServiceV1 = {
       date
     });
   },
+
+  getPlatformStats() {
+    return apiClient.get(`${API_V1_PREFIX}/stats/platform`);
+  },
 };
 
 // 页面聚合服务
@@ -490,6 +544,53 @@ export const aiServiceV1 = {
     return apiClient.post(`${API_V1_PREFIX}/ai/chat`, {
       prompt,
       model
+    });
+  },
+};
+
+// 系统配置服务
+export const systemServiceV1 = {
+  getSystemConfig(part) {
+    if (part) {
+      return apiClient.get(`${API_V1_PREFIX}/system`, {
+        params: { part }
+      });
+    }
+    return apiClient.get(`${API_V1_PREFIX}/system`);
+  },
+
+  // 根据key获取单个配置
+  getConfigByKey(key) {
+    return apiClient.get(`${API_V1_PREFIX}/system/${key}`);
+  },
+
+  // 更新配置（key-value模式）
+  updateConfigByKey(key, value) {
+    return apiClient.post(`${API_V1_PREFIX}/system`, {
+      value
+    }, {
+      params: { key }
+    });
+  },
+
+  // 删除配置
+  deleteConfigByKey(key) {
+    return apiClient.delete(`${API_V1_PREFIX}/system`, {
+      params: { key }
+    });
+  },
+
+  // 获取课程分类数据
+  getCourseCategories() {
+    return apiClient.get(`${API_V1_PREFIX}/system`, {
+      params: { part: 'courseCategories' }
+    });
+  },
+
+  // 获取职业分类数据
+  getProfessionCategories() {
+    return apiClient.get(`${API_V1_PREFIX}/system`, {
+      params: { part: 'professionCategories' }
     });
   },
 };

@@ -4,13 +4,18 @@ import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.basic.RedisStatsService;
 import com.prosper.learn.domain.service.basic.DailyStatsService;
 import com.prosper.learn.domain.service.basic.StatsMonitorService;
+import com.prosper.learn.domain.service.basic.PlatformStatsService;
 import com.prosper.learn.dto.response.UserStatsDTO;
+import com.prosper.learn.dto.response.PlatformStatsDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
+import cn.dev33.satoken.stp.StpUtil;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 统计接口
@@ -25,6 +30,7 @@ public class StatsController {
     private final DailyStatsService dailyStatsService;
     private final RedisStatsService redisStatsService;
     private final StatsMonitorService statsMonitorService;
+    private final PlatformStatsService platformStatsService;
 
     /**
      * 记录访问
@@ -125,5 +131,15 @@ public class StatsController {
         LocalDate targetDate = LocalDate.parse(date);
         dailyStatsService.syncSpecificDate(targetDate);
         return ApiResponse.success("指定日期统计数据同步成功");
+    }
+
+    /**
+     * 获取平台统计数据
+     * 映射: GET /api/platform/stats → GET /api/v1/stats/platform
+     */
+    @GetMapping("/stats/platform")
+    public ApiResponse<PlatformStatsDTO> getPlatformStats() {
+        PlatformStatsDTO stats = platformStatsService.getPlatformStats();
+        return ApiResponse.success(stats);
     }
 }

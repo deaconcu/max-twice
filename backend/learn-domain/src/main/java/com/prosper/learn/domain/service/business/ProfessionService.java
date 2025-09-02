@@ -52,7 +52,7 @@ public class ProfessionService {
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }
 
-    public List<ProfessionDTO> getListByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, long lastId) {
+    public List<ProfessionDTO> getListByCategoryAndLastId(int mainCategory, int subCategory, long lastId) {
         List<ProfessionDO> professionDOList = professionDataService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }

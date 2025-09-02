@@ -69,8 +69,6 @@ watch(tab, (newValue, oldValue) => {
   }
 });
 
-
-
 const postMessage = async (type, toUserId, reason) => {
   try {
     const response = await messageServiceV1.sendSystemMessage(type, toUserId, reason)
@@ -86,8 +84,6 @@ const postMessage = async (type, toUserId, reason) => {
     isLoggedIn.value = false; // 如果请求失败，认为用户未登录
   }
 }
-
-
 
 const onClickCreateCourse = (name, desc, parentId, messageId) => {
   if (parentId == 0) {

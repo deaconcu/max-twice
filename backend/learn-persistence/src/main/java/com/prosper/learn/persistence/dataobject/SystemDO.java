@@ -5,8 +5,8 @@ import lombok.Data;
 @Data
 public class SystemDO {
 
-    private Long id;
+    private String key;
 
-    private String config;
+    private String value;
 
 }

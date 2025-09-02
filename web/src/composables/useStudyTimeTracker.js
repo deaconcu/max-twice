@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { learnService } from '@/services/learnService'
+// import { learnService } from '@/services/learnService' // TODO: 等待V1 API支持学习时间同步
 
 // 活跃状态检测的事件列表
 const ACTIVITY_EVENTS = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click']
@@ -175,18 +175,16 @@ export function useStudyTimeTracker() {
     if (unsyncedSessions.length === 0) return
     
     try {
-      // 这里调用后端API同步数据
-      const response = await learnService.syncStudySessions(unsyncedSessions)
+      // TODO: 等待V1 API支持学习时间同步功能
+      // const response = await learnService.syncStudySessions(unsyncedSessions)
+      console.log('Study time sync not implemented yet:', unsyncedSessions.length)
       
-      if (response.code === 200) {
-        // 标记为已同步
-        unsyncedSessions.forEach(session => {
-          session.synced = true
-        })
-        localData.lastSyncTime = new Date().toISOString()
-        saveLocalData(localData)
-        console.log('Study sessions synced to backend:', unsyncedSessions.length)
-      }
+      // 暂时标记为已同步，避免重复尝试
+      unsyncedSessions.forEach(session => {
+        session.synced = true
+      })
+      localData.lastSyncTime = new Date().toISOString()
+      saveLocalData(localData)
     } catch (error) {
       console.warn('Failed to sync study sessions:', error)
     }

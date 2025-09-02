@@ -19,8 +19,6 @@ public class UserDTO {
 
     private String biography;
 
-
-
     private String createdAt;
 
     private String updatedAt;

@@ -1,6 +1,8 @@
 package com.prosper.learn.domain.service.business;
 
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.common.Enums.CourseState;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
 import com.prosper.learn.domain.util.Converter;
@@ -29,11 +31,6 @@ public class CourseService {
     private final NodeDataService nodeDataService;
     private final CourseRankingService courseRankingService;
     private final SystemProperties systemProperties;
-
-    // 不变常量 - 课程状态
-    private static final String STATE_APPROVED = "APPROVED";
-    private static final String STATE_REJECTED = "REJECTED";
-    private static final String STATE_ALL = "ALL";
 
     // ========== 私有辅助方法 ==========
 
@@ -70,7 +67,7 @@ public class CourseService {
         if (!systemProperties.getCourse().isEnableStateValidation()) {
             return;
         }
-        if (STATE_APPROVED.equals(courseDO.getState())) {
+        if (CourseState.APPROVED.value().equals(courseDO.getState())) {
             throw ErrorCode.COURSE_ALREADY_APPROVED.exception();
         }
     }
@@ -82,7 +79,7 @@ public class CourseService {
         if (!systemProperties.getCourse().isEnableStateValidation()) {
             return;
         }
-        if (STATE_REJECTED.equals(courseDO.getState())) {
+        if (CourseState.REJECTED.value().equals(courseDO.getState())) {
             throw ErrorCode.COURSE_ALREADY_REJECTED.exception();
         }
     }
@@ -153,7 +150,7 @@ public class CourseService {
     }
 
     // 新增：根据状态和lastId获取课程列表
-    public List<CourseDTOV4> getListByStateAndLastId(String state, long lastId) {
+    public List<CourseDTOV4> getListByStateAndLastId(CourseState state, long lastId) {
         List<CourseDO> courseDOList = courseDataService.listByStateAndLastId(state, lastId);
         return courseDOList.stream()
                 .map(courseDO -> Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseDataService))
@@ -170,9 +167,9 @@ public class CourseService {
     }
 
     // 新增：根据父课程ID获取子课程列表
-    public List<CourseDTOV4> getListByParent(long parentId, String state) {
+    public List<CourseDTOV4> getListByParent(long parentId, CourseState state) {
         List<CourseDO> courseDOList;
-        if (STATE_ALL.equals(state)) {
+        if (state == null) { // null表示获取所有状态
             courseDOList = courseDataService.listByParent(parentId);
         } else {
             courseDOList = courseDataService.listByParentAndState(state, parentId);

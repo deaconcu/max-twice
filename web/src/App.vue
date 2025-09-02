@@ -31,46 +31,6 @@ const showSnackbar = (message, type = 'info', params = []) => {
 
 provide('showSnackbar', showSnackbar);
 
-async function loadPostingList() {
-  try {
-    if (tab.value == 'option-6') {
-      let response = '';
-      response = await learnService.getApplyCourseMessage(applyCourseCurrPage.value, 10);
-
-      if (response.code === 401) {
-        console.log('not login');
-      } else if (response.code === 200) {
-        console.log('get data:' + JSON.stringify(response.data));
-        messageList.value = response.data.messages;
-        applyCourseCurrPage.value = response.data.pagination.currentPage;
-        applyCourseTotalPage.value = response.data.pagination.totalPages;
-      }
-    }
-  } catch (error) {
-    console.error('Error get message:', error);
-  }
-};
-
-async function loadContentsList() {
-  try {
-    if (tab.value == 'option-6') {
-      let response = '';
-      response = await learnService.getApplyCourseMessage(applyCourseCurrPage.value, 10);
-
-      if (response.code === 401) {
-        console.log('not login');
-      } else if (response.code === 200) {
-        console.log('get data:' + JSON.stringify(response.data));
-        messageList.value = response.data.messages;
-        applyCourseCurrPage.value = response.data.pagination.currentPage;
-        applyCourseTotalPage.value = response.data.pagination.totalPages;
-      }
-    }
-  } catch (error) {
-    console.error('Error get message:', error);
-  }
-};
-
 </script>
 
 <template>

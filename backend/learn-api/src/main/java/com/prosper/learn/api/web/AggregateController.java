@@ -278,7 +278,7 @@ public class AggregateController implements AggregateClient {
         parentCourse.setSubscribed(subscribed);
 
         List<CourseDTOV2> subCourseList = Converter.INSTANCE.toCourseDTOV2(
-                courseMapper.listByParentAndState("APPROVED", parentCourse.getId()));
+                courseMapper.listByParentAndState(Enums.CourseState.APPROVED, parentCourse.getId()));
 
         // 检查节点完成状态并创建DTO
         boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());

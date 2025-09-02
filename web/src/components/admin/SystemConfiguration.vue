@@ -28,7 +28,7 @@
             v-model="courseCategories"
             :label="t('systemConfiguration.courseCategoriesJSON')"
             variant="outlined"
-            rows="16"
+            rows="30"
             rounded="lg"
             bg-color="grey-lighten-5"
             :placeholder="t('systemConfiguration.courseCategoriesPlaceholder')"
@@ -49,7 +49,7 @@
             v-model="professionCategories"
             :label="t('systemConfiguration.professionCategoriesJSON')"
             variant="outlined"
-            rows="16"
+            rows="30"
             rounded="lg"
             bg-color="grey-lighten-5"
             :placeholder="t('systemConfiguration.professionCategoriesPlaceholder')"
@@ -59,25 +59,6 @@
         </v-card>
       </v-col>
     </v-row>
-
-    <!-- 合并后的完整配置预览 -->
-    <v-card flat class="pa-4 mt-4" rounded="lg" outlined>
-      <div class="d-flex align-center mb-4">
-        <v-icon icon="mdi-eye-outline" color="purple-darken-1" class="mr-2"></v-icon>
-        <h4 class="text-h6 font-weight-bold text-grey-darken-3">{{ t('systemConfiguration.fullConfigPreview') }}</h4>
-      </div>
-      <v-textarea
-        :model-value="mergedConfig"
-        :label="t('systemConfiguration.mergedConfig')"
-        variant="outlined"
-        rows="8"
-        rounded="lg"
-        bg-color="grey-lighten-5"
-        readonly
-        :hint="t('systemConfiguration.mergedConfigHint')"
-        persistent-hint
-      ></v-textarea>
-    </v-card>
 
     <!-- 操作按钮 -->
     <div class="d-flex align-center justify-space-between mt-6">
@@ -125,7 +106,7 @@
 
 <script setup>
 import { ref, computed, onMounted, inject, watch } from 'vue';
-import { learnService } from '@/services/learnService';
+import { systemServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -138,29 +119,6 @@ const configError = ref('');
 const lastUpdateTime = ref('');
 
 const showSnackbar = inject('showSnackbar');
-
-// 计算属性：合并后的配置
-const mergedConfig = computed(() => {
-  try {
-    const config = {};
-    
-    // 解析课程类别
-    if (courseCategories.value.trim()) {
-      const courseData = JSON.parse(courseCategories.value);
-      config.courseCategories = courseData;
-    }
-    
-    // 解析职业类别
-    if (professionCategories.value.trim()) {
-      const professionData = JSON.parse(professionCategories.value);
-      config.professionCategories = professionData;
-    }
-    
-    return JSON.stringify(config, null, 2);
-  } catch (error) {
-    return '{}';
-  }
-});
 
 // 计算属性：配置是否有效
 const isValidConfig = computed(() => {
@@ -205,25 +163,33 @@ const saveConfiguration = async () => {
   try {
     saving.value = true;
     
-    // 合并配置
-    const config = {};
+    // 分别保存课程分类和职业分类配置
+    const promises = [];
     
     if (courseCategories.value.trim()) {
-      config.courseCategories = JSON.parse(courseCategories.value);
+      promises.push(
+        systemServiceV1.updateConfigByKey('courseCategories', courseCategories.value)
+      );
     }
     
     if (professionCategories.value.trim()) {
-      config.professionCategories = JSON.parse(professionCategories.value);
+      promises.push(
+        systemServiceV1.updateConfigByKey('professionCategories', professionCategories.value)
+      );
     }
     
-    const response = await learnService.postSystem(JSON.stringify(config));
+    const responses = await Promise.all(promises);
     
-    if (response.code === 200) {
+    // 检查所有请求是否成功
+    const allSuccess = responses.every(response => response.code === 200);
+    
+    if (allSuccess) {
       showSnackbar(t('systemConfiguration.saveSuccess'))
       lastUpdateTime.value = new Date().toLocaleString('zh-CN');
       configError.value = '';
     } else {
-      configError.value = `${t('systemConfiguration.saveFailed')}: ${response.message || t('common.error')}`;
+      const failedResponses = responses.filter(response => response.code !== 200);
+      configError.value = `${t('systemConfiguration.saveFailed')}: ${failedResponses.map(r => r.message).join(', ')}`;
     }
   } catch (error) {
     configError.value = `${t('systemConfiguration.saveFailed')}: ${error.message}`;
@@ -235,30 +201,57 @@ const saveConfiguration = async () => {
 // 加载配置
 const loadConfiguration = async () => {
   try {
-    const response = await learnService.getSystem();
+    // 先获取所有配置
+    const response = await systemServiceV1.getSystemConfig();
     
     if (response.code === 200 && response.data) {
-      const data = response.data;
+      const allConfigs = response.data;
       
-      // 分离课程类别和职业类别
-      if (data.courseCategories) {
-        courseCategories.value = JSON.stringify(data.courseCategories, null, 2);
+      // 查找并设置课程分类配置
+      if (allConfigs.courseCategories) {
+        try {
+          // 如果已经是对象，格式化为JSON字符串
+          if (typeof allConfigs.courseCategories === 'object') {
+            courseCategories.value = JSON.stringify(allConfigs.courseCategories, null, 2);
+          } else {
+            // 如果是字符串，尝试解析后重新格式化
+            const parsedCourse = JSON.parse(allConfigs.courseCategories);
+            courseCategories.value = JSON.stringify(parsedCourse, null, 2);
+          }
+        } catch {
+          // 如果解析失败，直接显示
+          courseCategories.value = allConfigs.courseCategories;
+        }
+      } else {
+        courseCategories.value = '';
       }
       
-      if (data.professionCategories) {
-        professionCategories.value = JSON.stringify(data.professionCategories, null, 2);
-      }
-      
-      // 如果数据结构不是分离的，尝试解析整体配置
-      if (!data.courseCategories && !data.professionCategories) {
-        // 如果是旧的整体配置格式，可以在这里做兼容处理
-        const fullConfig = JSON.stringify(data, null, 2);
-        courseCategories.value = fullConfig;
+      // 查找并设置职业分类配置
+      if (allConfigs.professionCategories) {
+        try {
+          // 如果已经是对象，格式化为JSON字符串
+          if (typeof allConfigs.professionCategories === 'object') {
+            professionCategories.value = JSON.stringify(allConfigs.professionCategories, null, 2);
+          } else {
+            // 如果是字符串，尝试解析后重新格式化
+            const parsedProfession = JSON.parse(allConfigs.professionCategories);
+            professionCategories.value = JSON.stringify(parsedProfession, null, 2);
+          }
+        } catch {
+          // 如果解析失败，直接显示
+          professionCategories.value = allConfigs.professionCategories;
+        }
+      } else {
+        professionCategories.value = '';
       }
       
       lastUpdateTime.value = new Date().toLocaleString('zh-CN');
+      configError.value = ''; // 清除之前的错误
+    } else {
+      configError.value = `${t('systemConfiguration.loadFailed')}: ${response.message || 'No data'}`;
     }
   } catch (error) {
+    console.error('加载配置时发生错误:', error);
     configError.value = `${t('systemConfiguration.loadFailed')}: ${error.message}`;
   }
 };

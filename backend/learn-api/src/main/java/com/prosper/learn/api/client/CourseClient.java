@@ -22,7 +22,7 @@ public interface CourseClient {
 
     // 根据状态和lastId获取列表
     //@GetMapping(value = "/course/list", params = {"state", "lastId"})
-    Response<Object> getListByState(@RequestParam String state, @RequestParam(value = "lastId", defaultValue = "0") Long lastId);
+    Response<Object> getListByState(@RequestParam Integer state, @RequestParam(value = "lastId", defaultValue = "0") Long lastId);
 
     // 根据主分类和子分类获取已批准的课程列表
     //@GetMapping(value = "/course/list", params = {"mainCategory", "subCategory"})

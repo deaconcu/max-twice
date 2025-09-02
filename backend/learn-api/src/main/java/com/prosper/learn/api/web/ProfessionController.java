@@ -46,7 +46,7 @@ public class ProfessionController implements ProfessionClient {
 
     @Override
     public Response<Object> listByMainCategoryAndSubCategoryAndLastId(Integer mainCategory, Integer subCategory, Long lastId) {
-        List<ProfessionDTO> professionList = professionService.getListByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
+        List<ProfessionDTO> professionList = professionService.getListByCategoryAndLastId(mainCategory, subCategory, lastId);
         return new Response<>(professionList);
     }
 

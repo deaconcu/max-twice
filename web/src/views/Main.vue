@@ -22,11 +22,11 @@ onUnmounted(() => {
 <template>
   <div class="page-container">
     <!-- 顶部标题栏 -->
-    <div app flat :density="scrollY > 20 ? 'compact' : 'comfortable'" style="border-bottom: 1px solid #eef;">
+    <div class="header-container" :class="{ 'compact': scrollY > 20 }">
       <Header />
     </div>
 
-    <div class="content" style="width: 1600px;height:1800px">
+    <div class="content" style="width: 1600px; height:1800px">
       <RouterView />
     </div>
 
@@ -39,6 +39,30 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   min-height: 97vh;
+}
+
+.header-container {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: white;
+  padding: 16px 0;
+  transition: all 0.3s ease;
+}
+
+.header-container::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  height: 1px;
+  background-color: #eef;
+}
+
+.header-container.compact {
+  padding: 8px 0;
 }
 
 .content {

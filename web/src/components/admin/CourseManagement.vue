@@ -455,8 +455,7 @@
 
 <script setup>
 import { ref, onMounted, inject } from 'vue'
-import { courseServiceV1 } from '@/services/api/v1/apiServiceV1'
-import { learnService } from '@/services/learnService' // TODO: 临时保留，等待完整迁移
+import { courseServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { APPROVAL_STATE, APPROVAL_STATE_TEXT } from '@/constants/statusConstants'
 import CourseCard from './CourseCard.vue'
 import { useI18n } from 'vue-i18n'
@@ -574,7 +573,7 @@ const loadCourses = async (isLoadMore = false) => {
 
     // 如果是已通过状态且选择了主分类和子分类，使用分类查询（不支持分页）
     if (currentState === APPROVAL_STATE.APPROVED && selectedMainCategory.value && selectedSubCategory.value) {
-      response = await learnService.getCoursesByCategory(selectedMainCategory.value, selectedSubCategory.value) // TODO: 需要迁移到V1
+      response = await courseServiceV1.getCoursesByCategory(selectedMainCategory.value, selectedSubCategory.value)
       // 分类查询不支持下拉刷新
       hasMore.value = false
     } else {
@@ -656,7 +655,7 @@ const searchCourseById = async () => {
       
       // 自动查询子课程（如果可能是父课程）
       try {
-        const subcourseResponse = await learnService.getSubcoursesByParent(searchCourseId.value) // TODO: 需要迁移到V1
+        const subcourseResponse = await courseServiceV1.getCoursesByState(null, null, null, null, searchCourseId.value)
         if (subcourseResponse.code === 200) {
           subcourseList.value = subcourseResponse.data || []
         }
@@ -687,7 +686,7 @@ const searchCourseById = async () => {
 // 加载课程分类数据
 const loadCourseCategories = async () => {
   try {
-    const response = await learnService.getCourseCategories() // TODO: 需要迁移到V1
+    const response = await systemServiceV1.getCourseCategories()
     
     if (response.code === 200) {
       const { mainCategories: categories, categoryMapping: mapping } = response.data.courseCategories

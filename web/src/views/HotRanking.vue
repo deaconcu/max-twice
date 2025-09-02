@@ -2,7 +2,7 @@
 import { ref, onMounted, inject } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { learnService } from '@/services/learnService';
+import { courseServiceV1, professionServiceV1 } from '@/services/api/v1/apiServiceV1';
 
 const { t } = useI18n();
 
@@ -52,7 +52,7 @@ const loadHotCoursesRanking = async () => {
   try {
     coursesLoading.value = true;
     console.log("加载热门课程排行榜");
-    const response = await learnService.getHotCoursesRanking();
+    const response = await courseServiceV1.getCoursesRanking();
     
     if (response.code === 401) {
       console.log('未登录');
@@ -106,7 +106,7 @@ const loadHotProfessionsRanking = async () => {
   try {
     professionsLoading.value = true;
     console.log("加载热门职业排行榜");
-    const response = await learnService.getHotProfessions(100);
+    const response = await professionServiceV1.getHotProfessions(100);
     
     if (response.code === 401) {
       console.log('未登录');

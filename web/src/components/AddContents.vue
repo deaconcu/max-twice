@@ -4,7 +4,7 @@ import { ref, watch } from 'vue';
 import draggable from 'vuedraggable'
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { learnService } from '@/services/learnService';
+import { postServiceV1, aiServiceV1 } from '@/services/api/v1/apiServiceV1';
 
 const route = useRoute();
 const router = useRouter();
@@ -47,7 +47,7 @@ const submitAddContents = async () => {
     }
 
     console.log('request: ' + JSON.stringify(data));
-    const response = await learnService.addPosting(data);
+    const response = await postServiceV1.createPost(data);
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {
@@ -64,7 +64,7 @@ const submitAddContents = async () => {
 const addAIContents = async () => {
   try {
     console.log('begin get');
-    const response = await learnService.openAI(
+    const response = await aiServiceV1.chat(
       t('addContents.aiPrompt', { pathText: props.pathText }),
       "openai/gpt-4o-mini"
     );

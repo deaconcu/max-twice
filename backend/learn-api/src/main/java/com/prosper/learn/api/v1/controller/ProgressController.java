@@ -4,7 +4,9 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.LearningProgressService;
 import com.prosper.learn.domain.service.business.UserCourseService;
+import com.prosper.learn.domain.service.business.UserRoadmapService;
 import com.prosper.learn.dto.response.UserCourseDTO;
+import com.prosper.learn.dto.response.UserRoadmapDTO;
 import lombok.RequiredArgsConstructor;
 import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +25,7 @@ public class ProgressController {
 
     private final LearningProgressService learningProgressService;
     private final UserCourseService userCourseService;
+    private final UserRoadmapService userRoadmapService;
 
     /**
      * 标记节点完成
@@ -128,5 +131,65 @@ public class ProgressController {
         long userId = StpUtil.getLoginIdAsLong();
         Map<String, Object> result = learningProgressService.markCourseCompletedWithResponse(userId, courseId);
         return ApiResponse.success(result);
+    }
+
+    // =================== 路线图进度相关接口 ===================
+
+    /**
+     * 开始学习路线图
+     * 映射: POST /user/roadmap → POST /api/v1/progress/roadmaps/{roadmapId}/start
+     */
+    @PostMapping("/progress/roadmaps/{roadmapId}/start")
+    public ApiResponse<Boolean> startRoadmap(@PathVariable Long roadmapId) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        boolean result = userRoadmapService.startRoadmap(userId, roadmapId);
+        return ApiResponse.success(result);
+    }
+
+    /**
+     * 获取路线图进度
+     * 映射: GET /user/roadmap → GET /api/v1/progress/roadmaps/{roadmapId}
+     */
+    @GetMapping("/progress/roadmaps/{roadmapId}")
+    public ApiResponse<UserRoadmapDTO> getRoadmapProgress(@PathVariable Long roadmapId) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        UserRoadmapDTO progress = userRoadmapService.getUserRoadmap(userId, roadmapId);
+        return ApiResponse.success(progress);
+    }
+
+    /**
+     * 获取所有路线图进度
+     * 映射: GET /user/roadmap/list → GET /api/v1/progress/roadmaps
+     */
+    @GetMapping("/progress/roadmaps")
+    public ApiResponse<List<UserRoadmapDTO>> getAllRoadmapsProgress() {
+        Long userId = StpUtil.getLoginIdAsLong();
+        List<UserRoadmapDTO> progressList = userRoadmapService.getUserAllRoadmap(userId);
+        return ApiResponse.success(progressList);
+    }
+
+    /**
+     * 更新路线图进度
+     * 映射: PUT /user/roadmap → PUT /api/v1/progress/roadmaps/{roadmapId}
+     */
+    @PutMapping("/progress/roadmaps/{roadmapId}")
+    public ApiResponse<UserRoadmapDTO> updateRoadmapProgress(
+            @PathVariable Long roadmapId, 
+            @JsonParam("progressPercent") Integer progressPercent) {
+        
+        Long userId = StpUtil.getLoginIdAsLong();
+        UserRoadmapDTO progress = userRoadmapService.updateProgress(userId, roadmapId, progressPercent);
+        return ApiResponse.success(progress);
+    }
+
+    /**
+     * 删除路线图进度
+     * 映射: DELETE /user/roadmap → DELETE /api/v1/progress/roadmaps/{roadmapId}
+     */
+    @DeleteMapping("/progress/roadmaps/{roadmapId}")
+    public ApiResponse<String> deleteRoadmapProgress(@PathVariable Long roadmapId) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        userRoadmapService.deleteRoadmap(userId, roadmapId);
+        return ApiResponse.success("删除成功");
     }
 }

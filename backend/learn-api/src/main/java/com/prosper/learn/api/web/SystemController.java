@@ -23,11 +23,8 @@ public class SystemController implements SystemClient {
 
     @Override
     public Response<JsonNode> get() {
-        try {
-            return new Response<>(mapper.readTree(systemMapper.get(0).getConfig()));
-        } catch (IOException e) {
-            throw ErrorCode.JSON_PARSE_ERROR.exception(e);
-        }
+        //return new Response<>(mapper.readTree(systemMapper.get(0).getConfig()));
+        return new Response<>();
     }
 
     @Override
@@ -37,7 +34,8 @@ public class SystemController implements SystemClient {
         }
 
         try {
-            String config = systemMapper.get(1).getConfig();
+            //String config = systemMapper.get(1).getConfig();
+            String config = systemMapper.getAll().toString();
             JsonNode jsonNode = mapper.readTree(config);
             JsonNode partNode = jsonNode.get(part);
             if (partNode == null) {
@@ -52,9 +50,9 @@ public class SystemController implements SystemClient {
     @Override
     public Response<Object> post(String config) {
         SystemDO systemDO = new SystemDO();
-        systemDO.setId(1L);
-        systemDO.setConfig(config);
-        systemMapper.update(systemDO);
+        //systemDO.setId(1L);
+        //systemDO.setConfig(config);
+        //systemMapper.update(systemDO);
         return Response.success;
     }
 }

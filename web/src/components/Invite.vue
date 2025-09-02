@@ -2,7 +2,7 @@
 
 import { ref, watch, inject } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { learnService, userService } from '@/services/learnService'; // TODO: inviteUser 需要迁移到 V1 API
+import { userServiceV1, messageServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useI18n } from 'vue-i18n'
 
 const showSnackbar = inject('showSnackbar');
@@ -19,7 +19,7 @@ const users = ref([])
 
 const searchUser = async () => {
   try {
-    const response = await userService.searchUser(inputUserName.value);
+    const response = await userServiceV1.searchUser(inputUserName.value);
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {
@@ -37,7 +37,7 @@ const searchUser = async () => {
 
 const inviteUser = async (event, user) => {
   try {
-    const response = await learnService.inviteUser(user.id, props.nodeId);
+    const response = await messageServiceV1.inviteUser(user.id, props.nodeId);
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {

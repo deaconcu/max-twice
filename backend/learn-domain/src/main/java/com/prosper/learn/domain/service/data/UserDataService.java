@@ -74,13 +74,7 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
         if (email == null || email.trim().isEmpty()) {
             return null;
         }
-        
-        try {
-            return userMapper.getByEmail(email);
-        } catch (Exception e) {
-            log.error("Error querying user by email: {}", email, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
-        }
+        return userMapper.getByEmail(email);
     }
     
     /**
@@ -91,20 +85,16 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
         if (user == null || user.getId() == null) {
             throw new IllegalArgumentException("User or user ID cannot be null");
         }
-        
-        try {
-            userMapper.update(user);
-            // 如果邮箱可能变更，也要清除邮箱缓存
-            if (user.getEmail() != null) {
-                evictEmailCache(user.getEmail());
-            }
-            log.debug("Updated user {}", user.getId());
-        } catch (Exception e) {
-            log.error("Error updating user: {}", user.getId(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+
+        userMapper.update(user);
+
+        // 如果邮箱可能变更，也要清除邮箱缓存
+        if (user.getEmail() != null) {
+            evictEmailCache(user.getEmail());
         }
+        log.debug("Updated user {}", user.getId());
     }
-    
+
     /**
      * 清除邮箱缓存
      */

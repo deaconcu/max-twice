@@ -3,7 +3,6 @@ import { ref, onMounted, inject, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { progressServiceV1 } from '@/services/api/v1/apiServiceV1';
-import { learnService, userService } from '@/services/learnService'; // TODO: 临时保留，等待完整迁移
 import { useUserStore } from "@/stores/user";
 import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -181,8 +180,8 @@ const loadLearningData = async () => {
   try {
     // 并行加载用户学习的路线图数据和课程数据
     const [roadmapResponse, courseResponse] = await Promise.all([
-      learnService.getUserRoadmaps(),
-      learnService.getUserCourseList()
+      progressServiceV1.getUserRoadmaps(),
+      progressServiceV1.getAllCourseProgress()
     ]);
     
     console.log('获取用户学习路线图数据:', roadmapResponse)

@@ -54,7 +54,7 @@ class DailyStatsServiceTest {
     private DailyStatsService dailyStatsService;
     
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final Integer TEST_USER_ID = 123;
+    private final Long TEST_USER_ID = 123L;
     private final Long TEST_POST_ID = 456L;
     private final String TODAY = LocalDate.now().toString();
     private final String YESTERDAY = LocalDate.now().minusDays(1).toString();

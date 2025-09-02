@@ -3,6 +3,7 @@ package com.prosper.learn.api.application;
 import cn.dev33.satoken.interceptor.SaInterceptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
@@ -56,9 +57,30 @@ public class AppConfiguration implements WebMvcConfigurer {
     }
 
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory, ObjectMapper objectMapper) {
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory);
+        
+        // 使用已配置的 ObjectMapper 创建序列化器
+        ObjectMapper redisObjectMapper = objectMapper.copy();
+        
+        // 启用默认类型信息以保持类型安全
+        redisObjectMapper.activateDefaultTyping(
+                redisObjectMapper.getPolymorphicTypeValidator(),
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY
+        );
+        
+        org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer jsonRedisSerializer = 
+                new org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer(redisObjectMapper);
+        
+        // 设置键值序列化器
+        redisTemplate.setKeySerializer(new org.springframework.data.redis.serializer.StringRedisSerializer());
+        redisTemplate.setValueSerializer(jsonRedisSerializer);
+        redisTemplate.setHashKeySerializer(new org.springframework.data.redis.serializer.StringRedisSerializer());
+        redisTemplate.setHashValueSerializer(jsonRedisSerializer);
+        
+        redisTemplate.afterPropertiesSet();
         return redisTemplate;
     }
 
@@ -76,13 +98,7 @@ public class AppConfiguration implements WebMvcConfigurer {
     @Bean
     @Primary
     public ObjectMapper objectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.findAndRegisterModules();
-        /*
-                .registerModule(new ParameterNamesModule())
-                .registerModule(new Jdk8Module())
-                .registerModule(new JavaTimeModule());
-         */
+        ObjectMapper mapper = JsonMapper.builder().findAndAddModules().build();
 
         // 禁用将日期写成时间戳
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);

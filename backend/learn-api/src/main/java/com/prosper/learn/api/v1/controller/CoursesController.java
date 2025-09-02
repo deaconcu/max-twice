@@ -3,6 +3,7 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.common.Enums.CourseState;
 import com.prosper.learn.dto.response.CourseDTO;
 import com.prosper.learn.dto.response.CourseDTOV3;
 import com.prosper.learn.dto.response.CourseDTOV4;
@@ -52,24 +53,25 @@ public class CoursesController {
      */
     @GetMapping("/courses")
     public ApiResponse<Object> getCoursesByState(
-            @RequestParam(required = false) String state,
+            @RequestParam(required = false) Integer state,
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false) Integer mainCategory,
             @RequestParam(required = false) Integer subCategory,
             @RequestParam(required = false) Long parentId) {
-        
+
+        CourseState courseState = CourseState.getByValue(state);
         if (state != null && lastId != null) {
-            List<CourseDTOV4> courseList = courseService.getListByStateAndLastId(state, lastId);
+            List<CourseDTOV4> courseList = courseService.getListByStateAndLastId(courseState, lastId);
             return ApiResponse.success(courseList);
         } else if (mainCategory != null && subCategory != null) {
             List<CourseDTOV4> courseList = courseService.getListByCategory(mainCategory, subCategory);
             return ApiResponse.success(courseList);
         } else if (parentId != null) {
-            if ("approved".equals(state)) {
-                List<CourseDTOV4> courseList = courseService.getListByParent(parentId, "APPROVED");
+            if (courseState != null && courseState == CourseState.APPROVED) {
+                List<CourseDTOV4> courseList = courseService.getListByParent(parentId, CourseState.APPROVED);
                 return ApiResponse.success(courseList);
             } else {
-                List<CourseDTOV4> courseList = courseService.getListByParent(parentId, "ALL");
+                List<CourseDTOV4> courseList = courseService.getListByParent(parentId, null);
                 return ApiResponse.success(courseList);
             }
         } else {

@@ -2,8 +2,7 @@
 import { ref, onMounted, inject, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { courseServiceV1, subscriptionServiceV1 } from '@/services/api/v1/apiServiceV1';
-import { learnService } from '@/services/learnService'; // 临时保留，用于尚未迁移的接口
+import { courseServiceV1, subscriptionServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useUserStore } from "@/stores/user";
 import RightSidebar from '@/components/RightSidebar.vue';
 
@@ -54,17 +53,35 @@ watch([() => activeFirstLvl.value, () => selected.value], async ([newFirstLvl, n
 
 const loadSystem = async () => {
   try {
-    const response = await learnService.getCourseCategories(); // TODO: 需要迁移到V1 API
+    console.log('开始加载课程分类...');
+    const response = await systemServiceV1.getCourseCategories();
+    console.log('课程分类API响应:', response);
 
     if (response.code === 401) {
       console.log('not login');
     } else if (response.code === 200) {
+      console.log('API返回的数据结构:', response.data);
+      
+      // 检查数据结构
+      if (!response.data) {
+        console.error('响应中没有data字段');
+        return;
+      }
+      
       // 转换新的API数据结构为模板期望的格式
-      const { mainCategories, categoryMapping } = response.data.courseCategories;
+      const { mainCategories, categoryMapping } = response.data;
+      console.log('主分类数据:', mainCategories);
+      console.log('分类映射数据:', categoryMapping);
+      
+      if (!mainCategories || !categoryMapping) {
+        console.error('缺少主分类或分类映射数据');
+        return;
+      }
       
       // 构建课程分类树结构
       const coursesConfig = mainCategories.map(mainCategory => {
         const mapping = categoryMapping.find(m => m.mainCategoryId === mainCategory.id);
+        console.log(`为主分类 ${mainCategory.name} 找到的映射:`, mapping);
         return {
           id: mainCategory.id,
           name: mainCategory.name,
@@ -74,8 +91,12 @@ const loadSystem = async () => {
         };
       });
       
+      console.log('构建的课程配置:', coursesConfig);
       config.value = { courses: coursesConfig };
       selected.value = new Array(coursesConfig.length).fill(-1);
+      console.log('最终配置:', config.value);
+    } else {
+      console.error('API返回错误:', response);
     }
   } catch (error) {
     console.error('Error loading course categories:', error);
@@ -88,7 +109,7 @@ const loadCoursesByCategory = async (mainCategory, subCategory) => {
     loading.value = true;
     console.log(`Loading courses for mainCategory: ${mainCategory}, subCategory: ${subCategory}`);
     
-    const response = await learnService.getCoursesByCategory(mainCategory, subCategory); // TODO: 需要迁移到V1 API
+    const response = await courseServiceV1.getCoursesByCategory(mainCategory, subCategory);
     
     if (response.code === 200) {
       courses.value = response.data || [];

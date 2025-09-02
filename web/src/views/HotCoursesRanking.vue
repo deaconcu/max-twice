@@ -2,7 +2,7 @@
 import { ref, onMounted, inject } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { learnService } from '@/services/learnService';
+import { courseServiceV1 } from '@/services/api/v1/apiServiceV1';
 
 const { t } = useI18n();
 const showSnackbar = inject('showSnackbar');
@@ -26,7 +26,7 @@ const loadHotCoursesRanking = async () => {
   try {
     loading.value = true;
     console.log("加载热门课程排行榜");
-    const response = await learnService.getHotCoursesRanking();
+    const response = await courseServiceV1.getCoursesRanking();
     
     console.log('完整API响应:', response);
     console.log('响应码:', response.code);

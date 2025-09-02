@@ -1,6 +1,7 @@
 package com.prosper.learn.domain.service.data;
 
 import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.common.Enums.CourseState;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.mapper.CourseMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -135,7 +136,7 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
     /**
      * 根据状态和最后ID获取课程列表（不缓存）
      */
-    public List<CourseDO> listByStateAndLastId(String state, Long lastId) {
+    public List<CourseDO> listByStateAndLastId(CourseState state, Long lastId) {
         return courseMapper.listByStateAndLastId(state, lastId);
     }
     
@@ -156,7 +157,7 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
     /**
      * 根据父ID和状态获取子课程列表（不缓存）
      */
-    public List<CourseDO> listByParentAndState(String state, Long parentId) {
+    public List<CourseDO> listByParentAndState(CourseState state, Long parentId) {
         return courseMapper.listByParentAndState(state, parentId);
     }
     

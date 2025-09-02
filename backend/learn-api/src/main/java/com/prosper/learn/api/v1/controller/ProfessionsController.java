@@ -35,7 +35,6 @@ public class ProfessionsController {
     @GetMapping("/professions")
     public ApiResponse<Object> getProfessionsByPage(
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false, defaultValue = "20") Integer size,
             @RequestParam(required = false) Byte state,
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false) Integer mainCategory,
@@ -55,7 +54,7 @@ public class ProfessionsController {
             return ApiResponse.success(professionList);
         } else if (mainCategory != null && subCategory != null && lastId != null) {
             // 按分类获取
-            List<ProfessionDTO> professionList = professionService.getListByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
+            List<ProfessionDTO> professionList = professionService.getListByCategoryAndLastId(mainCategory, subCategory, lastId);
             return ApiResponse.success(professionList);
         } else if (mainCategory != null && lastId != null) {
             // 按主分类获取

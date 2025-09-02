@@ -9,7 +9,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-container max-width="1600" style="position:fixed; z-index: 100; background: #fff; border-bottom: 1px solid #eee;">
+  <v-container max-width="1600" class="py-0">
     <div class="d-flex justify-space-between align-end">
       <div class="d-flex align-end">
         <v-icon class="custom-icon mb-1" color="#333" size="24" >mdi-github</v-icon>

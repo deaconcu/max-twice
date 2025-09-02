@@ -4,7 +4,7 @@ import { ref, watch } from 'vue';
 //import { defineProps } from 'vue';
 import draggable from 'vuedraggable'
 import { useRoute, useRouter } from 'vue-router';
-import { learnService } from '@/services/learnService';
+import { postServiceV1 } from '@/services/api/v1/apiServiceV1';
 import Tiptap from '../components/Tiptap.vue'
 import { useI18n } from 'vue-i18n'
 
@@ -27,7 +27,7 @@ const submitAddArticle = async () => {
     }
 
     console.log('request: ' + JSON.stringify(data));
-    const response = await learnService.addPosting(data);
+    const response = await postServiceV1.createPost(data);
     console.log('response: ' + JSON.stringify(response));
 
     if (response.code === 200) {
