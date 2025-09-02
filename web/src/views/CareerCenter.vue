@@ -560,7 +560,7 @@ onMounted(() => {
         />
       </v-col>
 
-      <v-col cols="3" class="ps-12 pt-6">
+      <v-col cols="3">
         <RightSidebar />
       </v-col>
     </v-row>

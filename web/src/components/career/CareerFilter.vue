@@ -134,31 +134,36 @@ const handleNavigation = (route) => {
 <style scoped>
 /* 导航栏样式 */
 .nav-toggle {
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-radius: 8px !important;
+  border: 1px solid #e0e0e0 !important;
   overflow: hidden;
 }
 
 .nav-btn {
-  text-transform: none;
-  font-weight: 500;
-  letter-spacing: normal;
-  border-radius: 0;
-  padding: 8px 16px;
-  transition: all 0.2s ease;
-}
-
-.nav-btn:not(:last-child) {
-  border-right: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.nav-btn-active {
-  background-color: rgba(0, 121, 107, 0.1);
-  color: #00796b;
+  padding: 8px 16px !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  border-radius: 6px !important;
+  margin: 2px !important;
+  transition: all 0.2s ease !important;
+  color: #666 !important;
 }
 
 .nav-btn:hover {
-  background-color: rgba(0, 121, 107, 0.05);
+  background: rgba(25, 118, 210, 0.08) !important;
+  color: #1976d2 !important;
+}
+
+.nav-btn-active {
+  background: #1976d2 !important;
+  color: white !important;
+}
+
+.nav-btn-active:hover {
+  background: #1565c0 !important;
+  color: white !important;
 }
 
 /* 搜索容器样式 */

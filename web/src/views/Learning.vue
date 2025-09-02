@@ -4,13 +4,12 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { progressServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useUserStore } from "@/stores/user";
-import { VueFlow } from '@vue-flow/core'
-import { Background } from '@vue-flow/background'
-import { Controls } from '@vue-flow/controls'
 import RoadmapDetail from '@/components/roadmap/RoadmapDetail.vue';
 import RightSidebar from '@/components/common/RightSidebar.vue';
+import LearningHeader from '@/components/learning/LearningHeader.vue';
+import RoadmapLearningCard from '@/components/learning/RoadmapLearningCard.vue';
+import CourseLearningCard from '@/components/learning/CourseLearningCard.vue';
 import dagre from 'dagre';
-import { usePlatformStats } from '@/composables/usePlatformStats';
 import { PROGRESS_STATE, PROGRESS_STATE_TEXT } from '@/constants/statusConstants';
 
 const { t } = useI18n();
@@ -18,17 +17,13 @@ const showSnackbar = inject('showSnackbar');
 const user = useUserStore();
 const router = useRouter();
 
-// 使用平台统计数据
-const { stats: platformStats, isLoading: statsLoading, error: statsError, refresh: refreshStats } = usePlatformStats();
-
 // 响应式数据
 const learningData = ref({
   totalProgress: 18,
   completedNodes: 2938,
   totalNodes: 29380,
   roadmaps: [], // 用户收藏的roadmap posts (VueFlow图)
-  courses: [],    // 用户正在学习的课程
-  recentActivities: []
+  courses: []    // 用户正在学习的课程
 });
 
 const selectedTab = ref('roadmaps'); // 默认显示学习路线图
@@ -268,8 +263,7 @@ const loadLearningData = async () => {
           lastActivity: getRelativeTime(userCourse.updatedAt),
           // 根据状态设置其他属性
           category: getCategoryFromDescription(userCourse.course.description),
-          difficulty: getDifficultyFromStatus(userCourse.state),
-          estimatedTime: getEstimatedTime(userCourse.course.description)
+          difficulty: getDifficultyFromStatus(userCourse.state)
         }
       })
     }
@@ -279,8 +273,7 @@ const loadLearningData = async () => {
       completedNodes: roadmaps.reduce((sum, r) => sum + r.completedNodes, 0),
       totalNodes: roadmaps.reduce((sum, r) => sum + r.totalNodes, 0),
       roadmaps: roadmaps,
-      courses: courses,
-      recentActivities: generateRecentActivities([...roadmaps, ...courses])
+      courses: courses
     }
 
     console.log("learningData:", learningData.value) // 调试信息
@@ -326,33 +319,6 @@ function extractTags(description) {
   return commonTags.filter(tag => description.includes(tag)).slice(0, 3)
 }
 
-// 生成最近活动数据
-function generateRecentActivities(items) {
-  const activities = []
-  
-  items.forEach(item => {
-    if (item.state === PROGRESS_STATE.IN_PROGRESS) {
-      activities.push({
-        type: item.nodes ? 'roadmap' : 'course', // 有nodes的是roadmap，否则是course
-        title: item.title || item.name,
-        action: t('learning.inProgress'),
-        time: item.lastActivity
-      })
-    }
-    
-    if (item.state === PROGRESS_STATE.COMPLETED) {
-      activities.push({
-        type: item.nodes ? 'roadmap' : 'course',
-        title: item.title || item.name,
-        action: t('learning.completed'),
-        time: getRelativeTime(item.completedAt)
-      })
-    }
-  })
-  
-  return activities.slice(0, 5) // 返回最近5个活动
-}
-
 // 根据课程描述推断分类
 function getCategoryFromDescription(description) {
   if (!description) return 'other'
@@ -374,18 +340,6 @@ function getDifficultyFromStatus(state) {
     case 'COMPLETED': return 'advanced'
     default: return 'beginner'
   }
-}
-
-// 根据描述估算学习时间
-function getEstimatedTime(description) {
-  if (!description) return t('learning.estimatedTime.unknown')
-  
-  // 简单的估算逻辑，可根据实际需求调整
-  const length = description.length
-  if (length < 50) return t('learning.estimatedTime.shortTime')
-  if (length < 100) return t('learning.estimatedTime.mediumTime')
-  if (length < 200) return t('learning.estimatedTime.longTime')
-  return t('learning.estimatedTime.veryLongTime')
 }
 
 const getDifficultyColor = (difficulty) => {
@@ -466,7 +420,6 @@ const handleVoteRoadmap = async (roadmap, event) => {
   }
 };
 
-// 上移路线图
 const moveRoadmapUp = (roadmap, event) => {
   if (event) {
     event.stopPropagation();
@@ -583,92 +536,13 @@ const getStatusText = (state) => {
     <v-row class="mt-2">
       
       <v-col cols="9" class="pr-8">
-        <div class="mb-8">
-          <!-- 页面标题区域 -->
-          <v-row justify="start" class="mb-4">
-            <v-col cols="12">
-              <div class="d-flex align-center justify-space-between mb-3">
-                <div class="d-flex align-center">
-                  <v-avatar color="teal-lighten-4" size="40" class="mr-3">
-                    <v-icon icon="mdi-school" color="teal-darken-2" size="20"></v-icon>
-                  </v-avatar>
-                  <div>
-                    <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-1">{{ t('learning.title') }}</h1>
-                    <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('learning.subtitle') }}</p>
-                  </div>
-                </div>
-                
-                <!-- 导航栏 -->
-                <div class="d-flex align-center">
-                  <v-btn-toggle v-model="selectedNavTab" variant="text" color="primary" class="nav-toggle">
-                    <v-btn value="learning" class="nav-btn" :class="{ 'nav-btn-active': selectedNavTab === 'learning' }">
-                      {{ t('learning.title') }}
-                    </v-btn>
-                    <v-btn value="career" class="nav-btn" @click="router.push('/career')">
-                      {{ t('learning.careerCenter') }}
-                    </v-btn>
-                    <v-btn value="courses" class="nav-btn" @click="router.push('/course/list')">
-                      {{ t('learning.courseCenter') }}
-                    </v-btn>
-                  </v-btn-toggle>
-                </div>
-              </div>
-            </v-col>
-          </v-row>
-
-          <!-- 搜索和筛选区域 -->
-          <v-row justify="start" align="center" class="mb-4">
-            <v-col cols="4" class="d-flex justify-start">
-              <v-btn-toggle v-model="selectedTab" variant="outlined" color="primary" rounded="lg" density="comfortable">
-                <v-btn value="roadmaps" size="default">
-                  <v-icon icon="mdi-map" class="mr-2" size="16"></v-icon>
-                  {{ t('learning.roadmaps') }}
-                </v-btn>
-                <v-btn value="courses" size="default">
-                  <v-icon icon="mdi-book-multiple" class="mr-2" size="16"></v-icon>
-                  {{ t('learning.courses') }}
-                </v-btn>
-              </v-btn-toggle>
-            </v-col>
-            
-            <v-col cols="5" class="d-flex justify-start">
-              <!-- 状态筛选按钮 -->
-              <v-btn-toggle v-model="selectedStatus" rounded="lg" color="grey-darken-2" variant="text"
-                density="compact" mandatory class="status-filter">
-                <v-btn value="all" size="small" class="me-1 rounded-lg text-body-2">
-                  <v-icon icon="mdi-format-list-bulleted" class="mr-1" size="14"></v-icon>
-                  {{ t('learning.all') }}
-                </v-btn>
-                <v-btn :value="PROGRESS_STATE.NOT_STARTED" size="small" class="me-1 rounded-lg text-body-2">
-                  <v-icon icon="mdi-circle-outline" class="mr-1" size="14"></v-icon>
-                  {{ PROGRESS_STATE_TEXT[PROGRESS_STATE.NOT_STARTED] }}
-                </v-btn>
-                <v-btn :value="PROGRESS_STATE.IN_PROGRESS" size="small" class="me-1 rounded-lg text-body-2">
-                  <v-icon icon="mdi-play-circle" class="mr-1" size="14"></v-icon>
-                  {{ PROGRESS_STATE_TEXT[PROGRESS_STATE.IN_PROGRESS] }}
-                </v-btn>
-                <v-btn :value="PROGRESS_STATE.COMPLETED" size="small" class="me-1 rounded-lg text-body-2">
-                  <v-icon icon="mdi-check-circle" class="mr-1" size="14"></v-icon>
-                  {{ PROGRESS_STATE_TEXT[PROGRESS_STATE.COMPLETED] }}
-                </v-btn>
-              </v-btn-toggle>
-            </v-col>
-            <v-col cols="3" class="d-flex justify-end">
-              <v-text-field 
-                v-model="searchQuery"
-                hide-details="auto" 
-                density="compact" 
-                class="search-input" 
-                rounded="lg"
-                :placeholder="t('learning.searchPlaceholder')" 
-                variant="outlined">
-                <template v-slot:prepend-inner>
-                  <v-icon icon="mdi-magnify" color="grey-lighten-1" size="18"></v-icon>
-                </template>
-              </v-text-field>
-            </v-col>
-          </v-row>
-        </div>
+        <!-- 页面头部 -->
+        <LearningHeader
+          v-model:selected-tab="selectedTab"
+          v-model:selected-nav-tab="selectedNavTab"
+          v-model:selected-status="selectedStatus"
+          v-model:search-query="searchQuery"
+        />
 
         <!-- 学习路线图标签页 -->
         <div v-if="selectedTab === 'roadmaps'">
@@ -691,183 +565,16 @@ const getStatusText = (state) => {
           </div>
 
           <div v-else>
-            <div v-for="roadmap in filteredLearningData.roadmaps" :key="roadmap.id" class="mb-4">
-              <v-card @click="openRoadmapDetail(roadmap)" variant="flat" class="flat-card roadmap-card position-relative">
-                <!-- 学习状态标签 -->
-                <div class="status-badge-container">
-                  <div class="d-flex align-center">
-                    <v-chip 
-                      :color="getStatusColor(roadmap.state)" 
-                      variant="flat" 
-                      size="small"
-                      class="status-badge">
-                      <v-icon :icon="getStatusIcon(roadmap.state)" class="mr-1" size="14"></v-icon>
-                      {{ getStatusText(roadmap.state) }}
-                    </v-chip>
-                    
-                    <!-- 进行中状态的关闭按钮 -->
-                    <v-btn 
-                      v-if="roadmap.state === PROGRESS_STATE.IN_PROGRESS"
-                      variant="text" 
-                      size="x-small" 
-                      class="ml-2 close-btn"
-                      color="grey-darken-2"
-                      @click="closeRoadmap(roadmap, $event)">
-                      <v-icon size="16">mdi-close</v-icon>
-                      <v-tooltip activator="parent" location="bottom">
-                        退出学习
-                      </v-tooltip>
-                    </v-btn>
-                  </div>
-                </div>
-                
-                <div class="d-flex align-stretch" style="min-height: 240px;">
-                  <!-- 左侧信息区域 -->
-                  <div class="d-flex flex-column flex-grow-1 pt-2" style="min-width: 0; flex: 1;">
-                    <!-- 标题 -->
-                    <div class="px-4 pt-2 pb-1">
-                      <h3 class="text-h5 font-weight-normal mb-3 text-grey-darken-2">{{ roadmap.profession?.name || roadmap.title }}</h3>
-                    </div>
-
-                    <!-- 用户信息和描述并排 -->
-                    <div class="px-4 pb-2">
-                      <div class="d-flex align-start">
-                        <v-avatar :color="getAvatarColor(roadmap.author)" size="32" class="mr-3 flat-avatar flex-shrink-0">
-                          <span class="text-white text-caption">{{ roadmap.author?.charAt(0) || 'U' }}</span>
-                        </v-avatar>
-                        <div class="flex-grow-1 min-width-0">
-                          <div class="text-body-2 text-grey-darken-2 mb-1">{{ roadmap.author || '未知用户' }} · {{ formatDate(roadmap.createdAt) }}</div>
-                          <div class="text-body-2 text-grey-darken-3 description-text">{{ roadmap.description || '暂无描述' }}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <v-card-text class="text-body-2 flex-grow-1 pt-1 pb-2">
-                      
-                      <!-- 学习进度信息 -->
-                      <div class="mb-3">
-                        <div class="d-flex justify-space-between text-body-2 mb-2">
-                          <span class="text-grey-darken-3">{{ t('learning.completionProgress') }}</span>
-                          <span class="text-primary font-weight-bold">{{ parseFloat(roadmap.progress.toFixed(2)) }}%</span>
-                        </div>
-                        <v-progress-linear 
-                          :model-value="roadmap.progress" 
-                          color="primary" 
-                          background-color="grey-lighten-3" 
-                          height="8" 
-                          rounded="lg">
-                        </v-progress-linear>
-                      </div>
-
-                      <div class="d-flex flex-wrap align-center mb-3">
-                        <v-chip size="small" color="success" variant="tonal" class="mr-2 mb-1">
-                          <v-icon icon="mdi-check-circle" size="14" class="mr-1"></v-icon>
-                          {{ roadmap.completedNodes }}/{{ roadmap.totalNodes }} {{ t('learning.nodes') }}
-                        </v-chip>
-                        <v-chip size="small" color="info" variant="tonal" class="mr-2 mb-1">
-                          <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
-                          {{ roadmap.lastActivity }}
-                        </v-chip>
-                        <v-chip v-for="tag in roadmap.tags" :key="tag" size="small" color="grey-lighten-1" variant="tonal" class="mr-2 mb-1">
-                          {{ tag }}
-                        </v-chip>
-                      </div>
-
-                      <!-- 时间信息 -->
-                      <div class="time-info text-caption text-grey-darken-2">
-                        <div v-if="roadmap.startedAt" class="mb-1">
-                          <v-icon icon="mdi-calendar-start" size="12" class="mr-1"></v-icon>
-                          {{ t('learning.startTime') }}: {{ formatDateTime(roadmap.startedAt) }}
-                        </div>
-                        <div v-if="roadmap.completedAt" class="mb-1">
-                          <v-icon icon="mdi-calendar-check" size="12" class="mr-1"></v-icon>
-                          {{ t('learning.completionTime') }}: {{ formatDateTime(roadmap.completedAt) }}
-                        </div>
-                        <div v-if="!roadmap.completedAt && roadmap.startedAt" class="mb-1">
-                          <v-icon icon="mdi-timer-sand" size="12" class="mr-1"></v-icon>
-                          {{ t('learning.studyDuration') }}: {{ calculateDuration(roadmap.startedAt) }}
-                        </div>
-                      </div>
-                    </v-card-text>
-
-                    <!-- 操作按钮区域 -->
-                    <div class="px-4 py-2 d-flex justify-space-between border-t">
-                      <div class="d-flex align-center">
-                        <v-btn variant="text" size="small" class="flat-action-icon" 
-                          :color="roadmap.upvoted ? 'red-darken-2' : 'primary'"
-                          @click="handleVoteRoadmap(roadmap, $event)">
-                          <v-icon size="20" :class="{ 'vote-animation': roadmap.upvoted }">
-                            {{ roadmap.upvoted ? 'mdi-thumb-up' : 'mdi-thumb-up-outline' }}
-                          </v-icon>
-                          <span class="ml-1 text-body-2">{{ roadmap.vote || 0 }}</span>
-                          <v-tooltip activator="parent" location="top">
-                            {{ roadmap.upvoted ? t('learning.voted') : t('learning.voteSupport') }}
-                          </v-tooltip>
-                        </v-btn>
-
-                        <v-btn variant="text" size="small" class="flat-action-icon" color="info">
-                          <v-icon size="20">mdi-comment-outline</v-icon>
-                          <span class="ml-1 text-body-2">{{ roadmap.comment || 0 }}</span>
-                          <v-tooltip activator="parent" location="top">{{ t('learning.viewComments') }}</v-tooltip>
-                        </v-btn>
-                      </div>
-
-                      <div class="d-flex align-center">
-                        <v-btn variant="text" size="small" class="flat-action-icon" color="success">
-                          <v-icon size="20">mdi-school</v-icon>
-                          <v-tooltip activator="parent" location="top">{{ t('learning.continueLearning') }}</v-tooltip>
-                        </v-btn>
-
-                        <!-- 上下移动按钮 -->
-                        <v-btn variant="text" size="small" class="flat-action-icon ml-1" color="grey-darken-2"
-                          @click="moveRoadmapUp(roadmap, $event)">
-                          <v-icon size="18">mdi-arrow-up</v-icon>
-                          <v-tooltip activator="parent" location="top">{{ t('learning.up') }}</v-tooltip>
-                        </v-btn>
-
-                        <v-btn variant="text" size="small" class="flat-action-icon ml-1" color="grey-darken-2"
-                          @click="moveRoadmapDown(roadmap, $event)">
-                          <v-icon size="18">mdi-arrow-down</v-icon>
-                          <v-tooltip activator="parent" location="top">{{ t('learning.down') }}</v-tooltip>
-                        </v-btn>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- 右侧VueFlow图表区域 -->
-                  <div class="d-flex align-center" style="width: 400px; min-width: 400px; ">
-                    <div class="vue-flow-preview" style="width: 100%; height: 100%;">
-                      <VueFlow 
-                        v-if="roadmap.nodes && roadmap.nodes.length > 0"
-                        :nodes="roadmap.nodes" 
-                        :edges="roadmap.edges || []" 
-                        fit-view-on-init 
-                        :min-zoom="0.3"
-                        :max-zoom="0.8" 
-                        :snap-to-grid="true" 
-                        :snap-grid="[20, 20]" 
-                        :zoom-on-scroll="false"
-                        :pan-on-scroll="false" 
-                        :pan-on-drag="false" 
-                        :nodes-draggable="false" 
-                        :nodes-connectable="false"
-                        :elements-selectable="true" 
-                        @node-click="handleNodeClick"
-                        class="vue-flow-readonly"
-                        >
-                        <Background pattern-color="#aaa" :gap="20" />
-                      </VueFlow>
-                      <div v-else class="d-flex align-center justify-center h-100 text-grey-darken-2">
-                        <div class="text-center">
-                          <v-icon icon="mdi-map-outline" size="48" class="mb-2"></v-icon>
-                          <div class="text-body-2">{{ t('learning.noLearningPath') }}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </v-card>
-            </div>
+            <RoadmapLearningCard
+              v-for="roadmap in filteredLearningData.roadmaps" 
+              :key="roadmap.id"
+              :roadmap="roadmap"
+              @open-detail="openRoadmapDetail"
+              @vote="handleVoteRoadmap"
+              @move-up="moveRoadmapUp"
+              @move-down="moveRoadmapDown"
+              @close="closeRoadmap"
+            />
           </div>
         </div>
 
@@ -893,67 +600,13 @@ const getStatusText = (state) => {
 
           <div v-else>
             <v-row>
-              <v-col v-for="course in filteredLearningData.courses" :key="course.id" cols="12" md="6">
-                <v-card 
-                  flat 
-                  color="grey-lighten-5" 
-                  rounded="lg" 
-                  class="course-card mb-3"
-                  @click="openCourse(course)">
-                  <v-card-text class="pa-4">
-                    <div class="d-flex align-start justify-space-between mb-3">
-                      <div class="d-flex align-start flex-grow-1 mr-3">
-                        <v-avatar color="teal-lighten-4" size="32" class="mr-3 flex-shrink-0" style="margin-top: 5px;">
-                          <v-icon :icon="getCategoryIcon(course.category)" color="teal-darken-2" size="16"></v-icon>
-                        </v-avatar>
-                        <div class="flex-grow-1 min-width-0">
-                          <h4 class="text-subtitle-1 font-weight-bold text-grey-darken-4 mb-1">{{ course.title }}</h4>
-                          <p class="text-body-2 text-grey-darken-2 mb-0 course-description-text">{{ course.description }}</p>
-                        </div>
-                      </div>
-                      <div class="d-flex align-start flex-shrink-0">
-                        <v-chip 
-                          variant="flat" 
-                          :color="getDifficultyColor(course.difficulty)"
-                          size="small"
-                          class="course-difficulty-chip mr-2">
-                          {{ t(`learning.difficulty.${course.difficulty}`) }}
-                        </v-chip>
-                        <v-btn 
-                          variant="text" 
-                          size="x-small" 
-                          class="course-close-btn"
-                          color="grey-darken-2"
-                          @click="closeCourse(course, $event)">
-                          <v-icon size="16">mdi-close</v-icon>
-                          <v-tooltip activator="parent" location="bottom">
-                            {{ t('learning.exitLearning') }}
-                          </v-tooltip>
-                        </v-btn>
-                      </div>
-                    </div>
-
-                    <div class="mb-3">
-                      <div class="d-flex justify-space-between text-body-2 mb-2">
-                        <span class="text-grey-darken-3">{{ t('learning.courseProgress') }}</span>
-                        <span class="text-primary font-weight-bold">{{ parseFloat(course.progress.toFixed(2)) }}%</span>
-                      </div>
-                      <v-progress-linear 
-                        :model-value="course.progress" 
-                        color="primary" 
-                        background-color="grey-lighten-3" 
-                        height="8" 
-                        rounded="lg">
-                      </v-progress-linear>
-                    </div>
-
-                    <div class="d-flex justify-space-between align-center text-body-2 text-grey-darken-2">
-                      <span>{{ getStatusText(course.state) }}</span>
-                      <span>{{ course.lastActivity }}</span>
-                    </div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
+              <CourseLearningCard
+                v-for="course in filteredLearningData.courses" 
+                :key="course.id"
+                :course="course"
+                @open-course="openCourse"
+                @close-course="closeCourse"
+              />
             </v-row>
           </div>
         </div>
@@ -1087,7 +740,6 @@ const getStatusText = (state) => {
 
 .data-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* 跳转图标样式 */
@@ -1150,7 +802,6 @@ const getStatusText = (state) => {
 .ranking-item:hover {
   transform: translateX(4px);
   border-color: rgba(25, 118, 210, 0.3);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .rank-chip {
@@ -1183,7 +834,6 @@ const getStatusText = (state) => {
 .course-item:hover {
   transform: translateX(2px);
   border-color: rgba(76, 175, 80, 0.3);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .text-truncate {
@@ -1247,7 +897,6 @@ const getStatusText = (state) => {
 
 .learning-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .course-card {
@@ -1257,7 +906,6 @@ const getStatusText = (state) => {
 
 .course-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .roadmap-card {
