@@ -6,6 +6,9 @@ import { systemServiceV1, professionServiceV1 } from '@/services/api/v1/apiServi
 import CareerCard from '@/components/career/CareerCard.vue';
 import CategorySelector from '@/components/common/CategorySelector.vue';
 import RightSidebar from '@/components/common/RightSidebar.vue';
+import CategoryNavigation from '@/components/career/CategoryNavigation.vue';
+import CareerFilter from '@/components/career/CareerFilter.vue';
+import CareerGrid from '@/components/career/CareerGrid.vue';
 import { useToastMessage } from '@/composables/useToastMessage';
 
 const { t } = useI18n();
@@ -21,9 +24,6 @@ const searchText = ref('');
 const selectedCategory = ref('all');
 const selectedDifficulty = ref('all');
 const selectedNavTab = ref('career'); // 导航栏当前选中项
-
-// 热门职业数据
-const hotProfessions = ref([]);
 
 // 动态加载的分类数据
 const categories = ref([]);
@@ -181,8 +181,6 @@ const difficulties = computed(() => [
   { value: 'advanced', title: t('careerCenter.difficulty.advanced') },
 ]);
 
-// 模拟职业数据
-
 // 加载职业数据
 const loadCareerData = async (reset = true) => {
   try {
@@ -244,13 +242,17 @@ const loadCareersByMainCategory = async (mainCategoryId, reset = true) => {
       currentQueryParams.value = { type: 'mainCategory', mainCategory: mainCategoryId, subCategory: null };
     }
     
-    const response = await professionServiceV1.getProfessions(lastId.value, mainCategoryId, null);
+    const response = await professionServiceV1.getProfessionsByCategory(lastId.value, mainCategoryId, null);
     const newCareers = addRandomIconsToCareers(response.data || []);
     
     if (reset) {
+      careers.value = newCareers;
+      filteredCareers.value = newCareers;
       currentCareers.value = newCareers;
       displayedCareers.value = newCareers;
     } else {
+      careers.value = [...careers.value, ...newCareers];
+      filteredCareers.value = [...filteredCareers.value, ...newCareers];
       currentCareers.value = [...currentCareers.value, ...newCareers];
       displayedCareers.value = [...displayedCareers.value, ...newCareers];
     }
@@ -290,9 +292,13 @@ const loadCareersBySubCategory = async (mainCategoryId, subCategoryId, reset = t
     const newCareers = addRandomIconsToCareers(response.data || []);
     
     if (reset) {
+      careers.value = newCareers;
+      filteredCareers.value = newCareers;
       currentCareers.value = newCareers;
       displayedCareers.value = newCareers;
     } else {
+      careers.value = [...careers.value, ...newCareers];
+      filteredCareers.value = [...filteredCareers.value, ...newCareers];
       currentCareers.value = [...currentCareers.value, ...newCareers];
       displayedCareers.value = [...displayedCareers.value, ...newCareers];
     }
@@ -508,29 +514,9 @@ const clearSearch = () => {
   filterCareers();
 };
 
-// 加载热门职业
-const loadHotProfessions = async () => {
-  try {
-    console.log("加载热门职业数据");
-    const response = await professionServiceV1.getHotProfessions(5);
-    
-    if (response.code === 200) {
-      console.log('获取热门职业数据:', response.data);
-      hotProfessions.value = response.data || [];
-    } else {
-      console.error('获取热门职业失败:', response);
-      hotProfessions.value = [];
-    }
-  } catch (error) {
-    console.error('Error loading hot professions:', error);
-    hotProfessions.value = [];
-  }
-};
-
 onMounted(() => {
   loadProfessionCategories();
   loadCareerData(true);
-  loadHotProfessions();
 });
 </script>
 
@@ -538,579 +524,113 @@ onMounted(() => {
   <v-container fluid>
     <v-row class="mt-2">
       <v-col cols="12" md="9" lg="9" class="pr-lg-8">
-          <!-- 页面头部 -->
-          <div class="mb-8">
-            <v-row justify="start" class="mb-4">
-              <v-col cols="12">
-                <div class="d-flex align-center justify-space-between mb-3">
-                  <div class="d-flex align-center">
-                    <v-avatar color="teal-lighten-4" size="40" class="mr-3">
-                      <v-icon icon="mdi-briefcase-variant" color="teal-darken-2" size="20"></v-icon>
-                    </v-avatar>
-                    <div>
-                      <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-1">{{ t('careerCenter.title') }}</h1>
-                      <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('careerCenter.subtitle') }}</p>
-                    </div>
-                  </div>
-                  
-                  <!-- 导航栏 -->
-                  <div class="d-flex align-center">
-                    <v-btn-toggle v-model="selectedNavTab" variant="text" color="primary" class="nav-toggle">
-                      <v-btn value="learning" class="nav-btn" @click="router.push('/learning')">
-                        {{ t('careerCenter.navigation.learning') }}
-                      </v-btn>
-                      <v-btn value="career" class="nav-btn" :class="{ 'nav-btn-active': selectedNavTab === 'career' }">
-                        {{ t('careerCenter.navigation.career') }}
-                      </v-btn>
-                      <v-btn value="courses" class="nav-btn" @click="router.push('/course/list')">
-                        {{ t('careerCenter.navigation.courses') }}
-                      </v-btn>
-                    </v-btn-toggle>
-                  </div>
-                </div>
-              </v-col>
-            </v-row>
+        <!-- 页面头部和搜索 -->
+        <CareerFilter 
+          v-model:searchText="searchText"
+          v-model:selectedNavTab="selectedNavTab"
+          @performSearch="performSearch"
+          @openCareerApplication="openCareerApplicationDialog"
+        />
 
-            <!-- 搜索和筛选区域 -->
-            <v-row align="center" class="mb-6">
-              <v-col cols="12">
-                <div class="d-flex align-center search-container">
-                  <v-text-field 
-                    v-model="searchText"
-                    hide-details="auto" 
-                    density="compact" 
-                    class="search-input flex-grow-1" 
-                    :placeholder="t('careerCenter.search.placeholder')" 
-                    variant="outlined"
-                    color="primary"
-                    @keyup.enter="performSearch"
-                    clearable>
-                    <template v-slot:prepend-inner>
-                      <v-icon icon="mdi-magnify" color="primary" size="20"></v-icon>
-                    </template>
-                  </v-text-field>
-                  <v-btn 
-                    color="primary" 
-                    variant="flat" 
-                    class="ml-3 search-btn" 
-                    rounded="lg"
-                    size="default"
-                    @click="performSearch">
-                    <v-icon icon="mdi-magnify" class="mr-2"></v-icon>
-                    {{ t('careerCenter.search.button') }}
-                  </v-btn>
-                  <v-btn 
-                  color="grey-darken-2" 
-                  variant="tonal" 
-                  rounded="lg"
-                  size="default"
-                  prepend-icon="mdi-plus-circle"
-                  @click="openCareerApplicationDialog">
-                  {{ t('careerCenter.search.applyJob') }}
-                </v-btn>
-                </div>
-              </v-col>
-            </v-row>
+        <!-- 分类导航 -->
+        <CategoryNavigation 
+          :categories="categories"
+          :categoryMapping="categoryMapping"
+          :activeFirstLvl="activeFirstLvl"
+          :activeSecondLvl="activeSecondLvl"
+          :searchText="searchText"
+          @selectFirstLevel="selectFirstLevel"
+          @selectSecondLevel="selectSecondLevel"
+        />
 
-            <!-- 一级分类按钮导航 -->
-            <v-row class="mb-4" v-if="!searchText.trim()">
-              <v-col cols="12">
-                <v-card flat class="bg-grey-lighten-5 px-6 pt-6 pb-2" rounded="xl" style="border: 1px #ccc solid;">
-                  <!-- 标题区域 -->
-                  <div class="d-flex align-center mb-5">
-                    <div class="pa-3 rounded-xl bg-white mr-3">
-                      <v-icon icon="mdi-briefcase-variant" color="blue-darken-2" size="24"></v-icon>
-                    </div>
-                    <div>
-                      <h3 class="text-h6 font-weight-bold text-blue-grey-darken-3 mb-1">{{ t('careerCenter.category.title') }}</h3>
-                      <p class="text-caption text-blue-grey-darken-1 mb-0">
-                        <v-icon icon="mdi-filter-outline" size="12" class="mr-1"></v-icon>
-                        {{ t('careerCenter.category.subtitle') }}
-                      </p>
-                    </div>
-                  </div>
-                    
-                  <!-- 一级分类按钮组 -->
-                  <div class="d-flex flex-wrap mb-6" style="gap: 16px;">
-                    <v-btn
-                      v-for="category in categories"
-                      :key="category.id"
-                      :color="activeFirstLvl === category.id? 'blue-darken-1' : 'white'"
-                      variant="flat"
-                      rounded="xl"
-                      class="font-weight-medium category-btn-flat"
-                      @click="selectFirstLevel(category.id)">
-                      <v-icon 
-                        :icon="category.icon" 
-                        size="18" 
-                        class="mr-2"
-                        :color="activeFirstLvl === category.id? 'white' : 'blue-grey-darken-2'">
-                      </v-icon>
-                      <span :class="activeFirstLvl === category.id? 'text-white' : 'text-blue-grey-darken-3'">
-                        {{ category.title }}
-                      </span>
-                    </v-btn>
-                  </div>
-               
-                  <!-- 二级分类按钮 -->
-                  <div v-if="activeFirstLvl !== -1 && activeFirstLvl !== 0" class="mt-4">
-                    <!-- 二级分类标题 -->
-                    <div class="pa-4 mb-4 rounded-xl bg-white">
-                      <div class="d-flex align-center mb-3">
-                        <v-icon icon="mdi-chevron-right" color="blue-darken-1" size="16" class="mr-2"></v-icon>
-                        <h4 class="text-subtitle-1 font-weight-bold text-blue-grey-darken-3 mb-0">
-                          {{ categories.find(c => c.id === activeFirstLvl)?.title }} - {{ t('careerCenter.category.specificDirection') }}
-                        </h4>
-                      </div>
-                      
-                      <!-- 二级分类按钮组 -->
-                      <div class="d-flex flex-wrap" style="gap: 12px;">
-                        <v-btn
-                          v-for="(subcategory, subcategoryIndex) in getSubcategoriesByMainCategory(activeFirstLvl)" 
-                          :key="subcategoryIndex"
-                          :color="activeSecondLvl === subcategoryIndex ? 'orange-darken-1' : 'grey-lighten-3'"
-                          variant="flat"
-                          rounded="xl"
-                          class="font-weight-medium subcategory-btn-flat"
-                          @click="selectSecondLevel(subcategoryIndex)">
-                          <v-icon 
-                            :icon="activeSecondLvl === subcategoryIndex ? 'mdi-folder-open' : 'mdi-folder-outline'" 
-                            size="14" 
-                            class="mr-1"
-                            :color="activeSecondLvl === subcategoryIndex ? 'white' : 'blue-grey-darken-2'">
-                          </v-icon>
-                          <span :class="activeSecondLvl === subcategoryIndex ? 'text-white' : 'text-blue-grey-darken-3'">
-                            {{ subcategory.name }}
-                          </span>
-                        </v-btn>
-                      </div>
-                    </div>
-                  </div>
-                </v-card>
-              </v-col>
-            </v-row>
-
-            <!-- 职业列表显示区域 -->
-            <v-row class="mb-4">
-              <v-col cols="12">
-                <v-card flat color="transparent" rounded="lg">
-                  <!-- 职业列表 -->
-                  <div v-if="activeFirstLvl !== -1 && activeSecondLvl !== -1">
-                    <div class="d-flex align-center mb-5">
-                      <v-btn 
-                        icon="mdi-arrow-left" 
-                        variant="text" 
-                        size="small"
-                        color="grey-darken-2"
-                        @click="goBackToSecondLevel"></v-btn>
-                      <h4 class="text-subtitle-1 font-weight-bold text-grey-darken-3 ml-2">
-                        {{ getSubcategoriesByMainCategory(activeFirstLvl)[activeSecondLvl]?.name }} 
-                        - {{ t('careerCenter.listing.specificJobs', { count: currentCareers.length }) }}
-                      </h4>
-                    </div>
-                    
-                    <!-- 空状态提示 -->
-                    <div v-if="!loading && displayedCareers.length === 0" class="text-center py-12">
-                      <v-icon icon="mdi-briefcase-search-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
-                      <h3 class="text-h6 text-grey-darken-1 mb-2">{{ t('careerCenter.empty.noRelatedJobs') }}</h3>
-                      <p class="text-body-2 text-grey mb-4">{{ t('careerCenter.empty.noRelatedJobsDesc') }}</p>
-                    </div>
-                    
-                    <!-- 无限滚动容器 -->
-                    <v-infinite-scroll 
-                      v-else
-                      :items="displayedCareers" 
-                      :onLoad="loadMoreCareers"
-                      color="primary">
-                      <v-row>
-                        <v-col 
-                          v-for="career in displayedCareers" 
-                          :key="career.id"
-                          cols="12" 
-                          md="6" 
-                          lg="4">
-                          <CareerCard 
-                            :career="career" 
-                            :get-category-name="getCategoryName"
-                            :get-sub-category-name-by-id="getSubCategoryNameById"
-                            @click="goToCareerDetail(career)" />
-                        </v-col>
-                      </v-row>
-                      
-                      <!-- 加载中状态 -->
-                      <template v-slot:loading>
-                        <div class="text-center py-4">
-                          <v-progress-circular 
-                            indeterminate 
-                            color="primary" 
-                            size="24">
-                          </v-progress-circular>
-                          <p class="text-body-2 text-grey mt-2">{{ t('careerCenter.listing.loadingMore') }}</p>
-                        </div>
-                      </template>
-                      
-                      <!-- 没有更多数据时的提示 -->
-                      <template v-slot:empty>
-                        <div class="text-center pt-8 pb-4">
-                          <p class="text-body-2 text-grey">{{ t('careerCenter.listing.allLoaded') }}</p>
-                        </div>
-                      </template>
-                    </v-infinite-scroll>
-                  </div>
-
-                  <!-- 默认职业列表（未选择任何分类） -->
-                  <div v-else-if="activeFirstLvl === -1">
-                    <h4 class="text-subtitle-1 font-weight-bold text-grey-darken-3 mb-3">
-                      {{ t('careerCenter.listing.hotProfessions', { count: careers.length }) }}
-                    </h4>
-                    
-                    <!-- 空状态提示 -->
-                    <div v-if="!loading && displayedCareers.length === 0" class="text-center py-12">
-                      <v-icon icon="mdi-briefcase-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
-                      <h3 class="text-h6 text-grey-darken-1 mb-2">{{ t('careerCenter.empty.noJobs') }}</h3>
-                      <p class="text-body-2 text-grey mb-4">{{ t('careerCenter.empty.noJobsDesc') }}</p>
-                    </div>
-                    
-                    <!-- 无限滚动容器 -->
-                    <v-infinite-scroll 
-                      v-else
-                      :items="displayedCareers" 
-                      :onLoad="loadMoreCareers"
-                      color="primary">
-                      <v-row>
-                        <v-col 
-                          v-for="career in displayedCareers" 
-                          :key="career.id"
-                          cols="12" 
-                          md="6" 
-                          lg="4">
-                          <CareerCard 
-                            :career="career" 
-                            :get-category-name="getCategoryName"
-                            :get-sub-category-name-by-id="getSubCategoryNameById"
-                            @click="goToCareerDetail(career)" />
-                        </v-col>
-                      </v-row>
-                      
-                      <!-- 加载中状态 -->
-                      <template v-slot:loading>
-                        <div class="text-center py-4">
-                          <v-progress-circular 
-                            indeterminate 
-                            color="primary" 
-                            size="24">
-                          </v-progress-circular>
-                          <p class="text-body-2 text-grey mt-2">{{ t('careerCenter.listing.loadingMore') }}</p>
-                        </div>
-                      </template>
-                      
-                      <!-- 没有更多数据时的提示 -->
-                      <template v-slot:empty>
-                        <div class="text-center pt-8 pb-4">
-                          <p class="text-body-2 text-grey">{{ t('careerCenter.listing.allLoaded') }}</p>
-                        </div>
-                      </template>
-                    </v-infinite-scroll>
-                  </div>
-
-                  <!-- 一级分类选中但二级未选中 -->
-                  <div v-else-if="activeFirstLvl !== -1 && activeSecondLvl === -1">
-                    <h4 class="text-subtitle-1 font-weight-bold text-grey-darken-3 mb-3">
-                      {{ t('careerCenter.listing.categoryJobs', { 
-                        category: categories.find(c => c.id === activeFirstLvl)?.title, 
-                        count: currentCareers.length 
-                      }) }}
-                    </h4>
-                    
-                    <!-- 空状态提示 -->
-                    <div v-if="!loading && displayedCareers.length === 0" class="text-center py-12">
-                      <v-icon icon="mdi-briefcase-search-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
-                      <h3 class="text-h6 text-grey-darken-1 mb-2">{{ t('careerCenter.empty.noCategoryJobs') }}</h3>
-                      <p class="text-body-2 text-grey mb-4">{{ t('careerCenter.empty.noCategoryJobsDesc') }}</p>
-                    </div>
-                    
-                    <!-- 无限滚动容器 -->
-                    <v-infinite-scroll 
-                      v-else
-                      :items="displayedCareers" 
-                      :onLoad="loadMoreCareers"
-                      color="primary">
-                      <v-row>
-                        <v-col 
-                          v-for="career in displayedCareers" 
-                          :key="career.id"
-                          cols="12" 
-                          md="6" 
-                          lg="4">
-                          <CareerCard 
-                            :career="career" 
-                            :get-category-name="getCategoryName"
-                            :get-sub-category-name-by-id="getSubCategoryNameById"
-                            @click="goToCareerDetail(career)" />
-                        </v-col>
-                      </v-row>
-                      
-                      <!-- 加载中状态 -->
-                      <template v-slot:loading>
-                        <div class="text-center py-4">
-                          <v-progress-circular 
-                            indeterminate 
-                            color="primary" 
-                            size="24">
-                          </v-progress-circular>
-                          <p class="text-body-2 text-grey mt-2">{{ t('careerCenter.listing.loadingMore') }}</p>
-                        </div>
-                      </template>
-                      
-                      <!-- 没有更多数据时的提示 -->
-                      <template v-slot:empty>
-                        <div class="text-center pt-8 pb-4">
-                          <p class="text-body-2 text-grey">{{ t('careerCenter.listing.allLoaded') }}</p>
-                        </div>
-                      </template>
-                    </v-infinite-scroll>
-                  </div>
-                </v-card>
-              </v-col>
-            </v-row>
-          </div>
-
-        <!-- 加载状态 -->
-        <div v-if="loading" class="text-center py-8">
-          <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-          <p class="text-grey-darken-2 mt-4">{{ t('careerCenter.listing.loading') }}</p>
-        </div>
-
-        <!-- 搜索结果显示（保持原有的卡片模式） -->
-        <div v-if="searchText.trim()">
-          <v-row v-if="filteredCareers.length > 0">
-            <v-col 
-              v-for="career in filteredCareers" 
-              :key="career.id"
-              cols="12" 
-              md="6" 
-              lg="4">
-              <CareerCard 
-                :career="career" 
-                :get-category-name="getCategoryName"
-                :get-sub-category-name-by-id="getSubCategoryNameById"
-                @click="goToCareerDetail(career)" />
-            </v-col>
-          </v-row>
-
-          <!-- 无结果提示 -->
-          <v-row v-else>
-            <v-col cols="12">
-              <v-card flat class="text-center py-12" color="grey-lighten-5" rounded="lg">
-                <v-icon icon="mdi-briefcase-search-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
-                <h3 class="text-h6 text-grey-darken-1 mb-2">{{ t('careerCenter.empty.noSearchResults') }}</h3>
-                <p class="text-body-2 text-grey mb-4">{{ t('careerCenter.empty.noSearchResultsDesc') }}</p>
-              </v-card>
-            </v-col>
-          </v-row>
-        </div>
+        <!-- 职业网格 -->
+        <CareerGrid 
+          :displayedCareers="displayedCareers"
+          :loading="loading"
+          :activeFirstLvl="activeFirstLvl"
+          :activeSecondLvl="activeSecondLvl"
+          :currentCareers="currentCareers"
+          :careers="careers"
+          :categoryMapping="categoryMapping"
+          :categories="categories"
+          :searchText="searchText"
+          @loadMoreCareers="loadMoreCareers"
+          @goToCareerDetail="goToCareerDetail"
+          @goBackToSecondLevel="goBackToSecondLevel"
+        />
       </v-col>
 
-      <!-- 右侧边栏 -->
-      <v-col cols="3" class="pl-0">
+      <v-col cols="3" class="ps-12 pt-6">
         <RightSidebar />
       </v-col>
     </v-row>
-
-    <!-- 申请职业对话框 -->
-    <v-dialog v-model="showApplicationDialog" max-width="600" >
-      <v-card rounded="xl">
-        <v-card-title class="pa-6 pb-0">
-          <div class="d-flex align-center">
-            <v-avatar color="success" size="40" class="mr-3">
-              <v-icon icon="mdi-briefcase-plus" color="white"></v-icon>
-            </v-avatar>
-            <div>
-              <h3 class="text-h6 font-weight-bold">{{ t('careerCenter.application.title') }}</h3>
-              <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('careerCenter.application.subtitle') }}</p>
-            </div>
-          </div>
-        </v-card-title>
-
-        <v-card-text class="pa-6">
-          <v-form ref="applicationForm" v-model="applicationValid">
-            <v-text-field
-              v-model="newCareerApplication.name"
-              :label="t('careerCenter.application.jobName')"
-              variant="outlined"
-              rounded="lg"
-              class="mb-4"
-              required
-              :placeholder="t('careerCenter.application.jobNamePlaceholder')">
-              <template v-slot:prepend-inner>
-                <v-icon icon="mdi-briefcase" color="grey-darken-1"></v-icon>
-              </template>
-            </v-text-field>
-
-            <!-- 使用新的分类选择器 -->
-            <div class="mb-4">
-              <div class="text-body-2 font-weight-medium mb-2">{{ t('careerCenter.application.category') }}</div>
-              <CategorySelector
-                v-model:model-main-category="newCareerApplication.mainCategory"
-                v-model:model-sub-category="newCareerApplication.subCategory"
-              />
-            </div>
-
-            <v-textarea
-              v-model="newCareerApplication.description"
-              :label="t('careerCenter.application.description')"
-              variant="outlined"
-              rounded="lg"
-              rows="3"
-              required
-              class="mb-4"
-              :placeholder="t('careerCenter.application.descriptionPlaceholder')">
-            </v-textarea>
-
-            <v-text-field
-              v-model="newCareerApplication.skills"
-              :label="t('careerCenter.application.skills')"
-              variant="outlined"
-              rounded="lg"
-              :placeholder="t('careerCenter.application.skillsPlaceholder')">
-            </v-text-field>
-          </v-form>
-        </v-card-text>
-
-        <v-card-actions class="pa-6 pt-0">
-          <v-spacer></v-spacer>
-          <v-btn 
-            variant="text" 
-            @click="closeApplicationDialog">
-            {{ t('careerCenter.application.cancel') }}
-          </v-btn>
-          <v-btn 
-            color="success" 
-            variant="flat"
-            :disabled="!applicationValid"
-            :loading="submitting"
-            @click="submitCareerApplication">
-            {{ t('careerCenter.application.submit') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-container>
+
+  <!-- 申请职业对话框 -->
+  <v-dialog v-model="showApplicationDialog" max-width="600px" persistent>
+    <v-card rounded="lg">
+      <v-card-title class="pa-6">
+        <div class="d-flex align-center">
+          <v-avatar color="primary" size="32" class="mr-3">
+            <v-icon icon="mdi-plus-circle" color="white" size="16"></v-icon>
+          </v-avatar>
+          <span class="text-h6 font-weight-bold">{{ t('careerCenter.application.title') }}</span>
+        </div>
+      </v-card-title>
+
+      <v-card-text class="px-6 pb-0">
+        <v-form v-model="applicationValid">
+          <v-text-field
+            v-model="newCareerApplication.name"
+            :label="t('careerCenter.application.name')"
+            variant="outlined"
+            :rules="[(v) => !!v || t('careerCenter.application.nameRequired')]"
+            required
+            class="mb-4">
+          </v-text-field>
+
+          <v-textarea
+            v-model="newCareerApplication.description"
+            :label="t('careerCenter.application.description')"
+            variant="outlined"
+            :rules="[(v) => !!v || t('careerCenter.application.descriptionRequired')]"
+            required
+            rows="3"
+            class="mb-4">
+          </v-textarea>
+
+          <v-text-field
+            v-model="newCareerApplication.skills"
+            :label="t('careerCenter.application.skills')"
+            variant="outlined"
+            :hint="t('careerCenter.application.skillsHint')"
+            persistent-hint
+            class="mb-4">
+          </v-text-field>
+        </v-form>
+      </v-card-text>
+
+      <v-card-actions class="px-6 pb-6">
+        <v-spacer></v-spacer>
+        <v-btn
+          variant="text"
+          @click="closeApplicationDialog"
+          :disabled="submitting">
+          {{ t('careerCenter.application.cancel') }}
+        </v-btn>
+        <v-btn
+          color="primary"
+          variant="flat"
+          @click="submitCareerApplication"
+          :disabled="!applicationValid || submitting"
+          :loading="submitting">
+          {{ t('careerCenter.application.submit') }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <style scoped>
 /* Flat 风格 - 无阴影设计 */
-
-/* 搜索区域样式 */
-.search-container {
-  gap: 12px;
-}
-
-.search-input :deep(.v-field) {
-  border-radius: 16px !important;
-  border: 1px solid rgba(25, 118, 210, 0.2) !important;
-}
-
-.search-btn {
-  font-weight: 600 !important;
-  letter-spacing: 0.5px !important;
-  border: 1px solid rgba(25, 118, 210, 0.3) !important;
-  transition: all 0.2s ease !important;
-}
-
-.search-btn:hover {
-  transform: translateY(-1px) !important;
-  border-color: #1976d2 !important;
-}
-
-/* 职业分类筛选区域 - Flat 样式 */
-.category-btn-flat {
-  transition: all 0.3s ease !important;
-  text-transform: none !important;
-}
-
-.category-btn-flat:hover {
-  transform: translateY(-2px) !important;
-  border-color: #1565c0 !important;
-}
-
-.subcategory-btn-flat {
-  transition: all 0.3s ease !important;
-  text-transform: none !important;
-  height: 32px;
-}
-
-.subcategory-btn-flat:hover {
-  transform: translateY(-1px) !important;
-  border-color: #1565c0 !important;
-}
-
-/* 导航栏样式 */
-.nav-toggle {
-  background: rgba(255, 255, 255, 0.8) !important;
-  border-radius: 8px !important;
-  border: 1px solid #e0e0e0 !important;
-}
-
-.nav-btn {
-  padding: 8px 16px !important;
-  font-size: 0.875rem !important;
-  font-weight: 500 !important;
-  text-transform: none !important;
-  border-radius: 6px !important;
-  margin: 2px !important;
-  transition: all 0.2s ease !important;
-  color: #666 !important;
-}
-
-.nav-btn:hover {
-  background: rgba(25, 118, 210, 0.08) !important;
-  color: #1976d2 !important;
-}
-
-.nav-btn-active {
-  background: #1976d2 !important;
-  color: white !important;
-}
-
-.nav-btn-active:hover {
-  background: #1565c0 !important;
-  color: white !important;
-}
-
-.sticky-sidebar {
-  position: sticky;
-  top: 20px;
-}
-
-.hover-item {
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-}
-
-.hover-item:hover {
-  background-color: rgba(0, 0, 0, 0.04);
-}
-
-.cursor-pointer {
-  cursor: pointer;
-}
-
-.gap-2 {
-  gap: 12px;
-}
-
-/* 三级导航样式 */
-.transition-all {
-  transition: all 0.3s ease;
-}
-
-.hover-shadow:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
-}
-
-.border {
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-}
 </style>
