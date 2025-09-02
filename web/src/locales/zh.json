@@ -270,6 +270,9 @@
     "viewComments": "查看评论",
     "up": "上移",
     "down": "下移",
+    "status": {
+      "inProgress":"正在学习"
+    },
     "difficulty": {
       "beginner": "初级",
       "intermediate": "中级",
