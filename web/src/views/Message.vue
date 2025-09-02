@@ -170,17 +170,14 @@ async function loadData({ done }) {
   //messageList.value = [];
   try {
     let response = '';
-    if (selected.value == 'courseApply') {
-      response = await messageServiceV1.getCourseApplications(); // TODO: 可能需要添加参数
-    } else if (selected.value == 'system') {
-      response = await messageServiceV1.getMessages(); // TODO: 可能需要添加参数
-    }
+    response = await messageServiceV1.getSystemMessages(systemMessageType.value, lastId.value); 
 
     if (response.code === 401) {
       console.log('not login');
+      done('error'); // 调用 done 结束加载状态
     } else if (response.code === 200) {
       console.log('get data:' + JSON.stringify(response.data));
-      const appendList = response.data.messages;
+      const appendList = response.data;
       /*
       const appendList = response.data.messages.map(item => ({
         ...item,
@@ -199,9 +196,14 @@ async function loadData({ done }) {
       } else {
         done('empty')
       }
+    } else {
+      // 处理其他错误状态码
+      console.error('Unexpected response code:', response.code);
+      done('error');
     }
   } catch (error) {
     console.error('Error get message:', error);
+    done('error'); // 调用 done 结束加载状态
   }
 };
 

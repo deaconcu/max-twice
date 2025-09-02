@@ -269,20 +269,21 @@ public class MessageService {
             Map<String, Object> map = Util.readValueToMap(messageDO.getContent());
 
             if (messageDO.getType() == upvote.value()) {
-                if (map.containsKey("postingId")) {
-                    postingIdSet.add((Long) map.get("postingId"));
+                Long postingId = Util.getLong(map, "postingId");
+                if (postingId != null) {
+                    postingIdSet.add(postingId);
                 }
-                nodeIdSet.add((Long) map.get("nodeId"));
-                userIdSet.add((Long) map.get("upvoterId"));
+                nodeIdSet.add(Util.getLong(map, "nodeId"));
+                userIdSet.add(Util.getLong(map, "upvoterId"));
             } else if (messageDO.getType() == invite.value()) {
-                nodeIdSet.add((Long) map.get("nodeId"));
-                userIdSet.add((Long) map.get("InviterId"));
+                nodeIdSet.add(Util.getLong(map, "nodeId"));
+                userIdSet.add(Util.getLong(map, "InviterId"));
             } else if (messageDO.getType() == follow.value()) {
-                userIdSet.add((Long) map.get("followerId"));
+                userIdSet.add(Util.getLong(map, "followerId"));
             } else if (messageDO.getType() == postComment.value() || messageDO.getType() == replyPostingComment.value() ||
                        messageDO.getType() == nodeComment.value() || messageDO.getType() == replyNodeComment.value()) {
-                nodeIdSet.add((Long) map.get("nodeId"));
-                userIdSet.add((Long) map.get("commenterId"));
+                nodeIdSet.add(Util.getLong(map, "nodeId"));
+                userIdSet.add(Util.getLong(map, "commenterId"));
             }
         }
 
@@ -310,37 +311,37 @@ public class MessageService {
             messageDO.getType() == nodeComment.value() || messageDO.getType() == replyNodeComment.value()) {
 
             CommentMessageDTO m = new CommentMessageDTO();
-            long nodeId = (Long) content.get("nodeId");
+            long nodeId = Util.getLong(content, "nodeId");
             NodeDO nodeDO = nodeDOMap.get(nodeId);
 
-            m.setCommentId((Long)content.get("commentId"));
+            m.setCommentId(Util.getLong(content, "commentId"));
             m.setNode(Converter.INSTANCE.toNodeDTOV1(nodeDO));
-            m.setCommenter(Converter.INSTANCE.toUserDTOV4(userDOMap.get(content.get("commenterId"))));
+            m.setCommenter(Converter.INSTANCE.toUserDTOV4(userDOMap.get(Util.getLong(content, "commenterId"))));
             messageDTO = m;
         } else if (messageDO.getType() == upvote.value()) {
             UpvoteMessageDTO m = new UpvoteMessageDTO();
             if (content.containsKey("postingId")) {
-                long postId = (Long) content.get("postingId");
+                long postId = Util.getLong(content, "postingId");
                 m.setObjectId(postId);
                 m.setObjectType(Enums.ObjectType.post.value());
             } else if (content.containsKey("commentId")) {
-                long commentId = (Long) content.get("commentId");
+                long commentId = Util.getLong(content, "commentId");
                 m.setObjectId(commentId);
                 m.setObjectType(Enums.ObjectType.comment.value());
             }
 
-            m.setNode(Converter.INSTANCE.toNodeDTOV1(nodeDOMap.get((Integer)content.get("nodeId"))));
-            m.setVoteType((Integer) content.get("type"));
-            m.setUpvoter(Converter.INSTANCE.toUserDTOV4(userDOMap.get(content.get("upvoterId"))));
+            m.setNode(Converter.INSTANCE.toNodeDTOV1(nodeDOMap.get(Util.getLong(content, "nodeId"))));
+            m.setVoteType(Util.getInteger(content, "type"));
+            m.setUpvoter(Converter.INSTANCE.toUserDTOV4(userDOMap.get(Util.getLong(content, "upvoterId"))));
             messageDTO = m;
         } else if (messageDO.getType() == follow.value()) {
             FollowMessageDTO m = new FollowMessageDTO();
-            m.setFollower(Converter.INSTANCE.toUserDTOV4(userDOMap.get(content.get("followerId"))));
+            m.setFollower(Converter.INSTANCE.toUserDTOV4(userDOMap.get(Util.getLong(content,"followerId"))));
             messageDTO = m;
         } else if (messageDO.getType() == invite.value()) {
             InviteMessageDTO m = new InviteMessageDTO();
-            m.setInviter(Converter.INSTANCE.toUserDTOV4(userDOMap.get(content.get("inviterId"))));
-            long nodeId = ((Number) content.get("nodeId")).longValue();
+            m.setInviter(Converter.INSTANCE.toUserDTOV4(userDOMap.get(Util.getLong(content, "inviterId"))));
+            long nodeId = Util.getLong(content, "nodeId");
             m.setNode(Converter.INSTANCE.toNodeDTOV1(nodeDOMap.get(nodeId)));
             messageDTO = m;
         }

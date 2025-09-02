@@ -29,4 +29,54 @@ public class Util {
             throw new RuntimeException("Parse json failed", e);
         }
     }
+
+    /**
+     * 安全地从 Map 中获取 Long 值
+     */
+    public static Long getLong(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        if (value instanceof String) {
+            try {
+                return Long.valueOf((String) value);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Cannot convert value '" + value + "' to Long for key: " + key);
+            }
+        }
+        throw new IllegalArgumentException("Cannot convert value of type " + value.getClass().getSimpleName() + " to Long for key: " + key);
+    }
+
+    /**
+     * 安全地从 Map 中获取 Integer 值
+     */
+    public static Integer getInteger(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        if (value instanceof String) {
+            try {
+                return Integer.valueOf((String) value);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Cannot convert value '" + value + "' to Integer for key: " + key);
+            }
+        }
+        throw new IllegalArgumentException("Cannot convert value of type " + value.getClass().getSimpleName() + " to Integer for key: " + key);
+    }
+
+    /**
+     * 安全地从 Map 中获取 String 值
+     */
+    public static String getString(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        return value != null ? value.toString() : null;
+    }
 }

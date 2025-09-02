@@ -2,6 +2,7 @@ package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.dto.response.message.MessageDTO;
 import com.prosper.learn.persistence.dataobject.UserDO;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+
+import static com.prosper.learn.common.Enums.*;
 
 /**
  * 消息管理接口
@@ -42,16 +45,17 @@ public class MessagesController {
     }
 
     /**
-     * 获取课程申请列表
-     * 映射: GET /message/new-course → GET /api/v1/messages/course-applications
+     * 获取消息列表
+     * 映射: GET /message → GET /api/v1/messages
      */
-    @GetMapping("/messages/course-applications")
-    public ApiResponse<Map<String, Object>> getApplCourseList(
-            @RequestParam int page, 
-            @RequestParam int length) {
-        
-        Map<String, Object> result = messageService.getApplyCourseListWithPagination(page, length);
-        return ApiResponse.success(result);
+    @GetMapping("/messages/system")
+    public ApiResponse<List<MessageDTO>> getSystemMessageList(
+            @RequestParam int type,
+            @RequestParam Long lastId) {
+
+        long self = StpUtil.getLoginIdAsLong();
+        List<MessageDTO> messageDTOList = messageService.getSystemList(type, self, lastId);
+        return ApiResponse.success(messageDTOList);
     }
 
     /**

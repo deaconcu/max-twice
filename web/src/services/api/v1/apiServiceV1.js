@@ -352,8 +352,10 @@ export const messageServiceV1 = {
     });
   },
 
-  getCourseApplications() {
-    return apiClient.get(`${API_V1_PREFIX}/messages/course-applications`);
+  getSystemMessages(type, lastId) {
+    return apiClient.get(`${API_V1_PREFIX}/messages/system`, {
+      params: { type, lastId }
+    });
   },
 
   getMessages() {
