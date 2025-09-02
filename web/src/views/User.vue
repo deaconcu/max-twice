@@ -8,9 +8,8 @@ import UserPostsTab from '@/components/user/UserPostsTab.vue';
 import UserContentsTab from '@/components/user/UserContentsTab.vue';
 import UserFollowingTab from '@/components/user/UserFollowingTab.vue';
 import SubscriptionTab from '@/components/user/SubscriptionTab.vue';
+import UserSidebar from '@/components/user/UserSidebar.vue';
 import RightSidebar from '@/components/common/RightSidebar.vue';
-import UserProfileCard from '@/components/user/UserProfileCard.vue';
-import TabNavigation from '@/components/common/TabNavigation.vue';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -62,6 +61,19 @@ const handleTabChange = (newTab) => {
   router.push({ query: { tab: newTab, id: route.query.id } });
 };
 
+// 获取当前选中标签的描述
+const getSelectedTabDescription = () => {
+  const descriptions = {
+    info: '查看用户的个人信息',
+    learning: '查看用户的学习进度',
+    subscription: '查看用户的订阅内容',
+    follow: '查看用户的关注列表',
+    contents: '查看用户创建的内容',
+    article: '查看用户发布的文章'
+  };
+  return descriptions[selected.value] || '查看用户详细信息';
+};
+
 // 生命周期
 onMounted(() => {
   // UserProfileCard 组件会自动加载用户信息
@@ -69,30 +81,51 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-container class="ma-0" fluid>
-    <v-row no-gutters>
-      <v-col cols="auto" class="pr-4 pt-6" style="width: 320px;">
-        <!-- 更美观的左侧导航栏设计 -->
-        <div class="sticky-left" style="position: sticky; top: 30px;">
-          <!-- 用户信息卡片 -->
-          <UserProfileCard 
-            :userId="route.query.id"
-            :editable="false"
-            class="mb-4"
-          />
-
-          <!-- 导航菜单 -->
-          <TabNavigation
-            v-model="selected"
-            :items="items"
-            :width="320"
-            @tab-change="handleTabChange"
-          />
+  <v-container fluid>
+    <v-row class="mt-2">
+      <!-- 页面头部 -->
+      <v-col cols="12" class="mb-4">
+        <div class="d-flex align-center justify-space-between">
+          <div class="d-flex align-center">
+            <v-btn
+              @click="$router.go(-1)"
+              icon="mdi-arrow-left"
+              variant="text"
+              color="grey-darken-2"
+              class="mr-3"
+            ></v-btn>
+            <div>
+              <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-1">
+                用户详情
+              </h1>
+              <p class="text-body-2 text-grey-darken-2 mb-0">
+                <v-icon icon="mdi-account" color="primary" size="16" class="mr-1"></v-icon>
+                {{ getSelectedTabDescription() }}
+              </p>
+            </div>
+          </div>
+          
+          <!-- 用户ID显示 -->
+          <div class="d-flex align-center">
+            <v-chip color="grey-lighten-1" variant="flat" size="small">
+              <v-icon icon="mdi-identifier" size="14" class="mr-1"></v-icon>
+              用户ID: {{ route.query.id || '未知' }}
+            </v-chip>
+          </div>
         </div>
       </v-col>
 
-      <v-col cols="auto" class="flex-grow-1 d-flex justify-center">
-        <div style="width: 720px; max-width: 800px;" class="py-6">
+      <!-- 左侧导航栏 -->
+      <UserSidebar 
+        v-model:selected-tab="selected"
+        :items="items"
+        :user-id="route.query.id"
+        @tab-change="handleTabChange"
+      />
+
+      <!-- 主内容区域 -->
+      <v-col cols="auto" class="flex-grow-1 d-flex justify-center pt-0">
+        <div style="width: 720px; max-width: 800px;" class="py-0">
           <v-slide-y-reverse-transition hide-on-leave>
             <component 
               :is="currentComponent" 
@@ -103,7 +136,8 @@ onMounted(() => {
         </div>
       </v-col>
 
-      <v-col cols="3" class="ps-12 pt-6">
+      <!-- 右侧边栏 -->
+      <v-col cols="3" class="pt-0">
         <RightSidebar />
       </v-col>
     </v-row>

@@ -281,9 +281,9 @@ export const commentServiceV1 = {
     return apiClient.get(`${API_V1_PREFIX}/admin/comments/pending`);
   },
 
-  approveComment(id, action) {
+  approveComment(id, approve) {
     return apiClient.put(`${API_V1_PREFIX}/admin/comments/${id}/approve`, {
-      action
+      approve
     });
   },
 };

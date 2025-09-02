@@ -3,6 +3,7 @@ import { ref, onMounted, nextTick, watch, toRef, inject } from 'vue';
 import { upvoteServiceV1, postServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { VOTE_TYPE, POST_TYPE } from '@/constants/statusConstants';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github.css';
 
@@ -78,7 +79,7 @@ const deletePosting = async (postingId) => {
 
     <v-row class="ma-0 pa-0 pt-3">
       <!-- is contents -->
-      <template v-if="posting.type == 1">
+      <template v-if="posting.type == POST_TYPE.CONTENTS">
         <div class="w-100 d-flex justify-space-between align-end">
           <v-list class="">
             <v-list-item v-for="(item, index) in posting.content.split(',')" :key="index" class="px-0 py-0"
@@ -103,14 +104,14 @@ const deletePosting = async (postingId) => {
     <div class="w-100 d-flex justify-space-between align-end pb-2 pt-3">
       <div class="">
         <!-- is contents -->
-        <template v-if="posting.type == 1">
-          <v-btn :variant="posting.voteType === 3 ? 'text' : 'outlined'" rounded="lg" density="comfortable"
-            :color="posting.voteType === 3 ? 'pink-lighten-1' : ''" class="ps-4 me-4 border"
-            @click="upvote(posting, 3, 0)">
+        <template v-if="posting.type == POST_TYPE.CONTENTS">
+          <v-btn :variant="posting.voteType === VOTE_TYPE.HELPFUL ? 'text' : 'outlined'" rounded="lg" density="comfortable"
+            :color="posting.voteType === VOTE_TYPE.HELPFUL ? 'pink-lighten-1' : ''" class="ps-4 me-4 border"
+            @click="upvote(posting, VOTE_TYPE.HELPFUL, 0)">
             <template v-slot:prepend>
-              <v-icon v-if="posting.voteType === 3">mdi-check</v-icon>
+              <v-icon v-if="posting.voteType === VOTE_TYPE.HELPFUL">mdi-check</v-icon>
             </template>
-            <span :class="posting.voteType === 3 ? 'font-weight-medium' : ''">{{ t('userPosting.agree') }} {{ posting.helpful }}</span>
+            <span :class="posting.voteType === VOTE_TYPE.HELPFUL ? 'font-weight-medium' : ''">{{ t('userPosting.agree') }} {{ posting.helpful }}</span>
           </v-btn>
         </template>
 
@@ -118,26 +119,26 @@ const deletePosting = async (postingId) => {
         <template v-else>
           <v-btn-toggle v-model="posting.voteType" variant="plain" rounded="xl" class="pe-4 custom-btn-toggle"
             style="height: 28px;">
-            <v-btn :value="1" color="pink" class="px-3 border border-e-0" @click="upvote(posting, 1)">
+            <v-btn :value="VOTE_TYPE.ONCE" color="pink" class="px-3 border border-e-0" @click="upvote(posting, VOTE_TYPE.ONCE)">
               <template v-slot:prepend>
-                <v-icon v-if="posting.voteType === 1">mdi-check</v-icon>
+                <v-icon v-if="posting.voteType === VOTE_TYPE.ONCE">mdi-check</v-icon>
               </template>
-              <span class="selected" :class="posting.voteType === 1 ? 'font-weight-medium' : ''">{{ t('userPosting.understandOnce') }}
+              <span class="selected" :class="posting.voteType === VOTE_TYPE.ONCE ? 'font-weight-medium' : ''">{{ t('userPosting.understandOnce') }}
                 {{ posting.once }}</span>
             </v-btn>
 
-            <v-btn :value="2" color="teal" class="px-3 border border-e-0" @click="upvote(posting, 2)">
+            <v-btn :value="VOTE_TYPE.TWICE" color="teal" class="px-3 border border-e-0" @click="upvote(posting, VOTE_TYPE.TWICE)">
               <template v-slot:prepend>
-                <v-icon v-if="posting.voteType === 2">mdi-check</v-icon>
+                <v-icon v-if="posting.voteType === VOTE_TYPE.TWICE">mdi-check</v-icon>
               </template>
-              <span class="" :class="posting.voteType === 2 ? 'font-weight-medium' : ''">{{ t('userPosting.understandTwice') }} {{ posting.twice }}</span>
+              <span class="" :class="posting.voteType === VOTE_TYPE.TWICE ? 'font-weight-medium' : ''">{{ t('userPosting.understandTwice') }} {{ posting.twice }}</span>
             </v-btn>
 
-            <v-btn :value="3" color="brown" class="px-3 border" @click="upvote(posting, 3)">
+            <v-btn :value="VOTE_TYPE.HELPFUL" color="brown" class="px-3 border" @click="upvote(posting, VOTE_TYPE.HELPFUL)">
               <template v-slot:prepend>
-                <v-icon v-if="posting.voteType === 3">mdi-check</v-icon>
+                <v-icon v-if="posting.voteType === VOTE_TYPE.HELPFUL">mdi-check</v-icon>
               </template>
-              <span class="" :class="posting.voteType === 3 ? 'font-weight-medium' : ''">{{ t('userPosting.helpful') }} {{ posting.helpful
+              <span class="" :class="posting.voteType === VOTE_TYPE.HELPFUL ? 'font-weight-medium' : ''">{{ t('userPosting.helpful') }} {{ posting.helpful
                 }}</span>
             </v-btn>
           </v-btn-toggle>

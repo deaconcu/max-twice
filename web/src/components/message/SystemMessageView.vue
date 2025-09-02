@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { VOTE_TYPE, MESSAGE_TYPE, OBJECT_TYPE } from '@/constants/statusConstants';
 
 const { t } = useI18n();
 
@@ -107,13 +108,13 @@ const setSystemMessageType = (type) => {
                 <div class="border-e text-end pe-6 py-3" style="min-width: 138px;">
                   <div class="text-caption text-grey-darken-2">{{ getDatePart(message.createdAt, 1) }}</div>
                   <div class="mt-2">
-                    <v-chip v-if="message.type == 2" color="info" variant="tonal" size="small" rounded="lg">新增关注</v-chip>
-                    <v-chip v-if="message.type == 3" color="success" variant="tonal" size="small" rounded="lg">点赞</v-chip>
-                    <v-chip v-if="message.type == 4" color="warning" variant="tonal" size="small" rounded="lg">邀请回答</v-chip>
-                    <v-chip v-if="message.type == 5" color="primary" variant="tonal" size="small" rounded="lg">评论</v-chip>
-                    <v-chip v-if="message.type == 6" color="primary" variant="tonal" size="small" rounded="lg">评论</v-chip>
-                    <v-chip v-if="message.type == 7" color="primary" variant="tonal" size="small" rounded="lg">评论</v-chip>
-                    <v-chip v-if="message.type == 8" color="primary" variant="tonal" size="small" rounded="lg">评论</v-chip>
+                    <v-chip v-if="message.type == MESSAGE_TYPE.FOLLOW" color="info" variant="tonal" size="small" rounded="lg">新增关注</v-chip>
+                    <v-chip v-if="message.type == MESSAGE_TYPE.UPVOTE" color="success" variant="tonal" size="small" rounded="lg">点赞</v-chip>
+                    <v-chip v-if="message.type == MESSAGE_TYPE.INVITE" color="warning" variant="tonal" size="small" rounded="lg">邀请回答</v-chip>
+                    <v-chip v-if="message.type == MESSAGE_TYPE.NODE_COMMENT" color="primary" variant="tonal" size="small" rounded="lg">评论</v-chip>
+                    <v-chip v-if="message.type == MESSAGE_TYPE.POST_COMMENT" color="primary" variant="tonal" size="small" rounded="lg">评论</v-chip>
+                    <v-chip v-if="message.type == MESSAGE_TYPE.REPLY_NODE_COMMENT" color="primary" variant="tonal" size="small" rounded="lg">评论</v-chip>
+                    <v-chip v-if="message.type == MESSAGE_TYPE.REPLY_POSTING_COMMENT" color="primary" variant="tonal" size="small" rounded="lg">评论</v-chip>
                   </div>
                 </div>
                 <div class="ps-6 w-100">
@@ -124,31 +125,31 @@ const setSystemMessageType = (type) => {
                         rounded="lg" size="28" class="me-3"></v-avatar>
                       
                       <!-- 关注消息 -->
-                      <div v-if="message.type == 2" class="message-content">
+                      <div v-if="message.type == MESSAGE_TYPE.FOLLOW" class="message-content">
                         <a :href="`/user?id=${message.follower.id}`" target="_blank">{{ message.follower.name }}</a>
                         关注了您
                       </div>
                       
                       <!-- 点赞消息 -->
-                      <div v-if="message.type == 3" class="message-content">
-                        <div v-if="message.objectType == 0">
-                          <div v-if="message.voteType == 1">
+                      <div v-if="message.type == MESSAGE_TYPE.UPVOTE" class="message-content">
+                        <div v-if="message.objectType == OBJECT_TYPE.POST">
+                          <div v-if="message.voteType == VOTE_TYPE.ONCE">
                             <a :href="`/user?id=${message.receiver.id}`" target="_blank">{{ message.receiver.name }}</a>
                             认为您在目录 <a :href="`/read?postId=${message.objectId}`" target="_blank">{{ message.node.name }}</a>
                             的文章能被一次读懂
                           </div>
-                          <div v-if="message.voteType == 2">
+                          <div v-if="message.voteType == VOTE_TYPE.TWICE">
                             <a :href="`/user?id=${message.receiver.id}`" target="_blank">{{ message.receiver.name }}</a>
                             认为您在目录 <a :href="`/read?postId=${message.objectId}`" target="_blank">{{ message.node.name }}</a>
                             的文章能被两次读懂
                           </div>
-                          <div v-if="message.voteType == 3">
+                          <div v-if="message.voteType == VOTE_TYPE.HELPFUL">
                             <a :href="`/user?id=${message.receiver.id}`" target="_blank">{{ message.receiver.name }}</a>
                             认为您在目录 <a :href="`/read?postId=${message.objectId}`" target="_blank">{{ message.node.name }}</a>
                             的文章有帮助
                           </div>
                         </div>
-                        <div v-if="message.objectType == 2">
+                        <div v-if="message.objectType == OBJECT_TYPE.COMMENT">
                             <a :href="`/user?id=${message.receiver.id}`" target="_blank">{{ message.receiver.name }}</a>
                             点赞了您在目录 <a :href="`/read?commentId=${message.objectId}`" target="_blank">{{ message.node.name }}</a>
                             下的评论
@@ -156,26 +157,26 @@ const setSystemMessageType = (type) => {
                       </div>
                       
                       <!-- 邀请回答消息 -->
-                      <div v-if="message.type == 4" class="message-content">
+                      <div v-if="message.type == MESSAGE_TYPE.INVITE" class="message-content">
                         <a :href="`/user?id=${message.inviter.id}`" target="_blank">{{ message.inviter.name }}</a>
                         邀请您给目录 <a :href="`/read?nodeId=${message.node.id}`" target="_blank">{{ message.node.name }}</a>
                         添加文章
                       </div>
                       
                       <!-- 评论相关消息 -->
-                      <div v-if="message.type == 5" class="message-content">
+                      <div v-if="message.type == MESSAGE_TYPE.NODE_COMMENT" class="message-content">
                         <a :href="`/user?id=${message.commenter.id}`" target="_blank">{{ message.commenter.name }}</a>
                         评论了您创建的目录 <a :href="`/read?commentId=${message.commentId}`" target="_blank">{{ message.node.name }}</a>
                       </div>
-                      <div v-if="message.type == 6" class="message-content">
+                      <div v-if="message.type == MESSAGE_TYPE.POST_COMMENT" class="message-content">
                         <a :href="`/user?id=${message.commenter.id}`" target="_blank">{{ message.commenter.name }}</a>
                         评论了您在目录 <a :href="`/read?commentId=${message.commentId}`" target="_blank">{{ message.node.name }}</a> 下的文章
                       </div>
-                      <div v-if="message.type == 7" class="message-content">
+                      <div v-if="message.type == MESSAGE_TYPE.REPLY_NODE_COMMENT" class="message-content">
                         <a :href="`/user?id=${message.commenter.id}`" target="_blank">{{ message.commenter.name }}</a>
                         回复了您在目录 <a :href="`/read?commentId=${message.commentId}`" target="_blank">{{ message.node.name }}</a>下的评论
                       </div>
-                      <div v-if="message.type == 8" class="message-content">
+                      <div v-if="message.type == MESSAGE_TYPE.REPLY_POSTING_COMMENT" class="message-content">
                         <a :href="`/user?id=${message.commenter.id}`" target="_blank">{{ message.commenter.name }}</a>
                         回复了您在目录 <a :href="`/read?commentId=${message.commentId}`" target="_blank">{{ message.node.name }}</a> 的文章下的评论
                       </div>

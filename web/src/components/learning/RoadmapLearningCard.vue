@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { VueFlow } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
-import { PROGRESS_STATE } from '@/constants/statusConstants';
+import { USER_ROADMAP_STATE } from '@/constants/statusConstants';
 
 const props = defineProps({
   roadmap: {
@@ -44,27 +44,27 @@ const formatDateTime = (dateString) => {
 
 const getStatusColor = (state) => {
   switch (state) {
-    case PROGRESS_STATE.NOT_STARTED: return 'grey';
-    case PROGRESS_STATE.IN_PROGRESS: return 'primary';
-    case PROGRESS_STATE.COMPLETED: return 'success';
+    case USER_ROADMAP_STATE.NOT_STARTED: return 'grey';
+    case USER_ROADMAP_STATE.IN_PROGRESS: return 'primary';
+    case USER_ROADMAP_STATE.COMPLETED: return 'success';
     default: return 'grey';
   }
 };
 
 const getStatusIcon = (state) => {
   switch (state) {
-    case PROGRESS_STATE.NOT_STARTED: return 'mdi-circle-outline';
-    case PROGRESS_STATE.IN_PROGRESS: return 'mdi-play-circle';
-    case PROGRESS_STATE.COMPLETED: return 'mdi-check-circle';
+    case USER_ROADMAP_STATE.NOT_STARTED: return 'mdi-circle-outline';
+    case USER_ROADMAP_STATE.IN_PROGRESS: return 'mdi-play-circle';
+    case USER_ROADMAP_STATE.COMPLETED: return 'mdi-check-circle';
     default: return 'mdi-circle-outline';
   }
 };
 
 const getStatusText = (state) => {
   switch (state) {
-    case PROGRESS_STATE.NOT_STARTED: return t('learning.status.notStarted');
-    case PROGRESS_STATE.IN_PROGRESS: return t('learning.status.inProgress');
-    case PROGRESS_STATE.COMPLETED: return t('learning.status.completed');
+    case USER_ROADMAP_STATE.NOT_STARTED: return t('learning.status.notStarted');
+    case USER_ROADMAP_STATE.IN_PROGRESS: return t('learning.status.inProgress');
+    case USER_ROADMAP_STATE.COMPLETED: return t('learning.status.completed');
     default: return t('learning.status.unknown');
   }
 };
@@ -123,7 +123,7 @@ const handleNodeClick = ({ event, node }) => {
           
           <!-- 进行中状态的关闭按钮 -->
           <v-btn 
-            v-if="roadmap.state === PROGRESS_STATE.IN_PROGRESS"
+            v-if="roadmap.state === USER_ROADMAP_STATE.IN_PROGRESS"
             variant="text" 
             size="x-small" 
             class="ml-2 close-btn"
@@ -285,11 +285,13 @@ const handleNodeClick = ({ event, node }) => {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   overflow: hidden;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 12px !important;
 }
 
 .roadmap-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(25, 118, 210, 0.2);
+  border-color: rgba(25, 118, 210, 0.4) !important;
 }
 
 .status-badge-container {

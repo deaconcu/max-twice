@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { usePlatformStats } from '@/composables/usePlatformStats';
 import { professionServiceV1, courseServiceV1, progressServiceV1 } from '@/services/api/v1/apiServiceV1';
-import { PROGRESS_STATE, PROGRESS_STATE_TEXT } from '@/constants/statusConstants';
+import { USER_COURSE_STATE, USER_ROADMAP_STATE } from '@/constants/statusConstants';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -199,19 +199,44 @@ onUnmounted(() => {
   window.removeEventListener('resize', initSidebar);
 });
 
-// 获取状态颜色
-const getStatusColor = (state) => {
+// 获取路线图状态颜色
+const getRoadmapStatusColor = (state) => {
   switch (state) {
-    case PROGRESS_STATE.NOT_STARTED: return 'grey'
-    case PROGRESS_STATE.IN_PROGRESS: return 'primary'
-    case PROGRESS_STATE.COMPLETED: return 'success'
+    case USER_ROADMAP_STATE.NOT_STARTED: return 'grey'
+    case USER_ROADMAP_STATE.IN_PROGRESS: return 'primary'
+    case USER_ROADMAP_STATE.COMPLETED: return 'success'
     default: return 'grey'
   }
 };
 
-// 获取状态文本
-const getStatusText = (state) => {
-  return PROGRESS_STATE_TEXT[state] || t('rightSidebar.status.unknown')
+// 获取课程状态颜色
+const getCourseStatusColor = (state) => {
+  switch (state) {
+    case USER_COURSE_STATE.NOT_STARTED: return 'grey'
+    case USER_COURSE_STATE.IN_PROGRESS: return 'primary'
+    case USER_COURSE_STATE.COMPLETED: return 'success'
+    default: return 'grey'
+  }
+};
+
+// 获取路线图状态文本
+const getRoadmapStatusText = (state) => {
+  const stateTexts = {
+    [USER_ROADMAP_STATE.NOT_STARTED]: '未开始',
+    [USER_ROADMAP_STATE.IN_PROGRESS]: '进行中',
+    [USER_ROADMAP_STATE.COMPLETED]: '已完成'
+  };
+  return stateTexts[state] || t('rightSidebar.status.unknown')
+};
+
+// 获取课程状态文本
+const getCourseStatusText = (state) => {
+  const stateTexts = {
+    [USER_COURSE_STATE.NOT_STARTED]: '未开始',
+    [USER_COURSE_STATE.IN_PROGRESS]: '进行中',
+    [USER_COURSE_STATE.COMPLETED]: '已完成'
+  };
+  return stateTexts[state] || t('rightSidebar.status.unknown')
 };
 
 // 获取排名芯片颜色
@@ -426,8 +451,8 @@ const openInNewTab = (courseId) => {
                   {{ t('rightSidebar.progress') }} {{ roadmap.progress }}% · {{ roadmap.lastActivity }}
                 </div>
               </div>
-              <v-chip :color="getStatusColor(roadmap.status)" variant="flat" size="x-small" class="ml-2">
-                {{ getStatusText(roadmap.status) }}
+              <v-chip :color="getRoadmapStatusColor(roadmap.status)" variant="flat" size="x-small" class="ml-2">
+                {{ getRoadmapStatusText(roadmap.status) }}
               </v-chip>
             </div>
           </div>
@@ -465,8 +490,8 @@ const openInNewTab = (courseId) => {
                   {{ t('rightSidebar.progress') }} {{ course.progress }}% · {{ course.lastActivity }}
                 </div>
               </div>
-              <v-chip :color="getStatusColor(course.status)" variant="flat" size="x-small" class="ml-2">
-                {{ getStatusText(course.status) }}
+              <v-chip :color="getCourseStatusColor(course.status)" variant="flat" size="x-small" class="ml-2">
+                {{ getCourseStatusText(course.status) }}
               </v-chip>
             </div>
           </div>

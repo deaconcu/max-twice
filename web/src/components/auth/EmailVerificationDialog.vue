@@ -49,7 +49,7 @@ const closeDialog = () => {
 </script>
 
 <template>
-  <v-dialog max-width="600" v-model="dialogModel" persistent>
+  <v-dialog max-width="600" :model-value="modelValue" @update:model-value="dialogModel = $event" persistent>
     <template v-slot:default>
       <v-card rounded="xl" elevation="0">
         <v-card-title class="pa-6 pb-4">
@@ -80,7 +80,8 @@ const closeDialog = () => {
 
           <v-form @submit.prevent="handleSubmit">
             <v-text-field 
-              v-model="validateCodeModel" 
+              :model-value="validateCode" 
+              @update:model-value="validateCodeModel = $event" 
               label="验证码" 
               variant="outlined"
               class="mb-4" 

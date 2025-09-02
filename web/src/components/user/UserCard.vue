@@ -2,6 +2,7 @@
 import { ref, onMounted, nextTick, watch, toRef, inject } from 'vue';
 import { userServiceV1, followServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useI18n } from 'vue-i18n'
+import { BOOL } from '@/constants/statusConstants';
 
 const ps = defineProps(['id', 'name']);
 const { t } = useI18n()
@@ -84,8 +85,8 @@ const unfollow = async (id) => {
         </v-card-subtitle>
 
         <v-card-actions class="justify-left">
-          <v-btn v-if="userInfo.followed == 0" variant="text" @click="follow(userInfo.id)">{{ t('userCard.follow') }}</v-btn>
-          <v-btn v-if="userInfo.followed == 1" variant="text" @click="unfollow(userInfo.id)">{{ t('userCard.unfollow') }}</v-btn>
+          <v-btn v-if="userInfo.followed == BOOL.FALSE" variant="text" @click="follow(userInfo.id)">{{ t('userCard.follow') }}</v-btn>
+          <v-btn v-if="userInfo.followed == BOOL.TRUE" variant="text" @click="unfollow(userInfo.id)">{{ t('userCard.unfollow') }}</v-btn>
         </v-card-actions>
         
       </div>

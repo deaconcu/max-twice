@@ -2,6 +2,7 @@
 import { ref, onMounted, inject } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { postServiceV1 } from '@/services/api/v1/apiServiceV1';
+import { POST_STATE, POST_TYPE } from '@/constants/statusConstants';
 
 const { t } = useI18n();
 const showSnackbar = inject('showSnackbar');
@@ -23,9 +24,9 @@ const getPostSensorList = async () => {
   }
 }
 
-const approvePost = async (post, action) => {
+const approvePost = async (post, approve) => {
   try {
-    const response = await postServiceV1.approvePost(post.id, action === 'approve')
+    const response = await postServiceV1.approvePost(post.id, approve)
 
     if (response.code === 401) {
       console.log('not login');
@@ -74,25 +75,25 @@ onMounted(() => {
           <!-- 状态和操作区域 -->
           <div class="mr-4" style="min-width: 200px;">
             <div class="mb-3">
-              <v-chip v-if="post.state == 0" variant="flat" color="orange-lighten-4" rounded="lg" size="small">
+              <v-chip v-if="post.state == POST_STATE.SUBMITTED" variant="flat" color="orange-lighten-4" rounded="lg" size="small">
                 <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
                 {{ t('admin.pending') }}
               </v-chip>
-              <v-chip v-if="post.state == 1" variant="flat" color="green-lighten-4" rounded="lg" size="small">
+              <v-chip v-if="post.state == POST_STATE.APPROVED" variant="flat" color="green-lighten-4" rounded="lg" size="small">
                 <v-icon icon="mdi-check-circle" size="14" class="mr-1"></v-icon>
                 {{ t('admin.approved') }}
               </v-chip>
-              <v-chip v-if="post.state == 2" variant="flat" color="red-lighten-4" rounded="lg" size="small">
+              <v-chip v-if="post.state == POST_STATE.DELETED" variant="flat" color="red-lighten-4" rounded="lg" size="small">
                 <v-icon icon="mdi-close-circle" size="14" class="mr-1"></v-icon>
                 {{ t('admin.rejected') }}
               </v-chip>
             </div>
             <div class="d-flex flex-column ga-2">
-              <v-btn variant="flat" color="green-lighten-4" rounded="lg" size="small" @click="approvePost(post, 1)">
+              <v-btn variant="flat" color="green-lighten-4" rounded="lg" size="small" @click="approvePost(post, true)">
                 <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
                 {{ t('admin.approve') }}
               </v-btn>
-              <v-btn variant="flat" color="red-lighten-4" rounded="lg" size="small" @click="approvePost(post, 0)">
+              <v-btn variant="flat" color="red-lighten-4" rounded="lg" size="small" @click="approvePost(post, false)">
                 <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
                 {{ t('admin.reject') }}
               </v-btn>
@@ -112,8 +113,8 @@ onMounted(() => {
             </div>
 
             <div class="bg-grey-lighten-5 rounded-lg pa-4">
-              <div v-if="post.type == 2" class="tiptap post-content" v-html="post.content"></div>
-              <div v-if="post.type == 1">
+              <div v-if="post.type == POST_TYPE.ARTICLE" class="tiptap post-content" v-html="post.content"></div>
+              <div v-if="post.type == POST_TYPE.CONTENTS">
                 <div class="text-caption text-grey-darken-1 mb-2">{{ t('admin.directory') }}</div>
                 <div class="gap-2">
                   <v-chip v-for="(item, index) in post.content.split(',')" :key="index" style="display: block;"

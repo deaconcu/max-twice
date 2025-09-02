@@ -2,6 +2,7 @@
 import { ref, onMounted, inject } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { commentServiceV1 } from '@/services/api/v1/apiServiceV1';
+import { COMMENT_STATE } from '@/constants/statusConstants';
 
 const { t } = useI18n();
 const showSnackbar = inject('showSnackbar');
@@ -23,9 +24,9 @@ const getCommentSensorList = async () => {
   }
 }
 
-const approveComment = async (comment, action) => {
+const approveComment = async (comment, approve) => {
   try {
-    const response = await commentServiceV1.approveComment(comment.id, action)
+    const response = await commentServiceV1.approveComment(comment.id, approve)
 
     if (response.code === 401) {
       console.log('not login');
@@ -74,25 +75,25 @@ onMounted(() => {
           <!-- 状态和操作区域 -->
           <div class="mr-4" style="min-width: 200px;">
             <div class="mb-3">
-              <v-chip v-if="comment.state == 0" variant="flat" color="orange-lighten-4" rounded="lg" size="small">
+              <v-chip v-if="comment.state == COMMENT_STATE.SUBMITTED" variant="flat" color="orange-lighten-4" rounded="lg" size="small">
                 <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
                 {{ t('admin.pending') }}
               </v-chip>
-              <v-chip v-if="comment.state == 1" variant="flat" color="green-lighten-4" rounded="lg" size="small">
+              <v-chip v-if="comment.state == COMMENT_STATE.APPROVED" variant="flat" color="green-lighten-4" rounded="lg" size="small">
                 <v-icon icon="mdi-check-circle" size="14" class="mr-1"></v-icon>
                 {{ t('admin.approved') }}
               </v-chip>
-              <v-chip v-if="comment.state == 2" variant="flat" color="red-lighten-4" rounded="lg" size="small">
+              <v-chip v-if="comment.state == COMMENT_STATE.DELETED" variant="flat" color="red-lighten-4" rounded="lg" size="small">
                 <v-icon icon="mdi-close-circle" size="14" class="mr-1"></v-icon>
                 {{ t('admin.rejected') }}
               </v-chip>
             </div>
             <div class="d-flex flex-column ga-2">
-              <v-btn variant="flat" color="green-lighten-4" rounded="lg" size="small" @click="approveComment(comment, 1)">
+              <v-btn variant="flat" color="green-lighten-4" rounded="lg" size="small" @click="approveComment(comment, true)">
                 <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
                 {{ t('admin.approve') }}
               </v-btn>
-              <v-btn variant="flat" color="red-lighten-4" rounded="lg" size="small" @click="approveComment(comment, 0)">
+              <v-btn variant="flat" color="red-lighten-4" rounded="lg" size="small" @click="approveComment(comment, false)">
                 <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
                 {{ t('admin.reject') }}
               </v-btn>

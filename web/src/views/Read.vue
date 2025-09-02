@@ -2,19 +2,17 @@
 import { ref, onMounted, onUnmounted, inject, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { VOTE_TYPE } from '@/constants/statusConstants';
 
 import { 
   pageServiceV1, 
   progressServiceV1 
 } from '@/services/api/v1/apiServiceV1';
-import TreeNode from '../components/read/TreeNode.vue';
 import PostingList from '../components/read/PostingList.vue';
-import ConfigContents from '../components/course/ConfigContents.vue';
 import RightSidebar from '@/components/common/RightSidebar.vue';
 import CourseCompletionDialog from '@/components/course/CourseCompletionDialog.vue';
 import CourseHeader from '@/components/read/CourseHeader.vue';
 import CourseTableOfContents from '@/components/read/CourseTableOfContents.vue';
-import { PROGRESS_STATE } from '@/constants/statusConstants';
 
 import { useUserStore } from "@/stores/user";
 import { usePlatformStats } from '@/composables/usePlatformStats';

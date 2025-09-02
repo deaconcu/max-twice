@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { PROGRESS_STATE, PROGRESS_STATE_TEXT } from '@/constants/statusConstants';
+import { USER_COURSE_STATE, USER_ROADMAP_STATE } from '@/constants/statusConstants';
 
 const props = defineProps({
   selectedTab: {
@@ -29,6 +29,21 @@ const emit = defineEmits([
   'update:selectedStatus',
   'update:searchQuery'
 ]);
+
+// 根据当前选中的tab返回对应的状态常量
+const currentStateConstants = computed(() => {
+  return props.selectedTab === 'roadmaps' ? USER_ROADMAP_STATE : USER_COURSE_STATE;
+});
+
+// 状态文本映射
+const getStateText = (state) => {
+  const stateTexts = {
+    [0]: '未开始',  // NOT_STARTED
+    [1]: '进行中',  // IN_PROGRESS  
+    [2]: '已完成'   // COMPLETED
+  };
+  return stateTexts[state] || '未知状态';
+};
 
 const { t } = useI18n();
 const router = useRouter();
@@ -117,17 +132,17 @@ const handleNavigation = (route) => {
             <v-icon icon="mdi-format-list-bulleted" class="mr-1" size="14"></v-icon>
             {{ t('learning.all') }}
           </v-btn>
-          <v-btn :value="PROGRESS_STATE.NOT_STARTED" size="small" class="me-1 rounded-lg text-body-2">
+          <v-btn :value="currentStateConstants.NOT_STARTED" size="small" class="me-1 rounded-lg text-body-2">
             <v-icon icon="mdi-circle-outline" class="mr-1" size="14"></v-icon>
-            {{ PROGRESS_STATE_TEXT[PROGRESS_STATE.NOT_STARTED] }}
+            {{ getStateText(currentStateConstants.NOT_STARTED) }}
           </v-btn>
-          <v-btn :value="PROGRESS_STATE.IN_PROGRESS" size="small" class="me-1 rounded-lg text-body-2">
+          <v-btn :value="currentStateConstants.IN_PROGRESS" size="small" class="me-1 rounded-lg text-body-2">
             <v-icon icon="mdi-play-circle" class="mr-1" size="14"></v-icon>
-            {{ PROGRESS_STATE_TEXT[PROGRESS_STATE.IN_PROGRESS] }}
+            {{ getStateText(currentStateConstants.IN_PROGRESS) }}
           </v-btn>
-          <v-btn :value="PROGRESS_STATE.COMPLETED" size="small" class="me-1 rounded-lg text-body-2">
+          <v-btn :value="currentStateConstants.COMPLETED" size="small" class="me-1 rounded-lg text-body-2">
             <v-icon icon="mdi-check-circle" class="mr-1" size="14"></v-icon>
-            {{ PROGRESS_STATE_TEXT[PROGRESS_STATE.COMPLETED] }}
+            {{ getStateText(currentStateConstants.COMPLETED) }}
           </v-btn>
         </v-btn-toggle>
       </v-col>
@@ -150,9 +165,6 @@ const handleNavigation = (route) => {
 </template>
 
 <style scoped>
-.learning-header {
-  /* 学习页面头部样式 */
-}
 
 .nav-toggle {
   background: rgba(255, 255, 255, 0.8) !important;

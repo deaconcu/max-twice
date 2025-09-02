@@ -4,7 +4,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { subscriptionServiceV1, progressServiceV1, courseServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useUserStore } from '@/stores/user';
-import { PROGRESS_STATE } from '@/constants/statusConstants';
 
 const props = defineProps({
   parentCourseInfo: {

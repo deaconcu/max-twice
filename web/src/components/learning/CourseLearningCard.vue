@@ -1,5 +1,6 @@
 <script setup>
 import { useI18n } from 'vue-i18n';
+import { USER_COURSE_STATE } from '@/constants/statusConstants';
 
 const props = defineProps({
   course: {
@@ -37,9 +38,9 @@ const getCategoryIcon = (category) => {
 
 const getStatusText = (state) => {
   switch (state) {
-    case 'NOT_STARTED': return t('learning.status.notStarted');
-    case 'IN_PROGRESS': return t('learning.status.inProgress');
-    case 'COMPLETED': return t('learning.status.completed');
+    case USER_COURSE_STATE.NOT_STARTED: return t('learning.status.notStarted');
+    case USER_COURSE_STATE.IN_PROGRESS: return t('learning.status.inProgress');
+    case USER_COURSE_STATE.COMPLETED: return t('learning.status.completed');
     default: return t('learning.status.unknown');
   }
 };

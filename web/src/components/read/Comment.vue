@@ -3,6 +3,7 @@ import { ref, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { commentServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1';
+import { OBJECT_TYPE } from '@/constants/statusConstants';
 import Subcomment from './Subcomment.vue';
 
 const route = useRoute();
@@ -121,7 +122,7 @@ const sendSubcomment = async (comment) => {
 
 const returnToAllComment = () => {
   let url = "";
-  if (props.type == 0) {
+  if (props.type == OBJECT_TYPE.POST) {
     url = "/read?postId=" + props.object.id;
   } else {
     url = "/read?nodeId=" + props.object.id + "&tab=comment";

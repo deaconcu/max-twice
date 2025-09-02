@@ -62,7 +62,7 @@ const closeDialog = () => {
 </script>
 
 <template>
-  <v-dialog max-width="600" v-model="dialogModel" persistent>
+  <v-dialog max-width="600" :model-value="modelValue" @update:model-value="dialogModel = $event" persistent>
     <template v-slot:default="{ isActive }">
       <v-card rounded="xl" elevation="0">
         <v-card-title class="pa-6 pb-4">
@@ -92,7 +92,8 @@ const closeDialog = () => {
           </div>
 
           <v-text-field 
-            v-model="registerFormModel.email" 
+            :model-value="registerForm.email" 
+            @update:model-value="registerFormModel.email = $event" 
             :label="t('user.register.email')" 
             variant="outlined" 
             class="mb-4"
@@ -106,7 +107,8 @@ const closeDialog = () => {
           </v-text-field>
 
           <v-text-field 
-            v-model="registerFormModel.name" 
+            :model-value="registerForm.name" 
+            @update:model-value="registerFormModel.name = $event" 
             :label="t('user.register.username')" 
             variant="outlined" 
             class="mb-4"
@@ -120,7 +122,8 @@ const closeDialog = () => {
           </v-text-field>
 
           <v-text-field 
-            v-model="registerFormModel.password" 
+            :model-value="registerForm.password" 
+            @update:model-value="registerFormModel.password = $event" 
             :type="showPassword ? 'text' : 'password'" 
             :label="t('user.register.password')" 
             variant="outlined" 
@@ -137,7 +140,8 @@ const closeDialog = () => {
           </v-text-field>
 
           <v-text-field 
-            v-model="registerFormModel.passwordRepeat" 
+            :model-value="registerForm.passwordRepeat" 
+            @update:model-value="registerFormModel.passwordRepeat = $event" 
             :type="showPasswordRepeat ? 'text' : 'password'"
             :label="t('user.register.confirmPassword')" 
             variant="outlined" 

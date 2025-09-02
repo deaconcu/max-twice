@@ -3,6 +3,7 @@ import { ref, onMounted, nextTick, watch, toRef, inject } from 'vue';
 import { contentServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { VOTE_TYPE, POST_TYPE } from '@/constants/statusConstants';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github.css'; // 选择你的高亮主题
 
@@ -86,7 +87,7 @@ const upvote = async (posting, type) => {
       if (posting.voteType == 0) posting.voteType = null;
       
       // 如果是"看两遍就懂"(type=2)，只有在学习模式下才标记节点完成
-      if (type === 2 && response.data.voteType === 2) {
+      if (type === VOTE_TYPE.TWICE && response.data.voteType === VOTE_TYPE.TWICE) {
         if (props.isLearning) {
           console.log('看两遍就懂被点击，用户在学习模式下，标记节点完成');
           emit('markNodeCompleted');
@@ -142,7 +143,7 @@ const handleViewFullContent = () => {
     </v-row>
 
     <v-row class="ma-0 pa-0 pt-3"> <!-- is contents -->
-      <template v-if="posting.type == 1">
+      <template v-if="posting.type == POST_TYPE.CONTENTS">
         <div class="w-100 d-flex justify-space-between align-end">
           <v-list class="">
             <v-list-item v-for="(item, index) in posting.content.split(',')" :key="index" class="px-0 py-0"
@@ -170,12 +171,12 @@ const handleViewFullContent = () => {
     <v-row class="ma-0 pt-5 d-flex justify-space-between" align="center">
 
       <!-- is contents -->
-      <template v-if="posting.type == 1">
-        <v-btn :variant="posting.voteType === 3 ? 'flat' : 'flat'" rounded="lg" density="comfortable"
-          :color="posting.voteType === 3 ? 'green-lighten-4' : 'grey-lighten-3'" class="px-4" @click="upvote(posting, 3)">
-          <v-icon v-if="posting.voteType === 3" icon="mdi-check" size="16" class="mr-2" color="green-darken-2"></v-icon>
-          <v-icon v-else icon="mdi-thumb-up-outline" size="16" class="mr-2" :color="posting.voteType === 3 ? 'green-darken-2' : 'grey-darken-2'"></v-icon>
-          <span :class="posting.voteType === 3 ? 'font-weight-medium text-green-darken-2' : 'font-weight-medium text-grey-darken-2'">{{ t('posting.agree') }} {{ posting.helpful }}</span>
+      <template v-if="posting.type == POST_TYPE.CONTENTS">
+        <v-btn :variant="posting.voteType === VOTE_TYPE.HELPFUL ? 'flat' : 'flat'" rounded="lg" density="comfortable"
+          :color="posting.voteType === VOTE_TYPE.HELPFUL ? 'green-lighten-4' : 'grey-lighten-3'" class="px-4" @click="upvote(posting, VOTE_TYPE.HELPFUL)">
+          <v-icon v-if="posting.voteType === VOTE_TYPE.HELPFUL" icon="mdi-check" size="16" class="mr-2" color="green-darken-2"></v-icon>
+          <v-icon v-else icon="mdi-thumb-up-outline" size="16" class="mr-2" :color="posting.voteType === VOTE_TYPE.HELPFUL ? 'green-darken-2' : 'grey-darken-2'"></v-icon>
+          <span :class="posting.voteType === VOTE_TYPE.HELPFUL ? 'font-weight-medium text-green-darken-2' : 'font-weight-medium text-grey-darken-2'">{{ t('posting.agree') }} {{ posting.helpful }}</span>
         </v-btn>
       </template>
 
@@ -183,20 +184,20 @@ const handleViewFullContent = () => {
       <template v-else>
         <div class="d-flex">
 
-          <v-btn :variant="posting.voteType === 2 ? 'flat' : 'flat'" rounded="lg" density="comfortable"
-            :color="posting.voteType === 2 ? 'teal-lighten-4' : 'grey-lighten-3'" class="px-3" @click="upvote(posting, 2)">
-            <v-icon v-if="posting.voteType === 2" icon="mdi-check" size="14" class="mr-2" color="teal-darken-2"></v-icon>
-            <v-icon v-else icon="mdi-lightbulb-outline" size="14" class="mr-2" :color="posting.voteType === 2 ? 'teal-darken-2' : 'grey-darken-2'"></v-icon>
-            <span :class="posting.voteType === 2 ? 'font-weight-medium text-teal-darken-3' : 'font-weight-medium text-grey-darken-2'">
+          <v-btn :variant="posting.voteType === VOTE_TYPE.TWICE ? 'flat' : 'flat'" rounded="lg" density="comfortable"
+            :color="posting.voteType === VOTE_TYPE.TWICE ? 'teal-lighten-4' : 'grey-lighten-3'" class="px-3" @click="upvote(posting, VOTE_TYPE.TWICE)">
+            <v-icon v-if="posting.voteType === VOTE_TYPE.TWICE" icon="mdi-check" size="14" class="mr-2" color="teal-darken-2"></v-icon>
+            <v-icon v-else icon="mdi-lightbulb-outline" size="14" class="mr-2" :color="posting.voteType === VOTE_TYPE.TWICE ? 'teal-darken-2' : 'grey-darken-2'"></v-icon>
+            <span :class="posting.voteType === VOTE_TYPE.TWICE ? 'font-weight-medium text-teal-darken-3' : 'font-weight-medium text-grey-darken-2'">
               {{ t('posting.twiceUnderstand') }} {{ posting.twice }}
             </span>
           </v-btn>
 
-          <v-btn :variant="posting.voteType === 3 ? 'flat' : 'flat'" rounded="lg" density="comfortable"
-            :color="posting.voteType === 3 ? 'brown-lighten-4' : 'grey-lighten-3'" class="px-3 ms-3" @click="upvote(posting, 3)">
-            <v-icon v-if="posting.voteType === 3" icon="mdi-check" size="14" class="mr-2" color="brown-darken-2"></v-icon>
-            <v-icon v-else icon="mdi-thumb-up-outline" size="14" class="mr-2" :color="posting.voteType === 3 ? 'brown-darken-2' : 'grey-darken-2'"></v-icon>
-            <span :class="posting.voteType === 3 ? 'font-weight-medium text-brown-darken-2' : 'font-weight-medium text-grey-darken-2'">{{ t('posting.helpful') }} {{ posting.helpful }}</span>
+          <v-btn :variant="posting.voteType === VOTE_TYPE.HELPFUL ? 'flat' : 'flat'" rounded="lg" density="comfortable"
+            :color="posting.voteType === VOTE_TYPE.HELPFUL ? 'brown-lighten-4' : 'grey-lighten-3'" class="px-3 ms-3" @click="upvote(posting, VOTE_TYPE.HELPFUL)">
+            <v-icon v-if="posting.voteType === VOTE_TYPE.HELPFUL" icon="mdi-check" size="14" class="mr-2" color="brown-darken-2"></v-icon>
+            <v-icon v-else icon="mdi-thumb-up-outline" size="14" class="mr-2" :color="posting.voteType === VOTE_TYPE.HELPFUL ? 'brown-darken-2' : 'grey-darken-2'"></v-icon>
+            <span :class="posting.voteType === VOTE_TYPE.HELPFUL ? 'font-weight-medium text-brown-darken-2' : 'font-weight-medium text-grey-darken-2'">{{ t('posting.helpful') }} {{ posting.helpful }}</span>
           </v-btn>
         </div>
       </template>
@@ -216,7 +217,7 @@ const handleViewFullContent = () => {
       </v-btn>
 
       <!-- is contents -->
-      <template v-if="posting.type == 1">
+      <template v-if="posting.type == POST_TYPE.CONTENTS">
         <v-btn @click="modifyContents(posting.id, props.currNode['+'] && props.currNode['+'] === posting.id ? 2 : 1)"
           variant="text" rounded="lg" :color="props.currNode['+'] && props.currNode['+'] === posting.id ? 'red-lighten-4' : 'grey-lighten-3'"
           density="comfortable" class="px-3 mx-3">

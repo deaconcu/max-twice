@@ -10,7 +10,7 @@ import LearningHeader from '@/components/learning/LearningHeader.vue';
 import RoadmapLearningCard from '@/components/learning/RoadmapLearningCard.vue';
 import CourseLearningCard from '@/components/learning/CourseLearningCard.vue';
 import dagre from 'dagre';
-import { PROGRESS_STATE, PROGRESS_STATE_TEXT } from '@/constants/statusConstants';
+import { USER_COURSE_STATE, USER_ROADMAP_STATE } from '@/constants/statusConstants';
 
 const { t } = useI18n();
 const showSnackbar = inject('showSnackbar');
@@ -29,7 +29,22 @@ const learningData = ref({
 const selectedTab = ref('roadmaps'); // 默认显示学习路线图
 const searchQuery = ref('');
 const selectedNavTab = ref('learning'); // 导航栏当前选中项
-const selectedStatus = ref('all'); // 状态筛选: all, PROGRESS_STATE.NOT_STARTED, PROGRESS_STATE.IN_PROGRESS, PROGRESS_STATE.COMPLETED
+const selectedRoadmapStatus = ref('all'); // 路线图状态筛选: all, USER_ROADMAP_STATE.NOT_STARTED, USER_ROADMAP_STATE.IN_PROGRESS, USER_ROADMAP_STATE.COMPLETED
+const selectedCourseStatus = ref('all'); // 课程状态筛选: all, USER_COURSE_STATE.NOT_STARTED, USER_COURSE_STATE.IN_PROGRESS, USER_COURSE_STATE.COMPLETED
+
+// 计算属性：根据当前选中的tab返回对应的状态值（用于传递给LearningHeader）
+const selectedStatus = computed({
+  get: () => {
+    return selectedTab.value === 'roadmaps' ? selectedRoadmapStatus.value : selectedCourseStatus.value;
+  },
+  set: (value) => {
+    if (selectedTab.value === 'roadmaps') {
+      selectedRoadmapStatus.value = value;
+    } else {
+      selectedCourseStatus.value = value;
+    }
+  }
+});
 
 // RoadmapDetail 浮层状态
 const showRoadmapDetail = ref(false);
@@ -137,8 +152,8 @@ const filteredLearningData = computed(() => {
   const filtered = {
     ...learningData.value,
     roadmaps: learningData.value.roadmaps.filter(roadmap => {
-      // 状态筛选
-      if (selectedStatus.value !== 'all' && roadmap.state !== selectedStatus.value) {
+      // 路线图状态筛选
+      if (selectedRoadmapStatus.value !== 'all' && roadmap.state !== selectedRoadmapStatus.value) {
         return false;
       }
       // 搜索筛选
@@ -151,8 +166,8 @@ const filteredLearningData = computed(() => {
       return true;
     }),
     courses: learningData.value.courses.filter(course => {
-      // 状态筛选
-      if (selectedStatus.value !== 'all' && course.state !== selectedStatus.value) {
+      // 课程状态筛选
+      if (selectedCourseStatus.value !== 'all' && course.state !== selectedCourseStatus.value) {
         return false;
       }
       // 搜索筛选
@@ -255,7 +270,7 @@ const loadLearningData = async () => {
           name: userCourse.course.name,
           description: userCourse.course.description,
           progress: userCourse.progressPercent ? userCourse.progressPercent / 100 : 0,
-          state: userCourse.state, // PROGRESS_STATE.NOT_STARTED, PROGRESS_STATE.IN_PROGRESS, PROGRESS_STATE.COMPLETED
+          state: userCourse.state, // USER_COURSE_STATE.NOT_STARTED, USER_COURSE_STATE.IN_PROGRESS, USER_COURSE_STATE.COMPLETED
           startedAt: userCourse.startedAt,
           completedAt: userCourse.completedAt,
           createdAt: userCourse.createdAt,
@@ -335,9 +350,9 @@ function getCategoryFromDescription(description) {
 // 根据状态推断难度
 function getDifficultyFromStatus(state) {
   switch (state) {
-    case 'NOT_STARTED': return 'beginner'
-    case 'IN_PROGRESS': return 'intermediate'
-    case 'COMPLETED': return 'advanced'
+    case USER_COURSE_STATE.NOT_STARTED: return 'beginner'
+    case USER_COURSE_STATE.IN_PROGRESS: return 'intermediate'
+    case USER_COURSE_STATE.COMPLETED: return 'advanced'
     default: return 'beginner'
   }
 }
@@ -505,29 +520,24 @@ const calculateDuration = (startTime) => {
   }
 };
 
-// 获取状态颜色
-const getStatusColor = (state) => {
-  switch (state) {
-    case PROGRESS_STATE.NOT_STARTED: return 'grey'
-    case PROGRESS_STATE.IN_PROGRESS: return 'primary'
-    case PROGRESS_STATE.COMPLETED: return 'success'
-    default: return 'grey'
-  }
-};
-
-// 获取状态图标
-const getStatusIcon = (state) => {
-  switch (state) {
-    case PROGRESS_STATE.NOT_STARTED: return 'mdi-circle-outline'
-    case PROGRESS_STATE.IN_PROGRESS: return 'mdi-play-circle'
-    case PROGRESS_STATE.COMPLETED: return 'mdi-check-circle'
-    default: return 'mdi-circle-outline'
-  }
-};
-
 // 获取状态文本
 const getStatusText = (state) => {
-  return PROGRESS_STATE_TEXT[state] || t('learning.unknownStatus', '未知状态')
+  // 根据当前tab决定使用哪个状态映射
+  if (selectedTab.value === 'roadmaps') {
+    const roadmapStateTexts = {
+      [USER_ROADMAP_STATE.NOT_STARTED]: '未开始',
+      [USER_ROADMAP_STATE.IN_PROGRESS]: '进行中',
+      [USER_ROADMAP_STATE.COMPLETED]: '已完成'
+    };
+    return roadmapStateTexts[state] || t('learning.unknownStatus', '未知状态');
+  } else {
+    const courseStateTexts = {
+      [USER_COURSE_STATE.NOT_STARTED]: '未开始',
+      [USER_COURSE_STATE.IN_PROGRESS]: '进行中',
+      [USER_COURSE_STATE.COMPLETED]: '已完成'
+    };
+    return courseStateTexts[state] || t('learning.unknownStatus', '未知状态');
+  }
 };
 </script>
 

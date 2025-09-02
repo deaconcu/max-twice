@@ -6,7 +6,7 @@ import { VueFlow } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
 import RoadmapDetail from '@/components/roadmap/RoadmapDetail.vue';
 import dagre from 'dagre';
-import { PROGRESS_STATE, PROGRESS_STATE_TEXT } from '@/constants/statusConstants';
+import { USER_ROADMAP_STATE} from '@/constants/statusConstants';
 import { useUserStore } from "@/stores/user";
 
 // Props
@@ -320,9 +320,9 @@ const getCategoryFromDescription = (description) => {
 
 const getDifficultyFromStatus = (state) => {
   switch (state) {
-    case 'NOT_STARTED': return 'beginner';
-    case 'IN_PROGRESS': return 'intermediate';
-    case 'COMPLETED': return 'advanced';
+    case USER_ROADMAP_STATE.NOT_STARTED: return 'beginner';
+    case USER_ROADMAP_STATE.IN_PROGRESS: return 'intermediate';
+    case USER_ROADMAP_STATE.COMPLETED: return 'advanced';
     default: return 'beginner';
   }
 };
@@ -396,24 +396,29 @@ const calculateDuration = (startTime) => {
 
 const getStatusColor = (state) => {
   switch (state) {
-    case PROGRESS_STATE.NOT_STARTED: return 'grey'
-    case PROGRESS_STATE.IN_PROGRESS: return 'primary'
-    case PROGRESS_STATE.COMPLETED: return 'success'
+    case USER_ROADMAP_STATE.NOT_STARTED: return 'grey'
+    case USER_ROADMAP_STATE.IN_PROGRESS: return 'primary'
+    case USER_ROADMAP_STATE.COMPLETED: return 'success'
     default: return 'grey'
   }
 };
 
 const getStatusIcon = (state) => {
   switch (state) {
-    case PROGRESS_STATE.NOT_STARTED: return 'mdi-circle-outline'
-    case PROGRESS_STATE.IN_PROGRESS: return 'mdi-play-circle'
-    case PROGRESS_STATE.COMPLETED: return 'mdi-check-circle'
+    case USER_ROADMAP_STATE.NOT_STARTED: return 'mdi-circle-outline'
+    case USER_ROADMAP_STATE.IN_PROGRESS: return 'mdi-play-circle'
+    case USER_ROADMAP_STATE.COMPLETED: return 'mdi-check-circle'
     default: return 'mdi-circle-outline'
   }
 };
 
 const getStatusText = (state) => {
-  return PROGRESS_STATE_TEXT[state] || '未知状态'
+  const stateTexts = {
+    [USER_ROADMAP_STATE.NOT_STARTED]: '未开始',
+    [USER_ROADMAP_STATE.IN_PROGRESS]: '进行中',
+    [USER_ROADMAP_STATE.COMPLETED]: '已完成'
+  };
+  return stateTexts[state] || '未知状态'
 };
 
 const handleNodeClick = ({event, node}) => {
@@ -470,8 +475,8 @@ onMounted(() => {
 <template>
   <div>
     <div class="mb-6">
-      <h2 class="text-h5 font-weight-bold text-grey-darken-4 mb-2">我的学习</h2>
-      <p class="text-body-2 text-grey-darken-2">管理您收藏的学习路线图和课程</p>
+      <h2 class="text-h5 font-weight-bold mb-2" style="color: #424242;">我的学习</h2>
+      <p class="text-body-2" style="color: #424242;">管理您收藏的学习路线图和课程</p>
     </div>
 
     <!-- 统计卡片 -->
@@ -479,36 +484,36 @@ onMounted(() => {
       <v-col cols="3">
         <v-card flat color="grey-lighten-5" rounded="lg">
           <v-card-text class="text-center pa-4">
-            <v-icon icon="mdi-chart-line" color="primary" size="32" class="mb-2"></v-icon>
-            <h3 class="text-h4 font-weight-bold text-primary mb-1">{{ learningData.totalProgress }}%</h3>
-            <p class="text-body-2 text-grey-darken-2 mb-0">总体进度</p>
+            <v-icon icon="mdi-chart-line" color="#424242" size="32" class="mb-2"></v-icon>
+            <h3 class="text-h4 font-weight-bold mb-1" style="color: #424242;">{{ learningData.totalProgress }}%</h3>
+            <p class="text-body-2 mb-0" style="color: #424242;">总体进度</p>
           </v-card-text>
         </v-card>
       </v-col>
       <v-col cols="3">
         <v-card flat color="grey-lighten-5" rounded="lg">
           <v-card-text class="text-center pa-4">
-            <v-icon icon="mdi-map" color="success" size="32" class="mb-2"></v-icon>
-            <h3 class="text-h4 font-weight-bold text-success mb-1">{{ learningData.roadmaps.length }}</h3>
-            <p class="text-body-2 text-grey-darken-2 mb-0">学习路线图</p>
+            <v-icon icon="mdi-map" color="#424242" size="32" class="mb-2"></v-icon>
+            <h3 class="text-h4 font-weight-bold mb-1" style="color: #424242;">{{ learningData.roadmaps.length }}</h3>
+            <p class="text-body-2 mb-0" style="color: #424242;">学习路线图</p>
           </v-card-text>
         </v-card>
       </v-col>
       <v-col cols="3">
         <v-card flat color="grey-lighten-5" rounded="lg">
           <v-card-text class="text-center pa-4">
-            <v-icon icon="mdi-book-multiple" color="warning" size="32" class="mb-2"></v-icon>
-            <h3 class="text-h4 font-weight-bold text-warning mb-1">{{ learningData.courses.length }}</h3>
-            <p class="text-body-2 text-grey-darken-2 mb-0">正在学习课程</p>
+            <v-icon icon="mdi-book-multiple" color="#424242" size="32" class="mb-2"></v-icon>
+            <h3 class="text-h4 font-weight-bold mb-1" style="color: #424242;">{{ learningData.courses.length }}</h3>
+            <p class="text-body-2 mb-0" style="color: #424242;">正在学习课程</p>
           </v-card-text>
         </v-card>
       </v-col>
       <v-col cols="3">
         <v-card flat color="grey-lighten-5" rounded="lg">
           <v-card-text class="text-center pa-4">
-            <v-icon icon="mdi-trophy" color="error" size="32" class="mb-2"></v-icon>
-            <h3 class="text-h4 font-weight-bold text-error mb-1">7</h3>
-            <p class="text-body-2 text-grey-darken-2 mb-0">连续学习天数</p>
+            <v-icon icon="mdi-trophy" color="#424242" size="32" class="mb-2"></v-icon>
+            <h3 class="text-h4 font-weight-bold mb-1" style="color: #424242;">7</h3>
+            <p class="text-body-2 mb-0" style="color: #424242;">连续学习天数</p>
           </v-card-text>
         </v-card>
       </v-col>
@@ -516,7 +521,7 @@ onMounted(() => {
 
     <!-- 标签页切换 -->
     <div class="mb-4">
-      <v-btn-toggle v-model="selectedLearningTab" variant="outlined" color="primary" rounded="lg" density="comfortable">
+      <v-btn-toggle v-model="selectedLearningTab" variant="outlined" color="#424242" rounded="lg" density="comfortable" class="learning-tab-toggle">
         <v-btn value="roadmaps" size="default">
           <v-icon icon="mdi-map" class="mr-2" size="16"></v-icon>
           学习路线图
@@ -561,7 +566,7 @@ onMounted(() => {
                 
                 <!-- 进行中状态的关闭按钮 -->
                 <v-btn 
-                  v-if="roadmap.state === PROGRESS_STATE.IN_PROGRESS"
+                  v-if="roadmap.state === USER_ROADMAP_STATE.IN_PROGRESS"
                   variant="text" 
                   size="x-small" 
                   class="ml-2 close-btn"
@@ -635,7 +640,7 @@ onMounted(() => {
                 <div class="px-4 py-2 d-flex justify-space-between border-t">
                   <div class="d-flex align-center">
                     <v-btn variant="text" size="small" class="flat-action-icon" 
-                      :color="roadmap.upvoted ? 'red-darken-2' : 'primary'"
+                      color="primary"
                       @click="handleVoteRoadmap(roadmap, $event)">
                       <v-icon size="20" :class="{ 'vote-animation': roadmap.upvoted }">
                         {{ roadmap.upvoted ? 'mdi-thumb-up' : 'mdi-thumb-up-outline' }}
@@ -646,7 +651,7 @@ onMounted(() => {
                       </v-tooltip>
                     </v-btn>
 
-                    <v-btn variant="text" size="small" class="flat-action-icon" color="info">
+                    <v-btn variant="text" size="small" class="flat-action-icon" color="primary">
                       <v-icon size="20">mdi-comment-outline</v-icon>
                       <span class="ml-1 text-body-2">{{ roadmap.comment || 0 }}</span>
                       <v-tooltip activator="parent" location="top">查看评论</v-tooltip>
@@ -870,8 +875,8 @@ onMounted(() => {
 .vue-flow-readonly :deep(.vue-flow__node) {
   border-radius: 12px !important;
   background: #fafafa  !important;
-  border: 3px solid #1976d2 !important;
-  color: #1976d2 !important;
+  border: 3px solid #424242 !important;
+  color: #424242 !important;
   font-weight: 500 !important;
   font-size: 0.85rem !important;
   transition: all 0.2s ease;
@@ -882,17 +887,17 @@ onMounted(() => {
 }
 
 .vue-flow-readonly :deep(.vue-flow__node[data-id="0"]) {
-  background: #1976d2  !important;
-  border: 3px solid #1976d2 !important;
+  background: #424242  !important;
+  border: 3px solid #424242 !important;
   color: #ffffff !important;
   font-weight: 600 !important;
 }
 
 .vue-flow-readonly :deep(.vue-flow__node:hover) {
   background: #e3f2fd  !important;
-  border-color: #1976d2 !important;
+  border-color: #424242 !important;
   transform: translateY(-5px);
-  color: #0d47a1 !important;
+  color: #424242 !important;
 }
 
 .vote-animation {

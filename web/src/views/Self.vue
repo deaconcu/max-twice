@@ -11,9 +11,8 @@ import UserPostsTab from '@/components/user/UserPostsTab.vue';
 import UserContentsTab from '@/components/user/UserContentsTab.vue';
 import UserFollowingTab from '@/components/user/UserFollowingTab.vue';
 import SubscriptionTab from '@/components/user/SubscriptionTab.vue';
+import UserSidebar from '@/components/user/UserSidebar.vue';
 import RightSidebar from '@/components/common/RightSidebar.vue';
-import UserProfileCard from '@/components/user/UserProfileCard.vue';
-import TabNavigation from '@/components/common/TabNavigation.vue';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -174,23 +173,11 @@ const getSelectedTabDescription = () => {
       </v-col>
 
       <!-- 左侧导航栏 -->
-      <v-col cols="auto" class="pr-4 pt-0" style="width: 320px;">
-        <div class="sticky-left" style="position: sticky; top: 65px;">
-          <!-- 用户信息卡片 -->
-          <UserProfileCard 
-            :editable="true"
-            class="mb-4"
-          />
-
-          <!-- 导航菜单 -->
-          <TabNavigation
-            v-model="selected"
-            :items="items"
-            :width="320"
-            @tab-change="handleTabChange"
-          />
-        </div>
-      </v-col>
+      <UserSidebar 
+        v-model:selected-tab="selected"
+        :items="items"
+        @tab-change="handleTabChange"
+      />
 
       <!-- 主内容区域 -->
       <v-col cols="auto" class="flex-grow-1 d-flex justify-center pt-0">
