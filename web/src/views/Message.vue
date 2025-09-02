@@ -115,14 +115,64 @@ const handleSelectUser = (user) => {
   // TODO: 实现选择用户逻辑
 };
 
+// 获取当前选中类型的描述
+const getSelectedTypeDescription = () => {
+  switch (selected.value) {
+    case 'system':
+      return '系统通知和重要消息';
+    case 'courseApply':
+      return '课程申请相关消息';
+    case 'private':
+      return '用户私信和交流消息';
+    default:
+      return '查看和管理您的所有消息';
+  }
+};
+
 onMounted(() => {
   // 初始化数据加载可以在这里进行
 });
 </script>
 
 <template>
-  <v-container class="ma-0" fluid>
-    <v-row>
+  <v-container fluid>
+    <v-row class="mt-2">
+      <!-- 页面头部 -->
+      <v-col cols="12" class="mb-4">
+        <div class="d-flex align-center justify-space-between">
+          <div class="d-flex align-center">
+            <v-btn
+              @click="$router.go(-1)"
+              icon="mdi-arrow-left"
+              variant="text"
+              color="grey-darken-2"
+              class="mr-3"
+            ></v-btn>
+            <div>
+              <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-1">
+                消息中心
+              </h1>
+              <p class="text-body-2 text-grey-darken-2 mb-0">
+                <v-icon icon="mdi-email" color="primary" size="16" class="mr-1"></v-icon>
+                {{ getSelectedTypeDescription() }}
+              </p>
+            </div>
+          </div>
+          
+          <!-- 消息统计 -->
+          <div class="d-flex align-center">
+            <v-chip color="primary" variant="flat" size="small" class="mr-2">
+              <v-icon icon="mdi-email-outline" size="14" class="mr-1"></v-icon>
+              总消息: {{ totalMessages }}
+            </v-chip>
+            <v-chip color="warning" variant="flat" size="small">
+              <v-icon icon="mdi-email-alert" size="14" class="mr-1"></v-icon>
+              未读: {{ unreadCount }}
+            </v-chip>
+          </div>
+        </div>
+      </v-col>
+
       <!-- 左侧导航栏 -->
       <MessageSidebar 
         v-model:selected-message-type="selected"
@@ -131,7 +181,7 @@ onMounted(() => {
       />
 
       <!-- 主内容区域 -->
-      <v-col class="py-9">
+      <v-col class="pt-0">
         <!-- 系统消息视图 -->
         <SystemMessageView
           v-if="selected === 'system'"
@@ -158,10 +208,8 @@ onMounted(() => {
       </v-col>
 
       <!-- 右侧边栏 -->
-      <v-col cols="3" class="ps-8 pt-9">
-        <div class="sticky-right" style="position: sticky; top: 90px;">
-          <RightSidebar />
-        </div>
+      <v-col cols="3" class="pt-0">
+        <RightSidebar />
       </v-col>
     </v-row>
   </v-container>

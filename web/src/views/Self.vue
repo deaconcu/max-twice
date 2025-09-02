@@ -118,14 +118,64 @@ watch(() => route.query.learningTab, (newValue) => {
     selectedLearningTab.value = newValue;
   }
 });
+
+// 获取当前选中标签的描述
+const getSelectedTabDescription = () => {
+  const currentItem = items.value.find(item => item.value === selected.value);
+  const descriptions = {
+    info: '管理个人信息和账户设置',
+    learning: '查看学习进度和路线图',
+    stats: '统计数据和学习分析',
+    subscription: '管理订阅的课程和内容',
+    follow: '管理关注的用户和动态',
+    contents: '查看和管理我的内容',
+    article: '查看和管理我的文章'
+  };
+  return descriptions[selected.value] || '个人中心管理';
+};
 </script>
 
 <template>
-  <v-container class="ma-0" fluid>
-    <v-row no-gutters>
-      <v-col cols="auto" class="pr-4 pt-6" style="width: 320px;">
-        <!-- 更美观的左侧导航栏设计 -->
-        <div class="sticky-left" style="position: sticky; top: 30px;">
+  <v-container fluid>
+    <v-row class="mt-2">
+      <!-- 页面头部 -->
+      <v-col cols="12" class="mb-4">
+        <div class="d-flex align-center justify-space-between">
+          <div class="d-flex align-center">
+            <v-btn
+              @click="$router.go(-1)"
+              icon="mdi-arrow-left"
+              variant="text"
+              color="grey-darken-2"
+              class="mr-3"
+            ></v-btn>
+            <div>
+              <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-1">
+                个人中心
+              </h1>
+              <p class="text-body-2 text-grey-darken-2 mb-0">
+                <v-icon icon="mdi-account-circle" color="primary" size="16" class="mr-1"></v-icon>
+                {{ getSelectedTabDescription() }}
+              </p>
+            </div>
+          </div>
+          
+          <!-- 用户信息简要显示 -->
+          <div class="d-flex align-center">
+            <v-avatar color="primary" size="32" class="mr-2">
+              <span class="text-white font-weight-bold">{{ user.name ? user.name.charAt(0).toUpperCase() : 'U' }}</span>
+            </v-avatar>
+            <div>
+              <div class="text-body-2 font-weight-bold text-grey-darken-4">{{ user.name || '未登录' }}</div>
+              <div class="text-caption text-grey-darken-2">{{ user.email || '' }}</div>
+            </div>
+          </div>
+        </div>
+      </v-col>
+
+      <!-- 左侧导航栏 -->
+      <v-col cols="auto" class="pr-4 pt-0" style="width: 320px;">
+        <div class="sticky-left" style="position: sticky; top: 65px;">
           <!-- 用户信息卡片 -->
           <UserProfileCard 
             :editable="true"
@@ -142,8 +192,9 @@ watch(() => route.query.learningTab, (newValue) => {
         </div>
       </v-col>
 
-      <v-col cols="auto" class="flex-grow-1 d-flex justify-center">
-        <div style="width: 720px; max-width: 800px;" class="py-6">
+      <!-- 主内容区域 -->
+      <v-col cols="auto" class="flex-grow-1 d-flex justify-center pt-0">
+        <div style="width: 720px; max-width: 800px;" class="py-0">
           <v-slide-y-reverse-transition hide-on-leave>
             <component 
               :is="currentComponent" 
@@ -155,12 +206,12 @@ watch(() => route.query.learningTab, (newValue) => {
         </div>
       </v-col>
 
-      <v-col cols="3" class="ps-12 pt-6">
+      <!-- 右侧边栏 -->
+      <v-col cols="3" class="pt-0">
         <RightSidebar />
       </v-col>
     </v-row>
   </v-container>
-
 </template>
 
 

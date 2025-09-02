@@ -83,7 +83,8 @@ const closeDialog = () => {
           </div>
 
           <v-text-field 
-            v-model="loginFormModel.email" 
+            :model-value="loginForm.email" 
+            @update:model-value="loginFormModel.email = $event" 
             label="邮箱地址" 
             variant="outlined" 
             class="mb-4"
@@ -94,7 +95,8 @@ const closeDialog = () => {
           </v-text-field>
 
           <v-text-field 
-            v-model="loginFormModel.password" 
+            :model-value="loginForm.password" 
+            @update:model-value="loginFormModel.password = $event" 
             :type="showPassword ? 'text' : 'password'" 
             label="密码" 
             variant="outlined" 
