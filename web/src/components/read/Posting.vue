@@ -6,9 +6,9 @@ import { useI18n } from 'vue-i18n';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github.css'; // 选择你的高亮主题
 
-import AddContents from '../components/AddContents.vue';
-import Comment from '../components/Comment.vue';
-import UserCard from '../components/UserCard.vue';
+import AddContents from '../course/AddContents.vue';
+import Comment from './Comment.vue';
+import UserCard from '../user/UserCard.vue';
 
 // 🔴 导入Post浏览量跟踪服务
 import postViewTracking from '@/services/postViewTracking'

@@ -101,21 +101,23 @@ export const subscriptionServiceV1 = {
 };
 
 // 职业管理服务
-// TODO 这里为什么要分页
 export const professionServiceV1 = {
-  getProfessions(page = 1) {
+  // 分页获取职业（管理端使用）
+  getProfessionsByPage(page = 1) {
     return apiClient.get(`${API_V1_PREFIX}/professions`, {
       params: { page }
     });
   },
 
+  // 按状态获取职业（管理端使用）
   getProfessions(state, lastId) {
     return apiClient.get(`${API_V1_PREFIX}/professions`, {
       params: { state, lastId }
     });
   },
 
-  getProfessions(lastId, mainCategory, subCategory) {
+  // 按分类获取职业（前端使用）
+  getProfessionsByCategory(lastId, mainCategory, subCategory) {
     return apiClient.get(`${API_V1_PREFIX}/professions`, {
       params: { lastId, mainCategory, subCategory }
     });

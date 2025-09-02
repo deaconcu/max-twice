@@ -3,9 +3,9 @@ import { ref, onMounted, inject, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { systemServiceV1, professionServiceV1 } from '@/services/api/v1/apiServiceV1';
-import CareerCard from '@/components/CareerCard.vue';
-import CategorySelector from '@/components/CategorySelector.vue';
-import RightSidebar from '@/components/RightSidebar.vue';
+import CareerCard from '@/components/career/CareerCard.vue';
+import CategorySelector from '@/components/common/CategorySelector.vue';
+import RightSidebar from '@/components/common/RightSidebar.vue';
 import { useToastMessage } from '@/composables/useToastMessage';
 
 const { t } = useI18n();
@@ -286,7 +286,7 @@ const loadCareersBySubCategory = async (mainCategoryId, subCategoryId, reset = t
       currentQueryParams.value = { type: 'subCategory', mainCategory: mainCategoryId, subCategory: subCategoryId };
     }
     
-    const response = await professionServiceV1.getProfessions(lastId.value, mainCategoryId, subCategoryId);
+    const response = await professionServiceV1.getProfessionsByCategory(lastId.value, mainCategoryId, subCategoryId);
     const newCareers = addRandomIconsToCareers(response.data || []);
     
     if (reset) {

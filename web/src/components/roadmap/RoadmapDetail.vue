@@ -126,7 +126,7 @@ import { useI18n } from 'vue-i18n'
 import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
-import Comment from '../components/Comment.vue';
+import Comment from '../read/Comment.vue';
 
 const { t } = useI18n()
 

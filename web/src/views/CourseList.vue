@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { courseServiceV1, subscriptionServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useUserStore } from "@/stores/user";
-import RightSidebar from '@/components/RightSidebar.vue';
+import RightSidebar from '@/components/common/RightSidebar.vue';
 
 const { t } = useI18n();
 const showSnackbar = inject('showSnackbar');

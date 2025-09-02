@@ -321,7 +321,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { statsServiceV1 } from '@/services/api/v1/apiServiceV1'
-import TrendChart from './TrendChart.vue'
+import TrendChart from '../ranking/TrendChart.vue'
 
 export default {
   name: 'UserStatsComponent',

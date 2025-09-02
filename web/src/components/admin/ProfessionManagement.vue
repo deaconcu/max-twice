@@ -486,7 +486,7 @@
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { professionServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { APPROVAL_STATE, APPROVAL_STATE_TEXT, getApprovalStateClass } from '@/constants/statusConstants';
-import CategorySelector from '../CategorySelector.vue';
+import CategorySelector from '../common/CategorySelector.vue';
 
 // 响应式数据
 const professionList = ref([]);

@@ -4,12 +4,12 @@ import { postServiceV1, progressServiceV1 } from '@/services/api/v1/apiServiceV1
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
-import AddContents from '../components/AddContents.vue';
-import AddArticle from '../components/AddArticle.vue';
-import Invite from '../components/Invite.vue';
-import Comment from '../components/Comment.vue';
+import AddContents from '../course/AddContents.vue';
+import AddArticle from './AddArticle.vue';
+import Invite from '../user/Invite.vue';
+import Comment from './Comment.vue';
 import Posting from './Posting.vue';
-import Tiptap from '../components/Tiptap.vue'
+import Tiptap from './Tiptap.vue'
 
 // 导入Post浏览量跟踪服务
 import postViewTracking from '@/services/postViewTracking'

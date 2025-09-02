@@ -688,15 +688,17 @@ const loadCourseCategories = async () => {
   try {
     const response = await systemServiceV1.getCourseCategories()
     
-    if (response.code === 200) {
-      const { mainCategories: categories, categoryMapping: mapping } = response.data.courseCategories
-      mainCategories.value = categories
-      categoryMapping.value = mapping
+    if (response.code === 200 && response.data) {
+      // 新的key-value格式：数据是JSON字符串
+      const { mainCategories: categories, categoryMapping: mapping } = response.data;
+      
+      mainCategories.value = categories;
+      categoryMapping.value = mapping;
       
       // 初始化子分类
       if (categories.length > 0) {
-        const firstMapping = mapping.find(m => m.mainCategoryId === categories[0].id)
-        subCategories.value = firstMapping ? firstMapping.subCategories : []
+        const firstMapping = mapping.find(m => m.mainCategoryId === categories[0].id);
+        subCategories.value = firstMapping ? firstMapping.subCategories : [];
       }
     }
   } catch (error) {

@@ -7,8 +7,8 @@ import { useUserStore } from "@/stores/user";
 import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
-import RoadmapDetail from '@/components/RoadmapDetail.vue';
-import RightSidebar from '@/components/RightSidebar.vue';
+import RoadmapDetail from '@/components/roadmap/RoadmapDetail.vue';
+import RightSidebar from '@/components/common/RightSidebar.vue';
 import dagre from 'dagre';
 import { usePlatformStats } from '@/composables/usePlatformStats';
 import { PROGRESS_STATE, PROGRESS_STATE_TEXT } from '@/constants/statusConstants';

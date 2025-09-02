@@ -5,7 +5,7 @@ import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { courseServiceV1 } from '@/services/api/v1/apiServiceV1'
-import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import dagre from 'dagre'
 
 const { t } = useI18n()

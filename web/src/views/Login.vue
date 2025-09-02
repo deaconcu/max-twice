@@ -1,11 +1,11 @@
 <script setup>
-import TheWelcome from '../components/TheWelcome.vue'
+import TheWelcome from '../components/common/TheWelcome.vue'
 //import { mdiAlphaMBox, mdiClose, mdiEmailOutline } from '@mdi/js'
 import { ref } from 'vue';
 import { useRoute, useRouter} from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
-import Footer from '../components/Footer.vue';
+import Footer from '../components/common/Footer.vue';
 import { authServiceV1, userServiceV1 } from '@/services/api/v1/apiServiceV1';
 import { useUserStore } from "@/stores/user";
 

@@ -14,13 +14,13 @@ import { useUserStore } from "@/stores/user";
 import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
-import RoadmapDetail from '@/components/RoadmapDetail.vue';
+import RoadmapDetail from '@/components/roadmap/RoadmapDetail.vue';
 import dagre from 'dagre';
-import UserPosting from '../components/UserPosting.vue';
-import Comment from '../components/Comment.vue';
-import Tiptap from '../components/Tiptap.vue'
-import RightSidebar from '@/components/RightSidebar.vue';
-import UserStatsComponent from '@/components/UserStatsComponent.vue';
+import UserPosting from '../components/user/UserPosting.vue';
+import Comment from '../components/read/Comment.vue';
+import Tiptap from '../components/read/Tiptap.vue'
+import RightSidebar from '@/components/common/RightSidebar.vue';
+import UserStatsComponent from '@/components/user/UserStatsComponent.vue';
 import { PROGRESS_STATE, PROGRESS_STATE_TEXT } from '@/constants/statusConstants';
 
 const { t } = useI18n();

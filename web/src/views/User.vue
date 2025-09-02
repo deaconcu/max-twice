@@ -11,14 +11,14 @@ import {
 } from '@/services/api/v1/apiServiceV1'
 import draggable from 'vuedraggable';
 import { useUserStore } from "@/stores/user";
-import UserPosting from '../components/UserPosting.vue';
-import Comment from '../components/Comment.vue';
-import Tiptap from '../components/Tiptap.vue'
+import UserPosting from '../components/user/UserPosting.vue';
+import Comment from '../components/read/Comment.vue';
+import Tiptap from '../components/read/Tiptap.vue'
 import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
-import RoadmapDetail from '@/components/RoadmapDetail.vue';
-import RightSidebar from '@/components/RightSidebar.vue';
+import RoadmapDetail from '@/components/roadmap/RoadmapDetail.vue';
+import RightSidebar from '@/components/common/RightSidebar.vue';
 import dagre from 'dagre';
 import { PROGRESS_STATE, PROGRESS_STATE_TEXT } from '@/constants/statusConstants';
 

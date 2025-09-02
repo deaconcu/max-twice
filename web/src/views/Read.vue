@@ -9,11 +9,11 @@ import {
   subscriptionServiceV1,
   progressServiceV1 
 } from '@/services/api/v1/apiServiceV1';
-import TreeNode from '../components/TreeNode.vue';
-import PostingList from '../components/PostingList.vue';
-import ConfigContents from '../components/ConfigContents.vue';
-import RightSidebar from '@/components/RightSidebar.vue';
-import CourseCompletionDialog from '@/components/CourseCompletionDialog.vue';
+import TreeNode from '../components/roadmap/TreeNode.vue';
+import PostingList from '../components/read/PostingList.vue';
+import ConfigContents from '../components/course/ConfigContents.vue';
+import RightSidebar from '@/components/common/RightSidebar.vue';
+import CourseCompletionDialog from '@/components/course/CourseCompletionDialog.vue';
 import { PROGRESS_STATE } from '@/constants/statusConstants';
 
 import { useUserStore } from "@/stores/user";

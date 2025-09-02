@@ -5,7 +5,7 @@ import { ref, watch } from 'vue';
 import draggable from 'vuedraggable'
 import { useRoute, useRouter } from 'vue-router';
 import { postServiceV1 } from '@/services/api/v1/apiServiceV1';
-import Tiptap from '../components/Tiptap.vue'
+import Tiptap from './Tiptap.vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps(['nodeId', 'pathText']);

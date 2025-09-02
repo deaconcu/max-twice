@@ -6,7 +6,7 @@ import { messageServiceV1 } from '@/services/api/v1/apiServiceV1';
 import draggable from 'vuedraggable';
 import { useUserStore } from "@/stores/user";
 import apiClient from '@/services/apiClient';
-import RightSidebar from '@/components/RightSidebar.vue';
+import RightSidebar from '@/components/common/RightSidebar.vue';
 
 const { t } = useI18n();
 const user = useUserStore();

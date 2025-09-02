@@ -3,7 +3,7 @@ import { ref, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { commentServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1';
-import Subcomment from '../components/Subcomment.vue';
+import Subcomment from './Subcomment.vue';
 
 const route = useRoute();
 const router = useRouter();

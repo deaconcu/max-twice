@@ -7,10 +7,10 @@ import { Controls } from '@vue-flow/controls'
 import dagre from 'dagre'
 import { roadmapServiceV1, progressServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useRoute, useRouter } from 'vue-router'
-import RoadmapCard from '@/components/RoadmapCard.vue'
-import RoadmapDetail from '@/components/RoadmapDetail.vue'
-import RoadmapCreate from '@/components/RoadmapCreate.vue'
-import RightSidebar from '@/components/RightSidebar.vue';
+import RoadmapCard from '@/components/roadmap/RoadmapCard.vue'
+import RoadmapDetail from '@/components/roadmap/RoadmapDetail.vue'
+import RoadmapCreate from '@/components/roadmap/RoadmapCreate.vue'
+import RightSidebar from '@/components/common/RightSidebar.vue';
 
 const { t } = useI18n();
 const showSnackbar = inject('showSnackbar');
