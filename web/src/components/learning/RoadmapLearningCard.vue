@@ -255,6 +255,10 @@ const handleNodeClick = ({ event, node }) => {
               :nodes="roadmap.nodes" 
               :edges="roadmap.edges || []" 
               fit-view-on-init
+              :min-zoom="0.3"
+              :max-zoom="0.8"
+              :snap-to-grid="true"
+              :snap-grid="[20, 20]"
               class="vue-flow-readonly"
               :nodes-draggable="false"
               :nodes-connectable="false"
@@ -265,7 +269,6 @@ const handleNodeClick = ({ event, node }) => {
               :pan-on-drag="false"
               @node-click="handleNodeClick">
               <Background pattern-color="#e0e0e0" />
-              <Controls :show-zoom="false" :show-fit-view="false" :show-interactive="false" />
             </VueFlow>
             <div v-else class="d-flex align-center justify-center h-100 text-grey-lighten-1">
               <v-icon icon="mdi-map-outline" size="48"></v-icon>

@@ -23,6 +23,7 @@
 - 使用 Optional 处理可能为空的返回值
 
 ### Vue 3 前端
+- **严格遵循 ESLint 和 Prettier 规则** - 详见 `web/CODE_STANDARDS.md`
 - 使用 Composition API (setup)
 - 优先使用 TypeScript
 - 组件名使用 PascalCase
@@ -30,6 +31,12 @@
 - 使用 Pinia 进行状态管理
 - 异步操作使用 async/await
 - 组件通信优先使用 props/emit
+
+### 代码质量控制
+- **提交前必须运行** `npm run prepare`
+- **禁止提交** 包含 ESLint 错误的代码
+- **自动格式化** 使用 Prettier，保存时自动执行
+- **类型检查** 使用 `npm run typecheck` 验证
 
 ## 命名规范
 - Java: camelCase (方法/变量), PascalCase (类)
@@ -118,7 +125,9 @@ npm install
 npm run dev
 npm run build
 npm run lint
+npm run format
 npm run typecheck
+npm run prepare
 ```
 
 ## 禁止事项

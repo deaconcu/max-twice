@@ -103,6 +103,21 @@ function parseContent(content) {
     }
     
     const nodes = (data.nodes || []).map((node, index) => {
+      // 如果是根节点（id=0），设置特殊处理
+      if (node.id === 0 || node.id === '0') {
+        return {
+          id: String(node.id),
+          type: 'default',
+          data: {
+            label: node.name || node.label || 'JAVA初级程序员', // 根节点显示职业名称
+            link: null, // 根节点不跳转
+            ...node.data
+          },
+          position: node.position || { x: 0, y: 0 },
+          targetPosition: 'bottom'  // 根节点只能入，不能出
+        }
+      }
+      
       const completed = node.finished || node.completed || false;
       const progress = node.progress || 0;
       
@@ -110,7 +125,6 @@ function parseContent(content) {
         id: String(node.id || index),
         type: 'default',
         data: {
-          type: 'course', // 标记为课程节点
           label: node.name || node.label || `节点 ${node.id || index}`, // 适配新的name字段
           link: '/read?courseId=' + (node.id || index),
           completed: completed, // 适配新的finished字段
@@ -1065,6 +1079,26 @@ const getStatusText = (state) => {
   color: #0d47a1 !important;
 }
 
+/* 边样式 - 参考 RoadmapFlow */
+:deep(.vue-flow__edge-path) {
+  stroke: #9e9e9e;
+  stroke-width: 2px;
+}
+
+:deep(.vue-flow__edge.selected .vue-flow__edge-path) {
+  stroke: #1976d2;
+  stroke-width: 3px;
+}
+
+/* 确保节点和边可以被选中 - 参考 RoadmapFlow */
+:deep(.vue-flow__node) {
+  cursor: pointer !important;
+}
+
+:deep(.vue-flow__edge) {
+  cursor: pointer !important;
+}
+
 /* VueFlow 节点样式覆盖 */
 :deep(.vue-flow__node) {
   border-radius: 8px;
@@ -1084,26 +1118,6 @@ const getStatusText = (state) => {
 :deep(.vue-flow__node.selected) {
   border-color: #1976d2;
   box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
-}
-
-/* 边样式 - 参考 RoadmapFlow */
-:deep(.vue-flow__edge-path) {
-  stroke: #9e9e9e;
-  stroke-width: 2px;
-}
-
-:deep(.vue-flow__edge.selected .vue-flow__edge-path) {
-  stroke: #1976d2;
-  stroke-width: 3px;
-}
-
-/* 确保节点和边可以被选中 - 参考 RoadmapFlow */
-:deep(.vue-flow__node) {
-  cursor: pointer !important;
-}
-
-:deep(.vue-flow__edge) {
-  cursor: pointer !important;
 }
 
 :deep(.vue-flow__controls) {

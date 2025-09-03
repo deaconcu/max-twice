@@ -1,28 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+// 核心页面 - 保持静态导入（首屏需要的）
 import Login from '../views/Login.vue'
 import Main from '../views/Main.vue'
-import CourseList from '../views/CourseList.vue'
-import Read from '../views/Read.vue'
-import Admin from '../views/Admin.vue'
-import User from '../views/User.vue'
-import Self from '../views/Self.vue'
-import Message from '../views/Message.vue'
-import RoadmapFlow from '../views/RoadmapFlow.vue'
-import CareerCenter from '../views/CareerCenter.vue'
-import Learning from '../views/Learning.vue'
-import HotRanking from '../views/HotRanking.vue'
+
+// 非核心页面将使用懒加载
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    /*
-    {
-      path: '/',
-      name: 'home',
-      component: HomeView,
-    },
-    */
     {
       path: '/about',
       name: 'about',
@@ -41,19 +27,58 @@ const router = createRouter({
       name: 'main',
       component: Main,
       children: [
-        { path: 'admin', name:"admin", component: Admin},
-        { path: 'course/list', name: "courseList", component: CourseList },
-        { path: 'ranking', name: "hotRanking", component: HotRanking },
-        { path: 'read', name: "read", component: Read },
-        { path: 'user', name:"user", component: User },
-        { path: 'self', name:"self", component: Self },
-        { path: 'message', name:"message", component: Message},
-        { path: 'roadmap/:professionId?', name: "roadmap", component: RoadmapFlow},
-        { path: 'career', name: "careerCenter", component: CareerCenter},
-        { path: 'learning', name: "learning", component: Learning}
+        { 
+          path: 'admin', 
+          name: "admin", 
+          component: () => import('../views/Admin.vue')
+        },
+        { 
+          path: 'course/list', 
+          name: "courseList", 
+          component: () => import('../views/CourseList.vue')
+        },
+        { 
+          path: 'ranking', 
+          name: "hotRanking", 
+          component: () => import('../views/HotRanking.vue')
+        },
+        { 
+          path: 'read', 
+          name: "read", 
+          component: () => import('../views/Read.vue')
+        },
+        { 
+          path: 'user', 
+          name: "user", 
+          component: () => import('../views/User.vue')
+        },
+        { 
+          path: 'self', 
+          name: "self", 
+          component: () => import('../views/Self.vue')
+        },
+        { 
+          path: 'message', 
+          name: "message", 
+          component: () => import('../views/Message.vue')
+        },
+        { 
+          path: 'roadmap/:professionId?', 
+          name: "roadmap", 
+          component: () => import('../views/RoadmapFlow.vue')
+        },
+        { 
+          path: 'career', 
+          name: "careerCenter", 
+          component: () => import('../views/CareerCenter.vue')
+        },
+        { 
+          path: 'learning', 
+          name: "learning", 
+          component: () => import('../views/Learning.vue')
+        }
       ]
     },
-
   ],
 })
 

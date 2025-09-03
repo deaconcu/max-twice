@@ -241,12 +241,12 @@ watch(() => props.userId, () => {
 }
 
 .nav-item-active {
-  background: rgba(66, 66, 66, 0.08);
-  border-color: rgba(66, 66, 66, 0.2);
+  background: rgba(189, 189, 189, 0.1) !important;
+  border-color: rgba(189, 189, 189, 0.2) !important;
 }
 
 .nav-item-active:hover {
-  background: rgba(66, 66, 66, 0.12);
-  border-color: rgba(66, 66, 66, 0.3);
+  background: rgba(189, 189, 189, 0.15) !important;
+  border-color: rgba(189, 189, 189, 0.3) !important;
 }
 </style>

@@ -42,29 +42,29 @@
         <v-row v-else-if="totalStatsData" class="mt-1">
           <v-col cols="6" sm="3">
             <div class="text-center py-3">
-              <v-icon icon="mdi-eye" color="blue" size="20" class="mb-1"></v-icon>
-              <h4 class="text-h5 font-weight-bold text-blue mb-1">{{ formatNumber(totalStatsData.totalViews) }}</h4>
+              <v-icon icon="mdi-eye" color="grey-darken-1" size="20" class="mb-1"></v-icon>
+              <h4 class="text-h5 font-weight-bold text-grey-darken-2 mb-1">{{ formatNumber(totalStatsData.totalViews) }}</h4>
               <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.totalViews') }}</p>
             </div>
           </v-col>
           <v-col cols="6" sm="3">
             <div class="text-center py-3">
-              <v-icon icon="mdi-thumb-up" color="green" size="20" class="mb-1"></v-icon>
-              <h4 class="text-h5 font-weight-bold text-green mb-1">{{ formatNumber(totalStatsData.totalTwice) }}</h4>
+              <v-icon icon="mdi-thumb-up" color="grey-darken-1" size="20" class="mb-1"></v-icon>
+              <h4 class="text-h5 font-weight-bold text-grey-darken-2 mb-1">{{ formatNumber(totalStatsData.totalTwice) }}</h4>
               <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.totalTwice') }}</p>
             </div>
           </v-col>
           <v-col cols="6" sm="3">
             <div class="text-center py-3">
-              <v-icon icon="mdi-heart" color="red" size="20" class="mb-1"></v-icon>
-              <h4 class="text-h5 font-weight-bold text-red mb-1">{{ formatNumber(totalStatsData.totalHelpful) }}</h4>
+              <v-icon icon="mdi-heart" color="grey-darken-1" size="20" class="mb-1"></v-icon>
+              <h4 class="text-h5 font-weight-bold text-grey-darken-2 mb-1">{{ formatNumber(totalStatsData.totalHelpful) }}</h4>
               <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.totalHelpful') }}</p>
             </div>
           </v-col>
           <v-col cols="6" sm="3">
             <div class="text-center py-3">
-              <v-icon icon="mdi-comment" color="orange" size="20" class="mb-1"></v-icon>
-              <h4 class="text-h5 font-weight-bold text-orange mb-1">{{ formatNumber(totalStatsData.totalComments) }}</h4>
+              <v-icon icon="mdi-comment" color="grey-darken-1" size="20" class="mb-1"></v-icon>
+              <h4 class="text-h5 font-weight-bold text-grey-darken-2 mb-1">{{ formatNumber(totalStatsData.totalComments) }}</h4>
               <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.totalComments') }}</p>
             </div>
           </v-col>
@@ -175,7 +175,7 @@
           <v-col cols="12" sm="6" md="3">
             <div class="flat-stats-card">
               <div class="text-center pa-3">
-                <h3 class="text-h5 font-weight-bold text-blue mb-1">{{ formatNumber(statsData.totalViews) }}</h3>
+                <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-1">{{ formatNumber(statsData.totalViews) }}</h3>
                 <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.articleViews') }}</p>
               </div>
             </div>
@@ -183,7 +183,7 @@
           <v-col cols="12" sm="6" md="3">
             <div class="flat-stats-card">
               <div class="text-center pa-3">
-                <h3 class="text-h5 font-weight-bold text-green mb-1">{{ formatNumber(statsData.totalTwice) }}</h3>
+                <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-1">{{ formatNumber(statsData.totalTwice) }}</h3>
                 <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.maxTwiceLikes') }}</p>
               </div>
             </div>
@@ -191,7 +191,7 @@
           <v-col cols="12" sm="6" md="3">
             <div class="flat-stats-card">
               <div class="text-center pa-3">
-                <h3 class="text-h5 font-weight-bold text-red mb-1">{{ formatNumber(statsData.totalHelpful) }}</h3>
+                <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-1">{{ formatNumber(statsData.totalHelpful) }}</h3>
                 <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.helpfulLikes') }}</p>
               </div>
             </div>
@@ -199,7 +199,7 @@
           <v-col cols="12" sm="6" md="3">
             <div class="flat-stats-card">
               <div class="text-center pa-3">
-                <h3 class="text-h5 font-weight-bold text-orange mb-1">{{ formatNumber(statsData.totalComments) }}</h3>
+                <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-1">{{ formatNumber(statsData.totalComments) }}</h3>
                 <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('userStats.comments') }}</p>
               </div>
             </div>
@@ -249,7 +249,7 @@
               <template #item.views="{ item }">
                 <v-chip 
                   size="small" 
-                  :color="item.views > 0 ? 'blue' : 'grey-lighten-3'"
+                  :color="item.views > 0 ? 'grey-darken-1' : 'grey-lighten-3'"
                   variant="tonal"
                 >
                   {{ item.views }}
@@ -259,7 +259,7 @@
               <template #item.twice="{ item }">
                 <v-chip 
                   size="small" 
-                  :color="item.twice > 0 ? 'green' : 'grey-lighten-3'"
+                  :color="item.twice > 0 ? 'grey-darken-1' : 'grey-lighten-3'"
                   variant="tonal"
                 >
                   {{ item.twice }}
@@ -269,7 +269,7 @@
               <template #item.helpful="{ item }">
                 <v-chip 
                   size="small" 
-                  :color="item.helpful > 0 ? 'red' : 'grey-lighten-3'"
+                  :color="item.helpful > 0 ? 'grey-darken-1' : 'grey-lighten-3'"
                   variant="tonal"
                 >
                   {{ item.helpful }}
@@ -279,7 +279,7 @@
               <template #item.comments="{ item }">
                 <v-chip 
                   size="small" 
-                  :color="item.comments > 0 ? 'orange' : 'grey-lighten-3'"
+                  :color="item.comments > 0 ? 'grey-darken-1' : 'grey-lighten-3'"
                   variant="tonal"
                 >
                   {{ item.comments }}
@@ -535,7 +535,7 @@ export default {
 
 <style scoped>
 .user-stats-container {
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 20px;
 }
@@ -655,20 +655,22 @@ export default {
 
 /* 时间选择器容器 */
 .time-selector-container {
-  min-width: 400px;
+  min-width: 350px;
 }
 
 /* 概览标题容器 */
 .overview-title-container {
-  max-width: 300px;
+  max-width: 280px;
 }
 
 /* 时间段统计区域 */
 .period-stats-section {
-  background: rgba(25, 118, 210, 0.01);
+  background: rgba(245, 245, 245, 0.6);
   border-radius: 12px;
-  border: 1px solid #e3f2fd;
+  border: 1px solid #e0e0e0;
   padding: 20px;
+  width: 100%;
+  margin: 0;
 }
 
 .date-cell {
