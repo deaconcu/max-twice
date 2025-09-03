@@ -4,7 +4,7 @@ import { useApiErrorHandler } from './useApiErrorHandler'
 /**
  * Toast/Snackbar消息国际化工具
  */
-export function useToastMessage() {
+export const useToastMessage = function () {
   const { t } = useI18n()
   const { tryTranslateMessage, handleApiError } = useApiErrorHandler()
 
@@ -17,7 +17,7 @@ export function useToastMessage() {
   const successMessage = (messageKey, params = []) => {
     try {
       return t(messageKey, params)
-    } catch (e) {
+    } catch {
       return tryTranslateMessage(messageKey) || messageKey
     }
   }
@@ -32,11 +32,11 @@ export function useToastMessage() {
     if (typeof error === 'string') {
       try {
         return t(error)
-      } catch (e) {
+      } catch {
         return tryTranslateMessage(error) || error
       }
     }
-    
+
     return handleApiError(error, response)
   }
 
@@ -50,6 +50,7 @@ export function useToastMessage() {
     try {
       return t(messageKey, params)
     } catch (e) {
+      console.error('Warning message translation error:', e)
       return tryTranslateMessage(messageKey) || messageKey
     }
   }
@@ -64,6 +65,7 @@ export function useToastMessage() {
     try {
       return t(messageKey, params)
     } catch (e) {
+      console.error('Info message translation error:', e)
       return tryTranslateMessage(messageKey) || messageKey
     }
   }
@@ -94,6 +96,6 @@ export function useToastMessage() {
     errorMessage,
     warningMessage,
     infoMessage,
-    getMessage
+    getMessage,
   }
 }

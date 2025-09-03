@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { statsServiceV1 } from '@/services/api/v1/apiServiceV1'
 
 // 缓存键和过期时间
@@ -14,15 +14,15 @@ const lastFetched = ref(null)
 // 数字格式化函数
 const formatNumber = (num) => {
   // 处理null、undefined或非数字类型
-  if (num == null || isNaN(num)) {
+  if (num === null || isNaN(num)) {
     return '--'
   }
-  
+
   // 确保是数字类型
   const number = Number(num)
-  
+
   if (number >= 10000) {
-    return (number / 1000).toFixed(1) + 'k'
+    return `${(number / 1000).toFixed(1)}k`
   }
   return number.toLocaleString()
 }
@@ -34,7 +34,7 @@ const getCachedData = () => {
     if (cached) {
       const { data, timestamp } = JSON.parse(cached)
       const now = Date.now()
-      
+
       // 检查缓存是否过期
       if (now - timestamp < CACHE_DURATION) {
         return data
@@ -51,7 +51,7 @@ const setCachedData = (data) => {
   try {
     const cacheData = {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
     localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData))
   } catch (e) {
@@ -82,10 +82,10 @@ const fetchPlatformStats = async (force = false) => {
 
   try {
     const response = await statsServiceV1.getPlatformStats()
-    
+
     if (response.code === 200) {
       const stats = response.data
-      
+
       // 格式化数据
       const formattedStats = {
         courseCount: formatNumber(stats.courseCount),
@@ -93,16 +93,16 @@ const fetchPlatformStats = async (force = false) => {
         roadmapCount: formatNumber(stats.roadmapCount),
         knowledgeNodeCount: formatNumber(stats.knowledgeNodeCount),
         articleCount: formatNumber(stats.articleCount),
-        rawData: stats
+        rawData: stats,
       }
-      
+
       globalStats.value = formattedStats
       lastFetched.value = Date.now()
       error.value = null // 清除错误状态
-      
+
       // 缓存数据
       setCachedData(formattedStats)
-      
+
       return formattedStats
     } else {
       // 后端返回错误状态码时，不抛出异常，直接设置默认数据
@@ -113,7 +113,7 @@ const fetchPlatformStats = async (force = false) => {
   } catch (err) {
     // 网络错误或其他异常时，不抛出异常，设置默认数据
     console.warn('Error fetching platform stats:', err)
-    
+
     // 如果有缓存数据，在错误时仍然使用缓存
     const cached = getCachedData()
     if (cached) {
@@ -121,7 +121,7 @@ const fetchPlatformStats = async (force = false) => {
       error.value = null // 不显示错误状态
       return cached
     }
-    
+
     // 没有缓存时设置默认数据
     setDefaultStats()
     return globalStats.value
@@ -134,76 +134,27 @@ const fetchPlatformStats = async (force = false) => {
 const setDefaultStats = () => {
   globalStats.value = {
     courseCount: '--',
-    careerPathCount: '--', 
+    careerPathCount: '--',
     roadmapCount: '--',
     knowledgeNodeCount: '--',
     articleCount: '--',
-    rawData: null
+    rawData: null,
   }
   error.value = null // 不显示错误状态，让UI显示默认数据
 }
 
-// 定时刷新机制
-let refreshInterval = null
-
-const startAutoRefresh = () => {
-  // 每10分钟自动刷新一次
-  refreshInterval = setInterval(async () => {
-    try {
-      await fetchPlatformStats(false)
-    } catch (err) {
-      // 自动刷新失败时静默处理
-      console.warn('Auto refresh failed:', err)
-    }
-  }, 10 * 60 * 1000)
-}
-
-const stopAutoRefresh = () => {
-  if (refreshInterval) {
-    clearInterval(refreshInterval)
-    refreshInterval = null
-  }
-}
-
-export function usePlatformStats() {
-  // 手动刷新功能
-  const refresh = async () => {
-    try {
-      return await fetchPlatformStats(true)
-    } catch (err) {
-      // 手动刷新时也不抛出异常
-      console.warn('Manual refresh failed:', err)
-      return globalStats.value
-    }
-  }
-
+// 主要的 composable 函数
+export const usePlatformStats = () => {
   // 组件挂载时获取数据
-  onMounted(async () => {
-    // 如果还没有数据，立即获取
-    if (!globalStats.value) {
-      try {
-        await fetchPlatformStats()
-      } catch (err) {
-        // 静默处理初始化错误
-        console.warn('Initial data fetch failed:', err)
-      }
-    }
-    
-    // 启动自动刷新
-    startAutoRefresh()
-  })
-
-  // 组件卸载时清理定时器
-  onUnmounted(() => {
-    stopAutoRefresh()
+  onMounted(() => {
+    fetchPlatformStats()
   })
 
   return {
     stats: globalStats,
     isLoading,
     error,
-    lastFetched,
-    refresh,
-    fetchPlatformStats
+    fetchPlatformStats,
+    formatNumber,
   }
 }

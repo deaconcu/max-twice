@@ -1,56 +1,56 @@
 <script setup>
-import { computed } from 'vue';
+  import { computed } from 'vue'
 
-// Props
-const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    default: false
-  },
-  validateCode: {
-    type: String,
-    default: ''
+  // Props
+  const props = defineProps({
+    modelValue: {
+      type: Boolean,
+      default: false,
+    },
+    validateCode: {
+      type: String,
+      default: '',
+    },
+  })
+
+  // Emits
+  const emit = defineEmits(['update:modelValue', 'update:validateCode', 'submit', 'resend'])
+
+  // Computed properties for v-model
+  const dialogModel = computed({
+    get: () => props.modelValue,
+    set: (value) => emit('update:modelValue', value),
+  })
+
+  const validateCodeModel = computed({
+    get: () => props.validateCode,
+    set: (value) => emit('update:validateCode', value),
+  })
+
+  // 处理表单提交
+  const handleSubmit = () => {
+    emit('submit')
   }
-});
 
-// Emits
-const emit = defineEmits([
-  'update:modelValue',
-  'update:validateCode',
-  'submit',
-  'resend'
-]);
+  // 处理重新发送验证码
+  const handleResend = () => {
+    emit('resend')
+  }
 
-// Computed properties for v-model
-const dialogModel = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-});
-
-const validateCodeModel = computed({
-  get: () => props.validateCode,
-  set: (value) => emit('update:validateCode', value)
-});
-
-// 处理表单提交
-const handleSubmit = () => {
-  emit('submit');
-};
-
-// 处理重新发送验证码
-const handleResend = () => {
-  emit('resend');
-};
-
-// 关闭对话框
-const closeDialog = () => {
-  dialogModel.value = false;
-};
+  // 关闭对话框
+  const closeDialog = () => {
+    dialogModel.value = false
+  }
 </script>
 
 <template>
-  <v-dialog max-width="600" :model-value="modelValue" @update:model-value="dialogModel = $event" persistent>
-    <template v-slot:default>
+  <v-dialog
+    max-width="600"
+    :model-value="modelValue"
+    persistent
+    @update:model-value="dialogModel = $event"
+  >
+    <template #default>
       <v-card rounded="xl" elevation="0">
         <v-card-title class="pa-6 pb-4">
           <div class="d-flex align-center">
@@ -62,13 +62,13 @@ const closeDialog = () => {
               <p class="text-body-2 text-grey-darken-2 mb-0">请检查您的邮箱</p>
             </div>
           </div>
-          <v-btn 
-            icon="mdi-close" 
-            variant="text" 
-            size="small" 
-            class="position-absolute" 
-            style="top: 16px; right: 16px;"
-            @click="closeDialog">
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            size="small"
+            class="position-absolute close-btn"
+            @click="closeDialog"
+          >
           </v-btn>
         </v-card-title>
 
@@ -79,27 +79,29 @@ const closeDialog = () => {
           </div>
 
           <v-form @submit.prevent="handleSubmit">
-            <v-text-field 
-              :model-value="validateCode" 
-              @update:model-value="validateCodeModel = $event" 
-              label="验证码" 
+            <v-text-field
+              :model-value="validateCode"
+              label="验证码"
               variant="outlined"
-              class="mb-4" 
+              class="mb-4"
               prepend-inner-icon="mdi-key"
               rounded="lg"
               density="comfortable"
               hint="请输入6位数字验证码"
               persistent-hint
-              clearable>
+              clearable
+              @update:model-value="validateCodeModel = $event"
+            >
             </v-text-field>
 
-            <v-btn 
-              block 
-              size="large" 
-              @click="handleSubmit" 
+            <v-btn
+              block
+              size="large"
               color="success"
-              rounded="lg" 
-              class="font-weight-bold mb-3">
+              rounded="lg"
+              class="font-weight-bold mb-3"
+              @click="handleSubmit"
+            >
               <v-icon icon="mdi-check-circle" class="mr-2"></v-icon>
               验证邮箱
             </v-btn>
@@ -115,3 +117,10 @@ const closeDialog = () => {
     </template>
   </v-dialog>
 </template>
+
+<style scoped>
+  .close-btn {
+    top: 16px;
+    right: 16px;
+  }
+</style>

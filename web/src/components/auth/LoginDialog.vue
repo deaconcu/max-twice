@@ -1,60 +1,60 @@
 <script setup>
-import { computed } from 'vue';
+  import { computed } from 'vue'
 
-// Props
-const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    default: false
-  },
-  loginForm: {
-    type: Object,
-    required: true
-  },
-  showPassword: {
-    type: Boolean,
-    default: false
+  // Props
+  const props = defineProps({
+    modelValue: {
+      type: Boolean,
+      default: false,
+    },
+    loginForm: {
+      type: Object,
+      required: true,
+    },
+    showPassword: {
+      type: Boolean,
+      default: false,
+    },
+  })
+
+  // Emits
+  const emit = defineEmits(['update:modelValue', 'update:loginForm', 'submit', 'togglePassword'])
+
+  // Computed properties for v-model
+  const dialogModel = computed({
+    get: () => props.modelValue,
+    set: (value) => emit('update:modelValue', value),
+  })
+
+  const loginFormModel = computed({
+    get: () => props.loginForm,
+    set: (value) => emit('update:loginForm', value),
+  })
+
+  // 处理密码可见性切换
+  const handleTogglePassword = () => {
+    emit('togglePassword')
   }
-});
 
-// Emits
-const emit = defineEmits([
-  'update:modelValue',
-  'update:loginForm',
-  'submit',
-  'togglePassword'
-]);
+  // 处理表单提交
+  const handleSubmit = () => {
+    emit('submit')
+  }
 
-// Computed properties for v-model
-const dialogModel = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-});
-
-const loginFormModel = computed({
-  get: () => props.loginForm,
-  set: (value) => emit('update:loginForm', value)
-});
-
-// 处理密码可见性切换
-const handleTogglePassword = () => {
-  emit('togglePassword');
-};
-
-// 处理表单提交
-const handleSubmit = () => {
-  emit('submit');
-};
-
-// 关闭对话框
-const closeDialog = () => {
-  dialogModel.value = false;
-};
+  // 关闭对话框
+  const closeDialog = () => {
+    dialogModel.value = false
+  }
 </script>
 
 <template>
-  <v-dialog max-width="600" :model-value="modelValue" @update:model-value="dialogModel = $event" persistent>
-    <template v-slot:default="{ isActive }">
+  <v-dialog
+    max-width="600"
+    :model-value="modelValue"
+    persistent
+    @update:model-value="dialogModel = $event"
+  >
+    <template #default>
       <v-card rounded="xl" elevation="0">
         <v-card-title class="pa-6 pb-4">
           <div class="d-flex align-center">
@@ -66,13 +66,13 @@ const closeDialog = () => {
               <p class="text-body-2 text-grey-darken-2 mb-0">登录您的学习账户</p>
             </div>
           </div>
-          <v-btn 
-            icon="mdi-close" 
-            variant="text" 
-            size="small" 
-            class="position-absolute" 
-            style="top: 16px; right: 16px;"
-            @click="closeDialog">
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            size="small"
+            class="position-absolute close-button"
+            @click="closeDialog"
+          >
           </v-btn>
         </v-card-title>
 
@@ -82,40 +82,43 @@ const closeDialog = () => {
             <span class="text-body-2">使用邮箱和密码登录您的账户</span>
           </div>
 
-          <v-text-field 
-            :model-value="loginForm.email" 
-            @update:model-value="loginFormModel.email = $event" 
-            label="邮箱地址" 
-            variant="outlined" 
+          <v-text-field
+            :model-value="loginForm.email"
+            label="邮箱地址"
+            variant="outlined"
             class="mb-4"
             prepend-inner-icon="mdi-email-outline"
             rounded="lg"
             density="comfortable"
-            clearable>
+            clearable
+            @update:model-value="loginFormModel.email = $event"
+          >
           </v-text-field>
 
-          <v-text-field 
-            :model-value="loginForm.password" 
-            @update:model-value="loginFormModel.password = $event" 
-            :type="showPassword ? 'text' : 'password'" 
-            label="密码" 
-            variant="outlined" 
+          <v-text-field
+            :model-value="loginForm.password"
+            :type="showPassword ? 'text' : 'password'"
+            label="密码"
+            variant="outlined"
             class="mb-6"
             prepend-inner-icon="mdi-lock-outline"
-            :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'" 
-            @click:append-inner="handleTogglePassword"
+            :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
             rounded="lg"
             density="comfortable"
-            clearable>
+            clearable
+            @update:model-value="loginFormModel.password = $event"
+            @click:append-inner="handleTogglePassword"
+          >
           </v-text-field>
 
-          <v-btn 
-            block 
-            size="large" 
-            @click="handleSubmit" 
+          <v-btn
+            block
+            size="large"
             color="primary"
-            rounded="lg" 
-            class="font-weight-bold">
+            rounded="lg"
+            class="font-weight-bold"
+            @click="handleSubmit"
+          >
             <v-icon icon="mdi-login" class="mr-2"></v-icon>
             登录
           </v-btn>
@@ -124,3 +127,10 @@ const closeDialog = () => {
     </template>
   </v-dialog>
 </template>
+
+<style scoped>
+  .close-button {
+    top: 16px;
+    right: 16px;
+  }
+</style>

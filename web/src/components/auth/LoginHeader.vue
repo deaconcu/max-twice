@@ -1,5 +1,5 @@
 <script setup>
-// 无需props和emits，这是一个静态展示组件
+  // 无需props和emits，这是一个静态展示组件
 </script>
 
 <template>

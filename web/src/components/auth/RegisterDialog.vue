@@ -1,71 +1,76 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { useI18n } from 'vue-i18n';
+  import { computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n();
+  const { t } = useI18n()
 
-// Props
-const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    default: false
-  },
-  registerForm: {
-    type: Object,
-    required: true
-  },
-  showPassword: {
-    type: Boolean,
-    default: false
-  },
-  showPasswordRepeat: {
-    type: Boolean,
-    default: false
+  // Props
+  const props = defineProps({
+    modelValue: {
+      type: Boolean,
+      default: false,
+    },
+    registerForm: {
+      type: Object,
+      required: true,
+    },
+    showPassword: {
+      type: Boolean,
+      default: false,
+    },
+    showPasswordRepeat: {
+      type: Boolean,
+      default: false,
+    },
+  })
+
+  // Emits
+  const emit = defineEmits([
+    'update:modelValue',
+    'update:registerForm',
+    'update:showPassword',
+    'update:showPasswordRepeat',
+    'submit',
+    'togglePassword',
+  ])
+
+  // Computed properties for v-model
+  const dialogModel = computed({
+    get: () => props.modelValue,
+    set: (value) => emit('update:modelValue', value),
+  })
+
+  const registerFormModel = computed({
+    get: () => props.registerForm,
+    set: (value) => emit('update:registerForm', value),
+  })
+
+  // 处理密码可见性切换
+  const handleTogglePassword = (repeat = false) => {
+    emit('togglePassword', repeat)
   }
-});
 
-// Emits
-const emit = defineEmits([
-  'update:modelValue',
-  'update:registerForm',
-  'update:showPassword', 
-  'update:showPasswordRepeat',
-  'submit',
-  'togglePassword'
-]);
+  // 处理表单提交
+  const handleSubmit = () => {
+    emit('submit')
+  }
 
-// Computed properties for v-model
-const dialogModel = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-});
-
-const registerFormModel = computed({
-  get: () => props.registerForm,
-  set: (value) => emit('update:registerForm', value)
-});
-
-// 处理密码可见性切换
-const handleTogglePassword = (repeat = false) => {
-  emit('togglePassword', repeat);
-};
-
-// 处理表单提交
-const handleSubmit = () => {
-  emit('submit');
-};
-
-// 关闭对话框
-const closeDialog = () => {
-  dialogModel.value = false;
-};
+  // 关闭对话框
+  const closeDialog = () => {
+    dialogModel.value = false
+  }
 </script>
 
 <template>
-  <v-dialog max-width="600" :model-value="modelValue" @update:model-value="dialogModel = $event" persistent>
-    <template v-slot:default="{ isActive }">
+  <v-dialog
+    max-width="600"
+    :model-value="modelValue"
+    persistent
+    @update:model-value="dialogModel = $event"
+  >
+    <template #default>
       <v-card rounded="xl" elevation="0">
-        <v-card-title class="pa-6 pb-4">
+        <v-card-title class="pa-6 pb-4 position-relative">
           <div class="d-flex align-center">
             <v-avatar color="primary" size="40" class="mr-3">
               <v-icon icon="mdi-account-plus" color="white" size="20"></v-icon>
@@ -75,13 +80,13 @@ const closeDialog = () => {
               <p class="text-body-2 text-grey-darken-2 mb-0">{{ t('user.register.subtitle') }}</p>
             </div>
           </div>
-          <v-btn 
-            icon="mdi-close" 
-            variant="text" 
-            size="small" 
-            class="position-absolute" 
-            style="top: 16px; right: 16px;"
-            @click="closeDialog">
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            size="small"
+            class="close-btn"
+            @click="closeDialog"
+          >
           </v-btn>
         </v-card-title>
 
@@ -91,77 +96,82 @@ const closeDialog = () => {
             <span class="text-body-2">{{ t('user.register.instructions') }}</span>
           </div>
 
-          <v-text-field 
-            :model-value="registerForm.email" 
-            @update:model-value="registerFormModel.email = $event" 
-            :label="t('user.register.email')" 
-            variant="outlined" 
+          <v-text-field
+            :model-value="registerForm.email"
+            :label="t('user.register.email')"
+            variant="outlined"
             class="mb-4"
-            prepend-inner-icon="mdi-email-outline" 
-            hint="请输入常用邮箱，用于接收验证码" 
-            persistent-hint 
+            prepend-inner-icon="mdi-email-outline"
+            hint="请输入常用邮箱，用于接收验证码"
+            persistent-hint
             maxlength="30"
             rounded="lg"
             density="comfortable"
-            clearable>
+            clearable
+            @update:model-value="registerFormModel.email = $event"
+          >
           </v-text-field>
 
-          <v-text-field 
-            :model-value="registerForm.name" 
-            @update:model-value="registerFormModel.name = $event" 
-            :label="t('user.register.username')" 
-            variant="outlined" 
+          <v-text-field
+            :model-value="registerForm.name"
+            :label="t('user.register.username')"
+            variant="outlined"
             class="mb-4"
-            prepend-inner-icon="mdi-account-outline" 
-            hint="用户名长度2-20个字符" 
+            prepend-inner-icon="mdi-account-outline"
+            hint="用户名长度2-20个字符"
             persistent-hint
-            maxlength="20" 
-            rounded="lg"
-            density="comfortable"
-            clearable>
-          </v-text-field>
-
-          <v-text-field 
-            :model-value="registerForm.password" 
-            @update:model-value="registerFormModel.password = $event" 
-            :type="showPassword ? 'text' : 'password'" 
-            :label="t('user.register.password')" 
-            variant="outlined" 
-            class="mb-4"
-            prepend-inner-icon="mdi-lock-outline"
-            :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'" 
-            hint="密码需包含大小写字母和特殊字符" 
-            maxlength="20" 
-            persistent-hint
-            rounded="lg"
-            density="comfortable"
-            @click:append-inner="handleTogglePassword(false)"
-            clearable>
-          </v-text-field>
-
-          <v-text-field 
-            :model-value="registerForm.passwordRepeat" 
-            @update:model-value="registerFormModel.passwordRepeat = $event" 
-            :type="showPasswordRepeat ? 'text' : 'password'"
-            :label="t('user.register.confirmPassword')" 
-            variant="outlined" 
-            class="mb-6"
-            prepend-inner-icon="mdi-lock-check-outline"
-            :append-inner-icon="showPasswordRepeat ? 'mdi-eye' : 'mdi-eye-off'" 
             maxlength="20"
             rounded="lg"
             density="comfortable"
-            @click:append-inner="handleTogglePassword(true)"
-            clearable>
+            clearable
+            @update:model-value="registerFormModel.name = $event"
+          >
           </v-text-field>
 
-          <v-btn 
-            block 
-            size="large" 
-            @click="handleSubmit" 
+          <v-text-field
+            :model-value="registerForm.password"
+            :type="showPassword ? 'text' : 'password'"
+            :label="t('user.register.password')"
+            variant="outlined"
+            class="mb-4"
+            prepend-inner-icon="mdi-lock-outline"
+            :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+            hint="密码需包含大小写字母和特殊字符"
+            maxlength="20"
+            persistent-hint
+            rounded="lg"
+            density="comfortable"
+            clearable
+            @update:model-value="registerFormModel.password = $event"
+            @click:append-inner="handleTogglePassword(false)"
+          >
+          </v-text-field>
+
+          <v-text-field
+            :model-value="registerForm.passwordRepeat"
+            :type="showPasswordRepeat ? 'text' : 'password'"
+            :label="t('user.register.confirmPassword')"
+            variant="outlined"
+            class="mb-6"
+            prepend-inner-icon="mdi-lock-check-outline"
+            :append-inner-icon="showPasswordRepeat ? 'mdi-eye' : 'mdi-eye-off'"
+            maxlength="20"
+            rounded="lg"
+            density="comfortable"
+            clearable
+            @update:model-value="registerFormModel.passwordRepeat = $event"
+            @click:append-inner="handleTogglePassword(true)"
+          >
+          </v-text-field>
+
+          <v-btn
+            block
+            size="large"
             color="primary"
-            rounded="lg" 
-            class="font-weight-bold">
+            rounded="lg"
+            class="font-weight-bold"
+            @click="handleSubmit"
+          >
             <v-icon icon="mdi-rocket-launch" class="mr-2"></v-icon>
             创建账户
           </v-btn>
@@ -170,3 +180,11 @@ const closeDialog = () => {
     </template>
   </v-dialog>
 </template>
+
+<style scoped>
+  .close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+  }
+</style>

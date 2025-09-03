@@ -143,7 +143,7 @@
     "articleList": "文章列表",
     "comments": "条评论",
     "addContent": "添加目录",
-    "addArticle": "添加文章", 
+    "addArticle": "添加文章",
     "inviteAnswer": "邀请回答",
     "reachedEnd": "已经到底了",
     "submitArticle": "写好了，提交",
@@ -217,7 +217,7 @@
     "systematicLearning": "系统化学习路径，助力职业发展",
     "skills": {
       "javaBasics": "Java基础语法",
-      "oop": "面向对象编程", 
+      "oop": "面向对象编程",
       "dataStructures": "数据结构",
       "webDevelopment": "Web开发"
     }
@@ -271,7 +271,7 @@
     "up": "上移",
     "down": "下移",
     "status": {
-      "inProgress":"正在学习"
+      "inProgress": "正在学习"
     },
     "difficulty": {
       "beginner": "初级",
@@ -526,7 +526,7 @@
     "sortBy": "排序方式：",
     "sortOptions": {
       "total": "总热度",
-      "learning": "学习人数", 
+      "learning": "学习人数",
       "subscription": "收藏人数"
     },
     "loading": "正在加载排行榜...",

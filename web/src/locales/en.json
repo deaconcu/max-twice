@@ -167,7 +167,7 @@
     "viewFullText": "View Full Text",
     "agree": "Agree",
     "understandOnce": "Understand Once",
-    "understandTwice": "Understand Twice", 
+    "understandTwice": "Understand Twice",
     "helpful": "Helpful",
     "edit": "Edit",
     "delete": "Delete"
@@ -186,7 +186,7 @@
   "trendChart": {
     "loadingData": "Loading chart data...",
     "today": "Today",
-    "yesterday": "Yesterday", 
+    "yesterday": "Yesterday",
     "views": "Views",
     "helpful": "Helpful",
     "comments": "Comments"
@@ -524,7 +524,7 @@
     "sortBy": "Sort by:",
     "sortOptions": {
       "total": "Total Popularity",
-      "learning": "Learners Count", 
+      "learning": "Learners Count",
       "subscription": "Subscribers Count"
     },
     "loading": "Loading ranking...",
@@ -605,7 +605,7 @@
     "messageFilter": "Message Filter",
     "all": "All",
     "noMoreMessages": "No more messages",
-    "courseApplicationTitle": "Course Application", 
+    "courseApplicationTitle": "Course Application",
     "hoursAgo": "{hours} hours ago",
     "courseCreateSuccess": "Course created successfully!",
     "loginSuccess": "Login successful",

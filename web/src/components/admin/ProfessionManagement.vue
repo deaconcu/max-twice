@@ -19,7 +19,13 @@
 
     <!-- 状态筛选 -->
     <div class="mb-6">
-      <v-chip-group v-model="selectedStateIndex" color="primary" variant="flat" @update:model-value="onStateChange" mandatory>
+      <v-chip-group
+        v-model="selectedStateIndex"
+        color="primary"
+        variant="flat"
+        mandatory
+        @update:model-value="onStateChange"
+      >
         <v-chip
           v-for="(state, index) in stateOptions"
           :key="state.value"
@@ -57,7 +63,7 @@
       >
         <div class="d-flex align-start">
           <!-- 状态和操作区域 -->
-          <div class="mr-4" style="min-width: 200px;">
+          <div class="mr-4 status-actions-area">
             <div class="mb-3">
               <v-chip
                 :color="getStateConfig(profession.state).color"
@@ -65,11 +71,15 @@
                 rounded="lg"
                 size="small"
               >
-                <v-icon :icon="getStateConfig(profession.state).icon" size="14" class="mr-1"></v-icon>
+                <v-icon
+                  :icon="getStateConfig(profession.state).icon"
+                  size="14"
+                  class="mr-1"
+                ></v-icon>
                 {{ getStateConfig(profession.state).text }}
               </v-chip>
             </div>
-            
+
             <!-- 审核操作按钮 -->
             <div class="d-flex flex-column ga-2">
               <!-- 通过按钮 - 只在待审核状态显示 -->
@@ -79,16 +89,19 @@
                 color="green-lighten-4"
                 rounded="lg"
                 size="small"
-                @click="approveProfession(profession)"
                 :loading="profession.approving"
+                @click="approveProfession(profession)"
               >
                 <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
                 通过
               </v-btn>
-              
+
               <!-- 拒绝按钮 - 待审核和已通过状态都显示 -->
               <v-btn
-                v-if="profession.state === PROFESSION_STATE.SUBMITTED || profession.state === PROFESSION_STATE.APPROVED"
+                v-if="
+                  profession.state === PROFESSION_STATE.SUBMITTED ||
+                  profession.state === PROFESSION_STATE.APPROVED
+                "
                 variant="flat"
                 color="red-lighten-4"
                 rounded="lg"
@@ -98,7 +111,7 @@
                 <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
                 {{ profession.state === PROFESSION_STATE.APPROVED ? '撤销通过' : '拒绝' }}
               </v-btn>
-              
+
               <!-- 恢复按钮 - 只在已拒绝状态显示，实际是重新通过 -->
               <v-btn
                 v-if="profession.state === PROFESSION_STATE.REJECTED"
@@ -106,8 +119,8 @@
                 color="orange-lighten-4"
                 rounded="lg"
                 size="small"
-                @click="restoreProfession(profession)"
                 :loading="profession.restoring"
+                @click="restoreProfession(profession)"
               >
                 <v-icon icon="mdi-check" color="orange-darken-2" size="16" class="mr-1"></v-icon>
                 重新通过
@@ -131,8 +144,8 @@
                 color="grey-lighten-3"
                 rounded="lg"
                 size="small"
-                @click="showDeleteConfirm(profession)"
                 :loading="profession.deleting"
+                @click="showDeleteConfirm(profession)"
               >
                 <v-icon icon="mdi-delete" color="grey-darken-2" size="16" class="mr-1"></v-icon>
                 删除
@@ -140,9 +153,14 @@
             </div>
 
             <!-- 拒绝原因显示 -->
-            <div v-if="profession.state === PROFESSION_STATE.REJECTED && profession.rejectedReason" class="mt-3">
+            <div
+              v-if="profession.state === PROFESSION_STATE.REJECTED && profession.rejectedReason"
+              class="mt-3"
+            >
               <div class="text-caption text-grey-darken-1 mb-1">拒绝原因：</div>
-              <div class="text-body-2 text-red-darken-2 rejection-reason">{{ profession.rejectedReason }}</div>
+              <div class="text-body-2 text-red-darken-2 rejection-reason">
+                {{ profession.rejectedReason }}
+              </div>
             </div>
           </div>
 
@@ -150,14 +168,19 @@
           <div class="flex-grow-1">
             <div class="d-flex align-center mb-3">
               <v-avatar size="32" color="grey-lighten-3" class="mr-3">
-                <v-icon :icon="profession.icon || 'mdi-briefcase'" color="grey-darken-1" size="18"></v-icon>
+                <v-icon
+                  :icon="profession.icon || 'mdi-briefcase'"
+                  color="grey-darken-1"
+                  size="18"
+                ></v-icon>
               </v-avatar>
               <div>
                 <div class="text-body-2 font-weight-medium text-grey-darken-2">
                   职业ID: {{ profession.id }}
-                  
                 </div>
-                <div class="text-caption text-grey-darken-1">{{ profession.createdAt || '未知时间' }}</div>
+                <div class="text-caption text-grey-darken-1">
+                  {{ profession.createdAt || '未知时间' }}
+                </div>
               </div>
             </div>
 
@@ -176,7 +199,9 @@
                     $ {{ profession.price }}
                   </v-chip>
                 </div>
-                <div class="text-body-2 text-grey-darken-1 my-6">{{ profession.description || '暂无描述' }}</div>
+                <div class="text-body-2 text-grey-darken-1 my-6">
+                  {{ profession.description || '暂无描述' }}
+                </div>
               </div>
 
               <!-- 技能要求 -->
@@ -197,7 +222,10 @@
               </div>
 
               <!-- 分类信息 -->
-              <div v-if="profession.mainCategory !== undefined || profession.subCategory !== undefined" class="mb-3 d-flex align-center">
+              <div
+                v-if="profession.mainCategory !== undefined || profession.subCategory !== undefined"
+                class="mb-3 d-flex align-center"
+              >
                 <div class="text-caption text-grey-darken-1">分类：</div>
                 <div class="d-flex ga-2">
                   <v-chip
@@ -241,7 +269,7 @@
         <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
         <p class="mt-2 text-body-2 text-grey-darken-1">加载更多中...</p>
       </div>
-      
+
       <!-- 没有更多数据提示 -->
       <div v-else-if="!hasMoreData && professionList.length > 0" class="text-center py-4">
         <p class="text-body-2 text-grey-darken-1">已加载全部数据</p>
@@ -253,15 +281,20 @@
       <v-card rounded="lg">
         <v-card-title class="text-h6 font-weight-bold pa-6 pb-4">
           <v-icon icon="mdi-close-circle-outline" color="red-darken-2" class="mr-3"></v-icon>
-          {{ currentProfession?.state === PROFESSION_STATE.APPROVED ? '撤销职业通过' : '拒绝职业申请' }}
+          {{
+            currentProfession?.state === PROFESSION_STATE.APPROVED ? '撤销职业通过' : '拒绝职业申请'
+          }}
         </v-card-title>
-        
+
         <v-card-text class="pa-6 pt-0">
           <div class="mb-4">
             <div class="text-body-2 text-grey-darken-1 mb-2">
               职业名称：<strong>{{ currentProfession?.name }}</strong>
             </div>
-            <div v-if="currentProfession?.state === PROFESSION_STATE.APPROVED" class="text-body-2 text-orange-darken-2 mb-2">
+            <div
+              v-if="currentProfession?.state === PROFESSION_STATE.APPROVED"
+              class="text-body-2 text-orange-darken-2 mb-2"
+            >
               <v-icon icon="mdi-alert" size="16" class="mr-1"></v-icon>
               注意：此职业已通过审核，撤销后将变为拒绝状态
             </div>
@@ -269,11 +302,17 @@
 
           <div class="mb-4">
             <div class="text-body-2 font-weight-medium mb-2">
-              {{ currentProfession?.state === PROFESSION_STATE.APPROVED ? '选择撤销原因：' : '选择拒绝原因：' }}
+              {{
+                currentProfession?.state === PROFESSION_STATE.APPROVED
+                  ? '选择撤销原因：'
+                  : '选择拒绝原因：'
+              }}
             </div>
             <v-chip-group v-model="selectedRejectReason" color="red-lighten-3" variant="flat">
               <v-chip
-                v-for="reason in (currentProfession?.state === PROFESSION_STATE.APPROVED ? revokeReasons : rejectReasons)"
+                v-for="reason in currentProfession?.state === PROFESSION_STATE.APPROVED
+                  ? revokeReasons
+                  : rejectReasons"
                 :key="reason"
                 :value="reason"
                 rounded="lg"
@@ -287,8 +326,14 @@
 
           <v-textarea
             v-model="rejectReason"
-            :label="currentProfession?.state === PROFESSION_STATE.APPROVED ? '撤销原因' : '拒绝原因'"
-            :placeholder="currentProfession?.state === PROFESSION_STATE.APPROVED ? '请详细说明撤销通过的原因...' : '请详细说明拒绝的原因...'"
+            :label="
+              currentProfession?.state === PROFESSION_STATE.APPROVED ? '撤销原因' : '拒绝原因'
+            "
+            :placeholder="
+              currentProfession?.state === PROFESSION_STATE.APPROVED
+                ? '请详细说明撤销通过的原因...'
+                : '请详细说明拒绝的原因...'
+            "
             variant="outlined"
             rows="4"
             rounded="lg"
@@ -298,21 +343,16 @@
 
         <v-card-actions class="pa-6 pt-0">
           <v-spacer></v-spacer>
-          <v-btn
-            variant="outlined"
-            color="grey"
-            rounded="lg"
-            @click="closeRejectDialog"
-          >
+          <v-btn variant="outlined" color="grey" rounded="lg" @click="closeRejectDialog">
             取消
           </v-btn>
           <v-btn
             variant="flat"
             color="red-lighten-4"
             rounded="lg"
-            @click="rejectProfession"
             :disabled="!rejectReason.trim()"
             :loading="rejecting"
+            @click="rejectProfession"
           >
             <v-icon icon="mdi-close" color="red-darken-2" class="mr-2"></v-icon>
             {{ currentProfession?.state === PROFESSION_STATE.APPROVED ? '确认撤销' : '确认拒绝' }}
@@ -328,7 +368,7 @@
           <v-icon icon="mdi-pencil-outline" color="blue-darken-2" class="mr-3"></v-icon>
           编辑职业信息
         </v-card-title>
-        
+
         <v-card-text class="pa-6 pt-0">
           <v-form ref="editForm" v-model="editFormValid">
             <v-row>
@@ -339,10 +379,10 @@
                   variant="outlined"
                   rounded="lg"
                   bg-color="grey-lighten-5"
-                  :rules="[v => !!v || '职业名称不能为空']"
+                  :rules="[(v) => !!v || '职业名称不能为空']"
                 ></v-text-field>
               </v-col>
-              
+
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="editProfession.price"
@@ -362,7 +402,7 @@
               rounded="lg"
               bg-color="grey-lighten-5"
               rows="4"
-              :rules="[v => !!v || '职业描述不能为空']"
+              :rules="[(v) => !!v || '职业描述不能为空']"
               class="mb-4"
             ></v-textarea>
 
@@ -415,21 +455,16 @@
 
         <v-card-actions class="pa-6 pt-0">
           <v-spacer></v-spacer>
-          <v-btn
-            variant="outlined"
-            color="grey"
-            rounded="lg"
-            @click="closeEditDialog"
-          >
+          <v-btn variant="outlined" color="grey" rounded="lg" @click="closeEditDialog">
             取消
           </v-btn>
           <v-btn
             variant="flat"
             color="blue-lighten-4"
             rounded="lg"
-            @click="updateProfession"
             :disabled="!editFormValid"
             :loading="updating"
+            @click="updateProfession"
           >
             <v-icon icon="mdi-content-save" color="blue-darken-2" class="mr-2"></v-icon>
             保存修改
@@ -445,7 +480,7 @@
           <v-icon icon="mdi-delete-outline" color="red-darken-2" class="mr-3"></v-icon>
           确认删除
         </v-card-title>
-        
+
         <v-card-text class="pa-6 pt-0">
           <div class="text-body-1 mb-4">
             确定要删除职业 <strong>"{{ currentProfession?.name }}"</strong> 吗？
@@ -458,20 +493,15 @@
 
         <v-card-actions class="pa-6 pt-0">
           <v-spacer></v-spacer>
-          <v-btn
-            variant="outlined"
-            color="grey"
-            rounded="lg"
-            @click="closeDeleteDialog"
-          >
+          <v-btn variant="outlined" color="grey" rounded="lg" @click="closeDeleteDialog">
             取消
           </v-btn>
           <v-btn
             variant="flat"
             color="red-lighten-4"
             rounded="lg"
-            @click="deleteProfession"
             :loading="deleting"
+            @click="deleteProfession"
           >
             <v-icon icon="mdi-delete" color="red-darken-2" class="mr-2"></v-icon>
             确认删除
@@ -483,443 +513,480 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { professionServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1';
-import { PROFESSION_STATE } from '@/constants/statusConstants';
-import CategorySelector from '../common/CategorySelector.vue';
+  import { onMounted, onUnmounted, ref, watch } from 'vue'
+  import { professionServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1'
+  import { PROFESSION_STATE } from '@/constants/statusConstants'
+  import CategorySelector from '../common/CategorySelector.vue'
 
-// 响应式数据
-const professionList = ref([]);
-const loading = ref(false);
-const lastId = ref(0);
-const hasMoreData = ref(true);
-const selectedStateIndex = ref(0);
-const rejectReason = ref('');
-const selectedRejectReason = ref('');
-const showRejectDialog = ref(false);
-const currentProfession = ref(null);
-const rejecting = ref(false);
+  // 响应式数据
+  const professionList = ref([])
+  const loading = ref(false)
+  const lastId = ref(0)
+  const hasMoreData = ref(true)
+  const selectedStateIndex = ref(0)
+  const rejectReason = ref('')
+  const selectedRejectReason = ref('')
+  const showRejectDialog = ref(false)
+  const currentProfession = ref(null)
+  const rejecting = ref(false)
 
-// 编辑相关数据
-const showEditDialog = ref(false);
-const editProfession = ref({});
-const editFormValid = ref(false);
-const updating = ref(false);
+  // 编辑相关数据
+  const showEditDialog = ref(false)
+  const editProfession = ref({})
+  const editFormValid = ref(false)
+  const updating = ref(false)
+  const editForm = ref(null)
 
-// 删除相关数据
-const showDeleteDialog = ref(false);
-const deleting = ref(false);
+  // 删除相关数据
+  const showDeleteDialog = ref(false)
+  const deleting = ref(false)
 
-// 动态类别数据
-const mainCategories = ref([]);
-const categoryMapping = ref([]);
+  // 动态类别数据
+  const mainCategories = ref([])
+  const categoryMapping = ref([])
 
-// 动态类别功能函数
-const getCategoryName = (mainCategoryId) => {
-  if (!mainCategories.value || !mainCategoryId) return '未知类别';
-  const category = mainCategories.value.find(cat => cat.id === mainCategoryId);
-  return category ? category.name : '未知类别';
-};
-
-const getSubCategoryName = (mainCategoryId, subCategoryId) => {
-  if (!categoryMapping.value || !mainCategoryId || !subCategoryId) return '未知子类别';
-  const mapping = categoryMapping.value.find(m => m.mainCategoryId === mainCategoryId);
-  if (!mapping) return '未知子类别';
-  const subCategory = mapping.subCategories.find(sub => sub.id === subCategoryId);
-  return subCategory ? subCategory.name : '未知子类别';
-};
-
-// 加载职业类别数据
-const loadProfessionCategories = async () => {
-  try {
-    const data = await systemServiceV1.getProfessionCategories();
-    mainCategories.value = data.mainCategories || [];
-    categoryMapping.value = data.categoryMapping || [];
-  } catch (error) {
-    console.error('加载职业类别失败:', error);
-    // 保持空数组作为默认值
+  // 动态类别功能函数
+  const getCategoryName = (mainCategoryId) => {
+    if (!mainCategories.value || !mainCategoryId) return '未知类别'
+    const category = mainCategories.value.find((cat) => cat.id === mainCategoryId)
+    return category ? category.name : '未知类别'
   }
-};
 
-// 状态选项
-const stateOptions = [
-  { value: PROFESSION_STATE.SUBMITTED, text: '待审核', color: 'orange-lighten-4', icon: 'mdi-clock-outline' },
-  { value: PROFESSION_STATE.APPROVED, text: '已批准', color: 'green-lighten-4', icon: 'mdi-check-circle' },
-  { value: PROFESSION_STATE.REJECTED, text: '已拒绝', color: 'red-lighten-4', icon: 'mdi-close-circle' }
-];
-
-// 预设拒绝理由
-const rejectReasons = [
-  '职业描述不够详细',
-  '技能要求不明确',
-  '重复申请',
-  '不符合平台定位',
-  '信息不完整'
-];
-
-// 预设撤销理由
-const revokeReasons = [
-  '发现信息有误',
-  '用户投诉举报',
-  '不符合最新政策',
-  '重复职业',
-  '质量不达标',
-  '其他管理原因'
-];
-
-// 获取当前选中的状态
-const getCurrentState = () => stateOptions[selectedStateIndex.value]?.value || PROFESSION_STATE.SUBMITTED;
-const getCurrentStateText = () => stateOptions[selectedStateIndex.value]?.text || '待审核';
-
-// 根据状态获取配置
-const getStateConfig = (state) => {
-  return stateOptions.find(option => option.value === state) || stateOptions[0];
-};
-
-// 处理技能数组
-const getSkillsArray = (skills) => {
-  if (!skills) return [];
-  if (typeof skills === 'string') {
-    return skills.split(',').map(s => s.trim()).filter(s => s);
+  const getSubCategoryName = (mainCategoryId, subCategoryId) => {
+    if (!categoryMapping.value || !mainCategoryId || !subCategoryId) return '未知子类别'
+    const mapping = categoryMapping.value.find((m) => m.mainCategoryId === mainCategoryId)
+    if (!mapping) return '未知子类别'
+    const subCategory = mapping.subCategories.find((sub) => sub.id === subCategoryId)
+    return subCategory ? subCategory.name : '未知子类别'
   }
-  return Array.isArray(skills) ? skills : [];
-};
 
-// 获取主分类名称
-// 获取职业申请列表
-const loadProfessionList = async (reset = true) => {
-  if (loading.value) return;
-  
-  try {
-    loading.value = true;
-    
-    const currentLastId = reset ? 0 : lastId.value;
-    const state = getCurrentState();
-    const response = await professionServiceV1.getProfessions(state, currentLastId);
-    
-    if (response.code === 200 && response.data) {
-      const newData = Array.isArray(response.data) ? response.data : [];
-      
-      if (reset) {
-        professionList.value = newData;
-        lastId.value = 0;
-      } else {
-        professionList.value = [...professionList.value, ...newData];
-      }
-      
-      // 更新分页信息
-      if (newData.length > 0) {
-        lastId.value = newData[newData.length - 1].id;
-        hasMoreData.value = newData.length >= 20; // 假设每页20条
-      } else {
-        hasMoreData.value = false;
-      }
-    } else {
-      console.error('获取职业申请列表失败:', response.message);
-      if (reset) {
-        professionList.value = [];
-      }
+  // 加载职业类别数据
+  const loadProfessionCategories = async () => {
+    try {
+      const data = await systemServiceV1.getProfessionCategories()
+      mainCategories.value = data.mainCategories || []
+      categoryMapping.value = data.categoryMapping || []
+    } catch (error) {
+      console.error('加载职业类别失败:', error)
+      // 保持空数组作为默认值
     }
-  } catch (error) {
-    console.error('获取职业申请列表错误:', error);
-    if (reset) {
-      professionList.value = [];
+  }
+
+  // 状态选项
+  const stateOptions = [
+    {
+      value: PROFESSION_STATE.SUBMITTED,
+      text: '待审核',
+      color: 'orange-lighten-4',
+      icon: 'mdi-clock-outline',
+    },
+    {
+      value: PROFESSION_STATE.APPROVED,
+      text: '已批准',
+      color: 'green-lighten-4',
+      icon: 'mdi-check-circle',
+    },
+    {
+      value: PROFESSION_STATE.REJECTED,
+      text: '已拒绝',
+      color: 'red-lighten-4',
+      icon: 'mdi-close-circle',
+    },
+  ]
+
+  // 预设拒绝理由
+  const rejectReasons = [
+    '职业描述不够详细',
+    '技能要求不明确',
+    '重复申请',
+    '不符合平台定位',
+    '信息不完整',
+  ]
+
+  // 预设撤销理由
+  const revokeReasons = [
+    '发现信息有误',
+    '用户投诉举报',
+    '不符合最新政策',
+    '重复职业',
+    '质量不达标',
+    '其他管理原因',
+  ]
+
+  // 获取当前选中的状态
+  const getCurrentState = () =>
+    stateOptions[selectedStateIndex.value]?.value || PROFESSION_STATE.SUBMITTED
+  const getCurrentStateText = () => stateOptions[selectedStateIndex.value]?.text || '待审核'
+
+  // 根据状态获取配置
+  const getStateConfig = (state) => {
+    return stateOptions.find((option) => option.value === state) || stateOptions[0]
+  }
+
+  // 处理技能数组
+  const getSkillsArray = (skills) => {
+    if (!skills) return []
+    if (typeof skills === 'string') {
+      return skills
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s)
     }
-  } finally {
-    loading.value = false;
+    return Array.isArray(skills) ? skills : []
   }
-};
 
-// 加载更多数据
-const loadMoreData = () => {
-  if (!loading.value && hasMoreData.value) {
-    loadProfessionList(false);
-  }
-};
+  // 获取主分类名称
+  // 获取职业申请列表
+  const loadProfessionList = async (reset = true) => {
+    if (loading.value) return
 
-// 滚动监听处理（带节流）
-let isScrollLoading = false;
-const handleScroll = () => {
-  // 防止重复触发
-  if (isScrollLoading || loading.value || !hasMoreData.value) {
-    return;
-  }
-  
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-  const windowHeight = window.innerHeight;
-  const documentHeight = document.documentElement.scrollHeight;
-  
-  // 当滚动到距离底部100px时触发加载
-  if (scrollTop + windowHeight >= documentHeight - 100) {
-    isScrollLoading = true;
-    loadMoreData();
-    // 延迟重置标志，避免过于频繁触发
-    setTimeout(() => {
-      isScrollLoading = false;
-    }, 500);
-  }
-};
+    try {
+      loading.value = true
 
-// 状态改变处理
-const onStateChange = () => {
-  loadProfessionList(true);
-};
+      const currentLastId = reset ? 0 : lastId.value
+      const state = getCurrentState()
+      const response = await professionServiceV1.getProfessions(state, currentLastId)
 
-// 操作职业申请
-const operateProfession = async (profession, action, reason = '') => {
-  try {
-    const response = await professionServiceV1.approveProfession(profession.id, action, reason);
-    
-    if (response.code === 200) {
-      // 更新本地数据
-      const index = professionList.value.findIndex(p => p.id === profession.id);
-      if (index !== -1) {
-        if (action === 'APPROVE') {
-          professionList.value[index].state = PROFESSION_STATE.APPROVED;
-          professionList.value[index].rejectedReason = ''; // 清空拒绝原因
-        } else if (action === 'REJECT') {
-          professionList.value[index].state = PROFESSION_STATE.REJECTED;
-          professionList.value[index].rejectedReason = reason;
+      if (response.code === 200 && response.data) {
+        const newData = Array.isArray(response.data) ? response.data : []
+
+        if (reset) {
+          professionList.value = newData
+          lastId.value = 0
+        } else {
+          professionList.value = [...professionList.value, ...newData]
+        }
+
+        // 更新分页信息
+        if (newData.length > 0) {
+          lastId.value = newData[newData.length - 1].id
+          hasMoreData.value = newData.length >= 20 // 假设每页20条
+        } else {
+          hasMoreData.value = false
+        }
+      } else {
+        console.error('获取职业申请列表失败:', response.message)
+        if (reset) {
+          professionList.value = []
         }
       }
-      
-      // 如果当前筛选状态与操作结果不匹配，从列表中移除
-      const currentState = getCurrentState();
-      if ((action === 'APPROVE' && currentState !== PROFESSION_STATE.APPROVED) ||
-          (action === 'REJECT' && currentState !== PROFESSION_STATE.REJECTED)) {
-        professionList.value = professionList.value.filter(p => p.id !== profession.id);
+    } catch (error) {
+      console.error('获取职业申请列表错误:', error)
+      if (reset) {
+        professionList.value = []
       }
-      
-      return true;
-    } else {
-      console.error('操作失败:', response.message);
-      return false;
+    } finally {
+      loading.value = false
     }
-  } catch (error) {
-    console.error('操作错误:', error);
-    return false;
   }
-};
 
-// 通过申请
-const approveProfession = async (profession) => {
-  profession.approving = true;
-  const success = await operateProfession(profession, 'APPROVE');
-  profession.approving = false;
-  
-  if (success) {
-    // 可以添加成功提示
+  // 加载更多数据
+  const loadMoreData = () => {
+    if (!loading.value && hasMoreData.value) {
+      loadProfessionList(false)
+    }
   }
-};
 
-// 恢复申请 - 将已拒绝的职业重新通过
-const restoreProfession = async (profession) => {
-  // 显示确认对话框
-  const confirmed = confirm(`确定要通过职业申请"${profession.name}"吗？\n通过后该申请将变为已通过状态。`);
-  if (!confirmed) {
-    return;
+  // 滚动监听处理（带节流）
+  let isScrollLoading = false
+  const handleScroll = () => {
+    // 防止重复触发
+    if (isScrollLoading || loading.value || !hasMoreData.value) {
+      return
+    }
+
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+    const windowHeight = window.innerHeight
+    const documentHeight = document.documentElement.scrollHeight
+
+    // 当滚动到距离底部100px时触发加载
+    if (scrollTop + windowHeight >= documentHeight - 100) {
+      isScrollLoading = true
+      loadMoreData()
+      // 延迟重置标志，避免过于频繁触发
+      setTimeout(() => {
+        isScrollLoading = false
+      }, 500)
+    }
   }
-  
-  profession.restoring = true;
-  const success = await operateProfession(profession, 'APPROVE');
-  profession.restoring = false;
-  
-  if (success) {
-    // 可以添加成功提示
+
+  // 状态改变处理
+  const onStateChange = () => {
+    loadProfessionList(true)
   }
-};
 
-// 显示拒绝对话框
-const showRejectModal = (profession) => {
-  currentProfession.value = profession;
-  rejectReason.value = '';
-  selectedRejectReason.value = '';
-  showRejectDialog.value = true;
-};
+  // 操作职业申请
+  const operateProfession = async (profession, action, reason = '') => {
+    try {
+      const response = await professionServiceV1.approveProfession(profession.id, action, reason)
 
-// 关闭拒绝对话框
-const closeRejectDialog = () => {
-  showRejectDialog.value = false;
-  currentProfession.value = null;
-  rejectReason.value = '';
-  selectedRejectReason.value = '';
-};
+      if (response.code === 200) {
+        // 更新本地数据
+        const index = professionList.value.findIndex((p) => p.id === profession.id)
+        if (index !== -1) {
+          if (action === 'APPROVE') {
+            professionList.value[index].state = PROFESSION_STATE.APPROVED
+            professionList.value[index].rejectedReason = '' // 清空拒绝原因
+          } else if (action === 'REJECT') {
+            professionList.value[index].state = PROFESSION_STATE.REJECTED
+            professionList.value[index].rejectedReason = reason
+          }
+        }
 
-// 拒绝申请
-const rejectProfession = async () => {
-  if (!rejectReason.value.trim()) {
-    return;
+        // 如果当前筛选状态与操作结果不匹配，从列表中移除
+        const currentState = getCurrentState()
+        if (
+          (action === 'APPROVE' && currentState !== PROFESSION_STATE.APPROVED) ||
+          (action === 'REJECT' && currentState !== PROFESSION_STATE.REJECTED)
+        ) {
+          professionList.value = professionList.value.filter((p) => p.id !== profession.id)
+        }
+
+        return true
+      } else {
+        console.error('操作失败:', response.message)
+        return false
+      }
+    } catch (error) {
+      console.error('操作错误:', error)
+      return false
+    }
   }
-  
-  try {
-    rejecting.value = true;
-    const success = await operateProfession(currentProfession.value, 'REJECT', rejectReason.value);
+
+  // 通过申请
+  const approveProfession = async (profession) => {
+    profession.approving = true
+    const success = await operateProfession(profession, 'APPROVE')
+    profession.approving = false
+
     if (success) {
-      closeRejectDialog();
+      // 可以添加成功提示
     }
-  } finally {
-    rejecting.value = false;
   }
-};
 
-// 监听选中的拒绝理由
-watch(selectedRejectReason, (newValue) => {
-  if (newValue) {
-    rejectReason.value = newValue;
+  // 恢复申请 - 将已拒绝的职业重新通过
+  const restoreProfession = async (profession) => {
+    // 显示确认对话框
+    // TODO
+    /*
+    const confirmed = confirm(
+      `确定要通过职业申请"${profession.name}"吗？\n通过后该申请将变为已通过状态。`
+    ) 
+    if (!confirmed) {
+      return
+    }
+    */
+
+    profession.restoring = true
+    const success = await operateProfession(profession, 'APPROVE')
+    profession.restoring = false
+
+    if (success) {
+      // 可以添加成功提示
+    }
   }
-});
 
-// 显示编辑对话框
-const showEditModal = (profession) => {
-  currentProfession.value = profession;
-  editProfession.value = {
-    id: profession.id,
-    name: profession.name || '',
-    description: profession.description || '',
-    price: profession.price || '',
-    skillsText: profession.skills || '',
-    mainCategory: profession.mainCategory || null,
-    subCategory: profession.subCategory || null,
-    icon: profession.icon || 'mdi-briefcase',
-    rejectedReason: profession.rejectedReason || '',
-    state: profession.state
-  };
-  
-  showEditDialog.value = true;
-};
+  // 显示拒绝对话框
+  const showRejectModal = (profession) => {
+    currentProfession.value = profession
+    rejectReason.value = ''
+    selectedRejectReason.value = ''
+    showRejectDialog.value = true
+  }
 
-// 关闭编辑对话框
-const closeEditDialog = () => {
-  showEditDialog.value = false;
-  currentProfession.value = null;
-  editProfession.value = {};
-  editFormValid.value = false;
-};
+  // 关闭拒绝对话框
+  const closeRejectDialog = () => {
+    showRejectDialog.value = false
+    currentProfession.value = null
+    rejectReason.value = ''
+    selectedRejectReason.value = ''
+  }
 
-// 更新职业信息
-const updateProfession = async () => {
-  if (!editFormValid.value) return;
-  
-  try {
-    updating.value = true;
-    
-    // 准备更新数据
-    const updateData = {
-      id: editProfession.value.id,
-      name: editProfession.value.name,
-      description: editProfession.value.description,
-      price: editProfession.value.price || '',
-      skills: editProfession.value.skillsText || '',
-      mainCategory: editProfession.value.mainCategory || 0,
-      subCategory: editProfession.value.subCategory || 0,
-      icon: editProfession.value.icon || 'mdi-briefcase',
-      rejectedReason: editProfession.value.rejectedReason || ''
-    };
-    
-    const response = await professionServiceV1.updateProfession(profession.id, updateData);
-    
-    if (response.code === 200) {
-      // 更新本地数据
-      const index = professionList.value.findIndex(p => p.id === editProfession.value.id);
-      if (index !== -1) {
-        professionList.value[index] = {
-          ...professionList.value[index],
-          ...updateData
-        };
+  // 拒绝申请
+  const rejectProfession = async () => {
+    if (!rejectReason.value.trim()) {
+      return
+    }
+
+    try {
+      rejecting.value = true
+      const success = await operateProfession(currentProfession.value, 'REJECT', rejectReason.value)
+      if (success) {
+        closeRejectDialog()
       }
-      
-      closeEditDialog();
-      // 可以添加成功提示
-    } else {
-      console.error('更新职业信息失败:', response.message);
+    } finally {
+      rejecting.value = false
     }
-  } catch (error) {
-    console.error('更新职业信息错误:', error);
-  } finally {
-    updating.value = false;
   }
-};
 
-// 显示删除确认对话框
-const showDeleteConfirm = (profession) => {
-  currentProfession.value = profession;
-  showDeleteDialog.value = true;
-};
-
-// 关闭删除确认对话框
-const closeDeleteDialog = () => {
-  showDeleteDialog.value = false;
-  currentProfession.value = null;
-};
-
-// 删除职业申请
-const deleteProfession = async () => {
-  if (!currentProfession.value) return;
-  
-  try {
-    deleting.value = true;
-    
-    const response = await professionServiceV1.deleteProfession(currentProfession.value.id);
-    
-    if (response.code === 200) {
-      // 从本地列表中移除
-      professionList.value = professionList.value.filter(p => p.id !== currentProfession.value.id);
-      
-      closeDeleteDialog();
-      // 可以添加成功提示
-    } else {
-      console.error('删除职业申请失败:', response.message);
+  // 监听选中的拒绝理由
+  watch(selectedRejectReason, (newValue) => {
+    if (newValue) {
+      rejectReason.value = newValue
     }
-  } catch (error) {
-    console.error('删除职业申请错误:', error);
-  } finally {
-    deleting.value = false;
+  })
+
+  // 显示编辑对话框
+  const showEditModal = (profession) => {
+    currentProfession.value = profession
+    editProfession.value = {
+      id: profession.id,
+      name: profession.name || '',
+      description: profession.description || '',
+      price: profession.price || '',
+      skillsText: profession.skills || '',
+      mainCategory: profession.mainCategory || null,
+      subCategory: profession.subCategory || null,
+      icon: profession.icon || 'mdi-briefcase',
+      rejectedReason: profession.rejectedReason || '',
+      state: profession.state,
+    }
+
+    showEditDialog.value = true
   }
-};
 
-// 组件挂载时加载数据和添加滚动监听
-onMounted(() => {
-  loadProfessionCategories();
-  loadProfessionList(true);
-  // 添加滚动监听
-  window.addEventListener('scroll', handleScroll);
-});
+  // 关闭编辑对话框
+  const closeEditDialog = () => {
+    showEditDialog.value = false
+    currentProfession.value = null
+    editProfession.value = {}
+    editFormValid.value = false
+  }
 
-// 组件卸载时移除滚动监听
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll);
-});
+  // 更新职业信息
+  const updateProfession = async () => {
+    if (!editFormValid.value) return
+
+    try {
+      updating.value = true
+
+      // 准备更新数据
+      const updateData = {
+        id: editProfession.value.id,
+        name: editProfession.value.name,
+        description: editProfession.value.description,
+        price: editProfession.value.price || '',
+        skills: editProfession.value.skillsText || '',
+        mainCategory: editProfession.value.mainCategory || 0,
+        subCategory: editProfession.value.subCategory || 0,
+        icon: editProfession.value.icon || 'mdi-briefcase',
+        rejectedReason: editProfession.value.rejectedReason || '',
+      }
+
+      const response = await professionServiceV1.updateProfession(
+        editProfession.value.id,
+        updateData
+      )
+
+      if (response.code === 200) {
+        // 更新本地数据
+        const index = professionList.value.findIndex((p) => p.id === editProfession.value.id)
+        if (index !== -1) {
+          professionList.value[index] = {
+            ...professionList.value[index],
+            ...updateData,
+          }
+        }
+
+        closeEditDialog()
+        // 可以添加成功提示
+      } else {
+        console.error('更新职业信息失败:', response.message)
+      }
+    } catch (error) {
+      console.error('更新职业信息错误:', error)
+    } finally {
+      updating.value = false
+    }
+  }
+
+  // 显示删除确认对话框
+  const showDeleteConfirm = (profession) => {
+    currentProfession.value = profession
+    showDeleteDialog.value = true
+  }
+
+  // 关闭删除确认对话框
+  const closeDeleteDialog = () => {
+    showDeleteDialog.value = false
+    currentProfession.value = null
+  }
+
+  // 删除职业申请
+  const deleteProfession = async () => {
+    if (!currentProfession.value) return
+
+    try {
+      deleting.value = true
+
+      const response = await professionServiceV1.deleteProfession(currentProfession.value.id)
+
+      if (response.code === 200) {
+        // 从本地列表中移除
+        professionList.value = professionList.value.filter(
+          (p) => p.id !== currentProfession.value.id
+        )
+
+        closeDeleteDialog()
+        // 可以添加成功提示
+      } else {
+        console.error('删除职业申请失败:', response.message)
+      }
+    } catch (error) {
+      console.error('删除职业申请错误:', error)
+    } finally {
+      deleting.value = false
+    }
+  }
+
+  // 组件挂载时加载数据和添加滚动监听
+  onMounted(() => {
+    loadProfessionCategories()
+    loadProfessionList(true)
+    // 添加滚动监听
+    window.addEventListener('scroll', handleScroll)
+  })
+
+  // 组件卸载时移除滚动监听
+  onUnmounted(() => {
+    window.removeEventListener('scroll', handleScroll)
+  })
 </script>
 
 <style scoped>
-.profession-management {
-  padding: 0;
-}
+  .profession-management {
+    padding: 0;
+  }
 
-/* 卡片悬停效果 */
-:deep(.v-card[hover]:hover) {
-  transform: translateY(-2px);
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-}
+  /* 状态和操作区域最小宽度 */
+  .status-actions-area {
+    min-width: 200px;
+  }
 
-/* 边框样式 */
-.border {
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-}
+  /* 卡片悬停效果 */
+  :deep(.v-card[hover]:hover) {
+    transform: translateY(-2px);
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  }
 
-/* 芯片组样式优化 */
-:deep(.v-chip-group) {
-  column-gap: 8px;
-  row-gap: 8px;
-}
+  /* 边框样式 */
+  .border {
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  }
 
-/* 拒绝原因文本换行 */
-.rejection-reason {
-  word-wrap: break-word;
-  word-break: break-word;
-  white-space: normal;
-  line-height: 1.4;
-  max-width: 180px;
-}
+  /* 芯片组样式优化 */
+  :deep(.v-chip-group) {
+    column-gap: 8px;
+    row-gap: 8px;
+  }
+
+  /* 拒绝原因文本换行 */
+  .rejection-reason {
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.4;
+    max-width: 180px;
+  }
 </style>

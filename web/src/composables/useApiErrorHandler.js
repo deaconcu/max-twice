@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n'
 /**
  * API错误处理工具，统一处理错误消息的国际化
  */
-export function useApiErrorHandler() {
+export const useApiErrorHandler = () => {
   const { t } = useI18n()
 
   /**
@@ -55,30 +55,30 @@ export function useApiErrorHandler() {
    */
   const tryTranslateMessage = (message) => {
     if (!message) return ''
-    
+
     // 尝试将常见的后端错误消息映射到国际化key
     const errorMessageMap = {
-      '用户不存在': 'user.not.found',
-      '密码错误': 'user.password.wrong',
-      '邮箱未验证': 'user.email.not.validated',
-      '课程不存在': 'course.not.found',
-      '权限不足': 'message.permissionDenied',
-      '参数错误': 'message.validationError',
-      '系统繁忙': 'message.systemError',
+      用户不存在: 'user.not.found',
+      密码错误: 'user.password.wrong',
+      邮箱未验证: 'user.email.not.validated',
+      课程不存在: 'course.not.found',
+      权限不足: 'message.permissionDenied',
+      参数错误: 'message.validationError',
+      系统繁忙: 'message.systemError',
       'User not found': 'user.not.found',
       'Invalid password': 'user.password.wrong',
       'Email not verified': 'user.email.not.validated',
       'Course not found': 'course.not.found',
       'Permission denied': 'message.permissionDenied',
       'Validation error': 'message.validationError',
-      'System busy': 'message.systemError'
+      'System busy': 'message.systemError',
     }
 
     const translationKey = errorMessageMap[message]
     if (translationKey) {
       try {
         return t(translationKey)
-      } catch (e) {
+      } catch {
         // 如果翻译失败，返回原消息
         return message
       }
@@ -109,6 +109,6 @@ export function useApiErrorHandler() {
   return {
     handleApiError,
     tryTranslateMessage,
-    handleValidationErrors
+    handleValidationErrors,
   }
 }

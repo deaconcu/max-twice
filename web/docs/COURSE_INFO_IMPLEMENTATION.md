@@ -8,7 +8,7 @@
 // 后端返回数据格式
 Map<String, Object> data = {
     "parentCourse": parentCourse,     // CourseDTOV2 类型
-    "course": course,                 // CourseDTOV2 类型  
+    "course": course,                 // CourseDTOV2 类型
     "subCourseList": subCourseList   // List<CourseDTOV2> 类型
 }
 ```
@@ -16,16 +16,19 @@ Map<String, Object> data = {
 ## 实现逻辑
 
 ### 1. 标题显示
+
 - **标题来源**：从 `parentCourse.name` 中获取
 - **备用方案**：如果没有 `parentCourse`，则显示 `course.name`
 
 ### 2. 课程类型判断
+
 - **主课程**：`course.id === parentCourse.id`
 - **子课程**：`course.id !== parentCourse.id`
 
 ### 3. 显示差异
 
 #### 主课程 (isMainCourse = true)
+
 - 标题：显示 `parentCourse.name`
 - 子课程标签：不显示
 - 子课程列表标题：显示 "子课程列表"
@@ -34,48 +37,54 @@ Map<String, Object> data = {
 - 订阅对象：当前课程
 
 #### 子课程 (isMainCourse = false)
+
 - 标题：显示 `parentCourse.name`
 - 子课程标签：显示 "子课程: {course.name}"
-- 子课程列表标题：显示 "同级课程"  
+- 子课程列表标题：显示 "同级课程"
 - 申请子课程按钮：不显示
 - 返回主课程按钮：显示
 - 订阅对象：父课程
 - 正在学习标签：在子课程列表中，当前课程显示 "正在学习"
 
 ### 4. 子课程列表显示
+
 - **数据来源**：从 `subCourseList` 中获取
-- **正在学习标识**：在子课程中，当 `subcourse.id === course.id` 时显示 "正在学习" 标签
+- **正在学习标识**：在子课程中，当 `subcourse.id === course.id`
+  时显示 "正在学习" 标签
 
 ## 修改的文件
 
 ### `/src/views/Read.vue`
 
 #### 新增响应式变量
+
 ```javascript
-const subCourseList = ref([]);     // 子课程列表
-const isMainCourse = ref(true);    // 是否为主课程
+const subCourseList = ref([]) // 子课程列表
+const isMainCourse = ref(true) // 是否为主课程
 ```
 
 #### 修改数据处理逻辑
+
 ```javascript
 // 处理新的数据格式
 if (response.data.parentCourse) {
-  parentCourseInfo.value = response.data.parentCourse;
+  parentCourseInfo.value = response.data.parentCourse
 }
 
 if (response.data.subCourseList) {
-  subCourseList.value = response.data.subCourseList;
+  subCourseList.value = response.data.subCourseList
 }
 
 // 判断是否为主课程
 if (response.data.course && response.data.parentCourse) {
-  isMainCourse.value = response.data.course.id === response.data.parentCourse.id;
+  isMainCourse.value = response.data.course.id === response.data.parentCourse.id
 } else {
-  isMainCourse.value = true;
+  isMainCourse.value = true
 }
 ```
 
 #### 模板更新
+
 - 标题显示逻辑更新
 - 子课程标签条件显示
 - 子课程列表数据源更新
@@ -85,6 +94,7 @@ if (response.data.course && response.data.parentCourse) {
 ## 测试数据
 
 参考 `/src/utils/testCourseInfo.js` 中的模拟数据：
+
 - `mockMainCourseData`：主课程测试数据
 - `mockSubCourseData`：子课程测试数据
 

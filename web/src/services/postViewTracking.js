@@ -1,12 +1,12 @@
 /**
  * Post瀑布流浏览量统计服务
- * 
+ *
  * 功能说明：
  * - 使用Intersection Observer API检测post的可见性
  * - 基于停留时间判断是否为有效浏览
  * - 批量提交优化性能
  * - 防重复统计机制
- * 
+ *
  * @author Claude
  * @since 2024-08-24
  */
@@ -18,22 +18,22 @@ class PostViewTracker {
   constructor() {
     // 配置参数
     this.config = {
-      visibilityThreshold: 0.5,      // post需要露出50%才算进入可视区域
-      minViewTime: 2500,             // 有效浏览的最小停留时间（毫秒）
-      batchSize: 8,                  // 批量提交的最大数量
-      batchInterval: 4000,           // 批量提交的时间间隔（毫秒）
-      duplicateWindow: 45000,        // 防重复统计的时间窗口（毫秒）
+      visibilityThreshold: 0.5, // post需要露出50%才算进入可视区域
+      minViewTime: 2500, // 有效浏览的最小停留时间（毫秒）
+      batchSize: 8, // 批量提交的最大数量
+      batchInterval: 4000, // 批量提交的时间间隔（毫秒）
+      duplicateWindow: 45000, // 防重复统计的时间窗口（毫秒）
       rootMargin: '0px 0px -5% 0px', // 可视区域的根边距
-      debug: false                   // 是否启用调试日志
+      debug: false, // 是否启用调试日志
     }
 
     // 核心状态
     this.observer = null
-    this.viewStartTimes = new Map()    // postId -> 开始浏览时间
-    this.recentViews = new Set()       // 最近浏览过的postId集合（防重复）
-    this.pendingViews = []             // 待提交的浏览记录队列
-    this.observedElements = new Map()  // postId -> DOM元素映射
-    
+    this.viewStartTimes = new Map() // postId -> 开始浏览时间
+    this.recentViews = new Set() // 最近浏览过的postId集合（防重复）
+    this.pendingViews = [] // 待提交的浏览记录队列
+    this.observedElements = new Map() // postId -> DOM元素映射
+
     // 定时器
     this.batchTimer = null
     this.cleanupTimer = null
@@ -53,27 +53,30 @@ class PostViewTracker {
       return
     }
 
-    this.observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        const postId = entry.target.dataset.postId
-        
-        if (!postId) {
-          this.log('元素缺少postId属性', entry.target)
-          return
-        }
+    this.observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const { postId } = entry.target.dataset
 
-        if (entry.isIntersecting) {
-          // post进入可视区域
-          this.handlePostEnterView(postId)
-        } else {
-          // post离开可视区域
-          this.handlePostLeaveView(postId)
-        }
-      })
-    }, {
-      threshold: this.config.visibilityThreshold,
-      rootMargin: this.config.rootMargin
-    })
+          if (!postId) {
+            this.log('元素缺少postId属性', entry.target)
+            return
+          }
+
+          if (entry.isIntersecting) {
+            // post进入可视区域
+            this.handlePostEnterView(postId)
+          } else {
+            // post离开可视区域
+            this.handlePostLeaveView(postId)
+          }
+        })
+      },
+      {
+        threshold: this.config.visibilityThreshold,
+        rootMargin: this.config.rootMargin,
+      }
+    )
 
     this.log('Intersection Observer 已初始化')
   }
@@ -96,10 +99,10 @@ class PostViewTracker {
     // 记录开始浏览时间
     const startTime = Date.now()
     this.viewStartTimes.set(postId, startTime)
-    
-    this.log('Post进入可视区域，开始跟踪', { 
-      postId, 
-      startTime: new Date(startTime).toISOString() 
+
+    this.log('Post进入可视区域，开始跟踪', {
+      postId,
+      startTime: new Date(startTime).toISOString(),
     })
   }
 
@@ -108,31 +111,31 @@ class PostViewTracker {
    */
   handlePostLeaveView(postId) {
     const startTime = this.viewStartTimes.get(postId)
-    
+
     if (!startTime) {
       return
     }
 
     // 计算在可视区域的停留时间
     const viewDuration = Date.now() - startTime
-    
+
     // 清除开始时间记录
     this.viewStartTimes.delete(postId)
 
-    this.log('Post离开可视区域', { 
-      postId, 
+    this.log('Post离开可视区域', {
+      postId,
       viewDuration,
-      threshold: this.config.minViewTime
+      threshold: this.config.minViewTime,
     })
 
     // 检查是否达到有效浏览的时间阈值
     if (viewDuration >= this.config.minViewTime) {
       this.recordValidView(postId, viewDuration)
     } else {
-      this.log('浏览时间不足，不统计', { 
-        postId, 
-        viewDuration, 
-        required: this.config.minViewTime 
+      this.log('浏览时间不足，不统计', {
+        postId,
+        viewDuration,
+        required: this.config.minViewTime,
       })
     }
   }
@@ -142,12 +145,12 @@ class PostViewTracker {
    */
   recordValidView(postId, viewDuration) {
     const numericPostId = parseInt(postId)
-    
+
     // 创建浏览记录
     const viewRecord = {
       postId: numericPostId,
-      viewDuration: viewDuration,
-      timestamp: Date.now()
+      viewDuration,
+      timestamp: Date.now(),
     }
 
     // 添加到待提交队列
@@ -174,7 +177,7 @@ class PostViewTracker {
    */
   recordManualView(postId, trigger = 'manual_view') {
     const postIdStr = postId.toString()
-    
+
     // 如果最近已经统计过，跳过
     if (this.recentViews.has(postIdStr)) {
       this.log('Post最近已统计过，跳过手动记录', { postId, trigger })
@@ -183,11 +186,11 @@ class PostViewTracker {
 
     // 记录手动浏览，使用固定的有效浏览时长
     const manualViewDuration = this.config.minViewTime + 1000 // 比最小时长多1秒
-    
-    this.log('手动记录浏览', { 
-      postId, 
+
+    this.log('手动记录浏览', {
+      postId,
       trigger,
-      viewDuration: manualViewDuration 
+      viewDuration: manualViewDuration,
     })
 
     this.recordValidView(postIdStr, manualViewDuration)
@@ -200,8 +203,8 @@ class PostViewTracker {
   checkBatchSubmit() {
     // 如果达到批量大小，立即提交
     if (this.pendingViews.length >= this.config.batchSize) {
-      this.log('达到批量大小，立即提交', { 
-        pendingCount: this.pendingViews.length 
+      this.log('达到批量大小，立即提交', {
+        pendingCount: this.pendingViews.length,
       })
       this.submitBatch()
       return
@@ -214,8 +217,8 @@ class PostViewTracker {
 
     this.batchTimer = setTimeout(() => {
       if (this.pendingViews.length > 0) {
-        this.log('延时提交触发', { 
-          pendingCount: this.pendingViews.length 
+        this.log('延时提交触发', {
+          pendingCount: this.pendingViews.length,
         })
         this.submitBatch()
       }
@@ -238,10 +241,10 @@ class PostViewTracker {
 
     // 取出所有待提交的记录
     const viewsToSubmit = this.pendingViews.splice(0)
-    
-    this.log('开始批量提交', { 
+
+    this.log('开始批量提交', {
       count: viewsToSubmit.length,
-      views: viewsToSubmit.map(v => ({ postId: v.postId, duration: v.viewDuration }))
+      views: viewsToSubmit.map((v) => ({ postId: v.postId, duration: v.viewDuration })),
     })
 
     // 获取当前用户ID
@@ -254,20 +257,20 @@ class PostViewTracker {
         // 调用后端API记录浏览（articleId参数传入postId）
         const response = await learnService.recordView(
           viewRecord.postId, // articleId参数传入postId
-          userId,            // 用户ID
-          null              // IP地址由后端获取
+          userId, // 用户ID
+          null // IP地址由后端获取
         )
 
-        this.log('单个浏览记录提交成功', { 
+        this.log('单个浏览记录提交成功', {
           postId: viewRecord.postId,
-          response: response?.data 
+          response: response?.data,
         })
 
         return { success: true, postId: viewRecord.postId }
       } catch (error) {
-        this.log('单个浏览记录提交失败', { 
+        this.log('单个浏览记录提交失败', {
           postId: viewRecord.postId,
-          error: error.message 
+          error: error.message,
         })
 
         return { success: false, postId: viewRecord.postId, error }
@@ -276,23 +279,22 @@ class PostViewTracker {
 
     try {
       const results = await Promise.allSettled(submitPromises)
-      
-      const successCount = results.filter(result => 
-        result.status === 'fulfilled' && result.value.success
+
+      const successCount = results.filter(
+        (result) => result.status === 'fulfilled' && result.value.success
       ).length
-      
+
       const failCount = viewsToSubmit.length - successCount
 
-      this.log('批量提交完成', { 
+      this.log('批量提交完成', {
         total: viewsToSubmit.length,
         success: successCount,
-        failed: failCount
+        failed: failCount,
       })
 
       if (failCount > 0) {
         console.warn(`[PostViewTracker] ${failCount} 个浏览记录提交失败`)
       }
-
     } catch (error) {
       this.log('批量提交过程出错', { error: error.message })
     }
@@ -314,10 +316,10 @@ class PostViewTracker {
 
     // 设置元素的data属性
     element.dataset.postId = postId.toString()
-    
+
     // 开始观察
     this.observer.observe(element)
-    
+
     // 记录映射关系
     this.observedElements.set(postId.toString(), element)
 
@@ -333,11 +335,11 @@ class PostViewTracker {
     }
 
     const element = this.observedElements.get(postId.toString())
-    
+
     if (element) {
       this.observer.unobserve(element)
       this.observedElements.delete(postId.toString())
-      
+
       // 如果正在跟踪，停止跟踪
       if (this.viewStartTimes.has(postId)) {
         this.handlePostLeaveView(postId)
@@ -353,16 +355,16 @@ class PostViewTracker {
   autoObservePosts(container = document) {
     // 查找所有带有data-post-id属性的元素
     const postElements = container.querySelectorAll('[data-post-id]')
-    
-    postElements.forEach(element => {
-      const postId = element.dataset.postId
+
+    postElements.forEach((element) => {
+      const { postId } = element.dataset
       if (postId && !this.observedElements.has(postId)) {
         this.observePost(element, postId)
       }
     })
 
-    this.log('自动扫描并观察Posts', { 
-      found: postElements.length
+    this.log('自动扫描并观察Posts', {
+      found: postElements.length,
     })
   }
 
@@ -386,9 +388,12 @@ class PostViewTracker {
    * 启动定期清理定时器
    */
   startCleanupTimer() {
-    this.cleanupTimer = setInterval(() => {
-      this.performCleanup()
-    }, 5 * 60 * 1000) // 每5分钟清理一次
+    this.cleanupTimer = setInterval(
+      () => {
+        this.performCleanup()
+      },
+      5 * 60 * 1000
+    ) // 每5分钟清理一次
   }
 
   /**
@@ -449,19 +454,19 @@ class PostViewTracker {
       const userStore = useUserStore()
       const userId = userStore.userId || null
 
-      this.pendingViews.forEach(viewRecord => {
+      this.pendingViews.forEach((viewRecord) => {
         try {
           const params = new URLSearchParams({
             articleId: viewRecord.postId.toString(),
-            userId: userId || ''
+            userId: userId || '',
           })
-          
+
           navigator.sendBeacon('/api/stats/view', params)
           this.log('Beacon发送成功', { postId: viewRecord.postId })
         } catch (error) {
-          this.log('Beacon发送异常', { 
-            postId: viewRecord.postId, 
-            error: error.message 
+          this.log('Beacon发送异常', {
+            postId: viewRecord.postId,
+            error: error.message,
           })
         }
       })
@@ -517,11 +522,11 @@ class PostViewTracker {
   getStatus() {
     return {
       config: { ...this.config },
-      isObserverActive: !!this.observer,
+      isObserverActive: Boolean(this.observer),
       currentlyTracking: this.viewStartTimes.size,
       pendingSubmissions: this.pendingViews.length,
       recentViewsCount: this.recentViews.size,
-      observedPostsCount: this.observedElements.size
+      observedPostsCount: this.observedElements.size,
     }
   }
 
@@ -546,16 +551,16 @@ let globalTracker = null
 /**
  * 获取全局PostViewTracker实例
  */
-export function getPostViewTracker() {
+export const getPostViewTracker = function () {
   if (!globalTracker) {
     globalTracker = new PostViewTracker()
-    
+
     // 在开发环境启用调试日志
     if (import.meta.env.DEV) {
       globalTracker.updateConfig({ debug: true })
     }
   }
-  
+
   return globalTracker
 }
 
@@ -630,7 +635,7 @@ export const postViewTracking = {
       globalTracker.destroy()
       globalTracker = null
     }
-  }
+  },
 }
 
 export default postViewTracking

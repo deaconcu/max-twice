@@ -1,45 +1,58 @@
 <script setup>
-import { defineProps, defineEmits } from 'vue';
-import { useI18n } from 'vue-i18n';
+  import { defineEmits, defineProps, toRefs } from 'vue'
+  import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n();
+  const { t } = useI18n()
 
-const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    default: false
-  },
-  courseName: {
-    type: String,
-    default: ''
+  const props = defineProps({
+    modelValue: {
+      type: Boolean,
+      default: false,
+    },
+    courseName: {
+      type: String,
+      default: '',
+    },
+  })
+
+  const { modelValue, courseName } = toRefs(props)
+  const emit = defineEmits(['update:modelValue'])
+
+  const closeDialog = () => {
+    emit('update:modelValue', false)
   }
-});
-
-const emit = defineEmits(['update:modelValue']);
-
-const closeDialog = () => {
-  emit('update:modelValue', false);
-};
 </script>
 
 <template>
   <!-- 恭喜完成课程弹窗 -->
-  <v-dialog :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)" width="600" persistent>
+  <v-dialog
+    :model-value="modelValue"
+    width="600"
+    persistent
+    @update:model-value="emit('update:modelValue', $event)"
+  >
     <v-card rounded="xl" elevation="12" class="congratulations-card">
       <!-- 头部装饰 -->
       <div class="celebration-header">
         <div class="confetti-bg"></div>
         <div class="celebration-content pa-8 text-center">
           <div class="celebration-icon-container mb-4">
-            <v-icon icon="mdi-trophy" size="80" color="yellow-lighten-3" class="celebration-icon"></v-icon>
+            <v-icon
+              icon="mdi-trophy"
+              size="80"
+              color="yellow-lighten-3"
+              class="celebration-icon"
+            ></v-icon>
           </div>
-          <h2 class="text-h4 font-weight-bold text-white mb-2">{{ t('completion.congratulations') }}</h2>
+          <h2 class="text-h4 font-weight-bold text-white mb-2">
+            {{ t('completion.congratulations') }}
+          </h2>
           <p class="text-h6 text-white mb-4">
             {{ t('completion.courseCompleted', { courseName }) }}
           </p>
         </div>
       </div>
-      
+
       <!-- 内容区域 -->
       <v-card-text class="pa-8">
         <div class="achievement-stats">
@@ -47,9 +60,9 @@ const closeDialog = () => {
             <p class="text-body-1 text-grey-darken-2 mb-4">
               {{ t('completion.description') }}
             </p>
-            
+
             <!-- 成就徽章 -->
-             <!--
+            <!--
             <div class="achievement-badges d-flex justify-center gap-3 mb-4">
               <v-chip 
                 color="success" 
@@ -75,7 +88,7 @@ const closeDialog = () => {
           </div>
         </div>
       </v-card-text>
-      
+
       <!-- 底部操作 -->
       <v-card-actions class="pa-6 pt-0">
         <v-spacer></v-spacer>
@@ -84,9 +97,9 @@ const closeDialog = () => {
           variant="flat"
           rounded="lg"
           size="large"
-          @click="closeDialog"
           prepend-icon="mdi-check"
           class="px-8"
+          @click="closeDialog"
         >
           <span class="font-weight-bold">{{ t('completion.continueStudy') }}</span>
         </v-btn>
@@ -97,77 +110,82 @@ const closeDialog = () => {
 </template>
 
 <style scoped>
-/* 恭喜完成课程弹窗样式 */
-.congratulations-card {
-  overflow: hidden;
-}
-
-.celebration-header {
-  position: relative;
-  background: linear-gradient(135deg, #e65100 0%, #ff9800 50%, #ffc107 100%);
-  overflow: hidden;
-}
-
-.confetti-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: 
-    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.3) 2px, transparent 2px),
-    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.4) 1px, transparent 1px),
-    radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.2) 3px, transparent 3px),
-    radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.3) 2px, transparent 2px);
-  animation: sparkle 3s ease-in-out infinite;
-}
-
-.celebration-content {
-  position: relative;
-  z-index: 1;
-}
-
-.celebration-icon-container {
-  position: relative;
-}
-
-.celebration-icon {
-  animation: bounce 2s ease-in-out infinite;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
-}
-
-.achievement-badges {
-  margin: 16px 0;
-}
-
-.achievement-badges .v-chip {
-  transition: transform 0.2s ease;
-}
-
-.achievement-badges .v-chip:hover {
-  transform: scale(1.05);
-}
-
-@keyframes sparkle {
-  0%, 100% {
-    opacity: 0.7;
-    transform: scale(1);
+  /* 恭喜完成课程弹窗样式 */
+  .congratulations-card {
+    overflow: hidden;
   }
-  50% {
-    opacity: 1;
-    transform: scale(1.1);
-  }
-}
 
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
+  .celebration-header {
+    position: relative;
+    background: linear-gradient(135deg, #e65100 0%, #ff9800 50%, #ffc107 100%);
+    overflow: hidden;
   }
-  40% {
-    transform: translateY(-10px);
+
+  .confetti-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.3) 2px, transparent 2px),
+      radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.4) 1px, transparent 1px),
+      radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.2) 3px, transparent 3px),
+      radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.3) 2px, transparent 2px);
+    animation: sparkle 3s ease-in-out infinite;
   }
-  60% {
-    transform: translateY(-5px);
+
+  .celebration-content {
+    position: relative;
+    z-index: 1;
   }
-}
+
+  .celebration-icon-container {
+    position: relative;
+  }
+
+  .celebration-icon {
+    animation: bounce 2s ease-in-out infinite;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  }
+
+  .achievement-badges {
+    margin: 16px 0;
+  }
+
+  .achievement-badges .v-chip {
+    transition: transform 0.2s ease;
+  }
+
+  .achievement-badges .v-chip:hover {
+    transform: scale(1.05);
+  }
+
+  @keyframes sparkle {
+    0%,
+    100% {
+      opacity: 0.7;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+  }
+
+  @keyframes bounce {
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
+      transform: translateY(0);
+    }
+    40% {
+      transform: translateY(-10px);
+    }
+    60% {
+      transform: translateY(-5px);
+    }
+  }
 </style>

@@ -1,14 +1,14 @@
 <script setup>
-import { useI18n } from 'vue-i18n'
-import WelcomeItem from './WelcomeItem.vue'
-import DocumentationIcon from '../icons/IconDocumentation.vue'
-import ToolingIcon from '../icons/IconTooling.vue'
-import EcosystemIcon from '../icons/IconEcosystem.vue'
-import CommunityIcon from '../icons/IconCommunity.vue'
-import SupportIcon from '../icons/IconSupport.vue'
+  import { useI18n } from 'vue-i18n'
+  import WelcomeItem from './WelcomeItem.vue'
+  import DocumentationIcon from '../icons/IconDocumentation.vue'
+  import ToolingIcon from '../icons/IconTooling.vue'
+  import EcosystemIcon from '../icons/IconEcosystem.vue'
+  import CommunityIcon from '../icons/IconCommunity.vue'
+  import SupportIcon from '../icons/IconSupport.vue'
 
-const { t } = useI18n()
-const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
+  const { t } = useI18n()
+  const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
 </script>
 
 <template>
@@ -19,7 +19,9 @@ const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
     <template #heading>{{ t('welcome.documentation') }}</template>
 
     {{ t('welcome.vueDocumentation') }}
-    <a href="https://vuejs.org/" target="_blank" rel="noopener">{{ t('welcome.officialDocumentation') }}</a>
+    <a href="https://vuejs.org/" target="_blank" rel="noopener">{{
+      t('welcome.officialDocumentation')
+    }}</a>
     {{ t('welcome.providesInformation') }}
   </WelcomeItem>
 
@@ -30,10 +32,12 @@ const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
     <template #heading>{{ t('welcome.tooling') }}</template>
 
     {{ t('welcome.toolingDescription1') }}
-    <a href="https://vite.dev/guide/features.html" target="_blank" rel="noopener">Vite</a>{{ t('welcome.toolingDescription2') }}
+    <a href="https://vite.dev/guide/features.html" target="_blank" rel="noopener">Vite</a
+    >{{ t('welcome.toolingDescription2') }}
     <a href="https://code.visualstudio.com/" target="_blank" rel="noopener">VSCode</a>
     +
-    <a href="https://github.com/johnsoncodehk/volar" target="_blank" rel="noopener">Volar</a>{{ t('welcome.toolingDescription3') }}
+    <a href="https://github.com/johnsoncodehk/volar" target="_blank" rel="noopener">Volar</a
+    >{{ t('welcome.toolingDescription3') }}
     <a href="https://vitest.dev/" target="_blank" rel="noopener">Vitest</a>
     {{ t('welcome.and') }}
     <a href="https://www.cypress.io/" target="_blank" rel="noopener">Cypress</a>
@@ -43,7 +47,8 @@ const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
     <br />
 
     {{ t('welcome.moreInstructions') }}
-    <a href="javascript:void(0)" @click="openReadmeInEditor"><code>README.md</code></a>.
+    <a href="javascript:void(0)" @click="openReadmeInEditor"><code>README.md</code></a
+    >.
   </WelcomeItem>
 
   <WelcomeItem>
@@ -55,8 +60,10 @@ const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
     {{ t('welcome.ecosystemDescription') }}
     <a href="https://pinia.vuejs.org/" target="_blank" rel="noopener">Pinia</a>,
     <a href="https://router.vuejs.org/" target="_blank" rel="noopener">Vue Router</a>,
-    <a href="https://test-utils.vuejs.org/" target="_blank" rel="noopener">Vue Test Utils</a>, {{ t('welcome.and') }}
-    <a href="https://github.com/vuejs/devtools" target="_blank" rel="noopener">Vue Dev Tools</a>{{ t('welcome.ecosystemDescription2') }}
+    <a href="https://test-utils.vuejs.org/" target="_blank" rel="noopener">Vue Test Utils</a>,
+    {{ t('welcome.and') }}
+    <a href="https://github.com/vuejs/devtools" target="_blank" rel="noopener">Vue Dev Tools</a
+    >{{ t('welcome.ecosystemDescription2') }}
     <a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">Awesome Vue</a>
     {{ t('welcome.aVisit') }}
   </WelcomeItem>
@@ -86,6 +93,9 @@ const openReadmeInEditor = () => fetch('/__open-in-editor?file=README.md')
     <template #heading>{{ t('welcome.supportVue') }}</template>
 
     {{ t('welcome.supportDescription') }}
-    <a href="https://vuejs.org/sponsor/" target="_blank" rel="noopener">{{ t('welcome.becomingSponsor') }}</a>.
+    <a href="https://vuejs.org/sponsor/" target="_blank" rel="noopener">{{
+      t('welcome.becomingSponsor')
+    }}</a
+    >.
   </WelcomeItem>
 </template>

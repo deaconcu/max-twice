@@ -1,177 +1,216 @@
 <script setup>
-import { inject } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { VueFlow } from '@vue-flow/core';
-import { Background } from '@vue-flow/background';
-import { Controls } from '@vue-flow/controls';
-import { USER_ROADMAP_STATE } from '@/constants/statusConstants';
+  import { onMounted } from 'vue'
+  import { useI18n } from 'vue-i18n'
+  import RoadmapVueFlow from '@/components/common/RoadmapVueFlow.vue'
+  import { USER_ROADMAP_STATE } from '@/constants/statusConstants'
 
-const props = defineProps({
-  roadmap: {
-    type: Object,
-    required: true
+  const props = defineProps({
+    roadmap: {
+      type: Object,
+      required: true,
+    },
+  })
+
+  // 添加调试信息
+  onMounted(() => {
+    console.log('RoadmapLearningCard - roadmap数据:', props.roadmap)
+    console.log('RoadmapLearningCard - nodes:', props.roadmap.nodes)
+    console.log('RoadmapLearningCard - edges:', props.roadmap.edges)
+    console.log('RoadmapLearningCard - nodes数量:', props.roadmap.nodes?.length)
+    console.log('RoadmapLearningCard - edges数量:', props.roadmap.edges?.length)
+  })
+
+  const emit = defineEmits(['open-detail', 'vote', 'move-up', 'move-down', 'close'])
+
+  const { t } = useI18n()
+
+  // 工具函数
+  const getAvatarColor = (name) => {
+    if (!name) return 'grey'
+    const colors = [
+      'red',
+      'pink',
+      'purple',
+      'indigo',
+      'blue',
+      'cyan',
+      'teal',
+      'green',
+      'amber',
+      'orange',
+    ]
+    const charCode = name.charCodeAt(0)
+    return colors[charCode % colors.length]
   }
-});
 
-const emit = defineEmits([
-  'open-detail',
-  'vote',
-  'move-up',
-  'move-down', 
-  'close'
-]);
-
-const { t } = useI18n();
-const showSnackbar = inject('showSnackbar');
-
-// 工具函数
-const getAvatarColor = (name) => {
-  if (!name) return 'grey';
-  const colors = ['red', 'pink', 'purple', 'indigo', 'blue', 'cyan', 'teal', 'green', 'amber', 'orange'];
-  const charCode = name.charCodeAt(0);
-  return colors[charCode % colors.length];
-};
-
-const formatDate = (dateString) => {
-  if (!dateString) return t('learning.timeAgo.unknownTime');
-  return new Date(dateString).toLocaleDateString();
-};
-
-const formatDateTime = (dateString) => {
-  if (!dateString) return t('learning.timeAgo.unknownTime');
-  return new Date(dateString).toLocaleString();
-};
-
-const getStatusColor = (state) => {
-  switch (state) {
-    case USER_ROADMAP_STATE.NOT_STARTED: return 'grey';
-    case USER_ROADMAP_STATE.IN_PROGRESS: return 'primary';
-    case USER_ROADMAP_STATE.COMPLETED: return 'success';
-    default: return 'grey';
+  const formatDate = (dateString) => {
+    if (!dateString) return t('learning.timeAgo.unknownTime')
+    return new Date(dateString).toLocaleDateString()
   }
-};
 
-const getStatusIcon = (state) => {
-  switch (state) {
-    case USER_ROADMAP_STATE.NOT_STARTED: return 'mdi-circle-outline';
-    case USER_ROADMAP_STATE.IN_PROGRESS: return 'mdi-play-circle';
-    case USER_ROADMAP_STATE.COMPLETED: return 'mdi-check-circle';
-    default: return 'mdi-circle-outline';
+  const formatDateTime = (dateString) => {
+    if (!dateString) return t('learning.timeAgo.unknownTime')
+    return new Date(dateString).toLocaleString()
   }
-};
 
-const getStatusText = (state) => {
-  switch (state) {
-    case USER_ROADMAP_STATE.NOT_STARTED: return t('learning.status.notStarted');
-    case USER_ROADMAP_STATE.IN_PROGRESS: return t('learning.status.inProgress');
-    case USER_ROADMAP_STATE.COMPLETED: return t('learning.status.completed');
-    default: return t('learning.status.unknown');
+  const getStatusColor = (state) => {
+    switch (state) {
+      case USER_ROADMAP_STATE.NOT_STARTED:
+        return 'grey'
+      case USER_ROADMAP_STATE.IN_PROGRESS:
+        return 'primary'
+      case USER_ROADMAP_STATE.COMPLETED:
+        return 'success'
+      default:
+        return 'grey'
+    }
   }
-};
 
-// 事件处理
-const handleOpenDetail = () => {
-  emit('open-detail', props.roadmap);
-};
-
-const handleVote = (event) => {
-  event.stopPropagation();
-  emit('vote', props.roadmap, event);
-};
-
-const handleMoveUp = (event) => {
-  event.stopPropagation();
-  emit('move-up', props.roadmap, event);
-};
-
-const handleMoveDown = (event) => {
-  event.stopPropagation();
-  emit('move-down', props.roadmap, event);
-};
-
-const handleClose = (event) => {
-  event.stopPropagation();
-  emit('close', props.roadmap, event);
-};
-
-const handleNodeClick = ({ event, node }) => {
-  // 根节点不跳转
-  if (node.id === '0') {
-    return;
+  const getStatusIcon = (state) => {
+    switch (state) {
+      case USER_ROADMAP_STATE.NOT_STARTED:
+        return 'mdi-circle-outline'
+      case USER_ROADMAP_STATE.IN_PROGRESS:
+        return 'mdi-play-circle'
+      case USER_ROADMAP_STATE.COMPLETED:
+        return 'mdi-check-circle'
+      default:
+        return 'mdi-circle-outline'
+    }
   }
-  
-  if (node.data.link) {
-    window.open(node.data.link, '_blank');
+
+  const getStatusText = (state) => {
+    switch (state) {
+      case USER_ROADMAP_STATE.NOT_STARTED:
+        return t('learning.status.notStarted')
+      case USER_ROADMAP_STATE.IN_PROGRESS:
+        return t('learning.status.inProgress')
+      case USER_ROADMAP_STATE.COMPLETED:
+        return t('learning.status.completed')
+      default:
+        return t('learning.status.unknown')
+    }
   }
-};
+
+  // 事件处理
+  const handleOpenDetail = () => {
+    emit('open-detail', props.roadmap)
+  }
+
+  const handleVote = (event) => {
+    event.stopPropagation()
+    emit('vote', props.roadmap, event)
+  }
+
+  const handleMoveUp = (event) => {
+    event.stopPropagation()
+    emit('move-up', props.roadmap, event)
+  }
+
+  const handleMoveDown = (event) => {
+    event.stopPropagation()
+    emit('move-down', props.roadmap, event)
+  }
+
+  const handleClose = (event) => {
+    event.stopPropagation()
+    emit('close', props.roadmap, event)
+  }
+
+  const handleNodeClick = ({ node }) => {
+    // 根节点不跳转
+    if (node.id === '0') {
+      return
+    }
+
+    if (node.data.link) {
+      window.open(node.data.link, '_blank')
+    }
+  }
 </script>
 
 <template>
   <div class="mb-4">
-    <v-card @click="handleOpenDetail" variant="flat" class="flat-card roadmap-card position-relative">
+    <v-card
+      variant="flat"
+      class="flat-card roadmap-card position-relative"
+      @click="handleOpenDetail"
+    >
       <!-- 学习状态标签 -->
       <div class="status-badge-container">
         <div class="d-flex align-center">
-          <v-chip 
-            :color="getStatusColor(roadmap.state)" 
-            variant="flat" 
+          <v-chip
+            :color="getStatusColor(roadmap.state)"
+            variant="flat"
             size="small"
-            class="status-badge">
+            class="status-badge"
+          >
             <v-icon :icon="getStatusIcon(roadmap.state)" class="mr-1" size="14"></v-icon>
             {{ getStatusText(roadmap.state) }}
           </v-chip>
-          
+
           <!-- 进行中状态的关闭按钮 -->
-          <v-btn 
+          <v-btn
             v-if="roadmap.state === USER_ROADMAP_STATE.IN_PROGRESS"
-            variant="text" 
-            size="x-small" 
+            variant="text"
+            size="x-small"
             class="ml-2 close-btn"
             color="grey-darken-2"
-            @click="handleClose">
+            @click="handleClose"
+          >
             <v-icon size="16">mdi-close</v-icon>
-            <v-tooltip activator="parent" location="bottom">
-              退出学习
-            </v-tooltip>
+            <v-tooltip activator="parent" location="bottom"> 退出学习 </v-tooltip>
           </v-btn>
         </div>
       </div>
-      
-      <div class="d-flex align-stretch" style="min-height: 240px;">
+
+      <div class="d-flex align-stretch roadmap-content-container">
         <!-- 左侧信息区域 -->
-        <div class="d-flex flex-column flex-grow-1 pt-2" style="min-width: 0; flex: 1;">
+        <div class="d-flex flex-column flex-grow-1 pt-2 roadmap-left-section">
           <!-- 标题 -->
           <div class="px-4 pt-2 pb-1">
-            <h3 class="text-h5 font-weight-normal mb-3 text-grey-darken-2">{{ roadmap.profession?.name || roadmap.title }}</h3>
+            <h3 class="text-h5 font-weight-normal mb-3 text-grey-darken-2">
+              {{ roadmap.profession?.name || roadmap.title }}
+            </h3>
           </div>
 
           <!-- 用户信息和描述并排 -->
           <div class="px-4 pb-2">
             <div class="d-flex align-start">
-              <v-avatar :color="getAvatarColor(roadmap.author)" size="32" class="mr-3 flat-avatar flex-shrink-0">
+              <v-avatar
+                :color="getAvatarColor(roadmap.author)"
+                size="32"
+                class="mr-3 flat-avatar flex-shrink-0"
+              >
                 <span class="text-white text-caption">{{ roadmap.author?.charAt(0) || 'U' }}</span>
               </v-avatar>
               <div class="flex-grow-1 min-width-0">
-                <div class="text-body-2 text-grey-darken-2 mb-1">{{ roadmap.author || '未知用户' }} · {{ formatDate(roadmap.createdAt) }}</div>
-                <div class="text-body-2 text-grey-darken-3 description-text">{{ roadmap.description || '暂无描述' }}</div>
+                <div class="text-body-2 text-grey-darken-2 mb-1">
+                  {{ roadmap.author || '未知用户' }} · {{ formatDate(roadmap.createdAt) }}
+                </div>
+                <div class="text-body-2 text-grey-darken-3 description-text">
+                  {{ roadmap.description || '暂无描述' }}
+                </div>
               </div>
             </div>
           </div>
 
           <v-card-text class="text-body-2 flex-grow-1 pt-1 pb-2">
-            
             <!-- 学习进度信息 -->
             <div class="mb-3">
               <div class="d-flex justify-space-between text-body-2 mb-2">
                 <span class="text-grey-darken-3">{{ t('learning.completionProgress') }}</span>
-                <span class="text-primary font-weight-bold">{{ parseFloat(roadmap.progress.toFixed(2)) }}%</span>
+                <span class="text-primary font-weight-bold"
+                  >{{ parseFloat(roadmap.progress.toFixed(2)) }}%</span
+                >
               </div>
-              <v-progress-linear 
-                :model-value="roadmap.progress" 
-                color="primary" 
-                background-color="grey-lighten-3" 
-                height="8" 
-                rounded="lg">
+              <v-progress-linear
+                :model-value="roadmap.progress"
+                color="primary"
+                background-color="grey-lighten-3"
+                height="8"
+                rounded="lg"
+              >
               </v-progress-linear>
             </div>
 
@@ -184,7 +223,14 @@ const handleNodeClick = ({ event, node }) => {
                 <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
                 {{ roadmap.lastActivity }}
               </v-chip>
-              <v-chip v-for="tag in roadmap.tags" :key="tag" size="small" color="grey-lighten-1" variant="tonal" class="mr-2 mb-1">
+              <v-chip
+                v-for="tag in roadmap.tags"
+                :key="tag"
+                size="small"
+                color="grey-lighten-1"
+                variant="tonal"
+                class="mr-2 mb-1"
+              >
                 {{ tag }}
               </v-chip>
             </div>
@@ -200,15 +246,18 @@ const handleNodeClick = ({ event, node }) => {
                 {{ t('learning.completionTime') }}: {{ formatDateTime(roadmap.completedAt) }}
               </div>
             </div>
-
           </v-card-text>
 
           <!-- 操作按钮区域 -->
           <div class="px-4 py-2 d-flex justify-space-between border-t">
             <div class="d-flex align-center">
-              <v-btn variant="text" size="small" class="flat-action-icon" 
+              <v-btn
+                variant="text"
+                size="small"
+                class="flat-action-icon"
                 :color="roadmap.upvoted ? 'red-darken-2' : 'primary'"
-                @click="handleVote">
+                @click="handleVote"
+              >
                 <v-icon size="20" :class="{ 'vote-animation': roadmap.upvoted }">
                   {{ roadmap.upvoted ? 'mdi-thumb-up' : 'mdi-thumb-up-outline' }}
                 </v-icon>
@@ -221,25 +270,39 @@ const handleNodeClick = ({ event, node }) => {
               <v-btn variant="text" size="small" class="flat-action-icon" color="info">
                 <v-icon size="20">mdi-comment-outline</v-icon>
                 <span class="ml-1 text-body-2">{{ roadmap.comment || 0 }}</span>
-                <v-tooltip activator="parent" location="top">{{ t('learning.viewComments') }}</v-tooltip>
+                <v-tooltip activator="parent" location="top">{{
+                  t('learning.viewComments')
+                }}</v-tooltip>
               </v-btn>
             </div>
 
             <div class="d-flex align-center">
               <v-btn variant="text" size="small" class="flat-action-icon" color="success">
                 <v-icon size="20">mdi-school</v-icon>
-                <v-tooltip activator="parent" location="top">{{ t('learning.continueLearning') }}</v-tooltip>
+                <v-tooltip activator="parent" location="top">{{
+                  t('learning.continueLearning')
+                }}</v-tooltip>
               </v-btn>
 
               <!-- 上下移动按钮 -->
-              <v-btn variant="text" size="small" class="flat-action-icon ml-1" color="grey-darken-2"
-                @click="handleMoveUp">
+              <v-btn
+                variant="text"
+                size="small"
+                class="flat-action-icon ml-1"
+                color="grey-darken-2"
+                @click="handleMoveUp"
+              >
                 <v-icon size="18">mdi-arrow-up</v-icon>
                 <v-tooltip activator="parent" location="top">{{ t('learning.up') }}</v-tooltip>
               </v-btn>
 
-              <v-btn variant="text" size="small" class="flat-action-icon ml-1" color="grey-darken-2"
-                @click="handleMoveDown">
+              <v-btn
+                variant="text"
+                size="small"
+                class="flat-action-icon ml-1"
+                color="grey-darken-2"
+                @click="handleMoveDown"
+              >
                 <v-icon size="18">mdi-arrow-down</v-icon>
                 <v-tooltip activator="parent" location="top">{{ t('learning.down') }}</v-tooltip>
               </v-btn>
@@ -248,31 +311,16 @@ const handleNodeClick = ({ event, node }) => {
         </div>
 
         <!-- 右侧VueFlow图表区域 -->
-        <div class="d-flex align-center" style="width: 400px; min-width: 400px; ">
-          <div class="vue-flow-preview" style="width: 100%; height: 100%;">
-            <VueFlow 
-              v-if="roadmap.nodes && roadmap.nodes.length > 0"
-              :nodes="roadmap.nodes" 
-              :edges="roadmap.edges || []" 
-              fit-view-on-init
-              :min-zoom="0.3"
-              :max-zoom="0.8"
-              :snap-to-grid="true"
-              :snap-grid="[20, 20]"
-              class="vue-flow-readonly"
-              :nodes-draggable="false"
-              :nodes-connectable="false"
-              :elements-selectable="false"
-              :pan-on-scroll="false"
-              :zoom-on-scroll="false"
-              :zoom-on-pinch="false"
-              :pan-on-drag="false"
-              @node-click="handleNodeClick">
-              <Background pattern-color="#e0e0e0" />
-            </VueFlow>
-            <div v-else class="d-flex align-center justify-center h-100 text-grey-lighten-1">
-              <v-icon icon="mdi-map-outline" size="48"></v-icon>
-            </div>
+        <div class="d-flex align-center roadmap-chart-section">
+          <div class="vue-flow-preview vue-flow-chart-container">
+            <RoadmapVueFlow
+              :nodes="roadmap.nodes"
+              :edges="roadmap.edges"
+              :readonly="true"
+              :show-background="true"
+              background-pattern="#aaa"
+              @node-click="handleNodeClick"
+            />
           </div>
         </div>
       </div>
@@ -281,138 +329,112 @@ const handleNodeClick = ({ event, node }) => {
 </template>
 
 <style scoped>
-@import '@vue-flow/core/dist/style.css';
-@import '@vue-flow/core/dist/theme-default.css';
+  .roadmap-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    overflow: hidden;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 12px !important;
+  }
 
-.roadmap-card {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-  overflow: hidden;
-  border: 1px solid #e0e0e0 !important;
-  border-radius: 12px !important;
-}
+  .roadmap-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(25, 118, 210, 0.4) !important;
+  }
 
-.roadmap-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(25, 118, 210, 0.4) !important;
-}
+  .status-badge-container {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+  }
 
-.status-badge-container {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 10;
-}
+  .status-badge {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
 
-.status-badge {
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
+  .close-btn {
+    min-width: 24px !important;
+    width: 24px;
+    height: 24px;
+  }
 
-.close-btn {
-  min-width: 24px !important;
-  width: 24px;
-  height: 24px;
-}
+  .flat-avatar {
+    border: 2px solid rgba(255, 255, 255, 0.8);
+  }
 
-.flat-avatar {
-  border: 2px solid rgba(255, 255, 255, 0.8);
-}
+  .description-text {
+    line-height: 1.4;
+    max-height: 2.8em;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
 
-.description-text {
-  line-height: 1.4;
-  max-height: 2.8em;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
+  .time-info {
+    background: rgba(0, 0, 0, 0.02);
+    padding: 8px;
+    border-radius: 8px;
+    border-left: 3px solid #1976d2;
+  }
 
-.time-info {
-  background: rgba(0, 0, 0, 0.02);
-  padding: 8px;
-  border-radius: 8px;
-  border-left: 3px solid #1976d2;
-}
+  .flat-action-icon {
+    min-width: auto !important;
+    border-radius: 12px !important;
+    transition: all 0.2s ease !important;
+  }
 
-.flat-action-icon {
-  min-width: auto !important;
-  border-radius: 12px !important;
-  transition: all 0.2s ease !important;
-}
+  .flat-action-icon:hover {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+    transform: scale(1.05);
+  }
 
-.flat-action-icon:hover {
-  background-color: rgba(0, 0, 0, 0.04) !important;
-  transform: scale(1.05);
-}
+  .vote-animation {
+    animation: vote-pulse 0.3s ease;
+  }
 
-.vote-animation {
-  animation: vote-pulse 0.3s ease;
-}
+  @keyframes vote-pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
 
-@keyframes vote-pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
+  .vue-flow-preview {
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fafafa;
+    border: 1px solid #e0e0e0;
+  }
 
-.vue-flow-preview {
-  border-radius: 12px;
-  overflow: hidden;
-  background: #fafafa;
-  border: 1px solid #e0e0e0;
-}
+  .border-t {
+    border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+  }
 
-.vue-flow-readonly {
-  pointer-events: none;
-}
+  .roadmap-content-container {
+    min-height: 240px;
+  }
 
-.vue-flow-readonly .vue-flow__node {
-  pointer-events: auto;
-  cursor: pointer;
-}
+  .roadmap-left-section {
+    min-width: 0;
+    flex: 1;
+  }
 
-/* VueFlow样式覆盖 */
-.vue-flow-readonly .vue-flow__handle {
-  display: none !important;
-}
+  .roadmap-chart-section {
+    width: 400px;
+    min-width: 400px;
+  }
 
-.vue-flow-readonly .vue-flow__node {
-  border-radius: 16px !important;
-  background: #f5f5f5 !important;
-  border: 3px solid #9e9e9e !important;
-  color: #424242 !important;
-  font-weight: 500 !important;
-  font-size: 0.85rem !important;
-  padding: 6px 8px !important;
-}
-
-.vue-flow-readonly .vue-flow__node[data-id="0"] {
-  background: #1976d2 !important;
-  border: 4px double #1976d2 !important;
-  color: #ffffff !important;
-  font-weight: 600 !important;
-}
-
-.vue-flow-readonly .vue-flow__node:hover {
-  background: #e3f2fd !important;
-  border-color: #1976d2 !important;
-  transform: translateY(-2px);
-  color: #0d47a1 !important;
-}
-
-.vue-flow-readonly .vue-flow__node[data-id="0"]:hover {
-  background: #1976d2 !important;
-  border: 4px double #1976d2 !important;
-  color: #ffffff !important;
-}
-
-.vue-flow__edge-path {
-  stroke-width: 2px !important;
-}
-
-.border-t {
-  border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
-}
+  .vue-flow-chart-container {
+    width: 100%;
+    height: 100%;
+  }
 </style>

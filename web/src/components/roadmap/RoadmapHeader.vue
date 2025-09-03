@@ -1,72 +1,72 @@
 <script setup>
-import { computed, inject } from 'vue';
-import { useI18n } from 'vue-i18n';
+  import { computed } from 'vue'
+  import { useI18n } from 'vue-i18n'
 
-const props = defineProps({
-  professionName: {
-    type: String,
-    default: 'JAVA初级程序员'
-  },
-  roadmaps: {
-    type: Array,
-    default: () => []
-  },
-  totalLearners: {
-    type: Number,
-    default: 0
+  const props = defineProps({
+    professionName: {
+      type: String,
+      default: 'JAVA初级程序员',
+    },
+    roadmaps: {
+      type: Array,
+      default: () => [],
+    },
+    totalLearners: {
+      type: Number,
+      default: 0,
+    },
+  })
+
+  const emit = defineEmits(['create-roadmap'])
+
+  const { t } = useI18n()
+
+  // 技能列表
+  const skills = computed(() => [
+    {
+      icon: 'mdi-language-java',
+      label: t('roadmap.skills.javaBasics'),
+      color: 'grey-darken-2',
+    },
+    {
+      icon: 'mdi-cube-outline',
+      label: t('roadmap.skills.oop'),
+      color: 'grey-darken-2',
+    },
+    {
+      icon: 'mdi-database-outline',
+      label: t('roadmap.skills.dataStructures'),
+      color: 'grey-darken-2',
+    },
+    {
+      icon: 'mdi-web',
+      label: t('roadmap.skills.webDevelopment'),
+      color: 'grey-darken-2',
+    },
+  ])
+
+  // 统计信息
+  const stats = computed(() => [
+    {
+      icon: 'mdi-chart-line',
+      label: `总学习人数: ${props.totalLearners}`,
+      color: 'grey-darken-2',
+    },
+    {
+      icon: 'mdi-star',
+      label: '平均评分: 4.8',
+      color: 'grey-darken-2',
+    },
+    {
+      icon: 'mdi-clock-outline',
+      label: '最近更新: 2小时前',
+      color: 'primary',
+    },
+  ])
+
+  const handleCreateClick = () => {
+    emit('create-roadmap')
   }
-});
-
-const emit = defineEmits(['create-roadmap']);
-
-const { t } = useI18n();
-
-// 技能列表
-const skills = computed(() => [
-  {
-    icon: 'mdi-language-java',
-    label: t('roadmap.skills.javaBasics'),
-    color: 'grey-darken-2'
-  },
-  {
-    icon: 'mdi-cube-outline', 
-    label: t('roadmap.skills.oop'),
-    color: 'grey-darken-2'
-  },
-  {
-    icon: 'mdi-database-outline',
-    label: t('roadmap.skills.dataStructures'), 
-    color: 'grey-darken-2'
-  },
-  {
-    icon: 'mdi-web',
-    label: t('roadmap.skills.webDevelopment'),
-    color: 'grey-darken-2'
-  }
-]);
-
-// 统计信息
-const stats = computed(() => [
-  {
-    icon: 'mdi-chart-line',
-    label: `总学习人数: ${props.totalLearners}`,
-    color: 'grey-darken-2'
-  },
-  {
-    icon: 'mdi-star',
-    label: '平均评分: 4.8',
-    color: 'grey-darken-2'
-  },
-  {
-    icon: 'mdi-clock-outline',
-    label: '最近更新: 2小时前',
-    color: 'primary'
-  }
-]);
-
-const handleCreateClick = () => {
-  emit('create-roadmap');
-};
 </script>
 
 <template>
@@ -90,11 +90,11 @@ const handleCreateClick = () => {
     <v-row justify="start" align="center" class="mb-4">
       <v-col cols="12" md="8">
         <div class="d-flex flex-wrap align-center">
-          <v-chip 
+          <v-chip
             v-for="skill in skills"
             :key="skill.label"
-            color="grey-lighten-3" 
-            variant="flat" 
+            color="grey-lighten-3"
+            variant="flat"
             class="mr-2 mb-2 skill-chip"
           >
             <v-icon :icon="skill.icon" size="14" class="mr-1" :color="skill.color"></v-icon>
@@ -103,12 +103,12 @@ const handleCreateClick = () => {
         </div>
       </v-col>
       <v-col cols="12" md="4" class="d-flex justify-end">
-        <v-btn 
-          color="primary" 
-          variant="flat" 
-          @click="handleCreateClick" 
+        <v-btn
+          color="primary"
+          variant="flat"
           rounded="lg"
           class="create-btn"
+          @click="handleCreateClick"
         >
           <v-icon icon="mdi-plus" class="mr-2" size="16"></v-icon>
           {{ t('roadmap.createNew') }}
@@ -123,17 +123,24 @@ const handleCreateClick = () => {
           <div class="d-flex align-center justify-space-between">
             <div class="d-flex align-center text-grey-darken-3">
               <v-icon icon="mdi-information-outline" size="16" class="mr-2"></v-icon>
-              <span class="text-body-2">已有 <strong class="text-primary">{{ roadmaps.length }}</strong> 个学习路径</span>
+              <span class="text-body-2"
+                >已有 <strong class="text-primary">{{ roadmaps.length }}</strong> 个学习路径</span
+              >
             </div>
             <div class="d-flex align-center text-grey-darken-3 text-body-2">
-              <div 
+              <div
                 v-for="(stat, index) in stats"
                 :key="stat.label"
                 class="d-flex align-center"
                 :class="{ 'mr-6': index < stats.length - 1 }"
               >
                 <v-icon :icon="stat.icon" class="mr-1" size="16" :color="stat.color"></v-icon>
-                <span>{{ stat.label.includes(':') ? stat.label.split(':')[0] + ': ' : '' }}<strong :class="`text-${stat.color}`">{{ stat.label.includes(':') ? stat.label.split(':')[1] : stat.label }}</strong></span>
+                <span
+                  >{{ stat.label.includes(':') ? stat.label.split(':')[0] + ': ' : ''
+                  }}<strong :class="`text-${stat.color}`">{{
+                    stat.label.includes(':') ? stat.label.split(':')[1] : stat.label
+                  }}</strong></span
+                >
               </div>
             </div>
           </div>
@@ -144,28 +151,28 @@ const handleCreateClick = () => {
 </template>
 
 <style scoped>
-.roadmap-header {
-  /* 页面头部样式 */
-}
+  .roadmap-header {
+    /* 页面头部样式 */
+  }
 
-.skill-chip {
-  transition: all 0.2s ease;
-}
+  .skill-chip {
+    transition: all 0.2s ease;
+  }
 
-.skill-chip:hover {
-  background-color: rgba(0, 0, 0, 0.08) !important;
-  transform: translateY(-1px);
-}
+  .skill-chip:hover {
+    background-color: rgba(0, 0, 0, 0.08) !important;
+    transform: translateY(-1px);
+  }
 
-.create-btn {
-  text-transform: none;
-  font-weight: 600;
-  min-width: 120px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+  .create-btn {
+    text-transform: none;
+    font-weight: 600;
+    min-width: 120px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
-.create-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(25, 118, 210, 0.2);
-}
+  .create-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(25, 118, 210, 0.2);
+  }
 </style>

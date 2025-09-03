@@ -1,257 +1,257 @@
-import apiClient from '../../apiClient';
+import apiClient from '../../apiClient'
 
 // API v1 统一服务模块，使用 JSON 格式
-const API_V1_PREFIX = '/api/v1';
+const API_V1_PREFIX = '/api/v1'
 
 // 用户认证服务
 export const authServiceV1 = {
   login(email, password) {
     return apiClient.post(`${API_V1_PREFIX}/auth/login`, {
       email,
-      password
-    });
+      password,
+    })
   },
 
   register(userName, email, password) {
     return apiClient.post(`${API_V1_PREFIX}/auth/register`, {
       userName,
       email,
-      password
-    });
+      password,
+    })
   },
 
   validateEmail(email, code) {
     return apiClient.post(`${API_V1_PREFIX}/auth/validate-email`, {
       email,
-      code
-    });
+      code,
+    })
   },
-};
+}
 
 // 用户管理服务
 export const userServiceV1 = {
   getCurrentUser() {
-    return apiClient.get(`${API_V1_PREFIX}/users/current`);
+    return apiClient.get(`${API_V1_PREFIX}/users/current`)
   },
 
   updateCurrentUser(name, biography) {
     return apiClient.put(`${API_V1_PREFIX}/users/current`, {
       name,
-      biography
-    });
+      biography,
+    })
   },
 
   getUser(userId) {
-    return apiClient.get(`${API_V1_PREFIX}/users/${userId}`);
+    return apiClient.get(`${API_V1_PREFIX}/users/${userId}`)
   },
 
   searchUser(name) {
     return apiClient.get(`${API_V1_PREFIX}/users/search`, {
-      params: { name }
-    });
+      params: { name },
+    })
   },
 
   getUserPosts(userId, lastId, type = 'article') {
     return apiClient.get(`${API_V1_PREFIX}/users/${userId}/posts`, {
-      params: { lastId, type }
-    });
+      params: { lastId, type },
+    })
   },
-};
+}
 
 // 关注服务
 export const followServiceV1 = {
   follow(followeeId) {
     return apiClient.post(`${API_V1_PREFIX}/follows`, {
-      followeeId
-    });
+      followeeId,
+    })
   },
 
   unfollow(followeeId) {
-    return apiClient.delete(`${API_V1_PREFIX}/follows/${followeeId}`);
+    return apiClient.delete(`${API_V1_PREFIX}/follows/${followeeId}`)
   },
 
   getFollowees(userId, lastCreateTime) {
     return apiClient.get(`${API_V1_PREFIX}/users/${userId}/followees`, {
-      params: { lastCreateTime }
-    });
+      params: { lastCreateTime },
+    })
   },
-};
+}
 
 // 订阅服务
 export const subscriptionServiceV1 = {
   getUserSubscriptions(userId) {
-    return apiClient.get(`${API_V1_PREFIX}/users/${userId}/subscriptions`);
+    return apiClient.get(`${API_V1_PREFIX}/users/${userId}/subscriptions`)
   },
 
   subscribe(courseId) {
     return apiClient.post(`${API_V1_PREFIX}/users/current/subscriptions`, {
-      courseId
-    });
+      courseId,
+    })
   },
 
   updateSubscriptions(subscription) {
     return apiClient.put(`${API_V1_PREFIX}/users/current/subscriptions`, {
-      subscription
-    });
+      subscription,
+    })
   },
 
   unsubscribe(courseId) {
-    return apiClient.delete(`${API_V1_PREFIX}/users/current/subscriptions/${courseId}`);
+    return apiClient.delete(`${API_V1_PREFIX}/users/current/subscriptions/${courseId}`)
   },
-};
+}
 
 // 职业管理服务
 export const professionServiceV1 = {
   // 分页获取职业（管理端使用）
   getProfessionsByPage(page = 1) {
     return apiClient.get(`${API_V1_PREFIX}/professions`, {
-      params: { page }
-    });
+      params: { page },
+    })
   },
 
   // 按状态获取职业（管理端使用）
   getProfessions(state, lastId) {
     return apiClient.get(`${API_V1_PREFIX}/professions`, {
-      params: { state, lastId }
-    });
+      params: { state, lastId },
+    })
   },
 
   // 按分类获取职业（前端使用）
   getProfessionsByCategory(lastId, mainCategory, subCategory) {
     return apiClient.get(`${API_V1_PREFIX}/professions`, {
-      params: { lastId, mainCategory, subCategory }
-    });
+      params: { lastId, mainCategory, subCategory },
+    })
   },
 
   getApprovedProfessions(lastId = 0) {
     return apiClient.get(`${API_V1_PREFIX}/professions/approved`, {
-      params: { lastId }
-    });
+      params: { lastId },
+    })
   },
 
   getProfession(id) {
-    return apiClient.get(`${API_V1_PREFIX}/professions/${id}`);
+    return apiClient.get(`${API_V1_PREFIX}/professions/${id}`)
   },
 
   createProfession(professionData) {
-    return apiClient.post(`${API_V1_PREFIX}/professions`, professionData);
+    return apiClient.post(`${API_V1_PREFIX}/professions`, professionData)
   },
 
   updateProfession(id, professionData) {
-    return apiClient.put(`${API_V1_PREFIX}/professions/${id}`, professionData);
+    return apiClient.put(`${API_V1_PREFIX}/professions/${id}`, professionData)
   },
 
   approveProfession(id, action, rejectedReason) {
     return apiClient.post(`${API_V1_PREFIX}/professions/${id}/approve`, {
       action,
-      rejectedReason
-    });
+      rejectedReason,
+    })
   },
 
   deleteProfession(id) {
-    return apiClient.delete(`${API_V1_PREFIX}/professions/${id}`);
+    return apiClient.delete(`${API_V1_PREFIX}/professions/${id}`)
   },
 
   getHotProfessions(limit = 10) {
     return apiClient.get(`${API_V1_PREFIX}/professions/hot`, {
-      params: { limit }
-    });
+      params: { limit },
+    })
   },
-};
+}
 
 // 课程管理服务
 export const courseServiceV1 = {
   getCourse(id) {
-    return apiClient.get(`${API_V1_PREFIX}/courses/${id}`);
+    return apiClient.get(`${API_V1_PREFIX}/courses/${id}`)
   },
 
   searchCourses(name) {
     return apiClient.get(`${API_V1_PREFIX}/courses/search`, {
-      params: { name }
-    });
+      params: { name },
+    })
   },
 
   getCoursesByState(state, lastId) {
     return apiClient.get(`${API_V1_PREFIX}/courses`, {
-      params: { state, lastId }
-    });
+      params: { state, lastId },
+    })
   },
 
   getCoursesByCategory(mainCategory, subCategory) {
     return apiClient.get(`${API_V1_PREFIX}/courses`, {
-      params: { mainCategory, subCategory }
-    });
+      params: { mainCategory, subCategory },
+    })
   },
 
   getHotCourses() {
-    return apiClient.get(`${API_V1_PREFIX}/courses/hot`);
+    return apiClient.get(`${API_V1_PREFIX}/courses/hot`)
   },
 
   getCoursesRanking() {
-    return apiClient.get(`${API_V1_PREFIX}/courses/ranking`);
+    return apiClient.get(`${API_V1_PREFIX}/courses/ranking`)
   },
 
   createCourse(courseData) {
-    return apiClient.post(`${API_V1_PREFIX}/courses`, courseData);
+    return apiClient.post(`${API_V1_PREFIX}/courses`, courseData)
   },
 
   updateCourse(id, courseData) {
-    return apiClient.put(`${API_V1_PREFIX}/courses/${id}`, courseData);
+    return apiClient.put(`${API_V1_PREFIX}/courses/${id}`, courseData)
   },
 
   createSubcourse(parentId, name, description) {
     return apiClient.post(`${API_V1_PREFIX}/courses/${parentId}/subcourses`, {
       name,
-      description
-    });
+      description,
+    })
   },
 
   approveCourse(id, action, rejectedReason) {
     return apiClient.post(`${API_V1_PREFIX}/courses/${id}/approve`, {
       action,
-      rejectedReason
-    });
+      rejectedReason,
+    })
   },
-};
+}
 
 // 帖子管理服务
 export const postServiceV1 = {
   getPosts(ids, nodeId, lastScore, lastPostingId) {
     return apiClient.get(`${API_V1_PREFIX}/posts`, {
-      params: { ids: ids?.join(','), nodeId, lastScore, lastId: lastPostingId }
-    });
+      params: { ids: ids?.join(','), nodeId, lastScore, lastId: lastPostingId },
+    })
   },
 
   createPost(postData) {
-    return apiClient.post(`${API_V1_PREFIX}/posts`, postData);
+    return apiClient.post(`${API_V1_PREFIX}/posts`, postData)
   },
 
   updatePost(id, postData) {
-    return apiClient.put(`${API_V1_PREFIX}/posts/${id}`, postData);
+    return apiClient.put(`${API_V1_PREFIX}/posts/${id}`, postData)
   },
 
   deletePost(id) {
-    return apiClient.delete(`${API_V1_PREFIX}/posts/${id}`);
+    return apiClient.delete(`${API_V1_PREFIX}/posts/${id}`)
   },
 
   getPost(id) {
-    return apiClient.get(`${API_V1_PREFIX}/posts/${id}`);
+    return apiClient.get(`${API_V1_PREFIX}/posts/${id}`)
   },
 
   getNodePosts(nodeId) {
-    return apiClient.get(`${API_V1_PREFIX}/nodes/${nodeId}/posts`);
+    return apiClient.get(`${API_V1_PREFIX}/nodes/${nodeId}/posts`)
   },
 
   getPendingPosts() {
-    return apiClient.get(`${API_V1_PREFIX}/admin/posts/pending`);
+    return apiClient.get(`${API_V1_PREFIX}/admin/posts/pending`)
   },
 
   approvePost(id, approve) {
     return apiClient.put(`${API_V1_PREFIX}/admin/posts/${id}/approve`, null, {
-      params: { approve }
-    });
+      params: { approve },
+    })
   },
-};
+}
 
 // 评论管理服务
 export const commentServiceV1 = {
@@ -261,70 +261,70 @@ export const commentServiceV1 = {
       type,
       replyTo,
       toUser,
-      content
-    });
+      content,
+    })
   },
 
   getComments(objectId, type, offsetId = 0) {
     return apiClient.get(`${API_V1_PREFIX}/comments`, {
-      params: { objectId, type, offsetId }
-    });
+      params: { objectId, type, offsetId },
+    })
   },
 
   getCommentReplies(id, offsetId = 0) {
     return apiClient.get(`${API_V1_PREFIX}/comments/${id}/replies`, {
-      params: { offsetId }
-    });
+      params: { offsetId },
+    })
   },
 
   getPendingComments() {
-    return apiClient.get(`${API_V1_PREFIX}/admin/comments/pending`);
+    return apiClient.get(`${API_V1_PREFIX}/admin/comments/pending`)
   },
 
   approveComment(id, approve) {
     return apiClient.put(`${API_V1_PREFIX}/admin/comments/${id}/approve`, {
-      approve
-    });
+      approve,
+    })
   },
-};
+}
 
 // 路线图管理服务
 export const roadmapServiceV1 = {
   getProfessionRoadmaps(professionId, lastId = 0) {
     return apiClient.get(`${API_V1_PREFIX}/professions/${professionId}/roadmaps`, {
-      params: { lastId }
-    });
+      params: { lastId },
+    })
   },
 
   updateRoadmap(id, content) {
     return apiClient.put(`${API_V1_PREFIX}/roadmaps/${id}`, {
-      content
-    });
+      content,
+    })
   },
 
   upvoteRoadmap(id) {
-    return apiClient.put(`${API_V1_PREFIX}/roadmaps/${id}/upvote`);
+    return apiClient.put(`${API_V1_PREFIX}/roadmaps/${id}/upvote`)
   },
 
   createRoadmap(professionId, content, description) {
     return apiClient.post(`${API_V1_PREFIX}/roadmaps`, {
       professionId,
       content,
-      description
-    });
+      description,
+    })
   },
 
   getRoadmap(id) {
-    return apiClient.get(`${API_V1_PREFIX}/roadmaps/${id}`);
+    return apiClient.get(`${API_V1_PREFIX}/roadmaps/${id}`)
   },
 
   pinRoadmap(professionId, roadmapId) {
     return apiClient.post(`${API_V1_PREFIX}/roadmaps/pin`, {
       professionId,
-      roadmapId
-    });
+      roadmapId,
+    })
   },
-};
+}
 
 // 点赞服务
 export const upvoteServiceV1 = {
@@ -332,16 +332,16 @@ export const upvoteServiceV1 = {
     return apiClient.post(`${API_V1_PREFIX}/upvotes`, {
       objectId,
       objectType,
-      type
-    });
+      type,
+    })
   },
 
   getUpvoteStatus(objectId, objectType) {
     return apiClient.get(`${API_V1_PREFIX}/upvotes/status`, {
-      params: { objectId, objectType }
-    });
+      params: { objectId, objectType },
+    })
   },
-};
+}
 
 // 消息管理服务
 export const messageServiceV1 = {
@@ -350,110 +350,110 @@ export const messageServiceV1 = {
       title,
       summary,
       explanation,
-      parentId
-    });
+      parentId,
+    })
   },
 
   getSystemMessages(type, lastId) {
     return apiClient.get(`${API_V1_PREFIX}/messages/system`, {
-      params: { type, lastId }
-    });
+      params: { type, lastId },
+    })
   },
 
   getMessages() {
-    return apiClient.get(`${API_V1_PREFIX}/messages`);
+    return apiClient.get(`${API_V1_PREFIX}/messages`)
   },
 
   sendSystemMessage(type, to, content) {
     return apiClient.post(`${API_V1_PREFIX}/messages/system`, {
       type,
       to,
-      content
-    });
+      content,
+    })
   },
 
   updateCourseApplication(id, reply) {
     return apiClient.put(`${API_V1_PREFIX}/messages/course-applications/${id}`, {
-      reply
-    });
+      reply,
+    })
   },
 
   // 邀请用户
   inviteUser(userId, nodeId) {
     return apiClient.post(`${API_V1_PREFIX}/messages/invite`, {
       userId,
-      nodeId
-    });
+      nodeId,
+    })
   },
-};
+}
 
 // 学习进度服务
 export const progressServiceV1 = {
   markNodeComplete(nodeId, courseId) {
     return apiClient.post(`${API_V1_PREFIX}/progress/nodes/${nodeId}/complete`, {
-      courseId
-    });
+      courseId,
+    })
   },
 
   unmarkNodeComplete(nodeId) {
-    return apiClient.delete(`${API_V1_PREFIX}/progress/nodes/${nodeId}/complete`);
+    return apiClient.delete(`${API_V1_PREFIX}/progress/nodes/${nodeId}/complete`)
   },
 
   getNodeStatus(nodeId) {
-    return apiClient.get(`${API_V1_PREFIX}/progress/nodes/${nodeId}/status`);
+    return apiClient.get(`${API_V1_PREFIX}/progress/nodes/${nodeId}/status`)
   },
 
   startCourse(courseId) {
     return apiClient.post(`${API_V1_PREFIX}/progress/courses/${courseId}/start`, {
-      courseId
-    });
+      courseId,
+    })
   },
 
   getCourseProgress(courseId) {
-    return apiClient.get(`${API_V1_PREFIX}/progress/courses/${courseId}`);
+    return apiClient.get(`${API_V1_PREFIX}/progress/courses/${courseId}`)
   },
 
   getAllCourseProgress(lastId) {
     return apiClient.get(`${API_V1_PREFIX}/progress/courses`, {
-      params: { lastId }
-    });
+      params: { lastId },
+    })
   },
 
   updateCourseProgress(courseId, data) {
-    return apiClient.put(`${API_V1_PREFIX}/progress/courses/${courseId}`, data);
+    return apiClient.put(`${API_V1_PREFIX}/progress/courses/${courseId}`, data)
   },
 
   deleteCourseProgress(courseId) {
-    return apiClient.delete(`${API_V1_PREFIX}/progress/courses/${courseId}`);
+    return apiClient.delete(`${API_V1_PREFIX}/progress/courses/${courseId}`)
   },
 
   completeCourse(courseId) {
-    return apiClient.post(`${API_V1_PREFIX}/progress/courses/${courseId}/complete`);
+    return apiClient.post(`${API_V1_PREFIX}/progress/courses/${courseId}/complete`)
   },
 
   // 路线图进度相关方法
   startRoadmap(roadmapId) {
-    return apiClient.post(`${API_V1_PREFIX}/progress/roadmaps/${roadmapId}/start`);
+    return apiClient.post(`${API_V1_PREFIX}/progress/roadmaps/${roadmapId}/start`)
   },
 
   getRoadmapProgress(roadmapId) {
-    return apiClient.get(`${API_V1_PREFIX}/progress/roadmaps/${roadmapId}`);
+    return apiClient.get(`${API_V1_PREFIX}/progress/roadmaps/${roadmapId}`)
   },
 
   getUserRoadmaps() {
-    return apiClient.get(`${API_V1_PREFIX}/progress/roadmaps`);
+    return apiClient.get(`${API_V1_PREFIX}/progress/roadmaps`)
   },
 
   updateRoadmapProgress(roadmapId, progressPercent) {
     return apiClient.put(`${API_V1_PREFIX}/progress/roadmaps/${roadmapId}`, {
-      progressPercent
-    });
+      progressPercent,
+    })
   },
 
   deleteRoadmapProgress(roadmapId) {
-    return apiClient.delete(`${API_V1_PREFIX}/progress/roadmaps/${roadmapId}`);
+    return apiClient.delete(`${API_V1_PREFIX}/progress/roadmaps/${roadmapId}`)
   },
-};
+}
 
 // 统计服务
 export const statsServiceV1 = {
@@ -461,140 +461,144 @@ export const statsServiceV1 = {
     return apiClient.post(`${API_V1_PREFIX}/stats/views`, {
       articleId,
       userId,
-      ipAddress
-    });
+      ipAddress,
+    })
   },
 
   getUserTodayStats(userId) {
-    return apiClient.get(`${API_V1_PREFIX}/stats/users/${userId}/today`);
+    return apiClient.get(`${API_V1_PREFIX}/stats/users/${userId}/today`)
   },
 
   getUserYesterdayStats(userId) {
-    return apiClient.get(`${API_V1_PREFIX}/stats/users/${userId}/yesterday`);
+    return apiClient.get(`${API_V1_PREFIX}/stats/users/${userId}/yesterday`)
   },
 
   getUserHistoryStats(userId, days = 7) {
     return apiClient.get(`${API_V1_PREFIX}/stats/users/${userId}/history`, {
-      params: { days }
-    });
+      params: { days },
+    })
   },
 
   getUserPeriodStats(userId, days = 7) {
     return apiClient.get(`${API_V1_PREFIX}/stats/users/${userId}/period`, {
-      params: { days }
-    });
+      params: { days },
+    })
   },
 
   getUserAllTimeStats(userId) {
-    return apiClient.get(`${API_V1_PREFIX}/stats/users/${userId}/all-time`);
+    return apiClient.get(`${API_V1_PREFIX}/stats/users/${userId}/all-time`)
   },
 
   syncManual() {
-    return apiClient.post(`${API_V1_PREFIX}/stats/sync/manual`);
+    return apiClient.post(`${API_V1_PREFIX}/stats/sync/manual`)
   },
 
   getHealth() {
-    return apiClient.get(`${API_V1_PREFIX}/stats/health`);
+    return apiClient.get(`${API_V1_PREFIX}/stats/health`)
   },
 
   syncDate(date) {
     return apiClient.post(`${API_V1_PREFIX}/stats/sync/date`, {
-      date
-    });
+      date,
+    })
   },
 
   getPlatformStats() {
-    return apiClient.get(`${API_V1_PREFIX}/stats/platform`);
+    return apiClient.get(`${API_V1_PREFIX}/stats/platform`)
   },
-};
+}
 
 // 页面聚合服务
 export const pageServiceV1 = {
   readByCoursePath(courseId, path) {
     return apiClient.get(`${API_V1_PREFIX}/pages/read`, {
-      params: { courseId, path }
-    });
+      params: { courseId, path },
+    })
   },
 
   readByNode(nodeId) {
     return apiClient.get(`${API_V1_PREFIX}/pages/read`, {
-      params: { nodeId }
-    });
+      params: { nodeId },
+    })
   },
 
   readByPost(postId) {
     return apiClient.get(`${API_V1_PREFIX}/pages/read`, {
-      params: { postId }
-    });
+      params: { postId },
+    })
   },
 
   readByComment(commentId) {
     return apiClient.get(`${API_V1_PREFIX}/pages/read`, {
-      params: { commentId }
-    });
+      params: { commentId },
+    })
   },
-};
+}
 
 // 内容管理服务
 export const contentServiceV1 = {
   operateContent(data) {
-    return apiClient.post(`${API_V1_PREFIX}/contents`, data);
+    return apiClient.post(`${API_V1_PREFIX}/contents`, data)
   },
-};
+}
 
 // AI服务
 export const aiServiceV1 = {
   chat(prompt, model) {
     return apiClient.post(`${API_V1_PREFIX}/ai/chat`, {
       prompt,
-      model
-    });
+      model,
+    })
   },
-};
+}
 
 // 系统配置服务
 export const systemServiceV1 = {
   getSystemConfig(part) {
     if (part) {
       return apiClient.get(`${API_V1_PREFIX}/system`, {
-        params: { part }
-      });
+        params: { part },
+      })
     }
-    return apiClient.get(`${API_V1_PREFIX}/system`);
+    return apiClient.get(`${API_V1_PREFIX}/system`)
   },
 
   // 根据key获取单个配置
   getConfigByKey(key) {
-    return apiClient.get(`${API_V1_PREFIX}/system/${key}`);
+    return apiClient.get(`${API_V1_PREFIX}/system/${key}`)
   },
 
   // 更新配置（key-value模式）
   updateConfigByKey(key, value) {
-    return apiClient.post(`${API_V1_PREFIX}/system`, {
-      value
-    }, {
-      params: { key }
-    });
+    return apiClient.post(
+      `${API_V1_PREFIX}/system`,
+      {
+        value,
+      },
+      {
+        params: { key },
+      }
+    )
   },
 
   // 删除配置
   deleteConfigByKey(key) {
     return apiClient.delete(`${API_V1_PREFIX}/system`, {
-      params: { key }
-    });
+      params: { key },
+    })
   },
 
   // 获取课程分类数据
   getCourseCategories() {
     return apiClient.get(`${API_V1_PREFIX}/system`, {
-      params: { part: 'courseCategories' }
-    });
+      params: { part: 'courseCategories' },
+    })
   },
 
   // 获取职业分类数据
   getProfessionCategories() {
     return apiClient.get(`${API_V1_PREFIX}/system`, {
-      params: { part: 'professionCategories' }
-    });
+      params: { part: 'professionCategories' },
+    })
   },
-};
+}

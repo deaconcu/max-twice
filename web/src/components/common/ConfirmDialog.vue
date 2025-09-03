@@ -6,12 +6,19 @@
         <v-icon class="mr-2" size="small">mdi-content-save</v-icon>
         {{ t('confirmDialog.saveRoadmap') }}
       </v-card-title>
-      
+
       <v-card-text class="pt-4">
-        <v-alert color="grey" type="info" variant="tonal" class="mb-6" density="compact" rounded="lg">
+        <v-alert
+          color="grey"
+          type="info"
+          variant="tonal"
+          class="mb-6"
+          density="compact"
+          rounded="lg"
+        >
           {{ t('confirmDialog.saveDescription') }}
         </v-alert>
-        
+
         <v-textarea
           v-model="description"
           :label="t('confirmDialog.descriptionLabel')"
@@ -22,25 +29,23 @@
           color="teal-darken-1"
           :rules="[rules.required]"
           counter="500"
-          maxlength="500">
+          maxlength="500"
+        >
         </v-textarea>
       </v-card-text>
 
       <v-card-actions class="px-6 py-3">
         <v-spacer></v-spacer>
-        <v-btn 
-          variant="text" 
-          color="grey" 
-          @click="$emit('cancel-save')"
-          class="flat-button">
+        <v-btn variant="text" color="grey" class="flat-button" @click="$emit('cancel-save')">
           {{ t('confirmDialog.cancel') }}
-        </v-btn>   
-        <v-btn 
-          color="teal-darken-1" 
-          variant="flat" 
-          @click="$emit('confirm-save', description)"
+        </v-btn>
+        <v-btn
+          color="teal-darken-1"
+          variant="flat"
           :disabled="!description || description.trim().length === 0"
-          class="flat-button ml-2">
+          class="flat-button ml-2"
+          @click="$emit('confirm-save', description)"
+        >
           <v-icon class="me-1" left>mdi-content-save</v-icon>
           {{ t('confirmDialog.confirmSave') }}
         </v-btn>
@@ -55,25 +60,22 @@
         <v-icon class="mr-2" size="small">mdi-alert-circle-outline</v-icon>
         {{ t('confirmDialog.confirmReset') }}
       </v-card-title>
-      
+
       <v-card-text class="pt-4">
         {{ t('confirmDialog.resetDescription') }}
       </v-card-text>
 
       <v-card-actions class="px-6 py-3">
         <v-spacer></v-spacer>
-        <v-btn 
-          variant="text" 
-          color="grey" 
-          @click="$emit('cancel-reset')"
-          class="flat-button">
+        <v-btn variant="text" color="grey" class="flat-button" @click="$emit('cancel-reset')">
           {{ t('confirmDialog.cancel') }}
         </v-btn>
-        <v-btn 
-          color="orange-darken-2" 
-          variant="flat" 
+        <v-btn
+          color="orange-darken-2"
+          variant="flat"
+          class="flat-button ml-2"
           @click="$emit('confirm-reset')"
-          class="flat-button ml-2">
+        >
           <v-icon class="me-1" left>mdi-refresh</v-icon>
           {{ t('confirmDialog.confirmResetButton') }}
         </v-btn>
@@ -83,57 +85,69 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
+  import { computed, ref, watch } from 'vue'
+  import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n()
+  const { t } = useI18n()
 
-const props = defineProps({
-  showSaveDialog: {
-    type: Boolean,
-    default: false
-  },
-  showResetDialog: {
-    type: Boolean,
-    default: false
-  },
-  initialDescription: {
-    type: String,
-    default: ''
+  const props = defineProps({
+    showSaveDialog: {
+      type: Boolean,
+      default: false,
+    },
+    showResetDialog: {
+      type: Boolean,
+      default: false,
+    },
+    initialDescription: {
+      type: String,
+      default: '',
+    },
+  })
+
+  defineEmits(['confirm-save', 'cancel-save', 'confirm-reset', 'cancel-reset'])
+
+  const description = ref()
+
+  // 监听 props 变化来更新本地 ref
+  watch(
+    () => props.initialDescription,
+    (newValue) => {
+      description.value = newValue
+    },
+    { immediate: true }
+  )
+
+  const showSave = computed({
+    get: () => props.showSaveDialog,
+    set: () => {}, // 由父组件控制
+  })
+
+  const showReset = computed({
+    get: () => props.showResetDialog,
+    set: () => {}, // 由父组件控制
+  })
+
+  const rules = {
+    required: (value) => Boolean(value) || t('confirmDialog.descriptionRequired'),
   }
-})
 
-const emit = defineEmits(['confirm-save', 'cancel-save', 'confirm-reset', 'cancel-reset'])
-
-const description = ref(props.initialDescription)
-
-const showSave = computed({
-  get: () => props.showSaveDialog,
-  set: () => {} // 由父组件控制
-})
-
-const showReset = computed({
-  get: () => props.showResetDialog,
-  set: () => {} // 由父组件控制
-})
-
-const rules = {
-  required: value => !!value || t('confirmDialog.descriptionRequired'),
-}
-
-// 监听初始描述变化
-watch(() => props.initialDescription, (newVal) => {
-  description.value = newVal
-})
+  // 监听初始描述变化
+  watch(
+    () => props.initialDescription,
+    (newVal) => {
+      description.value = newVal
+    }
+  )
 </script>
 
 <style scoped>
-.flat-button {
-  border-radius: 8px !important;
-  box-shadow: none !important;
-}
+  .flat-button {
+    border-radius: 8px !important;
+    box-shadow: none !important;
+  }
 
-.flat-input :deep(.v-field) {
-  border-radius: 8px !important;
-}
+  .flat-input :deep(.v-field) {
+    border-radius: 8px !important;
+  }
 </style>

@@ -1,5 +1,5 @@
 <script setup>
-// 左侧欢迎区域 - 静态展示组件，无需props和emits
+  // 左侧欢迎区域 - 静态展示组件，无需props和emits
 </script>
 
 <template>
@@ -8,14 +8,10 @@
       <h1 class="text-h3 font-weight-bold text-grey-darken-4 mb-4">欢迎来到学习平台</h1>
       <p class="text-h6 text-grey-darken-2 mb-8">高效学习，一次掌握 • 智能互动，共同进步</p>
     </div>
-    
-    <v-card rounded="xl" elevation="0" color="grey-lighten-5" class="pa-6 mx-auto" style="max-width: 600px; border: 1px solid rgba(0, 0, 0, 0.06);">
-      <v-img 
-        src="/images/big2.png" 
-        width="0" 
-        class="mx-auto rounded-lg mb-4">
-      </v-img>
-      
+
+    <v-card rounded="xl" elevation="0" color="grey-lighten-5" class="pa-6 mx-auto welcome-card">
+      <v-img src="/images/big2.png" width="0" class="mx-auto rounded-lg mb-4"> </v-img>
+
       <!-- 特色展示 -->
       <div class="d-flex justify-space-around mt-6">
         <div class="text-center">
@@ -25,7 +21,7 @@
           <h4 class="text-body-1 font-weight-bold text-grey-darken-4">高效学习</h4>
           <p class="text-body-2 text-grey-darken-2 mb-0">最多两次掌握</p>
         </div>
-        
+
         <div class="text-center">
           <v-avatar color="success" size="48" class="mb-2">
             <v-icon icon="mdi-account-group" color="white" size="24"></v-icon>
@@ -33,7 +29,7 @@
           <h4 class="text-body-1 font-weight-bold text-grey-darken-4">互动社区</h4>
           <p class="text-body-2 text-grey-darken-2 mb-0">共同学习进步</p>
         </div>
-        
+
         <div class="text-center">
           <v-avatar color="warning" size="48" class="mb-2">
             <v-icon icon="mdi-chart-line" color="white" size="24"></v-icon>
@@ -42,7 +38,7 @@
           <p class="text-body-2 text-grey-darken-2 mb-0">实时掌握成果</p>
         </div>
       </div>
-      
+
       <!-- 网站简介内容 -->
       <div class="mt-6 pa-4 bg-blue-lighten-5 rounded-lg">
         <h3 class="text-h6 font-weight-bold text-primary mb-2">为什么选择我们？</h3>
@@ -54,3 +50,10 @@
     </v-card>
   </v-col>
 </template>
+
+<style scoped>
+  .welcome-card {
+    max-width: 600px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+</style>
