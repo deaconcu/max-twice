@@ -2,7 +2,7 @@
   import { inject, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import dagre from 'dagre'
-  import { roadmapServiceV1 } from '@/services/api/v1/apiServiceV1'
+  import { roadmapServiceV1, professionServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { useRoute } from 'vue-router'
   import RoadmapDetail from '@/components/roadmap/RoadmapDetail.vue'
   import RoadmapCreate from '@/components/roadmap/RoadmapCreate.vue'
@@ -15,6 +15,7 @@
 
   // 状态管理
   const roadmaps = ref([])
+  const profession = ref(null) // 添加职业信息
   const loading = ref(true)
   const error = ref(null)
   const showModal = ref(false)
@@ -81,7 +82,7 @@
             id: node.id,
             type: 'default',
             data: {
-              label: PROFESSION_NAME, // 根节点显示职业名称
+              label: profession.value.name || '当前职业', // 使用动态职业名称
               link: null, // 根节点不跳转
               ...node.data,
             },
@@ -126,12 +127,23 @@
     try {
       loading.value = true
       error.value = null
-      const response = await roadmapServiceV1.getProfessionRoadmaps(professionId.value)
+      
+      // 并行获取职业信息和路线图数据
+      const [professionResponse, roadmapResponse] = await Promise.all([
+        professionServiceV1.getProfession(professionId.value),
+        roadmapServiceV1.getProfessionRoadmaps(professionId.value)
+      ])
 
-      console.log('课程数据：response:', response)
+      console.log('职业信息：', professionResponse)
+      console.log('课程数据：response:', roadmapResponse)
 
-      // 确保我们在处理 response.data
-      const data = response.data || response
+      // 设置职业信息
+      if (professionResponse && professionResponse.data) {
+        profession.value = professionResponse.data
+      }
+
+      // 确保我们在处理 roadmapResponse.data
+      const data = roadmapResponse.data || roadmapResponse
       if (!Array.isArray(data)) {
         throw new Error('返回的数据格式不正确')
       }
@@ -319,7 +331,7 @@
       <v-col cols="12" lg="9" class="pr-lg-8">
         <!-- 页面头部 -->
         <RoadmapHeader
-          profession-name="JAVA初级程序员"
+          :profession-name="profession?.name || 'JAVA初级程序员'"
           :roadmaps="roadmaps"
           :total-learners="getTotalLearners()"
           @create-roadmap="openCreateModal"

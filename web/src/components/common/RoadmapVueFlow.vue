@@ -47,30 +47,6 @@
   const handleNodeClick = (event) => {
     emit('node-click', event)
   }
-
-  // 添加调试日志
-  onMounted(() => {
-    console.log('RoadmapVueFlow mounted - nodes:', props.nodes)
-    console.log('RoadmapVueFlow mounted - edges:', props.edges)
-    console.log('RoadmapVueFlow mounted - nodes length:', props.nodes?.length)
-    console.log('RoadmapVueFlow mounted - edges length:', props.edges?.length)
-  })
-
-  watch(
-    () => props.nodes,
-    (newNodes) => {
-      console.log('RoadmapVueFlow nodes updated:', newNodes)
-    },
-    { deep: true }
-  )
-
-  watch(
-    () => props.edges,
-    (newEdges) => {
-      console.log('RoadmapVueFlow edges updated:', newEdges)
-    },
-    { deep: true }
-  )
 </script>
 
 <template>
@@ -122,8 +98,8 @@
   .vue-flow-readonly :deep(.vue-flow__node) {
     border-radius: 12px !important;
     background: #fafafa !important;
-    border: 3px solid #1976d2 !important;
-    color: #1976d2 !important;
+    border: 3px solid #757575 !important;
+    color: #424242 !important;
     font-weight: 500 !important;
     font-size: 0.85rem !important;
     transition: all 0.2s ease !important;
@@ -136,24 +112,23 @@
 
   /* 根节点特殊样式 */
   .vue-flow-readonly :deep(.vue-flow__node[data-id='0']) {
-    background: #1976d2 !important;
-    border: 3px solid #1976d2 !important;
+    background: #616161 !important;
+    border: 3px solid #616161 !important;
     color: #ffffff !important;
     font-weight: 600 !important;
   }
 
   .vue-flow-readonly :deep(.vue-flow__node[data-id='0']:hover) {
-    background: #1976d2 !important;
-    border: 3px solid #1976d2 !important;
+    background: #616161 !important;
+    border: 3px solid #616161 !important;
     color: #ffffff !important;
     font-weight: 600 !important;
   }
 
   .vue-flow-readonly :deep(.vue-flow__node:hover) {
-    background: #e3f2fd !important;
-    border-color: #1976d2 !important;
-    transform: translateY(-5px) !important;
-    color: #0d47a1 !important;
+    background: #f5f5f5 !important;
+    border-color: #757575 !important;
+    color: #212121 !important;
   }
 
   /* 已完成课程样式 */
@@ -203,7 +178,7 @@
   }
 
   :deep(.vue-flow__edge.selected .vue-flow__edge-path) {
-    stroke: #1976d2 !important;
+    stroke: #757575 !important;
     stroke-width: 3px !important;
   }
 

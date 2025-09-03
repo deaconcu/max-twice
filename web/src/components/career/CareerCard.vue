@@ -153,7 +153,6 @@
 
   .career-card:hover {
     transform: translateY(-4px) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
     border-color: #e0e0e0 !important;
   }
 
@@ -168,7 +167,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.58);
     backdrop-filter: blur(2px);
     display: flex;
     align-items: center;

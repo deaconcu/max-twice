@@ -202,7 +202,7 @@
   </v-container>
 </template>
 
-<style scoped>
+<style>
   :deep(.sticky-top) {
     position: sticky;
     top: 49px;

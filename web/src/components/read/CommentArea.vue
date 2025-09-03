@@ -14,7 +14,7 @@
       required: true,
     },
     type: {
-      type: String,
+      type: [String, Number],
       required: true,
     },
   })
@@ -197,7 +197,7 @@
     @click="returnToAllComment"
     >... {{ t('comment.viewAllComments') }}</a
   >
-  <v-infinite-scroll :key="scrollKey" :items="comments" :on-load="load" class="w-100">
+  <v-infinite-scroll :key="scrollKey" :items="comments" @load="load" class="w-100">
     <div
       v-for="comment in comments"
       :key="comment.id"

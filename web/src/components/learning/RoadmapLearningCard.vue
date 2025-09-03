@@ -1,5 +1,4 @@
 <script setup>
-  import { onMounted, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import RoadmapVueFlow from '@/components/common/RoadmapVueFlow.vue'
   import { USER_ROADMAP_STATE } from '@/constants/statusConstants'
@@ -9,81 +8,6 @@
       type: Object,
       required: true,
     },
-  })
-
-  // 测试用的简单节点和边数据
-  const testNodes = [
-    {
-      id: '1',
-      type: 'default',
-      position: { x: 50, y: 50 },
-      data: { label: 'React基础' },
-      style: { background: '#f0f9ff', border: '2px solid #0ea5e9', borderRadius: '8px', width: '120px', height: '40px' }
-    },
-    {
-      id: '2', 
-      type: 'default',
-      position: { x: 200, y: 50 },
-      data: { label: 'State管理' },
-      style: { background: '#f0fdf4', border: '2px solid #22c55e', borderRadius: '8px', width: '120px', height: '40px' }
-    },
-    {
-      id: '3',
-      type: 'default', 
-      position: { x: 350, y: 50 },
-      data: { label: 'Router' },
-      style: { background: '#fefce8', border: '2px solid #eab308', borderRadius: '8px', width: '120px', height: '40px' }
-    },
-    {
-      id: '4',
-      type: 'default',
-      position: { x: 125, y: 150 },
-      data: { label: 'Redux' },
-      style: { background: '#fdf2f8', border: '2px solid #ec4899', borderRadius: '8px', width: '120px', height: '40px' }
-    }
-  ]
-
-  const testEdges = [
-    {
-      id: 'e1-2',
-      source: '1',
-      target: '2',
-      type: 'smoothstep',
-      style: { stroke: '#0ea5e9', strokeWidth: 2 }
-    },
-    {
-      id: 'e2-3', 
-      source: '2',
-      target: '3',
-      type: 'smoothstep',
-      style: { stroke: '#22c55e', strokeWidth: 2 }
-    },
-    {
-      id: 'e2-4',
-      source: '2', 
-      target: '4',
-      type: 'smoothstep',
-      style: { stroke: '#ec4899', strokeWidth: 2 }
-    }
-  ]
-
-  // 使用测试数据
-  const displayNodes = computed(() => {
-    return testNodes
-  })
-
-  const displayEdges = computed(() => {
-    return testEdges
-  })
-
-  // 添加调试信息
-  onMounted(() => {
-    console.log('RoadmapLearningCard - roadmap数据:', props.roadmap)
-    console.log('RoadmapLearningCard - nodes:', props.roadmap.nodes)
-    console.log('RoadmapLearningCard - edges:', props.roadmap.edges)
-    console.log('RoadmapLearningCard - nodes数量:', props.roadmap.nodes?.length)
-    console.log('RoadmapLearningCard - edges数量:', props.roadmap.edges?.length)
-    console.log('RoadmapLearningCard - 使用测试数据:', { testNodes, testEdges })
   })
 
   const emit = defineEmits(['open-detail', 'vote', 'move-up', 'move-down', 'close'])
@@ -181,17 +105,6 @@
   const handleClose = (event) => {
     event.stopPropagation()
     emit('close', props.roadmap, event)
-  }
-
-  const handleNodeClick = ({ node }) => {
-    // 根节点不跳转
-    if (node.id === '0') {
-      return
-    }
-
-    if (node.data.link) {
-      window.open(node.data.link, '_blank')
-    }
   }
 </script>
 
@@ -385,7 +298,6 @@
               :readonly="true"
               :show-background="true"
               background-pattern="#aaa"
-              @node-click="handleNodeClick"
             />
           </div>
         </div>

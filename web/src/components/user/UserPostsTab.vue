@@ -122,7 +122,7 @@
       <v-infinite-scroll
         :key="postType"
         :items="postList"
-        :on-load="loadPosts"
+        @load="loadPosts"
         no-more-text="已经到底了"
         class="infinite-scroll-offset"
       >

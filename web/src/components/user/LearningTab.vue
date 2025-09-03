@@ -2,8 +2,7 @@
   import { computed, inject, onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { progressServiceV1 } from '@/services/api/v1/apiServiceV1'
-  import { VueFlow } from '@vue-flow/core'
-  import { Background } from '@vue-flow/background'
+  import RoadmapVueFlow from '@/components/common/RoadmapVueFlow.vue'
   import RoadmapDetail from '@/components/roadmap/RoadmapDetail.vue'
   import dagre from 'dagre'
   import { USER_ROADMAP_STATE } from '@/constants/statusConstants'
@@ -738,34 +737,22 @@
 
               <!-- 右侧VueFlow图表区域 -->
               <div class="d-flex align-center roadmap-right-content">
-                <div class="vue-flow-preview vue-flow-container">
-                  <VueFlow
-                    v-if="roadmap.nodes && roadmap.nodes.length > 0"
+                <div
+                  class="vue-flow-preview vue-flow-container"
+                  @click="openRoadmapDetail(roadmap)"
+                >
+                  <RoadmapVueFlow
                     :nodes="roadmap.nodes"
                     :edges="roadmap.edges || []"
-                    fit-view-on-init
+                    :readonly="true"
+                    :show-background="true"
+                    background-pattern="#aaa"
                     :min-zoom="0.3"
                     :max-zoom="0.8"
                     :snap-to-grid="true"
                     :snap-grid="[20, 20]"
-                    :zoom-on-scroll="false"
-                    :pan-on-scroll="false"
-                    :pan-on-drag="false"
-                    :nodes-draggable="false"
-                    :nodes-connectable="false"
-                    :elements-selectable="true"
-                    class="vue-flow-readonly"
                     @node-click="handleNodeClick"
-                    @click="openRoadmapDetail(roadmap)"
-                  >
-                    <Background pattern-color="#aaa" :gap="20" />
-                  </VueFlow>
-                  <div v-else class="d-flex align-center justify-center h-100 text-grey-darken-2">
-                    <div class="text-center">
-                      <v-icon icon="mdi-map-outline" size="48" class="mb-2"></v-icon>
-                      <div class="text-body-2">暂无学习路径</div>
-                    </div>
-                  </div>
+                  />
                 </div>
               </div>
             </div>
@@ -876,7 +863,9 @@
   </div>
 </template>
 
-<style scoped>
+<style>
+  @import '@vue-flow/core/dist/style.css';
+  @import '@vue-flow/core/dist/theme-default.css';
   /* 从 Self.vue 复制的样式 */
   .roadmap-card,
   .course-card {
@@ -982,41 +971,6 @@
     background: linear-gradient(135deg, #fafafa 0%, #f5f7ff 100%) !important;
     margin: 0 !important;
     padding: 0 !important;
-  }
-
-  .vue-flow-readonly :deep(.vue-flow__handle) {
-    width: 0 !important;
-    height: 0 !important;
-    border: none !important;
-    background: transparent !important;
-  }
-
-  .vue-flow-readonly :deep(.vue-flow__node) {
-    border-radius: 12px !important;
-    background: #fafafa !important;
-    border: 3px solid #424242 !important;
-    color: #424242 !important;
-    font-weight: 500 !important;
-    font-size: 0.85rem !important;
-    transition: all 0.2s ease;
-    cursor: pointer !important;
-    padding: 6px 8px !important;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .vue-flow-readonly :deep(.vue-flow__node[data-id='0']) {
-    background: #424242 !important;
-    border: 3px solid #424242 !important;
-    color: #ffffff !important;
-    font-weight: 600 !important;
-  }
-
-  .vue-flow-readonly :deep(.vue-flow__node:hover) {
-    background: #e3f2fd !important;
-    border-color: #424242 !important;
-    transform: translateY(-5px);
-    color: #424242 !important;
   }
 
   .vote-animation {

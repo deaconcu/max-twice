@@ -10,8 +10,6 @@
   import CourseLearningCard from '@/components/learning/CourseLearningCard.vue'
   import dagre from 'dagre'
   import { USER_COURSE_STATE, USER_ROADMAP_STATE } from '@/constants/statusConstants'
-  import VueFlowTest from '@/components/test/VueFlowTest.vue'
-
 
   const { t } = useI18n()
   const showSnackbar = inject('showSnackbar')
@@ -93,7 +91,7 @@
   }
 
   // 解析 content 字段 - 完全参考 RoadmapFlow 的实现
-  const parseContent = (content) => {
+  const parseContent = (content, profession = null) => {
     try {
       const data = typeof content === 'string' ? JSON.parse(content) : content
       // console.log('解析内容数据:', data) // 调试信息
@@ -111,7 +109,7 @@
             id: String(node.id),
             type: 'default',
             data: {
-              label: node.name || node.label || 'JAVA初级程序员', // 根节点显示职业名称
+              label: profession?.name || '当前职业', // 根节点显示职业名称
               link: null, // 根节点不跳转
               ...node.data,
             },
@@ -227,7 +225,7 @@
       if (roadmapResponse.code === 200 && Array.isArray(roadmapResponse.data)) {
         roadmaps = roadmapResponse.data.map((userRoadmap) => {
           const { roadmap } = userRoadmap
-          const { nodes, edges } = parseContent(roadmap.content)
+          const { nodes, edges } = parseContent(roadmap.content, roadmap.profession)
 
           // 首先进行布局计算 - 参考 RoadmapFlow
           const layoutedNodes = applyAutoLayout(nodes, edges, 'BT')
@@ -406,6 +404,12 @@
     const courseId = course.courseId || course.id
     const url = router.resolve({ path: '/read', query: { courseId } }).href
     window.open(url, '_blank')
+  }
+
+  // 打开路线图详情
+  const openRoadmapDetail = (roadmap) => {
+    selectedRoadmap.value = roadmap
+    showRoadmapDetail.value = true
   }
 
   // 路线图投票功能

@@ -161,6 +161,7 @@
       if (courseResponse.code === 200 && Array.isArray(courseResponse.data)) {
         courses = courseResponse.data.map((userCourse) => ({
           id: userCourse.id,
+          courseId: userCourse.course.id, // 添加实际课程ID
           title: userCourse.course.name,
           progress: userCourse.progressPercent || 0,
           status: userCourse.status,
@@ -300,7 +301,19 @@
 
   // 跳转到职业详情
   const goToCareerDetail = (profession) => {
-    router.push(`/career/${profession.id}`)
+    router.push(`/roadmap/${profession.id}`)
+  }
+
+  // 跳转到路线图详情
+  const goToRoadmapDetail = (roadmap) => {
+    router.push(`/roadmap/${roadmap.id}`)
+  }
+
+  // 跳转到课程详情(用户课程)
+  const openCourseInNewTab = (course) => {
+    const courseId = course.courseId || course.id
+    const url = router.resolve({ path: '/read', query: { courseId } }).href
+    window.open(url, '_blank')
   }
 
   // 跳转到课程详情
@@ -449,7 +462,7 @@
               </div>
             </v-col>
           </v-row>
-          
+
           <!-- 第二排：3个数据项 -->
           <v-row dense>
             <v-col cols="4" class="pa-0-5">
@@ -539,7 +552,8 @@
             <div
               v-for="roadmap in learningData.roadmaps.slice(0, 10)"
               :key="roadmap.id"
-              class="career-item pa-2 rounded bg-white mb-1 d-flex align-center"
+              class="career-item pa-2 rounded bg-white mb-1 d-flex align-center cursor-pointer"
+              @click="goToRoadmapDetail(roadmap)"
             >
               <v-avatar color="teal-lighten-4" size="20" class="mr-2">
                 <v-icon icon="mdi-account-tie" color="teal-darken-2" size="12"></v-icon>
@@ -604,7 +618,8 @@
             <div
               v-for="course in learningData.courses.slice(0, 10)"
               :key="course.id"
-              class="course-item pa-2 rounded bg-white mb-1 d-flex align-center"
+              class="course-item pa-2 rounded bg-white mb-1 d-flex align-center cursor-pointer"
+              @click="openCourseInNewTab(course)"
             >
               <v-avatar color="blue-lighten-4" size="20" class="mr-2">
                 <v-icon icon="mdi-book" color="primary" size="12"></v-icon>
@@ -817,7 +832,7 @@
   /* 固定在底部的样式 */
   .sidebar-fixed {
     position: sticky;
-    top: -300px;
+    top: -350px;
     z-index: 900;
   }
 

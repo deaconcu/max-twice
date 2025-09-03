@@ -57,7 +57,7 @@
   <!-- 一级分类按钮导航 -->
   <v-row v-if="!searchText.trim()" class="mb-4">
     <v-col cols="12">
-      <v-card flat class="bg-grey-lighten-5 px-6 pt-6 pb-2" rounded="xl">
+      <v-card flat class="bg-grey-lighten-5 px-6 pt-6 pb-2 category-navigation-card" rounded="xl">
         <!-- 标题区域 -->
         <div class="d-flex align-center mb-5">
           <div class="pa-3 rounded-xl bg-white mr-3">
@@ -156,6 +156,12 @@
 </template>
 
 <style scoped>
+  /* 职业领域筛选区域样式 */
+  .category-navigation-card {
+    border-left: 4px solid #d0d0d0 !important;
+    border-right: 4px solid #d0d0d0 !important;
+  }
+
   /* 分类按钮样式 */
   .category-btn-flat {
     transition: all 0.2s ease-in-out;

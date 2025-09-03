@@ -81,7 +81,7 @@
 
     <v-infinite-scroll
       :items="followeeList"
-      :on-load="loadFollowee"
+      @load="loadFollowee"
       no-more-text="已经到底了"
       class="infinite-scroll-offset"
     >

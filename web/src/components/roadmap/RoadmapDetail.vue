@@ -32,7 +32,7 @@
                   :nodes-connectable="false"
                   :elements-selectable="false"
                   class="vue-flow-readonly"
-                  @node-click="$emit('node-click', $event)"
+                  @node-click="handleNodeClick"
                 >
                   <Background pattern-color="#aaa" :gap="20" />
                   <Controls />
@@ -116,7 +116,7 @@
 
               <!-- 评论区域预留空间 -->
               <v-card-text class="px-4 pt-6 comment-section">
-                <Comment :object="roadmap" :type="3"></Comment>
+                <Comment :object="roadmap" :type="OBJECT_TYPE.ROADMAP"></Comment>
               </v-card-text>
             </v-card>
           </v-col>
@@ -132,6 +132,7 @@
   import { VueFlow } from '@vue-flow/core'
   import { Background } from '@vue-flow/background'
   import { Controls } from '@vue-flow/controls'
+  import { OBJECT_TYPE } from '@/constants/statusConstants'
   import Comment from '../read/CommentArea.vue'
 
   const { t } = useI18n()
@@ -200,6 +201,18 @@
     }
   })
 
+  // 节点点击处理 - 跳转到read页面
+  const handleNodeClick = ({ node }) => {
+    // 根节点不跳转
+    if (node.id === '0') {
+      return
+    }
+
+    if (node.data.link) {
+      window.open(node.data.link, '_blank')
+    }
+  }
+
   // 格式化日期
   const formatDate = (date) => {
     if (!date) return ''
@@ -265,11 +278,11 @@
   .vue-flow-readonly :deep(.vue-flow__node) {
     border-radius: 16px !important;
     box-shadow:
-      0 4px 16px rgba(0, 150, 136, 0.1),
+      0 4px 16px rgba(117, 117, 117, 0.1),
       0 1.5px 6px rgba(0, 0, 0, 0.06) !important;
     background: #fafafa !important;
-    border: 4px double #b2dfdb !important;
-    color: #68976b !important;
+    border: 4px double #bdbdbd !important;
+    color: #424242 !important;
     font-weight: 500 !important;
     font-size: 1rem !important;
     transition: all 0.2s ease;
@@ -281,27 +294,23 @@
 
   /* 根节点特殊样式 */
   .vue-flow-readonly :deep(.vue-flow__node[data-id='0']) {
-    background: #4f87a0 !important;
-    border: 4px double #cae0e9 !important;
+    background: #616161 !important;
+    border: 4px double #9e9e9e !important;
     color: #ffffff !important;
     font-weight: 500 !important;
   }
 
   .vue-flow-readonly :deep(.vue-flow__node[data-id='0']:hover) {
-    background: #4f87a0 !important;
-    border: 4px double #cae0e9 !important;
+    background: #616161 !important;
+    border: 4px double #9e9e9e !important;
     color: #ffffff !important;
     font-weight: 500 !important;
   }
 
   .vue-flow-readonly :deep(.vue-flow__node:hover) {
-    box-shadow:
-      0 8px 24px rgba(0, 150, 136, 0.18),
-      0 2px 8px rgba(0, 0, 0, 0.1) !important;
-    background: #e0f2f1 !important;
-    border-color: #b2dfdb !important;
-    transform: translateY(-10px);
-    color: #004d40 !important;
+    background: #f5f5f5 !important;
+    border-color: #bdbdbd !important;
+    color: #212121 !important;
   }
 
   /* Vue Flow 边样式 */
