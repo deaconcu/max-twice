@@ -2,7 +2,7 @@
   import { inject, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import dagre from 'dagre'
-  import { roadmapServiceV1, professionServiceV1 } from '@/services/api/v1/apiServiceV1'
+  import { professionServiceV1, roadmapServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { useRoute } from 'vue-router'
   import RoadmapDetail from '@/components/roadmap/RoadmapDetail.vue'
   import RoadmapCreate from '@/components/roadmap/RoadmapCreate.vue'
@@ -27,9 +27,6 @@
   // 路由参数
   const route = useRoute()
   const professionId = ref(route.params.professionId || '1')
-
-  // 职业名称常量 - 根节点显示用
-  const PROFESSION_NAME = 'JAVA初级程序员'
 
   // 自动布局函数
   const applyAutoLayout = (nodeList, edgeList, direction = 'BT') => {
@@ -127,11 +124,11 @@
     try {
       loading.value = true
       error.value = null
-      
+
       // 并行获取职业信息和路线图数据
       const [professionResponse, roadmapResponse] = await Promise.all([
         professionServiceV1.getProfession(professionId.value),
-        roadmapServiceV1.getProfessionRoadmaps(professionId.value)
+        roadmapServiceV1.getProfessionRoadmaps(professionId.value),
       ])
 
       console.log('职业信息：', professionResponse)
