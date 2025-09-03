@@ -83,6 +83,11 @@
 
   defineExpose({ editor })
 
+  const clearFormatting = () => {
+    editor.value?.chain().focus().unsetAllMarks().run()
+    editor.value?.chain().focus().clearNodes().run()
+  }
+
   const setLink = () => {
     const previousUrl = editor.value?.getAttributes('link').href
     // TODO: 实现一个安全的 URL 输入对话框
@@ -140,12 +145,7 @@
           <v-icon icon="mdi-arrow-u-right-top"></v-icon>
         </button>
 
-        <button
-          @click="
-            editor.chain().focus().unsetAllMarks().run();
-            editor.chain().focus().clearNodes().run()
-          "
-        >
+        <button @click="clearFormatting">
           <v-icon icon="mdi-eraser"></v-icon>
         </button>
 

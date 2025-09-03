@@ -149,11 +149,11 @@
       <v-infinite-scroll
         v-else
         :items="displayedCareers"
-        :on-load="handleLoadMoreCareers"
         color="primary"
+        @load="handleLoadMoreCareers"
       >
         <v-row>
-          <v-col v-for="career in displayedCareers" :key="career.id" cols="12" md="6" lg="4">
+          <v-col v-for="career in displayedCareers" :key="career.id" cols="12">
             <CareerCard
               :career="career"
               :get-category-name="getCategoryName"
@@ -213,7 +213,7 @@
       <v-infinite-scroll
         v-else
         :items="displayedCareers"
-        :on-load="handleLoadMoreCareers"
+        @load="handleLoadMoreCareers"
         color="primary"
       >
         <v-row>
@@ -261,7 +261,7 @@
       <v-infinite-scroll
         v-else
         :items="displayedCareers"
-        :on-load="handleLoadMoreCareers"
+        @load="handleLoadMoreCareers"
         color="primary"
       >
         <v-row>
@@ -298,6 +298,17 @@
   /* 职业网格样式 */
   .v-infinite-scroll {
     min-height: 200px;
+    overflow-x: hidden; /* 隐藏水平滚动条 */
+  }
+
+  /* 隐藏所有滚动条 */
+  :deep(*) {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  :deep(*::-webkit-scrollbar) {
+    display: none; /* Chrome, Safari and Opera */
   }
 
   /* 空状态样式 */

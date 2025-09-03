@@ -34,7 +34,7 @@
       required: true,
     },
     currNodeId: {
-      type: [String, Number],
+      type: Number,
       required: true,
     },
     currNode: {
@@ -84,14 +84,13 @@
   onMounted(() => {
     window.addEventListener('popstate', restoreScrollPosition)
 
-    // // console.log(`post: ${props.data.post}`)
+    // 以下处理路径直接定位到文章页或者评论的情况
 
     if ('tab' in route.query && route.query.tab === 'comment') {
-      // // console.log('xxss')
       tab.value = 'comment'
     }
 
-    if (props.data.post !== null) {
+    if (props.data.post !== null && props.data.post !== undefined) {
       switchTab('detail', dataRef.value.post)
     }
 
@@ -196,18 +195,14 @@
   updateLastPostingId()
 
   const switchTab = (tabName, posting) => {
-    // // console.log('switch tab')
     tab.value = tabName // 切换到指定 Tab
 
     if (tabName === 'list') {
-      // // console.log(`scroll: ${scrollPosition.value}`)
       nextTick(() => {
         window.scrollTo(0, scrollPosition.value)
       })
     } else {
-      // // console.log(`save: ${window.scrollY}`)
       scrollPosition.value = window.scrollY
-      //window.scrollTo(0, 75);
       window.scrollTo(0, 0)
       currPosting.value = posting
     }
@@ -215,23 +210,14 @@
 
   const loadMore = async ({ done }) => {
     try {
-      const params = {
-        lastId: lastPostingId.value,
-        lastScore: lastScore.value,
-        nodeId: props.currNodeId,
-      }
-      // // console.log(`begin load: param: ${JSON.stringify(params)}`)
-
       const response = await postServiceV1.getPosts(
-        params.ids,
-        params.nodeId,
-        params.lastScore,
-        params.lastPostingId
+        null,
+        props.currNodeId,
+        lastScore.value,
+        lastPostingId.value
       )
-      // // console.log(`response: ${JSON.stringify(response)}`)
 
       if (response.code === 200) {
-        // // console.log('Form submitted successfully')
         response.data.forEach((posting) => {
           if (posting.voteType === 0) {
             posting.voteType = null
@@ -561,6 +547,7 @@
         <AddArticle
           v-model="createArticleDialog"
           :node-id="props.currNodeId"
+          :path-text="props.pathText"
           @load-data="loadData"
         ></AddArticle>
 
@@ -620,7 +607,7 @@
       <v-infinite-scroll
         :key="scrollKey"
         :items="data.otherPostings"
-        :on-load="loadMore"
+        @load="loadMore"
         :no-more-text="t('postingList.reachedEnd')"
         class=""
       >

@@ -10,6 +10,8 @@
   import CourseLearningCard from '@/components/learning/CourseLearningCard.vue'
   import dagre from 'dagre'
   import { USER_COURSE_STATE, USER_ROADMAP_STATE } from '@/constants/statusConstants'
+  import VueFlowTest from '@/components/test/VueFlowTest.vue'
+
 
   const { t } = useI18n()
   const showSnackbar = inject('showSnackbar')
@@ -618,7 +620,10 @@
   />
 </template>
 
-<style scoped>
+<style>
+  @import '@vue-flow/core/dist/style.css';
+  @import '@vue-flow/core/dist/theme-default.css';
+
   .text-h7 {
     font-size: 1.15rem;
   }
@@ -957,157 +962,6 @@
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   }
 
-  /* Vue Flow 预览样式 - 完全参考 RoadmapCard */
-  .vue-flow-preview {
-    border-radius: 0 !important;
-    overflow: hidden !important;
-    border: none !important;
-    background: linear-gradient(135deg, #fafafa 0%, #f5f7ff 100%) !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* 只读模式下隐藏连接点 - 参考 RoadmapCard */
-  .vue-flow-readonly :deep(.vue-flow__handle) {
-    width: 0 !important;
-    height: 0 !important;
-    border: none !important;
-    background: transparent !important;
-  }
-
-  /* 只读模式下美化默认节点 - 参考 RoadmapCard */
-  .vue-flow-readonly :deep(.vue-flow__node) {
-    border-radius: 12px !important;
-    background: #fafafa !important;
-    border: 3px solid #1976d2 !important;
-    color: #1976d2 !important;
-    font-weight: 500 !important;
-    font-size: 0.85rem !important;
-    transition: all 0.2s ease;
-    cursor: pointer !important;
-    padding: 6px 8px !important;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* 根节点特殊样式 - 参考 RoadmapCard */
-  .vue-flow-readonly :deep(.vue-flow__node[data-id='0']) {
-    background: #1976d2 !important;
-    border: 3px solid #1976d2 !important;
-    color: #ffffff !important;
-    font-weight: 600 !important;
-  }
-
-  /* 已完成课程样式 */
-  .vue-flow-readonly :deep(.vue-flow__node.completed-course) {
-    background: #e8f5e9 !important;
-    border-color: #4caf50 !important;
-    color: #2e7d32 !important;
-  }
-
-  /* 已完成课程标识 */
-  .vue-flow-readonly :deep(.vue-flow__node.completed-course::after) {
-    content: '✓';
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    width: 16px;
-    height: 16px;
-    background: #4caf50;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    font-weight: bold;
-    border: 2px solid white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  }
-
-  /* 有进度课程的背景进度填充 */
-  .vue-flow-readonly :deep(.vue-flow__node.progress-course) {
-    background: linear-gradient(
-      to right,
-      #88ee76 var(--progress, 0%),
-      #fafafa var(--progress, 0%)
-    ) !important;
-    border: 3px solid #2fae19 !important;
-    color: #333 !important;
-  }
-
-  .vue-flow-readonly :deep(.vue-flow__node[data-id='0']:hover) {
-    background: #1976d2 !important;
-    border: 3px solid #1976d2 !important;
-    color: #ffffff !important;
-    font-weight: 600 !important;
-  }
-
-  .vue-flow-readonly :deep(.vue-flow__node:hover) {
-    background: #e3f2fd !important;
-    border-color: #1976d2 !important;
-    transform: translateY(-5px);
-    color: #0d47a1 !important;
-  }
-
-  /* 边样式 - 参考 RoadmapFlow */
-  :deep(.vue-flow__edge-path) {
-    stroke: #9e9e9e;
-    stroke-width: 2px;
-  }
-
-  :deep(.vue-flow__edge.selected .vue-flow__edge-path) {
-    stroke: #1976d2;
-    stroke-width: 3px;
-  }
-
-  /* 确保节点和边可以被选中 - 参考 RoadmapFlow */
-  :deep(.vue-flow__node) {
-    cursor: pointer !important;
-  }
-
-  :deep(.vue-flow__edge) {
-    cursor: pointer !important;
-  }
-
-  /* VueFlow 节点样式覆盖 */
-  :deep(.vue-flow__node) {
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    font-size: 12px;
-    font-weight: 500;
-  }
-
-  :deep(.vue-flow__node-default) {
-    background: white;
-    border: 2px solid #e0e0e0;
-    padding: 8px 12px;
-    min-width: 120px;
-    text-align: center;
-  }
-
-  :deep(.vue-flow__node.selected) {
-    border-color: #1976d2;
-    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
-  }
-
-  :deep(.vue-flow__controls) {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  :deep(.vue-flow__controls-button) {
-    border: none;
-    border-radius: 4px;
-    background: transparent;
-    transition: background-color 0.2s;
-  }
-
-  :deep(.vue-flow__controls-button:hover) {
-    background: #f5f5f5;
-  }
-
   /* 投票动画效果 */
   .vote-animation {
     animation: voteUp 0.3s ease;
@@ -1127,20 +981,6 @@
 
   /* 响应式设计 */
   @media (max-width: 768px) {
-    .vue-flow-container {
-      height: 250px !important;
-    }
-
-    .vue-flow-preview {
-      height: 200px !important;
-    }
-
-    :deep(.vue-flow__node-default) {
-      min-width: 100px;
-      font-size: 11px;
-      padding: 6px 8px;
-    }
-
     .roadmap-card .d-flex {
       flex-direction: column !important;
     }

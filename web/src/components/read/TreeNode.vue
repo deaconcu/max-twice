@@ -31,13 +31,20 @@
     }
   }
 
+  // 确保节点展开
+  const expandNode = (key) => {
+    if (!expandedNodes.value.includes(key)) {
+      expandedNodes.value.push(key)
+    }
+  }
+
   // Watch for changes in props to update expanded nodes
   watch(
     () => [props.nodeData, props.path, props.currPath],
     () => {
       Object.keys(props.nodeData).forEach((key) => {
         if (props.path.startsWith(`${props.currPath}-${key}`)) {
-          toggleNode(key)
+          expandNode(key)
         }
       })
     },
@@ -148,20 +155,20 @@
 
               <span
                 v-if="depth === 1 && calculatePath(currPath, key) == path"
-                class="font-weight-black text-primary text-body-1"
+                class="tree-node-text text-primary text-body-1"
               >
                 {{ nodeInfos[key]?.name || key }}
               </span>
-              <span v-else-if="depth === 1" class="font-weight-black">
+              <span v-else-if="depth === 1" class="tree-node-text">
                 {{ nodeInfos[key]?.name || key }}
               </span>
               <span
                 v-else-if="calculatePath(currPath, key) == path"
-                class="font-weight-bold text-teal"
+                class="tree-node-text text-teal"
               >
                 {{ nodeInfos[key]?.name || key }}
               </span>
-              <span v-else class="font-weight-bold">
+              <span v-else class="tree-node-text">
                 {{ nodeInfos[key]?.name || key }}
               </span>
             </div>
@@ -207,6 +214,10 @@
   .tree-node-item {
     font-size: 0.95em;
     margin-bottom: 0.38em;
+  }
+
+  .tree-node-text {
+    font-weight: 500;
   }
 
   a {

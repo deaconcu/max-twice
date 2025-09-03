@@ -87,6 +87,12 @@
     subscriptions.value = JSON.parse(JSON.stringify(subscriptionsCopy.value))
   }
 
+  // 处理鼠标悬停
+  const handleCourseHover = (element, index) => {
+    courseDescription.value = element.description
+    courseHoveringIndex.value = index
+  }
+
   // 暴露函数给父组件调用
   defineExpose({
     loadSubscription,
@@ -122,10 +128,7 @@
                     v-bind="hoverProps"
                     class="mr-4 mb-4 px-4 py-4 text-body-1"
                     :class="courseHoveringIndex == index ? 'bg-red-lighten-1' : 'bg-grey-lighten-4'"
-                    @mouseenter="
-                      courseDescription = element.description;
-                      courseHoveringIndex = index
-                    "
+                    @mouseenter="handleCourseHover(element, index)"
                   >
                     <span class="font-weight-medium">{{ element.name }}</span>
                     <v-slide-x-transition hide-on-leave>
@@ -150,10 +153,7 @@
             :key="element.id"
             variant="flat"
             class="mr-4 mb-4 px-4 py-4 text-body-1 bg-grey-lighten-4"
-            @mouseenter="
-              courseDescription = element.description;
-              courseHoveringIndex = index
-            "
+            @mouseenter="handleCourseHover(element, index)"
           >
             <span class="font-weight-medium">{{ element.name }}</span>
           </v-chip>

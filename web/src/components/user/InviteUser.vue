@@ -8,7 +8,7 @@
 
   const props = defineProps({
     nodeId: {
-      type: String,
+      type: Number,
       required: true,
     },
   })

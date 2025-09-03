@@ -7,7 +7,7 @@
 
   const props = defineProps({
     nodeId: {
-      type: [String, Number],
+      type: Number,
       required: true,
     },
     pathText: {

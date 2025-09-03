@@ -308,12 +308,10 @@
 
   /* Vue Flow 预览样式 */
   .vue-flow-preview {
-    border-radius: 0 !important;
-    overflow: hidden !important;
-    border: none !important;
-    background: linear-gradient(135deg, #fafafa 0%, #f5f7ff 100%) !important;
-    margin: 0 !important;
-    padding: 0 !important;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fafafa;
+    border: 1px solid #e0e0e0;
   }
 
   /* 卡片操作区域样式 */
@@ -326,51 +324,6 @@
     border-top: 1px solid #e3f2fd !important;
     min-height: 48px !important;
     border-radius: 0 0 12px 12px !important;
-  }
-
-  /* 只读模式下隐藏连接点 */
-  .vue-flow-readonly :deep(.vue-flow__handle) {
-    width: 0 !important;
-    height: 0 !important;
-    border: none !important;
-    background: transparent !important;
-  }
-
-  /* 只读模式下美化默认节点 */
-  .vue-flow-readonly :deep(.vue-flow__node) {
-    border-radius: 12px !important;
-    background: #fafafa !important;
-    border: 3px solid #4c5257 !important;
-    color: #4c5257 !important;
-    font-weight: 500 !important;
-    font-size: 0.85rem !important;
-    transition: all 0.2s ease;
-    cursor: pointer !important;
-    padding: 6px 8px !important;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* 根节点特殊样式 */
-  .vue-flow-readonly :deep(.vue-flow__node[data-id='0']) {
-    background: #4c5257 !important;
-    border: 3px solid #4c5257 !important;
-    color: #ffffff !important;
-    font-weight: 600 !important;
-  }
-
-  .vue-flow-readonly :deep(.vue-flow__node[data-id='0']:hover) {
-    background: #1976d2 !important;
-    border: 3px solid #1976d2 !important;
-    color: #ffffff !important;
-    font-weight: 600 !important;
-  }
-
-  .vue-flow-readonly :deep(.vue-flow__node:hover) {
-    background: #e3f2fd !important;
-    border-color: #1976d2 !important;
-    transform: translateY(-5px);
-    color: #0d47a1 !important;
   }
 
   /* 响应式设计 */
@@ -394,11 +347,6 @@
   @media (max-width: 768px) {
     .roadmap-card .vue-flow-preview {
       height: 180px !important;
-    }
-
-    .vue-flow-readonly :deep(.vue-flow__node) {
-      font-size: 0.75rem !important;
-      padding: 4px 6px !important;
     }
   }
 

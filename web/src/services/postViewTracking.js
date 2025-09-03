@@ -11,7 +11,7 @@
  * @since 2024-08-24
  */
 
-import { learnService } from './learnService'
+import { statsServiceV1 } from './api/v1/apiServiceV1'
 import { useUserStore } from '@/stores/user'
 
 class PostViewTracker {
@@ -255,7 +255,7 @@ class PostViewTracker {
     const submitPromises = viewsToSubmit.map(async (viewRecord) => {
       try {
         // 调用后端API记录浏览（articleId参数传入postId）
-        const response = await learnService.recordView(
+        const response = await statsServiceV1.recordView(
           viewRecord.postId, // articleId参数传入postId
           userId, // 用户ID
           null // IP地址由后端获取
@@ -454,17 +454,12 @@ class PostViewTracker {
       const userStore = useUserStore()
       const userId = userStore.userId || null
 
-      this.pendingViews.forEach((viewRecord) => {
+      this.pendingViews.forEach(async (viewRecord) => {
         try {
-          const params = new URLSearchParams({
-            articleId: viewRecord.postId.toString(),
-            userId: userId || '',
-          })
-
-          navigator.sendBeacon('/api/stats/view', params)
-          this.log('Beacon发送成功', { postId: viewRecord.postId })
+          await statsServiceV1.recordView(viewRecord.postId, userId, null)
+          this.log('浏览记录提交成功', { postId: viewRecord.postId })
         } catch (error) {
-          this.log('Beacon发送异常', {
+          this.log('浏览记录提交异常', {
             postId: viewRecord.postId,
             error: error.message,
           })

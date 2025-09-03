@@ -57,7 +57,7 @@
   <!-- 一级分类按钮导航 -->
   <v-row v-if="!searchText.trim()" class="mb-4">
     <v-col cols="12">
-      <v-card flat class="bg-grey-lighten-5 px-6 pt-6 pb-2 card-border" rounded="xl">
+      <v-card flat class="bg-grey-lighten-5 px-6 pt-6 pb-2" rounded="xl">
         <!-- 标题区域 -->
         <div class="d-flex align-center mb-5">
           <div class="pa-3 rounded-xl bg-white mr-3">
@@ -156,11 +156,6 @@
 </template>
 
 <style scoped>
-  /* 卡片边框样式 */
-  .card-border {
-    border: 1px #ccc solid;
-  }
-
   /* 分类按钮样式 */
   .category-btn-flat {
     transition: all 0.2s ease-in-out;
