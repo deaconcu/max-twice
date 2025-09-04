@@ -14,7 +14,7 @@
   }
 
   interface Props {
-    selectedMessageType?: MessageType
+    selectedMessageType?: string 
     unreadCount?: number
     totalMessages?: number
   }

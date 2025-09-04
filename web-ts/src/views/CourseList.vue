@@ -11,6 +11,10 @@ import {
 import { useUserStore } from '@/stores/user'
 import type { Course } from '@/types/course'
 import type { UserCourse } from '@/types/userCourse'
+import RightSidebar from '@/components/common/RightSidebar.vue'
+import CourseHeader from '@/components/course/CourseHeader.vue'
+import CourseCreateDialog from '@/components/course/CourseCreateDialog.vue'
+import CourseCategoryCard from '@/components/course/CourseCategoryCard.vue'
 
 // 类型定义
 interface Category {
@@ -246,135 +250,38 @@ const handleOpenCourse = (courseId: number): void => {
         <!-- 主内容区域 -->
         <v-col cols="9" class="pr-8">
           <!-- 页面头部 -->
-          <div class="course-header mb-4">
-            <v-card>
-              <v-card-title>课程列表</v-card-title>
-              <v-card-text>
-                <v-tabs v-model="selectedNavTab">
-                  <v-tab value="courses">全部课程</v-tab>
-                  <v-tab value="hot">热门课程</v-tab>
-                </v-tabs>
-                <v-btn 
-                  color="primary" 
-                  @click="handleOpenCreateDialog"
-                  class="mt-2"
-                >
-                  创建课程
-                </v-btn>
-              </v-card-text>
-            </v-card>
-          </div>
+          <CourseHeader
+            v-model:selected-nav-tab="selectedNavTab"
+            @search="handleSearch"
+            @open-create-dialog="handleOpenCreateDialog"
+          />
 
           <!-- 分类卡片列表 -->
-          <div v-for="(category, categoryIndex) in config.courses" :key="categoryIndex" class="mb-4">
-            <v-card>
-              <v-card-title 
-                @click="handleToggleFirstLevel(categoryIndex)"
-                class="cursor-pointer"
-                :style="{ backgroundColor: category.color }"
-              >
-                <v-icon v-if="category.icon" class="mr-2">{{ category.icon }}</v-icon>
-                {{ category.name }}
-                <v-spacer />
-                <v-icon>
-                  {{ activeFirstLvl === categoryIndex ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
-                </v-icon>
-              </v-card-title>
-              
-              <v-expand-transition>
-                <div v-show="activeFirstLvl === categoryIndex">
-                  <v-card-text>
-                    <!-- 子分类选择 -->
-                    <v-chip-group
-                      v-model="selected[categoryIndex]"
-                      @update:model-value="(value) => handleSelectSubCategory(categoryIndex, value)"
-                      mandatory
-                      class="mb-3"
-                    >
-                      <v-chip
-                        v-for="(subCategory, subIndex) in category.list"
-                        :key="subIndex"
-                        :value="subIndex"
-                        filter
-                      >
-                        {{ subCategory.name }}
-                      </v-chip>
-                    </v-chip-group>
-
-                    <!-- 课程列表 -->
-                    <div v-if="loading" class="text-center py-4">
-                      <v-progress-circular indeterminate color="primary" />
-                    </div>
-                    
-                    <v-row v-else-if="courses.length > 0">
-                      <v-col
-                        v-for="course in courses"
-                        :key="course.id"
-                        cols="12"
-                        md="6"
-                        lg="4"
-                      >
-                        <v-card 
-                          @click="handleOpenCourse(course.id)"
-                          class="cursor-pointer hover-card"
-                          height="200"
-                        >
-                          <v-card-title class="text-h6">{{ course.name }}</v-card-title>
-                          <v-card-text>
-                            <p class="text-body-2">{{ course.description }}</p>
-                            <v-chip size="small" color="primary" class="mt-2">
-                              难度: 初级
-                            </v-chip>
-                          </v-card-text>
-                        </v-card>
-                      </v-col>
-                    </v-row>
-                    
-                    <div v-else class="text-center py-4 text-grey">
-                      暂无课程数据
-                    </div>
-                  </v-card-text>
-                </div>
-              </v-expand-transition>
-            </v-card>
-          </div>
+          <CourseCategoryCard
+            v-for="(category, categoryIndex) in config.courses"
+            :key="categoryIndex"
+            :category="category"
+            :category-index="categoryIndex"
+            :active-first-lvl="activeFirstLvl"
+            :selected-sub-category="selected[categoryIndex]"
+            :courses="courses"
+            :loading="loading"
+            @toggle-first-level="handleToggleFirstLevel"
+            @select-sub-category="handleSelectSubCategory"
+            @open-course="handleOpenCourse"
+          />
 
           <!-- 课程创建对话框 -->
-          <v-dialog v-model="applyCourseDialog" max-width="600px">
-            <v-card>
-              <v-card-title>创建新课程</v-card-title>
-              <v-card-text>
-                <p>课程创建功能待完善...</p>
-              </v-card-text>
-              <v-card-actions>
-                <v-spacer />
-                <v-btn @click="applyCourseDialog = false">取消</v-btn>
-                <v-btn color="primary" @click="applyCourseDialog = false">确定</v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-dialog>
+          <CourseCreateDialog
+            v-model="applyCourseDialog"
+            :categories="config.courses || []"
+            @submit="handleCreateCourse"
+          />
         </v-col>
 
         <!-- 右侧边栏 -->
         <v-col cols="3">
-          <v-card>
-            <v-card-title>热门课程</v-card-title>
-            <v-card-text>
-              <div v-for="course in hotCourses" :key="course.id" class="mb-2">
-                <v-chip
-                  @click="handleOpenCourse(course.id)"
-                  class="cursor-pointer"
-                  color="primary"
-                  variant="outlined"
-                >
-                  {{ course.name }}
-                </v-chip>
-                <div class="text-caption text-grey">
-                  学习人数: {{ course.learnerCount }}
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
+          <RightSidebar />
         </v-col>
       </v-row>
     </v-container>
@@ -406,19 +313,6 @@ h5,
 h6 {
   font-weight: 700 !important;
   letter-spacing: -0.01em;
-}
-
-.cursor-pointer {
-  cursor: pointer;
-}
-
-.hover-card {
-  transition: transform 0.2s ease-in-out;
-}
-
-.hover-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
 }
 
 /* 自定义滚动条样式 */

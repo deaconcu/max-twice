@@ -8,7 +8,7 @@ import { ProfessionState } from './enums'
 // 职业信息
 export interface Profession {
   id: number
-  name?: string               // 职业名称 (可选)
+  name: string               // 职业名称 (可选)
   description?: string        // 职业描述 (可选)
   price?: string             // 价格 (可选)
   skills?: string            // 技能要求 (可选)

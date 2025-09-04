@@ -21,7 +21,7 @@
                 class="vue-flow-container pa-2 roadmap-detail-content flex-grow-1 vue-flow-wrapper"
               >
                 <VueFlow
-                  :nodes="roadmap.nodes"
+                  :nodes="roadmap.nodes as any"
                   :edges="roadmap.edges"
                   fit-view-on-init
                   :min-zoom="0.9"
@@ -116,7 +116,7 @@
 
               <!-- 评论区域预留空间 -->
               <v-card-text class="px-4 pt-6 comment-section">
-                <Comment :object="{ id: roadmap.id, commentCount: roadmap.commentCount || 0 }" :type="ObjectType.ROADMAP"></Comment>
+                <Comment :object="{ id: roadmap.id, commentCount: roadmap.comment || 0 }" :type="ObjectType.ROADMAP"></Comment>
               </v-card-text>
             </v-card>
           </v-col>
@@ -135,6 +135,8 @@
   import type { Node, Edge } from '@vue-flow/core'
   import { ObjectType } from '@/types/enums'
   import Comment from '../read/CommentArea.vue'
+  import type { Roadmap } from '@/types/roadmap'
+  import type { ProcessedUserRoadmap } from '@/types/userRoadmap'
 
   const { t } = useI18n()
 
@@ -144,21 +146,9 @@
     [key: string]: any
   }
 
-  interface Roadmap {
-    id: number
-    description?: string
-    createdAt?: string
-    upvoted?: boolean
-    vote?: number
-    nodes?: Node[]
-    edges?: Edge[]
-    creator?: Creator
-    [key: string]: any
-  }
-
   interface Props {
     modelValue?: boolean
-    roadmap?: Roadmap | null
+    roadmap?: ProcessedUserRoadmap | null
   }
 
   interface Emits {
@@ -188,7 +178,7 @@
   const handleVote = (event: Event): void => {
     console.log('Handling vote for roadmap:', props.roadmap)
     if (props.roadmap) {
-      emit('vote', props.roadmap, event)
+      emit('vote', props.roadmap as unknown as Roadmap, event)
     }
   }
 

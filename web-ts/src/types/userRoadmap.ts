@@ -5,6 +5,7 @@
 
 import type { Roadmap } from './roadmap'
 import { UserRoadmapState } from './enums'
+import type { Edge } from 'node_modules/@vue-flow/core/dist/types/edge'
 
 // 用户路线图信息
 export interface UserRoadmap {
@@ -17,4 +18,29 @@ export interface UserRoadmap {
   completedAt?: string         // 完成时间 (可选)
   createdAt?: string           // 创建时间 (可选)
   updatedAt?: string           // 更新时间 (可选)
+}
+
+
+export interface ProcessedUserRoadmap {
+  id: number
+  title: string
+  description?: string
+  author: string
+  createdAt: string
+  addedDate: string
+  vote: number
+  upvoted: boolean
+  progress: number
+  completedNodes: number
+  totalNodes: number
+  lastActivity: string
+  state: UserRoadmapState
+  startedAt?: string
+  completedAt?: string
+  tags: string[]
+  profession?: { name: string }
+  nodes: Node[]
+  edges: Edge[]
+  content: string
+  [key: string]: any
 }

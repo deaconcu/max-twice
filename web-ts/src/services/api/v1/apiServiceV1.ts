@@ -450,7 +450,7 @@ export const progressServiceV1 = {
     return apiClient.get(`${API_V1_PREFIX}/progress/nodes/${nodeId}/status`)
   },
 
-  startCourse(courseId: number): Promise<ApiResponse<UserCourse>> {
+  startCourse(courseId: number): Promise<ApiResponse<boolean>> {
     return apiClient.post(`${API_V1_PREFIX}/progress/courses/${courseId}/start`, {
       courseId,
     })
