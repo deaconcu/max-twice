@@ -1,0 +1,33 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+
+    /* 渐进式迁移配置 */
+    "allowJs": true,              // 允许编译 JS 文件
+    "strict": false,              // 暂时关闭严格模式
+    "noImplicitAny": false,       // 允许隐式 any 类型
+    "noUnusedLocals": false,      // 暂时允许未使用的变量
+    "noUnusedParameters": false,  // 暂时允许未使用的参数
+    "skipLibCheck": true,         // 跳过第三方库类型检查
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+
+    /* 路径映射 */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+
+    /* 类型定义 */
+    "types": ["vite/client", "vuetify", "node"]
+  },
+  "include": [
+    "src/**/*.ts", 
+    "src/**/*.tsx", 
+    "src/**/*.vue",
+    "src/**/*.js",    // 包含 JS 文件
+    "src/**/*.jsx"     // 包含 JSX 文件
+  ]
+}

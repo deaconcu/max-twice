@@ -4,6 +4,7 @@
   import { postServiceV1 } from '@/services/api/v1/apiServiceV1'
   import Tiptap from './TiptapInput.vue'
   import { useI18n } from 'vue-i18n'
+  import { POST_TYPE } from '@/constants/statusConstants'
 
   const props = defineProps({
     nodeId: {
@@ -29,7 +30,7 @@
       const data = {
         content: editorRef.value.editor.getHTML(),
         nodeId: props.nodeId,
-        type: 2,
+        type: POST_TYPE.ARTICLE,
       }
 
       console.log(`request: ${JSON.stringify(data)}`)
