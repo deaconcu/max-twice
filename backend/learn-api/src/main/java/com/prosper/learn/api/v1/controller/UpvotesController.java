@@ -4,12 +4,14 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.UpvoteService;
+import com.prosper.learn.dto.response.UpvoteStatusDTO;
 import lombok.RequiredArgsConstructor;
 import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
 import static com.prosper.learn.common.Enums.ObjectType.comment;
 import static com.prosper.learn.common.Enums.ObjectType.post;
+import static com.prosper.learn.common.Enums.ObjectType.roadmap;
 
 /**
  * 点赞接口
@@ -27,7 +29,7 @@ public class UpvotesController {
      * 映射: POST /upvote → POST /api/v1/upvotes
      */
     @PostMapping("/upvotes")
-    public ApiResponse<Object> upvote(
+    public ApiResponse<UpvoteStatusDTO> upvote(
             @JsonParam("objectId") Long objectId,
             @JsonParam("objectType") Integer objectType,
             @JsonParam("type") Integer type) {
@@ -38,11 +40,13 @@ public class UpvotesController {
             upvoteService.upvotePost(objectId, userId, type);
         } else if (objectType == comment.value()) {
             upvoteService.upvoteComment(objectId, userId);
+        } else if (objectType == roadmap.value()) {
+            upvoteService.upvoteRoadmap(objectId, userId);
         } else {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }
         
-        Object result = upvoteService.getUpvoteObjectWithStatus(objectId, objectType, userId);
+        UpvoteStatusDTO result = upvoteService.getUpvoteStatus(objectId, objectType, userId);
         return ApiResponse.success(result);
     }
 
@@ -51,12 +55,12 @@ public class UpvotesController {
      * 映射: 新增接口 → GET /api/v1/upvotes/status?objectId=123&objectType=1
      */
     @GetMapping("/upvotes/status")
-    public ApiResponse<Object> getUpvoteStatus(
+    public ApiResponse<UpvoteStatusDTO> getUpvoteStatus(
             @RequestParam Long objectId, 
             @RequestParam int objectType) {
         
         long userId = StpUtil.getLoginIdAsLong();
-        Object result = upvoteService.getUpvoteStatus(objectId, objectType, userId);
+        UpvoteStatusDTO result = upvoteService.getUpvoteStatus(objectId, objectType, userId);
         
         return ApiResponse.success(result);
     }

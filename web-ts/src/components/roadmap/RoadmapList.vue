@@ -1,7 +1,8 @@
 <script setup lang="ts">
   import { inject } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { progressServiceV1, roadmapServiceV1 } from '@/services/api/v1/apiServiceV1'
+  import { progressServiceV1, roadmapServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1'
+  import { ObjectType, VoteType } from '@/types/enums'
   import RoadmapCard from './RoadmapCard.vue'
 
   interface Roadmap {
@@ -30,7 +31,7 @@
     (e: 'open-detail', roadmap: Roadmap): void
     (e: 'copy-roadmap', roadmap: Roadmap): void
     (e: 'create-roadmap'): void
-    (e: 'roadmaps-updated', roadmapId: number, status: string): void
+    (e: 'roadmaps-updated', roadmapId: number, pinned: boolean): void
     (e: 'update-roadmap', roadmapId: number, updates: RoadmapUpdate): void
   }
 
@@ -57,14 +58,14 @@
     event.stopPropagation() // 阻止卡片点击事件
 
     try {
-      const response = await roadmapServiceV1.upvoteRoadmap(roadmap.id)
+      const response = await upvoteServiceV1.upvote(roadmap.id, ObjectType.ROADMAP, VoteType.NORMAL)
       if (response.code === 200) {
         // 通过事件通知父组件更新数据
         emit('update-roadmap', roadmap.id, {
-          vote: response.data.vote,
+          vote: response.data.upvotes,
           upvoted: response.data.upvoted,
         })
-        if (roadmap.upvoted) {
+        if (response.data.upvoted) {
           showSnackbar?.(t('roadmap.voteSuccess'))
         } else {
           showSnackbar?.(t('roadmap.voteCancel'))
@@ -85,16 +86,16 @@
       const response = await roadmapServiceV1.pinRoadmap(props.professionId, roadmap.id)
 
       if (response.code === 200) {
-        const status = response.data
+        const pinned = response.data
 
-        if (status === 'pinned') {
+        if (pinned) {
           showSnackbar?.(t('roadmap.pinSuccess'))
-        } else if (status === 'unpinned') {
+        } else {
           showSnackbar?.(t('roadmap.unpinSuccess'))
         }
 
         // 通知父组件更新数据和重新排序
-        emit('roadmaps-updated', roadmap.id, status)
+        emit('roadmaps-updated', roadmap.id, pinned)
       } else {
         showSnackbar?.(t('roadmap.pinFailed'))
       }

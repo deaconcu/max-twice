@@ -3,17 +3,10 @@ import { nextTick, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { commentServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1'
+import type { Comment } from '@/types/comment'
 
 const { t } = useI18n()
 const route = useRoute()
-
-interface Comment {
-  id: number
-  content: string
-  createdAt: string
-  upvoteCount: number
-  upvoted: number
-}
 
 interface Props {
   commentId: number
@@ -108,7 +101,7 @@ const upvote = async (comment: Comment): Promise<void> => {
     const response = await upvoteServiceV1.upvote(comment.id, 2, 2)
 
     if (response.code === 200) {
-      comment.upvoteCount = response.data.upvoteCount
+      comment.upvoteCount = response.data.upvotes
       comment.upvoted = response.data.upvoted
     }
   } catch (error) {
@@ -144,7 +137,7 @@ const sendComment = (): void => {
             <v-btn
               class="ms-0"
               variant="flat"
-              :color="comment.upvoted > 0 ? 'teal' : 'grey-lighten-4'"
+              :color="comment.upvoted ? 'teal' : 'grey-lighten-4'"
               rounded="xl"
               density="compact"
               prepend-icon="mdi-arrow-up"

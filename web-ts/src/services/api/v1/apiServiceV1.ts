@@ -1,7 +1,7 @@
 import axios from 'axios'
 import type { InternalAxiosRequestConfig } from 'axios'
 import type { ApiResponse } from '@/types/api'
-import type { User } from '@/types/user'
+import type { User, LoginResponseData, UserStatsDTO } from '@/types/user'
 import type { Course } from '@/types/course'
 import type { Post } from '@/types/post'
 import type { Comment } from '@/types/comment'
@@ -9,7 +9,16 @@ import type { Profession } from '@/types/profession'
 import type { Roadmap } from '@/types/roadmap'
 import type { UserCourse } from '@/types/userCourse'
 import type { UserRoadmap } from '@/types/userRoadmap'
+import type { Message } from '@/types/message'
 import type { PlatformStats, DailyStats } from '@/types/stats'
+import type { Node } from '@/types/node'
+import type { 
+  NodeProgressResponse, 
+  CourseCompletionResponse, 
+  ApprovalResponse, 
+  ReadResponse, 
+  UpvoteStatusResponse 
+} from '@/types/response'
 import { ObjectType, VoteType, MessageType } from '@/types/enums'
 
 // 设置 axios 默认配置
@@ -46,14 +55,14 @@ const API_V1_PREFIX = '/api/v1'
 
 // 用户认证服务
 export const authServiceV1 = {
-  login(email: string, password: string): Promise<ApiResponse<User>> {
+  login(email: string, password: string): Promise<ApiResponse<LoginResponseData>> {
     return apiClient.post(`${API_V1_PREFIX}/auth/login`, {
       email,
       password,
     })
   },
 
-  register(userName: string, email: string, password: string): Promise<ApiResponse<User>> {
+  register(userName: string, email: string, password: string): Promise<ApiResponse<void>> {
     return apiClient.post(`${API_V1_PREFIX}/auth/register`, {
       userName,
       email,
@@ -61,7 +70,7 @@ export const authServiceV1 = {
     })
   },
 
-  validateEmail(email: string, code: string): Promise<ApiResponse<any>> {
+  validateEmail(email: string, code: string): Promise<ApiResponse<User>> {
     return apiClient.post(`${API_V1_PREFIX}/auth/validate-email`, {
       email,
       code,
@@ -101,13 +110,13 @@ export const userServiceV1 = {
 
 // 关注服务
 export const followServiceV1 = {
-  follow(followeeId: number): Promise<ApiResponse<any>> {
+  follow(followeeId: number): Promise<ApiResponse<void>> {
     return apiClient.post(`${API_V1_PREFIX}/follows`, {
       followeeId,
     })
   },
 
-  unfollow(followeeId: number): Promise<ApiResponse<any>> {
+  unfollow(followeeId: number): Promise<ApiResponse<void>> {
     return apiClient.delete(`${API_V1_PREFIX}/follows/${followeeId}`)
   },
 
@@ -124,7 +133,7 @@ export const subscriptionServiceV1 = {
     return apiClient.get(`${API_V1_PREFIX}/users/${userId}/subscriptions`)
   },
 
-  subscribe(courseId: number): Promise<ApiResponse<any>> {
+  subscribe(courseId: number): Promise<ApiResponse<void>> {
     return apiClient.post(`${API_V1_PREFIX}/users/current/subscriptions`, {
       courseId,
     })
@@ -136,7 +145,7 @@ export const subscriptionServiceV1 = {
     })
   },
 
-  unsubscribe(courseId: number): Promise<ApiResponse<any>> {
+  unsubscribe(courseId: number): Promise<ApiResponse<void>> {
     return apiClient.delete(`${API_V1_PREFIX}/users/current/subscriptions/${courseId}`)
   },
 }
@@ -182,14 +191,14 @@ export const professionServiceV1 = {
     return apiClient.put(`${API_V1_PREFIX}/professions/${id}`, professionData)
   },
 
-  approveProfession(id: number, action: string, rejectedReason?: string): Promise<ApiResponse<any>> {
+  approveProfession(id: number, action: string, rejectedReason?: string): Promise<ApiResponse<ApprovalResponse>> {
     return apiClient.post(`${API_V1_PREFIX}/professions/${id}/approve`, {
       action,
       rejectedReason,
     })
   },
 
-  deleteProfession(id: number): Promise<ApiResponse<any>> {
+  deleteProfession(id: number): Promise<ApiResponse<void>> {
     return apiClient.delete(`${API_V1_PREFIX}/professions/${id}`)
   },
 
@@ -247,7 +256,7 @@ export const courseServiceV1 = {
     })
   },
 
-  approveCourse(id: number, action: string, rejectedReason?: string): Promise<ApiResponse<any>> {
+  approveCourse(id: number, action: string, rejectedReason?: string): Promise<ApiResponse<ApprovalResponse>> {
     return apiClient.post(`${API_V1_PREFIX}/courses/${id}/approve`, {
       action,
       rejectedReason,
@@ -277,7 +286,7 @@ export const postServiceV1 = {
     return apiClient.put(`${API_V1_PREFIX}/posts/${id}`, postData)
   },
 
-  deletePost(id: number): Promise<ApiResponse<any>> {
+  deletePost(id: number): Promise<ApiResponse<void>> {
     return apiClient.delete(`${API_V1_PREFIX}/posts/${id}`)
   },
 
@@ -293,7 +302,7 @@ export const postServiceV1 = {
     return apiClient.get(`${API_V1_PREFIX}/admin/posts/pending`)
   },
 
-  approvePost(id: number, approve: boolean): Promise<ApiResponse<any>> {
+  approvePost(id: number, approve: boolean): Promise<ApiResponse<Post>> {
     return apiClient.put(`${API_V1_PREFIX}/admin/posts/${id}/approve`, null, {
       params: { approve },
     })
@@ -328,7 +337,7 @@ export const commentServiceV1 = {
     return apiClient.get(`${API_V1_PREFIX}/admin/comments/pending`)
   },
 
-  approveComment(id: number, approve: boolean): Promise<ApiResponse<any>> {
+  approveComment(id: number, approve: boolean): Promise<ApiResponse<Comment>> {
     return apiClient.put(`${API_V1_PREFIX}/admin/comments/${id}/approve`, {
       approve,
     })
@@ -349,10 +358,6 @@ export const roadmapServiceV1 = {
     })
   },
 
-  upvoteRoadmap(id: number): Promise<ApiResponse<any>> {
-    return apiClient.put(`${API_V1_PREFIX}/roadmaps/${id}/upvote`)
-  },
-
   createRoadmap(professionId: number, content: string, description: string): Promise<ApiResponse<Roadmap>> {
     return apiClient.post(`${API_V1_PREFIX}/roadmaps`, {
       professionId,
@@ -365,7 +370,7 @@ export const roadmapServiceV1 = {
     return apiClient.get(`${API_V1_PREFIX}/roadmaps/${id}`)
   },
 
-  pinRoadmap(professionId: number, roadmapId: number): Promise<ApiResponse<any>> {
+  pinRoadmap(professionId: number, roadmapId: number): Promise<ApiResponse<boolean>> {
     return apiClient.post(`${API_V1_PREFIX}/roadmaps/pin`, {
       professionId,
       roadmapId,
@@ -375,7 +380,7 @@ export const roadmapServiceV1 = {
 
 // 点赞服务
 export const upvoteServiceV1 = {
-  upvote(objectId: number, objectType: ObjectType, type: VoteType): Promise<ApiResponse<any>> {
+  upvote(objectId: number, objectType: ObjectType, type: VoteType): Promise<ApiResponse<UpvoteStatusResponse>> {
     return apiClient.post(`${API_V1_PREFIX}/upvotes`, {
       objectId,
       objectType,
@@ -383,7 +388,7 @@ export const upvoteServiceV1 = {
     })
   },
 
-  getUpvoteStatus(objectId: number, objectType: ObjectType): Promise<ApiResponse<any>> {
+  getUpvoteStatus(objectId: number, objectType: ObjectType): Promise<ApiResponse<UpvoteStatusResponse>> {
     return apiClient.get(`${API_V1_PREFIX}/upvotes/status`, {
       params: { objectId, objectType },
     })
@@ -392,7 +397,7 @@ export const upvoteServiceV1 = {
 
 // 消息管理服务
 export const messageServiceV1 = {
-  applyCourse(title: string, summary: string, explanation: string, parentId?: number): Promise<ApiResponse<any>> {
+  applyCourse(title: string, summary: string, explanation: string, parentId?: number): Promise<ApiResponse<void>> {
     return apiClient.post(`${API_V1_PREFIX}/messages/course-applications`, {
       title,
       summary,
@@ -401,17 +406,17 @@ export const messageServiceV1 = {
     })
   },
 
-  getSystemMessages(type?: MessageType, lastId?: number): Promise<ApiResponse<any[]>> {
+  getSystemMessages(type?: MessageType, lastId?: number): Promise<ApiResponse<Message[]>> {
     return apiClient.get(`${API_V1_PREFIX}/messages/system`, {
       params: { type, lastId },
     })
   },
 
-  getMessages(): Promise<ApiResponse<any[]>> {
+  getMessages(): Promise<ApiResponse<Message[]>> {
     return apiClient.get(`${API_V1_PREFIX}/messages`)
   },
 
-  sendSystemMessage(type: MessageType, to: number, content: string): Promise<ApiResponse<any>> {
+  sendSystemMessage(type: MessageType, to: number, content: string): Promise<ApiResponse<void>> {
     return apiClient.post(`${API_V1_PREFIX}/messages/system`, {
       type,
       to,
@@ -419,14 +424,14 @@ export const messageServiceV1 = {
     })
   },
 
-  updateCourseApplication(id: number, reply: string): Promise<ApiResponse<any>> {
+  updateCourseApplication(id: number, reply: string): Promise<ApiResponse<void>> {
     return apiClient.put(`${API_V1_PREFIX}/messages/course-applications/${id}`, {
       reply,
     })
   },
 
   // 邀请用户
-  inviteUser(userId: number, nodeId: number): Promise<ApiResponse<any>> {
+  inviteUser(userId: number, nodeId: number): Promise<ApiResponse<void>> {
     return apiClient.post(`${API_V1_PREFIX}/messages/invite`, {
       userId,
       nodeId,
@@ -436,17 +441,19 @@ export const messageServiceV1 = {
 
 // 学习进度服务
 export const progressServiceV1 = {
-  markNodeComplete(nodeId: number, courseId: number): Promise<ApiResponse<any>> {
+  markNodeComplete(nodeId: number, courseId: number): Promise<ApiResponse<NodeProgressResponse>> {
     return apiClient.post(`${API_V1_PREFIX}/progress/nodes/${nodeId}/complete`, {
       courseId,
     })
   },
 
-  unmarkNodeComplete(nodeId: number): Promise<ApiResponse<any>> {
-    return apiClient.delete(`${API_V1_PREFIX}/progress/nodes/${nodeId}/complete`)
+  unmarkNodeComplete(nodeId: number, courseId: number): Promise<ApiResponse<NodeProgressResponse>> {
+    return apiClient.delete(`${API_V1_PREFIX}/progress/nodes/${nodeId}/complete`, {
+      data: { courseId }
+    })
   },
 
-  getNodeStatus(nodeId: number): Promise<ApiResponse<any>> {
+  getNodeStatus(nodeId: number): Promise<ApiResponse<Node>> {
     return apiClient.get(`${API_V1_PREFIX}/progress/nodes/${nodeId}/status`)
   },
 
@@ -470,11 +477,11 @@ export const progressServiceV1 = {
     return apiClient.put(`${API_V1_PREFIX}/progress/courses/${courseId}`, data)
   },
 
-  deleteCourseProgress(courseId: number): Promise<ApiResponse<any>> {
+  deleteCourseProgress(courseId: number): Promise<ApiResponse<string>> {
     return apiClient.delete(`${API_V1_PREFIX}/progress/courses/${courseId}`)
   },
 
-  completeCourse(courseId: number): Promise<ApiResponse<UserCourse>> {
+  completeCourse(courseId: number): Promise<ApiResponse<CourseCompletionResponse>> {
     return apiClient.post(`${API_V1_PREFIX}/progress/courses/${courseId}/complete`)
   },
 
@@ -497,14 +504,14 @@ export const progressServiceV1 = {
     })
   },
 
-  deleteRoadmapProgress(roadmapId: number): Promise<ApiResponse<any>> {
+  deleteRoadmapProgress(roadmapId: number): Promise<ApiResponse<string>> {
     return apiClient.delete(`${API_V1_PREFIX}/progress/roadmaps/${roadmapId}`)
   },
 }
 
 // 统计服务
 export const statsServiceV1 = {
-  recordView(articleId: number, userId?: number, ipAddress?: string): Promise<ApiResponse<any>> {
+  recordView(articleId: number, userId?: number, ipAddress?: string): Promise<ApiResponse<void>> {
     return apiClient.post(`${API_V1_PREFIX}/stats/views`, {
       articleId,
       userId,
@@ -526,25 +533,25 @@ export const statsServiceV1 = {
     })
   },
 
-  getUserPeriodStats(userId: number, days = 7): Promise<ApiResponse<any>> {
+  getUserPeriodStats(userId: number, days = 7): Promise<ApiResponse<UserStatsDTO>> {
     return apiClient.get(`${API_V1_PREFIX}/stats/users/${userId}/period`, {
       params: { days },
     })
   },
 
-  getUserAllTimeStats(userId: number): Promise<ApiResponse<any>> {
+  getUserAllTimeStats(userId: number): Promise<ApiResponse<UserStatsDTO>> {
     return apiClient.get(`${API_V1_PREFIX}/stats/users/${userId}/all-time`)
   },
 
-  syncManual(): Promise<ApiResponse<any>> {
+  syncManual(): Promise<ApiResponse<string>> {
     return apiClient.post(`${API_V1_PREFIX}/stats/sync/manual`)
   },
 
-  getHealth(): Promise<ApiResponse<any>> {
+  getHealth(): Promise<ApiResponse<string>> {
     return apiClient.get(`${API_V1_PREFIX}/stats/health`)
   },
 
-  syncDate(date: string): Promise<ApiResponse<any>> {
+  syncDate(date: string): Promise<ApiResponse<string>> {
     return apiClient.post(`${API_V1_PREFIX}/stats/sync/date`, {
       date,
     })
@@ -557,25 +564,25 @@ export const statsServiceV1 = {
 
 // 页面聚合服务
 export const pageServiceV1 = {
-  readByCoursePath(courseId: number, path: string): Promise<ApiResponse<any>> {
+  readByCoursePath(courseId: number, path: string): Promise<ApiResponse<ReadResponse>> {
     return apiClient.get(`${API_V1_PREFIX}/pages/read`, {
       params: { courseId, path },
     })
   },
 
-  readByNode(nodeId: number): Promise<ApiResponse<any>> {
+  readByNode(nodeId: number): Promise<ApiResponse<ReadResponse>> {
     return apiClient.get(`${API_V1_PREFIX}/pages/read`, {
       params: { nodeId },
     })
   },
 
-  readByPost(postId: number): Promise<ApiResponse<any>> {
+  readByPost(postId: number): Promise<ApiResponse<ReadResponse>> {
     return apiClient.get(`${API_V1_PREFIX}/pages/read`, {
       params: { postId },
     })
   },
 
-  readByComment(commentId: number): Promise<ApiResponse<any>> {
+  readByComment(commentId: number): Promise<ApiResponse<ReadResponse>> {
     return apiClient.get(`${API_V1_PREFIX}/pages/read`, {
       params: { commentId },
     })
@@ -591,7 +598,7 @@ export const contentServiceV1 = {
 
 // AI服务
 export const aiServiceV1 = {
-  chat(prompt: string, model?: string): Promise<ApiResponse<any>> {
+  chat(prompt: string, model?: string): Promise<ApiResponse<string>> {
     return apiClient.post(`${API_V1_PREFIX}/ai/chat`, {
       prompt,
       model,
@@ -611,12 +618,12 @@ export const systemServiceV1 = {
   },
 
   // 根据key获取单个配置
-  getConfigByKey(key: string): Promise<ApiResponse<any>> {
+  getConfigByKey(key: string): Promise<ApiResponse<string>> {
     return apiClient.get(`${API_V1_PREFIX}/system/${key}`)
   },
 
   // 更新配置（key-value模式）
-  updateConfigByKey(key: string, value: any): Promise<ApiResponse<any>> {
+  updateConfigByKey(key: string, value: any): Promise<ApiResponse<string>> {
     return apiClient.post(
       `${API_V1_PREFIX}/system`,
       {
@@ -629,7 +636,7 @@ export const systemServiceV1 = {
   },
 
   // 删除配置
-  deleteConfigByKey(key: string): Promise<ApiResponse<any>> {
+  deleteConfigByKey(key: string): Promise<ApiResponse<string>> {
     return apiClient.delete(`${API_V1_PREFIX}/system`, {
       params: { key },
     })

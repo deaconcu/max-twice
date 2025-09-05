@@ -308,7 +308,7 @@
     try {
       if (props.data.node.isCompleted) {
         // 取消完成
-        const response = await progressServiceV1.unmarkNodeComplete(props.currNodeId)
+        const response = await progressServiceV1.unmarkNodeComplete(props.currNodeId, props.data.course.id)
 
         if (response.code === 200) {
           // eslint-disable-next-line vue/no-mutating-props

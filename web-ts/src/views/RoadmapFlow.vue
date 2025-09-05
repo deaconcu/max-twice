@@ -3,13 +3,16 @@ import { inject, onMounted, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import dagre from 'dagre'
-import { professionServiceV1, roadmapServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { professionServiceV1, roadmapServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { ObjectType, VoteType } from '@/types/enums'
 import { useRoute } from 'vue-router'
 import RoadmapDetail from '@/components/roadmap/RoadmapDetail.vue'
 import RoadmapCreate from '@/components/roadmap/RoadmapCreate.vue'
 import RoadmapHeader from '@/components/roadmap/RoadmapHeader.vue'
 import RoadmapList from '@/components/roadmap/RoadmapList.vue'
 import RightSidebar from '@/components/common/RightSidebar.vue'
+import type { Roadmap } from '@/types/roadmap'
+import type { Profession } from '@/types/profession'
 
 interface Node {
   id: string 
@@ -31,24 +34,6 @@ interface Edge {
   type?: string
   animated?: boolean
   label?: string
-}
-
-interface Roadmap {
-  id: number 
-  description?: string
-  content: string | object
-  nodes?: Node[]
-  edges?: Edge[]
-  votes?: number
-  learners?: number
-  pinned?: boolean
-  [key: string]: any
-}
-
-interface Profession {
-  id: number | string
-  name: string
-  [key: string]: any
 }
 
 const { t } = useI18n()
@@ -231,9 +216,13 @@ const closeCreateModal = (): void => {
 
 // 计算总学习人数
 const getTotalLearners = (): number => {
+  // TODO
+  return 199
+  /*
   return roadmaps.value.reduce((total, roadmap) => {
     return total + (roadmap.learners || Math.floor(Math.random() * 1000) + 100)
   }, 0)
+  */
 }
 
 // 复制课程表到创建页面
@@ -323,8 +312,8 @@ const handleUpdateRoadmap = (roadmapId: string | number, updates: Partial<Roadma
 }
 
 // 处理置顶状态变更
-const handleRoadmapsUpdated = async (roadmapId?: string | number, status?: string): Promise<void> => {
-  if (!roadmapId || !status) {
+const handleRoadmapsUpdated = async (roadmapId?: string | number, pinned?: boolean): Promise<void> => {
+  if (!roadmapId || pinned === undefined) {
     // 如果没有参数，只重新加载
     await loadRoadmaps()
     return
@@ -332,7 +321,7 @@ const handleRoadmapsUpdated = async (roadmapId?: string | number, status?: strin
 
   const roadmap = roadmaps.value.find((r) => r.id === roadmapId)
   if (roadmap) {
-    if (status === 'pinned') {
+    if (pinned) {
       // 置顶：更新状态并移动到第一个位置
       roadmap.pinned = true
       const index = roadmaps.value.findIndex((r) => r.id === roadmapId)
@@ -340,7 +329,7 @@ const handleRoadmapsUpdated = async (roadmapId?: string | number, status?: strin
         const [pinnedRoadmap] = roadmaps.value.splice(index, 1)
         roadmaps.value.unshift(pinnedRoadmap)
       }
-    } else if (status === 'unpinned') {
+    } else {
       // 取消置顶：更新状态并移动到非置顶区第一个
       roadmap.pinned = false
       const currentIndex = roadmaps.value.findIndex((r) => r.id === roadmapId)
@@ -360,12 +349,13 @@ const handleRoadmapsUpdated = async (roadmapId?: string | number, status?: strin
 // 投票功能 - 添加缺失的函数
 const voteRoadmap = async (roadmapId: number, voteType: 'up' | 'down'): Promise<void> => {
   try {
-    const response = await roadmapServiceV1.upvoteRoadmap(roadmapId)
+    const response = await upvoteServiceV1.upvote(roadmapId, ObjectType.ROADMAP, VoteType.NORMAL)
     if (response.code === 200) {
       // 更新本地数据
       const roadmap = roadmaps.value.find(r => r.id === roadmapId)
       if (roadmap) {
-        roadmap.votes = response.data.votes
+        roadmap.vote = response.data.upvotes
+        roadmap.upvoted = response.data.upvoted
       }
       showSnackbar(t('roadmap.voteSuccess'))
     } else {

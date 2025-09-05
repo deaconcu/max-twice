@@ -7,12 +7,14 @@ import com.prosper.learn.domain.service.business.UserCourseService;
 import com.prosper.learn.domain.service.business.UserRoadmapService;
 import com.prosper.learn.dto.response.UserCourseDTO;
 import com.prosper.learn.dto.response.UserRoadmapDTO;
+import com.prosper.learn.dto.response.NodeProgressResponseDTO;
+import com.prosper.learn.dto.response.CourseCompletionResponseDTO;
+import com.prosper.learn.dto.response.NodeDTOV2;
 import lombok.RequiredArgsConstructor;
 import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 学习进度接口
@@ -32,11 +34,11 @@ public class ProgressController {
      * 映射: POST /user/complete/{nodeId} → POST /api/v1/progress/nodes/{nodeId}/complete
      */
     @PostMapping("/progress/nodes/{nodeId}/complete")
-    public ApiResponse<Map<String, Object>> markNodeCompleted(
+    public ApiResponse<NodeProgressResponseDTO> markNodeCompleted(
             @PathVariable Long nodeId, 
             @JsonParam("courseId") Long courseId) {
         long userId = StpUtil.getLoginIdAsLong();
-        Map<String, Object> result = learningProgressService.markNodeCompletedWithResponse(userId, nodeId, courseId);
+        NodeProgressResponseDTO result = learningProgressService.markNodeCompletedWithResponse(userId, nodeId, courseId);
         return ApiResponse.success(result);
     }
 
@@ -45,11 +47,11 @@ public class ProgressController {
      * 映射: DELETE /user/complete/{nodeId} → DELETE /api/v1/progress/nodes/{nodeId}/complete
      */
     @DeleteMapping("/progress/nodes/{nodeId}/complete")
-    public ApiResponse<Map<String, Object>> unmarkNodeCompleted(
+    public ApiResponse<NodeProgressResponseDTO> unmarkNodeCompleted(
             @PathVariable Long nodeId, 
             @JsonParam("courseId") Long courseId) {
         long userId = StpUtil.getLoginIdAsLong();
-        Map<String, Object> result = learningProgressService.unmarkNodeCompletedWithResponse(userId, nodeId, courseId);
+        NodeProgressResponseDTO result = learningProgressService.unmarkNodeCompletedWithResponse(userId, nodeId, courseId);
         return ApiResponse.success(result);
     }
 
@@ -58,9 +60,9 @@ public class ProgressController {
      * 映射: GET /user/complete/{nodeId} → GET /api/v1/progress/nodes/{nodeId}/status
      */
     @GetMapping("/progress/nodes/{nodeId}/status")
-    public ApiResponse<Map<String, Object>> getNodeCompletionStatus(@PathVariable Long nodeId) {
+    public ApiResponse<NodeDTOV2> getNodeCompletionStatus(@PathVariable Long nodeId) {
         long userId = StpUtil.getLoginIdAsLong();
-        Map<String, Object> result = learningProgressService.getNodeCompletionStatusResponse(userId, nodeId);
+        NodeDTOV2 result = learningProgressService.getNodeCompletionStatusResponse(userId, nodeId);
         return ApiResponse.success(result);
     }
 
@@ -127,9 +129,9 @@ public class ProgressController {
      * 映射: POST /user/complete/course/{courseId} → POST /api/v1/progress/courses/{courseId}/complete
      */
     @PostMapping("/progress/courses/{courseId}/complete")
-    public ApiResponse<Map<String, Object>> markCourseCompleted(@PathVariable Long courseId) {
+    public ApiResponse<CourseCompletionResponseDTO> markCourseCompleted(@PathVariable Long courseId) {
         long userId = StpUtil.getLoginIdAsLong();
-        Map<String, Object> result = learningProgressService.markCourseCompletedWithResponse(userId, courseId);
+        CourseCompletionResponseDTO result = learningProgressService.markCourseCompletedWithResponse(userId, courseId);
         return ApiResponse.success(result);
     }
 

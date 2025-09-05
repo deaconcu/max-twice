@@ -16,7 +16,6 @@ export interface Post {
   creatorId?: number           // 创建者ID (可选)
   creator?: User               // 创建者信息 (可选)
   type?: PostType              // 帖子类型 (可选)
-  once?: number                // "一遍就懂"票数 (可选)
   twice?: number               // "两遍就懂"票数 (可选)
   helpful?: number             // "有帮助"票数 (可选)
   commentCount?: number        // 评论数量 (可选)

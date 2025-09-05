@@ -2,6 +2,7 @@ package com.prosper.learn.api.client;
 
 import com.prosper.learn.dto.response.message.MessageDTO;
 import com.prosper.learn.dto.response.Response;
+import com.prosper.learn.dto.response.ReadDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -13,16 +14,16 @@ import java.util.Map;
 public interface AggregateClient {
 
     //@GetMapping(value = "/read", params = {"courseId"})
-    Response<Object> readByPath(@RequestParam Long courseId, @RequestParam(required = false) String path);
+    Response<ReadDTO> readByPath(@RequestParam Long courseId, @RequestParam(required = false) String path);
 
     //@GetMapping(value = "/read", params = "nodeId")
-    Response<Object> readByNode(@RequestParam Long nodeId);
+    Response<ReadDTO> readByNode(@RequestParam Long nodeId);
 
     //@GetMapping(value = "/read", params = "postId")
-    Response<Object> readByPost(@RequestParam Long postId);
+    Response<ReadDTO> readByPost(@RequestParam Long postId);
 
     //@GetMapping(value = "/read", params = "commentId" )
-    Response<Object> readByComment(@RequestParam Long commentId);
+    Response<ReadDTO> readByComment(@RequestParam Long commentId);
 
     //@GetMapping("/postings")
     Response<Object> getPostings(@RequestParam(value = "id", required = false) List<Long> ids,

@@ -6,7 +6,7 @@
 // 投票类型常量 (VoteType)
 export const VoteType = {
   NONE: 0,      // 无投票
-  ONCE: 1,      // 一次投票
+  NORMAL: 1,    // 普通投票
   TWICE: 2,     // 二次投票  
   HELPFUL: 3    // 有帮助
 } as const

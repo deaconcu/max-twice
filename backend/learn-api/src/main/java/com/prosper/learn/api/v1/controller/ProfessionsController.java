@@ -8,6 +8,7 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.ProfessionService;
 import com.prosper.learn.domain.service.scheduler.ProfessionRankingScheduler;
 import com.prosper.learn.dto.response.ProfessionDTO;
+import com.prosper.learn.dto.response.ApprovalResponseDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.prosper.learn.api.v1.annotation.JsonParam;
@@ -127,26 +128,46 @@ public class ProfessionsController {
      * 映射: POST /profession/operate → POST /api/v1/professions/{id}/approve
      */
     @PostMapping("/professions/{id}/approve")
-    public ApiResponse<Object> approveProfession(
+    public ApiResponse<ApprovalResponseDTO> approveProfession(
             @PathVariable Long id, 
             @JsonParam("action") String action, 
             @JsonParam(value = "rejectedReason", required = false) String rejectedReason) {
         
-        return switch (action.toLowerCase()) {
+        ApprovalResponseDTO response = switch (action.toLowerCase()) {
             case "approve" -> {
                 professionService.approve(id);
-                yield ApiResponse.success("批准成功");
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("批准成功")
+                        .objectId(id)
+                        .objectType("profession")
+                        .action("approve")
+                        .build();
             }
             case "reject" -> {
                 professionService.reject(id, rejectedReason);
-                yield ApiResponse.success("拒绝成功");
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("拒绝成功")
+                        .objectId(id)
+                        .objectType("profession")
+                        .action("reject")
+                        .build();
             }
             case "delete" -> {
                 professionService.delete(id);
-                yield ApiResponse.success("删除成功");
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("删除成功")
+                        .objectId(id)
+                        .objectType("profession")
+                        .action("delete")
+                        .build();
             }
             default -> throw ErrorCode.SYSTEM_ERROR.exception();
         };
+        
+        return ApiResponse.success(response);
     }
 
     /**

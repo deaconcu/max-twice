@@ -7,6 +7,7 @@ import com.prosper.learn.common.Enums.CourseState;
 import com.prosper.learn.dto.response.CourseDTO;
 import com.prosper.learn.dto.response.CourseDTOV3;
 import com.prosper.learn.dto.response.CourseDTOV4;
+import com.prosper.learn.dto.response.ApprovalResponseDTO;
 import com.prosper.learn.domain.service.business.CourseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -145,7 +146,7 @@ public class CoursesController {
      * 映射: POST /course/operate → POST /api/v1/courses/{id}/approve
      */
     @PostMapping("/courses/{id}/approve")
-    public ApiResponse<Object> approveCourse(
+    public ApiResponse<ApprovalResponseDTO> approveCourse(
             @PathVariable Long id, 
             @JsonParam("action") String action, 
             @JsonParam(value = "rejectedReason", required = false) String rejectedReason) {
@@ -154,20 +155,40 @@ public class CoursesController {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }
 
-        return switch (action.toLowerCase()) {
+        ApprovalResponseDTO response = switch (action.toLowerCase()) {
             case "approve" -> {
                 courseService.approve(id);
-                yield ApiResponse.success("批准成功");
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("批准成功")
+                        .objectId(id)
+                        .objectType("course")
+                        .action("approve")
+                        .build();
             }
             case "reject" -> {
                 courseService.reject(id, rejectedReason);
-                yield ApiResponse.success("拒绝成功");
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("拒绝成功")
+                        .objectId(id)
+                        .objectType("course")
+                        .action("reject")
+                        .build();
             }
             case "delete" -> {
                 courseService.delete(id);
-                yield ApiResponse.success("删除成功");
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("删除成功")
+                        .objectId(id)
+                        .objectType("course")
+                        .action("delete")
+                        .build();
             }
             default -> throw ErrorCode.SYSTEM_ERROR.exception();
         };
+        
+        return ApiResponse.success(response);
     }
 }

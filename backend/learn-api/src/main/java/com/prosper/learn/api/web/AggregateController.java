@@ -15,6 +15,7 @@ import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.dto.response.message.MessageDTO;
 import com.prosper.learn.dto.response.*;
+import com.prosper.learn.dto.response.ReadDTO;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
@@ -57,17 +58,17 @@ public class AggregateController implements AggregateClient {
     private final PageService pageService;
 
     @Override
-    public Response<Object> readByComment(Long commentId) {
-        Map<String, Object> data = new HashMap<>();
+    public Response<ReadDTO> readByComment(Long commentId) {
         if (commentId <= 0) throw new IllegalArgumentException("评论ID必须大于0");
 
         CommentDO commentDO = commentMapper.getById(commentId);
         if (commentDO == null) throw new IllegalArgumentException("评论不存在");
 
         if (commentDO.getReplyTo() != 0) {
-            data.put("commentId", commentDO.getReplyTo());
-            data.put("subCommentId", commentDO.getId());
-            return new Response<>(data);
+            return new Response<>(ReadDTO.builder()
+                    .commentId(commentDO.getReplyTo())
+                    .subCommentId(commentDO.getId())
+                    .build());
         }
 
         PostDO postDO = null;
@@ -91,7 +92,7 @@ public class AggregateController implements AggregateClient {
     }
 
     @Override
-    public Response<Object> readByPost(Long postId) {
+    public Response<ReadDTO> readByPost(Long postId) {
         if (postId <= 0) throw new IllegalArgumentException("帖子ID必须大于0");
 
         PostDO postDO = postingService.get(postId);
@@ -105,7 +106,7 @@ public class AggregateController implements AggregateClient {
     }
 
     @Override
-    public Response<Object> readByNode(Long nodeId) {
+    public Response<ReadDTO> readByNode(Long nodeId) {
         NodeDO nodeDO = nodeMapper.getById(nodeId);
         CourseDO courseDO = courseMapper.getById(nodeDO.getCourseId());
         String path = "1-" + courseDO.getRootNode();
@@ -114,7 +115,7 @@ public class AggregateController implements AggregateClient {
     }
 
     @Override
-    public Response<Object> readByPath(Long courseId, String path) {
+    public Response<ReadDTO> readByPath(Long courseId, String path) {
         CourseDO courseDO = courseMapper.getById(courseId);
         return read(courseDO, path, null, null);
     }
@@ -126,7 +127,7 @@ public class AggregateController implements AggregateClient {
      * 3. 给了 courseId 和 path，正常返回
      * 4. 只给了 courseId，path 为根节点
      */
-    private Response<Object> read(CourseDO courseDO, String path, NodeDO nodeDO, PostDO postDO) {
+    private Response<ReadDTO> read(CourseDO courseDO, String path, NodeDO nodeDO, PostDO postDO) {
 
         long userId = StpUtil.getLoginIdAsLong();
         Utils.Pair<String, Map<Long, NodeDTOV2>> response = pageService.getToc(userId, courseDO.getId(), true);
@@ -287,22 +288,24 @@ public class AggregateController implements AggregateClient {
         UserCourseDO userCourse = userCourseMapper.getByUserIdAndCourseId((long)userId, (long)courseDO.getId());
         Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("node", Converter.INSTANCE.toNodeDTOV2(nodeDO, nodeCompleted));
-        data.put("parentCourse", parentCourse);
-        data.put("course", Converter.INSTANCE.toCourseDTOV4(courseDO, subscribed, courseProgress));
-        data.put("subCourseList", subCourseList);
-        data.put("chosenPosting", chosenPosting);
-        data.put("fixedPostings", fixedPostings);
-        data.put("otherPostings", otherPostings);
-        data.put("lastId", lastId);
-        data.put("toc", contents);
-        data.put("tocNodeInfos", courseTocDTO.getNodeInfos());
-        data.put("path", path);
-        data.put("users", userList);
-        data.put("learning", learning);
-        if (postDTO != null) data.put("post", postDTO);
-        return new Response<>(data);
+        ReadDTO responseData = ReadDTO.builder()
+                .node(Converter.INSTANCE.toNodeDTOV2(nodeDO, nodeCompleted))
+                .parentCourse(parentCourse)
+                .course(Converter.INSTANCE.toCourseDTOV4(courseDO, subscribed, courseProgress))
+                .subCourseList(subCourseList)
+                .chosenPosting(chosenPosting)
+                .fixedPostings(fixedPostings)
+                .otherPostings(otherPostings)
+                .lastId(lastId)
+                .toc(contents)
+                .tocNodeInfos(courseTocDTO.getNodeInfos())
+                .path(path)
+                .users(userList)
+                .learning(learning)
+                .post(postDTO)
+                .build();
+        
+        return new Response<>(responseData);
     }
 
     private void validatePath(String path) {
@@ -388,7 +391,7 @@ public class AggregateController implements AggregateClient {
             CommentDTO commentDTO = Converter.INSTANCE.toCommentDTO(commentDO);
             UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, commentId, comment.value());
             if (upvoteDO != null) {
-                commentDTO.setUpvoted(1);
+                commentDTO.setUpvoted(true);
             }
             return new Response<>(commentDTO);
         } else {

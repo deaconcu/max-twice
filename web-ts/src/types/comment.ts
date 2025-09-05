@@ -11,7 +11,7 @@ export interface Comment {
   content: string
   createdAt: string               // 创建时间 (必需，用于显示)
   upvoteCount: number             // 点赞数 (必需，用于显示)
-  upvoted: number                 // 点赞状态 (必需，用于显示)
+  upvoted: boolean                // 点赞状态 (必需，用于显示)
   type?: ObjectType               // 评论类型 (可选)
   objectId?: number              // 被评论对象ID (可选)
   replyCount?: number            // 回复数量 (可选)

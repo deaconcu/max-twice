@@ -20,7 +20,7 @@ interface StatsData {
   totalTwice: number
   totalHelpful: number
   totalComments: number
-  dailyStats: DailyStats[]
+  dailyStats?: DailyStats[]
 }
 
 interface TableHeader {

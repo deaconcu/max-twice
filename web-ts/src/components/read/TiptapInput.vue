@@ -3,7 +3,7 @@
   import { Editor, EditorContent } from '@tiptap/vue-3'
   import { Color } from '@tiptap/extension-color'
   import Placeholder from '@tiptap/extension-placeholder'
-  import TextStyle from '@tiptap/extension-text-style'
+  import { TextStyle } from '@tiptap/extension-text-style'
   import ListItem from '@tiptap/extension-list-item'
   import StarterKit from '@tiptap/starter-kit'
   import Highlight from '@tiptap/extension-highlight'
@@ -12,13 +12,13 @@
   import Subscript from '@tiptap/extension-subscript'
   import Superscript from '@tiptap/extension-superscript'
   import Image from '@tiptap/extension-image'
-  import Table from '@tiptap/extension-table'
+  import { Table } from '@tiptap/extension-table'
   import TableCell from '@tiptap/extension-table-cell'
   import TableHeader from '@tiptap/extension-table-header'
   import TableRow from '@tiptap/extension-table-row'
   import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
   import TextAlign from '@tiptap/extension-text-align'
-  import { Mathematics } from '@tiptap-pro/extension-mathematics'
+  //import { Mathematics } from '@tiptap-pro/extension-mathematics'
   import { all, createLowlight } from 'lowlight'
   import css from 'highlight.js/lib/languages/css'
   import js from 'highlight.js/lib/languages/javascript'
@@ -44,15 +44,15 @@
     content: '',
   })
 
-  const editor = ref<Editor | null>(null)
+  const editor = ref<Editor>()
   const { t } = useI18n()
 
   onMounted(() => {
     editor.value = new Editor({
       extensions: [
         Color.configure({ types: [TextStyle.name, ListItem.name] }),
-        Mathematics,
-        TextStyle.configure({ types: [ListItem.name] }),
+        //Mathematics,
+        TextStyle,
         StarterKit.configure({ codeBlock: false }),
         Placeholder.configure({ placeholder: t('tiptap.placeholder') }),
         Underline,

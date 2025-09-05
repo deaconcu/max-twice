@@ -109,14 +109,23 @@
 
       if (response.code === 200) {
         console.log('Form submitted successfully')
-        posting.once = response.data.once
-        posting.twice = response.data.twice
-        posting.helpful = response.data.helpful
-        posting.voteType = response.data.voteType
+        // 更新帖子的点赞统计数据
+        posting.twice = response.data.twiceUpvotes || 0
+        posting.helpful = response.data.helpfulUpvotes || 0
+        
+        // 根据点赞状态设置 voteType
+        if (response.data.twiceUpvoted) {
+          posting.voteType = VoteType.TWICE
+        } else if (response.data.helpfulUpvoted) {
+          posting.voteType = VoteType.HELPFUL
+        } else {
+          posting.voteType = VoteType.NONE
+        }
+        
         if (posting.voteType === VoteType.NONE) posting.voteType = null
 
         // 如果是"看两遍就懂"(type=2)，只有在学习模式下才标记节点完成
-        if (type === VoteType.TWICE && response.data.voteType === VoteType.TWICE) {
+        if (type === VoteType.TWICE && response.data.twiceUpvoted) {
           if (props.isLearning) {
             console.log('看两遍就懂被点击，用户在学习模式下，标记节点完成')
             emit('markNodeCompleted')

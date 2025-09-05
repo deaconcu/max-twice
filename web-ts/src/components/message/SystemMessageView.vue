@@ -253,16 +253,6 @@
                     <!-- 点赞消息 -->
                     <div v-if="message.type == MessageType.UPVOTE" class="message-content">
                       <div v-if="message.objectType == ObjectType.POST">
-                        <div v-if="message.voteType == VoteType.ONCE">
-                          <a :href="`/user?id=${message.receiver?.id}`" target="_blank">{{
-                            message.receiver?.name
-                          }}</a>
-                          认为您在目录
-                          <a :href="`/read?postId=${message.objectId}`" target="_blank">{{
-                            message.node?.name
-                          }}</a>
-                          的文章能被一次读懂
-                        </div>
                         <div v-if="message.voteType == VoteType.TWICE">
                           <a :href="`/user?id=${message.receiver?.id}`" target="_blank">{{
                             message.receiver?.name

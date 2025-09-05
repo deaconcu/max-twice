@@ -26,7 +26,7 @@ public class CommentDTO {
 
     private Integer upvoteCount;
 
-    private Integer upvoted;
+    private Boolean upvoted;
 
     private String createdAt;
 

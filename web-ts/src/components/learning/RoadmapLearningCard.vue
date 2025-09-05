@@ -193,15 +193,15 @@ const handleClose = (event: Event): void => {
           <div class="px-4 pb-2">
             <div class="d-flex align-start">
               <v-avatar
-                :color="getAvatarColor(roadmap.creator.name)"
+                :color="getAvatarColor(roadmap.creator?.name)"
                 size="32"
                 class="mr-3 flat-avatar flex-shrink-0"
               >
-                <span class="text-white text-caption">{{ roadmap.creator.name?.charAt(0) || 'U' }}</span>
+                <span class="text-white text-caption">{{ roadmap.creator?.name?.charAt(0) || 'U' }}</span>
               </v-avatar>
               <div class="flex-grow-1 min-width-0">
                 <div class="text-body-2 text-grey-darken-2 mb-1">
-                  {{ roadmap.creator.name|| '未知用户' }} · {{ formatDate(roadmap.createdAt) }}
+                  {{ roadmap.creator?.name || '未知用户' }} · {{ formatDate(roadmap.createdAt) }}
                 </div>
                 <div class="text-body-2 text-grey-darken-3 description-text">
                   {{ roadmap.description || '暂无描述' }}

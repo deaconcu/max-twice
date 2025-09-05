@@ -8,11 +8,10 @@ import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.basic.RedisStatsService;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
-import com.prosper.learn.domain.util.Converter;
-import com.prosper.learn.dto.response.CommentDTO;
-import com.prosper.learn.dto.response.PostDTO;
+import com.prosper.learn.dto.response.UpvoteStatusDTO;
 import com.prosper.learn.persistence.dataobject.CommentDO;
 import com.prosper.learn.persistence.dataobject.PostDO;
+import com.prosper.learn.persistence.dataobject.RoadmapDO;
 import com.prosper.learn.persistence.dataobject.UpvoteDO;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import com.prosper.learn.domain.service.data.*;
@@ -20,10 +19,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -50,7 +47,7 @@ import java.util.stream.Collectors;
 public class UpvoteService {
 
     /** 点赞类型名称常量 */
-    private static final String UPVOTE_TYPE_ONCE = "once";
+    private static final String UPVOTE_TYPE_NORMAL = "normal";
     private static final String UPVOTE_TYPE_TWICE = "twice";
     private static final String UPVOTE_TYPE_HELPFUL = "helpful";
 
@@ -65,6 +62,9 @@ public class UpvoteService {
     
     /** 评论数据访问接口 */
     private final CommentDataService commentDataService;
+    
+    /** 路线图数据访问接口 */
+    private final RoadmapDataService roadmapDataService;
     
     /** 消息服务，用于发送点赞通知 */
     private final MessageService messageService;
@@ -161,8 +161,8 @@ public class UpvoteService {
      * @return 点赞类型名称
      */
     private String getUpvoteTypeName(int type) {
-        if (type == Enums.VoteType.once.value()) {
-            return UPVOTE_TYPE_ONCE;
+        if (type == Enums.VoteType.normal.value()) {
+            return UPVOTE_TYPE_NORMAL;
         } else if (type == Enums.VoteType.twice.value()) {
             return UPVOTE_TYPE_TWICE;
         } else {
@@ -178,9 +178,7 @@ public class UpvoteService {
      * @param increment 增量（1为增加，-1为减少）
      */
     private void updatePostVoteCount(PostDO postDO, int type, int increment) {
-        if (type == Enums.VoteType.once.value()) {
-            postDO.setOnce(postDO.getOnce() + increment);
-        } else if (type == Enums.VoteType.twice.value()) {
+        if (type == Enums.VoteType.twice.value()) {
             postDO.setTwice(postDO.getTwice() + increment);
         } else {
             postDO.setHelpful(postDO.getHelpful() + increment);
@@ -434,51 +432,14 @@ public class UpvoteService {
     }
 
     /**
-     * 获取完整的点赞对象信息(带用户点赞状态)
-     * @param objectId 对象ID
-     * @param objectType 对象类型
-     * @param userId 用户ID
-     * @return 返回完整的对象信息
-     * @throws BusinessException 当参数无效或对象不存在时抛出异常
-     */
-    public Object getUpvoteObjectWithStatus(Long objectId, int objectType, long userId) {
-        validateUserId(userId);
-        if (objectId == null || objectId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("对象ID无效: " + objectId);
-        }
-        
-        if (objectType == ObjectType.post.value()) {
-            PostDO postDO = validatePostExists(objectId);
-            
-            PostDTO postDTO = Converter.INSTANCE.toPostDTO(postDO);
-            UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, objectId, ObjectType.post.value());
-            if (upvoteDO != null) {
-                postDTO.setVoteType(upvoteDO.getType());
-            }
-            return postDTO;
-        } else if (objectType == ObjectType.comment.value()) {
-            CommentDO commentDO = validateCommentExists(objectId);
-            
-            CommentDTO commentDTO = Converter.INSTANCE.toCommentDTO(commentDO);
-            UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, objectId, ObjectType.comment.value());
-            if (upvoteDO != null) {
-                commentDTO.setUpvoted(1);
-            }
-            return commentDTO;
-        } else {
-            throw ErrorCode.INVALID_PARAMETER.exception("不支持的对象类型: " + objectType);
-        }
-    }
-
-    /**
      * 获取用户对指定对象的点赞状态
      * @param objectId 对象ID
      * @param objectType 对象类型
      * @param userId 用户ID
-     * @return 包含点赞状态的Map
+     * @return 点赞状态DTO
      * @throws BusinessException 当参数无效时抛出异常
      */
-    public Map<String, Object> getUpvoteStatus(Long objectId, int objectType, long userId) {
+    public UpvoteStatusDTO getUpvoteStatus(Long objectId, int objectType, long userId) {
         validateUserId(userId);
         if (objectId == null || objectId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception("对象ID无效: " + objectId);
@@ -486,14 +447,54 @@ public class UpvoteService {
         
         UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, objectId, objectType);
         
-        Map<String, Object> result = new HashMap<>();
-        result.put("objectId", objectId);
-        result.put("objectType", objectType);
-        result.put("upvoted", upvoteDO != null);
-        if (upvoteDO != null) {
-            result.put("type", upvoteDO.getType());
+        // 获取对象的点赞数据
+        Integer upvotes = 0;
+        Integer twiceUpvotes = null;
+        Integer helpfulUpvotes = null;
+        Boolean upvoted = false;
+        Boolean twiceUpvoted = false;
+        Boolean helpfulUpvoted = false;
+        
+        if (objectType == ObjectType.post.value()) {
+            PostDO postDO = postDataService.getById(objectId);
+            if (postDO != null) {
+                // PostDO 使用 once, twice, helpful 统计
+                upvotes = (postDO.getOnce() != null ? postDO.getOnce() : 0) +
+                          (postDO.getTwice() != null ? postDO.getTwice() : 0) +
+                          (postDO.getHelpful() != null ? postDO.getHelpful() : 0);
+                twiceUpvotes = postDO.getTwice() != null ? postDO.getTwice() : 0;
+                helpfulUpvotes = postDO.getHelpful() != null ? postDO.getHelpful() : 0;
+                
+                // 检查用户点赞状态
+                if (upvoteDO != null) {
+                    upvoted = true;
+                    twiceUpvoted = upvoteDO.getType() == Enums.VoteType.twice.value();
+                    helpfulUpvoted = upvoteDO.getType() == Enums.VoteType.helpful.value();
+                }
+            }
+        } else if (objectType == ObjectType.comment.value()) {
+            CommentDO commentDO = commentDataService.getById(objectId);
+            if (commentDO != null) {
+                upvotes = commentDO.getUpvoteCount() != null ? commentDO.getUpvoteCount() : 0;
+                upvoted = upvoteDO != null;
+            }
+        } else if (objectType == ObjectType.roadmap.value()) {
+            RoadmapDO roadmapDO = roadmapDataService.getById(objectId);
+            if (roadmapDO != null) {
+                upvotes = roadmapDO.getVote() != null ? roadmapDO.getVote() : 0;
+                upvoted = upvoteDO != null;
+            }
         }
         
-        return result;
+        return UpvoteStatusDTO.builder()
+                .objectId(objectId)
+                .objectType(objectType)
+                .upvotes(upvotes)
+                .upvoted(upvoted)
+                .twiceUpvotes(twiceUpvotes)
+                .twiceUpvoted(twiceUpvoted)
+                .helpfulUpvotes(helpfulUpvotes)
+                .helpfulUpvoted(helpfulUpvoted)
+                .build();
     }
 }

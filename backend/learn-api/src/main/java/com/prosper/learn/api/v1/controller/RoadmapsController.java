@@ -61,22 +61,6 @@ public class RoadmapsController {
     }
 
     /**
-     * 路线图点赞
-     * 映射: PUT /roadmap/{id}/upvote → PUT /api/v1/roadmaps/{id}/upvote
-     */
-    @PutMapping("/roadmaps/{id}/upvote")
-    public ApiResponse<RoadmapDTO> upvoteRoadmap(@PathVariable Long id) {
-        if (!StpUtil.isLogin()) {
-            throw ErrorCode.USER_NOT_LOGIN.exception();
-        }
-
-        long userId = StpUtil.getLoginIdAsLong();
-        RoadmapDTO roadmapDTO = roadmapService.upvoteRoadmap(id, userId);
-
-        return ApiResponse.success(roadmapDTO);
-    }
-
-    /**
      * 创建路线图
      * 映射: POST /roadmap → POST /api/v1/roadmaps
      */
@@ -112,7 +96,7 @@ public class RoadmapsController {
      * 映射: POST /roadmap/pin → POST /api/v1/roadmaps/pin
      */
     @PostMapping("/roadmaps/pin")
-    public ApiResponse<String> pinRoadmap(
+    public ApiResponse<Boolean> pinRoadmap(
             @JsonParam("professionId") Long professionId,
             @JsonParam("roadmapId") Long roadmapId) {
         if (!StpUtil.isLogin()) {
@@ -120,8 +104,8 @@ public class RoadmapsController {
         }
 
         long userId = StpUtil.getLoginIdAsLong();
-        String result = roadmapService.pinRoadmap(professionId, roadmapId, userId);
+        Boolean pinned = roadmapService.pinRoadmap(professionId, roadmapId, userId);
 
-        return ApiResponse.success(result);
+        return ApiResponse.success(pinned);
     }
 }

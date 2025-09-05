@@ -270,7 +270,7 @@ public class CommentService {
         }
 
         for (CommentDTO commentDTO : commentDTOList) {
-            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()) ? 1 : 0);
+            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
         }
     }
     
@@ -299,12 +299,12 @@ public class CommentService {
 
         // 设置父评论点赞状态
         for (CommentDTO commentDTO : commentDTOList) {
-            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()) ? 1 : 0);
+            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
         }
 
         // 设置子评论点赞状态
         for (CommentDTO commentDTO: childrenMap.values()) {
-            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()) ? 1 : 0);
+            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
         }
     }
 

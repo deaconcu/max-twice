@@ -165,7 +165,7 @@ const upvote = async (comment: Comment): Promise<void> => {
 
     if (response.code === 200) {
       console.log('Form submitted successfully')
-      comment.upvoteCount = response.data.upvoteCount
+      comment.upvoteCount = response.data.upvotes
       comment.upvoted = response.data.upvoted
     }
   } catch (error) {
@@ -219,7 +219,7 @@ const upvote = async (comment: Comment): Promise<void> => {
             <v-btn
               class="ms-0"
               variant="flat"
-              :color="comment.upvoted > 0 ? 'teal' : 'grey-lighten-4'"
+              :color="comment.upvoted ? 'teal' : 'grey-lighten-4'"
               rounded="xl"
               density="compact"
               prepend-icon="mdi-arrow-up"

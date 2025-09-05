@@ -21,6 +21,11 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.prosper.learn.dto.response.NodeProgressResponseDTO;
+import com.prosper.learn.dto.response.CourseCompletionResponseDTO;
+import com.prosper.learn.dto.response.NodeDTOV2;
+import com.prosper.learn.domain.util.Converter;
+import com.prosper.learn.persistence.dataobject.NodeDO;
 
 /**
  * 学习进度服务
@@ -757,71 +762,69 @@ public class LearningProgressService {
     /**
      * 标记节点完成并返回完整的响应数据
      */
-    public Map<String, Object> markNodeCompletedWithResponse(long userId, long nodeId, long courseId) {
+    public NodeProgressResponseDTO markNodeCompletedWithResponse(long userId, long nodeId, long courseId) {
         boolean isNewlyCompleted = markNodeCompleted(userId, nodeId, courseId);
         
         UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
         Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
         
-        Map<String, Object> result = new HashMap<>();
-        result.put("nodeId", nodeId);
-        result.put("completed", true);
-        result.put("isNewlyCompleted", isNewlyCompleted);
-        result.put("courseProgress", courseProgress);
-        
         long totalCompleted = getUserCompletedCount(userId);
-        result.put("totalCompletedNodes", totalCompleted);
-
-        return result;
+        
+        return NodeProgressResponseDTO.builder()
+                .nodeId(nodeId)
+                .completed(true)
+                .isNewlyCompleted(isNewlyCompleted)
+                .courseProgress(courseProgress)
+                .totalCompletedNodes(totalCompleted)
+                .build();
     }
 
     /**
      * 取消节点完成并返回完整的响应数据
      */
-    public Map<String, Object> unmarkNodeCompletedWithResponse(long userId, long nodeId, long courseId) {
+    public NodeProgressResponseDTO unmarkNodeCompletedWithResponse(long userId, long nodeId, long courseId) {
         boolean wasRemoved = unmarkNodeCompleted(userId, nodeId, courseId);
         
         UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
         Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
         
-        Map<String, Object> result = new HashMap<>();
-        result.put("nodeId", nodeId);
-        result.put("completed", false);
-        result.put("wasRemoved", wasRemoved);
-        result.put("courseProgress", courseProgress);
-        
         long totalCompleted = getUserCompletedCount(userId);
-        result.put("totalCompletedNodes", totalCompleted);
-
-        return result;
+        
+        return NodeProgressResponseDTO.builder()
+                .nodeId(nodeId)
+                .completed(false)
+                .wasRemoved(wasRemoved)
+                .courseProgress(courseProgress)
+                .totalCompletedNodes(totalCompleted)
+                .build();
     }
 
     /**
      * 获取节点完成状态响应数据
      */
-    public Map<String, Object> getNodeCompletionStatusResponse(long userId, long nodeId) {
+    public NodeDTOV2 getNodeCompletionStatusResponse(long userId, long nodeId) {
         boolean isCompleted = isNodeCompleted(userId, nodeId);
         
-        Map<String, Object> result = new HashMap<>();
-        result.put("nodeId", nodeId);
-        result.put("completed", isCompleted);
-
-        return result;
+        NodeDO nodeDO = nodeDataService.getById(nodeId);
+        if (nodeDO == null) {
+            throw ErrorCode.LEARNING_PROGRESS_INVALID_NODE_ID.exception();
+        }
+        
+        return Converter.INSTANCE.toNodeDTOV2(nodeDO, isCompleted);
     }
 
     /**
      * 标记课程完成并返回完整的响应数据
      */
-    public Map<String, Object> markCourseCompletedWithResponse(long userId, long courseId) {
+    public CourseCompletionResponseDTO markCourseCompletedWithResponse(long userId, long courseId) {
         boolean result = markCourseCompleted(userId, courseId);
         
         if (result) {
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("courseId", courseId);
-            responseData.put("completed", true);
-            responseData.put("message", "课程已标记为完成");
-            
-            return responseData;
+            return CourseCompletionResponseDTO.builder()
+                    .courseId(courseId)
+                    .completed(true)
+                    .message("课程已标记为完成")
+                    .build();
         } else {
             throw new RuntimeException("标记课程完成失败");
         }

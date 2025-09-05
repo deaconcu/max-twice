@@ -5,4 +5,6 @@ export interface ApiResponse<T = any> {
   code: number           // 状态码：200 成功，401 未授权等
   data: T               // 响应数据
   message?: string      // 错误信息（可选）
+  timestamp?: number    // 时间戳（可选）
+  path?: string         // 请求路径（可选）
 }

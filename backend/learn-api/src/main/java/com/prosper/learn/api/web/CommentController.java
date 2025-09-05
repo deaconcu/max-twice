@@ -169,11 +169,11 @@ public class CommentController implements CommentClient {
             }
 
             for (CommentDTO commentDTO : commentDTOList) {
-                commentDTO.setUpvoted(set.contains(commentDTO.getId()) ? 1 : 0);
+                commentDTO.setUpvoted(set.contains(commentDTO.getId()));
             }
 
             for (CommentDTO commentDTO: map.values()) {
-                commentDTO.setUpvoted(set.contains(commentDTO.getId()) ? 1 : 0);
+                commentDTO.setUpvoted(set.contains(commentDTO.getId()));
             }
         }
 
@@ -207,7 +207,7 @@ public class CommentController implements CommentClient {
 
         List<CommentDTO> commentDTOList = Converter.INSTANCE.toCommentDTO(commentDOList);
         for (CommentDTO commentDTO : commentDTOList) {
-            commentDTO.setUpvoted(set.contains(commentDTO.getId()) ? 1 : 0);
+            commentDTO.setUpvoted(set.contains(commentDTO.getId()));
         }
         return new Response<>(commentDTOList);
     }

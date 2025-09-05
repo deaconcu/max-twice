@@ -421,7 +421,7 @@ public class RoadmapService {
      * 置顶/取消置顶路线图
      */
     @Transactional
-    public String pinRoadmap(Long professionId, Long roadmapId, long userId) {
+    public Boolean pinRoadmap(Long professionId, Long roadmapId, long userId) {
         UserProfileDO userProfile = userProfileDataService.getById(userId);
         Map<String, List<Long>> pinMap = new HashMap<>();
 
@@ -437,17 +437,17 @@ public class RoadmapService {
         List<Long> professionPins = pinMap.getOrDefault(professionKey, new ArrayList<>());
 
         boolean isPinned = professionPins.contains(roadmapId);
-        String message;
+        Boolean pinned;
 
         if (isPinned) {
             professionPins.remove(roadmapId);
-            message = "unpinned";
+            pinned = false;
         } else {
             if (professionPins.size() >= 19) {
                 throw ErrorCode.ROADMAP_PIN_LIMIT_EXCEEDED.exception();
             }
             professionPins.add(roadmapId);
-            message = "pinned";
+            pinned = true;
         }
 
         if (professionPins.isEmpty()) {
@@ -473,7 +473,7 @@ public class RoadmapService {
             userProfileDataService.updateRoadmapPin(userId, updatedPinJson);
         }
 
-        return message;
+        return pinned;
     }
     
     // ========== 私有辅助方法 ==========

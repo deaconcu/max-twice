@@ -5,38 +5,32 @@
 
 // 统一的用户信息 (合并所有版本)
 export interface User {
-  id: number
-  name: string
-  email?: string               // 邮箱 (可选)
-  password?: string            // 密码 (可选，一般不返回)
-  phone?: string               // 手机号 (可选)
-  emailValidated?: boolean     // 邮箱是否验证 (可选)
-  biography?: string           // 个人简介 (可选)
+  id: number                   // 所有版本都有
+  name: string                 // 所有版本都有
+  email?: string               // 邮箱 (可选) - UserDTO
+  password?: string            // 密码 (可选，一般不返回) - UserDTO
+  phone?: string               // 手机号 (可选) - UserDTO
+  emailValidated?: boolean     // 邮箱是否验证 (可选) - UserDTO
+  biography?: string           // 个人简介 (可选) - UserDTO, UserDTOV3
   avatar?: string              // 头像 (可选)
-  subscriptions?: number[]     // 订阅的课程ID列表 (可选)
-  createdAt?: string           // 创建时间 (可选)
-  updatedAt?: string           // 更新时间 (可选)
-  followed?: number             // 关注人数
+  subscriptions?: number[]     // 订阅的课程ID列表 (可选) - 用于兼容
+  createdAt?: string           // 创建时间 (可选) - UserDTO
+  updatedAt?: string           // 更新时间 (可选) - UserDTO
+  followed?: number            // 关注人数 - UserDTOV3
 }
 
-// 用户登录请求
-export interface LoginRequest {
-  email: string
-  password: string
-}
-
-// 用户注册请求
-export interface RegisterRequest {
-  name: string
-  email: string
-  password: string
-}
 
 // 用户登录响应数据（只包含 id, name, subscriptions）
 export interface LoginResponseData {
   id: number
   name: string
-  subscriptions: number[]  // 订阅的课程ID列表
+  subscriptions: SubscriptionInfo[]  // 订阅的课程信息列表，与UserDTOV2一致
+}
+
+// 订阅信息（与后端SubscriptionDTO一致）
+export interface SubscriptionInfo {
+  id: number
+  name: string
 }
 
 // 邮箱验证请求

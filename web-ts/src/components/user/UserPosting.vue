@@ -44,11 +44,20 @@ const upvote = async (posting: Post, type: VoteType): Promise<void> => {
 
     if (response.code === 200) {
       console.log('Form submitted successfully')
-      posting.once = response.data.once
-      posting.twice = response.data.twice
-      posting.helpful = response.data.helpful
-      posting.voteType = response.data.voteType
-      if (posting.voteType === 0) posting.voteType = null
+      // 更新帖子的点赞统计数据
+      posting.twice = response.data.twiceUpvotes || 0
+      posting.helpful = response.data.helpfulUpvotes || 0
+      
+      // 根据点赞状态设置 voteType
+      if (response.data.twiceUpvoted) {
+        posting.voteType = VoteType.TWICE
+      } else if (response.data.helpfulUpvoted) {
+        posting.voteType = VoteType.HELPFUL
+      } else {
+        posting.voteType = VoteType.NONE
+      }
+      
+      if (posting.voteType === VoteType.NONE) posting.voteType = null
     }
   } catch (error) {
     // todo
@@ -167,22 +176,6 @@ const deletePosting = async (postingId: number): Promise<void> => {
             rounded="xl"
             class="pe-4 custom-btn-toggle btn-toggle-height"
           >
-            <v-btn
-              :value="VoteType.ONCE"
-              color="pink"
-              class="px-3 border border-e-0"
-              @click="upvote(posting, VoteType.ONCE)"
-            >
-              <template #prepend>
-                <v-icon v-if="posting.voteType === VoteType.ONCE">mdi-check</v-icon>
-              </template>
-              <span
-                class="selected"
-                :class="posting.voteType === VoteType.ONCE ? 'font-weight-medium' : ''"
-                >{{ t('userPosting.understandOnce') }} {{ posting.once }}</span
-              >
-            </v-btn>
-
             <v-btn
               :value="VoteType.TWICE"
               color="teal"
