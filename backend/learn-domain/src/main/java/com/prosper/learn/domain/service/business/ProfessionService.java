@@ -6,6 +6,8 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ProfessionRankingService;
 import com.prosper.learn.domain.util.Converter;
+import com.prosper.learn.dto.request.CreateProfessionRequest;
+import com.prosper.learn.dto.request.UpdateProfessionRequest;
 import com.prosper.learn.dto.response.ProfessionDTO;
 import com.prosper.learn.persistence.dataobject.ProfessionDO;
 import com.prosper.learn.domain.service.data.ProfessionDataService;
@@ -64,22 +66,45 @@ public class ProfessionService {
         return Converter.INSTANCE.toProfessionDTO(professionDOList);
     }
 
-    public Long create(ProfessionDTO professionDTO) {
-        validateProfessionForCreation(professionDTO);
-        
-        // 设置默认值
-        setDefaultValues(professionDTO);
-        
-        ProfessionDO professionDO = Converter.INSTANCE.toProfessionDO(professionDTO);
+    public Long create(long userId, CreateProfessionRequest request) {
+        ProfessionDO professionDO = new ProfessionDO();
+        professionDO.setName(request.getName());
+        professionDO.setDescription(request.getDescription());
+        professionDO.setMainCategory(request.getMainCategory());
+        professionDO.setSubCategory(request.getSubCategory());
+        professionDO.setSkills(request.getSkills());
+        professionDO.setCreator(userId);
         professionDO.setState(ProfessionState.SUBMITTED.value());
         professionDO.setRejectedReason(DEFAULT_EMPTY_STRING);
         professionDataService.insert(professionDO);
         return professionDO.getId();
     }
 
-    public void update(ProfessionDTO professionDTO) {
-        validateProfessionForUpdate(professionDTO);
-        ProfessionDO professionDO = Converter.INSTANCE.toProfessionDO(professionDTO);
+    public void update(Long id, UpdateProfessionRequest request) {
+        // 先验证参数
+        if (request == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("更新请求不能为空");
+        }
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            throw ErrorCode.INVALID_PARAMETER.exception("职业名称不能为空");
+        }
+        
+        // 验证职业是否存在并获取
+        ProfessionDO professionDO = professionDataService.getById(id);
+        if (professionDO == null) {
+            throw ErrorCode.PROFESSION_NOT_FOUND.exception();
+        }
+        
+        // 更新字段
+        professionDO.setName(request.getName());
+        professionDO.setDescription(request.getDescription());
+        professionDO.setPrice(request.getPrice());
+        professionDO.setSkills(request.getSkills());
+        professionDO.setMainCategory(request.getMainCategory());
+        professionDO.setSubCategory(request.getSubCategory());
+        professionDO.setIcon(request.getIcon());
+        professionDO.setRejectedReason(request.getRejectedReason());
+        
         professionDataService.update(professionDO);
     }
 

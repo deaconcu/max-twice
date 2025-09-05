@@ -5,9 +5,11 @@ import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.UpvoteService;
 import com.prosper.learn.dto.response.UpvoteStatusDTO;
+import com.prosper.learn.dto.request.UpvoteRequest;
 import lombok.RequiredArgsConstructor;
-import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
 
 import static com.prosper.learn.common.Enums.ObjectType.comment;
 import static com.prosper.learn.common.Enums.ObjectType.post;
@@ -29,24 +31,21 @@ public class UpvotesController {
      * 映射: POST /upvote → POST /api/v1/upvotes
      */
     @PostMapping("/upvotes")
-    public ApiResponse<UpvoteStatusDTO> upvote(
-            @JsonParam("objectId") Long objectId,
-            @JsonParam("objectType") Integer objectType,
-            @JsonParam("type") Integer type) {
+    public ApiResponse<UpvoteStatusDTO> upvote(@RequestBody @Valid UpvoteRequest request) {
         
         long userId = StpUtil.getLoginIdAsLong();
         
-        if (objectType == post.value()) {
-            upvoteService.upvotePost(objectId, userId, type);
-        } else if (objectType == comment.value()) {
-            upvoteService.upvoteComment(objectId, userId);
-        } else if (objectType == roadmap.value()) {
-            upvoteService.upvoteRoadmap(objectId, userId);
+        if (request.getObjectType() == post.value()) {
+            upvoteService.upvotePost(request.getObjectId(), userId, request.getType());
+        } else if (request.getObjectType() == comment.value()) {
+            upvoteService.upvoteComment(request.getObjectId(), userId);
+        } else if (request.getObjectType() == roadmap.value()) {
+            upvoteService.upvoteRoadmap(request.getObjectId(), userId);
         } else {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }
         
-        UpvoteStatusDTO result = upvoteService.getUpvoteStatus(objectId, objectType, userId);
+        UpvoteStatusDTO result = upvoteService.getUpvoteStatus(request.getObjectId(), request.getObjectType(), userId);
         return ApiResponse.success(result);
     }
 

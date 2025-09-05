@@ -1,16 +1,18 @@
 package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.dto.response.message.MessageDTO;
+import com.prosper.learn.dto.request.*;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import com.prosper.learn.persistence.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
-import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 
@@ -33,14 +35,10 @@ public class MessagesController {
      * 映射: POST /message/new-course → POST /api/v1/messages/course-applications
      */
     @PostMapping("/messages/course-applications")
-    public ApiResponse<Void> applyCourse(
-            @JsonParam("title") String title, 
-            @JsonParam("summary") String summary, 
-            @JsonParam("explanation") String explanation, 
-            @JsonParam("parentId") Long parentId) {
+    public ApiResponse<Void> applyCourse(@RequestBody @Valid CreateMessageRequest request) {
         
         long userId = StpUtil.getLoginIdAsLong();
-        messageService.applyCourse(title, summary, explanation, parentId, userId);
+        messageService.applyCourse(request.getTitle(), request.getSummary(), request.getExplanation(), request.getParentId(), userId);
         return ApiResponse.success();
     }
 
@@ -79,12 +77,9 @@ public class MessagesController {
      * 映射: POST /message/system → POST /api/v1/messages/system
      */
     @PostMapping("/messages/system")
-    public ApiResponse<Void> postSystemMessage(
-            @JsonParam("type") Integer type, 
-            @JsonParam("userId") Long userId, 
-            @JsonParam("content") String content) {
+    public ApiResponse<Void> postSystemMessage(@RequestBody @Valid SendMessageRequest request) {
         
-        //messageService.createSystemMessage(type, userId, content);
+        //messageService.createSystemMessage(request.getType(), request.getUserId(), request.getContent());
         return ApiResponse.success();
     }
 
@@ -106,24 +101,22 @@ public class MessagesController {
      * 映射: POST /message/invite → POST /api/v1/messages/invite
      */
     @PostMapping("/messages/invite")
-    public ApiResponse<Void> inviteUser(
-            @JsonParam("userId") Long userId, 
-            @JsonParam("nodeId") Long nodeId) {
+    public ApiResponse<Void> inviteUser(@RequestBody @Valid CreateNotificationRequest request) {
         
-        if (userId <= 0) {
+        if (request.getUserId() <= 0) {
             throw new IllegalArgumentException("用户ID无效");
         }
-        if (nodeId <= 0) {
+        if (request.getNodeId() <= 0) {
             throw new IllegalArgumentException("节点ID无效");
         }
         
-        UserDO userDO = userMapper.getById(userId);
+        UserDO userDO = userMapper.getById(request.getUserId());
         if (userDO == null) {
             throw new IllegalArgumentException("用户不存在");
         }
 
         long inviterId = StpUtil.getLoginIdAsLong();
-        messageService.createInviteMessage(userId, inviterId, nodeId);
+        messageService.createInviteMessage(request.getUserId(), inviterId, request.getNodeId());
         return ApiResponse.success();
     }
 }

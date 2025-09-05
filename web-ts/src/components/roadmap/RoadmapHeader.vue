@@ -1,11 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
-
-  interface Roadmap {
-    id: string | number
-    [key: string]: any
-  }
+  import type { Roadmap } from '@/types/roadmap'
 
   interface Skill {
     icon: string

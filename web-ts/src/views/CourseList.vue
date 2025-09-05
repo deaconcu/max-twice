@@ -16,7 +16,8 @@ import CourseHeader from '@/components/course/CourseHeader.vue'
 import CourseCreateDialog from '@/components/course/CourseCreateDialog.vue'
 import CourseCategoryCard from '@/components/course/CourseCategoryCard.vue'
 
-// 类型定义
+
+// 扩展类型，保持现有的嵌套结构
 interface Category {
   id: number
   name: string

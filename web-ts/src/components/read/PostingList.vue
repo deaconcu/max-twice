@@ -7,6 +7,8 @@
   import { useI18n } from 'vue-i18n'
   import { ObjectType, PostType } from '@/types/enums'
   import type { Post } from '@/types/post'
+  import type { Course } from '@/types/course'
+  import type { Node } from '@/types/node'
 
   import AddContents from '../course/AddContents.vue'
   import AddArticle from './AddArticle.vue'
@@ -23,20 +25,6 @@
   const { t } = useI18n()
 
   const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
-
-  // 类型定义
-  interface Course {
-    id: number
-    progress?: number
-  }
-
-  interface Node {
-    name: string
-    description?: string
-    isCompleted: boolean
-    commentCount: number
-  }
-
 
   interface TocNodeInfo {
     name: string

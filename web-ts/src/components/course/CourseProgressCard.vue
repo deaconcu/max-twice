@@ -1,0 +1,1 @@
+<!-- CourseProgressCard component placeholder -->

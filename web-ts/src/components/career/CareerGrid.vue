@@ -3,14 +3,9 @@ import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import CareerCard from '@/components/career/CareerCard.vue'
-import type { Profession, ProfessionCategory, CategoryMapping } from '@/types/profession'
+import type { ProfessionCategory, CategoryMapping, CareerWithDisplay } from '@/types/profession'
 
 // 类型定义
-interface CareerWithDisplay extends Profession {
-  icon?: string
-  iconColor?: string
-}
-
 interface Props {
   displayedCareers: CareerWithDisplay[]
   loading: boolean

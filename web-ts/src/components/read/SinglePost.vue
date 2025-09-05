@@ -4,6 +4,8 @@
   import { useI18n } from 'vue-i18n'
   import { PostType, VoteType } from '@/types/enums'
   import type { Post } from '@/types/post'
+  import type { Course } from '@/types/course'
+  import type { Node } from '@/types/node'
   import hljs from 'highlight.js'
   import 'highlight.js/styles/github.css' // 选择你的高亮主题
 
@@ -11,18 +13,6 @@
 
   // 🔴 导入Post浏览量跟踪服务
   import postViewTracking from '@/services/postViewTracking'
-
-  // 类型定义
-  interface Course {
-    id: number
-  }
-
-  interface Node {
-    name: string
-    description?: string
-    isCompleted: boolean
-    commentCount: number
-  }
 
   interface DataProps {
     path: string

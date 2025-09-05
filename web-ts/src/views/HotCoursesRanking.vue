@@ -3,20 +3,8 @@
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { courseServiceV1 } from '@/services/api/v1/apiServiceV1'
-
-  interface Course {
-    id: string | number
-    name: string
-    description?: string
-    learnerCount?: number
-    subscriptionCount?: number
-    [key: string]: any
-  }
-
-  interface SortOption {
-    value: string
-    title: string
-  }
+  import type { Course } from '@/types/course'
+  import type { SortOption } from '@/types/common'
 
   const { t } = useI18n()
   const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')

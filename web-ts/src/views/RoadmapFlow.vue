@@ -13,28 +13,12 @@ import RoadmapList from '@/components/roadmap/RoadmapList.vue'
 import RightSidebar from '@/components/common/RightSidebar.vue'
 import type { Roadmap } from '@/types/roadmap'
 import type { Profession } from '@/types/profession'
+import type { FlowNode, FlowEdge } from '@/types/flow'
+import { Position } from '@vue-flow/core'
 
-interface Node {
-  id: string 
-  type?: string
-  data: {
-    label: string
-    link?: string | null
-    [key: string]: any
-  }
-  position: { x: number; y: number }
-  sourcePosition?: string
-  targetPosition?: string
-}
-
-interface Edge {
-  id: string
-  source: string | number
-  target: string | number
-  type?: string
-  animated?: boolean
-  label?: string
-}
+// 使用全局流程图类型的别名
+type Node = FlowNode
+type Edge = FlowEdge
 
 const { t } = useI18n()
 const showSnackbar = inject('showSnackbar') as (message: string, type?: string) => void
@@ -110,7 +94,7 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
             ...node.data,
           },
           position: node.position || { x: 0, y: 0 },
-          targetPosition: 'bottom', // 根节点只能入，不能出
+          targetPosition: Position.Bottom, // 根节点只能入，不能出
         }
       }
 
@@ -123,8 +107,8 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
           ...node.data,
         },
         position: node.position || { x: 0, y: 0 },
-        sourcePosition: 'top', // source 在上面
-        targetPosition: 'bottom', // target 在下面
+        sourcePosition: Position.Top, // source 在上面
+        targetPosition: Position.Bottom, // target 在下面
       }
     })
 
@@ -425,126 +409,7 @@ onMounted(() => {
   </v-container>
 </template>
 
-<style>
-@import '@vue-flow/core/dist/style.css';
-@import '@vue-flow/core/dist/theme-default.css';
-
-/* 连接点样式 - 入口红色，出口绿色 */
-.vue-flow__handle.vue-flow__handle-top {
-  padding: 3px;
-  border: 1px solid #000000 !important;
-  background: #f44336 !important;
-}
-
-.vue-flow__handle.vue-flow__handle-bottom {
-  padding: 3px;
-  border: 1px solid #000000 !important;
-  background: #4caf50 !important;
-}
-
-/* 只读模式下隐藏连接点 */
-.vue-flow-readonly .vue-flow__handle {
-  width: 0 !important;
-  height: 0 !important;
-  border: none !important;
-  background: transparent !important;
-}
-
-/* 只读模式下美化默认节点 */
-.vue-flow-readonly .vue-flow__node {
-  border-radius: 16px !important;
-  background: #f5f5f5 !important;
-  border: 3px solid #9e9e9e !important;
-  color: #424242 !important;
-  font-weight: 500 !important;
-  font-size: 1rem !important;
-  transition: all 0.2s ease;
-  cursor: pointer !important;
-  padding: 8px 8px !important;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 根节点特殊样式 */
-.vue-flow-readonly .vue-flow__node[data-id='0'] {
-  background: #1976d2 !important;
-  border: 4px double #1976d2 !important;
-  color: #ffffff !important;
-  font-weight: 500 !important;
-}
-
-.vue-flow-readonly .vue-flow__node[data-id='0']:hover {
-  background: #1976d2 !important;
-  border: 4px double #1976d2 !important;
-  color: #ffffff !important;
-  font-weight: 500 !important;
-}
-
-/* 编辑模式下的根节点样式 */
-.vue-flow__node[data-id='0'] {
-  background: #1976d2 !important;
-  border: 4px double #1976d2 !important;
-  color: #ffffff !important;
-  font-weight: 500 !important;
-}
-
-.vue-flow-readonly .vue-flow__node:hover {
-  background: #e3f2fd !important;
-  border-color: #1976d2 !important;
-  transform: translateY(-10px);
-  color: #0d47a1 !important;
-}
-
-.vue-flow__edge-path {
-  stroke-width: 2px !important;
-}
-
-.vue-flow__edge-path {
-  stroke-width: 2px !important;
-}
-
-/* 扁平化设计样式 */
-.flat-button {
-  border-radius: 8px !important;
-  text-transform: none !important;
-  font-weight: 500 !important;
-  transition: all 0.2s ease !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.flat-button:hover {
-  transform: translateY(-1px) !important;
-}
-
-.flat-chip {
-  border-radius: 6px !important;
-  border: 1px solid rgba(25, 118, 210, 0.3) !important;
-  transition: all 0.2s ease !important;
-}
-
-/* 选中状态的样式 */
-.vue-flow__node.selected {
-  box-shadow: 0 0 0 2px #1976d2 !important;
-}
-
-.vue-flow__edge.selected .vue-flow__edge-path {
-  stroke: #1976d2 !important;
-  stroke-width: 3px !important;
-}
-
-/* 确保节点和边可以被选中 */
-.vue-flow__node {
-  padding: 3px;
-  border-radius: 8px;
-  cursor: pointer !important;
-}
-
-.vue-flow__edge {
-  cursor: pointer !important;
-}
-
+<style scoped>
 /* 全局按钮内容居中 */
 :deep(.v-btn__content) {
   display: flex !important;
@@ -552,6 +417,4 @@ onMounted(() => {
   justify-content: center !important;
   gap: 4px !important;
 }
-
-/* 保留核心样式 */
 </style>

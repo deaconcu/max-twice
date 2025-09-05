@@ -4,8 +4,9 @@
  */
 
 import type { Roadmap } from './roadmap'
+import type { User } from './user'
 import { UserRoadmapState } from './enums'
-import type { Edge } from 'node_modules/@vue-flow/core/dist/types/edge'
+import type { Node, Edge } from '@vue-flow/core'
 
 // 用户路线图信息
 export interface UserRoadmap {
@@ -25,7 +26,7 @@ export interface ProcessedUserRoadmap {
   id: number
   title: string
   description?: string
-  author: string
+  creator?: User
   createdAt: string
   addedDate: string
   vote: number

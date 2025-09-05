@@ -3,14 +3,8 @@
   import { useI18n } from 'vue-i18n'
   import { progressServiceV1, roadmapServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { ObjectType, VoteType } from '@/types/enums'
+  import type { Roadmap } from '@/types/roadmap'
   import RoadmapCard from './RoadmapCard.vue'
-
-  interface Roadmap {
-    id: number
-    upvoted?: boolean
-    learning?: boolean
-    [key: string]: any
-  }
 
   interface RoadmapUpdate {
     vote?: number

@@ -2,18 +2,10 @@
   import { ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { MessageType, ObjectType, VoteType } from '@/types/enums'
+  import type { User } from '@/types/user'
+  import type { Node } from '@/types/node'
 
   const { t } = useI18n()
-
-  interface User {
-    id: string | number
-    name: string
-  }
-
-  interface Node {
-    id: string | number
-    name: string
-  }
 
   interface SystemMessage {
     id: string | number

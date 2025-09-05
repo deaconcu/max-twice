@@ -5,6 +5,7 @@
 
 import type { User } from './user'
 import type { Profession } from './profession'
+import type { Node, Edge } from '@vue-flow/core'
 
 // 统一的路线图信息
 export interface Roadmap {
@@ -21,4 +22,8 @@ export interface Roadmap {
   creator?: User             // 创建者信息 (可选) - UserDTOV4 -> User
   updatedAt?: string         // 更新时间 (可选) - LocalDateTime -> string
   createdAt?: string         // 创建时间 (可选) - LocalDateTime -> string
+  learners?: number          // 学习者数量 (可选)
+  nodes?: Node[]             // Vue Flow 节点 (可选)
+  edges?: Edge[]             // Vue Flow 边 (可选)
+  pined?: boolean            // 是否置顶 (兼容拼写错误) (可选)
 }

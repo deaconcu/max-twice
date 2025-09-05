@@ -4,14 +4,14 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.Enums.CourseState;
-import com.prosper.learn.dto.response.CourseDTO;
+import com.prosper.learn.dto.request.*;
+import jakarta.validation.Valid;
 import com.prosper.learn.dto.response.CourseDTOV3;
 import com.prosper.learn.dto.response.CourseDTOV4;
 import com.prosper.learn.dto.response.ApprovalResponseDTO;
 import com.prosper.learn.domain.service.business.CourseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -109,10 +109,9 @@ public class CoursesController {
      * 映射: POST /course → POST /api/v1/courses
      */
     @PostMapping("/courses")
-    public ApiResponse<Object> createCourse(@RequestBody CourseDTO course) {
+    public ApiResponse<Object> createCourse(@Valid @RequestBody CreateCourseRequest request) {
         long userId = StpUtil.getLoginIdAsLong();
-        course.setCreator(userId);
-        courseService.createCourse(course);
+        courseService.createCourse(request, userId);
         return ApiResponse.success("课程创建成功");
     }
 
@@ -121,8 +120,8 @@ public class CoursesController {
      * 映射: PUT /course/{id} → PUT /api/v1/courses/{id}
      */
     @PutMapping("/courses/{id}")
-    public ApiResponse<Object> updateCourse(@PathVariable Long id, @RequestBody CourseDTO course) {
-        courseService.updateCourse(id, course);
+    public ApiResponse<Object> updateCourse(@PathVariable Long id, @Valid @RequestBody UpdateCourseRequest request) {
+        courseService.updateCourse(id, request);
         return ApiResponse.success("更新成功");
     }
 
@@ -133,11 +132,10 @@ public class CoursesController {
     @PostMapping("/courses/{parentId}/subcourses")
     public ApiResponse<Object> createSubcourse(
             @PathVariable Long parentId,
-            @JsonParam("name") String name, 
-            @JsonParam("description") String description) {
+            @RequestBody @Valid CreateSubcourseRequest request) {
         
         long userId = StpUtil.getLoginIdAsLong();
-        courseService.createSubcourse(name, description, parentId, userId);
+        courseService.createSubcourse(request.getName(), request.getDescription(), parentId, userId);
         return ApiResponse.success("课程创建成功");
     }
 
@@ -148,14 +146,13 @@ public class CoursesController {
     @PostMapping("/courses/{id}/approve")
     public ApiResponse<ApprovalResponseDTO> approveCourse(
             @PathVariable Long id, 
-            @JsonParam("action") String action, 
-            @JsonParam(value = "rejectedReason", required = false) String rejectedReason) {
+            @RequestBody @Valid OperateRequest request) {
         
         if (!courseService.exist(id)) {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }
 
-        ApprovalResponseDTO response = switch (action.toLowerCase()) {
+        ApprovalResponseDTO response = switch (request.getAction().toLowerCase()) {
             case "approve" -> {
                 courseService.approve(id);
                 yield ApprovalResponseDTO.builder()
@@ -167,7 +164,7 @@ public class CoursesController {
                         .build();
             }
             case "reject" -> {
-                courseService.reject(id, rejectedReason);
+                courseService.reject(id, request.getRejectedReason());
                 yield ApprovalResponseDTO.builder()
                         .success(true)
                         .message("拒绝成功")

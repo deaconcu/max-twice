@@ -87,7 +87,7 @@ public class CourseController implements CourseClient {
     public Response<Object> post(CourseDTO course) {
         long userId = StpUtil.getLoginIdAsLong();
         course.setCreator(userId);
-        courseService.createCourse(course);
+        //courseService.createCourse(course);
         return Response.success("课程创建成功");
     }
 

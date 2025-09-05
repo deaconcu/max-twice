@@ -3,33 +3,10 @@
   import { courseServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { CourseState } from '@/types/enums'
   import type { Course } from '@/types/course'
+  import type { MainCategory, SubCategory, CategoryMapping, StateOption } from '@/types/common'
   import CourseCard from './CourseCard.vue'
 
   const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
-
-  // 状态选项接口
-  interface StateOption {
-    value: number
-    text: string
-    color: string
-    icon: string
-  }
-
-  // 分类相关接口
-  interface MainCategory {
-    id: number
-    name: string
-  }
-
-  interface SubCategory {
-    id: number
-    name: string
-  }
-
-  interface CategoryMapping {
-    mainCategoryId: number
-    subCategories: SubCategory[]
-  }
 
   // 编辑课程数据接口
   interface EditCourseData {

@@ -66,10 +66,14 @@
   </div>
 </template>
 
-<style scoped>
-  @import '@vue-flow/core/dist/style.css';
-  @import '@vue-flow/core/dist/theme-default.css';
+<!-- Vue Flow 核心样式必须全局导入 -->
+<style>
+@import '@vue-flow/core/dist/style.css';
+@import '@vue-flow/core/dist/theme-default.css';
+</style>
 
+<!-- 组件特定样式使用 scoped -->
+<style scoped>
   .roadmap-vue-flow {
     width: 100%;
     height: 100%;

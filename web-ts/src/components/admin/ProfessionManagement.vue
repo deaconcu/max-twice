@@ -517,6 +517,7 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { professionServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { ProfessionState } from '@/types/enums'
 import type { Profession, ProfessionCategory, CategoryMapping } from '@/types/profession'
+import type { StateOption } from '@/types/common'
 import CategorySelector from '../common/CategorySelector.vue'
 
 // 扩展 Profession 接口以包含UI状态
@@ -524,14 +525,6 @@ interface ProfessionWithUIState extends Profession {
   approving?: boolean
   restoring?: boolean
   deleting?: boolean
-}
-
-// 状态选项配置
-interface StateOption {
-  value: number
-  text: string
-  color: string
-  icon: string
 }
 
 // 编辑表单数据

@@ -57,3 +57,17 @@ export interface ApproveCourseRequest {
   action: string             // 审核动作
   rejectedReason?: string    // 拒绝原因
 }
+
+// 课程子分类
+export interface SubCourseCategory {
+  id: number
+  name: string
+  list?: any[]  // 可选的课程列表
+}
+
+// 课程分类
+export interface CourseCategory {
+  id?: number
+  name: string
+  list: SubCourseCategory[]
+}

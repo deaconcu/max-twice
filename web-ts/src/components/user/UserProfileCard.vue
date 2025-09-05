@@ -3,17 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import type { Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { userServiceV1 } from '@/services/api/v1/apiServiceV1'
-
-// 类型定义
-interface User {
-  id?: string | number
-  name?: string
-  biography?: string
-  avatar?: string
-  canFollow?: boolean
-  isFollowing?: boolean
-  [key: string]: any
-}
+import type { User } from '@/types/user'
 
 interface Stats {
   followeeCount: number
@@ -43,7 +33,7 @@ const emit = defineEmits<{
 const router = useRouter()
 
 // 用户数据
-const user: Ref<User> = ref({})
+const user: Ref<User> = ref()
 const loading: Ref<boolean> = ref(false)
 const error: Ref<string | null> = ref(null)
 

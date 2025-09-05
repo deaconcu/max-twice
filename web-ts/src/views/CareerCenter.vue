@@ -15,7 +15,7 @@ import type {
   CategoryMapping 
 } from '@/types/profession'
 
-// 类型定义
+// 扩展职业类型以包含显示属性
 interface CareerWithDisplay extends Profession {
   icon?: string
   iconColor?: string

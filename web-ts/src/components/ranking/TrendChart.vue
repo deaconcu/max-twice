@@ -14,6 +14,7 @@ import type { TooltipItem, ChartOptions, ChartData } from 'chart.js'
 import { Line as LineChart } from 'vue-chartjs'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { DailyStats } from '@/types/stats'
 
 // 注册Chart.js组件
 ChartJS.register(
@@ -27,14 +28,8 @@ ChartJS.register(
   Filler
 )
 
-// 类型定义
-interface DailyStat {
-  date: string
-  views?: number
-  twice?: number
-  helpful?: number
-  comments?: number
-}
+// 扩展全局类型为可选字段版本
+type DailyStat = Partial<DailyStats> & { date: string }
 
 interface Props {
   dailyStats?: DailyStat[]

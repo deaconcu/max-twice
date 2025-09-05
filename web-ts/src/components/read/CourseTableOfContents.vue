@@ -2,10 +2,7 @@
 import { computed, ref } from 'vue'
 import TreeNode from './TreeNode.vue'
 import ConfigContents from '../course/ConfigContents.vue'
-
-interface Course {
-  id: number
-}
+import type { Course } from '@/types/course'
 
 interface TocItem {
   [key: string]: any

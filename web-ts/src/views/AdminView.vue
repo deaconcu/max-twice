@@ -11,10 +11,6 @@
   const { t } = useI18n()
   const tab = ref<string>('system-config')
 
-  onMounted(async (): Promise<void> => {
-    // 组件挂载时的初始化逻辑
-    console.log('Admin view mounted')
-  })
 </script>
 
 <template>

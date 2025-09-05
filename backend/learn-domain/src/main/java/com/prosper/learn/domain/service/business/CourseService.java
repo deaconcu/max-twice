@@ -6,7 +6,8 @@ import com.prosper.learn.common.Enums.CourseState;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
 import com.prosper.learn.domain.util.Converter;
-import com.prosper.learn.dto.response.CourseDTO;
+import com.prosper.learn.dto.request.CreateCourseRequest;
+import com.prosper.learn.dto.request.UpdateCourseRequest;
 import com.prosper.learn.dto.response.CourseDTOV3;
 import com.prosper.learn.dto.response.CourseDTOV4;
 import com.prosper.learn.persistence.dataobject.CourseDO;
@@ -126,11 +127,18 @@ public class CourseService {
     }
 
     @Transactional
-    public void updateCourse(Long id, CourseDTO courseDTO) {
+    public void updateCourse(Long id, UpdateCourseRequest request) {
+        // 先验证参数
+        if (request == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("课程更新请求不能为空");
+        }
+        
         CourseDO courseDO = validateCourseExists(id);
         
-        courseDO.setName(courseDTO.getName());
-        courseDO.setDescription(courseDTO.getDescription());
+        courseDO.setName(request.getName());
+        courseDO.setDescription(request.getDescription());
+        courseDO.setMainCategory(request.getMainCategory());
+        courseDO.setSubCategory(request.getSubCategory());
         courseDataService.update(courseDO);
     }
 
@@ -204,27 +212,32 @@ public class CourseService {
         }
     }
 
-    public void createCourse(CourseDTO courseDTO) {
-        CourseDO course = new CourseDO();
-        course.setName(courseDTO.getName());
-        course.setDescription(courseDTO.getDescription());
+    public void createCourse(CreateCourseRequest request, Long userId) {
+        // 先验证参数
+        if (request == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("课程创建请求不能为空");
+        }
+        if (userId == null || userId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效");
+        }
 
         long parentId = 0;
-        if (courseDTO.getParentId() != null && courseDTO.getParentId() > 0) {
-            parentId = courseDTO.getParentId();
-        }
-        course.setParent(parentId);
-
         validateParentCourseExists(parentId);
 
-        course.setCreator(courseDTO.getCreator());
-        course.setMainCategory(courseDTO.getMainCategory());
-        course.setSubCategory(courseDTO.getSubCategory());
+        // 验证通过后创建对象
+        CourseDO course = new CourseDO();
+        course.setName(request.getName());
+        course.setDescription(request.getDescription());
+        course.setMainCategory(request.getMainCategory());
+        course.setSubCategory(request.getSubCategory());
+        course.setCreator(userId);
+        course.setParent(parentId);
         course.setState(CourseState.SUBMITTED.value());
         course.setRootNode(0L);
+        
         courseDataService.insert(course);
 
-        NodeDO nodeDO = NodeDO.createRoot(course.getCreator(), course.getId());
+        NodeDO nodeDO = NodeDO.createRoot(userId, course.getId());
         nodeDataService.insert(nodeDO);
 
         course.setRootNode(nodeDO.getId());

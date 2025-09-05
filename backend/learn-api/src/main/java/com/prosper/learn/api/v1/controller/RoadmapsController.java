@@ -4,12 +4,14 @@ import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.RoadmapService;
 import com.prosper.learn.dto.response.RoadmapDTO;
+import com.prosper.learn.dto.request.*;
 import com.prosper.learn.api.v1.annotation.JsonParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import cn.dev33.satoken.stp.StpUtil;
 
+import jakarta.validation.Valid;
 import java.util.List;
 
 /**
@@ -65,17 +67,14 @@ public class RoadmapsController {
      * 映射: POST /roadmap → POST /api/v1/roadmaps
      */
     @PostMapping("/roadmaps")
-    public ApiResponse<Long> createRoadmap(
-            @JsonParam("professionId") Long professionId,
-            @JsonParam("content") String content,
-            @JsonParam("description") String description) {
+    public ApiResponse<Long> createRoadmap(@RequestBody @Valid CreateRoadmapRequest request) {
         
         if (!StpUtil.isLogin()) {
             throw ErrorCode.USER_NOT_LOGIN.exception();
         }
 
         long userId = StpUtil.getLoginIdAsLong();
-        Long roadmapId = roadmapService.createRoadmap(professionId, content, description, userId);
+        Long roadmapId = roadmapService.createRoadmap(request.getProfessionId(), request.getContent(), request.getDescription(), userId);
         return ApiResponse.success(roadmapId);
     }
 
@@ -96,15 +95,13 @@ public class RoadmapsController {
      * 映射: POST /roadmap/pin → POST /api/v1/roadmaps/pin
      */
     @PostMapping("/roadmaps/pin")
-    public ApiResponse<Boolean> pinRoadmap(
-            @JsonParam("professionId") Long professionId,
-            @JsonParam("roadmapId") Long roadmapId) {
+    public ApiResponse<Boolean> pinRoadmap(@RequestBody @Valid SetRoadmapProgressRequest request) {
         if (!StpUtil.isLogin()) {
             throw ErrorCode.USER_NOT_LOGIN.exception();
         }
 
         long userId = StpUtil.getLoginIdAsLong();
-        Boolean pinned = roadmapService.pinRoadmap(professionId, roadmapId, userId);
+        Boolean pinned = roadmapService.pinRoadmap(request.getProfessionId(), request.getRoadmapId(), userId);
 
         return ApiResponse.success(pinned);
     }

@@ -3,15 +3,15 @@ import { ref } from 'vue'
 import { followServiceV1, userServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useI18n } from 'vue-i18n'
 import { Bool } from '@/types/enums'
+import type { User } from '@/types/user'
 
 interface Props {
   id: number
   name: string
 }
 
-interface UserCardInfo {
-  id: number
-  name: string
+// 扩展 User 类型以支持关注状态
+interface UserCardInfo extends User {
   followed?: number
 }
 

@@ -7,11 +7,12 @@ import static com.prosper.learn.common.Enums.ProfessionState;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.ProfessionService;
 import com.prosper.learn.domain.service.scheduler.ProfessionRankingScheduler;
+import com.prosper.learn.dto.request.*;
 import com.prosper.learn.dto.response.ProfessionDTO;
+import jakarta.validation.Valid;
 import com.prosper.learn.dto.response.ApprovalResponseDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -91,9 +92,9 @@ public class ProfessionsController {
      * 映射: POST /profession → POST /api/v1/professions
      */
     @PostMapping("/professions")
-    public ApiResponse<Object> createProfession(@RequestBody ProfessionDTO professionDTO) {
-        professionDTO.setCreator(StpUtil.getLoginIdAsLong());
-        professionService.create(professionDTO);
+    public ApiResponse<Object> createProfession(@Valid @RequestBody CreateProfessionRequest request) {
+        long userId = StpUtil.getLoginIdAsLong();
+        professionService.create(userId, request);
         return ApiResponse.success();
     }
 
@@ -102,24 +103,8 @@ public class ProfessionsController {
      * 映射: PUT /profession → PUT /api/v1/professions/{id}
      */
     @PutMapping("/professions/{id}")
-    public ApiResponse<Object> updateProfession(@PathVariable Long id, @RequestBody ProfessionDTO professionDTO) {
-        professionDTO.setId(id);
-        if (professionDTO.getName() == null || professionDTO.getName().trim().isEmpty()) {
-            throw ErrorCode.SYSTEM_ERROR.exception();
-        }
-        if (professionDTO.getPrice() == null || professionDTO.getPrice().trim().isEmpty()) {
-            throw ErrorCode.SYSTEM_ERROR.exception();
-        }
-        if (professionDTO.getSkills() == null || professionDTO.getSkills().trim().isEmpty()) {
-            throw ErrorCode.SYSTEM_ERROR.exception();
-        }
-
-        ProfessionDTO existing = professionService.getById(professionDTO.getId());
-        if (existing == null) {
-            throw ErrorCode.SYSTEM_ERROR.exception();
-        }
-
-        professionService.update(professionDTO);
+    public ApiResponse<Object> updateProfession(@PathVariable Long id, @Valid @RequestBody UpdateProfessionRequest request) {
+        professionService.update(id, request);
         return ApiResponse.success();
     }
 
@@ -130,10 +115,9 @@ public class ProfessionsController {
     @PostMapping("/professions/{id}/approve")
     public ApiResponse<ApprovalResponseDTO> approveProfession(
             @PathVariable Long id, 
-            @JsonParam("action") String action, 
-            @JsonParam(value = "rejectedReason", required = false) String rejectedReason) {
+            @RequestBody @Valid OperateRequest request) {
         
-        ApprovalResponseDTO response = switch (action.toLowerCase()) {
+        ApprovalResponseDTO response = switch (request.getAction().toLowerCase()) {
             case "approve" -> {
                 professionService.approve(id);
                 yield ApprovalResponseDTO.builder()
@@ -145,7 +129,7 @@ public class ProfessionsController {
                         .build();
             }
             case "reject" -> {
-                professionService.reject(id, rejectedReason);
+                professionService.reject(id, request.getRejectedReason());
                 yield ApprovalResponseDTO.builder()
                         .success(true)
                         .message("拒绝成功")

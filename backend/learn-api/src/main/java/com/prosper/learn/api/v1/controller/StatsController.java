@@ -7,12 +7,14 @@ import com.prosper.learn.domain.service.basic.StatsMonitorService;
 import com.prosper.learn.domain.service.basic.PlatformStatsService;
 import com.prosper.learn.dto.response.UserStatsDTO;
 import com.prosper.learn.dto.response.PlatformStatsDTO;
+import com.prosper.learn.dto.request.RecordViewRequest;
+import com.prosper.learn.api.v1.annotation.JsonParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 import cn.dev33.satoken.stp.StpUtil;
 
+import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -37,12 +39,9 @@ public class StatsController {
      * 映射: POST /api/stats/view → POST /api/v1/stats/views
      */
     @PostMapping("/stats/views")
-    public ApiResponse<Void> recordView(
-            @JsonParam("articleId") Long articleId, 
-            @JsonParam("userId") Long userId, 
-            @JsonParam("ipAddress") String ipAddress) {
+    public ApiResponse<Void> recordView(@RequestBody @Valid RecordViewRequest request) {
         
-        redisStatsService.recordArticleView(articleId, userId);
+        redisStatsService.recordArticleView(request.getArticleId(), request.getUserId());
         return ApiResponse.success();
     }
 

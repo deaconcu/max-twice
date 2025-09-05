@@ -3,7 +3,10 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.PostingService;
+import com.prosper.learn.dto.request.CreatePostRequest;
+import com.prosper.learn.dto.request.UpdatePostRequest;
 import com.prosper.learn.dto.response.PostDTO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.prosper.learn.api.v1.annotation.JsonParam;
@@ -44,8 +47,9 @@ public class PostsController {
      * 映射: POST /posting → POST /api/v1/posts
      */
     @PostMapping("/posts")
-    public ApiResponse<Void> createPost(@RequestBody PostDTO posting) {
-        postingService.createPost(posting);
+    public ApiResponse<Void> createPost(@Valid @RequestBody CreatePostRequest request) {
+        long userId = StpUtil.getLoginIdAsLong();
+        postingService.createPost(userId, request);
         return ApiResponse.success();
     }
 
@@ -54,8 +58,8 @@ public class PostsController {
      * 映射: PUT /posting → PUT /api/v1/posts/{id}
      */
     @PutMapping("/posts/{id}")
-    public ApiResponse<Void> updatePost(@PathVariable Long id, @RequestBody PostDTO posting) {
-        postingService.updatePost(id, posting);
+    public ApiResponse<Void> updatePost(@PathVariable Long id, @Valid @RequestBody UpdatePostRequest request) {
+        postingService.updatePost(id, request);
         return ApiResponse.success();
     }
 

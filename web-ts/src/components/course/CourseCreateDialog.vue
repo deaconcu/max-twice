@@ -1,26 +1,10 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import type { MainCategory, SubCategory } from '@/types/common'
+  import type { CreateCourseRequest } from '@/types/course'
 
   const { t } = useI18n()
-
-  interface SubCategory {
-    id: string | number
-    name: string
-  }
-
-  interface MainCategory {
-    id: string | number
-    name: string
-    list?: SubCategory[]
-  }
-
-  interface CourseData {
-    name: string
-    description: string
-    mainCategory: string | number
-    subCategory: string | number
-  }
 
   interface Props {
     modelValue?: boolean
@@ -35,7 +19,7 @@
 
   interface Emits {
     (e: 'update:modelValue', value: boolean): void
-    (e: 'submit', courseData: CourseData): void
+    (e: 'submit', courseData: CreateCourseRequest): void
   }
 
   // Emits
@@ -45,8 +29,8 @@
   const applyCourseData = ref({
     name: '',
     description: '',
-    mainCategoryId: '',
-    subCategoryId: '',
+    mainCategoryId: 0,
+    subCategoryId: 0,
   })
 
   // Computed properties for v-model
@@ -71,13 +55,13 @@
   watch(
     () => applyCourseData.value.mainCategoryId,
     () => {
-      applyCourseData.value.subCategoryId = ''
+      applyCourseData.value.subCategoryId = 0
     }
   )
 
   // 处理表单提交
   const handleSubmit = (): void => {
-    const courseData: CourseData = {
+    const courseData: CreateCourseRequest = {
       name: applyCourseData.value.name,
       description: applyCourseData.value.description,
       mainCategory: applyCourseData.value.mainCategoryId,
@@ -90,8 +74,8 @@
     applyCourseData.value = {
       name: '',
       description: '',
-      mainCategoryId: '',
-      subCategoryId: '',
+      mainCategoryId: 0,
+      subCategoryId: 0,
     }
   }
 
@@ -103,8 +87,8 @@
     applyCourseData.value = {
       name: '',
       description: '',
-      mainCategoryId: '',
-      subCategoryId: '',
+      mainCategoryId: 0,
+      subCategoryId: 0,
     }
   }
 </script>

@@ -1,25 +1,10 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import CourseItemsList from './CourseItemsList.vue'
-
-  interface SubCategory {
-    name: string
-    list?: any[]
-  }
-
-  interface Category {
-    name: string
-    list: SubCategory[]
-  }
-
-  interface Course {
-    id: string | number
-    name: string
-    [key: string]: any
-  }
+  import type { Course, CourseCategory } from '@/types/course'
 
   interface Props {
-    category: Category
+    category: CourseCategory
     categoryIndex: number
     activeFirstLvl?: number
     selectedSubCategory?: number

@@ -1,13 +1,8 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import type { Profession } from '@/types/profession'
+import type { CareerWithDisplay } from '@/types/profession'
 
 // 类型定义
-interface CareerWithDisplay extends Profession {
-  icon?: string
-  iconColor?: string
-}
-
 interface Props {
   career: CareerWithDisplay
   getCategoryName: (categoryId: number) => string

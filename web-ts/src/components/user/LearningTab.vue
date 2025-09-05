@@ -8,63 +8,15 @@ import RoadmapDetail from '@/components/roadmap/RoadmapDetail.vue'
 import dagre from 'dagre'
 import { UserRoadmapState } from '@/types/enums'
 import { useUserStore } from '@/stores/user'
+import type { Course } from '@/types/course'
+import type { FlowNode, FlowEdge } from '@/types/flow'
+import type { ProcessedUserRoadmap } from '@/types/userRoadmap'
+import { Position } from '@vue-flow/core'
 
-// 类型定义
-interface Node {
-  id: string
-  type: string
-  data: {
-    label: string
-    link?: string
-    completed?: boolean
-    current?: boolean
-    description?: string
-    [key: string]: any
-  }
-  position: { x: number; y: number }
-  sourcePosition?: string
-  targetPosition?: string
-}
-
-interface Edge {
-  id: string
-  source: string
-  target: string
-  type?: string
-  animated?: boolean
-  label?: string
-}
-
-interface Roadmap {
-  id: number
-  title: string
-  description?: string
-  author: string
-  createdAt: string
-  addedDate: string
-  vote: number
-  upvoted: boolean
-  progress: number
-  completedNodes: number
-  totalNodes: number
-  lastActivity: string
-  state: UserRoadmapState
-  startedAt?: string
-  completedAt?: string
-  tags: string[]
-  profession?: { name: string }
-  nodes: Node[]
-  edges: Edge[]
-  content: string
-  [key: string]: any
-}
-
-interface Course {
-  id: number
+// 扩展课程信息
+interface LearningCourse extends Course {
   courseId: number
-  title: string
-  description: string
-  progress: number
+  title: string // 添加title字段
   totalLessons: number
   completedLessons: number
   category: string
@@ -78,8 +30,8 @@ interface LearningData {
   totalProgress: number
   completedNodes: number
   totalNodes: number
-  roadmaps: Roadmap[]
-  courses: Course[]
+  roadmaps: ProcessedUserRoadmap[]
+  courses: LearningCourse[]
   recentActivities: any[]
 }
 
@@ -109,7 +61,7 @@ const selectedLearningTab: Ref<string> = ref('roadmaps')
 
 // RoadmapDetail 浮层状态
 const showRoadmapDetail: Ref<boolean> = ref(false)
-const selectedRoadmap: Ref<Roadmap | null> = ref(null)
+const selectedRoadmap: Ref<ProcessedUserRoadmap | null> = ref(null)
 
 // 学习进度加载函数
 const loadLearningProgress = async (): Promise<void> => {
@@ -122,12 +74,12 @@ const loadLearningProgress = async (): Promise<void> => {
     console.log('获取用户学习路线图数据:', roadmapResponse)
     console.log('获取用户学习课程数据:', courseResponse)
 
-    let roadmaps: Roadmap[] = []
-    let courses: Course[] = []
+    let roadmaps: ProcessedUserRoadmap[] = []
+    let courses: LearningCourse[] = []
 
     // 处理路线图数据
     if (roadmapResponse.code === 200 && Array.isArray(roadmapResponse.data)) {
-      roadmaps = roadmapResponse.data.map((userRoadmap: any): Roadmap => {
+      roadmaps = roadmapResponse.data.map((userRoadmap: any): ProcessedUserRoadmap => {
         const { roadmap } = userRoadmap
         const { nodes, edges } = parseRoadmapContent(roadmap.content)
 
@@ -141,7 +93,7 @@ const loadLearningProgress = async (): Promise<void> => {
           id: roadmap.id,
           title: roadmap.description || `学习路线图 ${roadmap.id}`,
           description: roadmap.description || '暂无描述',
-          author: roadmap.creator?.name || '未知用户',
+          creator: roadmap.creator,
           createdAt: roadmap.createdAt,
           addedDate: formatDate(userRoadmap.startedAt),
           vote: roadmap.vote || 0,
@@ -164,9 +116,10 @@ const loadLearningProgress = async (): Promise<void> => {
 
     // 处理课程数据
     if (courseResponse.code === 200 && Array.isArray(courseResponse.data)) {
-      courses = courseResponse.data.map((userCourse: any): Course => {
+      courses = courseResponse.data.map((userCourse: any): LearningCourse => {
         return {
           id: userCourse.id,
+          name: userCourse.course.name, // 添加name字段
           courseId: userCourse.course.id,
           title: userCourse.course.name,
           description: userCourse.course.description,
@@ -199,7 +152,7 @@ const loadLearningProgress = async (): Promise<void> => {
 }
 
 // 解析路线图内容
-const parseRoadmapContent = (content: string | object): { nodes: Node[]; edges: Edge[] } => {
+const parseRoadmapContent = (content: string | object): { nodes: FlowNode[]; edges: FlowEdge[] } => {
   try {
     const data = typeof content === 'string' ? JSON.parse(content) : content
     console.log('解析路线图内容数据:', data)
@@ -209,7 +162,7 @@ const parseRoadmapContent = (content: string | object): { nodes: Node[]; edges: 
       return { nodes: [], edges: [] }
     }
 
-    const nodes = (data.nodes || []).map((node: any, index: number): Node => {
+    const nodes = (data.nodes || []).map((node: any, index: number): FlowNode => {
       return {
         id: String(node.id || index),
         type: 'default',
@@ -221,12 +174,12 @@ const parseRoadmapContent = (content: string | object): { nodes: Node[]; edges: 
           ...node.data,
         },
         position: node.position || { x: 0, y: 0 },
-        sourcePosition: 'top',
-        targetPosition: 'bottom',
+        sourcePosition: Position.Top,
+        targetPosition: Position.Bottom,
       }
     })
 
-    const edges = (data.edges || []).map((edge: any): Edge => ({
+    const edges = (data.edges || []).map((edge: any): FlowEdge => ({
       id: `${edge.source}-${edge.target}`,
       source: String(edge.source),
       target: String(edge.target),
@@ -243,7 +196,7 @@ const parseRoadmapContent = (content: string | object): { nodes: Node[]; edges: 
 }
 
 // 自动布局函数
-const applyAutoLayout = (nodeList: Node[], edgeList: Edge[], direction: string = 'BT'): Node[] => {
+const applyAutoLayout = (nodeList: FlowNode[], edgeList: FlowEdge[], direction: string = 'BT'): FlowNode[] => {
   console.log('Applying auto layout with direction:', direction)
   const dagreGraph = new dagre.graphlib.Graph()
   dagreGraph.setDefaultEdgeLabel(() => ({}))
@@ -317,7 +270,7 @@ const calculateCompletedLessons = (userCourse: any): number => {
   return Math.floor((progress / 100) * totalLessons)
 }
 
-const calculateOverallProgress = (roadmaps: Roadmap[], courses: Course[]): number => {
+const calculateOverallProgress = (roadmaps: ProcessedUserRoadmap[], courses: LearningCourse[]): number => {
   const allItems = [...roadmaps, ...courses]
   if (allItems.length === 0) return 0
 
@@ -325,7 +278,7 @@ const calculateOverallProgress = (roadmaps: Roadmap[], courses: Course[]): numbe
   return Math.round(totalProgress / allItems.length)
 }
 
-const calculateCompletedNodes = (roadmaps: Roadmap[]): number => {
+const calculateCompletedNodes = (roadmaps: ProcessedUserRoadmap[]): number => {
   return roadmaps.reduce((sum, roadmap) => {
     const progress = roadmap.progress || 0
     const totalSteps = (roadmap as any).totalSteps || 5
@@ -333,11 +286,11 @@ const calculateCompletedNodes = (roadmaps: Roadmap[]): number => {
   }, 0)
 }
 
-const calculateTotalNodes = (roadmaps: Roadmap[]): number => {
+const calculateTotalNodes = (roadmaps: ProcessedUserRoadmap[]): number => {
   return roadmaps.reduce((sum, roadmap) => sum + ((roadmap as any).totalSteps || 5), 0)
 }
 
-const generateRecentActivities = (items: (Roadmap | Course)[]): any[] => {
+const generateRecentActivities = (items: (ProcessedUserRoadmap | LearningCourse)[]): any[] => {
   const activities: any[] = []
 
   items.forEach((item) => {
@@ -437,7 +390,7 @@ const getEstimatedTime = (description: string): string => {
   return '3-7天'
 }
 
-const generateRoadmapHTML = (nodes: Node[]): string => {
+const generateRoadmapHTML = (nodes: FlowNode[]): string => {
   if (!nodes || nodes.length === 0) {
     return '<p>暂无学习路径内容</p>'
   }
@@ -531,7 +484,7 @@ const getStatusText = (state: string): string => {
   return stateTexts[state] || '未知状态'
 }
 
-const handleNodeClick = ({ event, node }: { event: any; node: Node }): void => {
+const handleNodeClick = ({ event, node }: { event: any; node: FlowNode }): void => {
   console.log('Node clicked:', event, node)
 
   if (node.id === '0') {
@@ -543,7 +496,7 @@ const handleNodeClick = ({ event, node }: { event: any; node: Node }): void => {
   }
 }
 
-const handleVoteRoadmap = async (roadmap: Roadmap, event?: Event): Promise<void> => {
+const handleVoteRoadmap = async (roadmap: ProcessedUserRoadmap, event?: Event): Promise<void> => {
   if (event) {
     event.stopPropagation()
   }
@@ -557,7 +510,7 @@ const handleVoteRoadmap = async (roadmap: Roadmap, event?: Event): Promise<void>
   }
 }
 
-const closeRoadmap = (roadmap: Roadmap, event?: Event): void => {
+const closeRoadmap = (roadmap: ProcessedUserRoadmap, event?: Event): void => {
   if (event) {
     event.stopPropagation()
   }
@@ -567,7 +520,7 @@ const closeRoadmap = (roadmap: Roadmap, event?: Event): void => {
   //}
 }
 
-const openRoadmapDetail = (roadmap: Roadmap): void => {
+const openRoadmapDetail = (roadmap: ProcessedUserRoadmap): void => {
   selectedRoadmap.value = roadmap
   showRoadmapDetail.value = true
 }

@@ -75,7 +75,7 @@ public class ProfessionController implements ProfessionClient {
         }
 
         professionDTO.setCreator(StpUtil.getLoginIdAsLong());
-        professionService.create(professionDTO);
+        //professionService.create(professionDTO);
         return Response.success;
     }
 
@@ -108,7 +108,7 @@ public class ProfessionController implements ProfessionClient {
         existing.setIcon(professionDTO.getIcon() != null ? professionDTO.getIcon() : "");
         existing.setRejectedReason(professionDTO.getRejectedReason() != null ? professionDTO.getRejectedReason() : "");
 
-        professionService.update(existing);
+        //professionService.update(existing);
         return new Response<>("更新成功");
     }
 

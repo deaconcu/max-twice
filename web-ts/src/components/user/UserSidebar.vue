@@ -2,22 +2,8 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { userServiceV1 } from '@/services/api/v1/apiServiceV1'
-
-// 类型定义
-interface TabItem {
-  text: string
-  icon: string
-  value: string
-}
-
-interface User {
-  id?: string | number
-  name?: string
-  email?: string
-  avatar?: string
-  biography?: string
-  [key: string]: any
-}
+import type { User } from '@/types/user'
+import type { TabItem } from '@/types/common'
 
 interface UserStats {
   followeeCount: number
@@ -40,7 +26,7 @@ const emit = defineEmits<{
 }>()
 
 // 用户数据
-const user: Ref<User> = ref({})
+const user: Ref<User> = ref()
 const loading: Ref<boolean> = ref(false)
 const error: Ref<string | null> = ref(null)
 

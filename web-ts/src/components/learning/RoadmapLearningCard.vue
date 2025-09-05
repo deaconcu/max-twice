@@ -2,47 +2,18 @@
 import { useI18n } from 'vue-i18n'
 import RoadmapVueFlow from '@/components/common/RoadmapVueFlow.vue'
 import { UserRoadmapState } from '@/types/enums'
-import type { Profession } from '@/types/profession'
-
-// 扩展的路线图类型，包含学习相关的计算字段
-interface ProcessedRoadmap {
-  id: string | number
-  title?: string
-  description?: string
-  author?: string
-  createdAt?: string
-  addedDate?: string
-  vote?: number
-  comment?: number
-  upvoted?: boolean
-  progress: number
-  completedNodes: number
-  totalNodes: number
-  lastActivity: string
-  state: UserRoadmapState
-  startedAt?: string
-  completedAt?: string
-  tags?: string[]
-  profession?: Profession
-  nodes?: any[]
-  edges?: any[]
-  creator?: {
-    name?: string
-    [key: string]: any
-  }
-  [key: string]: any
-}
+import type { ProcessedUserRoadmap } from '@/types/userRoadmap'
 
 interface Props {
-  roadmap: ProcessedRoadmap
+  roadmap: ProcessedUserRoadmap
 }
 
 interface Emits {
-  (e: 'open-detail', roadmap: ProcessedRoadmap): void
-  (e: 'vote', roadmap: ProcessedRoadmap, event: Event): void
-  (e: 'move-up', roadmap: ProcessedRoadmap, event: Event): void
-  (e: 'move-down', roadmap: ProcessedRoadmap, event: Event): void
-  (e: 'close', roadmap: ProcessedRoadmap, event: Event): void
+  (e: 'open-detail', roadmap: ProcessedUserRoadmap): void
+  (e: 'vote', roadmap: ProcessedUserRoadmap, event: Event): void
+  (e: 'move-up', roadmap: ProcessedUserRoadmap, event: Event): void
+  (e: 'move-down', roadmap: ProcessedUserRoadmap, event: Event): void
+  (e: 'close', roadmap: ProcessedUserRoadmap, event: Event): void
 }
 
 const props = defineProps<Props>()
@@ -421,13 +392,6 @@ const handleClose = (event: Event): void => {
   }
 }
 
-.vue-flow-preview {
-  border-radius: 12px;
-  overflow: hidden;
-  background: #fafafa;
-  border: 1px solid #e0e0e0;
-}
-
 .border-t {
   border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
 }
@@ -444,6 +408,13 @@ const handleClose = (event: Event): void => {
 .roadmap-chart-section {
   width: 400px;
   min-width: 400px;
+}
+
+.vue-flow-preview {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
 }
 
 .vue-flow-chart-container {

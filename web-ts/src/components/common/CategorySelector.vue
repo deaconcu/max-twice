@@ -58,23 +58,9 @@
   import { computed, onMounted, ref, watch } from 'vue'
   import { systemServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { useI18n } from 'vue-i18n'
+  import type { MainCategory, SubCategory, CategoryMapping } from '@/types/common'
 
   const { t } = useI18n()
-
-  interface MainCategory {
-    title: string
-    value: string | number
-  }
-
-  interface SubCategory {
-    id: string | number
-    name: string
-  }
-
-  interface CategoryMapping {
-    mainCategoryId: string | number
-    subcategories: SubCategory[]
-  }
 
   interface Props {
     modelMainCategory?: number | string | null
@@ -115,9 +101,14 @@
   const categoryMapping = ref<CategoryMapping[]>([])
   const loading = ref<boolean>(true)
 
-  // 使用动态的主分类选项（过滤掉'all'选项，因为CategorySelector主要用于表单）
+  // 转换为表单选项格式
   const formMainCategories = computed(() => {
-    return mainCategories.value.filter((cat) => cat.value !== 'all')
+    return mainCategories.value
+      .filter((cat) => cat.id !== 0) // 使用数字0而不是字符串'all'
+      .map((cat) => ({
+        title: cat.name,
+        value: cat.id,
+      }))
   })
 
   // 计算当前可用的子分类
@@ -128,7 +119,7 @@
       (item) => item.mainCategoryId === selectedMainCategory.value
     )
 
-    return mapping?.subcategories || []
+    return mapping?.subCategories || []
   })
 
   // 加载职业类别数据

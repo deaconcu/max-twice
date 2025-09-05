@@ -10,6 +10,8 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.DailyStatsService;
 import com.prosper.learn.domain.util.Converter;
+import com.prosper.learn.dto.request.CreatePostRequest;
+import com.prosper.learn.dto.request.UpdatePostRequest;
 import com.prosper.learn.dto.response.NodeDTO;
 import com.prosper.learn.dto.response.PostDTO;
 import com.prosper.learn.dto.response.PostDTOV2;
@@ -697,23 +699,29 @@ public class PostingService {
     /**
      * 创建帖子（处理contents类型的特殊逻辑）
      * 
-     * @param posting 帖子DTO对象
+     * @param request 帖子创建请求对象
      * @throws BusinessException 当节点不存在或JSON处理失败时抛出异常
      */
     @Transactional
-    public void createPost(PostDTO posting) {
-        if (posting == null) {
+    public void createPost(long userId, CreatePostRequest request) {
+        // 先验证参数
+        if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子对象不能为空");
         }
+        if (userId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效");
+        }
         
-        if (posting.getType() == Enums.PostType.contents.value()) {
-            validateNodeId(posting.getNodeId());
-            NodeDO nodeDO = nodeDataService.getById(posting.getNodeId());
+        // 验证节点
+        validateNodeId(request.getNodeId());
+        
+        if (request.getType() == Enums.PostType.contents.value()) {
+            NodeDO nodeDO = nodeDataService.getById(request.getNodeId());
             if (nodeDO == null) {
                 throw ErrorCode.POSTING_NODE_NOT_FOUND.exception();
             }
             
-            List<String> nodeNames = parseJsonToStringList(posting.getContent());
+            List<String> nodeNames = parseJsonToStringList(request.getContent());
             String[] ids = new String[nodeNames.size()];
             
             for (int i = 0; i < nodeNames.size(); i++) {
@@ -727,12 +735,25 @@ public class PostingService {
                 nodeDataService.insert(node);
                 ids[i] = Long.toString(node.getId());
             }
-            posting.setContent(String.join(",", ids));
+            
+            // 创建 PostDO 对象
+            PostDO postDO = new PostDO();
+            postDO.setContent(String.join(",", ids));
+            postDO.setNodeId(request.getNodeId());
+            postDO.setType(request.getType());
+            postDO.setCreator(userId);
+            postDO.setCreatedAt(Utils.getLocalDateTime());
+            postDataService.insert(postDO);
+        } else {
+            // 非 contents 类型的帖子
+            PostDO postDO = new PostDO();
+            postDO.setContent(request.getContent());
+            postDO.setNodeId(request.getNodeId());
+            postDO.setType(request.getType());
+            postDO.setCreator(userId);
+            postDO.setCreatedAt(Utils.getLocalDateTime());
+            postDataService.insert(postDO);
         }
-
-        posting.setCreatorId(0L);
-        posting.setCreatedAt(Utils.getTimeString());
-        postDataService.insert(Converter.INSTANCE.toPostDO(posting));
     }
 
     /**
@@ -743,13 +764,13 @@ public class PostingService {
      * @throws BusinessException 当帖子不存在时抛出异常
      */
     @Transactional
-    public void updatePost(Long id, PostDTO posting) {
-        if (posting == null) {
+    public void updatePost(Long id, UpdatePostRequest request) {
+        if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子对象不能为空");
         }
         
         PostDO postDO = validateAndGetPost(id);
-        postDO.setContent(posting.getContent());
+        postDO.setContent(request.getContent());
         postDO.setUpdatedAt(Utils.getLocalDateTime());
         postDataService.update(postDO);
     }

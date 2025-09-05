@@ -3,7 +3,9 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.CommentService;
+import com.prosper.learn.dto.request.CreateCommentRequest;
 import com.prosper.learn.dto.response.CommentDTO;
+import jakarta.validation.Valid;
 import com.prosper.learn.dto.response.CommentDTOV1;
 import com.prosper.learn.persistence.dataobject.CommentDO;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +30,9 @@ public class CommentsController {
      * 映射: POST /comment → POST /api/v1/comments
      */
     @PostMapping("/comments")
-    public ApiResponse<CommentDO> createComment(@RequestBody CommentDTO commentDTO) {
+    public ApiResponse<CommentDO> createComment(@Valid @RequestBody CreateCommentRequest request) {
         Long userId = StpUtil.getLoginIdAsLong();
-        CommentDO comment = commentService.createComment(commentDTO, userId);
+        CommentDO comment = commentService.createComment(request, userId);
         return ApiResponse.success(comment);
     }
 

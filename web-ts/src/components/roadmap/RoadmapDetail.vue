@@ -140,12 +140,6 @@
 
   const { t } = useI18n()
 
-  interface Creator {
-    name: string
-    avatar?: string
-    [key: string]: any
-  }
-
   interface Props {
     modelValue?: boolean
     roadmap?: ProcessedUserRoadmap | null

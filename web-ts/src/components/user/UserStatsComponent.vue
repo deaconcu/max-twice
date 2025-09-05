@@ -5,15 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { statsServiceV1 } from '@/services/api/v1/apiServiceV1'
 import TrendChart from '../ranking/TrendChart.vue'
-
-// 类型定义
-interface DailyStats {
-  date: string
-  views: number
-  twice: number
-  helpful: number
-  comments: number
-}
+import type { DailyStats } from '@/types/stats'
 
 interface StatsData {
   totalViews: number

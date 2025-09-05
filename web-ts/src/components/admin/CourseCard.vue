@@ -2,22 +2,7 @@
   import { defineEmits, defineProps } from 'vue'
   import { CourseState } from '@/types/enums'
   import type { Course } from '@/types/course'
-
-  // 分类相关接口
-  interface MainCategory {
-    id: number
-    name: string
-  }
-
-  interface SubCategory {
-    id: number
-    name: string
-  }
-
-  interface CategoryMapping {
-    mainCategoryId: number
-    subCategories: SubCategory[]
-  }
+  import type { MainCategory, SubCategory, CategoryMapping, StateConfig } from '@/types/common'
 
   interface Props {
     course: Course
@@ -39,13 +24,6 @@
   })
 
   defineEmits<Emits>()
-
-  // 状态配置
-  interface StateConfig {
-    text: string
-    color: string
-    icon: string
-  }
 
   const getStateConfig = (state: number): StateConfig => {
     const configs: Record<number, StateConfig> = {

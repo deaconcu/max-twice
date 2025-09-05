@@ -4,14 +4,12 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.basic.ContentsService;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
+import com.prosper.learn.dto.request.PostContentsRequest;
 import lombok.RequiredArgsConstructor;
-import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
 
 /**
  * 内容管理接口
@@ -30,26 +28,23 @@ public class ContentsController {
      */
     @PostMapping("/contents")
     public ApiResponse<Void> postContents(
-            @JsonParam("path") @NotBlank String path,
-            @JsonParam("courseId") @Positive Long courseId,
-            @JsonParam("postingId") @Positive Long postingId,
-            @JsonParam("action") @Min(1) @Max(4) Integer action,
+            @RequestBody @Valid PostContentsRequest request,
             Model model) {
 
         long userId = StpUtil.getLoginIdAsLong();
 
-        switch (action) {
+        switch (request.getAction()) {
             case 1:
-                contentsService.choose(userId, path, courseId, postingId);
+                contentsService.choose(userId, request.getPath(), request.getCourseId(), request.getPostingId());
                 break;
             case 2:
-                contentsService.unchoose(userId, courseId, path);
+                contentsService.unchoose(userId, request.getCourseId(), request.getPath());
                 break;
             case 3:
-                contentsService.pin(userId, courseId, path, postingId, true);
+                contentsService.pin(userId, request.getCourseId(), request.getPath(), request.getPostingId(), true);
                 break;
             case 4:
-                contentsService.pin(userId, courseId, path, postingId, false);
+                contentsService.pin(userId, request.getCourseId(), request.getPath(), request.getPostingId(), false);
                 break;
             default:
                 throw ErrorCode.NOT_SUPPORTED.exception();

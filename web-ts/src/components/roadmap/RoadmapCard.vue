@@ -154,30 +154,9 @@
   import { useI18n } from 'vue-i18n'
   import RoadmapVueFlow from '@/components/common/RoadmapVueFlow.vue'
   import type { Node, Edge } from '@vue-flow/core'
+  import type { Roadmap } from '@/types/roadmap'
 
   const { t } = useI18n()
-
-  interface Creator {
-    name?: string
-    [key: string]: any
-  }
-
-  interface Roadmap {
-    id: string | number
-    description?: string
-    updatedAt?: string
-    learning?: boolean
-    learners?: number
-    nodes?: Node[]
-    edges?: Edge[]
-    creator?: Creator
-    upvoted?: boolean
-    vote?: number
-    comment?: number
-    pinned?: boolean
-    pined?: boolean // 注意：原代码中可能有拼写错误，保持兼容
-    [key: string]: any
-  }
 
   interface Props {
     roadmap: Roadmap

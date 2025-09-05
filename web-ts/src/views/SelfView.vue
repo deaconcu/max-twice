@@ -14,18 +14,7 @@ import UserFollowingTab from '@/components/user/UserFollowingTab.vue'
 import SubscriptionTab from '@/components/user/SubscriptionTab.vue'
 import UserSidebar from '@/components/user/UserSidebar.vue'
 import RightSidebar from '@/components/common/RightSidebar.vue'
-
-interface TabItem {
-  text: string
-  icon: string
-  value: string
-}
-
-interface ComponentProps {
-  postType?: string
-  editable?: boolean
-  [key: string]: any
-}
+import type { TabItem, ComponentProps } from '@/types/common'
 
 const { t } = useI18n()
 const route = useRoute()

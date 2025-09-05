@@ -10,12 +10,9 @@ import {
 import { useUserStore } from '@/stores/user'
 import type { Course } from '@/types/course'
 
-interface CourseInfo {
-  id: number
-  name: string
-  description?: string
+// 扩展课程信息，添加UI所需字段
+interface CourseInfo extends Course {
   subscribed?: boolean
-  progress?: number
 }
 
 interface SubCourse {

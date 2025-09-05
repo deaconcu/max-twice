@@ -2,9 +2,11 @@ package com.prosper.learn.api.v1.controller;
 
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.external.AiService;
+import com.prosper.learn.dto.request.ChatRequest;
 import lombok.RequiredArgsConstructor;
-import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
 
 /**
  * AI功能接口
@@ -22,11 +24,9 @@ public class AiController {
      * 映射: POST /openai → POST /api/v1/ai/chat
      */
     @PostMapping("/ai/chat")
-    public ApiResponse<String> chatWithGPT(
-            @JsonParam("prompt") String prompt,
-            @JsonParam("model") String model) {
+    public ApiResponse<String> chatWithGPT(@RequestBody @Valid ChatRequest request) {
         
-        String answer = aiService.chatWithGPT(prompt, model);
+        String answer = aiService.chatWithGPT(request.getPrompt(), request.getModel());
         return ApiResponse.success(answer);
     }
 }

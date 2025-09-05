@@ -1,16 +1,8 @@
 <script setup lang="ts">
   import { computed } from 'vue'
+  import type { TabItem } from '@/types/common'
 
   type Direction = 'vertical' | 'horizontal'
-
-  interface TabItem {
-    value: string
-    text: string
-    icon?: string
-    badge?: string | number
-    badgeColor?: string
-    group?: string
-  }
 
   interface GroupedItem {
     title?: string

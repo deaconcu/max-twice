@@ -3,16 +3,7 @@ import { computed, inject, onMounted, ref } from 'vue'
 import type { Ref } from 'vue'
 import { userServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useUserStore } from '@/stores/user'
-
-// 类型定义
-interface UserInfo {
-  id?: string | number
-  name?: string
-  email?: string
-  biography?: string
-  avatar?: string
-  [key: string]: any
-}
+import type { User } from '@/types/user'
 
 // Props
 const props = defineProps<{
@@ -33,7 +24,7 @@ const isSelf = computed(() => !props.userId || props.userId === userStore.userId
 const canEdit = computed(() => props.editable && isSelf.value)
 
 // 组件内部数据
-const info: Ref<UserInfo> = ref({})
+const info: Ref<User> = ref()
 const displayModifyName: Ref<boolean> = ref(false)
 const displayModifyIntro: Ref<boolean> = ref(false)
 const loading: Ref<boolean> = ref(false)

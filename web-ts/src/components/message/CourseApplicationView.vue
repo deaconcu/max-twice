@@ -12,13 +12,13 @@
     reply: string
   }
 
-  interface Message {
+  interface CourseApplicationMessage {
     id: string | number
     content: MessageContent
   }
 
   interface Props {
-    messageList?: Message[]
+    messageList?: CourseApplicationMessage[]
   }
 
   // Props

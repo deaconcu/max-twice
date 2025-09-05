@@ -2,10 +2,10 @@
 import { inject, ref } from 'vue'
 import { messageServiceV1, userServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useI18n } from 'vue-i18n'
+import type { User } from '@/types/user'
 
-interface User {
-  id: number
-  name: string
+// 扩展 User 类型以支持 UI 状态
+interface SearchUser extends User {
   disabled?: boolean
 }
 
@@ -21,7 +21,7 @@ const dialog = defineModel<boolean>({ type: Boolean })
 
 const inputUserName = ref<string>('')
 const info = ref<string>('')
-const users = ref<User[]>([])
+const users = ref<SearchUser[]>([])
 
 const searchUser = async (): Promise<void> => {
   try {
@@ -40,7 +40,7 @@ const searchUser = async (): Promise<void> => {
   }
 }
 
-const inviteUser = async (event: Event, user: User): Promise<void> => {
+const inviteUser = async (event: Event, user: SearchUser): Promise<void> => {
   try {
     const response = await messageServiceV1.inviteUser(user.id, props.nodeId)
     console.log(`response: ${JSON.stringify(response)}`)

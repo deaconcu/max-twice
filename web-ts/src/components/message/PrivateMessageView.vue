@@ -1,14 +1,15 @@
 <script setup lang="ts">
   import { ref } from 'vue'
+  import type { User } from '@/types/user'
 
-  interface User {
+  interface ChatUser {
     prependAvatar: string
     title: string
     [key: string]: any
   }
 
   interface Props {
-    users?: User[]
+    users?: ChatUser[]
   }
 
   // Props
@@ -16,7 +17,7 @@
 
   interface Emits {
     (e: 'sendMessage', message: string): void
-    (e: 'selectUser', user: User): void
+    (e: 'selectUser', user: ChatUser): void
   }
 
   // Emits
@@ -26,7 +27,7 @@
   const messageInput = ref<string>('')
 
   // 处理用户点击
-  const handleUserClick = (user: User): void => {
+  const handleUserClick = (user: ChatUser): void => {
     emit('selectUser', user)
   }
 

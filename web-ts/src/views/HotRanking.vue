@@ -4,26 +4,8 @@
   import { useI18n } from 'vue-i18n'
   import { courseServiceV1, professionServiceV1 } from '@/services/api/v1/apiServiceV1'
   import type { Profession } from '@/types/profession'
-
-  interface Course {
-    id: string | number
-    name: string
-    description?: string
-    learnerCount?: number
-    subscriptionCount?: number
-    [key: string]: any
-  }
-
-  interface TabItem {
-    key: string
-    title: string
-    icon: string
-  }
-
-  interface SortOption {
-    value: string
-    title: string
-  }
+  import type { Course } from '@/types/course'
+  import type { TabItem, SortOption } from '@/types/common'
 
   type RankingItem = Course | Profession
 
@@ -36,8 +18,8 @@
   // 选项卡相关
   const activeTab = ref<string>('courses')
   const tabItems = ref<TabItem[]>([
-    { key: 'courses', title: t('hotRanking.tabs.courses'), icon: 'mdi-book-multiple' },
-    { key: 'professions', title: t('hotRanking.tabs.professions'), icon: 'mdi-briefcase-variant' },
+    { value: 'courses', text: t('hotRanking.tabs.courses'), icon: 'mdi-book-multiple' },
+    { value: 'professions', text: t('hotRanking.tabs.professions'), icon: 'mdi-briefcase-variant' },
   ])
 
   // 课程相关数据
@@ -292,21 +274,21 @@
             <v-list bg-color="transparent" class="pa-0">
               <v-list-item
                 v-for="item in tabItems"
-                :key="item.key"
-                :value="item.key"
+                :key="item.value"
+                :value="item.value"
                 class="nav-item ma-1 rounded-lg"
-                :class="[activeTab === item.key ? 'nav-item-active' : 'nav-item-inactive']"
-                @click="activeTab = item.key"
+                :class="[activeTab === item.value ? 'nav-item-active' : 'nav-item-inactive']"
+                @click="activeTab = item.value"
               >
                 <template #prepend>
                   <v-avatar
-                    :color="activeTab === item.key ? 'primary' : 'grey-lighten-2'"
+                    :color="activeTab === item.value ? 'primary' : 'grey-lighten-2'"
                     size="32"
                     class="mr-3"
                   >
                     <v-icon
                       :icon="item.icon"
-                      :color="activeTab === item.key ? 'white' : 'grey-darken-2'"
+                      :color="activeTab === item.value ? 'white' : 'grey-darken-2'"
                       size="16"
                     ></v-icon>
                   </v-avatar>
@@ -314,14 +296,14 @@
 
                 <v-list-item-title
                   class="font-weight-medium"
-                  :class="activeTab === item.key ? 'text-primary' : 'text-grey-darken-3'"
+                  :class="activeTab === item.value ? 'text-primary' : 'text-grey-darken-3'"
                 >
-                  {{ item.title }}
+                  {{ item.text }}
                 </v-list-item-title>
 
                 <v-list-item-subtitle class="text-caption">
                   {{
-                    item.key === 'courses'
+                    item.value === 'courses'
                       ? `${courses.length} 个课程`
                       : `${professions.length} 个职业`
                   }}
@@ -330,7 +312,7 @@
                 <template #append>
                   <v-icon
                     icon="mdi-chevron-right"
-                    :color="activeTab === item.key ? 'primary' : 'grey-lighten-1'"
+                    :color="activeTab === item.value ? 'primary' : 'grey-lighten-1'"
                     size="16"
                   ></v-icon>
                 </template>
