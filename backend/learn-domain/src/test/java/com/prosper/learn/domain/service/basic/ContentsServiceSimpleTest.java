@@ -1,11 +1,9 @@
 package com.prosper.learn.domain.service.basic;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.ContentsProperties;
@@ -17,11 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -94,7 +88,7 @@ class ContentsServiceSimpleTest {
         // Given
         CourseDO course = new CourseDO();
         course.setId(TEST_COURSE_ID);
-        course.setRootNode(1L);
+        course.setRootNodeId(1L);
         when(courseMapper.getById(TEST_COURSE_ID)).thenReturn(course);
         when(userCourseTocMapper.getByUserAndCourse(TEST_USER_ID, TEST_COURSE_ID)).thenReturn(null);
 

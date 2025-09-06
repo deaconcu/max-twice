@@ -1,8 +1,8 @@
 package com.prosper.learn.api.client;
 
-import com.prosper.learn.dto.response.CourseDTO;
-import com.prosper.learn.dto.response.CourseDTOV4;
-import com.prosper.learn.dto.response.CourseDTOV3;
+import com.prosper.learn.dto.response.old.CourseDTOV1;
+import com.prosper.learn.dto.response.old.CourseDTOV4;
+import com.prosper.learn.dto.response.old.CourseDTOV3;
 import com.prosper.learn.dto.response.Response;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
@@ -48,7 +48,7 @@ public interface CourseClient {
 
     // 用户提交新课程
     //@PostMapping("/course")
-    Response post(@RequestBody CourseDTO course);
+    Response post(@RequestBody CourseDTOV1 course);
 
     // 用户提交子课程
     //@PostMapping("/subcourse")
@@ -58,5 +58,5 @@ public interface CourseClient {
     // 管理员批准，修改课程
     // 用户修改简介，名称
     //@PutMapping("/course/{id}")
-    Response put(@PathVariable Long id, @RequestBody CourseDTO course);
+    Response put(@PathVariable Long id, @RequestBody CourseDTOV1 course);
 }

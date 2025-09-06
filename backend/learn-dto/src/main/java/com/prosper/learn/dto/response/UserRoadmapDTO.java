@@ -1,5 +1,6 @@
 package com.prosper.learn.dto.response;
 
+import com.prosper.learn.dto.response.old.RoadmapDTOV1;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -10,7 +11,7 @@ public class UserRoadmapDTO {
 
     private Long userId;
 
-    private RoadmapDTOV2 roadmap;
+    private RoadmapDTOV1 roadmap;
 
     private Integer progressPercent;
 

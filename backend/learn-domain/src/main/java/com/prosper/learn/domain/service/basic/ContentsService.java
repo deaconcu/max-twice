@@ -194,7 +194,7 @@ public class ContentsService {
         if (userCourseTocDO == null) {
             // 创建根目录结构：包含课程根节点的空目录
             ObjectNode s = objectMapper.createObjectNode();
-            s.put(Long.toString(courseDO.getRootNode()), objectMapper.createObjectNode());
+            s.put(Long.toString(courseDO.getRootNodeId()), objectMapper.createObjectNode());
 
             tocStr = s.toString();
             String tosHash = Utils.hashSHA(tocStr);

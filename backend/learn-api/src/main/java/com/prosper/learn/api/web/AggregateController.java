@@ -16,6 +16,7 @@ import com.prosper.learn.common.Utils;
 import com.prosper.learn.dto.response.message.MessageDTO;
 import com.prosper.learn.dto.response.*;
 import com.prosper.learn.dto.response.ReadDTO;
+import com.prosper.learn.dto.response.old.*;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
@@ -64,9 +65,9 @@ public class AggregateController implements AggregateClient {
         CommentDO commentDO = commentMapper.getById(commentId);
         if (commentDO == null) throw new IllegalArgumentException("评论不存在");
 
-        if (commentDO.getReplyTo() != 0) {
+        if (commentDO.getReplyToUserId() != 0) {
             return new Response<>(ReadDTO.builder()
-                    .commentId(commentDO.getReplyTo())
+                    .commentId(commentDO.getReplyToUserId())
                     .subCommentId(commentDO.getId())
                     .build());
         }
@@ -81,11 +82,11 @@ public class AggregateController implements AggregateClient {
             postDO = postingService.get(postId);
             nodeDO = nodeMapper.getById(postDO.getNodeId());
             courseDO = courseMapper.getById(nodeDO.getCourseId());
-            path = "1-" + courseDO.getRootNode();
+            path = "1-" + courseDO.getRootNodeId();
         } else {
             nodeDO = nodeMapper.getById(commentDO.getObjectId());
             courseDO = courseMapper.getById(nodeDO.getCourseId());
-            path = "1-" + courseDO.getRootNode();
+            path = "1-" + courseDO.getRootNodeId();
         }
 
         return read(courseDO, path, nodeDO, postDO);
@@ -100,7 +101,7 @@ public class AggregateController implements AggregateClient {
 
         NodeDO nodeDO = nodeMapper.getById(postDO.getNodeId());
         CourseDO courseDO = courseMapper.getById(nodeDO.getCourseId());
-        String path = "1-" + courseDO.getRootNode();
+        String path = "1-" + courseDO.getRootNodeId();
 
         return read(courseDO, path, nodeDO, postDO);
     }
@@ -109,7 +110,7 @@ public class AggregateController implements AggregateClient {
     public Response<ReadDTO> readByNode(Long nodeId) {
         NodeDO nodeDO = nodeMapper.getById(nodeId);
         CourseDO courseDO = courseMapper.getById(nodeDO.getCourseId());
-        String path = "1-" + courseDO.getRootNode();
+        String path = "1-" + courseDO.getRootNodeId();
 
         return read(courseDO, path, nodeDO, null);
     }
@@ -135,8 +136,8 @@ public class AggregateController implements AggregateClient {
 
         //Map<String, Object> contents;
         List<Object> contents;
-        List<PostDTO> fixedPostings = null;
-        PostDTO chosenPosting = null;
+        List<PostDTOV1> fixedPostings = null;
+        PostDTOV1 chosenPosting = null;
         List<Long> fixedIds = null;
         List<Long> userIds = new LinkedList<>();
 
@@ -147,14 +148,14 @@ public class AggregateController implements AggregateClient {
             validatePath(path);
             // path 不合法时设置默认路径
             if (path == null || path.equals("") || !path.contains("-")) {
-                path = "1-" + courseDO.getRootNode();
+                path = "1-" + courseDO.getRootNodeId();
             }
 
             Utils.Pair<Long, JsonNode> pair = Utils.getNodeByPath(rootNode, path);
 
             // 目录不存在
             if (pair == null) {
-                path = "1-" + courseDO.getRootNode();
+                path = "1-" + courseDO.getRootNodeId();
                 pair = Utils.getNodeByPath(rootNode, path);
             }
 
@@ -165,7 +166,7 @@ public class AggregateController implements AggregateClient {
                 JsonNode currentNode = pair.right();
                 if (currentNode != null && currentNode.has("+")) {
                     PostDO chosenPostDO = postingService.get(currentNode.get("+").asInt());
-                    userIds.add(chosenPostDO.getCreator());
+                    userIds.add(chosenPostDO.getCreatorId());
                     chosenPosting = Converter.INSTANCE.toPostDTO(chosenPostDO);
                 }
 
@@ -175,7 +176,7 @@ public class AggregateController implements AggregateClient {
 
                     List<PostDO> postDOList = postingService.getList(fixedIds);
                     for (PostDO postingDTO : postDOList) {
-                        userIds.add(postingDTO.getCreator());
+                        userIds.add(postingDTO.getCreatorId());
                     }
                     fixedPostings = Converter.INSTANCE.toPostDTO(postDOList);
                 }
@@ -186,9 +187,9 @@ public class AggregateController implements AggregateClient {
 
         List<PostDO> postDOList = postingService.getList(nodeDO.getId());
         for (PostDO item: postDOList) {
-            userIds.add(item.getCreator());
+            userIds.add(item.getCreatorId());
         }
-        List<PostDTO> otherPostings = Converter.INSTANCE.toPostDTO(postDOList);
+        List<PostDTOV1> otherPostings = Converter.INSTANCE.toPostDTO(postDOList);
 
         // get all users
         List<UserDTOV1> userList = userIds.size() == 0 ? new ArrayList<>() : Converter.INSTANCE.toUserDTOV1(userMapper.getByIds(userIds));
@@ -197,7 +198,7 @@ public class AggregateController implements AggregateClient {
             userMap.put(user.getId(), user);
         }
 
-        PostDTO postDTO = null;
+        PostDTOV1 postDTO = null;
         if (postDO != null) {
             postDTO = Converter.INSTANCE.toPostDTO(postDO);
             postDTO.setCreator(userMap.get(postDTO.getCreatorId()));
@@ -228,14 +229,14 @@ public class AggregateController implements AggregateClient {
                 chosenPosting.setVoteType(types.get(chosenPosting.getId()));
 
             if (fixedPostings != null) {
-                for (PostDTO posting : fixedPostings) {
+                for (PostDTOV1 posting : fixedPostings) {
                     if (types.containsKey(posting.getId()))
                         posting.setVoteType(types.get(posting.getId()));
                 }
             }
 
             if (otherPostings != null) {
-                for (PostDTO posting : otherPostings) {
+                for (PostDTOV1 posting : otherPostings) {
                     if (types.containsKey(posting.getId()))
                         posting.setVoteType(types.get(posting.getId()));
                 }
@@ -251,8 +252,8 @@ public class AggregateController implements AggregateClient {
         boolean learning = userCourseDo != null ?  true : false;
 
         CourseDTOV4 parentCourse = null;
-        if (courseDO.getParent() != 0) {
-            CourseDO parentCourseDO = courseMapper.getById(courseDO.getParent());
+        if (courseDO.getParentCourseId() != 0) {
+            CourseDO parentCourseDO = courseMapper.getById(courseDO.getParentCourseId());
             parentCourse = Converter.INSTANCE.toCourseDTOV4(parentCourseDO, false); // 先设置为false，后面会更新
         } else {
             parentCourse = Converter.INSTANCE.toCourseDTOV4(courseDO, false); // 先设置为false，后面会更新
@@ -335,7 +336,7 @@ public class AggregateController implements AggregateClient {
         postDOList.forEach(postingDO -> {
             postingService.idToName(postingDO);
             allPostingIds.add(postingDO.getId());
-            userIds.add(postingDO.getCreator());
+            userIds.add(postingDO.getCreatorId());
         });
 
         // get all users
@@ -346,7 +347,7 @@ public class AggregateController implements AggregateClient {
             userMap.put(user.getId(), user);
         }
 
-        List<PostDTO> postDTOList = Converter.INSTANCE.toPostDTO(postDOList);
+        List<PostDTOV1> postDTOList = Converter.INSTANCE.toPostDTO(postDOList);
         postDTOList.stream().forEach(item -> {
             item.setCreator(userMap.get(item.getCreatorId()));
         });
@@ -359,7 +360,7 @@ public class AggregateController implements AggregateClient {
             }
 
             if (postDOList != null) {
-                for (PostDTO posting : postDTOList) {
+                for (PostDTOV1 posting : postDTOList) {
                     if (types.containsKey(posting.getId()))
                         posting.setVoteType(types.get(posting.getId()));
                 }
@@ -376,7 +377,7 @@ public class AggregateController implements AggregateClient {
             long userId = StpUtil.getLoginIdAsLong();
             upvoteService.upvotePost(postId, userId, type);
 
-            PostDTO postDTO = Converter.INSTANCE.toPostDTO(postMapper.get(postId));
+            PostDTOV1 postDTO = Converter.INSTANCE.toPostDTO(postMapper.get(postId));
             UpvoteDO upvoteDO = upvoteMapper.getByUserAndObject(userId, postId, post.value());
             if (upvoteDO != null) {
                 postDTO.setVoteType(upvoteDO.getType());

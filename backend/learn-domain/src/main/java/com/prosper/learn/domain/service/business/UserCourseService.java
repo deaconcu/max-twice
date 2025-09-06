@@ -5,7 +5,7 @@ import static com.prosper.learn.common.Enums.UserCourseState;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
 import com.prosper.learn.domain.util.Converter;
-import com.prosper.learn.dto.response.CourseDTOV2;
+import com.prosper.learn.dto.response.old.CourseDTOV2;
 import com.prosper.learn.dto.response.UserCourseDTO;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.UserCourseDO;

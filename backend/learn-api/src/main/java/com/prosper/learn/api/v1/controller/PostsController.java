@@ -5,7 +5,7 @@ import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.PostingService;
 import com.prosper.learn.dto.request.CreatePostRequest;
 import com.prosper.learn.dto.request.UpdatePostRequest;
-import com.prosper.learn.dto.response.PostDTO;
+import com.prosper.learn.dto.response.old.PostDTOV1;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,14 +31,14 @@ public class PostsController {
      * 映射: GET /postings?ids=1,2,3 → GET /api/v1/posts?ids=1,2,3
      */
     @GetMapping("/posts")
-    public ApiResponse<List<PostDTO>> getPosts(
+    public ApiResponse<List<PostDTOV1>> getPosts(
             @RequestParam(value = "ids", required = false) List<Long> ids,
             @RequestParam(value = "nodeId", required = false) Long nodeId,
             @RequestParam(value = "lastScore", required = false, defaultValue = "0") double lastScore,
             @RequestParam(value = "lastId", required = false, defaultValue = "0") Long lastPostingId) {
         
         long currentUserId = StpUtil.getLoginIdAsLong();
-        List<PostDTO> posts = postingService.getPostsWithUserAndVoteInfo(ids, nodeId, lastScore, lastPostingId, currentUserId);
+        List<PostDTOV1> posts = postingService.getPostsWithUserAndVoteInfo(ids, nodeId, lastScore, lastPostingId, currentUserId);
         return ApiResponse.success(posts);
     }
 
@@ -78,8 +78,8 @@ public class PostsController {
      * 映射: GET /posting/{id} → GET /api/v1/posts/{id}
      */
     @GetMapping("/posts/{id}")
-    public ApiResponse<PostDTO> getPost(@PathVariable Long id) {
-        PostDTO post = postingService.getPostDetail(id);
+    public ApiResponse<PostDTOV1> getPost(@PathVariable Long id) {
+        PostDTOV1 post = postingService.getPostDetail(id);
         return ApiResponse.success(post);
     }
 
@@ -88,8 +88,8 @@ public class PostsController {
      * 映射: GET /node/{nodeId}/posting → GET /api/v1/nodes/{nodeId}/posts
      */
     @GetMapping("/nodes/{nodeId}/posts")
-    public ApiResponse<List<PostDTO>> getNodePosts(@PathVariable Long nodeId) {
-        List<PostDTO> posts = postingService.getNodePostsList(nodeId);
+    public ApiResponse<List<PostDTOV1>> getNodePosts(@PathVariable Long nodeId) {
+        List<PostDTOV1> posts = postingService.getNodePostsList(nodeId);
         return ApiResponse.success(posts);
     }
 
@@ -98,8 +98,8 @@ public class PostsController {
      * 映射: GET /post/censor → GET /api/v1/admin/posts/pending
      */
     @GetMapping("/admin/posts/pending")
-    public ApiResponse<List<PostDTO>> getPendingPosts() {
-        List<PostDTO> posts = postingService.getPendingPostsList();
+    public ApiResponse<List<PostDTOV1>> getPendingPosts() {
+        List<PostDTOV1> posts = postingService.getPendingPostsList();
         return ApiResponse.success(posts);
     }
 
@@ -108,10 +108,10 @@ public class PostsController {
      * 映射: PUT /post → PUT /api/v1/admin/posts/{id}/approve
      */
     @PutMapping("/admin/posts/{id}/approve")
-    public ApiResponse<PostDTO> approvePost(
+    public ApiResponse<PostDTOV1> approvePost(
             @PathVariable Long id, 
             @JsonParam("approve") Boolean approve) {
-        PostDTO post = postingService.approvePost(id, approve);
+        PostDTOV1 post = postingService.approvePost(id, approve);
         return ApiResponse.success(post);
     }
 }

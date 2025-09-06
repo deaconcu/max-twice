@@ -31,7 +31,7 @@ public class ApprovalResponseDTO {
     private String objectType;
     
     /**
-     * 操作类型（approve/reject/delete）
+     * 操作类型（approve/reject/delete） TODO: 使用枚举值
      */
     private String action;
 }

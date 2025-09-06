@@ -74,7 +74,7 @@ public class ProfessionController implements ProfessionClient {
             professionDTO.setIcon("mdi-triangle-outline");
         }
 
-        professionDTO.setCreator(StpUtil.getLoginIdAsLong());
+        professionDTO.setCreatorId(StpUtil.getLoginIdAsLong());
         //professionService.create(professionDTO);
         return Response.success;
     }

@@ -4,9 +4,12 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 
 import static com.prosper.learn.common.Enums.UserRoadmapState;
-import com.prosper.learn.domain.util.Converter;
+
+import com.prosper.learn.domain.service.converter.RoadmapConverter;
+import com.prosper.learn.domain.service.converter.UserRoadmapConverter;
 import com.prosper.learn.dto.response.ProfessionDTO;
-import com.prosper.learn.dto.response.RoadmapDTOV2;
+import com.prosper.learn.dto.response.old.RoadmapDTOV1;
+import com.prosper.learn.dto.response.old.RoadmapDTOV2;
 import com.prosper.learn.dto.response.UserRoadmapDTO;
 import com.prosper.learn.persistence.dataobject.ProfessionDO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
@@ -36,6 +39,8 @@ public class UserRoadmapService {
     private final RoadmapService roadmapService;
     private final ProfessionDataService professionDataService;
     private final SystemProperties systemProperties;
+    private final UserRoadmapConverter userRoadmapConverter;
+    private final RoadmapConverter roadmapConverter;
 
     // 不变常量 - 进度相关
     private static final int INITIAL_PROGRESS = 0;
@@ -131,18 +136,19 @@ public class UserRoadmapService {
         validateRoadmapId(roadmapId);
         
         try {
-            UserRoadmapDO progressDO = userRoadmapDataService.getByUserAndRoadmap(userId, roadmapId);
-            if (progressDO == null) {
+            UserRoadmapDO userRoadmapDO = userRoadmapDataService.getByUserAndRoadmap(userId, roadmapId);
+            if (userRoadmapDO == null) {
                 return null;
             }
 
-            UserRoadmapDTO dto = Converter.INSTANCE.toUserRoadmapDTO(progressDO);
+            UserRoadmapDTO dto = userRoadmapConverter.toDTO(userRoadmapDO);
 
             // 批量查询 roadmap 信息
             RoadmapDO roadmapDO = roadmapDataService.getById(roadmapId);
             if (roadmapDO != null) {
-                RoadmapDTOV2 roadmapDTO = Converter.INSTANCE.toRoadmapDTOV2WithUser(roadmapDO, userDataService);
-                dto.setRoadmap(roadmapDTO);
+                //RoadmapDTOV2 roadmapDTO = roadmapConverter.toRoadmapDTOV2WithUser(roadmapDO, userDataService);
+                RoadmapDTOV1 roadmapDTOV1 = roadmapConverter.toDTOV2(roadmapDO);
+                dto.setRoadmap(roadmapDTOV1);
             }
 
             return dto;

@@ -1,7 +1,7 @@
 package com.prosper.learn.dto.response.message;
 
-import com.prosper.learn.dto.response.NodeDTOV1;
-import com.prosper.learn.dto.response.UserDTOV4;
+import com.prosper.learn.dto.response.old.NodeDTOV1;
+import com.prosper.learn.dto.response.old.UserDTOV4;
 import lombok.Data;
 
 @Data

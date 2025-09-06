@@ -17,34 +17,34 @@ public interface CommentMapper {
     List<CommentDO> getByIds(List<Long> ids);
 
     // 首页加载评论，按分数排序
-    @Select("SELECT * FROM comment where object_id = #{objectId} and type = #{type} and reply_to = 0 ORDER BY score DESC, id DESC limit #{count}")
+    @Select("SELECT * FROM comment where object_id = #{objectId} and type = #{type} and reply_to_comment_id = 0 ORDER BY score DESC, id DESC limit #{count}")
     List<CommentDO> getByObjectId(long objectId, int type, int count);
 
     // 分页加载评论，处理分数相同的情况
-    @Select("SELECT * FROM comment where object_id = #{objectId} and type = #{type} and reply_to = 0 AND " +
+    @Select("SELECT * FROM comment where object_id = #{objectId} and type = #{type} and reply_to_comment_id = 0 AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, id DESC limit #{count}")
     List<CommentDO> getByObjectIdPaginated(long objectId, int type, double lastScore, long lastId, int count);
 
     @Select("<script>SELECT * " +
             "FROM comment c1 " +
-            "where c1.reply_to IN " +
+            "where c1.reply_to_comment_id IN " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "AND c1.id = (" +
             "  SELECT c2.id " +
             "  FROM comment c2 " +
-            "  WHERE c2.reply_to = c1.reply_to " +
+            "  WHERE c2.reply_to_comment_id = c1.reply_to_comment_id " +
             "  ORDER BY c2.score DESC, c2.id DESC " +
             "  LIMIT 1" +
             ")</script>")
     List<CommentDO> getChildren(List<Long> ids);
 
     // 首页加载话题回复，按分数排序
-    @Select("SELECT * FROM comment where reply_to = #{commentId} ORDER BY score DESC, id DESC limit #{count}")
+    @Select("SELECT * FROM comment where reply_to_comment_id = #{commentId} ORDER BY score DESC, id DESC limit #{count}")
     List<CommentDO> getByTopic(long commentId, int count);
 
     // 分页加载话题回复，处理分数相同的情况
-    @Select("SELECT * FROM comment where reply_to = #{commentId} AND " +
+    @Select("SELECT * FROM comment where reply_to_comment_id = #{commentId} AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, id DESC limit #{count}")
     List<CommentDO> getByTopicPaginated(long commentId, double lastScore, long lastId, int count);
@@ -52,8 +52,8 @@ public interface CommentMapper {
     @Select("SELECT * FROM comment where state = #{state} order by id limit #{count}")
     List<CommentDO> getListByState(int state, int count);
 
-    @Insert("INSERT INTO comment(content, object_id, type, reply_to, from_user, to_user, upvote_count, score) " +
-            "VALUES (#{content}, #{objectId}, #{type}, #{replyTo}, #{fromUser}, #{toUser}, #{upvoteCount}, #{score})")
+    @Insert("INSERT INTO comment(content, object_id, type, reply_to_comment_id, from_user_id, to_user_id, upvote_count, score) " +
+            "VALUES (#{content}, #{objectId}, #{type}, #{replyToCommentId}, #{fromUserId}, #{toUserId}, #{upvoteCount}, #{score})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(CommentDO commentDO);
 

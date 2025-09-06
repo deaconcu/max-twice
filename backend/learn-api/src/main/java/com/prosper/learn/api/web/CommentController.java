@@ -7,7 +7,7 @@ import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
 import com.prosper.learn.domain.service.basic.RedisStatsService;
 import com.prosper.learn.dto.response.CommentDTO;
-import com.prosper.learn.dto.response.CommentDTOV1;
+import com.prosper.learn.dto.response.old.CommentDTOV1;
 import com.prosper.learn.dto.response.Response;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.persistence.dataobject.*;
@@ -39,7 +39,7 @@ public class CommentController implements CommentClient {
     @Transactional
     public Response<Object> create(CommentDTO commentDTO) {
         long userId = StpUtil.getLoginIdAsLong();
-        commentDTO.setFromUser(userId);
+        commentDTO.setFromUserId(userId);
         UserDO fromUser = userMapper.getById(userId);
 
         // update posting comment count
@@ -67,8 +67,8 @@ public class CommentController implements CommentClient {
         commentMapper.insert(commentDO);
 
         // update parent comment reply count
-        if (commentDTO.getReplyTo() != 0) {
-            CommentDO parentCommentDO = commentMapper.getById(commentDTO.getReplyTo());
+        if (commentDTO.getReplyToCommentId() != 0) {
+            CommentDO parentCommentDO = commentMapper.getById(commentDTO.getReplyToCommentId());
             if (parentCommentDO == null) throw new IllegalArgumentException("父评论不存在");
             parentCommentDO.setReplyCount(parentCommentDO.getReplyCount() + 1);
 
@@ -81,13 +81,13 @@ public class CommentController implements CommentClient {
 
             if (commentDTO.getType() == Enums.ObjectType.node.value() && nodeDO != null) {
                 messageService.createCommentMessage(
-                        parentCommentDO.getFromUser(), fromUser.getId(), nodeDO.getId(), commentDO.getId(), replyNodeComment.value());
+                        parentCommentDO.getFromUserId(), fromUser.getId(), nodeDO.getId(), commentDO.getId(), replyNodeComment.value());
             } else if (commentDTO.getType() == Enums.ObjectType.post.value() && postDO != null) {
                 messageService.createCommentMessage(
-                        parentCommentDO.getFromUser(), fromUser.getId(), postDO.getNodeId(), commentDO.getId(), replyPostingComment.value());
+                        parentCommentDO.getFromUserId(), fromUser.getId(), postDO.getNodeId(), commentDO.getId(), replyPostingComment.value());
             } else if (commentDTO.getType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
                 messageService.createCommentMessage(
-                        parentCommentDO.getFromUser(), fromUser.getId(), roadmapDO.getId(), commentDO.getId(), replyRoadmapComment.value());
+                        parentCommentDO.getFromUserId(), fromUser.getId(), roadmapDO.getId(), commentDO.getId(), replyRoadmapComment.value());
             }
         }
 
@@ -98,7 +98,7 @@ public class CommentController implements CommentClient {
             // 记录到Redis统计
             redisStatsService.recordComment((long) postDO.getId(), userId);
             
-            messageService.createCommentMessage(postDO.getCreator(), fromUser.getId(), postDO.getNodeId(), commentDO.getId(), postComment.value());
+            messageService.createCommentMessage(postDO.getCreatorId(), fromUser.getId(), postDO.getNodeId(), commentDO.getId(), postComment.value());
         } else if (commentDTO.getType() == Enums.ObjectType.node.value() && nodeDO != null) {
             nodeDO.setCommentCount(nodeDO.getCommentCount() + 1);
             nodeMapper.update(nodeDO);
@@ -106,7 +106,7 @@ public class CommentController implements CommentClient {
             // 记录到Redis统计
             redisStatsService.recordComment((long) nodeDO.getId(), userId);
             
-            messageService.createCommentMessage(nodeDO.getCreator(), fromUser.getId(), nodeDO.getId(), commentDO.getId(), nodeComment.value());
+            messageService.createCommentMessage(nodeDO.getCreatorId(), fromUser.getId(), nodeDO.getId(), commentDO.getId(), nodeComment.value());
         } else if (commentDTO.getType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
             roadmapDO.setComment(roadmapDO.getComment() + 1);
             roadmapMapper.update(roadmapDO);
@@ -150,7 +150,7 @@ public class CommentController implements CommentClient {
 
             HashMap<Long, CommentDTO> map = new HashMap<>();
             for (CommentDO commentDO : children) {
-                map.put(commentDO.getReplyTo(), Converter.INSTANCE.toCommentDTO(commentDO));
+                map.put(commentDO.getReplyToUserId(), Converter.INSTANCE.toCommentDTO(commentDO));
             }
 
             for (CommentDTO commentDTO: commentDTOList) {

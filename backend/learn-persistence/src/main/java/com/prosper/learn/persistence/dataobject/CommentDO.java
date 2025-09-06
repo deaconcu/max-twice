@@ -17,11 +17,11 @@ public class CommentDO {
 
     private Integer replyCount;
 
-    private Long replyTo;
+    private Long replyToUserId;
 
-    private Long fromUser;
+    private Long fromUserId;
 
-    private Long toUser;
+    private Long toUserId;
 
     private Integer upvoteCount;
 

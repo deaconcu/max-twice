@@ -23,7 +23,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import com.prosper.learn.dto.response.NodeProgressResponseDTO;
 import com.prosper.learn.dto.response.CourseCompletionResponseDTO;
-import com.prosper.learn.dto.response.NodeDTOV2;
+import com.prosper.learn.dto.response.old.NodeDTOV2;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.persistence.dataobject.NodeDO;
 

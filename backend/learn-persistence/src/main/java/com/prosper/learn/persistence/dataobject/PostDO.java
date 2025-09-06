@@ -11,7 +11,7 @@ public class PostDO {
 
     private Long nodeId;
 
-    private Long creator;
+    private Long creatorId;
 
     private Integer type;
 

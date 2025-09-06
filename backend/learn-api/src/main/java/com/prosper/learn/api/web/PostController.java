@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.api.client.PostClient;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.dto.response.PostDTO;
+import com.prosper.learn.dto.response.old.PostDTOV1;
 import com.prosper.learn.dto.response.Response;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.common.Enums;
@@ -31,7 +31,7 @@ public class PostController implements PostClient {
     private final PostingService postService;
 
     @Override
-    public Response create(PostDTO posting) {
+    public Response create(PostDTOV1 posting) {
         if (posting.getType() == Enums.PostType.contents.value()) {
             try {
                 NodeDO nodeDO = nodeMapper.getById(posting.getNodeId());
@@ -41,7 +41,6 @@ public class PostController implements PostClient {
                     NodeDO node = new NodeDO();
                     node.setName(nodeNames.get(i));
                     node.setDescription("");
-                    node.setRoot(0l);
                     node.setCourseId(nodeDO.getCourseId());
                     node.setCreatedAt(Utils.getLocalDateTime());
                     node.setUpdatedAt(Utils.getLocalDateTime());
@@ -63,7 +62,7 @@ public class PostController implements PostClient {
     }
 
     @Override
-    public Response modify(PostDTO posting) {
+    public Response modify(PostDTOV1 posting) {
         PostDO postDO = postMapper.get(posting.getId());
         if (postDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
@@ -89,12 +88,12 @@ public class PostController implements PostClient {
     }
 
     @Override
-    public PostDTO get(Long id) {
+    public PostDTOV1 get(Long id) {
         return Converter.INSTANCE.toPostDTO(postService.get(id));
     }
 
     @Override
-    public List<PostDTO> getPostings(Long nodeId) {
+    public List<PostDTOV1> getPostings(Long nodeId) {
         int count = 3;
         List<PostDO> postings = postMapper.getListByNode(nodeId, count, Enums.PostState.approved.value());
         postings.forEach(postingDO -> postService.idToName(postingDO));
@@ -102,7 +101,7 @@ public class PostController implements PostClient {
     }
 
     @Override
-    public List<PostDTO> getByLastId(Long nodeId, Long lastPostingId) {
+    public List<PostDTOV1> getByLastId(Long nodeId, Long lastPostingId) {
         int count = 2;
         List<PostDO> postings = postMapper.getListByLastId(nodeId, lastPostingId, count, Enums.PostState.approved.value());
         postings.forEach(postingDO -> postService.idToName(postingDO));
@@ -125,7 +124,7 @@ public class PostController implements PostClient {
     }
 
     @Override
-    public Response<List<PostDTO>> getCensorList() {
+    public Response<List<PostDTOV1>> getCensorList() {
         List<PostDO> postDOList = postMapper.getListByState(Enums.PostState.approved.value(), 200);
         for (PostDO postDO : postDOList) {
             if (postDO.getType() == Enums.PostType.contents.value()) {
@@ -160,8 +159,8 @@ public class PostController implements PostClient {
      * @return 按分数排序的文章列表
      */
     @GetMapping("/post/list/by-score")
-    public Response<List<PostDTO>> getPostsByScore(@RequestParam long nodeId,
-                                                  @RequestParam(defaultValue = "10") int limit) {
+    public Response<List<PostDTOV1>> getPostsByScore(@RequestParam long nodeId,
+                                                     @RequestParam(defaultValue = "10") int limit) {
         List<PostDO> postings = postService.getListByScore(nodeId, limit);
         return new Response<>(Converter.INSTANCE.toPostDTO(postings));
     }
@@ -175,10 +174,10 @@ public class PostController implements PostClient {
      * @return 按分数排序的文章列表
      */
     @GetMapping("/post/list/by-score/pagination")
-    public Response<List<PostDTO>> getPostsByScoreWithPagination(@RequestParam long nodeId,
-                                                                @RequestParam(required = false) Double lastScore,
-                                                                @RequestParam(defaultValue = "0") long lastId,
-                                                                @RequestParam(defaultValue = "10") int limit) {
+    public Response<List<PostDTOV1>> getPostsByScoreWithPagination(@RequestParam long nodeId,
+                                                                   @RequestParam(required = false) Double lastScore,
+                                                                   @RequestParam(defaultValue = "0") long lastId,
+                                                                   @RequestParam(defaultValue = "10") int limit) {
         List<PostDO> postings = postService.getListByScoreWithPagination(nodeId, lastScore, lastId, limit);
         return new Response<>(Converter.INSTANCE.toPostDTO(postings));
     }

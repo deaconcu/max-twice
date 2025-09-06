@@ -77,7 +77,7 @@ public class TocController {
 
         // 创建默认目录结构
         ObjectNode defaultTocNode = objectMapper.createObjectNode();
-        defaultTocNode.set(Long.toString(courseDO.getRootNode()), objectMapper.createObjectNode());
+        defaultTocNode.set(Long.toString(courseDO.getRootNodeId()), objectMapper.createObjectNode());
         String defaultTocStr = defaultTocNode.toString();
         String defaultTocHash = Utils.hashSHA(defaultTocStr);
 

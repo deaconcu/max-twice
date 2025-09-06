@@ -26,7 +26,7 @@ public class ProfessionDTO {
 
     private String icon; // 图标字段
 
-    private Long creator; // 创建者 ID
+    private Long creatorId; // 创建者 ID
 
     private Integer learnerCount; // 学习人数
 

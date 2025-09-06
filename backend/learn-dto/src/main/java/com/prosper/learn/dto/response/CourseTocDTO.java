@@ -1,5 +1,6 @@
 package com.prosper.learn.dto.response;
 
+import com.prosper.learn.dto.response.old.NodeDTOV2;
 import lombok.Data;
 
 import java.util.Map;

@@ -1,4 +1,4 @@
-package com.prosper.learn.dto.response;
+package com.prosper.learn.dto.response.old;
 
 import lombok.Data;
 
@@ -11,7 +11,7 @@ public class PostDTOV2 {
 
     private Long nodeId;
 
-    private NodeDTO node;
+    private NodeDTOV0 node;
 
     private Long creatorId;
 

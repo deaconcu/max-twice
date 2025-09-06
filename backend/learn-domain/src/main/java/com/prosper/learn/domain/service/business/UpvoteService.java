@@ -194,7 +194,7 @@ public class UpvoteService {
      */
     private void sendPostUpvoteMessage(PostDO postDO, long fromUserId, int type) {
         messageService.createUpvoteMessage(
-            postDO.getCreator(), fromUserId, postDO.getNodeId(), 
+            postDO.getCreatorId(), fromUserId, postDO.getNodeId(),
             postDO.getId(), ObjectType.post.value(), type);
     }
 
@@ -329,7 +329,7 @@ public class UpvoteService {
         commentDataService.update(commentDO);
 
         messageService.createUpvoteMessage(
-                commentDO.getFromUser(), userId, nodeId, commentId, ObjectType.comment.value(), 1);
+                commentDO.getFromUserId(), userId, nodeId, commentId, ObjectType.comment.value(), 1);
     }
 
     /**

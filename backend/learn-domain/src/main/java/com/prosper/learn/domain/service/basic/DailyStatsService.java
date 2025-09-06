@@ -8,7 +8,7 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.dto.response.DailyStatsDTO;
-import com.prosper.learn.dto.response.PostDTOV2;
+import com.prosper.learn.dto.response.old.PostDTOV2;
 import com.prosper.learn.dto.response.UserStatsDTO;
 import com.prosper.learn.persistence.dataobject.UserStatsDO;
 import com.prosper.learn.persistence.dataobject.PostStatsDO;

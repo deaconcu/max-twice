@@ -6,7 +6,6 @@ import com.prosper.learn.domain.service.business.CommentService;
 import com.prosper.learn.dto.request.CreateCommentRequest;
 import com.prosper.learn.dto.response.CommentDTO;
 import jakarta.validation.Valid;
-import com.prosper.learn.dto.response.CommentDTOV1;
 import com.prosper.learn.persistence.dataobject.CommentDO;
 import lombok.RequiredArgsConstructor;
 import com.prosper.learn.api.v1.annotation.JsonParam;
@@ -70,8 +69,8 @@ public class CommentsController {
      * 映射: GET /comment/censor → GET /api/v1/admin/comments/pending
      */
     @GetMapping("/admin/comments/pending")
-    public ApiResponse<List<CommentDTOV1>> getPendingComments() {
-        List<CommentDTOV1> pendingComments = commentService.getPendingComments();
+    public ApiResponse<List<CommentDTO>> getPendingComments() {
+        List<CommentDTO> pendingComments = commentService.getPendingComments();
         return ApiResponse.success(pendingComments);
     }
 
@@ -80,10 +79,10 @@ public class CommentsController {
      * 映射: PUT /comment → PUT /api/v1/admin/comments/{id}/approve
      */
     @PutMapping("/admin/comments/{id}/approve")
-    public ApiResponse<CommentDTOV1> approveComment(
+    public ApiResponse<CommentDTO> approveComment(
             @PathVariable Long id, 
             @JsonParam("approve") Boolean approve) {
-        CommentDTOV1 result = commentService.approveComment(id, approve);
+        CommentDTO result = commentService.approveComment(id, approve);
         return ApiResponse.success(result);
     }
 }

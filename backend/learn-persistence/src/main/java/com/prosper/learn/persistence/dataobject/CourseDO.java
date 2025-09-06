@@ -13,11 +13,11 @@ public class CourseDO {
 
     private String description;
 
-    private Long creator;
+    private Long creatorId;
 
-    private Long rootNode;
+    private Long rootNodeId;
 
-    private Long parent;
+    private Long parentCourseId;
 
     private Byte state; // 改为 tinyint 类型，支持 SUBMITTED=0, APPROVED=1, REJECTED=2
 

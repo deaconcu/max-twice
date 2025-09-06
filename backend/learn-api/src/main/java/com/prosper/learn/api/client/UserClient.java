@@ -1,9 +1,9 @@
 package com.prosper.learn.api.client;
 
 import com.prosper.learn.dto.response.Response;
-import com.prosper.learn.dto.response.UserDTO;
-import com.prosper.learn.dto.response.UserDTOV2;
-import com.prosper.learn.dto.response.UserDTOV4;
+import com.prosper.learn.dto.response.old.UserDTOV0;
+import com.prosper.learn.dto.response.old.UserDTOV2;
+import com.prosper.learn.dto.response.old.UserDTOV4;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,7 +13,7 @@ import java.util.List;
 public interface UserClient {
 
     //@GetMapping("/self")
-    Response<UserDTO> getSelf();
+    Response<UserDTOV0> getSelf();
 
     //@PostMapping("/self")
     Response<Object> modifySelf(@RequestParam String name, @RequestParam String biography);
@@ -31,7 +31,7 @@ public interface UserClient {
     Response<UserDTOV2> login(@RequestParam String email, @RequestParam String password);
 
     // @PostMapping("/user/validate")
-    Response<UserDTO> validateMail(@RequestParam String email, @RequestParam String code);
+    Response<UserDTOV0> validateMail(@RequestParam String email, @RequestParam String code);
 
     // @GetMapping("/user/article")
     Response<Object> getSelfArticle(@RequestParam Long userId, @RequestParam Long lastId);

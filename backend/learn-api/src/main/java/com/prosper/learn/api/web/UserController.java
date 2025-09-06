@@ -9,6 +9,10 @@ import com.prosper.learn.domain.service.business.LearningProgressService;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.dto.response.*;
+import com.prosper.learn.dto.response.old.UserDTOV0;
+import com.prosper.learn.dto.response.old.UserDTOV2;
+import com.prosper.learn.dto.response.old.UserDTOV3;
+import com.prosper.learn.dto.response.old.UserDTOV4;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +44,7 @@ public class UserController implements UserClient {
     private final UserCourseMapper userCourseMapper;
 
     @Override
-    public Response<UserDTO> getSelf() {
+    public Response<UserDTOV0> getSelf() {
         long id = StpUtil.getLoginIdAsLong();
         UserDO userDO = userMapper.getById(id);
         return Response.success(Converter.INSTANCE.toUserDTO(userDO));
@@ -128,7 +132,7 @@ public class UserController implements UserClient {
     }
 
     @Override
-    public Response<UserDTO> validateMail(String email, String code) {
+    public Response<UserDTOV0> validateMail(String email, String code) {
         // todo 5min
         VerificationDO verificationDO = verificationMapper.getByEmail(email, false);
         if (verificationDO == null) {

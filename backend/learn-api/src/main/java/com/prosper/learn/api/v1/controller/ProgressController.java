@@ -9,7 +9,7 @@ import com.prosper.learn.dto.response.UserCourseDTO;
 import com.prosper.learn.dto.response.UserRoadmapDTO;
 import com.prosper.learn.dto.response.NodeProgressResponseDTO;
 import com.prosper.learn.dto.response.CourseCompletionResponseDTO;
-import com.prosper.learn.dto.response.NodeDTOV2;
+import com.prosper.learn.dto.response.old.NodeDTOV2;
 import lombok.RequiredArgsConstructor;
 import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;

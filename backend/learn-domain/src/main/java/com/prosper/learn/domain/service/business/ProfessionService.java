@@ -73,7 +73,7 @@ public class ProfessionService {
         professionDO.setMainCategory(request.getMainCategory());
         professionDO.setSubCategory(request.getSubCategory());
         professionDO.setSkills(request.getSkills());
-        professionDO.setCreator(userId);
+        professionDO.setCreatorId(userId);
         professionDO.setState(ProfessionState.SUBMITTED.value());
         professionDO.setRejectedReason(DEFAULT_EMPTY_STRING);
         professionDataService.insert(professionDO);

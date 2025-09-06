@@ -1,11 +1,12 @@
-package com.prosper.learn.dto.response;
+package com.prosper.learn.dto.response.old;
 
 import lombok.Data;
 
 @Data
-public class NodeDTOV1 {
+public class CourseDTOV3 {
 
     private Long id;
 
     private String name;
+
 }

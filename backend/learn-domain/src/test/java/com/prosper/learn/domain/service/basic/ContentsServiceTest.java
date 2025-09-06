@@ -90,7 +90,7 @@ class ContentsServiceTest {
     private CourseDO createTestCourse() {
         CourseDO course = new CourseDO();
         course.setId(TEST_COURSE_ID);
-        course.setRootNode(1L);
+        course.setRootNodeId(1L);
         return course;
     }
 

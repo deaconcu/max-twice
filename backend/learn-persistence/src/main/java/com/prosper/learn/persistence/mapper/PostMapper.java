@@ -34,19 +34,19 @@ public interface PostMapper {
     List<PostDO> getListByLastId(long nodeId, long lastId, int limit, int state);
 
     @Select("SELECT * FROM post " +
-            "WHERE creator = #{userId} and type = 2 and id < #{lastId} " +
+            "WHERE creator_id = #{userId} and type = 2 and id < #{lastId} " +
             "order by id desc limit #{count}")
     List<PostDO> getArticleListByUser(long userId, long lastId, int count);
 
     @Select("SELECT * FROM post " +
-            "WHERE creator = #{userId} and type = 1 and id < #{lastId} " +
+            "WHERE creator_id = #{userId} and type = 1 and id < #{lastId} " +
             "order by id desc limit #{count}")
     List<PostDO> getContentsListByUser(long userId, long lastId, int count);
 
     @Insert("INSERT INTO post" +
-            "(node_id, creator, type, content, once, twice, helpful, comment_count, state, score) " +
+            "(node_id, creator_id, type, content, once, twice, helpful, comment_count, state, score) " +
             "VALUES " +
-            "(#{nodeId}, #{creator}, #{type}, #{content}, #{once}, #{twice}, #{helpful}, #{commentCount}, #{state}, 0.0)")
+            "(#{nodeId}, #{creatorId}, #{type}, #{content}, #{once}, #{twice}, #{helpful}, #{commentCount}, #{state}, 0.0)")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(PostDO posting);
 

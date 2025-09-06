@@ -6,7 +6,7 @@ import com.prosper.learn.domain.service.business.RoadmapService;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
 import com.prosper.learn.domain.service.business.UpvoteService;
 import com.prosper.learn.dto.response.Response;
-import com.prosper.learn.dto.response.RoadmapDTO;
+import com.prosper.learn.dto.response.old.RoadmapDTOV1;
 import com.prosper.learn.persistence.mapper.RoadmapMapper;
 import com.prosper.learn.persistence.mapper.UserProfileMapper;
 import com.prosper.learn.persistence.mapper.UserRoadmapMapper;
@@ -42,7 +42,7 @@ public class RoadmapController implements RoadmapClient {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public Response<List<RoadmapDTO>> getListByProfession(Long professionId, Long lastId) {
+    public Response<List<RoadmapDTOV1>> getListByProfession(Long professionId, Long lastId) {
         if (!StpUtil.isLogin()) {
             throw ErrorCode.USER_NOT_LOGIN.exception();
         }
@@ -96,7 +96,7 @@ public class RoadmapController implements RoadmapClient {
             }
         }
 
-        List<RoadmapDTO> dtoList = Converter.INSTANCE.toRoadMapDTO(roadmapList);
+        List<RoadmapDTOV1> dtoList = Converter.INSTANCE.toRoadMapDTO(roadmapList);
 
         // 获取当前用户ID，用于批量查询状态
         long userId = StpUtil.getLoginIdAsLong();
@@ -105,7 +105,7 @@ public class RoadmapController implements RoadmapClient {
         if (!dtoList.isEmpty()) {
             // 1. 批量查询点赞状态
             List<Long> roadmapIds = dtoList.stream()
-                .map(RoadmapDTO::getId)
+                .map(RoadmapDTOV1::getId)
                 .collect(Collectors.toList());
 
             Set<Long> upvotedIds = upvoteService.getUpvotedRoadmapIds(roadmapIds, userId);
@@ -139,7 +139,7 @@ public class RoadmapController implements RoadmapClient {
             Set<Long> learningIds = new HashSet<>(learningRoadmapIds);
 
             // 4. 设置状态
-            for (RoadmapDTO dto : dtoList) {
+            for (RoadmapDTOV1 dto : dtoList) {
                 dto.setUpvoted(upvotedIds.contains(dto.getId()));
                 dto.setPinned(pinnedIds.contains(dto.getId()));
                 dto.setLearning(learningIds.contains(dto.getId()));
@@ -147,7 +147,7 @@ public class RoadmapController implements RoadmapClient {
         }
 
         // 转换每个路线图的 content 格式
-        for (RoadmapDTO dto : dtoList) {
+        for (RoadmapDTOV1 dto : dtoList) {
             if (dto.getContent() != null) {
                 String formattedContent = roadmapService.parseContentToGraphFormat(dto.getContent(), userId);
                 dto.setContent(formattedContent);
@@ -215,10 +215,10 @@ public class RoadmapController implements RoadmapClient {
             log.warn("更新roadmap评分失败: roadmapId={}", id, e);
         }
 
-        RoadmapDTO roadmapDTO = Converter.INSTANCE.toRoadMapDTO(roadmapDO);
-        roadmapDTO.setUpvoted(voted);
+        RoadmapDTOV1 roadmapDTOV1 = Converter.INSTANCE.toRoadMapDTO(roadmapDO);
+        roadmapDTOV1.setUpvoted(voted);
 
-        return Response.success(roadmapDTO);
+        return Response.success(roadmapDTOV1);
     }
 
     @Override
@@ -252,21 +252,21 @@ public class RoadmapController implements RoadmapClient {
     }
 
     @Override
-    public Response<RoadmapDTO> getById(Long id) {
+    public Response<RoadmapDTOV1> getById(Long id) {
         long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : 0;
-        RoadmapDTO roadmapDTO = roadmapService.getById(id, userId);
+        RoadmapDTOV1 roadmapDTOV1 = roadmapService.getById(id, userId);
 
-        if (roadmapDTO == null) {
+        if (roadmapDTOV1 == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
 
         // 转换 content 格式
-        if (roadmapDTO.getContent() != null) {
-            String formattedContent = roadmapService.parseContentToGraphFormat(roadmapDTO.getContent(), userId);
-            roadmapDTO.setContent(formattedContent);
+        if (roadmapDTOV1.getContent() != null) {
+            String formattedContent = roadmapService.parseContentToGraphFormat(roadmapDTOV1.getContent(), userId);
+            roadmapDTOV1.setContent(formattedContent);
         }
 
-        return Response.success(roadmapDTO);
+        return Response.success(roadmapDTOV1);
     }
 
     @Override

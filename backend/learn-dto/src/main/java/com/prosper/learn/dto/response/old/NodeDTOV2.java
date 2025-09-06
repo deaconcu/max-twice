@@ -1,4 +1,4 @@
-package com.prosper.learn.dto.response;
+package com.prosper.learn.dto.response.old;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

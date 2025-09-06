@@ -1,5 +1,6 @@
-package com.prosper.learn.dto.response;
+package com.prosper.learn.dto.response.old;
 
+import com.prosper.learn.dto.response.SubscriptionDTO;
 import lombok.Data;
 
 @Data

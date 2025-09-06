@@ -1,5 +1,6 @@
 package com.prosper.learn.dto.response;
 
+import com.prosper.learn.dto.response.old.*;
 import lombok.Builder;
 import lombok.Data;
 import java.util.List;
@@ -35,17 +36,17 @@ public class ReadDTO {
     /**
      * 选中的帖子
      */
-    private PostDTO chosenPosting;
+    private PostDTOV1 chosenPosting;
     
     /**
      * 固定的帖子列表
      */
-    private List<PostDTO> fixedPostings;
+    private List<PostDTOV1> fixedPostings;
     
     /**
      * 其他帖子列表
      */
-    private List<PostDTO> otherPostings;
+    private List<PostDTOV1> otherPostings;
     
     /**
      * 最后一个ID
@@ -80,7 +81,7 @@ public class ReadDTO {
     /**
      * 帖子信息（可选）
      */
-    private PostDTO post;
+    private PostDTOV1 post;
     
     /**
      * 评论ID（readByComment时返回）

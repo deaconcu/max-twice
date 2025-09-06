@@ -1,6 +1,8 @@
 package com.prosper.learn.dto.response;
 
+import com.prosper.learn.dto.response.old.UserDTOV4;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -11,6 +13,8 @@ public class RoadmapDTO {
     private String content;
 
     private Long professionId;
+
+    private ProfessionDTO profession;
 
     private String description;
 
@@ -23,6 +27,8 @@ public class RoadmapDTO {
     private Boolean pinned;
 
     private Boolean learning;
+
+    private Long creatorId;
 
     private UserDTOV4 creator;
 

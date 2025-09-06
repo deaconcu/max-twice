@@ -30,14 +30,13 @@ public interface NodeMapper {
     @Select("SELECT * FROM node where course_id = #{courseId}")
     List<NodeDO> listBySubcourse(long courseId);
 
-    @Insert("INSERT INTO node(name, description, course_id, root, creator) " +
-            "VALUES (#{name}, #{description}, #{courseId}, #{root}, #{creator})")
+    @Insert("INSERT INTO node(name, description, course_id, creator_id) " +
+            "VALUES (#{name}, #{description}, #{courseId}, #{creatorId})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(NodeDO Node);
 
     @Update("UPDATE node SET name = #{name}, description = #{description}, " +
-            "creator = #{creator}, course_id = #{courseId}, root = #{root}, " +
-            "comment_count = #{commentCount} where id = #{id}")
+            "creator_id = #{creatorId}, course_id = #{courseId}, comment_count = #{commentCount} where id = #{id}")
     void update(NodeDO Node);
     
     // 平台统计相关方法

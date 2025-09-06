@@ -1,5 +1,6 @@
-package com.prosper.learn.dto.response;
+package com.prosper.learn.dto.response.old;
 
+import com.prosper.learn.dto.response.ProfessionDTO;
 import lombok.Data;
 
 import java.time.LocalDateTime;

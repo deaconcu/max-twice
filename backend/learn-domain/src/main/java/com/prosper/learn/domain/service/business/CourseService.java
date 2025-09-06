@@ -1,15 +1,16 @@
 package com.prosper.learn.domain.service.business;
 
-import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.Enums.CourseState;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
+import com.prosper.learn.domain.service.converter.CourseConverter;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.request.CreateCourseRequest;
 import com.prosper.learn.dto.request.UpdateCourseRequest;
-import com.prosper.learn.dto.response.CourseDTOV3;
-import com.prosper.learn.dto.response.CourseDTOV4;
+import com.prosper.learn.dto.response.old.CourseDTOV1;
+import com.prosper.learn.dto.response.old.CourseDTOV3;
+import com.prosper.learn.dto.response.old.CourseDTOV4;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.NodeDO;
 import com.prosper.learn.domain.service.data.CourseDataService;
@@ -22,8 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.prosper.learn.common.Enums.*;
-
 @Service
 @RequiredArgsConstructor
 public class CourseService {
@@ -32,6 +31,7 @@ public class CourseService {
     private final NodeDataService nodeDataService;
     private final CourseRankingService courseRankingService;
     private final SystemProperties systemProperties;
+    private final CourseConverter courseConverter;
 
     // ========== 私有辅助方法 ==========
 
@@ -97,20 +97,21 @@ public class CourseService {
     /**
      * 转换为DTO并附加统计信息
      */
-    private CourseDTOV4 convertToDTOWithStats(CourseDO courseDO) {
-        CourseDTOV4 courseDTO = Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseDataService);
-        
+    private CourseDTOV1 convertToDTOWithStats(CourseDO courseDO) {
+        //CourseDTOV4 courseDTO = Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseDataService);
+        CourseDTOV1 courseDTOV1 = courseConverter.toCourseDTOV4(courseDO);
+
         try {
             CourseRankingService.CourseStats stats = courseRankingService.getCourseStats(courseDO.getId());
-            courseDTO.setLearnerCount((int) stats.getLearningCount());
-            courseDTO.setSubscriptionCount((int) stats.getSubscriptionCount());
+            courseDTOV1.setLearnerCount((int) stats.getLearningCount());
+            courseDTOV1.setSubscriptionCount((int) stats.getSubscriptionCount());
         } catch (Exception e) {
             // 统计信息获取失败时设置默认值
-            courseDTO.setLearnerCount(0);
-            courseDTO.setSubscriptionCount(0);
+            courseDTOV1.setLearnerCount(0);
+            courseDTOV1.setSubscriptionCount(0);
         }
         
-        return courseDTO;
+        return courseDTOV1;
     }
 
     // ========== 公共业务方法 ==========
@@ -230,17 +231,17 @@ public class CourseService {
         course.setDescription(request.getDescription());
         course.setMainCategory(request.getMainCategory());
         course.setSubCategory(request.getSubCategory());
-        course.setCreator(userId);
-        course.setParent(parentId);
+        course.setCreatorId(userId);
+        course.setParentCourseId(parentId);
         course.setState(CourseState.SUBMITTED.value());
-        course.setRootNode(0L);
+        course.setRootNodeId(0L);
         
         courseDataService.insert(course);
 
         NodeDO nodeDO = NodeDO.createRoot(userId, course.getId());
         nodeDataService.insert(nodeDO);
 
-        course.setRootNode(nodeDO.getId());
+        course.setRootNodeId(nodeDO.getId());
         courseDataService.update(course);
     }
 
@@ -251,10 +252,10 @@ public class CourseService {
         CourseDO subCourse = new CourseDO();
         subCourse.setName(name);
         subCourse.setDescription(description);
-        subCourse.setCreator(userId);
-        subCourse.setParent(parentId);
+        subCourse.setCreatorId(userId);
+        subCourse.setParentCourseId(parentId);
         subCourse.setState(CourseState.SUBMITTED.value());
-        subCourse.setRootNode(0L);
+        subCourse.setRootNodeId(0L);
         subCourse.setMainCategory(parentCourse.getMainCategory());
         subCourse.setSubCategory(parentCourse.getSubCategory());
 
@@ -263,7 +264,7 @@ public class CourseService {
         NodeDO nodeDO = NodeDO.createRoot(userId, subCourse.getId());
         nodeDataService.insert(nodeDO);
 
-        subCourse.setRootNode(nodeDO.getId());
+        subCourse.setRootNodeId(nodeDO.getId());
         courseDataService.update(subCourse);
     }
 

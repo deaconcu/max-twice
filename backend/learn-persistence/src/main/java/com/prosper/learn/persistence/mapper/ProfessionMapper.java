@@ -42,16 +42,16 @@ public interface ProfessionMapper {
     Map<Integer, ProfessionDO> getMapByIds(Collection<Long> ids);
 
     @Insert("INSERT INTO profession(name, description, icon, price, skills, main_category, sub_category, " +
-            "state, rejected_reason, creator) " +
+            "state, rejected_reason, creator_id) " +
             "VALUES (#{name}, #{description}, #{icon}, #{price}, #{skills}, #{mainCategory}, #{subCategory}, " +
-            "#{state}, #{rejectedReason}, #{creator})")
+            "#{state}, #{rejectedReason}, #{creatorId})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(ProfessionDO professionDO);
 
     @Update("UPDATE profession SET name = #{name}, description = #{description}, icon = #{icon}, " +
             "price = #{price}, skills = #{skills}, main_category = #{mainCategory}, " +
             "sub_category = #{subCategory}, state = #{state}, rejected_reason = #{rejectedReason}, " +
-            "creator = #{creator}, updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")
+            "creator_id = #{creatorId}, updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")
     void update(ProfessionDO professionDO);
 
     @Update("UPDATE profession SET state = 1, updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")

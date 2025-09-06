@@ -15,9 +15,7 @@ public class NodeDO {
 
     private Long courseId;
 
-    private Long root;
-
-    private Long creator;
+    private Long creatorId;
 
     private Integer commentCount;
 
@@ -32,8 +30,7 @@ public class NodeDO {
         node.setName("课程根目录");
         node.setDescription("");
         node.setCourseId(courseId);
-        node.setCreator(creator);
-        node.setRoot(0L);
+        node.setCreatorId(creator);
         node.setCreatedAt(LocalDateTime.now());
         node.setUpdatedAt(LocalDateTime.now());
         return node;

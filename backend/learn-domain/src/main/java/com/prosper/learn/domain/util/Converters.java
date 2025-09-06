@@ -5,6 +5,7 @@ import com.prosper.learn.domain.service.data.CourseDataService;
 import com.prosper.learn.domain.service.data.UserDataService;
 import com.prosper.learn.dto.response.message.MessageDTO;
 import com.prosper.learn.dto.response.*;
+import com.prosper.learn.dto.response.old.*;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.CourseMapper;
 import com.prosper.learn.persistence.mapper.UserMapper;
@@ -18,9 +19,9 @@ import java.util.List;
 // 只需要指出字段不一致的情况，支持复杂嵌套
 // 如果字段没有不一致，不需要注解
 @Mapper
-public interface Converter {
+public interface Converters {
 
-    Converter INSTANCE = Mappers.getMapper(Converter.class);
+    Converters INSTANCE = Mappers.getMapper(Converters.class);
 
     // course
 
@@ -42,7 +43,7 @@ public interface Converter {
 
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    NodeDTO toNodeDTO(NodeDO item);
+    NodeDTOV0 toNodeDTO(NodeDO item);
     NodeDTOV1 toNodeDTOV1(NodeDO item);
     NodeDTOV2 toNodeDTOV2(NodeDO item);
     
@@ -58,21 +59,21 @@ public interface Converter {
 
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    NodeDO toNodeDO(NodeDTO itemDTO);
+    NodeDO toNodeDO(NodeDTOV0 itemDTO);
 
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    List<NodeDTO> toNodeDTO(List<NodeDO> list);
+    List<NodeDTOV0> toNodeDTO(List<NodeDO> list);
 
     // posting
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(source = "creator", target="creatorId")
     @Mapping(target = "creator", ignore = true)
-    PostDTO toPostDTO(PostDO item);
+    PostDTOV1 toPostDTO(PostDO item);
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(source = "creator", target="creatorId")
     @Mapping(target = "creator", ignore = true)
-    List<PostDTO> toPostDTO(List<PostDO> list);
+    List<PostDTOV1> toPostDTO(List<PostDO> list);
 
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(source = "creator", target="creatorId")
@@ -85,7 +86,7 @@ public interface Converter {
 
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(source = "creatorId", target="creator")
-    PostDO toPostDO(PostDTO item);
+    PostDO toPostDO(PostDTOV1 item);
 
     // follow
     @Mapping(target = "createTime", dateFormat = "yyyy-MM-dd HH:mm:ss")
@@ -94,7 +95,7 @@ public interface Converter {
     // user
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    UserDTO toUserDTO(UserDO userDO);
+    UserDTOV0 toUserDTO(UserDO userDO);
     UserDTOV1 toUserDTOV1(UserDO userDO);
     UserDTOV4 toUserDTOV4(UserDO userDO);
     List<UserDTOV1> toUserDTOV1(List<UserDO> userDOList);
@@ -104,7 +105,7 @@ public interface Converter {
 
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    UserDO toUserDO(UserDTO userDTO);
+    UserDO toUserDO(UserDTOV0 userDTOV0);
 
     // comment
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
@@ -136,12 +137,12 @@ public interface Converter {
     @Mapping(target = "creator", ignore = true)
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    RoadmapDTO toRoadMapDTO(RoadmapDO item);
+    RoadmapDTOV1 toRoadMapDTO(RoadmapDO item);
 
     @Mapping(target = "creator", ignore = true)
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    List<RoadmapDTO> toRoadMapDTO(List<RoadmapDO> list);
+    List<RoadmapDTOV1> toRoadMapDTO(List<RoadmapDO> list);
 
     // roadmapV2 转换方法
     @Mapping(target = "creator", ignore = true)
@@ -156,11 +157,11 @@ public interface Converter {
     @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     List<RoadmapDTOV2> toRoadmapDTOV2(List<RoadmapDO> list);
 
-    default RoadmapDTO toRoadmapDTOWithUser(RoadmapDO item, UserMapper userMapper) {
+    default RoadmapDTOV1 toRoadmapDTOWithUser(RoadmapDO item, UserMapper userMapper) {
         if (item == null) {
             return null;
         }
-        RoadmapDTO dto = toRoadMapDTO(item);
+        RoadmapDTOV1 dto = toRoadMapDTO(item);
         UserDO creator = userMapper.getById(item.getCreatorId());
         if (creator != null) {
             dto.setCreator(toUserDTOV4(creator));
@@ -170,11 +171,11 @@ public interface Converter {
         return dto;
     }
 
-    default RoadmapDTO toRoadmapDTOWithUser(RoadmapDO item, UserDataService userDataService) {
+    default RoadmapDTOV1 toRoadmapDTOWithUser(RoadmapDO item, UserDataService userDataService) {
         if (item == null) {
             return null;
         }
-        RoadmapDTO dto = toRoadMapDTO(item);
+        RoadmapDTOV1 dto = toRoadMapDTO(item);
         UserDO creator = userDataService.getById(item.getCreatorId());
         if (creator != null) {
             dto.setCreator(toUserDTOV4(creator));
@@ -239,10 +240,10 @@ public interface Converter {
         CourseDTOV4 dto = toCourseDTOV4(item);
 
         // 处理 parent 字段
-        if (item.getParent() != null && item.getParent() > 0) {
-            CourseDO parentCourse = courseMapper.getById(item.getParent());
+        if (item.getParentCourseId() != null && item.getParentCourseId() > 0) {
+            CourseDO parentCourse = courseMapper.getById(item.getParentCourseId());
             if (parentCourse != null) {
-                dto.setParent(toCourseDTOV3(parentCourse));
+                dto.setParentCourse(toCourseDTOV3(parentCourse));
             }
         }
 
@@ -256,10 +257,10 @@ public interface Converter {
         CourseDTOV4 dto = toCourseDTOV4(item);
 
         // 处理 parent 字段
-        if (item.getParent() != null && item.getParent() > 0) {
-            CourseDO parentCourse = courseDataService.getById(item.getParent());
+        if (item.getParentCourseId() != null && item.getParentCourseId() > 0) {
+            CourseDO parentCourse = courseDataService.getById(item.getParentCourseId());
             if (parentCourse != null) {
-                dto.setParent(toCourseDTOV3(parentCourse));
+                dto.setParentCourse(toCourseDTOV3(parentCourse));
             }
         }
 

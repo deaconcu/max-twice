@@ -1,13 +1,12 @@
 package com.prosper.learn.api.web;
 
 import cn.dev33.satoken.stp.StpUtil;
-import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.dto.response.CourseDTO;
-import com.prosper.learn.dto.response.CourseDTOV4;
+import com.prosper.learn.dto.response.old.CourseDTOV1;
+import com.prosper.learn.dto.response.old.CourseDTOV4;
 import com.prosper.learn.dto.response.Response;
 import com.prosper.learn.api.client.CourseClient;
-import com.prosper.learn.dto.response.CourseDTOV3;
+import com.prosper.learn.dto.response.old.CourseDTOV3;
 import com.prosper.learn.domain.service.business.CourseService;
 import com.prosper.learn.domain.service.scheduler.CourseRankingScheduler;
 import com.prosper.learn.domain.util.Converter;
@@ -84,9 +83,9 @@ public class CourseController implements CourseClient {
     }
 
     @Override
-    public Response<Object> post(CourseDTO course) {
+    public Response<Object> post(CourseDTOV1 course) {
         long userId = StpUtil.getLoginIdAsLong();
-        course.setCreator(userId);
+        course.setCreatorId(userId);
         //courseService.createCourse(course);
         return Response.success("课程创建成功");
     }
@@ -100,7 +99,7 @@ public class CourseController implements CourseClient {
     }
 
     @Override
-    public Response<Object> put(@PathVariable Long id, CourseDTO course) {
+    public Response<Object> put(@PathVariable Long id, CourseDTOV1 course) {
         CourseDO courseDo = courseMapper.getById(id);
         if (courseDo == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();

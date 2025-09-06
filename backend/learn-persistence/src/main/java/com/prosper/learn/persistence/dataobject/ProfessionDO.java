@@ -26,7 +26,7 @@ public class ProfessionDO {
 
     private String icon; // 图标字段
 
-    private Long creator; // 创建者 ID
+    private Long creatorId; // 创建者 ID
 
     private LocalDateTime createdAt;
 

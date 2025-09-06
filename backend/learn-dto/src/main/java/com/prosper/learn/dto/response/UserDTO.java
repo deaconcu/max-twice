@@ -19,6 +19,10 @@ public class UserDTO {
 
     private String biography;
 
+    private SubscriptionDTO[] subscriptions;
+
+    private boolean followed;
+
     private String createdAt;
 
     private String updatedAt;

@@ -1,5 +1,6 @@
 package com.prosper.learn.dto.response;
 
+import com.prosper.learn.dto.response.old.CourseDTOV4;
 import lombok.Data;
 
 import java.util.List;
@@ -17,15 +18,15 @@ public class NodeDTO {
 
     private CourseDTOV4 course;
 
-    private Long root;
-
     private List<NodeDTO> children;
 
-    private Long creator;
+    private Long creatorId;
 
     private Integer commentCount;
 
     private String createdAt;
 
     private String updatedAt;
+
+    private Boolean isCompleted;
 }

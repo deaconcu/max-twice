@@ -18,13 +18,15 @@ public class CommentDTO {
 
     private Integer replyCount;
 
-    private Long replyTo;
+    private Long replyToCommentId;
 
-    private Long fromUser;
+    private Long fromUserId;
 
-    private Long toUser;
+    private Long toUserId;
 
     private Integer upvoteCount;
+
+    private Integer state;
 
     private Boolean upvoted;
 

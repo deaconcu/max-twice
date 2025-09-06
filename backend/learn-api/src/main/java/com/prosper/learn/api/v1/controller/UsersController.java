@@ -3,11 +3,10 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.UserService;
-import com.prosper.learn.dto.response.*;
-import com.prosper.learn.dto.response.UserDTO;
-import com.prosper.learn.dto.response.UserDTOV2;
-import com.prosper.learn.dto.response.UserDTOV3;
-import com.prosper.learn.dto.response.UserDTOV4;
+import com.prosper.learn.dto.response.old.UserDTOV0;
+import com.prosper.learn.dto.response.old.UserDTOV2;
+import com.prosper.learn.dto.response.old.UserDTOV3;
+import com.prosper.learn.dto.response.old.UserDTOV4;
 import com.prosper.learn.dto.request.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,10 +31,10 @@ public class UsersController {
      * 映射: GET /self → GET /api/v1/users/current
      */
     @GetMapping("/users/current")
-    public ApiResponse<UserDTO> getCurrentUser() {
+    public ApiResponse<UserDTOV0> getCurrentUser() {
         Long userId = StpUtil.getLoginIdAsLong();
-        UserDTO userDTO = userService.getCurrentUser(userId);
-        return ApiResponse.success(userDTO);
+        UserDTOV0 userDTOV0 = userService.getCurrentUser(userId);
+        return ApiResponse.success(userDTOV0);
     }
 
     /**
@@ -100,14 +99,14 @@ public class UsersController {
      * 映射: POST /user/validate → POST /api/v1/auth/validate-email
      */
     @PostMapping("/auth/validate-email")
-    public ApiResponse<UserDTO> validateEmail(@RequestBody @Valid VerifyEmailRequest request) {
+    public ApiResponse<UserDTOV0> validateEmail(@RequestBody @Valid VerifyEmailRequest request) {
         // Service 负责验证逻辑
-        UserDTO userDTO = userService.validateEmail(request.getEmail(), request.getCode());
+        UserDTOV0 userDTOV0 = userService.validateEmail(request.getEmail(), request.getCode());
         
         // Controller 负责认证状态管理（验证成功后自动登录）
-        StpUtil.login(userDTO.getId());
+        StpUtil.login(userDTOV0.getId());
         
-        return ApiResponse.success(userDTO);
+        return ApiResponse.success(userDTOV0);
     }
 
     /**

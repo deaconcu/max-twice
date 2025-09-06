@@ -7,6 +7,10 @@ import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.data.*;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.response.*;
+import com.prosper.learn.dto.response.old.UserDTOV0;
+import com.prosper.learn.dto.response.old.UserDTOV2;
+import com.prosper.learn.dto.response.old.UserDTOV3;
+import com.prosper.learn.dto.response.old.UserDTOV4;
 import com.prosper.learn.persistence.dataobject.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +57,7 @@ public class UserService {
     /**
      * 获取当前用户信息
      */
-    public UserDTO getCurrentUser(Long userId) {
+    public UserDTOV0 getCurrentUser(Long userId) {
         validateUserId(userId);
         UserDO userDO = userDataService.getById(userId);
         return Converter.INSTANCE.toUserDTO(userDO);
@@ -146,7 +150,7 @@ public class UserService {
      * 只做验证逻辑，不操作认证状态
      */
     @Transactional
-    public UserDTO validateEmail(String email, String code) {
+    public UserDTOV0 validateEmail(String email, String code) {
         validateEmail(email);
         validateVerificationCode(code);
         

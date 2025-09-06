@@ -6,10 +6,9 @@ import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.basic.RedisStatsService;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
-import com.prosper.learn.domain.util.Converter;
+import com.prosper.learn.domain.service.converter.CommentConverter;
 import com.prosper.learn.dto.request.CreateCommentRequest;
 import com.prosper.learn.dto.response.CommentDTO;
-import com.prosper.learn.dto.response.CommentDTOV1;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.domain.service.data.*;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +34,7 @@ public class CommentService {
     private final ScoreCalculationService scoreCalculationService;
     private final RedisStatsService redisStatsService;
     private final SystemProperties systemProperties;
+    private final CommentConverter commentConverter;
 
     // ========== 私有验证方法 ==========
     
@@ -145,6 +145,12 @@ public class CommentService {
         return userDO;
     }
 
+    /**
+     * 创建评论，用户提交评论时调用
+     * @param request
+     * @param userId
+     * @return
+     */
     @Transactional
     public CommentDO createComment(CreateCommentRequest request, Long userId) {
         // 先验证参数
@@ -176,10 +182,10 @@ public class CommentService {
         CommentDO commentDO = new CommentDO();
         commentDO.setObjectId(request.getObjectId());
         commentDO.setType(request.getType());
-        commentDO.setReplyTo(request.getReplyTo());
-        commentDO.setToUser(request.getToUser());
+        commentDO.setReplyToUserId(request.getReplyTo());
+        commentDO.setToUserId(request.getToUser());
         commentDO.setContent(request.getContent());
-        commentDO.setFromUser(userId);
+        commentDO.setFromUserId(userId);
         commentDO.setScore(scoreCalculationService.calculateCommentScore(commentDO));
         commentDataService.insert(commentDO);
 
@@ -188,40 +194,44 @@ public class CommentService {
             handleReplyComment(request, commentDO, fromUser, postDO, nodeDO, roadmapDO);
         }
 
-        handleObjectComment(request, commentDO, fromUser, postDO, nodeDO, roadmapDO, userId);
+        // 更新对象评论数和创建评论通知
+        incrementCommentCount(request, postDO, nodeDO, roadmapDO, userId);
+        createCommentNotification(request, commentDO, fromUser, postDO, nodeDO, roadmapDO);
 
         return commentDataService.getById(commentDO.getId());
     }
 
     /**
-     * 更新对象评论数量
+     * 更新对象评论数量，提交评论时调用
+     * 主要功能是增加对象表的评论数和在Redis中记录评论行为
      */
     private void incrementCommentCount(CreateCommentRequest request, PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO, Long userId) {
         if (request.getType() == Enums.ObjectType.post.value() && postDO != null) {
             postDO.setCommentCount(postDO.getCommentCount() + 1);
             postDataService.update(postDO);
-            redisStatsService.recordComment((long) postDO.getId(), userId);
+            redisStatsService.recordComment(postDO.getId(), userId);
         } else if (request.getType() == Enums.ObjectType.node.value() && nodeDO != null) {
             nodeDO.setCommentCount(nodeDO.getCommentCount() + 1);
             nodeDataService.update(nodeDO);
-            redisStatsService.recordComment((long) nodeDO.getId(), userId);
+            redisStatsService.recordComment(nodeDO.getId(), userId);
         } else if (request.getType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
             roadmapDO.setComment(roadmapDO.getComment() + 1);
             roadmapDataService.update(roadmapDO);
-            redisStatsService.recordComment((long) roadmapDO.getId(), userId);
+            redisStatsService.recordComment(roadmapDO.getId(), userId);
         }
     }
     
     /**
-     * 创建评论消息通知
+     * 创建评论消息通知，提交评论时调用
+     * 主要功能是给被评论的用户发送评论通知
      */
     private void createCommentNotification(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
                                          PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO) {
         if (request.getType() == Enums.ObjectType.post.value() && postDO != null) {
-            messageService.createCommentMessage(postDO.getCreator(), fromUser.getId(), 
+            messageService.createCommentMessage(postDO.getCreatorId(), fromUser.getId(),
                                               postDO.getNodeId(), commentDO.getId(), postComment.value());
         } else if (request.getType() == Enums.ObjectType.node.value() && nodeDO != null) {
-            messageService.createCommentMessage(nodeDO.getCreator(), fromUser.getId(), 
+            messageService.createCommentMessage(nodeDO.getCreatorId(), fromUser.getId(),
                                               nodeDO.getId(), commentDO.getId(), nodeComment.value());
         } else if (request.getType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
             messageService.createCommentMessage(roadmapDO.getCreatorId(), fromUser.getId(), 
@@ -230,7 +240,7 @@ public class CommentService {
     }
     
     /**
-     * 创建回复评论消息通知
+     * 创建回复评论消息通知，回复评论时调用
      */
     private void createReplyNotification(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
                                        PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO, Long parentUserId) {
@@ -246,27 +256,26 @@ public class CommentService {
         }
     }
 
+    /**
+     * 处理回复评论的一些逻辑，回复评论时调用
+     * 主要功能：
+     * 1. 更新父评论的回复数和分数
+     * 2. 创建回复通知
+     */
     private void handleReplyComment(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser, 
                                    PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO) {
         CommentDO parentCommentDO = validateAndGetComment(request.getReplyTo());
-        
         parentCommentDO.setReplyCount(parentCommentDO.getReplyCount() + 1);
 
         // 更新评论分数并保存
         scoreCalculationService.checkAndUpdateCommentScore(parentCommentDO);
         commentDataService.update(parentCommentDO);
 
-        createReplyNotification(request, commentDO, fromUser, postDO, nodeDO, roadmapDO, parentCommentDO.getFromUser());
-    }
-
-    private void handleObjectComment(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
-                                   PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO, Long userId) {
-        incrementCommentCount(request, postDO, nodeDO, roadmapDO, userId);
-        createCommentNotification(request, commentDO, fromUser, postDO, nodeDO, roadmapDO);
+        createReplyNotification(request, commentDO, fromUser, postDO, nodeDO, roadmapDO, parentCommentDO.getFromUserId());
     }
 
     /**
-     * 处理点赞状态
+     * 给查询到的评论列表设置点赞状态 upvoted
      */
     private void processUpvoteStatus(List<CommentDTO> commentDTOList, Long userId) {
         if (commentDTOList.isEmpty()) {
@@ -287,7 +296,7 @@ public class CommentService {
     }
     
     /**
-     * 处理点赞状态（包含子评论）
+     * 给查询到的评论列表及其子评论设置点赞状态 upvoted
      */
     private void processUpvoteStatusWithChildren(List<CommentDTO> commentDTOList, HashMap<Long, CommentDTO> childrenMap, Long userId) {
         List<Long> allIds = new ArrayList<>();
@@ -320,6 +329,9 @@ public class CommentService {
         }
     }
 
+    /**
+     * 获取对象(post, node, comment ...)评论，分页查询，按分数和ID倒序排列
+     */
     public List<CommentDTO> getCommentsByObject(Long objectId, int type, Long offsetId, Long userId) {
         validateObjectId(objectId);
         validateCommentType(type);
@@ -338,7 +350,7 @@ public class CommentService {
             commentDOList = commentDataService.getByObjectIdPaginated(objectId, type, lastComment.getScore(), offsetId, pageSize);
         }
 
-        List<CommentDTO> commentDTOList = Converter.INSTANCE.toCommentDTO(commentDOList);
+        List<CommentDTO> commentDTOList = commentConverter.toDTO(commentDOList);
 
         List<Long> ids = new ArrayList<>();
         for (CommentDO commentDO : commentDOList) {
@@ -346,18 +358,21 @@ public class CommentService {
         }
 
         if (!ids.isEmpty()) {
-            handleChildComments(commentDTOList, ids, userId);
+            fillChildComments(commentDTOList, ids, userId);
         }
 
         return commentDTOList;
     }
 
-    private void handleChildComments(List<CommentDTO> commentDTOList, List<Long> ids, Long userId) {
+    /**
+     * 给commentDTOList查询子评论并填充，每条评论只填充一条子评论，选取分数最高的子评论
+     */
+    private void fillChildComments(List<CommentDTO> commentDTOList, List<Long> ids, Long userId) {
         List<CommentDO> children = commentDataService.getChildren(ids);
 
         HashMap<Long, CommentDTO> map = new HashMap<>();
         for (CommentDO commentDO : children) {
-            map.put(commentDO.getReplyTo(), Converter.INSTANCE.toCommentDTO(commentDO));
+            map.put(commentDO.getReplyToUserId(), commentConverter.toDTO(commentDO));
         }
 
         for (CommentDTO commentDTO: commentDTOList) {
@@ -371,6 +386,9 @@ public class CommentService {
         processUpvoteStatusWithChildren(commentDTOList, map, userId);
     }
 
+    /**
+     * 获取子评论列表，分页查询(lastId)，按分数和ID倒序排列
+     */
     public List<CommentDTO> getCommentReplies(Long id, Long offsetId, Long userId) {
         validateCommentId(id);
         validateOffsetId(offsetId);
@@ -388,19 +406,28 @@ public class CommentService {
             commentDOList = commentDataService.getByTopicPaginated(id, lastComment.getScore(), offsetId, pageSize);
         }
 
-        List<CommentDTO> commentDTOList = Converter.INSTANCE.toCommentDTO(commentDOList);
+        List<CommentDTO> commentDTOList = commentConverter.toDTO(commentDOList);
         processUpvoteStatus(commentDTOList, userId);
         return commentDTOList;
     }
 
-    public List<CommentDTOV1> getPendingComments() {
+
+    /**
+     * 获取待审核评论列表，按提交时间倒序排列，只返回有限数量（limit）
+     * 仅管理员调用
+     */
+    public List<CommentDTO> getPendingComments() {
         int limit = systemProperties.getComment().getPendingCommentsLimit();
         List<CommentDO> commentDOList = commentDataService.getListByState(submited.value(), limit);
-        return Converter.INSTANCE.toCommentDTOV1(commentDOList);
+        return commentConverter.toDTOV1(commentDOList);
     }
 
+    /**
+     * 审核评论，批准或删除评论
+     * 仅管理员调用
+     */
     @Transactional
-    public CommentDTOV1 approveComment(Long id, boolean approve) {
+    public CommentDTO approveComment(Long id, boolean approve) {
         validateCommentId(id);
         
         CommentDO commentDO = validateAndGetComment(id);
@@ -413,6 +440,6 @@ public class CommentService {
             commentDO.setState(Enums.CommentState.deleted.value());
             commentDataService.update(commentDO);
         }
-        return Converter.INSTANCE.toCommentDTOV1(commentDO);
+        return commentConverter.toDTOV1(commentDO);
     }
 }

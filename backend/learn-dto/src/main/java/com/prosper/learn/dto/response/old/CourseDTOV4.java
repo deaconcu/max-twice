@@ -1,4 +1,4 @@
-package com.prosper.learn.dto.response;
+package com.prosper.learn.dto.response.old;
 
 import lombok.Data;
 
@@ -11,11 +11,11 @@ public class CourseDTOV4 {
 
     private String description;
 
-    private Long creator;
+    private Long creatorId;
 
-    private Long rootNode;
+    private Long rootNodeId;
 
-    private CourseDTOV3 parent;
+    private CourseDTOV3 parentCourse;
 
     private String state; // 修改为 String 类型，支持 SUMMITTED, APPROVED, REJECTED
 

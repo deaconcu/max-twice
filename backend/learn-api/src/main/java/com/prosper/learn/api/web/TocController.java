@@ -56,7 +56,7 @@ public class TocController implements TocClient {
         }
 
         ObjectNode s = objectMapper.createObjectNode();
-        s.set(Long.toString(courseDO.getRootNode()), objectMapper.createObjectNode());
+        s.set(Long.toString(courseDO.getRootNodeId()), objectMapper.createObjectNode());
 
         String tocStr = s.toString();
         String defaultTosHash = Utils.hashSHA(tocStr);
