@@ -96,6 +96,7 @@ public interface Converter {
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     UserDTOV0 toUserDTO(UserDO userDO);
+    List<UserDTO> toUserDTO(List<UserDO> userDOList);
     UserDTOV1 toUserDTOV1(UserDO userDO);
     UserDTOV4 toUserDTOV4(UserDO userDO);
     List<UserDTOV1> toUserDTOV1(List<UserDO> userDOList);

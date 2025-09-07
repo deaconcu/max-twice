@@ -1,6 +1,7 @@
 package com.prosper.learn.api.client;
 
 import com.prosper.learn.dto.response.Response;
+import com.prosper.learn.dto.response.RoadmapDTO;
 import com.prosper.learn.dto.response.old.RoadmapDTOV1;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
@@ -35,7 +36,7 @@ public interface RoadmapClient {
      * 获取课程详情
      */
     //@GetMapping("/roadmap/{id}")
-    Response<RoadmapDTOV1> getById(@PathVariable("id") Long id);
+    Response<RoadmapDTO> getById(@PathVariable("id") Long id);
 
     /**
      * 置顶用户课程

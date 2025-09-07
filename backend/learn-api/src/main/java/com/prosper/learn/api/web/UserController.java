@@ -7,6 +7,7 @@ import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.business.PostingService;
 import com.prosper.learn.domain.service.business.LearningProgressService;
 import com.prosper.learn.common.Utils;
+import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.response.*;
 import com.prosper.learn.dto.response.old.UserDTOV0;
 import com.prosper.learn.dto.response.old.UserDTOV2;

@@ -61,7 +61,7 @@ public class ReadDTO {
     /**
      * 目录节点信息
      */
-    private Map<Long, NodeDTOV2> tocNodeInfos;
+    private Map<Long, NodeDTO> tocNodeInfos;
     
     /**
      * 路径
@@ -71,7 +71,7 @@ public class ReadDTO {
     /**
      * 用户列表
      */
-    private List<UserDTOV1> users;
+    private List<UserDTO> users;
     
     /**
      * 是否正在学习

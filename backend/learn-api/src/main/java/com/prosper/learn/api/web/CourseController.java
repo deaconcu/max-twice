@@ -2,6 +2,8 @@ package com.prosper.learn.api.web;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.util.Converter;
+import com.prosper.learn.dto.response.CourseDTO;
 import com.prosper.learn.dto.response.old.CourseDTOV1;
 import com.prosper.learn.dto.response.old.CourseDTOV4;
 import com.prosper.learn.dto.response.Response;
@@ -37,24 +39,28 @@ public class CourseController implements CourseClient {
 
     @Override
     public Response<Object> getListByState(Integer state, Long lastId) {
-        List<CourseDTOV4> courseList = courseService.getListByStateAndLastId(CourseState.getByValue(state), lastId);
+        //List<CourseDTOV4> courseList = courseService.getListByStateAndLastId(CourseState.getByValue(state), lastId);
+        List<CourseDTO> courseList = courseService.getListByStateAndLastId(CourseState.getByValue(state), lastId);
         return new Response<>(courseList);
     }
 
     @Override
     public Response<Object> getListByCategory(int mainCategory, int subCategory) {
-        List<CourseDTOV4> courseList = courseService.getListByCategory(mainCategory, subCategory);
+        //List<CourseDTOV4> courseList = courseService.getListByCategory(mainCategory, subCategory);
+        List<CourseDTO> courseList = courseService.getListByCategory(mainCategory, subCategory);
         return new Response<>(courseList);
     }
 
     @Override
     public Response<Object> getApprovedListByParent(Long parentId) {
-        List<CourseDTOV4> courseList = courseService.getListByParent(parentId, CourseState.APPROVED);
+        //List<CourseDTOV4> courseList = courseService.getListByParent(parentId, CourseState.APPROVED);
+        List<CourseDTO> courseList = courseService.getListByParent(parentId, CourseState.APPROVED);
         return new Response<>(courseList);
     }
 
     public Response<Object> getListByParent(Long parentId) {
-        List<CourseDTOV4> courseList = courseService.getListByParent(parentId, null);
+        //List<CourseDTOV4> courseList = courseService.getListByParent(parentId, null);
+        List<CourseDTO> courseList = courseService.getListByParent(parentId, null);
         return new Response<>(courseList);
     }
 
@@ -120,7 +126,8 @@ public class CourseController implements CourseClient {
     @Override
     public Response<Object> getHotCourses(@RequestParam(value = "limit", defaultValue = "10") Integer limit) {
         log.info("开始获取热门课程，limit: {}", limit);
-        List<CourseDTOV4> hotCourses = courseService.getHotCourses(limit);
+        //List<CourseDTOV4> hotCourses = courseService.getHotCourses(limit);
+        List<CourseDTO> hotCourses = courseService.getHotCourses(limit);
         log.info("成功获取热门课程数量: {}", hotCourses.size());
         return new Response<>(hotCourses);
     }
@@ -128,7 +135,8 @@ public class CourseController implements CourseClient {
     @Override
     public Response<Object> getHotCoursesRanking() {
         log.info("开始获取热门课程完整排行榜");
-        List<CourseDTOV4> hotCoursesRanking = courseService.getHotCoursesRanking();
+        //List<CourseDTOV4> hotCoursesRanking = courseService.getHotCoursesRanking();
+        List<CourseDTO> hotCoursesRanking = courseService.getHotCoursesRanking();
         log.info("成功获取热门课程排行榜数量: {}", hotCoursesRanking.size());
         return new Response<>(hotCoursesRanking);
     }

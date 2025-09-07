@@ -7,6 +7,7 @@ import com.prosper.learn.domain.service.basic.ScoreCalculationService;
 import com.prosper.learn.domain.service.business.UpvoteService;
 import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.response.Response;
+import com.prosper.learn.dto.response.RoadmapDTO;
 import com.prosper.learn.dto.response.old.RoadmapDTOV1;
 import com.prosper.learn.persistence.mapper.RoadmapMapper;
 import com.prosper.learn.persistence.mapper.UserProfileMapper;
@@ -252,21 +253,22 @@ public class RoadmapController implements RoadmapClient {
     }
 
     @Override
-    public Response<RoadmapDTOV1> getById(Long id) {
+    public Response<RoadmapDTO> getById(Long id) {
         long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : 0;
-        RoadmapDTOV1 roadmapDTOV1 = roadmapService.getById(id, userId);
+        //RoadmapDTOV1 roadmapDTOV1 = roadmapService.getById(id, userId);
+        RoadmapDTO roadmapDTO = roadmapService.getById(id, userId);
 
-        if (roadmapDTOV1 == null) {
+        if (roadmapDTO == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
 
         // 转换 content 格式
-        if (roadmapDTOV1.getContent() != null) {
-            String formattedContent = roadmapService.parseContentToGraphFormat(roadmapDTOV1.getContent(), userId);
-            roadmapDTOV1.setContent(formattedContent);
+        if (roadmapDTO.getContent() != null) {
+            String formattedContent = roadmapService.parseContentToGraphFormat(roadmapDTO.getContent(), userId);
+            roadmapDTO.setContent(formattedContent);
         }
 
-        return Response.success(roadmapDTOV1);
+        return Response.success(roadmapDTO);
     }
 
     @Override

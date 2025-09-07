@@ -64,9 +64,7 @@ public class RoadmapService {
             return null;
         }
 
-        RoadmapDTO dto = roadmapConverter.toDTOV2(roadmapDO);
-        dto.setUpvoted(upvoteService.hasUpvotedRoadmap(dto.getId(), userId));
-        return dto;
+        return roadmapConverter.toDTOV2(roadmapDO, userId);
     }
     /**
      * 标准化content内容并计算hash值
@@ -360,14 +358,9 @@ public class RoadmapService {
         roadmapDataService.updateVoteCount(id, voteDelta);
 
         RoadmapDO roadmapDO = roadmapDataService.getById(id);
-
         scoreCalculationService.checkAndUpdateRoadmapScore(roadmapDO);
-        roadmapDO = roadmapDataService.getById(id);
 
-        RoadmapDTO roadmapDTO = roadmapConverter.toDTO(roadmapDO);
-        roadmapDTO.setUpvoted(voted);
-
-        return roadmapDTO;
+        return roadmapConverter.toDTOV2(roadmapDataService.getById(id), userId);
     }
 
     /**

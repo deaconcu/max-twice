@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.api.client.PostClient;
 import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.response.old.PostDTOV1;
 import com.prosper.learn.dto.response.Response;
 import com.prosper.learn.common.Enums;

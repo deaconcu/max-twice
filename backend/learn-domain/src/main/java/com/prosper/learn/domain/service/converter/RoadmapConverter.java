@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service.converter;
 
+import com.prosper.learn.domain.service.business.UpvoteService;
 import com.prosper.learn.dto.response.RoadmapDTO;
 import com.prosper.learn.dto.response.UserDTO;
 import com.prosper.learn.dto.response.old.RoadmapDTOV1;
@@ -8,6 +9,7 @@ import com.prosper.learn.dto.response.ProfessionDTO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
 import com.prosper.learn.domain.service.data.UserDataService;
 import com.prosper.learn.domain.service.data.ProfessionDataService;
+import com.prosper.learn.domain.service.business.RoadmapService;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -24,6 +26,10 @@ public abstract class RoadmapConverter {
     protected ProfessionDataService professionDataService;
     @Autowired
     protected ProfessionConverter professionConverter;
+    @Autowired
+    protected UpvoteService upvoteService;
+    @Autowired
+    protected RoadmapService roadmapService;
     
     @Named("toDTO")
     public abstract RoadmapDTO toDTO(RoadmapDO roadmapDO);
@@ -34,19 +40,19 @@ public abstract class RoadmapConverter {
     @Named("toDTOV2")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
-    @Mapping(target = "content")
+    @Mapping(target = "content", source = "content", qualifiedByName = "getFormattedContent")
     @Mapping(target = "profession", source = "professionId", qualifiedByName = "getProfession")
     @Mapping(target = "description")
     @Mapping(target = "vote")
     @Mapping(target = "comment")
-    //@Mapping(target = "upvoted")
+    @Mapping(target = "upvoted", source = "id", qualifiedByName = "getUpvotedStatus")
     @Mapping(target = "creator", source = "creatorId", qualifiedByName = "getCreator")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
-    public abstract RoadmapDTO toDTOV2(RoadmapDO roadmapDO);
+    public abstract RoadmapDTO toDTOV2(RoadmapDO roadmapDO, long userId);
 
     @IterableMapping(qualifiedByName = "toDTOV2")
-    public abstract List<RoadmapDTO> toDTOV2(List<RoadmapDO> roadmapDOList);
+    public abstract List<RoadmapDTO> toDTOV2(List<RoadmapDO> roadmapDOList, long userId);
 
     @Named("getCreator")
     public UserDTO getCreator(Long creatorId) {
@@ -58,5 +64,17 @@ public abstract class RoadmapConverter {
     public ProfessionDTO getProfession(Long professionId) {
         if (professionId == null) return null;
         return professionConverter.toDTO(professionDataService.getById(professionId));
+    }
+    
+    @Named("getUpvotedStatus")
+    public Boolean getUpvotedStatus(Long roadmapId, long userId) {
+        if (roadmapId == null) return false;
+        return upvoteService.hasUpvotedRoadmap(roadmapId, userId);
+    }
+    
+    @Named("getFormattedContent")
+    public String getFormattedContent(String content, long userId) {
+        if (content == null) return null;
+        return roadmapService.parseContentToGraphFormat(content, userId);
     }
 }

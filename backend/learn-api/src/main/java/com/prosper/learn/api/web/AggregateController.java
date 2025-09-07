@@ -12,6 +12,7 @@ import com.prosper.learn.domain.service.basic.ContentsService;
 import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.business.*;
 import com.prosper.learn.common.Utils;
+import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.response.message.MessageDTO;
 import com.prosper.learn.dto.response.*;
 import com.prosper.learn.dto.response.ReadDTO;
@@ -130,7 +131,8 @@ public class AggregateController implements AggregateClient {
     private Response<ReadDTO> read(CourseDO courseDO, String path, NodeDO nodeDO, PostDO postDO) {
 
         long userId = StpUtil.getLoginIdAsLong();
-        Utils.Pair<String, Map<Long, NodeDTOV2>> response = pageService.getToc(userId, courseDO.getId(), true);
+        //Utils.Pair<String, Map<Long, NodeDTOV2>> response = pageService.getToc(userId, courseDO.getId(), true);
+        Utils.Pair<String, Map<Long, NodeDTO>> response = pageService.getToc(userId, courseDO.getId(), true);
         CourseTocDTO courseTocDTO = new CourseTocDTO(response.left(), response.right());
 
         //Map<String, Object> contents;
@@ -191,9 +193,12 @@ public class AggregateController implements AggregateClient {
         List<PostDTOV1> otherPostings = Converter.INSTANCE.toPostDTO(postDOList);
 
         // get all users
-        List<UserDTOV1> userList = userIds.size() == 0 ? new ArrayList<>() : Converter.INSTANCE.toUserDTOV1(userMapper.getByIds(userIds));
-        Map<Long, UserDTOV1> userMap = new HashMap<>();
-        for (UserDTOV1 user : userList) {
+        //List<UserDTOV1> userList = userIds.size() == 0 ? new ArrayList<>() : Converter.INSTANCE.toUserDTOV1(userMapper.getByIds(userIds));
+        List<UserDTO> userList = userIds.size() == 0 ? new ArrayList<>() : Converter.INSTANCE.toUserDTO(userMapper.getByIds(userIds));
+        //Map<Long, UserDTOV1> userMap = new HashMap<>();
+        Map<Long, UserDTO> userMap = new HashMap<>();
+        //for (UserDTOV1 user : userList) {
+        for (UserDTO user : userList) {
             userMap.put(user.getId(), user);
         }
 
@@ -339,10 +344,10 @@ public class AggregateController implements AggregateClient {
         });
 
         // get all users
-        List<UserDTOV1> userList = userIds.size() == 0 ?
-                new ArrayList<>() : Converter.INSTANCE.toUserDTOV1(userMapper.getByIds(userIds));
-        Map<Long, UserDTOV1> userMap = new HashMap<>();
-        for (UserDTOV1 user : userList) {
+        List<UserDTO> userList = userIds.size() == 0 ?
+                new ArrayList<>() : Converter.INSTANCE.toUserDTO(userMapper.getByIds(userIds));
+        Map<Long, UserDTO> userMap = new HashMap<>();
+        for (UserDTO user : userList) {
             userMap.put(user.getId(), user);
         }
 
