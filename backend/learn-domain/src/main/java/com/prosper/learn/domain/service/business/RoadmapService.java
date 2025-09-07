@@ -11,7 +11,8 @@ import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
-import com.prosper.learn.domain.util.Converter;
+import com.prosper.learn.domain.service.converter.RoadmapConverter;
+import com.prosper.learn.dto.response.RoadmapDTO;
 import com.prosper.learn.dto.response.old.RoadmapDTOV1;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
@@ -45,15 +46,16 @@ public class RoadmapService {
     private final UpvoteService upvoteService;
     private final UserCourseService userCourseService;
     private final ScoreCalculationService scoreCalculationService;
+    private final RoadmapConverter roadmapConverter;
     private final SystemProperties systemProperties;
-    
+
     // ========== 常量定义 ==========
     
     private static final String DEFAULT_EMPTY_STRING = "";
     
     // ========== 公共方法 ==========
 
-    public RoadmapDTOV1 getById(long id, long userId) {
+    public RoadmapDTO getById(long id, long userId) {
         validateRoadmapId(id);
         validateUserId(userId);
         
@@ -62,7 +64,7 @@ public class RoadmapService {
             return null;
         }
 
-        RoadmapDTOV1 dto = Converter.INSTANCE.toRoadmapDTOWithUser(roadmapDO, userDataService);
+        RoadmapDTO dto = roadmapConverter.toDTOV2(roadmapDO);
         dto.setUpvoted(upvoteService.hasUpvotedRoadmap(dto.getId(), userId));
         return dto;
     }
@@ -288,7 +290,7 @@ public class RoadmapService {
     /**
      * 获取职业路线图列表（带置顶和状态信息）
      */
-    public List<RoadmapDTOV1> getRoadmapsByProfession(Long professionId, Long lastId, long userId) {
+    public List<RoadmapDTO> getRoadmapsByProfession(Long professionId, Long lastId, long userId) {
         validateProfessionId(professionId);
         validateUserId(userId);
         
@@ -351,7 +353,7 @@ public class RoadmapService {
      * 路线图点赞
      */
     @Transactional
-    public RoadmapDTOV1 upvoteRoadmap(Long id, long userId) {
+    public RoadmapDTO upvoteRoadmap(Long id, long userId) {
         boolean voted = upvoteService.upvoteRoadmap(id, userId);
 
         int voteDelta = voted ? 1 : -1;
@@ -362,10 +364,10 @@ public class RoadmapService {
         scoreCalculationService.checkAndUpdateRoadmapScore(roadmapDO);
         roadmapDO = roadmapDataService.getById(id);
 
-        RoadmapDTOV1 roadmapDTOV1 = Converter.INSTANCE.toRoadMapDTO(roadmapDO);
-        roadmapDTOV1.setUpvoted(voted);
+        RoadmapDTO roadmapDTO = roadmapConverter.toDTO(roadmapDO);
+        roadmapDTO.setUpvoted(voted);
 
-        return roadmapDTOV1;
+        return roadmapDTO;
     }
 
     /**
@@ -399,22 +401,22 @@ public class RoadmapService {
     /**
      * 获取路线图详情（带格式化内容）
      */
-    public RoadmapDTOV1 getRoadmapWithContent(Long id, long userId) {
+    public RoadmapDTO getRoadmapWithContent(Long id, long userId) {
         validateRoadmapId(id);
         validateUserId(userId);
         
-        RoadmapDTOV1 roadmapDTOV1 = getById(id, userId);
+        RoadmapDTO roadmapDTO = getById(id, userId);
 
-        if (roadmapDTOV1 == null) {
+        if (roadmapDTO == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
 
-        if (roadmapDTOV1.getContent() != null) {
-            String formattedContent = parseContentToGraphFormat(roadmapDTOV1.getContent(), userId);
-            roadmapDTOV1.setContent(formattedContent);
+        if (roadmapDTO.getContent() != null) {
+            String formattedContent = parseContentToGraphFormat(roadmapDTO.getContent(), userId);
+            roadmapDTO.setContent(formattedContent);
         }
 
-        return roadmapDTOV1;
+        return roadmapDTO;
     }
 
     /**
@@ -574,19 +576,19 @@ public class RoadmapService {
         }
     }
     
-    private List<RoadmapDTOV1> buildRoadmapDTOList(List<RoadmapDO> roadmapList, long userId, Long professionId, Long lastId, List<Long> pinnedRoadmapIds) {
-        List<RoadmapDTOV1> dtoList = Converter.INSTANCE.toRoadMapDTO(roadmapList);
+    private List<RoadmapDTO> buildRoadmapDTOList(List<RoadmapDO> roadmapList, long userId, Long professionId, Long lastId, List<Long> pinnedRoadmapIds) {
+        List<RoadmapDTO> dtoList = roadmapConverter.toDTO(roadmapList);
 
         if (!dtoList.isEmpty()) {
             List<Long> roadmapIds = dtoList.stream()
-                .map(RoadmapDTOV1::getId)
+                .map(RoadmapDTO::getId)
                 .collect(Collectors.toList());
 
             Set<Long> upvotedIds = upvoteService.getUpvotedRoadmapIds(roadmapIds, userId);
             Set<Long> pinnedIds = getPinnedIdsForCurrentRequest(userId, professionId, lastId, pinnedRoadmapIds);
             Set<Long> learningIds = getLearningIds(userId, roadmapIds);
 
-            for (RoadmapDTOV1 dto : dtoList) {
+            for (RoadmapDTO dto : dtoList) {
                 dto.setUpvoted(upvotedIds.contains(dto.getId()));
                 dto.setPinned(pinnedIds.contains(dto.getId()));
                 dto.setLearning(learningIds.contains(dto.getId()));

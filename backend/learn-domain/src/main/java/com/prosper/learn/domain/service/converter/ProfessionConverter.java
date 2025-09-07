@@ -7,12 +7,11 @@ import org.mapstruct.*;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface ProfessionConverter {
+public abstract class ProfessionConverter {
     
     @Named("toDTO")
-    ProfessionDTO toDTO(ProfessionDO professionDO);
+    public abstract ProfessionDTO toDTO(ProfessionDO professionDO);
     
     @IterableMapping(qualifiedByName = "toDTO")
-    List<ProfessionDTO> toDTO(List<ProfessionDO> professionDOList);
-    
+    public abstract List<ProfessionDTO> toDTO(List<ProfessionDO> professionDOList);
 }

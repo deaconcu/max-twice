@@ -4,6 +4,8 @@ import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ContentsService;
+import com.prosper.learn.domain.service.converter.NodeConverter;
+import com.prosper.learn.dto.response.NodeDTO;
 import com.prosper.learn.persistence.dataobject.UserProgressDO;
 import com.prosper.learn.persistence.dataobject.UserCourseDO;
 import com.prosper.learn.domain.service.data.UserProgressDataService;
@@ -24,7 +26,6 @@ import java.util.stream.Collectors;
 import com.prosper.learn.dto.response.NodeProgressResponseDTO;
 import com.prosper.learn.dto.response.CourseCompletionResponseDTO;
 import com.prosper.learn.dto.response.old.NodeDTOV2;
-import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.persistence.dataobject.NodeDO;
 
 /**
@@ -41,10 +42,10 @@ public class LearningProgressService {
     private final UserProgressDataService userProgressDataService;
     private final UserCourseDataService userCourseDataService;
     private final NodeDataService nodeDataService;
-    private final CourseDataService courseDataService;
     private final ContentsService contentsService;
     private final ObjectMapper objectMapper;
     private final SystemProperties systemProperties;
+    private final NodeConverter nodeConverter;
 
     private static final String USER_COMPLETED_KEY_PREFIX = "user:completed:";
     private static final String SYNC_FAILED_USERS_KEY = "sync:failed:users";
@@ -802,7 +803,7 @@ public class LearningProgressService {
     /**
      * 获取节点完成状态响应数据
      */
-    public NodeDTOV2 getNodeCompletionStatusResponse(long userId, long nodeId) {
+    public NodeDTO getNodeCompletionStatusResponse(long userId, long nodeId) {
         boolean isCompleted = isNodeCompleted(userId, nodeId);
         
         NodeDO nodeDO = nodeDataService.getById(nodeId);
@@ -810,7 +811,7 @@ public class LearningProgressService {
             throw ErrorCode.LEARNING_PROGRESS_INVALID_NODE_ID.exception();
         }
         
-        return Converter.INSTANCE.toNodeDTOV2(nodeDO, isCompleted);
+        return nodeConverter.toDTOV2(nodeDO, isCompleted);
     }
 
     /**

@@ -4,8 +4,9 @@ import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.MessageService;
+import com.prosper.learn.domain.service.converter.CourseConverter;
+import com.prosper.learn.domain.service.converter.UserConverter;
 import com.prosper.learn.domain.service.data.*;
-import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.response.*;
 import com.prosper.learn.dto.response.old.UserDTOV0;
 import com.prosper.learn.dto.response.old.UserDTOV2;
@@ -42,6 +43,8 @@ public class UserService {
     private final PostingService postingService;
     private final MessageService messageService;
     private final SystemProperties systemProperties;
+    private final UserConverter userConverter;
+    private final CourseConverter courseConverter;
     
     // ========== 常量定义 ==========
     
@@ -57,10 +60,10 @@ public class UserService {
     /**
      * 获取当前用户信息
      */
-    public UserDTOV0 getCurrentUser(Long userId) {
+    public UserDTO getCurrentUser(Long userId) {
         validateUserId(userId);
         UserDO userDO = userDataService.getById(userId);
-        return Converter.INSTANCE.toUserDTO(userDO);
+        return userConverter.toDTO(userDO);
     }
 
     /**
@@ -78,26 +81,24 @@ public class UserService {
     /**
      * 获取用户信息（包含关注状态）
      */
-    public UserDTOV3 getUser(Long userId, Long viewerId) {
+    public UserDTO getUser(Long userId, Long viewerId) {
         UserDO userDO = validateUserExists(userId);
         validateUserId(viewerId);
 
-        UserDTOV3 userDTOV3 = Converter.INSTANCE.toUserDTOV3(userDO);
-
         FollowDO followDO = followDataService.get(viewerId, userId);
         if (followDO != null) {
-            userDTOV3.setFollowed(1);
+            return userConverter.toDTOV1(userDO, true);
         }
-        return userDTOV3;
+        return userConverter.toDTOV1(userDO, false);
     }
 
     /**
      * 搜索用户
      */
-    public List<UserDTOV4> searchUsers(String name) {
+    public List<UserDTO> searchUsers(String name) {
         validateSearchName(name);
         List<UserDO> userDOList = userDataService.searchByName(name);
-        return Converter.INSTANCE.toUserDTOV4(userDOList);
+        return userConverter.toDTOV4(userDOList);
     }
 
     /**
@@ -127,7 +128,7 @@ public class UserService {
      * 用户登录验证
      * 只做业务验证，不操作认证状态
      */
-    public UserDTOV2 validateLogin(String email, String password) {
+    public UserDTO validateLogin(String email, String password) {
         validateEmail(email);
         validatePassword(password);
         
@@ -139,10 +140,8 @@ public class UserService {
         // TODO: 密码验证
         // if (!userDO.getPassword().equals(Utils.md5(password))) throw ErrorCode.USER_PASSWORD_WRONG.exception();
         
-        UserDTOV2 userDTOV2 = Converter.INSTANCE.toUserDTOV2(userDO);
-        setUserSubscriptions(userDTOV2, userDO.getId());
-        
-        return userDTOV2;
+        UserDTO userDTO = userConverter.toDTOV2(userDO);
+        return userDTO;
     }
 
     /**
@@ -150,7 +149,7 @@ public class UserService {
      * 只做验证逻辑，不操作认证状态
      */
     @Transactional
-    public UserDTOV0 validateEmail(String email, String code) {
+    public UserDTO validateEmail(String email, String code) {
         validateEmail(email);
         validateVerificationCode(code);
         
@@ -171,12 +170,12 @@ public class UserService {
         }
         
         if (user.getEmailValidated()) {
-            return Converter.INSTANCE.toUserDTO(user);
+            return userConverter.toDTO(user);
         }
 
         user.setEmailValidated(true);
         userDataService.update(user);
-        return Converter.INSTANCE.toUserDTO(user);
+        return userConverter.toDTO(user);
     }
 
     /**
@@ -557,7 +556,7 @@ public class UserService {
             List<CourseDO> courseDOList = courseDataService.getByIds(ids);
             log.info("查询到{}个收藏课程，课程信息: {}", courseDOList.size(), 
                 courseDOList.stream().map(c -> "id=" + c.getId() + ",name=" + c.getName()).collect(Collectors.toList()));
-            return Converter.INSTANCE.toCourseDTOV2(courseDOList);
+            return courseConverter.toDTOV2(courseDOList);
         } catch (Exception e) {
             log.error("获取用户{}收藏课程时出错: {}", userId, e.getMessage());
             throw ErrorCode.USER_SUBSCRIPTION_PARSE_ERROR.exception(e);

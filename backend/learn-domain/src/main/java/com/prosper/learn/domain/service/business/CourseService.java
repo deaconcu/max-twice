@@ -5,9 +5,9 @@ import com.prosper.learn.common.Enums.CourseState;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
 import com.prosper.learn.domain.service.converter.CourseConverter;
-import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.dto.request.CreateCourseRequest;
 import com.prosper.learn.dto.request.UpdateCourseRequest;
+import com.prosper.learn.dto.response.CourseDTO;
 import com.prosper.learn.dto.response.old.CourseDTOV1;
 import com.prosper.learn.dto.response.old.CourseDTOV3;
 import com.prosper.learn.dto.response.old.CourseDTOV4;
@@ -97,34 +97,34 @@ public class CourseService {
     /**
      * 转换为DTO并附加统计信息
      */
-    private CourseDTOV1 convertToDTOWithStats(CourseDO courseDO) {
+    private CourseDTO convertToDTOWithStats(CourseDO courseDO) {
         //CourseDTOV4 courseDTO = Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseDataService);
-        CourseDTOV1 courseDTOV1 = courseConverter.toCourseDTOV4(courseDO);
+        CourseDTO courseDTO = courseConverter.toDTOV4(courseDO);
 
         try {
             CourseRankingService.CourseStats stats = courseRankingService.getCourseStats(courseDO.getId());
-            courseDTOV1.setLearnerCount((int) stats.getLearningCount());
-            courseDTOV1.setSubscriptionCount((int) stats.getSubscriptionCount());
+            courseDTO.setLearnerCount((int) stats.getLearningCount());
+            courseDTO.setSubscriptionCount((int) stats.getSubscriptionCount());
         } catch (Exception e) {
             // 统计信息获取失败时设置默认值
-            courseDTOV1.setLearnerCount(0);
-            courseDTOV1.setSubscriptionCount(0);
+            courseDTO.setLearnerCount(0);
+            courseDTO.setSubscriptionCount(0);
         }
         
-        return courseDTOV1;
+        return courseDTO;
     }
 
     // ========== 公共业务方法 ==========
 
-    public CourseDTOV4 getCourseById(Long id) {
+    public CourseDTO getCourseById(Long id) {
         CourseDO course = validateCourseExists(id);
-        return Converter.INSTANCE.toCourseDTOV4(course);
+        return  courseConverter.toDTOV4(course);
     }
 
-    public List<CourseDTOV3> searchCoursesByName(String name) {
+    public List<CourseDTO> searchCoursesByName(String name) {
         int searchLimit = systemProperties.getCourse().getSearchLimit();
         List<CourseDO> courseList = courseDataService.searchByName(name, searchLimit);
-        return Converter.INSTANCE.toCourseDTOV3(courseList);
+        return  courseConverter.toDTOV3(courseList);
     }
 
     @Transactional
@@ -153,30 +153,30 @@ public class CourseService {
         return courseDO != null;
     }
 
-    public CourseDTOV4 getById(long id) {
+    public CourseDTO getById(long id) {
         CourseDO courseDO = courseDataService.getById(id);
-        return courseDO != null ? Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseDataService) : null;
+        return courseDO != null ?  courseConverter.toDTOV4(courseDO) : null;
     }
 
     // 新增：根据状态和lastId获取课程列表
-    public List<CourseDTOV4> getListByStateAndLastId(CourseState state, long lastId) {
+    public List<CourseDTO> getListByStateAndLastId(CourseState state, long lastId) {
         List<CourseDO> courseDOList = courseDataService.listByStateAndLastId(state, lastId);
         return courseDOList.stream()
-                .map(courseDO -> Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseDataService))
+                .map(courseDO -> courseConverter.toDTOV4(courseDO))
                 .collect(java.util.stream.Collectors.toList());
     }
 
     // 新增：根据主分类和子分类获取已批准的课程列表
-    public List<CourseDTOV4> getListByCategory(int mainCategory, int subCategory) {
+    public List<CourseDTO> getListByCategory(int mainCategory, int subCategory) {
         List<CourseDO> courseDOList;
         courseDOList = courseDataService.listRootByCategory(mainCategory, subCategory);
         return courseDOList.stream()
-                .map(courseDO -> Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseDataService))
+                .map(courseDO ->  courseConverter.toDTOV4(courseDO))
                 .collect(java.util.stream.Collectors.toList());
     }
 
     // 新增：根据父课程ID获取子课程列表
-    public List<CourseDTOV4> getListByParent(long parentId, CourseState state) {
+    public List<CourseDTO> getListByParent(long parentId, CourseState state) {
         List<CourseDO> courseDOList;
         if (state == null) { // null表示获取所有状态
             courseDOList = courseDataService.listByParent(parentId);
@@ -184,7 +184,7 @@ public class CourseService {
             courseDOList = courseDataService.listByParentAndState(state, parentId);
         }
         return courseDOList.stream()
-                .map(courseDO -> Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseDataService))
+                .map(courseDO ->  courseConverter.toDTOV4(courseDO))
                 .collect(java.util.stream.Collectors.toList());
     }
 
@@ -269,7 +269,7 @@ public class CourseService {
     }
 
     // 获取热门课程（使用Redis排行榜）
-    public List<CourseDTOV4> getHotCourses(int limit) {
+    public List<CourseDTO> getHotCourses(int limit) {
         try {
             List<Long> hotCourseIds = courseRankingService.getHotCourseIds(limit);
             
@@ -279,7 +279,7 @@ public class CourseService {
             
             List<CourseDO> courseDOList = courseDataService.getByIds(hotCourseIds);
             
-            List<CourseDTOV4> result = new ArrayList<>();
+            List<CourseDTO> result = new ArrayList<>();
             for (CourseDO courseDO : courseDOList) {
                 result.add(convertToDTOWithStats(courseDO));
             }
@@ -292,7 +292,7 @@ public class CourseService {
     }
     
     // 获取热门课程完整排行榜
-    public List<CourseDTOV4> getHotCoursesRanking() {
+    public List<CourseDTO> getHotCoursesRanking() {
         try {
             int rankingLimit = systemProperties.getCourse().getHotCoursesRankingLimit();
             List<Long> hotCourseIds = courseRankingService.getHotCourseIds(rankingLimit);
@@ -303,7 +303,7 @@ public class CourseService {
             
             List<CourseDO> courseDOList = courseDataService.getByIds(hotCourseIds);
             
-            List<CourseDTOV4> result = new ArrayList<>();
+            List<CourseDTO> result = new ArrayList<>();
             for (CourseDO courseDO : courseDOList) {
                 result.add(convertToDTOWithStats(courseDO));
             }

@@ -5,9 +5,12 @@ import com.prosper.learn.domain.config.SystemProperties;
 
 import static com.prosper.learn.common.Enums.UserRoadmapState;
 
+import com.prosper.learn.domain.service.converter.ProfessionConverter;
 import com.prosper.learn.domain.service.converter.RoadmapConverter;
+import com.prosper.learn.domain.service.converter.UserConverter;
 import com.prosper.learn.domain.service.converter.UserRoadmapConverter;
 import com.prosper.learn.dto.response.ProfessionDTO;
+import com.prosper.learn.dto.response.RoadmapDTO;
 import com.prosper.learn.dto.response.old.RoadmapDTOV1;
 import com.prosper.learn.dto.response.old.RoadmapDTOV2;
 import com.prosper.learn.dto.response.UserRoadmapDTO;
@@ -41,6 +44,8 @@ public class UserRoadmapService {
     private final SystemProperties systemProperties;
     private final UserRoadmapConverter userRoadmapConverter;
     private final RoadmapConverter roadmapConverter;
+    private final UserConverter userConverter;
+    private final ProfessionConverter professionConverter;
 
     // 不变常量 - 进度相关
     private static final int INITIAL_PROGRESS = 0;
@@ -147,8 +152,8 @@ public class UserRoadmapService {
             RoadmapDO roadmapDO = roadmapDataService.getById(roadmapId);
             if (roadmapDO != null) {
                 //RoadmapDTOV2 roadmapDTO = roadmapConverter.toRoadmapDTOV2WithUser(roadmapDO, userDataService);
-                RoadmapDTOV1 roadmapDTOV1 = roadmapConverter.toDTOV2(roadmapDO);
-                dto.setRoadmap(roadmapDTOV1);
+                RoadmapDTO roadmapDTO = roadmapConverter.toDTOV2(roadmapDO);
+                dto.setRoadmap(roadmapDTO);
             }
 
             return dto;
@@ -215,21 +220,22 @@ public class UserRoadmapService {
 
         // 转换为 DTO 并填充 roadmap 信息
         return userRoadmapList.stream()
-                .map(progressDO -> {
-                    UserRoadmapDTO dto = Converter.INSTANCE.toUserRoadmapDTO(progressDO);
-                    RoadmapDO roadmapDO = roadmapMap.get(progressDO.getRoadmapId());
+                .map(userRoadmapDO -> {
+                    UserRoadmapDTO dto = userRoadmapConverter.toDTO(userRoadmapDO);
+                    RoadmapDO roadmapDO = roadmapMap.get(userRoadmapDO.getRoadmapId());
 
                     if (roadmapDO != null) {
                         // 这里的content已经在上面解析过了
-                        RoadmapDTOV2 roadmapDTO = Converter.INSTANCE.toRoadmapDTOV2WithUser(roadmapDO, userDataService);
+                        RoadmapDTO roadmapDTO = roadmapConverter.toDTOV2(roadmapDO);
 
+                        /*
                         // 设置 profession 信息
                         ProfessionDO professionDO = professionMap.get(roadmapDO.getProfessionId());
                         if (professionDO != null) {
                             ProfessionDTO professionDTO = Converter.INSTANCE.toProfessionDTO(professionDO);
                             roadmapDTO.setProfession(professionDTO);
                         }
-
+                         */
                         dto.setRoadmap(roadmapDTO);
                     }
                     return dto;
@@ -314,25 +320,26 @@ public class UserRoadmapService {
      * @return 更新后的学习进度记录
      */
     public UserRoadmapDTO updateProgress(Long userId, Long roadmapId, Integer progressPercent) {
-        UserRoadmapDO progressDO = userRoadmapDataService.getByUserAndRoadmap(userId, roadmapId);
+        UserRoadmapDO userRoadmapDO = userRoadmapDataService.getByUserAndRoadmap(userId, roadmapId);
 
-        if (progressDO == null) {
+        if (userRoadmapDO == null) {
             throw ErrorCode.USER_ROADMAP_NOT_FOUND.exception();
         }
 
-        progressDO.setProgressPercent(progressPercent);
+        userRoadmapDO.setProgressPercent(progressPercent);
 
         // 如果进度达到100%，标记为完成
         if (progressPercent >= 100) {
-            progressDO.setState(UserRoadmapState.COMPLETED.value());
-            progressDO.setCompletedAt(LocalDateTime.now());
+            userRoadmapDO.setState(UserRoadmapState.COMPLETED.value());
+            userRoadmapDO.setCompletedAt(LocalDateTime.now());
         } else if (progressPercent > 0) {
-            progressDO.setState(UserRoadmapState.IN_PROGRESS.value());
+            userRoadmapDO.setState(UserRoadmapState.IN_PROGRESS.value());
         }
 
-        userRoadmapDataService.update(progressDO);
+        userRoadmapDataService.update(userRoadmapDO);
 
-        return Converter.INSTANCE.toUserRoadmapDTO(progressDO);
+        //return Converter.INSTANCE.toUserRoadmapDTO(progressDO);
+        return userRoadmapConverter.toDTO(userRoadmapDO);
     }
 
     /**

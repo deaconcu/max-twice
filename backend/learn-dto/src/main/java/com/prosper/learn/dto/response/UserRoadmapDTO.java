@@ -11,7 +11,7 @@ public class UserRoadmapDTO {
 
     private Long userId;
 
-    private RoadmapDTOV1 roadmap;
+    private RoadmapDTO roadmap;
 
     private Integer progressPercent;
 

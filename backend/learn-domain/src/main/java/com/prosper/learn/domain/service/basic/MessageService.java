@@ -8,7 +8,6 @@ import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
-import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.domain.util.Util;
 import com.prosper.learn.dto.response.message.*;
 import com.prosper.learn.persistence.dataobject.CourseDO;

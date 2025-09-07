@@ -7,15 +7,11 @@ import org.mapstruct.*;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface MessageConverter {
+public abstract class MessageConverter {
     
     @Named("toDTO")
-    MessageDTO toDTO(MessageDO messageDO);
+    public abstract MessageDTO toDTO(MessageDO messageDO);
     
     @IterableMapping(qualifiedByName = "toDTO")
-    List<MessageDTO> toDTO(List<MessageDO> messageDOList);
-    
-    MessageDO toMessageDO(MessageDTO messageDTO);
-    
-    List<MessageDO> toMessageDO(List<MessageDTO> messageDTOList);
+    public abstract List<MessageDTO> toDTO(List<MessageDO> messageDOList);
 }

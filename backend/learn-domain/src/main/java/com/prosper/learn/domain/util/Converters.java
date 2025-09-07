@@ -27,7 +27,7 @@ public interface Converters {
 
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
     @Mapping(target = "updatedAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    @Mapping(target = "parent", ignore = true) // 自定义处理 parent 字段
+    //@Mapping(target = "parent", ignore = true) // 自定义处理 parent 字段
     CourseDTOV4 toCourseDTOV4(CourseDO item);
 
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
@@ -67,25 +67,25 @@ public interface Converters {
 
     // posting
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    @Mapping(source = "creator", target="creatorId")
-    @Mapping(target = "creator", ignore = true)
+    //@Mapping(source = "creator", target="creatorId")
+    //@Mapping(target = "creator", ignore = true)
     PostDTOV1 toPostDTO(PostDO item);
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    @Mapping(source = "creator", target="creatorId")
-    @Mapping(target = "creator", ignore = true)
+    //@Mapping(source = "creator", target="creatorId")
+    //@Mapping(target = "creator", ignore = true)
     List<PostDTOV1> toPostDTO(List<PostDO> list);
 
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    @Mapping(source = "creator", target="creatorId")
-    @Mapping(target = "creator", ignore = true)
+    //@Mapping(source = "creator", target="creatorId")
+    //@Mapping(target = "creator", ignore = true)
     PostDTOV2 toPostDTOV2(PostDO item);
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    @Mapping(source = "creator", target="creatorId")
-    @Mapping(target = "creator", ignore = true)
+    //@Mapping(source = "creator", target="creatorId")
+    //@Mapping(target = "creator", ignore = true)
     List<PostDTOV2> toPostDTOV2(List<PostDO> list);
 
     @Mapping(target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss")
-    @Mapping(source = "creatorId", target="creator")
+    //@Mapping(source = "creatorId", target="creator")
     PostDO toPostDO(PostDTOV1 item);
 
     // follow

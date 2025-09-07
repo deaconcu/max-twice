@@ -30,7 +30,7 @@ public class RoadmapDTO {
 
     private Long creatorId;
 
-    private UserDTOV4 creator;
+    private UserDTO creator;
 
     private LocalDateTime updatedAt;
 

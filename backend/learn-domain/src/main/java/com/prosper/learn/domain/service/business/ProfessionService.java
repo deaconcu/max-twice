@@ -5,7 +5,7 @@ import static com.prosper.learn.common.Enums.ProfessionState;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ProfessionRankingService;
-import com.prosper.learn.domain.util.Converter;
+import com.prosper.learn.domain.service.converter.ProfessionConverter;
 import com.prosper.learn.dto.request.CreateProfessionRequest;
 import com.prosper.learn.dto.request.UpdateProfessionRequest;
 import com.prosper.learn.dto.response.ProfessionDTO;
@@ -26,6 +26,7 @@ public class ProfessionService {
     private final ProfessionDataService professionDataService;
     private final ProfessionRankingService professionRankingService;
     private final SystemProperties systemProperties;
+    private final ProfessionConverter professionConverter;
     
     // ========== 常量定义 ==========
     
@@ -36,34 +37,34 @@ public class ProfessionService {
     public ProfessionDTO getById(long id) {
         validateProfessionId(id);
         ProfessionDO professionDO = professionDataService.getById(id);
-        return professionDO != null ? Converter.INSTANCE.toProfessionDTO(professionDO) : null;
+        return professionDO != null ? professionConverter.toDTO(professionDO) : null;
     }
 
     public List<ProfessionDTO> getListByStateAndLastId(ProfessionState state, long lastId) {
         List<ProfessionDO> professionDOList = professionDataService.listByStateAndLastId(state.value(), lastId);
-        return Converter.INSTANCE.toProfessionDTO(professionDOList);
+        return professionConverter.toDTO(professionDOList);
     }
 
     public List<ProfessionDTO> getListByMainCategoryAndLastId(int mainCategory, long lastId) {
         List<ProfessionDO> professionDOList = professionDataService.listByMainCategoryAndLastId(mainCategory, lastId);
-        return Converter.INSTANCE.toProfessionDTO(professionDOList);
+        return professionConverter.toDTO(professionDOList);
     }
 
     public List<ProfessionDTO> getListBySubCategoryAndLastId(int subCategory, long lastId) {
         List<ProfessionDO> professionDOList = professionDataService.listBySubCategoryAndLastId(subCategory, lastId);
-        return Converter.INSTANCE.toProfessionDTO(professionDOList);
+        return professionConverter.toDTO(professionDOList);
     }
 
     public List<ProfessionDTO> getListByCategoryAndLastId(int mainCategory, int subCategory, long lastId) {
         List<ProfessionDO> professionDOList = professionDataService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
-        return Converter.INSTANCE.toProfessionDTO(professionDOList);
+        return professionConverter.toDTO(professionDOList);
     }
 
     public List<ProfessionDTO> getListByPage(int page) {
         validatePageNumber(page);
         int pageSize = systemProperties.getProfession().getDefaultPageSize();
         List<ProfessionDO> professionDOList = professionDataService.listByPage((page - 1) * pageSize, pageSize);
-        return Converter.INSTANCE.toProfessionDTO(professionDOList);
+        return professionConverter.toDTO(professionDOList);
     }
 
     public Long create(long userId, CreateProfessionRequest request) {
@@ -157,7 +158,7 @@ public class ProfessionService {
             
             List<ProfessionDTO> result = new ArrayList<>();
             for (ProfessionDO professionDO : professionDOList) {
-                ProfessionDTO professionDTO = Converter.INSTANCE.toProfessionDTO(professionDO);
+                ProfessionDTO professionDTO = professionConverter.toDTO(professionDO);
                 
                 long learningCount = professionRankingService.getProfessionLearningCount(professionDO.getId());
                 professionDTO.setLearnerCount((int) learningCount);

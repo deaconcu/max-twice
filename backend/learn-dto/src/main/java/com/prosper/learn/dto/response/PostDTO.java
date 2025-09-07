@@ -17,7 +17,7 @@ public class PostDTO {
 
     private Long creatorId;
 
-    private UserDTOV1 creator;
+    private UserDTO creator;
 
     private Integer type;
 

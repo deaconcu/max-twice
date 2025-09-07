@@ -4,7 +4,9 @@ import static com.prosper.learn.common.Enums.UserCourseState;
 
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
-import com.prosper.learn.domain.util.Converter;
+import com.prosper.learn.domain.service.converter.CourseConverter;
+import com.prosper.learn.domain.service.converter.UserCourseConverter;
+import com.prosper.learn.dto.response.CourseDTO;
 import com.prosper.learn.dto.response.old.CourseDTOV2;
 import com.prosper.learn.dto.response.UserCourseDTO;
 import com.prosper.learn.persistence.dataobject.CourseDO;
@@ -27,6 +29,8 @@ public class UserCourseService {
     private final UserCourseDataService userCourseDataService;
     private final CourseDataService courseDataService;
     private final CourseRankingService courseRankingService;
+    private final CourseConverter courseConverter;
+    private final UserCourseConverter userCourseConverter;
 
     // ========== 常量定义 ==========
     private static final int MIN_PROGRESS = 0;
@@ -79,7 +83,7 @@ public class UserCourseService {
     private void loadCourseInfo(UserCourseDTO dto, Long courseId) {
         CourseDO courseDO = courseDataService.getById(courseId);
         if (courseDO != null) {
-            List<CourseDTOV2> courseList = Converter.INSTANCE.toCourseDTOV2(List.of(courseDO));
+            List<CourseDTO> courseList = courseConverter.toDTOV2(List.of(courseDO));
             if (!courseList.isEmpty()) {
                 dto.setCourse(courseList.get(0));
             }
@@ -152,7 +156,7 @@ public class UserCourseService {
             return null;
         }
 
-        UserCourseDTO dto = Converter.INSTANCE.toUserCourseDTO(userCourseDo);
+        UserCourseDTO dto = userCourseConverter.toDTO(userCourseDo);
         // 加载课程信息
         loadCourseInfo(dto, userCourseDo.getCourseId());
 
@@ -171,7 +175,7 @@ public class UserCourseService {
             lastId = DEFAULT_MAX_ID;
         }
         List<UserCourseDO> userCourseDOList = userCourseDataService.getByUserId(userId, lastId);
-        List<UserCourseDTO> dtoList = Converter.INSTANCE.toUserCourseDTO(userCourseDOList);
+        List<UserCourseDTO> dtoList = userCourseConverter.toDTO(userCourseDOList);
 
         // 批量加载课程信息
         Set<Long> courseIds = userCourseDOList.stream()
@@ -180,9 +184,9 @@ public class UserCourseService {
 
         if (!courseIds.isEmpty()) {
             List<CourseDO> courses = courseDataService.getByIds(courseIds.stream().toList());
-            List<CourseDTOV2> courseDTOList = Converter.INSTANCE.toCourseDTOV2(courses);
+            List<CourseDTO> courseDTOList = courseConverter.toDTOV2(courses);
 
-            Map<Long, CourseDTOV2> courseMap = courseDTOList.stream()
+            Map<Long, CourseDTO> courseMap = courseDTOList.stream()
                 .collect(Collectors.toMap(course -> (long) course.getId(), course -> course));
 
             // 为每个UserCourseDTO设置对应的课程信息
@@ -214,7 +218,7 @@ public class UserCourseService {
         updateLearningState(progressDO, progressPercent);
         userCourseDataService.update(progressDO);
 
-        UserCourseDTO dto = Converter.INSTANCE.toUserCourseDTO(progressDO);
+        UserCourseDTO dto = userCourseConverter.toDTO(progressDO);
         // 加载课程信息
         loadCourseInfo(dto, courseId);
 

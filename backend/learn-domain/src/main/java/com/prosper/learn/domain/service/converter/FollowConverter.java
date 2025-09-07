@@ -7,11 +7,11 @@ import org.mapstruct.*;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface FollowConverter {
+public abstract class FollowConverter {
     
     @Named("toDTO")
-    FollowDTO toDTO(FollowDO followDO);
+    public abstract FollowDTO toDTO(FollowDO followDO);
     
     @IterableMapping(qualifiedByName = "toDTO")
-    List<FollowDTO> toDTO(List<FollowDO> followDOList);
+    public abstract List<FollowDTO> toDTO(List<FollowDO> followDOList);
 }

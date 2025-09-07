@@ -1,46 +1,39 @@
 package com.prosper.learn.domain.service.converter;
 
+import com.prosper.learn.dto.response.NodeDTO;
 import com.prosper.learn.dto.response.old.NodeDTOV0;
 import com.prosper.learn.persistence.dataobject.NodeDO;
 import com.prosper.learn.domain.service.data.CourseDataService;
 import org.mapstruct.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", 
-        uses = {CourseDataService.class}, 
-        unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface NodeConverter {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public abstract class NodeConverter {
+
+    @Autowired
+    protected CourseDataService courseDataService;
     
     @Named("toDTO")
-    NodeDTOV0 toDTO(NodeDO nodeDO);
+    public abstract NodeDTO toDTO(NodeDO nodeDO);
     
     @IterableMapping(qualifiedByName = "toDTO")
-    List<NodeDTOV0> toDTO(List<NodeDO> nodeDOList);
-    
-    NodeDO toNodeDO(NodeDTOV0 nodeDTOV0);
+    public abstract List<NodeDTO> toDTO(List<NodeDO> nodeDOList);
     
     @Named("toDTOV1")
+    @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "name")
-    NodeDTOV0 toDTOV1(NodeDO nodeDO);
+    public abstract NodeDTO toDTOV1(NodeDO nodeDO);
     
     @IterableMapping(qualifiedByName = "toDTOV1")
-    List<NodeDTOV0> toDTOV1(List<NodeDO> nodeDOList);
-    
-    @Named("toDTOV2")
-    @Mapping(target = "id")
-    @Mapping(target = "name")
-    @Mapping(target = "isCompleted", ignore = true)
-    NodeDTOV0 toDTOV2(NodeDO nodeDO);
-    
-    @IterableMapping(qualifiedByName = "toDTOV2")
-    List<NodeDTOV0> toDTOV2(List<NodeDO> nodeDOList);
-    
-    default NodeDTOV0 toDTOV2WithCompleted(NodeDO nodeDO, boolean isCompleted) {
+    public abstract List<NodeDTO> toDTOV1(List<NodeDO> nodeDOList);
+
+    public NodeDTO toDTOV2(NodeDO nodeDO, boolean isCompleted) {
         if (nodeDO == null) return null;
         
-        NodeDTOV0 dto = toDTOV2(nodeDO);
+        NodeDTO dto = toDTOV1(nodeDO);
         dto.setIsCompleted(isCompleted);
         return dto;
     }

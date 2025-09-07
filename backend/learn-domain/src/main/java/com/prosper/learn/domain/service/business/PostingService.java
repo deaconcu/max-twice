@@ -9,7 +9,10 @@ import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.DailyStatsService;
-import com.prosper.learn.domain.util.Converter;
+import com.prosper.learn.domain.service.converter.CourseConverter;
+import com.prosper.learn.domain.service.converter.NodeConverter;
+import com.prosper.learn.domain.service.converter.PostConverter;
+import com.prosper.learn.domain.service.converter.UserConverter;
 import com.prosper.learn.dto.request.CreatePostRequest;
 import com.prosper.learn.dto.request.UpdatePostRequest;
 import com.prosper.learn.dto.response.old.NodeDTOV0;
@@ -50,29 +53,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostingService {
 
-    /** 节点数据访问接口 */
     private final NodeDataService nodeDataService;
-    
-    /** 帖子数据访问接口 */
     private final PostDataService postDataService;
-    
-    /** 课程数据访问接口 */
     private final CourseDataService courseDataService;
-    
-    /** 点赞数据访问接口 */
     private final UpvoteDataService upvoteDataService;
-    
-    /** 用户数据访问接口 */
     private final UserDataService userDataService;
-    
-    /** 日常统计服务 */
     private final DailyStatsService dailyStatsService;
-    
-    /** JSON对象映射器 */
     private final ObjectMapper objectMapper;
-    
-    /** 系统配置属性 */
     private final SystemProperties systemProperties;
+    private final UserConverter userConverter;
+    private final NodeConverter nodeConverter;
+    private final CourseConverter courseConverter;
+    private final PostConverter postConverter;
 
     // ========== 私有验证方法 ==========
     

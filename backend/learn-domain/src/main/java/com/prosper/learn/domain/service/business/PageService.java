@@ -8,7 +8,10 @@ import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ContentsService;
-import com.prosper.learn.domain.util.Converter;
+import com.prosper.learn.domain.service.converter.CourseConverter;
+import com.prosper.learn.domain.service.converter.NodeConverter;
+import com.prosper.learn.domain.service.converter.PostConverter;
+import com.prosper.learn.domain.service.converter.UserConverter;
 import com.prosper.learn.dto.response.*;
 import com.prosper.learn.dto.response.old.*;
 import com.prosper.learn.persistence.dataobject.*;
@@ -42,6 +45,11 @@ public class PageService {
     private final UserCourseDataService userCourseDataService;
     private final UserProfileDataService userProfileDataService;
     private final SystemProperties systemProperties;
+    private final NodeConverter nodeConverter;
+    private final PostConverter postConverter;
+    private final UserConverter userConverter;
+    private final CourseConverter courseConverter;
+
     
     // ========== 常量定义 ==========
     
@@ -53,7 +61,7 @@ public class PageService {
     
     // ========== 公共方法 ==========
 
-    public Utils.Pair<String, Map<Long, NodeDTOV2>> getToc(long userId, long courseId, boolean create) {
+    public Utils.Pair<String, Map<Long, NodeDTO>> getToc(long userId, long courseId, boolean create) {
 
         ArrayNode arrayNode = contentsService.getToc(userId, courseId, create);
 
@@ -66,10 +74,10 @@ public class PageService {
         Set<Integer> completedNodes = learningProgressService.getUserCompletedNodes(userId);
 
         // 构建包含完成状态的节点信息
-        Map<Long, NodeDTOV2> nodeInfos = nodeList.stream()
+        Map<Long, NodeDTO> nodeInfos = nodeList.stream()
                 .collect(Collectors.toMap(
                         NodeDO::getId,
-                        node -> Converter.INSTANCE.toNodeDTOV2(node, completedNodes.contains(node.getId()))
+                        node -> nodeConverter.toDTOV2(node, completedNodes.contains(node.getId()))
                 ));
 
 
@@ -157,7 +165,7 @@ public class PageService {
      * 核心页面数据聚合逻辑
      */
     private Map<String, Object> readPageData(CourseDO courseDO, String path, NodeDO nodeDO, PostDO postDO, long userId) {
-        Utils.Pair<String, Map<Long, NodeDTOV2>> response = getToc(userId, courseDO.getId(), true);
+        Utils.Pair<String, Map<Long, NodeDTO>> response = getToc(userId, courseDO.getId(), true);
         CourseTocDTO courseTocDTO = new CourseTocDTO(response.left(), response.right());
 
         JsonNode rootNode = parseJsonSafely(courseTocDTO.getContents());
@@ -166,26 +174,26 @@ public class PageService {
         Utils.Pair<Long, JsonNode> pair = getNodeByPath(rootNode, path, courseDO.getRootNodeId());
         
         List<Long> userIds = new LinkedList<>();
-        PostDTOV1 chosenPosting = extractChosenPosting(pair.right(), userIds);
-        List<PostDTOV1> fixedPostings = extractFixedPostings(pair.right(), userIds);
+        PostDTO chosenPosting = extractChosenPosting(pair.right(), userIds);
+        List<PostDTO> fixedPostings = extractFixedPostings(pair.right(), userIds);
         
         if (nodeDO == null) {
             long nodeId = pair.left();
             nodeDO = validateNodeExists(nodeId);
         }
         
-        List<PostDTOV1> otherPostings = getOtherPostings(nodeDO.getId(), userIds);
-        Map<Long, UserDTOV1> userMap = buildUserMap(userIds);
+        List<PostDTO> otherPostings = getOtherPostings(nodeDO.getId(), userIds);
+        Map<Long, UserDTO> userMap = buildUserMap(userIds);
         
         setPostCreators(chosenPosting, fixedPostings, otherPostings, userMap);
         setVoteTypes(userId, chosenPosting, fixedPostings, otherPostings);
         
-        PostDTOV1 postDTO = buildPostDTO(postDO, userMap);
+        PostDTO postDTO = buildPostDTO(postDO, userMap);
         long lastId = calculateLastId(chosenPosting, fixedPostings, otherPostings);
         
         boolean learning = checkLearningStatus(userId, courseDO.getId());
-        CourseDTOV4 parentCourse = buildParentCourse(courseDO, userId);
-        List<CourseDTOV2> subCourseList = getSubCourses(parentCourse.getId());
+        CourseDTO parentCourse = buildParentCourse(courseDO, userId);
+        List<CourseDTO> subCourseList = getSubCourses(parentCourse.getId());
         
         boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
         Integer courseProgress = getCourseProgress(userId, courseDO.getId());
@@ -302,18 +310,18 @@ public class PageService {
         return pair;
     }
     
-    private PostDTOV1 extractChosenPosting(JsonNode currentNode, List<Long> userIds) {
+    private PostDTO extractChosenPosting(JsonNode currentNode, List<Long> userIds) {
         if (currentNode != null && currentNode.has(CHOSEN_POST_FIELD)) {
             PostDO chosenPostDO = postingService.get(currentNode.get(CHOSEN_POST_FIELD).asInt());
             if (chosenPostDO != null) {
                 userIds.add(chosenPostDO.getCreatorId());
-                return Converter.INSTANCE.toPostDTO(chosenPostDO);
+                return postConverter.toDTO(chosenPostDO);
             }
         }
         return null;
     }
     
-    private List<PostDTOV1> extractFixedPostings(JsonNode currentNode, List<Long> userIds) {
+    private List<PostDTO> extractFixedPostings(JsonNode currentNode, List<Long> userIds) {
         if (currentNode != null && currentNode.has(FIXED_POSTS_FIELD)) {
             ArrayNode idsNode = (ArrayNode) currentNode.get(FIXED_POSTS_FIELD);
             List<Long> fixedIds = objectMapper.convertValue(idsNode, List.class);
@@ -321,27 +329,27 @@ public class PageService {
             List<PostDO> postDOList = postingService.getList(fixedIds);
             postDOList.forEach(postDO -> userIds.add(postDO.getCreatorId()));
             
-            return Converter.INSTANCE.toPostDTO(postDOList);
+            return postConverter.toDTO(postDOList);
         }
         return null;
     }
     
-    private List<PostDTOV1> getOtherPostings(Long nodeId, List<Long> userIds) {
+    private List<PostDTO> getOtherPostings(Long nodeId, List<Long> userIds) {
         List<PostDO> postDOList = postingService.getList(nodeId);
         postDOList.forEach(postDO -> userIds.add(postDO.getCreatorId()));
-        return Converter.INSTANCE.toPostDTO(postDOList);
+        return postConverter.toDTO(postDOList);
     }
     
-    private Map<Long, UserDTOV1> buildUserMap(List<Long> userIds) {
+    private Map<Long, UserDTO> buildUserMap(List<Long> userIds) {
         if (userIds.isEmpty()) {
             return new HashMap<>();
         }
         
-        List<UserDTOV1> userList = Converter.INSTANCE.toUserDTOV1(userDataService.getByIds(userIds));
-        return userList.stream().collect(Collectors.toMap(UserDTOV1::getId, user -> user));
+        List<UserDTO> userList = userConverter.toDTOV1(userDataService.getByIds(userIds));
+        return userList.stream().collect(Collectors.toMap(UserDTO::getId, user -> user));
     }
     
-    private void setPostCreators(PostDTOV1 chosenPosting, List<PostDTOV1> fixedPostings, List<PostDTOV1> otherPostings, Map<Long, UserDTOV1> userMap) {
+    private void setPostCreators(PostDTO chosenPosting, List<PostDTO> fixedPostings, List<PostDTO> otherPostings, Map<Long, UserDTO> userMap) {
         if (chosenPosting != null) {
             chosenPosting.setCreator(userMap.get(chosenPosting.getCreatorId()));
         }
@@ -355,7 +363,7 @@ public class PageService {
         }
     }
     
-    private void setVoteTypes(long userId, PostDTOV1 chosenPosting, List<PostDTOV1> fixedPostings, List<PostDTOV1> otherPostings) {
+    private void setVoteTypes(long userId, PostDTO chosenPosting, List<PostDTO> fixedPostings, List<PostDTO> otherPostings) {
         List<Long> allPostingIds = new ArrayList<>();
         
         if (chosenPosting != null) allPostingIds.add(chosenPosting.getId());
@@ -391,25 +399,25 @@ public class PageService {
         }
     }
     
-    private PostDTOV1 buildPostDTO(PostDO postDO, Map<Long, UserDTOV1> userMap) {
+    private PostDTO buildPostDTO(PostDO postDO, Map<Long, UserDTO> userMap) {
         if (postDO == null) {
             return null;
         }
         
-        PostDTOV1 postDTO = Converter.INSTANCE.toPostDTO(postDO);
+        PostDTO postDTO = postConverter.toDTO(postDO);
         postDTO.setCreator(userMap.get(postDTO.getCreatorId()));
         return postDTO;
     }
     
-    private long calculateLastId(PostDTOV1 chosenPosting, List<PostDTOV1> fixedPostings, List<PostDTOV1> otherPostings) {
+    private long calculateLastId(PostDTO chosenPosting, List<PostDTO> fixedPostings, List<PostDTO> otherPostings) {
         long lastId = -1;
         
         if (chosenPosting != null) lastId = Math.max(lastId, chosenPosting.getId());
         if (fixedPostings != null) {
-            lastId = Math.max(lastId, fixedPostings.stream().mapToLong(PostDTOV1::getId).max().orElse(-1));
+            lastId = Math.max(lastId, fixedPostings.stream().mapToLong(PostDTO::getId).max().orElse(-1));
         }
         if (otherPostings != null) {
-            lastId = Math.max(lastId, otherPostings.stream().mapToLong(PostDTOV1::getId).max().orElse(-1));
+            lastId = Math.max(lastId, otherPostings.stream().mapToLong(PostDTO::getId).max().orElse(-1));
         }
         
         return lastId;
@@ -420,13 +428,13 @@ public class PageService {
         return userCourseDo != null;
     }
     
-    private CourseDTOV4 buildParentCourse(CourseDO courseDO, long userId) {
-        CourseDTOV4 parentCourse;
+    private CourseDTO buildParentCourse(CourseDO courseDO, long userId) {
+        CourseDTO parentCourse;
         if (courseDO.getParentCourseId() != 0) {
             CourseDO parentCourseDO = courseDataService.getById(courseDO.getParentCourseId());
-            parentCourse = Converter.INSTANCE.toCourseDTOV4(parentCourseDO, false);
+            parentCourse = courseConverter.toDTOV4(parentCourseDO);
         } else {
-            parentCourse = Converter.INSTANCE.toCourseDTOV4(courseDO, false);
+            parentCourse = courseConverter.toDTOV4(courseDO);
         }
         
         boolean subscribed = checkSubscriptionStatus(userId, parentCourse.getId());
@@ -454,9 +462,8 @@ public class PageService {
         }
     }
     
-    private List<CourseDTOV2> getSubCourses(long parentCourseId) {
-        return Converter.INSTANCE.toCourseDTOV2(
-            courseDataService.listByParentAndState(CourseState.APPROVED, parentCourseId));
+    private List<CourseDTO> getSubCourses(long parentCourseId) {
+        return courseConverter.toDTOV2(courseDataService.listByParentAndState(CourseState.APPROVED, parentCourseId));
     }
     
     private Integer getCourseProgress(long userId, Long courseId) {
@@ -465,10 +472,10 @@ public class PageService {
     }
     
     private Map<String, Object> buildPageDataResponse(CourseTocDTO courseTocDTO, NodeDO nodeDO,
-                                                      CourseDTOV4 parentCourse, CourseDO courseDO, List<CourseDTOV2> subCourseList,
-                                                      PostDTOV1 chosenPosting, List<PostDTOV1> fixedPostings, List<PostDTOV1> otherPostings,
-                                                      long lastId, String path, Collection<UserDTOV1> users, boolean learning,
-                                                      PostDTOV1 postDTO, boolean nodeCompleted, Integer courseProgress) {
+                                                      CourseDTO parentCourse, CourseDO courseDO, List<CourseDTO> subCourseList,
+                                                      PostDTO chosenPosting, List<PostDTO> fixedPostings, List<PostDTO> otherPostings,
+                                                      long lastId, String path, Collection<UserDTO> users, boolean learning,
+                                                      PostDTO postDTO, boolean nodeCompleted, Integer courseProgress) {
         
         Map<String, Object> data = new HashMap<>();
         
@@ -479,10 +486,10 @@ public class PageService {
             log.error("TOC内容解析失败", e);
             data.put("toc", new ArrayList<>());
         }
-        
-        data.put("node", Converter.INSTANCE.toNodeDTOV2(nodeDO, nodeCompleted));
+
+        data.put("node", nodeConverter.toDTOV2(nodeDO, nodeCompleted));
         data.put("parentCourse", parentCourse);
-        data.put("course", Converter.INSTANCE.toCourseDTOV4(courseDO, parentCourse.getSubscribed(), courseProgress));
+        data.put("course", courseConverter.toDTOV4(courseDO, parentCourse.getSubscribed(), courseProgress));
         data.put("subCourseList", subCourseList);
         data.put("chosenPosting", chosenPosting);
         data.put("fixedPostings", fixedPostings);

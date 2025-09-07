@@ -23,7 +23,7 @@ public class CourseDTO {
     private Long parentCourseId;
     
     // === 父课程信息 (V4特有的嵌套对象) ===
-    private CourseDTOV3 parentCourse;  // 保持原有的CourseDTOV3类型
+    private CourseDTO parentCourse;  // 保持原有的CourseDTOV3类型
     
     // === 状态字段 (V1, V4有) ===
     private String state; // SUBMITTED, APPROVED, REJECTED
