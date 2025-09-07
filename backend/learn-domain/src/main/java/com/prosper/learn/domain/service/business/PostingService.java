@@ -15,6 +15,9 @@ import com.prosper.learn.domain.service.converter.PostConverter;
 import com.prosper.learn.domain.service.converter.UserConverter;
 import com.prosper.learn.dto.request.CreatePostRequest;
 import com.prosper.learn.dto.request.UpdatePostRequest;
+import com.prosper.learn.dto.response.NodeDTO;
+import com.prosper.learn.dto.response.PostDTO;
+import com.prosper.learn.dto.response.UserDTO;
 import com.prosper.learn.dto.response.old.NodeDTOV0;
 import com.prosper.learn.dto.response.old.PostDTOV1;
 import com.prosper.learn.dto.response.old.PostDTOV2;
@@ -128,7 +131,7 @@ public class PostingService {
     /**
      * 为PostDTO列表设置完整的关联信息（用户、节点、课程）
      */
-    private void setPostDTOAssociations(List<PostDTOV1> postDTOList) {
+    private void setPostDTOAssociations(List<PostDTO> postDTOList) {
         if (postDTOList == null || postDTOList.isEmpty()) {
             return;
         }
@@ -153,19 +156,19 @@ public class PostingService {
         }
         
         // 设置关联信息
-        for (PostDTOV1 postDTO : postDTOList) {
+        for (PostDTO postDTO : postDTOList) {
             // 设置用户信息
-            postDTO.setCreator(Converter.INSTANCE.toUserDTOV1(userMap.get(postDTO.getCreatorId())));
+            postDTO.setCreator(userConverter.toDTOV1(userMap.get(postDTO.getCreatorId())));
             
             // 设置节点信息
             NodeDO nodeDO = nodeMap.get(postDTO.getNodeId());
             if (nodeDO != null) {
-                NodeDTOV0 nodeDTOV0 = Converter.INSTANCE.toNodeDTO(nodeDO);
-                postDTO.setNode(nodeDTOV0);
+                NodeDTO nodeDTO = nodeConverter.toDTO(nodeDO);
+                postDTO.setNode(nodeDTO);
                 
                 // 设置课程信息
-                if (nodeDTOV0 != null && nodeDO.getCourseId() != null) {
-                    nodeDTOV0.setCourse(Converter.INSTANCE.toCourseDTOV4(courseMap.get(nodeDO.getCourseId())));
+                if (nodeDTO != null && nodeDO.getCourseId() != null) {
+                    nodeDTO.setCourse(courseConverter.toDTOV4(courseMap.get(nodeDO.getCourseId())));
                 }
             }
         }
@@ -174,13 +177,13 @@ public class PostingService {
     /**
      * 为PostDTOV2列表设置完整的关联信息（用户、节点、课程、投票状态）
      */
-    private void setPostDTOV2Associations(List<PostDTOV2> postDTOList, Long currentUserId) {
+    private void setPostDTOV2Associations(List<PostDTO> postDTOList, Long currentUserId) {
         if (postDTOList == null || postDTOList.isEmpty()) {
             return;
         }
         
         // 批量加载用户信息
-        List<Long> userIds = postDTOList.stream().map(PostDTOV2::getCreatorId).distinct().collect(Collectors.toList());
+        List<Long> userIds = postDTOList.stream().map(PostDTO::getCreatorId).distinct().collect(Collectors.toList());
         Map<Long, UserDO> userMap = new HashMap<>();
         if (!userIds.isEmpty()) {
             List<UserDO> userList = userDataService.getByIds(userIds);
@@ -188,7 +191,7 @@ public class PostingService {
         }
         
         // 批量加载节点信息
-        List<Long> nodeIds = postDTOList.stream().map(PostDTOV2::getNodeId).distinct().collect(Collectors.toList());
+        List<Long> nodeIds = postDTOList.stream().map(PostDTO::getNodeId).distinct().collect(Collectors.toList());
         Map<Long, NodeDO> nodeMap = new HashMap<>();
         if (!nodeIds.isEmpty()) {
             List<NodeDO> nodeList = nodeDataService.getByIds(nodeIds);
@@ -198,24 +201,24 @@ public class PostingService {
         // 批量加载投票状态
         Map<Long, Integer> voteTypes = new HashMap<>();
         if (currentUserId != null) {
-            List<Long> postIds = postDTOList.stream().map(PostDTOV2::getId).collect(Collectors.toList());
+            List<Long> postIds = postDTOList.stream().map(PostDTO::getId).collect(Collectors.toList());
             voteTypes = loadVoteTypes(currentUserId, postIds);
         }
         
         // 设置关联信息
-        for (PostDTOV2 postDTO : postDTOList) {
+        for (PostDTO postDTO : postDTOList) {
             // 设置用户信息
-            postDTO.setCreator(Converter.INSTANCE.toUserDTOV1(userMap.get(postDTO.getCreatorId())));
+            postDTO.setCreator(userConverter.toDTOV1(userMap.get(postDTO.getCreatorId())));
             
             // 设置节点信息
             NodeDO nodeDO = nodeMap.get(postDTO.getNodeId());
             if (nodeDO != null) {
-                NodeDTOV0 nodeDTOV0 = Converter.INSTANCE.toNodeDTO(nodeDO);
+                NodeDTO nodeDTOV0 = nodeConverter.toDTO(nodeDO);
                 postDTO.setNode(nodeDTOV0);
                 
                 // 设置课程信息
                 if (nodeDTOV0 != null) {
-                    nodeDTOV0.setCourse(Converter.INSTANCE.toCourseDTOV4(courseDataService.getById(nodeDO.getCourseId())));
+                    nodeDTOV0.setCourse(courseConverter.toDTOV4(courseDataService.getById(nodeDO.getCourseId())));
                 }
             }
             
@@ -435,7 +438,7 @@ public class PostingService {
      * @return 文章DTO列表
      * @throws BusinessException 当用户ID无效时抛出异常
      */
-    public List<PostDTOV1> getUserArticle(long userId, long lastId) {
+    public List<PostDTO> getUserArticle(long userId, long lastId) {
         validateUserId(userId);
         if (lastId < 0) {
             throw ErrorCode.INVALID_PARAMETER.exception("最后帖子ID无效: " + lastId);
@@ -446,7 +449,7 @@ public class PostingService {
             return new ArrayList<>();
         }
 
-        List<PostDTOV1> postDTOList = Converter.INSTANCE.toPostDTO(postings);
+        List<PostDTO> postDTOList = postConverter.toDTO(postings);
 
         // 批量加载用户信息
         Map<Long, UserDO> userMap = loadUserMap(postDTOList, dto -> ((PostDTOV1) dto).getCreatorId());
@@ -454,20 +457,20 @@ public class PostingService {
         // 批量加载节点信息
         Map<Long, NodeDO> nodeMap = loadNodeMap(postDTOList, dto -> ((PostDTOV1) dto).getNodeId());
 
-        for (PostDTOV1 postDTO : postDTOList) {
-            postDTO.setNode(Converter.INSTANCE.toNodeDTO(nodeMap.get(postDTO.getNodeId())));
-            NodeDTOV0 node = postDTO.getNode();
+        for (PostDTO postDTO : postDTOList) {
+            postDTO.setNode(nodeConverter.toDTO(nodeMap.get(postDTO.getNodeId())));
+            NodeDTO node = postDTO.getNode();
             if (node != null) {
-                node.setCourse(Converter.INSTANCE.toCourseDTOV4(courseDataService.getById(node.getCourseId())));
+                node.setCourse(courseConverter.toDTOV4(courseDataService.getById(node.getCourseId())));
             }
 
-            postDTO.setCreator(Converter.INSTANCE.toUserDTOV1(userMap.get(postDTO.getCreatorId())));
+            postDTO.setCreator(userConverter.toDTOV1(userMap.get(postDTO.getCreatorId())));
         }
 
         return postDTOList;
     }
 
-    public List<PostDTOV1> getUserContents(long userId, long lastId) {
+    public List<PostDTO> getUserContents(long userId, long lastId) {
         validateUserId(userId);
         if (lastId < 0) {
             throw ErrorCode.INVALID_PARAMETER.exception("最后帖子ID无效: " + lastId);
@@ -480,8 +483,8 @@ public class PostingService {
         // 使用提取的公共方法处理内容ID转名称
         processContentPostsIdToName(postings);
 
-        List<PostDTOV1> postDTOList = Converter.INSTANCE.toPostDTO(postings);
-        List<Long> nodeIds = postDTOList.stream().map(PostDTOV1::getNodeId).collect(Collectors.toList());
+        List<PostDTO> postDTOList = postConverter.toDTO(postings);
+        List<Long> nodeIds = postDTOList.stream().map(PostDTO::getNodeId).collect(Collectors.toList());
         List<NodeDO> nodeList = nodeDataService.getByIds(nodeIds);
         Map<Long, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
 
@@ -497,19 +500,19 @@ public class PostingService {
         }
 
         // get all user
-        List<Long> userIds = postDTOList.stream().map(PostDTOV1::getCreatorId).collect(Collectors.toList());
+        List<Long> userIds = postDTOList.stream().map(PostDTO::getCreatorId).collect(Collectors.toList());
         List<UserDO> userList = userDataService.getByIds(userIds);
         Map<Long, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
 
-        for (PostDTOV1 postDTO : postDTOList) {
-            postDTO.setNode(Converter.INSTANCE.toNodeDTO(nodeMap.get(postDTO.getNodeId())));
-            NodeDTOV0 node = postDTO.getNode();
-            node.setCourse(Converter.INSTANCE.toCourseDTOV4(courseDataService.getById(node.getCourseId())));
+        for (PostDTO postDTO : postDTOList) {
+            postDTO.setNode(nodeConverter.toDTO(nodeMap.get(postDTO.getNodeId())));
+            NodeDTO node = postDTO.getNode();
+            node.setCourse(courseConverter.toDTOV4(courseDataService.getById(node.getCourseId())));
 
             if (types.containsKey(postDTO.getId()))
                 postDTO.setVoteType(types.get(postDTO.getId()));
 
-            postDTO.setCreator(Converter.INSTANCE.toUserDTOV1(userMap.get(postDTO.getCreatorId())));
+            postDTO.setCreator(userConverter.toDTOV1(userMap.get(postDTO.getCreatorId())));
         }
         return postDTOList;
     }
@@ -548,32 +551,32 @@ public class PostingService {
     /**
      * 获取用户文章列表（包含阅读量）
      */
-    public List<PostDTOV2> getUserArticleWithViews(long userId, long lastId) {
+    public List<PostDTO> getUserArticleWithViews(long userId, long lastId) {
         int count = systemProperties.getPosting().getUserContentsPageSize();
         List<PostDO> postings = postDataService.getArticleListByUser(userId, lastId, count);
         if (postings == null || postings.size() == 0) return new ArrayList<>();
 
-        List<PostDTOV2> postDTOList = Converter.INSTANCE.toPostDTOV2(postings);
+        List<PostDTO> postDTOList = postConverter.toDTOV2(postings);
 
         // 设置views字段
         setViewsForPosts(postDTOList);
 
         // get all user
-        List<Long> userIds = postDTOList.stream().map(PostDTOV2::getCreatorId).collect(Collectors.toList());
+        List<Long> userIds = postDTOList.stream().map(PostDTO::getCreatorId).collect(Collectors.toList());
         List<UserDO> userList = userDataService.getByIds(userIds);
         Map<Long, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
 
         // get all node
-        List<Long> nodeIds = postDTOList.stream().map(PostDTOV2::getNodeId).collect(Collectors.toList());
+        List<Long> nodeIds = postDTOList.stream().map(PostDTO::getNodeId).collect(Collectors.toList());
         List<NodeDO> nodeList = nodeDataService.getByIds(nodeIds);
         Map<Long, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
 
-        for (PostDTOV2 postDTO : postDTOList) {
-            postDTO.setNode(Converter.INSTANCE.toNodeDTO(nodeMap.get(postDTO.getNodeId())));
-            NodeDTOV0 node = postDTO.getNode();
-            node.setCourse(Converter.INSTANCE.toCourseDTOV4(courseDataService.getById(node.getCourseId())));
+        for (PostDTO postDTO : postDTOList) {
+            postDTO.setNode(nodeConverter.toDTO(nodeMap.get(postDTO.getNodeId())));
+            NodeDTO node = postDTO.getNode();
+            node.setCourse(courseConverter.toDTOV4(courseDataService.getById(node.getCourseId())));
 
-            postDTO.setCreator(Converter.INSTANCE.toUserDTOV1(userMap.get(postDTO.getCreatorId())));
+            postDTO.setCreator(userConverter.toDTOV1(userMap.get(postDTO.getCreatorId())));
         }
 
         return postDTOList;
@@ -582,7 +585,7 @@ public class PostingService {
     /**
      * 获取用户目录列表（包含阅读量）
      */
-    public List<PostDTOV2> getUserContentsWithViews(long userId, long lastId) {
+    public List<PostDTO> getUserContentsWithViews(long userId, long lastId) {
         int count = systemProperties.getPosting().getUserContentsPageSize();
         List<PostDO> postings = postDataService.getContentsListByUser(userId, lastId, count);
         if (postings == null || postings.size() == 0) return new ArrayList<>();
@@ -590,12 +593,12 @@ public class PostingService {
         // 使用提取的公共方法处理内容ID转名称
         processContentPostsIdToName(postings);
 
-        List<PostDTOV2> postDTOList = Converter.INSTANCE.toPostDTOV2(postings);
+        List<PostDTO> postDTOList = postConverter.toDTOV2(postings);
         
         // 设置views字段
         setViewsForPosts(postDTOList);
         
-        List<Long> nodeIds = postDTOList.stream().map(PostDTOV2::getNodeId).collect(Collectors.toList());
+        List<Long> nodeIds = postDTOList.stream().map(PostDTO::getNodeId).collect(Collectors.toList());
         List<NodeDO> nodeList = nodeDataService.getByIds(nodeIds);
         Map<Long, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
 
@@ -611,19 +614,19 @@ public class PostingService {
         }
 
         // get all user
-        List<Long> userIds = postDTOList.stream().map(PostDTOV2::getCreatorId).collect(Collectors.toList());
+        List<Long> userIds = postDTOList.stream().map(PostDTO::getCreatorId).collect(Collectors.toList());
         List<UserDO> userList = userDataService.getByIds(userIds);
         Map<Long, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
 
-        for (PostDTOV2 postDTO : postDTOList) {
-            postDTO.setNode(Converter.INSTANCE.toNodeDTO(nodeMap.get(postDTO.getNodeId())));
-            NodeDTOV0 node = postDTO.getNode();
-            node.setCourse(Converter.INSTANCE.toCourseDTOV4(courseDataService.getById(node.getCourseId())));
+        for (PostDTO postDTO : postDTOList) {
+            postDTO.setNode(nodeConverter.toDTO(nodeMap.get(postDTO.getNodeId())));
+            NodeDTO node = postDTO.getNode();
+            node.setCourse(courseConverter.toDTOV4(courseDataService.getById(node.getCourseId())));
 
             if (types.containsKey(postDTO.getId()))
                 postDTO.setVoteType(types.get(postDTO.getId()));
 
-            postDTO.setCreator(Converter.INSTANCE.toUserDTOV1(userMap.get(postDTO.getCreatorId())));
+            postDTO.setCreator(userConverter.toDTOV1(userMap.get(postDTO.getCreatorId())));
         }
         return postDTOList;
     }
@@ -631,7 +634,7 @@ public class PostingService {
     /**
      * 为文章列表设置阅读量（历史数据 + 今日实时数据）
      */
-    private void setViewsForPosts(List<PostDTOV2> postDTOList) {
+    private void setViewsForPosts(List<PostDTO> postDTOList) {
         // 使用DailyStatsService来设置阅读量
         dailyStatsService.setViewsForPosts(postDTOList);
     }
@@ -639,7 +642,8 @@ public class PostingService {
     /**
      * 批量获取帖子（带用户信息和投票状态）
      */
-    public List<PostDTOV1> getPostsWithUserAndVoteInfo(List<Long> ids, Long nodeId, double lastScore, Long lastPostingId, long currentUserId) {
+    public List<PostDTO> getPostsWithUserAndVoteInfo(
+            List<Long> ids, Long nodeId, double lastScore, Long lastPostingId, long currentUserId) {
         List<PostDO> postDOList = null;
         if (ids != null && ids.size() > 0) {
             postDOList = postDataService.getByIds(ids);
@@ -660,14 +664,14 @@ public class PostingService {
             userIds.add(postingDO.getCreatorId());
         });
 
-        List<UserDTOV1> userList = userIds.size() == 0 ?
-                new ArrayList<>() : Converter.INSTANCE.toUserDTOV1(userDataService.getByIds(userIds));
-        Map<Long, UserDTOV1> userMap = new HashMap<>();
-        for (UserDTOV1 user : userList) {
+        List<UserDTO> userList = userIds.size() == 0 ?
+                new ArrayList<>() : userConverter.toDTOV1(userDataService.getByIds(userIds));
+        Map<Long, UserDTO> userMap = new HashMap<>();
+        for (UserDTO user : userList) {
             userMap.put(user.getId(), user);
         }
 
-        List<PostDTOV1> postDTOList = Converter.INSTANCE.toPostDTO(postDOList);
+        List<PostDTO> postDTOList = postConverter.toDTO(postDOList);
         postDTOList.stream().forEach(item -> {
             item.setCreator(userMap.get(item.getCreatorId()));
         });
@@ -679,7 +683,7 @@ public class PostingService {
                 types.put(upvote.getObjectId(), upvote.getType());
             }
 
-            for (PostDTOV1 posting : postDTOList) {
+            for (PostDTO posting : postDTOList) {
                 if (types.containsKey(posting.getId()))
                     posting.setVoteType(types.get(posting.getId()));
             }
@@ -751,7 +755,6 @@ public class PostingService {
      * 更新帖子内容
      * 
      * @param id 帖子ID
-     * @param posting 帖子DTO对象
      * @throws BusinessException 当帖子不存在时抛出异常
      */
     @Transactional
@@ -783,38 +786,38 @@ public class PostingService {
     /**
      * 获取帖子详情（转换为DTO）
      */
-    public PostDTOV1 getPostDetail(Long id) {
-        return Converter.INSTANCE.toPostDTO(get(id));
+    public PostDTO getPostDetail(Long id) {
+        return postConverter.toDTO(get(id));
     }
 
     /**
      * 获取节点帖子列表
      */
-    public List<PostDTOV1> getNodePostsList(Long nodeId) {
+    public List<PostDTO> getNodePostsList(Long nodeId) {
         int count = systemProperties.getPosting().getDefaultNodeListCount();
         List<PostDO> postings = postDataService.getListByNode(nodeId, count, Enums.PostState.approved.value());
         postings.forEach(this::idToName);
-        return Converter.INSTANCE.toPostDTO(postings);
+        return postConverter.toDTO(postings);
     }
 
     /**
      * 获取待审核帖子列表
      */
-    public List<PostDTOV1> getPendingPostsList() {
+    public List<PostDTO> getPendingPostsList() {
         List<PostDO> postDOList = postDataService.getListByState(Enums.PostState.approved.value(), systemProperties.getPosting().getPendingPostsLimit());
         for (PostDO postDO : postDOList) {
             if (postDO.getType() == Enums.PostType.contents.value()) {
                 idToName(postDO);
             }
         }
-        return Converter.INSTANCE.toPostDTO(postDOList);
+        return postConverter.toDTO(postDOList);
     }
 
     /**
      * 审核帖子
      */
     @Transactional
-    public PostDTOV1 approvePost(Long id, boolean approve) {
+    public PostDTO approvePost(Long id, boolean approve) {
         PostDO postDO = validateAndGetPost(id);
 
         if (approve && postDO.getState() != Enums.PostState.approved.value()) {
@@ -825,6 +828,6 @@ public class PostingService {
             postDO.setState(Enums.CommentState.deleted.value());
             postDataService.update(postDO);
         }
-        return Converter.INSTANCE.toPostDTO(postDO);
+        return postConverter.toDTO(postDO);
     }
 }

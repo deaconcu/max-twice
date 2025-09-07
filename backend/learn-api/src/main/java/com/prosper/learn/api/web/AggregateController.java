@@ -11,7 +11,6 @@ import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.service.basic.ContentsService;
 import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.business.*;
-import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.dto.response.message.MessageDTO;
 import com.prosper.learn.dto.response.*;

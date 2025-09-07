@@ -1,5 +1,6 @@
 package com.prosper.learn.dto.response.message;
 
+import com.prosper.learn.dto.response.UserDTO;
 import com.prosper.learn.dto.response.old.UserDTOV4;
 import lombok.Data;
 
@@ -8,9 +9,9 @@ public class MessageDTO {
 
     private Long id;
 
-    private UserDTOV4 sender;
+    private UserDTO sender;
 
-    private UserDTOV4 receiver;
+    private UserDTO receiver;
 
     private Integer type;
 

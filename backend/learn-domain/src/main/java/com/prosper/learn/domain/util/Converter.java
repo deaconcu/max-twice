@@ -19,9 +19,9 @@ import java.util.List;
 // 只需要指出字段不一致的情况，支持复杂嵌套
 // 如果字段没有不一致，不需要注解
 @Mapper
-public interface Converters {
+public interface Converter {
 
-    Converters INSTANCE = Mappers.getMapper(Converters.class);
+    Converter INSTANCE = Mappers.getMapper(Converter.class);
 
     // course
 

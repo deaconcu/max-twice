@@ -13,7 +13,7 @@ public class PostDTO {
 
     private Long nodeId;
 
-    private NodeDTOV0 node;
+    private NodeDTO node;
 
     private Long creatorId;
 

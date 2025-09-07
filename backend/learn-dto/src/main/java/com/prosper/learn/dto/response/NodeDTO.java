@@ -16,7 +16,7 @@ public class NodeDTO {
 
     private Long courseId;
 
-    private CourseDTOV4 course;
+    private CourseDTO course;
 
     private List<NodeDTO> children;
 

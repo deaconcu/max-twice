@@ -9,7 +9,6 @@ import com.prosper.learn.api.client.CourseClient;
 import com.prosper.learn.dto.response.old.CourseDTOV3;
 import com.prosper.learn.domain.service.business.CourseService;
 import com.prosper.learn.domain.service.scheduler.CourseRankingScheduler;
-import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.mapper.CourseMapper;
 import lombok.RequiredArgsConstructor;

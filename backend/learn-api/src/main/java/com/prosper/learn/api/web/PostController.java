@@ -7,7 +7,6 @@ import com.prosper.learn.api.client.PostClient;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.dto.response.old.PostDTOV1;
 import com.prosper.learn.dto.response.Response;
-import com.prosper.learn.domain.util.Converter;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.domain.service.business.PostingService;

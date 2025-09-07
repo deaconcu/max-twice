@@ -3,6 +3,7 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.UserService;
+import com.prosper.learn.dto.response.UserDTO;
 import com.prosper.learn.dto.response.old.UserDTOV0;
 import com.prosper.learn.dto.response.old.UserDTOV2;
 import com.prosper.learn.dto.response.old.UserDTOV3;
@@ -31,10 +32,10 @@ public class UsersController {
      * 映射: GET /self → GET /api/v1/users/current
      */
     @GetMapping("/users/current")
-    public ApiResponse<UserDTOV0> getCurrentUser() {
+    public ApiResponse<UserDTO> getCurrentUser() {
         Long userId = StpUtil.getLoginIdAsLong();
-        UserDTOV0 userDTOV0 = userService.getCurrentUser(userId);
-        return ApiResponse.success(userDTOV0);
+        UserDTO userDTO = userService.getCurrentUser(userId);
+        return ApiResponse.success(userDTO);
     }
 
     /**
@@ -53,9 +54,9 @@ public class UsersController {
      * 映射: GET /user/{id} → GET /api/v1/users/{id}
      */
     @GetMapping("/users/{id}")
-    public ApiResponse<UserDTOV3> getUser(@PathVariable Long id) {
+    public ApiResponse<UserDTO> getUser(@PathVariable Long id) {
         Long viewerId = StpUtil.getLoginIdAsLong();
-        UserDTOV3 userDTO = userService.getUser(id, viewerId);
+        UserDTO userDTO = userService.getUser(id, viewerId);
         return ApiResponse.success(userDTO);
     }
 
@@ -64,8 +65,8 @@ public class UsersController {
      * 映射: GET /user?name=xxx → GET /api/v1/users/search?name=xxx
      */
     @GetMapping("/users/search")
-    public ApiResponse<List<UserDTOV4>> searchUsers(@RequestParam String name) {
-        List<UserDTOV4> users = userService.searchUsers(name);
+    public ApiResponse<List<UserDTO>> searchUsers(@RequestParam String name) {
+        List<UserDTO> users = userService.searchUsers(name);
         return ApiResponse.success(users);
     }
 
@@ -84,9 +85,9 @@ public class UsersController {
      * 映射: POST /login → POST /api/v1/auth/login
      */
     @PostMapping("/auth/login")
-    public ApiResponse<UserDTOV2> login(@RequestBody @Valid LoginRequest request) {
+    public ApiResponse<UserDTO> login(@RequestBody @Valid LoginRequest request) {
         // Service 负责业务验证
-        UserDTOV2 userDTO = userService.validateLogin(request.getEmail(), request.getPassword());
+        UserDTO userDTO = userService.validateLogin(request.getEmail(), request.getPassword());
         
         // Controller 负责认证状态管理
         StpUtil.login(userDTO.getId());
@@ -99,14 +100,14 @@ public class UsersController {
      * 映射: POST /user/validate → POST /api/v1/auth/validate-email
      */
     @PostMapping("/auth/validate-email")
-    public ApiResponse<UserDTOV0> validateEmail(@RequestBody @Valid VerifyEmailRequest request) {
+    public ApiResponse<UserDTO> validateEmail(@RequestBody @Valid VerifyEmailRequest request) {
         // Service 负责验证逻辑
-        UserDTOV0 userDTOV0 = userService.validateEmail(request.getEmail(), request.getCode());
+        UserDTO userDTO = userService.validateEmail(request.getEmail(), request.getCode());
         
         // Controller 负责认证状态管理（验证成功后自动登录）
-        StpUtil.login(userDTOV0.getId());
+        StpUtil.login(userDTO.getId());
         
-        return ApiResponse.success(userDTOV0);
+        return ApiResponse.success(userDTO);
     }
 
     /**

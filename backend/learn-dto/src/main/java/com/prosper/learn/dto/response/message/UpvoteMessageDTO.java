@@ -1,5 +1,7 @@
 package com.prosper.learn.dto.response.message;
 
+import com.prosper.learn.dto.response.NodeDTO;
+import com.prosper.learn.dto.response.UserDTO;
 import com.prosper.learn.dto.response.old.NodeDTOV1;
 import com.prosper.learn.dto.response.old.UserDTOV4;
 import lombok.Data;
@@ -7,7 +9,7 @@ import lombok.Data;
 @Data
 public class UpvoteMessageDTO extends MessageDTO {
 
-    NodeDTOV1 node;
+    NodeDTO node;
 
     Long objectId;
 
@@ -15,5 +17,5 @@ public class UpvoteMessageDTO extends MessageDTO {
 
     Integer voteType;
 
-    UserDTOV4 upvoter;
+    UserDTO upvoter;
 }

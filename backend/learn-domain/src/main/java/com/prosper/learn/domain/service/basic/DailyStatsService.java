@@ -8,6 +8,7 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.dto.response.DailyStatsDTO;
+import com.prosper.learn.dto.response.PostDTO;
 import com.prosper.learn.dto.response.old.PostDTOV2;
 import com.prosper.learn.dto.response.UserStatsDTO;
 import com.prosper.learn.persistence.dataobject.UserStatsDO;
@@ -1103,14 +1104,14 @@ public class DailyStatsService {
      * 
      * @param postList 需要设置阅读量的文章列表
      */
-    public void setViewsForPosts(List<PostDTOV2> postList) {
+    public void setViewsForPosts(List<PostDTO> postList) {
         if (postList == null || postList.isEmpty()) {
             return;
         }
         
         log.debug("Setting views for {} posts", postList.size());
         
-        for (PostDTOV2 postObj : postList) {
+        for (PostDTO postObj : postList) {
             try {
                 // 使用反射获取postId和设置views
                 Long postId = postObj.getId();

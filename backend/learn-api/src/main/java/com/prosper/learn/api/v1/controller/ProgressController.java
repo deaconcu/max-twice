@@ -5,10 +5,7 @@ import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.LearningProgressService;
 import com.prosper.learn.domain.service.business.UserCourseService;
 import com.prosper.learn.domain.service.business.UserRoadmapService;
-import com.prosper.learn.dto.response.UserCourseDTO;
-import com.prosper.learn.dto.response.UserRoadmapDTO;
-import com.prosper.learn.dto.response.NodeProgressResponseDTO;
-import com.prosper.learn.dto.response.CourseCompletionResponseDTO;
+import com.prosper.learn.dto.response.*;
 import com.prosper.learn.dto.response.old.NodeDTOV2;
 import lombok.RequiredArgsConstructor;
 import com.prosper.learn.api.v1.annotation.JsonParam;
@@ -60,9 +57,9 @@ public class ProgressController {
      * 映射: GET /user/complete/{nodeId} → GET /api/v1/progress/nodes/{nodeId}/status
      */
     @GetMapping("/progress/nodes/{nodeId}/status")
-    public ApiResponse<NodeDTOV2> getNodeCompletionStatus(@PathVariable Long nodeId) {
+    public ApiResponse<NodeDTO> getNodeCompletionStatus(@PathVariable Long nodeId) {
         long userId = StpUtil.getLoginIdAsLong();
-        NodeDTOV2 result = learningProgressService.getNodeCompletionStatusResponse(userId, nodeId);
+        NodeDTO result = learningProgressService.getNodeCompletionStatusResponse(userId, nodeId);
         return ApiResponse.success(result);
     }
 

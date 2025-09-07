@@ -5,6 +5,7 @@ import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.Enums.CourseState;
 import com.prosper.learn.dto.request.*;
+import com.prosper.learn.dto.response.CourseDTO;
 import jakarta.validation.Valid;
 import com.prosper.learn.dto.response.old.CourseDTOV3;
 import com.prosper.learn.dto.response.old.CourseDTOV4;
@@ -33,8 +34,8 @@ public class CoursesController {
      * 映射: GET /course/{id} → GET /api/v1/courses/{id}
      */
     @GetMapping("/courses/{id}")
-    public ApiResponse<CourseDTOV4> getCourse(@PathVariable Long id) {
-        CourseDTOV4 course = courseService.getCourseById(id);
+    public ApiResponse<CourseDTO> getCourse(@PathVariable Long id) {
+        CourseDTO course = courseService.getCourseById(id);
         return ApiResponse.success(course);
     }
 
@@ -43,8 +44,8 @@ public class CoursesController {
      * 映射: GET /course/search?name=xxx → GET /api/v1/courses/search?name=xxx
      */
     @GetMapping("/courses/search")
-    public ApiResponse<List<CourseDTOV3>> searchCourses(@RequestParam String name) {
-        List<CourseDTOV3> courseList = courseService.searchCoursesByName(name);
+    public ApiResponse<List<CourseDTO>> searchCourses(@RequestParam String name) {
+        List<CourseDTO> courseList = courseService.searchCoursesByName(name);
         return ApiResponse.success(courseList);
     }
 
@@ -62,17 +63,17 @@ public class CoursesController {
 
         CourseState courseState = CourseState.getByValue(state);
         if (state != null && lastId != null) {
-            List<CourseDTOV4> courseList = courseService.getListByStateAndLastId(courseState, lastId);
+            List<CourseDTO> courseList = courseService.getListByStateAndLastId(courseState, lastId);
             return ApiResponse.success(courseList);
         } else if (mainCategory != null && subCategory != null) {
-            List<CourseDTOV4> courseList = courseService.getListByCategory(mainCategory, subCategory);
+            List<CourseDTO> courseList = courseService.getListByCategory(mainCategory, subCategory);
             return ApiResponse.success(courseList);
         } else if (parentId != null) {
             if (courseState != null && courseState == CourseState.APPROVED) {
-                List<CourseDTOV4> courseList = courseService.getListByParent(parentId, CourseState.APPROVED);
+                List<CourseDTO> courseList = courseService.getListByParent(parentId, CourseState.APPROVED);
                 return ApiResponse.success(courseList);
             } else {
-                List<CourseDTOV4> courseList = courseService.getListByParent(parentId, null);
+                List<CourseDTO> courseList = courseService.getListByParent(parentId, null);
                 return ApiResponse.success(courseList);
             }
         } else {
@@ -87,7 +88,7 @@ public class CoursesController {
     @GetMapping("/courses/hot")
     public ApiResponse<Object> getHotCourses(@RequestParam(value = "limit", defaultValue = "10") Integer limit) {
         log.info("开始获取热门课程，limit: {}", limit);
-        List<CourseDTOV4> hotCourses = courseService.getHotCourses(limit);
+        List<CourseDTO> hotCourses = courseService.getHotCourses(limit);
         log.info("成功获取热门课程数量: {}", hotCourses.size());
         return ApiResponse.success(hotCourses);
     }
@@ -99,7 +100,7 @@ public class CoursesController {
     @GetMapping("/courses/ranking")
     public ApiResponse<Object> getCoursesRanking() {
         log.info("开始获取热门课程完整排行榜");
-        List<CourseDTOV4> hotCoursesRanking = courseService.getHotCoursesRanking();
+        List<CourseDTO> hotCoursesRanking = courseService.getHotCoursesRanking();
         log.info("成功获取热门课程排行榜数量: {}", hotCoursesRanking.size());
         return ApiResponse.success(hotCoursesRanking);
     }

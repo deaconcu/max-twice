@@ -3,6 +3,7 @@ package com.prosper.learn.api.v1.controller;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.RoadmapService;
+import com.prosper.learn.dto.response.RoadmapDTO;
 import com.prosper.learn.dto.response.old.RoadmapDTOV1;
 import com.prosper.learn.dto.request.*;
 import com.prosper.learn.api.v1.annotation.JsonParam;
@@ -31,7 +32,7 @@ public class RoadmapsController {
      * 映射: GET /roadmap/list/{professionId} → GET /api/v1/professions/{professionId}/roadmaps?lastId=123
      */
     @GetMapping("/professions/{professionId}/roadmaps")
-    public ApiResponse<List<RoadmapDTOV1>> getRoadmapsByProfession(
+    public ApiResponse<List<RoadmapDTO>> getRoadmapsByProfession(
             @PathVariable Long professionId, 
             @RequestParam(required = false, defaultValue = "0") Long lastId) {
         
@@ -40,7 +41,7 @@ public class RoadmapsController {
         }
 
         long userId = StpUtil.getLoginIdAsLong();
-        List<RoadmapDTOV1> roadmaps = roadmapService.getRoadmapsByProfession(professionId, lastId, userId);
+        List<RoadmapDTO> roadmaps = roadmapService.getRoadmapsByProfession(professionId, lastId, userId);
 
         return ApiResponse.success(roadmaps);
     }
@@ -83,9 +84,9 @@ public class RoadmapsController {
      * 映射: GET /roadmap/{id} → GET /api/v1/roadmaps/{id}
      */
     @GetMapping("/roadmaps/{id}")
-    public ApiResponse<RoadmapDTOV1> getRoadmap(@PathVariable Long id) {
+    public ApiResponse<RoadmapDTO> getRoadmap(@PathVariable Long id) {
         long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : 0;
-        RoadmapDTOV1 roadmapDTOV1 = roadmapService.getRoadmapWithContent(id, userId);
+        RoadmapDTO roadmapDTOV1 = roadmapService.getRoadmapWithContent(id, userId);
 
         return ApiResponse.success(roadmapDTOV1);
     }

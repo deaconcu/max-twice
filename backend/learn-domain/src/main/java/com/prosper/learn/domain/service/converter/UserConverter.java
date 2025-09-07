@@ -71,10 +71,11 @@ public abstract class UserConverter {
     public abstract List<UserDTO> toDTOV4(List<UserDO> userDOList);
     
     @Named("getSubscriptions")
-    private SubscriptionDTO[] getSubscriptions(Long userId) {
-        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
+    public SubscriptionDTO[] getSubscriptions(Long id) {
+        UserProfileDO userProfileDO = userProfileDataService.getById(id);
 
-        if (userProfileDO != null && userProfileDO.getSubscription() != null && !userProfileDO.getSubscription().trim().isEmpty()) {
+        if (userProfileDO != null && userProfileDO.getSubscription() != null
+                && !userProfileDO.getSubscription().trim().isEmpty()) {
             List<Long> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
                     .map(Long::parseLong).collect(Collectors.toCollection(ArrayList::new));
             List<CourseDO> courseDOList = courseDataService.getByIds(ids);

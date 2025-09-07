@@ -1,5 +1,6 @@
 package com.prosper.learn.dto.response.old;
 
+import com.prosper.learn.dto.response.UserDTO;
 import lombok.Data;
 
 @Data
@@ -15,7 +16,7 @@ public class PostDTOV1 {
 
     private Long creatorId;
 
-    private UserDTOV1 creator;
+    private UserDTO creator;
 
     private Integer type;
 
