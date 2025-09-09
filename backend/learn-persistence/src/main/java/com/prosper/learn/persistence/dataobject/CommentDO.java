@@ -17,7 +17,7 @@ public class CommentDO {
 
     private Integer replyCount;
 
-    private Long replyToUserId;
+    private Long replyToCommentId;
 
     private Long fromUserId;
 

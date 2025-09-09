@@ -9,9 +9,15 @@ public class MessageDTO {
 
     private Long id;
 
+    private Long senderId;
+
     private UserDTO sender;
 
+    private long receiverId;
+
     private UserDTO receiver;
+
+    private String content;
 
     private Integer type;
 

@@ -28,6 +28,8 @@ public class CommentDTO {
 
     private Integer state;
 
+    private Double score;
+
     private Boolean upvoted;
 
     private String createdAt;

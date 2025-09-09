@@ -4,14 +4,13 @@ import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ContentsService;
-import com.prosper.learn.domain.service.converter.NodeConverter;
+import com.prosper.learn.domain.util.converter.NodeConverter;
 import com.prosper.learn.dto.response.NodeDTO;
 import com.prosper.learn.persistence.dataobject.UserProgressDO;
 import com.prosper.learn.persistence.dataobject.UserCourseDO;
 import com.prosper.learn.domain.service.data.UserProgressDataService;
 import com.prosper.learn.domain.service.data.UserCourseDataService;
 import com.prosper.learn.domain.service.data.NodeDataService;
-import com.prosper.learn.domain.service.data.CourseDataService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import com.prosper.learn.dto.response.NodeProgressResponseDTO;
 import com.prosper.learn.dto.response.CourseCompletionResponseDTO;
-import com.prosper.learn.dto.response.old.NodeDTOV2;
 import com.prosper.learn.persistence.dataobject.NodeDO;
 
 /**

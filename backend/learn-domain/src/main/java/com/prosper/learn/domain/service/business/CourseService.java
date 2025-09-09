@@ -1,16 +1,14 @@
 package com.prosper.learn.domain.service.business;
 
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.Enums.CourseState;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
-import com.prosper.learn.domain.service.converter.CourseConverter;
+import com.prosper.learn.domain.util.converter.CourseConverter;
 import com.prosper.learn.dto.request.CreateCourseRequest;
 import com.prosper.learn.dto.request.UpdateCourseRequest;
 import com.prosper.learn.dto.response.CourseDTO;
-import com.prosper.learn.dto.response.old.CourseDTOV1;
-import com.prosper.learn.dto.response.old.CourseDTOV3;
-import com.prosper.learn.dto.response.old.CourseDTOV4;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.NodeDO;
 import com.prosper.learn.domain.service.data.CourseDataService;
@@ -21,7 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -94,12 +95,68 @@ public class CourseService {
         }
     }
 
+
+    // ========== toDTO ==========
+
     /**
-     * 转换为DTO并附加统计信息
+     * dtov1 = id + name + description + mainCategory + subCategory
      */
-    private CourseDTO convertToDTOWithStats(CourseDO courseDO) {
+    public CourseDTO toDTOV2(CourseDO courseDO) {
+        return courseConverter.toDTOV2(courseDO);
+    }
+
+    public List<CourseDTO> toDTOV2(List<CourseDO> courseDOList) {
+        return courseConverter.toDTOV2(courseDOList);
+    }
+
+    /**
+     * dtoV3 = id + name
+     */
+    public CourseDTO toDTOV3(CourseDO courseDO) {
+        return courseConverter.toDTOV3(courseDO);
+    }
+
+    public List<CourseDTO> toDTOV3(List<CourseDO> courseDOList) {
+        return courseConverter.toDTOV3(courseDOList);
+    }
+
+    /**
+     * dtoV4 = dto + parentCourse(dtoV3)
+     */
+    public CourseDTO toDTOV4(CourseDO courseDO) {
+        if (courseDO == null) return null;
+        
+        CourseDTO dto = courseConverter.toDTO(courseDO);
+        
+        // 填充父课程信息
+        if (courseDO.getParentCourseId() != null && courseDO.getParentCourseId() > 0) {
+            CourseDO parentCourseDO = courseDataService.getById(courseDO.getParentCourseId());
+            if (parentCourseDO != null) {
+                CourseDTO parentDTO = courseConverter.toDTOV3(parentCourseDO);
+                dto.setParentCourse(parentDTO);
+            }
+        }
+        return dto;
+    }
+    
+    /**
+     * dtov5 = dtov4 + subcribed + progress
+     */
+    public CourseDTO toDTOV5(CourseDO courseDO, boolean subscribed, int progress) {
+        if (courseDO == null) return null;
+
+        CourseDTO dto = toDTOV4(courseDO);
+        dto.setSubscribed(subscribed);
+        dto.setProgress(progress);
+        return dto;
+    }
+
+    /**
+     * dtov6 = dto + learnerCount + subscriptionCount
+     */
+    private CourseDTO toDTOV6(CourseDO courseDO) {
         //CourseDTOV4 courseDTO = Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseDataService);
-        CourseDTO courseDTO = courseConverter.toDTOV4(courseDO);
+        CourseDTO courseDTO = courseConverter.toDTO(courseDO);
 
         try {
             CourseRankingService.CourseStats stats = courseRankingService.getCourseStats(courseDO.getId());
@@ -110,7 +167,6 @@ public class CourseService {
             courseDTO.setLearnerCount(0);
             courseDTO.setSubscriptionCount(0);
         }
-        
         return courseDTO;
     }
 
@@ -118,13 +174,31 @@ public class CourseService {
 
     public CourseDTO getCourseById(Long id) {
         CourseDO course = validateCourseExists(id);
-        return  courseConverter.toDTOV4(course);
+        return toDTOV4(course);
     }
 
     public List<CourseDTO> searchCoursesByName(String name) {
         int searchLimit = systemProperties.getCourse().getSearchLimit();
         List<CourseDO> courseList = courseDataService.searchByName(name, searchLimit);
-        return  courseConverter.toDTOV3(courseList);
+        return toDTOV3(courseList);
+    }
+
+    public Map<Long, CourseDO> getCourseMap(List<Long> ids) {
+        Map<Long, CourseDO> courseMap = new HashMap<>();
+        if (ids == null || ids.isEmpty()) return courseMap;
+
+        List<CourseDO> courseList = courseDataService.getByIds(ids);
+        courseMap = courseList.stream().collect(Collectors.toMap(CourseDO::getId, course -> course));
+        return courseMap;
+    }
+
+    /**
+     * 获取子课程列表（仅包含已批准的子课程）, 用于展示在课程详情页面
+     * @param parentCourseId
+     * @return
+     */
+    public List<CourseDTO> getSubCourses(long parentCourseId) {
+        return toDTOV2(courseDataService.listByParentAndState(CourseState.APPROVED, parentCourseId));
     }
 
     @Transactional
@@ -153,16 +227,28 @@ public class CourseService {
         return courseDO != null;
     }
 
-    public CourseDTO getById(long id) {
+    public CourseDTO getById(long id, Enums.DTOVersion version) {
         CourseDO courseDO = courseDataService.getById(id);
-        return courseDO != null ?  courseConverter.toDTOV4(courseDO) : null;
+        if (courseDO == null) return null;
+
+        switch (version) {
+            case V2 -> toDTOV2(courseDO);
+            case V4 -> toDTOV4(courseDO);
+        }
+        return null;
+    }
+
+    public CourseDTO getCourseDTOV4ById(Long courseId) {
+        if (courseId == null) return null;
+        CourseDO courseDO = courseDataService.getById(courseId);
+        return courseDO != null ? toDTOV4(courseDO) : null;
     }
 
     // 新增：根据状态和lastId获取课程列表
     public List<CourseDTO> getListByStateAndLastId(CourseState state, long lastId) {
         List<CourseDO> courseDOList = courseDataService.listByStateAndLastId(state, lastId);
         return courseDOList.stream()
-                .map(courseDO -> courseConverter.toDTOV4(courseDO))
+                .map(this::toDTOV4)
                 .collect(java.util.stream.Collectors.toList());
     }
 
@@ -171,7 +257,7 @@ public class CourseService {
         List<CourseDO> courseDOList;
         courseDOList = courseDataService.listRootByCategory(mainCategory, subCategory);
         return courseDOList.stream()
-                .map(courseDO ->  courseConverter.toDTOV4(courseDO))
+                .map(this::toDTOV4)
                 .collect(java.util.stream.Collectors.toList());
     }
 
@@ -184,7 +270,7 @@ public class CourseService {
             courseDOList = courseDataService.listByParentAndState(state, parentId);
         }
         return courseDOList.stream()
-                .map(courseDO ->  courseConverter.toDTOV4(courseDO))
+                .map(this::toDTOV4)
                 .collect(java.util.stream.Collectors.toList());
     }
 
@@ -281,7 +367,7 @@ public class CourseService {
             
             List<CourseDTO> result = new ArrayList<>();
             for (CourseDO courseDO : courseDOList) {
-                result.add(convertToDTOWithStats(courseDO));
+                result.add(toDTOV6(courseDO));
             }
             
             return result;
@@ -305,7 +391,7 @@ public class CourseService {
             
             List<CourseDTO> result = new ArrayList<>();
             for (CourseDO courseDO : courseDOList) {
-                result.add(convertToDTOWithStats(courseDO));
+                result.add(toDTOV6(courseDO));
             }
             
             return result;

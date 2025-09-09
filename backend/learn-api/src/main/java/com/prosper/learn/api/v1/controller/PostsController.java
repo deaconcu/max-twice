@@ -2,11 +2,10 @@ package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
-import com.prosper.learn.domain.service.business.PostingService;
+import com.prosper.learn.domain.service.business.PostService;
 import com.prosper.learn.dto.request.CreatePostRequest;
 import com.prosper.learn.dto.request.UpdatePostRequest;
 import com.prosper.learn.dto.response.PostDTO;
-import com.prosper.learn.dto.response.old.PostDTOV1;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +24,7 @@ import java.util.List;
 @Slf4j
 public class PostsController {
 
-    private final PostingService postingService;
+    private final PostService postService;
 
     /**
      * 批量获取帖子
@@ -39,7 +38,7 @@ public class PostsController {
             @RequestParam(value = "lastId", required = false, defaultValue = "0") Long lastPostingId) {
         
         long currentUserId = StpUtil.getLoginIdAsLong();
-        List<PostDTO> posts = postingService.getPostsWithUserAndVoteInfo(ids, nodeId, lastScore, lastPostingId, currentUserId);
+        List<PostDTO> posts = postService.getPostsWithUserAndVoteInfo(ids, nodeId, lastScore, lastPostingId, currentUserId);
         return ApiResponse.success(posts);
     }
 
@@ -50,7 +49,7 @@ public class PostsController {
     @PostMapping("/posts")
     public ApiResponse<Void> createPost(@Valid @RequestBody CreatePostRequest request) {
         long userId = StpUtil.getLoginIdAsLong();
-        postingService.createPost(userId, request);
+        postService.createPost(userId, request);
         return ApiResponse.success();
     }
 
@@ -60,7 +59,7 @@ public class PostsController {
      */
     @PutMapping("/posts/{id}")
     public ApiResponse<Void> updatePost(@PathVariable Long id, @Valid @RequestBody UpdatePostRequest request) {
-        postingService.updatePost(id, request);
+        postService.updatePost(id, request);
         return ApiResponse.success();
     }
 
@@ -70,7 +69,7 @@ public class PostsController {
      */
     @DeleteMapping("/posts/{id}")
     public ApiResponse<Void> deletePost(@PathVariable Long id) {
-        postingService.deletePost(id);
+        postService.deletePost(id);
         return ApiResponse.success();
     }
 
@@ -80,7 +79,7 @@ public class PostsController {
      */
     @GetMapping("/posts/{id}")
     public ApiResponse<PostDTO> getPost(@PathVariable Long id) {
-        PostDTO post = postingService.getPostDetail(id);
+        PostDTO post = postService.getDTO(id);
         return ApiResponse.success(post);
     }
 
@@ -90,7 +89,7 @@ public class PostsController {
      */
     @GetMapping("/nodes/{nodeId}/posts")
     public ApiResponse<List<PostDTO>> getNodePosts(@PathVariable Long nodeId) {
-        List<PostDTO> posts = postingService.getNodePostsList(nodeId);
+        List<PostDTO> posts = postService.getNodePostsList(nodeId);
         return ApiResponse.success(posts);
     }
 
@@ -100,7 +99,7 @@ public class PostsController {
      */
     @GetMapping("/admin/posts/pending")
     public ApiResponse<List<PostDTO>> getPendingPosts() {
-        List<PostDTO> posts = postingService.getPendingPostsList();
+        List<PostDTO> posts = postService.getPendingPostsList();
         return ApiResponse.success(posts);
     }
 
@@ -112,7 +111,7 @@ public class PostsController {
     public ApiResponse<PostDTO> approvePost(
             @PathVariable Long id, 
             @JsonParam("approve") Boolean approve) {
-        PostDTO post = postingService.approvePost(id, approve);
+        PostDTO post = postService.approvePost(id, approve);
         return ApiResponse.success(post);
     }
 }

@@ -2,12 +2,9 @@ package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
+import com.prosper.learn.domain.service.business.PostService;
 import com.prosper.learn.domain.service.business.UserService;
 import com.prosper.learn.dto.response.UserDTO;
-import com.prosper.learn.dto.response.old.UserDTOV0;
-import com.prosper.learn.dto.response.old.UserDTOV2;
-import com.prosper.learn.dto.response.old.UserDTOV3;
-import com.prosper.learn.dto.response.old.UserDTOV4;
 import com.prosper.learn.dto.request.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +23,7 @@ import java.util.List;
 public class UsersController {
 
     private final UserService userService;
+    private final PostService postService;
 
     /**
      * 获取当前用户信息
@@ -34,7 +32,7 @@ public class UsersController {
     @GetMapping("/users/current")
     public ApiResponse<UserDTO> getCurrentUser() {
         Long userId = StpUtil.getLoginIdAsLong();
-        UserDTO userDTO = userService.getCurrentUser(userId);
+        UserDTO userDTO = userService.getUser(userId);
         return ApiResponse.success(userDTO);
     }
 
@@ -121,7 +119,7 @@ public class UsersController {
             @RequestParam Long lastId,
             @RequestParam(required = false, defaultValue = "article") String type) {
         
-        Object posts = userService.getUserPosts(userId, lastId, type);
+        Object posts = postService.getUserPosts(userId, lastId, type);
         return ApiResponse.success(posts);
     }
 }

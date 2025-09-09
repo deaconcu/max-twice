@@ -1,9 +1,15 @@
 package com.prosper.learn.domain.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.persistence.dataobject.UserDO;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class Util {
@@ -70,6 +76,15 @@ public class Util {
             }
         }
         throw new IllegalArgumentException("Cannot convert value of type " + value.getClass().getSimpleName() + " to Integer for key: " + key);
+    }
+
+    public static List<Long> getIds(Collection<? extends Object> dtos, Function<Object, Long> userIdExtractor) {
+        List<Long> ids = dtos.stream()
+                .map(userIdExtractor)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        return ids;
     }
 
     /**

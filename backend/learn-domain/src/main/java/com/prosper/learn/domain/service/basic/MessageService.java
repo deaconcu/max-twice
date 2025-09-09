@@ -8,9 +8,9 @@ import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
-import com.prosper.learn.domain.service.converter.MessageConverter;
-import com.prosper.learn.domain.service.converter.NodeConverter;
-import com.prosper.learn.domain.service.converter.UserConverter;
+import com.prosper.learn.domain.util.converter.MessageConverter;
+import com.prosper.learn.domain.util.converter.NodeConverter;
+import com.prosper.learn.domain.util.converter.UserConverter;
 import com.prosper.learn.domain.util.Util;
 import com.prosper.learn.dto.response.message.*;
 import com.prosper.learn.persistence.dataobject.CourseDO;
@@ -162,16 +162,65 @@ public class MessageService {
      */
     public MessageDTO get(long id) {
         MessageDO messageDO = validateMessageExists(id);
-        
+        return toDTOV1(messageDO);
+    }
+
+    // ========== toDTO ==========
+
+    /**
+     * 将消息DO转换为DTO（包含发送者和接收者信息）
+     * v1 = v0 + sender + receiver
+     */
+    public MessageDTO toDTOV1(MessageDO messageDO) {
         // 获取发送者和接收者信息（系统消息的发送者可能为null）
         UserDO sender = messageDO.getSenderId() != 0 ? userDataService.getById(messageDO.getSenderId()) : null;
         UserDO receiver = messageDO.getReceiverId() != 0 ? userDataService.getById(messageDO.getReceiverId()) : null;
 
         MessageDTO messageDTO = messageConverter.toDTO(messageDO);
-        messageDTO.setSender(sender != null ? userConverter.toDTOV4(sender) : null);
-        messageDTO.setReceiver(receiver != null ? userConverter.toDTOV4(receiver) : null);
+        messageDTO.setSender(sender != null ? userConverter.toDTOV2(sender) : null);
+        messageDTO.setReceiver(receiver != null ? userConverter.toDTOV2(receiver) : null);
 
         return messageDTO;
+    }
+
+    private List<MessageDTO> toDTOV1(List<MessageDO> messageDOList) {
+        if (messageDOList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 收集所有涉及的用户ID
+        Set<Long> userIdSet = new HashSet<>();
+        for (MessageDO messageDO : messageDOList) {
+            if (messageDO.getSenderId() != 0) {
+                userIdSet.add(messageDO.getSenderId());
+            }
+            if (messageDO.getReceiverId() != 0) {
+                userIdSet.add(messageDO.getReceiverId());
+            }
+        }
+
+        // 批量获取用户信息
+        Map<Long, UserDO> userMap = new HashMap<>();
+        if (!userIdSet.isEmpty()) {
+            List<UserDO> userDOList = userDataService.getByIds(userIdSet);
+            for (UserDO userDO : userDOList) {
+                userMap.put(userDO.getId(), userDO);
+            }
+        }
+
+        // 转换为DTO
+        List<MessageDTO> messageDTOList = new ArrayList<>();
+        for (MessageDO messageDO : messageDOList) {
+            MessageDTO messageDTO = messageConverter.toDTO(messageDO);
+
+            UserDO sender = userMap.get(messageDO.getSenderId());
+            UserDO receiver = userMap.get(messageDO.getReceiverId());
+
+            messageDTO.setSender(sender != null ? userConverter.toDTOV2(sender) : null);
+            messageDTO.setReceiver(receiver != null ? userConverter.toDTOV2(receiver) : null);
+            messageDTOList.add(messageDTO);
+        }
+        return messageDTOList;
     }
 
     /**
@@ -197,55 +246,12 @@ public class MessageService {
             messageDOList = messageDataService.getConversationByUser(senderId, receiverId, lastId, DEFAULT_PAGE_SIZE);
         }
         
-        return convertMessagesToDTO(messageDOList);
+        return toDTOV1(messageDOList);
     }
     
     /**
      * 将消息DO列表转换为DTO列表的通用方法
-     * 
-     * @param messageDOList 消息DO列表
-     * @return 消息DTO列表
      */
-    private List<MessageDTO> convertMessagesToDTO(List<MessageDO> messageDOList) {
-        if (messageDOList.isEmpty()) {
-            return new ArrayList<>();
-        }
-        
-        // 收集所有涉及的用户ID
-        Set<Long> userIdSet = new HashSet<>();
-        for (MessageDO messageDO : messageDOList) {
-            if (messageDO.getSenderId() != 0) {
-                userIdSet.add(messageDO.getSenderId());
-            }
-            if (messageDO.getReceiverId() != 0) {
-                userIdSet.add(messageDO.getReceiverId());
-            }
-        }
-
-        // 批量获取用户信息
-        Map<Long, UserDO> userMap = new HashMap<>();
-        if (!userIdSet.isEmpty()) {
-            List<UserDO> userDOList = userDataService.getByIds(userIdSet);
-            for (UserDO userDO : userDOList) {
-                userMap.put(userDO.getId(), userDO);
-            }
-        }
-
-        // 转换为DTO
-        List<MessageDTO> messageDTOList = new ArrayList<>();
-        for (MessageDO messageDO : messageDOList) {
-            MessageDTO messageDTO = messageConverter.toDTO(messageDO);
-            
-            UserDO sender = userMap.get(messageDO.getSenderId());
-            UserDO receiver = userMap.get(messageDO.getReceiverId());
-            
-            messageDTO.setSender(sender != null ? userConverter.toDTOV4(sender) : null);
-            messageDTO.setReceiver(receiver != null ? userConverter.toDTOV4(receiver) : null);
-            messageDTOList.add(messageDTO);
-        }
-        return messageDTOList;
-    }
-
     public List<MessageDTO> getSystemList(int type, long receiverId, long lastId) {
         List<MessageDO> messageDOList;
         if (type == system.value()) {
@@ -310,7 +316,7 @@ public class MessageService {
 
             m.setCommentId(Util.getLong(content, "commentId"));
             m.setNode(nodeConverter.toDTOV1(nodeDO));
-            m.setCommenter(userConverter.toDTOV4(userDOMap.get(Util.getLong(content, "commenterId"))));
+            m.setCommenter(userConverter.toDTOV2(userDOMap.get(Util.getLong(content, "commenterId"))));
             messageDTO = m;
         } else if (messageDO.getType() == upvote.value()) {
             UpvoteMessageDTO m = new UpvoteMessageDTO();
@@ -326,15 +332,15 @@ public class MessageService {
 
             m.setNode(nodeConverter.toDTOV1(nodeDOMap.get(Util.getLong(content, "nodeId"))));
             m.setVoteType(Util.getInteger(content, "type"));
-            m.setUpvoter(userConverter.toDTOV4(userDOMap.get(Util.getLong(content, "upvoterId"))));
+            m.setUpvoter(userConverter.toDTOV2(userDOMap.get(Util.getLong(content, "upvoterId"))));
             messageDTO = m;
         } else if (messageDO.getType() == follow.value()) {
             FollowMessageDTO m = new FollowMessageDTO();
-            m.setFollower(userConverter.toDTOV4(userDOMap.get(Util.getLong(content,"followerId"))));
+            m.setFollower(userConverter.toDTOV2(userDOMap.get(Util.getLong(content,"followerId"))));
             messageDTO = m;
         } else if (messageDO.getType() == invite.value()) {
             InviteMessageDTO m = new InviteMessageDTO();
-            m.setInviter(userConverter.toDTOV4(userDOMap.get(Util.getLong(content, "inviterId"))));
+            m.setInviter(userConverter.toDTOV2(userDOMap.get(Util.getLong(content, "inviterId"))));
             long nodeId = Util.getLong(content, "nodeId");
             m.setNode(nodeConverter.toDTOV1(nodeDOMap.get(nodeId)));
             messageDTO = m;
@@ -342,7 +348,7 @@ public class MessageService {
 
         messageDTO.setId(messageDO.getId());
         messageDTO.setSender(null);
-        messageDTO.setReceiver(userConverter.toDTOV4(userDOMap.get(messageDO.getReceiverId())));
+        messageDTO.setReceiver(userConverter.toDTOV2(userDOMap.get(messageDO.getReceiverId())));
         messageDTO.setType(messageDO.getType());
         messageDTO.setCreatedAt(Utils.getTimeString(messageDO.getCreatedAt()));
         messageDTO.setIsRead(messageDO.getIsRead());
@@ -350,7 +356,9 @@ public class MessageService {
         return messageDTO;
     }
 
+    // @Deprecated
     public List<MessageDTO> getCourseApplyList(long senderId, long lastId) {
+        /*
         List<MessageDO> messageDOList = messageDataService.getApplyCourseListByUser(senderId, lastId, 20);
 
         Set<Long> userIdSet = new HashSet<>();
@@ -371,8 +379,11 @@ public class MessageService {
             MessageDTO messageDTO = messageConverter.toDTO(messageDO);
             messageDTO.setSender(userConverter.toDTOV4(userMap.get(messageDO.getSenderId())));
             messageDTOList.add(messageDTO);
+
         }
         return messageDTOList;
+         */
+        return null;
     }
 
     public List<MessageDTO> getApplyCourseMessage(int page, int length) {

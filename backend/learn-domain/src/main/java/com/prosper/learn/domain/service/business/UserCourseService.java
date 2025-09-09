@@ -2,12 +2,12 @@ package com.prosper.learn.domain.service.business;
 
 import static com.prosper.learn.common.Enums.UserCourseState;
 
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
-import com.prosper.learn.domain.service.converter.CourseConverter;
-import com.prosper.learn.domain.service.converter.UserCourseConverter;
+import com.prosper.learn.domain.util.converter.CourseConverter;
+import com.prosper.learn.domain.util.converter.UserCourseConverter;
 import com.prosper.learn.dto.response.CourseDTO;
-import com.prosper.learn.dto.response.old.CourseDTOV2;
 import com.prosper.learn.dto.response.UserCourseDTO;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.UserCourseDO;
@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,11 +30,64 @@ public class UserCourseService {
     private final CourseRankingService courseRankingService;
     private final CourseConverter courseConverter;
     private final UserCourseConverter userCourseConverter;
+    private final CourseService courseService;
 
     // ========== 常量定义 ==========
     private static final int MIN_PROGRESS = 0;
     private static final int MAX_PROGRESS = 100;
     private static final long DEFAULT_MAX_ID = Long.MAX_VALUE;
+    
+    // ========== DTO转换方法 ==========
+    
+    public UserCourseDTO toDTO(UserCourseDO userCourseDO) {
+        return userCourseConverter.toDTO(userCourseDO);
+    }
+    
+    public List<UserCourseDTO> toDTO(List<UserCourseDO> userCourseDOList) {
+        return userCourseConverter.toDTO(userCourseDOList);
+    }
+
+    /**
+     * v1 = v0 + course
+     */
+    public UserCourseDTO toDTOV1(UserCourseDO userCourseDO) {
+        if (userCourseDO == null) return null;
+        CourseDTO courseDTO = courseService.getById(userCourseDO.getCourseId(), Enums.DTOVersion.V2);
+        UserCourseDTO dto = userCourseConverter.toDTO(userCourseDO);
+        dto.setCourse(courseDTO);
+        return dto;
+    }
+
+    /**
+     * v2 = v1 + course (批量版本)
+     */
+    public List<UserCourseDTO> toDTOV1(List<UserCourseDO> userCourseDOList) {
+        if (userCourseDOList.isEmpty()) {
+            return List.of();
+        }
+
+        // 提取所有课程 IDs
+        List<Long> courseIds = userCourseDOList.stream()
+                .map(userCourse -> userCourse.getCourseId().longValue())
+                .collect(Collectors.toList());
+
+        // 批量查询课程信息
+        List<CourseDO> courseDOList = courseDataService.getByIds(courseIds);
+        List<CourseDTO> courseDTOList = courseService.toDTOV2(courseDOList);
+        Map<Long, CourseDTO> courseMap = courseDTOList.stream()
+                .collect(Collectors.toMap(course -> (long) course.getId(), course -> course));
+
+        // 转换为 DTO 并填充课程信息
+        return userCourseDOList.stream()
+                .map(userCourseDO -> {
+                    UserCourseDTO dto = toDTO(userCourseDO);
+                    CourseDTO courseDTO = courseMap.get(userCourseDO.getCourseId());
+                    if (courseDTO != null) {
+                        dto.setCourse(courseDTO);
+                    }
+                    return dto;
+                }).collect(Collectors.toList());
+    }
 
     // ========== 私有验证方法 ==========
     
@@ -76,19 +128,7 @@ public class UserCourseService {
         }
         return userCourseDO;
     }
-    
-    /**
-     * 加载课程信息到DTO
-     */
-    private void loadCourseInfo(UserCourseDTO dto, Long courseId) {
-        CourseDO courseDO = courseDataService.getById(courseId);
-        if (courseDO != null) {
-            List<CourseDTO> courseList = courseConverter.toDTOV2(List.of(courseDO));
-            if (!courseList.isEmpty()) {
-                dto.setCourse(courseList.get(0));
-            }
-        }
-    }
+
     
     /**
      * 更新学习状态
@@ -102,6 +142,11 @@ public class UserCourseService {
         } else if (progressPercent > MIN_PROGRESS) {
             progressDO.setState(UserCourseState.IN_PROGRESS.value());
         }
+    }
+
+    public Integer getCourseProgress(long userId, Long courseId) {
+        UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
+        return userCourse != null ? userCourse.getProgressPercent() : 0;
     }
 
     /**
@@ -152,15 +197,7 @@ public class UserCourseService {
         validateCourseId(courseId);
         
         UserCourseDO userCourseDo = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
-        if (userCourseDo == null) {
-            return null;
-        }
-
-        UserCourseDTO dto = userCourseConverter.toDTO(userCourseDo);
-        // 加载课程信息
-        loadCourseInfo(dto, userCourseDo.getCourseId());
-
-        return dto;
+        return toDTOV1(userCourseDo);
     }
 
     /**
@@ -174,31 +211,9 @@ public class UserCourseService {
         if (lastId == null || lastId <= 0) {
             lastId = DEFAULT_MAX_ID;
         }
+        
         List<UserCourseDO> userCourseDOList = userCourseDataService.getByUserId(userId, lastId);
-        List<UserCourseDTO> dtoList = userCourseConverter.toDTO(userCourseDOList);
-
-        // 批量加载课程信息
-        Set<Long> courseIds = userCourseDOList.stream()
-            .map(progress -> progress.getCourseId().longValue())
-            .collect(Collectors.toSet());
-
-        if (!courseIds.isEmpty()) {
-            List<CourseDO> courses = courseDataService.getByIds(courseIds.stream().toList());
-            List<CourseDTO> courseDTOList = courseConverter.toDTOV2(courses);
-
-            Map<Long, CourseDTO> courseMap = courseDTOList.stream()
-                .collect(Collectors.toMap(course -> (long) course.getId(), course -> course));
-
-            // 为每个UserCourseDTO设置对应的课程信息
-            dtoList.forEach(dto -> {
-                userCourseDOList.stream()
-                    .filter(progress -> progress.getId().equals(dto.getId()))
-                    .findFirst()
-                    .ifPresent(progress -> dto.setCourse(courseMap.get(progress.getCourseId())));
-            });
-        }
-
-        return dtoList;
+        return toDTOV1(userCourseDOList);
     }
 
     /**
@@ -213,16 +228,12 @@ public class UserCourseService {
         validateCourseId(courseId);
         validateProgressPercent(progressPercent);
         
-        UserCourseDO progressDO = validateAndGetUserCourse(userId, courseId);
+        UserCourseDO userCourseDO = validateAndGetUserCourse(userId, courseId);
 
-        updateLearningState(progressDO, progressPercent);
-        userCourseDataService.update(progressDO);
+        updateLearningState(userCourseDO, progressPercent);
+        userCourseDataService.update(userCourseDO);
 
-        UserCourseDTO dto = userCourseConverter.toDTO(progressDO);
-        // 加载课程信息
-        loadCourseInfo(dto, courseId);
-
-        return dto;
+        return toDTOV1(userCourseDO);
     }
 
     /**

@@ -1,7 +1,5 @@
 package com.prosper.learn.dto.response;
 
-import com.prosper.learn.dto.response.old.NodeDTOV0;
-import com.prosper.learn.dto.response.old.UserDTOV1;
 import lombok.Data;
 
 @Data
@@ -29,7 +27,7 @@ public class PostDTO {
 
     private Integer commentCount;
 
-    private Integer views;
+    private Integer viewCount;
 
     private Integer state;
 

@@ -11,9 +11,11 @@ import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
-import com.prosper.learn.domain.service.converter.RoadmapConverter;
+import com.prosper.learn.domain.util.converter.RoadmapConverter;
+import com.prosper.learn.domain.util.converter.UserConverter;
+import com.prosper.learn.dto.response.ProfessionDTO;
 import com.prosper.learn.dto.response.RoadmapDTO;
-import com.prosper.learn.dto.response.old.RoadmapDTOV1;
+import com.prosper.learn.dto.response.UserDTO;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
 import com.prosper.learn.persistence.dataobject.UserCourseDO;
@@ -43,18 +45,118 @@ public class RoadmapService {
     private final UserDataService userDataService;
     private final UserProfileDataService userProfileDataService;
     private final UserRoadmapDataService userRoadmapDataService;
+    private final ProfessionDataService professionDataService;
     private final UpvoteService upvoteService;
     private final UserCourseService userCourseService;
     private final ScoreCalculationService scoreCalculationService;
     private final RoadmapConverter roadmapConverter;
+    private final UserConverter userConverter;
+    private final ProfessionService professionService;
     private final SystemProperties systemProperties;
 
     // ========== 常量定义 ==========
     
     private static final String DEFAULT_EMPTY_STRING = "";
     
+    // ========== DTO转换方法 ==========
+    
+    /**
+     * 转换单个对象为DTO
+     */
+    public RoadmapDTO toDTO(RoadmapDO roadmapDO) {
+        return roadmapConverter.toDTO(roadmapDO);
+    }
+    
+    /**
+     * 转换列表为DTO列表
+     */
+    public List<RoadmapDTO> toDTO(List<RoadmapDO> roadmapDOList) {
+        return roadmapConverter.toDTO(roadmapDOList);
+    }
+
+
+    /**
+     * 转换为RoadmapDTO V2版本（包含完整业务信息）
+     * v1 = v0 + creator + profession + upvoted + formatted content
+     */
+    public RoadmapDTO toDTOV1(RoadmapDO roadmapDO, long userId) {
+        if (roadmapDO == null) return null;
+
+        RoadmapDTO dto = toDTO(roadmapDO);
+
+        // 设置创建者信息
+        if (roadmapDO.getCreatorId() != null) {
+            dto.setCreator(userConverter.toDTOV2(userDataService.getById(roadmapDO.getCreatorId())));
+        }
+
+        // 设置专业信息
+        if (roadmapDO.getProfessionId() != null) {
+            dto.setProfession(professionService.toDTO(professionDataService.getById(roadmapDO.getProfessionId())));
+        }
+
+        // 设置点赞状态
+        dto.setUpvoted(upvoteService.hasUpvotedRoadmap(roadmapDO.getId(), userId));
+
+        // 设置格式化内容
+        if (roadmapDO.getContent() != null) {
+            dto.setContent(parseContentToGraphFormat(roadmapDO.getContent(), userId));
+        }
+
+        return dto;
+    }
+
+    /**
+     * 转换为RoadmapDTO V2版本列表（包含完整业务信息）
+     * v1 = v0 + creator + profession + upvoted + pinned + learning + formatted content
+     */
+    private List<RoadmapDTO> toDTOV1(List<RoadmapDO> roadmapList, long userId, Long professionId, Long lastId, List<Long> pinnedRoadmapIds) {
+        List<RoadmapDTO> dtoList = toDTO(roadmapList);
+
+        if (!dtoList.isEmpty()) {
+            List<Long> roadmapIds = dtoList.stream()
+                    .map(RoadmapDTO::getId)
+                    .collect(Collectors.toList());
+
+            UserDTO userDTO = userConverter.toDTOV2(userDataService.getById(userId));
+            ProfessionDTO professionDTO = professionService.getById(professionId);
+            Set<Long> upvotedIds = upvoteService.getUpvotedRoadmapIds(roadmapIds, userId);
+            Set<Long> pinnedIds = getPinnedIdsForCurrentRequest(userId, professionId, lastId, pinnedRoadmapIds);
+            Set<Long> learningIds = getLearningIds(userId, roadmapIds);
+
+            for (RoadmapDTO dto : dtoList) {
+                dto.setProfession(professionDTO);
+                dto.setCreator(userDTO);
+                dto.setUpvoted(upvotedIds.contains(dto.getId()));
+                dto.setPinned(pinnedIds.contains(dto.getId()));
+                dto.setLearning(learningIds.contains(dto.getId()));
+
+                if (dto.getContent() != null) {
+                    String formattedContent = parseContentToGraphFormat(dto.getContent(), userId);
+                    dto.setContent(formattedContent);
+                }
+            }
+        }
+        return dtoList;
+    }
+
     // ========== 公共方法 ==========
 
+    /**
+     * return RoadmapDTO
+     */
+    public RoadmapDTO getById(long id) {
+        validateRoadmapId(id);
+
+        RoadmapDO roadmapDO = roadmapDataService.getById(id);
+        if (roadmapDO == null) {
+            return null;
+        }
+        return toDTO(roadmapDO);
+    }
+
+    /**
+     * return RoadmapDTO v1
+     */
     public RoadmapDTO getById(long id, long userId) {
         validateRoadmapId(id);
         validateUserId(userId);
@@ -63,9 +165,9 @@ public class RoadmapService {
         if (roadmapDO == null) {
             return null;
         }
-
-        return roadmapConverter.toDTOV2(roadmapDO, userId);
+        return toDTOV1(roadmapDO, userId);
     }
+
     /**
      * 标准化content内容并计算hash值
      * @param content 原始content字符串，格式: [[[1,2],[2,3]],[1,2,3]]
@@ -318,7 +420,7 @@ public class RoadmapService {
             }
         }
 
-        return buildRoadmapDTOList(roadmapList, userId, professionId, lastId, pinnedRoadmapIds);
+        return toDTOV1(roadmapList, userId, professionId, lastId, pinnedRoadmapIds);
     }
 
     /**
@@ -360,7 +462,7 @@ public class RoadmapService {
         RoadmapDO roadmapDO = roadmapDataService.getById(id);
         scoreCalculationService.checkAndUpdateRoadmapScore(roadmapDO);
 
-        return roadmapConverter.toDTOV2(roadmapDataService.getById(id), userId);
+        return toDTOV1(roadmapDataService.getById(id), userId);
     }
 
     /**
@@ -402,11 +504,6 @@ public class RoadmapService {
 
         if (roadmapDTO == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
-        }
-
-        if (roadmapDTO.getContent() != null) {
-            String formattedContent = parseContentToGraphFormat(roadmapDTO.getContent(), userId);
-            roadmapDTO.setContent(formattedContent);
         }
 
         return roadmapDTO;
@@ -569,32 +666,7 @@ public class RoadmapService {
         }
     }
     
-    private List<RoadmapDTO> buildRoadmapDTOList(List<RoadmapDO> roadmapList, long userId, Long professionId, Long lastId, List<Long> pinnedRoadmapIds) {
-        List<RoadmapDTO> dtoList = roadmapConverter.toDTO(roadmapList);
 
-        if (!dtoList.isEmpty()) {
-            List<Long> roadmapIds = dtoList.stream()
-                .map(RoadmapDTO::getId)
-                .collect(Collectors.toList());
-
-            Set<Long> upvotedIds = upvoteService.getUpvotedRoadmapIds(roadmapIds, userId);
-            Set<Long> pinnedIds = getPinnedIdsForCurrentRequest(userId, professionId, lastId, pinnedRoadmapIds);
-            Set<Long> learningIds = getLearningIds(userId, roadmapIds);
-
-            for (RoadmapDTO dto : dtoList) {
-                dto.setUpvoted(upvotedIds.contains(dto.getId()));
-                dto.setPinned(pinnedIds.contains(dto.getId()));
-                dto.setLearning(learningIds.contains(dto.getId()));
-                
-                if (dto.getContent() != null) {
-                    String formattedContent = parseContentToGraphFormat(dto.getContent(), userId);
-                    dto.setContent(formattedContent);
-                }
-            }
-        }
-
-        return dtoList;
-    }
     
     private Set<Long> getPinnedIdsForCurrentRequest(long userId, Long professionId, Long lastId, List<Long> pinnedRoadmapIds) {
         Set<Long> pinnedIds = new HashSet<>();

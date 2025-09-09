@@ -8,12 +8,10 @@ import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ContentsService;
-import com.prosper.learn.domain.service.converter.CourseConverter;
-import com.prosper.learn.domain.service.converter.NodeConverter;
-import com.prosper.learn.domain.service.converter.PostConverter;
-import com.prosper.learn.domain.service.converter.UserConverter;
+import com.prosper.learn.domain.util.converter.NodeConverter;
+import com.prosper.learn.domain.util.converter.PostConverter;
+import com.prosper.learn.domain.util.converter.UserConverter;
 import com.prosper.learn.dto.response.*;
-import com.prosper.learn.dto.response.old.*;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.domain.service.data.*;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +22,6 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.prosper.learn.common.Enums.*;
 import static com.prosper.learn.common.Enums.ObjectType.post;
 
 @Slf4j
@@ -36,7 +33,7 @@ public class PageService {
     private final LearningProgressService learningProgressService;
     private final NodeDataService nodeDataService;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final PostingService postingService;
+    private final PostService postService;
     private final PostDataService postDataService;
     private final UpvoteDataService upvoteDataService;
     private final CourseDataService courseDataService;
@@ -48,7 +45,8 @@ public class PageService {
     private final NodeConverter nodeConverter;
     private final PostConverter postConverter;
     private final UserConverter userConverter;
-    private final CourseConverter courseConverter;
+    private final CourseService courseService;
+    private final UserCourseService userCourseService;
 
     
     // ========== 常量定义 ==========
@@ -58,6 +56,7 @@ public class PageService {
     private static final String FIXED_POSTS_FIELD = "^";
     private static final String CHOSEN_POST_FIELD = "+";
     private static final Pattern PATH_PATTERN = Pattern.compile("^\\d+(\\-\\d+)*$");
+
     
     // ========== 公共方法 ==========
 
@@ -93,9 +92,9 @@ public class PageService {
         
         CommentDO commentDO = validateCommentExists(commentId);
 
-        if (commentDO.getReplyToUserId() != 0) {
+        if (commentDO.getReplyToCommentId() != 0) {
             Map<String, Object> data = new HashMap<>();
-            data.put("commentId", commentDO.getReplyToUserId());
+            data.put("commentId", commentDO.getReplyToCommentId());
             data.put("subCommentId", commentDO.getId());
             return data;
         }
@@ -107,7 +106,7 @@ public class PageService {
 
         if (commentDO.getType() == post.value()) {
             long postId = commentDO.getObjectId();
-            postDO = validatePostExists(postId);
+            postDO = postService.validateAndGetPost(postId);
             nodeDO = validateNodeExists(postDO.getNodeId());
             courseDO = validateCourseExists(nodeDO.getCourseId());
             path = generateDefaultPath(courseDO.getRootNodeId());
@@ -127,7 +126,7 @@ public class PageService {
         validatePostId(postId);
         validateUserId(userId);
 
-        PostDO postDO = validatePostExists(postId);
+        PostDO postDO = postService.validateAndGetPost(postId);
         NodeDO nodeDO = validateNodeExists(postDO.getNodeId());
         CourseDO courseDO = validateCourseExists(nodeDO.getCourseId());
         String path = generateDefaultPath(courseDO.getRootNodeId());
@@ -193,10 +192,10 @@ public class PageService {
         
         boolean learning = checkLearningStatus(userId, courseDO.getId());
         CourseDTO parentCourse = buildParentCourse(courseDO, userId);
-        List<CourseDTO> subCourseList = getSubCourses(parentCourse.getId());
+        List<CourseDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
         
         boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
-        Integer courseProgress = getCourseProgress(userId, courseDO.getId());
+        Integer courseProgress = userCourseService.getCourseProgress(userId, courseDO.getId());
         
         return buildPageDataResponse(courseTocDTO, nodeDO, parentCourse, courseDO, subCourseList,
                 chosenPosting, fixedPostings, otherPostings, lastId, path, userMap.values(),
@@ -241,14 +240,6 @@ public class PageService {
             throw ErrorCode.COMMENT_NOT_FOUND.exception();
         }
         return commentDO;
-    }
-    
-    private PostDO validatePostExists(Long postId) {
-        PostDO postDO = postingService.get(postId);
-        if (postDO == null) {
-            throw ErrorCode.CONTENTS_POST_NOT_FOUND.exception();
-        }
-        return postDO;
     }
     
     private NodeDO validateNodeExists(Long nodeId) {
@@ -312,10 +303,10 @@ public class PageService {
     
     private PostDTO extractChosenPosting(JsonNode currentNode, List<Long> userIds) {
         if (currentNode != null && currentNode.has(CHOSEN_POST_FIELD)) {
-            PostDO chosenPostDO = postingService.get(currentNode.get(CHOSEN_POST_FIELD).asInt());
+            PostDTO chosenPostDO = postService.getDTO(currentNode.get(CHOSEN_POST_FIELD).asInt());
             if (chosenPostDO != null) {
                 userIds.add(chosenPostDO.getCreatorId());
-                return postConverter.toDTO(chosenPostDO);
+                return chosenPostDO;
             }
         }
         return null;
@@ -326,18 +317,18 @@ public class PageService {
             ArrayNode idsNode = (ArrayNode) currentNode.get(FIXED_POSTS_FIELD);
             List<Long> fixedIds = objectMapper.convertValue(idsNode, List.class);
             
-            List<PostDO> postDOList = postingService.getList(fixedIds);
+            List<PostDTO> postDOList = postService.getDTOList(fixedIds);
             postDOList.forEach(postDO -> userIds.add(postDO.getCreatorId()));
             
-            return postConverter.toDTO(postDOList);
+            return postDOList;
         }
         return null;
     }
     
     private List<PostDTO> getOtherPostings(Long nodeId, List<Long> userIds) {
-        List<PostDO> postDOList = postingService.getList(nodeId);
-        postDOList.forEach(postDO -> userIds.add(postDO.getCreatorId()));
-        return postConverter.toDTO(postDOList);
+        List<PostDTO> postDTOList = postService.getList(nodeId);
+        postDTOList.forEach(postDO -> userIds.add(postDO.getCreatorId()));
+        return postDTOList;
     }
     
     private Map<Long, UserDTO> buildUserMap(List<Long> userIds) {
@@ -432,9 +423,9 @@ public class PageService {
         CourseDTO parentCourse;
         if (courseDO.getParentCourseId() != 0) {
             CourseDO parentCourseDO = courseDataService.getById(courseDO.getParentCourseId());
-            parentCourse = courseConverter.toDTOV4(parentCourseDO);
+            parentCourse = courseService.toDTOV4(parentCourseDO);
         } else {
-            parentCourse = courseConverter.toDTOV4(courseDO);
+            parentCourse = courseService.toDTOV4(courseDO);
         }
         
         boolean subscribed = checkSubscriptionStatus(userId, parentCourse.getId());
@@ -462,15 +453,6 @@ public class PageService {
         }
     }
     
-    private List<CourseDTO> getSubCourses(long parentCourseId) {
-        return courseConverter.toDTOV2(courseDataService.listByParentAndState(CourseState.APPROVED, parentCourseId));
-    }
-    
-    private Integer getCourseProgress(long userId, Long courseId) {
-        UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
-        return userCourse != null ? userCourse.getProgressPercent() : 0;
-    }
-    
     private Map<String, Object> buildPageDataResponse(CourseTocDTO courseTocDTO, NodeDO nodeDO,
                                                       CourseDTO parentCourse, CourseDO courseDO, List<CourseDTO> subCourseList,
                                                       PostDTO chosenPosting, List<PostDTO> fixedPostings, List<PostDTO> otherPostings,
@@ -489,7 +471,7 @@ public class PageService {
 
         data.put("node", nodeConverter.toDTOV2(nodeDO, nodeCompleted));
         data.put("parentCourse", parentCourse);
-        data.put("course", courseConverter.toDTOV4(courseDO, parentCourse.getSubscribed(), courseProgress));
+        data.put("course", courseService.toDTOV5(courseDO, parentCourse.getSubscribed(), courseProgress));
         data.put("subCourseList", subCourseList);
         data.put("chosenPosting", chosenPosting);
         data.put("fixedPostings", fixedPostings);

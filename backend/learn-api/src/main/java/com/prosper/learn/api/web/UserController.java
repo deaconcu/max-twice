@@ -4,7 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.client.UserClient;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.basic.MessageService;
-import com.prosper.learn.domain.service.business.PostingService;
+import com.prosper.learn.domain.service.business.PostService;
 import com.prosper.learn.domain.service.business.LearningProgressService;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.domain.util.Converter;
@@ -38,7 +38,7 @@ public class UserController implements UserClient {
     private final FollowMapper followMapper;
     private final VerificationMapper verificationMapper;
     private final JavaMailSender mailSender;
-    private final PostingService postingService;
+    private final PostService postService;
     private final MessageService messageService;
     private final LearningProgressService learningProgressService;
     private final UserCourseMapper userCourseMapper;
@@ -178,7 +178,8 @@ public class UserController implements UserClient {
         if (userDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }
-        return Response.success(postingService.getUserArticleWithViews(userDO.getId(), lastId));
+        //return Response.success(postService.getUserArticleWithViews(userDO.getId(), lastId));
+        return Response.success();
     }
 
     @Override
@@ -187,7 +188,7 @@ public class UserController implements UserClient {
         if (userDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }
-        return Response.success(postingService.getUserContentsWithViews(userDO.getId(), lastId));
+        return Response.success(postService.getUserContentsWithViews(userDO.getId(), lastId));
     }
 
     @Override

@@ -9,7 +9,6 @@ import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.dto.response.DailyStatsDTO;
 import com.prosper.learn.dto.response.PostDTO;
-import com.prosper.learn.dto.response.old.PostDTOV2;
 import com.prosper.learn.dto.response.UserStatsDTO;
 import com.prosper.learn.persistence.dataobject.UserStatsDO;
 import com.prosper.learn.persistence.dataobject.PostStatsDO;
@@ -1117,7 +1116,7 @@ public class DailyStatsService {
                 Long postId = postObj.getId();
                 if (postId != null) {
                     int totalViews = getPostTotalViews(postId);
-                    postObj.setViews(totalViews);
+                    postObj.setViewCount(totalViews);
                 }
             } catch (Exception e) {
                 log.error("Failed to set views for post: {}", e.getMessage(), e);

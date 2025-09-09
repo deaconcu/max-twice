@@ -1,18 +1,17 @@
 package com.prosper.learn.domain.service.business;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 
 import static com.prosper.learn.common.Enums.UserRoadmapState;
 
-import com.prosper.learn.domain.service.converter.ProfessionConverter;
-import com.prosper.learn.domain.service.converter.RoadmapConverter;
-import com.prosper.learn.domain.service.converter.UserConverter;
-import com.prosper.learn.domain.service.converter.UserRoadmapConverter;
-import com.prosper.learn.dto.response.ProfessionDTO;
+import com.prosper.learn.domain.util.converter.ProfessionConverter;
+import com.prosper.learn.domain.util.converter.RoadmapConverter;
+import com.prosper.learn.domain.util.converter.UserConverter;
+import com.prosper.learn.domain.util.converter.UserRoadmapConverter;
 import com.prosper.learn.dto.response.RoadmapDTO;
-import com.prosper.learn.dto.response.old.RoadmapDTOV1;
-import com.prosper.learn.dto.response.old.RoadmapDTOV2;
 import com.prosper.learn.dto.response.UserRoadmapDTO;
 import com.prosper.learn.persistence.dataobject.ProfessionDO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
@@ -51,6 +50,90 @@ public class UserRoadmapService {
     private static final int INITIAL_PROGRESS = 0;
     private static final double COMPLETE_PROGRESS = 100.0;
     private static final double PROGRESS_PRECISION = 100.0;
+    
+    // ========== DTO转换方法 ==========
+    
+    /**
+     * 转换单个对象为DTO
+     */
+    public UserRoadmapDTO toDTO(UserRoadmapDO userRoadmapDO) {
+        return userRoadmapConverter.toDTO(userRoadmapDO);
+    }
+    
+    /**
+     * 转换列表为DTO列表
+     */
+    public List<UserRoadmapDTO> toDTO(List<UserRoadmapDO> userRoadmapDOList) {
+        return userRoadmapConverter.toDTO(userRoadmapDOList);
+    }
+
+    /**
+     * v1 = v0 + roadmap
+     */
+    public UserRoadmapDTO toDTOV1(UserRoadmapDO userRoadmapDO, Long userId) {
+        UserRoadmapDTO userRoadmapDTO = toDTO(userRoadmapDO);
+        RoadmapDTO roadmapDTO = roadmapService.getById(userRoadmapDO.getRoadmapId(), userId);
+        userRoadmapDTO.setRoadmap(roadmapDTO);
+        return userRoadmapDTO;
+    }
+
+    /**
+     * 转换列表为DTO列表
+     */
+    public List<UserRoadmapDTO> toDTOV1(List<UserRoadmapDO> userRoadmapList, long userId) {
+        if (userRoadmapList.isEmpty()) {
+            return List.of();
+        }
+
+        // 提取所有 roadmap IDs
+        List<Long> roadmapIds = userRoadmapList.stream()
+                .map(userRoadMap -> userRoadMap.getRoadmapId().longValue())
+                .collect(Collectors.toList());
+
+        // 批量查询 roadmap 信息
+        List<RoadmapDO> roadmapDOList = roadmapDataService.getByIds(roadmapIds);
+        Map<Long, RoadmapDO> roadmapMap = roadmapDOList.stream()
+                .collect(Collectors.toMap(RoadmapDO::getId, roadmap -> roadmap));
+
+        // 需要更新的路线图记录列表
+        List<UserRoadmapDO> toUpdateList = new ArrayList<>();
+
+        // 先批量检查和收集所有需要更新的路线图状态
+        for (UserRoadmapDO userRoadmapDO : userRoadmapList) {
+            RoadmapDO roadmapDO = roadmapMap.get(userRoadmapDO.getRoadmapId());
+            if (roadmapDO != null) {
+                try {
+                    String parsedContent = roadmapService.parseContentToGraphFormat(roadmapDO.getContent(), userId);
+                    checkAndCollectRoadmapUpdate(userRoadmapDO, parsedContent, toUpdateList);
+                    // 将解析后的内容设置回去，避免重复解析
+                    // roadmapDO.setContent(parsedContent);
+                } catch (Exception e) {
+                    // 解析失败时继续处理其他路线图
+                    log.error("Failed to parse roadmap content: roadmapId={}", userRoadmapDO.getRoadmapId(), e);
+                }
+            }
+        }
+
+        // 批量更新数据库
+        if (!toUpdateList.isEmpty()) {
+            userRoadmapDataService.updateBatch(toUpdateList);
+        }
+
+        // 转换为 DTO 并填充 roadmap 信息
+        return userRoadmapList.stream()
+                .map(userRoadmapDO -> {
+                    UserRoadmapDTO dto = toDTO(userRoadmapDO);
+                    RoadmapDO roadmapDO = roadmapMap.get(userRoadmapDO.getRoadmapId());
+
+                    if (roadmapDO != null) {
+                        // 这里的content已经在上面解析过了
+                        RoadmapDTO roadmapDTO = roadmapService.toDTOV1(roadmapDO, userId);
+                        dto.setRoadmap(roadmapDTO);
+                    }
+                    return dto;
+                }).collect(Collectors.toList());
+    }
+
 
     // ========== 私有辅助方法 ==========
 
@@ -132,114 +215,23 @@ public class UserRoadmapService {
 
     /**
      * 获取用户的路线图学习进度
-     * @param userId 用户ID
-     * @param roadmapId 路线图ID
-     * @return 学习进度记录，如果不存在返回null
      */
     public UserRoadmapDTO getUserRoadmap(Long userId, Long roadmapId) {
         validateUserId(userId);
         validateRoadmapId(roadmapId);
-        
-        try {
-            UserRoadmapDO userRoadmapDO = userRoadmapDataService.getByUserAndRoadmap(userId, roadmapId);
-            if (userRoadmapDO == null) {
-                return null;
-            }
 
-            UserRoadmapDTO dto = userRoadmapConverter.toDTO(userRoadmapDO);
-
-            // 批量查询 roadmap 信息
-            RoadmapDO roadmapDO = roadmapDataService.getById(roadmapId);
-            if (roadmapDO != null) {
-                //RoadmapDTOV2 roadmapDTO = roadmapConverter.toRoadmapDTOV2WithUser(roadmapDO, userDataService);
-                RoadmapDTO roadmapDTO = roadmapConverter.toDTOV2(roadmapDO);
-                dto.setRoadmap(roadmapDTO);
-            }
-
-            return dto;
-            
-        } catch (Exception e) {
-            log.error("获取用户路线图进度失败: userId={}, roadmapId={}", userId, roadmapId, e);
-            throw ErrorCode.USER_ROADMAP_NOT_FOUND.exception(e);
-        }
+        UserRoadmapDO userRoadmapDO = userRoadmapDataService.getByUserAndRoadmap(userId, roadmapId);
+        return toDTOV1(userRoadmapDO, userId);
     }
 
     /**
-     * 获取用户所有路线图学习进度
-     * @param userId 用户ID
-     * @return 用户所有路线图学习进度列表
+     * 获取用户的全部路线图学习进度
+     * @param userId
+     * @return
      */
     public List<UserRoadmapDTO> getUserAllRoadmap(Long userId) {
         List<UserRoadmapDO> userRoadmapList = userRoadmapDataService.getByUser(userId);
-        if (userRoadmapList.isEmpty()) {
-            return List.of();
-        }
-
-        // 提取所有 roadmap IDs
-        List<Long> roadmapIds = userRoadmapList.stream()
-                .map(progress -> progress.getRoadmapId().longValue())
-                .collect(Collectors.toList());
-
-        // 批量查询 roadmap 信息
-        List<RoadmapDO> roadmapDOList = roadmapDataService.getByIds(roadmapIds);
-        Map<Long, RoadmapDO> roadmapMap = roadmapDOList.stream()
-                .collect(Collectors.toMap(RoadmapDO::getId, roadmap -> roadmap));
-
-        // 提取所有 profession IDs
-        List<Long> professionIds = roadmapDOList.stream()
-                .map(RoadmapDO::getProfessionId)
-                .distinct()
-                .collect(Collectors.toList());
-
-        // 批量查询 profession 信息
-        Map<Long, ProfessionDO> professionMap = professionDataService.getMapByIds(professionIds);
-
-        // 需要更新的路线图记录列表
-        List<UserRoadmapDO> toUpdateList = new ArrayList<>();
-        
-        // 先批量检查和收集所有需要更新的路线图状态
-        for (UserRoadmapDO progressDO : userRoadmapList) {
-            RoadmapDO roadmapDO = roadmapMap.get(progressDO.getRoadmapId());
-            if (roadmapDO != null) {
-                try {
-                    String parsedContent = roadmapService.parseContentToGraphFormat(roadmapDO.getContent(), userId);
-                    checkAndCollectRoadmapUpdate(progressDO, parsedContent, toUpdateList);
-                    // 将解析后的内容设置回去，避免重复解析
-                    roadmapDO.setContent(parsedContent);
-                } catch (Exception e) {
-                    // 解析失败时继续处理其他路线图
-                    log.error("Failed to parse roadmap content: roadmapId={}", progressDO.getRoadmapId(), e);
-                }
-            }
-        }
-        
-        // 批量更新数据库
-        if (!toUpdateList.isEmpty()) {
-            userRoadmapDataService.updateBatch(toUpdateList);
-        }
-
-        // 转换为 DTO 并填充 roadmap 信息
-        return userRoadmapList.stream()
-                .map(userRoadmapDO -> {
-                    UserRoadmapDTO dto = userRoadmapConverter.toDTO(userRoadmapDO);
-                    RoadmapDO roadmapDO = roadmapMap.get(userRoadmapDO.getRoadmapId());
-
-                    if (roadmapDO != null) {
-                        // 这里的content已经在上面解析过了
-                        RoadmapDTO roadmapDTO = roadmapConverter.toDTOV2(roadmapDO);
-
-                        /*
-                        // 设置 profession 信息
-                        ProfessionDO professionDO = professionMap.get(roadmapDO.getProfessionId());
-                        if (professionDO != null) {
-                            ProfessionDTO professionDTO = Converter.INSTANCE.toProfessionDTO(professionDO);
-                            roadmapDTO.setProfession(professionDTO);
-                        }
-                         */
-                        dto.setRoadmap(roadmapDTO);
-                    }
-                    return dto;
-                }).collect(Collectors.toList());
+        return toDTOV1(userRoadmapList, userId);
     }
 
     /**
@@ -257,16 +249,16 @@ public class UserRoadmapService {
             }
             
             // 解析content获取节点信息
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            com.fasterxml.jackson.databind.JsonNode rootNode = mapper.readTree(content);
-            com.fasterxml.jackson.databind.JsonNode nodesNode = rootNode.get("nodes");
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(content);
+            JsonNode nodesNode = rootNode.get("nodes");
             
             if (nodesNode != null && nodesNode.isArray()) {
                 int totalCourses = 0;
                 int completedCourses = 0;
                 double totalProgress = 0.0;
                 
-                for (com.fasterxml.jackson.databind.JsonNode node : nodesNode) {
+                for (JsonNode node : nodesNode) {
                     totalCourses++;
                     boolean finished = node.get("finished").asBoolean(false);
                     double progress = node.get("progress").asDouble(0.0);
@@ -337,9 +329,7 @@ public class UserRoadmapService {
         }
 
         userRoadmapDataService.update(userRoadmapDO);
-
-        //return Converter.INSTANCE.toUserRoadmapDTO(progressDO);
-        return userRoadmapConverter.toDTO(userRoadmapDO);
+        return toDTO(userRoadmapDO);
     }
 
     /**

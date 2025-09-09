@@ -150,7 +150,7 @@ public class CommentController implements CommentClient {
 
             HashMap<Long, CommentDTO> map = new HashMap<>();
             for (CommentDO commentDO : children) {
-                map.put(commentDO.getReplyToUserId(), Converter.INSTANCE.toCommentDTO(commentDO));
+                map.put(commentDO.getReplyToCommentId(), Converter.INSTANCE.toCommentDTO(commentDO));
             }
 
             for (CommentDTO commentDTO: commentDTOList) {

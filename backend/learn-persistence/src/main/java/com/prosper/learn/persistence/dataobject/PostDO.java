@@ -25,6 +25,8 @@ public class PostDO {
 
     private Integer commentCount;
 
+    private Integer viewCount;
+
     private Integer state;
 
     private Double score;  // 计算出的排序分数

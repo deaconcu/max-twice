@@ -44,7 +44,7 @@ public class AggregateController implements AggregateClient {
     private final ContentsService contentsService;
     private final CourseMapper courseMapper;
     private final ObjectMapper objectMapper;
-    private final PostingService postingService;
+    private final PostService postService;
     private final PostMapper postMapper;
     private final UpvoteMapper upvoteMapper;
     private final NodeMapper nodeMapper;
@@ -65,9 +65,9 @@ public class AggregateController implements AggregateClient {
         CommentDO commentDO = commentMapper.getById(commentId);
         if (commentDO == null) throw new IllegalArgumentException("评论不存在");
 
-        if (commentDO.getReplyToUserId() != 0) {
+        if (commentDO.getReplyToCommentId() != 0) {
             return new Response<>(ReadDTO.builder()
-                    .commentId(commentDO.getReplyToUserId())
+                    .commentId(commentDO.getReplyToCommentId())
                     .subCommentId(commentDO.getId())
                     .build());
         }
@@ -79,7 +79,8 @@ public class AggregateController implements AggregateClient {
 
         if (commentDO.getType() == post.value()) {
             long postId = commentDO.getObjectId();
-            postDO = postingService.get(postId);
+            //postDO = postService.get(postId);
+            postDO = null;
             nodeDO = nodeMapper.getById(postDO.getNodeId());
             courseDO = courseMapper.getById(nodeDO.getCourseId());
             path = "1-" + courseDO.getRootNodeId();
@@ -96,7 +97,7 @@ public class AggregateController implements AggregateClient {
     public Response<ReadDTO> readByPost(Long postId) {
         if (postId <= 0) throw new IllegalArgumentException("帖子ID必须大于0");
 
-        PostDO postDO = postingService.get(postId);
+        PostDO postDO = null; //postService.get(postId);
         if (postDO == null) throw new IllegalArgumentException("帖子不存在");
 
         NodeDO nodeDO = nodeMapper.getById(postDO.getNodeId());
@@ -166,7 +167,7 @@ public class AggregateController implements AggregateClient {
 
                 JsonNode currentNode = pair.right();
                 if (currentNode != null && currentNode.has("+")) {
-                    PostDO chosenPostDO = postingService.get(currentNode.get("+").asInt());
+                    PostDO chosenPostDO = null; //postService.get(currentNode.get("+").asInt());
                     userIds.add(chosenPostDO.getCreatorId());
                     chosenPosting = Converter.INSTANCE.toPostDTO(chosenPostDO);
                 }
@@ -175,7 +176,7 @@ public class AggregateController implements AggregateClient {
                     ArrayNode idsNode = (ArrayNode) currentNode.get("^");
                     fixedIds = objectMapper.convertValue(idsNode, List.class);
 
-                    List<PostDO> postDOList = postingService.getList(fixedIds);
+                    List<PostDO> postDOList = null; //postService.getList(fixedIds);
                     for (PostDO postingDTO : postDOList) {
                         userIds.add(postingDTO.getCreatorId());
                     }
@@ -186,7 +187,7 @@ public class AggregateController implements AggregateClient {
             throw new RuntimeException(e);
         }
 
-        List<PostDO> postDOList = postingService.getList(nodeDO.getId());
+        List<PostDO> postDOList = null; //postService.getList(nodeDO.getId());
         for (PostDO item: postDOList) {
             userIds.add(item.getCreatorId());
         }
@@ -338,7 +339,7 @@ public class AggregateController implements AggregateClient {
         List<Long> allPostingIds = new ArrayList<>();
         List<Long> userIds = new LinkedList<>();
         postDOList.forEach(postingDO -> {
-            postingService.idToName(postingDO);
+            postService.idToName(postingDO);
             allPostingIds.add(postingDO.getId());
             userIds.add(postingDO.getCreatorId());
         });

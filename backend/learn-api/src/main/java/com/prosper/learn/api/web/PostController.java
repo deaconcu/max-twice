@@ -10,7 +10,7 @@ import com.prosper.learn.dto.response.old.PostDTOV1;
 import com.prosper.learn.dto.response.Response;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
-import com.prosper.learn.domain.service.business.PostingService;
+import com.prosper.learn.domain.service.business.PostService;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ public class PostController implements PostClient {
     private final PostMapper postMapper;
     private final ObjectMapper objectMapper;
     private final NodeMapper nodeMapper;
-    private final PostingService postService;
+    private final PostService postService;
 
     @Override
     public Response create(PostDTOV1 posting) {
@@ -89,7 +89,7 @@ public class PostController implements PostClient {
 
     @Override
     public PostDTOV1 get(Long id) {
-        return Converter.INSTANCE.toPostDTO(postService.get(id));
+        return null; //Converter.INSTANCE.toPostDTO(postService.get(id));
     }
 
     @Override
@@ -161,7 +161,7 @@ public class PostController implements PostClient {
     @GetMapping("/post/list/by-score")
     public Response<List<PostDTOV1>> getPostsByScore(@RequestParam long nodeId,
                                                      @RequestParam(defaultValue = "10") int limit) {
-        List<PostDO> postings = postService.getListByScore(nodeId, limit);
+        List<PostDO> postings = null; //postService.getListByScore(nodeId, limit);
         return new Response<>(Converter.INSTANCE.toPostDTO(postings));
     }
 
@@ -178,7 +178,7 @@ public class PostController implements PostClient {
                                                                    @RequestParam(required = false) Double lastScore,
                                                                    @RequestParam(defaultValue = "0") long lastId,
                                                                    @RequestParam(defaultValue = "10") int limit) {
-        List<PostDO> postings = postService.getListByScoreWithPagination(nodeId, lastScore, lastId, limit);
+        List<PostDO> postings = null; //postService.getListByScoreWithPagination(nodeId, lastScore, lastId, limit);
         return new Response<>(Converter.INSTANCE.toPostDTO(postings));
     }
 }

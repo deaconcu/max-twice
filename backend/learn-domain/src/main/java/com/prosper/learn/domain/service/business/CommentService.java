@@ -6,7 +6,7 @@ import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.basic.RedisStatsService;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
-import com.prosper.learn.domain.service.converter.CommentConverter;
+import com.prosper.learn.domain.util.converter.CommentConverter;
 import com.prosper.learn.dto.request.CreateCommentRequest;
 import com.prosper.learn.dto.response.CommentDTO;
 import com.prosper.learn.persistence.dataobject.*;
@@ -182,7 +182,7 @@ public class CommentService {
         CommentDO commentDO = new CommentDO();
         commentDO.setObjectId(request.getObjectId());
         commentDO.setType(request.getType());
-        commentDO.setReplyToUserId(request.getReplyTo());
+        commentDO.setReplyToCommentId(request.getReplyTo());
         commentDO.setToUserId(request.getToUser());
         commentDO.setContent(request.getContent());
         commentDO.setFromUserId(userId);
@@ -275,30 +275,9 @@ public class CommentService {
     }
 
     /**
-     * 给查询到的评论列表设置点赞状态 upvoted
-     */
-    private void processUpvoteStatus(List<CommentDTO> commentDTOList, Long userId) {
-        if (commentDTOList.isEmpty()) {
-            return;
-        }
-        
-        List<Long> ids = commentDTOList.stream().map(CommentDTO::getId).toList();
-        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, ids, Enums.ObjectType.comment.value());
-
-        Set<Long> upvotedSet = new HashSet<>();
-        for (UpvoteDO upvoteDO : upvoteList) {
-            upvotedSet.add(upvoteDO.getObjectId());
-        }
-
-        for (CommentDTO commentDTO : commentDTOList) {
-            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
-        }
-    }
-    
-    /**
      * 给查询到的评论列表及其子评论设置点赞状态 upvoted
      */
-    private void processUpvoteStatusWithChildren(List<CommentDTO> commentDTOList, HashMap<Long, CommentDTO> childrenMap, Long userId) {
+    private List<CommentDTO> processUpvoteStatusWithChildren(List<CommentDTO> commentDTOList, HashMap<Long, CommentDTO> childrenMap, Long userId) {
         List<Long> allIds = new ArrayList<>();
         
         // 收集所有评论ID（父评论和子评论）
@@ -308,7 +287,7 @@ public class CommentService {
         allIds.addAll(childrenMap.values().stream().map(CommentDTO::getId).toList());
         
         if (allIds.isEmpty()) {
-            return;
+            return commentDTOList;
         }
 
         List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, allIds, Enums.ObjectType.comment.value());
@@ -327,6 +306,7 @@ public class CommentService {
         for (CommentDTO commentDTO: childrenMap.values()) {
             commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
         }
+        return commentDTOList;
     }
 
     /**
@@ -350,41 +330,10 @@ public class CommentService {
             commentDOList = commentDataService.getByObjectIdPaginated(objectId, type, lastComment.getScore(), offsetId, pageSize);
         }
 
-        List<CommentDTO> commentDTOList = commentConverter.toDTO(commentDOList);
-
-        List<Long> ids = new ArrayList<>();
-        for (CommentDO commentDO : commentDOList) {
-            ids.add(commentDO.getId());
-        }
-
-        if (!ids.isEmpty()) {
-            fillChildComments(commentDTOList, ids, userId);
-        }
-
-        return commentDTOList;
+        return toDTOV1(commentDOList, userId);
     }
 
-    /**
-     * 给commentDTOList查询子评论并填充，每条评论只填充一条子评论，选取分数最高的子评论
-     */
-    private void fillChildComments(List<CommentDTO> commentDTOList, List<Long> ids, Long userId) {
-        List<CommentDO> children = commentDataService.getChildren(ids);
 
-        HashMap<Long, CommentDTO> map = new HashMap<>();
-        for (CommentDO commentDO : children) {
-            map.put(commentDO.getReplyToUserId(), commentConverter.toDTO(commentDO));
-        }
-
-        for (CommentDTO commentDTO: commentDTOList) {
-            if (map.containsKey(commentDTO.getId())) {
-                CommentDTO childCommentDTO = map.get(commentDTO.getId());
-                ids.add(childCommentDTO.getId());
-                commentDTO.addChild(childCommentDTO);
-            }
-        }
-
-        processUpvoteStatusWithChildren(commentDTOList, map, userId);
-    }
 
     /**
      * 获取子评论列表，分页查询(lastId)，按分数和ID倒序排列
@@ -407,8 +356,7 @@ public class CommentService {
         }
 
         List<CommentDTO> commentDTOList = commentConverter.toDTO(commentDOList);
-        processUpvoteStatus(commentDTOList, userId);
-        return commentDTOList;
+        return toDTOV2(commentDTOList, userId);
     }
 
 
@@ -419,7 +367,7 @@ public class CommentService {
     public List<CommentDTO> getPendingComments() {
         int limit = systemProperties.getComment().getPendingCommentsLimit();
         List<CommentDO> commentDOList = commentDataService.getListByState(submited.value(), limit);
-        return commentConverter.toDTOV1(commentDOList);
+        return commentConverter.toDTO(commentDOList);
     }
 
     /**
@@ -429,7 +377,6 @@ public class CommentService {
     @Transactional
     public CommentDTO approveComment(Long id, boolean approve) {
         validateCommentId(id);
-        
         CommentDO commentDO = validateAndGetComment(id);
 
         if (approve && commentDO.getState() != Enums.CommentState.approved.value()) {
@@ -440,6 +387,70 @@ public class CommentService {
             commentDO.setState(Enums.CommentState.deleted.value());
             commentDataService.update(commentDO);
         }
-        return commentConverter.toDTOV1(commentDO);
+        return toDTO(commentDO);
     }
+
+    // ========== toDTV ==========
+
+    /**
+     * 单个 CommentDO 转换为 CommentDTO，默认方法
+     */
+    public CommentDTO toDTO(CommentDO commentDO) {
+        return commentConverter.toDTO(commentDO);
+    }
+
+    /**
+     * 给commentDTOList查询子评论并填充，每条评论只填充一条子评论，选取分数最高的子评论，并且填充upvoted状态位
+     * dtoV1 = dto + childComments + upvoted
+     */
+    private List<CommentDTO> toDTOV1(List<CommentDO> commentDOList, Long userId) {
+        List<Long> ids = new ArrayList<>();
+        for (CommentDO commentDO : commentDOList) {
+            ids.add(commentDO.getId());
+        }
+
+        List<CommentDTO> commentDTOList = commentConverter.toDTO(commentDOList);
+        List<CommentDO> children = commentDataService.getChildren(ids);
+
+        HashMap<Long, CommentDTO> map = new HashMap<>();
+        for (CommentDO commentDO : children) {
+            map.put(commentDO.getReplyToCommentId(), commentConverter.toDTO(commentDO));
+        }
+
+        for (CommentDTO commentDTO: commentDTOList) {
+            if (map.containsKey(commentDTO.getId())) {
+                CommentDTO childCommentDTO = map.get(commentDTO.getId());
+                ids.add(childCommentDTO.getId());
+                commentDTO.addChild(childCommentDTO);
+            }
+        }
+
+        return processUpvoteStatusWithChildren(commentDTOList, map, userId);
+    }
+
+    /**
+     * 给查询到的评论列表设置点赞状态 upvoted
+     * dtoV2 = dto + upvoted
+     * 在加载更多子评论时调用，因为它已经是子评论了，所以它没有子评论列表
+     */
+    private List<CommentDTO> toDTOV2(List<CommentDTO> commentDTOList, Long userId) {
+        if (commentDTOList.isEmpty()) {
+            return commentDTOList;
+        }
+
+        List<Long> ids = commentDTOList.stream().map(CommentDTO::getId).toList();
+        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, ids, Enums.ObjectType.comment.value());
+
+        Set<Long> upvotedSet = new HashSet<>();
+        for (UpvoteDO upvoteDO : upvoteList) {
+            upvotedSet.add(upvoteDO.getObjectId());
+        }
+
+        for (CommentDTO commentDTO : commentDTOList) {
+            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
+        }
+        return commentDTOList;
+    }
+
+
 }

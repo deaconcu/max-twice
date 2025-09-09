@@ -5,7 +5,7 @@ import static com.prosper.learn.common.Enums.ProfessionState;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ProfessionRankingService;
-import com.prosper.learn.domain.service.converter.ProfessionConverter;
+import com.prosper.learn.domain.util.converter.ProfessionConverter;
 import com.prosper.learn.dto.request.CreateProfessionRequest;
 import com.prosper.learn.dto.request.UpdateProfessionRequest;
 import com.prosper.learn.dto.response.ProfessionDTO;
@@ -34,37 +34,39 @@ public class ProfessionService {
 
     // ========== 公共方法 ==========
     
+
+    
     public ProfessionDTO getById(long id) {
         validateProfessionId(id);
         ProfessionDO professionDO = professionDataService.getById(id);
-        return professionDO != null ? professionConverter.toDTO(professionDO) : null;
+        return professionDO != null ? toDTO(professionDO) : null;
     }
 
     public List<ProfessionDTO> getListByStateAndLastId(ProfessionState state, long lastId) {
         List<ProfessionDO> professionDOList = professionDataService.listByStateAndLastId(state.value(), lastId);
-        return professionConverter.toDTO(professionDOList);
+        return toDTO(professionDOList);
     }
 
     public List<ProfessionDTO> getListByMainCategoryAndLastId(int mainCategory, long lastId) {
         List<ProfessionDO> professionDOList = professionDataService.listByMainCategoryAndLastId(mainCategory, lastId);
-        return professionConverter.toDTO(professionDOList);
+        return toDTO(professionDOList);
     }
 
     public List<ProfessionDTO> getListBySubCategoryAndLastId(int subCategory, long lastId) {
         List<ProfessionDO> professionDOList = professionDataService.listBySubCategoryAndLastId(subCategory, lastId);
-        return professionConverter.toDTO(professionDOList);
+        return toDTO(professionDOList);
     }
 
     public List<ProfessionDTO> getListByCategoryAndLastId(int mainCategory, int subCategory, long lastId) {
         List<ProfessionDO> professionDOList = professionDataService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
-        return professionConverter.toDTO(professionDOList);
+        return toDTO(professionDOList);
     }
 
     public List<ProfessionDTO> getListByPage(int page) {
         validatePageNumber(page);
         int pageSize = systemProperties.getProfession().getDefaultPageSize();
         List<ProfessionDO> professionDOList = professionDataService.listByPage((page - 1) * pageSize, pageSize);
-        return professionConverter.toDTO(professionDOList);
+        return toDTO(professionDOList);
     }
 
     public Long create(long userId, CreateProfessionRequest request) {
@@ -158,7 +160,7 @@ public class ProfessionService {
             
             List<ProfessionDTO> result = new ArrayList<>();
             for (ProfessionDO professionDO : professionDOList) {
-                ProfessionDTO professionDTO = professionConverter.toDTO(professionDO);
+                ProfessionDTO professionDTO = toDTO(professionDO);
                 
                 long learningCount = professionRankingService.getProfessionLearningCount(professionDO.getId());
                 professionDTO.setLearnerCount((int) learningCount);
@@ -172,6 +174,22 @@ public class ProfessionService {
             log.error("获取热门专业失败，limit: {}", limit, e);
             throw ErrorCode.PROFESSION_HOT_LIST_FAILED.exception(e);
         }
+    }
+
+    // ========== DTO转换方法 ==========
+
+    /**
+     * 转换单个对象为DTO
+     */
+    public ProfessionDTO toDTO(ProfessionDO professionDO) {
+        return professionConverter.toDTO(professionDO);
+    }
+
+    /**
+     * 转换列表为DTO列表
+     */
+    public List<ProfessionDTO> toDTO(List<ProfessionDO> professionDOList) {
+        return professionConverter.toDTO(professionDOList);
     }
     
     // ========== 私有辅助方法 ==========

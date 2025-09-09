@@ -1,17 +1,16 @@
 package com.prosper.learn.domain.service.business;
 
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
+import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.MessageService;
-import com.prosper.learn.domain.service.converter.CourseConverter;
-import com.prosper.learn.domain.service.converter.UserConverter;
+import com.prosper.learn.domain.util.converter.CourseConverter;
+import com.prosper.learn.domain.util.converter.UserConverter;
 import com.prosper.learn.domain.service.data.*;
 import com.prosper.learn.dto.response.*;
-import com.prosper.learn.dto.response.old.UserDTOV0;
 import com.prosper.learn.dto.response.old.UserDTOV2;
-import com.prosper.learn.dto.response.old.UserDTOV3;
-import com.prosper.learn.dto.response.old.UserDTOV4;
 import com.prosper.learn.persistence.dataobject.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +24,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.prosper.learn.common.Enums.*;
 
 /**
  * 用户业务服务
@@ -40,11 +41,10 @@ public class UserService {
     private final FollowDataService followDataService;
     private final VerificationDataService verificationDataService;
     private final JavaMailSender mailSender;
-    private final PostingService postingService;
     private final MessageService messageService;
     private final SystemProperties systemProperties;
     private final UserConverter userConverter;
-    private final CourseConverter courseConverter;
+    private final CourseService courseService;
     
     // ========== 常量定义 ==========
     
@@ -55,16 +55,75 @@ public class UserService {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = 
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
-    // ========== 公共方法 ==========
+    // ========== 公共方法 Query ==========
 
     /**
      * 获取当前用户信息
      */
-    public UserDTO getCurrentUser(Long userId) {
+    public UserDTO getUser(Long userId) {
         validateUserId(userId);
         UserDO userDO = userDataService.getById(userId);
-        return userConverter.toDTO(userDO);
+        return toDTO(userDO);
     }
+
+    public UserDTO getUser(Long userId, DTOVersion dtoVersion) {
+        validateUserId(userId);
+        UserDO userDO = userDataService.getById(userId);
+        switch (dtoVersion) {
+            case V1 -> { return toDTOV1(userDO); }
+            case V2 -> { return toDTOV2(userDO); }
+            case V3 -> { return toDTOV3(userDO); }
+        }
+        throw ErrorCode.USER_NOT_FOUND.exception();
+    }
+
+    /**
+     * 获取用户信息（包含关注状态）
+     */
+    public UserDTO getUser(Long userId, Long viewerId) {
+        validateUserId(viewerId);
+        UserDO userDO = validateUserExists(userId);
+
+        return toDTOV4(userDO, viewerId);
+    }
+
+    /**
+     * 批量加载用户信息
+     */
+    public Map<Long, UserDTO> getUserMap(List<Long> ids) {
+        if (ids.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        List<UserDTO> userList = toDTOV2(userDataService.getByIds(ids));
+        return userList.stream().collect(Collectors.toMap(UserDTO::getId, user -> user));
+    }
+
+    /**
+     * 搜索用户
+     */
+    public List<UserDTO> searchUsers(String name) {
+        validateSearchName(name);
+        List<UserDO> userDOList = userDataService.searchByName(name);
+        return userConverter.toDTOV2(userDOList);
+    }
+
+    /**
+     * 获取用户订阅
+     */
+    public Object getUserSubscriptions(Long userId) {
+        validateUserExists(userId);
+
+        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
+        if (userProfileDO == null || isEmptySubscription(userProfileDO.getSubscription())) {
+            return new ArrayList<>();
+        }
+
+        return parseUserSubscriptions(userProfileDO.getSubscription(), userId);
+    }
+
+
+    // ========== 公共方法 Command ==========
 
     /**
      * 更新当前用户信息
@@ -76,29 +135,6 @@ public class UserService {
         userDO.setName(name);
         userDO.setBiography(biography);
         userDataService.update(userDO);
-    }
-
-    /**
-     * 获取用户信息（包含关注状态）
-     */
-    public UserDTO getUser(Long userId, Long viewerId) {
-        UserDO userDO = validateUserExists(userId);
-        validateUserId(viewerId);
-
-        FollowDO followDO = followDataService.get(viewerId, userId);
-        if (followDO != null) {
-            return userConverter.toDTOV1(userDO, true);
-        }
-        return userConverter.toDTOV1(userDO, false);
-    }
-
-    /**
-     * 搜索用户
-     */
-    public List<UserDTO> searchUsers(String name) {
-        validateSearchName(name);
-        List<UserDO> userDOList = userDataService.searchByName(name);
-        return userConverter.toDTOV4(userDOList);
     }
 
     /**
@@ -140,7 +176,7 @@ public class UserService {
         // TODO: 密码验证
         // if (!userDO.getPassword().equals(Utils.md5(password))) throw ErrorCode.USER_PASSWORD_WRONG.exception();
         
-        UserDTO userDTO = userConverter.toDTOV2(userDO);
+        UserDTO userDTO = toDTOV2(userDO);
         return userDTO;
     }
 
@@ -176,34 +212,6 @@ public class UserService {
         user.setEmailValidated(true);
         userDataService.update(user);
         return userConverter.toDTO(user);
-    }
-
-    /**
-     * 获取用户文章或内容
-     */
-    public Object getUserPosts(Long userId, Long lastId, String type) {
-        validateUserExists(userId);
-        validateUserId(lastId);
-        
-        if ("content".equals(type)) {
-            return postingService.getUserContentsWithViews(userId, lastId);
-        } else {
-            return postingService.getUserArticleWithViews(userId, lastId);
-        }
-    }
-
-    /**
-     * 获取用户订阅
-     */
-    public Object getUserSubscriptions(Long userId) {
-        validateUserExists(userId);
-
-        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
-        if (userProfileDO == null || isEmptySubscription(userProfileDO.getSubscription())) {
-            return new ArrayList<>();
-        }
-        
-        return parseUserSubscriptions(userProfileDO.getSubscription(), userId);
     }
 
     /**
@@ -322,35 +330,6 @@ public class UserService {
     }
 
     /**
-     * 获取关注列表
-     */
-    public Object getFollowees(Long userId, String lastCreateTime) {
-        validateUserId(userId);
-        validateUserExists(userId);
-        validateDateTimeString(lastCreateTime);
-        
-        LocalDateTime time = LocalDateTime.parse(lastCreateTime, DATE_TIME_FORMATTER);
-        int pageSize = systemProperties.getUser().getFollowPageSize();
-        
-        List<FollowDO> followDOList = followDataService.getList(userId, time, pageSize);
-        List<Long> userIds = followDOList.stream()
-            .map(FollowDO::getFolloweeId)
-            .collect(Collectors.toList());
-
-        if (userIds.isEmpty()) {
-            return new LinkedList<>();
-        }
-
-        List<UserDO> userDOList = userDataService.getByIds(userIds);
-        Map<Long, UserDO> userDOMap = userDOList.stream()
-            .collect(Collectors.toMap(UserDO::getId, userDO -> userDO));
-
-        return followDOList.stream()
-            .map(followDO -> createFolloweeDTO(followDO, userDOMap.get(followDO.getFolloweeId())))
-            .collect(Collectors.toList());
-    }
-
-    /**
      * 发送验证邮件
      */
     private void sendVerificationEmail(String toEmail, String code) {
@@ -369,16 +348,96 @@ public class UserService {
         int code = min + random.nextInt(max - min + 1);
         return String.valueOf(code);
     }
-    
+
+    //=========== DTO转换方法 ==========
+
+    public UserDTO toDTO(UserDO userDO) {
+        return userConverter.toDTO(userDO);
+    }
+
+    public List<UserDTO> toDTO(List<UserDO> userDO) {
+        return userConverter.toDTO(userDO);
+    }
+
+    /**
+     * v1 = id + name + biography
+     */
+    public UserDTO toDTOV1(UserDO userDO) {
+        return userConverter.toDTOV1(userDO);
+    }
+
+    public List<UserDTO> toDTOV1(List<UserDO> userDO) {
+        return userConverter.toDTOV1(userDO);
+    }
+
+    /**
+     * v2 = id + name
+     */
+    public UserDTO toDTOV2(UserDO userDO) {
+        return userConverter.toDTOV2(userDO);
+    }
+
+    public List<UserDTO> toDTOV2(List<UserDO> userDO) {
+        return userConverter.toDTOV2(userDO);
+    }
+
+    /**
+     * v3 = id + name + subscriptions
+     */
+    public UserDTO toDTOV3(UserDO userDO) {
+        if (userDO == null) return null;
+        
+        UserDTO userDTO = userConverter.toDTOV2(userDO);
+        userDTO.setSubscriptions(getSubscriptions(userDO.getId()));
+        return userDTO;
+    }
+
+    /**
+     * v4 = v1 + followed (针对特定viewer)
+     */
+    public UserDTO toDTOV4(UserDO userDO, Long viewerId) {
+        UserDTO userDTO = userConverter.toDTOV1(userDO);
+        userDTO.setFollowed(false);
+
+        FollowDO followDO = followDataService.get(viewerId, userDO.getId());
+        if (followDO != null) {
+            userDTO.setFollowed(true);
+        }
+        return userDTO;
+    }
+
+
     // ========== 私有辅助方法 ==========
     
+    /**
+     * 获取用户订阅信息
+     */
+    private SubscriptionDTO[] getSubscriptions(Long userId) {
+        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
+
+        if (userProfileDO != null && userProfileDO.getSubscription() != null
+                && !userProfileDO.getSubscription().trim().isEmpty()) {
+            List<Long> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
+                    .map(Long::parseLong).collect(Collectors.toCollection(ArrayList::new));
+            List<CourseDO> courseDOList = courseDataService.getByIds(ids);
+            SubscriptionDTO[] subscriptionDTOS = new SubscriptionDTO[courseDOList.size()];
+            int i = 0;
+            for (CourseDO courseDO : courseDOList) {
+                subscriptionDTOS[i++] = new SubscriptionDTO(courseDO.getId(), courseDO.getName());
+            }
+            return subscriptionDTOS;
+        } else {
+            return new SubscriptionDTO[0];
+        }
+    }
+
     private void validateUserId(Long userId) {
         if (userId == null || userId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }
     }
     
-    private UserDO validateUserExists(Long userId) {
+    public UserDO validateUserExists(Long userId) {
         validateUserId(userId);
         UserDO userDO = userDataService.getById(userId);
         if (userDO == null) {
@@ -556,7 +615,7 @@ public class UserService {
             List<CourseDO> courseDOList = courseDataService.getByIds(ids);
             log.info("查询到{}个收藏课程，课程信息: {}", courseDOList.size(), 
                 courseDOList.stream().map(c -> "id=" + c.getId() + ",name=" + c.getName()).collect(Collectors.toList()));
-            return courseConverter.toDTOV2(courseDOList);
+            return courseService.toDTOV2(courseDOList);
         } catch (Exception e) {
             log.error("获取用户{}收藏课程时出错: {}", userId, e.getMessage());
             throw ErrorCode.USER_SUBSCRIPTION_PARSE_ERROR.exception(e);

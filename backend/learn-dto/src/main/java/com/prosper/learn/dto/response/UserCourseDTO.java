@@ -11,6 +11,8 @@ public class UserCourseDTO {
 
     private Long userId;
 
+    private Long courseId;
+
     private CourseDTO course;
 
     private Integer progressPercent;
