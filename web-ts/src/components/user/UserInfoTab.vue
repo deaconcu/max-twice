@@ -27,7 +27,7 @@ const canEdit = computed(() => props.editable && isSelf.value)
 const info: Ref<User> = ref()
 const displayModifyName: Ref<boolean> = ref(false)
 const displayModifyIntro: Ref<boolean> = ref(false)
-const loading: Ref<boolean> = ref(false)
+const loading: Ref<boolean> = ref(true)
 
 // 加载用户信息
 const loadUser = async (): Promise<void> => {
@@ -95,111 +95,126 @@ onMounted(() => {
 
 <template>
   <div>
-    <div v-if="canEdit" class="mb-5 px-3 text-grey d-flex align-center">
-      <v-icon icon="mdi-information-outline" start size="16" class="mr-2"></v-icon>
-      <span class="text-body-2">点击图片修改头像，点击链接修改名称和介绍</span>
-    </div>
-    <div v-else class="mb-5 px-3 text-grey d-flex align-center">
-      <v-icon icon="mdi-information-outline" start size="16" class="mr-2"></v-icon>
-      <span class="text-body-2">查看用户的个人信息</span>
+    <!-- 加载状态 -->
+    <div v-if="loading" class="text-center py-8">
+      <v-progress-circular indeterminate color="primary" size="32"></v-progress-circular>
+      <p class="text-body-2 text-grey-darken-1 mt-4">加载用户信息中...</p>
     </div>
 
-    <v-row align="start" class="mt-12">
-      <v-col cols="auto" class="text-end pe-6 border-e avatar-col">
-        <div class="font-weight-bold">头像</div>
-      </v-col>
-      <v-col cols="9" class="ps-6">
-        <div class="">
-          <v-avatar
-            image="https://pica.zhimg.com/v2-b12a03a32cf776765897927720acb3bf_xll.jpg"
-            rounded="lg"
-            size="120"
-            class="mb-6 avatar-border"
-          />
-        </div>
-      </v-col>
-    </v-row>
+    <!-- 用户信息内容 -->
+    <div v-else-if="info">
+      <div v-if="canEdit" class="mb-5 px-3 text-grey d-flex align-center">
+        <v-icon icon="mdi-information-outline" start size="16" class="mr-2"></v-icon>
+        <span class="text-body-2">点击图片修改头像，点击链接修改名称和介绍</span>
+      </div>
+      <div v-else class="mb-5 px-3 text-grey d-flex align-center">
+        <v-icon icon="mdi-information-outline" start size="16" class="mr-2"></v-icon>
+        <span class="text-body-2">查看用户的个人信息</span>
+      </div>
 
-    <v-row align="center">
-      <v-col cols="auto" class="text-end pe-6 py-4 border-e label-col">
-        <div class="font-weight-bold">姓名</div>
-      </v-col>
-      <v-col cols="9" class="ps-6 py-0">
-        <div v-if="!displayModifyName" class="d-flex align-center">
-          {{ info.name }}
-          <v-btn
-            v-if="canEdit"
-            prepend-icon="mdi-pencil"
-            variant="plain"
-            color="grey"
-            class="text-body-2 ps-8"
-            @click="displayModifyName = true"
-          >
-            修改
-          </v-btn>
-        </div>
-        <div v-if="displayModifyName && canEdit" class="d-flex align-baseline">
-          <v-text-field
-            v-model="info.name"
-            class=""
-            hide-details
-            density="compact"
-            max-width="200"
-            variant="underlined"
-          ></v-text-field>
-          <v-btn
-            density="comfortable"
-            prepend-icon="mdi-check"
-            variant="plain"
-            color="grey"
-            class="text-body-2 ps-8"
-            @click="onModifyName"
-          >
-            确定
-          </v-btn>
-        </div>
-      </v-col>
-    </v-row>
+      <v-row align="start" class="mt-12">
+        <v-col cols="auto" class="text-end pe-6 border-e avatar-col">
+          <div class="font-weight-bold">头像</div>
+        </v-col>
+        <v-col cols="9" class="ps-6">
+          <div class="">
+            <v-avatar
+              image="https://pica.zhimg.com/v2-b12a03a32cf776765897927720acb3bf_xll.jpg"
+              rounded="lg"
+              size="120"
+              class="mb-6 avatar-border"
+            />
+          </div>
+        </v-col>
+      </v-row>
 
-    <v-row align="center" class="">
-      <v-col cols="auto" class="text-end pe-6 py-4 border-e label-col">
-        <div class="font-weight-bold">简单介绍自己</div>
-      </v-col>
-      <v-col cols="9" class="ps-6 py-0">
-        <div v-if="!displayModifyIntro" class="d-flex align-center">
-          {{ info.biography }}
-          <v-btn
-            v-if="canEdit"
-            prepend-icon="mdi-pencil"
-            variant="plain"
-            color="grey"
-            class="text-body-2 ps-8"
-            @click="displayModifyIntro = true"
-          >
-            修改
-          </v-btn>
-        </div>
-        <div v-if="displayModifyIntro && canEdit" class="d-flex align-baseline">
-          <v-text-field
-            v-model="info.biography"
-            class=""
-            hide-details
-            density="compact"
-            max-width="400"
-            variant="underlined"
-          ></v-text-field>
-          <v-btn
-            prepend-icon="mdi-check"
-            variant="plain"
-            color="grey"
-            class="text-body-2 ps-8"
-            @click="onModifyIntro"
-          >
-            确定
-          </v-btn>
-        </div>
-      </v-col>
-    </v-row>
+      <v-row align="center">
+        <v-col cols="auto" class="text-end pe-6 py-4 border-e label-col">
+          <div class="font-weight-bold">姓名</div>
+        </v-col>
+        <v-col cols="9" class="ps-6 py-0">
+          <div v-if="!displayModifyName" class="d-flex align-center">
+            {{ info.name }}
+            <v-btn
+              v-if="canEdit"
+              prepend-icon="mdi-pencil"
+              variant="plain"
+              color="grey"
+              class="text-body-2 ps-8"
+              @click="displayModifyName = true"
+            >
+              修改
+            </v-btn>
+          </div>
+          <div v-if="displayModifyName && canEdit" class="d-flex align-baseline">
+            <v-text-field
+              v-model="info.name"
+              class=""
+              hide-details
+              density="compact"
+              max-width="200"
+              variant="underlined"
+            ></v-text-field>
+            <v-btn
+              density="comfortable"
+              prepend-icon="mdi-check"
+              variant="plain"
+              color="grey"
+              class="text-body-2 ps-8"
+              @click="onModifyName"
+            >
+              确定
+            </v-btn>
+          </div>
+        </v-col>
+      </v-row>
+
+      <v-row align="center" class="">
+        <v-col cols="auto" class="text-end pe-6 py-4 border-e label-col">
+          <div class="font-weight-bold">简单介绍自己</div>
+        </v-col>
+        <v-col cols="9" class="ps-6 py-0">
+          <div v-if="!displayModifyIntro" class="d-flex align-center">
+            {{ info.biography }}
+            <v-btn
+              v-if="canEdit"
+              prepend-icon="mdi-pencil"
+              variant="plain"
+              color="grey"
+              class="text-body-2 ps-8"
+              @click="displayModifyIntro = true"
+            >
+              修改
+            </v-btn>
+          </div>
+          <div v-if="displayModifyIntro && canEdit" class="d-flex align-baseline">
+            <v-text-field
+              v-model="info.biography"
+              class=""
+              hide-details
+              density="compact"
+              max-width="400"
+              variant="underlined"
+            ></v-text-field>
+            <v-btn
+              prepend-icon="mdi-check"
+              variant="plain"
+              color="grey"
+              class="text-body-2 ps-8"
+              @click="onModifyIntro"
+            >
+              确定
+            </v-btn>
+          </div>
+        </v-col>
+      </v-row>
+    </div>
+
+    <!-- 加载失败状态 -->
+    <div v-else class="text-center py-8">
+      <v-icon icon="mdi-alert-circle" color="error" size="32" class="mb-2"></v-icon>
+      <p class="text-body-2 text-error">加载用户信息失败</p>
+    </div>
   </div>
 </template>
 

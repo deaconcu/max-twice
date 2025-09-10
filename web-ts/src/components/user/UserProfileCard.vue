@@ -168,7 +168,7 @@ defineExpose({
         </p>
 
         <!-- 操作按钮 -->
-        <div v-if="editable || user.canFollow" class="mb-4">
+        <div v-if="editable || props.userId" class="mb-4">
           <v-btn
             v-if="editable"
             variant="outlined"
@@ -182,7 +182,7 @@ defineExpose({
           </v-btn>
 
           <v-btn
-            v-else-if="user.canFollow && !user.isFollowing"
+            v-else-if="props.userId && !user.isFollowing"
             variant="flat"
             color="primary"
             size="small"
@@ -194,7 +194,7 @@ defineExpose({
           </v-btn>
 
           <v-btn
-            v-else-if="user.canFollow && user.isFollowing"
+            v-else-if="props.userId && user.isFollowing"
             variant="outlined"
             color="grey"
             size="small"

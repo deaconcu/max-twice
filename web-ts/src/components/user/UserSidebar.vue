@@ -27,7 +27,7 @@ const emit = defineEmits<{
 
 // 用户数据
 const user: Ref<User> = ref()
-const loading: Ref<boolean> = ref(false)
+const loading: Ref<boolean> = ref(true)
 const error: Ref<string | null> = ref(null)
 
 // 统计数据
@@ -55,6 +55,7 @@ const loadUser = async (): Promise<void> => {
 
     if (response.code === 200) {
       user.value = response.data
+      console.log('user:', user.value)
       // 可以在这里加载统计数据
       // await loadUserStats();
     } else {

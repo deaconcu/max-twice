@@ -202,13 +202,13 @@
             <h4 class="font-weight-bold text-grey-darken-3 mr-3 course-title">
               {{ course.name }}
             </h4>
-            <div v-if="course.parent" class="d-flex align-center">
-              <v-chip v-if="course.parent" variant="flat" size="x-small" rounded="lg" color="teal">
+            <div v-if="course.parentCourse" class="d-flex align-center">
+              <v-chip v-if="course.parentCourse" variant="flat" size="x-small" rounded="lg" color="teal">
                 子课程
               </v-chip>
               <span class="text-caption text-grey-darken-1 ps-4">
-                父课程：<a :href="`/read?courseId=${course.parent.id}`" target="_blank">
-                  {{ course.parent.name }}
+                父课程：<a :href="`/read?courseId=${course.parentCourse.id}`" target="_blank">
+                  {{ course.parentCourse.name }}
                 </a>
               </span>
             </div>
@@ -274,7 +274,7 @@
               </v-col>
             </v-row>
 
-            <v-row v-if="course.parent" no-gutters class="mb-2">
+            <v-row v-if="course.parentCourse" no-gutters class="mb-2">
               <v-col cols="12">
                 <div class="d-flex align-center"></div>
               </v-col>
@@ -285,7 +285,7 @@
                 <div class="d-flex align-center">
                   <v-icon icon="mdi-account" size="16" color="grey-darken-1" class="mr-2"></v-icon>
                   <span class="text-body-2 text-grey-darken-1">
-                    <strong>创建者：</strong>{{ course.creator || '系统' }}
+                    <strong>创建者：</strong>{{ course.creator?.name || '系统' }}
                   </span>
                 </div>
               </v-col>

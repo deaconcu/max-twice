@@ -133,7 +133,6 @@ const handleDeletePosting = (id: string | number): void => {
         :items="postList"
         @load="loadPosts"
         no-more-text="已经到底了"
-        class="infinite-scroll-offset"
       >
         <div v-for="(posting, index) in postList" :key="posting.id">
           <v-row class="ma-0 border-b px-0 pb-7" :class="{ 'pt-10': index != 0 }">
@@ -233,8 +232,6 @@ const handleDeletePosting = (id: string | number): void => {
   position: sticky;
   top: 49px;
   z-index: 10;
-  height: 3.8vh;
-  overflow-y: auto;
 }
 .v-infinite-scroll__side {
   display: none !important;

@@ -6,6 +6,9 @@ import { useI18n } from 'vue-i18n'
 import { pageServiceV1, progressServiceV1 } from '@/services/api/v1/apiServiceV1'
 import PostingList from '@/components/read/PostingList.vue'
 import RightSidebar from '@/components/common/RightSidebar.vue'
+import MemoryCardSidebar from '@/components/memory/MemoryCardSidebar.vue'
+import CreateDeckDialog from '@/components/memory/CreateDeckDialog.vue'
+import DeckDetailDialog from '@/components/memory/DeckDetailDialog.vue'
 import CourseCompletionDialog from '@/components/course/CourseCompletionDialog.vue'
 import CourseHeader from '@/components/read/CourseHeader.vue'
 import CourseTableOfContents from '@/components/read/CourseTableOfContents.vue'
@@ -37,6 +40,11 @@ const subCourseList: Ref<any[]> = ref([]) // 子课程列表
 const isMainCourse: Ref<boolean> = ref(true) // 是否为主课程
 const showCongratulations: Ref<boolean> = ref(false) // 恭喜完成课程弹窗
 const courseTableOfContentsRef: Ref<any> = ref(null)
+const showCreateDeckDialog: Ref<boolean> = ref(false) // 创建卡片组对话框
+const showDeckDetailDialog: Ref<boolean> = ref(false) // 卡片组详情对话框
+const selectedDeck: Ref<any> = ref(null) // 选中的卡片组
+const currentTab: Ref<string> = ref('list') // 当前PostingList的tab状态
+const currentPosting: Ref<any> = ref(null) // 当前查看的文章
 
 onMounted(() => {
   loadData([])
@@ -322,6 +330,66 @@ const startCourse = async (): Promise<void> => {
     showSnackbar(t('read.messages.operationFailed'))
   }
 }
+
+// 处理创建卡片组
+const handleCreateDeck = (): void => {
+  showCreateDeckDialog.value = true
+}
+
+// 处理卡片组创建完成
+const handleDeckCreated = (deck: any): void => {
+  showSnackbar('卡片组创建成功！', 'success')
+  // TODO: 刷新侧边栏数据
+}
+
+// 处理添加卡片组到学习计划
+const handleAddDeck = async (deck: any): Promise<void> => {
+  console.log('ReadView received addDeck event:', deck)
+  
+  try {
+    // 获取当前课程ID
+    const courseId = data.value?.course?.id
+    if (!courseId) {
+      showSnackbar('无法确定课程信息', 'error')
+      return
+    }
+
+    // TODO: 调用API添加卡片组到记忆库
+    // const response = await memoryCardService.addDeckToMemoryBank({
+    //   deckId: deck.id,
+    //   courseId: courseId
+    // })
+    
+    // 模拟API调用成功
+    showSnackbar(`已将"${deck.title}"添加到${data.value.course.name}课程的学习计划`, 'success')
+    
+    // TODO: 可选择性刷新侧边栏数据以显示更新后的状态
+  } catch (error) {
+    console.error('Failed to add deck to memory bank:', error)
+    showSnackbar('添加失败，请重试', 'error')
+  }
+}
+
+// 处理查看卡片组详情
+const handleViewDeck = (deck: any): void => {
+  console.log('ReadView received viewDeck event:', deck)
+  selectedDeck.value = deck
+  showDeckDetailDialog.value = true
+}
+
+// 检查是否显示记忆卡片组侧边栏
+const shouldShowMemoryCardSidebar = (): boolean => {
+  // 当在文章详情页时显示记忆卡片组侧边栏
+  return !!data.value?.post || !!(route.query.postId)
+}
+
+// 处理PostingList的tab切换
+const handleTabSwitch = (tab: string, posting?: any): void => {
+  currentTab.value = tab
+  if (posting && typeof posting === 'object') {
+    currentPosting.value = posting
+  }
+}
 </script>
 
 <template>
@@ -373,6 +441,7 @@ const startCourse = async (): Promise<void> => {
                 @load-data="loadData"
                 @node-completed="onNodeCompleted"
                 @start-learning="startCourse"
+                @switch-tab="handleTabSwitch"
               />
             </v-col>
           </v-col>
@@ -381,12 +450,36 @@ const startCourse = async (): Promise<void> => {
 
       <!-- right -->
       <v-col cols="3" class="">
-        <RightSidebar />
+        <!-- 记忆卡片组侧边栏 (文章详情页) -->
+        <MemoryCardSidebar
+          v-if="currentTab !== 'list' && currentPosting"
+          :post="currentPosting"
+          @create-deck="handleCreateDeck"
+          @add-deck="handleAddDeck"
+          @view-deck="handleViewDeck"
+        />
+        <!-- 默认侧边栏 (其他页面) -->
+        <RightSidebar v-else />
       </v-col>
     </v-row>
 
     <!-- 恭喜完成课程弹窗 -->
     <CourseCompletionDialog v-model="showCongratulations" :course-name="data?.course?.name || ''" />
+    
+    <!-- 创建卡片组对话框 -->
+    <CreateDeckDialog
+      v-if="currentPosting"
+      v-model="showCreateDeckDialog"
+      :post="currentPosting"
+      @created="handleDeckCreated"
+    />
+
+    <!-- 卡片组详情对话框 -->
+    <DeckDetailDialog
+      v-model="showDeckDetailDialog"
+      :deck="selectedDeck"
+      @add-to-study="handleAddDeck"
+    />
   </v-container>
 </template>
 

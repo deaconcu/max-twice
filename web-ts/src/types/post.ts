@@ -19,12 +19,13 @@ export interface Post {
   twice?: number               // "两遍就懂"票数 (可选)
   helpful?: number             // "有帮助"票数 (可选)
   commentCount?: number        // 评论数量 (可选)
-  views?: number               // 浏览量 (PostDTOV2 独有字段，可选)
+  viewCount?: number           // 浏览量 (可选)
   state?: PostState            // 帖子状态 (可选)
   score?: number               // 帖子得分 (可选)
   createdAt?: string           // 创建时间 (可选)
   updatedAt?: string           // 更新时间 (可选)
   voteType?: VoteType | null   // 当前用户投票状态 (可选)
+  deckCount?: number           // 记忆卡片组数量 (可选)
 }
 
 // 创建帖子请求

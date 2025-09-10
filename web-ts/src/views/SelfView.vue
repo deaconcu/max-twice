@@ -189,7 +189,7 @@ const getSelectedTabDescription = (): string => {
 
       <!-- 主内容区域 -->
       <v-col cols="auto" class="flex-grow-1 d-flex justify-center pt-0">
-        <div class="main-content py-0">
+        <div class="main-content-container py-0">
           <v-slide-y-reverse-transition hide-on-leave>
             <component :is="currentComponent" v-bind="currentProps" :key="selected" />
           </v-slide-y-reverse-transition>
@@ -204,17 +204,11 @@ const getSelectedTabDescription = (): string => {
   </v-container>
 </template>
 
-<style>
-:deep(.sticky-top) {
-  position: sticky;
-  top: 49px;
-  z-index: 10;
-  height: 3.8vh;
-  overflow-y: auto;
-}
-
-.v-infinite-scroll__side {
-  display: none !important;
+<style scoped>
+/* 主内容区域样式 */
+.main-content-container {
+  width: 720px;
+  max-width: 800px;
 }
 
 /* 新版导航样式 */
@@ -352,10 +346,5 @@ const getSelectedTabDescription = (): string => {
     padding-left: 16px !important;
     padding-right: 16px !important;
   }
-}
-
-.main-content {
-  width: 720px;
-  max-width: 800px;
 }
 </style>

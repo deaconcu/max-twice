@@ -87,7 +87,7 @@ const loadCourseData = async (): Promise<void> => {
           updatedAt: userCourse.updatedAt,
           lastActivity: getRelativeTime(userCourse.updatedAt),
           category: getCategoryFromDescription(userCourse.course.description),
-          difficulty: getDifficultyFromStatus(userCourse.state),
+          difficulty: getDifficultyFromStatus(userCourse.state as UserCourseState),
         }
       })
     }

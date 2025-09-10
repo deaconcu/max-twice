@@ -21,7 +21,7 @@ public class UserDTO {
 
     private SubscriptionDTO[] subscriptions;
 
-    private boolean followed;
+    private boolean isFollowing;
 
     private String createdAt;
 

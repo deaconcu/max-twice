@@ -10,16 +10,11 @@ interface Props {
   name: string
 }
 
-// 扩展 User 类型以支持关注状态
-interface UserCardInfo extends User {
-  followed?: number
-}
-
 const props = defineProps<Props>()
 const { t } = useI18n()
 
 const loadingUserInfo = ref<boolean>(false)
-const userInfo = ref<UserCardInfo | null>(null)
+const userInfo = ref<User | null>(null)
 
 const onHover = function (open: boolean, id: number): void {
   if (open && !userInfo.value) {
@@ -36,7 +31,7 @@ const getUser = async (id: number): Promise<void> => {
     console.log(`response: ${JSON.stringify(response)}`)
 
     if (response.code === 200) {
-      userInfo.value = response.data as UserCardInfo
+      userInfo.value = response.data as User
       loadingUserInfo.value = false
     }
   } catch (error) {
@@ -53,7 +48,7 @@ const follow = async (id: number): Promise<void> => {
 
     if (response.code === 200) {
       if (userInfo.value) {
-        userInfo.value.followed = 1
+        userInfo.value.followed = true
       }
     }
   } catch (error) {

@@ -227,7 +227,7 @@ const deletePosting = async (postingId: number): Promise<void> => {
           <template #prepend>
             <v-icon size="16">mdi-eye</v-icon>
           </template>
-          {{ posting.views || 0 }}
+          {{ posting.viewCount || 0 }}
         </v-btn>
       </div>
       <div class="">

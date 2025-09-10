@@ -48,7 +48,7 @@ public interface UserConverter {
         if (userDO == null) return null;
 
         UserDTO dto = toDTOV1(userDO);
-        dto.setFollowed(followed);
+        dto.setFollowing(followed);
         return dto;
     }
 }

@@ -324,6 +324,26 @@
 
       <v-spacer></v-spacer>
 
+      <!-- Memory Card Deck Count Preview -->
+      <v-tooltip location="top">
+        <template v-slot:activator="{ props: tooltipProps }">
+          <v-btn
+            v-bind="tooltipProps"
+            variant="text"
+            color="grey-lighten-3"
+            rounded="lg"
+            density="comfortable"
+            class="px-3"
+          >
+            <v-icon icon="mdi-cards-outline" size="14" class="mr-2" color="purple-darken-2"></v-icon>
+            <span class="font-weight-medium text-purple-darken-2">
+              {{ posting.deckCount || 0 }}
+            </span>
+          </v-btn>
+        </template>
+        <span>查看详情页以浏览和添加记忆卡片组</span>
+      </v-tooltip>
+
       <v-btn
         v-if="!props.detail"
         variant="text"

@@ -13,11 +13,10 @@ export interface User {
   emailValidated?: boolean     // 邮箱是否验证 (可选) - UserDTO
   biography?: string           // 个人简介 (可选) - UserDTO, UserDTOV3
   avatar?: string              // 头像 (可选)
-  subscriptions?: number[]     // 订阅的课程ID列表 (可选) - 用于兼容
+  subscriptions?: SubscriptionInfo[]     // 订阅的课程ID列表 (可选) - 用于兼容
   createdAt?: string           // 创建时间 (可选) - UserDTO
   updatedAt?: string           // 更新时间 (可选) - UserDTO
   followed?: number            // 关注人数 - UserDTOV3
-  canFollow?: boolean          // 是否可以关注 (可选)
   isFollowing?: boolean        // 是否已关注 (可选)
 }
 

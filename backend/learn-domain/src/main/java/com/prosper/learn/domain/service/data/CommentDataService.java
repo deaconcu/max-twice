@@ -109,6 +109,9 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
      * 获取子评论列表（不缓存）
      */
     public List<CommentDO> getChildren(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
         return commentMapper.getChildren(ids);
     }
     

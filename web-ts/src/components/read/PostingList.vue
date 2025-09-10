@@ -68,6 +68,7 @@
     (e: 'node-completed', nodeId: number): void
     (e: 'start-learning'): void
     (e: 'loadData', data: any[]): void
+    (e: 'switch-tab', tab: string, posting?: Post): void
   }
 
   const emit = defineEmits<Emits>()
@@ -202,6 +203,13 @@
 
   const switchTab = (tabName: string, posting: Post | string): void => {
     tab.value = tabName // 切换到指定 Tab
+
+    // 触发事件通知父组件
+    if (typeof posting === 'object') {
+      emit('switch-tab', tabName, posting)
+    } else {
+      emit('switch-tab', tabName)
+    }
 
     if (tabName === 'list') {
       nextTick(() => {

@@ -19,6 +19,7 @@ public class CourseDTO {
     
     // === 关联字段 (V1, V4有) ===
     private Long creatorId;
+    private Long creator;
     private Long rootNodeId;
     private Long parentCourseId;
     

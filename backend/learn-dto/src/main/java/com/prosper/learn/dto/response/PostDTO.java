@@ -19,8 +19,6 @@ public class PostDTO {
 
     private Integer type;
 
-    private Integer once;
-
     private Integer twice;
 
     private Integer helpful;

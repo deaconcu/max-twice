@@ -932,7 +932,7 @@
                 >查询课程（父课程）</span
               >
             </div>
-            <div v-else-if="searchedCourse.parent" class="d-flex align-center mb-3">
+            <div v-else-if="searchedCourse.parentCourse" class="d-flex align-center mb-3">
               <v-icon
                 icon="mdi-file-document-outline"
                 size="16"

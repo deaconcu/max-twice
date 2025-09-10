@@ -1,12 +1,9 @@
 package com.prosper.learn.domain.service.business;
 
-import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
-import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.MessageService;
-import com.prosper.learn.domain.util.converter.CourseConverter;
 import com.prosper.learn.domain.util.converter.UserConverter;
 import com.prosper.learn.domain.service.data.*;
 import com.prosper.learn.dto.response.*;
@@ -397,11 +394,11 @@ public class UserService {
      */
     public UserDTO toDTOV4(UserDO userDO, Long viewerId) {
         UserDTO userDTO = userConverter.toDTOV1(userDO);
-        userDTO.setFollowed(false);
+        userDTO.setFollowing(false);
 
         FollowDO followDO = followDataService.get(viewerId, userDO.getId());
         if (followDO != null) {
-            userDTO.setFollowed(true);
+            userDTO.setFollowing(true);
         }
         return userDTO;
     }

@@ -4,16 +4,17 @@
  */
 
 import { CourseState } from './enums'
+import type { User } from './user'
 
 // 统一的课程信息 (合并所有版本)
 export interface Course {
   id: number
   name: string
   description?: string          // 课程描述 (可选)
-  creator?: number             // 创建者ID (可选)
-  rootNode?: number            // 根节点ID (可选)
-  parentId?: number            // 父课程ID (可选，子课程才有)
-  parent?: Course              // 父课程信息 (可选，简化版本)
+  creator?: User             // 创建者ID (可选)
+  rootNodeId?: number            // 根节点ID (可选)
+  parentCourseId?: number            // 父课程ID (可选，子课程才有)
+  parentCourse?: Course              // 父课程信息 (可选，简化版本)
   state?: CourseState          // 课程状态 (可选)
   mainCategory?: number        // 主分类ID (可选)
   subCategory?: number         // 子分类ID (可选)
