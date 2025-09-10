@@ -18,12 +18,20 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
 
+// 模拟当前用户ID
+const currentUserId = ref(1) // TODO: 从用户认证系统获取
+
 const dialog = ref(false)
 const loading = ref(false)
 const deckDetail = ref<DeckDetail | null>(null)
 const selectedCard = ref<MemoryCardWithVersion | null>(null)
 const showCardDetail = ref(false)
 const isFlipped = ref(false) // 翻转状态
+
+// 检查是否为当前用户创建的卡片组
+const isOwnDeck = computed(() => {
+  return props.deck?.creatorId === currentUserId.value
+})
 
 watch(() => props.modelValue, (newVal) => {
   dialog.value = newVal
@@ -80,6 +88,80 @@ const addCardToStudy = async (card: MemoryCardWithVersion) => {
     }
   } catch (error) {
     console.error('Failed to add card to study:', error)
+  }
+}
+
+// 卡片管理功能
+const editingCard = ref<MemoryCardWithVersion | null>(null)
+const showEditDialog = ref(false)
+const editCardFront = ref('')
+const editCardBack = ref('')
+
+// 新建卡片
+const createNewCard = () => {
+  if (!props.deck) return
+  editingCard.value = null
+  editCardFront.value = ''
+  editCardBack.value = ''
+  showEditDialog.value = true
+}
+
+// 编辑卡片
+const editCard = (card: MemoryCardWithVersion) => {
+  editingCard.value = card
+  editCardFront.value = card.currentVersion.front
+  editCardBack.value = card.currentVersion.back
+  showEditDialog.value = true
+}
+
+// 删除卡片
+const deleteCard = async (card: MemoryCardWithVersion) => {
+  if (!confirm('确定要删除这张卡片吗？')) return
+  
+  try {
+    // TODO: 调用删除API
+    console.log('删除卡片:', card.id)
+    
+    // 从本地数据中移除
+    if (deckDetail.value) {
+      const index = deckDetail.value.cards.findIndex(c => c.id === card.id)
+      if (index > -1) {
+        deckDetail.value.cards.splice(index, 1)
+        deckDetail.value.cardCount--
+      }
+    }
+  } catch (error) {
+    console.error('Failed to delete card:', error)
+  }
+}
+
+// 保存卡片
+const saveCard = async () => {
+  if (!props.deck || !editCardFront.value.trim() || !editCardBack.value.trim()) return
+  
+  try {
+    if (editingCard.value) {
+      // 更新现有卡片
+      console.log('更新卡片:', editingCard.value.id)
+      editingCard.value.currentVersion.front = editCardFront.value
+      editingCard.value.currentVersion.back = editCardBack.value
+    } else {
+      // 创建新卡片
+      const response = await MemoryCardMockService.createCard({
+        deckId: props.deck.id,
+        front: editCardFront.value,
+        back: editCardBack.value
+      })
+      
+      if (response.code === 200 && deckDetail.value) {
+        deckDetail.value.cards.push(response.data)
+        deckDetail.value.cardCount++
+      }
+    }
+    
+    showEditDialog.value = false
+  } catch (error) {
+    console.error('Failed to save card:', error)
   }
 }
 
@@ -140,9 +222,24 @@ const closeDialog = () => {
       <!-- 卡片列表 - 可滚动区域 -->
       <div class="flex-grow-1" style="overflow-y: auto;">
         <div class="px-6 pt-6 pb-6">
-          <h3 class="text-h6 font-weight-bold text-grey-darken-3 mb-4 d-flex align-center">
-            <v-icon icon="mdi-cards-variant" class="mr-2" color="primary"></v-icon>
-            卡片内容
+          <h3 class="text-h6 font-weight-bold text-grey-darken-3 mb-4 d-flex align-center justify-space-between">
+            <div class="d-flex align-center">
+              <v-icon icon="mdi-cards-variant" class="mr-2" color="primary"></v-icon>
+              卡片内容
+            </div>
+            
+            <!-- 如果是当前用户的卡片组，显示新建卡片按钮 -->
+            <v-btn
+              v-if="isOwnDeck"
+              color="primary"
+              variant="tonal"
+              size="small"
+              rounded="lg"
+              prepend-icon="mdi-plus"
+              @click="createNewCard"
+            >
+              新建卡片
+            </v-btn>
           </h3>
           
           <div v-if="loading" class="text-center pa-8">
@@ -208,7 +305,7 @@ const closeDialog = () => {
                   <div class="d-flex flex-column align-center" style="gap: 12px; min-width: 100px;">
                     <v-btn
                       color="primary"
-                      variant="outlined"
+                      variant="tonal"
                       size="small"
                       rounded="xl"
                       prepend-icon="mdi-eye"
@@ -218,31 +315,61 @@ const closeDialog = () => {
                       预览
                     </v-btn>
                     
-                    <v-btn
-                      v-if="!card.userCard"
-                      color="success"
-                      variant="flat"
-                      size="small"
-                      rounded="xl"
-                      prepend-icon="mdi-plus"
-                      class="action-btn"
-                      @click="addCardToStudy(card)"
-                    >
-                      学习
-                    </v-btn>
+                    <!-- 如果是当前用户的卡片组，显示编辑和删除按钮 -->
+                    <template v-if="isOwnDeck">
+                      <v-btn
+                        color="warning"
+                        variant="tonal"
+                        size="small"
+                        rounded="xl"
+                        prepend-icon="mdi-pencil"
+                        class="action-btn"
+                        @click="editCard(card)"
+                      >
+                        编辑
+                      </v-btn>
+                      
+                      <v-btn
+                        color="error"
+                        variant="tonal"
+                        size="small"
+                        rounded="xl"
+                        prepend-icon="mdi-delete"
+                        class="action-btn"
+                        @click="deleteCard(card)"
+                      >
+                        删除
+                      </v-btn>
+                    </template>
                     
-                    <v-btn
-                      v-else
-                      color="success"
-                      variant="tonal"
-                      size="small"
-                      rounded="xl"
-                      prepend-icon="mdi-check-circle"
-                      class="action-btn"
-                      disabled
-                    >
-                      已添加
-                    </v-btn>
+                    <!-- 如果不是当前用户的卡片组，显示学习按钮 -->
+                    <template v-else>
+                      <v-btn
+                        v-if="!card.userCard"
+                        color="success"
+                        variant="tonal"
+                        size="small"
+                        rounded="xl"
+                        prepend-icon="mdi-plus"
+                        class="action-btn"
+                        @click="addCardToStudy(card)"
+                      >
+                        学习
+                      </v-btn>
+                      
+                      <v-btn
+                        v-else
+                        color="success"
+                        variant="tonal"
+                        size="small"
+                        rounded="xl"
+                        prepend-icon="mdi-check-circle"
+                        class="action-btn"
+                        disabled
+                      >
+                        已添加
+                      </v-btn>
+                    </template>
                   </div>
                 </div>
               </v-card-text>
@@ -288,6 +415,79 @@ const closeDialog = () => {
         </div>
       </div>
     </v-card>
+
+    <!-- 编辑/新建卡片对话框 -->
+    <v-dialog v-model="showEditDialog" width="600" persistent>
+      <v-card rounded="xl" elevation="0">
+        <v-card-title class="pa-6 bg-primary text-white">
+          <div class="d-flex align-center justify-space-between">
+            <h3 class="text-h5 font-weight-bold">
+              {{ editingCard ? '编辑卡片' : '新建卡片' }}
+            </h3>
+            <v-btn 
+              icon="mdi-close" 
+              variant="text" 
+              color="white"
+              @click="showEditDialog = false"
+            ></v-btn>
+          </div>
+        </v-card-title>
+        
+        <v-card-text class="pa-6">
+          <v-form>
+            <div class="mb-6">
+              <label class="text-subtitle-2 font-weight-bold text-grey-darken-3 mb-2 d-block">
+                <v-icon icon="mdi-help-circle" color="primary" size="20" class="mr-2"></v-icon>
+                问题 (卡片正面)
+              </label>
+              <v-textarea
+                v-model="editCardFront"
+                variant="outlined"
+                rounded="lg"
+                placeholder="请输入问题内容..."
+                rows="3"
+                :rules="[v => !!v || '问题不能为空']"
+              ></v-textarea>
+            </div>
+            
+            <div class="mb-4">
+              <label class="text-subtitle-2 font-weight-bold text-grey-darken-3 mb-2 d-block">
+                <v-icon icon="mdi-lightbulb" color="success" size="20" class="mr-2"></v-icon>
+                答案 (卡片背面)
+              </label>
+              <v-textarea
+                v-model="editCardBack"
+                variant="outlined"
+                rounded="lg"
+                placeholder="请输入答案内容..."
+                rows="4"
+                :rules="[v => !!v || '答案不能为空']"
+              ></v-textarea>
+            </div>
+          </v-form>
+        </v-card-text>
+        
+        <v-card-actions class="pa-6 pt-0">
+          <v-spacer></v-spacer>
+          <v-btn 
+            variant="tonal"
+            rounded="xl"
+            @click="showEditDialog = false"
+          >
+            取消
+          </v-btn>
+          <v-btn 
+            color="primary"
+            variant="tonal"
+            rounded="xl"
+            @click="saveCard"
+            :disabled="!editCardFront.trim() || !editCardBack.trim()"
+          >
+            {{ editingCard ? '保存修改' : '创建卡片' }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- 卡片预览对话框 - 正反面翻转效果 -->
     <v-dialog v-model="showCardDetail" width="600">
