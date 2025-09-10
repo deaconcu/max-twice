@@ -103,6 +103,7 @@ const createDeck = async () => {
       creator: { id: 1, name: '当前用户', email: 'user@example.com' },
       title: deckForm.value.title,
       description: deckForm.value.description,
+      version: 1, // 新创建的卡片组版本为1
       state: 0, // 审核中
       upvoteCount: 0,
       cardCount: 0,

@@ -21,7 +21,8 @@ import type {
   CourseMemoryBank,
   DeckUpdateDiff,
   CardDiff,
-  UpdateDeckRequest
+  UpdateDeckRequest,
+  AcceptDeckChangesRequest
 } from '@/types/memoryCard'
 import { DeckState, CardState, ReviewResult, FrequencySetting, CourseStudyStatus, CardDiffType } from '@/types/memoryCard'
 
@@ -467,6 +468,7 @@ export class MemoryCardMockService {
       creator: mockUsers[0],
       title: request.title,
       description: request.description,
+      version: 1, // 新创建的卡片组版本为1
       state: DeckState.PENDING, // 新创建的卡片组需要审核
       upvoteCount: 0,
       cardCount: 0,
@@ -851,7 +853,7 @@ export class MemoryCardMockService {
   }
 
   // 应用卡片组更新
-  static async updateDeck(request: UpdateDeckRequest): Promise<{
+  static async updateDeck(request: AcceptDeckChangesRequest): Promise<{
     code: number
     data: boolean
     message?: string

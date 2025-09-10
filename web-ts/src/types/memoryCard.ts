@@ -8,41 +8,51 @@ import type { Post } from './post'
 import type { Course } from './course'
 
 // 卡片组状态枚举
-export enum DeckState {
-  PENDING = 0,    // 审核中
-  NORMAL = 1,     // 正常
-  LOCKED = 2,     // 锁定
-  PRIVATE = 3,    // 私有
-  DELETED = 4     // 已删除
-}
+export const DeckState = {
+  PENDING: 0,    // 审核中
+  NORMAL: 1,     // 正常
+  LOCKED: 2,     // 锁定
+  PRIVATE: 3,    // 私有
+  DELETED: 4     // 已删除
+} as const
+
+export type DeckState = typeof DeckState[keyof typeof DeckState]
 
 // 卡片状态枚举
-export enum CardState {
-  NORMAL = 0,     // 正常
-  DELETED = 1     // 已被创建者删除
-}
+export const CardState = {
+  NORMAL: 0,     // 正常
+  DELETED: 1     // 已被创建者删除
+} as const
+
+export type CardState = typeof CardState[keyof typeof CardState]
 
 // 复习结果枚举 (调整为4个级别)
-export enum ReviewResult {
-  FAILED = 0,     // 忘记了
-  HARD = 1,       // 困难
-  GOOD = 2,       // 良好  
-  EASY = 3        // 简单
-}
+export const ReviewResult = {
+  FAILED: 0,     // 忘记了
+  HARD: 1,       // 困难
+  GOOD: 2,       // 良好  
+  EASY: 3        // 简单
+} as const
+
+export type ReviewResult = typeof ReviewResult[keyof typeof ReviewResult]
 
 // 课程学习状态枚举
-export enum CourseStudyStatus {
-  STUDYING = 1,   // 学习中
-  PAUSED = 2,     // 已暂停
-  ARCHIVED = 3    // 已归档
-}
+export const CourseStudyStatus = {
+  STUDYING: 1,   // 学习中
+  PAUSED: 2,     // 已暂停
+  ARCHIVED: 3    // 已归档
+} as const
+
+export type CourseStudyStatus = typeof CourseStudyStatus[keyof typeof CourseStudyStatus]
 
 // 复习频率设置枚举
-export enum FrequencySetting {
-  HIGH = 0,       // 高频
-  NORMAL = 1,     // 普通
-  LOW = 2         // 低频
-}
+export const FrequencySetting = {
+  HIGH: 0,       // 高频
+  NORMAL: 1,     // 普通
+  LOW: 2         // 低频
+} as const
+
+export type FrequencySetting = typeof FrequencySetting[keyof typeof FrequencySetting]
 
 // 记忆卡片组
 export interface MemoryCardDeck {
@@ -255,11 +265,13 @@ export interface DeckStats {
 }
 
 // 卡片diff类型枚举
-export enum CardDiffType {
-  ADDED = 'added',     // 新增卡片
-  MODIFIED = 'modified', // 修改卡片
-  DELETED = 'deleted'   // 删除卡片
-}
+export const CardDiffType = {
+  ADDED: 'added',     // 新增卡片
+  MODIFIED: 'modified', // 修改卡片
+  DELETED: 'deleted'   // 删除卡片
+} as const
+
+export type CardDiffType = typeof CardDiffType[keyof typeof CardDiffType]
 
 // 单个卡片的diff信息
 export interface CardDiff {
@@ -296,8 +308,8 @@ export interface DeckUpdateDiff {
   }
 }
 
-// 更新卡片组请求
-export interface UpdateDeckRequest {
+// 接受卡片组更新请求
+export interface AcceptDeckChangesRequest {
   deckId: number
   acceptedChanges: {
     updateMeta?: boolean // 是否更新标题和描述

@@ -48,7 +48,8 @@ const follow = async (id: number): Promise<void> => {
 
     if (response.code === 200) {
       if (userInfo.value) {
-        userInfo.value.followed = true
+        // 关注成功后，增加关注人数
+        userInfo.value.followed = (userInfo.value.followed || 0) + 1
       }
     }
   } catch (error) {
