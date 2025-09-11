@@ -31,13 +31,14 @@ const sortedDecks = computed(() => {
   let filtered = decks.value
 
   if (showAuthorOnly.value && props.post.creator) {
-    filtered = filtered.filter(deck => deck.creatorId === props.post.creator!.id)
+    filtered = filtered.filter(deck => deck.creator?.id === props.post.creator!.id)
   }
 
   return filtered.sort((a, b) => {
     switch (sortBy.value) {
       case 'score':
-        return (b.score || 0) - (a.score || 0)
+        // 使用 upvoteCount 作为 score 的替代
+        return (b.upvoteCount || 0) - (a.upvoteCount || 0)
       case 'upvoteCount':
         return (b.upvoteCount || 0) - (a.upvoteCount || 0)
       case 'createdAt':
@@ -70,30 +71,24 @@ const loadDecks = async (reset = false) => {
       {
         id: 1,
         sourcePostId: props.post.id,
-        creatorId: 1,
         creator: { id: 1, name: 'AI助手', email: 'ai@example.com' },
         title: '核心概念记忆卡',
         description: 'AI生成的核心概念记忆卡片组，包含本文的重要知识点',
-        version: 1,
         state: DeckState.NORMAL,
         upvoteCount: 15,
         cardCount: 8,
-        score: 85.5,
         createdAt: '2024-01-01T10:00:00Z',
         updatedAt: '2024-01-01T10:00:00Z'
       },
       {
         id: 2,
         sourcePostId: props.post.id,
-        creatorId: 2,
         creator: { id: 2, name: '学习者小王', email: 'wang@example.com' },
         title: '实践练习卡片',
         description: '根据文章内容制作的实践练习题，适合巩固理解',
-        version: 1,
         state: DeckState.NORMAL,
         upvoteCount: 8,
         cardCount: 12,
-        score: 78.2,
         createdAt: '2024-01-02T14:30:00Z',
         updatedAt: '2024-01-02T14:30:00Z'
       }

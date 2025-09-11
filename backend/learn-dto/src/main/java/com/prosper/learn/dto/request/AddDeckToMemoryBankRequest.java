@@ -1,0 +1,18 @@
+package com.prosper.learn.dto.request;
+
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+
+/**
+ * 添加卡片组到用户记忆库请求DTO
+ */
+@Data
+public class AddDeckToMemoryBankRequest {
+
+    @NotNull(message = "卡片组ID不能为空")
+    private Long deckId;
+
+    @NotNull(message = "课程ID不能为空")
+    private Long courseId;
+
+}

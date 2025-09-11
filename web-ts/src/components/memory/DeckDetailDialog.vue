@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { MemoryCardDeck, DeckDetail, MemoryCardWithVersion } from '@/types/memoryCard'
+import type { MemoryCardDeck, DeckDetail, MemoryCardView } from '@/types/memoryCard'
 import { MemoryCardMockService } from '@/services/memoryCardMockService'
 
 interface Props {
@@ -24,13 +24,13 @@ const currentUserId = ref(1) // TODO: 从用户认证系统获取
 const dialog = ref(false)
 const loading = ref(false)
 const deckDetail = ref<DeckDetail | null>(null)
-const selectedCard = ref<MemoryCardWithVersion | null>(null)
+const selectedCard = ref<MemoryCardView | null>(null)
 const showCardDetail = ref(false)
 const isFlipped = ref(false) // 翻转状态
 
 // 检查是否为当前用户创建的卡片组
 const isOwnDeck = computed(() => {
-  return props.deck?.creatorId === currentUserId.value
+  return props.deck?.creator?.id === currentUserId.value
 })
 
 watch(() => props.modelValue, (newVal) => {
@@ -60,7 +60,7 @@ const loadDeckDetail = async () => {
   }
 }
 
-const viewCard = (card: MemoryCardWithVersion) => {
+const viewCard = (card: MemoryCardView) => {
   selectedCard.value = card
   isFlipped.value = false // 重置翻转状态，总是从正面开始
   showCardDetail.value = true
@@ -78,12 +78,12 @@ const addToStudy = async () => {
   dialog.value = false
 }
 
-const addCardToStudy = async (card: MemoryCardWithVersion) => {
+const addCardToStudy = async (card: MemoryCardView) => {
   try {
     const response = await MemoryCardMockService.addCardToStudy(card.id)
     if (response.code === 200) {
       // 更新卡片的用户状态
-      card.userCard = response.data
+      card.srsState = response.data
       // TODO: 显示成功消息
     }
   } catch (error) {
@@ -92,7 +92,7 @@ const addCardToStudy = async (card: MemoryCardWithVersion) => {
 }
 
 // 卡片管理功能
-const editingCard = ref<MemoryCardWithVersion | null>(null)
+const editingCard = ref<MemoryCardView | null>(null)
 const showEditDialog = ref(false)
 const editCardFront = ref('')
 const editCardBack = ref('')
@@ -107,15 +107,15 @@ const createNewCard = () => {
 }
 
 // 编辑卡片
-const editCard = (card: MemoryCardWithVersion) => {
+const editCard = (card: MemoryCardView) => {
   editingCard.value = card
-  editCardFront.value = card.currentVersion.front
-  editCardBack.value = card.currentVersion.back
+  editCardFront.value = card.front
+  editCardBack.value = card.back
   showEditDialog.value = true
 }
 
 // 删除卡片
-const deleteCard = async (card: MemoryCardWithVersion) => {
+const deleteCard = async (card: MemoryCardView) => {
   if (!confirm('确定要删除这张卡片吗？')) return
   
   try {
@@ -143,8 +143,8 @@ const saveCard = async () => {
     if (editingCard.value) {
       // 更新现有卡片
       console.log('更新卡片:', editingCard.value.id)
-      editingCard.value.currentVersion.front = editCardFront.value
-      editingCard.value.currentVersion.back = editCardBack.value
+      editingCard.value.front = editCardFront.value
+      editingCard.value.back = editCardBack.value
     } else {
       // 创建新卡片
       const response = await MemoryCardMockService.createCard({
@@ -265,13 +265,13 @@ const closeDialog = () => {
                         第 {{ index + 1 }} 张卡片
                       </h4>
                       <v-chip
-                        v-if="card.userCard"
+                        v-if="card.srsState"
                         size="small"
-                        :color="card.userCard.repetitions >= 3 ? 'success' : 'warning'"
+                        :color="card.srsState.repetitions >= 3 ? 'success' : 'warning'"
                         variant="flat"
                         prepend-icon="mdi-trophy"
                       >
-                        {{ card.userCard.repetitions >= 3 ? '已掌握' : `学习${card.userCard.repetitions}次` }}
+                        {{ card.srsState.repetitions >= 3 ? '已掌握' : `学习${card.srsState.repetitions}次` }}
                       </v-chip>
                       <v-chip v-else size="small" color="grey-lighten-1" variant="flat" prepend-icon="mdi-circle-outline">
                         未开始
@@ -285,7 +285,7 @@ const closeDialog = () => {
                         <span class="text-subtitle-2 font-weight-bold text-primary">问题</span>
                       </div>
                       <div class="question-content pa-3 bg-blue-lighten-5 rounded-lg">
-                        <p class="text-body-1 mb-0">{{ card.currentVersion.front }}</p>
+                        <p class="text-body-1 mb-0">{{ card.front }}</p>
                       </div>
                     </div>
                     
@@ -296,7 +296,7 @@ const closeDialog = () => {
                         <span class="text-subtitle-2 font-weight-bold text-success">答案</span>
                       </div>
                       <div class="answer-content pa-3 bg-green-lighten-5 rounded-lg">
-                        <p class="text-body-1 mb-0">{{ card.currentVersion.back }}</p>
+                        <p class="text-body-1 mb-0">{{ card.back }}</p>
                       </div>
                     </div>
                   </div>
@@ -345,7 +345,7 @@ const closeDialog = () => {
                     <!-- 如果不是当前用户的卡片组，显示学习按钮 -->
                     <template v-else>
                       <v-btn
-                        v-if="!card.userCard"
+                        v-if="!card.srsState"
                         color="success"
                         variant="tonal"
                         size="small"
@@ -512,7 +512,7 @@ const closeDialog = () => {
                 </div>
                 <div class="text-center">
                   <h4 class="text-h6 font-weight-bold text-primary mb-4">问题</h4>
-                  <p class="text-h6 text-grey-darken-3">{{ selectedCard.currentVersion.front }}</p>
+                  <p class="text-h6 text-grey-darken-3">{{ selectedCard.front }}</p>
                 </div>
                 <div class="text-center mt-6">
                   <v-chip size="small" color="primary" variant="outlined">
@@ -529,7 +529,7 @@ const closeDialog = () => {
                 </div>
                 <div class="text-center">
                   <h4 class="text-h6 font-weight-bold text-success mb-4">答案</h4>
-                  <p class="text-h6 text-grey-darken-3">{{ selectedCard.currentVersion.back }}</p>
+                  <p class="text-h6 text-grey-darken-3">{{ selectedCard.back }}</p>
                 </div>
                 <div class="text-center mt-6">
                   <v-chip size="small" color="success" variant="outlined">

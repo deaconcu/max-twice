@@ -123,7 +123,7 @@
               @click="$emit('toggle-pin', roadmap, $event)"
             >
               <v-icon size="20">{{
-                roadmap.pined ? 'mdi-arrow-up-thick' : 'mdi-arrow-up-thick'
+                roadmap.pinned ? 'mdi-arrow-up-thick' : 'mdi-arrow-up-thick'
               }}</v-icon>
               <v-tooltip activator="parent" location="top">
                 {{ roadmap.pinned ? t('roadmapCard.unpin') : t('roadmapCard.pin') }}

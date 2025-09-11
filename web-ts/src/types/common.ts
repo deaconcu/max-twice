@@ -55,3 +55,33 @@ export interface StateOption {
   color: string
   icon: string
 }
+
+// 通用分页查询基类
+export interface PageQuery {
+  page?: number
+  size?: number
+}
+
+// 通用排序查询基类
+export interface SortQuery {
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+}
+
+// 分页 + 排序查询基类
+export interface PageSortQuery extends PageQuery, SortQuery {}
+
+// 限制数量查询基类
+export interface LimitQuery {
+  limit?: number
+}
+
+// Keyset分页响应类型
+export interface KeysetPageResponse<T> {
+  items: T[]
+  hasMore: boolean
+  nextCursor?: {
+    lastScore?: number
+    lastId?: number
+  }
+}

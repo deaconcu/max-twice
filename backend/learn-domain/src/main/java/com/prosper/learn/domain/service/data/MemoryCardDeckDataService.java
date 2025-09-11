@@ -1,0 +1,199 @@
+package com.prosper.learn.domain.service.data;
+
+import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.persistence.dataobject.MemoryCardDeckDO;
+import com.prosper.learn.persistence.mapper.MemoryCardDeckMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/**
+ * 记忆卡片组数据服务
+ */
+@Slf4j
+@Service
+public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDeckDO, MemoryCardDeckMapper, Long> {
+
+    @Autowired
+    private MemoryCardDeckMapper memoryCardDeckMapper;
+
+    @Override
+    protected MemoryCardDeckMapper mapper() {
+        return memoryCardDeckMapper;
+    }
+
+    @Override
+    protected String getCacheName() {
+        return "memory_card_decks";
+    }
+
+    @Override
+    protected String getEntityName() {
+        return "MemoryCardDeck";
+    }
+
+    @Override
+    protected Long getEntityId(MemoryCardDeckDO entity) {
+        return entity.getId();
+    }
+
+    @Override
+    protected MemoryCardDeckDO getByIdFromMapper(MemoryCardDeckMapper mapper, Long id) {
+        return mapper.get(id);
+    }
+
+    @Override
+    protected List<MemoryCardDeckDO> getByIdsFromMapper(MemoryCardDeckMapper mapper, Collection<Long> ids) {
+        return mapper.getByIds(ids.stream().collect(Collectors.toList()));
+    }
+
+    @Override
+    protected Map<Long, MemoryCardDeckDO> getMapByIdsFromMapper(MemoryCardDeckMapper mapper, Collection<Long> ids) {
+        return mapper.getMapByIds(ids);
+    }
+
+    @Override
+    protected Duration getCacheTtl() {
+        return Duration.ofMinutes(15);
+    }
+
+    /**
+     * 插入卡片组
+     */
+    public int insert(MemoryCardDeckDO deck) {
+        if (deck == null) {
+            throw new IllegalArgumentException("Deck cannot be null");
+        }
+        
+        try {
+            return memoryCardDeckMapper.insert(deck);
+        } catch (Exception e) {
+            log.error("Error inserting deck: {}", deck.getTitle(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 更新卡片组并清除缓存
+     */
+    @CacheEvict(value = "memory_card_decks", key = "#deck.id")
+    public void update(MemoryCardDeckDO deck) {
+        if (deck == null || deck.getId() == null) {
+            throw new IllegalArgumentException("Deck or deck ID cannot be null");
+        }
+
+        try {
+            memoryCardDeckMapper.update(deck);
+            log.debug("Updated deck {}", deck.getId());
+        } catch (Exception e) {
+            log.error("Error updating deck: {}", deck.getId(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 更新审核状态并清除缓存
+     */
+    @CacheEvict(value = "memory_card_decks", key = "#id")
+    public boolean updateAuditStatus(long id, int state, long auditorId) {
+        try {
+            int result = memoryCardDeckMapper.updateAuditStatus(id, state, auditorId);
+            return result > 0;
+        } catch (Exception e) {
+            log.error("Error updating deck audit status: {}", id, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 更新分数并清除缓存
+     */
+    @CacheEvict(value = "memory_card_decks", key = "#id")
+    public boolean updateScore(long id, int upvoteCount, double score) {
+        try {
+            int result = memoryCardDeckMapper.updateScore(id, upvoteCount, score);
+            return result > 0;
+        } catch (Exception e) {
+            log.error("Error updating deck score: {}", id, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 更新卡片数量并清除缓存
+     */
+    @CacheEvict(value = "memory_card_decks", key = "#id")
+    public boolean updateCardCount(long id, int cardCount) {
+        try {
+            int result = memoryCardDeckMapper.updateCardCount(id, cardCount);
+            return result > 0;
+        } catch (Exception e) {
+            log.error("Error updating deck card count: {}", id, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 根据帖子获取卡片组列表
+     */
+    public List<MemoryCardDeckDO> getListByPost(long postId, int state, int limit) {
+        return memoryCardDeckMapper.getListByPost(postId, state, limit);
+    }
+
+    /**
+     * 根据帖子获取卡片组列表 - Keyset分页
+     */
+    public List<MemoryCardDeckDO> getListByPostKeyset(long postId, double lastScore, long lastId, int state, int limit) {
+        return memoryCardDeckMapper.getListByPostKeyset(postId, lastScore, lastId, state, limit);
+    }
+
+    /**
+     * 根据创建者获取卡片组列表
+     */
+    public List<MemoryCardDeckDO> getListByCreator(long creatorId, int state, int limit) {
+        return memoryCardDeckMapper.getListByCreator(creatorId, state, limit);
+    }
+
+    /**
+     * 根据创建者获取卡片组列表 - Keyset分页
+     */
+    public List<MemoryCardDeckDO> getListByCreatorKeyset(long creatorId, double lastScore, long lastId, int state, int limit) {
+        return memoryCardDeckMapper.getListByCreatorKeyset(creatorId, lastScore, lastId, state, limit);
+    }
+
+    /**
+     * 根据状态获取卡片组列表
+     */
+    public List<MemoryCardDeckDO> getListByState(int state, int limit) {
+        return memoryCardDeckMapper.getListByState(state, limit);
+    }
+
+    /**
+     * 根据状态获取卡片组列表 - Keyset分页
+     */
+    public List<MemoryCardDeckDO> getListByStateKeyset(double lastScore, long lastId, int state, int limit) {
+        return memoryCardDeckMapper.getListByStateKeyset(lastScore, lastId, state, limit);
+    }
+
+    /**
+     * 统计帖子下的卡片组数量
+     */
+    public int countByPost(long postId, int state) {
+        return memoryCardDeckMapper.countByPost(postId, state);
+    }
+
+    /**
+     * 统计创建者的卡片组数量
+     */
+    public int countByCreator(long creatorId, int state) {
+        return memoryCardDeckMapper.countByCreator(creatorId, state);
+    }
+
+}

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { MemoryCardWithVersion, UserCardSRSState, ReviewSession, ReviewCardResult, CourseMemoryBank, DeckUpdateDiff, MemoryCardDeck } from '@/types/memoryCard'
-import { ReviewResult, FrequencySetting, CourseStudyStatus } from '@/types/memoryCard'
+import type { MemoryCardView, UserCardSRSState, ReviewSession, ReviewCardResult, CourseMemoryBank, DeckUpdateDiff, MemoryCardDeck } from '@/types/memoryCard'
+import { ReviewResult, FrequencySetting, CourseStudyStatus, DeckState } from '@/types/memoryCard'
 import { MemoryCardMockService } from '@/services/memoryCardMockService'
 import DeckUpdateDiffDialog from '@/components/memory/DeckUpdateDiffDialog.vue'
 
@@ -12,15 +12,21 @@ const { t } = useI18n()
 const activeTab = ref<string>('all')
 const viewMode = ref<'review' | 'list' | 'manage'>('review') // review: 复习模式, list: 列表模式, manage: 管理模式
 
+// Mock 卡片组数据
+const mockDecks = [
+  { id: 1, title: 'Vue 3 核心技术', sourcePostId: 1, creator: { id: 1, name: 'AI助手' }, state: DeckState.NORMAL, upvoteCount: 15, cardCount: 8, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+  { id: 2, title: 'TypeScript 进阶', sourcePostId: 2, creator: { id: 2, name: '开发者' }, state: DeckState.NORMAL, upvoteCount: 12, cardCount: 6, createdAt: '2024-01-02', updatedAt: '2024-01-02' },
+  { id: 3, title: 'React Hooks', sourcePostId: 3, creator: { id: 3, name: '前端专家' }, state: DeckState.NORMAL, upvoteCount: 20, cardCount: 10, createdAt: '2024-01-03', updatedAt: '2024-01-03' }
+]
+
 // Mock 课程记忆库数据
 const courseMemoryBanks = ref<CourseMemoryBank[]>([
   {
     course: { id: 1, name: 'Vue 3 核心技术', description: 'Vue 3 响应式系统和组合式API' },
     setting: { 
-      id: 1, userId: 1, courseId: 1, 
+      id: 1, 
       frequencySetting: FrequencySetting.NORMAL, 
-      status: CourseStudyStatus.STUDYING,
-      createdAt: '', updatedAt: ''
+      status: CourseStudyStatus.STUDYING
     },
     cardCount: 5,
     dueCardCount: 3,
@@ -31,10 +37,9 @@ const courseMemoryBanks = ref<CourseMemoryBank[]>([
   {
     course: { id: 2, name: 'TypeScript 进阶', description: '深入学习TypeScript类型系统' },
     setting: { 
-      id: 2, userId: 1, courseId: 2,
+      id: 2,
       frequencySetting: FrequencySetting.HIGH,
       status: CourseStudyStatus.STUDYING,
-      createdAt: '', updatedAt: ''
     },
     cardCount: 3,
     dueCardCount: 2,
@@ -45,10 +50,9 @@ const courseMemoryBanks = ref<CourseMemoryBank[]>([
   {
     course: { id: 3, name: 'React Hooks', description: 'React Hooks 最佳实践' },
     setting: { 
-      id: 3, userId: 1, courseId: 3,
+      id: 3,
       frequencySetting: FrequencySetting.LOW,
       status: CourseStudyStatus.PAUSED,
-      createdAt: '', updatedAt: ''
     },
     cardCount: 8,
     dueCardCount: 3,
@@ -59,7 +63,7 @@ const courseMemoryBanks = ref<CourseMemoryBank[]>([
 ])
 
 const loading = ref(false)
-const reviewCards = ref<MemoryCardWithVersion[]>([])
+const reviewCards = ref<MemoryCardView[]>([])
 const currentCardIndex = ref(0)
 const isReviewing = ref(false)
 const showAnswer = ref(false)
@@ -95,7 +99,7 @@ const currentCards = computed(() => {
     return reviewCards.value
   }
   const courseId = parseInt(activeTab.value)
-  return reviewCards.value.filter(card => card.primaryCourse?.id === courseId)
+  return reviewCards.value.filter(card => card.deck?.id === courseId)
 })
 
 // 当前卡片
@@ -129,7 +133,7 @@ const loadReviewQueue = async () => {
       // 为每张卡片模拟添加课程信息
       reviewCards.value = response.data.map(card => ({
         ...card,
-        primaryCourse: courseMemoryBanks.value.find(bank => bank.course.id === (card.id % 3) + 1)?.course
+        deck: mockDecks.find(deck => deck.id === (card.id % 3) + 1)
       }))
       
       // 检测卡片组更新
@@ -146,7 +150,7 @@ const loadReviewQueue = async () => {
 const checkDeckUpdates = async () => {
   try {
     // 获取所有唯一的卡片组ID
-    const deckIds = [...new Set(reviewCards.value.map(card => card.deckId))]
+    const deckIds = [...new Set(reviewCards.value.map(card => card.deck?.id).filter(Boolean))]
     
     // 检查每个卡片组是否有更新
     for (const deckId of deckIds) {
@@ -180,7 +184,7 @@ const applyDeckUpdate = async (acceptedChanges: { updateMeta: boolean; cardIds: 
   try {
     const response = await MemoryCardMockService.updateDeck({
       deckId: currentDeckDiff.value.deckId,
-      acceptedChanges
+      cardIds: acceptedChanges.cardIds
     })
     
     if (response.code === 200) {
@@ -262,8 +266,8 @@ const submitReview = async (result: ReviewResult) => {
     })
     
     if (response.code === 200) {
-      if (currentCard.value.userCard) {
-        Object.assign(currentCard.value.userCard, response.data)
+      if (currentCard.value.srsState) {
+        Object.assign(currentCard.value.srsState, response.data)
       }
       
       if (reviewSession.value) {
@@ -405,10 +409,10 @@ const resetSelectedCards = async (): Promise<void> => {
     // 模拟重置操作
     selectedCards.value.forEach(cardId => {
       const card = reviewCards.value.find(c => c.id === cardId)
-      if (card && card.userCard) {
-        card.userCard.repetitions = 0
-        card.userCard.intervalDays = 0
-        card.userCard.reviewDueAt = new Date().toISOString()
+      if (card && card.srsState) {
+        card.srsState.repetitions = 0
+        card.srsState.intervalDays = 0
+        card.srsState.reviewDueAt = new Date().toISOString()
       }
     })
     
@@ -440,25 +444,25 @@ const reviewSelectedCards = (): void => {
 }
 
 // 获取卡片状态显示文本
-const getCardStatusText = (card: MemoryCardWithVersion): string => {
-  if (!card.userCard) return '新卡片'
+const getCardStatusText = (card: MemoryCardView): string => {
+  if (!card.srsState) return '新卡片'
   
-  if (card.userCard.repetitions === 0) return '新卡片'
-  if (card.userCard.repetitions >= 3) return '已掌握'
-  return `复习${card.userCard.repetitions}次`
+  if (card.srsState.repetitions === 0) return '新卡片'
+  if (card.srsState.repetitions >= 3) return '已掌握'
+  return `复习${card.srsState.repetitions}次`
 }
 
 // 获取卡片状态颜色
-const getCardStatusColor = (card: MemoryCardWithVersion): string => {
-  if (!card.userCard || card.userCard.repetitions === 0) return 'blue'
-  if (card.userCard.repetitions >= 3) return 'success'
+const getCardStatusColor = (card: MemoryCardView): string => {
+  if (!card.srsState || card.srsState.repetitions === 0) return 'blue'
+  if (card.srsState.repetitions >= 3) return 'success'
   return 'warning'
 }
 
 // 是否到期
-const isCardDue = (card: MemoryCardWithVersion): boolean => {
-  if (!card.userCard) return true
-  return new Date(card.userCard.reviewDueAt) <= new Date()
+const isCardDue = (card: MemoryCardView): boolean => {
+  if (!card.srsState) return true
+  return new Date(card.srsState.reviewDueAt) <= new Date()
 }
 </script>
 
@@ -703,15 +707,15 @@ const isCardDue = (card: MemoryCardWithVersion): boolean => {
                   <h3 class="text-h5 font-weight-bold text-primary mb-4">问题</h3>
                   
                   <!-- 上下文信息 -->
-                  <div v-if="currentCard.primaryCourse" class="mb-4">
+                  <div v-if="currentCard.deck" class="mb-4">
                     <v-chip size="small" color="primary" variant="outlined">
                       <v-icon icon="mdi-book-open-page-variant" size="16" class="mr-1"></v-icon>
-                      {{ currentCard.primaryCourse.name }}
+                      {{ currentCard.deck.title }}
                     </v-chip>
                   </div>
                   
                   <div class="question-content pa-6 mx-auto" style="max-width: 600px;">
-                    <p class="text-h6 text-grey-darken-3">{{ currentCard.currentVersion.front }}</p>
+                    <p class="text-h6 text-grey-darken-3">{{ currentCard.front }}</p>
                   </div>
                   <div class="mt-8">
                     <v-btn color="primary" variant="flat" rounded="lg" size="large" @click="revealAnswer">
@@ -729,15 +733,15 @@ const isCardDue = (card: MemoryCardWithVersion): boolean => {
                   <h3 class="text-h5 font-weight-bold text-success mb-4">答案</h3>
                   
                   <!-- 上下文信息 -->
-                  <div v-if="currentCard.primaryCourse" class="mb-4">
+                  <div v-if="currentCard.deck" class="mb-4">
                     <v-chip size="small" color="success" variant="outlined">
                       <v-icon icon="mdi-book-open-page-variant" size="16" class="mr-1"></v-icon>
-                      {{ currentCard.primaryCourse.name }}
+                      {{ currentCard.deck.title }}
                     </v-chip>
                   </div>
                   
                   <div class="answer-content pa-6 mx-auto" style="max-width: 600px;">
-                    <p class="text-h6 text-grey-darken-3">{{ currentCard.currentVersion.back }}</p>
+                    <p class="text-h6 text-grey-darken-3">{{ currentCard.back }}</p>
                   </div>
                   
                   <!-- 评价按钮 -->
@@ -938,14 +942,14 @@ const isCardDue = (card: MemoryCardWithVersion): boolean => {
                     <div class="flex-grow-1">
                       <div class="d-flex align-center mb-1">
                         <div class="text-h6 font-weight-medium">
-                          {{ card.currentVersion.front }}
+                          {{ card.front }}
                         </div>
-                        <span v-if="card.primaryCourse" class="text-body-2 text-grey ml-2">
-                          - {{ card.primaryCourse.name }}
+                        <span v-if="card.deck" class="text-body-2 text-grey ml-2">
+                          - {{ card.deck.title }}
                         </span>
                       </div>
                       <div class="text-body-2 text-grey-darken-2">
-                        {{ card.currentVersion.back }}
+                        {{ card.back }}
                       </div>
                     </div>
 
@@ -962,12 +966,12 @@ const isCardDue = (card: MemoryCardWithVersion): boolean => {
                         </v-chip>
                         
                         <v-chip
-                          v-if="hasDeckUpdate(card.deckId)"
+                          v-if="hasDeckUpdate(card.deck?.id)"
                           size="small"
                           color="warning"
                           variant="flat"
                           class="cursor-pointer"
-                          @click.stop="showDeckUpdateDiff(card.deckId)"
+                          @click.stop="showDeckUpdateDiff(card.deck?.id)"
                         >
                           <v-icon icon="mdi-update" size="14" class="mr-1"></v-icon>
                           有更新

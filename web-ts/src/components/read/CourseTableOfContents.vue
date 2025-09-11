@@ -364,7 +364,7 @@ defineExpose({
 /* 保持原有样式 */
 .sticky-left {
   position: sticky;
-  top: 15px;
+  top: 65px;
   z-index: 10;
   height: 100vh;
   overflow-y: auto;

@@ -16,7 +16,6 @@ public interface PostConverter {
     @Mapping(target = "creatorId")
     @Mapping(target = "type")
     @Mapping(target = "content")
-    @Mapping(target = "once")
     @Mapping(target = "twice")
     @Mapping(target = "helpful")
     @Mapping(target = "commentCount")

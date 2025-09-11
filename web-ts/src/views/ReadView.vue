@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import { pageServiceV1, progressServiceV1 } from '@/services/api/v1/apiServiceV1'
 import PostingList from '@/components/read/PostingList.vue'
 import RightSidebar from '@/components/common/RightSidebar.vue'
+import AIAssistant from '@/components/common/AIAssistant.vue'
 import MemoryCardSidebar from '@/components/memory/MemoryCardSidebar.vue'
 import CreateDeckDialog from '@/components/memory/CreateDeckDialog.vue'
 import DeckDetailDialog from '@/components/memory/DeckDetailDialog.vue'
@@ -450,14 +451,19 @@ const handleTabSwitch = (tab: string, posting?: any): void => {
 
       <!-- right -->
       <v-col cols="3" class="">
-        <!-- 记忆卡片组侧边栏 (文章详情页) -->
-        <MemoryCardSidebar
-          v-if="currentTab !== 'list' && currentPosting"
-          :post="currentPosting"
-          @create-deck="handleCreateDeck"
-          @add-deck="handleAddDeck"
-          @view-deck="handleViewDeck"
-        />
+        <div v-if="currentTab !== 'list' && currentPosting" class="sticky-sidebar d-flex flex-column" style="gap: 16px;">
+          <!-- AI答疑助手 (文章详情页) -->
+          <AIAssistant />
+          
+          <!-- 记忆卡片组侧边栏 (文章详情页) -->
+          <MemoryCardSidebar
+            :post="currentPosting"
+            @create-deck="handleCreateDeck"
+            @add-deck="handleAddDeck"
+            @view-deck="handleViewDeck"
+          />
+        </div>
+        
         <!-- 默认侧边栏 (其他页面) -->
         <RightSidebar v-else />
       </v-col>
@@ -544,5 +550,12 @@ const handleTabSwitch = (tab: string, posting?: any): void => {
 /* 紧凑间距样式 */
 .pa-0-5 {
   padding: 2px !important;
+}
+
+/* 粘性侧边栏样式 */
+.sticky-sidebar {
+  position: sticky;
+  top: 65px;
+  align-self: flex-start;
 }
 </style>

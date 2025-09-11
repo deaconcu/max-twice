@@ -1,0 +1,143 @@
+package com.prosper.learn.domain.service.data;
+
+import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.persistence.dataobject.MemoryCardDO;
+import com.prosper.learn.persistence.mapper.MemoryCardMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/**
+ * 记忆卡片数据服务
+ */
+@Slf4j
+@Service
+public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, MemoryCardMapper, Long> {
+
+    @Autowired
+    private MemoryCardMapper memoryCardMapper;
+
+    @Override
+    protected MemoryCardMapper mapper() {
+        return memoryCardMapper;
+    }
+
+    @Override
+    protected String getCacheName() {
+        return "memory_cards";
+    }
+
+    @Override
+    protected String getEntityName() {
+        return "MemoryCard";
+    }
+
+    @Override
+    protected Long getEntityId(MemoryCardDO entity) {
+        return entity.getId();
+    }
+
+    @Override
+    protected MemoryCardDO getByIdFromMapper(MemoryCardMapper mapper, Long id) {
+        return mapper.get(id);
+    }
+
+    @Override
+    protected List<MemoryCardDO> getByIdsFromMapper(MemoryCardMapper mapper, Collection<Long> ids) {
+        return mapper.getByIds(ids.stream().collect(Collectors.toList()));
+    }
+
+    @Override
+    protected Map<Long, MemoryCardDO> getMapByIdsFromMapper(MemoryCardMapper mapper, Collection<Long> ids) {
+        return mapper.getMapByIds(ids);
+    }
+
+    @Override
+    protected Duration getCacheTtl() {
+        return Duration.ofMinutes(20);
+    }
+
+    /**
+     * 插入卡片
+     */
+    public int insert(MemoryCardDO card) {
+        if (card == null) {
+            throw new IllegalArgumentException("Card cannot be null");
+        }
+
+        try {
+            return memoryCardMapper.insert(card);
+        } catch (Exception e) {
+            log.error("Error inserting card: deckId={}", card.getDeckId(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 更新卡片并清除缓存
+     */
+    @CacheEvict(value = "memory_cards", key = "#card.id")
+    public void update(MemoryCardDO card) {
+        if (card == null || card.getId() == null) {
+            throw new IllegalArgumentException("Card or card ID cannot be null");
+        }
+
+        try {
+            memoryCardMapper.update(card);
+            log.debug("Updated card {}", card.getId());
+        } catch (Exception e) {
+            log.error("Error updating card: {}", card.getId(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 更新卡片状态并清除缓存
+     */
+    @CacheEvict(value = "memory_cards", key = "#id")
+    public boolean updateState(long id, int state) {
+        try {
+            int result = memoryCardMapper.updateState(id, state);
+            return result > 0;
+        } catch (Exception e) {
+            log.error("Error updating card state: {}", id, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 根据卡片组获取卡片列表
+     */
+    public List<MemoryCardDO> getListByDeck(long deckId, int state) {
+        return memoryCardMapper.getListByDeck(deckId, state);
+    }
+
+    /**
+     * 根据创建者获取卡片列表
+     */
+    public List<MemoryCardDO> getListByCreator(long creatorId, int state, int limit) {
+        return memoryCardMapper.getListByCreator(creatorId, state, limit);
+    }
+
+    /**
+     * 统计卡片组下的卡片数量
+     */
+    public int countByDeck(long deckId, int state) {
+        return memoryCardMapper.countByDeck(deckId, state);
+    }
+
+    /**
+     * 统计创建者的卡片数量
+     */
+    public int countByCreator(long creatorId, int state) {
+        return memoryCardMapper.countByCreator(creatorId, state);
+    }
+
+}
