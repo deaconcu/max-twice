@@ -316,6 +316,45 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
     protected T getDefaultEntity() {
         return null;
     }
+
+
+    // ========== 验证方法 ==========
+    
+    /**
+     * 验证ID并获取实体（通用验证方法）
+     */
+    public T validateAndGet(Y id) {
+        if (id == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception(getEntityName() + "ID不能为空");
+        }
+        
+        T entity = getById(id);
+        if (entity == null) {
+            throw ErrorCode.NOT_FOUND.exception(getEntityName() + "不存在");
+        }
+        
+        return entity;
+    }
+    
+    /**
+     * 验证ID的有效性（只检查ID格式，不查询数据库）
+     */
+    public void validateId(Y id) {
+        if (id == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception(getEntityName() + "ID不能为空");
+        }
+        // 如果ID是Long类型，检查是否大于0
+        if (id instanceof Long && ((Long) id) <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception(getEntityName() + "ID必须大于0");
+        }
+    }
+    
+    /**
+     * 验证实体是否存在（只验证，不返回实体）
+     */
+    public void validateExists(Y id) {
+        validateAndGet(id);
+    }
     
     /**
      * 预热缓存
@@ -352,4 +391,32 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
         
         return stats;
     }
+    
+    /**
+     * 根据ID删除实体并清除缓存
+     */
+    @CacheEvict(value = "#{target.cacheName}", key = "#id")
+    public boolean deleteById(Y id) {
+        if (id == null) {
+            throw new IllegalArgumentException(getEntityName() + " ID cannot be null");
+        }
+        
+        try {
+            int result = deleteByIdFromMapper(mapper(), id);
+            
+            if (result > 0) {
+                log.debug("Deleted {} with id: {}", getEntityName(), id);
+            }
+            
+            return result > 0;
+        } catch (Exception e) {
+            log.error("Error deleting {} with id: {}", getEntityName(), id, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+    
+    /**
+     * 子类必须实现：从 Mapper 中根据ID删除实体
+     */
+    protected abstract int deleteByIdFromMapper(M mapper, Y id);
 }

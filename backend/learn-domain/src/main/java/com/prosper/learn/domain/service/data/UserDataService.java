@@ -66,6 +66,11 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
         return Duration.ofMinutes(30);
     }
 
+    @Override
+    protected int deleteByIdFromMapper(UserMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 根据邮箱查询用户（带缓存）
      */

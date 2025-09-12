@@ -55,6 +55,11 @@ public class FollowDataService extends AbstractDataService<FollowDO, FollowMappe
         return Map.of(); // Follow实体不支持批量按ID查询
     }
 
+    @Override
+    protected int deleteByIdFromMapper(FollowMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 获取关注关系
      */

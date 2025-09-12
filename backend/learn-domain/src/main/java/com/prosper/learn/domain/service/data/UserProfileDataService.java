@@ -54,6 +54,11 @@ public class UserProfileDataService extends AbstractDataService<UserProfileDO, U
         return Map.of(); // 类型不匹配
     }
 
+    @Override
+    protected int deleteByIdFromMapper(UserProfileMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 更新用户档案
      */

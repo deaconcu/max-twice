@@ -55,6 +55,11 @@ public class UserRoadmapDataService extends AbstractDataService<UserRoadmapDO, U
         return Map.of(); // UserRoadmapMapper没有批量按ID查询方法
     }
 
+    @Override
+    protected int deleteByIdFromMapper(UserRoadmapMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 根据用户ID和路线图ID查询学习进度
      */

@@ -8,8 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +67,11 @@ public class UserCardSrsStateDataService extends AbstractDataService<UserCardSrs
         return Duration.ofMinutes(30);
     }
 
+    @Override
+    protected int deleteByIdFromMapper(UserCardSrsStateMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 插入SRS状态
      */
@@ -118,7 +125,7 @@ public class UserCardSrsStateDataService extends AbstractDataService<UserCardSrs
      * 复习后更新状态
      */
     public boolean updateAfterReview(long userId, long cardId, LocalDateTime reviewDueAt,
-                                   int intervalDays, double easeFactor, int repetitions, int lapseCount) {
+                                     int intervalDays, BigDecimal easeFactor, int repetitions, int lapseCount) {
         try {
             // 先获取现有记录以获得ID用于清除缓存
             UserCardSrsStateDO existingState = userCardSrsStateMapper.getByUserAndCard(userId, cardId);
@@ -143,6 +150,16 @@ public class UserCardSrsStateDataService extends AbstractDataService<UserCardSrs
      */
     public UserCardSrsStateDO getByUserAndCard(long userId, long cardId) {
         return userCardSrsStateMapper.getByUserAndCard(userId, cardId);
+    }
+
+    /**
+     * 根据用户和多个卡片获取SRS状态列表
+     */
+    public List<UserCardSrsStateDO> getByUserAndCards(long userId, Collection<Long> cardIds) {
+        if (cardIds == null || cardIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return userCardSrsStateMapper.getByUserAndCards(userId, cardIds);
     }
 
     /**
@@ -200,6 +217,86 @@ public class UserCardSrsStateDataService extends AbstractDataService<UserCardSrs
      */
     public int countDueCards(long userId, LocalDateTime dueTime) {
         return userCardSrsStateMapper.countDueCards(userId, dueTime);
+    }
+
+    /**
+     * 统计用户指定课程的到期卡片数量
+     */
+    public long countDueCardsByUserAndCourse(long userId, long courseId) {
+        return userCardSrsStateMapper.countDueCardsByUserAndCourse(userId, courseId);
+    }
+
+    /**
+     * 统计用户指定课程的新卡片数量（没有SRS状态的卡片）
+     */
+    public long countNewCardsByUserAndCourse(long userId, long courseId) {
+        return userCardSrsStateMapper.countNewCardsByUserAndCourse(userId, courseId);
+    }
+
+    /**
+     * 统计用户指定课程的复习卡片数量（有SRS状态且不到期的卡片）
+     */
+    public long countReviewCardsByUserAndCourse(long userId, long courseId) {
+        return userCardSrsStateMapper.countReviewCardsByUserAndCourse(userId, courseId);
+    }
+
+    /**
+     * 统计用户指定课程的已学会卡片数量（重复次数 >= 3的卡片）
+     */
+    public long countLearnedCardsByUserAndCourse(long userId, long courseId) {
+        return userCardSrsStateMapper.countLearnedCardsByUserAndCourse(userId, courseId);
+    }
+
+    /**
+     * 获取用户的复习队列（所有课程）
+     */
+    public List<UserCardSrsStateDO> getReviewQueue(long userId, boolean dueOnly, int limit) {
+        if (dueOnly) {
+            return userCardSrsStateMapper.getDueCardsForReview(userId, LocalDateTime.now(), limit);
+        } else {
+            return userCardSrsStateMapper.getByUser(userId, limit);
+        }
+    }
+
+    /**
+     * 获取用户指定课程的复习队列
+     */
+    public List<UserCardSrsStateDO> getReviewQueueByCourse(long userId, long courseId, boolean dueOnly, int limit) {
+        if (dueOnly) {
+            return userCardSrsStateMapper.getDueCardsByCourseForReview(userId, courseId, LocalDateTime.now(), limit);
+        } else {
+            return userCardSrsStateMapper.getByUserAndCourse(userId, courseId);
+        }
+    }
+
+    /**
+     * 统计指定时间段内的复习次数
+     */
+    public long countReviewsInPeriod(long userId, LocalDateTime startTime, LocalDateTime endTime) {
+        return userCardSrsStateMapper.countReviewsInPeriod(userId, startTime, endTime);
+    }
+
+    /**
+     * 计算用户的连续复习天数
+     */
+    public int calculateStreakDays(long userId) {
+        return userCardSrsStateMapper.calculateStreakDays(userId);
+    }
+
+    /**
+     * 计算指定时间段内的平均分数
+     */
+    public double calculateAverageScore(long userId, LocalDateTime startTime, LocalDateTime endTime) {
+        Double result = userCardSrsStateMapper.calculateAverageScore(userId, startTime, endTime);
+        return result != null ? result : 0.0;
+    }
+
+    /**
+     * 计算指定时间段内的学习时间（毫秒）
+     */
+    public long calculateTimeSpent(long userId, LocalDateTime startTime, LocalDateTime endTime) {
+        Long result = userCardSrsStateMapper.calculateTimeSpent(userId, startTime, endTime);
+        return result != null ? result : 0L;
     }
 
 }

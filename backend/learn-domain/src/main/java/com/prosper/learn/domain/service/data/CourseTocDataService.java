@@ -81,4 +81,9 @@ public class CourseTocDataService extends AbstractDataService<CourseTocDO, Cours
         String[] hashArray = ids.toArray(new String[0]);
         return courseTocMapper.getByHashes(hashArray);
     }
+
+    @Override
+    protected int deleteByIdFromMapper(CourseTocMapper mapper, String id) {
+        return 0;
+    }
 }

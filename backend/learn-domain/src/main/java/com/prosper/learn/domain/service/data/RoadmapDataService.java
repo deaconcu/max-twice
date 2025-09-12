@@ -65,7 +65,12 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
     protected Duration getCacheTtl() {
         return Duration.ofMinutes(20);  // 路线图相对稳定，较长缓存时间
     }
-    
+
+    @Override
+    protected int deleteByIdFromMapper(RoadmapMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 更新路线图并清除缓存
      */

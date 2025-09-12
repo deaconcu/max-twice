@@ -58,6 +58,9 @@ public interface UserCardInCourseMapper {
             "</script>"})
     int batchInsert(List<UserCardInCourseDO> relations);
 
+    @Delete("DELETE FROM user_card_in_course WHERE id = #{id}")
+    int deleteById(long id);
+
     @Delete("DELETE FROM user_card_in_course " +
             "WHERE user_id = #{userId} AND card_id = #{cardId} AND course_id = #{courseId}")
     int deleteByUserCardAndCourse(long userId, long cardId, long courseId);

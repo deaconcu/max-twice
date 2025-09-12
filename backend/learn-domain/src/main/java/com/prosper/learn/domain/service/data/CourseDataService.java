@@ -68,7 +68,12 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
     protected Duration getCacheTtl() {
         return Duration.ofMinutes(15);
     }
-    
+
+    @Override
+    protected int deleteByIdFromMapper(CourseMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 根据主分类和子分类获取课程列表（带缓存）
      */

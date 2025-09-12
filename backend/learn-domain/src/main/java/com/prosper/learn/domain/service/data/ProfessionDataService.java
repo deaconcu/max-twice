@@ -65,7 +65,12 @@ public class ProfessionDataService extends AbstractDataService<ProfessionDO, Pro
     protected Duration getCacheTtl() {
         return Duration.ofMinutes(60);  // 专业信息变化很少，长缓存时间
     }
-    
+
+    @Override
+    protected int deleteByIdFromMapper(ProfessionMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 更新专业并清除缓存
      */

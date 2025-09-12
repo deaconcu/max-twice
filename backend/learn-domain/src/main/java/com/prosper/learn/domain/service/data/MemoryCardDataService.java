@@ -64,6 +64,11 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
         return Duration.ofMinutes(20);
     }
 
+    @Override
+    protected int deleteByIdFromMapper(MemoryCardMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 插入卡片
      */
@@ -138,6 +143,16 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
      */
     public int countByCreator(long creatorId, int state) {
         return memoryCardMapper.countByCreator(creatorId, state);
+    }
+
+    /**
+     * 根据卡片组ID获取卡片列表（只获取正常状态的卡片）
+     */
+    public List<MemoryCardDO> getByDeckId(Long deckId) {
+        if (deckId == null) {
+            return List.of();
+        }
+        return getListByDeck(deckId, 0); // 0 = 正常状态
     }
 
 }

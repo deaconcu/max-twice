@@ -55,6 +55,11 @@ public class UserCourseDataService extends AbstractDataService<UserCourseDO, Use
         return Map.of(); // UserCourseMapper没有批量按ID查询方法
     }
 
+    @Override
+    protected int deleteByIdFromMapper(UserCourseMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 根据用户ID和课程ID查询进度
      */

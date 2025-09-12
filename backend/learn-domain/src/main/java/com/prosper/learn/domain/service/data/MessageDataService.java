@@ -54,6 +54,11 @@ public class MessageDataService extends AbstractDataService<MessageDO, MessageMa
         return Map.of(); // MessageMapper没有批量查询方法
     }
 
+    @Override
+    protected int deleteByIdFromMapper(MessageMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 更新消息
      */

@@ -59,6 +59,11 @@ public class UserCardInCourseDataService extends AbstractDataService<UserCardInC
     }
 
     @Override
+    protected int deleteByIdFromMapper(UserCardInCourseMapper mapper, Long id) {
+        return mapper.deleteById(id);
+    }
+
+    @Override
     protected Duration getCacheTtl() {
         return Duration.ofHours(1);
     }
@@ -235,6 +240,13 @@ public class UserCardInCourseDataService extends AbstractDataService<UserCardInC
      */
     public int countByCourse(long courseId) {
         return userCardInCourseMapper.countByCourse(courseId);
+    }
+
+    /**
+     * 统计用户指定课程的卡片数量
+     */
+    public long countCardsByUserAndCourse(long userId, long courseId) {
+        return userCardInCourseMapper.countByUserAndCourse(userId, courseId);
     }
 
 }

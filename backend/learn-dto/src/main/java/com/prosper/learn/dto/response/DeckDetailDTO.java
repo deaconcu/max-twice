@@ -12,6 +12,6 @@ public class DeckDetailDTO extends MemoryCardDeckDTO {
 
     private List<MemoryCardViewDTO> cards;
 
-    private DeckStatsDTO stats;
+    //private DeckStatsDTO stats;
 
 }

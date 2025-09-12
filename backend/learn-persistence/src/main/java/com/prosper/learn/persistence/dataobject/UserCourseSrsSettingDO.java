@@ -13,9 +13,9 @@ public class UserCourseSrsSettingDO {
 
     private Long courseId;
 
-    private Integer frequencySetting;
+    private Byte frequencySetting;
 
-    private Integer status;
+    private Byte status;
 
     private LocalDateTime createdAt;
 

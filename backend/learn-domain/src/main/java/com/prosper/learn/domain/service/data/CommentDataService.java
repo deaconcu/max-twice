@@ -65,7 +65,12 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
     protected Duration getCacheTtl() {
         return Duration.ofMinutes(5);  // 评论内容变化频繁，较短缓存时间
     }
-    
+
+    @Override
+    protected int deleteByIdFromMapper(CommentMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 更新评论并清除缓存
      */

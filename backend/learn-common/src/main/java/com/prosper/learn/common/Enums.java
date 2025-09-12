@@ -532,4 +532,180 @@ public class Enums {
             }
         }
     }
+
+    /**
+     * 记忆卡片组状态枚举
+     * PENDING=0, NORMAL=1, LOCKED=2, PRIVATE=3, DELETED=4
+     */
+    public enum MemoryCardDeckState implements ValueEnum<Byte> {
+        PENDING((byte) 0),      // 审核中
+        NORMAL((byte) 1),       // 正常
+        LOCKED((byte) 2),       // 锁定
+        PRIVATE((byte) 3),      // 私有
+        DELETED((byte) 4);      // 已删除
+
+        private final byte value;
+
+        MemoryCardDeckState(byte value) {
+            this.value = value;
+        }
+
+        @Override
+        public Byte value() {
+            return value;
+        }
+
+        public static MemoryCardDeckState getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(MemoryCardDeckState.class, value.byteValue());
+        }
+
+        public static boolean isValid(int value) {
+            return ValueEnum.isValid(MemoryCardDeckState.class, (byte)value);
+        }
+    }
+
+    /**
+     * 记忆卡片状态枚举
+     * NORMAL=0, DELETED=1
+     */
+    public enum MemoryCardState implements ValueEnum<Byte> {
+        NORMAL((byte) 0),       // 正常
+        DELETED((byte) 1);      // 已删除
+
+        private final byte value;
+
+        MemoryCardState(byte value) {
+            this.value = value;
+        }
+
+        @Override
+        public Byte value() {
+            return value;
+        }
+
+        public static MemoryCardState getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(MemoryCardState.class, value.byteValue());
+        }
+
+        public static boolean isValid(int value) {
+            return ValueEnum.isValid(MemoryCardState.class, (byte)value);
+        }
+    }
+
+    /**
+     * 复习频率设置枚举
+     * HIGH=0, NORMAL=1, LOW=2
+     */
+    public enum FrequencySetting implements ValueEnum<Byte> {
+        HIGH((byte) 0),         // 高频
+        NORMAL((byte) 1),       // 普通
+        LOW((byte) 2);          // 低频
+
+        private final byte value;
+
+        FrequencySetting(byte value) {
+            this.value = value;
+        }
+
+        @Override
+        public Byte value() {
+            return value;
+        }
+
+        public static FrequencySetting getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(FrequencySetting.class, value.byteValue());
+        }
+
+        public static boolean isValid(int value) {
+            return ValueEnum.isValid(FrequencySetting.class, (byte)value);
+        }
+    }
+
+    /**
+     * 课程学习状态枚举
+     * STUDYING=1, PAUSED=2, ARCHIVED=3
+     */
+    public enum CourseStudyStatus implements ValueEnum<Byte> {
+        STUDYING((byte) 1),     // 学习中
+        PAUSED((byte) 2),       // 已暂停
+        ARCHIVED((byte) 3);     // 已归档
+
+        private final byte value;
+
+        CourseStudyStatus(byte value) {
+            this.value = value;
+        }
+
+        @Override
+        public Byte value() {
+            return value;
+        }
+
+        public static CourseStudyStatus getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(CourseStudyStatus.class, value.byteValue());
+        }
+
+        public static boolean isValid(int value) {
+            return ValueEnum.isValid(CourseStudyStatus.class, (byte)value);
+        }
+    }
+
+    /**
+     * 复习结果枚举
+     * FAILED=0, HARD=1, GOOD=2, EASY=3
+     */
+    public enum ReviewResult implements ValueEnum<Integer> {
+        FAILED(0),              // 忘记了
+        HARD(1),                // 困难
+        GOOD(2),                // 良好
+        EASY(3);                // 简单
+
+        private final int value;
+
+        ReviewResult(int value) {
+            this.value = value;
+        }
+
+        @Override
+        public Integer value() {
+            return value;
+        }
+
+        public static ReviewResult getByValue(Integer value) {
+            return ValueEnum.getByValue(ReviewResult.class, value);
+        }
+
+        public static boolean isValid(int value) {
+            return ValueEnum.isValid(ReviewResult.class, value);
+        }
+    }
+
+    /**
+     * 统计周期枚举
+     */
+    public enum Period implements ValueEnum<String> {
+        DAY("day"),
+        WEEK("week"),
+        MONTH("month"),
+        YEAR("year");
+
+        private final String value;
+
+        Period(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String value() {
+            return value;
+        }
+
+        public static Period getByValue(String value) {
+            return ValueEnum.getByValue(Period.class, value);
+        }
+
+        public static boolean isValid(String value) {
+            return ValueEnum.isValid(Period.class, value);
+        }
+    }
 }

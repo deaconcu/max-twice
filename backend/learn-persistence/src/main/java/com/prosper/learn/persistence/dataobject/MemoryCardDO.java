@@ -15,7 +15,7 @@ public class MemoryCardDO {
 
     private Long currentVersionId;
 
-    private Integer state;
+    private Byte state;
 
     private LocalDateTime createdAt;
 

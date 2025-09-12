@@ -23,6 +23,7 @@ public enum ErrorCode {
     INVALID_DATE(1004, "无效的日期"),
     INVALID_DAYS_RANGE(1005, "无效的天数范围"),
     PERMISSION_DENIED(1006, "权限不足"),
+    NOT_FOUND(1007, "没有找到对象"),
 
     // 用户认证相关 11xx
     USER_NOT_LOGIN(1001, "用户未登录"),
@@ -103,6 +104,17 @@ public enum ErrorCode {
     PROFESSION_STATE_CONFLICT(2105, "专业状态已被其他操作修改，请刷新后重试"),
     PROFESSION_HOT_LIST_FAILED(2106, "获取热门专业失败"),
     PROFESSION_INVALID_LIMIT(2107, "专业查询数量超出限制"),
+
+    // 记忆卡片相关 22xx
+    MEMORY_CARD_DECK_NOT_FOUND(2201, "卡片组不存在"),
+    MEMORY_CARD_NOT_FOUND(2202, "记忆卡片不存在"),
+    MEMORY_CARD_VERSION_NOT_FOUND(2203, "卡片版本不存在"),
+    MEMORY_BANK_COURSE_NOT_FOUND(2204, "记忆库课程不存在"),
+    SRS_STATE_NOT_FOUND(2205, "SRS复习状态不存在"),
+    MEMORY_CARD_DECK_ALREADY_EXISTS(2206, "卡片组已存在于记忆库中"),
+    INVALID_REVIEW_RESULT(2207, "无效的复习结果"),
+    INVALID_FREQUENCY_SETTING(2208, "无效的复习频率设置"),
+    INVALID_COURSE_STUDY_STATUS(2209, "无效的课程学习状态"),
 
     // 系统错误 9xxx
     SYSTEM_ERROR(9999, "系统繁忙，请稍后重试"),

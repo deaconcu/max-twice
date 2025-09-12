@@ -64,6 +64,11 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
         return Duration.ofMinutes(15);
     }
 
+    @Override
+    protected int deleteByIdFromMapper(MemoryCardDeckMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 插入卡片组
      */
@@ -141,6 +146,20 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     }
 
     /**
+     * 更新状态并清除缓存
+     */
+    @CacheEvict(value = "memory_card_decks", key = "#id")
+    public boolean updateState(long id, byte state) {
+        try {
+            int result = memoryCardDeckMapper.updateState(id, state);
+            return result > 0;
+        } catch (Exception e) {
+            log.error("Error updating deck state: {}", id, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
      * 根据帖子获取卡片组列表
      */
     public List<MemoryCardDeckDO> getListByPost(long postId, int state, int limit) {
@@ -194,6 +213,20 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
      */
     public int countByCreator(long creatorId, int state) {
         return memoryCardDeckMapper.countByCreator(creatorId, state);
+    }
+
+    /**
+     * 根据帖子和创建者获取卡片组列表
+     */
+    public List<MemoryCardDeckDO> getListByPostAndCreator(long postId, long creatorId, int state, int limit) {
+        return memoryCardDeckMapper.getListByPostAndCreator(postId, creatorId, state, limit);
+    }
+
+    /**
+     * 根据帖子和创建者获取卡片组列表 - Keyset分页
+     */
+    public List<MemoryCardDeckDO> getListByPostAndCreatorKeyset(long postId, long creatorId, double lastScore, long lastId, int state, int limit) {
+        return memoryCardDeckMapper.getListByPostAndCreatorKeyset(postId, creatorId, lastScore, lastId, state, limit);
     }
 
 }

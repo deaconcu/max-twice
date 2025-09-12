@@ -63,7 +63,12 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
     protected Duration getCacheTtl() {
         return Duration.ofMinutes(5);  // 帖子内容变化频繁，较短缓存时间
     }
-    
+
+    @Override
+    protected int deleteByIdFromMapper(PostMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 更新帖子并清除缓存
      */

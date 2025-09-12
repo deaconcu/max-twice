@@ -64,6 +64,11 @@ public class MemoryCardVersionDataService extends AbstractDataService<MemoryCard
         return Duration.ofHours(1);
     }
 
+    @Override
+    protected int deleteByIdFromMapper(MemoryCardVersionMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 插入卡片版本
      */
@@ -84,7 +89,7 @@ public class MemoryCardVersionDataService extends AbstractDataService<MemoryCard
      * 更新版本激活状态并清除缓存
      */
     @CacheEvict(value = "memory_card_versions", key = "#id")
-    public boolean updateActiveStatus(long id, int isActive) {
+    public boolean updateActiveStatus(long id, boolean isActive) {
         try {
             int result = memoryCardVersionMapper.updateActiveStatus(id, isActive);
             return result > 0;

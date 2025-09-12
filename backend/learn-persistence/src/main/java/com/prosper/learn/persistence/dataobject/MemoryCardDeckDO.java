@@ -19,7 +19,7 @@ public class MemoryCardDeckDO {
 
     private Integer version;
 
-    private Integer state;
+    private Byte state;
 
     private Long auditorId;
 

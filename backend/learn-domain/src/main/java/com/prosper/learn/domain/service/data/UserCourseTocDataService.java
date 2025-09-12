@@ -55,6 +55,11 @@ public class UserCourseTocDataService extends AbstractDataService<UserCourseTocD
         return Map.of(); // UserCourseTocMapper没有批量查询方法
     }
 
+    @Override
+    protected int deleteByIdFromMapper(UserCourseTocMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 根据用户ID和课程ID查询用户课程目录
      */

@@ -55,6 +55,11 @@ public class UserProgressDataService extends AbstractDataService<UserProgressDO,
         return Map.of(); // UserProgressMapper没有批量查询方法
     }
 
+    @Override
+    protected int deleteByIdFromMapper(UserProgressMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 根据用户ID获取学习进度
      */

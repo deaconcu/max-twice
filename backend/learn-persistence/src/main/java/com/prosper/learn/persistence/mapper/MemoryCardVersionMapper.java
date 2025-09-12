@@ -44,7 +44,7 @@ public interface MemoryCardVersionMapper {
     int insert(MemoryCardVersionDO version);
 
     @Update("UPDATE memory_card_version SET is_active = #{isActive} WHERE id = #{id}")
-    int updateActiveStatus(long id, int isActive);
+    int updateActiveStatus(long id, boolean isActive);
 
     @Update("UPDATE memory_card_version SET is_active = 0 WHERE card_id = #{cardId}")
     int deactivateAllVersions(long cardId);

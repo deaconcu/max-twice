@@ -64,6 +64,11 @@ public class UserCourseSrsSettingDataService extends AbstractDataService<UserCou
         return Duration.ofHours(2);
     }
 
+    @Override
+    protected int deleteByIdFromMapper(UserCourseSrsSettingMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 插入课程设置
      */

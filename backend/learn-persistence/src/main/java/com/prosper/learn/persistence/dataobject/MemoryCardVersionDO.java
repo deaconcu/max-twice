@@ -22,7 +22,7 @@ public class MemoryCardVersionDO {
 
     private String contentHash;
 
-    private Integer isActive;
+    private Boolean isActive;
 
     private LocalDateTime createdAt;
 

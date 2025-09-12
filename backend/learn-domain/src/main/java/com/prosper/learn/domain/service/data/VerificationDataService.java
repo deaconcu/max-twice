@@ -56,7 +56,12 @@ public class VerificationDataService extends AbstractDataService<VerificationDO,
     protected Map<Long, VerificationDO> getMapByIdsFromMapper(VerificationMapper mapper, Collection<Long> ids) {
         throw new UnsupportedOperationException("VerificationMapper does not support batch query");
     }
-    
+
+    @Override
+    protected int deleteByIdFromMapper(VerificationMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 根据邮箱获取验证码信息
      */
@@ -80,4 +85,6 @@ public class VerificationDataService extends AbstractDataService<VerificationDO,
     public void update(VerificationDO verificationDO) {
         verificationMapper.update(verificationDO);
     }
+
+
 }

@@ -64,7 +64,12 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
     protected Duration getCacheTtl() {
         return Duration.ofMinutes(15);
     }
-    
+
+    @Override
+    protected int deleteByIdFromMapper(NodeMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 更新节点并清除缓存
      */

@@ -55,6 +55,11 @@ public class UpvoteDataService extends AbstractDataService<UpvoteDO, UpvoteMappe
         return Map.of(); // 投票实体不支持批量按ID查询
     }
 
+    @Override
+    protected int deleteByIdFromMapper(UpvoteMapper mapper, Long id) {
+        return 0;
+    }
+
     /**
      * 获取用户对特定对象的投票
      */

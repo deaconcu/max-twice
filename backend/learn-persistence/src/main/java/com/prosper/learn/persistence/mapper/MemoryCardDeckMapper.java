@@ -76,10 +76,22 @@ public interface MemoryCardDeckMapper {
     @Update("UPDATE memory_card_deck SET card_count = #{cardCount} WHERE id = #{id}")
     int updateCardCount(long id, int cardCount);
 
+    @Update("UPDATE memory_card_deck SET state = #{state}, updated_at = NOW() WHERE id = #{id}")
+    int updateState(long id, byte state);
+
     @Select("SELECT COUNT(*) FROM memory_card_deck WHERE source_post_id = #{postId} AND state = #{state}")
     int countByPost(long postId, int state);
 
     @Select("SELECT COUNT(*) FROM memory_card_deck WHERE creator_id = #{creatorId} AND state = #{state}")
     int countByCreator(long creatorId, int state);
+
+    @Select("SELECT * FROM memory_card_deck WHERE source_post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} " +
+            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+    List<MemoryCardDeckDO> getListByPostAndCreator(long postId, long creatorId, int state, int limit);
+
+    @Select("SELECT * FROM memory_card_deck WHERE source_post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} AND " +
+            "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
+            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+    List<MemoryCardDeckDO> getListByPostAndCreatorKeyset(long postId, long creatorId, double lastScore, long lastId, int state, int limit);
 
 }
