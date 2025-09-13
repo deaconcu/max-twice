@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useUserStore } from '@/stores/user'
 import type { Post } from '@/types/post'
 import type { CreateDeckRequest, CreateCardRequest, MemoryCardDeck } from '@/types/memoryCard'
+import { MemoryService } from '@/services/memoryService'
 
 interface Props {
   modelValue: boolean
@@ -18,6 +20,7 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
+const userStore = useUserStore()
 
 const dialog = ref(false)
 const loading = ref(false)
@@ -37,6 +40,7 @@ const cardForm = ref({
 
 const cards = ref<CreateCardRequest[]>([])
 const currentDeck = ref<MemoryCardDeck | null>(null)
+const showEmptyError = ref(false)
 
 // 表单验证规则
 const titleRules = [
@@ -68,7 +72,7 @@ watch(dialog, (newVal) => {
 const resetForm = () => {
   step.value = 1
   deckForm.value = {
-    title: '',
+    title: `${userStore.name}的记忆卡片组`,
     description: ''
   }
   cardForm.value = {
@@ -77,51 +81,39 @@ const resetForm = () => {
   }
   cards.value = []
   currentDeck.value = null
+  showEmptyError.value = false
 }
 
 const createDeck = async () => {
   if (!deckForm.value.title.trim()) return
 
-  loading.value = true
-  
-  try {
-    // TODO: 调用真实API
-    // const response = await memoryCardService.createDeck({
-    //   sourcePostId: props.post.id,
-    //   title: deckForm.value.title,
-    //   description: deckForm.value.description
-    // })
-
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // 模拟创建的卡片组
-    currentDeck.value = {
-      id: Date.now(),
-      sourcePostId: props.post.id,
-      creator: { id: 1, name: '当前用户', email: 'user@example.com' },
-      title: deckForm.value.title,
-      description: deckForm.value.description,
-      state: 0, // 审核中
-      upvoteCount: 0,
-      cardCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-
-    step.value = 2
-  } catch (error) {
-    console.error('Failed to create deck:', error)
-  } finally {
-    loading.value = false
+  // 第一步只是进入下一步，不调用接口
+  // 创建临时的卡片组对象用于显示
+  currentDeck.value = {
+    id: 0, // 临时ID，实际创建时由后端分配
+    sourcePostId: props.post.id,
+    creator: userStore.userId ? { 
+      id: userStore.userId, 
+      name: userStore.name || '当前用户', 
+      email: 'user@example.com' 
+    } : undefined,
+    title: deckForm.value.title,
+    description: deckForm.value.description,
+    state: 0,
+    upvoteCount: 0,
+    cardCount: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }
+
+  step.value = 2
 }
 
 const addCard = () => {
   if (!cardForm.value.front.trim() || !cardForm.value.back.trim()) return
 
   cards.value.push({
-    deckId: currentDeck.value!.id,
+    deckId: 0, // 临时值，实际创建时会被忽略
     front: cardForm.value.front,
     back: cardForm.value.back
   })
@@ -147,28 +139,34 @@ const removeCard = (index: number) => {
 const finishCreation = async () => {
   if (cards.value.length === 0) {
     // 至少需要一张卡片
+    showEmptyError.value = true
     return
   }
 
+  showEmptyError.value = false
   loading.value = true
 
   try {
-    // TODO: 批量创建卡片
-    // for (const card of cards.value) {
-    //   await memoryCardService.createCard(card)
-    // }
+    // 第二步：一次性创建卡片组和所有卡片
+    const response = await MemoryService.createDeck({
+      sourcePostId: props.post.id,
+      title: deckForm.value.title,
+      description: deckForm.value.description,
+      cards: cards.value.map(card => ({
+        front: card.front,
+        back: card.back
+      }))
+    })
 
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    if (currentDeck.value) {
+    if (response.code === 200) {
+      // 使用后端返回的真实卡片组数据
+      currentDeck.value = response.data
       currentDeck.value.cardCount = cards.value.length
       emit('created', currentDeck.value)
+      dialog.value = false
     }
-
-    dialog.value = false
   } catch (error) {
-    console.error('Failed to create cards:', error)
+    console.error('Failed to create deck and cards:', error)
   } finally {
     loading.value = false
   }
@@ -246,7 +244,6 @@ const closeDialog = () => {
             v-model="cardForm.front"
             label="问题（卡片正面）"
             placeholder="输入问题..."
-            :rules="frontRules"
             variant="outlined"
             rounded="lg"
             rows="2"
@@ -258,7 +255,6 @@ const closeDialog = () => {
             v-model="cardForm.back"
             label="答案（卡片背面）"
             placeholder="输入答案..."
-            :rules="backRules"
             variant="outlined"
             rounded="lg"
             rows="3"
@@ -285,38 +281,48 @@ const closeDialog = () => {
             已添加的卡片 ({{ cards.length }})
           </h4>
           
-          <v-card
+          <div
             v-for="(card, index) in cards"
             :key="index"
-            class="mb-3"
-            elevation="1"
-            rounded="lg"
+            class="mb-3 pa-4 border rounded-lg position-relative"
+            style="border-color: #e0e0e0; background-color: #fafafa;"
           >
-            <v-card-text class="pa-4">
-              <div class="d-flex justify-space-between align-start mb-2">
-                <h5 class="text-subtitle-2 font-weight-bold text-grey-darken-3">
-                  卡片 {{ index + 1 }}
-                </h5>
-                <v-btn
-                  icon="mdi-delete-outline"
-                  variant="text"
-                  size="small"
-                  color="error"
-                  @click="removeCard(index)"
-                ></v-btn>
+            <div class="d-flex justify-space-between align-start mb-3">
+              <div class="d-flex align-center">
+                <v-chip 
+                  size="small" 
+                  variant="outlined" 
+                  color="primary"
+                  class="mr-2"
+                >
+                  {{ index + 1 }}
+                </v-chip>
+                <span class="text-body-2 font-weight-medium text-grey-darken-2">卡片</span>
               </div>
-              
-              <div class="mb-2">
-                <span class="text-body-2 font-weight-medium text-grey-darken-2">问题：</span>
-                <p class="text-body-2 text-grey-darken-1 mb-0">{{ card.front }}</p>
+              <v-btn
+                icon="mdi-close"
+                variant="text"
+                size="x-small"
+                color="grey"
+                class="ml-2"
+                @click="removeCard(index)"
+              ></v-btn>
+            </div>
+            
+            <div class="mb-3">
+              <div class="text-caption font-weight-medium text-primary mb-1">问题</div>
+              <div class="text-body-2 text-grey-darken-3 pa-2 rounded" style="background-color: white; border: 1px solid #e0e0e0;">
+                {{ card.front }}
               </div>
-              
-              <div>
-                <span class="text-body-2 font-weight-medium text-grey-darken-2">答案：</span>
-                <p class="text-body-2 text-grey-darken-1 mb-0">{{ card.back }}</p>
+            </div>
+            
+            <div>
+              <div class="text-caption font-weight-medium text-primary mb-1">答案</div>
+              <div class="text-body-2 text-grey-darken-3 pa-2 rounded" style="background-color: white; border: 1px solid #e0e0e0;">
+                {{ card.back }}
               </div>
-            </v-card-text>
-          </v-card>
+            </div>
+          </div>
         </div>
 
         <!-- 空状态提示 -->
@@ -330,6 +336,14 @@ const closeDialog = () => {
 
       <!-- 底部操作按钮 -->
       <v-card-actions class="pa-6 pt-0">
+        <!-- 空卡片错误提示 -->
+        <div v-if="step === 2 && showEmptyError" class="d-flex align-center">
+          <v-icon icon="mdi-alert-circle" size="14" color="grey-darken-1" class="mr-1"></v-icon>
+          <p class="text-caption text-grey-darken-1 mb-0">
+            至少需要添加一张卡片才能完成创建
+          </p>
+        </div>
+        
         <v-spacer></v-spacer>
         
         <v-btn

@@ -1,11 +1,13 @@
 package com.prosper.learn.persistence.mapper;
 
+import com.prosper.learn.persistence.dataobject.CourseMemoryBankDO;
 import com.prosper.learn.persistence.dataobject.UserCardInCourseDO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface UserCardInCourseMapper {
 
@@ -74,11 +76,94 @@ public interface UserCardInCourseMapper {
     @Select("SELECT COUNT(*) FROM user_card_in_course WHERE user_id = #{userId}")
     int countByUser(long userId);
 
-    @Select("SELECT COUNT(*) FROM user_card_in_course " +
-            "WHERE user_id = #{userId} AND course_id = #{courseId}")
+    @Select("SELECT COUNT(*) FROM user_card_in_course WHERE user_id = #{userId} AND course_id = #{courseId}")
     int countByUserAndCourse(long userId, long courseId);
 
     @Select("SELECT COUNT(*) FROM user_card_in_course WHERE course_id = #{courseId}")
     int countByCourse(long courseId);
+
+    @Select("""
+          <script>
+          SELECT
+              ucc.course_id AS courseId,
+              COUNT(ucc.card_id) AS cardCount,
+              SUM(CASE WHEN srs.review_due_at &lt;= NOW() THEN 1 ELSE 0 END) AS dueCardCount,
+              SUM(CASE WHEN srs.repetitions = 0 THEN 1 ELSE 0 END) AS newCardCount,
+              SUM(CASE WHEN srs.repetitions &gt; 0 THEN 1 ELSE 0 END) AS learnedCardCount,
+              SUM(CASE WHEN srs.review_due_at &lt;= NOW() AND srs.repetitions > 0 THEN 1 ELSE 0 END) AS reviewCardCount
+          FROM
+              user_card_in_course ucc
+          LEFT JOIN
+              user_card_srs_state srs ON ucc.user_id = srs.user_id AND ucc.card_id = srs.card_id
+          WHERE
+              ucc.user_id = #{userId}
+              AND ucc.course_id IN
+              <foreach item="courseId" collection="courseIds" open="(" separator="," close=")">
+                  #{courseId}
+              </foreach>
+          GROUP BY
+              ucc.course_id
+          </script> 
+          """)
+    List<CourseMemoryBankDO> getBatchCardStatsForCourses(@Param("userId") Long userId, @Param("courseIds") Set<Long> courseIds);
+
+    @Select("""
+          <script>
+          SELECT
+              ucc.course_id AS courseId,
+              COUNT(ucc.card_id) AS cardCount,
+              SUM(CASE WHEN srs.review_due_at &lt;= NOW() THEN 1 ELSE 0 END) AS dueCardCount,
+              SUM(CASE WHEN srs.repetitions = 0 THEN 1 ELSE 0 END) AS newCardCount,
+              SUM(CASE WHEN srs.repetitions &gt; 0 THEN 1 ELSE 0 END) AS learnedCardCount,
+              SUM(CASE WHEN srs.review_due_at &lt;= NOW() AND srs.repetitions > 0 THEN 1 ELSE 0 END) AS reviewCardCount
+          FROM
+              user_card_in_course ucc
+          LEFT JOIN
+              user_card_srs_state srs ON ucc.user_id = srs.user_id AND ucc.card_id = srs.card_id
+          WHERE
+              ucc.user_id = #{userId}
+              AND ucc.course_id = #{courseId}
+          </script> 
+          """)
+    CourseMemoryBankDO getCardStatsForCourses(@Param("userId") Long userId, @Param("courseId") Long courseId);
+
+    @Insert("""
+          <script>
+          INSERT IGNORE INTO user_card_in_course (user_id, card_id, course_id, created_at)
+          VALUES
+          <foreach collection="cardIds" item="cardId" separator=",">
+              (#{userId}, #{cardId}, #{courseId}, NOW())
+          </foreach>
+          </script>
+          """)
+    int batchInsertIgnore(@Param("userId") Long userId, 
+                         @Param("courseId") Long courseId, 
+                         @Param("cardIds") List<Long> cardIds);
+
+    @Delete("""
+          <script>
+          DELETE FROM user_card_in_course 
+          WHERE user_id = #{userId} AND course_id = #{courseId} AND card_id IN
+          <foreach collection="cardIds" item="cardId" open="(" separator="," close=")">
+              #{cardId}
+          </foreach>
+          </script>
+          """)
+    int batchDeleteByUserCourseAndCards(@Param("userId") Long userId, 
+                                       @Param("courseId") Long courseId, 
+                                       @Param("cardIds") List<Long> cardIds);
+
+    @Select("""
+          <script>
+          SELECT DISTINCT card_id FROM user_card_in_course 
+          WHERE user_id = #{userId} AND card_id IN
+          <foreach collection="cardIds" item="cardId" open="(" separator="," close=")">
+              #{cardId}
+          </foreach>
+          </script>
+          """)
+    List<Long> getExistingCardIdsByUserAndCards(@Param("userId") Long userId, 
+                                               @Param("cardIds") List<Long> cardIds);
+
 
 }

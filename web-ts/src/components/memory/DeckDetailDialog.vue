@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useUserStore } from '@/stores/user'
 import type { MemoryCardDeck, DeckDetail, MemoryCardView } from '@/types/memoryCard'
-import { MemoryCardMockService } from '@/services/memoryCardMockService'
+import { MemoryService } from '@/services/memoryService'
 
 interface Props {
   modelValue: boolean
@@ -17,9 +18,10 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
+const userStore = useUserStore()
 
-// 模拟当前用户ID
-const currentUserId = ref(1) // TODO: 从用户认证系统获取
+// 获取当前用户ID
+const currentUserId = computed(() => userStore.userId)
 
 const dialog = ref(false)
 const loading = ref(false)
@@ -49,7 +51,7 @@ const loadDeckDetail = async () => {
   
   loading.value = true
   try {
-    const response = await MemoryCardMockService.getDeckDetail(props.deck.id)
+    const response = await MemoryService.getDeckDetail(props.deck.id)
     if (response.code === 200) {
       deckDetail.value = response.data
     }
@@ -80,7 +82,7 @@ const addToStudy = async () => {
 
 const addCardToStudy = async (card: MemoryCardView) => {
   try {
-    const response = await MemoryCardMockService.addCardToStudy(card.id)
+    const response = await MemoryService.addCardToStudy(card.id)
     if (response.code === 200) {
       // 更新卡片的用户状态
       card.srsState = response.data
@@ -119,15 +121,15 @@ const deleteCard = async (card: MemoryCardView) => {
   if (!confirm('确定要删除这张卡片吗？')) return
   
   try {
-    // TODO: 调用删除API
-    console.log('删除卡片:', card.id)
-    
-    // 从本地数据中移除
-    if (deckDetail.value) {
-      const index = deckDetail.value.cards.findIndex(c => c.id === card.id)
-      if (index > -1) {
-        deckDetail.value.cards.splice(index, 1)
-        deckDetail.value.cardCount--
+    const response = await MemoryService.deleteCard(card.id)
+    if (response.code === 200) {
+      // 从本地数据中移除
+      if (deckDetail.value) {
+        const index = deckDetail.value.cards.findIndex(c => c.id === card.id)
+        if (index > -1) {
+          deckDetail.value.cards.splice(index, 1)
+          deckDetail.value.cardCount--
+        }
       }
     }
   } catch (error) {
@@ -142,12 +144,19 @@ const saveCard = async () => {
   try {
     if (editingCard.value) {
       // 更新现有卡片
-      console.log('更新卡片:', editingCard.value.id)
-      editingCard.value.front = editCardFront.value
-      editingCard.value.back = editCardBack.value
+      const response = await MemoryService.updateCard(editingCard.value.id, {
+        id: editingCard.value.id,
+        front: editCardFront.value,
+        back: editCardBack.value
+      })
+      
+      if (response.code === 200) {
+        editingCard.value.front = editCardFront.value
+        editingCard.value.back = editCardBack.value
+      }
     } else {
       // 创建新卡片
-      const response = await MemoryCardMockService.createCard({
+      const response = await MemoryService.createCard({
         deckId: props.deck.id,
         front: editCardFront.value,
         back: editCardBack.value
@@ -207,7 +216,7 @@ const closeDialog = () => {
             
             <div class="d-flex align-center text-white">
               <div class="text-center mr-4">
-                <div class="text-subtitle-1 font-weight-bold">{{ deckDetail?.stats.totalCards || 0 }}</div>
+                <div class="text-subtitle-1 font-weight-bold">{{ deckDetail?.stats?.totalCards || deckDetail?.cardCount || 0 }}</div>
                 <div class="text-caption opacity-80">卡片</div>
               </div>
               <div class="text-center">

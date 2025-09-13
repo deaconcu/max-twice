@@ -111,6 +111,7 @@ const submitLogin = async (): Promise<void> => {
       console.log('Form submitted successfully')
       loginDialog.value = false
       user.setUserId(response.data.id)
+      user.setName(response.data.name) // 设置用户名
       user.setSubscription(response.data.subscriptions)
       router.push({ name: 'courseList', params: {} })
     }

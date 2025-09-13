@@ -7,6 +7,7 @@
   import CourseManagement from '@/components/admin/CourseManagement.vue'
   import PostReview from '@/components/admin/PostReview.vue'
   import CommentReview from '@/components/admin/CommentReview.vue'
+  import MemoryCardReview from '@/components/admin/MemoryCardReview.vue'
 
   const { t } = useI18n()
   const tab = ref<string>('system-config')
@@ -90,6 +91,12 @@
             value="comment-review"
             class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"
           ></v-tab>
+          <v-tab
+            prepend-icon="mdi-cards-variant"
+            text="审核记忆卡片"
+            value="memory-card-review"
+            class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"
+          ></v-tab>
         </v-tabs>
       </div>
 
@@ -123,6 +130,11 @@
         <!-- 评论审核 -->
         <v-card v-if="tab == 'comment-review'" flat class="pa-6" rounded="lg">
           <CommentReview />
+        </v-card>
+
+        <!-- 记忆卡片审核 -->
+        <v-card v-if="tab == 'memory-card-review'" flat class="pa-6" rounded="lg">
+          <MemoryCardReview />
         </v-card>
       </div>
     </div>

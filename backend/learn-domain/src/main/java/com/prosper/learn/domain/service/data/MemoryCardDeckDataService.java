@@ -160,6 +160,34 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     }
 
     /**
+     * 原子操作：增加卡片数量并设置状态
+     */
+    @CacheEvict(value = "memory_card_decks", key = "#id")
+    public boolean incrementCardCountAndSetState(long id, byte state) {
+        try {
+            int result = memoryCardDeckMapper.incrementCardCountAndSetState(id, state);
+            return result > 0;
+        } catch (Exception e) {
+            log.error("Error incrementing card count and setting state: {}", id, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 原子操作：减少卡片数量（保证不会小于0）
+     */
+    @CacheEvict(value = "memory_card_decks", key = "#id")
+    public boolean decrementCardCount(long id) {
+        try {
+            int result = memoryCardDeckMapper.decrementCardCount(id);
+            return result > 0;
+        } catch (Exception e) {
+            log.error("Error decrementing card count: {}", id, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
      * 根据帖子获取卡片组列表
      */
     public List<MemoryCardDeckDO> getListByPost(long postId, int state, int limit) {

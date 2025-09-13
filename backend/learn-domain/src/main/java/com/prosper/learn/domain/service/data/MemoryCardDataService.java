@@ -86,6 +86,24 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
     }
 
     /**
+     * 批量插入卡片
+     */
+    public int batchInsert(List<MemoryCardDO> cards) {
+        if (cards == null || cards.isEmpty()) {
+            return 0;
+        }
+        
+        try {
+            int result = memoryCardMapper.batchInsert(cards);
+            log.info("Batch inserted {} memory cards", cards.size());
+            return result;
+        } catch (Exception e) {
+            log.error("Error batch inserting memory cards: count={}", cards.size(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
      * 更新卡片并清除缓存
      */
     @CacheEvict(value = "memory_cards", key = "#card.id")
@@ -153,6 +171,40 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
             return List.of();
         }
         return getListByDeck(deckId, 0); // 0 = 正常状态
+    }
+
+    /**
+     * 根据卡片组ID获取卡片ID列表（只获取正常状态的卡片）
+     */
+    public List<Long> getCardIdsByDeckId(Long deckId) {
+        if (deckId == null) {
+            return List.of();
+        }
+        return memoryCardMapper.getCardIdsByDeckId(deckId);
+    }
+
+    /**
+     * 批量更新卡片的当前版本ID
+     */
+    public int batchUpdateCurrentVersionId(List<MemoryCardDO> cards) {
+        if (cards == null || cards.isEmpty()) {
+            return 0;
+        }
+        
+        try {
+            int result = memoryCardMapper.batchUpdateCurrentVersionId(cards);
+            log.info("Batch updated current version id for {} memory cards", cards.size());
+            
+            // 清除相关缓存
+            for (MemoryCardDO card : cards) {
+                evictCache(card.getId());
+            }
+            
+            return result;
+        } catch (Exception e) {
+            log.error("Error batch updating current version id: count={}", cards.size(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
     }
 
 }

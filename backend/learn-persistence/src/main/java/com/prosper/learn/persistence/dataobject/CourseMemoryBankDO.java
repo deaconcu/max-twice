@@ -1,18 +1,14 @@
-package com.prosper.learn.dto.response;
+package com.prosper.learn.persistence.dataobject;
 
 import lombok.Data;
-
-import java.util.List;
 
 /**
  * 课程记忆库信息响应DTO
  */
 @Data
-public class CourseMemoryBankDTO {
+public class CourseMemoryBankDO {
 
-    private CourseDTO course;
-
-    private UserCourseSrsSettingDTO setting;
+    private Long courseId;
 
     // 当前在学多少张卡片
     private Integer cardCount;

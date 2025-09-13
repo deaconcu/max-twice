@@ -43,6 +43,14 @@ public interface MemoryCardVersionMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(MemoryCardVersionDO version);
 
+    @Insert({"<script>INSERT INTO memory_card_version " +
+            "(card_id, version, creator_id, front, back, content_hash, is_active) VALUES " +
+            "<foreach collection='versions' item='version' separator=','>",
+            "(#{version.cardId}, #{version.version}, #{version.creatorId}, #{version.front}, #{version.back}, #{version.contentHash}, #{version.isActive})",
+            "</foreach></script>"})
+    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
+    int batchInsert(@Param("versions") List<MemoryCardVersionDO> versions);
+
     @Update("UPDATE memory_card_version SET is_active = #{isActive} WHERE id = #{id}")
     int updateActiveStatus(long id, boolean isActive);
 

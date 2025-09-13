@@ -252,6 +252,7 @@ export interface GetDecksQuery {
 export interface GetReviewQueueQuery extends LimitQuery {
   dueOnly?: boolean     // 只获取到期的卡片
   courseId?: number     // 筛选特定课程的卡片
+  lastId?: number       // 用于keyset分页的最后一个ID
 }
 
 // 记忆库管理查询参数  - 查询需要显示在左侧的课程列表

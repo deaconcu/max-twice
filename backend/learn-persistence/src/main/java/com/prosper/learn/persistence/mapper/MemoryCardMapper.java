@@ -38,16 +38,40 @@ public interface MemoryCardMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(MemoryCardDO card);
 
+    @Insert({"<script>INSERT INTO memory_card " +
+            "(deck_id, creator_id, current_version_id, state) VALUES " +
+            "<foreach collection='cards' item='card' separator=','>",
+            "(#{card.deckId}, #{card.creatorId}, #{card.currentVersionId}, #{card.state})",
+            "</foreach></script>"})
+    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
+    int batchInsert(@Param("cards") List<MemoryCardDO> cards);
+
     @Update("UPDATE memory_card SET " +
             "current_version_id = #{currentVersionId}, state = #{state} " +
             "WHERE id = #{id}")
     void update(MemoryCardDO card);
+
+    @Update({"<script>" +
+            "UPDATE memory_card SET current_version_id = CASE id " +
+            "<foreach collection='cards' item='card'>" +
+            "WHEN #{card.id} THEN #{card.currentVersionId} " +
+            "</foreach>" +
+            "END " +
+            "WHERE id IN " +
+            "<foreach collection='cards' item='card' open='(' separator=',' close=')'>" +
+            "#{card.id}" +
+            "</foreach>" +
+            "</script>"})
+    int batchUpdateCurrentVersionId(@Param("cards") List<MemoryCardDO> cards);
 
     @Update("UPDATE memory_card SET state = #{state} WHERE id = #{id}")
     int updateState(long id, int state);
 
     @Select("SELECT COUNT(*) FROM memory_card WHERE deck_id = #{deckId} AND state = #{state}")
     int countByDeck(long deckId, int state);
+
+    @Select("SELECT id FROM memory_card WHERE deck_id = #{deckId} AND state = 0 ORDER BY id")
+    List<Long> getCardIdsByDeckId(long deckId);
 
     @Select("SELECT COUNT(*) FROM memory_card WHERE creator_id = #{creatorId} AND state = #{state}")
     int countByCreator(long creatorId, int state);

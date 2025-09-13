@@ -1,16 +1,20 @@
 package com.prosper.learn.domain.service.data;
 
 import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.persistence.dataobject.CourseMemoryBankDO;
 import com.prosper.learn.persistence.dataobject.UserCardInCourseDO;
 import com.prosper.learn.persistence.mapper.UserCardInCourseMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -95,8 +99,6 @@ public class UserCardInCourseDataService extends AbstractDataService<UserCardInC
 
         try {
             int result = userCardInCourseMapper.batchInsert(relations);
-            // 清除相关缓存
-            evictAllCache();
             return result;
         } catch (Exception e) {
             log.error("Error batch inserting relations: count={}", relations.size(), e);
@@ -247,6 +249,67 @@ public class UserCardInCourseDataService extends AbstractDataService<UserCardInC
      */
     public long countCardsByUserAndCourse(long userId, long courseId) {
         return userCardInCourseMapper.countByUserAndCourse(userId, courseId);
+    }
+
+
+    public List<CourseMemoryBankDO> getBatchCardStatsForCourses(Long userId, Set<Long> courseIds) {
+        if (courseIds == null || courseIds.isEmpty()) {
+            return List.of();
+        }
+        return userCardInCourseMapper.getBatchCardStatsForCourses(userId, courseIds);
+    }
+
+    public CourseMemoryBankDO getCardStatsForCourses(Long userId, Long courseId) {
+        return userCardInCourseMapper.getCardStatsForCourses(userId, courseId);
+    }
+
+    /**
+     * 批量插入用户卡片课程关系（使用INSERT IGNORE自动跳过重复）
+     */
+    public int batchInsertIgnore(Long userId, Long courseId, List<Long> cardIds) {
+        if (cardIds == null || cardIds.isEmpty()) {
+            return 0;
+        }
+        try {
+            int result = userCardInCourseMapper.batchInsertIgnore(userId, courseId, cardIds);
+            log.debug("Batch inserted {} card-course relations for user: {} course: {}", 
+                     result, userId, courseId);
+            return result;
+        } catch (Exception e) {
+            log.error("Error batch inserting card-course relations: userId={}, courseId={}, cardCount={}", 
+                     userId, courseId, cardIds.size(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 批量删除用户指定课程的特定卡片关系
+     */
+    //@CacheEvict(value = "courseStats", key = "{#userId, #courseId}")
+    public int batchDeleteByUserCourseAndCards(Long userId, Long courseId, List<Long> cardIds) {
+        if (cardIds == null || cardIds.isEmpty()) {
+            return 0;
+        }
+        try {
+            int result = userCardInCourseMapper.batchDeleteByUserCourseAndCards(userId, courseId, cardIds);
+            log.debug("Batch deleted {} card-course relations for user: {} course: {}", 
+                     result, userId, courseId);
+            return result;
+        } catch (Exception e) {
+            log.error("Error batch deleting card-course relations: userId={}, courseId={}, cardCount={}", 
+                     userId, courseId, cardIds.size(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 获取用户在指定卡片中仍有课程关系的卡片ID列表
+     */
+    public List<Long> getExistingCardIdsByUserAndCards(Long userId, List<Long> cardIds) {
+        if (cardIds == null || cardIds.isEmpty()) {
+            return List.of();
+        }
+        return userCardInCourseMapper.getExistingCardIdsByUserAndCards(userId, cardIds);
     }
 
 }

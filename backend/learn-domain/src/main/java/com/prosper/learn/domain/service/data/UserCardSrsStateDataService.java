@@ -92,7 +92,7 @@ public class UserCardSrsStateDataService extends AbstractDataService<UserCardSrs
     /**
      * 更新SRS状态并清除缓存
      */
-    @CacheEvict(value = "user_card_srs_states", key = "#state.id")
+    //@CacheEvict(value = "user_card_srs_states", key = "#state.id")
     public void update(UserCardSrsStateDO state) {
         if (state == null || state.getId() == null) {
             throw new IllegalArgumentException("State or state ID cannot be null");
@@ -110,7 +110,7 @@ public class UserCardSrsStateDataService extends AbstractDataService<UserCardSrs
     /**
      * 更新复习到期时间
      */
-    @CacheEvict(value = "user_card_srs_states", key = "#id")
+    //@CacheEvict(value = "user_card_srs_states", key = "#id")
     public boolean updateReviewDueAt(long id, LocalDateTime reviewDueAt) {
         try {
             int result = userCardSrsStateMapper.updateReviewDueAt(id, reviewDueAt);
@@ -250,22 +250,22 @@ public class UserCardSrsStateDataService extends AbstractDataService<UserCardSrs
     /**
      * 获取用户的复习队列（所有课程）
      */
-    public List<UserCardSrsStateDO> getReviewQueue(long userId, boolean dueOnly, int limit) {
+    public List<UserCardSrsStateDO> getReviewQueue(long userId, boolean dueOnly, int limit, Long lastId) {
         if (dueOnly) {
-            return userCardSrsStateMapper.getDueCardsForReview(userId, LocalDateTime.now(), limit);
+            return userCardSrsStateMapper.getDueCardsForReviewWithPaging(userId, LocalDateTime.now(), limit, lastId);
         } else {
-            return userCardSrsStateMapper.getByUser(userId, limit);
+            return userCardSrsStateMapper.getByUserWithPaging(userId, limit, lastId);
         }
     }
 
     /**
      * 获取用户指定课程的复习队列
      */
-    public List<UserCardSrsStateDO> getReviewQueueByCourse(long userId, long courseId, boolean dueOnly, int limit) {
+    public List<UserCardSrsStateDO> getReviewQueueByCourse(long userId, long courseId, boolean dueOnly, int limit, Long lastId) {
         if (dueOnly) {
-            return userCardSrsStateMapper.getDueCardsByCourseForReview(userId, courseId, LocalDateTime.now(), limit);
+            return userCardSrsStateMapper.getDueCardsByCourseForReviewWithPaging(userId, courseId, LocalDateTime.now(), limit, lastId);
         } else {
-            return userCardSrsStateMapper.getByUserAndCourse(userId, courseId);
+            return userCardSrsStateMapper.getByUserAndCourseWithPaging(userId, courseId, limit, lastId);
         }
     }
 
@@ -297,6 +297,42 @@ public class UserCardSrsStateDataService extends AbstractDataService<UserCardSrs
     public long calculateTimeSpent(long userId, LocalDateTime startTime, LocalDateTime endTime) {
         Long result = userCardSrsStateMapper.calculateTimeSpent(userId, startTime, endTime);
         return result != null ? result : 0L;
+    }
+
+    /**
+     * 批量插入SRS状态（使用INSERT IGNORE自动跳过已存在的）
+     */
+    public int batchInsertIgnoreSrsStates(Long userId, List<Long> cardIds) {
+        if (cardIds == null || cardIds.isEmpty()) {
+            return 0;
+        }
+        try {
+            int result = userCardSrsStateMapper.batchInsertIgnoreSrsStates(userId, cardIds);
+            log.debug("Batch inserted {} SRS states for user: {}", result, userId);
+            return result;
+        } catch (Exception e) {
+            log.error("Error batch inserting SRS states: userId={}, cardCount={}", 
+                     userId, cardIds.size(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 批量删除用户指定卡片的SRS状态
+     */
+    public int batchDeleteByUserAndCards(Long userId, List<Long> cardIds) {
+        if (cardIds == null || cardIds.isEmpty()) {
+            return 0;
+        }
+        try {
+            int result = userCardSrsStateMapper.batchDeleteByUserAndCards(userId, cardIds);
+            log.debug("Batch deleted {} SRS states for user: {}", result, userId);
+            return result;
+        } catch (Exception e) {
+            log.error("Error batch deleting SRS states: userId={}, cardCount={}", 
+                     userId, cardIds.size(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
     }
 
 }

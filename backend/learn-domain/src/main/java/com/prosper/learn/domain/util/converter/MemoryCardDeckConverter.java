@@ -17,7 +17,6 @@ public interface MemoryCardDeckConverter {
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "sourcePostId")
-    @Mapping(target = "creatorId")
     @Mapping(target = "title")
     @Mapping(target = "description")
     @Mapping(target = "state")
@@ -33,7 +32,7 @@ public interface MemoryCardDeckConverter {
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "title")
-    MemoryCardDeckDTO toDTOv2(MemoryCardDeckDO deckDTO);
+    MemoryCardDeckDTO toDTOV2(MemoryCardDeckDO deckDTO);
     
     /**
      * 从MemoryCardDeckDTO转换为DeckDetailDTO

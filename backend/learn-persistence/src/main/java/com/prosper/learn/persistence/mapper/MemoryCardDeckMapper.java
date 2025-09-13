@@ -79,6 +79,12 @@ public interface MemoryCardDeckMapper {
     @Update("UPDATE memory_card_deck SET state = #{state}, updated_at = NOW() WHERE id = #{id}")
     int updateState(long id, byte state);
 
+    @Update("UPDATE memory_card_deck SET card_count = card_count + 1, state = #{state}, updated_at = NOW() WHERE id = #{id}")
+    int incrementCardCountAndSetState(long id, byte state);
+
+    @Update("UPDATE memory_card_deck SET card_count = GREATEST(0, card_count - 1), updated_at = NOW() WHERE id = #{id}")
+    int decrementCardCount(long id);
+
     @Select("SELECT COUNT(*) FROM memory_card_deck WHERE source_post_id = #{postId} AND state = #{state}")
     int countByPost(long postId, int state);
 

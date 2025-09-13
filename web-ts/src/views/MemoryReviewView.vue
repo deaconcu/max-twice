@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { MemoryCardView, UserCardSRSState, ReviewSession, ReviewCardResult, CourseMemoryBank, DeckUpdateDiff, MemoryCardDeck } from '@/types/memoryCard'
 import { ReviewResult, FrequencySetting, CourseStudyStatus, DeckState } from '@/types/memoryCard'
-import { MemoryCardMockService } from '@/services/memoryCardMockService'
+import { MemoryService } from '@/services/memoryService'
 import DeckUpdateDiffDialog from '@/components/memory/DeckUpdateDiffDialog.vue'
 
 const { t } = useI18n()
@@ -12,55 +12,9 @@ const { t } = useI18n()
 const activeTab = ref<string>('all')
 const viewMode = ref<'review' | 'list' | 'manage'>('review') // review: 复习模式, list: 列表模式, manage: 管理模式
 
-// Mock 卡片组数据
-const mockDecks = [
-  { id: 1, title: 'Vue 3 核心技术', sourcePostId: 1, creator: { id: 1, name: 'AI助手' }, state: DeckState.NORMAL, upvoteCount: 15, cardCount: 8, createdAt: '2024-01-01', updatedAt: '2024-01-01' },
-  { id: 2, title: 'TypeScript 进阶', sourcePostId: 2, creator: { id: 2, name: '开发者' }, state: DeckState.NORMAL, upvoteCount: 12, cardCount: 6, createdAt: '2024-01-02', updatedAt: '2024-01-02' },
-  { id: 3, title: 'React Hooks', sourcePostId: 3, creator: { id: 3, name: '前端专家' }, state: DeckState.NORMAL, upvoteCount: 20, cardCount: 10, createdAt: '2024-01-03', updatedAt: '2024-01-03' }
-]
 
-// Mock 课程记忆库数据
-const courseMemoryBanks = ref<CourseMemoryBank[]>([
-  {
-    course: { id: 1, name: 'Vue 3 核心技术', description: 'Vue 3 响应式系统和组合式API' },
-    setting: { 
-      id: 1, 
-      frequencySetting: FrequencySetting.NORMAL, 
-      status: CourseStudyStatus.STUDYING
-    },
-    cardCount: 5,
-    dueCardCount: 3,
-    newCardCount: 1,
-    reviewCardCount: 2,
-    learnedCardCount: 2
-  },
-  {
-    course: { id: 2, name: 'TypeScript 进阶', description: '深入学习TypeScript类型系统' },
-    setting: { 
-      id: 2,
-      frequencySetting: FrequencySetting.HIGH,
-      status: CourseStudyStatus.STUDYING,
-    },
-    cardCount: 3,
-    dueCardCount: 2,
-    newCardCount: 0,
-    reviewCardCount: 1,
-    learnedCardCount: 2
-  },
-  {
-    course: { id: 3, name: 'React Hooks', description: 'React Hooks 最佳实践' },
-    setting: { 
-      id: 3,
-      frequencySetting: FrequencySetting.LOW,
-      status: CourseStudyStatus.PAUSED,
-    },
-    cardCount: 8,
-    dueCardCount: 3,
-    newCardCount: 2,
-    reviewCardCount: 3,
-    learnedCardCount: 3
-  }
-])
+// 课程记忆库数据
+const courseMemoryBanks = ref<CourseMemoryBank[]>([])
 
 const loading = ref(false)
 const reviewCards = ref<MemoryCardView[]>([])
@@ -69,11 +23,18 @@ const isReviewing = ref(false)
 const showAnswer = ref(false)
 const reviewSession = ref<ReviewSession | null>(null)
 const selectedCards = ref<number[]>([]) // 选中的卡片ID列表
+
+// 列表模式专用数据
+const listCards = ref<MemoryCardView[]>([])
+const listLoading = ref(false)
+const listLastId = ref<number | undefined>(undefined)
+const listPageSize = ref(20)
+const listHasMore = ref(true)
 const stats = ref({
-  totalReviews: 234,
-  streakDays: 12,
-  averageScore: 87.3,
-  timeSpent: 65
+  totalReviews: 0,
+  streakDays: 0,
+  averageScore: 0,
+  timeSpent: 0
 })
 
 // 更新检测相关状态
@@ -93,13 +54,15 @@ const selectedCourse = computed(() => {
   return courseMemoryBanks.value.find(bank => bank.course.id === courseId)
 })
 
-// 计算当前要显示的卡片（根据选中的标签）
+// 计算当前要显示的卡片（根据视图模式和选中的标签）
 const currentCards = computed(() => {
-  if (activeTab.value === 'all') {
+  if (viewMode.value === 'list') {
+    // 列表模式显示全部卡片
+    return listCards.value
+  } else {
+    // 复习模式显示到期卡片
     return reviewCards.value
   }
-  const courseId = parseInt(activeTab.value)
-  return reviewCards.value.filter(card => card.deck?.id === courseId)
 })
 
 // 当前卡片
@@ -117,24 +80,45 @@ const reviewProgress = computed(() => {
 })
 
 onMounted(() => {
+  loadMemoryBankCourses()
   loadReviewQueue()
+  loadReviewStats()
 })
+
+// 加载记忆库课程
+const loadMemoryBankCourses = async () => {
+  try {
+    const response = await MemoryService.getMemoryBankCourses()
+    if (response.code === 200) {
+      courseMemoryBanks.value = response.data
+    }
+  } catch (error) {
+    console.error('Failed to load memory bank courses:', error)
+  }
+}
+
+// 加载复习统计
+const loadReviewStats = async () => {
+  try {
+    const response = await MemoryService.getReviewStats()
+    if (response.code === 200) {
+      stats.value = response.data
+    }
+  } catch (error) {
+    console.error('Failed to load review stats:', error)
+  }
+}
 
 // 加载复习队列
 const loadReviewQueue = async () => {
   loading.value = true
   try {
-    const response = await MemoryCardMockService.getReviewQueue({
-      dueOnly: true,
-      limit: 50
+    const response = await MemoryService.getReviewQueue({
+      courseId: selectedCourse.value?.course.id
     })
     
     if (response.code === 200) {
-      // 为每张卡片模拟添加课程信息
-      reviewCards.value = response.data.map(card => ({
-        ...card,
-        deck: mockDecks.find(deck => deck.id === (card.id % 3) + 1)
-      }))
+      reviewCards.value = response.data
       
       // 检测卡片组更新
       await checkDeckUpdates()
@@ -143,6 +127,42 @@ const loadReviewQueue = async () => {
     console.error('Failed to load review queue:', error)
   } finally {
     loading.value = false
+  }
+}
+
+// 加载列表卡片（全部卡片，支持keyset分页）
+const loadListCards = async (reset = false) => {
+  if (listLoading.value) return
+  
+  listLoading.value = true
+  try {
+    const response = await MemoryService.getCardList({
+      courseId: selectedCourse.value?.course.id,
+      limit: listPageSize.value,
+      lastId: reset ? undefined : listLastId.value
+    })
+    
+    if (response.code === 200) {
+      if (reset) {
+        listCards.value = response.data
+        listLastId.value = undefined
+      } else {
+        listCards.value = [...listCards.value, ...response.data]
+      }
+      
+      // 更新lastId为当前页最后一张卡片的ID
+      if (response.data.length > 0) {
+        const lastCard = response.data[response.data.length - 1]
+        listLastId.value = lastCard.id
+      }
+      
+      // 判断是否还有更多数据
+      listHasMore.value = response.data.length === listPageSize.value
+    }
+  } catch (error) {
+    console.error('Failed to load list cards:', error)
+  } finally {
+    listLoading.value = false
   }
 }
 
@@ -167,11 +187,14 @@ const checkDeckUpdates = async () => {
 // 显示卡片组更新差异
 const showDeckUpdateDiff = async (deckId: number) => {
   try {
-    const response = await MemoryCardMockService.getDeckUpdateDiff(deckId)
-    if (response.code === 200) {
-      currentDeckDiff.value = response.data
-      showUpdateDiffDialog.value = true
-    }
+    // TODO: 等待后端实现获取卡片组更新差异的API
+    console.log('Show deck update diff for deck:', deckId)
+    // 临时禁用此功能，等待后端API实现
+    // const response = await MemoryService.getDeckUpdateDiff(deckId)
+    // if (response.code === 200) {
+    //   currentDeckDiff.value = response.data
+    //   showUpdateDiffDialog.value = true
+    // }
   } catch (error) {
     console.error('Failed to get deck diff:', error)
   }
@@ -182,22 +205,25 @@ const applyDeckUpdate = async (acceptedChanges: { updateMeta: boolean; cardIds: 
   if (!currentDeckDiff.value) return
   
   try {
-    const response = await MemoryCardMockService.updateDeck({
-      deckId: currentDeckDiff.value.deckId,
-      cardIds: acceptedChanges.cardIds
-    })
+    // TODO: 等待后端实现应用卡片组更新的API
+    console.log('Apply deck update for:', currentDeckDiff.value.deckId, acceptedChanges)
+    // 临时禁用此功能，等待后端API实现
+    // const response = await MemoryService.updateDeck({
+    //   deckId: currentDeckDiff.value.deckId,
+    //   cardIds: acceptedChanges.cardIds
+    // })
     
-    if (response.code === 200) {
-      // 更新成功，移除更新标记
-      deckUpdateMap.value.set(currentDeckDiff.value.deckId, false)
-      
-      // 重新加载数据
-      await loadReviewQueue()
-      
-      // 关闭对话框
-      showUpdateDiffDialog.value = false
-      currentDeckDiff.value = null
-    }
+    // if (response.code === 200) {
+    //   // 更新成功，移除更新标记
+    //   deckUpdateMap.value.set(currentDeckDiff.value.deckId, false)
+    //   
+    //   // 重新加载数据
+    //   await loadReviewQueue()
+    //   
+    //   // 关闭对话框
+    //   showUpdateDiffDialog.value = false
+    //   currentDeckDiff.value = null
+    // }
   } catch (error) {
     console.error('Failed to update deck:', error)
   }
@@ -211,8 +237,17 @@ const hasDeckUpdate = (deckId: number): boolean => {
 // 切换标签
 const switchTab = (tabValue: string) => {
   activeTab.value = tabValue
-  viewMode.value = 'review'
-  resetReview()
+  
+  // 根据当前视图模式加载对应数据
+  if (viewMode.value === 'review') {
+    resetReview()
+    loadReviewQueue()
+  } else if (viewMode.value === 'list') {
+    // 切换课程时重置列表分页状态
+    listLastId.value = undefined
+    listHasMore.value = true
+    loadListCards(true)
+  }
 }
 
 // 切换视图模式
@@ -221,6 +256,9 @@ const switchViewMode = (mode: 'review' | 'list' | 'manage') => {
   selectedCards.value = [] // 切换模式时清空选中状态
   if (mode === 'review') {
     resetReview()
+  } else if (mode === 'list') {
+    // 切换到列表模式时加载列表数据
+    loadListCards(true)
   }
 }
 
@@ -259,17 +297,13 @@ const submitReview = async (result: ReviewResult) => {
   if (!currentCard.value) return
   
   try {
-    const response = await MemoryCardMockService.reviewCard({
+    const response = await MemoryService.reviewCard({
       cardId: currentCard.value.id,
       result: result,
       timeSpent: 5
     })
     
     if (response.code === 200) {
-      if (currentCard.value.srsState) {
-        Object.assign(currentCard.value.srsState, response.data)
-      }
-      
       if (reviewSession.value) {
         reviewSession.value.reviewedCards++
         if (result >= ReviewResult.GOOD) {
@@ -282,7 +316,20 @@ const submitReview = async (result: ReviewResult) => {
         })
       }
       
-      nextCard()
+      // 从当前复习队列中移除已复习的卡片
+      reviewCards.value = reviewCards.value.filter(card => card.id !== currentCard.value?.id)
+      
+      // 检查是否还有卡片
+      if (reviewCards.value.length === 0) {
+        // 当前批次完成，尝试加载下一批
+        await completeReview()
+      } else {
+        // 继续复习当前批次的下一张卡片
+        if (currentCardIndex.value >= reviewCards.value.length) {
+          currentCardIndex.value = reviewCards.value.length - 1
+        }
+        showAnswer.value = false
+      }
     }
   } catch (error) {
     console.error('Failed to submit review:', error)
@@ -301,14 +348,30 @@ const nextCard = () => {
 }
 
 // 完成复习
-const completeReview = () => {
+const completeReview = async () => {
   isReviewing.value = false
   
   if (reviewSession.value) {
     reviewSession.value.endTime = new Date().toISOString()
   }
   
-  loadReviewQueue()
+  // 重新加载复习队列，检查是否还有更多到期卡片
+  await loadReviewQueue()
+  
+  // 如果还有到期卡片，自动开始下一轮复习
+  if (currentCards.value.length > 0) {
+    // 短暂延迟后自动开始，给用户一个喘息时间
+    setTimeout(() => {
+      console.log(`发现还有 ${currentCards.value.length} 张到期卡片，继续复习...`)
+      startReview()
+    }, 1000)
+  } else {
+    // 没有更多到期卡片，复习完成
+    console.log('恭喜！所有到期卡片复习完成')
+    // 重新加载课程数据以更新统计信息
+    await loadMemoryBankCourses()
+    await loadReviewStats()
+  }
 }
 
 // 跳过当前卡片
@@ -639,9 +702,13 @@ const isCardDue = (card: MemoryCardView): boolean => {
                 <span class="text-grey-darken-2">连续天数</span>
                 <span class="font-weight-bold text-success">{{ stats.streakDays }}天</span>
               </div>
-              <div class="d-flex justify-space-between text-body-2">
+              <div class="d-flex justify-space-between text-body-2 mb-1">
                 <span class="text-grey-darken-2">平均正确率</span>
                 <span class="font-weight-bold text-warning">{{ stats.averageScore }}%</span>
+              </div>
+              <div class="d-flex justify-space-between text-body-2">
+                <span class="text-grey-darken-2">总学习时长</span>
+                <span class="font-weight-bold text-info">{{ stats.timeSpent }}分钟</span>
               </div>
             </div>
           </v-card-text>

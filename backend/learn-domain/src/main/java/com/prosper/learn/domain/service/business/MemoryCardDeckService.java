@@ -79,12 +79,16 @@ public class MemoryCardDeckService {
                 UserDO creator = userMap.get(deck.getCreatorId());
                 if (creator != null) {
                     dto.setCreator(userConverter.toDTO(creator));
+                } else {
+                    log.warn("Cannot find creator with id: {}", deck.getCreatorId());
                 }
                 return dto;
             })
             .collect(Collectors.toList());
     }
 
+
+    // ========= 业务方法(Query) ==========
 
     /**
      * 获取卡片组列表 - Keyset分页
@@ -182,7 +186,7 @@ public class MemoryCardDeckService {
         return detail;
     }
 
-    // ========== 业务方法 ==========
+    // ========== 业务方法(Command) ==========
 
     /**
      * 创建卡片组
@@ -209,7 +213,7 @@ public class MemoryCardDeckService {
         deck.setVersion(1);
         deck.setState(MemoryCardDeckState.PENDING.value()); // 默认审核中
         deck.setUpvoteCount(0);
-        deck.setCardCount(0);
+        deck.setCardCount(request.getCards() != null ? request.getCards().size() : 0);
         deck.setScore(0.0);
         deck.setCreatedAt(LocalDateTime.now());
         deck.setUpdatedAt(LocalDateTime.now());
@@ -218,6 +222,12 @@ public class MemoryCardDeckService {
         int result = deckDataService.insert(deck);
         if (result <= 0) {
             throw ErrorCode.SYSTEM_ERROR.exception("创建卡片组失败");
+        }
+
+        // 如果有卡片数据，批量创建卡片
+        if (request.getCards() != null && !request.getCards().isEmpty()) {
+            memoryCardService.batchCreateCards(userId, deck.getId(), request.getCards());
+            log.info("Created deck {} with {} cards", deck.getId(), request.getCards().size());
         }
 
         // 转换并返回 (包含创建者信息)
@@ -241,8 +251,7 @@ public class MemoryCardDeckService {
         }
 
         // 更新字段
-        MemoryCardDeckDO deck = new MemoryCardDeckDO();
-        deck.setId(request.getId());
+        MemoryCardDeckDO deck = deckDataService.getById(request.getId());
         if (request.getTitle() != null) {
             deck.setTitle(request.getTitle());
         }
@@ -256,8 +265,7 @@ public class MemoryCardDeckService {
         deckDataService.update(deck);
 
         // 获取更新后的数据并返回 (包含创建者信息)
-        MemoryCardDeckDO updatedDeck = deckDataService.getById(request.getId());
-        return toDTOV1(updatedDeck);
+        return toDTOV1(deck);
     }
 
     /**

@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import type { Post } from '@/types/post'
 import type { MemoryCardDeck, DeckDetail, GetDecksQuery } from '@/types/memoryCard'
 import { DeckState } from '@/types/memoryCard'
-import { MemoryCardMockService } from '@/services/memoryCardMockService'
+import { MemoryService } from '@/services/memoryService'
 
 interface Props {
   post: Post
@@ -28,6 +28,11 @@ const page = ref(1)
 const hasMore = ref(true)
 
 const sortedDecks = computed(() => {
+  // 确保 decks.value 是一个数组
+  if (!decks.value || !Array.isArray(decks.value)) {
+    return []
+  }
+  
   let filtered = decks.value
 
   if (showAuthorOnly.value && props.post.creator) {
@@ -55,57 +60,40 @@ const loadDecks = async (reset = false) => {
   loading.value = true
   
   try {
-    // TODO: 调用真实API
-    // const response = await memoryCardService.getDecks({
-    //   postId: props.post.id,
-    //   sortBy: sortBy.value,
-    //   page: reset ? 1 : page.value,
-    //   size: 20
-    // })
+    const response = await MemoryService.getDecks({
+      postId: props.post.id,
+      sortBy: sortBy.value,
+      sortOrder: 'desc',
+      limit: 20,
+      lastScore: reset || !decks.value?.length ? undefined : decks.value[decks.value.length - 1]?.upvoteCount,
+      lastId: reset || !decks.value?.length ? undefined : decks.value[decks.value.length - 1]?.id
+    })
     
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // 模拟数据
-    const mockDecks: MemoryCardDeck[] = [
-      {
-        id: 1,
-        sourcePostId: props.post.id,
-        creator: { id: 1, name: 'AI助手', email: 'ai@example.com' },
-        title: '核心概念记忆卡',
-        description: 'AI生成的核心概念记忆卡片组，包含本文的重要知识点',
-        state: DeckState.NORMAL,
-        upvoteCount: 15,
-        cardCount: 8,
-        createdAt: '2024-01-01T10:00:00Z',
-        updatedAt: '2024-01-01T10:00:00Z'
-      },
-      {
-        id: 2,
-        sourcePostId: props.post.id,
-        creator: { id: 2, name: '学习者小王', email: 'wang@example.com' },
-        title: '实践练习卡片',
-        description: '根据文章内容制作的实践练习题，适合巩固理解',
-        state: DeckState.NORMAL,
-        upvoteCount: 8,
-        cardCount: 12,
-        createdAt: '2024-01-02T14:30:00Z',
-        updatedAt: '2024-01-02T14:30:00Z'
+    if (response.code === 200) {
+      const responseData = response.data
+      
+      if (reset || !decks.value) {
+        decks.value = responseData.items || []
+        page.value = 1
+      } else {
+        decks.value.push(...(responseData.items || []))
       }
-    ]
-    
-    if (reset) {
-      decks.value = mockDecks
-      page.value = 1
+      
+      hasMore.value = responseData.hasMore || false
+      if (!reset) page.value++
     } else {
-      decks.value.push(...mockDecks)
+      // API 返回错误状态码时，确保 decks.value 是数组
+      if (reset || !decks.value) {
+        decks.value = []
+      }
     }
-    
-    hasMore.value = mockDecks.length === 20
-    if (!reset) page.value++
     
   } catch (error) {
     console.error('Failed to load decks:', error)
+    // 发生错误时，确保 decks.value 是数组
+    if (reset || !decks.value) {
+      decks.value = []
+    }
   } finally {
     loading.value = false
   }
@@ -133,39 +121,21 @@ const viewDeckDetail = (deck: MemoryCardDeck) => {
 onMounted(() => {
   loadDecks(true)
 })
+
+// 暴露方法给父组件
+defineExpose({
+  loadDecks
+})
 </script>
 
 <template>
   <div class="memory-card-sidebar h-100 d-flex flex-column">
-    <!-- 固定头部 -->
-    <div class="sidebar-header pa-4 bg-white" style="position: sticky; top: 0; z-index: 2;">
-      <div class="d-flex align-center mb-3">
-        <v-avatar size="32" class="mr-3">
-          <v-img v-if="post.creator?.avatar" :src="post.creator.avatar" />
-          <v-icon v-else icon="mdi-account-circle" color="grey"></v-icon>
-        </v-avatar>
-        <div class="flex-grow-1">
-          <h3 class="text-h6 font-weight-bold text-grey-darken-3 mb-1">
-            {{ post.creator?.name || '匿名用户' }}
-          </h3>
-          <!--
-          <p class="text-body-2 text-grey-darken-1 mb-0 text-truncate">
-            {{ post.content?.substring(0, 30) || '文章标题' }}...
-          </p>-->
-        </div>
+    <!-- 模块头部 -->
+    <div class="sidebar-header pa-4 bg-grey-lighten-5" style="position: sticky; top: 0; z-index: 2;">
+      <div class="d-flex align-center">
+        <v-icon icon="mdi-cards-outline" color="primary" size="20" class="mr-2"></v-icon>
+        <h3 class="text-body-1 font-weight-bold text-grey-darken-2">记忆卡片组</h3>
       </div>
-      
-      <v-btn
-        color="primary"
-        variant="flat"
-        rounded="lg"
-        block
-        class="text-white font-weight-medium"
-        prepend-icon="mdi-plus"
-        @click="emit('createDeck')"
-      >
-        创建新卡片组
-      </v-btn>
     </div>
 
     <!-- 排序和筛选控件 -->
@@ -212,7 +182,7 @@ onMounted(() => {
     </div>
 
     <!-- 卡片组列表 -->
-    <div class="flex-grow-1" style="overflow-y: auto;">
+    <div style="height: 500px; overflow-y: auto;">
       <!-- 空状态 -->
       <div v-if="sortedDecks.length === 0 && !loading" class="text-center pa-6">
         <v-icon icon="mdi-cards-outline" size="48" color="grey-lighten-2" class="mb-3"></v-icon>

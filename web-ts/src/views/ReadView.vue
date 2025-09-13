@@ -4,6 +4,7 @@ import type { Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { pageServiceV1, progressServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { MemoryService } from '@/services/memoryService'
 import PostingList from '@/components/read/PostingList.vue'
 import RightSidebar from '@/components/common/RightSidebar.vue'
 import AIAssistant from '@/components/common/AIAssistant.vue'
@@ -44,6 +45,7 @@ const courseTableOfContentsRef: Ref<any> = ref(null)
 const showCreateDeckDialog: Ref<boolean> = ref(false) // 创建卡片组对话框
 const showDeckDetailDialog: Ref<boolean> = ref(false) // 卡片组详情对话框
 const selectedDeck: Ref<any> = ref(null) // 选中的卡片组
+const memoryCardSidebarRef: Ref<any> = ref(null) // 记忆卡片组侧边栏引用
 const currentTab: Ref<string> = ref('list') // 当前PostingList的tab状态
 const currentPosting: Ref<any> = ref(null) // 当前查看的文章
 
@@ -340,7 +342,10 @@ const handleCreateDeck = (): void => {
 // 处理卡片组创建完成
 const handleDeckCreated = (deck: any): void => {
   showSnackbar('卡片组创建成功！', 'success')
-  // TODO: 刷新侧边栏数据
+  // 刷新侧边栏数据
+  if (memoryCardSidebarRef.value && memoryCardSidebarRef.value.loadDecks) {
+    memoryCardSidebarRef.value.loadDecks(true)
+  }
 }
 
 // 处理添加卡片组到学习计划
@@ -355,14 +360,17 @@ const handleAddDeck = async (deck: any): Promise<void> => {
       return
     }
 
-    // TODO: 调用API添加卡片组到记忆库
-    // const response = await memoryCardService.addDeckToMemoryBank({
-    //   deckId: deck.id,
-    //   courseId: courseId
-    // })
-    
-    // 模拟API调用成功
-    showSnackbar(`已将"${deck.title}"添加到${data.value.course.name}课程的学习计划`, 'success')
+    // 调用API添加卡片组到记忆库
+    const response = await MemoryService.addDeckToMemoryBank({
+      deckId: deck.id,
+      courseId: courseId
+    })
+
+    if (response.code === 200) {
+      showSnackbar(`已将"${deck.title}"添加到${data.value.course.name}课程的学习计划`, 'success')
+    } else {
+      showSnackbar('添加失败，请重试', 'error')
+    }
     
     // TODO: 可选择性刷新侧边栏数据以显示更新后的状态
   } catch (error) {
@@ -457,6 +465,7 @@ const handleTabSwitch = (tab: string, posting?: any): void => {
           
           <!-- 记忆卡片组侧边栏 (文章详情页) -->
           <MemoryCardSidebar
+            ref="memoryCardSidebarRef"
             :post="currentPosting"
             @create-deck="handleCreateDeck"
             @add-deck="handleAddDeck"

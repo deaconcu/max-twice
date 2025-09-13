@@ -86,6 +86,24 @@ public class MemoryCardVersionDataService extends AbstractDataService<MemoryCard
     }
 
     /**
+     * 批量插入卡片版本
+     */
+    public int batchInsert(List<MemoryCardVersionDO> versions) {
+        if (versions == null || versions.isEmpty()) {
+            return 0;
+        }
+        
+        try {
+            int result = memoryCardVersionMapper.batchInsert(versions);
+            log.info("Batch inserted {} memory card versions", versions.size());
+            return result;
+        } catch (Exception e) {
+            log.error("Error batch inserting memory card versions: count={}", versions.size(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
      * 更新版本激活状态并清除缓存
      */
     @CacheEvict(value = "memory_card_versions", key = "#id")

@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service.business;
 
+import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.data.*;
 import com.prosper.learn.domain.util.converter.*;
@@ -41,17 +42,6 @@ public class MemoryCardService {
     // ========== toDTO ==========
 
     /**
-     * 基础DTO转换
-     */
-    public MemoryCardViewDTO toDTO(MemoryCardDO cardDO) {
-        return cardConverter.toDTO(cardDO);
-    }
-
-    public List<MemoryCardViewDTO> toDTO(List<MemoryCardDO> cardDOList) {
-        return cardConverter.toDTO(cardDOList);
-    }
-
-    /**
      * V1 = 基础信息 + 创建者信息 + 卡片内容 + SRS状态(可选)
      */
     public MemoryCardViewDTO toDTOV1(MemoryCardDO cardDO, Long userId) {
@@ -65,7 +55,7 @@ public class MemoryCardService {
         dto.setCreator(creator);
 
         MemoryCardDeckDO deck = deckDataService.validateAndGet(cardDO.getDeckId());
-        dto.setDeck(deckConverter.toDTOv2(deck));
+        dto.setDeck(deckConverter.toDTOV2(deck));
 
         // 获取当前版本内容
         if (cardDO.getCurrentVersionId() != null) {
@@ -122,9 +112,15 @@ public class MemoryCardService {
             srsStateMap = new HashMap<>();
         }
 
+        Set<Long> deckIds = cardDOList.stream()
+                .map(MemoryCardDO::getDeckId)
+                .collect(Collectors.toSet());
+        Map<Long, MemoryCardDeckDO> deckMap = deckDataService.getMapByIds(deckIds);
+
         return cardDOList.stream()
             .map(card -> {
-                MemoryCardViewDTO dto = cardConverter.toDTO(card);
+                MemoryCardViewDTO dto = new MemoryCardViewDTO();
+                dto.setId(card.getId());
 
                 // 设置创建者信息
                 UserDO creator = userMap.get(card.getCreatorId());
@@ -147,12 +143,17 @@ public class MemoryCardService {
                     dto.setSrsState(srsStateConverter.toDTO(srsState));
                 }
 
+                if (deckMap.containsKey(card.getDeckId())) {
+                    dto.setDeck(deckConverter.toDTOV2(deckMap.get(card.getDeckId())));
+                }
+
                 return dto;
             })
             .collect(Collectors.toList());
     }
 
-    // ========== 业务方法 ==========
+
+    // ========== 业务方法(Query) ==========
 
     /**
      * 根据卡片组获取卡片列表（包含SRS状态）
@@ -166,6 +167,9 @@ public class MemoryCardService {
         List<MemoryCardDO> cards = cardDataService.getByDeckId(deckId);
         return toDTOV1(cards, userId);
     }
+
+
+    // ========== 业务方法(Command) ==========
 
     /**
      * 创建卡片
@@ -191,6 +195,7 @@ public class MemoryCardService {
         MemoryCardDO card = new MemoryCardDO();
         card.setDeckId(request.getDeckId());
         card.setCreatorId(userId);
+        card.setCurrentVersionId(0L); // 临时设置为0，版本插入后再更新
         card.setState(MemoryCardState.NORMAL.value()); // 正常状态
         card.setCreatedAt(LocalDateTime.now());
         card.setUpdatedAt(LocalDateTime.now());
@@ -220,15 +225,96 @@ public class MemoryCardService {
         card.setCurrentVersionId(version.getId());
         cardDataService.update(card);
 
-        // 更新卡片组的卡片数量和状态（卡片内容变化，需要重新审核）
-        deck.setCardCount(deck.getCardCount() + 1);
-        deck.setState(MemoryCardDeckState.PENDING.value());
-        deckDataService.update(deck);
+        // 原子操作：更新卡片组的卡片数量和状态（卡片内容变化，需要重新审核）
+        deckDataService.incrementCardCountAndSetState(request.getDeckId(), MemoryCardDeckState.PENDING.value());
 
         log.info("Created card: {} in deck: {} by user: {}", card.getId(), request.getDeckId(), userId);
 
         // 转换并返回
         return toDTOV1(card, userId);
+    }
+
+    /**
+     * 批量创建卡片（用于创建卡片组时同时创建卡片）
+     */
+    @Transactional
+    public List<MemoryCardViewDTO> batchCreateCards(Long userId, Long deckId, List<CreateDeckRequest.CardInfo> cardInfos) {
+        // 验证参数
+        checkNotNull(cardInfos);
+        if (cardInfos.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 验证并获取用户和卡片组
+        UserDO user = userDataService.validateAndGet(userId);
+        MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
+
+        // 验证权限：只有卡片组创建者可以添加卡片
+        if (!deck.getCreatorId().equals(userId)) {
+            throw ErrorCode.PERMISSION_DENIED.exception("无权限在此卡片组中创建卡片");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        
+        // 准备批量插入的卡片
+        List<MemoryCardDO> cardsToInsert = new ArrayList<>();
+        for (CreateDeckRequest.CardInfo cardInfo : cardInfos) {
+            MemoryCardDO card = new MemoryCardDO();
+            card.setDeckId(deckId);
+            card.setCreatorId(userId);
+            card.setCurrentVersionId(0L); // 临时设置为0，版本插入后再更新
+            card.setState(MemoryCardState.NORMAL.value());
+            card.setCreatedAt(now);
+            card.setUpdatedAt(now);
+            cardsToInsert.add(card);
+        }
+
+        // 批量插入卡片
+        int cardResult = cardDataService.batchInsert(cardsToInsert);
+        if (cardResult <= 0) {
+            throw ErrorCode.SYSTEM_ERROR.exception("批量创建卡片失败");
+        }
+
+        // 准备批量插入的卡片版本
+        List<MemoryCardVersionDO> versionsToInsert = new ArrayList<>();
+        for (int i = 0; i < cardInfos.size(); i++) {
+            CreateDeckRequest.CardInfo cardInfo = cardInfos.get(i);
+            MemoryCardDO card = cardsToInsert.get(i);
+            
+            String contentHash = calculateContentHash(cardInfo.getFront(), cardInfo.getBack());
+            
+            MemoryCardVersionDO version = new MemoryCardVersionDO();
+            version.setCardId(card.getId());
+            version.setVersion(1);
+            version.setCreatorId(userId);
+            version.setFront(cardInfo.getFront());
+            version.setBack(cardInfo.getBack());
+            version.setContentHash(contentHash);
+            version.setIsActive(true);
+            version.setCreatedAt(now);
+            versionsToInsert.add(version);
+        }
+
+        // 批量插入卡片版本
+        int versionResult = cardVersionDataService.batchInsert(versionsToInsert);
+        if (versionResult <= 0) {
+            throw ErrorCode.SYSTEM_ERROR.exception("批量创建卡片版本失败");
+        }
+
+        // 批量更新卡片的当前版本ID
+        for (int i = 0; i < cardsToInsert.size(); i++) {
+            MemoryCardDO card = cardsToInsert.get(i);
+            MemoryCardVersionDO version = versionsToInsert.get(i);
+            card.setCurrentVersionId(version.getId());
+        }
+        cardDataService.batchUpdateCurrentVersionId(cardsToInsert);
+
+        log.info("Batch created {} cards for deck {} by user {}", cardInfos.size(), deckId, userId);
+
+        // 转换为DTO返回
+        return cardsToInsert.stream()
+            .map(card -> toDTOV1(card, userId))
+            .collect(Collectors.toList());
     }
 
     /**
@@ -282,21 +368,17 @@ public class MemoryCardService {
         cardVersionDataService.updateActiveStatus(currentVersion.getId(), false);
 
         // 更新卡片的当前版本ID
-        MemoryCardDO card = new MemoryCardDO();
-        card.setId(request.getId());
+        MemoryCardDO card = cardDataService.getById(request.getId());
         card.setCurrentVersionId(newVersion.getId());
         card.setUpdatedAt(LocalDateTime.now());
         cardDataService.update(card);
 
         log.info("Updated card: {} to version: {} by user: {}", request.getId(), newVersion.getVersion(), userId);
 
-        // 获取更新后的卡片并返回
-        MemoryCardDO updatedCard = cardDataService.getById(request.getId());
-
         // 卡片内容变化，将卡片组状态设置为审核中
         deckDataService.updateState(existingCard.getDeckId(), MemoryCardDeckState.PENDING.value());
 
-        return toDTOV1(updatedCard, userId);
+        return toDTOV1(card, userId);
     }
 
     /**
@@ -319,16 +401,13 @@ public class MemoryCardService {
             throw ErrorCode.SYSTEM_ERROR.exception("卡片组不存在");
         }
 
-        // 软删除卡片
-        MemoryCardDO updateCard = new MemoryCardDO();
-        updateCard.setId(cardId);
-        updateCard.setState(MemoryCardState.DELETED.value()); // 已删除状态
-        updateCard.setUpdatedAt(LocalDateTime.now());
-        cardDataService.update(updateCard);
+        // 软删除卡片：直接修改已获取的card对象
+        card.setState(MemoryCardState.DELETED.value()); // 已删除状态
+        card.setUpdatedAt(LocalDateTime.now());
+        cardDataService.update(card);
 
-        // 更新卡片组的卡片数量
-        int newCardCount = Math.max(0, deck.getCardCount() - 1);
-        deckDataService.updateCardCount(card.getDeckId(), newCardCount);
+        // 原子操作：减少卡片数量（保证不会小于0）
+        deckDataService.decrementCardCount(card.getDeckId());
 
         log.info("Deleted card: {} from deck: {} by user: {}", cardId, card.getDeckId(), userId);
     }
@@ -336,11 +415,11 @@ public class MemoryCardService {
     // ========== 私有方法 ==========
 
     /**
-     * 计算内容哈希
+     * 计算内容哈希（使用SHA-256算法提高安全性）
      */
     private String calculateContentHash(String front, String back) {
         String content = (front != null ? front : "") + "|" + (back != null ? back : "");
-        return DigestUtils.md5DigestAsHex(content.getBytes());
+        return Utils.hashSHA(content);
     }
 
 }

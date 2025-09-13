@@ -28,10 +28,11 @@ export const useUserStore = defineStore(
     // 清除用户 ID（退出登录）
     const logout = (): void => {
       userId.value = null
+      name.value = null
       subscription.value = null
     }
 
-    return { userId, name, subscription, setUserId, setSubscription, logout }
+    return { userId, name, subscription, setUserId, setName, setSubscription, logout }
   },
   {
     persist: true, // 启用持久化插件
