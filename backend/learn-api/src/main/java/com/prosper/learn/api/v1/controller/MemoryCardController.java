@@ -48,6 +48,26 @@ public class MemoryCardController {
     }
 
     /**
+     * 获取用户在指定节点下学习的所有卡片
+     */
+    @GetMapping("/cards/node/{nodeId}")
+    public ApiResponse<java.util.List<MemoryCardViewDTO>> getUserCardsByNode(@PathVariable Long nodeId) {
+        long userId = StpUtil.getLoginIdAsLong();
+        java.util.List<MemoryCardViewDTO> result = cardService.getCardsByNode(nodeId, userId);
+        return ApiResponse.success(result);
+    }
+
+    /**
+     * 获取卡片内容差异
+     */
+    @GetMapping("/cards/{cardId}/diff")
+    public ApiResponse<Object> getCardDiff(@PathVariable Long cardId) {
+        long userId = StpUtil.getLoginIdAsLong();
+        Object result = cardService.getCardContentDiff(userId, cardId);
+        return ApiResponse.success(result);
+    }
+
+    /**
      * 删除卡片
      */
     @DeleteMapping("/cards/{cardId}")

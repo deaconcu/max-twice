@@ -2,8 +2,9 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
-import type { MemoryCardDeck, DeckDetail, MemoryCardView } from '@/types/memoryCard'
+import type { MemoryCardDeck, DeckDetail, MemoryCardView, DeckUpdateDiff } from '@/types/memoryCard'
 import { MemoryService } from '@/services/memoryService'
+import DeckUpdateDiffDialog from '@/components/memory/DeckUpdateDiffDialog.vue'
 
 interface Props {
   modelValue: boolean
@@ -13,6 +14,7 @@ interface Props {
 interface Emits {
   (e: 'update:modelValue', value: boolean): void
   (e: 'addToStudy', deck: MemoryCardDeck): void
+  (e: 'showDiffDialog', deckDiff: DeckUpdateDiff): void
 }
 
 const props = defineProps<Props>()
@@ -30,10 +32,102 @@ const selectedCard = ref<MemoryCardView | null>(null)
 const showCardDetail = ref(false)
 const isFlipped = ref(false) // 翻转状态
 
+// Tab相关状态
+const currentTab = ref('all') // 'all' | 'study' | 'diff'
+const studyCards = ref<MemoryCardView[]>([]) // 用户学习的卡片
+const diffTab = ref('all') // diff页面内的子tab: 'all' | 'modified' | 'added' | 'nodeOnly'
+
 // 检查是否为当前用户创建的卡片组
 const isOwnDeck = computed(() => {
   return props.deck?.creator?.id === currentUserId.value
 })
+
+// 前端计算差异 - 新增的卡片（deck中有但用户没学习的）
+const addedDiffs = computed(() => {
+  if (!deckDetail.value?.cards || !studyCards.value) return []
+
+  const studiedCardIds = new Set(studyCards.value.map(card => card.id))
+  return deckDetail.value.cards
+    .filter(card => !studiedCardIds.has(card.id))
+    .map(card => ({
+      cardId: card.id,
+      type: 'added',
+      newVersion: {
+        front: card.front,
+        back: card.back
+      }
+    }))
+})
+
+// 前端计算差异 - 修改的卡片（版本不同的）
+const modifiedDiffs = computed(() => {
+  if (!deckDetail.value?.cards || !studyCards.value) return []
+
+  const studiedCardsMap = new Map(studyCards.value.map(card => [card.id, card]))
+
+  return deckDetail.value.cards
+    .filter(deckCard => {
+      const studiedCard = studiedCardsMap.get(deckCard.id)
+      // 存在学习记录且内容不同
+      return studiedCard && (
+        studiedCard.front !== deckCard.front ||
+        studiedCard.back !== deckCard.back
+      )
+    })
+    .map(deckCard => {
+      const studiedCard = studiedCardsMap.get(deckCard.id)!
+      return {
+        cardId: deckCard.id,
+        type: 'modified',
+        newVersion: {
+          front: deckCard.front,
+          back: deckCard.back
+        },
+        oldVersion: {
+          front: studiedCard.front,
+          back: studiedCard.back
+        }
+      }
+    })
+})
+
+// 计算学习记录独有的卡片数量
+const nodeOnlyCardsCount = computed(() => {
+  // 从studyCards中过滤出不在当前deck中的卡片
+  if (!studyCards.value || !deckDetail.value?.cards) return 0
+  
+  const deckCardIds = new Set(deckDetail.value.cards.map(card => card.id))
+  return studyCards.value.filter(card => !deckCardIds.has(card.id)).length
+})
+
+// 计算学习记录独有的卡片
+const nodeOnlyCards = computed(() => {
+  if (!studyCards.value || !deckDetail.value?.cards) return []
+
+  const deckCardIds = new Set(deckDetail.value.cards.map(card => card.id))
+  return studyCards.value.filter(card => !deckCardIds.has(card.id))
+})
+
+// 自动选择第一个有数据的tab
+const getFirstAvailableTab = (): string => {
+  if (modifiedDiffs.value.length > 0) return 'modified'
+  if (addedDiffs.value.length > 0) return 'added'
+  if (nodeOnlyCardsCount.value > 0) return 'nodeOnly'
+  return 'modified' // 默认返回第一个tab
+}
+
+// 监听数据变化，自动切换到第一个有数据的tab
+watch([modifiedDiffs, addedDiffs, nodeOnlyCards], () => {
+  // 只在当前tab没有数据时才自动切换
+  const currentTabHasData =
+    (diffTab.value === 'modified' && modifiedDiffs.value.length > 0) ||
+    (diffTab.value === 'added' && addedDiffs.value.length > 0) ||
+    (diffTab.value === 'nodeOnly' && nodeOnlyCardsCount.value > 0)
+
+  if (!currentTabHasData) {
+    diffTab.value = getFirstAvailableTab()
+  }
+}, { immediate: true })
 
 watch(() => props.modelValue, (newVal) => {
   dialog.value = newVal
@@ -54,12 +148,34 @@ const loadDeckDetail = async () => {
     const response = await MemoryService.getDeckDetail(props.deck.id)
     if (response.code === 200) {
       deckDetail.value = response.data
+      
+      // 获取deck所属的nodeId
+      const nodeId = deckDetail.value.nodeId 
+      if (nodeId && currentUserId.value) {
+        // 获取用户在这个node下学习的所有卡片
+        const nodeCardsResponse = await MemoryService.getUserCardsByNode(nodeId)
+        if (nodeCardsResponse.code === 200) {
+          studyCards.value = nodeCardsResponse.data
+        }
+      }
+      
+      console.log('Deck detail loaded:', {
+        totalCards: response.data.cards.length,
+        studyCards: studyCards.value.length,
+        cardsWithUpdates: response.data.cards.filter(card => card.hasUpdate).length
+      })
     }
   } catch (error) {
     console.error('Failed to load deck detail:', error)
   } finally {
     loading.value = false
   }
+}
+
+// 当切换到diff tab时，不需要额外加载数据
+const onTabChange = (tab: string) => {
+  currentTab.value = tab
+  // diff数据完全基于前端计算，无需额外加载
 }
 
 const viewCard = (card: MemoryCardView) => {
@@ -174,8 +290,115 @@ const saveCard = async () => {
   }
 }
 
+// 滚动到指定区域
+const scrollToSection = (sectionType: 'modified' | 'added' | 'nodeOnly') => {
+  const elementId = `${sectionType}-section`
+  const element = document.getElementById(elementId)
+  if (element) {
+    element.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    })
+  }
+}
+
 const closeDialog = () => {
   dialog.value = false
+}
+
+// 跳转到更新差异标签页
+const goToDiffTab = () => {
+  currentTab.value = 'diff'
+  // 如果还没有加载diff数据，则加载
+  if (!deckDiff.value && props.deck) {
+    loadDeckDiff()
+  }
+}
+
+// Diff相关方法
+const getDiffTypeText = (type: string): string => {
+  switch (type) {
+    case 'added': return '新增'
+    case 'modified': return '修改'
+    case 'deleted': return '删除'
+    default: return '未知'
+  }
+}
+
+const getDiffTypeColor = (type: string): string => {
+  switch (type) {
+    case 'added': return 'success'
+    case 'modified': return 'warning'
+    case 'deleted': return 'error'
+    default: return 'grey'
+  }
+}
+
+// 显示详细差异对话框
+const showDiffDialog = () => {
+  // 触发显示DeckUpdateDiffDialog
+  emit('showDiffDialog', deckDiff.value)
+}
+
+// 接受单个卡片更新
+const acceptUpdate = async (cardId: number) => {
+  try {
+    await MemoryService.acceptDeckChanges(props.deck!.id, [cardId])
+    // 重新加载数据
+    loadDeckDetail()
+    loadDeckDiff()
+  } catch (error) {
+    console.error('Failed to accept update:', error)
+  }
+}
+
+// 添加单个卡片到学习（diff界面用）
+const addCardToStudyFromDiff = async (cardId: number) => {
+  try {
+    await MemoryService.acceptDeckChanges(props.deck!.id, [cardId])
+    // 重新加载数据
+    loadDeckDetail()
+    loadDeckDiff()
+  } catch (error) {
+    console.error('Failed to add card to study:', error)
+  }
+}
+
+// 移除学习记录
+const removeFromStudy = async (cardId: number) => {
+  try {
+    // TODO: 实现移除学习记录的API
+    console.log('Remove card from study:', cardId)
+    // 重新加载数据
+    loadDeckDetail()
+  } catch (error) {
+    console.error('Failed to remove from study:', error)
+  }
+}
+
+// 接受所有更新
+const acceptAllChanges = async () => {
+  try {
+    await MemoryService.acceptDeckChanges(props.deck!.id, [])
+    // 重新加载数据
+    loadDeckDetail()
+    loadDeckDiff()
+  } catch (error) {
+    console.error('Failed to accept all changes:', error)
+  }
+}
+
+// 添加所有新卡片
+const addAllNewCards = async () => {
+  try {
+    const addedCardIds = addedDiffs.value.map(diff => diff.cardId)
+    await MemoryService.acceptDeckChanges(props.deck!.id, addedCardIds)
+    // 重新加载数据
+    loadDeckDetail()
+    loadDeckDiff()
+  } catch (error) {
+    console.error('Failed to add all new cards:', error)
+  }
 }
 </script>
 
@@ -231,175 +454,763 @@ const closeDialog = () => {
       <!-- 卡片列表 - 可滚动区域 -->
       <div class="flex-grow-1" style="overflow-y: auto;">
         <div class="px-6 pt-6 pb-6">
-          <h3 class="text-h6 font-weight-bold text-grey-darken-3 mb-4 d-flex align-center justify-space-between">
-            <div class="d-flex align-center">
-              <v-icon icon="mdi-cards-variant" class="mr-2" color="primary"></v-icon>
-              卡片内容
-            </div>
-            
-            <!-- 如果是当前用户的卡片组，显示新建卡片按钮 -->
-            <v-btn
-              v-if="isOwnDeck"
+          <!-- Tab 导航 -->
+          <div class="mb-6">
+            <v-tabs
+              v-model="currentTab"
               color="primary"
-              variant="tonal"
-              size="small"
-              rounded="lg"
-              prepend-icon="mdi-plus"
-              @click="createNewCard"
+              align-tabs="center"
+              @update:model-value="onTabChange"
             >
-              新建卡片
-            </v-btn>
-          </h3>
-          
-          <div v-if="loading" class="text-center pa-8">
-            <v-progress-circular indeterminate color="primary" size="40"></v-progress-circular>
-            <p class="text-body-1 text-grey-darken-1 mt-4">加载中...</p>
+              <v-tab value="all">
+                <v-icon icon="mdi-cards-variant" class="mr-2"></v-icon>
+                所有卡片 ({{ deckDetail?.cards.length || 0 }})
+              </v-tab>
+              <v-tab v-if="studyCards.length > 0" value="study">
+                <v-icon icon="mdi-school" class="mr-2"></v-icon>
+                我的学习卡片 ({{ studyCards.length }})
+              </v-tab>
+              <v-tab v-if="studyCards.length > 0" value="diff">
+                <v-icon icon="mdi-compare" class="mr-2"></v-icon>
+                更新差异
+              </v-tab>
+            </v-tabs>
           </div>
 
-          <div v-else-if="deckDetail" class="cards-container">
-            <v-card
-              v-for="(card, index) in deckDetail.cards"
-              :key="card.id"
-              class="mb-4 card-item"
-              rounded="12"
-              elevation="0"
-              variant="outlined"
-            >
-              <v-card-text class="pa-5">
-                <div class="d-flex align-start justify-space-between">
-                  <div class="flex-grow-1 mr-4">
-                    <!-- 卡片标题和状态 -->
-                    <div class="d-flex align-center justify-space-between mb-3">
-                      <h4 class="text-h6 font-weight-bold text-grey-darken-3">
-                        第 {{ index + 1 }} 张卡片
-                      </h4>
-                      <v-chip
-                        v-if="card.srsState"
-                        size="small"
-                        :color="card.srsState.repetitions >= 3 ? 'success' : 'warning'"
-                        variant="flat"
-                        prepend-icon="mdi-trophy"
-                      >
-                        {{ card.srsState.repetitions >= 3 ? '已掌握' : `学习${card.srsState.repetitions}次` }}
-                      </v-chip>
-                      <v-chip v-else size="small" color="grey-lighten-1" variant="flat" prepend-icon="mdi-circle-outline">
-                        未开始
-                      </v-chip>
-                    </div>
-                    
-                    <!-- 问题 -->
-                    <div class="question-section mb-4">
-                      <div class="d-flex align-center mb-2">
-                        <v-icon icon="mdi-help-circle" color="primary" size="20" class="mr-2"></v-icon>
-                        <span class="text-subtitle-2 font-weight-bold text-primary">问题</span>
-                      </div>
-                      <div class="question-content pa-3 bg-blue-lighten-5 rounded-lg">
-                        <p class="text-body-1 mb-0">{{ card.front }}</p>
-                      </div>
-                    </div>
-                    
-                    <!-- 答案 -->
-                    <div class="answer-section">
-                      <div class="d-flex align-center mb-2">
-                        <v-icon icon="mdi-lightbulb" color="success" size="20" class="mr-2"></v-icon>
-                        <span class="text-subtitle-2 font-weight-bold text-success">答案</span>
-                      </div>
-                      <div class="answer-content pa-3 bg-green-lighten-5 rounded-lg">
-                        <p class="text-body-1 mb-0">{{ card.back }}</p>
-                      </div>
-                    </div>
-                  </div>
+          <!-- Tab 内容 -->
+          <v-window v-model="currentTab">
+            <!-- 所有卡片 Tab -->
+            <v-window-item value="all">
+              <div class="d-flex align-center justify-space-between mb-4">
+                <h3 class="text-h6 font-weight-bold text-grey-darken-3">
+                  <v-icon icon="mdi-cards-variant" class="mr-2" color="primary"></v-icon>
+                  卡片内容
+                </h3>
+                
+                <!-- 如果是当前用户的卡片组，显示新建卡片按钮 -->
+                <v-btn
+                  v-if="isOwnDeck"
+                  color="primary"
+                  variant="tonal"
+                  size="small"
+                  rounded="lg"
+                  prepend-icon="mdi-plus"
+                  @click="createNewCard"
+                >
+                  新建卡片
+                </v-btn>
+              </div>
+              
+              <div v-if="loading" class="text-center pa-8">
+                <v-progress-circular indeterminate color="primary" size="40"></v-progress-circular>
+                <p class="text-body-1 text-grey-darken-1 mt-4">加载中...</p>
+              </div>
 
-                  <!-- 操作按钮 -->
-                  <div class="d-flex flex-column align-center" style="gap: 12px; min-width: 100px;">
-                    <v-btn
-                      color="primary"
-                      variant="tonal"
-                      size="small"
-                      rounded="xl"
-                      prepend-icon="mdi-eye"
-                      class="action-btn"
-                      @click="viewCard(card)"
-                    >
-                      预览
-                    </v-btn>
-                    
-                    <!-- 如果是当前用户的卡片组，显示编辑和删除按钮 -->
-                    <template v-if="isOwnDeck">
-                      <v-btn
-                        color="warning"
-                        variant="tonal"
-                        size="small"
-                        rounded="xl"
-                        prepend-icon="mdi-pencil"
-                        class="action-btn"
-                        @click="editCard(card)"
-                      >
-                        编辑
-                      </v-btn>
-                      
-                      <v-btn
-                        color="error"
-                        variant="tonal"
-                        size="small"
-                        rounded="xl"
-                        prepend-icon="mdi-delete"
-                        class="action-btn"
-                        @click="deleteCard(card)"
-                      >
-                        删除
-                      </v-btn>
-                    </template>
-                    
-                    <!-- 如果不是当前用户的卡片组，显示学习按钮 -->
-                    <template v-else>
-                      <v-btn
-                        v-if="!card.srsState"
-                        color="success"
-                        variant="tonal"
-                        size="small"
-                        rounded="xl"
-                        prepend-icon="mdi-plus"
-                        class="action-btn"
-                        @click="addCardToStudy(card)"
-                      >
-                        学习
-                      </v-btn>
-                      
-                      <v-btn
-                        v-else
-                        color="success"
-                        variant="tonal"
-                        size="small"
-                        rounded="xl"
-                        prepend-icon="mdi-check-circle"
-                        class="action-btn"
-                        disabled
-                      >
-                        已添加
-                      </v-btn>
-                    </template>
-                  </div>
+              <div v-else-if="deckDetail" class="cards-container">
+                <v-card
+                  v-for="(card, index) in deckDetail.cards"
+                  :key="card.id"
+                  class="mb-4 card-item"
+                  rounded="12"
+                  elevation="0"
+                  variant="outlined"
+                >
+                  <v-card-text class="pa-5">
+                    <div class="d-flex align-start justify-space-between">
+                      <div class="flex-grow-1 mr-4">
+                        <!-- 卡片标题和状态 -->
+                        <div class="d-flex align-center justify-space-between mb-3">
+                          <h4 class="text-h6 font-weight-bold text-grey-darken-3">
+                            第 {{ index + 1 }} 张卡片
+                          </h4>
+                          <div class="d-flex align-center" style="gap: 8px;">
+                            <v-chip
+                              v-if="card.srsState"
+                              size="small"
+                              :color="card.srsState.repetitions >= 3 ? 'success' : 'warning'"
+                              variant="flat"
+                              prepend-icon="mdi-trophy"
+                            >
+                              {{ card.srsState.repetitions >= 3 ? '已掌握' : `学习${card.srsState.repetitions}次` }}
+                            </v-chip>
+                            <v-chip v-else size="small" color="grey-lighten-1" variant="flat" prepend-icon="mdi-circle-outline">
+                              未开始
+                            </v-chip>
+                            <v-chip
+                              v-if="card.hasUpdate"
+                              size="small"
+                              color="warning"
+                              variant="flat"
+                              prepend-icon="mdi-update"
+                            >
+                              有更新
+                            </v-chip>
+                          </div>
+                        </div>
+                        
+                        <!-- 问题 -->
+                        <div class="question-section mb-4">
+                          <div class="d-flex align-center mb-2">
+                            <v-icon icon="mdi-help-circle" color="primary" size="20" class="mr-2"></v-icon>
+                            <span class="text-subtitle-2 font-weight-bold text-primary">问题</span>
+                          </div>
+                          <div class="question-content pa-3 bg-blue-lighten-5 rounded-lg">
+                            <p class="text-body-1 mb-0">{{ card.front }}</p>
+                          </div>
+                        </div>
+                        
+                        <!-- 答案 -->
+                        <div class="answer-section">
+                          <div class="d-flex align-center mb-2">
+                            <v-icon icon="mdi-lightbulb" color="success" size="20" class="mr-2"></v-icon>
+                            <span class="text-subtitle-2 font-weight-bold text-success">答案</span>
+                          </div>
+                          <div class="answer-content pa-3 bg-green-lighten-5 rounded-lg">
+                            <p class="text-body-1 mb-0">{{ card.back }}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 操作按钮 -->
+                      <div class="d-flex flex-column align-center" style="gap: 12px; min-width: 100px;">
+                        <v-btn
+                          color="primary"
+                          variant="tonal"
+                          size="small"
+                          rounded="xl"
+                          prepend-icon="mdi-eye"
+                          class="action-btn"
+                          @click="viewCard(card)"
+                        >
+                          预览
+                        </v-btn>
+                        
+                        <!-- 如果是当前用户的卡片组，显示编辑和删除按钮 -->
+                        <template v-if="isOwnDeck">
+                          <v-btn
+                            color="warning"
+                            variant="tonal"
+                            size="small"
+                            rounded="xl"
+                            prepend-icon="mdi-pencil"
+                            class="action-btn"
+                            @click="editCard(card)"
+                          >
+                            编辑
+                          </v-btn>
+                          
+                          <v-btn
+                            color="error"
+                            variant="tonal"
+                            size="small"
+                            rounded="xl"
+                            prepend-icon="mdi-delete"
+                            class="action-btn"
+                            @click="deleteCard(card)"
+                          >
+                            删除
+                          </v-btn>
+                        </template>
+                        
+                        <!-- 如果不是当前用户的卡片组，显示学习按钮 -->
+                        <template v-else>
+                          <v-btn
+                            v-if="!card.srsState"
+                            color="success"
+                            variant="tonal"
+                            size="small"
+                            rounded="xl"
+                            prepend-icon="mdi-plus"
+                            class="action-btn"
+                            @click="addCardToStudy(card)"
+                          >
+                            学习
+                          </v-btn>
+                          
+                          <v-btn
+                            v-else
+                            color="success"
+                            variant="tonal"
+                            size="small"
+                            rounded="xl"
+                            prepend-icon="mdi-check-circle"
+                            class="action-btn"
+                            disabled
+                          >
+                            已添加
+                          </v-btn>
+                        </template>
+                      </div>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </div>
+
+              <div v-else class="text-center pa-8">
+                <v-icon icon="mdi-alert-circle-outline" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
+                <h4 class="text-h6 text-grey-darken-1 mb-2">加载失败</h4>
+                <p class="text-body-2 text-grey-darken-1">请检查网络连接后重试</p>
+              </div>
+            </v-window-item>
+
+            <!-- 我的学习卡片 Tab -->
+            <v-window-item value="study">
+              <div v-if="loading" class="text-center pa-8">
+                <v-progress-circular indeterminate color="primary" size="40"></v-progress-circular>
+                <p class="text-body-1 text-grey-darken-1 mt-4">加载中...</p>
+              </div>
+
+              <div v-else-if="studyCards.length === 0" class="text-center pa-8">
+                <v-icon icon="mdi-school-outline" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
+                <h4 class="text-h6 text-grey-darken-1 mb-2">暂无学习卡片</h4>
+                <p class="text-body-2 text-grey-darken-1">您还没有开始学习此卡片组中的任何卡片</p>
+              </div>
+
+              <div v-else class="cards-container">
+                <v-card
+                  v-for="(card, index) in studyCards"
+                  :key="card.id"
+                  class="mb-4 card-item"
+                  rounded="12"
+                  elevation="0"
+                  variant="outlined"
+                >
+                  <v-card-text class="pa-5">
+                    <div class="d-flex align-start justify-space-between">
+                      <div class="flex-grow-1 mr-4">
+                        <!-- 卡片标题和状态 -->
+                        <div class="d-flex align-center justify-space-between mb-3">
+                          <h4 class="text-h6 font-weight-bold text-grey-darken-3">
+                            学习卡片 {{ index + 1 }}
+                          </h4>
+                          <div class="d-flex align-center" style="gap: 8px;">
+                            <v-chip
+                              v-if="card.srsState"
+                              size="small"
+                              :color="card.srsState.repetitions >= 3 ? 'success' : 'warning'"
+                              variant="flat"
+                              prepend-icon="mdi-trophy"
+                            >
+                              {{ card.srsState.repetitions >= 3 ? '已掌握' : `学习${card.srsState.repetitions}次` }}
+                            </v-chip>
+                            <v-chip
+                              v-if="card.hasUpdate"
+                              size="small"
+                              color="warning"
+                              variant="flat"
+                              prepend-icon="mdi-update"
+                            >
+                              有更新
+                            </v-chip>
+                          </div>
+                        </div>
+                        
+                        <!-- 问题 -->
+                        <div class="question-section mb-4">
+                          <div class="d-flex align-center mb-2">
+                            <v-icon icon="mdi-help-circle" color="primary" size="20" class="mr-2"></v-icon>
+                            <span class="text-subtitle-2 font-weight-bold text-primary">问题</span>
+                          </div>
+                          <div class="question-content pa-3 bg-blue-lighten-5 rounded-lg">
+                            <p class="text-body-1 mb-0">{{ card.front }}</p>
+                          </div>
+                        </div>
+                        
+                        <!-- 答案 -->
+                        <div class="answer-section">
+                          <div class="d-flex align-center mb-2">
+                            <v-icon icon="mdi-lightbulb" color="success" size="20" class="mr-2"></v-icon>
+                            <span class="text-subtitle-2 font-weight-bold text-success">答案</span>
+                          </div>
+                          <div class="answer-content pa-3 bg-green-lighten-5 rounded-lg">
+                            <p class="text-body-1 mb-0">{{ card.back }}</p>
+                          </div>
+                        </div>
+                        
+                        <!-- 学习进度信息 -->
+                        <div v-if="card.srsState" class="mt-4">
+                          <div class="d-flex align-center justify-space-between text-body-2 text-grey-darken-2">
+                            <span>间隔天数：{{ card.srsState.intervalDays }}天</span>
+                            <span>难度系数：{{ card.srsState.easeFactor }}</span>
+                            <span>下次复习：{{ new Date(card.srsState.reviewDueAt).toLocaleDateString() }}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 操作按钮 -->
+                      <div class="d-flex flex-column align-center" style="gap: 12px; min-width: 100px;">
+                        <v-btn
+                          color="primary"
+                          variant="tonal"
+                          size="small"
+                          rounded="xl"
+                          prepend-icon="mdi-eye"
+                          class="action-btn"
+                          @click="viewCard(card)"
+                        >
+                          预览
+                        </v-btn>
+                        
+                        <v-btn
+                          color="success"
+                          variant="tonal"
+                          size="small"
+                          rounded="xl"
+                          prepend-icon="mdi-play"
+                          class="action-btn"
+                        >
+                          复习
+                        </v-btn>
+                      </div>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </div>
+            </v-window-item>
+
+            <!-- 更新差异 Tab -->
+            <v-window-item value="diff">
+              <div v-if="addedDiffs.length === 0 && modifiedDiffs.length === 0 && nodeOnlyCardsCount === 0" class="text-center pa-8">
+                <v-icon icon="mdi-check-circle" size="64" color="success" class="mb-4"></v-icon>
+                <h4 class="text-h6 text-success mb-2">没有差异</h4>
+                <p class="text-body-2 text-grey-darken-1">卡片组与您的学习记录完全同步</p>
+              </div>
+
+              <div v-else>
+                <!-- 更新摘要 - 作为Tab导航 -->
+                <div class="mb-4">
+                  <v-card flat color="blue-lighten-5" rounded="lg" class="py-3 px-4">
+                    <div class="d-flex align-center justify-space-between">
+                      <div class="d-flex align-center">
+                        <v-icon color="blue-darken-2" size="20" class="mr-2">mdi-compare</v-icon>
+                        <h4 class="text-body-1 text-blue-darken-2 mb-0">
+                          差异对比 - 检测到 {{ addedDiffs.length + modifiedDiffs.length + nodeOnlyCardsCount }} 项差异
+                        </h4>
+                      </div>
+                      <div class="d-flex align-center" style="gap: 8px;">
+                        <div class="text-center tab-item">
+                          <div
+                            class="text-body-1 font-weight-bold clickable-stat"
+                            :class="{ 'text-warning': diffTab === 'modified', 'text-grey-darken-2': diffTab !== 'modified' }"
+                            @click="diffTab = 'modified'"
+                          >
+                            {{ modifiedDiffs.length }}
+                          </div>
+                          <div class="text-caption text-grey-darken-1">内容有更新</div>
+                        </div>
+                        <div class="text-center tab-item">
+                          <div
+                            class="text-body-1 font-weight-bold clickable-stat"
+                            :class="{ 'text-success': diffTab === 'added', 'text-grey-darken-2': diffTab !== 'added' }"
+                            @click="diffTab = 'added'"
+                          >
+                            {{ addedDiffs.length }}
+                          </div>
+                          <div class="text-caption text-grey-darken-1">可添加</div>
+                        </div>
+                        <div class="text-center tab-item">
+                          <div
+                            class="text-body-1 font-weight-bold clickable-stat"
+                            :class="{ 'text-info': diffTab === 'nodeOnly', 'text-grey-darken-2': diffTab !== 'nodeOnly' }"
+                            @click="diffTab = 'nodeOnly'"
+                          >
+                            {{ nodeOnlyCardsCount }}
+                          </div>
+                          <div class="text-caption text-grey-darken-1">其他来源</div>
+                        </div>
+                      </div>
+                    </div>
+                  </v-card>
                 </div>
-              </v-card-text>
-            </v-card>
-          </div>
 
-          <div v-else class="text-center pa-8">
-            <v-icon icon="mdi-alert-circle-outline" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
-            <h4 class="text-h6 text-grey-darken-1 mb-2">加载失败</h4>
-            <p class="text-body-2 text-grey-darken-1">请检查网络连接后重试</p>
-          </div>
+                <!-- Tab内容 -->
+                <v-window v-model="diffTab">
+                  <!-- 内容有更新Tab -->
+                  <v-window-item value="modified">
+                    <div class="cards-container">
+                      <!-- 解释说明 -->
+                      <div class="mb-4 pa-3">
+                        <div class="d-flex align-center">
+                          <v-icon icon="mdi-information" size="16" color="grey-lighten-1" class="mr-2"></v-icon>
+                          <span class="text-body-2 text-grey-lighten-1">
+                            这些卡片的内容在卡片组中已更新，与您学习记录中的版本不同。您可以选择接受更新以获取最新内容。
+                          </span>
+                        </div>
+                      </div>
+
+                      <div v-if="modifiedDiffs.length === 0" class="text-center pa-8">
+                        <v-icon icon="mdi-check-circle" size="64" color="success" class="mb-4"></v-icon>
+                        <h4 class="text-h6 text-success mb-2">没有修改</h4>
+                        <p class="text-body-2 text-grey-darken-1">当前没有修改的卡片</p>
+                      </div>
+
+                      <template v-else>
+                        <v-card
+                          v-for="(diff, index) in modifiedDiffs"
+                          :key="'modified-' + diff.cardId"
+                          class="mb-4 card-item"
+                          rounded="12"
+                          elevation="0"
+                          variant="outlined"
+                        >
+                          <v-card-text class="pa-5">
+                            <div class="d-flex align-start justify-space-between">
+                              <div class="flex-grow-1 mr-4">
+                                <!-- 卡片标题和状态 -->
+                                <div class="d-flex align-center justify-space-between mb-3">
+                                  <h4 class="text-h6 font-weight-bold text-grey-darken-3">
+                                    卡片 {{ index + 1 }}
+                                  </h4>
+                                  <v-chip
+                                    size="small"
+                                    color="warning"
+                                    variant="flat"
+                                    prepend-icon="mdi-pencil"
+                                  >
+                                    内容有更新
+                                  </v-chip>
+                                </div>
+
+                                <!-- 新版本 -->
+                                <div class="version-section mb-4">
+                                  <div class="d-flex align-center mb-2">
+                                    <v-chip size="small" color="success" variant="flat" class="mr-2">新版本</v-chip>
+                                    <span class="text-caption text-grey-darken-1">卡片组最新内容</span>
+                                  </div>
+
+                                  <div class="question-section mb-3">
+                                    <div class="d-flex align-center mb-2">
+                                      <v-icon icon="mdi-help-circle" color="primary" size="20" class="mr-2"></v-icon>
+                                      <span class="text-subtitle-2 font-weight-bold text-primary">问题</span>
+                                    </div>
+                                    <div class="question-content pa-3 bg-blue-lighten-5 rounded-lg">
+                                      <p class="text-body-1 mb-0 text-grey-darken-3">{{ diff.newVersion.front }}</p>
+                                    </div>
+                                  </div>
+
+                                  <div class="answer-section">
+                                    <div class="d-flex align-center mb-2">
+                                      <v-icon icon="mdi-lightbulb" color="success" size="20" class="mr-2"></v-icon>
+                                      <span class="text-subtitle-2 font-weight-bold text-success">答案</span>
+                                    </div>
+                                    <div class="answer-content pa-3 bg-green-lighten-5 rounded-lg">
+                                      <p class="text-body-1 mb-0 text-grey-darken-3">{{ diff.newVersion.back }}</p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <!-- 旧版本 -->
+                                <div class="version-section">
+                                  <div class="d-flex align-center mb-2">
+                                    <v-chip size="small" color="grey" variant="flat" class="mr-2">学习版本</v-chip>
+                                    <span class="text-caption text-grey-darken-1">您当前学习的内容</span>
+                                  </div>
+
+                                  <div class="question-section mb-3">
+                                    <div class="d-flex align-center mb-2">
+                                      <v-icon icon="mdi-help-circle" color="primary" size="20" class="mr-2"></v-icon>
+                                      <span class="text-subtitle-2 font-weight-bold text-primary">问题</span>
+                                    </div>
+                                    <div class="question-content pa-3 bg-grey-lighten-4 rounded-lg">
+                                      <p class="text-body-1 mb-0 text-grey-darken-2">{{ diff.oldVersion.front }}</p>
+                                    </div>
+                                  </div>
+
+                                  <div class="answer-section">
+                                    <div class="d-flex align-center mb-2">
+                                      <v-icon icon="mdi-lightbulb" color="success" size="20" class="mr-2"></v-icon>
+                                      <span class="text-subtitle-2 font-weight-bold text-success">答案</span>
+                                    </div>
+                                    <div class="answer-content pa-3 bg-grey-lighten-4 rounded-lg">
+                                      <p class="text-body-1 mb-0 text-grey-darken-2">{{ diff.oldVersion.back }}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- 操作按钮 -->
+                              <div class="d-flex flex-column align-center" style="gap: 12px; min-width: 100px;">
+                                <v-btn
+                                  color="primary"
+                                  variant="tonal"
+                                  size="small"
+                                  rounded="xl"
+                                  prepend-icon="mdi-eye"
+                                  class="action-btn"
+                                  @click="viewCard({...diff.newVersion, id: diff.cardId})"
+                                >
+                                  预览
+                                </v-btn>
+
+                                <v-btn
+                                  color="warning"
+                                  variant="tonal"
+                                  size="small"
+                                  rounded="xl"
+                                  prepend-icon="mdi-check"
+                                  class="action-btn"
+                                  @click="acceptUpdate(diff.cardId)"
+                                >
+                                  接受修改
+                                </v-btn>
+                              </div>
+                            </div>
+                          </v-card-text>
+                        </v-card>
+                      </template>
+                    </div>
+                  </v-window-item>
+
+                  <!-- 可添加Tab -->
+                  <v-window-item value="added">
+                    <div class="cards-container">
+                      <!-- 解释说明 -->
+                      <div class="mb-4 pa-3">
+                        <div class="d-flex align-center">
+                          <v-icon icon="mdi-information" size="16" color="grey-lighten-1" class="mr-2"></v-icon>
+                          <span class="text-body-2 text-grey-lighten-1">
+                            这些是卡片组中新增的卡片，您还未开始学习。可以选择添加到您的学习计划中。
+                          </span>
+                        </div>
+                      </div>
+
+                      <div v-if="addedDiffs.length === 0" class="text-center pa-8">
+                        <v-icon icon="mdi-plus-circle-outline" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
+                        <h4 class="text-h6 text-grey-darken-1 mb-2">没有可添加的卡片</h4>
+                        <p class="text-body-2 text-grey-darken-1">当前没有新的卡片可以添加</p>
+                      </div>
+
+                      <template v-else>
+                        <v-card
+                          v-for="(diff, index) in addedDiffs"
+                          :key="'added-' + diff.cardId"
+                          class="mb-4 card-item"
+                          rounded="12"
+                          elevation="0"
+                          variant="outlined"
+                        >
+                          <v-card-text class="pa-5">
+                            <div class="d-flex align-start justify-space-between">
+                              <div class="flex-grow-1 mr-4">
+                                <!-- 卡片标题和状态 -->
+                                <div class="d-flex align-center justify-space-between mb-3">
+                                  <h4 class="text-h6 font-weight-bold text-grey-darken-3">
+                                    卡片 {{ index + 1 }}
+                                  </h4>
+                                  <v-chip
+                                    size="small"
+                                    color="success"
+                                    variant="flat"
+                                    prepend-icon="mdi-plus"
+                                  >
+                                    未学习
+                                  </v-chip>
+                                </div>
+
+                                <!-- 问题 -->
+                                <div class="question-section mb-4">
+                                  <div class="d-flex align-center mb-2">
+                                    <v-icon icon="mdi-help-circle" color="primary" size="20" class="mr-2"></v-icon>
+                                    <span class="text-subtitle-2 font-weight-bold text-primary">问题</span>
+                                  </div>
+                                  <div class="question-content pa-3 bg-blue-lighten-5 rounded-lg">
+                                    <p class="text-body-1 mb-0 text-grey-darken-3">{{ diff.newVersion.front }}</p>
+                                  </div>
+                                </div>
+
+                                <!-- 答案 -->
+                                <div class="answer-section">
+                                  <div class="d-flex align-center mb-2">
+                                    <v-icon icon="mdi-lightbulb" color="success" size="20" class="mr-2"></v-icon>
+                                    <span class="text-subtitle-2 font-weight-bold text-success">答案</span>
+                                  </div>
+                                  <div class="answer-content pa-3 bg-green-lighten-5 rounded-lg">
+                                    <p class="text-body-1 mb-0 text-grey-darken-3">{{ diff.newVersion.back }}</p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- 操作按钮 -->
+                              <div class="d-flex flex-column align-center" style="gap: 12px; min-width: 100px;">
+                                <v-btn
+                                  color="primary"
+                                  variant="tonal"
+                                  size="small"
+                                  rounded="xl"
+                                  prepend-icon="mdi-eye"
+                                  class="action-btn"
+                                  @click="viewCard({...diff.newVersion, id: diff.cardId})"
+                                >
+                                  预览
+                                </v-btn>
+
+                                <v-btn
+                                  color="success"
+                                  variant="tonal"
+                                  size="small"
+                                  rounded="xl"
+                                  prepend-icon="mdi-plus"
+                                  class="action-btn"
+                                  @click="addCardToStudyFromDiff(diff.cardId)"
+                                >
+                                  添加学习
+                                </v-btn>
+                              </div>
+                            </div>
+                          </v-card-text>
+                        </v-card>
+                      </template>
+                    </div>
+                  </v-window-item>
+
+                  <!-- 其他来源Tab -->
+                  <v-window-item value="nodeOnly">
+                    <div class="cards-container">
+                      <!-- 解释说明 -->
+                      <div class="mb-4 pa-3">
+                        <div class="d-flex align-center">
+                          <v-icon icon="mdi-information" size="16" color="grey-lighten-1" class="mr-2"></v-icon>
+                          <span class="text-body-2 text-grey-lighten-1">
+                            这些卡片来自其他卡片组，或者是已经被删除的卡片。如果不需要，可以选择移除学习。
+                          </span>
+                        </div>
+                      </div>
+
+                      <div v-if="nodeOnlyCards.length === 0" class="text-center pa-8">
+                        <v-icon icon="mdi-bookmark-outline" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
+                        <h4 class="text-h6 text-grey-darken-1 mb-2">没有其他来源的卡片</h4>
+                        <p class="text-body-2 text-grey-darken-1">当前没有来自其他来源的卡片</p>
+                      </div>
+
+                      <template v-else>
+                        <v-card
+                          v-for="(card, index) in nodeOnlyCards"
+                          :key="'node-only-' + card.id"
+                          class="mb-4 card-item"
+                          rounded="12"
+                          elevation="0"
+                          variant="outlined"
+                        >
+                          <v-card-text class="pa-5">
+                            <div class="d-flex align-start justify-space-between">
+                              <div class="flex-grow-1 mr-4">
+                                <!-- 卡片标题和状态 -->
+                                <div class="d-flex align-center justify-space-between mb-3">
+                                  <h4 class="text-h6 font-weight-bold text-grey-darken-3">
+                                    卡片 {{ index + 1 }}
+                                  </h4>
+                                  <v-chip
+                                    size="small"
+                                    color="info"
+                                    variant="flat"
+                                    prepend-icon="mdi-bookmark"
+                                  >
+                                    其他来源
+                                  </v-chip>
+                                </div>
+
+                                <!-- 问题 -->
+                                <div class="question-section mb-4">
+                                  <div class="d-flex align-center mb-2">
+                                    <v-icon icon="mdi-help-circle" color="primary" size="20" class="mr-2"></v-icon>
+                                    <span class="text-subtitle-2 font-weight-bold text-primary">问题</span>
+                                  </div>
+                                  <div class="question-content pa-3 bg-blue-lighten-5 rounded-lg">
+                                    <p class="text-body-1 mb-0 text-grey-darken-3">{{ card.front }}</p>
+                                  </div>
+                                </div>
+
+                                <!-- 答案 -->
+                                <div class="answer-section mb-4">
+                                  <div class="d-flex align-center mb-2">
+                                    <v-icon icon="mdi-lightbulb" color="success" size="20" class="mr-2"></v-icon>
+                                    <span class="text-subtitle-2 font-weight-bold text-success">答案</span>
+                                  </div>
+                                  <div class="answer-content pa-3 bg-green-lighten-5 rounded-lg">
+                                    <p class="text-body-1 mb-0 text-grey-darken-3">{{ card.back }}</p>
+                                  </div>
+                                </div>
+
+                                <!-- 学习进度信息 -->
+                                <div v-if="card.srsState" class="mt-4">
+                                  <div class="d-flex align-center justify-space-between text-body-2 text-grey-darken-2">
+                                    <span>间隔天数：{{ card.srsState.repetitions }}次</span>
+                                    <span>难度系数：{{ card.srsState.easeFactor }}</span>
+                                    <span>下次复习：{{ new Date(card.srsState.reviewDueAt).toLocaleDateString() }}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- 操作按钮 -->
+                              <div class="d-flex flex-column align-center" style="gap: 12px; min-width: 100px;">
+                                <v-btn
+                                  color="primary"
+                                  variant="tonal"
+                                  size="small"
+                                  rounded="xl"
+                                  prepend-icon="mdi-eye"
+                                  class="action-btn"
+                                  @click="viewCard(card)"
+                                >
+                                  预览
+                                </v-btn>
+
+                                <v-btn
+                                  color="error"
+                                  variant="tonal"
+                                  size="small"
+                                  rounded="xl"
+                                  prepend-icon="mdi-close"
+                                  class="action-btn"
+                                  @click="removeFromStudy(card.id)"
+                                >
+                                  移除学习
+                                </v-btn>
+                              </div>
+                            </div>
+                          </v-card-text>
+                        </v-card>
+                      </template>
+                    </div>
+                  </v-window-item>
+                </v-window>
+              </div>
+            </v-window-item>
+          </v-window>
         </div>
       </div>
 
       <!-- 底部固定操作栏 -->
       <div class="bottom-actions pa-6 bg-grey-lighten-5 d-flex align-center justify-space-between" style="flex-shrink: 0;">
-        <div class="text-body-2 text-grey-darken-1">
-          <v-icon icon="mdi-information" size="16" class="mr-1"></v-icon>
-          点击"学习整个卡片组"将所有卡片加入您的学习计划
+        <!-- Diff标签页的操作按钮 -->
+        <div v-if="currentTab === 'diff' && (addedDiffs.length > 0 || modifiedDiffs.length > 0 || nodeOnlyCardsCount > 0)" class="d-flex align-center" style="gap: 12px;">
+          <v-btn
+            color="primary"
+            variant="flat"
+            rounded="lg"
+            prepend-icon="mdi-sync"
+            @click="acceptAllChanges"
+          >
+            同步所有更新
+          </v-btn>
+          <v-btn
+            color="success"
+            variant="outlined"
+            rounded="lg"
+            prepend-icon="mdi-plus"
+            @click="addAllNewCards"
+          >
+            添加所有新卡片
+          </v-btn>
         </div>
-        
+
+        <!-- 其他标签页的提示信息 -->
+        <div v-else class="text-body-2 text-grey-darken-1">
+          <v-icon icon="mdi-information" size="16" class="mr-1"></v-icon>
+          <span v-if="studyCards.length === 0">点击"学习卡片组"将所有卡片加入您的学习计划</span>
+          <span v-else>点击"学习卡片组"查看更新差异并选择要学习的卡片</span>
+        </div>
+
         <div class="d-flex" style="gap: 12px;">
           <v-btn
             variant="text"
@@ -411,7 +1222,19 @@ const closeDialog = () => {
           </v-btn>
 
           <v-btn
-            v-if="deckDetail"
+            v-if="deckDetail && currentTab === 'study'"
+            color="primary"
+            variant="flat"
+            rounded="xl"
+            size="large"
+            prepend-icon="mdi-compare"
+            @click="goToDiffTab"
+          >
+            查看对比更新
+          </v-btn>
+
+          <v-btn
+            v-else-if="deckDetail && currentTab === 'all' && studyCards.length === 0"
             color="primary"
             variant="flat"
             rounded="xl"
@@ -419,7 +1242,19 @@ const closeDialog = () => {
             prepend-icon="mdi-playlist-plus"
             @click="addToStudy"
           >
-            学习整个卡片组
+            学习卡片组
+          </v-btn>
+
+          <v-btn
+            v-else-if="deckDetail && currentTab === 'all' && studyCards.length > 0"
+            color="primary"
+            variant="flat"
+            rounded="xl"
+            size="large"
+            prepend-icon="mdi-compare"
+            @click="goToDiffTab"
+          >
+            学习卡片组
           </v-btn>
         </div>
       </div>
@@ -662,6 +1497,25 @@ const closeDialog = () => {
   transform: rotateY(180deg);
 }
 
+/* Tab项固定宽度 */
+.tab-item {
+  min-width: 80px;
+  flex: 0 0 80px;
+}
+
+/* 可点击的统计数字样式 */
+.clickable-stat {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+
+.clickable-stat:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: scale(1.1);
+}
+
 /* 滚动条样式 */
 .flex-grow-1::-webkit-scrollbar {
   width: 8px;
@@ -692,5 +1546,161 @@ const closeDialog = () => {
     top: 8px;
     right: 8px;
   }
+}
+
+/* Diff内容样式 */
+.diff-content {
+  border-left: 4px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.diff-content.added {
+  background-color: rgba(76, 175, 80, 0.1);
+  border-left-color: #4caf50;
+}
+
+.diff-content.deleted {
+  background-color: rgba(244, 67, 54, 0.1);
+  border-left-color: #f44336;
+}
+
+/* 双列Diff界面样式 */
+.diff-container {
+  height: auto;
+  min-height: 400px;
+}
+
+/* 修改的卡片行对齐 */
+.modified-cards-section {
+  margin-bottom: 24px;
+  margin-top: 32px;
+}
+
+.section-header {
+  padding: 8px 0;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.modified-card-row {
+  align-items: flex-start;
+}
+
+.modified-row {
+  align-items: flex-start;
+}
+
+.panel-header {
+  padding: 12px 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.card-list-content {
+  padding: 0;
+}
+
+.diff-item {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #e8eaed;
+  transition: all 0.2s ease;
+  position: relative;
+  height: fit-content;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.diff-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.diff-item.modified {
+  border-left: 4px solid #ff9800;
+  background: linear-gradient(135deg, #fff8e1 0%, #ffffff 100%);
+  margin-bottom: 0;
+}
+
+.diff-item.modified-old {
+  border-left: 4px solid #9e9e9e;
+  background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+  margin-bottom: 0;
+}
+
+.diff-item.added {
+  border-left: 4px solid #4caf50;
+  background: linear-gradient(135deg, #f1f8e9 0%, #ffffff 100%);
+}
+
+.diff-item.node-only {
+  border-left: 4px solid #2196f3;
+  background: linear-gradient(135deg, #e8f4fd 0%, #ffffff 100%);
+}
+
+.diff-content-card {
+  margin-top: 8px;
+}
+
+.diff-content-card.old-version {
+  opacity: 0.85;
+}
+
+.content-section {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.content-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.content-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  word-break: break-word;
+}
+
+.card-id {
+  color: #666;
+  font-size: 14px;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.diff-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.diff-meta {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 左右面板间距 */
+.left-panel {
+  padding-right: 8px;
+  flex: 0 0 50%;
+  max-width: 50%;
+}
+
+.right-panel {
+  padding-left: 8px;
+  flex: 0 0 50%;
+  max-width: 50%;
 }
 </style>

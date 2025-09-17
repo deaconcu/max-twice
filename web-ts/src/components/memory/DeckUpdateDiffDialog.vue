@@ -95,13 +95,13 @@ watch(() => props.modelValue, (newValue) => {
 </script>
 
 <template>
-  <v-dialog 
-    v-model="show" 
-    width="900" 
+  <v-dialog
+    v-model="show"
+    width="900"
     height="800"
     persistent
   >
-    <v-card v-if="deckDiff" rounded="xl" elevation="0">
+    <v-card v-if="deckDiff" rounded="xl" elevation="0" class="d-flex flex-column" style="height: 100%">
       <!-- 头部 -->
       <div class="dialog-header pa-6 bg-primary text-white">
         <div class="d-flex align-center justify-space-between">
@@ -121,20 +121,20 @@ watch(() => props.modelValue, (newValue) => {
       </div>
 
       <!-- 内容 -->
-      <v-card-text class="pa-0">
-        <div class="pa-6">
+      <v-card-text class="pa-0 flex-grow-1 d-flex flex-column">
+        <div class="pa-6 flex-grow-1 d-flex flex-column">
 
 
           <!-- 卡片更新列表 -->
-          <div class="mb-6">
+          <div class="flex-grow-1 d-flex flex-column">
             <div class="d-flex align-center justify-space-between mb-3">
               <h4 class="text-h6 font-weight-bold text-grey-darken-4">
                 <v-icon icon="mdi-cards" class="mr-2"></v-icon>
                 卡片更新 ({{ deckDiff.cardDiffs.length }} 项变更)
               </h4>
-              <v-btn 
-                color="primary" 
-                variant="tonal" 
+              <v-btn
+                color="primary"
+                variant="tonal"
                 size="small"
                 rounded="lg"
                 @click="toggleSelectAll"
@@ -143,13 +143,13 @@ watch(() => props.modelValue, (newValue) => {
               </v-btn>
             </div>
 
-            <div class="max-height-400 overflow-y-auto no-scrollbar">
-              <v-card 
-                v-for="(diff, index) in deckDiff.cardDiffs" 
+            <div class="flex-grow-1 overflow-y-auto no-scrollbar">
+              <v-card
+                v-for="(diff, index) in deckDiff.cardDiffs"
                 :key="index"
-                flat 
-                variant="outlined" 
-                rounded="lg" 
+                flat
+                variant="outlined"
+                rounded="lg"
                 class="mb-3"
               >
                 <v-card-text class="pa-4">
@@ -236,23 +236,23 @@ watch(() => props.modelValue, (newValue) => {
       </v-card-text>
 
       <!-- 底部操作 -->
-      <v-card-actions class="pa-6 pt-0">
+      <v-card-actions class="pa-6 pt-0 flex-shrink-0">
         <div class="d-flex align-center justify-space-between w-100">
           <div class="text-body-2 text-grey-darken-1">
             已选择 {{ selectedCardIds.length }} 项卡片更新
           </div>
           <div class="d-flex" style="gap: 12px;">
-            <v-btn 
-              color="grey-darken-2" 
-              variant="tonal" 
+            <v-btn
+              color="grey-darken-2"
+              variant="tonal"
               rounded="lg"
               @click="cancelUpdate"
             >
               取消
             </v-btn>
-            <v-btn 
-              color="primary" 
-              variant="flat" 
+            <v-btn
+              color="primary"
+              variant="flat"
               rounded="lg"
               @click="acceptUpdate"
               :disabled="selectedCardIds.length === 0"
@@ -270,10 +270,6 @@ watch(() => props.modelValue, (newValue) => {
 <style scoped>
 .dialog-header {
   background: rgb(var(--v-theme-primary));
-}
-
-.max-height-400 {
-  max-height: 519px;
 }
 
 .custom-checkbox {

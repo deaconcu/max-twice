@@ -154,8 +154,87 @@ export class MemoryService {
    */
   static async getDecks(query: GetDecksQuery = {}): Promise<{
     code: number
-    data: { 
+    data: {
       items: MemoryCardDeck[]
+      hasMore: boolean
+      nextCursor?: {
+        lastScore?: number
+        lastId?: number
+      }
+    }
+    message?: string
+  }> {
+    const params = new URLSearchParams()
+
+    if (query.postId) {
+      params.append('postId', query.postId.toString())
+    }
+    if (query.creatorId) {
+      params.append('creatorId', query.creatorId.toString())
+    }
+    if (query.state !== undefined) {
+      params.append('state', query.state.toString())
+    }
+    if (query.sortBy) {
+      params.append('sortBy', query.sortBy)
+    }
+    if (query.sortOrder) {
+      params.append('sortOrder', query.sortOrder)
+    }
+    if (query.lastScore !== undefined) {
+      params.append('lastScore', query.lastScore.toString())
+    }
+    if (query.lastId) {
+      params.append('lastId', query.lastId.toString())
+    }
+    if (query.limit) {
+      params.append('limit', query.limit.toString())
+    }
+
+    return apiClient.get(`${API_V1_PREFIX}/memory/decks?${params.toString()}`)
+  }
+
+  /**
+   * 获取指定节点下的卡片组列表
+   */
+  static async getDecksByNode(nodeId: number, query: {
+    lastScore?: number
+    lastId?: number
+    limit?: number
+  } = {}): Promise<{
+    code: number
+    data: {
+      items: MemoryCardDeck[]
+      hasMore: boolean
+      nextCursor?: {
+        lastScore?: number
+        lastId?: number
+      }
+    }
+    message?: string
+  }> {
+    const params = new URLSearchParams()
+
+    if (query.lastScore !== undefined) {
+      params.append('lastScore', query.lastScore.toString())
+    }
+    if (query.lastId) {
+      params.append('lastId', query.lastId.toString())
+    }
+    if (query.limit) {
+      params.append('limit', query.limit.toString())
+    }
+
+    return apiClient.get(`${API_V1_PREFIX}/memory/decks/node/${nodeId}?${params.toString()}`)
+  }
+
+  /**
+   * 获取卡片组审核列表 - 包含卡片详情
+   */
+  static async getDecksForReview(query: GetDecksQuery = {}): Promise<{
+    code: number
+    data: { 
+      items: DeckDetail[]
       hasMore: boolean
       nextCursor?: {
         lastScore?: number
@@ -191,7 +270,7 @@ export class MemoryService {
       params.append('limit', query.limit.toString())
     }
 
-    return apiClient.get(`${API_V1_PREFIX}/memory/decks?${params.toString()}`)
+    return apiClient.get(`${API_V1_PREFIX}/memory/decks/review?${params.toString()}`)
   }
 
   /**
@@ -272,5 +351,100 @@ export class MemoryService {
   }> {
     // TODO: 需要确认后端是否有此接口，可能需要通过添加卡片组到记忆库的方式实现
     return apiClient.post(`${API_V1_PREFIX}/memory/cards/${cardId}/study`)
+  }
+
+  // ========== 审核相关API ==========
+
+  /**
+   * 审核通过卡片组
+   */
+  static async approveDeck(deckId: number): Promise<{
+    code: number
+    data: any
+    message?: string
+  }> {
+    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/approve`)
+  }
+
+  /**
+   * 审核拒绝卡片组
+   */
+  static async rejectDeck(deckId: number): Promise<{
+    code: number
+    data: any
+    message?: string
+  }> {
+    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/reject`)
+  }
+
+  /**
+   * 屏蔽卡片组
+   */
+  static async blockDeck(deckId: number): Promise<{
+    code: number
+    data: any
+    message?: string
+  }> {
+    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/block`)
+  }
+
+  /**
+   * 恢复卡片组
+   */
+  static async restoreDeck(deckId: number): Promise<{
+    code: number
+    data: any
+    message?: string
+  }> {
+    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/restore`)
+  }
+
+  /**
+   * 获取卡片组更新差异
+   */
+  static async getDeckDiff(deckId: number, userCurrentVersion?: number): Promise<{
+    code: number
+    data: any
+    message?: string
+  }> {
+    const params = userCurrentVersion ? `?userCurrentVersion=${userCurrentVersion}` : ''
+    return apiClient.get(`${API_V1_PREFIX}/memory/decks/${deckId}/diff${params}`)
+  }
+
+  /**
+   * 获取单个卡片的内容差异
+   */
+  static async getCardDiff(cardId: number): Promise<{
+    code: number
+    data: {
+      cardId: number
+      oldVersion: { front: string; back: string }
+      newVersion: { front: string; back: string }
+    }
+    message?: string
+  }> {
+    return apiClient.get(`${API_V1_PREFIX}/memory/cards/${cardId}/diff`)
+  }
+
+  /**
+   * 获取用户在指定节点下学习的所有卡片
+   */
+  static async getUserCardsByNode(nodeId: number): Promise<{
+    code: number
+    data: MemoryCardView[]
+    message?: string
+  }> {
+    return apiClient.get(`${API_V1_PREFIX}/memory/cards/node/${nodeId}`)
+  }
+
+  /**
+   * 接受卡片组更新
+   */
+  static async acceptDeckChanges(deckId: number, cardIds: number[]): Promise<{
+    code: number
+    data: any
+    message?: string
+  }> {
+    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/accept-changes`, cardIds)
   }
 }

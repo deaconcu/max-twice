@@ -174,6 +174,20 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     }
 
     /**
+     * 原子操作：增加卡片数量、设置状态并增加版本号
+     */
+    @CacheEvict(value = "memory_card_decks", key = "#id")
+    public boolean incrementCardCountAndSetStateAndVersion(long id, byte state) {
+        try {
+            int result = memoryCardDeckMapper.incrementCardCountAndSetStateAndVersion(id, state);
+            return result > 0;
+        } catch (Exception e) {
+            log.error("Error incrementing card count, setting state and incrementing version: {}", id, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
      * 原子操作：减少卡片数量（保证不会小于0）
      */
     @CacheEvict(value = "memory_card_decks", key = "#id")
@@ -183,6 +197,34 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
             return result > 0;
         } catch (Exception e) {
             log.error("Error decrementing card count: {}", id, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 原子操作：减少卡片数量并增加版本号
+     */
+    @CacheEvict(value = "memory_card_decks", key = "#id")
+    public boolean decrementCardCountAndIncrementVersion(long id) {
+        try {
+            int result = memoryCardDeckMapper.decrementCardCountAndIncrementVersion(id);
+            return result > 0;
+        } catch (Exception e) {
+            log.error("Error decrementing card count and incrementing version: {}", id, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 原子操作：更新状态并增加版本号
+     */
+    @CacheEvict(value = "memory_card_decks", key = "#id")
+    public boolean updateStateAndIncrementVersion(long id, byte state) {
+        try {
+            int result = memoryCardDeckMapper.updateStateAndIncrementVersion(id, state);
+            return result > 0;
+        } catch (Exception e) {
+            log.error("Error updating state and incrementing version: {}", id, e);
             throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }
@@ -255,6 +297,34 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
      */
     public List<MemoryCardDeckDO> getListByPostAndCreatorKeyset(long postId, long creatorId, double lastScore, long lastId, int state, int limit) {
         return memoryCardDeckMapper.getListByPostAndCreatorKeyset(postId, creatorId, lastScore, lastId, state, limit);
+    }
+
+    /**
+     * 根据帖子和创建者获取卡片组列表 - 所有状态
+     */
+    public List<MemoryCardDeckDO> getListByPostAndCreatorAllStates(long postId, long creatorId, int limit) {
+        return memoryCardDeckMapper.getListByPostAndCreatorAllStates(postId, creatorId, limit);
+    }
+
+    /**
+     * 根据帖子和创建者获取卡片组列表 - Keyset分页，所有状态
+     */
+    public List<MemoryCardDeckDO> getListByPostAndCreatorKeysetAllStates(long postId, long creatorId, double lastScore, long lastId, int limit) {
+        return memoryCardDeckMapper.getListByPostAndCreatorKeysetAllStates(postId, creatorId, lastScore, lastId, limit);
+    }
+
+    /**
+     * 根据节点ID获取卡片组列表
+     */
+    public List<MemoryCardDeckDO> getListByNode(long nodeId, int state, int limit) {
+        return memoryCardDeckMapper.getListByNode(nodeId, state, limit);
+    }
+
+    /**
+     * 根据节点ID获取卡片组列表 - Keyset分页
+     */
+    public List<MemoryCardDeckDO> getListByNodeKeyset(long nodeId, double lastScore, long lastId, int state, int limit) {
+        return memoryCardDeckMapper.getListByNodeKeyset(nodeId, lastScore, lastId, state, limit);
     }
 
 }

@@ -11,9 +11,8 @@ import type { PageSortQuery, PageQuery, LimitQuery } from './common'
 export const DeckState = {
   PENDING: 0,    // 审核中
   NORMAL: 1,     // 正常
-  LOCKED: 2,     // 锁定，锁定后不可编辑，用来比如内容有争议，等待管理员处理
-  PRIVATE: 3,    // 私有
-  DELETED: 4     // 已删除
+  BLOCKED: 2,    // 屏蔽
+  PRIVATE: 3     // 私有
 } as const
 
 export type DeckState = typeof DeckState[keyof typeof DeckState]
@@ -58,6 +57,7 @@ export type FrequencySetting = typeof FrequencySetting[keyof typeof FrequencySet
 export interface MemoryCardDeck {
   id: number
   sourcePostId?: number              // 卡片组的来源帖子 (可选)，比如在卡片组list中，可以跳转到对应的post
+  nodeId?: number                    // 卡片组所属的节点ID (可选)
   creator?: User                     // 创建者 (可选)
   title: string                      // 卡片组标题，一般叫xxx的记忆卡片组
   description?: string               // 卡片组描述 (可选)
@@ -90,6 +90,10 @@ export interface MemoryCardView {
 
   // --- 用户相关的学习状态 (在复习场景下必须) ---
   srsState?: UserCardSRSState;
+  
+  // --- 版本更新检测 ---
+  hasDeckUpdate?: boolean;    // 所在deck是否有更新
+  hasCardUpdate?: boolean;    // 卡片内容本身是否有更新
 }
 
 // 记忆卡片主表 delete
@@ -299,6 +303,19 @@ export interface CardDiff {
     back: string
   }
   newVersion?: {
+    front: string
+    back: string
+  }
+}
+
+// 单个卡片的内容差异信息
+export interface CardContentDiff {
+  cardId: number
+  oldVersion: {
+    front: string
+    back: string
+  }
+  newVersion: {
     front: string
     back: string
   }

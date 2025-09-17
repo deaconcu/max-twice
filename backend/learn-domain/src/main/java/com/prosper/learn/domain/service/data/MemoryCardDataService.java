@@ -174,6 +174,16 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
     }
 
     /**
+     * 批量根据卡片组ID列表获取卡片（只获取正常状态的卡片）
+     */
+    public List<MemoryCardDO> getByDeckIds(List<Long> deckIds) {
+        if (deckIds == null || deckIds.isEmpty()) {
+            return List.of();
+        }
+        return memoryCardMapper.getByDeckIds(deckIds, 0); // 0 = 正常状态
+    }
+
+    /**
      * 根据卡片组ID获取卡片ID列表（只获取正常状态的卡片）
      */
     public List<Long> getCardIdsByDeckId(Long deckId) {

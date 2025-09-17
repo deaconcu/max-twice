@@ -12,6 +12,8 @@ public class MemoryCardDeckDTO {
 
     private Long sourcePostId;
 
+    private Long nodeId;  // 添加nodeId字段，方便前端直接使用
+
     private UserDTO creator;
 
     private String title;

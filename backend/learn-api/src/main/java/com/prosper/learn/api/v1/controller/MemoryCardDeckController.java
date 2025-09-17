@@ -50,12 +50,59 @@ public class MemoryCardDeckController {
     }
 
     /**
+     * 获取卡片组审核列表 - 包含卡片详情
+     */
+    @GetMapping("/decks/review")
+    public ApiResponse<KeysetPageResponse<DeckDetailDTO>> getDecksForReview(
+            @RequestParam(required = false) Long postId,
+            @RequestParam(required = false) Long creatorId,
+            @RequestParam(required = false) Integer state,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortOrder,
+            @RequestParam(required = false) Double lastScore,
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(defaultValue = "10") Integer limit) {
+        
+        // 限制每页最大数量
+        if (limit > 50) {
+            limit = 50;
+        }
+        
+        long userId = StpUtil.getLoginIdAsLong();
+        KeysetPageResponse<DeckDetailDTO> result = deckService.getDecksForReview(
+            postId, creatorId, state, sortBy, sortOrder, lastScore, lastId, limit, userId);
+        
+        return ApiResponse.success(result);
+    }
+
+    /**
      * 获取卡片组详情
      */
     @GetMapping("/decks/{deckId}")
     public ApiResponse<DeckDetailDTO> getDeckDetail(@PathVariable Long deckId) {
         long userId = StpUtil.getLoginIdAsLong();
         DeckDetailDTO result = deckService.getDeckDetail(deckId, userId);
+        return ApiResponse.success(result);
+    }
+
+    /**
+     * 获取指定节点下的卡片组列表
+     */
+    @GetMapping("/decks/node/{nodeId}")
+    public ApiResponse<KeysetPageResponse<MemoryCardDeckDTO>> getDecksByNode(
+            @PathVariable Long nodeId,
+            @RequestParam(required = false) Double lastScore,
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(defaultValue = "20") Integer limit) {
+
+        // 限制每页最大数量
+        if (limit > 50) {
+            limit = 50;
+        }
+
+        KeysetPageResponse<MemoryCardDeckDTO> result = deckService.getDecksByNode(
+            nodeId, lastScore, lastId, limit);
+
         return ApiResponse.success(result);
     }
 
@@ -82,6 +129,70 @@ public class MemoryCardDeckController {
         
         MemoryCardDeckDTO result = deckService.updateDeck(userId, request);
         return ApiResponse.success(result);
+    }
+
+    /**
+     * 审核通过卡片组
+     */
+    @PostMapping("/decks/{deckId}/approve")
+    public ApiResponse<Void> approveDeck(@PathVariable Long deckId) {
+        long userId = StpUtil.getLoginIdAsLong();
+        deckService.approveDeck(deckId, userId);
+        return ApiResponse.success();
+    }
+
+    /**
+     * 审核拒绝卡片组 (设置为屏蔽状态)
+     */
+    @PostMapping("/decks/{deckId}/reject")
+    public ApiResponse<Void> rejectDeck(@PathVariable Long deckId) {
+        long userId = StpUtil.getLoginIdAsLong();
+        deckService.rejectDeck(deckId, userId);
+        return ApiResponse.success();
+    }
+
+    /**
+     * 屏蔽卡片组
+     */
+    @PostMapping("/decks/{deckId}/block")
+    public ApiResponse<Void> blockDeck(@PathVariable Long deckId) {
+        long userId = StpUtil.getLoginIdAsLong();
+        deckService.blockDeck(deckId, userId);
+        return ApiResponse.success();
+    }
+
+    /**
+     * 恢复卡片组
+     */
+    @PostMapping("/decks/{deckId}/restore")
+    public ApiResponse<Void> restoreDeck(@PathVariable Long deckId) {
+        long userId = StpUtil.getLoginIdAsLong();
+        deckService.restoreDeck(deckId, userId);
+        return ApiResponse.success();
+    }
+
+    /**
+     * 获取卡片组更新差异
+     */
+    @GetMapping("/decks/{deckId}/diff")
+    public ApiResponse<Object> getDeckDiff(
+            @PathVariable Long deckId,
+            @RequestParam(required = false) Integer userCurrentVersion) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        Object diffResult = deckService.getDeckDiff(deckId, userCurrentVersion, userId);
+        return ApiResponse.success(diffResult);
+    }
+
+    /**
+     * 接受卡片组更新
+     */
+    @PostMapping("/decks/{deckId}/accept-changes")
+    public ApiResponse<Void> acceptDeckChanges(
+            @PathVariable Long deckId,
+            @RequestBody java.util.List<Long> cardIds) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        deckService.acceptDeckChanges(deckId, cardIds, userId);
+        return ApiResponse.success();
     }
 
 }

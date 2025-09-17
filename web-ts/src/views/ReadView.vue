@@ -342,8 +342,13 @@ const handleCreateDeck = (): void => {
 // 处理卡片组创建完成
 const handleDeckCreated = (deck: any): void => {
   showSnackbar('卡片组创建成功！', 'success')
-  // 刷新侧边栏数据
+  // 刷新侧边栏数据并切换到"只看我的"标签
   if (memoryCardSidebarRef.value && memoryCardSidebarRef.value.loadDecks) {
+    // 切换到"只看我的"标签
+    if (memoryCardSidebarRef.value.switchToMyDecks) {
+      memoryCardSidebarRef.value.switchToMyDecks()
+    }
+    // 刷新数据
     memoryCardSidebarRef.value.loadDecks(true)
   }
 }
@@ -397,6 +402,9 @@ const handleTabSwitch = (tab: string, posting?: any): void => {
   currentTab.value = tab
   if (posting && typeof posting === 'object') {
     currentPosting.value = posting
+  } else if (tab === 'list') {
+    // 切换回list标签时，清空currentPosting
+    currentPosting.value = null
   }
 }
 </script>

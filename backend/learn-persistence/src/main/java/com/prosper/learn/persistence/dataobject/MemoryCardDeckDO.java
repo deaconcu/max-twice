@@ -11,6 +11,8 @@ public class MemoryCardDeckDO {
 
     private Long sourcePostId;
 
+    private Long nodeId;  // 卡片组所属的节点ID，冗余字段便于查询
+
     private Long creatorId;
 
     private String title;

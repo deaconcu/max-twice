@@ -11,13 +11,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.*;
-
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.prosper.learn.common.Enums.*;
 
 /**
@@ -32,7 +30,7 @@ public class MemoryBankService {
     private final MemoryCardDataService cardDataService;
     private final UserCourseSrsSettingDataService courseSrsSettingDataService;
     private final UserCardInCourseDataService userCardInCourseDataService;
-    private final UserCardSrsStateDataService userCardSrsStateDataService;
+    private final UserCardSrsDataService userCardSrsDataService;
     private final CourseDataService courseDataService;
     private final UserDataService userDataService;
     private final PostDataService postDataService;
@@ -157,8 +155,27 @@ public class MemoryBankService {
             // 批量插入用户卡片课程关系（自动跳过已存在的）
             userCardInCourseDataService.batchInsertIgnore(userId, request.getCourseId(), cardIds);
             
+            // 构建SRS状态对象
+            List<UserCardSrsDO> srsStates = new ArrayList<>();
+            
+            // 获取nodeId：deck.sourcePostId → post.nodeId
+            Long nodeId = null;
+            if (deck.getSourcePostId() != null) {
+                PostDO post = postDataService.getById(deck.getSourcePostId());
+                if (post != null) {
+                    nodeId = post.getNodeId();
+                }
+            }
+            checkNotNull(nodeId, "无法获取卡片组关联的节点ID");
+
+            for (MemoryCardDO card : cards) {
+                UserCardSrsDO state = userCardSrsDataService.createNewSrsState(
+                    userId, card.getId(), nodeId, deck.getVersion(), card.getCurrentVersionId());
+                srsStates.add(state);
+            }
+            
             // 批量创建SRS状态（自动跳过已存在的）
-            userCardSrsStateDataService.batchInsertIgnoreSrsStates(userId, cardIds);
+            userCardSrsDataService.batchInsertIgnoreSrsStates(srsStates);
             
         } else {
             log.info("No cards found in deck: {} to add to memory bank for user: {} in course: {}", 
@@ -241,7 +258,7 @@ public class MemoryBankService {
             
             // 批量删除孤立卡片的SRS状态
             if (!orphanedCardIds.isEmpty()) {
-                userCardSrsStateDataService.batchDeleteByUserAndCards(userId, orphanedCardIds);
+                userCardSrsDataService.batchDeleteByUserAndCards(userId, orphanedCardIds);
             }
             
             log.info("Removed {} cards from deck: {} from course: {} for user: {}, deleted {} orphaned SRS states", 

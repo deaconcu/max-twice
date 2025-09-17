@@ -6,13 +6,15 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-public class UserCardSrsStateDO {
+public class UserCardSrsDO {
 
     private Long id;
 
     private Long userId;
 
     private Long cardId;
+
+    private Long nodeId;  // 新增：记忆卡片所属的节点ID
 
     private Integer deckVersion;
 

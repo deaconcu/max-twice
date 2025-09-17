@@ -18,6 +18,9 @@ public class MemoryCardViewDTO {
 
     private UserDTO creator;
 
-    private UserCardSrsStateDTO srsState;
+    private UserCardSrsDTO srsState;
+    
+    private Boolean hasDeckUpdate;  // 所在deck是否有更新
+    private Boolean hasCardUpdate;  // 卡片内容本身是否有更新
 
 }

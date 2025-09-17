@@ -27,6 +27,12 @@ public interface MemoryCardMapper {
             "ORDER BY created_at ASC")
     List<MemoryCardDO> getListByDeck(long deckId, int state);
 
+    @Select({"<script>SELECT * FROM memory_card WHERE deck_id IN " +
+            "<foreach item='deckId' collection='deckIds' open='(' separator=', ' close=')'>#{deckId}</foreach>" +
+            " AND state = #{state} ORDER BY deck_id, created_at ASC" +
+            "</script>"})
+    List<MemoryCardDO> getByDeckIds(@Param("deckIds") List<Long> deckIds, @Param("state") int state);
+
     @Select("SELECT * FROM memory_card WHERE creator_id = #{creatorId} AND state = #{state} " +
             "ORDER BY created_at DESC LIMIT #{limit}")
     List<MemoryCardDO> getListByCreator(long creatorId, int state, int limit);

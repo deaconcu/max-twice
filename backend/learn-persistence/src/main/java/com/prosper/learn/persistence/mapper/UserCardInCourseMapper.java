@@ -94,7 +94,7 @@ public interface UserCardInCourseMapper {
           FROM
               user_card_in_course ucc
           LEFT JOIN
-              user_card_srs_state srs ON ucc.user_id = srs.user_id AND ucc.card_id = srs.card_id
+              user_card_srs srs ON ucc.user_id = srs.user_id AND ucc.card_id = srs.card_id
           WHERE
               ucc.user_id = #{userId}
               AND ucc.course_id IN
@@ -119,7 +119,7 @@ public interface UserCardInCourseMapper {
           FROM
               user_card_in_course ucc
           LEFT JOIN
-              user_card_srs_state srs ON ucc.user_id = srs.user_id AND ucc.card_id = srs.card_id
+              user_card_srs srs ON ucc.user_id = srs.user_id AND ucc.card_id = srs.card_id
           WHERE
               ucc.user_id = #{userId}
               AND ucc.course_id = #{courseId}

@@ -16,6 +16,7 @@
   import CommentArea from './CommentArea.vue'
   import SinglePost from './SinglePost.vue'
   import TiptapInput from './TiptapInput.vue'
+  import MemoryCardList from '@/components/memory/MemoryCardList.vue'
 
   // 导入Post浏览量跟踪服务
   import postViewTracking from '@/services/postViewTracking'
@@ -183,6 +184,8 @@
     () => route.fullPath,
     () => {
       tab.value = 'list'
+      // 通知父组件tab已切换回list
+      emit('switch-tab', 'list')
     }
   )
 
@@ -428,7 +431,7 @@
 
 <template>
   <template
-    v-if="(tab == 'list' || tab == 'addArticle' || tab == 'comment') && data && data.tocNodeInfos"
+    v-if="(tab == 'list' || tab == 'addArticle' || tab == 'comment' || tab == 'memoryCards') && data && data.tocNodeInfos"
   >
     <v-row class="ma-0 text-grey text-body-2 pb-2">
       <div v-if="!('nodeId' in route.query)" class="d-flex align-center">
@@ -477,18 +480,22 @@
     <p class="text-body-1 text-grey-darken-2 mb-0">{{ data.node.description }}</p>
     <v-row class="mt-8 mb-0 mx-0 justify-space-between">
       <div>
-        <v-tabs density="compact" class="">
-          <v-tab class="px-3" @click="switchTab('list', '')">
+        <v-tabs v-model="tab" density="compact" color="primary" class="">
+          <v-tab value="list" class="px-3" @click="switchTab('list', '')">
             <v-icon icon="mdi-list-box-outline" size="16" class="mr-2"></v-icon>
             <span class="font-weight-medium text-grey-darken-3">{{
               t('postingList.articleList')
             }}</span>
           </v-tab>
-          <v-tab class="px-3" @click="switchTab('comment', '')">
+          <v-tab value="comment" class="px-3" @click="switchTab('comment', '')">
             <v-icon icon="mdi-comment-outline" size="16" class="mr-2"></v-icon>
             <span class="font-weight-medium text-grey-darken-3"
               >{{ data.node.commentCount }} {{ t('postingList.comments') }}</span
             >
+          </v-tab>
+          <v-tab value="memoryCards" class="px-3" @click="switchTab('memoryCards', '')">
+            <v-icon icon="mdi-cards-outline" size="16" class="mr-2"></v-icon>
+            <span class="font-weight-medium text-grey-darken-3">记忆卡片</span>
           </v-tab>
         </v-tabs>
       </div>
@@ -652,11 +659,18 @@
 
   <template v-else-if="tab === 'comment'">
     <v-row class="pa-0 ma-0 my-8">
-      <CommentArea 
-        :object="{ id: currNodeId, commentCount: data.node.commentCount }" 
+      <CommentArea
+        :object="{ id: currNodeId, commentCount: data.node.commentCount }"
         :type=ObjectType.NODE
       ></CommentArea>
     </v-row>
+  </template>
+
+  <template v-else-if="tab === 'memoryCards'">
+    <MemoryCardList
+      :node-id="currNodeId"
+      class="my-8"
+    />
   </template>
 
   <!-- detail -->

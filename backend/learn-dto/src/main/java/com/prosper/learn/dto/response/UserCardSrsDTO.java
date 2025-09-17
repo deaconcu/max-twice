@@ -6,7 +6,7 @@ import lombok.Data;
  * 用户卡片SRS状态响应DTO
  */
 @Data
-public class UserCardSrsStateDTO {
+public class UserCardSrsDTO {
 
     private Long id;
 

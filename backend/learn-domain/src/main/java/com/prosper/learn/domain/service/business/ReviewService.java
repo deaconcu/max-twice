@@ -12,10 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.swing.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -29,9 +27,9 @@ import static com.prosper.learn.common.Enums.*;
 @RequiredArgsConstructor
 public class ReviewService {
 
-    private final UserCardSrsStateDataService srsStateDataService;
+    private final UserCardSrsDataService srsStateDataService;
     private final MemoryCardDataService cardDataService;
-    private final UserCardSrsStateConverter srsStateConverter;
+    private final UserCardSrsConverter srsStateConverter;
     private final MemoryCardService memoryCardService;
     private final UserDataService userDataService;
 
@@ -71,7 +69,7 @@ public class ReviewService {
         if (limit == null) limit = 50;
         if (limit > 500) limit = 500;
 
-        List<UserCardSrsStateDO> userCardList;
+        List<UserCardSrsDO> userCardList;
         
         if (courseId != null) {
             // 按课程筛选
@@ -87,7 +85,7 @@ public class ReviewService {
 
         // 获取卡片信息
         Set<Long> cardIds = userCardList.stream()
-            .map(UserCardSrsStateDO::getCardId)
+            .map(UserCardSrsDO::getCardId)
             .collect(Collectors.toSet());
 
         List<MemoryCardDO> cardList = cardDataService.getByIds(cardIds);
@@ -107,7 +105,7 @@ public class ReviewService {
         }
 
         // 获取SRS状态
-        UserCardSrsStateDO srsState = srsStateDataService.getByUserAndCard(userId, request.getCardId());
+        UserCardSrsDO srsState = srsStateDataService.getByUserAndCard(userId, request.getCardId());
         if (srsState == null) {
             throw ErrorCode.SRS_STATE_NOT_FOUND.exception();
         }
@@ -223,7 +221,7 @@ public class ReviewService {
      * @param quality  复习质量 (0-5: 0=完全忘记, 1=错误重复, 2=错误简单, 3=正确困难, 4=正确, 5=完美)
      * @return SM2计算结果
      */
-    private SM2Result calculateSM2(UserCardSrsStateDO srsState, Integer quality) {
+    private SM2Result calculateSM2(UserCardSrsDO srsState, Integer quality) {
         BigDecimal currentEaseFactor = srsState.getEaseFactor();
         int currentRepetitions = srsState.getRepetitions();
         int currentIntervalDays = srsState.getIntervalDays();

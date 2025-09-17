@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { MemoryCardView, UserCardSRSState, ReviewSession, ReviewCardResult, CourseMemoryBank, DeckUpdateDiff, MemoryCardDeck } from '@/types/memoryCard'
+import type { MemoryCardView, UserCardSRSState, ReviewSession, ReviewCardResult, CourseMemoryBank, DeckUpdateDiff, MemoryCardDeck, CardContentDiff } from '@/types/memoryCard'
 import { ReviewResult, FrequencySetting, CourseStudyStatus, DeckState } from '@/types/memoryCard'
 import { MemoryService } from '@/services/memoryService'
 import DeckUpdateDiffDialog from '@/components/memory/DeckUpdateDiffDialog.vue'
+import DeckDetailDialog from '@/components/memory/DeckDetailDialog.vue'
+import CardContentDiffDialog from '@/components/memory/CardContentDiffDialog.vue'
 
 const { t } = useI18n()
 
@@ -41,6 +43,14 @@ const stats = ref({
 const showUpdateDiffDialog = ref(false)
 const currentDeckDiff = ref<DeckUpdateDiff | null>(null)
 const deckUpdateMap = ref<Map<number, boolean>>(new Map()) // 卡片组更新状态
+
+// 卡片内容差异相关状态
+const showCardDiffDialog = ref(false)
+const currentCardDiff = ref<CardContentDiff | null>(null)
+
+// 卡片组详情对话框相关状态
+const showDeckDetailDialog = ref(false)
+const selectedDeck = ref<MemoryCardDeck | null>(null)
 
 // 计算所有课程的到期卡片总数
 const totalDueCards = computed(() => {
@@ -158,6 +168,9 @@ const loadListCards = async (reset = false) => {
       
       // 判断是否还有更多数据
       listHasMore.value = response.data.length === listPageSize.value
+      
+      // 检测卡片组更新
+      await checkDeckUpdates()
     }
   } catch (error) {
     console.error('Failed to load list cards:', error)
@@ -169,34 +182,89 @@ const loadListCards = async (reset = false) => {
 // 检测卡片组更新
 const checkDeckUpdates = async () => {
   try {
-    // 获取所有唯一的卡片组ID
-    const deckIds = [...new Set(reviewCards.value.map(card => card.deck?.id).filter(Boolean))]
-    
-    // 检查每个卡片组是否有更新
-    for (const deckId of deckIds) {
-      // 模拟：卡片组ID为1的有更新
-      if (deckId === 1) {
-        deckUpdateMap.value.set(deckId, true)
+    // 直接从当前卡片中检测是否有更新
+    const cardsWithDeckUpdates = currentCards.value.filter(card => card.hasDeckUpdate === true)
+
+    // 按deck分组统计有更新的卡片
+    const deckUpdateStatus = new Map<number, boolean>()
+    cardsWithDeckUpdates.forEach(card => {
+      if (card.deck?.id) {
+        deckUpdateStatus.set(card.deck.id, true)
       }
+    })
+
+    deckUpdateMap.value = deckUpdateStatus
+
+    // 如果有更新，可以显示全局提示
+    if (cardsWithDeckUpdates.length > 0) {
+      console.log(`发现 ${cardsWithDeckUpdates.length} 张卡片的deck有更新`)
+    }
+
+    // 检测卡片内容更新
+    const cardsWithContentUpdates = currentCards.value.filter(card => card.hasCardUpdate === true)
+    if (cardsWithContentUpdates.length > 0) {
+      console.log(`发现 ${cardsWithContentUpdates.length} 张卡片内容有更新`)
     }
   } catch (error) {
     console.error('Failed to check deck updates:', error)
   }
 }
 
-// 显示卡片组更新差异
-const showDeckUpdateDiff = async (deckId: number) => {
+// 显示卡片组详情
+const viewDeckDetails = (deckId: number | undefined) => {
+  if (!deckId) return
+  
+  // 从当前卡片中找到对应的deck信息
+  const card = currentCards.value.find(c => c.deck?.id === deckId)
+  if (card?.deck) {
+    selectedDeck.value = card.deck
+    showDeckDetailDialog.value = true
+  }
+}
+
+// 处理从DeckDetailDialog触发的显示diff对话框事件
+const handleShowDiffDialog = (deckDiff: DeckUpdateDiff) => {
+  currentDeckDiff.value = deckDiff
+  showUpdateDiffDialog.value = true
+}
+
+// 显示卡片内容差异
+const showCardContentDiff = async (cardId: number) => {
   try {
-    // TODO: 等待后端实现获取卡片组更新差异的API
-    console.log('Show deck update diff for deck:', deckId)
-    // 临时禁用此功能，等待后端API实现
-    // const response = await MemoryService.getDeckUpdateDiff(deckId)
-    // if (response.code === 200) {
-    //   currentDeckDiff.value = response.data
-    //   showUpdateDiffDialog.value = true
-    // }
+    const response = await MemoryService.getCardDiff(cardId)
+    if (response.code === 200) {
+      currentCardDiff.value = response.data
+      showCardDiffDialog.value = true
+    }
   } catch (error) {
-    console.error('Failed to get deck diff:', error)
+    console.error('Failed to get card diff:', error)
+  }
+}
+
+// 应用卡片内容更新
+const applyCardUpdate = async (cardId: number) => {
+  try {
+    // 使用现有的接受deck更新API，只传入单个卡片ID
+    const response = await MemoryService.acceptDeckChanges(
+      currentCardDiff.value?.cardId || cardId,
+      [cardId]
+    )
+
+    if (response.code === 200) {
+      // 重新加载数据
+      await loadReviewQueue()
+      if (viewMode.value === 'list') {
+        await loadListCards(true)
+      }
+
+      // 关闭对话框
+      showCardDiffDialog.value = false
+      currentCardDiff.value = null
+
+      console.log('Card content update accepted successfully')
+    }
+  } catch (error) {
+    console.error('Failed to accept card update:', error)
   }
 }
 
@@ -205,27 +273,29 @@ const applyDeckUpdate = async (acceptedChanges: { updateMeta: boolean; cardIds: 
   if (!currentDeckDiff.value) return
   
   try {
-    // TODO: 等待后端实现应用卡片组更新的API
-    console.log('Apply deck update for:', currentDeckDiff.value.deckId, acceptedChanges)
-    // 临时禁用此功能，等待后端API实现
-    // const response = await MemoryService.updateDeck({
-    //   deckId: currentDeckDiff.value.deckId,
-    //   cardIds: acceptedChanges.cardIds
-    // })
+    const response = await MemoryService.acceptDeckChanges(
+      currentDeckDiff.value.deckId, 
+      acceptedChanges.cardIds
+    )
     
-    // if (response.code === 200) {
-    //   // 更新成功，移除更新标记
-    //   deckUpdateMap.value.set(currentDeckDiff.value.deckId, false)
-    //   
-    //   // 重新加载数据
-    //   await loadReviewQueue()
-    //   
-    //   // 关闭对话框
-    //   showUpdateDiffDialog.value = false
-    //   currentDeckDiff.value = null
-    // }
+    if (response.code === 200) {
+      // 更新成功，移除更新标记
+      deckUpdateMap.value.set(currentDeckDiff.value.deckId, false)
+      
+      // 重新加载数据
+      await loadReviewQueue()
+      if (viewMode.value === 'list') {
+        await loadListCards(true)
+      }
+      
+      // 关闭对话框
+      showUpdateDiffDialog.value = false
+      currentDeckDiff.value = null
+      
+      console.log('Deck changes accepted successfully')
+    }
   } catch (error) {
-    console.error('Failed to update deck:', error)
+    console.error('Failed to accept deck changes:', error)
   }
 }
 
@@ -1022,7 +1092,7 @@ const isCardDue = (card: MemoryCardView): boolean => {
 
                     <!-- 状态和操作 -->
                     <div class="d-flex flex-column align-end" style="gap: 8px; min-width: 180px;">
-                      <!-- 第一行：状态标签 -->
+                      <!-- 第一行：状态标签和deck详情按钮 -->
                       <div class="d-flex align-center" style="gap: 8px;">
                         <v-chip
                           size="small"
@@ -1031,18 +1101,29 @@ const isCardDue = (card: MemoryCardView): boolean => {
                         >
                           {{ getCardStatusText(card) }}
                         </v-chip>
-                        
-                        <v-chip
-                          v-if="hasDeckUpdate(card.deck?.id)"
+
+                        <!-- deck详情按钮 -->
+                        <v-btn
+                          v-if="card.deck?.id"
+                          icon
                           size="small"
-                          color="warning"
-                          variant="flat"
-                          class="cursor-pointer"
-                          @click.stop="showDeckUpdateDiff(card.deck?.id)"
+                          variant="text"
+                          color="grey-darken-2"
+                          class="deck-detail-btn"
+                          @click.stop="viewDeckDetails(card.deck?.id)"
                         >
-                          <v-icon icon="mdi-update" size="14" class="mr-1"></v-icon>
-                          有更新
-                        </v-chip>
+                          <v-tooltip activator="parent" location="top">
+                            {{ card.hasDeckUpdate ? '所在记忆卡片组有更新，点击查看' : '查看卡片组详情' }}
+                          </v-tooltip>
+                          <div class="position-relative">
+                            <v-icon icon="mdi-folder-open" size="18"></v-icon>
+                            <!-- 更新小红点 -->
+                            <div
+                              v-if="card.hasDeckUpdate"
+                              class="update-dot"
+                            ></div>
+                          </div>
+                        </v-btn>
                       </div>
 
                       <!-- 第二行：更多操作菜单 -->
@@ -1148,6 +1229,20 @@ const isCardDue = (card: MemoryCardView): boolean => {
       v-model="showUpdateDiffDialog"
       :deck-diff="currentDeckDiff"
       @accept-update="applyDeckUpdate"
+    />
+
+    <!-- 卡片组详情对话框 -->
+    <DeckDetailDialog
+      v-model="showDeckDetailDialog"
+      :deck="selectedDeck"
+      @show-diff-dialog="handleShowDiffDialog"
+    />
+
+    <!-- 卡片内容差异对话框 -->
+    <CardContentDiffDialog
+      v-model="showCardDiffDialog"
+      :card-diff="currentCardDiff"
+      @accept-update="applyCardUpdate"
     />
   </v-container>
 </template>
@@ -1256,5 +1351,27 @@ h6 {
 /* 鼠标指针样式 */
 .cursor-pointer {
   cursor: pointer;
+}
+
+/* deck详情按钮样式 */
+.deck-detail-btn {
+  transition: all 0.2s ease;
+}
+
+.deck-detail-btn:hover {
+  background: rgba(var(--v-theme-primary), 0.1) !important;
+}
+
+/* 更新小红点 */
+.update-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: #f44336;
+  border-radius: 50%;
+  border: 1px solid white;
+  z-index: 1;
 }
 </style>

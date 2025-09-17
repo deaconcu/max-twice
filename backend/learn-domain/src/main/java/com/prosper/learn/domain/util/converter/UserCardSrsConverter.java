@@ -1,7 +1,7 @@
 package com.prosper.learn.domain.util.converter;
 
-import com.prosper.learn.dto.response.UserCardSrsStateDTO;
-import com.prosper.learn.persistence.dataobject.UserCardSrsStateDO;
+import com.prosper.learn.dto.response.UserCardSrsDTO;
+import com.prosper.learn.persistence.dataobject.UserCardSrsDO;
 import org.mapstruct.*;
 
 import java.util.List;
@@ -10,7 +10,7 @@ import java.util.List;
  * 用户卡片SRS状态转换器
  */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-public interface UserCardSrsStateConverter {
+public interface UserCardSrsConverter {
 
     @Named("toDTO")
     @BeanMapping(ignoreByDefault = true)
@@ -20,9 +20,9 @@ public interface UserCardSrsStateConverter {
     @Mapping(target = "intervalDays")
     @Mapping(target = "repetitions")
     @Mapping(target = "lapseCount")
-    UserCardSrsStateDTO toDTO(UserCardSrsStateDO srsStateDO);
+    UserCardSrsDTO toDTO(UserCardSrsDO srsStateDO);
 
     @IterableMapping(qualifiedByName = "toDTO")
-    List<UserCardSrsStateDTO> toDTO(List<UserCardSrsStateDO> srsStateDOList);
+    List<UserCardSrsDTO> toDTO(List<UserCardSrsDO> srsStateDOList);
 
 }

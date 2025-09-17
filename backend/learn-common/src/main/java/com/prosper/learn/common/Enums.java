@@ -535,14 +535,13 @@ public class Enums {
 
     /**
      * 记忆卡片组状态枚举
-     * PENDING=0, NORMAL=1, LOCKED=2, PRIVATE=3, DELETED=4
+     * PENDING=0, NORMAL=1, BLOCKED=2, PRIVATE=3
      */
     public enum MemoryCardDeckState implements ValueEnum<Byte> {
         PENDING((byte) 0),      // 审核中
         NORMAL((byte) 1),       // 正常
-        LOCKED((byte) 2),       // 锁定
-        PRIVATE((byte) 3),      // 私有
-        DELETED((byte) 4);      // 已删除
+        BLOCKED((byte) 2),      // 屏蔽
+        PRIVATE((byte) 3);      // 私有
 
         private final byte value;
 
