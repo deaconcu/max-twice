@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
+import TurndownService from 'turndown'
+import { gfm } from 'turndown-plugin-gfm'
 
 // 文本选择 AI 组件：
 // - 用户选中文本后显示 AI 按钮
@@ -27,6 +29,31 @@ const dragging = ref<'top' | 'bottom' | null>(null)
 const initialStartEl = ref<HTMLElement | null>(null)
 
 // 向父组件发出的查询事件载荷
+// 复制到剪贴板（Markdown）；使用 turndown 将 HTML 转为 Markdown
+// 转换前会规范化表格 HTML，避免换行/样式导致的 Markdown 解析混乱
+const onCopy = async () => {
+  const html = collectRegionHtml()
+  let md = contextText.value
+  if (html) {
+    try {
+      const clean = normalizeHtml(html)
+      const service = new TurndownService({
+        headingStyle: 'atx',      // 标题样式: # Hello
+        codeBlockStyle: 'fenced', // 代码块样式: ```java ... ```
+        bulletListMarker: '-',    // 无序列表标记: - item
+        hr: '---',                // 水平线样式: ---
+      })
+      service.use(gfm)
+      md = service.turndown(clean)
+    } catch (_) {}
+  }
+  const prompt = `请解释上面引用中的内容：${question.value || selectedText.value}`
+  const content = `${md}\n\n${prompt}`
+  try {
+    await navigator.clipboard.writeText(content)
+  } catch (_) {}
+}
+
 interface QueryPayload {
   question: string
   context: string
@@ -62,16 +89,31 @@ const findSelectedBlock = () => {
   const sel = window.getSelection()
   if (!sel || sel.rangeCount === 0) return null
   const range = sel.getRangeAt(0)
-  const node = range.commonAncestorContainer
-  const base = node.nodeType === 1 ? (node as Element) : (node.parentElement as Element | null)
-  const el = base && 'closest' in base ? (base as HTMLElement).closest('p,li,h1,h2,h3,h4,h5,h6,blockquote,pre,div') as HTMLElement | null : null
+  const startNode = range.startContainer
+  const base = startNode.nodeType === 1
+    ? (startNode as Element)
+    : ((startNode.parentElement as Element | null))
+  const articleEl = getArticleEl()
+
+  let cur = base as HTMLElement | null
+  let candidate: HTMLElement | null = null
+  while (cur && cur !== articleEl) {
+    if (isValidBlock(cur)) candidate = cur
+    cur = cur.parentElement as HTMLElement | null
+  }
+  if (candidate) return candidate
+
+  const el = base && 'closest' in base
+    ? ((base as HTMLElement).closest('p,li,h1,h2,h3,h4,h5,h6,blockquote,pre,div') as HTMLElement | null)
+    : null
+  if (el && articleEl && el === articleEl) return null
   return el
 }
 
 const isValidBlock = (el: Element | null) => {
   if (!el) return false
   const tag = el.tagName.toLowerCase()
-  return ['p','li','h1','h2','h3','h4','h5','h6','blockquote','pre','div'].includes(tag)
+  return ['p','li','h1','h2','h3','h4','h5','h6','blockquote','pre','div','table'].includes(tag)
 }
 
 const findPrevBlock = (el: HTMLElement | null) => {
@@ -90,6 +132,35 @@ const findNextBlock = (el: HTMLElement | null) => {
 
 const getArticleEl = () => document.querySelector(ARTICLE_SELECTOR) as HTMLElement | null
 
+// 从任意节点向上寻找最近的 table 元素（若存在则优先返回整个表格）
+const nearestTable = (node: Node | null) => {
+  if (!node) return null
+  let el: HTMLElement | null = node.nodeType === 1 ? (node as HTMLElement) : (node.parentElement as HTMLElement | null)
+  while (el) {
+    if (el.tagName && el.tagName.toLowerCase() === 'table') return el
+    el = el.parentElement as HTMLElement | null
+  }
+  return null
+}
+
+// 从任意节点向上寻找最近的块级段落元素
+const blockOfNode = (node: Node | null) => {
+  if (!node) return null
+  const base = node.nodeType === 1 ? (node as Element) : (node.parentElement as Element | null)
+  const articleEl = getArticleEl()
+  let cur = base as HTMLElement | null
+  let candidate: HTMLElement | null = null
+  while (cur && cur !== articleEl) {
+    if (isValidBlock(cur)) candidate = cur
+    cur = cur.parentElement as HTMLElement | null
+  }
+  if (candidate) return candidate
+  return base && 'closest' in base
+    ? ((base as HTMLElement).closest('p,li,h1,h2,h3,h4,h5,h6,blockquote,pre,div') as HTMLElement | null)
+    : null
+}
+
+// 收集引用区域的纯文本内容
 const collectRegionText = () => {
   if (!regionStartEl.value || !regionEndEl.value) return contextText.value
   const article = getArticleEl()
@@ -102,6 +173,46 @@ const collectRegionText = () => {
     cur = cur.nextElementSibling as HTMLElement | null
   }
   return parts.join(' ').trim()
+}
+
+// 收集引用区域的 HTML（用于 turndown 转换）
+const collectRegionHtml = () => {
+  return collectRegionHtmlNormalized()
+}
+
+// 规范化 HTML 以提高 Markdown 转换质量
+const collectRegionHtmlNormalized = () => {
+  if (!regionStartEl.value || !regionEndEl.value) return ''
+  const parts: string[] = []
+  let cur: HTMLElement | null = regionStartEl.value
+  const doc = document.implementation.createHTMLDocument('norm')
+  while (cur) {
+    const clone = cur.cloneNode(true) as HTMLElement
+    clone.querySelectorAll('colgroup, col').forEach((n) => n.remove())
+    clone.querySelectorAll('[style]').forEach((el) => (el as HTMLElement).removeAttribute('style'))
+    clone.querySelectorAll('td, th').forEach((cell) => {
+      cell.querySelectorAll('br').forEach((br) => br.replaceWith(doc.createTextNode(' ')))
+      const text = (cell.textContent || '').replace(/\s+/g, ' ').trim()
+      cell.textContent = text
+    })
+    parts.push(clone.outerHTML)
+    if (cur === regionEndEl.value) break
+    cur = cur.nextElementSibling as HTMLElement | null
+  }
+  return parts.join('\n')
+}
+
+// 转换前的 HTML 规范化：移除 colgroup/col 与内联 style，提升表格 Markdown 转换质量
+const normalizeHtml = (raw: string) => {
+  try {
+    const doc = new DOMParser().parseFromString(raw, 'text/html')
+    doc.querySelectorAll('colgroup, col').forEach((n) => n.remove())
+    doc.querySelectorAll('[style]')
+      .forEach((el) => (el as HTMLElement).removeAttribute('style'))
+    return doc.body.innerHTML
+  } catch {
+    return raw
+  }
 }
 
 // 更新引用竖线与手柄位置；面板跟随引用下边界
@@ -193,11 +304,41 @@ const onClick = (e: MouseEvent) => {
   panelOpen.value = true
   question.value = selectedText.value
   articleLeft.value = computeArticleLeft()
-  selectedBlockEl.value = findSelectedBlock()
-  regionStartEl.value = selectedBlockEl.value
-  regionEndEl.value = selectedBlockEl.value
-  initialStartEl.value = selectedBlockEl.value
+  const sel = window.getSelection()
+  const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null
+
+  const startTbl = nearestTable(range?.startContainer || null)
+  const endTbl = nearestTable(range?.endContainer || null)
+  if (startTbl || endTbl) {
+    const tbl = startTbl || endTbl
+    selectedBlockEl.value = tbl
+    regionStartEl.value = tbl
+    regionEndEl.value = tbl
+    initialStartEl.value = tbl
+    updateIndicator()
+    contextText.value = collectRegionText()
+    return
+  }
+
+  const startBlock = blockOfNode(range?.startContainer || null)
+  const endBlock = blockOfNode(range?.endContainer || null)
+
+  if (startBlock && endBlock && startBlock.parentElement === endBlock.parentElement) {
+    const order = startBlock.compareDocumentPosition(endBlock)
+    const startFirst = !(order & Node.DOCUMENT_POSITION_PRECEDING)
+    regionStartEl.value = startFirst ? startBlock : endBlock
+    regionEndEl.value = startFirst ? endBlock : startBlock
+    selectedBlockEl.value = regionStartEl.value
+    initialStartEl.value = regionStartEl.value
+  } else {
+    selectedBlockEl.value = startBlock || findSelectedBlock()
+    regionStartEl.value = selectedBlockEl.value
+    regionEndEl.value = selectedBlockEl.value
+    initialStartEl.value = selectedBlockEl.value
+  }
+
   updateIndicator()
+  contextText.value = collectRegionText()
 }
 
 const closePanel = () => hide()
@@ -313,7 +454,7 @@ const onDragStartBottom = (e: MouseEvent) => {
       <div class="ai-grip-line" />
       <div class="ai-grip-line" />
     </div>
-    <div class="ai-handle ai-handle--bottom" :style="{ top: (indicatorTop + indicatorHeight - 10) + 'px', left: (indicatorLeft - 28) + 'px' }" @mousedown.stop="onDragStartBottom">
+    <div class="ai-handle ai-handle--bottom" :style="{ top: (indicatorTop + indicatorHeight - 8) + 'px', left: (indicatorLeft - 28) + 'px' }" @mousedown.stop="onDragStartBottom">
       <div class="ai-grip-line" />
       <div class="ai-grip-line" />
       <div class="ai-grip-line" />
@@ -323,7 +464,22 @@ const onDragStartBottom = (e: MouseEvent) => {
         <div class="panel-header">
           <div class="title">AI 助手</div>
           <div class="actions">
-            <v-btn density="comfortable" variant="text" color="default" @click="closePanel">关闭</v-btn>
+            <v-btn
+              density="comfortable"
+              variant="text"
+              color="primary"
+              @click="onCopy"
+            >
+              复制
+            </v-btn>
+            <v-btn
+              density="comfortable"
+              variant="text"
+              color="default"
+              @click="closePanel"
+            >
+              关闭
+            </v-btn>
           </div>
         </div>
         <v-text-field
@@ -364,8 +520,8 @@ const onDragStartBottom = (e: MouseEvent) => {
 }
 .ai-indicator {
   position: absolute;
-  width: 6px;
-  background: #9e9e9e;
+  width: 4px;
+  background: rgb(var(--v-theme-primary));
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
   border-radius: 3px;
   z-index: 900;
@@ -393,7 +549,7 @@ const onDragStartBottom = (e: MouseEvent) => {
   z-index: 900;
 }
 .ai-grip-line {
-  width: 12px;
+  width: 8px;
   height: 2px;
   background: #9e9e9e;
 }
