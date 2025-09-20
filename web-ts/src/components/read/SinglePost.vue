@@ -200,7 +200,7 @@
       <!-- is article -->
       <template v-else>
         <div ref="contentRef" :class="!props.detail ? 'text-limited' : ''">
-          <div ref="content" class="tiptap pt-3 w-100 ai-selectable-content" v-html="posting.content"></div>
+          <div ref="content" class="tiptap pt-3 w-100 ai-selectable-content article" v-html="posting.content"></div>
         </div>
 
         <v-btn
