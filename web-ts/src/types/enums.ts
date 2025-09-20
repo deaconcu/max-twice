@@ -64,7 +64,8 @@ export const ObjectType = {
   POST: 0,    // 帖子
   NODE: 1,    // 节点
   COMMENT: 2, // 评论
-  ROADMAP: 3  // 路线图
+  ROADMAP: 3, // 路线图
+  MEMORY_CARD_DECK: 4 // 记忆卡片组
 } as const
 
 // 消息类型常量 (MessageType)

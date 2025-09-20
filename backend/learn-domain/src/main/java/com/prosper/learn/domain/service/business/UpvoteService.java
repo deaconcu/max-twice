@@ -14,6 +14,7 @@ import com.prosper.learn.persistence.dataobject.PostDO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
 import com.prosper.learn.persistence.dataobject.UpvoteDO;
 import com.prosper.learn.persistence.dataobject.UserDO;
+import com.prosper.learn.persistence.dataobject.MemoryCardDeckDO;
 import com.prosper.learn.domain.service.data.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -65,6 +66,9 @@ public class UpvoteService {
     
     /** 路线图数据访问接口 */
     private final RoadmapDataService roadmapDataService;
+
+    /** 记忆卡片组数据访问接口 */
+    private final MemoryCardDeckDataService deckDataService;
     
     /** 消息服务，用于发送点赞通知 */
     private final MessageService messageService;
@@ -400,6 +404,54 @@ public class UpvoteService {
     }
 
     /**
+     * 记忆卡片组点赞
+     * @param deckId 卡片组ID
+     * @param userId 用户ID
+     * @return true表示点赞成功，false表示取消点赞
+     */
+    @Transactional
+    public boolean upvoteMemoryCardDeck(long deckId, long userId) {
+        validateUserId(userId);
+        if (deckId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("卡片组ID无效: " + deckId);
+        }
+
+        // 检查是否已经点过赞
+        UpvoteDO existingUpvote = upvoteDataService.getByUserAndObject(userId, deckId, ObjectType.memory_card_deck.value());
+        if (existingUpvote != null) {
+            // 如果已经点过赞，则取消点赞
+            upvoteDataService.delete(existingUpvote.getId());
+            // 更新卡片组点赞数
+            MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
+            deck.setUpvoteCount(Math.max(0, deck.getUpvoteCount() - 1));
+
+            // 更新卡片组分数
+            scoreCalculationService.checkAndUpdateMemoryCardDeckScore(deck);
+
+            deckDataService.update(deck);
+            return false; // 返回false表示取消点赞
+        } else {
+            // 如果没有点过赞，则点赞
+            UpvoteDO upvoteDO = new UpvoteDO();
+            upvoteDO.setUserId(userId);
+            upvoteDO.setObjectId(deckId);
+            upvoteDO.setObjectType(ObjectType.memory_card_deck.value());
+            upvoteDO.setType(0); // 卡片组点赞类型设为0
+            upvoteDataService.insert(upvoteDO);
+
+            // 更新卡片组点赞数
+            MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
+            deck.setUpvoteCount(deck.getUpvoteCount() + 1);
+
+            // 更新卡片组分数
+            scoreCalculationService.checkAndUpdateMemoryCardDeckScore(deck);
+
+            deckDataService.update(deck);
+            return true; // 返回true表示点赞成功
+        }
+    }
+
+    /**
      * 取消点赞
      * @param postingId 帖子ID
      * @param userId 用户ID
@@ -482,6 +534,12 @@ public class UpvoteService {
             RoadmapDO roadmapDO = roadmapDataService.getById(objectId);
             if (roadmapDO != null) {
                 upvotes = roadmapDO.getVote() != null ? roadmapDO.getVote() : 0;
+                upvoted = upvoteDO != null;
+            }
+        } else if (objectType == ObjectType.memory_card_deck.value()) {
+            MemoryCardDeckDO deckDO = deckDataService.getById(objectId);
+            if (deckDO != null) {
+                upvotes = deckDO.getUpvoteCount() != null ? deckDO.getUpvoteCount() : 0;
                 upvoted = upvoteDO != null;
             }
         }

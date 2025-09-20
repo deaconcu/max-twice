@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import TreeNode from './TreeNode.vue'
-import ConfigContents from '../course/ConfigContents.vue'
+import ConfigContents from './ConfigContents.vue'
 import type { Course } from '@/types/course'
 
 interface TocItem {
@@ -366,7 +366,6 @@ defineExpose({
   position: sticky;
   top: 65px;
   z-index: 10;
-  height: 100vh;
   overflow-y: auto;
 }
 

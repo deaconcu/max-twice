@@ -6,10 +6,7 @@ import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.config.SystemProperties;
-import com.prosper.learn.persistence.dataobject.PostStatsDO;
-import com.prosper.learn.persistence.dataobject.PostDO;
-import com.prosper.learn.persistence.dataobject.RoadmapDO;
-import com.prosper.learn.persistence.dataobject.CommentDO;
+import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.PostStatsMapper;
 import com.prosper.learn.persistence.mapper.PostMapper;
 import com.prosper.learn.persistence.mapper.RoadmapMapper;
@@ -555,6 +552,73 @@ public class ScoreCalculationService {
         double timeWeight = COMMENT_TIME_BASE_WEIGHT + Math.log1p(Math.max(0, hoursFromBase * 0.0002));
 
         return timeWeight;
+    }
+
+    /**
+     * 计算单个记忆卡片组的分数
+     * 基于点赞数和时间的简化评分算法
+     *
+     * @param deck 记忆卡片组对象
+     * @return 卡片组分数
+     * @throws BusinessException 当参数无效或计算失败时抛出异常
+     */
+    public double calculateMemoryCardDeckScore(MemoryCardDeckDO deck) {
+        if (deck == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("卡片组对象不能为空");
+        }
+        if (deck.getId() <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("卡片组ID无效: " + deck.getId());
+        }
+
+        try {
+            // 基础分数：点赞数
+            double upvoteScore = deck.getUpvoteCount() * 1.0;
+
+            // 时间权重：基于创建时间，越新的权重越高
+            double timeWeight = calculateTimeWeightFromBaseline(deck.getCreatedAt().toLocalDate());
+
+            // 卡片数量因子：鼓励内容丰富的卡片组
+            double cardCountFactor = Math.log1p(deck.getCardCount() * 0.1);
+
+            // 综合分数 = 点赞分数 * 时间权重 + 卡片数量因子
+            double finalScore = upvoteScore * timeWeight + cardCountFactor;
+
+            log.debug("卡片组ID: {}, 点赞数: {}, 卡片数: {}, 时间权重: {}, 最终评分: {}",
+                     deck.getId(), deck.getUpvoteCount(), deck.getCardCount(), timeWeight, finalScore);
+
+            return Math.max(0.0, finalScore);
+
+        } catch (Exception e) {
+            log.error("计算卡片组分数失败, deckId: {}", deck.getId(), e);
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 检查并更新记忆卡片组分数（如果需要的话）
+     *
+     * @param deck 记忆卡片组对象
+     * @return 是否进行了分数更新
+     * @throws BusinessException 当参数无效时抛出异常
+     */
+    public boolean checkAndUpdateMemoryCardDeckScore(MemoryCardDeckDO deck) {
+        if (deck == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("卡片组对象不能为空");
+        }
+
+        try {
+            double newScore = calculateMemoryCardDeckScore(deck);
+
+            // 如果分数有变化，则更新
+            if (deck.getScore() == null || Math.abs(deck.getScore() - newScore) > 0.001) {
+                deck.setScore(newScore);
+                return true;  // 返回true表示需要更新数据库
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("检查并更新卡片组分数失败: deckId={}", deck.getId(), e);
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
+        }
     }
 
     /**

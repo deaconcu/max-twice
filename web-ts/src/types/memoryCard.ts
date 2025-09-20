@@ -75,6 +75,7 @@ export interface MemoryCardDeck {
   // 社区互动字段
   upvoteCount: number       // 点赞数
   cardCount: number         // 卡片数
+  hasUpvoted?: boolean      // 当前用户是否已点赞
   //score: number             // delete 综合得分（热度）
 }
 

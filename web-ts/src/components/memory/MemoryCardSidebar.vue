@@ -122,6 +122,21 @@ const viewDeckDetail = (deck: MemoryCardDeck) => {
   emit('viewDeck', deck)
 }
 
+// 处理点赞
+const handleUpvote = async (deck: MemoryCardDeck, event: Event) => {
+  event.stopPropagation() // 阻止事件冒泡
+  try {
+    const response = await MemoryService.upvoteDeck(deck.id)
+    if (response.code === 200) {
+      // 更新本地状态 - 适配后端返回的字段名
+      deck.hasUpvoted = response.data.upvoted
+      deck.upvoteCount = response.data.upvotes
+    }
+  } catch (error) {
+    console.error('Failed to upvote deck:', error)
+  }
+}
+
 // 切换到"我提交的"标签
 const switchToMyDecks = () => {
   handleMyFilterToggle()
@@ -201,7 +216,7 @@ defineExpose({
     </div>
 
     <!-- 排序和筛选控件 -->
-    <div class="px-4 pb-2 bg-grey-lighten-5">
+    <div class="px-3 pb-2 bg-grey-lighten-5">
       <div class="d-flex align-center justify-space-between">
         <!-- 左侧：筛选选项 -->
         <div class="d-flex gap-2">
@@ -328,9 +343,22 @@ defineExpose({
                 </span>
               </div>
               <div class="d-flex align-center">
-                <v-icon icon="mdi-thumb-up-outline" size="14" color="grey-darken-2" class="mr-1"></v-icon>
-                <span class="text-body-2 text-grey-darken-2 mr-3">{{ deck.upvoteCount }}</span>
-                <v-icon icon="mdi-cards-outline" size="14" color="grey-darken-2" class="mr-1"></v-icon>
+                <v-btn
+                  :color="deck.hasUpvoted ? 'grey-darken-2' : 'grey-darken-2'"
+                  variant="text"
+                  size="small"
+                  rounded="lg"
+                  @click="handleUpvote(deck, $event)"
+                >
+                  <v-icon
+                    :icon="deck.hasUpvoted ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+                    :color="deck.hasUpvoted ? 'red' : 'grey-darken-2'"
+                    size="14"
+                    class="mr-2"
+                  ></v-icon>
+                  {{ deck.upvoteCount }}
+                </v-btn>
+                <v-icon icon="mdi-cards-outline" size="14" color="grey-darken-2" class="ml-3 mr-2"></v-icon>
                 <span class="text-body-2 text-grey-darken-2">{{ deck.cardCount }}</span>
               </div>
             </div>

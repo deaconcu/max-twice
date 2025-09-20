@@ -59,7 +59,8 @@ public interface MemoryCardDeckMapper {
 
     @Update("UPDATE memory_card_deck SET " +
             "title = #{title}, description = #{description}, version = #{version}, " +
-            "state = #{state}, updated_by = #{updatedBy}, card_count = #{cardCount}, node_id = #{nodeId} " +
+            "state = #{state}, updated_by = #{updatedBy}, card_count = #{cardCount}, node_id = #{nodeId}, " +
+            "upvote_count = #{upvoteCount}, score = #{score} " +
             "WHERE id = #{id}")
     void update(MemoryCardDeckDO deck);
 

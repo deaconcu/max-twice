@@ -4,6 +4,7 @@
  */
 
 import apiClient from './api/v1/apiServiceV1'
+import { ObjectType, VoteType } from '@/types/enums'
 import type {
   MemoryCardView,
   ReviewCardRequest,
@@ -446,5 +447,44 @@ export class MemoryService {
     message?: string
   }> {
     return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/accept-changes`, cardIds)
+  }
+
+  // ========== 点赞相关API ==========
+
+  /**
+   * 点赞/取消点赞卡片组
+   */
+  static async upvoteDeck(deckId: number): Promise<{
+    code: number
+    data: {
+      hasUpvoted: boolean
+      upvoteCount: number
+    }
+    message?: string
+  }> {
+    return apiClient.post(`${API_V1_PREFIX}/upvotes`, {
+      objectId: deckId,
+      objectType: ObjectType.MEMORY_CARD_DECK,
+      type: VoteType.NORMAL
+    })
+  }
+
+  /**
+   * 获取卡片组点赞状态
+   */
+  static async getDeckUpvoteStatus(deckId: number): Promise<{
+    code: number
+    data: {
+      hasUpvoted: boolean
+      upvoteCount: number
+    }
+    message?: string
+  }> {
+    return apiClient.get(`${API_V1_PREFIX}/upvotes/status`, {
+      params: {
+        objectId: deckId,
+        objectType: ObjectType.MEMORY_CARD_DECK
+      }
+    })
   }
 }

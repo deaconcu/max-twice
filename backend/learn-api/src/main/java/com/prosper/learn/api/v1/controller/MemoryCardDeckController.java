@@ -42,10 +42,11 @@ public class MemoryCardDeckController {
         if (limit > 50) {
             limit = 50;
         }
-        
+
+        long userId = StpUtil.getLoginIdAsLong();
         KeysetPageResponse<MemoryCardDeckDTO> result = deckService.getDeckList(
-            postId, creatorId, state, sortBy, sortOrder, lastScore, lastId, limit);
-        
+            postId, creatorId, state, sortBy, sortOrder, lastScore, lastId, limit, userId);
+
         return ApiResponse.success(result);
     }
 
@@ -100,8 +101,9 @@ public class MemoryCardDeckController {
             limit = 50;
         }
 
+        long userId = StpUtil.getLoginIdAsLong();
         KeysetPageResponse<MemoryCardDeckDTO> result = deckService.getDecksByNode(
-            nodeId, lastScore, lastId, limit);
+            nodeId, lastScore, lastId, limit, userId);
 
         return ApiResponse.success(result);
     }

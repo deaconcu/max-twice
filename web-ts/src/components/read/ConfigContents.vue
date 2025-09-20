@@ -60,7 +60,7 @@
     try {
       const response = await courseServiceV1.updateUserCourseToc(
         props.courseId, 
-        JSON.stringify(list.value)
+        list.value.join(',')
       )
       console.log(`response: ${JSON.stringify(response)}`)
       if (response.code === 200) {

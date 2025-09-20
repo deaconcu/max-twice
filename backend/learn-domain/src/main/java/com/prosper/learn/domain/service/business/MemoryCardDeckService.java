@@ -36,6 +36,7 @@ public class MemoryCardDeckService {
     private final MemoryCardService memoryCardService;
     private final MemoryCardVersionDataService cardVersionDataService;
     private final UserCardSrsDataService userCardSrsDataService;
+    private final UpvoteService upvoteService;
 
     // ========== toDTO ==========
 
@@ -55,13 +56,34 @@ public class MemoryCardDeckService {
      */
     public MemoryCardDeckDTO toDTOV1(MemoryCardDeckDO deckDO) {
         if (deckDO == null) return null;
-        
+
         MemoryCardDeckDTO dto = deckConverter.toDTO(deckDO);
-        
+
         // 填充创建者信息
         UserDTO creator = userService.getUser(deckDO.getCreatorId(), DTOVersion.V2);
         dto.setCreator(creator);
-        
+
+        return dto;
+    }
+
+    /**
+     * V1 = 基础信息 + 创建者信息 + 点赞状态
+     */
+    public MemoryCardDeckDTO toDTOV1(MemoryCardDeckDO deckDO, Long userId) {
+        if (deckDO == null) return null;
+
+        MemoryCardDeckDTO dto = deckConverter.toDTO(deckDO);
+
+        // 填充创建者信息
+        UserDTO creator = userService.getUser(deckDO.getCreatorId(), DTOVersion.V2);
+        dto.setCreator(creator);
+
+        // 填充点赞状态（如果提供了用户ID）
+        if (userId != null) {
+            boolean hasUpvoted = upvoteService.getUpvoteStatus(deckDO.getId(), ObjectType.memory_card_deck.value(), userId).getUpvoted();
+            dto.setHasUpvoted(hasUpvoted);
+        }
+
         return dto;
     }
 
@@ -69,13 +91,13 @@ public class MemoryCardDeckService {
         if (deckDOList == null || deckDOList.isEmpty()) {
             return new ArrayList<>();
         }
-        
+
         // 批量获取创建者信息
         Set<Long> creatorIds = deckDOList.stream()
             .map(MemoryCardDeckDO::getCreatorId)
             .collect(Collectors.toSet());
         Map<Long, UserDO> userMap = userDataService.getMapByIds(creatorIds);
-        
+
         return deckDOList.stream()
             .map(deck -> {
                 MemoryCardDeckDTO dto = deckConverter.toDTO(deck);
@@ -90,6 +112,50 @@ public class MemoryCardDeckService {
             .collect(Collectors.toList());
     }
 
+    public List<MemoryCardDeckDTO> toDTOV1(List<MemoryCardDeckDO> deckDOList, Long userId) {
+        if (deckDOList == null || deckDOList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 批量获取创建者信息
+        Set<Long> creatorIds = deckDOList.stream()
+            .map(MemoryCardDeckDO::getCreatorId)
+            .collect(Collectors.toSet());
+        Map<Long, UserDO> userMap = userDataService.getMapByIds(creatorIds);
+
+        // 批量获取点赞状态（如果提供了用户ID）
+        Map<Long, Boolean> upvoteStatusMap = new HashMap<>();
+        if (userId != null) {
+            Set<Long> deckIds = deckDOList.stream()
+                .map(MemoryCardDeckDO::getId)
+                .collect(Collectors.toSet());
+            // 批量查询点赞状态
+            for (Long deckId : deckIds) {
+                boolean hasUpvoted = upvoteService.getUpvoteStatus(deckId, ObjectType.memory_card_deck.value(), userId).getUpvoted();
+                upvoteStatusMap.put(deckId, hasUpvoted);
+            }
+        }
+
+        return deckDOList.stream()
+            .map(deck -> {
+                MemoryCardDeckDTO dto = deckConverter.toDTO(deck);
+                UserDO creator = userMap.get(deck.getCreatorId());
+                if (creator != null) {
+                    dto.setCreator(userConverter.toDTO(creator));
+                } else {
+                    log.warn("Cannot find creator with id: {}", deck.getCreatorId());
+                }
+
+                // 设置点赞状态
+                if (userId != null) {
+                    dto.setHasUpvoted(upvoteStatusMap.get(deck.getId()));
+                }
+
+                return dto;
+            })
+            .collect(Collectors.toList());
+    }
+
 
     // ========= 业务方法(Query) ==========
 
@@ -99,7 +165,7 @@ public class MemoryCardDeckService {
      */
     public KeysetPageResponse<MemoryCardDeckDTO> getDeckList(
             Long postId, Long creatorId, Integer state, String sortBy, String sortOrder,
-            Double lastScore, Long lastId, Integer limit) {
+            Double lastScore, Long lastId, Integer limit, Long userId) {
         // 参数验证
         if (limit == null || limit <= 0) limit = 10;
         if (limit > 50) limit = 50;
@@ -148,8 +214,8 @@ public class MemoryCardDeckService {
             deckList = deckList.subList(0, limit);
         }
 
-        // 转换为DTO (包含创建者信息)
-        List<MemoryCardDeckDTO> dtoList = toDTOV1(deckList);
+        // 转换为DTO (包含创建者信息和点赞状态)
+        List<MemoryCardDeckDTO> dtoList = toDTOV1(deckList, userId);
 
         // 构建响应
         KeysetPageResponse<MemoryCardDeckDTO> response = new KeysetPageResponse<>();
@@ -171,7 +237,7 @@ public class MemoryCardDeckService {
      * 根据节点ID获取卡片组列表 - Keyset分页
      */
     public KeysetPageResponse<MemoryCardDeckDTO> getDecksByNode(
-            Long nodeId, Double lastScore, Long lastId, Integer limit) {
+            Long nodeId, Double lastScore, Long lastId, Integer limit, Long userId) {
         // 参数验证
         if (limit == null || limit <= 0) limit = 20;
         if (limit > 50) limit = 50;
@@ -193,8 +259,8 @@ public class MemoryCardDeckService {
             deckList = deckList.subList(0, limit);
         }
 
-        // 转换为DTO (包含创建者信息)
-        List<MemoryCardDeckDTO> dtoList = toDTOV1(deckList);
+        // 转换为DTO (包含创建者信息和点赞状态)
+        List<MemoryCardDeckDTO> dtoList = toDTOV1(deckList, userId);
 
         // 构建响应
         KeysetPageResponse<MemoryCardDeckDTO> response = new KeysetPageResponse<>();
@@ -265,8 +331,8 @@ public class MemoryCardDeckService {
             deckList = deckList.subList(0, limit);
         }
 
-        // 转换为基础DTO列表(包含创建者信息)
-        List<MemoryCardDeckDTO> baseDTOList = toDTOV1(deckList);
+        // 转换为基础DTO列表(包含创建者信息和点赞状态)
+        List<MemoryCardDeckDTO> baseDTOList = toDTOV1(deckList, userId);
         
         // 批量获取所有卡片组的卡片信息
         Set<Long> deckIds = deckList.stream().map(MemoryCardDeckDO::getId).collect(Collectors.toSet());
@@ -382,6 +448,10 @@ public class MemoryCardDeckService {
         if (result <= 0) {
             throw ErrorCode.SYSTEM_ERROR.exception("创建卡片组失败");
         }
+
+        // 创建完成后立即计算初始分数
+        scoreCalculationService.checkAndUpdateMemoryCardDeckScore(deck);
+        deckDataService.update(deck);
 
         // 如果有卡片数据，批量创建卡片
         if (request.getCards() != null && !request.getCards().isEmpty()) {

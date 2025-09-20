@@ -400,6 +400,24 @@ const addAllNewCards = async () => {
     console.error('Failed to add all new cards:', error)
   }
 }
+
+// 处理点赞
+const handleUpvote = async () => {
+  if (!props.deck) return
+
+  try {
+    const response = await MemoryService.upvoteDeck(props.deck.id)
+    if (response.code === 200) {
+      // 更新本地状态
+      if (props.deck) {
+        props.deck.hasUpvoted = response.data.upvoted
+        props.deck.upvoteCount = response.data.upvotes
+      }
+    }
+  } catch (error) {
+    console.error('Failed to upvote deck:', error)
+  }
+}
 </script>
 
 <template>
@@ -409,6 +427,7 @@ const addAllNewCards = async () => {
       <div class="header-bg pa-4 pb-6 position-relative">
         <v-btn 
           icon="mdi-close" 
+          size="small"
           variant="text" 
           color="white"
           class="position-absolute close-btn"
@@ -442,7 +461,10 @@ const addAllNewCards = async () => {
                 <div class="text-subtitle-1 font-weight-bold">{{ deckDetail?.stats?.totalCards || deckDetail?.cardCount || 0 }}</div>
                 <div class="text-caption opacity-80">卡片</div>
               </div>
-              <div class="text-center">
+              <div
+                class="text-center upvote-area"
+                @click="handleUpvote"
+              >
                 <div class="text-subtitle-1 font-weight-bold">{{ deck?.upvoteCount || 0 }}</div>
                 <div class="text-caption opacity-80">点赞</div>
               </div>
@@ -779,7 +801,7 @@ const addAllNewCards = async () => {
               <div v-else>
                 <!-- 更新摘要 - 作为Tab导航 -->
                 <div class="mb-4">
-                  <v-card flat color="blue-lighten-5" rounded="lg" class="py-3 px-4">
+                  <v-card flat color="blue-lighten-5" rounded="lg" class="py-0 px-4">
                     <div class="d-flex align-center justify-space-between">
                       <div class="d-flex align-center">
                         <v-icon color="blue-darken-2" size="20" class="mr-2">mdi-compare</v-icon>
@@ -787,36 +809,30 @@ const addAllNewCards = async () => {
                           差异对比 - 检测到 {{ addedDiffs.length + modifiedDiffs.length + nodeOnlyCardsCount }} 项差异
                         </h4>
                       </div>
-                      <div class="d-flex align-center" style="gap: 8px;">
-                        <div class="text-center tab-item">
-                          <div
-                            class="text-body-1 font-weight-bold clickable-stat"
-                            :class="{ 'text-warning': diffTab === 'modified', 'text-grey-darken-2': diffTab !== 'modified' }"
-                            @click="diffTab = 'modified'"
-                          >
-                            {{ modifiedDiffs.length }}
-                          </div>
-                          <div class="text-caption text-grey-darken-1">内容有更新</div>
+                      <div class="d-flex align-center justify-end">
+                        <div
+                          class="diff-tab-item"
+                          :class="{ 'diff-tab-active': diffTab === 'modified' }"
+                          @click="diffTab = 'modified'"
+                        >
+                          <div class="diff-tab-number text-warning">{{ modifiedDiffs.length }}</div>
+                          <div class="diff-tab-label">内容有更新</div>
                         </div>
-                        <div class="text-center tab-item">
-                          <div
-                            class="text-body-1 font-weight-bold clickable-stat"
-                            :class="{ 'text-success': diffTab === 'added', 'text-grey-darken-2': diffTab !== 'added' }"
-                            @click="diffTab = 'added'"
-                          >
-                            {{ addedDiffs.length }}
-                          </div>
-                          <div class="text-caption text-grey-darken-1">可添加</div>
+                        <div
+                          class="diff-tab-item"
+                          :class="{ 'diff-tab-active': diffTab === 'added' }"
+                          @click="diffTab = 'added'"
+                        >
+                          <div class="diff-tab-number text-success">{{ addedDiffs.length }}</div>
+                          <div class="diff-tab-label">可添加</div>
                         </div>
-                        <div class="text-center tab-item">
-                          <div
-                            class="text-body-1 font-weight-bold clickable-stat"
-                            :class="{ 'text-info': diffTab === 'nodeOnly', 'text-grey-darken-2': diffTab !== 'nodeOnly' }"
-                            @click="diffTab = 'nodeOnly'"
-                          >
-                            {{ nodeOnlyCardsCount }}
-                          </div>
-                          <div class="text-caption text-grey-darken-1">其他来源</div>
+                        <div
+                          class="diff-tab-item"
+                          :class="{ 'diff-tab-active': diffTab === 'nodeOnly' }"
+                          @click="diffTab = 'nodeOnly'"
+                        >
+                          <div class="diff-tab-number text-info">{{ nodeOnlyCardsCount }}</div>
+                          <div class="diff-tab-label">其他来源</div>
                         </div>
                       </div>
                     </div>
@@ -1399,6 +1415,19 @@ const addAllNewCards = async () => {
 </template>
 
 <style scoped>
+/* 点赞区域样式 */
+.upvote-area {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+
+.upvote-area:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
 /* 头部背景 */
 .header-bg {
   background: rgb(var(--v-theme-primary));
@@ -1497,6 +1526,39 @@ const addAllNewCards = async () => {
   transform: rotateY(180deg);
 }
 
+/* 差异对比tab样式 - Flat设计 */
+.diff-tab-item {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 0px;
+  padding: 8px 12px;
+  min-width: 80px;
+  background: transparent;
+  text-align: center;
+}
+
+.diff-tab-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.diff-tab-active {
+  background: rgba(var(--v-theme-primary), 0.08) !important;
+}
+
+.diff-tab-number {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.diff-tab-label {
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.7);
+  font-weight: 400;
+  line-height: 1;
+}
+
 /* Tab项固定宽度 */
 .tab-item {
   min-width: 80px;
@@ -1505,15 +1567,16 @@ const addAllNewCards = async () => {
 
 /* 可点击的统计数字样式 */
 .clickable-stat {
-  cursor: pointer;
   transition: all 0.2s ease;
-  border-radius: 4px;
-  padding: 2px 4px;
 }
 
 .clickable-stat:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  transform: scale(1.1);
+  transform: scale(1.05);
+}
+
+/* 选中状态的背景 */
+.selected-tab {
+  background-color: rgba(0, 0, 0, 0.08) !important;
 }
 
 /* 滚动条样式 */

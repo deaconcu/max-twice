@@ -30,4 +30,6 @@ public class MemoryCardDeckDTO {
 
     private Integer cardCount;
 
+    private Boolean hasUpvoted;  // 当前用户是否已点赞
+
 }

@@ -10,7 +10,7 @@
   import type { Course } from '@/types/course'
   import type { Node } from '@/types/node'
 
-  import AddContents from '../course/AddContents.vue'
+  import AddContents from './AddContents.vue'
   import AddArticle from './AddArticle.vue'
   import InviteUser from '../user/InviteUser.vue'
   import CommentArea from './CommentArea.vue'

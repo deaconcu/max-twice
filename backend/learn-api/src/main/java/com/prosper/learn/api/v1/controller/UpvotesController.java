@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import static com.prosper.learn.common.Enums.ObjectType.comment;
 import static com.prosper.learn.common.Enums.ObjectType.post;
 import static com.prosper.learn.common.Enums.ObjectType.roadmap;
+import static com.prosper.learn.common.Enums.ObjectType.memory_card_deck;
 
 /**
  * 点赞接口
@@ -41,6 +42,8 @@ public class UpvotesController {
             upvoteService.upvoteComment(request.getObjectId(), userId);
         } else if (request.getObjectType() == roadmap.value()) {
             upvoteService.upvoteRoadmap(request.getObjectId(), userId);
+        } else if (request.getObjectType() == memory_card_deck.value()) {
+            upvoteService.upvoteMemoryCardDeck(request.getObjectId(), userId);
         } else {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }

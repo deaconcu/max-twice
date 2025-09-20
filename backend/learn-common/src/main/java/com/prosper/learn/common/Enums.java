@@ -215,7 +215,8 @@ public class Enums {
         post(0),
         node(1),
         comment(2),
-        roadmap(3);
+        roadmap(3),
+        memory_card_deck(4);
 
         private final int value;
 

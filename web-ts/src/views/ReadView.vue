@@ -8,6 +8,7 @@ import { MemoryService } from '@/services/memoryService'
 import PostingList from '@/components/read/PostingList.vue'
 import RightSidebar from '@/components/common/RightSidebar.vue'
 import AIAssistant from '@/components/common/AIAssistant.vue'
+import TextSelectionAI from '@/components/common/TextSelectionAI.vue'
 import MemoryCardSidebar from '@/components/memory/MemoryCardSidebar.vue'
 import CreateDeckDialog from '@/components/memory/CreateDeckDialog.vue'
 import DeckDetailDialog from '@/components/memory/DeckDetailDialog.vue'
@@ -407,6 +408,16 @@ const handleTabSwitch = (tab: string, posting?: any): void => {
     currentPosting.value = null
   }
 }
+
+// 处理复制查询
+const handleAIQuery = ({ question, context, selectedText }: {
+  question: string
+  context: string
+  selectedText: string
+}): void => {
+  // 显示复制成功提示
+  showSnackbar('查询内容已复制到剪贴板，可以到其他AI网站粘贴查询', 'success')
+}
 </script>
 
 <template>
@@ -429,7 +440,7 @@ const handleTabSwitch = (tab: string, posting?: any): void => {
 
         <v-row class="mt-1">
           <!-- left -->
-          <v-col cols="3" class="pt-7">
+          <v-col cols="3" class="pt-7 toc-column">
             <CourseTableOfContents
               ref="courseTableOfContentsRef"
               :data="data"
@@ -503,10 +514,29 @@ const handleTabSwitch = (tab: string, posting?: any): void => {
       :deck="selectedDeck"
       @add-to-study="handleAddDeck"
     />
+
+    <!-- 文本选择AI查询组件 -->
+    <TextSelectionAI @query="handleAIQuery" />
   </v-container>
 </template>
 
 <style scoped>
+/* 目录栏右侧边框 */
+.toc-column {
+  position: relative;
+  padding-right: 40px;
+}
+
+.toc-column::after {
+  content: '';
+  position: absolute;
+  top: 28px; /* 与文字顶端对齐 */
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
 .text-h7 {
   font-size: 1.15rem;
 }

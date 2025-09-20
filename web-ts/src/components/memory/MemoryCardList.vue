@@ -38,6 +38,21 @@ const handleSourcePostClick = (postId: number, event: Event) => {
   window.location.href = `/read?postId=${postId}`
 }
 
+// 处理点赞
+const handleUpvote = async (deck: MemoryCardDeck, event: Event) => {
+  event.stopPropagation() // 阻止事件冒泡
+  try {
+    const response = await MemoryService.upvoteDeck(deck.id)
+    if (response.code === 200) {
+      // 更新本地状态 - 适配后端返回的字段名
+      deck.hasUpvoted = response.data.upvoted
+      deck.upvoteCount = response.data.upvotes
+    }
+  } catch (error) {
+    console.error('Failed to upvote deck:', error)
+  }
+}
+
 // 加载卡片组列表
 const loadDecks = async (reset = false) => {
   if (loading.value || (!reset && !hasMore.value)) return
@@ -175,13 +190,16 @@ onMounted(() => {
             elevation="0"
             rounded="lg"
             class="deck-card pt-2"
-            hover
-            @click="handleDeckClick(deck)"
           >
-            <v-card-title class="d-flex align-center justify-space-between pb-2">
+            <v-card-title class="d-flex align-center justify-space-between pb-5">
               <div class="d-flex align-center">
                 <v-icon icon="mdi-cards" color="primary" class="mr-3"></v-icon>
-                <span class="text-h6 font-weight-bold">{{ deck.title }}</span>
+                <span
+                  class="text-h6 font-weight-bold clickable-title"
+                  @click="handleDeckClick(deck)"
+                >
+                  {{ deck.title }}
+                </span>
               </div>
               <!-- 来源文章 -->
               <div v-if="deck.sourcePostId">
@@ -207,16 +225,29 @@ onMounted(() => {
               <div class="d-flex align-center justify-space-between">
                 <div class="d-flex align-center">
                   <div class="d-flex align-center mr-6">
-                    <v-icon icon="mdi-card-multiple" size="16" color="grey-darken-1" class="mr-1"></v-icon>
+                    <v-icon icon="mdi-card-multiple" size="16" color="grey-darken-1" class="mr-2"></v-icon>
                     <span class="text-body-2 text-grey-darken-1">{{ deck.cardCount }} 张卡片</span>
                   </div>
                   <div class="d-flex align-center mr-6">
-                    <v-icon icon="mdi-thumb-up" size="16" color="grey-darken-1" class="mr-1"></v-icon>
-                    <span class="text-body-2 text-grey-darken-1">{{ deck.upvoteCount }} 点赞</span>
+                    <v-btn
+                      :color="deck.hasUpvoted ? 'grey-darken-1' : 'grey-darken-1'"
+                      variant="text"
+                      density="comfortable"
+                      rounded="lg"
+                      @click="handleUpvote(deck, $event)"
+                    >
+                      <v-icon
+                        :icon="deck.hasUpvoted ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+                        :color="deck.hasUpvoted ? 'red' : 'grey-darken-1'"
+                        size="16"
+                        class="mr-2"
+                      ></v-icon>
+                      {{ deck.upvoteCount }} 点赞
+                    </v-btn>
                   </div>
                 </div>
                 <div class="d-flex align-center">
-                  <v-icon icon="mdi-clock-outline" size="16" color="grey-darken-1" class="mr-1"></v-icon>
+                  <v-icon icon="mdi-clock-outline" size="16" color="grey-darken-1" class="mr-2"></v-icon>
                   <span class="text-body-2 text-grey-darken-1">{{ formatDate(deck.updatedAt) }}</span>
                 </div>
               </div>
@@ -256,11 +287,14 @@ onMounted(() => {
 <style scoped>
 .deck-card {
   transition: all 0.2s ease;
+}
+
+.clickable-title {
   cursor: pointer;
+  transition: color 0.2s ease;
 }
 
-.deck-card:hover {
-  transform: translateY(-2px);
+.clickable-title:hover {
+  color: #1976d2;
 }
-
 </style>
