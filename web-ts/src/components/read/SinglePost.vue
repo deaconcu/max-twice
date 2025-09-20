@@ -10,6 +10,7 @@
   import 'highlight.js/styles/github.css' // 选择你的高亮主题
 
   import UserCard from '../user/UserCard.vue'
+  import TextSelectionAI from '@/components/common/TextSelectionAI.vue'
 
   // 🔴 导入Post浏览量跟踪服务
   import postViewTracking from '@/services/postViewTracking'
@@ -200,7 +201,7 @@
       <!-- is article -->
       <template v-else>
         <div ref="contentRef" :class="!props.detail ? 'text-limited' : ''">
-          <div ref="content" class="tiptap pt-3 w-100 ai-selectable-content article" v-html="posting.content"></div>
+          <div ref="content" class="tiptap pt-3 w-100" :class="props.detail ? 'full-article' : ''" v-html="posting.content"></div>
         </div>
 
         <v-btn
@@ -215,6 +216,8 @@
         </v-btn>
       </template>
     </v-row>
+
+    <TextSelectionAI v-if="props.detail" />
 
     <v-row class="ma-0 pt-5 d-flex justify-space-between" align="center">
       <!-- is contents -->

@@ -1,199 +1,61 @@
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
-
-interface ChatMessage {
-  id: number
-  content: string
-  isUser: boolean
-  timestamp: string
-}
+import { ref } from 'vue'
 
 const isExpanded = ref(true)
-const inputMessage = ref('')
-const loading = ref(false)
-const chatContainer = ref()
 
-// 模拟对话数据
-const messages = ref<ChatMessage[]>([
-  {
-    id: 1,
-    content: '你好！我是AI答疑助手，有什么关于这篇文章的问题可以问我。',
-    isUser: false,
-    timestamp: new Date().toLocaleTimeString()
-  }
-])
-
-// 发送消息
-const sendMessage = async () => {
-  if (!inputMessage.value.trim() || loading.value) return
-  
-  const userMessage: ChatMessage = {
-    id: Date.now(),
-    content: inputMessage.value.trim(),
-    isUser: true,
-    timestamp: new Date().toLocaleTimeString()
-  }
-  
-  messages.value.push(userMessage)
-  const question = inputMessage.value
-  inputMessage.value = ''
-  loading.value = true
-  
-  // 滚动到底部
-  await nextTick()
-  scrollToBottom()
-  
-  // 模拟AI回复
-  setTimeout(() => {
-    const aiResponse: ChatMessage = {
-      id: Date.now() + 1,
-      content: generateMockResponse(question),
-      isUser: false,
-      timestamp: new Date().toLocaleTimeString()
-    }
-    
-    messages.value.push(aiResponse)
-    loading.value = false
-    
-    nextTick(() => {
-      scrollToBottom()
-    })
-  }, 1000)
-}
-
-// 生成模拟回复
-const generateMockResponse = (question: string): string => {
-  const responses = [
-    '这是一个很好的问题！根据文章内容，我认为...',
-    '让我来解释一下这个概念。从文章中可以看出...',
-    '这个问题涉及到文章中提到的几个关键点...',
-    '根据我对文章的理解，这里的重点是...',
-    '这是文章中的一个重要概念，让我详细说明一下...'
-  ]
-  
-  return responses[Math.floor(Math.random() * responses.length)] + 
-    '这只是一个UI演示，实际的AI回复会更加准确和详细。'
-}
-
-// 滚动到底部
-const scrollToBottom = () => {
-  if (chatContainer.value) {
-    chatContainer.value.scrollTop = chatContainer.value.scrollHeight
-  }
-}
-
-// 清空对话
-const clearMessages = () => {
-  messages.value = [
-    {
-      id: 1,
-      content: '你好！我是AI答疑助手，有什么关于这篇文章的问题可以问我。',
-      isUser: false,
-      timestamp: new Date().toLocaleTimeString()
-    }
-  ]
-}
-
-// 回车发送消息
-const handleKeyPress = (event: KeyboardEvent) => {
-  if (event.key === 'Enter' && !event.shiftKey) {
-    event.preventDefault()
-    sendMessage()
-  }
-}
+const engines = [
+  { name: 'ChatGPT', href: 'https://chatgpt.com', color: 'green-darken-2' },
+  { name: 'Claude', href: 'https://claude.ai', color: 'indigo-darken-2' },
+  { name: 'Gemini', href: 'https://gemini.google.com', color: 'blue-darken-2' },
+  { name: 'DeepSeek', href: 'https://chat.deepseek.com', color: 'deep-purple-darken-2' }
+]
 </script>
 
 <template>
   <div class="ai-assistant-container">
-    <!-- 标题栏 -->
     <div class="ai-header pa-2 bg-grey-lighten-5">
       <div class="d-flex align-center justify-space-between">
         <div class="d-flex align-center">
           <v-icon icon="mdi-robot-excited" color="primary" size="20" class="mr-2"></v-icon>
-          <h3 class="text-body-1 font-weight-bold text-grey-darken-2">AI答疑助手</h3>
+          <h3 class="text-body-1 font-weight-bold text-grey-darken-2">答疑助手</h3>
         </div>
-        <div class="d-flex align-center">
-          <v-btn
-            icon="mdi-delete-outline"
-            variant="text"
-            color="grey-darken-1"
-            size="x-small"
-            @click="clearMessages"
-          ></v-btn>
-          <v-btn
-            :icon="isExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-            variant="text"
-            color="grey-darken-1"
-            size="x-small"
-            @click="isExpanded = !isExpanded"
-          ></v-btn>
-        </div>
+        <v-btn
+          :icon="isExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+          variant="text"
+          color="grey-darken-1"
+          size="x-small"
+          @click="isExpanded = !isExpanded"
+        ></v-btn>
       </div>
     </div>
 
-    <!-- 对话区域 -->
     <v-expand-transition>
-      <div v-show="isExpanded" class="ai-content">
-        <!-- 消息列表 -->
-        <div
-          ref="chatContainer"
-          class="chat-messages pa-3"
-          style="height: 400px; overflow-y: auto;"
-        >
-          <div
-            v-for="message in messages"
-            :key="message.id"
-            class="message-wrapper mb-3"
-            :class="{ 'user-message': message.isUser, 'ai-message': !message.isUser }"
-          >
-            <div class="d-flex" :class="message.isUser ? 'justify-end' : 'justify-start'">
-              <div class="message-bubble" :class="message.isUser ? 'user-bubble' : 'ai-bubble'">
-                <p class="text-body-2 mb-1">{{ message.content }}</p>
-                <div class="text-caption text-right" style="opacity: 0.7;">
-                  {{ message.timestamp }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 加载状态 -->
-          <div v-if="loading" class="d-flex justify-start mb-3">
-            <div class="message-bubble ai-bubble">
-              <div class="d-flex align-center">
-                <v-progress-circular
-                  indeterminate
-                  size="16"
-                  width="2"
-                  color="primary"
-                  class="mr-2"
-                ></v-progress-circular>
-                <span class="text-body-2">AI正在思考...</span>
-              </div>
-            </div>
-          </div>
+      <div v-show="isExpanded" class="pa-3">
+        <div class="text-body-2 text-grey-darken-2 mb-3">
+          <div class="font-weight-bold w-100">用法：</div>
+          <div class="mt-2">1）在文章中选中您不太理解的内容</div>
+          <div>2）在左侧竖线处拖动手柄，调整上下文范围</div>
+          <div>3）点击面板中的“复制”，将引用和问题复制到剪贴板</div>
+          <div>4）用复制的内容询问你常用的 AI 引擎</div>
         </div>
 
-        <!-- 输入区域 -->
-        <div class="input-area pa-3 bg-grey-lighten-5">
-          <div class="d-flex align-center" style="gap: 8px;">
-            <v-text-field
-              v-model="inputMessage"
-              placeholder="输入你的问题..."
-              variant="outlined"
-              density="compact"
-              class="flex-grow-1"
-              hide-details
-              @keydown="handleKeyPress"
-            ></v-text-field>
-            <v-btn
-              color="primary"
-              icon="mdi-send"
-              size="x-small"
-              variant="flat"
-              :disabled="!inputMessage.trim() || loading"
-              @click="sendMessage"
-            ></v-btn>
-          </div>
+        <div class="d-flex flex-wrap mt-8" style="gap: 8px;">
+          <div class="text-body-2 w-100 text-grey-darken-2 font-weight-bold">常用 AI 引擎：</div>
+          <v-btn
+            v-for="e in engines"
+            :key="e.name"
+            :href="e.href"
+            target="_blank"
+            rel="noopener"
+            :color="e.color"
+            variant="flat"
+            rounded="lg"
+            size="small"
+            class="engine-link"
+          >
+            <v-icon icon="mdi-web" size="14" class="mr-2"></v-icon>
+            <span class="font-weight-medium text-white">{{ e.name }}</span>
+          </v-btn>
         </div>
       </div>
     </v-expand-transition>
@@ -205,11 +67,11 @@ const handleKeyPress = (event: KeyboardEvent) => {
   border: 0px solid #e0e0e0;
   border-radius: 12px;
   overflow: hidden;
-  background: white;
+  background: #fafafa;
 }
 
 .ai-header {
-  border-bottom: 0px solid #e0e0e0;
+  border-bottom: 1px solid #eee;
 }
 
 .chat-messages {
@@ -258,5 +120,13 @@ const handleKeyPress = (event: KeyboardEvent) => {
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
   background-color: rgba(0, 0, 0, 0.3);
+}
+.engine-link {
+  text-decoration: none !important;
+}
+.engine-link:hover,
+.engine-link:focus,
+.engine-link:active {
+  text-decoration: none !important;
 }
 </style>

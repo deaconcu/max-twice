@@ -17,7 +17,7 @@ const left = ref(0)
 const selectedText = ref('')
 const contextText = ref('')
 const question = ref('')
-const ARTICLE_SELECTOR = '.article'
+const ARTICLE_SELECTOR = '.full-article'
 const articleLeft = ref(0)
 const selectedBlockEl = ref<HTMLElement | null>(null)
 const regionStartEl = ref<HTMLElement | null>(null)
@@ -27,31 +27,47 @@ const indicatorLeft = ref(0)
 const indicatorHeight = ref(0)
 const dragging = ref<'top' | 'bottom' | null>(null)
 const initialStartEl = ref<HTMLElement | null>(null)
+const ownerKey = '__TextSelectionAIOwner__'
+const myId = Math.random().toString(36).slice(2)
 
-// 向父组件发出的查询事件载荷
-// 复制到剪贴板（Markdown）；使用 turndown 将 HTML 转为 Markdown
-// 转换前会规范化表格 HTML，避免换行/样式导致的 Markdown 解析混乱
-const onCopy = async () => {
+// 内部缓存的引用 Markdown 内容
+const mdRegion = ref('')
+const buildMdRegion = () => {
   const html = collectRegionHtml()
   let md = contextText.value
   if (html) {
     try {
       const clean = normalizeHtml(html)
       const service = new TurndownService({
-        headingStyle: 'atx',      // 标题样式: # Hello
-        codeBlockStyle: 'fenced', // 代码块样式: ```java ... ```
-        bulletListMarker: '-',    // 无序列表标记: - item
-        hr: '---',                // 水平线样式: ---
+        headingStyle: 'atx',
+        codeBlockStyle: 'fenced',
+        bulletListMarker: '-',
+        hr: '---'
       })
       service.use(gfm)
       md = service.turndown(clean)
     } catch (_) {}
   }
-  const prompt = `请解释上面引用中的内容：${question.value || selectedText.value}`
-  const content = `${md}\n\n${prompt}`
+  mdRegion.value = md || ''
+}
+
+// 向父组件发出的查询事件载荷
+// 复制到剪贴板（Markdown）；使用 turndown 将 HTML 转为 Markdown
+// 转换前会规范化表格 HTML，避免换行/样式导致的 Markdown 解析混乱
+const localTip = ref('')
+let tipTimer: number | null = null
+const onCopy = async () => {
+  buildMdRegion()
+  const prompt = question.value || `请解释上面引用中的内容：${selectedText.value}`
+  const content = `${mdRegion.value}\n\n${prompt}`
   try {
     await navigator.clipboard.writeText(content)
-  } catch (_) {}
+    localTip.value = '上下文和问题均已复制，您可以去 AI 引擎粘贴提问了'
+  } catch (_) {
+    localTip.value = '复制失败，请重试'
+  }
+  if (tipTimer) window.clearTimeout(tipTimer)
+  tipTimer = window.setTimeout(() => { localTip.value = '' }, 3000)
 }
 
 interface QueryPayload {
@@ -67,6 +83,7 @@ const emit = defineEmits<{
 const hide = () => {
   visible.value = false
   panelOpen.value = false
+  if ((globalThis as any)[ownerKey] === myId) (globalThis as any)[ownerKey] = null
   selectedText.value = ''
   contextText.value = ''
   question.value = ''
@@ -104,7 +121,7 @@ const findSelectedBlock = () => {
   if (candidate) return candidate
 
   const el = base && 'closest' in base
-    ? ((base as HTMLElement).closest('p,li,h1,h2,h3,h4,h5,h6,blockquote,pre,div') as HTMLElement | null)
+    ? ((base as HTMLElement).closest('p,li,ul,ol,h1,h2,h3,h4,h5,h6,blockquote,pre,div,table') as HTMLElement | null)
     : null
   if (el && articleEl && el === articleEl) return null
   return el
@@ -113,7 +130,7 @@ const findSelectedBlock = () => {
 const isValidBlock = (el: Element | null) => {
   if (!el) return false
   const tag = el.tagName.toLowerCase()
-  return ['p','li','h1','h2','h3','h4','h5','h6','blockquote','pre','div','table'].includes(tag)
+  return ['p','li','ul','ol','h1','h2','h3','h4','h5','h6','blockquote','pre','div','table'].includes(tag)
 }
 
 const findPrevBlock = (el: HTMLElement | null) => {
@@ -132,6 +149,29 @@ const findNextBlock = (el: HTMLElement | null) => {
 
 const getArticleEl = () => document.querySelector(ARTICLE_SELECTOR) as HTMLElement | null
 
+// 计算共同祖先（不越过 boundary）
+const getCommonAncestor = (a: HTMLElement, b: HTMLElement, boundary: HTMLElement | null) => {
+  const seen = new Set<HTMLElement>()
+  let cur: HTMLElement | null = a
+  while (cur && cur !== boundary) {
+    seen.add(cur)
+    cur = cur.parentElement
+  }
+  cur = b
+  while (cur && cur !== boundary) {
+    if (seen.has(cur)) return cur
+    cur = cur.parentElement
+  }
+  return boundary || document.body
+}
+
+// 将元素提升为共同祖先的直接子元素
+const liftToChildOf = (el: HTMLElement, ancestor: HTMLElement) => {
+  let cur: HTMLElement | null = el
+  while (cur && cur.parentElement !== ancestor) cur = cur.parentElement as HTMLElement | null
+  return cur || el
+}
+
 // 从任意节点向上寻找最近的 table 元素（若存在则优先返回整个表格）
 const nearestTable = (node: Node | null) => {
   if (!node) return null
@@ -143,9 +183,27 @@ const nearestTable = (node: Node | null) => {
   return null
 }
 
-// 从任意节点向上寻找最近的块级段落元素
+// 从任意节点向上寻找最近的列表（ul/ol）元素（若存在则优先返回整个列表）
+const nearestList = (node: Node | null) => {
+  if (!node) return null
+  let el: HTMLElement | null = node.nodeType === 1 ? (node as HTMLElement) : (node.parentElement as HTMLElement | null)
+  while (el) {
+    if (el.tagName) {
+      const t = el.tagName.toLowerCase()
+      if (t === 'ul' || t === 'ol') return el
+    }
+    el = el.parentElement as HTMLElement | null
+  }
+  return null
+}
+
+// 从任意节点向上寻找最近的块级段落元素（优先 table 与 ul/ol 整块）
 const blockOfNode = (node: Node | null) => {
   if (!node) return null
+  const listEl = nearestList(node)
+  if (listEl) return listEl
+  const tableEl = nearestTable(node)
+  if (tableEl) return tableEl
   const base = node.nodeType === 1 ? (node as Element) : (node.parentElement as Element | null)
   const articleEl = getArticleEl()
   let cur = base as HTMLElement | null
@@ -156,7 +214,7 @@ const blockOfNode = (node: Node | null) => {
   }
   if (candidate) return candidate
   return base && 'closest' in base
-    ? ((base as HTMLElement).closest('p,li,h1,h2,h3,h4,h5,h6,blockquote,pre,div') as HTMLElement | null)
+    ? ((base as HTMLElement).closest('p,li,ul,ol,h1,h2,h3,h4,h5,h6,blockquote,pre,div,table') as HTMLElement | null)
     : null
 }
 
@@ -223,7 +281,9 @@ const updateIndicator = () => {
     const startRect = startEl.getBoundingClientRect()
     const endRect = endEl.getBoundingClientRect()
     indicatorTop.value = startRect.top + window.scrollY
-    indicatorLeft.value = startRect.left + window.scrollX - 20
+    const listEl = nearestList(startEl)
+    const baseLeft = listEl ? articleLeft.value : (startRect.left + window.scrollX)
+    indicatorLeft.value = baseLeft - 20
     indicatorHeight.value = Math.max(12, endRect.bottom - startRect.top)
     if (panelOpen.value) top.value = indicatorTop.value + indicatorHeight.value + 8
     return
@@ -240,6 +300,7 @@ const updateIndicator = () => {
 // 侦听浏览器选区并在选区底部显示 AI 按钮
 const update = () => {
   if (panelOpen.value) return
+  if ((globalThis as any)[ownerKey] && (globalThis as any)[ownerKey] !== myId) { visible.value = false; return }
   const sel = window.getSelection()
   if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
     visible.value = false
@@ -251,6 +312,11 @@ const update = () => {
     return
   }
   const range = sel.getRangeAt(0)
+  const articleEl = getArticleEl()
+  if (!articleEl || !articleEl.contains(range.startContainer) || !articleEl.contains(range.endContainer)) {
+    visible.value = false
+    return
+  }
   const rect = range.getBoundingClientRect()
   if (!rect || (rect.width === 0 && rect.height === 0)) {
     visible.value = false
@@ -265,7 +331,7 @@ const update = () => {
   const end = Math.min(raw.length, idx + text.length + 300)
   contextText.value = raw.slice(start, end)
   top.value = rect.bottom + 8
-  left.value = Math.max(0, rect.left + rect.width / 2)
+  left.value = rect.left + rect.width / 2
   visible.value = true
 }
 
@@ -301,33 +367,32 @@ const onResize = () => {
 const onClick = (e: MouseEvent) => {
   e.stopPropagation()
   if (!selectedText.value) return
+  const curr = (globalThis as any)[ownerKey]
+  if (curr && curr !== myId) return
+  ;(globalThis as any)[ownerKey] = myId
   panelOpen.value = true
-  question.value = selectedText.value
+  visible.value = false
+  question.value = `请解释上面引用中的内容：${selectedText.value}`
   articleLeft.value = computeArticleLeft()
   const sel = window.getSelection()
   const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null
 
-  const startTbl = nearestTable(range?.startContainer || null)
-  const endTbl = nearestTable(range?.endContainer || null)
-  if (startTbl || endTbl) {
-    const tbl = startTbl || endTbl
-    selectedBlockEl.value = tbl
-    regionStartEl.value = tbl
-    regionEndEl.value = tbl
-    initialStartEl.value = tbl
-    updateIndicator()
-    contextText.value = collectRegionText()
-    return
-  }
-
+  // 起止块（优先 table，其次常规块）
   const startBlock = blockOfNode(range?.startContainer || null)
   const endBlock = blockOfNode(range?.endContainer || null)
 
-  if (startBlock && endBlock && startBlock.parentElement === endBlock.parentElement) {
-    const order = startBlock.compareDocumentPosition(endBlock)
+  if (startBlock && endBlock) {
+    // 若不在同一父节点下，提升到共同祖先（限定在文章容器内）后作为兄弟块处理
+    const article = getArticleEl()
+    const common = getCommonAncestor(startBlock, endBlock, article)
+    const startLifted = liftToChildOf(startBlock, common)
+    const endLifted = liftToChildOf(endBlock, common)
+
+    const order = startLifted.compareDocumentPosition(endLifted)
     const startFirst = !(order & Node.DOCUMENT_POSITION_PRECEDING)
-    regionStartEl.value = startFirst ? startBlock : endBlock
-    regionEndEl.value = startFirst ? endBlock : startBlock
+
+    regionStartEl.value = startFirst ? startLifted : endLifted
+    regionEndEl.value = startFirst ? endLifted : startLifted
     selectedBlockEl.value = regionStartEl.value
     initialStartEl.value = regionStartEl.value
   } else {
@@ -339,6 +404,7 @@ const onClick = (e: MouseEvent) => {
 
   updateIndicator()
   contextText.value = collectRegionText()
+  buildMdRegion()
 }
 
 const closePanel = () => hide()
@@ -359,6 +425,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', onResize)
   window.removeEventListener('mousemove', onDragMove as any)
   window.removeEventListener('mouseup', onDragEnd as any)
+  if ((globalThis as any)[ownerKey] === myId) (globalThis as any)[ownerKey] = null
 })
 
 const getBlocksInSameParent = (el: HTMLElement | null) => {
@@ -398,6 +465,7 @@ const onDragMove = (e: MouseEvent) => {
       regionStartEl.value = target
       updateIndicator()
       contextText.value = collectRegionText()
+      buildMdRegion()
     }
   } else if (dragging.value === 'bottom') {
     const list = getBlocksInSameParent(regionStartEl.value || selectedBlockEl.value)
@@ -411,6 +479,7 @@ const onDragMove = (e: MouseEvent) => {
       regionEndEl.value = target
       updateIndicator()
       contextText.value = collectRegionText()
+      buildMdRegion()
     }
   }
 }
@@ -437,18 +506,21 @@ const onDragStartBottom = (e: MouseEvent) => {
   window.addEventListener('mousemove', onDragMove as any)
   window.addEventListener('mouseup', onDragEnd as any)
 }
+// 清空：仅清空问题输入
+const onClear = () => {
+  question.value = ''
+}
 </script>
 
 <template>
-  <div v-show="visible">
-    <template v-if="!panelOpen">
-      <v-btn class="ai-button" size="small" color="primary" variant="flat" rounded="lg" @click="onClick" :style="{ top: top + 'px', left: left + 'px' }">
-        AI
-      </v-btn>
-    </template>
+  <div v-if="visible && !panelOpen">
+    <v-btn class="ai-button" size="small" color="primary" variant="flat" rounded="lg" @click="onClick" :style="{ top: top + 'px', left: left + 'px' }">
+      创建一个问题
+    </v-btn>
   </div>
-  <teleport to="body" v-if="panelOpen && visible">
+  <teleport to="body" v-if="panelOpen">
     <div class="ai-indicator" :style="{ top: indicatorTop + 'px', left: indicatorLeft + 'px', height: indicatorHeight + 'px' }" />
+    <div class="ai-tag" :style="{ top: (indicatorTop - 40) + 'px', left: (indicatorLeft - 43) + 'px' }">上下文</div>
     <div class="ai-handle ai-handle--top" :style="{ top: (indicatorTop - 10) + 'px', left: (indicatorLeft - 28) + 'px' }" @mousedown.stop="onDragStartTop">
       <div class="ai-grip-line" />
       <div class="ai-grip-line" />
@@ -459,42 +531,37 @@ const onDragStartBottom = (e: MouseEvent) => {
       <div class="ai-grip-line" />
       <div class="ai-grip-line" />
     </div>
-    <v-card class="ai-panel" elevation="8" :style="{ top: top + 'px', left: articleLeft + 'px' }">
+    <v-card class="ai-panel rounded-xl" elevation="3" :style="{ top: top + 'px', left: articleLeft + 'px' }">
       <v-card-text>
         <div class="panel-header">
-          <div class="title">AI 助手</div>
+          <div class="title text-body-1">在这里输入问题</div>
           <div class="actions">
-            <v-btn
-              density="comfortable"
-              variant="text"
-              color="primary"
-              @click="onCopy"
-            >
+            <v-btn density="comfortable" variant="text" color="default" @click="onClear">
+              清空
+            </v-btn>
+            <v-btn density="comfortable" variant="text" color="default" @click="onCopy">
               复制
             </v-btn>
-            <v-btn
-              density="comfortable"
-              variant="text"
-              color="default"
-              @click="closePanel"
-            >
+            <v-btn density="comfortable" variant="text" color="default" @click="closePanel">
               关闭
             </v-btn>
           </div>
         </div>
-        <v-text-field
+        <div class="ai-hint">
+          用于选择一段上下文并提出一个问题；默认问题是让 AI 解释您选中的内容，您也可以修改问题后再点击复制，默认输出格式是Markdown。
+        </div>
+        <v-textarea
           v-model="question"
           variant="outlined"
+          auto-grow
+          rows="2"
           density="comfortable"
-          placeholder="请输入问题并按回车发送"
-          hide-details
+          placeholder="请输入问题…"
           class="mt-2"
-          @keyup.enter="emit('query', {
-            question: question,
-            context: contextText,
-            selectedText: selectedText
-          })"
+          hide-details
+          rounded="lg"
         />
+        <div v-if="localTip" class="text-body-2 text-center mt-4 text-success-darken-1">{{ localTip }}</div>
       </v-card-text>
     </v-card>
   </teleport>
@@ -511,7 +578,7 @@ const onDragStartBottom = (e: MouseEvent) => {
 }
 .actions {
   display: flex;
-  gap: 8px;
+  gap: 4px;
 }
 .ai-button {
   position: fixed;
@@ -521,7 +588,7 @@ const onDragStartBottom = (e: MouseEvent) => {
 .ai-indicator {
   position: absolute;
   width: 4px;
-  background: rgb(var(--v-theme-primary));
+  background: rgb(var(--v-theme-success));
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
   border-radius: 3px;
   z-index: 900;
@@ -544,9 +611,25 @@ const onDragStartBottom = (e: MouseEvent) => {
   flex-direction: column;
 }
 .ai-panel {
+  border: 2px solid rgb(var(--v-theme-success));
   position: absolute;
   width: 640px;
   z-index: 900;
+}
+.ai-tag {
+  position: absolute;
+  padding: 2px 8px;
+  background: rgb(var(--v-theme-success));
+  color: #fff;
+  border-radius: 999px;
+  font-size: 10px;
+  z-index: 900;
+  pointer-events: none;
+}
+.ai-hint {
+  font-size: 12px;
+  color: #666;
+  margin-top: 6px;
 }
 .ai-grip-line {
   width: 8px;
