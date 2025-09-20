@@ -4,10 +4,10 @@ import { ref } from 'vue'
 const isExpanded = ref(true)
 
 const engines = [
-  { name: 'ChatGPT', href: 'https://chatgpt.com', color: 'green-darken-2' },
-  { name: 'Claude', href: 'https://claude.ai', color: 'indigo-darken-2' },
-  { name: 'Gemini', href: 'https://gemini.google.com', color: 'blue-darken-2' },
-  { name: 'DeepSeek', href: 'https://chat.deepseek.com', color: 'deep-purple-darken-2' }
+  { name: 'ChatGPT', href: 'https://chatgpt.com', color: 'green-darken-2', icon: 'mdi-robot' },
+  { name: 'Claude', href: 'https://claude.ai', color: 'indigo-darken-2', icon: 'mdi-alpha-c-circle-outline' },
+  { name: 'Gemini', href: 'https://gemini.google.com', color: 'blue-darken-2', icon: 'mdi-google' },
+  { name: 'DeepSeek', href: 'https://chat.deepseek.com', color: 'red-darken-4', icon: 'mdi-radar' }
 ]
 </script>
 
@@ -39,23 +39,22 @@ const engines = [
           <div>4）用复制的内容询问你常用的 AI 引擎</div>
         </div>
 
-        <div class="d-flex flex-wrap mt-8" style="gap: 8px;">
+        <div class="d-flex flex-wrap mt-5" style="gap: 8px;">
           <div class="text-body-2 w-100 text-grey-darken-2 font-weight-bold">常用 AI 引擎：</div>
-          <v-btn
+          <v-chip
             v-for="e in engines"
             :key="e.name"
             :href="e.href"
             target="_blank"
             rel="noopener"
             :color="e.color"
-            variant="flat"
-            rounded="lg"
+            variant="tonal"
+            rounded="xl"
             size="small"
             class="engine-link"
-          >
-            <v-icon icon="mdi-web" size="14" class="mr-2"></v-icon>
-            <span class="font-weight-medium text-white">{{ e.name }}</span>
-          </v-btn>
+            :prepend-icon="e.icon"
+            :text="e.name"
+          />
         </div>
       </div>
     </v-expand-transition>
