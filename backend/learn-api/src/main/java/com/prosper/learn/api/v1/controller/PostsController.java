@@ -109,8 +109,8 @@ public class PostsController {
      */
     @PutMapping("/admin/posts/{id}/approve")
     public ApiResponse<PostDTO> approvePost(
-            @PathVariable Long id, 
-            @JsonParam("approve") Boolean approve) {
+            @PathVariable Long id,
+            @RequestParam("approve") Boolean approve) {
         PostDTO post = postService.approvePost(id, approve);
         return ApiResponse.success(post);
     }

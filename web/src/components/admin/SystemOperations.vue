@@ -249,6 +249,80 @@
       </div>
     </v-card>
 
+    <!-- AutoAuthor 队列管理 -->
+    <v-card flat class="pa-4 mb-4" rounded="lg" outlined>
+      <div class="d-flex align-center mb-4">
+        <v-icon icon="mdi-robot" color="purple-darken-1" class="mr-2"></v-icon>
+        <h4 class="text-h6 font-weight-bold text-grey-darken-3">AutoAuthor 队列管理</h4>
+      </div>
+
+      <div class="mb-4">
+        <p class="text-body-2 text-grey-darken-1 mb-4">
+          将指定的节点（Node）加入到 AutoAuthor 自动创作队列中，系统将自动为该节点生成内容。
+        </p>
+
+        <v-row class="mb-4">
+          <v-col cols="12" md="8">
+            <v-card flat class="pa-4 bg-purple-lighten-5" rounded="lg" elevation="0">
+              <div class="d-flex align-center mb-3">
+                <v-icon icon="mdi-playlist-plus" color="purple-darken-2" size="20" class="mr-2"></v-icon>
+                <h5 class="text-subtitle-1 font-weight-bold text-purple-darken-2">
+                  加入创作队列
+                </h5>
+              </div>
+              <p class="text-body-2 text-grey-darken-1 mb-3">
+                输入节点ID，将其加入到AutoAuthor队列中进行自动内容创作
+              </p>
+              <div class="d-flex align-center gap-3">
+                <v-text-field
+                  v-model="nodeId"
+                  label="节点ID"
+                  type="number"
+                  variant="outlined"
+                  density="compact"
+                  rounded="lg"
+                  bg-color="white"
+                  hide-details
+                  class="node-id-input"
+                  placeholder="请输入节点ID"
+                ></v-text-field>
+                <v-btn
+                  variant="flat"
+                  color="purple-darken-1"
+                  rounded="lg"
+                  density="compact"
+                  :loading="enqueuingNode"
+                  :disabled="!nodeId || enqueuingNode"
+                  class="enqueue-button ml-3"
+                  @click="enqueueNode"
+                >
+                  <v-icon icon="mdi-plus" size="16" class="mr-2"></v-icon>
+                  加入队列
+                </v-btn>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <!-- 队列操作结果显示 -->
+        <v-alert
+          v-if="enqueueResult"
+          :type="enqueueResult.type"
+          variant="tonal"
+          class="mt-3"
+          rounded="lg"
+          closable
+          @click:close="enqueueResult = null"
+        >
+          <div class="font-weight-bold">{{ enqueueResult.title }}</div>
+          <div class="text-body-2 mt-1">{{ enqueueResult.message }}</div>
+          <div v-if="enqueueResult.details" class="text-caption mt-2 text-grey-darken-1">
+            {{ enqueueResult.details }}
+          </div>
+        </v-alert>
+      </div>
+    </v-card>
+
     <!-- 操作历史 -->
     <v-card flat class="pa-4" rounded="lg" outlined>
       <div class="d-flex align-center mb-4">
@@ -321,6 +395,10 @@
   const checkingHealth = ref(false)
   const healthResult = ref(null)
   const lastHealthCheck = ref('')
+
+  const nodeId = ref('')
+  const enqueuingNode = ref(false)
+  const enqueueResult = ref(null)
 
   const operationHistory = ref([])
 

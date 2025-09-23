@@ -74,7 +74,7 @@ public class CourseRankingScheduler {
         return """
             SELECT course_id, COUNT(*) as learning_count 
             FROM user_course 
-            WHERE status IN (?, ?) 
+            WHERE state IN (?, ?) 
             GROUP BY course_id
             """;
     }

@@ -72,7 +72,7 @@ public class ProfessionRankingScheduler {
             SELECT p.id as profession_id, COUNT(ur.id) as learning_count 
             FROM profession p
             LEFT JOIN roadmap r ON p.id = r.profession_id
-            LEFT JOIN user_roadmap ur ON r.id = ur.roadmap_id AND ur.status = ?
+            LEFT JOIN user_roadmap ur ON r.id = ur.roadmap_id AND ur.state = ?
             WHERE p.state = ?
             GROUP BY p.id
             """;

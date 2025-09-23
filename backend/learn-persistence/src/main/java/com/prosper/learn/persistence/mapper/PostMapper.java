@@ -44,16 +44,16 @@ public interface PostMapper {
     List<PostDO> getContentsListByUser(long userId, long lastId, int count);
 
     @Insert("INSERT INTO post" +
-            "(node_id, creator_id, type, content, once, twice, helpful, comment_count, state, score) " +
+            "(node_id, creator_id, type, content, twice, helpful, comment_count, state, score) " +
             "VALUES " +
-            "(#{nodeId}, #{creatorId}, #{type}, #{content}, #{once}, #{twice}, #{helpful}, #{commentCount}, #{state}, 0.0)")
+            "(#{nodeId}, #{creatorId}, #{type}, #{content}, #{twice}, #{helpful}, #{commentCount}, #{state}, 0.0)")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(PostDO posting);
 
     @Update("UPDATE post " +
             "SET " +
-            "node_id = #{nodeId}, content = #{content}, once = #{once}, twice = #{twice}, " +
-            "helpful = #{helpful}, comment_count=#{commentCount}, state=#{state} where id = #{id}")
+            "node_id = #{nodeId}, content = #{content}, twice = #{twice}, helpful = #{helpful}, " +
+            "comment_count=#{commentCount}, state=#{state} where id = #{id}")
     void update(PostDO posting);
 
     // 新增分数相关方法
@@ -69,10 +69,10 @@ public interface PostMapper {
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<PostDO> getListByNodeAndScoreAndPaginated(long nodeId, double lastScore, long lastId, int limit, int state);
 
-    @Select("SELECT id, once, twice, helpful, created_at FROM post WHERE state = #{state}")
+    @Select("SELECT id, twice, helpful, created_at FROM post WHERE state = #{state}")
     List<PostDO> getAllPostsForScoreCalculation(int state);
 
-    @Select("SELECT * FROM post where state = #{state} order by id limit #{count}")
+    @Select("SELECT * FROM post where state = #{state} order by id DESC limit #{count}")
     List<PostDO> getListByState(int state, int count);
     
     /**
@@ -82,4 +82,7 @@ public interface PostMapper {
      */
     @Select("SELECT COUNT(*) FROM post WHERE state = 1")
     Long countActiveArticles();
+
+    @Select("SELECT COUNT(*) FROM post WHERE node_id = #{nodeId} AND creator_id = #{creatorId} AND state != 2")
+    Long countPostsByNodeAndCreator(@Param("nodeId") long nodeId, @Param("creatorId") long creatorId);
 }

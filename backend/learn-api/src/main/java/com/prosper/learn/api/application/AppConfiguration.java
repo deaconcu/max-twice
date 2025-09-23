@@ -15,6 +15,7 @@ import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -28,6 +29,7 @@ import java.sql.Connection;
 @Configuration
 @Log
 @MapperScan(basePackages = "com.prosper.learn.persistence.mapper")
+@EnableScheduling
 public class AppConfiguration implements WebMvcConfigurer {
 
     @Bean

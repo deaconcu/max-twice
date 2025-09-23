@@ -66,13 +66,14 @@
     try {
       console.log('begin post')
 
-      const formData = new FormData()
-      formData.append('path', props.data.path)
-      formData.append('courseId', props.data.course.id.toString())
-      formData.append('postingId', postingId.toString())
-      formData.append('action', action.toString())
+      const requestData = {
+        path: props.data.path,
+        courseId: props.data.course.id,
+        postingId: postingId,
+        action: action
+      }
 
-      const response = await contentServiceV1.operateContent(formData)
+      const response = await contentServiceV1.operateContent(requestData)
       console.log(`response: ${JSON.stringify(response)}`)
 
       if (response.code === 200) {

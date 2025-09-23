@@ -9,6 +9,9 @@ import java.util.Map;
 
 public interface NodeMapper {
 
+    @Select("SELECT n.id FROM node n WHERE n.id > #{afterId} AND NOT EXISTS (SELECT 1 FROM post p WHERE p.node_id = n.id AND p.creator_id = #{userId} AND p.state != 2) ORDER BY n.id ASC LIMIT #{limit}")
+    List<Long> selectIdsByUserIdAndPost(@Param("afterId") long afterId, @Param("userId") long userId, @Param("limit") int limit);
+
 
     @Select("SELECT * FROM node WHERE id = #{id}")
     NodeDO getById(long id);

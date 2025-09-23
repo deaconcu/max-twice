@@ -1,6 +1,7 @@
 package com.prosper.learn.domain.service.business;
 
 import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.service.basic.ScoreCalculationService;
 import com.prosper.learn.domain.service.data.*;
 import com.prosper.learn.domain.util.converter.*;
 import com.prosper.learn.dto.request.*;
@@ -37,6 +38,7 @@ public class MemoryCardDeckService {
     private final MemoryCardVersionDataService cardVersionDataService;
     private final UserCardSrsDataService userCardSrsDataService;
     private final UpvoteService upvoteService;
+    private final ScoreCalculationService scoreCalculationService;
 
     // ========== toDTO ==========
 

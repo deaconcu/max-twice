@@ -657,4 +657,22 @@ export const systemServiceV1 = {
   },
 }
 
+// AutoAuthor 管理服务
+export const adminAutoAuthorServiceV1 = {
+  // 将节点加入到 AutoAuthor 队列
+  enqueue(nodeId: number): Promise<ApiResponse<void>> {
+    return apiClient.post(`${API_V1_PREFIX}/admin/auto-author/enqueue/${nodeId}`)
+  },
+
+  // 扫描节点并加入队列
+  scan(): Promise<ApiResponse<number>> {
+    return apiClient.post(`${API_V1_PREFIX}/admin/auto-author/scan`)
+  },
+
+  // 重置 opencode 会话
+  resetSession(): Promise<ApiResponse<void>> {
+    return apiClient.post(`${API_V1_PREFIX}/admin/auto-author/session/reset`)
+  },
+}
+
 export default apiClient

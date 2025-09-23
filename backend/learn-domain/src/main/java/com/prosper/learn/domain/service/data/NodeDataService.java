@@ -95,6 +95,10 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
         return nodeMapper.countActiveNodes();
     }
 
+    public List<Long> selectIdsByUserIdAndPost(long afterId, long userId, int limit) {
+        return nodeMapper.selectIdsByUserIdAndPost(afterId, userId, limit);
+    }
+
     /**
      * 插入新节点
      */

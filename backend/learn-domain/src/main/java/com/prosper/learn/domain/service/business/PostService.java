@@ -377,6 +377,17 @@ public class PostService {
      */
     @Transactional
     public void createPost(long userId, CreatePostRequest request) {
+        createPost(userId, request, Enums.PostState.submited);
+    }
+
+    /**
+     * 创建帖子（处理contents类型的特殊逻辑）
+     *
+     * @param request 帖子创建请求对象
+     * @throws BusinessException 当节点不存在或JSON处理失败时抛出异常
+     */
+    @Transactional
+    public void createPost(long userId, CreatePostRequest request, Enums.PostState postState) {
         // 先验证参数
         if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子对象不能为空");
@@ -397,6 +408,7 @@ public class PostService {
             List<String> nodeNames = parseJsonToStringList(request.getContent());
             String[] ids = new String[nodeNames.size()];
 
+            // TODO 需要检查node name是否已存在，避免重复创建
             for (int i = 0; i < nodeNames.size(); i++) {
                 NodeDO node = new NodeDO();
                 node.setName(nodeNames.get(i));
@@ -404,6 +416,7 @@ public class PostService {
                 node.setCourseId(nodeDO.getCourseId());
                 node.setCreatedAt(Utils.getLocalDateTime());
                 node.setUpdatedAt(Utils.getLocalDateTime());
+                node.setCreatorId(userId);
                 nodeDataService.insert(node);
                 ids[i] = Long.toString(node.getId());
             }
@@ -414,7 +427,7 @@ public class PostService {
             postDO.setNodeId(request.getNodeId());
             postDO.setType(request.getType());
             postDO.setCreatorId(userId);
-            postDO.setCreatedAt(Utils.getLocalDateTime());
+            postDO.setState(postState.value());
             postDataService.insert(postDO);
         } else {
             // 非 contents 类型的帖子
@@ -423,6 +436,7 @@ public class PostService {
             postDO.setNodeId(request.getNodeId());
             postDO.setType(request.getType());
             postDO.setCreatorId(userId);
+            postDO.setState(postState.value());
             postDO.setCreatedAt(Utils.getLocalDateTime());
             postDataService.insert(postDO);
         }

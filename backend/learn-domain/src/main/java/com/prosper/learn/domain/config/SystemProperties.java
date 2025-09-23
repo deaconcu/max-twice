@@ -91,6 +91,7 @@ public class SystemProperties {
      * 缓存相关配置
      */
     private Cache cache = new Cache();
+    private AutoAuthor autoAuthor = new AutoAuthor();
 
     @Data
     public static class Contents {
@@ -453,7 +454,7 @@ public class SystemProperties {
         /**
          * 待审核帖子查询限制
          */
-        private int pendingPostsLimit = 200;
+        private int pendingPostsLimit = 20;
         
         /**
          * 用户内容列表默认数量
@@ -550,5 +551,27 @@ public class SystemProperties {
          * 影响：spring.cache.type配置，控制所有@Cacheable等注解是否生效
          */
         private String type = "redis";
+    }
+
+    @Data
+    public static class AutoAuthor {
+        /** 是否启用自动作者功能 */
+        private boolean enabled = true;
+        /** 用于创建AI帖子/目录的系统AI用户ID */
+        private long aiUserId = 85L;
+        /** 执行器轮询间隔（秒） */
+        private int pollIntervalSec = 2;
+        /** 生成失败后的休眠重试间隔（秒） */
+        private int retryDelaySec = 60;//600;
+        /** DIRECTORY 分支每个节点最多创建的子节点数量 */
+        private int maxChildrenPerNode = 30;
+        /** 兜底扫描CRON表达式（默认每日03:00） */
+        private String scanCron = "0 0 3 * * ?";
+        /** Redis键前缀，例如 autoAuthor:ready */
+        private String redisKeyPrefix = "autoAuthor:";
+        /** OpenCode 本地服务基础URL，用于调用生成接口 */
+        private String opencodeBaseUrl = "http://127.0.0.1:4096";
+        private String providerId = "github-copilot";
+        private String modelId = "gemini-2.5-pro";
     }
 }

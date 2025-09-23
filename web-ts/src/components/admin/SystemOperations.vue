@@ -249,6 +249,120 @@
       </div>
     </v-card>
 
+    <!-- AutoAuthor 队列管理 -->
+    <v-card flat class="pa-4 mb-4" rounded="lg" outlined>
+      <div class="d-flex align-center mb-4">
+        <v-icon icon="mdi-robot" color="purple-darken-1" class="mr-2"></v-icon>
+        <h4 class="text-h6 font-weight-bold text-grey-darken-3">AutoAuthor 队列管理</h4>
+      </div>
+
+      <div class="mb-4">
+        <p class="text-body-2 text-grey-darken-1 mb-4">
+          将指定的节点（Node）加入到 AutoAuthor 自动创作队列中，系统将自动为该节点生成内容。
+        </p>
+
+        <v-row class="mb-4">
+          <!-- 手动入队 -->
+          <v-col cols="12" md="4">
+            <v-card flat class="pa-4 bg-purple-lighten-5" rounded="lg" elevation="0">
+              <div class="d-flex align-center mb-3">
+                <v-icon icon="mdi-playlist-plus" color="purple-darken-2" size="20" class="mr-2"></v-icon>
+                <h5 class="text-subtitle-1 font-weight-bold text-purple-darken-2">
+                  加入创作队列
+                </h5>
+              </div>
+              <p class="text-body-2 text-grey-darken-1 mb-3">
+                输入节点ID，将其加入到AutoAuthor队列中
+              </p>
+              <div class="d-flex align-center gap-3">
+                <v-text-field
+                  v-model="nodeId"
+                  label="节点ID"
+                  type="number"
+                  variant="outlined"
+                  density="compact"
+                  rounded="lg"
+                  bg-color="white"
+                  hide-details
+                  class="node-id-input"
+                  placeholder="请输入节点ID"
+                ></v-text-field>
+                <v-btn
+                  variant="flat"
+                  color="purple-darken-1"
+                  rounded="lg"
+                  density="compact"
+                  :loading="enqueuingNode"
+                  :disabled="!nodeId || enqueuingNode"
+                  class="enqueue-button ml-3"
+                  @click="enqueueNode"
+                >
+                  <v-icon icon="mdi-plus" size="16" class="mr-2"></v-icon>
+                  加入队列
+                </v-btn>
+              </div>
+            </v-card>
+          </v-col>
+
+          <!-- 扫描节点 -->
+          <v-col cols="12" md="4">
+            <v-card flat class="pa-4 bg-green-lighten-5" rounded="lg" elevation="0">
+              <div class="d-flex align-center mb-3">
+                <v-icon icon="mdi-magnify-scan" color="green-darken-2" size="20" class="mr-2"></v-icon>
+                <h5 class="text-subtitle-1 font-weight-bold text-green-darken-2">
+                  扫描节点
+                </h5>
+              </div>
+              <p class="text-body-2 text-grey-darken-1 mb-3">
+                扫描所有缺少AI内容的节点并批量加入队列
+              </p>
+              <v-btn
+                variant="flat"
+                color="green-darken-1"
+                rounded="lg"
+                density="compact"
+                :loading="scanningNodes"
+                :disabled="scanningNodes"
+                class="scan-button"
+                @click="scanNodes"
+              >
+                <v-icon icon="mdi-radar" size="16" class="mr-2"></v-icon>
+                开始扫描
+              </v-btn>
+            </v-card>
+          </v-col>
+
+          <!-- 重置会话 -->
+          <v-col cols="12" md="4">
+            <v-card flat class="pa-4 bg-orange-lighten-5" rounded="lg" elevation="0">
+              <div class="d-flex align-center mb-3">
+                <v-icon icon="mdi-refresh-auto" color="orange-darken-2" size="20" class="mr-2"></v-icon>
+                <h5 class="text-subtitle-1 font-weight-bold text-orange-darken-2">
+                  重置会话
+                </h5>
+              </div>
+              <p class="text-body-2 text-grey-darken-1 mb-3">
+                重置与opencode的连接会话，解决连接问题
+              </p>
+              <v-btn
+                variant="flat"
+                color="orange-darken-1"
+                rounded="lg"
+                density="compact"
+                :loading="resettingSession"
+                :disabled="resettingSession"
+                class="reset-button"
+                @click="resetSession"
+              >
+                <v-icon icon="mdi-connection" size="16" class="mr-2"></v-icon>
+                重置会话
+              </v-btn>
+            </v-card>
+          </v-col>
+        </v-row>
+      </div>
+    </v-card>
+
     <!-- 操作历史 -->
     <v-card flat class="pa-4" rounded="lg" outlined>
       <div class="d-flex align-center mb-4">
@@ -307,7 +421,7 @@
 
 <script setup lang="ts">
 import { inject, ref } from 'vue'
-import { statsServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { statsServiceV1, adminAutoAuthorServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -345,6 +459,11 @@ const syncResult = ref<SyncResult | null>(null)
 const checkingHealth = ref<boolean>(false)
 const healthResult = ref<HealthResult | null>(null)
 const lastHealthCheck = ref<string>('')
+
+const nodeId = ref<string>('')
+const enqueuingNode = ref<boolean>(false)
+const scanningNodes = ref<boolean>(false)
+const resettingSession = ref<boolean>(false)
 
 const operationHistory = ref<OperationRecord[]>([])
 
@@ -505,6 +624,83 @@ const checkSystemHealth = async (): Promise<void> => {
     checkingHealth.value = false
   }
 }
+
+/**
+ * 将节点加入到 AutoAuthor 队列
+ */
+const enqueueNode = async (): Promise<void> => {
+  if (!nodeId.value) {
+    showSnackbar?.('请输入节点ID', 'error')
+    return
+  }
+
+  enqueuingNode.value = true
+
+  try {
+    const nodeIdNumber = parseInt(nodeId.value, 10)
+    const response = await adminAutoAuthorServiceV1.enqueue(nodeIdNumber)
+
+    if (response.code === 200) {
+      showSnackbar?.(response.message || '操作成功', 'success')
+      addOperationToHistory('AutoAuthor队列', `节点 ${nodeIdNumber} 加入创作队列`, true)
+      // 清空输入框
+      nodeId.value = ''
+    } else {
+      throw new Error(response.message || '加入队列失败')
+    }
+  } catch (error: any) {
+    showSnackbar?.(`节点加入队列失败: ${error.message}`, 'error')
+    addOperationToHistory('AutoAuthor队列', `节点 ${nodeId.value} 加入队列失败: ${error.message}`, false)
+  } finally {
+    enqueuingNode.value = false
+  }
+}
+
+/**
+ * 扫描节点并批量加入队列
+ */
+const scanNodes = async (): Promise<void> => {
+  scanningNodes.value = true
+
+  try {
+    const response = await adminAutoAuthorServiceV1.scan()
+
+    if (response.code === 200) {
+      showSnackbar?.('扫描已开始', 'success')
+      addOperationToHistory('AutoAuthor扫描', '开始扫描缺少AI内容的节点', true)
+    } else {
+      throw new Error(response.message || '启动扫描失败')
+    }
+  } catch (error: any) {
+    showSnackbar?.(`启动扫描失败: ${error.message}`, 'error')
+    addOperationToHistory('AutoAuthor扫描', `扫描失败: ${error.message}`, false)
+  } finally {
+    scanningNodes.value = false
+  }
+}
+
+/**
+ * 重置 opencode 会话
+ */
+const resetSession = async (): Promise<void> => {
+  resettingSession.value = true
+
+  try {
+    const response = await adminAutoAuthorServiceV1.resetSession()
+
+    if (response.code === 200) {
+      showSnackbar?.('会话已重置', 'success')
+      addOperationToHistory('AutoAuthor会话', '重置opencode会话成功', true)
+    } else {
+      throw new Error(response.message || '重置会话失败')
+    }
+  } catch (error: any) {
+    showSnackbar?.(`重置会话失败: ${error.message}`, 'error')
+    addOperationToHistory('AutoAuthor会话', `重置失败: ${error.message}`, false)
+  } finally {
+    resettingSession.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -518,8 +714,21 @@ const checkSystemHealth = async (): Promise<void> => {
     max-width: 180px;
   }
 
+  /* 节点ID输入框样式 */
+  .node-id-input {
+    min-width: 220px;
+    max-width: 700px;
+  }
+
   /* 同步按钮样式 */
   .sync-button {
+    height: 40px;
+  }
+
+  /* 队列按钮样式 */
+  .enqueue-button,
+  .scan-button,
+  .reset-button {
     height: 40px;
   }
 

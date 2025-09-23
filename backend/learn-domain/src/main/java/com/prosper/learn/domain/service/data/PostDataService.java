@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service.data;
 
+import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.persistence.dataobject.PostDO;
 import com.prosper.learn.persistence.mapper.PostMapper;
@@ -107,11 +108,21 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
     public Long countActiveArticles() {
         return postMapper.countActiveArticles();
     }
-    
+
+    public boolean existPost(long nodeId, long creatorId) {
+        Long c = postMapper.countPostsByNodeAndCreator(nodeId, creatorId);
+        return c != null && c > 0;
+    }
+
     /**
      * 插入帖子
      */
     public void insert(PostDO post) {
+        post.setTwice(0);
+        post.setHelpful(0);
+        post.setCommentCount(0);
+        post.setCreatedAt(Utils.getLocalDateTime());
+        post.setScore(0.0);
         postMapper.insert(post);
     }
     
