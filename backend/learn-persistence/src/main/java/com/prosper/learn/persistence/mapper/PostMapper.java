@@ -74,6 +74,9 @@ public interface PostMapper {
 
     @Select("SELECT * FROM post where state = #{state} order by id DESC limit #{count}")
     List<PostDO> getListByState(int state, int count);
+
+    @Select("SELECT * FROM post where state = #{state} and id < #{lastId} order by id DESC limit #{limit}")
+    List<PostDO> getListByStateWithPagination(int state, long lastId, int limit);
     
     /**
      * 统计活跃文章数量（state=1表示已发布状态）

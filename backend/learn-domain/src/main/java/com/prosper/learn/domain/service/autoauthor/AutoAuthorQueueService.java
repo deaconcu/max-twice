@@ -65,4 +65,18 @@ public class AutoAuthorQueueService {
         String key = readyKey();
         redisTemplate.opsForZSet().remove(key, Long.toString(nodeId));
     }
+
+    /**
+     * 清空所有队列
+     * @return 清空的节点数量
+     */
+    public long clear() {
+        String key = readyKey();
+        Long size = redisTemplate.opsForZSet().zCard(key);
+        if (size != null && size > 0) {
+            redisTemplate.delete(key);
+            return size;
+        }
+        return 0;
+    }
 }

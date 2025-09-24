@@ -302,6 +302,12 @@ export const postServiceV1 = {
     return apiClient.get(`${API_V1_PREFIX}/admin/posts/pending`)
   },
 
+  getPostsByState(state: string, lastId?: number, limit?: number): Promise<ApiResponse<Post[]>> {
+    return apiClient.get(`${API_V1_PREFIX}/admin/posts`, {
+      params: { state, lastId, limit },
+    })
+  },
+
   approvePost(id: number, approve: boolean): Promise<ApiResponse<Post>> {
     return apiClient.put(`${API_V1_PREFIX}/admin/posts/${id}/approve`, null, {
       params: { approve },
@@ -672,6 +678,11 @@ export const adminAutoAuthorServiceV1 = {
   // 重置 opencode 会话
   resetSession(): Promise<ApiResponse<void>> {
     return apiClient.post(`${API_V1_PREFIX}/admin/auto-author/session/reset`)
+  },
+
+  // 清空队列
+  clearQueue(): Promise<ApiResponse<void>> {
+    return apiClient.delete(`${API_V1_PREFIX}/admin/auto-author/queue`)
   },
 }
 

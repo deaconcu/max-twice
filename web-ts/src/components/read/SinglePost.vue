@@ -48,14 +48,20 @@
   const content = ref<HTMLElement | null>(null)
   const isOverflow = ref<boolean>(false)
   const contentRef = ref<HTMLElement | null>(null)
+  const mathRendererRef = ref<any>(null)
 
   onMounted(async () => {
     await nextTick() // 确保 DOM 更新后执行
-    if (!content.value) return
-    content.value.querySelectorAll('pre code, code').forEach((block) => {
-      hljs.highlightElement(block as HTMLElement)
-    })
 
+    // 代码高亮处理
+    const contentElement = content.value || mathRendererRef.value?.$el
+    if (contentElement) {
+      contentElement.querySelectorAll('pre code, code').forEach((block) => {
+        hljs.highlightElement(block as HTMLElement)
+      })
+    }
+
+    // 检查溢出状态
     const el = contentRef.value
     if (el && el.scrollHeight > el.clientHeight + 1) {
       isOverflow.value = true
@@ -202,7 +208,12 @@
       <!-- is article -->
       <template v-else>
         <div ref="contentRef" :class="!props.detail ? 'text-limited' : ''">
-          <div ref="content" class="tiptap pt-3 w-100" :class="props.detail ? 'full-article' : ''" v-html="posting.content"></div>
+          <div
+            ref="content"
+            class="tiptap pt-3 w-100"
+            :class="props.detail ? 'full-article' : ''"
+            v-html="posting.content"
+          ></div>
         </div>
 
         <v-btn
@@ -527,6 +538,7 @@
       line-height: 1.1;
       margin-top: 2.5rem;
       text-wrap: pretty;
+      font-weight: bold;
     }
 
     h1,
@@ -569,6 +581,8 @@
       font-family: 'JetBrainsMono', monospace;
       margin: 1.5rem 0;
       padding: 0.75rem 1rem;
+      overflow-x: scroll;
+      width: 100%;
 
       code {
         background: none;

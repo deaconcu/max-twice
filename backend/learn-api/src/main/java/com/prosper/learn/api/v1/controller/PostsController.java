@@ -94,6 +94,34 @@ public class PostsController {
     }
 
     /**
+     * 根据状态获取帖子列表
+     */
+    @GetMapping("/admin/posts")
+    public ApiResponse<List<PostDTO>> getPostsByState(
+            @RequestParam("state") String state,
+            @RequestParam(value = "lastId", defaultValue = "0") Long lastId,
+            @RequestParam(value = "limit", defaultValue = "20") Integer limit) {
+        com.prosper.learn.common.Enums.PostState postState;
+
+        switch (state) {
+            case "pending":
+                postState = com.prosper.learn.common.Enums.PostState.submited;
+                break;
+            case "approved":
+                postState = com.prosper.learn.common.Enums.PostState.approved;
+                break;
+            case "rejected":
+                postState = com.prosper.learn.common.Enums.PostState.deleted;
+                break;
+            default:
+                postState = com.prosper.learn.common.Enums.PostState.submited;
+        }
+
+        List<PostDTO> posts = postService.getPostsByState(postState, lastId, limit);
+        return ApiResponse.success(posts);
+    }
+
+    /**
      * 获取待审核帖子
      * 映射: GET /post/censor → GET /api/v1/admin/posts/pending
      */

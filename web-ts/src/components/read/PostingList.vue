@@ -476,9 +476,13 @@
           </span>
         </v-btn>
       </div>
+      <div v-if="data.node.description" class="ms-0 mt-4">
+        <p class="text-body-2 text-grey-darken-1 mb-0">
+          {{ data.node.description }}
+        </p>
+      </div>
     </div>
-    <p class="text-body-1 text-grey-darken-2 mb-0">{{ data.node.description }}</p>
-    <v-row class="mt-8 mb-0 mx-0 justify-space-between">
+    <v-row class="mt-4 mb-0 mx-0 justify-space-between">
       <div>
         <v-tabs v-model="tab" density="compact" color="primary" class="">
           <v-tab value="list" class="px-3" @click="switchTab('list', '')">

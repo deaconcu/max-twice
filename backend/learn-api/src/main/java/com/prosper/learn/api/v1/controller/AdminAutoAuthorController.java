@@ -49,4 +49,14 @@ public class AdminAutoAuthorController {
         generationService.resetSession();
         return ApiResponse.success();
     }
+
+    @DeleteMapping("/queue")
+    @SaCheckLogin
+    public ApiResponse<String> clearQueue() {
+        long count = queueService.clear();
+        String message = count > 0 ?
+            String.format("已清空队列，共删除 %d 个待处理节点", count) :
+            "队列已经是空的";
+        return ApiResponse.success(message);
+    }
 }

@@ -29,6 +29,7 @@ public interface NodeConverter {
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "name")
+    @Mapping(target = "description")
     NodeDTO toDTOV1(NodeDO nodeDO);
     
     @IterableMapping(qualifiedByName = "toDTOV1")

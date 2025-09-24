@@ -263,7 +263,7 @@
 
         <v-row class="mb-4">
           <!-- 手动入队 -->
-          <v-col cols="12" md="4">
+          <v-col cols="12" md="3">
             <v-card flat class="pa-4 bg-purple-lighten-5" rounded="lg" elevation="0">
               <div class="d-flex align-center mb-3">
                 <v-icon icon="mdi-playlist-plus" color="purple-darken-2" size="20" class="mr-2"></v-icon>
@@ -272,7 +272,7 @@
                 </h5>
               </div>
               <p class="text-body-2 text-grey-darken-1 mb-3">
-                输入节点ID，将其加入到AutoAuthor队列中
+                将节点ID加入到AutoAuthor队列中
               </p>
               <div class="d-flex align-center gap-3">
                 <v-text-field
@@ -298,14 +298,14 @@
                   @click="enqueueNode"
                 >
                   <v-icon icon="mdi-plus" size="16" class="mr-2"></v-icon>
-                  加入队列
+                  加入
                 </v-btn>
               </div>
             </v-card>
           </v-col>
 
           <!-- 扫描节点 -->
-          <v-col cols="12" md="4">
+          <v-col cols="12" md="3">
             <v-card flat class="pa-4 bg-green-lighten-5" rounded="lg" elevation="0">
               <div class="d-flex align-center mb-3">
                 <v-icon icon="mdi-magnify-scan" color="green-darken-2" size="20" class="mr-2"></v-icon>
@@ -314,7 +314,7 @@
                 </h5>
               </div>
               <p class="text-body-2 text-grey-darken-1 mb-3">
-                扫描所有缺少AI内容的节点并批量加入队列
+                扫描缺少AI内容的节点并批量加入队列
               </p>
               <v-btn
                 variant="flat"
@@ -333,7 +333,7 @@
           </v-col>
 
           <!-- 重置会话 -->
-          <v-col cols="12" md="4">
+          <v-col cols="12" md="3">
             <v-card flat class="pa-4 bg-orange-lighten-5" rounded="lg" elevation="0">
               <div class="d-flex align-center mb-3">
                 <v-icon icon="mdi-refresh-auto" color="orange-darken-2" size="20" class="mr-2"></v-icon>
@@ -342,7 +342,7 @@
                 </h5>
               </div>
               <p class="text-body-2 text-grey-darken-1 mb-3">
-                重置与opencode的连接会话，解决连接问题
+                重置与opencode的连接会话
               </p>
               <v-btn
                 variant="flat"
@@ -356,6 +356,34 @@
               >
                 <v-icon icon="mdi-connection" size="16" class="mr-2"></v-icon>
                 重置会话
+              </v-btn>
+            </v-card>
+          </v-col>
+
+          <!-- 清空队列 -->
+          <v-col cols="12" md="3">
+            <v-card flat class="pa-4 bg-red-lighten-5" rounded="lg" elevation="0">
+              <div class="d-flex align-center mb-3">
+                <v-icon icon="mdi-delete-sweep" color="red-darken-2" size="20" class="mr-2"></v-icon>
+                <h5 class="text-subtitle-1 font-weight-bold text-red-darken-2">
+                  清空队列
+                </h5>
+              </div>
+              <p class="text-body-2 text-grey-darken-1 mb-3">
+                清空所有待处理的AutoAuthor创作队列
+              </p>
+              <v-btn
+                variant="flat"
+                color="red-darken-1"
+                rounded="lg"
+                density="compact"
+                :loading="clearingQueue"
+                :disabled="clearingQueue"
+                class="clear-button"
+                @click="confirmClearQueue"
+              >
+                <v-icon icon="mdi-trash-can" size="16" class="mr-2"></v-icon>
+                清空队列
               </v-btn>
             </v-card>
           </v-col>
@@ -464,6 +492,7 @@ const nodeId = ref<string>('')
 const enqueuingNode = ref<boolean>(false)
 const scanningNodes = ref<boolean>(false)
 const resettingSession = ref<boolean>(false)
+const clearingQueue = ref<boolean>(false)
 
 const operationHistory = ref<OperationRecord[]>([])
 
@@ -701,6 +730,38 @@ const resetSession = async (): Promise<void> => {
     resettingSession.value = false
   }
 }
+
+/**
+ * 确认清空队列
+ */
+const confirmClearQueue = (): void => {
+  if (confirm('确定要清空所有AutoAuthor队列吗？此操作不可撤销。')) {
+    clearQueue()
+  }
+}
+
+/**
+ * 清空 AutoAuthor 队列
+ */
+const clearQueue = async (): Promise<void> => {
+  clearingQueue.value = true
+
+  try {
+    const response = await adminAutoAuthorServiceV1.clearQueue()
+
+    if (response.code === 200) {
+      showSnackbar?.(response.message || '队列已清空', 'success')
+      addOperationToHistory('AutoAuthor队列', '清空所有待处理队列', true)
+    } else {
+      throw new Error(response.message || '清空队列失败')
+    }
+  } catch (error: any) {
+    showSnackbar?.(`清空队列失败: ${error.message}`, 'error')
+    addOperationToHistory('AutoAuthor队列', `清空队列失败: ${error.message}`, false)
+  } finally {
+    clearingQueue.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -716,8 +777,9 @@ const resetSession = async (): Promise<void> => {
 
   /* 节点ID输入框样式 */
   .node-id-input {
-    min-width: 220px;
-    max-width: 700px;
+    min-width: 80px;
+    max-width: 280px;
+    flex-shrink: 1;
   }
 
   /* 同步按钮样式 */
@@ -728,7 +790,8 @@ const resetSession = async (): Promise<void> => {
   /* 队列按钮样式 */
   .enqueue-button,
   .scan-button,
-  .reset-button {
+  .reset-button,
+  .clear-button {
     height: 40px;
   }
 

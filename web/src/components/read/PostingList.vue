@@ -459,7 +459,12 @@
       <div class="d-flex align-center justify-space-between mb-2">
         <div class="d-flex align-center">
           <v-icon icon="mdi-list-box-outline" color="primary-darken-1" size="24"></v-icon>
-          <h2 class="text-h5 font-weight-bold text-grey-darken-4 ms-3">{{ data.node.name }}</h2>
+          <div class="ms-3">
+            <h2 class="text-h5 font-weight-bold text-grey-darken-4 mb-1">{{ data.node.name }}</h2>
+            <p v-if="data.node.description" class="text-body-2 text-grey-darken-1 mb-0">
+              {{ data.node.description }}
+            </p>
+          </div>
         </div>
         <v-btn
           v-if="isLearning && !hasSubNodes"

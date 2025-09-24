@@ -246,6 +246,12 @@ export const postServiceV1 = {
     return apiClient.get(`${API_V1_PREFIX}/admin/posts/pending`)
   },
 
+  getPostsByState(state) {
+    return apiClient.get(`${API_V1_PREFIX}/admin/posts`, {
+      params: { state },
+    })
+  },
+
   approvePost(id, approve) {
     return apiClient.put(`${API_V1_PREFIX}/admin/posts/${id}/approve`, null, {
       params: { approve },

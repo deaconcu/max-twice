@@ -353,16 +353,36 @@ public class PostService {
     }
 
     /**
-     * 获取待审核帖子列表
+     * 根据状态获取帖子列表
      */
-    public List<PostDTO> getPendingPostsList() {
-        List<PostDO> postDOList = postDataService.getListByState(Enums.PostState.approved.value(), systemProperties.getPosting().getPendingPostsLimit());
+    public List<PostDTO> getPostsByState(Enums.PostState state) {
+        List<PostDO> postDOList = postDataService.getListByState(state.value(), systemProperties.getPosting().getPendingPostsLimit());
         for (PostDO postDO : postDOList) {
             if (postDO.getType() == Enums.PostType.contents.value()) {
                 idToName(postDO);
             }
         }
         return toDTO(postDOList);
+    }
+
+    /**
+     * 根据状态获取帖子列表（支持分页）
+     */
+    public List<PostDTO> getPostsByState(Enums.PostState state, Long lastId, Integer limit) {
+        List<PostDO> postDOList = postDataService.getListByState(state.value(), lastId, limit);
+        for (PostDO postDO : postDOList) {
+            if (postDO.getType() == Enums.PostType.contents.value()) {
+                idToName(postDO);
+            }
+        }
+        return toDTO(postDOList);
+    }
+
+    /**
+     * 获取待审核帖子列表
+     */
+    public List<PostDTO> getPendingPostsList() {
+        return getPostsByState(Enums.PostState.submited);
     }
 
 
@@ -405,14 +425,15 @@ public class PostService {
                 throw ErrorCode.POSTING_NODE_NOT_FOUND.exception();
             }
 
-            List<String> nodeNames = parseJsonToStringList(request.getContent());
-            String[] ids = new String[nodeNames.size()];
+            List<Utils.Pair<String, String>> chapterInfos = parseJsonToChapterInfoList(request.getContent());
+            String[] ids = new String[chapterInfos.size()];
 
             // TODO 需要检查node name是否已存在，避免重复创建
-            for (int i = 0; i < nodeNames.size(); i++) {
+            for (int i = 0; i < chapterInfos.size(); i++) {
+                Utils.Pair<String, String> chapterInfo = chapterInfos.get(i);
                 NodeDO node = new NodeDO();
-                node.setName(nodeNames.get(i));
-                node.setDescription("");
+                node.setName(chapterInfo.left());
+                node.setDescription(chapterInfo.right());
                 node.setCourseId(nodeDO.getCourseId());
                 node.setCreatedAt(Utils.getLocalDateTime());
                 node.setUpdatedAt(Utils.getLocalDateTime());
@@ -615,14 +636,21 @@ public class PostService {
     }
     
     /**
-     * 解析JSON字符串到字符串列表
+     * 解析JSON字符串到章节信息列表
+     * 格式：[{"章节1": "描述1"}, {"章节2": "描述2"}, {"章节3": "描述3"}]
      */
-    private List<String> parseJsonToStringList(String jsonContent) {
+    private List<Utils.Pair<String, String>> parseJsonToChapterInfoList(String jsonContent) {
         try {
-            return objectMapper.readValue(jsonContent, new TypeReference<List<String>>() {});
+            List<Map<String, String>> chapterMaps = objectMapper.readValue(jsonContent, new TypeReference<>() {});
+            return chapterMaps.stream().map(chapterMap -> {
+                if (chapterMap.size() != 1) {
+                    throw ErrorCode.INVALID_PARAMETER.exception("每个章节对象必须包含且仅包含一个键值对");
+                }
+                Map.Entry<String, String> entry = chapterMap.entrySet().iterator().next();
+                return new Utils.Pair<>(entry.getKey(), entry.getValue() != null ? entry.getValue() : "");
+            }).collect(Collectors.toList());
         } catch (JsonProcessingException e) {
-            log.error("JSON解析失败: {}", jsonContent, e);
-            throw ErrorCode.POSTING_CONTENT_PARSE_FAILED.exception(e);
+            throw ErrorCode.INVALID_PARAMETER.exception("目录内容格式错误，请使用正确的JSON格式");
         }
     }
     

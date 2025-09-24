@@ -1,5 +1,5 @@
 <script setup>
-  import { inject, onMounted, ref } from 'vue'
+  import { inject, onMounted, ref, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { postServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { POST_STATE, POST_TYPE } from '@/constants/statusConstants'
@@ -7,21 +7,57 @@
   const { t } = useI18n()
   const showSnackbar = inject('showSnackbar')
 
-  const postList = ref([])
+  const allPostList = ref([])
+  const currentTab = ref('pending')
 
-  const getPostSensorList = async () => {
+  // 标签配置
+  const tabs = [
+    {
+      key: 'pending',
+      label: t('admin.pending'),
+      state: POST_STATE.SUBMITTED,
+      icon: 'mdi-clock-outline',
+      color: 'orange'
+    },
+    {
+      key: 'approved',
+      label: t('admin.approved'),
+      state: POST_STATE.APPROVED,
+      icon: 'mdi-check-circle',
+      color: 'green'
+    },
+    {
+      key: 'rejected',
+      label: t('admin.rejected'),
+      state: POST_STATE.DELETED,
+      icon: 'mdi-close-circle',
+      color: 'red'
+    }
+  ]
+
+  // 直接显示当前tab的数据，不需要过滤
+  const postList = computed(() => {
+    return allPostList.value
+  })
+
+  // 根据当前tab获取对应状态的帖子
+  const getPostsByTab = async (tabKey) => {
     try {
-      const response = await postServiceV1.getPendingPosts()
+      const response = await postServiceV1.getPostsByState(tabKey)
 
       if (response.code === 401) {
         console.log('not login')
       } else if (response.code === 200) {
-        postList.value = response.data
+        allPostList.value = response.data
         console.log('done')
       }
     } catch (error) {
-      console.error('Error verifying login status:', error)
+      console.error('Error loading posts:', error)
     }
+  }
+
+  const getPostSensorList = async () => {
+    await getPostsByTab(currentTab.value)
   }
 
   const approvePost = async (post, approve) => {
@@ -33,12 +69,20 @@
       } else if (response.code === 200) {
         console.log('done')
         console.log(`post: ${JSON.stringify(response.data)}`)
-        post.state = response.data.state
+
+        // 审核操作后重新加载当前tab的数据
+        await getPostsByTab(currentTab.value)
+
         showSnackbar(t('admin.operationSuccess'))
       }
     } catch (error) {
       console.error('Error verifying login status:', error)
     }
+  }
+
+  // 监听tab切换，重新加载数据
+  const handleTabChange = async (newTab) => {
+    await getPostsByTab(newTab)
   }
 
   onMounted(() => {
@@ -68,10 +112,34 @@
           class="mr-1"
         ></v-icon>
         <span class="text-blue-darken-2 text-caption"
-          >{{ postList.length }} {{ t('admin.articlesAwaitingReview') }}</span
+          >{{ postList.length }} {{ tabs.find(tab => tab.key === currentTab)?.label }}</span
         >
       </v-chip>
     </div>
+
+    <!-- 状态标签 -->
+    <v-tabs
+      v-model="currentTab"
+      color="primary"
+      class="mb-6"
+      show-arrows
+      @update:model-value="handleTabChange"
+    >
+      <v-tab
+        v-for="tab in tabs"
+        :key="tab.key"
+        :value="tab.key"
+        class="text-none"
+      >
+        <v-icon
+          :icon="tab.icon"
+          :color="`${tab.color}-darken-1`"
+          size="18"
+          class="mr-2"
+        ></v-icon>
+        {{ tab.label }}
+      </v-tab>
+    </v-tabs>
 
     <div v-if="postList.length === 0" class="text-center py-12">
       <v-icon
@@ -80,7 +148,9 @@
         color="grey-lighten-1"
         class="mb-4"
       ></v-icon>
-      <p class="text-body-1 text-grey-darken-1">{{ t('admin.noArticlesToReview') }}</p>
+      <p class="text-body-1 text-grey-darken-1">
+        {{ currentTab === 'pending' ? t('admin.noArticlesToReview') : `暂无${tabs.find(tab => tab.key === currentTab)?.label}的文章` }}
+      </p>
     </div>
 
     <div v-for="post in postList" :key="post.id" class="mb-4">
@@ -120,7 +190,7 @@
                 {{ t('admin.rejected') }}
               </v-chip>
             </div>
-            <div class="d-flex flex-column ga-2">
+            <div v-if="post.state == POST_STATE.SUBMITTED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
                 color="green-lighten-4"
