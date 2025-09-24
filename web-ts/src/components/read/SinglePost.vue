@@ -1,16 +1,15 @@
 <script setup lang="ts">
-  import { inject, nextTick, onMounted, ref } from 'vue'
+  import { inject, nextTick, onMounted, ref, watch } from 'vue'
   import { contentServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { useI18n } from 'vue-i18n'
   import { PostType, VoteType } from '@/types/enums'
   import type { Post } from '@/types/post'
   import type { Course } from '@/types/course'
   import type { Node } from '@/types/node'
-  import hljs from 'highlight.js'
-  import 'highlight.js/styles/github.css' // 选择你的高亮主题
 
   import UserCard from '../user/UserCard.vue'
   import TextSelectionAI from '@/components/common/TextSelectionAI.vue'
+  import RichContentRenderer from '@/components/common/RichContentRenderer.vue'
 
   // 🔴 导入Post浏览量跟踪服务
   import postViewTracking from '@/services/postViewTracking'
@@ -45,28 +44,46 @@
   const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
   const { t } = useI18n()
 
-  const content = ref<HTMLElement | null>(null)
   const isOverflow = ref<boolean>(false)
   const contentRef = ref<HTMLElement | null>(null)
-  const mathRendererRef = ref<any>(null)
+  const updateOverflowState = () => {
+    const el = contentRef.value
+    if (!el || props.detail) {
+      isOverflow.value = false
+      return
+    }
+    isOverflow.value = el.scrollHeight > el.clientHeight + 1
+  }
 
-  onMounted(async () => {
-    await nextTick() // 确保 DOM 更新后执行
+  const handleContentRendered = () => {
+    nextTick(() => {
+      updateOverflowState()
+    })
+  }
 
-    // 代码高亮处理
-    const contentElement = content.value || mathRendererRef.value?.$el
-    if (contentElement) {
-      contentElement.querySelectorAll('pre code, code').forEach((block) => {
-        hljs.highlightElement(block as HTMLElement)
+  onMounted(() => {
+    nextTick(() => {
+      updateOverflowState()
+    })
+  })
+
+  watch(
+    () => props.detail,
+    () => {
+      nextTick(() => {
+        updateOverflowState()
       })
     }
+  )
 
-    // 检查溢出状态
-    const el = contentRef.value
-    if (el && el.scrollHeight > el.clientHeight + 1) {
-      isOverflow.value = true
+  watch(
+    () => props.posting.content,
+    () => {
+      nextTick(() => {
+        updateOverflowState()
+      })
     }
-  })
+  )
 
   const modifyContents = async (postingId: number, action: number): Promise<void> => {
     try {
@@ -208,12 +225,12 @@
       <!-- is article -->
       <template v-else>
         <div ref="contentRef" :class="!props.detail ? 'text-limited' : ''">
-          <div
-            ref="content"
+          <RichContentRenderer
             class="tiptap pt-3 w-100"
             :class="props.detail ? 'full-article' : ''"
-            v-html="posting.content"
-          ></div>
+            :html="posting.content"
+            @rendered="handleContentRendered"
+          />
         </div>
 
         <v-btn
