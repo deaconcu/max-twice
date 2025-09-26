@@ -128,6 +128,14 @@ const getNextNode = (currentPath: string): NextNodeInfo | null => {
   }
 }
 
+// 滚动到页面顶部
+const scrollToTop = (): void => {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  })
+}
+
 // 暴露方法给父组件
 defineExpose({
   getNextNode,
@@ -151,6 +159,7 @@ defineExpose({
               query: { courseId: courseId, path: calculatePath(currPath, key as string) },
             }"
             class="custom-link"
+            @click="scrollToTop"
           >
             <div class="d-flex align-center">
               <!-- 完成状态图标 - 只在学习模式下显示 -->

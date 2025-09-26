@@ -73,7 +73,12 @@ const ensureMermaidInitialized = () => {
     mermaid.initialize({
       startOnLoad: false,
       securityLevel: 'loose',
-      theme: 'default'
+      theme: 'neutral',
+      look: 'handDrawn',
+      htmlLabels: false,
+      fontFamily: 'Arial, sans-serif',
+      flowchart: { htmlLabels: true, useMaxWidth: true },
+      sequence: { noteFontFamily: 'Arial, sans-serif' }
     })
     mermaidInitialized = true
   }
@@ -103,7 +108,7 @@ const renderMathBlocks = (root: HTMLElement) => {
       { left: '$$', right: '$$', display: true },
       { left: '\\[', right: '\\]', display: true },
       { left: '\\(', right: '\\)', display: false },
-      { left: '$', right: '$', display: false }
+      { left: '$', right: '$', display: false}
     ],
     throwOnError: false
   })
@@ -209,14 +214,20 @@ defineExpose({ rootEl })
   width: 100%;
 }
 
-.rich-content :deep(svg) {
-  max-width: 100%;
-}
-
 .rich-content :deep(.katex-display) {
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 12px 0 0 0;
+}
+
+/* 行内公式样式 */
+.rich-content :deep(.katex) {
+  font-size: inherit;
+  padding: 0px 4px 0 4px;
+}
+
+.rich-content :deep(.katex-html) {
+  display: inline-block;
+  vertical-align: baseline;
 }
 
 .rich-content :deep(.mermaid) {
@@ -240,5 +251,15 @@ defineExpose({ rootEl })
   white-space: pre-wrap;
   font-size: 13px;
   line-height: 1.4;
+}
+
+.rich-content :deep(.mermaid svg) {
+  overflow: visible;
+}
+.rich-content :deep(.mermaid foreignObject) {
+  overflow: visible;
+}
+.rich-content :deep(.mermaid text) {
+  font-family: Arial, sans-serif;
 }
 </style>

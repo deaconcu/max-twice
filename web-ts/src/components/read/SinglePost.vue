@@ -533,6 +533,12 @@
       margin-top: 0;
     }
 
+    /* 增加段落行距 */
+    p {
+      line-height: 1.8;
+      margin-bottom: 1.2em;
+    }
+
     /* List styles */
     ul,
     ol {
