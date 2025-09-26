@@ -17,6 +17,10 @@ const rootEl = ref<HTMLElement | null>(null)
 let mermaidInitialized = false
 let mermaidIdCounter = 0
 
+// 模态框状态
+const showDialog = ref(false)
+const modalSvg = ref('')
+
 const normalizeMermaidDefinition = (raw: string) => {
   let normalized = raw
     .replace(/\r\n?/g, '\n')
@@ -102,6 +106,12 @@ const highlightCodeBlocks = (root: HTMLElement) => {
   })
 }
 
+// 显示 mermaid 放大模态框
+const showMermaidModal = (svg: string) => {
+  modalSvg.value = svg
+  showDialog.value = true
+}
+
 const renderMathBlocks = (root: HTMLElement) => {
   renderMathInElement(root, {
     delimiters: [
@@ -169,6 +179,13 @@ const renderMermaidDiagrams = async (root: HTMLElement) => {
         const { svg } = await mermaid.render(`mermaid-${mermaidIdCounter++}`, normalized)
         el.innerHTML = svg
         el.dataset.processed = 'true'
+
+        // 添加点击放大功能
+        const svgElement = el.querySelector('svg')
+        if (svgElement) {
+          el.style.cursor = 'zoom-in'
+          el.addEventListener('click', () => showMermaidModal(svg))
+        }
       } catch (error) {
         console.error('Mermaid render failed:', error, definition)
         el.dataset.processed = 'error'
@@ -206,7 +223,25 @@ defineExpose({ rootEl })
 </script>
 
 <template>
-  <div ref="rootEl" class="rich-content" v-html="props.html"></div>
+  <div>
+    <div ref="rootEl" class="rich-content" v-html="props.html"></div>
+
+    <!-- Mermaid 放大对话框 -->
+    <v-dialog v-model="showDialog" max-width="95vw" max-height="95vh" scrollable>
+      <v-card class="mermaid-modal-card">
+        <v-card-title class="d-flex justify-space-between align-center">
+          <span>图表详情</span>
+          <v-btn icon variant="text" @click="showDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+
+        <v-card-text class="pa-0">
+          <div class="mermaid-large-container" v-html="modalSvg"></div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+  </div>
 </template>
 
 <style scoped>
@@ -261,5 +296,25 @@ defineExpose({ rootEl })
 }
 .rich-content :deep(.mermaid text) {
   font-family: Arial, sans-serif;
+}
+
+/* Mermaid 模态框样式 */
+.mermaid-modal-card {
+  height: 90vh;
+}
+
+.mermaid-large-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  padding: 20px;
+}
+
+.mermaid-large-container :deep(svg) {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto !important;
+  height: auto !important;
 }
 </style>

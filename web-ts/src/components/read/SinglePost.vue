@@ -545,6 +545,10 @@
       padding: 0 1rem;
       margin: 1.25rem 1rem 1.25rem 0.4rem;
 
+      li {
+        margin-bottom: 0.3em;
+      }
+
       li p {
         margin-top: 0.25em;
         margin-bottom: 0.25em;
