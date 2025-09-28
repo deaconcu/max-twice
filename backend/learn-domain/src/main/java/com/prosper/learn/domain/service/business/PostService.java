@@ -407,7 +407,7 @@ public class PostService {
      * @throws BusinessException 当节点不存在或JSON处理失败时抛出异常
      */
     @Transactional
-    public void createPost(long userId, CreatePostRequest request, Enums.PostState postState) {
+    public Long createPost(long userId, CreatePostRequest request, Enums.PostState postState) {
         // 先验证参数
         if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子对象不能为空");
@@ -419,31 +419,47 @@ public class PostService {
         // 验证节点
         validateNodeId(request.getNodeId());
 
+        PostDO postDO = new PostDO();
         if (request.getType() == Enums.PostType.contents.value()) {
             NodeDO nodeDO = nodeDataService.getById(request.getNodeId());
             if (nodeDO == null) {
                 throw ErrorCode.POSTING_NODE_NOT_FOUND.exception();
             }
 
+            log.info("content:" + request.getContent());
             List<Utils.Pair<String, String>> chapterInfos = parseJsonToChapterInfoList(request.getContent());
             String[] ids = new String[chapterInfos.size()];
 
-            // TODO 需要检查node name是否已存在，避免重复创建
+            // 检查node name是否已存在，避免重复创建
             for (int i = 0; i < chapterInfos.size(); i++) {
                 Utils.Pair<String, String> chapterInfo = chapterInfos.get(i);
-                NodeDO node = new NodeDO();
-                node.setName(chapterInfo.left());
-                node.setDescription(chapterInfo.right());
-                node.setCourseId(nodeDO.getCourseId());
-                node.setCreatedAt(Utils.getLocalDateTime());
-                node.setUpdatedAt(Utils.getLocalDateTime());
-                node.setCreatorId(userId);
-                nodeDataService.insert(node);
-                ids[i] = Long.toString(node.getId());
+                String nodeName = chapterInfo.left();
+                Long courseId = nodeDO.getCourseId();
+
+                // 先查询是否已存在相同名称的节点
+                NodeDO existingNode = nodeDataService.getByCourseAndName(courseId, nodeName);
+
+                if (existingNode != null) {
+                    // 如果节点已存在，复用该节点
+                    ids[i] = Long.toString(existingNode.getId());
+                    log.info("Reusing existing node: {} (id: {}) in course: {}", nodeName, existingNode.getId(), courseId);
+                } else {
+                    // 如果节点不存在，创建新节点
+                    NodeDO newNode = new NodeDO();
+                    newNode.setName(nodeName);
+                    newNode.setDescription(chapterInfo.right());
+                    newNode.setCourseId(courseId);
+                    newNode.setCreatedAt(Utils.getLocalDateTime());
+                    newNode.setUpdatedAt(Utils.getLocalDateTime());
+                    newNode.setCreatorId(userId);
+                    nodeDataService.insert(newNode);
+                    ids[i] = Long.toString(newNode.getId());
+                    log.info("Created new node: {} (id: {}) in course: {}", nodeName, newNode.getId(), courseId);
+                }
             }
 
             // 创建 PostDO 对象
-            PostDO postDO = new PostDO();
+
             postDO.setContent(String.join(",", ids));
             postDO.setNodeId(request.getNodeId());
             postDO.setType(request.getType());
@@ -452,7 +468,6 @@ public class PostService {
             postDataService.insert(postDO);
         } else {
             // 非 contents 类型的帖子
-            PostDO postDO = new PostDO();
             postDO.setContent(request.getContent());
             postDO.setNodeId(request.getNodeId());
             postDO.setType(request.getType());
@@ -461,6 +476,7 @@ public class PostService {
             postDO.setCreatedAt(Utils.getLocalDateTime());
             postDataService.insert(postDO);
         }
+        return postDO.getId();
     }
 
     /**

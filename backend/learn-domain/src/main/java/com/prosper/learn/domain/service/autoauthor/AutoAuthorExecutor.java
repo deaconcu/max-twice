@@ -2,6 +2,10 @@ package com.prosper.learn.domain.service.autoauthor;
 
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.data.PostDataService;
+import com.prosper.learn.domain.service.data.MemoryCardDeckDataService;
+import com.prosper.learn.domain.service.business.PostService;
+import com.prosper.learn.domain.service.business.MemoryCardDeckService;
+import com.prosper.learn.dto.request.CreateDeckRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -9,14 +13,18 @@ import org.springframework.stereotype.Service;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.List;
+import com.prosper.learn.persistence.dataobject.PostDO;
+
+import static com.prosper.learn.common.Enums.MemoryCardDeckState.*;
 
 /**
  * AutoAuthor 执行器
  *
  * 轮询 Redis ZSET 队列：
- * - 取队首 nodeId
- * - 幂等：若该节点已有 AI 用户帖子（任意类型且未删除）则 ZREM 跳过
- * - 调用生成服务；成功 ZREM；失败休眠 retryDelaySec 原地重试
+ * - 取队首任务ID（N:nodeId 或 C:postId）
+ * - 幂等检查：若已有相关内容则跳过
+ * - 调用生成服务；成功则移除任务；失败则停止当前轮次，等待下次定时器重新处理
  */
 @Slf4j
 @Service
@@ -26,29 +34,108 @@ public class AutoAuthorExecutor {
     private final AutoAuthorQueueService queueService;
     private final AutoAuthorGenerationService generationService;
     private final PostDataService postDataService;
+    private final PostService postService;
+    private final MemoryCardDeckDataService deckDataService;
+    private final MemoryCardDeckService memoryCardDeckService;
     private final SystemProperties systemProperties;
 
     @Scheduled(fixedDelayString = "#{systemProperties.autoAuthor.pollIntervalSec * 1000}")
     public void poll() {
         log.info("Auto Author Poll Start");
         if (!systemProperties.getAutoAuthor().isEnabled()) return;
-        Long nodeId = queueService.peek();
-        if (nodeId == null) return;
+
         long aiUserId = systemProperties.getAutoAuthor().getAiUserId();
-        try {
-            if (postDataService.existPost(nodeId, aiUserId)) {
-                queueService.remove(nodeId);
-                return;
+        int processedCount = 0;
+
+        // 循环执行直到队列为空
+        while (true) {
+            String taskId = queueService.peek();
+            if (taskId == null) {
+                log.info("Auto Author Poll End - processed {} tasks", processedCount);
+                break;
             }
-            generationService.generateForNode(nodeId);
-            queueService.remove(nodeId);
-        } catch (Exception e) {
-            log.error("auto-author failed for node {}", nodeId, e);
+
             try {
-                Thread.sleep(systemProperties.getAutoAuthor().getRetryDelaySec() * 1000L);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
+                if (taskId.startsWith("N:")) {
+                    // 节点内容生成任务
+                    handleNodeTask(taskId, aiUserId);
+                } else if (taskId.startsWith("C:")) {
+                    // 记忆卡片生成任务
+                    handleMemoryCardTask(taskId, aiUserId);
+                } else {
+                    log.warn("Unknown task format: {}, removing from queue", taskId);
+                    queueService.remove(taskId);
+                }
+                processedCount++;
+            } catch (Exception e) {
+                log.error("auto-author failed for task {}, stopping poll cycle", taskId, e);
+                break;
             }
         }
+    }
+
+    /**
+     * 处理节点内容生成任务
+     */
+    private void handleNodeTask(String taskId, long aiUserId) {
+        long nodeId = Long.parseLong(taskId.substring(2)); // 去掉 "N:" 前缀
+
+        if (postDataService.existPost(nodeId, aiUserId)) {
+            log.info("Node {} already has AI post, soft deleting existing post before regeneration", nodeId);
+
+            // 查找并软删除现有的AI帖子
+            List<PostDO> existingPosts = postDataService.getListByNodeAndCreator(nodeId, aiUserId);
+            for (PostDO post : existingPosts) {
+                if (post.getState() != com.prosper.learn.common.Enums.PostState.deleted.value()) {
+                    postService.deletePost(post.getId());
+                    log.info("Soft deleted existing AI post {} for node {}", post.getId(), nodeId);
+                }
+            }
+        }
+
+        // 重新生成内容
+        generationService.generateForNode(nodeId);
+        queueService.remove(taskId);
+        log.info("Successfully generated/updated content for node {}", nodeId);
+    }
+
+    /**
+     * 处理记忆卡片生成任务
+     */
+    private void handleMemoryCardTask(String taskId, long aiUserId) {
+        long postId = Long.parseLong(taskId.substring(2)); // 去掉 "C:" 前缀
+
+        // 检查是否已存在AI生成的卡片组（查找所有状态）
+        List<com.prosper.learn.persistence.dataobject.MemoryCardDeckDO> existingDecks =
+            deckDataService.getListByPostAndCreatorAllStates(postId, aiUserId, 10);
+
+        if (!existingDecks.isEmpty()) {
+            // 废弃所有已存在的AI deck
+            existingDecks.forEach(deck -> {
+                if (deck.getState() == PENDING.value() || deck.getState() == NORMAL.value()) {
+                    memoryCardDeckService.discardDeck(deck.getId(), aiUserId);
+                    log.info("Discarded existing AI deck {} for post {}", deck.getId(), postId);
+                }
+            });
+        }
+
+        // 生成新的记忆卡片
+        generateMemoryCardsForPost(postId, aiUserId);
+        queueService.remove(taskId);
+        log.info("Successfully generated memory cards for post {}", postId);
+    }
+
+    /**
+     * 为帖子生成记忆卡片
+     */
+    private void generateMemoryCardsForPost(long postId, long aiUserId) {
+        // 获取帖子内容
+        var post = postDataService.validateAndGet(postId);
+
+        // 调用AI生成记忆卡片（如果失败会抛出异常，任务会重试）
+        List<CreateDeckRequest.CardInfo> cards = generationService.generateMemoryCardsForContent(post.getContent());
+
+        // 直接调用 createMemoryCardsForPost 方法
+        generationService.createMemoryCardsForPost(postId, aiUserId, cards);
     }
 }

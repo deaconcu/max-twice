@@ -39,31 +39,48 @@ public class AutoAuthorQueueService {
     public void enqueue(long nodeId) {
         String key = readyKey();
         double score = (double) Instant.now().toEpochMilli();
-        redisTemplate.opsForZSet().add(key, Long.toString(nodeId), score);
+        // 节点内容生成任务格式：N:{nodeId}
+        redisTemplate.opsForZSet().add(key, "N:" + nodeId, score);
+    }
+
+    /**
+     * 入队：将记忆卡片生成任务加入就绪集合
+     * @param postId 帖子ID
+     */
+    public void enqueueMemoryCards(long postId) {
+        String key = readyKey();
+        double score = (double) Instant.now().toEpochMilli();
+        // 记忆卡片生成任务格式：C:{postId}
+        redisTemplate.opsForZSet().add(key, "C:" + postId, score);
     }
 
     /**
      * 取队首但不删除；用于执行器轮询
-     * @return 最早入队的 nodeId；队列空返回 null
+     * @return 最早入队的任务；队列空返回 null
      */
-    public Long peek() {
+    public String peek() {
         String key = readyKey();
         Set<Object> set = redisTemplate.opsForZSet().range(key, 0, 0);
         if (set == null || set.isEmpty()) return null;
         Object first = set.iterator().next();
-        if (first instanceof String s) {
-            try { return Long.parseLong(s); } catch (NumberFormatException ignored) {}
-        }
-        return null;
+        return first instanceof String ? (String) first : null;
     }
 
     /**
-     * 从集合中移除指定节点
+     * 从集合中移除指定任务
+     * @param taskId 任务ID（格式：N:nodeId 或 C:postId）
+     */
+    public void remove(String taskId) {
+        String key = readyKey();
+        redisTemplate.opsForZSet().remove(key, taskId);
+    }
+
+    /**
+     * 从集合中移除指定节点任务（兼容旧接口）
      * @param nodeId 节点ID
      */
     public void remove(long nodeId) {
-        String key = readyKey();
-        redisTemplate.opsForZSet().remove(key, Long.toString(nodeId));
+        remove("N:" + nodeId);
     }
 
     /**

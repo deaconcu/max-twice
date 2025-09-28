@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { inject, nextTick, onMounted, ref, watch } from 'vue'
-  import { contentServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1'
+  import { contentServiceV1, upvoteServiceV1, memoryCardDeckServiceV1, adminAutoAuthorServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { useI18n } from 'vue-i18n'
   import { PostType, VoteType } from '@/types/enums'
   import type { Post } from '@/types/post'
@@ -46,6 +46,9 @@
 
   const isOverflow = ref<boolean>(false)
   const contentRef = ref<HTMLElement | null>(null)
+
+  // 管理菜单状态
+  const showAdminMenu = ref<boolean>(false)
   const updateOverflowState = () => {
     const el = contentRef.value
     if (!el || props.detail) {
@@ -171,6 +174,36 @@
 
     // 切换到详情页面
     emit('switchTab', 'two', props.posting)
+  }
+
+  /**
+   * 重新生成内容
+   */
+  const handleRegenerateContent = async (): Promise<void> => {
+    try {
+      await adminAutoAuthorServiceV1.enqueue(props.posting.nodeId)
+      showSnackbar && showSnackbar('内容重新生成任务已提交，请稍后查看结果')
+    } catch (error) {
+      showSnackbar && showSnackbar('提交内容重新生成任务失败')
+      console.error('Failed to regenerate content:', error)
+    } finally {
+      showAdminMenu.value = false
+    }
+  }
+
+  /**
+   * 重新生成记忆卡片
+   */
+  const handleRegenerateMemoryCards = async (): Promise<void> => {
+    try {
+      await memoryCardDeckServiceV1.createAIDeck(props.posting.id)
+      showSnackbar && showSnackbar('记忆卡片生成任务已提交，请稍后查看结果')
+    } catch (error) {
+      showSnackbar && showSnackbar('提交记忆卡片生成任务失败')
+      console.error('Failed to generate memory cards:', error)
+    } finally {
+      showAdminMenu.value = false
+    }
   }
 </script>
 
@@ -501,6 +534,45 @@
             </template>
           </span>
         </v-btn>
+
+        <!-- 管理入口按钮 -->
+        <v-menu v-model="showAdminMenu" location="bottom end">
+          <template v-slot:activator="{ props: menuProps }">
+            <v-btn
+              v-bind="menuProps"
+              variant="text"
+              rounded="lg"
+              color="grey-lighten-3"
+              density="comfortable"
+              class="px-3 ms-3"
+              icon="mdi-dots-vertical"
+              size="small"
+            >
+            </v-btn>
+          </template>
+
+          <v-list density="compact" class="admin-menu">
+            <v-list-item
+              class="admin-menu-item"
+              @click="handleRegenerateContent"
+            >
+              <template v-slot:prepend>
+                <v-icon size="16" color="blue-darken-2">mdi-refresh</v-icon>
+              </template>
+              <v-list-item-title class="text-body-2">重新生成内容</v-list-item-title>
+            </v-list-item>
+
+            <v-list-item
+              class="admin-menu-item"
+              @click="handleRegenerateMemoryCards"
+            >
+              <template v-slot:prepend>
+                <v-icon size="16" color="purple-darken-2">mdi-cards</v-icon>
+              </template>
+              <v-list-item-title class="text-body-2">重新生成记忆卡片</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </template>
     </v-row>
   </div>
@@ -813,5 +885,27 @@
     [aria-hidden='true'] {
       display: none;
     }
+  }
+
+  /* 管理菜单样式 */
+  .admin-menu {
+    min-width: 180px;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  .admin-menu-item {
+    min-height: 44px !important;
+    padding: 8px 16px !important;
+    transition: background-color 0.2s ease !important;
+  }
+
+  .admin-menu-item:hover {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+
+  .admin-menu-item .v-list-item-title {
+    font-weight: 500 !important;
+    color: #455a64 !important;
   }
 </style>

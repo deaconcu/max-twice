@@ -1,6 +1,7 @@
 package com.prosper.learn.domain.service.data;
 
 import com.prosper.learn.common.Utils;
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.persistence.dataobject.PostDO;
 import com.prosper.learn.persistence.mapper.PostMapper;
@@ -112,6 +113,13 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
     public boolean existPost(long nodeId, long creatorId) {
         Long c = postMapper.countPostsByNodeAndCreator(nodeId, creatorId);
         return c != null && c > 0;
+    }
+
+    /**
+     * 根据节点和创建者获取帖子列表（排除已删除状态）
+     */
+    public List<PostDO> getListByNodeAndCreator(long nodeId, long creatorId) {
+        return postMapper.getListByNodeAndCreator(nodeId, creatorId, Enums.PostState.deleted.value());
     }
 
     /**

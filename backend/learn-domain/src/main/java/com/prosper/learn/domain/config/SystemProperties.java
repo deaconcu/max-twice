@@ -560,9 +560,7 @@ public class SystemProperties {
         /** 用于创建AI帖子/目录的系统AI用户ID */
         private long aiUserId = 85L;
         /** 执行器轮询间隔（秒） */
-        private int pollIntervalSec = 2;
-        /** 生成失败后的休眠重试间隔（秒） */
-        private int retryDelaySec = 10;//600;
+        private int pollIntervalSec = 10;
         /** DIRECTORY 分支每个节点最多创建的子节点数量 */
         private int maxChildrenPerNode = 30;
         /** 兜底扫描CRON表达式（默认每日03:00） */

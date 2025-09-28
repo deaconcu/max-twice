@@ -88,4 +88,7 @@ public interface PostMapper {
 
     @Select("SELECT COUNT(*) FROM post WHERE node_id = #{nodeId} AND creator_id = #{creatorId} AND state != 2")
     Long countPostsByNodeAndCreator(@Param("nodeId") long nodeId, @Param("creatorId") long creatorId);
+
+    @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND creator_id = #{creatorId} AND state != #{excludeState} ORDER BY created_at DESC")
+    List<PostDO> getListByNodeAndCreator(@Param("nodeId") long nodeId, @Param("creatorId") long creatorId, @Param("excludeState") int excludeState);
 }

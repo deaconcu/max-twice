@@ -7,11 +7,15 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.config.SystemProperties;
 import com.prosper.learn.domain.service.business.PostService;
+import com.prosper.learn.domain.service.business.MemoryCardDeckService;
 import com.prosper.learn.domain.service.data.CourseDataService;
 import com.prosper.learn.domain.service.data.NodeDataService;
+import com.prosper.learn.domain.service.data.PostDataService;
 import com.prosper.learn.dto.request.CreatePostRequest;
+import com.prosper.learn.dto.request.CreateDeckRequest;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.NodeDO;
+import com.prosper.learn.persistence.dataobject.PostDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -24,6 +28,8 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.ArrayList;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -48,6 +54,9 @@ public class AutoAuthorGenerationService {
     private final NodeDataService nodeDataService;
     private final CourseDataService courseDataService;
     private final PostService postService;
+    private final PostDataService postDataService;
+    private final MemoryCardDeckService memoryCardDeckService;
+    private final AutoAuthorQueueService autoAuthorQueueService;
     private final ObjectMapper objectMapper;
     private final RedisTemplate<String, String> redisTemplate;
 
@@ -75,7 +84,44 @@ public class AutoAuthorGenerationService {
         String sessionId = getOrCreateSession();
         String response = sendMessageWithRetry(sessionId, buildPrompt(nodeDO, courseDO));
         log.info("sessionId={}, response={}", sessionId, response);
-        handleResponse(nodeId, aiUserId, response);
+        Long postId = handleResponse(nodeId, aiUserId, response);
+
+        if (postId != null) {
+            // 检查创建的帖子类型，如果是目录类型则将目录节点放入AI生成队列
+            PostDO createdPost = postDataService.getById(postId);
+            if (createdPost != null && createdPost.getType() == Enums.PostType.contents.value()) {
+                // post.content 存储的是节点ID列表，以逗号分隔
+                if (createdPost.getContent() != null && !createdPost.getContent().isEmpty()) {
+                    String[] nodeIds = createdPost.getContent().split(",");
+                    for (String nodeIdStr : nodeIds) {
+                        try {
+                            long childNodeId = Long.parseLong(nodeIdStr.trim());
+
+                            // 检查该节点是否已经有AI创建的post
+                            boolean hasAiPost = postDataService.existPost(childNodeId, aiUserId);
+                            if (!hasAiPost) {
+                                // 只有没有AI post的节点才加入队列
+                                autoAuthorQueueService.enqueue(childNodeId);
+                                log.info("Added child node {} to AI generation queue from contents post {}", childNodeId, postId);
+                            } else {
+                                log.info("Child node {} already has AI post, skipping queue", childNodeId);
+                            }
+                        } catch (NumberFormatException e) {
+                            log.warn("Invalid node ID format in post content: {}", nodeIdStr);
+                        }
+                    }
+                }
+            }
+
+            // 为创建的帖子生成记忆卡片组
+            try {
+                createMemoryCardsForPost(postId, aiUserId, response);
+                log.info("Successfully created memory cards for post: {}", postId);
+            } catch (Exception e) {
+                log.warn("Failed to create memory cards for post: {}, error: {}", postId, e.getMessage());
+                // 不抛出异常，避免影响主要的帖子创建功能
+            }
+        }
     }
 
     // ========= 与 opencode 通信 =========
@@ -196,13 +242,14 @@ public class AutoAuthorGenerationService {
                    数学相关内容请使用LaTeX语法，
                    图表相关内容请使用Mermaid语法
                        1. 图表不要太复杂，尽量简单易懂，图表要占满行宽，节点要使用与之适配的图形，比如不要在没有判断的地方使用菱形节点
-                       2. 节点名称要整体用双引号包含, 比如：节点 B1["1. xxx"]，不要在双引号中包含双引号，比如: subgraph "空间 B = {"α₁, α₂"}, 原色 {"红, 绿, 蓝"})"，这是错误的写法
+                       2. 节点名称要整体用双引号包含, 比如：节点 B1["1. xxx"]，不要在双引号中使用双引号，比如: subgraph "空间 B = {"α₁, α₂"}, 原色 {"红, 绿, 蓝"})"，P1["\"系数位置 A[i, i"]"]，都是错误的写法
                        3. 灵活使用图表生成方向 graph TB/LR，保证生成的图表宽小于高，不要使用direction xx，没有作用
                    中文和数字，英文之间添加空格
                    不要添加任何js代码，不要在[A]后添加换行
                    示例：[A]文章内容
                 2. 如果这个目录下的内容比较多，不能用一篇文章说清楚，就生成一个子目录列表:
-                   目录前用"[C]"来标注这是一个目录，目录列表使用[{"目录名1": "目录描述"}, {"目录名2": "目录描述"}, ...]的格式，
+                   目录前用"[C]"来标注这是一个目录，目录列表使用[{"目录名1": "目录描述"}, {"目录名2": "目录描述"}, ...]的JSON格式，请输出合法的JSON数组
+                   每一个对象中只有一个键值对，不要在一个对象中放多个键值对
                    目录名是子节点名称，目录描述是对这个子节点的介绍。
                    1. 目录名不允许重复，
                    2. 目录描述是对这个目录的完整定义，非常重要, 要精确描述这个目录要讲述的知识的范围，要让用户容易理解，不容易有歧义，而且要概括完整，不要遗漏
@@ -215,8 +262,9 @@ public class AutoAuthorGenerationService {
 
     /**
      * 解析 opencode 响应，调用 PostService 创建文章/目录帖
+     * @return 创建的帖子ID
      */
-    private void handleResponse(long nodeId, long aiUserId, String responseBody) {
+    private Long handleResponse(long nodeId, long aiUserId, String responseBody) {
         try {
             // opencode Message 结构：parts[0].text 存放模型输出
             JsonNode root = objectMapper.readTree(responseBody);
@@ -239,41 +287,179 @@ public class AutoAuthorGenerationService {
             req.setNodeId(nodeId);
             req.setType(postType.value());
             req.setContent(content.substring(3));
-            postService.createPost(aiUserId, req, Enums.PostState.approved);
-
-            // 模型承诺只返回 JSON
-            //JsonNode data = objectMapper.readTree(content);
-            //String decision = data.path("decision").asText();
-            /*
-            if ("ARTICLE".equalsIgnoreCase(decision)) {
-                //String md = data.path("articleMd").asText("");
-                CreatePostRequest req = new CreatePostRequest();
-                req.setNodeId(nodeId);
-                req.setType(Enums.PostType.article.value());
-                req.setContent(content.substring(3));
-                postService.createPost(aiUserId, req, Enums.PostState.approved);
-                return;
-            if ("DIRECTORY".equalsIgnoreCase(decision)) {
-                ArrayNode children = (ArrayNode) data.path("children");
-                ArrayNode titles = objectMapper.createArrayNode();
-                if (children != null) {
-                    int max = systemProperties.getAutoAuthor().getMaxChildrenPerNode();
-                    for (int i = 0; i < children.size() && i < max; i++) {
-                        String title = children.get(i).path("title").asText("Untitled");
-                        titles.add(title);
-                    }
-                }
-                CreatePostRequest req = new CreatePostRequest();
-                req.setNodeId(nodeId);
-                req.setType(Enums.PostType.contents.value());
-                req.setContent(titles.toString()); // PostService 内部会据此批量创建子节点并写 contents
-                postService.createPost(aiUserId, req, Enums.PostState.approved);
-                return;
-            }
-            throw new RuntimeException("unknown decision: " + decision);
-             */
+            return postService.createPost(aiUserId, req, Enums.PostState.approved);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * 为文章创建记忆卡片组
+     */
+    private void createMemoryCardsForPost(Long postId, Long aiUserId, String response) {
+        try {
+            // 解析响应内容，确定是否为文章类型
+            JsonNode root = objectMapper.readTree(response);
+            JsonNode parts = root.path("parts");
+            String content;
+            if (parts.isArray() && parts.size() > 0) {
+                content = parts.get(1).path("text").asText();
+            } else {
+                content = root.path("text").asText();
+            }
+
+            // 只为文章类型创建记忆卡片
+            if (content == null || !content.startsWith("[A]")) {
+                return;
+            }
+
+            // 创建记忆卡片组请求
+            CreateDeckRequest deckRequest = new CreateDeckRequest();
+            deckRequest.setSourcePostId(postId);
+            deckRequest.setTitle("AI生成记忆卡片");
+            deckRequest.setDescription("基于文章内容自动生成的记忆卡片组");
+
+            // 生成示例记忆卡片
+            List<CreateDeckRequest.CardInfo> cards = generateMemoryCards(content);
+            deckRequest.setCards(cards);
+
+            // 创建卡片组
+            memoryCardDeckService.createDeck(aiUserId, deckRequest);
+
+        } catch (Exception e) {
+            log.error("Failed to create memory cards for post: {}", postId, e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 基于文章内容生成记忆卡片
+     */
+    private List<CreateDeckRequest.CardInfo> generateMemoryCards(String articleContent) {
+        try {
+            String sessionId = getOrCreateSession();
+            String prompt = buildMemoryCardPrompt(articleContent);
+            String response = sendMessage(sessionId, prompt);
+
+            log.info("response:" + response);
+            return parseMemoryCardResponse(response);
+        } catch (Exception e) {
+            log.warn("Failed to generate AI memory cards, falling back to default cards: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 构建记忆卡片生成的提示词
+     */
+    private String buildMemoryCardPrompt(String articleContent) {
+        return String.format("""
+            请忽略之前所有对话内容，独立回答
+            基于以下文章内容，生成记忆卡片组，每张卡片包含问题(front)和答案(back)。
+
+            要求：
+            1. 卡片的内容选取参照以下标准：
+                1). 需要记忆的内容
+                    * 重要的概念、定义、公式
+                    * 专有名词
+                2). 比较难理解的地方
+            2. 卡片的形式
+                1）问答
+                2）选择题
+                3）填空题
+                4）判断题
+            3. 问题要具体明确
+            4. 答案要准确完整，而且要尽量简洁，答案长篇大论的卡片没有意义，卡片是需要记忆的
+            5. 如果问答题做不到答案简洁，可以使用别的卡片形式（选择，填空，判断）
+            6. 严格按照JSON格式返回，格式如下：
+            [{"front": "问题", "back": "答案"}, ...]
+
+            文章内容：
+            %s
+            
+            示例Output:
+            [
+              {"front": "问题1", "back": "答案1"},
+              {"front": "问题2", "back": "答案2"},
+              {"front": "问题3", "back": "答案3"}
+            ]
+            你的回应以'['开头，以']'结尾，中间是合法的JSON对象
+            """, articleContent);
+    }
+
+    /**
+     * 解析AI生成的记忆卡片响应
+     */
+    private List<CreateDeckRequest.CardInfo> parseMemoryCardResponse(String responseBody) {
+        try {
+            // 解析opencode响应格式
+            JsonNode root = objectMapper.readTree(responseBody);
+            JsonNode parts = root.path("parts");
+            String content;
+            if (parts.isArray() && parts.size() > 0) {
+                content = parts.get(1).path("text").asText();
+            } else {
+                content = root.path("text").asText();
+            }
+
+            if (content == null || content.isEmpty()) {
+                throw new RuntimeException("Empty AI response");
+            }
+
+            if (content.startsWith("```json")) {
+                content = content.substring(7, content.length() - 3).trim();
+            }
+            // 尝试解析JSON数组
+            log.info("content:" + content);
+            JsonNode cardsArray = objectMapper.readTree(content);
+            if (!cardsArray.isArray()) {
+                throw new RuntimeException("Response is not a JSON array");
+            }
+
+            List<CreateDeckRequest.CardInfo> cards = new ArrayList<>();
+            for (JsonNode cardNode : cardsArray) {
+                String front = cardNode.path("front").asText();
+                String back = cardNode.path("back").asText();
+
+                if (!front.isEmpty() && !back.isEmpty()) {
+                    CreateDeckRequest.CardInfo card = new CreateDeckRequest.CardInfo();
+                    card.setFront(front);
+                    card.setBack(back);
+                    cards.add(card);
+                }
+            }
+
+            if (cards.isEmpty()) {
+                throw new RuntimeException("No valid cards generated");
+            }
+
+            return cards;
+        } catch (Exception e) {
+            log.warn("Failed to parse AI memory card response: {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 公共接口：为指定文章内容生成记忆卡片
+     */
+    public List<CreateDeckRequest.CardInfo> generateMemoryCardsForContent(String articleContent) {
+        return generateMemoryCards(articleContent);
+    }
+
+    /**
+     * 公共接口：创建记忆卡片组
+     */
+    public void createMemoryCardsForPost(Long postId, Long aiUserId, List<CreateDeckRequest.CardInfo> cards) {
+        // 创建记忆卡片组请求
+        CreateDeckRequest deckRequest = new CreateDeckRequest();
+        deckRequest.setSourcePostId(postId);
+        deckRequest.setTitle("AI生成记忆卡片");
+        deckRequest.setDescription("基于文章内容AI生成的记忆卡片组");
+        deckRequest.setCards(cards);
+
+        // 创建卡片组
+        memoryCardDeckService.createDeck(aiUserId, deckRequest);
+        log.info("Created AI memory cards for post {}", postId);
     }
 }

@@ -110,36 +110,36 @@ const approveDeck = async (deck: DeckDetail, approve: boolean): Promise<void> =>
     if (approve) {
       await MemoryService.approveDeck(deck.id)
     } else {
-      await MemoryService.rejectDeck(deck.id)
+      await MemoryService.discardDeck(deck.id)
     }
-    
+
     // 从列表中移除已审核的项目
     const index = deckList.value.findIndex(d => d.id === deck.id)
     if (index > -1) {
       deckList.value.splice(index, 1)
     }
-    
-    showSnackbar?.(approve ? '卡片组审核通过' : '卡片组已拒绝', 'success')
+
+    showSnackbar?.(approve ? '卡片组审核通过' : '卡片组已废弃', 'success')
   } catch (error) {
     console.error('Error approving deck:', error)
     showSnackbar?.('审核操作失败', 'error')
   }
 }
 
-const blockDeck = async (deck: DeckDetail): Promise<void> => {
+const discardDeck = async (deck: DeckDetail): Promise<void> => {
   try {
-    await MemoryService.blockDeck(deck.id)
-    
-    // 从列表中移除已屏蔽的项目
+    await MemoryService.discardDeck(deck.id)
+
+    // 从列表中移除已废弃的项目
     const index = deckList.value.findIndex(d => d.id === deck.id)
     if (index > -1) {
       deckList.value.splice(index, 1)
     }
-    
-    showSnackbar?.('卡片组已屏蔽', 'success')
+
+    showSnackbar?.('卡片组已废弃', 'success')
   } catch (error) {
-    console.error('Error blocking deck:', error)
-    showSnackbar?.('屏蔽操作失败', 'error')
+    console.error('Error discarding deck:', error)
+    showSnackbar?.('废弃操作失败', 'error')
   }
 }
 
@@ -383,7 +383,7 @@ onMounted(() => {
                     prepend-icon="mdi-close"
                     @click="approveDeck(deck, false)"
                   >
-                    拒绝
+                    废弃
                   </v-btn>
                 </div>
 
@@ -394,10 +394,10 @@ onMounted(() => {
                     variant="outlined"
                     rounded="lg"
                     size="small"
-                    prepend-icon="mdi-block-helper"
-                    @click="blockDeck(deck)"
+                    prepend-icon="mdi-delete"
+                    @click="discardDeck(deck)"
                   >
-                    屏蔽
+                    废弃
                   </v-btn>
                 </div>
 

@@ -100,6 +100,13 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
     }
 
     /**
+     * 根据课程ID和节点名称查询节点
+     */
+    public NodeDO getByCourseAndName(long courseId, String name) {
+        return nodeMapper.getByCourseAndName(courseId, name);
+    }
+
+    /**
      * 插入新节点
      */
     public void insert(NodeDO nodeDO) {

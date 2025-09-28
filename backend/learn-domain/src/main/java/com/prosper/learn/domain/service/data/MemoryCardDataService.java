@@ -200,19 +200,43 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
         if (cards == null || cards.isEmpty()) {
             return 0;
         }
-        
+
         try {
             int result = memoryCardMapper.batchUpdateCurrentVersionId(cards);
             log.info("Batch updated current version id for {} memory cards", cards.size());
-            
+
             // 清除相关缓存
             for (MemoryCardDO card : cards) {
                 evictCache(card.getId());
             }
-            
+
             return result;
         } catch (Exception e) {
             log.error("Error batch updating current version id: count={}", cards.size(), e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 批量更新卡片
+     */
+    public int batchUpdate(List<MemoryCardDO> cards) {
+        if (cards == null || cards.isEmpty()) {
+            return 0;
+        }
+
+        try {
+            int result = memoryCardMapper.batchUpdate(cards);
+            log.info("Batch updated {} memory cards", cards.size());
+
+            // 清除相关缓存
+            for (MemoryCardDO card : cards) {
+                evictCache(card.getId());
+            }
+
+            return result;
+        } catch (Exception e) {
+            log.error("Error batch updating memory cards: count={}", cards.size(), e);
             throw ErrorCode.DATABASE_ERROR.exception(e);
         }
     }

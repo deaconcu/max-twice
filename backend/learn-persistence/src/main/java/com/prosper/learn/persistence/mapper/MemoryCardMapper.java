@@ -73,6 +73,17 @@ public interface MemoryCardMapper {
     @Update("UPDATE memory_card SET state = #{state} WHERE id = #{id}")
     int updateState(long id, int state);
 
+    @Update({"<script>" +
+            "<foreach collection='cards' item='card' separator=';'>" +
+            "UPDATE memory_card SET " +
+            "current_version_id = #{card.currentVersionId}, " +
+            "state = #{card.state}, " +
+            "updated_at = #{card.updatedAt} " +
+            "WHERE id = #{card.id}" +
+            "</foreach>" +
+            "</script>"})
+    int batchUpdate(@Param("cards") List<MemoryCardDO> cards);
+
     @Select("SELECT COUNT(*) FROM memory_card WHERE deck_id = #{deckId} AND state = #{state}")
     int countByDeck(long deckId, int state);
 

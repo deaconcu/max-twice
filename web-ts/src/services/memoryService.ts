@@ -151,9 +151,15 @@ export class MemoryService {
   // ========== Deck相关API ==========
 
   /**
-   * 获取卡片组列表
+   * 需求1: 获取帖子下的公共卡片组列表 - keyset分页，normal状态
    */
-  static async getDecks(query: GetDecksQuery = {}): Promise<{
+  static async getPostPublicDecks(postId: number, query: {
+    sortBy?: string
+    sortOrder?: string
+    lastScore?: number
+    lastId?: number
+    limit?: number
+  } = {}): Promise<{
     code: number
     data: {
       items: MemoryCardDeck[]
@@ -167,15 +173,6 @@ export class MemoryService {
   }> {
     const params = new URLSearchParams()
 
-    if (query.postId) {
-      params.append('postId', query.postId.toString())
-    }
-    if (query.creatorId) {
-      params.append('creatorId', query.creatorId.toString())
-    }
-    if (query.state !== undefined) {
-      params.append('state', query.state.toString())
-    }
     if (query.sortBy) {
       params.append('sortBy', query.sortBy)
     }
@@ -192,7 +189,176 @@ export class MemoryService {
       params.append('limit', query.limit.toString())
     }
 
-    return apiClient.get(`${API_V1_PREFIX}/memory/decks?${params.toString()}`)
+    return apiClient.get(`${API_V1_PREFIX}/memory/posts/${postId}/decks?${params.toString()}`)
+  }
+
+  /**
+   * 需求2: 获取帖子创建者提交的卡片组 - 最新创建，limit通常为1
+   */
+  static async getPostCreatorDeck(postId: number, query: {
+    sortBy?: string
+    sortOrder?: string
+    lastScore?: number
+    lastId?: number
+    limit?: number
+  } = {}): Promise<{
+    code: number
+    data: {
+      items: MemoryCardDeck[]
+      hasMore: boolean
+      nextCursor?: {
+        lastScore?: number
+        lastId?: number
+      }
+    }
+    message?: string
+  }> {
+    const params = new URLSearchParams()
+
+    if (query.sortBy) {
+      params.append('sortBy', query.sortBy)
+    }
+    if (query.sortOrder) {
+      params.append('sortOrder', query.sortOrder)
+    }
+    if (query.lastScore !== undefined) {
+      params.append('lastScore', query.lastScore.toString())
+    }
+    if (query.lastId) {
+      params.append('lastId', query.lastId.toString())
+    }
+    if (query.limit) {
+      params.append('limit', query.limit.toString())
+    }
+
+    return apiClient.get(`${API_V1_PREFIX}/memory/posts/${postId}/creator-deck?${params.toString()}`)
+  }
+
+  /**
+   * 需求3: 获取用户自己在指定帖子下提交的卡片组 - 最新创建，limit通常为1
+   */
+  static async getMyPostDeck(postId: number, query: {
+    sortBy?: string
+    sortOrder?: string
+    lastScore?: number
+    lastId?: number
+    limit?: number
+  } = {}): Promise<{
+    code: number
+    data: {
+      items: MemoryCardDeck[]
+      hasMore: boolean
+      nextCursor?: {
+        lastScore?: number
+        lastId?: number
+      }
+    }
+    message?: string
+  }> {
+    const params = new URLSearchParams()
+
+    if (query.sortBy) {
+      params.append('sortBy', query.sortBy)
+    }
+    if (query.sortOrder) {
+      params.append('sortOrder', query.sortOrder)
+    }
+    if (query.lastScore !== undefined) {
+      params.append('lastScore', query.lastScore.toString())
+    }
+    if (query.lastId) {
+      params.append('lastId', query.lastId.toString())
+    }
+    if (query.limit) {
+      params.append('limit', query.limit.toString())
+    }
+
+    return apiClient.get(`${API_V1_PREFIX}/memory/posts/${postId}/my-deck?${params.toString()}`)
+  }
+
+  /**
+   * 需求4: 获取用户自己提交的所有卡片组 - keyset分页，全部状态
+   */
+  static async getMyAllDecks(query: {
+    sortBy?: string
+    sortOrder?: string
+    lastScore?: number
+    lastId?: number
+    limit?: number
+  } = {}): Promise<{
+    code: number
+    data: {
+      items: MemoryCardDeck[]
+      hasMore: boolean
+      nextCursor?: {
+        lastScore?: number
+        lastId?: number
+      }
+    }
+    message?: string
+  }> {
+    const params = new URLSearchParams()
+
+    if (query.sortBy) {
+      params.append('sortBy', query.sortBy)
+    }
+    if (query.sortOrder) {
+      params.append('sortOrder', query.sortOrder)
+    }
+    if (query.lastScore !== undefined) {
+      params.append('lastScore', query.lastScore.toString())
+    }
+    if (query.lastId) {
+      params.append('lastId', query.lastId.toString())
+    }
+    if (query.limit) {
+      params.append('limit', query.limit.toString())
+    }
+
+    return apiClient.get(`${API_V1_PREFIX}/memory/decks/my?${params.toString()}`)
+  }
+
+  /**
+   * 需求5: 管理员按状态查询所有卡片组 - keyset分页
+   */
+  static async getAdminDecks(state: number, query: {
+    sortBy?: string
+    sortOrder?: string
+    lastScore?: number
+    lastId?: number
+    limit?: number
+  } = {}): Promise<{
+    code: number
+    data: {
+      items: MemoryCardDeck[]
+      hasMore: boolean
+      nextCursor?: {
+        lastScore?: number
+        lastId?: number
+      }
+    }
+    message?: string
+  }> {
+    const params = new URLSearchParams()
+
+    params.append('state', state.toString())
+    if (query.sortBy) {
+      params.append('sortBy', query.sortBy)
+    }
+    if (query.sortOrder) {
+      params.append('sortOrder', query.sortOrder)
+    }
+    if (query.lastScore !== undefined) {
+      params.append('lastScore', query.lastScore.toString())
+    }
+    if (query.lastId) {
+      params.append('lastId', query.lastId.toString())
+    }
+    if (query.limit) {
+      params.append('limit', query.limit.toString())
+    }
+
+    return apiClient.get(`${API_V1_PREFIX}/memory/decks/admin?${params.toString()}`)
   }
 
   /**
@@ -368,25 +534,14 @@ export class MemoryService {
   }
 
   /**
-   * 审核拒绝卡片组
+   * 废弃卡片组（审核拒绝或屏蔽）
    */
-  static async rejectDeck(deckId: number): Promise<{
+  static async discardDeck(deckId: number): Promise<{
     code: number
     data: any
     message?: string
   }> {
-    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/reject`)
-  }
-
-  /**
-   * 屏蔽卡片组
-   */
-  static async blockDeck(deckId: number): Promise<{
-    code: number
-    data: any
-    message?: string
-  }> {
-    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/block`)
+    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/discard`)
   }
 
   /**

@@ -663,6 +663,14 @@ export const systemServiceV1 = {
   },
 }
 
+// 记忆卡片组服务
+export const memoryCardDeckServiceV1 = {
+  // AI生成记忆卡片组
+  createAIDeck(postId: number): Promise<ApiResponse<void>> {
+    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${postId}/ai-generate`)
+  },
+}
+
 // AutoAuthor 管理服务
 export const adminAutoAuthorServiceV1 = {
   // 将节点加入到 AutoAuthor 队列

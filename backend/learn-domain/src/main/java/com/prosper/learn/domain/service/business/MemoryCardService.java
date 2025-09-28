@@ -547,6 +547,45 @@ public class MemoryCardService {
         log.info("Deleted card: {} from deck: {} by user: {}", cardId, card.getDeckId(), userId);
     }
 
+    /**
+     * 批量删除指定卡片组中的所有卡片
+     */
+    @Transactional
+    public void deleteCardsByDeck(Long userId, Long deckId) {
+        // 验证用户和卡片组
+        userDataService.validateExists(userId);
+        MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
+
+        // 验证权限：只有卡片组创建者可以删除卡片
+        if (!deck.getCreatorId().equals(userId)) {
+            throw ErrorCode.PERMISSION_DENIED.exception("无权限删除此卡片组中的卡片");
+        }
+
+        // 获取卡片组中的所有有效卡片
+        List<MemoryCardDO> cards = cardDataService.getByDeckId(deckId);
+        if (cards.isEmpty()) {
+            return;
+        }
+
+        // 批量软删除卡片
+        LocalDateTime now = LocalDateTime.now();
+        for (MemoryCardDO card : cards) {
+            card.setState(MemoryCardState.DELETED.value());
+            card.setUpdatedAt(now);
+        }
+
+        // 批量更新卡片状态
+        cardDataService.batchUpdate(cards);
+
+        // 重置卡片组的卡片数量为0并增加版本
+        deck.setCardCount(0);
+        deck.setVersion(deck.getVersion() + 1);
+        deck.setUpdatedAt(now);
+        deckDataService.update(deck);
+
+        log.info("Batch deleted {} cards from deck: {} by user: {}", cards.size(), deckId, userId);
+    }
+
     // ========== 私有方法 ==========
 
     /**

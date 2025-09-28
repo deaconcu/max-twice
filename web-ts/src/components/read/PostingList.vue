@@ -2,7 +2,7 @@
   // TODO: 修复 props 直接修改问题 - 需要重构为通过 emit 事件与父组件通信
   // 当前直接修改 props.data 违反 Vue 规范，应该通过事件通知父组件更新数据
   import { computed, inject, nextTick, onMounted, onUnmounted, ref, toRef, watch } from 'vue'
-  import { postServiceV1, progressServiceV1 } from '@/services/api/v1/apiServiceV1'
+  import { postServiceV1, progressServiceV1, adminAutoAuthorServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ObjectType, PostType } from '@/types/enums'
@@ -91,6 +91,7 @@
   const currPosting = ref<Post | null>(null)
   const nextNodeDialog = ref<boolean>(false)
   const nextNodeInfo = ref<NextNodeInfo | null>(null)
+  const showAdminMenu = ref<boolean>(false)
 
   // 计算当前节点是否有子节点
   const hasSubNodes = computed((): boolean => {
@@ -427,6 +428,19 @@
       showSnackbar && showSnackbar(t('postingList.operationFailed'), 'error')
     }
   }
+
+  // 生成AI内容
+  const handleGenerateAIContent = async (): Promise<void> => {
+    try {
+      await adminAutoAuthorServiceV1.enqueue(props.currNodeId)
+      showSnackbar && showSnackbar('AI内容生成任务已提交，请稍后查看结果')
+    } catch (error) {
+      showSnackbar && showSnackbar('提交AI内容生成任务失败')
+      console.error('Failed to generate AI content:', error)
+    } finally {
+      showAdminMenu.value = false
+    }
+  }
 </script>
 
 <template>
@@ -456,25 +470,53 @@
           <v-icon icon="mdi-list-box-outline" color="primary-darken-1" size="24"></v-icon>
           <h2 class="text-h5 font-weight-bold text-grey-darken-4 ms-3">{{ data.node.name }}</h2>
         </div>
-        <v-btn
-          v-if="isLearning && !hasSubNodes"
-          :color="data.node.isCompleted ? 'grey-lighten-2' : 'success'"
-          :variant="data.node.isCompleted ? 'outlined' : 'flat'"
-          rounded="lg"
-          size="small"
-          class="px-4"
-          :prepend-icon="data.node.isCompleted ? 'mdi-check-circle' : 'mdi-circle-outline'"
-          @click="toggleNodeCompletion"
-        >
-          <span
-            class="font-weight-medium"
-            :class="data.node.isCompleted ? 'text-grey-darken-2' : 'text-white'"
+        <div class="d-flex align-center">
+          <v-btn
+            v-if="isLearning && !hasSubNodes"
+            :color="data.node.isCompleted ? 'grey-lighten-2' : 'success'"
+            :variant="data.node.isCompleted ? 'outlined' : 'flat'"
+            rounded="lg"
+            size="small"
+            class="px-4"
+            :prepend-icon="data.node.isCompleted ? 'mdi-check-circle' : 'mdi-circle-outline'"
+            @click="toggleNodeCompletion"
           >
-            {{
-              data.node.isCompleted ? t('postingList.completed') : t('postingList.completeStudy')
-            }}
-          </span>
-        </v-btn>
+            <span
+              class="font-weight-medium"
+              :class="data.node.isCompleted ? 'text-grey-darken-2' : 'text-white'"
+            >
+              {{
+                data.node.isCompleted ? t('postingList.completed') : t('postingList.completeStudy')
+              }}
+            </span>
+          </v-btn>
+
+          <!-- 管理菜单按钮 -->
+          <v-menu v-model="showAdminMenu" location="bottom end">
+            <template v-slot:activator="{ props: menuProps }">
+              <v-btn
+                v-bind="menuProps"
+                variant="text"
+                rounded="lg"
+                color="grey-lighten-3"
+                density="comfortable"
+                class="px-3 ms-3"
+                icon="mdi-dots-vertical"
+                size="small"
+              >
+              </v-btn>
+            </template>
+
+            <v-list density="compact" class="admin-menu">
+              <v-list-item class="admin-menu-item" @click="handleGenerateAIContent">
+                <template v-slot:prepend>
+                  <v-icon size="16" color="blue-darken-2">mdi-robot</v-icon>
+                </template>
+                <v-list-item-title class="text-body-2">生成AI内容</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </div>
       </div>
       <div v-if="data.node.description" class="ms-0 mt-4">
         <p class="text-body-2 text-grey-darken-1 mb-0">
@@ -776,5 +818,27 @@
   .custom-btn-toggle .v-btn:not(.v-btn--variant-elevated) {
     color: #000;
     /* 修改未选中按钮的字体颜色 */
+  }
+
+  /* 管理菜单样式 */
+  :deep(.admin-menu) {
+    min-width: 180px;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  :deep(.admin-menu-item) {
+    min-height: 44px !important;
+    padding: 8px 16px !important;
+    transition: background-color 0.2s ease !important;
+  }
+
+  :deep(.admin-menu-item:hover) {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+
+  :deep(.admin-menu-item .v-list-item-title) {
+    font-weight: 500 !important;
+    color: #455a64 !important;
   }
 </style>

@@ -3,6 +3,7 @@ package com.prosper.learn.domain.service.business;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
 import com.prosper.learn.domain.service.data.*;
+import com.prosper.learn.domain.service.autoauthor.AutoAuthorQueueService;
 import com.prosper.learn.domain.util.converter.*;
 import com.prosper.learn.dto.request.*;
 import com.prosper.learn.dto.response.*;
@@ -39,6 +40,7 @@ public class MemoryCardDeckService {
     private final UserCardSrsDataService userCardSrsDataService;
     private final UpvoteService upvoteService;
     private final ScoreCalculationService scoreCalculationService;
+    private final AutoAuthorQueueService autoAuthorQueueService;
 
     // ========== toDTO ==========
 
@@ -162,54 +164,105 @@ public class MemoryCardDeckService {
     // ========= 业务方法(Query) ==========
 
     /**
-     * 获取卡片组列表 - Keyset分页
-     * 在read页面的右边栏显示卡片组列表
+     * 需求1: 获取帖子下的公共卡片组列表 - keyset分页，normal状态
      */
-    public KeysetPageResponse<MemoryCardDeckDTO> getDeckList(
-            Long postId, Long creatorId, Integer state, String sortBy, String sortOrder,
-            Double lastScore, Long lastId, Integer limit, Long userId) {
+    public KeysetPageResponse<MemoryCardDeckDTO> getPostPublicDecks(
+            Long postId, String sortBy, String sortOrder, Double lastScore, Long lastId, Integer limit) {
         // 参数验证
         if (limit == null || limit <= 0) limit = 10;
         if (limit > 50) limit = 50;
 
         List<MemoryCardDeckDO> deckList;
+        if (lastScore != null && lastId != null) {
+            deckList = deckDataService.getListByPostKeyset(postId, lastScore, lastId, MemoryCardDeckState.NORMAL.value(), limit + 1);
+        } else {
+            deckList = deckDataService.getListByPost(postId, MemoryCardDeckState.NORMAL.value(), limit + 1);
+        }
 
-        // 根据查询条件组合获取数据
-        if (postId != null && creatorId != null) {
-            // 同时按帖子和创建者查询，read页右边栏，"我提交的"标签页
-            // 查询所有状态的卡片组
+        return buildDeckResponse(deckList, limit, null);
+    }
+
+    /**
+     * 需求2: 获取帖子创建者提交的卡片组 - 最新创建，limit通常为1
+     */
+    public KeysetPageResponse<MemoryCardDeckDTO> getPostCreatorDeck(
+            Long postId, String sortBy, String sortOrder, Double lastScore, Long lastId, Integer limit, Long userId) {
+        // 参数验证
+        if (limit == null || limit <= 0) limit = 1;
+        if (limit > 50) limit = 50;
+
+        PostDO post = postDataService.validateAndGet(postId);
+        Long postCreatorId = post.getCreatorId();
+
+        List<MemoryCardDeckDO> deckList;
+        if (!postCreatorId.equals(userId)) {
+            // post创建者不是当前用户，只查询normal状态
             if (lastScore != null && lastId != null) {
-                deckList = deckDataService.getListByPostAndCreatorKeysetAllStates(postId, creatorId, lastScore, lastId, limit + 1);
+                deckList = deckDataService.getListByPostAndCreatorKeyset(
+                        postId, postCreatorId, lastScore, lastId, MemoryCardDeckState.NORMAL.value(), limit + 1);
             } else {
-                deckList = deckDataService.getListByPostAndCreatorAllStates(postId, creatorId, limit + 1);
-            }
-        } else if (postId != null) {
-            // 只按帖子查询，read页右边栏，显示帖子的所有卡片组
-            // 只查询正常状态的卡片组
-            if (lastScore != null && lastId != null) {
-                deckList = deckDataService.getListByPostKeyset(postId, lastScore, lastId, MemoryCardDeckState.NORMAL.value(), limit + 1);
-            } else {
-                deckList = deckDataService.getListByPost(postId, MemoryCardDeckState.NORMAL.value(), limit + 1);
-            }
-        } else if (creatorId != null) {
-            // 只按创建者查询，用户主页，显示用户创建的所有卡片组
-            // 只查询正常状态的卡片组
-            if (lastScore != null && lastId != null) {
-                deckList = deckDataService.getListByCreatorKeyset(creatorId, lastScore, lastId, MemoryCardDeckState.NORMAL.value(), limit + 1);
-            } else {
-                deckList = deckDataService.getListByCreator(creatorId, MemoryCardDeckState.NORMAL.value(), limit + 1);
+                deckList = deckDataService.getListByPostAndCreator(
+                        postId, postCreatorId, MemoryCardDeckState.NORMAL.value(), limit + 1);
             }
         } else {
-            // 按状态查询, 管理员后台，按状态显示所有卡片组
-            // 这里才使用 state 参数，默认查询正常状态的卡片组
-            int defaultState = state != null ? state : MemoryCardDeckState.NORMAL.value();
+            // post创建者就是当前用户，查询所有状态
             if (lastScore != null && lastId != null) {
-                deckList = deckDataService.getListByStateKeyset(lastScore, lastId, defaultState, limit + 1);
+                deckList = deckDataService.getListByPostAndCreatorKeysetAllStates(
+                        postId, postCreatorId, lastScore, lastId, limit + 1);
             } else {
-                deckList = deckDataService.getListByState(defaultState, limit + 1);
+                deckList = deckDataService.getListByPostAndCreatorAllStates(
+                        postId, postCreatorId, limit + 1);
             }
         }
 
+        return buildDeckResponse(deckList, limit, userId);
+    }
+
+    /**
+     * 需求3: 获取用户自己在指定帖子下提交的卡片组 - 最新创建，limit通常为1
+     */
+    public KeysetPageResponse<MemoryCardDeckDTO> getMyPostDeck(
+            Long postId, Long userId, String sortBy, String sortOrder, Double lastScore, Long lastId, Integer limit) {
+        // 参数验证
+        if (limit == null || limit <= 0) limit = 1;
+        if (limit > 50) limit = 50;
+
+        List<MemoryCardDeckDO> deckList;
+        if (lastScore != null && lastId != null) {
+            deckList = deckDataService.getListByPostAndCreatorKeysetAllStates(postId, userId, lastScore, lastId, limit + 1);
+        } else {
+            deckList = deckDataService.getListByPostAndCreatorAllStates(postId, userId, limit + 1);
+        }
+
+        return buildDeckResponse(deckList, limit, userId);
+    }
+
+    /**
+     * 需求4: 获取用户自己提交的所有卡片组 - keyset分页，全部状态
+     */
+    public KeysetPageResponse<MemoryCardDeckDTO> getMyAllDecks(
+            Long userId, String sortBy, String sortOrder, Double lastScore, Long lastId, Integer limit) {
+        // 参数验证
+        if (limit == null || limit <= 0) limit = 10;
+        if (limit > 50) limit = 50;
+
+        List<MemoryCardDeckDO> deckList;
+        // 暂时查询正常状态，TODO: 需要添加查询所有状态的方法
+        if (lastScore != null && lastId != null) {
+            deckList = deckDataService.getListByCreatorKeyset(
+                    userId, lastScore, lastId, MemoryCardDeckState.NORMAL.value(), limit + 1);
+        } else {
+            deckList = deckDataService.getListByCreator(userId, MemoryCardDeckState.NORMAL.value(), limit + 1);
+        }
+
+        return buildDeckResponse(deckList, limit, userId);
+    }
+
+    /**
+     * 构建卡片组响应的通用方法
+     */
+    private KeysetPageResponse<MemoryCardDeckDTO> buildDeckResponse(
+            List<MemoryCardDeckDO> deckList, Integer limit, Long userId) {
         // 判断是否有更多数据
         boolean hasMore = deckList.size() > limit;
         if (hasMore) {
@@ -522,47 +575,26 @@ public class MemoryCardDeckService {
     }
 
     /**
-     * 审核拒绝卡片组
+     * 废弃卡片组（合并原 rejectDeck 和 blockDeck 功能）
      */
     @Transactional
-    public void rejectDeck(Long deckId, Long auditorId) {
+    public void discardDeck(Long deckId, Long auditorId) {
         // 获取卡片组
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
-        
-        // 验证状态：只有待审核的卡片组才能拒绝
-        if (deck.getState() != MemoryCardDeckState.PENDING.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只有待审核状态的卡片组才能拒绝审核");
-        }
-        
-        // 更新状态为屏蔽
-        deck.setState(MemoryCardDeckState.BLOCKED.value());
-        deck.setUpdatedBy(auditorId);
-        deck.setUpdatedAt(LocalDateTime.now());
-        
-        deckDataService.update(deck);
-        log.info("Deck {} rejected by user {}", deckId, auditorId);
-    }
 
-    /**
-     * 屏蔽卡片组
-     */
-    @Transactional
-    public void blockDeck(Long deckId, Long auditorId) {
-        // 获取卡片组
-        MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
-        
-        // 验证状态：只有正常状态的卡片组才能屏蔽
-        if (deck.getState() != MemoryCardDeckState.NORMAL.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只有正常状态的卡片组才能屏蔽");
+        // 验证状态：只有待审核或正常状态的卡片组才能废弃
+        if (deck.getState() != MemoryCardDeckState.PENDING.value() &&
+            deck.getState() != MemoryCardDeckState.NORMAL.value()) {
+            throw ErrorCode.INVALID_PARAMETER.exception("只有待审核或正常状态的卡片组才能废弃");
         }
-        
+
         // 更新状态为屏蔽
         deck.setState(MemoryCardDeckState.BLOCKED.value());
         deck.setUpdatedBy(auditorId);
         deck.setUpdatedAt(LocalDateTime.now());
-        
+
         deckDataService.update(deck);
-        log.info("Deck {} blocked by user {}", deckId, auditorId);
+        log.info("Deck {} discarded by user {}", deckId, auditorId);
     }
 
     /**
@@ -865,7 +897,73 @@ public class MemoryCardDeckService {
             log.info("Created {} new SRS states for added cards for user: {}", newSrsStates.size(), userId);
         }
         
-        log.info("User {} accepted changes for deck {} with {} target items", 
+        log.info("User {} accepted changes for deck {} with {} target items",
                 userId, deckId, cardIds.isEmpty() ? userStates.size() + newSrsStates.size() : cardIds.size());
+    }
+
+    /**
+     * 整体替换卡片组中的所有卡片
+     */
+    @Transactional
+    public MemoryCardDeckDTO replaceAllCards(Long userId, Long deckId, CreateDeckRequest request) {
+        // 验证并获取卡片组
+        MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
+
+        // 验证权限：只有创建者可以替换卡片
+        if (!deck.getCreatorId().equals(userId)) {
+            throw ErrorCode.PERMISSION_DENIED.exception("无权限修改此卡片组");
+        }
+
+        // 删除现有所有卡片
+        memoryCardService.deleteCardsByDeck(userId, deckId);
+
+        // 更新卡片组信息（如果提供了）
+        if (request.getTitle() != null) {
+            deck.setTitle(request.getTitle());
+        }
+        if (request.getDescription() != null) {
+            deck.setDescription(request.getDescription());
+        }
+
+        // 设置为待审核状态
+        deck.setState(MemoryCardDeckState.PENDING.value());
+        deck.setUpdatedAt(LocalDateTime.now());
+        deck.setUpdatedBy(userId);
+        deckDataService.update(deck);
+
+        // 批量创建新卡片
+        if (request.getCards() != null && !request.getCards().isEmpty()) {
+            memoryCardService.batchCreateCards(userId, deckId, request.getCards());
+            log.info("Replaced with {} new cards for deck {}", request.getCards().size(), deckId);
+        }
+
+        // 重新计算分数
+        scoreCalculationService.checkAndUpdateMemoryCardDeckScore(deck);
+        deckDataService.update(deck);
+
+        log.info("Replaced all cards for deck {} by user {}", deckId, userId);
+
+        // 返回更新后的卡片组信息
+        return toDTOV1(deck, userId);
+    }
+
+    /**
+     * AI生成记忆卡片组（异步任务）
+     */
+    @Transactional
+    public void createAIDeck(Long userId, Long postId) {
+        // 验证用户和帖子
+        userDataService.validateExists(userId);
+        PostDO post = postDataService.validateAndGet(postId);
+
+        // 只为文章类型的帖子生成记忆卡片
+        if (!post.getType().equals(PostType.article.value())) {
+            throw ErrorCode.INVALID_PARAMETER.exception("只能为文章类型的帖子生成记忆卡片");
+        }
+
+        // 将任务加入队列
+        autoAuthorQueueService.enqueueMemoryCards(postId);
+
+        log.info("Queued AI memory card generation task for post {} requested by user {}", postId, userId);
     }
 }

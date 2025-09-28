@@ -82,7 +82,8 @@ const ensureMermaidInitialized = () => {
       htmlLabels: false,
       fontFamily: 'Arial, sans-serif',
       flowchart: { htmlLabels: true, useMaxWidth: true },
-      sequence: { noteFontFamily: 'Arial, sans-serif' }
+      sequence: { noteFontFamily: 'Arial, sans-serif' },
+      suppressErrorRendering: false
     })
     mermaidInitialized = true
   }
@@ -296,6 +297,16 @@ defineExpose({ rootEl })
 }
 .rich-content :deep(.mermaid text) {
   font-family: Arial, sans-serif;
+}
+
+/* 隐藏 mermaid 创建的临时 div，避免页面抖动 */
+:global([id^="dmermaid-"]) {
+  position: absolute !important;
+  left: -9999px !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
 }
 
 /* Mermaid 模态框样式 */

@@ -36,9 +36,8 @@ const loadDecks = async (reset = false) => {
   loading.value = true
 
   try {
-    // 根据不同标签构建不同的查询参数
-    const queryParams: any = {
-      postId: props.post.id,
+    // 构建查询参数
+    const queryParams = {
       sortBy: sortBy.value,
       sortOrder: 'desc',
       limit: 20,
@@ -46,14 +45,18 @@ const loadDecks = async (reset = false) => {
       lastId: reset || !decks.value?.length ? undefined : decks.value[decks.value.length - 1]?.id
     }
 
-    // 根据选中的标签添加创建者参数
-    if (showAuthorOnly.value && props.post.creator) {
-      queryParams.creatorId = props.post.creator.id
-    } else if (showMyOnly.value && userStore.userId) {
-      queryParams.creatorId = userStore.userId
+    // 根据选中的标签调用不同的接口
+    let response
+    if (showAuthorOnly.value) {
+      // 需求2: 获取帖子创建者提交的卡片组
+      response = await MemoryService.getPostCreatorDeck(props.post.id, queryParams)
+    } else if (showMyOnly.value) {
+      // 需求3: 获取用户自己在指定帖子下提交的卡片组
+      response = await MemoryService.getMyPostDeck(props.post.id, queryParams)
+    } else {
+      // 需求1: 获取帖子下的公共卡片组列表
+      response = await MemoryService.getPostPublicDecks(props.post.id, queryParams)
     }
-
-    const response = await MemoryService.getDecks(queryParams)
     
     if (response.code === 200) {
       const responseData = response.data
