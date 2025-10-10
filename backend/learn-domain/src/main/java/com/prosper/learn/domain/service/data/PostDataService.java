@@ -126,11 +126,6 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
      * 插入帖子
      */
     public void insert(PostDO post) {
-        post.setTwice(0);
-        post.setHelpful(0);
-        post.setCommentCount(0);
-        post.setCreatedAt(Utils.getLocalDateTime());
-        post.setScore(0.0);
         postMapper.insert(post);
     }
     

@@ -77,7 +77,7 @@ public class AggregateController implements AggregateClient {
         CourseDO courseDO = null;
         String path = "";
 
-        if (commentDO.getType() == post.value()) {
+        if (commentDO.getObjectType() == post.value()) {
             long postId = commentDO.getObjectId();
             //postDO = postService.get(postId);
             postDO = null;

@@ -210,8 +210,8 @@ public class ContentsService {
 
             // 为用户创建目录记录，指向刚创建的目录版本
             userCourseTocDO = new UserCourseTocDO();
-            userCourseTocDO.setCourseId(courseId);
             userCourseTocDO.setUserId(userId);
+            userCourseTocDO.setCourseId(courseId);
             userCourseTocDO.setToc(tosHash);
 
             userCourseTocDataService.insert(userCourseTocDO);

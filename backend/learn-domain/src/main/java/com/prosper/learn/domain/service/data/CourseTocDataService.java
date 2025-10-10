@@ -65,7 +65,6 @@ public class CourseTocDataService extends AbstractDataService<CourseTocDO, Cours
      * 插入目录
      */
     public void insert(CourseTocDO courseTocDO) {
-        courseTocDO.setRefCount(0);
         courseTocMapper.insert(courseTocDO);
     }
 

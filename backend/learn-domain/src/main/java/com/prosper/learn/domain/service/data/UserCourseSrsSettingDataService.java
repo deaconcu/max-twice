@@ -134,7 +134,7 @@ public class UserCourseSrsSettingDataService extends AbstractDataService<UserCou
             // 先获取现有记录以获得ID用于清除缓存
             UserCourseSrsSettingDO existingSetting = userCourseSrsSettingMapper.getByUserAndCourse(userId, courseId);
             
-            int result = userCourseSrsSettingMapper.updateStatus(userId, courseId, status);
+            int result = userCourseSrsSettingMapper.updateState(userId, courseId, status);
             
             // 如果更新成功且存在记录，清除对应的缓存
             if (result > 0 && existingSetting != null) {
@@ -166,14 +166,14 @@ public class UserCourseSrsSettingDataService extends AbstractDataService<UserCou
      * 根据用户和状态获取设置列表
      */
     public List<UserCourseSrsSettingDO> getByUserAndStatus(long userId, int status) {
-        return userCourseSrsSettingMapper.getByUserAndStatus(userId, status);
+        return userCourseSrsSettingMapper.getByUserAndState(userId, status);
     }
 
     /**
      * 根据课程和状态获取设置列表
      */
     public List<UserCourseSrsSettingDO> getByCourseAndStatus(long courseId, int status) {
-        return userCourseSrsSettingMapper.getByCourseAndStatus(courseId, status);
+        return userCourseSrsSettingMapper.getByCourseAndState(courseId, status);
     }
 
     /**
@@ -209,7 +209,7 @@ public class UserCourseSrsSettingDataService extends AbstractDataService<UserCou
      * 统计用户指定状态的课程设置数量
      */
     public int countByUserAndStatus(long userId, int status) {
-        return userCourseSrsSettingMapper.countByUserAndStatus(userId, status);
+        return userCourseSrsSettingMapper.countByUserAndState(userId, status);
     }
 
 }

@@ -452,7 +452,7 @@ public class DailyStatsService {
         PostStatsDO existing = postStatsMapper.getByTypeAndObjectIdAndYear(type, objectId, year);
         if (existing == null) {
             PostStatsDO yearRecord = new PostStatsDO();
-            yearRecord.setType(type);
+            yearRecord.setObjectType(type);
             yearRecord.setObjectId(objectId);
             yearRecord.setStatYear(year);
             yearRecord.setStats("{}");

@@ -66,14 +66,13 @@ public interface MessageMapper {
             "where receiver_id = 0 and type = 1 ")
     int getApplyCourseCount();
 
-    @Insert("INSERT INTO message(sender_id, receiver_id, content, type, is_read) " +
-            "VALUES (#{senderId}, #{receiverId}, #{content}, #{type}, #{isRead})")
+    @Insert("INSERT INTO message(sender_id, receiver_id, content, type) " +
+            "VALUES (#{senderId}, #{receiverId}, #{content}, #{type})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(MessageDO messageDO);
 
     @Update("UPDATE message " +
-            "SET sender_id = #{senderId}, receiver_id = #{receiverId}, content= #{content}, " +
-                "type = #{type}, is_read = #{isRead} " +
+            "SET sender_id = #{senderId}, receiver_id = #{receiverId}, content= #{content}, type = #{type} " +
             "where id = #{id}")
     void update(MessageDO messageDO);
 }

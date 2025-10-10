@@ -50,6 +50,39 @@ public interface MemoryCardDeckMapper {
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByStateKeyset(double lastScore, long lastId, int state, int limit);
 
+    @Select("SELECT COUNT(*) FROM memory_card_deck WHERE source_post_id = #{postId} AND state = #{state}")
+    int countByPost(long postId, int state);
+
+    @Select("SELECT COUNT(*) FROM memory_card_deck WHERE creator_id = #{creatorId} AND state = #{state}")
+    int countByCreator(long creatorId, int state);
+
+    @Select("SELECT * FROM memory_card_deck WHERE source_post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} " +
+            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+    List<MemoryCardDeckDO> getListByPostAndCreator(long postId, long creatorId, int state, int limit);
+
+    @Select("SELECT * FROM memory_card_deck WHERE source_post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} AND " +
+            "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
+            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+    List<MemoryCardDeckDO> getListByPostAndCreatorKeyset(long postId, long creatorId, double lastScore, long lastId, int state, int limit);
+
+    @Select("SELECT * FROM memory_card_deck WHERE source_post_id = #{postId} AND creator_id = #{creatorId} " +
+            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+    List<MemoryCardDeckDO> getListByPostAndCreatorAllStates(long postId, long creatorId, int limit);
+
+    @Select("SELECT * FROM memory_card_deck WHERE source_post_id = #{postId} AND creator_id = #{creatorId} AND " +
+            "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
+            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+    List<MemoryCardDeckDO> getListByPostAndCreatorKeysetAllStates(long postId, long creatorId, double lastScore, long lastId, int limit);
+
+    @Select("SELECT * FROM memory_card_deck WHERE node_id = #{nodeId} AND state = #{state} " +
+            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+    List<MemoryCardDeckDO> getListByNode(long nodeId, int state, int limit);
+
+    @Select("SELECT * FROM memory_card_deck WHERE node_id = #{nodeId} AND state = #{state} AND " +
+            "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
+            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+    List<MemoryCardDeckDO> getListByNodeKeyset(long nodeId, double lastScore, long lastId, int state, int limit);
+
     @Insert("INSERT INTO memory_card_deck " +
             "(source_post_id, node_id, creator_id, title, description, version, state, upvote_count, card_count, score) " +
             "VALUES " +
@@ -95,37 +128,6 @@ public interface MemoryCardDeckMapper {
     @Update("UPDATE memory_card_deck SET state = #{state}, version = version + 1, updated_at = NOW() WHERE id = #{id}")
     int updateStateAndIncrementVersion(long id, byte state);
 
-    @Select("SELECT COUNT(*) FROM memory_card_deck WHERE source_post_id = #{postId} AND state = #{state}")
-    int countByPost(long postId, int state);
 
-    @Select("SELECT COUNT(*) FROM memory_card_deck WHERE creator_id = #{creatorId} AND state = #{state}")
-    int countByCreator(long creatorId, int state);
-
-    @Select("SELECT * FROM memory_card_deck WHERE source_post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} " +
-            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
-    List<MemoryCardDeckDO> getListByPostAndCreator(long postId, long creatorId, int state, int limit);
-
-    @Select("SELECT * FROM memory_card_deck WHERE source_post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} AND " +
-            "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
-            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
-    List<MemoryCardDeckDO> getListByPostAndCreatorKeyset(long postId, long creatorId, double lastScore, long lastId, int state, int limit);
-
-    @Select("SELECT * FROM memory_card_deck WHERE source_post_id = #{postId} AND creator_id = #{creatorId} " +
-            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
-    List<MemoryCardDeckDO> getListByPostAndCreatorAllStates(long postId, long creatorId, int limit);
-
-    @Select("SELECT * FROM memory_card_deck WHERE source_post_id = #{postId} AND creator_id = #{creatorId} AND " +
-            "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
-            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
-    List<MemoryCardDeckDO> getListByPostAndCreatorKeysetAllStates(long postId, long creatorId, double lastScore, long lastId, int limit);
-
-    @Select("SELECT * FROM memory_card_deck WHERE node_id = #{nodeId} AND state = #{state} " +
-            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
-    List<MemoryCardDeckDO> getListByNode(long nodeId, int state, int limit);
-
-    @Select("SELECT * FROM memory_card_deck WHERE node_id = #{nodeId} AND state = #{state} AND " +
-            "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
-            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
-    List<MemoryCardDeckDO> getListByNodeKeyset(long nodeId, double lastScore, long lastId, int state, int limit);
 
 }

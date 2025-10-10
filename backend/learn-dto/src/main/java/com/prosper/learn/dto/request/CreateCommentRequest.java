@@ -23,7 +23,7 @@ public class CreateCommentRequest {
      * 对象类型
      */
     @NotNull(message = "对象类型不能为空")
-    private Integer type;
+    private Integer objectType;
 
     /**
      * 回复的评论ID

@@ -104,7 +104,7 @@ public class PageService {
         CourseDO courseDO;
         String path;
 
-        if (commentDO.getType() == post.value()) {
+        if (commentDO.getObjectType() == post.value()) {
             long postId = commentDO.getObjectId();
             postDO = postService.validateAndGetPost(postId);
             nodeDO = validateNodeExists(postDO.getNodeId());

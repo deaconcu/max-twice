@@ -19,8 +19,7 @@ public interface CourseTocMapper {
     @MapKey("hash")
     Map<String, CourseTocDO> getByHashes(String[] hashes);
 
-    @Insert("INSERT INTO course_toc(hash, toc, ref_count) " +
-        "VALUES (#{hash}, #{toc}, #{refCount})")
+    @Insert("INSERT INTO course_toc(hash, toc, ref_count) VALUES (#{hash}, #{toc}, #{refCount})")
     int insert(CourseTocDO courseTocDO);
 
     @Update("UPDATE course_toc SET ref_count = ref_count + #{n} where hash = #{hash}")

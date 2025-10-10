@@ -17,8 +17,6 @@ public class MessageDO {
 
     private Integer type;
 
-    private Integer isRead;
-
     private LocalDateTime createdAt;
 
 }

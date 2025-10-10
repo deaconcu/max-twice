@@ -73,9 +73,9 @@ public class ProfessionService {
         ProfessionDO professionDO = new ProfessionDO();
         professionDO.setName(request.getName());
         professionDO.setDescription(request.getDescription());
+        professionDO.setSkills(request.getSkills());
         professionDO.setMainCategory(request.getMainCategory());
         professionDO.setSubCategory(request.getSubCategory());
-        professionDO.setSkills(request.getSkills());
         professionDO.setCreatorId(userId);
         professionDO.setState(ProfessionState.SUBMITTED.value());
         professionDO.setRejectedReason(DEFAULT_EMPTY_STRING);

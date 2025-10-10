@@ -492,11 +492,7 @@ public class MemoryCardDeckService {
         deck.setDescription(request.getDescription());
         deck.setVersion(1);
         deck.setState(MemoryCardDeckState.PENDING.value()); // 默认审核中
-        deck.setUpvoteCount(0);
         deck.setCardCount(request.getCards() != null ? request.getCards().size() : 0);
-        deck.setScore(0.0);
-        deck.setCreatedAt(LocalDateTime.now());
-        deck.setUpdatedAt(LocalDateTime.now());
 
         // 插入数据库
         int result = deckDataService.insert(deck);

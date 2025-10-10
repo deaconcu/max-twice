@@ -24,6 +24,8 @@ public class Enums {
         }
     }
 
+
+
     public enum CourseState implements ValueEnum<Byte> {
         SUBMITTED((byte)0),
         APPROVED((byte)1),
@@ -67,6 +69,31 @@ public class Enums {
 
         public static CourseRequestState getByValue(Integer value) {
             return ValueEnum.getByValue(CourseRequestState.class, value);
+        }
+    }
+
+    public enum CommomState implements ValueEnum<Byte> {
+        SUBMITTED((byte)0),
+        APPROVED((byte)1),
+        REJECTED((byte)2);
+
+        private final byte value;
+
+        CommomState(byte value) {
+            this.value = value;
+        }
+
+        @Override
+        public Byte value() {
+            return value;
+        }
+
+        public static CommomState getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(CommomState.class, value.byteValue());
+        }
+
+        public static boolean isValid(int value) {
+            return ValueEnum.isValid(CommomState.class, (byte)value);
         }
     }
 
@@ -625,14 +652,14 @@ public class Enums {
      * 课程学习状态枚举
      * STUDYING=1, PAUSED=2, ARCHIVED=3
      */
-    public enum CourseStudyStatus implements ValueEnum<Byte> {
+    public enum CourseStudyState implements ValueEnum<Byte> {
         STUDYING((byte) 1),     // 学习中
         PAUSED((byte) 2),       // 已暂停
         ARCHIVED((byte) 3);     // 已归档
 
         private final byte value;
 
-        CourseStudyStatus(byte value) {
+        CourseStudyState(byte value) {
             this.value = value;
         }
 
@@ -641,12 +668,12 @@ public class Enums {
             return value;
         }
 
-        public static CourseStudyStatus getByValue(Integer value) {
-            return value == null ? null : ValueEnum.getByValue(CourseStudyStatus.class, value.byteValue());
+        public static CourseStudyState getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(CourseStudyState.class, value.byteValue());
         }
 
         public static boolean isValid(int value) {
-            return ValueEnum.isValid(CourseStudyStatus.class, (byte)value);
+            return ValueEnum.isValid(CourseStudyState.class, (byte)value);
         }
     }
 

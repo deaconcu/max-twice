@@ -32,7 +32,7 @@ public interface UserRoadmapMapper {
      * 更新学习进度
      */
     @Update("UPDATE user_roadmap SET progress_percent = #{progressPercent}, state = #{state}, " +
-            "completed_at = #{completedAt}, updated_at = CURRENT_TIMESTAMP " +
+            "completed_at = #{completedAt} " +
             "WHERE user_id = #{userId} AND roadmap_id = #{roadmapId}")
     void update(UserRoadmapDO progressDO);
 
@@ -42,7 +42,7 @@ public interface UserRoadmapMapper {
     @Update({"<script>",
              "<foreach collection='list' item='item' separator=';'>",
              "UPDATE user_roadmap SET progress_percent = #{item.progressPercent}, state = #{item.state}, " +
-             "completed_at = #{item.completedAt}, updated_at = CURRENT_TIMESTAMP " +
+             "completed_at = #{item.completedAt} " +
              "WHERE user_id = #{item.userId} AND roadmap_id = #{item.roadmapId}",
              "</foreach>",
              "</script>"})

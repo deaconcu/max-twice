@@ -30,22 +30,22 @@ public interface UserCourseSrsSettingMapper {
             "ORDER BY created_at DESC")
     List<UserCourseSrsSettingDO> getByUser(long userId);
 
-    @Select("SELECT * FROM user_course_srs_setting WHERE user_id = #{userId} AND status = #{status} " +
+    @Select("SELECT * FROM user_course_srs_setting WHERE user_id = #{userId} AND state = #{state} " +
             "ORDER BY created_at DESC")
-    List<UserCourseSrsSettingDO> getByUserAndStatus(long userId, int status);
+    List<UserCourseSrsSettingDO> getByUserAndState(long userId, int state);
 
-    @Select("SELECT * FROM user_course_srs_setting WHERE course_id = #{courseId} AND status = #{status}")
-    List<UserCourseSrsSettingDO> getByCourseAndStatus(long courseId, int status);
+    @Select("SELECT * FROM user_course_srs_setting WHERE course_id = #{courseId} AND state = #{state}")
+    List<UserCourseSrsSettingDO> getByCourseAndState(long courseId, int state);
 
     @Insert("INSERT INTO user_course_srs_setting " +
-            "(user_id, course_id, frequency_setting, status) " +
+            "(user_id, course_id, frequency_setting, state) " +
             "VALUES " +
-            "(#{userId}, #{courseId}, #{frequencySetting}, #{status})")
+            "(#{userId}, #{courseId}, #{frequencySetting}, #{state})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserCourseSrsSettingDO setting);
 
     @Update("UPDATE user_course_srs_setting SET " +
-            "frequency_setting = #{frequencySetting}, status = #{status} " +
+            "frequency_setting = #{frequencySetting}, state = #{state} " +
             "WHERE id = #{id}")
     void update(UserCourseSrsSettingDO setting);
 
@@ -53,9 +53,9 @@ public interface UserCourseSrsSettingMapper {
             "WHERE user_id = #{userId} AND course_id = #{courseId}")
     int updateFrequencySetting(long userId, long courseId, int frequencySetting);
 
-    @Update("UPDATE user_course_srs_setting SET status = #{status} " +
+    @Update("UPDATE user_course_srs_setting SET state = #{state} " +
             "WHERE user_id = #{userId} AND course_id = #{courseId}")
-    int updateStatus(long userId, long courseId, int status);
+    int updateState(long userId, long courseId, int state);
 
     @Delete("DELETE FROM user_course_srs_setting WHERE user_id = #{userId} AND course_id = #{courseId}")
     int deleteByUserAndCourse(long userId, long courseId);
@@ -63,7 +63,7 @@ public interface UserCourseSrsSettingMapper {
     @Select("SELECT COUNT(*) FROM user_course_srs_setting WHERE user_id = #{userId}")
     int countByUser(long userId);
 
-    @Select("SELECT COUNT(*) FROM user_course_srs_setting WHERE user_id = #{userId} AND status = #{status}")
-    int countByUserAndStatus(long userId, int status);
+    @Select("SELECT COUNT(*) FROM user_course_srs_setting WHERE user_id = #{userId} AND state = #{state}")
+    int countByUserAndState(long userId, int state);
 
 }

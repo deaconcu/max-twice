@@ -87,7 +87,7 @@ public class MemoryBankService {
         // 过滤状态
         if (state != null) {
             settings = settings.stream()
-                    .filter(setting -> setting.getStatus().equals(state.byteValue()))
+                    .filter(setting -> setting.getState().equals(state.byteValue()))
                     .collect(Collectors.toList());
         }
 
@@ -134,9 +134,7 @@ public class MemoryBankService {
             setting.setUserId(userId);
             setting.setCourseId(request.getCourseId());
             setting.setFrequencySetting(FrequencySetting.NORMAL.value()); // 默认普通频率
-            setting.setStatus(CourseStudyStatus.STUDYING.value()); // 学习中
-            setting.setCreatedAt(LocalDateTime.now());
-            setting.setUpdatedAt(LocalDateTime.now());
+            setting.setState(CourseStudyState.STUDYING.value()); // 学习中
             courseSrsSettingDataService.insert(setting);
         }
 
@@ -206,7 +204,7 @@ public class MemoryBankService {
             existingSetting.setFrequencySetting(request.getFrequencySetting().byteValue());
         }
         if (request.getStatus() != null) {
-            existingSetting.setStatus(request.getStatus().byteValue());
+            existingSetting.setState(request.getStatus().byteValue());
         }
         existingSetting.setUpdatedAt(LocalDateTime.now());
         courseSrsSettingDataService.update(existingSetting);

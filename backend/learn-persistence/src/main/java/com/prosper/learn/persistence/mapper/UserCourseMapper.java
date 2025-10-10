@@ -12,8 +12,8 @@ public interface UserCourseMapper {
     /**
      * 插入用户课程进度记录
      */
-    @Insert("INSERT INTO user_course(user_id, course_id, progress_percent, state, started_at, completed_at, created_at, updated_at) " +
-            "VALUES (#{userId}, #{courseId}, #{progressPercent}, #{state}, #{startedAt}, #{completedAt}, NOW(), NOW())")
+    @Insert("INSERT INTO user_course (user_id, course_id, state, started_at) " +
+            "VALUES (#{userId}, #{courseId}, #{startedAt}, #{state})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserCourseDO userCourseDO);
 
@@ -27,7 +27,7 @@ public interface UserCourseMapper {
      * 更新用户课程进度
      */
     @Update("UPDATE user_course SET progress_percent = #{progressPercent}, state = #{state}, " +
-            "completed_at = #{completedAt}, updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")
+            "completed_at = #{completedAt} WHERE id = #{id}")
     int update(UserCourseDO userCourseDO);
 
     @Select("SELECT * FROM user_course WHERE user_id = #{userId} and id < #{lastId} ORDER BY id DESC LIMIT 20")

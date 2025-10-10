@@ -308,20 +308,16 @@ public class CourseService {
             throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效");
         }
 
-        long parentId = 0;
-        validateParentCourseExists(parentId);
-
         // 验证通过后创建对象
         CourseDO course = new CourseDO();
         course.setName(request.getName());
         course.setDescription(request.getDescription());
+        course.setCreatorId(userId);
+        course.setRootNodeId(0L);
+        course.setParentCourseId(0L);
+        course.setState(CourseState.SUBMITTED.value());
         course.setMainCategory(request.getMainCategory());
         course.setSubCategory(request.getSubCategory());
-        course.setCreatorId(userId);
-        course.setParentCourseId(parentId);
-        course.setState(CourseState.SUBMITTED.value());
-        course.setRootNodeId(0L);
-        
         courseDataService.insert(course);
 
         NodeDO nodeDO = NodeDO.createRoot(userId, course.getId());
@@ -339,9 +335,9 @@ public class CourseService {
         subCourse.setName(name);
         subCourse.setDescription(description);
         subCourse.setCreatorId(userId);
+        subCourse.setRootNodeId(0L);
         subCourse.setParentCourseId(parentId);
         subCourse.setState(CourseState.SUBMITTED.value());
-        subCourse.setRootNodeId(0L);
         subCourse.setMainCategory(parentCourse.getMainCategory());
         subCourse.setSubCategory(parentCourse.getSubCategory());
 

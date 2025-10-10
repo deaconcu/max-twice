@@ -1,5 +1,6 @@
 package com.prosper.learn.persistence.dataobject;
 
+import com.prosper.learn.common.Enums;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -19,7 +20,7 @@ public class NodeDO {
 
     private Integer commentCount;
 
-    private Integer state;
+    private Byte state;
 
     private LocalDateTime createdAt;
 
@@ -31,8 +32,7 @@ public class NodeDO {
         node.setDescription("");
         node.setCourseId(courseId);
         node.setCreatorId(creator);
-        node.setCreatedAt(LocalDateTime.now());
-        node.setUpdatedAt(LocalDateTime.now());
+        node.setState(Enums.CommomState.APPROVED.value());
         return node;
     }
 }

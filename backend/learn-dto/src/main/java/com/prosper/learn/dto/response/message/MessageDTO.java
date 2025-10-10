@@ -21,8 +21,6 @@ public class MessageDTO {
 
     private Integer type;
 
-    private Integer isRead;
-
     private String createdAt;
 
 }

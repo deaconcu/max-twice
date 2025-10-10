@@ -479,15 +479,11 @@ public class RoadmapService {
         }
 
         RoadmapDO roadmapDO = new RoadmapDO();
+        roadmapDO.setContent(content);
+        roadmapDO.setContentHash(calculateContentHash(content));
+        roadmapDO.setDescription(description);
         roadmapDO.setProfessionId(professionId);
         roadmapDO.setCreatorId(userId);
-        roadmapDO.setContent(content);
-        roadmapDO.setDescription(description);
-        roadmapDO.setContentHash(calculateContentHash(content));
-        roadmapDO.setVote(0);
-        roadmapDO.setComment(0);
-        roadmapDO.setCreatedAt(LocalDateTime.now());
-        roadmapDO.setUpdatedAt(LocalDateTime.now());
 
         roadmapDataService.insert(roadmapDO);
         return roadmapDO.getId();

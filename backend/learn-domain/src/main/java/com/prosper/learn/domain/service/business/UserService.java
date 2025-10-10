@@ -143,10 +143,9 @@ public class UserService {
         
         UserDO user = new UserDO();
         user.setName(userName);
-        user.setEmail(email);
         user.setPassword(Utils.md5(password));
-        user.setCreatedAt(Utils.getLocalDateTime());
-        user.setUpdatedAt(Utils.getLocalDateTime());
+        user.setEmail(email);
+        user.setBiography("");
         userDataService.insert(user);
 
         if (systemProperties.getUser().isEnableEmailValidation()) {
@@ -226,6 +225,7 @@ public class UserService {
             userProfileDO.setUserId(userId);
             idsStr = String.valueOf(courseId);
             userProfileDO.setSubscription(idsStr);
+            userProfileDO.setRoadmapPin("");
             userProfileDataService.insert(userProfileDO);
         } else {
             List<Long> ids = parseSubscriptionIds(userProfileDO.getSubscription());

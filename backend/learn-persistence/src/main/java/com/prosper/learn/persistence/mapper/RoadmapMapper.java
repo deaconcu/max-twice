@@ -51,10 +51,12 @@ public interface RoadmapMapper {
     List<RoadmapDO> getByContentHash(String contentHash);
 
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
-    @Insert("INSERT INTO roadmap(content, content_hash, description, profession_id, creator_id, vote, comment) VALUES (#{content}, #{contentHash}, #{description}, #{professionId}, #{creatorId}, #{vote}, #{comment})")
+    @Insert("INSERT INTO roadmap(content, content_hash, description, profession_id, creator_id) " +
+            "VALUES (#{content}, #{contentHash}, #{description}, #{professionId}, #{creatorId})")
     int insert(RoadmapDO roadmapDO);
 
-    @Update("UPDATE roadmap SET content = #{content}, content_hash = #{contentHash}, description = #{description}, vote = #{vote}, comment = #{comment}, updated_at = #{updatedAt} where id = #{id}")
+    @Update("UPDATE roadmap SET content = #{content}, content_hash = #{contentHash}, description = #{description}, " +
+            "vote = #{vote}, comment = #{comment} where id = #{id}")
     @MapKey("id")
     void update(RoadmapDO roadmapDO);
 

@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service.data;
 
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.persistence.dataobject.ProfessionDO;
 import com.prosper.learn.persistence.mapper.ProfessionMapper;
@@ -142,14 +143,14 @@ public class ProfessionDataService extends AbstractDataService<ProfessionDO, Pro
      * 审批通过职业
      */
     public int approve(long id) {
-        return professionMapper.approve(id);
+        return professionMapper.updateState(id, Enums.CommomState.APPROVED.value(), "");
     }
 
     /**
      * 拒绝职业申请
      */
     public int reject(long id, String reason) {
-        return professionMapper.reject(id, reason);
+        return professionMapper.updateState(id, Enums.CommomState.REJECTED.value(), reason);
     }
 
     /**

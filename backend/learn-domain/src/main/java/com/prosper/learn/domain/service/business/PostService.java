@@ -449,9 +449,8 @@ public class PostService {
                     newNode.setName(nodeName);
                     newNode.setDescription(chapterInfo.right());
                     newNode.setCourseId(courseId);
-                    newNode.setCreatedAt(Utils.getLocalDateTime());
-                    newNode.setUpdatedAt(Utils.getLocalDateTime());
                     newNode.setCreatorId(userId);
+                    newNode.setState(Enums.CommomState.APPROVED.value());
                     nodeDataService.insert(newNode);
                     ids[i] = Long.toString(newNode.getId());
                     log.info("Created new node: {} (id: {}) in course: {}", nodeName, newNode.getId(), courseId);
@@ -460,20 +459,19 @@ public class PostService {
 
             // 创建 PostDO 对象
 
-            postDO.setContent(String.join(",", ids));
             postDO.setNodeId(request.getNodeId());
-            postDO.setType(request.getType());
             postDO.setCreatorId(userId);
+            postDO.setType(request.getType());
+            postDO.setContent(String.join(",", ids));
             postDO.setState(postState.value());
             postDataService.insert(postDO);
         } else {
             // 非 contents 类型的帖子
-            postDO.setContent(request.getContent());
             postDO.setNodeId(request.getNodeId());
-            postDO.setType(request.getType());
             postDO.setCreatorId(userId);
+            postDO.setType(request.getType());
+            postDO.setContent(request.getContent());
             postDO.setState(postState.value());
-            postDO.setCreatedAt(Utils.getLocalDateTime());
             postDataService.insert(postDO);
         }
         return postDO.getId();

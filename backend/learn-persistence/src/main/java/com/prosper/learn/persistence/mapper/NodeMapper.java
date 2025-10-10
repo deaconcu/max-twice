@@ -1,5 +1,6 @@
 package com.prosper.learn.persistence.mapper;
 
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.persistence.dataobject.NodeDO;
 import org.apache.ibatis.annotations.*;
 
@@ -44,6 +45,9 @@ public interface NodeMapper {
     @Update("UPDATE node SET name = #{name}, description = #{description}, " +
             "creator_id = #{creatorId}, course_id = #{courseId}, comment_count = #{commentCount} where id = #{id}")
     void update(NodeDO Node);
+
+    @Update("UPDATE node SET state = #{state} where id = #{id}")
+    void updateState(Enums.CommomState state);
     
     // 平台统计相关方法
     @Select("SELECT COUNT(*) FROM node WHERE course_id > 0")

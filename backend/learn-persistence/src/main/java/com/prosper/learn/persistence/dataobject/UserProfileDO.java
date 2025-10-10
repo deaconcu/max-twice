@@ -16,5 +16,6 @@ public class UserProfileDO {
     public UserProfileDO(Long userId, String subscription) {
         this.userId = userId;
         this.subscription = subscription;
+        this.roadmapPin = "";
     }
 }

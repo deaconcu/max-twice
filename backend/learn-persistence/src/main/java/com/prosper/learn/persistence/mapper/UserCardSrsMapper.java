@@ -62,10 +62,10 @@ public interface UserCardSrsMapper {
     List<UserCardSrsDO> getByUserAndCourse(long userId, long courseId);
 
     @Insert("INSERT INTO user_card_srs " +
-            "(user_id, card_id, node_id, deck_version, card_version_id, review_due_at, last_reviewed_at, " +
+            "(user_id, card_id, node_id, deck_version, card_version_id, review_due_at, " +
             "interval_days, ease_factor, repetitions, lapse_count) " +
             "VALUES " +
-            "(#{userId}, #{cardId}, #{nodeId}, #{deckVersion}, #{cardVersionId}, #{reviewDueAt}, #{lastReviewedAt}, " +
+            "(#{userId}, #{cardId}, #{nodeId}, #{deckVersion}, #{cardVersionId}, #{reviewDueAt}, " +
             "#{intervalDays}, #{easeFactor}, #{repetitions}, #{lapseCount})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserCardSrsDO state);

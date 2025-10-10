@@ -7,8 +7,11 @@ import java.util.List;
 
 public interface SystemMapper {
 
-    @Select("SELECT * FROM `system` WHERE `key` = #{key}")
+    @Select("SELECT * FROM `system` WHERE `key` = #{key} LIMIT 1" )
     SystemDO getByKey(String key);
+
+    @Select("SELECT COUNT(*) FROM `system` WHERE `key` = #{key}")
+    int existsByKey(String key);
 
     @Select("SELECT * FROM `system`")
     List<SystemDO> getAll();
@@ -21,7 +24,4 @@ public interface SystemMapper {
 
     @Delete("DELETE FROM `system` WHERE `key` = #{key}")
     void deleteByKey(String key);
-
-    @Select("SELECT COUNT(*) FROM `system` WHERE `key` = #{key}")
-    int existsByKey(String key);
 }

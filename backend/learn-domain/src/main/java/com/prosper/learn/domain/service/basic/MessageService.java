@@ -147,10 +147,10 @@ public class MessageService {
         }
 
         MessageDO messageDO = new MessageDO();
-        messageDO.setContent(content);
         messageDO.setSenderId(senderId);
-        messageDO.setType(messageType.value());
         messageDO.setReceiverId(receiverId);
+        messageDO.setContent(content);
+        messageDO.setType(messageType.value());
         messageDataService.insert(messageDO);
     }
 
@@ -351,7 +351,6 @@ public class MessageService {
         messageDTO.setReceiver(userConverter.toDTOV2(userDOMap.get(messageDO.getReceiverId())));
         messageDTO.setType(messageDO.getType());
         messageDTO.setCreatedAt(Utils.getTimeString(messageDO.getCreatedAt()));
-        messageDTO.setIsRead(messageDO.getIsRead());
 
         return messageDTO;
     }
@@ -440,10 +439,10 @@ public class MessageService {
 
     public void createSystemMessage(int type, long userId, String content) {
         MessageDO messageDO = new MessageDO();
-        messageDO.setType(type);
         messageDO.setSenderId(0L);
         messageDO.setReceiverId(userId);
         messageDO.setContent(content);
+        messageDO.setType(type);
         messageDataService.insert(messageDO);
     }
 

@@ -332,8 +332,6 @@ public class MemoryCardService {
         card.setCreatorId(userId);
         card.setCurrentVersionId(0L); // 临时设置为0，版本插入后再更新
         card.setState(MemoryCardState.NORMAL.value()); // 正常状态
-        card.setCreatedAt(LocalDateTime.now());
-        card.setUpdatedAt(LocalDateTime.now());
 
         int cardResult = cardDataService.insert(card);
         if (cardResult <= 0) {
@@ -349,7 +347,6 @@ public class MemoryCardService {
         version.setBack(request.getBack());
         version.setContentHash(contentHash);
         version.setIsActive(true);
-        version.setCreatedAt(LocalDateTime.now());
 
         int versionResult = cardVersionDataService.insert(version);
         if (versionResult <= 0) {
@@ -492,7 +489,6 @@ public class MemoryCardService {
         newVersion.setBack(request.getBack());
         newVersion.setContentHash(contentHash);
         newVersion.setIsActive(true);
-        newVersion.setCreatedAt(LocalDateTime.now());
 
         int versionResult = cardVersionDataService.insert(newVersion);
         if (versionResult <= 0) {

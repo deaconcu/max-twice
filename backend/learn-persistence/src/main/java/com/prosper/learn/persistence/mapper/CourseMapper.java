@@ -50,11 +50,11 @@ public interface CourseMapper {
 
     // 新增：课程状态操作方法
     // 修正状态值：使用数字1代替字符串'APPROVED'，对应CourseState.APPROVED.value()
-    @Update("UPDATE course SET state = 1, rejected_reason = '', updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")
+    @Update("UPDATE course SET state = 1, rejected_reason = '' WHERE id = #{id}")
     int approve(long id);
 
     // 修正状态值：使用数字2代替字符串'REJECTED'，对应CourseState.REJECTED.value()
-    @Update("UPDATE course SET state = 2, rejected_reason = #{rejectedReason}, updated_at = CURRENT_TIMESTAMP WHERE id = #{id}")
+    @Update("UPDATE course SET state = 2, rejected_reason = #{rejectedReason} WHERE id = #{id}")
     int reject(long id, String rejectedReason);
 
     @Delete("DELETE FROM course WHERE id = #{id}")

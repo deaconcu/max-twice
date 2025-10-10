@@ -160,7 +160,7 @@ public class CommentService {
         
         validateUserId(userId);
         validateObjectId(request.getObjectId());
-        validateCommentType(request.getType());
+        validateCommentType(request.getObjectType());
         
         UserDO fromUser = validateAndGetUser(userId);
 
@@ -168,11 +168,11 @@ public class CommentService {
         NodeDO nodeDO = null;
         RoadmapDO roadmapDO = null;
 
-        if (request.getType() == Enums.ObjectType.post.value()) {
+        if (request.getObjectType() == Enums.ObjectType.post.value()) {
             postDO = validateAndGetPost(request.getObjectId());
-        } else if (request.getType() == Enums.ObjectType.node.value()) {
+        } else if (request.getObjectType() == Enums.ObjectType.node.value()) {
             nodeDO = validateAndGetNode(request.getObjectId());
-        } else if (request.getType() == Enums.ObjectType.roadmap.value()) {
+        } else if (request.getObjectType() == Enums.ObjectType.roadmap.value()) {
             roadmapDO = validateAndGetRoadmap(request.getObjectId());
         } else {
             throw ErrorCode.COMMENT_INVALID_TYPE.exception();
@@ -181,8 +181,9 @@ public class CommentService {
         // 直接创建 CommentDO
         CommentDO commentDO = new CommentDO();
         commentDO.setObjectId(request.getObjectId());
-        commentDO.setType(request.getType());
+        commentDO.setObjectType(request.getObjectType());
         commentDO.setReplyToCommentId(request.getReplyTo());
+        // TODO 检查这个toUser是否合理
         commentDO.setToUserId(request.getToUser());
         commentDO.setContent(request.getContent());
         commentDO.setFromUserId(userId);
@@ -206,15 +207,15 @@ public class CommentService {
      * 主要功能是增加对象表的评论数和在Redis中记录评论行为
      */
     private void incrementCommentCount(CreateCommentRequest request, PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO, Long userId) {
-        if (request.getType() == Enums.ObjectType.post.value() && postDO != null) {
+        if (request.getObjectType() == Enums.ObjectType.post.value() && postDO != null) {
             postDO.setCommentCount(postDO.getCommentCount() + 1);
             postDataService.update(postDO);
             redisStatsService.recordComment(postDO.getId(), userId);
-        } else if (request.getType() == Enums.ObjectType.node.value() && nodeDO != null) {
+        } else if (request.getObjectType() == Enums.ObjectType.node.value() && nodeDO != null) {
             nodeDO.setCommentCount(nodeDO.getCommentCount() + 1);
             nodeDataService.update(nodeDO);
             redisStatsService.recordComment(nodeDO.getId(), userId);
-        } else if (request.getType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
+        } else if (request.getObjectType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
             roadmapDO.setComment(roadmapDO.getComment() + 1);
             roadmapDataService.update(roadmapDO);
             redisStatsService.recordComment(roadmapDO.getId(), userId);
@@ -227,13 +228,13 @@ public class CommentService {
      */
     private void createCommentNotification(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
                                          PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO) {
-        if (request.getType() == Enums.ObjectType.post.value() && postDO != null) {
+        if (request.getObjectType() == Enums.ObjectType.post.value() && postDO != null) {
             messageService.createCommentMessage(postDO.getCreatorId(), fromUser.getId(),
                                               postDO.getNodeId(), commentDO.getId(), postComment.value());
-        } else if (request.getType() == Enums.ObjectType.node.value() && nodeDO != null) {
+        } else if (request.getObjectType() == Enums.ObjectType.node.value() && nodeDO != null) {
             messageService.createCommentMessage(nodeDO.getCreatorId(), fromUser.getId(),
                                               nodeDO.getId(), commentDO.getId(), nodeComment.value());
-        } else if (request.getType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
+        } else if (request.getObjectType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
             messageService.createCommentMessage(roadmapDO.getCreatorId(), fromUser.getId(), 
                                               roadmapDO.getId(), commentDO.getId(), roadmapComment.value());
         }
@@ -244,13 +245,13 @@ public class CommentService {
      */
     private void createReplyNotification(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
                                        PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO, Long parentUserId) {
-        if (request.getType() == Enums.ObjectType.node.value() && nodeDO != null) {
+        if (request.getObjectType() == Enums.ObjectType.node.value() && nodeDO != null) {
             messageService.createCommentMessage(parentUserId, fromUser.getId(), 
                                               nodeDO.getId(), commentDO.getId(), replyNodeComment.value());
-        } else if (request.getType() == Enums.ObjectType.post.value() && postDO != null) {
+        } else if (request.getObjectType() == Enums.ObjectType.post.value() && postDO != null) {
             messageService.createCommentMessage(parentUserId, fromUser.getId(), 
                                               postDO.getNodeId(), commentDO.getId(), replyPostingComment.value());
-        } else if (request.getType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
+        } else if (request.getObjectType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
             messageService.createCommentMessage(parentUserId, fromUser.getId(), 
                                               roadmapDO.getId(), commentDO.getId(), replyRoadmapComment.value());
         }

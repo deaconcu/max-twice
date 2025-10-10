@@ -43,17 +43,15 @@ public interface PostMapper {
             "order by id desc limit #{count}")
     List<PostDO> getContentsListByUser(long userId, long lastId, int count);
 
-    @Insert("INSERT INTO post" +
-            "(node_id, creator_id, type, content, twice, helpful, comment_count, state, score) " +
-            "VALUES " +
-            "(#{nodeId}, #{creatorId}, #{type}, #{content}, #{twice}, #{helpful}, #{commentCount}, #{state}, 0.0)")
+    @Insert("INSERT INTO post (node_id, creator_id, type, content, state) " +
+            "VALUES (#{nodeId}, #{creatorId}, #{type}, #{content}, #{state})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(PostDO posting);
 
     @Update("UPDATE post " +
             "SET " +
             "node_id = #{nodeId}, content = #{content}, twice = #{twice}, helpful = #{helpful}, " +
-            "comment_count=#{commentCount}, state=#{state} where id = #{id}")
+            "comment_count=#{commentCount}, view_count=#{viewCount}, state=#{state} where id = #{id}")
     void update(PostDO posting);
 
     // 新增分数相关方法

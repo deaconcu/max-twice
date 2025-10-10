@@ -10,11 +10,11 @@ public interface UserStatsMapper {
 
     // ===== 基础CRUD操作 =====
     
-    @Insert("INSERT INTO user_stats (user_id, stats, stat_year, created_at, updated_at) " +
-            "VALUES (#{userId}, #{stats}, #{statYear}, NOW(), NOW())")
+    @Insert("INSERT INTO user_stats (user_id, stats, stat_year) " +
+            "VALUES (#{userId}, #{stats}, #{statYear})")
     int insert(UserStatsDO userStats);
 
-    @Update("UPDATE user_stats SET stats = #{stats}, updated_at = NOW() " +
+    @Update("UPDATE user_stats SET stats = #{stats} " +
             "WHERE user_id = #{userId} AND stat_year = #{statYear}")
     int updateStats(UserStatsDO userStats);
 
@@ -38,7 +38,6 @@ public interface UserStatsMapper {
             "    CAST(COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\".', #{statType})), 0) AS SIGNED) + #{count}" +
             "  )" +
             "), " +
-            "updated_at = NOW() " +
             "WHERE user_id = #{userId} AND stat_year = #{statYear}")
     int incrementUserStatsCount(long userId, int statYear, String dayKey, String statType, int count);
 
@@ -56,7 +55,6 @@ public interface UserStatsMapper {
             "    'comments', #{comments}" +
             "  )" +
             "), " +
-            "updated_at = NOW() " +
             "WHERE user_id = #{userId} AND stat_year = #{statYear}")
     int setUserDayStats(long userId, int statYear, String dayKey, int views, int twice,
                         int helpful, int comments);

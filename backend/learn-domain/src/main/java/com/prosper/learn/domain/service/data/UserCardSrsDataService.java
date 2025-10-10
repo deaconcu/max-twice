@@ -345,8 +345,6 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
         state.setEaseFactor(new java.math.BigDecimal("2.5"));
         state.setRepetitions(0);
         state.setLapseCount(0);
-        state.setCreatedAt(now);
-        state.setUpdatedAt(now);
         return state;
     }
 

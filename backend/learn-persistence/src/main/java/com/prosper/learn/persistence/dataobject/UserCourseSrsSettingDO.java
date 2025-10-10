@@ -15,7 +15,7 @@ public class UserCourseSrsSettingDO {
 
     private Byte frequencySetting;
 
-    private Byte status;
+    private Byte state;
 
     private LocalDateTime createdAt;
 

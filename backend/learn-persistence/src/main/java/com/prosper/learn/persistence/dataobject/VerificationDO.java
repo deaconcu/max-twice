@@ -23,7 +23,6 @@ public class VerificationDO {
     public VerificationDO(String email, String code) {
         this.email = email;
         this.code = code;
-        this.createdAt = Utils.getLocalDateTime();
         this.used = false;
     }
 

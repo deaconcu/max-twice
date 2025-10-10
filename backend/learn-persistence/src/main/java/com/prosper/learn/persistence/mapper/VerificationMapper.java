@@ -12,7 +12,7 @@ public interface VerificationMapper {
     @Select("SELECT * FROM verification WHERE email = #{email} and used = #{used} order by id desc limit 1")
     VerificationDO getByEmail(String email, boolean used);
 
-    @Insert("INSERT INTO verification(email, code, created_at, used) VALUES (#{email}, #{code}, #{createdAt}, #{used})")
+    @Insert("INSERT INTO verification(email, code, used) VALUES (#{email}, #{code}, #{used})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(VerificationDO verificationDO);
 

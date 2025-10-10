@@ -244,6 +244,7 @@ public class UpvoteService {
             upvoteDO = new UpvoteDO();
             upvoteDO.setUserId(userId);
             upvoteDO.setObjectId(postDO.getId());
+            upvoteDO.setObjectType(ObjectType.post.value());
             upvoteDO.setType(type);
             upvoteDataService.insert(upvoteDO);
         } else {
@@ -283,13 +284,13 @@ public class UpvoteService {
      * @throws BusinessException 当评论类型无效时抛出异常
      */
     private long getNodeIdFromComment(CommentDO commentDO) {
-        if (commentDO.getType() == ObjectType.node.value()) {
+        if (commentDO.getObjectType() == ObjectType.node.value()) {
             return commentDO.getObjectId();
-        } else if (commentDO.getType() == ObjectType.post.value()) {
+        } else if (commentDO.getObjectType() == ObjectType.post.value()) {
             PostDO postDO = validatePostExists(commentDO.getObjectId());
             return postDO.getNodeId();
         } else {
-            throw ErrorCode.INVALID_PARAMETER.exception("无效的评论类型: " + commentDO.getType());
+            throw ErrorCode.INVALID_PARAMETER.exception("无效的评论类型: " + commentDO.getObjectType());
         }
     }
 

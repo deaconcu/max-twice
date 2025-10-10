@@ -11,7 +11,7 @@ public class CommentDO {
 
     private String content;
 
-    private Integer type;
+    private Integer objectType;
 
     private Long objectId;
 
