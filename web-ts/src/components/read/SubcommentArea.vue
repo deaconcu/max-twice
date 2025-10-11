@@ -139,7 +139,7 @@ const sendComment = (): void => {
             <v-btn
               class="ms-0"
               variant="flat"
-              :color="comment.upvoted ? 'teal' : 'grey-lighten-4'"
+              :color="comment.upvoted ? 'grey-darken-1' : 'grey-lighten-4'"
               rounded="xl"
               density="compact"
               prepend-icon="mdi-arrow-up"

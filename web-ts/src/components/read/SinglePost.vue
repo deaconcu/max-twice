@@ -330,7 +330,7 @@
           :variant="posting.voteType === VoteType.HELPFUL ? 'flat' : 'flat'"
           rounded="lg"
           density="comfortable"
-          :color="posting.voteType === VoteType.HELPFUL ? 'green-lighten-4' : 'grey-lighten-3'"
+          :color="posting.voteType === VoteType.HELPFUL ? 'primary' : 'grey-lighten-3'"
           class="px-4"
           @click="upvote(posting, VoteType.HELPFUL)"
         >
@@ -339,19 +339,19 @@
             icon="mdi-check"
             size="16"
             class="mr-2"
-            color="green-darken-2"
+            color="white"
           ></v-icon>
           <v-icon
             v-else
             icon="mdi-thumb-up-outline"
             size="16"
             class="mr-2"
-            :color="(posting.voteType as VoteType) === VoteType.HELPFUL ? 'green-darken-2' : 'grey-darken-2'"
+            color="grey-darken-2"
           ></v-icon>
           <span
             :class="
               posting.voteType === VoteType.HELPFUL
-                ? 'font-weight-medium text-green-darken-2'
+                ? 'font-weight-medium text-white'
                 : 'font-weight-medium text-grey-darken-2'
             "
             >{{ t('posting.agree') }} {{ posting.helpful || 0 }}</span
@@ -366,7 +366,7 @@
             :variant="posting.voteType === VoteType.TWICE ? 'flat' : 'flat'"
             rounded="lg"
             density="comfortable"
-            :color="posting.voteType === VoteType.TWICE ? 'teal-lighten-4' : 'grey-lighten-3'"
+            :color="posting.voteType === VoteType.TWICE ? 'primary' : 'grey-lighten-3'"
             class="px-3"
             @click="upvote(posting, VoteType.TWICE)"
           >
@@ -375,19 +375,19 @@
               icon="mdi-check"
               size="14"
               class="mr-2"
-              color="teal-darken-2"
+              color="white"
             ></v-icon>
             <v-icon
               v-else
               icon="mdi-lightbulb-outline"
               size="14"
               class="mr-2"
-              :color="(posting.voteType as VoteType)  === VoteType.TWICE ? 'teal-darken-2' : 'grey-darken-2'"
+              color="grey-darken-2"
             ></v-icon>
             <span
               :class="
                 posting.voteType === VoteType.TWICE
-                  ? 'font-weight-medium text-teal-darken-3'
+                  ? 'font-weight-medium text-white'
                   : 'font-weight-medium text-grey-darken-2'
               "
             >
@@ -399,7 +399,7 @@
             :variant="posting.voteType === VoteType.HELPFUL ? 'flat' : 'flat'"
             rounded="lg"
             density="comfortable"
-            :color="posting.voteType === VoteType.HELPFUL ? 'brown-lighten-4' : 'grey-lighten-3'"
+            :color="posting.voteType === VoteType.HELPFUL ? 'primary' : 'grey-lighten-3'"
             class="px-3 ms-3"
             @click="upvote(posting, VoteType.HELPFUL)"
           >
@@ -408,19 +408,19 @@
               icon="mdi-check"
               size="14"
               class="mr-2"
-              color="brown-darken-2"
+              color="white"
             ></v-icon>
             <v-icon
               v-else
               icon="mdi-thumb-up-outline"
               size="14"
               class="mr-2"
-              :color="(posting.voteType as VoteType) === VoteType.HELPFUL ? 'brown-darken-2' : 'grey-darken-2'"
+              color="grey-darken-2"
             ></v-icon>
             <span
               :class="
                 posting.voteType === VoteType.HELPFUL
-                  ? 'font-weight-medium text-brown-darken-2'
+                  ? 'font-weight-medium text-white'
                   : 'font-weight-medium text-grey-darken-2'
               "
               >{{ t('posting.helpful') }} {{ posting.helpful || 0 }}</span

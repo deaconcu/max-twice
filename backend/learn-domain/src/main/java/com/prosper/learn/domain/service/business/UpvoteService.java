@@ -352,13 +352,23 @@ public class UpvoteService {
         if (roadmapId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception("路线图ID无效: " + roadmapId);
         }
-        
+
+        RoadmapDO roadmapDO = roadmapDataService.getById(roadmapId);
+        if (roadmapDO == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("路线图不存在: " + roadmapId);
+        }
+
         // 检查是否已经投过票
         UpvoteDO existingUpvote = upvoteDataService.getByUserAndObject(userId, roadmapId, ObjectType.roadmap.value());
 
         if (existingUpvote != null) {
             // 如果已经投过票，则取消投票
             upvoteDataService.delete(existingUpvote.getId());
+
+            // 减少投票数
+            int currentVote = roadmapDO.getVote() != null ? roadmapDO.getVote() : 0;
+            roadmapDO.setVote(Math.max(0, currentVote - 1));
+            roadmapDataService.update(roadmapDO);
 
             return false; // 返回false表示取消投票
         } else {
@@ -369,6 +379,11 @@ public class UpvoteService {
             upvoteDO.setObjectType(ObjectType.roadmap.value());
             upvoteDO.setType(0); // roadmap投票类型设为0，对应"once"
             upvoteDataService.insert(upvoteDO);
+
+            // 增加投票数
+            int currentVote = roadmapDO.getVote() != null ? roadmapDO.getVote() : 0;
+            roadmapDO.setVote(currentVote + 1);
+            roadmapDataService.update(roadmapDO);
 
             return true; // 返回true表示投票成功
         }
