@@ -187,7 +187,8 @@ public class CommentService {
         commentDO.setToUserId(request.getToUser());
         commentDO.setContent(request.getContent());
         commentDO.setFromUserId(userId);
-        commentDO.setScore(scoreCalculationService.calculateCommentScore(commentDO));
+        //commentDO.setScore(scoreCalculationService.calculateCommentScore(commentDO));
+        commentDO.setScore(0.0);
         commentDataService.insert(commentDO);
 
         // 处理回复和通知 - 重构现有方法以直接使用 request 和 commentDO
@@ -313,7 +314,7 @@ public class CommentService {
     /**
      * 获取对象(post, node, comment ...)评论，分页查询，按分数和ID倒序排列
      */
-    public List<CommentDTO> getCommentsByObject(Long objectId, int type, Long offsetId, Long userId) {
+    public List<CommentDTO> getCommentsByObject(Long objectId, Integer type, Long offsetId, Long userId) {
         validateObjectId(objectId);
         validateCommentType(type);
         validateOffsetId(offsetId);

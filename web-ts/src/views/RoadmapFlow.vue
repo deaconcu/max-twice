@@ -251,6 +251,9 @@ const performSave = async (description: string, content: any): Promise<void> => 
       console.log('课程表保存成功:', response.data)
       showSnackbar(t('roadmap.saveSuccess'))
 
+      // 关闭创建对话框
+      showCreateModal.value = false
+
       // 重新加载课程表列表
       await loadRoadmaps()
     } else {
@@ -402,6 +405,7 @@ onMounted(() => {
     <!-- 创建新课程表弹窗 -->
     <RoadmapCreate
       v-model="showCreateModal"
+      :profession-name="profession?.name"
       :copied-roadmap="copiedRoadmapData"
       @close="closeCreateModal"
       @save="saveRoadmap"

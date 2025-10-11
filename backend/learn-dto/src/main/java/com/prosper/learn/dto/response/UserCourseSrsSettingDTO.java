@@ -12,6 +12,6 @@ public class UserCourseSrsSettingDTO {
 
     private Integer frequencySetting;
 
-    private Integer status;
+    private Integer state;
 
 }

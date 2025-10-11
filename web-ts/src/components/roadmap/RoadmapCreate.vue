@@ -59,6 +59,7 @@
   interface Props {
     modelValue?: boolean
     professionId?: string
+    professionName?: string
     copiedRoadmap?: CopiedRoadmap | null
   }
 
@@ -101,6 +102,7 @@
   const props = withDefaults(defineProps<Props>(), {
     modelValue: false,
     professionId: '1',
+    professionName: '',
     copiedRoadmap: null,
   })
 
@@ -117,7 +119,7 @@
       id: '0',
       type: 'default',
       data: {
-        label: PROFESSION_NAME,
+        label: props.professionName || t('roadmapCreate.rootNodeTitle'),
         link: null, // 根节点不跳转
       },
       position,
@@ -265,7 +267,13 @@
   const loadAvailableCourses = async (searchName = ''): Promise<void> => {
     try {
       const response = await courseServiceV1.searchCourses(searchName)
-      availableCourses.value = response.data || []
+      console.log('Search courses response:', response)
+      if (response.code === 200) {
+        availableCourses.value = response.data || []
+      } else {
+        availableCourses.value = []
+        showSnackbar?.(response.message || t('roadmapCreate.messages.loadCoursesError', { error: 'Search failed' }))
+      }
     } catch (err: any) {
       availableCourses.value = []
       showSnackbar?.(

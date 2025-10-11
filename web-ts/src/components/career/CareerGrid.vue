@@ -137,7 +137,7 @@ const showCareerList: ComputedRef<boolean> = computed(() => {
         @load="handleLoadMoreCareers"
       >
         <v-row>
-          <v-col v-for="career in displayedCareers" :key="career.id" cols="12">
+          <v-col v-for="career in displayedCareers" :key="career.id" cols="12" md="6" lg="4">
             <CareerCard
               :career="career"
               :get-category-name="getCategoryName"

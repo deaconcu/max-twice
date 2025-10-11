@@ -317,19 +317,19 @@ export const postServiceV1 = {
 
 // 评论管理服务
 export const commentServiceV1 = {
-  createComment(objectId: number, type: ObjectType, replyTo?: number, toUser?: number, content?: string): Promise<ApiResponse<Comment>> {
+  createComment(objectId: number, objectType: ObjectType, replyTo?: number, toUser?: number, content?: string): Promise<ApiResponse<Comment>> {
     return apiClient.post(`${API_V1_PREFIX}/comments`, {
       objectId,
-      type,
+      objectType,
       replyTo,
       toUser,
       content,
     })
   },
 
-  getComments(objectId: number, type: ObjectType, offsetId = 0): Promise<ApiResponse<Comment[]>> {
+  getComments(objectId: number, objectType: ObjectType, offsetId = 0): Promise<ApiResponse<Comment[]>> {
     return apiClient.get(`${API_V1_PREFIX}/comments`, {
-      params: { objectId, type, offsetId },
+      params: { objectId, objectType, offsetId },
     })
   },
 

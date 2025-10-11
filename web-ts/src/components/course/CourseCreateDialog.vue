@@ -9,12 +9,14 @@
   interface Props {
     modelValue?: boolean
     categories?: MainCategory[]
+    resetForm?: boolean
   }
 
   // Props
   const props = withDefaults(defineProps<Props>(), {
     modelValue: false,
     categories: () => [],
+    resetForm: false,
   })
 
   interface Emits {
@@ -29,8 +31,8 @@
   const applyCourseData = ref({
     name: '',
     description: '',
-    mainCategoryId: 0,
-    subCategoryId: 0,
+    mainCategoryId: null as number | null,
+    subCategoryId: null as number | null,
   })
 
   // Computed properties for v-model
@@ -55,7 +57,22 @@
   watch(
     () => applyCourseData.value.mainCategoryId,
     () => {
-      applyCourseData.value.subCategoryId = 0
+      applyCourseData.value.subCategoryId = null
+    }
+  )
+
+  // 监听重置表单信号
+  watch(
+    () => props.resetForm,
+    (newVal) => {
+      if (newVal) {
+        applyCourseData.value = {
+          name: '',
+          description: '',
+          mainCategoryId: null,
+          subCategoryId: null,
+        }
+      }
     }
   )
 
@@ -69,27 +86,11 @@
     }
 
     emit('submit', courseData)
-
-    // 清空表单
-    applyCourseData.value = {
-      name: '',
-      description: '',
-      mainCategoryId: 0,
-      subCategoryId: 0,
-    }
   }
 
   // 关闭对话框
   const closeDialog = (): void => {
     dialogModel.value = false
-
-    // 清空表单
-    applyCourseData.value = {
-      name: '',
-      description: '',
-      mainCategoryId: 0,
-      subCategoryId: 0,
-    }
   }
 </script>
 
@@ -140,6 +141,7 @@
           variant="outlined"
           density="compact"
           class="mb-4"
+          clearable
           required
         >
         </v-select>
@@ -154,6 +156,7 @@
           density="compact"
           class="mb-4"
           :disabled="!applyCourseData.mainCategoryId"
+          clearable
           required
         >
         </v-select>

@@ -51,7 +51,7 @@
             <div class="px-8">
               <v-infinite-scroll
                 :items="messageList"
-                :on-load="handleLoadData"
+                @load="handleLoadData"
                 :no-more-text="t('message.noMoreMessages')"
                 class="infinite-scroll-offset"
               >

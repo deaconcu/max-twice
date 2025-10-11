@@ -47,11 +47,11 @@ const loadDecks = async (reset = false): Promise<void> => {
     if (response.code === 200) {
       const responseData = response.data
       const newDecks = responseData.items || []
-      
+
       if (reset) {
         deckList.value = newDecks
       } else {
-        deckList.value = [...deckList.value, ...newDecks]
+        deckList.value.push(...newDecks)
       }
       
       hasMore.value = responseData.hasMore || false

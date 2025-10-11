@@ -84,9 +84,9 @@ public interface MemoryCardDeckMapper {
     List<MemoryCardDeckDO> getListByNodeKeyset(long nodeId, double lastScore, long lastId, int state, int limit);
 
     @Insert("INSERT INTO memory_card_deck " +
-            "(source_post_id, node_id, creator_id, title, description, version, state, upvote_count, card_count, score) " +
+            "(source_post_id, node_id, creator_id, title, description, version, state, card_count) " +
             "VALUES " +
-            "(#{sourcePostId}, #{nodeId}, #{creatorId}, #{title}, #{description}, #{version}, #{state}, #{upvoteCount}, #{cardCount}, #{score})")
+            "(#{sourcePostId}, #{nodeId}, #{creatorId}, #{title}, #{description}, #{version}, #{state}, #{cardCount})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(MemoryCardDeckDO deck);
 

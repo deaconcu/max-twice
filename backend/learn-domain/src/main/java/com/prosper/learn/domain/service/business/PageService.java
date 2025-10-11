@@ -70,7 +70,7 @@ public class PageService {
         List<NodeDO> nodeList = keys.isEmpty() ? new ArrayList<>() : nodeDataService.getByIds(keys.stream().toList());
 
         // 获取用户完成的节点集合
-        Set<Integer> completedNodes = learningProgressService.getUserCompletedNodes(userId);
+        Set<Long> completedNodes = learningProgressService.getUserCompletedNodes(userId);
 
         // 构建包含完成状态的节点信息
         Map<Long, NodeDTO> nodeInfos = nodeList.stream()

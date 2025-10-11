@@ -82,8 +82,8 @@ const unfollow = async (id: number): Promise<void> => {
     origin="top center"
     @update:model-value="(val) => onHover(val, props.id)"
   >
-    <template #activator="{ props }">
-      <span v-bind="props" class="text-body-2 text-grey-darken-4 font-weight-bold">{{
+    <template #activator="{ props: menuProps }">
+      <span v-bind="menuProps" class="text-body-2 text-grey-darken-4 font-weight-bold">{{
         props.name
       }}</span>
     </template>

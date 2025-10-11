@@ -15,7 +15,7 @@ public interface ProfessionMapper {
     @Select("SELECT * FROM profession ORDER BY id DESC LIMIT #{size} OFFSET #{offset}")
     List<ProfessionDO> listByPage(int offset, int size);
 
-    @Select("SELECT * FROM profession WHERE state = #{state} AND id > #{lastId} ORDER BY id ASC LIMIT 20")
+    @Select("SELECT * FROM profession WHERE state = #{state} AND id > #{lastId} ORDER BY id DESC LIMIT 20")
     List<ProfessionDO> listByStateAndLastId(byte state, long lastId);
 
     @Select("SELECT * FROM profession WHERE main_category = #{mainCategory} AND state = 1 AND id > #{lastId} ORDER BY id ASC LIMIT 20")
@@ -41,17 +41,19 @@ public interface ProfessionMapper {
     @MapKey("id")
     Map<Integer, ProfessionDO> getMapByIds(Collection<Long> ids);
 
-    @Insert("INSERT INTO profession(name, description, icon, price, skills, main_category, sub_category, " +
-            "state, creator_id) " +
-            "VALUES (#{name}, #{description}, #{icon}, #{price}, #{skills}, #{mainCategory}, #{subCategory}, " +
+    @Insert("INSERT INTO profession" +
+            "(name, description, icon, skills, main_category, sub_category, state, creator_id) " +
+            "VALUES (#{name}, #{description}, #{icon}, #{skills}, #{mainCategory}, #{subCategory}, " +
             "#{state}, #{creatorId})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(ProfessionDO professionDO);
 
-    @Update("UPDATE profession SET name = #{name}, description = #{description}, icon = #{icon}, " +
-            "price = #{price}, skills = #{skills}, main_category = #{mainCategory}, " +
-            "sub_category = #{subCategory}, state = #{state}, rejected_reason = #{rejectedReason}, " +
-            "creator_id = #{creatorId} WHERE id = #{id}")
+    @Update("UPDATE profession " +
+            "SET " +
+            "name = #{name}, description = #{description}, icon = #{icon}, skills = #{skills}, " +
+            "main_category = #{mainCategory}, sub_category = #{subCategory}, state = #{state}, " +
+            "rejected_reason = #{rejectedReason}, creator_id = #{creatorId} " +
+            "WHERE id = #{id}")
     void update(ProfessionDO professionDO);
 
     @Update("UPDATE profession SET state = #{state}, rejected_reason = #{rejectedReason} WHERE id = #{id}")

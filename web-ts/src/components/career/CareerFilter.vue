@@ -139,7 +139,7 @@ const handleNavigation = (route: string): void => {
             rounded="lg"
             size="default"
             prepend-icon="mdi-plus-circle"
-            class="ml-3"
+            class="ml-3 action-btn"
             @click="handleOpenCareerApplication"
           >
             {{ t('careerCenter.search.applyJob') }}
@@ -195,6 +195,14 @@ const handleNavigation = (route: string): void => {
 }
 
 .search-btn {
+  min-width: 120px;
+  height: 40px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.action-btn {
   min-width: 120px;
   height: 40px;
   font-weight: 500;

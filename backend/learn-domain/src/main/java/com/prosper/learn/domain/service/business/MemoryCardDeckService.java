@@ -501,8 +501,9 @@ public class MemoryCardDeckService {
         }
 
         // 创建完成后立即计算初始分数
-        scoreCalculationService.checkAndUpdateMemoryCardDeckScore(deck);
-        deckDataService.update(deck);
+        // TODO: 先注释掉，新deck需要有一个启动分数，后续再调整分数计算逻辑
+        //scoreCalculationService.checkAndUpdateMemoryCardDeckScore(deck);
+        //deckDataService.update(deck);
 
         // 如果有卡片数据，批量创建卡片
         if (request.getCards() != null && !request.getCards().isEmpty()) {

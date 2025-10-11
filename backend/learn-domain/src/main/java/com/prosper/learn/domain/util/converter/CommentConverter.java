@@ -13,7 +13,7 @@ public interface CommentConverter {
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "content")
-    @Mapping(target = "type")
+    @Mapping(target = "objectType")
     @Mapping(target = "objectId")
     @Mapping(target = "replyCount")
     @Mapping(target = "replyToCommentId")

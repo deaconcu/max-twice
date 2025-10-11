@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { inject, nextTick, onMounted, ref, watch } from 'vue'
+  import { computed, inject, nextTick, onMounted, ref, watch } from 'vue'
   import { contentServiceV1, upvoteServiceV1, memoryCardDeckServiceV1, adminAutoAuthorServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { useI18n } from 'vue-i18n'
   import { PostType, VoteType } from '@/types/enums'
@@ -13,6 +13,12 @@
 
   // 🔴 导入Post浏览量跟踪服务
   import postViewTracking from '@/services/postViewTracking'
+
+  interface NodeInfo {
+    id: number
+    name: string
+    description: string
+  }
 
   interface DataProps {
     path: string
@@ -49,6 +55,29 @@
 
   // 管理菜单状态
   const showAdminMenu = ref<boolean>(false)
+
+  // 解析目录内容
+  const contentNodes = computed<NodeInfo[]>(() => {
+    if (props.posting.type !== PostType.CONTENTS) {
+      return []
+    }
+
+    try {
+      const parsed = JSON.parse(props.posting.content)
+      if (Array.isArray(parsed)) {
+        return parsed
+      }
+      return []
+    } catch (e) {
+      // 向后兼容：如果解析失败，尝试按逗号分割
+      return props.posting.content.split(',').map((item, index) => ({
+        id: index,
+        name: item.trim(),
+        description: '',
+      }))
+    }
+  })
+
   const updateOverflowState = () => {
     const el = contentRef.value
     if (!el || props.detail) {
@@ -242,14 +271,27 @@
       <!-- is contents -->
       <template v-if="posting.type === PostType.CONTENTS">
         <div class="w-100 d-flex justify-space-between align-end">
-          <v-list class="">
+          <v-list class="w-100">
             <v-list-item
-              v-for="(item, index) in posting.content.split(',')"
+              v-for="(nodeInfo, index) in contentNodes"
               :key="index"
-              class="px-0 py-0"
-              min-height="48"
+              class="px-0 py-4 dashed-border"
             >
-              <v-list-item-title class="pb-1 dashed-border">{{ item }}</v-list-item-title>
+              <router-link
+                :to="{ name: 'read', query: { nodeId: nodeInfo.id } }"
+                target="_blank"
+                class="text-decoration-none d-block w-100"
+              >
+                <v-list-item-title class="pb-1 text-grey-darken-3">
+                  {{ index + 1 }}. {{ nodeInfo.name }}
+                </v-list-item-title>
+                <v-list-item-subtitle
+                  v-if="nodeInfo.description"
+                  class="text-body-2 text-grey-darken-1 mt-1"
+                >
+                  {{ nodeInfo.description }}
+                </v-list-item-subtitle>
+              </router-link>
             </v-list-item>
           </v-list>
         </div>
@@ -908,4 +950,5 @@
     font-weight: 500 !important;
     color: #455a64 !important;
   }
+
 </style>

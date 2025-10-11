@@ -320,7 +320,7 @@ public class LearningProgressService {
      * @param userId 用户ID
      * @return 已完成的节点ID集合
      */
-    public Set<Integer> getUserCompletedNodes(long userId) {
+    public Set<Long> getUserCompletedNodes(long userId) {
         try {
             String key = USER_COMPLETED_KEY_PREFIX + userId;
             
@@ -334,7 +334,7 @@ public class LearningProgressService {
             }
             
             return nodeStrings.stream()
-                .map(Integer::parseInt)
+                .map(Long::parseLong)
                 .collect(Collectors.toSet());
                 
         } catch (Exception e) {
@@ -664,7 +664,7 @@ public class LearningProgressService {
             JsonNode tocNode = objectMapper.readTree(toc1Content);
             
             // 3. 获取用户已完成的节点
-            Set<Integer> userCompletedNodes = getUserCompletedNodes(userId);
+            Set<Long> userCompletedNodes = getUserCompletedNodes(userId);
             
             // 4. 递归计算层级进度
             double progressPercent = calculateHierarchicalProgress(tocNode, userCompletedNodes) * 10000;
@@ -707,7 +707,7 @@ public class LearningProgressService {
      * @param completedNodes 已完成的节点集合
      * @return 当前节点的完成进度 (0.0 到 1.0)
      */
-    private double calculateHierarchicalProgress(JsonNode node, Set<Integer> completedNodes) {
+    private double calculateHierarchicalProgress(JsonNode node, Set<Long> completedNodes) {
         if (node == null || !node.isObject()) {
             return 0.0;
         }

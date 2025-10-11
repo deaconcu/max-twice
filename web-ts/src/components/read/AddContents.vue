@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, watch } from 'vue'
+  import { ref, watch, inject } from 'vue'
   import draggable from 'vuedraggable'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
@@ -8,6 +8,7 @@
 
   const route = useRoute()
   const { t } = useI18n()
+  const showSnackbar = inject<(message: string) => void>('showSnackbar')
 
   interface Props {
     nodeId: number
@@ -26,9 +27,15 @@
 
   const emit = defineEmits<Emits>()
 
+  interface ContentItem {
+    name: string
+    description: string
+  }
+
   const createContentsTab = ref<string | number>(0)
   const newContentsItem = ref<string>('')
-  const newContents = ref<string[]>([])
+  const newContentsDescription = ref<string>('')
+  const newContents = ref<ContentItem[]>([])
 
   watch(
     () => route.query.path,
@@ -39,8 +46,12 @@
 
   const addContentsItem = (): void => {
     if (newContentsItem.value.trim() !== '') {
-      newContents.value.push(newContentsItem.value.trim())
+      newContents.value.push({
+        name: newContentsItem.value.trim(),
+        description: newContentsDescription.value.trim(),
+      })
       newContentsItem.value = ''
+      newContentsDescription.value = ''
     }
   }
 
@@ -52,8 +63,12 @@
     try {
       console.log('begin post')
 
+      const contentArray = newContents.value.map((item) => ({
+        [item.name]: item.description,
+      }))
+
       const data = {
-        content: JSON.stringify(newContents.value),
+        content: JSON.stringify(contentArray),
         nodeId: props.nodeId,
         type: PostType.CONTENTS,
       }
@@ -64,12 +79,15 @@
 
       if (response.code === 200) {
         console.log('Form submitted successfully')
+        showSnackbar?.('目录添加成功')
         dialog.value = false
         emit('loadData', [])
+      } else {
+        showSnackbar?.(response.message || '目录添加失败')
       }
-    } catch (error) {
-      // todo
+    } catch (error: any) {
       console.error('Error submitting form:', error)
+      showSnackbar?.(error.response?.data?.message || error.message || '目录添加失败，请稍后重试')
     }
   }
 
@@ -92,7 +110,7 @@
 
 <template>
   <v-dialog v-model="dialog" width="1100" height="700px">
-    <v-card prepend-icon="mdi-account" :title="t('addContents.title')">
+    <v-card prepend-icon="mdi-account" :title="t('addContents.title')" rounded="xl">
       <v-row class="ma-0 border-t-sm">
         <v-col class="border-e-sm">
           <v-card-text>
@@ -111,6 +129,13 @@
                     variant="outlined"
                     class="pt-5"
                   ></v-text-field>
+                  <v-textarea
+                    v-model="newContentsDescription"
+                    :label="t('addContents.nodeDescription')"
+                    variant="outlined"
+                    rows="3"
+                    class="pt-2"
+                  ></v-textarea>
                   <v-btn variant="tonal" class="me-4" @click="addContentsItem">{{
                     t('addContents.submit')
                   }}</v-btn>
@@ -127,10 +152,15 @@
 
         <v-col>
           <div class="scrollable-div px-5 py-1">
-            <draggable v-model="newContents" item-key="id">
+            <draggable v-model="newContents" item-key="name">
               <template #item="{ element, index }">
-                <div class="d-flex justify-space-between align-center pt-3 dashed-border-bottom">
-                  <span>{{ index + 1 }}. {{ element }}</span>
+                <div class="d-flex justify-space-between align-start pt-3 dashed-border-bottom pb-2">
+                  <div class="flex-grow-1">
+                    <div class="font-weight-medium">{{ index + 1 }}. {{ element.name }}</div>
+                    <div v-if="element.description" class="text-caption text-grey-darken-1 mt-1">
+                      {{ element.description }}
+                    </div>
+                  </div>
                   <v-btn
                     v-ripple="false"
                     icon

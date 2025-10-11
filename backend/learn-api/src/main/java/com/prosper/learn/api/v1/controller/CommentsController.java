@@ -42,11 +42,11 @@ public class CommentsController {
     @GetMapping("/comments")
     public ApiResponse<List<CommentDTO>> getCommentsByObject(
             @RequestParam Long objectId, 
-            @RequestParam int type, 
+            @RequestParam Integer objectType,
             @RequestParam Long offsetId) {
         
         Long userId = StpUtil.getLoginIdAsLong();
-        List<CommentDTO> comments = commentService.getCommentsByObject(objectId, type, offsetId, userId);
+        List<CommentDTO> comments = commentService.getCommentsByObject(objectId, objectType, offsetId, userId);
         return ApiResponse.success(comments);
     }
 

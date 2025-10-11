@@ -60,7 +60,7 @@ const submitAddArticle = async (): Promise<void> => {
 
 <template>
   <v-dialog v-model="dialog" width="800" height="1200px">
-    <v-card>
+    <v-card rounded="xl">
       <v-card-item class="border-b-sm">
         <v-card-title class="d-flex align-center">
           <v-icon size="small" class="px-4" icon="mdi-account"></v-icon>

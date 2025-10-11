@@ -104,6 +104,12 @@ public class AppConfiguration implements WebMvcConfigurer {
 
         // 禁用将日期写成时间戳
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        // 设置日期格式和时区
+        java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        dateFormat.setTimeZone(java.util.TimeZone.getTimeZone("GMT+8"));
+        mapper.setDateFormat(dateFormat);
+
         return mapper;
     }
 }

@@ -4,6 +4,8 @@ import com.prosper.learn.dto.response.PostDTO;
 import com.prosper.learn.persistence.dataobject.PostDO;
 import org.mapstruct.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -27,4 +29,11 @@ public interface PostConverter {
     
     @IterableMapping(qualifiedByName = "toDTO")
     List<PostDTO> toDTO(List<PostDO> postDOList);
+
+    default String map(LocalDateTime localDateTime) {
+        if (localDateTime == null) {
+            return null;
+        }
+        return localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
 }

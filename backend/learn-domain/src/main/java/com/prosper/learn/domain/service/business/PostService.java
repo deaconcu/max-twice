@@ -545,11 +545,24 @@ public class PostService {
 
             if (!ids.isEmpty()) {
                 List<NodeDO> nodeList = nodeDataService.getByIds(ids);
-                String names = nodeList.stream().map(NodeDO::getName).collect(Collectors.joining(","));
-                post.setContent(names);
+
+                List<Map<String, Object>> nodeInfoList = nodeList.stream()
+                        .map(node -> {
+                            Map<String, Object> nodeInfo = new java.util.HashMap<>();
+                            nodeInfo.put("id", node.getId());
+                            nodeInfo.put("name", node.getName());
+                            nodeInfo.put("description", node.getDescription() != null ? node.getDescription() : "");
+                            return nodeInfo;
+                        })
+                        .collect(Collectors.toList());
+
+                String jsonContent = objectMapper.writeValueAsString(nodeInfoList);
+                post.setContent(jsonContent);
             }
         } catch (NumberFormatException e) {
             log.warn("Failed to parse content IDs for post {}: {}", post.getId(), post.getContent(), e);
+        } catch (Exception e) {
+            log.error("Failed to convert node info to JSON for post {}", post.getId(), e);
         }
     }
 

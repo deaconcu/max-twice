@@ -153,8 +153,8 @@ const currentFirstCategory: ComputedRef<ProfessionCategory | undefined> = comput
 <style scoped>
 /* 职业领域筛选区域样式 */
 .category-navigation-card {
-  border-left: 4px solid #d0d0d0 !important;
-  border-right: 4px solid #d0d0d0 !important;
+  border-left: 2px solid #d0d0d0 !important;
+  border-right: 2px solid #d0d0d0 !important;
 }
 
 /* 分类按钮样式 */

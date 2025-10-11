@@ -13,7 +13,7 @@ public interface UserCourseMapper {
      * 插入用户课程进度记录
      */
     @Insert("INSERT INTO user_course (user_id, course_id, state, started_at) " +
-            "VALUES (#{userId}, #{courseId}, #{startedAt}, #{state})")
+            "VALUES (#{userId}, #{courseId}, #{state}, #{startedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserCourseDO userCourseDO);
 

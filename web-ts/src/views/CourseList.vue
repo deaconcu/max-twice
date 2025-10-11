@@ -59,6 +59,7 @@ const courses: Ref<Course[]> = ref([])
 const loading: Ref<boolean> = ref(false)
 const activeFirstLvl: Ref<number> = ref(-1)
 const applyCourseDialog: Ref<boolean> = ref(false)
+const resetFormFlag: Ref<boolean> = ref(false)
 
 // 其他数据
 const subscriptions: Ref<UserCourse[]> = ref([])
@@ -219,6 +220,10 @@ const handleCreateCourse = async (courseData: CourseCreateData): Promise<void> =
     } else if (response.code === 200) {
       console.log('Course created successfully')
       applyCourseDialog.value = false
+      resetFormFlag.value = true
+      setTimeout(() => {
+        resetFormFlag.value = false
+      }, 100)
       showSnackbar(t('message.courseCreateSuccess'))
     } else {
       showSnackbar(response.message || '创建失败，请重试！', 'error')
@@ -276,6 +281,7 @@ const handleOpenCourse = (courseId: number): void => {
           <CourseCreateDialog
             v-model="applyCourseDialog"
             :categories="config.courses || []"
+            :reset-form="resetFormFlag"
             @submit="handleCreateCourse"
           />
         </v-col>

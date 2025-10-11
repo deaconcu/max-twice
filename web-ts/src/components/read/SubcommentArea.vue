@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { commentServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1'
@@ -33,7 +33,12 @@ const localOffsetId = ref<number>(0)
 const displayLoadMore = ref<boolean>(true)
 const highlightedSubCommentId = ref<number | null>(null)
 const replyContent = ref<string>('')
-const localComments = ref<Comment[]>([])
+const additionalComments = ref<Comment[]>([])
+
+// 合并 props.comments 和额外加载的评论
+const localComments = computed<Comment[]>(() => {
+  return [...props.comments, ...additionalComments.value]
+})
 
 // 设置子评论高亮并在5秒后移除
 const setSubHighlight = (subCommentId: number): void => {
@@ -52,15 +57,12 @@ const updateActiveReplayId = (newValue: string | number): void => {
 }
 
 onMounted(() => {
-  // Initialize localComments with props data
-  localComments.value = [...props.comments]
-
-  if (localComments.value.length > 0) {
-    localOffsetId.value = localComments.value[localComments.value.length - 1].id
+  // 初始化 offsetId
+  if (props.comments.length > 0) {
+    localOffsetId.value = props.comments[props.comments.length - 1].id
   }
 
   if (Number(props.offsetId) > localOffsetId.value) {
-    localComments.value = []
     localOffsetId.value = Number(props.offsetId) - 1
     loadMore()
   }
@@ -83,7 +85,7 @@ const loadMore = async (): Promise<void> => {
     if (response.code === 401) {
       // not login
     } else if (response.code === 200) {
-      localComments.value.push(...response.data)
+      additionalComments.value.push(...response.data)
 
       if (response.data.length > 0) {
         localOffsetId.value = response.data[response.data.length - 1].id

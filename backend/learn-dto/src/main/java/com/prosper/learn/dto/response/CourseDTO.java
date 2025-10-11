@@ -27,7 +27,7 @@ public class CourseDTO {
     private CourseDTO parentCourse;  // 保持原有的CourseDTOV3类型
     
     // === 状态字段 (V1, V4有) ===
-    private String state; // SUBMITTED, APPROVED, REJECTED
+    private Byte state; // SUBMITTED, APPROVED, REJECTED
     
     // === 分类字段 (V1, V2, V4有) ===
     private Integer mainCategory;

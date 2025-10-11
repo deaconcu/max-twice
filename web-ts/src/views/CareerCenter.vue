@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, onMounted, ref } from 'vue'
+import { inject, onMounted, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -111,6 +111,14 @@ const newCareerApplication: Ref<CareerApplication> = ref({
   subCategory: null,
   skills: '',
 })
+
+// 监听主分类变化，清空子分类选择
+watch(
+  () => newCareerApplication.value.mainCategory,
+  () => {
+    newCareerApplication.value.subCategory = null
+  }
+)
 
 // 随机图标数组
 const availableIcons: string[] = [
@@ -481,8 +489,12 @@ const submitCareerApplication = async (): Promise<void> => {
     const response = await professionServiceV1.createProfession(applicationData)
     console.log(`response: ${JSON.stringify(response)}`)
 
-    showSnackbar(getMessage('careerCenter.application.submittedSuccess'), 'success')
-    closeApplicationDialog()
+    if (response.code === 200) {
+      showSnackbar(getMessage('careerCenter.application.submittedSuccess'), 'success')
+      closeApplicationDialog()
+    } else {
+      showSnackbar(response.message || getMessage('careerCenter.application.submitFailed'), 'error')
+    }
   } catch (error) {
     console.error('提交职业申请失败:', error)
     showSnackbar(getMessage('careerCenter.application.submitFailed'), 'error')
@@ -577,6 +589,37 @@ onMounted(() => {
             class="mb-4"
           >
           </v-textarea>
+
+          <v-select
+            v-model="newCareerApplication.mainCategory"
+            :items="categories"
+            item-title="title"
+            item-value="id"
+            :label="t('course.mainCategory')"
+            variant="outlined"
+            density="compact"
+            class="mb-4"
+            clearable
+            :rules="[(v: number | null) => v !== null || t('validation.required.mainCategory')]"
+            required
+          >
+          </v-select>
+
+          <v-select
+            v-model="newCareerApplication.subCategory"
+            :items="getSubcategoriesByMainCategory(newCareerApplication.mainCategory || 0)"
+            item-title="name"
+            item-value="id"
+            :label="t('course.subCategory')"
+            variant="outlined"
+            density="compact"
+            class="mb-4"
+            :disabled="!newCareerApplication.mainCategory"
+            clearable
+            :rules="[(v: number | null) => v !== null || t('validation.required.subCategory')]"
+            required
+          >
+          </v-select>
 
           <v-text-field
             v-model="newCareerApplication.skills"

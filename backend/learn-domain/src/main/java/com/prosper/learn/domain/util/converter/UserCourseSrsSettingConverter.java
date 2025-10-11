@@ -16,7 +16,7 @@ public interface UserCourseSrsSettingConverter {
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "frequencySetting")
-    @Mapping(target = "status")
+    @Mapping(target = "state")
     UserCourseSrsSettingDTO toDTO(UserCourseSrsSettingDO settingDO);
 
     @IterableMapping(qualifiedByName = "toDTO")

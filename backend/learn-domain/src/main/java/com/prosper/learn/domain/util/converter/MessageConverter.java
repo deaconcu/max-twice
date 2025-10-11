@@ -16,7 +16,6 @@ public interface MessageConverter {
     @Mapping(target = "receiverId")
     @Mapping(target = "content")
     @Mapping(target = "type")
-    @Mapping(target = "isRead")
     @Mapping(target = "createdAt")
     MessageDTO toDTO(MessageDO messageDO);
     

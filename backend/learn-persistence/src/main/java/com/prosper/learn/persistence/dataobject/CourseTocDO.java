@@ -20,6 +20,7 @@ public class CourseTocDO {
     public CourseTocDO(String hash, String toc) {
         this.hash = hash;
         this.toc = toc;
+        this.refCount = 0;
     }
 
 }

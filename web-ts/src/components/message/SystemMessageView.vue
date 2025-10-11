@@ -133,7 +133,7 @@
           <v-infinite-scroll
             :key="systemMessageListKey"
             :items="messageList"
-            :on-load="handleLoadData"
+            @load="handleLoadData"
           >
             <div v-for="(message, index) in messageList" :key="message.id || index" class="mb-0">
               <div
@@ -214,7 +214,6 @@
               </div>
               <div class="ps-6 w-100">
                 <v-badge
-                  class="w-100"
                   color="error"
                   dot
                   offset-x="3"
