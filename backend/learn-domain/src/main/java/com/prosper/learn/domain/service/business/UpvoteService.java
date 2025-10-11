@@ -215,7 +215,10 @@ public class UpvoteService {
      */
     @Transactional
     public void upvotePost(long postingId, long userId, int type) {
-        validateVoteType(type);
+        if (type != Enums.VoteType.twice.value() && type != Enums.VoteType.helpful.value()) {
+            throw ErrorCode.INVALID_PARAMETER.exception("帖子仅支持 twice 或 helpful 点赞类型: " + type);
+        }
+
         UserDO fromUserDO = validateUserExists(userId);
         PostDO postDO = validatePostExists(postingId);
 
