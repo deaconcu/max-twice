@@ -463,6 +463,7 @@ const handleUpvote = async () => {
               </div>
               <div
                 class="text-center upvote-area"
+                :class="{ 'upvoted': deck?.hasUpvoted }"
                 @click="handleUpvote"
               >
                 <div class="text-subtitle-1 font-weight-bold">{{ deck?.upvoteCount || 0 }}</div>
@@ -1426,6 +1427,14 @@ const handleUpvote = async () => {
 .upvote-area:hover {
   background: rgba(255, 255, 255, 0.1);
   transform: scale(1.05);
+}
+
+.upvote-area.upvoted {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.upvote-area.upvoted:hover {
+  background: rgba(255, 255, 255, 0.35);
 }
 
 /* 头部背景 */

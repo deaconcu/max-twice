@@ -145,6 +145,7 @@ public class UserService {
         user.setName(userName);
         user.setPassword(Utils.md5(password));
         user.setEmail(email);
+        user.setPhone("");
         user.setBiography("");
         userDataService.insert(user);
 

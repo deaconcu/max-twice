@@ -435,19 +435,21 @@ public class UpvoteService {
             throw ErrorCode.INVALID_PARAMETER.exception("卡片组ID无效: " + deckId);
         }
 
+        // 验证卡片组存在
+        MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
+
         // 检查是否已经点过赞
         UpvoteDO existingUpvote = upvoteDataService.getByUserAndObject(userId, deckId, ObjectType.memory_card_deck.value());
         if (existingUpvote != null) {
             // 如果已经点过赞，则取消点赞
             upvoteDataService.delete(existingUpvote.getId());
-            // 更新卡片组点赞数
-            MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
-            deck.setUpvoteCount(Math.max(0, deck.getUpvoteCount() - 1));
+
+            // 使用SQL原子操作减少点赞数
+            deckDataService.decrementUpvoteCount(deckId);
 
             // 更新卡片组分数
             scoreCalculationService.checkAndUpdateMemoryCardDeckScore(deck);
 
-            deckDataService.update(deck);
             return false; // 返回false表示取消点赞
         } else {
             // 如果没有点过赞，则点赞
@@ -458,14 +460,12 @@ public class UpvoteService {
             upvoteDO.setType(0); // 卡片组点赞类型设为0
             upvoteDataService.insert(upvoteDO);
 
-            // 更新卡片组点赞数
-            MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
-            deck.setUpvoteCount(deck.getUpvoteCount() + 1);
+            // 使用SQL原子操作增加点赞数
+            deckDataService.incrementUpvoteCount(deckId);
 
             // 更新卡片组分数
             scoreCalculationService.checkAndUpdateMemoryCardDeckScore(deck);
 
-            deckDataService.update(deck);
             return true; // 返回true表示点赞成功
         }
     }

@@ -334,17 +334,27 @@ const handleRoadmapsUpdated = async (roadmapId?: string | number, pinned?: boole
 }
 
 // 投票功能 - 添加缺失的函数
-const voteRoadmap = async (roadmapId: number, voteType: 'up' | 'down'): Promise<void> => {
+const voteRoadmap = async (roadmap: Roadmap, event: Event): Promise<void> => {
+  event?.stopPropagation()
   try {
-    const response = await upvoteServiceV1.upvote(roadmapId, ObjectType.ROADMAP, VoteType.NORMAL)
+    const response = await upvoteServiceV1.upvote(roadmap.id, ObjectType.ROADMAP, VoteType.NORMAL)
     if (response.code === 200) {
       // 更新本地数据
-      const roadmap = roadmaps.value.find(r => r.id === roadmapId)
-      if (roadmap) {
-        roadmap.vote = response.data.upvotes
-        roadmap.upvoted = response.data.upvoted
+      roadmap.vote = response.data.upvotes
+      roadmap.upvoted = response.data.upvoted
+
+      // 同步更新 roadmaps 列表中的数据
+      const listRoadmap = roadmaps.value.find(r => r.id === roadmap.id)
+      if (listRoadmap) {
+        listRoadmap.vote = response.data.upvotes
+        listRoadmap.upvoted = response.data.upvoted
       }
-      showSnackbar(t('roadmap.voteSuccess'))
+
+      if (response.data.upvoted) {
+        showSnackbar(t('roadmap.voteSuccess'))
+      } else {
+        showSnackbar(t('roadmap.voteCancel'))
+      }
     } else {
       showSnackbar(t('roadmap.voteFailed'))
     }

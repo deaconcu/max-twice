@@ -128,6 +128,10 @@ public interface MemoryCardDeckMapper {
     @Update("UPDATE memory_card_deck SET state = #{state}, version = version + 1, updated_at = NOW() WHERE id = #{id}")
     int updateStateAndIncrementVersion(long id, byte state);
 
+    @Update("UPDATE memory_card_deck SET upvote_count = upvote_count + 1 WHERE id = #{id}")
+    int incrementUpvoteCount(long id);
 
+    @Update("UPDATE memory_card_deck SET upvote_count = GREATEST(0, upvote_count - 1) WHERE id = #{id}")
+    int decrementUpvoteCount(long id);
 
 }

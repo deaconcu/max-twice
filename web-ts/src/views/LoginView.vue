@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, inject } from 'vue'
 import type { Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -30,6 +30,7 @@ interface LoginForm {
 const router = useRouter()
 const user = useUserStore()
 const { t } = useI18n()
+const showSnackbar = inject('showSnackbar') as (message: string, type?: string) => void
 
 // 密码可见性状态
 const showPassword: Ref<boolean> = ref(false)
@@ -75,9 +76,13 @@ const submitRegisterFirstForm = async (): Promise<void> => {
       console.log('Form submitted successfully')
       registerFirstDialog.value = false
       registerSecondDialog.value = true
+    } else {
+      showSnackbar(response.message || '注册失败，请重试', 'error')
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error submitting form:', error)
+    const message = error?.response?.data?.message || error?.message || '网络错误，请检查网络连接'
+    showSnackbar(message, 'error')
   }
 }
 
@@ -94,9 +99,14 @@ const submitRegisterSecondForm = async (): Promise<void> => {
     if (response.code === 200) {
       console.log('Form submitted successfully')
       registerSecondDialog.value = false
+      showSnackbar('邮箱验证成功', 'success')
+    } else {
+      showSnackbar(response.message || '验证失败，请重试', 'error')
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error submitting form:', error)
+    const message = error?.response?.data?.message || error?.message || '网络错误，请检查网络连接'
+    showSnackbar(message, 'error')
   }
 }
 
@@ -111,12 +121,17 @@ const submitLogin = async (): Promise<void> => {
       console.log('Form submitted successfully')
       loginDialog.value = false
       user.setUserId(response.data.id)
-      user.setName(response.data.name) // 设置用户名
+      user.setName(response.data.name)
       user.setSubscription(response.data.subscriptions)
+      showSnackbar('登录成功', 'success')
       router.push({ name: 'courseList', params: {} })
+    } else {
+      showSnackbar(response.message || '登录失败，请检查邮箱和密码', 'error')
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error submitting form:', error)
+    const message = error?.response?.data?.message || error?.message || '网络错误，请检查网络连接'
+    showSnackbar(message, 'error')
   }
 }
 
