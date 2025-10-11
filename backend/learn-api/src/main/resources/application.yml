@@ -28,16 +28,20 @@ spring:
       write-dates-as-timestamps: false
   mail:
     host: smtp.126.com
-    port: 25
+    port: 465
     username: deaconcc@126.com
-    password: SQvpYXGC6kaYKNqw
+    password: HJyGF7GSRD36u5Ev
     protocol: smtp
     properties:
       mail:
         smtp:
           auth: true
-          starttls:
+          ssl:
             enable: true
+            required: true
+          socketFactory:
+            class: javax.net.ssl.SSLSocketFactory
+            port: 465
         debug: true
   data:
     redis:

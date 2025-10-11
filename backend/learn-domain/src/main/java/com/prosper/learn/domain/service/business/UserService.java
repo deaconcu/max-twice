@@ -140,12 +140,16 @@ public class UserService {
     @Transactional
     public void register(String userName, String email, String password) {
         validateRegistrationParams(userName, email, password);
-        
+
+        UserDO existingUser = userDataService.getByEmail(email);
+        if (existingUser != null) {
+            throw ErrorCode.USER_ALREADY_EXISTS.exception();
+        }
+
         UserDO user = new UserDO();
         user.setName(userName);
         user.setPassword(Utils.md5(password));
         user.setEmail(email);
-        user.setPhone("");
         user.setBiography("");
         userDataService.insert(user);
 
