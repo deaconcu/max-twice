@@ -5,7 +5,7 @@ spring:
     type: ${app.cache.type:redis}  # 读取app.cache.type配置，默认redis
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    jdbc-url: jdbc:mysql://127.0.0.1:3307/learn?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true
+    jdbc-url: jdbc:mysql://127.0.0.1:3307/learn?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
     username: root
     password: root123
     hikari:
@@ -208,6 +208,47 @@ app:
     enable-batch-status-query: true
   cache:
     type: none  # redis 启用缓存，none 关闭所有缓存
+  validation:
+    # 评论相关
+    comment-content-min-length: 1
+    comment-content-max-length: 500
+    # 用户相关
+    username-min-length: 3
+    username-max-length: 20
+    password-min-length: 8
+    password-max-length: 20
+    biography-max-length: 100
+    email-max-length: 254
+    phone-max-length: 20
+    # 课程相关
+    course-name-min-length: 2
+    course-name-max-length: 40
+    course-description-min-length: 20
+    course-description-max-length: 1000
+    # 帖子相关
+    post-content-min-length: 10
+    post-content-max-length: 20000
+    # 专业相关
+    profession-name-min-length: 2
+    profession-name-max-length: 30
+    profession-description-min-length: 20
+    profession-description-max-length: 2000
+    # 记忆卡片相关
+    card-front-min-length: 5
+    card-front-max-length: 500
+    card-back-min-length: 1
+    card-back-max-length: 500
+    deck-title-min-length: 2
+    deck-title-max-length: 30
+    deck-description-max-length: 200
+    # 消息相关
+    message-content-min-length: 1
+    message-content-max-length: 1000
+    # 路线图相关
+    roadmap-content-min-length: 1
+    roadmap-content-max-length: 5000
+    roadmap-description-min-length: 1
+    roadmap-description-max-length: 500
 
 logging:
   level:

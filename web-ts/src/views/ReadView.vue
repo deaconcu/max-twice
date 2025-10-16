@@ -5,6 +5,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { pageServiceV1, progressServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { MemoryService } from '@/services/memoryService'
+import { COURSE_NOT_FOUND, COURSE_BLOCKED } from '@/constants/errorCodes'
+import type { ErrorInfo } from '@/types/error'
 import PostingList from '@/components/read/PostingList.vue'
 import RightSidebar from '@/components/common/RightSidebar.vue'
 import AIAssistant from '@/components/common/AIAssistant.vue'
@@ -15,6 +17,7 @@ import DeckDetailDialog from '@/components/memory/DeckDetailDialog.vue'
 import CourseCompletionDialog from '@/components/course/CourseCompletionDialog.vue'
 import CourseHeader from '@/components/read/CourseHeader.vue'
 import CourseTableOfContents from '@/components/read/CourseTableOfContents.vue'
+import ErrorPage from '@/components/common/ErrorPage.vue'
 
 import { useStudyTimeTracker } from '@/composables/useStudyTimeTracker'
 
@@ -49,6 +52,7 @@ const selectedDeck: Ref<any> = ref(null) // 选中的卡片组
 const memoryCardSidebarRef: Ref<any> = ref(null) // 记忆卡片组侧边栏引用
 const currentTab: Ref<string> = ref('list') // 当前PostingList的tab状态
 const currentPosting: Ref<any> = ref(null) // 当前查看的文章
+const errorInfo: Ref<ErrorInfo | null> = ref(null) // 错误信息
 
 onMounted(() => {
   loadData([])
@@ -70,6 +74,9 @@ router.afterEach((to) => {
 
 const loadData = async (parts: string[]): Promise<void> => {
   try {
+    // 清空之前的错误信息
+    errorInfo.value = null
+
     let response: any
     if ('commentId' in route.query) {
       response = await pageServiceV1.readByComment(Number(route.query.commentId as string))
@@ -86,6 +93,20 @@ const loadData = async (parts: string[]): Promise<void> => {
     if (response.code === 401) {
       console.log('not login')
       //router.push('/login');
+    } else if (response.code === COURSE_NOT_FOUND) {
+      // 课程不存在
+      errorInfo.value = {
+        code: COURSE_NOT_FOUND,
+        message: response.message || '课程不存在'
+      }
+      return
+    } else if (response.code === COURSE_BLOCKED) {
+      // 课程被屏蔽
+      errorInfo.value = {
+        code: COURSE_BLOCKED,
+        message: response.message || '该课程已被屏蔽，暂时无法访问'
+      }
+      return
     } else if (response.code === 200) {
       if ('commentId' in response.data) {
         console.log('redirect to subcomment')
@@ -194,9 +215,19 @@ const loadData = async (parts: string[]): Promise<void> => {
 
         currNodeId.value = data.value.node.id
       }
+    } else {
+      // 其他错误
+      errorInfo.value = {
+        code: response.code,
+        message: response.message || '加载失败'
+      }
     }
   } catch (error) {
     console.error('Error:', error)
+    errorInfo.value = {
+      code: -1,
+      message: '网络错误，请稍后重试'
+    }
   }
 }
 
@@ -421,7 +452,17 @@ const handleAIQuery = ({ question, context, selectedText }: {
 </script>
 
 <template>
-  <v-container v-if="data" fluid>
+  <!-- 错误状态显示 -->
+  <ErrorPage
+    v-if="errorInfo"
+    :error-code="errorInfo.code"
+    :error-message="errorInfo.message"
+    @retry="loadData([])"
+    @back-home="router.push('/')"
+  />
+
+  <!-- 正常内容显示 -->
+  <v-container v-else-if="data" fluid>
     <!-- 页面主内容 -->
     <v-row class="mt-0">
       <v-col cols="9" class="pr-6">

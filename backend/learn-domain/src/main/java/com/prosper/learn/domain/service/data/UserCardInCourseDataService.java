@@ -11,6 +11,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -256,11 +257,11 @@ public class UserCardInCourseDataService extends AbstractDataService<UserCardInC
         if (courseIds == null || courseIds.isEmpty()) {
             return List.of();
         }
-        return userCardInCourseMapper.getBatchCardStatsForCourses(userId, courseIds);
+        return userCardInCourseMapper.getBatchCardStatsForCourses(userId, courseIds, LocalDateTime.now());
     }
 
     public CourseMemoryBankDO getCardStatsForCourses(Long userId, Long courseId) {
-        return userCardInCourseMapper.getCardStatsForCourses(userId, courseId);
+        return userCardInCourseMapper.getCardStatsForCourses(userId, courseId, LocalDateTime.now());
     }
 
     /**

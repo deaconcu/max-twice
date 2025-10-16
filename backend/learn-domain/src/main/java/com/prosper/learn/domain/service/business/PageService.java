@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ContentsService;
 import com.prosper.learn.domain.util.converter.NodeConverter;
 import com.prosper.learn.domain.util.converter.PostConverter;
@@ -254,6 +254,10 @@ public class PageService {
         CourseDO courseDO = courseDataService.getById(courseId);
         if (courseDO == null) {
             throw ErrorCode.COURSE_NOT_FOUND.exception();
+        }
+        // 检查课程状态，如果被屏蔽则抛出异常
+        if (courseDO.getState() == com.prosper.learn.common.Enums.CourseState.REJECTED.value()) {
+            throw ErrorCode.COURSE_BLOCKED.exception();
         }
         return courseDO;
     }

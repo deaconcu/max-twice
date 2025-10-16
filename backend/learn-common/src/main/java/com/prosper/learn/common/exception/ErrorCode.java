@@ -49,6 +49,7 @@ public enum ErrorCode {
     COURSE_PARENT_NOT_FOUND(1205, "父课程不存在"),
     COURSE_DELETE_FAILED(1206, "课程删除失败"),
     COURSE_OPERATION_FAILED(1207, "课程操作失败"),
+    COURSE_BLOCKED(1208, "该课程已被屏蔽，暂时无法访问"),
 
     // 路线图相关 15xx
     ROADMAP_NOT_FOUND(1501, "路线图不存在"),

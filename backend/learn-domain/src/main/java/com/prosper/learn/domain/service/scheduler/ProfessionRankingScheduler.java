@@ -1,7 +1,7 @@
 package com.prosper.learn.domain.service.scheduler;
 
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ProfessionRankingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

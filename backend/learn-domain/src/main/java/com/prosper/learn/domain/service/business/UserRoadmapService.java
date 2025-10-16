@@ -3,7 +3,7 @@ package com.prosper.learn.domain.service.business;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 
 import static com.prosper.learn.common.Enums.UserRoadmapState;
 
@@ -13,7 +13,6 @@ import com.prosper.learn.domain.util.converter.UserConverter;
 import com.prosper.learn.domain.util.converter.UserRoadmapConverter;
 import com.prosper.learn.dto.response.RoadmapDTO;
 import com.prosper.learn.dto.response.UserRoadmapDTO;
-import com.prosper.learn.persistence.dataobject.ProfessionDO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
 import com.prosper.learn.persistence.dataobject.UserRoadmapDO;
 import com.prosper.learn.domain.service.data.ProfessionDataService;

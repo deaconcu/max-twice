@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import static com.prosper.learn.common.Enums.PostStatsType;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.exception.BusinessException;
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.dto.response.DailyStatsDTO;
 import com.prosper.learn.dto.response.PostDTO;
 import com.prosper.learn.dto.response.UserStatsDTO;

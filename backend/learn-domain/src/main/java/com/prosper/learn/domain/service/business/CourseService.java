@@ -3,7 +3,7 @@ package com.prosper.learn.domain.service.business;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.Enums.CourseState;
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
 import com.prosper.learn.domain.util.converter.CourseConverter;
 import com.prosper.learn.dto.request.CreateCourseRequest;

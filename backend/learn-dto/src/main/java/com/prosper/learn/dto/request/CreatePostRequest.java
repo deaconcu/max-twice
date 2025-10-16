@@ -1,13 +1,13 @@
 package com.prosper.learn.dto.request;
 
+import com.prosper.learn.common.validation.ConfigurableSize;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
  * 创建帖子请求DTO
- * 
+ *
  * @author Claude Code
  */
 @Data
@@ -17,7 +17,7 @@ public class CreatePostRequest {
      * 帖子内容
      */
     @NotBlank(message = "帖子内容不能为空")
-    @Size(max = 10000, message = "帖子内容长度不能超过10000字符")
+    @ConfigurableSize(configKey = "post-content")
     private String content;
 
     /**

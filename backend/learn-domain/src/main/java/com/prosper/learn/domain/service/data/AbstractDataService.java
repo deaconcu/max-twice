@@ -1,7 +1,7 @@
 package com.prosper.learn.domain.service.data;
 
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;

@@ -4,6 +4,8 @@ import { postServiceV1 } from '@/services/api/v1/apiServiceV1'
 import Tiptap from './TiptapInput.vue'
 import { useI18n } from 'vue-i18n'
 import { PostType } from '@/types/enums'
+import { postContentRules } from '@/utils/validationRules'
+import { POST_VALIDATION } from '@/types/validation'
 
 interface Props {
   nodeId: number
@@ -17,6 +19,7 @@ interface Emits {
 interface EditorRef {
   editor: {
     getHTML(): string
+    getText(): string
   }
 }
 
@@ -26,8 +29,24 @@ const { t } = useI18n()
 
 const dialog = defineModel<boolean>({ type: Boolean })
 const editorRef = ref<EditorRef | null>(null)
+const formValid = ref(false)
+const contentLength = ref(0)
+
+const updateContentLength = () => {
+  if (editorRef.value?.editor) {
+    const text = editorRef.value.editor.getText()
+    contentLength.value = text.length
+
+    // 验证内容长度
+    formValid.value =
+      text.length >= POST_VALIDATION.CONTENT_MIN_LENGTH &&
+      text.length <= POST_VALIDATION.CONTENT_MAX_LENGTH
+  }
+}
 
 const submitAddArticle = async (): Promise<void> => {
+  if (!formValid.value) return
+
   try {
     console.log('begin post')
     console.log('编辑器内容:', editorRef.value?.editor.getHTML())
@@ -59,26 +78,41 @@ const submitAddArticle = async (): Promise<void> => {
 </script>
 
 <template>
-  <v-dialog v-model="dialog" width="800" height="1200px">
+  <v-dialog v-model="dialog" width="800" height="1200px" persistent>
     <v-card rounded="xl">
       <v-card-item class="border-b-sm">
-        <v-card-title class="d-flex align-center">
-          <v-icon size="small" class="px-4" icon="mdi-account"></v-icon>
-          <span class="ps-2 font-weight-medium">{{ t('addArticle.createArticle') }}</span>
+        <v-card-title class="d-flex align-center justify-space-between">
+          <div class="d-flex align-center">
+            <v-icon size="small" class="px-4" icon="mdi-account"></v-icon>
+            <span class="ps-2 font-weight-medium">{{ t('addArticle.createArticle') }}</span>
+          </div>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="dialog = false"></v-btn>
         </v-card-title>
       </v-card-item>
       <div class="overflow-y-scroll dialog-content">
-        <Tiptap ref="editorRef" :path-text="props.pathText" class="px-6" />
-        <div class="pt-1 pb-4 px-6 sticky-bottom">
-          <v-btn
-            variant="flat"
-            color="grey-darken-2"
-            size="large"
-            class="rounded-lg text-white"
-            block
-            @click="submitAddArticle"
-            >{{ t('addArticle.submitArticle') }}</v-btn
-          >
+        <Tiptap ref="editorRef" :path-text="props.pathText" class="px-6" @update="updateContentLength" />
+      </div>
+      <div class="px-6 pb-6 pt-4 action-bottom">
+        <div class="d-flex align-center justify-space-between">
+          <div class="text-caption text-grey">
+            {{ contentLength }} / {{ POST_VALIDATION.CONTENT_MAX_LENGTH }}
+            <span v-if="contentLength < POST_VALIDATION.CONTENT_MIN_LENGTH" class="text-error">
+              (至少 {{ POST_VALIDATION.CONTENT_MIN_LENGTH }} 字符)
+            </span>
+          </div>
+          <div class="d-flex gap-2">
+            <v-btn variant="text" @click="dialog = false">
+              {{ t('common.cancel') }}
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="flat"
+              :disabled="!formValid"
+              @click="submitAddArticle"
+            >
+              {{ t('addArticle.submitArticle') }}
+            </v-btn>
+          </div>
         </div>
       </div>
     </v-card>
@@ -87,12 +121,15 @@ const submitAddArticle = async (): Promise<void> => {
 
 <style scoped>
 .dialog-content {
-  height: 1200px;
+  height: calc(1200px - 120px);
 }
 
-.sticky-bottom {
-  position: sticky;
-  bottom: 0px;
+.action-bottom {
   background-color: #fff;
+  border-top: 1px solid #e0e0e0;
+}
+
+.gap-2 {
+  gap: 8px;
 }
 </style>

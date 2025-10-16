@@ -15,8 +15,8 @@ public class ReviewCardRequest {
     private Long cardId;
 
     @NotNull(message = "复习结果不能为空")
-    @Min(value = 0, message = "复习结果值不能小于0")
-    @Max(value = 3, message = "复习结果值不能大于3")
+    @Min(value = 0, message = "复习结果值不正确")
+    @Max(value = 3, message = "复习结果值不正确")
     private Integer result;
 
     private Integer timeSpent;

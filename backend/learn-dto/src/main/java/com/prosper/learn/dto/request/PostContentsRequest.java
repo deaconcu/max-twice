@@ -18,7 +18,7 @@ public class PostContentsRequest {
     private Long postingId;
     
     @NotNull(message = "操作类型不能为空")
-    @Min(value = 1, message = "操作类型最小值为1")
-    @Max(value = 4, message = "操作类型最大值为4")
+    @Min(value = 1, message = "操作类型不正确")
+    @Max(value = 4, message = "操作类型不正确")
     private Integer action;
 }

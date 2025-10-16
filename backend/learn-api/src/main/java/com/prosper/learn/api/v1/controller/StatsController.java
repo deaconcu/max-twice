@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import cn.dev33.satoken.stp.StpUtil;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,7 @@ import java.util.Map;
 @RequestMapping("/api/v1")
 @Slf4j
 @RequiredArgsConstructor
+@Validated
 public class StatsController {
 
     private final DailyStatsService dailyStatsService;
@@ -50,7 +53,10 @@ public class StatsController {
      * 映射: GET /api/stats/user/{userId}/today → GET /api/v1/stats/users/{userId}/today
      */
     @GetMapping("/stats/users/{userId}/today")
-    public ApiResponse<UserStatsDTO> getUserTodayStats(@PathVariable Long userId) {
+    public ApiResponse<UserStatsDTO> getUserTodayStats(
+            @PathVariable @NotNull(message = "用户ID不能为空")
+            @Positive(message = "用户ID必须大于0")
+            Long userId) {
         UserStatsDTO stats = dailyStatsService.getUserTodayStats(userId);
         return ApiResponse.success(stats);
     }
@@ -60,7 +66,10 @@ public class StatsController {
      * 映射: GET /api/stats/user/{userId}/yesterday → GET /api/v1/stats/users/{userId}/yesterday
      */
     @GetMapping("/stats/users/{userId}/yesterday")
-    public ApiResponse<UserStatsDTO> getUserYesterdayStats(@PathVariable Long userId) {
+    public ApiResponse<UserStatsDTO> getUserYesterdayStats(
+            @PathVariable @NotNull(message = "用户ID不能为空")
+            @Positive(message = "用户ID必须大于0")
+            Long userId) {
         UserStatsDTO stats = dailyStatsService.getUserYesterdayStats(userId);
         return ApiResponse.success(stats);
     }
@@ -71,8 +80,12 @@ public class StatsController {
      */
     @GetMapping("/stats/users/{userId}/history")
     public ApiResponse<UserStatsDTO> getUserHistoryStats(
-            @PathVariable Long userId, 
-            @RequestParam(defaultValue = "7") int days) {
+            @PathVariable @NotNull(message = "用户ID不能为空")
+            @Positive(message = "用户ID必须大于0")
+            Long userId,
+            @RequestParam(defaultValue = "7")
+            @Positive(message = "天数必须大于0")
+            int days) {
         
         UserStatsDTO stats = dailyStatsService.getUserHistoryStats(userId, days);
         return ApiResponse.success(stats);
@@ -84,8 +97,12 @@ public class StatsController {
      */
     @GetMapping("/stats/users/{userId}/period")
     public ApiResponse<UserStatsDTO> getUserPeriodStats(
-            @PathVariable Long userId, 
-            @RequestParam(defaultValue = "7") int days) {
+            @PathVariable @NotNull(message = "用户ID不能为空")
+            @Positive(message = "用户ID必须大于0")
+            Long userId,
+            @RequestParam(defaultValue = "7")
+            @Positive(message = "天数必须大于0")
+            int days) {
 
         UserStatsDTO stats = dailyStatsService.getUserPeriodStatsWithDaily(userId, days);
         return ApiResponse.success(stats);
@@ -96,7 +113,10 @@ public class StatsController {
      * 映射: GET /api/stats/user/{userId}/all-time → GET /api/v1/stats/users/{userId}/all-time
      */
     @GetMapping("/stats/users/{userId}/all-time")
-    public ApiResponse<UserStatsDTO> getUserAllTimeStats(@PathVariable Long userId) {
+    public ApiResponse<UserStatsDTO> getUserAllTimeStats(
+            @PathVariable @NotNull(message = "用户ID不能为空")
+            @Positive(message = "用户ID必须大于0")
+            Long userId) {
         UserStatsDTO stats = dailyStatsService.getUserAllTimeStats(userId);
         return ApiResponse.success(stats);
     }
@@ -126,7 +146,8 @@ public class StatsController {
      * 映射: POST /api/stats/sync/date → POST /api/v1/stats/sync/date?date=xxx
      */
     @PostMapping("/stats/sync/date")
-    public ApiResponse<Object> syncByDate(@JsonParam("date") String date) {
+    public ApiResponse<Object> syncByDate(
+            @JsonParam("date") @NotBlank(message = "日期不能为空") String date) {
         LocalDate targetDate = LocalDate.parse(date);
         dailyStatsService.syncSpecificDate(targetDate);
         return ApiResponse.success("指定日期统计数据同步成功");

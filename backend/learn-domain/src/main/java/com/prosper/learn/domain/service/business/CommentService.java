@@ -2,7 +2,7 @@ package com.prosper.learn.domain.service.business;
 
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.basic.RedisStatsService;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;

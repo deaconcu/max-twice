@@ -6,7 +6,7 @@
   import { Controls } from '@vue-flow/controls'
   import { type Node, type Edge, type Connection, type NodeChange, type EdgeChange, Position } from '@vue-flow/core'
   import { courseServiceV1 } from '@/services/api/v1/apiServiceV1'
-  import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+  import ConfirmDialog from '@/components/roadmap/ConfirmDialog.vue'
   import type { Course } from '@/types/course'
   import dagre from 'dagre'
 

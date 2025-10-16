@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.prosper.learn.common.UnionFind;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
 import com.prosper.learn.domain.util.converter.RoadmapConverter;
 import com.prosper.learn.domain.util.converter.UserConverter;

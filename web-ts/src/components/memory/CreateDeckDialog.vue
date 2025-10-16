@@ -5,6 +5,8 @@ import { useUserStore } from '@/stores/user'
 import type { Post } from '@/types/post'
 import type { CreateDeckRequest, CreateCardRequest, MemoryCardDeck } from '@/types/memoryCard'
 import { MemoryService } from '@/services/memoryService'
+import { deckTitleRules, deckDescriptionRules, cardFrontRules, cardBackRules } from '@/utils/validationRules'
+import { DECK_VALIDATION, CARD_VALIDATION } from '@/types/validation'
 
 interface Props {
   modelValue: boolean
@@ -42,21 +44,9 @@ const cards = ref<CreateCardRequest[]>([])
 const currentDeck = ref<MemoryCardDeck | null>(null)
 const showEmptyError = ref(false)
 
-// 表单验证规则
-const titleRules = [
-  (v: string) => !!v || '标题不能为空',
-  (v: string) => v.length <= 100 || '标题不能超过100个字符'
-]
-
-const frontRules = [
-  (v: string) => !!v || '问题不能为空',
-  (v: string) => v.length <= 500 || '问题不能超过500个字符'
-]
-
-const backRules = [
-  (v: string) => !!v || '答案不能为空',
-  (v: string) => v.length <= 1000 || '答案不能超过1000个字符'
-]
+// 表单验证状态
+const deckFormValid = ref(true)
+const cardFormValid = ref(true)
 
 watch(() => props.modelValue, (newVal) => {
   dialog.value = newVal
@@ -213,12 +203,13 @@ const closeDialog = () => {
 
       <!-- 步骤1: 创建卡片组 -->
       <v-card-text v-if="step === 1" class="pa-6">
-        <v-form @submit.prevent="createDeck">
+        <v-form v-model="deckFormValid" @submit.prevent="createDeck">
           <v-text-field
             v-model="deckForm.title"
             label="卡片组标题"
             placeholder="为你的卡片组起一个有意义的名字"
-            :rules="titleRules"
+            :rules="deckTitleRules"
+            :counter="DECK_VALIDATION.TITLE_MAX_LENGTH"
             variant="outlined"
             rounded="lg"
             class="mb-4"
@@ -228,6 +219,8 @@ const closeDialog = () => {
             v-model="deckForm.description"
             label="描述（可选）"
             placeholder="简要描述这个卡片组的内容和用途"
+            :rules="deckDescriptionRules"
+            :counter="DECK_VALIDATION.DESCRIPTION_MAX_LENGTH"
             variant="outlined"
             rounded="lg"
             rows="3"
@@ -239,11 +232,13 @@ const closeDialog = () => {
       <!-- 步骤2: 添加卡片 -->
       <v-card-text v-if="step === 2" class="pa-6">
         <!-- 卡片添加表单 -->
-        <v-form @submit.prevent="addCard" class="mb-6">
+        <v-form v-model="cardFormValid" @submit.prevent="addCard" class="mb-6">
           <v-textarea
             v-model="cardForm.front"
             label="问题（卡片正面）"
             placeholder="输入问题..."
+            :rules="cardFrontRules"
+            :counter="CARD_VALIDATION.FRONT_MAX_LENGTH"
             variant="outlined"
             rounded="lg"
             rows="2"
@@ -255,6 +250,8 @@ const closeDialog = () => {
             v-model="cardForm.back"
             label="答案（卡片背面）"
             placeholder="输入答案..."
+            :rules="cardBackRules"
+            :counter="CARD_VALIDATION.BACK_MAX_LENGTH"
             variant="outlined"
             rounded="lg"
             rows="3"
@@ -268,7 +265,7 @@ const closeDialog = () => {
             variant="outlined"
             rounded="lg"
             prepend-icon="mdi-plus"
-            :disabled="!cardForm.front.trim() || !cardForm.back.trim()"
+            :disabled="!cardFormValid || !cardForm.front.trim() || !cardForm.back.trim()"
             block
           >
             添加卡片
@@ -361,7 +358,7 @@ const closeDialog = () => {
           variant="flat"
           rounded="lg"
           :loading="loading"
-          :disabled="!deckForm.title.trim()"
+          :disabled="!deckFormValid || !deckForm.title.trim()"
           @click="createDeck"
         >
           下一步

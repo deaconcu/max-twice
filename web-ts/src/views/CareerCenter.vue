@@ -9,10 +9,12 @@ import CategoryNavigation from '@/components/career/CategoryNavigation.vue'
 import CareerFilter from '@/components/career/CareerFilter.vue'
 import CareerGrid from '@/components/career/CareerGrid.vue'
 import { useToastMessage } from '@/composables/useToastMessage'
-import type { 
-  Profession, 
-  ProfessionCategory, 
-  CategoryMapping 
+import { professionNameRules, professionDescriptionRules, categoryRules } from '@/utils/validationRules'
+import { PROFESSION_VALIDATION } from '@/types/validation'
+import type {
+  Profession,
+  ProfessionCategory,
+  CategoryMapping
 } from '@/types/profession'
 
 // 扩展职业类型以包含显示属性
@@ -572,8 +574,10 @@ onMounted(() => {
           <v-text-field
             v-model="newCareerApplication.name"
             :label="t('careerCenter.application.name')"
+            :rules="professionNameRules"
+            :counter="PROFESSION_VALIDATION.NAME_MAX_LENGTH"
             variant="outlined"
-            :rules="[(v: string) => !!v || t('careerCenter.application.nameRequired')]"
+            clearable
             required
             class="mb-4"
           >
@@ -582,8 +586,10 @@ onMounted(() => {
           <v-textarea
             v-model="newCareerApplication.description"
             :label="t('careerCenter.application.description')"
+            :rules="professionDescriptionRules"
+            :counter="PROFESSION_VALIDATION.DESCRIPTION_MAX_LENGTH"
             variant="outlined"
-            :rules="[(v: string) => !!v || t('careerCenter.application.descriptionRequired')]"
+            clearable
             required
             rows="3"
             class="mb-4"
@@ -596,11 +602,11 @@ onMounted(() => {
             item-title="title"
             item-value="id"
             :label="t('course.mainCategory')"
+            :rules="categoryRules"
             variant="outlined"
             density="compact"
             class="mb-4"
             clearable
-            :rules="[(v: number | null) => v !== null || t('validation.required.mainCategory')]"
             required
           >
           </v-select>
@@ -611,12 +617,12 @@ onMounted(() => {
             item-title="name"
             item-value="id"
             :label="t('course.subCategory')"
+            :rules="categoryRules"
             variant="outlined"
             density="compact"
             class="mb-4"
             :disabled="!newCareerApplication.mainCategory"
             clearable
-            :rules="[(v: number | null) => v !== null || t('validation.required.subCategory')]"
             required
           >
           </v-select>

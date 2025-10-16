@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, inject, nextTick, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { commentServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1'
@@ -7,6 +7,7 @@ import type { Comment } from '@/types/comment'
 
 const { t } = useI18n()
 const route = useRoute()
+const showSnackbar = inject('showSnackbar') as (message: string, type?: string) => void
 
 interface Props {
   commentId: number
@@ -83,7 +84,7 @@ const loadMore = async (): Promise<void> => {
     )
 
     if (response.code === 401) {
-      // not login
+      showSnackbar('error.loadFailed', 'error')
     } else if (response.code === 200) {
       additionalComments.value.push(...response.data)
 
@@ -92,9 +93,12 @@ const loadMore = async (): Promise<void> => {
       } else {
         displayLoadMore.value = false
       }
+    } else {
+      showSnackbar(response.message || 'error.loadFailed', 'error')
     }
   } catch (error) {
     console.error('Error loading comments:', error)
+    showSnackbar('error.loadFailed', 'error')
   }
 }
 
@@ -105,9 +109,12 @@ const upvote = async (comment: Comment): Promise<void> => {
     if (response.code === 200) {
       comment.upvoteCount = response.data.upvotes
       comment.upvoted = response.data.upvoted
+    } else {
+      showSnackbar(response.message || 'error.operationFailed', 'error')
     }
   } catch (error) {
     console.error('Error submitting upvote:', error)
+    showSnackbar('error.operationFailed', 'error')
   }
 }
 

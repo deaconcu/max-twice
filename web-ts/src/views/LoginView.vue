@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useUserStore } from '@/stores/user'
+import { USER_EMAIL_NOT_VALIDATED } from '@/constants/errorCodes'
 
 import Footer from '@/components/common/PageFooter.vue'
 import LoginHeader from '@/components/auth/LoginHeader.vue'
@@ -16,7 +17,6 @@ import LoginDialog from '@/components/auth/LoginDialog.vue'
 // 类型定义
 interface RegisterForm {
   email: string
-  name: string
   password: string
   passwordRepeat: string
   validateCode: string
@@ -44,7 +44,6 @@ const loginDialog: Ref<boolean> = ref(false)
 // 表单数据
 const registerForm: Ref<RegisterForm> = ref({
   email: '',
-  name: '',
   password: '',
   passwordRepeat: '',
   validateCode: '',
@@ -66,7 +65,6 @@ const submitRegisterFirstForm = async (): Promise<void> => {
   try {
     console.log('begin post')
     const response = await authServiceV1.register(
-      registerForm.value.name,
       registerForm.value.email,
       registerForm.value.password
     )
@@ -99,7 +97,13 @@ const submitRegisterSecondForm = async (): Promise<void> => {
     if (response.code === 200) {
       console.log('Form submitted successfully')
       registerSecondDialog.value = false
-      showSnackbar('邮箱验证成功', 'success')
+
+      user.setUserId(response.data.id)
+      user.setName(response.data.name)
+      user.setSubscription(response.data.subscriptions)
+
+      showSnackbar('注册成功,欢迎加入!', 'success')
+      router.push({ name: 'courseList', params: {} })
     } else {
       showSnackbar(response.message || '验证失败，请重试', 'error')
     }
@@ -125,6 +129,11 @@ const submitLogin = async (): Promise<void> => {
       user.setSubscription(response.data.subscriptions)
       showSnackbar('登录成功', 'success')
       router.push({ name: 'courseList', params: {} })
+    } else if (response.code === USER_EMAIL_NOT_VALIDATED) {
+      loginDialog.value = false
+      registerForm.value.email = loginForm.value.email
+      registerSecondDialog.value = true
+      showSnackbar('请先验证邮箱', 'warning')
     } else {
       showSnackbar(response.message || '登录失败，请检查邮箱和密码', 'error')
     }

@@ -23,11 +23,9 @@ public class MemoryCardDeckDO {
 
     private Byte state;
 
-    private Long auditorId;
+    //private Long auditorId;
 
-    private LocalDateTime auditedAt;
-
-    private Long updatedBy;
+    //private LocalDateTime auditedAt;
 
     private LocalDateTime updatedAt;
 

@@ -101,10 +101,11 @@ public class MemoryBankService {
         Map<Long, UserCourseSrsSettingDO> settingMap = settings.stream()
                 .collect(Collectors.toMap(UserCourseSrsSettingDO::getCourseId, s -> s));
 
-        // 转换为DTO
+        // 转换为DTO，过滤掉被屏蔽的课程（state != APPROVED）
         List<CourseDO> courses = settings.stream()
                 .map(setting -> courseMap.get(setting.getCourseId()))
                 .filter(Objects::nonNull)
+                .filter(course -> CourseState.APPROVED.value().equals(course.getState()))
                 .collect(Collectors.toList());
 
         return toCourseMemoryBankDTO(courses, settingMap, userId);

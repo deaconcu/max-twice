@@ -5,6 +5,8 @@ import { useUserStore } from '@/stores/user'
 import type { MemoryCardDeck, DeckDetail, MemoryCardView, DeckUpdateDiff } from '@/types/memoryCard'
 import { MemoryService } from '@/services/memoryService'
 import DeckUpdateDiffDialog from '@/components/memory/DeckUpdateDiffDialog.vue'
+import { cardFrontRules, cardBackRules } from '@/utils/validationRules'
+import { CARD_VALIDATION } from '@/types/validation'
 
 interface Props {
   modelValue: boolean
@@ -214,6 +216,7 @@ const editingCard = ref<MemoryCardView | null>(null)
 const showEditDialog = ref(false)
 const editCardFront = ref('')
 const editCardBack = ref('')
+const editCardFormValid = ref(true)
 
 // 新建卡片
 const createNewCard = () => {
@@ -1295,7 +1298,7 @@ const handleUpvote = async () => {
         </v-card-title>
         
         <v-card-text class="pa-6">
-          <v-form>
+          <v-form v-model="editCardFormValid">
             <div class="mb-6">
               <label class="text-subtitle-2 font-weight-bold text-grey-darken-3 mb-2 d-block">
                 <v-icon icon="mdi-help-circle" color="primary" size="20" class="mr-2"></v-icon>
@@ -1307,7 +1310,8 @@ const handleUpvote = async () => {
                 rounded="lg"
                 placeholder="请输入问题内容..."
                 rows="3"
-                :rules="[v => !!v || '问题不能为空']"
+                :rules="cardFrontRules"
+                :counter="CARD_VALIDATION.FRONT_MAX_LENGTH"
               ></v-textarea>
             </div>
             
@@ -1322,7 +1326,8 @@ const handleUpvote = async () => {
                 rounded="lg"
                 placeholder="请输入答案内容..."
                 rows="4"
-                :rules="[v => !!v || '答案不能为空']"
+                :rules="cardBackRules"
+                :counter="CARD_VALIDATION.BACK_MAX_LENGTH"
               ></v-textarea>
             </div>
           </v-form>
@@ -1337,12 +1342,12 @@ const handleUpvote = async () => {
           >
             取消
           </v-btn>
-          <v-btn 
+          <v-btn
             color="primary"
             variant="tonal"
             rounded="xl"
             @click="saveCard"
-            :disabled="!editCardFront.trim() || !editCardBack.trim()"
+            :disabled="!editCardFormValid || !editCardFront.trim() || !editCardBack.trim()"
           >
             {{ editingCard ? '保存修改' : '创建卡片' }}
           </v-btn>

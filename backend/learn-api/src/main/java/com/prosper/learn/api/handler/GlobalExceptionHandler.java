@@ -5,6 +5,8 @@ import com.prosper.learn.api.util.MessageUtils;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.BusinessException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -59,7 +61,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
     public ApiResponse<Object> handleValidationException(Exception e, HttpServletRequest request) {
         String message = "参数验证失败";
-        
+
         if (e instanceof MethodArgumentNotValidException) {
             MethodArgumentNotValidException ex = (MethodArgumentNotValidException) e;
             if (ex.getBindingResult().hasFieldErrors()) {
@@ -71,7 +73,21 @@ public class GlobalExceptionHandler {
                 message = ex.getBindingResult().getFieldErrors().get(0).getDefaultMessage();
             }
         }
-        
+
+        log.warn("参数验证异常: {}", message);
+        return ApiResponse.paramError(message).path(request.getRequestURI());
+    }
+
+    /**
+     * 处理 @RequestParam/@PathVariable 参数验证异常 - 返回200 + 参数错误码
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ApiResponse<Object> handleConstraintViolation(ConstraintViolationException e, HttpServletRequest request) {
+        String message = e.getConstraintViolations().stream()
+                .map(ConstraintViolation::getMessage)
+                .findFirst()
+                .orElse("参数验证失败");
+
         log.warn("参数验证异常: {}", message);
         return ApiResponse.paramError(message).path(request.getRequestURI());
     }

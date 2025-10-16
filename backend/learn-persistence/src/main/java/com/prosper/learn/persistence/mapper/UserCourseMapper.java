@@ -30,7 +30,10 @@ public interface UserCourseMapper {
             "completed_at = #{completedAt} WHERE id = #{id}")
     int update(UserCourseDO userCourseDO);
 
-    @Select("SELECT * FROM user_course WHERE user_id = #{userId} and id < #{lastId} ORDER BY id DESC LIMIT 20")
+    @Select("SELECT user_course.* FROM user_course " +
+            "INNER JOIN course ON user_course.course_id = course.id " +
+            "WHERE user_course.user_id = #{userId} AND user_course.id < #{lastId} AND course.state = 1 " +
+            "ORDER BY user_course.id DESC LIMIT 20")
     List<UserCourseDO> getByUserId(long userId, long lastId);
 
     @Select("SELECT * FROM user_course WHERE course_id = #{courseId}")

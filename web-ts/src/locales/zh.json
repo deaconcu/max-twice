@@ -54,6 +54,10 @@
     "error": "错误",
     "warning": "警告"
   },
+  "error": {
+    "loadFailed": "加载失败",
+    "operationFailed": "操作失败"
+  },
   "nav": {
     "dashboard": "仪表板",
     "learning": "学习",

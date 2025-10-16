@@ -4,6 +4,7 @@ import com.prosper.learn.persistence.dataobject.CourseMemoryBankDO;
 import com.prosper.learn.persistence.dataobject.UserCardInCourseDO;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -87,10 +88,10 @@ public interface UserCardInCourseMapper {
           SELECT
               ucc.course_id AS courseId,
               COUNT(ucc.card_id) AS cardCount,
-              SUM(CASE WHEN srs.review_due_at &lt;= NOW() THEN 1 ELSE 0 END) AS dueCardCount,
+              SUM(CASE WHEN srs.review_due_at &lt;= #{now} THEN 1 ELSE 0 END) AS dueCardCount,
               SUM(CASE WHEN srs.repetitions = 0 THEN 1 ELSE 0 END) AS newCardCount,
               SUM(CASE WHEN srs.repetitions &gt; 0 THEN 1 ELSE 0 END) AS learnedCardCount,
-              SUM(CASE WHEN srs.review_due_at &lt;= NOW() AND srs.repetitions > 0 THEN 1 ELSE 0 END) AS reviewCardCount
+              SUM(CASE WHEN srs.review_due_at &lt;= #{now} AND srs.repetitions > 0 THEN 1 ELSE 0 END) AS reviewCardCount
           FROM
               user_card_in_course ucc
           LEFT JOIN
@@ -103,19 +104,19 @@ public interface UserCardInCourseMapper {
               </foreach>
           GROUP BY
               ucc.course_id
-          </script> 
+          </script>
           """)
-    List<CourseMemoryBankDO> getBatchCardStatsForCourses(@Param("userId") Long userId, @Param("courseIds") Set<Long> courseIds);
+    List<CourseMemoryBankDO> getBatchCardStatsForCourses(@Param("userId") Long userId, @Param("courseIds") Set<Long> courseIds, @Param("now") LocalDateTime now);
 
     @Select("""
           <script>
           SELECT
               ucc.course_id AS courseId,
               COUNT(ucc.card_id) AS cardCount,
-              SUM(CASE WHEN srs.review_due_at &lt;= NOW() THEN 1 ELSE 0 END) AS dueCardCount,
+              SUM(CASE WHEN srs.review_due_at &lt;= #{now} THEN 1 ELSE 0 END) AS dueCardCount,
               SUM(CASE WHEN srs.repetitions = 0 THEN 1 ELSE 0 END) AS newCardCount,
               SUM(CASE WHEN srs.repetitions &gt; 0 THEN 1 ELSE 0 END) AS learnedCardCount,
-              SUM(CASE WHEN srs.review_due_at &lt;= NOW() AND srs.repetitions > 0 THEN 1 ELSE 0 END) AS reviewCardCount
+              SUM(CASE WHEN srs.review_due_at &lt;= #{now} AND srs.repetitions > 0 THEN 1 ELSE 0 END) AS reviewCardCount
           FROM
               user_card_in_course ucc
           LEFT JOIN
@@ -123,9 +124,9 @@ public interface UserCardInCourseMapper {
           WHERE
               ucc.user_id = #{userId}
               AND ucc.course_id = #{courseId}
-          </script> 
+          </script>
           """)
-    CourseMemoryBankDO getCardStatsForCourses(@Param("userId") Long userId, @Param("courseId") Long courseId);
+    CourseMemoryBankDO getCardStatsForCourses(@Param("userId") Long userId, @Param("courseId") Long courseId, @Param("now") LocalDateTime now);
 
     @Insert("""
           <script>

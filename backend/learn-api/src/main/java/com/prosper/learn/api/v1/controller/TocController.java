@@ -4,6 +4,8 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.api.v1.annotation.JsonParam;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
+@Validated
 public class TocController {
 
     private final CourseMapper courseMapper;
@@ -38,8 +41,10 @@ public class TocController {
      */
     @PutMapping("/users/current/courses/{courseId}/toc")
     public ApiResponse<String> updateUserCourseToc(
-            @PathVariable Long courseId,
-            @JsonParam("indexArray") String indexArray) {
+            @PathVariable @NotNull(message = "课程ID不能为空")
+            @Positive(message = "课程ID必须大于0")
+            Long courseId,
+            @JsonParam("indexArray") @NotBlank(message = "索引数组不能为空") String indexArray) {
         
         // 验证课程存在性
         CourseDO courseDO = courseMapper.getById(courseId);
@@ -114,7 +119,10 @@ public class TocController {
      * 新增接口: GET /api/v1/users/current/courses/{courseId}/toc
      */
     @GetMapping("/users/current/courses/{courseId}/toc")
-    public ApiResponse<String> getUserCourseToc(@PathVariable Long courseId) {
+    public ApiResponse<String> getUserCourseToc(
+            @PathVariable @NotNull(message = "课程ID不能为空")
+            @Positive(message = "课程ID必须大于0")
+            Long courseId) {
         Long userId = StpUtil.getLoginIdAsLong();
         UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(userId, courseId);
         

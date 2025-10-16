@@ -1,8 +1,8 @@
 package com.prosper.learn.dto.request;
 
+import com.prosper.learn.common.validation.ConfigurableSize;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -17,14 +17,14 @@ public class CreateCourseRequest {
      * 课程名称
      */
     @NotBlank(message = "课程名称不能为空")
-    @Size(max = 100, message = "课程名称长度不能超过100字符")
+    @ConfigurableSize(configKey = "course-name")
     private String name;
 
     /**
      * 课程描述
      */
     @NotBlank(message = "课程描述不能为空")
-    @Size(max = 500, message = "课程描述长度不能超过500字符")
+    @ConfigurableSize(configKey = "course-description")
     private String description;
 
     /**

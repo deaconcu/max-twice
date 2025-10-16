@@ -44,6 +44,12 @@
     content: '',
   })
 
+  interface Emits {
+    (e: 'update'): void
+  }
+
+  const emit = defineEmits<Emits>()
+
   const editor = ref<Editor>()
   const { t } = useI18n()
 
@@ -69,6 +75,9 @@
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
       ],
       content: props.content,
+      onUpdate: () => {
+        emit('update')
+      },
     })
   })
 
@@ -376,7 +385,7 @@
   }
 
   .editor-content {
-    min-height: 980px;
+    min-height: 400px;
     border-left: 0px solid #ddd;
   }
 

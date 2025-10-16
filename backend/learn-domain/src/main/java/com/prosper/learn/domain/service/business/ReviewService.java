@@ -149,7 +149,7 @@ public class ReviewService {
      * 批量提交复习结果
      */
     @Transactional
-    public void batchSubmitReview(Long userId, ReviewSessionDTO session) {
+    public void batchSubmitReview(Long userId, ReviewSessionRequest session) {
         userDataService.validateExists(userId);
         if (session == null || session.getResults() == null || session.getResults().isEmpty()) {
             throw ErrorCode.INVALID_PARAMETER.exception("请求参数不能为空");

@@ -376,10 +376,12 @@
                 <v-text-field
                   v-model="editProfession.name"
                   label="职业名称"
+                  :rules="professionNameRules"
+                  :counter="PROFESSION_VALIDATION.NAME_MAX_LENGTH"
                   variant="outlined"
                   rounded="lg"
                   bg-color="grey-lighten-5"
-                  :rules="[(v: string) => !!v || '职业名称不能为空']"
+                  clearable
                 ></v-text-field>
               </v-col>
 
@@ -398,11 +400,13 @@
             <v-textarea
               v-model="editProfession.description"
               label="职业描述"
+              :rules="professionDescriptionRules"
+              :counter="PROFESSION_VALIDATION.DESCRIPTION_MAX_LENGTH"
               variant="outlined"
               rounded="lg"
               bg-color="grey-lighten-5"
               rows="4"
-              :rules="[(v: string) => !!v || '职业描述不能为空']"
+              clearable
               class="mb-4"
             ></v-textarea>
 
@@ -519,6 +523,8 @@ import { ProfessionState } from '@/types/enums'
 import type { Profession, ProfessionCategory, CategoryMapping } from '@/types/profession'
 import type { StateOption } from '@/types/common'
 import CategorySelector from '../common/CategorySelector.vue'
+import { professionNameRules, professionDescriptionRules, categoryRules } from '@/utils/validationRules'
+import { PROFESSION_VALIDATION } from '@/types/validation'
 
 // 扩展 Profession 接口以包含UI状态
 interface ProfessionWithUIState extends Profession {

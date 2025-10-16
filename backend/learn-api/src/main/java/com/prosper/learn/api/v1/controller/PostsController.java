@@ -7,6 +7,8 @@ import com.prosper.learn.dto.request.CreatePostRequest;
 import com.prosper.learn.dto.request.UpdatePostRequest;
 import com.prosper.learn.dto.response.PostDTO;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.prosper.learn.api.v1.annotation.JsonParam;
@@ -22,6 +24,7 @@ import java.util.List;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class PostsController {
 
     private final PostService postService;
@@ -33,9 +36,9 @@ public class PostsController {
     @GetMapping("/posts")
     public ApiResponse<List<PostDTO>> getPosts(
             @RequestParam(value = "ids", required = false) List<Long> ids,
-            @RequestParam(value = "nodeId", required = false) Long nodeId,
+            @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
             @RequestParam(value = "lastScore", required = false, defaultValue = "0") double lastScore,
-            @RequestParam(value = "lastId", required = false, defaultValue = "0") Long lastPostingId) {
+            @RequestParam(value = "lastId", required = false, defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastPostingId) {
         
         long currentUserId = StpUtil.getLoginIdAsLong();
         List<PostDTO> posts = postService.getPostsWithUserAndVoteInfo(ids, nodeId, lastScore, lastPostingId, currentUserId);
@@ -58,7 +61,11 @@ public class PostsController {
      * 映射: PUT /posting → PUT /api/v1/posts/{id}
      */
     @PutMapping("/posts/{id}")
-    public ApiResponse<Void> updatePost(@PathVariable Long id, @Valid @RequestBody UpdatePostRequest request) {
+    public ApiResponse<Void> updatePost(
+            @PathVariable @NotNull(message = "帖子ID不能为空")
+            @Positive(message = "帖子ID必须大于0")
+            Long id,
+            @Valid @RequestBody UpdatePostRequest request) {
         postService.updatePost(id, request);
         return ApiResponse.success();
     }
@@ -68,7 +75,10 @@ public class PostsController {
      * 映射: DELETE /posting → DELETE /api/v1/posts/{id}
      */
     @DeleteMapping("/posts/{id}")
-    public ApiResponse<Void> deletePost(@PathVariable Long id) {
+    public ApiResponse<Void> deletePost(
+            @PathVariable @NotNull(message = "帖子ID不能为空")
+            @Positive(message = "帖子ID必须大于0")
+            Long id) {
         postService.deletePost(id);
         return ApiResponse.success();
     }
@@ -78,7 +88,10 @@ public class PostsController {
      * 映射: GET /posting/{id} → GET /api/v1/posts/{id}
      */
     @GetMapping("/posts/{id}")
-    public ApiResponse<PostDTO> getPost(@PathVariable Long id) {
+    public ApiResponse<PostDTO> getPost(
+            @PathVariable @NotNull(message = "帖子ID不能为空")
+            @Positive(message = "帖子ID必须大于0")
+            Long id) {
         PostDTO post = postService.getDTO(id);
         return ApiResponse.success(post);
     }
@@ -88,7 +101,10 @@ public class PostsController {
      * 映射: GET /node/{nodeId}/posting → GET /api/v1/nodes/{nodeId}/posts
      */
     @GetMapping("/nodes/{nodeId}/posts")
-    public ApiResponse<List<PostDTO>> getNodePosts(@PathVariable Long nodeId) {
+    public ApiResponse<List<PostDTO>> getNodePosts(
+            @PathVariable @NotNull(message = "节点ID不能为空")
+            @Positive(message = "节点ID必须大于0")
+            Long nodeId) {
         List<PostDTO> posts = postService.getNodePostsList(nodeId);
         return ApiResponse.success(posts);
     }
@@ -98,9 +114,9 @@ public class PostsController {
      */
     @GetMapping("/admin/posts")
     public ApiResponse<List<PostDTO>> getPostsByState(
-            @RequestParam("state") String state,
-            @RequestParam(value = "lastId", defaultValue = "0") Long lastId,
-            @RequestParam(value = "limit", defaultValue = "20") Integer limit) {
+            @RequestParam("state") @NotBlank(message = "状态不能为空") String state,
+            @RequestParam(value = "lastId", defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
+            @RequestParam(value = "limit", defaultValue = "20") @Positive(message = "限制数量必须大于0") Integer limit) {
         com.prosper.learn.common.Enums.PostState postState;
 
         switch (state) {
@@ -137,8 +153,10 @@ public class PostsController {
      */
     @PutMapping("/admin/posts/{id}/approve")
     public ApiResponse<PostDTO> approvePost(
-            @PathVariable Long id,
-            @RequestParam("approve") Boolean approve) {
+            @PathVariable @NotNull(message = "帖子ID不能为空")
+            @Positive(message = "帖子ID必须大于0")
+            Long id,
+            @RequestParam("approve") @NotNull(message = "审核结果不能为空") Boolean approve) {
         PostDTO post = postService.approvePost(id, approve);
         return ApiResponse.success(post);
     }

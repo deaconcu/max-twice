@@ -3,7 +3,7 @@ package com.prosper.learn.domain.service.business;
 import static com.prosper.learn.common.Enums.ProfessionState;
 
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ProfessionRankingService;
 import com.prosper.learn.domain.util.converter.ProfessionConverter;
 import com.prosper.learn.dto.request.CreateProfessionRequest;

@@ -6,9 +6,11 @@ import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.service.business.ReviewService;
 import com.prosper.learn.dto.request.ReviewCardRequest;
 import com.prosper.learn.dto.response.MemoryCardViewDTO;
-import com.prosper.learn.dto.response.ReviewSessionDTO;
+import com.prosper.learn.dto.request.ReviewSessionRequest;
 import com.prosper.learn.dto.response.ReviewStatsDTO;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +24,7 @@ import java.util.List;
 @RequestMapping("/api/v1/memory/review")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class ReviewController {
 
     private final ReviewService reviewService;
@@ -31,7 +34,7 @@ public class ReviewController {
      */
     @GetMapping("/queue")
     public ApiResponse<List<MemoryCardViewDTO>> getReviewQueue(
-            @RequestParam(required = false) Long courseId) {
+            @RequestParam(required = false) @Positive(message = "课程ID必须大于0") Long courseId) {
         
         long userId = StpUtil.getLoginIdAsLong();
         
@@ -45,9 +48,9 @@ public class ReviewController {
      */
     @GetMapping("/cards")
     public ApiResponse<List<MemoryCardViewDTO>> getCardList(
-            @RequestParam(required = false) Long courseId,
-            @RequestParam(defaultValue = "20") Integer limit,
-            @RequestParam(required = false) Long lastId) {
+            @RequestParam(required = false) @Positive(message = "课程ID必须大于0") Long courseId,
+            @RequestParam(defaultValue = "20") @Positive(message = "限制数量必须大于0") Integer limit,
+            @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId) {
         
         long userId = StpUtil.getLoginIdAsLong();
         
@@ -75,7 +78,7 @@ public class ReviewController {
      * 批量提交复习结果
      */
     @PostMapping("/batch-submit")
-    public ApiResponse<Void> batchSubmitReview(@Valid @RequestBody ReviewSessionDTO session) {
+    public ApiResponse<Void> batchSubmitReview(@Valid @RequestBody ReviewSessionRequest session) {
         long userId = StpUtil.getLoginIdAsLong();
         reviewService.batchSubmitReview(userId, session);
         return ApiResponse.success();

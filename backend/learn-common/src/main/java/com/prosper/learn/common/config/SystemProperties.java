@@ -1,4 +1,4 @@
-package com.prosper.learn.domain.config;
+package com.prosper.learn.common.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -92,6 +92,11 @@ public class SystemProperties {
      */
     private Cache cache = new Cache();
     private AutoAuthor autoAuthor = new AutoAuthor();
+
+    /**
+     * 验证规则相关配置
+     */
+    private Validation validation = new Validation();
 
     @Data
     public static class Contents {
@@ -571,5 +576,93 @@ public class SystemProperties {
         private String opencodeBaseUrl = "http://127.0.0.1:4096";
         private String providerId = "github-copilot";
         private String modelId = "gemini-2.5-pro";
+    }
+
+    @Data
+    public static class Validation {
+        // ========== 评论相关 ==========
+        /** 评论内容最小长度 */
+        private int commentContentMinLength = 1;
+        /** 评论内容最大长度 */
+        private int commentContentMaxLength = 500;   // 10行左右
+
+        // ========== 用户相关 ==========
+        /** 用户名最小长度 */
+        private int usernameMinLength = 3;
+        /** 用户名最大长度 */
+        private int usernameMaxLength = 20;
+        /** 密码最小长度 */
+        private int passwordMinLength = 8;
+        /** 密码最大长度 */
+        private int passwordMaxLength = 20;
+        /** 个人简介最大长度 */
+        private int biographyMaxLength = 100;
+        /** 邮箱最大长度 */
+        private int emailMaxLength = 254;
+        /** 手机号最大长度 */
+        private int phoneMaxLength = 20;
+
+        // ========== 课程相关 ==========
+        /** 课程名称最小长度 */
+        private int courseNameMinLength = 2;
+        /** 课程名称最大长度 */
+        private int courseNameMaxLength = 40;   // 英文应该设置为60
+        /** 课程描述最小长度 */
+        private int courseDescriptionMinLength = 20;
+        /** 课程描述最大长度 */
+        private int courseDescriptionMaxLength = 1000;
+
+        // ========== 帖子相关 ==========
+        /** 帖子标题最小长度 */
+        //private int postTitleMinLength = 5;
+        /** 帖子标题最大长度 */
+        //private int postTitleMaxLength = 100;
+        /** 帖子内容最小长度 */
+        private int postContentMinLength = 10;
+        /** 帖子内容最大长度 */
+        private int postContentMaxLength = 20000; // 约400行
+
+        // ========== 专业相关 ==========
+        /** 专业名称最小长度 */
+        private int professionNameMinLength = 2;
+        /** 专业名称最大长度 */
+        private int professionNameMaxLength = 30;
+        /** 专业描述最小长度 */
+        private int professionDescriptionMinLength = 20;
+        /** 专业描述最大长度 */
+        private int professionDescriptionMaxLength = 2000;
+
+        // ========== 记忆卡片相关 ==========
+        /** 卡片正面最小长度 */
+        private int cardFrontMinLength = 5;
+        /** 卡片正面最大长度 */
+        private int cardFrontMaxLength = 500;
+        /** 卡片背面最小长度 */
+
+        private int cardBackMinLength = 1;
+        /** 卡片背面最大长度 */
+        private int cardBackMaxLength = 500;
+        /** 卡片组标题最小长度 */
+        private int deckTitleMinLength = 2;
+        /** 卡片组标题最大长度 */
+        private int deckTitleMaxLength = 30;
+        /** 卡片组描述最大长度 */
+        private int deckDescriptionMaxLength = 200;
+
+        // ========== 消息相关 ==========
+        /** 消息内容最小长度 */
+        private int messageContentMinLength = 1;
+        /** 消息内容最大长度 */
+        private int messageContentMaxLength = 1000;
+
+        // ========== 路线图相关 ==========
+        /** 路线图内容最小长度 */
+        private int roadmapContentMinLength = 1;
+        /** 路线图内容最大长度 */
+        private int roadmapContentMaxLength = 5000;
+        /** 路线图描述最小长度 */
+        private int roadmapDescriptionMinLength = 1;
+        /** 路线图描述最大长度 */
+        private int roadmapDescriptionMaxLength = 500;
     }
 }

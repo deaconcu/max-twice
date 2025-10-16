@@ -1,6 +1,6 @@
 package com.prosper.learn.domain.service.autoauthor;
 
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.data.PostDataService;
 import com.prosper.learn.domain.service.data.MemoryCardDeckDataService;
 import com.prosper.learn.domain.service.business.PostService;
@@ -11,8 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.List;
 import com.prosper.learn.persistence.dataobject.PostDO;
 

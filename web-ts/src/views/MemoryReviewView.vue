@@ -126,10 +126,10 @@ const loadReviewQueue = async () => {
     const response = await MemoryService.getReviewQueue({
       courseId: selectedCourse.value?.course.id
     })
-    
+
     if (response.code === 200) {
       reviewCards.value = response.data
-      
+
       // 检测卡片组更新
       await checkDeckUpdates()
     }
@@ -576,26 +576,49 @@ const reviewSelectedCards = (): void => {
   startReview()
 }
 
-// 获取卡片状态显示文本
-const getCardStatusText = (card: MemoryCardView): string => {
-  if (!card.srsState) return '新卡片'
-  
-  if (card.srsState.repetitions === 0) return '新卡片'
-  if (card.srsState.repetitions >= 3) return '已掌握'
-  return `复习${card.srsState.repetitions}次`
-}
-
-// 获取卡片状态颜色
-const getCardStatusColor = (card: MemoryCardView): string => {
-  if (!card.srsState || card.srsState.repetitions === 0) return 'blue'
-  if (card.srsState.repetitions >= 3) return 'success'
-  return 'warning'
-}
-
 // 是否到期
 const isCardDue = (card: MemoryCardView): boolean => {
-  if (!card.srsState) return true
-  return new Date(card.srsState.reviewDueAt) <= new Date()
+  if (!card.srsState) {
+    return true
+  }
+  const dueTime = new Date(card.srsState.reviewDueAt).getTime()
+  const now = new Date().getTime()
+  const result = now >= dueTime
+  return result
+}
+
+// 获取卡片状态标签（返回标签对象数组）
+const getCardStatusChips = (card: MemoryCardView): Array<{ text: string; color: string }> => {
+  const chips: Array<{ text: string; color: string }> = []
+
+  if (!card.srsState) {
+    chips.push({ text: '新卡片', color: 'grey' })
+    return chips
+  }
+
+  const isDue = isCardDue(card)
+
+  // 待复习：到期需要复习
+  if (isDue) {
+    chips.push({ text: '待复习', color: 'primary' })
+  }
+
+  // 新卡片：从未复习过
+  if (card.srsState.repetitions === 0) {
+    chips.push({ text: '新卡片', color: 'grey' })
+  }
+
+  // 已掌握：复习3次以上
+  if (card.srsState.repetitions >= 3 && !isDue) {
+    chips.push({ text: '已掌握', color: 'success' })
+  }
+
+  // 复习中：已复习但未到期且未掌握
+  if (card.srsState.repetitions > 0 && card.srsState.repetitions < 3 && !isDue) {
+    chips.push({ text: `复习${card.srsState.repetitions}次`, color: 'warning' })
+  }
+
+  return chips.length > 0 ? chips : [{ text: '未知状态', color: 'grey' }]
 }
 </script>
 
@@ -811,7 +834,7 @@ const isCardDue = (card: MemoryCardView): boolean => {
               <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">准备开始复习</h3>
               <p class="text-body-1 text-grey-darken-1 mb-4">
                 {{ selectedCourse ? selectedCourse.course.name : '全部课程' }}有
-                <span class="font-weight-bold text-primary">{{ currentCards.length }}</span> 张卡片等待复习
+                <span class="font-weight-bold text-primary">{{ selectedCourse ? selectedCourse.dueCardCount : totalDueCards }}</span> 张卡片等待复习
               </p>
               <v-btn color="primary" variant="flat" rounded="lg" size="large" @click="startReview">
                 <v-icon icon="mdi-play" class="mr-2"></v-icon>
@@ -1095,11 +1118,14 @@ const isCardDue = (card: MemoryCardView): boolean => {
                       <!-- 第一行：状态标签和deck详情按钮 -->
                       <div class="d-flex align-center" style="gap: 8px;">
                         <v-chip
+                          v-for="(chip, idx) in getCardStatusChips(card)"
+                          :key="idx"
                           size="small"
-                          :color="getCardStatusColor(card)"
+                          :color="chip.color"
                           variant="flat"
+                          :class="chip.text === '待复习' ? 'text-white' : ''"
                         >
-                          {{ getCardStatusText(card) }}
+                          {{ chip.text }}
                         </v-chip>
 
                         <!-- deck详情按钮 -->

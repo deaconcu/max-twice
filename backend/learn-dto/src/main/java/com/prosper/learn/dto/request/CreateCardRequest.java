@@ -1,8 +1,8 @@
 package com.prosper.learn.dto.request;
 
+import com.prosper.learn.common.validation.ConfigurableSize;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -15,11 +15,11 @@ public class CreateCardRequest {
     private Long deckId;
 
     @NotBlank(message = "卡片正面不能为空")
-    @Size(max = 2000, message = "卡片正面长度不能超过2000字符")
+    @ConfigurableSize(configKey = "card-front")
     private String front;
 
     @NotBlank(message = "卡片背面不能为空")
-    @Size(max = 2000, message = "卡片背面长度不能超过2000字符")
+    @ConfigurableSize(configKey = "card-back")
     private String back;
 
 }

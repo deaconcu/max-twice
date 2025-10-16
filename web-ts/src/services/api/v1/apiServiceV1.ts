@@ -62,9 +62,8 @@ export const authServiceV1 = {
     })
   },
 
-  register(userName: string, email: string, password: string): Promise<ApiResponse<void>> {
+  register(email: string, password: string): Promise<ApiResponse<void>> {
     return apiClient.post(`${API_V1_PREFIX}/auth/register`, {
-      userName,
       email,
       password,
     })
@@ -344,8 +343,8 @@ export const commentServiceV1 = {
   },
 
   approveComment(id: number, approve: boolean): Promise<ApiResponse<Comment>> {
-    return apiClient.put(`${API_V1_PREFIX}/admin/comments/${id}/approve`, {
-      approve,
+    return apiClient.put(`${API_V1_PREFIX}/admin/comments/${id}/approve`, null, {
+      params: { approve },
     })
   },
 }

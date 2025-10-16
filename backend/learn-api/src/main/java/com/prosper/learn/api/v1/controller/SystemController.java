@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.api.v1.annotation.JsonParam;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.data.SystemDataService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 @SaCheckLogin
+@Validated
 public class SystemController {
 
     private final SystemDataService systemDataService;
@@ -85,8 +88,8 @@ public class SystemController {
      */
     @PostMapping("/system")
     public ApiResponse<String> updateSystemConfig(
-            @RequestParam String key,
-            @JsonParam("value") String value) {
+            @RequestParam @NotBlank(message = "配置键不能为空") String key,
+            @JsonParam("value") @NotBlank(message = "配置值不能为空") String value) {
         try {
             // 如果value是JSON格式，验证其有效性
             try {
@@ -109,7 +112,8 @@ public class SystemController {
      * 删除系统配置
      */
     @DeleteMapping("/system")
-    public ApiResponse<String> deleteSystemConfig(@RequestParam String key) {
+    public ApiResponse<String> deleteSystemConfig(
+            @RequestParam @NotBlank(message = "配置键不能为空") String key) {
         try {
             if (!systemDataService.exists(key)) {
                 return ApiResponse.error("配置不存在: " + key);
@@ -129,7 +133,8 @@ public class SystemController {
      * 获取单个配置值
      */
     @GetMapping("/system/{key}")
-    public ApiResponse<String> getConfigByKey(@PathVariable String key) {
+    public ApiResponse<String> getConfigByKey(
+            @PathVariable @NotBlank(message = "配置键不能为空") String key) {
         try {
             String value = systemDataService.getValue(key);
             if (value == null) {

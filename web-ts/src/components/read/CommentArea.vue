@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref } from 'vue'
+import { inject, nextTick, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { commentServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { ObjectType } from '@/types/enums'
 import type { ObjectType as ObjectTypeType } from '@/types/enums'
 import type { Comment } from '@/types/comment'
+import { COMMENT_VALIDATION } from '@/types/validation'
+import { commentRules } from '@/utils/validationRules'
 import SubcommentArea from './SubcommentArea.vue'
 
 const route = useRoute()
 const { t } = useI18n()
+const showSnackbar = inject('showSnackbar') as (message: string, type?: string) => void
 
 interface CommentObject {
   id: number
@@ -36,6 +39,13 @@ const replyContent = ref<string>('')
 const targetItem = ref<HTMLElement | null>(null)
 const highlightedCommentId = ref<number | null>(null)
 const commentArea = ref<HTMLElement | null>(null)
+
+// 判断是否可以发送评论
+const isValidComment = (content: string): boolean => {
+  const trimmed = content.trim()
+  return trimmed.length >= COMMENT_VALIDATION.CONTENT_MIN_LENGTH &&
+         trimmed.length <= COMMENT_VALIDATION.CONTENT_MAX_LENGTH
+}
 
 // 用于获取目标元素的ref函数
 const setTargetRef = (el: HTMLElement | null): void => {
@@ -65,7 +75,8 @@ const load = async ({ done }: { done: LoadCallback }): Promise<void> => {
     )
 
     if (response.code === 401) {
-      // not login
+      showSnackbar('error.loadFailed', 'error')
+      done('error')
     } else if (response.code === 200) {
       comments.value.push(...response.data)
 
@@ -83,13 +94,22 @@ const load = async ({ done }: { done: LoadCallback }): Promise<void> => {
       } else {
         done('empty')
       }
+    } else {
+      showSnackbar(response.message || 'error.loadFailed', 'error')
+      done('error')
     }
   } catch (error) {
     console.error('Error loading comments:', error)
+    showSnackbar('error.loadFailed', 'error')
+    done('error')
   }
 }
 
 const sendComment = async (): Promise<void> => {
+  if (!isValidComment(inputComment.value)) {
+    return
+  }
+
   try {
     const response = await commentServiceV1.createComment(
       props.object.id,
@@ -98,24 +118,27 @@ const sendComment = async (): Promise<void> => {
       0,
       inputComment.value
     )
-    inputComment.value = ''
-    console.log(`response: ${JSON.stringify(response)}`)
 
     if (response.code === 200) {
-      console.log('Form submitted successfully')
+      inputComment.value = ''
       comments.value.unshift(response.data)
       // eslint-disable-next-line vue/no-mutating-props
       props.object.commentCount++
+    } else {
+      showSnackbar(response.message || 'error.operationFailed', 'error')
     }
   } catch (error) {
     console.error('Error submitting form:', error)
+    showSnackbar('error.operationFailed', 'error')
   }
 }
 
 const sendSubcomment = async (comment: Comment): Promise<void> => {
-  try {
-    console.log('begin post')
+  if (!isValidComment(replyContent.value)) {
+    return
+  }
 
+  try {
     const response = await commentServiceV1.createComment(
       props.object.id,
       props.type,
@@ -123,11 +146,9 @@ const sendSubcomment = async (comment: Comment): Promise<void> => {
       0,
       replyContent.value
     )
-    replyContent.value = ''
-    console.log(`response: ${JSON.stringify(response)}`)
 
     if (response.code === 200) {
-      console.log('Form submitted successfully')
+      replyContent.value = ''
       // eslint-disable-next-line vue/no-mutating-props
       props.object.commentCount++
       if (comment.children === null) {
@@ -135,9 +156,12 @@ const sendSubcomment = async (comment: Comment): Promise<void> => {
       } else {
         comment.children.unshift(response.data)
       }
+    } else {
+      showSnackbar(response.message || 'error.operationFailed', 'error')
     }
   } catch (error) {
     console.error('Error submitting form:', error)
+    showSnackbar('error.operationFailed', 'error')
   }
 }
 
@@ -158,18 +182,17 @@ onMounted(async () => {
 
 const upvote = async (comment: Comment): Promise<void> => {
   try {
-    console.log('begin post')
-
     const response = await upvoteServiceV1.upvote(comment.id, 2, 2)
-    console.log(`response: ${JSON.stringify(response)}`)
 
     if (response.code === 200) {
-      console.log('Form submitted successfully')
       comment.upvoteCount = response.data.upvotes
       comment.upvoted = response.data.upvoted
+    } else {
+      showSnackbar(response.message || 'error.operationFailed', 'error')
     }
   } catch (error) {
     console.error('Error submitting form:', error)
+    showSnackbar('error.operationFailed', 'error')
   }
 }
 </script>
@@ -181,6 +204,8 @@ const upvote = async (comment: Comment): Promise<void> => {
     density="compact"
     append-inner-icon="mdi-email-fast-outline"
     :placeholder="t('comment.addComment')"
+    :rules="commentRules"
+    :counter="COMMENT_VALIDATION.CONTENT_MAX_LENGTH"
     class="w-100"
     @click:append-inner="sendComment"
   ></v-text-field>
@@ -245,8 +270,9 @@ const upvote = async (comment: Comment): Promise<void> => {
               density="compact"
               append-inner-icon="mdi-email-fast-outline"
               :placeholder="t('comment.addComment')"
+              :rules="commentRules"
+              :counter="COMMENT_VALIDATION.CONTENT_MAX_LENGTH"
               class="w-100"
-              hide-details
               @click:append-inner="sendSubcomment(comment)"
             ></v-text-field>
           </div>

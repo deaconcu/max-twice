@@ -8,6 +8,8 @@ import com.prosper.learn.dto.request.RemoveDeckFromCourseRequest;
 import com.prosper.learn.dto.request.UpdateCourseSettingRequest;
 import com.prosper.learn.dto.response.CourseMemoryBankDTO;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,7 @@ import java.util.List;
 @RequestMapping("/api/v1/memory/memory-bank")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class MemoryBankController {
 
     private final MemoryBankService memoryBankService;
@@ -40,7 +43,7 @@ public class MemoryBankController {
      */
     @GetMapping("/courses")
     public ApiResponse<List<CourseMemoryBankDTO>> getMemoryBankCourses(
-            @RequestParam(required = false) Integer status) {
+            @RequestParam(required = false) @Min(value = 0, message = "状态不能小于0") Integer status) {
         
         long userId = StpUtil.getLoginIdAsLong();
         List<CourseMemoryBankDTO> result = memoryBankService.getMemoryBankCourses(userId, status);
@@ -52,7 +55,9 @@ public class MemoryBankController {
      */
     @PutMapping("/courses/{courseId}/settings")
     public ApiResponse<Void> updateCourseSetting(
-            @PathVariable Long courseId,
+            @PathVariable @NotNull(message = "课程ID不能为空")
+            @Positive(message = "课程ID必须大于0")
+            Long courseId,
             @Valid @RequestBody UpdateCourseSettingRequest request) {
         
         long userId = StpUtil.getLoginIdAsLong();
@@ -65,8 +70,12 @@ public class MemoryBankController {
      */
     @DeleteMapping("/courses/{courseId}/decks/{deckId}")
     public ApiResponse<Void> removeDeckFromCourse(
-            @PathVariable Long courseId,
-            @PathVariable Long deckId) {
+            @PathVariable @NotNull(message = "课程ID不能为空")
+            @Positive(message = "课程ID必须大于0")
+            Long courseId,
+            @PathVariable @NotNull(message = "卡片组ID不能为空")
+            @Positive(message = "卡片组ID必须大于0")
+            Long deckId) {
 
         long userId = StpUtil.getLoginIdAsLong();
         memoryBankService.removeDeckFromCourse(userId, courseId, deckId);

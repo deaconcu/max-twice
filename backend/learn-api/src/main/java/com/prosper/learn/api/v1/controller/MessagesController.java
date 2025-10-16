@@ -13,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +27,7 @@ import static com.prosper.learn.common.Enums.*;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
+@Validated
 public class MessagesController {
 
     private final MessageService messageService;
@@ -48,8 +51,12 @@ public class MessagesController {
      */
     @GetMapping("/messages/system")
     public ApiResponse<List<MessageDTO>> getSystemMessageList(
-            @RequestParam int type,
-            @RequestParam Long lastId) {
+            @RequestParam @NotNull(message = "消息类型不能为空")
+            @Positive(message = "消息类型必须大于0")
+            int type,
+            @RequestParam @NotNull(message = "最后ID不能为空")
+            @Min(value = 0, message = "最后ID不能小于0")
+            Long lastId) {
 
         long self = StpUtil.getLoginIdAsLong();
         List<MessageDTO> messageDTOList = messageService.getSystemList(type, self, lastId);
@@ -62,10 +69,18 @@ public class MessagesController {
      */
     @GetMapping("/messages")
     public ApiResponse<List<MessageDTO>> getMessageList(
-            @RequestParam Long userId, 
-            @RequestParam int type, 
-            @RequestParam Long lastId, 
-            @RequestParam int conversation) {
+            @RequestParam @NotNull(message = "用户ID不能为空")
+            @Positive(message = "用户ID必须大于0")
+            Long userId,
+            @RequestParam @NotNull(message = "消息类型不能为空")
+            @Positive(message = "消息类型必须大于0")
+            int type,
+            @RequestParam @NotNull(message = "最后ID不能为空")
+            @Min(value = 0, message = "最后ID不能小于0")
+            Long lastId,
+            @RequestParam @NotNull(message = "会话类型不能为空")
+            @Min(value = 0, message = "会话类型不能小于0")
+            int conversation) {
         
         long self = StpUtil.getLoginIdAsLong();
         List<MessageDTO> messageDTOList = messageService.getList(type, self, userId, lastId, conversation);
@@ -89,8 +104,10 @@ public class MessagesController {
      */
     @PutMapping("/messages/course-applications/{id}")
     public ApiResponse<Void> modifyCourseApply(
-            @PathVariable Long id, 
-            @JsonParam("reply") String reply) {
+            @PathVariable @NotNull(message = "申请ID不能为空")
+            @Positive(message = "申请ID必须大于0")
+            Long id,
+            @JsonParam("reply") @NotBlank(message = "回复内容不能为空") String reply) {
         
         messageService.modifyCourseApply(id, reply);
         return ApiResponse.success();

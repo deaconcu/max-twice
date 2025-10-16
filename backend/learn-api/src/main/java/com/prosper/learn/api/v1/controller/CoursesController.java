@@ -7,6 +7,8 @@ import com.prosper.learn.common.Enums.CourseState;
 import com.prosper.learn.dto.request.*;
 import com.prosper.learn.dto.response.CourseDTO;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 import com.prosper.learn.dto.response.old.CourseDTOV3;
 import com.prosper.learn.dto.response.old.CourseDTOV4;
 import com.prosper.learn.dto.response.ApprovalResponseDTO;
@@ -25,6 +27,7 @@ import java.util.List;
 @RequestMapping("/api/v1")
 @Slf4j
 @RequiredArgsConstructor
+@Validated
 public class CoursesController {
 
     private final CourseService courseService;
@@ -34,7 +37,9 @@ public class CoursesController {
      * 映射: GET /course/{id} → GET /api/v1/courses/{id}
      */
     @GetMapping("/courses/{id}")
-    public ApiResponse<CourseDTO> getCourse(@PathVariable Long id) {
+    public ApiResponse<CourseDTO> getCourse(
+            @PathVariable @NotNull(message = "课程ID不能为空")
+            @Positive(message = "课程ID不正确") Long id) {
         CourseDTO course = courseService.getCourseById(id);
         return ApiResponse.success(course);
     }
@@ -44,7 +49,8 @@ public class CoursesController {
      * 映射: GET /course/search?name=xxx → GET /api/v1/courses/search?name=xxx
      */
     @GetMapping("/courses/search")
-    public ApiResponse<List<CourseDTO>> searchCourses(@RequestParam String name) {
+    public ApiResponse<List<CourseDTO>> searchCourses(
+            @RequestParam @NotBlank(message = "搜索名称不能为空") String name) {
         List<CourseDTO> courseList = courseService.searchCoursesByName(name);
         return ApiResponse.success(courseList);
     }
@@ -55,11 +61,11 @@ public class CoursesController {
      */
     @GetMapping("/courses")
     public ApiResponse<Object> getCoursesByState(
-            @RequestParam(required = false) Integer state,
-            @RequestParam(required = false) Long lastId,
-            @RequestParam(required = false) Integer mainCategory,
-            @RequestParam(required = false) Integer subCategory,
-            @RequestParam(required = false) Long parentId) {
+            @RequestParam(required = false) @Positive(message = "状态必须大于0") Integer state,
+            @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
+            @RequestParam(required = false) @Positive(message = "主分类必须大于0") Integer mainCategory,
+            @RequestParam(required = false) @Positive(message = "子分类必须大于0") Integer subCategory,
+            @RequestParam(required = false) @Positive(message = "父课程ID必须大于0") Long parentId) {
 
         CourseState courseState = CourseState.getByValue(state);
         if (state != null && lastId != null) {
@@ -86,7 +92,10 @@ public class CoursesController {
      * 映射: GET /course/hot → GET /api/v1/courses/hot
      */
     @GetMapping("/courses/hot")
-    public ApiResponse<Object> getHotCourses(@RequestParam(value = "limit", defaultValue = "10") Integer limit) {
+    public ApiResponse<Object> getHotCourses(
+            @RequestParam(value = "limit", defaultValue = "10")
+            @Positive(message = "限制数量必须大于0")
+            Integer limit) {
         log.info("开始获取热门课程，limit: {}", limit);
         List<CourseDTO> hotCourses = courseService.getHotCourses(limit);
         log.info("成功获取热门课程数量: {}", hotCourses.size());
@@ -121,7 +130,11 @@ public class CoursesController {
      * 映射: PUT /course/{id} → PUT /api/v1/courses/{id}
      */
     @PutMapping("/courses/{id}")
-    public ApiResponse<Object> updateCourse(@PathVariable Long id, @Valid @RequestBody UpdateCourseRequest request) {
+    public ApiResponse<Object> updateCourse(
+            @PathVariable @NotNull(message = "课程ID不能为空")
+            @Positive(message = "课程ID必须大于0")
+            Long id,
+            @Valid @RequestBody UpdateCourseRequest request) {
         courseService.updateCourse(id, request);
         return ApiResponse.success("更新成功");
     }
@@ -132,7 +145,9 @@ public class CoursesController {
      */
     @PostMapping("/courses/{parentId}/subcourses")
     public ApiResponse<Object> createSubcourse(
-            @PathVariable Long parentId,
+            @PathVariable @NotNull(message = "父课程ID不能为空")
+            @Positive(message = "父课程ID必须大于0")
+            Long parentId,
             @RequestBody @Valid CreateSubcourseRequest request) {
         
         long userId = StpUtil.getLoginIdAsLong();
@@ -146,7 +161,9 @@ public class CoursesController {
      */
     @PostMapping("/courses/{id}/approve")
     public ApiResponse<ApprovalResponseDTO> approveCourse(
-            @PathVariable Long id, 
+            @PathVariable @NotNull(message = "课程ID不能为空")
+            @Positive(message = "课程ID必须大于0")
+            Long id,
             @RequestBody @Valid OperateRequest request) {
         
         if (!courseService.exist(id)) {

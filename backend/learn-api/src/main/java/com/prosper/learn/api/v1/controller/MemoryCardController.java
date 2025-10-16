@@ -7,6 +7,8 @@ import com.prosper.learn.dto.request.CreateCardRequest;
 import com.prosper.learn.dto.request.UpdateCardRequest;
 import com.prosper.learn.dto.response.MemoryCardViewDTO;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/memory")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class MemoryCardController {
 
     private final MemoryCardService cardService;
@@ -37,7 +40,9 @@ public class MemoryCardController {
      */
     @PutMapping("/cards/{cardId}")
     public ApiResponse<MemoryCardViewDTO> updateCard(
-            @PathVariable Long cardId,
+            @PathVariable @NotNull(message = "卡片ID不能为空")
+            @Positive(message = "卡片ID必须大于0")
+            Long cardId,
             @Valid @RequestBody UpdateCardRequest request) {
         
         long userId = StpUtil.getLoginIdAsLong();
@@ -51,7 +56,10 @@ public class MemoryCardController {
      * 获取用户在指定节点下学习的所有卡片
      */
     @GetMapping("/cards/node/{nodeId}")
-    public ApiResponse<java.util.List<MemoryCardViewDTO>> getUserCardsByNode(@PathVariable Long nodeId) {
+    public ApiResponse<java.util.List<MemoryCardViewDTO>> getUserCardsByNode(
+            @PathVariable @NotNull(message = "节点ID不能为空")
+            @Positive(message = "节点ID必须大于0")
+            Long nodeId) {
         long userId = StpUtil.getLoginIdAsLong();
         java.util.List<MemoryCardViewDTO> result = cardService.getCardsByNode(nodeId, userId);
         return ApiResponse.success(result);
@@ -61,7 +69,10 @@ public class MemoryCardController {
      * 获取卡片内容差异
      */
     @GetMapping("/cards/{cardId}/diff")
-    public ApiResponse<Object> getCardDiff(@PathVariable Long cardId) {
+    public ApiResponse<Object> getCardDiff(
+            @PathVariable @NotNull(message = "卡片ID不能为空")
+            @Positive(message = "卡片ID必须大于0")
+            Long cardId) {
         long userId = StpUtil.getLoginIdAsLong();
         Object result = cardService.getCardContentDiff(userId, cardId);
         return ApiResponse.success(result);
@@ -71,7 +82,10 @@ public class MemoryCardController {
      * 删除卡片
      */
     @DeleteMapping("/cards/{cardId}")
-    public ApiResponse<Void> deleteCard(@PathVariable Long cardId) {
+    public ApiResponse<Void> deleteCard(
+            @PathVariable @NotNull(message = "卡片ID不能为空")
+            @Positive(message = "卡片ID必须大于0")
+            Long cardId) {
         long userId = StpUtil.getLoginIdAsLong();
         cardService.deleteCard(userId, cardId);
         return ApiResponse.success();

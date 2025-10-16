@@ -539,7 +539,7 @@ public class MemoryCardDeckService {
         if (request.getDescription() != null) {
             deck.setDescription(request.getDescription());
         }
-        deck.setUpdatedBy(userId);
+        //deck.setUpdatedBy(userId);
         deck.setUpdatedAt(LocalDateTime.now());
 
         // 更新数据库
@@ -564,7 +564,7 @@ public class MemoryCardDeckService {
         
         // 更新状态为正常
         deck.setState(MemoryCardDeckState.NORMAL.value());
-        deck.setUpdatedBy(auditorId);
+        //deck.setUpdatedBy(auditorId);
         deck.setUpdatedAt(LocalDateTime.now());
         
         deckDataService.update(deck);
@@ -587,7 +587,7 @@ public class MemoryCardDeckService {
 
         // 更新状态为屏蔽
         deck.setState(MemoryCardDeckState.BLOCKED.value());
-        deck.setUpdatedBy(auditorId);
+        //deck.setUpdatedBy(auditorId);
         deck.setUpdatedAt(LocalDateTime.now());
 
         deckDataService.update(deck);
@@ -609,7 +609,7 @@ public class MemoryCardDeckService {
         
         // 更新状态为正常
         deck.setState(MemoryCardDeckState.NORMAL.value());
-        deck.setUpdatedBy(auditorId);
+        //deck.setUpdatedBy(auditorId);
         deck.setUpdatedAt(LocalDateTime.now());
         
         deckDataService.update(deck);
@@ -925,7 +925,7 @@ public class MemoryCardDeckService {
         // 设置为待审核状态
         deck.setState(MemoryCardDeckState.PENDING.value());
         deck.setUpdatedAt(LocalDateTime.now());
-        deck.setUpdatedBy(userId);
+        //deck.setUpdatedBy(userId);
         deckDataService.update(deck);
 
         // 批量创建新卡片

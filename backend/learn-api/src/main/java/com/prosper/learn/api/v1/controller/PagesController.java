@@ -3,6 +3,8 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 import com.prosper.learn.domain.service.business.PageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
+@Validated
 public class PagesController {
 
     private final PageService pageService;
@@ -29,11 +32,11 @@ public class PagesController {
      */
     @GetMapping("/pages/read")
     public ApiResponse<Map<String, Object>> read(
-            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) @Positive(message = "课程ID必须大于0") Long courseId,
             @RequestParam(required = false) String path,
-            @RequestParam(required = false) Long nodeId,
-            @RequestParam(required = false) Long postId,
-            @RequestParam(required = false) Long commentId) {
+            @RequestParam(required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
+            @RequestParam(required = false) @Positive(message = "帖子ID必须大于0") Long postId,
+            @RequestParam(required = false) @Positive(message = "评论ID必须大于0") Long commentId) {
 
         long userId = StpUtil.getLoginIdAsLong();
         Map<String, Object> result;

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { emailRules, passwordRules } from '@/utils/validationRules'
+import { USER_VALIDATION } from '@/types/validation'
 
 // 类型定义
 interface RegisterForm {
   email: string
-  name: string
   password: string
   passwordRepeat: string
   validateCode: string
@@ -34,6 +35,12 @@ const props = defineProps<Props>()
 
 // Emits
 const emit = defineEmits<Emits>()
+
+// 确认密码验证规则
+const passwordRepeatRules = [
+  (v: string) => !!v || '请再次输入密码',
+  (v: string) => v === props.registerForm.password || '两次输入的密码不一致'
+]
 
 // Computed properties for v-model
 const dialogModel = computed({
@@ -100,12 +107,13 @@ const closeDialog = (): void => {
           <v-text-field
             :model-value="registerForm.email"
             :label="t('user.register.email')"
+            :rules="emailRules"
             variant="outlined"
             class="mb-4"
             prepend-inner-icon="mdi-email-outline"
             hint="请输入常用邮箱，用于接收验证码"
             persistent-hint
-            maxlength="30"
+            :counter="USER_VALIDATION.EMAIL_MAX_LENGTH"
             rounded="lg"
             density="comfortable"
             clearable
@@ -114,31 +122,16 @@ const closeDialog = (): void => {
           </v-text-field>
 
           <v-text-field
-            :model-value="registerForm.name"
-            :label="t('user.register.username')"
-            variant="outlined"
-            class="mb-4"
-            prepend-inner-icon="mdi-account-outline"
-            hint="用户名长度2-20个字符"
-            persistent-hint
-            maxlength="20"
-            rounded="lg"
-            density="comfortable"
-            clearable
-            @update:model-value="registerFormModel.name = $event"
-          >
-          </v-text-field>
-
-          <v-text-field
             :model-value="registerForm.password"
             :type="showPassword ? 'text' : 'password'"
             :label="t('user.register.password')"
+            :rules="passwordRules"
             variant="outlined"
             class="mb-4"
             prepend-inner-icon="mdi-lock-outline"
             :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
-            hint="密码需包含大小写字母和特殊字符"
-            maxlength="20"
+            :hint="`密码长度 ${USER_VALIDATION.PASSWORD_MIN_LENGTH}-${USER_VALIDATION.PASSWORD_MAX_LENGTH} 个字符`"
+            :counter="USER_VALIDATION.PASSWORD_MAX_LENGTH"
             persistent-hint
             rounded="lg"
             density="comfortable"
@@ -152,11 +145,12 @@ const closeDialog = (): void => {
             :model-value="registerForm.passwordRepeat"
             :type="showPasswordRepeat ? 'text' : 'password'"
             :label="t('user.register.confirmPassword')"
+            :rules="passwordRepeatRules"
             variant="outlined"
             class="mb-6"
             prepend-inner-icon="mdi-lock-check-outline"
             :append-inner-icon="showPasswordRepeat ? 'mdi-eye' : 'mdi-eye-off'"
-            maxlength="20"
+            :counter="USER_VALIDATION.PASSWORD_MAX_LENGTH"
             rounded="lg"
             density="comfortable"
             clearable

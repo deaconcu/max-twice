@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.PostStatsMapper;
 import com.prosper.learn.persistence.mapper.PostMapper;

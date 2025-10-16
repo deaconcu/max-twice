@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import cn.dev33.satoken.stp.StpUtil;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 import java.util.List;
 
 /**
@@ -23,6 +25,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
+@Validated
 public class RoadmapsController {
 
     private final RoadmapService roadmapService;
@@ -33,8 +36,12 @@ public class RoadmapsController {
      */
     @GetMapping("/professions/{professionId}/roadmaps")
     public ApiResponse<List<RoadmapDTO>> getRoadmapsByProfession(
-            @PathVariable Long professionId, 
-            @RequestParam(required = false, defaultValue = "0") Long lastId) {
+            @PathVariable @NotNull(message = "职业ID不能为空")
+            @Positive(message = "职业ID必须大于0")
+            Long professionId,
+            @RequestParam(required = false, defaultValue = "0")
+            @Min(value = 0, message = "最后ID不能小于0")
+            Long lastId) {
         
         if (!StpUtil.isLogin()) {
             throw ErrorCode.USER_NOT_LOGIN.exception();
@@ -52,8 +59,10 @@ public class RoadmapsController {
      */
     @PutMapping("/roadmaps/{id}")
     public ApiResponse<Void> updateRoadmap(
-            @PathVariable Long id, 
-            @JsonParam("content") String content) {
+            @PathVariable @NotNull(message = "路线图ID不能为空")
+            @Positive(message = "路线图ID必须大于0")
+            Long id,
+            @JsonParam("content") @NotBlank(message = "内容不能为空") String content) {
         if (!StpUtil.isLogin()) {
             throw ErrorCode.USER_NOT_LOGIN.exception();
         }
@@ -84,7 +93,10 @@ public class RoadmapsController {
      * 映射: GET /roadmap/{id} → GET /api/v1/roadmaps/{id}
      */
     @GetMapping("/roadmaps/{id}")
-    public ApiResponse<RoadmapDTO> getRoadmap(@PathVariable Long id) {
+    public ApiResponse<RoadmapDTO> getRoadmap(
+            @PathVariable @NotNull(message = "路线图ID不能为空")
+            @Positive(message = "路线图ID必须大于0")
+            Long id) {
         long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : 0;
         RoadmapDTO roadmapDTOV1 = roadmapService.getRoadmapWithContent(id, userId);
 

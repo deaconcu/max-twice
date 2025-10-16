@@ -10,6 +10,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 
 /**
  * 内容管理接口
@@ -18,6 +20,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
+@Validated
 public class ContentsController {
 
     private final ContentsService contentsService;

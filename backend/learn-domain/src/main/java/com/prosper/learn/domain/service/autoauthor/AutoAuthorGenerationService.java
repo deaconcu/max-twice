@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.common.Enums;
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.business.PostService;
 import com.prosper.learn.domain.service.business.MemoryCardDeckService;
 import com.prosper.learn.domain.service.data.CourseDataService;

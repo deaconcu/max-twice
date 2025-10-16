@@ -9,7 +9,7 @@ import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.domain.service.data.*;
 import lombok.RequiredArgsConstructor;

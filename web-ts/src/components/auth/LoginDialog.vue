@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { emailRules, passwordRules } from '@/utils/validationRules'
 
 // 类型定义
 interface LoginForm {
@@ -91,6 +92,7 @@ const closeDialog = (): void => {
           <v-text-field
             :model-value="loginForm.email"
             label="邮箱地址"
+            :rules="emailRules"
             variant="outlined"
             class="mb-4"
             prepend-inner-icon="mdi-email-outline"
@@ -105,6 +107,7 @@ const closeDialog = (): void => {
             :model-value="loginForm.password"
             :type="showPassword ? 'text' : 'password'"
             label="密码"
+            :rules="passwordRules"
             variant="outlined"
             class="mb-6"
             prepend-inner-icon="mdi-lock-outline"

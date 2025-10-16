@@ -3,6 +3,8 @@
   import { useI18n } from 'vue-i18n'
   import type { MainCategory, SubCategory } from '@/types/common'
   import type { CreateCourseRequest } from '@/types/course'
+  import { courseNameRules, courseDescriptionRules, categoryRules } from '@/utils/validationRules'
+  import { COURSE_VALIDATION } from '@/types/validation'
 
   const { t } = useI18n()
 
@@ -34,6 +36,12 @@
     mainCategoryId: null as number | null,
     subCategoryId: null as number | null,
   })
+
+  // 表单引用
+  const formRef = ref()
+
+  // 表单是否有效
+  const isFormValid = ref(false)
 
   // Computed properties for v-model
   const dialogModel = computed({
@@ -77,7 +85,10 @@
   )
 
   // 处理表单提交
-  const handleSubmit = (): void => {
+  const handleSubmit = async (): Promise<void> => {
+    const { valid } = await formRef.value.validate()
+    if (!valid) return
+
     const courseData: CreateCourseRequest = {
       name: applyCourseData.value.name,
       description: applyCourseData.value.description,
@@ -95,88 +106,95 @@
 </script>
 
 <template>
-  <v-dialog
-    :model-value="modelValue"
-    width="800"
-    height="620"
-    content-class="fix-dialog"
-    @update:model-value="dialogModel = $event"
-  >
-    <v-card class="px-1 py-2" rounded="lg">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-file-cog-outline" size="small" class=""></v-icon>
-        <span class="ps-2">{{ t('course.createNew') }}</span>
+  <v-dialog v-model="dialogModel" max-width="600px" persistent>
+    <v-card rounded="lg">
+      <v-card-title class="pa-6">
+        <div class="d-flex align-center">
+          <v-avatar color="primary" size="32" class="mr-3">
+            <v-icon icon="mdi-plus-circle" color="white" size="16"></v-icon>
+          </v-avatar>
+          <span class="text-h6 font-weight-bold">{{ t('course.createNew') }}</span>
+        </div>
       </v-card-title>
-      <v-card-subtitle>
-        {{ t('course.fillInfo') }}
-      </v-card-subtitle>
-      <v-card-text class="px-4 py-8">
-        <v-text-field
-          v-model="applyCourseData.name"
-          :label="t('course.name')"
-          variant="outlined"
-          density="compact"
-          class="mb-4"
-          required
-        >
-        </v-text-field>
 
-        <v-textarea
-          v-model="applyCourseData.description"
-          :label="t('course.description')"
-          variant="outlined"
-          density="compact"
-          rows="4"
-          class="mb-4"
-          required
-        >
-        </v-textarea>
+      <v-card-text class="px-6 pb-0">
+        <v-form ref="formRef" v-model="isFormValid">
+          <v-text-field
+            v-model="applyCourseData.name"
+            :label="t('course.name')"
+            :rules="courseNameRules"
+            :counter="COURSE_VALIDATION.NAME_MAX_LENGTH"
+            variant="outlined"
+            clearable
+            required
+            class="mb-4"
+          >
+          </v-text-field>
 
-        <v-select
-          v-model="applyCourseData.mainCategoryId"
-          :items="categories || []"
-          item-title="name"
-          item-value="id"
-          :label="t('course.mainCategory')"
-          variant="outlined"
-          density="compact"
-          class="mb-4"
-          clearable
-          required
-        >
-        </v-select>
+          <v-textarea
+            v-model="applyCourseData.description"
+            :label="t('course.description')"
+            :rules="courseDescriptionRules"
+            :counter="COURSE_VALIDATION.DESCRIPTION_MAX_LENGTH"
+            variant="outlined"
+            clearable
+            required
+            rows="3"
+            class="mb-4"
+          >
+          </v-textarea>
 
-        <v-select
-          v-model="applyCourseData.subCategoryId"
-          :items="getSubCategories()"
-          item-title="name"
-          item-value="id"
-          :label="t('course.subCategory')"
-          variant="outlined"
-          density="compact"
-          class="mb-4"
-          :disabled="!applyCourseData.mainCategoryId"
-          clearable
-          required
-        >
-        </v-select>
+          <v-select
+            v-model="applyCourseData.mainCategoryId"
+            :items="categories || []"
+            item-title="name"
+            item-value="id"
+            :label="t('course.mainCategory')"
+            :rules="categoryRules"
+            variant="outlined"
+            density="compact"
+            class="mb-4"
+            clearable
+            required
+          >
+          </v-select>
+
+          <v-select
+            v-model="applyCourseData.subCategoryId"
+            :items="getSubCategories()"
+            item-title="name"
+            item-value="id"
+            :label="t('course.subCategory')"
+            :rules="categoryRules"
+            variant="outlined"
+            density="compact"
+            class="mb-4"
+            :disabled="!applyCourseData.mainCategoryId"
+            clearable
+            required
+          >
+          </v-select>
+        </v-form>
       </v-card-text>
-      <v-card-actions class="justify-center">
-        <v-btn text="取消" class="px-4" variant="outlined" @click="closeDialog"></v-btn>
+
+      <v-card-actions class="px-6 pb-6">
+        <v-spacer></v-spacer>
+        <v-btn variant="text" @click="closeDialog">
+          {{ t('common.cancel') }}
+        </v-btn>
         <v-btn
-          :text="t('course.create')"
-          class="px-4"
           color="primary"
+          variant="flat"
+          :disabled="!isFormValid"
           @click="handleSubmit"
-        ></v-btn>
+        >
+          {{ t('course.create') }}
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <style scoped>
-  :deep(.fix-dialog) {
-    top: 150px !important;
-    position: absolute !important;
-  }
+/* Flat 风格 - 无阴影设计 */
 </style>

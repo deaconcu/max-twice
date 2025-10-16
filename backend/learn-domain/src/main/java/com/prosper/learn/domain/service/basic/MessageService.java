@@ -7,7 +7,7 @@ import com.prosper.learn.common.Enums.MessageType;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.util.converter.MessageConverter;
 import com.prosper.learn.domain.util.converter.NodeConverter;
 import com.prosper.learn.domain.util.converter.UserConverter;

@@ -1,7 +1,7 @@
 package com.prosper.learn.domain.service.scheduler;
 
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
 import com.prosper.learn.persistence.dataobject.UserProfileDO;
 import com.prosper.learn.persistence.mapper.UserProfileMapper;

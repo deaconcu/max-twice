@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 
 import static com.prosper.learn.common.Enums.ObjectType.comment;
 import static com.prosper.learn.common.Enums.ObjectType.post;
@@ -23,6 +25,7 @@ import static com.prosper.learn.common.Enums.ObjectType.memory_card_deck;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
+@Validated
 public class UpvotesController {
 
     private final UpvoteService upvoteService;
@@ -58,8 +61,12 @@ public class UpvotesController {
      */
     @GetMapping("/upvotes/status")
     public ApiResponse<UpvoteStatusDTO> getUpvoteStatus(
-            @RequestParam Long objectId, 
-            @RequestParam int objectType) {
+            @RequestParam @NotNull(message = "对象ID不能为空")
+            @Positive(message = "对象ID必须大于0")
+            Long objectId,
+            @RequestParam @NotNull(message = "对象类型不能为空")
+            @Positive(message = "对象类型必须大于0")
+            int objectType) {
         
         long userId = StpUtil.getLoginIdAsLong();
         UpvoteStatusDTO result = upvoteService.getUpvoteStatus(objectId, objectType, userId);

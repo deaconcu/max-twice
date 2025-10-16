@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 import java.util.List;
 
 /**
@@ -20,6 +22,7 @@ import java.util.List;
 @RequestMapping("/api/v1")
 @Slf4j
 @RequiredArgsConstructor
+@Validated
 public class UsersController {
 
     private final UserService userService;
@@ -52,7 +55,10 @@ public class UsersController {
      * 映射: GET /user/{id} → GET /api/v1/users/{id}
      */
     @GetMapping("/users/{id}")
-    public ApiResponse<UserDTO> getUser(@PathVariable Long id) {
+    public ApiResponse<UserDTO> getUser(
+            @PathVariable @NotNull(message = "用户ID不能为空")
+            @Positive(message = "用户ID必须大于0")
+            Long id) {
         Long viewerId = StpUtil.getLoginIdAsLong();
         UserDTO userDTO = userService.getUser(id, viewerId);
         return ApiResponse.success(userDTO);
@@ -63,7 +69,7 @@ public class UsersController {
      * 映射: GET /user?name=xxx → GET /api/v1/users/search?name=xxx
      */
     @GetMapping("/users/search")
-    public ApiResponse<List<UserDTO>> searchUsers(@RequestParam String name) {
+    public ApiResponse<List<UserDTO>> searchUsers(@RequestParam @NotBlank(message = "搜索名称不能为空") String name) {
         List<UserDTO> users = userService.searchUsers(name);
         return ApiResponse.success(users);
     }
@@ -74,7 +80,7 @@ public class UsersController {
      */
     @PostMapping("/auth/register")
     public ApiResponse<Void> register(@RequestBody @Valid RegisterRequest request) {
-        userService.register(request.getUserName(), request.getEmail(), request.getPassword());
+        userService.register(request.getEmail(), request.getPassword());
         return ApiResponse.success();
     }
 
@@ -115,8 +121,8 @@ public class UsersController {
      */
     @GetMapping("/users/{userId}/posts")
     public ApiResponse<Object> getUserPosts(
-            @PathVariable Long userId, 
-            @RequestParam Long lastId,
+            @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
+            @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
             @RequestParam(required = false, defaultValue = "article") String type) {
         
         Object posts = postService.getUserPosts(userId, lastId, type);

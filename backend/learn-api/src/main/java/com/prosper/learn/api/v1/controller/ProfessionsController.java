@@ -10,6 +10,8 @@ import com.prosper.learn.domain.service.scheduler.ProfessionRankingScheduler;
 import com.prosper.learn.dto.request.*;
 import com.prosper.learn.dto.response.ProfessionDTO;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 import com.prosper.learn.dto.response.ApprovalResponseDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ import java.util.List;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class ProfessionsController {
 
     private final ProfessionService professionService;
@@ -36,11 +39,11 @@ public class ProfessionsController {
      */
     @GetMapping("/professions")
     public ApiResponse<Object> getProfessionsByPage(
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Byte state,
-            @RequestParam(required = false) Long lastId,
-            @RequestParam(required = false) Integer mainCategory,
-            @RequestParam(required = false) Integer subCategory) {
+            @RequestParam(required = false) @Min(value = 0, message = "页码不能小于0") Integer page,
+            @RequestParam(required = false) @Positive(message = "状态必须大于0") Byte state,
+            @RequestParam(required = false) @Min(value = 0, message = "最后ID不能小于0") Long lastId,
+            @RequestParam(required = false) @Positive(message = "主分类必须大于0") Integer mainCategory,
+            @RequestParam(required = false) @Positive(message = "子分类必须大于0") Integer subCategory) {
         
         if (page != null) {
             // 分页获取职业
@@ -72,7 +75,10 @@ public class ProfessionsController {
      * 映射: GET /profession/list/approved → GET /api/v1/professions/approved?lastId=123
      */
     @GetMapping("/professions/approved")
-    public ApiResponse<Object> getApprovedProfessions(@RequestParam(required = false, defaultValue = "0") Long lastId) {
+    public ApiResponse<Object> getApprovedProfessions(
+            @RequestParam(required = false, defaultValue = "0")
+            @Min(value = 0, message = "最后ID不能小于0")
+            Long lastId) {
         List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(ProfessionState.APPROVED, lastId);
         return ApiResponse.success(professionList);
     }
@@ -82,7 +88,10 @@ public class ProfessionsController {
      * 映射: GET /profession?id=123 → GET /api/v1/professions/{id}
      */
     @GetMapping("/professions/{id}")
-    public ApiResponse<ProfessionDTO> getProfession(@PathVariable Long id) {
+    public ApiResponse<ProfessionDTO> getProfession(
+            @PathVariable @NotNull(message = "职业ID不能为空")
+            @Positive(message = "职业ID必须大于0")
+            Long id) {
         ProfessionDTO profession = professionService.getById(id);
         return ApiResponse.success(profession);
     }
@@ -103,7 +112,11 @@ public class ProfessionsController {
      * 映射: PUT /profession → PUT /api/v1/professions/{id}
      */
     @PutMapping("/professions/{id}")
-    public ApiResponse<Object> updateProfession(@PathVariable Long id, @Valid @RequestBody UpdateProfessionRequest request) {
+    public ApiResponse<Object> updateProfession(
+            @PathVariable @NotNull(message = "职业ID不能为空")
+            @Positive(message = "职业ID必须大于0")
+            Long id,
+            @Valid @RequestBody UpdateProfessionRequest request) {
         professionService.update(id, request);
         return ApiResponse.success();
     }
@@ -114,7 +127,9 @@ public class ProfessionsController {
      */
     @PostMapping("/professions/{id}/approve")
     public ApiResponse<ApprovalResponseDTO> approveProfession(
-            @PathVariable Long id, 
+            @PathVariable @NotNull(message = "职业ID不能为空")
+            @Positive(message = "职业ID必须大于0")
+            Long id,
             @RequestBody @Valid OperateRequest request) {
         
         ApprovalResponseDTO response = switch (request.getAction().toLowerCase()) {
@@ -159,7 +174,10 @@ public class ProfessionsController {
      * 映射: DELETE /profession → DELETE /api/v1/professions/{id}
      */
     @DeleteMapping("/professions/{id}")
-    public ApiResponse<Object> deleteProfession(@PathVariable Long id) {
+    public ApiResponse<Object> deleteProfession(
+            @PathVariable @NotNull(message = "职业ID不能为空")
+            @Positive(message = "职业ID必须大于0")
+            Long id) {
         professionService.delete(id);
         return ApiResponse.success("删除成功");
     }
@@ -169,7 +187,10 @@ public class ProfessionsController {
      * 映射: GET /profession/hot → GET /api/v1/professions/hot?limit=10
      */
     @GetMapping("/professions/hot")
-    public ApiResponse<Object> getHotProfessions(@RequestParam(value = "limit", defaultValue = "10") Integer limit) {
+    public ApiResponse<Object> getHotProfessions(
+            @RequestParam(value = "limit", defaultValue = "10")
+            @Positive(message = "限制数量必须大于0")
+            Integer limit) {
         log.info("开始获取热门职业，limit: {}", limit);
         List<ProfessionDTO> hotProfessions = professionService.getHotProfessions(limit);
         log.info("成功获取热门职业数量: {}", hotProfessions.size());

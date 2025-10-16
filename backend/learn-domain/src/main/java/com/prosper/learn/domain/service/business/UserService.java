@@ -2,7 +2,7 @@ package com.prosper.learn.domain.service.business;
 
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.config.SystemProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.util.converter.UserConverter;
 import com.prosper.learn.domain.service.data.*;
@@ -15,6 +15,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -42,15 +43,17 @@ public class UserService {
     private final SystemProperties systemProperties;
     private final UserConverter userConverter;
     private final CourseService courseService;
-    
+
     // ========== 常量定义 ==========
-    
+
     private static final String DEFAULT_EMPTY_STRING = "";
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
         "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
     );
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = 
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final String BASE62_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final int USERNAME_RANDOM_LENGTH = 8;
     
     // ========== 公共方法 Query ==========
 
@@ -112,7 +115,7 @@ public class UserService {
         validateUserExists(userId);
 
         UserProfileDO userProfileDO = userProfileDataService.getById(userId);
-        if (userProfileDO == null || isEmptySubscription(userProfileDO.getSubscription())) {
+        if (userProfileDO == null || !StringUtils.hasText(userProfileDO.getSubscription())) {
             return new ArrayList<>();
         }
 
@@ -138,8 +141,9 @@ public class UserService {
      * 用户注册
      */
     @Transactional
-    public void register(String userName, String email, String password) {
-        validateRegistrationParams(userName, email, password);
+    public void register(String email, String password) {
+        validateEmail(email);
+        validatePassword(password);
 
         UserDO existingUser = userDataService.getByEmail(email);
         if (existingUser != null) {
@@ -147,7 +151,7 @@ public class UserService {
         }
 
         UserDO user = new UserDO();
-        user.setName(userName);
+        user.setName("MT_" + generateRandomBase62(USERNAME_RANDOM_LENGTH));
         user.setPassword(Utils.md5(password));
         user.setEmail(email);
         user.setBiography("");
@@ -168,15 +172,19 @@ public class UserService {
     public UserDTO validateLogin(String email, String password) {
         validateEmail(email);
         validatePassword(password);
-        
+
         UserDO userDO = userDataService.getByEmail(email);
         if (userDO == null) {
             throw ErrorCode.USER_NOT_FOUND.exception();
         }
-        
+
         // TODO: 密码验证
         // if (!userDO.getPassword().equals(Utils.md5(password))) throw ErrorCode.USER_PASSWORD_WRONG.exception();
-        
+
+        if (!userDO.getEmailValidated()) {
+            throw ErrorCode.USER_EMAIL_NOT_VALIDATED.exception();
+        }
+
         UserDTO userDTO = toDTOV2(userDO);
         return userDTO;
     }
@@ -276,7 +284,7 @@ public class UserService {
         validateUserId(userId);
 
         UserProfileDO userProfileDO = userProfileDataService.getById(userId);
-        if (userProfileDO == null || isEmptySubscription(userProfileDO.getSubscription())) {
+        if (userProfileDO == null || !StringUtils.hasText(userProfileDO.getSubscription())) {
             throw ErrorCode.USER_COURSE_NOT_SUBSCRIBED.exception();
         }
         
@@ -459,68 +467,47 @@ public class UserService {
     }
     
     private void validateEmail(String email) {
-        if (email == null || email.trim().isEmpty()) {
+        if (!StringUtils.hasText(email)) {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }
         if (!EMAIL_PATTERN.matcher(email).matches()) {
             throw ErrorCode.USER_INVALID_EMAIL_FORMAT.exception();
         }
     }
-    
+
     private void validateUsername(String username) {
-        if (username == null || username.trim().isEmpty()) {
+        if (!StringUtils.hasText(username)) {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }
         if (username.length() > systemProperties.getUser().getMaxUsernameLength()) {
             throw ErrorCode.USER_INVALID_USERNAME_LENGTH.exception();
         }
     }
-    
+
     private void validatePassword(String password) {
         if (password == null || password.length() < systemProperties.getUser().getMinPasswordLength()) {
             throw ErrorCode.USER_INVALID_PASSWORD_LENGTH.exception();
         }
     }
-    
+
     private void validateSearchName(String name) {
-        if (name == null || name.trim().isEmpty()) {
+        if (!StringUtils.hasText(name)) {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }
     }
-    
+
     private void validateVerificationCode(String code) {
-        if (code == null || code.trim().isEmpty()) {
+        if (!StringUtils.hasText(code)) {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }
     }
-    
-    private void validateDateTimeString(String dateTimeStr) {
-        if (dateTimeStr == null || dateTimeStr.trim().isEmpty()) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-        try {
-            LocalDateTime.parse(dateTimeStr, DATE_TIME_FORMATTER);
-        } catch (Exception e) {
-            throw ErrorCode.INVALID_DATE.exception();
-        }
-    }
-    
+
     private void validateSubscriptionString(String subscription) {
         if (subscription == null) {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }
     }
-    
-    private void validateRegistrationParams(String userName, String email, String password) {
-        validateUsername(userName);
-        validateEmail(email);
-        validatePassword(password);
-    }
-    
-    private boolean isEmptySubscription(String subscription) {
-        return subscription == null || subscription.trim().isEmpty();
-    }
-    
+
     private List<Long> parseSubscriptionIds(String subscription) {
         try {
             return Arrays.stream(subscription.split(","))
@@ -585,7 +572,7 @@ public class UserService {
     
     private void setUserSubscriptions(UserDTOV2 userDTOV2, Long userId) {
         UserProfileDO userProfileDO = userProfileDataService.getById(userId);
-        if (userProfileDO != null && !isEmptySubscription(userProfileDO.getSubscription())) {
+        if (userProfileDO != null && StringUtils.hasText(userProfileDO.getSubscription())) {
             try {
                 List<Long> ids = parseSubscriptionIds(userProfileDO.getSubscription());
                 List<CourseDO> courseDOList = courseDataService.getByIds(ids);
@@ -631,5 +618,21 @@ public class UserService {
         followeeDTO.setBiography(userDO.getBiography());
         followeeDTO.setCreatedAt(Utils.getTimeString(followDO.getCreatedAt()));
         return followeeDTO;
+    }
+
+    /**
+     * 生成随机Base62字符串
+     * Base62: 0-9a-zA-Z (62个字符)
+     *
+     * @param length 字符串长度
+     * @return 随机Base62字符串
+     */
+    private String generateRandomBase62(int length) {
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(BASE62_CHARS.charAt(random.nextInt(62)));
+        }
+        return sb.toString();
     }
 }

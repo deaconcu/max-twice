@@ -6,6 +6,8 @@ import com.prosper.learn.domain.service.business.CommentService;
 import com.prosper.learn.dto.request.CreateCommentRequest;
 import com.prosper.learn.dto.response.CommentDTO;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 import com.prosper.learn.persistence.dataobject.CommentDO;
 import lombok.RequiredArgsConstructor;
 import com.prosper.learn.api.v1.annotation.JsonParam;
@@ -20,6 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
+@Validated
 public class CommentsController {
 
     private final CommentService commentService;
@@ -38,12 +41,14 @@ public class CommentsController {
     /**
      * 获取对象评论
      * 映射: GET /comment → GET /api/v1/comments?objectId=123&type=1&offsetId=0
+     * TODO 要改成按score排序
      */
     @GetMapping("/comments")
     public ApiResponse<List<CommentDTO>> getCommentsByObject(
-            @RequestParam Long objectId, 
-            @RequestParam Integer objectType,
-            @RequestParam Long offsetId) {
+            @RequestParam @NotNull(message = "对象ID不能为空") @Positive(message = "对象ID必须大于0") Long objectId,
+            // TODO @Positive(message = "对象类型必须大于0")
+            @RequestParam @NotNull(message = "对象类型不能为空") Integer objectType,
+            @RequestParam @NotNull(message = "偏移ID不能为空") @Min(value = 0, message = "偏移ID不能小于0") Long offsetId) {
         
         Long userId = StpUtil.getLoginIdAsLong();
         List<CommentDTO> comments = commentService.getCommentsByObject(objectId, objectType, offsetId, userId);
@@ -53,11 +58,12 @@ public class CommentsController {
     /**
      * 获取评论回复
      * 映射: GET /comment/{id}/reply → GET /api/v1/comments/{id}/replies?offsetId=0
+     * TODO 要改成按score排序
      */
     @GetMapping("/comments/{id}/replies")
     public ApiResponse<List<CommentDTO>> getCommentReplies(
-            @PathVariable Long id, 
-            @RequestParam Long offsetId) {
+            @PathVariable @NotNull(message = "评论ID不能为空") @Positive(message = "评论ID必须大于0") Long id,
+            @RequestParam @NotNull(message = "偏移ID不能为空") @Min(value = 0, message = "偏移ID不能小于0") Long offsetId) {
         
         Long userId = StpUtil.getLoginIdAsLong();
         List<CommentDTO> replies = commentService.getCommentReplies(id, offsetId, userId);
@@ -80,8 +86,8 @@ public class CommentsController {
      */
     @PutMapping("/admin/comments/{id}/approve")
     public ApiResponse<CommentDTO> approveComment(
-            @PathVariable Long id, 
-            @JsonParam("approve") Boolean approve) {
+            @PathVariable @NotNull(message = "评论ID不能为空") @Positive(message = "评论ID必须大于0") Long id,
+            @RequestParam Boolean approve) {
         CommentDTO result = commentService.approveComment(id, approve);
         return ApiResponse.success(result);
     }

@@ -6,6 +6,8 @@ import com.prosper.learn.domain.service.business.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.prosper.learn.api.v1.annotation.JsonParam;
+import jakarta.validation.constraints.*;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1")
 @Slf4j
 @RequiredArgsConstructor
+@Validated
 public class SubscriptionsController {
 
     private final UserService userService;
@@ -25,7 +28,10 @@ public class SubscriptionsController {
      * 映射: GET /user/subscription → GET /api/v1/users/{userId}/subscriptions
      */
     @GetMapping("/users/{userId}/subscriptions")
-    public ApiResponse<Object> getUserSubscriptions(@PathVariable Long userId) {
+    public ApiResponse<Object> getUserSubscriptions(
+            @PathVariable @NotNull(message = "用户ID不能为空")
+            @Positive(message = "用户ID必须大于0")
+            Long userId) {
         Object subscriptions = userService.getUserSubscriptions(userId);
         return ApiResponse.success(subscriptions);
     }
@@ -35,7 +41,10 @@ public class SubscriptionsController {
      * 映射: POST /user/subscription → POST /api/v1/users/current/subscriptions
      */
     @PostMapping("/users/current/subscriptions")
-    public ApiResponse<Object> subscribe(@JsonParam("courseId") Long courseId) {
+    public ApiResponse<Object> subscribe(
+            @JsonParam("courseId") @NotNull(message = "课程ID不能为空")
+            @Positive(message = "课程ID必须大于0")
+            Long courseId) {
         long userId = StpUtil.getLoginIdAsLong();
         Object result = userService.subscribe(userId, courseId);
         return ApiResponse.success(result);
@@ -46,7 +55,9 @@ public class SubscriptionsController {
      * 映射: PUT /user/subscription → PUT /api/v1/users/current/subscriptions
      */
     @PutMapping("/users/current/subscriptions")
-    public ApiResponse<Object> updateSubscriptions(@JsonParam("subscription") String subscription) {
+    public ApiResponse<Object> updateSubscriptions(
+            @JsonParam("subscription") @NotBlank(message = "订阅内容不能为空")
+            String subscription) {
         long userId = StpUtil.getLoginIdAsLong();
         Object result = userService.updateSubscriptions(userId, subscription);
         return ApiResponse.success(result);
@@ -57,7 +68,10 @@ public class SubscriptionsController {
      * 映射: DELETE /user/subscription → DELETE /api/v1/users/current/subscriptions/{courseId}
      */
     @DeleteMapping("/users/current/subscriptions/{courseId}")
-    public ApiResponse<Object> unsubscribe(@PathVariable Long courseId) {
+    public ApiResponse<Object> unsubscribe(
+            @PathVariable @NotNull(message = "课程ID不能为空")
+            @Positive(message = "课程ID必须大于0")
+            Long courseId) {
         long userId = StpUtil.getLoginIdAsLong();
         Object result = userService.unsubscribe(userId, courseId);
         return ApiResponse.success(result);

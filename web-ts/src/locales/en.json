@@ -54,6 +54,10 @@
     "error": "Error",
     "warning": "Warning"
   },
+  "error": {
+    "loadFailed": "Load failed",
+    "operationFailed": "Operation failed"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "learning": "Learning",
@@ -88,7 +92,6 @@
       "learning": "Currently Learning",
       "statistics": "Statistics",
       "subscriptions": "My Subscribed Courses",
-      "following": "People I Follow",
       "myContents": "My Created Contents",
       "myArticles": "My Created Articles",
       "name": "Name",
