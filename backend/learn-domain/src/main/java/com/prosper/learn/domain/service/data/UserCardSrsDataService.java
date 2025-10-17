@@ -332,20 +332,22 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
     /**
      * 创建新的SRS状态对象
      */
-    public UserCardSrsDO createNewSrsState(Long userId, Long cardId, Long nodeId, Integer deckVersion, Long cardVersionId) {
+    public UserCardSrsDO createNewSrsState(
+            Long userId, Long cardId, Long deckId, Long nodeId, Integer deckVersion, Long cardVersionId) {
         LocalDateTime now = LocalDateTime.now();
-        UserCardSrsDO state = new UserCardSrsDO();
-        state.setUserId(userId);
-        state.setCardId(cardId);
-        state.setNodeId(nodeId);
-        state.setDeckVersion(deckVersion);
-        state.setCardVersionId(cardVersionId);
-        state.setReviewDueAt(now); // 立即可复习
-        state.setIntervalDays(0);
-        state.setEaseFactor(new java.math.BigDecimal("2.5"));
-        state.setRepetitions(0);
-        state.setLapseCount(0);
-        return state;
+        UserCardSrsDO srs = new UserCardSrsDO();
+        srs.setUserId(userId);
+        srs.setCardId(cardId);
+        srs.setDeckId(deckId);
+        srs.setNodeId(nodeId);
+        srs.setDeckVersion(deckVersion);
+        srs.setCardVersionId(cardVersionId);
+        srs.setReviewDueAt(now); // 立即可复习
+        srs.setIntervalDays(0);
+        srs.setEaseFactor(new java.math.BigDecimal("2.5"));
+        srs.setRepetitions(0);
+        srs.setLapseCount(0);
+        return srs;
     }
 
     /**

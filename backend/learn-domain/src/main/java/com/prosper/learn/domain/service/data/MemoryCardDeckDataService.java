@@ -237,6 +237,13 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     }
 
     /**
+     * 根据帖子获取卡片组列表 - ID分页
+     */
+    public List<MemoryCardDeckDO> getListByPostWithIdPaging(long postId, int state, long lastId, int limit) {
+        return memoryCardDeckMapper.getListByPostWithIdPaging(postId, state, lastId, limit);
+    }
+
+    /**
      * 根据帖子获取卡片组列表 - Keyset分页
      */
     public List<MemoryCardDeckDO> getListByPostKeyset(long postId, double lastScore, long lastId, int state, int limit) {
@@ -248,6 +255,13 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
      */
     public List<MemoryCardDeckDO> getListByCreator(long creatorId, int state, int limit) {
         return memoryCardDeckMapper.getListByCreator(creatorId, state, limit);
+    }
+
+    /**
+     * 根据创建者获取卡片组列表 - ID分页
+     */
+    public List<MemoryCardDeckDO> getListByCreatorWithIdPaging(long creatorId, int state, long lastId, int limit) {
+        return memoryCardDeckMapper.getListByCreatorWithIdPaging(creatorId, state, lastId, limit);
     }
 
     /**
@@ -272,6 +286,41 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     }
 
     /**
+     * 根据状态获取卡片组列表 - ID分页
+     */
+    public List<MemoryCardDeckDO> getListByStateWithIdPaging(int state, long lastId, int limit) {
+        return memoryCardDeckMapper.getListByStateWithIdPaging(state, lastId, limit);
+    }
+
+    /**
+     * 根据帖子获取卡片组列表 - 审核专用
+     */
+    public List<MemoryCardDeckDO> getListByPostForReview(long postId, int state, int limit) {
+        return memoryCardDeckMapper.getListByPostForReview(postId, state, limit);
+    }
+
+    /**
+     * 根据创建者获取卡片组列表 - 审核专用
+     */
+    public List<MemoryCardDeckDO> getListByCreatorForReview(long creatorId, int state, int limit) {
+        return memoryCardDeckMapper.getListByCreatorForReview(creatorId, state, limit);
+    }
+
+    /**
+     * 根据状态获取卡片组列表 - 审核专用
+     */
+    public List<MemoryCardDeckDO> getListByStateForReview(int state, int limit) {
+        return memoryCardDeckMapper.getListByStateForReview(state, limit);
+    }
+
+    /**
+     * 根据帖子和创建者获取卡片组列表 - 审核专用
+     */
+    public List<MemoryCardDeckDO> getListByPostAndCreatorForReview(long postId, long creatorId, int state, int limit) {
+        return memoryCardDeckMapper.getListByPostAndCreatorForReview(postId, creatorId, state, limit);
+    }
+
+    /**
      * 统计帖子下的卡片组数量
      */
     public int countByPost(long postId, int state) {
@@ -290,6 +339,13 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
      */
     public List<MemoryCardDeckDO> getListByPostAndCreator(long postId, long creatorId, int state, int limit) {
         return memoryCardDeckMapper.getListByPostAndCreator(postId, creatorId, state, limit);
+    }
+
+    /**
+     * 根据帖子和创建者获取卡片组列表 - ID分页
+     */
+    public List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPaging(long postId, long creatorId, int state, long lastId, int limit) {
+        return memoryCardDeckMapper.getListByPostAndCreatorWithIdPaging(postId, creatorId, state, lastId, limit);
     }
 
     /**

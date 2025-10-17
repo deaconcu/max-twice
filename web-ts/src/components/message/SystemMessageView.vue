@@ -4,6 +4,7 @@
   import { MessageType, ObjectType, VoteType } from '@/types/enums'
   import type { User } from '@/types/user'
   import type { Node } from '@/types/node'
+  import { getUserDisplayName } from '@/utils/common'
 
   const { t } = useI18n()
 
@@ -240,9 +241,7 @@
                         <div class="flex-grow-1">
                           <!-- 关注消息 -->
                           <div v-if="message.type == MessageType.FOLLOW" class="message-text">
-                      <a :href="`/user?id=${message.follower?.id}`" target="_blank">{{
-                        message.follower?.name
-                      }}</a>
+                      <a :href="`/user?id=${message.follower?.id}`" target="_blank">{{ getUserDisplayName(message.follower) }}</a>
                       关注了您
                           </div>
 
@@ -284,9 +283,7 @@
 
                           <!-- 邀请回答消息 -->
                           <div v-if="message.type == MessageType.INVITE" class="message-text">
-                      <a :href="`/user?id=${message.inviter?.id}`" target="_blank">{{
-                        message.inviter?.name
-                      }}</a>
+                      <a :href="`/user?id=${message.inviter?.id}`" target="_blank">{{ getUserDisplayName(message.inviter) }}</a>
                       邀请您给目录
                       <a :href="`/read?nodeId=${message.node?.id}`" target="_blank">{{
                         message.node?.name
@@ -296,18 +293,14 @@
 
                           <!-- 评论相关消息 -->
                           <div v-if="message.type == MessageType.NODE_COMMENT" class="message-text">
-                      <a :href="`/user?id=${message.commenter?.id}`" target="_blank">{{
-                        message.commenter?.name
-                      }}</a>
+                      <a :href="`/user?id=${message.commenter?.id}`" target="_blank">{{ getUserDisplayName(message.commenter) }}</a>
                       评论了您创建的目录
                       <a :href="`/read?commentId=${message.commentId}`" target="_blank">{{
                         message.node?.name
                       }}</a>
                           </div>
                           <div v-if="message.type == MessageType.POST_COMMENT" class="message-text">
-                      <a :href="`/user?id=${message.commenter?.id}`" target="_blank">{{
-                        message.commenter?.name
-                      }}</a>
+                      <a :href="`/user?id=${message.commenter?.id}`" target="_blank">{{ getUserDisplayName(message.commenter) }}</a>
                       评论了您在目录
                       <a :href="`/read?commentId=${message.commentId}`" target="_blank">{{
                         message.node?.name
@@ -318,9 +311,7 @@
                             v-if="message.type == MessageType.REPLY_NODE_COMMENT"
                             class="message-text"
                           >
-                      <a :href="`/user?id=${message.commenter?.id}`" target="_blank">{{
-                        message.commenter?.name
-                      }}</a>
+                      <a :href="`/user?id=${message.commenter?.id}`" target="_blank">{{ getUserDisplayName(message.commenter) }}</a>
                       回复了您在目录
                       <a :href="`/read?commentId=${message.commentId}`" target="_blank">{{
                         message.node?.name

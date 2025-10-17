@@ -8,6 +8,7 @@
   import PostReview from '@/components/admin/PostReview.vue'
   import CommentReview from '@/components/admin/CommentReview.vue'
   import MemoryCardReview from '@/components/admin/MemoryCardReview.vue'
+  import UserManagement from '@/components/admin/UserManagement.vue'
 
   const { t } = useI18n()
   const tab = ref<string>('system-config')
@@ -49,6 +50,20 @@
             prepend-icon="mdi-cog-sync"
             :text="t('admin.systemOperations')"
             value="system-operations"
+            class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"
+          ></v-tab>
+
+          <div class="px-3 py-3">
+            <div class="text-caption text-grey-darken-1 font-weight-medium mb-2">
+              用户管理
+            </div>
+            <v-divider class="border-opacity-40"></v-divider>
+          </div>
+
+          <v-tab
+            prepend-icon="mdi-account-multiple"
+            text="用户管理"
+            value="user-management"
             class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"
           ></v-tab>
 
@@ -135,6 +150,11 @@
         <!-- 记忆卡片审核 -->
         <v-card v-if="tab == 'memory-card-review'" flat class="pa-6" rounded="lg">
           <MemoryCardReview />
+        </v-card>
+
+        <!-- 用户管理 -->
+        <v-card v-if="tab == 'user-management'" flat class="pa-6" rounded="lg">
+          <UserManagement />
         </v-card>
       </div>
     </div>

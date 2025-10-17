@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import type { Ref } from 'vue'
-import { userServiceV1 } from '@/services/api/v1/apiServiceV1'
 import type { User } from '@/types/user'
 import type { TabItem } from '@/types/common'
+import { getUserDisplayName } from '@/utils/common'
 
 interface UserStats {
   followeeCount: number
@@ -16,7 +16,7 @@ interface UserStats {
 const props = defineProps<{
   selectedTab?: string
   items: TabItem[]
-  userId?: number | null
+  user?: User
 }>()
 
 // Emits
@@ -26,8 +26,7 @@ const emit = defineEmits<{
 }>()
 
 // 用户数据
-const user: Ref<User> = ref()
-const loading: Ref<boolean> = ref(true)
+const loading: Ref<boolean> = ref(false)
 const error: Ref<string | null> = ref(null)
 
 // 统计数据
@@ -38,36 +37,6 @@ const stats: Ref<UserStats> = ref({
   contentCount: 0,
 })
 
-// 加载用户信息
-const loadUser = async (): Promise<void> => {
-  try {
-    loading.value = true
-    error.value = null
-
-    let response: any
-    if (props.userId) {
-      // 加载指定用户信息
-      response = await userServiceV1.getUser(props.userId)
-    } else {
-      // 加载当前用户信息
-      response = await userServiceV1.getCurrentUser()
-    }
-
-    if (response.code === 200) {
-      user.value = response.data
-      console.log('user:', user.value)
-      // 可以在这里加载统计数据
-      // await loadUserStats();
-    } else {
-      error.value = '加载用户信息失败'
-    }
-  } catch (err) {
-    console.error('Error loading user:', err)
-    error.value = '加载用户信息失败'
-  } finally {
-    loading.value = false
-  }
-}
 
 // 处理标签选择
 const handleTabSelect = (value: string): void => {
@@ -77,8 +46,11 @@ const handleTabSelect = (value: string): void => {
 
 // 获取用户头像字母
 const getUserInitial = (): string => {
-  return user.value.name ? user.value.name.charAt(0).toUpperCase() : 'U'
+  return props.user?.name ? props.user.name.charAt(0).toUpperCase() : 'U'
 }
+
+// 用户显示名称
+const displayName = computed(() => getUserDisplayName(props.user))
 
 // 用户统计数据 (模拟数据，实际应该从 API 获取)
 const userStats = computed(() => ({
@@ -88,17 +60,6 @@ const userStats = computed(() => ({
   subscriptions: stats.value.subscriptionCount || 25,
 }))
 
-onMounted(() => {
-  loadUser()
-})
-
-// 监听 userId 变化
-watch(
-  () => props.userId,
-  () => {
-    loadUser()
-  }
-)
 </script>
 
 <template>
@@ -118,7 +79,7 @@ watch(
 
         <div v-else class="text-center mb-4">
           <!-- 用户头像 - 使用真实头像或首字母 -->
-          <v-avatar v-if="user.avatar" size="64" class="mb-3">
+          <v-avatar v-if="user?.avatar" size="64" class="mb-3">
             <v-img :src="user.avatar" :alt="user.name"></v-img>
           </v-avatar>
           <v-avatar v-else color="primary" size="64" class="mb-3">
@@ -126,13 +87,13 @@ watch(
           </v-avatar>
 
           <h3 class="text-h6 font-weight-bold text-grey-darken-4 mb-1">
-            {{ user.name || '未登录用户' }}
+            {{ displayName }}
           </h3>
           <p class="text-body-2 text-grey-darken-2 mb-2">
-            {{ user.email || '请登录账户' }}
+            {{ user?.email || '请登录账户' }}
           </p>
           <p class="text-caption text-grey-darken-1">
-            {{ user.biography || '这个人很懒，什么都没留下' }}
+            {{ user?.biography || '这个人很懒，什么都没留下' }}
           </p>
         </div>
 

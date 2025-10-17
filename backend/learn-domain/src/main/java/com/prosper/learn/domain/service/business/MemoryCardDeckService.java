@@ -337,46 +337,44 @@ public class MemoryCardDeckService {
      * 获取卡片组审核列表 - 包含卡片内容
      */
     public KeysetPageResponse<DeckDetailDTO> getDecksForReview(
-            Long postId, Long creatorId, Integer state, String sortBy, String sortOrder,
-            Double lastScore, Long lastId, Integer limit, Long userId) {
-        
-        // 参数验证
-        if (limit == null || limit <= 0) limit = 10;
-        if (limit > 50) limit = 50;
+            Long postId, Long creatorId, Integer state, Long lastId, Long userId) {
+
+        // 固定每页数量
+        int limit = 20;
 
         // 默认查询待审核状态的卡片组
         int defaultState = state != null ? state : MemoryCardDeckState.PENDING.value();
 
         List<MemoryCardDeckDO> deckList;
-        
-        // 根据查询条件组合获取数据
+
+        // 根据查询条件组合获取数据 - 统一使用ID分页
         if (postId != null && creatorId != null) {
             // 同时按帖子和创建者查询
-            if (lastScore != null && lastId != null) {
-                deckList = deckDataService.getListByPostAndCreatorKeyset(postId, creatorId, lastScore, lastId, defaultState, limit + 1);
+            if (lastId != null) {
+                deckList = deckDataService.getListByPostAndCreatorWithIdPaging(postId, creatorId, defaultState, lastId, limit + 1);
             } else {
-                deckList = deckDataService.getListByPostAndCreator(postId, creatorId, defaultState, limit + 1);
+                deckList = deckDataService.getListByPostAndCreatorForReview(postId, creatorId, defaultState, limit + 1);
             }
         } else if (postId != null) {
             // 只按帖子查询
-            if (lastScore != null && lastId != null) {
-                deckList = deckDataService.getListByPostKeyset(postId, lastScore, lastId, defaultState, limit + 1);
+            if (lastId != null) {
+                deckList = deckDataService.getListByPostWithIdPaging(postId, defaultState, lastId, limit + 1);
             } else {
-                deckList = deckDataService.getListByPost(postId, defaultState, limit + 1);
+                deckList = deckDataService.getListByPostForReview(postId, defaultState, limit + 1);
             }
         } else if (creatorId != null) {
             // 只按创建者查询
-            if (lastScore != null && lastId != null) {
-                deckList = deckDataService.getListByCreatorKeyset(creatorId, lastScore, lastId, defaultState, limit + 1);
+            if (lastId != null) {
+                deckList = deckDataService.getListByCreatorWithIdPaging(creatorId, defaultState, lastId, limit + 1);
             } else {
-                deckList = deckDataService.getListByCreator(creatorId, defaultState, limit + 1);
+                deckList = deckDataService.getListByCreatorForReview(creatorId, defaultState, limit + 1);
             }
         } else {
             // 按状态查询，管理员审核页面
-            if (lastScore != null && lastId != null) {
-                deckList = deckDataService.getListByStateKeyset(lastScore, lastId, defaultState, limit + 1);
+            if (lastId != null) {
+                deckList = deckDataService.getListByStateWithIdPaging(defaultState, lastId, limit + 1);
             } else {
-                deckList = deckDataService.getListByState(defaultState, limit + 1);
+                deckList = deckDataService.getListByStateForReview(defaultState, limit + 1);
             }
         }
 
@@ -426,11 +424,10 @@ public class MemoryCardDeckService {
         KeysetPageResponse<DeckDetailDTO> response = new KeysetPageResponse<>();
         response.setItems(dtoList);
         response.setHasMore(hasMore);
-        
+
         if (hasMore && !deckList.isEmpty()) {
             MemoryCardDeckDO lastDeck = deckList.get(deckList.size() - 1);
             KeysetPageResponse.NextCursor nextCursor = new KeysetPageResponse.NextCursor();
-            nextCursor.setLastScore(lastDeck.getScore());
             nextCursor.setLastId(lastDeck.getId());
             response.setNextCursor(nextCursor);
         }
@@ -843,7 +840,7 @@ public class MemoryCardDeckService {
                 if (!userStateMap.containsKey(card.getId())) {
                     // 新增的卡片：创建SRS学习记录
                     UserCardSrsDO newState = userCardSrsDataService.createNewSrsState(
-                        userId, card.getId(), nodeId, deck.getVersion(), card.getCurrentVersionId());
+                        userId, card.getId(), nodeId, deck.getId(), deck.getVersion(), card.getCurrentVersionId());
                     newSrsStates.add(newState);
                 }
             }
@@ -881,7 +878,7 @@ public class MemoryCardDeckService {
                     if (card != null) {
                         // 新增的卡片：创建SRS学习记录
                         UserCardSrsDO newState = userCardSrsDataService.createNewSrsState(
-                            userId, card.getId(), nodeId, deck.getVersion(), card.getCurrentVersionId());
+                            userId, card.getId(), nodeId, deck.getId(), deck.getVersion(), card.getCurrentVersionId());
                         newSrsStates.add(newState);
                     }
                 }

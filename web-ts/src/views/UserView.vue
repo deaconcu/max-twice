@@ -11,11 +11,53 @@ import UserFollowingTab from '@/components/user/UserFollowingTab.vue'
 import SubscriptionTab from '@/components/user/SubscriptionTab.vue'
 import UserSidebar from '@/components/user/UserSidebar.vue'
 import RightSidebar from '@/components/common/RightSidebar.vue'
+import ErrorPage from '@/components/common/ErrorPage.vue'
 import type { TabItem, ComponentProps } from '@/types/common'
+import type { User } from '@/types/user'
+import { userServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { USER_BANNED } from '@/constants/errorCodes'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
+
+const user: Ref<User | null> = ref(null)
+const loading = ref(true)
+const showError = ref(false)
+const errorCode = ref(0)
+const errorMessage = ref('')
+
+const loadUser = async () => {
+  try {
+    loading.value = true
+    const userId = parseInt(route.query.id as string)
+    if (!userId) return
+
+    const response = await userServiceV1.getUser(userId)
+    if (response.code === 200) {
+      user.value = response.data
+    } else if (response.code === USER_BANNED) {
+      showError.value = true
+      errorCode.value = USER_BANNED
+      errorMessage.value = '该用户已被屏蔽'
+    } else {
+      showError.value = true
+      errorCode.value = response.code
+      errorMessage.value = response.message || '加载用户信息失败'
+    }
+  } catch (error) {
+    console.error('Error loading user:', error)
+    showError.value = true
+    errorCode.value = 500
+    errorMessage.value = '加载用户信息失败'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadUser()
+})
 
 // 标签页配置（User页面不包含stats）
 const items: Ref<TabItem[]> = ref([
@@ -88,7 +130,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-container fluid>
+  <ErrorPage
+    v-if="showError"
+    :error-code="errorCode"
+    :error-message="errorMessage"
+    :show-retry="false"
+    @back-home="router.push('/')"
+  />
+  <v-container v-else-if="!loading && user" fluid>
     <v-row class="mt-2">
       <!-- 页面头部 -->
       <v-col cols="12" class="mb-4">
@@ -124,7 +173,7 @@ onMounted(() => {
       <UserSidebar
         v-model:selected-tab="selected"
         :items="items"
-        :user-id="Number(route.query.id as string)"
+        :user="user"
         @tab-change="handleTabChange"
       />
 

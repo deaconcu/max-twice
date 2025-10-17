@@ -72,26 +72,20 @@ const loadDecks = async (reset = false): Promise<void> => {
   }
 }
 
-const loadMore = async ({ done }: { done: (status: string) => void }): Promise<void> => {
-  if (loading.value || !hasMore.value) {
-    done('empty')
-    return
+const loadMore = (): void => {
+  if (!loading.value && hasMore.value) {
+    loadDecks(false)
   }
-  
-  await loadDecks(false)
-  done(hasMore.value ? 'ok' : 'empty')
 }
 
 const switchTab = (tab: 'pending' | 'reviewed' | 'blocked') => {
   activeTab.value = tab
-  deckList.value = []
   lastId.value = undefined
   hasMore.value = true
   loadDecks(true)
 }
 
 const applyFilter = () => {
-  deckList.value = []
   lastId.value = undefined
   hasMore.value = true
   loadDecks(true)
@@ -277,53 +271,26 @@ onMounted(() => {
         <v-tab value="pending" @click="switchTab('pending')">
           <v-icon icon="mdi-clock-outline" size="16" class="mr-2"></v-icon>
           待审核
-          <v-chip 
-            v-if="activeTab === 'pending'" 
-            size="x-small" 
-            color="orange" 
-            variant="flat" 
-            class="ml-2"
-          >
-            {{ activeTab === 'pending' ? deckList.length : 0 }}
-          </v-chip>
         </v-tab>
         <v-tab value="reviewed" @click="switchTab('reviewed')">
           <v-icon icon="mdi-check-circle-outline" size="16" class="mr-2"></v-icon>
           已审核
-          <v-chip 
-            v-if="activeTab === 'reviewed'" 
-            size="x-small" 
-            color="success" 
-            variant="flat" 
-            class="ml-2"
-          >
-            {{ activeTab === 'reviewed' ? deckList.length : 0 }}
-          </v-chip>
         </v-tab>
         <v-tab value="blocked" @click="switchTab('blocked')">
           <v-icon icon="mdi-block-helper" size="16" class="mr-2"></v-icon>
           已屏蔽
-          <v-chip 
-            v-if="activeTab === 'blocked'" 
-            size="x-small" 
-            color="error" 
-            variant="flat" 
-            class="ml-2"
-          >
-            {{ activeTab === 'blocked' ? deckList.length : 0 }}
-          </v-chip>
         </v-tab>
       </v-tabs>
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="text-center py-12">
+    <div v-if="loading && deckList.length === 0" class="text-center py-12">
       <v-progress-circular indeterminate color="purple" size="48"></v-progress-circular>
       <p class="text-body-1 text-grey-darken-1 mt-4">正在加载待审核卡片组...</p>
     </div>
 
     <!-- 空状态 -->
-    <div v-else-if="deckList.length === 0" class="text-center py-12">
+    <div v-else-if="!loading && deckList.length === 0" class="text-center py-12">
       <v-icon
         icon="mdi-cards-outline"
         size="48"
@@ -334,14 +301,19 @@ onMounted(() => {
     </div>
 
     <!-- 卡片组列表 -->
-    <div v-else>
-      <v-infinite-scroll
-        @load="loadMore"
-        :loading="loading"
-        mode="intersect"
-        side="end"
+    <div v-if="deckList.length > 0">
+      <div
+        v-for="deck in deckList"
+        :key="deck.id"
+        class="mb-4"
+        v-intersect="{
+          handler: (isIntersecting) => {
+            if (isIntersecting && deck === deckList[deckList.length - 1] && hasMore && !loading) {
+              loadMore()
+            }
+          }
+        }"
       >
-        <div v-for="deck in deckList" :key="deck.id" class="mb-4">
           <v-card flat class="border rounded-lg pa-4" hover>
             <div class="d-flex align-start">
               <!-- 状态和操作区域 -->
@@ -500,9 +472,8 @@ onMounted(() => {
                 </div>
               </div>
             </div>
-          </v-card>
-        </div>
-      </v-infinite-scroll>
+        </v-card>
+      </div>
     </div>
   </div>
 </template>

@@ -71,13 +71,17 @@ public class CommentsController {
     }
 
     /**
-     * 获取待审核评论
-     * 映射: GET /comment/censor → GET /api/v1/admin/comments/pending
+     * 获取指定状态的评论（分页）
+     * 映射: GET /api/v1/admin/comments/{state}?offsetId=0
+     * state: pending(待审核), approved(已通过), rejected(已拒绝)
      */
-    @GetMapping("/admin/comments/pending")
-    public ApiResponse<List<CommentDTO>> getPendingComments() {
-        List<CommentDTO> pendingComments = commentService.getPendingComments();
-        return ApiResponse.success(pendingComments);
+    @GetMapping("/admin/comments/{state}")
+    public ApiResponse<List<CommentDTO>> getCommentsByState(
+            @PathVariable String state,
+            @RequestParam(required = false) @Min(value = 0, message = "偏移ID不能小于0") Long offsetId) {
+        Long actualOffsetId = (offsetId == null) ? 0L : offsetId;
+        List<CommentDTO> comments = commentService.getCommentsByState(state, actualOffsetId);
+        return ApiResponse.success(comments);
     }
 
     /**

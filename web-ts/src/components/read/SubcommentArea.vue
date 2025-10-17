@@ -174,6 +174,7 @@ const sendComment = (): void => {
               class="w-100"
               hide-details
               @click:append-inner="sendComment"
+              @keydown.enter="sendComment"
             ></v-text-field>
           </div>
         </div>

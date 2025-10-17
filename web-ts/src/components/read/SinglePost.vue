@@ -256,10 +256,9 @@
         <v-icon icon="mdi-account-circle" size="24" color="white"></v-icon>
       </v-avatar>
       <div class="pl-3">
-        <UserCard 
+        <UserCard
           v-if="posting.creator"
-          :id="posting.creator.id" 
-          :name="posting.creator.name"
+          :user="posting.creator"
         ></UserCard>
         <div class="text-body-2 text-grey-darken-2 font-weight-medium">
           {{ posting.createdAt || '' }}

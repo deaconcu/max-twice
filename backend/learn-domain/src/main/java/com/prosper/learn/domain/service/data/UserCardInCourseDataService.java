@@ -267,17 +267,17 @@ public class UserCardInCourseDataService extends AbstractDataService<UserCardInC
     /**
      * 批量插入用户卡片课程关系（使用INSERT IGNORE自动跳过重复）
      */
-    public int batchInsertIgnore(Long userId, Long courseId, List<Long> cardIds) {
+    public int batchInsertIgnore(Long userId, Long deckId, Long courseId, List<Long> cardIds) {
         if (cardIds == null || cardIds.isEmpty()) {
             return 0;
         }
         try {
-            int result = userCardInCourseMapper.batchInsertIgnore(userId, courseId, cardIds);
-            log.debug("Batch inserted {} card-course relations for user: {} course: {}", 
+            int result = userCardInCourseMapper.batchInsertIgnore(userId, deckId, courseId, cardIds);
+            log.debug("Batch inserted {} card-course relations for user: {} course: {}",
                      result, userId, courseId);
             return result;
         } catch (Exception e) {
-            log.error("Error batch inserting card-course relations: userId={}, courseId={}, cardCount={}", 
+            log.error("Error batch inserting card-course relations: userId={}, courseId={}, cardCount={}",
                      userId, courseId, cardIds.size(), e);
             throw ErrorCode.DATABASE_ERROR.exception(e);
         }

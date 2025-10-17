@@ -133,21 +133,12 @@ public class MemoryCardDeckController {
             @RequestParam(required = false) @Positive(message = "帖子ID必须大于0") Long postId,
             @RequestParam(required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
             @RequestParam(required = false) @Min(value = 0, message = "状态不能小于0") Integer state,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortOrder,
-            @RequestParam(required = false) Double lastScore,
-            @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
-            @RequestParam(defaultValue = "10") @Positive(message = "限制数量必须大于0") Integer limit) {
-
-        // 限制每页最大数量
-        if (limit > 50) {
-            limit = 50;
-        }
+            @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId) {
 
         long userId = StpUtil.getLoginIdAsLong();
-        KeysetPageResponse<DeckDetailDTO> result = deckService.getDecksForReview(
-            postId, creatorId, state, sortBy, sortOrder, lastScore, lastId, limit, userId);
-        
+        KeysetPageResponse<DeckDetailDTO> result =
+                deckService.getDecksForReview(postId, creatorId, state, lastId, userId);
+
         return ApiResponse.success(result);
     }
 

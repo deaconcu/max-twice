@@ -79,10 +79,15 @@ public class UserService {
 
     /**
      * 获取用户信息（包含关注状态）
+     * 被屏蔽的用户会抛出异常
      */
     public UserDTO getUser(Long userId, Long viewerId) {
         validateUserId(viewerId);
         UserDO userDO = validateUserExists(userId);
+
+        if (userDO.getState() != null && userDO.getState() == UserState.BANNED.value()) {
+            throw ErrorCode.USER_BANNED.exception();
+        }
 
         return toDTOV4(userDO, viewerId);
     }
@@ -106,6 +111,29 @@ public class UserService {
         validateSearchName(name);
         List<UserDO> userDOList = userDataService.searchByName(name);
         return userConverter.toDTOV2(userDOList);
+    }
+
+    public List<UserDTO> getUsers(Long offsetId, int pageSize) {
+        List<UserDO> userDOList;
+        if (offsetId == null) {
+            userDOList = userDataService.getList(pageSize);
+        } else {
+            userDOList = userDataService.getListPaginated(offsetId, pageSize);
+        }
+        return userConverter.toDTO(userDOList);
+    }
+
+    public UserDTO updateUserState(Long userId, boolean ban) {
+        UserDO userDO = validateUserExists(userId);
+
+        if (ban) {
+            userDO.setState(UserState.BANNED.value());
+        } else {
+            userDO.setState(UserState.ACTIVE.value());
+        }
+
+        userDataService.update(userDO);
+        return userConverter.toDTO(userDO);
     }
 
     /**
@@ -155,6 +183,7 @@ public class UserService {
         user.setPassword(Utils.md5(password));
         user.setEmail(email);
         user.setBiography("");
+        user.setState(UserState.ACTIVE.value());
         userDataService.insert(user);
 
         if (systemProperties.getUser().isEnableEmailValidation()) {
@@ -183,6 +212,10 @@ public class UserService {
 
         if (!userDO.getEmailValidated()) {
             throw ErrorCode.USER_EMAIL_NOT_VALIDATED.exception();
+        }
+
+        if (userDO.getState() != null && userDO.getState() == UserState.BANNED.value()) {
+            throw ErrorCode.USER_BANNED.exception();
         }
 
         UserDTO userDTO = toDTOV2(userDO);

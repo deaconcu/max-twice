@@ -105,6 +105,17 @@ export const userServiceV1 = {
       params: { lastId, type },
     })
   },
+
+  getUsers(offsetId: number | null = null): Promise<ApiResponse<User[]>> {
+    const params = offsetId !== null ? { offsetId } : {}
+    return apiClient.get(`${API_V1_PREFIX}/admin/users`, { params })
+  },
+
+  updateUserState(userId: number, ban: boolean): Promise<ApiResponse<User>> {
+    return apiClient.put(`${API_V1_PREFIX}/admin/users/${userId}/state`, null, {
+      params: { ban },
+    })
+  },
 }
 
 // 关注服务
@@ -316,7 +327,7 @@ export const postServiceV1 = {
 
 // 评论管理服务
 export const commentServiceV1 = {
-  createComment(objectId: number, objectType: ObjectType, replyTo?: number, toUser?: number, content?: string): Promise<ApiResponse<Comment>> {
+  createComment(objectId: number, objectType: ObjectType, replyTo?: number | null, toUser?: number | null, content?: string): Promise<ApiResponse<Comment>> {
     return apiClient.post(`${API_V1_PREFIX}/comments`, {
       objectId,
       objectType,
@@ -338,8 +349,10 @@ export const commentServiceV1 = {
     })
   },
 
-  getPendingComments(): Promise<ApiResponse<Comment[]>> {
-    return apiClient.get(`${API_V1_PREFIX}/admin/comments/pending`)
+  getCommentsByState(state: string, offsetId = 0): Promise<ApiResponse<Comment[]>> {
+    return apiClient.get(`${API_V1_PREFIX}/admin/comments/${state}`, {
+      params: { offsetId },
+    })
   },
 
   approveComment(id: number, approve: boolean): Promise<ApiResponse<Comment>> {

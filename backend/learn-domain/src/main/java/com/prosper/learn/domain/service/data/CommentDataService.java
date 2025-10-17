@@ -140,4 +140,11 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
     public List<CommentDO> getListByState(int state, int limit) {
         return commentMapper.getListByState(state, limit);
     }
+
+    /**
+     * 根据状态分页获取评论列表（不缓存）
+     */
+    public List<CommentDO> getListByStatePaginated(int state, long offsetId, int limit) {
+        return commentMapper.getListByStatePaginated(state, offsetId, limit);
+    }
 }

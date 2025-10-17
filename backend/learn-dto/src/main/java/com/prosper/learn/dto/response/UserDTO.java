@@ -19,6 +19,8 @@ public class UserDTO {
 
     private String biography;
 
+    private Byte state;
+
     private SubscriptionDTO[] subscriptions;
 
     private boolean isFollowing;

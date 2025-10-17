@@ -48,15 +48,15 @@ public interface UserCardInCourseMapper {
     List<Long> getCardIdsByUserAndCourse(long userId, long courseId);
 
     @Insert("INSERT INTO user_card_in_course " +
-            "(user_id, card_id, course_id) " +
+            "(user_id, card_id, deck_id, course_id) " +
             "VALUES " +
-            "(#{userId}, #{cardId}, #{courseId})")
+            "(#{userId}, #{cardId}, #{deckId}, #{courseId})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserCardInCourseDO relation);
 
-    @Insert({"<script>INSERT INTO user_card_in_course (user_id, card_id, course_id) VALUES " +
+    @Insert({"<script>INSERT INTO user_card_in_course (user_id, card_id, deck_id, course_id) VALUES " +
             "<foreach collection='list' item='item' separator=','>" +
-            "(#{item.userId}, #{item.cardId}, #{item.courseId})" +
+            "(#{item.userId}, #{item.cardId}, #{item.deckId}, #{item.courseId})" +
             "</foreach>" +
             "</script>"})
     int batchInsert(List<UserCardInCourseDO> relations);
@@ -94,10 +94,13 @@ public interface UserCardInCourseMapper {
               SUM(CASE WHEN srs.review_due_at &lt;= #{now} AND srs.repetitions > 0 THEN 1 ELSE 0 END) AS reviewCardCount
           FROM
               user_card_in_course ucc
+          INNER JOIN
+              memory_card_deck deck ON ucc.deck_id = deck.id
           LEFT JOIN
               user_card_srs srs ON ucc.user_id = srs.user_id AND ucc.card_id = srs.card_id
           WHERE
               ucc.user_id = #{userId}
+              AND deck.state = 1
               AND ucc.course_id IN
               <foreach item="courseId" collection="courseIds" open="(" separator="," close=")">
                   #{courseId}
@@ -119,26 +122,30 @@ public interface UserCardInCourseMapper {
               SUM(CASE WHEN srs.review_due_at &lt;= #{now} AND srs.repetitions > 0 THEN 1 ELSE 0 END) AS reviewCardCount
           FROM
               user_card_in_course ucc
+          INNER JOIN
+              memory_card_deck deck ON ucc.deck_id = deck.id
           LEFT JOIN
               user_card_srs srs ON ucc.user_id = srs.user_id AND ucc.card_id = srs.card_id
           WHERE
               ucc.user_id = #{userId}
               AND ucc.course_id = #{courseId}
+              AND deck.state = 1
           </script>
           """)
     CourseMemoryBankDO getCardStatsForCourses(@Param("userId") Long userId, @Param("courseId") Long courseId, @Param("now") LocalDateTime now);
 
     @Insert("""
           <script>
-          INSERT IGNORE INTO user_card_in_course (user_id, card_id, course_id, created_at)
+          INSERT IGNORE INTO user_card_in_course (user_id, card_id, deck_id, course_id, created_at)
           VALUES
           <foreach collection="cardIds" item="cardId" separator=",">
-              (#{userId}, #{cardId}, #{courseId}, NOW())
+              (#{userId}, #{cardId}, #{deckId}, #{courseId}, NOW())
           </foreach>
           </script>
           """)
-    int batchInsertIgnore(@Param("userId") Long userId, 
-                         @Param("courseId") Long courseId, 
+    int batchInsertIgnore(@Param("userId") Long userId,
+                         @Param("deckId") Long deckId,
+                         @Param("courseId") Long courseId,
                          @Param("cardIds") List<Long> cardIds);
 
     @Delete("""

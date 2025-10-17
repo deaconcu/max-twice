@@ -16,6 +16,8 @@ public class UserCardSrsDO {
 
     private Long nodeId;  // 新增：记忆卡片所属的节点ID
 
+    private Long deckId;  // 冗余字段：记忆卡片组ID，用于快速过滤被屏蔽的卡片组
+
     private Integer deckVersion;
 
     private Long cardVersionId;

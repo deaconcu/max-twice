@@ -123,4 +123,12 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
     public int insert(UserDO user) {
         return userMapper.insert(user);
     }
+
+    public List<UserDO> getList(int count) {
+        return userMapper.getList(count);
+    }
+
+    public List<UserDO> getListPaginated(long offsetId, int count) {
+        return userMapper.getListPaginated(offsetId, count);
+    }
 }

@@ -24,7 +24,29 @@ public class Enums {
         }
     }
 
+    public enum UserState implements ValueEnum<Byte> {
+        ACTIVE((byte)1),
+        BANNED((byte)2);
 
+        private final byte value;
+
+        UserState(byte value) {
+            this.value = value;
+        }
+
+        @Override
+        public Byte value() {
+            return value;
+        }
+
+        public static UserState getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(UserState.class, value.byteValue());
+        }
+
+        public static boolean isValid(int value) {
+            return ValueEnum.isValid(UserState.class, (byte)value);
+        }
+    }
 
     public enum CourseState implements ValueEnum<Byte> {
         SUBMITTED((byte)0),

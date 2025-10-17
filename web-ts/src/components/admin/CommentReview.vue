@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { inject, onMounted, ref } from 'vue'
+  import { inject, ref, computed, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { commentServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { CommentState } from '@/types/enums'
@@ -8,20 +8,90 @@
   const { t } = useI18n()
   const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
-  const commentList = ref<Comment[]>([])
+  const allCommentList = ref<Comment[]>([])
+  const currentTab = ref<string>('pending')
+  const offsetId = ref<number>(0)
+  const loading = ref<boolean>(false)
+  const hasMore = ref<boolean>(true)
 
-  const getCommentSensorList = async (): Promise<void> => {
+  // 标签配置
+  interface TabConfig {
+    key: string
+    label: string
+    state: CommentState
+    icon: string
+    color: string
+  }
+
+  const tabs: TabConfig[] = [
+    {
+      key: 'pending',
+      label: t('admin.pending'),
+      state: CommentState.SUBMITTED,
+      icon: 'mdi-clock-outline',
+      color: 'orange'
+    },
+    {
+      key: 'approved',
+      label: t('admin.approved'),
+      state: CommentState.APPROVED,
+      icon: 'mdi-check-circle',
+      color: 'green'
+    },
+    {
+      key: 'rejected',
+      label: t('admin.rejected'),
+      state: CommentState.DELETED,
+      icon: 'mdi-close-circle',
+      color: 'red'
+    }
+  ]
+
+  const commentList = computed<Comment[]>(() => {
+    return allCommentList.value
+  })
+
+  const getCommentsByTab = async (tabKey: string, isLoadMore: boolean = false): Promise<void> => {
+    if (loading.value) return
+
+    loading.value = true
+
     try {
-      const response = await commentServiceV1.getPendingComments()
+      const lastId = isLoadMore && allCommentList.value.length > 0
+        ? allCommentList.value[allCommentList.value.length - 1].id
+        : 0
+
+      const response = await commentServiceV1.getCommentsByState(tabKey, lastId)
 
       if (response.code === 401) {
-        console.log('not login')
+        // not login
       } else if (response.code === 200) {
-        commentList.value = response.data
-        console.log('done')
+        const newComments = response.data
+
+        if (isLoadMore) {
+          allCommentList.value.push(...newComments)
+        } else {
+          allCommentList.value = newComments
+        }
+
+        hasMore.value = newComments.length > 0
+        if (newComments.length > 0) {
+          offsetId.value = newComments[newComments.length - 1].id
+        }
+      } else {
+        showSnackbar && showSnackbar(response.message || 'error.loadFailed', 'error')
       }
     } catch (error) {
-      console.error('Error verifying login status:', error)
+      console.error('Error loading comments:', error)
+      showSnackbar && showSnackbar('error.loadFailed', 'error')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const loadMore = async (): Promise<void> => {
+    if (hasMore.value && !loading.value) {
+      await getCommentsByTab(currentTab.value, true)
     }
   }
 
@@ -30,20 +100,27 @@
       const response = await commentServiceV1.approveComment(comment.id, approve)
 
       if (response.code === 401) {
-        console.log('not login')
+        // not login
       } else if (response.code === 200) {
-        console.log('done')
-        console.log(`comment: ${JSON.stringify(response.data)}`)
-        comment.state = response.data.state
+        // 审核操作后重新加载当前tab的数据
+        await getCommentsByTab(currentTab.value)
         showSnackbar && showSnackbar(t('admin.operationSuccess'))
+      } else {
+        showSnackbar && showSnackbar(response.message || 'error.operationFailed', 'error')
       }
     } catch (error) {
-      console.error('Error verifying login status:', error)
+      console.error('Error approving comment:', error)
+      showSnackbar && showSnackbar('error.operationFailed', 'error')
     }
   }
 
+  const handleTabChange = async (newTab: string) => {
+    hasMore.value = true
+    await getCommentsByTab(newTab)
+  }
+
   onMounted(() => {
-    getCommentSensorList()
+    getCommentsByTab(currentTab.value)
   })
 </script>
 
@@ -61,20 +138,51 @@
           <p class="text-body-2 text-grey-darken-1 mb-0">{{ t('admin.reviewUserComments') }}</p>
         </div>
       </div>
-      <v-chip variant="flat" color="purple-lighten-4" rounded="lg">
-        <v-icon icon="mdi-comment-multiple" color="purple-darken-2" size="16" class="mr-1"></v-icon>
-        <span class="text-purple-darken-2 text-caption"
-          >{{ commentList.length }} {{ t('admin.commentsAwaitingReview') }}</span
-        >
-      </v-chip>
     </div>
 
-    <div v-if="commentList.length === 0" class="text-center py-12">
+    <!-- 状态标签 -->
+    <v-tabs
+      v-model="currentTab"
+      color="primary"
+      class="mb-6"
+      show-arrows
+      @update:model-value="handleTabChange"
+    >
+      <v-tab
+        v-for="tab in tabs"
+        :key="tab.key"
+        :value="tab.key"
+        class="text-none"
+      >
+        <v-icon
+          :icon="tab.icon"
+          :color="`${tab.color}-darken-1`"
+          size="18"
+          class="mr-2"
+        ></v-icon>
+        {{ tab.label }}
+      </v-tab>
+    </v-tabs>
+
+    <div v-if="commentList.length === 0 && !loading" class="text-center py-12">
       <v-icon icon="mdi-comment-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
-      <p class="text-body-1 text-grey-darken-1">{{ t('admin.noCommentsToReview') }}</p>
+      <p class="text-body-1 text-grey-darken-1">
+        {{ currentTab === 'pending' ? t('admin.noCommentsToReview') : `暂无${tabs.find(tab => tab.key === currentTab)?.label}的评论` }}
+      </p>
     </div>
 
-    <div v-for="comment in commentList" :key="comment.id" class="mb-4">
+    <div
+      v-for="comment in commentList"
+      :key="comment.id"
+      class="mb-4"
+      v-intersect="{
+        handler: (isIntersecting) => {
+          if (isIntersecting && comment === commentList[commentList.length - 1] && hasMore && !loading) {
+            loadMore()
+          }
+        }
+      }"
+    >
       <v-card flat class="border rounded-lg pa-5" hover>
         <div class="d-flex align-start">
           <!-- 状态和操作区域 -->
@@ -111,7 +219,7 @@
                 {{ t('admin.rejected') }}
               </v-chip>
             </div>
-            <div class="d-flex flex-column ga-2">
+            <div v-if="comment.state === CommentState.SUBMITTED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
                 color="green-lighten-4"
@@ -131,6 +239,34 @@
               >
                 <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
                 {{ t('admin.reject') }}
+              </v-btn>
+            </div>
+
+            <!-- 已通过状态下显示屏蔽按钮 -->
+            <div v-if="comment.state === CommentState.APPROVED" class="d-flex flex-column ga-2">
+              <v-btn
+                variant="flat"
+                color="red-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="approveComment(comment, false)"
+              >
+                <v-icon icon="mdi-block-helper" color="red-darken-2" size="16" class="mr-1"></v-icon>
+                屏蔽
+              </v-btn>
+            </div>
+
+            <!-- 已拒绝状态下显示通过按钮 -->
+            <div v-if="comment.state === CommentState.DELETED" class="d-flex flex-column ga-2">
+              <v-btn
+                variant="flat"
+                color="green-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="approveComment(comment, true)"
+              >
+                <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
+                {{ t('admin.approve') }}
               </v-btn>
             </div>
           </div>
@@ -173,6 +309,21 @@
           </div>
         </div>
       </v-card>
+    </div>
+
+    <!-- 加载更多指示器 -->
+    <div v-if="loading" class="text-center py-4">
+      <v-progress-circular
+        indeterminate
+        color="primary"
+        size="24"
+      ></v-progress-circular>
+      <span class="ml-2 text-grey-darken-1">加载中...</span>
+    </div>
+
+    <!-- 没有更多数据提示 -->
+    <div v-if="!hasMore && commentList.length > 0" class="text-center py-4">
+      <span class="text-grey-darken-1">没有更多数据了</span>
     </div>
   </div>
 </template>

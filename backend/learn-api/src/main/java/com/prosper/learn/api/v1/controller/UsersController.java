@@ -124,8 +124,31 @@ public class UsersController {
             @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
             @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
             @RequestParam(required = false, defaultValue = "article") String type) {
-        
+
         Object posts = postService.getUserPosts(userId, lastId, type);
         return ApiResponse.success(posts);
+    }
+
+    /**
+     * 管理员获取用户列表（分页）
+     * 映射: GET /api/v1/admin/users?offsetId=0
+     */
+    @GetMapping("/admin/users")
+    public ApiResponse<List<UserDTO>> getUsers(
+            @RequestParam(required = false) @Min(value = 0, message = "偏移ID不能小于0") Long offsetId) {
+        List<UserDTO> users = userService.getUsers(offsetId, 20);
+        return ApiResponse.success(users);
+    }
+
+    /**
+     * 管理员更新用户状态（屏蔽/恢复）
+     * 映射: PUT /api/v1/admin/users/{id}/state?ban=true
+     */
+    @PutMapping("/admin/users/{id}/state")
+    public ApiResponse<UserDTO> updateUserState(
+            @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long id,
+            @RequestParam Boolean ban) {
+        UserDTO userDTO = userService.updateUserState(id, ban);
+        return ApiResponse.success(userDTO);
     }
 }

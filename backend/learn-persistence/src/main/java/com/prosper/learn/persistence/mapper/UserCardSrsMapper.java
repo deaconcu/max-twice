@@ -33,7 +33,9 @@ public interface UserCardSrsMapper {
     Map<Long, UserCardSrsDO> getMapByIds(Collection<Long> ids);
 
     @Select("SELECT srs.* FROM user_card_srs srs " +
+            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
             "WHERE srs.user_id = #{userId} AND srs.review_due_at <= #{dueTime} " +
+            "AND deck.state = 1 " +
             "AND EXISTS (" +
             "    SELECT 1 FROM user_card_in_course ctx " +
             "    JOIN user_course_srs_setting s ON ctx.course_id = s.course_id AND ctx.user_id = s.user_id " +
@@ -43,7 +45,9 @@ public interface UserCardSrsMapper {
     List<UserCardSrsDO> getDueCardsForReview(long userId, LocalDateTime dueTime, int limit);
 
     @Select("SELECT srs.* FROM user_card_srs srs " +
+            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
             "WHERE srs.user_id = #{userId} AND srs.review_due_at <= #{dueTime} " +
+            "AND deck.state = 1 " +
             "AND EXISTS (" +
             "    SELECT 1 FROM user_card_in_course ctx " +
             "    WHERE ctx.card_id = srs.card_id AND ctx.user_id = #{userId} AND ctx.course_id = #{courseId}" +
@@ -51,27 +55,31 @@ public interface UserCardSrsMapper {
             "ORDER BY srs.review_due_at ASC LIMIT #{limit}")
     List<UserCardSrsDO> getDueCardsByCourseForReview(long userId, long courseId, LocalDateTime dueTime, int limit);
 
-    @Select("SELECT * FROM user_card_srs WHERE user_id = #{userId} " +
-            "ORDER BY review_due_at ASC LIMIT #{limit}")
+    @Select("SELECT srs.* FROM user_card_srs srs " +
+            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
+            "WHERE srs.user_id = #{userId} AND deck.state = 1 " +
+            "ORDER BY srs.review_due_at ASC LIMIT #{limit}")
     List<UserCardSrsDO> getByUser(long userId, int limit);
 
-    @Select("SELECT * FROM user_card_srs " +
-            "WHERE user_id = #{userId} AND card_id IN " +
+    @Select("SELECT srs.* FROM user_card_srs srs " +
+            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
+            "WHERE srs.user_id = #{userId} AND deck.state = 1 " +
+            "AND srs.card_id IN " +
             "(SELECT card_id FROM user_card_in_course WHERE course_id = #{courseId} AND user_id = #{userId}) " +
-            "ORDER BY review_due_at ASC")
+            "ORDER BY srs.review_due_at ASC")
     List<UserCardSrsDO> getByUserAndCourse(long userId, long courseId);
 
     @Insert("INSERT INTO user_card_srs " +
-            "(user_id, card_id, node_id, deck_version, card_version_id, review_due_at, " +
+            "(user_id, card_id, node_id, deck_id, deck_version, card_version_id, review_due_at, " +
             "interval_days, ease_factor, repetitions, lapse_count) " +
             "VALUES " +
-            "(#{userId}, #{cardId}, #{nodeId}, #{deckVersion}, #{cardVersionId}, #{reviewDueAt}, " +
+            "(#{userId}, #{cardId}, #{nodeId}, #{deckId}, #{deckVersion}, #{cardVersionId}, #{reviewDueAt}, " +
             "#{intervalDays}, #{easeFactor}, #{repetitions}, #{lapseCount})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserCardSrsDO state);
 
     @Update("UPDATE user_card_srs SET " +
-            "node_id = #{nodeId}, deck_version = #{deckVersion}, card_version_id = #{cardVersionId}, " +
+            "node_id = #{nodeId}, deck_id = #{deckId}, deck_version = #{deckVersion}, card_version_id = #{cardVersionId}, " +
             "review_due_at = #{reviewDueAt}, last_reviewed_at = #{lastReviewedAt}, " +
             "interval_days = #{intervalDays}, ease_factor = #{easeFactor}, " +
             "repetitions = #{repetitions}, lapse_count = #{lapseCount}, " +
@@ -126,13 +134,13 @@ public interface UserCardSrsMapper {
 
     @Insert("""
           <script>
-          INSERT IGNORE INTO user_card_srs 
-          (user_id, card_id, node_id, deck_version, card_version_id, review_due_at, 
+          INSERT IGNORE INTO user_card_srs
+          (user_id, card_id, node_id, deck_id, deck_version, card_version_id, review_due_at,
            interval_days, ease_factor, repetitions, lapse_count, created_at, updated_at)
           VALUES
           <foreach collection="states" item="state" separator=",">
-              (#{state.userId}, #{state.cardId}, #{state.nodeId}, #{state.deckVersion}, #{state.cardVersionId}, 
-               #{state.reviewDueAt}, #{state.intervalDays}, #{state.easeFactor}, 
+              (#{state.userId}, #{state.cardId}, #{state.nodeId}, #{state.deckId}, #{state.deckVersion}, #{state.cardVersionId},
+               #{state.reviewDueAt}, #{state.intervalDays}, #{state.easeFactor},
                #{state.repetitions}, #{state.lapseCount}, #{state.createdAt}, #{state.updatedAt})
           </foreach>
           </script>
@@ -170,35 +178,41 @@ public interface UserCardSrsMapper {
     // ========== 支持分页的查询方法 ==========
 
     @Select({"<script>",
-            "SELECT * FROM user_card_srs",
-            "WHERE user_id = #{userId}",
-            "<if test='lastId != null'>AND id &gt; #{lastId}</if>",
-            "ORDER BY id ASC LIMIT #{limit}",
+            "SELECT srs.* FROM user_card_srs srs",
+            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
+            "WHERE srs.user_id = #{userId} AND deck.state = 1",
+            "<if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
+            "ORDER BY srs.id ASC LIMIT #{limit}",
             "</script>"})
     List<UserCardSrsDO> getByUserWithPaging(long userId, int limit, Long lastId);
 
     @Select({"<script>",
             "SELECT srs.* FROM user_card_srs srs",
             "INNER JOIN user_card_in_course ucc ON srs.card_id = ucc.card_id",
-            "WHERE srs.user_id = #{userId} AND ucc.course_id = #{courseId}",
+            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
+            "WHERE srs.user_id = #{userId} AND ucc.course_id = #{courseId} AND deck.state = 1",
             "<if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
             "ORDER BY srs.id ASC LIMIT #{limit}",
             "</script>"})
     List<UserCardSrsDO> getByUserAndCourseWithPaging(long userId, long courseId, int limit, Long lastId);
 
     @Select({"<script>",
-            "SELECT * FROM user_card_srs",
-            "WHERE user_id = #{userId} AND review_due_at &lt;= #{dueTime}",
-            "<if test='lastId != null'>AND id &gt; #{lastId}</if>",
-            "ORDER BY id ASC LIMIT #{limit}",
+            "SELECT srs.* FROM user_card_srs srs",
+            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
+            "WHERE srs.user_id = #{userId} AND srs.review_due_at &lt;= #{dueTime}",
+            "AND deck.state = 1",
+            "<if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
+            "ORDER BY srs.id ASC LIMIT #{limit}",
             "</script>"})
     List<UserCardSrsDO> getDueCardsForReviewWithPaging(long userId, LocalDateTime dueTime, int limit, Long lastId);
 
     @Select({"<script>",
             "SELECT srs.* FROM user_card_srs srs",
             "INNER JOIN user_card_in_course ucc ON srs.card_id = ucc.card_id",
+            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
             "WHERE srs.user_id = #{userId} AND ucc.course_id = #{courseId}",
             "AND srs.review_due_at &lt;= #{dueTime}",
+            "AND deck.state = 1",
             "<if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
             "ORDER BY srs.id ASC LIMIT #{limit}",
             "</script>"})

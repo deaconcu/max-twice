@@ -40,6 +40,7 @@ public enum ErrorCode {
     USER_SUBSCRIPTION_PARSE_ERROR(1111, "订阅数据解析失败"),
     USER_COURSE_ALREADY_SUBSCRIBED(1112, "课程已订阅"),
     USER_COURSE_NOT_SUBSCRIBED(1113, "课程未订阅"),
+    USER_BANNED(1114, "用户已被屏蔽"),
 
     // 课程相关 12xx
     COURSE_NOT_FOUND(1201, "课程不存在"),

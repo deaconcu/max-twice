@@ -152,10 +152,10 @@ public class MemoryBankService {
                     .collect(Collectors.toList());
             
             // 批量插入用户卡片课程关系（自动跳过已存在的）
-            userCardInCourseDataService.batchInsertIgnore(userId, request.getCourseId(), cardIds);
+            userCardInCourseDataService.batchInsertIgnore(userId, request.getDeckId(), request.getCourseId(), cardIds);
             
             // 构建SRS状态对象
-            List<UserCardSrsDO> srsStates = new ArrayList<>();
+            List<UserCardSrsDO> srsList = new ArrayList<>();
             
             // 获取nodeId：deck.sourcePostId → post.nodeId
             Long nodeId = null;
@@ -168,13 +168,13 @@ public class MemoryBankService {
             checkNotNull(nodeId, "无法获取卡片组关联的节点ID");
 
             for (MemoryCardDO card : cards) {
-                UserCardSrsDO state = userCardSrsDataService.createNewSrsState(
-                    userId, card.getId(), nodeId, deck.getVersion(), card.getCurrentVersionId());
-                srsStates.add(state);
+                UserCardSrsDO srs = userCardSrsDataService.createNewSrsState(
+                    userId, card.getId(), card.getDeckId(), nodeId, deck.getVersion(), card.getCurrentVersionId());
+                srsList.add(srs);
             }
             
             // 批量创建SRS状态（自动跳过已存在的）
-            userCardSrsDataService.batchInsertIgnoreSrsStates(srsStates);
+            userCardSrsDataService.batchInsertIgnoreSrsStates(srsList);
             
         } else {
             log.info("No cards found in deck: {} to add to memory bank for user: {} in course: {}", 

@@ -12,6 +12,7 @@ export interface User {
   phone?: string               // 手机号 (可选) - UserDTO
   emailValidated?: boolean     // 邮箱是否验证 (可选) - UserDTO
   biography?: string           // 个人简介 (可选) - UserDTO, UserDTOV3
+  state?: number               // 用户状态 (1: 正常, 2: 已屏蔽)
   avatar?: string              // 头像 (可选)
   subscriptions?: SubscriptionInfo[]     // 订阅的课程ID列表 (可选) - 用于兼容
   createdAt?: string           // 创建时间 (可选) - UserDTO

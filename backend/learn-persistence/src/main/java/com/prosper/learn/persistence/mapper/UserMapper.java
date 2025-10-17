@@ -36,6 +36,13 @@ public interface UserMapper {
     int insert(UserDO user);
 
     @Update("UPDATE user SET name = #{name}, password = #{password}, phone = #{phone}, email = #{email}, " +
-            "email_validated = #{emailValidated}, biography = #{biography}, updated_at = #{updatedAt}, msg_read_time = #{msgReadTime} where id = #{id}")
+            "email_validated = #{emailValidated}, biography = #{biography}, state = #{state}, " +
+            "msg_read_time = #{msgReadTime} where id = #{id}")
     void update(UserDO user);
+
+    @Select("SELECT * FROM user ORDER BY id DESC LIMIT #{count}")
+    List<UserDO> getList(int count);
+
+    @Select("SELECT * FROM user WHERE id < #{offsetId} ORDER BY id DESC LIMIT #{count}")
+    List<UserDO> getListPaginated(long offsetId, int count);
 }

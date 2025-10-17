@@ -114,8 +114,8 @@ const sendComment = async (): Promise<void> => {
     const response = await commentServiceV1.createComment(
       props.object.id,
       props.type,
-      0,
-      0,
+      null,
+      null,
       inputComment.value
     )
 
@@ -143,7 +143,7 @@ const sendSubcomment = async (comment: Comment): Promise<void> => {
       props.object.id,
       props.type,
       activeReplyId.value,
-      0,
+      null,
       replyContent.value
     )
 
@@ -208,6 +208,7 @@ const upvote = async (comment: Comment): Promise<void> => {
     :counter="COMMENT_VALIDATION.CONTENT_MAX_LENGTH"
     class="w-100"
     @click:append-inner="sendComment"
+    @keydown.enter="sendComment"
   ></v-text-field>
   <a
     v-if="'commentId' in route.query"
@@ -274,6 +275,7 @@ const upvote = async (comment: Comment): Promise<void> => {
               :counter="COMMENT_VALIDATION.CONTENT_MAX_LENGTH"
               class="w-100"
               @click:append-inner="sendSubcomment(comment)"
+              @keydown.enter="sendSubcomment(comment)"
             ></v-text-field>
           </div>
           <SubcommentArea

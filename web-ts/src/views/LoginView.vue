@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useUserStore } from '@/stores/user'
-import { USER_EMAIL_NOT_VALIDATED } from '@/constants/errorCodes'
+import { USER_EMAIL_NOT_VALIDATED, USER_BANNED } from '@/constants/errorCodes'
 
 import Footer from '@/components/common/PageFooter.vue'
 import LoginHeader from '@/components/auth/LoginHeader.vue'
@@ -134,6 +134,8 @@ const submitLogin = async (): Promise<void> => {
       registerForm.value.email = loginForm.value.email
       registerSecondDialog.value = true
       showSnackbar('请先验证邮箱', 'warning')
+    } else if (response.code === USER_BANNED) {
+      showSnackbar('该账号已被屏蔽，无法登录', 'error')
     } else {
       showSnackbar(response.message || '登录失败，请检查邮箱和密码', 'error')
     }

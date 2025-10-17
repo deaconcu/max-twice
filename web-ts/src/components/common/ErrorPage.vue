@@ -44,6 +44,7 @@ const icon = computed(() => getErrorIcon(props.errorCode))
             color="primary"
             variant="flat"
             size="large"
+            rounded="lg"
             prepend-icon="mdi-home"
             @click="emit('back-home')"
           >
@@ -55,6 +56,7 @@ const icon = computed(() => getErrorIcon(props.errorCode))
             color="primary"
             variant="outlined"
             size="large"
+            rounded="lg"
             prepend-icon="mdi-refresh"
             @click="emit('retry')"
           >

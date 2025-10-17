@@ -182,9 +182,9 @@ public class CommentService {
         CommentDO commentDO = new CommentDO();
         commentDO.setObjectId(request.getObjectId());
         commentDO.setObjectType(request.getObjectType());
-        commentDO.setReplyToCommentId(request.getReplyTo());
+        commentDO.setReplyToCommentId(request.getReplyTo() == null ? 0 : request.getReplyTo());
         // TODO 检查这个toUser是否合理
-        commentDO.setToUserId(request.getToUser());
+        commentDO.setToUserId(request.getToUser() == null ? 0 : request.getToUser());
         commentDO.setContent(request.getContent());
         commentDO.setFromUserId(userId);
         //commentDO.setScore(scoreCalculationService.calculateCommentScore(commentDO));
@@ -196,33 +196,12 @@ public class CommentService {
             handleReplyComment(request, commentDO, fromUser, postDO, nodeDO, roadmapDO);
         }
 
-        // 更新对象评论数和创建评论通知
-        incrementCommentCount(request, postDO, nodeDO, roadmapDO, userId);
+        // 创建评论通知（不更新评论数，等审核通过后再更新）
         createCommentNotification(request, commentDO, fromUser, postDO, nodeDO, roadmapDO);
 
         return commentDataService.getById(commentDO.getId());
     }
 
-    /**
-     * 更新对象评论数量，提交评论时调用
-     * 主要功能是增加对象表的评论数和在Redis中记录评论行为
-     */
-    private void incrementCommentCount(CreateCommentRequest request, PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO, Long userId) {
-        if (request.getObjectType() == Enums.ObjectType.post.value() && postDO != null) {
-            postDO.setCommentCount(postDO.getCommentCount() + 1);
-            postDataService.update(postDO);
-            redisStatsService.recordComment(postDO.getId(), userId);
-        } else if (request.getObjectType() == Enums.ObjectType.node.value() && nodeDO != null) {
-            nodeDO.setCommentCount(nodeDO.getCommentCount() + 1);
-            nodeDataService.update(nodeDO);
-            redisStatsService.recordComment(nodeDO.getId(), userId);
-        } else if (request.getObjectType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
-            roadmapDO.setComment(roadmapDO.getComment() + 1);
-            roadmapDataService.update(roadmapDO);
-            redisStatsService.recordComment(roadmapDO.getId(), userId);
-        }
-    }
-    
     /**
      * 创建评论消息通知，提交评论时调用
      * 主要功能是给被评论的用户发送评论通知
@@ -363,12 +342,35 @@ public class CommentService {
 
 
     /**
-     * 获取待审核评论列表，按提交时间倒序排列，只返回有限数量（limit）
+     * 根据状态获取评论列表（分页），按ID正序排列（越早的越靠前）
      * 仅管理员调用
+     * @param state pending(待审核), approved(已通过), rejected(已拒绝)
      */
-    public List<CommentDTO> getPendingComments() {
-        int limit = systemProperties.getComment().getPendingCommentsLimit();
-        List<CommentDO> commentDOList = commentDataService.getListByState(submited.value(), limit);
+    public List<CommentDTO> getCommentsByState(String state, Long offsetId) {
+        validateOffsetId(offsetId);
+        int pageSize = systemProperties.getComment().getDefaultPageSize();
+
+        int stateValue;
+        switch (state.toLowerCase()) {
+            case "pending":
+                stateValue = submited.value();
+                break;
+            case "approved":
+                stateValue = Enums.CommentState.approved.value();
+                break;
+            case "rejected":
+                stateValue = Enums.CommentState.deleted.value();
+                break;
+            default:
+                throw ErrorCode.INVALID_PARAMETER.exception("无效的状态参数: " + state);
+        }
+
+        List<CommentDO> commentDOList;
+        if (offsetId == 0) {
+            commentDOList = commentDataService.getListByState(stateValue, pageSize);
+        } else {
+            commentDOList = commentDataService.getListByStatePaginated(stateValue, offsetId, pageSize);
+        }
         return commentConverter.toDTO(commentDOList);
     }
 
@@ -380,16 +382,54 @@ public class CommentService {
     public CommentDTO approveComment(Long id, boolean approve) {
         validateCommentId(id);
         CommentDO commentDO = validateAndGetComment(id);
+        int oldState = commentDO.getState();
 
-        if (approve && commentDO.getState() != Enums.CommentState.approved.value()) {
+        if (approve && oldState != Enums.CommentState.approved.value()) {
             commentDO.setState(Enums.CommentState.approved.value());
             commentDataService.update(commentDO);
+
+            // 通过审核，评论数+1
+            if (oldState == Enums.CommentState.submited.value() || oldState == Enums.CommentState.deleted.value()) {
+                updateObjectCommentCount(commentDO, 1);
+            }
         }
-        if (!approve && commentDO.getState() != Enums.CommentState.deleted.value()) {
+
+        if (!approve && oldState != Enums.CommentState.deleted.value()) {
             commentDO.setState(Enums.CommentState.deleted.value());
             commentDataService.update(commentDO);
+
+            // 屏蔽评论，评论数-1
+            if (oldState == Enums.CommentState.approved.value()) {
+                updateObjectCommentCount(commentDO, -1);
+            }
         }
+
         return toDTO(commentDO);
+    }
+
+    /**
+     * 更新对象的评论数
+     */
+    private void updateObjectCommentCount(CommentDO commentDO, int delta) {
+        if (commentDO.getObjectType() == Enums.ObjectType.post.value()) {
+            PostDO postDO = postDataService.getById(commentDO.getObjectId());
+            if (postDO != null) {
+                postDO.setCommentCount(Math.max(0, postDO.getCommentCount() + delta));
+                postDataService.update(postDO);
+            }
+        } else if (commentDO.getObjectType() == Enums.ObjectType.node.value()) {
+            NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
+            if (nodeDO != null) {
+                nodeDO.setCommentCount(Math.max(0, nodeDO.getCommentCount() + delta));
+                nodeDataService.update(nodeDO);
+            }
+        } else if (commentDO.getObjectType() == Enums.ObjectType.roadmap.value()) {
+            RoadmapDO roadmapDO = roadmapDataService.getById(commentDO.getObjectId());
+            if (roadmapDO != null) {
+                roadmapDO.setComment(Math.max(0, roadmapDO.getComment() + delta));
+                roadmapDataService.update(roadmapDO);
+            }
+        }
     }
 
     // ========== toDTV ==========

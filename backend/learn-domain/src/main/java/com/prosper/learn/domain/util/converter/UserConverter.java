@@ -18,6 +18,7 @@ public interface UserConverter {
     @Mapping(target = "email")
     @Mapping(target = "emailValidated")
     @Mapping(target = "biography")
+    @Mapping(target = "state")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
     UserDTO toDTO(UserDO userDO);
@@ -29,6 +30,7 @@ public interface UserConverter {
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "name")
+    @Mapping(target = "state")
     @Mapping(target = "biography")
     UserDTO toDTOV1(UserDO userDO);
     
@@ -39,6 +41,7 @@ public interface UserConverter {
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "name")
+    @Mapping(target = "state")
     UserDTO toDTOV2(UserDO userDO);
 
     @IterableMapping(qualifiedByName = "toDTOV2")
