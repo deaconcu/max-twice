@@ -312,11 +312,24 @@ const moveRoadmapDown = (roadmap: any, event?: Event): void => {
   showSnackbar?.(t('learning.roadmapMoveDown'))
 }
 
-const closeRoadmap = (roadmap: any, event?: Event): void => {
+const closeRoadmap = async (roadmap: any, event?: Event): Promise<void> => {
   if (event) {
     event.stopPropagation()
   }
-  // TODO: 实现关闭逻辑
+
+  try {
+    const response = await progressServiceV1.deleteRoadmapProgress(roadmap.id)
+
+    if (response.code === 200) {
+      showSnackbar?.(t('common.success'))
+      roadmaps.value = roadmaps.value.filter(r => r.id !== roadmap.id)
+    } else {
+      showSnackbar?.(t('learning.operationFailed'))
+    }
+  } catch (error) {
+    console.error('取消学习失败:', error)
+    showSnackbar?.(t('learning.operationFailed'))
+  }
 }
 
 onMounted(() => {

@@ -11,9 +11,10 @@ import type { Node, Edge } from '@vue-flow/core'
 export interface Roadmap {
   id: number                  // Long -> number
   content?: string            // 路线图内容 (可选)
-  professionId?: number       // 职业ID (可选) - Long -> number 
+  professionId?: number       // 职业ID (可选) - Long -> number
   profession?: Profession     // 职业信息 (可选)
   description?: string        // 描述 (可选)
+  state?: number              // 状态：0-待审核，1-已批准，2-已拒绝 (可选)
   vote?: number              // 投票数 (可选) - Integer -> number
   comment?: number           // 评论数 (可选) - Integer -> number
   upvoted?: boolean          // 是否已点赞 (可选)

@@ -170,10 +170,12 @@ export const professionServiceV1 = {
   },
 
   // 按状态获取职业（管理端使用）
-  getProfessions(state?: number, lastId?: number): Promise<ApiResponse<Profession[]>> {
-    return apiClient.get(`${API_V1_PREFIX}/professions`, {
-      params: { state, lastId },
-    })
+  getAdminProfessions(state?: number, lastId?: number | null): Promise<ApiResponse<Profession[]>> {
+    const params: Record<string, any> = { state }
+    if (lastId !== null && lastId !== undefined) {
+      params.lastId = lastId
+    }
+    return apiClient.get(`${API_V1_PREFIX}/admin/professions`, { params })
   },
 
   // 按分类获取职业（前端使用）
@@ -183,10 +185,9 @@ export const professionServiceV1 = {
     })
   },
 
-  getApprovedProfessions(lastId = 0): Promise<ApiResponse<Profession[]>> {
-    return apiClient.get(`${API_V1_PREFIX}/professions/approved`, {
-      params: { lastId },
-    })
+  getApprovedProfessions(lastId?: number | null): Promise<ApiResponse<Profession[]>> {
+    const params = lastId !== undefined && lastId !== null ? { lastId } : {}
+    return apiClient.get(`${API_V1_PREFIX}/professions/approved`, { params })
   },
 
   getProfession(id: number): Promise<ApiResponse<Profession>> {
@@ -229,6 +230,14 @@ export const courseServiceV1 = {
     return apiClient.get(`${API_V1_PREFIX}/courses/search`, {
       params: { name },
     })
+  },
+
+  getAdminCourses(state?: number, lastId?: number | null): Promise<ApiResponse<Course[]>> {
+    const params: Record<string, any> = { state }
+    if (lastId !== null && lastId !== undefined) {
+      params.lastId = lastId
+    }
+    return apiClient.get(`${API_V1_PREFIX}/admin/courses`, { params })
   },
 
   getCoursesByState(state: number, lastId?: number): Promise<ApiResponse<Course[]>> {
@@ -318,6 +327,12 @@ export const postServiceV1 = {
     })
   },
 
+  getPostsByFilter(nodeId?: number, creatorId?: number, lastId?: number): Promise<ApiResponse<Post[]>> {
+    return apiClient.get(`${API_V1_PREFIX}/admin/posts/filter`, {
+      params: { nodeId, creatorId, lastId },
+    })
+  },
+
   approvePost(id: number, approve: boolean): Promise<ApiResponse<Post>> {
     return apiClient.put(`${API_V1_PREFIX}/admin/posts/${id}/approve`, null, {
       params: { approve },
@@ -328,13 +343,18 @@ export const postServiceV1 = {
 // 评论管理服务
 export const commentServiceV1 = {
   createComment(objectId: number, objectType: ObjectType, replyTo?: number | null, toUser?: number | null, content?: string): Promise<ApiResponse<Comment>> {
-    return apiClient.post(`${API_V1_PREFIX}/comments`, {
+    const body: any = {
       objectId,
       objectType,
-      replyTo,
-      toUser,
       content,
-    })
+    }
+    if (replyTo !== null && replyTo !== undefined) {
+      body.replyTo = replyTo
+    }
+    if (toUser !== null && toUser !== undefined) {
+      body.toUser = toUser
+    }
+    return apiClient.post(`${API_V1_PREFIX}/comments`, body)
   },
 
   getComments(objectId: number, objectType: ObjectType, offsetId = 0): Promise<ApiResponse<Comment[]>> {
@@ -370,6 +390,23 @@ export const roadmapServiceV1 = {
     })
   },
 
+  getAdminRoadmaps(state?: number, professionId?: number, creatorId?: number, lastId?: number | null): Promise<ApiResponse<Roadmap[]>> {
+    const params: Record<string, any> = {}
+    if (state !== undefined && state !== null) {
+      params.state = state
+    }
+    if (professionId !== undefined && professionId !== null) {
+      params.professionId = professionId
+    }
+    if (creatorId !== undefined && creatorId !== null) {
+      params.creatorId = creatorId
+    }
+    if (lastId !== undefined && lastId !== null) {
+      params.lastId = lastId
+    }
+    return apiClient.get(`${API_V1_PREFIX}/admin/roadmaps`, { params })
+  },
+
   updateRoadmap(id: number, content: string): Promise<ApiResponse<Roadmap>> {
     return apiClient.put(`${API_V1_PREFIX}/roadmaps/${id}`, {
       content,
@@ -392,6 +429,19 @@ export const roadmapServiceV1 = {
     return apiClient.post(`${API_V1_PREFIX}/roadmaps/pin`, {
       professionId,
       roadmapId,
+    })
+  },
+
+  approveRoadmap(id: number, action: string, rejectedReason?: string): Promise<ApiResponse<Roadmap>> {
+    return apiClient.post(`${API_V1_PREFIX}/roadmaps/${id}/approve`, {
+      action,
+      rejectedReason,
+    })
+  },
+
+  updateRoadmapDescription(id: number, description: string): Promise<ApiResponse<Roadmap>> {
+    return apiClient.put(`${API_V1_PREFIX}/roadmaps/${id}/description`, {
+      description,
     })
   },
 }
@@ -703,6 +753,21 @@ export const adminAutoAuthorServiceV1 = {
   // 清空队列
   clearQueue(): Promise<ApiResponse<void>> {
     return apiClient.delete(`${API_V1_PREFIX}/admin/auto-author/queue`)
+  },
+}
+
+// 节点管理服务
+export const nodeServiceV1 = {
+  getNodesByFilter(nodeId?: number, courseId?: number, creatorId?: number, lastId?: number): Promise<ApiResponse<Node[]>> {
+    return apiClient.get(`${API_V1_PREFIX}/admin/nodes/filter`, {
+      params: { nodeId, courseId, creatorId, lastId },
+    })
+  },
+
+  updateNodeState(nodeId: number, state: number): Promise<ApiResponse<Node>> {
+    return apiClient.put(`${API_V1_PREFIX}/admin/nodes/${nodeId}/state`, null, {
+      params: { state },
+    })
   },
 }
 

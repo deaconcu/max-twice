@@ -14,6 +14,11 @@ const loading = ref<boolean>(false)
 const hasMore = ref<boolean>(true)
 const pageSize = 20
 
+// 筛选条件
+const filterNodeId = ref<number | undefined>(undefined)
+const filterCreatorId = ref<number | undefined>(undefined)
+const isFilterMode = ref<boolean>(false)
+
 // 标签配置
 interface TabConfig {
   key: string
@@ -87,10 +92,71 @@ const getPostsByTab = async (tabKey: string, isLoadMore: boolean = false): Promi
   }
 }
 
+// 按筛选条件获取帖子
+const getPostsByFilter = async (isLoadMore: boolean = false): Promise<void> => {
+  if (loading.value) return
+
+  loading.value = true
+
+  try {
+    const lastId = isLoadMore && allPostList.value.length > 0
+      ? allPostList.value[allPostList.value.length - 1].id
+      : undefined
+
+    const response = await postServiceV1.getPostsByFilter(
+      filterNodeId.value,
+      filterCreatorId.value,
+      lastId
+    )
+
+    if (response.code === 401) {
+      console.log('not login')
+    } else if (response.code === 200) {
+      const newPosts = response.data as Post[]
+
+      if (isLoadMore) {
+        allPostList.value.push(...newPosts)
+      } else {
+        allPostList.value = newPosts
+      }
+
+      hasMore.value = newPosts.length === pageSize
+    }
+  } catch (error) {
+    console.error('Error loading posts:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 应用筛选
+const applyFilter = async (): Promise<void> => {
+  if (!filterNodeId.value && !filterCreatorId.value) {
+    showSnackbar?.('请至少输入一个筛选条件', 'warning')
+    return
+  }
+  isFilterMode.value = true
+  hasMore.value = true
+  await getPostsByFilter()
+}
+
+// 清除筛选
+const clearFilter = async (): Promise<void> => {
+  filterNodeId.value = undefined
+  filterCreatorId.value = undefined
+  isFilterMode.value = false
+  hasMore.value = true
+  await getPostsByTab(currentTab.value)
+}
+
 // 加载更多数据
 const loadMore = async (): Promise<void> => {
   if (hasMore.value && !loading.value) {
-    await getPostsByTab(currentTab.value, true)
+    if (isFilterMode.value) {
+      await getPostsByFilter(true)
+    } else {
+      await getPostsByTab(currentTab.value, true)
+    }
   }
 }
 
@@ -108,8 +174,12 @@ const approvePost = async (post: Post, approve: boolean): Promise<void> => {
       console.log('done')
       console.log(`post: ${JSON.stringify(response.data)}`)
 
-      // 审核操作后重新加载当前tab的数据
-      await getPostsByTab(currentTab.value)
+      // 使用后端返回的数据更新本地状态
+      const updatedPost = response.data as Post
+      const index = allPostList.value.findIndex(p => p.id === post.id)
+      if (index !== -1) {
+        allPostList.value[index].state = updatedPost.state
+      }
 
       showSnackbar?.(t('admin.operationSuccess'))
     }
@@ -119,9 +189,31 @@ const approvePost = async (post: Post, approve: boolean): Promise<void> => {
 }
 
 // 监听tab切换，重新加载数据
-const handleTabChange = async (newTab: string) => {
-  hasMore.value = true // 重置分页状态
-  await getPostsByTab(newTab)
+const handleTabChange = async (newTab: string) => { if (isFilterMode.value) {
+    // 如果在筛选模式下，切换tab时清除筛选
+    await clearFilter()
+  } else {
+    hasMore.value = true
+    await getPostsByTab(newTab)
+  }
+}
+
+// 解析目录内容 JSON
+const parseContents = (content: string) => {
+  try {
+    const parsed = JSON.parse(content)
+    if (Array.isArray(parsed)) {
+      return parsed
+    }
+    return []
+  } catch (e) {
+    // 向后兼容：如果解析失败，尝试按逗号分割
+    return content.split(',').map((item, index) => ({
+      id: index,
+      name: item.trim(),
+      description: ''
+    }))
+  }
 }
 
 onMounted(() => {
@@ -143,21 +235,83 @@ onMounted(() => {
           <p class="text-body-2 text-grey-darken-1 mb-0">{{ t('admin.reviewUserArticles') }}</p>
         </div>
       </div>
-      <v-chip variant="flat" color="blue-lighten-4" rounded="lg">
+      <v-chip variant="tonal" color="teal" rounded="lg">
         <v-icon
           icon="mdi-file-document-multiple"
-          color="blue-darken-2"
           size="16"
           class="mr-1"
         ></v-icon>
-        <span class="text-blue-darken-2 text-caption"
-          >{{ postList.length }} {{ tabs.find(tab => tab.key === currentTab)?.label }}</span
-        >
+        <span class="text-caption">{{ postList.length }}</span>
       </v-chip>
     </div>
 
+    <!-- 筛选区域 -->
+    <v-card v-if="!isFilterMode" flat class="border rounded-lg pa-4 mb-6">
+      <div class="text-subtitle-2 font-weight-bold text-grey-darken-3 mb-3">
+        <v-icon icon="mdi-filter-outline" size="18" class="mr-2"></v-icon>
+        高级筛选
+      </div>
+      <v-row dense>
+        <v-col cols="12" sm="5">
+          <v-text-field
+            v-model.number="filterNodeId"
+            type="number"
+            label="节点 ID"
+            variant="outlined"
+            density="compact"
+            hide-details
+            clearable
+          ></v-text-field>
+        </v-col>
+        <v-col cols="12" sm="5">
+          <v-text-field
+            v-model.number="filterCreatorId"
+            type="number"
+            label="用户 ID"
+            variant="outlined"
+            density="compact"
+            hide-details
+            clearable
+          ></v-text-field>
+        </v-col>
+        <v-col cols="12" sm="2">
+          <v-btn
+            variant="flat"
+            color="primary"
+            block
+            @click="applyFilter"
+          >
+            <v-icon icon="mdi-magnify" class="mr-1"></v-icon>
+            筛选
+          </v-btn>
+        </v-col>
+      </v-row>
+    </v-card>
+
+    <!-- 筛选结果提示 -->
+    <v-alert
+      v-if="isFilterMode"
+      type="info"
+      color="teal"
+      variant="outlined"
+      class="mb-6"
+      border="top"
+      rounded="lg"
+      closable
+      @click:close="clearFilter"
+    >
+      <div class="d-flex align-center justify-space-between">
+        <div>
+          <span class="font-weight-medium">筛选条件：</span>
+          <v-chip v-if="filterNodeId" size="small" class="mx-1">节点 ID: {{ filterNodeId }}</v-chip>
+          <v-chip v-if="filterCreatorId" size="small" class="mx-1">用户 ID: {{ filterCreatorId }}</v-chip>
+        </div>
+      </div>
+    </v-alert>
+
     <!-- 状态标签 -->
     <v-tabs
+      v-if="!isFilterMode"
       v-model="currentTab"
       color="primary"
       class="mb-6"
@@ -313,18 +467,23 @@ onMounted(() => {
                 v-html="post.content"
               ></div>
               <div v-if="post.type == PostType.CONTENTS">
-                <div class="text-caption text-grey-darken-1 mb-2">{{ t('admin.directory') }}</div>
-                <div class="gap-2">
-                  <v-chip
-                    v-for="(item, index) in post.content.split(',')"
+                <div class="text-caption text-grey-darken-1 mb-3">{{ t('admin.directory') }}</div>
+                <div class="contents-list">
+                  <div
+                    v-for="(item, index) in parseContents(post.content)"
                     :key="index"
-                    variant="flat"
-                    color="grey-lighten-4"
-                    rounded="lg"
-                    class="my-2 py-1 d-block"
+                    class="content-item mb-3"
                   >
-                    {{ item.trim() }}
-                  </v-chip>
+                    <div class="d-flex align-start">
+                      <div class="text-body-2 font-weight-medium text-grey-darken-3 mr-2">{{ index + 1 }}.</div>
+                      <div class="flex-grow-1">
+                        <div class="text-body-2 font-weight-medium text-grey-darken-3">{{ item.name }}</div>
+                        <div v-if="item.description" class="text-caption text-grey-darken-1 mt-1">
+                          {{ item.description }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

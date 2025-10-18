@@ -16,8 +16,9 @@ export interface Comment {
   objectId?: number              // 被评论对象ID (可选)
   replyCount?: number            // 回复数量 (可选)
   replyToCommentId?: number      // 回复的评论ID (可选)
-  fromUserId?: number            // 评论者ID (可选)
+  creatorId?: number             // 评论者ID (可选)
   toUserId?: number              // 被回复者ID (可选)
+  toUserName?: string            // 被回复者用户名 (可选)
   state?: CommentState           // 评论状态 (可选)
   children?: Comment[] | null    // 子评论列表 (可选，可以为null)
 }

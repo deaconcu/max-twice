@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 用户课程SRS设置转换器
  */
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = CommonConverter.class)
 public interface UserCourseSrsSettingConverter {
 
     @Named("toDTO")

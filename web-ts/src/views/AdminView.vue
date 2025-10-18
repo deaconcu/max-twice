@@ -5,6 +5,8 @@
   import SystemConfiguration from '@/components/admin/SystemConfiguration.vue'
   import SystemOperations from '@/components/admin/SystemOperations.vue'
   import CourseManagement from '@/components/admin/CourseManagement.vue'
+  import RoadmapManagement from '@/components/admin/RoadmapManagement.vue'
+  import NodeManagement from '@/components/admin/NodeManagement.vue'
   import PostReview from '@/components/admin/PostReview.vue'
   import CommentReview from '@/components/admin/CommentReview.vue'
   import MemoryCardReview from '@/components/admin/MemoryCardReview.vue'
@@ -34,11 +36,6 @@
     <div class="d-flex flex-row pt-4">
       <!-- 侧边栏 -->
       <div class="sidebar-container">
-        <div class="pa-3 pb-2">
-          <h3 class="text-subtitle-1 font-weight-bold text-grey-darken-2 mb-3">
-            {{ t('admin.modules') }}
-          </h3>
-        </div>
         <v-tabs v-model="tab" color="teal" direction="vertical" class="px-2" flat>
           <v-tab
             prepend-icon="mdi-cog-outline"
@@ -54,9 +51,6 @@
           ></v-tab>
 
           <div class="px-3 py-3">
-            <div class="text-caption text-grey-darken-1 font-weight-medium mb-2">
-              用户管理
-            </div>
             <v-divider class="border-opacity-40"></v-divider>
           </div>
 
@@ -66,13 +60,6 @@
             value="user-management"
             class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"
           ></v-tab>
-
-          <div class="px-3 py-3">
-            <div class="text-caption text-grey-darken-1 font-weight-medium mb-2">
-              {{ t('admin.courseManagement') }}
-            </div>
-            <v-divider class="border-opacity-40"></v-divider>
-          </div>
 
           <v-tab
             prepend-icon="mdi-briefcase-check-outline"
@@ -88,12 +75,21 @@
           ></v-tab>
 
           <div class="px-3 py-3">
-            <div class="text-caption text-grey-darken-1 font-weight-medium mb-2">
-              {{ t('admin.contentReview') }}
-            </div>
             <v-divider class="border-opacity-40"></v-divider>
           </div>
 
+          <v-tab
+            prepend-icon="mdi-map-marker-path"
+            text="路线图管理"
+            value="roadmap-management"
+            class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"
+          ></v-tab>
+          <v-tab
+            prepend-icon="mdi-file-tree-outline"
+            text="节点管理"
+            value="node-management"
+            class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"
+          ></v-tab>
           <v-tab
             prepend-icon="mdi-note-check-outline"
             :text="t('admin.reviewArticles')"
@@ -108,7 +104,7 @@
           ></v-tab>
           <v-tab
             prepend-icon="mdi-cards-variant"
-            text="审核记忆卡片"
+            text="记忆卡片管理"
             value="memory-card-review"
             class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"
           ></v-tab>
@@ -135,6 +131,16 @@
         <!-- 课程申请管理 -->
         <v-card v-if="tab == 'course-management'" flat class="pa-6" rounded="lg">
           <CourseManagement />
+        </v-card>
+
+        <!-- 路线图管理 -->
+        <v-card v-if="tab == 'roadmap-management'" flat class="pa-6" rounded="lg">
+          <RoadmapManagement />
+        </v-card>
+
+        <!-- 节点管理 -->
+        <v-card v-if="tab == 'node-management'" flat class="pa-6" rounded="lg">
+          <NodeManagement />
         </v-card>
 
         <!-- 文章审核 -->

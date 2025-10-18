@@ -218,7 +218,8 @@ public class PostService {
      */
     public List<PostDTO> getList(long nodeId) {
         validateNodeId(nodeId);
-        List<PostDO> posts = postDataService.getListByNodeAndScore(nodeId, systemProperties.getPosting().getDefaultNodePostCount(), Enums.PostState.approved.value());
+        List<PostDO> posts = postDataService.getListByNodeAndScore(
+                nodeId, systemProperties.getPosting().getDefaultNodePostCount(), Enums.PostState.approved.value());
         posts.forEach(this::idToName);
         return postConverter.toDTO(posts);
     }
@@ -385,6 +386,20 @@ public class PostService {
         return getPostsByState(Enums.PostState.submited);
     }
 
+    /**
+     * 根据节点和用户筛选帖子列表（不限状态）
+     */
+    public List<PostDTO> getPostsByNodeAndCreator(Long nodeId, Long creatorId, Long lastId) {
+        int limit = systemProperties.getPosting().getPendingPostsLimit();
+        List<PostDO> postDOList = postDataService.getListByNodeAndCreator(nodeId, creatorId, lastId, limit);
+        for (PostDO postDO : postDOList) {
+            if (postDO.getType() == Enums.PostType.contents.value()) {
+                idToName(postDO);
+            }
+        }
+        return toDTO(postDOList);
+    }
+
 
 
     // ========== 公共方法 command ==========
@@ -548,10 +563,11 @@ public class PostService {
 
                 List<Map<String, Object>> nodeInfoList = nodeList.stream()
                         .map(node -> {
+                            NodeDTO nodeDTO = nodeConverter.toDTOV1(node);
                             Map<String, Object> nodeInfo = new java.util.HashMap<>();
-                            nodeInfo.put("id", node.getId());
-                            nodeInfo.put("name", node.getName());
-                            nodeInfo.put("description", node.getDescription() != null ? node.getDescription() : "");
+                            nodeInfo.put("id", nodeDTO.getId());
+                            nodeInfo.put("name", nodeDTO.getName());
+                            nodeInfo.put("description", nodeDTO.getDescription() != null ? nodeDTO.getDescription() : "");
                             return nodeInfo;
                         })
                         .collect(Collectors.toList());
@@ -707,34 +723,35 @@ public class PostService {
         
         // 批量查询节点信息
         List<NodeDO> nodeList = nodeDataService.getByIds(allContentIds);
-        Map<Long, NodeDO> nodeMap = nodeList.stream()
-                .collect(Collectors.toMap(NodeDO::getId, node -> node));
-        
+        Map<Long, NodeDTO> nodeDTOMap = nodeList.stream()
+                .map(nodeDO -> nodeConverter.toDTOV1(nodeDO))
+                .collect(Collectors.toMap(NodeDTO::getId, node -> node));
+
         // 为每个帖子转换内容ID为名称
         for (PostDO postDO : postings) {
-            if (postDO.getType() == Enums.PostType.article.value() || 
+            if (postDO.getType() == Enums.PostType.article.value() ||
                 postDO.getContent() == null || postDO.getContent().isEmpty()) {
                 continue;
             }
-            
+
             String[] contentIds = postDO.getContent().split(",");
             StringBuilder newContent = new StringBuilder();
-            
+
             for (int i = 0; i < contentIds.length; i++) {
                 try {
                     long nodeId = Long.parseLong(contentIds[i].trim());
-                    NodeDO node = nodeMap.get(nodeId);
-                    if (node != null) {
+                    NodeDTO nodeDTO = nodeDTOMap.get(nodeId);
+                    if (nodeDTO != null) {
                         if (i > 0) {
                             newContent.append(",");
                         }
-                        newContent.append(node.getName());
+                        newContent.append(nodeDTO.getName());
                     }
                 } catch (NumberFormatException e) {
                     log.warn("Failed to parse content ID: {}", contentIds[i], e);
                 }
             }
-            
+
             postDO.setContent(newContent.toString());
         }
     }

@@ -327,7 +327,7 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
         if (id == null) {
             throw ErrorCode.INVALID_PARAMETER.exception(getEntityName() + "ID不能为空");
         }
-        
+
         T entity = getById(id);
         if (entity == null) {
             throw ErrorCode.NOT_FOUND.exception(getEntityName() + "不存在");

@@ -9,6 +9,7 @@ import type { Comment } from '@/types/comment'
 import { COMMENT_VALIDATION } from '@/types/validation'
 import { commentRules } from '@/utils/validationRules'
 import SubcommentArea from './SubcommentArea.vue'
+import UserCard from '../user/UserCard.vue'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -202,6 +203,7 @@ const upvote = async (comment: Comment): Promise<void> => {
     v-model="inputComment"
     variant="outlined"
     density="compact"
+    rounded="lg"
     append-inner-icon="mdi-email-fast-outline"
     :placeholder="t('comment.addComment')"
     :rules="commentRules"
@@ -238,7 +240,11 @@ const upvote = async (comment: Comment): Promise<void> => {
             {{ t('comment.username') }}
             <span class="ms-2 text-caption text-grey">{{ comment.createdAt }}</span>
           </div>
-          <div>{{ comment.content }}</div>
+          <div>
+            <template v-if="comment.toUserId && comment.toUserName">
+              <UserCard :user-id="comment.toUserId" :user-name="comment.toUserName" :show-at-sign="true" />&nbsp;
+            </template>{{ comment.content }}
+          </div>
           <div
             class="ma-0 mt-3 pb-1 d-flex align-center justify-start text-grey-darken-1 text-body-2"
           >
@@ -269,6 +275,7 @@ const upvote = async (comment: Comment): Promise<void> => {
               v-model="replyContent"
               variant="outlined"
               density="compact"
+              rounded="lg"
               append-inner-icon="mdi-email-fast-outline"
               :placeholder="t('comment.addComment')"
               :rules="commentRules"
@@ -284,6 +291,8 @@ const upvote = async (comment: Comment): Promise<void> => {
             :comment-id="comment.id"
             :comments="comment.children"
             :count="comment.replyCount"
+            :object-id="object.id"
+            :object-type="type"
             :offset-id="
               comment.id === parseInt(route.query.commentId as string) && 'subCommentId' in route.query
                 ? route.query.subCommentId as string

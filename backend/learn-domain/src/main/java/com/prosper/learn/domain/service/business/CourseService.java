@@ -245,7 +245,7 @@ public class CourseService {
     }
 
     // 新增：根据状态和lastId获取课程列表
-    public List<CourseDTO> getListByStateAndLastId(CourseState state, long lastId) {
+    public List<CourseDTO> getListByStateAndLastId(CourseState state, Long lastId) {
         List<CourseDO> courseDOList = courseDataService.listByStateAndLastId(state, lastId);
         return courseDOList.stream()
                 .map(this::toDTOV4)

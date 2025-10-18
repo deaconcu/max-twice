@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 课程记忆库转换器
  */
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = CommonConverter.class)
 public interface CourseMemoryBankConverter {
 
     /**

@@ -720,4 +720,57 @@ public class RoadmapService {
             throw ErrorCode.JSON_PROCESSING_ERROR.exception(e);
         }
     }
+
+    // ========== Admin管理方法 ==========
+
+    /**
+     * Admin管理：按条件获取路线图列表
+     */
+    public List<RoadmapDTO> listByFilter(Byte state, Long professionId, Long creatorId, Long lastId) {
+        List<RoadmapDO> roadmapDOList = roadmapDataService.listByFilter(state, professionId, creatorId, lastId);
+        return toDTO(roadmapDOList);
+    }
+
+    /**
+     * 批准路线图（直接通过，保留描述）
+     */
+    public RoadmapDTO approve(long id) {
+        RoadmapDO roadmap = roadmapDataService.getById(id);
+        if (roadmap == null) {
+            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+        }
+
+        roadmapDataService.approve(id);
+        roadmap.setState((byte) 1);
+        return toDTO(roadmap);
+    }
+
+    /**
+     * 清除描述并批准路线图
+     */
+    public RoadmapDTO approveAndClearDescription(long id) {
+        RoadmapDO roadmap = roadmapDataService.getById(id);
+        if (roadmap == null) {
+            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+        }
+
+        roadmap.setDescription("");
+        roadmap.setState((byte) 1);
+        roadmapDataService.update(roadmap);
+        return toDTO(roadmap);
+    }
+
+    /**
+     * 更新路线图描述（管理员操作）
+     */
+    public RoadmapDTO updateDescription(long id, String description) {
+        RoadmapDO roadmap = roadmapDataService.getById(id);
+        if (roadmap == null) {
+            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+        }
+
+        roadmap.setDescription(description != null ? description : "");
+        roadmapDataService.update(roadmap);
+        return toDTO(roadmap);
+    }
 }

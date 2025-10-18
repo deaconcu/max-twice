@@ -52,96 +52,98 @@ const currentFirstCategory: ComputedRef<ProfessionCategory | undefined> = comput
   <!-- 一级分类按钮导航 -->
   <v-row v-if="!searchText.trim()" class="mb-4">
     <v-col cols="12">
-      <v-card flat class="bg-grey-lighten-5 px-6 pt-6 pb-2 category-navigation-card" rounded="xl">
-        <!-- 标题区域 -->
-        <div class="d-flex align-center mb-5">
-          <div class="pa-3 rounded-xl bg-white mr-3">
-            <v-icon icon="mdi-briefcase-variant" color="blue-darken-2" size="24"></v-icon>
-          </div>
-          <div>
-            <h3 class="text-h6 font-weight-bold text-blue-grey-darken-3 mb-1">
-              {{ t('careerCenter.category.title') }}
-            </h3>
-            <p class="text-caption text-blue-grey-darken-1 mb-0">
-              <v-icon icon="mdi-filter-outline" size="12" class="mr-1"></v-icon>
-              {{ t('careerCenter.category.subtitle') }}
-            </p>
-          </div>
-        </div>
-
-        <!-- 一级分类按钮组 -->
-        <div class="d-flex flex-wrap mb-6 category-buttons-gap">
-          <v-btn
-            v-for="category in categories"
-            :key="category.id"
-            :color="activeFirstLvl === category.id ? 'blue-darken-1' : 'white'"
-            variant="flat"
-            rounded="xl"
-            class="font-weight-medium category-btn-flat"
-            @click="handleFirstLevelSelect(category.id)"
-          >
-            <v-icon
-              :icon="category.icon"
-              size="18"
-              class="mr-2"
-              :color="activeFirstLvl === category.id ? 'white' : 'blue-grey-darken-2'"
-            >
-            </v-icon>
-            <span
-              :class="activeFirstLvl === category.id ? 'text-white' : 'text-blue-grey-darken-3'"
-            >
-              {{ category.title }}
-            </span>
-          </v-btn>
-        </div>
-
-        <!-- 二级分类按钮 -->
-        <div v-if="activeFirstLvl !== -1 && activeFirstLvl !== 0" class="mt-4">
-          <!-- 二级分类标题 -->
-          <div class="pa-4 mb-4 rounded-xl bg-white">
-            <div class="d-flex align-center mb-3">
-              <v-icon
-                icon="mdi-chevron-right"
-                color="blue-darken-1"
-                size="16"
-                class="mr-2"
-              ></v-icon>
-              <h4 class="text-subtitle-1 font-weight-bold text-blue-grey-darken-3 mb-0">
-                {{ currentFirstCategory?.title }} -
-                {{ t('careerCenter.category.specificDirection') }}
-              </h4>
+      <v-card flat class="pa-1 category-navigation-card" rounded="xl">
+        <div class="bg-grey-lighten-5 pa-3 pb-2 rounded-xl">
+          <!-- 标题区域 -->
+          <div class="d-flex align-center pb-4 title-divider">
+            <div class="pa-3 rounded-xl bg-white mr-3">
+              <v-icon icon="mdi-briefcase-variant" color="blue-darken-2" size="24"></v-icon>
             </div>
+            <div>
+              <h3 class="text-h6 font-weight-bold text-blue-grey-darken-3 mb-1">
+                {{ t('careerCenter.category.title') }}
+              </h3>
+              <p class="text-caption text-blue-grey-darken-1 mb-0">
+                <v-icon icon="mdi-filter-outline" size="12" class="mr-1"></v-icon>
+                {{ t('careerCenter.category.subtitle') }}
+              </p>
+            </div>
+          </div>
 
-            <!-- 二级分类按钮组 -->
-            <div class="d-flex flex-wrap subcategory-buttons-gap">
-              <v-btn
-                v-for="(subcategory, subcategoryIndex) in getSubcategoriesByMainCategory(
-                  activeFirstLvl
-                )"
-                :key="subcategoryIndex"
-                :color="activeSecondLvl === subcategoryIndex ? 'orange-darken-1' : 'grey-lighten-3'"
-                variant="flat"
-                rounded="xl"
-                class="font-weight-medium subcategory-btn-flat"
-                @click="handleSecondLevelSelect(subcategoryIndex)"
+          <!-- 一级分类按钮组 -->
+          <div class="d-flex flex-wrap pt-5 mb-5 category-buttons-gap">
+            <v-btn
+              v-for="category in categories"
+              :key="category.id"
+              :color="activeFirstLvl === category.id ? 'blue-darken-1' : 'white'"
+              variant="flat"
+              rounded="xl"
+              class="font-weight-medium category-btn-flat"
+              @click="handleFirstLevelSelect(category.id)"
+            >
+              <v-icon
+                :icon="category.icon"
+                size="18"
+                class="mr-2"
+                :color="activeFirstLvl === category.id ? 'white' : 'blue-grey-darken-2'"
               >
+              </v-icon>
+              <span
+                :class="activeFirstLvl === category.id ? 'text-white' : 'text-blue-grey-darken-3'"
+              >
+                {{ category.title }}
+              </span>
+            </v-btn>
+          </div>
+
+          <!-- 二级分类按钮 -->
+          <div v-if="activeFirstLvl !== -1 && activeFirstLvl !== 0" class="mt-4">
+            <!-- 二级分类标题 -->
+            <div class="pa-4 mb-1 rounded-xl bg-white">
+              <div class="d-flex align-center mb-3">
                 <v-icon
-                  :icon="
-                    activeSecondLvl === subcategoryIndex ? 'mdi-folder-open' : 'mdi-folder-outline'
-                  "
-                  size="14"
-                  class="mr-1"
-                  :color="activeSecondLvl === subcategoryIndex ? 'white' : 'blue-grey-darken-2'"
+                  icon="mdi-chevron-right"
+                  color="blue-darken-1"
+                  size="16"
+                  class="mr-2"
+                ></v-icon>
+                <h4 class="text-subtitle-1 font-weight-bold text-blue-grey-darken-3 mb-0">
+                  {{ currentFirstCategory?.title }} -
+                  {{ t('careerCenter.category.specificDirection') }}
+                </h4>
+              </div>
+
+              <!-- 二级分类按钮组 -->
+              <div class="d-flex flex-wrap subcategory-buttons-gap">
+                <v-btn
+                  v-for="(subcategory, subcategoryIndex) in getSubcategoriesByMainCategory(
+                    activeFirstLvl
+                  )"
+                  :key="subcategoryIndex"
+                  :color="activeSecondLvl === subcategoryIndex ? 'orange-darken-1' : 'grey-lighten-3'"
+                  variant="flat"
+                  rounded="xl"
+                  class="font-weight-medium subcategory-btn-flat"
+                  @click="handleSecondLevelSelect(subcategoryIndex)"
                 >
-                </v-icon>
-                <span
-                  :class="
-                    activeSecondLvl === subcategoryIndex ? 'text-white' : 'text-blue-grey-darken-3'
-                  "
-                >
-                  {{ subcategory.name }}
-                </span>
-              </v-btn>
+                  <v-icon
+                    :icon="
+                      activeSecondLvl === subcategoryIndex ? 'mdi-folder-open' : 'mdi-folder-outline'
+                    "
+                    size="14"
+                    class="mr-1"
+                    :color="activeSecondLvl === subcategoryIndex ? 'white' : 'blue-grey-darken-2'"
+                  >
+                  </v-icon>
+                  <span
+                    :class="
+                      activeSecondLvl === subcategoryIndex ? 'text-white' : 'text-blue-grey-darken-3'
+                    "
+                  >
+                    {{ subcategory.name }}
+                  </span>
+                </v-btn>
+              </div>
             </div>
           </div>
         </div>
@@ -153,8 +155,12 @@ const currentFirstCategory: ComputedRef<ProfessionCategory | undefined> = comput
 <style scoped>
 /* 职业领域筛选区域样式 */
 .category-navigation-card {
-  border-left: 2px solid #d0d0d0 !important;
-  border-right: 2px solid #d0d0d0 !important;
+  border: 1px solid #d0d0d0 !important;
+}
+
+/* 标题分隔线 */
+.title-divider {
+  border-bottom: 1px solid #e0e0e0;
 }
 
 /* 分类按钮样式 */

@@ -138,6 +138,18 @@ public class PostsController {
     }
 
     /**
+     * 根据节点和用户筛选帖子列表
+     */
+    @GetMapping("/admin/posts/filter")
+    public ApiResponse<List<PostDTO>> getPostsByNodeAndCreator(
+            @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
+            @RequestParam(value = "creatorId", required = false) @Positive(message = "用户ID必须大于0") Long creatorId,
+            @RequestParam(value = "lastId", defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastId) {
+        List<PostDTO> posts = postService.getPostsByNodeAndCreator(nodeId, creatorId, lastId);
+        return ApiResponse.success(posts);
+    }
+
+    /**
      * 获取待审核帖子
      * 映射: GET /post/censor → GET /api/v1/admin/posts/pending
      */

@@ -19,7 +19,7 @@ public class CommentDO {
 
     private Long replyToCommentId;
 
-    private Long fromUserId;
+    private Long creatorId;
 
     private Long toUserId;
 

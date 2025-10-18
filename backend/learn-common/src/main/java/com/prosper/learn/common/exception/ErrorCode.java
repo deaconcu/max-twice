@@ -79,13 +79,14 @@ public enum ErrorCode {
 
     // 内容管理相关 13xx
     CONTENTS_COURSE_NOT_FOUND(1301, "课程不存在"),
-    CONTENTS_POST_NOT_FOUND(1302, "帖子不存在"), 
+    CONTENTS_POST_NOT_FOUND(1302, "帖子不存在"),
     CONTENTS_PINNED_ITEMS_LIMIT_EXCEEDED(1303, "置顶帖子数量超限"),
     CONTENTS_INVALID_POST_TYPE(1304, "无效的帖子类型"),
     POSTING_INVALID_PARAMETER(1305, "帖子参数无效"),
     POSTING_CONTENT_PARSE_FAILED(1306, "帖子内容解析失败"),
     POSTING_NODE_NOT_FOUND(1307, "节点不存在"),
     POSTING_LIST_QUERY_FAILED(1308, "帖子列表查询失败"),
+    NODE_BLOCKED(1309, "该节点已被屏蔽，暂时无法访问"),
 
     // 目录管理相关 18xx
     TOC_USER_TOC_NOT_FOUND(1801, "用户目录不存在"),
@@ -106,6 +107,7 @@ public enum ErrorCode {
     PROFESSION_STATE_CONFLICT(2105, "专业状态已被其他操作修改，请刷新后重试"),
     PROFESSION_HOT_LIST_FAILED(2106, "获取热门专业失败"),
     PROFESSION_INVALID_LIMIT(2107, "专业查询数量超出限制"),
+    PROFESSION_BLOCKED(2108, "该职业已被屏蔽，暂时无法访问"),
 
     // 记忆卡片相关 22xx
     MEMORY_CARD_DECK_NOT_FOUND(2201, "卡片组不存在"),

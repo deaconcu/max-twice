@@ -15,8 +15,12 @@ public interface ProfessionMapper {
     @Select("SELECT * FROM profession ORDER BY id DESC LIMIT #{size} OFFSET #{offset}")
     List<ProfessionDO> listByPage(int offset, int size);
 
-    @Select("SELECT * FROM profession WHERE state = #{state} AND id > #{lastId} ORDER BY id DESC LIMIT 20")
-    List<ProfessionDO> listByStateAndLastId(byte state, long lastId);
+    @Select("<script>" +
+            "SELECT * FROM profession WHERE state = #{state} " +
+            "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
+            "ORDER BY id DESC LIMIT 20" +
+            "</script>")
+    List<ProfessionDO> listByStateAndLastId(byte state, Long lastId);
 
     @Select("SELECT * FROM profession WHERE main_category = #{mainCategory} AND state = 1 AND id > #{lastId} ORDER BY id ASC LIMIT 20")
     List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, long lastId);

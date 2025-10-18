@@ -5,6 +5,7 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.RoadmapService;
 import com.prosper.learn.dto.response.RoadmapDTO;
 import com.prosper.learn.dto.response.old.RoadmapDTOV1;
+import com.prosper.learn.dto.response.ApprovalResponseDTO;
 import com.prosper.learn.dto.request.*;
 import com.prosper.learn.api.v1.annotation.JsonParam;
 import lombok.RequiredArgsConstructor;
@@ -117,5 +118,55 @@ public class RoadmapsController {
         Boolean pinned = roadmapService.pinRoadmap(request.getProfessionId(), request.getRoadmapId(), userId);
 
         return ApiResponse.success(pinned);
+    }
+
+    /**
+     * 管理后台：按条件获取路线图列表
+     * 映射: GET /api/v1/admin/roadmaps?state=0&professionId=1&creatorId=2&lastId=123
+     */
+    @GetMapping("/admin/roadmaps")
+    public ApiResponse<List<RoadmapDTO>> getAdminRoadmaps(
+            @RequestParam(required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state,
+            @RequestParam(required = false) @Positive(message = "职业ID必须大于0") Long professionId,
+            @RequestParam(required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
+            @RequestParam(required = false) Long lastId) {
+
+        List<RoadmapDTO> roadmaps = roadmapService.listByFilter(state, professionId, creatorId, lastId);
+        return ApiResponse.success(roadmaps);
+    }
+
+    /**
+     * 路线图审核操作
+     * 映射: POST /api/v1/roadmaps/{id}/approve
+     */
+    @PostMapping("/roadmaps/{id}/approve")
+    public ApiResponse<RoadmapDTO> approveRoadmap(
+            @PathVariable @NotNull(message = "路线图ID不能为空")
+            @Positive(message = "路线图ID必须大于0")
+            Long id,
+            @RequestBody @Valid OperateRequest request) {
+
+        RoadmapDTO roadmap = switch (request.getAction().toLowerCase()) {
+            case "approve" -> roadmapService.approve(id);
+            case "approve_clear" -> roadmapService.approveAndClearDescription(id);
+            default -> throw ErrorCode.SYSTEM_ERROR.exception();
+        };
+
+        return ApiResponse.success(roadmap);
+    }
+
+    /**
+     * 更新路线图描述
+     * 映射: PUT /api/v1/roadmaps/{id}/description
+     */
+    @PutMapping("/roadmaps/{id}/description")
+    public ApiResponse<RoadmapDTO> updateRoadmapDescription(
+            @PathVariable @NotNull(message = "路线图ID不能为空")
+            @Positive(message = "路线图ID必须大于0")
+            Long id,
+            @JsonParam("description") String description) {
+
+        RoadmapDTO roadmap = roadmapService.updateDescription(id, description);
+        return ApiResponse.success(roadmap);
     }
 }

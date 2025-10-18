@@ -56,6 +56,25 @@ public class CoursesController {
     }
 
     /**
+     * 管理后台：按状态获取课程列表
+     * 映射: GET /api/v1/admin/courses?state=0&lastId=123
+     */
+    @GetMapping("/admin/courses")
+    public ApiResponse<Object> getAdminCourses(
+            @RequestParam @NotNull(message = "状态不能为空")
+            @Min(value = 0, message = "状态必须大于等于0") Byte state,
+            @RequestParam(required = false) Long lastId) {
+
+        CourseState courseState = CourseState.getByValue(state.intValue());
+        if (courseState == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("Invalid course state: " + state);
+        }
+
+        List<CourseDTO> courseList = courseService.getListByStateAndLastId(courseState, lastId);
+        return ApiResponse.success(courseList);
+    }
+
+    /**
      * 按状态获取课程列表
      * 映射: GET /course/list?state=xxx&lastId=123 → GET /api/v1/courses?state=xxx&lastId=123
      */

@@ -32,9 +32,9 @@ public class CommentsController {
      * 映射: POST /comment → POST /api/v1/comments
      */
     @PostMapping("/comments")
-    public ApiResponse<CommentDO> createComment(@Valid @RequestBody CreateCommentRequest request) {
+    public ApiResponse<CommentDTO> createComment(@Valid @RequestBody CreateCommentRequest request) {
         Long userId = StpUtil.getLoginIdAsLong();
-        CommentDO comment = commentService.createComment(request, userId);
+        CommentDTO comment = commentService.createComment(request, userId);
         return ApiResponse.success(comment);
     }
 

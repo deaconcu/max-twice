@@ -34,28 +34,37 @@ public class ProfessionsController {
     private final ProfessionRankingScheduler professionRankingScheduler;
 
     /**
+     * 管理后台：按状态获取职业列表
+     * 映射: GET /api/v1/admin/professions?state=0&lastId=123
+     */
+    @GetMapping("/admin/professions")
+    public ApiResponse<Object> getAdminProfessions(
+            @RequestParam @Positive(message = "状态必须大于0") Byte state,
+            @RequestParam(required = false) Long lastId) {
+
+        ProfessionState professionState = ProfessionState.getByValue(state.intValue());
+        if (professionState == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("Invalid profession state: " + state);
+        }
+
+        List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(professionState, lastId);
+        return ApiResponse.success(professionList);
+    }
+
+    /**
      * 分页获取职业
      * 映射: GET /profession/list?page=1 → GET /api/v1/professions?page=0&size=20
      */
     @GetMapping("/professions")
     public ApiResponse<Object> getProfessionsByPage(
             @RequestParam(required = false) @Min(value = 0, message = "页码不能小于0") Integer page,
-            @RequestParam(required = false) @Positive(message = "状态必须大于0") Byte state,
-            @RequestParam(required = false) @Min(value = 0, message = "最后ID不能小于0") Long lastId,
+            @RequestParam(required = false) Long lastId,
             @RequestParam(required = false) @Positive(message = "主分类必须大于0") Integer mainCategory,
             @RequestParam(required = false) @Positive(message = "子分类必须大于0") Integer subCategory) {
-        
+
         if (page != null) {
             // 分页获取职业
             List<ProfessionDTO> professionList = professionService.getListByPage(page);
-            return ApiResponse.success(professionList);
-        } else if (state != null && lastId != null) {
-            // 按状态获取职业
-            ProfessionState professionState = ProfessionState.getByValue(state.intValue());
-            if (professionState == null) {
-                throw ErrorCode.INVALID_PARAMETER.exception("Invalid profession state: " + state);
-            }
-            List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(professionState, lastId);
             return ApiResponse.success(professionList);
         } else if (mainCategory != null && subCategory != null && lastId != null) {
             // 按分类获取
@@ -76,7 +85,7 @@ public class ProfessionsController {
      */
     @GetMapping("/professions/approved")
     public ApiResponse<Object> getApprovedProfessions(
-            @RequestParam(required = false, defaultValue = "0")
+            @RequestParam(required = false)
             @Min(value = 0, message = "最后ID不能小于0")
             Long lastId) {
         List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(ProfessionState.APPROVED, lastId);

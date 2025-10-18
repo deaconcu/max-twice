@@ -150,10 +150,8 @@
         hasMore.value = false
       } else {
         // 使用lastId进行分页查询
-        response = await courseServiceV1.getCoursesByState(
-          currentState,
-          isLoadMore ? lastId.value : 0
-        )
+        const currentLastId = isLoadMore ? lastId.value : null
+        response = await courseServiceV1.getAdminCourses(currentState, currentLastId)
       }
 
       if (response.code === 200) {

@@ -4,6 +4,9 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { commentServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1'
 import type { Comment } from '@/types/comment'
+import type { ObjectType as ObjectTypeType } from '@/types/enums'
+import { COMMENT_VALIDATION } from '@/types/validation'
+import UserCard from '../user/UserCard.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -15,6 +18,8 @@ interface Props {
   count?: number
   activeReplyId?: string | number
   offsetId?: string | number
+  objectId: number
+  objectType: ObjectTypeType
 }
 
 interface Emits {
@@ -118,9 +123,56 @@ const upvote = async (comment: Comment): Promise<void> => {
   }
 }
 
-const sendComment = (): void => {
-  // TODO: 实现发送评论功能
-  replyContent.value = ''
+const isValidComment = (content: string): boolean => {
+  const trimmed = content.trim()
+  return trimmed.length >= COMMENT_VALIDATION.CONTENT_MIN_LENGTH &&
+         trimmed.length <= COMMENT_VALIDATION.CONTENT_MAX_LENGTH
+}
+
+const sendComment = async (toComment: Comment): Promise<void> => {
+  if (!isValidComment(replyContent.value)) {
+    return
+  }
+
+  try {
+    const response = await commentServiceV1.createComment(
+      props.objectId,
+      props.objectType,
+      props.commentId,
+      toComment.creatorId,
+      replyContent.value
+    )
+
+    if (response.code === 200) {
+      replyContent.value = ''
+
+      // 找到被回复评论的位置，插入到其后面
+      const allComments = localComments.value
+      const toCommentIndex = allComments.findIndex(c => c.id === toComment.id)
+
+      if (toCommentIndex !== -1) {
+        // 判断是在 props.comments 还是 additionalComments 中
+        if (toCommentIndex < props.comments.length) {
+          // 在 props.comments 中，插入到 additionalComments 开头
+          additionalComments.value.unshift(response.data)
+        } else {
+          // 在 additionalComments 中，插入到对应位置后面
+          const indexInAdditional = toCommentIndex - props.comments.length
+          additionalComments.value.splice(indexInAdditional + 1, 0, response.data)
+        }
+      } else {
+        // 找不到就插入到顶部
+        additionalComments.value.unshift(response.data)
+      }
+
+      emit('update:activeReplyId', 0)
+    } else {
+      showSnackbar(response.message || 'error.operationFailed', 'error')
+    }
+  } catch (error) {
+    console.error('Error submitting subcomment:', error)
+    showSnackbar('error.operationFailed', 'error')
+  }
 }
 </script>
 
@@ -141,7 +193,11 @@ const sendComment = (): void => {
             {{ t('subcomment.username') }}
             <span class="ms-2 text-caption text-grey">{{ comment.createdAt }}</span>
           </div>
-          <div class="">{{ comment.content }}</div>
+          <div class="">
+            <template v-if="comment.toUserId && comment.toUserName">
+              <UserCard :user-id="comment.toUserId" :user-name="comment.toUserName" :show-at-sign="true" />&nbsp;
+            </template>{{ comment.content }}
+          </div>
           <div class="ma-0 py-2 pb-1 d-flex align-center justify-start text-grey-darken-1">
             <v-btn
               class="ms-0"
@@ -169,12 +225,13 @@ const sendComment = (): void => {
               v-model="replyContent"
               variant="outlined"
               density="compact"
+              rounded="lg"
               append-inner-icon="mdi-email-fast-outline"
               :placeholder="t('subcomment.addComment')"
               class="w-100"
               hide-details
-              @click:append-inner="sendComment"
-              @keydown.enter="sendComment"
+              @click:append-inner="sendComment(comment)"
+              @keydown.enter="sendComment(comment)"
             ></v-text-field>
           </div>
         </div>

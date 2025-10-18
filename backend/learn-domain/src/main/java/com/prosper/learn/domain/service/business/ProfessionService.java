@@ -39,10 +39,18 @@ public class ProfessionService {
     public ProfessionDTO getById(long id) {
         validateProfessionId(id);
         ProfessionDO professionDO = professionDataService.getById(id);
-        return professionDO != null ? toDTO(professionDO) : null;
+        if (professionDO == null) {
+            return null;
+        }
+
+        if (professionDO.getState() == ProfessionState.REJECTED.value()) {
+            throw ErrorCode.PROFESSION_BLOCKED.exception();
+        }
+
+        return toDTO(professionDO);
     }
 
-    public List<ProfessionDTO> getListByStateAndLastId(ProfessionState state, long lastId) {
+    public List<ProfessionDTO> getListByStateAndLastId(ProfessionState state, Long lastId) {
         List<ProfessionDO> professionDOList = professionDataService.listByStateAndLastId(state.value(), lastId);
         return toDTO(professionDOList);
     }
@@ -158,14 +166,18 @@ public class ProfessionService {
             }
             
             List<ProfessionDO> professionDOList = professionDataService.getByIds(hotProfessionIds);
-            
+
             List<ProfessionDTO> result = new ArrayList<>();
             for (ProfessionDO professionDO : professionDOList) {
+                if (professionDO.getState() != ProfessionState.APPROVED.value()) {
+                    continue;
+                }
+
                 ProfessionDTO professionDTO = toDTO(professionDO);
-                
+
                 long learningCount = professionRankingService.getProfessionLearningCount(professionDO.getId());
                 professionDTO.setLearnerCount((int) learningCount);
-                
+
                 result.add(professionDTO);
             }
             
@@ -216,22 +228,6 @@ public class ProfessionService {
         return profession;
     }
     
-    private void validateProfessionForCreation(ProfessionDTO professionDTO) {
-        if (professionDTO == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-        if (professionDTO.getName() == null || professionDTO.getName().trim().isEmpty()) {
-            throw ErrorCode.PROFESSION_NAME_REQUIRED.exception();
-        }
-    }
-    
-    private void validateProfessionForUpdate(ProfessionDTO professionDTO) {
-        if (professionDTO == null || professionDTO.getId() == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-        validateProfessionId(professionDTO.getId());
-    }
-    
     private void validateNotAlreadyApproved(ProfessionDTO profession) {
         if (ProfessionState.APPROVED.value() == profession.getState()) {
             throw ErrorCode.PROFESSION_ALREADY_APPROVED.exception();
@@ -256,18 +252,6 @@ public class ProfessionService {
         }
         if (limit > systemProperties.getProfession().getMaxHotProfessionsLimit()) {
             throw ErrorCode.PROFESSION_INVALID_LIMIT.exception();
-        }
-    }
-    
-    private void setDefaultValues(ProfessionDTO professionDTO) {
-        if (professionDTO.getPrice() == null || professionDTO.getPrice().trim().isEmpty()) {
-            professionDTO.setPrice(DEFAULT_EMPTY_STRING);
-        }
-        if (professionDTO.getSkills() == null || professionDTO.getSkills().trim().isEmpty()) {
-            professionDTO.setSkills(DEFAULT_EMPTY_STRING);
-        }
-        if (professionDTO.getIcon() == null || professionDTO.getIcon().trim().isEmpty()) {
-            professionDTO.setIcon(systemProperties.getProfession().getDefaultIcon());
         }
     }
 }

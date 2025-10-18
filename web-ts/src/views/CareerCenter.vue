@@ -189,7 +189,7 @@ const loadCareerData = async (reset: boolean = true): Promise<void> => {
       currentQueryParams.value = { type: 'all', mainCategory: null, subCategory: null }
     }
 
-    const response = await professionServiceV1.getApprovedProfessions(lastId.value)
+    const response = await professionServiceV1.getApprovedProfessions(reset ? null : lastId.value)
     console.log('response', response.data)
     const newCareers = addRandomIconsToCareers(response.data || [])
 

@@ -8,9 +8,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = CommonConverter.class)
 public interface PostConverter {
-    
+
     @Named("toDTO")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
@@ -26,14 +26,7 @@ public interface PostConverter {
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
     PostDTO toDTO(PostDO postDO);
-    
+
     @IterableMapping(qualifiedByName = "toDTO")
     List<PostDTO> toDTO(List<PostDO> postDOList);
-
-    default String map(LocalDateTime localDateTime) {
-        if (localDateTime == null) {
-            return null;
-        }
-        return localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-    }
 }

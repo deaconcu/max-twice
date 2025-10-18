@@ -20,9 +20,11 @@ public class CommentDTO {
 
     private Long replyToCommentId;
 
-    private Long fromUserId;
+    private Long creatorId;
 
     private Long toUserId;
+
+    private String toUserName;
 
     private Integer upvoteCount;
 

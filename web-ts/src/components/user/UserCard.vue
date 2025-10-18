@@ -4,22 +4,26 @@ import { followServiceV1, userServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useI18n } from 'vue-i18n'
 import { Bool } from '@/types/enums'
 import type { User } from '@/types/user'
-import { getUserDisplayName, isUserBanned } from '@/utils/common'
+import { getUserDisplayName } from '@/utils/common'
 
 interface Props {
-  user: User
+  userId: number
+  userName: string
+  showAtSign?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  showAtSign: false
+})
 const { t } = useI18n()
 
 const loadingUserInfo = ref<boolean>(false)
-const userInfo = ref<User | null>(props.user)
+const userInfo = ref<User | null>(null)
 
 const onHover = function (open: boolean): void {
   if (open && (!userInfo.value?.biography || userInfo.value.followed === undefined)) {
     loadingUserInfo.value = true
-    getUser(props.user.id)
+    getUser(props.userId)
   }
 }
 
@@ -39,8 +43,7 @@ const getUser = async (id: number): Promise<void> => {
   }
 }
 
-const displayName = computed(() => getUserDisplayName(userInfo.value))
-const isBanned = computed(() => isUserBanned(props.user))
+const displayName = computed(() => userInfo.value ? getUserDisplayName(userInfo.value) : props.userName)
 
 const follow = async (id: number): Promise<void> => {
   try {
@@ -79,24 +82,30 @@ const unfollow = async (id: number): Promise<void> => {
 </script>
 
 <template>
-  <!-- 被屏蔽用户不显示弹窗 -->
-  <span v-if="isBanned" class="text-body-2 text-grey-darken-4 font-weight-bold">{{ displayName }}</span>
-
   <v-menu
-    v-else
     open-on-hover
     :close-on-content-click="false"
     origin="top center"
     @update:model-value="(val) => onHover(val)"
   >
     <template #activator="{ props: menuProps }">
-      <span v-bind="menuProps" class="text-body-2 text-grey-darken-4 font-weight-bold">{{ displayName }}</span>
+      <a
+        v-bind="menuProps"
+        :href="'/user?id=' + props.userId"
+        target="_blank"
+        class="text-decoration-none"
+        :class="showAtSign ? 'text-primary' : 'text-grey-darken-4'"
+      >
+        <span class="text-body-2 font-weight-bold">
+          <span v-if="showAtSign">@</span>{{ displayName }}
+        </span>
+      </a>
     </template>
     <v-card width="300" elevation="1" class="mt-3 ms-9 mx-auto">
       <div v-if="loadingUserInfo">{{ t('userCard.loading') }}</div>
       <div v-else>
         <v-card-title class="d-flex align-center text-body-1">
-          <a :href="'/user?id=' + props.user.id" target="_blank">{{ displayName }}</a>
+          <a :href="'/user?id=' + props.userId" target="_blank">{{ displayName }}</a>
         </v-card-title>
         <v-card-subtitle>
           {{ t('userCard.stats', { articles: 5, likes: 202 }) }}

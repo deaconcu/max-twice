@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service.data;
 
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.persistence.dataobject.NodeDO;
 import com.prosper.learn.persistence.mapper.NodeMapper;
@@ -111,5 +112,36 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
      */
     public void insert(NodeDO nodeDO) {
         nodeMapper.insert(nodeDO);
+    }
+
+    /**
+     * 根据筛选条件获取节点列表（支持分页）
+     */
+    public List<NodeDO> getListByFilter(Long nodeId, Long courseId, Long creatorId, Long lastId) {
+        if (lastId == null || lastId == 0) {
+            lastId = Long.MAX_VALUE;
+        }
+        return nodeMapper.getListByFilterWithPagination(nodeId, courseId, creatorId, lastId, 20);
+    }
+
+    /**
+     * 更新节点状态
+     */
+    @CacheEvict(value = "nodes", key = "#nodeId")
+    public void updateState(Long nodeId, Enums.CommomState state) {
+        if (nodeId == null || nodeId <= 0) {
+            throw new IllegalArgumentException("Invalid node ID");
+        }
+        if (state == null) {
+            throw new IllegalArgumentException("State cannot be null");
+        }
+
+        try {
+            nodeMapper.updateState(nodeId, state.value());
+            log.debug("Updated node {} state to {}", nodeId, state);
+        } catch (Exception e) {
+            log.error("Error updating node state: {}", nodeId, e);
+            throw ErrorCode.DATABASE_ERROR.exception(e);
+        }
     }
 }

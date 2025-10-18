@@ -337,7 +337,7 @@ public class UpvoteService {
         commentDataService.update(commentDO);
 
         messageService.createUpvoteMessage(
-                commentDO.getFromUserId(), userId, nodeId, commentId, ObjectType.comment.value(), 1);
+                commentDO.getCreatorId(), userId, nodeId, commentId, ObjectType.comment.value(), 1);
     }
 
     /**

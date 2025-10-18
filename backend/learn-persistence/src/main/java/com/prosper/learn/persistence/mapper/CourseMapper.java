@@ -30,8 +30,12 @@ public interface CourseMapper {
     List<CourseDO> list(CourseState state, long creatorId, int limit, int offset);
 
     // 新增：根据状态和lastId获取列表
-    @Select("SELECT * FROM course WHERE state = #{state.value} AND id > #{lastId} ORDER BY updated_at DESC LIMIT 20")
-    List<CourseDO> listByStateAndLastId(CourseState state, long lastId);
+    @Select("<script>" +
+            "SELECT * FROM course WHERE state = #{state.value} " +
+            "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
+            "ORDER BY id DESC LIMIT 20" +
+            "</script>")
+    List<CourseDO> listByStateAndLastId(CourseState state, Long lastId);
 
     // 新增：根据主分类和子分类获取已批准的课程列表
     // 修正状态值：使用数字1代替字符串'APPROVED'，对应CourseState.APPROVED.value()

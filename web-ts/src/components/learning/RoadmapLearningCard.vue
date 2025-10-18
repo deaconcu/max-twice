@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import RoadmapVueFlow from '@/components/common/RoadmapVueFlow.vue'
-import { UserRoadmapState } from '@/types/enums'
+import { UserRoadmapState, ProfessionState } from '@/types/enums'
 import type { ProcessedUserRoadmap } from '@/types/userRoadmap'
 
 interface Props {
@@ -113,6 +114,10 @@ const handleClose = (event: Event): void => {
   event.stopPropagation()
   emit('close', props.roadmap, event)
 }
+
+const isProfessionBlocked = computed((): boolean => {
+  return props.roadmap.profession?.state === ProfessionState.REJECTED
+})
 </script>
 
 <template>
@@ -120,34 +125,53 @@ const handleClose = (event: Event): void => {
     <v-card
       variant="flat"
       class="flat-card roadmap-card position-relative"
-      @click="handleOpenDetail"
+      :class="{ 'blocked-card': isProfessionBlocked }"
+      @click="!isProfessionBlocked && handleOpenDetail()"
     >
-      <!-- 学习状态标签 -->
-      <div class="status-badge-container">
-        <div class="d-flex align-center">
-          <v-chip
-            :color="getStatusColor(roadmap.state)"
-            variant="flat"
-            size="small"
-            class="status-badge"
-          >
-            <v-icon :icon="getStatusIcon(roadmap.state)" class="mr-1" size="14"></v-icon>
-            {{ getStatusText(roadmap.state) }}
-          </v-chip>
+      <!-- 职业被屏蔽时只显示警告 -->
+      <div v-if="isProfessionBlocked" class="pa-1">
+        <v-alert
+          type="error"
+          color="grey"
+          variant="tonal"
+          prominent
+          rounded="lg"
+        >
+          <div class="d-flex align-center justify-space-between">
+            <div class="d-flex align-center">
+              <div>
+                <div class="text-h6 font-weight-bold mb-1">该职业已被屏蔽</div>
+                <div class="text-body-2">请取消学习此路线图</div>
+              </div>
+            </div>
+            <v-btn
+              color="grey-lighten-2"
+              variant="flat"
+              rounded="lg"
+              @click.stop="handleClose"
+            >
+              <v-icon icon="mdi-close" class="mr-1"></v-icon>
+              取消学习
+            </v-btn>
+          </div>
+        </v-alert>
+      </div>
 
-          <!-- 进行中状态的关闭按钮 -->
-          <v-btn
-            v-if="roadmap.state === UserRoadmapState.IN_PROGRESS"
-            variant="text"
-            size="x-small"
-            class="ml-2 close-btn"
-            color="grey-darken-2"
-            @click="handleClose"
-          >
-            <v-icon size="16">mdi-close</v-icon>
-            <v-tooltip activator="parent" location="bottom"> 退出学习 </v-tooltip>
-          </v-btn>
-        </div>
+      <!-- 正常显示卡片内容 -->
+      <div v-else>
+      <!-- 关闭按钮 -->
+      <div class="status-badge-container">
+        <v-btn
+          v-if="roadmap.state === UserRoadmapState.IN_PROGRESS"
+          variant="text"
+          size="x-small"
+          class="close-btn"
+          color="grey-darken-2"
+          @click="handleClose"
+        >
+          <v-icon size="16">mdi-close</v-icon>
+          <v-tooltip activator="parent" location="bottom"> 退出学习 </v-tooltip>
+        </v-btn>
       </div>
 
       <div class="d-flex align-stretch roadmap-content-container">
@@ -309,6 +333,7 @@ const handleClose = (event: Event): void => {
           </div>
         </div>
       </div>
+      </div>
     </v-card>
   </div>
 </template>
@@ -325,6 +350,15 @@ const handleClose = (event: Event): void => {
 .roadmap-card:hover {
   transform: translateY(-4px);
   border-color: rgba(25, 118, 210, 0.4) !important;
+}
+
+.blocked-card {
+  cursor: default !important;
+}
+
+.blocked-card:hover {
+  transform: none !important;
+  border-color: #e0e0e0 !important;
 }
 
 .status-badge-container {

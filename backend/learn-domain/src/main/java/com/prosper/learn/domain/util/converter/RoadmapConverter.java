@@ -6,7 +6,7 @@ import org.mapstruct.*;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = CommonConverter.class)
 public interface RoadmapConverter {
     
     @Named("toDTO")
@@ -18,6 +18,7 @@ public interface RoadmapConverter {
     @Mapping(target = "description")
     @Mapping(target = "vote")
     @Mapping(target = "comment")
+    @Mapping(target = "state")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
     RoadmapDTO toDTO(RoadmapDO roadmapDO);

@@ -57,8 +57,8 @@ public interface CommentMapper {
     @Select("SELECT * FROM comment where state = #{state} and id < #{offsetId} order by id DESC limit #{count}")
     List<CommentDO> getListByStatePaginated(int state, long offsetId, int count);
 
-    @Insert("INSERT INTO comment(content, object_type, object_id, reply_to_comment_id, from_user_id, to_user_id, score) " +
-            "VALUES (#{content}, #{objectType}, #{objectId}, #{replyToCommentId}, #{fromUserId}, #{toUserId}, #{score})")
+    @Insert("INSERT INTO comment(content, object_type, object_id, reply_to_comment_id, creator_id, to_user_id, score) " +
+            "VALUES (#{content}, #{objectType}, #{objectId}, #{replyToCommentId}, #{creatorId}, #{toUserId}, #{score})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(CommentDO commentDO);
 

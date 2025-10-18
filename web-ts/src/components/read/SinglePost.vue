@@ -237,8 +237,54 @@
 </script>
 
 <template>
-  <!-- Post容器：添加data-post-id属性用于浏览量跟踪 -->
-  <div :data-post-id="posting.id" class="posting-container">
+  <!-- 被屏蔽的Post占位显示 -->
+  <div v-if="posting.state === 2" class="blocked-post-placeholder">
+    <v-card rounded="lg" elevation="0" class="bg-grey-lighten-5 pa-6">
+      <div class="d-flex align-center justify-space-between">
+        <div class="d-flex align-center">
+          <v-icon icon="mdi-eye-off-outline" size="32" color="grey-darken-1" class="mr-4"></v-icon>
+          <div>
+            <div class="text-h6 font-weight-medium text-grey-darken-3 mb-1">
+              此内容已被屏蔽
+            </div>
+            <div class="text-body-2 text-grey-darken-1">
+              该内容因违反社区规范已被移除
+            </div>
+          </div>
+        </div>
+        <!-- 操作按钮区域 -->
+        <div class="d-flex gap-2">
+          <!-- 如果是设置为目录的Post，显示取消设置按钮 -->
+          <v-btn
+            v-if="props.currNode['+'] && props.currNode['+'] === posting.id"
+            variant="flat"
+            color="grey-lighten-3"
+            rounded="lg"
+            size="small"
+            @click="modifyContents(posting.id, 2)"
+          >
+            <v-icon icon="mdi-playlist-remove" size="16" class="mr-1" color="grey-darken-2"></v-icon>
+            <span class="text-grey-darken-2">取消设置为目录</span>
+          </v-btn>
+          <!-- 如果是置顶的Post，显示取消置顶按钮 -->
+          <v-btn
+            v-if="props.currNode['^'] && props.currNode['^'].includes(posting.id)"
+            variant="flat"
+            color="grey-lighten-3"
+            rounded="lg"
+            size="small"
+            @click="modifyContents(posting.id, 4)"
+          >
+            <v-icon icon="mdi-arrow-collapse-down" size="16" class="mr-1" color="grey-darken-2"></v-icon>
+            <span class="text-grey-darken-2">取消置顶</span>
+          </v-btn>
+        </div>
+      </div>
+    </v-card>
+  </div>
+
+  <!-- 正常Post显示 -->
+  <div v-else :data-post-id="posting.id" class="posting-container">
     <v-row
       class="ma-0 pb-0 d-flex align-center bg-white"
       :class="[props.detail ? 'sticky-top detail-transform' : '']"
@@ -948,6 +994,11 @@
   .admin-menu-item .v-list-item-title {
     font-weight: 500 !important;
     color: #455a64 !important;
+  }
+
+  .blocked-post-placeholder {
+    margin: 0;
+    padding: 0;
   }
 
 </style>

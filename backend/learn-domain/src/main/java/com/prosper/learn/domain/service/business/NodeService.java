@@ -77,4 +77,36 @@ public class NodeService {
         }
         return nodeDOList.stream().map(this::toDTOV3).collect(Collectors.toList());
     }
+
+    // ========== 查询方法 ==========
+
+    /**
+     * 根据节点、课程、创建者筛选节点列表（不限状态）
+     * 如果提供了 nodeId，其他参数将被忽略
+     */
+    public List<NodeDTO> getNodesByFilter(Long nodeId, Long courseId, Long creatorId, Long lastId) {
+        if (nodeId != null) {
+            courseId = null;
+            creatorId = null;
+            lastId = null;
+        }
+
+        List<NodeDO> nodeDOList = nodeDataService.getListByFilter(nodeId, courseId, creatorId, lastId);
+        return nodeConverter.toDTO(nodeDOList);
+    }
+
+    /**
+     * 修改节点状态
+     */
+    public NodeDTO updateNodeState(Long nodeId, Enums.CommomState state) {
+        if (state == null) {
+            throw new IllegalArgumentException("State cannot be null");
+        }
+
+        nodeDataService.validateExists(nodeId);
+        nodeDataService.updateState(nodeId, state);
+
+        NodeDO nodeDO = nodeDataService.getById(nodeId);
+        return nodeConverter.toDTO(nodeDO);
+    }
 }

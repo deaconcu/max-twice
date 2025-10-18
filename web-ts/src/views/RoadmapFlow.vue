@@ -11,6 +11,7 @@ import RoadmapCreate from '@/components/roadmap/RoadmapCreate.vue'
 import RoadmapHeader from '@/components/roadmap/RoadmapHeader.vue'
 import RoadmapList from '@/components/roadmap/RoadmapList.vue'
 import RightSidebar from '@/components/common/RightSidebar.vue'
+import ErrorPage from '@/components/common/ErrorPage.vue'
 import type { Roadmap } from '@/types/roadmap'
 import type { Profession } from '@/types/profession'
 import type { FlowNode, FlowEdge } from '@/types/flow'
@@ -28,6 +29,7 @@ const roadmaps: Ref<Roadmap[]> = ref([])
 const profession: Ref<Profession | null> = ref(null) // 添加职业信息
 const loading: Ref<boolean> = ref(true)
 const error: Ref<string | null> = ref(null)
+const errorCode: Ref<number | null> = ref(null)
 const showModal: Ref<boolean> = ref(false)
 const selectedRoadmap: Ref<Roadmap | null> = ref(null)
 const layoutDirection: Ref<string> = ref('BT')
@@ -143,6 +145,14 @@ const loadRoadmaps = async (): Promise<void> => {
 
     console.log('职业信息：', professionResponse)
     console.log('课程数据：response:', roadmapResponse)
+
+    // 检查职业信息响应
+    if (professionResponse.code !== 200) {
+      errorCode.value = professionResponse.code
+      error.value = professionResponse.message || '获取职业信息失败'
+      loading.value = false
+      return
+    }
 
     // 设置职业信息
     if (professionResponse && professionResponse.data) {
@@ -372,7 +382,17 @@ onMounted(() => {
 
 <template>
   <v-container fluid>
-    <v-row class="mt-2">
+    <!-- 错误页面 -->
+    <ErrorPage
+      v-if="errorCode"
+      :error-code="errorCode"
+      :error-message="error || '发生错误'"
+      :show-retry="false"
+      @back-home="() => $router.push('/')"
+    />
+
+    <!-- 正常内容 -->
+    <v-row v-else class="mt-2">
       <v-col cols="12" lg="9" class="pr-lg-8">
         <!-- 页面头部 -->
         <RoadmapHeader

@@ -87,10 +87,7 @@ public class PageService {
      * 根据评论ID读取页面数据
      */
     public Map<String, Object> readPageByComment(Long commentId, long userId) {
-        validateCommentId(commentId);
-        validateUserId(userId);
-        
-        CommentDO commentDO = validateCommentExists(commentId);
+        CommentDO commentDO = commentDataService.validateAndGet(commentId);
 
         if (commentDO.getReplyToCommentId() != 0) {
             Map<String, Object> data = new HashMap<>();
@@ -107,11 +104,11 @@ public class PageService {
         if (commentDO.getObjectType() == post.value()) {
             long postId = commentDO.getObjectId();
             postDO = postService.validateAndGetPost(postId);
-            nodeDO = validateNodeExists(postDO.getNodeId());
+            nodeDO = nodeDataService.validateAndGet(postDO.getNodeId());
             courseDO = validateCourseExists(nodeDO.getCourseId());
             path = generateDefaultPath(courseDO.getRootNodeId());
         } else {
-            nodeDO = validateNodeExists(commentDO.getObjectId());
+            nodeDO = nodeDataService.validateAndGet(commentDO.getObjectId());
             courseDO = validateCourseExists(nodeDO.getCourseId());
             path = generateDefaultPath(courseDO.getRootNodeId());
         }
@@ -123,11 +120,8 @@ public class PageService {
      * 根据帖子ID读取页面数据
      */
     public Map<String, Object> readPageByPost(Long postId, long userId) {
-        validatePostId(postId);
-        validateUserId(userId);
-
         PostDO postDO = postService.validateAndGetPost(postId);
-        NodeDO nodeDO = validateNodeExists(postDO.getNodeId());
+        NodeDO nodeDO = nodeDataService.validateAndGet(postDO.getNodeId());
         CourseDO courseDO = validateCourseExists(nodeDO.getCourseId());
         String path = generateDefaultPath(courseDO.getRootNodeId());
 
@@ -138,10 +132,7 @@ public class PageService {
      * 根据节点ID读取页面数据
      */
     public Map<String, Object> readPageByNode(Long nodeId, long userId) {
-        validateNodeId(nodeId);
-        validateUserId(userId);
-        
-        NodeDO nodeDO = validateNodeExists(nodeId);
+        NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
         CourseDO courseDO = validateCourseExists(nodeDO.getCourseId());
         String path = generateDefaultPath(courseDO.getRootNodeId());
 
@@ -152,11 +143,8 @@ public class PageService {
      * 根据课程ID和路径读取页面数据
      */
     public Map<String, Object> readPageByPath(Long courseId, String path, long userId) {
-        validateCourseId(courseId);
-        validateUserId(userId);
         validatePath(path);
-        
-        CourseDO courseDO = validateCourseExists(courseId);
+        CourseDO courseDO = courseDataService.validateAndGet(courseId);
         return readPageData(courseDO, path, null, null, userId);
     }
 
@@ -169,18 +157,22 @@ public class PageService {
 
         JsonNode rootNode = parseJsonSafely(courseTocDTO.getContents());
         path = sanitizePath(path, courseDO.getRootNodeId());
-        
+
         Utils.Pair<Long, JsonNode> pair = getNodeByPath(rootNode, path, courseDO.getRootNodeId());
-        
+
         List<Long> userIds = new LinkedList<>();
         PostDTO chosenPosting = extractChosenPosting(pair.right(), userIds);
         List<PostDTO> fixedPostings = extractFixedPostings(pair.right(), userIds);
-        
+
         if (nodeDO == null) {
             long nodeId = pair.left();
-            nodeDO = validateNodeExists(nodeId);
+            nodeDO = nodeDataService.validateAndGet(nodeId);
         }
-        
+
+        if (nodeDO.getState() != null && nodeDO.getState() == 2) {
+            throw ErrorCode.NODE_BLOCKED.exception();
+        }
+
         List<PostDTO> otherPostings = getOtherPostings(nodeDO.getId(), userIds);
         Map<Long, UserDTO> userMap = buildUserMap(userIds);
         
@@ -203,59 +195,9 @@ public class PageService {
     }
 
     // ========== 私有辅助方法 ==========
-    
-    private void validateUserId(long userId) {
-        if (userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-    }
-    
-    private void validateCommentId(Long commentId) {
-        if (commentId == null || commentId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-    }
-    
-    private void validatePostId(Long postId) {
-        if (postId == null || postId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-    }
-    
-    private void validateNodeId(Long nodeId) {
-        if (nodeId == null || nodeId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-    }
-    
-    private void validateCourseId(Long courseId) {
-        if (courseId == null || courseId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-    }
-    
-    private CommentDO validateCommentExists(Long commentId) {
-        CommentDO commentDO = commentDataService.getById(commentId);
-        if (commentDO == null) {
-            throw ErrorCode.COMMENT_NOT_FOUND.exception();
-        }
-        return commentDO;
-    }
-    
-    private NodeDO validateNodeExists(Long nodeId) {
-        NodeDO nodeDO = nodeDataService.getById(nodeId);
-        if (nodeDO == null) {
-            throw ErrorCode.POSTING_NODE_NOT_FOUND.exception();
-        }
-        return nodeDO;
-    }
-    
+
     private CourseDO validateCourseExists(Long courseId) {
-        CourseDO courseDO = courseDataService.getById(courseId);
-        if (courseDO == null) {
-            throw ErrorCode.COURSE_NOT_FOUND.exception();
-        }
-        // 检查课程状态，如果被屏蔽则抛出异常
+        CourseDO courseDO = courseDataService.validateAndGet(courseId);
         if (courseDO.getState() == com.prosper.learn.common.Enums.CourseState.REJECTED.value()) {
             throw ErrorCode.COURSE_BLOCKED.exception();
         }

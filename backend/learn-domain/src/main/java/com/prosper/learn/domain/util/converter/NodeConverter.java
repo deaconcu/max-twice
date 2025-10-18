@@ -7,7 +7,7 @@ import org.mapstruct.*;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = CommonConverter.class)
 public interface NodeConverter {
     
     @Named("toDTO")
@@ -18,28 +18,62 @@ public interface NodeConverter {
     @Mapping(target = "courseId")
     @Mapping(target = "creatorId")
     @Mapping(target = "commentCount")
+    @Mapping(target = "state")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
-    NodeDTO toDTO(NodeDO nodeDO);
-    
+    NodeDTO toDTOInternal(NodeDO nodeDO);
+
+    default NodeDTO toDTO(NodeDO nodeDO) {
+        if (nodeDO == null) return null;
+
+        NodeDTO dto = toDTOInternal(nodeDO);
+
+        if (nodeDO.getState() != null && nodeDO.getState() == 2) {
+            dto.setName("目录节点已被屏蔽");
+            dto.setDescription("");
+        }
+
+        return dto;
+    }
+
     @IterableMapping(qualifiedByName = "toDTO")
-    List<NodeDTO> toDTO(List<NodeDO> nodeDOList);
+    default List<NodeDTO> toDTO(List<NodeDO> nodeDOList) {
+        if (nodeDOList == null) return null;
+        return nodeDOList.stream().map(this::toDTO).toList();
+    }
     
     @Named("toDTOV1")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "name")
     @Mapping(target = "description")
-    NodeDTO toDTOV1(NodeDO nodeDO);
-    
+    NodeDTO toDTOV1Internal(NodeDO nodeDO);
+
+    default NodeDTO toDTOV1(NodeDO nodeDO) {
+        if (nodeDO == null) return null;
+
+        NodeDTO dto = toDTOV1Internal(nodeDO);
+
+        if (nodeDO.getState() != null && nodeDO.getState() == 2) {
+            dto.setName("目录节点已被屏蔽");
+            dto.setDescription("");
+        }
+
+        return dto;
+    }
+
     @IterableMapping(qualifiedByName = "toDTOV1")
-    List<NodeDTO> toDTOV1(List<NodeDO> nodeDOList);
+    default List<NodeDTO> toDTOV1(List<NodeDO> nodeDOList) {
+        if (nodeDOList == null) return null;
+        return nodeDOList.stream().map(this::toDTOV1).toList();
+    }
 
     default NodeDTO toDTOV2(NodeDO nodeDO, boolean isCompleted) {
         if (nodeDO == null) return null;
-        
+
         NodeDTO dto = toDTOV1(nodeDO);
         dto.setIsCompleted(isCompleted);
+
         return dto;
     }
 }

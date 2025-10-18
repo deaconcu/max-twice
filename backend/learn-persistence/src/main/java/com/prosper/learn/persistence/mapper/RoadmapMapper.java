@@ -51,12 +51,12 @@ public interface RoadmapMapper {
     List<RoadmapDO> getByContentHash(String contentHash);
 
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
-    @Insert("INSERT INTO roadmap(content, content_hash, description, profession_id, creator_id) " +
-            "VALUES (#{content}, #{contentHash}, #{description}, #{professionId}, #{creatorId})")
+    @Insert("INSERT INTO roadmap(content, content_hash, description, profession_id, creator_id, state) " +
+            "VALUES (#{content}, #{contentHash}, #{description}, #{professionId}, #{creatorId}, 0)")
     int insert(RoadmapDO roadmapDO);
 
     @Update("UPDATE roadmap SET content = #{content}, content_hash = #{contentHash}, description = #{description}, " +
-            "vote = #{vote}, comment = #{comment} where id = #{id}")
+            "vote = #{vote}, comment = #{comment}, state = #{state} where id = #{id}")
     @MapKey("id")
     void update(RoadmapDO roadmapDO);
 
@@ -72,7 +72,7 @@ public interface RoadmapMapper {
     List<RoadmapDO> getListByScore(int limit);
 
     @Select({"<script>",
-             "SELECT * FROM roadmap WHERE profession_id = #{professionId}",
+             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = 1",
              "<if test='excludeIds != null and excludeIds.size() > 0'>",
              " AND id NOT IN ",
              "<foreach item='id' collection='excludeIds' open='(' separator=',' close=')'>#{id}</foreach>",
@@ -83,7 +83,7 @@ public interface RoadmapMapper {
             long professionId, int offset, int limit, List<Long> excludeIds);
 
     @Select({"<script>",
-             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND ",
+             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = 1 AND ",
              "(score &lt; #{lastScore} OR (score = #{lastScore} AND id &lt; #{lastId}))",
              "<if test='excludeIds != null and excludeIds.size() > 0'>",
              " AND id NOT IN ",
@@ -93,8 +93,22 @@ public interface RoadmapMapper {
              "</script>"})
     List<RoadmapDO> getListByProfessionAfterScoreExcluding(
             long professionId, double lastScore, long lastId, int limit, List<Long> excludeIds);
-    
+
     // 平台统计相关方法
     @Select("SELECT COUNT(*) FROM roadmap WHERE vote >= 0")
     Long countPublicRoadmaps();
+
+    // Admin管理接口
+    @Select("<script>" +
+            "SELECT * FROM roadmap WHERE 1=1 " +
+            "<if test='state != null'>AND state = #{state}</if> " +
+            "<if test='professionId != null'>AND profession_id = #{professionId}</if> " +
+            "<if test='creatorId != null'>AND creator_id = #{creatorId}</if> " +
+            "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
+            "ORDER BY id DESC LIMIT 20" +
+            "</script>")
+    List<RoadmapDO> listByFilter(Byte state, Long professionId, Long creatorId, Long lastId);
+
+    @Update("UPDATE roadmap SET state = #{state} WHERE id = #{id}")
+    int updateState(@Param("id") long id, @Param("state") byte state);
 }

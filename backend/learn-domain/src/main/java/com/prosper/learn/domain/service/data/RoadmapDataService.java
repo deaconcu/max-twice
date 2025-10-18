@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service.data;
 
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
 import com.prosper.learn.persistence.mapper.RoadmapMapper;
@@ -123,5 +124,20 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
      */
     public List<RoadmapDO> getListByProfessionAfterScoreExcluding(Long professionId, Double lastScore, Long lastId, int limit, List<Long> excludeIds) {
         return roadmapMapper.getListByProfessionAfterScoreExcluding(professionId, lastScore, lastId, limit, excludeIds);
+    }
+
+    /**
+     * Admin管理：按条件筛选路线图列表
+     */
+    public List<RoadmapDO> listByFilter(Byte state, Long professionId, Long creatorId, Long lastId) {
+        return roadmapMapper.listByFilter(state, professionId, creatorId, lastId);
+    }
+
+    /**
+     * 批准路线图
+     */
+    @CacheEvict(value = "roadmaps", key = "#id")
+    public int approve(long id) {
+        return roadmapMapper.updateState(id, Enums.CommomState.APPROVED.value());
     }
 }

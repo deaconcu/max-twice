@@ -6,7 +6,7 @@ import org.mapstruct.*;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = CommonConverter.class)
 public interface CommentConverter {
 
     @Named("toDTO")
@@ -17,7 +17,7 @@ public interface CommentConverter {
     @Mapping(target = "objectId")
     @Mapping(target = "replyCount")
     @Mapping(target = "replyToCommentId")
-    @Mapping(target = "fromUserId")
+    @Mapping(target = "creatorId")
     @Mapping(target = "toUserId")
     @Mapping(target = "upvoteCount")
     @Mapping(target = "state")

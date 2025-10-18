@@ -24,6 +24,8 @@ public class NodeDTO {
 
     private Integer commentCount;
 
+    private Byte state;
+
     private String createdAt;
 
     private String updatedAt;

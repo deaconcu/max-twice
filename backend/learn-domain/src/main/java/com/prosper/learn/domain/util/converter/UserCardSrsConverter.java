@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 用户卡片SRS状态转换器
  */
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = CommonConverter.class)
 public interface UserCardSrsConverter {
 
     @Named("toDTO")

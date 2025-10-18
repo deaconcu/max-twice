@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * 记忆卡片组转换器
  */
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = CommonConverter.class)
 public interface MemoryCardDeckConverter {
 
     @Named("toDTO")

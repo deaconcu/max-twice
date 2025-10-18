@@ -673,9 +673,9 @@ const loadProfessionList = async (reset: boolean = true): Promise<void> => {
   try {
     loading.value = true
 
-    const currentLastId = reset ? 0 : lastId.value
+    const currentLastId = reset ? null : lastId.value
     const state = getCurrentState()
-    const response = await professionServiceV1.getProfessions(state, currentLastId)
+    const response = await professionServiceV1.getAdminProfessions(state, currentLastId)
 
     if (response.code === 200 && response.data) {
       const newData = Array.isArray(response.data) ? response.data : []

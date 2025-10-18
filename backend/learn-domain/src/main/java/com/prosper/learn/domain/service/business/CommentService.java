@@ -152,7 +152,7 @@ public class CommentService {
      * @return
      */
     @Transactional
-    public CommentDO createComment(CreateCommentRequest request, Long userId) {
+    public CommentDTO createComment(CreateCommentRequest request, Long userId) {
         // 先验证参数
         if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("评论请求不能为空");
@@ -161,7 +161,22 @@ public class CommentService {
         validateUserId(userId);
         validateObjectId(request.getObjectId());
         validateCommentType(request.getObjectType());
-        
+
+        // 验证 replyTo 评论是否存在
+        if (request.getReplyTo() != null && request.getReplyTo() > 0) {
+            CommentDO replyToComment = validateAndGetComment(request.getReplyTo());
+            // 确保回复的评论属于同一个对象
+            if (!replyToComment.getObjectId().equals(request.getObjectId()) ||
+                !replyToComment.getObjectType().equals(request.getObjectType())) {
+                throw ErrorCode.INVALID_PARAMETER.exception("回复的评论不属于当前对象");
+            }
+        }
+
+        // 验证 toUser 用户是否存在
+        if (request.getToUser() != null && request.getToUser() > 0) {
+            validateAndGetUser(request.getToUser());
+        }
+
         UserDO fromUser = validateAndGetUser(userId);
 
         PostDO postDO = null;
@@ -183,23 +198,24 @@ public class CommentService {
         commentDO.setObjectId(request.getObjectId());
         commentDO.setObjectType(request.getObjectType());
         commentDO.setReplyToCommentId(request.getReplyTo() == null ? 0 : request.getReplyTo());
-        // TODO 检查这个toUser是否合理
         commentDO.setToUserId(request.getToUser() == null ? 0 : request.getToUser());
         commentDO.setContent(request.getContent());
-        commentDO.setFromUserId(userId);
+        commentDO.setCreatorId(userId);
         //commentDO.setScore(scoreCalculationService.calculateCommentScore(commentDO));
         commentDO.setScore(0.0);
         commentDataService.insert(commentDO);
 
         // 处理回复和通知 - 重构现有方法以直接使用 request 和 commentDO
-        if (request.getReplyTo() != null && request.getReplyTo() != 0) {
+        if (request.getReplyTo() != null && request.getReplyTo() > 0) {
             handleReplyComment(request, commentDO, fromUser, postDO, nodeDO, roadmapDO);
         }
 
         // 创建评论通知（不更新评论数，等审核通过后再更新）
         createCommentNotification(request, commentDO, fromUser, postDO, nodeDO, roadmapDO);
 
-        return commentDataService.getById(commentDO.getId());
+        // 重新查询并转换为 DTO，填充 toUserName
+        CommentDO savedComment = commentDataService.getById(commentDO.getId());
+        return toDTOV3(savedComment);
     }
 
     /**
@@ -252,7 +268,7 @@ public class CommentService {
         scoreCalculationService.checkAndUpdateCommentScore(parentCommentDO);
         commentDataService.update(parentCommentDO);
 
-        createReplyNotification(request, commentDO, fromUser, postDO, nodeDO, roadmapDO, parentCommentDO.getFromUserId());
+        createReplyNotification(request, commentDO, fromUser, postDO, nodeDO, roadmapDO, parentCommentDO.getCreatorId());
     }
 
     /**
@@ -443,7 +459,7 @@ public class CommentService {
 
     /**
      * 给commentDTOList查询子评论并填充，每条评论只填充一条子评论，选取分数最高的子评论，并且填充upvoted状态位
-     * dtoV1 = dto + childComments + upvoted
+     * dtoV1 = dto + childComments + upvoted + toUserName
      */
     private List<CommentDTO> toDTOV1(List<CommentDO> commentDOList, Long userId) {
         List<Long> ids = new ArrayList<>();
@@ -467,12 +483,14 @@ public class CommentService {
             }
         }
 
+        fillToUserNames(commentDTOList, map);
+
         return processUpvoteStatusWithChildren(commentDTOList, map, userId);
     }
 
     /**
      * 给查询到的评论列表设置点赞状态 upvoted
-     * dtoV2 = dto + upvoted
+     * dtoV2 = dto + upvoted + toUserName
      * 在加载更多子评论时调用，因为它已经是子评论了，所以它没有子评论列表
      */
     private List<CommentDTO> toDTOV2(List<CommentDTO> commentDTOList, Long userId) {
@@ -491,7 +509,67 @@ public class CommentService {
         for (CommentDTO commentDTO : commentDTOList) {
             commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
         }
+
+        fillToUserNames(commentDTOList, new HashMap<>());
+
         return commentDTOList;
+    }
+
+    /**
+     * 转换单个评论为 DTO 并填充 toUserName（用于创建评论后返回）
+     * dtoV3 = dto + toUserName
+     */
+    private CommentDTO toDTOV3(CommentDO commentDO) {
+        CommentDTO commentDTO = commentConverter.toDTO(commentDO);
+
+        // 填充 toUserName
+        if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0) {
+            UserDO toUser = userDataService.getById(commentDTO.getToUserId());
+            if (toUser != null) {
+                commentDTO.setToUserName(toUser.getName());
+            }
+        }
+
+        return commentDTO;
+    }
+
+    /**
+     * 填充评论列表中的 toUserName 字段
+     */
+    private void fillToUserNames(List<CommentDTO> commentDTOList, HashMap<Long, CommentDTO> childrenMap) {
+        Set<Long> userIds = new HashSet<>();
+
+        for (CommentDTO commentDTO : commentDTOList) {
+            if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0) {
+                userIds.add(commentDTO.getToUserId());
+            }
+        }
+
+        for (CommentDTO commentDTO : childrenMap.values()) {
+            if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0) {
+                userIds.add(commentDTO.getToUserId());
+            }
+        }
+
+        if (userIds.isEmpty()) {
+            return;
+        }
+
+        Map<Long, UserDO> userMap = userDataService.getMapByIds(userIds);
+
+        for (CommentDTO commentDTO : commentDTOList) {
+            if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0 && userMap.containsKey(commentDTO.getToUserId())) {
+                UserDO user = userMap.get(commentDTO.getToUserId());
+                commentDTO.setToUserName(user.getName());
+            }
+        }
+
+        for (CommentDTO commentDTO : childrenMap.values()) {
+            if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0 && userMap.containsKey(commentDTO.getToUserId())) {
+                UserDO user = userMap.get(commentDTO.getToUserId());
+                commentDTO.setToUserName(user.getName());
+            }
+        }
     }
 
 

@@ -34,12 +34,12 @@ public interface PostMapper {
     List<PostDO> getListByLastId(long nodeId, long lastId, int limit, int state);
 
     @Select("SELECT * FROM post " +
-            "WHERE creator_id = #{userId} and type = 2 and id < #{lastId} " +
+            "WHERE creator_id = #{userId} and type = 2 and state = 1 and id < #{lastId} " +
             "order by id desc limit #{count}")
     List<PostDO> getArticleListByUser(long userId, long lastId, int count);
 
     @Select("SELECT * FROM post " +
-            "WHERE creator_id = #{userId} and type = 1 and id < #{lastId} " +
+            "WHERE creator_id = #{userId} and type = 1 and state = 1 and id < #{lastId} " +
             "order by id desc limit #{count}")
     List<PostDO> getContentsListByUser(long userId, long lastId, int count);
 
@@ -89,4 +89,12 @@ public interface PostMapper {
 
     @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND creator_id = #{creatorId} AND state != #{excludeState} ORDER BY created_at DESC")
     List<PostDO> getListByNodeAndCreator(@Param("nodeId") long nodeId, @Param("creatorId") long creatorId, @Param("excludeState") int excludeState);
+
+    @Select({"<script>",
+            "SELECT * FROM post WHERE id &lt; #{lastId}",
+            "<if test='nodeId != null'> AND node_id = #{nodeId}</if>",
+            "<if test='creatorId != null'> AND creator_id = #{creatorId}</if>",
+            "ORDER BY id DESC LIMIT #{limit}",
+            "</script>"})
+    List<PostDO> getListByNodeAndCreatorWithPagination(@Param("nodeId") Long nodeId, @Param("creatorId") Long creatorId, @Param("lastId") Long lastId, @Param("limit") int limit);
 }
