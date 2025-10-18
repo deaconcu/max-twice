@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import { pageServiceV1, progressServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { MemoryService } from '@/services/memoryService'
 import { COURSE_NOT_FOUND, COURSE_BLOCKED } from '@/constants/errorCodes'
+import { PostType } from '@/types/enums'
 import type { ErrorInfo } from '@/types/error'
 import PostingList from '@/components/read/PostingList.vue'
 import RightSidebar from '@/components/common/RightSidebar.vue'
@@ -519,10 +520,10 @@ const handleAIQuery = ({ question, context, selectedText }: {
 
       <!-- right -->
       <v-col cols="3" class="">
-        <div v-if="currentTab !== 'list' && currentPosting" class="sticky-sidebar d-flex flex-column" style="gap: 16px;">
+        <div v-if="currentTab !== 'list' && currentPosting && currentPosting.type === PostType.ARTICLE" class="sticky-sidebar d-flex flex-column" style="gap: 16px;">
           <!-- AI答疑助手 (文章详情页) -->
           <AIAssistant />
-          
+
           <!-- 记忆卡片组侧边栏 (文章详情页) -->
           <MemoryCardSidebar
             ref="memoryCardSidebarRef"
@@ -532,7 +533,7 @@ const handleAIQuery = ({ question, context, selectedText }: {
             @view-deck="handleViewDeck"
           />
         </div>
-        
+
         <!-- 默认侧边栏 (其他页面) -->
         <RightSidebar v-else />
       </v-col>

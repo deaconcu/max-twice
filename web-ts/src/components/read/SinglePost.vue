@@ -650,6 +650,7 @@
             </v-list-item>
 
             <v-list-item
+              v-if="posting.type === PostType.ARTICLE"
               class="admin-menu-item"
               @click="handleRegenerateMemoryCards"
             >
