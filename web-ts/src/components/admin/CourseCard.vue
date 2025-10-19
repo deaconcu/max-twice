@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { defineEmits, defineProps } from 'vue'
-  import { CourseState } from '@/types/enums'
+  import { ContentState } from '@/types/enums'
   import type { Course } from '@/types/course'
   import type { MainCategory, SubCategory, CategoryMapping, StateConfig } from '@/types/common'
 
@@ -27,9 +27,9 @@
 
   const getStateConfig = (state: number): StateConfig => {
     const configs: Record<number, StateConfig> = {
-      [CourseState.SUBMITTED]: { text: '待审核', color: 'warning', icon: 'mdi-clock-outline' },
-      [CourseState.APPROVED]: { text: '已批准', color: 'success', icon: 'mdi-check-circle' },
-      [CourseState.REJECTED]: { text: '已拒绝', color: 'error', icon: 'mdi-close-circle' },
+      [ContentState.SUBMITTED]: { text: '待审核', color: 'warning', icon: 'mdi-clock-outline' },
+      [ContentState.APPROVED]: { text: '已批准', color: 'success', icon: 'mdi-check-circle' },
+      [ContentState.REJECTED]: { text: '已拒绝', color: 'error', icon: 'mdi-close-circle' },
     }
     return configs[state] || { text: '未知', color: 'grey', icon: 'mdi-help-circle' }
   }
@@ -87,7 +87,7 @@
             </v-btn>
 
             <!-- 待审核状态：批准和拒绝 -->
-            <template v-if="course.state === CourseState.SUBMITTED">
+            <template v-if="course.state === ContentState.SUBMITTED">
               <!-- 批准按钮 -->
               <v-btn
                 variant="flat"
@@ -116,7 +116,7 @@
             </template>
 
             <!-- 已通过状态：删除 -->
-            <template v-if="course.state === CourseState.APPROVED">
+            <template v-if="course.state === ContentState.APPROVED">
               <!-- 拒绝按钮 -->
               <v-btn
                 variant="flat"
@@ -145,7 +145,7 @@
             </template>
 
             <!-- 已拒绝状态：恢复和删除 -->
-            <template v-if="course.state === CourseState.REJECTED">
+            <template v-if="course.state === ContentState.REJECTED">
               <!-- 恢复按钮 -->
               <v-btn
                 variant="flat"

@@ -289,13 +289,15 @@ public interface Converter {
         return dto;
     }
 
-    default int map(Enums.CourseState state) {
+    default int map(Enums.ContentState state) {
         return state.value();
     }
 
+    /*
     default int map(Enums.CourseRequestState state) {
         return state.value();
     }
+     */
 
     default List<Integer> map(String value) {
         List<Integer> list = new LinkedList<>();

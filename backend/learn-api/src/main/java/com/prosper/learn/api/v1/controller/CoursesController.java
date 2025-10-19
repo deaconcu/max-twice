@@ -3,14 +3,12 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.common.Enums.CourseState;
+import com.prosper.learn.common.Enums.ContentState;
 import com.prosper.learn.dto.request.*;
 import com.prosper.learn.dto.response.CourseDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
-import com.prosper.learn.dto.response.old.CourseDTOV3;
-import com.prosper.learn.dto.response.old.CourseDTOV4;
 import com.prosper.learn.dto.response.ApprovalResponseDTO;
 import com.prosper.learn.domain.service.business.CourseService;
 import lombok.RequiredArgsConstructor;
@@ -65,7 +63,7 @@ public class CoursesController {
             @Min(value = 0, message = "状态必须大于等于0") Byte state,
             @RequestParam(required = false) Long lastId) {
 
-        CourseState courseState = CourseState.getByValue(state.intValue());
+        ContentState courseState = ContentState.getByValue(state.intValue());
         if (courseState == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("Invalid course state: " + state);
         }
@@ -86,7 +84,7 @@ public class CoursesController {
             @RequestParam(required = false) @Positive(message = "子分类必须大于0") Integer subCategory,
             @RequestParam(required = false) @Positive(message = "父课程ID必须大于0") Long parentId) {
 
-        CourseState courseState = CourseState.getByValue(state);
+        ContentState courseState = ContentState.getByValue(state);
         if (state != null && lastId != null) {
             List<CourseDTO> courseList = courseService.getListByStateAndLastId(courseState, lastId);
             return ApiResponse.success(courseList);
@@ -94,8 +92,8 @@ public class CoursesController {
             List<CourseDTO> courseList = courseService.getListByCategory(mainCategory, subCategory);
             return ApiResponse.success(courseList);
         } else if (parentId != null) {
-            if (courseState != null && courseState == CourseState.APPROVED) {
-                List<CourseDTO> courseList = courseService.getListByParent(parentId, CourseState.APPROVED);
+            if (courseState != null && courseState == ContentState.APPROVED) {
+                List<CourseDTO> courseList = courseService.getListByParent(parentId, ContentState.APPROVED);
                 return ApiResponse.success(courseList);
             } else {
                 List<CourseDTO> courseList = courseService.getListByParent(parentId, null);

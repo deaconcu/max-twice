@@ -3,7 +3,7 @@
  * 统一合并所有后端 DTO 版本的字段
  */
 
-import { CourseState } from './enums'
+import { ContentState } from './enums'
 import type { User } from './user'
 
 // 统一的课程信息 (合并所有版本)
@@ -15,7 +15,7 @@ export interface Course {
   rootNodeId?: number            // 根节点ID (可选)
   parentCourseId?: number            // 父课程ID (可选，子课程才有)
   parentCourse?: Course              // 父课程信息 (可选，简化版本)
-  state?: CourseState          // 课程状态 (可选)
+  state?: ContentState         // 课程状态 (可选)
   mainCategory?: number        // 主分类ID (可选)
   subCategory?: number         // 子分类ID (可选)
   rejectedReason?: string      // 拒绝原因 (可选)

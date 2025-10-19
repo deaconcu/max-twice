@@ -219,7 +219,7 @@ public class PostService {
     public List<PostDTO> getList(long nodeId) {
         validateNodeId(nodeId);
         List<PostDO> posts = postDataService.getListByNodeAndScore(
-                nodeId, systemProperties.getPosting().getDefaultNodePostCount(), Enums.PostState.approved.value());
+                nodeId, systemProperties.getPosting().getDefaultNodePostCount(), Enums.ContentState.APPROVED.value());
         posts.forEach(this::idToName);
         return postConverter.toDTO(posts);
     }
@@ -338,7 +338,7 @@ public class PostService {
         } else if (nodeId != null && nodeId > 0) {
             int count = 2;
             postDOList = postDataService.getListByNodeAndScoreAndPaginated(
-                    nodeId, lastScore, lastPostingId, count, Enums.PostState.approved.value());
+                    nodeId, lastScore, lastPostingId, count, Enums.ContentState.APPROVED.value());
         }
         return toDTOV3(postDOList, userId);
     }
@@ -348,7 +348,7 @@ public class PostService {
      */
     public List<PostDTO> getNodePostsList(Long nodeId) {
         int count = systemProperties.getPosting().getDefaultNodeListCount();
-        List<PostDO> postings = postDataService.getListByNode(nodeId, count, Enums.PostState.approved.value());
+        List<PostDO> postings = postDataService.getListByNode(nodeId, count, Enums.ContentState.APPROVED.value());
         postings.forEach(this::idToName);
         return toDTO(postings);
     }
@@ -356,7 +356,7 @@ public class PostService {
     /**
      * 根据状态获取帖子列表
      */
-    public List<PostDTO> getPostsByState(Enums.PostState state) {
+    public List<PostDTO> getPostsByState(Enums.ContentState state) {
         List<PostDO> postDOList = postDataService.getListByState(state.value(), systemProperties.getPosting().getPendingPostsLimit());
         for (PostDO postDO : postDOList) {
             if (postDO.getType() == Enums.PostType.contents.value()) {
@@ -369,7 +369,7 @@ public class PostService {
     /**
      * 根据状态获取帖子列表（支持分页）
      */
-    public List<PostDTO> getPostsByState(Enums.PostState state, Long lastId, Integer limit) {
+    public List<PostDTO> getPostsByState(Enums.ContentState state, Long lastId, Integer limit) {
         List<PostDO> postDOList = postDataService.getListByState(state.value(), lastId, limit);
         for (PostDO postDO : postDOList) {
             if (postDO.getType() == Enums.PostType.contents.value()) {
@@ -383,7 +383,7 @@ public class PostService {
      * 获取待审核帖子列表
      */
     public List<PostDTO> getPendingPostsList() {
-        return getPostsByState(Enums.PostState.submited);
+        return getPostsByState(Enums.ContentState.SUBMITTED);
     }
 
     /**
@@ -412,7 +412,7 @@ public class PostService {
      */
     @Transactional
     public void createPost(long userId, CreatePostRequest request) {
-        createPost(userId, request, Enums.PostState.submited);
+        createPost(userId, request, Enums.ContentState.SUBMITTED);
     }
 
     /**
@@ -422,7 +422,7 @@ public class PostService {
      * @throws BusinessException 当节点不存在或JSON处理失败时抛出异常
      */
     @Transactional
-    public Long createPost(long userId, CreatePostRequest request, Enums.PostState postState) {
+    public Long createPost(long userId, CreatePostRequest request, Enums.ContentState postState) {
         // 先验证参数
         if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子对象不能为空");
@@ -465,7 +465,7 @@ public class PostService {
                     newNode.setDescription(chapterInfo.right());
                     newNode.setCourseId(courseId);
                     newNode.setCreatorId(userId);
-                    newNode.setState(Enums.CommomState.APPROVED.value());
+                    newNode.setState(Enums.ContentState.APPROVED.value());
                     nodeDataService.insert(newNode);
                     ids[i] = Long.toString(newNode.getId());
                     log.info("Created new node: {} (id: {}) in course: {}", nodeName, newNode.getId(), courseId);
@@ -519,7 +519,7 @@ public class PostService {
     @Transactional
     public void deletePost(Long id) {
         PostDO postDO = validateAndGetPost(id);
-        postDO.setState(Enums.PostState.deleted.value());
+        postDO.setState(Enums.ContentState.BANNED.value());
         postDO.setUpdatedAt(Utils.getLocalDateTime());
         postDataService.update(postDO);
     }
@@ -531,12 +531,12 @@ public class PostService {
     public PostDTO approvePost(Long id, boolean approve) {
         PostDO postDO = validateAndGetPost(id);
 
-        if (approve && postDO.getState() != Enums.PostState.approved.value()) {
-            postDO.setState(Enums.CommentState.approved.value());
+        if (approve && postDO.getState() != Enums.ContentState.APPROVED.value()) {
+            postDO.setState(Enums.ContentState.APPROVED.value());
             postDataService.update(postDO);
         }
-        if (!approve && postDO.getState() != Enums.CommentState.deleted.value()) {
-            postDO.setState(Enums.CommentState.deleted.value());
+        if (!approve && postDO.getState() != Enums.ContentState.BANNED.value()) {
+            postDO.setState(Enums.ContentState.BANNED.value());
             postDataService.update(postDO);
         }
         return postConverter.toDTO(postDO);

@@ -81,7 +81,32 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
         }
         return userMapper.getByEmail(email);
     }
-    
+
+    /**
+     * 根据用户名查询用户（带缓存）
+     */
+    @Cacheable(value = "usersByName", key = "#name")
+    public UserDO getByName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return null;
+        }
+        return userMapper.getByName(name);
+    }
+
+    /**
+     * 根据用户名查询用户并验证存在（带缓存）
+     */
+    public UserDO validateAndGetByName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            throw ErrorCode.INVALID_PARAMETER.exception();
+        }
+        UserDO userDO = getByName(name);
+        if (userDO == null) {
+            throw ErrorCode.USER_NOT_FOUND.exception();
+        }
+        return userDO;
+    }
+
     /**
      * 更新用户信息并清除缓存
      */
@@ -91,12 +116,27 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
             throw new IllegalArgumentException("User or user ID cannot be null");
         }
 
+        // 如果用户名可能变更，先获取旧用户名用于清除缓存
+        UserDO oldUser = userMapper.getById(user.getId());
+        String oldName = oldUser != null ? oldUser.getName() : null;
+
         userMapper.update(user);
 
         // 如果邮箱可能变更，也要清除邮箱缓存
         if (user.getEmail() != null) {
             evictEmailCache(user.getEmail());
         }
+
+        // 清除旧用户名的缓存
+        if (oldName != null) {
+            evictNameCache(oldName);
+        }
+
+        // 清除新用户名的缓存（如果用户名变更了）
+        if (user.getName() != null && !user.getName().equals(oldName)) {
+            evictNameCache(user.getName());
+        }
+
         log.debug("Updated user {}", user.getId());
     }
 
@@ -107,6 +147,16 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
     public void evictEmailCache(String email) {
         if (email != null) {
             log.debug("Evicted email cache for: {}", email);
+        }
+    }
+
+    /**
+     * 清除用户名缓存
+     */
+    @CacheEvict(value = "usersByName", key = "#name")
+    public void evictNameCache(String name) {
+        if (name != null) {
+            log.debug("Evicted name cache for: {}", name);
         }
     }
     

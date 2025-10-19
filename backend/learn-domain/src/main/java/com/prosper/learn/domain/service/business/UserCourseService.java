@@ -1,6 +1,6 @@
 package com.prosper.learn.domain.service.business;
 
-import static com.prosper.learn.common.Enums.UserCourseState;
+import static com.prosper.learn.common.Enums.UserProgressState;
 
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
@@ -137,10 +137,10 @@ public class UserCourseService {
         progressDO.setProgressPercent(progressPercent);
         
         if (progressPercent >= MAX_PROGRESS) {
-            progressDO.setState(UserCourseState.COMPLETED.value());
+            progressDO.setState(UserProgressState.COMPLETED.value());
             progressDO.setCompletedAt(LocalDateTime.now());
         } else if (progressPercent > MIN_PROGRESS) {
-            progressDO.setState(UserCourseState.IN_PROGRESS.value());
+            progressDO.setState(UserProgressState.IN_PROGRESS.value());
         }
     }
 
@@ -175,7 +175,7 @@ public class UserCourseService {
         progressDO.setUserId(userId);
         progressDO.setCourseId(courseId);
         progressDO.setProgressPercent(MIN_PROGRESS);
-        progressDO.setState(UserCourseState.IN_PROGRESS.value());
+        progressDO.setState(UserProgressState.IN_PROGRESS.value());
         progressDO.setStartedAt(LocalDateTime.now());
 
         userCourseDataService.insert(progressDO);

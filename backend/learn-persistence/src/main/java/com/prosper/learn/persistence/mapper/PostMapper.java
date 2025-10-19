@@ -26,12 +26,12 @@ public interface PostMapper {
     @Select("SELECT * FROM post " +
             "WHERE node_id = #{nodeId} and state = #{state} " +
             "order by created_at desc limit #{limit}")
-    List<PostDO> getListByNode(long nodeId, int limit, int state);
+    List<PostDO> getListByNode(long nodeId, int limit, byte state);
 
     @Select("SELECT * FROM post " +
             "WHERE node_id = #{nodeId} and id < #{lastId} and state = #{state} " +
             "order by id desc limit #{limit}")
-    List<PostDO> getListByLastId(long nodeId, long lastId, int limit, int state);
+    List<PostDO> getListByLastId(long nodeId, long lastId, int limit, byte state);
 
     @Select("SELECT * FROM post " +
             "WHERE creator_id = #{userId} and type = 2 and state = 1 and id < #{lastId} " +
@@ -60,21 +60,21 @@ public interface PostMapper {
 
     @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND state = #{state} " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
-    List<PostDO> getListByNodeAndScore(long nodeId, int limit, int state);
+    List<PostDO> getListByNodeAndScore(long nodeId, int limit, byte state);
 
     @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND state = #{state} AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
-    List<PostDO> getListByNodeAndScoreAndPaginated(long nodeId, double lastScore, long lastId, int limit, int state);
+    List<PostDO> getListByNodeAndScoreAndPaginated(long nodeId, double lastScore, long lastId, int limit, byte state);
 
     @Select("SELECT id, twice, helpful, created_at FROM post WHERE state = #{state}")
-    List<PostDO> getAllPostsForScoreCalculation(int state);
+    List<PostDO> getAllPostsForScoreCalculation(byte state);
 
     @Select("SELECT * FROM post where state = #{state} order by id DESC limit #{count}")
-    List<PostDO> getListByState(int state, int count);
+    List<PostDO> getListByState(byte state, int count);
 
     @Select("SELECT * FROM post where state = #{state} and id < #{lastId} order by id DESC limit #{limit}")
-    List<PostDO> getListByStateWithPagination(int state, long lastId, int limit);
+    List<PostDO> getListByStateWithPagination(byte state, long lastId, int limit);
     
     /**
      * 统计活跃文章数量（state=1表示已发布状态）
@@ -88,7 +88,7 @@ public interface PostMapper {
     Long countPostsByNodeAndCreator(@Param("nodeId") long nodeId, @Param("creatorId") long creatorId);
 
     @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND creator_id = #{creatorId} AND state != #{excludeState} ORDER BY created_at DESC")
-    List<PostDO> getListByNodeAndCreator(@Param("nodeId") long nodeId, @Param("creatorId") long creatorId, @Param("excludeState") int excludeState);
+    List<PostDO> getListByNodeAndCreator(@Param("nodeId") long nodeId, @Param("creatorId") long creatorId, @Param("excludeState") byte excludeState);
 
     @Select({"<script>",
             "SELECT * FROM post WHERE id &lt; #{lastId}",

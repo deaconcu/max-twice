@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { UserCourseState } from '@/types/enums'
+import { UserProgressState } from '@/types/enums'
 import type { Course } from '@/types/course'
 
 interface Props {
@@ -48,11 +48,11 @@ const getCategoryIcon = (category: string): string => {
 
 const getStatusText = (state: number): string => {
   switch (state) {
-    case UserCourseState.NOT_STARTED:
+    case UserProgressState.NOT_STARTED:
       return t('learning.status.notStarted')
-    case UserCourseState.IN_PROGRESS:
+    case UserProgressState.IN_PROGRESS:
       return t('learning.status.inProgress')
-    case UserCourseState.COMPLETED:
+    case UserProgressState.COMPLETED:
       return t('learning.status.completed')
     default:
       return t('learning.status.unknown')

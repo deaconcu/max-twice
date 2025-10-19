@@ -5,7 +5,7 @@
 
 import type { Node } from './node'
 import type { User } from './user'
-import { VoteType, PostType, PostState } from './enums'
+import { VoteType, PostType, ContentState } from './enums'
 
 // 统一的帖子信息 (合并所有版本)
 export interface Post {
@@ -20,7 +20,7 @@ export interface Post {
   helpful?: number             // "有帮助"票数 (可选)
   commentCount?: number        // 评论数量 (可选)
   viewCount?: number           // 浏览量 (可选)
-  state?: PostState            // 帖子状态 (可选)
+  state?: ContentState         // 帖子状态 (可选)
   score?: number               // 帖子得分 (可选)
   createdAt?: string           // 创建时间 (可选)
   updatedAt?: string           // 更新时间 (可选)

@@ -2,6 +2,7 @@ package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.service.business.PostService;
 import com.prosper.learn.dto.request.CreatePostRequest;
 import com.prosper.learn.dto.request.UpdatePostRequest;
@@ -11,7 +12,6 @@ import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.prosper.learn.api.v1.annotation.JsonParam;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -117,20 +117,20 @@ public class PostsController {
             @RequestParam("state") @NotBlank(message = "状态不能为空") String state,
             @RequestParam(value = "lastId", defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
             @RequestParam(value = "limit", defaultValue = "20") @Positive(message = "限制数量必须大于0") Integer limit) {
-        com.prosper.learn.common.Enums.PostState postState;
+        Enums.ContentState postState;
 
         switch (state) {
             case "pending":
-                postState = com.prosper.learn.common.Enums.PostState.submited;
+                postState = Enums.ContentState.SUBMITTED;
                 break;
             case "approved":
-                postState = com.prosper.learn.common.Enums.PostState.approved;
+                postState = Enums.ContentState.APPROVED;
                 break;
             case "rejected":
-                postState = com.prosper.learn.common.Enums.PostState.deleted;
+                postState = Enums.ContentState.BANNED;
                 break;
             default:
-                postState = com.prosper.learn.common.Enums.PostState.submited;
+                postState = Enums.ContentState.SUBMITTED;
         }
 
         List<PostDTO> posts = postService.getPostsByState(postState, lastId, limit);

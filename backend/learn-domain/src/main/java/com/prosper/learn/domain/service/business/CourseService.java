@@ -2,7 +2,7 @@ package com.prosper.learn.domain.service.business;
 
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.common.Enums.CourseState;
+import com.prosper.learn.common.Enums.ContentState;
 import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
 import com.prosper.learn.domain.util.converter.CourseConverter;
@@ -65,11 +65,11 @@ public class CourseService {
     /**
      * 验证课程状态并检查重复操作
      */
-    private void validateCourseStateForApproval(CourseDO courseDO) {
+    private void validateCommonStateForApproval(CourseDO courseDO) {
         if (!systemProperties.getCourse().isEnableStateValidation()) {
             return;
         }
-        if (CourseState.APPROVED.value().equals(courseDO.getState())) {
+        if (ContentState.APPROVED.value().equals(courseDO.getState())) {
             throw ErrorCode.COURSE_ALREADY_APPROVED.exception();
         }
     }
@@ -77,11 +77,11 @@ public class CourseService {
     /**
      * 验证课程状态并检查重复操作
      */
-    private void validateCourseStateForRejection(CourseDO courseDO) {
+    private void validateCommonStateForRejection(CourseDO courseDO) {
         if (!systemProperties.getCourse().isEnableStateValidation()) {
             return;
         }
-        if (CourseState.REJECTED.value().equals(courseDO.getState())) {
+        if (ContentState.BANNED.value().equals(courseDO.getState())) {
             throw ErrorCode.COURSE_ALREADY_REJECTED.exception();
         }
     }
@@ -198,7 +198,7 @@ public class CourseService {
      * @return
      */
     public List<CourseDTO> getSubCourses(long parentCourseId) {
-        return toDTOV2(courseDataService.listByParentAndState(CourseState.APPROVED, parentCourseId));
+        return toDTOV2(courseDataService.listByParentAndState(ContentState.APPROVED, parentCourseId));
     }
 
     @Transactional
@@ -245,7 +245,7 @@ public class CourseService {
     }
 
     // 新增：根据状态和lastId获取课程列表
-    public List<CourseDTO> getListByStateAndLastId(CourseState state, Long lastId) {
+    public List<CourseDTO> getListByStateAndLastId(ContentState state, Long lastId) {
         List<CourseDO> courseDOList = courseDataService.listByStateAndLastId(state, lastId);
         return courseDOList.stream()
                 .map(this::toDTOV4)
@@ -262,7 +262,7 @@ public class CourseService {
     }
 
     // 新增：根据父课程ID获取子课程列表
-    public List<CourseDTO> getListByParent(long parentId, CourseState state) {
+    public List<CourseDTO> getListByParent(long parentId, ContentState state) {
         List<CourseDO> courseDOList;
         if (state == null) { // null表示获取所有状态
             courseDOList = courseDataService.listByParent(parentId);
@@ -276,7 +276,7 @@ public class CourseService {
 
     public void approve(long id) {
         CourseDO courseDO = validateCourseExists(id);
-        validateCourseStateForApproval(courseDO);
+        validateCommonStateForApproval(courseDO);
 
         int rowsAffected = courseDataService.approve(id);
         validateOperationResult(rowsAffected);
@@ -284,7 +284,7 @@ public class CourseService {
 
     public void reject(long id, String rejectedReason) {
         CourseDO courseDO = validateCourseExists(id);
-        validateCourseStateForRejection(courseDO);
+        validateCommonStateForRejection(courseDO);
 
         int rowsAffected = courseDataService.reject(id, rejectedReason);
         validateOperationResult(rowsAffected);
@@ -315,7 +315,7 @@ public class CourseService {
         course.setCreatorId(userId);
         course.setRootNodeId(0L);
         course.setParentCourseId(0L);
-        course.setState(CourseState.SUBMITTED.value());
+        course.setState(ContentState.SUBMITTED.value());
         course.setMainCategory(request.getMainCategory());
         course.setSubCategory(request.getSubCategory());
         courseDataService.insert(course);
@@ -337,7 +337,7 @@ public class CourseService {
         subCourse.setCreatorId(userId);
         subCourse.setRootNodeId(0L);
         subCourse.setParentCourseId(parentId);
-        subCourse.setState(CourseState.SUBMITTED.value());
+        subCourse.setState(ContentState.SUBMITTED.value());
         subCourse.setMainCategory(parentCourse.getMainCategory());
         subCourse.setSubCategory(parentCourse.getSubCategory());
 

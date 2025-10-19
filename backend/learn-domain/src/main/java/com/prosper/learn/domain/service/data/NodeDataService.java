@@ -128,7 +128,7 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
      * 更新节点状态
      */
     @CacheEvict(value = "nodes", key = "#nodeId")
-    public void updateState(Long nodeId, Enums.CommomState state) {
+    public void updateState(Long nodeId, Enums.ContentState state) {
         if (nodeId == null || nodeId <= 0) {
             throw new IllegalArgumentException("Invalid node ID");
         }

@@ -3,7 +3,7 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 
-import static com.prosper.learn.common.Enums.ProfessionState;
+import static com.prosper.learn.common.Enums.ContentState;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.ProfessionService;
 import com.prosper.learn.domain.service.scheduler.ProfessionRankingScheduler;
@@ -42,7 +42,7 @@ public class ProfessionsController {
             @RequestParam @Positive(message = "状态必须大于0") Byte state,
             @RequestParam(required = false) Long lastId) {
 
-        ProfessionState professionState = ProfessionState.getByValue(state.intValue());
+        ContentState professionState = ContentState.getByValue(state.intValue());
         if (professionState == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("Invalid profession state: " + state);
         }
@@ -88,7 +88,7 @@ public class ProfessionsController {
             @RequestParam(required = false)
             @Min(value = 0, message = "最后ID不能小于0")
             Long lastId) {
-        List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(ProfessionState.APPROVED, lastId);
+        List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(ContentState.APPROVED, lastId);
         return ApiResponse.success(professionList);
     }
 

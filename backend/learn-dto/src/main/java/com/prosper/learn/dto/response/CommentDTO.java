@@ -22,6 +22,8 @@ public class CommentDTO {
 
     private Long creatorId;
 
+    private String creatorName;
+
     private Long toUserId;
 
     private String toUserName;

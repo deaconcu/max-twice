@@ -20,14 +20,14 @@ public interface PostStatsMapper {
     int updateStats(PostStatsDO stats);
 
     @Select("SELECT * FROM post_stats WHERE object_type = #{objectType} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    PostStatsDO getByTypeAndObjectIdAndYear(byte objectType, long objectId, Integer statYear);
+    PostStatsDO getByTypeAndObjectIdAndYear(int objectType, long objectId, Integer statYear);
 
     @Select("SELECT * FROM post_stats WHERE object_type = #{objectType} AND object_id = #{objectId} " +
             "AND stat_year >= #{startYear} ORDER BY stat_year DESC")
-    List<PostStatsDO> getStatsInYearRange(byte objectType, long objectId, Integer startYear);
+    List<PostStatsDO> getStatsInYearRange(int objectType, long objectId, Integer startYear);
 
     @Select("SELECT DISTINCT object_id FROM post_stats WHERE object_type = #{objectType}")
-    List<Long> getAllObjectIdsByType(byte objectType);
+    List<Long> getAllObjectIdsByType(int objectType);
 
     // ===== 实时统计操作（增量更新）=====
     
@@ -44,7 +44,7 @@ public interface PostStatsMapper {
             "), " +
             "updated_at = NOW() " +
             "WHERE object_type = #{obejctType} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    int incrementStatsCount(byte objectType, long objectId, int statYear, String dayKey, String statType, int count);
+    int incrementStatsCount(int objectType, long objectId, int statYear, String dayKey, String statType, int count);
 
     // 使用MySQL JSON函数直接减少计数（用于撤销操作）
     @Update("UPDATE post_stats SET " +
@@ -56,7 +56,7 @@ public interface PostStatsMapper {
             "updated_at = NOW() " +
             "WHERE object_type = #{objectType} AND object_id = #{objectId} AND stat_year = #{statYear} " +
             "AND JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\"')) IS NOT NULL")
-    int decrementStatsCount(byte objectType, long objectId, int statYear, String dayKey, String statType, int count);
+    int decrementStatsCount(int objectType, long objectId, int statYear, String dayKey, String statType, int count);
 
     // ===== 同步操作（直接覆盖）=====
     
@@ -74,7 +74,7 @@ public interface PostStatsMapper {
             "), " +
             "updated_at = NOW() " +
             "WHERE object_type = #{objectType} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    int setDayStats(byte objectType, long objectId, int statYear, String dayKey, int views, int twice,
+    int setDayStats(int objectType, long objectId, int statYear, String dayKey, int views, int twice,
                     int helpful, int comments);
 
     // ===== 查询操作 =====
@@ -83,5 +83,5 @@ public interface PostStatsMapper {
     @Select("SELECT JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\"')) " +
             "FROM post_stats " +
             "WHERE object_type = #{objectType} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    String getDayStats(byte objectType, long objectId, int statYear, String dayKey);
+    String getDayStats(int objectType, long objectId, int statYear, String dayKey);
 }

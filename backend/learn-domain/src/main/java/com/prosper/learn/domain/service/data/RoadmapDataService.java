@@ -138,6 +138,6 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
      */
     @CacheEvict(value = "roadmaps", key = "#id")
     public int approve(long id) {
-        return roadmapMapper.updateState(id, Enums.CommomState.APPROVED.value());
+        return roadmapMapper.updateState(id, Enums.ContentState.APPROVED.value());
     }
 }

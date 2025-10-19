@@ -45,11 +45,11 @@ public class NodesController {
     public ApiResponse<NodeDTO> updateNodeState(
             @PathVariable @Positive(message = "节点ID必须大于0") Long nodeId,
             @RequestParam @Min(value = 0, message = "状态值必须大于等于0") Integer state) {
-        Enums.CommomState commomState = Enums.CommomState.getByValue(state);
+        Enums.ContentState contentState = Enums.ContentState.getByValue(state);
         if (state == null) {
             throw new IllegalArgumentException("Invalid state value: " + state);
         }
-        NodeDTO node = nodeService.updateNodeState(nodeId, commomState);
+        NodeDTO node = nodeService.updateNodeState(nodeId, contentState);
         return ApiResponse.success(node);
     }
 }

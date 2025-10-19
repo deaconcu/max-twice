@@ -30,10 +30,10 @@ const errorMessage = ref('')
 const loadUser = async () => {
   try {
     loading.value = true
-    const userId = parseInt(route.query.id as string)
-    if (!userId) return
+    const username = route.params.username as string
+    if (!username) return
 
-    const response = await userServiceV1.getUser(userId)
+    const response = await userServiceV1.getUser(username)
     if (response.code === 200) {
       user.value = response.data
     } else if (response.code === USER_BANNED) {
@@ -83,10 +83,11 @@ const tabComponents: Record<string, any> = {
   article: UserPostsTab,
 }
 
-// 组件属性映射 - User页面所有组件都传入userId，都不可编辑
+// 组件属性映射 - User页面传入username
 const getComponentProps = (tabValue: string): ComponentProps => {
   const baseProps: ComponentProps = {
-    userId: route.query.id as string,
+    userId: user.value?.id?.toString() || '',  // 保留 userId 用于其他需要的组件
+    username: route.params.username as string,  // 传递 username
   }
 
   if (tabValue === 'article') {
@@ -98,7 +99,7 @@ const getComponentProps = (tabValue: string): ComponentProps => {
 
 // 当前选中的标签页
 if (!route.query || !route.query.tab)
-  router.replace({ query: { tab: 'info', id: route.query.id } })
+  router.replace({ params: { username: route.params.username }, query: { tab: 'info' } })
 const selected = computed(() => (route.query.tab as string) || 'info')
 
 // 当前渲染的组件
@@ -107,7 +108,7 @@ const currentProps = computed(() => getComponentProps(selected.value))
 
 // 处理标签页切换
 const handleTabChange = (newTab: string): void => {
-  router.push({ query: { tab: newTab, id: route.query.id } })
+  router.push({ params: { username: route.params.username }, query: { tab: newTab } })
 }
 
 // 获取当前选中标签的描述
@@ -159,11 +160,11 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- 用户ID显示 -->
+          <!-- 用户名显示 -->
           <div class="d-flex align-center">
             <v-chip color="grey-lighten-1" variant="flat" size="small">
-              <v-icon icon="mdi-identifier" size="14" class="mr-1"></v-icon>
-              用户ID: {{ route.query.id || '未知' }}
+              <v-icon icon="mdi-account" size="14" class="mr-1"></v-icon>
+              用户: {{ route.params.username || '未知' }}
             </v-chip>
           </div>
         </div>
@@ -184,7 +185,7 @@ onMounted(() => {
             <component
               :is="currentComponent"
               v-bind="currentProps"
-              :key="`${selected}-${route.query.id}`"
+              :key="`${selected}-${route.params.username}`"
             />
           </v-slide-y-reverse-transition>
         </div>

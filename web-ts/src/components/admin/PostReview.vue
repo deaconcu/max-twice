@@ -2,7 +2,7 @@
 import { inject, onMounted, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { postServiceV1 } from '@/services/api/v1/apiServiceV1'
-import { PostState, PostType } from '@/types/enums'
+import { ContentState, PostType } from '@/types/enums'
 import type { Post } from '@/types/post'
 
 const { t } = useI18n()
@@ -23,7 +23,7 @@ const isFilterMode = ref<boolean>(false)
 interface TabConfig {
   key: string
   label: string
-  state: PostState
+  state: ContentState
   icon: string
   color: string
 }
@@ -32,21 +32,21 @@ const tabs: TabConfig[] = [
   {
     key: 'pending',
     label: t('admin.pending'),
-    state: PostState.SUBMITTED,
+    state: ContentState.SUBMITTED,
     icon: 'mdi-clock-outline',
     color: 'orange'
   },
   {
     key: 'approved',
     label: t('admin.approved'),
-    state: PostState.APPROVED,
+    state: ContentState.APPROVED,
     icon: 'mdi-check-circle',
     color: 'green'
   },
   {
     key: 'rejected',
     label: t('admin.rejected'),
-    state: PostState.DELETED,
+    state: ContentState.BANNED,
     icon: 'mdi-close-circle',
     color: 'red'
   }
@@ -364,7 +364,7 @@ onMounted(() => {
           <div class="mr-4 action-area">
             <div class="mb-3">
               <v-chip
-                v-if="post.state == PostState.SUBMITTED"
+                v-if="post.state == ContentState.SUBMITTED"
                 variant="flat"
                 color="orange-lighten-4"
                 rounded="lg"
@@ -374,7 +374,7 @@ onMounted(() => {
                 {{ t('admin.pending') }}
               </v-chip>
               <v-chip
-                v-if="post.state == PostState.APPROVED"
+                v-if="post.state == ContentState.APPROVED"
                 variant="flat"
                 color="green-lighten-4"
                 rounded="lg"
@@ -384,7 +384,7 @@ onMounted(() => {
                 {{ t('admin.approved') }}
               </v-chip>
               <v-chip
-                v-if="post.state == PostState.DELETED"
+                v-if="post.state == ContentState.BANNED"
                 variant="flat"
                 color="red-lighten-4"
                 rounded="lg"
@@ -394,7 +394,7 @@ onMounted(() => {
                 {{ t('admin.rejected') }}
               </v-chip>
             </div>
-            <div v-if="post.state == PostState.SUBMITTED" class="d-flex flex-column ga-2">
+            <div v-if="post.state == ContentState.SUBMITTED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
                 color="green-lighten-4"
@@ -418,7 +418,7 @@ onMounted(() => {
             </div>
 
             <!-- 已通过状态下显示屏蔽按钮 -->
-            <div v-if="post.state == PostState.APPROVED" class="d-flex flex-column ga-2">
+            <div v-if="post.state == ContentState.APPROVED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
                 color="red-lighten-4"
@@ -432,7 +432,7 @@ onMounted(() => {
             </div>
 
             <!-- 已拒绝状态下显示通过按钮 -->
-            <div v-if="post.state == PostState.DELETED" class="d-flex flex-column ga-2">
+            <div v-if="post.state == ContentState.BANNED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
                 color="green-lighten-4"

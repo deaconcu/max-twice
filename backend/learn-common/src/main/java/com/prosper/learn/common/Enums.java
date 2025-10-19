@@ -48,14 +48,14 @@ public class Enums {
         }
     }
 
-    public enum CourseState implements ValueEnum<Byte> {
+    public enum ContentState implements ValueEnum<Byte> {
         SUBMITTED((byte)0),
         APPROVED((byte)1),
-        REJECTED((byte)2);
+        BANNED((byte)2);
 
         private final byte value;
 
-        CourseState(byte value) {
+        ContentState(byte value) {
             this.value = value;
         }
 
@@ -64,58 +64,12 @@ public class Enums {
             return value;
         }
 
-        public static CourseState getByValue(Integer value) {
-            return value == null ? null : ValueEnum.getByValue(CourseState.class, value.byteValue());
-        }
-        
-        public static boolean isValid(int value) {
-            return ValueEnum.isValid(CourseState.class, (byte)value);
-        }
-    }
-
-    public enum CourseRequestState implements ValueEnum<Integer> {
-        submitted(1),
-        proved(2),
-        reject(3);
-
-        private final int value;
-
-        CourseRequestState(int value) {
-            this.value = value;
-        }
-
-        @Override
-        public Integer value() {
-            return value;
-        }
-
-        public static CourseRequestState getByValue(Integer value) {
-            return ValueEnum.getByValue(CourseRequestState.class, value);
-        }
-    }
-
-    public enum CommomState implements ValueEnum<Byte> {
-        SUBMITTED((byte)0),
-        APPROVED((byte)1),
-        REJECTED((byte)2);
-
-        private final byte value;
-
-        CommomState(byte value) {
-            this.value = value;
-        }
-
-        @Override
-        public Byte value() {
-            return value;
-        }
-
-        public static CommomState getByValue(Integer value) {
-            return value == null ? null : ValueEnum.getByValue(CommomState.class, value.byteValue());
+        public static ContentState getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(ContentState.class, value.byteValue());
         }
 
         public static boolean isValid(int value) {
-            return ValueEnum.isValid(CommomState.class, (byte)value);
+            return ValueEnum.isValid(ContentState.class, (byte)value);
         }
     }
 
@@ -136,48 +90,6 @@ public class Enums {
 
         public static PostType getByValue(Integer value) {
             return ValueEnum.getByValue(PostType.class, value);
-        }
-    }
-
-    public enum PostState implements ValueEnum<Integer> {
-        submited(0),
-        approved(1),
-        deleted(2);
-
-        private final int value;
-
-        PostState(int value) {
-            this.value = value;
-        }
-
-        @Override
-        public Integer value() {
-            return value;
-        }
-
-        public static PostState getByValue(Integer value) {
-            return ValueEnum.getByValue(PostState.class, value);
-        }
-    }
-
-    public enum CommentState implements ValueEnum<Integer> {
-        submited(0),
-        approved(1),
-        deleted(2);
-
-        private final int value;
-
-        CommentState(int value) {
-            this.value = value;
-        }
-
-        @Override
-        public Integer value() {
-            return value;
-        }
-
-        public static CommentState getByValue(Integer value) {
-            return ValueEnum.getByValue(CommentState.class, value);
         }
     }
 
@@ -261,11 +173,11 @@ public class Enums {
     }
 
     public enum ObjectType implements ValueEnum<Integer> {
-        post(0),
-        node(1),
-        comment(2),
-        roadmap(3),
-        memory_card_deck(4);
+        post(1),
+        node(2),
+        comment(3),
+        roadmap(4),
+        memory_card_deck(5);
 
         private final int value;
 
@@ -341,46 +253,17 @@ public class Enums {
     }
 
     /**
-     * Profession表状态枚举
-     * SUBMITTED=0, APPROVED=1, REJECTED=2
-     */
-    public enum ProfessionState implements ValueEnum<Byte> {
-        SUBMITTED((byte)0),
-        APPROVED((byte)1),
-        REJECTED((byte)2);
-
-        private final byte value;
-
-        ProfessionState(byte value) {
-            this.value = value;
-        }
-
-        @Override
-        public Byte value() {
-            return value;
-        }
-
-        public static ProfessionState getByValue(Integer value) {
-            return value == null ? null : ValueEnum.getByValue(ProfessionState.class, value.byteValue());
-        }
-
-        public static boolean isValid(int value) {
-            return ValueEnum.isValid(ProfessionState.class, (byte)value);
-        }
-    }
-
-    /**
-     * UserCourse表状态枚举 (原status字段，现改为state)
+     * 用户进度状态枚举 (用于 UserCourse 和 UserRoadmap)
      * NOT_STARTED=0, IN_PROGRESS=1, COMPLETED=2
      */
-    public enum UserCourseState implements ValueEnum<Byte> {
+    public enum UserProgressState implements ValueEnum<Byte> {
         NOT_STARTED((byte)0),
         IN_PROGRESS((byte)1),
         COMPLETED((byte)2);
 
         private final byte value;
 
-        UserCourseState(byte value) {
+        UserProgressState(byte value) {
             this.value = value;
         }
 
@@ -389,71 +272,15 @@ public class Enums {
             return value;
         }
 
-        public static UserCourseState getByValue(Integer value) {
-            return value == null ? null : ValueEnum.getByValue(UserCourseState.class, value.byteValue());
+        public static UserProgressState getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(UserProgressState.class, value.byteValue());
         }
 
         public static boolean isValid(int value) {
-            return ValueEnum.isValid(UserCourseState.class, (byte)value);
+            return ValueEnum.isValid(UserProgressState.class, (byte)value);
         }
     }
 
-    /**
-     * UserRoadmap表状态枚举 (原status字段，现改为state)
-     * NOT_STARTED=0, IN_PROGRESS=1, COMPLETED=2
-     */
-    public enum UserRoadmapState implements ValueEnum<Byte> {
-        NOT_STARTED((byte)0),
-        IN_PROGRESS((byte)1),
-        COMPLETED((byte)2);
-
-        private final byte value;
-
-        UserRoadmapState(byte value) {
-            this.value = value;
-        }
-
-        @Override
-        public Byte value() {
-            return value;
-        }
-
-        public static UserRoadmapState getByValue(Integer value) {
-            return value == null ? null : ValueEnum.getByValue(UserRoadmapState.class, value.byteValue());
-        }
-
-        public static boolean isValid(int value) {
-            return ValueEnum.isValid(UserRoadmapState.class, (byte)value);
-        }
-    }
-
-    /**
-     * PostStats表类型枚举
-     * POST=0, ROADMAP=1
-     */
-    public enum PostStatsType implements ValueEnum<Byte> {
-        POST((byte)0),
-        ROADMAP((byte)1);
-
-        private final byte value;
-
-        PostStatsType(byte value) {
-            this.value = value;
-        }
-
-        @Override
-        public Byte value() {
-            return value;
-        }
-
-        public static PostStatsType getByValue(Integer value) {
-            return value == null ? null : ValueEnum.getByValue(PostStatsType.class, value.byteValue());
-        }
-
-        public static boolean isValid(int value) {
-            return ValueEnum.isValid(PostStatsType.class, (byte)value);
-        }
-    }
 
     public enum DTOVersion {
         V1, V2, V3, V4, V5, V6, V7, V8, V9, V10
@@ -583,72 +410,16 @@ public class Enums {
         }
     }
 
-    /**
-     * 记忆卡片组状态枚举
-     * PENDING=0, NORMAL=1, BLOCKED=2, PRIVATE=3
-     */
-    public enum MemoryCardDeckState implements ValueEnum<Byte> {
-        PENDING((byte) 0),      // 审核中
-        NORMAL((byte) 1),       // 正常
-        BLOCKED((byte) 2),      // 屏蔽
-        PRIVATE((byte) 3);      // 私有
 
-        private final byte value;
-
-        MemoryCardDeckState(byte value) {
-            this.value = value;
-        }
-
-        @Override
-        public Byte value() {
-            return value;
-        }
-
-        public static MemoryCardDeckState getByValue(Integer value) {
-            return value == null ? null : ValueEnum.getByValue(MemoryCardDeckState.class, value.byteValue());
-        }
-
-        public static boolean isValid(int value) {
-            return ValueEnum.isValid(MemoryCardDeckState.class, (byte)value);
-        }
-    }
-
-    /**
-     * 记忆卡片状态枚举
-     * NORMAL=0, DELETED=1
-     */
-    public enum MemoryCardState implements ValueEnum<Byte> {
-        NORMAL((byte) 0),       // 正常
-        DELETED((byte) 1);      // 已删除
-
-        private final byte value;
-
-        MemoryCardState(byte value) {
-            this.value = value;
-        }
-
-        @Override
-        public Byte value() {
-            return value;
-        }
-
-        public static MemoryCardState getByValue(Integer value) {
-            return value == null ? null : ValueEnum.getByValue(MemoryCardState.class, value.byteValue());
-        }
-
-        public static boolean isValid(int value) {
-            return ValueEnum.isValid(MemoryCardState.class, (byte)value);
-        }
-    }
 
     /**
      * 复习频率设置枚举
      * HIGH=0, NORMAL=1, LOW=2
      */
     public enum FrequencySetting implements ValueEnum<Byte> {
-        HIGH((byte) 0),         // 高频
-        NORMAL((byte) 1),       // 普通
-        LOW((byte) 2);          // 低频
+        HIGH((byte) 1),         // 高频
+        NORMAL((byte) 2),       // 普通
+        LOW((byte) 3);          // 低频
 
         private final byte value;
 
@@ -704,10 +475,10 @@ public class Enums {
      * FAILED=0, HARD=1, GOOD=2, EASY=3
      */
     public enum ReviewResult implements ValueEnum<Integer> {
-        FAILED(0),              // 忘记了
-        HARD(1),                // 困难
-        GOOD(2),                // 良好
-        EASY(3);                // 简单
+        FAILED(1),              // 忘记了
+        HARD(2),                // 困难
+        GOOD(3),                // 良好
+        EASY(4);                // 简单
 
         private final int value;
 

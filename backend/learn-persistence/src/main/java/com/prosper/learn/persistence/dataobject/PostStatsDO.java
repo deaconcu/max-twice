@@ -9,7 +9,7 @@ public class PostStatsDO {
 
     private Long id;
 
-    private Byte objectType; // 改为 tinyint 类型，支持 POST=0, ROADMAP=1
+    private Integer objectType; // 使用 ObjectType 枚举值（post=1, roadmap=4）
 
     private Long objectId;
 

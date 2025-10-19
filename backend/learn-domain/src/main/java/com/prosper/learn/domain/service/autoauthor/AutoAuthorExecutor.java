@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service.autoauthor;
 
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.data.PostDataService;
 import com.prosper.learn.domain.service.data.MemoryCardDeckDataService;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import com.prosper.learn.persistence.dataobject.PostDO;
 
-import static com.prosper.learn.common.Enums.MemoryCardDeckState.*;
 
 /**
  * AutoAuthor 执行器
@@ -84,7 +84,7 @@ public class AutoAuthorExecutor {
             // 查找并软删除现有的AI帖子
             List<PostDO> existingPosts = postDataService.getListByNodeAndCreator(nodeId, aiUserId);
             for (PostDO post : existingPosts) {
-                if (post.getState() != com.prosper.learn.common.Enums.PostState.deleted.value()) {
+                if (post.getState() != Enums.ContentState.BANNED.value()) {
                     postService.deletePost(post.getId());
                     log.info("Soft deleted existing AI post {} for node {}", post.getId(), nodeId);
                 }
@@ -110,7 +110,7 @@ public class AutoAuthorExecutor {
         if (!existingDecks.isEmpty()) {
             // 废弃所有已存在的AI deck
             existingDecks.forEach(deck -> {
-                if (deck.getState() == PENDING.value() || deck.getState() == NORMAL.value()) {
+                if (deck.getState() == Enums.ContentState.SUBMITTED.value() || deck.getState() == Enums.ContentState.APPROVED.value()) {
                     memoryCardDeckService.discardDeck(deck.getId(), aiUserId);
                     log.info("Discarded existing AI deck {} for post {}", deck.getId(), postId);
                 }

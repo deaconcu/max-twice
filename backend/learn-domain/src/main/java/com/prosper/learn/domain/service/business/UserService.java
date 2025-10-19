@@ -93,6 +93,21 @@ public class UserService {
     }
 
     /**
+     * 根据用户名获取用户信息（包含关注状态）
+     * 被屏蔽的用户会抛出异常
+     */
+    public UserDTO getUserByUsername(String username, Long viewerId) {
+        validateUserId(viewerId);
+        UserDO userDO = userDataService.validateAndGetByName(username);
+
+        if (userDO.getState() != null && userDO.getState() == UserState.BANNED.value()) {
+            throw ErrorCode.USER_BANNED.exception();
+        }
+
+        return toDTOV4(userDO, viewerId);
+    }
+
+    /**
      * 批量加载用户信息
      */
     public Map<Long, UserDTO> getUserMap(List<Long> ids) {
@@ -488,7 +503,7 @@ public class UserService {
         }
         return userDO;
     }
-    
+
     private void validateCourseExists(Long courseId) {
         if (courseId == null || courseId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception();

@@ -18,7 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.*;
-import static com.prosper.learn.common.Enums.*;
+import com.prosper.learn.common.Enums;
 
 /**
  * 记忆卡片组业务服务
@@ -64,7 +64,7 @@ public class MemoryCardDeckService {
         MemoryCardDeckDTO dto = deckConverter.toDTO(deckDO);
 
         // 填充创建者信息
-        UserDTO creator = userService.getUser(deckDO.getCreatorId(), DTOVersion.V2);
+        UserDTO creator = userService.getUser(deckDO.getCreatorId(), Enums.DTOVersion.V2);
         dto.setCreator(creator);
 
         return dto;
@@ -79,12 +79,12 @@ public class MemoryCardDeckService {
         MemoryCardDeckDTO dto = deckConverter.toDTO(deckDO);
 
         // 填充创建者信息
-        UserDTO creator = userService.getUser(deckDO.getCreatorId(), DTOVersion.V2);
+        UserDTO creator = userService.getUser(deckDO.getCreatorId(), Enums.DTOVersion.V2);
         dto.setCreator(creator);
 
         // 填充点赞状态（如果提供了用户ID）
         if (userId != null) {
-            boolean hasUpvoted = upvoteService.getUpvoteStatus(deckDO.getId(), ObjectType.memory_card_deck.value(), userId).getUpvoted();
+            boolean hasUpvoted = upvoteService.getUpvoteStatus(deckDO.getId(), Enums.ObjectType.memory_card_deck.value(), userId).getUpvoted();
             dto.setHasUpvoted(hasUpvoted);
         }
 
@@ -135,7 +135,7 @@ public class MemoryCardDeckService {
                 .collect(Collectors.toSet());
             // 批量查询点赞状态
             for (Long deckId : deckIds) {
-                boolean hasUpvoted = upvoteService.getUpvoteStatus(deckId, ObjectType.memory_card_deck.value(), userId).getUpvoted();
+                boolean hasUpvoted = upvoteService.getUpvoteStatus(deckId, Enums.ObjectType.memory_card_deck.value(), userId).getUpvoted();
                 upvoteStatusMap.put(deckId, hasUpvoted);
             }
         }
@@ -174,9 +174,9 @@ public class MemoryCardDeckService {
 
         List<MemoryCardDeckDO> deckList;
         if (lastScore != null && lastId != null) {
-            deckList = deckDataService.getListByPostKeyset(postId, lastScore, lastId, MemoryCardDeckState.NORMAL.value(), limit + 1);
+            deckList = deckDataService.getListByPostKeyset(postId, lastScore, lastId, Enums.ContentState.APPROVED.value(), limit + 1);
         } else {
-            deckList = deckDataService.getListByPost(postId, MemoryCardDeckState.NORMAL.value(), limit + 1);
+            deckList = deckDataService.getListByPost(postId, Enums.ContentState.APPROVED.value(), limit + 1);
         }
 
         return buildDeckResponse(deckList, limit, null);
@@ -199,10 +199,10 @@ public class MemoryCardDeckService {
             // post创建者不是当前用户，只查询normal状态
             if (lastScore != null && lastId != null) {
                 deckList = deckDataService.getListByPostAndCreatorKeyset(
-                        postId, postCreatorId, lastScore, lastId, MemoryCardDeckState.NORMAL.value(), limit + 1);
+                        postId, postCreatorId, lastScore, lastId, Enums.ContentState.APPROVED.value(), limit + 1);
             } else {
                 deckList = deckDataService.getListByPostAndCreator(
-                        postId, postCreatorId, MemoryCardDeckState.NORMAL.value(), limit + 1);
+                        postId, postCreatorId, Enums.ContentState.APPROVED.value(), limit + 1);
             }
         } else {
             // post创建者就是当前用户，查询所有状态
@@ -250,9 +250,9 @@ public class MemoryCardDeckService {
         // 暂时查询正常状态，TODO: 需要添加查询所有状态的方法
         if (lastScore != null && lastId != null) {
             deckList = deckDataService.getListByCreatorKeyset(
-                    userId, lastScore, lastId, MemoryCardDeckState.NORMAL.value(), limit + 1);
+                    userId, lastScore, lastId, Enums.ContentState.APPROVED.value(), limit + 1);
         } else {
-            deckList = deckDataService.getListByCreator(userId, MemoryCardDeckState.NORMAL.value(), limit + 1);
+            deckList = deckDataService.getListByCreator(userId, Enums.ContentState.APPROVED.value(), limit + 1);
         }
 
         return buildDeckResponse(deckList, limit, userId);
@@ -300,7 +300,7 @@ public class MemoryCardDeckService {
         List<MemoryCardDeckDO> deckList;
 
         // 只查询正常状态的卡片组
-        int state = MemoryCardDeckState.NORMAL.value();
+        int state = Enums.ContentState.APPROVED.value();
 
         if (lastScore != null && lastId != null) {
             deckList = deckDataService.getListByNodeKeyset(nodeId, lastScore, lastId, state, limit + 1);
@@ -343,7 +343,7 @@ public class MemoryCardDeckService {
         int limit = 20;
 
         // 默认查询待审核状态的卡片组
-        int defaultState = state != null ? state : MemoryCardDeckState.PENDING.value();
+        int defaultState = state != null ? state : Enums.ContentState.SUBMITTED.value();
 
         List<MemoryCardDeckDO> deckList;
 
@@ -488,7 +488,7 @@ public class MemoryCardDeckService {
         deck.setTitle(request.getTitle());
         deck.setDescription(request.getDescription());
         deck.setVersion(1);
-        deck.setState(MemoryCardDeckState.PENDING.value()); // 默认审核中
+        deck.setState(Enums.ContentState.SUBMITTED.value()); // 默认审核中
         deck.setCardCount(request.getCards() != null ? request.getCards().size() : 0);
 
         // 插入数据库
@@ -555,12 +555,12 @@ public class MemoryCardDeckService {
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
         
         // 验证状态：只有待审核的卡片组才能通过
-        if (deck.getState() != MemoryCardDeckState.PENDING.value()) {
+        if (deck.getState() != Enums.ContentState.SUBMITTED.value()) {
             throw ErrorCode.INVALID_PARAMETER.exception("只有待审核状态的卡片组才能通过审核");
         }
         
         // 更新状态为正常
-        deck.setState(MemoryCardDeckState.NORMAL.value());
+        deck.setState(Enums.ContentState.APPROVED.value());
         //deck.setUpdatedBy(auditorId);
         deck.setUpdatedAt(LocalDateTime.now());
         
@@ -577,13 +577,13 @@ public class MemoryCardDeckService {
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
 
         // 验证状态：只有待审核或正常状态的卡片组才能废弃
-        if (deck.getState() != MemoryCardDeckState.PENDING.value() &&
-            deck.getState() != MemoryCardDeckState.NORMAL.value()) {
+        if (deck.getState() != Enums.ContentState.SUBMITTED.value() &&
+            deck.getState() != Enums.ContentState.APPROVED.value()) {
             throw ErrorCode.INVALID_PARAMETER.exception("只有待审核或正常状态的卡片组才能废弃");
         }
 
         // 更新状态为屏蔽
-        deck.setState(MemoryCardDeckState.BLOCKED.value());
+        deck.setState(Enums.ContentState.BANNED.value());
         //deck.setUpdatedBy(auditorId);
         deck.setUpdatedAt(LocalDateTime.now());
 
@@ -600,12 +600,12 @@ public class MemoryCardDeckService {
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
         
         // 验证状态：只有屏蔽状态的卡片组才能恢复
-        if (deck.getState() != MemoryCardDeckState.BLOCKED.value()) {
+        if (deck.getState() != Enums.ContentState.BANNED.value()) {
             throw ErrorCode.INVALID_PARAMETER.exception("只有屏蔽状态的卡片组才能恢复");
         }
         
         // 更新状态为正常
-        deck.setState(MemoryCardDeckState.NORMAL.value());
+        deck.setState(Enums.ContentState.APPROVED.value());
         //deck.setUpdatedBy(auditorId);
         deck.setUpdatedAt(LocalDateTime.now());
         
@@ -920,7 +920,7 @@ public class MemoryCardDeckService {
         }
 
         // 设置为待审核状态
-        deck.setState(MemoryCardDeckState.PENDING.value());
+        deck.setState(Enums.ContentState.SUBMITTED.value());
         deck.setUpdatedAt(LocalDateTime.now());
         //deck.setUpdatedBy(userId);
         deckDataService.update(deck);
@@ -951,7 +951,7 @@ public class MemoryCardDeckService {
         PostDO post = postDataService.validateAndGet(postId);
 
         // 只为文章类型的帖子生成记忆卡片
-        if (!post.getType().equals(PostType.article.value())) {
+        if (!post.getType().equals(Enums.PostType.article.value())) {
             throw ErrorCode.INVALID_PARAMETER.exception("只能为文章类型的帖子生成记忆卡片");
         }
 

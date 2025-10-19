@@ -30,6 +30,9 @@ public interface UserMapper {
     @Select("SELECT * FROM user WHERE email = #{email} limit 1")
     UserDO getByEmail(String email);
 
+    @Select("SELECT * FROM user WHERE name = #{name} limit 1")
+    UserDO getByName(String name);
+
     @Insert("INSERT INTO user(name, password, phone, email, biography) " +
             "VALUES (#{name}, #{password}, #{phone}, #{email}, #{biography})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")

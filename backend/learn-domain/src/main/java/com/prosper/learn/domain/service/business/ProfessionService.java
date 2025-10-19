@@ -1,6 +1,6 @@
 package com.prosper.learn.domain.service.business;
 
-import static com.prosper.learn.common.Enums.ProfessionState;
+import static com.prosper.learn.common.Enums.ContentState;
 
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
@@ -43,14 +43,14 @@ public class ProfessionService {
             return null;
         }
 
-        if (professionDO.getState() == ProfessionState.REJECTED.value()) {
+        if (professionDO.getState() == ContentState.BANNED.value()) {
             throw ErrorCode.PROFESSION_BLOCKED.exception();
         }
 
         return toDTO(professionDO);
     }
 
-    public List<ProfessionDTO> getListByStateAndLastId(ProfessionState state, Long lastId) {
+    public List<ProfessionDTO> getListByStateAndLastId(ContentState state, Long lastId) {
         List<ProfessionDO> professionDOList = professionDataService.listByStateAndLastId(state.value(), lastId);
         return toDTO(professionDOList);
     }
@@ -85,7 +85,7 @@ public class ProfessionService {
         professionDO.setMainCategory(request.getMainCategory());
         professionDO.setSubCategory(request.getSubCategory());
         professionDO.setCreatorId(userId);
-        professionDO.setState(ProfessionState.SUBMITTED.value());
+        professionDO.setState(ContentState.SUBMITTED.value());
         professionDO.setRejectedReason("");
         professionDO.setIcon("");
         professionDataService.insert(professionDO);
@@ -169,7 +169,7 @@ public class ProfessionService {
 
             List<ProfessionDTO> result = new ArrayList<>();
             for (ProfessionDO professionDO : professionDOList) {
-                if (professionDO.getState() != ProfessionState.APPROVED.value()) {
+                if (professionDO.getState() != ContentState.APPROVED.value()) {
                     continue;
                 }
 
@@ -229,13 +229,13 @@ public class ProfessionService {
     }
     
     private void validateNotAlreadyApproved(ProfessionDTO profession) {
-        if (ProfessionState.APPROVED.value() == profession.getState()) {
+        if (ContentState.APPROVED.value() == profession.getState()) {
             throw ErrorCode.PROFESSION_ALREADY_APPROVED.exception();
         }
     }
     
     private void validateNotAlreadyRejected(ProfessionDTO profession) {
-        if (ProfessionState.REJECTED.value() == profession.getState()) {
+        if (ContentState.BANNED.value() == profession.getState()) {
             throw ErrorCode.PROFESSION_ALREADY_REJECTED.exception();
         }
     }

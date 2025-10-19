@@ -90,8 +90,8 @@ export const userServiceV1 = {
     })
   },
 
-  getUser(userId: number): Promise<ApiResponse<User>> {
-    return apiClient.get(`${API_V1_PREFIX}/users/${userId}`)
+  getUser(username: string): Promise<ApiResponse<User>> {
+    return apiClient.get(`${API_V1_PREFIX}/users/${username}`)
   },
 
   searchUser(name: string): Promise<ApiResponse<User[]>> {

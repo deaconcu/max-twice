@@ -237,7 +237,8 @@ const upvote = async (comment: Comment): Promise<void> => {
         </div>
         <div class="comment-content">
           <div class="text-body-2 mb-2 text-grey-darken-1">
-            {{ t('comment.username') }}
+            <UserCard v-if="comment.creatorId && comment.creatorName" :user-id="comment.creatorId" :user-name="comment.creatorName" />
+            <span v-else>{{ t('comment.username') }}</span>
             <span class="ms-2 text-caption text-grey">{{ comment.createdAt }}</span>
           </div>
           <div>

@@ -331,7 +331,7 @@ public class MemoryCardService {
         card.setDeckId(request.getDeckId());
         card.setCreatorId(userId);
         card.setCurrentVersionId(0L); // 临时设置为0，版本插入后再更新
-        card.setState(MemoryCardState.NORMAL.value()); // 正常状态
+        card.setState(ContentState.APPROVED.value()); // 正常状态
 
         int cardResult = cardDataService.insert(card);
         if (cardResult <= 0) {
@@ -358,7 +358,7 @@ public class MemoryCardService {
         cardDataService.update(card);
 
         // 原子操作：更新卡片组的卡片数量、状态和版本（卡片内容变化，需要重新审核）
-        deckDataService.incrementCardCountAndSetStateAndVersion(request.getDeckId(), MemoryCardDeckState.PENDING.value());
+        deckDataService.incrementCardCountAndSetStateAndVersion(request.getDeckId(), ContentState.SUBMITTED.value());
 
         log.info("Created card: {} in deck: {} by user: {}", card.getId(), request.getDeckId(), userId);
 
@@ -395,7 +395,7 @@ public class MemoryCardService {
             card.setDeckId(deckId);
             card.setCreatorId(userId);
             card.setCurrentVersionId(0L); // 临时设置为0，版本插入后再更新
-            card.setState(MemoryCardState.NORMAL.value());
+            card.setState(ContentState.APPROVED.value());
             card.setCreatedAt(now);
             card.setUpdatedAt(now);
             cardsToInsert.add(card);
@@ -507,7 +507,7 @@ public class MemoryCardService {
         log.info("Updated card: {} to version: {} by user: {}", request.getId(), newVersion.getVersion(), userId);
 
         // 卡片内容变化，将卡片组状态设置为审核中并增加版本
-        deckDataService.updateStateAndIncrementVersion(existingCard.getDeckId(), MemoryCardDeckState.PENDING.value());
+        deckDataService.updateStateAndIncrementVersion(existingCard.getDeckId(), ContentState.SUBMITTED.value());
 
         return toDTOV1(card, userId);
     }
@@ -533,7 +533,7 @@ public class MemoryCardService {
         }
 
         // 软删除卡片：直接修改已获取的card对象
-        card.setState(MemoryCardState.DELETED.value()); // 已删除状态
+        card.setState(ContentState.BANNED.value()); // 已删除状态
         card.setUpdatedAt(LocalDateTime.now());
         cardDataService.update(card);
 
@@ -566,7 +566,7 @@ public class MemoryCardService {
         // 批量软删除卡片
         LocalDateTime now = LocalDateTime.now();
         for (MemoryCardDO card : cards) {
-            card.setState(MemoryCardState.DELETED.value());
+            card.setState(ContentState.BANNED.value());
             card.setUpdatedAt(now);
         }
 

@@ -105,7 +105,7 @@ public class MemoryBankService {
         List<CourseDO> courses = settings.stream()
                 .map(setting -> courseMap.get(setting.getCourseId()))
                 .filter(Objects::nonNull)
-                .filter(course -> CourseState.APPROVED.value().equals(course.getState()))
+                .filter(course -> ContentState.APPROVED.value().equals(course.getState()))
                 .collect(Collectors.toList());
 
         return toCourseMemoryBankDTO(courses, settingMap, userId);

@@ -3,7 +3,7 @@
  * 基于后端 CommentDTO.java, CommentDTOV1.java
  */
 
-import { ObjectType, CommentState } from './enums'
+import { ObjectType, ContentState } from './enums'
 
 // 统一的评论信息
 export interface Comment {
@@ -17,9 +17,10 @@ export interface Comment {
   replyCount?: number            // 回复数量 (可选)
   replyToCommentId?: number      // 回复的评论ID (可选)
   creatorId?: number             // 评论者ID (可选)
+  creatorName?: string           // 评论者用户名 (可选) - TODO: 后端需要添加此字段
   toUserId?: number              // 被回复者ID (可选)
   toUserName?: string            // 被回复者用户名 (可选)
-  state?: CommentState           // 评论状态 (可选)
+  state?: ContentState           // 评论状态 (可选)
   children?: Comment[] | null    // 子评论列表 (可选，可以为null)
 }
 

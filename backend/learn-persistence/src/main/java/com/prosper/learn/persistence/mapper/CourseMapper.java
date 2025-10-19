@@ -1,8 +1,7 @@
 package com.prosper.learn.persistence.mapper;
 
 import com.prosper.learn.persistence.dataobject.CourseDO;
-import com.prosper.learn.persistence.dataobject.PostDO;
-import com.prosper.learn.common.Enums.CourseState;
+import com.prosper.learn.common.Enums.ContentState;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -21,13 +20,13 @@ public interface CourseMapper {
     List<CourseDO> searchByName(String name, int limit);
 
     @Select("SELECT * FROM course where state = #{state.value} and parent_course_id = #{parentCourseId} ORDER BY created_at DESC")
-    List<CourseDO> listByParentAndState(CourseState state, long parentCourseId);
+    List<CourseDO> listByParentAndState(ContentState state, long parentCourseId);
 
     @Select("SELECT * FROM course where parent_course_id = #{parentCourseId} ORDER BY created_at DESC")
     List<CourseDO> listByParent(long parentCourseId);
 
     @Select("SELECT * FROM course where state = #{state.value} and creator_id = #{creatorId} ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
-    List<CourseDO> list(CourseState state, long creatorId, int limit, int offset);
+    List<CourseDO> list(ContentState state, long creatorId, int limit, int offset);
 
     // 新增：根据状态和lastId获取列表
     @Select("<script>" +
@@ -35,10 +34,10 @@ public interface CourseMapper {
             "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
             "ORDER BY id DESC LIMIT 20" +
             "</script>")
-    List<CourseDO> listByStateAndLastId(CourseState state, Long lastId);
+    List<CourseDO> listByStateAndLastId(ContentState state, Long lastId);
 
     // 新增：根据主分类和子分类获取已批准的课程列表
-    // 修正状态值：使用数字1代替字符串'APPROVED'，对应CourseState.APPROVED.value()
+    // 修正状态值：使用数字1代替字符串'APPROVED'，对应CommonState.APPROVED.value()
     @Select("SELECT * FROM course WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} " +
             "AND state = 1 AND parent_course_id = 0 ORDER BY id ASC LIMIT 20")
     List<CourseDO> listRootByCategory(int mainCategory, int subCategory);
@@ -53,11 +52,11 @@ public interface CourseMapper {
     void update(CourseDO course);
 
     // 新增：课程状态操作方法
-    // 修正状态值：使用数字1代替字符串'APPROVED'，对应CourseState.APPROVED.value()
+    // 修正状态值：使用数字1代替字符串'APPROVED'，对应CommonState.APPROVED.value()
     @Update("UPDATE course SET state = 1, rejected_reason = '' WHERE id = #{id}")
     int approve(long id);
 
-    // 修正状态值：使用数字2代替字符串'REJECTED'，对应CourseState.REJECTED.value()
+    // 修正状态值：使用数字2代替字符串'REJECTED'，对应CommonState.REJECTED.value()
     @Update("UPDATE course SET state = 2, rejected_reason = #{rejectedReason} WHERE id = #{id}")
     int reject(long id, String rejectedReason);
 
@@ -65,7 +64,7 @@ public interface CourseMapper {
     int delete(long id);
     
     // 平台统计相关方法
-    // 修正状态值：使用数字1代替字符串'APPROVED'，对应CourseState.APPROVED.value()
+    // 修正状态值：使用数字1代替字符串'APPROVED'，对应CommonState.APPROVED.value()
     @Select("SELECT COUNT(*) FROM course WHERE state = 1")
     Long countActiveCourses();
 }

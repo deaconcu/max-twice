@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
-import static com.prosper.learn.common.Enums.CommentState.submited;
 import static com.prosper.learn.common.Enums.MessageType.*;
 
 @Service
@@ -366,16 +365,16 @@ public class CommentService {
         validateOffsetId(offsetId);
         int pageSize = systemProperties.getComment().getDefaultPageSize();
 
-        int stateValue;
+        byte stateValue;
         switch (state.toLowerCase()) {
             case "pending":
-                stateValue = submited.value();
+                stateValue = Enums.ContentState.SUBMITTED.value();
                 break;
             case "approved":
-                stateValue = Enums.CommentState.approved.value();
+                stateValue = Enums.ContentState.APPROVED.value();
                 break;
             case "rejected":
-                stateValue = Enums.CommentState.deleted.value();
+                stateValue = Enums.ContentState.BANNED.value();
                 break;
             default:
                 throw ErrorCode.INVALID_PARAMETER.exception("无效的状态参数: " + state);
@@ -400,22 +399,22 @@ public class CommentService {
         CommentDO commentDO = validateAndGetComment(id);
         int oldState = commentDO.getState();
 
-        if (approve && oldState != Enums.CommentState.approved.value()) {
-            commentDO.setState(Enums.CommentState.approved.value());
+        if (approve && oldState != Enums.ContentState.APPROVED.value()) {
+            commentDO.setState(Enums.ContentState.APPROVED.value());
             commentDataService.update(commentDO);
 
             // 通过审核，评论数+1
-            if (oldState == Enums.CommentState.submited.value() || oldState == Enums.CommentState.deleted.value()) {
+            if (oldState == Enums.ContentState.SUBMITTED.value() || oldState == Enums.ContentState.BANNED.value()) {
                 updateObjectCommentCount(commentDO, 1);
             }
         }
 
-        if (!approve && oldState != Enums.CommentState.deleted.value()) {
-            commentDO.setState(Enums.CommentState.deleted.value());
+        if (!approve && oldState != Enums.ContentState.BANNED.value()) {
+            commentDO.setState(Enums.ContentState.BANNED.value());
             commentDataService.update(commentDO);
 
             // 屏蔽评论，评论数-1
-            if (oldState == Enums.CommentState.approved.value()) {
+            if (oldState == Enums.ContentState.APPROVED.value()) {
                 updateObjectCommentCount(commentDO, -1);
             }
         }
@@ -534,18 +533,25 @@ public class CommentService {
     }
 
     /**
-     * 填充评论列表中的 toUserName 字段
+     * 填充评论列表中的 creatorName 和 toUserName 字段
      */
     private void fillToUserNames(List<CommentDTO> commentDTOList, HashMap<Long, CommentDTO> childrenMap) {
         Set<Long> userIds = new HashSet<>();
 
+        // 收集所有需要查询的用户ID（包括 creatorId 和 toUserId）
         for (CommentDTO commentDTO : commentDTOList) {
+            if (commentDTO.getCreatorId() != null && commentDTO.getCreatorId() > 0) {
+                userIds.add(commentDTO.getCreatorId());
+            }
             if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0) {
                 userIds.add(commentDTO.getToUserId());
             }
         }
 
         for (CommentDTO commentDTO : childrenMap.values()) {
+            if (commentDTO.getCreatorId() != null && commentDTO.getCreatorId() > 0) {
+                userIds.add(commentDTO.getCreatorId());
+            }
             if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0) {
                 userIds.add(commentDTO.getToUserId());
             }
@@ -557,7 +563,12 @@ public class CommentService {
 
         Map<Long, UserDO> userMap = userDataService.getMapByIds(userIds);
 
+        // 填充 creatorName 和 toUserName
         for (CommentDTO commentDTO : commentDTOList) {
+            if (commentDTO.getCreatorId() != null && commentDTO.getCreatorId() > 0 && userMap.containsKey(commentDTO.getCreatorId())) {
+                UserDO creator = userMap.get(commentDTO.getCreatorId());
+                commentDTO.setCreatorName(creator.getName());
+            }
             if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0 && userMap.containsKey(commentDTO.getToUserId())) {
                 UserDO user = userMap.get(commentDTO.getToUserId());
                 commentDTO.setToUserName(user.getName());
@@ -565,6 +576,10 @@ public class CommentService {
         }
 
         for (CommentDTO commentDTO : childrenMap.values()) {
+            if (commentDTO.getCreatorId() != null && commentDTO.getCreatorId() > 0 && userMap.containsKey(commentDTO.getCreatorId())) {
+                UserDO creator = userMap.get(commentDTO.getCreatorId());
+                commentDTO.setCreatorName(creator.getName());
+            }
             if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0 && userMap.containsKey(commentDTO.getToUserId())) {
                 UserDO user = userMap.get(commentDTO.getToUserId());
                 commentDTO.setToUserName(user.getName());

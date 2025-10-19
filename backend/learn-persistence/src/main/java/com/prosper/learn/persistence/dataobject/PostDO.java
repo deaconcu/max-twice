@@ -27,7 +27,7 @@ public class PostDO {
 
     private Integer viewCount;
 
-    private Integer state;
+    private Byte state;
 
     private Double score;  // 计算出的排序分数
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { inject, onMounted, ref } from 'vue'
   import { courseServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1'
-  import { CourseState } from '@/types/enums'
+  import { ContentState } from '@/types/enums'
   import type { Course } from '@/types/course'
   import type { MainCategory, SubCategory, CategoryMapping, StateOption } from '@/types/common'
   import CourseCard from './CourseCard.vue'
@@ -24,19 +24,19 @@
   // 状态选项
   const stateOptions: StateOption[] = [
     {
-      value: CourseState.SUBMITTED,
+      value: ContentState.SUBMITTED,
       text: '待审核',
       color: 'orange-lighten-4',
       icon: 'mdi-clock-outline',
     },
     {
-      value: CourseState.APPROVED,
+      value: ContentState.APPROVED,
       text: '已批准',
       color: 'green-lighten-4',
       icon: 'mdi-check-circle-outline',
     },
     {
-      value: CourseState.REJECTED,
+      value: ContentState.REJECTED,
       text: '已拒绝',
       color: 'red-lighten-4',
       icon: 'mdi-close-circle-outline',
@@ -125,7 +125,7 @@
 
       // 如果是已通过状态且选择了主分类但没有选择子分类，不加载
       if (
-        currentState === CourseState.APPROVED &&
+        currentState === ContentState.APPROVED &&
         selectedMainCategory.value &&
         !selectedSubCategory.value
       ) {
@@ -138,7 +138,7 @@
 
       // 如果是已通过状态且选择了主分类和子分类，使用分类查询（不支持分页）
       if (
-        currentState === CourseState.APPROVED &&
+        currentState === ContentState.APPROVED &&
         selectedMainCategory.value &&
         selectedSubCategory.value
       ) {
@@ -166,7 +166,7 @@
 
         // 更新lastId和hasMore状态（仅在状态查询时）
         if (
-          currentState !== CourseState.APPROVED ||
+          currentState !== ContentState.APPROVED ||
           !selectedMainCategory.value ||
           !selectedSubCategory.value
         ) {
@@ -296,7 +296,7 @@
 
   // 分类变化处理
   const onCategoryChange = (): void => {
-    if (getCurrentState() === CourseState.APPROVED) {
+    if (getCurrentState() === ContentState.APPROVED) {
       // 只有选择了主分类和子分类时才加载
       if (selectedMainCategory.value && selectedSubCategory.value) {
         loadCourses()
@@ -332,9 +332,9 @@
     if (newValue) {
       updateSubCategories(newValue)
       // 如果有子分类且已选择第一个，直接加载课程
-      if (getCurrentState() === CourseState.APPROVED && selectedSubCategory.value) {
+      if (getCurrentState() === ContentState.APPROVED && selectedSubCategory.value) {
         loadCourses()
-      } else if (getCurrentState() === CourseState.APPROVED) {
+      } else if (getCurrentState() === ContentState.APPROVED) {
         // 没有子分类，清空列表
         courseList.value = []
       }
@@ -342,7 +342,7 @@
       subCategories.value = []
       selectedSubCategory.value = null
       // 清除主分类选择，重新加载全部数据
-      if (getCurrentState() === CourseState.APPROVED) {
+      if (getCurrentState() === ContentState.APPROVED) {
         loadCourses()
       }
     }
@@ -356,14 +356,14 @@
       if (response.code === 200) {
         showSnackbar && showSnackbar('课程已通过审核')
         // 从当前列表中移除（如果当前不是已通过状态）
-        if (getCurrentState() !== CourseState.APPROVED) {
+        if (getCurrentState() !== ContentState.APPROVED) {
           const index = courseList.value.findIndex((c) => c.id === course.id)
           if (index > -1) {
             courseList.value.splice(index, 1)
           }
         } else {
           // 更新状态
-          course.state = CourseState.APPROVED
+          course.state = ContentState.APPROVED
         }
 
         // 如果当前在ID查询tab且查询的是同一个课程，更新搜索结果
@@ -372,13 +372,13 @@
           searchedCourse.value &&
           searchedCourse.value.id === course.id
         ) {
-          searchedCourse.value.state = CourseState.APPROVED
+          searchedCourse.value.state = ContentState.APPROVED
         }
 
         // 如果当前在子课程查询tab且列表中包含该课程，更新状态
         const subcourseIndex = subcourseList.value.findIndex((c) => c.id === course.id)
         if (subcourseIndex > -1) {
-          subcourseList.value[subcourseIndex].state = CourseState.APPROVED
+          subcourseList.value[subcourseIndex].state = ContentState.APPROVED
         }
       } else {
         showSnackbar && showSnackbar('操作失败: ' + (response.message|| '未知错误'))
@@ -434,14 +434,14 @@
       if (response.code === 200) {
         showSnackbar && showSnackbar('课程已恢复')
         // 从当前列表中移除（如果当前是拒绝状态）
-        if (getCurrentState() === CourseState.REJECTED) {
+        if (getCurrentState() === ContentState.REJECTED) {
           const index = courseList.value.findIndex((c) => c.id === course.id)
           if (index > -1) {
             courseList.value.splice(index, 1)
           }
         } else {
           // 更新状态（恢复后通常变为待审核状态）
-          course.state = CourseState.SUBMITTED
+          course.state = ContentState.SUBMITTED
         }
 
         // 如果当前在ID查询tab且查询的是同一个课程，更新搜索结果
@@ -450,14 +450,14 @@
           searchedCourse.value &&
           searchedCourse.value.id === course.id
         ) {
-          searchedCourse.value.state = CourseState.SUBMITTED
+          searchedCourse.value.state = ContentState.SUBMITTED
           delete (searchedCourse.value as any).rejectedReason
         }
 
         // 如果当前在子课程查询tab且列表中包含该课程，更新状态
         const subcourseIndex = subcourseList.value.findIndex((c) => c.id === course.id)
         if (subcourseIndex > -1) {
-          subcourseList.value[subcourseIndex].state = CourseState.SUBMITTED
+          subcourseList.value[subcourseIndex].state = ContentState.SUBMITTED
           delete (subcourseList.value[subcourseIndex] as any).rejectedReason
         }
       } else {
@@ -592,18 +592,18 @@
 
       if (response.code === 200) {
         showSnackbar && showSnackbar(
-          selectedCourse.value!.state === CourseState.APPROVED ? '已撤销通过' : '已拒绝申请'
+          selectedCourse.value!.state === ContentState.APPROVED ? '已撤销通过' : '已拒绝申请'
         )
 
         // 从当前列表中移除（如果当前不是拒绝状态）
-        if (getCurrentState() !== CourseState.REJECTED) {
+        if (getCurrentState() !== ContentState.REJECTED) {
           const index = courseList.value.findIndex((c) => c.id === selectedCourse.value!.id)
           if (index > -1) {
             courseList.value.splice(index, 1)
           }
         } else {
           // 更新状态
-          selectedCourse.value!.state = CourseState.REJECTED
+          selectedCourse.value!.state = ContentState.REJECTED
           ;(selectedCourse.value as any).rejectedReason = rejectReason.value.trim()
         }
 
@@ -613,7 +613,7 @@
           searchedCourse.value &&
           searchedCourse.value.id === selectedCourse.value!.id
         ) {
-          searchedCourse.value.state = CourseState.REJECTED
+          searchedCourse.value.state = ContentState.REJECTED
           ;(searchedCourse.value as any).rejectedReason = rejectReason.value.trim()
         }
 
@@ -622,7 +622,7 @@
           (c) => c.id === selectedCourse.value!.id
         )
         if (subcourseIndex > -1) {
-          subcourseList.value[subcourseIndex].state = CourseState.REJECTED
+          subcourseList.value[subcourseIndex].state = ContentState.REJECTED
           ;(subcourseList.value[subcourseIndex] as any).rejectedReason = rejectReason.value.trim()
         }
 
@@ -706,7 +706,7 @@
         </div>
 
         <!-- 分类筛选 - 只在已通过状态显示 -->
-        <div v-if="getCurrentState() === CourseState.APPROVED" class="mb-6">
+        <div v-if="getCurrentState() === ContentState.APPROVED" class="mb-6">
           <v-card flat class="pa-4 bg-grey-lighten-5" rounded="lg">
             <h4 class="text-subtitle-2 text-grey-darken-2 mb-3 d-flex align-center">
               <v-icon icon="mdi-filter-variant" size="16" class="mr-2"></v-icon>
@@ -781,7 +781,7 @@
           <!-- 分类筛选提示 -->
           <div
             v-if="
-              getCurrentState() === CourseState.APPROVED &&
+              getCurrentState() === ContentState.APPROVED &&
               selectedMainCategory &&
               !selectedSubCategory
             "
@@ -809,7 +809,7 @@
           <!-- 使用分类筛选时不启用无限滚动 -->
           <template
             v-if="
-              getCurrentState() === CourseState.APPROVED &&
+              getCurrentState() === ContentState.APPROVED &&
               selectedMainCategory &&
               selectedSubCategory
             "

@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { progressServiceV1 } from '@/services/api/v1/apiServiceV1'
 import CourseLearningCard from './CourseLearningCard.vue'
-import { UserCourseState } from '@/types/enums'
+import { UserProgressState } from '@/types/enums'
 import type { UserCourse } from '@/types/userCourse'
 
 interface ProcessedCourse {
@@ -87,7 +87,7 @@ const loadCourseData = async (): Promise<void> => {
           updatedAt: userCourse.updatedAt,
           lastActivity: getRelativeTime(userCourse.updatedAt),
           category: getCategoryFromDescription(userCourse.course.description),
-          difficulty: getDifficultyFromStatus(userCourse.state as UserCourseState),
+          difficulty: getDifficultyFromStatus(userCourse.state as UserProgressState),
         }
       })
     }
@@ -141,13 +141,13 @@ const getCategoryFromDescription = (description?: string): string => {
 }
 
 // 根据状态推断难度
-const getDifficultyFromStatus = (state: UserCourseState): string => {
+const getDifficultyFromStatus = (state: UserProgressState): string => {
   switch (state) {
-    case UserCourseState.NOT_STARTED:
+    case UserProgressState.NOT_STARTED:
       return 'beginner'
-    case UserCourseState.IN_PROGRESS:
+    case UserProgressState.IN_PROGRESS:
       return 'intermediate'
-    case UserCourseState.COMPLETED:
+    case UserProgressState.COMPLETED:
       return 'advanced'
     default:
       return 'beginner'
@@ -157,9 +157,9 @@ const getDifficultyFromStatus = (state: UserCourseState): string => {
 // 获取状态文本
 const getStatusText = (state: string): string => {
   const courseStateTexts: Record<string, string> = {
-    [UserCourseState.NOT_STARTED]: '未开始',
-    [UserCourseState.IN_PROGRESS]: '进行中',
-    [UserCourseState.COMPLETED]: '已完成',
+    [UserProgressState.NOT_STARTED]: '未开始',
+    [UserProgressState.IN_PROGRESS]: '进行中',
+    [UserProgressState.COMPLETED]: '已完成',
   }
   return courseStateTexts[state] || t('learning.unknownStatus', '未知状态')
 }

@@ -3,7 +3,7 @@ package com.prosper.learn.domain.service.basic;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import static com.prosper.learn.common.Enums.PostStatsType;
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.config.SystemProperties;
@@ -357,10 +357,10 @@ public class DailyStatsService {
             
             try {
                 // 确保post_stats年度记录存在
-                ensurePostYearRecord(PostStatsType.POST.value(), postId, year);
+                ensurePostYearRecord(Enums.ObjectType.post.value(), postId, year);
                 
                 // 直接设置当天的完整数据（覆盖而非增量）
-                int updated = postStatsMapper.setDayStats(PostStatsType.POST.value(), postId, year, dayKey,
+                int updated = postStatsMapper.setDayStats(Enums.ObjectType.post.value(), postId, year, dayKey,
                         dayStats.views, dayStats.twice, dayStats.helpful, dayStats.comments);
                 
                 if (updated > 0) {
@@ -448,7 +448,7 @@ public class DailyStatsService {
     /**
      * 确保post_stats的年度记录存在
      */
-    private void ensurePostYearRecord(byte type, Long objectId, int year) {
+    private void ensurePostYearRecord(int type, Long objectId, int year) {
         PostStatsDO existing = postStatsMapper.getByTypeAndObjectIdAndYear(type, objectId, year);
         if (existing == null) {
             PostStatsDO yearRecord = new PostStatsDO();
@@ -1030,7 +1030,7 @@ public class DailyStatsService {
             int currentYear = today.getYear();
             
             // 获取所有年份的统计数据
-            List<PostStatsDO> statsList = postStatsMapper.getStatsInYearRange(PostStatsType.POST.value(),
+            List<PostStatsDO> statsList = postStatsMapper.getStatsInYearRange(Enums.ObjectType.post.value(),
                 Long.valueOf(postId), currentYear - 1); // 查询最近2年的数据
             
             for (PostStatsDO stats : statsList) {

@@ -84,7 +84,7 @@
             <div class="d-flex flex-column ga-2">
               <!-- 通过按钮 - 只在待审核状态显示 -->
               <v-btn
-                v-if="profession.state === ProfessionState.SUBMITTED"
+                v-if="profession.state === ContentState.SUBMITTED"
                 variant="flat"
                 color="green-lighten-4"
                 rounded="lg"
@@ -99,8 +99,8 @@
               <!-- 拒绝按钮 - 待审核和已通过状态都显示 -->
               <v-btn
                 v-if="
-                  profession.state === ProfessionState.SUBMITTED ||
-                  profession.state === ProfessionState.APPROVED
+                  profession.state === ContentState.SUBMITTED ||
+                  profession.state === ContentState.APPROVED
                 "
                 variant="flat"
                 color="red-lighten-4"
@@ -109,12 +109,12 @@
                 @click="showRejectModal(profession)"
               >
                 <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
-                {{ profession.state === ProfessionState.APPROVED ? '撤销通过' : '拒绝' }}
+                {{ profession.state === ContentState.APPROVED ? '撤销通过' : '拒绝' }}
               </v-btn>
 
               <!-- 恢复按钮 - 只在已拒绝状态显示，实际是重新通过 -->
               <v-btn
-                v-if="profession.state === ProfessionState.REJECTED"
+                v-if="profession.state === ContentState.REJECTED"
                 variant="flat"
                 color="orange-lighten-4"
                 rounded="lg"
@@ -154,7 +154,7 @@
 
             <!-- 拒绝原因显示 -->
             <div
-              v-if="profession.state === ProfessionState.REJECTED && profession.rejectedReason"
+              v-if="profession.state === ContentState.REJECTED && profession.rejectedReason"
               class="mt-3"
             >
               <div class="text-caption text-grey-darken-1 mb-1">拒绝原因：</div>
@@ -282,7 +282,7 @@
         <v-card-title class="text-h6 font-weight-bold pa-6 pb-4">
           <v-icon icon="mdi-close-circle-outline" color="red-darken-2" class="mr-3"></v-icon>
           {{
-            currentProfession?.state === ProfessionState.APPROVED ? '撤销职业通过' : '拒绝职业申请'
+            currentProfession?.state === ContentState.APPROVED ? '撤销职业通过' : '拒绝职业申请'
           }}
         </v-card-title>
 
@@ -292,7 +292,7 @@
               职业名称：<strong>{{ currentProfession?.name }}</strong>
             </div>
             <div
-              v-if="currentProfession?.state === ProfessionState.APPROVED"
+              v-if="currentProfession?.state === ContentState.APPROVED"
               class="text-body-2 text-orange-darken-2 mb-2"
             >
               <v-icon icon="mdi-alert" size="16" class="mr-1"></v-icon>
@@ -303,14 +303,14 @@
           <div class="mb-4">
             <div class="text-body-2 font-weight-medium mb-2">
               {{
-                currentProfession?.state === ProfessionState.APPROVED
+                currentProfession?.state === ContentState.APPROVED
                   ? '选择撤销原因：'
                   : '选择拒绝原因：'
               }}
             </div>
             <v-chip-group v-model="selectedRejectReason" color="red-lighten-3" variant="flat">
               <v-chip
-                v-for="reason in currentProfession?.state === ProfessionState.APPROVED
+                v-for="reason in currentProfession?.state === ContentState.APPROVED
                   ? revokeReasons
                   : rejectReasons"
                 :key="reason"
@@ -327,10 +327,10 @@
           <v-textarea
             v-model="rejectReason"
             :label="
-              currentProfession?.state === ProfessionState.APPROVED ? '撤销原因' : '拒绝原因'
+              currentProfession?.state === ContentState.APPROVED ? '撤销原因' : '拒绝原因'
             "
             :placeholder="
-              currentProfession?.state === ProfessionState.APPROVED
+              currentProfession?.state === ContentState.APPROVED
                 ? '请详细说明撤销通过的原因...'
                 : '请详细说明拒绝的原因...'
             "
@@ -355,7 +355,7 @@
             @click="rejectProfession"
           >
             <v-icon icon="mdi-close" color="red-darken-2" class="mr-2"></v-icon>
-            {{ currentProfession?.state === ProfessionState.APPROVED ? '确认撤销' : '确认拒绝' }}
+            {{ currentProfession?.state === ContentState.APPROVED ? '确认撤销' : '确认拒绝' }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -444,7 +444,7 @@
 
             <!-- 拒绝原因（仅在拒绝状态时显示） -->
             <v-textarea
-              v-if="editProfession.state === ProfessionState.REJECTED"
+              v-if="editProfession.state === ContentState.REJECTED"
               v-model="editProfession.rejectedReason"
               label="拒绝原因"
               variant="outlined"
@@ -519,7 +519,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { professionServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1'
-import { ProfessionState } from '@/types/enums'
+import { ContentState } from '@/types/enums'
 import type { Profession, ProfessionCategory, CategoryMapping } from '@/types/profession'
 import type { StateOption } from '@/types/common'
 import CategorySelector from '../common/CategorySelector.vue'
@@ -606,19 +606,19 @@ const loadProfessionCategories = async (): Promise<void> => {
 // 状态选项
 const stateOptions: StateOption[] = [
   {
-    value: ProfessionState.SUBMITTED,
+    value: ContentState.SUBMITTED,
     text: '待审核',
     color: 'orange-lighten-4',
     icon: 'mdi-clock-outline',
   },
   {
-    value: ProfessionState.APPROVED,
+    value: ContentState.APPROVED,
     text: '已批准',
     color: 'green-lighten-4',
     icon: 'mdi-check-circle',
   },
   {
-    value: ProfessionState.REJECTED,
+    value: ContentState.REJECTED,
     text: '已拒绝',
     color: 'red-lighten-4',
     icon: 'mdi-close-circle',
@@ -646,7 +646,7 @@ const revokeReasons: string[] = [
 
 // 获取当前选中的状态
 const getCurrentState = (): number =>
-  stateOptions[selectedStateIndex.value]?.value || ProfessionState.SUBMITTED
+  stateOptions[selectedStateIndex.value]?.value || ContentState.SUBMITTED
 const getCurrentStateText = (): string => stateOptions[selectedStateIndex.value]?.text || '待审核'
 
 // 根据状态获取配置
@@ -759,10 +759,10 @@ const operateProfession = async (
       const index = professionList.value.findIndex((p) => p.id === profession.id)
       if (index !== -1) {
         if (action === 'APPROVE') {
-          professionList.value[index].state = ProfessionState.APPROVED
+          professionList.value[index].state = ContentState.APPROVED
           professionList.value[index].rejectedReason = '' // 清空拒绝原因
         } else if (action === 'REJECT') {
-          professionList.value[index].state = ProfessionState.REJECTED
+          professionList.value[index].state = ContentState.REJECTED
           professionList.value[index].rejectedReason = reason
         }
       }
@@ -770,8 +770,8 @@ const operateProfession = async (
       // 如果当前筛选状态与操作结果不匹配，从列表中移除
       const currentState = getCurrentState()
       if (
-        (action === 'APPROVE' && currentState !== ProfessionState.APPROVED) ||
-        (action === 'REJECT' && currentState !== ProfessionState.REJECTED)
+        (action === 'APPROVE' && currentState !== ContentState.APPROVED) ||
+        (action === 'REJECT' && currentState !== ContentState.REJECTED)
       ) {
         professionList.value = professionList.value.filter((p) => p.id !== profession.id)
       }

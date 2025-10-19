@@ -52,10 +52,10 @@ public interface CommentMapper {
     List<CommentDO> getByTopicPaginated(long commentId, double lastScore, long lastId, int count);
 
     @Select("SELECT * FROM comment where state = #{state} order by id DESC limit #{count}")
-    List<CommentDO> getListByState(int state, int count);
+    List<CommentDO> getListByState(byte state, int count);
 
     @Select("SELECT * FROM comment where state = #{state} and id < #{offsetId} order by id DESC limit #{count}")
-    List<CommentDO> getListByStatePaginated(int state, long offsetId, int count);
+    List<CommentDO> getListByStatePaginated(byte state, long offsetId, int count);
 
     @Insert("INSERT INTO comment(content, object_type, object_id, reply_to_comment_id, creator_id, to_user_id, score) " +
             "VALUES (#{content}, #{objectType}, #{objectId}, #{replyToCommentId}, #{creatorId}, #{toUserId}, #{score})")

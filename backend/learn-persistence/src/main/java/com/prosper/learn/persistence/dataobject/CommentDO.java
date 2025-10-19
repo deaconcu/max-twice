@@ -25,7 +25,7 @@ public class CommentDO {
 
     private Integer upvoteCount;
 
-    private Integer state;
+    private Byte state;
 
     private Double score;
 

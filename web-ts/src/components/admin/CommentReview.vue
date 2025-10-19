@@ -2,7 +2,7 @@
   import { inject, ref, computed, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { commentServiceV1 } from '@/services/api/v1/apiServiceV1'
-  import { CommentState } from '@/types/enums'
+  import { ContentState } from '@/types/enums'
   import type { Comment } from '@/types/comment'
 
   const { t } = useI18n()
@@ -18,7 +18,7 @@
   interface TabConfig {
     key: string
     label: string
-    state: CommentState
+    state: ContentState
     icon: string
     color: string
   }
@@ -27,21 +27,21 @@
     {
       key: 'pending',
       label: t('admin.pending'),
-      state: CommentState.SUBMITTED,
+      state: ContentState.SUBMITTED,
       icon: 'mdi-clock-outline',
       color: 'orange'
     },
     {
       key: 'approved',
       label: t('admin.approved'),
-      state: CommentState.APPROVED,
+      state: ContentState.APPROVED,
       icon: 'mdi-check-circle',
       color: 'green'
     },
     {
       key: 'rejected',
       label: t('admin.rejected'),
-      state: CommentState.DELETED,
+      state: ContentState.BANNED,
       icon: 'mdi-close-circle',
       color: 'red'
     }
@@ -189,7 +189,7 @@
           <div class="mr-4 status-actions-area">
             <div class="mb-3">
               <v-chip
-                v-if="comment.state === CommentState.SUBMITTED"
+                v-if="comment.state === ContentState.SUBMITTED"
                 variant="flat"
                 color="orange-lighten-4"
                 rounded="lg"
@@ -199,7 +199,7 @@
                 {{ t('admin.pending') }}
               </v-chip>
               <v-chip
-                v-if="comment.state === CommentState.APPROVED"
+                v-if="comment.state === ContentState.APPROVED"
                 variant="flat"
                 color="green-lighten-4"
                 rounded="lg"
@@ -209,7 +209,7 @@
                 {{ t('admin.approved') }}
               </v-chip>
               <v-chip
-                v-if="comment.state === CommentState.DELETED"
+                v-if="comment.state === ContentState.BANNED"
                 variant="flat"
                 color="red-lighten-4"
                 rounded="lg"
@@ -219,7 +219,7 @@
                 {{ t('admin.rejected') }}
               </v-chip>
             </div>
-            <div v-if="comment.state === CommentState.SUBMITTED" class="d-flex flex-column ga-2">
+            <div v-if="comment.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
                 color="green-lighten-4"
@@ -243,7 +243,7 @@
             </div>
 
             <!-- 已通过状态下显示屏蔽按钮 -->
-            <div v-if="comment.state === CommentState.APPROVED" class="d-flex flex-column ga-2">
+            <div v-if="comment.state === ContentState.APPROVED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
                 color="red-lighten-4"
@@ -257,7 +257,7 @@
             </div>
 
             <!-- 已拒绝状态下显示通过按钮 -->
-            <div v-if="comment.state === CommentState.DELETED" class="d-flex flex-column ga-2">
+            <div v-if="comment.state === ContentState.BANNED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
                 color="green-lighten-4"

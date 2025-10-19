@@ -1,6 +1,5 @@
 package com.prosper.learn.domain.service.data;
 
-import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.persistence.dataobject.PostDO;
@@ -119,7 +118,7 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
      * 根据节点和创建者获取帖子列表（排除已删除状态）
      */
     public List<PostDO> getListByNodeAndCreator(long nodeId, long creatorId) {
-        return postMapper.getListByNodeAndCreator(nodeId, creatorId, Enums.PostState.deleted.value());
+        return postMapper.getListByNodeAndCreator(nodeId, creatorId, Enums.ContentState.BANNED.value());
     }
 
     /**
@@ -156,28 +155,28 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
     /**
      * 根据节点和分页获取帖子列表
      */
-    public List<PostDO> getListByNodeAndScoreAndPaginated(Long nodeId, double score, Long offsetId, int limit, Integer type) {
+    public List<PostDO> getListByNodeAndScoreAndPaginated(Long nodeId, double score, Long offsetId, int limit, Byte type) {
         return postMapper.getListByNodeAndScoreAndPaginated(nodeId, score, offsetId, limit, type);
     }
-    
+
     /**
      * 根据节点获取帖子列表
      */
-    public List<PostDO> getListByNode(Long nodeId, int limit, Integer type) {
+    public List<PostDO> getListByNode(Long nodeId, int limit, Byte type) {
         return postMapper.getListByNode(nodeId, limit, type);
     }
-    
+
     /**
      * 根据状态获取帖子列表
      */
-    public List<PostDO> getListByState(Integer state, int limit) {
+    public List<PostDO> getListByState(Byte state, int limit) {
         return postMapper.getListByState(state, limit);
     }
 
     /**
      * 根据状态获取帖子列表（支持分页）
      */
-    public List<PostDO> getListByState(Integer state, Long lastId, Integer limit) {
+    public List<PostDO> getListByState(Byte state, Long lastId, Integer limit) {
         if (lastId == null || lastId == 0) {
             return postMapper.getListByState(state, limit);
         }
@@ -187,14 +186,14 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
     /**
      * 根据节点和分数获取帖子列表
      */
-    public List<PostDO> getListByNodeAndScore(long nodeId, int limit, Integer state) {
+    public List<PostDO> getListByNodeAndScore(long nodeId, int limit, Byte state) {
         return postMapper.getListByNodeAndScore(nodeId, limit, state);
     }
 
     /**
      * 根据节点和分页获取帖子列表
      */
-    public List<PostDO> getListByLastId(long nodeId, long lastId, int limit, Integer state) {
+    public List<PostDO> getListByLastId(long nodeId, long lastId, int limit, Byte state) {
         return postMapper.getListByLastId(nodeId, lastId, limit, state);
     }
 }

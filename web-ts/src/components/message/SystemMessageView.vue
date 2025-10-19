@@ -5,6 +5,7 @@
   import type { User } from '@/types/user'
   import type { Node } from '@/types/node'
   import { getUserDisplayName } from '@/utils/common'
+  import UserCard from '@/components/user/UserCard.vue'
 
   const { t } = useI18n()
 
@@ -241,7 +242,7 @@
                         <div class="flex-grow-1">
                           <!-- 关注消息 -->
                           <div v-if="message.type == MessageType.FOLLOW" class="message-text">
-                      <a :href="`/user?id=${message.follower?.id}`" target="_blank">{{ getUserDisplayName(message.follower) }}</a>
+                      <UserCard :user-id="message.follower?.id || 0" :user-name="message.follower?.name || ''" />
                       关注了您
                           </div>
 
@@ -249,9 +250,7 @@
                           <div v-if="message.type == MessageType.UPVOTE" class="message-text">
                       <div v-if="message.objectType == ObjectType.POST">
                         <div v-if="message.voteType == VoteType.TWICE">
-                          <a :href="`/user?id=${message.receiver?.id}`" target="_blank">{{
-                            message.receiver?.name
-                          }}</a>
+                          <UserCard :user-id="message.receiver?.id || 0" :user-name="message.receiver?.name || ''" />
                           认为您在目录
                           <a :href="`/read?postId=${message.objectId}`" target="_blank">{{
                             message.node?.name
@@ -259,9 +258,7 @@
                           的文章能被两次读懂
                         </div>
                         <div v-if="message.voteType == VoteType.HELPFUL">
-                          <a :href="`/user?id=${message.receiver?.id}`" target="_blank">{{
-                            message.receiver?.name
-                          }}</a>
+                          <UserCard :user-id="message.receiver?.id || 0" :user-name="message.receiver?.name || ''" />
                           认为您在目录
                           <a :href="`/read?postId=${message.objectId}`" target="_blank">{{
                             message.node?.name
@@ -270,9 +267,7 @@
                         </div>
                       </div>
                       <div v-if="message.objectType == ObjectType.COMMENT">
-                        <a :href="`/user?id=${message.receiver?.id}`" target="_blank">{{
-                          message.receiver?.name
-                        }}</a>
+                        <UserCard :user-id="message.receiver?.id || 0" :user-name="message.receiver?.name || ''" />
                         点赞了您在目录
                         <a :href="`/read?commentId=${message.objectId}`" target="_blank">{{
                           message.node?.name
@@ -283,7 +278,7 @@
 
                           <!-- 邀请回答消息 -->
                           <div v-if="message.type == MessageType.INVITE" class="message-text">
-                      <a :href="`/user?id=${message.inviter?.id}`" target="_blank">{{ getUserDisplayName(message.inviter) }}</a>
+                      <UserCard :user-id="message.inviter?.id || 0" :user-name="message.inviter?.name || ''" />
                       邀请您给目录
                       <a :href="`/read?nodeId=${message.node?.id}`" target="_blank">{{
                         message.node?.name
@@ -293,14 +288,14 @@
 
                           <!-- 评论相关消息 -->
                           <div v-if="message.type == MessageType.NODE_COMMENT" class="message-text">
-                      <a :href="`/user?id=${message.commenter?.id}`" target="_blank">{{ getUserDisplayName(message.commenter) }}</a>
+                      <UserCard :user-id="message.commenter?.id || 0" :user-name="message.commenter?.name || ''" />
                       评论了您创建的目录
                       <a :href="`/read?commentId=${message.commentId}`" target="_blank">{{
                         message.node?.name
                       }}</a>
                           </div>
                           <div v-if="message.type == MessageType.POST_COMMENT" class="message-text">
-                      <a :href="`/user?id=${message.commenter?.id}`" target="_blank">{{ getUserDisplayName(message.commenter) }}</a>
+                      <UserCard :user-id="message.commenter?.id || 0" :user-name="message.commenter?.name || ''" />
                       评论了您在目录
                       <a :href="`/read?commentId=${message.commentId}`" target="_blank">{{
                         message.node?.name
@@ -311,7 +306,7 @@
                             v-if="message.type == MessageType.REPLY_NODE_COMMENT"
                             class="message-text"
                           >
-                      <a :href="`/user?id=${message.commenter?.id}`" target="_blank">{{ getUserDisplayName(message.commenter) }}</a>
+                      <UserCard :user-id="message.commenter?.id || 0" :user-name="message.commenter?.name || ''" />
                       回复了您在目录
                       <a :href="`/read?commentId=${message.commentId}`" target="_blank">{{
                         message.node?.name
@@ -322,9 +317,7 @@
                             v-if="message.type == MessageType.REPLY_POSTING_COMMENT"
                             class="message-text"
                           >
-                            <a :href="`/user?id=${message.commenter?.id}`" target="_blank">{{
-                              message.commenter?.name
-                            }}</a>
+                            <UserCard :user-id="message.commenter?.id || 0" :user-name="message.commenter?.name || ''" />
                             回复了您在目录
                             <a :href="`/read?commentId=${message.commentId}`" target="_blank">{{
                               message.node?.name

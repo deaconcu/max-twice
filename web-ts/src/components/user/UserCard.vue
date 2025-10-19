@@ -23,15 +23,15 @@ const userInfo = ref<User | null>(null)
 const onHover = function (open: boolean): void {
   if (open && (!userInfo.value?.biography || userInfo.value.followed === undefined)) {
     loadingUserInfo.value = true
-    getUser(props.userId)
+    getUser(props.userName)
   }
 }
 
-const getUser = async (id: number): Promise<void> => {
+const getUser = async (username: string): Promise<void> => {
   try {
     console.log('begin post')
 
-    const response = await userServiceV1.getUser(id)
+    const response = await userServiceV1.getUser(username)
     console.log(`response: ${JSON.stringify(response)}`)
 
     if (response.code === 200) {
@@ -91,7 +91,7 @@ const unfollow = async (id: number): Promise<void> => {
     <template #activator="{ props: menuProps }">
       <a
         v-bind="menuProps"
-        :href="'/user?id=' + props.userId"
+        :href="'/user/' + props.userName"
         target="_blank"
         class="text-decoration-none"
         :class="showAtSign ? 'text-primary' : 'text-grey-darken-4'"
@@ -105,7 +105,7 @@ const unfollow = async (id: number): Promise<void> => {
       <div v-if="loadingUserInfo">{{ t('userCard.loading') }}</div>
       <div v-else>
         <v-card-title class="d-flex align-center text-body-1">
-          <a :href="'/user?id=' + props.userId" target="_blank">{{ displayName }}</a>
+          <a :href="'/user/' + props.userName" target="_blank">{{ displayName }}</a>
         </v-card-title>
         <v-card-subtitle>
           {{ t('userCard.stats', { articles: 5, likes: 202 }) }}

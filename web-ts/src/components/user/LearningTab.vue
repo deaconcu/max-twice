@@ -6,7 +6,7 @@ import { progressServiceV1 } from '@/services/api/v1/apiServiceV1'
 import RoadmapVueFlow from '@/components/common/RoadmapVueFlow.vue'
 import RoadmapDetail from '@/components/roadmap/RoadmapDetail.vue'
 import dagre from 'dagre'
-import { UserRoadmapState } from '@/types/enums'
+import { UserProgressState } from '@/types/enums'
 import { useUserStore } from '@/stores/user'
 import type { Course } from '@/types/course'
 import type { FlowNode, FlowEdge } from '@/types/flow'
@@ -369,11 +369,11 @@ const getCategoryFromDescription = (description: string): string => {
 
 const getDifficultyFromStatus = (state: number): string => {
   switch (state) {
-    case UserRoadmapState.NOT_STARTED:
+    case UserProgressState.NOT_STARTED:
       return 'beginner'
-    case UserRoadmapState.IN_PROGRESS:
+    case UserProgressState.IN_PROGRESS:
       return 'intermediate'
-    case UserRoadmapState.COMPLETED:
+    case UserProgressState.COMPLETED:
       return 'advanced'
     default:
       return 'beginner'
@@ -451,11 +451,11 @@ const calculateDuration = (startTime: string): string => {
 
 const getStatusColor = (state: number): string => {
   switch (state) {
-    case UserRoadmapState.NOT_STARTED:
+    case UserProgressState.NOT_STARTED:
       return 'grey'
-    case UserRoadmapState.IN_PROGRESS:
+    case UserProgressState.IN_PROGRESS:
       return 'primary'
-    case UserRoadmapState.COMPLETED:
+    case UserProgressState.COMPLETED:
       return 'success'
     default:
       return 'grey'
@@ -464,11 +464,11 @@ const getStatusColor = (state: number): string => {
 
 const getStatusIcon = (state: number): string => {
   switch (state) {
-    case UserRoadmapState.NOT_STARTED:
+    case UserProgressState.NOT_STARTED:
       return 'mdi-circle-outline'
-    case UserRoadmapState.IN_PROGRESS:
+    case UserProgressState.IN_PROGRESS:
       return 'mdi-play-circle'
-    case UserRoadmapState.COMPLETED:
+    case UserProgressState.COMPLETED:
       return 'mdi-check-circle'
     default:
       return 'mdi-circle-outline'
@@ -477,9 +477,9 @@ const getStatusIcon = (state: number): string => {
 
 const getStatusText = (state: string): string => {
   const stateTexts: Record<string, string> = {
-    [UserRoadmapState.NOT_STARTED]: '未开始',
-    [UserRoadmapState.IN_PROGRESS]: '进行中',
-    [UserRoadmapState.COMPLETED]: '已完成',
+    [UserProgressState.NOT_STARTED]: '未开始',
+    [UserProgressState.IN_PROGRESS]: '进行中',
+    [UserProgressState.COMPLETED]: '已完成',
   }
   return stateTexts[state] || '未知状态'
 }
@@ -655,7 +655,7 @@ onMounted(() => {
 
                 <!-- 进行中状态的关闭按钮 -->
                 <v-btn
-                  v-if="roadmap.state === UserRoadmapState.IN_PROGRESS"
+                  v-if="roadmap.state === UserProgressState.IN_PROGRESS"
                   variant="text"
                   size="x-small"
                   class="ml-2 close-btn"

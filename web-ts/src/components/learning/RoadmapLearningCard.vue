@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import RoadmapVueFlow from '@/components/common/RoadmapVueFlow.vue'
-import { UserRoadmapState, ProfessionState } from '@/types/enums'
+import { UserProgressState, ContentState } from '@/types/enums'
 import type { ProcessedUserRoadmap } from '@/types/userRoadmap'
 
 interface Props {
@@ -53,11 +53,11 @@ const formatDateTime = (dateString: string): string => {
 
 const getStatusColor = (state: number): string => {
   switch (state) {
-    case UserRoadmapState.NOT_STARTED:
+    case UserProgressState.NOT_STARTED:
       return 'grey'
-    case UserRoadmapState.IN_PROGRESS:
+    case UserProgressState.IN_PROGRESS:
       return 'primary'
-    case UserRoadmapState.COMPLETED:
+    case UserProgressState.COMPLETED:
       return 'success'
     default:
       return 'grey'
@@ -66,11 +66,11 @@ const getStatusColor = (state: number): string => {
 
 const getStatusIcon = (state: number): string => {
   switch (state) {
-    case UserRoadmapState.NOT_STARTED:
+    case UserProgressState.NOT_STARTED:
       return 'mdi-circle-outline'
-    case UserRoadmapState.IN_PROGRESS:
+    case UserProgressState.IN_PROGRESS:
       return 'mdi-play-circle'
-    case UserRoadmapState.COMPLETED:
+    case UserProgressState.COMPLETED:
       return 'mdi-check-circle'
     default:
       return 'mdi-circle-outline'
@@ -79,11 +79,11 @@ const getStatusIcon = (state: number): string => {
 
 const getStatusText = (state: number): string => {
   switch (state) {
-    case UserRoadmapState.NOT_STARTED:
+    case UserProgressState.NOT_STARTED:
       return t('learning.status.notStarted')
-    case UserRoadmapState.IN_PROGRESS:
+    case UserProgressState.IN_PROGRESS:
       return t('learning.status.inProgress')
-    case UserRoadmapState.COMPLETED:
+    case UserProgressState.COMPLETED:
       return t('learning.status.completed')
     default:
       return t('learning.status.unknown')
@@ -116,7 +116,7 @@ const handleClose = (event: Event): void => {
 }
 
 const isProfessionBlocked = computed((): boolean => {
-  return props.roadmap.profession?.state === ProfessionState.REJECTED
+  return props.roadmap.profession?.state === ContentState.REJECTED
 })
 </script>
 
@@ -162,7 +162,7 @@ const isProfessionBlocked = computed((): boolean => {
       <!-- 关闭按钮 -->
       <div class="status-badge-container">
         <v-btn
-          v-if="roadmap.state === UserRoadmapState.IN_PROGRESS"
+          v-if="roadmap.state === UserProgressState.IN_PROGRESS"
           variant="text"
           size="x-small"
           class="close-btn"

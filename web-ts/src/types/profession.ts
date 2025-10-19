@@ -3,7 +3,7 @@
  * 基于后端 ProfessionDTO.java
  */
 
-import { ProfessionState } from './enums'
+import { ContentState } from './enums'
 
 // 职业信息
 export interface Profession {

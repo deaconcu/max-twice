@@ -4,7 +4,7 @@
  */
 
 import type { Course } from './course'
-import { UserCourseState } from './enums'
+import { UserProgressState } from './enums'
 
 // 用户课程信息
 export interface UserCourse {

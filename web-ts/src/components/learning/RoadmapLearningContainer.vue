@@ -6,7 +6,7 @@ import { progressServiceV1 } from '@/services/api/v1/apiServiceV1'
 import RoadmapLearningCard from './RoadmapLearningCard.vue'
 import RoadmapDetail from '@/components/roadmap/RoadmapDetail.vue'
 import dagre from 'dagre'
-import { UserRoadmapState } from '@/types/enums'
+import { UserProgressState } from '@/types/enums'
 import type { UserRoadmap, ProcessedUserRoadmap } from '@/types/userRoadmap'
 import type { Profession } from '@/types/profession'
 import type { 
@@ -269,9 +269,9 @@ const extractTags = (description?: string): string[] => {
 // 获取状态文本
 const getStatusText = (state: string): string => {
   const roadmapStateTexts: Record<string, string> = {
-    [UserRoadmapState.NOT_STARTED]: '未开始',
-    [UserRoadmapState.IN_PROGRESS]: '进行中',
-    [UserRoadmapState.COMPLETED]: '已完成',
+    [UserProgressState.NOT_STARTED]: '未开始',
+    [UserProgressState.IN_PROGRESS]: '进行中',
+    [UserProgressState.COMPLETED]: '已完成',
   }
   return roadmapStateTexts[state] || t('learning.unknownStatus', '未知状态')
 }

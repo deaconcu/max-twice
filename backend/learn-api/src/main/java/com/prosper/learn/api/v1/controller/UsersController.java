@@ -52,15 +52,13 @@ public class UsersController {
 
     /**
      * 获取用户信息
-     * 映射: GET /user/{id} → GET /api/v1/users/{id}
+     * 映射: GET /user/{username} → GET /api/v1/users/{username}
      */
-    @GetMapping("/users/{id}")
+    @GetMapping("/users/{username}")
     public ApiResponse<UserDTO> getUser(
-            @PathVariable @NotNull(message = "用户ID不能为空")
-            @Positive(message = "用户ID必须大于0")
-            Long id) {
+            @PathVariable @NotBlank(message = "用户名不能为空") String username) {
         Long viewerId = StpUtil.getLoginIdAsLong();
-        UserDTO userDTO = userService.getUser(id, viewerId);
+        UserDTO userDTO = userService.getUserByUsername(username, viewerId);
         return ApiResponse.success(userDTO);
     }
 

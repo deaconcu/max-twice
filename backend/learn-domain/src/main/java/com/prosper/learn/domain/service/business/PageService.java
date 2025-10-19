@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
@@ -198,7 +199,7 @@ public class PageService {
 
     private CourseDO validateCourseExists(Long courseId) {
         CourseDO courseDO = courseDataService.validateAndGet(courseId);
-        if (courseDO.getState() == com.prosper.learn.common.Enums.CourseState.REJECTED.value()) {
+        if (courseDO.getState() == Enums.ContentState.BANNED.value()) {
             throw ErrorCode.COURSE_BLOCKED.exception();
         }
         return courseDO;

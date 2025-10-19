@@ -3,6 +3,7 @@ import { inject, ref } from 'vue'
 import { messageServiceV1, userServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useI18n } from 'vue-i18n'
 import type { User } from '@/types/user'
+import UserCard from '@/components/user/UserCard.vue'
 
 // 扩展 User 类型以支持 UI 状态
 interface SearchUser extends User {
@@ -84,7 +85,7 @@ const closeDialog = (): void => {
                 <div
                   class="d-flex justify-space-between align-center py-4 border-b-sm border-opacity-25"
                 >
-                  <a :href="`/user?id=${user.id}`" target="_blank">{{ user.name }}</a>
+                  <UserCard :user-id="user.id" :user-name="user.name" />
                   <v-btn
                     v-ripple="false"
                     density="comfortable"

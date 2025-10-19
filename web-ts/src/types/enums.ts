@@ -17,55 +17,29 @@ export const PostType = {
   ARTICLE: 2    // 文章
 } as const
 
-// 课程状态常量 (CourseState)
-export const CourseState = {
-  SUBMITTED: 0, // 已提交
-  APPROVED: 1,  // 已批准
-  REJECTED: 2   // 已拒绝
-} as const
+// Course 和 Profession 使用 ContentState
 
-// 职业状态常量 (ProfessionState)
-export const ProfessionState = {
-  SUBMITTED: 0, // 已提交
-  APPROVED: 1,  // 已批准
-  REJECTED: 2   // 已拒绝
-} as const
-
-// 用户课程状态常量 (UserCourseState)
-export const UserCourseState = {
+// 用户进度状态常量 (UserProgressState) - 统一用于 UserCourse 和 UserRoadmap
+export const UserProgressState = {
   NOT_STARTED: 0, // 未开始
   IN_PROGRESS: 1, // 进行中
   COMPLETED: 2    // 已完成
 } as const
 
-// 用户路线图状态常量 (UserRoadmapState)
-export const UserRoadmapState = {
-  NOT_STARTED: 0, // 未开始
-  IN_PROGRESS: 1, // 进行中
-  COMPLETED: 2    // 已完成
-} as const
-
-// 帖子状态常量 (PostState)
-export const PostState = {
+// 内容状态常量 (ContentState) - 统一用于 Post、Comment、Node、MemoryCardDeck、MemoryCard
+export const ContentState = {
   SUBMITTED: 0, // 已提交
   APPROVED: 1,  // 已批准
-  DELETED: 2    // 已删除
-} as const
-
-// 评论状态常量 (CommentState)
-export const CommentState = {
-  SUBMITTED: 0, // 已提交
-  APPROVED: 1,  // 已批准
-  DELETED: 2    // 已删除
+  BANNED: 2     // 已禁止
 } as const
 
 // 对象类型常量 (ObjectType)
 export const ObjectType = {
-  POST: 0,    // 帖子
-  NODE: 1,    // 节点
-  COMMENT: 2, // 评论
-  ROADMAP: 3, // 路线图
-  MEMORY_CARD_DECK: 4 // 记忆卡片组
+  POST: 1,    // 帖子
+  NODE: 2,    // 节点
+  COMMENT: 3, // 评论
+  ROADMAP: 4, // 路线图
+  MEMORY_CARD_DECK: 5 // 记忆卡片组
 } as const
 
 // 消息类型常量 (MessageType)
@@ -93,12 +67,8 @@ export const Bool = {
 // 类型导出
 export type VoteType = typeof VoteType[keyof typeof VoteType]
 export type PostType = typeof PostType[keyof typeof PostType]
-export type CourseState = typeof CourseState[keyof typeof CourseState]
-export type ProfessionState = typeof ProfessionState[keyof typeof ProfessionState]
-export type UserCourseState = typeof UserCourseState[keyof typeof UserCourseState]
-export type UserRoadmapState = typeof UserRoadmapState[keyof typeof UserRoadmapState]
-export type PostState = typeof PostState[keyof typeof PostState]
-export type CommentState = typeof CommentState[keyof typeof CommentState]
+export type UserProgressState = typeof UserProgressState[keyof typeof UserProgressState]
+export type ContentState = typeof ContentState[keyof typeof ContentState]
 export type ObjectType = typeof ObjectType[keyof typeof ObjectType]
 export type MessageType = typeof MessageType[keyof typeof MessageType]
 export type Bool = typeof Bool[keyof typeof Bool]

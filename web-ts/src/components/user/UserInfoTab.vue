@@ -7,18 +7,19 @@ import type { User } from '@/types/user'
 
 // Props
 const props = defineProps<{
-  userId?: number | null
+  userId?: number | null  // 保留用于兼容性
+  username?: string | null  // 新增 username
   editable?: boolean
 }>()
 
 const showSnackbar = inject('showSnackbar') as (message: string, type?: string) => void
 const userStore = useUserStore()
 
-// 当前操作的用户ID
-const targetUserId = computed(() => props.userId || userStore.userId)
+// 当前操作的用户名
+const targetUsername = computed(() => props.username || userStore.name)
 
 // 是否为当前用户查看自己的信息
-const isSelf = computed(() => !props.userId || props.userId === userStore.userId)
+const isSelf = computed(() => !props.username || props.username === userStore.name)
 
 // 实际的可编辑状态：必须是自己的信息且明确允许编辑
 const canEdit = computed(() => props.editable && isSelf.value)
@@ -36,7 +37,7 @@ const loadUser = async (): Promise<void> => {
     loading.value = true
     const response = isSelf.value
       ? await userServiceV1.getCurrentUser()
-      : await userServiceV1.getUser(targetUserId.value)
+      : await userServiceV1.getUser(targetUsername.value as string)
 
     if (response.code === 401) {
       console.log('not login')

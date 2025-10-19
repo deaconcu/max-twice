@@ -8,7 +8,7 @@
     professionServiceV1,
     progressServiceV1,
   } from '@/services/api/v1/apiServiceV1'
-  import { UserCourseState, UserRoadmapState } from '@/types/enums'
+  import { UserProgressState } from '@/types/enums'
   import type { Profession } from '@/types/profession'
 
   const { t } = useI18n()
@@ -26,7 +26,7 @@
     id: number
     title: string
     progress: number
-    status: UserRoadmapState
+    status: UserProgressState
     lastActivity: string
     profession?: Profession
   }
@@ -36,7 +36,7 @@
     courseId?: number
     title: string
     progress: number
-    status: UserCourseState
+    status: UserProgressState
     lastActivity: string
   }
 
@@ -255,13 +255,13 @@
   })
 
   // 获取路线图状态颜色
-  const getRoadmapStatusColor = (state: UserRoadmapState): string => {
+  const getRoadmapStatusColor = (state: UserProgressState): string => {
     switch (state) {
-      case UserRoadmapState.NOT_STARTED:
+      case UserProgressState.NOT_STARTED:
         return 'grey'
-      case UserRoadmapState.IN_PROGRESS:
+      case UserProgressState.IN_PROGRESS:
         return 'primary'
-      case UserRoadmapState.COMPLETED:
+      case UserProgressState.COMPLETED:
         return 'success'
       default:
         return 'grey'
@@ -269,13 +269,13 @@
   }
 
   // 获取课程状态颜色
-  const getCourseStatusColor = (state: UserCourseState): string => {
+  const getCourseStatusColor = (state: UserProgressState): string => {
     switch (state) {
-      case UserCourseState.NOT_STARTED:
+      case UserProgressState.NOT_STARTED:
         return 'grey'
-      case UserCourseState.IN_PROGRESS:
+      case UserProgressState.IN_PROGRESS:
         return 'primary'
-      case UserCourseState.COMPLETED:
+      case UserProgressState.COMPLETED:
         return 'success'
       default:
         return 'grey'
@@ -283,21 +283,21 @@
   }
 
   // 获取路线图状态文本
-  const getRoadmapStatusText = (state: UserRoadmapState): string => {
+  const getRoadmapStatusText = (state: UserProgressState): string => {
     const stateTexts: Record<string, string> = {
-      [UserRoadmapState.NOT_STARTED]: '未开始',
-      [UserRoadmapState.IN_PROGRESS]: '进行中',
-      [UserRoadmapState.COMPLETED]: '已完成',
+      [UserProgressState.NOT_STARTED]: '未开始',
+      [UserProgressState.IN_PROGRESS]: '进行中',
+      [UserProgressState.COMPLETED]: '已完成',
     }
     return stateTexts[state] || t('rightSidebar.status.unknown')
   }
 
   // 获取课程状态文本
-  const getCourseStatusText = (state: UserCourseState): string => {
+  const getCourseStatusText = (state: UserProgressState): string => {
     const stateTexts: Record<string, string> = {
-      [UserCourseState.NOT_STARTED]: '未开始',
-      [UserCourseState.IN_PROGRESS]: '进行中',
-      [UserCourseState.COMPLETED]: '已完成',
+      [UserProgressState.NOT_STARTED]: '未开始',
+      [UserProgressState.IN_PROGRESS]: '进行中',
+      [UserProgressState.COMPLETED]: '已完成',
     }
     return stateTexts[state] || t('rightSidebar.status.unknown')
   }

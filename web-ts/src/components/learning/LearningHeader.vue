@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { UserCourseState, UserRoadmapState } from '@/types/enums'
+import { UserProgressState } from '@/types/enums'
 
 interface Props {
   selectedTab?: string
@@ -29,7 +29,7 @@ const emit = defineEmits<Emits>()
 
 // 根据当前选中的tab返回对应的状态常量
 const currentStateConstants = computed(() => {
-  return props.selectedTab === 'roadmaps' ? UserRoadmapState : UserCourseState
+  return props.selectedTab === 'roadmaps' ? UserProgressState : UserProgressState
 })
 
 // 状态文本映射

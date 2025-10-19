@@ -98,7 +98,7 @@ public class NodeService {
     /**
      * 修改节点状态
      */
-    public NodeDTO updateNodeState(Long nodeId, Enums.CommomState state) {
+    public NodeDTO updateNodeState(Long nodeId, Enums.ContentState state) {
         if (state == null) {
             throw new IllegalArgumentException("State cannot be null");
         }

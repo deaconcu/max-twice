@@ -36,7 +36,7 @@ public class CourseRepository {
             CourseDO courseInDb = courseMapper.getByName(course.getName());
             if (courseInDb != null) throw new IllegalArgumentException("课程名相同");
             course.setUserId(1);
-            course.setState(Enums.CourseState.created);
+            course.setState(Enums.CommonState.created);
             CourseDO courseDO = Converter.INSTANCE.courseToDo(course);
             courseMapper.insert(courseDO);
             course.setId(courseDO.getId());
