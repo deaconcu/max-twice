@@ -6,6 +6,9 @@ import org.apache.ibatis.annotations.*;
 import java.util.List;
 import java.util.Map;
 
+import static com.prosper.learn.common.Enums.ContentState.*;
+import static com.prosper.learn.common.Enums.UserProgressState.*;
+
 @Mapper
 public interface UserCourseMapper {
 
@@ -32,7 +35,7 @@ public interface UserCourseMapper {
 
     @Select("SELECT user_course.* FROM user_course " +
             "INNER JOIN course ON user_course.course_id = course.id " +
-            "WHERE user_course.user_id = #{userId} AND user_course.id < #{lastId} AND course.state = 1 " +
+            "WHERE user_course.user_id = #{userId} AND user_course.id < #{lastId} AND course.state = " + APPROVED_VALUE + " " +
             "ORDER BY user_course.id DESC LIMIT 20")
     List<UserCourseDO> getByUserId(long userId, long lastId);
 
@@ -48,7 +51,7 @@ public interface UserCourseMapper {
     /**
      * 统计用户正在学习的课程数量
      */
-    @Select("SELECT COUNT(*) FROM user_course WHERE user_id = #{userId} AND state = 1")
+    @Select("SELECT COUNT(*) FROM user_course WHERE user_id = #{userId} AND state = " + IN_PROGRESS_VALUE)
     Integer countActiveCoursesByUserId(long userId);
 
     /**

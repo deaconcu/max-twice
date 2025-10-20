@@ -122,13 +122,21 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
     public int approve(long id) {
         return courseMapper.approve(id);
     }
-    
+
     /**
      * 课程拒绝
      */
     @CacheEvict(value = "courses", key = "#id")
-    public int reject(long id, String rejectedReason) {
-        return courseMapper.reject(id, rejectedReason);
+    public int reject(long id, String reason) {
+        return courseMapper.reject(id, reason);
+    }
+
+    /**
+     * 课程封禁
+     */
+    @CacheEvict(value = "courses", key = "#id")
+    public int ban(long id, String reason) {
+        return courseMapper.ban(id, reason);
     }
     
     /**

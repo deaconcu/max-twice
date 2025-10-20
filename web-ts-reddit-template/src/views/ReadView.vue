@@ -2,48 +2,249 @@
   <div class="read-page">
     <AppHeader />
 
+    <!-- 课程信息条 -->
+    <div class="course-info-bar">
+      <v-container fluid class="px-4">
+        <div class="d-flex align-center ga-6">
+          <!-- 左侧：课程信息 -->
+          <div class="d-flex align-center ga-3 course-left">
+            <div>
+              <div class="d-flex align-center ga-2 mb-1">
+                <v-icon icon="mdi-book-open-variant" color="primary" size="20"></v-icon>
+                <h2 class="course-bar-title">{{ courseData.title }}</h2>
+              </div>
+              <p class="course-bar-description">{{ courseData.description }}</p>
+            </div>
+          </div>
+
+          <!-- 中间：子课程列表 -->
+          <div class="course-middle">
+            <div class="sub-courses-wrapper">
+              <div class="d-flex align-center ga-3 flex-wrap">
+                <span class="sub-courses-label">子课程</span>
+                <div
+                  v-for="(subCourse, index) in subCourses"
+                  :key="index"
+                  class="sub-course-chip"
+                  :class="{ 'sub-course-active': currentSubCourseIndex === index }"
+                  @click="currentSubCourseIndex = index"
+                >
+                  <span class="sub-course-name">{{ subCourse.name }}</span>
+                  <v-chip size="x-small" :color="currentSubCourseIndex === index ? 'white' : 'primary'" variant="flat" class="sub-course-progress-chip">
+                    {{ subCourse.progress }}%
+                  </v-chip>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右侧：统计信息和按钮 -->
+          <div class="d-flex align-center ga-3 course-right">
+            <div class="stats-group">
+              <div class="stat-item-compact">
+                <span class="stat-label-compact">总节数</span>
+                <span class="stat-value-compact">{{ courseData.totalNodes }}</span>
+              </div>
+              <div class="stat-item-compact">
+                <span class="stat-label-compact">已完成</span>
+                <span class="stat-value-compact text-success">{{ courseData.completedNodes }}</span>
+              </div>
+              <div class="stat-item-compact">
+                <span class="stat-label-compact">进度</span>
+                <span class="stat-value-compact text-primary">{{ courseData.progress }}%</span>
+              </div>
+            </div>
+            <v-divider vertical class="stat-divider" />
+            <div class="d-flex align-center ga-2">
+              <v-btn
+                :variant="isLearning ? 'flat' : 'outlined'"
+                color="primary"
+                class="text-none"
+                size="small"
+                @click="toggleLearning"
+              >
+                <v-icon left size="16">{{ isLearning ? 'mdi-check-circle' : 'mdi-play-circle-outline' }}</v-icon>
+                {{ isLearning ? '学习中' : '开始' }}
+              </v-btn>
+              <v-btn
+                :variant="courseData.subscribed ? 'flat' : 'outlined'"
+                color="primary"
+                class="text-none"
+                size="small"
+                @click="toggleSubscribe"
+              >
+                <v-icon left size="16">{{ courseData.subscribed ? 'mdi-heart' : 'mdi-heart-outline' }}</v-icon>
+                {{ courseData.subscribed ? '已订阅' : '订阅' }}
+              </v-btn>
+            </div>
+          </div>
+        </div>
+      </v-container>
+    </div>
+
     <div class="read-content">
       <!-- 左侧目录 - 靠边固定 -->
       <div class="left-sidebar">
-        <div class="toc-card">
-          <h3 class="text-h6 font-weight-bold mb-4">目录</h3>
-          <div class="toc-tree">
-            <TreeNode
-              v-for="(item, index) in tocData"
-              :key="index"
-              :node="item"
-              :active-node="activeNode"
-              @node-click="handleNodeClick"
-            />
+        <div class="toc-sticky-wrapper">
+          <!-- 目录组选择卡片 -->
+          <div class="toc-groups-card mb-4">
+            <div class="toc-header">
+              <div class="d-flex align-center">
+                <v-icon icon="mdi-view-list" size="14" color="grey" class="mr-2"></v-icon>
+                <span class="toc-title">课程目录</span>
+              </div>
+              <div class="toc-actions">
+                <v-btn
+                  icon
+                  size="x-small"
+                  variant="text"
+                  :class="{ 'rotate-180': openContentsList }"
+                  @click="openContentsList = !openContentsList"
+                >
+                  <v-icon size="16">mdi-chevron-down</v-icon>
+                </v-btn>
+                <v-btn
+                  icon
+                  size="x-small"
+                  variant="text"
+                  @click="configContents = true"
+                >
+                  <v-icon size="16">mdi-cog-outline</v-icon>
+                </v-btn>
+              </div>
+            </div>
+            <v-expand-transition>
+              <div v-if="openContentsList" class="toc-chips">
+                <div
+                  v-for="(item, index) in tocGroups"
+                  :key="index"
+                  class="toc-chip"
+                  :class="{
+                    'chip-active': currentTocGroupIndex === index,
+                    'chip-primary': index === 0
+                  }"
+                  @click="currentTocGroupIndex = index"
+                >
+                  <div class="chip-inner">
+                    <span class="chip-number">{{ index + 1 }}</span>
+                  </div>
+                  <div v-if="index === 0" class="corner-badge">
+                    <v-icon icon="mdi-chart-line-variant" size="8" color="white"></v-icon>
+                  </div>
+                </div>
+              </div>
+            </v-expand-transition>
+          </div>
+
+          <!-- 目录树 -->
+          <div class="toc-card">
+            <h3 class="text-h6 font-weight-bold mb-1">目录</h3>
+            <div class="toc-tree">
+              <TreeNode
+                v-for="(item, index) in tocData"
+                :key="index"
+                :node="item"
+                :active-node="activeNode"
+                @node-click="handleNodeClick"
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 中间+右侧容器 - 居中 -->
-      <div class="center-right-wrapper">
-        <!-- 中间内容区 - 固定宽度居中 -->
-        <div class="center-content">
-        <!-- 课程头部 -->
-        <div class="course-header">
-          <h1 class="text-h4 font-weight-bold mb-2">{{ courseData.title }}</h1>
-          <p class="text-body-1 text-medium-emphasis mb-4">{{ courseData.description }}</p>
+      <!-- 中间+右侧容器包装 -->
+      <div class="center-right-container">
+        <!-- 中间+右侧容器 - 居中 -->
+        <div class="center-right-wrapper">
+          <!-- 中间内容区 - 固定宽度居中 -->
+          <div class="center-content">
+        <!-- 节点路径（面包屑） -->
+        <div class="node-path mb-2">
+          <div class="d-flex align-center">
+            <span class="text-caption text-medium-emphasis">{{ pathText }}</span>
+          </div>
+        </div>
 
-          <div class="d-flex align-center ga-2">
+        <!-- 节点头部 -->
+        <div class="node-header mb-4">
+          <div class="d-flex align-center justify-space-between mb-3">
+            <div class="d-flex align-center">
+              <v-icon icon="mdi-list-box-outline" color="primary" size="24"></v-icon>
+              <h2 class="text-h5 font-weight-bold ms-3">{{ currentNode.name }}</h2>
+            </div>
             <v-btn
-              :variant="isLearning ? 'flat' : 'outlined'"
-              color="primary"
-              class="text-none"
-              @click="toggleLearning"
+              v-if="isLearning"
+              :color="currentNode.isCompleted ? 'grey-lighten-2' : 'success'"
+              :variant="currentNode.isCompleted ? 'outlined' : 'flat'"
+              rounded="lg"
+              size="small"
+              class="px-4"
+              :prepend-icon="currentNode.isCompleted ? 'mdi-check-circle' : 'mdi-circle-outline'"
+              @click="toggleNodeCompletion"
             >
-              {{ isLearning ? '正在学习' : '开始学习' }}
+              <span
+                class="font-weight-medium"
+                :class="currentNode.isCompleted ? 'text-grey-darken-2' : 'text-white'"
+              >
+                {{ currentNode.isCompleted ? '已完成' : '完成学习' }}
+              </span>
             </v-btn>
-            <v-btn
-              variant="outlined"
-              color="primary"
-              class="text-none"
-            >
-              {{ courseData.subscribed ? '已订阅' : '订阅课程' }}
-            </v-btn>
+          </div>
+          <p v-if="currentNode.description" class="text-body-2 text-medium-emphasis mb-0">
+            {{ currentNode.description }}
+          </p>
+        </div>
+
+        <!-- Tab栏和操作按钮 -->
+        <div class="tabs-actions-bar mb-4">
+          <div class="d-flex align-center justify-space-between">
+            <v-tabs v-model="activeTab" density="compact" color="primary">
+              <v-tab value="list" class="px-3">
+                <v-icon icon="mdi-list-box-outline" size="16" class="mr-2"></v-icon>
+                <span class="font-weight-medium">文章列表</span>
+              </v-tab>
+              <v-tab value="comment" class="px-3">
+                <v-icon icon="mdi-comment-outline" size="16" class="mr-2"></v-icon>
+                <span class="font-weight-medium">{{ currentNode.commentCount }} 评论</span>
+              </v-tab>
+              <v-tab value="memoryCards" class="px-3">
+                <v-icon icon="mdi-cards-outline" size="16" class="mr-2"></v-icon>
+                <span class="font-weight-medium">记忆卡片</span>
+              </v-tab>
+            </v-tabs>
+
+            <div class="d-flex align-center ga-2">
+              <v-btn
+                variant="flat"
+                color="grey-lighten-4"
+                rounded="lg"
+                density="comfortable"
+                class="px-3"
+              >
+                <v-icon icon="mdi-note-plus-outline" size="14" class="mr-2"></v-icon>
+                <span class="font-weight-medium text-grey-darken-3">添加文章</span>
+              </v-btn>
+              <v-btn
+                variant="flat"
+                color="grey-lighten-4"
+                rounded="lg"
+                density="comfortable"
+                class="px-3"
+              >
+                <v-icon icon="mdi-format-list-group-plus" size="14" class="mr-2"></v-icon>
+                <span class="font-weight-medium text-grey-darken-3">添加目录</span>
+              </v-btn>
+              <v-btn
+                variant="flat"
+                color="grey-lighten-4"
+                rounded="lg"
+                density="comfortable"
+                class="px-3"
+              >
+                <v-icon icon="mdi-account-plus-outline" size="14" class="mr-2"></v-icon>
+                <span class="font-weight-medium text-grey-darken-3">邀请回答</span>
+              </v-btn>
+            </div>
           </div>
         </div>
 
@@ -134,20 +335,53 @@
       <!-- 右侧工具栏 - 靠边固定 -->
       <div class="right-sidebar">
         <div class="sidebar-sticky">
-          <!-- AI助手卡片 -->
+          <!-- AI答疑助手 -->
           <v-card class="sidebar-card mb-4" border rounded="xl">
             <v-card-title class="pa-4">
-              <v-icon left color="primary">mdi-robot</v-icon>
-              AI 答疑助手
+              <div class="d-flex align-center justify-space-between w-100">
+                <div class="d-flex align-center">
+                  <v-icon icon="mdi-robot-excited" color="primary" class="mr-2"></v-icon>
+                  <span>答疑助手</span>
+                </div>
+                <v-btn
+                  :icon="isAssistantExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                  variant="text"
+                  color="grey-darken-1"
+                  size="x-small"
+                  @click="isAssistantExpanded = !isAssistantExpanded"
+                ></v-btn>
+              </div>
             </v-card-title>
-            <v-card-text class="pa-4 pt-0">
-              <p class="text-body-2 text-medium-emphasis mb-3">
-                选中文本即可提问
-              </p>
-              <v-btn block color="primary" variant="outlined" class="text-none">
-                开始提问
-              </v-btn>
-            </v-card-text>
+
+            <v-expand-transition>
+              <v-card-text v-show="isAssistantExpanded" class="pa-4 pt-0">
+                <div class="text-body-2 text-grey-darken-2 mb-3">
+                  <div class="font-weight-bold w-100">用法：</div>
+                  <div class="mt-2">1）在文章中选中您不太理解的内容</div>
+                  <div>2）在左侧竖线处拖动手柄，调整上下文范围</div>
+                  <div>3）点击面板中的"复制"，将引用和问题复制到剪贴板</div>
+                  <div>4）用复制的内容询问你常用的 AI 引擎</div>
+                </div>
+
+                <div class="d-flex flex-wrap mt-5" style="gap: 8px;">
+                  <div class="text-body-2 w-100 text-grey-darken-2 font-weight-bold">常用 AI 引擎：</div>
+                  <v-chip
+                    v-for="e in aiEngines"
+                    :key="e.name"
+                    :href="e.href"
+                    target="_blank"
+                    rel="noopener"
+                    :color="e.color"
+                    variant="tonal"
+                    rounded="xl"
+                    size="small"
+                    class="engine-link"
+                    :prepend-icon="e.icon"
+                    :text="e.name"
+                  />
+                </div>
+              </v-card-text>
+            </v-expand-transition>
           </v-card>
 
           <!-- 记忆卡片组 -->
@@ -206,6 +440,7 @@
           </v-card>
         </div>
       </div>
+        </div>
       </div>
     </div>
 
@@ -219,20 +454,70 @@ import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import TreeNode from '@/components/TreeNode.vue'
 
-const isLearning = ref(false)
-const currentNode = ref(0)
+const isLearning = ref(true)
 const newComment = ref('')
 const activeNode = ref(null)
+const activeTab = ref('list')
+const isAssistantExpanded = ref(true)
+
+// AI 引擎列表
+const aiEngines = [
+  { name: 'ChatGPT', href: 'https://chatgpt.com', color: 'green-darken-2', icon: 'mdi-robot' },
+  { name: 'Claude', href: 'https://claude.ai', color: 'indigo-darken-2', icon: 'mdi-alpha-c-circle-outline' },
+  { name: 'Gemini', href: 'https://gemini.google.com', color: 'blue-darken-2', icon: 'mdi-google' },
+  { name: 'DeepSeek', href: 'https://chat.deepseek.com', color: 'red-darken-4', icon: 'mdi-radar' }
+]
+
+// 子课程相关
+const currentSubCourseIndex = ref(0)
+const subCourses = ref([
+  { name: 'Vue 3 基础', progress: 80 },
+  { name: 'Vue 3 进阶', progress: 60 },
+  { name: 'Vue 3 实战', progress: 30 }
+])
+
+// 目录组相关
+const openContentsList = ref(true)
+const configContents = ref(false)
+const currentTocGroupIndex = ref(0)
+const tocGroups = ref([
+  { name: '主线目录' },
+  { name: '扩展目录' },
+  { name: '实战目录' }
+])
+
+// 节点路径
+const pathText = ref('Vue 3 完整教程 / 2. 响应式系统 / 2.1 响应式基础')
+
+// 当前节点数据
+const currentNode = ref({
+  name: '2.1 响应式基础',
+  description: '学习 Vue 3 响应式系统的核心API和基本用法',
+  isCompleted: false,
+  commentCount: 8
+})
 
 const handleNodeClick = (node: any) => {
   activeNode.value = node
   console.log('Clicked node:', node.name)
 }
 
+const toggleLearning = () => {
+  isLearning.value = !isLearning.value
+}
+
+const toggleNodeCompletion = () => {
+  currentNode.value.isCompleted = !currentNode.value.isCompleted
+}
+
+const toggleSubscribe = () => {
+  courseData.value.subscribed = !courseData.value.subscribed
+}
+
 // Mock 数据
 const courseData = ref({
   title: 'Vue 3 完整教程',
-  description: '从入门到精通，掌握 Vue 3 的核心概念和最佳实践',
+  description: '从入门到精通，掌握 Vue 3 的核心概念和最佳实践。本课程涵盖响应式系统、组合式 API、组件开发、路由管理、状态管理等核心内容，通过大量实战案例帮助你深入理解 Vue 3 的设计理念和使用方法，最终能够独立开发完整的 Vue 3 应用程序。课程包含从基础语法到高级特性的完整知识体系，适合零基础学员和有一定经验的开发者。每个章节都配有详细的代码示例和练习题，帮助你巩固所学知识并应用到实际项目中。',
   subscribed: false,
   totalNodes: 20,
   completedNodes: 5,
@@ -459,10 +744,6 @@ const memoryDecks = ref([
   { id: 2, title: '响应式原理', cardCount: 8 },
   { id: 3, title: '常见问题', cardCount: 15 }
 ])
-
-const toggleLearning = () => {
-  isLearning.value = !isLearning.value
-}
 </script>
 
 <style scoped>
@@ -470,34 +751,154 @@ const toggleLearning = () => {
   min-height: 100vh;
   background-color: #FAFBFC;
   position: relative;
-  overflow: hidden;
 }
 
-/* 背景装饰 */
-.read-page::before {
-  content: '';
-  position: absolute;
-  top: -20%;
-  right: -10%;
-  width: 1000px;
-  height: 1000px;
-  background: radial-gradient(circle, rgba(255, 87, 34, 0.25) 0%, rgba(255, 87, 34, 0.1) 40%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
+.course-info-bar {
+  background-color: white;
+  border-bottom: 1px solid #EDEFF1;
+  padding: 12px 15px;
+  position: relative;
+  z-index: 1;
 }
 
-.read-page::after {
-  content: '';
-  position: absolute;
-  bottom: -25%;
-  left: -15%;
-  width: 1100px;
-  height: 1100px;
-  background: radial-gradient(circle, rgba(0, 188, 212, 0.2) 0%, rgba(0, 188, 212, 0.08) 40%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
+.course-bar-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1A1A1B;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+
+.course-bar-description {
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 0;
+  line-height: 1.3;
+}
+
+.stat-item-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-label-inline {
+  font-size: 0.75rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.stat-value-inline {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #1A1A1B;
+}
+
+.stat-divider {
+  height: 40px;
+  align-self: center;
+}
+
+/* 三栏布局 */
+.course-left {
+  flex: 0 0 auto;
+  max-width: 40%;
+  min-width: 350px;
+}
+
+.course-middle {
+  flex: 1;
+  min-width: 0;
+  padding: 0 24px;
+}
+
+.course-right {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* 统计信息组 */
+.stats-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stat-item-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stat-label-compact {
+  font-size: 0.65rem;
+  color: #999;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value-compact {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1A1A1B;
+}
+
+/* 子课程标签 */
+.sub-courses-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* 子课程列表 */
+.sub-courses-wrapper {
+  background-color: rgba(0, 0, 0, 0.02);
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #EDEFF1;
+}
+
+.sub-course-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background-color: white;
+  border: 1.5px solid #EDEFF1;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sub-course-chip:hover {
+  border-color: rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.05);
+  transform: translateY(-1px);
+}
+
+.sub-course-chip.sub-course-active {
+  background-color: rgb(var(--v-theme-primary));
+  border-color: rgb(var(--v-theme-primary));
+}
+
+.sub-course-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1A1A1B;
+}
+
+.sub-course-active .sub-course-name {
+  color: white;
+}
+
+.sub-course-progress-chip {
+  height: 18px !important;
+  font-size: 0.65rem !important;
+  font-weight: 700 !important;
 }
 
 /* Reddit风格三栏布局 */
@@ -514,17 +915,178 @@ const toggleLearning = () => {
   padding: 20px 0 20px 20px;
 }
 
-.toc-card {
+.toc-sticky-wrapper {
   position: sticky;
-  top: 20px;
+  top: 75px;
+  max-height: calc(100vh - 95px);
+  display: flex;
+  flex-direction: column;
+}
+
+.toc-card {
   background-color: white;
   padding: 20px;
   border: 1px solid #EDEFF1;
   border-radius: 24px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 目录卡片右上角青色光晕 */
+.toc-card::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(0, 188, 212, 0.15) 0%, rgba(0, 188, 212, 0.08) 40%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .toc-tree {
   margin-top: 8px;
+  margin-right: -20px;
+  padding-right: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 自定义滚动条样式 - Webkit (Chrome, Safari, Edge) */
+.toc-tree::-webkit-scrollbar {
+  width: 1px;
+  height: 1px;
+}
+
+.toc-tree::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.toc-tree::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 0.5px;
+}
+
+.toc-tree::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* 目录组选择卡片 */
+.toc-groups-card {
+  background-color: white;
+  padding: 12px 16px;
+  border: 1px solid #EDEFF1;
+  border-radius: 24px;
+  flex-shrink: 0;
+}
+
+.toc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #EDEFF1;
+}
+
+.toc-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.toc-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+  transition: transform 0.3s ease;
+}
+
+.toc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.toc-chip {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background-color: #F6F7F8;
+  border: 1.5px solid #EDEFF1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toc-chip:hover {
+  border-color: rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.05);
+}
+
+.toc-chip.chip-active {
+  background-color: rgb(var(--v-theme-primary));
+  border-color: rgb(var(--v-theme-primary));
+}
+
+.toc-chip.chip-primary {
+  border-color: rgb(var(--v-theme-primary));
+  border-width: 2px;
+}
+
+.chip-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chip-number {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.chip-active .chip-number {
+  color: white;
+}
+
+.corner-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: rgb(var(--v-theme-primary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+/* 中间+右侧容器包装 */
+.center-right-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 /* 中间+右侧容器 - 居中 */
@@ -532,7 +1094,7 @@ const toggleLearning = () => {
   display: flex;
   flex: 1;
   justify-content: center;
-  max-width: calc(100% - 360px);
+  max-width: 100%;
 }
 
 /* 中间内容区 - 固定宽度 */
@@ -542,18 +1104,46 @@ const toggleLearning = () => {
   padding: 20px 20px 20px 20px;
 }
 
-.course-header {
+/* 节点路径 */
+.node-path {
+  padding: 8px 0;
+}
+
+/* 节点头部 */
+.node-header {
   background-color: white;
-  padding: 32px;
+  padding: 24px;
   border: 1px solid #EDEFF1;
-  border-radius: 24px;
-  margin-bottom: 20px;
+  border-radius: 16px;
+}
+
+/* Tab栏和操作按钮 */
+.tabs-actions-bar {
+  background-color: white;
+  padding: 12px 16px;
+  border: 1px solid #EDEFF1;
+  border-radius: 16px;
 }
 
 .post-card,
 .comments-card {
   background-color: white;
   border: 1px solid #EDEFF1;
+  position: relative;
+}
+
+/* 文章卡片右上角橙色光晕 */
+.post-card::before {
+  content: '';
+  position: absolute;
+  top: -90px;
+  right: -90px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255, 87, 34, 0.15) 0%, rgba(255, 87, 34, 0.08) 40%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* 文章内容区域 */
@@ -829,19 +1419,31 @@ const toggleLearning = () => {
 
 /* 右侧边栏 - 紧贴中间内容 */
 .right-sidebar {
-  width: 320px;
+  width: 400px;
   flex-shrink: 0;
   padding: 20px 0 20px 20px;
 }
 
 .sidebar-sticky {
   position: sticky;
-  top: 20px;
+  top: 75px;
 }
 
 .sidebar-card {
   background-color: white;
   border: 1px solid #EDEFF1;
+  position: relative;
+}
+
+/* AI 引擎链接样式 */
+.engine-link {
+  text-decoration: none !important;
+}
+
+.engine-link:hover,
+.engine-link:focus,
+.engine-link:active {
+  text-decoration: none !important;
 }
 
 .info-item {
@@ -875,7 +1477,7 @@ const toggleLearning = () => {
   }
 
   .right-sidebar {
-    width: 280px;
+    width: 360px;
   }
 }
 </style>

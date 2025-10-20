@@ -49,9 +49,16 @@ public class Enums {
     }
 
     public enum ContentState implements ValueEnum<Byte> {
-        SUBMITTED((byte)0),
-        APPROVED((byte)1),
-        BANNED((byte)2);
+        SUBMITTED((byte)1),
+        APPROVED((byte)2),
+        REJECTED((byte)3),
+        BANNED((byte)4);
+
+        // 静态常量用于 MyBatis 注解（注解需要编译时常量）
+        public static final byte SUBMITTED_VALUE = 1;
+        public static final byte APPROVED_VALUE = 2;
+        public static final byte REJECTED_VALUE = 3;
+        public static final byte BANNED_VALUE = 4;
 
         private final byte value;
 
@@ -260,6 +267,11 @@ public class Enums {
         NOT_STARTED((byte)0),
         IN_PROGRESS((byte)1),
         COMPLETED((byte)2);
+
+        // 静态常量用于 MyBatis 注解（注解需要编译时常量）
+        public static final byte NOT_STARTED_VALUE = 0;
+        public static final byte IN_PROGRESS_VALUE = 1;
+        public static final byte COMPLETED_VALUE = 2;
 
         private final byte value;
 

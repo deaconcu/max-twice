@@ -147,4 +147,20 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
     public List<CommentDO> getListByStatePaginated(byte state, long offsetId, int limit) {
         return commentMapper.getListByStatePaginated(state, offsetId, limit);
     }
+
+    /**
+     * 拒绝评论（审核不通过）
+     */
+    @CacheEvict(value = "comments", key = "#id")
+    public int reject(long id) {
+        return commentMapper.updateState(id, com.prosper.learn.common.Enums.ContentState.REJECTED.value());
+    }
+
+    /**
+     * 封禁评论（违规封禁）
+     */
+    @CacheEvict(value = "comments", key = "#id")
+    public int ban(long id) {
+        return commentMapper.updateState(id, com.prosper.learn.common.Enums.ContentState.BANNED.value());
+    }
 }

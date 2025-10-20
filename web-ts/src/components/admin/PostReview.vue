@@ -46,7 +46,7 @@ const tabs: TabConfig[] = [
   {
     key: 'rejected',
     label: t('admin.rejected'),
-    state: ContentState.BANNED,
+    state: ContentState.REJECTED,
     icon: 'mdi-close-circle',
     color: 'red'
   }
@@ -384,7 +384,7 @@ onMounted(() => {
                 {{ t('admin.approved') }}
               </v-chip>
               <v-chip
-                v-if="post.state == ContentState.BANNED"
+                v-if="post.state == ContentState.REJECTED"
                 variant="flat"
                 color="red-lighten-4"
                 rounded="lg"
@@ -432,7 +432,7 @@ onMounted(() => {
             </div>
 
             <!-- 已拒绝状态下显示通过按钮 -->
-            <div v-if="post.state == ContentState.BANNED" class="d-flex flex-column ga-2">
+            <div v-if="post.state == ContentState.REJECTED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
                 color="green-lighten-4"

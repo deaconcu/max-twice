@@ -33,6 +33,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.prosper.learn.common.Enums.ContentState;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -741,7 +743,35 @@ public class RoadmapService {
         }
 
         roadmapDataService.approve(id);
-        roadmap.setState((byte) 1);
+        roadmap.setState(ContentState.APPROVED.value());
+        return toDTO(roadmap);
+    }
+
+    /**
+     * 拒绝路线图
+     */
+    public RoadmapDTO reject(long id) {
+        RoadmapDO roadmap = roadmapDataService.getById(id);
+        if (roadmap == null) {
+            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+        }
+
+        roadmapDataService.reject(id);
+        roadmap.setState(ContentState.REJECTED.value());
+        return toDTO(roadmap);
+    }
+
+    /**
+     * 封禁路线图
+     */
+    public RoadmapDTO ban(long id) {
+        RoadmapDO roadmap = roadmapDataService.getById(id);
+        if (roadmap == null) {
+            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+        }
+
+        roadmapDataService.ban(id);
+        roadmap.setState(ContentState.BANNED.value());
         return toDTO(roadmap);
     }
 
@@ -755,7 +785,7 @@ public class RoadmapService {
         }
 
         roadmap.setDescription("");
-        roadmap.setState((byte) 1);
+        roadmap.setState(ContentState.APPROVED.value());
         roadmapDataService.update(roadmap);
         return toDTO(roadmap);
     }

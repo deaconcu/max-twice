@@ -199,13 +199,23 @@ public class CoursesController {
                         .build();
             }
             case "reject" -> {
-                courseService.reject(id, request.getRejectedReason());
+                courseService.reject(id, request.getReason());
                 yield ApprovalResponseDTO.builder()
                         .success(true)
                         .message("拒绝成功")
                         .objectId(id)
                         .objectType("course")
                         .action("reject")
+                        .build();
+            }
+            case "ban" -> {
+                courseService.ban(id, request.getReason());
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("封禁成功")
+                        .objectId(id)
+                        .objectType("course")
+                        .action("ban")
                         .build();
             }
             case "delete" -> {

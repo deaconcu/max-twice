@@ -149,6 +149,8 @@ public class RoadmapsController {
         RoadmapDTO roadmap = switch (request.getAction().toLowerCase()) {
             case "approve" -> roadmapService.approve(id);
             case "approve_clear" -> roadmapService.approveAndClearDescription(id);
+            case "reject" -> roadmapService.reject(id);
+            case "ban" -> roadmapService.ban(id);
             default -> throw ErrorCode.SYSTEM_ERROR.exception();
         };
 

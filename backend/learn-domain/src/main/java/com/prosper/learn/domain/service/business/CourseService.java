@@ -75,14 +75,30 @@ public class CourseService {
     }
 
     /**
-     * 验证课程状态并检查重复操作
+     * 验证课程状态并检查重复操作（审核不通过）
      */
     private void validateCommonStateForRejection(CourseDO courseDO) {
         if (!systemProperties.getCourse().isEnableStateValidation()) {
             return;
         }
-        if (ContentState.BANNED.value().equals(courseDO.getState())) {
+        if (ContentState.REJECTED.value().equals(courseDO.getState())) {
             throw ErrorCode.COURSE_ALREADY_REJECTED.exception();
+        }
+        if (ContentState.BANNED.value().equals(courseDO.getState())) {
+            throw ErrorCode.COURSE_ALREADY_BANNED.exception();
+        }
+    }
+
+    /**
+     * 验证课程是否可以被封禁
+     * SUBMITTED、APPROVED、REJECTED 状态都可以被封禁
+     */
+    private void validateStateForBan(CourseDO courseDO) {
+        if (!systemProperties.getCourse().isEnableStateValidation()) {
+            return;
+        }
+        if (ContentState.BANNED.value().equals(courseDO.getState())) {
+            throw ErrorCode.COURSE_ALREADY_BANNED.exception();
         }
     }
 
@@ -282,11 +298,19 @@ public class CourseService {
         validateOperationResult(rowsAffected);
     }
 
-    public void reject(long id, String rejectedReason) {
+    public void reject(long id, String reason) {
         CourseDO courseDO = validateCourseExists(id);
         validateCommonStateForRejection(courseDO);
 
-        int rowsAffected = courseDataService.reject(id, rejectedReason);
+        int rowsAffected = courseDataService.reject(id, reason);
+        validateOperationResult(rowsAffected);
+    }
+
+    public void ban(long id, String reason) {
+        CourseDO courseDO = validateCourseExists(id);
+        validateStateForBan(courseDO);
+
+        int rowsAffected = courseDataService.ban(id, reason);
         validateOperationResult(rowsAffected);
     }
 

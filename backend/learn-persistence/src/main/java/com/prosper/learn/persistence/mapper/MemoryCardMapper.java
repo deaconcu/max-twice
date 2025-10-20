@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.prosper.learn.common.Enums.ContentState.*;
+
 public interface MemoryCardMapper {
 
     @Select("SELECT * FROM memory_card WHERE id = #{id}")
@@ -87,7 +89,7 @@ public interface MemoryCardMapper {
     @Select("SELECT COUNT(*) FROM memory_card WHERE deck_id = #{deckId} AND state = #{state}")
     int countByDeck(long deckId, int state);
 
-    @Select("SELECT id FROM memory_card WHERE deck_id = #{deckId} AND state = 0 ORDER BY id")
+    @Select("SELECT id FROM memory_card WHERE deck_id = #{deckId} AND state = " + SUBMITTED.value() + " ORDER BY id")
     List<Long> getCardIdsByDeckId(long deckId);
 
     @Select("SELECT COUNT(*) FROM memory_card WHERE creator_id = #{creatorId} AND state = #{state}")

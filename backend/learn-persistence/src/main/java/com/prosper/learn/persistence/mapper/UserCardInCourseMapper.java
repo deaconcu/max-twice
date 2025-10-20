@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.prosper.learn.common.Enums.ContentState.*;
+
 public interface UserCardInCourseMapper {
 
     @Select("SELECT * FROM user_card_in_course WHERE id = #{id}")
@@ -83,55 +85,51 @@ public interface UserCardInCourseMapper {
     @Select("SELECT COUNT(*) FROM user_card_in_course WHERE course_id = #{courseId}")
     int countByCourse(long courseId);
 
-    @Select("""
-          <script>
-          SELECT
-              ucc.course_id AS courseId,
-              COUNT(ucc.card_id) AS cardCount,
-              SUM(CASE WHEN srs.review_due_at &lt;= #{now} THEN 1 ELSE 0 END) AS dueCardCount,
-              SUM(CASE WHEN srs.repetitions = 0 THEN 1 ELSE 0 END) AS newCardCount,
-              SUM(CASE WHEN srs.repetitions &gt; 0 THEN 1 ELSE 0 END) AS learnedCardCount,
-              SUM(CASE WHEN srs.review_due_at &lt;= #{now} AND srs.repetitions > 0 THEN 1 ELSE 0 END) AS reviewCardCount
-          FROM
-              user_card_in_course ucc
-          INNER JOIN
-              memory_card_deck deck ON ucc.deck_id = deck.id
-          LEFT JOIN
-              user_card_srs srs ON ucc.user_id = srs.user_id AND ucc.card_id = srs.card_id
-          WHERE
-              ucc.user_id = #{userId}
-              AND deck.state = 1
-              AND ucc.course_id IN
-              <foreach item="courseId" collection="courseIds" open="(" separator="," close=")">
-                  #{courseId}
-              </foreach>
-          GROUP BY
-              ucc.course_id
-          </script>
-          """)
+    @Select({"<script>",
+          "SELECT",
+          "    ucc.course_id AS courseId,",
+          "    COUNT(ucc.card_id) AS cardCount,",
+          "    SUM(CASE WHEN srs.review_due_at &lt;= #{now} THEN 1 ELSE 0 END) AS dueCardCount,",
+          "    SUM(CASE WHEN srs.repetitions = 0 THEN 1 ELSE 0 END) AS newCardCount,",
+          "    SUM(CASE WHEN srs.repetitions &gt; 0 THEN 1 ELSE 0 END) AS learnedCardCount,",
+          "    SUM(CASE WHEN srs.review_due_at &lt;= #{now} AND srs.repetitions > 0 THEN 1 ELSE 0 END) AS reviewCardCount",
+          "FROM",
+          "    user_card_in_course ucc",
+          "INNER JOIN",
+          "    memory_card_deck deck ON ucc.deck_id = deck.id",
+          "LEFT JOIN",
+          "    user_card_srs srs ON ucc.user_id = srs.user_id AND ucc.card_id = srs.card_id",
+          "WHERE",
+          "    ucc.user_id = #{userId}",
+          "    AND deck.state = " + APPROVED_VALUE,
+          "    AND ucc.course_id IN",
+          "    <foreach item=\"courseId\" collection=\"courseIds\" open=\"(\" separator=\",\" close=\")\">",
+          "        #{courseId}",
+          "    </foreach>",
+          "GROUP BY",
+          "    ucc.course_id",
+          "</script>"})
     List<CourseMemoryBankDO> getBatchCardStatsForCourses(@Param("userId") Long userId, @Param("courseIds") Set<Long> courseIds, @Param("now") LocalDateTime now);
 
-    @Select("""
-          <script>
-          SELECT
-              ucc.course_id AS courseId,
-              COUNT(ucc.card_id) AS cardCount,
-              SUM(CASE WHEN srs.review_due_at &lt;= #{now} THEN 1 ELSE 0 END) AS dueCardCount,
-              SUM(CASE WHEN srs.repetitions = 0 THEN 1 ELSE 0 END) AS newCardCount,
-              SUM(CASE WHEN srs.repetitions &gt; 0 THEN 1 ELSE 0 END) AS learnedCardCount,
-              SUM(CASE WHEN srs.review_due_at &lt;= #{now} AND srs.repetitions > 0 THEN 1 ELSE 0 END) AS reviewCardCount
-          FROM
-              user_card_in_course ucc
-          INNER JOIN
-              memory_card_deck deck ON ucc.deck_id = deck.id
-          LEFT JOIN
-              user_card_srs srs ON ucc.user_id = srs.user_id AND ucc.card_id = srs.card_id
-          WHERE
-              ucc.user_id = #{userId}
-              AND ucc.course_id = #{courseId}
-              AND deck.state = 1
-          </script>
-          """)
+    @Select({"<script>",
+          "SELECT",
+          "    ucc.course_id AS courseId,",
+          "    COUNT(ucc.card_id) AS cardCount,",
+          "    SUM(CASE WHEN srs.review_due_at &lt;= #{now} THEN 1 ELSE 0 END) AS dueCardCount,",
+          "    SUM(CASE WHEN srs.repetitions = 0 THEN 1 ELSE 0 END) AS newCardCount,",
+          "    SUM(CASE WHEN srs.repetitions &gt; 0 THEN 1 ELSE 0 END) AS learnedCardCount,",
+          "    SUM(CASE WHEN srs.review_due_at &lt;= #{now} AND srs.repetitions > 0 THEN 1 ELSE 0 END) AS reviewCardCount",
+          "FROM",
+          "    user_card_in_course ucc",
+          "INNER JOIN",
+          "    memory_card_deck deck ON ucc.deck_id = deck.id",
+          "LEFT JOIN",
+          "    user_card_srs srs ON ucc.user_id = srs.user_id AND ucc.card_id = srs.card_id",
+          "WHERE",
+          "    ucc.user_id = #{userId}",
+          "    AND ucc.course_id = #{courseId}",
+          "    AND deck.state = " + APPROVED_VALUE,
+          "</script>"})
     CourseMemoryBankDO getCardStatsForCourses(@Param("userId") Long userId, @Param("courseId") Long courseId, @Param("now") LocalDateTime now);
 
     @Insert("""

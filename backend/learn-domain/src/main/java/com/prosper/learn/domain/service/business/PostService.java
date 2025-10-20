@@ -520,7 +520,6 @@ public class PostService {
     public void deletePost(Long id) {
         PostDO postDO = validateAndGetPost(id);
         postDO.setState(Enums.ContentState.BANNED.value());
-        postDO.setUpdatedAt(Utils.getLocalDateTime());
         postDataService.update(postDO);
     }
 
@@ -535,11 +534,29 @@ public class PostService {
             postDO.setState(Enums.ContentState.APPROVED.value());
             postDataService.update(postDO);
         }
-        if (!approve && postDO.getState() != Enums.ContentState.BANNED.value()) {
-            postDO.setState(Enums.ContentState.BANNED.value());
+        if (!approve && postDO.getState() != Enums.ContentState.REJECTED.value()) {
+            postDO.setState(Enums.ContentState.REJECTED.value());
             postDataService.update(postDO);
         }
         return postConverter.toDTO(postDO);
+    }
+
+    /**
+     * 拒绝帖子（审核不通过）
+     */
+    @Transactional
+    public void rejectPost(Long id) {
+        validatePostId(id);
+        postDataService.reject(id);
+    }
+
+    /**
+     * 封禁帖子（违规封禁）
+     */
+    @Transactional
+    public void banPost(Long id) {
+        validatePostId(id);
+        postDataService.ban(id);
     }
 
     /**

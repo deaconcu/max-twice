@@ -28,9 +28,10 @@ export const UserProgressState = {
 
 // 内容状态常量 (ContentState) - 统一用于 Post、Comment、Node、MemoryCardDeck、MemoryCard
 export const ContentState = {
-  SUBMITTED: 0, // 已提交
-  APPROVED: 1,  // 已批准
-  BANNED: 2     // 已禁止
+  SUBMITTED: 1, // 待审核
+  APPROVED: 2,  // 已批准
+  REJECTED: 3,  // 审核不通过（可重新提交）
+  BANNED: 4     // 违规封禁（一般不可逆）
 } as const
 
 // 对象类型常量 (ObjectType)

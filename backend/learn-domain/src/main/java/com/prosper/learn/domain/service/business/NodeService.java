@@ -10,6 +10,7 @@ import com.prosper.learn.persistence.dataobject.NodeDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -108,5 +109,32 @@ public class NodeService {
 
         NodeDO nodeDO = nodeDataService.getById(nodeId);
         return nodeConverter.toDTO(nodeDO);
+    }
+
+    /**
+     * 审批通过节点
+     */
+    @Transactional
+    public void approve(Long nodeId) {
+        nodeDataService.validateExists(nodeId);
+        nodeDataService.approve(nodeId);
+    }
+
+    /**
+     * 拒绝节点（审核不通过）
+     */
+    @Transactional
+    public void reject(Long nodeId) {
+        nodeDataService.validateExists(nodeId);
+        nodeDataService.reject(nodeId);
+    }
+
+    /**
+     * 封禁节点（违规封禁）
+     */
+    @Transactional
+    public void ban(Long nodeId) {
+        nodeDataService.validateExists(nodeId);
+        nodeDataService.ban(nodeId);
     }
 }

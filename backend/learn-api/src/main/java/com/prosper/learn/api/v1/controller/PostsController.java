@@ -127,7 +127,7 @@ public class PostsController {
                 postState = Enums.ContentState.APPROVED;
                 break;
             case "rejected":
-                postState = Enums.ContentState.BANNED;
+                postState = Enums.ContentState.REJECTED;
                 break;
             default:
                 postState = Enums.ContentState.SUBMITTED;

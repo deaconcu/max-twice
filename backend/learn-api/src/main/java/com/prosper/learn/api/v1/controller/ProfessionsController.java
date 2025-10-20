@@ -153,13 +153,23 @@ public class ProfessionsController {
                         .build();
             }
             case "reject" -> {
-                professionService.reject(id, request.getRejectedReason());
+                professionService.reject(id, request.getReason());
                 yield ApprovalResponseDTO.builder()
                         .success(true)
                         .message("拒绝成功")
                         .objectId(id)
                         .objectType("profession")
                         .action("reject")
+                        .build();
+            }
+            case "ban" -> {
+                professionService.ban(id, request.getReason());
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("封禁成功")
+                        .objectId(id)
+                        .objectType("profession")
+                        .action("ban")
                         .build();
             }
             case "delete" -> {

@@ -43,7 +43,8 @@ public class ProfessionService {
             return null;
         }
 
-        if (professionDO.getState() == ContentState.BANNED.value()) {
+        if (professionDO.getState() == ContentState.REJECTED.value() ||
+            professionDO.getState() == ContentState.BANNED.value()) {
             throw ErrorCode.PROFESSION_BLOCKED.exception();
         }
 
@@ -86,7 +87,7 @@ public class ProfessionService {
         professionDO.setSubCategory(request.getSubCategory());
         professionDO.setCreatorId(userId);
         professionDO.setState(ContentState.SUBMITTED.value());
-        professionDO.setRejectedReason("");
+        professionDO.setReason("");
         professionDO.setIcon("");
         professionDataService.insert(professionDO);
         return professionDO.getId();
@@ -100,13 +101,13 @@ public class ProfessionService {
         if (request.getName() == null || request.getName().trim().isEmpty()) {
             throw ErrorCode.INVALID_PARAMETER.exception("职业名称不能为空");
         }
-        
+
         // 验证职业是否存在并获取
         ProfessionDO professionDO = professionDataService.getById(id);
         if (professionDO == null) {
             throw ErrorCode.PROFESSION_NOT_FOUND.exception();
         }
-        
+
         // 更新字段
         professionDO.setName(request.getName());
         professionDO.setDescription(request.getDescription());
@@ -115,8 +116,8 @@ public class ProfessionService {
         professionDO.setMainCategory(request.getMainCategory());
         professionDO.setSubCategory(request.getSubCategory());
         professionDO.setIcon(request.getIcon());
-        professionDO.setRejectedReason(request.getRejectedReason());
-        
+        professionDO.setReason(request.getReason());
+
         professionDataService.update(professionDO);
     }
 
@@ -134,19 +135,35 @@ public class ProfessionService {
         }
     }
 
-    public void reject(long id, String rejectedReason) {
+    public void reject(long id, String reason) {
         ProfessionDTO profession = validateProfessionExists(id);
-        
+
         if (systemProperties.getProfession().isEnableStateValidation()) {
             validateNotAlreadyRejected(profession);
         }
-        
-        String reason = rejectedReason != null ? rejectedReason : DEFAULT_EMPTY_STRING;
-        
+
+        String reasonValue = reason != null ? reason : DEFAULT_EMPTY_STRING;
+
         if (systemProperties.getProfession().isEnableConcurrencyCheck()) {
-            validateConcurrentStateChange(professionDataService.reject(id, reason));
+            validateConcurrentStateChange(professionDataService.reject(id, reasonValue));
         } else {
-            professionDataService.reject(id, reason);
+            professionDataService.reject(id, reasonValue);
+        }
+    }
+
+    public void ban(long id, String reason) {
+        ProfessionDTO profession = validateProfessionExists(id);
+
+        if (systemProperties.getProfession().isEnableStateValidation()) {
+            validateStateForBan(profession);
+        }
+
+        String reasonValue = reason != null ? reason : DEFAULT_EMPTY_STRING;
+
+        if (systemProperties.getProfession().isEnableConcurrencyCheck()) {
+            validateConcurrentStateChange(professionDataService.ban(id, reasonValue));
+        } else {
+            professionDataService.ban(id, reasonValue);
         }
     }
 
@@ -235,8 +252,17 @@ public class ProfessionService {
     }
     
     private void validateNotAlreadyRejected(ProfessionDTO profession) {
-        if (ContentState.BANNED.value() == profession.getState()) {
+        if (ContentState.REJECTED.value() == profession.getState()) {
             throw ErrorCode.PROFESSION_ALREADY_REJECTED.exception();
+        }
+        if (ContentState.BANNED.value() == profession.getState()) {
+            throw ErrorCode.PROFESSION_ALREADY_BANNED.exception();
+        }
+    }
+
+    private void validateStateForBan(ProfessionDTO profession) {
+        if (ContentState.BANNED.value() == profession.getState()) {
+            throw ErrorCode.PROFESSION_ALREADY_BANNED.exception();
         }
     }
     

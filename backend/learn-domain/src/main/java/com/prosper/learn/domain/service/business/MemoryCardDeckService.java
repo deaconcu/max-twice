@@ -553,42 +553,60 @@ public class MemoryCardDeckService {
     public void approveDeck(Long deckId, Long auditorId) {
         // 获取卡片组
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
-        
+
         // 验证状态：只有待审核的卡片组才能通过
         if (deck.getState() != Enums.ContentState.SUBMITTED.value()) {
             throw ErrorCode.INVALID_PARAMETER.exception("只有待审核状态的卡片组才能通过审核");
         }
-        
+
         // 更新状态为正常
         deck.setState(Enums.ContentState.APPROVED.value());
-        //deck.setUpdatedBy(auditorId);
         deck.setUpdatedAt(LocalDateTime.now());
-        
+
         deckDataService.update(deck);
         log.info("Deck {} approved by user {}", deckId, auditorId);
     }
 
     /**
-     * 废弃卡片组（合并原 rejectDeck 和 blockDeck 功能）
+     * 拒绝卡片组（审核不通过）
      */
     @Transactional
-    public void discardDeck(Long deckId, Long auditorId) {
+    public void rejectDeck(Long deckId, Long auditorId) {
         // 获取卡片组
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
 
-        // 验证状态：只有待审核或正常状态的卡片组才能废弃
-        if (deck.getState() != Enums.ContentState.SUBMITTED.value() &&
-            deck.getState() != Enums.ContentState.APPROVED.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只有待审核或正常状态的卡片组才能废弃");
+        // 验证状态：只有待审核的卡片组才能拒绝
+        if (deck.getState() != Enums.ContentState.SUBMITTED.value()) {
+            throw ErrorCode.INVALID_PARAMETER.exception("只有待审核状态的卡片组才能拒绝");
         }
 
-        // 更新状态为屏蔽
-        deck.setState(Enums.ContentState.BANNED.value());
-        //deck.setUpdatedBy(auditorId);
+        // 更新状态为审核不通过
+        deck.setState(Enums.ContentState.REJECTED.value());
         deck.setUpdatedAt(LocalDateTime.now());
 
         deckDataService.update(deck);
-        log.info("Deck {} discarded by user {}", deckId, auditorId);
+        log.info("Deck {} rejected by user {}", deckId, auditorId);
+    }
+
+    /**
+     * 封禁卡片组（违规封禁）
+     */
+    @Transactional
+    public void banDeck(Long deckId, Long auditorId) {
+        // 获取卡片组
+        MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
+
+        // 验证状态：只有正常状态的卡片组才能封禁
+        if (deck.getState() != Enums.ContentState.APPROVED.value()) {
+            throw ErrorCode.INVALID_PARAMETER.exception("只有正常状态的卡片组才能封禁");
+        }
+
+        // 更新状态为封禁
+        deck.setState(Enums.ContentState.BANNED.value());
+        deck.setUpdatedAt(LocalDateTime.now());
+
+        deckDataService.update(deck);
+        log.info("Deck {} banned by user {}", deckId, auditorId);
     }
 
     /**

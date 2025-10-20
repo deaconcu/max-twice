@@ -5,6 +5,8 @@ import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
+import static com.prosper.learn.common.Enums.ContentState.*;
+
 public interface RoadmapMapper {
 
     @Select("SELECT * FROM roadmap WHERE id = #{id}")
@@ -52,7 +54,7 @@ public interface RoadmapMapper {
 
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     @Insert("INSERT INTO roadmap(content, content_hash, description, profession_id, creator_id, state) " +
-            "VALUES (#{content}, #{contentHash}, #{description}, #{professionId}, #{creatorId}, 0)")
+            "VALUES (#{content}, #{contentHash}, #{description}, #{professionId}, #{creatorId}, " + SUBMITTED_VALUE + ")")
     int insert(RoadmapDO roadmapDO);
 
     @Update("UPDATE roadmap SET content = #{content}, content_hash = #{contentHash}, description = #{description}, " +
@@ -72,7 +74,7 @@ public interface RoadmapMapper {
     List<RoadmapDO> getListByScore(int limit);
 
     @Select({"<script>",
-             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = 1",
+             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + APPROVED_VALUE,
              "<if test='excludeIds != null and excludeIds.size() > 0'>",
              " AND id NOT IN ",
              "<foreach item='id' collection='excludeIds' open='(' separator=',' close=')'>#{id}</foreach>",
@@ -83,7 +85,7 @@ public interface RoadmapMapper {
             long professionId, int offset, int limit, List<Long> excludeIds);
 
     @Select({"<script>",
-             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = 1 AND ",
+             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + APPROVED_VALUE + " AND ",
              "(score &lt; #{lastScore} OR (score = #{lastScore} AND id &lt; #{lastId}))",
              "<if test='excludeIds != null and excludeIds.size() > 0'>",
              " AND id NOT IN ",

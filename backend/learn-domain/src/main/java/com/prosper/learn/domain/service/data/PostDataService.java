@@ -196,4 +196,20 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
     public List<PostDO> getListByLastId(long nodeId, long lastId, int limit, Byte state) {
         return postMapper.getListByLastId(nodeId, lastId, limit, state);
     }
+
+    /**
+     * 拒绝帖子（审核不通过）
+     */
+    @CacheEvict(value = "posts", key = "#id")
+    public int reject(long id) {
+        return postMapper.updateState(id, Enums.ContentState.REJECTED.value());
+    }
+
+    /**
+     * 封禁帖子（违规封禁）
+     */
+    @CacheEvict(value = "posts", key = "#id")
+    public int ban(long id) {
+        return postMapper.updateState(id, Enums.ContentState.BANNED.value());
+    }
 }

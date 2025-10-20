@@ -6,6 +6,8 @@ import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
+import static com.prosper.learn.common.Enums.ContentState.*;
+
 public interface CourseMapper {
 
     @Select("SELECT * FROM course WHERE id = #{id}")
@@ -37,9 +39,8 @@ public interface CourseMapper {
     List<CourseDO> listByStateAndLastId(ContentState state, Long lastId);
 
     // 新增：根据主分类和子分类获取已批准的课程列表
-    // 修正状态值：使用数字1代替字符串'APPROVED'，对应CommonState.APPROVED.value()
     @Select("SELECT * FROM course WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} " +
-            "AND state = 1 AND parent_course_id = 0 ORDER BY id ASC LIMIT 20")
+            "AND state = " + APPROVED_VALUE + " AND parent_course_id = 0 ORDER BY id ASC LIMIT 20")
     List<CourseDO> listRootByCategory(int mainCategory, int subCategory);
 
     @Insert("INSERT INTO course(name, description, creator_id, parent_course_id, state, root_node_id, main_category, sub_category) " +
@@ -52,19 +53,19 @@ public interface CourseMapper {
     void update(CourseDO course);
 
     // 新增：课程状态操作方法
-    // 修正状态值：使用数字1代替字符串'APPROVED'，对应CommonState.APPROVED.value()
-    @Update("UPDATE course SET state = 1, rejected_reason = '' WHERE id = #{id}")
+    @Update("UPDATE course SET state = " + APPROVED_VALUE + ", reason = '' WHERE id = #{id}")
     int approve(long id);
 
-    // 修正状态值：使用数字2代替字符串'REJECTED'，对应CommonState.REJECTED.value()
-    @Update("UPDATE course SET state = 2, rejected_reason = #{rejectedReason} WHERE id = #{id}")
-    int reject(long id, String rejectedReason);
+    @Update("UPDATE course SET state = " + REJECTED_VALUE + ", reason = #{reason} WHERE id = #{id}")
+    int reject(long id, String reason);
+
+    @Update("UPDATE course SET state = " + BANNED_VALUE + ", reason = #{reason} WHERE id = #{id}")
+    int ban(long id, String reason);
 
     @Delete("DELETE FROM course WHERE id = #{id}")
     int delete(long id);
     
     // 平台统计相关方法
-    // 修正状态值：使用数字1代替字符串'APPROVED'，对应CommonState.APPROVED.value()
-    @Select("SELECT COUNT(*) FROM course WHERE state = 1")
+    @Select("SELECT COUNT(*) FROM course WHERE state = " + APPROVED_VALUE)
     Long countActiveCourses();
 }

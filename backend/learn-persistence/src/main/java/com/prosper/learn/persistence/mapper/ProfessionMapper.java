@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.prosper.learn.common.Enums.ContentState.*;
+
 public interface ProfessionMapper {
 
     @Select("SELECT * FROM profession WHERE id = #{id}")
@@ -22,13 +24,13 @@ public interface ProfessionMapper {
             "</script>")
     List<ProfessionDO> listByStateAndLastId(byte state, Long lastId);
 
-    @Select("SELECT * FROM profession WHERE main_category = #{mainCategory} AND state = 1 AND id > #{lastId} ORDER BY id ASC LIMIT 20")
+    @Select("SELECT * FROM profession WHERE main_category = #{mainCategory} AND state = " + APPROVED_VALUE + " AND id > #{lastId} ORDER BY id ASC LIMIT 20")
     List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, long lastId);
 
-    @Select("SELECT * FROM profession WHERE sub_category = #{subCategory} AND state = 1 AND id > #{lastId} ORDER BY id ASC LIMIT 20")
+    @Select("SELECT * FROM profession WHERE sub_category = #{subCategory} AND state = " + APPROVED_VALUE + " AND id > #{lastId} ORDER BY id ASC LIMIT 20")
     List<ProfessionDO> listBySubCategoryAndLastId(int subCategory, long lastId);
 
-    @Select("SELECT * FROM profession WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} AND state = 1 AND id > #{lastId} ORDER BY id ASC LIMIT 20")
+    @Select("SELECT * FROM profession WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} AND state = " + APPROVED_VALUE + " AND id > #{lastId} ORDER BY id ASC LIMIT 20")
     List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, long lastId);
 
     @Select("SELECT * FROM profession WHERE INSTR(name, #{name}) > 0 limit 20")
@@ -65,8 +67,8 @@ public interface ProfessionMapper {
 
     @Delete("DELETE FROM profession WHERE id = #{id}")
     void delete(long id);
-    
+
     // 平台统计相关方法
-    @Select("SELECT COUNT(*) FROM profession WHERE state = 1")
+    @Select("SELECT COUNT(*) FROM profession WHERE state = " + APPROVED_VALUE)
     Long countActiveProfessions();
 }

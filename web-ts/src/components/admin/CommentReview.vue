@@ -41,7 +41,7 @@
     {
       key: 'rejected',
       label: t('admin.rejected'),
-      state: ContentState.BANNED,
+      state: ContentState.REJECTED,
       icon: 'mdi-close-circle',
       color: 'red'
     }
@@ -209,7 +209,7 @@
                 {{ t('admin.approved') }}
               </v-chip>
               <v-chip
-                v-if="comment.state === ContentState.BANNED"
+                v-if="comment.state === ContentState.REJECTED"
                 variant="flat"
                 color="red-lighten-4"
                 rounded="lg"
@@ -257,7 +257,7 @@
             </div>
 
             <!-- 已拒绝状态下显示通过按钮 -->
-            <div v-if="comment.state === ContentState.BANNED" class="d-flex flex-column ga-2">
+            <div v-if="comment.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
                 color="green-lighten-4"

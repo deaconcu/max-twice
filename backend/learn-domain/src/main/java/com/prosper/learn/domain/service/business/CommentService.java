@@ -374,7 +374,7 @@ public class CommentService {
                 stateValue = Enums.ContentState.APPROVED.value();
                 break;
             case "rejected":
-                stateValue = Enums.ContentState.BANNED.value();
+                stateValue = Enums.ContentState.REJECTED.value();
                 break;
             default:
                 throw ErrorCode.INVALID_PARAMETER.exception("无效的状态参数: " + state);
@@ -390,7 +390,7 @@ public class CommentService {
     }
 
     /**
-     * 审核评论，批准或删除评论
+     * 审核评论，批准或拒绝评论
      * 仅管理员调用
      */
     @Transactional
@@ -404,22 +404,56 @@ public class CommentService {
             commentDataService.update(commentDO);
 
             // 通过审核，评论数+1
-            if (oldState == Enums.ContentState.SUBMITTED.value() || oldState == Enums.ContentState.BANNED.value()) {
+            if (oldState == Enums.ContentState.SUBMITTED.value() || oldState == Enums.ContentState.REJECTED.value()) {
                 updateObjectCommentCount(commentDO, 1);
             }
         }
 
-        if (!approve && oldState != Enums.ContentState.BANNED.value()) {
-            commentDO.setState(Enums.ContentState.BANNED.value());
+        if (!approve && oldState != Enums.ContentState.REJECTED.value()) {
+            commentDO.setState(Enums.ContentState.REJECTED.value());
             commentDataService.update(commentDO);
 
-            // 屏蔽评论，评论数-1
+            // 拒绝评论，评论数-1
             if (oldState == Enums.ContentState.APPROVED.value()) {
                 updateObjectCommentCount(commentDO, -1);
             }
         }
 
         return toDTO(commentDO);
+    }
+
+    /**
+     * 拒绝评论（审核不通过）
+     */
+    @Transactional
+    public void rejectComment(Long id) {
+        validateCommentId(id);
+        CommentDO commentDO = validateAndGetComment(id);
+        int oldState = commentDO.getState();
+
+        commentDataService.reject(id);
+
+        // 拒绝评论，如果之前是已批准状态，评论数-1
+        if (oldState == Enums.ContentState.APPROVED.value()) {
+            updateObjectCommentCount(commentDO, -1);
+        }
+    }
+
+    /**
+     * 封禁评论（违规封禁）
+     */
+    @Transactional
+    public void banComment(Long id) {
+        validateCommentId(id);
+        CommentDO commentDO = validateAndGetComment(id);
+        int oldState = commentDO.getState();
+
+        commentDataService.ban(id);
+
+        // 封禁评论，如果之前是已批准状态，评论数-1
+        if (oldState == Enums.ContentState.APPROVED.value()) {
+            updateObjectCommentCount(commentDO, -1);
+        }
     }
 
     /**
