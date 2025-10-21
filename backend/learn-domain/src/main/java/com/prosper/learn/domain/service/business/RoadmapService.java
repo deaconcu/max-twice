@@ -743,7 +743,7 @@ public class RoadmapService {
         }
 
         roadmapDataService.approve(id);
-        roadmap.setState(ContentState.APPROVED.value());
+        roadmap.setState(ContentState.PUBLISHED.value());
         return toDTO(roadmap);
     }
 
@@ -785,7 +785,7 @@ public class RoadmapService {
         }
 
         roadmap.setDescription("");
-        roadmap.setState(ContentState.APPROVED.value());
+        roadmap.setState(ContentState.PUBLISHED.value());
         roadmapDataService.update(roadmap);
         return toDTO(roadmap);
     }

@@ -2,7 +2,7 @@
 import { inject, onMounted, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { postServiceV1 } from '@/services/api/v1/apiServiceV1'
-import { ContentState, PostType } from '@/types/enums'
+import { ContentState, PostType, ApprovalAction } from '@/types/enums'
 import type { Post } from '@/types/post'
 
 const { t } = useI18n()
@@ -31,24 +31,31 @@ interface TabConfig {
 const tabs: TabConfig[] = [
   {
     key: 'pending',
-    label: t('admin.pending'),
+    label: '待审核',
     state: ContentState.SUBMITTED,
     icon: 'mdi-clock-outline',
     color: 'orange'
   },
   {
     key: 'approved',
-    label: t('admin.approved'),
+    label: '已批准',
     state: ContentState.APPROVED,
     icon: 'mdi-check-circle',
     color: 'green'
   },
   {
     key: 'rejected',
-    label: t('admin.rejected'),
+    label: '已拒绝',
     state: ContentState.REJECTED,
     icon: 'mdi-close-circle',
     color: 'red'
+  },
+  {
+    key: 'banned',
+    label: '已屏蔽',
+    state: ContentState.BANNED,
+    icon: 'mdi-cancel',
+    color: 'grey'
   }
 ]
 
@@ -166,7 +173,7 @@ const getPostSensorList = async (): Promise<void> => {
 
 const approvePost = async (post: Post, approve: boolean): Promise<void> => {
   try {
-    const response = await postServiceV1.approvePost(post.id, approve)
+    const response = await postServiceV1.approvePost(post.id, approve ? ApprovalAction.APPROVE : ApprovalAction.REJECT)
 
     if (response.code === 401) {
       console.log('not login')
@@ -185,6 +192,72 @@ const approvePost = async (post: Post, approve: boolean): Promise<void> => {
     }
   } catch (error) {
     console.error('Error verifying login status:', error)
+  }
+}
+
+// 拒绝文章
+const rejectPost = async (post: Post): Promise<void> => {
+  try {
+    const response = await postServiceV1.approvePost(post.id, ApprovalAction.REJECT)
+
+    if (response.code === 401) {
+      console.log('not login')
+    } else if (response.code === 200) {
+      // 更新本地状态
+      const index = allPostList.value.findIndex(p => p.id === post.id)
+      if (index !== -1) {
+        allPostList.value[index].state = ContentState.REJECTED
+      }
+
+      showSnackbar?.('操作成功')
+    }
+  } catch (error) {
+    console.error('Error rejecting post:', error)
+    showSnackbar?.('操作失败', 'error')
+  }
+}
+
+// 屏蔽文章
+const banPost = async (post: Post): Promise<void> => {
+  try {
+    const response = await postServiceV1.approvePost(post.id, ApprovalAction.BAN)
+
+    if (response.code === 401) {
+      console.log('not login')
+    } else if (response.code === 200) {
+      // 更新本地状态
+      const index = allPostList.value.findIndex(p => p.id === post.id)
+      if (index !== -1) {
+        allPostList.value[index].state = ContentState.BANNED
+      }
+
+      showSnackbar?.('已屏蔽')
+    }
+  } catch (error) {
+    console.error('Error banning post:', error)
+    showSnackbar?.('操作失败', 'error')
+  }
+}
+
+// 取消屏蔽文章
+const unbanPost = async (post: Post): Promise<void> => {
+  try {
+    const response = await postServiceV1.approvePost(post.id, true)
+
+    if (response.code === 401) {
+      console.log('not login')
+    } else if (response.code === 200) {
+      // 更新本地状态
+      const index = allPostList.value.findIndex(p => p.id === post.id)
+      if (index !== -1) {
+        allPostList.value[index].state = ContentState.APPROVED
+      }
+
+      showSnackbar?.('已取消屏蔽')
+    }
+  } catch (error) {
+    console.error('Error unbanning post:', error)
+    showSnackbar?.('操作失败', 'error')
   }
 }
 
@@ -246,11 +319,11 @@ onMounted(() => {
     </div>
 
     <!-- 筛选区域 -->
-    <v-card v-if="!isFilterMode" flat class="border rounded-lg pa-4 mb-6">
-      <div class="text-subtitle-2 font-weight-bold text-grey-darken-3 mb-3">
-        <v-icon icon="mdi-filter-outline" size="18" class="mr-2"></v-icon>
+    <v-card v-if="!isFilterMode" flat class="pa-4 bg-grey-lighten-5 rounded-lg mb-6">
+      <h4 class="text-subtitle-2 text-grey-darken-2 mb-3 d-flex align-center">
+        <v-icon icon="mdi-filter-outline" size="16" class="mr-2"></v-icon>
         高级筛选
-      </div>
+      </h4>
       <v-row dense>
         <v-col cols="12" sm="5">
           <v-text-field
@@ -259,6 +332,8 @@ onMounted(() => {
             label="节点 ID"
             variant="outlined"
             density="compact"
+            rounded="lg"
+            bg-color="white"
             hide-details
             clearable
           ></v-text-field>
@@ -270,6 +345,8 @@ onMounted(() => {
             label="用户 ID"
             variant="outlined"
             density="compact"
+            rounded="lg"
+            bg-color="white"
             hide-details
             clearable
           ></v-text-field>
@@ -278,6 +355,7 @@ onMounted(() => {
           <v-btn
             variant="flat"
             color="primary"
+            rounded="lg"
             block
             @click="applyFilter"
           >
@@ -393,7 +471,18 @@ onMounted(() => {
                 <v-icon icon="mdi-close-circle" size="14" class="mr-1"></v-icon>
                 {{ t('admin.rejected') }}
               </v-chip>
+              <v-chip
+                v-if="post.state == ContentState.BANNED"
+                variant="flat"
+                color="grey-lighten-2"
+                rounded="lg"
+                size="small"
+              >
+                <v-icon icon="mdi-cancel" size="14" class="mr-1"></v-icon>
+                {{ t('admin.banned') }}
+              </v-chip>
             </div>
+            <!-- 待审核状态：批准、拒绝、屏蔽 -->
             <div v-if="post.state == ContentState.SUBMITTED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
@@ -403,35 +492,55 @@ onMounted(() => {
                 @click="approvePost(post, true)"
               >
                 <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
-                {{ t('admin.approve') }}
+                批准
               </v-btn>
               <v-btn
                 variant="flat"
                 color="red-lighten-4"
                 rounded="lg"
                 size="small"
-                @click="approvePost(post, false)"
+                @click="rejectPost(post)"
               >
                 <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
-                {{ t('admin.reject') }}
+                拒绝
               </v-btn>
-            </div>
-
-            <!-- 已通过状态下显示屏蔽按钮 -->
-            <div v-if="post.state == ContentState.APPROVED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
-                color="red-lighten-4"
+                color="grey-lighten-2"
                 rounded="lg"
                 size="small"
-                @click="approvePost(post, false)"
+                @click="banPost(post)"
               >
-                <v-icon icon="mdi-block-helper" color="red-darken-2" size="16" class="mr-1"></v-icon>
+                <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
                 屏蔽
               </v-btn>
             </div>
 
-            <!-- 已拒绝状态下显示通过按钮 -->
+            <!-- 已批准状态：撤销通过、屏蔽 -->
+            <div v-if="post.state == ContentState.APPROVED" class="d-flex flex-column ga-2">
+              <v-btn
+                variant="flat"
+                color="orange-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="rejectPost(post)"
+              >
+                <v-icon icon="mdi-undo" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                撤销通过
+              </v-btn>
+              <v-btn
+                variant="flat"
+                color="grey-lighten-2"
+                rounded="lg"
+                size="small"
+                @click="banPost(post)"
+              >
+                <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                屏蔽
+              </v-btn>
+            </div>
+
+            <!-- 已拒绝状态：通过 -->
             <div v-if="post.state == ContentState.REJECTED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
@@ -441,7 +550,31 @@ onMounted(() => {
                 @click="approvePost(post, true)"
               >
                 <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
-                {{ t('admin.approve') }}
+                通过
+              </v-btn>
+            </div>
+
+            <!-- 已屏蔽状态：取消屏蔽、降级为拒绝 -->
+            <div v-if="post.state == ContentState.BANNED" class="d-flex flex-column ga-2">
+              <v-btn
+                variant="flat"
+                color="blue-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="unbanPost(post)"
+              >
+                <v-icon icon="mdi-lock-open" color="blue-darken-2" size="16" class="mr-1"></v-icon>
+                取消屏蔽
+              </v-btn>
+              <v-btn
+                variant="flat"
+                color="orange-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="rejectPost(post)"
+              >
+                <v-icon icon="mdi-arrow-down" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                降级为拒绝
               </v-btn>
             </div>
           </div>

@@ -20,7 +20,7 @@ public class CourseFields {
      * V4 字段 - CourseDTOV4 的所有字段
      */
     public static final String[] V4 = {"id", "name", "description", "creator", "rootNode", "parent", 
-                                        "state", "mainCategory", "subCategory", "rejectedReason", 
+                                        "state", "mainCategory", "subCategory", "reason",
                                         "createdAt", "updatedAt", "learnerCount", "subscriptionCount", 
                                         "subscribed", "progress"};
     
@@ -28,7 +28,7 @@ public class CourseFields {
      * 完整字段 - CourseDTO 的所有字段
      */
     public static final String[] FULL = {"id", "name", "description", "creator", "rootNode", "parentId", 
-                                         "state", "mainCategory", "subCategory", "rejectedReason", 
+                                         "state", "mainCategory", "subCategory", "reason",
                                          "createdAt", "updatedAt"};
     
     // 私有构造函数，防止实例化

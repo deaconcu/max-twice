@@ -143,7 +143,7 @@ public class ProfessionDataService extends AbstractDataService<ProfessionDO, Pro
      * 审批通过职业
      */
     public int approve(long id) {
-        return professionMapper.updateState(id, Enums.ContentState.APPROVED.value(), "");
+        return professionMapper.updateState(id, Enums.ContentState.PUBLISHED.value(), "");
     }
 
     /**

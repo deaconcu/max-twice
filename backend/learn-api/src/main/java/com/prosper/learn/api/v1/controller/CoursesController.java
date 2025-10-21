@@ -92,8 +92,8 @@ public class CoursesController {
             List<CourseDTO> courseList = courseService.getListByCategory(mainCategory, subCategory);
             return ApiResponse.success(courseList);
         } else if (parentId != null) {
-            if (courseState != null && courseState == ContentState.APPROVED) {
-                List<CourseDTO> courseList = courseService.getListByParent(parentId, ContentState.APPROVED);
+            if (courseState != null && courseState == ContentState.PUBLISHED) {
+                List<CourseDTO> courseList = courseService.getListByParent(parentId, ContentState.PUBLISHED);
                 return ApiResponse.success(courseList);
             } else {
                 List<CourseDTO> courseList = courseService.getListByParent(parentId, null);

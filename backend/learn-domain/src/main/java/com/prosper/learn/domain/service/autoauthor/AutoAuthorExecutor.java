@@ -110,8 +110,8 @@ public class AutoAuthorExecutor {
         if (!existingDecks.isEmpty()) {
             // 废弃所有已存在的AI deck
             existingDecks.forEach(deck -> {
-                if (deck.getState() == Enums.ContentState.SUBMITTED.value() || deck.getState() == Enums.ContentState.APPROVED.value()) {
-                    memoryCardDeckService.discardDeck(deck.getId(), aiUserId);
+                if (deck.getState() == Enums.ContentState.SUBMITTED.value() || deck.getState() == Enums.ContentState.PUBLISHED.value()) {
+                    memoryCardDeckService.banDeck(deck.getId(), aiUserId);
                     log.info("Discarded existing AI deck {} for post {}", deck.getId(), postId);
                 }
             });

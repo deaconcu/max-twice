@@ -32,7 +32,7 @@ public class NodeDO {
         node.setDescription("");
         node.setCourseId(courseId);
         node.setCreatorId(creator);
-        node.setState(Enums.ContentState.APPROVED.value());
+        node.setState(Enums.ContentState.PUBLISHED.value());
         return node;
     }
 }

@@ -23,7 +23,7 @@ public class CourseDTOV1 {
 
     private Integer subCategory; // 新增子分类字段
 
-    private String rejectedReason; // 拒绝原因，默认为空字符串
+    private String reason; // 拒绝原因，默认为空字符串
 
     private String createdAt;
 

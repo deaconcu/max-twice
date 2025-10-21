@@ -223,12 +223,12 @@ public class MemoryCardDeckController {
      * 废弃卡片组（审核拒绝或屏蔽）
      */
     @PostMapping("/decks/{deckId}/discard")
-    public ApiResponse<Void> discardDeck(
+    public ApiResponse<Void> banDeck(
             @PathVariable @NotNull(message = "卡片组ID不能为空")
             @Positive(message = "卡片组ID必须大于0")
             Long deckId) {
         long userId = StpUtil.getLoginIdAsLong();
-        deckService.discardDeck(deckId, userId);
+        deckService.banDeck(deckId, userId);
         return ApiResponse.success();
     }
 

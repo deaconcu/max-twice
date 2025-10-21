@@ -33,11 +33,14 @@ public class ProfessionService {
     private static final String DEFAULT_EMPTY_STRING = "";
 
     // ========== 公共方法 ==========
-    
 
-    
+    /**
+     * 返回正常状态的职业信息
+     * 职业被拒绝或屏蔽时抛出异常
+     * @param id
+     * @return
+     */
     public ProfessionDTO getById(long id) {
-        validateProfessionId(id);
         ProfessionDO professionDO = professionDataService.getById(id);
         if (professionDO == null) {
             return null;
@@ -47,7 +50,6 @@ public class ProfessionService {
             professionDO.getState() == ContentState.BANNED.value()) {
             throw ErrorCode.PROFESSION_BLOCKED.exception();
         }
-
         return toDTO(professionDO);
     }
 
@@ -122,12 +124,15 @@ public class ProfessionService {
     }
 
     public void approve(long id) {
-        ProfessionDTO profession = validateProfessionExists(id);
-        
+        ProfessionDO profession = professionDataService.validateAndGet(id);
+
+        // 状态验证:只有已批准的职业不能重复批准,已拒绝和已屏蔽的可以重新批准
         if (systemProperties.getProfession().isEnableStateValidation()) {
-            validateNotAlreadyApproved(profession);
+            if (ContentState.PUBLISHED.value() == profession.getState()) {
+                throw ErrorCode.ALREADY_APPROVED.exception();
+            }
         }
-        
+
         if (systemProperties.getProfession().isEnableConcurrencyCheck()) {
             validateConcurrentStateChange(professionDataService.approve(id));
         } else {
@@ -136,10 +141,13 @@ public class ProfessionService {
     }
 
     public void reject(long id, String reason) {
-        ProfessionDTO profession = validateProfessionExists(id);
+        ProfessionDO profession = professionDataService.validateAndGet(id);
 
+        // 状态验证:已拒绝和已屏蔽的不能重复拒绝
         if (systemProperties.getProfession().isEnableStateValidation()) {
-            validateNotAlreadyRejected(profession);
+            if (ContentState.REJECTED.value() == profession.getState()) {
+                throw ErrorCode.ALREADY_REJECTED.exception();
+            }
         }
 
         String reasonValue = reason != null ? reason : DEFAULT_EMPTY_STRING;
@@ -152,10 +160,13 @@ public class ProfessionService {
     }
 
     public void ban(long id, String reason) {
-        ProfessionDTO profession = validateProfessionExists(id);
+        ProfessionDO profession = professionDataService.validateAndGet(id);
 
+        // 状态验证:已屏蔽的不能重复屏蔽
         if (systemProperties.getProfession().isEnableStateValidation()) {
-            validateStateForBan(profession);
+            if (ContentState.BANNED.value() == profession.getState()) {
+                throw ErrorCode.ALREADY_BANNED.exception();
+            }
         }
 
         String reasonValue = reason != null ? reason : DEFAULT_EMPTY_STRING;
@@ -167,9 +178,9 @@ public class ProfessionService {
         }
     }
 
+    // TODO
     public void delete(long id) {
-        validateProfessionId(id);
-        professionDataService.delete(id);
+        //professionDataService.delete(id);
     }
 
     public List<ProfessionDTO> getHotProfessions(int limit) {
@@ -186,7 +197,7 @@ public class ProfessionService {
 
             List<ProfessionDTO> result = new ArrayList<>();
             for (ProfessionDO professionDO : professionDOList) {
-                if (professionDO.getState() != ContentState.APPROVED.value()) {
+                if (professionDO.getState() != ContentState.PUBLISHED.value()) {
                     continue;
                 }
 
@@ -221,51 +232,15 @@ public class ProfessionService {
     public List<ProfessionDTO> toDTO(List<ProfessionDO> professionDOList) {
         return professionConverter.toDTO(professionDOList);
     }
-    
+
     // ========== 私有辅助方法 ==========
-    
-    private void validateProfessionId(long id) {
-        if (id <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-    }
-    
+
     private void validatePageNumber(int page) {
         if (page <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }
     }
-    
-    private ProfessionDTO validateProfessionExists(long id) {
-        validateProfessionId(id);
-        ProfessionDTO profession = getById(id);
-        if (profession == null) {
-            throw ErrorCode.PROFESSION_NOT_FOUND.exception();
-        }
-        return profession;
-    }
-    
-    private void validateNotAlreadyApproved(ProfessionDTO profession) {
-        if (ContentState.APPROVED.value() == profession.getState()) {
-            throw ErrorCode.PROFESSION_ALREADY_APPROVED.exception();
-        }
-    }
-    
-    private void validateNotAlreadyRejected(ProfessionDTO profession) {
-        if (ContentState.REJECTED.value() == profession.getState()) {
-            throw ErrorCode.PROFESSION_ALREADY_REJECTED.exception();
-        }
-        if (ContentState.BANNED.value() == profession.getState()) {
-            throw ErrorCode.PROFESSION_ALREADY_BANNED.exception();
-        }
-    }
 
-    private void validateStateForBan(ProfessionDTO profession) {
-        if (ContentState.BANNED.value() == profession.getState()) {
-            throw ErrorCode.PROFESSION_ALREADY_BANNED.exception();
-        }
-    }
-    
     private void validateConcurrentStateChange(int rowsAffected) {
         if (rowsAffected == 0) {
             throw ErrorCode.PROFESSION_STATE_CONFLICT.exception();

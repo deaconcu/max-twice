@@ -29,7 +29,7 @@ export const UserProgressState = {
 // 内容状态常量 (ContentState) - 统一用于 Post、Comment、Node、MemoryCardDeck、MemoryCard
 export const ContentState = {
   SUBMITTED: 1, // 待审核
-  APPROVED: 2,  // 已批准
+  PUBLISHED: 2,  // 已批准
   REJECTED: 3,  // 审核不通过（可重新提交）
   BANNED: 4     // 违规封禁（一般不可逆）
 } as const
@@ -64,6 +64,13 @@ export const Bool = {
   TRUE: 1,  // 真
   FALSE: 0  // 假
 } as const
+
+// 审核操作枚举 (ApprovalAction)
+export enum ApprovalAction {
+  APPROVE = 'approve',  // 批准
+  REJECT = 'reject',    // 拒绝
+  BAN = 'ban'           // 封禁
+}
 
 // 类型导出
 export type VoteType = typeof VoteType[keyof typeof VoteType]

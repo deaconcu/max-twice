@@ -29,6 +29,8 @@ public class PostDO {
 
     private Byte state;
 
+    private String reason;  // 拒绝/封禁原因
+
     private Double score;  // 计算出的排序分数
 
     private LocalDateTime scoreCalculatedAt;  // 分数计算时间

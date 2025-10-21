@@ -513,10 +513,12 @@
 </template>
 
 <script setup>
-  import { onMounted, onUnmounted, ref, watch } from 'vue'
+  import { inject, onMounted, onUnmounted, ref, watch } from 'vue'
   import { professionServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { PROFESSION_STATE } from '@/constants/statusConstants'
   import CategorySelector from '../common/CategorySelector.vue'
+
+  const showSnackbar = inject('showSnackbar')
 
   // 响应式数据
   const professionList = ref([])
@@ -744,11 +746,12 @@
 
         return true
       } else {
-        console.error('操作失败:', response.message)
+        showSnackbar(`操作失败: ${response.message || '未知错误'}`)
         return false
       }
     } catch (error) {
       console.error('操作错误:', error)
+      showSnackbar('操作失败: 服务器开小差了')
       return false
     }
   }
@@ -760,29 +763,18 @@
     profession.approving = false
 
     if (success) {
-      // 可以添加成功提示
+      showSnackbar('操作成功')
     }
   }
 
   // 恢复申请 - 将已拒绝的职业重新通过
   const restoreProfession = async (profession) => {
-    // 显示确认对话框
-    // TODO
-    /*
-    const confirmed = confirm(
-      `确定要通过职业申请"${profession.name}"吗？\n通过后该申请将变为已通过状态。`
-    ) 
-    if (!confirmed) {
-      return
-    }
-    */
-
     profession.restoring = true
     const success = await operateProfession(profession, 'APPROVE')
     profession.restoring = false
 
     if (success) {
-      // 可以添加成功提示
+      showSnackbar('操作成功')
     }
   }
 
@@ -805,6 +797,7 @@
   // 拒绝申请
   const rejectProfession = async () => {
     if (!rejectReason.value.trim()) {
+      showSnackbar('请输入拒绝原因')
       return
     }
 
@@ -812,6 +805,7 @@
       rejecting.value = true
       const success = await operateProfession(currentProfession.value, 'REJECT', rejectReason.value)
       if (success) {
+        showSnackbar('操作成功')
         closeRejectDialog()
       }
     } finally {
@@ -888,13 +882,14 @@
           }
         }
 
+        showSnackbar('操作成功')
         closeEditDialog()
-        // 可以添加成功提示
       } else {
-        console.error('更新职业信息失败:', response.message)
+        showSnackbar(`操作失败: ${response.message || '未知错误'}`)
       }
     } catch (error) {
       console.error('更新职业信息错误:', error)
+      showSnackbar('操作失败: 服务器开小差了')
     } finally {
       updating.value = false
     }
@@ -927,13 +922,14 @@
           (p) => p.id !== currentProfession.value.id
         )
 
+        showSnackbar('操作成功')
         closeDeleteDialog()
-        // 可以添加成功提示
       } else {
-        console.error('删除职业申请失败:', response.message)
+        showSnackbar(`操作失败: ${response.message || '未知错误'}`)
       }
     } catch (error) {
       console.error('删除职业申请错误:', error)
+      showSnackbar('操作失败: 服务器开小差了')
     } finally {
       deleting.value = false
     }

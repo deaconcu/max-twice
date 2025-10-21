@@ -2,22 +2,107 @@
 import { inject, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { nodeServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { ContentState } from '@/types/enums'
 import type { Node } from '@/types/node'
 
 const { t } = useI18n()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
+// 当前选中的tab
+const currentTab = ref<string>('pending')
+
+// 标签配置
+interface TabConfig {
+  key: string
+  label: string
+  state: ContentState
+  icon: string
+  color: string
+}
+
+const tabs: TabConfig[] = [
+  {
+    key: 'pending',
+    label: '待审核',
+    state: ContentState.SUBMITTED,
+    icon: 'mdi-clock-outline',
+    color: 'orange'
+  },
+  {
+    key: 'approved',
+    label: '已通过',
+    state: ContentState.PUBLISHED,
+    icon: 'mdi-check-circle',
+    color: 'green'
+  },
+  {
+    key: 'rejected',
+    label: '已拒绝',
+    state: ContentState.REJECTED,
+    icon: 'mdi-close-circle',
+    color: 'red'
+  },
+  {
+    key: 'banned',
+    label: '已封禁',
+    state: ContentState.BANNED,
+    icon: 'mdi-cancel',
+    color: 'grey'
+  }
+]
+
 // 筛选条件
 const filterNodeId = ref<number | undefined>(undefined)
 const filterCourseId = ref<number | undefined>(undefined)
 const filterCreatorId = ref<number | undefined>(undefined)
+const isFilterMode = ref<boolean>(false)
 
 // 节点列表
 const nodeList = ref<Node[]>([])
 const loading = ref<boolean>(false)
 const hasMore = ref<boolean>(true)
 
-// 搜索节点
+// 根据当前tab获取节点列表
+const getNodesByTab = async (tabKey: string, isLoadMore: boolean = false): Promise<void> => {
+  if (loading.value) return
+
+  loading.value = true
+
+  try {
+    const lastId = isLoadMore && nodeList.value.length > 0
+      ? nodeList.value[nodeList.value.length - 1].id
+      : undefined
+
+    const currentTabConfig = tabs.find(tab => tab.key === tabKey)
+    if (!currentTabConfig) return
+
+    const response = await nodeServiceV1.getNodesByState(
+      currentTabConfig.state,
+      lastId
+    )
+
+    if (response.code === 200) {
+      const newNodes = response.data as Node[]
+
+      if (isLoadMore) {
+        nodeList.value.push(...newNodes)
+      } else {
+        nodeList.value = newNodes
+      }
+
+      hasMore.value = newNodes.length === 20
+    } else {
+      showSnackbar && showSnackbar(response.message || 'error.loadFailed', 'error')
+    }
+  } catch (error) {
+    console.error('Error loading nodes:', error)
+    showSnackbar?.('加载失败', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 搜索节点（筛选模式）
 const searchNodes = async (isLoadMore: boolean = false) => {
   if (!isLoadMore && !filterNodeId.value && !filterCourseId.value && !filterCreatorId.value) {
     showSnackbar?.('请至少输入一个筛选条件', 'warning')
@@ -56,45 +141,66 @@ const searchNodes = async (isLoadMore: boolean = false) => {
   }
 }
 
-// 加载更多
-const loadMore = async () => {
-  if (hasMore.value && !loading.value) {
-    await searchNodes(true)
+// 应用筛选
+const applyFilter = async (): Promise<void> => {
+  if (!filterNodeId.value && !filterCourseId.value && !filterCreatorId.value) {
+    showSnackbar?.('请至少输入一个筛选条件', 'warning')
+    return
   }
+  isFilterMode.value = true
+  hasMore.value = true
+  await searchNodes()
 }
 
-// 清除搜索
-const clearSearch = () => {
+// 清除筛选
+const clearFilter = async (): Promise<void> => {
   filterNodeId.value = undefined
   filterCourseId.value = undefined
   filterCreatorId.value = undefined
-  nodeList.value = []
+  isFilterMode.value = false
   hasMore.value = true
+  await getNodesByTab(currentTab.value)
 }
 
-const getStateColor = (state: number) => {
-  switch (state) {
-    case 0:
-      return 'orange-lighten-4'
-    case 1:
-      return 'teal-lighten-4'
-    case 2:
-      return 'red-lighten-4'
-    default:
-      return 'grey-lighten-4'
+// 加载更多
+const loadMore = async () => {
+  if (hasMore.value && !loading.value) {
+    if (isFilterMode.value) {
+      await searchNodes(true)
+    } else {
+      await getNodesByTab(currentTab.value, true)
+    }
   }
 }
 
-const getStateText = (state: number) => {
+// 监听tab切换
+const handleTabChange = async (newTab: string) => {
+  if (isFilterMode.value) {
+    // 如果在筛选模式下，切换tab时清除筛选
+    await clearFilter()
+  } else {
+    hasMore.value = true
+    await getNodesByTab(newTab)
+  }
+}
+
+const getStateColor = (state: ContentState): string => {
   switch (state) {
-    case 0:
-      return '待审核'
-    case 1:
-      return '正常'
-    case 2:
-      return '已屏蔽'
-    default:
-      return '未知'
+    case ContentState.SUBMITTED: return 'orange-lighten-4'
+    case ContentState.PUBLISHED: return 'green-lighten-4'
+    case ContentState.REJECTED: return 'red-lighten-4'
+    case ContentState.BANNED: return 'grey-lighten-2'
+    default: return 'grey-lighten-4'
+  }
+}
+
+const getStateText = (state: ContentState): string => {
+  switch (state) {
+    case ContentState.SUBMITTED: return '待审核'
+    case ContentState.PUBLISHED: return '已通过'
+    case ContentState.REJECTED: return '已拒绝'
+    case ContentState.BANNED: return '已封禁'
+    default: return '未知'
   }
 }
 
@@ -103,17 +209,35 @@ const updateNodeState = async (node: Node, newState: number) => {
     const response = await nodeServiceV1.updateNodeState(node.id, newState)
     if (response.code === 200) {
       const updatedNode = response.data as Node
-      const index = nodeList.value.findIndex(n => n.id === node.id)
-      if (index !== -1) {
-        nodeList.value[index].state = updatedNode.state
+      // 从当前列表中移除（如果状态改变且不在筛选模式）
+      if (!isFilterMode.value) {
+        const index = nodeList.value.findIndex(n => n.id === node.id)
+        if (index !== -1) {
+          nodeList.value.splice(index, 1)
+        }
+      } else {
+        // 筛选模式下更新状态
+        const index = nodeList.value.findIndex(n => n.id === node.id)
+        if (index !== -1) {
+          nodeList.value[index].state = updatedNode.state
+        }
       }
       showSnackbar?.(`节点状态已更新为${getStateText(newState)}`, 'success')
+    } else {
+      showSnackbar && showSnackbar(response.message || 'error.operationFailed', 'error')
     }
   } catch (error) {
     console.error('Error updating node state:', error)
     showSnackbar?.('更新节点状态失败', 'error')
   }
 }
+
+// 组件挂载时加载默认tab的数据
+import { onMounted } from 'vue'
+
+onMounted(() => {
+  getNodesByTab(currentTab.value)
+})
 </script>
 
 <template>
@@ -139,12 +263,12 @@ const updateNodeState = async (node: Node, newState: number) => {
       </v-chip>
     </div>
 
-    <!-- 搜索区域 -->
-    <v-card flat class="border rounded-lg pa-4 mb-6">
-      <div class="text-subtitle-2 font-weight-bold text-grey-darken-3 mb-3">
-        <v-icon icon="mdi-magnify" size="18" class="mr-2"></v-icon>
-        搜索节点
-      </div>
+    <!-- 筛选区域 -->
+    <v-card v-if="!isFilterMode" flat class="pa-4 bg-grey-lighten-5 rounded-lg mb-6">
+      <h4 class="text-subtitle-2 text-grey-darken-2 mb-3 d-flex align-center">
+        <v-icon icon="mdi-filter-outline" size="16" class="mr-2"></v-icon>
+        高级筛选
+      </h4>
       <v-row dense align="center">
         <v-col cols="12" sm="3">
           <v-text-field
@@ -153,6 +277,8 @@ const updateNodeState = async (node: Node, newState: number) => {
             label="节点 ID"
             variant="outlined"
             density="compact"
+            rounded="lg"
+            bg-color="white"
             hide-details
             clearable
           ></v-text-field>
@@ -164,6 +290,8 @@ const updateNodeState = async (node: Node, newState: number) => {
             label="课程 ID"
             variant="outlined"
             density="compact"
+            rounded="lg"
+            bg-color="white"
             hide-details
             clearable
           ></v-text-field>
@@ -175,35 +303,74 @@ const updateNodeState = async (node: Node, newState: number) => {
             label="创建者 ID"
             variant="outlined"
             density="compact"
+            rounded="lg"
+            bg-color="white"
             hide-details
             clearable
           ></v-text-field>
         </v-col>
         <v-col cols="12" sm="3">
-          <div class="d-flex ga-2">
-            <v-btn
-              variant="flat"
-              color="primary"
-              @click="searchNodes()"
-              :loading="loading"
-            >
-              <v-icon icon="mdi-magnify" class="mr-1"></v-icon>
-              搜索
-            </v-btn>
-            <v-btn
-              variant="outlined"
-              color="grey-darken-1"
-              @click="clearSearch"
-            >
-              <v-icon icon="mdi-close" class="mr-1"></v-icon>
-              清除
-            </v-btn>
-          </div>
+          <v-btn
+            variant="flat"
+            color="primary"
+            rounded="lg"
+            block
+            @click="applyFilter"
+          >
+            <v-icon icon="mdi-magnify" class="mr-1"></v-icon>
+            筛选
+          </v-btn>
         </v-col>
       </v-row>
     </v-card>
 
-    <!-- 搜索结果 -->
+    <!-- 筛选结果提示 -->
+    <v-alert
+      v-if="isFilterMode"
+      type="info"
+      color="primary"
+      variant="tonal"
+      class="mb-6"
+      rounded="lg"
+      closable
+      @click:close="clearFilter"
+    >
+      <div class="d-flex align-center justify-space-between">
+        <div>
+          <span class="font-weight-medium">筛选条件：</span>
+          <v-chip v-if="filterNodeId" size="small" class="mx-1">节点 ID: {{ filterNodeId }}</v-chip>
+          <v-chip v-if="filterCourseId" size="small" class="mx-1">课程 ID: {{ filterCourseId }}</v-chip>
+          <v-chip v-if="filterCreatorId" size="small" class="mx-1">创建者 ID: {{ filterCreatorId }}</v-chip>
+        </div>
+      </div>
+    </v-alert>
+
+    <!-- 状态标签 -->
+    <v-tabs
+      v-if="!isFilterMode"
+      v-model="currentTab"
+      color="primary"
+      class="mb-6"
+      show-arrows
+      @update:model-value="handleTabChange"
+    >
+      <v-tab
+        v-for="tab in tabs"
+        :key="tab.key"
+        :value="tab.key"
+        class="text-none"
+      >
+        <v-icon
+          :icon="tab.icon"
+          :color="`${tab.color}-darken-1`"
+          size="18"
+          class="mr-2"
+        ></v-icon>
+        {{ tab.label }}
+      </v-tab>
+    </v-tabs>
+
+    <!-- 空状态 -->
     <div v-if="nodeList.length === 0 && !loading" class="text-center py-12">
       <v-icon
         icon="mdi-file-tree-outline"
@@ -211,7 +378,9 @@ const updateNodeState = async (node: Node, newState: number) => {
         color="grey-lighten-1"
         class="mb-4"
       ></v-icon>
-      <p class="text-body-1 text-grey-darken-1">请输入搜索条件查询节点</p>
+      <p class="text-body-1 text-grey-darken-1">
+        {{ isFilterMode ? '未找到符合条件的节点' : `暂无${tabs.find(tab => tab.key === currentTab)?.label}的节点` }}
+      </p>
     </div>
 
     <!-- 节点列表 -->
@@ -228,56 +397,141 @@ const updateNodeState = async (node: Node, newState: number) => {
       }"
     >
       <v-card flat class="border rounded-lg pa-5" hover>
-        <div class="d-flex justify-space-between align-start">
-          <div class="flex-grow-1">
-            <div class="d-flex align-center mb-2">
-              <v-chip size="small" variant="flat" color="blue-lighten-4" class="mr-2">
-                <span class="text-blue-darken-2">ID: {{ node.id }}</span>
-              </v-chip>
-              <v-chip size="small" variant="flat" color="green-lighten-4" class="mr-2">
-                <span class="text-green-darken-2">课程: {{ node.courseId }}</span>
+        <div class="d-flex align-start">
+          <!-- 状态和操作区域 -->
+          <div class="mr-4 status-actions-area">
+            <div class="mb-3">
+              <v-chip
+                v-if="node.state === ContentState.SUBMITTED"
+                variant="flat"
+                color="orange-lighten-4"
+                rounded="lg"
+                size="small"
+              >
+                <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
+                {{ t('admin.pending') }}
               </v-chip>
               <v-chip
-                size="small"
+                v-if="node.state === ContentState.PUBLISHED"
                 variant="flat"
-                :color="getStateColor(node.state)"
+                color="green-lighten-4"
+                rounded="lg"
+                size="small"
               >
-                <span :class="`text-${getStateColor(node.state)}-darken-2`">{{ getStateText(node.state) }}</span>
+                <v-icon icon="mdi-check-circle" size="14" class="mr-1"></v-icon>
+                {{ t('admin.approved') }}
+              </v-chip>
+              <v-chip
+                v-if="node.state === ContentState.REJECTED"
+                variant="flat"
+                color="red-lighten-4"
+                rounded="lg"
+                size="small"
+              >
+                <v-icon icon="mdi-close-circle" size="14" class="mr-1"></v-icon>
+                {{ t('admin.rejected') }}
+              </v-chip>
+              <v-chip
+                v-if="node.state === ContentState.BANNED"
+                variant="flat"
+                color="grey-lighten-2"
+                rounded="lg"
+                size="small"
+              >
+                <v-icon icon="mdi-cancel" size="14" class="mr-1"></v-icon>
+                {{ t('admin.banned') }}
               </v-chip>
             </div>
-            <div class="text-h6 font-weight-bold text-grey-darken-3 mb-2">
-              {{ node.name }}
+
+            <!-- 待审核状态 -->
+            <div v-if="node.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
+              <v-btn
+                variant="flat"
+                color="green-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="updateNodeState(node, ContentState.PUBLISHED)"
+              >
+                <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
+                {{ t('admin.approve') }}
+              </v-btn>
+              <v-btn
+                variant="flat"
+                color="red-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="updateNodeState(node, ContentState.REJECTED)"
+              >
+                <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
+                {{ t('admin.reject') }}
+              </v-btn>
             </div>
-            <div v-if="node.description" class="text-body-2 text-grey-darken-1 mb-2">
-              {{ node.description }}
+
+            <!-- 已通过状态下显示屏蔽按钮 -->
+            <div v-if="node.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
+              <v-btn
+                variant="flat"
+                color="red-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="updateNodeState(node, ContentState.REJECTED)"
+              >
+                <v-icon icon="mdi-block-helper" color="red-darken-2" size="16" class="mr-1"></v-icon>
+                屏蔽
+              </v-btn>
             </div>
-            <div class="text-caption text-grey-darken-1">
-              创建时间: {{ node.createdAt }}
+
+            <!-- 已拒绝状态下显示通过按钮 -->
+            <div v-if="node.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
+              <v-btn
+                variant="flat"
+                color="green-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="updateNodeState(node, ContentState.PUBLISHED)"
+              >
+                <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
+                {{ t('admin.approve') }}
+              </v-btn>
+            </div>
+
+            <!-- 已封禁状态下显示恢复按钮 -->
+            <div v-if="node.state === ContentState.BANNED" class="d-flex flex-column ga-2">
+              <v-btn
+                variant="flat"
+                color="orange-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="updateNodeState(node, ContentState.PUBLISHED)"
+              >
+                <v-icon icon="mdi-restore" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                恢复
+              </v-btn>
             </div>
           </div>
-          <div class="d-flex ga-2">
-            <v-btn
-              v-if="node.state === 1"
-              variant="outlined"
-              color="red-darken-1"
-              size="small"
-              rounded="lg"
-              @click="updateNodeState(node, 2)"
-            >
-              <v-icon icon="mdi-cancel" size="16" class="mr-1"></v-icon>
-              屏蔽
-            </v-btn>
-            <v-btn
-              v-else-if="node.state === 2"
-              variant="outlined"
-              color="green-darken-1"
-              size="small"
-              rounded="lg"
-              @click="updateNodeState(node, 1)"
-            >
-              <v-icon icon="mdi-check" size="16" class="mr-1"></v-icon>
-              恢复
-            </v-btn>
+
+          <!-- 内容区域 -->
+          <div class="flex-grow-1">
+            <div class="d-flex align-center mb-3">
+              <v-avatar size="32" color="grey-lighten-3" class="mr-3">
+                <v-icon icon="mdi-file-tree" color="grey-darken-1" size="18"></v-icon>
+              </v-avatar>
+              <div>
+                <div class="text-body-2 font-weight-medium text-grey-darken-2">
+                  节点ID: {{ node.id }} | 课程ID: {{ node.courseId }}
+                </div>
+                <div class="text-caption text-grey-darken-1">{{ node.createdAt }}</div>
+              </div>
+            </div>
+
+            <div class="bg-grey-lighten-5 rounded-lg pa-4">
+              <div class="text-h6 font-weight-bold text-grey-darken-3 mb-2">
+                {{ node.name }}
+              </div>
+              <div v-if="node.description" class="text-body-2 text-grey-darken-1">
+                {{ node.description }}
+              </div>
+            </div>
           </div>
         </div>
       </v-card>
@@ -303,5 +557,9 @@ const updateNodeState = async (node: Node, newState: number) => {
 <style scoped>
 .border {
   border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.status-actions-area {
+  min-width: 200px;
 }
 </style>

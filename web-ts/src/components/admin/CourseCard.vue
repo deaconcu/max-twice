@@ -28,7 +28,7 @@
   const getStateConfig = (state: number): StateConfig => {
     const configs: Record<number, StateConfig> = {
       [ContentState.SUBMITTED]: { text: '待审核', color: 'warning', icon: 'mdi-clock-outline' },
-      [ContentState.APPROVED]: { text: '已批准', color: 'success', icon: 'mdi-check-circle' },
+      [ContentState.PUBLISHED]: { text: '已通过', color: 'success', icon: 'mdi-check-circle' },
       [ContentState.REJECTED]: { text: '已拒绝', color: 'error', icon: 'mdi-close-circle' },
     }
     return configs[state] || { text: '未知', color: 'grey', icon: 'mdi-help-circle' }
@@ -86,7 +86,7 @@
               编辑
             </v-btn>
 
-            <!-- 待审核状态：批准和拒绝 -->
+            <!-- 待审核状态：批准、拒绝、屏蔽 -->
             <template v-if="course.state === ContentState.SUBMITTED">
               <!-- 批准按钮 -->
               <v-btn
@@ -113,11 +113,24 @@
                 <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
                 拒绝
               </v-btn>
+
+              <!-- 屏蔽按钮 -->
+              <v-btn
+                variant="flat"
+                color="grey-lighten-2"
+                rounded="lg"
+                size="small"
+                class="text-none"
+                @click="$emit('ban', course)"
+              >
+                <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                屏蔽
+              </v-btn>
             </template>
 
-            <!-- 已通过状态：删除 -->
+            <!-- 已批准状态：撤销通过、屏蔽 -->
             <template v-if="course.state === ContentState.APPROVED">
-              <!-- 拒绝按钮 -->
+              <!-- 撤销通过按钮 -->
               <v-btn
                 variant="flat"
                 color="orange-lighten-4"
@@ -126,55 +139,71 @@
                 class="text-none"
                 @click="$emit('reject', course)"
               >
-                <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
+                <v-icon icon="mdi-undo" color="orange-darken-2" size="16" class="mr-1"></v-icon>
                 撤销通过
               </v-btn>
 
-              <!-- 删除按钮 -->
+              <!-- 屏蔽按钮 -->
               <v-btn
                 variant="flat"
-                color="red-lighten-4"
+                color="grey-lighten-2"
                 rounded="lg"
                 size="small"
                 class="text-none"
-                @click="$emit('delete', course)"
+                @click="$emit('ban', course)"
               >
-                <v-icon icon="mdi-delete" color="red-darken-2" size="16" class="mr-1"></v-icon>
-                删除
+                <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                屏蔽
               </v-btn>
             </template>
 
-            <!-- 已拒绝状态：恢复和删除 -->
+            <!-- 已拒绝状态：通过 -->
             <template v-if="course.state === ContentState.REJECTED">
-              <!-- 恢复按钮 -->
+              <!-- 通过按钮 -->
+              <v-btn
+                variant="flat"
+                color="green-lighten-4"
+                rounded="lg"
+                size="small"
+                class="text-none"
+                @click="$emit('approve', course)"
+              >
+                <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
+                通过
+              </v-btn>
+            </template>
+
+            <!-- 已屏蔽状态：取消屏蔽、降级为拒绝 -->
+            <template v-if="course.state === ContentState.BANNED">
+              <!-- 取消屏蔽按钮 -->
+              <v-btn
+                variant="flat"
+                color="blue-lighten-4"
+                rounded="lg"
+                size="small"
+                class="text-none"
+                @click="$emit('unban', course)"
+              >
+                <v-icon icon="mdi-lock-open" color="blue-darken-2" size="16" class="mr-1"></v-icon>
+                取消屏蔽
+              </v-btn>
+
+              <!-- 降级为拒绝按钮 -->
               <v-btn
                 variant="flat"
                 color="orange-lighten-4"
                 rounded="lg"
                 size="small"
                 class="text-none"
-                @click="$emit('approve', course)"
+                @click="$emit('reject', course)"
               >
-                <v-icon icon="mdi-restore" color="orange-darken-2" size="16" class="mr-1"></v-icon>
-                恢复
-              </v-btn>
-
-              <!-- 删除按钮 -->
-              <v-btn
-                variant="flat"
-                color="red-lighten-4"
-                rounded="lg"
-                size="small"
-                class="text-none"
-                @click="$emit('delete', course)"
-              >
-                <v-icon icon="mdi-delete" color="red-darken-2" size="16" class="mr-1"></v-icon>
-                删除
+                <v-icon icon="mdi-arrow-down" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                降级为拒绝
               </v-btn>
             </template>
 
             <!-- 拒绝原因显示 -->
-            <div v-if="course.rejectedReason" class="mt-3">
+            <div v-if="course.reason" class="mt-3">
               <div class="rejection-reason">
                 <div class="text-body-2 text-red-darken-1">
                   <div class="d-flex align-center">
@@ -186,7 +215,7 @@
                     ></v-icon>
                     <strong>拒绝原因：</strong>
                   </div>
-                  <div class="rejection-text">{{ course.rejectedReason }}</div>
+                  <div class="rejection-text">{{ course.reason }}</div>
                 </div>
               </div>
             </div>

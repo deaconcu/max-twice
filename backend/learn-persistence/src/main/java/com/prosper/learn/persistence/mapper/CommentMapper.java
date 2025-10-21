@@ -1,7 +1,6 @@
 package com.prosper.learn.persistence.mapper;
 
 import com.prosper.learn.persistence.dataobject.CommentDO;
-import com.prosper.learn.persistence.dataobject.PostDO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -19,11 +18,11 @@ public interface CommentMapper {
     List<CommentDO> getByIds(List<Long> ids);
 
     // 首页加载评论，按分数排序，只显示已通过的评论
-    @Select("SELECT * FROM comment where object_id = #{objectId} and object_type = #{objectType} and reply_to_comment_id = 0 and state = " + APPROVED_VALUE + " ORDER BY score DESC, id DESC limit #{count}")
+    @Select("SELECT * FROM comment where object_id = #{objectId} and object_type = #{objectType} and reply_to_comment_id = 0 and state = " + PUBLISHED_VALUE + " ORDER BY score DESC, id DESC limit #{count}")
     List<CommentDO> getByObjectId(long objectId, int objectType, int count);
 
     // 分页加载评论，处理分数相同的情况，只显示已通过的评论
-    @Select("SELECT * FROM comment where object_id = #{objectId} and object_type = #{objectType} and reply_to_comment_id = 0 and state = " + APPROVED_VALUE + " AND " +
+    @Select("SELECT * FROM comment where object_id = #{objectId} and object_type = #{objectType} and reply_to_comment_id = 0 and state = " + PUBLISHED_VALUE + " AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, id DESC limit #{count}")
     List<CommentDO> getByObjectIdPaginated(long objectId, int objectType, double lastScore, long lastId, int count);
@@ -32,23 +31,23 @@ public interface CommentMapper {
             "FROM comment c1 " +
             "where c1.reply_to_comment_id IN " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
-            "AND c1.state = " + APPROVED_VALUE + " " +
+            "AND c1.state = " + PUBLISHED_VALUE + " " +
             "AND c1.id = (" +
             "  SELECT c2.id " +
             "  FROM comment c2 " +
             "  WHERE c2.reply_to_comment_id = c1.reply_to_comment_id " +
-            "  AND c2.state = " + APPROVED_VALUE + " " +
+            "  AND c2.state = " + PUBLISHED_VALUE + " " +
             "  ORDER BY c2.score DESC, c2.id DESC " +
             "  LIMIT 1" +
             ")</script>")
     List<CommentDO> getChildren(List<Long> ids);
 
     // 首页加载话题回复，按分数排序，只显示已通过的评论
-    @Select("SELECT * FROM comment where reply_to_comment_id = #{commentId} and state = " + APPROVED_VALUE + " ORDER BY score DESC, id DESC limit #{count}")
+    @Select("SELECT * FROM comment where reply_to_comment_id = #{commentId} and state = " + PUBLISHED_VALUE + " ORDER BY score DESC, id DESC limit #{count}")
     List<CommentDO> getByTopic(long commentId, int count);
 
     // 分页加载话题回复，处理分数相同的情况，只显示已通过的评论
-    @Select("SELECT * FROM comment where reply_to_comment_id = #{commentId} and state = " + APPROVED_VALUE + " AND " +
+    @Select("SELECT * FROM comment where reply_to_comment_id = #{commentId} and state = " + PUBLISHED_VALUE + " AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, id DESC limit #{count}")
     List<CommentDO> getByTopicPaginated(long commentId, double lastScore, long lastId, int count);
@@ -69,6 +68,9 @@ public interface CommentMapper {
 
     @Update("UPDATE comment SET state = #{state} WHERE id = #{id}")
     int updateState(@Param("id") long id, @Param("state") byte state);
+
+    @Update("UPDATE comment SET state = #{state}, reason = #{reason} WHERE id = #{id}")
+    int updateStateWithReason(@Param("id") long id, @Param("state") byte state, @Param("reason") String reason);
 
     @Delete("DELETE FROM comment where id = #{id}")
     void delete(long id);

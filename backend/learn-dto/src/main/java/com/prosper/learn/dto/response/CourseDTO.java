@@ -1,6 +1,5 @@
 package com.prosper.learn.dto.response;
 
-import com.prosper.learn.dto.response.old.CourseDTOV3;
 import lombok.Data;
 
 /**
@@ -34,7 +33,7 @@ public class CourseDTO {
     private Integer subCategory;
     
     // === 管理字段 (V1, V4有) ===
-    private String rejectedReason;
+    private String reason;
     
     // === 时间字段 (V1, V4有) ===
     private String createdAt;

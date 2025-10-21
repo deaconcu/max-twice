@@ -3,9 +3,12 @@ package com.prosper.learn.api.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.Enums;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.PostService;
 import com.prosper.learn.dto.request.CreatePostRequest;
+import com.prosper.learn.dto.request.OperateRequest;
 import com.prosper.learn.dto.request.UpdatePostRequest;
+import com.prosper.learn.dto.response.ApprovalResponseDTO;
 import com.prosper.learn.dto.response.PostDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -124,7 +127,7 @@ public class PostsController {
                 postState = Enums.ContentState.SUBMITTED;
                 break;
             case "approved":
-                postState = Enums.ContentState.APPROVED;
+                postState = Enums.ContentState.PUBLISHED;
                 break;
             case "rejected":
                 postState = Enums.ContentState.REJECTED;
@@ -160,16 +163,50 @@ public class PostsController {
     }
 
     /**
-     * 审核帖子
-     * 映射: PUT /post → PUT /api/v1/admin/posts/{id}/approve
+     * 帖子审核操作
+     * 映射: POST /post/operate → POST /api/v1/admin/posts/{id}/approve
      */
-    @PutMapping("/admin/posts/{id}/approve")
-    public ApiResponse<PostDTO> approvePost(
+    @PostMapping("/admin/posts/{id}/approve")
+    public ApiResponse<ApprovalResponseDTO> approvePost(
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
             Long id,
-            @RequestParam("approve") @NotNull(message = "审核结果不能为空") Boolean approve) {
-        PostDTO post = postService.approvePost(id, approve);
-        return ApiResponse.success(post);
+            @RequestBody @Valid OperateRequest request) {
+
+        ApprovalResponseDTO response = switch (request.getAction().toLowerCase()) {
+            case "approve" -> {
+                postService.approve(id);
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("批准成功")
+                        .objectId(id)
+                        .objectType("post")
+                        .action("approve")
+                        .build();
+            }
+            case "reject" -> {
+                postService.reject(id, request.getReason());
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("拒绝成功")
+                        .objectId(id)
+                        .objectType("post")
+                        .action("reject")
+                        .build();
+            }
+            case "ban" -> {
+                postService.ban(id, request.getReason());
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("封禁成功")
+                        .objectId(id)
+                        .objectType("post")
+                        .action("ban")
+                        .build();
+            }
+            default -> throw ErrorCode.INVALID_PARAMETER.exception();
+        };
+
+        return ApiResponse.success(response);
     }
 }

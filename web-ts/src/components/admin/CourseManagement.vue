@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { inject, onMounted, ref } from 'vue'
   import { courseServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1'
-  import { ContentState } from '@/types/enums'
+  import { ContentState, ApprovalAction } from '@/types/enums'
   import type { Course } from '@/types/course'
   import type { MainCategory, SubCategory, CategoryMapping, StateOption } from '@/types/common'
   import CourseCard from './CourseCard.vue'
@@ -41,10 +41,15 @@
       color: 'red-lighten-4',
       icon: 'mdi-close-circle-outline',
     },
+    {
+      value: ContentState.BANNED,
+      text: '已屏蔽',
+      color: 'grey-lighten-2',
+      icon: 'mdi-cancel',
+    },
   ]
 
   // 响应式数据
-  const activeTab = ref<number>(0)
   const courseList = ref<Course[]>([])
   const selectedStateIndex = ref<number>(0)
   const loading = ref<boolean>(false)
@@ -73,6 +78,7 @@
   const selectedCourse = ref<Course | null>(null)
   const rejectReason = ref<string>('')
   const rejecting = ref<boolean>(false)
+  const dialogType = ref<'reject' | 'ban'>('reject') // 区分是拒绝还是屏蔽操作
 
   // 编辑对话框相关
   const editDialog = ref<boolean>(false)
@@ -93,18 +99,13 @@
 
   // 获取当前Tab的课程数量显示
   const getTabCourseCount = (): string => {
-    switch (activeTab.value) {
-      case 0:
-        return `${courseList.value.length}个课程`
-      case 1:
-        if (searchedCourse.value) {
-          const totalCount = 1 + subcourseList.value.length
-          return totalCount === 1 ? '1个课程' : `${totalCount}个课程`
-        }
-        return '0个课程'
-      default:
-        return '0个课程'
+    // 如果有查询结果，显示查询到的课程数量
+    if (searchedCourse.value) {
+      const totalCount = 1 + subcourseList.value.length
+      return totalCount === 1 ? '1个课程' : `${totalCount}个课程`
     }
+    // 否则显示当前状态下的课程数量
+    return `${courseList.value.length}个课程`
   }
 
   // 加载课程列表
@@ -213,6 +214,13 @@
   }
 
   // ID查询相关方法
+  const clearSearch = (): void => {
+    searchCourseId.value = ''
+    searchedCourse.value = null
+    searchAttempted.value = false
+    subcourseList.value = []
+  }
+
   const searchCourseById = async (): Promise<void> => {
     if (!searchCourseId.value || Number(searchCourseId.value) <= 0) {
       showSnackbar && showSnackbar('请输入有效的课程ID', 'error')
@@ -351,7 +359,7 @@
   // 通过课程
   const approveCourse = async (course: Course): Promise<void> => {
     try {
-      const response = await courseServiceV1.approveCourse(course.id, 'approve')
+      const response = await courseServiceV1.approveCourse(course.id, ApprovalAction.APPROVE)
 
       if (response.code === 200) {
         showSnackbar && showSnackbar('课程已通过审核')
@@ -389,83 +397,39 @@
     }
   }
 
-  // 删除课程
-  const deleteCourse = async (course: Course): Promise<void> => {
-    try {
-      const response = await courseServiceV1.approveCourse(course.id, 'delete')
-
-      if (response.code === 200) {
-        showSnackbar && showSnackbar('课程已删除')
-        // 从列表中移除课程
-        const index = courseList.value.findIndex((c) => c.id === course.id)
-        if (index > -1) {
-          courseList.value.splice(index, 1)
-        }
-
-        // 如果当前在ID查询tab且查询的是同一个课程，清空搜索结果
-        if (
-          activeTab.value === 1 &&
-          searchedCourse.value &&
-          searchedCourse.value.id === course.id
-        ) {
-          searchedCourse.value = null
-          searchAttempted.value = false
-        }
-
-        // 如果当前在子课程查询tab且列表中包含该课程，从列表中移除
-        const subcourseIndex = subcourseList.value.findIndex((c) => c.id === course.id)
-        if (subcourseIndex > -1) {
-          subcourseList.value.splice(subcourseIndex, 1)
-        }
-      } else {
-        showSnackbar && showSnackbar('删除失败: ' + (response.message || '未知错误'))
-      }
-    } catch (error) {
-      console.error('Error deleting course:', error)
-      showSnackbar && showSnackbar('删除失败: 服务器开小差了')
-    }
+  // 屏蔽课程
+  const banCourse = async (course: Course): Promise<void> => {
+    // 显示屏蔽对话框，需要输入原因
+    selectedCourse.value = course
+    rejectReason.value = ''
+    dialogType.value = 'ban'
+    rejectDialog.value = true
   }
 
-  // 恢复课程（从拒绝状态恢复）
-  const restoreCourse = async (course: Course): Promise<void> => {
+  // 取消屏蔽课程
+  const unbanCourse = async (course: Course): Promise<void> => {
     try {
-      const response = await courseServiceV1.approveCourse(course.id, 'restore')
+      const response = await courseServiceV1.approveCourse(course.id, ApprovalAction.APPROVE)
 
       if (response.code === 200) {
-        showSnackbar && showSnackbar('课程已恢复')
-        // 从当前列表中移除（如果当前是拒绝状态）
-        if (getCurrentState() === ContentState.REJECTED) {
+        showSnackbar && showSnackbar('已取消屏蔽')
+        // 从当前列表中移除（如果当前是屏蔽状态）
+        if (getCurrentState() === ContentState.BANNED) {
           const index = courseList.value.findIndex((c) => c.id === course.id)
           if (index > -1) {
             courseList.value.splice(index, 1)
           }
         } else {
-          // 更新状态（恢复后通常变为待审核状态）
-          course.state = ContentState.SUBMITTED
-        }
-
-        // 如果当前在ID查询tab且查询的是同一个课程，更新搜索结果
-        if (
-          activeTab.value === 1 &&
-          searchedCourse.value &&
-          searchedCourse.value.id === course.id
-        ) {
-          searchedCourse.value.state = ContentState.SUBMITTED
-          delete (searchedCourse.value as any).rejectedReason
-        }
-
-        // 如果当前在子课程查询tab且列表中包含该课程，更新状态
-        const subcourseIndex = subcourseList.value.findIndex((c) => c.id === course.id)
-        if (subcourseIndex > -1) {
-          subcourseList.value[subcourseIndex].state = ContentState.SUBMITTED
-          delete (subcourseList.value[subcourseIndex] as any).rejectedReason
+          // 更新状态
+          course.state = ContentState.APPROVED
+          delete (course as any).reason
         }
       } else {
-        showSnackbar && showSnackbar('恢复失败: ' + (response.message || '未知错误'))
+        showSnackbar && showSnackbar('操作失败: ' + (response.message || '未知错误'))
       }
     } catch (error) {
-      console.error('Error restoring course:', error)
-      showSnackbar && showSnackbar('恢复失败: 服务器开小差了')
+      console.error('Error unbanning course:', error)
+      showSnackbar && showSnackbar('操作失败: 服务器开小差了')
     }
   }
 
@@ -567,6 +531,7 @@
   const showRejectModal = (course: Course): void => {
     selectedCourse.value = course
     rejectReason.value = ''
+    dialogType.value = 'reject'
     rejectDialog.value = true
   }
 
@@ -583,7 +548,9 @@
 
     try {
       rejecting.value = true
-      const action = 'reject'
+      // 根据 dialogType 决定 action
+      const action = dialogType.value === 'ban' ? ApprovalAction.BAN : ApprovalAction.REJECT
+
       const response = await courseServiceV1.approveCourse(
         selectedCourse.value!.id,
         action,
@@ -591,39 +558,22 @@
       )
 
       if (response.code === 200) {
-        showSnackbar && showSnackbar(
-          selectedCourse.value!.state === ContentState.APPROVED ? '已撤销通过' : '已拒绝申请'
-        )
+        const isBan = action === ApprovalAction.BAN
+        const targetState = isBan ? ContentState.BANNED : ContentState.REJECTED
+        const message = isBan ? '已屏蔽' : (selectedCourse.value!.state === ContentState.APPROVED ? '已撤销通过' : '已拒绝申请')
 
-        // 从当前列表中移除（如果当前不是拒绝状态）
-        if (getCurrentState() !== ContentState.REJECTED) {
+        showSnackbar && showSnackbar(message)
+
+        // 从当前列表中移除（如果当前不是目标状态）
+        if (getCurrentState() !== targetState) {
           const index = courseList.value.findIndex((c) => c.id === selectedCourse.value!.id)
           if (index > -1) {
             courseList.value.splice(index, 1)
           }
         } else {
           // 更新状态
-          selectedCourse.value!.state = ContentState.REJECTED
-          ;(selectedCourse.value as any).rejectedReason = rejectReason.value.trim()
-        }
-
-        // 如果当前在ID查询tab且查询的是同一个课程，更新搜索结果
-        if (
-          activeTab.value === 1 &&
-          searchedCourse.value &&
-          searchedCourse.value.id === selectedCourse.value!.id
-        ) {
-          searchedCourse.value.state = ContentState.REJECTED
-          ;(searchedCourse.value as any).rejectedReason = rejectReason.value.trim()
-        }
-
-        // 如果当前在子课程查询tab且列表中包含该课程，更新状态
-        const subcourseIndex = subcourseList.value.findIndex(
-          (c) => c.id === selectedCourse.value!.id
-        )
-        if (subcourseIndex > -1) {
-          subcourseList.value[subcourseIndex].state = ContentState.REJECTED
-          ;(subcourseList.value[subcourseIndex] as any).rejectedReason = rejectReason.value.trim()
+          selectedCourse.value!.state = targetState
+          ;(selectedCourse.value as any).reason = rejectReason.value.trim()
         }
 
         closeRejectModal()
@@ -666,44 +616,170 @@
       </v-chip>
     </div>
 
-    <!-- Tab导航 -->
-    <v-tabs v-model="activeTab" bg-color="transparent" color="primary" class="mb-6">
-      <v-tab :value="0" class="text-none">
-        <v-icon icon="mdi-format-list-bulleted" size="16" class="mr-2"></v-icon>
-        状态管理
-      </v-tab>
-      <v-tab :value="1" class="text-none">
-        <v-icon icon="mdi-card-search-outline" size="16" class="mr-2"></v-icon>
-        课程查询
-      </v-tab>
-    </v-tabs>
-
-    <!-- Tab内容 -->
-    <v-window v-model="activeTab">
-      <!-- 状态管理Tab -->
-      <v-window-item :value="0">
-        <!-- 状态筛选 -->
-        <div class="mb-6">
-          <v-chip-group
-            v-model="selectedStateIndex"
-            color="primary"
-            variant="flat"
-            mandatory
-            @update:model-value="onStateChange"
+    <!-- 搜索区域 -->
+    <div class="mb-6">
+      <v-card flat class="pa-4 bg-grey-lighten-5" rounded="lg">
+        <h4 class="text-subtitle-2 text-grey-darken-2 mb-3 d-flex align-center">
+          <v-icon icon="mdi-card-search-outline" size="16" class="mr-2"></v-icon>
+          通过ID查询课程
+        </h4>
+        <div class="d-flex align-center">
+          <v-text-field
+            v-model="searchCourseId"
+            label="输入课程ID"
+            variant="outlined"
+            density="compact"
+            rounded="lg"
+            bg-color="white"
+            hide-details="auto"
+            type="number"
+            class="me-3"
+            :rules="[(v: string) => !v || Number(v) > 0 || '请输入有效的课程ID']"
+            @keyup.enter="searchCourseById"
           >
-            <v-chip
-              v-for="(state, index) in stateOptions"
-              :key="state.value"
-              :value="index"
-              :color="state.color"
-              rounded="lg"
-              class="me-2"
-            >
-              <v-icon :icon="state.icon" size="16" class="mr-1"></v-icon>
-              {{ state.text }}
-            </v-chip>
-          </v-chip-group>
+            <template #prepend-inner>
+              <v-icon icon="mdi-identifier" size="16" color="grey-darken-1"></v-icon>
+            </template>
+          </v-text-field>
+          <v-btn
+            variant="flat"
+            color="primary"
+            rounded="lg"
+            :loading="searchLoading"
+            :disabled="!searchCourseId || Number(searchCourseId) <= 0"
+            @click="searchCourseById"
+          >
+            <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
+            查询
+          </v-btn>
+          <v-btn
+            v-if="searchedCourse || searchAttempted"
+            variant="flat"
+            color="grey-lighten-2"
+            rounded="lg"
+            class="ml-2"
+            @click="clearSearch"
+          >
+            <v-icon icon="mdi-close" size="16" class="mr-1"></v-icon>
+            清除
+          </v-btn>
         </div>
+      </v-card>
+    </div>
+
+    <!-- 查询结果显示 -->
+    <div v-if="searchedCourse || searchAttempted || searchLoading">
+      <!-- 搜索加载状态 -->
+      <div v-if="searchLoading" class="text-center py-8">
+        <v-progress-circular indeterminate color="primary"></v-progress-circular>
+        <p class="mt-3 text-grey-darken-1">查询中...</p>
+      </div>
+
+      <!-- 搜索结果 -->
+      <div v-else-if="searchedCourse">
+        <!-- 查询到的课程卡片 -->
+        <div class="mb-6">
+          <div v-if="subcourseList.length > 0" class="d-flex align-center mb-3">
+            <v-icon
+              icon="mdi-folder-account-outline"
+              size="16"
+              color="blue-darken-1"
+              class="mr-2"
+            ></v-icon>
+            <span class="text-subtitle-2 text-blue-darken-1 font-weight-medium"
+              >查询课程（父课程）</span
+            >
+          </div>
+          <div v-else-if="searchedCourse.parentCourse" class="d-flex align-center mb-3">
+            <v-icon
+              icon="mdi-file-document-outline"
+              size="16"
+              color="green-darken-1"
+              class="mr-2"
+            ></v-icon>
+            <span class="text-subtitle-2 text-green-darken-1 font-weight-medium"
+              >查询课程（子课程）</span
+            >
+          </div>
+          <div v-else class="d-flex align-center mb-3">
+            <v-icon icon="mdi-book-outline" size="16" color="grey-darken-1" class="mr-2"></v-icon>
+            <span class="text-subtitle-2 text-grey-darken-1 font-weight-medium">查询课程</span>
+          </div>
+
+          <CourseCard
+            :course="searchedCourse"
+            :main-categories="mainCategories"
+            :category-mapping="categoryMapping"
+            @edit="showEditModal"
+            @approve="approveCourse"
+            @reject="showRejectModal"
+            @delete="deleteCourse"
+            @restore="restoreCourse"
+          />
+        </div>
+
+        <!-- 子课程列表（如果查询的是父课程） -->
+        <div v-if="subcourseList.length > 0">
+          <div class="mb-4 d-flex align-center">
+            <v-icon icon="mdi-file-tree" size="16" color="green-darken-1" class="mr-2"></v-icon>
+            <span class="text-subtitle-2 text-green-darken-1 font-weight-medium">
+              子课程列表 ({{ subcourseList.length }}个)
+            </span>
+          </div>
+
+          <CourseCard
+            v-for="course in subcourseList"
+            :key="course.id"
+            :course="course"
+            :main-categories="mainCategories"
+            :category-mapping="categoryMapping"
+            @edit="showEditModal"
+            @approve="approveCourse"
+            @reject="showRejectModal"
+            @delete="deleteCourse"
+            @restore="restoreCourse"
+          />
+        </div>
+      </div>
+
+      <!-- 搜索空状态 -->
+      <div v-else-if="searchAttempted" class="text-center py-12">
+        <v-icon
+          icon="mdi-file-search-outline"
+          size="48"
+          color="grey-lighten-1"
+          class="mb-4"
+        ></v-icon>
+        <p class="text-body-1 text-grey-darken-1">未找到ID为 {{ searchCourseId }} 的课程</p>
+        <p class="text-body-2 text-grey-darken-2">请检查课程ID是否正确</p>
+      </div>
+    </div>
+
+    <!-- 状态管理内容（无查询时显示） -->
+    <div v-else>
+      <!-- 状态标签 -->
+      <v-tabs
+          v-model="selectedStateIndex"
+          color="primary"
+          class="mb-6"
+          show-arrows
+          @update:model-value="onStateChange"
+        >
+          <v-tab
+            v-for="(state, index) in stateOptions"
+            :key="state.value"
+            :value="index"
+            class="text-none"
+          >
+            <v-icon
+              :icon="state.icon"
+              :color="state.value === ContentState.SUBMITTED ? 'orange-darken-1' : state.value === ContentState.APPROVED ? 'green-darken-1' : state.value === ContentState.REJECTED ? 'red-darken-1' : 'grey-darken-1'"
+              size="18"
+              class="mr-2"
+            ></v-icon>
+            {{ state.text }}
+          </v-tab>
+        </v-tabs>
 
         <!-- 分类筛选 - 只在已通过状态显示 -->
         <div v-if="getCurrentState() === ContentState.APPROVED" class="mb-6">
@@ -823,8 +899,8 @@
               @edit="showEditModal"
               @approve="approveCourse"
               @reject="showRejectModal"
-              @delete="deleteCourse"
-              @restore="restoreCourse"
+              @ban="banCourse"
+              @unban="unbanCourse"
             />
           </template>
 
@@ -844,8 +920,8 @@
               @edit="showEditModal"
               @approve="approveCourse"
               @reject="showRejectModal"
-              @delete="deleteCourse"
-              @restore="restoreCourse"
+              @ban="banCourse"
+              @unban="unbanCourse"
             />
 
             <template #empty>
@@ -862,146 +938,7 @@
             </template>
           </v-infinite-scroll>
         </div>
-      </v-window-item>
-
-      <!-- ID查询Tab -->
-      <v-window-item :value="1">
-        <!-- 搜索区域 -->
-        <div class="mb-6">
-          <v-card flat class="pa-4 bg-grey-lighten-5" rounded="lg">
-            <h4 class="text-subtitle-2 text-grey-darken-2 mb-3 d-flex align-center">
-              <v-icon icon="mdi-card-search-outline" size="16" class="mr-2"></v-icon>
-              通过ID查询课程
-            </h4>
-            <p class="text-body-2 text-grey-darken-1 mb-3">
-              输入课程ID进行查询，如果是父课程会同时显示所有子课程
-            </p>
-            <div class="d-flex align-center">
-              <v-text-field
-                v-model="searchCourseId"
-                label="输入课程ID"
-                variant="outlined"
-                density="compact"
-                rounded="lg"
-                bg-color="white"
-                hide-details="auto"
-                type="number"
-                class="me-3"
-                :rules="[(v: string) => !v || Number(v) > 0 || '请输入有效的课程ID']"
-                @keyup.enter="searchCourseById"
-              >
-                <template #prepend-inner>
-                  <v-icon icon="mdi-identifier" size="16" color="grey-darken-1"></v-icon>
-                </template>
-              </v-text-field>
-              <v-btn
-                variant="flat"
-                color="primary"
-                rounded="lg"
-                :loading="searchLoading"
-                :disabled="!searchCourseId || Number(searchCourseId) <= 0"
-                @click="searchCourseById"
-              >
-                <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
-                查询
-              </v-btn>
-            </div>
-          </v-card>
-        </div>
-
-        <!-- 搜索加载状态 -->
-        <div v-if="searchLoading" class="text-center py-8">
-          <v-progress-circular indeterminate color="primary"></v-progress-circular>
-          <p class="mt-3 text-grey-darken-1">查询中...</p>
-        </div>
-
-        <!-- 搜索结果 -->
-        <div v-else-if="searchedCourse">
-          <!-- 查询到的课程卡片 -->
-          <div class="mb-6">
-            <div v-if="subcourseList.length > 0" class="d-flex align-center mb-3">
-              <v-icon
-                icon="mdi-folder-account-outline"
-                size="16"
-                color="blue-darken-1"
-                class="mr-2"
-              ></v-icon>
-              <span class="text-subtitle-2 text-blue-darken-1 font-weight-medium"
-                >查询课程（父课程）</span
-              >
-            </div>
-            <div v-else-if="searchedCourse.parentCourse" class="d-flex align-center mb-3">
-              <v-icon
-                icon="mdi-file-document-outline"
-                size="16"
-                color="green-darken-1"
-                class="mr-2"
-              ></v-icon>
-              <span class="text-subtitle-2 text-green-darken-1 font-weight-medium"
-                >查询课程（子课程）</span
-              >
-            </div>
-            <div v-else class="d-flex align-center mb-3">
-              <v-icon icon="mdi-book-outline" size="16" color="grey-darken-1" class="mr-2"></v-icon>
-              <span class="text-subtitle-2 text-grey-darken-1 font-weight-medium">查询课程</span>
-            </div>
-
-            <CourseCard
-              :course="searchedCourse"
-              :main-categories="mainCategories"
-              :category-mapping="categoryMapping"
-              @edit="showEditModal"
-              @approve="approveCourse"
-              @reject="showRejectModal"
-              @delete="deleteCourse"
-              @restore="restoreCourse"
-            />
-          </div>
-
-          <!-- 子课程列表（如果查询的是父课程） -->
-          <div v-if="subcourseList.length > 0">
-            <div class="mb-4 d-flex align-center">
-              <v-icon icon="mdi-file-tree" size="16" color="green-darken-1" class="mr-2"></v-icon>
-              <span class="text-subtitle-2 text-green-darken-1 font-weight-medium">
-                子课程列表 ({{ subcourseList.length }}个)
-              </span>
-            </div>
-
-            <CourseCard
-              v-for="course in subcourseList"
-              :key="course.id"
-              :course="course"
-              :main-categories="mainCategories"
-              :category-mapping="categoryMapping"
-              @edit="showEditModal"
-              @approve="approveCourse"
-              @reject="showRejectModal"
-              @delete="deleteCourse"
-              @restore="restoreCourse"
-            />
-          </div>
-        </div>
-
-        <!-- 搜索空状态 -->
-        <div v-else-if="searchAttempted" class="text-center py-12">
-          <v-icon
-            icon="mdi-file-search-outline"
-            size="48"
-            color="grey-lighten-1"
-            class="mb-4"
-          ></v-icon>
-          <p class="text-body-1 text-grey-darken-1">未找到ID为 {{ searchCourseId }} 的课程</p>
-          <p class="text-body-2 text-grey-darken-2">请检查课程ID是否正确</p>
-        </div>
-
-        <!-- 初始状态 -->
-        <div v-else class="text-center py-12">
-          <v-icon icon="mdi-card-search" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
-          <p class="text-body-1 text-grey-darken-1">输入课程ID进行查询</p>
-          <p class="text-body-2 text-grey-darken-2">可以查询任意状态的课程并进行管理操作</p>
-        </div>
-      </v-window-item>
-    </v-window>
+    </div>
 
     <!-- 拒绝对话框 -->
     <v-dialog v-model="rejectDialog" max-width="500px" persistent>

@@ -37,7 +37,7 @@ public interface UserCardSrsMapper {
     @Select("SELECT srs.* FROM user_card_srs srs " +
             "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
             "WHERE srs.user_id = #{userId} AND srs.review_due_at <= #{dueTime} " +
-            "AND deck.state = " + APPROVED_VALUE + " " +
+            "AND deck.state = " + PUBLISHED_VALUE + " " +
             "AND EXISTS (" +
             "    SELECT 1 FROM user_card_in_course ctx " +
             "    JOIN user_course_srs_setting s ON ctx.course_id = s.course_id AND ctx.user_id = s.user_id " +
@@ -49,7 +49,7 @@ public interface UserCardSrsMapper {
     @Select("SELECT srs.* FROM user_card_srs srs " +
             "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
             "WHERE srs.user_id = #{userId} AND srs.review_due_at <= #{dueTime} " +
-            "AND deck.state = " + APPROVED_VALUE + " " +
+            "AND deck.state = " + PUBLISHED_VALUE + " " +
             "AND EXISTS (" +
             "    SELECT 1 FROM user_card_in_course ctx " +
             "    WHERE ctx.card_id = srs.card_id AND ctx.user_id = #{userId} AND ctx.course_id = #{courseId}" +
@@ -59,13 +59,13 @@ public interface UserCardSrsMapper {
 
     @Select("SELECT srs.* FROM user_card_srs srs " +
             "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
-            "WHERE srs.user_id = #{userId} AND deck.state = " + APPROVED_VALUE + " " +
+            "WHERE srs.user_id = #{userId} AND deck.state = " + PUBLISHED_VALUE + " " +
             "ORDER BY srs.review_due_at ASC LIMIT #{limit}")
     List<UserCardSrsDO> getByUser(long userId, int limit);
 
     @Select("SELECT srs.* FROM user_card_srs srs " +
             "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
-            "WHERE srs.user_id = #{userId} AND deck.state = " + APPROVED_VALUE + " " +
+            "WHERE srs.user_id = #{userId} AND deck.state = " + PUBLISHED_VALUE + " " +
             "AND srs.card_id IN " +
             "(SELECT card_id FROM user_card_in_course WHERE course_id = #{courseId} AND user_id = #{userId}) " +
             "ORDER BY srs.review_due_at ASC")
@@ -182,7 +182,7 @@ public interface UserCardSrsMapper {
     @Select({"<script>",
             "SELECT srs.* FROM user_card_srs srs",
             "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
-            "WHERE srs.user_id = #{userId} AND deck.state = " + APPROVED_VALUE,
+            "WHERE srs.user_id = #{userId} AND deck.state = " + PUBLISHED_VALUE,
             "<if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
             "ORDER BY srs.id ASC LIMIT #{limit}",
             "</script>"})
@@ -192,7 +192,7 @@ public interface UserCardSrsMapper {
             "SELECT srs.* FROM user_card_srs srs",
             "INNER JOIN user_card_in_course ucc ON srs.card_id = ucc.card_id",
             "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
-            "WHERE srs.user_id = #{userId} AND ucc.course_id = #{courseId} AND deck.state = " + APPROVED_VALUE,
+            "WHERE srs.user_id = #{userId} AND ucc.course_id = #{courseId} AND deck.state = " + PUBLISHED_VALUE,
             "<if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
             "ORDER BY srs.id ASC LIMIT #{limit}",
             "</script>"})
@@ -202,7 +202,7 @@ public interface UserCardSrsMapper {
             "SELECT srs.* FROM user_card_srs srs",
             "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
             "WHERE srs.user_id = #{userId} AND srs.review_due_at &lt;= #{dueTime}",
-            "AND deck.state = " + APPROVED_VALUE,
+            "AND deck.state = " + PUBLISHED_VALUE,
             "<if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
             "ORDER BY srs.id ASC LIMIT #{limit}",
             "</script>"})
@@ -214,7 +214,7 @@ public interface UserCardSrsMapper {
             "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
             "WHERE srs.user_id = #{userId} AND ucc.course_id = #{courseId}",
             "AND srs.review_due_at &lt;= #{dueTime}",
-            "AND deck.state = " + APPROVED_VALUE,
+            "AND deck.state = " + PUBLISHED_VALUE,
             "<if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
             "ORDER BY srs.id ASC LIMIT #{limit}",
             "</script>"})

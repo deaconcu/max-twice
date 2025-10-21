@@ -36,7 +36,7 @@ public interface ProfessionClient {
 
     //@PostMapping("/profession/operate")
     Response<Object> operate(
-            @RequestParam Long id, @RequestParam String action, @RequestParam(required = false) String rejectedReason);
+            @RequestParam Long id, @RequestParam String action, @RequestParam(required = false) String reason);
 
     // @DeleteMapping("/profession")
     Response<Object> delete(@RequestParam Long id);

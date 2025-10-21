@@ -1,6 +1,7 @@
 <script setup>
-  import { onMounted, ref } from 'vue'
+  import { onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { useRoute, useRouter } from 'vue-router'
   import ProfessionManagement from '@/components/admin/ProfessionManagement.vue'
   import SystemConfiguration from '@/components/admin/SystemConfiguration.vue'
   import SystemOperations from '@/components/admin/SystemOperations.vue'
@@ -9,11 +10,47 @@
   import CommentReview from '@/components/admin/CommentReview.vue'
 
   const { t } = useI18n()
-  const tab = ref('system-config')
+  const route = useRoute()
+  const router = useRouter()
+
+  // 有效的 tab 值列表
+  const validTabs = [
+    'system-config',
+    'system-operations',
+    'profession-management',
+    'course-management',
+    'post-review',
+    'comment-review',
+  ]
+
+  // 从 URL 参数读取 tab,如果无效则使用默认值
+  const getInitialTab = () => {
+    const tabFromUrl = route.query.tab
+    return validTabs.includes(tabFromUrl) ? tabFromUrl : 'system-config'
+  }
+
+  const tab = ref(getInitialTab())
+
+  // 监听 tab 变化,同步更新 URL 参数
+  watch(tab, (newTab) => {
+    if (route.query.tab !== newTab) {
+      router.replace({ query: { tab: newTab } })
+    }
+  })
+
+  // 监听 URL 参数变化,同步更新 tab
+  watch(
+    () => route.query.tab,
+    (newTab) => {
+      if (newTab && validTabs.includes(newTab) && tab.value !== newTab) {
+        tab.value = newTab
+      }
+    }
+  )
 
   onMounted(async () => {
     // 组件挂载时的初始化逻辑
-    console.log('Admin view mounted')
+    console.log('Admin view mounted, current tab:', tab.value)
   })
 </script>
 

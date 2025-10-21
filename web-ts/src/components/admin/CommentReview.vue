@@ -2,7 +2,7 @@
   import { inject, ref, computed, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { commentServiceV1 } from '@/services/api/v1/apiServiceV1'
-  import { ContentState } from '@/types/enums'
+  import { ContentState, ApprovalAction } from '@/types/enums'
   import type { Comment } from '@/types/comment'
 
   const { t } = useI18n()
@@ -26,24 +26,31 @@
   const tabs: TabConfig[] = [
     {
       key: 'pending',
-      label: t('admin.pending'),
+      label: '待审核',
       state: ContentState.SUBMITTED,
       icon: 'mdi-clock-outline',
       color: 'orange'
     },
     {
       key: 'approved',
-      label: t('admin.approved'),
-      state: ContentState.APPROVED,
+      label: '已通过',
+      state: ContentState.PUBLISHED,
       icon: 'mdi-check-circle',
       color: 'green'
     },
     {
       key: 'rejected',
-      label: t('admin.rejected'),
+      label: '已拒绝',
       state: ContentState.REJECTED,
       icon: 'mdi-close-circle',
       color: 'red'
+    },
+    {
+      key: 'banned',
+      label: '已封禁',
+      state: ContentState.BANNED,
+      icon: 'mdi-cancel',
+      color: 'grey'
     }
   ]
 
@@ -97,7 +104,7 @@
 
   const approveComment = async (comment: Comment, approve: boolean): Promise<void> => {
     try {
-      const response = await commentServiceV1.approveComment(comment.id, approve)
+      const response = await commentServiceV1.approveComment(comment.id, approve ? ApprovalAction.APPROVE : ApprovalAction.REJECT)
 
       if (response.code === 401) {
         // not login
@@ -111,6 +118,60 @@
     } catch (error) {
       console.error('Error approving comment:', error)
       showSnackbar && showSnackbar('error.operationFailed', 'error')
+    }
+  }
+
+  const rejectComment = async (comment: Comment): Promise<void> => {
+    try {
+      const response = await commentServiceV1.approveComment(comment.id, ApprovalAction.REJECT)
+
+      if (response.code === 401) {
+        // not login
+      } else if (response.code === 200) {
+        await getCommentsByTab(currentTab.value)
+        showSnackbar && showSnackbar('操作成功')
+      } else {
+        showSnackbar && showSnackbar(response.message || '操作失败', 'error')
+      }
+    } catch (error) {
+      console.error('Error rejecting comment:', error)
+      showSnackbar && showSnackbar('操作失败', 'error')
+    }
+  }
+
+  const banComment = async (comment: Comment): Promise<void> => {
+    try {
+      const response = await commentServiceV1.approveComment(comment.id, ApprovalAction.BAN)
+
+      if (response.code === 401) {
+        // not login
+      } else if (response.code === 200) {
+        await getCommentsByTab(currentTab.value)
+        showSnackbar && showSnackbar('已屏蔽')
+      } else {
+        showSnackbar && showSnackbar(response.message || '操作失败', 'error')
+      }
+    } catch (error) {
+      console.error('Error banning comment:', error)
+      showSnackbar && showSnackbar('操作失败', 'error')
+    }
+  }
+
+  const unbanComment = async (comment: Comment): Promise<void> => {
+    try {
+      const response = await commentServiceV1.approveComment(comment.id, true)
+
+      if (response.code === 401) {
+        // not login
+      } else if (response.code === 200) {
+        await getCommentsByTab(currentTab.value)
+        showSnackbar && showSnackbar('已取消屏蔽')
+      } else {
+        showSnackbar && showSnackbar(response.message || '操作失败', 'error')
+      }
+    } catch (error) {
+      console.error('Error unbanning comment:', error)
+      showSnackbar && showSnackbar('操作失败', 'error')
     }
   }
 
@@ -199,7 +260,7 @@
                 {{ t('admin.pending') }}
               </v-chip>
               <v-chip
-                v-if="comment.state === ContentState.APPROVED"
+                v-if="comment.state === ContentState.PUBLISHED"
                 variant="flat"
                 color="green-lighten-4"
                 rounded="lg"
@@ -218,7 +279,18 @@
                 <v-icon icon="mdi-close-circle" size="14" class="mr-1"></v-icon>
                 {{ t('admin.rejected') }}
               </v-chip>
+              <v-chip
+                v-if="comment.state === ContentState.BANNED"
+                variant="flat"
+                color="grey-lighten-2"
+                rounded="lg"
+                size="small"
+              >
+                <v-icon icon="mdi-cancel" size="14" class="mr-1"></v-icon>
+                {{ t('admin.banned') }}
+              </v-chip>
             </div>
+            <!-- 待审核状态：批准、拒绝、屏蔽 -->
             <div v-if="comment.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
@@ -228,35 +300,55 @@
                 @click="approveComment(comment, true)"
               >
                 <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
-                {{ t('admin.approve') }}
+                批准
               </v-btn>
               <v-btn
                 variant="flat"
                 color="red-lighten-4"
                 rounded="lg"
                 size="small"
-                @click="approveComment(comment, false)"
+                @click="rejectComment(comment)"
               >
                 <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
-                {{ t('admin.reject') }}
+                拒绝
               </v-btn>
-            </div>
-
-            <!-- 已通过状态下显示屏蔽按钮 -->
-            <div v-if="comment.state === ContentState.APPROVED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
-                color="red-lighten-4"
+                color="grey-lighten-2"
                 rounded="lg"
                 size="small"
-                @click="approveComment(comment, false)"
+                @click="banComment(comment)"
               >
-                <v-icon icon="mdi-block-helper" color="red-darken-2" size="16" class="mr-1"></v-icon>
+                <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
                 屏蔽
               </v-btn>
             </div>
 
-            <!-- 已拒绝状态下显示通过按钮 -->
+            <!-- 已通过状态：撤销通过、屏蔽 -->
+            <div v-if="comment.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
+              <v-btn
+                variant="flat"
+                color="orange-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="rejectComment(comment)"
+              >
+                <v-icon icon="mdi-undo" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                撤销通过
+              </v-btn>
+              <v-btn
+                variant="flat"
+                color="grey-lighten-2"
+                rounded="lg"
+                size="small"
+                @click="banComment(comment)"
+              >
+                <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                屏蔽
+              </v-btn>
+            </div>
+
+            <!-- 已拒绝状态：通过 -->
             <div v-if="comment.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
@@ -266,7 +358,31 @@
                 @click="approveComment(comment, true)"
               >
                 <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
-                {{ t('admin.approve') }}
+                通过
+              </v-btn>
+            </div>
+
+            <!-- 已屏蔽状态：取消屏蔽、降级为拒绝 -->
+            <div v-if="comment.state === ContentState.BANNED" class="d-flex flex-column ga-2">
+              <v-btn
+                variant="flat"
+                color="blue-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="unbanComment(comment)"
+              >
+                <v-icon icon="mdi-lock-open" color="blue-darken-2" size="16" class="mr-1"></v-icon>
+                取消屏蔽
+              </v-btn>
+              <v-btn
+                variant="flat"
+                color="orange-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="rejectComment(comment)"
+              >
+                <v-icon icon="mdi-arrow-down" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                降级为拒绝
               </v-btn>
             </div>
           </div>

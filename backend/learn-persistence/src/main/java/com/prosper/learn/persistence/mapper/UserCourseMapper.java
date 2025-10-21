@@ -35,7 +35,7 @@ public interface UserCourseMapper {
 
     @Select("SELECT user_course.* FROM user_course " +
             "INNER JOIN course ON user_course.course_id = course.id " +
-            "WHERE user_course.user_id = #{userId} AND user_course.id < #{lastId} AND course.state = " + APPROVED_VALUE + " " +
+            "WHERE user_course.user_id = #{userId} AND user_course.id < #{lastId} AND course.state = " + PUBLISHED_VALUE + " " +
             "ORDER BY user_course.id DESC LIMIT 20")
     List<UserCourseDO> getByUserId(long userId, long lastId);
 

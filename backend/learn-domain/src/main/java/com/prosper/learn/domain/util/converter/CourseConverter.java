@@ -20,7 +20,7 @@ public interface CourseConverter {
     @Mapping(target = "state")
     @Mapping(target = "mainCategory")
     @Mapping(target = "subCategory")
-    @Mapping(target = "rejectedReason")
+    @Mapping(target = "reason")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
     CourseDTO toDTO(CourseDO courseDO);

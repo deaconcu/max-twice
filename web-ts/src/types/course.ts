@@ -18,7 +18,7 @@ export interface Course {
   state?: ContentState         // 课程状态 (可选)
   mainCategory?: number        // 主分类ID (可选)
   subCategory?: number         // 子分类ID (可选)
-  rejectedReason?: string      // 拒绝原因 (可选)
+  reason?: string              // 拒绝原因 (可选)
   createdAt?: string           // 创建时间 (可选)
   updatedAt?: string           // 更新时间 (可选)
   
@@ -56,7 +56,7 @@ export interface CreateSubcourseRequest {
 export interface ApproveCourseRequest {
   id: number                 // 课程ID
   action: string             // 审核动作
-  rejectedReason?: string    // 拒绝原因
+  reason?: string            // 拒绝原因
 }
 
 // 课程子分类

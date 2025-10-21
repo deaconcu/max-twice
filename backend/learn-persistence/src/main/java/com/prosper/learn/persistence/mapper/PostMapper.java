@@ -36,12 +36,12 @@ public interface PostMapper {
     List<PostDO> getListByLastId(long nodeId, long lastId, int limit, byte state);
 
     @Select("SELECT * FROM post " +
-            "WHERE creator_id = #{userId} and type = 2 and state = " + APPROVED_VALUE + " and id < #{lastId} " +
+            "WHERE creator_id = #{userId} and type = 2 and state = " + PUBLISHED_VALUE + " and id < #{lastId} " +
             "order by id desc limit #{count}")
     List<PostDO> getArticleListByUser(long userId, long lastId, int count);
 
     @Select("SELECT * FROM post " +
-            "WHERE creator_id = #{userId} and type = 1 and state = " + APPROVED_VALUE + " and id < #{lastId} " +
+            "WHERE creator_id = #{userId} and type = 1 and state = " + PUBLISHED_VALUE + " and id < #{lastId} " +
             "order by id desc limit #{count}")
     List<PostDO> getContentsListByUser(long userId, long lastId, int count);
 
@@ -83,10 +83,10 @@ public interface PostMapper {
      *
      * @return 文章总数
      */
-    @Select("SELECT COUNT(*) FROM post WHERE state = " + APPROVED_VALUE)
+    @Select("SELECT COUNT(*) FROM post WHERE state = " + PUBLISHED_VALUE)
     Long countActiveArticles();
 
-    @Select("SELECT COUNT(*) FROM post WHERE node_id = #{nodeId} AND creator_id = #{creatorId} AND state = " + APPROVED_VALUE)
+    @Select("SELECT COUNT(*) FROM post WHERE node_id = #{nodeId} AND creator_id = #{creatorId} AND state = " + PUBLISHED_VALUE)
     Long countPostsByNodeAndCreator(@Param("nodeId") long nodeId, @Param("creatorId") long creatorId);
 
     @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND creator_id = #{creatorId} AND state != #{excludeState} ORDER BY created_at DESC")
@@ -102,4 +102,7 @@ public interface PostMapper {
 
     @Update("UPDATE post SET state = #{state} WHERE id = #{id}")
     int updateState(@Param("id") long id, @Param("state") byte state);
+
+    @Update("UPDATE post SET state = #{state}, reason = #{reason} WHERE id = #{id}")
+    int updateStateWithReason(@Param("id") long id, @Param("state") byte state, @Param("reason") String reason);
 }

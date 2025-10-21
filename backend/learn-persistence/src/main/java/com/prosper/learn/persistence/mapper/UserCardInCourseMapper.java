@@ -101,7 +101,7 @@ public interface UserCardInCourseMapper {
           "    user_card_srs srs ON ucc.user_id = srs.user_id AND ucc.card_id = srs.card_id",
           "WHERE",
           "    ucc.user_id = #{userId}",
-          "    AND deck.state = " + APPROVED_VALUE,
+          "    AND deck.state = " + PUBLISHED_VALUE,
           "    AND ucc.course_id IN",
           "    <foreach item=\"courseId\" collection=\"courseIds\" open=\"(\" separator=\",\" close=\")\">",
           "        #{courseId}",
@@ -128,7 +128,7 @@ public interface UserCardInCourseMapper {
           "WHERE",
           "    ucc.user_id = #{userId}",
           "    AND ucc.course_id = #{courseId}",
-          "    AND deck.state = " + APPROVED_VALUE,
+          "    AND deck.state = " + PUBLISHED_VALUE,
           "</script>"})
     CourseMemoryBankDO getCardStatsForCourses(@Param("userId") Long userId, @Param("courseId") Long courseId, @Param("now") LocalDateTime now);
 

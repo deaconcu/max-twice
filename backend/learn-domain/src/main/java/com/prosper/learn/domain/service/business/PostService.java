@@ -219,7 +219,7 @@ public class PostService {
     public List<PostDTO> getList(long nodeId) {
         validateNodeId(nodeId);
         List<PostDO> posts = postDataService.getListByNodeAndScore(
-                nodeId, systemProperties.getPosting().getDefaultNodePostCount(), Enums.ContentState.APPROVED.value());
+                nodeId, systemProperties.getPosting().getDefaultNodePostCount(), Enums.ContentState.PUBLISHED.value());
         posts.forEach(this::idToName);
         return postConverter.toDTO(posts);
     }
@@ -338,7 +338,7 @@ public class PostService {
         } else if (nodeId != null && nodeId > 0) {
             int count = 2;
             postDOList = postDataService.getListByNodeAndScoreAndPaginated(
-                    nodeId, lastScore, lastPostingId, count, Enums.ContentState.APPROVED.value());
+                    nodeId, lastScore, lastPostingId, count, Enums.ContentState.PUBLISHED.value());
         }
         return toDTOV3(postDOList, userId);
     }
@@ -348,7 +348,7 @@ public class PostService {
      */
     public List<PostDTO> getNodePostsList(Long nodeId) {
         int count = systemProperties.getPosting().getDefaultNodeListCount();
-        List<PostDO> postings = postDataService.getListByNode(nodeId, count, Enums.ContentState.APPROVED.value());
+        List<PostDO> postings = postDataService.getListByNode(nodeId, count, Enums.ContentState.PUBLISHED.value());
         postings.forEach(this::idToName);
         return toDTO(postings);
     }
@@ -465,7 +465,7 @@ public class PostService {
                     newNode.setDescription(chapterInfo.right());
                     newNode.setCourseId(courseId);
                     newNode.setCreatorId(userId);
-                    newNode.setState(Enums.ContentState.APPROVED.value());
+                    newNode.setState(Enums.ContentState.PUBLISHED.value());
                     nodeDataService.insert(newNode);
                     ids[i] = Long.toString(newNode.getId());
                     log.info("Created new node: {} (id: {}) in course: {}", nodeName, newNode.getId(), courseId);
@@ -530,8 +530,8 @@ public class PostService {
     public PostDTO approvePost(Long id, boolean approve) {
         PostDO postDO = validateAndGetPost(id);
 
-        if (approve && postDO.getState() != Enums.ContentState.APPROVED.value()) {
-            postDO.setState(Enums.ContentState.APPROVED.value());
+        if (approve && postDO.getState() != Enums.ContentState.PUBLISHED.value()) {
+            postDO.setState(Enums.ContentState.PUBLISHED.value());
             postDataService.update(postDO);
         }
         if (!approve && postDO.getState() != Enums.ContentState.REJECTED.value()) {
@@ -542,7 +542,36 @@ public class PostService {
     }
 
     /**
+     * 批准帖子
+     */
+    @Transactional
+    public void approve(Long id) {
+        PostDO postDO = validateAndGetPost(id);
+        postDO.setState(Enums.ContentState.PUBLISHED.value());
+        postDO.setReason(null);  // 清空拒绝原因
+        postDataService.update(postDO);
+    }
+
+    /**
      * 拒绝帖子（审核不通过）
+     */
+    @Transactional
+    public void reject(Long id, String reason) {
+        validatePostId(id);
+        postDataService.reject(id, reason);
+    }
+
+    /**
+     * 封禁帖子（违规封禁）
+     */
+    @Transactional
+    public void ban(Long id, String reason) {
+        validatePostId(id);
+        postDataService.ban(id, reason);
+    }
+
+    /**
+     * 拒绝帖子（审核不通过）- 无原因版本
      */
     @Transactional
     public void rejectPost(Long id) {
@@ -551,7 +580,7 @@ public class PostService {
     }
 
     /**
-     * 封禁帖子（违规封禁）
+     * 封禁帖子（违规封禁）- 无原因版本
      */
     @Transactional
     public void banPost(Long id) {

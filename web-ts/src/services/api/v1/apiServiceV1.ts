@@ -202,10 +202,10 @@ export const professionServiceV1 = {
     return apiClient.put(`${API_V1_PREFIX}/professions/${id}`, professionData)
   },
 
-  approveProfession(id: number, action: string, rejectedReason?: string): Promise<ApiResponse<ApprovalResponse>> {
+  approveProfession(id: number, action: string, reason?: string): Promise<ApiResponse<ApprovalResponse>> {
     return apiClient.post(`${API_V1_PREFIX}/professions/${id}/approve`, {
       action,
-      rejectedReason,
+      reason,
     })
   },
 
@@ -275,10 +275,10 @@ export const courseServiceV1 = {
     })
   },
 
-  approveCourse(id: number, action: string, rejectedReason?: string): Promise<ApiResponse<ApprovalResponse>> {
+  approveCourse(id: number, action: string, reason?: string): Promise<ApiResponse<ApprovalResponse>> {
     return apiClient.post(`${API_V1_PREFIX}/courses/${id}/approve`, {
       action,
-      rejectedReason,
+      reason,
     })
   },
 
@@ -333,9 +333,10 @@ export const postServiceV1 = {
     })
   },
 
-  approvePost(id: number, approve: boolean): Promise<ApiResponse<Post>> {
-    return apiClient.put(`${API_V1_PREFIX}/admin/posts/${id}/approve`, null, {
-      params: { approve },
+  approvePost(id: number, action: string, reason?: string): Promise<ApiResponse<any>> {
+    return apiClient.post(`${API_V1_PREFIX}/admin/posts/${id}/approve`, {
+      action,
+      reason: reason || '',
     })
   },
 }
@@ -375,9 +376,10 @@ export const commentServiceV1 = {
     })
   },
 
-  approveComment(id: number, approve: boolean): Promise<ApiResponse<Comment>> {
-    return apiClient.put(`${API_V1_PREFIX}/admin/comments/${id}/approve`, null, {
-      params: { approve },
+  approveComment(id: number, action: string, reason?: string): Promise<ApiResponse<any>> {
+    return apiClient.post(`${API_V1_PREFIX}/admin/comments/${id}/approve`, {
+      action,
+      reason: reason || '',
     })
   },
 }
@@ -432,10 +434,10 @@ export const roadmapServiceV1 = {
     })
   },
 
-  approveRoadmap(id: number, action: string, rejectedReason?: string): Promise<ApiResponse<Roadmap>> {
+  approveRoadmap(id: number, action: string, reason?: string): Promise<ApiResponse<Roadmap>> {
     return apiClient.post(`${API_V1_PREFIX}/roadmaps/${id}/approve`, {
       action,
-      rejectedReason,
+      reason,
     })
   },
 
@@ -761,6 +763,12 @@ export const nodeServiceV1 = {
   getNodesByFilter(nodeId?: number, courseId?: number, creatorId?: number, lastId?: number): Promise<ApiResponse<Node[]>> {
     return apiClient.get(`${API_V1_PREFIX}/admin/nodes/filter`, {
       params: { nodeId, courseId, creatorId, lastId },
+    })
+  },
+
+  getNodesByState(state: number, lastId?: number): Promise<ApiResponse<Node[]>> {
+    return apiClient.get(`${API_V1_PREFIX}/admin/nodes/state`, {
+      params: { state, lastId },
     })
   },
 

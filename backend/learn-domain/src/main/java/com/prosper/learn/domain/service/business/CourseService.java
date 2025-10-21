@@ -69,7 +69,7 @@ public class CourseService {
         if (!systemProperties.getCourse().isEnableStateValidation()) {
             return;
         }
-        if (ContentState.APPROVED.value().equals(courseDO.getState())) {
+        if (ContentState.PUBLISHED.value().equals(courseDO.getState())) {
             throw ErrorCode.COURSE_ALREADY_APPROVED.exception();
         }
     }
@@ -82,7 +82,7 @@ public class CourseService {
             return;
         }
         if (ContentState.REJECTED.value().equals(courseDO.getState())) {
-            throw ErrorCode.COURSE_ALREADY_REJECTED.exception();
+            throw ErrorCode.COURSE_ALREADY_BANNED.exception();
         }
         if (ContentState.BANNED.value().equals(courseDO.getState())) {
             throw ErrorCode.COURSE_ALREADY_BANNED.exception();
@@ -214,7 +214,7 @@ public class CourseService {
      * @return
      */
     public List<CourseDTO> getSubCourses(long parentCourseId) {
-        return toDTOV2(courseDataService.listByParentAndState(ContentState.APPROVED, parentCourseId));
+        return toDTOV2(courseDataService.listByParentAndState(ContentState.PUBLISHED, parentCourseId));
     }
 
     @Transactional

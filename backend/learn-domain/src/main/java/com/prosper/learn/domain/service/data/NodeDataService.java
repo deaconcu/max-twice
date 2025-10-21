@@ -148,23 +148,23 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
     /**
      * 审批通过节点
      */
-    public int approve(long id) {
-        return nodeMapper.updateState(id, Enums.ContentState.APPROVED.value());
+    public void approve(long id) {
+        nodeMapper.updateState(id, Enums.ContentState.PUBLISHED.value());
     }
 
     /**
      * 拒绝节点申请
      */
     @CacheEvict(value = "nodes", key = "#id")
-    public int reject(long id) {
-        return nodeMapper.updateState(id, Enums.ContentState.REJECTED.value());
+    public void reject(long id) {
+        nodeMapper.updateState(id, Enums.ContentState.REJECTED.value());
     }
 
     /**
      * 封禁节点
      */
     @CacheEvict(value = "nodes", key = "#id")
-    public int ban(long id) {
-        return nodeMapper.updateState(id, Enums.ContentState.BANNED.value());
+    public void ban(long id) {
+        nodeMapper.updateState(id, Enums.ContentState.BANNED.value());
     }
 }

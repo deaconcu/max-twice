@@ -241,6 +241,9 @@ const openCareer = (careerId: number): void => {
 
           <!-- 平台介绍和学习路径 -->
           <v-card border rounded="xl" class="platform-guide-card pa-6 mb-6">
+            <!-- 涂鸦装饰元素 -->
+            <div class="doodle-decoration doodle-dots"></div>
+
             <!-- 标题 -->
             <div class="text-center mb-6">
               <h2 class="text-h5 font-weight-bold text-grey-darken-4 mb-2">
@@ -805,6 +808,85 @@ const openCareer = (careerId: number): void => {
 .platform-guide-card {
   background-color: #FFFFFF;
   border: 1px solid #EDEFF1;
+  position: relative;
+  overflow: visible;
+}
+
+/* 左上角光晕效果 */
+.platform-guide-card::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  left: -80px;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(244, 67, 54, 0.15) 0%, rgba(244, 67, 54, 0.08) 40%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 波浪线已删除 */
+
+.platform-guide-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 涂鸦装饰基础样式 */
+.doodle-decoration {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+/* 圆圈已删除 */
+/* 之字形已删除 */
+
+/* 涂鸦点点 - 右上角 */
+.doodle-dots {
+  top: 40px;
+  right: 60px;
+  width: 160px;
+  height: 160px;
+  background-image:
+    /* 第一层 - 蓝色 */
+    radial-gradient(circle, rgba(33, 150, 243, 0.45) 4px, transparent 4px),
+    radial-gradient(circle, rgba(33, 150, 243, 0.4) 3px, transparent 3px),
+    radial-gradient(circle, rgba(33, 150, 243, 0.35) 3px, transparent 3px),
+    radial-gradient(circle, rgba(33, 150, 243, 0.4) 4px, transparent 4px),
+    /* 第二层 - 绿色 */
+    radial-gradient(circle, rgba(76, 175, 80, 0.45) 3px, transparent 3px),
+    radial-gradient(circle, rgba(76, 175, 80, 0.4) 4px, transparent 4px),
+    radial-gradient(circle, rgba(76, 175, 80, 0.35) 3px, transparent 3px),
+    radial-gradient(circle, rgba(76, 175, 80, 0.4) 3px, transparent 3px),
+    /* 第三层 - 橙色 */
+    radial-gradient(circle, rgba(255, 152, 0, 0.45) 4px, transparent 4px),
+    radial-gradient(circle, rgba(255, 152, 0, 0.4) 3px, transparent 3px),
+    radial-gradient(circle, rgba(255, 152, 0, 0.35) 4px, transparent 4px),
+    radial-gradient(circle, rgba(255, 152, 0, 0.4) 3px, transparent 3px),
+    /* 第四层 - 紫色 */
+    radial-gradient(circle, rgba(156, 39, 176, 0.45) 3px, transparent 3px),
+    radial-gradient(circle, rgba(156, 39, 176, 0.4) 4px, transparent 4px),
+    radial-gradient(circle, rgba(156, 39, 176, 0.35) 3px, transparent 3px),
+    /* 第五层 - 红色 */
+    radial-gradient(circle, rgba(244, 67, 54, 0.45) 4px, transparent 4px),
+    radial-gradient(circle, rgba(244, 67, 54, 0.4) 3px, transparent 3px),
+    radial-gradient(circle, rgba(244, 67, 54, 0.35) 3px, transparent 3px);
+  background-size:
+    12px 12px, 10px 10px, 11px 11px, 13px 13px,
+    11px 11px, 12px 12px, 10px 10px, 13px 13px,
+    13px 13px, 11px 11px, 12px 12px, 10px 10px,
+    10px 10px, 12px 12px, 11px 11px,
+    13px 13px, 11px 11px, 10px 10px;
+  background-position:
+    0 0, 6px 6px, 3px 9px, 9px 3px,
+    12px 8px, 2px 5px, 15px 11px, 5px 14px,
+    8px 1px, 14px 5px, 4px 12px, 11px 15px,
+    16px 2px, 7px 10px, 13px 13px,
+    1px 7px, 10px 4px, 6px 16px;
+  transform: rotate(25deg);
 }
 
 .platform-stat {

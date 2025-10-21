@@ -1,5 +1,6 @@
 package com.prosper.learn.persistence.mapper;
 
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.persistence.dataobject.MemoryCardDO;
 import org.apache.ibatis.annotations.*;
 
@@ -89,7 +90,7 @@ public interface MemoryCardMapper {
     @Select("SELECT COUNT(*) FROM memory_card WHERE deck_id = #{deckId} AND state = #{state}")
     int countByDeck(long deckId, int state);
 
-    @Select("SELECT id FROM memory_card WHERE deck_id = #{deckId} AND state = " + SUBMITTED.value() + " ORDER BY id")
+    @Select("SELECT id FROM memory_card WHERE deck_id = #{deckId} AND state = " + PUBLISHED_VALUE + " ORDER BY id")
     List<Long> getCardIdsByDeckId(long deckId);
 
     @Select("SELECT COUNT(*) FROM memory_card WHERE creator_id = #{creatorId} AND state = #{state}")

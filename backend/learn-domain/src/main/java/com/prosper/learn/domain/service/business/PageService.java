@@ -200,7 +200,7 @@ public class PageService {
     private CourseDO validateCourseExists(Long courseId) {
         CourseDO courseDO = courseDataService.validateAndGet(courseId);
         if (courseDO.getState() == Enums.ContentState.BANNED.value()) {
-            throw ErrorCode.COURSE_BLOCKED.exception();
+            throw ErrorCode.COURSE_BANNED.exception();
         }
         return courseDO;
     }

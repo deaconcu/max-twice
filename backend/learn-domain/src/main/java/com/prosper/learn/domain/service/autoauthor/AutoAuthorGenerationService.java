@@ -287,7 +287,7 @@ public class AutoAuthorGenerationService {
             req.setNodeId(nodeId);
             req.setType(postType.value());
             req.setContent(content.substring(3));
-            return postService.createPost(aiUserId, req, Enums.ContentState.APPROVED);
+            return postService.createPost(aiUserId, req, Enums.ContentState.PUBLISHED);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

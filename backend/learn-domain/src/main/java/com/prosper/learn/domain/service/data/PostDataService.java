@@ -206,10 +206,26 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
     }
 
     /**
+     * 拒绝帖子（审核不通过，带原因）
+     */
+    @CacheEvict(value = "posts", key = "#id")
+    public int reject(long id, String reason) {
+        return postMapper.updateStateWithReason(id, Enums.ContentState.REJECTED.value(), reason);
+    }
+
+    /**
      * 封禁帖子（违规封禁）
      */
     @CacheEvict(value = "posts", key = "#id")
     public int ban(long id) {
         return postMapper.updateState(id, Enums.ContentState.BANNED.value());
+    }
+
+    /**
+     * 封禁帖子（违规封禁，带原因）
+     */
+    @CacheEvict(value = "posts", key = "#id")
+    public int ban(long id, String reason) {
+        return postMapper.updateStateWithReason(id, Enums.ContentState.BANNED.value(), reason);
     }
 }

@@ -371,7 +371,7 @@ public class CommentService {
                 stateValue = Enums.ContentState.SUBMITTED.value();
                 break;
             case "approved":
-                stateValue = Enums.ContentState.APPROVED.value();
+                stateValue = Enums.ContentState.PUBLISHED.value();
                 break;
             case "rejected":
                 stateValue = Enums.ContentState.REJECTED.value();
@@ -399,8 +399,8 @@ public class CommentService {
         CommentDO commentDO = validateAndGetComment(id);
         int oldState = commentDO.getState();
 
-        if (approve && oldState != Enums.ContentState.APPROVED.value()) {
-            commentDO.setState(Enums.ContentState.APPROVED.value());
+        if (approve && oldState != Enums.ContentState.PUBLISHED.value()) {
+            commentDO.setState(Enums.ContentState.PUBLISHED.value());
             commentDataService.update(commentDO);
 
             // 通过审核，评论数+1
@@ -414,7 +414,7 @@ public class CommentService {
             commentDataService.update(commentDO);
 
             // 拒绝评论，评论数-1
-            if (oldState == Enums.ContentState.APPROVED.value()) {
+            if (oldState == Enums.ContentState.PUBLISHED.value()) {
                 updateObjectCommentCount(commentDO, -1);
             }
         }
@@ -423,7 +423,60 @@ public class CommentService {
     }
 
     /**
-     * 拒绝评论（审核不通过）
+     * 批准评论
+     */
+    @Transactional
+    public void approve(Long id) {
+        validateCommentId(id);
+        CommentDO commentDO = validateAndGetComment(id);
+        int oldState = commentDO.getState();
+
+        if (oldState != Enums.ContentState.PUBLISHED.value()) {
+            commentDO.setState(Enums.ContentState.PUBLISHED.value());
+            commentDO.setReason(null);  // 清空拒绝原因
+            commentDataService.update(commentDO);
+
+            // 批准评论，评论数+1
+            updateObjectCommentCount(commentDO, 1);
+        }
+    }
+
+    /**
+     * 拒绝评论（审核不通过，带原因）
+     */
+    @Transactional
+    public void reject(Long id, String reason) {
+        validateCommentId(id);
+        CommentDO commentDO = validateAndGetComment(id);
+        int oldState = commentDO.getState();
+
+        commentDataService.reject(id, reason);
+
+        // 拒绝评论，如果之前是已批准状态，评论数-1
+        if (oldState == Enums.ContentState.PUBLISHED.value()) {
+            updateObjectCommentCount(commentDO, -1);
+        }
+    }
+
+    /**
+     * 封禁评论（违规封禁，带原因）
+     */
+    @Transactional
+    public void ban(Long id, String reason) {
+        validateCommentId(id);
+        CommentDO commentDO = validateAndGetComment(id);
+        int oldState = commentDO.getState();
+
+        commentDataService.ban(id, reason);
+
+        // 封禁评论，如果之前是已批准状态，评论数-1
+        if (oldState == Enums.ContentState.PUBLISHED.value()) {
+            updateObjectCommentCount(commentDO, -1);
+        }
+    }
+
+    /**
+     * 拒绝评论（审核不通过）- 无原因版本
      */
     @Transactional
     public void rejectComment(Long id) {
@@ -434,13 +487,13 @@ public class CommentService {
         commentDataService.reject(id);
 
         // 拒绝评论，如果之前是已批准状态，评论数-1
-        if (oldState == Enums.ContentState.APPROVED.value()) {
+        if (oldState == Enums.ContentState.PUBLISHED.value()) {
             updateObjectCommentCount(commentDO, -1);
         }
     }
 
     /**
-     * 封禁评论（违规封禁）
+     * 封禁评论（违规封禁）- 无原因版本
      */
     @Transactional
     public void banComment(Long id) {
@@ -451,7 +504,7 @@ public class CommentService {
         commentDataService.ban(id);
 
         // 封禁评论，如果之前是已批准状态，评论数-1
-        if (oldState == Enums.ContentState.APPROVED.value()) {
+        if (oldState == Enums.ContentState.PUBLISHED.value()) {
             updateObjectCommentCount(commentDO, -1);
         }
     }

@@ -2,17 +2,57 @@
 import { inject, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { MemoryService } from '@/services/memoryService'
-import { DeckState } from '@/types/memoryCard'
+import { ContentState } from '@/types/enums'
 import type { DeckDetail } from '@/types/memoryCard'
 
 const { t } = useI18n()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
-const activeTab = ref<'pending' | 'reviewed' | 'blocked'>('pending')
+const activeTab = ref<string>('pending')
 const deckList = ref<DeckDetail[]>([])
 const loading = ref(false)
 const lastId = ref<number | undefined>(undefined)
 const hasMore = ref(true)
+
+// 标签配置
+interface TabConfig {
+  key: string
+  label: string
+  state: number
+  icon: string
+  color: string
+}
+
+const tabs: TabConfig[] = [
+  {
+    key: 'pending',
+    label: '待审核',
+    state: ContentState.SUBMITTED,
+    icon: 'mdi-clock-outline',
+    color: 'orange'
+  },
+  {
+    key: 'approved',
+    label: '已通过',
+    state: ContentState.PUBLISHED,
+    icon: 'mdi-check-circle',
+    color: 'green'
+  },
+  {
+    key: 'rejected',
+    label: '已拒绝',
+    state: ContentState.REJECTED,
+    icon: 'mdi-close-circle',
+    color: 'red'
+  },
+  {
+    key: 'banned',
+    label: '已封禁',
+    state: ContentState.BANNED,
+    icon: 'mdi-cancel',
+    color: 'grey'
+  }
+]
 
 // 筛选条件
 const filterForm = ref({
@@ -20,20 +60,16 @@ const filterForm = ref({
   creatorId: null as number | null
 })
 
+const getCurrentTab = () => tabs.find(tab => tab.key === activeTab.value) || tabs[0]
+
 const loadDecks = async (reset = false): Promise<void> => {
   if (loading.value) return
-  
+
   loading.value = true
   try {
-    let state: number
-    if (activeTab.value === 'pending') {
-      state = DeckState.PENDING
-    } else if (activeTab.value === 'reviewed') {
-      state = DeckState.NORMAL
-    } else {
-      state = DeckState.BLOCKED
-    }
-    
+    const currentTab = getCurrentTab()
+    const state = currentTab.state
+
     const response = await MemoryService.getDecksForReview({
       state: state,
       postId: filterForm.value.postId || undefined,
@@ -53,9 +89,9 @@ const loadDecks = async (reset = false): Promise<void> => {
       } else {
         deckList.value.push(...newDecks)
       }
-      
+
       hasMore.value = responseData.hasMore || false
-      
+
       // 更新lastId - 使用 nextCursor 中的信息
       if (responseData.nextCursor?.lastId) {
         lastId.value = responseData.nextCursor.lastId
@@ -63,7 +99,7 @@ const loadDecks = async (reset = false): Promise<void> => {
         lastId.value = undefined
       }
     }
-    
+
   } catch (error) {
     console.error('Error loading decks:', error)
     showSnackbar?.('加载卡片组失败', 'error')
@@ -78,8 +114,8 @@ const loadMore = (): void => {
   }
 }
 
-const switchTab = (tab: 'pending' | 'reviewed' | 'blocked') => {
-  activeTab.value = tab
+const switchTab = (tabKey: string) => {
+  activeTab.value = tabKey
   lastId.value = undefined
   hasMore.value = true
   loadDecks(true)
@@ -154,22 +190,22 @@ const restoreDeck = async (deck: DeckDetail): Promise<void> => {
   }
 }
 
-const getStateText = (state: DeckState): string => {
+const getStateText = (state: number): string => {
   switch (state) {
-    case DeckState.PENDING: return '待审核'
-    case DeckState.NORMAL: return '正常'
-    case DeckState.BLOCKED: return '已屏蔽'
-    case DeckState.PRIVATE: return '私有'
+    case ContentState.SUBMITTED: return '待审核'
+    case ContentState.PUBLISHED: return '已通过'
+    case ContentState.REJECTED: return '已拒绝'
+    case ContentState.BANNED: return '已封禁'
     default: return '未知'
   }
 }
 
-const getStateColor = (state: DeckState): string => {
+const getStateColor = (state: number): string => {
   switch (state) {
-    case DeckState.PENDING: return 'orange-lighten-4'
-    case DeckState.NORMAL: return 'green-lighten-4'
-    case DeckState.BLOCKED: return 'red-lighten-4'
-    case DeckState.PRIVATE: return 'blue-lighten-4'
+    case ContentState.SUBMITTED: return 'orange-lighten-4'
+    case ContentState.PUBLISHED: return 'green-lighten-4'
+    case ContentState.REJECTED: return 'red-lighten-4'
+    case ContentState.BANNED: return 'grey-lighten-2'
     default: return 'grey-lighten-3'
   }
 }
@@ -206,13 +242,13 @@ onMounted(() => {
       </v-chip>
     </div>
 
-    <!-- 筛选条件 -->
-    <v-card flat class="border rounded-lg pa-4 mb-6">
-      <div class="d-flex align-center mb-3">
-        <v-icon icon="mdi-filter-variant" size="18" color="grey-darken-2" class="mr-2"></v-icon>
-        <h5 class="text-subtitle-2 font-weight-medium text-grey-darken-2 mb-0">筛选条件</h5>
-      </div>
-      <v-row>
+    <!-- 筛选区域 -->
+    <v-card flat class="pa-4 bg-grey-lighten-5 rounded-lg mb-6">
+      <h4 class="text-subtitle-2 text-grey-darken-2 mb-3 d-flex align-center">
+        <v-icon icon="mdi-filter-outline" size="16" class="mr-2"></v-icon>
+        高级筛选
+      </h4>
+      <v-row dense>
         <v-col cols="12" md="4">
           <v-text-field
             v-model.number="filterForm.postId"
@@ -220,10 +256,10 @@ onMounted(() => {
             type="number"
             variant="outlined"
             density="compact"
+            rounded="lg"
+            bg-color="white"
+            hide-details
             clearable
-            prepend-inner-icon="mdi-post"
-            hide-spin-buttons
-            @keyup.enter="applyFilter"
           ></v-text-field>
         </v-col>
         <v-col cols="12" md="4">
@@ -233,31 +269,30 @@ onMounted(() => {
             type="number"
             variant="outlined"
             density="compact"
+            rounded="lg"
+            bg-color="white"
+            hide-details
             clearable
-            prepend-inner-icon="mdi-account"
-            hide-spin-buttons
-            @keyup.enter="applyFilter"
           ></v-text-field>
         </v-col>
         <v-col cols="12" md="4">
           <div class="d-flex gap-2">
             <v-btn
-              color="primary"
               variant="flat"
+              color="primary"
               rounded="lg"
-              class="mr-2"
-              prepend-icon="mdi-magnify"
               @click="applyFilter"
             >
+              <v-icon icon="mdi-magnify" class="mr-1"></v-icon>
               筛选
             </v-btn>
             <v-btn
-              color="grey"
               variant="outlined"
+              color="grey"
               rounded="lg"
-              prepend-icon="mdi-refresh"
               @click="resetFilter"
             >
+              <v-icon icon="mdi-refresh" class="mr-1"></v-icon>
               重置
             </v-btn>
           </div>
@@ -265,23 +300,29 @@ onMounted(() => {
       </v-row>
     </v-card>
 
-    <!-- 标签页 -->
-    <div class="mb-6">
-      <v-tabs v-model="activeTab" color="purple" density="compact" class="mb-4">
-        <v-tab value="pending" @click="switchTab('pending')">
-          <v-icon icon="mdi-clock-outline" size="16" class="mr-2"></v-icon>
-          待审核
-        </v-tab>
-        <v-tab value="reviewed" @click="switchTab('reviewed')">
-          <v-icon icon="mdi-check-circle-outline" size="16" class="mr-2"></v-icon>
-          已审核
-        </v-tab>
-        <v-tab value="blocked" @click="switchTab('blocked')">
-          <v-icon icon="mdi-block-helper" size="16" class="mr-2"></v-icon>
-          已屏蔽
-        </v-tab>
-      </v-tabs>
-    </div>
+    <!-- 状态标签 -->
+    <v-tabs
+      v-model="activeTab"
+      color="primary"
+      class="mb-6"
+      show-arrows
+      @update:model-value="switchTab"
+    >
+      <v-tab
+        v-for="tab in tabs"
+        :key="tab.key"
+        :value="tab.key"
+        class="text-none"
+      >
+        <v-icon
+          :icon="tab.icon"
+          :color="`${tab.color}-darken-1`"
+          size="18"
+          class="mr-2"
+        ></v-icon>
+        {{ tab.label }}
+      </v-tab>
+    </v-tabs>
 
     <!-- 加载状态 -->
     <div v-if="loading && deckList.length === 0" class="text-center py-12">
@@ -320,69 +361,109 @@ onMounted(() => {
               <div class="mr-8 action-area">
                 <div class="mb-3">
                   <v-chip
+                    v-if="deck.state === ContentState.SUBMITTED"
                     variant="flat"
-                    :color="getStateColor(deck.state)"
+                    color="orange-lighten-4"
                     rounded="lg"
                     size="small"
                   >
-                    <span class="text-caption font-weight-medium" :class="{
-                      'text-orange-darken-2': deck.state === DeckState.PENDING,
-                      'text-green-darken-2': deck.state === DeckState.NORMAL,
-                      'text-red-darken-2': deck.state === DeckState.BLOCKED
-                    }">
-                      {{ getStateText(deck.state) }}
-                    </span>
+                    <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
+                    {{ t('admin.pending') }}
+                  </v-chip>
+                  <v-chip
+                    v-if="deck.state === ContentState.PUBLISHED"
+                    variant="flat"
+                    color="green-lighten-4"
+                    rounded="lg"
+                    size="small"
+                  >
+                    <v-icon icon="mdi-check-circle" size="14" class="mr-1"></v-icon>
+                    {{ t('admin.approved') }}
+                  </v-chip>
+                  <v-chip
+                    v-if="deck.state === ContentState.REJECTED"
+                    variant="flat"
+                    color="red-lighten-4"
+                    rounded="lg"
+                    size="small"
+                  >
+                    <v-icon icon="mdi-close-circle" size="14" class="mr-1"></v-icon>
+                    {{ t('admin.rejected') }}
+                  </v-chip>
+                  <v-chip
+                    v-if="deck.state === ContentState.BANNED"
+                    variant="flat"
+                    color="grey-lighten-2"
+                    rounded="lg"
+                    size="small"
+                  >
+                    <v-icon icon="mdi-cancel" size="14" class="mr-1"></v-icon>
+                    {{ t('admin.banned') }}
                   </v-chip>
                 </div>
 
                 <!-- 待审核状态的操作 -->
-                <div v-if="activeTab === 'pending'" class="d-flex flex-column" style="gap: 8px;">
+                <div v-if="deck.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
                   <v-btn
-                    color="green"
                     variant="flat"
+                    color="green-lighten-4"
                     rounded="lg"
                     size="small"
-                    prepend-icon="mdi-check"
                     @click="approveDeck(deck, true)"
                   >
-                    通过
+                    <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
+                    {{ t('admin.approve') }}
                   </v-btn>
                   <v-btn
-                    color="red"
-                    variant="outlined"
+                    variant="flat"
+                    color="red-lighten-4"
                     rounded="lg"
                     size="small"
-                    prepend-icon="mdi-close"
                     @click="approveDeck(deck, false)"
                   >
-                    废弃
+                    <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
+                    {{ t('admin.reject') }}
                   </v-btn>
                 </div>
 
-                <!-- 已审核状态的操作 -->
-                <div v-else-if="activeTab === 'reviewed'" class="d-flex flex-column" style="gap: 8px;">
+                <!-- 已通过状态下显示屏蔽按钮 -->
+                <div v-if="deck.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
                   <v-btn
-                    color="red"
-                    variant="outlined"
-                    rounded="lg"
-                    size="small"
-                    prepend-icon="mdi-delete"
-                    @click="discardDeck(deck)"
-                  >
-                    废弃
-                  </v-btn>
-                </div>
-
-                <!-- 已屏蔽状态的操作 -->
-                <div v-else-if="activeTab === 'blocked'" class="d-flex flex-column" style="gap: 8px;">
-                  <v-btn
-                    color="green"
                     variant="flat"
+                    color="red-lighten-4"
                     rounded="lg"
                     size="small"
-                    prepend-icon="mdi-restore"
+                    @click="approveDeck(deck, false)"
+                  >
+                    <v-icon icon="mdi-block-helper" color="red-darken-2" size="16" class="mr-1"></v-icon>
+                    屏蔽
+                  </v-btn>
+                </div>
+
+                <!-- 已拒绝状态下显示通过按钮 -->
+                <div v-if="deck.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
+                  <v-btn
+                    variant="flat"
+                    color="green-lighten-4"
+                    rounded="lg"
+                    size="small"
+                    @click="approveDeck(deck, true)"
+                  >
+                    <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
+                    {{ t('admin.approve') }}
+                  </v-btn>
+                </div>
+
+                <!-- 已封禁状态下显示恢复按钮 -->
+                <div v-if="deck.state === ContentState.BANNED" class="d-flex flex-column ga-2">
+                  <v-btn
+                    variant="flat"
+                    color="orange-lighten-4"
+                    rounded="lg"
+                    size="small"
                     @click="restoreDeck(deck)"
                   >
+                    <v-icon icon="mdi-restore" color="orange-darken-2" size="16" class="mr-1"></v-icon>
                     恢复
                   </v-btn>
                 </div>

@@ -17,84 +17,87 @@
       </v-chip>
     </div>
 
-    <!-- 筛选条件 -->
-    <div class="mb-6">
-      <v-card flat class="pa-4 bg-grey-lighten-5" rounded="lg">
-        <h4 class="text-subtitle-2 text-grey-darken-2 mb-3 d-flex align-center">
-          <v-icon icon="mdi-filter-variant" size="16" class="mr-2"></v-icon>
-          筛选条件
-        </h4>
-        <div class="d-flex align-center flex-wrap">
+    <!-- 筛选区域 -->
+    <v-card flat class="pa-4 bg-grey-lighten-5 rounded-lg mb-6">
+      <h4 class="text-subtitle-2 text-grey-darken-2 mb-3 d-flex align-center">
+        <v-icon icon="mdi-filter-outline" size="16" class="mr-2"></v-icon>
+        高级筛选
+      </h4>
+      <v-row dense>
+        <v-col cols="12" sm="4">
           <v-text-field
-            v-model="professionIdFilter"
+            v-model.number="professionIdFilter"
             label="职业ID"
+            type="number"
             variant="outlined"
             density="compact"
             rounded="lg"
             bg-color="white"
             hide-details
             clearable
-            type="number"
-            class="me-3"
-            style="max-width: 200px"
           ></v-text-field>
+        </v-col>
+        <v-col cols="12" sm="4">
           <v-text-field
-            v-model="creatorIdFilter"
+            v-model.number="creatorIdFilter"
             label="创建者ID"
+            type="number"
             variant="outlined"
             density="compact"
             rounded="lg"
             bg-color="white"
             hide-details
             clearable
-            type="number"
-            class="me-3"
-            style="max-width: 200px"
           ></v-text-field>
-          <v-btn
-            color="primary"
-            variant="flat"
-            rounded="lg"
-            class="me-2"
-            @click="onFilterChange"
-          >
-            <v-icon icon="mdi-magnify" class="mr-1"></v-icon>
-            查询
-          </v-btn>
-          <v-btn
-            variant="outlined"
-            rounded="lg"
-            @click="onResetFilter"
-          >
-            <v-icon icon="mdi-refresh" class="mr-1"></v-icon>
-            重置
-          </v-btn>
-        </div>
-      </v-card>
-    </div>
+        </v-col>
+        <v-col cols="12" sm="4">
+          <div class="d-flex gap-2">
+            <v-btn
+              variant="flat"
+              color="primary"
+              rounded="lg"
+              @click="onFilterChange"
+            >
+              <v-icon icon="mdi-magnify" class="mr-1"></v-icon>
+              筛选
+            </v-btn>
+            <v-btn
+              variant="outlined"
+              color="grey"
+              rounded="lg"
+              @click="onResetFilter"
+            >
+              <v-icon icon="mdi-refresh" class="mr-1"></v-icon>
+              重置
+            </v-btn>
+          </div>
+        </v-col>
+      </v-row>
+    </v-card>
 
-    <!-- 状态筛选 -->
-    <div class="mb-6">
-      <v-chip-group
-        v-model="selectedStateIndex"
-        color="primary"
-        variant="flat"
-        mandatory
-        @update:model-value="onStateChange"
+    <!-- 状态标签 -->
+    <v-tabs
+      v-model="selectedStateIndex"
+      color="primary"
+      class="mb-6"
+      show-arrows
+      @update:model-value="onStateChange"
+    >
+      <v-tab
+        v-for="(state, index) in stateOptions"
+        :key="state.value"
+        :value="index"
+        class="text-none"
       >
-        <v-chip
-          v-for="(state, index) in stateOptions"
-          :key="state.value"
-          :value="index"
-          :color="state.color"
-          rounded="lg"
-          class="me-2"
-        >
-          <v-icon :icon="state.icon" size="16" class="mr-1"></v-icon>
-          {{ state.text }}
-        </v-chip>
-      </v-chip-group>
-    </div>
+        <v-icon
+          :icon="state.icon"
+          :color="state.value === ContentState.SUBMITTED ? 'orange-darken-1' : state.value === ContentState.PUBLISHED ? 'green-darken-1' : state.value === ContentState.REJECTED ? 'red-darken-1' : 'grey-darken-1'"
+          size="18"
+          class="mr-2"
+        ></v-icon>
+        {{ state.text }}
+      </v-tab>
+    </v-tabs>
 
     <!-- 加载状态 -->
     <div v-if="loading && roadmapList.length === 0" class="text-center py-8">
@@ -135,7 +138,7 @@
             <!-- 审核操作按钮 -->
             <div class="d-flex flex-column ga-2">
               <!-- 待审核状态：清除描述并通过、直接通过 -->
-              <template v-if="roadmap.state === 0">
+              <template v-if="roadmap.state === ContentState.SUBMITTED">
                 <v-btn
                   variant="flat"
                   color="green-lighten-4"
@@ -162,7 +165,7 @@
 
               <!-- 已通过状态：修改描述 -->
               <v-btn
-                v-if="roadmap.state === 1"
+                v-if="roadmap.state === ContentState.PUBLISHED"
                 variant="flat"
                 color="blue-lighten-4"
                 rounded="lg"
@@ -175,7 +178,7 @@
 
               <!-- 已拒绝状态：恢复 -->
               <v-btn
-                v-if="roadmap.state === 2"
+                v-if="roadmap.state === ContentState.REJECTED"
                 variant="flat"
                 color="orange-lighten-4"
                 rounded="lg"
@@ -295,6 +298,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { roadmapServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { ContentState } from '@/types/enums'
 import type { Roadmap } from '@/types/roadmap'
 import type { StateOption } from '@/types/common'
 
@@ -317,27 +321,33 @@ const editForm = ref(null)
 // 状态选项
 const stateOptions: StateOption[] = [
   {
-    value: 0,
+    value: ContentState.SUBMITTED,
     text: '待审核',
     color: 'orange-lighten-4',
     icon: 'mdi-clock-outline',
   },
   {
-    value: 1,
-    text: '已批准',
+    value: ContentState.PUBLISHED,
+    text: '已通过',
     color: 'green-lighten-4',
     icon: 'mdi-check-circle',
   },
   {
-    value: 2,
+    value: ContentState.REJECTED,
     text: '已拒绝',
     color: 'red-lighten-4',
     icon: 'mdi-close-circle',
   },
+  {
+    value: ContentState.BANNED,
+    text: '已封禁',
+    color: 'grey-lighten-2',
+    icon: 'mdi-cancel',
+  },
 ]
 
 // 获取当前选中的状态
-const getCurrentState = (): number => stateOptions[selectedStateIndex.value]?.value || 0
+const getCurrentState = (): number => stateOptions[selectedStateIndex.value]?.value || ContentState.SUBMITTED
 
 // 根据状态获取配置
 const getStateConfig = (state?: number): StateOption => {

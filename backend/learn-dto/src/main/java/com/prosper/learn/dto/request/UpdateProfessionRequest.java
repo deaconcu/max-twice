@@ -56,6 +56,6 @@ public class UpdateProfessionRequest {
     /**
      * 拒绝原因
      */
-    @Size(max = 500, message = "拒绝原因长度不能超过500字符")
-    private String rejectedReason;
+    @Size(max = 500, message = "操作原因长度不能超过500字符")
+    private String reason;
 }

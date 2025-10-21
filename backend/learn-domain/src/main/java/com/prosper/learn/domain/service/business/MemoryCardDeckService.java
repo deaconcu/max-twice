@@ -174,9 +174,9 @@ public class MemoryCardDeckService {
 
         List<MemoryCardDeckDO> deckList;
         if (lastScore != null && lastId != null) {
-            deckList = deckDataService.getListByPostKeyset(postId, lastScore, lastId, Enums.ContentState.APPROVED.value(), limit + 1);
+            deckList = deckDataService.getListByPostKeyset(postId, lastScore, lastId, Enums.ContentState.PUBLISHED.value(), limit + 1);
         } else {
-            deckList = deckDataService.getListByPost(postId, Enums.ContentState.APPROVED.value(), limit + 1);
+            deckList = deckDataService.getListByPost(postId, Enums.ContentState.PUBLISHED.value(), limit + 1);
         }
 
         return buildDeckResponse(deckList, limit, null);
@@ -199,10 +199,10 @@ public class MemoryCardDeckService {
             // post创建者不是当前用户，只查询normal状态
             if (lastScore != null && lastId != null) {
                 deckList = deckDataService.getListByPostAndCreatorKeyset(
-                        postId, postCreatorId, lastScore, lastId, Enums.ContentState.APPROVED.value(), limit + 1);
+                        postId, postCreatorId, lastScore, lastId, Enums.ContentState.PUBLISHED.value(), limit + 1);
             } else {
                 deckList = deckDataService.getListByPostAndCreator(
-                        postId, postCreatorId, Enums.ContentState.APPROVED.value(), limit + 1);
+                        postId, postCreatorId, Enums.ContentState.PUBLISHED.value(), limit + 1);
             }
         } else {
             // post创建者就是当前用户，查询所有状态
@@ -250,9 +250,9 @@ public class MemoryCardDeckService {
         // 暂时查询正常状态，TODO: 需要添加查询所有状态的方法
         if (lastScore != null && lastId != null) {
             deckList = deckDataService.getListByCreatorKeyset(
-                    userId, lastScore, lastId, Enums.ContentState.APPROVED.value(), limit + 1);
+                    userId, lastScore, lastId, Enums.ContentState.PUBLISHED.value(), limit + 1);
         } else {
-            deckList = deckDataService.getListByCreator(userId, Enums.ContentState.APPROVED.value(), limit + 1);
+            deckList = deckDataService.getListByCreator(userId, Enums.ContentState.PUBLISHED.value(), limit + 1);
         }
 
         return buildDeckResponse(deckList, limit, userId);
@@ -300,7 +300,7 @@ public class MemoryCardDeckService {
         List<MemoryCardDeckDO> deckList;
 
         // 只查询正常状态的卡片组
-        int state = Enums.ContentState.APPROVED.value();
+        int state = Enums.ContentState.PUBLISHED.value();
 
         if (lastScore != null && lastId != null) {
             deckList = deckDataService.getListByNodeKeyset(nodeId, lastScore, lastId, state, limit + 1);
@@ -560,7 +560,7 @@ public class MemoryCardDeckService {
         }
 
         // 更新状态为正常
-        deck.setState(Enums.ContentState.APPROVED.value());
+        deck.setState(Enums.ContentState.PUBLISHED.value());
         deck.setUpdatedAt(LocalDateTime.now());
 
         deckDataService.update(deck);
@@ -597,7 +597,7 @@ public class MemoryCardDeckService {
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
 
         // 验证状态：只有正常状态的卡片组才能封禁
-        if (deck.getState() != Enums.ContentState.APPROVED.value()) {
+        if (deck.getState() != Enums.ContentState.PUBLISHED.value()) {
             throw ErrorCode.INVALID_PARAMETER.exception("只有正常状态的卡片组才能封禁");
         }
 
@@ -623,7 +623,7 @@ public class MemoryCardDeckService {
         }
         
         // 更新状态为正常
-        deck.setState(Enums.ContentState.APPROVED.value());
+        deck.setState(Enums.ContentState.PUBLISHED.value());
         //deck.setUpdatedBy(auditorId);
         deck.setUpdatedAt(LocalDateTime.now());
         

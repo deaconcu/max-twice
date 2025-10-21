@@ -40,7 +40,7 @@ public interface CourseMapper {
 
     // 新增：根据主分类和子分类获取已批准的课程列表
     @Select("SELECT * FROM course WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} " +
-            "AND state = " + APPROVED_VALUE + " AND parent_course_id = 0 ORDER BY id ASC LIMIT 20")
+            "AND state = " + PUBLISHED_VALUE + " AND parent_course_id = 0 ORDER BY id ASC LIMIT 20")
     List<CourseDO> listRootByCategory(int mainCategory, int subCategory);
 
     @Insert("INSERT INTO course(name, description, creator_id, parent_course_id, state, root_node_id, main_category, sub_category) " +
@@ -53,7 +53,7 @@ public interface CourseMapper {
     void update(CourseDO course);
 
     // 新增：课程状态操作方法
-    @Update("UPDATE course SET state = " + APPROVED_VALUE + ", reason = '' WHERE id = #{id}")
+    @Update("UPDATE course SET state = " + PUBLISHED_VALUE + ", reason = '' WHERE id = #{id}")
     int approve(long id);
 
     @Update("UPDATE course SET state = " + REJECTED_VALUE + ", reason = #{reason} WHERE id = #{id}")
@@ -66,6 +66,6 @@ public interface CourseMapper {
     int delete(long id);
     
     // 平台统计相关方法
-    @Select("SELECT COUNT(*) FROM course WHERE state = " + APPROVED_VALUE)
+    @Select("SELECT COUNT(*) FROM course WHERE state = " + PUBLISHED_VALUE)
     Long countActiveCourses();
 }

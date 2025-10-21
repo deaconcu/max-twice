@@ -24,13 +24,13 @@ public interface ProfessionMapper {
             "</script>")
     List<ProfessionDO> listByStateAndLastId(byte state, Long lastId);
 
-    @Select("SELECT * FROM profession WHERE main_category = #{mainCategory} AND state = " + APPROVED_VALUE + " AND id > #{lastId} ORDER BY id ASC LIMIT 20")
+    @Select("SELECT * FROM profession WHERE main_category = #{mainCategory} AND state = " + PUBLISHED_VALUE + " AND id > #{lastId} ORDER BY id ASC LIMIT 20")
     List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, long lastId);
 
-    @Select("SELECT * FROM profession WHERE sub_category = #{subCategory} AND state = " + APPROVED_VALUE + " AND id > #{lastId} ORDER BY id ASC LIMIT 20")
+    @Select("SELECT * FROM profession WHERE sub_category = #{subCategory} AND state = " + PUBLISHED_VALUE + " AND id > #{lastId} ORDER BY id ASC LIMIT 20")
     List<ProfessionDO> listBySubCategoryAndLastId(int subCategory, long lastId);
 
-    @Select("SELECT * FROM profession WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} AND state = " + APPROVED_VALUE + " AND id > #{lastId} ORDER BY id ASC LIMIT 20")
+    @Select("SELECT * FROM profession WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} AND state = " + PUBLISHED_VALUE + " AND id > #{lastId} ORDER BY id ASC LIMIT 20")
     List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, long lastId);
 
     @Select("SELECT * FROM profession WHERE INSTR(name, #{name}) > 0 limit 20")
@@ -58,17 +58,17 @@ public interface ProfessionMapper {
             "SET " +
             "name = #{name}, description = #{description}, icon = #{icon}, skills = #{skills}, " +
             "main_category = #{mainCategory}, sub_category = #{subCategory}, state = #{state}, " +
-            "rejected_reason = #{rejectedReason}, creator_id = #{creatorId} " +
+            "reason = #{reason}, creator_id = #{creatorId} " +
             "WHERE id = #{id}")
     void update(ProfessionDO professionDO);
 
-    @Update("UPDATE profession SET state = #{state}, rejected_reason = #{rejectedReason} WHERE id = #{id}")
-    int updateState(long id, byte state, String rejectedReason);
+    @Update("UPDATE profession SET state = #{state}, reason = #{reason} WHERE id = #{id}")
+    int updateState(long id, byte state, String reason);
 
     @Delete("DELETE FROM profession WHERE id = #{id}")
     void delete(long id);
 
     // 平台统计相关方法
-    @Select("SELECT COUNT(*) FROM profession WHERE state = " + APPROVED_VALUE)
+    @Select("SELECT COUNT(*) FROM profession WHERE state = " + PUBLISHED_VALUE)
     Long countActiveProfessions();
 }

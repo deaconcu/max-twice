@@ -44,7 +44,7 @@ public interface CourseClient {
 
     // 课程状态操作接口（批准、拒绝、屏蔽）
     //@PostMapping("/course/operate")
-    Response<Object> operate(@RequestParam Long id, @RequestParam String action, @RequestParam(required = false) String rejectedReason);
+    Response<Object> operate(@RequestParam Long id, @RequestParam String action, @RequestParam(required = false) String reason);
 
     // 用户提交新课程
     //@PostMapping("/course")

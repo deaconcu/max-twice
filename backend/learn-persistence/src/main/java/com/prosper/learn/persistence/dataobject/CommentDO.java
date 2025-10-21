@@ -27,6 +27,8 @@ public class CommentDO {
 
     private Byte state;
 
+    private String reason;  // 拒绝/封禁原因
+
     private Double score;
 
     private LocalDateTime createdAt;

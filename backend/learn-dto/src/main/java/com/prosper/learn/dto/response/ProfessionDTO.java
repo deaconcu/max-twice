@@ -22,7 +22,7 @@ public class ProfessionDTO {
 
     private Byte state; // SUBMITTED=0, APPROVED=1, REJECTED=2
 
-    private String rejectedReason; // 拒绝原因，默认为空字符串
+    private String reason; // 拒绝原因，默认为空字符串
 
     private String icon; // 图标字段
 

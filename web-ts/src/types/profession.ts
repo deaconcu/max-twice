@@ -15,7 +15,7 @@ export interface Profession {
   mainCategory?: number      // 主分类 (可选)
   subCategory?: number       // 子分类 (可选)
   state?: number             // 状态：SUBMITTED(0), APPROVED(1), REJECTED(2) (可选)
-  rejectedReason?: string    // 拒绝原因 (可选)
+  reason?: string            // 拒绝原因 (可选)
   icon?: string              // 图标 (可选)
   creator?: number           // 创建者ID (可选)
   learnerCount?: number      // 学习人数 (可选)

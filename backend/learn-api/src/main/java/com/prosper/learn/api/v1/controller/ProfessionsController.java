@@ -88,7 +88,7 @@ public class ProfessionsController {
             @RequestParam(required = false)
             @Min(value = 0, message = "最后ID不能小于0")
             Long lastId) {
-        List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(ContentState.APPROVED, lastId);
+        List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(ContentState.PUBLISHED, lastId);
         return ApiResponse.success(professionList);
     }
 

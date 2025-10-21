@@ -2,8 +2,11 @@ package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
+import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.CommentService;
 import com.prosper.learn.dto.request.CreateCommentRequest;
+import com.prosper.learn.dto.request.OperateRequest;
+import com.prosper.learn.dto.response.ApprovalResponseDTO;
 import com.prosper.learn.dto.response.CommentDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -85,14 +88,49 @@ public class CommentsController {
     }
 
     /**
-     * 审核评论
-     * 映射: PUT /comment → PUT /api/v1/admin/comments/{id}/approve
+     * 评论审核操作
+     * 映射: POST /comment/operate → POST /api/v1/admin/comments/{id}/approve
      */
-    @PutMapping("/admin/comments/{id}/approve")
-    public ApiResponse<CommentDTO> approveComment(
-            @PathVariable @NotNull(message = "评论ID不能为空") @Positive(message = "评论ID必须大于0") Long id,
-            @RequestParam Boolean approve) {
-        CommentDTO result = commentService.approveComment(id, approve);
-        return ApiResponse.success(result);
+    @PostMapping("/admin/comments/{id}/approve")
+    public ApiResponse<ApprovalResponseDTO> approveComment(
+            @PathVariable @NotNull(message = "评论ID不能为空")
+            @Positive(message = "评论ID必须大于0") Long id,
+            @RequestBody @Valid OperateRequest request) {
+
+        ApprovalResponseDTO response = switch (request.getAction().toLowerCase()) {
+            case "approve" -> {
+                commentService.approve(id);
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("批准成功")
+                        .objectId(id)
+                        .objectType("comment")
+                        .action("approve")
+                        .build();
+            }
+            case "reject" -> {
+                commentService.reject(id, request.getReason());
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("拒绝成功")
+                        .objectId(id)
+                        .objectType("comment")
+                        .action("reject")
+                        .build();
+            }
+            case "ban" -> {
+                commentService.ban(id, request.getReason());
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("封禁成功")
+                        .objectId(id)
+                        .objectType("comment")
+                        .action("ban")
+                        .build();
+            }
+            default -> throw ErrorCode.INVALID_PARAMETER.exception();
+        };
+
+        return ApiResponse.success(response);
     }
 }

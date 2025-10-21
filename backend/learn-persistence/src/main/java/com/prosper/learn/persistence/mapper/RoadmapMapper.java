@@ -74,7 +74,7 @@ public interface RoadmapMapper {
     List<RoadmapDO> getListByScore(int limit);
 
     @Select({"<script>",
-             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + APPROVED_VALUE,
+             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + PUBLISHED_VALUE,
              "<if test='excludeIds != null and excludeIds.size() > 0'>",
              " AND id NOT IN ",
              "<foreach item='id' collection='excludeIds' open='(' separator=',' close=')'>#{id}</foreach>",
@@ -85,7 +85,7 @@ public interface RoadmapMapper {
             long professionId, int offset, int limit, List<Long> excludeIds);
 
     @Select({"<script>",
-             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + APPROVED_VALUE + " AND ",
+             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + PUBLISHED_VALUE + " AND ",
              "(score &lt; #{lastScore} OR (score = #{lastScore} AND id &lt; #{lastId}))",
              "<if test='excludeIds != null and excludeIds.size() > 0'>",
              " AND id NOT IN ",

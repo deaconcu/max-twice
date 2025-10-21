@@ -331,7 +331,7 @@ public class MemoryCardService {
         card.setDeckId(request.getDeckId());
         card.setCreatorId(userId);
         card.setCurrentVersionId(0L); // 临时设置为0，版本插入后再更新
-        card.setState(ContentState.APPROVED.value()); // 正常状态
+        card.setState(ContentState.PUBLISHED.value()); // 正常状态
 
         int cardResult = cardDataService.insert(card);
         if (cardResult <= 0) {
@@ -395,7 +395,7 @@ public class MemoryCardService {
             card.setDeckId(deckId);
             card.setCreatorId(userId);
             card.setCurrentVersionId(0L); // 临时设置为0，版本插入后再更新
-            card.setState(ContentState.APPROVED.value());
+            card.setState(ContentState.PUBLISHED.value());
             card.setCreatedAt(now);
             card.setUpdatedAt(now);
             cardsToInsert.add(card);

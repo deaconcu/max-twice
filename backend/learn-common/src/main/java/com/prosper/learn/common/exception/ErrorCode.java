@@ -24,6 +24,9 @@ public enum ErrorCode {
     INVALID_DAYS_RANGE(1005, "无效的天数范围"),
     PERMISSION_DENIED(1006, "权限不足"),
     NOT_FOUND(1007, "没有找到对象"),
+    ALREADY_APPROVED(1008, "专业状态已是批准状态，无需重复操作"),
+    ALREADY_REJECTED(1009, "专业状态已是拒绝状态，无需重复操作"),
+    ALREADY_BANNED(1010, "专业状态已是屏蔽状态，无需重复操作"),
 
     // 用户认证相关 11xx
     USER_NOT_LOGIN(1001, "用户未登录"),
@@ -45,12 +48,13 @@ public enum ErrorCode {
     // 课程相关 12xx
     COURSE_NOT_FOUND(1201, "课程不存在"),
     COURSE_ALREADY_APPROVED(1202, "课程状态已是批准状态，无需重复操作"),
-    COURSE_ALREADY_REJECTED(1203, "课程状态已是被屏蔽状态，无需重复操作"),
+    COURSE_ALREADY_REJECTED(1203, "课程状态已是被拒绝状态，无需重复操作"),
     COURSE_STATE_CONFLICT(1204, "课程状态已被其他操作修改，请刷新后重试"),
     COURSE_PARENT_NOT_FOUND(1205, "父课程不存在"),
     COURSE_DELETE_FAILED(1206, "课程删除失败"),
     COURSE_OPERATION_FAILED(1207, "课程操作失败"),
-    COURSE_BLOCKED(1208, "该课程已被屏蔽，暂时无法访问"),
+    COURSE_BANNED(1208, "该课程已被屏蔽，暂时无法访问"),
+    COURSE_ALREADY_BANNED(1209, "课程状态已是被屏蔽状态，无需重复操作"),
 
     // 路线图相关 15xx
     ROADMAP_NOT_FOUND(1501, "路线图不存在"),
