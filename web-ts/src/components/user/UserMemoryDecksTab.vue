@@ -7,6 +7,8 @@ import { DeckState } from '@/types/memoryCard'
 import { useRouter } from 'vue-router'
 import DeckDetailDialog from '@/components/memory/DeckDetailDialog.vue'
 import { useUserStore } from '@/stores/user'
+import { memoryCardDeckServiceV1 } from '@/services/api/v1/apiServiceV1'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 interface LoadEventData {
   done: (status: 'ok' | 'empty') => void
@@ -26,11 +28,15 @@ const isCurrentUser = computed(() => !props.userId || props.userId === userStore
 // 卡片组列表数据
 const deckList: Ref<MemoryCardDeck[]> = ref([])
 const lastId: Ref<number | undefined> = ref(undefined)
-const lastScore: Ref<number | undefined> = ref(undefined)
 
 // 卡片组详情对话框
 const showDeckDetail = ref(false)
 const selectedDeck: Ref<MemoryCardDeck | null> = ref(null)
+
+// 删除相关
+const deleteDialog = ref(false)
+const deckToDelete: Ref<MemoryCardDeck | null> = ref(null)
+const deleting = ref(false)
 
 // 加载卡片组数据
 const loadDecks = async ({ done }: LoadEventData): Promise<void> => {
@@ -38,19 +44,14 @@ const loadDecks = async ({ done }: LoadEventData): Promise<void> => {
     let response
 
     // 如果是查看自己的卡片组，使用 getMyAllDecks（显示所有状态）
-    // 如果是查看其他用户的，使用 getUserDecks（只显示正常状态）
+    // 如果是查看其他用户的，使用 getUserDecks（显示所有状态）
     if (isCurrentUser.value) {
       response = await MemoryService.getMyAllDecks({
-        sortBy: 'createdAt',
-        sortOrder: 'desc',
-        lastScore: lastScore.value,
         lastId: lastId.value,
         limit: 10,
       })
     } else {
       response = await MemoryService.getUserDecks(props.userId!, {
-        sortBy: 'createdAt',
-        sortOrder: 'desc',
         lastId: lastId.value,
         limit: 10,
       })
@@ -62,7 +63,6 @@ const loadDecks = async ({ done }: LoadEventData): Promise<void> => {
       deckList.value.push(...items)
 
       if (hasMore && nextCursor) {
-        lastScore.value = nextCursor.lastScore
         lastId.value = nextCursor.lastId
         done('ok')
       } else {
@@ -83,7 +83,7 @@ const getStateText = (state: number): string => {
     case DeckState.SUBMITTED:
       return '审核中'
     case DeckState.PUBLISHED:
-      return '正常'
+      return '已发布'
     case DeckState.REJECTED:
       return '已拒绝'
     case DeckState.BANNED:
@@ -141,6 +141,47 @@ const formatDate = (dateString: string): string => {
     return `${Math.floor(diffDays / 365)}年前`
   }
 }
+
+const deleteMessage = computed(() =>
+  deckToDelete.value
+    ? `确定要删除卡片组「${deckToDelete.value.title}」吗？此操作无法撤销。`
+    : ''
+)
+
+// 打开删除确认对话框
+const confirmDelete = (deck: MemoryCardDeck, event: Event): void => {
+  event.stopPropagation() // 阻止事件冒泡
+  deckToDelete.value = deck
+  deleteDialog.value = true
+}
+
+// 执行删除
+const handleDelete = async (): Promise<void> => {
+  if (!deckToDelete.value) return
+
+  try {
+    deleting.value = true
+    const response = await memoryCardDeckServiceV1.deleteDeck(deckToDelete.value.id)
+
+    if (response.code === 200) {
+      // 从列表中移除已删除的卡片组
+      const index = deckList.value.findIndex(d => d.id === deckToDelete.value!.id)
+      if (index !== -1) {
+        deckList.value.splice(index, 1)
+      }
+      deleteDialog.value = false
+      deckToDelete.value = null
+    } else {
+      console.error('删除失败:', response.message)
+      alert('删除失败: ' + response.message)
+    }
+  } catch (error) {
+    console.error('删除卡片组时发生错误:', error)
+    alert('删除失败，请稍后重试')
+  } finally {
+    deleting.value = false
+  }
+}
 </script>
 
 <template>
@@ -190,8 +231,9 @@ const formatDate = (dateString: string): string => {
             </div>
 
             <!-- 来源帖子链接 -->
-            <div v-if="deck.sourcePostId" class="d-flex align-center">
+            <div class="d-flex align-center justify-space-between">
               <v-btn
+                v-if="deck.sourcePostId"
                 variant="text"
                 size="small"
                 color="primary"
@@ -201,6 +243,16 @@ const formatDate = (dateString: string): string => {
                 <v-icon icon="mdi-file-document-outline" size="16" class="mr-1"></v-icon>
                 查看来源帖子
               </v-btn>
+              <v-spacer v-else></v-spacer>
+              <!-- 只为当前用户显示删除按钮 -->
+              <v-btn
+                v-if="isCurrentUser"
+                variant="text"
+                size="small"
+                color="error"
+                icon="mdi-delete"
+                @click.stop="confirmDelete(deck, $event)"
+              ></v-btn>
             </div>
           </v-card-text>
         </v-card>
@@ -220,6 +272,17 @@ const formatDate = (dateString: string): string => {
     <DeckDetailDialog
       v-model="showDeckDetail"
       :deck="selectedDeck"
+    />
+
+    <!-- 删除确认对话框 -->
+    <ConfirmDialog
+      v-model="deleteDialog"
+      title="确认删除"
+      :message="deleteMessage"
+      confirm-text="删除"
+      cancel-text="取消"
+      :loading="deleting"
+      @confirm="handleDelete"
     />
   </div>
 </template>

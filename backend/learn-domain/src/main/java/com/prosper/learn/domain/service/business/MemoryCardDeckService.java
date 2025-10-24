@@ -243,25 +243,24 @@ public class MemoryCardDeckService {
      * 需求4: 获取用户自己提交的所有卡片组 - keyset分页，全部状态
      */
     /**
-     * 获取用户的卡片组列表
+     * 获取用户的卡片组列表（按ID逆序，返回所有状态）
      * @param userId 用户ID
      * @param currentUserId 当前登录用户ID（用于获取点赞状态）
-     * @param state 状态过滤（null表示所有状态，否则只返回指定状态）
+     * @param lastId 最后一条记录的ID（用于分页）
+     * @param limit 每页数量
      */
     public KeysetPageResponse<MemoryCardDeckDTO> getUserDecks(
-            Long userId, Long currentUserId, String sortBy, String sortOrder,
-            Double lastScore, Long lastId, Integer limit, Byte state) {
+            Long userId, Long currentUserId, Long lastId, Integer limit) {
         // 参数验证
         if (limit == null || limit <= 0) limit = 10;
         if (limit > 50) limit = 50;
 
         List<MemoryCardDeckDO> deckList;
-        // 使用 keyset 分页查询
-        if (lastScore != null && lastId != null) {
-            deckList = deckDataService.getListByCreatorKeyset(
-                    userId, lastScore, lastId, state, limit + 1);
+        // 使用 ID 分页查询
+        if (lastId != null) {
+            deckList = deckDataService.getListByCreatorWithIdPaging(userId, lastId, limit + 1);
         } else {
-            deckList = deckDataService.getListByCreator(userId, state, limit + 1);
+            deckList = deckDataService.getListByCreator(userId, limit + 1);
         }
 
         return buildDeckResponse(deckList, limit, currentUserId);
@@ -374,7 +373,7 @@ public class MemoryCardDeckService {
         } else if (creatorId != null) {
             // 只按创建者查询
             if (lastId != null) {
-                deckList = deckDataService.getListByCreatorWithIdPaging(creatorId, defaultState, lastId, limit + 1);
+                deckList = deckDataService.getListByCreatorWithIdPagingAndState(creatorId, defaultState, lastId, limit + 1);
             } else {
                 deckList = deckDataService.getListByCreatorForReview(creatorId, defaultState, limit + 1);
             }
@@ -1020,5 +1019,35 @@ public class MemoryCardDeckService {
         autoAuthorQueueService.enqueueMemoryCards(postId);
 
         log.info("Queued AI memory card generation task for post {} requested by user {}", postId, userId);
+    }
+
+    /**
+     * 删除卡片组（软删除）
+     * @param deckId 卡片组ID
+     * @param userId 用户ID
+     */
+    @Transactional
+    public void deleteDeck(Long deckId, Long userId) {
+        if (deckId == null || deckId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("卡片组ID无效");
+        }
+        if (userId == null || userId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效");
+        }
+
+        MemoryCardDeckDO deck = deckDataService.getById(deckId);
+        if (deck == null) {
+            throw ErrorCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
+        }
+
+        // 验证权限：只能删除自己创建的卡片组
+        if (!deck.getCreatorId().equals(userId)) {
+            throw ErrorCode.PERMISSION_DENIED.exception();
+        }
+
+        int result = deckDataService.softDelete(deckId);
+        if (result == 0) {
+            throw ErrorCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
+        }
     }
 }

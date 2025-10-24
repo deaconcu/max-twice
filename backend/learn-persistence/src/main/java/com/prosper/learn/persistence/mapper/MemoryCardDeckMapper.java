@@ -9,108 +9,112 @@ import java.util.Map;
 
 public interface MemoryCardDeckMapper {
 
-    @Select("SELECT * FROM memory_card_deck WHERE id = #{id}")
+    @Select("SELECT * FROM memory_card_deck WHERE id = #{id} AND deleted_at IS NULL")
     MemoryCardDeckDO get(long id);
 
     @Select({"<script>SELECT * FROM memory_card_deck WHERE id IN " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
-            "</script>"})
+            " AND deleted_at IS NULL</script>"})
     List<MemoryCardDeckDO> getByIds(List<Long> ids);
 
     @Select({"<script>SELECT * FROM memory_card_deck WHERE id IN " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
-            "</script>"})
+            " AND deleted_at IS NULL</script>"})
     @MapKey("id")
     Map<Long, MemoryCardDeckDO> getMapByIds(Collection<Long> ids);
 
-    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND state = #{state} " +
+    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND state = #{state} AND deleted_at IS NULL " +
             "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPost(long postId, int state, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND state = #{state} AND id < #{lastId} " +
+    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND state = #{state} AND id < #{lastId} AND deleted_at IS NULL " +
             "ORDER BY id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostWithIdPaging(long postId, int state, long lastId, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND state = #{state} AND " +
+    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND state = #{state} AND deleted_at IS NULL AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostKeyset(long postId, double lastScore, long lastId, int state, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE creator_id = #{creatorId} AND state = #{state} " +
+    @Select("SELECT * FROM memory_card_deck WHERE creator_id = #{creatorId} AND deleted_at IS NULL " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
-    List<MemoryCardDeckDO> getListByCreator(long creatorId, int state, int limit);
+    List<MemoryCardDeckDO> getListByCreator(long creatorId, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE creator_id = #{creatorId} AND state = #{state} AND id < #{lastId} " +
+    @Select("SELECT * FROM memory_card_deck WHERE creator_id = #{creatorId} AND id < #{lastId} AND deleted_at IS NULL " +
             "ORDER BY id DESC LIMIT #{limit}")
-    List<MemoryCardDeckDO> getListByCreatorWithIdPaging(long creatorId, int state, long lastId, int limit);
+    List<MemoryCardDeckDO> getListByCreatorWithIdPaging(long creatorId, long lastId, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE creator_id = #{creatorId} AND state = #{state} AND " +
+    @Select("SELECT * FROM memory_card_deck WHERE creator_id = #{creatorId} AND state = #{state} AND id < #{lastId} AND deleted_at IS NULL " +
+            "ORDER BY id DESC LIMIT #{limit}")
+    List<MemoryCardDeckDO> getListByCreatorWithIdPagingAndState(long creatorId, int state, long lastId, int limit);
+
+    @Select("SELECT * FROM memory_card_deck WHERE creator_id = #{creatorId} AND state = #{state} AND deleted_at IS NULL AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByCreatorKeyset(long creatorId, double lastScore, long lastId, int state, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE state = #{state} " +
+    @Select("SELECT * FROM memory_card_deck WHERE state = #{state} AND deleted_at IS NULL " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByState(int state, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE state = #{state} AND " +
+    @Select("SELECT * FROM memory_card_deck WHERE state = #{state} AND deleted_at IS NULL AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByStateKeyset(double lastScore, long lastId, int state, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE state = #{state} AND id < #{lastId} " +
+    @Select("SELECT * FROM memory_card_deck WHERE state = #{state} AND id < #{lastId} AND deleted_at IS NULL " +
             "ORDER BY id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByStateWithIdPaging(int state, long lastId, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND state = #{state} " +
+    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND state = #{state} AND deleted_at IS NULL " +
             "ORDER BY id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostForReview(long postId, int state, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE creator_id = #{creatorId} AND state = #{state} " +
+    @Select("SELECT * FROM memory_card_deck WHERE creator_id = #{creatorId} AND state = #{state} AND deleted_at IS NULL " +
             "ORDER BY id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByCreatorForReview(long creatorId, int state, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE state = #{state} " +
+    @Select("SELECT * FROM memory_card_deck WHERE state = #{state} AND deleted_at IS NULL " +
             "ORDER BY id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByStateForReview(int state, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} " +
+    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} AND deleted_at IS NULL " +
             "ORDER BY id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostAndCreatorForReview(long postId, long creatorId, int state, int limit);
 
-    @Select("SELECT COUNT(*) FROM memory_card_deck WHERE post_id = #{postId} AND state = #{state}")
+    @Select("SELECT COUNT(*) FROM memory_card_deck WHERE post_id = #{postId} AND state = #{state} AND deleted_at IS NULL")
     int countByPost(long postId, int state);
 
-    @Select("SELECT COUNT(*) FROM memory_card_deck WHERE creator_id = #{creatorId} AND state = #{state}")
+    @Select("SELECT COUNT(*) FROM memory_card_deck WHERE creator_id = #{creatorId} AND state = #{state} AND deleted_at IS NULL")
     int countByCreator(long creatorId, int state);
 
-    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} " +
+    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} AND deleted_at IS NULL " +
             "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostAndCreator(long postId, long creatorId, int state, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} AND id < #{lastId} " +
+    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} AND id < #{lastId} AND deleted_at IS NULL " +
             "ORDER BY id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPaging(long postId, long creatorId, int state, long lastId, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} AND " +
+    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} AND deleted_at IS NULL AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostAndCreatorKeyset(long postId, long creatorId, double lastScore, long lastId, int state, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} " +
+    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND deleted_at IS NULL " +
             "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostAndCreatorAllStates(long postId, long creatorId, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND " +
+    @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND deleted_at IS NULL AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostAndCreatorKeysetAllStates(long postId, long creatorId, double lastScore, long lastId, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE node_id = #{nodeId} AND state = #{state} " +
+    @Select("SELECT * FROM memory_card_deck WHERE node_id = #{nodeId} AND state = #{state} AND deleted_at IS NULL " +
             "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByNode(long nodeId, int state, int limit);
 
-    @Select("SELECT * FROM memory_card_deck WHERE node_id = #{nodeId} AND state = #{state} AND " +
+    @Select("SELECT * FROM memory_card_deck WHERE node_id = #{nodeId} AND state = #{state} AND deleted_at IS NULL AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByNodeKeyset(long nodeId, double lastScore, long lastId, int state, int limit);
@@ -165,5 +169,8 @@ public interface MemoryCardDeckMapper {
 
     @Update("UPDATE memory_card_deck SET upvote_count = GREATEST(0, upvote_count - 1) WHERE id = #{id}")
     int decrementUpvoteCount(long id);
+
+    @Update("UPDATE memory_card_deck SET deleted_at = NOW() WHERE id = #{id} AND deleted_at IS NULL")
+    int softDelete(long id);
 
 }

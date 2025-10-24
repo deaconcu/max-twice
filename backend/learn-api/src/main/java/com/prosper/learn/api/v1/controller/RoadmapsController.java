@@ -1,6 +1,7 @@
 package com.prosper.learn.api.v1.controller;
 
 import com.prosper.learn.api.v1.dto.ApiResponse;
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.RoadmapService;
 import com.prosper.learn.dto.response.RoadmapDTO;
@@ -17,6 +18,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 路线图接口
@@ -170,5 +172,49 @@ public class RoadmapsController {
 
         RoadmapDTO roadmap = roadmapService.updateDescription(id, description);
         return ApiResponse.success(roadmap);
+    }
+
+    /**
+     * 获取当前登录用户创建的路线图（所有状态）
+     * 包含：待审核、已发布、审核拒绝、已屏蔽
+     * GET /api/v1/users/me/roadmaps?lastId=0
+     */
+    @GetMapping("/users/me/roadmaps")
+    public ApiResponse<List<RoadmapDTO>> getCurrentUserRoadmaps(
+            @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId) {
+
+        Long currentUserId = StpUtil.getLoginIdAsLong();
+        List<RoadmapDTO> roadmaps = roadmapService.getUserRoadmaps(currentUserId, lastId, null);
+        return ApiResponse.success(roadmaps);
+    }
+
+    /**
+     * 获取指定用户创建的路线图（仅已发布）
+     * GET /api/v1/users/{userId}/roadmaps?lastId=0
+     */
+    @GetMapping("/users/{userId}/roadmaps")
+    public ApiResponse<List<RoadmapDTO>> getUserRoadmaps(
+            @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
+            @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId) {
+
+        List<RoadmapDTO> roadmaps = roadmapService.getUserRoadmaps(userId, lastId, Enums.ContentState.PUBLISHED);
+        return ApiResponse.success(roadmaps);
+    }
+
+    /**
+     * 删除路线图（软删除）
+     * DELETE /api/v1/roadmaps/{id}
+     */
+    @DeleteMapping("/roadmaps/{id}")
+    public ApiResponse<Void> deleteRoadmap(
+            @PathVariable @NotNull(message = "路线图ID不能为空") @Positive(message = "路线图ID必须大于0") Long id) {
+
+        if (!StpUtil.isLogin()) {
+            throw ErrorCode.USER_NOT_LOGIN.exception();
+        }
+
+        long userId = StpUtil.getLoginIdAsLong();
+        roadmapService.deleteRoadmap(id, userId);
+        return ApiResponse.success();
     }
 }

@@ -112,6 +112,22 @@ export const userServiceV1 = {
     })
   },
 
+  getCurrentUserRoadmaps(lastId?: number): Promise<ApiResponse<Roadmap[]>> {
+    return apiClient.get(`${API_V1_PREFIX}/users/me/roadmaps`, {
+      params: { lastId },
+    })
+  },
+
+  getUserRoadmaps(userId: number, lastId?: number): Promise<ApiResponse<Roadmap[]>> {
+    return apiClient.get(`${API_V1_PREFIX}/users/${userId}/roadmaps`, {
+      params: { lastId },
+    })
+  },
+
+  deleteRoadmap(roadmapId: number): Promise<ApiResponse<void>> {
+    return apiClient.delete(`${API_V1_PREFIX}/roadmaps/${roadmapId}`)
+  },
+
   getUsers(offsetId: number | null = null): Promise<ApiResponse<User[]>> {
     const params = offsetId !== null ? { offsetId } : {}
     return apiClient.get(`${API_V1_PREFIX}/admin/users`, { params })
@@ -765,6 +781,11 @@ export const memoryCardDeckServiceV1 = {
   // AI生成记忆卡片组
   createAIDeck(postId: number): Promise<ApiResponse<void>> {
     return apiClient.post(`${API_V1_PREFIX}/memory/decks/${postId}/ai-generate`)
+  },
+
+  // 删除卡片组
+  deleteDeck(deckId: number): Promise<ApiResponse<void>> {
+    return apiClient.delete(`${API_V1_PREFIX}/memory/decks/${deckId}`)
   },
 }
 

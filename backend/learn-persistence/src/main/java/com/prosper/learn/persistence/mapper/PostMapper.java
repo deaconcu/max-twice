@@ -11,32 +11,32 @@ import static com.prosper.learn.common.Enums.ContentState.*;
 
 public interface PostMapper {
 
-    @Select("SELECT * FROM post WHERE id = #{id}")
+    @Select("SELECT * FROM post WHERE id = #{id} AND deleted_at IS NULL")
     PostDO get(long id);
 
     @Select({"<script>SELECT * FROM post where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
-            "</script>"})
+            " AND deleted_at IS NULL</script>"})
     List<PostDO> getByIds(List<Long> ids);
 
     @Select({"<script>SELECT * FROM post where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
-            "</script>"})
+            " AND deleted_at IS NULL</script>"})
     @MapKey("id")
     Map<Long, PostDO> getMapByIds(Collection<Long> ids);
 
     @Select("SELECT * FROM post " +
-            "WHERE node_id = #{nodeId} and state = #{state} " +
+            "WHERE node_id = #{nodeId} and state = #{state} AND deleted_at IS NULL " +
             "order by created_at desc limit #{limit}")
     List<PostDO> getListByNode(long nodeId, int limit, byte state);
 
     @Select("SELECT * FROM post " +
-            "WHERE node_id = #{nodeId} and id < #{lastId} and state = #{state} " +
+            "WHERE node_id = #{nodeId} and id < #{lastId} and state = #{state} AND deleted_at IS NULL " +
             "order by id desc limit #{limit}")
     List<PostDO> getListByLastId(long nodeId, long lastId, int limit, byte state);
 
     @Select({"<script>",
-            "SELECT * FROM post WHERE creator_id = #{userId} and type = #{type} and id &lt; #{lastId}",
+            "SELECT * FROM post WHERE creator_id = #{userId} and type = #{type} and id &lt; #{lastId} AND deleted_at IS NULL",
             "<if test='state != null'> AND state = #{state}</if>",
             "ORDER BY id DESC LIMIT #{count}",
             "</script>"})
@@ -57,40 +57,40 @@ public interface PostMapper {
     @Update("UPDATE post SET score = #{score}, score_calculated_at = NOW() WHERE id = #{id}")
     int updateScore(long id, double score);
 
-    @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND state = #{state} " +
+    @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND state = #{state} AND deleted_at IS NULL " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<PostDO> getListByNodeAndScore(long nodeId, int limit, byte state);
 
-    @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND state = #{state} AND " +
+    @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND state = #{state} AND deleted_at IS NULL AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<PostDO> getListByNodeAndScoreAndPaginated(long nodeId, double lastScore, long lastId, int limit, byte state);
 
-    @Select("SELECT id, twice, helpful, created_at FROM post WHERE state = #{state}")
+    @Select("SELECT id, twice, helpful, created_at FROM post WHERE state = #{state} AND deleted_at IS NULL")
     List<PostDO> getAllPostsForScoreCalculation(byte state);
 
-    @Select("SELECT * FROM post where state = #{state} order by id DESC limit #{count}")
+    @Select("SELECT * FROM post where state = #{state} AND deleted_at IS NULL order by id DESC limit #{count}")
     List<PostDO> getListByState(byte state, int count);
 
-    @Select("SELECT * FROM post where state = #{state} and id < #{lastId} order by id DESC limit #{limit}")
+    @Select("SELECT * FROM post where state = #{state} and id < #{lastId} AND deleted_at IS NULL order by id DESC limit #{limit}")
     List<PostDO> getListByStateWithPagination(byte state, long lastId, int limit);
-    
+
     /**
      * 统计活跃文章数量（state=APPROVED表示已发布状态）
      *
      * @return 文章总数
      */
-    @Select("SELECT COUNT(*) FROM post WHERE state = " + PUBLISHED_VALUE)
+    @Select("SELECT COUNT(*) FROM post WHERE state = " + PUBLISHED_VALUE + " AND deleted_at IS NULL")
     Long countActiveArticles();
 
-    @Select("SELECT COUNT(*) FROM post WHERE node_id = #{nodeId} AND creator_id = #{creatorId} AND state = " + PUBLISHED_VALUE)
+    @Select("SELECT COUNT(*) FROM post WHERE node_id = #{nodeId} AND creator_id = #{creatorId} AND state = " + PUBLISHED_VALUE + " AND deleted_at IS NULL")
     Long countPostsByNodeAndCreator(@Param("nodeId") long nodeId, @Param("creatorId") long creatorId);
 
-    @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND creator_id = #{creatorId} AND state != #{excludeState} ORDER BY created_at DESC")
+    @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND creator_id = #{creatorId} AND state != #{excludeState} AND deleted_at IS NULL ORDER BY created_at DESC")
     List<PostDO> getListByNodeAndCreator(@Param("nodeId") long nodeId, @Param("creatorId") long creatorId, @Param("excludeState") byte excludeState);
 
     @Select({"<script>",
-            "SELECT * FROM post WHERE id &lt; #{lastId}",
+            "SELECT * FROM post WHERE id &lt; #{lastId} AND deleted_at IS NULL",
             "<if test='nodeId != null'> AND node_id = #{nodeId}</if>",
             "<if test='creatorId != null'> AND creator_id = #{creatorId}</if>",
             "<if test='state != null'> AND state = #{state}</if>",
@@ -103,4 +103,7 @@ public interface PostMapper {
 
     @Update("UPDATE post SET state = #{state}, reason = #{reason} WHERE id = #{id}")
     int updateStateWithReason(@Param("id") long id, @Param("state") byte state, @Param("reason") String reason);
+
+    @Update("UPDATE post SET deleted_at = NOW() WHERE id = #{id} AND deleted_at IS NULL")
+    int softDelete(long id);
 }

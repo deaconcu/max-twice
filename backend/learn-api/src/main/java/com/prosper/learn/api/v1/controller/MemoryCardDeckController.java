@@ -2,6 +2,7 @@ package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.service.business.MemoryCardDeckService;
 import com.prosper.learn.dto.request.CreateDeckRequest;
 import com.prosper.learn.dto.request.UpdateDeckRequest;
@@ -106,37 +107,11 @@ public class MemoryCardDeckController {
 
     /**
      * 获取当前用户自己的所有卡片组（所有状态）
-     * GET /api/v1/users/me/memory-decks
+     * GET /api/v1/memory/users/me/memory-decks
+     * 按ID逆序排序
      */
     @GetMapping("/users/me/memory-decks")
     public ApiResponse<KeysetPageResponse<MemoryCardDeckDTO>> getCurrentUserAllDecks(
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortOrder,
-            @RequestParam(required = false) Double lastScore,
-            @RequestParam(required = false) Long lastId,
-            @RequestParam(defaultValue = "10") Integer limit) {
-
-        if (limit > 50) {
-            limit = 50;
-        }
-
-        long userId = StpUtil.getLoginIdAsLong();
-        KeysetPageResponse<MemoryCardDeckDTO> result = deckService.getUserDecks(
-            userId, userId, sortBy, sortOrder, lastScore, lastId, limit, null);
-
-        return ApiResponse.success(result);
-    }
-
-    /**
-     * 获取指定用户的卡片组（仅已发布）
-     * GET /api/v1/users/{userId}/memory-decks
-     */
-    @GetMapping("/users/{userId}/memory-decks")
-    public ApiResponse<KeysetPageResponse<MemoryCardDeckDTO>> getUserDecks(
-            @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortOrder,
-            @RequestParam(required = false) Double lastScore,
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "10") Integer limit) {
 
@@ -146,30 +121,29 @@ public class MemoryCardDeckController {
 
         long currentUserId = StpUtil.getLoginIdAsLong();
         KeysetPageResponse<MemoryCardDeckDTO> result = deckService.getUserDecks(
-            userId, currentUserId, sortBy, sortOrder, lastScore, lastId, limit, Enums.ContentState.PUBLISHED.value());
+                currentUserId, currentUserId, lastId, limit);
 
         return ApiResponse.success(result);
     }
 
     /**
-     * 需求4: 获取用户自己提交的所有卡片组 - keyset分页，全部状态
+     * 获取指定用户的卡片组（所有状态）
+     * GET /api/v1/memory/users/{userId}/memory-decks
+     * 按ID逆序排序
      */
-    @GetMapping("/decks/my")
-    public ApiResponse<KeysetPageResponse<MemoryCardDeckDTO>> getMyDecks(
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortOrder,
-            @RequestParam(required = false) Double lastScore,
+    @GetMapping("/users/{userId}/memory-decks")
+    public ApiResponse<KeysetPageResponse<MemoryCardDeckDTO>> getUserDecks(
+            @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "10") Integer limit) {
 
-        // 限制每页最大数量
         if (limit > 50) {
             limit = 50;
         }
 
-        long userId = StpUtil.getLoginIdAsLong();
-        KeysetPageResponse<MemoryCardDeckDTO> result = deckService.getMyAllDecks(
-            userId, sortBy, sortOrder, lastScore, lastId, limit);
+        long currentUserId = StpUtil.getLoginIdAsLong();
+        KeysetPageResponse<MemoryCardDeckDTO> result = deckService.getUserDecks(
+            userId, currentUserId, lastId, limit);
 
         return ApiResponse.success(result);
     }
@@ -364,6 +338,20 @@ public class MemoryCardDeckController {
             Long postId) {
         long userId = StpUtil.getLoginIdAsLong();
         deckService.createAIDeck(userId, postId);
+        return ApiResponse.success();
+    }
+
+    /**
+     * 删除卡片组（软删除）
+     * DELETE /api/v1/memory/decks/{id}
+     */
+    @DeleteMapping("/decks/{id}")
+    public ApiResponse<Void> deleteDeck(
+            @PathVariable @NotNull(message = "卡片组ID不能为空")
+            @Positive(message = "卡片组ID必须大于0")
+            Long id) {
+        long userId = StpUtil.getLoginIdAsLong();
+        deckService.deleteDeck(id, userId);
         return ApiResponse.success();
     }
 

@@ -85,7 +85,7 @@ public class AutoAuthorExecutor {
             List<PostDO> existingPosts = postDataService.getListByNodeAndCreator(nodeId, aiUserId);
             for (PostDO post : existingPosts) {
                 if (post.getState() != Enums.ContentState.BANNED.value()) {
-                    postService.deletePost(post.getId());
+                    postService.deletePost(post.getId(), aiUserId);
                     log.info("Soft deleted existing AI post {} for node {}", post.getId(), nodeId);
                 }
             }

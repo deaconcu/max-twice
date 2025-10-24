@@ -127,6 +127,16 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
     }
 
     /**
+     * 根据创建者获取路线图列表（支持分页）
+     */
+    public List<RoadmapDO> getListByCreatorWithPaging(Long creatorId, Long lastId, int limit, Byte state) {
+        if (lastId == null || lastId == 0) {
+            return roadmapMapper.getListByCreator(creatorId, 0, limit);
+        }
+        return roadmapMapper.getListByCreatorWithPaging(creatorId, lastId, limit, state);
+    }
+
+    /**
      * Admin管理：按条件筛选路线图列表
      */
     public List<RoadmapDO> listByFilter(Byte state, Long professionId, Long creatorId, Long lastId) {
@@ -155,5 +165,13 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
     @CacheEvict(value = "roadmaps", key = "#id")
     public int ban(long id, String reason) {
         return roadmapMapper.updateStateAndReason(id, Enums.ContentState.BANNED.value(), reason);
+    }
+
+    /**
+     * 软删除路线图
+     */
+    @CacheEvict(value = "roadmaps", key = "#id")
+    public int softDelete(long id) {
+        return roadmapMapper.softDelete(id);
     }
 }

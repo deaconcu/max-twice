@@ -253,15 +253,22 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     /**
      * 根据创建者获取卡片组列表
      */
-    public List<MemoryCardDeckDO> getListByCreator(long creatorId, int state, int limit) {
-        return memoryCardDeckMapper.getListByCreator(creatorId, state, limit);
+    public List<MemoryCardDeckDO> getListByCreator(long creatorId, int limit) {
+        return memoryCardDeckMapper.getListByCreator(creatorId, limit);
     }
 
     /**
      * 根据创建者获取卡片组列表 - ID分页
      */
-    public List<MemoryCardDeckDO> getListByCreatorWithIdPaging(long creatorId, int state, long lastId, int limit) {
-        return memoryCardDeckMapper.getListByCreatorWithIdPaging(creatorId, state, lastId, limit);
+    public List<MemoryCardDeckDO> getListByCreatorWithIdPaging(long creatorId, long lastId, int limit) {
+        return memoryCardDeckMapper.getListByCreatorWithIdPaging(creatorId, lastId, limit);
+    }
+
+    /**
+     * 根据创建者获取卡片组列表 - ID分页（带状态过滤）
+     */
+    public List<MemoryCardDeckDO> getListByCreatorWithIdPagingAndState(long creatorId, int state, long lastId, int limit) {
+        return memoryCardDeckMapper.getListByCreatorWithIdPagingAndState(creatorId, state, lastId, limit);
     }
 
     /**
@@ -402,13 +409,10 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
      */
     @CacheEvict(value = "memory_card_decks", key = "#id")
     public boolean decrementUpvoteCount(long id) {
-        try {
-            int result = memoryCardDeckMapper.decrementUpvoteCount(id);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error decrementing upvote count: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
-        }
+        return false;
     }
 
+    public int softDelete(Long deckId) {
+        return memoryCardDeckMapper.softDelete(deckId);
+    }
 }

@@ -504,10 +504,18 @@ public class PostService {
      * @throws BusinessException 当帖子不存在时抛出异常
      */
     @Transactional
-    public void deletePost(Long id) {
+    public void deletePost(Long id, Long userId) {
         PostDO postDO = validateAndGetPost(id);
-        postDO.setState(Enums.ContentState.BANNED.value());
-        postDataService.update(postDO);
+
+        // 验证权限：只能删除自己创建的帖子
+        if (!postDO.getCreatorId().equals(userId)) {
+            throw ErrorCode.PERMISSION_DENIED.exception();
+        }
+
+        int result = postDataService.softDelete(id);
+        if (result == 0) {
+            throw ErrorCode.NOT_FOUND.exception();
+        }
     }
 
     /**

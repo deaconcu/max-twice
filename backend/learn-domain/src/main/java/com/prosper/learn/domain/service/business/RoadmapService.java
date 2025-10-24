@@ -430,6 +430,44 @@ public class RoadmapService {
     }
 
     /**
+     * 获取用户创建的路线图列表（所有状态）
+     * @param userId 用户ID
+     * @param lastId 分页游标
+     * @return 路线图列表
+     */
+    public List<RoadmapDTO> getUserRoadmaps(Long userId, Long lastId, Enums.ContentState state) {
+        validateUserId(userId);
+
+        int limit = systemProperties.getRoadmap().getDefaultPageSize();
+        List<RoadmapDO> roadmapList = roadmapDataService.getListByCreatorWithPaging(
+                userId, lastId, limit, state == null ? null : state.value());
+        return toDTO(roadmapList);
+    }
+
+    /**
+     * 删除路线图（软删除）
+     * @param id 路线图ID
+     * @param userId 用户ID
+     */
+    @Transactional
+    public void deleteRoadmap(Long id, Long userId) {
+        validateRoadmapId(id);
+        validateUserId(userId);
+
+        RoadmapDO roadmapDO = validateRoadmapExists(id);
+
+        // 验证权限：只能删除自己创建的路线图
+        if (!roadmapDO.getCreatorId().equals(userId)) {
+            throw ErrorCode.PERMISSION_DENIED.exception();
+        }
+
+        int result = roadmapDataService.softDelete(id);
+        if (result == 0) {
+            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+        }
+    }
+
+    /**
      * 更新路线图
      */
     @Transactional

@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import { PostType, VoteType, ContentState } from '@/types/enums'
 import type { Post } from '@/types/post'
 import 'highlight.js/styles/github.css'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 // 类型定义使用全局 Post 类型
 
@@ -82,20 +83,38 @@ const upvote = async (posting: Post, type: VoteType): Promise<void> => {
   }
 }
 
-const deletePosting = async (postingId: number): Promise<void> => {
-  try {
-    console.log('begin post')
+// 删除相关
+const deleteDialog = ref(false)
+const deleting = ref(false)
 
-    const response = await postServiceV1.deletePost(postingId)
+const deleteMessage = computed(() => {
+  const typeText = props.posting.type === PostType.ARTICLE ? '文章' : '目录'
+  return `确定要删除${typeText}「${props.posting.title}」吗？此操作无法撤销。`
+})
+
+const confirmDelete = (): void => {
+  deleteDialog.value = true
+}
+
+const deletePosting = async (): Promise<void> => {
+  try {
+    deleting.value = true
+    const response = await postServiceV1.deletePost(props.posting.id)
     console.log(`response: ${JSON.stringify(response)}`)
 
     if (response.code === 200) {
       console.log('Form submitted successfully')
-      emit('deletePosting', postingId)
+      deleteDialog.value = false
+      emit('deletePosting', props.posting.id)
+    } else {
+      console.error('删除失败:', response.message)
+      alert('删除失败: ' + response.message)
     }
   } catch (error) {
-    // todo
     console.error('Error submitting form:', error)
+    alert('删除失败，请稍后重试')
+  } finally {
+    deleting.value = false
   }
 }
 </script>
@@ -278,12 +297,23 @@ const deletePosting = async (postingId: number): Promise<void> => {
             variant="flat"
             rounded="lg"
             color="grey-lighten-3"
-            @click="deletePosting(posting.id)"
+            @click="confirmDelete"
             >{{ t('userPosting.delete') }}</v-btn
           >
         </div>
       </div>
     </v-card-text>
+
+    <!-- 删除确认对话框 -->
+    <ConfirmDialog
+      v-model="deleteDialog"
+      title="确认删除"
+      :message="deleteMessage"
+      confirm-text="删除"
+      cancel-text="取消"
+      :loading="deleting"
+      @confirm="deletePosting"
+    />
   </v-card>
 </template>
 

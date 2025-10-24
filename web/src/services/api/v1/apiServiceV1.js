@@ -558,6 +558,23 @@ export const aiServiceV1 = {
   },
 }
 
+// 记忆卡片组服务
+export const memoryDeckServiceV1 = {
+  // 获取当前用户的所有记忆卡片组
+  getCurrentUserMemoryDecks(sortBy = 'createdAt', sortOrder = 'desc', lastScore, lastId, limit = 10) {
+    return apiClient.get(`${API_V1_PREFIX}/memory/users/me/memory-decks`, {
+      params: { sortBy, sortOrder, lastScore, lastId, limit },
+    })
+  },
+
+  // 获取指定用户的记忆卡片组（仅已发布）
+  getUserMemoryDecks(userId, sortBy = 'createdAt', sortOrder = 'desc', lastScore, lastId, limit = 10) {
+    return apiClient.get(`${API_V1_PREFIX}/memory/users/${userId}/memory-decks`, {
+      params: { sortBy, sortOrder, lastScore, lastId, limit },
+    })
+  },
+}
+
 // 系统配置服务
 export const systemServiceV1 = {
   getSystemConfig(part) {

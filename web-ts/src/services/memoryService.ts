@@ -277,12 +277,11 @@ export class MemoryService {
   }
 
   /**
-   * 需求4: 获取用户自己提交的所有卡片组 - keyset分页，全部状态
+   * 需求4: 获取用户自己提交的所有卡片组 - ID分页，全部状态
+   * 使用新的 RESTful 接口: /users/me/memory-decks
+   * 默认按ID逆序排序
    */
   static async getMyAllDecks(query: {
-    sortBy?: string
-    sortOrder?: string
-    lastScore?: number
     lastId?: number
     limit?: number
   } = {}): Promise<{
@@ -299,15 +298,6 @@ export class MemoryService {
   }> {
     const params = new URLSearchParams()
 
-    if (query.sortBy) {
-      params.append('sortBy', query.sortBy)
-    }
-    if (query.sortOrder) {
-      params.append('sortOrder', query.sortOrder)
-    }
-    if (query.lastScore !== undefined) {
-      params.append('lastScore', query.lastScore.toString())
-    }
     if (query.lastId) {
       params.append('lastId', query.lastId.toString())
     }
@@ -315,15 +305,15 @@ export class MemoryService {
       params.append('limit', query.limit.toString())
     }
 
-    return apiClient.get(`${API_V1_PREFIX}/memory/decks/my?${params.toString()}`)
+    return apiClient.get(`${API_V1_PREFIX}/memory/users/me/memory-decks?${params.toString()}`)
   }
 
   /**
-   * 获取指定用户创建的所有卡片组 - 用于查看其他用户的卡片组
+   * 获取指定用户创建的所有卡片组 - 用于查看其他用户的卡片组（所有状态）
+   * 使用新的 RESTful 接口: /users/{userId}/memory-decks
+   * 默认按ID逆序排序
    */
   static async getUserDecks(userId: number, query: {
-    sortBy?: string
-    sortOrder?: string
     lastId?: number
     limit?: number
   } = {}): Promise<{
@@ -338,15 +328,16 @@ export class MemoryService {
     }
     message?: string
   }> {
-    // 使用 getDecksForReview 接口，只传 creatorId
-    return this.getDecksForReview({
-      creatorId: userId,
-      sortBy: query.sortBy || 'createdAt',
-      sortOrder: query.sortOrder || 'desc',
-      lastId: query.lastId,
-      limit: query.limit || 10,
-      state: 2 // 只显示已发布状态的卡片组 (PUBLISHED = 2)
-    }) as any // 返回类型稍有不同，但兼容
+    const params = new URLSearchParams()
+
+    if (query.lastId) {
+      params.append('lastId', query.lastId.toString())
+    }
+    if (query.limit) {
+      params.append('limit', query.limit.toString())
+    }
+
+    return apiClient.get(`${API_V1_PREFIX}/memory/users/${userId}/memory-decks?${params.toString()}`)
   }
 
   /**

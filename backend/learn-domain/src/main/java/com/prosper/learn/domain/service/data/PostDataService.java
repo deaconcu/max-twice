@@ -221,4 +221,12 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
     public int ban(long id, String reason) {
         return postMapper.updateStateWithReason(id, Enums.ContentState.BANNED.value(), reason);
     }
+
+    /**
+     * 软删除帖子
+     */
+    @CacheEvict(value = "posts", key = "#id")
+    public int softDelete(long id) {
+        return postMapper.softDelete(id);
+    }
 }

@@ -9,24 +9,24 @@ import static com.prosper.learn.common.Enums.ContentState.*;
 
 public interface RoadmapMapper {
 
-    @Select("SELECT * FROM roadmap WHERE id = #{id}")
+    @Select("SELECT * FROM roadmap WHERE id = #{id} AND deleted_at IS NULL")
     RoadmapDO getById(long id);
 
-    @Select("SELECT * FROM roadmap ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
+    @Select("SELECT * FROM roadmap WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
     List<RoadmapDO> getList(int offset, int limit);
 
-    @Select("SELECT * FROM roadmap WHERE profession_id = #{professionId} ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
+    @Select("SELECT * FROM roadmap WHERE profession_id = #{professionId} AND deleted_at IS NULL ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
     List<RoadmapDO> getListByProfession(long professionId, int offset, int limit);
 
     @Select({"<script>",
              "SELECT * FROM roadmap WHERE id IN ",
              "<foreach item='id' collection='ids' open='(' separator=',' close=')'>#{id}</foreach>",
-             " ORDER BY created_at DESC",
+             " AND deleted_at IS NULL ORDER BY created_at DESC",
              "</script>"})
     List<RoadmapDO> getByIds(List<Long> ids);
 
     @Select({"<script>",
-             "SELECT * FROM roadmap WHERE profession_id = #{professionId}",
+             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND deleted_at IS NULL",
              "<if test='excludeIds != null and excludeIds.size() > 0'>",
              " AND id NOT IN ",
              "<foreach item='id' collection='excludeIds' open='(' separator=',' close=')'>#{id}</foreach>",
@@ -36,7 +36,7 @@ public interface RoadmapMapper {
     List<RoadmapDO> getListByProfessionExcluding(long professionId, int offset, int limit, List<Long> excludeIds);
 
     @Select({"<script>",
-             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND id &lt; #{lastId}",
+             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND id &lt; #{lastId} AND deleted_at IS NULL",
              "<if test='excludeIds != null and excludeIds.size() > 0'>",
              " AND id NOT IN ",
              "<foreach item='id' collection='excludeIds' open='(' separator=',' close=')'>#{id}</foreach>",
@@ -46,10 +46,18 @@ public interface RoadmapMapper {
     List<RoadmapDO> getListByProfessionAfterIdExcluding(
             long professionId, long lastId, int limit, List<Long> excludeIds);
 
-    @Select("SELECT * FROM roadmap WHERE creator_id = #{creatorId} ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
+    @Select("SELECT * FROM roadmap WHERE creator_id = #{creatorId} AND deleted_at IS NULL ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
     List<RoadmapDO> getListByCreator(long creatorId, int offset, int limit);
 
-    @Select("SELECT * FROM roadmap WHERE content_hash = #{contentHash}")
+    @Select({"<script>",
+             "SELECT * FROM roadmap WHERE creator_id = #{creatorId} AND deleted_at IS NULL",
+             "<if test='state != null'> AND state = #{state}</if>",
+             " AND id &lt; #{lastId}",
+             " ORDER BY id DESC LIMIT #{limit}",
+             "</script>"})
+    List<RoadmapDO> getListByCreatorWithPaging(long creatorId, long lastId, int limit, Byte state);
+
+    @Select("SELECT * FROM roadmap WHERE content_hash = #{contentHash} AND deleted_at IS NULL")
     List<RoadmapDO> getByContentHash(String contentHash);
 
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
@@ -70,11 +78,11 @@ public interface RoadmapMapper {
 
     @Select("SELECT * FROM roadmap WHERE id IN " +
             "(SELECT DISTINCT post_id FROM upvote WHERE post_type = 'roadmap') " +
-            "ORDER BY score DESC, id DESC LIMIT #{limit}")
+            "AND deleted_at IS NULL ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<RoadmapDO> getListByScore(int limit);
 
     @Select({"<script>",
-             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + PUBLISHED_VALUE,
+             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + PUBLISHED_VALUE + " AND deleted_at IS NULL",
              "<if test='excludeIds != null and excludeIds.size() > 0'>",
              " AND id NOT IN ",
              "<foreach item='id' collection='excludeIds' open='(' separator=',' close=')'>#{id}</foreach>",
@@ -85,7 +93,7 @@ public interface RoadmapMapper {
             long professionId, int offset, int limit, List<Long> excludeIds);
 
     @Select({"<script>",
-             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + PUBLISHED_VALUE + " AND ",
+             "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + PUBLISHED_VALUE + " AND deleted_at IS NULL AND ",
              "(score &lt; #{lastScore} OR (score = #{lastScore} AND id &lt; #{lastId}))",
              "<if test='excludeIds != null and excludeIds.size() > 0'>",
              " AND id NOT IN ",
@@ -97,12 +105,12 @@ public interface RoadmapMapper {
             long professionId, double lastScore, long lastId, int limit, List<Long> excludeIds);
 
     // 平台统计相关方法
-    @Select("SELECT COUNT(*) FROM roadmap WHERE vote >= 0")
+    @Select("SELECT COUNT(*) FROM roadmap WHERE vote >= 0 AND deleted_at IS NULL")
     Long countPublicRoadmaps();
 
     // Admin管理接口
     @Select("<script>" +
-            "SELECT * FROM roadmap WHERE 1=1 " +
+            "SELECT * FROM roadmap WHERE deleted_at IS NULL " +
             "<if test='state != null'>AND state = #{state}</if> " +
             "<if test='professionId != null'>AND profession_id = #{professionId}</if> " +
             "<if test='creatorId != null'>AND creator_id = #{creatorId}</if> " +
@@ -113,4 +121,7 @@ public interface RoadmapMapper {
 
     @Update("UPDATE roadmap SET state = #{state}, reason = #{reason} WHERE id = #{id}")
     int updateStateAndReason(@Param("id") long id, @Param("state") byte state, @Param("reason") String reason);
+
+    @Update("UPDATE roadmap SET deleted_at = NOW() WHERE id = #{id} AND deleted_at IS NULL")
+    int softDelete(long id);
 }

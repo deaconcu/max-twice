@@ -11,6 +11,7 @@ import UserContentsTab from '@/components/user/UserContentsTab.vue'
 import UserFollowingTab from '@/components/user/UserFollowingTab.vue'
 import SubscriptionTab from '@/components/user/SubscriptionTab.vue'
 import UserMemoryDecksTab from '@/components/user/UserMemoryDecksTab.vue'
+import UserRoadmapsTab from '@/components/user/UserRoadmapsTab.vue'
 import UserSidebar from '@/components/user/UserSidebar.vue'
 import RightSidebar from '@/components/common/RightSidebar.vue'
 import ErrorPage from '@/components/common/ErrorPage.vue'
@@ -74,6 +75,7 @@ const items: Ref<TabItem[]> = ref([
   { text: t('user.profile.myContents'), icon: 'mdi-format-list-group', value: 'contents' },
   { text: t('user.profile.myArticles'), icon: 'mdi-file-document-outline', value: 'article' },
   { text: t('user.profile.myMemoryDecks'), icon: 'mdi-cards-outline', value: 'memoryDecks' },
+  { text: '创建的路线图', icon: 'mdi-map-marker-path', value: 'roadmaps' },
 ])
 
 // 组件映射
@@ -85,12 +87,13 @@ const tabComponents: Record<string, any> = {
   contents: UserContentsTab,
   article: UserPostsTab,
   memoryDecks: UserMemoryDecksTab,
+  roadmaps: UserRoadmapsTab,
 }
 
 // 组件属性映射 - User页面传入username
 const getComponentProps = (tabValue: string): ComponentProps => {
   const baseProps: ComponentProps = {
-    userId: user.value?.id?.toString() || '',  // 保留 userId 用于其他需要的组件
+    userId: user.value?.id || 0,  // userId 作为数字类型，用于 roadmaps tab
     username: route.params.username as string,  // 传递 username
   }
 
