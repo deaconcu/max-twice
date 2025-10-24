@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.common.Enums;
+import com.prosper.learn.common.Enums.PostType;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
@@ -227,67 +228,28 @@ public class PostService {
     }
 
     /**
-     * 获取用户文章或内容，这个在用户中心显示，带上这个帖子的views，用户能看到自己文章的阅读量
+     * 获取用户文章或目录
+     * @param userId 用户ID
+     * @param lastId 分页游标
+     * @param postType 帖子类型
+     * @param state 状态过滤（null表示所有状态，否则只返回指定状态）
      */
-    public List<PostDTO> getUserPosts(Long userId, Long lastId, String type) {
+    public List<PostDTO> getUserPosts(Long userId, Long lastId, PostType postType, Byte state) {
         validateUserId(lastId);
         userService.validateUserExists(userId);
 
-        if ("content".equals(type)) {
-            return getUserContentsWithViews(userId, lastId);
-        } else {
-            return getUserArticleWithViews(userId, lastId);
-        }
-    }
-
-    /**
-     * 获取用户文章列表（包含阅读量）
-     */
-    public List<PostDTO> getUserArticleWithViews(long userId, long lastId) {
         int count = systemProperties.getPosting().getUserContentsPageSize();
-        List<PostDO> postings = postDataService.getArticleListByUser(userId, lastId, count);
-        if (postings == null || postings.size() == 0) return new ArrayList<>();
 
-        return toDTOV2(postings, userId);
-
-        /*
-        List<PostDTO> postDTOList = postConverter.toDTO(postings);
-
-        // 设置views字段
-        dailyStatsService.setViewsForPosts(postDTOList);
-
-        // get all user
-        List<Long> userIds = postDTOList.stream().map(PostDTO::getCreatorId).collect(Collectors.toList());
-        List<UserDO> userList = userDataService.getByIds(userIds);
-        Map<Long, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
-
-        // get all node
-        List<Long> nodeIds = postDTOList.stream().map(PostDTO::getNodeId).collect(Collectors.toList());
-        List<NodeDO> nodeList = nodeDataService.getByIds(nodeIds);
-        Map<Long, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
-
-        for (PostDTO postDTO : postDTOList) {
-            postDTO.setNode(nodeConverter.toDTO(nodeMap.get(postDTO.getNodeId())));
-            NodeDTO node = postDTO.getNode();
-            node.setCourse(courseService.getCourseDTOV4ById(node.getCourseId()));
-
-            postDTO.setCreator(userConverter.toDTOV1(userMap.get(postDTO.getCreatorId())));
+        List<PostDO> postings = postDataService.getPostsByUser(userId, postType.value(), lastId, state, count);
+        if (postings == null || postings.isEmpty()) {
+            return new ArrayList<>();
         }
 
-        return postDTOList;
-         */
-    }
+        // 如果是目录类型，处理内容ID转名称
+        if (PostType.contents == postType) {
+            processContentPostsIdToName(postings);
+        }
 
-    /**
-     * 获取用户目录列表（包含阅读量）
-     */
-    public List<PostDTO> getUserContentsWithViews(long userId, long lastId) {
-        int count = systemProperties.getPosting().getUserContentsPageSize();
-        List<PostDO> postings = postDataService.getContentsListByUser(userId, lastId, count);
-        if (postings == null || postings.size() == 0) return new ArrayList<>();
-
-        // 使用提取的公共方法处理内容ID转名称
-        processContentPostsIdToName(postings);
         return toDTOV2(postings, userId);
 
         /*
@@ -361,7 +323,7 @@ public class PostService {
     public List<PostDTO> getPostsByState(Enums.ContentState state) {
         List<PostDO> postDOList = postDataService.getListByState(state.value(), systemProperties.getPosting().getPendingPostsLimit());
         for (PostDO postDO : postDOList) {
-            if (postDO.getType() == Enums.PostType.contents.value()) {
+            if (postDO.getType() == PostType.contents.value()) {
                 idToName(postDO);
             }
         }
@@ -374,7 +336,7 @@ public class PostService {
     public List<PostDTO> getPostsByState(Enums.ContentState state, Long lastId, Integer limit) {
         List<PostDO> postDOList = postDataService.getListByState(state.value(), lastId, limit);
         for (PostDO postDO : postDOList) {
-            if (postDO.getType() == Enums.PostType.contents.value()) {
+            if (postDO.getType() == PostType.contents.value()) {
                 idToName(postDO);
             }
         }
@@ -395,7 +357,7 @@ public class PostService {
         int limit = systemProperties.getPosting().getPendingPostsLimit();
         List<PostDO> postDOList = postDataService.getListByNodeAndCreator(nodeId, creatorId, lastId, state, limit);
         for (PostDO postDO : postDOList) {
-            if (postDO.getType() == Enums.PostType.contents.value()) {
+            if (postDO.getType() == PostType.contents.value()) {
                 idToName(postDO);
             }
         }
@@ -437,7 +399,7 @@ public class PostService {
         validateNodeId(request.getNodeId());
 
         PostDO postDO = new PostDO();
-        if (request.getType() == Enums.PostType.contents.value()) {
+        if (request.getType() == PostType.contents.value()) {
             NodeDO nodeDO = nodeDataService.getById(request.getNodeId());
             if (nodeDO == null) {
                 throw ErrorCode.POSTING_NODE_NOT_FOUND.exception();
@@ -498,7 +460,7 @@ public class PostService {
      * 更新帖子内容
      *
      * @param id 帖子ID
-     * @throws BusinessException 当帖子不存在时抛出异常
+     * @throws BusinessException 当帖子不存在或帖子类型为目录时抛出异常
      */
     @Transactional
     public void updatePost(Long id, UpdatePostRequest request) {
@@ -507,9 +469,32 @@ public class PostService {
         }
 
         PostDO postDO = validateAndGetPost(id);
+
+        // 目录类型不允许修改
+        if (postDO.getType() == PostType.contents.value()) {
+            throw ErrorCode.INVALID_OPERATION.exception("目录类型的帖子不允许修改");
+        }
+
         postDO.setContent(request.getContent());
         postDO.setUpdatedAt(Utils.getLocalDateTime());
+        // 修改后重新设置为待审核状态
+        postDO.setState(Enums.ContentState.SUBMITTED.value());
+        postDO.setReason(null);  // 清空之前的拒绝原因
         postDataService.update(postDO);
+    }
+
+    /**
+     * 更新帖子内容并返回更新后的DTO
+     *
+     * @param id 帖子ID
+     * @return 更新后的帖子DTO
+     * @throws BusinessException 当帖子不存在或帖子类型为目录时抛出异常
+     */
+    @Transactional
+    public PostDTO updatePostAndReturn(Long id, UpdatePostRequest request) {
+        updatePost(id, request);
+        PostDO postDO = validateAndGetPost(id);
+        return postConverter.toDTO(postDO);
     }
 
     /**
@@ -568,7 +553,7 @@ public class PostService {
             CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
 
             // 截取内容前50个字符作为预览
-            String contentPreview = postDO.getContent();
+            String contentPreview = com.prosper.learn.domain.util.Util.stripFormatting(postDO.getContent());
             if (contentPreview != null && contentPreview.length() > 50) {
                 contentPreview = contentPreview.substring(0, 50) + "...";
             }
@@ -607,7 +592,7 @@ public class PostService {
             CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
 
             // 截取内容前50个字符作为预览
-            String contentPreview = postDO.getContent();
+            String contentPreview = com.prosper.learn.domain.util.Util.stripFormatting(postDO.getContent());
             if (contentPreview != null && contentPreview.length() > 50) {
                 contentPreview = contentPreview.substring(0, 50) + "...";
             }
@@ -654,7 +639,7 @@ public class PostService {
      * 将帖子内容中的ID转换为名称（向后兼容方法）
      */
     public void idToName(PostDO post) {
-        if (post == null || post.getType() == Enums.PostType.article.value() ||
+        if (post == null || post.getType() == PostType.article.value() ||
                 post.getContent() == null || post.getContent().isEmpty()) {
             return;
         }
@@ -815,7 +800,7 @@ public class PostService {
         
         // 收集所有内容ID
         List<Long> allContentIds = postings.stream()
-                .filter(post -> post.getType() != Enums.PostType.article.value())
+                .filter(post -> post.getType() != PostType.article.value())
                 .map(PostDO::getContent)
                 .filter(content -> content != null && !content.isEmpty())
                 .flatMap(content -> Arrays.stream(content.split(","))
@@ -837,7 +822,7 @@ public class PostService {
 
         // 为每个帖子转换内容ID为名称
         for (PostDO postDO : postings) {
-            if (postDO.getType() == Enums.PostType.article.value() ||
+            if (postDO.getType() == PostType.article.value() ||
                 postDO.getContent() == null || postDO.getContent().isEmpty()) {
                 continue;
             }

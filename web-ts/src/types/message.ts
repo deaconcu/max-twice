@@ -11,6 +11,7 @@ export interface Message {
   id: number              // Long -> number
   sender?: User           // UserDTOV4 -> User (可选)
   receiver?: User         // UserDTOV4 -> User (可选)
+  content?: string        // String (可选) - JSON 格式的消息内容
   type?: MessageType      // Integer -> MessageType (可选)
   isRead?: number         // Integer -> number (可选)
   createdAt?: string      // String (可选)

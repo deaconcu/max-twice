@@ -101,7 +101,7 @@ public class ProfessionsController {
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
             Long id) {
-        ProfessionDTO profession = professionService.getById(id);
+        ProfessionDTO profession = professionService.getById(id, true);
         return ApiResponse.success(profession);
     }
 

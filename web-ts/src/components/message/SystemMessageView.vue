@@ -4,21 +4,18 @@
   import { MessageType, ObjectType, VoteType } from '@/types/enums'
   import type { User } from '@/types/user'
   import type { Node } from '@/types/node'
-  import { getUserDisplayName } from '@/utils/common'
+  import type { Message } from '@/types/message'
+  import { getUserDisplayName, getObjectTypeName } from '@/utils/common'
   import UserCard from '@/components/user/UserCard.vue'
 
   const { t } = useI18n()
 
-  interface SystemMessage {
-    id: string | number
-    type: number
-    createdAt: string
+  interface SystemMessage extends Message {
     objectType?: number
     objectId?: string | number
     voteType?: number
     commentId?: string | number
     follower?: User
-    receiver?: User
     inviter?: User
     commenter?: User
     node?: Node
@@ -27,12 +24,14 @@
   interface Props {
     messageList?: SystemMessage[]
     lastReadTime?: Date | null
+    showFilter?: boolean  // 是否显示筛选器
   }
 
   // Props
   const props = withDefaults(defineProps<Props>(), {
     messageList: () => [],
     lastReadTime: null,
+    showFilter: true,  // 默认显示筛选器
   })
 
   interface LoadOptions {
@@ -81,7 +80,7 @@
   }
 
   // 判断是否是拒绝消息
-  const isRejectionMessage = (type: number): boolean => {
+  const isRejectionMessage = (type: any): boolean => {
     return [
       MessageType.COURSE_REJECTED,
       MessageType.POST_REJECTED,
@@ -94,7 +93,7 @@
   }
 
   // 判断是否是封禁消息
-  const isBannedMessage = (type: number): boolean => {
+  const isBannedMessage = (type: any): boolean => {
     return [
       MessageType.COURSE_BANNED,
       MessageType.POST_BANNED,
@@ -107,21 +106,11 @@
   }
 
   // 判断是否是通过消息
-  const isApprovedMessage = (type: number): boolean => {
+  const isApprovedMessage = (type: any): boolean => {
     return [
       MessageType.COURSE_APPROVED,
       MessageType.PROFESSION_APPROVED
     ].includes(type)
-  }
-
-  // 获取对象类型的中文名称
-  const getObjectTypeName = (objectType: string): string => {
-    const typeMap: Record<string, string> = {
-      'post': '帖子',
-      'node': '节点',
-      'roadmap': '路线图'
-    }
-    return typeMap[objectType] || '内容'
   }
 
   // 获取审核消息文本
@@ -132,16 +121,16 @@
 
       switch (type) {
         case MessageType.COURSE_REJECTED:
-          return `您的课程《${data.courseName}》审核未通过。原因：${data.reason}`
+          return `您提交的课程《${data.courseName}》审核未通过。原因：${data.reason}`
         case MessageType.COURSE_BANNED:
-          return `您的课程《${data.courseName}》已被封禁。原因：${data.reason}`
+          return `您提交的课程《${data.courseName}》已被封禁。原因：${data.reason}`
         case MessageType.COURSE_APPROVED:
-          return `您的课程《${data.courseName}》审核通过！`
+          return `您提交的课程《${data.courseName}》审核通过！`
 
         case MessageType.POST_REJECTED:
-          return `您在《${data.courseName} - ${data.nodeName}》下的帖子《${data.postTitle}》审核未通过。原因：${data.reason}`
+          return `您在《${data.courseName} - ${data.nodeName}》下的帖子"${data.postPreview}"审核未通过。原因：${data.reason}`
         case MessageType.POST_BANNED:
-          return `您在《${data.courseName} - ${data.nodeName}》下的帖子《${data.postTitle}》已被封禁。原因：${data.reason}`
+          return `您在《${data.courseName} - ${data.nodeName}》下的帖子"${data.postPreview}"已被封禁。原因：${data.reason}`
 
         case MessageType.COMMENT_REJECTED:
           return `您在${getObjectTypeName(data.objectType)}《${data.objectTitle}》下的评论"${data.commentPreview}"审核未通过。原因：${data.reason}`
@@ -193,7 +182,8 @@
             class="mb-5"
           ></v-alert>
 
-          <div class="mb-4">
+          <!-- 消息筛选器 - 仅在互动消息中显示 -->
+          <div v-if="showFilter" class="mb-4">
             <div class="d-flex align-center mb-3">
               <v-icon
                 icon="mdi-filter-variant"
@@ -315,6 +305,37 @@
                     rounded="lg"
                     >评论</v-chip
                   >
+                  <!-- 审核消息类型标签 -->
+                  <v-chip
+                    v-if="isRejectionMessage(message.type)"
+                    color="warning"
+                    variant="tonal"
+                    size="small"
+                    rounded="lg"
+                  >
+                    <v-icon icon="mdi-alert-circle" size="14" class="mr-1"></v-icon>
+                    审核未通过
+                  </v-chip>
+                  <v-chip
+                    v-if="isBannedMessage(message.type)"
+                    color="error"
+                    variant="tonal"
+                    size="small"
+                    rounded="lg"
+                  >
+                    <v-icon icon="mdi-block-helper" size="14" class="mr-1"></v-icon>
+                    内容封禁
+                  </v-chip>
+                  <v-chip
+                    v-if="isApprovedMessage(message.type)"
+                    color="success"
+                    variant="tonal"
+                    size="small"
+                    rounded="lg"
+                  >
+                    <v-icon icon="mdi-check-circle" size="14" class="mr-1"></v-icon>
+                    审核通过
+                  </v-chip>
                 </div>
 
                 <!-- 右侧消息内容 -->
@@ -330,7 +351,7 @@
                         'unread-message': showDot(message.createdAt),
                       }"
                     >
-                      <div class="d-flex align-start">
+                      <div class="d-flex align-center">
                         <v-avatar
                           image="https://pica.zhimg.com/v2-b12a03a32cf776765897927720acb3bf_xll.jpg"
                           rounded="lg"
@@ -426,15 +447,12 @@
 
                           <!-- 审核消息 -->
                           <div v-if="isRejectionMessage(message.type)" class="message-text moderation-message rejected">
-                            <v-icon icon="mdi-alert-circle" color="warning" size="18" class="mr-1"></v-icon>
                             {{ getModerationText(message) }}
                           </div>
                           <div v-if="isBannedMessage(message.type)" class="message-text moderation-message banned">
-                            <v-icon icon="mdi-block-helper" color="error" size="18" class="mr-1"></v-icon>
                             {{ getModerationText(message) }}
                           </div>
                           <div v-if="isApprovedMessage(message.type)" class="message-text moderation-message approved">
-                            <v-icon icon="mdi-check-circle" color="success" size="18" class="mr-1"></v-icon>
                             {{ getModerationText(message) }}
                           </div>
                         </div>
@@ -513,27 +531,8 @@
 
   /* 审核消息样式 */
   .moderation-message {
-    padding: 8px 12px;
-    border-radius: 8px;
-    margin: 4px 0;
-    font-weight: 500;
     display: flex;
-    align-items: flex-start;
-  }
-
-  .moderation-message.rejected {
-    background: #fff3e0;
-    border-left: 3px solid #ff9800;
-  }
-
-  .moderation-message.banned {
-    background: #ffebee;
-    border-left: 3px solid #f44336;
-  }
-
-  .moderation-message.approved {
-    background: #e8f5e9;
-    border-left: 3px solid #4caf50;
+    align-items: center;
   }
 
   .message-text a {

@@ -273,13 +273,13 @@ const handleConfirmAction = async (reason: string) => {
     submitting.value = true
     const targetState = dialogType.value === 'reject' ? ContentState.REJECTED : ContentState.BANNED
 
-    const response = await nodeServiceV1.updateNodeState(currentNode.value.id, targetState)
+    const response = await nodeServiceV1.updateNodeState(currentNode.value.id, targetState, reason)
 
     if (response.code === 200) {
       const message = dialogType.value === 'reject' ? '已拒绝' : '已屏蔽'
       showSnackbar?.(message, 'success')
 
-      // 从当前列表中移除（如果状态改变且不在筛选模式）
+      // 从当前列表中移除(如果状态改变且不在筛选模式)
       if (!isFilterMode.value) {
         const index = nodeList.value.findIndex(n => n.id === currentNode.value!.id)
         if (index !== -1) {

@@ -46,9 +46,9 @@ public interface NodeMapper {
             "creator_id = #{creatorId}, course_id = #{courseId}, comment_count = #{commentCount} where id = #{id}")
     void update(NodeDO Node);
 
-    @Update("UPDATE node SET state = #{state} where id = #{id}")
-    void updateState(@Param("id") Long id, @Param("state") Byte state);
-    
+    @Update("UPDATE node SET state = #{state}, reason = #{reason} where id = #{id}")
+    void updateStateAndReason(@Param("id") Long id, @Param("state") Byte state, @Param("reason") String reason);
+
     // 平台统计相关方法
     @Select("SELECT COUNT(*) FROM node WHERE course_id > 0")
     Long countActiveNodes();

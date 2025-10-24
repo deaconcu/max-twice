@@ -7,7 +7,7 @@ import Comment from '../read/CommentArea.vue'
 import Tiptap from '../read/TiptapInput.vue'
 import { useUserStore } from '@/stores/user'
 import type { Post } from '@/types/post'
-import { ObjectType } from '@/types/enums'
+import { ObjectType, PostType } from '@/types/enums'
 
 
 interface TiptapRef {
@@ -22,13 +22,16 @@ interface LoadEventData {
 
 // Props
 const props = defineProps<{
-  userId?: number 
+  userId?: number
 }>()
 
 const userStore = useUserStore()
 
 // 当前操作的用户ID
 const targetUserId = computed(() => props.userId || userStore.userId)
+
+// 是否查看自己
+const isSelf = computed(() => targetUserId.value === userStore.userId)
 
 // 内部状态管理
 const mainArea: Ref<'list' | 'detail' | 'edit'> = ref('list')
@@ -44,11 +47,10 @@ const lastContentsId: Ref<number> = ref(0x7fffffff)
 // 加载目录数据
 const loadContents = async ({ done }: LoadEventData): Promise<void> => {
   try {
-    const response = await userServiceV1.getUserPosts(
-      targetUserId.value,
-      lastContentsId.value,
-      'content'
-    )
+    // 查看自己：获取所有状态；查看别人：只获取已发布
+    const response = isSelf.value
+      ? await userServiceV1.getCurrentUserAllPosts(lastContentsId.value, PostType.CONTENTS)
+      : await userServiceV1.getUserPosts(targetUserId.value, lastContentsId.value, PostType.CONTENTS)
 
     if (response.code === 401) {
       console.log('not login')
@@ -106,9 +108,11 @@ const modifyPosting = async (): Promise<void> => {
     })
     console.log(`response: ${JSON.stringify(response)}`)
 
-    if (response.code === 200) {
+    if (response.code === 200 && response.data) {
       console.log('Form submitted successfully')
-      currPosting.value.content = editorRef.value.editor.getHTML()
+      // 使用后端返回的数据更新状态
+      currPosting.value.content = response.data.content
+      currPosting.value.state = response.data.state
       switchToLastPage()
     }
   } catch (error) {

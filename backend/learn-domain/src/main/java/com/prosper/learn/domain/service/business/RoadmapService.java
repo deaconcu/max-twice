@@ -8,9 +8,12 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.prosper.learn.common.UnionFind;
 import com.prosper.learn.common.Utils;
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
+import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
+import com.prosper.learn.domain.util.Util;
 import com.prosper.learn.domain.util.converter.RoadmapConverter;
 import com.prosper.learn.domain.util.converter.UserConverter;
 import com.prosper.learn.dto.response.ProfessionDTO;
@@ -41,7 +44,7 @@ import static com.prosper.learn.common.Enums.ContentState;
 public class RoadmapService {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    
+
     private final CourseDataService courseDataService;
     private final RoadmapDataService roadmapDataService;
     private final UserDataService userDataService;
@@ -51,6 +54,7 @@ public class RoadmapService {
     private final UpvoteService upvoteService;
     private final UserCourseService userCourseService;
     private final ScoreCalculationService scoreCalculationService;
+    private final MessageService messageService;
     private final RoadmapConverter roadmapConverter;
     private final UserConverter userConverter;
     private final ProfessionService professionService;
@@ -120,7 +124,7 @@ public class RoadmapService {
                     .collect(Collectors.toList());
 
             UserDTO userDTO = userConverter.toDTOV2(userDataService.getById(userId));
-            ProfessionDTO professionDTO = professionService.getById(professionId);
+            ProfessionDTO professionDTO = professionService.getById(professionId, true);
             Set<Long> upvotedIds = upvoteService.getUpvotedRoadmapIds(roadmapIds, userId);
             Set<Long> pinnedIds = getPinnedIdsForCurrentRequest(userId, professionId, lastId, pinnedRoadmapIds);
             Set<Long> learningIds = getLearningIds(userId, roadmapIds);
@@ -742,6 +746,8 @@ public class RoadmapService {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
 
+        Util.validateStateTransition(roadmap.getState(), ContentState.PUBLISHED);
+
         roadmapDataService.approve(id);
         roadmap.setState(ContentState.PUBLISHED.value());
         return toDTO(roadmap);
@@ -750,28 +756,64 @@ public class RoadmapService {
     /**
      * 拒绝路线图
      */
-    public RoadmapDTO reject(long id) {
+    public RoadmapDTO reject(long id, String reason) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
 
-        roadmapDataService.reject(id);
+        Util.validateStateTransition(roadmap.getState(), ContentState.REJECTED);
+
+        // 获取职业信息用于通知
+        ProfessionDTO profession = professionService.getById(roadmap.getProfessionId(), false);
+
+        roadmapDataService.reject(id, reason);
         roadmap.setState(ContentState.REJECTED.value());
+
+        // 发送拒绝通知
+        if (profession != null) {
+            messageService.sendRoadmapModeration(
+                roadmap.getCreatorId(),
+                roadmap.getId(),
+                profession.getId(),
+                profession.getName(),
+                Enums.ModerationAction.REJECTED,
+                reason
+            );
+        }
+
         return toDTO(roadmap);
     }
 
     /**
      * 封禁路线图
      */
-    public RoadmapDTO ban(long id) {
+    public RoadmapDTO ban(long id, String reason) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
 
-        roadmapDataService.ban(id);
+        Util.validateStateTransition(roadmap.getState(), ContentState.BANNED);
+
+        // 获取职业信息用于通知
+        ProfessionDTO profession = professionService.getById(roadmap.getProfessionId(), false);
+
+        roadmapDataService.ban(id, reason);
         roadmap.setState(ContentState.BANNED.value());
+
+        // 发送封禁通知
+        if (profession != null) {
+            messageService.sendRoadmapModeration(
+                roadmap.getCreatorId(),
+                roadmap.getId(),
+                profession.getId(),
+                profession.getName(),
+                Enums.ModerationAction.BANNED,
+                reason
+            );
+        }
+
         return toDTO(roadmap);
     }
 

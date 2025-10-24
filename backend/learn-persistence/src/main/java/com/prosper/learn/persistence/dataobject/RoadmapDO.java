@@ -20,6 +20,8 @@ public class RoadmapDO {
 
     private Byte state;  // 状态：0-待审核，1-已批准，2-已拒绝
 
+    private String reason;  // 拒绝/封禁原因
+
     private Integer vote;
 
     private Integer comment;

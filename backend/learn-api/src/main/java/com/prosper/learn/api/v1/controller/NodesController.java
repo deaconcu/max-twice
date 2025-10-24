@@ -46,12 +46,13 @@ public class NodesController {
     @PutMapping("/admin/nodes/{nodeId}/state")
     public ApiResponse<NodeDTO> updateNodeState(
             @PathVariable @Positive(message = "节点ID必须大于0") Long nodeId,
-            @RequestParam @Min(value = 0, message = "状态值必须大于等于0") Integer state) {
+            @RequestParam @Min(value = 0, message = "状态值必须大于等于0") Integer state,
+            @RequestParam(required = false, defaultValue = "") String reason) {
         Enums.ContentState contentState = Enums.ContentState.getByValue(state);
-        if (state == null) {
+        if (contentState == null) {
             throw new IllegalArgumentException("Invalid state value: " + state);
         }
-        NodeDTO node = nodeService.updateNodeState(nodeId, contentState);
+        NodeDTO node = nodeService.updateNodeState(nodeId, contentState, reason);
         return ApiResponse.success(node);
     }
 }

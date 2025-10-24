@@ -27,6 +27,7 @@ public enum ErrorCode {
     ALREADY_APPROVED(1008, "专业状态已是批准状态，无需重复操作"),
     ALREADY_REJECTED(1009, "专业状态已是拒绝状态，无需重复操作"),
     ALREADY_BANNED(1010, "专业状态已是屏蔽状态，无需重复操作"),
+    INVALID_OPERATION(1011, "不合法的操作类型"),
 
     // 用户认证相关 11xx
     USER_NOT_LOGIN(1001, "用户未登录"),

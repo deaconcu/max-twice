@@ -128,6 +128,15 @@ public class Enums {
         public static PostType getByValue(Integer value) {
             return ValueEnum.getByValue(PostType.class, value);
         }
+
+        /**
+         * 从字符串转换为 PostType
+         * @param type "content" 或 "article"
+         * @return 对应的 PostType，默认返回 article
+         */
+        public static PostType fromString(String type) {
+            return "content".equals(type) ? contents : article;
+        }
     }
 
     public enum VoteType implements ValueEnum<Integer> {

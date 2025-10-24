@@ -344,6 +344,9 @@ public class MessageService {
             long nodeId = Util.getLong(content, "nodeId");
             m.setNode(nodeConverter.toDTOV1(nodeDOMap.get(nodeId)));
             messageDTO = m;
+        } else {
+            // 其他类型消息(如审核消息)，使用基础 MessageDTO，保留原始 content
+            messageDTO = messageConverter.toDTO(messageDO);
         }
 
         messageDTO.setId(messageDO.getId());
@@ -562,12 +565,12 @@ public class MessageService {
     /**
      * 2. 发送帖子审核通知
      */
-    public void sendPostModeration(long userId, long postId, String postTitle,
+    public void sendPostModeration(long userId, long postId, String postPreview,
                                    long nodeId, String nodeName, String courseName,
                                    Enums.ModerationAction action, String reason) {
         Map<String, Object> data = new HashMap<>();
         data.put("postId", postId);
-        data.put("postTitle", postTitle);
+        data.put("postPreview", Util.stripFormatting(postPreview));
         data.put("nodeId", nodeId);
         data.put("nodeName", nodeName);
         data.put("courseName", courseName);
@@ -591,7 +594,7 @@ public class MessageService {
                                       Enums.ModerationAction action, String reason) {
         Map<String, Object> data = new HashMap<>();
         data.put("commentId", commentId);
-        data.put("commentPreview", commentPreview);
+        data.put("commentPreview", Util.stripFormatting(commentPreview));
         data.put("objectType", objectType);
         data.put("objectId", objectId);
         data.put("objectTitle", objectTitle);

@@ -242,22 +242,29 @@ public class MemoryCardDeckService {
     /**
      * 需求4: 获取用户自己提交的所有卡片组 - keyset分页，全部状态
      */
-    public KeysetPageResponse<MemoryCardDeckDTO> getMyAllDecks(
-            Long userId, String sortBy, String sortOrder, Double lastScore, Long lastId, Integer limit) {
+    /**
+     * 获取用户的卡片组列表
+     * @param userId 用户ID
+     * @param currentUserId 当前登录用户ID（用于获取点赞状态）
+     * @param state 状态过滤（null表示所有状态，否则只返回指定状态）
+     */
+    public KeysetPageResponse<MemoryCardDeckDTO> getUserDecks(
+            Long userId, Long currentUserId, String sortBy, String sortOrder,
+            Double lastScore, Long lastId, Integer limit, Byte state) {
         // 参数验证
         if (limit == null || limit <= 0) limit = 10;
         if (limit > 50) limit = 50;
 
         List<MemoryCardDeckDO> deckList;
-        // 暂时查询正常状态，TODO: 需要添加查询所有状态的方法
+        // 使用 keyset 分页查询
         if (lastScore != null && lastId != null) {
             deckList = deckDataService.getListByCreatorKeyset(
-                    userId, lastScore, lastId, Enums.ContentState.PUBLISHED.value(), limit + 1);
+                    userId, lastScore, lastId, state, limit + 1);
         } else {
-            deckList = deckDataService.getListByCreator(userId, Enums.ContentState.PUBLISHED.value(), limit + 1);
+            deckList = deckDataService.getListByCreator(userId, state, limit + 1);
         }
 
-        return buildDeckResponse(deckList, limit, userId);
+        return buildDeckResponse(deckList, limit, currentUserId);
     }
 
     /**
@@ -581,7 +588,7 @@ public class MemoryCardDeckService {
         PostDO postDO = postDataService.getById(deck.getPostId());
         String postContentPreview = "";
         if (postDO != null && postDO.getContent() != null) {
-            postContentPreview = postDO.getContent();
+            postContentPreview = com.prosper.learn.domain.util.Util.stripFormatting(postDO.getContent());
             if (postContentPreview.length() > 50) {
                 postContentPreview = postContentPreview.substring(0, 50) + "...";
             }
@@ -619,7 +626,7 @@ public class MemoryCardDeckService {
         PostDO postDO = postDataService.getById(deck.getPostId());
         String postContentPreview = "";
         if (postDO != null && postDO.getContent() != null) {
-            postContentPreview = postDO.getContent();
+            postContentPreview = com.prosper.learn.domain.util.Util.stripFormatting(postDO.getContent());
             if (postContentPreview.length() > 50) {
                 postContentPreview = postContentPreview.substring(0, 50) + "...";
             }

@@ -100,8 +100,14 @@ export const userServiceV1 = {
     })
   },
 
-  getUserPosts(userId: number, lastId?: number, type = 'article'): Promise<ApiResponse<Post[]>> {
+  getUserPosts(userId: number, lastId?: number, type = 2): Promise<ApiResponse<Post[]>> {
     return apiClient.get(`${API_V1_PREFIX}/users/${userId}/posts`, {
+      params: { lastId, type },
+    })
+  },
+
+  getCurrentUserAllPosts(lastId?: number, type = 2): Promise<ApiResponse<Post[]>> {
+    return apiClient.get(`${API_V1_PREFIX}/users/me/posts`, {
       params: { lastId, type },
     })
   },
@@ -807,9 +813,12 @@ export const nodeServiceV1 = {
     return apiClient.get(`${API_V1_PREFIX}/admin/nodes`, { params })
   },
 
-  updateNodeState(nodeId: number, state: number): Promise<ApiResponse<Node>> {
+  updateNodeState(nodeId: number, state: number, reason?: string): Promise<ApiResponse<Node>> {
     return apiClient.put(`${API_V1_PREFIX}/admin/nodes/${nodeId}/state`, null, {
-      params: { state },
+      params: {
+        state,
+        reason: reason || '',
+      },
     })
   },
 }

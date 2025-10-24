@@ -64,13 +64,13 @@ public class PostsController {
      * 映射: PUT /posting → PUT /api/v1/posts/{id}
      */
     @PutMapping("/posts/{id}")
-    public ApiResponse<Void> updatePost(
+    public ApiResponse<PostDTO> updatePost(
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
             Long id,
             @Valid @RequestBody UpdatePostRequest request) {
-        postService.updatePost(id, request);
-        return ApiResponse.success();
+        PostDTO postDTO = postService.updatePostAndReturn(id, request);
+        return ApiResponse.success(postDTO);
     }
 
     /**

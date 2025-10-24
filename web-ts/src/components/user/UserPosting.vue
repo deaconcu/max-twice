@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, toRef } from 'vue'
+import { nextTick, onMounted, ref, toRef, computed } from 'vue'
 import type { Ref } from 'vue'
 import { postServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useI18n } from 'vue-i18n'
-import { PostType, VoteType } from '@/types/enums'
+import { PostType, VoteType, ContentState } from '@/types/enums'
 import type { Post } from '@/types/post'
 import 'highlight.js/styles/github.css'
 
@@ -26,6 +26,23 @@ const { t } = useI18n()
 const localVoteType = toRef(() => props.posting.voteType)
 const contentRef: Ref<HTMLElement | null> = ref(null)
 const isOverflow: Ref<boolean> = ref(false)
+
+// 获取状态标签配置
+const stateConfig = computed(() => {
+  const state = props.posting.state
+  switch (state) {
+    case ContentState.SUBMITTED:
+      return { text: '待审核', color: 'warning', icon: 'mdi-clock-outline' }
+    case ContentState.PUBLISHED:
+      return { text: '已发布', color: 'success', icon: 'mdi-check-circle' }
+    case ContentState.REJECTED:
+      return { text: '审核拒绝', color: 'error', icon: 'mdi-close-circle' }
+    case ContentState.BANNED:
+      return { text: '已屏蔽', color: 'grey-darken-2', icon: 'mdi-cancel' }
+    default:
+      return null
+  }
+})
 
 onMounted(async () => {
   await nextTick()
@@ -84,171 +101,190 @@ const deletePosting = async (postingId: number): Promise<void> => {
 </script>
 
 <template>
-  <div class="w-100">
-    <v-row
-      class="ma-0 pb-0 d-flex align-center"
-      :class="type == 'detail' ? 'sticky-top' : ''"
-      :style="
-        type == 'detail'
-          ? 'background-color: white; transform: translateX(-37px); width: 110%;'
-          : ''
-      "
-    >
-      <v-btn
-        v-if="type == 'detail'"
-        variant="flat"
-        class="me-0"
-        color=""
-        density="comfortable"
-        icon="mdi-chevron-left"
-        @click="emit('switchMainArea', 'list')"
-      ></v-btn>
-      <v-avatar icon="mdi-account" size="34" color="red">
-        <span class="text-body-1">CJ</span>
-      </v-avatar>
-      <div class="pl-3">
-        <div class="text-body-2 text-grey-darken-4 font-weight-bold">
-          {{ posting.creator.name }}
+  <v-card class="w-100" elevation="0" outlined>
+    <v-card-text class="pa-0">
+      <v-row
+        class="ma-0 pb-0 d-flex align-start justify-space-between"
+        :class="type == 'detail' ? 'sticky-top' : ''"
+        :style="
+          type == 'detail'
+            ? 'background-color: white; transform: translateX(-37px); width: 110%;'
+            : ''
+        "
+      >
+        <div class="d-flex align-center">
+          <v-btn
+            v-if="type == 'detail'"
+            variant="flat"
+            class="me-0"
+            color=""
+            density="comfortable"
+            icon="mdi-chevron-left"
+            @click="emit('switchMainArea', 'list')"
+          ></v-btn>
+          <v-avatar icon="mdi-account" size="34" color="red">
+            <span class="text-body-1">CJ</span>
+          </v-avatar>
+          <div class="pl-3">
+            <div class="d-flex align-center">
+              <div class="text-body-2 text-grey-darken-4 font-weight-bold">
+                {{ posting.creator.name }}
+              </div>
+            </div>
+            <div class="text-body-2 text-grey">{{ posting.createdAt }}</div>
+          </div>
         </div>
-        <div class="text-body-2 text-grey">{{ posting.createdAt }}</div>
-      </div>
-    </v-row>
 
-    <v-row class="ma-0 pa-0 pt-3">
-      <!-- is contents -->
-      <template v-if="posting.type == PostType.CONTENTS">
-        <div class="w-100 d-flex justify-space-between align-end">
-          <v-list class="">
-            <v-list-item
-              v-for="(item, index) in posting.content.split(',')"
-              :key="index"
-              class="px-0 py-0"
-              min-height="48"
-            >
-              <v-list-item-title class="pb-1 dashed-border">{{ item }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </div>
-      </template>
-
-      <!-- is article -->
-      <template v-else>
-        <div ref="contentRef" :class="props.type == 'list' ? 'text-limited' : ''">
-          <div class="tiptap pt-3 pb-5 w-100" v-html="posting.content"></div>
-        </div>
-        <v-btn
-          v-if="isOverflow"
-          variant="text"
-          class="px-0 mt-2 text-body-1"
-          @click="props.type == 'list' ? emit('switchMainArea', 'detail', posting) : ''"
-          >{{ t('userPosting.viewFullText') }}...</v-btn
+        <!-- 状态标签 - 右侧对齐 -->
+        <v-chip
+          v-if="stateConfig"
+          :color="stateConfig.color"
+          size="small"
+          variant="flat"
         >
-        <br />
-      </template>
-    </v-row>
+          <v-icon :icon="stateConfig.icon" size="14" class="mr-1"></v-icon>
+          {{ stateConfig.text }}
+        </v-chip>
+      </v-row>
 
-    <div class="w-100 d-flex justify-space-between align-end pb-2 pt-3">
-      <div class="">
+      <v-row class="ma-0 pa-0 pt-3">
         <!-- is contents -->
         <template v-if="posting.type == PostType.CONTENTS">
-          <v-btn
-            :variant="posting.voteType === VoteType.HELPFUL ? 'text' : 'outlined'"
-            rounded="lg"
-            density="comfortable"
-            :color="posting.voteType === VoteType.HELPFUL ? 'pink-lighten-1' : ''"
-            class="ps-4 me-4 border"
-            @click="upvote(posting, VoteType.HELPFUL)"
-          >
-            <template #prepend>
-              <v-icon v-if="posting.voteType === VoteType.HELPFUL">mdi-check</v-icon>
-            </template>
-            <span :class="posting.voteType === VoteType.HELPFUL ? 'font-weight-medium' : ''"
-              >{{ t('userPosting.agree') }} {{ posting.helpful }}</span
-            >
-          </v-btn>
+          <div class="w-100 d-flex justify-space-between align-end">
+            <v-list class="">
+              <v-list-item
+                v-for="(item, index) in posting.content.split(',')"
+                :key="index"
+                class="px-0 py-0"
+                min-height="48"
+              >
+                <v-list-item-title class="pb-1 dashed-border">{{ item }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </div>
         </template>
 
         <!-- is article -->
         <template v-else>
-          <v-btn-toggle
-            v-model="localVoteType"
-            variant="plain"
-            rounded="xl"
-            class="pe-4 custom-btn-toggle btn-toggle-height"
+          <div ref="contentRef" :class="props.type == 'list' ? 'text-limited' : ''">
+            <div class="tiptap pt-3 pb-5 w-100" v-html="posting.content"></div>
+          </div>
+          <v-btn
+            v-if="isOverflow"
+            variant="text"
+            class="px-0 mt-2 text-body-1"
+            @click="props.type == 'list' ? emit('switchMainArea', 'detail', posting) : ''"
+            >{{ t('userPosting.viewFullText') }}...</v-btn
           >
-            <v-btn
-              :value="VoteType.TWICE"
-              color="teal"
-              class="px-3 border border-e-0"
-              @click="upvote(posting, VoteType.TWICE)"
-            >
-              <template #prepend>
-                <v-icon v-if="posting.voteType === VoteType.TWICE">mdi-check</v-icon>
-              </template>
-              <span
-                class=""
-                :class="posting.voteType === VoteType.TWICE ? 'font-weight-medium' : ''"
-                >{{ t('userPosting.understandTwice') }} {{ posting.twice }}</span
-              >
-            </v-btn>
+          <br />
+        </template>
+      </v-row>
 
+      <div class="w-100 d-flex justify-space-between align-end pb-2 pt-3">
+        <div class="">
+          <!-- is contents -->
+          <template v-if="posting.type == PostType.CONTENTS">
             <v-btn
-              :value="VoteType.HELPFUL"
-              color="brown"
-              class="px-3 border"
+              :variant="posting.voteType === VoteType.HELPFUL ? 'text' : 'outlined'"
+              rounded="lg"
+              density="comfortable"
+              :color="posting.voteType === VoteType.HELPFUL ? 'pink-lighten-1' : ''"
+              class="ps-4 me-4 border"
               @click="upvote(posting, VoteType.HELPFUL)"
             >
               <template #prepend>
                 <v-icon v-if="posting.voteType === VoteType.HELPFUL">mdi-check</v-icon>
               </template>
-              <span
-                class=""
-                :class="posting.voteType === VoteType.HELPFUL ? 'font-weight-medium' : ''"
-                >{{ t('userPosting.helpful') }} {{ posting.helpful }}</span
+              <span :class="posting.voteType === VoteType.HELPFUL ? 'font-weight-medium' : ''"
+                >{{ t('userPosting.agree') }} {{ posting.helpful }}</span
               >
             </v-btn>
-          </v-btn-toggle>
-        </template>
-
-        <v-btn
-          variant="plain"
-          class="px-3"
-          prepend-icon="mdi-comment-outline"
-          :ripple="false"
-          @click.stop.prevent="null"
-          @click="props.type == 'list' ? emit('switchMainArea', 'detail', posting) : ''"
-        >
-          <template #prepend><v-icon size="16"></v-icon></template>
-          {{ posting.commentCount }}
-        </v-btn>
-
-        <!-- 阅读量显示 -->
-        <v-btn variant="plain" class="px-3" :ripple="false">
-          <template #prepend>
-            <v-icon size="16">mdi-eye</v-icon>
           </template>
-          {{ posting.viewCount || 0 }}
-        </v-btn>
+
+          <!-- is article -->
+          <template v-else>
+            <v-btn-toggle
+              v-model="localVoteType"
+              variant="plain"
+              rounded="xl"
+              class="pe-4 custom-btn-toggle btn-toggle-height"
+            >
+              <v-btn
+                :value="VoteType.TWICE"
+                color="teal"
+                class="px-3 border border-e-0"
+                @click="upvote(posting, VoteType.TWICE)"
+              >
+                <template #prepend>
+                  <v-icon v-if="posting.voteType === VoteType.TWICE">mdi-check</v-icon>
+                </template>
+                <span
+                  class=""
+                  :class="posting.voteType === VoteType.TWICE ? 'font-weight-medium' : ''"
+                  >{{ t('userPosting.understandTwice') }} {{ posting.twice }}</span
+                >
+              </v-btn>
+
+              <v-btn
+                :value="VoteType.HELPFUL"
+                color="brown"
+                class="px-3 border"
+                @click="upvote(posting, VoteType.HELPFUL)"
+              >
+                <template #prepend>
+                  <v-icon v-if="posting.voteType === VoteType.HELPFUL">mdi-check</v-icon>
+                </template>
+                <span
+                  class=""
+                  :class="posting.voteType === VoteType.HELPFUL ? 'font-weight-medium' : ''"
+                  >{{ t('userPosting.helpful') }} {{ posting.helpful }}</span
+                >
+              </v-btn>
+            </v-btn-toggle>
+          </template>
+
+          <v-btn
+            variant="plain"
+            class="px-3"
+            prepend-icon="mdi-comment-outline"
+            :ripple="false"
+            @click.stop.prevent="null"
+            @click="props.type == 'list' ? emit('switchMainArea', 'detail', posting) : ''"
+          >
+            <template #prepend><v-icon size="16"></v-icon></template>
+            {{ posting.commentCount }}
+          </v-btn>
+
+          <!-- 阅读量显示 -->
+          <v-btn variant="plain" class="px-3" :ripple="false">
+            <template #prepend>
+              <v-icon size="16">mdi-eye</v-icon>
+            </template>
+            {{ posting.viewCount || 0 }}
+          </v-btn>
+        </div>
+        <div class="">
+          <!-- 目录类型不允许编辑 -->
+          <v-btn
+            v-if="posting.type !== PostType.CONTENTS"
+            variant="flat"
+            rounded="lg"
+            color="grey-lighten-3"
+            @click="emit('switchMainArea', 'edit', posting)"
+            >{{ t('userPosting.edit') }}</v-btn
+          >
+          <v-btn
+            :class="posting.type !== PostType.CONTENTS ? 'ms-4' : ''"
+            variant="flat"
+            rounded="lg"
+            color="grey-lighten-3"
+            @click="deletePosting(posting.id)"
+            >{{ t('userPosting.delete') }}</v-btn
+          >
+        </div>
       </div>
-      <div class="">
-        <v-btn
-          variant="flat"
-          rounded="lg"
-          color="grey-lighten-3"
-          @click="emit('switchMainArea', 'edit', posting)"
-          >{{ t('userPosting.edit') }}</v-btn
-        >
-        <v-btn
-          class="ms-4"
-          variant="flat"
-          rounded="lg"
-          color="grey-lighten-3"
-          @click="deletePosting(posting.id)"
-          >{{ t('userPosting.delete') }}</v-btn
-        >
-      </div>
-    </div>
-  </div>
+    </v-card-text>
+  </v-card>
 </template>
 
 <style lang="scss">

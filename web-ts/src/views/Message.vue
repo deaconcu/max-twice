@@ -5,6 +5,7 @@ defineOptions({
 
 import { onMounted, ref, watch } from 'vue'
 import type { Ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { messageServiceV1 } from '@/services/api/v1/apiServiceV1'
 import RightSidebar from '@/components/common/RightSidebar.vue'
 import MessageSidebar from '@/components/message/MessageSidebar.vue'
@@ -13,8 +14,18 @@ import PrivateMessageView from '@/components/message/PrivateMessageView.vue'
 import { MessageCategory } from '@/types/enums'
 import type { MessageType } from '@/types/enums'
 
+const route = useRoute()
+const router = useRouter()
+
+// 从 URL 参数初始化 tab,默认为 'interaction'
+const getInitialTab = (): string => {
+  const tab = route.query.tab as string
+  const validTabs = ['interaction', 'system', 'private']
+  return validTabs.includes(tab) ? tab : 'interaction'
+}
+
 // 响应式数据
-const selected: Ref<string> = ref('interaction')
+const selected: Ref<string> = ref(getInitialTab())
 const messageList: Ref<any[]> = ref([])
 const systemMessageType: Ref<MessageType> = ref(99)
 const lastId: Ref<number> = ref(0x7fffffff)
@@ -67,10 +78,18 @@ const users: Ref<any[]> = ref([
 ])
 
 // 监听选中消息类型变化
-watch(selected, () => {
+watch(selected, (newValue) => {
   console.log('selected changed')
   messageList.value = []
   lastId.value = 0x7fffffff
+
+  // 更新 URL 参数
+  router.replace({
+    query: {
+      ...route.query,
+      tab: newValue
+    }
+  })
 })
 
 // 数据加载函数
@@ -202,6 +221,7 @@ onMounted(() => {
           v-if="selected === 'interaction'"
           :message-list="messageList"
           :last-read-time="lastReadTime"
+          :show-filter="true"
           @load-data="loadData"
           @update-system-message-type="handleSystemMessageTypeUpdate"
         />
@@ -211,6 +231,7 @@ onMounted(() => {
           v-if="selected === 'system'"
           :message-list="messageList"
           :last-read-time="lastReadTime"
+          :show-filter="false"
           @load-data="loadData"
           @update-system-message-type="handleSystemMessageTypeUpdate"
         />

@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { userServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useUserStore } from '@/stores/user'
+import { PostType } from '@/types/enums'
 import UserInfoTab from '@/components/user/UserInfoTab.vue'
 import LearningTab from '@/components/user/LearningTab.vue'
 import StatsTab from '@/components/user/StatsTab.vue'
@@ -56,7 +57,7 @@ const tabComponents: Record<string, any> = {
 // 组件属性映射
 const getComponentProps = (tabValue: string): ComponentProps => {
   if (tabValue === 'article') {
-    return { postType: 'article' }
+    return { postType: PostType.ARTICLE }
   } else if (tabValue === 'info') {
     return { editable: true }
   } else if (tabValue === 'follow') {

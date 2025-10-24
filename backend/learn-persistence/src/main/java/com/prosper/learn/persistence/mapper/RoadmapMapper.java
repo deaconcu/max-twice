@@ -111,6 +111,6 @@ public interface RoadmapMapper {
             "</script>")
     List<RoadmapDO> listByFilter(Byte state, Long professionId, Long creatorId, Long lastId);
 
-    @Update("UPDATE roadmap SET state = #{state} WHERE id = #{id}")
-    int updateState(@Param("id") long id, @Param("state") byte state);
+    @Update("UPDATE roadmap SET state = #{state}, reason = #{reason} WHERE id = #{id}")
+    int updateStateAndReason(@Param("id") long id, @Param("state") byte state, @Param("reason") String reason);
 }

@@ -107,13 +107,21 @@ public class NodeService {
     /**
      * 修改节点状态
      */
-    public NodeDTO updateNodeState(Long nodeId, Enums.ContentState state) {
+    @Transactional
+    public NodeDTO updateNodeState(Long nodeId, Enums.ContentState state, String reason) {
         if (state == null) {
             throw new IllegalArgumentException("State cannot be null");
         }
 
         nodeDataService.validateExists(nodeId);
-        nodeDataService.updateState(nodeId, state);
+
+        // 根据状态调用相应的方法，以便发送通知
+        switch (state) {
+            case REJECTED -> reject(nodeId, reason);
+            case BANNED -> ban(nodeId, reason);
+            case PUBLISHED -> approve(nodeId);
+            default -> throw new IllegalArgumentException("Unsupported state: " + state);
+        }
 
         NodeDO nodeDO = nodeDataService.getById(nodeId);
         return nodeConverter.toDTO(nodeDO);
@@ -125,6 +133,10 @@ public class NodeService {
     @Transactional
     public void approve(Long nodeId) {
         nodeDataService.validateExists(nodeId);
+
+        NodeDO nodeDO = nodeDataService.getById(nodeId);
+        Util.validateStateTransition(nodeDO.getState(), Enums.ContentState.PUBLISHED);
+
         nodeDataService.approve(nodeId);
     }
 
@@ -135,14 +147,16 @@ public class NodeService {
     public void reject(Long nodeId, String reason) {
         nodeDataService.validateExists(nodeId);
 
-        // 获取节点和课程信息用于通知
+        // 获取节点和课程信息
         NodeDO nodeDO = nodeDataService.getById(nodeId);
-        CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
+        Util.validateStateTransition(nodeDO.getState(), Enums.ContentState.REJECTED);
 
-        nodeDataService.reject(nodeId);
+        CourseDO courseDO = courseDataService.getById(nodeDO.getCourseId());
+
+        nodeDataService.reject(nodeId, reason);
 
         // 发送拒绝通知
-        if (nodeDO != null && courseDO != null) {
+        if (courseDO != null) {
             messageService.sendNodeModeration(
                 nodeDO.getCreatorId(),
                 nodeDO.getId(),
@@ -162,14 +176,16 @@ public class NodeService {
     public void ban(Long nodeId, String reason) {
         nodeDataService.validateExists(nodeId);
 
-        // 获取节点和课程信息用于通知
+        // 获取节点和课程信息
         NodeDO nodeDO = nodeDataService.getById(nodeId);
-        CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
+        Util.validateStateTransition(nodeDO.getState(), Enums.ContentState.BANNED);
 
-        nodeDataService.ban(nodeId);
+        CourseDO courseDO = courseDataService.getById(nodeDO.getCourseId());
+
+        nodeDataService.ban(nodeId, reason);
 
         // 发送封禁通知
-        if (nodeDO != null && courseDO != null) {
+        if (courseDO != null) {
             messageService.sendNodeModeration(
                 nodeDO.getCreatorId(),
                 nodeDO.getId(),

@@ -125,46 +125,25 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
     }
 
     /**
-     * 更新节点状态
-     */
-    @CacheEvict(value = "nodes", key = "#nodeId")
-    public void updateState(Long nodeId, Enums.ContentState state) {
-        if (nodeId == null || nodeId <= 0) {
-            throw new IllegalArgumentException("Invalid node ID");
-        }
-        if (state == null) {
-            throw new IllegalArgumentException("State cannot be null");
-        }
-
-        try {
-            nodeMapper.updateState(nodeId, state.value());
-            log.debug("Updated node {} state to {}", nodeId, state);
-        } catch (Exception e) {
-            log.error("Error updating node state: {}", nodeId, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
-        }
-    }
-
-    /**
      * 审批通过节点
      */
     public void approve(long id) {
-        nodeMapper.updateState(id, Enums.ContentState.PUBLISHED.value());
+        nodeMapper.updateStateAndReason(id, Enums.ContentState.PUBLISHED.value(), "");
     }
 
     /**
      * 拒绝节点申请
      */
     @CacheEvict(value = "nodes", key = "#id")
-    public void reject(long id) {
-        nodeMapper.updateState(id, Enums.ContentState.REJECTED.value());
+    public void reject(long id, String reason) {
+        nodeMapper.updateStateAndReason(id, Enums.ContentState.REJECTED.value(), reason);
     }
 
     /**
      * 封禁节点
      */
     @CacheEvict(value = "nodes", key = "#id")
-    public void ban(long id) {
-        nodeMapper.updateState(id, Enums.ContentState.BANNED.value());
+    public void ban(long id, String reason) {
+        nodeMapper.updateStateAndReason(id, Enums.ContentState.BANNED.value(), reason);
     }
 }

@@ -2,8 +2,10 @@ package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.api.v1.dto.ApiResponse;
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.service.business.PostService;
 import com.prosper.learn.domain.service.business.UserService;
+import com.prosper.learn.dto.response.PostDTO;
 import com.prosper.learn.dto.response.UserDTO;
 import com.prosper.learn.dto.request.*;
 import lombok.RequiredArgsConstructor;
@@ -113,17 +115,40 @@ public class UsersController {
     }
 
     /**
-     * 获取用户文章或内容
-     * 映射: GET /user/article → GET /api/v1/users/{userId}/posts?type=article
-     * 映射: GET /user/contents → GET /api/v1/users/{userId}/posts?type=content
+     * 获取用户文章或内容（仅已发布）
+     * 映射: GET /user/article → GET /api/v1/users/{userId}/posts?type=2
+     * 映射: GET /user/contents → GET /api/v1/users/{userId}/posts?type=1
      */
     @GetMapping("/users/{userId}/posts")
-    public ApiResponse<Object> getUserPosts(
+    public ApiResponse<List<PostDTO>> getUserPosts(
             @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
             @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
-            @RequestParam(required = false, defaultValue = "article") String type) {
+            @RequestParam(required = false, defaultValue = "2") Integer type) {
 
-        Object posts = postService.getUserPosts(userId, lastId, type);
+        Enums.PostType postType = Enums.PostType.getByValue(type);
+        if (postType == null) {
+            return ApiResponse.error(400, "无效的帖子类型");
+        }
+        List<PostDTO> posts = postService.getUserPosts(userId, lastId, postType, Enums.ContentState.PUBLISHED.value());
+        return ApiResponse.success(posts);
+    }
+
+    /**
+     * 获取当前登录用户所有状态的文章或目录（用于个人中心内容管理）
+     * 包含：待审核、已发布、审核拒绝、已屏蔽
+     * GET /api/v1/users/me/posts?lastId=0&type=2
+     */
+    @GetMapping("/users/me/posts")
+    public ApiResponse<List<PostDTO>> getCurrentUserAllPosts(
+            @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
+            @RequestParam(required = false, defaultValue = "2") Integer type) {
+
+        Long currentUserId = StpUtil.getLoginIdAsLong();
+        Enums.PostType postType = Enums.PostType.getByValue(type);
+        if (postType == null) {
+            return ApiResponse.error(400, "无效的帖子类型");
+        }
+        List<PostDTO> posts = postService.getUserPosts(currentUserId, lastId, postType, null);
         return ApiResponse.success(posts);
     }
 

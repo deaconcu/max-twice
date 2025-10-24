@@ -43,14 +43,12 @@ public class ProfessionService {
      * @param id
      * @return
      */
-    public ProfessionDTO getById(long id) {
+    public ProfessionDTO getById(long id, boolean published) {
         ProfessionDO professionDO = professionDataService.getById(id);
-        if (professionDO == null) {
-            return null;
-        }
-
-        if (professionDO.getState() == ContentState.REJECTED.value() ||
-            professionDO.getState() == ContentState.BANNED.value()) {
+        if (professionDO == null) return null;
+        if (published &&
+            (professionDO.getState() == ContentState.REJECTED.value() ||
+             professionDO.getState() == ContentState.BANNED.value())) {
             throw ErrorCode.PROFESSION_BLOCKED.exception();
         }
         return toDTO(professionDO);

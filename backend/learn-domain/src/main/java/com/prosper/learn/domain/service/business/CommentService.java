@@ -464,13 +464,19 @@ public class CommentService {
         int oldState = commentDO.getState();
 
         // 获取评论对象信息用于通知
-        String objectType = commentDO.getObjectType() == Enums.ContentType.post.value() ? "post" : "node";
+        String objectType = "node"; // 默认为 node
+        if (commentDO.getObjectType() == Enums.ContentType.post.value()) {
+            objectType = "post";
+        } else if (commentDO.getObjectType() == Enums.ContentType.roadmap.value()) {
+            objectType = "roadmap";
+        }
+
         String objectTitle = "";
 
         if (commentDO.getObjectType() == Enums.ContentType.post.value()) {
             PostDO postDO = postDataService.getById(commentDO.getObjectId());
             if (postDO != null && postDO.getContent() != null) {
-                objectTitle = postDO.getContent();
+                objectTitle = com.prosper.learn.domain.util.Util.stripFormatting(postDO.getContent());
                 if (objectTitle.length() > 50) {
                     objectTitle = objectTitle.substring(0, 50) + "...";
                 }
@@ -478,6 +484,8 @@ public class CommentService {
         } else if (commentDO.getObjectType() == Enums.ContentType.node.value()) {
             NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
             if (nodeDO != null) objectTitle = nodeDO.getName();
+        } else if (commentDO.getObjectType() == Enums.ContentType.roadmap.value()) {
+            objectTitle = "路线图";
         }
 
         // 截取评论预览（前50个字符）
@@ -516,13 +524,19 @@ public class CommentService {
         int oldState = commentDO.getState();
 
         // 获取评论对象信息用于通知
-        String objectType = commentDO.getObjectType() == Enums.ContentType.post.value() ? "post" : "node";
+        String objectType = "node"; // 默认为 node
+        if (commentDO.getObjectType() == Enums.ContentType.post.value()) {
+            objectType = "post";
+        } else if (commentDO.getObjectType() == Enums.ContentType.roadmap.value()) {
+            objectType = "roadmap";
+        }
+
         String objectTitle = "";
 
         if (commentDO.getObjectType() == Enums.ContentType.post.value()) {
             PostDO postDO = postDataService.getById(commentDO.getObjectId());
             if (postDO != null && postDO.getContent() != null) {
-                objectTitle = postDO.getContent();
+                objectTitle = com.prosper.learn.domain.util.Util.stripFormatting(postDO.getContent());
                 if (objectTitle.length() > 50) {
                     objectTitle = objectTitle.substring(0, 50) + "...";
                 }
@@ -530,6 +544,8 @@ public class CommentService {
         } else if (commentDO.getObjectType() == Enums.ContentType.node.value()) {
             NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
             if (nodeDO != null) objectTitle = nodeDO.getName();
+        } else if (commentDO.getObjectType() == Enums.ContentType.roadmap.value()) {
+            objectTitle = "路线图";
         }
 
         // 截取评论预览（前50个字符）

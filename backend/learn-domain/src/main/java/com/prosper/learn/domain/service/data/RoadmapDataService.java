@@ -138,22 +138,22 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
      */
     @CacheEvict(value = "roadmaps", key = "#id")
     public int approve(long id) {
-        return roadmapMapper.updateState(id, Enums.ContentState.PUBLISHED.value());
+        return roadmapMapper.updateStateAndReason(id, Enums.ContentState.PUBLISHED.value(), "");
     }
 
     /**
      * 拒绝路线图
      */
     @CacheEvict(value = "roadmaps", key = "#id")
-    public int reject(long id) {
-        return roadmapMapper.updateState(id, Enums.ContentState.REJECTED.value());
+    public int reject(long id, String reason) {
+        return roadmapMapper.updateStateAndReason(id, Enums.ContentState.REJECTED.value(), reason);
     }
 
     /**
      * 封禁路线图
      */
     @CacheEvict(value = "roadmaps", key = "#id")
-    public int ban(long id) {
-        return roadmapMapper.updateState(id, Enums.ContentState.BANNED.value());
+    public int ban(long id, String reason) {
+        return roadmapMapper.updateStateAndReason(id, Enums.ContentState.BANNED.value(), reason);
     }
 }

@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import type { Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { PostType } from '@/types/enums'
 import UserInfoTab from '@/components/user/UserInfoTab.vue'
 import LearningTab from '@/components/user/LearningTab.vue'
 import UserPostsTab from '@/components/user/UserPostsTab.vue'
@@ -94,7 +95,7 @@ const getComponentProps = (tabValue: string): ComponentProps => {
   }
 
   if (tabValue === 'article') {
-    return { ...baseProps, postType: 'article' }
+    return { ...baseProps, postType: PostType.ARTICLE }
   }
 
   return baseProps
