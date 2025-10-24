@@ -23,7 +23,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.prosper.learn.common.Enums.ObjectType.post;
+import static com.prosper.learn.common.Enums.ContentType.post;
 
 @Slf4j
 @Service
@@ -145,7 +145,7 @@ public class PageService {
      */
     public Map<String, Object> readPageByPath(Long courseId, String path, long userId) {
         validatePath(path);
-        CourseDO courseDO = courseDataService.validateAndGet(courseId);
+        CourseDO courseDO = validateCourseExists(courseId);
         return readPageData(courseDO, path, null, null, userId);
     }
 
@@ -170,8 +170,8 @@ public class PageService {
             nodeDO = nodeDataService.validateAndGet(nodeId);
         }
 
-        if (nodeDO.getState() != null && nodeDO.getState() == 2) {
-            throw ErrorCode.NODE_BLOCKED.exception();
+        if (nodeDO.getState() != null && nodeDO.getState() != Enums.ContentState.PUBLISHED.value()) {
+            throw ErrorCode.NODE_STATE_INVALID.exception();
         }
 
         List<PostDTO> otherPostings = getOtherPostings(nodeDO.getId(), userIds);
@@ -199,8 +199,8 @@ public class PageService {
 
     private CourseDO validateCourseExists(Long courseId) {
         CourseDO courseDO = courseDataService.validateAndGet(courseId);
-        if (courseDO.getState() == Enums.ContentState.BANNED.value()) {
-            throw ErrorCode.COURSE_BANNED.exception();
+        if (courseDO.getState() != Enums.ContentState.PUBLISHED.value()) {
+            throw ErrorCode.COURSE_IS_NOT_PUBLISHED.exception();
         }
         return courseDO;
     }

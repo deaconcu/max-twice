@@ -77,9 +77,9 @@ public class CommentService {
      * 验证评论类型
      */
     private void validateCommentType(int type) {
-        if (type != Enums.ObjectType.post.value() && 
-            type != Enums.ObjectType.node.value() && 
-            type != Enums.ObjectType.roadmap.value()) {
+        if (type != Enums.ContentType.post.value() &&
+            type != Enums.ContentType.node.value() &&
+            type != Enums.ContentType.roadmap.value()) {
             throw ErrorCode.COMMENT_INVALID_TYPE.exception();
         }
     }
@@ -182,11 +182,11 @@ public class CommentService {
         NodeDO nodeDO = null;
         RoadmapDO roadmapDO = null;
 
-        if (request.getObjectType() == Enums.ObjectType.post.value()) {
+        if (request.getObjectType() == Enums.ContentType.post.value()) {
             postDO = validateAndGetPost(request.getObjectId());
-        } else if (request.getObjectType() == Enums.ObjectType.node.value()) {
+        } else if (request.getObjectType() == Enums.ContentType.node.value()) {
             nodeDO = validateAndGetNode(request.getObjectId());
-        } else if (request.getObjectType() == Enums.ObjectType.roadmap.value()) {
+        } else if (request.getObjectType() == Enums.ContentType.roadmap.value()) {
             roadmapDO = validateAndGetRoadmap(request.getObjectId());
         } else {
             throw ErrorCode.COMMENT_INVALID_TYPE.exception();
@@ -223,13 +223,13 @@ public class CommentService {
      */
     private void createCommentNotification(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
                                          PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO) {
-        if (request.getObjectType() == Enums.ObjectType.post.value() && postDO != null) {
+        if (request.getObjectType() == Enums.ContentType.post.value() && postDO != null) {
             messageService.createCommentMessage(postDO.getCreatorId(), fromUser.getId(),
                                               postDO.getNodeId(), commentDO.getId(), postComment.value());
-        } else if (request.getObjectType() == Enums.ObjectType.node.value() && nodeDO != null) {
+        } else if (request.getObjectType() == Enums.ContentType.node.value() && nodeDO != null) {
             messageService.createCommentMessage(nodeDO.getCreatorId(), fromUser.getId(),
                                               nodeDO.getId(), commentDO.getId(), nodeComment.value());
-        } else if (request.getObjectType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
+        } else if (request.getObjectType() == Enums.ContentType.roadmap.value() && roadmapDO != null) {
             messageService.createCommentMessage(roadmapDO.getCreatorId(), fromUser.getId(), 
                                               roadmapDO.getId(), commentDO.getId(), roadmapComment.value());
         }
@@ -240,13 +240,13 @@ public class CommentService {
      */
     private void createReplyNotification(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
                                        PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO, Long parentUserId) {
-        if (request.getObjectType() == Enums.ObjectType.node.value() && nodeDO != null) {
+        if (request.getObjectType() == Enums.ContentType.node.value() && nodeDO != null) {
             messageService.createCommentMessage(parentUserId, fromUser.getId(), 
                                               nodeDO.getId(), commentDO.getId(), replyNodeComment.value());
-        } else if (request.getObjectType() == Enums.ObjectType.post.value() && postDO != null) {
+        } else if (request.getObjectType() == Enums.ContentType.post.value() && postDO != null) {
             messageService.createCommentMessage(parentUserId, fromUser.getId(), 
                                               postDO.getNodeId(), commentDO.getId(), replyPostingComment.value());
-        } else if (request.getObjectType() == Enums.ObjectType.roadmap.value() && roadmapDO != null) {
+        } else if (request.getObjectType() == Enums.ContentType.roadmap.value() && roadmapDO != null) {
             messageService.createCommentMessage(parentUserId, fromUser.getId(), 
                                               roadmapDO.getId(), commentDO.getId(), replyRoadmapComment.value());
         }
@@ -286,7 +286,7 @@ public class CommentService {
             return commentDTOList;
         }
 
-        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, allIds, Enums.ObjectType.comment.value());
+        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, allIds, Enums.ContentType.comment.value());
 
         Set<Long> upvotedSet = new HashSet<>();
         for (UpvoteDO upvoteDO : upvoteList) {
@@ -359,7 +359,7 @@ public class CommentService {
     /**
      * 根据状态获取评论列表（分页），按ID正序排列（越早的越靠前）
      * 仅管理员调用
-     * @param state pending(待审核), approved(已通过), rejected(已拒绝)
+     * @param state pending(待审核), approved(已通过), rejected(已拒绝), banned(已封禁)
      */
     public List<CommentDTO> getCommentsByState(String state, Long offsetId) {
         validateOffsetId(offsetId);
@@ -376,6 +376,9 @@ public class CommentService {
             case "rejected":
                 stateValue = Enums.ContentState.REJECTED.value();
                 break;
+            case "banned":
+                stateValue = Enums.ContentState.BANNED.value();
+                break;
             default:
                 throw ErrorCode.INVALID_PARAMETER.exception("无效的状态参数: " + state);
         }
@@ -386,6 +389,16 @@ public class CommentService {
         } else {
             commentDOList = commentDataService.getListByStatePaginated(stateValue, offsetId, pageSize);
         }
+        return commentConverter.toDTO(commentDOList);
+    }
+
+    /**
+     * 根据对象类型、对象ID、创建者和状态筛选评论列表
+     * 仅管理员调用
+     */
+    public List<CommentDTO> getCommentsByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId, Byte state) {
+        int pageSize = systemProperties.getComment().getDefaultPageSize();
+        List<CommentDO> commentDOList = commentDataService.getListByFilter(objectType, objectId, creatorId, lastId, state, pageSize);
         return commentConverter.toDTO(commentDOList);
     }
 
@@ -450,12 +463,47 @@ public class CommentService {
         CommentDO commentDO = validateAndGetComment(id);
         int oldState = commentDO.getState();
 
+        // 获取评论对象信息用于通知
+        String objectType = commentDO.getObjectType() == Enums.ContentType.post.value() ? "post" : "node";
+        String objectTitle = "";
+
+        if (commentDO.getObjectType() == Enums.ContentType.post.value()) {
+            PostDO postDO = postDataService.getById(commentDO.getObjectId());
+            if (postDO != null && postDO.getContent() != null) {
+                objectTitle = postDO.getContent();
+                if (objectTitle.length() > 50) {
+                    objectTitle = objectTitle.substring(0, 50) + "...";
+                }
+            }
+        } else if (commentDO.getObjectType() == Enums.ContentType.node.value()) {
+            NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
+            if (nodeDO != null) objectTitle = nodeDO.getName();
+        }
+
+        // 截取评论预览（前50个字符）
+        String preview = commentDO.getContent();
+        if (preview != null && preview.length() > 50) {
+            preview = preview.substring(0, 50) + "...";
+        }
+
         commentDataService.reject(id, reason);
 
         // 拒绝评论，如果之前是已批准状态，评论数-1
         if (oldState == Enums.ContentState.PUBLISHED.value()) {
             updateObjectCommentCount(commentDO, -1);
         }
+
+        // 发送拒绝通知
+        messageService.sendCommentModeration(
+            commentDO.getCreatorId(),
+            commentDO.getId(),
+            preview,
+            objectType,
+            commentDO.getObjectId(),
+            objectTitle,
+            Enums.ModerationAction.REJECTED,
+            reason
+        );
     }
 
     /**
@@ -467,12 +515,47 @@ public class CommentService {
         CommentDO commentDO = validateAndGetComment(id);
         int oldState = commentDO.getState();
 
+        // 获取评论对象信息用于通知
+        String objectType = commentDO.getObjectType() == Enums.ContentType.post.value() ? "post" : "node";
+        String objectTitle = "";
+
+        if (commentDO.getObjectType() == Enums.ContentType.post.value()) {
+            PostDO postDO = postDataService.getById(commentDO.getObjectId());
+            if (postDO != null && postDO.getContent() != null) {
+                objectTitle = postDO.getContent();
+                if (objectTitle.length() > 50) {
+                    objectTitle = objectTitle.substring(0, 50) + "...";
+                }
+            }
+        } else if (commentDO.getObjectType() == Enums.ContentType.node.value()) {
+            NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
+            if (nodeDO != null) objectTitle = nodeDO.getName();
+        }
+
+        // 截取评论预览（前50个字符）
+        String preview = commentDO.getContent();
+        if (preview != null && preview.length() > 50) {
+            preview = preview.substring(0, 50) + "...";
+        }
+
         commentDataService.ban(id, reason);
 
         // 封禁评论，如果之前是已批准状态，评论数-1
         if (oldState == Enums.ContentState.PUBLISHED.value()) {
             updateObjectCommentCount(commentDO, -1);
         }
+
+        // 发送封禁通知
+        messageService.sendCommentModeration(
+            commentDO.getCreatorId(),
+            commentDO.getId(),
+            preview,
+            objectType,
+            commentDO.getObjectId(),
+            objectTitle,
+            Enums.ModerationAction.BANNED,
+            reason
+        );
     }
 
     /**
@@ -513,19 +596,19 @@ public class CommentService {
      * 更新对象的评论数
      */
     private void updateObjectCommentCount(CommentDO commentDO, int delta) {
-        if (commentDO.getObjectType() == Enums.ObjectType.post.value()) {
+        if (commentDO.getObjectType() == Enums.ContentType.post.value()) {
             PostDO postDO = postDataService.getById(commentDO.getObjectId());
             if (postDO != null) {
                 postDO.setCommentCount(Math.max(0, postDO.getCommentCount() + delta));
                 postDataService.update(postDO);
             }
-        } else if (commentDO.getObjectType() == Enums.ObjectType.node.value()) {
+        } else if (commentDO.getObjectType() == Enums.ContentType.node.value()) {
             NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
             if (nodeDO != null) {
                 nodeDO.setCommentCount(Math.max(0, nodeDO.getCommentCount() + delta));
                 nodeDataService.update(nodeDO);
             }
-        } else if (commentDO.getObjectType() == Enums.ObjectType.roadmap.value()) {
+        } else if (commentDO.getObjectType() == Enums.ContentType.roadmap.value()) {
             RoadmapDO roadmapDO = roadmapDataService.getById(commentDO.getObjectId());
             if (roadmapDO != null) {
                 roadmapDO.setComment(Math.max(0, roadmapDO.getComment() + delta));
@@ -585,7 +668,7 @@ public class CommentService {
         }
 
         List<Long> ids = commentDTOList.stream().map(CommentDTO::getId).toList();
-        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, ids, Enums.ObjectType.comment.value());
+        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, ids, Enums.ContentType.comment.value());
 
         Set<Long> upvotedSet = new HashSet<>();
         for (UpvoteDO upvoteDO : upvoteList) {

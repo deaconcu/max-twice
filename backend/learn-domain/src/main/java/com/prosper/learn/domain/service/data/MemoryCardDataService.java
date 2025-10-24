@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.service.data;
 
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.persistence.dataobject.MemoryCardDO;
 import com.prosper.learn.persistence.mapper.MemoryCardMapper;
@@ -164,23 +165,23 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
     }
 
     /**
-     * 根据卡片组ID获取卡片列表（只获取正常状态的卡片）
+     * 根据卡片组ID获取卡片列表（只获取已发布状态的卡片）
      */
     public List<MemoryCardDO> getByDeckId(Long deckId) {
         if (deckId == null) {
             return List.of();
         }
-        return getListByDeck(deckId, 0); // 0 = 正常状态
+        return getListByDeck(deckId, Enums.ContentState.PUBLISHED.value());
     }
 
     /**
-     * 批量根据卡片组ID列表获取卡片（只获取正常状态的卡片）
+     * 批量根据卡片组ID列表获取卡片（只获取已发布状态的卡片）
      */
     public List<MemoryCardDO> getByDeckIds(List<Long> deckIds) {
         if (deckIds == null || deckIds.isEmpty()) {
             return List.of();
         }
-        return memoryCardMapper.getByDeckIds(deckIds, 0); // 0 = 正常状态
+        return memoryCardMapper.getByDeckIds(deckIds, Enums.ContentState.PUBLISHED.value());
     }
 
     /**

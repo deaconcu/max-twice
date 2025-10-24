@@ -9,6 +9,7 @@ import UserPostsTab from '@/components/user/UserPostsTab.vue'
 import UserContentsTab from '@/components/user/UserContentsTab.vue'
 import UserFollowingTab from '@/components/user/UserFollowingTab.vue'
 import SubscriptionTab from '@/components/user/SubscriptionTab.vue'
+import UserMemoryDecksTab from '@/components/user/UserMemoryDecksTab.vue'
 import UserSidebar from '@/components/user/UserSidebar.vue'
 import RightSidebar from '@/components/common/RightSidebar.vue'
 import ErrorPage from '@/components/common/ErrorPage.vue'
@@ -71,6 +72,7 @@ const items: Ref<TabItem[]> = ref([
   { text: t('user.profile.following'), icon: 'mdi-account-heart', value: 'follow' },
   { text: t('user.profile.myContents'), icon: 'mdi-format-list-group', value: 'contents' },
   { text: t('user.profile.myArticles'), icon: 'mdi-file-document-outline', value: 'article' },
+  { text: t('user.profile.myMemoryDecks'), icon: 'mdi-cards-outline', value: 'memoryDecks' },
 ])
 
 // 组件映射
@@ -81,6 +83,7 @@ const tabComponents: Record<string, any> = {
   follow: UserFollowingTab,
   contents: UserContentsTab,
   article: UserPostsTab,
+  memoryDecks: UserMemoryDecksTab,
 }
 
 // 组件属性映射 - User页面传入username
@@ -120,6 +123,7 @@ const getSelectedTabDescription = (): string => {
     follow: '查看用户的关注列表',
     contents: '查看用户创建的内容',
     article: '查看用户发布的文章',
+    memoryDecks: '查看用户创建的记忆卡片组',
   }
   return descriptions[selected.value] || '查看用户详细信息'
 }

@@ -126,7 +126,7 @@ public class SystemProperties {
         /**
          * 最大热门课程列表大小
          */
-        private int maxHotCoursesLimit = 100;
+        private int maxHotCoursesLimit = 200;
 
         /**
          * 是否启用排行榜更新

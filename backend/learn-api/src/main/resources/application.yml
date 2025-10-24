@@ -110,8 +110,6 @@ app:
   course-ranking:
     # 默认热门课程列表大小
     default-hot-courses-limit: 20
-    # 最大热门课程列表大小（用于验证请求参数）
-    max-hot-courses-limit: 100
     # 统计数据清理时的批量大小
     clear-batch-size: 1000
   stats:

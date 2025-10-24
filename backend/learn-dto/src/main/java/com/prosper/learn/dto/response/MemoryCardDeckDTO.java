@@ -10,7 +10,7 @@ public class MemoryCardDeckDTO {
 
     private Long id;
 
-    private Long sourcePostId;
+    private Long postId;
 
     private Long nodeId;  // 添加nodeId字段，方便前端直接使用
 

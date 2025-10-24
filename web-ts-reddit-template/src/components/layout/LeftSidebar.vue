@@ -21,6 +21,7 @@ const navigationItems = [
       { icon: 'mdi-account', text: '个人主页', path: '/profile', badge: null },
       { icon: 'mdi-book-multiple', text: '我的课程', path: '/my-courses', badge: null },
       { icon: 'mdi-briefcase-variant', text: '我的职业', path: '/my-careers', badge: null },
+      { icon: 'mdi-brain', text: '记忆复习', path: '/my-memory-review', badge: '23' },
       { icon: 'mdi-star', text: '收藏', path: '/favorites', badge: '12' },
       { icon: 'mdi-note-text', text: '笔记', path: '/notes', badge: null }
     ]

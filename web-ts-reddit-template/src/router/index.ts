@@ -8,6 +8,7 @@ import CourseCenter from '@/views/CourseCenter.vue'
 import MyCourses from '@/views/MyCourses.vue'
 import MyCareers from '@/views/MyCareers.vue'
 import HomePage from '@/views/HomePage.vue'
+import MemoryReviewView from '@/views/MemoryReviewView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -69,6 +70,11 @@ const router = createRouter({
       path: '/my-careers',
       name: 'my-careers',
       component: MyCareers
+    },
+    {
+      path: '/my-memory-review',
+      name: 'my-memory-review',
+      component: MemoryReviewView
     }
   ]
 })

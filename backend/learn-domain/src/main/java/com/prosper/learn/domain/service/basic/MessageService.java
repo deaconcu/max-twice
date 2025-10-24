@@ -323,11 +323,11 @@ public class MessageService {
             if (content.containsKey("postingId")) {
                 long postId = Util.getLong(content, "postingId");
                 m.setObjectId(postId);
-                m.setObjectType(Enums.ObjectType.post.value());
+                m.setObjectType(Enums.ContentType.post.value());
             } else if (content.containsKey("commentId")) {
                 long commentId = Util.getLong(content, "commentId");
                 m.setObjectId(commentId);
-                m.setObjectType(Enums.ObjectType.comment.value());
+                m.setObjectType(Enums.ContentType.comment.value());
             }
 
             m.setNode(nodeConverter.toDTOV1(nodeDOMap.get(Util.getLong(content, "nodeId"))));
@@ -420,9 +420,9 @@ public class MessageService {
         messageMap.put("voterId", voterId);
         messageMap.put("type", type);
         messageMap.put("nodeId", nodeId);
-        if (objectType == Enums.ObjectType.post.value()) {
+        if (objectType == Enums.ContentType.post.value()) {
             messageMap.put("postingId", objectId);
-        } else if (objectType == Enums.ObjectType.comment.value()) {
+        } else if (objectType == Enums.ContentType.comment.value()) {
             messageMap.put("commentId", objectId);
         }
 
@@ -443,6 +443,16 @@ public class MessageService {
         messageDO.setReceiverId(userId);
         messageDO.setContent(content);
         messageDO.setType(type);
+
+        // 自动设置 category
+        MessageType messageType = MessageType.getByValue(type);
+        if (messageType != null) {
+            messageDO.setCategory(messageType.getCategory());
+        } else {
+            // 默认系统消息
+            messageDO.setCategory(2);
+        }
+
         messageDataService.insert(messageDO);
     }
 
@@ -516,5 +526,250 @@ public class MessageService {
         pagination.put("totalPages", totalPage);
         resultMap.put("pagination", pagination);
         return resultMap;
+    }
+
+    // ========== 审核通知方法 ==========
+
+    /**
+     * 1. 发送课程审核通知
+     */
+    public void sendCourseModeration(long userId, long courseId, String courseName,
+                                     Enums.ModerationAction action, String reason) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("courseId", courseId);
+        data.put("courseName", courseName);
+
+        int type;
+        switch (action) {
+            case APPROVED -> {
+                data.put("linkUrl", "/read?courseId=" + courseId);
+                type = MessageType.courseApproved.value();
+            }
+            case REJECTED -> {
+                data.put("reason", reason != null ? reason : "");
+                type = MessageType.courseRejected.value();
+            }
+            case BANNED -> {
+                data.put("reason", reason != null ? reason : "");
+                type = MessageType.courseBanned.value();
+            }
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("无效的审核操作: " + action);
+        }
+
+        createSystemMessage(type, userId, Util.toJson(data));
+    }
+
+    /**
+     * 2. 发送帖子审核通知
+     */
+    public void sendPostModeration(long userId, long postId, String postTitle,
+                                   long nodeId, String nodeName, String courseName,
+                                   Enums.ModerationAction action, String reason) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("postId", postId);
+        data.put("postTitle", postTitle);
+        data.put("nodeId", nodeId);
+        data.put("nodeName", nodeName);
+        data.put("courseName", courseName);
+        data.put("reason", reason != null ? reason : "");
+        data.put("linkUrl", "/self?tab=posts");
+
+        int type = switch (action) {
+            case REJECTED -> MessageType.postRejected.value();
+            case BANNED -> MessageType.postBanned.value();
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("帖子审核操作只支持 REJECTED 和 BANNED");
+        };
+
+        createSystemMessage(type, userId, Util.toJson(data));
+    }
+
+    /**
+     * 3. 发送评论审核通知
+     */
+    public void sendCommentModeration(long userId, long commentId, String commentPreview,
+                                      String objectType, long objectId, String objectTitle,
+                                      Enums.ModerationAction action, String reason) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("commentId", commentId);
+        data.put("commentPreview", commentPreview);
+        data.put("objectType", objectType);
+        data.put("objectId", objectId);
+        data.put("objectTitle", objectTitle);
+        data.put("reason", reason != null ? reason : "");
+
+        int type = switch (action) {
+            case REJECTED -> MessageType.commentRejected.value();
+            case BANNED -> MessageType.commentBanned.value();
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("评论审核操作只支持 REJECTED 和 BANNED");
+        };
+
+        createSystemMessage(type, userId, Util.toJson(data));
+    }
+
+    /**
+     * 4. 发送职业审核通知
+     */
+    public void sendProfessionModeration(long userId, long professionId, String professionName,
+                                         Enums.ModerationAction action, String reason) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("professionId", professionId);
+        data.put("professionName", professionName);
+
+        int type;
+        switch (action) {
+            case APPROVED -> {
+                data.put("linkUrl", "/roadmap/" + professionId);
+                type = MessageType.professionApproved.value();
+            }
+            case REJECTED -> {
+                data.put("reason", reason != null ? reason : "");
+                type = MessageType.professionRejected.value();
+            }
+            case BANNED -> {
+                data.put("reason", reason != null ? reason : "");
+                type = MessageType.professionBanned.value();
+            }
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("无效的审核操作: " + action);
+        }
+
+        createSystemMessage(type, userId, Util.toJson(data));
+    }
+
+    /**
+     * 5. 发送路线图审核通知
+     */
+    public void sendRoadmapModeration(long userId, long roadmapId, long professionId,
+                                      String professionName, Enums.ModerationAction action, String reason) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("roadmapId", roadmapId);
+        data.put("professionId", professionId);
+        data.put("professionName", professionName);
+        data.put("reason", reason != null ? reason : "");
+        data.put("linkUrl", "/self?tab=roadmaps");
+
+        int type = switch (action) {
+            case REJECTED -> MessageType.roadmapRejected.value();
+            case BANNED -> MessageType.roadmapBanned.value();
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("路线图审核操作只支持 REJECTED 和 BANNED");
+        };
+
+        createSystemMessage(type, userId, Util.toJson(data));
+    }
+
+    /**
+     * 6. 发送记忆卡片组审核通知
+     */
+    public void sendMemoryDeckModeration(long userId, long deckId, String deckTitle,
+                                         long postId, String postTitle,
+                                         Enums.ModerationAction action, String reason) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("deckId", deckId);
+        data.put("deckTitle", deckTitle);
+        data.put("postId", postId);
+        data.put("postTitle", postTitle);
+        data.put("reason", reason != null ? reason : "");
+        data.put("linkUrl", "/self?tab=memory-decks");
+
+        int type = switch (action) {
+            case REJECTED -> MessageType.memoryDeckRejected.value();
+            case BANNED -> MessageType.memoryDeckBanned.value();
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("记忆卡片组审核操作只支持 REJECTED 和 BANNED");
+        };
+
+        createSystemMessage(type, userId, Util.toJson(data));
+    }
+
+    /**
+     * 7. 发送节点审核通知
+     */
+    public void sendNodeModeration(long userId, long nodeId, String nodeName,
+                                   long courseId, String courseName,
+                                   Enums.ModerationAction action, String reason) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("nodeId", nodeId);
+        data.put("nodeName", nodeName);
+        data.put("courseId", courseId);
+        data.put("courseName", courseName);
+        data.put("reason", reason != null ? reason : "");
+
+        int type = switch (action) {
+            case REJECTED -> MessageType.nodeRejected.value();
+            case BANNED -> MessageType.nodeBanned.value();
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("节点审核操作只支持 REJECTED 和 BANNED");
+        };
+
+        createSystemMessage(type, userId, Util.toJson(data));
+    }
+
+    /**
+     * 按分类获取消息列表
+     * @param category 消息分类 1=互动消息, 2=系统消息, 3=私信
+     * @param receiverId 接收者ID
+     * @param lastId 最后一条消息的ID，用于分页，首次请求传null
+     * @param type 可选的消息类型过滤，传null表示查询该分类下所有消息
+     * @return 消息列表
+     */
+    public List<MessageDTO> getListByCategory(int category, long receiverId, Long lastId, Integer type) {
+        // 参数校验
+        if (category < 1 || category > 3) {
+            throw ErrorCode.INVALID_PARAMETER.exception("消息分类必须为1-3");
+        }
+
+        // 查询消息列表
+        // 如果指定了 type，则按 type 查询（使用现有的精确查询）
+        // 如果未指定 type，则按 category 查询该分类下所有消息
+        List<MessageDO> messageDOList;
+        if (type != null && type > 0) {
+            // 按类型查询
+            messageDOList = messageDataService.listByType(type, receiverId, lastId, 20);
+        } else {
+            // 按分类查询
+            messageDOList = messageDataService.listByCategory(receiverId, category, lastId, 20);
+        }
+
+        // 收集需要查询的关联数据的ID
+        Set<Long> userIdSet = new HashSet<>();
+        Set<Long> nodeIdSet = new HashSet<>();
+        Set<Long> postingIdSet = new HashSet<>();
+
+        for (MessageDO messageDO : messageDOList) {
+            userIdSet.add(messageDO.getReceiverId());
+            Map<String, Object> map = Util.readValueToMap(messageDO.getContent());
+
+            if (messageDO.getType() == upvote.value()) {
+                Long postingId = Util.getLong(map, "postingId");
+                if (postingId != null) {
+                    postingIdSet.add(postingId);
+                }
+                nodeIdSet.add(Util.getLong(map, "nodeId"));
+                userIdSet.add(Util.getLong(map, "upvoterId"));
+            } else if (messageDO.getType() == invite.value()) {
+                nodeIdSet.add(Util.getLong(map, "nodeId"));
+                userIdSet.add(Util.getLong(map, "InviterId"));
+            } else if (messageDO.getType() == follow.value()) {
+                userIdSet.add(Util.getLong(map, "followerId"));
+            } else if (messageDO.getType() == postComment.value() || messageDO.getType() == replyPostingComment.value() ||
+                       messageDO.getType() == nodeComment.value() || messageDO.getType() == replyNodeComment.value()) {
+                nodeIdSet.add(Util.getLong(map, "nodeId"));
+                userIdSet.add(Util.getLong(map, "commenterId"));
+            }
+        }
+
+        // 批量查询关联数据
+        Map<Long, UserDO> userDOMap = userIdSet.isEmpty() ? new HashMap<>() : userDataService.getMapByIds(userIdSet);
+        Map<Long, PostDO> postingDOMap = postingIdSet.isEmpty() ? new HashMap<>() : postDataService.getMapByIds(postingIdSet);
+
+        for (PostDO postDO : postingDOMap.values()) {
+            nodeIdSet.add(postDO.getNodeId());
+        }
+
+        Map<Long, NodeDO> nodeDOMap = nodeIdSet.isEmpty() ? new HashMap<>() : nodeDataService.getMapByIds(nodeIdSet);
+
+        // 转换为DTO
+        List<MessageDTO> messageDTOList = new ArrayList<>();
+        for (MessageDO messageDO : messageDOList) {
+            messageDTOList.add(convertMessage(messageDO, userDOMap, postingDOMap, nodeDOMap));
+        }
+        return messageDTOList;
     }
 }

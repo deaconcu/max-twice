@@ -53,7 +53,7 @@ public enum ErrorCode {
     COURSE_PARENT_NOT_FOUND(1205, "父课程不存在"),
     COURSE_DELETE_FAILED(1206, "课程删除失败"),
     COURSE_OPERATION_FAILED(1207, "课程操作失败"),
-    COURSE_BANNED(1208, "该课程已被屏蔽，暂时无法访问"),
+    COURSE_IS_NOT_PUBLISHED(1208, "该课程不是公开发布状态，暂时无法访问"),
     COURSE_ALREADY_BANNED(1209, "课程状态已是被屏蔽状态，无需重复操作"),
 
     // 路线图相关 15xx
@@ -90,7 +90,7 @@ public enum ErrorCode {
     POSTING_CONTENT_PARSE_FAILED(1306, "帖子内容解析失败"),
     POSTING_NODE_NOT_FOUND(1307, "节点不存在"),
     POSTING_LIST_QUERY_FAILED(1308, "帖子列表查询失败"),
-    NODE_BLOCKED(1309, "该节点已被屏蔽，暂时无法访问"),
+    NODE_STATE_INVALID(1309, "节点不是发布状态，暂时无法访问"),
 
     // 目录管理相关 18xx
     TOC_USER_TOC_NOT_FOUND(1801, "用户目录不存在"),

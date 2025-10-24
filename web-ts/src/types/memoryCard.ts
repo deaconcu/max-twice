@@ -7,12 +7,12 @@ import type { User } from './user'
 import type { Course } from './course'
 import type { PageSortQuery, PageQuery, LimitQuery } from './common'
 
-// 卡片组状态枚举
+// 卡片组状态枚举（与后端 ContentState 对应）
 export const DeckState = {
-  PENDING: 0,    // 审核中
-  NORMAL: 1,     // 正常
-  BLOCKED: 2,    // 屏蔽
-  PRIVATE: 3     // 私有
+  SUBMITTED: 1,   // 已提交/审核中
+  PUBLISHED: 2,   // 已发布/正常
+  REJECTED: 3,    // 已拒绝
+  BANNED: 4       // 已封禁/屏蔽
 } as const
 
 export type DeckState = typeof DeckState[keyof typeof DeckState]
@@ -56,7 +56,7 @@ export type FrequencySetting = typeof FrequencySetting[keyof typeof FrequencySet
 // 记忆卡片组
 export interface MemoryCardDeck {
   id: number
-  sourcePostId?: number              // 卡片组的来源帖子 (可选)，比如在卡片组list中，可以跳转到对应的post
+  postId?: number                    // 卡片组的来源帖子 (可选)，比如在卡片组list中，可以跳转到对应的post
   nodeId?: number                    // 卡片组所属的节点ID (可选)
   creator?: User                     // 创建者 (可选)
   title: string                      // 卡片组标题，一般叫xxx的记忆卡片组
@@ -206,7 +206,7 @@ export interface RemoveDeckFromCourseRequest {
 
 // 创建卡片组请求
 export interface CreateDeckRequest {
-  sourcePostId: number
+  postId: number
   title: string
   description?: string
   cards: { front: string; back: string }[]

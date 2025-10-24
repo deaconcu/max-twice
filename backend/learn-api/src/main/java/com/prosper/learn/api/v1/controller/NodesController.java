@@ -26,15 +26,17 @@ public class NodesController {
     private final NodeService nodeService;
 
     /**
-     * 根据节点、课程、创建者筛选节点列表
+     * 管理后台：按条件获取节点列表
+     * 映射: GET /api/v1/admin/nodes?state=0&nodeId=1&courseId=2&creatorId=3&lastId=123
      */
-    @GetMapping("/admin/nodes/filter")
-    public ApiResponse<List<NodeDTO>> getNodesByFilter(
+    @GetMapping("/admin/nodes")
+    public ApiResponse<List<NodeDTO>> getAdminNodes(
+            @RequestParam(value = "state", required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state,
             @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
             @RequestParam(value = "courseId", required = false) @Positive(message = "课程ID必须大于0") Long courseId,
             @RequestParam(value = "creatorId", required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
-            @RequestParam(value = "lastId", defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastId) {
-        List<NodeDTO> nodes = nodeService.getNodesByFilter(nodeId, courseId, creatorId, lastId);
+            @RequestParam(value = "lastId", required = false) Long lastId) {
+        List<NodeDTO> nodes = nodeService.listByFilter(state, nodeId, courseId, creatorId, lastId);
         return ApiResponse.success(nodes);
     }
 

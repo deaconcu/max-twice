@@ -48,6 +48,36 @@ public class Enums {
         }
     }
 
+    public enum ContentType implements ValueEnum<Integer> {
+        post(1),
+        node(2),
+        comment(3),
+        roadmap(4),
+        memory_card_deck(5),
+        memory_card(6),
+        profession(7),
+        course(8);
+
+        private final int value;
+
+        ContentType(int value) {
+            this.value = value;
+        }
+
+        @Override
+        public Integer value() {
+            return value;
+        }
+
+        public static ContentType getByValue(Integer value) {
+            return ValueEnum.getByValue(ContentType.class, value);
+        }
+
+        public static boolean isValid(int value) {
+            return ValueEnum.isValid(ContentType.class, value);
+        }
+    }
+
     public enum ContentState implements ValueEnum<Byte> {
         SUBMITTED((byte)1),
         PUBLISHED((byte)2),
@@ -146,28 +176,53 @@ public class Enums {
     }
 
     public enum MessageType implements ValueEnum<Integer> {
-        applyCourse(1),
-        follow(2),
-        upvote(3),
-        invite(4),
-        nodeComment(5),
-        postComment(6),
-        roadmapComment(10),
-        replyNodeComment(7),
-        replyPostingComment(8),
-        replyRoadmapComment(9),
-        system(99),
-        other(100);
+        applyCourse(1, 2),           // 课程申请 - 系统消息
+        follow(2, 1),                // 关注 - 互动消息
+        upvote(3, 1),                // 点赞 - 互动消息
+        invite(4, 1),                // 邀请 - 互动消息
+        nodeComment(5, 1),           // 节点评论 - 互动消息
+        postComment(6, 1),           // 帖子评论 - 互动消息
+        replyNodeComment(7, 1),      // 回复节点评论 - 互动消息
+        replyPostingComment(8, 1),   // 回复帖子评论 - 互动消息
+        replyRoadmapComment(9, 1),   // 回复路线图评论 - 互动消息
+        roadmapComment(10, 1),       // 路线图评论 - 互动消息
+
+        // 审核消息类型（新增14个）
+        courseRejected(11, 2),       // 课程被拒绝 - 系统消息
+        courseBanned(12, 2),         // 课程被封禁 - 系统消息
+        postRejected(13, 2),         // 帖子被拒绝 - 系统消息
+        postBanned(14, 2),           // 帖子被封禁 - 系统消息
+        commentRejected(15, 2),      // 评论被拒绝 - 系统消息
+        commentBanned(16, 2),        // 评论被封禁 - 系统消息
+        professionRejected(17, 2),   // 职业被拒绝 - 系统消息
+        professionBanned(18, 2),     // 职业被封禁 - 系统消息
+        roadmapRejected(19, 2),      // 路线图被拒绝 - 系统消息
+        roadmapBanned(20, 2),        // 路线图被封禁 - 系统消息
+        memoryDeckRejected(21, 2),   // 卡片组被拒绝 - 系统消息
+        memoryDeckBanned(22, 2),     // 卡片组被封禁 - 系统消息
+        nodeRejected(23, 2),         // 节点被拒绝 - 系统消息
+        nodeBanned(24, 2),           // 节点被封禁 - 系统消息
+        courseApproved(25, 2),       // 课程审核通过 - 系统消息
+        professionApproved(26, 2),   // 职业审核通过 - 系统消息
+
+        system(99, 2),               // 其他系统消息 - 系统消息
+        other(100, 3);               // 私信 - 私信
 
         private final int value;
+        private final int category;
 
-        MessageType(int value) {
+        MessageType(int value, int category) {
             this.value = value;
+            this.category = category;
         }
 
         @Override
         public Integer value() {
             return value;
+        }
+
+        public int getCategory() {
+            return category;
         }
 
         public static MessageType getByValue(Integer value) {
@@ -179,32 +234,16 @@ public class Enums {
         }
     }
 
-    public enum ObjectType implements ValueEnum<Integer> {
-        post(1),
-        node(2),
-        comment(3),
-        roadmap(4),
-        memory_card_deck(5);
-
-        private final int value;
-
-        ObjectType(int value) {
-            this.value = value;
-        }
-
-        @Override
-        public Integer value() {
-            return value;
-        }
-
-        public static ObjectType getByValue(Integer value) {
-            return ValueEnum.getByValue(ObjectType.class, value);
-        }
-
-        public static boolean isValid(int value) {
-            return ValueEnum.isValid(ObjectType.class, value);
-        }
+    /**
+     * 审核操作枚举
+     */
+    public enum ModerationAction {
+        APPROVED,   // 审核通过
+        REJECTED,   // 审核拒绝
+        BANNED      // 封禁
     }
+
+
 
     /**
      * 主分类枚举

@@ -96,9 +96,10 @@ public interface PostMapper {
             "SELECT * FROM post WHERE id &lt; #{lastId}",
             "<if test='nodeId != null'> AND node_id = #{nodeId}</if>",
             "<if test='creatorId != null'> AND creator_id = #{creatorId}</if>",
+            "<if test='state != null'> AND state = #{state}</if>",
             "ORDER BY id DESC LIMIT #{limit}",
             "</script>"})
-    List<PostDO> getListByNodeAndCreatorWithPagination(@Param("nodeId") Long nodeId, @Param("creatorId") Long creatorId, @Param("lastId") Long lastId, @Param("limit") int limit);
+    List<PostDO> getListByNodeAndCreatorWithPagination(@Param("nodeId") Long nodeId, @Param("creatorId") Long creatorId, @Param("lastId") Long lastId, @Param("state") Byte state, @Param("limit") int limit);
 
     @Update("UPDATE post SET state = #{state} WHERE id = #{id}")
     int updateState(@Param("id") long id, @Param("state") byte state);

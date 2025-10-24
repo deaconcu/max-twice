@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { MemoryService } from '@/services/memoryService'
 import { ContentState } from '@/types/enums'
 import type { DeckDetail } from '@/types/memoryCard'
+import RejectBanDialog from './RejectBanDialog.vue'
 
 const { t } = useI18n()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
@@ -13,6 +14,12 @@ const deckList = ref<DeckDetail[]>([])
 const loading = ref(false)
 const lastId = ref<number | undefined>(undefined)
 const hasMore = ref(true)
+
+// 拒绝/屏蔽对话框
+const showReasonDialog = ref<boolean>(false)
+const currentDeck = ref<DeckDetail | null>(null)
+const submitting = ref<boolean>(false)
+const dialogType = ref<'reject' | 'ban'>('reject')
 
 // 标签配置
 interface TabConfig {
@@ -135,13 +142,9 @@ const resetFilter = () => {
   applyFilter()
 }
 
-const approveDeck = async (deck: DeckDetail, approve: boolean): Promise<void> => {
+const approveDeck = async (deck: DeckDetail): Promise<void> => {
   try {
-    if (approve) {
-      await MemoryService.approveDeck(deck.id)
-    } else {
-      await MemoryService.discardDeck(deck.id)
-    }
+    await MemoryService.approveDeck(deck.id)
 
     // 从列表中移除已审核的项目
     const index = deckList.value.findIndex(d => d.id === deck.id)
@@ -149,44 +152,83 @@ const approveDeck = async (deck: DeckDetail, approve: boolean): Promise<void> =>
       deckList.value.splice(index, 1)
     }
 
-    showSnackbar?.(approve ? '卡片组审核通过' : '卡片组已废弃', 'success')
+    showSnackbar?.('卡片组审核通过', 'success')
   } catch (error) {
     console.error('Error approving deck:', error)
     showSnackbar?.('审核操作失败', 'error')
   }
 }
 
-const discardDeck = async (deck: DeckDetail): Promise<void> => {
-  try {
-    await MemoryService.discardDeck(deck.id)
+// 显示拒绝对话框
+const showRejectDialog = (deck: DeckDetail) => {
+  currentDeck.value = deck
+  dialogType.value = 'reject'
+  showReasonDialog.value = true
+}
 
-    // 从列表中移除已废弃的项目
-    const index = deckList.value.findIndex(d => d.id === deck.id)
+// 显示屏蔽对话框
+const showBanDialog = (deck: DeckDetail) => {
+  currentDeck.value = deck
+  dialogType.value = 'ban'
+  showReasonDialog.value = true
+}
+
+// 处理对话框确认
+const handleConfirmAction = async (reason: string) => {
+  if (!currentDeck.value) return
+
+  try {
+    submitting.value = true
+
+    if (dialogType.value === 'reject') {
+      await MemoryService.rejectDeck(currentDeck.value.id, reason)
+    } else {
+      await MemoryService.banDeck(currentDeck.value.id, reason)
+    }
+
+    // 从列表中移除已处理的项目
+    const index = deckList.value.findIndex(d => d.id === currentDeck.value!.id)
     if (index > -1) {
       deckList.value.splice(index, 1)
     }
 
-    showSnackbar?.('卡片组已废弃', 'success')
+    const message = dialogType.value === 'reject' ? '卡片组已拒绝' : '卡片组已屏蔽'
+    showSnackbar?.(message, 'success')
+
+    showReasonDialog.value = false
+    currentDeck.value = null
   } catch (error) {
-    console.error('Error discarding deck:', error)
-    showSnackbar?.('废弃操作失败', 'error')
+    console.error('Error updating deck:', error)
+    showSnackbar?.('操作失败', 'error')
+  } finally {
+    submitting.value = false
   }
 }
 
-const restoreDeck = async (deck: DeckDetail): Promise<void> => {
+// 拒绝卡片组（兼容旧调用）
+const rejectDeck = async (deck: DeckDetail): Promise<void> => {
+  showRejectDialog(deck)
+}
+
+// 屏蔽卡片组（兼容旧调用）
+const banDeck = async (deck: DeckDetail): Promise<void> => {
+  showBanDialog(deck)
+}
+
+const unbanDeck = async (deck: DeckDetail): Promise<void> => {
   try {
     await MemoryService.restoreDeck(deck.id)
-    
+
     // 从列表中移除已恢复的项目
     const index = deckList.value.findIndex(d => d.id === deck.id)
     if (index > -1) {
       deckList.value.splice(index, 1)
     }
-    
-    showSnackbar?.('卡片组已恢复', 'success')
+
+    showSnackbar?.('卡片组已取消屏蔽', 'success')
   } catch (error) {
-    console.error('Error restoring deck:', error)
-    showSnackbar?.('恢复操作失败', 'error')
+    console.error('Error unbanning deck:', error)
+    showSnackbar?.('取消屏蔽操作失败', 'error')
   }
 }
 
@@ -402,69 +444,109 @@ onMounted(() => {
                   </v-chip>
                 </div>
 
-                <!-- 待审核状态的操作 -->
+                <!-- 待审核状态：批准、拒绝、屏蔽 -->
                 <div v-if="deck.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
                   <v-btn
                     variant="flat"
                     color="green-lighten-4"
                     rounded="lg"
                     size="small"
-                    @click="approveDeck(deck, true)"
+                    @click="approveDeck(deck)"
                   >
                     <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
-                    {{ t('admin.approve') }}
+                    批准
                   </v-btn>
                   <v-btn
                     variant="flat"
                     color="red-lighten-4"
                     rounded="lg"
                     size="small"
-                    @click="approveDeck(deck, false)"
+                    @click="rejectDeck(deck)"
                   >
                     <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
-                    {{ t('admin.reject') }}
+                    拒绝
                   </v-btn>
-                </div>
-
-                <!-- 已通过状态下显示屏蔽按钮 -->
-                <div v-if="deck.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
                   <v-btn
                     variant="flat"
-                    color="red-lighten-4"
+                    color="grey-lighten-2"
                     rounded="lg"
                     size="small"
-                    @click="approveDeck(deck, false)"
+                    @click="banDeck(deck)"
                   >
-                    <v-icon icon="mdi-block-helper" color="red-darken-2" size="16" class="mr-1"></v-icon>
+                    <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
                     屏蔽
                   </v-btn>
                 </div>
 
-                <!-- 已拒绝状态下显示通过按钮 -->
+                <!-- 已通过状态：撤销通过、屏蔽 -->
+                <div v-if="deck.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
+                  <v-btn
+                    variant="flat"
+                    color="orange-lighten-4"
+                    rounded="lg"
+                    size="small"
+                    @click="rejectDeck(deck)"
+                  >
+                    <v-icon icon="mdi-undo" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                    撤销通过
+                  </v-btn>
+                  <v-btn
+                    variant="flat"
+                    color="grey-lighten-2"
+                    rounded="lg"
+                    size="small"
+                    @click="banDeck(deck)"
+                  >
+                    <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                    屏蔽
+                  </v-btn>
+                </div>
+
+                <!-- 已拒绝状态：通过、屏蔽 -->
                 <div v-if="deck.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
                   <v-btn
                     variant="flat"
                     color="green-lighten-4"
                     rounded="lg"
                     size="small"
-                    @click="approveDeck(deck, true)"
+                    @click="approveDeck(deck)"
                   >
                     <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
-                    {{ t('admin.approve') }}
+                    通过
+                  </v-btn>
+                  <v-btn
+                    variant="flat"
+                    color="grey-lighten-2"
+                    rounded="lg"
+                    size="small"
+                    @click="banDeck(deck)"
+                  >
+                    <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                    屏蔽
                   </v-btn>
                 </div>
 
-                <!-- 已封禁状态下显示恢复按钮 -->
+                <!-- 已封禁状态：取消屏蔽、降级为拒绝 -->
                 <div v-if="deck.state === ContentState.BANNED" class="d-flex flex-column ga-2">
+                  <v-btn
+                    variant="flat"
+                    color="blue-lighten-4"
+                    rounded="lg"
+                    size="small"
+                    @click="unbanDeck(deck)"
+                  >
+                    <v-icon icon="mdi-lock-open" color="blue-darken-2" size="16" class="mr-1"></v-icon>
+                    取消屏蔽
+                  </v-btn>
                   <v-btn
                     variant="flat"
                     color="orange-lighten-4"
                     rounded="lg"
                     size="small"
-                    @click="restoreDeck(deck)"
+                    @click="rejectDeck(deck)"
                   >
-                    <v-icon icon="mdi-restore" color="orange-darken-2" size="16" class="mr-1"></v-icon>
-                    恢复
+                    <v-icon icon="mdi-arrow-down" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                    降级为拒绝
                   </v-btn>
                 </div>
               </div>
@@ -556,6 +638,17 @@ onMounted(() => {
         </v-card>
       </div>
     </div>
+
+    <!-- 拒绝/屏蔽对话框 -->
+    <RejectBanDialog
+      v-model="showReasonDialog"
+      :type="dialogType"
+      :item-name="currentDeck?.title || ''"
+      :item-state="currentDeck?.state"
+      item-type="卡片组"
+      :loading="submitting"
+      @confirm="handleConfirmAction"
+    />
   </div>
 </template>
 

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { inject, ref } from 'vue'
+import { inject, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { nodeServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { ContentState } from '@/types/enums'
 import type { Node } from '@/types/node'
+import RejectBanDialog from './RejectBanDialog.vue'
 
 const { t } = useI18n()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
@@ -62,6 +63,12 @@ const nodeList = ref<Node[]>([])
 const loading = ref<boolean>(false)
 const hasMore = ref<boolean>(true)
 
+// 拒绝/屏蔽对话框
+const showReasonDialog = ref<boolean>(false)
+const currentNode = ref<Node | null>(null)
+const submitting = ref<boolean>(false)
+const dialogType = ref<'reject' | 'ban'>('reject')
+
 // 根据当前tab获取节点列表
 const getNodesByTab = async (tabKey: string, isLoadMore: boolean = false): Promise<void> => {
   if (loading.value) return
@@ -71,13 +78,16 @@ const getNodesByTab = async (tabKey: string, isLoadMore: boolean = false): Promi
   try {
     const lastId = isLoadMore && nodeList.value.length > 0
       ? nodeList.value[nodeList.value.length - 1].id
-      : undefined
+      : null
 
     const currentTabConfig = tabs.find(tab => tab.key === tabKey)
     if (!currentTabConfig) return
 
-    const response = await nodeServiceV1.getNodesByState(
+    const response = await nodeServiceV1.getAdminNodes(
       currentTabConfig.state,
+      null,
+      null,
+      null,
       lastId
     )
 
@@ -113,12 +123,21 @@ const searchNodes = async (isLoadMore: boolean = false) => {
   try {
     const lastId = isLoadMore && nodeList.value.length > 0
       ? nodeList.value[nodeList.value.length - 1].id
-      : undefined
+      : null
 
-    const response = await nodeServiceV1.getNodesByFilter(
-      filterNodeId.value,
-      filterCourseId.value,
-      filterCreatorId.value,
+    // 如果使用节点 ID 筛选，不需要传递状态参数（节点 ID 是唯一的）
+    // 否则筛选模式下也保留当前 tab 的状态
+    let currentState = null
+    if (!filterNodeId.value) {
+      const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
+      currentState = currentTabConfig?.state || null
+    }
+
+    const response = await nodeServiceV1.getAdminNodes(
+      currentState,
+      filterNodeId.value || null,
+      filterCourseId.value || null,
+      filterCreatorId.value || null,
       lastId
     )
 
@@ -175,11 +194,11 @@ const loadMore = async () => {
 
 // 监听tab切换
 const handleTabChange = async (newTab: string) => {
+  hasMore.value = true
   if (isFilterMode.value) {
-    // 如果在筛选模式下，切换tab时清除筛选
-    await clearFilter()
+    // 如果在筛选模式下，切换tab时重新应用筛选（保留筛选条件）
+    await searchNodes()
   } else {
-    hasMore.value = true
     await getNodesByTab(newTab)
   }
 }
@@ -229,6 +248,61 @@ const updateNodeState = async (node: Node, newState: number) => {
   } catch (error) {
     console.error('Error updating node state:', error)
     showSnackbar?.('更新节点状态失败', 'error')
+  }
+}
+
+// 打开拒绝对话框
+const showRejectDialog = (node: Node) => {
+  currentNode.value = node
+  dialogType.value = 'reject'
+  showReasonDialog.value = true
+}
+
+// 打开屏蔽对话框
+const showBanDialog = (node: Node) => {
+  currentNode.value = node
+  dialogType.value = 'ban'
+  showReasonDialog.value = true
+}
+
+// 确认操作
+const handleConfirmAction = async (reason: string) => {
+  if (!currentNode.value) return
+
+  try {
+    submitting.value = true
+    const targetState = dialogType.value === 'reject' ? ContentState.REJECTED : ContentState.BANNED
+
+    const response = await nodeServiceV1.updateNodeState(currentNode.value.id, targetState)
+
+    if (response.code === 200) {
+      const message = dialogType.value === 'reject' ? '已拒绝' : '已屏蔽'
+      showSnackbar?.(message, 'success')
+
+      // 从当前列表中移除（如果状态改变且不在筛选模式）
+      if (!isFilterMode.value) {
+        const index = nodeList.value.findIndex(n => n.id === currentNode.value!.id)
+        if (index !== -1) {
+          nodeList.value.splice(index, 1)
+        }
+      } else {
+        // 筛选模式下更新状态
+        const index = nodeList.value.findIndex(n => n.id === currentNode.value!.id)
+        if (index !== -1) {
+          nodeList.value[index].state = targetState
+        }
+      }
+
+      showReasonDialog.value = false
+      currentNode.value = null
+    } else {
+      showSnackbar?.(response.message || '操作失败', 'error')
+    }
+  } catch (error) {
+    console.error('Error updating node state:', error)
+    showSnackbar?.('操作失败', 'error')
+  } finally {
+    submitting.value = false
   }
 }
 
@@ -347,7 +421,7 @@ onMounted(() => {
 
     <!-- 状态标签 -->
     <v-tabs
-      v-if="!isFilterMode"
+      v-if="!filterNodeId"
       v-model="currentTab"
       color="primary"
       class="mb-6"
@@ -443,7 +517,7 @@ onMounted(() => {
               </v-chip>
             </div>
 
-            <!-- 待审核状态 -->
+            <!-- 待审核状态：通过、拒绝、屏蔽 -->
             <div v-if="node.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
@@ -460,28 +534,48 @@ onMounted(() => {
                 color="red-lighten-4"
                 rounded="lg"
                 size="small"
-                @click="updateNodeState(node, ContentState.REJECTED)"
+                @click="showRejectDialog(node)"
               >
                 <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
                 {{ t('admin.reject') }}
               </v-btn>
-            </div>
-
-            <!-- 已通过状态下显示屏蔽按钮 -->
-            <div v-if="node.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
-                color="red-lighten-4"
+                color="grey-lighten-2"
                 rounded="lg"
                 size="small"
-                @click="updateNodeState(node, ContentState.REJECTED)"
+                @click="showBanDialog(node)"
               >
-                <v-icon icon="mdi-block-helper" color="red-darken-2" size="16" class="mr-1"></v-icon>
+                <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
                 屏蔽
               </v-btn>
             </div>
 
-            <!-- 已拒绝状态下显示通过按钮 -->
+            <!-- 已通过状态：撤销通过、屏蔽 -->
+            <div v-if="node.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
+              <v-btn
+                variant="flat"
+                color="orange-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="showRejectDialog(node)"
+              >
+                <v-icon icon="mdi-undo" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                撤销通过
+              </v-btn>
+              <v-btn
+                variant="flat"
+                color="grey-lighten-2"
+                rounded="lg"
+                size="small"
+                @click="showBanDialog(node)"
+              >
+                <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                屏蔽
+              </v-btn>
+            </div>
+
+            <!-- 已拒绝状态：通过、屏蔽 -->
             <div v-if="node.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
@@ -493,19 +587,39 @@ onMounted(() => {
                 <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
                 {{ t('admin.approve') }}
               </v-btn>
+              <v-btn
+                variant="flat"
+                color="grey-lighten-2"
+                rounded="lg"
+                size="small"
+                @click="showBanDialog(node)"
+              >
+                <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                屏蔽
+              </v-btn>
             </div>
 
-            <!-- 已封禁状态下显示恢复按钮 -->
+            <!-- 已屏蔽状态：取消屏蔽、降级为拒绝 -->
             <div v-if="node.state === ContentState.BANNED" class="d-flex flex-column ga-2">
+              <v-btn
+                variant="flat"
+                color="blue-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="updateNodeState(node, ContentState.PUBLISHED)"
+              >
+                <v-icon icon="mdi-lock-open" color="blue-darken-2" size="16" class="mr-1"></v-icon>
+                取消屏蔽
+              </v-btn>
               <v-btn
                 variant="flat"
                 color="orange-lighten-4"
                 rounded="lg"
                 size="small"
-                @click="updateNodeState(node, ContentState.PUBLISHED)"
+                @click="updateNodeState(node, ContentState.REJECTED)"
               >
-                <v-icon icon="mdi-restore" color="orange-darken-2" size="16" class="mr-1"></v-icon>
-                恢复
+                <v-icon icon="mdi-arrow-down" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                降级为拒绝
               </v-btn>
             </div>
           </div>
@@ -551,6 +665,17 @@ onMounted(() => {
     <div v-if="!hasMore && nodeList.length > 0" class="text-center py-4">
       <span class="text-grey-darken-1">没有更多数据了</span>
     </div>
+
+    <!-- 拒绝/屏蔽对话框 -->
+    <RejectBanDialog
+      v-model="showReasonDialog"
+      :type="dialogType"
+      :item-name="currentNode?.name || ''"
+      :item-state="currentNode?.state"
+      item-type="节点"
+      :loading="submitting"
+      @confirm="handleConfirmAction"
+    />
   </div>
 </template>
 

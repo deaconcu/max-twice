@@ -58,6 +58,19 @@ public interface CommentMapper {
     @Select("SELECT * FROM comment where state = #{state} and id < #{offsetId} order by id DESC limit #{count}")
     List<CommentDO> getListByStatePaginated(byte state, long offsetId, int count);
 
+    @Select({"<script>",
+            "SELECT * FROM comment",
+            "<where>",
+            "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
+            "<if test='objectType != null'> AND object_type = #{objectType}</if>",
+            "<if test='objectId != null'> AND object_id = #{objectId}</if>",
+            "<if test='creatorId != null'> AND creator_id = #{creatorId}</if>",
+            "<if test='state != null'> AND state = #{state}</if>",
+            "</where>",
+            "ORDER BY id DESC LIMIT #{limit}",
+            "</script>"})
+    List<CommentDO> getListByFilter(@Param("objectType") Integer objectType, @Param("objectId") Long objectId, @Param("creatorId") Long creatorId, @Param("lastId") Long lastId, @Param("state") Byte state, @Param("limit") int limit);
+
     @Insert("INSERT INTO comment(content, object_type, object_id, reply_to_comment_id, creator_id, to_user_id, score) " +
             "VALUES (#{content}, #{objectType}, #{objectId}, #{replyToCommentId}, #{creatorId}, #{toUserId}, #{score})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")

@@ -79,6 +79,105 @@
   const setSystemMessageType = (type: number): void => {
     systemMessageType.value = type
   }
+
+  // 判断是否是拒绝消息
+  const isRejectionMessage = (type: number): boolean => {
+    return [
+      MessageType.COURSE_REJECTED,
+      MessageType.POST_REJECTED,
+      MessageType.COMMENT_REJECTED,
+      MessageType.PROFESSION_REJECTED,
+      MessageType.ROADMAP_REJECTED,
+      MessageType.MEMORY_DECK_REJECTED,
+      MessageType.NODE_REJECTED
+    ].includes(type)
+  }
+
+  // 判断是否是封禁消息
+  const isBannedMessage = (type: number): boolean => {
+    return [
+      MessageType.COURSE_BANNED,
+      MessageType.POST_BANNED,
+      MessageType.COMMENT_BANNED,
+      MessageType.PROFESSION_BANNED,
+      MessageType.ROADMAP_BANNED,
+      MessageType.MEMORY_DECK_BANNED,
+      MessageType.NODE_BANNED
+    ].includes(type)
+  }
+
+  // 判断是否是通过消息
+  const isApprovedMessage = (type: number): boolean => {
+    return [
+      MessageType.COURSE_APPROVED,
+      MessageType.PROFESSION_APPROVED
+    ].includes(type)
+  }
+
+  // 获取对象类型的中文名称
+  const getObjectTypeName = (objectType: string): string => {
+    const typeMap: Record<string, string> = {
+      'post': '帖子',
+      'node': '节点',
+      'roadmap': '路线图'
+    }
+    return typeMap[objectType] || '内容'
+  }
+
+  // 获取审核消息文本
+  const getModerationText = (message: SystemMessage): string => {
+    try {
+      const data = typeof message.content === 'string' ? JSON.parse(message.content) : message.content
+      const type = message.type
+
+      switch (type) {
+        case MessageType.COURSE_REJECTED:
+          return `您的课程《${data.courseName}》审核未通过。原因：${data.reason}`
+        case MessageType.COURSE_BANNED:
+          return `您的课程《${data.courseName}》已被封禁。原因：${data.reason}`
+        case MessageType.COURSE_APPROVED:
+          return `您的课程《${data.courseName}》审核通过！`
+
+        case MessageType.POST_REJECTED:
+          return `您在《${data.courseName} - ${data.nodeName}》下的帖子《${data.postTitle}》审核未通过。原因：${data.reason}`
+        case MessageType.POST_BANNED:
+          return `您在《${data.courseName} - ${data.nodeName}》下的帖子《${data.postTitle}》已被封禁。原因：${data.reason}`
+
+        case MessageType.COMMENT_REJECTED:
+          return `您在${getObjectTypeName(data.objectType)}《${data.objectTitle}》下的评论"${data.commentPreview}"审核未通过。原因：${data.reason}`
+        case MessageType.COMMENT_BANNED:
+          return `您在${getObjectTypeName(data.objectType)}《${data.objectTitle}》下的评论"${data.commentPreview}"已被封禁。原因：${data.reason}`
+
+        case MessageType.PROFESSION_REJECTED:
+          return `您提交的职业《${data.professionName}》审核未通过。原因：${data.reason}`
+        case MessageType.PROFESSION_BANNED:
+          return `您提交的职业《${data.professionName}》已被封禁。原因：${data.reason}`
+        case MessageType.PROFESSION_APPROVED:
+          return `您提交的职业《${data.professionName}》审核通过！`
+
+        case MessageType.ROADMAP_REJECTED:
+          return `您为职业《${data.professionName}》提交的路线图审核未通过。原因：${data.reason}`
+        case MessageType.ROADMAP_BANNED:
+          return `您为职业《${data.professionName}》提交的路线图已被封禁。原因：${data.reason}`
+
+        case MessageType.MEMORY_DECK_REJECTED:
+          return `您为帖子《${data.postTitle}》创建的卡片组《${data.deckTitle}》审核未通过。原因：${data.reason}`
+        case MessageType.MEMORY_DECK_BANNED:
+          return `您为帖子《${data.postTitle}》创建的卡片组《${data.deckTitle}》已被封禁。原因：${data.reason}`
+
+        case MessageType.NODE_REJECTED:
+          return `您在课程《${data.courseName}》中创建的节点《${data.nodeName}》审核未通过。原因：${data.reason}`
+        case MessageType.NODE_BANNED:
+          return `您在课程《${data.courseName}》中创建的节点《${data.nodeName}》已被封禁。原因：${data.reason}`
+
+        default:
+          return '审核通知'
+      }
+    } catch (error) {
+      console.error('解析审核消息失败:', error)
+      return '审核通知'
+    }
+  }
 </script>
 
 <template>
@@ -324,6 +423,20 @@
                             }}</a>
                             的文章下的评论
                           </div>
+
+                          <!-- 审核消息 -->
+                          <div v-if="isRejectionMessage(message.type)" class="message-text moderation-message rejected">
+                            <v-icon icon="mdi-alert-circle" color="warning" size="18" class="mr-1"></v-icon>
+                            {{ getModerationText(message) }}
+                          </div>
+                          <div v-if="isBannedMessage(message.type)" class="message-text moderation-message banned">
+                            <v-icon icon="mdi-block-helper" color="error" size="18" class="mr-1"></v-icon>
+                            {{ getModerationText(message) }}
+                          </div>
+                          <div v-if="isApprovedMessage(message.type)" class="message-text moderation-message approved">
+                            <v-icon icon="mdi-check-circle" color="success" size="18" class="mr-1"></v-icon>
+                            {{ getModerationText(message) }}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -396,6 +509,31 @@
     font-size: 14px;
     line-height: 1.6;
     color: #424242;
+  }
+
+  /* 审核消息样式 */
+  .moderation-message {
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin: 4px 0;
+    font-weight: 500;
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .moderation-message.rejected {
+    background: #fff3e0;
+    border-left: 3px solid #ff9800;
+  }
+
+  .moderation-message.banned {
+    background: #ffebee;
+    border-left: 3px solid #f44336;
+  }
+
+  .moderation-message.approved {
+    background: #e8f5e9;
+    border-left: 3px solid #4caf50;
   }
 
   .message-text a {

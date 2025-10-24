@@ -5,6 +5,7 @@
   import type { Course } from '@/types/course'
   import type { MainCategory, SubCategory, CategoryMapping, StateOption } from '@/types/common'
   import CourseCard from './CourseCard.vue'
+  import RejectBanDialog from './RejectBanDialog.vue'
 
   const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
@@ -30,7 +31,7 @@
       icon: 'mdi-clock-outline',
     },
     {
-      value: ContentState.APPROVED,
+      value: ContentState.PUBLISHED,
       text: '已批准',
       color: 'green-lighten-4',
       icon: 'mdi-check-circle-outline',
@@ -73,12 +74,11 @@
   const selectedSubCategory = ref<number | null>(null)
   const categoryMapping = ref<CategoryMapping[]>([])
 
-  // 拒绝对话框相关
-  const rejectDialog = ref<boolean>(false)
+  // 拒绝/屏蔽对话框
+  const showReasonDialog = ref<boolean>(false)
   const selectedCourse = ref<Course | null>(null)
-  const rejectReason = ref<string>('')
-  const rejecting = ref<boolean>(false)
-  const dialogType = ref<'reject' | 'ban'>('reject') // 区分是拒绝还是屏蔽操作
+  const submitting = ref<boolean>(false)
+  const dialogType = ref<'reject' | 'ban'>('reject')
 
   // 编辑对话框相关
   const editDialog = ref<boolean>(false)
@@ -92,6 +92,13 @@
     subCategory: null,
   })
   const editSubCategories = ref<SubCategory[]>([])
+
+  // 显示拒绝对话框
+  const showRejectDialog = (course: Course): void => {
+    selectedCourse.value = course
+    dialogType.value = 'reject'
+    showReasonDialog.value = true
+  }
 
   // 获取当前选中的状态
   const getCurrentState = (): number => stateOptions[selectedStateIndex.value].value
@@ -126,7 +133,7 @@
 
       // 如果是已通过状态且选择了主分类但没有选择子分类，不加载
       if (
-        currentState === ContentState.APPROVED &&
+        currentState === ContentState.PUBLISHED &&
         selectedMainCategory.value &&
         !selectedSubCategory.value
       ) {
@@ -139,7 +146,7 @@
 
       // 如果是已通过状态且选择了主分类和子分类，使用分类查询（不支持分页）
       if (
-        currentState === ContentState.APPROVED &&
+        currentState === ContentState.PUBLISHED &&
         selectedMainCategory.value &&
         selectedSubCategory.value
       ) {
@@ -167,7 +174,7 @@
 
         // 更新lastId和hasMore状态（仅在状态查询时）
         if (
-          currentState !== ContentState.APPROVED ||
+          currentState !== ContentState.PUBLISHED ||
           !selectedMainCategory.value ||
           !selectedSubCategory.value
         ) {
@@ -304,7 +311,7 @@
 
   // 分类变化处理
   const onCategoryChange = (): void => {
-    if (getCurrentState() === ContentState.APPROVED) {
+    if (getCurrentState() === ContentState.PUBLISHED) {
       // 只有选择了主分类和子分类时才加载
       if (selectedMainCategory.value && selectedSubCategory.value) {
         loadCourses()
@@ -340,9 +347,9 @@
     if (newValue) {
       updateSubCategories(newValue)
       // 如果有子分类且已选择第一个，直接加载课程
-      if (getCurrentState() === ContentState.APPROVED && selectedSubCategory.value) {
+      if (getCurrentState() === ContentState.PUBLISHED && selectedSubCategory.value) {
         loadCourses()
-      } else if (getCurrentState() === ContentState.APPROVED) {
+      } else if (getCurrentState() === ContentState.PUBLISHED) {
         // 没有子分类，清空列表
         courseList.value = []
       }
@@ -350,7 +357,7 @@
       subCategories.value = []
       selectedSubCategory.value = null
       // 清除主分类选择，重新加载全部数据
-      if (getCurrentState() === ContentState.APPROVED) {
+      if (getCurrentState() === ContentState.PUBLISHED) {
         loadCourses()
       }
     }
@@ -364,14 +371,14 @@
       if (response.code === 200) {
         showSnackbar && showSnackbar('课程已通过审核')
         // 从当前列表中移除（如果当前不是已通过状态）
-        if (getCurrentState() !== ContentState.APPROVED) {
+        if (getCurrentState() !== ContentState.PUBLISHED) {
           const index = courseList.value.findIndex((c) => c.id === course.id)
           if (index > -1) {
             courseList.value.splice(index, 1)
           }
         } else {
           // 更新状态
-          course.state = ContentState.APPROVED
+          course.state = ContentState.PUBLISHED
         }
 
         // 如果当前在ID查询tab且查询的是同一个课程，更新搜索结果
@@ -380,13 +387,13 @@
           searchedCourse.value &&
           searchedCourse.value.id === course.id
         ) {
-          searchedCourse.value.state = ContentState.APPROVED
+          searchedCourse.value.state = ContentState.PUBLISHED
         }
 
         // 如果当前在子课程查询tab且列表中包含该课程，更新状态
         const subcourseIndex = subcourseList.value.findIndex((c) => c.id === course.id)
         if (subcourseIndex > -1) {
-          subcourseList.value[subcourseIndex].state = ContentState.APPROVED
+          subcourseList.value[subcourseIndex].state = ContentState.PUBLISHED
         }
       } else {
         showSnackbar && showSnackbar('操作失败: ' + (response.message|| '未知错误'))
@@ -397,13 +404,60 @@
     }
   }
 
-  // 屏蔽课程
-  const banCourse = async (course: Course): Promise<void> => {
-    // 显示屏蔽对话框，需要输入原因
+  // 显示屏蔽对话框
+  const banCourse = (course: Course): void => {
     selectedCourse.value = course
-    rejectReason.value = ''
     dialogType.value = 'ban'
-    rejectDialog.value = true
+    showReasonDialog.value = true
+  }
+
+  // 处理对话框确认
+  const handleConfirmAction = async (reason: string): Promise<void> => {
+    if (!selectedCourse.value) return
+
+    try {
+      submitting.value = true
+      const action = dialogType.value === 'ban' ? ApprovalAction.BAN : ApprovalAction.REJECT
+      const targetState = dialogType.value === 'ban' ? ContentState.BANNED : ContentState.REJECTED
+      const response = await courseServiceV1.approveCourse(selectedCourse.value.id, action, reason)
+
+      if (response.code === 200) {
+        const message = dialogType.value === 'ban' ? '已屏蔽' : '已拒绝'
+        showSnackbar && showSnackbar(message, 'success')
+
+        // 从当前列表中移除（如果在对应状态tab中）
+        const currentState = getCurrentState()
+        const index = courseList.value.findIndex((c) => c.id === selectedCourse.value!.id)
+        if (index > -1) {
+          if (currentState !== targetState) {
+            courseList.value.splice(index, 1)
+          } else {
+            courseList.value[index].state = targetState
+          }
+        }
+
+        // 如果是搜索课程，更新状态
+        if (searchedCourse.value && searchedCourse.value.id === selectedCourse.value.id) {
+          searchedCourse.value.state = targetState
+        }
+
+        // 更新子课程列表状态
+        const subcourseIndex = subcourseList.value.findIndex((c) => c.id === selectedCourse.value!.id)
+        if (subcourseIndex > -1) {
+          subcourseList.value[subcourseIndex].state = targetState
+        }
+
+        showReasonDialog.value = false
+        selectedCourse.value = null
+      } else {
+        showSnackbar && showSnackbar('操作失败: ' + (response.message || '未知错误'), 'error')
+      }
+    } catch (error) {
+      console.error('Error performing action:', error)
+      showSnackbar && showSnackbar('操作失败: 服务器开小差了', 'error')
+    } finally {
+      submitting.value = false
+    }
   }
 
   // 取消屏蔽课程
@@ -421,7 +475,7 @@
           }
         } else {
           // 更新状态
-          course.state = ContentState.APPROVED
+          course.state = ContentState.PUBLISHED
           delete (course as any).reason
         }
       } else {
@@ -528,65 +582,6 @@
     }
   }
 
-  const showRejectModal = (course: Course): void => {
-    selectedCourse.value = course
-    rejectReason.value = ''
-    dialogType.value = 'reject'
-    rejectDialog.value = true
-  }
-
-  // 关闭拒绝对话框
-  const closeRejectModal = (): void => {
-    rejectDialog.value = false
-    selectedCourse.value = null
-    rejectReason.value = ''
-  }
-
-  // 确认拒绝
-  const confirmReject = async (): Promise<void> => {
-    if (!rejectReason.value.trim()) return
-
-    try {
-      rejecting.value = true
-      // 根据 dialogType 决定 action
-      const action = dialogType.value === 'ban' ? ApprovalAction.BAN : ApprovalAction.REJECT
-
-      const response = await courseServiceV1.approveCourse(
-        selectedCourse.value!.id,
-        action,
-        rejectReason.value.trim()
-      )
-
-      if (response.code === 200) {
-        const isBan = action === ApprovalAction.BAN
-        const targetState = isBan ? ContentState.BANNED : ContentState.REJECTED
-        const message = isBan ? '已屏蔽' : (selectedCourse.value!.state === ContentState.APPROVED ? '已撤销通过' : '已拒绝申请')
-
-        showSnackbar && showSnackbar(message)
-
-        // 从当前列表中移除（如果当前不是目标状态）
-        if (getCurrentState() !== targetState) {
-          const index = courseList.value.findIndex((c) => c.id === selectedCourse.value!.id)
-          if (index > -1) {
-            courseList.value.splice(index, 1)
-          }
-        } else {
-          // 更新状态
-          selectedCourse.value!.state = targetState
-          ;(selectedCourse.value as any).reason = rejectReason.value.trim()
-        }
-
-        closeRejectModal()
-      } else {
-        showSnackbar && showSnackbar(`操作失败: ${response.message || '未知错误'}`)
-      }
-    } catch (error) {
-      console.error('Error rejecting course:', error)
-      showSnackbar && showSnackbar('操作失败：服务器开小差了')
-    } finally {
-      rejecting.value = false
-    }
-  }
 
   // 组件挂载时加载数据
   onMounted(() => {
@@ -773,7 +768,7 @@
           >
             <v-icon
               :icon="state.icon"
-              :color="state.value === ContentState.SUBMITTED ? 'orange-darken-1' : state.value === ContentState.APPROVED ? 'green-darken-1' : state.value === ContentState.REJECTED ? 'red-darken-1' : 'grey-darken-1'"
+              :color="state.value === ContentState.SUBMITTED ? 'orange-darken-1' : state.value === ContentState.PUBLISHED ? 'green-darken-1' : state.value === ContentState.REJECTED ? 'red-darken-1' : 'grey-darken-1'"
               size="18"
               class="mr-2"
             ></v-icon>
@@ -782,7 +777,7 @@
         </v-tabs>
 
         <!-- 分类筛选 - 只在已通过状态显示 -->
-        <div v-if="getCurrentState() === ContentState.APPROVED" class="mb-6">
+        <div v-if="getCurrentState() === ContentState.PUBLISHED" class="mb-6">
           <v-card flat class="pa-4 bg-grey-lighten-5" rounded="lg">
             <h4 class="text-subtitle-2 text-grey-darken-2 mb-3 d-flex align-center">
               <v-icon icon="mdi-filter-variant" size="16" class="mr-2"></v-icon>
@@ -857,7 +852,7 @@
           <!-- 分类筛选提示 -->
           <div
             v-if="
-              getCurrentState() === ContentState.APPROVED &&
+              getCurrentState() === ContentState.PUBLISHED &&
               selectedMainCategory &&
               !selectedSubCategory
             "
@@ -885,7 +880,7 @@
           <!-- 使用分类筛选时不启用无限滚动 -->
           <template
             v-if="
-              getCurrentState() === ContentState.APPROVED &&
+              getCurrentState() === ContentState.PUBLISHED &&
               selectedMainCategory &&
               selectedSubCategory
             "
@@ -940,52 +935,16 @@
         </div>
     </div>
 
-    <!-- 拒绝对话框 -->
-    <v-dialog v-model="rejectDialog" max-width="500px" persistent>
-      <v-card rounded="lg">
-        <v-card-title class="pa-6 pb-4">
-          <div class="d-flex align-center">
-            <v-icon icon="mdi-close-circle-outline" color="red-darken-1" class="mr-3"></v-icon>
-            <span class="text-h6 font-weight-bold">拒绝课程申请</span>
-          </div>
-        </v-card-title>
-
-        <v-card-text class="pa-6 pt-2">
-          <p class="text-body-2 text-grey-darken-1 mb-4">
-            确定要拒绝课程 "{{ selectedCourse?.name }}" 吗？
-          </p>
-
-          <v-textarea
-            v-model="rejectReason"
-            label="拒绝原因"
-            variant="outlined"
-            rows="4"
-            rounded="lg"
-            bg-color="grey-lighten-5"
-            :rules="[(v: string) => !!v || '请输入拒绝原因']"
-            class="mb-0"
-          ></v-textarea>
-        </v-card-text>
-
-        <v-card-actions class="pa-6 pt-0">
-          <v-spacer></v-spacer>
-          <v-btn variant="flat" color="grey-lighten-2" rounded="lg" @click="closeRejectModal">
-            取消
-          </v-btn>
-          <v-btn
-            variant="flat"
-            color="red-lighten-4"
-            rounded="lg"
-            :loading="rejecting"
-            :disabled="!rejectReason.trim()"
-            @click="confirmReject"
-          >
-            <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
-            确认拒绝
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <!-- 拒绝/屏蔽对话框 -->
+    <RejectBanDialog
+      v-model="showReasonDialog"
+      :type="dialogType"
+      :item-name="selectedCourse?.name || ''"
+      :item-state="selectedCourse?.state"
+      item-type="课程"
+      :loading="submitting"
+      @confirm="handleConfirmAction"
+    />
 
     <!-- 编辑对话框 -->
     <v-dialog v-model="editDialog" max-width="600px" persistent>

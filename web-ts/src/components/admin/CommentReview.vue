@@ -2,8 +2,9 @@
   import { inject, ref, computed, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { commentServiceV1 } from '@/services/api/v1/apiServiceV1'
-  import { ContentState, ApprovalAction } from '@/types/enums'
+  import { ContentState, ApprovalAction, ObjectType } from '@/types/enums'
   import type { Comment } from '@/types/comment'
+  import RejectBanDialog from './RejectBanDialog.vue'
 
   const { t } = useI18n()
   const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
@@ -13,6 +14,31 @@
   const offsetId = ref<number>(0)
   const loading = ref<boolean>(false)
   const hasMore = ref<boolean>(true)
+
+  // 筛选条件
+  const filterObjectType = ref<number | undefined>(undefined)
+  const filterObjectId = ref<number | undefined>(undefined)
+  const filterCreatorId = ref<number | undefined>(undefined)
+  const isFilterMode = ref<boolean>(false)
+
+  // 对象类型选项
+  const objectTypeOptions = [
+    { title: '帖子', value: ObjectType.POST },
+    { title: '节点', value: ObjectType.NODE },
+    { title: '课程', value: ObjectType.COURSE }
+  ]
+
+  // 获取对象类型名称
+  const getObjectTypeName = (type?: number): string => {
+    const option = objectTypeOptions.find(opt => opt.value === type)
+    return option ? option.title : ''
+  }
+
+  // 拒绝/屏蔽对话框
+  const showReasonDialog = ref<boolean>(false)
+  const currentComment = ref<Comment | null>(null)
+  const submitting = ref<boolean>(false)
+  const dialogType = ref<'reject' | 'ban'>('reject')
 
   // 标签配置
   interface TabConfig {
@@ -58,6 +84,76 @@
     return allCommentList.value
   })
 
+  // 按筛选条件获取评论
+  const getCommentsByFilter = async (isLoadMore: boolean = false): Promise<void> => {
+    if (loading.value) return
+
+    loading.value = true
+
+    try {
+      const lastId = isLoadMore && allCommentList.value.length > 0
+        ? allCommentList.value[allCommentList.value.length - 1].id
+        : undefined
+
+      // 获取当前tab的状态
+      const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
+      const state = currentTabConfig?.state
+
+      const response = await commentServiceV1.getCommentsByFilter(
+        filterObjectType.value,
+        filterObjectId.value,
+        filterCreatorId.value,
+        lastId,
+        state
+      )
+
+      if (response.code === 401) {
+        // not login
+      } else if (response.code === 200) {
+        const newComments = response.data
+
+        if (isLoadMore) {
+          allCommentList.value.push(...newComments)
+        } else {
+          allCommentList.value = newComments
+        }
+
+        hasMore.value = newComments.length > 0
+        if (newComments.length > 0) {
+          offsetId.value = newComments[newComments.length - 1].id
+        }
+      } else {
+        showSnackbar && showSnackbar(response.message || 'error.loadFailed', 'error')
+      }
+    } catch (error) {
+      console.error('Error loading comments:', error)
+      showSnackbar && showSnackbar('error.loadFailed', 'error')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 应用筛选
+  const applyFilter = async (): Promise<void> => {
+    if (!filterObjectType.value && !filterObjectId.value && !filterCreatorId.value) {
+      showSnackbar && showSnackbar('请至少输入一个筛选条件', 'warning')
+      return
+    }
+    isFilterMode.value = true
+    hasMore.value = true
+    await getCommentsByFilter()
+  }
+
+  // 清除筛选
+  const clearFilter = async (): Promise<void> => {
+    filterObjectType.value = undefined
+    filterObjectId.value = undefined
+    filterCreatorId.value = undefined
+    isFilterMode.value = false
+    hasMore.value = true
+    await getCommentsByTab(currentTab.value)
+  }
+
   const getCommentsByTab = async (tabKey: string, isLoadMore: boolean = false): Promise<void> => {
     if (loading.value) return
 
@@ -98,13 +194,17 @@
 
   const loadMore = async (): Promise<void> => {
     if (hasMore.value && !loading.value) {
-      await getCommentsByTab(currentTab.value, true)
+      if (isFilterMode.value) {
+        await getCommentsByFilter(true)
+      } else {
+        await getCommentsByTab(currentTab.value, true)
+      }
     }
   }
 
-  const approveComment = async (comment: Comment, approve: boolean): Promise<void> => {
+  const approveComment = async (comment: Comment): Promise<void> => {
     try {
-      const response = await commentServiceV1.approveComment(comment.id, approve ? ApprovalAction.APPROVE : ApprovalAction.REJECT)
+      const response = await commentServiceV1.approveComment(comment.id, ApprovalAction.APPROVE)
 
       if (response.code === 401) {
         // not login
@@ -121,45 +221,62 @@
     }
   }
 
-  const rejectComment = async (comment: Comment): Promise<void> => {
-    try {
-      const response = await commentServiceV1.approveComment(comment.id, ApprovalAction.REJECT)
+  // 显示拒绝对话框
+  const showRejectDialog = (comment: Comment) => {
+    currentComment.value = comment
+    dialogType.value = 'reject'
+    showReasonDialog.value = true
+  }
 
-      if (response.code === 401) {
-        // not login
-      } else if (response.code === 200) {
+  // 显示屏蔽对话框
+  const showBanDialog = (comment: Comment) => {
+    currentComment.value = comment
+    dialogType.value = 'ban'
+    showReasonDialog.value = true
+  }
+
+  // 处理对话框确认
+  const handleConfirmAction = async (reason: string) => {
+    if (!currentComment.value) return
+
+    try {
+      submitting.value = true
+      const action = dialogType.value === 'reject' ? ApprovalAction.REJECT : ApprovalAction.BAN
+
+      const response = await commentServiceV1.approveComment(currentComment.value.id, action, reason)
+
+      if (response.code === 200) {
         await getCommentsByTab(currentTab.value)
-        showSnackbar && showSnackbar('操作成功')
+
+        const message = dialogType.value === 'reject' ? '已拒绝' : '已屏蔽'
+        showSnackbar && showSnackbar(message, 'success')
+
+        showReasonDialog.value = false
+        currentComment.value = null
       } else {
         showSnackbar && showSnackbar(response.message || '操作失败', 'error')
       }
     } catch (error) {
-      console.error('Error rejecting comment:', error)
+      console.error('Error updating comment:', error)
       showSnackbar && showSnackbar('操作失败', 'error')
+    } finally {
+      submitting.value = false
     }
   }
 
-  const banComment = async (comment: Comment): Promise<void> => {
-    try {
-      const response = await commentServiceV1.approveComment(comment.id, ApprovalAction.BAN)
+  // 拒绝评论（已弃用，保留兼容）
+  const rejectComment = async (comment: Comment): Promise<void> => {
+    showRejectDialog(comment)
+  }
 
-      if (response.code === 401) {
-        // not login
-      } else if (response.code === 200) {
-        await getCommentsByTab(currentTab.value)
-        showSnackbar && showSnackbar('已屏蔽')
-      } else {
-        showSnackbar && showSnackbar(response.message || '操作失败', 'error')
-      }
-    } catch (error) {
-      console.error('Error banning comment:', error)
-      showSnackbar && showSnackbar('操作失败', 'error')
-    }
+  // 屏蔽评论（已弃用，保留兼容）
+  const banComment = async (comment: Comment): Promise<void> => {
+    showBanDialog(comment)
   }
 
   const unbanComment = async (comment: Comment): Promise<void> => {
     try {
-      const response = await commentServiceV1.approveComment(comment.id, true)
+      const response = await commentServiceV1.approveComment(comment.id, ApprovalAction.APPROVE)
 
       if (response.code === 401) {
         // not login
@@ -177,7 +294,12 @@
 
   const handleTabChange = async (newTab: string) => {
     hasMore.value = true
-    await getCommentsByTab(newTab)
+    if (isFilterMode.value) {
+      // 如果在筛选模式下，切换tab时重新应用筛选（保留筛选条件和状态）
+      await getCommentsByFilter()
+    } else {
+      await getCommentsByTab(newTab)
+    }
   }
 
   onMounted(() => {
@@ -200,6 +322,93 @@
         </div>
       </div>
     </div>
+
+    <!-- 筛选区域 -->
+    <v-card v-if="!isFilterMode" flat class="pa-4 bg-grey-lighten-5 rounded-lg mb-6">
+      <h4 class="text-subtitle-2 text-grey-darken-2 mb-3 d-flex align-center">
+        <v-icon icon="mdi-filter-outline" size="16" class="mr-2"></v-icon>
+        高级筛选
+      </h4>
+      <v-row dense>
+        <v-col cols="12" sm="4">
+          <v-select
+            v-model="filterObjectType"
+            :items="objectTypeOptions"
+            label="对象类型"
+            variant="outlined"
+            density="compact"
+            rounded="lg"
+            bg-color="white"
+            hide-details
+            clearable
+          >
+            <template #prepend-inner>
+              <v-icon icon="mdi-shape-outline" size="16" color="grey-darken-1"></v-icon>
+            </template>
+          </v-select>
+        </v-col>
+        <v-col cols="12" sm="3">
+          <v-text-field
+            v-model.number="filterObjectId"
+            type="number"
+            label="对象 ID"
+            variant="outlined"
+            density="compact"
+            rounded="lg"
+            bg-color="white"
+            hide-details
+            clearable
+          ></v-text-field>
+        </v-col>
+        <v-col cols="12" sm="3">
+          <v-text-field
+            v-model.number="filterCreatorId"
+            type="number"
+            label="用户 ID"
+            variant="outlined"
+            density="compact"
+            rounded="lg"
+            bg-color="white"
+            hide-details
+            clearable
+          ></v-text-field>
+        </v-col>
+        <v-col cols="12" sm="2">
+          <v-btn
+            variant="flat"
+            color="primary"
+            rounded="lg"
+            block
+            @click="applyFilter"
+          >
+            <v-icon icon="mdi-magnify" class="mr-1"></v-icon>
+            筛选
+          </v-btn>
+        </v-col>
+      </v-row>
+    </v-card>
+
+    <!-- 筛选结果提示 -->
+    <v-alert
+      v-if="isFilterMode"
+      type="info"
+      color="teal"
+      variant="outlined"
+      class="mb-6"
+      border="top"
+      rounded="lg"
+      closable
+      @click:close="clearFilter"
+    >
+      <div class="d-flex align-center justify-space-between">
+        <div>
+          <span class="font-weight-medium">筛选条件：</span>
+          <v-chip v-if="filterObjectType" size="small" class="mx-1">对象类型: {{ getObjectTypeName(filterObjectType) }}</v-chip>
+          <v-chip v-if="filterObjectId" size="small" class="mx-1">对象 ID: {{ filterObjectId }}</v-chip>
+          <v-chip v-if="filterCreatorId" size="small" class="mx-1">用户 ID: {{ filterCreatorId }}</v-chip>
+        </div>
+      </div>
+    </v-alert>
 
     <!-- 状态标签 -->
     <v-tabs
@@ -297,7 +506,7 @@
                 color="green-lighten-4"
                 rounded="lg"
                 size="small"
-                @click="approveComment(comment, true)"
+                @click="approveComment(comment)"
               >
                 <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
                 批准
@@ -348,17 +557,27 @@
               </v-btn>
             </div>
 
-            <!-- 已拒绝状态：通过 -->
+            <!-- 已拒绝状态：通过、屏蔽 -->
             <div v-if="comment.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
                 color="green-lighten-4"
                 rounded="lg"
                 size="small"
-                @click="approveComment(comment, true)"
+                @click="approveComment(comment)"
               >
                 <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
                 通过
+              </v-btn>
+              <v-btn
+                variant="flat"
+                color="grey-lighten-2"
+                rounded="lg"
+                size="small"
+                @click="banComment(comment)"
+              >
+                <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                屏蔽
               </v-btn>
             </div>
 
@@ -441,6 +660,17 @@
     <div v-if="!hasMore && commentList.length > 0" class="text-center py-4">
       <span class="text-grey-darken-1">没有更多数据了</span>
     </div>
+
+    <!-- 拒绝/屏蔽对话框 -->
+    <RejectBanDialog
+      v-model="showReasonDialog"
+      :type="dialogType"
+      :item-name="`评论ID: ${currentComment?.id || ''}`"
+      :item-state="currentComment?.state"
+      item-type="评论"
+      :loading="submitting"
+      @confirm="handleConfirmAction"
+    />
   </div>
 </template>
 

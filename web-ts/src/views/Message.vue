@@ -9,16 +9,30 @@ import { messageServiceV1 } from '@/services/api/v1/apiServiceV1'
 import RightSidebar from '@/components/common/RightSidebar.vue'
 import MessageSidebar from '@/components/message/MessageSidebar.vue'
 import SystemMessageView from '@/components/message/SystemMessageView.vue'
-import CourseApplicationView from '@/components/message/CourseApplicationView.vue'
 import PrivateMessageView from '@/components/message/PrivateMessageView.vue'
+import { MessageCategory } from '@/types/enums'
 import type { MessageType } from '@/types/enums'
 
 // 响应式数据
-const selected: Ref<string> = ref('system')
+const selected: Ref<string> = ref('interaction')
 const messageList: Ref<any[]> = ref([])
 const systemMessageType: Ref<MessageType> = ref(99)
 const lastId: Ref<number> = ref(0x7fffffff)
 const lastReadTime: Ref<Date | null> = ref(null)
+
+// 根据选中类型获取消息分类
+const getCurrentCategory = (): number => {
+  switch (selected.value) {
+    case 'interaction':
+      return MessageCategory.INTERACTION
+    case 'system':
+      return MessageCategory.SYSTEM
+    case 'private':
+      return MessageCategory.PRIVATE
+    default:
+      return MessageCategory.INTERACTION
+  }
+}
 
 // 统计数据
 const unreadCount: Ref<number> = ref(5)
@@ -62,7 +76,14 @@ watch(selected, () => {
 // 数据加载函数
 const loadData = async ({ done }: { done: (status: string) => void }): Promise<void> => {
   try {
-    let response = await messageServiceV1.getSystemMessages(systemMessageType.value, lastId.value)
+    const category = getCurrentCategory()
+    const type = systemMessageType.value === 99 ? undefined : systemMessageType.value
+
+    let response = await messageServiceV1.getMessagesByCategory(
+      category,
+      lastId.value === 0x7fffffff ? undefined : lastId.value,
+      type
+    )
 
     if (response.code === 401) {
       console.log('not login')
@@ -114,10 +135,10 @@ const handleSelectUser = (user: any): void => {
 // 获取当前选中类型的描述
 const getSelectedTypeDescription = (): string => {
   switch (selected.value) {
+    case 'interaction':
+      return '关注、点赞、评论等互动消息'
     case 'system':
-      return '系统通知和重要消息'
-    case 'courseApply':
-      return '课程申请相关消息'
+      return '审核通知、系统通知等'
     case 'private':
       return '用户私信和交流消息'
     default:
@@ -176,6 +197,15 @@ onMounted(() => {
 
       <!-- 主内容区域 -->
       <v-col class="pt-0">
+        <!-- 互动消息视图 -->
+        <SystemMessageView
+          v-if="selected === 'interaction'"
+          :message-list="messageList"
+          :last-read-time="lastReadTime"
+          @load-data="loadData"
+          @update-system-message-type="handleSystemMessageTypeUpdate"
+        />
+
         <!-- 系统消息视图 -->
         <SystemMessageView
           v-if="selected === 'system'"
@@ -183,13 +213,6 @@ onMounted(() => {
           :last-read-time="lastReadTime"
           @load-data="loadData"
           @update-system-message-type="handleSystemMessageTypeUpdate"
-        />
-
-        <!-- 课程申请消息视图 -->
-        <CourseApplicationView
-          v-if="selected === 'courseApply'"
-          :message-list="messageList"
-          @load-data="loadData"
         />
 
         <!-- 私信消息视图 -->

@@ -94,6 +94,7 @@
       "subscriptions": "My Subscribed Courses",
       "myContents": "My Created Contents",
       "myArticles": "My Created Articles",
+      "myMemoryDecks": "My Memory Decks",
       "name": "Name",
       "biography": "Biography",
       "followers": "Followers",
@@ -587,7 +588,8 @@
     "noCommentsToReview": "No comments to review",
     "commentId": "Comment ID",
     "viewOriginal": "View Original",
-    "commentContent": "Comment Content:"
+    "commentContent": "Comment Content:",
+    "banned": "Banned"
   },
   "validation": {
     "required": {
@@ -607,6 +609,12 @@
     "subtitle": "View your notifications and messages",
     "systemNotification": "System Notifications",
     "courseApplication": "Course Applications",
+    "interactionMessage": "Interactions",
+    "systemMessage": "System",
+    "privateMessage": "Private",
+    "interactionMessageSubtitle": "Follows, likes, comments",
+    "systemMessageSubtitle": "Reviews, notifications",
+    "privateMessageSubtitle": "User messages",
     "unreadMessages": "Unread Messages",
     "totalMessages": "Total Messages",
     "systemRetention": "System only keeps messages within 30 days, please check in time",

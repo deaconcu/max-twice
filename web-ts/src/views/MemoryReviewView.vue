@@ -92,7 +92,7 @@ const reviewProgress = computed(() => {
 onMounted(() => {
   loadMemoryBankCourses()
   loadReviewQueue()
-  loadReviewStats()
+  // loadReviewStats() // 已注释：学习统计功能
 })
 
 // 加载记忆库课程
@@ -440,7 +440,7 @@ const completeReview = async () => {
     console.log('恭喜！所有到期卡片复习完成')
     // 重新加载课程数据以更新统计信息
     await loadMemoryBankCourses()
-    await loadReviewStats()
+    // await loadReviewStats() // 已注释：学习统计功能
   }
 }
 
@@ -785,6 +785,7 @@ const getCardStatusChips = (card: MemoryCardView): Array<{ text: string; color: 
             </v-list>
 
             <!-- 统计信息 -->
+            <!-- 已注释：学习统计功能
             <div class="mt-6 pa-3 rounded-lg bg-white">
               <h4 class="text-body-1 font-weight-bold text-grey-darken-4 mb-2">📊 学习统计</h4>
               <div class="d-flex justify-space-between text-body-2 mb-1">
@@ -804,6 +805,7 @@ const getCardStatusChips = (card: MemoryCardView): Array<{ text: string; color: 
                 <span class="font-weight-bold text-info">{{ stats.timeSpent }}分钟</span>
               </div>
             </div>
+            -->
           </v-card-text>
         </v-card>
       </v-col>

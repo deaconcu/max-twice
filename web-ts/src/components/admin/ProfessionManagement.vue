@@ -330,142 +330,16 @@
       </div>
     </div>
 
-    <!-- 拒绝/屏蔽申请对话框 -->
-    <v-dialog v-model="showRejectDialog" max-width="500px" persistent>
-      <v-card rounded="lg">
-        <v-card-title class="text-h6 font-weight-bold pa-6 pb-4">
-          <v-icon
-            :icon="dialogType === 'ban' ? 'mdi-cancel' : 'mdi-close-circle-outline'"
-            :color="dialogType === 'ban' ? 'grey-darken-2' : 'red-darken-2'"
-            class="mr-3"
-          ></v-icon>
-          {{
-            dialogType === 'ban'
-              ? '屏蔽职业'
-              : currentProfession?.state === ContentState.PUBLISHED
-                ? '撤销职业通过'
-                : currentProfession?.state === ContentState.BANNED
-                  ? '降级为拒绝'
-                  : '拒绝职业申请'
-          }}
-        </v-card-title>
-
-        <v-card-text class="pa-6 pt-0">
-          <div class="mb-4">
-            <div class="text-body-2 text-grey-darken-1 mb-2">
-              职业名称：<strong>{{ currentProfession?.name }}</strong>
-            </div>
-            <div
-              v-if="dialogType === 'ban'"
-              class="text-body-2 text-grey-darken-2 mb-2"
-            >
-              <v-icon icon="mdi-alert" size="16" class="mr-1"></v-icon>
-              注意：屏蔽后此职业将被永久封禁，不可见
-            </div>
-            <div
-              v-else-if="currentProfession?.state === ContentState.PUBLISHED"
-              class="text-body-2 text-orange-darken-2 mb-2"
-            >
-              <v-icon icon="mdi-alert" size="16" class="mr-1"></v-icon>
-              注意：此职业已通过审核，撤销后将变为拒绝状态
-            </div>
-            <div
-              v-else-if="currentProfession?.state === ContentState.BANNED"
-              class="text-body-2 text-orange-darken-2 mb-2"
-            >
-              <v-icon icon="mdi-alert" size="16" class="mr-1"></v-icon>
-              注意：此职业当前为屏蔽状态，降级后将变为拒绝状态
-            </div>
-          </div>
-
-          <div class="mb-4">
-            <div class="text-body-2 font-weight-medium mb-2">
-              {{
-                dialogType === 'ban'
-                  ? '选择屏蔽原因：'
-                  : currentProfession?.state === ContentState.PUBLISHED
-                    ? '选择撤销原因：'
-                    : currentProfession?.state === ContentState.BANNED
-                      ? '选择降级原因：'
-                      : '选择拒绝原因：'
-              }}
-            </div>
-            <v-chip-group
-              v-model="selectedRejectReason"
-              :color="dialogType === 'ban' ? 'grey-darken-1' : 'red-lighten-3'"
-              variant="flat"
-            >
-              <v-chip
-                v-for="reason in dialogType === 'ban' ? banReasons : rejectReasons"
-                :key="reason"
-                :value="reason"
-                rounded="lg"
-                size="small"
-                class="mb-2"
-              >
-                {{ reason }}
-              </v-chip>
-            </v-chip-group>
-          </div>
-
-          <v-textarea
-            v-model="rejectReason"
-            :label="
-              dialogType === 'ban'
-                ? '屏蔽原因'
-                : currentProfession?.state === ContentState.PUBLISHED
-                  ? '撤销原因'
-                  : currentProfession?.state === ContentState.BANNED
-                    ? '降级原因'
-                    : '拒绝原因'
-            "
-            :placeholder="
-              dialogType === 'ban'
-                ? '请详细说明屏蔽的原因...'
-                : currentProfession?.state === ContentState.PUBLISHED
-                  ? '请详细说明撤销通过的原因...'
-                  : currentProfession?.state === ContentState.BANNED
-                    ? '请详细说明降级的原因...'
-                    : '请详细说明拒绝的原因...'
-            "
-            variant="outlined"
-            rows="4"
-            rounded="lg"
-            :bg-color="dialogType === 'ban' ? 'grey-lighten-5' : 'grey-lighten-5'"
-          ></v-textarea>
-        </v-card-text>
-
-        <v-card-actions class="pa-6 pt-0">
-          <v-spacer></v-spacer>
-          <v-btn variant="outlined" color="grey" rounded="lg" @click="closeRejectDialog">
-            取消
-          </v-btn>
-          <v-btn
-            variant="flat"
-            :color="dialogType === 'ban' ? 'grey-lighten-2' : 'red-lighten-4'"
-            rounded="lg"
-            :disabled="!rejectReason.trim()"
-            :loading="rejecting"
-            @click="dialogType === 'ban' ? banProfession() : rejectProfession()"
-          >
-            <v-icon
-              :icon="dialogType === 'ban' ? 'mdi-cancel' : 'mdi-close'"
-              :color="dialogType === 'ban' ? 'grey-darken-2' : 'red-darken-2'"
-              class="mr-2"
-            ></v-icon>
-            {{
-              dialogType === 'ban'
-                ? '确认屏蔽'
-                : currentProfession?.state === ContentState.PUBLISHED
-                  ? '确认撤销'
-                  : currentProfession?.state === ContentState.BANNED
-                    ? '确认降级'
-                    : '确认拒绝'
-            }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <!-- 拒绝/屏蔽对话框 -->
+    <RejectBanDialog
+      v-model="showReasonDialog"
+      :type="dialogType"
+      :item-name="currentProfession?.name || ''"
+      :item-state="currentProfession?.state"
+      item-type="职业"
+      :loading="submitting"
+      @confirm="handleConfirmAction"
+    />
 
     <!-- 编辑职业对话框 -->
     <v-dialog v-model="showEditDialog" max-width="700px" persistent>
@@ -592,6 +466,7 @@ import { ContentState } from '@/types/enums'
 import type { Profession, ProfessionCategory, CategoryMapping } from '@/types/profession'
 import type { StateOption } from '@/types/common'
 import CategorySelector from '../common/CategorySelector.vue'
+import RejectBanDialog from './RejectBanDialog.vue'
 import { professionNameRules, professionDescriptionRules, categoryRules } from '@/utils/validationRules'
 import { PROFESSION_VALIDATION } from '@/types/validation'
 
@@ -624,12 +499,12 @@ const loading = ref<boolean>(false)
 const lastId = ref<number>(0)
 const hasMoreData = ref<boolean>(true)
 const selectedStateIndex = ref<number>(0)
-const rejectReason = ref<string>('')
-const selectedRejectReason = ref<string>('')
-const showRejectDialog = ref<boolean>(false)
+
+// 拒绝/屏蔽对话框
+const showReasonDialog = ref<boolean>(false)
 const currentProfession = ref<ProfessionWithUIState | null>(null)
-const rejecting = ref<boolean>(false)
-const dialogType = ref<'reject' | 'ban'>('reject') // 区分是拒绝还是屏蔽操作
+const submitting = ref<boolean>(false)
+const dialogType = ref<'reject' | 'ban'>('reject')
 
 // 编辑相关数据
 const showEditDialog = ref<boolean>(false)
@@ -697,25 +572,6 @@ const stateOptions: StateOption[] = [
     color: 'grey-lighten-2',
     icon: 'mdi-cancel',
   },
-]
-
-// 预设拒绝理由
-const rejectReasons: string[] = [
-  '职业描述不够详细',
-  '技能要求不明确',
-  '重复申请',
-  '不符合平台定位',
-  '信息不完整',
-]
-
-// 预设屏蔽理由
-const banReasons: string[] = [
-  '严重违规内容',
-  '虚假信息',
-  '侵犯版权',
-  '恶意刷屏',
-  '违反平台政策',
-  '其他严重违规'
 ]
 
 // 获取当前选中的状态
@@ -891,64 +747,33 @@ const restoreProfession = async (profession: ProfessionWithUIState): Promise<voi
 // 显示拒绝对话框
 const showRejectModal = (profession: ProfessionWithUIState): void => {
   currentProfession.value = profession
-  rejectReason.value = ''
-  selectedRejectReason.value = ''
   dialogType.value = 'reject'
-  showRejectDialog.value = true
-}
-
-// 关闭拒绝对话框
-const closeRejectDialog = (): void => {
-  showRejectDialog.value = false
-  currentProfession.value = null
-  rejectReason.value = ''
-  selectedRejectReason.value = ''
-}
-
-// 拒绝申请
-const rejectProfession = async (): Promise<void> => {
-  if (!rejectReason.value.trim()) {
-    showSnackbar?.('请输入拒绝原因')
-    return
-  }
-
-  try {
-    rejecting.value = true
-    const success = await operateProfession(currentProfession.value!, 'REJECT', rejectReason.value)
-    if (success) {
-      showSnackbar?.('操作成功')
-      closeRejectDialog()
-    }
-  } finally {
-    rejecting.value = false
-  }
+  showReasonDialog.value = true
 }
 
 // 显示屏蔽对话框
 const showBanModal = (profession: ProfessionWithUIState): void => {
   currentProfession.value = profession
-  rejectReason.value = ''
-  selectedRejectReason.value = ''
   dialogType.value = 'ban'
-  showRejectDialog.value = true
+  showReasonDialog.value = true
 }
 
-// 屏蔽职业
-const banProfession = async (): Promise<void> => {
-  if (!rejectReason.value.trim()) {
-    showSnackbar?.('请输入屏蔽原因')
-    return
-  }
+// 处理对话框确认
+const handleConfirmAction = async (reason: string): Promise<void> => {
+  if (!currentProfession.value) return
 
   try {
-    rejecting.value = true
-    const success = await operateProfession(currentProfession.value!, 'BAN', rejectReason.value)
+    submitting.value = true
+    const action = dialogType.value === 'reject' ? 'REJECT' : 'BAN'
+    const success = await operateProfession(currentProfession.value, action, reason)
+
     if (success) {
       showSnackbar?.('操作成功')
-      closeRejectDialog()
+      showReasonDialog.value = false
+      currentProfession.value = null
     }
   } finally {
-    rejecting.value = false
+    submitting.value = false
   }
 }
 
@@ -980,13 +805,6 @@ const unbanProfession = async (profession: ProfessionWithUIState): Promise<void>
     showSnackbar?.('操作失败: 服务器开小差了')
   }
 }
-
-// 监听选中的拒绝理由
-watch(selectedRejectReason, (newValue: string) => {
-  if (newValue) {
-    rejectReason.value = newValue
-  }
-})
 
 // 显示编辑对话框
 const showEditModal = (profession: ProfessionWithUIState): void => {

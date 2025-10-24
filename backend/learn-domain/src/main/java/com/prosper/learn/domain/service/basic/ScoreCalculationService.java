@@ -180,7 +180,7 @@ public class ScoreCalculationService {
         
         try {
             // 1. 获取历史点赞数据并计算时间加权
-            Map<LocalDate, DailyData> dailyData = getDailyUpvoteHistory(post.getId(), Enums.ObjectType.post);
+            Map<LocalDate, DailyData> dailyData = getDailyUpvoteHistory(post.getId(), Enums.ContentType.post);
             TimeWeightedData timeWeightedData = calculateTimeWeightedData(dailyData);
 
             // 2. 使用时间加权后的数据进行贝叶斯平滑
@@ -214,7 +214,7 @@ public class ScoreCalculationService {
         
         try {
             // 1. 获取历史点赞数据并计算时间加权
-            Map<LocalDate, DailyData> dailyData = getDailyUpvoteHistory(roadmap.getId(), Enums.ObjectType.roadmap);
+            Map<LocalDate, DailyData> dailyData = getDailyUpvoteHistory(roadmap.getId(), Enums.ContentType.roadmap);
             TimeWeightedData timeWeightedData = calculateTimeWeightedData(dailyData);
 
             // 2. 使用时间加权后的数据进行贝叶斯平滑
@@ -294,7 +294,7 @@ public class ScoreCalculationService {
     /**
      * 获取文章或路线图的每日点赞历史数据，包含分数和样本数
      */
-    private Map<LocalDate, DailyData> getDailyUpvoteHistory(long objectId, Enums.ObjectType objectType) {
+    private Map<LocalDate, DailyData> getDailyUpvoteHistory(long objectId, Enums.ContentType contentType) {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(MAX_DAYS_HISTORY);
 
@@ -305,7 +305,7 @@ public class ScoreCalculationService {
         int endYear = endDate.getYear();
 
         for (int year = startYear; year <= endYear; year++) {
-            PostStatsDO yearStats = postStatsMapper.getByTypeAndObjectIdAndYear( objectType.value(), (long) objectId, year);
+            PostStatsDO yearStats = postStatsMapper.getByTypeAndObjectIdAndYear( contentType.value(), (long) objectId, year);
 
             if (yearStats != null) {
                 try {

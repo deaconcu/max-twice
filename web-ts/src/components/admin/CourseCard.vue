@@ -129,7 +129,7 @@
             </template>
 
             <!-- 已批准状态：撤销通过、屏蔽 -->
-            <template v-if="course.state === ContentState.APPROVED">
+            <template v-if="course.state === ContentState.PUBLISHED">
               <!-- 撤销通过按钮 -->
               <v-btn
                 variant="flat"

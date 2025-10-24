@@ -105,8 +105,20 @@ public class MessageDataService extends AbstractDataService<MessageDO, MessageMa
     /**
      * 获取系统消息详情列表
      */
-    public List<MessageDO> getSystemItemListByUser(int type, long receiverId, long lastId, int limit) {
+    public List<MessageDO> getSystemItemListByUser(int type, long receiverId, Long lastId, int limit) {
         return messageMapper.getSystemItemListByUser(type, receiverId, lastId, limit);
+    }
+
+    /**
+     * 按类型查询消息列表
+     * @param type 消息类型
+     * @param receiverId 接收者ID
+     * @param lastId 最后一条消息ID，为null时查询首页
+     * @param limit 查询数量
+     * @return 消息列表
+     */
+    public List<MessageDO> listByType(int type, long receiverId, Long lastId, int limit) {
+        return messageMapper.listByType(type, receiverId, lastId, limit);
     }
 
     /**
@@ -128,5 +140,17 @@ public class MessageDataService extends AbstractDataService<MessageDO, MessageMa
      */
     public long getApplyCourseCount() {
         return messageMapper.getApplyCourseCount();
+    }
+
+    /**
+     * 按分类查询消息（支持分页）
+     * @param receiverId 接收者ID
+     * @param category 消息分类 1=互动消息, 2=系统消息, 3=私信
+     * @param lastId 最后一条消息ID，为null时查询首页
+     * @param limit 查询数量
+     * @return 消息列表
+     */
+    public List<MessageDO> listByCategory(long receiverId, int category, Long lastId, int limit) {
+        return messageMapper.listByCategory(receiverId, category, lastId, limit);
     }
 }

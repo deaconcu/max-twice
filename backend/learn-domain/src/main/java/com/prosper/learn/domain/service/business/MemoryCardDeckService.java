@@ -1,6 +1,7 @@
 package com.prosper.learn.domain.service.business;
 
 import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.basic.ScoreCalculationService;
 import com.prosper.learn.domain.service.data.*;
 import com.prosper.learn.domain.service.autoauthor.AutoAuthorQueueService;
@@ -32,6 +33,7 @@ public class MemoryCardDeckService {
     private final MemoryCardDataService memoryCardDataService;
     private final UserDataService userDataService;
     private final PostDataService postDataService;
+    private final MessageService messageService;
     private final MemoryCardDeckConverter deckConverter;
     private final UserConverter userConverter;
     private final UserService userService;
@@ -84,7 +86,7 @@ public class MemoryCardDeckService {
 
         // 填充点赞状态（如果提供了用户ID）
         if (userId != null) {
-            boolean hasUpvoted = upvoteService.getUpvoteStatus(deckDO.getId(), Enums.ObjectType.memory_card_deck.value(), userId).getUpvoted();
+            boolean hasUpvoted = upvoteService.getUpvoteStatus(deckDO.getId(), Enums.ContentType.memory_card_deck.value(), userId).getUpvoted();
             dto.setHasUpvoted(hasUpvoted);
         }
 
@@ -135,7 +137,7 @@ public class MemoryCardDeckService {
                 .collect(Collectors.toSet());
             // 批量查询点赞状态
             for (Long deckId : deckIds) {
-                boolean hasUpvoted = upvoteService.getUpvoteStatus(deckId, Enums.ObjectType.memory_card_deck.value(), userId).getUpvoted();
+                boolean hasUpvoted = upvoteService.getUpvoteStatus(deckId, Enums.ContentType.memory_card_deck.value(), userId).getUpvoted();
                 upvoteStatusMap.put(deckId, hasUpvoted);
             }
         }
@@ -482,7 +484,7 @@ public class MemoryCardDeckService {
 
         // 构建卡片组DO
         MemoryCardDeckDO deck = new MemoryCardDeckDO();
-        deck.setSourcePostId(request.getSourcePostId());
+        deck.setPostId(request.getSourcePostId());
         deck.setNodeId(nodeId);
         deck.setCreatorId(userId);
         deck.setTitle(request.getTitle());
@@ -550,7 +552,7 @@ public class MemoryCardDeckService {
      * 审核通过卡片组
      */
     @Transactional
-    public void approveDeck(Long deckId, Long auditorId) {
+    public void approve(Long deckId, Long auditorId) {
         // 获取卡片组
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
 
@@ -571,42 +573,76 @@ public class MemoryCardDeckService {
      * 拒绝卡片组（审核不通过）
      */
     @Transactional
-    public void rejectDeck(Long deckId, Long auditorId) {
+    public void reject(Long deckId, Long auditorId, String reason) {
         // 获取卡片组
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
 
-        // 验证状态：只有待审核的卡片组才能拒绝
-        if (deck.getState() != Enums.ContentState.SUBMITTED.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只有待审核状态的卡片组才能拒绝");
+        // 获取帖子信息用于通知
+        PostDO postDO = postDataService.getById(deck.getPostId());
+        String postContentPreview = "";
+        if (postDO != null && postDO.getContent() != null) {
+            postContentPreview = postDO.getContent();
+            if (postContentPreview.length() > 50) {
+                postContentPreview = postContentPreview.substring(0, 50) + "...";
+            }
         }
 
         // 更新状态为审核不通过
         deck.setState(Enums.ContentState.REJECTED.value());
+        deck.setReason(reason);
         deck.setUpdatedAt(LocalDateTime.now());
 
         deckDataService.update(deck);
-        log.info("Deck {} rejected by user {}", deckId, auditorId);
+        log.info("Deck {} rejected by user {}, reason: {}", deckId, auditorId, reason);
+
+        // 发送拒绝通知
+        messageService.sendMemoryDeckModeration(
+            deck.getCreatorId(),
+            deck.getId(),
+            deck.getTitle(),
+            deck.getPostId(),
+            postContentPreview,
+            Enums.ModerationAction.REJECTED,
+            reason
+        );
     }
 
     /**
      * 封禁卡片组（违规封禁）
      */
     @Transactional
-    public void banDeck(Long deckId, Long auditorId) {
+    public void ban(Long deckId, Long auditorId, String reason) {
         // 获取卡片组
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
 
-        // 验证状态：只有正常状态的卡片组才能封禁
-        if (deck.getState() != Enums.ContentState.PUBLISHED.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只有正常状态的卡片组才能封禁");
+        // 获取帖子信息用于通知
+        PostDO postDO = postDataService.getById(deck.getPostId());
+        String postContentPreview = "";
+        if (postDO != null && postDO.getContent() != null) {
+            postContentPreview = postDO.getContent();
+            if (postContentPreview.length() > 50) {
+                postContentPreview = postContentPreview.substring(0, 50) + "...";
+            }
         }
 
         // 更新状态为封禁
         deck.setState(Enums.ContentState.BANNED.value());
+        deck.setReason(reason);
         deck.setUpdatedAt(LocalDateTime.now());
 
         deckDataService.update(deck);
-        log.info("Deck {} banned by user {}", deckId, auditorId);
+        log.info("Deck {} banned by user {}, reason: {}", deckId, auditorId, reason);
+
+        // 发送封禁通知
+        messageService.sendMemoryDeckModeration(
+            deck.getCreatorId(),
+            deck.getId(),
+            deck.getTitle(),
+            deck.getPostId(),
+            postContentPreview,
+            Enums.ModerationAction.BANNED,
+            reason
+        );
     }
 
     /**
@@ -812,8 +848,8 @@ public class MemoryCardDeckService {
         
         // 获取nodeId：deck.sourcePostId → post.nodeId
         Long nodeId = null;
-        if (deck.getSourcePostId() != null) {
-            PostDO post = postDataService.getById(deck.getSourcePostId());
+        if (deck.getPostId() != null) {
+            PostDO post = postDataService.getById(deck.getPostId());
             if (post != null) {
                 nodeId = post.getNodeId();
             }

@@ -214,7 +214,7 @@
 | 现有接口 | 新接口路径 | 说明 |
 |---------|-----------|-----|
 | (空接口) | `POST /api/v1/upvotes` | 点赞操作（从AggregateClient迁移） |
-| (空接口) | `GET /api/v1/upvotes/status?objectId=123&objectType=1` | 获取点赞状态 |
+| (空接口) | `GET /api/v1/upvotes/status?objectId=123&contentType=1` | 获取点赞状态 |
 
 ---
 

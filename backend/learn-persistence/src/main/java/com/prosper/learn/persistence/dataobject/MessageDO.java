@@ -17,6 +17,8 @@ public class MessageDO {
 
     private Integer type;
 
+    private Integer category;  // 新增字段：消息分类 1=互动消息, 2=系统消息, 3=私信
+
     private LocalDateTime createdAt;
 
 }

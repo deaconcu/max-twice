@@ -64,6 +64,27 @@ public class MessagesController {
     }
 
     /**
+     * 按分类获取消息列表
+     * 映射: GET /api/v1/messages/category
+     * @param category 消息分类 1=互动消息, 2=系统消息, 3=私信
+     * @param lastId 最后一条消息的ID，用于分页，首次请求可不传
+     * @param type 可选的消息类型过滤
+     */
+    @GetMapping("/messages/category")
+    public ApiResponse<List<MessageDTO>> getMessagesByCategory(
+            @RequestParam @NotNull(message = "消息分类不能为空")
+            @Min(value = 1, message = "消息分类必须为1-3")
+            @Max(value = 3, message = "消息分类必须为1-3")
+            int category,
+            @RequestParam(required = false) Long lastId,
+            @RequestParam(required = false) Integer type) {
+
+        long userId = StpUtil.getLoginIdAsLong();
+        List<MessageDTO> messageDTOList = messageService.getListByCategory(category, userId, lastId, type);
+        return ApiResponse.success(messageDTOList);
+    }
+
+    /**
      * 获取消息列表
      * 映射: GET /message → GET /api/v1/messages
      */

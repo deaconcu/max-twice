@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { postServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { ContentState, PostType, ApprovalAction } from '@/types/enums'
 import type { Post } from '@/types/post'
+import RejectBanDialog from './RejectBanDialog.vue'
 
 const { t } = useI18n()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
@@ -18,6 +19,12 @@ const pageSize = 20
 const filterNodeId = ref<number | undefined>(undefined)
 const filterCreatorId = ref<number | undefined>(undefined)
 const isFilterMode = ref<boolean>(false)
+
+// 拒绝/屏蔽对话框
+const showReasonDialog = ref<boolean>(false)
+const currentPost = ref<Post | null>(null)
+const submitting = ref<boolean>(false)
+const dialogType = ref<'reject' | 'ban'>('reject')
 
 // 标签配置
 interface TabConfig {
@@ -39,7 +46,7 @@ const tabs: TabConfig[] = [
   {
     key: 'approved',
     label: '已批准',
-    state: ContentState.APPROVED,
+    state: ContentState.PUBLISHED,
     icon: 'mdi-check-circle',
     color: 'green'
   },
@@ -110,10 +117,15 @@ const getPostsByFilter = async (isLoadMore: boolean = false): Promise<void> => {
       ? allPostList.value[allPostList.value.length - 1].id
       : undefined
 
+    // 获取当前tab的状态
+    const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
+    const state = currentTabConfig?.state
+
     const response = await postServiceV1.getPostsByFilter(
       filterNodeId.value,
       filterCreatorId.value,
-      lastId
+      lastId,
+      state
     )
 
     if (response.code === 401) {
@@ -185,7 +197,13 @@ const approvePost = async (post: Post, approve: boolean): Promise<void> => {
       const updatedPost = response.data as Post
       const index = allPostList.value.findIndex(p => p.id === post.id)
       if (index !== -1) {
-        allPostList.value[index].state = updatedPost.state
+        // 如果状态改变且当前tab不是目标状态，从列表中移除
+        const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
+        if (updatedPost.state !== currentTabConfig?.state) {
+          allPostList.value.splice(index, 1)
+        } else {
+          allPostList.value[index].state = updatedPost.state
+        }
       }
 
       showSnackbar?.(t('admin.operationSuccess'))
@@ -195,48 +213,68 @@ const approvePost = async (post: Post, approve: boolean): Promise<void> => {
   }
 }
 
-// 拒绝文章
-const rejectPost = async (post: Post): Promise<void> => {
-  try {
-    const response = await postServiceV1.approvePost(post.id, ApprovalAction.REJECT)
+// 显示拒绝对话框
+const showRejectDialog = (post: Post) => {
+  currentPost.value = post
+  dialogType.value = 'reject'
+  showReasonDialog.value = true
+}
 
-    if (response.code === 401) {
-      console.log('not login')
-    } else if (response.code === 200) {
+// 显示屏蔽对话框
+const showBanDialog = (post: Post) => {
+  currentPost.value = post
+  dialogType.value = 'ban'
+  showReasonDialog.value = true
+}
+
+// 处理对话框确认
+const handleConfirmAction = async (reason: string) => {
+  if (!currentPost.value) return
+
+  try {
+    submitting.value = true
+    const action = dialogType.value === 'reject' ? ApprovalAction.REJECT : ApprovalAction.BAN
+    const targetState = dialogType.value === 'reject' ? ContentState.REJECTED : ContentState.BANNED
+
+    const response = await postServiceV1.approvePost(currentPost.value.id, action, reason)
+
+    if (response.code === 200) {
       // 更新本地状态
-      const index = allPostList.value.findIndex(p => p.id === post.id)
+      const index = allPostList.value.findIndex(p => p.id === currentPost.value!.id)
       if (index !== -1) {
-        allPostList.value[index].state = ContentState.REJECTED
+        // 如果当前tab不是目标状态，从列表中移除
+        const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
+        if (currentTabConfig?.state !== targetState) {
+          allPostList.value.splice(index, 1)
+        } else {
+          allPostList.value[index].state = targetState
+        }
       }
 
-      showSnackbar?.('操作成功')
+      const message = dialogType.value === 'reject' ? '已拒绝' : '已屏蔽'
+      showSnackbar?.(message, 'success')
+
+      showReasonDialog.value = false
+      currentPost.value = null
+    } else {
+      showSnackbar?.(response.message || '操作失败', 'error')
     }
   } catch (error) {
-    console.error('Error rejecting post:', error)
+    console.error('Error updating post:', error)
     showSnackbar?.('操作失败', 'error')
+  } finally {
+    submitting.value = false
   }
 }
 
-// 屏蔽文章
+// 拒绝文章（已弃用，保留兼容）
+const rejectPost = async (post: Post): Promise<void> => {
+  showRejectDialog(post)
+}
+
+// 屏蔽文章（已弃用，保留兼容）
 const banPost = async (post: Post): Promise<void> => {
-  try {
-    const response = await postServiceV1.approvePost(post.id, ApprovalAction.BAN)
-
-    if (response.code === 401) {
-      console.log('not login')
-    } else if (response.code === 200) {
-      // 更新本地状态
-      const index = allPostList.value.findIndex(p => p.id === post.id)
-      if (index !== -1) {
-        allPostList.value[index].state = ContentState.BANNED
-      }
-
-      showSnackbar?.('已屏蔽')
-    }
-  } catch (error) {
-    console.error('Error banning post:', error)
-    showSnackbar?.('操作失败', 'error')
-  }
+  showBanDialog(post)
 }
 
 // 取消屏蔽文章
@@ -250,7 +288,13 @@ const unbanPost = async (post: Post): Promise<void> => {
       // 更新本地状态
       const index = allPostList.value.findIndex(p => p.id === post.id)
       if (index !== -1) {
-        allPostList.value[index].state = ContentState.APPROVED
+        // 如果当前tab不是"已批准"，从列表中移除
+        const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
+        if (currentTabConfig?.state !== ContentState.PUBLISHED) {
+          allPostList.value.splice(index, 1)
+        } else {
+          allPostList.value[index].state = ContentState.PUBLISHED
+        }
       }
 
       showSnackbar?.('已取消屏蔽')
@@ -262,11 +306,12 @@ const unbanPost = async (post: Post): Promise<void> => {
 }
 
 // 监听tab切换，重新加载数据
-const handleTabChange = async (newTab: string) => { if (isFilterMode.value) {
-    // 如果在筛选模式下，切换tab时清除筛选
-    await clearFilter()
+const handleTabChange = async (newTab: string) => {
+  hasMore.value = true
+  if (isFilterMode.value) {
+    // 如果在筛选模式下，切换tab时重新应用筛选（保留筛选条件和状态）
+    await getPostsByFilter()
   } else {
-    hasMore.value = true
     await getPostsByTab(newTab)
   }
 }
@@ -389,7 +434,6 @@ onMounted(() => {
 
     <!-- 状态标签 -->
     <v-tabs
-      v-if="!isFilterMode"
       v-model="currentTab"
       color="primary"
       class="mb-6"
@@ -452,7 +496,7 @@ onMounted(() => {
                 {{ t('admin.pending') }}
               </v-chip>
               <v-chip
-                v-if="post.state == ContentState.APPROVED"
+                v-if="post.state == ContentState.PUBLISHED"
                 variant="flat"
                 color="green-lighten-4"
                 rounded="lg"
@@ -517,7 +561,7 @@ onMounted(() => {
             </div>
 
             <!-- 已批准状态：撤销通过、屏蔽 -->
-            <div v-if="post.state == ContentState.APPROVED" class="d-flex flex-column ga-2">
+            <div v-if="post.state == ContentState.PUBLISHED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
                 color="orange-lighten-4"
@@ -540,7 +584,7 @@ onMounted(() => {
               </v-btn>
             </div>
 
-            <!-- 已拒绝状态：通过 -->
+            <!-- 已拒绝状态：通过、屏蔽 -->
             <div v-if="post.state == ContentState.REJECTED" class="d-flex flex-column ga-2">
               <v-btn
                 variant="flat"
@@ -551,6 +595,16 @@ onMounted(() => {
               >
                 <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
                 通过
+              </v-btn>
+              <v-btn
+                variant="flat"
+                color="grey-lighten-2"
+                rounded="lg"
+                size="small"
+                @click="banPost(post)"
+              >
+                <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                屏蔽
               </v-btn>
             </div>
 
@@ -580,7 +634,7 @@ onMounted(() => {
           </div>
 
           <!-- 内容区域 -->
-          <div class="flex-grow-1">
+          <div class="flex-grow-1 post-content-area">
             <div class="d-flex align-center mb-3">
               <v-avatar size="32" color="grey-lighten-3" class="mr-3">
                 <v-icon icon="mdi-account" color="grey-darken-1" size="18"></v-icon>
@@ -639,13 +693,59 @@ onMounted(() => {
     <div v-if="!hasMore && postList.length > 0" class="text-center py-4">
       <span class="text-grey-darken-1">没有更多数据了</span>
     </div>
+
+    <!-- 拒绝/屏蔽对话框 -->
+    <RejectBanDialog
+      v-model="showReasonDialog"
+      :type="dialogType"
+      :item-name="currentPost?.title || ''"
+      :item-state="currentPost?.state"
+      item-type="帖子"
+      :loading="submitting"
+      @confirm="handleConfirmAction"
+    />
   </div>
 </template>
 
 <style scoped>
+  /* 防止flex子元素溢出 */
+  .post-content-area {
+    min-width: 0;
+    overflow: hidden;
+  }
+
   .tiptap.post-content {
     max-height: 200px;
     overflow-y: auto;
+    overflow-x: auto;
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* 防止内容中的元素溢出 */
+  .tiptap.post-content :deep(*) {
+    max-width: 100%;
+  }
+
+  /* 代码块样式 */
+  .tiptap.post-content :deep(pre) {
+    overflow-x: auto;
+    white-space: pre;
+    word-wrap: normal;
+  }
+
+  /* 表格样式 */
+  .tiptap.post-content :deep(table) {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  /* 图片样式 */
+  .tiptap.post-content :deep(img) {
+    max-width: 100%;
+    height: auto;
   }
 
   .action-area {

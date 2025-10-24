@@ -9,6 +9,7 @@ import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.DailyStatsService;
+import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.util.Util;
 import com.prosper.learn.domain.util.converter.CourseConverter;
 import com.prosper.learn.domain.util.converter.NodeConverter;
@@ -59,6 +60,7 @@ public class PostService {
     private final UpvoteDataService upvoteDataService;
     private final UserDataService userDataService;
     private final DailyStatsService dailyStatsService;
+    private final MessageService messageService;
     private final ObjectMapper objectMapper;
     private final SystemProperties systemProperties;
     private final UserConverter userConverter;
@@ -115,7 +117,7 @@ public class PostService {
 
         Map<Long, Integer> types = new HashMap<>();
         if (allPostingIds.size() > 0) {
-            List<UpvoteDO> upvotes = upvoteDataService.getList(userId, allPostingIds, Enums.ObjectType.post.value());
+            List<UpvoteDO> upvotes = upvoteDataService.getList(userId, allPostingIds, Enums.ContentType.post.value());
             for (UpvoteDO upvote : upvotes) {
                 types.put(upvote.getObjectId(), upvote.getType());
             }
@@ -164,7 +166,7 @@ public class PostService {
         });
 
         if (allPostingIds.size() > 0) {
-            List<UpvoteDO> upvotes = upvoteDataService.getList(userId, allPostingIds, Enums.ObjectType.post.value());
+            List<UpvoteDO> upvotes = upvoteDataService.getList(userId, allPostingIds, Enums.ContentType.post.value());
             Map<Long, Integer> types = new HashMap<>();
             for (UpvoteDO upvote : upvotes) {
                 types.put(upvote.getObjectId(), upvote.getType());
@@ -387,11 +389,11 @@ public class PostService {
     }
 
     /**
-     * 根据节点和用户筛选帖子列表（不限状态）
+     * 根据节点、用户和状态筛选帖子列表
      */
-    public List<PostDTO> getPostsByNodeAndCreator(Long nodeId, Long creatorId, Long lastId) {
+    public List<PostDTO> getPostsByNodeAndCreator(Long nodeId, Long creatorId, Long lastId, Byte state) {
         int limit = systemProperties.getPosting().getPendingPostsLimit();
-        List<PostDO> postDOList = postDataService.getListByNodeAndCreator(nodeId, creatorId, lastId, limit);
+        List<PostDO> postDOList = postDataService.getListByNodeAndCreator(nodeId, creatorId, lastId, state, limit);
         for (PostDO postDO : postDOList) {
             if (postDO.getType() == Enums.PostType.contents.value()) {
                 idToName(postDO);
@@ -558,7 +560,37 @@ public class PostService {
     @Transactional
     public void reject(Long id, String reason) {
         validatePostId(id);
-        postDataService.reject(id, reason);
+
+        // 获取帖子信息用于通知
+        PostDO postDO = postDataService.getById(id);
+        if (postDO != null) {
+            NodeDO nodeDO = nodeDataService.getById(postDO.getNodeId());
+            CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
+
+            // 截取内容前50个字符作为预览
+            String contentPreview = postDO.getContent();
+            if (contentPreview != null && contentPreview.length() > 50) {
+                contentPreview = contentPreview.substring(0, 50) + "...";
+            }
+
+            postDataService.reject(id, reason);
+
+            // 发送拒绝通知
+            if (nodeDO != null && courseDO != null) {
+                messageService.sendPostModeration(
+                    postDO.getCreatorId(),
+                    postDO.getId(),
+                    contentPreview,
+                    nodeDO.getId(),
+                    nodeDO.getName(),
+                    courseDO.getName(),
+                    Enums.ModerationAction.REJECTED,
+                    reason
+                );
+            }
+        } else {
+            postDataService.reject(id, reason);
+        }
     }
 
     /**
@@ -567,7 +599,37 @@ public class PostService {
     @Transactional
     public void ban(Long id, String reason) {
         validatePostId(id);
-        postDataService.ban(id, reason);
+
+        // 获取帖子信息用于通知
+        PostDO postDO = postDataService.getById(id);
+        if (postDO != null) {
+            NodeDO nodeDO = nodeDataService.getById(postDO.getNodeId());
+            CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
+
+            // 截取内容前50个字符作为预览
+            String contentPreview = postDO.getContent();
+            if (contentPreview != null && contentPreview.length() > 50) {
+                contentPreview = contentPreview.substring(0, 50) + "...";
+            }
+
+            postDataService.ban(id, reason);
+
+            // 发送封禁通知
+            if (nodeDO != null && courseDO != null) {
+                messageService.sendPostModeration(
+                    postDO.getCreatorId(),
+                    postDO.getId(),
+                    contentPreview,
+                    nodeDO.getId(),
+                    nodeDO.getName(),
+                    courseDO.getName(),
+                    Enums.ModerationAction.BANNED,
+                    reason
+                );
+            }
+        } else {
+            postDataService.ban(id, reason);
+        }
     }
 
     /**
@@ -716,7 +778,7 @@ public class PostService {
             return new HashMap<>();
         }
         
-        List<UpvoteDO> upvotes = upvoteDataService.getList(userId, postIds, Enums.ObjectType.post.value());
+        List<UpvoteDO> upvotes = upvoteDataService.getList(userId, postIds, Enums.ContentType.post.value());
         Map<Long, Integer> types = new HashMap<>();
         for (UpvoteDO upvote : upvotes) {
             types.put(upvote.getObjectId(), upvote.getType());

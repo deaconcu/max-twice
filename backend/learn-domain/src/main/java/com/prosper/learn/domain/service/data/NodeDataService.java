@@ -117,11 +117,11 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
     /**
      * 根据筛选条件获取节点列表（支持分页）
      */
-    public List<NodeDO> getListByFilter(Long nodeId, Long courseId, Long creatorId, Long lastId) {
+    public List<NodeDO> getListByFilter(Long nodeId, Long courseId, Long creatorId, Byte state, Long lastId) {
         if (lastId == null || lastId == 0) {
             lastId = Long.MAX_VALUE;
         }
-        return nodeMapper.getListByFilterWithPagination(nodeId, courseId, creatorId, lastId, 20);
+        return nodeMapper.getListByFilterWithPagination(nodeId, courseId, creatorId, state, lastId, 20);
     }
 
     /**

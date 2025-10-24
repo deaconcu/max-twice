@@ -58,12 +58,14 @@ public interface NodeMapper {
             "<if test='nodeId != null'> AND id = #{nodeId}</if>",
             "<if test='courseId != null'> AND course_id = #{courseId}</if>",
             "<if test='creatorId != null'> AND creator_id = #{creatorId}</if>",
+            "<if test='state != null'> AND state = #{state}</if>",
             "ORDER BY id DESC LIMIT #{limit}",
             "</script>"})
     List<NodeDO> getListByFilterWithPagination(
             @Param("nodeId") Long nodeId,
             @Param("courseId") Long courseId,
             @Param("creatorId") Long creatorId,
+            @Param("state") Byte state,
             @Param("lastId") Long lastId,
             @Param("limit") int limit);
 

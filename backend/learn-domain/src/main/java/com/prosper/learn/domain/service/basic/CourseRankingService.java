@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -99,7 +100,8 @@ public class CourseRankingService {
      * 获取热门课程ID列表（按分数降序）
      */
     public List<Long> getHotCourseIds(int limit) {
-        validateLimit(limit);
+        if (limit <= 0) return Collections.emptyList();
+        if (limit > 200) limit = 200;
         try {
             Set<String> courseIds = redisTemplate.opsForZSet().reverseRange(HOT_COURSES_KEY, 0, limit - 1);
             if (courseIds == null || courseIds.isEmpty()) {
@@ -192,15 +194,6 @@ public class CourseRankingService {
     private void validateCourseId(long courseId) {
         if (courseId <= 0) {
             throw ErrorCode.COURSE_NOT_FOUND.exception();
-        }
-    }
-
-    /**
-     * 验证限制数量有效性
-     */
-    private void validateLimit(int limit) {
-        if (limit <= 0 || limit > systemProperties.getCourseRanking().getMaxHotCoursesLimit()) {
-            throw ErrorCode.COURSE_RANKING_INVALID_LIMIT.exception();
         }
     }
 

@@ -1,20 +1,22 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { MessageCategory } from '@/types/enums'
 
   const { t } = useI18n()
 
-  type MessageType = 'system' | 'courseApply' | 'private'
+  type MessageCategoryValue = 'interaction' | 'system' | 'private'
 
   interface MenuItem {
     text: string
     icon: string
-    value: MessageType
+    value: MessageCategoryValue
     subtitle: string
+    category: number
   }
 
   interface Props {
-    selectedMessageType?: string 
+    selectedMessageType?: string
     unreadCount?: number
     totalMessages?: number
   }
@@ -23,7 +25,7 @@
   defineProps<Props>()
 
   interface Emits {
-    (e: 'update:selectedMessageType', value: MessageType): void
+    (e: 'update:selectedMessageType', value: MessageCategoryValue): void
   }
 
   // Emits
@@ -32,27 +34,30 @@
   // 导航菜单项
   const menuItems = computed((): MenuItem[] => [
     {
-      text: t('message.systemNotification'),
+      text: t('message.interactionMessage'),
       icon: 'mdi-bell-outline',
+      value: 'interaction',
+      subtitle: t('message.interactionMessageSubtitle'),
+      category: MessageCategory.INTERACTION
+    },
+    {
+      text: t('message.systemMessage'),
+      icon: 'mdi-information-outline',
       value: 'system',
-      subtitle: '系统通知消息',
+      subtitle: t('message.systemMessageSubtitle'),
+      category: MessageCategory.SYSTEM
     },
     {
-      text: t('message.courseApplication'),
-      icon: 'mdi-file-document-outline',
-      value: 'courseApply',
-      subtitle: '课程申请消息',
-    },
-    {
-      text: '私信消息',
+      text: t('message.privateMessage'),
       icon: 'mdi-message-text-outline',
       value: 'private',
-      subtitle: '用户私信消息',
+      subtitle: t('message.privateMessageSubtitle'),
+      category: MessageCategory.PRIVATE
     },
   ])
 
   // 处理菜单选择
-  const handleMenuSelect = (value: MessageType): void => {
+  const handleMenuSelect = (value: MessageCategoryValue): void => {
     emit('update:selectedMessageType', value)
   }
 </script>

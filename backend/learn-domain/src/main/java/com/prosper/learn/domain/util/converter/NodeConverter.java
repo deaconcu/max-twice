@@ -1,5 +1,6 @@
 package com.prosper.learn.domain.util.converter;
 
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.dto.response.NodeDTO;
 import com.prosper.learn.dto.response.old.NodeDTOV0;
 import com.prosper.learn.persistence.dataobject.NodeDO;
@@ -28,7 +29,7 @@ public interface NodeConverter {
 
         NodeDTO dto = toDTOInternal(nodeDO);
 
-        if (nodeDO.getState() != null && nodeDO.getState() == 2) {
+        if (nodeDO.getState() != null && nodeDO.getState() == Enums.ContentState.BANNED.value()) {
             dto.setName("目录节点已被屏蔽");
             dto.setDescription("");
         }
@@ -54,7 +55,7 @@ public interface NodeConverter {
 
         NodeDTO dto = toDTOV1Internal(nodeDO);
 
-        if (nodeDO.getState() != null && nodeDO.getState() == 2) {
+        if (nodeDO.getState() != null && nodeDO.getState() == Enums.ContentState.BANNED.value()) {
             dto.setName("目录节点已被屏蔽");
             dto.setDescription("");
         }

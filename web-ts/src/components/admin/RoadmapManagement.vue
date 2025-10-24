@@ -137,19 +137,8 @@
 
             <!-- 审核操作按钮 -->
             <div class="d-flex flex-column ga-2">
-              <!-- 待审核状态：清除描述并通过、直接通过 -->
+              <!-- 待审核状态：通过、拒绝、屏蔽 -->
               <template v-if="roadmap.state === ContentState.SUBMITTED">
-                <v-btn
-                  variant="flat"
-                  color="green-lighten-4"
-                  rounded="lg"
-                  size="small"
-                  :loading="roadmap.approving"
-                  @click="approveRoadmap(roadmap, 'approve_clear')"
-                >
-                  <v-icon icon="mdi-check-bold" color="green-darken-2" size="16" class="mr-1"></v-icon>
-                  清除并通过
-                </v-btn>
                 <v-btn
                   variant="flat"
                   color="green-lighten-4"
@@ -159,36 +148,112 @@
                   @click="approveRoadmap(roadmap, 'approve')"
                 >
                   <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
-                  直接通过
+                  通过
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="red-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  @click="rejectRoadmap(roadmap)"
+                >
+                  <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
+                  拒绝
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="grey-lighten-2"
+                  rounded="lg"
+                  size="small"
+                  @click="showBanModal(roadmap)"
+                >
+                  <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                  屏蔽
                 </v-btn>
               </template>
 
-              <!-- 已通过状态：修改描述 -->
-              <v-btn
-                v-if="roadmap.state === ContentState.PUBLISHED"
-                variant="flat"
-                color="blue-lighten-4"
-                rounded="lg"
-                size="small"
-                @click="showEditModal(roadmap)"
-              >
-                <v-icon icon="mdi-pencil" color="blue-darken-2" size="16" class="mr-1"></v-icon>
-                修改描述
-              </v-btn>
+              <!-- 已通过状态：撤销通过、修改、屏蔽 -->
+              <template v-if="roadmap.state === ContentState.PUBLISHED">
+                <v-btn
+                  variant="flat"
+                  color="orange-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  @click="rejectRoadmap(roadmap)"
+                >
+                  <v-icon icon="mdi-undo" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                  撤销通过
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="blue-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  @click="showEditModal(roadmap)"
+                >
+                  <v-icon icon="mdi-pencil" color="blue-darken-2" size="16" class="mr-1"></v-icon>
+                  修改
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="grey-lighten-2"
+                  rounded="lg"
+                  size="small"
+                  @click="showBanModal(roadmap)"
+                >
+                  <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                  屏蔽
+                </v-btn>
+              </template>
 
-              <!-- 已拒绝状态：恢复 -->
-              <v-btn
-                v-if="roadmap.state === ContentState.REJECTED"
-                variant="flat"
-                color="orange-lighten-4"
-                rounded="lg"
-                size="small"
-                :loading="roadmap.restoring"
-                @click="approveRoadmap(roadmap, 'approve')"
-              >
-                <v-icon icon="mdi-check" color="orange-darken-2" size="16" class="mr-1"></v-icon>
-                重新通过
-              </v-btn>
+              <!-- 已拒绝状态：恢复、屏蔽 -->
+              <template v-if="roadmap.state === ContentState.REJECTED">
+                <v-btn
+                  variant="flat"
+                  color="orange-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  :loading="roadmap.restoring"
+                  @click="approveRoadmap(roadmap, 'approve')"
+                >
+                  <v-icon icon="mdi-check" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                  重新通过
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="grey-lighten-2"
+                  rounded="lg"
+                  size="small"
+                  @click="showBanModal(roadmap)"
+                >
+                  <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                  屏蔽
+                </v-btn>
+              </template>
+
+              <!-- 已屏蔽状态：取消屏蔽、降级为拒绝 -->
+              <template v-if="roadmap.state === ContentState.BANNED">
+                <v-btn
+                  variant="flat"
+                  color="blue-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  @click="unbanRoadmap(roadmap)"
+                >
+                  <v-icon icon="mdi-lock-open" color="blue-darken-2" size="16" class="mr-1"></v-icon>
+                  取消屏蔽
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="orange-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  @click="downgradeToRejected(roadmap)"
+                >
+                  <v-icon icon="mdi-arrow-down" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                  降级为拒绝
+                </v-btn>
+              </template>
             </div>
           </div>
 
@@ -292,15 +357,27 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- 拒绝/屏蔽对话框 -->
+    <RejectBanDialog
+      v-model="showReasonDialog"
+      :type="dialogType"
+      :item-name="`路线图 ID: ${currentRoadmap?.id || ''}`"
+      :item-state="currentRoadmap?.state"
+      item-type="路线图"
+      :loading="submitting"
+      @confirm="handleConfirmAction"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { roadmapServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { ContentState } from '@/types/enums'
 import type { Roadmap } from '@/types/roadmap'
 import type { StateOption } from '@/types/common'
+import RejectBanDialog from './RejectBanDialog.vue'
 
 const roadmapList = ref<Roadmap[]>([])
 const loading = ref<boolean>(false)
@@ -317,6 +394,11 @@ const currentRoadmap = ref<Roadmap | null>(null)
 const editDescription = ref<string>('')
 const updating = ref<boolean>(false)
 const editForm = ref(null)
+
+// 拒绝/屏蔽对话框
+const showReasonDialog = ref<boolean>(false)
+const dialogType = ref<'reject' | 'ban'>('reject')
+const submitting = ref<boolean>(false)
 
 // 状态选项
 const stateOptions: StateOption[] = [
@@ -522,6 +604,99 @@ const approveRoadmap = async (roadmap: Roadmap, action: string): Promise<void> =
     ;(roadmap as any).approving = false
     ;(roadmap as any).restoring = false
   }
+}
+
+// 显示拒绝对话框
+const showRejectDialog = (roadmap: Roadmap): void => {
+  currentRoadmap.value = roadmap
+  dialogType.value = 'reject'
+  showReasonDialog.value = true
+}
+
+// 显示屏蔽对话框
+const showBanDialog = (roadmap: Roadmap): void => {
+  currentRoadmap.value = roadmap
+  dialogType.value = 'ban'
+  showReasonDialog.value = true
+}
+
+// 处理对话框确认
+const handleConfirmAction = async (reason: string): Promise<void> => {
+  if (!currentRoadmap.value) return
+
+  try {
+    submitting.value = true
+    const action = dialogType.value === 'reject' ? 'reject' : 'ban'
+    const targetState = dialogType.value === 'reject' ? ContentState.REJECTED : ContentState.BANNED
+
+    const response = await roadmapServiceV1.approveRoadmap(
+      currentRoadmap.value.id,
+      action,
+      reason
+    )
+
+    if (response.code === 200 && response.data) {
+      const index = roadmapList.value.findIndex((r) => r.id === currentRoadmap.value!.id)
+      if (index !== -1) {
+        const currentState = getCurrentState()
+        if (currentState !== targetState) {
+          roadmapList.value.splice(index, 1)
+        } else {
+          roadmapList.value[index] = response.data
+        }
+      }
+
+      showReasonDialog.value = false
+      currentRoadmap.value = null
+    } else {
+      console.error('操作失败:', response.message)
+    }
+  } catch (error) {
+    console.error('操作错误:', error)
+  } finally {
+    submitting.value = false
+  }
+}
+
+// 拒绝路线图（供按钮调用）
+const rejectRoadmap = (roadmap: Roadmap): void => {
+  showRejectDialog(roadmap)
+}
+
+// 取消屏蔽路线图
+const unbanRoadmap = async (roadmap: Roadmap): Promise<void> => {
+  try {
+    const response = await roadmapServiceV1.approveRoadmap(
+      roadmap.id,
+      'approve'
+    )
+
+    if (response.code === 200 && response.data) {
+      const index = roadmapList.value.findIndex((r) => r.id === roadmap.id)
+      if (index !== -1) {
+        const currentState = getCurrentState()
+        if (currentState !== ContentState.PUBLISHED) {
+          roadmapList.value.splice(index, 1)
+        } else {
+          roadmapList.value[index] = response.data
+        }
+      }
+    } else {
+      console.error('取消屏蔽路线图失败:', response.message)
+    }
+  } catch (error) {
+    console.error('取消屏蔽路线图错误:', error)
+  }
+}
+
+// 降级为拒绝
+const downgradeToRejected = (roadmap: Roadmap): void => {
+  showRejectDialog(roadmap)
+}
+
+// 屏蔽路线图（供按钮调用）
+const showBanModal = (roadmap: Roadmap): void => {
+  showBanDialog(roadmap)
 }
 
 onMounted(() => {

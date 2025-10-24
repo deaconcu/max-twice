@@ -5,6 +5,7 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.Enums.ContentState;
 import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
+import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.util.converter.CourseConverter;
 import com.prosper.learn.dto.request.CreateCourseRequest;
 import com.prosper.learn.dto.request.UpdateCourseRequest;
@@ -31,6 +32,7 @@ public class CourseService {
     private final CourseDataService courseDataService;
     private final NodeDataService nodeDataService;
     private final CourseRankingService courseRankingService;
+    private final MessageService messageService;
     private final SystemProperties systemProperties;
     private final CourseConverter courseConverter;
 
@@ -296,6 +298,15 @@ public class CourseService {
 
         int rowsAffected = courseDataService.approve(id);
         validateOperationResult(rowsAffected);
+
+        // 发送审核通过通知
+        messageService.sendCourseModeration(
+            courseDO.getCreatorId(),
+            courseDO.getId(),
+            courseDO.getName(),
+            Enums.ModerationAction.APPROVED,
+            null
+        );
     }
 
     public void reject(long id, String reason) {
@@ -304,6 +315,15 @@ public class CourseService {
 
         int rowsAffected = courseDataService.reject(id, reason);
         validateOperationResult(rowsAffected);
+
+        // 发送拒绝通知
+        messageService.sendCourseModeration(
+            courseDO.getCreatorId(),
+            courseDO.getId(),
+            courseDO.getName(),
+            Enums.ModerationAction.REJECTED,
+            reason
+        );
     }
 
     public void ban(long id, String reason) {
@@ -312,6 +332,15 @@ public class CourseService {
 
         int rowsAffected = courseDataService.ban(id, reason);
         validateOperationResult(rowsAffected);
+
+        // 发送封禁通知
+        messageService.sendCourseModeration(
+            courseDO.getCreatorId(),
+            courseDO.getId(),
+            courseDO.getName(),
+            Enums.ModerationAction.BANNED,
+            reason
+        );
     }
 
     public void delete(long id) {
@@ -377,21 +406,32 @@ public class CourseService {
     // 获取热门课程（使用Redis排行榜）
     public List<CourseDTO> getHotCourses(int limit) {
         try {
-            List<Long> hotCourseIds = courseRankingService.getHotCourseIds(limit);
-            
+            // 从Redis获取2倍数量，以防过滤后不足limit个
+            int fetchLimit = limit * 2;
+            List<Long> hotCourseIds = courseRankingService.getHotCourseIds(fetchLimit);
+
             if (hotCourseIds.isEmpty()) {
                 return new ArrayList<>();
             }
-            
+
             List<CourseDO> courseDOList = courseDataService.getByIds(hotCourseIds);
-            
+
             List<CourseDTO> result = new ArrayList<>();
             for (CourseDO courseDO : courseDOList) {
+                // 只返回已发布状态的课程，过滤屏蔽、拒绝等状态
+                if (courseDO.getState() != ContentState.PUBLISHED.value()) {
+                    continue;
+                }
                 result.add(toDTOV6(courseDO));
+
+                // 达到limit个后停止
+                if (result.size() >= limit) {
+                    break;
+                }
             }
-            
+
             return result;
-            
+
         } catch (Exception e) {
             throw ErrorCode.COURSE_OPERATION_FAILED.exception(e);
         }
@@ -401,21 +441,32 @@ public class CourseService {
     public List<CourseDTO> getHotCoursesRanking() {
         try {
             int rankingLimit = systemProperties.getCourse().getHotCoursesRankingLimit();
-            List<Long> hotCourseIds = courseRankingService.getHotCourseIds(rankingLimit);
-            
+            // 从Redis获取2倍数量，以防过滤后不足rankingLimit个
+            int fetchLimit = rankingLimit * 2;
+            List<Long> hotCourseIds = courseRankingService.getHotCourseIds(fetchLimit);
+
             if (hotCourseIds.isEmpty()) {
                 return new ArrayList<>();
             }
-            
+
             List<CourseDO> courseDOList = courseDataService.getByIds(hotCourseIds);
-            
+
             List<CourseDTO> result = new ArrayList<>();
             for (CourseDO courseDO : courseDOList) {
+                // 只返回已发布状态的课程，过滤屏蔽、拒绝等状态
+                if (courseDO.getState() != ContentState.PUBLISHED.value()) {
+                    continue;
+                }
                 result.add(toDTOV6(courseDO));
+
+                // 达到rankingLimit个后停止
+                if (result.size() >= rankingLimit) {
+                    break;
+                }
             }
-            
+
             return result;
-            
+
         } catch (Exception e) {
             throw ErrorCode.COURSE_OPERATION_FAILED.exception(e);
         }

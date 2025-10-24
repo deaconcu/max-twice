@@ -149,6 +149,13 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
     }
 
     /**
+     * 根据对象类型、对象ID、创建者和状态筛选评论列表（不缓存）
+     */
+    public List<CommentDO> getListByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId, Byte state, int limit) {
+        return commentMapper.getListByFilter(objectType, objectId, creatorId, lastId, state, limit);
+    }
+
+    /**
      * 拒绝评论（审核不通过）
      */
     @CacheEvict(value = "comments", key = "#id")

@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 /**
  * 记忆卡片组控制器
  */
@@ -210,25 +212,42 @@ public class MemoryCardDeckController {
      * 审核通过卡片组
      */
     @PostMapping("/decks/{deckId}/approve")
-    public ApiResponse<Void> approveDeck(
+    public ApiResponse<Void> approve(
             @PathVariable @NotNull(message = "卡片组ID不能为空")
             @Positive(message = "卡片组ID必须大于0")
             Long deckId) {
         long userId = StpUtil.getLoginIdAsLong();
-        deckService.approveDeck(deckId, userId);
+        deckService.approve(deckId, userId);
         return ApiResponse.success();
     }
 
     /**
-     * 废弃卡片组（审核拒绝或屏蔽）
+     * 拒绝卡片组
      */
-    @PostMapping("/decks/{deckId}/discard")
-    public ApiResponse<Void> banDeck(
+    @PostMapping("/decks/{deckId}/reject")
+    public ApiResponse<Void> reject(
             @PathVariable @NotNull(message = "卡片组ID不能为空")
             @Positive(message = "卡片组ID必须大于0")
-            Long deckId) {
+            Long deckId,
+            @RequestBody(required = false) Map<String, String> body) {
         long userId = StpUtil.getLoginIdAsLong();
-        deckService.banDeck(deckId, userId);
+        String reason = body != null ? body.get("reason") : null;
+        deckService.reject(deckId, userId, reason);
+        return ApiResponse.success();
+    }
+
+    /**
+     * 屏蔽卡片组
+     */
+    @PostMapping("/decks/{deckId}/ban")
+    public ApiResponse<Void> ban(
+            @PathVariable @NotNull(message = "卡片组ID不能为空")
+            @Positive(message = "卡片组ID必须大于0")
+            Long deckId,
+            @RequestBody(required = false) Map<String, String> body) {
+        long userId = StpUtil.getLoginIdAsLong();
+        String reason = body != null ? body.get("reason") : null;
+        deckService.ban(deckId, userId, reason);
         return ApiResponse.success();
     }
 

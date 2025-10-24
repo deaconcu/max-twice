@@ -1,6 +1,8 @@
 package com.prosper.learn.domain.service.business;
 
 import com.prosper.learn.common.Enums;
+import com.prosper.learn.domain.service.basic.MessageService;
+import com.prosper.learn.domain.service.data.CourseDataService;
 import com.prosper.learn.domain.service.data.NodeDataService;
 import com.prosper.learn.domain.util.Util;
 import com.prosper.learn.domain.util.converter.NodeConverter;
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
 public class NodeService {
 
     private final NodeDataService nodeDataService;
+    private final CourseDataService courseDataService;
+    private final MessageService messageService;
     private final NodeConverter nodeConverter;
     private final CourseService courseService;
 
@@ -82,18 +86,22 @@ public class NodeService {
     // ========== 查询方法 ==========
 
     /**
-     * 根据节点、课程、创建者筛选节点列表（不限状态）
+     * 管理后台：按条件筛选节点列表
      * 如果提供了 nodeId，其他参数将被忽略
      */
-    public List<NodeDTO> getNodesByFilter(Long nodeId, Long courseId, Long creatorId, Long lastId) {
+    public List<NodeDTO> listByFilter(Byte state, Long nodeId, Long courseId, Long creatorId, Long lastId) {
         if (nodeId != null) {
+            state = null;
             courseId = null;
             creatorId = null;
             lastId = null;
         }
 
-        List<NodeDO> nodeDOList = nodeDataService.getListByFilter(nodeId, courseId, creatorId, lastId);
-        return nodeConverter.toDTO(nodeDOList);
+        List<NodeDO> nodeDOList = nodeDataService.getListByFilter(nodeId, courseId, creatorId, state, lastId);
+        // 管理后台使用 toDTOInternal，返回原始数据，不做屏蔽处理
+        return nodeDOList.stream()
+                .map(nodeConverter::toDTOInternal)
+                .toList();
     }
 
     /**
@@ -124,17 +132,53 @@ public class NodeService {
      * 拒绝节点（审核不通过）
      */
     @Transactional
-    public void reject(Long nodeId) {
+    public void reject(Long nodeId, String reason) {
         nodeDataService.validateExists(nodeId);
+
+        // 获取节点和课程信息用于通知
+        NodeDO nodeDO = nodeDataService.getById(nodeId);
+        CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
+
         nodeDataService.reject(nodeId);
+
+        // 发送拒绝通知
+        if (nodeDO != null && courseDO != null) {
+            messageService.sendNodeModeration(
+                nodeDO.getCreatorId(),
+                nodeDO.getId(),
+                nodeDO.getName(),
+                courseDO.getId(),
+                courseDO.getName(),
+                Enums.ModerationAction.REJECTED,
+                reason
+            );
+        }
     }
 
     /**
      * 封禁节点（违规封禁）
      */
     @Transactional
-    public void ban(Long nodeId) {
+    public void ban(Long nodeId, String reason) {
         nodeDataService.validateExists(nodeId);
+
+        // 获取节点和课程信息用于通知
+        NodeDO nodeDO = nodeDataService.getById(nodeId);
+        CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
+
         nodeDataService.ban(nodeId);
+
+        // 发送封禁通知
+        if (nodeDO != null && courseDO != null) {
+            messageService.sendNodeModeration(
+                nodeDO.getCreatorId(),
+                nodeDO.getId(),
+                nodeDO.getName(),
+                courseDO.getId(),
+                courseDO.getName(),
+                Enums.ModerationAction.BANNED,
+                reason
+            );
+        }
     }
 }

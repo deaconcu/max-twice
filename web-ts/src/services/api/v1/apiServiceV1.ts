@@ -232,7 +232,7 @@ export const courseServiceV1 = {
     })
   },
 
-  getAdminCourses(state?: number, lastId?: number | null): Promise<ApiResponse<Course[]>> {
+  getAdminCourses(state: number, lastId?: number | null): Promise<ApiResponse<Course[]>> {
     const params: Record<string, any> = { state }
     if (lastId !== null && lastId !== undefined) {
       params.lastId = lastId
@@ -327,9 +327,9 @@ export const postServiceV1 = {
     })
   },
 
-  getPostsByFilter(nodeId?: number, creatorId?: number, lastId?: number): Promise<ApiResponse<Post[]>> {
+  getPostsByFilter(nodeId?: number, creatorId?: number, lastId?: number, state?: number): Promise<ApiResponse<Post[]>> {
     return apiClient.get(`${API_V1_PREFIX}/admin/posts/filter`, {
-      params: { nodeId, creatorId, lastId },
+      params: { nodeId, creatorId, lastId, state },
     })
   },
 
@@ -374,6 +374,16 @@ export const commentServiceV1 = {
     return apiClient.get(`${API_V1_PREFIX}/admin/comments/${state}`, {
       params: { offsetId },
     })
+  },
+
+  getCommentsByFilter(objectType?: number, objectId?: number, creatorId?: number, lastId?: number, state?: number): Promise<ApiResponse<Comment[]>> {
+    const params: Record<string, any> = {}
+    if (objectType !== undefined && objectType !== null) params.objectType = objectType
+    if (objectId !== undefined && objectId !== null) params.objectId = objectId
+    if (creatorId !== undefined && creatorId !== null) params.creatorId = creatorId
+    if (lastId !== undefined && lastId !== null) params.lastId = lastId
+    if (state !== undefined && state !== null) params.state = state
+    return apiClient.get(`${API_V1_PREFIX}/admin/comments/filter`, { params })
   },
 
   approveComment(id: number, action: string, reason?: string): Promise<ApiResponse<any>> {
@@ -480,6 +490,23 @@ export const messageServiceV1 = {
     return apiClient.get(`${API_V1_PREFIX}/messages/system`, {
       params: { type, lastId },
     })
+  },
+
+  /**
+   * 按分类获取消息
+   * @param category 消息分类 (1=互动消息, 2=系统消息, 3=私信)
+   * @param lastId 最后一条消息的 ID，用于分页
+   * @param type 可选的消息类型过滤
+   */
+  getMessagesByCategory(category: number, lastId?: number, type?: MessageType): Promise<ApiResponse<Message[]>> {
+    const params: Record<string, any> = { category }
+    if (lastId !== undefined && lastId !== null) {
+      params.lastId = lastId
+    }
+    if (type !== undefined && type !== null) {
+      params.type = type
+    }
+    return apiClient.get(`${API_V1_PREFIX}/messages/category`, { params })
   },
 
   getMessages(): Promise<ApiResponse<Message[]>> {
@@ -760,16 +787,24 @@ export const adminAutoAuthorServiceV1 = {
 
 // 节点管理服务
 export const nodeServiceV1 = {
-  getNodesByFilter(nodeId?: number, courseId?: number, creatorId?: number, lastId?: number): Promise<ApiResponse<Node[]>> {
-    return apiClient.get(`${API_V1_PREFIX}/admin/nodes/filter`, {
-      params: { nodeId, courseId, creatorId, lastId },
-    })
-  },
-
-  getNodesByState(state: number, lastId?: number): Promise<ApiResponse<Node[]>> {
-    return apiClient.get(`${API_V1_PREFIX}/admin/nodes/state`, {
-      params: { state, lastId },
-    })
+  getAdminNodes(state?: number, nodeId?: number, courseId?: number, creatorId?: number, lastId?: number): Promise<ApiResponse<Node[]>> {
+    const params: Record<string, any> = {}
+    if (state !== undefined && state !== null) {
+      params.state = state
+    }
+    if (nodeId !== undefined && nodeId !== null) {
+      params.nodeId = nodeId
+    }
+    if (courseId !== undefined && courseId !== null) {
+      params.courseId = courseId
+    }
+    if (creatorId !== undefined && creatorId !== null) {
+      params.creatorId = creatorId
+    }
+    if (lastId !== undefined && lastId !== null) {
+      params.lastId = lastId
+    }
+    return apiClient.get(`${API_V1_PREFIX}/admin/nodes`, { params })
   },
 
   updateNodeState(nodeId: number, state: number): Promise<ApiResponse<Node>> {

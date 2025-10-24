@@ -9,7 +9,7 @@ public class MemoryCardDeckDO {
 
     private Long id;
 
-    private Long sourcePostId;
+    private Long postId;
 
     private Long nodeId;  // 卡片组所属的节点ID，冗余字段便于查询
 
@@ -22,6 +22,8 @@ public class MemoryCardDeckDO {
     private Integer version;
 
     private Byte state;
+
+    private String reason;  // 拒绝或屏蔽的原因
 
     //private Long auditorId;
 

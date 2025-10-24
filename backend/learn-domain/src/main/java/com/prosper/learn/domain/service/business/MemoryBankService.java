@@ -159,8 +159,8 @@ public class MemoryBankService {
             
             // 获取nodeId：deck.sourcePostId → post.nodeId
             Long nodeId = null;
-            if (deck.getSourcePostId() != null) {
-                PostDO post = postDataService.getById(deck.getSourcePostId());
+            if (deck.getPostId() != null) {
+                PostDO post = postDataService.getById(deck.getPostId());
                 if (post != null) {
                     nodeId = post.getNodeId();
                 }

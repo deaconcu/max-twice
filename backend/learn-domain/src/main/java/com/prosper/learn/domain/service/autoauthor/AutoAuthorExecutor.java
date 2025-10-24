@@ -111,7 +111,7 @@ public class AutoAuthorExecutor {
             // 废弃所有已存在的AI deck
             existingDecks.forEach(deck -> {
                 if (deck.getState() == Enums.ContentState.SUBMITTED.value() || deck.getState() == Enums.ContentState.PUBLISHED.value()) {
-                    memoryCardDeckService.banDeck(deck.getId(), aiUserId);
+                    memoryCardDeckService.ban(deck.getId(), aiUserId, "Discarding for AI regeneration");
                     log.info("Discarded existing AI deck {} for post {}", deck.getId(), postId);
                 }
             });

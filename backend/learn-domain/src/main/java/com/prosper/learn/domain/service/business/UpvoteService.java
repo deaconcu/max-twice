@@ -1,7 +1,7 @@
 package com.prosper.learn.domain.service.business;
 
 import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.Enums.ObjectType;
+import com.prosper.learn.common.Enums.ContentType;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
@@ -199,7 +199,7 @@ public class UpvoteService {
     private void sendPostUpvoteMessage(PostDO postDO, long fromUserId, int type) {
         messageService.createUpvoteMessage(
             postDO.getCreatorId(), fromUserId, postDO.getNodeId(),
-            postDO.getId(), ObjectType.post.value(), type);
+            postDO.getId(), ContentType.post.value(), type);
     }
 
     /**
@@ -222,7 +222,7 @@ public class UpvoteService {
         UserDO fromUserDO = validateUserExists(userId);
         PostDO postDO = validatePostExists(postingId);
 
-        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, postDO.getId(), ObjectType.post.value());
+        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, postDO.getId(), ContentType.post.value());
         String upvoteTypeName = getUpvoteTypeName(type);
 
         if (upvoteDO != null && upvoteDO.getType() == type) {
@@ -247,7 +247,7 @@ public class UpvoteService {
             upvoteDO = new UpvoteDO();
             upvoteDO.setUserId(userId);
             upvoteDO.setObjectId(postDO.getId());
-            upvoteDO.setObjectType(ObjectType.post.value());
+            upvoteDO.setObjectType(ContentType.post.value());
             upvoteDO.setType(type);
             upvoteDataService.insert(upvoteDO);
         } else {
@@ -287,9 +287,9 @@ public class UpvoteService {
      * @throws BusinessException 当评论类型无效时抛出异常
      */
     private long getNodeIdFromComment(CommentDO commentDO) {
-        if (commentDO.getObjectType() == ObjectType.node.value()) {
+        if (commentDO.getObjectType() == ContentType.node.value()) {
             return commentDO.getObjectId();
-        } else if (commentDO.getObjectType() == ObjectType.post.value()) {
+        } else if (commentDO.getObjectType() == Enums.ContentType.post.value()) {
             PostDO postDO = validatePostExists(commentDO.getObjectId());
             return postDO.getNodeId();
         } else {
@@ -312,7 +312,7 @@ public class UpvoteService {
         // get node id
         long nodeId = getNodeIdFromComment(commentDO);
 
-        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, commentId, ObjectType.comment.value());
+        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, commentId, ContentType.comment.value());
         if (upvoteDO != null) {
             upvoteDataService.delete(upvoteDO.getId());
             commentDO.setUpvoteCount(commentDO.getUpvoteCount() - 1);
@@ -326,7 +326,7 @@ public class UpvoteService {
         upvoteDO = new UpvoteDO();
         upvoteDO.setUserId(userId);
         upvoteDO.setObjectId(commentDO.getId());
-        upvoteDO.setObjectType(Enums.ObjectType.comment.value());
+        upvoteDO.setObjectType(ContentType.comment.value());
         upvoteDO.setType(0);
         upvoteDataService.insert(upvoteDO);
 
@@ -337,7 +337,7 @@ public class UpvoteService {
         commentDataService.update(commentDO);
 
         messageService.createUpvoteMessage(
-                commentDO.getCreatorId(), userId, nodeId, commentId, ObjectType.comment.value(), 1);
+                commentDO.getCreatorId(), userId, nodeId, commentId, ContentType.comment.value(), 1);
     }
 
     /**
@@ -359,7 +359,7 @@ public class UpvoteService {
         }
 
         // 检查是否已经投过票
-        UpvoteDO existingUpvote = upvoteDataService.getByUserAndObject(userId, roadmapId, ObjectType.roadmap.value());
+        UpvoteDO existingUpvote = upvoteDataService.getByUserAndObject(userId, roadmapId, ContentType.roadmap.value());
 
         if (existingUpvote != null) {
             // 如果已经投过票，则取消投票
@@ -376,7 +376,7 @@ public class UpvoteService {
             UpvoteDO upvoteDO = new UpvoteDO();
             upvoteDO.setUserId(userId);
             upvoteDO.setObjectId(roadmapId);
-            upvoteDO.setObjectType(ObjectType.roadmap.value());
+            upvoteDO.setObjectType(ContentType.roadmap.value());
             upvoteDO.setType(0); // roadmap投票类型设为0，对应"once"
             upvoteDataService.insert(upvoteDO);
 
@@ -401,7 +401,7 @@ public class UpvoteService {
             throw ErrorCode.INVALID_PARAMETER.exception("路线图ID无效: " + roadmapId);
         }
         
-        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, roadmapId, ObjectType.roadmap.value());
+        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, roadmapId, ContentType.roadmap.value());
         return upvoteDO != null;
     }
 
@@ -416,7 +416,7 @@ public class UpvoteService {
             return new HashSet<>();
         }
 
-        List<UpvoteDO> upvotes = upvoteDataService.getList(userId, roadmapIds, ObjectType.roadmap.value());
+        List<UpvoteDO> upvotes = upvoteDataService.getList(userId, roadmapIds, ContentType.roadmap.value());
         return upvotes.stream()
                 .map(UpvoteDO::getObjectId)
                 .collect(Collectors.toSet());
@@ -439,7 +439,7 @@ public class UpvoteService {
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
 
         // 检查是否已经点过赞
-        UpvoteDO existingUpvote = upvoteDataService.getByUserAndObject(userId, deckId, ObjectType.memory_card_deck.value());
+        UpvoteDO existingUpvote = upvoteDataService.getByUserAndObject(userId, deckId, ContentType.memory_card_deck.value());
         if (existingUpvote != null) {
             // 如果已经点过赞，则取消点赞
             upvoteDataService.delete(existingUpvote.getId());
@@ -456,7 +456,7 @@ public class UpvoteService {
             UpvoteDO upvoteDO = new UpvoteDO();
             upvoteDO.setUserId(userId);
             upvoteDO.setObjectId(deckId);
-            upvoteDO.setObjectType(ObjectType.memory_card_deck.value());
+            upvoteDO.setObjectType(ContentType.memory_card_deck.value());
             upvoteDO.setType(0); // 卡片组点赞类型设为0
             upvoteDataService.insert(upvoteDO);
 
@@ -483,7 +483,7 @@ public class UpvoteService {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子ID无效: " + postingId);
         }
         
-        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, postingId, ObjectType.post.value());
+        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, postingId, Enums.ContentType.post.value());
         if (upvoteDO == null) return;
 
         PostDO postDO = validatePostExists(postingId);
@@ -526,7 +526,7 @@ public class UpvoteService {
         Boolean twiceUpvoted = false;
         Boolean helpfulUpvoted = false;
         
-        if (objectType == ObjectType.post.value()) {
+        if (objectType == ContentType.post.value()) {
             PostDO postDO = postDataService.getById(objectId);
             if (postDO != null) {
                 // PostDO 使用 once, twice, helpful 统计
@@ -543,19 +543,19 @@ public class UpvoteService {
                     helpfulUpvoted = upvoteDO.getType() == Enums.VoteType.helpful.value();
                 }
             }
-        } else if (objectType == ObjectType.comment.value()) {
+        } else if (objectType == ContentType.comment.value()) {
             CommentDO commentDO = commentDataService.getById(objectId);
             if (commentDO != null) {
                 upvotes = commentDO.getUpvoteCount() != null ? commentDO.getUpvoteCount() : 0;
                 upvoted = upvoteDO != null;
             }
-        } else if (objectType == ObjectType.roadmap.value()) {
+        } else if (objectType == ContentType.roadmap.value()) {
             RoadmapDO roadmapDO = roadmapDataService.getById(objectId);
             if (roadmapDO != null) {
                 upvotes = roadmapDO.getVote() != null ? roadmapDO.getVote() : 0;
                 upvoted = upvoteDO != null;
             }
-        } else if (objectType == ObjectType.memory_card_deck.value()) {
+        } else if (objectType == ContentType.memory_card_deck.value()) {
             MemoryCardDeckDO deckDO = deckDataService.getById(objectId);
             if (deckDO != null) {
                 upvotes = deckDO.getUpvoteCount() != null ? deckDO.getUpvoteCount() : 0;

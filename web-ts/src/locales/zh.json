@@ -95,6 +95,7 @@
       "following": "我关注的人",
       "myContents": "我创建的目录",
       "myArticles": "我创建的文章",
+      "myMemoryDecks": "我的卡片组",
       "name": "姓名",
       "biography": "个人简介",
       "followers": "关注者",
@@ -590,7 +591,8 @@
     "noCommentsToReview": "暂无待审核的评论",
     "commentId": "评论 ID",
     "viewOriginal": "查看原文",
-    "commentContent": "评论内容："
+    "commentContent": "评论内容：",
+    "banned": "已封禁"
   },
   "validation": {
     "required": {
@@ -610,6 +612,12 @@
     "subtitle": "查看您的通知和消息",
     "systemNotification": "系统通知",
     "courseApplication": "课程申请",
+    "interactionMessage": "互动消息",
+    "systemMessage": "系统消息",
+    "privateMessage": "私信",
+    "interactionMessageSubtitle": "关注、点赞、评论等",
+    "systemMessageSubtitle": "审核通知、系统通知",
+    "privateMessageSubtitle": "用户私信消息",
     "unreadMessages": "未读消息",
     "totalMessages": "总消息数",
     "systemRetention": "系统只保存30天内的消息，请及时查看",

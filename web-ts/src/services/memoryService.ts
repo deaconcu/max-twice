@@ -319,6 +319,37 @@ export class MemoryService {
   }
 
   /**
+   * 获取指定用户创建的所有卡片组 - 用于查看其他用户的卡片组
+   */
+  static async getUserDecks(userId: number, query: {
+    sortBy?: string
+    sortOrder?: string
+    lastId?: number
+    limit?: number
+  } = {}): Promise<{
+    code: number
+    data: {
+      items: MemoryCardDeck[]
+      hasMore: boolean
+      nextCursor?: {
+        lastScore?: number
+        lastId?: number
+      }
+    }
+    message?: string
+  }> {
+    // 使用 getDecksForReview 接口，只传 creatorId
+    return this.getDecksForReview({
+      creatorId: userId,
+      sortBy: query.sortBy || 'createdAt',
+      sortOrder: query.sortOrder || 'desc',
+      lastId: query.lastId,
+      limit: query.limit || 10,
+      state: 2 // 只显示已发布状态的卡片组 (PUBLISHED = 2)
+    }) as any // 返回类型稍有不同，但兼容
+  }
+
+  /**
    * 需求5: 管理员按状态查询所有卡片组 - keyset分页
    */
   static async getAdminDecks(state: number, query: {
@@ -534,14 +565,29 @@ export class MemoryService {
   }
 
   /**
-   * 废弃卡片组（审核拒绝或屏蔽）
+   * 拒绝卡片组
    */
-  static async discardDeck(deckId: number): Promise<{
+  static async rejectDeck(deckId: number, reason?: string): Promise<{
     code: number
     data: any
     message?: string
   }> {
-    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/discard`)
+    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/reject`, {
+      reason: reason || ''
+    })
+  }
+
+  /**
+   * 屏蔽卡片组
+   */
+  static async banDeck(deckId: number, reason?: string): Promise<{
+    code: number
+    data: any
+    message?: string
+  }> {
+    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/ban`, {
+      reason: reason || ''
+    })
   }
 
   /**

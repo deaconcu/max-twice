@@ -2,8 +2,10 @@ package com.prosper.learn.domain.service.business;
 
 import static com.prosper.learn.common.Enums.ContentState;
 
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
+import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.service.basic.ProfessionRankingService;
 import com.prosper.learn.domain.util.converter.ProfessionConverter;
 import com.prosper.learn.dto.request.CreateProfessionRequest;
@@ -25,6 +27,7 @@ public class ProfessionService {
 
     private final ProfessionDataService professionDataService;
     private final ProfessionRankingService professionRankingService;
+    private final MessageService messageService;
     private final SystemProperties systemProperties;
     private final ProfessionConverter professionConverter;
     
@@ -138,6 +141,15 @@ public class ProfessionService {
         } else {
             professionDataService.approve(id);
         }
+
+        // 发送审核通过通知
+        messageService.sendProfessionModeration(
+            profession.getCreatorId(),
+            profession.getId(),
+            profession.getName(),
+            Enums.ModerationAction.APPROVED,
+            null
+        );
     }
 
     public void reject(long id, String reason) {
@@ -157,6 +169,15 @@ public class ProfessionService {
         } else {
             professionDataService.reject(id, reasonValue);
         }
+
+        // 发送拒绝通知
+        messageService.sendProfessionModeration(
+            profession.getCreatorId(),
+            profession.getId(),
+            profession.getName(),
+            Enums.ModerationAction.REJECTED,
+            reasonValue
+        );
     }
 
     public void ban(long id, String reason) {
@@ -176,6 +197,15 @@ public class ProfessionService {
         } else {
             professionDataService.ban(id, reasonValue);
         }
+
+        // 发送封禁通知
+        messageService.sendProfessionModeration(
+            profession.getCreatorId(),
+            profession.getId(),
+            profession.getName(),
+            Enums.ModerationAction.BANNED,
+            reasonValue
+        );
     }
 
     // TODO

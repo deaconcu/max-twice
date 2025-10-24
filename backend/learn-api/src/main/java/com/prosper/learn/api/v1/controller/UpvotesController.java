@@ -13,10 +13,10 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 
-import static com.prosper.learn.common.Enums.ObjectType.comment;
-import static com.prosper.learn.common.Enums.ObjectType.post;
-import static com.prosper.learn.common.Enums.ObjectType.roadmap;
-import static com.prosper.learn.common.Enums.ObjectType.memory_card_deck;
+import static com.prosper.learn.common.Enums.ContentType.comment;
+import static com.prosper.learn.common.Enums.ContentType.post;
+import static com.prosper.learn.common.Enums.ContentType.roadmap;
+import static com.prosper.learn.common.Enums.ContentType.memory_card_deck;
 
 /**
  * 点赞接口

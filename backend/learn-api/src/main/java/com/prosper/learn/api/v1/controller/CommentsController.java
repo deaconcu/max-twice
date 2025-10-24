@@ -88,6 +88,20 @@ public class CommentsController {
     }
 
     /**
+     * 根据对象类型、对象ID、创建者和状态筛选评论列表
+     */
+    @GetMapping("/admin/comments/filter")
+    public ApiResponse<List<CommentDTO>> getCommentsByFilter(
+            @RequestParam(value = "objectType", required = false) @Positive(message = "对象类型必须大于0") Integer objectType,
+            @RequestParam(value = "objectId", required = false) @Positive(message = "对象ID必须大于0") Long objectId,
+            @RequestParam(value = "creatorId", required = false) @Positive(message = "用户ID必须大于0") Long creatorId,
+            @RequestParam(value = "lastId",  required = false) @Min(value = 0, message = "最后ID不能小于0") Long lastId,
+            @RequestParam(value = "state", required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state) {
+        List<CommentDTO> comments = commentService.getCommentsByFilter(objectType, objectId, creatorId, lastId, state);
+        return ApiResponse.success(comments);
+    }
+
+    /**
      * 评论审核操作
      * 映射: POST /comment/operate → POST /api/v1/admin/comments/{id}/approve
      */
