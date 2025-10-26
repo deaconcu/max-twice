@@ -146,4 +146,28 @@ public class SystemController {
             throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
     }
+
+    /**
+     * 设置只读模式（管理员）
+     * 映射: POST /api/v1/system/readonly-mode
+     * @param enable true=开启，false=关闭
+     */
+    @PostMapping("/system/readonly-mode")
+    public ApiResponse<String> setReadOnlyMode(
+            @JsonParam("enable") @NotNull(message = "enable参数不能为空") Boolean enable) {
+        try {
+            if (enable) {
+                systemDataService.enableReadOnlyMode();
+                log.info("只读模式已开启");
+                return ApiResponse.success("只读模式已开启");
+            } else {
+                systemDataService.disableReadOnlyMode();
+                log.info("只读模式已关闭");
+                return ApiResponse.success("只读模式已关闭");
+            }
+        } catch (Exception e) {
+            log.error("Failed to set readonly mode", e);
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
+        }
+    }
 }

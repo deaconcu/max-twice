@@ -774,6 +774,18 @@ export const systemServiceV1 = {
       params: { part: 'professionCategories' },
     })
   },
+
+  // 获取只读模式状态（公开接口，无需登录）
+  getReadonlyMode(): Promise<ApiResponse<{ enabled: boolean }>> {
+    return apiClient.get(`${API_V1_PREFIX}/public/readonly-mode`)
+  },
+
+  // 设置只读模式（管理员）
+  setReadonlyMode(enable: boolean): Promise<ApiResponse<string>> {
+    return apiClient.post(`${API_V1_PREFIX}/system/readonly-mode`, {
+      enable,
+    })
+  },
 }
 
 // 记忆卡片组服务

@@ -61,6 +61,12 @@
 
   const submitAddContents = async (): Promise<void> => {
     try {
+      // 验证目录数量
+      if (newContents.value.length < 2) {
+        showSnackbar?.('目录至少需要2个子目录')
+        return
+      }
+
       console.log('begin post')
 
       const contentArray = newContents.value.map((item) => ({

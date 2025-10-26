@@ -22,6 +22,61 @@
       </v-chip>
     </div>
 
+    <!-- 只读模式控制 -->
+    <v-card flat class="pa-4 mb-4" rounded="lg" outlined>
+      <div class="d-flex align-center mb-4">
+        <v-icon icon="mdi-shield-lock-outline" color="deep-orange-darken-1" class="mr-2"></v-icon>
+        <h4 class="text-h6 font-weight-bold text-grey-darken-3">只读模式</h4>
+      </div>
+
+      <div class="mb-4">
+        <p class="text-body-2 text-grey-darken-1 mb-4">
+          开启只读模式后，系统将禁止所有写操作（创建、修改、删除），适用于系统维护、数据迁移等场景。登录、注册等基础功能不受影响。
+        </p>
+
+        <v-card
+          flat
+          class="pa-4"
+          rounded="lg"
+          elevation="0"
+          :color="readonlyModeEnabled ? 'red-lighten-5' : 'green-lighten-5'"
+        >
+          <div class="d-flex align-center justify-space-between">
+            <div>
+              <div class="d-flex align-center mb-2">
+                <v-icon
+                  :icon="readonlyModeEnabled ? 'mdi-lock' : 'mdi-lock-open'"
+                  :color="readonlyModeEnabled ? 'red-darken-2' : 'green-darken-2'"
+                  size="24"
+                  class="mr-2"
+                ></v-icon>
+                <h5
+                  class="text-subtitle-1 font-weight-bold"
+                  :class="readonlyModeEnabled ? 'text-red-darken-2' : 'text-green-darken-2'"
+                >
+                  当前状态
+                </h5>
+              </div>
+              <p class="text-h6 font-weight-bold" :class="readonlyModeEnabled ? 'text-red-darken-2' : 'text-green-darken-2'">
+                {{ readonlyModeEnabled ? '只读模式已开启' : '正常运行中' }}
+              </p>
+              <p class="text-caption text-grey-darken-1">
+                {{ readonlyModeEnabled ? '所有写操作已被禁止' : '系统可正常读写' }}
+              </p>
+            </div>
+            <v-switch
+              v-model="readonlyModeEnabled"
+              color="red-darken-1"
+              :loading="togglingReadonlyMode"
+              :disabled="togglingReadonlyMode"
+              hide-details
+              @update:model-value="toggleReadonlyMode"
+            ></v-switch>
+          </div>
+        </v-card>
+      </div>
+    </v-card>
+
     <!-- Redis 统计数据同步 -->
     <v-card flat class="pa-4 mb-4" rounded="lg" outlined>
       <div class="d-flex align-center mb-4">
@@ -448,8 +503,8 @@
 </template>
 
 <script setup lang="ts">
-import { inject, ref } from 'vue'
-import { statsServiceV1, adminAutoAuthorServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { inject, onMounted, ref } from 'vue'
+import { statsServiceV1, adminAutoAuthorServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -479,6 +534,9 @@ interface HealthResult {
 }
 
 // 响应式数据
+const readonlyModeEnabled = ref<boolean>(false)
+const togglingReadonlyMode = ref<boolean>(false)
+
 const syncDate = ref<string>('')
 const syncingManual = ref<boolean>(false)
 const syncingSpecific = ref<boolean>(false)
@@ -497,6 +555,55 @@ const clearingQueue = ref<boolean>(false)
 const operationHistory = ref<OperationRecord[]>([])
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
+
+/**
+ * 加载只读模式状态
+ */
+const loadReadonlyMode = async (): Promise<void> => {
+  try {
+    const response = await systemServiceV1.getReadonlyMode()
+    if (response.code === 200 && response.data) {
+      readonlyModeEnabled.value = response.data.enabled
+    }
+  } catch (error: any) {
+    console.error('[SystemOperations] 加载只读模式状态失败:', error)
+  }
+}
+
+/**
+ * 切换只读模式
+ */
+const toggleReadonlyMode = async (enabled: boolean): Promise<void> => {
+  togglingReadonlyMode.value = true
+
+  try {
+    console.log('[SystemOperations] 切换只读模式:', enabled)
+
+    const response = await systemServiceV1.setReadonlyMode(enabled)
+
+    if (response.code === 200) {
+      showSnackbar?.(enabled ? '只读模式已开启' : '只读模式已关闭', 'success')
+      addOperationToHistory(
+        '只读模式',
+        enabled ? '开启系统只读模式' : '关闭系统只读模式',
+        true
+      )
+      console.log('[SystemOperations] 只读模式切换成功')
+    } else {
+      throw new Error(response.message || '操作失败')
+    }
+  } catch (error: any) {
+    console.error('[SystemOperations] 切换只读模式失败:', error)
+
+    // 恢复原状态
+    readonlyModeEnabled.value = !enabled
+
+    showSnackbar?.(`切换只读模式失败: ${error.message}`, 'error')
+    addOperationToHistory('只读模式', `切换失败: ${error.message}`, false)
+  } finally {
+    togglingReadonlyMode.value = false
+  }
+}
 
 /**
  * 添加操作记录到历史
@@ -762,6 +869,11 @@ const clearQueue = async (): Promise<void> => {
     clearingQueue.value = false
   }
 }
+
+// 组件挂载时加载只读模式状态
+onMounted(() => {
+  loadReadonlyMode()
+})
 </script>
 
 <style scoped>

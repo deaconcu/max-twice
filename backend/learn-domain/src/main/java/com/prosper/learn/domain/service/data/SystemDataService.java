@@ -71,4 +71,27 @@ public class SystemDataService {
     public boolean exists(String key) {
         return systemMapper.existsByKey(key) > 0;
     }
+
+    /**
+     * 判断是否只读模式
+     * @return true=只读模式，false=正常模式
+     */
+    public boolean isReadOnlyMode() {
+        String value = getValue("readonly_mode");
+        return "1".equals(value);
+    }
+
+    /**
+     * 开启只读模式
+     */
+    public void enableReadOnlyMode() {
+        setValue("readonly_mode", "1");
+    }
+
+    /**
+     * 关闭只读模式
+     */
+    public void disableReadOnlyMode() {
+        setValue("readonly_mode", "0");
+    }
 }

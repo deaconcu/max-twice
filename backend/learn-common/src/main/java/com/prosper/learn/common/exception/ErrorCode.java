@@ -127,6 +127,7 @@ public enum ErrorCode {
 
     // 系统错误 9xxx
     SYSTEM_ERROR(9999, "系统繁忙，请稍后重试"),
+    SYSTEM_READONLY_MODE(9010, "系统维护中，暂时无法进行此操作"),
     DATABASE_ERROR(9001, "数据访问异常"),
     EXTERNAL_SERVICE_ERROR(9002, "外部服务调用失败"),
     REDIS_CONNECTION_ERROR(9003, "Redis连接异常"),

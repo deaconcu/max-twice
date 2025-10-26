@@ -94,7 +94,7 @@ public class AppConfiguration implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new SaInterceptor()).addPathPatterns("/**")
-                .excludePathPatterns("/login");  // 排除不需要验证的路径
+                .excludePathPatterns("/login", "/api/v1/public/**");  // 排除登录和公开接口
     }
 
     @Bean

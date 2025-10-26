@@ -407,6 +407,12 @@ public class PostService {
 
             log.info("content:" + request.getContent());
             List<Utils.Pair<String, String>> chapterInfos = parseJsonToChapterInfoList(request.getContent());
+
+            // 验证目录型 post 的子目录数量必须大于等于2
+            if (chapterInfos.size() < 2) {
+                throw ErrorCode.INVALID_PARAMETER.exception("至少需要2个子目录");
+            }
+
             String[] ids = new String[chapterInfos.size()];
 
             // 检查node name是否已存在，避免重复创建
