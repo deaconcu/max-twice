@@ -12,6 +12,7 @@ import com.prosper.learn.dto.request.CreateProfessionRequest;
 import com.prosper.learn.dto.request.UpdateProfessionRequest;
 import com.prosper.learn.dto.response.ProfessionDTO;
 import com.prosper.learn.persistence.dataobject.ProfessionDO;
+import com.prosper.learn.persistence.dataobject.UserDO;
 import com.prosper.learn.domain.service.data.ProfessionDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -81,14 +82,14 @@ public class ProfessionService {
         return toDTO(professionDOList);
     }
 
-    public Long create(long userId, CreateProfessionRequest request) {
+    public Long create(CreateProfessionRequest request, UserDO creator) {
         ProfessionDO professionDO = new ProfessionDO();
         professionDO.setName(request.getName());
         professionDO.setDescription(request.getDescription());
         professionDO.setSkills(request.getSkills());
         professionDO.setMainCategory(request.getMainCategory());
         professionDO.setSubCategory(request.getSubCategory());
-        professionDO.setCreatorId(userId);
+        professionDO.setCreatorId(creator.getId());
         professionDO.setState(ContentState.SUBMITTED.value());
         professionDO.setReason("");
         professionDO.setIcon("");
@@ -96,7 +97,7 @@ public class ProfessionService {
         return professionDO.getId();
     }
 
-    public void update(Long id, UpdateProfessionRequest request) {
+    public void update(Long id, UpdateProfessionRequest request, UserDO operator) {
         // 先验证参数
         if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("更新请求不能为空");
@@ -109,6 +110,11 @@ public class ProfessionService {
         ProfessionDO professionDO = professionDataService.getById(id);
         if (professionDO == null) {
             throw ErrorCode.PROFESSION_NOT_FOUND.exception();
+        }
+
+        // 验证权限：只有所有者或管理员可以修改
+        if (!professionDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(Enums.UserRole.ADMIN)) {
+            throw ErrorCode.PERMISSION_DENIED.exception();
         }
 
         // 更新字段
@@ -124,7 +130,7 @@ public class ProfessionService {
         professionDataService.update(professionDO);
     }
 
-    public void approve(long id) {
+    public void approve(long id, UserDO operator) {
         ProfessionDO profession = professionDataService.validateAndGet(id);
 
         // 状态验证:只有已批准的职业不能重复批准,已拒绝和已屏蔽的可以重新批准
@@ -150,7 +156,7 @@ public class ProfessionService {
         );
     }
 
-    public void reject(long id, String reason) {
+    public void reject(long id, String reason, UserDO operator) {
         ProfessionDO profession = professionDataService.validateAndGet(id);
 
         // 状态验证:已拒绝和已屏蔽的不能重复拒绝
@@ -178,7 +184,7 @@ public class ProfessionService {
         );
     }
 
-    public void ban(long id, String reason) {
+    public void ban(long id, String reason, UserDO operator) {
         ProfessionDO profession = professionDataService.validateAndGet(id);
 
         // 状态验证:已屏蔽的不能重复屏蔽
@@ -206,9 +212,25 @@ public class ProfessionService {
         );
     }
 
-    // TODO
-    public void delete(long id) {
-        //professionDataService.delete(id);
+    /**
+     * 删除职业
+     * 只有创建者或管理员可以删除
+     */
+    public void delete(long id, UserDO operator) {
+        ProfessionDO professionDO = professionDataService.getById(id);
+        if (professionDO == null) {
+            throw ErrorCode.PROFESSION_NOT_FOUND.exception();
+        }
+
+        // 验证权限：只有所有者或管理员可以删除
+        if (!professionDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(Enums.UserRole.ADMIN)) {
+            throw ErrorCode.PERMISSION_DENIED.exception();
+        }
+
+        // 执行删除
+        professionDataService.delete(id);
+
+        log.info("用户 {} 删除了职业 {}", operator.getId(), id);
     }
 
     public List<ProfessionDTO> getHotProfessions(int limit) {

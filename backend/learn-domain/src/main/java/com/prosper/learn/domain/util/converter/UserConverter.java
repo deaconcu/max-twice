@@ -19,6 +19,7 @@ public interface UserConverter {
     @Mapping(target = "emailValidated")
     @Mapping(target = "biography")
     @Mapping(target = "state")
+    @Mapping(target = "role")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
     UserDTO toDTO(UserDO userDO);
@@ -42,6 +43,7 @@ public interface UserConverter {
     @Mapping(target = "id")
     @Mapping(target = "name")
     @Mapping(target = "state")
+    @Mapping(target = "role")
     UserDTO toDTOV2(UserDO userDO);
 
     @IterableMapping(qualifiedByName = "toDTOV2")

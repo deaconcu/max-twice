@@ -461,7 +461,8 @@
 
 <script setup lang="ts">
 import { inject, onMounted, onUnmounted, ref, watch } from 'vue'
-import { professionServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { professionServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { adminProfessionServiceV1, adminSystemServiceV1 } from '@/services/api/v1/adminApiServiceV1'
 import { ContentState } from '@/types/enums'
 import type { Profession, ProfessionCategory, CategoryMapping } from '@/types/profession'
 import type { StateOption } from '@/types/common'
@@ -535,7 +536,7 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
 // 加载职业类别数据
 const loadProfessionCategories = async (): Promise<void> => {
   try {
-    const response = await systemServiceV1.getProfessionCategories()
+    const response = await adminSystemServiceV1.getProfessionCategories()
     if (response.code === 200 && response.data) {
       mainCategories.value = response.data.mainCategories || []
       categoryMapping.value = response.data.categoryMapping || []
@@ -605,7 +606,7 @@ const loadProfessionList = async (reset: boolean = true): Promise<void> => {
 
     const currentLastId = reset ? null : lastId.value
     const state = getCurrentState()
-    const response = await professionServiceV1.getAdminProfessions(state, currentLastId)
+    const response = await adminProfessionServiceV1.getAdminProfessions(state, currentLastId)
 
     if (response.code === 200 && response.data) {
       const newData = Array.isArray(response.data) ? response.data : []

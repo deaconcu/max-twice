@@ -1,8 +1,10 @@
 package com.prosper.learn.api.v1.controller;
 
-import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.UserService;
+import com.prosper.learn.persistence.dataobject.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.prosper.learn.api.v1.annotation.JsonParam;
@@ -41,12 +43,13 @@ public class SubscriptionsController {
      * 映射: POST /user/subscription → POST /api/v1/users/current/subscriptions
      */
     @PostMapping("/users/current/subscriptions")
+    @SaCheckLogin
     public ApiResponse<Object> subscribe(
             @JsonParam("courseId") @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
-            Long courseId) {
-        long userId = StpUtil.getLoginIdAsLong();
-        Object result = userService.subscribe(userId, courseId);
+            Long courseId,
+            @CurrentUser UserDO currentUser) {
+        Object result = userService.subscribe(currentUser.getId(), courseId);
         return ApiResponse.success(result);
     }
 
@@ -55,11 +58,12 @@ public class SubscriptionsController {
      * 映射: PUT /user/subscription → PUT /api/v1/users/current/subscriptions
      */
     @PutMapping("/users/current/subscriptions")
+    @SaCheckLogin
     public ApiResponse<Object> updateSubscriptions(
             @JsonParam("subscription") @NotBlank(message = "订阅内容不能为空")
-            String subscription) {
-        long userId = StpUtil.getLoginIdAsLong();
-        Object result = userService.updateSubscriptions(userId, subscription);
+            String subscription,
+            @CurrentUser UserDO currentUser) {
+        Object result = userService.updateSubscriptions(currentUser.getId(), subscription);
         return ApiResponse.success(result);
     }
 
@@ -68,12 +72,13 @@ public class SubscriptionsController {
      * 映射: DELETE /user/subscription → DELETE /api/v1/users/current/subscriptions/{courseId}
      */
     @DeleteMapping("/users/current/subscriptions/{courseId}")
+    @SaCheckLogin
     public ApiResponse<Object> unsubscribe(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
-            Long courseId) {
-        long userId = StpUtil.getLoginIdAsLong();
-        Object result = userService.unsubscribe(userId, courseId);
+            Long courseId,
+            @CurrentUser UserDO currentUser) {
+        Object result = userService.unsubscribe(currentUser.getId(), courseId);
         return ApiResponse.success(result);
     }
 }

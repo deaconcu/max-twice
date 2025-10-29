@@ -19,6 +19,7 @@ import com.prosper.learn.domain.util.converter.UserConverter;
 import com.prosper.learn.dto.response.ProfessionDTO;
 import com.prosper.learn.dto.response.RoadmapDTO;
 import com.prosper.learn.dto.response.UserDTO;
+import com.prosper.learn.persistence.dataobject.UserDO;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
 import com.prosper.learn.persistence.dataobject.UserCourseDO;
@@ -396,17 +397,16 @@ public class RoadmapService {
     /**
      * 获取职业路线图列表（带置顶和状态信息）
      */
-    public List<RoadmapDTO> getRoadmapsByProfession(Long professionId, Long lastId, long userId) {
+    public List<RoadmapDTO> getRoadmapsByProfession(Long professionId, Long lastId, UserDO currentUser) {
         validateProfessionId(professionId);
-        validateUserId(userId);
-        
+
         List<RoadmapDO> roadmapList = new ArrayList<>();
         int limit = systemProperties.getRoadmap().getDefaultPageSize();
 
         List<Long> pinnedRoadmapIds = new ArrayList<>();
         if (lastId == null || lastId == 0) {
-            pinnedRoadmapIds = getPinnedRoadmapIds(userId, professionId);
-            
+            pinnedRoadmapIds = getPinnedRoadmapIds(currentUser.getId(), professionId);
+
             if (!pinnedRoadmapIds.isEmpty()) {
                 List<RoadmapDO> pinnedRoadmaps = roadmapDataService.getByIds(pinnedRoadmapIds);
                 roadmapList.addAll(pinnedRoadmaps);
@@ -426,7 +426,7 @@ public class RoadmapService {
             }
         }
 
-        return toDTOV1(roadmapList, userId, professionId, lastId, pinnedRoadmapIds);
+        return toDTOV1(roadmapList, currentUser.getId(), professionId, lastId, pinnedRoadmapIds);
     }
 
     /**
@@ -447,17 +447,16 @@ public class RoadmapService {
     /**
      * 删除路线图（软删除）
      * @param id 路线图ID
-     * @param userId 用户ID
+     * @param operator 操作用户
      */
     @Transactional
-    public void deleteRoadmap(Long id, Long userId) {
+    public void deleteRoadmap(Long id, UserDO operator) {
         validateRoadmapId(id);
-        validateUserId(userId);
 
         RoadmapDO roadmapDO = validateRoadmapExists(id);
 
-        // 验证权限：只能删除自己创建的路线图
-        if (!roadmapDO.getCreatorId().equals(userId)) {
+        // 验证权限：只能删除自己创建的路线图，除非是管理员
+        if (!roadmapDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(Enums.UserRole.ADMIN)) {
             throw ErrorCode.PERMISSION_DENIED.exception();
         }
 
@@ -471,18 +470,18 @@ public class RoadmapService {
      * 更新路线图
      */
     @Transactional
-    public void updateRoadmap(Long id, String content, long userId) {
+    public void updateRoadmap(Long id, String content, UserDO operator) {
         validateRoadmapId(id);
         validateContent(content);
-        validateUserId(userId);
-        
+
         if (systemProperties.getRoadmap().isEnableContentValidation() && !isValidContentFormat(content)) {
             throw ErrorCode.ROADMAP_CONTENT_INVALID.exception();
         }
 
         RoadmapDO roadmapDO = validateRoadmapExists(id);
-        
-        if (systemProperties.getRoadmap().isEnablePermissionCheck() && roadmapDO.getCreatorId() != userId) {
+
+        // 验证权限：只有所有者或管理员可以修改
+        if (!roadmapDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(Enums.UserRole.ADMIN)) {
             throw ErrorCode.PERMISSION_DENIED.exception();
         }
 
@@ -491,22 +490,6 @@ public class RoadmapService {
         roadmapDO.setUpdatedAt(LocalDateTime.now());
 
         roadmapDataService.update(roadmapDO);
-    }
-
-    /**
-     * 路线图点赞
-     */
-    @Transactional
-    public RoadmapDTO upvoteRoadmap(Long id, long userId) {
-        boolean voted = upvoteService.upvoteRoadmap(id, userId);
-
-        int voteDelta = voted ? 1 : -1;
-        roadmapDataService.updateVoteCount(id, voteDelta);
-
-        RoadmapDO roadmapDO = roadmapDataService.getById(id);
-        scoreCalculationService.checkAndUpdateRoadmapScore(roadmapDO);
-
-        return toDTOV1(roadmapDataService.getById(id), userId);
     }
 
     /**
@@ -778,7 +761,7 @@ public class RoadmapService {
     /**
      * 批准路线图（直接通过，保留描述）
      */
-    public RoadmapDTO approve(long id) {
+    public RoadmapDTO approve(long id, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
@@ -794,7 +777,7 @@ public class RoadmapService {
     /**
      * 拒绝路线图
      */
-    public RoadmapDTO reject(long id, String reason) {
+    public RoadmapDTO reject(long id, String reason, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
@@ -826,7 +809,7 @@ public class RoadmapService {
     /**
      * 封禁路线图
      */
-    public RoadmapDTO ban(long id, String reason) {
+    public RoadmapDTO ban(long id, String reason, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
@@ -858,7 +841,7 @@ public class RoadmapService {
     /**
      * 清除描述并批准路线图
      */
-    public RoadmapDTO approveAndClearDescription(long id) {
+    public RoadmapDTO approveAndClearDescription(long id, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
@@ -873,7 +856,7 @@ public class RoadmapService {
     /**
      * 更新路线图描述（管理员操作）
      */
-    public RoadmapDTO updateDescription(long id, String description) {
+    public RoadmapDTO updateDescription(long id, String description, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();

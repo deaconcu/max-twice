@@ -276,7 +276,7 @@ class PostViewTracker {
 
     // 获取当前用户ID
     const userStore = useUserStore()
-    const userId = userStore.userId || null
+    const userId = userStore.currentUser?.id || null
 
     // 并发提交所有浏览记录
     const submitPromises = viewsToSubmit.map(async (viewRecord): Promise<SubmitResult> => {
@@ -477,7 +477,7 @@ class PostViewTracker {
     // 使用sendBeacon API进行可靠的数据提交
     if (navigator.sendBeacon) {
       const userStore = useUserStore()
-      const userId = userStore.userId || null
+      const userId = userStore.currentUser?.id || null
 
       this.pendingViews.forEach(async (viewRecord) => {
         try {

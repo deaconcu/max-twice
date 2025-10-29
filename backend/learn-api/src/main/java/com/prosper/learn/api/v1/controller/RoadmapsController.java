@@ -1,18 +1,18 @@
 package com.prosper.learn.api.v1.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.RoadmapService;
 import com.prosper.learn.dto.response.RoadmapDTO;
 import com.prosper.learn.dto.response.old.RoadmapDTOV1;
-import com.prosper.learn.dto.response.ApprovalResponseDTO;
 import com.prosper.learn.dto.request.*;
 import com.prosper.learn.api.v1.annotation.JsonParam;
+import com.prosper.learn.persistence.dataobject.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import cn.dev33.satoken.stp.StpUtil;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -38,20 +38,17 @@ public class RoadmapsController {
      * 映射: GET /roadmap/list/{professionId} → GET /api/v1/professions/{professionId}/roadmaps?lastId=123
      */
     @GetMapping("/professions/{professionId}/roadmaps")
+    @SaCheckLogin
     public ApiResponse<List<RoadmapDTO>> getRoadmapsByProfession(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
             Long professionId,
             @RequestParam(required = false, defaultValue = "0")
             @Min(value = 0, message = "最后ID不能小于0")
-            Long lastId) {
-        
-        if (!StpUtil.isLogin()) {
-            throw ErrorCode.USER_NOT_LOGIN.exception();
-        }
+            Long lastId,
+            @CurrentUser UserDO currentUser) {
 
-        long userId = StpUtil.getLoginIdAsLong();
-        List<RoadmapDTO> roadmaps = roadmapService.getRoadmapsByProfession(professionId, lastId, userId);
+        List<RoadmapDTO> roadmaps = roadmapService.getRoadmapsByProfession(professionId, lastId, currentUser);
 
         return ApiResponse.success(roadmaps);
     }
@@ -61,17 +58,15 @@ public class RoadmapsController {
      * 映射: PUT /roadmap/{id} → PUT /api/v1/roadmaps/{id}
      */
     @PutMapping("/roadmaps/{id}")
+    @SaCheckLogin
     public ApiResponse<Void> updateRoadmap(
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")
             Long id,
-            @JsonParam("content") @NotBlank(message = "内容不能为空") String content) {
-        if (!StpUtil.isLogin()) {
-            throw ErrorCode.USER_NOT_LOGIN.exception();
-        }
+            @JsonParam("content") @NotBlank(message = "内容不能为空") String content,
+            @CurrentUser UserDO currentUser) {
 
-        long userId = StpUtil.getLoginIdAsLong();
-        roadmapService.updateRoadmap(id, content, userId);
+        roadmapService.updateRoadmap(id, content, currentUser);
         return ApiResponse.success();
     }
 
@@ -80,14 +75,12 @@ public class RoadmapsController {
      * 映射: POST /roadmap → POST /api/v1/roadmaps
      */
     @PostMapping("/roadmaps")
-    public ApiResponse<Long> createRoadmap(@RequestBody @Valid CreateRoadmapRequest request) {
-        
-        if (!StpUtil.isLogin()) {
-            throw ErrorCode.USER_NOT_LOGIN.exception();
-        }
+    @SaCheckLogin
+    public ApiResponse<Long> createRoadmap(
+            @RequestBody @Valid CreateRoadmapRequest request,
+            @CurrentUser UserDO currentUser) {
 
-        long userId = StpUtil.getLoginIdAsLong();
-        Long roadmapId = roadmapService.createRoadmap(request.getProfessionId(), request.getContent(), request.getDescription(), userId);
+        Long roadmapId = roadmapService.createRoadmap(request.getProfessionId(), request.getContent(), request.getDescription(), currentUser.getId());
         return ApiResponse.success(roadmapId);
     }
 
@@ -96,12 +89,13 @@ public class RoadmapsController {
      * 映射: GET /roadmap/{id} → GET /api/v1/roadmaps/{id}
      */
     @GetMapping("/roadmaps/{id}")
+    @SaCheckLogin
     public ApiResponse<RoadmapDTO> getRoadmap(
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")
-            Long id) {
-        long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : 0;
-        RoadmapDTO roadmapDTOV1 = roadmapService.getRoadmapWithContent(id, userId);
+            Long id,
+            @CurrentUser UserDO currentUser) {
+        RoadmapDTO roadmapDTOV1 = roadmapService.getRoadmapWithContent(id, currentUser.getId());
 
         return ApiResponse.success(roadmapDTOV1);
     }
@@ -111,67 +105,14 @@ public class RoadmapsController {
      * 映射: POST /roadmap/pin → POST /api/v1/roadmaps/pin
      */
     @PostMapping("/roadmaps/pin")
-    public ApiResponse<Boolean> pinRoadmap(@RequestBody @Valid SetRoadmapProgressRequest request) {
-        if (!StpUtil.isLogin()) {
-            throw ErrorCode.USER_NOT_LOGIN.exception();
-        }
+    @SaCheckLogin
+    public ApiResponse<Boolean> pinRoadmap(
+            @RequestBody @Valid SetRoadmapProgressRequest request,
+            @CurrentUser UserDO currentUser) {
 
-        long userId = StpUtil.getLoginIdAsLong();
-        Boolean pinned = roadmapService.pinRoadmap(request.getProfessionId(), request.getRoadmapId(), userId);
+        Boolean pinned = roadmapService.pinRoadmap(request.getProfessionId(), request.getRoadmapId(), currentUser.getId());
 
         return ApiResponse.success(pinned);
-    }
-
-    /**
-     * 管理后台：按条件获取路线图列表
-     * 映射: GET /api/v1/admin/roadmaps?state=0&professionId=1&creatorId=2&lastId=123
-     */
-    @GetMapping("/admin/roadmaps")
-    public ApiResponse<List<RoadmapDTO>> getAdminRoadmaps(
-            @RequestParam(required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state,
-            @RequestParam(required = false) @Positive(message = "职业ID必须大于0") Long professionId,
-            @RequestParam(required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
-            @RequestParam(required = false) Long lastId) {
-
-        List<RoadmapDTO> roadmaps = roadmapService.listByFilter(state, professionId, creatorId, lastId);
-        return ApiResponse.success(roadmaps);
-    }
-
-    /**
-     * 路线图审核操作
-     * 映射: POST /api/v1/roadmaps/{id}/approve
-     */
-    @PostMapping("/roadmaps/{id}/approve")
-    public ApiResponse<RoadmapDTO> approveRoadmap(
-            @PathVariable @NotNull(message = "路线图ID不能为空")
-            @Positive(message = "路线图ID必须大于0")
-            Long id,
-            @RequestBody @Valid OperateRequest request) {
-
-        RoadmapDTO roadmap = switch (request.getAction().toLowerCase()) {
-            case "approve" -> roadmapService.approve(id);
-            case "approve_clear" -> roadmapService.approveAndClearDescription(id);
-            case "reject" -> roadmapService.reject(id, request.getReason());
-            case "ban" -> roadmapService.ban(id, request.getReason());
-            default -> throw ErrorCode.SYSTEM_ERROR.exception();
-        };
-
-        return ApiResponse.success(roadmap);
-    }
-
-    /**
-     * 更新路线图描述
-     * 映射: PUT /api/v1/roadmaps/{id}/description
-     */
-    @PutMapping("/roadmaps/{id}/description")
-    public ApiResponse<RoadmapDTO> updateRoadmapDescription(
-            @PathVariable @NotNull(message = "路线图ID不能为空")
-            @Positive(message = "路线图ID必须大于0")
-            Long id,
-            @JsonParam("description") String description) {
-
-        RoadmapDTO roadmap = roadmapService.updateDescription(id, description);
-        return ApiResponse.success(roadmap);
     }
 
     /**
@@ -180,11 +121,12 @@ public class RoadmapsController {
      * GET /api/v1/users/me/roadmaps?lastId=0
      */
     @GetMapping("/users/me/roadmaps")
+    @SaCheckLogin
     public ApiResponse<List<RoadmapDTO>> getCurrentUserRoadmaps(
-            @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId) {
+            @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
+            @CurrentUser UserDO currentUser) {
 
-        Long currentUserId = StpUtil.getLoginIdAsLong();
-        List<RoadmapDTO> roadmaps = roadmapService.getUserRoadmaps(currentUserId, lastId, null);
+        List<RoadmapDTO> roadmaps = roadmapService.getUserRoadmaps(currentUser.getId(), lastId, null);
         return ApiResponse.success(roadmaps);
     }
 
@@ -206,15 +148,12 @@ public class RoadmapsController {
      * DELETE /api/v1/roadmaps/{id}
      */
     @DeleteMapping("/roadmaps/{id}")
+    @SaCheckLogin
     public ApiResponse<Void> deleteRoadmap(
-            @PathVariable @NotNull(message = "路线图ID不能为空") @Positive(message = "路线图ID必须大于0") Long id) {
+            @PathVariable @NotNull(message = "路线图ID不能为空") @Positive(message = "路线图ID必须大于0") Long id,
+            @CurrentUser UserDO currentUser) {
 
-        if (!StpUtil.isLogin()) {
-            throw ErrorCode.USER_NOT_LOGIN.exception();
-        }
-
-        long userId = StpUtil.getLoginIdAsLong();
-        roadmapService.deleteRoadmap(id, userId);
+        roadmapService.deleteRoadmap(id, currentUser);
         return ApiResponse.success();
     }
 }

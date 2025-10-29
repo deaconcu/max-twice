@@ -25,7 +25,7 @@ const { t } = useI18n()
 const userStore = useUserStore()
 
 // 获取当前用户ID
-const currentUserId = computed(() => userStore.userId)
+const currentUserId = computed(() => userStore.currentUser?.id)
 
 const dialog = ref(false)
 const loading = ref(false)

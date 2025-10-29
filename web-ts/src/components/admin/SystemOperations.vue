@@ -504,7 +504,8 @@
 
 <script setup lang="ts">
 import { inject, onMounted, ref } from 'vue'
-import { statsServiceV1, adminAutoAuthorServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { statsServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { adminAutoAuthorServiceV1, adminSystemServiceV1 } from '@/services/api/v1/adminApiServiceV1'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -561,7 +562,7 @@ const showSnackbar = inject<(message: string, type?: string) => void>('showSnack
  */
 const loadReadonlyMode = async (): Promise<void> => {
   try {
-    const response = await systemServiceV1.getReadonlyMode()
+    const response = await adminSystemServiceV1.getReadonlyMode()
     if (response.code === 200 && response.data) {
       readonlyModeEnabled.value = response.data.enabled
     }
@@ -579,7 +580,7 @@ const toggleReadonlyMode = async (enabled: boolean): Promise<void> => {
   try {
     console.log('[SystemOperations] 切换只读模式:', enabled)
 
-    const response = await systemServiceV1.setReadonlyMode(enabled)
+    const response = await adminSystemServiceV1.setReadonlyMode(enabled)
 
     if (response.code === 200) {
       showSnackbar?.(enabled ? '只读模式已开启' : '只读模式已关闭', 'success')

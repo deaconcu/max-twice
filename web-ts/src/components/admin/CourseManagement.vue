@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { inject, onMounted, ref } from 'vue'
-  import { courseServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1'
+  import { courseServiceV1 } from '@/services/api/v1/apiServiceV1'
+  import { adminCourseServiceV1, adminSystemServiceV1 } from '@/services/api/v1/adminApiServiceV1'
   import { ContentState, ApprovalAction } from '@/types/enums'
   import type { Course } from '@/types/course'
   import type { MainCategory, SubCategory, CategoryMapping, StateOption } from '@/types/common'
@@ -150,7 +151,9 @@
         selectedMainCategory.value &&
         selectedSubCategory.value
       ) {
-        response = await courseServiceV1.getCoursesByCategory(
+        response = await adminCourseServiceV1.getAdminCourses(
+          currentState,
+          null,
           selectedMainCategory.value,
           selectedSubCategory.value
         )
@@ -159,7 +162,7 @@
       } else {
         // 使用lastId进行分页查询
         const currentLastId = isLoadMore ? lastId.value : null
-        response = await courseServiceV1.getAdminCourses(currentState, currentLastId)
+        response = await adminCourseServiceV1.getAdminCourses(currentState, currentLastId)
       }
 
       if (response.code === 200) {
@@ -240,15 +243,15 @@
     subcourseList.value = []
 
     try {
-      const response = await courseServiceV1.getCourse(Number(searchCourseId.value))
+      const response = await adminCourseServiceV1.getAdminCourse(Number(searchCourseId.value))
 
       if (response.code === 200) {
         searchedCourse.value = response.data
 
         // 自动查询子课程（如果可能是父课程）
         try {
-          const subcourseResponse = await courseServiceV1.getCoursesByState(
-            undefined,
+          const subcourseResponse = await adminCourseServiceV1.getAdminSubcourses(
+            Number(searchCourseId.value),
             undefined
           )
           if (subcourseResponse.code === 200) {
@@ -281,7 +284,7 @@
   // 加载课程分类数据
   const loadCourseCategories = async (): Promise<void> => {
     try {
-      const response = await systemServiceV1.getCourseCategories()
+      const response = await adminSystemServiceV1.getCourseCategories()
 
       if (response.code === 200 && response.data) {
         // 新的key-value格式：数据是JSON字符串

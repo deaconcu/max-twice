@@ -48,6 +48,86 @@ public class Enums {
         }
     }
 
+    /**
+     * 用户角色枚举
+     * 角色代码按添加顺序分配，用于唯一标识角色
+     * 权限级别用于权限比较
+     */
+    public enum UserRole implements ValueEnum<Integer> {
+        USER(0, "user", "普通用户", 0),
+        MODERATOR(1, "moderator", "审核员", 30),
+        ADMIN(2, "admin", "管理员", 60),
+        SUPER_ADMIN(3, "super_admin", "超级管理员", 100);
+
+        private final int code;           // 数据库存储值
+        private final String name;        // Sa-Token 使用的角色名
+        private final String description; // 角色描述
+        private final int level;          // 权限级别（用于权限比较）
+
+        UserRole(int code, String name, String description, int level) {
+            this.code = code;
+            this.name = name;
+            this.description = description;
+            this.level = level;
+        }
+
+        @Override
+        public Integer value() {
+            return code;
+        }
+
+        public int getCode() {
+            return code;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public int getLevel() {
+            return level;
+        }
+
+        /**
+         * 根据 code 获取枚举
+         */
+        public static UserRole fromCode(Integer code) {
+            if (code == null) {
+                return USER; // 默认为普通用户
+            }
+            for (UserRole role : values()) {
+                if (role.code == code) {
+                    return role;
+                }
+            }
+            throw new IllegalArgumentException("Unknown role code: " + code);
+        }
+
+        public static UserRole getByValue(Integer value) {
+            return fromCode(value);
+        }
+
+        public static boolean isValid(int code) {
+            try {
+                fromCode(code);
+                return true;
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
+        }
+
+        /**
+         * 判断当前角色是否等于或高于指定角色
+         */
+        public boolean equalOrHigher(UserRole role) {
+            return this.level >= role.level;
+        }
+    }
+
     public enum ContentType implements ValueEnum<Integer> {
         post(1),
         node(2),
@@ -250,6 +330,44 @@ public class Enums {
         APPROVED,   // 审核通过
         REJECTED,   // 审核拒绝
         BANNED      // 封禁
+    }
+
+    /**
+     * 操作级别枚举（用于操作日志）
+     */
+    public enum OperationLevel implements ValueEnum<Integer> {
+        LOW(1, "低"),      // 审核通过、恢复内容
+        MEDIUM(2, "中"),   // 审核拒绝、临时屏蔽
+        HIGH(3, "高");     // 删除、封禁、修改角色
+
+        private final int code;
+        private final String description;
+
+        OperationLevel(int code, String description) {
+            this.code = code;
+            this.description = description;
+        }
+
+        @Override
+        public Integer value() {
+            return code;
+        }
+
+        public int getCode() {
+            return code;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public static OperationLevel getByValue(Integer value) {
+            return ValueEnum.getByValue(OperationLevel.class, value);
+        }
+
+        public static boolean isValid(int value) {
+            return ValueEnum.isValid(OperationLevel.class, value);
+        }
     }
 
 

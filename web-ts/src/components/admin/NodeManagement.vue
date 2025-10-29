@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { inject, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { nodeServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { adminNodeServiceV1 } from '@/services/api/v1/adminApiServiceV1'
 import { ContentState } from '@/types/enums'
 import type { Node } from '@/types/node'
 import RejectBanDialog from './RejectBanDialog.vue'
@@ -83,7 +83,7 @@ const getNodesByTab = async (tabKey: string, isLoadMore: boolean = false): Promi
     const currentTabConfig = tabs.find(tab => tab.key === tabKey)
     if (!currentTabConfig) return
 
-    const response = await nodeServiceV1.getAdminNodes(
+    const response = await adminNodeServiceV1.getAdminNodes(
       currentTabConfig.state,
       null,
       null,
@@ -133,7 +133,7 @@ const searchNodes = async (isLoadMore: boolean = false) => {
       currentState = currentTabConfig?.state || null
     }
 
-    const response = await nodeServiceV1.getAdminNodes(
+    const response = await adminNodeServiceV1.getAdminNodes(
       currentState,
       filterNodeId.value || null,
       filterCourseId.value || null,
@@ -225,7 +225,7 @@ const getStateText = (state: ContentState): string => {
 
 const updateNodeState = async (node: Node, newState: number) => {
   try {
-    const response = await nodeServiceV1.updateNodeState(node.id, newState)
+    const response = await adminNodeServiceV1.updateNodeState(node.id, newState)
     if (response.code === 200) {
       const updatedNode = response.data as Node
       // 从当前列表中移除（如果状态改变且不在筛选模式）
@@ -273,7 +273,7 @@ const handleConfirmAction = async (reason: string) => {
     submitting.value = true
     const targetState = dialogType.value === 'reject' ? ContentState.REJECTED : ContentState.BANNED
 
-    const response = await nodeServiceV1.updateNodeState(currentNode.value.id, targetState, reason)
+    const response = await adminNodeServiceV1.updateNodeState(currentNode.value.id, targetState, reason)
 
     if (response.code === 200) {
       const message = dialogType.value === 'reject' ? '已拒绝' : '已屏蔽'

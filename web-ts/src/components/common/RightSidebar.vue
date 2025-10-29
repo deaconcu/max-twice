@@ -179,14 +179,16 @@
       let courses: LearningCourse[] = []
 
       if (roadmapResponse.code === 200 && Array.isArray(roadmapResponse.data)) {
-        roadmaps = roadmapResponse.data.map((userRoadmap: any): LearningRoadmap => ({
-          id: userRoadmap.roadmap.id,
-          title: userRoadmap.roadmap.description || `学习路线图 ${userRoadmap.roadmap.id}`,
-          progress: userRoadmap.progressPercent || 0,
-          status: userRoadmap.status,
-          lastActivity: getRelativeTime(userRoadmap.updatedAt),
-          profession: userRoadmap.roadmap.profession,
-        }))
+        roadmaps = roadmapResponse.data
+          .filter((userRoadmap: any) => userRoadmap.roadmap != null)
+          .map((userRoadmap: any): LearningRoadmap => ({
+            id: userRoadmap.roadmap.id,
+            title: userRoadmap.roadmap.description || `学习路线图 ${userRoadmap.roadmap.id}`,
+            progress: userRoadmap.progressPercent || 0,
+            status: userRoadmap.status,
+            lastActivity: getRelativeTime(userRoadmap.updatedAt),
+            profession: userRoadmap.roadmap.profession,
+          }))
       }
 
       if (courseResponse.code === 200 && Array.isArray(courseResponse.data)) {

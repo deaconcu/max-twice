@@ -45,7 +45,7 @@ const showSnackbar = inject('showSnackbar') as (message: string, type?: string) 
 const userStore = useUserStore()
 
 // 当前操作的用户ID
-const targetUserId = computed(() => props.userId || userStore.userId)
+const targetUserId = computed(() => props.userId || userStore.currentUser?.id)
 
 // 学习进度相关数据
 const learningData: Ref<LearningData> = ref({

@@ -87,7 +87,12 @@ const subscript = async (courseId: number, action: boolean): Promise<void> => {
       console.log(`data:${response.data}`)
       console.log('done')
       // 更新用户store中的数据
-      user.setSubscription(response.data)
+      if (user.currentUser) {
+        user.setUser({
+          ...user.currentUser,
+          subscriptions: response.data
+        })
+      }
       showSnackbar?.(
         action ? t('read.messages.favoriteSuccess') : t('read.messages.favoriteRemoved'),
         'success'
@@ -144,7 +149,7 @@ const goToParentCourse = (): void => {
 // 创建子课程
 const postApplyCourse = async (): Promise<void> => {
   try {
-    if (!user.userId) {
+    if (!user.currentUser?.id) {
       showSnackbar?.(t('read.messages.pleaseLogin'), 'error')
       return
     }

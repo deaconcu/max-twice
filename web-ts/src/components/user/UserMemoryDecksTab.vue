@@ -23,7 +23,7 @@ const router = useRouter()
 const userStore = useUserStore()
 
 // 判断是否为当前用户自己
-const isCurrentUser = computed(() => !props.userId || props.userId === userStore.userId)
+const isCurrentUser = computed(() => !props.userId || props.userId === userStore.currentUser?.id)
 
 // 卡片组列表数据
 const deckList: Ref<MemoryCardDeck[]> = ref([])

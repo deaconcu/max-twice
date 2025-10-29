@@ -4,6 +4,7 @@ import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.data.PostDataService;
 import com.prosper.learn.domain.service.data.MemoryCardDeckDataService;
+import com.prosper.learn.domain.service.data.UserDataService;
 import com.prosper.learn.domain.service.business.PostService;
 import com.prosper.learn.domain.service.business.MemoryCardDeckService;
 import com.prosper.learn.dto.request.CreateDeckRequest;
@@ -33,6 +34,7 @@ public class AutoAuthorExecutor {
     private final AutoAuthorGenerationService generationService;
     private final PostDataService postDataService;
     private final PostService postService;
+    private final UserDataService userDataService;
     private final MemoryCardDeckDataService deckDataService;
     private final MemoryCardDeckService memoryCardDeckService;
     private final SystemProperties systemProperties;
@@ -85,7 +87,7 @@ public class AutoAuthorExecutor {
             List<PostDO> existingPosts = postDataService.getListByNodeAndCreator(nodeId, aiUserId);
             for (PostDO post : existingPosts) {
                 if (post.getState() != Enums.ContentState.BANNED.value()) {
-                    postService.deletePost(post.getId(), aiUserId);
+                    postService.deletePost(post.getId(), userDataService.getById(aiUserId));
                     log.info("Soft deleted existing AI post {} for node {}", post.getId(), nodeId);
                 }
             }

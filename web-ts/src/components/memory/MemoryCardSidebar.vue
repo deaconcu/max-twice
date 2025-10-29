@@ -321,7 +321,7 @@ defineExpose({
               </h4>
               <!-- 状态标签 (仅当创建者是当前用户时显示) -->
               <v-chip
-                v-if="deck.creator?.id === userStore.userId"
+                v-if="deck.creator?.id === userStore.currentUser?.id"
                 size="x-small"
                 :color="getStateColor(deck.state)"
                 variant="flat"

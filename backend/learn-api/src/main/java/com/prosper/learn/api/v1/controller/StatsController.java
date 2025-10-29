@@ -12,7 +12,6 @@ import com.prosper.learn.api.v1.annotation.JsonParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import cn.dev33.satoken.stp.StpUtil;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;

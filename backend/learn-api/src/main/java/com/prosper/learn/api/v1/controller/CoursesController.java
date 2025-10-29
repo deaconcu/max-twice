@@ -1,15 +1,15 @@
 package com.prosper.learn.api.v1.controller;
 
-import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
-import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.Enums.ContentState;
 import com.prosper.learn.dto.request.*;
 import com.prosper.learn.dto.response.CourseDTO;
+import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
-import com.prosper.learn.dto.response.ApprovalResponseDTO;
 import com.prosper.learn.domain.service.business.CourseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,25 +50,6 @@ public class CoursesController {
     public ApiResponse<List<CourseDTO>> searchCourses(
             @RequestParam @NotBlank(message = "搜索名称不能为空") String name) {
         List<CourseDTO> courseList = courseService.searchCoursesByName(name);
-        return ApiResponse.success(courseList);
-    }
-
-    /**
-     * 管理后台：按状态获取课程列表
-     * 映射: GET /api/v1/admin/courses?state=0&lastId=123
-     */
-    @GetMapping("/admin/courses")
-    public ApiResponse<Object> getAdminCourses(
-            @RequestParam @NotNull(message = "状态不能为空")
-            @Min(value = 0, message = "状态必须大于等于0") Byte state,
-            @RequestParam(required = false) Long lastId) {
-
-        ContentState courseState = ContentState.getByValue(state.intValue());
-        if (courseState == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("Invalid course state: " + state);
-        }
-
-        List<CourseDTO> courseList = courseService.getListByStateAndLastId(courseState, lastId);
         return ApiResponse.success(courseList);
     }
 
@@ -136,9 +117,11 @@ public class CoursesController {
      * 映射: POST /course → POST /api/v1/courses
      */
     @PostMapping("/courses")
-    public ApiResponse<Object> createCourse(@Valid @RequestBody CreateCourseRequest request) {
-        long userId = StpUtil.getLoginIdAsLong();
-        courseService.createCourse(request, userId);
+    @SaCheckLogin
+    public ApiResponse<Object> createCourse(
+            @Valid @RequestBody CreateCourseRequest request,
+            @CurrentUser UserDO currentUser) {
+        courseService.createCourse(request, currentUser);
         return ApiResponse.success("课程创建成功");
     }
 
@@ -147,12 +130,14 @@ public class CoursesController {
      * 映射: PUT /course/{id} → PUT /api/v1/courses/{id}
      */
     @PutMapping("/courses/{id}")
+    @SaCheckLogin
     public ApiResponse<Object> updateCourse(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
             Long id,
-            @Valid @RequestBody UpdateCourseRequest request) {
-        courseService.updateCourse(id, request);
+            @Valid @RequestBody UpdateCourseRequest request,
+            @CurrentUser UserDO currentUser) {
+        courseService.updateCourse(id, request, currentUser);
         return ApiResponse.success("更新成功");
     }
 
@@ -161,76 +146,15 @@ public class CoursesController {
      * 映射: POST /subcourse → POST /api/v1/courses/{parentId}/subcourses
      */
     @PostMapping("/courses/{parentId}/subcourses")
+    @SaCheckLogin
     public ApiResponse<Object> createSubcourse(
             @PathVariable @NotNull(message = "父课程ID不能为空")
             @Positive(message = "父课程ID必须大于0")
             Long parentId,
-            @RequestBody @Valid CreateSubcourseRequest request) {
-        
-        long userId = StpUtil.getLoginIdAsLong();
-        courseService.createSubcourse(request.getName(), request.getDescription(), parentId, userId);
+            @RequestBody @Valid CreateSubcourseRequest request,
+            @CurrentUser UserDO currentUser) {
+
+        courseService.createSubcourse(request.getName(), request.getDescription(), parentId, currentUser);
         return ApiResponse.success("课程创建成功");
-    }
-
-    /**
-     * 课程审核操作
-     * 映射: POST /course/operate → POST /api/v1/courses/{id}/approve
-     */
-    @PostMapping("/courses/{id}/approve")
-    public ApiResponse<ApprovalResponseDTO> approveCourse(
-            @PathVariable @NotNull(message = "课程ID不能为空")
-            @Positive(message = "课程ID必须大于0")
-            Long id,
-            @RequestBody @Valid OperateRequest request) {
-        
-        if (!courseService.exist(id)) {
-            throw ErrorCode.SYSTEM_ERROR.exception();
-        }
-
-        ApprovalResponseDTO response = switch (request.getAction().toLowerCase()) {
-            case "approve" -> {
-                courseService.approve(id);
-                yield ApprovalResponseDTO.builder()
-                        .success(true)
-                        .message("批准成功")
-                        .objectId(id)
-                        .objectType("course")
-                        .action("approve")
-                        .build();
-            }
-            case "reject" -> {
-                courseService.reject(id, request.getReason());
-                yield ApprovalResponseDTO.builder()
-                        .success(true)
-                        .message("拒绝成功")
-                        .objectId(id)
-                        .objectType("course")
-                        .action("reject")
-                        .build();
-            }
-            case "ban" -> {
-                courseService.ban(id, request.getReason());
-                yield ApprovalResponseDTO.builder()
-                        .success(true)
-                        .message("封禁成功")
-                        .objectId(id)
-                        .objectType("course")
-                        .action("ban")
-                        .build();
-            }
-            case "delete" -> {
-                courseService.delete(id);
-                yield ApprovalResponseDTO.builder()
-                        .success(true)
-                        .message("删除成功")
-                        .objectId(id)
-                        .objectType("course")
-                        .action("delete")
-                        .build();
-            }
-            default -> throw ErrorCode.SYSTEM_ERROR.exception();
-        };
-        
-        return ApiResponse.success(response);
     }
 }

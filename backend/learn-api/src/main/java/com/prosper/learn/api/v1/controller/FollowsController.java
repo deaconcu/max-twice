@@ -1,10 +1,12 @@
 package com.prosper.learn.api.v1.controller;
 
-import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.FollowService;
 import com.prosper.learn.dto.response.FolloweeDTO;
 import com.prosper.learn.api.v1.annotation.JsonParam;
+import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 import lombok.RequiredArgsConstructor;
@@ -31,12 +33,13 @@ public class FollowsController {
      * 映射: POST /user/follow → POST /api/v1/follows
      */
     @PostMapping("/follows")
+    @SaCheckLogin
     public ApiResponse<Void> follow(
             @JsonParam("followeeId") @NotNull(message = "被关注用户ID不能为空")
             @Positive(message = "被关注用户ID必须大于0")
-            Long followeeId) {
-        Long followerId = StpUtil.getLoginIdAsLong();
-        followService.follow(followerId, followeeId);
+            Long followeeId,
+            @CurrentUser UserDO currentUser) {
+        followService.follow(currentUser, followeeId);
         return ApiResponse.success();
     }
 
@@ -45,12 +48,13 @@ public class FollowsController {
      * 映射: DELETE /user/follow → DELETE /api/v1/follows/{followeeId}
      */
     @DeleteMapping("/follows/{followeeId}")
+    @SaCheckLogin
     public ApiResponse<Void> unfollow(
             @PathVariable @NotNull(message = "被关注用户ID不能为空")
             @Positive(message = "被关注用户ID必须大于0")
-            Long followeeId) {
-        Long followerId = StpUtil.getLoginIdAsLong();
-        followService.unfollow(followerId, followeeId);
+            Long followeeId,
+            @CurrentUser UserDO currentUser) {
+        followService.unfollow(currentUser.getId(), followeeId);
         return ApiResponse.success();
     }
 

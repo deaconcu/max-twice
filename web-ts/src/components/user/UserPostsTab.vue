@@ -30,10 +30,10 @@ const props = defineProps<{
 const userStore = useUserStore()
 
 // 当前操作的用户ID
-const targetUserId = computed(() => props.userId || userStore.userId)
+const targetUserId = computed(() => props.userId || userStore.currentUser?.id)
 
 // 是否查看自己
-const isSelf = computed(() => targetUserId.value === userStore.userId)
+const isSelf = computed(() => targetUserId.value === userStore.currentUser?.id)
 
 // 内部状态管理
 const mainArea: Ref<'list' | 'detail' | 'edit'> = ref('list')

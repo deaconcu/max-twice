@@ -1,6 +1,7 @@
 package com.prosper.learn.api.v1.config;
 
 import com.prosper.learn.api.v1.interceptor.ReadOnlyModeInterceptor;
+import com.prosper.learn.api.v1.resolver.CurrentUserArgumentResolver;
 import com.prosper.learn.api.v1.resolver.JsonParamArgumentResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
@@ -19,11 +20,13 @@ import java.util.List;
 public class WebMvcConfig implements WebMvcConfigurer {
 
     private final JsonParamArgumentResolver jsonParamArgumentResolver;
+    private final CurrentUserArgumentResolver currentUserArgumentResolver;
     private final ReadOnlyModeInterceptor readOnlyModeInterceptor;
 
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
         resolvers.add(jsonParamArgumentResolver);
+        resolvers.add(currentUserArgumentResolver);
     }
 
     @Override

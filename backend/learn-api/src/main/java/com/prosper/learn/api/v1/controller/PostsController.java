@@ -1,15 +1,14 @@
 package com.prosper.learn.api.v1.controller;
 
-import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.PostService;
 import com.prosper.learn.dto.request.CreatePostRequest;
-import com.prosper.learn.dto.request.OperateRequest;
 import com.prosper.learn.dto.request.UpdatePostRequest;
-import com.prosper.learn.dto.response.ApprovalResponseDTO;
 import com.prosper.learn.dto.response.PostDTO;
+import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
@@ -37,14 +36,15 @@ public class PostsController {
      * 映射: GET /postings?ids=1,2,3 → GET /api/v1/posts?ids=1,2,3
      */
     @GetMapping("/posts")
+    @SaCheckLogin
     public ApiResponse<List<PostDTO>> getPosts(
             @RequestParam(value = "ids", required = false) List<Long> ids,
             @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
             @RequestParam(value = "lastScore", required = false, defaultValue = "0") double lastScore,
-            @RequestParam(value = "lastId", required = false, defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastPostingId) {
-        
-        long currentUserId = StpUtil.getLoginIdAsLong();
-        List<PostDTO> posts = postService.getPostsWithUserAndVoteInfo(ids, nodeId, lastScore, lastPostingId, currentUserId);
+            @RequestParam(value = "lastId", required = false, defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastPostingId,
+            @CurrentUser UserDO currentUser) {
+
+        List<PostDTO> posts = postService.getPostsWithUserAndVoteInfo(ids, nodeId, lastScore, lastPostingId, currentUser.getId());
         return ApiResponse.success(posts);
     }
 
@@ -53,9 +53,11 @@ public class PostsController {
      * 映射: POST /posting → POST /api/v1/posts
      */
     @PostMapping("/posts")
-    public ApiResponse<Void> createPost(@Valid @RequestBody CreatePostRequest request) {
-        long userId = StpUtil.getLoginIdAsLong();
-        postService.createPost(userId, request);
+    @SaCheckLogin
+    public ApiResponse<Void> createPost(
+            @Valid @RequestBody CreatePostRequest request,
+            @CurrentUser UserDO currentUser) {
+        postService.createPost(currentUser, request);
         return ApiResponse.success();
     }
 
@@ -64,12 +66,14 @@ public class PostsController {
      * 映射: PUT /posting → PUT /api/v1/posts/{id}
      */
     @PutMapping("/posts/{id}")
+    @SaCheckLogin
     public ApiResponse<PostDTO> updatePost(
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
             Long id,
-            @Valid @RequestBody UpdatePostRequest request) {
-        PostDTO postDTO = postService.updatePostAndReturn(id, request);
+            @Valid @RequestBody UpdatePostRequest request,
+            @CurrentUser UserDO currentUser) {
+        PostDTO postDTO = postService.updatePostAndReturn(id, request, currentUser);
         return ApiResponse.success(postDTO);
     }
 
@@ -78,12 +82,13 @@ public class PostsController {
      * 映射: DELETE /posting → DELETE /api/v1/posts/{id}
      */
     @DeleteMapping("/posts/{id}")
+    @SaCheckLogin
     public ApiResponse<Void> deletePost(
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
-            Long id) {
-        long userId = StpUtil.getLoginIdAsLong();
-        postService.deletePost(id, userId);
+            Long id,
+            @CurrentUser UserDO currentUser) {
+        postService.deletePost(id, currentUser);
         return ApiResponse.success();
     }
 
@@ -114,108 +119,6 @@ public class PostsController {
     }
 
     /**
-     * 根据状态获取帖子列表
-     */
-    @GetMapping("/admin/posts")
-    public ApiResponse<List<PostDTO>> getPostsByState(
-            @RequestParam("state") @NotBlank(message = "状态不能为空") String state,
-            @RequestParam(value = "lastId", defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
-            @RequestParam(value = "limit", defaultValue = "20") @Positive(message = "限制数量必须大于0") Integer limit) {
-        Enums.ContentState postState;
-
-        switch (state) {
-            case "pending":
-                postState = Enums.ContentState.SUBMITTED;
-                break;
-            case "approved":
-                postState = Enums.ContentState.PUBLISHED;
-                break;
-            case "rejected":
-                postState = Enums.ContentState.REJECTED;
-                break;
-            case "banned":
-                postState = Enums.ContentState.BANNED;
-                break;
-            default:
-                postState = Enums.ContentState.SUBMITTED;
-        }
-
-        List<PostDTO> posts = postService.getPostsByState(postState, lastId, limit);
-        return ApiResponse.success(posts);
-    }
-
-    /**
-     * 根据节点、用户和状态筛选帖子列表
-     */
-    @GetMapping("/admin/posts/filter")
-    public ApiResponse<List<PostDTO>> getPostsByNodeAndCreator(
-            @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
-            @RequestParam(value = "creatorId", required = false) @Positive(message = "用户ID必须大于0") Long creatorId,
-            @RequestParam(value = "lastId", defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
-            @RequestParam(value = "state", required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state) {
-        List<PostDTO> posts = postService.getPostsByNodeAndCreator(nodeId, creatorId, lastId, state);
-        return ApiResponse.success(posts);
-    }
-
-    /**
-     * 获取待审核帖子
-     * 映射: GET /post/censor → GET /api/v1/admin/posts/pending
-     */
-    @GetMapping("/admin/posts/pending")
-    public ApiResponse<List<PostDTO>> getPendingPosts() {
-        List<PostDTO> posts = postService.getPendingPostsList();
-        return ApiResponse.success(posts);
-    }
-
-    /**
-     * 帖子审核操作
-     * 映射: POST /post/operate → POST /api/v1/admin/posts/{id}/approve
-     */
-    @PostMapping("/admin/posts/{id}/approve")
-    public ApiResponse<ApprovalResponseDTO> approvePost(
-            @PathVariable @NotNull(message = "帖子ID不能为空")
-            @Positive(message = "帖子ID必须大于0")
-            Long id,
-            @RequestBody @Valid OperateRequest request) {
-
-        ApprovalResponseDTO response = switch (request.getAction().toLowerCase()) {
-            case "approve" -> {
-                postService.approve(id);
-                yield ApprovalResponseDTO.builder()
-                        .success(true)
-                        .message("批准成功")
-                        .objectId(id)
-                        .objectType("post")
-                        .action("approve")
-                        .build();
-            }
-            case "reject" -> {
-                postService.reject(id, request.getReason());
-                yield ApprovalResponseDTO.builder()
-                        .success(true)
-                        .message("拒绝成功")
-                        .objectId(id)
-                        .objectType("post")
-                        .action("reject")
-                        .build();
-            }
-            case "ban" -> {
-                postService.ban(id, request.getReason());
-                yield ApprovalResponseDTO.builder()
-                        .success(true)
-                        .message("封禁成功")
-                        .objectId(id)
-                        .objectType("post")
-                        .action("ban")
-                        .build();
-            }
-            default -> throw ErrorCode.INVALID_PARAMETER.exception();
-        };
-
-        return ApiResponse.success(response);
-    }
-
-    /**
      * 获取用户文章或内容（仅已发布）
      * 映射: GET /user/article → GET /api/v1/users/{userId}/posts?type=2
      * 映射: GET /user/contents → GET /api/v1/users/{userId}/posts?type=1
@@ -240,16 +143,17 @@ public class PostsController {
      * GET /api/v1/users/me/posts?lastId=0&type=2
      */
     @GetMapping("/users/me/posts")
+    @SaCheckLogin
     public ApiResponse<List<PostDTO>> getCurrentUserAllPosts(
             @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
-            @RequestParam(required = false, defaultValue = "2") Integer type) {
+            @RequestParam(required = false, defaultValue = "2") Integer type,
+            @CurrentUser UserDO currentUser) {
 
-        Long currentUserId = StpUtil.getLoginIdAsLong();
         Enums.PostType postType = Enums.PostType.getByValue(type);
         if (postType == null) {
             return ApiResponse.error(400, "无效的帖子类型");
         }
-        List<PostDTO> posts = postService.getUserPosts(currentUserId, lastId, postType, null);
+        List<PostDTO> posts = postService.getUserPosts(currentUser.getId(), lastId, postType, null);
         return ApiResponse.success(posts);
     }
 }

@@ -11,6 +11,7 @@ import com.prosper.learn.domain.service.business.MemoryCardDeckService;
 import com.prosper.learn.domain.service.data.CourseDataService;
 import com.prosper.learn.domain.service.data.NodeDataService;
 import com.prosper.learn.domain.service.data.PostDataService;
+import com.prosper.learn.domain.service.data.UserDataService;
 import com.prosper.learn.dto.request.CreatePostRequest;
 import com.prosper.learn.dto.request.CreateDeckRequest;
 import com.prosper.learn.persistence.dataobject.CourseDO;
@@ -55,6 +56,7 @@ public class AutoAuthorGenerationService {
     private final CourseDataService courseDataService;
     private final PostService postService;
     private final PostDataService postDataService;
+    private final UserDataService userDataService;
     private final MemoryCardDeckService memoryCardDeckService;
     private final AutoAuthorQueueService autoAuthorQueueService;
     private final ObjectMapper objectMapper;
@@ -287,7 +289,7 @@ public class AutoAuthorGenerationService {
             req.setNodeId(nodeId);
             req.setType(postType.value());
             req.setContent(content.substring(3));
-            return postService.createPost(aiUserId, req, Enums.ContentState.PUBLISHED);
+            return postService.createPost(userDataService.getById(aiUserId), req, Enums.ContentState.PUBLISHED);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

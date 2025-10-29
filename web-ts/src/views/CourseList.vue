@@ -146,7 +146,7 @@ const loadCoursesByCategory = async (mainCategory: number, subCategory: number):
 
 const loadSubscription = async (): Promise<void> => {
   try {
-    const { userId } = user
+    const userId = user.currentUser?.id
     if (userId) {
       const response = await subscriptionServiceV1.getUserSubscriptions(userId)
 

@@ -103,7 +103,7 @@
 
 <script setup lang="ts">
 import { computed, inject, onMounted, ref, watch } from 'vue'
-import { systemServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { adminSystemServiceV1 } from '@/services/api/v1/adminApiServiceV1'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -167,12 +167,12 @@ const saveConfiguration = async (): Promise<void> => {
     const promises: Promise<any>[] = []
 
     if (courseCategories.value.trim()) {
-      promises.push(systemServiceV1.updateConfigByKey('courseCategories', courseCategories.value))
+      promises.push(adminSystemServiceV1.updateConfigByKey('courseCategories', courseCategories.value))
     }
 
     if (professionCategories.value.trim()) {
       promises.push(
-        systemServiceV1.updateConfigByKey('professionCategories', professionCategories.value)
+        adminSystemServiceV1.updateConfigByKey('professionCategories', professionCategories.value)
       )
     }
 
@@ -200,7 +200,7 @@ const saveConfiguration = async (): Promise<void> => {
 const loadConfiguration = async (): Promise<void> => {
   try {
     // 先获取所有配置
-    const response = await systemServiceV1.getSystemConfig()
+    const response = await adminSystemServiceV1.getSystemConfig()
 
     if (response.code === 200 && response.data) {
       const allConfigs = response.data

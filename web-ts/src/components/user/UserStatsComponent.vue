@@ -122,7 +122,7 @@ const getPeriodText = (): string => {
 
 // 数据加载方法
 const loadStatsData = async (): Promise<void> => {
-  if (!userStore.userId) {
+  if (!userStore.currentUser?.id) {
     error.value = t('userStats.userInfoFailed')
     return
   }
@@ -131,7 +131,7 @@ const loadStatsData = async (): Promise<void> => {
   error.value = null
 
   try {
-    const { userId } = userStore
+    const userId = userStore.currentUser?.id
     let response: any
 
     switch (selectedPeriod.value) {
@@ -164,7 +164,7 @@ const loadStatsData = async (): Promise<void> => {
 
 // 加载全部时间统计数据
 const loadTotalStatsData = async (): Promise<void> => {
-  if (!userStore.userId) {
+  if (!userStore.currentUser?.id) {
     totalStatsError.value = t('userStats.userInfoFailed')
     return
   }
@@ -173,7 +173,7 @@ const loadTotalStatsData = async (): Promise<void> => {
   totalStatsError.value = null
 
   try {
-    const { userId } = userStore
+    const userId = userStore.currentUser?.id
     const response = await statsServiceV1.getUserAllTimeStats(userId)
 
     if (response.code === 200) {
@@ -208,7 +208,7 @@ onMounted(() => {
 
 // 监听用户状态变化
 watch(
-  () => userStore.userId,
+  () => userStore.currentUser?.id,
   (newUserId) => {
     if (newUserId) {
       loadStatsData()

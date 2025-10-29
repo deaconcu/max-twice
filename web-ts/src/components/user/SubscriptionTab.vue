@@ -18,10 +18,10 @@ const userStore = useUserStore()
 const showSnackbar = inject('showSnackbar') as (message: string, type?: string) => void
 
 // 当前操作的用户ID
-const targetUserId = computed(() => props.userId || userStore.userId)
+const targetUserId = computed(() => props.userId || userStore.currentUser?.id)
 
 // 是否为当前用户查看自己的信息
-const isSelf = computed(() => !props.userId || props.userId === userStore.userId)
+const isSelf = computed(() => !props.userId || props.userId === userStore.currentUser?.id)
 
 // 实际的可编辑状态：必须是自己的信息且明确允许编辑
 const canEdit = computed(() => props.editable && isSelf.value)
@@ -35,7 +35,7 @@ const courseHoveringIndex: Ref<number> = ref(-1)
 const loadSubscription = async (): Promise<void> => {
   console.log('load subscription')
   console.log('targetUserId:', targetUserId.value)
-  console.log('userStore.userId:', userStore.userId)
+  console.log('userStore.currentUser?.id:', userStore.currentUser?.id)
   console.log('props.userId:', props.userId)
   console.log('props.editable:', props.editable)
 
@@ -69,7 +69,13 @@ const saveSubscription = async (): Promise<void> => {
       console.log('not login')
     } else if (response.code === 200) {
       showSnackbar('修改成功！')
-      userStore.setSubscription(response.data)
+      // 更新 currentUser 中的 subscriptions
+      if (userStore.currentUser) {
+        userStore.setUser({
+          ...userStore.currentUser,
+          subscriptions: response.data
+        })
+      }
       loadSubscription()
     }
   } catch (error) {

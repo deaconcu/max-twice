@@ -2,7 +2,8 @@
   // TODO: 修复 props 直接修改问题 - 需要重构为通过 emit 事件与父组件通信
   // 当前直接修改 props.data 违反 Vue 规范，应该通过事件通知父组件更新数据
   import { computed, inject, nextTick, onMounted, onUnmounted, ref, toRef, watch } from 'vue'
-  import { postServiceV1, progressServiceV1, adminAutoAuthorServiceV1 } from '@/services/api/v1/apiServiceV1'
+  import { postServiceV1, progressServiceV1 } from '@/services/api/v1/apiServiceV1'
+  import { adminAutoAuthorServiceV1 } from '@/services/api/v1/adminApiServiceV1'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ObjectType, PostType } from '@/types/enums'

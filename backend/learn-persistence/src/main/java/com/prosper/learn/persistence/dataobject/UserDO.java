@@ -1,5 +1,6 @@
 package com.prosper.learn.persistence.dataobject;
 
+import com.prosper.learn.common.Enums;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -25,7 +26,32 @@ public class UserDO {
 
     private Byte state;
 
+    private Integer role;  // 角色代码字段
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    // ========== 角色相关便捷方法 ==========
+
+    /**
+     * 获取用户角色枚举
+     */
+    public Enums.UserRole getRoleEnum() {
+        return Enums.UserRole.fromCode(this.role);
+    }
+
+    /**
+     * 设置用户角色
+     */
+    public void setRoleEnum(Enums.UserRole role) {
+        this.role = role != null ? role.getCode() : Enums.UserRole.USER.getCode();
+    }
+
+    /**
+     * 判断是否等于或高于指定角色
+     */
+    public boolean hasRole(Enums.UserRole role) {
+        return getRoleEnum().equalOrHigher(role);
+    }
 }

@@ -374,6 +374,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { roadmapServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { adminRoadmapServiceV1 } from '@/services/api/v1/adminApiServiceV1'
 import { ContentState } from '@/types/enums'
 import type { Roadmap } from '@/types/roadmap'
 import type { StateOption } from '@/types/common'
@@ -465,7 +466,7 @@ const loadRoadmapList = async (reset: boolean = true): Promise<void> => {
     const professionId = professionIdFilter.value || undefined
     const creatorId = creatorIdFilter.value || undefined
 
-    const response = await roadmapServiceV1.getAdminRoadmaps(
+    const response = await adminRoadmapServiceV1.getAdminRoadmaps(
       currentState,
       professionId,
       creatorId,

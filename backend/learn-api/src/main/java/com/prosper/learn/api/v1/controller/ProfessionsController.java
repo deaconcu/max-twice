@@ -1,14 +1,18 @@
 package com.prosper.learn.api.v1.controller;
 
-import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.v1.annotation.CurrentUser;
+import com.prosper.learn.api.v1.annotation.RequireRole;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 
 import static com.prosper.learn.common.Enums.ContentState;
+import com.prosper.learn.common.Enums.UserRole;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.ProfessionService;
 import com.prosper.learn.domain.service.scheduler.ProfessionRankingScheduler;
 import com.prosper.learn.dto.request.*;
 import com.prosper.learn.dto.response.ProfessionDTO;
+import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
@@ -32,24 +36,6 @@ public class ProfessionsController {
 
     private final ProfessionService professionService;
     private final ProfessionRankingScheduler professionRankingScheduler;
-
-    /**
-     * 管理后台：按状态获取职业列表
-     * 映射: GET /api/v1/admin/professions?state=0&lastId=123
-     */
-    @GetMapping("/admin/professions")
-    public ApiResponse<Object> getAdminProfessions(
-            @RequestParam @Positive(message = "状态必须大于0") Byte state,
-            @RequestParam(required = false) Long lastId) {
-
-        ContentState professionState = ContentState.getByValue(state.intValue());
-        if (professionState == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("Invalid profession state: " + state);
-        }
-
-        List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(professionState, lastId);
-        return ApiResponse.success(professionList);
-    }
 
     /**
      * 分页获取职业
@@ -110,9 +96,11 @@ public class ProfessionsController {
      * 映射: POST /profession → POST /api/v1/professions
      */
     @PostMapping("/professions")
-    public ApiResponse<Object> createProfession(@Valid @RequestBody CreateProfessionRequest request) {
-        long userId = StpUtil.getLoginIdAsLong();
-        professionService.create(userId, request);
+    @SaCheckLogin
+    public ApiResponse<Object> createProfession(
+            @Valid @RequestBody CreateProfessionRequest request,
+            @CurrentUser UserDO currentUser) {
+        professionService.create(request, currentUser);
         return ApiResponse.success();
     }
 
@@ -121,12 +109,14 @@ public class ProfessionsController {
      * 映射: PUT /profession → PUT /api/v1/professions/{id}
      */
     @PutMapping("/professions/{id}")
+    @SaCheckLogin
     public ApiResponse<Object> updateProfession(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
             Long id,
-            @Valid @RequestBody UpdateProfessionRequest request) {
-        professionService.update(id, request);
+            @Valid @RequestBody UpdateProfessionRequest request,
+            @CurrentUser UserDO currentUser) {
+        professionService.update(id, request, currentUser);
         return ApiResponse.success();
     }
 
@@ -135,15 +125,17 @@ public class ProfessionsController {
      * 映射: POST /profession/operate → POST /api/v1/professions/{id}/approve
      */
     @PostMapping("/professions/{id}/approve")
+    @RequireRole(UserRole.MODERATOR)
     public ApiResponse<ApprovalResponseDTO> approveProfession(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
             Long id,
-            @RequestBody @Valid OperateRequest request) {
-        
+            @RequestBody @Valid OperateRequest request,
+            @CurrentUser UserDO currentUser) {
+
         ApprovalResponseDTO response = switch (request.getAction().toLowerCase()) {
             case "approve" -> {
-                professionService.approve(id);
+                professionService.approve(id, currentUser);
                 yield ApprovalResponseDTO.builder()
                         .success(true)
                         .message("批准成功")
@@ -153,7 +145,7 @@ public class ProfessionsController {
                         .build();
             }
             case "reject" -> {
-                professionService.reject(id, request.getReason());
+                professionService.reject(id, request.getReason(), currentUser);
                 yield ApprovalResponseDTO.builder()
                         .success(true)
                         .message("拒绝成功")
@@ -163,7 +155,7 @@ public class ProfessionsController {
                         .build();
             }
             case "ban" -> {
-                professionService.ban(id, request.getReason());
+                professionService.ban(id, request.getReason(), currentUser);
                 yield ApprovalResponseDTO.builder()
                         .success(true)
                         .message("封禁成功")
@@ -173,7 +165,7 @@ public class ProfessionsController {
                         .build();
             }
             case "delete" -> {
-                professionService.delete(id);
+                professionService.delete(id, currentUser);
                 yield ApprovalResponseDTO.builder()
                         .success(true)
                         .message("删除成功")
@@ -184,7 +176,7 @@ public class ProfessionsController {
             }
             default -> throw ErrorCode.SYSTEM_ERROR.exception();
         };
-        
+
         return ApiResponse.success(response);
     }
 
@@ -193,11 +185,13 @@ public class ProfessionsController {
      * 映射: DELETE /profession → DELETE /api/v1/professions/{id}
      */
     @DeleteMapping("/professions/{id}")
+    @SaCheckLogin
     public ApiResponse<Object> deleteProfession(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
-            Long id) {
-        professionService.delete(id);
+            Long id,
+            @CurrentUser UserDO currentUser) {
+        professionService.delete(id, currentUser);
         return ApiResponse.success("删除成功");
     }
 

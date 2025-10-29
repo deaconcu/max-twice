@@ -214,29 +214,28 @@ public class UpvoteService {
      * @throws BusinessException 当参数无效或对象不存在时抛出异常
      */
     @Transactional
-    public void upvotePost(long postingId, long userId, int type) {
+    public void upvotePost(long postingId, UserDO user, int type) {
         if (type != Enums.VoteType.twice.value() && type != Enums.VoteType.helpful.value()) {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子仅支持 twice 或 helpful 点赞类型: " + type);
         }
 
-        UserDO fromUserDO = validateUserExists(userId);
         PostDO postDO = validatePostExists(postingId);
 
-        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, postDO.getId(), ContentType.post.value());
+        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(user.getId(), postDO.getId(), ContentType.post.value());
         String upvoteTypeName = getUpvoteTypeName(type);
 
         if (upvoteDO != null && upvoteDO.getType() == type) {
             // 取消点赞
             upvoteDataService.delete(upvoteDO.getId());
-            
+
             // 减少对应点赞数
             updatePostVoteCount(postDO, upvoteDO.getType(), -1);
-            
+
             // 记录到Redis统计
-            redisStatsService.removeUpvote(postDO.getId(), userId, upvoteTypeName);
-            
+            redisStatsService.removeUpvote(postDO.getId(), user.getId(), upvoteTypeName);
+
             postDataService.update(postDO);
-            
+
             // 智能更新文章分数
             scoreCalculationService.checkAndUpdatePostScore(postDO);
             return;
@@ -245,7 +244,7 @@ public class UpvoteService {
         if (upvoteDO == null) {
             // 新增点赞
             upvoteDO = new UpvoteDO();
-            upvoteDO.setUserId(userId);
+            upvoteDO.setUserId(user.getId());
             upvoteDO.setObjectId(postDO.getId());
             upvoteDO.setObjectType(ContentType.post.value());
             upvoteDO.setType(type);
@@ -253,28 +252,28 @@ public class UpvoteService {
         } else {
             // 切换点赞类型
             String oldUpvoteTypeName = getUpvoteTypeName(upvoteDO.getType());
-            
+
             // 减少原类型的点赞数
             updatePostVoteCount(postDO, upvoteDO.getType(), -1);
-            
+
             // 记录到Redis统计
-            redisStatsService.removeUpvote(postDO.getId(), userId, oldUpvoteTypeName);
-            
+            redisStatsService.removeUpvote(postDO.getId(), user.getId(), oldUpvoteTypeName);
+
             upvoteDO.setType(type);
             upvoteDataService.update(upvoteDO);
         }
 
         // 增加新类型的点赞数
         updatePostVoteCount(postDO, type, 1);
-        
+
         // 发送点赞通知消息
-        sendPostUpvoteMessage(postDO, fromUserDO.getId(), type);
-        
+        sendPostUpvoteMessage(postDO, user.getId(), type);
+
         // 记录到Redis统计
-        redisStatsService.recordUpvote(postDO.getId(), userId, upvoteTypeName);
-        
+        redisStatsService.recordUpvote(postDO.getId(), user.getId(), upvoteTypeName);
+
         postDataService.update(postDO);
-        
+
         // 智能更新文章分数
         scoreCalculationService.checkAndUpdatePostScore(postDO);
     }
@@ -305,14 +304,13 @@ public class UpvoteService {
      * @throws BusinessException 当参数无效或对象不存在时抛出异常
      */
     @Transactional
-    public void upvoteComment(long commentId, long userId) {
-        UserDO fromUserDO = validateUserExists(userId);
+    public void upvoteComment(long commentId, UserDO user) {
         CommentDO commentDO = validateCommentExists(commentId);
 
         // get node id
         long nodeId = getNodeIdFromComment(commentDO);
 
-        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, commentId, ContentType.comment.value());
+        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(user.getId(), commentId, ContentType.comment.value());
         if (upvoteDO != null) {
             upvoteDataService.delete(upvoteDO.getId());
             commentDO.setUpvoteCount(commentDO.getUpvoteCount() - 1);
@@ -324,7 +322,7 @@ public class UpvoteService {
         }
 
         upvoteDO = new UpvoteDO();
-        upvoteDO.setUserId(userId);
+        upvoteDO.setUserId(user.getId());
         upvoteDO.setObjectId(commentDO.getId());
         upvoteDO.setObjectType(ContentType.comment.value());
         upvoteDO.setType(0);
@@ -337,18 +335,17 @@ public class UpvoteService {
         commentDataService.update(commentDO);
 
         messageService.createUpvoteMessage(
-                commentDO.getCreatorId(), userId, nodeId, commentId, ContentType.comment.value(), 1);
+                commentDO.getCreatorId(), user.getId(), nodeId, commentId, ContentType.comment.value(), 1);
     }
 
     /**
      * 课程投票
      * @param roadmapId 课程ID
-     * @param userId 用户ID
+     * @param user 用户对象
      * @throws BusinessException 当参数无效时抛出异常
      */
     @Transactional
-    public boolean upvoteRoadmap(long roadmapId, long userId) {
-        validateUserId(userId);
+    public boolean upvoteRoadmap(long roadmapId, UserDO user) {
         if (roadmapId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception("路线图ID无效: " + roadmapId);
         }
@@ -359,7 +356,7 @@ public class UpvoteService {
         }
 
         // 检查是否已经投过票
-        UpvoteDO existingUpvote = upvoteDataService.getByUserAndObject(userId, roadmapId, ContentType.roadmap.value());
+        UpvoteDO existingUpvote = upvoteDataService.getByUserAndObject(user.getId(), roadmapId, ContentType.roadmap.value());
 
         if (existingUpvote != null) {
             // 如果已经投过票，则取消投票
@@ -374,7 +371,7 @@ public class UpvoteService {
         } else {
             // 如果没有投过票，则投票
             UpvoteDO upvoteDO = new UpvoteDO();
-            upvoteDO.setUserId(userId);
+            upvoteDO.setUserId(user.getId());
             upvoteDO.setObjectId(roadmapId);
             upvoteDO.setObjectType(ContentType.roadmap.value());
             upvoteDO.setType(0); // roadmap投票类型设为0，对应"once"
@@ -429,8 +426,7 @@ public class UpvoteService {
      * @return true表示点赞成功，false表示取消点赞
      */
     @Transactional
-    public boolean upvoteMemoryCardDeck(long deckId, long userId) {
-        validateUserId(userId);
+    public boolean upvoteMemoryCardDeck(long deckId, UserDO user) {
         if (deckId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception("卡片组ID无效: " + deckId);
         }
@@ -439,7 +435,7 @@ public class UpvoteService {
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
 
         // 检查是否已经点过赞
-        UpvoteDO existingUpvote = upvoteDataService.getByUserAndObject(userId, deckId, ContentType.memory_card_deck.value());
+        UpvoteDO existingUpvote = upvoteDataService.getByUserAndObject(user.getId(), deckId, ContentType.memory_card_deck.value());
         if (existingUpvote != null) {
             // 如果已经点过赞，则取消点赞
             upvoteDataService.delete(existingUpvote.getId());
@@ -454,7 +450,7 @@ public class UpvoteService {
         } else {
             // 如果没有点过赞，则点赞
             UpvoteDO upvoteDO = new UpvoteDO();
-            upvoteDO.setUserId(userId);
+            upvoteDO.setUserId(user.getId());
             upvoteDO.setObjectId(deckId);
             upvoteDO.setObjectType(ContentType.memory_card_deck.value());
             upvoteDO.setType(0); // 卡片组点赞类型设为0

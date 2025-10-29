@@ -1,9 +1,11 @@
 package com.prosper.learn.api.v1.controller;
 
-import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.api.v1.annotation.JsonParam;
+import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 import com.prosper.learn.api.v1.dto.ApiResponse;
@@ -40,12 +42,14 @@ public class TocController {
      * 映射: POST /toc → PUT /api/v1/users/current/courses/{courseId}/toc
      */
     @PutMapping("/users/current/courses/{courseId}/toc")
+    @SaCheckLogin
     public ApiResponse<String> updateUserCourseToc(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
             Long courseId,
-            @JsonParam("indexArray") @NotBlank(message = "索引数组不能为空") String indexArray) {
-        
+            @JsonParam("indexArray") @NotBlank(message = "索引数组不能为空") String indexArray,
+            @CurrentUser UserDO currentUser) {
+
         // 验证课程存在性
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {
@@ -53,8 +57,7 @@ public class TocController {
         }
 
         // 获取当前用户课程目录
-        Long userId = StpUtil.getLoginIdAsLong();
-        UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(userId, courseId);
+        UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(currentUser.getId(), courseId);
         if (userCourseTocDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }
@@ -119,13 +122,14 @@ public class TocController {
      * 新增接口: GET /api/v1/users/current/courses/{courseId}/toc
      */
     @GetMapping("/users/current/courses/{courseId}/toc")
+    @SaCheckLogin
     public ApiResponse<String> getUserCourseToc(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
-            Long courseId) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(userId, courseId);
-        
+            Long courseId,
+            @CurrentUser UserDO currentUser) {
+        UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(currentUser.getId(), courseId);
+
         if (userCourseTocDO == null) {
             throw ErrorCode.SYSTEM_ERROR.exception();
         }

@@ -16,10 +16,10 @@ const showSnackbar = inject('showSnackbar') as (message: string, type?: string) 
 const userStore = useUserStore()
 
 // 当前操作的用户名
-const targetUsername = computed(() => props.username || userStore.name)
+const targetUsername = computed(() => props.username || userStore.currentUser?.name)
 
 // 是否为当前用户查看自己的信息
-const isSelf = computed(() => !props.username || props.username === userStore.name)
+const isSelf = computed(() => !props.username || props.username === userStore.currentUser?.name)
 
 // 实际的可编辑状态：必须是自己的信息且明确允许编辑
 const canEdit = computed(() => props.editable && isSelf.value)

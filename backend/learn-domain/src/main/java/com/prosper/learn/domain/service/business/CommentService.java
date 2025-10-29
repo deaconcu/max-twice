@@ -146,18 +146,17 @@ public class CommentService {
 
     /**
      * 创建评论，用户提交评论时调用
-     * @param request
-     * @param userId
+     * @param request 评论请求
+     * @param commentor 评论用户
      * @return
      */
     @Transactional
-    public CommentDTO createComment(CreateCommentRequest request, Long userId) {
+    public CommentDTO createComment(CreateCommentRequest request, UserDO commentor) {
         // 先验证参数
         if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("评论请求不能为空");
         }
-        
-        validateUserId(userId);
+
         validateObjectId(request.getObjectId());
         validateCommentType(request.getObjectType());
 
@@ -175,8 +174,6 @@ public class CommentService {
         if (request.getToUser() != null && request.getToUser() > 0) {
             validateAndGetUser(request.getToUser());
         }
-
-        UserDO fromUser = validateAndGetUser(userId);
 
         PostDO postDO = null;
         NodeDO nodeDO = null;
@@ -199,18 +196,18 @@ public class CommentService {
         commentDO.setReplyToCommentId(request.getReplyTo() == null ? 0 : request.getReplyTo());
         commentDO.setToUserId(request.getToUser() == null ? 0 : request.getToUser());
         commentDO.setContent(request.getContent());
-        commentDO.setCreatorId(userId);
+        commentDO.setCreatorId(commentor.getId());
         //commentDO.setScore(scoreCalculationService.calculateCommentScore(commentDO));
         commentDO.setScore(0.0);
         commentDataService.insert(commentDO);
 
         // 处理回复和通知 - 重构现有方法以直接使用 request 和 commentDO
         if (request.getReplyTo() != null && request.getReplyTo() > 0) {
-            handleReplyComment(request, commentDO, fromUser, postDO, nodeDO, roadmapDO);
+            handleReplyComment(request, commentDO, commentor, postDO, nodeDO, roadmapDO);
         }
 
         // 创建评论通知（不更新评论数，等审核通过后再更新）
-        createCommentNotification(request, commentDO, fromUser, postDO, nodeDO, roadmapDO);
+        createCommentNotification(request, commentDO, commentor, postDO, nodeDO, roadmapDO);
 
         // 重新查询并转换为 DTO，填充 toUserName
         CommentDO savedComment = commentDataService.getById(commentDO.getId());
@@ -308,12 +305,11 @@ public class CommentService {
     /**
      * 获取对象(post, node, comment ...)评论，分页查询，按分数和ID倒序排列
      */
-    public List<CommentDTO> getCommentsByObject(Long objectId, Integer type, Long offsetId, Long userId) {
+    public List<CommentDTO> getCommentsByObject(Long objectId, Integer type, Long offsetId, UserDO currentUser) {
         validateObjectId(objectId);
         validateCommentType(type);
         validateOffsetId(offsetId);
-        validateUserId(userId);
-        
+
         List<CommentDO> commentDOList;
         int pageSize = systemProperties.getComment().getDefaultPageSize();
         if (offsetId == 0) {
@@ -326,7 +322,7 @@ public class CommentService {
             commentDOList = commentDataService.getByObjectIdPaginated(objectId, type, lastComment.getScore(), offsetId, pageSize);
         }
 
-        return toDTOV1(commentDOList, userId);
+        return toDTOV1(commentDOList, currentUser.getId());
     }
 
 
@@ -334,11 +330,10 @@ public class CommentService {
     /**
      * 获取子评论列表，分页查询(lastId)，按分数和ID倒序排列
      */
-    public List<CommentDTO> getCommentReplies(Long id, Long offsetId, Long userId) {
+    public List<CommentDTO> getCommentReplies(Long id, Long offsetId, UserDO currentUser) {
         validateCommentId(id);
         validateOffsetId(offsetId);
-        validateUserId(userId);
-        
+
         List<CommentDO> commentDOList;
         int pageSize = systemProperties.getComment().getDefaultPageSize();
         if (offsetId == 0) {
@@ -352,7 +347,7 @@ public class CommentService {
         }
 
         List<CommentDTO> commentDTOList = commentConverter.toDTO(commentDOList);
-        return toDTOV2(commentDTOList, userId);
+        return toDTOV2(commentDTOList, currentUser.getId());
     }
 
 
@@ -439,7 +434,7 @@ public class CommentService {
      * 批准评论
      */
     @Transactional
-    public void approve(Long id) {
+    public void approve(Long id, UserDO operator) {
         validateCommentId(id);
         CommentDO commentDO = validateAndGetComment(id);
         int oldState = commentDO.getState();
@@ -458,7 +453,7 @@ public class CommentService {
      * 拒绝评论（审核不通过，带原因）
      */
     @Transactional
-    public void reject(Long id, String reason) {
+    public void reject(Long id, String reason, UserDO operator) {
         validateCommentId(id);
         CommentDO commentDO = validateAndGetComment(id);
         int oldState = commentDO.getState();
@@ -518,7 +513,7 @@ public class CommentService {
      * 封禁评论（违规封禁，带原因）
      */
     @Transactional
-    public void ban(Long id, String reason) {
+    public void ban(Long id, String reason, UserDO operator) {
         validateCommentId(id);
         CommentDO commentDO = validateAndGetComment(id);
         int oldState = commentDO.getState();

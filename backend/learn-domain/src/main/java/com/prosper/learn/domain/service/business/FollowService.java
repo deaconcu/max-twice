@@ -143,29 +143,26 @@ public class FollowService {
 
     /**
      * 关注用户
-     * 
+     *
      * 执行关注操作，包括验证用户存在性、检查重复关注、创建关注记录和发送通知。
-     * 
-     * @param followerId 关注者ID
+     *
+     * @param follower 关注者（当前用户）
      * @param followeeId 被关注者ID
      * @throws BusinessException 当参数无效或用户不存在时抛出异常
      */
     @Transactional
-    public void follow(Long followerId, Long followeeId) {
-        validateFollowParams(followerId, followeeId);
-        
+    public void follow(UserDO follower, Long followeeId) {
+        validateFollowParams(follower.getId(), followeeId);
+
         // 验证被关注者存在性
         UserDO followee = validateUserExists(followeeId);
-        
+
         // 检查是否已经关注
-        FollowDO existingFollow = followDataService.get(followerId, followeeId);
+        FollowDO existingFollow = followDataService.get(follower.getId(), followeeId);
         if (existingFollow == null) {
-            // 验证关注者存在性
-            UserDO follower = validateUserExists(followerId);
-            
             // 创建关注记录
-            followDataService.insert(followerId, followeeId);
-            
+            followDataService.insert(follower.getId(), followeeId);
+
             // 发送关注通知消息
             messageService.createFollowMessage(followeeId, follower.getId());
         }

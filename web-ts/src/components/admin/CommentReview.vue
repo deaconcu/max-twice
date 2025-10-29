@@ -2,6 +2,7 @@
   import { inject, ref, computed, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { commentServiceV1 } from '@/services/api/v1/apiServiceV1'
+  import { adminCommentServiceV1 } from '@/services/api/v1/adminApiServiceV1'
   import { ContentState, ApprovalAction, ObjectType } from '@/types/enums'
   import type { Comment } from '@/types/comment'
   import RejectBanDialog from './RejectBanDialog.vue'
@@ -99,7 +100,7 @@
       const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
       const state = currentTabConfig?.state
 
-      const response = await commentServiceV1.getCommentsByFilter(
+      const response = await adminCommentServiceV1.getCommentsByFilter(
         filterObjectType.value,
         filterObjectId.value,
         filterCreatorId.value,
@@ -164,7 +165,7 @@
         ? allCommentList.value[allCommentList.value.length - 1].id
         : 0
 
-      const response = await commentServiceV1.getCommentsByState(tabKey, lastId)
+      const response = await adminCommentServiceV1.getCommentsByState(tabKey, lastId)
 
       if (response.code === 401) {
         // not login
@@ -204,7 +205,7 @@
 
   const approveComment = async (comment: Comment): Promise<void> => {
     try {
-      const response = await commentServiceV1.approveComment(comment.id, ApprovalAction.APPROVE)
+      const response = await adminCommentServiceV1.approveComment(comment.id, ApprovalAction.APPROVE)
 
       if (response.code === 401) {
         // not login
@@ -243,7 +244,7 @@
       submitting.value = true
       const action = dialogType.value === 'reject' ? ApprovalAction.REJECT : ApprovalAction.BAN
 
-      const response = await commentServiceV1.approveComment(currentComment.value.id, action, reason)
+      const response = await adminCommentServiceV1.approveComment(currentComment.value.id, action, reason)
 
       if (response.code === 200) {
         await getCommentsByTab(currentTab.value)
@@ -276,7 +277,7 @@
 
   const unbanComment = async (comment: Comment): Promise<void> => {
     try {
-      const response = await commentServiceV1.approveComment(comment.id, ApprovalAction.APPROVE)
+      const response = await adminCommentServiceV1.approveComment(comment.id, ApprovalAction.APPROVE)
 
       if (response.code === 401) {
         // not login

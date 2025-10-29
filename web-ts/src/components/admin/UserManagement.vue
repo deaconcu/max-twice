@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { inject, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { userServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { adminUserServiceV1 } from '@/services/api/v1/adminApiServiceV1'
 import type { User } from '@/types/user'
 
 const { t } = useI18n()
@@ -25,7 +25,7 @@ const getUserList = async (isLoadMore: boolean = false): Promise<void> => {
       lastId = lastUser?.id || 0
     }
 
-    const response = await userServiceV1.getUsers(lastId)
+    const response = await adminUserServiceV1.getUsers(lastId)
 
     if (response.code === 401) {
       // not login
@@ -64,7 +64,7 @@ const searchById = async (): Promise<void> => {
       return
     }
 
-    const response = await userServiceV1.getUser(userId)
+    const response = await adminUserServiceV1.getUserById(userId)
     if (response.code === 200) {
       userList.value = [response.data]
       hasMore.value = false
@@ -91,7 +91,7 @@ const searchByName = async (): Promise<void> => {
   loading.value = true
 
   try {
-    const response = await userServiceV1.searchUser(searchName.value.trim())
+    const response = await adminUserServiceV1.adminSearchUser(searchName.value.trim())
     if (response.code === 200) {
       userList.value = response.data
       hasMore.value = false
@@ -119,7 +119,7 @@ const clearSearch = (): void => {
 
 const updateUserState = async (user: User, ban: boolean): Promise<void> => {
   try {
-    const response = await userServiceV1.updateUserState(user.id, ban)
+    const response = await adminUserServiceV1.updateUserState(user.id, ban)
 
     if (response.code === 401) {
       // not login

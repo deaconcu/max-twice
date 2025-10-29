@@ -1,8 +1,10 @@
 package com.prosper.learn.api.v1.controller;
 
-import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 import com.prosper.learn.domain.service.business.PageService;
@@ -31,25 +33,26 @@ public class PagesController {
      * 映射: GET /read?commentId=123 → GET /api/v1/pages/read?commentId=123
      */
     @GetMapping("/pages/read")
+    @SaCheckLogin
     public ApiResponse<Map<String, Object>> read(
             @RequestParam(required = false) @Positive(message = "课程ID必须大于0") Long courseId,
             @RequestParam(required = false) String path,
             @RequestParam(required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
             @RequestParam(required = false) @Positive(message = "帖子ID必须大于0") Long postId,
-            @RequestParam(required = false) @Positive(message = "评论ID必须大于0") Long commentId) {
+            @RequestParam(required = false) @Positive(message = "评论ID必须大于0") Long commentId,
+            @CurrentUser UserDO currentUser) {
 
-        long userId = StpUtil.getLoginIdAsLong();
         Map<String, Object> result;
 
         // 参数优先级是 commentId > postId > nodeId > courseId + path
         if (commentId != null) {
-            result = pageService.readPageByComment(commentId, userId);
+            result = pageService.readPageByComment(commentId, currentUser.getId());
         } else if (postId != null) {
-            result = pageService.readPageByPost(postId, userId);
+            result = pageService.readPageByPost(postId, currentUser.getId());
         } else if (nodeId != null) {
-            result = pageService.readPageByNode(nodeId, userId);
+            result = pageService.readPageByNode(nodeId, currentUser.getId());
         } else if (courseId != null) {
-            result = pageService.readPageByPath(courseId, path, userId);
+            result = pageService.readPageByPath(courseId, path, currentUser.getId());
         } else {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }

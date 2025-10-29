@@ -138,7 +138,7 @@ public class UserService {
         return userConverter.toDTO(userDOList);
     }
 
-    public UserDTO updateUserState(Long userId, boolean ban) {
+    public UserDTO updateUserState(Long userId, boolean ban, UserDO operator) {
         UserDO userDO = validateUserExists(userId);
 
         if (ban) {
@@ -148,7 +148,40 @@ public class UserService {
         }
 
         userDataService.update(userDO);
+
+        log.info("管理员 {} {} 用户 {}", operator.getId(), ban ? "封禁" : "解封", userId);
+
         return userConverter.toDTO(userDO);
+    }
+
+    /**
+     * 修改用户角色
+     * 只有管理员可以修改用户角色
+     * 只有超级管理员可以设置超级管理员
+     */
+    public UserDTO setUserRole(Long userId, Integer roleCode, UserDO operator) {
+        validateUserId(userId);
+
+        UserDO targetUser = validateUserExists(userId);
+        UserRole newRole = UserRole.fromCode(roleCode);
+
+        // 1. 防止用户修改自己的角色
+        if (userId.equals(operator.getId())) {
+            throw ErrorCode.PERMISSION_DENIED.exception("不能修改自己的角色");
+        }
+
+        // 2. 只有超级管理员可以设置超级管理员
+        if (newRole == UserRole.SUPER_ADMIN && !operator.hasRole(UserRole.SUPER_ADMIN)) {
+            throw ErrorCode.PERMISSION_DENIED.exception("只有超级管理员可以设置超级管理员");
+        }
+
+        // 3. 执行角色修改
+        targetUser.setRole(roleCode);
+        userDataService.update(targetUser);
+
+        log.info("管理员 {} 将用户 {} 的角色修改为 {}", operator.getId(), userId, newRole.getDescription());
+
+        return userConverter.toDTO(targetUser);
     }
 
     /**

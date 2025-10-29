@@ -180,12 +180,12 @@ const getSelectedTabDescription = (): string => {
           <div class="d-flex align-center">
             <v-avatar color="primary" size="32" class="mr-2">
               <span class="text-white font-weight-bold">{{
-                user.name ? user.name.charAt(0).toUpperCase() : 'U'
+                user.currentUser?.name ? user.currentUser.name.charAt(0).toUpperCase() : 'U'
               }}</span>
             </v-avatar>
             <div>
               <div class="text-body-2 font-weight-bold text-grey-darken-4">
-                {{ user.name || '未登录' }}
+                {{ user.currentUser?.name || '未登录' }}
               </div>
               <div class="text-caption text-grey-darken-2">{{ '' }}</div>
             </div>

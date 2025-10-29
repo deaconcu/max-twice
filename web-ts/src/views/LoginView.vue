@@ -98,9 +98,13 @@ const submitRegisterSecondForm = async (): Promise<void> => {
       console.log('Form submitted successfully')
       registerSecondDialog.value = false
 
-      user.setUserId(response.data.id)
-      user.setName(response.data.name)
-      user.setSubscription(response.data.subscriptions)
+      // 使用 setUser 保存完整的用户对象
+      user.setUser({
+        id: response.data.id,
+        name: response.data.name,
+        subscriptions: response.data.subscriptions,
+        role: response.data.role
+      })
 
       showSnackbar('注册成功,欢迎加入!', 'success')
       router.push({ name: 'courseList', params: {} })
@@ -124,9 +128,15 @@ const submitLogin = async (): Promise<void> => {
     if (response.code === 200) {
       console.log('Form submitted successfully')
       loginDialog.value = false
-      user.setUserId(response.data.id)
-      user.setName(response.data.name)
-      user.setSubscription(response.data.subscriptions)
+
+      // 使用 setUser 保存完整的用户对象
+      user.setUser({
+        id: response.data.id,
+        name: response.data.name,
+        subscriptions: response.data.subscriptions,
+        role: response.data.role
+      })
+
       showSnackbar('登录成功', 'success')
       router.push({ name: 'courseList', params: {} })
     } else if (response.code === USER_EMAIL_NOT_VALIDATED) {

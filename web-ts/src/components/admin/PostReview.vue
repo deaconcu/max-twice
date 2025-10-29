@@ -2,6 +2,7 @@
 import { inject, onMounted, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { postServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { adminPostServiceV1 } from '@/services/api/v1/adminApiServiceV1'
 import { ContentState, PostType, ApprovalAction } from '@/types/enums'
 import type { Post } from '@/types/post'
 import RejectBanDialog from './RejectBanDialog.vue'
@@ -82,7 +83,7 @@ const getPostsByTab = async (tabKey: string, isLoadMore: boolean = false): Promi
       ? allPostList.value[allPostList.value.length - 1].id
       : undefined
 
-    const response = await postServiceV1.getPostsByState(tabKey, lastId, pageSize)
+    const response = await adminPostServiceV1.getPostsByState(tabKey, lastId, pageSize)
 
     if (response.code === 401) {
       console.log('not login')
@@ -121,7 +122,7 @@ const getPostsByFilter = async (isLoadMore: boolean = false): Promise<void> => {
     const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
     const state = currentTabConfig?.state
 
-    const response = await postServiceV1.getPostsByFilter(
+    const response = await adminPostServiceV1.getPostsByFilter(
       filterNodeId.value,
       filterCreatorId.value,
       lastId,
@@ -185,7 +186,7 @@ const getPostSensorList = async (): Promise<void> => {
 
 const approvePost = async (post: Post, approve: boolean): Promise<void> => {
   try {
-    const response = await postServiceV1.approvePost(post.id, approve ? ApprovalAction.APPROVE : ApprovalAction.REJECT)
+    const response = await adminPostServiceV1.approvePost(post.id, approve ? ApprovalAction.APPROVE : ApprovalAction.REJECT)
 
     if (response.code === 401) {
       console.log('not login')
@@ -236,7 +237,7 @@ const handleConfirmAction = async (reason: string) => {
     const action = dialogType.value === 'reject' ? ApprovalAction.REJECT : ApprovalAction.BAN
     const targetState = dialogType.value === 'reject' ? ContentState.REJECTED : ContentState.BANNED
 
-    const response = await postServiceV1.approvePost(currentPost.value.id, action, reason)
+    const response = await adminPostServiceV1.approvePost(currentPost.value.id, action, reason)
 
     if (response.code === 200) {
       // 更新本地状态
@@ -280,7 +281,7 @@ const banPost = async (post: Post): Promise<void> => {
 // 取消屏蔽文章
 const unbanPost = async (post: Post): Promise<void> => {
   try {
-    const response = await postServiceV1.approvePost(post.id, true)
+    const response = await adminPostServiceV1.approvePost(post.id, true)
 
     if (response.code === 401) {
       console.log('not login')

@@ -1,6 +1,7 @@
 package com.prosper.learn.api.v1.controller;
 
-import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.annotation.JsonParam;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.Enums;
@@ -38,10 +39,12 @@ public class MessagesController {
      * 映射: POST /message/new-course → POST /api/v1/messages/course-applications
      */
     @PostMapping("/messages/course-applications")
-    public ApiResponse<Void> applyCourse(@RequestBody @Valid CreateMessageRequest request) {
-        
-        long userId = StpUtil.getLoginIdAsLong();
-        messageService.applyCourse(request.getTitle(), request.getSummary(), request.getExplanation(), request.getParentId(), userId);
+    @SaCheckLogin
+    public ApiResponse<Void> applyCourse(
+            @RequestBody @Valid CreateMessageRequest request,
+            @CurrentUser UserDO currentUser) {
+
+        messageService.applyCourse(request.getTitle(), request.getSummary(), request.getExplanation(), request.getParentId(), currentUser.getId());
         return ApiResponse.success();
     }
 
@@ -50,16 +53,17 @@ public class MessagesController {
      * 映射: GET /message → GET /api/v1/messages
      */
     @GetMapping("/messages/system")
+    @SaCheckLogin
     public ApiResponse<List<MessageDTO>> getSystemMessageList(
             @RequestParam @NotNull(message = "消息类型不能为空")
             @Positive(message = "消息类型必须大于0")
             int type,
             @RequestParam @NotNull(message = "最后ID不能为空")
             @Min(value = 0, message = "最后ID不能小于0")
-            Long lastId) {
+            Long lastId,
+            @CurrentUser UserDO currentUser) {
 
-        long self = StpUtil.getLoginIdAsLong();
-        List<MessageDTO> messageDTOList = messageService.getSystemList(type, self, lastId);
+        List<MessageDTO> messageDTOList = messageService.getSystemList(type, currentUser.getId(), lastId);
         return ApiResponse.success(messageDTOList);
     }
 
@@ -71,16 +75,17 @@ public class MessagesController {
      * @param type 可选的消息类型过滤
      */
     @GetMapping("/messages/category")
+    @SaCheckLogin
     public ApiResponse<List<MessageDTO>> getMessagesByCategory(
             @RequestParam @NotNull(message = "消息分类不能为空")
             @Min(value = 1, message = "消息分类必须为1-3")
             @Max(value = 3, message = "消息分类必须为1-3")
             int category,
             @RequestParam(required = false) Long lastId,
-            @RequestParam(required = false) Integer type) {
+            @RequestParam(required = false) Integer type,
+            @CurrentUser UserDO currentUser) {
 
-        long userId = StpUtil.getLoginIdAsLong();
-        List<MessageDTO> messageDTOList = messageService.getListByCategory(category, userId, lastId, type);
+        List<MessageDTO> messageDTOList = messageService.getListByCategory(category, currentUser.getId(), lastId, type);
         return ApiResponse.success(messageDTOList);
     }
 
@@ -89,6 +94,7 @@ public class MessagesController {
      * 映射: GET /message → GET /api/v1/messages
      */
     @GetMapping("/messages")
+    @SaCheckLogin
     public ApiResponse<List<MessageDTO>> getMessageList(
             @RequestParam @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
@@ -101,10 +107,10 @@ public class MessagesController {
             Long lastId,
             @RequestParam @NotNull(message = "会话类型不能为空")
             @Min(value = 0, message = "会话类型不能小于0")
-            int conversation) {
-        
-        long self = StpUtil.getLoginIdAsLong();
-        List<MessageDTO> messageDTOList = messageService.getList(type, self, userId, lastId, conversation);
+            int conversation,
+            @CurrentUser UserDO currentUser) {
+
+        List<MessageDTO> messageDTOList = messageService.getList(type, currentUser.getId(), userId, lastId, conversation);
         return ApiResponse.success(messageDTOList);
     }
 
@@ -114,7 +120,7 @@ public class MessagesController {
      */
     @PostMapping("/messages/system")
     public ApiResponse<Void> postSystemMessage(@RequestBody @Valid SendMessageRequest request) {
-        
+
         //messageService.createSystemMessage(request.getType(), request.getUserId(), request.getContent());
         return ApiResponse.success();
     }
@@ -129,7 +135,7 @@ public class MessagesController {
             @Positive(message = "申请ID必须大于0")
             Long id,
             @JsonParam("reply") @NotBlank(message = "回复内容不能为空") String reply) {
-        
+
         messageService.modifyCourseApply(id, reply);
         return ApiResponse.success();
     }
@@ -139,22 +145,24 @@ public class MessagesController {
      * 映射: POST /message/invite → POST /api/v1/messages/invite
      */
     @PostMapping("/messages/invite")
-    public ApiResponse<Void> inviteUser(@RequestBody @Valid CreateNotificationRequest request) {
-        
+    @SaCheckLogin
+    public ApiResponse<Void> inviteUser(
+            @RequestBody @Valid CreateNotificationRequest request,
+            @CurrentUser UserDO currentUser) {
+
         if (request.getUserId() <= 0) {
             throw new IllegalArgumentException("用户ID无效");
         }
         if (request.getNodeId() <= 0) {
             throw new IllegalArgumentException("节点ID无效");
         }
-        
+
         UserDO userDO = userMapper.getById(request.getUserId());
         if (userDO == null) {
             throw new IllegalArgumentException("用户不存在");
         }
 
-        long inviterId = StpUtil.getLoginIdAsLong();
-        messageService.createInviteMessage(request.getUserId(), inviterId, request.getNodeId());
+        messageService.createInviteMessage(request.getUserId(), currentUser.getId(), request.getNodeId());
         return ApiResponse.success();
     }
 }

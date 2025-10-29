@@ -1,8 +1,9 @@
 <script setup lang="ts">
   import { computed, inject, nextTick, onMounted, ref, watch } from 'vue'
-  import { contentServiceV1, upvoteServiceV1, memoryCardDeckServiceV1, adminAutoAuthorServiceV1 } from '@/services/api/v1/apiServiceV1'
+  import { contentServiceV1, upvoteServiceV1, memoryCardDeckServiceV1 } from '@/services/api/v1/apiServiceV1'
+  import { adminAutoAuthorServiceV1 } from '@/services/api/v1/adminApiServiceV1'
   import { useI18n } from 'vue-i18n'
-  import { PostType, VoteType } from '@/types/enums'
+  import { PostType, VoteType, ContentState } from '@/types/enums'
   import type { Post } from '@/types/post'
   import type { Course } from '@/types/course'
   import type { Node } from '@/types/node'
@@ -238,7 +239,7 @@
 
 <template>
   <!-- 被屏蔽的Post占位显示 -->
-  <div v-if="posting.state === 2" class="blocked-post-placeholder">
+  <div v-if="posting.state !== ContentState.PUBLISHED" class="blocked-post-placeholder">
     <v-card rounded="lg" elevation="0" class="bg-grey-lighten-5 pa-6">
       <div class="d-flex align-center justify-space-between">
         <div class="d-flex align-center">
@@ -304,7 +305,8 @@
       <div class="pl-3">
         <UserCard
           v-if="posting.creator"
-          :user="posting.creator"
+          :user-id="posting.creator.id"
+          :user-name="posting.creator.name"
         ></UserCard>
         <div class="text-body-2 text-grey-darken-2 font-weight-medium">
           {{ posting.createdAt || '' }}

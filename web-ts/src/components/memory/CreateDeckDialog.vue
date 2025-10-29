@@ -62,7 +62,7 @@ watch(dialog, (newVal) => {
 const resetForm = () => {
   step.value = 1
   deckForm.value = {
-    title: `${userStore.name}的记忆卡片组`,
+    title: `${userStore.currentUser?.name}的记忆卡片组`,
     description: ''
   }
   cardForm.value = {
@@ -82,9 +82,9 @@ const createDeck = async () => {
   currentDeck.value = {
     id: 0, // 临时ID，实际创建时由后端分配
     sourcePostId: props.post.id,
-    creator: userStore.userId ? { 
-      id: userStore.userId, 
-      name: userStore.name || '当前用户', 
+    creator: userStore.currentUser?.id ? { 
+      id: userStore.currentUser?.id, 
+      name: userStore.currentUser?.name || '当前用户', 
       email: 'user@example.com' 
     } : undefined,
     title: deckForm.value.title,

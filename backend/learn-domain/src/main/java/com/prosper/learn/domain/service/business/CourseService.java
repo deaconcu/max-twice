@@ -14,6 +14,7 @@ import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.NodeDO;
 import com.prosper.learn.domain.service.data.CourseDataService;
 import com.prosper.learn.domain.service.data.NodeDataService;
+import com.prosper.learn.persistence.dataobject.UserDO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -220,14 +221,19 @@ public class CourseService {
     }
 
     @Transactional
-    public void updateCourse(Long id, UpdateCourseRequest request) {
+    public void updateCourse(Long id, UpdateCourseRequest request, UserDO operator) {
         // 先验证参数
         if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("课程更新请求不能为空");
         }
-        
+
         CourseDO courseDO = validateCourseExists(id);
-        
+
+        // 验证权限：只有所有者或管理员可以修改
+        if (!courseDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(Enums.UserRole.ADMIN)) {
+            throw ErrorCode.PERMISSION_DENIED.exception();
+        }
+
         courseDO.setName(request.getName());
         courseDO.setDescription(request.getDescription());
         courseDO.setMainCategory(request.getMainCategory());
@@ -292,7 +298,7 @@ public class CourseService {
                 .collect(java.util.stream.Collectors.toList());
     }
 
-    public void approve(long id) {
+    public void approve(long id, UserDO operator) {
         CourseDO courseDO = validateCourseExists(id);
         validateCommonStateForApproval(courseDO);
 
@@ -309,7 +315,7 @@ public class CourseService {
         );
     }
 
-    public void reject(long id, String reason) {
+    public void reject(long id, String reason, UserDO operator) {
         CourseDO courseDO = validateCourseExists(id);
         validateCommonStateForRejection(courseDO);
 
@@ -326,7 +332,7 @@ public class CourseService {
         );
     }
 
-    public void ban(long id, String reason) {
+    public void ban(long id, String reason, UserDO operator) {
         CourseDO courseDO = validateCourseExists(id);
         validateStateForBan(courseDO);
 
@@ -343,7 +349,7 @@ public class CourseService {
         );
     }
 
-    public void delete(long id) {
+    public void delete(long id, UserDO operator) {
         validateCourseExists(id);
 
         int rowsAffected = courseDataService.delete(id);
@@ -352,20 +358,17 @@ public class CourseService {
         }
     }
 
-    public void createCourse(CreateCourseRequest request, Long userId) {
+    public void createCourse(CreateCourseRequest request, UserDO creator) {
         // 先验证参数
         if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("课程创建请求不能为空");
-        }
-        if (userId == null || userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效");
         }
 
         // 验证通过后创建对象
         CourseDO course = new CourseDO();
         course.setName(request.getName());
         course.setDescription(request.getDescription());
-        course.setCreatorId(userId);
+        course.setCreatorId(creator.getId());
         course.setRootNodeId(0L);
         course.setParentCourseId(0L);
         course.setState(ContentState.SUBMITTED.value());
@@ -373,21 +376,21 @@ public class CourseService {
         course.setSubCategory(request.getSubCategory());
         courseDataService.insert(course);
 
-        NodeDO nodeDO = NodeDO.createRoot(userId, course.getId());
+        NodeDO nodeDO = NodeDO.createRoot(creator.getId(), course.getId());
         nodeDataService.insert(nodeDO);
 
         course.setRootNodeId(nodeDO.getId());
         courseDataService.update(course);
     }
 
-    public void createSubcourse(String name, String description, long parentId, long userId) {
+    public void createSubcourse(String name, String description, long parentId, UserDO creator) {
         validateParentCourseExists(parentId);
         CourseDO parentCourse = courseDataService.getById(parentId);
 
         CourseDO subCourse = new CourseDO();
         subCourse.setName(name);
         subCourse.setDescription(description);
-        subCourse.setCreatorId(userId);
+        subCourse.setCreatorId(creator.getId());
         subCourse.setRootNodeId(0L);
         subCourse.setParentCourseId(parentId);
         subCourse.setState(ContentState.SUBMITTED.value());
@@ -396,7 +399,7 @@ public class CourseService {
 
         courseDataService.insert(subCourse);
 
-        NodeDO nodeDO = NodeDO.createRoot(userId, subCourse.getId());
+        NodeDO nodeDO = NodeDO.createRoot(creator.getId(), subCourse.getId());
         nodeDataService.insert(nodeDO);
 
         subCourse.setRootNodeId(nodeDO.getId());

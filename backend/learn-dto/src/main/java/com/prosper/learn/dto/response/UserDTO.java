@@ -21,6 +21,8 @@ public class UserDTO {
 
     private Byte state;
 
+    private Integer role;  // 新增：用户角色（0=USER, 1=MODERATOR, 2=ADMIN, 3=SUPER_ADMIN）
+
     private SubscriptionDTO[] subscriptions;
 
     private boolean isFollowing;

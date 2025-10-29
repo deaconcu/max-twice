@@ -3,6 +3,14 @@
  * 统一合并所有后端 DTO 版本的字段
  */
 
+// 用户角色枚举
+export enum UserRole {
+  USER = 0,          // 普通用户
+  MODERATOR = 1,     // 审核员
+  ADMIN = 2,         // 管理员
+  SUPER_ADMIN = 3    // 超级管理员
+}
+
 // 统一的用户信息 (合并所有版本)
 export interface User {
   id: number                   // 所有版本都有
@@ -13,6 +21,7 @@ export interface User {
   emailValidated?: boolean     // 邮箱是否验证 (可选) - UserDTO
   biography?: string           // 个人简介 (可选) - UserDTO, UserDTOV3
   state?: number               // 用户状态 (1: 正常, 2: 已屏蔽)
+  role?: UserRole              // 用户角色 (0: 普通用户, 1: 审核员, 2: 管理员, 3: 超级管理员)
   avatar?: string              // 头像 (可选)
   subscriptions?: SubscriptionInfo[]     // 订阅的课程ID列表 (可选) - 用于兼容
   createdAt?: string           // 创建时间 (可选) - UserDTO
@@ -22,11 +31,12 @@ export interface User {
 }
 
 
-// 用户登录响应数据（只包含 id, name, subscriptions）
+// 用户登录响应数据（只包含 id, name, subscriptions, role）
 export interface LoginResponseData {
   id: number
   name: string
   subscriptions: SubscriptionInfo[]  // 订阅的课程信息列表，与UserDTOV2一致
+  role?: UserRole  // 用户角色
 }
 
 // 订阅信息（与后端SubscriptionDTO一致）

@@ -1,40 +1,32 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Ref } from 'vue'
+import type { User } from '@/types/user'
 
 export const useUserStore = defineStore(
   'user',
   () => {
-    // 用户 ID
-    const userId: Ref<number | null> = ref(null)
-    const name: Ref<string | null> = ref(null)
-    const subscription: Ref<any[] | null> = ref(null)
+    // 保存完整的用户对象
+    const currentUser: Ref<User | null> = ref(null)
 
-    // 设置用户 ID
-    const setUserId = (id: number | null): void => {
-      userId.value = id
-      console.log(`user id: ${userId.value}`)
+    // 设置完整的用户信息
+    const setUser = (user: User | null): void => {
+      currentUser.value = user
+      console.log(`user set:`, user)
     }
 
-    const setName = (val: string | null): void => {
-      name.value = val 
-    }
-
-    const setSubscription = (list: any[] | null): void => {
-      subscription.value = list
-      console.log(`subscription: ${subscription.value}`)
-    }
-
-    // 清除用户 ID（退出登录）
+    // 清除用户信息（退出登录）
     const logout = (): void => {
-      userId.value = null
-      name.value = null
-      subscription.value = null
+      currentUser.value = null
     }
 
-    return { userId, name, subscription, setUserId, setName, setSubscription, logout }
+    return {
+      currentUser,
+      setUser,
+      logout
+    }
   },
   {
-    persist: true, // 启用持久化插件
+    persist: true // 启用持久化插件
   }
 )

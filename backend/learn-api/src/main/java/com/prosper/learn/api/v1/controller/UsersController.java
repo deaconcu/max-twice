@@ -1,10 +1,13 @@
 package com.prosper.learn.api.v1.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
+import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.UserService;
 import com.prosper.learn.dto.response.UserDTO;
 import com.prosper.learn.dto.request.*;
+import com.prosper.learn.persistence.dataobject.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -31,9 +34,9 @@ public class UsersController {
      * 映射: GET /self → GET /api/v1/users/current
      */
     @GetMapping("/users/current")
-    public ApiResponse<UserDTO> getCurrentUser() {
-        Long userId = StpUtil.getLoginIdAsLong();
-        UserDTO userDTO = userService.getUser(userId);
+    @SaCheckLogin
+    public ApiResponse<UserDTO> getCurrentUser(@CurrentUser UserDO currentUser) {
+        UserDTO userDTO = userService.getUser(currentUser.getId());
         return ApiResponse.success(userDTO);
     }
 
@@ -42,9 +45,11 @@ public class UsersController {
      * 映射: POST /self → PUT /api/v1/users/current
      */
     @PutMapping("/users/current")
-    public ApiResponse<Void> updateCurrentUser(@RequestBody @Valid UpdateUserRequest request) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        userService.updateCurrentUser(userId, request.getName(), request.getBiography());
+    @SaCheckLogin
+    public ApiResponse<Void> updateCurrentUser(
+            @RequestBody @Valid UpdateUserRequest request,
+            @CurrentUser UserDO currentUser) {
+        userService.updateCurrentUser(currentUser.getId(), request.getName(), request.getBiography());
         return ApiResponse.success();
     }
 
@@ -53,10 +58,11 @@ public class UsersController {
      * 映射: GET /user/{username} → GET /api/v1/users/{username}
      */
     @GetMapping("/users/{username}")
+    @SaCheckLogin
     public ApiResponse<UserDTO> getUser(
-            @PathVariable @NotBlank(message = "用户名不能为空") String username) {
-        Long viewerId = StpUtil.getLoginIdAsLong();
-        UserDTO userDTO = userService.getUserByUsername(username, viewerId);
+            @PathVariable @NotBlank(message = "用户名不能为空") String username,
+            @CurrentUser UserDO currentUser) {
+        UserDTO userDTO = userService.getUserByUsername(username, currentUser.getId());
         return ApiResponse.success(userDTO);
     }
 
@@ -103,33 +109,10 @@ public class UsersController {
     public ApiResponse<UserDTO> validateEmail(@RequestBody @Valid VerifyEmailRequest request) {
         // Service 负责验证逻辑
         UserDTO userDTO = userService.validateEmail(request.getEmail(), request.getCode());
-        
+
         // Controller 负责认证状态管理（验证成功后自动登录）
         StpUtil.login(userDTO.getId());
 
-        return ApiResponse.success(userDTO);
-    }
-
-    /**
-     * 管理员获取用户列表（分页）
-     * 映射: GET /api/v1/admin/users?offsetId=0
-     */
-    @GetMapping("/admin/users")
-    public ApiResponse<List<UserDTO>> getUsers(
-            @RequestParam(required = false) @Min(value = 0, message = "偏移ID不能小于0") Long offsetId) {
-        List<UserDTO> users = userService.getUsers(offsetId, 20);
-        return ApiResponse.success(users);
-    }
-
-    /**
-     * 管理员更新用户状态（屏蔽/恢复）
-     * 映射: PUT /api/v1/admin/users/{id}/state?ban=true
-     */
-    @PutMapping("/admin/users/{id}/state")
-    public ApiResponse<UserDTO> updateUserState(
-            @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long id,
-            @RequestParam Boolean ban) {
-        UserDTO userDTO = userService.updateUserState(id, ban);
         return ApiResponse.success(userDTO);
     }
 }

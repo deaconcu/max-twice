@@ -1,10 +1,13 @@
-package com.prosper.learn.api.v1.controller;
+package com.prosper.learn.api.v1.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.api.v1.annotation.JsonParam;
+import com.prosper.learn.api.v1.annotation.OperationLog;
+import com.prosper.learn.api.v1.annotation.RequireRole;
+import com.prosper.learn.common.Enums;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 import com.prosper.learn.common.exception.ErrorCode;
@@ -17,23 +20,24 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * 系统配置接口 V1 - Key-Value模式
- * 映射原有的 /system 接口到 /api/v1/system
+ * 系统配置管理后台接口
+ * 映射原有的 /system 接口到 /api/v1/admin/system
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
 @Slf4j
 @SaCheckLogin
+@RequireRole(Enums.UserRole.ADMIN)
 @Validated
-public class SystemController {
+public class AdminSystemController {
 
     private final SystemDataService systemDataService;
     private final ObjectMapper objectMapper;
 
     /**
      * 获取系统配置
-     * 映射: GET /system → GET /api/v1/system
+     * 映射: GET /system → GET /api/v1/admin/system
      */
     @GetMapping("/system")
     public ApiResponse<JsonNode> getSystemConfig(@RequestParam(required = false) String part) {
@@ -58,7 +62,7 @@ public class SystemController {
 
     /**
      * 获取系统配置的特定部分
-     * 映射: GET /system?part=courseCategories → GET /api/v1/system?part=courseCategories
+     * 映射: GET /system?part=courseCategories → GET /api/v1/admin/system?part=courseCategories
      */
     private ApiResponse<JsonNode> getSystemConfigPart(String part) throws IOException {
         String configValue = systemDataService.getValue(part);
@@ -84,9 +88,17 @@ public class SystemController {
 
     /**
      * 更新系统配置
-     * 映射: POST /system → POST /api/v1/system
+     * 映射: POST /system → POST /api/v1/admin/system
      */
     @PostMapping("/system")
+    @OperationLog(
+        module = "系统配置",
+        type = "修改系统配置",
+        level = Enums.OperationLevel.HIGH,
+        targetType = "SystemConfig",
+        targetId = "0",
+        targetName = "#key"
+    )
     public ApiResponse<String> updateSystemConfig(
             @RequestParam @NotBlank(message = "配置键不能为空") String key,
             @JsonParam("value") @NotBlank(message = "配置值不能为空") String value) {
@@ -97,9 +109,9 @@ public class SystemController {
             } catch (IOException e) {
                 // 不是JSON格式也没关系，可能是普通字符串
             }
-            
+
             systemDataService.setValue(key, value);
-            
+
             log.info("System config updated successfully for key: {}", key);
             return ApiResponse.success("配置更新成功");
         } catch (Exception e) {
@@ -112,15 +124,23 @@ public class SystemController {
      * 删除系统配置
      */
     @DeleteMapping("/system")
+    @OperationLog(
+        module = "系统配置",
+        type = "删除系统配置",
+        level = Enums.OperationLevel.HIGH,
+        targetType = "SystemConfig",
+        targetId = "0",
+        targetName = "#key"
+    )
     public ApiResponse<String> deleteSystemConfig(
             @RequestParam @NotBlank(message = "配置键不能为空") String key) {
         try {
             if (!systemDataService.exists(key)) {
                 return ApiResponse.error("配置不存在: " + key);
             }
-            
+
             systemDataService.deleteConfig(key);
-            
+
             log.info("System config deleted successfully for key: {}", key);
             return ApiResponse.success("配置删除成功");
         } catch (Exception e) {
@@ -149,10 +169,18 @@ public class SystemController {
 
     /**
      * 设置只读模式（管理员）
-     * 映射: POST /api/v1/system/readonly-mode
+     * 映射: POST /api/v1/admin/system/readonly-mode
      * @param enable true=开启，false=关闭
      */
     @PostMapping("/system/readonly-mode")
+    @OperationLog(
+        module = "系统配置",
+        type = "#enable ? '开启只读模式' : '关闭只读模式'",
+        level = Enums.OperationLevel.HIGH,
+        targetType = "SystemConfig",
+        targetId = "0",
+        targetName = "'readonly_mode'"
+    )
     public ApiResponse<String> setReadOnlyMode(
             @JsonParam("enable") @NotNull(message = "enable参数不能为空") Boolean enable) {
         try {

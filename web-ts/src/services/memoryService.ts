@@ -422,7 +422,7 @@ export class MemoryService {
    */
   static async getDecksForReview(query: GetDecksQuery = {}): Promise<{
     code: number
-    data: { 
+    data: {
       items: DeckDetail[]
       hasMore: boolean
       nextCursor?: {
@@ -433,7 +433,7 @@ export class MemoryService {
     message?: string
   }> {
     const params = new URLSearchParams()
-    
+
     if (query.postId) {
       params.append('postId', query.postId.toString())
     }
@@ -459,7 +459,7 @@ export class MemoryService {
       params.append('limit', query.limit.toString())
     }
 
-    return apiClient.get(`${API_V1_PREFIX}/memory/decks/review?${params.toString()}`)
+    return apiClient.get(`${API_V1_PREFIX}/admin/memory/decks?${params.toString()}`)
   }
 
   /**
@@ -542,7 +542,52 @@ export class MemoryService {
     return apiClient.post(`${API_V1_PREFIX}/memory/cards/${cardId}/study`)
   }
 
-  // ========== 审核相关API ==========
+  // ========== 管理员审核相关API ==========
+
+  /**
+   * 管理员：获取卡片组列表（用于审核）
+   */
+  static async getAdminDecks(query: GetDecksQuery = {}): Promise<{
+    code: number
+    data: {
+      items: DeckDetail[]
+      hasMore: boolean
+      nextCursor?: {
+        lastScore?: number
+        lastId?: number
+      }
+    }
+    message?: string
+  }> {
+    const params = new URLSearchParams()
+
+    if (query.postId) {
+      params.append('postId', query.postId.toString())
+    }
+    if (query.creatorId) {
+      params.append('creatorId', query.creatorId.toString())
+    }
+    if (query.state !== undefined) {
+      params.append('state', query.state.toString())
+    }
+    if (query.sortBy) {
+      params.append('sortBy', query.sortBy)
+    }
+    if (query.sortOrder) {
+      params.append('sortOrder', query.sortOrder)
+    }
+    if (query.lastScore !== undefined) {
+      params.append('lastScore', query.lastScore.toString())
+    }
+    if (query.lastId) {
+      params.append('lastId', query.lastId.toString())
+    }
+    if (query.limit) {
+      params.append('limit', query.limit.toString())
+    }
+
+    return apiClient.get(`${API_V1_PREFIX}/admin/memory/decks?${params.toString()}`)
+  }
 
   /**
    * 审核通过卡片组
@@ -552,7 +597,7 @@ export class MemoryService {
     data: any
     message?: string
   }> {
-    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/approve`)
+    return apiClient.post(`${API_V1_PREFIX}/admin/memory/decks/${deckId}/approve`)
   }
 
   /**
@@ -563,7 +608,7 @@ export class MemoryService {
     data: any
     message?: string
   }> {
-    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/reject`, {
+    return apiClient.post(`${API_V1_PREFIX}/admin/memory/decks/${deckId}/reject`, {
       reason: reason || ''
     })
   }
@@ -576,7 +621,7 @@ export class MemoryService {
     data: any
     message?: string
   }> {
-    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/ban`, {
+    return apiClient.post(`${API_V1_PREFIX}/admin/memory/decks/${deckId}/ban`, {
       reason: reason || ''
     })
   }
@@ -589,7 +634,7 @@ export class MemoryService {
     data: any
     message?: string
   }> {
-    return apiClient.post(`${API_V1_PREFIX}/memory/decks/${deckId}/restore`)
+    return apiClient.post(`${API_V1_PREFIX}/admin/memory/decks/${deckId}/restore`)
   }
 
   /**

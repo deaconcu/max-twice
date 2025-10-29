@@ -127,17 +127,6 @@ export const userServiceV1 = {
   deleteRoadmap(roadmapId: number): Promise<ApiResponse<void>> {
     return apiClient.delete(`${API_V1_PREFIX}/roadmaps/${roadmapId}`)
   },
-
-  getUsers(offsetId: number | null = null): Promise<ApiResponse<User[]>> {
-    const params = offsetId !== null ? { offsetId } : {}
-    return apiClient.get(`${API_V1_PREFIX}/admin/users`, { params })
-  },
-
-  updateUserState(userId: number, ban: boolean): Promise<ApiResponse<User>> {
-    return apiClient.put(`${API_V1_PREFIX}/admin/users/${userId}/state`, null, {
-      params: { ban },
-    })
-  },
 }
 
 // 关注服务
@@ -184,20 +173,10 @@ export const subscriptionServiceV1 = {
 
 // 职业管理服务
 export const professionServiceV1 = {
-  // 分页获取职业（管理端使用）
   getProfessionsByPage(page = 1): Promise<ApiResponse<Profession[]>> {
     return apiClient.get(`${API_V1_PREFIX}/professions`, {
       params: { page },
     })
-  },
-
-  // 按状态获取职业（管理端使用）
-  getAdminProfessions(state?: number, lastId?: number | null): Promise<ApiResponse<Profession[]>> {
-    const params: Record<string, any> = { state }
-    if (lastId !== null && lastId !== undefined) {
-      params.lastId = lastId
-    }
-    return apiClient.get(`${API_V1_PREFIX}/admin/professions`, { params })
   },
 
   // 按分类获取职业（前端使用）
@@ -252,14 +231,6 @@ export const courseServiceV1 = {
     return apiClient.get(`${API_V1_PREFIX}/courses/search`, {
       params: { name },
     })
-  },
-
-  getAdminCourses(state: number, lastId?: number | null): Promise<ApiResponse<Course[]>> {
-    const params: Record<string, any> = { state }
-    if (lastId !== null && lastId !== undefined) {
-      params.lastId = lastId
-    }
-    return apiClient.get(`${API_V1_PREFIX}/admin/courses`, { params })
   },
 
   getCoursesByState(state: number, lastId?: number): Promise<ApiResponse<Course[]>> {
@@ -338,29 +309,6 @@ export const postServiceV1 = {
   getNodePosts(nodeId: number): Promise<ApiResponse<Post[]>> {
     return apiClient.get(`${API_V1_PREFIX}/nodes/${nodeId}/posts`)
   },
-
-  getPendingPosts(): Promise<ApiResponse<Post[]>> {
-    return apiClient.get(`${API_V1_PREFIX}/admin/posts/pending`)
-  },
-
-  getPostsByState(state: string, lastId?: number, limit?: number): Promise<ApiResponse<Post[]>> {
-    return apiClient.get(`${API_V1_PREFIX}/admin/posts`, {
-      params: { state, lastId, limit },
-    })
-  },
-
-  getPostsByFilter(nodeId?: number, creatorId?: number, lastId?: number, state?: number): Promise<ApiResponse<Post[]>> {
-    return apiClient.get(`${API_V1_PREFIX}/admin/posts/filter`, {
-      params: { nodeId, creatorId, lastId, state },
-    })
-  },
-
-  approvePost(id: number, action: string, reason?: string): Promise<ApiResponse<any>> {
-    return apiClient.post(`${API_V1_PREFIX}/admin/posts/${id}/approve`, {
-      action,
-      reason: reason || '',
-    })
-  },
 }
 
 // 评论管理服务
@@ -391,29 +339,6 @@ export const commentServiceV1 = {
       params: { offsetId },
     })
   },
-
-  getCommentsByState(state: string, offsetId = 0): Promise<ApiResponse<Comment[]>> {
-    return apiClient.get(`${API_V1_PREFIX}/admin/comments/${state}`, {
-      params: { offsetId },
-    })
-  },
-
-  getCommentsByFilter(objectType?: number, objectId?: number, creatorId?: number, lastId?: number, state?: number): Promise<ApiResponse<Comment[]>> {
-    const params: Record<string, any> = {}
-    if (objectType !== undefined && objectType !== null) params.objectType = objectType
-    if (objectId !== undefined && objectId !== null) params.objectId = objectId
-    if (creatorId !== undefined && creatorId !== null) params.creatorId = creatorId
-    if (lastId !== undefined && lastId !== null) params.lastId = lastId
-    if (state !== undefined && state !== null) params.state = state
-    return apiClient.get(`${API_V1_PREFIX}/admin/comments/filter`, { params })
-  },
-
-  approveComment(id: number, action: string, reason?: string): Promise<ApiResponse<any>> {
-    return apiClient.post(`${API_V1_PREFIX}/admin/comments/${id}/approve`, {
-      action,
-      reason: reason || '',
-    })
-  },
 }
 
 // 路线图管理服务
@@ -422,23 +347,6 @@ export const roadmapServiceV1 = {
     return apiClient.get(`${API_V1_PREFIX}/professions/${professionId}/roadmaps`, {
       params: { lastId },
     })
-  },
-
-  getAdminRoadmaps(state?: number, professionId?: number, creatorId?: number, lastId?: number | null): Promise<ApiResponse<Roadmap[]>> {
-    const params: Record<string, any> = {}
-    if (state !== undefined && state !== null) {
-      params.state = state
-    }
-    if (professionId !== undefined && professionId !== null) {
-      params.professionId = professionId
-    }
-    if (creatorId !== undefined && creatorId !== null) {
-      params.creatorId = creatorId
-    }
-    if (lastId !== undefined && lastId !== null) {
-      params.lastId = lastId
-    }
-    return apiClient.get(`${API_V1_PREFIX}/admin/roadmaps`, { params })
   },
 
   updateRoadmap(id: number, content: string): Promise<ApiResponse<Roadmap>> {
@@ -725,69 +633,6 @@ export const aiServiceV1 = {
   },
 }
 
-// 系统配置服务
-export const systemServiceV1 = {
-  getSystemConfig(part?: string): Promise<ApiResponse<any>> {
-    if (part) {
-      return apiClient.get(`${API_V1_PREFIX}/system`, {
-        params: { part },
-      })
-    }
-    return apiClient.get(`${API_V1_PREFIX}/system`)
-  },
-
-  // 根据key获取单个配置
-  getConfigByKey(key: string): Promise<ApiResponse<string>> {
-    return apiClient.get(`${API_V1_PREFIX}/system/${key}`)
-  },
-
-  // 更新配置（key-value模式）
-  updateConfigByKey(key: string, value: any): Promise<ApiResponse<string>> {
-    return apiClient.post(
-      `${API_V1_PREFIX}/system`,
-      {
-        value,
-      },
-      {
-        params: { key },
-      }
-    )
-  },
-
-  // 删除配置
-  deleteConfigByKey(key: string): Promise<ApiResponse<string>> {
-    return apiClient.delete(`${API_V1_PREFIX}/system`, {
-      params: { key },
-    })
-  },
-
-  // 获取课程分类数据
-  getCourseCategories(): Promise<ApiResponse<any>> {
-    return apiClient.get(`${API_V1_PREFIX}/system`, {
-      params: { part: 'courseCategories' },
-    })
-  },
-
-  // 获取职业分类数据
-  getProfessionCategories(): Promise<ApiResponse<any>> {
-    return apiClient.get(`${API_V1_PREFIX}/system`, {
-      params: { part: 'professionCategories' },
-    })
-  },
-
-  // 获取只读模式状态（公开接口，无需登录）
-  getReadonlyMode(): Promise<ApiResponse<{ enabled: boolean }>> {
-    return apiClient.get(`${API_V1_PREFIX}/public/readonly-mode`)
-  },
-
-  // 设置只读模式（管理员）
-  setReadonlyMode(enable: boolean): Promise<ApiResponse<string>> {
-    return apiClient.post(`${API_V1_PREFIX}/system/readonly-mode`, {
-      enable,
-    })
-  },
-}
-
 // 记忆卡片组服务
 export const memoryCardDeckServiceV1 = {
   // AI生成记忆卡片组
@@ -801,58 +646,21 @@ export const memoryCardDeckServiceV1 = {
   },
 }
 
-// AutoAuthor 管理服务
-export const adminAutoAuthorServiceV1 = {
-  // 将节点加入到 AutoAuthor 队列
-  enqueue(nodeId: number): Promise<ApiResponse<void>> {
-    return apiClient.post(`${API_V1_PREFIX}/admin/auto-author/enqueue/${nodeId}`)
+// 系统配置服务（公开接口）
+export const systemServiceV1 = {
+  // 获取课程分类数据
+  getCourseCategories(): Promise<ApiResponse<any>> {
+    return apiClient.get(`${API_V1_PREFIX}/public/course-categories`)
   },
 
-  // 扫描节点并加入队列
-  scan(): Promise<ApiResponse<number>> {
-    return apiClient.post(`${API_V1_PREFIX}/admin/auto-author/scan`)
+  // 获取职业分类数据
+  getProfessionCategories(): Promise<ApiResponse<any>> {
+    return apiClient.get(`${API_V1_PREFIX}/public/profession-categories`)
   },
 
-  // 重置 opencode 会话
-  resetSession(): Promise<ApiResponse<void>> {
-    return apiClient.post(`${API_V1_PREFIX}/admin/auto-author/session/reset`)
-  },
-
-  // 清空队列
-  clearQueue(): Promise<ApiResponse<void>> {
-    return apiClient.delete(`${API_V1_PREFIX}/admin/auto-author/queue`)
-  },
-}
-
-// 节点管理服务
-export const nodeServiceV1 = {
-  getAdminNodes(state?: number, nodeId?: number, courseId?: number, creatorId?: number, lastId?: number): Promise<ApiResponse<Node[]>> {
-    const params: Record<string, any> = {}
-    if (state !== undefined && state !== null) {
-      params.state = state
-    }
-    if (nodeId !== undefined && nodeId !== null) {
-      params.nodeId = nodeId
-    }
-    if (courseId !== undefined && courseId !== null) {
-      params.courseId = courseId
-    }
-    if (creatorId !== undefined && creatorId !== null) {
-      params.creatorId = creatorId
-    }
-    if (lastId !== undefined && lastId !== null) {
-      params.lastId = lastId
-    }
-    return apiClient.get(`${API_V1_PREFIX}/admin/nodes`, { params })
-  },
-
-  updateNodeState(nodeId: number, state: number, reason?: string): Promise<ApiResponse<Node>> {
-    return apiClient.put(`${API_V1_PREFIX}/admin/nodes/${nodeId}/state`, null, {
-      params: {
-        state,
-        reason: reason || '',
-      },
-    })
+  // 获取只读模式状态（公开接口，无需登录）
+  getReadonlyMode(): Promise<ApiResponse<{ enabled: boolean }>> {
+    return apiClient.get(`${API_V1_PREFIX}/public/readonly-mode`)
   },
 }
 

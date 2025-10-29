@@ -1,5 +1,7 @@
-package com.prosper.learn.api.v1.controller;
+package com.prosper.learn.api.v1.controller.admin;
 
+import com.prosper.learn.api.v1.annotation.OperationLog;
+import com.prosper.learn.api.v1.annotation.RequireRole;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.service.business.NodeService;
@@ -14,14 +16,15 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 节点管理接口
+ * 节点管理后台接口
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
 @Slf4j
+@RequireRole(Enums.UserRole.ADMIN)
 @Validated
-public class NodesController {
+public class AdminNodesController {
 
     private final NodeService nodeService;
 
@@ -29,7 +32,7 @@ public class NodesController {
      * 管理后台：按条件获取节点列表
      * 映射: GET /api/v1/admin/nodes?state=0&nodeId=1&courseId=2&creatorId=3&lastId=123
      */
-    @GetMapping("/admin/nodes")
+    @GetMapping("/nodes")
     public ApiResponse<List<NodeDTO>> getAdminNodes(
             @RequestParam(value = "state", required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state,
             @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
@@ -43,7 +46,15 @@ public class NodesController {
     /**
      * 修改节点状态
      */
-    @PutMapping("/admin/nodes/{nodeId}/state")
+    @PutMapping("/nodes/{nodeId}/state")
+    @OperationLog(
+        module = "内容管理",
+        type = "#state == 2 ? '审核通过节点' : (#state == 3 ? '审核拒绝节点' : '修改节点状态')",
+        level = Enums.OperationLevel.MEDIUM,
+        targetType = "Node",
+        targetId = "#nodeId",
+        reason = "#reason"
+    )
     public ApiResponse<NodeDTO> updateNodeState(
             @PathVariable @Positive(message = "节点ID必须大于0") Long nodeId,
             @RequestParam @Min(value = 0, message = "状态值必须大于等于0") Integer state,

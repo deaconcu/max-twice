@@ -371,29 +371,34 @@ public class PostService {
     /**
      * 创建帖子（处理contents类型的特殊逻辑）
      *
+     * @param currentUser 当前用户
      * @param request 帖子创建请求对象
      * @throws BusinessException 当节点不存在或JSON处理失败时抛出异常
      */
     @Transactional
-    public void createPost(long userId, CreatePostRequest request) {
-        createPost(userId, request, Enums.ContentState.SUBMITTED);
+    public void createPost(UserDO currentUser, CreatePostRequest request) {
+        createPost(currentUser, request, Enums.ContentState.SUBMITTED);
     }
 
     /**
      * 创建帖子（处理contents类型的特殊逻辑）
      *
+     * @param currentUser 当前用户
      * @param request 帖子创建请求对象
+     * @param postState 帖子状态
      * @throws BusinessException 当节点不存在或JSON处理失败时抛出异常
      */
     @Transactional
-    public Long createPost(long userId, CreatePostRequest request, Enums.ContentState postState) {
+    public Long createPost(UserDO currentUser, CreatePostRequest request, Enums.ContentState postState) {
         // 先验证参数
         if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子对象不能为空");
         }
-        if (userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效");
+        if (currentUser == null || currentUser.getId() == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("用户信息无效");
         }
+
+        long userId = currentUser.getId();
 
         // 验证节点
         validateNodeId(request.getNodeId());
@@ -466,15 +471,22 @@ public class PostService {
      * 更新帖子内容
      *
      * @param id 帖子ID
+     * @param request 更新请求
+     * @param operator 操作用户
      * @throws BusinessException 当帖子不存在或帖子类型为目录时抛出异常
      */
     @Transactional
-    public void updatePost(Long id, UpdatePostRequest request) {
+    public void updatePost(Long id, UpdatePostRequest request, UserDO operator) {
         if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子对象不能为空");
         }
 
         PostDO postDO = validateAndGetPost(id);
+
+        // 验证权限：只有所有者或管理员可以修改
+        if (!postDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(Enums.UserRole.ADMIN)) {
+            throw ErrorCode.PERMISSION_DENIED.exception();
+        }
 
         // 目录类型不允许修改
         if (postDO.getType() == PostType.contents.value()) {
@@ -493,12 +505,14 @@ public class PostService {
      * 更新帖子内容并返回更新后的DTO
      *
      * @param id 帖子ID
+     * @param request 更新请求
+     * @param currentUser 当前用户
      * @return 更新后的帖子DTO
      * @throws BusinessException 当帖子不存在或帖子类型为目录时抛出异常
      */
     @Transactional
-    public PostDTO updatePostAndReturn(Long id, UpdatePostRequest request) {
-        updatePost(id, request);
+    public PostDTO updatePostAndReturn(Long id, UpdatePostRequest request, UserDO currentUser) {
+        updatePost(id, request, currentUser);
         PostDO postDO = validateAndGetPost(id);
         return postConverter.toDTO(postDO);
     }
@@ -507,14 +521,15 @@ public class PostService {
      * 删除帖子（软删除）
      *
      * @param id 帖子ID
+     * @param currentUser 当前用户
      * @throws BusinessException 当帖子不存在时抛出异常
      */
     @Transactional
-    public void deletePost(Long id, Long userId) {
+    public void deletePost(Long id, UserDO currentUser) {
         PostDO postDO = validateAndGetPost(id);
 
-        // 验证权限：只能删除自己创建的帖子
-        if (!postDO.getCreatorId().equals(userId)) {
+        // 验证权限：只有所有者或管理员可以删除
+        if (!postDO.getCreatorId().equals(currentUser.getId()) && !currentUser.hasRole(Enums.UserRole.ADMIN)) {
             throw ErrorCode.PERMISSION_DENIED.exception();
         }
 
@@ -522,6 +537,8 @@ public class PostService {
         if (result == 0) {
             throw ErrorCode.NOT_FOUND.exception();
         }
+
+        log.info("用户 {} 删除了帖子 {}", currentUser.getId(), id);
     }
 
     /**
@@ -544,20 +561,29 @@ public class PostService {
 
     /**
      * 批准帖子
+     *
+     * @param id 帖子ID
+     * @param currentUser 当前审核员
      */
     @Transactional
-    public void approve(Long id) {
+    public void approve(Long id, UserDO currentUser) {
         PostDO postDO = validateAndGetPost(id);
         postDO.setState(Enums.ContentState.PUBLISHED.value());
         postDO.setReason(null);  // 清空拒绝原因
         postDataService.update(postDO);
+
+        log.info("审核员 {} 批准了帖子 {}", currentUser.getId(), id);
     }
 
     /**
      * 拒绝帖子（审核不通过）
+     *
+     * @param id 帖子ID
+     * @param reason 拒绝原因
+     * @param currentUser 当前审核员
      */
     @Transactional
-    public void reject(Long id, String reason) {
+    public void reject(Long id, String reason, UserDO currentUser) {
         validatePostId(id);
 
         // 获取帖子信息用于通知
@@ -587,6 +613,8 @@ public class PostService {
                     reason
                 );
             }
+
+            log.info("审核员 {} 拒绝了帖子 {}, 原因: {}", currentUser.getId(), id, reason);
         } else {
             postDataService.reject(id, reason);
         }
@@ -594,9 +622,13 @@ public class PostService {
 
     /**
      * 封禁帖子（违规封禁）
+     *
+     * @param id 帖子ID
+     * @param reason 封禁原因
+     * @param currentUser 当前审核员
      */
     @Transactional
-    public void ban(Long id, String reason) {
+    public void ban(Long id, String reason, UserDO currentUser) {
         validatePostId(id);
 
         // 获取帖子信息用于通知
@@ -626,6 +658,8 @@ public class PostService {
                     reason
                 );
             }
+
+            log.info("审核员 {} 封禁了帖子 {}, 原因: {}", currentUser.getId(), id, reason);
         } else {
             postDataService.ban(id, reason);
         }
