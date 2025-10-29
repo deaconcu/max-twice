@@ -79,4 +79,33 @@ public interface OperationLogMapper {
                   @Param("targetId") Long targetId,
                   @Param("startTime") LocalDateTime startTime,
                   @Param("endTime") LocalDateTime endTime);
+
+    /**
+     * 基于游标的分页查询操作日志（keyset分页）
+     */
+    @Select("<script>" +
+            "SELECT * FROM operation_log " +
+            "WHERE 1=1 " +
+            "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
+            "<if test='operatorId != null'>AND operator_id = #{operatorId}</if> " +
+            "<if test='module != null and module != \"\"'>AND module = #{module}</if> " +
+            "<if test='operationType != null and operationType != \"\"'>AND operation_type = #{operationType}</if> " +
+            "<if test='operationLevel != null'>AND operation_level = #{operationLevel}</if> " +
+            "<if test='targetType != null and targetType != \"\"'>AND target_type = #{targetType}</if> " +
+            "<if test='targetId != null'>AND target_id = #{targetId}</if> " +
+            "<if test='startTime != null'>AND created_at &gt;= #{startTime}</if> " +
+            "<if test='endTime != null'>AND created_at &lt;= #{endTime}</if> " +
+            "ORDER BY id DESC " +
+            "LIMIT #{limit}" +
+            "</script>")
+    List<OperationLogDO> queryLogsByLastId(@Param("operatorId") Long operatorId,
+                                           @Param("module") String module,
+                                           @Param("operationType") String operationType,
+                                           @Param("operationLevel") Integer operationLevel,
+                                           @Param("targetType") String targetType,
+                                           @Param("targetId") Long targetId,
+                                           @Param("startTime") LocalDateTime startTime,
+                                           @Param("endTime") LocalDateTime endTime,
+                                           @Param("lastId") Long lastId,
+                                           @Param("limit") int limit);
 }

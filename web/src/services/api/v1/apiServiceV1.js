@@ -138,11 +138,11 @@ export const professionServiceV1 = {
   },
 
   updateProfession(id, professionData) {
-    return apiClient.put(`${API_V1_PREFIX}/professions/${id}`, professionData)
+    return apiClient.put(`${API_V1_PREFIX}/admin/professions/${id}`, professionData)
   },
 
   approveProfession(id, action, rejectedReason) {
-    return apiClient.post(`${API_V1_PREFIX}/professions/${id}/approve`, {
+    return apiClient.post(`${API_V1_PREFIX}/admin/professions/${id}/approve`, {
       action,
       rejectedReason,
     })
@@ -196,7 +196,7 @@ export const courseServiceV1 = {
   },
 
   updateCourse(id, courseData) {
-    return apiClient.put(`${API_V1_PREFIX}/courses/${id}`, courseData)
+    return apiClient.put(`${API_V1_PREFIX}/admin/courses/${id}`, courseData)
   },
 
   createSubcourse(parentId, name, description) {
@@ -207,9 +207,9 @@ export const courseServiceV1 = {
   },
 
   approveCourse(id, action, rejectedReason) {
-    return apiClient.post(`${API_V1_PREFIX}/courses/${id}/approve`, {
+    return apiClient.post(`${API_V1_PREFIX}/admin/courses/${id}/approve`, {
       action,
-      rejectedReason,
+      reason: rejectedReason,
     })
   },
 }
@@ -571,6 +571,21 @@ export const memoryDeckServiceV1 = {
   getUserMemoryDecks(userId, sortBy = 'createdAt', sortOrder = 'desc', lastScore, lastId, limit = 10) {
     return apiClient.get(`${API_V1_PREFIX}/memory/users/${userId}/memory-decks`, {
       params: { sortBy, sortOrder, lastScore, lastId, limit },
+    })
+  },
+
+  // 管理后台：审核卡片组
+  approveDeck(deckId, action, reason) {
+    return apiClient.post(`${API_V1_PREFIX}/admin/memory/decks/${deckId}/approve`, {
+      action,
+      reason,
+    })
+  },
+
+  // 管理后台：查询卡片组列表
+  getAdminDecks(state, postId, creatorId, lastId, limit) {
+    return apiClient.get(`${API_V1_PREFIX}/admin/memory/decks`, {
+      params: { state, postId, creatorId, lastId, limit },
     })
   },
 }

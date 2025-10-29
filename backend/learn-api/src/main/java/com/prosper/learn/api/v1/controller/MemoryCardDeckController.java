@@ -242,66 +242,6 @@ public class MemoryCardDeckController {
     }
 
     /**
-     * 审核通过卡片组
-     */
-    @PostMapping("/decks/{deckId}/approve")
-    @SaCheckLogin
-    public ApiResponse<Void> approve(
-            @PathVariable @NotNull(message = "卡片组ID不能为空")
-            @Positive(message = "卡片组ID必须大于0")
-            Long deckId,
-            @CurrentUser UserDO currentUser) {
-        deckService.approve(deckId, currentUser.getId());
-        return ApiResponse.success();
-    }
-
-    /**
-     * 拒绝卡片组
-     */
-    @PostMapping("/decks/{deckId}/reject")
-    @SaCheckLogin
-    public ApiResponse<Void> reject(
-            @PathVariable @NotNull(message = "卡片组ID不能为空")
-            @Positive(message = "卡片组ID必须大于0")
-            Long deckId,
-            @RequestBody(required = false) Map<String, String> body,
-            @CurrentUser UserDO currentUser) {
-        String reason = body != null ? body.get("reason") : null;
-        deckService.reject(deckId, currentUser.getId(), reason);
-        return ApiResponse.success();
-    }
-
-    /**
-     * 屏蔽卡片组
-     */
-    @PostMapping("/decks/{deckId}/ban")
-    @SaCheckLogin
-    public ApiResponse<Void> ban(
-            @PathVariable @NotNull(message = "卡片组ID不能为空")
-            @Positive(message = "卡片组ID必须大于0")
-            Long deckId,
-            @RequestBody(required = false) Map<String, String> body,
-            @CurrentUser UserDO currentUser) {
-        String reason = body != null ? body.get("reason") : null;
-        deckService.ban(deckId, currentUser.getId(), reason);
-        return ApiResponse.success();
-    }
-
-    /**
-     * 恢复卡片组
-     */
-    @PostMapping("/decks/{deckId}/restore")
-    @SaCheckLogin
-    public ApiResponse<Void> restoreDeck(
-            @PathVariable @NotNull(message = "卡片组ID不能为空")
-            @Positive(message = "卡片组ID必须大于0")
-            Long deckId,
-            @CurrentUser UserDO currentUser) {
-        deckService.restoreDeck(deckId, currentUser.getId());
-        return ApiResponse.success();
-    }
-
-    /**
      * 获取卡片组更新差异
      */
     @GetMapping("/decks/{deckId}/diff")

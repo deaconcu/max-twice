@@ -47,21 +47,22 @@ public class OperationLogService {
     }
 
     /**
-     * 查询操作日志（分页）
+     * 查询操作日志（keyset分页）
      */
     public Map<String, Object> queryLogs(OperationLogRequest query) {
         // 参数验证和默认值
-        int page = query.getPage() != null && query.getPage() > 0 ? query.getPage() : 1;
-        int size = query.getSize() != null && query.getSize() > 0 ? query.getSize() : 20;
-        if (size > 100) {
-            size = 100; // 限制最大每页数量
+        int limit = query.getLimit() != null && query.getLimit() > 0 ? query.getLimit() : 20;
+        if (limit > 100) {
+            limit = 100; // 限制最大每页数量
         }
+
+        Long lastId = query.getLastId();
 
         // 时间转换
         LocalDateTime startTime = parseDateTime(query.getStartTime());
         LocalDateTime endTime = parseDateTime(query.getEndTime());
 
-        // 查询数据
+        // 查询数据（多查一条用于判断是否还有更多数据）
         List<OperationLogDO> logs = operationLogDataService.queryLogs(
                 query.getOperatorId(),
                 query.getModule(),
@@ -71,21 +72,21 @@ public class OperationLogService {
                 query.getTargetId(),
                 startTime,
                 endTime,
-                page,
-                size
+                lastId,
+                limit + 1
         );
 
-        // 统计总数
-        int total = operationLogDataService.countLogs(
-                query.getOperatorId(),
-                query.getModule(),
-                query.getOperationType(),
-                query.getOperationLevel(),
-                query.getTargetType(),
-                query.getTargetId(),
-                startTime,
-                endTime
-        );
+        // 判断是否还有更多数据
+        boolean hasMore = logs.size() > limit;
+        if (hasMore) {
+            logs = logs.subList(0, limit);
+        }
+
+        // 获取下一页的lastId
+        Long nextLastId = null;
+        if (hasMore && !logs.isEmpty()) {
+            nextLastId = logs.get(logs.size() - 1).getId();
+        }
 
         // 转换为DTO
         List<OperationLogDTO> logDTOs = logs.stream()
@@ -94,11 +95,9 @@ public class OperationLogService {
 
         // 构造返回结果
         Map<String, Object> result = new HashMap<>();
-        result.put("data", logDTOs);
-        result.put("total", total);
-        result.put("page", page);
-        result.put("size", size);
-        result.put("totalPages", (total + size - 1) / size);
+        result.put("items", logDTOs);
+        result.put("hasMore", hasMore);
+        result.put("nextLastId", nextLastId);
 
         return result;
     }

@@ -9,6 +9,7 @@ import type { Profession } from '@/types/profession'
 import type { Roadmap } from '@/types/roadmap'
 import type { Node } from '@/types/node'
 import type { ApprovalResponse } from '@/types/response'
+import type { OperationLogDTO, OperationLogQueryRequest, OperationLogPageResponse } from '@/types/operationLog'
 
 // 设置 axios 默认配置
 axios.defaults.withCredentials = true
@@ -184,6 +185,13 @@ export const adminRoadmapServiceV1 = {
     }
     return adminApiClient.get(`${API_V1_PREFIX}/admin/roadmaps`, { params })
   },
+
+  // 更新路线图描述
+  updateRoadmap(id: number, description: string): Promise<ApiResponse<Roadmap>> {
+    return adminApiClient.put(`${API_V1_PREFIX}/admin/roadmaps/${id}`, {
+      description,
+    })
+  },
 }
 
 // 系统配置服务
@@ -297,6 +305,47 @@ export const adminNodeServiceV1 = {
         reason: reason || '',
       },
     })
+  },
+}
+
+// 操作日志管理服务
+export const adminOperationLogServiceV1 = {
+  // 查询操作日志
+  getOperationLogs(query: OperationLogQueryRequest): Promise<ApiResponse<OperationLogPageResponse>> {
+    const params: Record<string, any> = {}
+    if (query.operatorId !== undefined && query.operatorId !== null) {
+      params.operatorId = query.operatorId
+    }
+    if (query.module) {
+      params.module = query.module
+    }
+    if (query.operationType) {
+      params.operationType = query.operationType
+    }
+    if (query.targetType) {
+      params.targetType = query.targetType
+    }
+    if (query.operationLevel !== undefined && query.operationLevel !== null) {
+      params.operationLevel = query.operationLevel
+    }
+    if (query.startTime) {
+      params.startTime = query.startTime
+    }
+    if (query.endTime) {
+      params.endTime = query.endTime
+    }
+    if (query.lastId !== undefined && query.lastId !== null) {
+      params.lastId = query.lastId
+    }
+    if (query.limit !== undefined && query.limit !== null) {
+      params.limit = query.limit
+    }
+    return adminApiClient.get(`${API_V1_PREFIX}/admin/operation-logs`, { params })
+  },
+
+  // 查询单条操作日志详情
+  getOperationLogById(id: number): Promise<ApiResponse<OperationLogDTO>> {
+    return adminApiClient.get(`${API_V1_PREFIX}/admin/operation-logs/${id}`)
   },
 }
 

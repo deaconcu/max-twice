@@ -12,6 +12,7 @@
   import CommentReview from '@/components/admin/CommentReview.vue'
   import MemoryCardReview from '@/components/admin/MemoryCardReview.vue'
   import UserManagement from '@/components/admin/UserManagement.vue'
+  import OperationLogManagement from '@/components/admin/OperationLogManagement.vue'
 
   const { t } = useI18n()
   const route = useRoute()
@@ -21,6 +22,7 @@
   const validTabs = [
     'system-config',
     'system-operations',
+    'operation-logs',
     'user-management',
     'profession-management',
     'course-management',
@@ -98,6 +100,12 @@
             value="system-operations"
             class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"
           ></v-tab>
+          <v-tab
+            prepend-icon="mdi-clipboard-text-clock"
+            text="操作日志"
+            value="operation-logs"
+            class="text-body-1 text-grey-darken-2 my-1 rounded-lg justify-start"
+          ></v-tab>
 
           <div class="px-3 py-3">
             <v-divider class="border-opacity-40"></v-divider>
@@ -170,6 +178,29 @@
         <!-- 系统操作 -->
         <v-card v-if="tab == 'system-operations'" flat class="pa-6" rounded="lg">
           <SystemOperations />
+        </v-card>
+
+        <!-- 操作日志 -->
+        <v-card v-if="tab == 'operation-logs'" flat class="pa-6" rounded="lg">
+          <div class="d-flex align-center justify-space-between mb-6">
+            <div class="d-flex align-center">
+              <div class="pa-3 rounded-lg bg-blue-lighten-5 mr-3">
+                <v-icon icon="mdi-clipboard-text-clock" color="blue-darken-1" size="20"></v-icon>
+              </div>
+              <div>
+                <h3 class="text-h6 font-weight-bold text-grey-darken-3">管理员操作日志</h3>
+                <p class="text-body-2 text-grey-darken-1 mb-0">
+                  查看所有管理员的操作记录，支持多维度筛选
+                </p>
+              </div>
+            </div>
+            <v-chip variant="flat" color="blue-lighten-4" rounded="lg">
+              <v-icon icon="mdi-history" color="blue-darken-2" size="16" class="mr-1"></v-icon>
+              <span class="text-blue-darken-2 text-caption">操作审计</span>
+            </v-chip>
+          </div>
+
+          <OperationLogManagement />
         </v-card>
 
         <!-- 职业申请管理 -->

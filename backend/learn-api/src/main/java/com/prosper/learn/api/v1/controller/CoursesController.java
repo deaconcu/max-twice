@@ -126,22 +126,6 @@ public class CoursesController {
     }
 
     /**
-     * 修改课程
-     * 映射: PUT /course/{id} → PUT /api/v1/courses/{id}
-     */
-    @PutMapping("/courses/{id}")
-    @SaCheckLogin
-    public ApiResponse<Object> updateCourse(
-            @PathVariable @NotNull(message = "课程ID不能为空")
-            @Positive(message = "课程ID必须大于0")
-            Long id,
-            @Valid @RequestBody UpdateCourseRequest request,
-            @CurrentUser UserDO currentUser) {
-        courseService.updateCourse(id, request, currentUser);
-        return ApiResponse.success("更新成功");
-    }
-
-    /**
      * 创建子课程
      * 映射: POST /subcourse → POST /api/v1/courses/{parentId}/subcourses
      */

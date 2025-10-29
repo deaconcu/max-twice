@@ -32,9 +32,9 @@ public class OperationLogRequest {
     /** 结束时间 */
     private String endTime;
 
-    /** 页码 */
-    private Integer page;
+    /** 最后一条记录的ID（keyset分页） */
+    private Long lastId;
 
     /** 每页数量 */
-    private Integer size;
+    private Integer limit;
 }

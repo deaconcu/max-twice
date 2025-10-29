@@ -200,11 +200,11 @@ export const professionServiceV1 = {
   },
 
   updateProfession(id: number, professionData: Partial<Profession>): Promise<ApiResponse<Profession>> {
-    return apiClient.put(`${API_V1_PREFIX}/professions/${id}`, professionData)
+    return apiClient.put(`${API_V1_PREFIX}/admin/professions/${id}`, professionData)
   },
 
   approveProfession(id: number, action: string, reason?: string): Promise<ApiResponse<ApprovalResponse>> {
-    return apiClient.post(`${API_V1_PREFIX}/professions/${id}/approve`, {
+    return apiClient.post(`${API_V1_PREFIX}/admin/professions/${id}/approve`, {
       action,
       reason,
     })

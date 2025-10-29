@@ -554,7 +554,7 @@ const updateRoadmapDescription = async (): Promise<void> => {
   try {
     updating.value = true
 
-    const response = await roadmapServiceV1.updateRoadmapDescription(
+    const response = await adminRoadmapServiceV1.updateRoadmap(
       currentRoadmap.value.id,
       editDescription.value || ''
     )

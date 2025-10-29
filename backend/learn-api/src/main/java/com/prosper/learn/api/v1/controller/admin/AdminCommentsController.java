@@ -72,7 +72,7 @@ public class AdminCommentsController {
     @RequireRole(UserRole.MODERATOR)
     @OperationLog(
         module = "内容管理",
-        type = "#request.action == 'approve' ? '审核通过评论' : (#request.action == 'reject' ? '审核拒绝评论' : '屏蔽评论')",
+        type = "#request.action == 'APPROVE' ? '审核通过评论' : (#request.action == 'REJECT' ? '审核拒绝评论' : '屏蔽评论')",
         level = Enums.OperationLevel.MEDIUM,
         targetType = "Comment",
         targetId = "#id",

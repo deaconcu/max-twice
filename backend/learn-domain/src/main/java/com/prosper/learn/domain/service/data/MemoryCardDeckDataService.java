@@ -239,7 +239,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     /**
      * 根据帖子获取卡片组列表 - ID分页
      */
-    public List<MemoryCardDeckDO> getListByPostWithIdPaging(long postId, int state, long lastId, int limit) {
+    public List<MemoryCardDeckDO> getListByPostWithIdPaging(long postId, int state, Long lastId, int limit) {
         return memoryCardDeckMapper.getListByPostWithIdPaging(postId, state, lastId, limit);
     }
 
@@ -260,14 +260,14 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     /**
      * 根据创建者获取卡片组列表 - ID分页
      */
-    public List<MemoryCardDeckDO> getListByCreatorWithIdPaging(long creatorId, long lastId, int limit) {
+    public List<MemoryCardDeckDO> getListByCreatorWithIdPaging(long creatorId, Long lastId, int limit) {
         return memoryCardDeckMapper.getListByCreatorWithIdPaging(creatorId, lastId, limit);
     }
 
     /**
      * 根据创建者获取卡片组列表 - ID分页（带状态过滤）
      */
-    public List<MemoryCardDeckDO> getListByCreatorWithIdPagingAndState(long creatorId, int state, long lastId, int limit) {
+    public List<MemoryCardDeckDO> getListByCreatorWithIdPagingAndState(long creatorId, int state, Long lastId, int limit) {
         return memoryCardDeckMapper.getListByCreatorWithIdPagingAndState(creatorId, state, lastId, limit);
     }
 
@@ -295,7 +295,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     /**
      * 根据状态获取卡片组列表 - ID分页
      */
-    public List<MemoryCardDeckDO> getListByStateWithIdPaging(int state, long lastId, int limit) {
+    public List<MemoryCardDeckDO> getListByStateWithIdPaging(int state, Long lastId, int limit) {
         return memoryCardDeckMapper.getListByStateWithIdPaging(state, lastId, limit);
     }
 
@@ -351,7 +351,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     /**
      * 根据帖子和创建者获取卡片组列表 - ID分页
      */
-    public List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPaging(long postId, long creatorId, int state, long lastId, int limit) {
+    public List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPaging(long postId, long creatorId, int state, Long lastId, int limit) {
         return memoryCardDeckMapper.getListByPostAndCreatorWithIdPaging(postId, creatorId, state, lastId, limit);
     }
 

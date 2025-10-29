@@ -251,6 +251,7 @@ app:
 logging:
   level:
     com.prosper.learn: INFO
+    com.prosper.learn.persistence.mapper: DEBUG  # MyBatis Mapper SQL日志
     org.springframework.web: DEBUG
     org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
     org.apache.ibatis: DEBUG

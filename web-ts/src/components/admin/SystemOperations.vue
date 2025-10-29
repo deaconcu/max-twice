@@ -446,11 +446,11 @@
       </div>
     </v-card>
 
-    <!-- 操作历史 -->
+    <!-- 最近的系统操作 -->
     <v-card flat class="pa-4" rounded="lg" outlined>
       <div class="d-flex align-center mb-4">
         <v-icon icon="mdi-history" color="grey-darken-1" class="mr-2"></v-icon>
-        <h4 class="text-h6 font-weight-bold text-grey-darken-3">操作历史</h4>
+        <h4 class="text-h6 font-weight-bold text-grey-darken-3">最近的系统操作</h4>
       </div>
 
       <div class="mb-4">

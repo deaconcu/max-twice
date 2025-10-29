@@ -104,10 +104,10 @@
 | `GET /course/list?parentId=123` | `GET /api/v1/courses?parentId=123` | 获取所有子课程 |
 | `GET /course/hot` | `GET /api/v1/courses/hot` | 热门课程 |
 | `GET /course/ranking` | `GET /api/v1/courses/ranking` | 课程排行榜 |
-| `POST /course/operate` | `POST /api/v1/courses/{id}/approve` | 课程审核操作 |
+| `POST /course/operate` | `POST /api/v1/admin/courses/{id}/approve` | 课程审核操作 |
 | `POST /course` | `POST /api/v1/courses` | 创建课程 |
 | `POST /subcourse` | `POST /api/v1/courses/{parentId}/subcourses` | 创建子课程 |
-| `PUT /course/{id}` | `PUT /api/v1/courses/{id}` | 修改课程 |
+| `PUT /course/{id}` | `PUT /api/v1/admin/courses/{id}` | 修改课程 |
 
 ---
 
@@ -218,11 +218,22 @@
 
 ---
 
+### 12. MemoryCardDeckApi → 记忆卡片管理接口
+
+| 现有接口 | 新接口路径 | 说明 |
+|---------|-----------|-----|
+| `POST /api/v1/memory/decks/{deckId}/approve` | `POST /api/v1/admin/memory/decks/{deckId}/approve` | 审核通过卡片组（迁移到admin） |
+| `POST /api/v1/memory/decks/{deckId}/reject` | `POST /api/v1/admin/memory/decks/{deckId}/approve` | 拒绝卡片组（统一到approve接口，action=reject） |
+| `POST /api/v1/memory/decks/{deckId}/ban` | `POST /api/v1/admin/memory/decks/{deckId}/approve` | 屏蔽卡片组（统一到approve接口，action=ban） |
+| `POST /api/v1/memory/decks/{deckId}/restore` | `POST /api/v1/admin/memory/decks/{deckId}/approve` | 恢复卡片组（统一到approve接口，action=restore） |
+
+---
+
 ## 总结
 
 ### 新增的API模块：
 1. **PagesApi** - 页面聚合接口（4个read接口）
-2. **UsersApi** - 用户管理接口 
+2. **UsersApi** - 用户管理接口
 3. **CoursesApi** - 课程管理接口
 4. **PostsApi** - 帖子管理接口
 5. **CommentsApi** - 评论管理接口
@@ -236,6 +247,7 @@
 13. **AiApi** - AI功能接口
 14. **SubscriptionsApi** - 订阅管理接口
 15. **FollowsApi** - 关注功能接口
+16. **MemoryCardDeckApi** - 记忆卡片管理接口
 
 ### 主要改进：
 - 统一使用 `/api/v1/` 前缀

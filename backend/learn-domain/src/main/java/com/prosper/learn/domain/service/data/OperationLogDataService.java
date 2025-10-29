@@ -22,9 +22,9 @@ public class OperationLogDataService {
     /**
      * 插入操作日志
      */
-    public void insert(OperationLogDO log) {
+    public void insert(OperationLogDO logDO) {
         try {
-            operationLogMapper.insert(log);
+            operationLogMapper.insert(logDO);
         } catch (Exception e) {
             log.error("Failed to insert operation log", e);
             // 操作日志记录失败不应影响主业务，只记录错误日志
@@ -39,24 +39,13 @@ public class OperationLogDataService {
     }
 
     /**
-     * 分页查询操作日志
+     * 查询操作日志（keyset分页）
      */
     public List<OperationLogDO> queryLogs(Long operatorId, String module, String operationType,
                                           Integer operationLevel, String targetType, Long targetId,
                                           LocalDateTime startTime, LocalDateTime endTime,
-                                          int page, int size) {
-        int offset = (page - 1) * size;
-        return operationLogMapper.queryLogs(operatorId, module, operationType, operationLevel,
-                targetType, targetId, startTime, endTime, offset, size);
-    }
-
-    /**
-     * 统计符合条件的日志数量
-     */
-    public int countLogs(Long operatorId, String module, String operationType,
-                         Integer operationLevel, String targetType, Long targetId,
-                         LocalDateTime startTime, LocalDateTime endTime) {
-        return operationLogMapper.countLogs(operatorId, module, operationType, operationLevel,
-                targetType, targetId, startTime, endTime);
+                                          Long lastId, int limit) {
+        return operationLogMapper.queryLogsByLastId(operatorId, module, operationType, operationLevel,
+                targetType, targetId, startTime, endTime, lastId, limit);
     }
 }

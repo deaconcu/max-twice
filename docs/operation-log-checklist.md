@@ -75,7 +75,8 @@
 **文件位置**：`backend/learn-api/src/main/java/com/prosper/learn/api/v1/controller/admin/AdminCommentsController.java`
 
 ### 3.4 课程管理 (AdminCoursesController)
-- [ ] ~~暂无操作接口，仅有查询接口~~
+- [x] `approveCourse()` - 审核课程（通过/拒绝/屏蔽/删除/恢复）
+- [x] `updateCourse()` - 更新课程信息
 
 **文件位置**：`backend/learn-api/src/main/java/com/prosper/learn/api/v1/controller/admin/AdminCoursesController.java`
 
@@ -85,17 +86,18 @@
 **文件位置**：`backend/learn-api/src/main/java/com/prosper/learn/api/v1/controller/admin/AdminNodesController.java`
 
 ### 3.6 职业管理 (AdminProfessionsController)
-- [ ] ~~暂无操作接口，仅有查询接口~~
+- [x] `updateProfession()` - 更新职业信息
+- [x] `approveProfession()` - 审核职业（通过/拒绝/屏蔽）
 
 **文件位置**：`backend/learn-api/src/main/java/com/prosper/learn/api/v1/controller/admin/AdminProfessionsController.java`
 
 ### 3.7 路线图管理 (AdminRoadmapsController)
-- [ ] ~~暂无操作接口，仅有查询接口~~
+- [x] `updateRoadmap()` - 更新路线图信息
 
 **文件位置**：`backend/learn-api/src/main/java/com/prosper/learn/api/v1/controller/admin/AdminRoadmapsController.java`
 
 ### 3.8 记忆卡片管理 (AdminMemoryCardDeckController)
-- [ ] ~~接口已定义但未实现（TODO）~~
+- [x] `approveDeck()` - 审核卡片组（通过/拒绝/屏蔽/恢复）
 
 **文件位置**：`backend/learn-api/src/main/java/com/prosper/learn/api/v1/controller/admin/AdminMemoryCardDeckController.java`
 
@@ -111,9 +113,9 @@
 ## 阶段 4：管理后台查看接口 ✅
 
 ### 4.1 创建操作日志查看接口
-- [ ] 创建 `AdminOperationLogController.java`
-- [ ] 实现 `getOperationLogs()` - 查询操作日志列表
-- [ ] 实现 `getOperationLogDetail()` - 查询操作日志详情
+- [x] 创建 `AdminOperationLogController.java`
+- [x] 实现 `getOperationLogs()` - 查询操作日志列表
+- [x] 实现 `getOperationLogDetail()` - 查询操作日志详情
 - [ ] 实现 `exportOperationLogs()` - 导出操作日志（可选）
 
 **文件位置**：`backend/learn-api/src/main/java/com/prosper/learn/api/v1/controller/admin/AdminOperationLogController.java`

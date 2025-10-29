@@ -1,10 +1,15 @@
 package com.prosper.learn.api.v1.controller.admin;
 
+import com.prosper.learn.api.v1.annotation.CurrentUser;
+import com.prosper.learn.api.v1.annotation.JsonParam;
+import com.prosper.learn.api.v1.annotation.OperationLog;
 import com.prosper.learn.api.v1.dto.ApiResponse;
+import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Enums.UserRole;
 import com.prosper.learn.api.v1.annotation.RequireRole;
 import com.prosper.learn.domain.service.business.RoadmapService;
 import com.prosper.learn.dto.response.RoadmapDTO;
+import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,5 +45,29 @@ public class AdminRoadmapsController {
 
         List<RoadmapDTO> roadmaps = roadmapService.listByFilter(state, professionId, creatorId, lastId);
         return ApiResponse.success(roadmaps);
+    }
+
+    /**
+     * 管理后台：更新路线图描述
+     * 映射: PUT /api/v1/admin/roadmaps/{id}
+     */
+    @PutMapping("/roadmaps/{id}")
+    @RequireRole(UserRole.MODERATOR)
+    @OperationLog(
+        module = "内容管理",
+        type = "更新路线图信息",
+        level = Enums.OperationLevel.MEDIUM,
+        targetType = "Roadmap",
+        targetId = "#id"
+    )
+    public ApiResponse<RoadmapDTO> updateRoadmap(
+            @PathVariable @NotNull(message = "路线图ID不能为空")
+            @Positive(message = "路线图ID必须大于0")
+            Long id,
+            @JsonParam("description") @Size(max = 500, message = "描述长度不能超过500个字符") String description,
+            @CurrentUser UserDO currentUser) {
+
+        RoadmapDTO roadmap = roadmapService.updateDescription(id, description, currentUser);
+        return ApiResponse.success(roadmap);
     }
 }

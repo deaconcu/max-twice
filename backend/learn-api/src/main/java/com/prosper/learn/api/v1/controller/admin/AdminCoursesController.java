@@ -1,5 +1,7 @@
 package com.prosper.learn.api.v1.controller.admin;
 
+import com.prosper.learn.api.v1.annotation.CurrentUser;
+import com.prosper.learn.api.v1.annotation.OperationLog;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Enums.ContentState;
@@ -7,7 +9,12 @@ import com.prosper.learn.common.Enums.UserRole;
 import com.prosper.learn.api.v1.annotation.RequireRole;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.CourseService;
+import com.prosper.learn.dto.request.OperateRequest;
+import com.prosper.learn.dto.request.UpdateCourseRequest;
+import com.prosper.learn.dto.response.ApprovalResponseDTO;
 import com.prosper.learn.dto.response.CourseDTO;
+import com.prosper.learn.persistence.dataobject.UserDO;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -92,5 +99,107 @@ public class AdminCoursesController {
         ContentState courseState = state != null ? ContentState.getByValue(state) : null;
         List<CourseDTO> courseList = courseService.getListByParent(parentId, courseState);
         return ApiResponse.success(courseList);
+    }
+
+    /**
+     * 管理后台：课程审核操作
+     * 映射: POST /course/operate → POST /api/v1/admin/courses/{id}/approve
+     */
+    @PostMapping("/courses/{id}/approve")
+    @RequireRole(UserRole.MODERATOR)
+    @OperationLog(
+        module = "内容管理",
+        type = "#request.action == 'APPROVE' ? '审核通过课程' : (#request.action == 'REJECT' ? '审核拒绝课程' : (#request.action == 'BAN' ? '屏蔽课程' : (#request.action == 'DELETE' ? '删除课程' : '恢复课程')))",
+        level = Enums.OperationLevel.MEDIUM,
+        targetType = "Course",
+        targetId = "#id",
+        reason = "#request.reason"
+    )
+    public ApiResponse<ApprovalResponseDTO> approveCourse(
+            @PathVariable @NotNull(message = "课程ID不能为空")
+            @Positive(message = "课程ID必须大于0")
+            Long id,
+            @RequestBody @Valid OperateRequest request,
+            @CurrentUser UserDO currentUser) {
+
+        ApprovalResponseDTO response = switch (request.getAction().toLowerCase()) {
+            case "approve" -> {
+                courseService.approve(id, currentUser);
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("批准成功")
+                        .objectId(id)
+                        .objectType("course")
+                        .action("approve")
+                        .build();
+            }
+            case "reject" -> {
+                courseService.reject(id, request.getReason(), currentUser);
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("拒绝成功")
+                        .objectId(id)
+                        .objectType("course")
+                        .action("reject")
+                        .build();
+            }
+            case "ban" -> {
+                courseService.ban(id, request.getReason(), currentUser);
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("封禁成功")
+                        .objectId(id)
+                        .objectType("course")
+                        .action("ban")
+                        .build();
+            }
+            case "delete" -> {
+                courseService.delete(id, currentUser);
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("删除成功")
+                        .objectId(id)
+                        .objectType("course")
+                        .action("delete")
+                        .build();
+            }
+            case "restore" -> {
+                // 恢复课程到待审核状态
+                courseService.approve(id, currentUser);
+                yield ApprovalResponseDTO.builder()
+                        .success(true)
+                        .message("恢复成功")
+                        .objectId(id)
+                        .objectType("course")
+                        .action("restore")
+                        .build();
+            }
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的操作类型: " + request.getAction());
+        };
+
+        return ApiResponse.success(response);
+    }
+
+    /**
+     * 管理后台：更新课程信息
+     * 映射: PUT /course/{id} → PUT /api/v1/admin/courses/{id}
+     */
+    @PutMapping("/courses/{id}")
+    @RequireRole(UserRole.MODERATOR)
+    @OperationLog(
+        module = "内容管理",
+        type = "更新课程信息",
+        level = Enums.OperationLevel.MEDIUM,
+        targetType = "Course",
+        targetId = "#id"
+    )
+    public ApiResponse<Object> updateCourse(
+            @PathVariable @NotNull(message = "课程ID不能为空")
+            @Positive(message = "课程ID必须大于0")
+            Long id,
+            @Valid @RequestBody UpdateCourseRequest request,
+            @CurrentUser UserDO currentUser) {
+        courseService.updateCourse(id, request, currentUser);
+        return ApiResponse.success("更新成功");
     }
 }

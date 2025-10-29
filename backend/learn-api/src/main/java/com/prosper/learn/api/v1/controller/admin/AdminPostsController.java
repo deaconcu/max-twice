@@ -98,7 +98,7 @@ public class AdminPostsController {
     @RequireRole(Enums.UserRole.MODERATOR)
     @OperationLog(
         module = "内容管理",
-        type = "#request.action == 'approve' ? '审核通过帖子' : (#request.action == 'reject' ? '审核拒绝帖子' : '屏蔽帖子')",
+        type = "#request.action == 'APPROVE' ? '审核通过帖子' : (#request.action == 'REJECT' ? '审核拒绝帖子' : '屏蔽帖子')",
         level = Enums.OperationLevel.MEDIUM,
         targetType = "Post",
         targetId = "#id",

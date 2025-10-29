@@ -1050,4 +1050,84 @@ public class MemoryCardDeckService {
             throw ErrorCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
         }
     }
+
+    // ========== 管理后台方法 ==========
+
+    /**
+     * 管理后台：按条件查询卡片组列表
+     * @param state 状态（可选）
+     * @param postId 帖子ID（可选）
+     * @param creatorId 创建者ID（可选）
+     * @param lastId 最后ID（分页）
+     * @param limit 限制数量
+     * @return 卡片组列表（分页响应）
+     */
+    public KeysetPageResponse<MemoryCardDeckDTO> getDecksForAdmin(Integer state, Long postId, Long creatorId, Long lastId, Integer limit) {
+        // 设置默认值
+        if (limit == null || limit <= 0) {
+            limit = 20;
+        }
+        if (limit > 100) {
+            limit = 100; // 最大100条
+        }
+        // lastId 保持 null，不设置默认值，由 Mapper 动态处理
+
+        List<MemoryCardDeckDO> deckDOList;
+
+        // 根据不同条件组合查询（查询 limit + 1 条用于判断是否有更多）
+        int queryLimit = limit + 1;
+
+        // 根据不同条件组合查询
+        if (postId != null && creatorId != null) {
+            // 按帖子和创建者查询
+            if (state != null) {
+                deckDOList = deckDataService.getListByPostAndCreatorWithIdPaging(postId, creatorId, state, lastId, queryLimit);
+            } else {
+                deckDOList = deckDataService.getListByPostAndCreatorAllStates(postId, creatorId, queryLimit);
+            }
+        } else if (postId != null) {
+            // 按帖子查询
+            if (state != null) {
+                deckDOList = deckDataService.getListByPostWithIdPaging(postId, state, lastId, queryLimit);
+            } else {
+                deckDOList = deckDataService.getListByPost(postId, Enums.ContentState.SUBMITTED.value(), queryLimit);
+            }
+        } else if (creatorId != null) {
+            // 按创建者查询
+            if (state != null) {
+                deckDOList = deckDataService.getListByCreatorWithIdPagingAndState(creatorId, state, lastId, queryLimit);
+            } else {
+                deckDOList = deckDataService.getListByCreatorWithIdPaging(creatorId, lastId, queryLimit);
+            }
+        } else if (state != null) {
+            // 只按状态查询
+            deckDOList = deckDataService.getListByStateWithIdPaging(state, lastId, queryLimit);
+        } else {
+            // 没有任何筛选条件，返回空列表
+            throw ErrorCode.INVALID_PARAMETER.exception("至少需要提供一个查询条件（state、postId 或 creatorId）");
+        }
+
+        // 判断是否有更多数据
+        boolean hasMore = deckDOList.size() > limit;
+        if (hasMore) {
+            deckDOList = deckDOList.subList(0, limit);
+        }
+
+        // 转换为 DTO
+        List<MemoryCardDeckDTO> dtoList = toDTOV1(deckDOList);
+
+        // 构建分页响应
+        KeysetPageResponse<MemoryCardDeckDTO> response = new KeysetPageResponse<>();
+        response.setItems(dtoList);
+        response.setHasMore(hasMore);
+
+        if (hasMore && !deckDOList.isEmpty()) {
+            MemoryCardDeckDO lastDeck = deckDOList.get(deckDOList.size() - 1);
+            KeysetPageResponse.NextCursor nextCursor = new KeysetPageResponse.NextCursor();
+            nextCursor.setLastId(lastDeck.getId());
+            response.setNextCursor(nextCursor);
+        }
+
+        return response;
+    }
 }
