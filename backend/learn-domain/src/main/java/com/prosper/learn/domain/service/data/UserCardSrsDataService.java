@@ -124,19 +124,21 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
      * 复习后更新状态
      */
     public boolean updateAfterReview(long userId, long cardId, LocalDateTime reviewDueAt,
-                                     int intervalDays, BigDecimal easeFactor, int repetitions, int lapseCount) {
+                                     byte type, byte currentStep, int interval, Short lapseOldInterval,
+                                     BigDecimal easeFactor, int repetitions, int lapseCount) {
         try {
             // 先获取现有记录以获得ID用于清除缓存
             UserCardSrsDO existingState = userCardSrsMapper.getByUserAndCard(userId, cardId);
-            
+
             int result = userCardSrsMapper.updateAfterReview(
-                userId, cardId, reviewDueAt, intervalDays, easeFactor, repetitions, lapseCount);
-            
+                userId, cardId, reviewDueAt, type, currentStep, interval, lapseOldInterval,
+                easeFactor, repetitions, lapseCount);
+
             // 如果更新成功且存在记录，清除对应的缓存
             if (result > 0 && existingState != null) {
                 evictCache(existingState.getId());
             }
-            
+
             return result > 0;
         } catch (Exception e) {
             log.error("Error updating after review: userId={}, cardId={}", userId, cardId, e);
@@ -342,8 +344,14 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
         srs.setNodeId(nodeId);
         srs.setDeckVersion(deckVersion);
         srs.setCardVersionId(cardVersionId);
+
+        // Anki 算法初始化
+        srs.setType(UserCardSrsDO.TYPE_NEW);  // 新卡片
+        srs.setCurrentStep((byte) 0);
+        srs.setInterval(0);
+        srs.setLapseOldInterval(null);
+
         srs.setReviewDueAt(now); // 立即可复习
-        srs.setIntervalDays(0);
         srs.setEaseFactor(new java.math.BigDecimal("2.5"));
         srs.setRepetitions(0);
         srs.setLapseCount(0);

@@ -73,18 +73,18 @@ public interface UserCardSrsMapper {
 
     @Insert("INSERT INTO user_card_srs " +
             "(user_id, card_id, node_id, deck_id, deck_version, card_version_id, review_due_at, " +
-            "interval_days, ease_factor, repetitions, lapse_count) " +
+            "type, current_step, `interval`, lapse_old_interval, ease_factor, repetitions, lapse_count) " +
             "VALUES " +
             "(#{userId}, #{cardId}, #{nodeId}, #{deckId}, #{deckVersion}, #{cardVersionId}, #{reviewDueAt}, " +
-            "#{intervalDays}, #{easeFactor}, #{repetitions}, #{lapseCount})")
+            "#{type}, #{currentStep}, #{interval}, #{lapseOldInterval}, #{easeFactor}, #{repetitions}, #{lapseCount})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserCardSrsDO state);
 
     @Update("UPDATE user_card_srs SET " +
             "node_id = #{nodeId}, deck_id = #{deckId}, deck_version = #{deckVersion}, card_version_id = #{cardVersionId}, " +
             "review_due_at = #{reviewDueAt}, last_reviewed_at = #{lastReviewedAt}, " +
-            "interval_days = #{intervalDays}, ease_factor = #{easeFactor}, " +
-            "repetitions = #{repetitions}, lapse_count = #{lapseCount}, " +
+            "type = #{type}, current_step = #{currentStep}, `interval` = #{interval}, lapse_old_interval = #{lapseOldInterval}, " +
+            "ease_factor = #{easeFactor}, repetitions = #{repetitions}, lapse_count = #{lapseCount}, " +
             "updated_at = #{updatedAt} " +
             "WHERE id = #{id}")
     void update(UserCardSrsDO state);
@@ -94,11 +94,12 @@ public interface UserCardSrsMapper {
 
     @Update("UPDATE user_card_srs SET " +
             "review_due_at = #{reviewDueAt}, last_reviewed_at = NOW(), " +
-            "interval_days = #{intervalDays}, ease_factor = #{easeFactor}, " +
-            "repetitions = #{repetitions}, lapse_count = #{lapseCount} " +
+            "type = #{type}, current_step = #{currentStep}, `interval` = #{interval}, lapse_old_interval = #{lapseOldInterval}, " +
+            "ease_factor = #{easeFactor}, repetitions = #{repetitions}, lapse_count = #{lapseCount} " +
             "WHERE user_id = #{userId} AND card_id = #{cardId}")
-    int updateAfterReview(long userId, long cardId, LocalDateTime reviewDueAt, 
-                         int intervalDays, java.math.BigDecimal easeFactor, int repetitions, int lapseCount);
+    int updateAfterReview(long userId, long cardId, LocalDateTime reviewDueAt,
+                         byte type, byte currentStep, int interval, Short lapseOldInterval,
+                         java.math.BigDecimal easeFactor, int repetitions, int lapseCount);
 
     @Delete("DELETE FROM user_card_srs WHERE user_id = #{userId} AND card_id = #{cardId}")
     int deleteByUserAndCard(long userId, long cardId);
@@ -138,12 +139,12 @@ public interface UserCardSrsMapper {
           <script>
           INSERT IGNORE INTO user_card_srs
           (user_id, card_id, node_id, deck_id, deck_version, card_version_id, review_due_at,
-           interval_days, ease_factor, repetitions, lapse_count, created_at, updated_at)
+           type, current_step, `interval`, lapse_old_interval, ease_factor, repetitions, lapse_count, created_at, updated_at)
           VALUES
           <foreach collection="states" item="state" separator=",">
               (#{state.userId}, #{state.cardId}, #{state.nodeId}, #{state.deckId}, #{state.deckVersion}, #{state.cardVersionId},
-               #{state.reviewDueAt}, #{state.intervalDays}, #{state.easeFactor},
-               #{state.repetitions}, #{state.lapseCount}, #{state.createdAt}, #{state.updatedAt})
+               #{state.reviewDueAt}, #{state.type}, #{state.currentStep}, #{state.interval}, #{state.lapseOldInterval},
+               #{state.easeFactor}, #{state.repetitions}, #{state.lapseCount}, #{state.createdAt}, #{state.updatedAt})
           </foreach>
           </script>
           """)
@@ -202,9 +203,14 @@ public interface UserCardSrsMapper {
             "SELECT srs.* FROM user_card_srs srs",
             "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
             "WHERE srs.user_id = #{userId} AND srs.review_due_at &lt;= #{dueTime}",
+            "AND srs.type IN (1, 2, 3)",  // LEARNING, REVIEW, RELEARNING
             "AND deck.state = " + PUBLISHED_VALUE,
             "<if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
-            "ORDER BY srs.id ASC LIMIT #{limit}",
+            "ORDER BY",
+            "  CASE srs.type WHEN 1 THEN 0 WHEN 3 THEN 1 WHEN 2 THEN 2 ELSE 3 END,",  // 优先级: LEARNING > RELEARNING > REVIEW
+            "  srs.review_due_at ASC,",
+            "  srs.id ASC",
+            "LIMIT #{limit}",
             "</script>"})
     List<UserCardSrsDO> getDueCardsForReviewWithPaging(long userId, LocalDateTime dueTime, int limit, Long lastId);
 
@@ -214,9 +220,14 @@ public interface UserCardSrsMapper {
             "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
             "WHERE srs.user_id = #{userId} AND ucc.course_id = #{courseId}",
             "AND srs.review_due_at &lt;= #{dueTime}",
+            "AND srs.type IN (1, 2, 3)",  // LEARNING, REVIEW, RELEARNING
             "AND deck.state = " + PUBLISHED_VALUE,
             "<if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
-            "ORDER BY srs.id ASC LIMIT #{limit}",
+            "ORDER BY",
+            "  CASE srs.type WHEN 1 THEN 0 WHEN 3 THEN 1 WHEN 2 THEN 2 ELSE 3 END,",  // 优先级
+            "  srs.review_due_at ASC,",
+            "  srs.id ASC",
+            "LIMIT #{limit}",
             "</script>"})
     List<UserCardSrsDO> getDueCardsByCourseForReviewWithPaging(long userId, long courseId, LocalDateTime dueTime, int limit, Long lastId);
 

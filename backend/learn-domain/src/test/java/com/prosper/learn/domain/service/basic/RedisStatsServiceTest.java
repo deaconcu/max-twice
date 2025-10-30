@@ -37,7 +37,7 @@ class RedisStatsServiceTest {
     private RedisStatsService redisStatsService;
     
     private final Long TEST_ARTICLE_ID = 123L;
-    private final Integer TEST_USER_ID = 456;
+    private final Long TEST_USER_ID = 456L;
     private final String TEST_UPVOTE_TYPE = "twice";
     private final String TODAY = LocalDate.now().toString();
     

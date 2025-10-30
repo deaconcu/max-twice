@@ -658,7 +658,7 @@ class DailyStatsServiceTest {
     private PostStatsDO createMockPostStatsDO() {
         PostStatsDO postStats = new PostStatsDO();
         postStats.setId(1L);
-        postStats.setObjectType((byte)1);
+        postStats.setObjectType(1);
         postStats.setObjectId(TEST_POST_ID);
         postStats.setStatYear(LocalDate.now().getYear());
         postStats.setStats("{}");

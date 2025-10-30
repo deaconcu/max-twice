@@ -98,6 +98,11 @@ public class SystemProperties {
      */
     private Validation validation = new Validation();
 
+    /**
+     * SRS复习算法相关配置
+     */
+    private Srs srs = new Srs();
+
     @Data
     public static class Contents {
         /**
@@ -664,5 +669,58 @@ public class SystemProperties {
         private int roadmapDescriptionMinLength = 1;
         /** 路线图描述最大长度 */
         private int roadmapDescriptionMaxLength = 500;
+    }
+
+    @Data
+    public static class Srs {
+        /**
+         * SRS复习算法配置
+         */
+        private Algorithm algorithm = new Algorithm();
+
+        @Data
+        public static class Algorithm {
+            /**
+             * 学习步骤(分钟)
+             * 新卡片的学习步骤，默认[10, 60]表示第一步10分钟后，第二步60分钟后
+             */
+            private int[] learningSteps = {10, 60};
+
+            /**
+             * 重学步骤(分钟)
+             * 遗忘卡的重新学习步骤，默认[20]表示20分钟后
+             */
+            private int[] relearningSteps = {20};
+
+            /**
+             * 毕业间隔(天)
+             * 学习中卡片首次毕业后的复习间隔
+             */
+            private int graduatingInterval = 1;
+
+            /**
+             * 简单间隔(天)
+             * 新卡被评为"简单"后，直接毕业的间隔
+             */
+            private int easyInterval = 4;
+
+            /**
+             * 简单奖励
+             * 对"复习"卡片评为"简单"时的额外间隔奖励乘数
+             */
+            private double easyBonus = 1.3;
+
+            /**
+             * 新间隔乘数
+             * 遗忘后重新毕业时的间隔恢复比例(0.2-0.8, Anki推荐0.5-0.7)
+             */
+            private double newIntervalMultiplier = 0.5;
+
+            /**
+             * 最小难度因子
+             * EF的最小值
+             */
+            private double minEaseFactor = 1.3;
+        }
     }
 }

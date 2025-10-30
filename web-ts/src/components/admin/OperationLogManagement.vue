@@ -129,97 +129,92 @@
       <p class="text-body-2 text-grey">请调整筛选条件后重新查询</p>
     </div>
 
-    <!-- 滚动容器 -->
-    <div v-else class="logs-container" @scroll="handleScroll">
-      <v-card
-        v-for="log in logs"
-        :key="log.id"
-        flat
-        class="pa-4 mb-3"
-        rounded="lg"
-        outlined
-      >
-        <div class="d-flex align-start justify-space-between">
-          <!-- 左侧：操作信息 -->
-          <div class="flex-grow-1">
-            <div class="d-flex align-center mb-2">
-              <!-- 操作级别标签 -->
-              <v-chip
-                :color="getLevelColor(log.operationLevel)"
+    <!-- 日志列表 - 使用 v-infinite-scroll -->
+    <v-infinite-scroll
+      v-else
+      :items="logs"
+      :onLoad="loadMore"
+      class="logs-infinite-scroll"
+    >
+      <template v-for="log in logs" :key="log.id">
+        <div class="log-item">
+          <div class="d-flex align-start justify-space-between">
+            <!-- 左侧：操作信息 -->
+            <div class="flex-grow-1">
+              <div class="d-flex align-center mb-2">
+                <!-- 操作级别标签 -->
+                <v-chip
+                  :color="getLevelColor(log.operationLevel)"
+                  size="small"
+                  variant="flat"
+                  class="mr-2"
+                >
+                  {{ getLevelText(log.operationLevel) }}
+                </v-chip>
+
+                <!-- 模块 -->
+                <v-chip size="small" variant="outlined" class="mr-2">
+                  {{ log.module }}
+                </v-chip>
+
+                <!-- 操作类型 -->
+                <span class="text-subtitle-1 font-weight-bold text-grey-darken-3">
+                  {{ log.operationType }}
+                </span>
+              </div>
+
+              <!-- 操作详情 -->
+              <div class="text-body-2 text-grey-darken-1 mb-2">
+                <v-icon icon="mdi-account" size="16" class="mr-1"></v-icon>
+                <strong>{{ log.operatorName }}</strong> (ID: {{ log.operatorId }})
+                <v-chip size="x-small" variant="flat" color="grey-lighten-2" class="ml-2">
+                  {{ getRoleText(log.operatorRole) }}
+                </v-chip>
+              </div>
+
+              <div class="text-body-2 text-grey-darken-1 mb-2">
+                <v-icon icon="mdi-target" size="16" class="mr-1"></v-icon>
+                目标: <strong>{{ log.targetType }}</strong> (ID: {{ log.targetId }})
+                <span v-if="log.targetName" class="ml-1">- {{ log.targetName }}</span>
+              </div>
+
+              <div v-if="log.reason" class="text-body-2 text-grey-darken-1 mb-2">
+                <v-icon icon="mdi-comment-text" size="16" class="mr-1"></v-icon>
+                原因: {{ log.reason }}
+              </div>
+
+              <div class="text-body-2 text-grey">
+                <v-icon icon="mdi-clock-outline" size="16" class="mr-1"></v-icon>
+                {{ formatDateTime(log.createdAt) }}
+                <span v-if="log.ipAddress" class="ml-3">
+                  <v-icon icon="mdi-ip" size="16" class="mr-1"></v-icon>
+                  {{ log.ipAddress }}
+                </span>
+              </div>
+            </div>
+
+            <!-- 右侧：操作按钮 -->
+            <div>
+              <v-btn
+                icon
+                variant="text"
                 size="small"
-                variant="flat"
-                class="mr-2"
+                @click="showDetail(log)"
               >
-                {{ getLevelText(log.operationLevel) }}
-              </v-chip>
-
-              <!-- 模块 -->
-              <v-chip size="small" variant="outlined" class="mr-2">
-                {{ log.module }}
-              </v-chip>
-
-              <!-- 操作类型 -->
-              <span class="text-subtitle-1 font-weight-bold text-grey-darken-3">
-                {{ log.operationType }}
-              </span>
+                <v-icon icon="mdi-eye" size="20"></v-icon>
+              </v-btn>
             </div>
-
-            <!-- 操作详情 -->
-            <div class="text-body-2 text-grey-darken-1 mb-2">
-              <v-icon icon="mdi-account" size="16" class="mr-1"></v-icon>
-              <strong>{{ log.operatorName }}</strong> (ID: {{ log.operatorId }})
-              <v-chip size="x-small" variant="flat" color="grey-lighten-2" class="ml-2">
-                {{ getRoleText(log.operatorRole) }}
-              </v-chip>
-            </div>
-
-            <div class="text-body-2 text-grey-darken-1 mb-2">
-              <v-icon icon="mdi-target" size="16" class="mr-1"></v-icon>
-              目标: <strong>{{ log.targetType }}</strong> (ID: {{ log.targetId }})
-              <span v-if="log.targetName" class="ml-1">- {{ log.targetName }}</span>
-            </div>
-
-            <div v-if="log.reason" class="text-body-2 text-grey-darken-1 mb-2">
-              <v-icon icon="mdi-comment-text" size="16" class="mr-1"></v-icon>
-              原因: {{ log.reason }}
-            </div>
-
-            <div class="text-body-2 text-grey">
-              <v-icon icon="mdi-clock-outline" size="16" class="mr-1"></v-icon>
-              {{ formatDateTime(log.createdAt) }}
-              <span v-if="log.ipAddress" class="ml-3">
-                <v-icon icon="mdi-ip" size="16" class="mr-1"></v-icon>
-                {{ log.ipAddress }}
-              </span>
-            </div>
-          </div>
-
-          <!-- 右侧：操作按钮 -->
-          <div>
-            <v-btn
-              icon
-              variant="text"
-              size="small"
-              @click="showDetail(log)"
-            >
-              <v-icon icon="mdi-eye" size="20"></v-icon>
-            </v-btn>
           </div>
         </div>
-      </v-card>
-
-      <!-- 加载中提示 -->
-      <div v-if="loading" class="text-center py-4">
-        <v-progress-circular indeterminate color="primary"></v-progress-circular>
-        <p class="text-body-2 text-grey mt-2">加载中...</p>
-      </div>
+      </template>
 
       <!-- 没有更多数据提示 -->
-      <div v-if="!hasMore && logs.length > 0" class="text-center py-4">
-        <v-divider class="mb-4"></v-divider>
-        <p class="text-body-2 text-grey">没有更多数据了</p>
-      </div>
-    </div>
+      <template #empty>
+        <div v-if="!hasMore && logs.length > 0" class="text-center py-4">
+          <p class="text-body-2 text-grey">没有更多数据了</p>
+        </div>
+      </template>
+    </v-infinite-scroll>
 
     <!-- 详情对话框 -->
     <v-dialog v-model="detailDialog" max-width="800">
@@ -455,17 +450,14 @@ const fetchLogs = async (reset: boolean = false): Promise<void> => {
 }
 
 /**
- * 处理滚动事件（无限滚动）
+ * 加载更多数据（v-infinite-scroll 回调）
  */
-const handleScroll = (event: Event): void => {
-  const target = event.target as HTMLElement
-  const scrollTop = target.scrollTop
-  const scrollHeight = target.scrollHeight
-  const clientHeight = target.clientHeight
-
-  // 当滚动到底部附近时加载更多
-  if (scrollTop + clientHeight >= scrollHeight - 100 && !loading.value && hasMore.value) {
-    fetchLogs(false)
+const loadMore = async ({ done }: { done: (status: 'ok' | 'empty' | 'error') => void }): Promise<void> => {
+  try {
+    await fetchLogs(false)
+    done(hasMore.value ? 'ok' : 'empty')
+  } catch (error) {
+    done('error')
   }
 }
 
@@ -486,9 +478,22 @@ fetchLogs(true)
   width: 100%;
 }
 
-.logs-container {
-  max-height: 600px;
-  overflow-y: auto;
+.logs-infinite-scroll {
+  width: 100%;
+}
+
+.log-item {
+  padding: 24px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.15s ease;
+}
+
+.log-item:hover {
+  background-color: #fafafa;
+}
+
+.log-item:last-child {
+  border-bottom: none;
 }
 
 pre {
@@ -501,24 +506,5 @@ pre {
   background-color: #f5f5f5;
   padding: 8px;
   border-radius: 4px;
-}
-
-/* 滚动条样式 */
-.logs-container::-webkit-scrollbar {
-  width: 8px;
-}
-
-.logs-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-.logs-container::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-.logs-container::-webkit-scrollbar-thumb:hover {
-  background: #555;
 }
 </style>

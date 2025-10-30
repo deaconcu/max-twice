@@ -756,7 +756,7 @@ const handleUpvote = async () => {
                         <!-- 学习进度信息 -->
                         <div v-if="card.srsState" class="mt-4">
                           <div class="d-flex align-center justify-space-between text-body-2 text-grey-darken-2">
-                            <span>间隔天数：{{ card.srsState.intervalDays }}天</span>
+                            <span>复习次数：{{ card.srsState.repetitions }}次</span>
                             <span>难度系数：{{ card.srsState.easeFactor }}</span>
                             <span>下次复习：{{ new Date(card.srsState.reviewDueAt).toLocaleDateString() }}</span>
                           </div>
@@ -1154,7 +1154,7 @@ const handleUpvote = async () => {
                                 <!-- 学习进度信息 -->
                                 <div v-if="card.srsState" class="mt-4">
                                   <div class="d-flex align-center justify-space-between text-body-2 text-grey-darken-2">
-                                    <span>间隔天数：{{ card.srsState.repetitions }}次</span>
+                                    <span>复习次数：{{ card.srsState.repetitions }}次</span>
                                     <span>难度系数：{{ card.srsState.easeFactor }}</span>
                                     <span>下次复习：{{ new Date(card.srsState.reviewDueAt).toLocaleDateString() }}</span>
                                   </div>

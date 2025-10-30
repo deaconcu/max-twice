@@ -914,10 +914,10 @@ const getCardStatusChips = (card: MemoryCardView): Array<{ text: string; color: 
                         color="error"
                         variant="outlined"
                         rounded="lg"
-                        @click="submitReview(ReviewResult.FAILED)"
+                        @click="submitReview(ReviewResult.AGAIN)"
                       >
                         <v-icon icon="mdi-close" class="mr-2"></v-icon>
-                        忘记了
+                        重来
                       </v-btn>
                       <v-btn
                         color="warning"

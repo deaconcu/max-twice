@@ -8,7 +8,7 @@ import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.config.ContentsProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,9 +62,12 @@ class ContentsServiceTest {
     
     @Mock
     private CourseTocMapper courseTocMapper;
-    
+
     @Mock
-    private ContentsProperties contentsProperties;
+    private SystemProperties systemProperties;
+
+    @Mock
+    private SystemProperties.Contents contentsConfig;
 
     @InjectMocks
     private ContentsService contentsService;
@@ -81,7 +84,8 @@ class ContentsServiceTest {
 
     @BeforeEach
     void setUp() {
-        // 删除不必要的全局配置，在具体测试中按需配置
+        // 配置 systemProperties 返回 contentsConfig
+        when(systemProperties.getContents()).thenReturn(contentsConfig);
     }
 
     /**
@@ -180,7 +184,7 @@ class ContentsServiceTest {
             when(objectMapper.createObjectNode()).thenReturn(childNode);
             when(childNode.putObject(anyString())).thenReturn(childNode);
             when(childNode.put(eq(CHOSEN_FIELD), eq(TEST_POST_ID))).thenReturn(childNode);
-            when(contentsProperties.getChosenField()).thenReturn(CHOSEN_FIELD);
+            when(contentsConfig.getChosenField()).thenReturn(CHOSEN_FIELD);
             
             ObjectNode rootNode = mock(ObjectNode.class);
             ObjectNode targetNode = mock(ObjectNode.class);
@@ -240,12 +244,12 @@ class ContentsServiceTest {
             CourseDO course = createTestCourse();
             when(courseMapper.getById(TEST_COURSE_ID)).thenReturn(course);
             
-            // Mock objectMapper and contentsProperties since they'll be called
+            // Mock objectMapper and contentsConfig since they'll be called
             ObjectNode mockChildNode = mock(ObjectNode.class);
             when(objectMapper.createObjectNode()).thenReturn(mockChildNode);
             when(mockChildNode.putObject(anyString())).thenReturn(mockChildNode);
             when(mockChildNode.put(anyString(), anyLong())).thenReturn(mockChildNode);
-            when(contentsProperties.getChosenField()).thenReturn(CHOSEN_FIELD);
+            when(contentsConfig.getChosenField()).thenReturn(CHOSEN_FIELD);
             
             when(userCourseTocMapper.getByUserAndCourse(TEST_USER_ID, TEST_COURSE_ID)).thenReturn(null);
 
@@ -267,12 +271,12 @@ class ContentsServiceTest {
             CourseDO course = createTestCourse();
             when(courseMapper.getById(TEST_COURSE_ID)).thenReturn(course);
             
-            // Mock objectMapper and contentsProperties since they'll be called
+            // Mock objectMapper and contentsConfig since they'll be called
             ObjectNode mockChildNode = mock(ObjectNode.class);
             when(objectMapper.createObjectNode()).thenReturn(mockChildNode);
             when(mockChildNode.putObject(anyString())).thenReturn(mockChildNode);
             when(mockChildNode.put(anyString(), anyLong())).thenReturn(mockChildNode);
-            when(contentsProperties.getChosenField()).thenReturn(CHOSEN_FIELD);
+            when(contentsConfig.getChosenField()).thenReturn(CHOSEN_FIELD);
             
             UserCourseTocDO userCourseToc = createTestUserCourseToc();
             userCourseToc.setToc("hash1,hash2"); // 只有2个哈希
@@ -409,7 +413,7 @@ class ContentsServiceTest {
             when(postMapper.get(TEST_POST_ID)).thenReturn(post);
             
             setupMocksForContentOperation();
-            when(contentsProperties.getChosenField()).thenReturn(CHOSEN_FIELD);
+            when(contentsConfig.getChosenField()).thenReturn(CHOSEN_FIELD);
             
             String updatedToc = "{\"1\":{\"chapter1\":{\"section1\":{}}}}";
             when(objectMapper.writeValueAsString(any())).thenReturn(updatedToc);
@@ -491,8 +495,8 @@ class ContentsServiceTest {
             when(arrayNode.add(anyLong())).thenReturn(arrayNode);
             
             // 配置pin相关的属性和节点行为
-            when(contentsProperties.getPinField()).thenReturn(PIN_FIELD);
-            when(contentsProperties.getMaxPinnedItems()).thenReturn(MAX_PINNED_ITEMS);
+            when(contentsConfig.getPinField()).thenReturn(PIN_FIELD);
+            when(contentsConfig.getMaxPinnedItems()).thenReturn(MAX_PINNED_ITEMS);
             
             // 配置目标节点的pin字段访问
             ObjectNode targetNode = mock(ObjectNode.class);
@@ -535,7 +539,7 @@ class ContentsServiceTest {
             when(arrayNode.remove(0)).thenReturn(mock(com.fasterxml.jackson.databind.JsonNode.class));
             
             // 配置pin相关的属性
-            when(contentsProperties.getPinField()).thenReturn(PIN_FIELD);
+            when(contentsConfig.getPinField()).thenReturn(PIN_FIELD);
             
             // 配置目标节点的pin字段访问
             ObjectNode targetNode = mock(ObjectNode.class);
@@ -625,18 +629,18 @@ class ContentsServiceTest {
         @DisplayName("配置属性使用验证")
         void configurationPropertiesUsage() {
             // Given
-            when(contentsProperties.getMaxPinnedItems()).thenReturn(5);
-            when(contentsProperties.getPinField()).thenReturn("@");
-            when(contentsProperties.getChosenField()).thenReturn("#");
+            when(contentsConfig.getMaxPinnedItems()).thenReturn(5);
+            when(contentsConfig.getPinField()).thenReturn("@");
+            when(contentsConfig.getChosenField()).thenReturn("#");
 
             // When & Then - 验证配置属性被正确调用
-            contentsProperties.getMaxPinnedItems();
-            contentsProperties.getPinField();
-            contentsProperties.getChosenField();
-            
-            verify(contentsProperties, atLeast(1)).getMaxPinnedItems();
-            verify(contentsProperties, atLeast(1)).getPinField();
-            verify(contentsProperties, atLeast(1)).getChosenField();
+            contentsConfig.getMaxPinnedItems();
+            contentsConfig.getPinField();
+            contentsConfig.getChosenField();
+
+            verify(contentsConfig, atLeast(1)).getMaxPinnedItems();
+            verify(contentsConfig, atLeast(1)).getPinField();
+            verify(contentsConfig, atLeast(1)).getChosenField();
         }
     }
 }

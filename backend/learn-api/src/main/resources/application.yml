@@ -247,6 +247,23 @@ app:
     roadmap-content-max-length: 5000
     roadmap-description-min-length: 1
     roadmap-description-max-length: 500
+  # SRS复习算法配置
+  srs:
+    algorithm:
+      # 学习步骤(分钟): 新卡片的学习步骤，默认[10, 60]表示第一步10分钟后，第二步60分钟后
+      learning-steps: [10, 60]
+      # 重学步骤(分钟): 遗忘卡的重新学习步骤，默认[20]表示20分钟后
+      relearning-steps: [20]
+      # 毕业间隔(天): 学习中卡片首次毕业后的复习间隔
+      graduating-interval: 1
+      # 简单间隔(天): 新卡被评为"简单"后，直接毕业的间隔
+      easy-interval: 4
+      # 简单奖励: 对"复习"卡片评为"简单"时的额外间隔奖励乘数
+      easy-bonus: 1.3
+      # 新间隔乘数: 遗忘后重新毕业时的间隔恢复比例(0.2-0.8, Anki推荐0.5-0.7)
+      new-interval-multiplier: 0.5
+      # 最小难度因子: EF的最小值
+      min-ease-factor: 1.3
 
 logging:
   level:

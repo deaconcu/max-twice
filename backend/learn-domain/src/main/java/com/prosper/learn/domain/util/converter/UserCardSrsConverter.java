@@ -17,7 +17,7 @@ public interface UserCardSrsConverter {
     @Mapping(target = "id")
     @Mapping(target = "reviewDueAt")
     @Mapping(target = "lastReviewedAt")
-    @Mapping(target = "intervalDays")
+    @Mapping(target = "interval")
     @Mapping(target = "repetitions")
     @Mapping(target = "lapseCount")
     UserCardSrsDTO toDTO(UserCardSrsDO srsStateDO);

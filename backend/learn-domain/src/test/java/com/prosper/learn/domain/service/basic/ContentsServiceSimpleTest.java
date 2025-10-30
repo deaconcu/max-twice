@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.domain.config.ContentsProperties;
+import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,9 +46,12 @@ class ContentsServiceSimpleTest {
     
     @Mock
     private CourseTocMapper courseTocMapper;
-    
+
     @Mock
-    private ContentsProperties contentsProperties;
+    private SystemProperties systemProperties;
+
+    @Mock
+    private SystemProperties.Contents contentsConfig;
 
     @InjectMocks
     private ContentsService contentsService;
@@ -65,7 +68,8 @@ class ContentsServiceSimpleTest {
 
     @BeforeEach
     void setUp() {
-        // 删除不必要的全局配置，在具体测试中按需配置
+        // 配置 systemProperties 返回 contentsConfig
+        when(systemProperties.getContents()).thenReturn(contentsConfig);
     }
 
     @Test
@@ -149,7 +153,7 @@ class ContentsServiceSimpleTest {
         when(objectMapper.createObjectNode()).thenReturn(mockChildNode);
         when(mockChildNode.putObject(anyString())).thenReturn(mockChildNode);
         when(mockChildNode.put(anyString(), anyLong())).thenReturn(mockChildNode);
-        when(contentsProperties.getChosenField()).thenReturn(CHOSEN_FIELD);
+        when(contentsConfig.getChosenField()).thenReturn(CHOSEN_FIELD);
         
         when(userCourseTocMapper.getByUserAndCourse(TEST_USER_ID, TEST_COURSE_ID)).thenReturn(null);
 
@@ -180,7 +184,7 @@ class ContentsServiceSimpleTest {
         when(objectMapper.createObjectNode()).thenReturn(mockChildNode);
         when(mockChildNode.putObject(anyString())).thenReturn(mockChildNode);
         when(mockChildNode.put(anyString(), anyLong())).thenReturn(mockChildNode);
-        when(contentsProperties.getChosenField()).thenReturn(CHOSEN_FIELD);
+        when(contentsConfig.getChosenField()).thenReturn(CHOSEN_FIELD);
         
         UserCourseTocDO userCourseToc = new UserCourseTocDO();
         userCourseToc.setUserId(TEST_USER_ID);

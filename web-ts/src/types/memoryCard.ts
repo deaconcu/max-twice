@@ -25,12 +25,22 @@ export const CardState = {
 
 export type CardState = typeof CardState[keyof typeof CardState]
 
+// 卡片状态枚举 - Anki 算法
+export const CardType = {
+  NEW: 0,          // 新卡片
+  LEARNING: 1,     // 学习中
+  REVIEW: 2,       // 复习
+  RELEARNING: 3    // 重新学习
+} as const
+
+export type CardType = typeof CardType[keyof typeof CardType]
+
 // 复习结果枚举 (调整为4个级别)
 export const ReviewResult = {
-  FAILED: 0,     // 忘记了
-  HARD: 1,       // 困难
-  GOOD: 2,       // 良好  
-  EASY: 3        // 简单
+  AGAIN: 1,      // 重来/完全忘记
+  HARD: 2,       // 困难
+  GOOD: 3,       // 良好
+  EASY: 4        // 简单
 } as const
 
 export type ReviewResult = typeof ReviewResult[keyof typeof ReviewResult]
@@ -128,26 +138,37 @@ export interface MemoryCardVersion {
 }
 */
 
-// 用户卡片全局记忆状态 (V8.0)
+// 用户卡片全局记忆状态 (Anki 算法)
 export interface UserCardSRSState {
   id: number
-  //userId: number            // delete
-  //cardId: number            // delete
-  //deckVersion: number       // delete 学习时卡片组的版本快照
-  //cardVersionId: number     // delete 用户学习时锁定的版本ID，实现内容快照
-  
-  // 核心SRS字段 (基于SM-2算法)
+
+  /**
+   * 卡片状态
+   * 0=NEW(新卡片), 1=LEARNING(学习中), 2=REVIEW(复习), 3=RELEARNING(重新学习)
+   */
+  type: CardType
+
+  /**
+   * 当前学习/重学步骤索引
+   * 仅在 type=1(LEARNING) 或 type=3(RELEARNING) 时有意义
+   */
+  currentStep?: number
+
+  /**
+   * 复习间隔
+   * 单位由 type 决定:
+   * - type=1(LEARNING) 或 3(RELEARNING): 单位为分钟
+   * - type=2(REVIEW): 单位为天
+   */
+  interval: number
+
+  // 核心SRS字段
   reviewDueAt: string       // 预计算好的、全局唯一的下次复习时间
   lastReviewedAt?: string   // 上次复习时间
-  intervalDays: number      // 当前复习间隔（天）
-  //easeFactor: number        // delete 缓急因子
   repetitions: number       // 连续正确次数
-  
+
   // 分析字段
   lapseCount: number        // 遗忘总次数
-  
-  //createdAt: string         // delete
-  //updatedAt: string         // delete
 }
 
 // 用户课程复习策略
