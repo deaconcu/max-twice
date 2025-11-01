@@ -309,15 +309,11 @@ import { adminOperationLogServiceV1 } from '@/services/api/v1/adminApiServiceV1'
 import type { OperationLogDTO, OperationLogQueryRequest } from '@/types/operationLog'
 import { OperationLevel } from '@/types/operationLog'
 import { UserRole } from '@/types/user'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
-// 响应式数据
-const logs = ref<OperationLogDTO[]>([])
-const loading = ref(false)
-const hasMore = ref(true)
-const lastId = ref<number | undefined>(undefined)
-
+// 详情对话框
 const detailDialog = ref(false)
 const selectedLog = ref<OperationLogDTO | null>(null)
 
@@ -338,6 +334,55 @@ const operationLevels = [
   { text: '中', value: OperationLevel.MEDIUM },
   { text: '高', value: OperationLevel.HIGH },
 ]
+
+// 使用 useInfiniteScroll 管理分页数据
+const {
+  items: logs,
+  loading,
+  hasMore,
+  loadMore: loadMoreLogs,
+  reset: resetLogs
+} = useInfiniteScroll<OperationLogDTO>({
+  fetchFn: async (params) => {
+    const query: OperationLogQueryRequest = {
+      ...filters,
+      ...params,
+      limit: 20,
+    }
+
+    // 清空空字符串值
+    if (query.module === '') delete query.module
+    if (query.operationType === '') delete query.operationType
+    if (query.targetType === '') delete query.targetType
+    if (query.startTime === '') delete query.startTime
+    if (query.endTime === '') delete query.endTime
+
+    const response = await adminOperationLogServiceV1.getOperationLogs(query)
+
+    if (response.code === 200 && response.data) {
+      return {
+        code: 200,
+        data: response.data.items || [],
+        message: '',
+        hasMore: response.data.hasMore,
+        nextLastId: response.data.nextLastId
+      }
+    }
+
+    throw new Error(response.message || '获取操作日志失败')
+  },
+  getNextParams: (lastItem, currentParams) => ({
+    ...currentParams,
+    lastId: lastItem.id
+  }),
+  initialParams: {
+    lastId: undefined
+  },
+  onError: (error) => {
+    console.error('[OperationLogManagement] 获取操作日志失败:', error)
+    showSnackbar?.(`获取操作日志失败: ${error.message}`, 'error')
+  }
+})
 
 /**
  * 获取操作级别颜色
@@ -402,51 +447,13 @@ const formatDateTime = (dateTime: string): string => {
 }
 
 /**
- * 获取操作日志
+ * 获取操作日志（用于查询按钮）
  */
 const fetchLogs = async (reset: boolean = false): Promise<void> => {
-  if (loading.value) return
-
   if (reset) {
-    logs.value = []
-    lastId.value = undefined
-    hasMore.value = true
+    resetLogs()
   }
-
-  if (!hasMore.value) return
-
-  loading.value = true
-
-  try {
-    const query: OperationLogQueryRequest = {
-      ...filters,
-      lastId: lastId.value,
-      limit: 20,
-    }
-
-    // 清空空字符串值
-    if (query.module === '') delete query.module
-    if (query.operationType === '') delete query.operationType
-    if (query.targetType === '') delete query.targetType
-    if (query.startTime === '') delete query.startTime
-    if (query.endTime === '') delete query.endTime
-
-    const response = await adminOperationLogServiceV1.getOperationLogs(query)
-
-    if (response.code === 200 && response.data) {
-      const newLogs = response.data.items || []
-      logs.value.push(...newLogs)
-      hasMore.value = response.data.hasMore
-      lastId.value = response.data.nextLastId
-    } else {
-      throw new Error(response.message || '获取操作日志失败')
-    }
-  } catch (error: any) {
-    console.error('[OperationLogManagement] 获取操作日志失败:', error)
-    showSnackbar?.(`获取操作日志失败: ${error.message}`, 'error')
-  } finally {
-    loading.value = false
-  }
+  loadMoreLogs({ done: () => {} } as any)
 }
 
 /**
@@ -454,7 +461,7 @@ const fetchLogs = async (reset: boolean = false): Promise<void> => {
  */
 const loadMore = async ({ done }: { done: (status: 'ok' | 'empty' | 'error') => void }): Promise<void> => {
   try {
-    await fetchLogs(false)
+    await loadMoreLogs({ done: () => {} } as any)
     done(hasMore.value ? 'ok' : 'empty')
   } catch (error) {
     done('error')

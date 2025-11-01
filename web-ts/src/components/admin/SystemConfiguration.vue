@@ -102,20 +102,109 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, onMounted, ref, watch } from 'vue'
+import { computed, inject, onMounted, ref } from 'vue'
 import { adminSystemServiceV1 } from '@/services/api/v1/adminApiServiceV1'
 import { useI18n } from 'vue-i18n'
+import { useFetch } from '@/composables/useFetch'
+import { useMutation } from '@/composables/useMutation'
 
 const { t } = useI18n()
+const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
 // 响应式数据
 const courseCategories = ref<string>('')
 const professionCategories = ref<string>('')
-const saving = ref<boolean>(false)
 const configError = ref<string>('')
 const lastUpdateTime = ref<string>('')
 
-const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
+// 使用 useFetch 加载配置
+const {
+  data: configData,
+  loading: loadingConfig,
+  refresh: loadConfiguration
+} = useFetch({
+  fetchFn: adminSystemServiceV1.getSystemConfig,
+  immediate: true,
+  onSuccess: (data) => {
+    if (data) {
+      // 处理课程分类配置
+      if (data.courseCategories) {
+        try {
+          if (typeof data.courseCategories === 'object') {
+            courseCategories.value = JSON.stringify(data.courseCategories, null, 2)
+          } else {
+            const parsedCourse = JSON.parse(data.courseCategories)
+            courseCategories.value = JSON.stringify(parsedCourse, null, 2)
+          }
+        } catch {
+          courseCategories.value = data.courseCategories
+        }
+      } else {
+        courseCategories.value = ''
+      }
+
+      // 处理职业分类配置
+      if (data.professionCategories) {
+        try {
+          if (typeof data.professionCategories === 'object') {
+            professionCategories.value = JSON.stringify(data.professionCategories, null, 2)
+          } else {
+            const parsedProfession = JSON.parse(data.professionCategories)
+            professionCategories.value = JSON.stringify(parsedProfession, null, 2)
+          }
+        } catch {
+          professionCategories.value = data.professionCategories
+        }
+      } else {
+        professionCategories.value = ''
+      }
+
+      lastUpdateTime.value = new Date().toLocaleString('zh-CN')
+      configError.value = ''
+    }
+  },
+  onError: (error) => {
+    console.error('加载配置时发生错误:', error)
+    configError.value = `${t('systemConfiguration.loadFailed')}: ${error.message}`
+  }
+})
+
+// 使用 useMutation 保存配置
+const { execute: saveConfig, loading: saving } = useMutation(
+  async () => {
+    const promises: Promise<any>[] = []
+
+    if (courseCategories.value.trim()) {
+      promises.push(adminSystemServiceV1.updateConfigByKey('courseCategories', courseCategories.value))
+    }
+
+    if (professionCategories.value.trim()) {
+      promises.push(
+        adminSystemServiceV1.updateConfigByKey('professionCategories', professionCategories.value)
+      )
+    }
+
+    const responses = await Promise.all(promises)
+    const allSuccess = responses.every((response) => response.code === 200)
+
+    if (!allSuccess) {
+      const failedResponses = responses.filter((response) => response.code !== 200)
+      throw new Error(failedResponses.map((r) => r.message).join(', '))
+    }
+
+    return { success: true }
+  },
+  {
+    successMessage: t('systemConfiguration.saveSuccess'),
+    onSuccess: () => {
+      lastUpdateTime.value = new Date().toLocaleString('zh-CN')
+      configError.value = ''
+    },
+    onError: (error) => {
+      configError.value = `${t('systemConfiguration.saveFailed')}: ${error.message}`
+    }
+  }
+)
 
 // 计算属性：配置是否有效
 const isValidConfig = computed<boolean>(() => {
@@ -132,10 +221,6 @@ const isValidConfig = computed<boolean>(() => {
     return false
   }
 })
-
-if (!isValidConfig.value) {
-  configError.value = '格式错误'
-}
 
 // 格式化配置
 const formatConfig = (): void => {
@@ -159,115 +244,8 @@ const saveConfiguration = async (): Promise<void> => {
   if (!isValidConfig.value) {
     return
   }
-
-  try {
-    saving.value = true
-
-    // 分别保存课程分类和职业分类配置
-    const promises: Promise<any>[] = []
-
-    if (courseCategories.value.trim()) {
-      promises.push(adminSystemServiceV1.updateConfigByKey('courseCategories', courseCategories.value))
-    }
-
-    if (professionCategories.value.trim()) {
-      promises.push(
-        adminSystemServiceV1.updateConfigByKey('professionCategories', professionCategories.value)
-      )
-    }
-
-    const responses = await Promise.all(promises)
-
-    // 检查所有请求是否成功
-    const allSuccess = responses.every((response) => response.code === 200)
-
-    if (allSuccess) {
-      showSnackbar?.(t('systemConfiguration.saveSuccess'))
-      lastUpdateTime.value = new Date().toLocaleString('zh-CN')
-      configError.value = ''
-    } else {
-      const failedResponses = responses.filter((response) => response.code !== 200)
-      configError.value = `${t('systemConfiguration.saveFailed')}: ${failedResponses.map((r) => r.message).join(', ')}`
-    }
-  } catch (error: any) {
-    configError.value = `${t('systemConfiguration.saveFailed')}: ${error.message}`
-  } finally {
-    saving.value = false
-  }
+  await saveConfig()
 }
-
-// 加载配置
-const loadConfiguration = async (): Promise<void> => {
-  try {
-    // 先获取所有配置
-    const response = await adminSystemServiceV1.getSystemConfig()
-
-    if (response.code === 200 && response.data) {
-      const allConfigs = response.data
-
-      // 查找并设置课程分类配置
-      if (allConfigs.courseCategories) {
-        try {
-          // 如果已经是对象，格式化为JSON字符串
-          if (typeof allConfigs.courseCategories === 'object') {
-            courseCategories.value = JSON.stringify(allConfigs.courseCategories, null, 2)
-          } else {
-            // 如果是字符串，尝试解析后重新格式化
-            const parsedCourse = JSON.parse(allConfigs.courseCategories)
-            courseCategories.value = JSON.stringify(parsedCourse, null, 2)
-          }
-        } catch {
-          // 如果解析失败，直接显示
-          courseCategories.value = allConfigs.courseCategories
-        }
-      } else {
-        courseCategories.value = ''
-      }
-
-      // 查找并设置职业分类配置
-      if (allConfigs.professionCategories) {
-        try {
-          // 如果已经是对象，格式化为JSON字符串
-          if (typeof allConfigs.professionCategories === 'object') {
-            professionCategories.value = JSON.stringify(allConfigs.professionCategories, null, 2)
-          } else {
-            // 如果是字符串，尝试解析后重新格式化
-            const parsedProfession = JSON.parse(allConfigs.professionCategories)
-            professionCategories.value = JSON.stringify(parsedProfession, null, 2)
-          }
-        } catch {
-          // 如果解析失败，直接显示
-          professionCategories.value = allConfigs.professionCategories
-        }
-      } else {
-        professionCategories.value = ''
-      }
-
-      lastUpdateTime.value = new Date().toLocaleString('zh-CN')
-      configError.value = '' // 清除之前的错误
-    } else {
-      configError.value = `${t('systemConfiguration.loadFailed')}: ${response.message || 'No data'}`
-    }
-  } catch (error: any) {
-    console.error('加载配置时发生错误:', error)
-    configError.value = `${t('systemConfiguration.loadFailed')}: ${error.message}`
-  }
-}
-
-// 监听配置变化，实时验证
-watch(
-  [courseCategories, professionCategories],
-  () => {
-    // 触发计算属性重新计算
-    isValidConfig.value
-  },
-  { immediate: true }
-)
-
-// 组件挂载时加载配置
-onMounted(() => {
-  loadConfiguration()
-})
 </script>
 
 <style scoped>

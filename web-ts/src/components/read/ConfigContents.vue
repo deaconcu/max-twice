@@ -5,6 +5,7 @@
   import draggable from 'vuedraggable'
   import { courseServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { useI18n } from 'vue-i18n'
+  import { useMutation } from '@/composables/useMutation'
 
   const route = useRoute()
   const router = useRouter()
@@ -37,34 +38,28 @@
     { immediate: true }
   )
 
-  watch(
-    () => props.contents,
-    (newContents: any[]) => {
-      list.value = Array.from({ length: newContents.length }, (_, i) => i + 1)
-    },
-    { immediate: true }
-  )
+  // 使用 useMutation 提交目录更新
+  const { execute: submitUpdate, loading: submitting } = useMutation(
+    () => courseServiceV1.updateUserCourseToc(
+      props.courseId,
+      list.value.join(',')
+    ),
+    {
+      successMessage: '目录更新成功',
+      onSuccess: () => {
+        const pathParts = (route.query.path as string).split('-')
+        const currIndex = Number(pathParts[0])
+        const index = list.value.indexOf(currIndex) + 1
 
-  const submit = async (): Promise<void> => {
-    const pathParts = (route.query.path as string).split('-')
-    const currIndex = Number(pathParts[0])
-    const index = list.value.indexOf(currIndex) + 1
+        let nextPath: string
+        if (index === 0) {
+          nextPath = `1-${pathParts[1]}`
+        } else {
+          nextPath = `${index}-${pathParts.slice(1).join('-')}`
+        }
 
-    let nextPath: string
-    if (index === 0) {
-      nextPath = `1-${pathParts[1]}`
-    } else {
-      nextPath = `${index}-${pathParts.slice(1).join('-')}`
-    }
-
-    try {
-      const response = await courseServiceV1.updateUserCourseToc(
-        props.courseId, 
-        list.value.join(',')
-      )
-      console.log(`response: ${JSON.stringify(response)}`)
-      if (response.code === 200) {
         dialog.value = false
+
         if (nextPath === route.query.path) {
           emit('loadData', [])
         } else {
@@ -77,10 +72,11 @@
           })
         }
       }
-    } catch (error) {
-      // todo
-      console.error('Error submitting form:', error)
     }
+  )
+
+  const submit = async (): Promise<void> => {
+    await submitUpdate()
   }
 
   const addItem = (): void => {
@@ -173,6 +169,7 @@
           density="comfortable"
           size="large"
           class="rounded-lg"
+          :loading="submitting"
           @click="submit()"
           ><span class="font-weight-medium">{{ t('configContents.done') }}</span></v-btn
         >

@@ -5,6 +5,7 @@
   import { ObjectType, VoteType } from '@/types/enums'
   import type { Roadmap } from '@/types/roadmap'
   import RoadmapCard from './RoadmapCard.vue'
+  import { useMutation } from '@/composables/useMutation'
 
   interface RoadmapUpdate {
     vote?: number
@@ -18,7 +19,7 @@
     loading?: boolean
     error?: string | null
     pinnedRoadmaps?: (string | number)[]
-    professionId?: number 
+    professionId?: number
   }
 
   interface Emits {
@@ -47,74 +48,68 @@
     return props.pinnedRoadmaps.includes(roadmapId)
   }
 
+  // 使用 useMutation 处理投票
+  const { execute: executeVote } = useMutation(
+    (roadmapId: number) => upvoteServiceV1.upvote(roadmapId, ObjectType.ROADMAP, VoteType.NORMAL),
+    {
+      onSuccess: (response, roadmapId) => {
+        emit('update-roadmap', roadmapId, {
+          vote: response.upvotes,
+          upvoted: response.upvoted,
+        })
+        showSnackbar?.(response.upvoted ? t('roadmap.voteSuccess') : t('roadmap.voteCancel'))
+      },
+      onError: () => {
+        showSnackbar?.(t('roadmap.voteFailed'))
+      },
+    },
+  )
+
   // 投票功能
   const handleVote = async (roadmap: Roadmap, event: Event): Promise<void> => {
-    event.stopPropagation() // 阻止卡片点击事件
-
-    try {
-      const response = await upvoteServiceV1.upvote(roadmap.id, ObjectType.ROADMAP, VoteType.NORMAL)
-      if (response.code === 200) {
-        // 通过事件通知父组件更新数据
-        emit('update-roadmap', roadmap.id, {
-          vote: response.data.upvotes,
-          upvoted: response.data.upvoted,
-        })
-        if (response.data.upvoted) {
-          showSnackbar?.(t('roadmap.voteSuccess'))
-        } else {
-          showSnackbar?.(t('roadmap.voteCancel'))
-        }
-      } else {
-        showSnackbar?.(t('roadmap.voteFailed'))
-      }
-    } catch {
-      showSnackbar?.('投票失败，请稍后重试')
-    }
+    event.stopPropagation()
+    await executeVote(roadmap.id)
   }
+
+  // 使用 useMutation 处理置顶
+  const { execute: executeTogglePin } = useMutation(
+    (data: { professionId: number; roadmapId: number }) =>
+      roadmapServiceV1.pinRoadmap(data.professionId, data.roadmapId),
+    {
+      onSuccess: (pinned, data) => {
+        showSnackbar?.(pinned ? t('roadmap.pinSuccess') : t('roadmap.unpinSuccess'))
+        emit('roadmaps-updated', data.roadmapId, pinned)
+      },
+      onError: () => {
+        showSnackbar?.(t('roadmap.pinFailed'))
+      },
+    },
+  )
 
   // 置顶功能
   const handleTogglePin = async (roadmap: Roadmap, event: Event): Promise<void> => {
-    event.stopPropagation() // 阻止卡片点击事件
-
-    try {
-      const response = await roadmapServiceV1.pinRoadmap(props.professionId, roadmap.id)
-
-      if (response.code === 200) {
-        const pinned = response.data
-
-        if (pinned) {
-          showSnackbar?.(t('roadmap.pinSuccess'))
-        } else {
-          showSnackbar?.(t('roadmap.unpinSuccess'))
-        }
-
-        // 通知父组件更新数据和重新排序
-        emit('roadmaps-updated', roadmap.id, pinned)
-      } else {
-        showSnackbar?.(t('roadmap.pinFailed'))
-      }
-    } catch {
-      showSnackbar?.('置顶操作失败，请稍后重试')
-    }
+    event.stopPropagation()
+    await executeTogglePin({ professionId: props.professionId, roadmapId: roadmap.id })
   }
+
+  // 使用 useMutation 处理开始学习
+  const { execute: executeStartLearning } = useMutation(
+    (roadmapId: number) => progressServiceV1.startRoadmap(roadmapId),
+    {
+      successMessage: t('roadmap.startLearningSuccess'),
+      onSuccess: (response, roadmapId) => {
+        emit('update-roadmap', roadmapId, { learning: response })
+      },
+      onError: () => {
+        showSnackbar?.(t('roadmap.startLearningFailed'))
+      },
+    },
+  )
 
   // 开始学习功能
   const handleStartLearning = async (roadmap: Roadmap, event: Event): Promise<void> => {
-    event.stopPropagation() // 阻止卡片点击事件
-
-    try {
-      const response = await progressServiceV1.startRoadmap(roadmap.id)
-
-      if (response.code === 200) {
-        showSnackbar?.(t('roadmap.startLearningSuccess'))
-        // 通过事件通知父组件更新数据
-        emit('update-roadmap', roadmap.id, { learning: response.data })
-      } else {
-        showSnackbar?.(t('roadmap.startLearningFailed'))
-      }
-    } catch {
-      showSnackbar?.(t('roadmap.startLearningFailed'))
-    }
+    event.stopPropagation()
+    await executeStartLearning(roadmap.id)
   }
 
   // 事件处理

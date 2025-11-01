@@ -6,6 +6,7 @@
   import { Controls } from '@vue-flow/controls'
   import { type Node, type Edge, type Connection, type NodeChange, type EdgeChange, Position } from '@vue-flow/core'
   import { courseServiceV1 } from '@/services/api/v1/apiServiceV1'
+  import { useFetch } from '@/composables/useFetch'
   import ConfirmDialog from '@/components/roadmap/ConfirmDialog.vue'
   import type { Course } from '@/types/course'
   import dagre from 'dagre'
@@ -175,7 +176,30 @@
 
   // 搜索相关状态
   const searchText = ref<string>('')
-  const availableCourses = ref<Course[]>([])
+
+  // 使用 useFetch 加载课程列表
+  const {
+    data: availableCourses,
+    execute: loadAvailableCourses
+  } = useFetch<Course[]>({
+    fetchFn: () => courseServiceV1.searchCourses(searchText.value.trim()),
+    immediate: false,
+    defaultValue: [],
+    onError: (error) => {
+      showSnackbar?.(
+        t('roadmapCreate.messages.loadCoursesError', {
+          error: error.message || t('roadmapCreate.messages.unknownError')
+        })
+      )
+    }
+  })
+
+  const onSearchCourses = (): void => {
+    if (!searchText.value.trim()) {
+      return
+    }
+    loadAvailableCourses()
+  }
 
   // 编辑相关状态 - 内部管理
   const internalNodes = ref<RoadmapNode[]>([])
@@ -261,35 +285,6 @@
   // 取消重置
   const cancelReset = (): void => {
     showResetConfirmDialog.value = false
-  }
-
-  // 搜索相关方法
-  const loadAvailableCourses = async (searchName = ''): Promise<void> => {
-    try {
-      const response = await courseServiceV1.searchCourses(searchName)
-      console.log('Search courses response:', response)
-      if (response.code === 200) {
-        availableCourses.value = response.data || []
-      } else {
-        availableCourses.value = []
-        showSnackbar?.(response.message || t('roadmapCreate.messages.loadCoursesError', { error: 'Search failed' }))
-      }
-    } catch (err: any) {
-      availableCourses.value = []
-      showSnackbar?.(
-        t('roadmapCreate.messages.loadCoursesError', {
-          error: err.message || t('roadmapCreate.messages.unknownError'),
-        })
-      )
-    }
-  }
-
-  const onSearchCourses = (): void => {
-    if (!searchText.value.trim()) {
-      availableCourses.value = []
-      return
-    }
-    loadAvailableCourses(searchText.value.trim())
   }
 
   // 编辑相关方法
@@ -650,7 +645,6 @@
         internalEdges.value = []
         showEmptyAreaTip.value = true
         searchText.value = ''
-        availableCourses.value = []
         roadmapDescription.value = ''
       }
     }

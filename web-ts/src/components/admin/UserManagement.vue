@@ -1,83 +1,64 @@
 <script setup lang="ts">
-import { inject, ref, onMounted } from 'vue'
+import { inject, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminUserServiceV1 } from '@/services/api/v1/adminApiServiceV1'
 import type { User } from '@/types/user'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useMutation } from '@/composables/useMutation'
 
 const { t } = useI18n()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
-const userList = ref<User[]>([])
-const loading = ref<boolean>(false)
-const hasMore = ref<boolean>(true)
 const searchId = ref<string>('')
 const searchName = ref<string>('')
+const isSearchMode = ref<boolean>(false)
 
-const getUserList = async (isLoadMore: boolean = false): Promise<void> => {
-  if (loading.value) return
-
-  loading.value = true
-
-  try {
-    let lastId = null;
-    if (isLoadMore && userList.value.length > 0) {
-      const lastUser = userList.value[userList.value.length - 1]
-      lastId = lastUser?.id || 0
-    }
-
-    const response = await adminUserServiceV1.getUsers(lastId)
-
-    if (response.code === 401) {
-      // not login
-    } else if (response.code === 200) {
-      const newUsers = response.data
-
-      if (isLoadMore) {
-        userList.value.push(...newUsers)
-      } else {
-        userList.value = newUsers
-      }
-
-      hasMore.value = newUsers.length > 0
-    } else {
-      showSnackbar && showSnackbar(response.message || 'error.loadFailed', 'error')
-    }
-  } catch (error) {
-    console.error('Error loading users:', error)
-    showSnackbar && showSnackbar('error.loadFailed', 'error')
-  } finally {
-    loading.value = false
-  }
-}
+// 使用 useInfiniteScroll 加载用户列表
+const {
+  items: userList,
+  loading,
+  hasMore,
+  loadMore,
+  reset: resetUserList
+} = useInfiniteScroll({
+  fetchFn: (params) => {
+    return adminUserServiceV1.getUsers(params.lastId)
+  },
+  getNextParams: (lastItem) => ({
+    lastId: lastItem.id
+  }),
+  initialParams: {
+    lastId: null
+  },
+  enabled: !isSearchMode.value
+})
 
 const searchById = async (): Promise<void> => {
   if (!searchId.value.trim()) {
     return
   }
 
+  const userId = parseInt(searchId.value.trim())
+  if (isNaN(userId)) {
+    showSnackbar?.('请输入有效的用户ID', 'error')
+    return
+  }
+
+  isSearchMode.value = true
   loading.value = true
 
   try {
-    const userId = parseInt(searchId.value.trim())
-    if (isNaN(userId)) {
-      showSnackbar && showSnackbar('请输入有效的用户ID', 'error')
-      return
-    }
-
     const response = await adminUserServiceV1.getUserById(userId)
     if (response.code === 200) {
       userList.value = [response.data]
-      hasMore.value = false
     } else {
       userList.value = []
-      hasMore.value = false
-      showSnackbar && showSnackbar(response.message || '未找到用户', 'error')
+      showSnackbar?.(response.message || '未找到用户', 'error')
     }
   } catch (error) {
     console.error('Error searching user by id:', error)
-    showSnackbar && showSnackbar('error.loadFailed', 'error')
+    showSnackbar?.('搜索失败', 'error')
     userList.value = []
-    hasMore.value = false
   } finally {
     loading.value = false
   }
@@ -88,23 +69,21 @@ const searchByName = async (): Promise<void> => {
     return
   }
 
+  isSearchMode.value = true
   loading.value = true
 
   try {
     const response = await adminUserServiceV1.adminSearchUser(searchName.value.trim())
     if (response.code === 200) {
       userList.value = response.data
-      hasMore.value = false
     } else {
       userList.value = []
-      hasMore.value = false
-      showSnackbar && showSnackbar(response.message || 'error.loadFailed', 'error')
+      showSnackbar?.(response.message || '搜索失败', 'error')
     }
   } catch (error) {
     console.error('Error searching users by name:', error)
-    showSnackbar && showSnackbar('error.loadFailed', 'error')
+    showSnackbar?.('搜索失败', 'error')
     userList.value = []
-    hasMore.value = false
   } finally {
     loading.value = false
   }
@@ -113,40 +92,29 @@ const searchByName = async (): Promise<void> => {
 const clearSearch = (): void => {
   searchId.value = ''
   searchName.value = ''
-  hasMore.value = true
-  getUserList()
+  isSearchMode.value = false
+  resetUserList()
 }
+
+// 使用 useMutation 更新用户状态
+const { execute: executeUpdateUserState } = useMutation(
+  (data: { userId: number; ban: boolean }) =>
+    adminUserServiceV1.updateUserState(data.userId, data.ban),
+  {
+    successMessage: '操作成功',
+    onSuccess: (response, data) => {
+      const index = userList.value.findIndex(u => u.id === data.userId)
+      if (index !== -1) {
+        userList.value[index] = response
+      }
+    }
+  }
+)
 
 const updateUserState = async (user: User, ban: boolean): Promise<void> => {
-  try {
-    const response = await adminUserServiceV1.updateUserState(user.id, ban)
-
-    if (response.code === 401) {
-      // not login
-    } else if (response.code === 200) {
-      const index = userList.value.findIndex(u => u.id === user.id)
-      if (index !== -1) {
-        userList.value[index] = response.data
-      }
-      showSnackbar && showSnackbar(t('admin.operationSuccess'))
-    } else {
-      showSnackbar && showSnackbar(response.message || 'error.operationFailed', 'error')
-    }
-  } catch (error) {
-    console.error('Error updating user state:', error)
-    showSnackbar && showSnackbar('error.operationFailed', 'error')
-  }
+  await executeUpdateUserState({ userId: user.id, ban })
 }
 
-const loadMore = async (): Promise<void> => {
-  if (hasMore.value && !loading.value) {
-    await getUserList(true)
-  }
-}
-
-onMounted(() => {
-  getUserList()
-})
 </script>
 
 <template>

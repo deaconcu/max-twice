@@ -7,6 +7,7 @@ import type { Comment } from '@/types/comment'
 import type { ObjectType as ObjectTypeType } from '@/types/enums'
 import { COMMENT_VALIDATION } from '@/types/validation'
 import UserCard from '../user/UserCard.vue'
+import { useMutation } from '@/composables/useMutation'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -62,25 +63,13 @@ const updateActiveReplayId = (newValue: string | number): void => {
   }
 }
 
-onMounted(() => {
-  // 初始化 offsetId
-  if (props.comments.length > 0) {
-    localOffsetId.value = props.comments[props.comments.length - 1].id
-  }
+const isValidComment = (content: string): boolean => {
+  const trimmed = content.trim()
+  return trimmed.length >= COMMENT_VALIDATION.CONTENT_MIN_LENGTH &&
+         trimmed.length <= COMMENT_VALIDATION.CONTENT_MAX_LENGTH
+}
 
-  if (Number(props.offsetId) > localOffsetId.value) {
-    localOffsetId.value = Number(props.offsetId) - 1
-    loadMore()
-  }
-
-  // 如果有subCommentId，设置子评论高亮
-  if ('subCommentId' in route.query) {
-    nextTick(() => {
-      setSubHighlight(parseInt(route.query.subCommentId as string))
-    })
-  }
-})
-
+// 加载更多子评论
 const loadMore = async (): Promise<void> => {
   try {
     const response = await commentServiceV1.getCommentReplies(
@@ -107,73 +96,91 @@ const loadMore = async (): Promise<void> => {
   }
 }
 
-const upvote = async (comment: Comment): Promise<void> => {
-  try {
-    const response = await upvoteServiceV1.upvote(comment.id, 2, 2)
-
-    if (response.code === 200) {
-      comment.upvoteCount = response.data.upvotes
-      comment.upvoted = response.data.upvoted
-    } else {
-      showSnackbar(response.message || 'error.operationFailed', 'error')
+// 使用 useMutation 处理点赞
+const { execute: executeUpvote } = useMutation(
+  (commentId: number) => upvoteServiceV1.upvote(commentId, 2, 2),
+  {
+    successMessage: '',
+    showToast: false,
+    throttle: 1000,
+    onSuccess: (result, commentId) => {
+      const comment = localComments.value.find(c => c.id === commentId)
+      if (comment) {
+        comment.upvoteCount = result.upvotes
+        comment.upvoted = result.upvoted
+      }
     }
-  } catch (error) {
-    console.error('Error submitting upvote:', error)
-    showSnackbar('error.operationFailed', 'error')
   }
+)
+
+const upvote = async (comment: Comment): Promise<void> => {
+  await executeUpvote(comment.id)
 }
 
-const isValidComment = (content: string): boolean => {
-  const trimmed = content.trim()
-  return trimmed.length >= COMMENT_VALIDATION.CONTENT_MIN_LENGTH &&
-         trimmed.length <= COMMENT_VALIDATION.CONTENT_MAX_LENGTH
-}
-
-const sendComment = async (toComment: Comment): Promise<void> => {
-  if (!isValidComment(replyContent.value)) {
-    return
-  }
-
-  try {
-    const response = await commentServiceV1.createComment(
-      props.objectId,
-      props.objectType,
-      props.commentId,
-      toComment.creatorId,
-      replyContent.value
-    )
-
-    if (response.code === 200) {
+// 使用 useMutation 发送子评论
+const { execute: executeSendComment } = useMutation(
+  (payload: { toComment: Comment }) => commentServiceV1.createComment(
+    props.objectId,
+    props.objectType,
+    props.commentId,
+    payload.toComment.creatorId,
+    replyContent.value
+  ),
+  {
+    successMessage: '',
+    showToast: false,
+    onSuccess: (result, payload) => {
       replyContent.value = ''
 
       // 找到被回复评论的位置，插入到其后面
       const allComments = localComments.value
-      const toCommentIndex = allComments.findIndex(c => c.id === toComment.id)
+      const toCommentIndex = allComments.findIndex(c => c.id === payload.toComment.id)
 
       if (toCommentIndex !== -1) {
         // 判断是在 props.comments 还是 additionalComments 中
         if (toCommentIndex < props.comments.length) {
           // 在 props.comments 中，插入到 additionalComments 开头
-          additionalComments.value.unshift(response.data)
+          additionalComments.value.unshift(result)
         } else {
           // 在 additionalComments 中，插入到对应位置后面
           const indexInAdditional = toCommentIndex - props.comments.length
-          additionalComments.value.splice(indexInAdditional + 1, 0, response.data)
+          additionalComments.value.splice(indexInAdditional + 1, 0, result)
         }
       } else {
         // 找不到就插入到顶部
-        additionalComments.value.unshift(response.data)
+        additionalComments.value.unshift(result)
       }
 
       emit('update:activeReplyId', 0)
-    } else {
-      showSnackbar(response.message || 'error.operationFailed', 'error')
     }
-  } catch (error) {
-    console.error('Error submitting subcomment:', error)
-    showSnackbar('error.operationFailed', 'error')
   }
+)
+
+const sendComment = async (toComment: Comment): Promise<void> => {
+  if (!isValidComment(replyContent.value)) {
+    return
+  }
+  await executeSendComment({ toComment })
 }
+
+onMounted(() => {
+  // 初始化 offsetId
+  if (props.comments.length > 0) {
+    localOffsetId.value = props.comments[props.comments.length - 1].id
+  }
+
+  if (Number(props.offsetId) > localOffsetId.value) {
+    localOffsetId.value = Number(props.offsetId) - 1
+    loadMore()
+  }
+
+  // 如果有subCommentId，设置子评论高亮
+  if ('subCommentId' in route.query) {
+    nextTick(() => {
+      setSubHighlight(parseInt(route.query.subCommentId as string))
+    })
+  }
+})
 </script>
 
 <template>

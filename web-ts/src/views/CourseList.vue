@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, onMounted, ref, watch } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -9,6 +9,8 @@ import {
   systemServiceV1,
 } from '@/services/api/v1/apiServiceV1'
 import { useUserStore } from '@/stores/user'
+import { useFetch } from '@/composables/useFetch'
+import { useMutation } from '@/composables/useMutation'
 import type { Course } from '@/types/course'
 import type { UserCourse } from '@/types/userCourse'
 import RightSidebar from '@/components/common/RightSidebar.vue'
@@ -52,24 +54,107 @@ const user = useUserStore()
 const router = useRouter()
 
 // 响应式数据
-const config: Ref<SystemConfig> = ref({ courses: [] })
 const selected: Ref<number[]> = ref([])
 const selectedNavTab: Ref<string> = ref('courses')
-const courses: Ref<Course[]> = ref([])
-const loading: Ref<boolean> = ref(false)
 const activeFirstLvl: Ref<number> = ref(-1)
 const applyCourseDialog: Ref<boolean> = ref(false)
 const resetFormFlag: Ref<boolean> = ref(false)
 
-// 其他数据
-const subscriptions: Ref<UserCourse[]> = ref([])
-const hotCourses: Ref<Course[]> = ref([])
+// 当前分类查询参数
+const currentCategory = ref<{ mainCategory: number; subCategory: number } | null>(null)
 
-onMounted(() => {
-  loadSystem()
-  loadSubscription()
-  loadHotCourses()
+// 使用 useFetch 加载课程分类
+const {
+  data: categoriesData,
+  loading: loadingCategories,
+  refresh: loadSystem
+} = useFetch({
+  fetchFn: systemServiceV1.getCourseCategories,
+  immediate: true,
+  defaultValue: { mainCategories: [], categoryMapping: [] },
+  onSuccess: (data) => {
+    console.log('课程分类API响应:', data)
+    const { mainCategories, categoryMapping } = data
+
+    if (!mainCategories || !categoryMapping) {
+      console.error('缺少主分类或分类映射数据')
+      return
+    }
+
+    const coursesConfig = mainCategories.map((mainCategory: Category) => {
+      const mapping = categoryMapping.find((m: any) => m.mainCategoryId === mainCategory.id)
+      return {
+        id: mainCategory.id,
+        name: mainCategory.name,
+        icon: mainCategory.icon,
+        color: mainCategory.color,
+        list: mapping ? mapping.subCategories : [],
+      }
+    })
+
+    config.value = { courses: coursesConfig }
+    selected.value = new Array(coursesConfig.length).fill(-1)
+  },
+  onError: (error) => {
+    console.error('Error loading course categories:', error)
+  }
 })
+
+// 配置数据
+const config: Ref<SystemConfig> = ref({ courses: [] })
+
+// 使用 useFetch 加载热门课程
+const { data: hotCourses, loading: loadingHotCourses } = useFetch<Course[]>({
+  fetchFn: courseServiceV1.getHotCourses,
+  immediate: true,
+  defaultValue: []
+})
+
+// 使用 useFetch 加载用户订阅
+const {
+  data: subscriptions,
+  loading: loadingSubscriptions,
+  refresh: loadSubscription
+} = useFetch<UserCourse[]>({
+  fetchFn: async () => {
+    const userId = user.currentUser?.id
+    if (!userId) {
+      return { code: 200, data: [], message: '' }
+    }
+    return subscriptionServiceV1.getUserSubscriptions(userId)
+  },
+  immediate: true,
+  defaultValue: [],
+  onError: (error) => {
+    console.error('Error get subscription:', error)
+  }
+})
+
+// 使用 useFetch 加载分类下的课程
+const {
+  data: courses,
+  loading,
+  refresh: refreshCourses
+} = useFetch<Course[]>({
+  fetchFn: async () => {
+    if (!currentCategory.value) {
+      return { code: 200, data: [], message: '' }
+    }
+    const { mainCategory, subCategory } = currentCategory.value
+    return courseServiceV1.getCoursesByCategory(mainCategory, subCategory)
+  },
+  immediate: false,
+  defaultValue: [],
+  onError: (error) => {
+    console.error('Error loading courses:', error)
+  }
+})
+
+// 加载分类下的课程
+const loadCoursesByCategory = async (mainCategory: number, subCategory: number): Promise<void> => {
+  currentCategory.value = { mainCategory, subCategory }
+  await refreshCourses()
+}
 
 // 监听分类选择变化，加载对应课程
 watch(
@@ -87,101 +172,23 @@ watch(
   { deep: true }
 )
 
-// 数据加载函数
-const loadSystem = async (): Promise<void> => {
-  try {
-    console.log('开始加载课程分类...')
-    const response = await systemServiceV1.getCourseCategories()
-    console.log('课程分类API响应:', response)
-
-    if (response.code === 401) {
-      console.log('not login')
-    } else if (response.code === 200) {
-      const { mainCategories, categoryMapping } = response.data
-
-      if (!mainCategories || !categoryMapping) {
-        console.error('缺少主分类或分类映射数据')
-        return
-      }
-
-      const coursesConfig = mainCategories.map((mainCategory: Category) => {
-        const mapping = categoryMapping.find((m: any) => m.mainCategoryId === mainCategory.id)
-        return {
-          id: mainCategory.id,
-          name: mainCategory.name,
-          icon: mainCategory.icon,
-          color: mainCategory.color,
-          list: mapping ? mapping.subCategories : [],
-        }
-      })
-
-      config.value = { courses: coursesConfig }
-      selected.value = new Array(coursesConfig.length).fill(-1)
-    } else {
-      console.error('API返回错误:', response)
+// 使用 useMutation 处理课程创建
+const { execute: createCourse, loading: creatingCourse } = useMutation(
+  courseServiceV1.createCourse,
+  {
+    successMessage: t('message.courseCreateSuccess'),
+    onSuccess: () => {
+      applyCourseDialog.value = false
+      resetFormFlag.value = true
+      setTimeout(() => {
+        resetFormFlag.value = false
+      }, 100)
+    },
+    onError: (error) => {
+      console.error('Error creating course:', error)
     }
-  } catch (error) {
-    console.error('Error loading course categories:', error)
   }
-}
-
-const loadCoursesByCategory = async (mainCategory: number, subCategory: number): Promise<void> => {
-  try {
-    loading.value = true
-    const response = await courseServiceV1.getCoursesByCategory(mainCategory, subCategory)
-
-    if (response.code === 200) {
-      courses.value = response.data || []
-    } else {
-      console.error('Failed to load courses:', response)
-      courses.value = []
-    }
-  } catch (error) {
-    console.error('Error loading courses:', error)
-    courses.value = []
-  } finally {
-    loading.value = false
-  }
-}
-
-const loadSubscription = async (): Promise<void> => {
-  try {
-    const userId = user.currentUser?.id
-    if (userId) {
-      const response = await subscriptionServiceV1.getUserSubscriptions(userId)
-
-      if (response.code === 200) {
-        subscriptions.value = response.data || []
-      } else {
-        subscriptions.value = []
-      }
-    } else {
-      subscriptions.value = []
-    }
-  } catch (error) {
-    console.error('Error get subscription:', error)
-    subscriptions.value = []
-  }
-}
-
-const loadHotCourses = async (): Promise<void> => {
-  try {
-    const response = await courseServiceV1.getHotCourses()
-
-    if (response.code === 200) {
-      hotCourses.value = response.data
-    }
-  } catch (error) {
-    console.error('Error get hot courses:', error)
-    hotCourses.value = [
-      { id: 1, name: '数据结构与算法', learnerCount: 15534, subscriptionCount: 8900 },
-      { id: 2, name: '英语写作', learnerCount: 20001, subscriptionCount: 7200 },
-      { id: 3, name: '计算机网络', learnerCount: 6888, subscriptionCount: 9100 },
-      { id: 4, name: '人工智能导论', learnerCount: 12230, subscriptionCount: 5800 },
-      { id: 5, name: '法律基础', learnerCount: 18910, subscriptionCount: 4500 },
-    ]
-  }
-}
+)
 
 // 事件处理函数
 const handleSearch = (): void => {
@@ -193,45 +200,26 @@ const handleOpenCreateDialog = (): void => {
 }
 
 const handleCreateCourse = async (courseData: CourseCreateData): Promise<void> => {
-  try {
-    // 验证必填字段
-    if (!courseData.name.trim()) {
-      showSnackbar(t('validation.required.courseName'), 'error')
-      return
-    }
-    if (!courseData.description.trim()) {
-      showSnackbar(t('validation.required.courseDescription'), 'error')
-      return
-    }
-    if (!courseData.mainCategory) {
-      showSnackbar(t('validation.required.mainCategory'), 'error')
-      return
-    }
-    if (!courseData.subCategory) {
-      showSnackbar(t('validation.required.subCategory'), 'error')
-      return
-    }
-
-    console.log('Creating course:', courseData)
-    const response = await courseServiceV1.createCourse(courseData)
-
-    if (response.code === 401) {
-      showSnackbar('请先登录！', 'error')
-    } else if (response.code === 200) {
-      console.log('Course created successfully')
-      applyCourseDialog.value = false
-      resetFormFlag.value = true
-      setTimeout(() => {
-        resetFormFlag.value = false
-      }, 100)
-      showSnackbar(t('message.courseCreateSuccess'))
-    } else {
-      showSnackbar(response.message || '创建失败，请重试！', 'error')
-    }
-  } catch (error) {
-    console.error('Error creating course:', error)
-    showSnackbar('创建失败，请重试！', 'error')
+  // 验证必填字段
+  if (!courseData.name.trim()) {
+    showSnackbar(t('validation.required.courseName'), 'error')
+    return
   }
+  if (!courseData.description.trim()) {
+    showSnackbar(t('validation.required.courseDescription'), 'error')
+    return
+  }
+  if (!courseData.mainCategory) {
+    showSnackbar(t('validation.required.mainCategory'), 'error')
+    return
+  }
+  if (!courseData.subCategory) {
+    showSnackbar(t('validation.required.subCategory'), 'error')
+    return
+  }
+
+  console.log('Creating course:', courseData)
+  await createCourse(courseData)
 }
 
 const handleToggleFirstLevel = (firstIndex: number): void => {

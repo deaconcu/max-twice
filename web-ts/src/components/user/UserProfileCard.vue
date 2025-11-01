@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { userServiceV1 } from '@/services/api/v1/apiServiceV1'
 import type { User } from '@/types/user'
+import { useFetch } from '@/composables/useFetch'
 
 interface Stats {
   followeeCount: number
@@ -32,11 +33,6 @@ const emit = defineEmits<{
 
 const router = useRouter()
 
-// 用户数据
-const user: Ref<User> = ref()
-const loading: Ref<boolean> = ref(false)
-const error: Ref<string | null> = ref(null)
-
 // 统计数据
 const stats: Ref<Stats> = ref({
   followeeCount: 0,
@@ -44,6 +40,25 @@ const stats: Ref<Stats> = ref({
   subscriptionCount: 0,
   contentCount: 0,
 })
+
+// 使用 useFetch 加载用户信息
+const {
+  data: user,
+  loading,
+  error: errorObj,
+  refresh: loadUser,
+} = useFetch<User>({
+  fetchFn: () => {
+    if (props.userId) {
+      return userServiceV1.getUser(props.userId)
+    } else {
+      return userServiceV1.getCurrentUser()
+    }
+  },
+  immediate: true,
+})
+
+const error = computed(() => (errorObj.value ? '加载用户信息失败' : null))
 
 const avatarSize = computed((): number => {
   switch (props.size) {
@@ -55,36 +70,6 @@ const avatarSize = computed((): number => {
       return 64
   }
 })
-
-// 加载用户信息
-const loadUser = async (): Promise<void> => {
-  try {
-    loading.value = true
-    error.value = null
-
-    let response
-    if (props.userId) {
-      // 加载指定用户信息
-      response = await userServiceV1.getUser(props.userId)
-    } else {
-      // 加载当前用户信息
-      response = await userServiceV1.getCurrentUser()
-    }
-
-    if (response.code === 200) {
-      user.value = response.data
-      // 可以在这里加载统计数据
-      // await loadUserStats();
-    } else {
-      error.value = '加载用户信息失败'
-    }
-  } catch (err) {
-    console.error('Error loading user:', err)
-    error.value = '加载用户信息失败'
-  } finally {
-    loading.value = false
-  }
-}
 
 const handleEdit = (): void => {
   if (props.editable) {
@@ -120,10 +105,6 @@ const handleStatClick = (statType: StatType): void => {
       break
   }
 }
-
-onMounted(() => {
-  loadUser()
-})
 
 // 暴露刷新方法供父组件调用
 defineExpose({

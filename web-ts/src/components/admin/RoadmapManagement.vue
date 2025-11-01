@@ -372,18 +372,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { roadmapServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { adminRoadmapServiceV1 } from '@/services/api/v1/adminApiServiceV1'
 import { ContentState } from '@/types/enums'
 import type { Roadmap } from '@/types/roadmap'
 import type { StateOption } from '@/types/common'
 import RejectBanDialog from './RejectBanDialog.vue'
-
-const roadmapList = ref<Roadmap[]>([])
-const loading = ref<boolean>(false)
-const lastId = ref<number>(0)
-const hasMoreData = ref<boolean>(true)
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useMutation } from '@/composables/useMutation'
 
 const professionIdFilter = ref<number | null>(null)
 const creatorIdFilter = ref<number | null>(null)
@@ -393,13 +390,11 @@ const showEditDialog = ref<boolean>(false)
 const editFormValid = ref<boolean>(false)
 const currentRoadmap = ref<Roadmap | null>(null)
 const editDescription = ref<string>('')
-const updating = ref<boolean>(false)
 const editForm = ref(null)
 
 // 拒绝/屏蔽对话框
 const showReasonDialog = ref<boolean>(false)
 const dialogType = ref<'reject' | 'ban'>('reject')
-const submitting = ref<boolean>(false)
 
 // 状态选项
 const stateOptions: StateOption[] = [
@@ -437,79 +432,48 @@ const getStateConfig = (state?: number): StateOption => {
   return stateOptions.find((option) => option.value === state) || stateOptions[0]
 }
 
+// 使用 useInfiniteScroll 进行列表加载
+const {
+  items: roadmapList,
+  loading,
+  hasMore: hasMoreData,
+  loadMore,
+  reset: resetList
+} = useInfiniteScroll<Roadmap>({
+  fetchFn: (params) =>
+    adminRoadmapServiceV1.getAdminRoadmaps(
+      params.state,
+      params.professionId,
+      params.creatorId,
+      params.lastId
+    ),
+  getNextParams: (lastItem, currentParams) => ({
+    ...currentParams,
+    lastId: lastItem.id
+  }),
+  initialParams: computed(() => ({
+    lastId: 0,
+    state: getCurrentState(),
+    professionId: professionIdFilter.value || undefined,
+    creatorId: creatorIdFilter.value || undefined
+  }))
+})
+
 // 状态改变
 const onStateChange = (): void => {
-  loadRoadmapList(true)
+  resetList()
 }
 
 // 筛选条件变化
 const onFilterChange = (): void => {
-  loadRoadmapList(true)
+  resetList()
 }
 
 // 重置筛选
 const onResetFilter = (): void => {
   professionIdFilter.value = null
   creatorIdFilter.value = null
-  loadRoadmapList(true)
-}
-
-// 加载路线图列表
-const loadRoadmapList = async (reset: boolean = true): Promise<void> => {
-  if (loading.value) return
-
-  try {
-    loading.value = true
-
-    const currentLastId = reset ? null : lastId.value
-    const currentState = getCurrentState()
-    const professionId = professionIdFilter.value || undefined
-    const creatorId = creatorIdFilter.value || undefined
-
-    const response = await adminRoadmapServiceV1.getAdminRoadmaps(
-      currentState,
-      professionId,
-      creatorId,
-      currentLastId
-    )
-
-    if (response.code === 200 && response.data) {
-      const newData = Array.isArray(response.data) ? response.data : []
-
-      if (reset) {
-        roadmapList.value = newData
-        lastId.value = 0
-      } else {
-        roadmapList.value = [...roadmapList.value, ...newData]
-      }
-
-      if (newData.length > 0) {
-        lastId.value = newData[newData.length - 1].id
-        hasMoreData.value = newData.length >= 20
-      } else {
-        hasMoreData.value = false
-      }
-    } else {
-      console.error('加载路线图列表失败:', response.message)
-      if (reset) {
-        roadmapList.value = []
-      }
-    }
-  } catch (error) {
-    console.error('加载路线图列表失败:', error)
-    if (reset) {
-      roadmapList.value = []
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
-// 加载更多数据
-const loadMoreData = (): void => {
-  if (!loading.value && hasMoreData.value) {
-    loadRoadmapList(false)
-  }
+  resetList()
 }
 
 // 滚动监听
@@ -525,7 +489,7 @@ const handleScroll = (): void => {
 
   if (scrollTop + windowHeight >= documentHeight - 100) {
     isScrollLoading = true
-    loadMoreData()
+    loadMore()
     setTimeout(() => {
       isScrollLoading = false
     }, 500)
@@ -547,64 +511,47 @@ const closeEditDialog = (): void => {
   editFormValid.value = false
 }
 
-// 更新路线图描述
-const updateRoadmapDescription = async (): Promise<void> => {
-  if (!currentRoadmap.value) return
-
-  try {
-    updating.value = true
-
-    const response = await adminRoadmapServiceV1.updateRoadmap(
-      currentRoadmap.value.id,
-      editDescription.value || ''
-    )
-
-    if (response.code === 200 && response.data) {
+// 使用 useMutation 更新路线图描述
+const { execute: updateRoadmapDescription, loading: updating } = useMutation(
+  () => adminRoadmapServiceV1.updateRoadmap(
+    currentRoadmap.value!.id,
+    editDescription.value || ''
+  ),
+  {
+    successMessage: '更新成功',
+    onSuccess: (result) => {
       const index = roadmapList.value.findIndex((r) => r.id === currentRoadmap.value!.id)
       if (index !== -1) {
-        roadmapList.value[index] = response.data
+        roadmapList.value[index] = result
       }
-
       closeEditDialog()
-    } else {
-      console.error('更新路线图描述失败:', response.message)
     }
-  } catch (error) {
-    console.error('更新路线图描述错误:', error)
-  } finally {
-    updating.value = false
   }
-}
+)
+
+// 使用 useMutation 批准路线图
+const { execute: executeApprove } = useMutation(
+  (payload: { id: number; action: string }) =>
+    roadmapServiceV1.approveRoadmap(payload.id, payload.action),
+  {
+    successMessage: '操作成功',
+    onSuccess: (result, payload) => {
+      const index = roadmapList.value.findIndex((r) => r.id === payload.id)
+      if (index !== -1) {
+        const currentState = getCurrentState()
+        if (currentState !== result.state) {
+          roadmapList.value.splice(index, 1)
+        } else {
+          roadmapList.value[index] = result
+        }
+      }
+    }
+  }
+)
 
 // 批准路线图
 const approveRoadmap = async (roadmap: Roadmap, action: string): Promise<void> => {
-  try {
-    ;(roadmap as any).approving = true
-
-    const response = await roadmapServiceV1.approveRoadmap(
-      roadmap.id,
-      action
-    )
-
-    if (response.code === 200 && response.data) {
-      const index = roadmapList.value.findIndex((r) => r.id === roadmap.id)
-      if (index !== -1) {
-        const currentState = getCurrentState()
-        if (currentState !== response.data.state) {
-          roadmapList.value.splice(index, 1)
-        } else {
-          roadmapList.value[index] = response.data
-        }
-      }
-    } else {
-      console.error('批准路线图失败:', response.message)
-    }
-  } catch (error) {
-    console.error('批准路线图错误:', error)
-  } finally {
-    ;(roadmap as any).approving = false
-    ;(roadmap as any).restoring = false
-  }
+  await executeApprove({ id: roadmap.id, action })
 }
 
 // 显示拒绝对话框
@@ -621,42 +568,38 @@ const showBanDialog = (roadmap: Roadmap): void => {
   showReasonDialog.value = true
 }
 
+// 使用 useMutation 处理拒绝/屏蔽操作
+const { execute: executeRejectOrBan, loading: submitting } = useMutation(
+  (payload: { id: number; action: string; reason: string }) =>
+    roadmapServiceV1.approveRoadmap(payload.id, payload.action, payload.reason),
+  {
+    successMessage: '操作成功',
+    onSuccess: (result) => {
+      const index = roadmapList.value.findIndex((r) => r.id === currentRoadmap.value!.id)
+      if (index !== -1) {
+        const currentState = getCurrentState()
+        if (currentState !== result.state) {
+          roadmapList.value.splice(index, 1)
+        } else {
+          roadmapList.value[index] = result
+        }
+      }
+      showReasonDialog.value = false
+      currentRoadmap.value = null
+    }
+  }
+)
+
 // 处理对话框确认
 const handleConfirmAction = async (reason: string): Promise<void> => {
   if (!currentRoadmap.value) return
 
-  try {
-    submitting.value = true
-    const action = dialogType.value === 'reject' ? 'reject' : 'ban'
-    const targetState = dialogType.value === 'reject' ? ContentState.REJECTED : ContentState.BANNED
-
-    const response = await roadmapServiceV1.approveRoadmap(
-      currentRoadmap.value.id,
-      action,
-      reason
-    )
-
-    if (response.code === 200 && response.data) {
-      const index = roadmapList.value.findIndex((r) => r.id === currentRoadmap.value!.id)
-      if (index !== -1) {
-        const currentState = getCurrentState()
-        if (currentState !== targetState) {
-          roadmapList.value.splice(index, 1)
-        } else {
-          roadmapList.value[index] = response.data
-        }
-      }
-
-      showReasonDialog.value = false
-      currentRoadmap.value = null
-    } else {
-      console.error('操作失败:', response.message)
-    }
-  } catch (error) {
-    console.error('操作错误:', error)
-  } finally {
-    submitting.value = false
-  }
+  const action = dialogType.value === 'reject' ? 'reject' : 'ban'
+  await executeRejectOrBan({
+    id: currentRoadmap.value.id,
+    action,
+    reason
+  })
 }
 
 // 拒绝路线图（供按钮调用）
@@ -666,28 +609,7 @@ const rejectRoadmap = (roadmap: Roadmap): void => {
 
 // 取消屏蔽路线图
 const unbanRoadmap = async (roadmap: Roadmap): Promise<void> => {
-  try {
-    const response = await roadmapServiceV1.approveRoadmap(
-      roadmap.id,
-      'approve'
-    )
-
-    if (response.code === 200 && response.data) {
-      const index = roadmapList.value.findIndex((r) => r.id === roadmap.id)
-      if (index !== -1) {
-        const currentState = getCurrentState()
-        if (currentState !== ContentState.PUBLISHED) {
-          roadmapList.value.splice(index, 1)
-        } else {
-          roadmapList.value[index] = response.data
-        }
-      }
-    } else {
-      console.error('取消屏蔽路线图失败:', response.message)
-    }
-  } catch (error) {
-    console.error('取消屏蔽路线图错误:', error)
-  }
+  await executeApprove({ id: roadmap.id, action: 'approve' })
 }
 
 // 降级为拒绝
@@ -701,7 +623,6 @@ const showBanModal = (roadmap: Roadmap): void => {
 }
 
 onMounted(() => {
-  loadRoadmapList(true)
   window.addEventListener('scroll', handleScroll)
 })
 

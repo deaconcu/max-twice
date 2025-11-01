@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { MemoryCardView, UserCardSRSState, ReviewSession, ReviewCardResult, CourseMemoryBank, DeckUpdateDiff, MemoryCardDeck, CardContentDiff } from '@/types/memoryCard'
 import { ReviewResult, FrequencySetting, CourseStudyStatus, DeckState } from '@/types/memoryCard'
@@ -7,6 +7,9 @@ import { MemoryService } from '@/services/memoryService'
 import DeckUpdateDiffDialog from '@/components/memory/DeckUpdateDiffDialog.vue'
 import DeckDetailDialog from '@/components/memory/DeckDetailDialog.vue'
 import CardContentDiffDialog from '@/components/memory/CardContentDiffDialog.vue'
+import { useFetch } from '@/composables/useFetch'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useMutation } from '@/composables/useMutation'
 
 const { t } = useI18n()
 
@@ -14,24 +17,77 @@ const { t } = useI18n()
 const activeTab = ref<string>('all')
 const viewMode = ref<'review' | 'list' | 'manage'>('review') // review: 复习模式, list: 列表模式, manage: 管理模式
 
-
-// 课程记忆库数据
-const courseMemoryBanks = ref<CourseMemoryBank[]>([])
-
-const loading = ref(false)
-const reviewCards = ref<MemoryCardView[]>([])
 const currentCardIndex = ref(0)
 const isReviewing = ref(false)
 const showAnswer = ref(false)
 const reviewSession = ref<ReviewSession | null>(null)
 const selectedCards = ref<number[]>([]) // 选中的卡片ID列表
 
-// 列表模式专用数据
-const listCards = ref<MemoryCardView[]>([])
-const listLoading = ref(false)
-const listLastId = ref<number | undefined>(undefined)
-const listPageSize = ref(20)
-const listHasMore = ref(true)
+// 使用 useFetch 加载记忆库课程
+const {
+  data: courseMemoryBanks,
+  loading: loadingCourses,
+  refresh: loadMemoryBankCourses
+} = useFetch<CourseMemoryBank[]>({
+  fetchFn: MemoryService.getMemoryBankCourses,
+  immediate: true,
+  defaultValue: []
+})
+
+// 使用 useFetch 加载复习队列
+const {
+  data: reviewCards,
+  loading,
+  refresh: refreshReviewQueue
+} = useFetch<MemoryCardView[]>({
+  fetchFn: async () => {
+    const response = await MemoryService.getReviewQueue({
+      courseId: selectedCourse.value?.course.id
+    })
+    if (response.code === 200) {
+      // 检测卡片组更新
+      await checkDeckUpdates(response.data)
+      return { code: 200, data: response.data, message: '' }
+    }
+    throw new Error(response.message || '加载复习队列失败')
+  },
+  defaultValue: []
+})
+
+// 使用 useInfiniteScroll 加载列表卡片
+const {
+  items: listCards,
+  loading: listLoading,
+  hasMore: listHasMore,
+  loadMore: loadMoreListCards,
+  reset: resetListCards
+} = useInfiniteScroll<MemoryCardView>({
+  fetchFn: async (params) => {
+    const response = await MemoryService.getCardList({
+      courseId: selectedCourse.value?.course.id,
+      limit: 20,
+      lastId: params.lastId
+    })
+
+    if (response.code === 200) {
+      // 检测卡片组更新
+      await checkDeckUpdates(response.data)
+      return {
+        code: 200,
+        data: response.data,
+        message: '',
+        hasMore: response.data.length === 20
+      }
+    }
+    throw new Error(response.message || '加载列表失败')
+  },
+  getNextParams: (lastItem) => ({
+    lastId: lastItem.id
+  }),
+  initialParams: {
+    lastId: undefined
+  }
+})
 const stats = ref({
   totalReviews: 0,
   streakDays: 0,
@@ -90,22 +146,8 @@ const reviewProgress = computed(() => {
 })
 
 onMounted(() => {
-  loadMemoryBankCourses()
-  loadReviewQueue()
   // loadReviewStats() // 已注释：学习统计功能
 })
-
-// 加载记忆库课程
-const loadMemoryBankCourses = async () => {
-  try {
-    const response = await MemoryService.getMemoryBankCourses()
-    if (response.code === 200) {
-      courseMemoryBanks.value = response.data
-    }
-  } catch (error) {
-    console.error('Failed to load memory bank courses:', error)
-  }
-}
 
 // 加载复习统计
 const loadReviewStats = async () => {
@@ -116,66 +158,6 @@ const loadReviewStats = async () => {
     }
   } catch (error) {
     console.error('Failed to load review stats:', error)
-  }
-}
-
-// 加载复习队列
-const loadReviewQueue = async () => {
-  loading.value = true
-  try {
-    const response = await MemoryService.getReviewQueue({
-      courseId: selectedCourse.value?.course.id
-    })
-
-    if (response.code === 200) {
-      reviewCards.value = response.data
-
-      // 检测卡片组更新
-      await checkDeckUpdates()
-    }
-  } catch (error) {
-    console.error('Failed to load review queue:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-// 加载列表卡片（全部卡片，支持keyset分页）
-const loadListCards = async (reset = false) => {
-  if (listLoading.value) return
-  
-  listLoading.value = true
-  try {
-    const response = await MemoryService.getCardList({
-      courseId: selectedCourse.value?.course.id,
-      limit: listPageSize.value,
-      lastId: reset ? undefined : listLastId.value
-    })
-    
-    if (response.code === 200) {
-      if (reset) {
-        listCards.value = response.data
-        listLastId.value = undefined
-      } else {
-        listCards.value = [...listCards.value, ...response.data]
-      }
-      
-      // 更新lastId为当前页最后一张卡片的ID
-      if (response.data.length > 0) {
-        const lastCard = response.data[response.data.length - 1]
-        listLastId.value = lastCard.id
-      }
-      
-      // 判断是否还有更多数据
-      listHasMore.value = response.data.length === listPageSize.value
-      
-      // 检测卡片组更新
-      await checkDeckUpdates()
-    }
-  } catch (error) {
-    console.error('Failed to load list cards:', error)
-  } finally {
-    listLoading.value = false
   }
 }
 
@@ -241,20 +223,21 @@ const showCardContentDiff = async (cardId: number) => {
   }
 }
 
-// 应用卡片内容更新
-const applyCardUpdate = async (cardId: number) => {
-  try {
-    // 使用现有的接受deck更新API，只传入单个卡片ID
-    const response = await MemoryService.acceptDeckChanges(
+// 使用 useMutation 处理卡片内容更新
+const { execute: applyCardUpdateExecute } = useMutation(
+  (cardId: number) => {
+    return MemoryService.acceptDeckChanges(
       currentCardDiff.value?.cardId || cardId,
       [cardId]
     )
-
-    if (response.code === 200) {
+  },
+  {
+    showToast: false,
+    onSuccess: async () => {
       // 重新加载数据
-      await loadReviewQueue()
+      await refreshReviewQueue()
       if (viewMode.value === 'list') {
-        await loadListCards(true)
+        resetListCards()
       }
 
       // 关闭对话框
@@ -262,41 +245,57 @@ const applyCardUpdate = async (cardId: number) => {
       currentCardDiff.value = null
 
       console.log('Card content update accepted successfully')
+    },
+    onError: (error) => {
+      console.error('Failed to accept card update:', error)
     }
-  } catch (error) {
-    console.error('Failed to accept card update:', error)
   }
+)
+
+const applyCardUpdate = (cardId: number) => {
+  applyCardUpdateExecute(cardId)
 }
 
-// 应用卡片组更新
-const applyDeckUpdate = async (acceptedChanges: { updateMeta: boolean; cardIds: number[] }) => {
-  if (!currentDeckDiff.value) return
-  
-  try {
-    const response = await MemoryService.acceptDeckChanges(
-      currentDeckDiff.value.deckId, 
+// 使用 useMutation 处理卡片组更新
+const { execute: applyDeckUpdateExecute } = useMutation(
+  (acceptedChanges: { updateMeta: boolean; cardIds: number[] }) => {
+    if (!currentDeckDiff.value) {
+      throw new Error('No deck diff available')
+    }
+    return MemoryService.acceptDeckChanges(
+      currentDeckDiff.value.deckId,
       acceptedChanges.cardIds
     )
-    
-    if (response.code === 200) {
+  },
+  {
+    showToast: false,
+    onSuccess: async (_, acceptedChanges) => {
       // 更新成功，移除更新标记
-      deckUpdateMap.value.set(currentDeckDiff.value.deckId, false)
-      
-      // 重新加载数据
-      await loadReviewQueue()
-      if (viewMode.value === 'list') {
-        await loadListCards(true)
+      if (currentDeckDiff.value) {
+        deckUpdateMap.value.set(currentDeckDiff.value.deckId, false)
       }
-      
+
+      // 重新加载数据
+      await refreshReviewQueue()
+      if (viewMode.value === 'list') {
+        resetListCards()
+      }
+
       // 关闭对话框
       showUpdateDiffDialog.value = false
       currentDeckDiff.value = null
-      
+
       console.log('Deck changes accepted successfully')
+    },
+    onError: (error) => {
+      console.error('Failed to accept deck changes:', error)
     }
-  } catch (error) {
-    console.error('Failed to accept deck changes:', error)
   }
+)
+
+const applyDeckUpdate = (acceptedChanges: { updateMeta: boolean; cardIds: number[] }) => {
+  if (!currentDeckDiff.value) return
+  applyDeckUpdateExecute(acceptedChanges)
 }
 
 // 检查卡片组是否有更新
@@ -307,16 +306,14 @@ const hasDeckUpdate = (deckId: number): boolean => {
 // 切换标签
 const switchTab = (tabValue: string) => {
   activeTab.value = tabValue
-  
+
   // 根据当前视图模式加载对应数据
   if (viewMode.value === 'review') {
     resetReview()
-    loadReviewQueue()
+    refreshReviewQueue()
   } else if (viewMode.value === 'list') {
     // 切换课程时重置列表分页状态
-    listLastId.value = undefined
-    listHasMore.value = true
-    loadListCards(true)
+    resetListCards()
   }
 }
 
@@ -328,7 +325,7 @@ const switchViewMode = (mode: 'review' | 'list' | 'manage') => {
     resetReview()
   } else if (mode === 'list') {
     // 切换到列表模式时加载列表数据
-    loadListCards(true)
+    resetListCards()
   }
 }
 
@@ -362,33 +359,29 @@ const revealAnswer = () => {
   showAnswer.value = true
 }
 
-// 提交复习结果
-const submitReview = async (result: ReviewResult) => {
-  if (!currentCard.value) return
-  
-  try {
-    const response = await MemoryService.reviewCard({
-      cardId: currentCard.value.id,
-      result: result,
-      timeSpent: 5
-    })
-    
-    if (response.code === 200) {
+// 使用 useMutation 处理复习提交
+const { execute: submitReviewExecute } = useMutation(
+  (params: { cardId: number; result: ReviewResult; timeSpent: number }) => {
+    return MemoryService.reviewCard(params)
+  },
+  {
+    showToast: false,
+    onSuccess: async (_, params) => {
       if (reviewSession.value) {
         reviewSession.value.reviewedCards++
-        if (result >= ReviewResult.GOOD) {
+        if (params.result >= ReviewResult.GOOD) {
           reviewSession.value.correctAnswers++
         }
         reviewSession.value.results.push({
-          cardId: currentCard.value.id,
-          result: result,
-          timeSpent: 5
+          cardId: params.cardId,
+          result: params.result,
+          timeSpent: params.timeSpent
         })
       }
-      
+
       // 从当前复习队列中移除已复习的卡片
-      reviewCards.value = reviewCards.value.filter(card => card.id !== currentCard.value?.id)
-      
+      reviewCards.value = reviewCards.value.filter(card => card.id !== params.cardId)
+
       // 检查是否还有卡片
       if (reviewCards.value.length === 0) {
         // 当前批次完成，尝试加载下一批
@@ -400,10 +393,22 @@ const submitReview = async (result: ReviewResult) => {
         }
         showAnswer.value = false
       }
+    },
+    onError: (error) => {
+      console.error('Failed to submit review:', error)
     }
-  } catch (error) {
-    console.error('Failed to submit review:', error)
   }
+)
+
+// 提交复习结果
+const submitReview = (result: ReviewResult) => {
+  if (!currentCard.value) return
+
+  submitReviewExecute({
+    cardId: currentCard.value.id,
+    result: result,
+    timeSpent: 5
+  })
 }
 
 // 下一张卡片
@@ -420,14 +425,14 @@ const nextCard = () => {
 // 完成复习
 const completeReview = async () => {
   isReviewing.value = false
-  
+
   if (reviewSession.value) {
     reviewSession.value.endTime = new Date().toISOString()
   }
-  
+
   // 重新加载复习队列，检查是否还有更多到期卡片
-  await loadReviewQueue()
-  
+  await refreshReviewQueue()
+
   // 如果还有到期卡片，自动开始下一轮复习
   if (currentCards.value.length > 0) {
     // 短暂延迟后自动开始，给用户一个喘息时间
@@ -512,50 +517,72 @@ const toggleSelectAll = (): void => {
   }
 }
 
-// 删除选中的卡片
-const deleteSelectedCards = async (): Promise<void> => {
-  if (selectedCards.value.length === 0) return
-  
-  try {
+// 使用 useMutation 处理删除卡片
+const { execute: deleteSelectedCardsExecute } = useMutation(
+  (cardIds: number[]) => {
     // TODO: 调用API删除卡片
-    console.log('删除卡片:', selectedCards.value)
-    
-    // 模拟删除操作
-    reviewCards.value = reviewCards.value.filter(card => !selectedCards.value.includes(card.id))
-    selectedCards.value = []
-    
-    // 刷新数据
-    await loadReviewQueue()
-  } catch (error) {
-    console.error('Failed to delete cards:', error)
+    console.log('删除卡片:', cardIds)
+    // 临时返回成功响应
+    return Promise.resolve({ code: 200, data: null, message: '删除成功' })
+  },
+  {
+    showToast: false,
+    onSuccess: async () => {
+      // 模拟删除操作
+      reviewCards.value = reviewCards.value.filter(card => !selectedCards.value.includes(card.id))
+      selectedCards.value = []
+
+      // 刷新数据
+      await refreshReviewQueue()
+    },
+    onError: (error) => {
+      console.error('Failed to delete cards:', error)
+    }
   }
+)
+
+// 删除选中的卡片
+const deleteSelectedCards = (): void => {
+  if (selectedCards.value.length === 0) return
+  deleteSelectedCardsExecute([...selectedCards.value])
 }
 
-// 重置选中卡片的学习进度
-const resetSelectedCards = async (): Promise<void> => {
-  if (selectedCards.value.length === 0) return
-  
-  try {
+// 使用 useMutation 处理重置卡片
+const { execute: resetSelectedCardsExecute } = useMutation(
+  (cardIds: number[]) => {
     // TODO: 调用API重置卡片进度
-    console.log('重置卡片进度:', selectedCards.value)
-    
-    // 模拟重置操作
-    selectedCards.value.forEach(cardId => {
-      const card = reviewCards.value.find(c => c.id === cardId)
-      if (card && card.srsState) {
-        card.srsState.repetitions = 0
-        card.srsState.intervalDays = 0
-        card.srsState.reviewDueAt = new Date().toISOString()
-      }
-    })
-    
-    selectedCards.value = []
-    
-    // 刷新数据
-    await loadReviewQueue()
-  } catch (error) {
-    console.error('Failed to reset cards:', error)
+    console.log('重置卡片进度:', cardIds)
+    // 临时返回成功响应
+    return Promise.resolve({ code: 200, data: null, message: '重置成功' })
+  },
+  {
+    showToast: false,
+    onSuccess: async (_, cardIds) => {
+      // 模拟重置操作
+      cardIds.forEach(cardId => {
+        const card = reviewCards.value.find(c => c.id === cardId)
+        if (card && card.srsState) {
+          card.srsState.repetitions = 0
+          card.srsState.intervalDays = 0
+          card.srsState.reviewDueAt = new Date().toISOString()
+        }
+      })
+
+      selectedCards.value = []
+
+      // 刷新数据
+      await refreshReviewQueue()
+    },
+    onError: (error) => {
+      console.error('Failed to reset cards:', error)
+    }
   }
+)
+
+// 重置选中卡片的学习进度
+const resetSelectedCards = (): void => {
+  if (selectedCards.value.length === 0) return
+  resetSelectedCardsExecute([...selectedCards.value])
 }
 
 // 立即复习选中的卡片

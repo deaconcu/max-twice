@@ -7,6 +7,7 @@
   import type { Post } from '@/types/post'
   import type { Course } from '@/types/course'
   import type { Node } from '@/types/node'
+  import { useMutation } from '@/composables/useMutation'
 
   import UserCard from '../user/UserCard.vue'
   import TextSelectionAI from '@/components/common/TextSelectionAI.vue'
@@ -118,62 +119,54 @@
     }
   )
 
-  const modifyContents = async (postingId: number, action: number): Promise<void> => {
-    try {
-      console.log('begin post')
-
-      const requestData = {
+  // 使用 useMutation 修改内容操作
+  const { execute: executeModifyContents } = useMutation(
+    (data: { postingId: number; action: number }) =>
+      contentServiceV1.operateContent({
         path: props.data.path,
         courseId: props.data.course.id,
-        postingId: postingId,
-        action: action
-      }
-
-      const response = await contentServiceV1.operateContent(requestData)
-      console.log(`response: ${JSON.stringify(response)}`)
-
-      if (response.code === 200) {
-        console.log('Form submitted successfully')
-        showSnackbar && showSnackbar(t('posting.operationSuccess'))
-
-        if (action === 1 || action === 2) {
+        postingId: data.postingId,
+        action: data.action
+      }),
+    {
+      successMessage: '操作成功',
+      onSuccess: (_, data) => {
+        if (data.action === 1 || data.action === 2) {
           emit('loadData', ['contents', 'chosenPosting'])
-        } else if (action === 3 || action === 4) {
+        } else if (data.action === 3 || data.action === 4) {
           emit('loadData', ['contents', 'fixedPostings'])
         }
       }
-    } catch (error) {
-      // todo
-      console.error('Error submitting form:', error)
     }
+  )
+
+  const modifyContents = async (postingId: number, action: number): Promise<void> => {
+    await executeModifyContents({ postingId, action })
   }
 
-  const upvote = async (posting: Post, type: VoteType): Promise<void> => {
-    try {
-      console.log('begin post')
-
-      const response = await upvoteServiceV1.upvote(posting.id, 0, type)
-      console.log(`response: ${JSON.stringify(response)}`)
-
-      if (response.code === 200) {
-        console.log('Form submitted successfully')
+  // 使用 useMutation 处理投票
+  const { execute: executeUpvote } = useMutation(
+    (data: { postingId: number; type: VoteType }) =>
+      upvoteServiceV1.upvote(data.postingId, 0, data.type),
+    {
+      onSuccess: (response, data) => {
         // 更新帖子的点赞统计数据
-        posting.twice = response.data.twiceUpvotes || 0
-        posting.helpful = response.data.helpfulUpvotes || 0
-        
+        props.posting.twice = response.twiceUpvotes || 0
+        props.posting.helpful = response.helpfulUpvotes || 0
+
         // 根据点赞状态设置 voteType
-        if (response.data.twiceUpvoted) {
-          posting.voteType = VoteType.TWICE
-        } else if (response.data.helpfulUpvoted) {
-          posting.voteType = VoteType.HELPFUL
+        if (response.twiceUpvoted) {
+          props.posting.voteType = VoteType.TWICE
+        } else if (response.helpfulUpvoted) {
+          props.posting.voteType = VoteType.HELPFUL
         } else {
-          posting.voteType = VoteType.NONE
+          props.posting.voteType = VoteType.NONE
         }
-        
-        if (posting.voteType === VoteType.NONE) posting.voteType = null
+
+        if (props.posting.voteType === VoteType.NONE) props.posting.voteType = null
 
         // 如果是"看两遍就懂"(type=2)，只有在学习模式下才标记节点完成
-        if (type === VoteType.TWICE && response.data.twiceUpvoted) {
+        if (data.type === VoteType.TWICE && response.twiceUpvoted) {
           if (props.isLearning) {
             console.log('看两遍就懂被点击，用户在学习模式下，标记节点完成')
             emit('markNodeCompleted')
@@ -182,10 +175,11 @@
           }
         }
       }
-    } catch (error) {
-      // todo
-      console.error('Error submitting form:', error)
     }
+  )
+
+  const upvote = async (posting: Post, type: VoteType): Promise<void> => {
+    await executeUpvote({ postingId: posting.id, type })
   }
 
   /**
@@ -206,35 +200,42 @@
     emit('switchTab', 'two', props.posting)
   }
 
+  // 使用 useMutation 重新生成内容
+  const { execute: executeRegenerateContent } = useMutation(
+    (nodeId: number) => adminAutoAuthorServiceV1.enqueue(nodeId),
+    {
+      successMessage: '内容重新生成任务已提交，请稍后查看结果',
+      onSuccess: () => {
+        showAdminMenu.value = false
+      }
+    }
+  )
+
   /**
    * 重新生成内容
    */
   const handleRegenerateContent = async (): Promise<void> => {
-    try {
-      await adminAutoAuthorServiceV1.enqueue(props.posting.nodeId)
-      showSnackbar && showSnackbar('内容重新生成任务已提交，请稍后查看结果')
-    } catch (error) {
-      showSnackbar && showSnackbar('提交内容重新生成任务失败')
-      console.error('Failed to regenerate content:', error)
-    } finally {
-      showAdminMenu.value = false
-    }
+    await executeRegenerateContent(props.posting.nodeId)
   }
+
+  // 使用 useMutation 重新生成记忆卡片
+  const { execute: executeRegenerateMemoryCards } = useMutation(
+    (postId: number) => memoryCardDeckServiceV1.createAIDeck(postId),
+    {
+      successMessage: '记忆卡片生成任务已提交，请稍后查看结果',
+      onSuccess: () => {
+        showAdminMenu.value = false
+      }
+    }
+  )
 
   /**
    * 重新生成记忆卡片
    */
   const handleRegenerateMemoryCards = async (): Promise<void> => {
-    try {
-      await memoryCardDeckServiceV1.createAIDeck(props.posting.id)
-      showSnackbar && showSnackbar('记忆卡片生成任务已提交，请稍后查看结果')
-    } catch (error) {
-      showSnackbar && showSnackbar('提交记忆卡片生成任务失败')
-      console.error('Failed to generate memory cards:', error)
-    } finally {
-      showAdminMenu.value = false
-    }
+    await executeRegenerateMemoryCards(props.posting.id)
   }
+
 </script>
 
 <template>

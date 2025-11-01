@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { inject, onMounted, ref } from 'vue'
+  import { inject, onMounted, ref, computed } from 'vue'
   import { courseServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { adminCourseServiceV1, adminSystemServiceV1 } from '@/services/api/v1/adminApiServiceV1'
   import { ContentState, ApprovalAction } from '@/types/enums'
@@ -7,6 +7,9 @@
   import type { MainCategory, SubCategory, CategoryMapping, StateOption } from '@/types/common'
   import CourseCard from './CourseCard.vue'
   import RejectBanDialog from './RejectBanDialog.vue'
+  import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+  import { useMutation } from '@/composables/useMutation'
+  import { useFetch } from '@/composables/useFetch'
 
   const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
@@ -78,7 +81,6 @@
   // 拒绝/屏蔽对话框
   const showReasonDialog = ref<boolean>(false)
   const selectedCourse = ref<Course | null>(null)
-  const submitting = ref<boolean>(false)
   const dialogType = ref<'reject' | 'ban'>('reject')
 
   // 编辑对话框相关
@@ -366,45 +368,44 @@
     }
   }
 
-  // 通过课程
-  const approveCourse = async (course: Course): Promise<void> => {
-    try {
-      const response = await courseServiceV1.approveCourse(course.id, ApprovalAction.APPROVE)
-
-      if (response.code === 200) {
-        showSnackbar && showSnackbar('课程已通过审核')
+  // 使用 useMutation 通过课程
+  const { execute: executeApproveCourse } = useMutation(
+    (courseId: number) => courseServiceV1.approveCourse(courseId, ApprovalAction.APPROVE),
+    {
+      successMessage: '课程已通过审核',
+      onSuccess: (_, courseId) => {
         // 从当前列表中移除（如果当前不是已通过状态）
         if (getCurrentState() !== ContentState.PUBLISHED) {
-          const index = courseList.value.findIndex((c) => c.id === course.id)
+          const index = courseList.value.findIndex((c) => c.id === courseId)
           if (index > -1) {
             courseList.value.splice(index, 1)
           }
         } else {
           // 更新状态
-          course.state = ContentState.PUBLISHED
+          const course = courseList.value.find((c) => c.id === courseId)
+          if (course) course.state = ContentState.PUBLISHED
         }
 
         // 如果当前在ID查询tab且查询的是同一个课程，更新搜索结果
-        if (
-          activeTab.value === 1 &&
-          searchedCourse.value &&
-          searchedCourse.value.id === course.id
-        ) {
+        if (activeTab.value === 1 && searchedCourse.value && searchedCourse.value.id === courseId) {
           searchedCourse.value.state = ContentState.PUBLISHED
         }
 
         // 如果当前在子课程查询tab且列表中包含该课程，更新状态
-        const subcourseIndex = subcourseList.value.findIndex((c) => c.id === course.id)
+        const subcourseIndex = subcourseList.value.findIndex((c) => c.id === courseId)
         if (subcourseIndex > -1) {
           subcourseList.value[subcourseIndex].state = ContentState.PUBLISHED
         }
-      } else {
-        showSnackbar && showSnackbar('操作失败: ' + (response.message|| '未知错误'))
-      }
-    } catch (error) {
-      console.error('Error approving course:', error)
-      showSnackbar && showSnackbar('操作失败: 服务器开小差了')
-    }
+      },
+      onError: (error: any) => {
+        showSnackbar && showSnackbar('操作失败: ' + (error?.message || '服务器开小差了'))
+      },
+    },
+  )
+
+  // 通过课程
+  const approveCourse = async (course: Course): Promise<void> => {
+    await executeApproveCourse(course.id)
   }
 
   // 显示屏蔽对话框
@@ -414,23 +415,19 @@
     showReasonDialog.value = true
   }
 
-  // 处理对话框确认
-  const handleConfirmAction = async (reason: string): Promise<void> => {
-    if (!selectedCourse.value) return
-
-    try {
-      submitting.value = true
-      const action = dialogType.value === 'ban' ? ApprovalAction.BAN : ApprovalAction.REJECT
-      const targetState = dialogType.value === 'ban' ? ContentState.BANNED : ContentState.REJECTED
-      const response = await courseServiceV1.approveCourse(selectedCourse.value.id, action, reason)
-
-      if (response.code === 200) {
-        const message = dialogType.value === 'ban' ? '已屏蔽' : '已拒绝'
+  // 使用 useMutation 处理拒绝/屏蔽
+  const { execute: executeRejectOrBan, loading: submitting } = useMutation(
+    (data: { courseId: number; action: string; reason: string }) =>
+      courseServiceV1.approveCourse(data.courseId, data.action, data.reason),
+    {
+      onSuccess: (_, data) => {
+        const message = data.action === ApprovalAction.BAN ? '已屏蔽' : '已拒绝'
+        const targetState = data.action === ApprovalAction.BAN ? ContentState.BANNED : ContentState.REJECTED
         showSnackbar && showSnackbar(message, 'success')
 
         // 从当前列表中移除（如果在对应状态tab中）
         const currentState = getCurrentState()
-        const index = courseList.value.findIndex((c) => c.id === selectedCourse.value!.id)
+        const index = courseList.value.findIndex((c) => c.id === data.courseId)
         if (index > -1) {
           if (currentState !== targetState) {
             courseList.value.splice(index, 1)
@@ -440,27 +437,35 @@
         }
 
         // 如果是搜索课程，更新状态
-        if (searchedCourse.value && searchedCourse.value.id === selectedCourse.value.id) {
+        if (searchedCourse.value && searchedCourse.value.id === data.courseId) {
           searchedCourse.value.state = targetState
         }
 
         // 更新子课程列表状态
-        const subcourseIndex = subcourseList.value.findIndex((c) => c.id === selectedCourse.value!.id)
+        const subcourseIndex = subcourseList.value.findIndex((c) => c.id === data.courseId)
         if (subcourseIndex > -1) {
           subcourseList.value[subcourseIndex].state = targetState
         }
 
         showReasonDialog.value = false
         selectedCourse.value = null
-      } else {
-        showSnackbar && showSnackbar('操作失败: ' + (response.message || '未知错误'), 'error')
-      }
-    } catch (error) {
-      console.error('Error performing action:', error)
-      showSnackbar && showSnackbar('操作失败: 服务器开小差了', 'error')
-    } finally {
-      submitting.value = false
-    }
+      },
+      onError: (error: any) => {
+        showSnackbar && showSnackbar('操作失败: ' + (error?.message || '服务器开小差了'), 'error')
+      },
+    },
+  )
+
+  // 处理对话框确认
+  const handleConfirmAction = async (reason: string): Promise<void> => {
+    if (!selectedCourse.value) return
+
+    const action = dialogType.value === 'ban' ? ApprovalAction.BAN : ApprovalAction.REJECT
+    await executeRejectOrBan({
+      courseId: selectedCourse.value.id,
+      action,
+      reason,
+    })
   }
 
   // 取消屏蔽课程

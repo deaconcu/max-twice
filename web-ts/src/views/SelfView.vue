@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import { userServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useUserStore } from '@/stores/user'
 import { PostType } from '@/types/enums'
+import { useFetch } from '@/composables/useFetch'
 import UserInfoTab from '@/components/user/UserInfoTab.vue'
 import LearningTab from '@/components/user/LearningTab.vue'
 import StatsTab from '@/components/user/StatsTab.vue'
@@ -78,24 +79,12 @@ const selected = computed(() => (route.query.tab as string) || 'info')
 // 当前渲染的组件
 const currentComponent = computed(() => tabComponents[selected.value])
 const currentProps = computed(() => getComponentProps(selected.value))
-const info: Ref<any> = ref({})
 
-// 加载用户信息
-const loadUser = async (): Promise<void> => {
-  console.log('load user')
-  try {
-    const response = await userServiceV1.getCurrentUser()
-
-    if (response.code === 401) {
-      console.log('not login')
-    } else if (response.code === 200) {
-      console.log('get data:', response.data)
-      info.value = response.data
-    }
-  } catch (error) {
-    console.error('Error get message:', error)
-  }
-}
+// 使用 useFetch 加载用户信息
+const { data: info, loading: loadingUser, execute: loadUser } = useFetch({
+  fetchFn: userServiceV1.getCurrentUser,
+  immediate: false  // 不自动加载，只在切换到 info 标签时才加载
+})
 
 // 标签页切换处理
 const onTabChange = (value: string): void => {

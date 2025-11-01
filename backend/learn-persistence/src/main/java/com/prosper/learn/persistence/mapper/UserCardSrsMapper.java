@@ -73,10 +73,10 @@ public interface UserCardSrsMapper {
 
     @Insert("INSERT INTO user_card_srs " +
             "(user_id, card_id, node_id, deck_id, deck_version, card_version_id, review_due_at, " +
-            "type, current_step, `interval`, lapse_old_interval, ease_factor, repetitions, lapse_count) " +
+            "type, current_step, `interval`, lapse_old_interval, ease_factor, repetitions, lapse_count, created_at, updated_at) " +
             "VALUES " +
             "(#{userId}, #{cardId}, #{nodeId}, #{deckId}, #{deckVersion}, #{cardVersionId}, #{reviewDueAt}, " +
-            "#{type}, #{currentStep}, #{interval}, #{lapseOldInterval}, #{easeFactor}, #{repetitions}, #{lapseCount})")
+            "#{type}, #{currentStep}, #{interval}, #{lapseOldInterval}, #{easeFactor}, #{repetitions}, #{lapseCount}, NOW(), NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserCardSrsDO state);
 
@@ -144,7 +144,7 @@ public interface UserCardSrsMapper {
           <foreach collection="states" item="state" separator=",">
               (#{state.userId}, #{state.cardId}, #{state.nodeId}, #{state.deckId}, #{state.deckVersion}, #{state.cardVersionId},
                #{state.reviewDueAt}, #{state.type}, #{state.currentStep}, #{state.interval}, #{state.lapseOldInterval},
-               #{state.easeFactor}, #{state.repetitions}, #{state.lapseCount}, #{state.createdAt}, #{state.updatedAt})
+               #{state.easeFactor}, #{state.repetitions}, #{state.lapseCount}, NOW(), NOW())
           </foreach>
           </script>
           """)
@@ -200,33 +200,69 @@ public interface UserCardSrsMapper {
     List<UserCardSrsDO> getByUserAndCourseWithPaging(long userId, long courseId, int limit, Long lastId);
 
     @Select({"<script>",
-            "SELECT srs.* FROM user_card_srs srs",
-            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
-            "WHERE srs.user_id = #{userId} AND srs.review_due_at &lt;= #{dueTime}",
-            "AND srs.type IN (1, 2, 3)",  // LEARNING, REVIEW, RELEARNING
-            "AND deck.state = " + PUBLISHED_VALUE,
-            "<if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
+            "(",
+            "  SELECT srs.* FROM user_card_srs srs",
+            "  INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
+            "  WHERE srs.user_id = #{userId} AND srs.review_due_at &lt;= #{dueTime}",
+            "  AND srs.type IN (1, 2, 3)",  // LEARNING, REVIEW, RELEARNING
+            "  AND deck.state = " + PUBLISHED_VALUE,
+            "  <if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
+            "  ORDER BY",
+            "    CASE srs.type WHEN 1 THEN 0 WHEN 3 THEN 1 WHEN 2 THEN 2 ELSE 3 END,",
+            "    srs.review_due_at ASC,",
+            "    srs.id ASC",
+            "  LIMIT #{limit}",
+            ")",
+            "UNION ALL",
+            "(",
+            "  SELECT srs.* FROM user_card_srs srs",
+            "  INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
+            "  WHERE srs.user_id = #{userId} AND srs.type = 0",  // NEW cards
+            "  AND deck.state = " + PUBLISHED_VALUE,
+            "  <if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
+            "  ORDER BY srs.id ASC",
+            "  LIMIT #{limit}",
+            ")",
             "ORDER BY",
-            "  CASE srs.type WHEN 1 THEN 0 WHEN 3 THEN 1 WHEN 2 THEN 2 ELSE 3 END,",  // 优先级: LEARNING > RELEARNING > REVIEW
-            "  srs.review_due_at ASC,",
-            "  srs.id ASC",
+            "  CASE type WHEN 1 THEN 0 WHEN 3 THEN 1 WHEN 2 THEN 2 WHEN 0 THEN 3 ELSE 4 END,",
+            "  review_due_at ASC,",
+            "  id ASC",
             "LIMIT #{limit}",
             "</script>"})
     List<UserCardSrsDO> getDueCardsForReviewWithPaging(long userId, LocalDateTime dueTime, int limit, Long lastId);
 
     @Select({"<script>",
-            "SELECT srs.* FROM user_card_srs srs",
-            "INNER JOIN user_card_in_course ucc ON srs.card_id = ucc.card_id",
-            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
-            "WHERE srs.user_id = #{userId} AND ucc.course_id = #{courseId}",
-            "AND srs.review_due_at &lt;= #{dueTime}",
-            "AND srs.type IN (1, 2, 3)",  // LEARNING, REVIEW, RELEARNING
-            "AND deck.state = " + PUBLISHED_VALUE,
-            "<if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
+            "(",
+            "  SELECT srs.* FROM user_card_srs srs",
+            "  INNER JOIN user_card_in_course ucc ON srs.card_id = ucc.card_id",
+            "  INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
+            "  WHERE srs.user_id = #{userId} AND ucc.course_id = #{courseId}",
+            "  AND srs.review_due_at &lt;= #{dueTime}",
+            "  AND srs.type IN (1, 2, 3)",  // LEARNING, REVIEW, RELEARNING
+            "  AND deck.state = " + PUBLISHED_VALUE,
+            "  <if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
+            "  ORDER BY",
+            "    CASE srs.type WHEN 1 THEN 0 WHEN 3 THEN 1 WHEN 2 THEN 2 ELSE 3 END,",
+            "    srs.review_due_at ASC,",
+            "    srs.id ASC",
+            "  LIMIT #{limit}",
+            ")",
+            "UNION ALL",
+            "(",
+            "  SELECT srs.* FROM user_card_srs srs",
+            "  INNER JOIN user_card_in_course ucc ON srs.card_id = ucc.card_id",
+            "  INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
+            "  WHERE srs.user_id = #{userId} AND ucc.course_id = #{courseId}",
+            "  AND srs.type = 0",  // NEW cards
+            "  AND deck.state = " + PUBLISHED_VALUE,
+            "  <if test='lastId != null'>AND srs.id &gt; #{lastId}</if>",
+            "  ORDER BY srs.id ASC",
+            "  LIMIT #{limit}",
+            ")",
             "ORDER BY",
-            "  CASE srs.type WHEN 1 THEN 0 WHEN 3 THEN 1 WHEN 2 THEN 2 ELSE 3 END,",  // 优先级
-            "  srs.review_due_at ASC,",
-            "  srs.id ASC",
+            "  CASE type WHEN 1 THEN 0 WHEN 3 THEN 1 WHEN 2 THEN 2 WHEN 0 THEN 3 ELSE 4 END,",
+            "  review_due_at ASC,",
+            "  id ASC",
             "LIMIT #{limit}",
             "</script>"})
     List<UserCardSrsDO> getDueCardsByCourseForReviewWithPaging(long userId, long courseId, LocalDateTime dueTime, int limit, Long lastId);

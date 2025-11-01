@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, ref } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { subscriptionServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useUserStore } from '@/stores/user'
+import { useFetch } from '@/composables/useFetch'
+import { useMutation } from '@/composables/useMutation'
 import type { UserCourse } from '@/types/userCourse'
 import draggable from 'vuedraggable'
-
-// 类型定义已移至 @/types/userCourse
 
 // Props
 const props = defineProps<{
@@ -31,56 +31,48 @@ const subscriptionsCopy: Ref<UserCourse[]> = ref([])
 const courseDescription: Ref<string> = ref('')
 const courseHoveringIndex: Ref<number> = ref(-1)
 
-// 加载订阅的课程
-const loadSubscription = async (): Promise<void> => {
-  console.log('load subscription')
-  console.log('targetUserId:', targetUserId.value)
-  console.log('userStore.currentUser?.id:', userStore.currentUser?.id)
-  console.log('props.userId:', props.userId)
-  console.log('props.editable:', props.editable)
-
-  try {
-    const response = await subscriptionServiceV1.getUserSubscriptions(targetUserId.value)
-
-    if (response.code === 401) {
-      console.log('not login')
-    } else if (response.code === 200) {
-      console.log(`get data:${JSON.stringify(response.data)}`)
-      subscriptions.value = response.data
-      subscriptionsCopy.value = JSON.parse(JSON.stringify(response.data))
-    } else {
-      console.log('Unexpected response code:', response.code)
-    }
-  } catch (error) {
-    console.error('Error get message:', error)
+// 使用 useFetch 加载订阅列表
+const { execute: loadSubscription } = useFetch<UserCourse[]>({
+  fetchFn: () => subscriptionServiceV1.getUserSubscriptions(targetUserId.value),
+  immediate: true,
+  onSuccess: (data) => {
+    console.log('load subscription success')
+    console.log(`get data:${JSON.stringify(data)}`)
+    subscriptions.value = data
+    subscriptionsCopy.value = JSON.parse(JSON.stringify(data))
+  },
+  onError: (error) => {
+    console.error('Error get subscription:', error)
   }
-}
+})
 
-// 保存订阅修改（仅在可编辑时可用）
-const saveSubscription = async (): Promise<void> => {
-  if (!canEdit.value) return
-
-  console.log('save subscription')
-  try {
-    const ids = subscriptions.value.map((item) => item.id).join(',')
-    const response = await subscriptionServiceV1.updateSubscriptions(ids)
-
-    if (response.code === 401) {
-      console.log('not login')
-    } else if (response.code === 200) {
-      showSnackbar('修改成功！')
+// 使用 useMutation 保存订阅
+const { execute: saveSubscription, loading: saving } = useMutation(
+  (ids: string) => subscriptionServiceV1.updateSubscriptions(ids),
+  {
+    successMessage: '修改成功！',
+    onSuccess: (result) => {
       // 更新 currentUser 中的 subscriptions
       if (userStore.currentUser) {
         userStore.setUser({
           ...userStore.currentUser,
-          subscriptions: response.data
+          subscriptions: result
         })
       }
       loadSubscription()
+    },
+    onError: (error) => {
+      console.error('Error saving subscription:', error)
     }
-  } catch (error) {
-    console.error('Error get message:', error)
   }
+)
+
+// 保存订阅修改（仅在可编辑时可用）
+const handleSaveSubscription = async (): Promise<void> => {
+  if (!canEdit.value) return
+  console.log('save subscription')
+  const ids = subscriptions.value.map((item) => item.id).join(',')
+  await saveSubscription(ids)
 }
 
 // 恢复订阅修改（仅在可编辑时可用）
@@ -98,11 +90,6 @@ const handleCourseHover = (element: UserCourse, index: number): void => {
 // 暴露函数给父组件调用
 defineExpose({
   loadSubscription,
-})
-
-// 组件挂载时自动加载数据
-onMounted(() => {
-  loadSubscription()
 })
 </script>
 
@@ -177,7 +164,8 @@ onMounted(() => {
         color="teal"
         density="comfortable"
         class="mr-4 mt-2"
-        @click="saveSubscription"
+        :loading="saving"
+        @click="handleSaveSubscription"
       >
         保存
       </v-btn>

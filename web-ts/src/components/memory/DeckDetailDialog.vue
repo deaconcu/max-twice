@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import type { MemoryCardDeck, DeckDetail, MemoryCardView, DeckUpdateDiff } from '@/types/memoryCard'
@@ -7,6 +7,8 @@ import { MemoryService } from '@/services/memoryService'
 import DeckUpdateDiffDialog from '@/components/memory/DeckUpdateDiffDialog.vue'
 import { cardFrontRules, cardBackRules } from '@/utils/validationRules'
 import { CARD_VALIDATION } from '@/types/validation'
+import { useFetch } from '@/composables/useFetch'
+import { useMutation } from '@/composables/useMutation'
 
 interface Props {
   modelValue: boolean
@@ -28,7 +30,6 @@ const userStore = useUserStore()
 const currentUserId = computed(() => userStore.currentUser?.id)
 
 const dialog = ref(false)
-const loading = ref(false)
 const deckDetail = ref<DeckDetail | null>(null)
 const selectedCard = ref<MemoryCardView | null>(null)
 const showCardDetail = ref(false)
@@ -43,6 +44,120 @@ const diffTab = ref('all') // diff页面内的子tab: 'all' | 'modified' | 'adde
 const isOwnDeck = computed(() => {
   return props.deck?.creator?.id === currentUserId.value
 })
+
+// 使用 useFetch 加载卡片组详情
+const { data: deckDetailData, loading, refresh: refreshDeckDetail } = useFetch({
+  fetchFn: () => props.deck ? MemoryService.getDeckDetail(props.deck.id) : Promise.reject('No deck'),
+  immediate: false,
+  onSuccess: async (data) => {
+    deckDetail.value = data
+
+    // 获取deck所属的nodeId
+    const nodeId = deckDetail.value?.nodeId
+    if (nodeId && currentUserId.value) {
+      // 获取用户在这个node下学习的所有卡片
+      const nodeCardsResponse = await MemoryService.getUserCardsByNode(nodeId)
+      if (nodeCardsResponse.code === 200) {
+        studyCards.value = nodeCardsResponse.data
+      }
+    }
+
+    console.log('Deck detail loaded:', {
+      totalCards: data.cards.length,
+      studyCards: studyCards.value.length,
+      cardsWithUpdates: data.cards.filter(card => card.hasUpdate).length
+    })
+  }
+})
+
+// 使用 useMutation 处理点赞
+const { execute: upvoteDeck } = useMutation(
+  (deckId: number) => MemoryService.upvoteDeck(deckId),
+  {
+    showToast: false,
+    onSuccess: (result) => {
+      if (props.deck) {
+        props.deck.hasUpvoted = result.upvoted
+        props.deck.upvoteCount = result.upvotes
+      }
+    }
+  }
+)
+
+// 使用 useMutation 处理添加卡片到学习
+const { execute: addCardToStudyMutation } = useMutation(
+  (cardId: number) => MemoryService.addCardToStudy(cardId),
+  {
+    successMessage: '添加成功',
+    onSuccess: (result, cardId) => {
+      // 更新卡片的用户状态
+      const card = deckDetail.value?.cards.find(c => c.id === cardId)
+      if (card) {
+        card.srsState = result
+      }
+    }
+  }
+)
+
+// 使用 useMutation 处理删除卡片
+const { execute: deleteCardMutation } = useMutation(
+  (cardId: number) => MemoryService.deleteCard(cardId),
+  {
+    successMessage: '删除成功',
+    confirm: true,
+    confirmMessage: '确定要删除这张卡片吗？',
+    onSuccess: (result, cardId) => {
+      // 从本地数据中移除
+      if (deckDetail.value) {
+        const index = deckDetail.value.cards.findIndex(c => c.id === cardId)
+        if (index > -1) {
+          deckDetail.value.cards.splice(index, 1)
+          deckDetail.value.cardCount--
+        }
+      }
+    }
+  }
+)
+
+// 使用 useMutation 处理更新卡片
+const { execute: updateCardMutation, loading: updatingCard } = useMutation(
+  ({ cardId, data }: { cardId: number, data: { id: number, front: string, back: string } }) =>
+    MemoryService.updateCard(cardId, data),
+  {
+    successMessage: '更新成功',
+    onSuccess: () => {
+      showEditDialog.value = false
+      refreshDeckDetail()
+    }
+  }
+)
+
+// 使用 useMutation 处理创建卡片
+const { execute: createCardMutation, loading: creatingCard } = useMutation(
+  (data: { deckId: number, front: string, back: string }) => MemoryService.createCard(data),
+  {
+    successMessage: '创建成功',
+    onSuccess: (result) => {
+      if (deckDetail.value) {
+        deckDetail.value.cards.push(result)
+        deckDetail.value.cardCount++
+      }
+      showEditDialog.value = false
+    }
+  }
+)
+
+// 使用 useMutation 处理接受更新
+const { execute: acceptUpdateMutation } = useMutation(
+  ({ deckId, cardIds }: { deckId: number, cardIds: number[] }) =>
+    MemoryService.acceptDeckChanges(deckId, cardIds),
+  {
+    successMessage: '更新成功',
+    onSuccess: () => {
+      refreshDeckDetail()
+    }
+  }
+)
 
 // 前端计算差异 - 新增的卡片（deck中有但用户没学习的）
 const addedDiffs = computed(() => {
@@ -134,7 +249,7 @@ watch([modifiedDiffs, addedDiffs, nodeOnlyCards], () => {
 watch(() => props.modelValue, (newVal) => {
   dialog.value = newVal
   if (newVal && props.deck) {
-    loadDeckDetail()
+    refreshDeckDetail()
   }
 })
 
@@ -142,42 +257,8 @@ watch(dialog, (newVal) => {
   emit('update:modelValue', newVal)
 })
 
-const loadDeckDetail = async () => {
-  if (!props.deck) return
-  
-  loading.value = true
-  try {
-    const response = await MemoryService.getDeckDetail(props.deck.id)
-    if (response.code === 200) {
-      deckDetail.value = response.data
-      
-      // 获取deck所属的nodeId
-      const nodeId = deckDetail.value.nodeId 
-      if (nodeId && currentUserId.value) {
-        // 获取用户在这个node下学习的所有卡片
-        const nodeCardsResponse = await MemoryService.getUserCardsByNode(nodeId)
-        if (nodeCardsResponse.code === 200) {
-          studyCards.value = nodeCardsResponse.data
-        }
-      }
-      
-      console.log('Deck detail loaded:', {
-        totalCards: response.data.cards.length,
-        studyCards: studyCards.value.length,
-        cardsWithUpdates: response.data.cards.filter(card => card.hasUpdate).length
-      })
-    }
-  } catch (error) {
-    console.error('Failed to load deck detail:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-// 当切换到diff tab时，不需要额外加载数据
 const onTabChange = (tab: string) => {
   currentTab.value = tab
-  // diff数据完全基于前端计算，无需额外加载
 }
 
 const viewCard = (card: MemoryCardView) => {
@@ -192,23 +273,14 @@ const flipCard = () => {
 
 const addToStudy = async () => {
   if (!props.deck) return
-  
+
   // TODO: 调用API添加整个卡片组到学习计划
   emit('addToStudy', props.deck)
   dialog.value = false
 }
 
 const addCardToStudy = async (card: MemoryCardView) => {
-  try {
-    const response = await MemoryService.addCardToStudy(card.id)
-    if (response.code === 200) {
-      // 更新卡片的用户状态
-      card.srsState = response.data
-      // TODO: 显示成功消息
-    }
-  } catch (error) {
-    console.error('Failed to add card to study:', error)
-  }
+  await addCardToStudyMutation(card.id)
 }
 
 // 卡片管理功能
@@ -237,59 +309,30 @@ const editCard = (card: MemoryCardView) => {
 
 // 删除卡片
 const deleteCard = async (card: MemoryCardView) => {
-  if (!confirm('确定要删除这张卡片吗？')) return
-  
-  try {
-    const response = await MemoryService.deleteCard(card.id)
-    if (response.code === 200) {
-      // 从本地数据中移除
-      if (deckDetail.value) {
-        const index = deckDetail.value.cards.findIndex(c => c.id === card.id)
-        if (index > -1) {
-          deckDetail.value.cards.splice(index, 1)
-          deckDetail.value.cardCount--
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Failed to delete card:', error)
-  }
+  await deleteCardMutation(card.id)
 }
 
 // 保存卡片
 const saveCard = async () => {
   if (!props.deck || !editCardFront.value.trim() || !editCardBack.value.trim()) return
-  
-  try {
-    if (editingCard.value) {
-      // 更新现有卡片
-      const response = await MemoryService.updateCard(editingCard.value.id, {
+
+  if (editingCard.value) {
+    // 更新现有卡片
+    await updateCardMutation({
+      cardId: editingCard.value.id,
+      data: {
         id: editingCard.value.id,
         front: editCardFront.value,
         back: editCardBack.value
-      })
-      
-      if (response.code === 200) {
-        editingCard.value.front = editCardFront.value
-        editingCard.value.back = editCardBack.value
       }
-    } else {
-      // 创建新卡片
-      const response = await MemoryService.createCard({
-        deckId: props.deck.id,
-        front: editCardFront.value,
-        back: editCardBack.value
-      })
-      
-      if (response.code === 200 && deckDetail.value) {
-        deckDetail.value.cards.push(response.data)
-        deckDetail.value.cardCount++
-      }
-    }
-    
-    showEditDialog.value = false
-  } catch (error) {
-    console.error('Failed to save card:', error)
+    })
+  } else {
+    // 创建新卡片
+    await createCardMutation({
+      deckId: props.deck.id,
+      front: editCardFront.value,
+      back: editCardBack.value
+    })
   }
 }
 
@@ -312,10 +355,6 @@ const closeDialog = () => {
 // 跳转到更新差异标签页
 const goToDiffTab = () => {
   currentTab.value = 'diff'
-  // 如果还没有加载diff数据，则加载
-  if (!deckDiff.value && props.deck) {
-    loadDeckDiff()
-  }
 }
 
 // Diff相关方法
@@ -340,86 +379,45 @@ const getDiffTypeColor = (type: string): string => {
 // 显示详细差异对话框
 const showDiffDialog = () => {
   // 触发显示DeckUpdateDiffDialog
-  emit('showDiffDialog', deckDiff.value)
+  // emit('showDiffDialog', deckDiff.value)
 }
 
 // 接受单个卡片更新
 const acceptUpdate = async (cardId: number) => {
-  try {
-    await MemoryService.acceptDeckChanges(props.deck!.id, [cardId])
-    // 重新加载数据
-    loadDeckDetail()
-    loadDeckDiff()
-  } catch (error) {
-    console.error('Failed to accept update:', error)
-  }
+  if (!props.deck) return
+  await acceptUpdateMutation({ deckId: props.deck.id, cardIds: [cardId] })
 }
 
 // 添加单个卡片到学习（diff界面用）
 const addCardToStudyFromDiff = async (cardId: number) => {
-  try {
-    await MemoryService.acceptDeckChanges(props.deck!.id, [cardId])
-    // 重新加载数据
-    loadDeckDetail()
-    loadDeckDiff()
-  } catch (error) {
-    console.error('Failed to add card to study:', error)
-  }
+  if (!props.deck) return
+  await acceptUpdateMutation({ deckId: props.deck.id, cardIds: [cardId] })
 }
 
 // 移除学习记录
 const removeFromStudy = async (cardId: number) => {
-  try {
-    // TODO: 实现移除学习记录的API
-    console.log('Remove card from study:', cardId)
-    // 重新加载数据
-    loadDeckDetail()
-  } catch (error) {
-    console.error('Failed to remove from study:', error)
-  }
+  // TODO: 实现移除学习记录的API
+  console.log('Remove card from study:', cardId)
+  refreshDeckDetail()
 }
 
 // 接受所有更新
 const acceptAllChanges = async () => {
-  try {
-    await MemoryService.acceptDeckChanges(props.deck!.id, [])
-    // 重新加载数据
-    loadDeckDetail()
-    loadDeckDiff()
-  } catch (error) {
-    console.error('Failed to accept all changes:', error)
-  }
+  if (!props.deck) return
+  await acceptUpdateMutation({ deckId: props.deck.id, cardIds: [] })
 }
 
 // 添加所有新卡片
 const addAllNewCards = async () => {
-  try {
-    const addedCardIds = addedDiffs.value.map(diff => diff.cardId)
-    await MemoryService.acceptDeckChanges(props.deck!.id, addedCardIds)
-    // 重新加载数据
-    loadDeckDetail()
-    loadDeckDiff()
-  } catch (error) {
-    console.error('Failed to add all new cards:', error)
-  }
+  if (!props.deck) return
+  const addedCardIds = addedDiffs.value.map(diff => diff.cardId)
+  await acceptUpdateMutation({ deckId: props.deck.id, cardIds: addedCardIds })
 }
 
 // 处理点赞
 const handleUpvote = async () => {
   if (!props.deck) return
-
-  try {
-    const response = await MemoryService.upvoteDeck(props.deck.id)
-    if (response.code === 200) {
-      // 更新本地状态
-      if (props.deck) {
-        props.deck.hasUpvoted = response.data.upvoted
-        props.deck.upvoteCount = response.data.upvotes
-      }
-    }
-  } catch (error) {
-    console.error('Failed to upvote deck:', error)
-  }
+  await upvoteDeck(props.deck.id)
 }
 </script>
 

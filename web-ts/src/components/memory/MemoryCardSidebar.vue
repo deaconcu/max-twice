@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import type { Post } from '@/types/post'
-import type { MemoryCardDeck, DeckDetail, GetDecksQuery } from '@/types/memoryCard'
+import type { MemoryCardDeck } from '@/types/memoryCard'
 import { DeckState } from '@/types/memoryCard'
 import { MemoryService } from '@/services/memoryService'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useMutation } from '@/composables/useMutation'
 
 interface Props {
   post: Post
@@ -22,75 +24,75 @@ const emit = defineEmits<Emits>()
 const { t } = useI18n()
 const userStore = useUserStore()
 
-const decks = ref<MemoryCardDeck[]>([])
-const loading = ref(false)
 const sortBy = ref<'score' | 'createdAt' | 'upvoteCount'>('score')
 const showAuthorOnly = ref(false)
 const showMyOnly = ref(false)
-const page = ref(1)
-const hasMore = ref(true)
 
-const loadDecks = async (reset = false) => {
-  if (loading.value) return
-
-  loading.value = true
-
-  try {
-    // 构建查询参数
+// 构建 fetchFn
+const buildFetchFn = () => {
+  return (params: any) => {
     const queryParams = {
       sortBy: sortBy.value,
       sortOrder: 'desc',
-      limit: 20,
-      lastScore: reset || !decks.value?.length ? undefined : decks.value[decks.value.length - 1]?.upvoteCount,
-      lastId: reset || !decks.value?.length ? undefined : decks.value[decks.value.length - 1]?.id
+      limit: params.limit,
+      lastScore: params.lastScore,
+      lastId: params.lastId
     }
 
     // 根据选中的标签调用不同的接口
-    let response
     if (showAuthorOnly.value) {
-      // 需求2: 获取帖子创建者提交的卡片组
-      response = await MemoryService.getPostCreatorDeck(props.post.id, queryParams)
+      return MemoryService.getPostCreatorDeck(props.post.id, queryParams)
     } else if (showMyOnly.value) {
-      // 需求3: 获取用户自己在指定帖子下提交的卡片组
-      response = await MemoryService.getMyPostDeck(props.post.id, queryParams)
+      return MemoryService.getMyPostDeck(props.post.id, queryParams)
     } else {
-      // 需求1: 获取帖子下的公共卡片组列表
-      response = await MemoryService.getPostPublicDecks(props.post.id, queryParams)
+      return MemoryService.getPostPublicDecks(props.post.id, queryParams)
     }
-    
-    if (response.code === 200) {
-      const responseData = response.data
-      
-      if (reset || !decks.value) {
-        decks.value = responseData.items || []
-        page.value = 1
-      } else {
-        decks.value.push(...(responseData.items || []))
-      }
-      
-      hasMore.value = responseData.hasMore || false
-      if (!reset) page.value++
-    } else {
-      // API 返回错误状态码时，确保 decks.value 是数组
-      if (reset || !decks.value) {
-        decks.value = []
-      }
-    }
-    
-  } catch (error) {
-    console.error('Failed to load decks:', error)
-    // 发生错误时，确保 decks.value 是数组
-    if (reset || !decks.value) {
-      decks.value = []
-    }
-  } finally {
-    loading.value = false
   }
 }
 
+// 使用 useInfiniteScroll 处理卡片组列表
+const { items: decks, loading, hasMore, loadMore: loadMoreDecks, reset } = useInfiniteScroll({
+  fetchFn: buildFetchFn(),
+  getNextParams: (lastItem, currentParams) => ({
+    lastId: lastItem.id,
+    lastScore: lastItem.upvoteCount || 0,
+    limit: currentParams.limit
+  }),
+  initialParams: {
+    lastId: 0,
+    lastScore: 0,
+    limit: 20
+  }
+})
+
+// 监听筛选条件变化，重新加载数据
+watch([sortBy, showAuthorOnly, showMyOnly], () => {
+  // 更新 fetchFn 并重置列表
+  const newFetchFn = buildFetchFn()
+  // 由于 fetchFn 已经改变，需要通过 reset 重新加载
+  reset()
+  // 手动触发第一次加载
+  loadMoreDecks((() => {}) as any)
+})
+
+// 使用 useMutation 处理点赞
+const { execute: upvoteDeck } = useMutation(
+  (deckId: number) => MemoryService.upvoteDeck(deckId),
+  {
+    showToast: false, // 点赞不显示提示
+    onSuccess: (result, deckId) => {
+      // 更新本地状态
+      const deck = decks.value.find(d => d.id === deckId)
+      if (deck) {
+        deck.hasUpvoted = result.upvoted
+        deck.upvoteCount = result.upvotes
+      }
+    }
+  }
+)
+
 const handleSort = (newSortBy: typeof sortBy.value) => {
   sortBy.value = newSortBy
-  loadDecks(true)
 }
 
 const handleFilterToggle = () => {
@@ -98,7 +100,6 @@ const handleFilterToggle = () => {
   if (showAuthorOnly.value) {
     showMyOnly.value = false
   }
-  loadDecks(true)
 }
 
 const handleMyFilterToggle = () => {
@@ -106,13 +107,11 @@ const handleMyFilterToggle = () => {
   if (showMyOnly.value) {
     showAuthorOnly.value = false
   }
-  loadDecks(true)
 }
 
 const handleShowAll = () => {
   showAuthorOnly.value = false
   showMyOnly.value = false
-  loadDecks(true)
 }
 
 const addDeckToStudy = (deck: MemoryCardDeck) => {
@@ -128,21 +127,20 @@ const viewDeckDetail = (deck: MemoryCardDeck) => {
 // 处理点赞
 const handleUpvote = async (deck: MemoryCardDeck, event: Event) => {
   event.stopPropagation() // 阻止事件冒泡
-  try {
-    const response = await MemoryService.upvoteDeck(deck.id)
-    if (response.code === 200) {
-      // 更新本地状态 - 适配后端返回的字段名
-      deck.hasUpvoted = response.data.upvoted
-      deck.upvoteCount = response.data.upvotes
-    }
-  } catch (error) {
-    console.error('Failed to upvote deck:', error)
-  }
+  await upvoteDeck(deck.id)
 }
 
 // 切换到"我提交的"标签
 const switchToMyDecks = () => {
   handleMyFilterToggle()
+}
+
+// 加载更多（用于手动触发）
+const loadDecks = async (resetList = false) => {
+  if (resetList) {
+    reset()
+  }
+  await loadMoreDecks((() => {}) as any)
 }
 
 // 获取状态显示文本
@@ -166,10 +164,6 @@ const getStateColor = (state: number) => {
     default: return 'grey'
   }
 }
-
-onMounted(() => {
-  loadDecks(true)
-})
 
 // 暴露方法和变量给父组件
 defineExpose({

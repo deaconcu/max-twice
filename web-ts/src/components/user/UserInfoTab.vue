@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, ref } from 'vue'
+import { computed, inject, ref } from 'vue'
 import type { Ref } from 'vue'
 import { userServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useUserStore } from '@/stores/user'
+import { useFetch } from '@/composables/useFetch'
+import { useMutation } from '@/composables/useMutation'
 import type { User } from '@/types/user'
 
 // Props
@@ -25,55 +27,47 @@ const isSelf = computed(() => !props.username || props.username === userStore.cu
 const canEdit = computed(() => props.editable && isSelf.value)
 
 // 组件内部数据
-const info: Ref<User> = ref()
 const displayModifyName: Ref<boolean> = ref(false)
 const displayModifyIntro: Ref<boolean> = ref(false)
-const loading: Ref<boolean> = ref(true)
 
-// 加载用户信息
-const loadUser = async (): Promise<void> => {
-  console.log('load user')
-  try {
-    loading.value = true
-    const response = isSelf.value
-      ? await userServiceV1.getCurrentUser()
-      : await userServiceV1.getUser(targetUsername.value as string)
-
-    if (response.code === 401) {
-      console.log('not login')
-    } else if (response.code === 200) {
-      console.log(`get data:${JSON.stringify(response.data)}`)
-      info.value = response.data
-    }
-  } catch (error) {
+// 使用 useFetch 加载用户信息
+const {
+  data: info,
+  loading,
+  execute: loadUser
+} = useFetch<User>({
+  fetchFn: () => isSelf.value
+    ? userServiceV1.getCurrentUser()
+    : userServiceV1.getUser(targetUsername.value as string),
+  immediate: true,
+  onSuccess: (data) => {
+    console.log('load user success')
+    console.log(`get data:${JSON.stringify(data)}`)
+  },
+  onError: (error) => {
     console.error('Error get user:', error)
     showSnackbar('加载用户信息失败')
-  } finally {
-    loading.value = false
   }
-}
+})
+
+// 使用 useMutation 更新用户信息
+const { execute: updateUserInfo, loading: updating } = useMutation(
+  (data: { name: string; biography: string }) =>
+    userServiceV1.updateCurrentUser(data.name, data.biography),
+  {
+    successMessage: '修改成功！',
+    onSuccess: loadUser
+  }
+)
 
 // 更新用户信息（仅在可编辑时可用）
 const updateUser = async (): Promise<void> => {
   if (!canEdit.value) return
 
-  console.log('update user')
-  try {
-    const response = await userServiceV1.updateCurrentUser(info.value.name, info.value.biography)
-
-    if (response.code === 401) {
-      console.log('not login')
-      showSnackbar('请先登录')
-    } else if (response.code === 200) {
-      showSnackbar('修改成功！')
-      await loadUser()
-    } else {
-      showSnackbar('修改失败')
-    }
-  } catch (error) {
-    console.error('Error update user:', error)
-    showSnackbar('修改失败')
-  }
+  await updateUserInfo({
+    name: info.value.name,
+    biography: info.value.biography
+  })
 }
 
 // 修改名称
@@ -87,11 +81,6 @@ const onModifyIntro = (): void => {
   displayModifyIntro.value = false
   updateUser()
 }
-
-// 组件挂载时加载数据
-onMounted(() => {
-  loadUser()
-})
 </script>
 
 <template>

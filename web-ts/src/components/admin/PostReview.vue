@@ -1,20 +1,17 @@
 <script setup lang="ts">
-import { inject, onMounted, ref, computed } from 'vue'
+import { inject, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { postServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { adminPostServiceV1 } from '@/services/api/v1/adminApiServiceV1'
 import { ContentState, PostType, ApprovalAction } from '@/types/enums'
 import type { Post } from '@/types/post'
 import RejectBanDialog from './RejectBanDialog.vue'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useMutation } from '@/composables/useMutation'
 
 const { t } = useI18n()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
-const allPostList = ref<Post[]>([])
 const currentTab = ref<string>('pending')
-const loading = ref<boolean>(false)
-const hasMore = ref<boolean>(true)
-const pageSize = 20
 
 // 筛选条件
 const filterNodeId = ref<number | undefined>(undefined)
@@ -24,7 +21,6 @@ const isFilterMode = ref<boolean>(false)
 // 拒绝/屏蔽对话框
 const showReasonDialog = ref<boolean>(false)
 const currentPost = ref<Post | null>(null)
-const submitting = ref<boolean>(false)
 const dialogType = ref<'reject' | 'ban'>('reject')
 
 // 标签配置
@@ -67,151 +63,78 @@ const tabs: TabConfig[] = [
   }
 ]
 
-// 直接显示当前tab的数据，不需要过滤
-const postList = computed<Post[]>(() => {
-  return allPostList.value
-})
-
-// 根据当前tab获取对应状态的帖子
-const getPostsByTab = async (tabKey: string, isLoadMore: boolean = false): Promise<void> => {
-  if (loading.value) return
-
-  loading.value = true
-
-  try {
-    const lastId = isLoadMore && allPostList.value.length > 0
-      ? allPostList.value[allPostList.value.length - 1].id
-      : undefined
-
-    const response = await adminPostServiceV1.getPostsByState(tabKey, lastId, pageSize)
-
-    if (response.code === 401) {
-      console.log('not login')
-    } else if (response.code === 200) {
-      const newPosts = response.data as Post[]
-
-      if (isLoadMore) {
-        allPostList.value.push(...newPosts)
-      } else {
-        allPostList.value = newPosts
-      }
-
-      // 如果返回的数据少于页面大小，说明没有更多数据了
-      hasMore.value = newPosts.length === pageSize
-      console.log('done')
-    }
-  } catch (error) {
-    console.error('Error loading posts:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-// 按筛选条件获取帖子
-const getPostsByFilter = async (isLoadMore: boolean = false): Promise<void> => {
-  if (loading.value) return
-
-  loading.value = true
-
-  try {
-    const lastId = isLoadMore && allPostList.value.length > 0
-      ? allPostList.value[allPostList.value.length - 1].id
-      : undefined
-
-    // 获取当前tab的状态
+// 使用 useInfiniteScroll 加载帖子列表
+const {
+  items: postList,
+  loading,
+  hasMore,
+  loadMore,
+  reset: resetPostList
+} = useInfiniteScroll({
+  fetchFn: (params) => {
     const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
     const state = currentTabConfig?.state
 
-    const response = await adminPostServiceV1.getPostsByFilter(
-      filterNodeId.value,
-      filterCreatorId.value,
-      lastId,
-      state
-    )
-
-    if (response.code === 401) {
-      console.log('not login')
-    } else if (response.code === 200) {
-      const newPosts = response.data as Post[]
-
-      if (isLoadMore) {
-        allPostList.value.push(...newPosts)
-      } else {
-        allPostList.value = newPosts
-      }
-
-      hasMore.value = newPosts.length === pageSize
+    if (isFilterMode.value) {
+      return adminPostServiceV1.getPostsByFilter(
+        filterNodeId.value,
+        filterCreatorId.value,
+        params.lastId,
+        state
+      )
+    } else {
+      return adminPostServiceV1.getPostsByState(currentTab.value, params.lastId, 20)
     }
-  } catch (error) {
-    console.error('Error loading posts:', error)
-  } finally {
-    loading.value = false
+  },
+  getNextParams: (lastItem) => ({
+    lastId: lastItem.id
+  }),
+  initialParams: {
+    lastId: undefined
   }
-}
+})
 
 // 应用筛选
-const applyFilter = async (): Promise<void> => {
+const applyFilter = (): void => {
   if (!filterNodeId.value && !filterCreatorId.value) {
     showSnackbar?.('请至少输入一个筛选条件', 'warning')
     return
   }
   isFilterMode.value = true
-  hasMore.value = true
-  await getPostsByFilter()
+  resetPostList()
 }
 
 // 清除筛选
-const clearFilter = async (): Promise<void> => {
+const clearFilter = (): void => {
   filterNodeId.value = undefined
   filterCreatorId.value = undefined
   isFilterMode.value = false
-  hasMore.value = true
-  await getPostsByTab(currentTab.value)
+  resetPostList()
 }
 
-// 加载更多数据
-const loadMore = async (): Promise<void> => {
-  if (hasMore.value && !loading.value) {
-    if (isFilterMode.value) {
-      await getPostsByFilter(true)
-    } else {
-      await getPostsByTab(currentTab.value, true)
-    }
-  }
-}
-
-const getPostSensorList = async (): Promise<void> => {
-  await getPostsByTab(currentTab.value)
-}
-
-const approvePost = async (post: Post, approve: boolean): Promise<void> => {
-  try {
-    const response = await adminPostServiceV1.approvePost(post.id, approve ? ApprovalAction.APPROVE : ApprovalAction.REJECT)
-
-    if (response.code === 401) {
-      console.log('not login')
-    } else if (response.code === 200) {
-      console.log('done')
-      console.log(`post: ${JSON.stringify(response.data)}`)
-
-      // 使用后端返回的数据更新本地状态
-      const updatedPost = response.data as Post
-      const index = allPostList.value.findIndex(p => p.id === post.id)
+// 使用 useMutation 批准/拒绝帖子
+const { execute: executeApprovePost } = useMutation(
+  (data: { postId: number; approve: boolean }) =>
+    adminPostServiceV1.approvePost(data.postId, data.approve ? ApprovalAction.APPROVE : ApprovalAction.REJECT),
+  {
+    successMessage: '操作成功',
+    onSuccess: (response, data) => {
+      const updatedPost = response as Post
+      const index = postList.value.findIndex(p => p.id === data.postId)
       if (index !== -1) {
-        // 如果状态改变且当前tab不是目标状态，从列表中移除
         const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
         if (updatedPost.state !== currentTabConfig?.state) {
-          allPostList.value.splice(index, 1)
+          postList.value.splice(index, 1)
         } else {
-          allPostList.value[index].state = updatedPost.state
+          postList.value[index].state = updatedPost.state
         }
       }
-
-      showSnackbar?.(t('admin.operationSuccess'))
     }
-  } catch (error) {
-    console.error('Error verifying login status:', error)
   }
+)
+
+const approvePost = async (post: Post, approve: boolean): Promise<void> => {
+  await executeApprovePost({ postId: post.id, approve })
 }
 
 // 显示拒绝对话框
@@ -228,44 +151,42 @@ const showBanDialog = (post: Post) => {
   showReasonDialog.value = true
 }
 
+// 使用 useMutation 处理拒绝/屏蔽
+const { execute: executeRejectOrBan, loading: submitting } = useMutation(
+  (data: { postId: number; action: string; reason: string }) =>
+    adminPostServiceV1.approvePost(data.postId, data.action, data.reason),
+  {
+    onSuccess: (_, data) => {
+      const message = data.action === ApprovalAction.BAN ? '已屏蔽' : '已拒绝'
+      const targetState = data.action === ApprovalAction.BAN ? ContentState.BANNED : ContentState.REJECTED
+      showSnackbar?.(message, 'success')
+
+      const index = postList.value.findIndex(p => p.id === data.postId)
+      if (index !== -1) {
+        const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
+        if (currentTabConfig?.state !== targetState) {
+          postList.value.splice(index, 1)
+        } else {
+          postList.value[index].state = targetState
+        }
+      }
+
+      showReasonDialog.value = false
+      currentPost.value = null
+    }
+  }
+)
+
 // 处理对话框确认
 const handleConfirmAction = async (reason: string) => {
   if (!currentPost.value) return
 
-  try {
-    submitting.value = true
-    const action = dialogType.value === 'reject' ? ApprovalAction.REJECT : ApprovalAction.BAN
-    const targetState = dialogType.value === 'reject' ? ContentState.REJECTED : ContentState.BANNED
-
-    const response = await adminPostServiceV1.approvePost(currentPost.value.id, action, reason)
-
-    if (response.code === 200) {
-      // 更新本地状态
-      const index = allPostList.value.findIndex(p => p.id === currentPost.value!.id)
-      if (index !== -1) {
-        // 如果当前tab不是目标状态，从列表中移除
-        const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
-        if (currentTabConfig?.state !== targetState) {
-          allPostList.value.splice(index, 1)
-        } else {
-          allPostList.value[index].state = targetState
-        }
-      }
-
-      const message = dialogType.value === 'reject' ? '已拒绝' : '已屏蔽'
-      showSnackbar?.(message, 'success')
-
-      showReasonDialog.value = false
-      currentPost.value = null
-    } else {
-      showSnackbar?.(response.message || '操作失败', 'error')
-    }
-  } catch (error) {
-    console.error('Error updating post:', error)
-    showSnackbar?.('操作失败', 'error')
-  } finally {
-    submitting.value = false
-  }
+  const action = dialogType.value === 'ban' ? ApprovalAction.BAN : ApprovalAction.REJECT
+  await executeRejectOrBan({
+    postId: currentPost.value.id,
+    action,
+    reason
+  })
 }
 
 // 拒绝文章（已弃用，保留兼容）
@@ -278,43 +199,32 @@ const banPost = async (post: Post): Promise<void> => {
   showBanDialog(post)
 }
 
-// 取消屏蔽文章
-const unbanPost = async (post: Post): Promise<void> => {
-  try {
-    const response = await adminPostServiceV1.approvePost(post.id, true)
-
-    if (response.code === 401) {
-      console.log('not login')
-    } else if (response.code === 200) {
-      // 更新本地状态
-      const index = allPostList.value.findIndex(p => p.id === post.id)
+// 使用 useMutation 取消屏蔽文章
+const { execute: executeUnbanPost } = useMutation(
+  (postId: number) => adminPostServiceV1.approvePost(postId, true),
+  {
+    successMessage: '已取消屏蔽',
+    onSuccess: (_, postId) => {
+      const index = postList.value.findIndex(p => p.id === postId)
       if (index !== -1) {
-        // 如果当前tab不是"已批准"，从列表中移除
         const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
         if (currentTabConfig?.state !== ContentState.PUBLISHED) {
-          allPostList.value.splice(index, 1)
+          postList.value.splice(index, 1)
         } else {
-          allPostList.value[index].state = ContentState.PUBLISHED
+          postList.value[index].state = ContentState.PUBLISHED
         }
       }
-
-      showSnackbar?.('已取消屏蔽')
     }
-  } catch (error) {
-    console.error('Error unbanning post:', error)
-    showSnackbar?.('操作失败', 'error')
   }
+)
+
+const unbanPost = async (post: Post): Promise<void> => {
+  await executeUnbanPost(post.id)
 }
 
 // 监听tab切换，重新加载数据
-const handleTabChange = async (newTab: string) => {
-  hasMore.value = true
-  if (isFilterMode.value) {
-    // 如果在筛选模式下，切换tab时重新应用筛选（保留筛选条件和状态）
-    await getPostsByFilter()
-  } else {
-    await getPostsByTab(newTab)
-  }
+const handleTabChange = (newTab: string) => {
+  resetPostList()
 }
 
 // 解析目录内容 JSON
@@ -335,9 +245,6 @@ const parseContents = (content: string) => {
   }
 }
 
-onMounted(() => {
-  getPostSensorList()
-})
 </script>
 
 <template>
@@ -474,7 +381,7 @@ onMounted(() => {
       :key="post.id"
       class="mb-4"
       v-intersect="{
-        handler: (isIntersecting) => {
+        handler: (isIntersecting: boolean) => {
           if (isIntersecting && post === postList[postList.length - 1] && hasMore && !loading) {
             loadMore()
           }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { progressServiceV1 } from '@/services/api/v1/apiServiceV1'
@@ -9,12 +9,13 @@ import dagre from 'dagre'
 import { UserProgressState } from '@/types/enums'
 import type { UserRoadmap, ProcessedUserRoadmap } from '@/types/userRoadmap'
 import type { Profession } from '@/types/profession'
-import type { 
-  ExtendedNodeData, 
-  ExtendedFlowNode, 
-  FlowEdge 
+import type {
+  ExtendedNodeData,
+  ExtendedFlowNode,
+  FlowEdge
 } from '@/types/flow'
 import { Position } from '@vue-flow/core'
+import { useFetch } from '@/composables/useFetch'
 
 // 使用全局流程图类型的别名
 type NodeData = ExtendedNodeData
@@ -37,8 +38,6 @@ const router = useRouter()
 
 // 响应式数据
 const roadmaps = ref<ProcessedUserRoadmap[]>([])
-const loading = ref<boolean>(true)
-const error = ref<string | null>(null)
 
 // RoadmapDetail 浮层状态
 const showRoadmapDetail = ref<boolean>(false)
@@ -166,40 +165,37 @@ const filteredRoadmaps = computed((): ProcessedUserRoadmap[] => {
   })
 })
 
-// 加载路线图数据
-const loadRoadmapData = async (): Promise<void> => {
-  loading.value = true
-  error.value = null
-  
-  try {
-    const response = await progressServiceV1.getUserRoadmaps()
-    
-    if (response.code === 200 && Array.isArray(response.data)) {
-      roadmaps.value = (response.data as UserRoadmap[]).map((userRoadmap: UserRoadmap): ProcessedUserRoadmap => {
+// 计算路线图的真实进度
+const calculateRoadmapProgress = (nodes: NodeBase[]): number => {
+  let totalProgress = 0
+  let totalCourses = 0
+
+  nodes.forEach((node) => {
+    if (node.data && node.data.type === 'course') {
+      totalCourses++
+      if (node.data.completed) {
+        totalProgress += 100
+      } else if (node.data.progress) {
+        totalProgress += parseFloat(String(node.data.progress))
+      }
+    }
+  })
+
+  return totalCourses > 0 ? totalProgress / totalCourses : 0
+}
+
+// 使用 useFetch 加载路线图数据
+const { loading, error, refresh: loadRoadmapData } = useFetch({
+  fetchFn: progressServiceV1.getUserRoadmaps,
+  immediate: true,
+  onSuccess: (data) => {
+    if (Array.isArray(data)) {
+      roadmaps.value = (data as UserRoadmap[]).map((userRoadmap: UserRoadmap): ProcessedUserRoadmap => {
         const { roadmap } = userRoadmap
         const { nodes, edges } = parseContent(roadmap.content, roadmap.profession)
 
         // 布局计算
         const layoutedNodes = applyAutoLayout(nodes, edges, 'BT')
-
-        // 计算路线图的真实进度
-        const calculateRoadmapProgress = (nodes: NodeBase[]): number => {
-          let totalProgress = 0
-          let totalCourses = 0
-
-          nodes.forEach((node) => {
-            if (node.data && node.data.type === 'course') {
-              totalCourses++
-              if (node.data.completed) {
-                totalProgress += 100
-              } else if (node.data.progress) {
-                totalProgress += parseFloat(String(node.data.progress))
-              }
-            }
-          })
-
-          return totalCourses > 0 ? totalProgress / totalCourses : 0
-        }
 
         const completedNodes = nodes.filter((node) => node.data.completed).length
         const totalNodes = nodes.length
@@ -229,14 +225,8 @@ const loadRoadmapData = async (): Promise<void> => {
         }
       })
     }
-  } catch (err) {
-    console.error('Error loading roadmap data:', err)
-    error.value = t('learning.loadFailed')
-    showSnackbar?.(t('learning.loadFailed'))
-  } finally {
-    loading.value = false
   }
-}
+})
 
 // 获取相对时间
 const getRelativeTime = (dateString?: string): string => {
@@ -331,10 +321,6 @@ const closeRoadmap = async (roadmap: any, event?: Event): Promise<void> => {
     showSnackbar?.(t('learning.operationFailed'))
   }
 }
-
-onMounted(() => {
-  loadRoadmapData()
-})
 
 // 暴露给父组件的数据和方法
 defineExpose({

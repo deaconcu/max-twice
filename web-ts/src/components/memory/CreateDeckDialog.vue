@@ -7,6 +7,7 @@ import type { CreateDeckRequest, CreateCardRequest, MemoryCardDeck } from '@/typ
 import { MemoryService } from '@/services/memoryService'
 import { deckTitleRules, deckDescriptionRules, cardFrontRules, cardBackRules } from '@/utils/validationRules'
 import { DECK_VALIDATION, CARD_VALIDATION } from '@/types/validation'
+import { useMutation } from '@/composables/useMutation'
 
 interface Props {
   modelValue: boolean
@@ -25,7 +26,6 @@ const { t } = useI18n()
 const userStore = useUserStore()
 
 const dialog = ref(false)
-const loading = ref(false)
 const step = ref(1) // 1: 创建卡片组, 2: 添加卡片
 
 // 卡片组表单
@@ -47,6 +47,20 @@ const showEmptyError = ref(false)
 // 表单验证状态
 const deckFormValid = ref(true)
 const cardFormValid = ref(true)
+
+// 使用 useMutation 处理创建卡片组
+const { execute: createDeckMutation, loading } = useMutation(
+  (data: CreateDeckRequest) => MemoryService.createDeck(data),
+  {
+    successMessage: '创建成功',
+    onSuccess: (result) => {
+      currentDeck.value = result
+      currentDeck.value.cardCount = cards.value.length
+      emit('created', currentDeck.value)
+      dialog.value = false
+    }
+  }
+)
 
 watch(() => props.modelValue, (newVal) => {
   dialog.value = newVal
@@ -82,10 +96,10 @@ const createDeck = async () => {
   currentDeck.value = {
     id: 0, // 临时ID，实际创建时由后端分配
     sourcePostId: props.post.id,
-    creator: userStore.currentUser?.id ? { 
-      id: userStore.currentUser?.id, 
-      name: userStore.currentUser?.name || '当前用户', 
-      email: 'user@example.com' 
+    creator: userStore.currentUser?.id ? {
+      id: userStore.currentUser?.id,
+      name: userStore.currentUser?.name || '当前用户',
+      email: 'user@example.com'
     } : undefined,
     title: deckForm.value.title,
     description: deckForm.value.description,
@@ -134,32 +148,17 @@ const finishCreation = async () => {
   }
 
   showEmptyError.value = false
-  loading.value = true
 
-  try {
-    // 第二步：一次性创建卡片组和所有卡片
-    const response = await MemoryService.createDeck({
-      sourcePostId: props.post.id,
-      title: deckForm.value.title,
-      description: deckForm.value.description,
-      cards: cards.value.map(card => ({
-        front: card.front,
-        back: card.back
-      }))
-    })
-
-    if (response.code === 200) {
-      // 使用后端返回的真实卡片组数据
-      currentDeck.value = response.data
-      currentDeck.value.cardCount = cards.value.length
-      emit('created', currentDeck.value)
-      dialog.value = false
-    }
-  } catch (error) {
-    console.error('Failed to create deck and cards:', error)
-  } finally {
-    loading.value = false
-  }
+  // 使用 useMutation 创建卡片组
+  await createDeckMutation({
+    sourcePostId: props.post.id,
+    title: deckForm.value.title,
+    description: deckForm.value.description,
+    cards: cards.value.map(card => ({
+      front: card.front,
+      back: card.back
+    }))
+  })
 }
 
 const goBack = () => {

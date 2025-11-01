@@ -5,6 +5,7 @@
   import { useI18n } from 'vue-i18n'
   import { aiServiceV1, postServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { PostType } from '@/types/enums'
+  import { useMutation } from '@/composables/useMutation'
 
   const route = useRoute()
   const { t } = useI18n()
@@ -59,12 +60,12 @@
     newContents.value.splice(index, 1) // 根据索引从数组中移除
   }
 
-  const submitAddContents = async (): Promise<void> => {
-    try {
+  // 使用 useMutation 提交添加目录
+  const { execute: submitAddContents, loading: submitting } = useMutation(
+    () => {
       // 验证目录数量
       if (newContents.value.length < 2) {
-        showSnackbar?.('目录至少需要2个子目录')
-        return
+        throw new Error('目录至少需要2个子目录')
       }
 
       console.log('begin post')
@@ -80,38 +81,33 @@
       }
 
       console.log(`request: ${JSON.stringify(data)}`)
-      const response = await postServiceV1.createPost(data)
-      console.log(`response: ${JSON.stringify(response)}`)
-
-      if (response.code === 200) {
+      return postServiceV1.createPost(data)
+    },
+    {
+      successMessage: '目录添加成功',
+      onSuccess: (result) => {
         console.log('Form submitted successfully')
-        showSnackbar?.('目录添加成功')
+        console.log(`response: ${JSON.stringify(result)}`)
         dialog.value = false
         emit('loadData', [])
-      } else {
-        showSnackbar?.(response.message || '目录添加失败')
       }
-    } catch (error: any) {
-      console.error('Error submitting form:', error)
-      showSnackbar?.(error.response?.data?.message || error.message || '目录添加失败，请稍后重试')
     }
-  }
+  )
 
-  const addAIContents = async (): Promise<void> => {
-    try {
-      console.log('begin get')
-      const response = await aiServiceV1.chat(
-        t('addContents.aiPrompt', { pathText: props.pathText }),
-        'openai/gpt-4o-mini'
-      )
-      console.log(`response: ${JSON.stringify(response)}`)
-      if (response.code === 200) {
-        newContents.value = JSON.parse(response.data)
+  // 使用 useMutation 获取 AI 生成的目录
+  const { execute: addAIContents, loading: aiGenerating } = useMutation(
+    () => aiServiceV1.chat(
+      t('addContents.aiPrompt', { pathText: props.pathText }),
+      'openai/gpt-4o-mini'
+    ),
+    {
+      successMessage: 'AI 生成成功',
+      onSuccess: (result) => {
+        console.log(`response: ${JSON.stringify(result)}`)
+        newContents.value = JSON.parse(result)
       }
-    } catch (error) {
-      console.error('Error submitting form:', error)
     }
-  }
+  )
 </script>
 
 <template>
@@ -145,7 +141,11 @@
                   <v-btn variant="tonal" class="me-4" @click="addContentsItem">{{
                     t('addContents.submit')
                   }}</v-btn>
-                  <v-btn variant="plain" @click="addAIContents">{{
+                  <v-btn
+                    variant="plain"
+                    :loading="aiGenerating"
+                    @click="addAIContents"
+                  >{{
                     t('addContents.aiGenerate')
                   }}</v-btn>
                 </v-tabs-window-item>
@@ -185,7 +185,11 @@
         </v-col>
       </v-row>
       <v-card-actions class="d-flex justify-center py-5 border-t-sm">
-        <v-btn class="primary-button" @click="submitAddContents">{{
+        <v-btn
+          class="primary-button"
+          :loading="submitting"
+          @click="submitAddContents"
+        >{{
           t('addContents.confirm')
         }}</v-btn>
       </v-card-actions>

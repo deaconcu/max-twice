@@ -1,24 +1,21 @@
 <script setup lang="ts">
-import { inject, onMounted, ref } from 'vue'
+import { inject, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { MemoryService } from '@/services/memoryService'
 import { ContentState } from '@/types/enums'
 import type { DeckDetail } from '@/types/memoryCard'
 import RejectBanDialog from './RejectBanDialog.vue'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useMutation } from '@/composables/useMutation'
 
 const { t } = useI18n()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
 const activeTab = ref<string>('pending')
-const deckList = ref<DeckDetail[]>([])
-const loading = ref(false)
-const lastId = ref<number | undefined>(undefined)
-const hasMore = ref(true)
 
 // 拒绝/屏蔽对话框
 const showReasonDialog = ref<boolean>(false)
 const currentDeck = ref<DeckDetail | null>(null)
-const submitting = ref<boolean>(false)
 const dialogType = ref<'reject' | 'ban'>('reject')
 
 // 标签配置
@@ -69,11 +66,15 @@ const filterForm = ref({
 
 const getCurrentTab = () => tabs.find(tab => tab.key === activeTab.value) || tabs[0]
 
-const loadDecks = async (reset = false): Promise<void> => {
-  if (loading.value) return
-
-  loading.value = true
-  try {
+// 使用 useInfiniteScroll 加载卡片组列表
+const {
+  items: deckList,
+  loading,
+  hasMore,
+  loadMore,
+  reset: resetDeckList
+} = useInfiniteScroll({
+  fetchFn: async (params) => {
     const currentTab = getCurrentTab()
     const state = currentTab.state
 
@@ -81,57 +82,31 @@ const loadDecks = async (reset = false): Promise<void> => {
       state: state,
       postId: filterForm.value.postId || undefined,
       creatorId: filterForm.value.creatorId || undefined,
-      lastId: reset ? undefined : lastId.value,
+      lastId: params.lastId,
       limit: 20,
       sortBy: 'createdAt',
       sortOrder: 'desc'
     })
 
-    if (response.code === 200) {
-      const responseData = response.data
-      const newDecks = responseData.items || []
-
-      if (reset) {
-        deckList.value = newDecks
-      } else {
-        deckList.value.push(...newDecks)
-      }
-
-      hasMore.value = responseData.hasMore || false
-
-      // 更新lastId - 使用 nextCursor 中的信息
-      if (responseData.nextCursor?.lastId) {
-        lastId.value = responseData.nextCursor.lastId
-      } else if (reset) {
-        lastId.value = undefined
-      }
+    // 适配响应格式
+    return {
+      code: response.code,
+      data: response.data?.items || [],
+      message: response.message
     }
-
-  } catch (error) {
-    console.error('Error loading decks:', error)
-    showSnackbar?.('加载卡片组失败', 'error')
-  } finally {
-    loading.value = false
+  },
+  getNextParams: (lastItem, currentParams) => {
+    return {
+      lastId: lastItem.id
+    }
+  },
+  initialParams: {
+    lastId: undefined
   }
-}
-
-const loadMore = (): void => {
-  if (!loading.value && hasMore.value) {
-    loadDecks(false)
-  }
-}
-
-const switchTab = (tabKey: string) => {
-  activeTab.value = tabKey
-  lastId.value = undefined
-  hasMore.value = true
-  loadDecks(true)
-}
+})
 
 const applyFilter = () => {
-  lastId.value = undefined
-  hasMore.value = true
-  loadDecks(true)
+  resetDeckList()
 }
 
 const resetFilter = () => {
@@ -142,21 +117,22 @@ const resetFilter = () => {
   applyFilter()
 }
 
-const approveDeck = async (deck: DeckDetail): Promise<void> => {
-  try {
-    await MemoryService.approveDeck(deck.id)
-
-    // 从列表中移除已审核的项目
-    const index = deckList.value.findIndex(d => d.id === deck.id)
-    if (index > -1) {
-      deckList.value.splice(index, 1)
+// 使用 useMutation 批准卡片组
+const { execute: executeApproveDeck } = useMutation(
+  (deckId: number) => MemoryService.approveDeck(deckId),
+  {
+    successMessage: '卡片组审核通过',
+    onSuccess: (_, deckId) => {
+      const index = deckList.value.findIndex(d => d.id === deckId)
+      if (index > -1) {
+        deckList.value.splice(index, 1)
+      }
     }
-
-    showSnackbar?.('卡片组审核通过', 'success')
-  } catch (error) {
-    console.error('Error approving deck:', error)
-    showSnackbar?.('审核操作失败', 'error')
   }
+)
+
+const approveDeck = async (deck: DeckDetail): Promise<void> => {
+  await executeApproveDeck(deck.id)
 }
 
 // 显示拒绝对话框
@@ -173,36 +149,40 @@ const showBanDialog = (deck: DeckDetail) => {
   showReasonDialog.value = true
 }
 
+// 使用 useMutation 处理拒绝/屏蔽
+const { execute: executeRejectOrBan, loading: submitting } = useMutation(
+  async (data: { deckId: number; action: 'reject' | 'ban'; reason: string }) => {
+    if (data.action === 'reject') {
+      return MemoryService.rejectDeck(data.deckId, data.reason)
+    } else {
+      return MemoryService.banDeck(data.deckId, data.reason)
+    }
+  },
+  {
+    onSuccess: (_, data) => {
+      const message = data.action === 'reject' ? '卡片组已拒绝' : '卡片组已屏蔽'
+      showSnackbar?.(message, 'success')
+
+      const index = deckList.value.findIndex(d => d.id === data.deckId)
+      if (index > -1) {
+        deckList.value.splice(index, 1)
+      }
+
+      showReasonDialog.value = false
+      currentDeck.value = null
+    }
+  }
+)
+
 // 处理对话框确认
 const handleConfirmAction = async (reason: string) => {
   if (!currentDeck.value) return
 
-  try {
-    submitting.value = true
-
-    if (dialogType.value === 'reject') {
-      await MemoryService.rejectDeck(currentDeck.value.id, reason)
-    } else {
-      await MemoryService.banDeck(currentDeck.value.id, reason)
-    }
-
-    // 从列表中移除已处理的项目
-    const index = deckList.value.findIndex(d => d.id === currentDeck.value!.id)
-    if (index > -1) {
-      deckList.value.splice(index, 1)
-    }
-
-    const message = dialogType.value === 'reject' ? '卡片组已拒绝' : '卡片组已屏蔽'
-    showSnackbar?.(message, 'success')
-
-    showReasonDialog.value = false
-    currentDeck.value = null
-  } catch (error) {
-    console.error('Error updating deck:', error)
-    showSnackbar?.('操作失败', 'error')
-  } finally {
-    submitting.value = false
-  }
+  await executeRejectOrBan({
+    deckId: currentDeck.value.id,
+    action: dialogType.value === 'reject' ? 'reject' : 'ban',
+    reason
+  })
 }
 
 // 拒绝卡片组（兼容旧调用）
@@ -215,21 +195,26 @@ const banDeck = async (deck: DeckDetail): Promise<void> => {
   showBanDialog(deck)
 }
 
-const unbanDeck = async (deck: DeckDetail): Promise<void> => {
-  try {
-    await MemoryService.restoreDeck(deck.id)
-
-    // 从列表中移除已恢复的项目
-    const index = deckList.value.findIndex(d => d.id === deck.id)
-    if (index > -1) {
-      deckList.value.splice(index, 1)
+// 使用 useMutation 取消屏蔽卡片组
+const { execute: executeUnbanDeck } = useMutation(
+  (deckId: number) => MemoryService.restoreDeck(deckId),
+  {
+    successMessage: '卡片组已取消屏蔽',
+    onSuccess: (_, deckId) => {
+      const index = deckList.value.findIndex(d => d.id === deckId)
+      if (index > -1) {
+        deckList.value.splice(index, 1)
+      }
     }
-
-    showSnackbar?.('卡片组已取消屏蔽', 'success')
-  } catch (error) {
-    console.error('Error unbanning deck:', error)
-    showSnackbar?.('取消屏蔽操作失败', 'error')
   }
+)
+
+const unbanDeck = async (deck: DeckDetail): Promise<void> => {
+  await executeUnbanDeck(deck.id)
+}
+
+const switchTab = (tabKey: string) => {
+  resetDeckList()
 }
 
 const getStateText = (state: number): string => {
@@ -252,9 +237,6 @@ const getStateColor = (state: number): string => {
   }
 }
 
-onMounted(() => {
-  loadDecks(true)
-})
 </script>
 
 <template>
@@ -390,7 +372,7 @@ onMounted(() => {
         :key="deck.id"
         class="mb-4"
         v-intersect="{
-          handler: (isIntersecting) => {
+          handler: (isIntersecting: boolean) => {
             if (isIntersecting && deck === deckList[deckList.length - 1] && hasMore && !loading) {
               loadMore()
             }

@@ -19,47 +19,37 @@ import type { TabItem, ComponentProps } from '@/types/common'
 import type { User } from '@/types/user'
 import { userServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { USER_BANNED } from '@/constants/errorCodes'
+import { useFetch } from '@/composables/useFetch'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
-const user: Ref<User | null> = ref(null)
-const loading = ref(true)
 const showError = ref(false)
 const errorCode = ref(0)
 const errorMessage = ref('')
 
-const loadUser = async () => {
-  try {
-    loading.value = true
+const {
+  data: user,
+  loading,
+  execute: loadUser,
+} = useFetch<User>({
+  fetchFn: async () => {
     const username = route.params.username as string
-    if (!username) return
-
-    const response = await userServiceV1.getUser(username)
-    if (response.code === 200) {
-      user.value = response.data
-    } else if (response.code === USER_BANNED) {
-      showError.value = true
-      errorCode.value = USER_BANNED
+    if (!username) throw new Error('用户名不能为空')
+    return userServiceV1.getUser(username)
+  },
+  immediate: true,
+  onError: (error: any) => {
+    const code = error?.response?.code || error?.code || 500
+    showError.value = true
+    errorCode.value = code
+    if (code === USER_BANNED) {
       errorMessage.value = '该用户已被屏蔽'
     } else {
-      showError.value = true
-      errorCode.value = response.code
-      errorMessage.value = response.message || '加载用户信息失败'
+      errorMessage.value = error?.response?.message || error?.message || '加载用户信息失败'
     }
-  } catch (error) {
-    console.error('Error loading user:', error)
-    showError.value = true
-    errorCode.value = 500
-    errorMessage.value = '加载用户信息失败'
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(() => {
-  loadUser()
+  },
 })
 
 // 标签页配置（User页面不包含stats）

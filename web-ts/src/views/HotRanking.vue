@@ -1,11 +1,12 @@
 <script setup lang="ts">
-  import { inject, onMounted, ref } from 'vue'
+  import { inject, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { courseServiceV1, professionServiceV1 } from '@/services/api/v1/apiServiceV1'
   import type { Profession } from '@/types/profession'
   import type { Course } from '@/types/course'
   import type { TabItem, SortOption } from '@/types/common'
+  import { useFetch } from '@/composables/useFetch'
 
   type RankingItem = Course | Profession
 
@@ -16,66 +17,49 @@
   const route = useRoute()
 
   // 选项卡相关
-  const activeTab = ref<string>('courses')
+  const activeTab = ref<string>(route.query.tab === 'professions' ? 'professions' : 'courses')
   const tabItems = ref<TabItem[]>([
     { value: 'courses', text: t('hotRanking.tabs.courses'), icon: 'mdi-book-multiple' },
     { value: 'professions', text: t('hotRanking.tabs.professions'), icon: 'mdi-briefcase-variant' },
   ])
 
-  // 课程相关数据
-  const courses = ref<Course[]>([])
-  const coursesLoading = ref<boolean>(false)
+  // 课程排序选项
   const coursesSortBy = ref<string>('total')
-
   const courseSortOptions: SortOption[] = [
     { value: 'total', title: t('hotRanking.sortOptions.total') },
     { value: 'learning', title: t('hotRanking.sortOptions.learning') },
     { value: 'subscription', title: t('hotRanking.sortOptions.subscription') },
   ]
 
-  // 职业相关数据
-  const professions = ref<Profession[]>([])
-  const professionsLoading = ref<boolean>(false)
+  // 职业排序选项
   const professionsSortBy = ref<string>('learning')
-
   const professionSortOptions: SortOption[] = [{ value: 'learning', title: '学习人数' }]
 
-  onMounted((): void => {
-    // 根据查询参数设置默认选项卡
-    if (route.query.tab === 'professions') {
-      activeTab.value = 'professions'
-    }
-
-    loadHotCoursesRanking()
-    loadHotProfessionsRanking()
+  // 使用 useFetch 加载课程排行榜
+  const {
+    data: courses,
+    loading: coursesLoading,
+  } = useFetch<Course[]>({
+    fetchFn: courseServiceV1.getCoursesRanking,
+    immediate: true,
+    defaultValue: [],
+    onError: () => {
+      showSnackbar?.('获取课程排行榜失败，请重试！', 'error')
+    },
   })
 
-  // 课程相关方法
-  const loadHotCoursesRanking = async (): Promise<void> => {
-    try {
-      coursesLoading.value = true
-      console.log('加载热门课程排行榜')
-      const response = await courseServiceV1.getCoursesRanking()
-
-      if (response.code === 401) {
-        console.log('未登录')
-        courses.value = []
-      } else if (response.code === 200) {
-        console.log('获取热门课程排行榜数据:', response.data)
-        courses.value = response.data || []
-      } else {
-        console.error('获取课程排行榜失败:', response)
-        showSnackbar?.('获取课程排行榜失败，请重试！', 'error')
-        courses.value = []
-      }
-    } catch (error) {
-      console.error('Error loading hot courses ranking:', error)
-      showSnackbar?.('网络错误，请重试！', 'error')
-      courses.value = []
-    } finally {
-      coursesLoading.value = false
-    }
-  }
+  // 使用 useFetch 加载职业排行榜
+  const {
+    data: professions,
+    loading: professionsLoading,
+  } = useFetch<Profession[]>({
+    fetchFn: () => professionServiceV1.getHotProfessions(100),
+    immediate: true,
+    defaultValue: [],
+    onError: () => {
+      showSnackbar?.('获取职业排行榜失败，请重试！', 'error')
+    },
+  })
 
   const sortCourses = (): void => {
     const sortedCourses = [...courses.value]
@@ -106,33 +90,7 @@
     window.open(url, '_blank')
   }
 
-  // 职业相关方法
-  const loadHotProfessionsRanking = async (): Promise<void> => {
-    try {
-      professionsLoading.value = true
-      console.log('加载热门职业排行榜')
-      const response = await professionServiceV1.getHotProfessions(100)
-
-      if (response.code === 401) {
-        console.log('未登录')
-        professions.value = []
-      } else if (response.code === 200) {
-        console.log('获取热门职业排行榜数据:', response.data)
-        professions.value = response.data || []
-      } else {
-        console.error('获取职业排行榜失败:', response)
-        showSnackbar?.('获取职业排行榜失败，请重试！', 'error')
-        professions.value = []
-      }
-    } catch (error) {
-      console.error('Error loading hot professions ranking:', error)
-      showSnackbar?.('网络错误，请重试！', 'error')
-      professions.value = []
-    } finally {
-      professionsLoading.value = false
-    }
-  }
-
+  // 职业排序方法
   const sortProfessions = (): void => {
     const sortedProfessions = [...professions.value]
 

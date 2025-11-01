@@ -10,6 +10,7 @@
   } from '@/services/api/v1/apiServiceV1'
   import { UserProgressState } from '@/types/enums'
   import type { Profession } from '@/types/profession'
+  import { useFetch } from '@/composables/useFetch'
 
   const { t } = useI18n()
   const router = useRouter()
@@ -102,9 +103,64 @@
     fetchPlatformStats: refreshStats,
   } = usePlatformStats()
 
-  // 热门数据
-  const hotProfessions = ref<Profession[]>([])
-  const hotCourses = ref<HotCourse[]>([])
+  // 获取相对时间
+  const getRelativeTime = (dateString: string): string => {
+    if (!dateString) return t('rightSidebar.time.unknown')
+
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 60) {
+      return t('rightSidebar.time.minutesAgo', { minutes: diffMins })
+    } else if (diffHours < 24) {
+      return t('rightSidebar.time.hoursAgo', { hours: diffHours })
+    } else {
+      return t('rightSidebar.time.daysAgo', { days: diffDays })
+    }
+  }
+
+  // 使用 useFetch 加载热门职业
+  const { data: hotProfessions } = useFetch<Profession[]>({
+    fetchFn: professionServiceV1.getHotProfessions,
+    immediate: actualEnabledModules.value.includes('careers'),
+    transform: (professions) => professions.slice(0, 3),
+    defaultValue: [
+      { id: 1, name: t('rightSidebar.professions.fullStack'), learnerCount: 2100 },
+      { id: 2, name: t('rightSidebar.professions.frontend'), learnerCount: 1800 },
+      { id: 3, name: t('rightSidebar.professions.dataScientist'), learnerCount: 1500 },
+    ]
+  })
+
+  // 使用 useFetch 加载热门课程
+  const { data: hotCourses } = useFetch<HotCourse[]>({
+    fetchFn: courseServiceV1.getHotCourses,
+    immediate: actualEnabledModules.value.includes('courses'),
+    transform: (courses) => courses.slice(0, 3),
+    defaultValue: [
+      {
+        id: 1,
+        name: t('rightSidebar.courses.vueComplete'),
+        learnerCount: 2800,
+        subscriptionCount: 400,
+      },
+      {
+        id: 2,
+        name: t('rightSidebar.courses.pythonData'),
+        learnerCount: 2300,
+        subscriptionCount: 500,
+      },
+      {
+        id: 3,
+        name: t('rightSidebar.courses.javaCore'),
+        learnerCount: 2000,
+        subscriptionCount: 500,
+      },
+    ]
+  })
 
   // 独立的学习数据
   const learningData = ref<LearningData>({
@@ -115,57 +171,6 @@
     courses: [],
     recentActivities: [],
   })
-
-  // 加载热门职业数据
-  const loadHotProfessions = async (): Promise<void> => {
-    try {
-      const response = await professionServiceV1.getHotProfessions()
-      if (response && response.data) {
-        hotProfessions.value = response.data.slice(0, 3) || []
-      }
-    } catch (error) {
-      console.error('Error loading hot professions:', error)
-      // 使用默认数据
-      hotProfessions.value = [
-        { id: 1, name: t('rightSidebar.professions.fullStack'), learnerCount: 2100 },
-        { id: 2, name: t('rightSidebar.professions.frontend'), learnerCount: 1800 },
-        { id: 3, name: t('rightSidebar.professions.dataScientist'), learnerCount: 1500 },
-      ]
-    }
-  }
-
-  // 加载热门课程数据
-  const loadHotCourses = async (): Promise<void> => {
-    try {
-      const response = await courseServiceV1.getHotCourses()
-      if (response && response.data) {
-        hotCourses.value = response.data.slice(0, 3) || []
-      }
-    } catch (error) {
-      console.error('Error loading hot courses:', error)
-      // 使用默认数据
-      hotCourses.value = [
-        {
-          id: 1,
-          name: t('rightSidebar.courses.vueComplete'),
-          learnerCount: 2800,
-          subscriptionCount: 400,
-        },
-        {
-          id: 2,
-          name: t('rightSidebar.courses.pythonData'),
-          learnerCount: 2300,
-          subscriptionCount: 500,
-        },
-        {
-          id: 3,
-          name: t('rightSidebar.courses.javaCore'),
-          learnerCount: 2000,
-          subscriptionCount: 500,
-        },
-      ]
-    }
-  }
 
   // 加载学习数据
   const loadLearningData = async (): Promise<void> => {
@@ -211,34 +216,7 @@
     }
   }
 
-  // 获取相对时间
-  const getRelativeTime = (dateString: string): string => {
-    if (!dateString) return t('rightSidebar.time.unknown')
-
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
-
-    if (diffMins < 60) {
-      return t('rightSidebar.time.minutesAgo', { minutes: diffMins })
-    } else if (diffHours < 24) {
-      return t('rightSidebar.time.hoursAgo', { hours: diffHours })
-    } else {
-      return t('rightSidebar.time.daysAgo', { days: diffDays })
-    }
-  }
-
   onMounted(() => {
-    // 直接检查而不依赖函数内部的检查
-    if (actualEnabledModules.value.includes('careers')) {
-      loadHotProfessions()
-    }
-    if (actualEnabledModules.value.includes('courses')) {
-      loadHotCourses()
-    }
     if (actualEnabledModules.value.includes('learning')) {
       loadLearningData()
     }

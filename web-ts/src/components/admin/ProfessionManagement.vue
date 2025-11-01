@@ -460,7 +460,7 @@
 </template>
 
 <script setup lang="ts">
-import { inject, onMounted, onUnmounted, ref, watch } from 'vue'
+import { inject, ref, onMounted } from 'vue'
 import { professionServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { adminProfessionServiceV1, adminSystemServiceV1 } from '@/services/api/v1/adminApiServiceV1'
 import { ContentState } from '@/types/enums'
@@ -468,8 +468,10 @@ import type { Profession, ProfessionCategory, CategoryMapping } from '@/types/pr
 import type { StateOption } from '@/types/common'
 import CategorySelector from '../common/CategorySelector.vue'
 import RejectBanDialog from './RejectBanDialog.vue'
-import { professionNameRules, professionDescriptionRules, categoryRules } from '@/utils/validationRules'
+import { professionNameRules, professionDescriptionRules } from '@/utils/validationRules'
 import { PROFESSION_VALIDATION } from '@/types/validation'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useMutation } from '@/composables/useMutation'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
@@ -494,24 +496,17 @@ interface EditProfessionForm {
   state?: number
 }
 
-// 响应式数据
-const professionList = ref<ProfessionWithUIState[]>([])
-const loading = ref<boolean>(false)
-const lastId = ref<number>(0)
-const hasMoreData = ref<boolean>(true)
 const selectedStateIndex = ref<number>(0)
 
 // 拒绝/屏蔽对话框
 const showReasonDialog = ref<boolean>(false)
 const currentProfession = ref<ProfessionWithUIState | null>(null)
-const submitting = ref<boolean>(false)
 const dialogType = ref<'reject' | 'ban'>('reject')
 
 // 编辑相关数据
 const showEditDialog = ref<boolean>(false)
 const editProfession = ref<EditProfessionForm>({})
 const editFormValid = ref<boolean>(false)
-const updating = ref<boolean>(false)
 const editForm = ref(null)
 
 // 动态类别数据
@@ -543,7 +538,6 @@ const loadProfessionCategories = async (): Promise<void> => {
     }
   } catch (error) {
     console.error('加载职业类别失败:', error)
-    // 保持空数组作为默认值
   }
 }
 
@@ -597,128 +591,74 @@ const getSkillsArray = (skills?: string): string[] => {
   return Array.isArray(skills) ? skills : []
 }
 
-// 获取职业申请列表
-const loadProfessionList = async (reset: boolean = true): Promise<void> => {
-  if (loading.value) return
-
-  try {
-    loading.value = true
-
-    const currentLastId = reset ? null : lastId.value
+// 使用 useInfiniteScroll 加载职业列表
+const {
+  items: professionList,
+  loading,
+  hasMore: hasMoreData,
+  loadMore: loadMoreData,
+  reset: resetProfessionList
+} = useInfiniteScroll({
+  fetchFn: (params) => {
     const state = getCurrentState()
-    const response = await adminProfessionServiceV1.getAdminProfessions(state, currentLastId)
-
-    if (response.code === 200 && response.data) {
-      const newData = Array.isArray(response.data) ? response.data : []
-
-      if (reset) {
-        professionList.value = newData
-        lastId.value = 0
-      } else {
-        professionList.value = [...professionList.value, ...newData]
-      }
-
-      // 更新分页信息
-      if (newData.length > 0) {
-        lastId.value = newData[newData.length - 1].id
-        hasMoreData.value = newData.length >= 20 // 假设每页20条
-      } else {
-        hasMoreData.value = false
-      }
-    } else {
-      console.error('获取职业申请列表失败:', response.message)
-      if (reset) {
-        professionList.value = []
-      }
-    }
-  } catch (error) {
-    console.error('获取职业申请列表错误:', error)
-    if (reset) {
-      professionList.value = []
-    }
-  } finally {
-    loading.value = false
+    return adminProfessionServiceV1.getAdminProfessions(state, params.lastId)
+  },
+  getNextParams: (lastItem) => ({
+    lastId: lastItem.id
+  }),
+  initialParams: {
+    lastId: null
   }
-}
-
-// 加载更多数据
-const loadMoreData = (): void => {
-  if (!loading.value && hasMoreData.value) {
-    loadProfessionList(false)
-  }
-}
-
-// 滚动监听处理（带节流）
-let isScrollLoading = false
-const handleScroll = (): void => {
-  // 防止重复触发
-  if (isScrollLoading || loading.value || !hasMoreData.value) {
-    return
-  }
-
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-  const windowHeight = window.innerHeight
-  const documentHeight = document.documentElement.scrollHeight
-
-  // 当滚动到距离底部100px时触发加载
-  if (scrollTop + windowHeight >= documentHeight - 100) {
-    isScrollLoading = true
-    loadMoreData()
-    // 延迟重置标志，避免过于频繁触发
-    setTimeout(() => {
-      isScrollLoading = false
-    }, 500)
-  }
-}
+})
 
 // 状态改变处理
 const onStateChange = (): void => {
-  loadProfessionList(true)
+  resetProfessionList()
 }
 
-// 操作职业申请
+// 使用 useMutation 操作职业申请
+const { execute: executeOperateProfession } = useMutation(
+  (data: { professionId: number; action: string; reason?: string }) =>
+    professionServiceV1.approveProfession(data.professionId, data.action, data.reason || ''),
+  {
+    onSuccess: (_, data) => {
+      const index = professionList.value.findIndex((p) => p.id === data.professionId)
+      if (index !== -1) {
+        if (data.action === 'APPROVE') {
+          professionList.value[index].state = ContentState.PUBLISHED
+          professionList.value[index].reason = ''
+        } else if (data.action === 'REJECT') {
+          professionList.value[index].state = ContentState.REJECTED
+          professionList.value[index].reason = data.reason || ''
+        } else if (data.action === 'BAN') {
+          professionList.value[index].state = ContentState.BANNED
+          professionList.value[index].reason = data.reason || ''
+        }
+
+        // 如果当前筛选状态与操作结果不匹配，从列表中移除
+        const currentState = getCurrentState()
+        const shouldRemove =
+          (data.action === 'APPROVE' && currentState !== ContentState.PUBLISHED) ||
+          (data.action === 'REJECT' && currentState !== ContentState.REJECTED) ||
+          (data.action === 'BAN' && currentState !== ContentState.BANNED)
+
+        if (shouldRemove) {
+          professionList.value.splice(index, 1)
+        }
+      }
+    }
+  }
+)
+
 const operateProfession = async (
   profession: ProfessionWithUIState,
   action: string,
   reason: string = ''
 ): Promise<boolean> => {
   try {
-    const response = await professionServiceV1.approveProfession(profession.id, action, reason)
-
-    if (response.code === 200) {
-      // 更新本地数据
-      const index = professionList.value.findIndex((p) => p.id === profession.id)
-      if (index !== -1) {
-        if (action === 'APPROVE') {
-          professionList.value[index].state = ContentState.PUBLISHED
-          professionList.value[index].reason = '' // 清空拒绝原因
-        } else if (action === 'REJECT') {
-          professionList.value[index].state = ContentState.REJECTED
-          professionList.value[index].reason = reason
-        } else if (action === 'BAN') {
-          professionList.value[index].state = ContentState.BANNED
-          professionList.value[index].reason = reason
-        }
-      }
-
-      // 如果当前筛选状态与操作结果不匹配，从列表中移除
-      const currentState = getCurrentState()
-      if (
-        (action === 'APPROVE' && currentState !== ContentState.PUBLISHED) ||
-        (action === 'REJECT' && currentState !== ContentState.REJECTED) ||
-        (action === 'BAN' && currentState !== ContentState.BANNED)
-      ) {
-        professionList.value = professionList.value.filter((p) => p.id !== profession.id)
-      }
-
-      return true
-    } else {
-      showSnackbar?.(`操作失败: ${response.message || '未知错误'}`)
-      return false
-    }
+    await executeOperateProfession({ professionId: profession.id, action, reason })
+    return true
   } catch (error) {
-    console.error('操作错误:', error)
-    showSnackbar?.('操作失败: 服务器开小差了')
     return false
   }
 }
@@ -759,52 +699,65 @@ const showBanModal = (profession: ProfessionWithUIState): void => {
   showReasonDialog.value = true
 }
 
+// 使用 useMutation 处理拒绝/屏蔽
+const { execute: executeRejectOrBan, loading: submitting } = useMutation(
+  (data: { professionId: number; action: string; reason: string }) =>
+    professionServiceV1.approveProfession(data.professionId, data.action, data.reason),
+  {
+    successMessage: '操作成功',
+    onSuccess: (_, data) => {
+      const index = professionList.value.findIndex((p) => p.id === data.professionId)
+      if (index !== -1) {
+        const targetState = data.action === 'REJECT' ? ContentState.REJECTED : ContentState.BANNED
+        professionList.value[index].state = targetState
+        professionList.value[index].reason = data.reason
+
+        const currentState = getCurrentState()
+        if (currentState !== targetState) {
+          professionList.value.splice(index, 1)
+        }
+      }
+
+      showReasonDialog.value = false
+      currentProfession.value = null
+    }
+  }
+)
+
 // 处理对话框确认
 const handleConfirmAction = async (reason: string): Promise<void> => {
   if (!currentProfession.value) return
 
-  try {
-    submitting.value = true
-    const action = dialogType.value === 'reject' ? 'REJECT' : 'BAN'
-    const success = await operateProfession(currentProfession.value, action, reason)
-
-    if (success) {
-      showSnackbar?.('操作成功')
-      showReasonDialog.value = false
-      currentProfession.value = null
-    }
-  } finally {
-    submitting.value = false
-  }
+  const action = dialogType.value === 'reject' ? 'REJECT' : 'BAN'
+  await executeRejectOrBan({
+    professionId: currentProfession.value.id,
+    action,
+    reason
+  })
 }
 
-// 取消屏蔽职业
-const unbanProfession = async (profession: ProfessionWithUIState): Promise<void> => {
-  try {
-    const response = await professionServiceV1.approveProfession(profession.id, 'APPROVE')
-
-    if (response.code === 200) {
-      // 更新本地数据
-      const index = professionList.value.findIndex((p) => p.id === profession.id)
+// 使用 useMutation 取消屏蔽职业
+const { execute: executeUnbanProfession } = useMutation(
+  (professionId: number) => professionServiceV1.approveProfession(professionId, 'APPROVE'),
+  {
+    successMessage: '操作成功',
+    onSuccess: (_, professionId) => {
+      const index = professionList.value.findIndex((p) => p.id === professionId)
       if (index !== -1) {
         professionList.value[index].state = ContentState.PUBLISHED
-        professionList.value[index].reason = '' // 清空拒绝原因
-      }
+        professionList.value[index].reason = ''
 
-      // 如果当前筛选状态与操作结果不匹配，从列表中移除
-      const currentState = getCurrentState()
-      if (currentState !== ContentState.PUBLISHED) {
-        professionList.value = professionList.value.filter((p) => p.id !== profession.id)
+        const currentState = getCurrentState()
+        if (currentState !== ContentState.PUBLISHED) {
+          professionList.value.splice(index, 1)
+        }
       }
-
-      showSnackbar?.('操作成功')
-    } else {
-      showSnackbar?.(`操作失败: ${response.message || '未知错误'}`)
     }
-  } catch (error) {
-    console.error('取消屏蔽错误:', error)
-    showSnackbar?.('操作失败: 服务器开小差了')
   }
+)
+
+const unbanProfession = async (profession: ProfessionWithUIState): Promise<void> => {
+  await executeUnbanProfession(profession.id)
 }
 
 // 显示编辑对话框
@@ -834,66 +787,52 @@ const closeEditDialog = (): void => {
   editFormValid.value = false
 }
 
+// 使用 useMutation 更新职业信息
+const { execute: executeUpdateProfession, loading: updating } = useMutation(
+  (data: { id: number; updateData: any }) =>
+    professionServiceV1.updateProfession(data.id, data.updateData),
+  {
+    successMessage: '操作成功',
+    onSuccess: (_, data) => {
+      const index = professionList.value.findIndex((p) => p.id === data.id)
+      if (index !== -1) {
+        professionList.value[index] = {
+          ...professionList.value[index],
+          ...data.updateData,
+        }
+      }
+      closeEditDialog()
+    }
+  }
+)
+
 // 更新职业信息
 const updateProfession = async (): Promise<void> => {
   if (!editFormValid.value) return
 
-  try {
-    updating.value = true
-
-    // 准备更新数据
-    const updateData = {
-      id: editProfession.value.id!,
-      name: editProfession.value.name!,
-      description: editProfession.value.description!,
-      price: editProfession.value.price || '',
-      skills: editProfession.value.skillsText || '',
-      mainCategory: editProfession.value.mainCategory || 0,
-      subCategory: editProfession.value.subCategory || 0,
-      icon: editProfession.value.icon || 'mdi-briefcase',
-      reason: editProfession.value.reason || '',
-    }
-
-    const response = await professionServiceV1.updateProfession(
-      editProfession.value.id!,
-      updateData
-    )
-
-    if (response.code === 200) {
-      // 更新本地数据
-      const index = professionList.value.findIndex((p) => p.id === editProfession.value.id)
-      if (index !== -1) {
-        professionList.value[index] = {
-          ...professionList.value[index],
-          ...updateData,
-        }
-      }
-
-      showSnackbar?.('操作成功')
-      closeEditDialog()
-    } else {
-      showSnackbar?.(`操作失败: ${response.message || '未知错误'}`)
-    }
-  } catch (error) {
-    console.error('更新职业信息错误:', error)
-    showSnackbar?.('操作失败: 服务器开小差了')
-  } finally {
-    updating.value = false
+  const updateData = {
+    id: editProfession.value.id!,
+    name: editProfession.value.name!,
+    description: editProfession.value.description!,
+    price: editProfession.value.price || '',
+    skills: editProfession.value.skillsText || '',
+    mainCategory: editProfession.value.mainCategory || 0,
+    subCategory: editProfession.value.subCategory || 0,
+    icon: editProfession.value.icon || 'mdi-briefcase',
+    reason: editProfession.value.reason || '',
   }
+
+  await executeUpdateProfession({
+    id: editProfession.value.id!,
+    updateData
+  })
 }
 
-// 组件挂载时加载数据和添加滚动监听
+// 组件挂载时加载数据
 onMounted(() => {
   loadProfessionCategories()
-  loadProfessionList(true)
-  // 添加滚动监听
-  window.addEventListener('scroll', handleScroll)
 })
 
-// 组件卸载时移除滚动监听
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
-})
 </script>
 
 <style scoped>

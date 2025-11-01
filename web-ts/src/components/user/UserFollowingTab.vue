@@ -1,22 +1,10 @@
 <script setup lang="ts">
-import { computed, inject, ref } from 'vue'
-import type { Ref } from 'vue'
+import { computed, inject } from 'vue'
 import { followServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { useUserStore } from '@/stores/user'
 import type { User } from '@/types/user'
-
-// 类型定义
-interface Followee {
-  id: string | number
-  name: string
-  biography?: string
-  createTime: string
-  [key: string]: any
-}
-
-interface LoadEventData {
-  done: (status: 'ok' | 'empty') => void
-}
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useMutation } from '@/composables/useMutation'
 
 // Props
 const props = defineProps<{
@@ -36,48 +24,41 @@ const isSelf = computed(() => !props.userId || props.userId === userStore.curren
 // 实际的可编辑状态：必须是自己的信息且明确允许编辑
 const canEdit = computed(() => props.editable && isSelf.value)
 
-const lastFolloweeId: Ref<string> = ref('2100-01-01 00:00:01')
-const followeeList: Ref<User[]> = ref([])
+// 使用 useInfiniteScroll 加载关注列表
+const {
+  items: followeeList,
+  loading,
+  loadMore: loadFollowee
+} = useInfiniteScroll<User>({
+  fetchFn: (params) =>
+    followServiceV1.getFollowees(targetUserId.value, params.lastCreatedAt),
+  getNextParams: (lastItem) => ({
+    lastCreatedAt: lastItem.createdAt
+  }),
+  initialParams: {
+    lastCreatedAt: '2100-01-01 00:00:01'
+  }
+})
 
-const loadFollowee = async ({ done }: LoadEventData): Promise<void> => {
-  try {
-    const response = await followServiceV1.getFollowees(targetUserId.value, lastFolloweeId.value)
-
-    if (response.code === 401) {
-      console.log('not login')
-    } else if (response.code === 200) {
-      console.log(`get data:${JSON.stringify(response.data)}`)
-      followeeList.value.push(...response.data)
-
-      if (response.data.length > 0) {
-        lastFolloweeId.value = response.data[response.data.length - 1].createdAt
-        done('ok')
-      } else {
-        done('empty')
+// 使用 useMutation 处理取消关注
+const { execute: executeUnfollow } = useMutation(
+  (userId: string | number) => followServiceV1.unfollow(userId),
+  {
+    successMessage: '已取消关注',
+    onSuccess: (_, userId) => {
+      const index = followeeList.value.findIndex(item => item.id === userId)
+      if (index !== -1) {
+        followeeList.value.splice(index, 1)
       }
     }
-  } catch (error) {
-    console.error('Error get message:', error)
   }
-}
+)
 
 const handleUnfollow = async (userId: string | number): Promise<void> => {
   if (!canEdit.value) return
-
-  try {
-    // 这里应该调用取消关注的API
-    // const response = await followServiceV1.unfollow(userId);
-    // if (response.code === 200) {
-    //   followeeList.value = followeeList.value.filter(item => item.id !== userId);
-    //   showSnackbar('已取消关注');
-    // }
-    console.log('取消关注用户:', userId)
-    showSnackbar('已取消关注')
-  } catch (error) {
-    console.error('取消关注失败:', error)
-    showSnackbar('操作失败，请重试')
-  }
+  await executeUnfollow(userId)
 }
+
 </script>
 
 <template>

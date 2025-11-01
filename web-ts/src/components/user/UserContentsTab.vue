@@ -8,6 +8,8 @@ import Tiptap from '../read/TiptapInput.vue'
 import { useUserStore } from '@/stores/user'
 import type { Post } from '@/types/post'
 import { ObjectType, PostType } from '@/types/enums'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useMutation } from '@/composables/useMutation'
 
 
 interface TiptapRef {
@@ -40,34 +42,27 @@ const scrollPosition: Ref<number> = ref(0)
 const lastPage: Ref<string> = ref('')
 const editorRef: Ref<TiptapRef | null> = ref(null)
 
-// 目录列表数据
-const contentsList: Ref<Post[]> = ref([])
-const lastContentsId: Ref<number> = ref(0x7fffffff)
+// 使用 useInfiniteScroll 加载目录列表
+const {
+  items: contentsList,
+  loadMore: loadMoreContents,
+  hasMore,
+} = useInfiniteScroll<Post>({
+  fetchFn: (params) => {
+    return isSelf.value
+      ? userServiceV1.getCurrentUserAllPosts(params.lastId, PostType.CONTENTS)
+      : userServiceV1.getUserPosts(targetUserId.value, params.lastId, PostType.CONTENTS)
+  },
+  getNextParams: (lastItem) => ({
+    lastId: lastItem.id,
+  }),
+  initialParams: { lastId: 0x7fffffff },
+})
 
-// 加载目录数据
+// 适配 v-infinite-scroll 的 load 事件
 const loadContents = async ({ done }: LoadEventData): Promise<void> => {
-  try {
-    // 查看自己：获取所有状态；查看别人：只获取已发布
-    const response = isSelf.value
-      ? await userServiceV1.getCurrentUserAllPosts(lastContentsId.value, PostType.CONTENTS)
-      : await userServiceV1.getUserPosts(targetUserId.value, lastContentsId.value, PostType.CONTENTS)
-
-    if (response.code === 401) {
-      console.log('not login')
-    } else if (response.code === 200) {
-      console.log(`get data:${JSON.stringify(response.data)}`)
-      contentsList.value.push(...response.data)
-
-      if (response.data.length > 0) {
-        lastContentsId.value = response.data[response.data.length - 1].id
-        done('ok')
-      } else {
-        done('empty')
-      }
-    }
-  } catch (error) {
-    console.error('Error get message:', error)
-  }
+  await loadMoreContents()
+  done(hasMore.value ? 'ok' : 'empty')
 }
 
 // 内部处理区域切换
@@ -96,28 +91,28 @@ const switchToLastPage = (): void => {
   switchMainArea(lastPage.value, currPosting.value)
 }
 
+// 使用 useMutation 修改文章
+const { execute: updatePost } = useMutation(
+  (data: { id: number; content: string }) => postServiceV1.updatePost(data.id, { content: data.content }),
+  {
+    onSuccess: (response) => {
+      if (currPosting.value && response) {
+        currPosting.value.content = response.content
+        currPosting.value.state = response.state
+      }
+      switchToLastPage()
+    },
+  },
+)
+
 // 修改文章
 const modifyPosting = async (): Promise<void> => {
   if (!currPosting.value || !editorRef.value) return
 
-  try {
-    console.log('begin post')
-
-    const response = await postServiceV1.updatePost(currPosting.value.id, {
-      content: editorRef.value.editor.getHTML(),
-    })
-    console.log(`response: ${JSON.stringify(response)}`)
-
-    if (response.code === 200 && response.data) {
-      console.log('Form submitted successfully')
-      // 使用后端返回的数据更新状态
-      currPosting.value.content = response.data.content
-      currPosting.value.state = response.data.state
-      switchToLastPage()
-    }
-  } catch (error) {
-    console.error('Error submitting form:', error)
-  }
+  await updatePost({
+    id: currPosting.value.id,
+    content: editorRef.value.editor.getHTML(),
+  })
 }
 
 // 处理删除目录

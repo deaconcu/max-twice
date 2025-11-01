@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { statsServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { useFetch } from '@/composables/useFetch'
 import TrendChart from '@/components/ranking/TrendChart.vue'
 import type { DailyStats } from '@/types/stats'
 
@@ -27,14 +28,60 @@ const { t } = useI18n()
 
 // 响应式数据
 const selectedPeriod: Ref<string> = ref('7') // 默认选择7天
-const statsData: Ref<StatsData | null> = ref(null)
-const loading: Ref<boolean> = ref(false)
-const error: Ref<string | null> = ref(null)
 
-// 全部时间统计数据
-const totalStatsData: Ref<StatsData | null> = ref(null)
-const totalStatsLoading: Ref<boolean> = ref(false)
-const totalStatsError: Ref<string | null> = ref(null)
+// 使用 useFetch 加载全部时间统计数据
+const {
+  data: totalStatsData,
+  loading: totalStatsLoading,
+  error: totalStatsError,
+  refresh: refreshTotalStats
+} = useFetch<StatsData>({
+  fetchFn: () => {
+    if (!userStore.currentUser?.id) {
+      throw new Error(t('userStats.userInfoFailed'))
+    }
+    return statsServiceV1.getUserAllTimeStats(userStore.currentUser.id)
+  },
+  immediate: true,
+  onError: (error) => {
+    console.error('Error loading total stats:', error)
+  }
+})
+
+// 获取时间段统计数据的函数
+const getPeriodStatsApi = () => {
+  if (!userStore.currentUser?.id) {
+    throw new Error(t('userStats.userInfoFailed'))
+  }
+
+  const userId = userStore.currentUser.id
+
+  switch (selectedPeriod.value) {
+    case 'today':
+      return statsServiceV1.getUserTodayStats(userId)
+    case 'yesterday':
+      return statsServiceV1.getUserYesterdayStats(userId)
+    default: {
+      const days = parseInt(selectedPeriod.value)
+      return statsServiceV1.getUserPeriodStats(userId, days)
+    }
+  }
+}
+
+// 使用 useFetch 加载时间段统计数据
+const {
+  data: statsData,
+  loading,
+  error,
+  execute: loadStatsData,
+  refresh: refreshStatsData
+} = useFetch<StatsData>({
+  fetchFn: getPeriodStatsApi,
+  immediate: true,
+  onError: (err) => {
+    console.error('Error loading stats:', err)
+  }
+})
 
 // 计算属性
 const showTrendChart = computed(() => {
@@ -121,90 +168,14 @@ const getPeriodText = (): string => {
 }
 
 // 数据加载方法
-const loadStatsData = async (): Promise<void> => {
-  if (!userStore.currentUser?.id) {
-    error.value = t('userStats.userInfoFailed')
-    return
-  }
-
-  loading.value = true
-  error.value = null
-
-  try {
-    const userId = userStore.currentUser?.id
-    let response: any
-
-    switch (selectedPeriod.value) {
-      case 'today':
-        response = await statsServiceV1.getUserTodayStats(userId)
-        break
-      case 'yesterday':
-        response = await statsServiceV1.getUserYesterdayStats(userId)
-        break
-      default: {
-        const days = parseInt(selectedPeriod.value)
-        response = await statsServiceV1.getUserPeriodStats(userId, days)
-        break
-      }
-    }
-
-    if (response.code === 200) {
-      statsData.value = response.data
-    } else {
-      throw new Error(response.msg || '获取统计数据失败')
-    }
-  } catch (err: any) {
-    console.error('Error loading stats:', err)
-    error.value = err.message || t('userStats.networkError')
-    statsData.value = null
-  } finally {
-    loading.value = false
-  }
-}
-
-// 加载全部时间统计数据
-const loadTotalStatsData = async (): Promise<void> => {
-  if (!userStore.currentUser?.id) {
-    totalStatsError.value = t('userStats.userInfoFailed')
-    return
-  }
-
-  totalStatsLoading.value = true
-  totalStatsError.value = null
-
-  try {
-    const userId = userStore.currentUser?.id
-    const response = await statsServiceV1.getUserAllTimeStats(userId)
-
-    if (response.code === 200) {
-      totalStatsData.value = response.data
-    } else {
-      throw new Error(response.message || '获取全部时间统计失败')
-    }
-  } catch (err: any) {
-    console.error('Error loading total stats:', err)
-    totalStatsError.value = err.message || '加载失败'
-    totalStatsData.value = null
-  } finally {
-    totalStatsLoading.value = false
-  }
-}
-
-// 事件处理
 const onPeriodChange = (): void => {
   loadStatsData()
 }
 
 const refreshData = (): void => {
   loadStatsData()
-  loadTotalStatsData() // 同时刷新全部时间数据
+  refreshTotalStats()
 }
-
-// 生命周期
-onMounted(() => {
-  loadStatsData()
-  loadTotalStatsData() // 页面加载时同时加载全部时间数据
-})
 
 // 监听用户状态变化
 watch(
@@ -212,7 +183,7 @@ watch(
   (newUserId) => {
     if (newUserId) {
       loadStatsData()
-      loadTotalStatsData() // 用户变化时也重新加载全部时间数据
+      refreshTotalStats()
     }
   }
 )
@@ -308,7 +279,7 @@ watch(
 
         <div v-else-if="totalStatsError" class="text-center py-3">
           <v-icon color="warning" size="20" class="mr-1">mdi-alert-circle</v-icon>
-          <span class="text-body-2 text-warning">{{ totalStatsError }}</span>
+          <span class="text-body-2 text-warning">{{ totalStatsError.message }}</span>
         </div>
       </div>
     </div>
@@ -392,7 +363,7 @@ watch(
         </template>
         <div class="alert-content">
           <div class="alert-title">{{ t('userStats.dataLoadFailed') }}</div>
-          <div class="alert-text">{{ error }}</div>
+          <div class="alert-text">{{ error.message }}</div>
           <v-btn size="small" variant="outlined" color="warning" class="mt-2" @click="refreshData">
             {{ t('userStats.retry') }}
           </v-btn>

@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { inject, ref, computed } from 'vue'
+import { inject, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminNodeServiceV1 } from '@/services/api/v1/adminApiServiceV1'
 import { ContentState } from '@/types/enums'
 import type { Node } from '@/types/node'
 import RejectBanDialog from './RejectBanDialog.vue'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useMutation } from '@/composables/useMutation'
 
 const { t } = useI18n()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
@@ -58,149 +60,72 @@ const filterCourseId = ref<number | undefined>(undefined)
 const filterCreatorId = ref<number | undefined>(undefined)
 const isFilterMode = ref<boolean>(false)
 
-// 节点列表
-const nodeList = ref<Node[]>([])
-const loading = ref<boolean>(false)
-const hasMore = ref<boolean>(true)
-
 // 拒绝/屏蔽对话框
 const showReasonDialog = ref<boolean>(false)
 const currentNode = ref<Node | null>(null)
-const submitting = ref<boolean>(false)
 const dialogType = ref<'reject' | 'ban'>('reject')
 
-// 根据当前tab获取节点列表
-const getNodesByTab = async (tabKey: string, isLoadMore: boolean = false): Promise<void> => {
-  if (loading.value) return
+// 使用 useInfiniteScroll 加载节点列表
+const {
+  items: nodeList,
+  loading,
+  hasMore,
+  loadMore,
+  reset: resetNodeList
+} = useInfiniteScroll({
+  fetchFn: (params) => {
+    const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
 
-  loading.value = true
-
-  try {
-    const lastId = isLoadMore && nodeList.value.length > 0
-      ? nodeList.value[nodeList.value.length - 1].id
-      : null
-
-    const currentTabConfig = tabs.find(tab => tab.key === tabKey)
-    if (!currentTabConfig) return
-
-    const response = await adminNodeServiceV1.getAdminNodes(
-      currentTabConfig.state,
-      null,
-      null,
-      null,
-      lastId
-    )
-
-    if (response.code === 200) {
-      const newNodes = response.data as Node[]
-
-      if (isLoadMore) {
-        nodeList.value.push(...newNodes)
-      } else {
-        nodeList.value = newNodes
-      }
-
-      hasMore.value = newNodes.length === 20
+    if (isFilterMode.value) {
+      // 筛选模式：如果使用节点 ID 筛选则不传递状态（节点 ID 唯一）
+      const state = filterNodeId.value ? null : currentTabConfig?.state || null
+      return adminNodeServiceV1.getAdminNodes(
+        state,
+        filterNodeId.value || null,
+        filterCourseId.value || null,
+        filterCreatorId.value || null,
+        params.lastId
+      )
     } else {
-      showSnackbar && showSnackbar(response.message || 'error.loadFailed', 'error')
+      return adminNodeServiceV1.getAdminNodes(
+        currentTabConfig?.state || null,
+        null,
+        null,
+        null,
+        params.lastId
+      )
     }
-  } catch (error) {
-    console.error('Error loading nodes:', error)
-    showSnackbar?.('加载失败', 'error')
-  } finally {
-    loading.value = false
+  },
+  getNextParams: (lastItem) => ({
+    lastId: lastItem.id
+  }),
+  initialParams: {
+    lastId: null
   }
-}
-
-// 搜索节点（筛选模式）
-const searchNodes = async (isLoadMore: boolean = false) => {
-  if (!isLoadMore && !filterNodeId.value && !filterCourseId.value && !filterCreatorId.value) {
-    showSnackbar?.('请至少输入一个筛选条件', 'warning')
-    return
-  }
-
-  loading.value = true
-  try {
-    const lastId = isLoadMore && nodeList.value.length > 0
-      ? nodeList.value[nodeList.value.length - 1].id
-      : null
-
-    // 如果使用节点 ID 筛选，不需要传递状态参数（节点 ID 是唯一的）
-    // 否则筛选模式下也保留当前 tab 的状态
-    let currentState = null
-    if (!filterNodeId.value) {
-      const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
-      currentState = currentTabConfig?.state || null
-    }
-
-    const response = await adminNodeServiceV1.getAdminNodes(
-      currentState,
-      filterNodeId.value || null,
-      filterCourseId.value || null,
-      filterCreatorId.value || null,
-      lastId
-    )
-
-    if (response.code === 200) {
-      const newNodes = response.data as Node[]
-
-      if (isLoadMore) {
-        nodeList.value.push(...newNodes)
-      } else {
-        nodeList.value = newNodes
-      }
-
-      hasMore.value = newNodes.length === 20
-    }
-  } catch (error) {
-    console.error('Error searching nodes:', error)
-    showSnackbar?.('搜索失败', 'error')
-  } finally {
-    loading.value = false
-  }
-}
+})
 
 // 应用筛选
-const applyFilter = async (): Promise<void> => {
+const applyFilter = (): void => {
   if (!filterNodeId.value && !filterCourseId.value && !filterCreatorId.value) {
     showSnackbar?.('请至少输入一个筛选条件', 'warning')
     return
   }
   isFilterMode.value = true
-  hasMore.value = true
-  await searchNodes()
+  resetNodeList()
 }
 
 // 清除筛选
-const clearFilter = async (): Promise<void> => {
+const clearFilter = (): void => {
   filterNodeId.value = undefined
   filterCourseId.value = undefined
   filterCreatorId.value = undefined
   isFilterMode.value = false
-  hasMore.value = true
-  await getNodesByTab(currentTab.value)
-}
-
-// 加载更多
-const loadMore = async () => {
-  if (hasMore.value && !loading.value) {
-    if (isFilterMode.value) {
-      await searchNodes(true)
-    } else {
-      await getNodesByTab(currentTab.value, true)
-    }
-  }
+  resetNodeList()
 }
 
 // 监听tab切换
-const handleTabChange = async (newTab: string) => {
-  hasMore.value = true
-  if (isFilterMode.value) {
-    // 如果在筛选模式下，切换tab时重新应用筛选（保留筛选条件）
-    await searchNodes()
-  } else {
-    await getNodesByTab(newTab)
-  }
+const handleTabChange = (newTab: string) => {
+  resetNodeList()
 }
 
 const getStateColor = (state: ContentState): string => {
@@ -223,32 +148,32 @@ const getStateText = (state: ContentState): string => {
   }
 }
 
-const updateNodeState = async (node: Node, newState: number) => {
-  try {
-    const response = await adminNodeServiceV1.updateNodeState(node.id, newState)
-    if (response.code === 200) {
-      const updatedNode = response.data as Node
-      // 从当前列表中移除（如果状态改变且不在筛选模式）
+// 使用 useMutation 更新节点状态
+const { execute: executeUpdateNodeState } = useMutation(
+  (data: { nodeId: number; newState: number; reason?: string }) =>
+    adminNodeServiceV1.updateNodeState(data.nodeId, data.newState, data.reason),
+  {
+    onSuccess: (response, data) => {
+      const updatedNode = response as Node
+      showSnackbar?.(`节点状态已更新为${getStateText(data.newState)}`, 'success')
+
       if (!isFilterMode.value) {
-        const index = nodeList.value.findIndex(n => n.id === node.id)
+        const index = nodeList.value.findIndex(n => n.id === data.nodeId)
         if (index !== -1) {
           nodeList.value.splice(index, 1)
         }
       } else {
-        // 筛选模式下更新状态
-        const index = nodeList.value.findIndex(n => n.id === node.id)
+        const index = nodeList.value.findIndex(n => n.id === data.nodeId)
         if (index !== -1) {
           nodeList.value[index].state = updatedNode.state
         }
       }
-      showSnackbar?.(`节点状态已更新为${getStateText(newState)}`, 'success')
-    } else {
-      showSnackbar && showSnackbar(response.message || 'error.operationFailed', 'error')
     }
-  } catch (error) {
-    console.error('Error updating node state:', error)
-    showSnackbar?.('更新节点状态失败', 'error')
   }
+)
+
+const updateNodeState = async (node: Node, newState: number) => {
+  await executeUpdateNodeState({ nodeId: node.id, newState })
 }
 
 // 打开拒绝对话框
@@ -265,53 +190,45 @@ const showBanDialog = (node: Node) => {
   showReasonDialog.value = true
 }
 
-// 确认操作
-const handleConfirmAction = async (reason: string) => {
-  if (!currentNode.value) return
-
-  try {
-    submitting.value = true
-    const targetState = dialogType.value === 'reject' ? ContentState.REJECTED : ContentState.BANNED
-
-    const response = await adminNodeServiceV1.updateNodeState(currentNode.value.id, targetState, reason)
-
-    if (response.code === 200) {
-      const message = dialogType.value === 'reject' ? '已拒绝' : '已屏蔽'
+// 使用 useMutation 处理拒绝/屏蔽
+const { execute: executeRejectOrBan, loading: submitting } = useMutation(
+  (data: { nodeId: number; targetState: number; reason: string }) =>
+    adminNodeServiceV1.updateNodeState(data.nodeId, data.targetState, data.reason),
+  {
+    onSuccess: (_, data) => {
+      const message = data.targetState === ContentState.REJECTED ? '已拒绝' : '已屏蔽'
       showSnackbar?.(message, 'success')
 
-      // 从当前列表中移除(如果状态改变且不在筛选模式)
       if (!isFilterMode.value) {
-        const index = nodeList.value.findIndex(n => n.id === currentNode.value!.id)
+        const index = nodeList.value.findIndex(n => n.id === data.nodeId)
         if (index !== -1) {
           nodeList.value.splice(index, 1)
         }
       } else {
-        // 筛选模式下更新状态
-        const index = nodeList.value.findIndex(n => n.id === currentNode.value!.id)
+        const index = nodeList.value.findIndex(n => n.id === data.nodeId)
         if (index !== -1) {
-          nodeList.value[index].state = targetState
+          nodeList.value[index].state = data.targetState
         }
       }
 
       showReasonDialog.value = false
       currentNode.value = null
-    } else {
-      showSnackbar?.(response.message || '操作失败', 'error')
     }
-  } catch (error) {
-    console.error('Error updating node state:', error)
-    showSnackbar?.('操作失败', 'error')
-  } finally {
-    submitting.value = false
   }
+)
+
+// 确认操作
+const handleConfirmAction = async (reason: string) => {
+  if (!currentNode.value) return
+
+  const targetState = dialogType.value === 'reject' ? ContentState.REJECTED : ContentState.BANNED
+  await executeRejectOrBan({
+    nodeId: currentNode.value.id,
+    targetState,
+    reason
+  })
 }
 
-// 组件挂载时加载默认tab的数据
-import { onMounted } from 'vue'
-
-onMounted(() => {
-  getNodesByTab(currentTab.value)
-})
 </script>
 
 <template>

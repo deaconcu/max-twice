@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, ref } from 'vue'
+import { computed, inject, ref } from 'vue'
 import type { Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { progressServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { useFetch } from '@/composables/useFetch'
 import RoadmapVueFlow from '@/components/common/RoadmapVueFlow.vue'
 import RoadmapDetail from '@/components/roadmap/RoadmapDetail.vue'
 import dagre from 'dagre'
@@ -62,94 +63,6 @@ const selectedLearningTab: Ref<string> = ref('roadmaps')
 // RoadmapDetail 浮层状态
 const showRoadmapDetail: Ref<boolean> = ref(false)
 const selectedRoadmap: Ref<ProcessedUserRoadmap | null> = ref(null)
-
-// 学习进度加载函数
-const loadLearningProgress = async (): Promise<void> => {
-  try {
-    const [roadmapResponse, courseResponse] = await Promise.all([
-      progressServiceV1.getUserRoadmaps(),
-      progressServiceV1.getAllCourseProgress(targetUserId.value),
-    ])
-
-    console.log('获取用户学习路线图数据:', roadmapResponse)
-    console.log('获取用户学习课程数据:', courseResponse)
-
-    let roadmaps: ProcessedUserRoadmap[] = []
-    let courses: LearningCourse[] = []
-
-    // 处理路线图数据
-    if (roadmapResponse.code === 200 && Array.isArray(roadmapResponse.data)) {
-      roadmaps = roadmapResponse.data.map((userRoadmap: any): ProcessedUserRoadmap => {
-        const { roadmap } = userRoadmap
-        const { nodes, edges } = parseRoadmapContent(roadmap.content)
-
-        const layoutedNodes = applyAutoLayout(nodes, edges, 'BT')
-
-        const completedNodes = nodes.filter((node) => node.data.completed).length
-        const totalNodes = nodes.length
-        const progress = totalNodes > 0 ? Math.round((completedNodes / totalNodes) * 100) : 0
-
-        return {
-          id: roadmap.id,
-          title: roadmap.description || `学习路线图 ${roadmap.id}`,
-          description: roadmap.description || '暂无描述',
-          creator: roadmap.creator,
-          createdAt: roadmap.createdAt,
-          addedDate: formatDate(userRoadmap.startedAt),
-          vote: roadmap.vote || 0,
-          upvoted: roadmap.upvoted || false,
-          progress: userRoadmap.progressPercent || progress,
-          completedNodes,
-          totalNodes,
-          lastActivity: getRelativeTime(userRoadmap.updatedAt),
-          state: userRoadmap.state,
-          startedAt: userRoadmap.startedAt,
-          completedAt: userRoadmap.completedAt,
-          tags: extractTags(roadmap.description),
-          profession: roadmap.profession,
-          nodes: layoutedNodes,
-          edges,
-          content: generateRoadmapHTML(nodes),
-        }
-      })
-    }
-
-    // 处理课程数据
-    if (courseResponse.code === 200 && Array.isArray(courseResponse.data)) {
-      courses = courseResponse.data.map((userCourse: any): LearningCourse => {
-        return {
-          id: userCourse.id,
-          name: userCourse.course.name, // 添加name字段
-          courseId: userCourse.course.id,
-          title: userCourse.course.name,
-          description: userCourse.course.description,
-          progress: userCourse.progressPercent || 0,
-          totalLessons: calculateTotalLessons(userCourse.course),
-          completedLessons: calculateCompletedLessons(userCourse),
-          category: getCategoryFromDescription(userCourse.course.description),
-          difficulty: getDifficultyFromStatus(userCourse.state),
-          estimatedTime: getEstimatedTime(userCourse.course.description),
-          lastActivity: getRelativeTime(userCourse.updatedAt),
-          instructor: userCourse.course.creator?.name || '未知讲师',
-        }
-      })
-    }
-
-    learningData.value = {
-      totalProgress: calculateOverallProgress(roadmaps, courses),
-      completedNodes: calculateCompletedNodes(roadmaps),
-      totalNodes: calculateTotalNodes(roadmaps),
-      roadmaps,
-      courses,
-      recentActivities: generateRecentActivities([...roadmaps, ...courses]),
-    }
-
-    console.log('learningData:', learningData.value)
-  } catch (error) {
-    console.error('Error loading learning data:', error)
-    showSnackbar('加载学习数据失败')
-  }
-}
 
 // 解析路线图内容
 const parseRoadmapContent = (content: string | object): { nodes: FlowNode[]; edges: FlowEdge[] } => {
@@ -530,9 +443,99 @@ const openCourse = (courseId: number): void => {
   window.open(url, '_blank')
 }
 
-// 组件挂载时加载数据
-onMounted(() => {
-  loadLearningProgress()
+// 使用 useFetch 加载学习进度数据
+useFetch({
+  fetchFn: async () => {
+    const userId = targetUserId.value
+    if (!userId) return { roadmaps: [], courses: [] }
+
+    // 并行加载路线图和课程数据
+    const [roadmapsResponse, coursesResponse] = await Promise.all([
+      progressServiceV1.getUserRoadmaps(),
+      progressServiceV1.getAllCourseProgress(),
+    ])
+
+    return {
+      roadmaps: roadmapsResponse.data || [],
+      courses: coursesResponse.data || [],
+    }
+  },
+  immediate: true,
+  onSuccess: (data) => {
+    const { roadmaps: rawRoadmaps, courses: rawCourses } = data
+
+    // 处理路线图数据
+    const processedRoadmaps: ProcessedUserRoadmap[] = rawRoadmaps.map((userRoadmap: any) => {
+      const roadmap = userRoadmap.roadmap || {}
+
+      // 解析并应用布局
+      const { nodes, edges } = parseRoadmapContent(roadmap.content || '{}')
+      const layoutedNodes = nodes.length > 0 ? applyAutoLayout(nodes, edges) : []
+
+      // 计算进度相关指标
+      const totalNodes = nodes.length
+      const completedNodes = nodes.filter((n: FlowNode) => n.data?.completed).length
+      const progress = totalNodes > 0 ? Math.round((completedNodes / totalNodes) * 100) : 0
+
+      return {
+        id: userRoadmap.id || roadmap.id,
+        roadmapId: roadmap.id,
+        title: roadmap.description || '未命名路线图',
+        profession: roadmap.profession,
+        description: roadmap.description || '',
+        progress,
+        state: userRoadmap.state || UserProgressState.NOT_STARTED,
+        nodes: layoutedNodes,
+        edges,
+        completedNodes,
+        totalNodes,
+        tags: extractTags(roadmap.description || ''),
+        upvoted: false,
+        vote: 0,
+        lastActivity: getRelativeTime(userRoadmap.updatedAt || userRoadmap.createdAt),
+        startedAt: userRoadmap.startedAt,
+        completedAt: userRoadmap.completedAt,
+      } as ProcessedUserRoadmap
+    })
+
+    // 处理课程数据
+    const processedCourses: LearningCourse[] = rawCourses.map((userCourse: any) => {
+      const course = userCourse.course || {}
+      const totalLessons = calculateTotalLessons(course)
+      const completedLessons = calculateCompletedLessons(userCourse)
+      const progress = userCourse.progressPercent || 0
+
+      return {
+        id: course.id,
+        courseId: course.id,
+        title: course.name || '未命名课程',
+        name: course.name,
+        description: course.description || '',
+        progress,
+        totalLessons,
+        completedLessons,
+        category: getCategoryFromDescription(course.description || ''),
+        difficulty: getDifficultyFromStatus(userCourse.state),
+        estimatedTime: getEstimatedTime(course.description || ''),
+        lastActivity: getRelativeTime(userCourse.updatedAt || userCourse.createdAt),
+        instructor: course.author || '未知',
+      } as LearningCourse
+    })
+
+    // 更新 learningData
+    learningData.value = {
+      roadmaps: processedRoadmaps,
+      courses: processedCourses,
+      totalProgress: calculateOverallProgress(processedRoadmaps, processedCourses),
+      completedNodes: calculateCompletedNodes(processedRoadmaps),
+      totalNodes: calculateTotalNodes(processedRoadmaps),
+      recentActivities: generateRecentActivities([...processedRoadmaps, ...processedCourses]),
+    }
+  },
+  onError: (error) => {
+    console.error('加载学习进度失败:', error)
+    showSnackbar('加载学习进度失败，请重试')
+  },
 })
 </script>
 

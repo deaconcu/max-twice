@@ -9,6 +9,7 @@ import {
 } from '@/services/api/v1/apiServiceV1'
 import { useUserStore } from '@/stores/user'
 import type { Course } from '@/types/course'
+import { useMutation } from '@/composables/useMutation'
 
 // 扩展课程信息，添加UI所需字段
 interface CourseInfo extends Course {
@@ -63,73 +64,66 @@ const showSnackbar = inject<(message: string, type?: string) => void>('showSnack
 
 // 创建子课程对话框状态
 const applyCourseDialog = ref<boolean>(false)
-const isCreatingSubcourse = ref<boolean>(false)
 const subcourseForm = ref<any>(null)
 const applyCourseData = ref<ApplyCourseData>({
   name: '',
   description: '',
 })
 
-// 订阅/取消订阅课程
-const subscript = async (courseId: number, action: boolean): Promise<void> => {
-  try {
-    let response = null
-    if (action) {
-      response = await subscriptionServiceV1.subscribe(courseId)
-    } else {
-      response = await subscriptionServiceV1.unsubscribe(courseId)
-    }
-
-    if (response.code === 401) {
-      console.log('not login')
-      showSnackbar?.(t('read.messages.pleaseLogin'), 'error')
-    } else if (response.code === 200) {
-      console.log(`data:${response.data}`)
-      console.log('done')
+// 使用 useMutation 处理订阅/取消订阅
+const { execute: handleSubscription } = useMutation(
+  (data: { courseId: number; action: boolean }) => {
+    return data.action
+      ? subscriptionServiceV1.subscribe(data.courseId)
+      : subscriptionServiceV1.unsubscribe(data.courseId)
+  },
+  {
+    onSuccess: (response, data) => {
       // 更新用户store中的数据
       if (user.currentUser) {
         user.setUser({
           ...user.currentUser,
-          subscriptions: response.data
+          subscriptions: response
         })
       }
       showSnackbar?.(
-        action ? t('read.messages.favoriteSuccess') : t('read.messages.favoriteRemoved'),
+        data.action ? t('read.messages.favoriteSuccess') : t('read.messages.favoriteRemoved'),
         'success'
       )
-      emit('subscribe-course', { courseId, action, data: response.data })
-    } else {
+      emit('subscribe-course', { courseId: data.courseId, action: data.action, data: response })
+    },
+    onError: () => {
       showSnackbar?.(t('read.messages.operationFailed'), 'error')
-    }
-  } catch (error) {
-    console.error('Error updating subscription:', error)
-    showSnackbar?.('操作失败，请稍后重试', 'error')
-  }
+    },
+  },
+)
+
+// 订阅/取消订阅课程
+const subscript = async (courseId: number, action: boolean): Promise<void> => {
+  await handleSubscription({ courseId, action })
 }
 
-// 开始学习课程
-const startCourse = async (): Promise<void> => {
-  try {
-    const courseId = parseInt(route.query.courseId as string) 
-    const response = await progressServiceV1.startCourse(courseId)
-
-    if (response.code === 401) {
-      console.log('not login')
-      showSnackbar?.(t('read.messages.pleaseLogin'))
-    } else if (response.code === 200) {
-      emit('start-learning', response.data)
-      if (response.data) {
+// 使用 useMutation 开始学习课程
+const { execute: startLearning } = useMutation(
+  () => progressServiceV1.startCourse(parseInt(route.query.courseId as string)),
+  {
+    onSuccess: (response) => {
+      emit('start-learning', response)
+      if (response) {
         showSnackbar?.(t('read.messages.startLearningSuccess'))
       } else {
         showSnackbar?.(t('read.messages.stopLearningSuccess'))
       }
-    } else {
+    },
+    onError: () => {
       showSnackbar?.(t('read.messages.operationFailed'))
-    }
-  } catch (error) {
-    console.error('Error starting course:', error)
-    showSnackbar?.(t('read.messages.operationFailed'))
-  }
+    },
+  },
+)
+
+// 开始学习课程
+const startCourse = async (): Promise<void> => {
+  await startLearning()
 }
 
 // 跳转到子课程
@@ -146,41 +140,41 @@ const goToParentCourse = (): void => {
   }
 }
 
-// 创建子课程
-const postApplyCourse = async (): Promise<void> => {
-  try {
-    if (!user.currentUser?.id) {
-      showSnackbar?.(t('read.messages.pleaseLogin'), 'error')
-      return
-    }
-
-    isCreatingSubcourse.value = true
-    const courseId = parseInt(route.query.courseId as string) 
-    const response = await courseServiceV1.createSubcourse(
+// 使用 useMutation 创建子课程
+const { execute: createSubcourse, loading: isCreatingSubcourse } = useMutation(
+  () => {
+    const courseId = parseInt(route.query.courseId as string)
+    return courseServiceV1.createSubcourse(
       courseId,
       applyCourseData.value.name,
       applyCourseData.value.description
     )
-
-    if (response.code === 200) {
-      showSnackbar?.(t('read.subcourse.applySuccess'), 'success')
+  },
+  {
+    successMessage: t('read.subcourse.applySuccess'),
+    onSuccess: () => {
       applyCourseDialog.value = false
       applyCourseData.value = { name: '', description: '' }
       emit('subcourse-created')
-    } else {
+    },
+    onError: (error: any) => {
       showSnackbar?.(
         t('read.subcourse.createFailedWithMsg', {
-          msg: response.message || t('read.subcourse.unknownError'),
+          msg: error?.message || t('read.subcourse.unknownError'),
         }),
         'error'
       )
-    }
-  } catch (error) {
-    console.error('创建子课程失败:', error)
-    showSnackbar?.(t('read.subcourse.applyFailed'), 'error')
-  } finally {
-    isCreatingSubcourse.value = false
+    },
+  },
+)
+
+// 创建子课程
+const postApplyCourse = async (): Promise<void> => {
+  if (!user.currentUser?.id) {
+    showSnackbar?.(t('read.messages.pleaseLogin'), 'error')
+    return
   }
+  await createSubcourse()
 }
 
 const closeCreateDialog = (): void => {

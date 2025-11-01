@@ -503,12 +503,15 @@
 </template>
 
 <script setup lang="ts">
-import { inject, onMounted, ref } from 'vue'
+import { inject, ref } from 'vue'
 import { statsServiceV1 } from '@/services/api/v1/apiServiceV1'
 import { adminAutoAuthorServiceV1, adminSystemServiceV1 } from '@/services/api/v1/adminApiServiceV1'
 import { useI18n } from 'vue-i18n'
+import { useFetch } from '@/composables/useFetch'
+import { useMutation } from '@/composables/useMutation'
 
 const { t } = useI18n()
+const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
 // 操作历史记录类型
 interface OperationRecord {
@@ -534,77 +537,19 @@ interface HealthResult {
   details?: string
 }
 
-// 响应式数据
-const readonlyModeEnabled = ref<boolean>(false)
-const togglingReadonlyMode = ref<boolean>(false)
+// 操作历史记录
+const operationHistory = ref<OperationRecord[]>([])
 
+// 同步相关
 const syncDate = ref<string>('')
-const syncingManual = ref<boolean>(false)
-const syncingSpecific = ref<boolean>(false)
 const syncResult = ref<SyncResult | null>(null)
 
-const checkingHealth = ref<boolean>(false)
+// 健康检查相关
 const healthResult = ref<HealthResult | null>(null)
 const lastHealthCheck = ref<string>('')
 
+// AutoAuthor 相关
 const nodeId = ref<string>('')
-const enqueuingNode = ref<boolean>(false)
-const scanningNodes = ref<boolean>(false)
-const resettingSession = ref<boolean>(false)
-const clearingQueue = ref<boolean>(false)
-
-const operationHistory = ref<OperationRecord[]>([])
-
-const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
-
-/**
- * 加载只读模式状态
- */
-const loadReadonlyMode = async (): Promise<void> => {
-  try {
-    const response = await adminSystemServiceV1.getReadonlyMode()
-    if (response.code === 200 && response.data) {
-      readonlyModeEnabled.value = response.data.enabled
-    }
-  } catch (error: any) {
-    console.error('[SystemOperations] 加载只读模式状态失败:', error)
-  }
-}
-
-/**
- * 切换只读模式
- */
-const toggleReadonlyMode = async (enabled: boolean): Promise<void> => {
-  togglingReadonlyMode.value = true
-
-  try {
-    console.log('[SystemOperations] 切换只读模式:', enabled)
-
-    const response = await adminSystemServiceV1.setReadonlyMode(enabled)
-
-    if (response.code === 200) {
-      showSnackbar?.(enabled ? '只读模式已开启' : '只读模式已关闭', 'success')
-      addOperationToHistory(
-        '只读模式',
-        enabled ? '开启系统只读模式' : '关闭系统只读模式',
-        true
-      )
-      console.log('[SystemOperations] 只读模式切换成功')
-    } else {
-      throw new Error(response.message || '操作失败')
-    }
-  } catch (error: any) {
-    console.error('[SystemOperations] 切换只读模式失败:', error)
-
-    // 恢复原状态
-    readonlyModeEnabled.value = !enabled
-
-    showSnackbar?.(`切换只读模式失败: ${error.message}`, 'error')
-    addOperationToHistory('只读模式', `切换失败: ${error.message}`, false)
-  } finally {
-    togglingReadonlyMode.value = false
-  }
-}
 
 /**
  * 添加操作记录到历史
@@ -625,256 +570,244 @@ const addOperationToHistory = (title: string, description: string, success: bool
   }
 }
 
-/**
- * 手动同步Redis统计数据到数据库
- * 触发后端的手动同步接口，同步所有Redis中的统计数据
- */
-const syncStatsManual = async (): Promise<void> => {
-  syncingManual.value = true
-  syncResult.value = null
+// 使用 useFetch 加载只读模式状态
+const {
+  data: readonlyModeData,
+  refresh: loadReadonlyMode
+} = useFetch({
+  fetchFn: async () => {
+    const response = await adminSystemServiceV1.getReadonlyMode()
+    if (response.code === 200 && response.data) {
+      return response.data
+    }
+    return null
+  },
+  immediate: true,
+  onError: (error) => {
+    console.error('[SystemOperations] 加载只读模式状态失败:', error)
+  }
+})
 
-  try {
-    console.log('[SystemOperations] 开始手动同步Redis统计数据...')
+// 响应式只读模式开关
+const readonlyModeEnabled = ref<boolean>(false)
 
-    const response = await statsServiceV1.syncManual()
+// 监听数据变化更新 switch 状态
+const updateReadonlyMode = () => {
+  if (readonlyModeData.value) {
+    readonlyModeEnabled.value = readonlyModeData.value.enabled
+  }
+}
 
-    if (response.code === 200) {
+// 切换只读模式
+const { execute: toggleReadonlyModeExecute, loading: togglingReadonlyMode } = useMutation(
+  (enabled: boolean) => adminSystemServiceV1.setReadonlyMode(enabled),
+  {
+    successMessage: '',
+    showToast: false,
+    onSuccess: (result, enabled) => {
+      showSnackbar?.(enabled ? '只读模式已开启' : '只读模式已关闭', 'success')
+      addOperationToHistory(
+        '只读模式',
+        enabled ? '开启系统只读模式' : '关闭系统只读模式',
+        true
+      )
+      readonlyModeEnabled.value = enabled
+      console.log('[SystemOperations] 只读模式切换成功')
+    },
+    onError: (error) => {
+      console.error('[SystemOperations] 切换只读模式失败:', error)
+      // 恢复原状态
+      readonlyModeEnabled.value = !readonlyModeEnabled.value
+      addOperationToHistory('只读模式', `切换失败: ${error.message}`, false)
+    }
+  }
+)
+
+const toggleReadonlyMode = (enabled: boolean) => {
+  toggleReadonlyModeExecute(enabled)
+}
+
+// 手动同步Redis统计数据
+const { execute: syncStatsManual, loading: syncingManual } = useMutation(
+  statsServiceV1.syncManual,
+  {
+    showToast: false,
+    onSuccess: (result) => {
       syncResult.value = {
         type: 'success',
         title: '同步成功',
         message: 'Redis统计数据已成功同步到数据库',
         details: `同步时间: ${new Date().toLocaleString()}`,
       }
-
       showSnackbar?.('统计数据同步成功', 'success')
       addOperationToHistory('Redis数据同步', '手动同步Redis统计数据到数据库', true)
-      console.log('[SystemOperations] Redis统计数据同步成功:', response.data)
-    } else {
-      throw new Error(response.message || '同步失败')
+      console.log('[SystemOperations] Redis统计数据同步成功:', result)
+    },
+    onError: (error) => {
+      console.error('[SystemOperations] Redis统计数据同步失败:', error)
+      syncResult.value = {
+        type: 'error',
+        title: '同步失败',
+        message: error.message || '同步过程中发生错误',
+        details: `错误时间: ${new Date().toLocaleString()}`,
+      }
+      addOperationToHistory('Redis数据同步', `同步失败: ${error.message}`, false)
     }
-  } catch (error: any) {
-    console.error('[SystemOperations] Redis统计数据同步失败:', error)
-
-    syncResult.value = {
-      type: 'error',
-      title: '同步失败',
-      message: error.message || '同步过程中发生错误',
-      details: `错误时间: ${new Date().toLocaleString()}`,
-    }
-
-    showSnackbar?.(`统计数据同步失败: ${error.message}`, 'error')
-    addOperationToHistory('Redis数据同步', `同步失败: ${error.message}`, false)
-  } finally {
-    syncingManual.value = false
   }
-}
+)
 
-/**
- * 同步指定日期的Redis统计数据到数据库
- * 可以指定具体日期，如果不指定则同步昨日数据
- */
-const syncStatsSpecificDate = async (): Promise<void> => {
-  syncingSpecific.value = true
-  syncResult.value = null
-
-  try {
-    const targetDate = syncDate.value || null
-    console.log('[SystemOperations] 开始同步指定日期的统计数据:', targetDate || '昨日')
-
-    const response = await statsServiceV1.syncDate(targetDate)
-
-    if (response.code === 200) {
+// 同步指定日期的Redis统计数据
+const { execute: syncStatsSpecificDateExecute, loading: syncingSpecific } = useMutation(
+  (targetDate: string | null) => statsServiceV1.syncDate(targetDate),
+  {
+    showToast: false,
+    onSuccess: (result, targetDate) => {
       const displayDate = targetDate || '昨日'
       syncResult.value = {
         type: 'success',
         title: '同步成功',
         message: `${displayDate}的统计数据已成功同步到数据库`,
-        details: response.data || `同步时间: ${new Date().toLocaleString()}`,
+        details: result || `同步时间: ${new Date().toLocaleString()}`,
       }
-
       showSnackbar?.(`${displayDate}统计数据同步成功`, 'success')
       addOperationToHistory('指定日期数据同步', `同步${displayDate}的统计数据`, true)
-      console.log('[SystemOperations] 指定日期统计数据同步成功:', response.data)
-    } else {
-      throw new Error(response.message || '同步失败')
+      console.log('[SystemOperations] 指定日期统计数据同步成功:', result)
+    },
+    onError: (error) => {
+      console.error('[SystemOperations] 指定日期统计数据同步失败:', error)
+      const displayDate = syncDate.value || '昨日'
+      syncResult.value = {
+        type: 'error',
+        title: '同步失败',
+        message: `${displayDate}数据同步失败: ${error.message || '同步过程中发生错误'}`,
+        details: `错误时间: ${new Date().toLocaleString()}`,
+      }
+      addOperationToHistory('指定日期数据同步', `${displayDate}同步失败: ${error.message}`, false)
     }
-  } catch (error: any) {
-    console.error('[SystemOperations] 指定日期统计数据同步失败:', error)
-
-    const displayDate = syncDate.value || '昨日'
-    syncResult.value = {
-      type: 'error',
-      title: '同步失败',
-      message: `${displayDate}数据同步失败: ${error.message || '同步过程中发生错误'}`,
-      details: `错误时间: ${new Date().toLocaleString()}`,
-    }
-
-    showSnackbar?.(`${displayDate}统计数据同步失败: ${error.message}`, 'error')
-    addOperationToHistory('指定日期数据同步', `${displayDate}同步失败: ${error.message}`, false)
-  } finally {
-    syncingSpecific.value = false
   }
+)
+
+const syncStatsSpecificDate = () => {
+  const targetDate = syncDate.value || null
+  console.log('[SystemOperations] 开始同步指定日期的统计数据:', targetDate || '昨日')
+  syncStatsSpecificDateExecute(targetDate)
 }
 
-/**
- * 检查系统健康状态
- */
-const checkSystemHealth = async (): Promise<void> => {
-  checkingHealth.value = true
-  healthResult.value = null
-
-  try {
-    console.log('[SystemOperations] 开始系统健康检查...')
-
-    const response = await statsServiceV1.getHealth()
-
-    if (response.code === 200) {
+// 检查系统健康状态
+const { execute: checkSystemHealth, loading: checkingHealth } = useMutation(
+  statsServiceV1.getHealth,
+  {
+    showToast: false,
+    onSuccess: (result) => {
       healthResult.value = {
         type: 'success',
         title: '系统健康',
         message: '所有系统组件运行正常',
         details:
-          typeof response.data === 'string'
-            ? response.data
-            : JSON.stringify(response.data, null, 2),
+          typeof result === 'string'
+            ? result
+            : JSON.stringify(result, null, 2),
       }
-
       lastHealthCheck.value = new Date().toLocaleString()
       addOperationToHistory('系统健康检查', '系统运行状态正常', true)
-      console.log('[SystemOperations] 系统健康检查成功:', response.data)
-    } else {
-      throw new Error(response.message || '健康检查失败')
+      console.log('[SystemOperations] 系统健康检查成功:', result)
+    },
+    onError: (error) => {
+      console.error('[SystemOperations] 系统健康检查失败:', error)
+      healthResult.value = {
+        type: 'warning',
+        title: '健康检查异常',
+        message: error.message || '健康检查过程中发生错误',
+        details: `检查时间: ${new Date().toLocaleString()}`,
+      }
+      lastHealthCheck.value = new Date().toLocaleString()
+      addOperationToHistory('系统健康检查', `检查异常: ${error.message}`, false)
     }
-  } catch (error: any) {
-    console.error('[SystemOperations] 系统健康检查失败:', error)
-
-    healthResult.value = {
-      type: 'warning',
-      title: '健康检查异常',
-      message: error.message || '健康检查过程中发生错误',
-      details: `检查时间: ${new Date().toLocaleString()}`,
-    }
-
-    lastHealthCheck.value = new Date().toLocaleString()
-    addOperationToHistory('系统健康检查', `检查异常: ${error.message}`, false)
-  } finally {
-    checkingHealth.value = false
   }
-}
+)
 
-/**
- * 将节点加入到 AutoAuthor 队列
- */
-const enqueueNode = async (): Promise<void> => {
+// 将节点加入到 AutoAuthor 队列
+const { execute: enqueueNodeExecute, loading: enqueuingNode } = useMutation(
+  (nodeIdNumber: number) => adminAutoAuthorServiceV1.enqueue(nodeIdNumber),
+  {
+    showToast: false,
+    onSuccess: (result, nodeIdNumber) => {
+      showSnackbar?.(result?.message || '操作成功', 'success')
+      addOperationToHistory('AutoAuthor队列', `节点 ${nodeIdNumber} 加入创作队列`, true)
+      nodeId.value = ''
+    },
+    onError: (error) => {
+      addOperationToHistory('AutoAuthor队列', `节点 ${nodeId.value} 加入队列失败: ${error.message}`, false)
+    }
+  }
+)
+
+const enqueueNode = () => {
   if (!nodeId.value) {
     showSnackbar?.('请输入节点ID', 'error')
     return
   }
-
-  enqueuingNode.value = true
-
-  try {
-    const nodeIdNumber = parseInt(nodeId.value, 10)
-    const response = await adminAutoAuthorServiceV1.enqueue(nodeIdNumber)
-
-    if (response.code === 200) {
-      showSnackbar?.(response.message || '操作成功', 'success')
-      addOperationToHistory('AutoAuthor队列', `节点 ${nodeIdNumber} 加入创作队列`, true)
-      // 清空输入框
-      nodeId.value = ''
-    } else {
-      throw new Error(response.message || '加入队列失败')
-    }
-  } catch (error: any) {
-    showSnackbar?.(`节点加入队列失败: ${error.message}`, 'error')
-    addOperationToHistory('AutoAuthor队列', `节点 ${nodeId.value} 加入队列失败: ${error.message}`, false)
-  } finally {
-    enqueuingNode.value = false
-  }
+  const nodeIdNumber = parseInt(nodeId.value, 10)
+  enqueueNodeExecute(nodeIdNumber)
 }
 
-/**
- * 扫描节点并批量加入队列
- */
-const scanNodes = async (): Promise<void> => {
-  scanningNodes.value = true
-
-  try {
-    const response = await adminAutoAuthorServiceV1.scan()
-
-    if (response.code === 200) {
-      showSnackbar?.('扫描已开始', 'success')
+// 扫描节点并批量加入队列
+const { execute: scanNodes, loading: scanningNodes } = useMutation(
+  adminAutoAuthorServiceV1.scan,
+  {
+    successMessage: '扫描已开始',
+    onSuccess: () => {
       addOperationToHistory('AutoAuthor扫描', '开始扫描缺少AI内容的节点', true)
-    } else {
-      throw new Error(response.message || '启动扫描失败')
+    },
+    onError: (error) => {
+      addOperationToHistory('AutoAuthor扫描', `扫描失败: ${error.message}`, false)
     }
-  } catch (error: any) {
-    showSnackbar?.(`启动扫描失败: ${error.message}`, 'error')
-    addOperationToHistory('AutoAuthor扫描', `扫描失败: ${error.message}`, false)
-  } finally {
-    scanningNodes.value = false
   }
-}
+)
 
-/**
- * 重置 opencode 会话
- */
-const resetSession = async (): Promise<void> => {
-  resettingSession.value = true
-
-  try {
-    const response = await adminAutoAuthorServiceV1.resetSession()
-
-    if (response.code === 200) {
-      showSnackbar?.('会话已重置', 'success')
+// 重置 opencode 会话
+const { execute: resetSession, loading: resettingSession } = useMutation(
+  adminAutoAuthorServiceV1.resetSession,
+  {
+    successMessage: '会话已重置',
+    onSuccess: () => {
       addOperationToHistory('AutoAuthor会话', '重置opencode会话成功', true)
-    } else {
-      throw new Error(response.message || '重置会话失败')
+    },
+    onError: (error) => {
+      addOperationToHistory('AutoAuthor会话', `重置失败: ${error.message}`, false)
     }
-  } catch (error: any) {
-    showSnackbar?.(`重置会话失败: ${error.message}`, 'error')
-    addOperationToHistory('AutoAuthor会话', `重置失败: ${error.message}`, false)
-  } finally {
-    resettingSession.value = false
   }
-}
+)
 
-/**
- * 确认清空队列
- */
+// 确认清空队列
 const confirmClearQueue = (): void => {
   if (confirm('确定要清空所有AutoAuthor队列吗？此操作不可撤销。')) {
-    clearQueue()
+    clearQueueExecute()
   }
 }
 
-/**
- * 清空 AutoAuthor 队列
- */
-const clearQueue = async (): Promise<void> => {
-  clearingQueue.value = true
-
-  try {
-    const response = await adminAutoAuthorServiceV1.clearQueue()
-
-    if (response.code === 200) {
-      showSnackbar?.(response.message || '队列已清空', 'success')
+// 清空 AutoAuthor 队列
+const { execute: clearQueueExecute, loading: clearingQueue } = useMutation(
+  adminAutoAuthorServiceV1.clearQueue,
+  {
+    showToast: false,
+    onSuccess: (result) => {
+      showSnackbar?.(result?.message || '队列已清空', 'success')
       addOperationToHistory('AutoAuthor队列', '清空所有待处理队列', true)
-    } else {
-      throw new Error(response.message || '清空队列失败')
+    },
+    onError: (error) => {
+      addOperationToHistory('AutoAuthor队列', `清空队列失败: ${error.message}`, false)
     }
-  } catch (error: any) {
-    showSnackbar?.(`清空队列失败: ${error.message}`, 'error')
-    addOperationToHistory('AutoAuthor队列', `清空队列失败: ${error.message}`, false)
-  } finally {
-    clearingQueue.value = false
   }
+)
+
+// 监听只读模式数据变化
+const watchReadonlyMode = () => {
+  updateReadonlyMode()
 }
 
-// 组件挂载时加载只读模式状态
-onMounted(() => {
-  loadReadonlyMode()
-})
+// 初始化时更新只读模式状态
+setTimeout(watchReadonlyMode, 100)
 </script>
 
 <style scoped>

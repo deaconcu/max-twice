@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { inject, onMounted, ref, watch } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { professionServiceV1, systemServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { useFetch } from '@/composables/useFetch'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useMutation } from '@/composables/useMutation'
 import RightSidebar from '@/components/common/RightSidebar.vue'
 import CategoryNavigation from '@/components/career/CategoryNavigation.vue'
 import CareerFilter from '@/components/career/CareerFilter.vue'
@@ -43,45 +46,43 @@ const router = useRouter()
 const { getMessage } = useToastMessage()
 
 // 状态管理
-const careers: Ref<CareerWithDisplay[]> = ref([])
 const filteredCareers: Ref<CareerWithDisplay[]> = ref([])
-const loading: Ref<boolean> = ref(true)
 const searchText: Ref<string> = ref('')
 const selectedCategory: Ref<string> = ref('all')
 const selectedDifficulty: Ref<string> = ref('all')
 const selectedNavTab: Ref<string> = ref('career')
 
-// 动态加载的分类数据
-const categories: Ref<ProfessionCategory[]> = ref([])
-const categoryMapping: Ref<CategoryMapping[]> = ref([])
-
 // 三级目录相关状态
 const activeFirstLvl: Ref<number> = ref(-1)
 const activeSecondLvl: Ref<number> = ref(-1)
-const currentCareers: Ref<CareerWithDisplay[]> = ref([])
 
-// 分页相关状态
-const displayedCareers: Ref<CareerWithDisplay[]> = ref([])
-const careerPage: Ref<number> = ref(1)
-const careerPageSize: Ref<number> = ref(20)
-const hasMoreCareers: Ref<boolean> = ref(false)
-const loadingMore: Ref<boolean> = ref(false)
-const lastId: Ref<number> = ref(0)
+// 当前查询参数
+const currentQueryParams: Ref<CurrentQueryParams> = ref({
+  type: 'all',
+  mainCategory: null,
+  subCategory: null,
+})
 
-// 动态加载职业类别数据
-const loadProfessionCategories = async (): Promise<void> => {
-  try {
-    const response = await systemServiceV1.getProfessionCategories()
-    console.log('Loaded profession categories:', response.data)
-
-    if (response.data) {
-      categories.value = response.data.mainCategories || []
-      categoryMapping.value = response.data.categoryMapping || []
-    }
-  } catch (error) {
+// 使用 useFetch 加载职业类别数据
+const {
+  data: categoriesData,
+  loading: loadingCategories,
+  refresh: loadProfessionCategories
+} = useFetch({
+  fetchFn: systemServiceV1.getProfessionCategories,
+  immediate: true,
+  defaultValue: { mainCategories: [], categoryMapping: [] },
+  onSuccess: (data) => {
+    console.log('Loaded profession categories:', data)
+  },
+  onError: (error) => {
     console.error('Failed to load profession categories:', error)
   }
-}
+})
+
+// 动态加载的分类数据
+const categories = computed(() => categoriesData.value?.mainCategories || [])
+const categoryMapping = computed(() => categoriesData.value?.categoryMapping || [])
 
 // 工具函数：根据主分类ID获取子分类列表
 const getSubcategoriesByMainCategory = (mainCategoryId: number) => {
@@ -105,7 +106,6 @@ const currentQueryParams: Ref<CurrentQueryParams> = ref({
 // 申请职业对话框
 const showApplicationDialog: Ref<boolean> = ref(false)
 const applicationValid: Ref<boolean> = ref(false)
-const submitting: Ref<boolean> = ref(false)
 const newCareerApplication: Ref<CareerApplication> = ref({
   name: '',
   description: '',
@@ -113,6 +113,19 @@ const newCareerApplication: Ref<CareerApplication> = ref({
   subCategory: null,
   skills: '',
 })
+
+// 使用 useMutation 处理职业创建
+const { execute: createProfession, loading: submitting } = useMutation(
+  professionServiceV1.createProfession,
+  {
+    successMessage: getMessage('careerCenter.application.submittedSuccess'),
+    onSuccess: () => {
+      closeApplicationDialog()
+      // 可选：重新加载职业列表
+      // loadCareerData(true)
+    }
+  }
+)
 
 // 监听主分类变化，清空子分类选择
 watch(
@@ -180,155 +193,63 @@ const addRandomIconsToCareers = (careerList: Profession[]): CareerWithDisplay[] 
   }))
 }
 
-// 加载职业数据
-const loadCareerData = async (reset: boolean = true): Promise<void> => {
-  try {
-    if (reset) {
-      loading.value = true
-      lastId.value = 0
-      currentQueryParams.value = { type: 'all', mainCategory: null, subCategory: null }
-    }
+// 使用 useInfiniteScroll 管理职业列表
+const {
+  items: careers,
+  loading,
+  hasMore: hasMoreCareers,
+  loadMore,
+  reset: resetCareers
+} = useInfiniteScroll<CareerWithDisplay>({
+  fetchFn: async (params) => {
+    const { type, mainCategory, subCategory } = currentQueryParams.value
+    let response
 
-    const response = await professionServiceV1.getApprovedProfessions(reset ? null : lastId.value)
-    console.log('response', response.data)
-    const newCareers = addRandomIconsToCareers(response.data || [])
-
-    if (reset) {
-      careers.value = newCareers
-      filteredCareers.value = newCareers
-      currentCareers.value = newCareers
-      displayedCareers.value = newCareers
+    if (type === 'all') {
+      response = await professionServiceV1.getApprovedProfessions(params.lastId)
+    } else if (type === 'mainCategory' && mainCategory !== null) {
+      response = await professionServiceV1.getProfessionsByCategory(
+        params.lastId || null,
+        mainCategory,
+        null
+      )
+    } else if (type === 'subCategory' && mainCategory !== null && subCategory !== null) {
+      response = await professionServiceV1.getProfessionsByCategory(
+        params.lastId || null,
+        mainCategory,
+        subCategory
+      )
     } else {
-      careers.value = [...careers.value, ...newCareers]
-      filteredCareers.value = [...filteredCareers.value, ...newCareers]
-      currentCareers.value = [...currentCareers.value, ...newCareers]
-      displayedCareers.value = [...displayedCareers.value, ...newCareers]
+      throw new Error('Invalid query parameters')
     }
 
-    if (newCareers.length > 0) {
-      lastId.value = newCareers[newCareers.length - 1].id
-      hasMoreCareers.value = newCareers.length === careerPageSize.value
-    } else {
-      hasMoreCareers.value = false
+    if (response.code === 200) {
+      const newCareers = addRandomIconsToCareers(response.data || [])
+      return {
+        code: 200,
+        data: newCareers,
+        message: '',
+        hasMore: newCareers.length === 20
+      }
     }
-  } catch (error) {
+
+    throw new Error(response.message || '加载职业数据失败')
+  },
+  getNextParams: (lastItem) => ({
+    lastId: lastItem.id
+  }),
+  initialParams: {
+    lastId: null
+  },
+  onError: (error) => {
     console.error('加载职业数据失败:', error)
     showSnackbar(getMessage('careerCenter.errors.loadFailed'), 'error')
-    if (reset) {
-      careers.value = []
-      filteredCareers.value = []
-      currentCareers.value = []
-      displayedCareers.value = []
-    }
-    hasMoreCareers.value = false
-  } finally {
-    if (reset) {
-      loading.value = false
-    }
   }
-}
+})
 
-// 根据主分类获取职业数据
-const loadCareersByMainCategory = async (mainCategoryId: number, reset: boolean = true): Promise<void> => {
-  try {
-    if (reset) {
-      loading.value = true
-      lastId.value = 0
-      currentQueryParams.value = {
-        type: 'mainCategory',
-        mainCategory: mainCategoryId,
-        subCategory: null,
-      }
-    }
-
-    const response = await professionServiceV1.getProfessionsByCategory(
-      lastId.value,
-      mainCategoryId,
-      null
-    )
-    const newCareers = addRandomIconsToCareers(response.data || [])
-
-    if (reset) {
-      careers.value = newCareers
-      filteredCareers.value = newCareers
-      currentCareers.value = newCareers
-      displayedCareers.value = newCareers
-    } else {
-      careers.value = [...careers.value, ...newCareers]
-      filteredCareers.value = [...filteredCareers.value, ...newCareers]
-      currentCareers.value = [...currentCareers.value, ...newCareers]
-      displayedCareers.value = [...displayedCareers.value, ...newCareers]
-    }
-
-    if (newCareers.length > 0) {
-      lastId.value = newCareers[newCareers.length - 1].id
-      hasMoreCareers.value = newCareers.length === careerPageSize.value
-    } else {
-      hasMoreCareers.value = false
-    }
-  } catch (error) {
-    console.error('加载主分类职业失败:', error)
-    showSnackbar(getMessage('careerCenter.errors.loadCategoryFailed'), 'error')
-    currentCareers.value = []
-    displayedCareers.value = []
-    hasMoreCareers.value = false
-  } finally {
-    if (reset) {
-      loading.value = false
-    }
-  }
-}
-
-// 根据子分类获取职业数据
-const loadCareersBySubCategory = async (mainCategoryId: number, subCategoryId: number, reset: boolean = true): Promise<void> => {
-  try {
-    if (reset) {
-      loading.value = true
-      lastId.value = 0
-      currentQueryParams.value = {
-        type: 'subCategory',
-        mainCategory: mainCategoryId,
-        subCategory: subCategoryId,
-      }
-    }
-
-    const response = await professionServiceV1.getProfessionsByCategory(
-      lastId.value,
-      mainCategoryId,
-      subCategoryId
-    )
-    const newCareers = addRandomIconsToCareers(response.data || [])
-
-    if (reset) {
-      careers.value = newCareers
-      filteredCareers.value = newCareers
-      currentCareers.value = newCareers
-      displayedCareers.value = newCareers
-    } else {
-      careers.value = [...careers.value, ...newCareers]
-      filteredCareers.value = [...filteredCareers.value, ...newCareers]
-      currentCareers.value = [...currentCareers.value, ...newCareers]
-      displayedCareers.value = [...displayedCareers.value, ...newCareers]
-    }
-
-    if (newCareers.length > 0) {
-      lastId.value = newCareers[newCareers.length - 1].id
-      hasMoreCareers.value = newCareers.length === careerPageSize.value
-    } else {
-      hasMoreCareers.value = false
-    }
-  } catch (error) {
-    console.error('加载子分类职业失败:', error)
-    showSnackbar(getMessage('careerCenter.errors.loadSubcategoryFailed'), 'error')
-    currentCareers.value = []
-    displayedCareers.value = []
-    hasMoreCareers.value = false
-  } finally {
-    if (reset) {
-      loading.value = false
-    }
-  }
-}
+// 当前显示的careers（用于兼容现有组件）
+const currentCareers = computed(() => careers.value)
+const displayedCareers = computed(() => careers.value)
 
 // 搜索和筛选
 const filterCareers = (): void => {
@@ -373,7 +294,8 @@ const selectFirstLevel = async (categoryValue: number): Promise<void> => {
   if (activeFirstLvl.value === categoryValue) {
     activeFirstLvl.value = -1
     activeSecondLvl.value = -1
-    await loadCareerData(true)
+    currentQueryParams.value = { type: 'all', mainCategory: null, subCategory: null }
+    resetCareers()
     return
   }
 
@@ -381,7 +303,12 @@ const selectFirstLevel = async (categoryValue: number): Promise<void> => {
   activeSecondLvl.value = -1
 
   if (categoryValue !== undefined && categoryValue !== null && categoryValue !== 0) {
-    await loadCareersByMainCategory(categoryValue, true)
+    currentQueryParams.value = {
+      type: 'mainCategory',
+      mainCategory: categoryValue,
+      subCategory: null
+    }
+    resetCareers()
   }
 }
 
@@ -393,7 +320,12 @@ const selectSecondLevel = async (subcategoryIndex: number): Promise<void> => {
       activeFirstLvl.value !== null &&
       activeFirstLvl.value !== 0
     ) {
-      await loadCareersByMainCategory(activeFirstLvl.value, true)
+      currentQueryParams.value = {
+        type: 'mainCategory',
+        mainCategory: activeFirstLvl.value,
+        subCategory: null
+      }
+      resetCareers()
     }
     return
   }
@@ -408,7 +340,12 @@ const selectSecondLevel = async (subcategoryIndex: number): Promise<void> => {
     subCategoryId !== null &&
     subCategoryId !== undefined
   ) {
-    await loadCareersBySubCategory(activeFirstLvl.value, subCategoryId, true)
+    currentQueryParams.value = {
+      type: 'subCategory',
+      mainCategory: activeFirstLvl.value,
+      subCategory: subCategoryId
+    }
+    resetCareers()
   }
 }
 
@@ -420,43 +357,23 @@ const goBackToSecondLevel = async (): Promise<void> => {
     activeFirstLvl.value !== null &&
     activeFirstLvl.value !== 0
   ) {
-    await loadCareersByMainCategory(activeFirstLvl.value, true)
+    currentQueryParams.value = {
+      type: 'mainCategory',
+      mainCategory: activeFirstLvl.value,
+      subCategory: null
+    }
+    resetCareers()
   }
 }
 
-// 加载更多职业
+// 加载更多职业 - 适配 v-infinite-scroll 回调
 const loadMoreCareers = async ({ done }: { done: (status: string) => void }): Promise<void> => {
-  if (loadingMore.value || !hasMoreCareers.value) {
-    done('empty')
-    return
-  }
-
-  loadingMore.value = true
-  careerPage.value++
-
   try {
-    await new Promise((resolve) => setTimeout(resolve, 800))
-
-    const { type, mainCategory, subCategory } = currentQueryParams.value
-
-    if (type === 'all') {
-      await loadCareerData(false)
-    } else if (type === 'mainCategory' && mainCategory !== null) {
-      await loadCareersByMainCategory(mainCategory, false)
-    } else if (type === 'subCategory' && mainCategory !== null && subCategory !== null) {
-      await loadCareersBySubCategory(mainCategory, subCategory, false)
-    }
-
-    if (hasMoreCareers.value) {
-      done('ok')
-    } else {
-      done('empty')
-    }
+    await loadMore({ done: () => {} } as any)
+    done(hasMoreCareers.value ? 'ok' : 'empty')
   } catch (error) {
     console.error('加载职业失败:', error)
     done('error')
-  } finally {
-    loadingMore.value = false
   }
 }
 
@@ -476,39 +393,19 @@ const closeApplicationDialog = (): void => {
   }
 }
 
+// 使用 useMutation 提交职业申请
 const submitCareerApplication = async (): Promise<void> => {
-  try {
-    submitting.value = true
-
-    const applicationData = {
-      name: newCareerApplication.value.name,
-      description: newCareerApplication.value.description,
-      mainCategory: newCareerApplication.value.mainCategory,
-      subCategory: newCareerApplication.value.subCategory,
-      skills: newCareerApplication.value.skills || '',
-    }
-
-    const response = await professionServiceV1.createProfession(applicationData)
-    console.log(`response: ${JSON.stringify(response)}`)
-
-    if (response.code === 200) {
-      showSnackbar(getMessage('careerCenter.application.submittedSuccess'), 'success')
-      closeApplicationDialog()
-    } else {
-      showSnackbar(response.message || getMessage('careerCenter.application.submitFailed'), 'error')
-    }
-  } catch (error) {
-    console.error('提交职业申请失败:', error)
-    showSnackbar(getMessage('careerCenter.application.submitFailed'), 'error')
-  } finally {
-    submitting.value = false
+  const applicationData = {
+    name: newCareerApplication.value.name,
+    description: newCareerApplication.value.description,
+    mainCategory: newCareerApplication.value.mainCategory,
+    subCategory: newCareerApplication.value.subCategory,
+    skills: newCareerApplication.value.skills || '',
   }
+
+  await createProfession(applicationData)
 }
 
-onMounted(() => {
-  loadProfessionCategories()
-  loadCareerData(true)
-})
 </script>
 
 <template>

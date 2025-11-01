@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import { PostType } from '@/types/enums'
 import { postContentRules } from '@/utils/validationRules'
 import { POST_VALIDATION } from '@/types/validation'
+import { useMutation } from '@/composables/useMutation'
 
 interface Props {
   nodeId: number
@@ -44,16 +45,11 @@ const updateContentLength = () => {
   }
 }
 
-const submitAddArticle = async (): Promise<void> => {
-  if (!formValid.value) return
-
-  try {
-    console.log('begin post')
-    console.log('编辑器内容:', editorRef.value?.editor.getHTML())
-
+// 使用 useMutation 提交文章
+const { execute: submitAddArticle, loading: submitting } = useMutation(
+  () => {
     if (!editorRef.value) {
-      console.error('Editor ref is null')
-      return
+      throw new Error('Editor ref is null')
     }
 
     const data = {
@@ -63,18 +59,18 @@ const submitAddArticle = async (): Promise<void> => {
     }
 
     console.log(`request: ${JSON.stringify(data)}`)
-    const response = await postServiceV1.createPost(data)
-    console.log(`response: ${JSON.stringify(response)}`)
-
-    if (response.code === 200) {
+    return postServiceV1.createPost(data)
+  },
+  {
+    successMessage: '发布成功',
+    onSuccess: (result) => {
       console.log('Form submitted successfully')
+      console.log(`response: ${JSON.stringify(result)}`)
       emit('loadData', [])
       dialog.value = false
     }
-  } catch (error) {
-    console.error('Error submitting form:', error)
   }
-}
+)
 </script>
 
 <template>
@@ -108,6 +104,7 @@ const submitAddArticle = async (): Promise<void> => {
               color="primary"
               variant="flat"
               :disabled="!formValid"
+              :loading="submitting"
               @click="submitAddArticle"
             >
               {{ t('addArticle.submitArticle') }}

@@ -1,17 +1,16 @@
 <script setup lang="ts">
-  import { inject, onMounted, ref } from 'vue'
+  import { inject, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { courseServiceV1 } from '@/services/api/v1/apiServiceV1'
   import type { Course } from '@/types/course'
   import type { SortOption } from '@/types/common'
+  import { useFetch } from '@/composables/useFetch'
 
   const { t } = useI18n()
   const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
   const router = useRouter()
 
-  const courses = ref<Course[]>([])
-  const loading = ref<boolean>(false)
   const selectedSortBy = ref<string>('total')
 
   const sortOptions: SortOption[] = [
@@ -20,44 +19,19 @@
     { value: 'subscription', title: t('hotRanking.sortOptions.subscription') },
   ]
 
-  onMounted((): void => {
-    loadHotCoursesRanking()
+  // 使用 useFetch 加载热门课程排行榜
+  const {
+    data: courses,
+    loading,
+    error,
+  } = useFetch<Course[]>({
+    fetchFn: courseServiceV1.getCoursesRanking,
+    immediate: true,
+    defaultValue: [],
+    onError: () => {
+      showSnackbar?.(t('hotRanking.getRankingFailed'), 'error')
+    },
   })
-
-  const loadHotCoursesRanking = async (): Promise<void> => {
-    try {
-      loading.value = true
-      console.log('加载热门课程排行榜')
-      const response = await courseServiceV1.getCoursesRanking()
-
-      console.log('完整API响应:', response)
-      console.log('响应码:', response.code)
-      console.log('响应数据:', response.data)
-      console.log('数据类型:', typeof response.data)
-      console.log('是否为数组:', Array.isArray(response.data))
-      if (response.data) {
-        console.log('数据长度:', response.data.length)
-      }
-
-      if (response.code === 401) {
-        console.log('未登录')
-        courses.value = []
-      } else if (response.code === 200) {
-        console.log('获取热门课程排行榜数据:', response.data)
-        courses.value = response.data || []
-      } else {
-        console.error('获取排行榜失败:', response)
-        showSnackbar?.(t('hotRanking.getRankingFailed'), 'error')
-        courses.value = []
-      }
-    } catch (error) {
-      console.error('Error loading hot courses ranking:', error)
-      showSnackbar?.(t('hotRanking.networkError'), 'error')
-      courses.value = []
-    } finally {
-      loading.value = false
-    }
-  }
 
   const sortCourses = (): void => {
     const sortedCourses = [...courses.value]

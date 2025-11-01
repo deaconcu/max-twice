@@ -2,6 +2,7 @@
 import { nextTick, onMounted, ref, toRef, computed } from 'vue'
 import type { Ref } from 'vue'
 import { postServiceV1, upvoteServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { useMutation } from '@/composables/useMutation'
 import { useI18n } from 'vue-i18n'
 import { PostType, VoteType, ContentState } from '@/types/enums'
 import type { Post } from '@/types/post'
@@ -85,37 +86,30 @@ const upvote = async (posting: Post, type: VoteType): Promise<void> => {
 
 // 删除相关
 const deleteDialog = ref(false)
-const deleting = ref(false)
 
 const deleteMessage = computed(() => {
   const typeText = props.posting.type === PostType.ARTICLE ? '文章' : '目录'
   return `确定要删除${typeText}「${props.posting.title}」吗？此操作无法撤销。`
 })
 
+// 使用 useMutation 处理删除
+const { execute: deletePostApi, loading: deleting } = useMutation(
+  postServiceV1.deletePost,
+  {
+    successMessage: '删除成功',
+    onSuccess: (result, postId) => {
+      deleteDialog.value = false
+      emit('deletePosting', postId)
+    }
+  }
+)
+
 const confirmDelete = (): void => {
   deleteDialog.value = true
 }
 
 const deletePosting = async (): Promise<void> => {
-  try {
-    deleting.value = true
-    const response = await postServiceV1.deletePost(props.posting.id)
-    console.log(`response: ${JSON.stringify(response)}`)
-
-    if (response.code === 200) {
-      console.log('Form submitted successfully')
-      deleteDialog.value = false
-      emit('deletePosting', props.posting.id)
-    } else {
-      console.error('删除失败:', response.message)
-      alert('删除失败: ' + response.message)
-    }
-  } catch (error) {
-    console.error('Error submitting form:', error)
-    alert('删除失败，请稍后重试')
-  } finally {
-    deleting.value = false
-  }
+  await deletePostApi(props.posting.id)
 }
 </script>
 

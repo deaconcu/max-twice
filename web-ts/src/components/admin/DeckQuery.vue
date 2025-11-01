@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { inject, onMounted, ref, computed } from 'vue'
+import { inject, ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { MemoryService } from '@/services/memoryService'
 import { DeckState } from '@/types/memoryCard'
 import type { DeckDetail } from '@/types/memoryCard'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 
 const { t } = useI18n()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
@@ -16,35 +17,21 @@ const searchForm = ref({
   keyword: ''
 })
 
-// 数据
-const deckList = ref<DeckDetail[]>([])
-const loading = ref(false)
-const lastId = ref<number | undefined>(undefined)
-const hasMore = ref(true)
-
-// 重置查询
-const resetSearch = () => {
-  searchForm.value = {
-    nodeId: null,
-    creatorId: null,
-    state: null,
-    keyword: ''
-  }
-  deckList.value = []
-  lastId.value = undefined
-  hasMore.value = true
-}
-
-// 执行查询
-const performSearch = async (reset = false) => {
-  if (loading.value) return
-
-  loading.value = true
-  try {
+// 使用 useInfiniteScroll 管理分页数据
+const {
+  items: deckList,
+  loading,
+  hasMore,
+  params,
+  loadMore,
+  reset: resetList
+} = useInfiniteScroll<DeckDetail>({
+  fetchFn: async (currentParams) => {
     const query: any = {
       limit: 20,
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
+      ...currentParams
     }
 
     if (searchForm.value.nodeId) {
@@ -56,55 +43,50 @@ const performSearch = async (reset = false) => {
     if (searchForm.value.state !== null) {
       query.state = searchForm.value.state
     }
-    if (!reset && lastId.value) {
-      query.lastId = lastId.value
-    }
 
     const response = await MemoryService.getDecksForReview(query)
 
     if (response.code === 200) {
       const responseData = response.data
-      const newDecks = responseData.items || []
-
-      if (reset) {
-        deckList.value = newDecks
-      } else {
-        deckList.value = [...deckList.value, ...newDecks]
-      }
-
-      hasMore.value = responseData.hasMore || false
-
-      if (responseData.nextCursor?.lastId) {
-        lastId.value = responseData.nextCursor.lastId
-      } else if (reset) {
-        lastId.value = undefined
+      return {
+        code: 200,
+        data: responseData.items || [],
+        message: '',
+        hasMore: responseData.hasMore || false,
+        nextCursor: responseData.nextCursor
       }
     }
-  } catch (error) {
+
+    throw new Error(response.message || '查询失败')
+  },
+  getNextParams: (lastItem, currentParams) => ({
+    ...currentParams,
+    lastId: lastItem.id
+  }),
+  initialParams: {
+    lastId: undefined
+  },
+  onError: (error) => {
     console.error('Error searching decks:', error)
     showSnackbar?.('查询失败', 'error')
-  } finally {
-    loading.value = false
   }
+})
+
+// 重置查询
+const resetSearch = () => {
+  searchForm.value = {
+    nodeId: null,
+    creatorId: null,
+    state: null,
+    keyword: ''
+  }
+  resetList()
 }
 
 // 搜索
 const handleSearch = () => {
-  deckList.value = []
-  lastId.value = undefined
-  hasMore.value = true
-  performSearch(true)
-}
-
-// 加载更多
-const loadMore = async ({ done }: { done: (status: string) => void }) => {
-  if (loading.value || !hasMore.value) {
-    done('empty')
-    return
-  }
-
-  await performSearch(false)
-  done(hasMore.value ? 'ok' : 'empty')
+  resetList()
+  loadMore({ done: () => {} } as any)
 }
 
 // 状态文本

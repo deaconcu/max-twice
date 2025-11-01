@@ -1,11 +1,11 @@
 <script setup lang="ts">
-  // TODO: 修复 props 直接修改问题 - 需要重构为通过 emit 事件与父组件通信
-  // 当前直接修改 props.data 违反 Vue 规范，应该通过事件通知父组件更新数据
+  // TODO: 已修复 props 直接修改问题 - 使用 useInfiniteScroll + emit 事件
   import { computed, inject, nextTick, onMounted, onUnmounted, ref, toRef, watch } from 'vue'
   import { postServiceV1, progressServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { adminAutoAuthorServiceV1 } from '@/services/api/v1/adminApiServiceV1'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
+  import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
   import { ObjectType, PostType } from '@/types/enums'
   import type { Post } from '@/types/post'
   import type { Course } from '@/types/course'
@@ -78,8 +78,29 @@
     isLearning: false,
   })
 
-  const lastPostingId = ref<number>(0)
-  const lastScore = ref<number>(0)
+  // 使用 useInfiniteScroll 管理帖子列表
+  const {
+    items: otherPostings,
+    loading: loadingPosts,
+    hasMore,
+    loadMore: loadMorePosts
+  } = useInfiniteScroll<Post>({
+    fetchFn: (params) =>
+      postServiceV1.getPosts(undefined, props.currNodeId, params.lastScore, params.lastId),
+    getNextParams: (lastItem) => ({
+      lastId: lastItem.id,
+      lastScore: lastItem.score || 0
+    }),
+    initialParams: {
+      lastId: 0,
+      lastScore: 0
+    },
+    transform: (post) => ({
+      ...post,
+      voteType: post.voteType === 0 ? null : post.voteType
+    })
+  })
+
   const createContentsDialog = ref<boolean>(false)
   const createArticleDialog = ref<boolean>(false)
 
@@ -159,7 +180,7 @@
 
   watch(dataRef, () => {
     scrollKey.value++
-    updateLastPostingId()
+    // useInfiniteScroll 已自动管理分页参数，无需手动更新
 
     // 🔴 数据更新后重新扫描新的posts进行跟踪
     handleDataUpdate()
@@ -195,17 +216,6 @@
     emit('loadData', parts)
   }
 
-  const updateLastPostingId = (): void => {
-    const { otherPostings } = props.data
-    if (otherPostings.length > 0) {
-      lastPostingId.value = otherPostings[otherPostings.length - 1].id
-      lastScore.value = otherPostings[otherPostings.length - 1].score || 0
-    }
-  }
-
-  // 初始化调用，放在函数定义之后
-  updateLastPostingId()
-
   const switchTab = (tabName: string, posting: Post | string): void => {
     tab.value = tabName // 切换到指定 Tab
 
@@ -233,35 +243,9 @@
     (status: 'ok' | 'empty'): void
   }
 
+  // 适配 v-infinite-scroll 的 loadMore 接口
   const loadMore = async ({ done }: { done: LoadMoreCallback }): Promise<void> => {
-    try {
-      const response = await postServiceV1.getPosts(
-        undefined,
-        props.currNodeId,
-        lastScore.value,
-        lastPostingId.value
-      )
-
-      if (response.code === 200) {
-        response.data.forEach((posting: Post) => {
-          if (posting.voteType === 0) {
-            posting.voteType = null
-          }
-        })
-        // eslint-disable-next-line vue/no-mutating-props
-        props.data.otherPostings.push(...response.data)
-
-        if (response.data.length > 0) {
-          lastPostingId.value = response.data[response.data.length - 1].id
-          lastScore.value = response.data[response.data.length - 1].score || 0
-          done('ok')
-        } else {
-          done('empty')
-        }
-      }
-    } catch {
-      // todo
-    }
+    await loadMorePosts(done)
   }
 
   const submitAddArticle = async (): Promise<void> => {
@@ -652,13 +636,13 @@
 
       <v-infinite-scroll
         :key="scrollKey"
-        :items="data.otherPostings"
+        :items="otherPostings"
         @load="loadMore"
         :no-more-text="t('postingList.reachedEnd')"
         class=""
       >
         <div
-          v-for="(posting, index) in data.otherPostings"
+          v-for="(posting, index) in otherPostings"
           v-show="
             !(
               (currNode['+'] && currNode['+'] == posting.id) ||

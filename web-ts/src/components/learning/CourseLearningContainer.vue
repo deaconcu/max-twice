@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { progressServiceV1 } from '@/services/api/v1/apiServiceV1'
 import CourseLearningCard from './CourseLearningCard.vue'
 import { UserProgressState } from '@/types/enums'
 import type { UserCourse } from '@/types/userCourse'
+import { useFetch } from '@/composables/useFetch'
 
 interface ProcessedCourse {
   id: string | number
@@ -36,13 +37,41 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const { t } = useI18n()
-const showSnackbar = inject<(message: string) => void>('showSnackbar')
 const router = useRouter()
 
 // 响应式数据
 const courses = ref<ProcessedCourse[]>([])
-const loading = ref<boolean>(true)
-const error = ref<string | null>(null)
+
+// 使用 useFetch 加载课程数据
+const { loading, error, refresh: loadCourseData } = useFetch({
+  fetchFn: progressServiceV1.getAllCourseProgress,
+  immediate: true,
+  onSuccess: (data) => {
+    if (Array.isArray(data)) {
+      courses.value = (data as UserCourse[]).map((userCourse: UserCourse): ProcessedCourse => {
+        return {
+          id: userCourse.id,
+          courseId: userCourse.course.id,
+          title: userCourse.course.name,
+          name: userCourse.course.name,
+          description: userCourse.course.description,
+          progress: userCourse.progressPercent ? userCourse.progressPercent / 100 : 0,
+          state: String(userCourse.state),
+          startedAt: userCourse.startedAt,
+          completedAt: userCourse.completedAt,
+          createdAt: userCourse.createdAt,
+          updatedAt: userCourse.updatedAt,
+          lastActivity: getRelativeTime(userCourse.updatedAt),
+          category: getCategoryFromDescription(userCourse.course.description),
+          difficulty: getDifficultyFromStatus(userCourse.state as UserProgressState),
+        }
+      })
+    }
+  },
+  onError: () => {
+    // 错误已由 useFetch 自动处理
+  }
+})
 
 // 筛选后的课程数据
 const filteredCourses = computed((): ProcessedCourse[] => {
@@ -62,43 +91,6 @@ const filteredCourses = computed((): ProcessedCourse[] => {
     return true
   })
 })
-
-// 加载课程数据
-const loadCourseData = async (): Promise<void> => {
-  loading.value = true
-  error.value = null
-  
-  try {
-    const response = await progressServiceV1.getAllCourseProgress()
-    
-    if (response.code === 200 && Array.isArray(response.data)) {
-      courses.value = (response.data as UserCourse[]).map((userCourse: UserCourse): ProcessedCourse => {
-        return {
-          id: userCourse.id,
-          courseId: userCourse.course.id,
-          title: userCourse.course.name,
-          name: userCourse.course.name,
-          description: userCourse.course.description,
-          progress: userCourse.progressPercent ? userCourse.progressPercent / 100 : 0,
-          state: String(userCourse.state),
-          startedAt: userCourse.startedAt,
-          completedAt: userCourse.completedAt,
-          createdAt: userCourse.createdAt,
-          updatedAt: userCourse.updatedAt,
-          lastActivity: getRelativeTime(userCourse.updatedAt),
-          category: getCategoryFromDescription(userCourse.course.description),
-          difficulty: getDifficultyFromStatus(userCourse.state as UserProgressState),
-        }
-      })
-    }
-  } catch (err) {
-    console.error('Error loading course data:', err)
-    error.value = t('learning.loadFailed')
-    showSnackbar?.(t('learning.loadFailed'))
-  } finally {
-    loading.value = false
-  }
-}
 
 // 获取相对时间
 const getRelativeTime = (dateString?: string): string => {
@@ -178,10 +170,6 @@ const closeCourse = (course: any, event?: Event): void => {
   }
   // TODO: 实现关闭逻辑
 }
-
-onMounted(() => {
-  loadCourseData()
-})
 
 // 暴露给父组件的数据和方法
 defineExpose({

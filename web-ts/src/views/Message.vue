@@ -3,7 +3,7 @@ defineOptions({
   name: 'MessageView',
 })
 
-import { onMounted, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { messageServiceV1 } from '@/services/api/v1/apiServiceV1'
@@ -13,6 +13,7 @@ import SystemMessageView from '@/components/message/SystemMessageView.vue'
 import PrivateMessageView from '@/components/message/PrivateMessageView.vue'
 import { MessageCategory } from '@/types/enums'
 import type { MessageType } from '@/types/enums'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,9 +27,7 @@ const getInitialTab = (): string => {
 
 // 响应式数据
 const selected: Ref<string> = ref(getInitialTab())
-const messageList: Ref<any[]> = ref([])
 const systemMessageType: Ref<MessageType> = ref(99)
-const lastId: Ref<number> = ref(0x7fffffff)
 const lastReadTime: Ref<Date | null> = ref(null)
 
 // 根据选中类型获取消息分类
@@ -77,11 +76,73 @@ const users: Ref<any[]> = ref([
   },
 ])
 
+// 使用 useInfiniteScroll 管理消息列表
+const {
+  items: messageList,
+  loading,
+  hasMore,
+  loadMore,
+  reset: resetMessages
+} = useInfiniteScroll<any>({
+  fetchFn: async (params) => {
+    const category = getCurrentCategory()
+    const type = systemMessageType.value === 99 ? undefined : systemMessageType.value
+
+    const response = await messageServiceV1.getMessagesByCategory(
+      category,
+      params.lastId,
+      type
+    )
+
+    if (response.code === 401) {
+      console.log('not login')
+      throw new Error('Not authenticated')
+    }
+
+    if (response.code === 200) {
+      console.log(`get data:${JSON.stringify(response.data)}`)
+      const appendList = response.data
+
+      if (lastReadTime.value === null) {
+        //lastReadTime.value = new Date(response.data.lastReadTime)
+      }
+
+      return {
+        code: 200,
+        data: appendList,
+        message: '',
+        hasMore: appendList.length > 0
+      }
+    }
+
+    throw new Error(`Unexpected response code: ${response.code}`)
+  },
+  getNextParams: (lastItem) => ({
+    lastId: lastItem.id
+  }),
+  initialParams: {
+    lastId: undefined
+  },
+  onError: (error) => {
+    console.error('Error get message:', error)
+  }
+})
+
+// 数据加载函数 - 适配 SystemMessageView 的回调
+const loadData = async ({ done }: { done: (status: string) => void }): Promise<void> => {
+  try {
+    await loadMore({ done: () => {} } as any)
+    done(hasMore.value ? 'ok' : 'empty')
+  } catch (error) {
+    console.error('Error loading messages:', error)
+    done('error')
+  }
+}
+
 // 监听选中消息类型变化
 watch(selected, (newValue) => {
   console.log('selected changed')
-  messageList.value = []
-  lastId.value = 0x7fffffff
+  resetMessages()
 
   // 更新 URL 参数
   router.replace({
@@ -92,51 +153,10 @@ watch(selected, (newValue) => {
   })
 })
 
-// 数据加载函数
-const loadData = async ({ done }: { done: (status: string) => void }): Promise<void> => {
-  try {
-    const category = getCurrentCategory()
-    const type = systemMessageType.value === 99 ? undefined : systemMessageType.value
-
-    let response = await messageServiceV1.getMessagesByCategory(
-      category,
-      lastId.value === 0x7fffffff ? undefined : lastId.value,
-      type
-    )
-
-    if (response.code === 401) {
-      console.log('not login')
-      done('error')
-    } else if (response.code === 200) {
-      console.log(`get data:${JSON.stringify(response.data)}`)
-      const appendList = response.data
-
-      if (lastReadTime.value === null) {
-        //lastReadTime.value = new Date(response.data.lastReadTime)
-      }
-      messageList.value.push(...appendList)
-
-      if (appendList.length > 0) {
-        lastId.value = appendList[appendList.length - 1].id
-        done('ok')
-      } else {
-        done('empty')
-      }
-    } else {
-      console.error('Unexpected response code:', response.code)
-      done('error')
-    }
-  } catch (error) {
-    console.error('Error get message:', error)
-    done('error')
-  }
-}
-
 // 处理系统消息类型更新
 const handleSystemMessageTypeUpdate = (newType: MessageType): void => {
-  messageList.value = []
-  lastId.value = 0x7fffffff
   systemMessageType.value = newType
+  resetMessages()
 }
 
 // 处理发送私信
@@ -165,9 +185,6 @@ const getSelectedTypeDescription = (): string => {
   }
 }
 
-onMounted(() => {
-  // 初始化数据加载可以在这里进行
-})
 </script>
 
 <template>

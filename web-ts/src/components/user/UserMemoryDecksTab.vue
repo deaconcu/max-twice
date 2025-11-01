@@ -8,11 +8,9 @@ import { useRouter } from 'vue-router'
 import DeckDetailDialog from '@/components/memory/DeckDetailDialog.vue'
 import { useUserStore } from '@/stores/user'
 import { memoryCardDeckServiceV1 } from '@/services/api/v1/apiServiceV1'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useMutation } from '@/composables/useMutation'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
-
-interface LoadEventData {
-  done: (status: 'ok' | 'empty') => void
-}
 
 // Props - 支持传入 userId 查看其他用户的卡片组
 const props = defineProps<{
@@ -25,9 +23,52 @@ const userStore = useUserStore()
 // 判断是否为当前用户自己
 const isCurrentUser = computed(() => !props.userId || props.userId === userStore.currentUser?.id)
 
-// 卡片组列表数据
-const deckList: Ref<MemoryCardDeck[]> = ref([])
-const lastId: Ref<number | undefined> = ref(undefined)
+// 使用 useInfiniteScroll 加载卡片组列表
+const {
+  items: deckList,
+  loadMore: loadDecks
+} = useInfiniteScroll<MemoryCardDeck>({
+  fetchFn: async (params) => {
+    let response
+    // 如果是查看自己的卡片组，使用 getMyAllDecks（显示所有状态）
+    // 如果是查看其他用户的，使用 getUserDecks（显示所有状态）
+    if (isCurrentUser.value) {
+      response = await MemoryService.getMyAllDecks({
+        lastId: params.lastId,
+        limit: 10,
+      })
+    } else {
+      response = await MemoryService.getUserDecks(props.userId!, {
+        lastId: params.lastId,
+        limit: 10,
+      })
+    }
+
+    // 适配响应格式
+    if (response.code === 200) {
+      const { items, hasMore, nextCursor } = response.data
+      // 返回符合 ApiResponse 格式的数据
+      return {
+        code: 200,
+        data: items,
+        // 通过数据长度判断是否还有更多
+        hasMore: hasMore && nextCursor
+      } as any
+    }
+
+    return {
+      code: response.code,
+      data: [],
+      message: response.message
+    } as any
+  },
+  getNextParams: (lastItem, currentParams) => ({
+    lastId: lastItem.id
+  }),
+  initialParams: {
+    lastId: undefined
+  }
+})
 
 // 卡片组详情对话框
 const showDeckDetail = ref(false)
@@ -36,45 +77,32 @@ const selectedDeck: Ref<MemoryCardDeck | null> = ref(null)
 // 删除相关
 const deleteDialog = ref(false)
 const deckToDelete: Ref<MemoryCardDeck | null> = ref(null)
-const deleting = ref(false)
 
-// 加载卡片组数据
-const loadDecks = async ({ done }: LoadEventData): Promise<void> => {
-  try {
-    let response
-
-    // 如果是查看自己的卡片组，使用 getMyAllDecks（显示所有状态）
-    // 如果是查看其他用户的，使用 getUserDecks（显示所有状态）
-    if (isCurrentUser.value) {
-      response = await MemoryService.getMyAllDecks({
-        lastId: lastId.value,
-        limit: 10,
-      })
-    } else {
-      response = await MemoryService.getUserDecks(props.userId!, {
-        lastId: lastId.value,
-        limit: 10,
-      })
-    }
-
-    if (response.code === 200) {
-      const { items, hasMore, nextCursor } = response.data
-
-      deckList.value.push(...items)
-
-      if (hasMore && nextCursor) {
-        lastId.value = nextCursor.lastId
-        done('ok')
-      } else {
-        done('empty')
+// 使用 useMutation 处理删除操作
+const { execute: deleteDeck, loading: deleting } = useMutation(
+  (deckId: number) => memoryCardDeckServiceV1.deleteDeck(deckId),
+  {
+    successMessage: '删除成功',
+    onSuccess: (_, deckId) => {
+      // 从列表中移除已删除的卡片组
+      const index = deckList.value.findIndex(d => d.id === deckId)
+      if (index !== -1) {
+        deckList.value.splice(index, 1)
       }
-    } else {
-      done('empty')
+      deleteDialog.value = false
+      deckToDelete.value = null
+    },
+    onError: (error) => {
+      console.error('删除卡片组时发生错误:', error)
+      alert('删除失败，请稍后重试')
     }
-  } catch (error) {
-    console.error('Error loading memory decks:', error)
-    done('empty')
   }
+)
+
+// 执行删除
+const handleDelete = async (): Promise<void> => {
+  if (!deckToDelete.value) return
+  await deleteDeck(deckToDelete.value.id)
 }
 
 // 获取状态文本
@@ -153,34 +181,6 @@ const confirmDelete = (deck: MemoryCardDeck, event: Event): void => {
   event.stopPropagation() // 阻止事件冒泡
   deckToDelete.value = deck
   deleteDialog.value = true
-}
-
-// 执行删除
-const handleDelete = async (): Promise<void> => {
-  if (!deckToDelete.value) return
-
-  try {
-    deleting.value = true
-    const response = await memoryCardDeckServiceV1.deleteDeck(deckToDelete.value.id)
-
-    if (response.code === 200) {
-      // 从列表中移除已删除的卡片组
-      const index = deckList.value.findIndex(d => d.id === deckToDelete.value!.id)
-      if (index !== -1) {
-        deckList.value.splice(index, 1)
-      }
-      deleteDialog.value = false
-      deckToDelete.value = null
-    } else {
-      console.error('删除失败:', response.message)
-      alert('删除失败: ' + response.message)
-    }
-  } catch (error) {
-    console.error('删除卡片组时发生错误:', error)
-    alert('删除失败，请稍后重试')
-  } finally {
-    deleting.value = false
-  }
 }
 </script>
 

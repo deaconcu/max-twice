@@ -1,20 +1,17 @@
 <script setup lang="ts">
-  import { inject, ref, computed, onMounted } from 'vue'
+  import { inject, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { commentServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { adminCommentServiceV1 } from '@/services/api/v1/adminApiServiceV1'
   import { ContentState, ApprovalAction, ObjectType } from '@/types/enums'
   import type { Comment } from '@/types/comment'
   import RejectBanDialog from './RejectBanDialog.vue'
+  import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+  import { useMutation } from '@/composables/useMutation'
 
   const { t } = useI18n()
   const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
-  const allCommentList = ref<Comment[]>([])
   const currentTab = ref<string>('pending')
-  const offsetId = ref<number>(0)
-  const loading = ref<boolean>(false)
-  const hasMore = ref<boolean>(true)
 
   // 筛选条件
   const filterObjectType = ref<number | undefined>(undefined)
@@ -38,7 +35,6 @@
   // 拒绝/屏蔽对话框
   const showReasonDialog = ref<boolean>(false)
   const currentComment = ref<Comment | null>(null)
-  const submitting = ref<boolean>(false)
   const dialogType = ref<'reject' | 'ban'>('reject')
 
   // 标签配置
@@ -81,145 +77,73 @@
     }
   ]
 
-  const commentList = computed<Comment[]>(() => {
-    return allCommentList.value
-  })
-
-  // 按筛选条件获取评论
-  const getCommentsByFilter = async (isLoadMore: boolean = false): Promise<void> => {
-    if (loading.value) return
-
-    loading.value = true
-
-    try {
-      const lastId = isLoadMore && allCommentList.value.length > 0
-        ? allCommentList.value[allCommentList.value.length - 1].id
-        : undefined
-
-      // 获取当前tab的状态
+  // 使用 useInfiniteScroll 加载评论列表
+  const {
+    items: commentList,
+    loading,
+    hasMore,
+    loadMore,
+    reset: resetCommentList
+  } = useInfiniteScroll({
+    fetchFn: (params) => {
       const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
       const state = currentTabConfig?.state
 
-      const response = await adminCommentServiceV1.getCommentsByFilter(
-        filterObjectType.value,
-        filterObjectId.value,
-        filterCreatorId.value,
-        lastId,
-        state
-      )
-
-      if (response.code === 401) {
-        // not login
-      } else if (response.code === 200) {
-        const newComments = response.data
-
-        if (isLoadMore) {
-          allCommentList.value.push(...newComments)
-        } else {
-          allCommentList.value = newComments
-        }
-
-        hasMore.value = newComments.length > 0
-        if (newComments.length > 0) {
-          offsetId.value = newComments[newComments.length - 1].id
-        }
+      if (isFilterMode.value) {
+        return adminCommentServiceV1.getCommentsByFilter(
+          filterObjectType.value,
+          filterObjectId.value,
+          filterCreatorId.value,
+          params.lastId,
+          state
+        )
       } else {
-        showSnackbar && showSnackbar(response.message || 'error.loadFailed', 'error')
+        return adminCommentServiceV1.getCommentsByState(currentTab.value, params.lastId || 0)
       }
-    } catch (error) {
-      console.error('Error loading comments:', error)
-      showSnackbar && showSnackbar('error.loadFailed', 'error')
-    } finally {
-      loading.value = false
+    },
+    getNextParams: (lastItem) => ({
+      lastId: lastItem.id
+    }),
+    initialParams: {
+      lastId: 0
     }
-  }
+  })
 
   // 应用筛选
-  const applyFilter = async (): Promise<void> => {
+  const applyFilter = (): void => {
     if (!filterObjectType.value && !filterObjectId.value && !filterCreatorId.value) {
-      showSnackbar && showSnackbar('请至少输入一个筛选条件', 'warning')
+      showSnackbar?.('请至少输入一个筛选条件', 'warning')
       return
     }
     isFilterMode.value = true
-    hasMore.value = true
-    await getCommentsByFilter()
+    resetCommentList()
   }
 
   // 清除筛选
-  const clearFilter = async (): Promise<void> => {
+  const clearFilter = (): void => {
     filterObjectType.value = undefined
     filterObjectId.value = undefined
     filterCreatorId.value = undefined
     isFilterMode.value = false
-    hasMore.value = true
-    await getCommentsByTab(currentTab.value)
+    resetCommentList()
   }
 
-  const getCommentsByTab = async (tabKey: string, isLoadMore: boolean = false): Promise<void> => {
-    if (loading.value) return
-
-    loading.value = true
-
-    try {
-      const lastId = isLoadMore && allCommentList.value.length > 0
-        ? allCommentList.value[allCommentList.value.length - 1].id
-        : 0
-
-      const response = await adminCommentServiceV1.getCommentsByState(tabKey, lastId)
-
-      if (response.code === 401) {
-        // not login
-      } else if (response.code === 200) {
-        const newComments = response.data
-
-        if (isLoadMore) {
-          allCommentList.value.push(...newComments)
-        } else {
-          allCommentList.value = newComments
+  // 使用 useMutation 批准评论
+  const { execute: executeApproveComment } = useMutation(
+    (commentId: number) => adminCommentServiceV1.approveComment(commentId, ApprovalAction.APPROVE),
+    {
+      successMessage: '操作成功',
+      onSuccess: (_, commentId) => {
+        const index = commentList.value.findIndex(c => c.id === commentId)
+        if (index !== -1) {
+          commentList.value.splice(index, 1)
         }
-
-        hasMore.value = newComments.length > 0
-        if (newComments.length > 0) {
-          offsetId.value = newComments[newComments.length - 1].id
-        }
-      } else {
-        showSnackbar && showSnackbar(response.message || 'error.loadFailed', 'error')
-      }
-    } catch (error) {
-      console.error('Error loading comments:', error)
-      showSnackbar && showSnackbar('error.loadFailed', 'error')
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const loadMore = async (): Promise<void> => {
-    if (hasMore.value && !loading.value) {
-      if (isFilterMode.value) {
-        await getCommentsByFilter(true)
-      } else {
-        await getCommentsByTab(currentTab.value, true)
       }
     }
-  }
+  )
 
   const approveComment = async (comment: Comment): Promise<void> => {
-    try {
-      const response = await adminCommentServiceV1.approveComment(comment.id, ApprovalAction.APPROVE)
-
-      if (response.code === 401) {
-        // not login
-      } else if (response.code === 200) {
-        // 审核操作后重新加载当前tab的数据
-        await getCommentsByTab(currentTab.value)
-        showSnackbar && showSnackbar(t('admin.operationSuccess'))
-      } else {
-        showSnackbar && showSnackbar(response.message || 'error.operationFailed', 'error')
-      }
-    } catch (error) {
-      console.error('Error approving comment:', error)
-      showSnackbar && showSnackbar('error.operationFailed', 'error')
-    }
+    await executeApproveComment(comment.id)
   }
 
   // 显示拒绝对话框
@@ -236,33 +160,36 @@
     showReasonDialog.value = true
   }
 
+  // 使用 useMutation 处理拒绝/屏蔽
+  const { execute: executeRejectOrBan, loading: submitting } = useMutation(
+    (data: { commentId: number; action: string; reason: string }) =>
+      adminCommentServiceV1.approveComment(data.commentId, data.action, data.reason),
+    {
+      onSuccess: (_, data) => {
+        const message = data.action === ApprovalAction.BAN ? '已屏蔽' : '已拒绝'
+        showSnackbar?.(message, 'success')
+
+        const index = commentList.value.findIndex(c => c.id === data.commentId)
+        if (index !== -1) {
+          commentList.value.splice(index, 1)
+        }
+
+        showReasonDialog.value = false
+        currentComment.value = null
+      }
+    }
+  )
+
   // 处理对话框确认
   const handleConfirmAction = async (reason: string) => {
     if (!currentComment.value) return
 
-    try {
-      submitting.value = true
-      const action = dialogType.value === 'reject' ? ApprovalAction.REJECT : ApprovalAction.BAN
-
-      const response = await adminCommentServiceV1.approveComment(currentComment.value.id, action, reason)
-
-      if (response.code === 200) {
-        await getCommentsByTab(currentTab.value)
-
-        const message = dialogType.value === 'reject' ? '已拒绝' : '已屏蔽'
-        showSnackbar && showSnackbar(message, 'success')
-
-        showReasonDialog.value = false
-        currentComment.value = null
-      } else {
-        showSnackbar && showSnackbar(response.message || '操作失败', 'error')
-      }
-    } catch (error) {
-      console.error('Error updating comment:', error)
-      showSnackbar && showSnackbar('操作失败', 'error')
-    } finally {
-      submitting.value = false
-    }
+    const action = dialogType.value === 'reject' ? ApprovalAction.REJECT : ApprovalAction.BAN
+    await executeRejectOrBan({
+      commentId: currentComment.value.id,
+      action,
+      reason
+    })
   }
 
   // 拒绝评论（已弃用，保留兼容）
@@ -275,37 +202,28 @@
     showBanDialog(comment)
   }
 
-  const unbanComment = async (comment: Comment): Promise<void> => {
-    try {
-      const response = await adminCommentServiceV1.approveComment(comment.id, ApprovalAction.APPROVE)
-
-      if (response.code === 401) {
-        // not login
-      } else if (response.code === 200) {
-        await getCommentsByTab(currentTab.value)
-        showSnackbar && showSnackbar('已取消屏蔽')
-      } else {
-        showSnackbar && showSnackbar(response.message || '操作失败', 'error')
+  // 使用 useMutation 取消屏蔽评论
+  const { execute: executeUnbanComment } = useMutation(
+    (commentId: number) => adminCommentServiceV1.approveComment(commentId, ApprovalAction.APPROVE),
+    {
+      successMessage: '已取消屏蔽',
+      onSuccess: (_, commentId) => {
+        const index = commentList.value.findIndex(c => c.id === commentId)
+        if (index !== -1) {
+          commentList.value.splice(index, 1)
+        }
       }
-    } catch (error) {
-      console.error('Error unbanning comment:', error)
-      showSnackbar && showSnackbar('操作失败', 'error')
     }
+  )
+
+  const unbanComment = async (comment: Comment): Promise<void> => {
+    await executeUnbanComment(comment.id)
   }
 
-  const handleTabChange = async (newTab: string) => {
-    hasMore.value = true
-    if (isFilterMode.value) {
-      // 如果在筛选模式下，切换tab时重新应用筛选（保留筛选条件和状态）
-      await getCommentsByFilter()
-    } else {
-      await getCommentsByTab(newTab)
-    }
+  const handleTabChange = (newTab: string) => {
+    resetCommentList()
   }
 
-  onMounted(() => {
-    getCommentsByTab(currentTab.value)
-  })
 </script>
 
 <template>
@@ -447,7 +365,7 @@
       :key="comment.id"
       class="mb-4"
       v-intersect="{
-        handler: (isIntersecting) => {
+        handler: (isIntersecting: boolean) => {
           if (isIntersecting && comment === commentList[commentList.length - 1] && hasMore && !loading) {
             loadMore()
           }

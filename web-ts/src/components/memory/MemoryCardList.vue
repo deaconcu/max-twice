@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { MemoryService } from '@/services/memoryService'
 import type { MemoryCardDeck } from '@/types/memoryCard'
 import DeckDetailDialog from './DeckDetailDialog.vue'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useMutation } from '@/composables/useMutation'
 
 interface Props {
   nodeId: number
@@ -10,20 +12,44 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// 状态管理
-const decks = ref<MemoryCardDeck[]>([])
-const loading = ref(false)
-const hasMore = ref(true)
-const lastScore = ref<number | undefined>(undefined)
-const lastId = ref<number | undefined>(undefined)
-const error = ref<string | null>(null)
-
 // 弹窗相关
 const showDeckDetail = ref(false)
 const selectedDeck = ref<MemoryCardDeck | null>(null)
 
-// 分页参数
-const LIMIT = 20
+// 使用 useInfiniteScroll 处理卡片组列表
+const { items: decks, loading, hasMore, loadMore: loadMoreDecks, refresh } = useInfiniteScroll({
+  fetchFn: (params) => MemoryService.getDecksByNode(props.nodeId, {
+    lastScore: params.lastScore,
+    lastId: params.lastId,
+    limit: params.limit
+  }),
+  getNextParams: (lastItem, currentParams) => ({
+    lastId: lastItem.id,
+    lastScore: lastItem.upvoteCount || 0,
+    limit: currentParams.limit
+  }),
+  initialParams: {
+    lastId: 0,
+    lastScore: 0,
+    limit: 20
+  }
+})
+
+// 使用 useMutation 处理点赞
+const { execute: upvoteDeck } = useMutation(
+  (deckId: number) => MemoryService.upvoteDeck(deckId),
+  {
+    showToast: false, // 点赞不显示提示
+    onSuccess: (result, deckId) => {
+      // 更新本地状态
+      const deck = decks.value.find(d => d.id === deckId)
+      if (deck) {
+        deck.hasUpvoted = result.upvoted
+        deck.upvoteCount = result.upvotes
+      }
+    }
+  }
+)
 
 // 处理卡片组点击事件
 const handleDeckClick = (deck: MemoryCardDeck) => {
@@ -41,70 +67,12 @@ const handleSourcePostClick = (postId: number, event: Event) => {
 // 处理点赞
 const handleUpvote = async (deck: MemoryCardDeck, event: Event) => {
   event.stopPropagation() // 阻止事件冒泡
-  try {
-    const response = await MemoryService.upvoteDeck(deck.id)
-    if (response.code === 200) {
-      // 更新本地状态 - 适配后端返回的字段名
-      deck.hasUpvoted = response.data.upvoted
-      deck.upvoteCount = response.data.upvotes
-    }
-  } catch (error) {
-    console.error('Failed to upvote deck:', error)
-  }
-}
-
-// 加载卡片组列表
-const loadDecks = async (reset = false) => {
-  if (loading.value || (!reset && !hasMore.value)) return
-
-  try {
-    loading.value = true
-    error.value = null
-
-    // 如果是重置，清空分页参数
-    if (reset) {
-      decks.value = []
-      lastScore.value = undefined
-      lastId.value = undefined
-      hasMore.value = true
-    }
-
-    const response = await MemoryService.getDecksByNode(props.nodeId, {
-      lastScore: lastScore.value,
-      lastId: lastId.value,
-      limit: LIMIT
-    })
-
-    if (response.code === 200) {
-      const newDecks = response.data.items || []
-
-      if (reset) {
-        decks.value = newDecks
-      } else {
-        decks.value.push(...newDecks)
-      }
-
-      // 更新分页参数
-      hasMore.value = response.data.hasMore
-      if (response.data.nextCursor) {
-        lastScore.value = response.data.nextCursor.lastScore
-        lastId.value = response.data.nextCursor.lastId
-      }
-    } else {
-      error.value = response.message || '加载失败'
-    }
-  } catch (err) {
-    console.error('Failed to load memory card decks:', err)
-    error.value = '加载卡片组失败，请重试'
-  } finally {
-    loading.value = false
-  }
+  await upvoteDeck(deck.id)
 }
 
 // 加载更多
 const loadMore = async ({ done }: { done: (status: 'ok' | 'empty') => void }) => {
-  await loadDecks(false)
-  done(hasMore.value ? 'ok' : 'empty')
+  await loadMoreDecks(done)
 }
 
 // 计算属性：是否有数据
@@ -140,38 +108,15 @@ const getStateColor = (state: number) => {
   }
   return colorMap[state] || 'grey'
 }
-
-// 初始化
-onMounted(() => {
-  loadDecks(true)
-})
 </script>
 
 <template>
   <div>
     <!-- 空状态 -->
-    <div v-if="!loading && !hasData && !error" class="text-center py-12">
+    <div v-if="!loading && !hasData" class="text-center py-12">
       <v-icon icon="mdi-cards-outline" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
       <p class="text-h6 text-grey-darken-1 mb-2">暂无记忆卡片</p>
       <p class="text-body-2 text-grey">该节点下还没有记忆卡片</p>
-    </div>
-
-    <!-- 错误状态 -->
-    <div v-if="error && !loading" class="text-center py-8">
-      <v-alert
-        type="error"
-        variant="tonal"
-        class="mb-4"
-      >
-        {{ error }}
-      </v-alert>
-      <v-btn
-        color="primary"
-        variant="outlined"
-        @click="loadDecks(true)"
-      >
-        重试
-      </v-btn>
     </div>
 
     <!-- 卡片组列表 -->

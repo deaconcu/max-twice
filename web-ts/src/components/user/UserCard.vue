@@ -5,6 +5,8 @@ import { useI18n } from 'vue-i18n'
 import { Bool } from '@/types/enums'
 import type { User } from '@/types/user'
 import { getUserDisplayName } from '@/utils/common'
+import { useFetch } from '@/composables/useFetch'
+import { useMutation } from '@/composables/useMutation'
 
 interface Props {
   userId: number
@@ -17,68 +19,48 @@ const props = withDefaults(defineProps<Props>(), {
 })
 const { t } = useI18n()
 
-const loadingUserInfo = ref<boolean>(false)
-const userInfo = ref<User | null>(null)
+// 使用 useFetch 加载用户信息
+const {
+  data: userInfo,
+  loading: loadingUserInfo,
+  execute: loadUser,
+} = useFetch<User>({
+  fetchFn: () => userServiceV1.getUser(props.userName),
+  immediate: false,
+})
 
 const onHover = function (open: boolean): void {
   if (open && (!userInfo.value?.biography || userInfo.value.followed === undefined)) {
-    loadingUserInfo.value = true
-    getUser(props.userName)
-  }
-}
-
-const getUser = async (username: string): Promise<void> => {
-  try {
-    console.log('begin post')
-
-    const response = await userServiceV1.getUser(username)
-    console.log(`response: ${JSON.stringify(response)}`)
-
-    if (response.code === 200) {
-      userInfo.value = response.data as User
-      loadingUserInfo.value = false
-    }
-  } catch (error) {
-    console.error('Error submitting form:', error)
+    loadUser()
   }
 }
 
 const displayName = computed(() => userInfo.value ? getUserDisplayName(userInfo.value) : props.userName)
 
-const follow = async (id: number): Promise<void> => {
-  try {
-    console.log('begin follow')
-
-    const response = await followServiceV1.follow(id)
-    console.log(`response: ${JSON.stringify(response)}`)
-
-    if (response.code === 200) {
+// 使用 useMutation 处理关注
+const { execute: followUser } = useMutation(
+  (id: number) => followServiceV1.follow(id),
+  {
+    onSuccess: () => {
       if (userInfo.value) {
-        // 关注成功后，增加关注人数
         userInfo.value.followed = (userInfo.value.followed || 0) + 1
       }
-    }
-  } catch (error) {
-    console.error('Error submitting form:', error)
-  }
-}
+    },
+  },
+)
 
-const unfollow = async (id: number): Promise<void> => {
-  try {
-    console.log('begin follow')
-
-    const response = await followServiceV1.unfollow(id)
-    console.log(`response: ${JSON.stringify(response)}`)
-
-    if (response.code === 200) {
+// 使用 useMutation 处理取消关注
+const { execute: unfollowUser } = useMutation(
+  (id: number) => followServiceV1.unfollow(id),
+  {
+    onSuccess: () => {
       if (userInfo.value) {
         userInfo.value.followed = 0
       }
-    }
-  } catch (error) {
-    console.error('Error submitting form:', error)
-  }
-}
+    },
+  },
+)
+
 </script>
 
 <template>
@@ -115,13 +97,13 @@ const unfollow = async (id: number): Promise<void> => {
           <v-btn
             v-if="userInfo?.followed == Bool.FALSE"
             variant="text"
-            @click="follow(userInfo.id)"
+            @click="followUser(userInfo.id)"
             >{{ t('userCard.follow') }}</v-btn
           >
           <v-btn
             v-if="userInfo?.followed == Bool.TRUE"
             variant="text"
-            @click="unfollow(userInfo.id)"
+            @click="unfollowUser(userInfo.id)"
             >{{ t('userCard.unfollow') }}</v-btn
           >
         </v-card-actions>

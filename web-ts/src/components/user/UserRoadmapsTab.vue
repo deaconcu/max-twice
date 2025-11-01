@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
 import { userServiceV1 } from '@/services/api/v1/apiServiceV1'
 import type { Roadmap } from '@/types/roadmap'
 import { ContentState } from '@/types/enums'
 import { useRouter } from 'vue-router'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useMutation } from '@/composables/useMutation'
 
 interface LoadEventData {
   done: (status: 'ok' | 'empty') => void
@@ -18,60 +20,31 @@ interface Props {
 const props = defineProps<Props>()
 const router = useRouter()
 
-// 路线图列表数据
-const roadmapList: Ref<Roadmap[]> = ref([])
-const lastRoadmapId: Ref<number> = ref(0)
-const loading = ref(false)
-const hasMore = ref(true)
-
 // 判断是否查看自己的路线图
 const isViewingSelf = !props.userId
 
-// 加载路线图数据
-const loadRoadmaps = async ({ done }: LoadEventData): Promise<void> => {
-  if (loading.value || !hasMore.value) {
-    done('empty')
-    return
-  }
-
-  try {
-    loading.value = true
-    const response = isViewingSelf
-      ? await userServiceV1.getCurrentUserRoadmaps(lastRoadmapId.value)
-      : await userServiceV1.getUserRoadmaps(props.userId!, lastRoadmapId.value)
-
-    if (response.code === 401) {
-      console.log('not login')
-      hasMore.value = false
-      done('empty')
-    } else if (response.code === 200) {
-      console.log(`get roadmaps data:`, response.data)
-      roadmapList.value.push(...response.data)
-
-      if (response.data.length > 0) {
-        lastRoadmapId.value = response.data[response.data.length - 1].id
-        done('ok')
-      } else {
-        hasMore.value = false
-        done('empty')
-      }
-    } else {
-      hasMore.value = false
-      done('empty')
-    }
-  } catch (error) {
-    console.error('Error loading roadmaps:', error)
-    hasMore.value = false
-    done('empty')
-  } finally {
-    loading.value = false
-  }
-}
-
-// 初始加载
-onMounted(() => {
-  loadRoadmaps({ done: () => {} })
+// 使用 useInfiniteScroll 加载路线图列表
+const {
+  items: roadmapList,
+  loadMore: loadMoreRoadmaps,
+  hasMore,
+} = useInfiniteScroll<Roadmap>({
+  fetchFn: (params) => {
+    return isViewingSelf
+      ? userServiceV1.getCurrentUserRoadmaps(params.lastId)
+      : userServiceV1.getUserRoadmaps(props.userId!, params.lastId)
+  },
+  getNextParams: (lastItem) => ({
+    lastId: lastItem.id,
+  }),
+  initialParams: { lastId: 0 },
 })
+
+// 适配 v-infinite-scroll 的 load 事件
+const loadRoadmaps = async ({ done }: LoadEventData): Promise<void> => {
+  await loadMoreRoadmaps()
+  done(hasMore.value ? 'ok' : 'empty')
+}
 
 // 获取状态颜色
 const getStateColor = (state: number): string => {
@@ -115,7 +88,6 @@ const viewRoadmap = (roadmap: Roadmap): void => {
 // 删除相关
 const deleteDialog = ref(false)
 const roadmapToDelete: Ref<Roadmap | null> = ref(null)
-const deleting = ref(false)
 
 const deleteMessage = computed(() =>
   roadmapToDelete.value
@@ -130,15 +102,12 @@ const confirmDelete = (roadmap: Roadmap, event: Event): void => {
   deleteDialog.value = true
 }
 
-// 执行删除
-const handleDelete = async (): Promise<void> => {
-  if (!roadmapToDelete.value) return
-
-  try {
-    deleting.value = true
-    const response = await userServiceV1.deleteRoadmap(roadmapToDelete.value.id)
-
-    if (response.code === 200) {
+// 使用 useMutation 删除路线图
+const { execute: deleteRoadmapApi, loading: deleting } = useMutation(
+  (id: number) => userServiceV1.deleteRoadmap(id),
+  {
+    successMessage: '删除成功',
+    onSuccess: () => {
       // 从列表中移除已删除的路线图
       const index = roadmapList.value.findIndex(r => r.id === roadmapToDelete.value!.id)
       if (index !== -1) {
@@ -146,16 +115,14 @@ const handleDelete = async (): Promise<void> => {
       }
       deleteDialog.value = false
       roadmapToDelete.value = null
-    } else {
-      console.error('删除失败:', response.message)
-      alert('删除失败: ' + response.message)
-    }
-  } catch (error) {
-    console.error('删除路线图时发生错误:', error)
-    alert('删除失败，请稍后重试')
-  } finally {
-    deleting.value = false
-  }
+    },
+  },
+)
+
+// 执行删除
+const handleDelete = async (): Promise<void> => {
+  if (!roadmapToDelete.value) return
+  await deleteRoadmapApi(roadmapToDelete.value.id)
 }
 </script>
 

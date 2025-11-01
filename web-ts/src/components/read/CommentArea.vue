@@ -10,6 +10,8 @@ import { COMMENT_VALIDATION } from '@/types/validation'
 import { commentRules } from '@/utils/validationRules'
 import SubcommentArea from './SubcommentArea.vue'
 import UserCard from '../user/UserCard.vue'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useMutation } from '@/composables/useMutation'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -31,9 +33,7 @@ interface LoadCallback {
 
 const props = defineProps<Props>()
 
-const comments = ref<Comment[]>([])
 const inputComment = ref<string>('')
-const offsetId = ref<number>(0)
 const scrollKey = ref<number>(Date.now())
 const activeReplyId = ref<number | null>(null)
 const replyContent = ref<string>('')
@@ -63,42 +63,46 @@ const setHighlight = (commentId: number): void => {
   }, 5000)
 }
 
-const load = async ({ done }: { done: LoadCallback }): Promise<void> => {
-  try {
-    if ('commentId' in route.query && offsetId.value === 0) {
-      const commentId = Number(route.query.commentId)
-      offsetId.value = commentId - 4 > 0 ? commentId - 4 : 0
-    }
-    const response = await commentServiceV1.getComments(
+// 使用 useInfiniteScroll 加载评论列表
+const {
+  items: comments,
+  loading,
+  loadMore
+} = useInfiniteScroll<Comment>({
+  fetchFn: (params) =>
+    commentServiceV1.getComments(
       props.object.id,
       props.type,
-      offsetId.value
-    )
-
-    if (response.code === 401) {
-      showSnackbar('error.loadFailed', 'error')
-      done('error')
-    } else if (response.code === 200) {
-      comments.value.push(...response.data)
-
-      if (response.data.length > 0) {
-        offsetId.value = response.data[response.data.length - 1].id
-        done('ok')
-
-        await nextTick()
-        targetItem.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-
-        // 如果有commentId且没有subCommentId，设置主评论高亮
-        if ('commentId' in route.query && !('subCommentId' in route.query)) {
-          setHighlight(parseInt(route.query.commentId as string))
-        }
-      } else {
-        done('empty')
-      }
-    } else {
-      showSnackbar(response.message || 'error.loadFailed', 'error')
-      done('error')
+      params.offsetId
+    ),
+  getNextParams: (lastItem) => ({
+    offsetId: lastItem.id
+  }),
+  initialParams: () => {
+    if ('commentId' in route.query) {
+      const commentId = Number(route.query.commentId)
+      return { offsetId: commentId - 4 > 0 ? commentId - 4 : 0 }
     }
+    return { offsetId: 0 }
+  },
+  onSuccess: async (newItems) => {
+    if (newItems.length > 0) {
+      await nextTick()
+      targetItem.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+      // 如果有commentId且没有subCommentId，设置主评论高亮
+      if ('commentId' in route.query && !('subCommentId' in route.query)) {
+        setHighlight(parseInt(route.query.commentId as string))
+      }
+    }
+  }
+})
+
+// 兼容 v-infinite-scroll 组件的 load 回调
+const load = async ({ done }: { done: LoadCallback }): Promise<void> => {
+  try {
+    await loadMore()
+    done(comments.value.length > 0 ? 'ok' : 'empty')
   } catch (error) {
     console.error('Error loading comments:', error)
     showSnackbar('error.loadFailed', 'error')
@@ -106,64 +110,83 @@ const load = async ({ done }: { done: LoadCallback }): Promise<void> => {
   }
 }
 
-const sendComment = async (): Promise<void> => {
-  if (!isValidComment(inputComment.value)) {
-    return
-  }
-
-  try {
-    const response = await commentServiceV1.createComment(
-      props.object.id,
-      props.type,
-      null,
-      null,
-      inputComment.value
-    )
-
-    if (response.code === 200) {
+// 使用 useMutation 发送评论
+const { execute: sendComment } = useMutation(
+  () => commentServiceV1.createComment(
+    props.object.id,
+    props.type,
+    null,
+    null,
+    inputComment.value
+  ),
+  {
+    successMessage: '',
+    showToast: false,
+    onSuccess: (result) => {
       inputComment.value = ''
-      comments.value.unshift(response.data)
+      comments.value.unshift(result)
       // eslint-disable-next-line vue/no-mutating-props
       props.object.commentCount++
-    } else {
-      showSnackbar(response.message || 'error.operationFailed', 'error')
     }
-  } catch (error) {
-    console.error('Error submitting form:', error)
-    showSnackbar('error.operationFailed', 'error')
   }
-}
+)
+
+// 使用 useMutation 发送子评论
+const { execute: executeSubcomment } = useMutation(
+  () => commentServiceV1.createComment(
+    props.object.id,
+    props.type,
+    activeReplyId.value,
+    null,
+    replyContent.value
+  ),
+  {
+    successMessage: '',
+    showToast: false,
+    onSuccess: (result, _payload) => {
+      replyContent.value = ''
+      // eslint-disable-next-line vue/no-mutating-props
+      props.object.commentCount++
+
+      // 找到对应的评论并添加子评论
+      const comment = comments.value.find(c => c.id === activeReplyId.value)
+      if (comment) {
+        if (comment.children === null) {
+          comment.children = [result]
+        } else {
+          comment.children.unshift(result)
+        }
+      }
+    }
+  }
+)
 
 const sendSubcomment = async (comment: Comment): Promise<void> => {
   if (!isValidComment(replyContent.value)) {
     return
   }
+  await executeSubcomment()
+}
 
-  try {
-    const response = await commentServiceV1.createComment(
-      props.object.id,
-      props.type,
-      activeReplyId.value,
-      null,
-      replyContent.value
-    )
-
-    if (response.code === 200) {
-      replyContent.value = ''
-      // eslint-disable-next-line vue/no-mutating-props
-      props.object.commentCount++
-      if (comment.children === null) {
-        comment.children = [response.data]
-      } else {
-        comment.children.unshift(response.data)
+// 使用 useMutation 点赞评论
+const { execute: executeUpvote } = useMutation(
+  (commentId: number) => upvoteServiceV1.upvote(commentId, 2, 2),
+  {
+    successMessage: '',
+    showToast: false,
+    throttle: 1000,
+    onSuccess: (result, commentId) => {
+      const comment = comments.value.find(c => c.id === commentId)
+      if (comment) {
+        comment.upvoteCount = result.upvotes
+        comment.upvoted = result.upvoted
       }
-    } else {
-      showSnackbar(response.message || 'error.operationFailed', 'error')
     }
-  } catch (error) {
-    console.error('Error submitting form:', error)
-    showSnackbar('error.operationFailed', 'error')
   }
+)
+
+const upvote = async (comment: Comment): Promise<void> => {
+  await executeUpvote(comment.id)
 }
 
 const returnToAllComment = (): void => {
@@ -180,22 +203,6 @@ onMounted(async () => {
   await nextTick()
   commentArea.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 })
-
-const upvote = async (comment: Comment): Promise<void> => {
-  try {
-    const response = await upvoteServiceV1.upvote(comment.id, 2, 2)
-
-    if (response.code === 200) {
-      comment.upvoteCount = response.data.upvotes
-      comment.upvoted = response.data.upvoted
-    } else {
-      showSnackbar(response.message || 'error.operationFailed', 'error')
-    }
-  } catch (error) {
-    console.error('Error submitting form:', error)
-    showSnackbar('error.operationFailed', 'error')
-  }
-}
 </script>
 
 <template>

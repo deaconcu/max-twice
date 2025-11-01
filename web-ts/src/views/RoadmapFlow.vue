@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, onMounted, ref, watch } from 'vue'
+import { inject, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import dagre from 'dagre'
@@ -16,6 +16,8 @@ import type { Roadmap } from '@/types/roadmap'
 import type { Profession } from '@/types/profession'
 import type { FlowNode, FlowEdge } from '@/types/flow'
 import { Position } from '@vue-flow/core'
+import { useFetch } from '@/composables/useFetch'
+import { useMutation } from '@/composables/useMutation'
 
 // 使用全局流程图类型的别名
 type Node = FlowNode
@@ -26,8 +28,7 @@ const showSnackbar = inject('showSnackbar') as (message: string, type?: string) 
 
 // 状态管理
 const roadmaps: Ref<Roadmap[]> = ref([])
-const profession: Ref<Profession | null> = ref(null) // 添加职业信息
-const loading: Ref<boolean> = ref(true)
+const profession: Ref<Profession | null> = ref(null)
 const error: Ref<string | null> = ref(null)
 const errorCode: Ref<number | null> = ref(null)
 const showModal: Ref<boolean> = ref(false)
@@ -132,59 +133,58 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
 }
 
 // 加载课程数据
-const loadRoadmaps = async (): Promise<void> => {
-  try {
-    loading.value = true
-    error.value = null
-
+// 使用 useFetch 加载职业和路线图数据
+const {
+  loading,
+  execute: loadRoadmaps,
+} = useFetch<{ profession: Profession; roadmaps: Roadmap[] }>({
+  fetchFn: async () => {
     // 并行获取职业信息和路线图数据
     const [professionResponse, roadmapResponse] = await Promise.all([
       professionServiceV1.getProfession(professionId.value),
       roadmapServiceV1.getProfessionRoadmaps(professionId.value),
     ])
 
-    console.log('职业信息：', professionResponse)
-    console.log('课程数据：response:', roadmapResponse)
-
     // 检查职业信息响应
     if (professionResponse.code !== 200) {
       errorCode.value = professionResponse.code
       error.value = professionResponse.message || '获取职业信息失败'
-      loading.value = false
-      return
+      throw new Error(error.value)
     }
 
+    return {
+      profession: professionResponse.data,
+      roadmaps: roadmapResponse.data || roadmapResponse,
+    }
+  },
+  immediate: true,
+  onSuccess: (data) => {
     // 设置职业信息
-    if (professionResponse && professionResponse.data) {
-      profession.value = professionResponse.data
-    }
+    profession.value = data.profession
 
-    // 确保我们在处理 roadmapResponse.data
-    const data = roadmapResponse.data || roadmapResponse
-    if (!Array.isArray(data)) {
+    // 处理路线图数据
+    const roadmapData = data.roadmaps
+    if (!Array.isArray(roadmapData)) {
       throw new Error('返回的数据格式不正确')
     }
 
-    roadmaps.value = data.map((roadmap: any): Roadmap => {
+    roadmaps.value = roadmapData.map((roadmap: any): Roadmap => {
       const { nodes, edges } = parseContent(roadmap.content)
-      // 首先进行布局计算
       const layoutedNodes = applyAutoLayout(nodes, edges, layoutDirection.value)
 
-      console.log(`nodes:${JSON.stringify(layoutedNodes)}`)
       return {
         ...roadmap,
         nodes: layoutedNodes,
         edges,
-        votes: roadmap.votes || Math.floor(Math.random() * 100), // 模拟投票数据
+        votes: roadmap.votes || Math.floor(Math.random() * 100),
       }
     })
-  } catch (err: any) {
+  },
+  onError: (err: any) => {
     console.error('加载课程数据失败:', err)
     error.value = `加载课程数据失败: ${err.message || '未知错误'}`
-  } finally {
-    loading.value = false
-  }
-}
+  },
+})
 
 // 弹窗控制
 const openModal = (roadmap: Roadmap): void => {
@@ -343,41 +343,41 @@ const handleRoadmapsUpdated = async (roadmapId?: string | number, pinned?: boole
   }
 }
 
-// 投票功能 - 添加缺失的函数
+// 使用 useMutation 处理投票
+const { execute: handleVote } = useMutation(
+  (roadmapId: number) => upvoteServiceV1.upvote(roadmapId, ObjectType.ROADMAP, VoteType.NORMAL),
+  {
+    onSuccess: (response, roadmapId) => {
+      // 查找并更新路线图数据
+      const roadmap = roadmaps.value.find(r => r.id === roadmapId)
+      if (roadmap) {
+        roadmap.vote = response.upvotes
+        roadmap.upvoted = response.upvoted
+      }
+
+      // 如果是当前选中的路线图，也更新它
+      if (selectedRoadmap.value && selectedRoadmap.value.id === roadmapId) {
+        selectedRoadmap.value.vote = response.upvotes
+        selectedRoadmap.value.upvoted = response.upvoted
+      }
+
+      showSnackbar(response.upvoted ? t('roadmap.voteSuccess') : t('roadmap.voteCancel'))
+    },
+    onError: () => {
+      showSnackbar(t('roadmap.voteFailed'))
+    },
+  },
+)
+
+// 投票功能
 const voteRoadmap = async (roadmap: Roadmap, event: Event): Promise<void> => {
   event?.stopPropagation()
-  try {
-    const response = await upvoteServiceV1.upvote(roadmap.id, ObjectType.ROADMAP, VoteType.NORMAL)
-    if (response.code === 200) {
-      // 更新本地数据
-      roadmap.vote = response.data.upvotes
-      roadmap.upvoted = response.data.upvoted
-
-      // 同步更新 roadmaps 列表中的数据
-      const listRoadmap = roadmaps.value.find(r => r.id === roadmap.id)
-      if (listRoadmap) {
-        listRoadmap.vote = response.data.upvotes
-        listRoadmap.upvoted = response.data.upvoted
-      }
-
-      if (response.data.upvoted) {
-        showSnackbar(t('roadmap.voteSuccess'))
-      } else {
-        showSnackbar(t('roadmap.voteCancel'))
-      }
-    } else {
-      showSnackbar(t('roadmap.voteFailed'))
-    }
-  } catch (error) {
-    console.error('投票失败:', error)
-    showSnackbar(t('roadmap.voteFailed'))
-  }
+  await handleVote(roadmap.id)
 }
 
 // 初始化
-onMounted(() => {
-  loadRoadmaps()
-})
+// onMounted 已经被 useFetch 的 immediate: true 替代
+
 </script>
 
 <template>

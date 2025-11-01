@@ -27,6 +27,7 @@
   import { aiServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { marked } from 'marked'
   import { useI18n } from 'vue-i18n'
+  import { useMutation } from '@/composables/useMutation'
 
   const lowlight = createLowlight(all)
   lowlight.register('html', html)
@@ -113,22 +114,31 @@
     }
   }
 
-  const generate = async (): Promise<void> => {
-    try {
-      const response = await aiServiceV1.chat(
-        `我在写一本教材，我当前在[${
-          props.pathText
-        }]这个目录下，请用容易让人理解的方式，给出一篇文章，返回的内容要带markdown的格式，不要有和内容无关的语言，请根据实际情况调整长度，文章要清楚明白`,
-        'openai/gpt-4o-mini'
-      )
-      if (response.code === 200 && editor.value) {
-        const html = marked(response.data)
-        editor.value.commands.setContent(html)
+  // 使用 useMutation 处理 AI 生成
+  const { execute: generate, loading: generating } = useMutation(
+    async () => {
+      const prompt = `我在写一本教材，我当前在[${props.pathText}]这个目录下，请用容易让人理解的方式，给出一篇文章，返回的内容要带markdown的格式，不要有和内容无关的语言，请根据实际情况调整长度，文章要清楚明白`
+      const response = await aiServiceV1.chat(prompt, 'openai/gpt-4o-mini')
+
+      if (response.code === 200) {
+        return response.data
       }
-    } catch {
-      // 错误处理
+
+      throw new Error(response.message || 'AI生成失败')
+    },
+    {
+      successMessage: 'AI内容生成成功',
+      onSuccess: (data) => {
+        if (editor.value && data) {
+          const html = marked(data)
+          editor.value.commands.setContent(html)
+        }
+      },
+      onError: (error) => {
+        console.error('AI生成失败:', error)
+      }
     }
-  }
+  )
 </script>
 
 <template>
@@ -244,7 +254,8 @@
           <v-icon icon="mdi-format-superscript"></v-icon>
         </button>
 
-        <button @click="generate">
+        <button @click="generate" :disabled="generating">
+          <v-progress-circular v-if="generating" indeterminate size="16" width="2" class="mr-1"></v-progress-circular>
           <span class="text-body-1 font-weight-bold">AI</span>
         </button>
       </div>

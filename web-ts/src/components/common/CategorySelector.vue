@@ -55,10 +55,11 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { systemServiceV1 } from '@/services/api/v1/apiServiceV1'
   import { useI18n } from 'vue-i18n'
   import type { MainCategory, SubCategory, CategoryMapping } from '@/types/common'
+  import { useFetch } from '@/composables/useFetch'
 
   const { t } = useI18n()
 
@@ -99,7 +100,17 @@
   // 动态数据
   const mainCategories = ref<MainCategory[]>([])
   const categoryMapping = ref<CategoryMapping[]>([])
-  const loading = ref<boolean>(true)
+
+  // 使用 useFetch 加载职业类别数据
+  const { loading } = useFetch({
+    fetchFn: systemServiceV1.getProfessionCategories,
+    immediate: true,
+    onSuccess: (data) => {
+      console.log('Loaded profession categories:', data)
+      mainCategories.value = data.mainCategories || []
+      categoryMapping.value = data.categoryMapping || []
+    }
+  })
 
   // 转换为表单选项格式
   const formMainCategories = computed(() => {
@@ -121,25 +132,6 @@
 
     return mapping?.subCategories || []
   })
-
-  // 加载职业类别数据
-  const loadProfessionCategories = async (): Promise<void> => {
-    try {
-      loading.value = true
-      const response = await systemServiceV1.getProfessionCategories()
-      console.log('Loaded profession categories:', response.data)
-
-      if (response.data) {
-        mainCategories.value = response.data.mainCategories || []
-        categoryMapping.value = response.data.categoryMapping || []
-      }
-    } catch (error) {
-      console.error('Failed to load profession categories:', error)
-      // 如果API调用失败，可以提供默认值或错误处理
-    } finally {
-      loading.value = false
-    }
-  }
 
   // 监听主分类变化
   const onMainCategoryChange = (value: number | string | null): void => {
@@ -171,11 +163,6 @@
       selectedSubCategory.value = newValue
     }
   )
-
-  // 组件挂载时加载数据
-  onMounted(() => {
-    loadProfessionCategories()
-  })
 </script>
 
 <style scoped>
