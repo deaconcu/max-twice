@@ -1,15 +1,29 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import LeftSidebar from '@/components/layout/LeftSidebar.vue'
+import UserInfoTab from '@/components/profile/UserInfoTab.vue'
+import LearningCareersTab from '@/components/profile/LearningCareersTab.vue'
+import LearningCoursesTab from '@/components/profile/LearningCoursesTab.vue'
+import StatsTab from '@/components/profile/StatsTab.vue'
+import SubscriptionTab from '@/components/profile/SubscriptionTab.vue'
+import FollowingTab from '@/components/profile/FollowingTab.vue'
+import CatalogsTab from '@/components/profile/CatalogsTab.vue'
+import ArticlesTab from '@/components/profile/ArticlesTab.vue'
+import MemoryDecksTab from '@/components/profile/MemoryDecksTab.vue'
+import RoadmapsTab from '@/components/profile/RoadmapsTab.vue'
+
+const route = useRoute()
+const router = useRouter()
 
 // 用户信息
 const userInfo = ref({
-  name: '用户名',
-  email: 'user@example.com',
+  name: '张三',
+  email: 'zhangsan@example.com',
   avatar: '',
   joinDate: '2024-01-01',
-  bio: '这是一段个人简介'
+  bio: '热爱学习的程序员，专注于前端开发和用户体验设计。'
 })
 
 // 统计数据
@@ -25,8 +39,29 @@ const stats = ref({
   roadmaps: 3
 })
 
-// Tab 选择
-const activeTab = ref('info')
+// Tab 选择 - 支持路由参数
+const activeTab = ref((route.query.tab as string) || 'careers')
+
+// 监听路由变化
+watch(() => route.query.tab, (newTab) => {
+  if (newTab && typeof newTab === 'string') {
+    activeTab.value = newTab
+  }
+})
+
+// Tab 切换时更新 URL
+watch(activeTab, (newTab) => {
+  if (route.query.tab !== newTab) {
+    router.push({ query: { tab: newTab } })
+  }
+})
+
+// 更新用户信息
+const handleUpdateUserInfo = (updatedInfo: typeof userInfo.value) => {
+  userInfo.value = { ...updatedInfo }
+  // 在真实项目中，这里会调用 API 保存数据
+  console.log('用户信息已更新:', updatedInfo)
+}
 </script>
 
 <template>
@@ -94,14 +129,14 @@ const activeTab = ref('info')
       </v-card>
 
       <!-- Tab 导航 -->
-      <v-tabs v-model="activeTab" color="primary" class="mb-6">
-        <v-tab value="info">
-          <v-icon icon="mdi-account-circle" size="18" class="mr-2"></v-icon>
-          个人信息
+      <v-tabs v-model="activeTab" color="primary" class="mb-6 tabs-with-border">
+        <v-tab value="careers">
+          <v-icon icon="mdi-briefcase" size="18" class="mr-2"></v-icon>
+          学习的职业
         </v-tab>
-        <v-tab value="studying">
+        <v-tab value="courses-learning">
           <v-icon icon="mdi-school" size="18" class="mr-2"></v-icon>
-          正在学习
+          学习的课程
         </v-tab>
         <v-tab value="stats">
           <v-icon icon="mdi-chart-line" size="18" class="mr-2"></v-icon>
@@ -131,270 +166,62 @@ const activeTab = ref('info')
           <v-icon icon="mdi-map-marker-path" size="18" class="mr-2"></v-icon>
           创建的路线图
         </v-tab>
+        <v-tab value="info">
+          <v-icon icon="mdi-account-circle" size="18" class="mr-2"></v-icon>
+          个人信息
+        </v-tab>
       </v-tabs>
 
       <!-- Tab 内容 -->
       <v-window v-model="activeTab">
         <!-- 个人信息 -->
         <v-window-item value="info">
-          <v-card border rounded="lg">
-            <v-card-text class="pa-6">
-              <h3 class="text-h6 font-weight-bold mb-4">个人信息</h3>
-              <v-row>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="userInfo.name"
-                    label="用户名"
-                    variant="outlined"
-                    rounded="lg"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="userInfo.email"
-                    label="邮箱"
-                    variant="outlined"
-                    rounded="lg"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12">
-                  <v-textarea
-                    v-model="userInfo.bio"
-                    label="个人简介"
-                    variant="outlined"
-                    rounded="lg"
-                    rows="4"
-                  ></v-textarea>
-                </v-col>
-              </v-row>
-              <div class="mt-4">
-                <v-btn color="primary" variant="flat" rounded="lg" class="mr-3">
-                  <v-icon icon="mdi-content-save" size="18" class="mr-2"></v-icon>
-                  保存
-                </v-btn>
-                <v-btn variant="outlined" rounded="lg">取消</v-btn>
-              </div>
-            </v-card-text>
-          </v-card>
+          <UserInfoTab :user-info="userInfo" @update="handleUpdateUserInfo" />
         </v-window-item>
 
-        <!-- 正在学习 -->
-        <v-window-item value="studying">
-          <v-card border rounded="lg">
-            <v-card-text class="pa-6">
-              <div class="d-flex align-center justify-space-between mb-4">
-                <h3 class="text-h6 font-weight-bold">正在学习</h3>
-                <v-btn color="primary" variant="text" rounded="lg" to="/learning">
-                  查看全部课程
-                  <v-icon icon="mdi-chevron-right" class="ml-1"></v-icon>
-                </v-btn>
-              </div>
-              <div class="text-center py-12">
-                <v-icon icon="mdi-school" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
-                <p class="text-body-1 text-grey-darken-2">暂无正在学习的课程</p>
-                <p class="text-body-2 text-grey">开始学习新课程，掌握新技能</p>
-                <v-btn color="primary" variant="flat" rounded="lg" class="mt-4" to="/learning">
-                  <v-icon icon="mdi-plus" size="18" class="mr-2"></v-icon>
-                  浏览课程
-                </v-btn>
-              </div>
-            </v-card-text>
-          </v-card>
+        <!-- 学习的职业 -->
+        <v-window-item value="careers">
+          <LearningCareersTab />
+        </v-window-item>
+
+        <!-- 学习的课程 -->
+        <v-window-item value="courses-learning">
+          <LearningCoursesTab />
         </v-window-item>
 
         <!-- 数据统计 -->
         <v-window-item value="stats">
-          <v-card border rounded="lg">
-            <v-card-text class="pa-6">
-              <h3 class="text-h6 font-weight-bold mb-4">数据统计</h3>
-
-              <v-row>
-                <v-col cols="12" md="6" lg="3">
-                  <v-card border rounded="lg" class="pa-4">
-                    <div class="d-flex align-center mb-2">
-                      <v-icon icon="mdi-book-open-outline" color="primary" size="24" class="mr-3"></v-icon>
-                      <div>
-                        <div class="text-h5 font-weight-bold text-primary">{{ stats.totalCourses }}</div>
-                        <div class="text-caption text-grey">学习课程</div>
-                      </div>
-                    </div>
-                  </v-card>
-                </v-col>
-
-                <v-col cols="12" md="6" lg="3">
-                  <v-card border rounded="lg" class="pa-4">
-                    <div class="d-flex align-center mb-2">
-                      <v-icon icon="mdi-check-circle" color="success" size="24" class="mr-3"></v-icon>
-                      <div>
-                        <div class="text-h5 font-weight-bold text-success">{{ stats.completedCourses }}</div>
-                        <div class="text-caption text-grey">完成课程</div>
-                      </div>
-                    </div>
-                  </v-card>
-                </v-col>
-
-                <v-col cols="12" md="6" lg="3">
-                  <v-card border rounded="lg" class="pa-4">
-                    <div class="d-flex align-center mb-2">
-                      <v-icon icon="mdi-calendar-check" color="warning" size="24" class="mr-3"></v-icon>
-                      <div>
-                        <div class="text-h5 font-weight-bold text-warning">{{ stats.studyDays }}</div>
-                        <div class="text-caption text-grey">学习天数</div>
-                      </div>
-                    </div>
-                  </v-card>
-                </v-col>
-
-                <v-col cols="12" md="6" lg="3">
-                  <v-card border rounded="lg" class="pa-4">
-                    <div class="d-flex align-center mb-2">
-                      <v-icon icon="mdi-clock-outline" color="info" size="24" class="mr-3"></v-icon>
-                      <div>
-                        <div class="text-h5 font-weight-bold text-info">{{ stats.studyHours }}</div>
-                        <div class="text-caption text-grey">学习时长(h)</div>
-                      </div>
-                    </div>
-                  </v-card>
-                </v-col>
-              </v-row>
-
-              <v-divider class="my-6"></v-divider>
-
-              <h4 class="text-body-1 font-weight-bold mb-4">学习趋势</h4>
-              <div class="text-center py-8">
-                <v-icon icon="mdi-chart-areaspline" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
-                <p class="text-body-2 text-grey">学习数据统计图表</p>
-              </div>
-            </v-card-text>
-          </v-card>
+          <StatsTab />
         </v-window-item>
 
         <!-- 我关注的课程 -->
         <v-window-item value="courses">
-          <v-card border rounded="lg">
-            <v-card-text class="pa-6">
-              <div class="d-flex align-center justify-space-between mb-4">
-                <h3 class="text-h6 font-weight-bold">我关注的课程</h3>
-                <v-btn color="primary" variant="text" rounded="lg" to="/learning">
-                  查看全部
-                  <v-icon icon="mdi-chevron-right" class="ml-1"></v-icon>
-                </v-btn>
-              </div>
-              <div class="text-center py-12">
-                <v-icon icon="mdi-book-multiple" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
-                <p class="text-body-1 text-grey-darken-2">暂无关注的课程</p>
-                <p class="text-body-2 text-grey">关注感兴趣的课程，及时获取更新</p>
-                <v-btn color="primary" variant="flat" rounded="lg" class="mt-4" to="/learning">
-                  <v-icon icon="mdi-plus" size="18" class="mr-2"></v-icon>
-                  浏览课程
-                </v-btn>
-              </div>
-            </v-card-text>
-          </v-card>
+          <SubscriptionTab />
         </v-window-item>
 
         <!-- 我关注的人 -->
         <v-window-item value="people">
-          <v-card border rounded="lg">
-            <v-card-text class="pa-6">
-              <div class="d-flex align-center justify-space-between mb-4">
-                <h3 class="text-h6 font-weight-bold">我关注的人</h3>
-                <div class="text-body-2 text-grey">
-                  <span class="font-weight-bold text-primary">{{ stats.following }}</span> 关注 ·
-                  <span class="font-weight-bold text-success">{{ stats.followers }}</span> 粉丝
-                </div>
-              </div>
-              <div class="text-center py-12">
-                <v-icon icon="mdi-account-multiple" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
-                <p class="text-body-1 text-grey-darken-2">暂无关注的人</p>
-                <p class="text-body-2 text-grey">关注优秀的创作者，获取精彩内容</p>
-              </div>
-            </v-card-text>
-          </v-card>
+          <FollowingTab />
         </v-window-item>
 
         <!-- 我创建的目录 -->
         <v-window-item value="catalogs">
-          <v-card border rounded="lg">
-            <v-card-text class="pa-6">
-              <div class="d-flex align-center justify-space-between mb-4">
-                <h3 class="text-h6 font-weight-bold">我创建的目录</h3>
-                <v-btn color="primary" variant="flat" rounded="lg">
-                  <v-icon icon="mdi-plus" size="18" class="mr-2"></v-icon>
-                  创建目录
-                </v-btn>
-              </div>
-              <div class="text-center py-12">
-                <v-icon icon="mdi-folder-multiple" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
-                <p class="text-body-1 text-grey-darken-2">暂无创建的目录</p>
-                <p class="text-body-2 text-grey">创建目录来组织您的学习内容</p>
-              </div>
-            </v-card-text>
-          </v-card>
+          <CatalogsTab />
         </v-window-item>
 
         <!-- 我创建的文章 -->
         <v-window-item value="articles">
-          <v-card border rounded="lg">
-            <v-card-text class="pa-6">
-              <div class="d-flex align-center justify-space-between mb-4">
-                <h3 class="text-h6 font-weight-bold">我创建的文章</h3>
-                <v-btn color="primary" variant="flat" rounded="lg">
-                  <v-icon icon="mdi-plus" size="18" class="mr-2"></v-icon>
-                  创建文章
-                </v-btn>
-              </div>
-              <div class="text-center py-12">
-                <v-icon icon="mdi-file-document-multiple" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
-                <p class="text-body-1 text-grey-darken-2">暂无创建的文章</p>
-                <p class="text-body-2 text-grey">分享您的学习心得和经验</p>
-              </div>
-            </v-card-text>
-          </v-card>
+          <ArticlesTab />
         </v-window-item>
 
         <!-- 我的卡片组 -->
         <v-window-item value="decks">
-          <v-card border rounded="lg">
-            <v-card-text class="pa-6">
-              <div class="d-flex align-center justify-space-between mb-4">
-                <h3 class="text-h6 font-weight-bold">我的卡片组</h3>
-                <v-btn color="primary" variant="flat" rounded="lg" to="/memory-review">
-                  <v-icon icon="mdi-plus" size="18" class="mr-2"></v-icon>
-                  创建卡片组
-                </v-btn>
-              </div>
-              <div class="text-center py-12">
-                <v-icon icon="mdi-cards" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
-                <p class="text-body-1 text-grey-darken-2">暂无卡片组</p>
-                <p class="text-body-2 text-grey">创建记忆卡片，高效复习知识点</p>
-                <v-btn color="primary" variant="outlined" rounded="lg" class="mt-4" to="/memory-review">
-                  <v-icon icon="mdi-brain" size="18" class="mr-2"></v-icon>
-                  前往复习中心
-                </v-btn>
-              </div>
-            </v-card-text>
-          </v-card>
+          <MemoryDecksTab />
         </v-window-item>
 
         <!-- 我创建的路线图 -->
         <v-window-item value="roadmaps">
-          <v-card border rounded="lg">
-            <v-card-text class="pa-6">
-              <div class="d-flex align-center justify-space-between mb-4">
-                <h3 class="text-h6 font-weight-bold">我创建的路线图</h3>
-                <v-btn color="primary" variant="flat" rounded="lg">
-                  <v-icon icon="mdi-plus" size="18" class="mr-2"></v-icon>
-                  创建路线图
-                </v-btn>
-              </div>
-              <div class="text-center py-12">
-                <v-icon icon="mdi-map-marker-path" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
-                <p class="text-body-1 text-grey-darken-2">暂无创建的路线图</p>
-                <p class="text-body-2 text-grey">创建学习路线图，规划职业发展路径</p>
-              </div>
-            </v-card-text>
-          </v-card>
+          <RoadmapsTab />
         </v-window-item>
       </v-window>
     </div>
@@ -422,6 +249,24 @@ const activeTab = ref('info')
     width: calc(100% - max(160px, calc((100vw - 1550px) / 2)));
     max-width: 1550px;
   }
+}
+
+/* Tab 标签字体颜色调整 */
+:deep(.v-tab) {
+  color: rgba(0, 0, 0, 0.5) !important;
+}
+
+:deep(.v-tab--selected) {
+  color: rgb(var(--v-theme-primary)) !important;
+}
+
+:deep(.v-tab:hover) {
+  color: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Tab 下边框 */
+.tabs-with-border {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 /* 移动端 */

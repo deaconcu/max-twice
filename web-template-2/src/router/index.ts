@@ -13,6 +13,8 @@ import ProfileView from '@/views/ProfileView.vue'
 import RoadmapListView from '@/views/RoadmapListView.vue'
 import RoadmapDetailView from '@/views/RoadmapDetailView.vue'
 import RoadmapCreateView from '@/views/RoadmapCreateView.vue'
+import CourseDetailView from '@/views/CourseDetailView.vue'
+import ContentReadView from '@/views/ContentReadView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -90,6 +92,16 @@ const router = createRouter({
       path: '/roadmap/:professionId/create',
       name: 'roadmap-create',
       component: RoadmapCreateView
+    },
+    {
+      path: '/course/:courseId',
+      name: 'course-detail',
+      component: CourseDetailView
+    },
+    {
+      path: '/course/:courseId/read/:subCourseId',
+      name: 'content-read',
+      component: ContentReadView
     }
   ]
 })

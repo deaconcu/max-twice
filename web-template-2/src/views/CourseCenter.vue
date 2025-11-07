@@ -365,7 +365,7 @@ const performSearch = (): void => {
 // 打开课程详情
 const goToCourse = (course: CourseWithDisplay): void => {
   console.log('打开课程:', course.name)
-  router.push(`/read/${course.id}`)
+  router.push(`/course/${course.id}`)
 }
 
 // 打开申请对话框
