@@ -85,6 +85,28 @@ public class PageService {
     }
 
     /**
+     * 获取TOC（公开版本，无需userId）
+     * 所有节点的完成状态都为false
+     */
+    public Utils.Pair<String, Map<Long, NodeDTO>> getTocPublic(long courseId) {
+        ArrayNode arrayNode = contentsService.getToc(0L, courseId, true);
+
+        Set<Long> keys = new HashSet<>();
+        Utils.collectKeys(arrayNode, keys);
+
+        List<NodeDO> nodeList = keys.isEmpty() ? new ArrayList<>() : nodeDataService.getByIds(keys.stream().toList());
+
+        // 所有节点都标记为未完成
+        Map<Long, NodeDTO> nodeInfos = nodeList.stream()
+                .collect(Collectors.toMap(
+                        NodeDO::getId,
+                        node -> nodeConverter.toDTOV2(node, false)
+                ));
+
+        return new Utils.Pair<>(arrayNode.toString(), nodeInfos);
+    }
+
+    /**
      * 根据评论ID读取页面数据
      */
     public Map<String, Object> readPageByComment(Long commentId, long userId) {
@@ -150,6 +172,16 @@ public class PageService {
     }
 
     /**
+     * 根据课程ID和路径读取页面数据（公开接口，无需登录）
+     * 用于匿名用户浏览，不包含个性化信息
+     */
+    public Map<String, Object> readPageByPathPublic(Long courseId, String path) {
+        validatePath(path);
+        CourseDO courseDO = validateCourseExists(courseId);
+        return readPageDataPublic(courseDO, path);
+    }
+
+    /**
      * 核心页面数据聚合逻辑
      */
     private Map<String, Object> readPageData(CourseDO courseDO, String path, NodeDO nodeDO, PostDO postDO, long userId) {
@@ -176,23 +208,72 @@ public class PageService {
 
         List<PostDTO> otherPostings = getOtherPostings(nodeDO.getId(), userIds);
         Map<Long, UserDTO> userMap = buildUserMap(userIds);
-        
+
         setPostCreators(chosenPosting, fixedPostings, otherPostings, userMap);
         setVoteTypes(userId, chosenPosting, fixedPostings, otherPostings);
-        
+
         PostDTO postDTO = buildPostDTO(postDO, userMap);
         long lastId = calculateLastId(chosenPosting, fixedPostings, otherPostings);
-        
+
         boolean learning = checkLearningStatus(userId, courseDO.getId());
         CourseDTO parentCourse = buildParentCourse(courseDO, userId);
         List<CourseDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
-        
+
         boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
         Integer courseProgress = userCourseService.getCourseProgress(userId, courseDO.getId());
-        
+
         return buildPageDataResponse(courseTocDTO, nodeDO, parentCourse, courseDO, subCourseList,
                 chosenPosting, fixedPostings, otherPostings, lastId, path, userMap.values(),
                 learning, postDTO, nodeCompleted, courseProgress);
+    }
+
+    /**
+     * 核心页面数据聚合逻辑（公开版本，无需userId）
+     * 用于匿名用户，所有个性化字段返回默认值
+     */
+    private Map<String, Object> readPageDataPublic(CourseDO courseDO, String path) {
+        // 使用假的userId=0来获取TOC（不包含完成状态）
+        Utils.Pair<String, Map<Long, NodeDTO>> response = getTocPublic(courseDO.getId());
+        CourseTocDTO courseTocDTO = new CourseTocDTO(response.left(), response.right());
+
+        JsonNode rootNode = parseJsonSafely(courseTocDTO.getContents());
+        path = sanitizePath(path, courseDO.getRootNodeId());
+
+        Utils.Pair<Long, JsonNode> pair = getNodeByPath(rootNode, path, courseDO.getRootNodeId());
+
+        List<Long> userIds = new LinkedList<>();
+        PostDTO chosenPosting = extractChosenPosting(pair.right(), userIds);
+        List<PostDTO> fixedPostings = extractFixedPostings(pair.right(), userIds);
+
+        long nodeId = pair.left();
+        NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
+
+        if (nodeDO.getState() != null && nodeDO.getState() != Enums.ContentState.PUBLISHED.value()) {
+            throw ErrorCode.NODE_STATE_INVALID.exception();
+        }
+
+        List<PostDTO> otherPostings = getOtherPostings(nodeDO.getId(), userIds);
+        Map<Long, UserDTO> userMap = buildUserMap(userIds);
+
+        setPostCreators(chosenPosting, fixedPostings, otherPostings, userMap);
+        // 匿名用户不设置投票类型
+
+        long lastId = calculateLastId(chosenPosting, fixedPostings, otherPostings);
+
+        // 构建父课程（无个性化信息）
+        CourseDTO parentCourse;
+        if (courseDO.getParentCourseId() != 0) {
+            CourseDO parentCourseDO = courseDataService.getById(courseDO.getParentCourseId());
+            parentCourse = courseService.toDTOV4(parentCourseDO);
+        } else {
+            parentCourse = courseService.toDTOV4(courseDO);
+        }
+        parentCourse.setSubscribed(false); // 匿名用户未订阅
+
+        List<CourseDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
+
+        return buildPageDataResponsePublic(courseTocDTO, nodeDO, parentCourse, courseDO, subCourseList,
+                chosenPosting, fixedPostings, otherPostings, lastId, path, userMap.values());
     }
 
     // ========== 私有辅助方法 ==========
@@ -405,9 +486,9 @@ public class PageService {
                                                       PostDTO chosenPosting, List<PostDTO> fixedPostings, List<PostDTO> otherPostings,
                                                       long lastId, String path, Collection<UserDTO> users, boolean learning,
                                                       PostDTO postDTO, boolean nodeCompleted, Integer courseProgress) {
-        
+
         Map<String, Object> data = new HashMap<>();
-        
+
         try {
             List<Object> contents = objectMapper.readValue(courseTocDTO.getContents(), List.class);
             data.put("toc", contents);
@@ -428,11 +509,46 @@ public class PageService {
         data.put("path", path);
         data.put("users", new ArrayList<>(users));
         data.put("learning", learning);
-        
+
         if (postDTO != null) {
             data.put("post", postDTO);
         }
-        
+
+        return data;
+    }
+
+    /**
+     * 构建页面数据响应（公开版本）
+     * 不包含个性化字段：learning=false, nodeCompleted=false, courseProgress=0
+     */
+    private Map<String, Object> buildPageDataResponsePublic(CourseTocDTO courseTocDTO, NodeDO nodeDO,
+                                                            CourseDTO parentCourse, CourseDO courseDO, List<CourseDTO> subCourseList,
+                                                            PostDTO chosenPosting, List<PostDTO> fixedPostings, List<PostDTO> otherPostings,
+                                                            long lastId, String path, Collection<UserDTO> users) {
+
+        Map<String, Object> data = new HashMap<>();
+
+        try {
+            List<Object> contents = objectMapper.readValue(courseTocDTO.getContents(), List.class);
+            data.put("toc", contents);
+        } catch (JsonProcessingException e) {
+            log.error("TOC内容解析失败", e);
+            data.put("toc", new ArrayList<>());
+        }
+
+        data.put("node", nodeConverter.toDTOV2(nodeDO, false)); // 未完成
+        data.put("parentCourse", parentCourse);
+        data.put("course", courseService.toDTOV5(courseDO, false, 0)); // 未订阅，进度0
+        data.put("subCourseList", subCourseList);
+        data.put("chosenPosting", chosenPosting);
+        data.put("fixedPostings", fixedPostings);
+        data.put("otherPostings", otherPostings);
+        data.put("lastId", lastId);
+        data.put("tocNodeInfos", courseTocDTO.getNodeInfos());
+        data.put("path", path);
+        data.put("users", new ArrayList<>(users));
+        data.put("learning", false); // 未学习
+
         return data;
     }
 }

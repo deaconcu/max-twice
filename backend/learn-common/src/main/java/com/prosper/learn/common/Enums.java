@@ -623,14 +623,14 @@ public class Enums {
      * 课程学习状态枚举
      * STUDYING=1, PAUSED=2, ARCHIVED=3
      */
-    public enum CourseStudyState implements ValueEnum<Byte> {
+    public enum DeckCourseStudyState implements ValueEnum<Byte> {
         STUDYING((byte) 1),     // 学习中
         PAUSED((byte) 2),       // 已暂停
         ARCHIVED((byte) 3);     // 已归档
 
         private final byte value;
 
-        CourseStudyState(byte value) {
+        DeckCourseStudyState(byte value) {
             this.value = value;
         }
 
@@ -639,12 +639,12 @@ public class Enums {
             return value;
         }
 
-        public static CourseStudyState getByValue(Integer value) {
-            return value == null ? null : ValueEnum.getByValue(CourseStudyState.class, value.byteValue());
+        public static DeckCourseStudyState getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(DeckCourseStudyState.class, value.byteValue());
         }
 
         public static boolean isValid(int value) {
-            return ValueEnum.isValid(CourseStudyState.class, (byte)value);
+            return ValueEnum.isValid(DeckCourseStudyState.class, (byte)value);
         }
     }
 

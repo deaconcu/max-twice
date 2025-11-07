@@ -135,7 +135,7 @@ public class MemoryBankService {
             setting.setUserId(userId);
             setting.setCourseId(request.getCourseId());
             setting.setFrequencySetting(FrequencySetting.NORMAL.value()); // 默认普通频率
-            setting.setState(CourseStudyState.STUDYING.value()); // 学习中
+            setting.setState(DeckCourseStudyState.STUDYING.value()); // 学习中
             courseSrsSettingDataService.insert(setting);
         }
 

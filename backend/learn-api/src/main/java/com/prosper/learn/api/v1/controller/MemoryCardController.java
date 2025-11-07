@@ -1,6 +1,8 @@
 package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.ratelimit.LimitType;
+import com.prosper.learn.api.ratelimit.RateLimit;
 import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.MemoryCardService;
@@ -14,6 +16,7 @@ import org.springframework.validation.annotation.Validated;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 记忆卡片控制器
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
+@RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class MemoryCardController {
 
     private final MemoryCardService cardService;

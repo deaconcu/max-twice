@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { Ref } from 'vue'
 import { handleApiCall } from './utils'
 import type { ApiResponse, CursorParams, LoadMoreCallback } from './types'
@@ -15,6 +15,9 @@ export interface InfiniteScrollOptions<T> {
 
   // 可选：初始分页参数（默认 {}）
   initialParams?: CursorParams
+
+  // 可选：是否自动加载第一页数据（默认 true）
+  immediate?: boolean
 
   // 可选：数据转换函数
   transform?: (item: T) => T
@@ -64,7 +67,7 @@ export interface InfiniteScrollReturn<T> {
 export function useInfiniteScroll<T>(
   options: InfiniteScrollOptions<T>
 ): InfiniteScrollReturn<T> {
-  const { fetchFn, getNextParams, initialParams = {}, transform, onError } = options
+  const { fetchFn, getNextParams, initialParams = {}, immediate = true, transform, onError } = options
 
   // 状态
   const items = ref<T[]>([]) as Ref<T[]>
@@ -136,6 +139,13 @@ export function useInfiniteScroll<T>(
     error.value = null
     hasMore.value = true
     params.value = { ...initialParams }
+  }
+
+  // 自动加载第一页数据
+  if (immediate) {
+    onMounted(() => {
+      loadMore()
+    })
   }
 
   return {

@@ -1,6 +1,8 @@
 package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.ratelimit.LimitType;
+import com.prosper.learn.api.ratelimit.RateLimit;
 import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.annotation.JsonParam;
 import com.prosper.learn.api.v1.dto.ApiResponse;
@@ -18,6 +20,7 @@ import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.prosper.learn.common.Enums.*;
 
@@ -29,6 +32,7 @@ import static com.prosper.learn.common.Enums.*;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
+@RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class MessagesController {
 
     private final MessageService messageService;

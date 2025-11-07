@@ -145,16 +145,25 @@ const {
       roadmapServiceV1.getProfessionRoadmaps(professionId.value),
     ])
 
-    // 检查职业信息响应
+    // 检查职业信息响应 - 返回错误响应让 handleApiCall 处理
     if (professionResponse.code !== 200) {
       errorCode.value = professionResponse.code
-      error.value = professionResponse.message || '获取职业信息失败'
-      throw new Error(error.value)
+      return professionResponse as any
     }
 
+    // 检查路线图响应 - 返回错误响应让 handleApiCall 处理
+    if (roadmapResponse.code !== 200) {
+      return roadmapResponse as any
+    }
+
+    // 返回符合 ApiResponse 格式的成功响应
     return {
-      profession: professionResponse.data,
-      roadmaps: roadmapResponse.data || roadmapResponse,
+      code: 200,
+      message: 'success',
+      data: {
+        profession: professionResponse.data,
+        roadmaps: roadmapResponse.data,
+      }
     }
   },
   immediate: true,

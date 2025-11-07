@@ -24,14 +24,26 @@ public interface ProfessionMapper {
             "</script>")
     List<ProfessionDO> listByStateAndLastId(byte state, Long lastId);
 
-    @Select("SELECT * FROM profession WHERE main_category = #{mainCategory} AND state = " + PUBLISHED_VALUE + " AND id > #{lastId} ORDER BY id ASC LIMIT 20")
-    List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, long lastId);
+    @Select("<script>" +
+            "SELECT * FROM profession WHERE main_category = #{mainCategory} AND state = " + PUBLISHED_VALUE + " " +
+            "<if test='lastId != null'>AND id &gt; #{lastId}</if> " +
+            "ORDER BY id ASC LIMIT 20" +
+            "</script>")
+    List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, Long lastId);
 
-    @Select("SELECT * FROM profession WHERE sub_category = #{subCategory} AND state = " + PUBLISHED_VALUE + " AND id > #{lastId} ORDER BY id ASC LIMIT 20")
-    List<ProfessionDO> listBySubCategoryAndLastId(int subCategory, long lastId);
+    @Select("<script>" +
+            "SELECT * FROM profession WHERE sub_category = #{subCategory} AND state = " + PUBLISHED_VALUE + " " +
+            "<if test='lastId != null'>AND id &gt; #{lastId}</if> " +
+            "ORDER BY id ASC LIMIT 20" +
+            "</script>")
+    List<ProfessionDO> listBySubCategoryAndLastId(int subCategory, Long lastId);
 
-    @Select("SELECT * FROM profession WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} AND state = " + PUBLISHED_VALUE + " AND id > #{lastId} ORDER BY id ASC LIMIT 20")
-    List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, long lastId);
+    @Select("<script>" +
+            "SELECT * FROM profession WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} AND state = " + PUBLISHED_VALUE + " " +
+            "<if test='lastId != null'>AND id &gt; #{lastId}</if> " +
+            "ORDER BY id ASC LIMIT 20" +
+            "</script>")
+    List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, Long lastId);
 
     @Select("SELECT * FROM profession WHERE INSTR(name, #{name}) > 0 limit 20")
     List<ProfessionDO> searchByName(String name);

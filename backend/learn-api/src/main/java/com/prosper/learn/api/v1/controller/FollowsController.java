@@ -1,6 +1,8 @@
 package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.ratelimit.LimitType;
+import com.prosper.learn.api.ratelimit.RateLimit;
 import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.FollowService;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 关注功能接口
@@ -24,6 +27,7 @@ import java.util.List;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
+@RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class FollowsController {
 
     private final FollowService followService;

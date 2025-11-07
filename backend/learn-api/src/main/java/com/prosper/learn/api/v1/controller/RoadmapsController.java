@@ -1,6 +1,8 @@
 package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.ratelimit.LimitType;
+import com.prosper.learn.api.ratelimit.RateLimit;
 import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.Enums;
@@ -18,6 +20,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -29,6 +32,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
+@RateLimit(capacity = 40, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class RoadmapsController {
 
     private final RoadmapService roadmapService;
@@ -43,8 +47,7 @@ public class RoadmapsController {
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
             Long professionId,
-            @RequestParam(required = false, defaultValue = "0")
-            @Min(value = 0, message = "最后ID不能小于0")
+            @RequestParam(required = false)
             Long lastId,
             @CurrentUser UserDO currentUser) {
 

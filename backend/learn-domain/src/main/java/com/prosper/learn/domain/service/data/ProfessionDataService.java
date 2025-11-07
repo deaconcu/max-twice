@@ -107,21 +107,21 @@ public class ProfessionDataService extends AbstractDataService<ProfessionDO, Pro
     /**
      * 根据主分类和最后ID查询
      */
-    public List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, long lastId) {
+    public List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, Long lastId) {
         return professionMapper.listByMainCategoryAndLastId(mainCategory, lastId);
     }
-    
+
     /**
      * 根据子分类和最后ID查询
      */
-    public List<ProfessionDO> listBySubCategoryAndLastId(int subCategory, long lastId) {
+    public List<ProfessionDO> listBySubCategoryAndLastId(int subCategory, Long lastId) {
         return professionMapper.listBySubCategoryAndLastId(subCategory, lastId);
     }
-    
+
     /**
      * 根据主分类、子分类和最后ID查询
      */
-    public List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, long lastId) {
+    public List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, Long lastId) {
         return professionMapper.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
     }
 

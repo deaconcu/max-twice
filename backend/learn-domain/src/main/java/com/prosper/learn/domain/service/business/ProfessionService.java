@@ -60,17 +60,17 @@ public class ProfessionService {
         return toDTO(professionDOList);
     }
 
-    public List<ProfessionDTO> getListByMainCategoryAndLastId(int mainCategory, long lastId) {
+    public List<ProfessionDTO> getListByMainCategoryAndLastId(int mainCategory, Long lastId) {
         List<ProfessionDO> professionDOList = professionDataService.listByMainCategoryAndLastId(mainCategory, lastId);
         return toDTO(professionDOList);
     }
 
-    public List<ProfessionDTO> getListBySubCategoryAndLastId(int subCategory, long lastId) {
+    public List<ProfessionDTO> getListBySubCategoryAndLastId(int subCategory, Long lastId) {
         List<ProfessionDO> professionDOList = professionDataService.listBySubCategoryAndLastId(subCategory, lastId);
         return toDTO(professionDOList);
     }
 
-    public List<ProfessionDTO> getListByCategoryAndLastId(int mainCategory, int subCategory, long lastId) {
+    public List<ProfessionDTO> getListByCategoryAndLastId(int mainCategory, int subCategory, Long lastId) {
         List<ProfessionDO> professionDOList = professionDataService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
         return toDTO(professionDOList);
     }

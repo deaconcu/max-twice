@@ -343,9 +343,13 @@ export const commentServiceV1 = {
 
 // 路线图管理服务
 export const roadmapServiceV1 = {
-  getProfessionRoadmaps(professionId: number, lastId = 0): Promise<ApiResponse<Roadmap[]>> {
+  getProfessionRoadmaps(professionId: number, lastId?: number): Promise<ApiResponse<Roadmap[]>> {
+    const params: Record<string, any> = {}
+    if (lastId !== undefined && lastId !== null) {
+      params.lastId = lastId
+    }
     return apiClient.get(`${API_V1_PREFIX}/professions/${professionId}/roadmaps`, {
-      params: { lastId },
+      params,
     })
   },
 

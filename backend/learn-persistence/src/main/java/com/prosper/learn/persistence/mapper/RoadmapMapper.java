@@ -87,10 +87,10 @@ public interface RoadmapMapper {
              " AND id NOT IN ",
              "<foreach item='id' collection='excludeIds' open='(' separator=',' close=')'>#{id}</foreach>",
              "</if>",
-             " ORDER BY score DESC, id DESC LIMIT #{offset}, #{limit}",
+             " ORDER BY score DESC, id DESC LIMIT #{limit}",
              "</script>"})
     List<RoadmapDO> getListByProfessionExcludingOrderByScore(
-            long professionId, int offset, int limit, List<Long> excludeIds);
+            long professionId, int limit, List<Long> excludeIds);
 
     @Select({"<script>",
              "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + PUBLISHED_VALUE + " AND deleted_at IS NULL AND ",

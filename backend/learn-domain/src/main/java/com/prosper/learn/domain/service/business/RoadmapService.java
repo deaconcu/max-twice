@@ -149,6 +149,33 @@ public class RoadmapService {
     // ========== 公共方法 ==========
 
     /**
+     * 获取职业路线图列表（公开接口，无个性化信息）
+     * 用于匿名用户浏览
+     */
+    public List<RoadmapDTO> getRoadmapsByProfessionPublic(Long professionId, Long lastId, Integer pageSize) {
+        validateProfessionId(professionId);
+
+        int limit = pageSize != null && pageSize > 0 ? pageSize : systemProperties.getRoadmap().getDefaultPageSize();
+        List<RoadmapDO> roadmapList;
+
+        if (lastId == null || lastId == 0) {
+            roadmapList = roadmapDataService.getListByProfessionExcludingOrderByScore(
+                professionId, limit, new ArrayList<>());
+        } else {
+            RoadmapDO lastRoadmap = roadmapDataService.getById(lastId);
+            if (lastRoadmap != null) {
+                roadmapList = roadmapDataService.getListByProfessionAfterScoreExcluding(
+                    professionId, lastRoadmap.getScore(), lastId, limit, null);
+            } else {
+                roadmapList = new ArrayList<>();
+            }
+        }
+
+        // 转换为DTO，只包含基础信息
+        return toDTO(roadmapList);
+    }
+
+    /**
      * return RoadmapDTO
      */
     public RoadmapDTO getById(long id) {
@@ -404,7 +431,7 @@ public class RoadmapService {
         int limit = systemProperties.getRoadmap().getDefaultPageSize();
 
         List<Long> pinnedRoadmapIds = new ArrayList<>();
-        if (lastId == null || lastId == 0) {
+        if (lastId == null) {
             pinnedRoadmapIds = getPinnedRoadmapIds(currentUser.getId(), professionId);
 
             if (!pinnedRoadmapIds.isEmpty()) {
@@ -415,7 +442,7 @@ public class RoadmapService {
             int remainingLimit = limit - roadmapList.size();
             if (remainingLimit > 0) {
                 List<RoadmapDO> otherRoadmaps = roadmapDataService.getListByProfessionExcludingOrderByScore(
-                    professionId, 0, remainingLimit, pinnedRoadmapIds);
+                    professionId, remainingLimit, pinnedRoadmapIds);
                 roadmapList.addAll(otherRoadmaps);
             }
         } else {

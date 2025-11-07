@@ -9,6 +9,9 @@ import MyCourses from '@/views/MyCourses.vue'
 import MyCareers from '@/views/MyCareers.vue'
 import HomePage from '@/views/HomePage.vue'
 import MemoryReviewView from '@/views/MemoryReviewView.vue'
+import RoadmapListView from '@/views/RoadmapListView.vue'
+import RoadmapDetailView from '@/views/RoadmapDetailView.vue'
+import RoadmapCreateView from '@/views/RoadmapCreateView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -75,6 +78,21 @@ const router = createRouter({
       path: '/my-memory-review',
       name: 'my-memory-review',
       component: MemoryReviewView
+    },
+    {
+      path: '/roadmap/:professionId',
+      name: 'roadmap-list',
+      component: RoadmapListView
+    },
+    {
+      path: '/roadmap/:professionId/detail/:roadmapId',
+      name: 'roadmap-detail',
+      component: RoadmapDetailView
+    },
+    {
+      path: '/roadmap/:professionId/create',
+      name: 'roadmap-create',
+      component: RoadmapCreateView
     }
   ]
 })

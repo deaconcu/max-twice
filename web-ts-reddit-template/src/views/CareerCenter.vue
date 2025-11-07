@@ -373,10 +373,9 @@ const selectSecondLevel = (subcategoryIndex: number): void => {
   }
 }
 
-// 跳转到职业详情
+// 跳转到职业详情（学习路径列表）
 const goToCareerDetail = (career: CareerWithDisplay): void => {
-  console.log('跳转到职业详情:', career.name)
-  // router.push(`/roadmap/${career.id}`)
+  router.push(`/roadmap/${career.id}`)
 }
 
 // 打开申请对话框
@@ -554,7 +553,7 @@ const getSubcategoriesByMainCategory = (mainCategoryId: number | null) => {
 <style scoped>
 .career-center-page {
   min-height: 100vh;
-  background-color: #FAFBFC;
+  background-color: #FdFdFd;
 }
 
 .page-content {

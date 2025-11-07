@@ -1,6 +1,8 @@
 package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.ratelimit.LimitType;
+import com.prosper.learn.api.ratelimit.RateLimit;
 import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.UserService;
@@ -11,6 +13,7 @@ import com.prosper.learn.api.v1.annotation.JsonParam;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 订阅管理接口
@@ -21,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RequiredArgsConstructor
 @Validated
+@RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class SubscriptionsController {
 
     private final UserService userService;

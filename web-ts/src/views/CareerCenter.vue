@@ -96,13 +96,6 @@ const getSubCategoryId = (mainCategoryId: number, subcategoryIndex: number): num
   return subcategories[subcategoryIndex]?.id || null
 }
 
-// 当前查询参数
-const currentQueryParams: Ref<CurrentQueryParams> = ref({
-  type: 'all',
-  mainCategory: null,
-  subCategory: null,
-})
-
 // 申请职业对话框
 const showApplicationDialog: Ref<boolean> = ref(false)
 const applicationValid: Ref<boolean> = ref(false)
@@ -199,7 +192,8 @@ const {
   loading,
   hasMore: hasMoreCareers,
   loadMore,
-  reset: resetCareers
+  reset: resetCareers,
+  refresh: refreshCareers
 } = useInfiniteScroll<CareerWithDisplay>({
   fetchFn: async (params) => {
     const { type, mainCategory, subCategory } = currentQueryParams.value
@@ -295,7 +289,7 @@ const selectFirstLevel = async (categoryValue: number): Promise<void> => {
     activeFirstLvl.value = -1
     activeSecondLvl.value = -1
     currentQueryParams.value = { type: 'all', mainCategory: null, subCategory: null }
-    resetCareers()
+    refreshCareers()
     return
   }
 
@@ -308,7 +302,7 @@ const selectFirstLevel = async (categoryValue: number): Promise<void> => {
       mainCategory: categoryValue,
       subCategory: null
     }
-    resetCareers()
+    refreshCareers()
   }
 }
 
@@ -325,7 +319,7 @@ const selectSecondLevel = async (subcategoryIndex: number): Promise<void> => {
         mainCategory: activeFirstLvl.value,
         subCategory: null
       }
-      resetCareers()
+      refreshCareers()
     }
     return
   }
@@ -345,7 +339,7 @@ const selectSecondLevel = async (subcategoryIndex: number): Promise<void> => {
       mainCategory: activeFirstLvl.value,
       subCategory: subCategoryId
     }
-    resetCareers()
+    refreshCareers()
   }
 }
 
@@ -362,7 +356,7 @@ const goBackToSecondLevel = async (): Promise<void> => {
       mainCategory: activeFirstLvl.value,
       subCategory: null
     }
-    resetCareers()
+    refreshCareers()
   }
 }
 

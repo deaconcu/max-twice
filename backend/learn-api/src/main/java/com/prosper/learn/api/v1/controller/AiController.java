@@ -1,5 +1,7 @@
 package com.prosper.learn.api.v1.controller;
 
+import com.prosper.learn.api.ratelimit.LimitType;
+import com.prosper.learn.api.ratelimit.RateLimit;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.external.AiService;
 import com.prosper.learn.dto.request.ChatRequest;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
+import java.util.concurrent.TimeUnit;
 
 /**
  * AI功能接口
@@ -18,6 +21,7 @@ import org.springframework.validation.annotation.Validated;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
+@RateLimit(capacity = 20, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class AiController {
 
     private final AiService aiService;

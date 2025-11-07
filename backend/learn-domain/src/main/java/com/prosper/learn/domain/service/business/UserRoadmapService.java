@@ -118,7 +118,7 @@ public class UserRoadmapService {
             userRoadmapDataService.updateBatch(toUpdateList);
         }
 
-        // 转换为 DTO 并填充 roadmap 信息
+        // 转换为 DTO 并填充 roadmap 信息，过滤掉 roadmap 已被删除的记录
         return userRoadmapList.stream()
                 .map(userRoadmapDO -> {
                     UserRoadmapDTO dto = toDTO(userRoadmapDO);
@@ -128,9 +128,13 @@ public class UserRoadmapService {
                         // 这里的content已经在上面解析过了
                         RoadmapDTO roadmapDTO = roadmapService.toDTOV1(roadmapDO, userId);
                         dto.setRoadmap(roadmapDTO);
+                        return dto;
                     }
-                    return dto;
-                }).collect(Collectors.toList());
+                    // roadmap 已被删除，返回 null
+                    return null;
+                })
+                .filter(dto -> dto != null && dto.getRoadmap() != null) // 过滤掉 roadmap 为 null 的记录
+                .collect(Collectors.toList());
     }
 
 

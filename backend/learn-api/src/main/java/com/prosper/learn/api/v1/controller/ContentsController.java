@@ -1,6 +1,8 @@
 package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.ratelimit.LimitType;
+import com.prosper.learn.api.ratelimit.RateLimit;
 import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 内容管理接口
@@ -23,6 +26,7 @@ import org.springframework.validation.annotation.Validated;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
+@RateLimit(capacity = 80, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class ContentsController {
 
     private final ContentsService contentsService;

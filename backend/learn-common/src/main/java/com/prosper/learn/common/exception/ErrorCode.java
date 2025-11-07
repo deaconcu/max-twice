@@ -125,6 +125,10 @@ public enum ErrorCode {
     INVALID_FREQUENCY_SETTING(2208, "无效的复习频率设置"),
     INVALID_COURSE_STUDY_STATUS(2209, "无效的课程学习状态"),
 
+    // 限流相关 23xx
+    RATE_LIMIT_EXCEEDED(2301, "访问过于频繁，请稍后再试"),
+    RATE_LIMIT_CONFIG_ERROR(2302, "限流配置错误"),
+
     // 系统错误 9xxx
     SYSTEM_ERROR(9999, "系统繁忙，请稍后重试"),
     SYSTEM_READONLY_MODE(9010, "系统维护中，暂时无法进行此操作"),

@@ -1,6 +1,8 @@
 package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.ratelimit.LimitType;
+import com.prosper.learn.api.ratelimit.RateLimit;
 import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.annotation.RequireRole;
 import com.prosper.learn.api.v1.dto.ApiResponse;
@@ -22,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 职业管理接口
@@ -32,6 +35,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
+@RateLimit(capacity = 40, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class ProfessionsController {
 
     private final ProfessionService professionService;
@@ -52,12 +56,12 @@ public class ProfessionsController {
             // 分页获取职业
             List<ProfessionDTO> professionList = professionService.getListByPage(page);
             return ApiResponse.success(professionList);
-        } else if (mainCategory != null && subCategory != null && lastId != null) {
-            // 按分类获取
+        } else if (mainCategory != null && subCategory != null) {
+            // 按分类获取（允许 lastId 为 null）
             List<ProfessionDTO> professionList = professionService.getListByCategoryAndLastId(mainCategory, subCategory, lastId);
             return ApiResponse.success(professionList);
-        } else if (mainCategory != null && lastId != null) {
-            // 按主分类获取
+        } else if (mainCategory != null) {
+            // 按主分类获取（允许 lastId 为 null）
             List<ProfessionDTO> professionList = professionService.getListByMainCategoryAndLastId(mainCategory, lastId);
             return ApiResponse.success(professionList);
         } else {

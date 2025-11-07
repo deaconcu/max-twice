@@ -423,28 +423,76 @@ const getSubcategoriesByMainCategory = (mainCategoryId: number | null): Subcateg
             </div>
           </div>
 
-          <!-- 搜索和筛选 -->
-          <CourseFilter
-            v-model:search-text="searchText"
-            @perform-search="performSearch"
-            @open-course-application="openCourseApplicationDialog"
-          />
+          <!-- 课程分类和推荐 -->
+          <v-row>
+            <!-- 左侧：搜索框和分类卡片列表 -->
+            <v-col cols="12" lg="9">
+              <!-- 搜索和筛选 -->
+              <CourseFilter
+                v-model:search-text="searchText"
+                @perform-search="performSearch"
+                @open-course-application="openCourseApplicationDialog"
+              />
 
-          <!-- 分类卡片列表 -->
-          <CourseCategoryCard
-            v-for="(category, index) in categories"
-            :key="category.id"
-            :category="category"
-            :category-index="index"
-            :category-mapping="categoryMapping"
-            :active-first-lvl="activeFirstLvl"
-            :active-second-lvl="activeSecondLvl"
-            :courses="displayedCourses"
-            :loading="loading"
-            @toggle-first-level="selectFirstLevel"
-            @select-second-level="selectSecondLevel"
-            @open-course="goToCourse"
-          />
+              <CourseCategoryCard
+                v-for="(category, index) in categories"
+                :key="category.id"
+                :category="category"
+                :category-index="index"
+                :category-mapping="categoryMapping"
+                :active-first-lvl="activeFirstLvl"
+                :active-second-lvl="activeSecondLvl"
+                :courses="displayedCourses"
+                :loading="loading"
+                @toggle-first-level="selectFirstLevel"
+                @select-second-level="selectSecondLevel"
+                @open-course="goToCourse"
+              />
+            </v-col>
+
+            <!-- 右侧：热门课程 -->
+            <v-col cols="12" lg="3">
+              <div class="sidebar-sticky">
+                <!-- 热门课程 -->
+                <v-card border rounded="xl" class="info-card">
+                  <v-card-title class="pa-6 pb-4">
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-fire" color="error" class="mr-2"></v-icon>
+                      <span class="text-h6 font-weight-bold">热门课程</span>
+                    </div>
+                  </v-card-title>
+
+                  <v-card-text class="pa-6 pt-0">
+                    <v-list class="pa-0">
+                      <v-list-item
+                        v-for="(course, index) in allCourses.sort((a, b) => b.learnerCount - a.learnerCount).slice(0, 5)"
+                        :key="'hot-' + course.id"
+                        class="course-list-item px-0 mb-3"
+                        @click="goToCourse(course)"
+                      >
+                        <template #prepend>
+                          <div class="rank-badge mr-3">
+                            <span class="text-caption font-weight-bold" :class="index < 3 ? 'text-error' : 'text-grey'">
+                              {{ index + 1 }}
+                            </span>
+                          </div>
+                        </template>
+
+                        <v-list-item-title class="text-body-2 font-weight-bold text-grey-darken-4 mb-1">
+                          {{ course.name }}
+                        </v-list-item-title>
+
+                        <v-list-item-subtitle class="text-caption text-grey-darken-1">
+                          <v-icon icon="mdi-account-group" size="14" class="mr-1"></v-icon>
+                          {{ course.learnerCount.toLocaleString() }} 人学习
+                        </v-list-item-subtitle>
+                      </v-list-item>
+                    </v-list>
+                  </v-card-text>
+                </v-card>
+              </div>
+            </v-col>
+          </v-row>
         </v-col>
       </v-row>
     </v-container>
@@ -553,10 +601,94 @@ const getSubcategoriesByMainCategory = (mainCategoryId: number | null): Subcateg
   flex: 1;
 }
 
+.info-card {
+  background-color: #FFFFFF;
+  border: 1px solid #EDEFF1;
+}
+
+.sidebar-sticky {
+  position: sticky;
+  top: 75px;
+  max-height: calc(100vh - 95px);
+  overflow-y: auto;
+}
+
+.sidebar-sticky::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-sticky::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-sticky::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+.sidebar-sticky::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.pinned-card {
+  position: sticky;
+  top: 75px;
+  z-index: 10;
+}
+
+.sticky-card {
+  position: sticky;
+  top: 75px;
+  max-height: calc(100vh - 95px);
+  overflow-y: auto;
+}
+
+.sticky-card::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sticky-card::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sticky-card::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+.sticky-card::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.course-list-item {
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.course-list-item:hover {
+  background-color: #F5F5F5;
+}
+
+.rank-badge {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #F5F5F5;
+  border-radius: 50%;
+}
+
 /* 移动端 */
 @media (max-width: 1280px) {
   .main-content {
     padding-left: 20px;
+  }
+
+  .sidebar-sticky {
+    position: static;
+    max-height: none;
   }
 }
 </style>

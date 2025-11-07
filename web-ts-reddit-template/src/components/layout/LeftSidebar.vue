@@ -10,9 +10,8 @@ const navigationItems = [
     title: '核心功能',
     items: [
       { icon: 'mdi-home', text: '首页', path: '/home', badge: null },
-      { icon: 'mdi-book-open-variant', text: '课程中心', path: '/learning', badge: null },
       { icon: 'mdi-briefcase-variant', text: '职业中心', path: '/career', badge: null },
-      { icon: 'mdi-map-marker-path', text: '学习路线', path: '/roadmap', badge: null }
+      { icon: 'mdi-book-open-variant', text: '课程中心', path: '/learning', badge: null }
     ]
   },
   {
@@ -49,8 +48,24 @@ const bottomItems = [
   { icon: 'mdi-help-circle-outline', text: '帮助', path: '/help' }
 ]
 
+// 判断是否在学习路径相关页面
+const isRoadmapRoute = computed(() => {
+  return route.path.startsWith('/roadmap/')
+})
+
+// 获取当前职业ID
+const currentProfessionId = computed(() => {
+  if (isRoadmapRoute.value) {
+    return route.params.professionId
+  }
+  return null
+})
+
 // 判断是否是当前路由
 const isActive = (path: string) => {
+  if (path === '/roadmap' && isRoadmapRoute.value) {
+    return true
+  }
   return route.path === path
 }
 </script>
@@ -58,6 +73,36 @@ const isActive = (path: string) => {
 <template>
   <div class="left-sidebar">
     <div class="sidebar-sticky">
+      <!-- 学习路径卡片（仅在路径页面显示） -->
+      <v-card v-if="isRoadmapRoute" border rounded="xl" class="nav-card mb-4">
+        <div class="group-header pa-3 pb-2">
+          <span class="text-caption text-grey-darken-1 font-weight-bold">
+            当前职业
+          </span>
+        </div>
+        <v-list density="compact" class="pa-2">
+          <v-list-item
+            :to="`/roadmap/${currentProfessionId}`"
+            :class="{ 'nav-item-active': isActive('/roadmap') }"
+            class="nav-item rounded-lg mb-1"
+          >
+            <template #prepend>
+              <v-icon
+                icon="mdi-map-marker-path"
+                :color="isActive('/roadmap') ? 'primary' : 'grey-darken-1'"
+                size="20"
+              ></v-icon>
+            </template>
+
+            <v-list-item-title
+              :class="isActive('/roadmap') ? 'text-primary font-weight-bold' : 'text-grey-darken-3'"
+            >
+              学习路径
+            </v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-card>
+
       <!-- 导航分组 -->
       <div
         v-for="(group, groupIndex) in navigationItems"

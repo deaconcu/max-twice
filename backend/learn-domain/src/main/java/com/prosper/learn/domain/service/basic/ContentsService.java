@@ -186,25 +186,44 @@ public class ContentsService {
         CourseDO courseDO = validateCourseExists(courseId);
 
         UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(userId, courseId);
-        String tocStr = "";
+        String tocHashStr = "";
 
         // 如果用户目录不存在且不需要创建，直接返回null
         if (userCourseTocDO == null && !create) return null;
 
         if (userCourseTocDO == null) {
-            // 创建根目录结构：包含课程根节点的空目录
+            // 创建根目录结构：包含课程根节点的目录
             ObjectNode s = objectMapper.createObjectNode();
-            s.put(Long.toString(courseDO.getRootNodeId()), objectMapper.createObjectNode());
+            ObjectNode rootNodeContent = objectMapper.createObjectNode();
 
-            tocStr = s.toString();
-            String tosHash = Utils.hashSHA(tocStr);
+            // 自动生成默认目录：查找根节点下 score 最高的 contents 类型 Post
+            List<PostDO> topPosts = postDataService.getListByNodeAndScore(
+                    courseDO.getRootNodeId(), 1, Enums.ContentState.PUBLISHED.value());
+
+            if (!topPosts.isEmpty()) {
+                PostDO topPost = topPosts.get(0);
+                // 只有 contents 类型才能作为目录
+                if (topPost.getType() == Enums.PostType.contents.value()) {
+                    // 创建子节点结构（使用 Post 的 content 字段）
+                    Arrays.stream(topPost.getContent().split(","))
+                            .forEach(id -> rootNodeContent.putObject(id));
+                    // 设置选中的帖子
+                    rootNodeContent.put(systemProperties.getContents().getChosenField(), topPost.getId());
+                }
+            }
+
+            s.put(Long.toString(courseDO.getRootNodeId()), rootNodeContent);
+
+            String tocStr = s.toString();
+            tocHashStr = Utils.hashSHA(tocStr);
 
             // 检查是否已存在相同内容的目录，避免重复存储
-            CourseTocDO courseTocDO = courseTocDataService.get(tosHash);
+            CourseTocDO courseTocDO = courseTocDataService.get(tocHashStr);
             if (courseTocDO == null) {
                 CourseTocDO newToc = new CourseTocDO();
-                newToc.setHash(tosHash);
+                newToc.setHash(tocHashStr);
                 newToc.setToc(tocStr);
+                newToc.setRefCount(1);
                 courseTocDataService.insert(newToc);
             }
 
@@ -212,16 +231,16 @@ public class ContentsService {
             userCourseTocDO = new UserCourseTocDO();
             userCourseTocDO.setUserId(userId);
             userCourseTocDO.setCourseId(courseId);
-            userCourseTocDO.setToc(tosHash);
+            userCourseTocDO.setToc(tocHashStr);
 
             userCourseTocDataService.insert(userCourseTocDO);
         } else {
             // 用户目录已存在，获取目录哈希列表
-            tocStr = userCourseTocDO.getToc();
+            tocHashStr = userCourseTocDO.getToc();
         }
 
         ArrayNode arrayNode = objectMapper.createArrayNode();
-        String[] tocHashArr = tocStr.split(",");
+        String[] tocHashArr = tocHashStr.split(",");
 
         // 批量获取所有目录版本的内容
         Map<String, CourseTocDO> map = courseTocDataService.getByHashes(tocHashArr);
@@ -230,7 +249,7 @@ public class ContentsService {
                 CourseTocDO courseTocDO = map.get(tocHash);
                 if (courseTocDO == null) {
                     // 数据不一致：目录哈希在数据库中不存在
-                    throw ErrorCode.TOC_INDEX_OUT_OF_BOUNDS.exception();
+                    throw ErrorCode.TOC_USER_TOC_NOT_FOUND.exception();
                 }
                 arrayNode.add(objectMapper.readTree(courseTocDO.getToc()));
             } catch (IOException e) {

@@ -1,6 +1,8 @@
 package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.api.ratelimit.LimitType;
+import com.prosper.learn.api.ratelimit.RateLimit;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.autoauthor.AutoAuthorGenerationService;
@@ -12,6 +14,8 @@ import org.springframework.validation.annotation.Validated;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * AutoAuthor 管理接口
  */
@@ -19,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/admin/auto-author")
 @RequiredArgsConstructor
 @Validated
+@RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class AdminAutoAuthorController {
 
     private final AutoAuthorScanner scanner;

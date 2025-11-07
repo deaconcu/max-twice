@@ -2,6 +2,8 @@ package com.prosper.learn.api.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
+import com.prosper.learn.api.ratelimit.LimitType;
+import com.prosper.learn.api.ratelimit.RateLimit;
 import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.UserService;
@@ -16,6 +18,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 用户管理接口
@@ -25,6 +28,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 @Validated
+@RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class UsersController {
 
     private final UserService userService;
@@ -71,6 +75,7 @@ public class UsersController {
      * 映射: GET /user?name=xxx → GET /api/v1/users/search?name=xxx
      */
     @GetMapping("/users/search")
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
     public ApiResponse<List<UserDTO>> searchUsers(@RequestParam @NotBlank(message = "搜索名称不能为空") String name) {
         List<UserDTO> users = userService.searchUsers(name);
         return ApiResponse.success(users);
@@ -81,6 +86,7 @@ public class UsersController {
      * 映射: POST /user → POST /api/v1/auth/register
      */
     @PostMapping("/auth/register")
+    @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
     public ApiResponse<Void> register(@RequestBody @Valid RegisterRequest request) {
         userService.register(request.getEmail(), request.getPassword());
         return ApiResponse.success();
@@ -91,13 +97,14 @@ public class UsersController {
      * 映射: POST /login → POST /api/v1/auth/login
      */
     @PostMapping("/auth/login")
+    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
     public ApiResponse<UserDTO> login(@RequestBody @Valid LoginRequest request) {
         // Service 负责业务验证
         UserDTO userDTO = userService.validateLogin(request.getEmail(), request.getPassword());
-        
+
         // Controller 负责认证状态管理
         StpUtil.login(userDTO.getId());
-        
+
         return ApiResponse.success(userDTO);
     }
 
@@ -106,6 +113,7 @@ public class UsersController {
      * 映射: POST /user/validate → POST /api/v1/auth/validate-email
      */
     @PostMapping("/auth/validate-email")
+    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
     public ApiResponse<UserDTO> validateEmail(@RequestBody @Valid VerifyEmailRequest request) {
         // Service 负责验证逻辑
         UserDTO userDTO = userService.validateEmail(request.getEmail(), request.getCode());

@@ -1,5 +1,7 @@
 package com.prosper.learn.api.v1.controller;
 
+import com.prosper.learn.api.ratelimit.LimitType;
+import com.prosper.learn.api.ratelimit.RateLimit;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.basic.RedisStatsService;
 import com.prosper.learn.domain.service.basic.DailyStatsService;
@@ -19,6 +21,7 @@ import org.springframework.validation.annotation.Validated;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 统计接口
@@ -29,6 +32,7 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 @Validated
+@RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class StatsController {
 
     private final DailyStatsService dailyStatsService;
