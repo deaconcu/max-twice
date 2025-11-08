@@ -1,0 +1,59 @@
+import type { ContentState } from '@/enums'
+
+/**
+ * 职业相关的类型定义
+ * 参考：web-ts/src/types/profession.ts
+ */
+
+/**
+ * 职业信息接口
+ */
+export interface Profession {
+  id: number
+  name: string // 职业名称
+  description?: string // 职业描述
+  price?: string // 价格
+  skills?: string // 技能要求
+  mainCategory?: number // 主分类
+  subCategory?: number // 子分类
+  state?: ContentState // 状态：SUBMITTED(1), PUBLISHED(2), REJECTED(3), BANNED(4)
+  reason?: string // 拒绝原因
+  icon?: string // 图标
+  creator?: number // 创建者ID
+  learnerCount?: number // 学习人数
+  createdAt?: string // 创建时间
+  updatedAt?: string // 更新时间
+}
+
+/**
+ * 职业分类
+ */
+export interface ProfessionCategory {
+  id: number
+  title: string
+  icon?: string
+}
+
+/**
+ * 子分类
+ */
+export interface Subcategory {
+  id: number
+  name: string
+}
+
+/**
+ * 分类映射关系
+ */
+export interface CategoryMapping {
+  mainCategoryId: number
+  subcategories: Subcategory[]
+}
+
+/**
+ * 带显示属性的职业信息（用于前端展示）
+ */
+export interface CareerWithDisplay extends Profession {
+  icon?: string
+  iconColor?: string
+}
