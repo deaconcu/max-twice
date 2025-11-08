@@ -3,9 +3,8 @@
     <!-- 左侧简介栏 -->
     <v-col cols="12" md="2">
       <div class="sticky-sidebar">
-        <div class="pa-2 pr-10">
-          <div class="d-flex align-center mb-3">
-            <v-icon icon="mdi-book-multiple" color="primary" size="20" class="mr-2"></v-icon>
+        <div class="pa-2 pr-10 pt-4">
+          <div class="mb-3">
             <h4 class="text-body-1 font-weight-bold">关注的课程</h4>
           </div>
           <p class="text-body-2 text-grey-darken-2 mb-3">
@@ -34,7 +33,8 @@
     <v-col cols="12" md="10">
       <div class="pa-2">
         <div class="d-flex align-center justify-space-between mb-4">
-          <h3 class="text-h6 font-weight-bold">我关注的课程</h3>
+          <v-icon icon="mdi-menu" size="18" color="grey-lighten-1"></v-icon>
+
           <v-btn color="primary" variant="text" rounded="md" density="compact" to="/learning">
             浏览更多课程
             <v-icon icon="mdi-chevron-right" class="ml-1"></v-icon>
@@ -54,26 +54,23 @@
             >
               <v-card
                 border
-                rounded="md"
+                rounded="lg"
                 hover
-                class="course-card"
-                @click="goToCourse(course.courseId)"
+                class="hoverable"
               >
-                <v-card-text class="pa-4">
+                <v-card-text class="pa-4" @click="goToCourse(course.courseId)">
                   <!-- 课程图标和取消关注按钮 -->
-                  <div class="d-flex align-center justify-space-between mb-3">
+                  <div class="d-flex align-start justify-space-between mb-3">
                     <v-avatar :color="course.course.iconColor" size="48" rounded="md">
                       <v-icon :icon="course.course.icon" color="white" size="24"></v-icon>
                     </v-avatar>
                     <v-btn
-                      icon
-                      size="small"
-                      variant="text"
-                      color="error"
+                      color="grey"
+                      variant="tonal"
+                      size="x-small"
+                      icon="mdi-close"
                       @click.stop="unsubscribe(course.id)"
-                    >
-                      <v-icon icon="mdi-heart" size="20"></v-icon>
-                    </v-btn>
+                    ></v-btn>
                   </div>
 
                   <!-- 课程信息 -->
@@ -117,34 +114,13 @@
         </div>
 
         <!-- 取消关注确认对话框 -->
-        <v-dialog v-model="showUnsubscribeDialog" max-width="400">
-          <v-card rounded="md">
-            <v-card-title class="text-h6 font-weight-bold">确认取消关注</v-card-title>
-            <v-card-text>
-              确定要取消关注《{{ unsubscribeCourse?.course.name }}》吗？
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn
-                variant="text"
-                rounded="md"
-                density="compact"
-                @click="showUnsubscribeDialog = false"
-              >
-                取消
-              </v-btn>
-              <v-btn
-                color="error"
-                variant="flat"
-                rounded="md"
-                density="compact"
-                @click="confirmUnsubscribe"
-              >
-                确认取消
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
+        <ConfirmDialog
+          v-model="showUnsubscribeDialog"
+          title="确认取消关注"
+          message="确定要取消关注该课程吗？"
+          confirm-text="确认取消"
+          @confirm="confirmUnsubscribe"
+        />
       </div>
     </v-col>
   </v-row>
@@ -153,6 +129,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const router = useRouter()
 
@@ -264,7 +241,6 @@ const confirmUnsubscribe = () => {
   if (unsubscribeCourse.value) {
     subscriptions.value = subscriptions.value.filter(c => c.id !== unsubscribeCourse.value!.id)
   }
-  showUnsubscribeDialog.value = false
   unsubscribeCourse.value = null
 }
 </script>
@@ -276,18 +252,6 @@ const confirmUnsubscribe = () => {
   top: 80px;
   max-height: calc(100vh - 100px);
   overflow-y: auto;
-}
-
-.course-card {
-  cursor: pointer;
-  transition: all 0.3s ease;
-  height: 100%;
-}
-
-.course-card:hover {
-  border-color: rgb(var(--v-theme-primary));
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .course-description {

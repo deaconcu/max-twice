@@ -54,9 +54,9 @@
               >
                 <v-card
                   border
-                  rounded="md"
+                  rounded="lg"
                   hover
-                  class="career-card"
+                  class="hoverable"
                   @click="goToCareer(career.careerId)"
                 >
                   <v-card-text class="pa-4">
@@ -69,9 +69,10 @@
                         <p class="text-caption text-grey mb-0">{{ career.lastActivity }}</p>
                       </div>
                       <v-chip
-                        :color="getProgressColor(career.progress)"
+                        color="grey-lighten-3"
                         size="small"
                         variant="flat"
+                        class="text-grey"
                       >
                         {{ career.progress }}%
                       </v-chip>
@@ -79,7 +80,7 @@
 
                     <v-progress-linear
                       :model-value="career.progress"
-                      :color="getProgressColor(career.progress)"
+                      color="grey-lighten-1"
                       height="6"
                       rounded
                       class="mb-2"
@@ -113,9 +114,9 @@
             >
               <v-card
                 border
-                rounded="md"
+                rounded="lg"
                 hover
-                class="course-card"
+                class="hoverable"
                 @click="goToCourse(course.courseId)"
               >
                 <v-card-text class="pa-4">
@@ -128,9 +129,10 @@
                       <p class="text-caption text-grey mb-0">{{ course.lastActivity }}</p>
                     </div>
                     <v-chip
-                      :color="getProgressColor(course.progress)"
+                      color="grey-lighten-3"
                       size="small"
                       variant="flat"
+                      class="text-grey"
                     >
                       {{ course.progress }}%
                     </v-chip>
@@ -280,28 +282,6 @@ const getProgressColor = (progress: number) => {
 .stat-item {
   text-align: center;
   padding: 8px 0;
-}
-
-.career-card {
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.career-card:hover {
-  border-color: rgb(var(--v-theme-primary));
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.course-card {
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.course-card:hover {
-  border-color: rgb(var(--v-theme-primary));
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* 移动端取消 sticky */

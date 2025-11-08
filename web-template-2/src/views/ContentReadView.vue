@@ -3,104 +3,108 @@
     <AppHeader />
     <LeftSidebar />
 
-    <!-- 固定顶部横条 - 滚动时显示 -->
-    <div class="fixed-top-bar" :class="{ 'show': showFixedBar }">
-      <div class="fixed-bar-content">
-        <!-- 左侧：返回按钮 + 课程和子课程信息 + 完整节点路径 -->
-        <div class="d-flex align-center flex-grow-1" style="gap: 12px;">
-          <v-btn
-            variant="text"
-            color="grey-darken-2"
-            size="small"
-            @click="goBackToCourse"
-          >
-            <v-icon icon="mdi-arrow-left" size="18" class="mr-1"></v-icon>
-            返回课程
-          </v-btn>
-          <div class="d-flex align-center" style="gap: 6px;">
-            <span class="fixed-bar-course-name">{{ courseData.title }}</span>
-            <v-icon icon="mdi-chevron-right" size="16" color="grey"></v-icon>
-            <span class="fixed-bar-subcourse-name">{{ currentSubCourse.name }}</span>
-            <v-icon icon="mdi-chevron-right" size="16" color="grey"></v-icon>
-            <span class="fixed-bar-path">{{ pathText }}</span>
-          </div>
-        </div>
-
-        <!-- 右侧：操作按钮 -->
-        <div class="d-flex align-center" style="gap: 8px;">
-          <v-btn
-            :color="isLearning ? 'success' : 'primary'"
-            :variant="isLearning ? 'outlined' : 'flat'"
-            size="x-small"
-            rounded="lg"
-            class="text-none"
-            @click="toggleLearning"
-          >
-            <v-icon size="14" class="mr-1">{{ isLearning ? 'mdi-check-circle' : 'mdi-play-circle' }}</v-icon>
-            {{ isLearning ? '学习中' : '开始学习' }}
-          </v-btn>
-        </div>
-      </div>
-    </div>
-
     <div class="main-content">
-      <!-- 返回按钮 -->
-      <v-btn
-        variant="text"
-        color="grey-darken-2"
-        class="mb-1"
-        @click="goBackToCourse"
-      >
-        <v-icon icon="mdi-arrow-left" class="mr-1"></v-icon>
-        返回课程
-      </v-btn>
-
-      <!-- 子课程信息卡片 -->
-      <v-card rounded="lg" class="subcourse-info-card mb-0 no-border" flat>
-        <v-card-text class="py-1 px-0">
-          <div class="d-flex align-start">
-            <v-avatar color="primary" size="48" rounded="lg" class="mr-3">
-              <v-icon icon="mdi-book-open-page-variant" color="white" size="24"></v-icon>
-            </v-avatar>
-            <div class="flex-grow-1">
-              <!-- 标题和按钮在同一行 -->
-              <div class="d-flex align-center justify-space-between">
-                <h1 class="text-h5 font-weight-bold text-grey-darken-4">
-                  {{ courseData.title }} - {{ currentSubCourse.name }}
-                </h1>
-                <!-- 操作按钮 -->
-                <div class="d-flex align-center flex-shrink-0 ml-4" style="gap: 8px;">
-                  <v-btn
-                    :color="isLearning ? 'success' : 'primary'"
-                    :variant="isLearning ? 'outlined' : 'flat'"
-                    size="small"
-                    rounded="lg"
-                    class="text-none"
-                    @click="toggleLearning"
-                  >
-                    <v-icon size="16" class="mr-1">{{ isLearning ? 'mdi-check-circle' : 'mdi-play-circle' }}</v-icon>
-                    {{ isLearning ? '学习中' : '开始学习' }}
-                  </v-btn>
-                  <v-btn
-                    :color="currentSubCourse.subscribed ? 'error' : 'grey-darken-2'"
-                    :variant="currentSubCourse.subscribed ? 'flat' : 'outlined'"
-                    size="small"
-                    rounded="lg"
-                    class="text-none"
-                    @click="toggleSubscribe"
-                  >
-                    <v-icon size="16" class="mr-1">{{ currentSubCourse.subscribed ? 'mdi-heart' : 'mdi-heart-outline' }}</v-icon>
-                    {{ currentSubCourse.subscribed ? '已订阅' : '订阅' }}
-                  </v-btn>
-                </div>
-              </div>
-              <p class="text-body-2 text-grey-darken-2 mb-0">
-                {{ currentSubCourse.description }}
-              </p>
+      <!-- 固定顶部横条 - 滚动时显示 -->
+      <div class="fixed-top-bar" :class="{ 'show': showFixedBar }">
+        <div class="fixed-bar-content">
+          <!-- 左侧：返回按钮 + 课程和子课程信息 + 完整节点路径 -->
+          <div class="d-flex align-center flex-grow-1" style="gap: 12px;">
+            <v-btn
+              variant="text"
+              color="grey-darken-2"
+              size="small"
+              @click="goBackToCourse"
+            >
+              <v-icon icon="mdi-arrow-left" size="18" class="mr-1"></v-icon>
+              返回课程
+            </v-btn>
+            <div class="d-flex align-center" style="gap: 6px;">
+              <span class="fixed-bar-course-name">{{ courseData.title }}</span>
+              <v-icon icon="mdi-chevron-right" size="16" color="grey"></v-icon>
+              <span class="fixed-bar-subcourse-name">{{ currentSubCourse.name }}</span>
+              <v-icon icon="mdi-chevron-right" size="16" color="grey"></v-icon>
+              <span class="fixed-bar-path">{{ pathText }}</span>
             </div>
           </div>
-        </v-card-text>
-      </v-card>
+
+          <!-- 右侧：操作按钮 -->
+          <div class="d-flex align-center" style="gap: 8px;">
+            <v-btn
+              :color="isLearning ? 'success' : 'primary'"
+              :variant="isLearning ? 'outlined' : 'flat'"
+              size="x-small"
+              rounded="lg"
+              class="text-none"
+              @click="toggleLearning"
+            >
+              <v-icon size="14" class="mr-1">{{ isLearning ? 'mdi-check-circle' : 'mdi-play-circle' }}</v-icon>
+              {{ isLearning ? '学习中' : '开始学习' }}
+            </v-btn>
+          </div>
+        </div>
+      </div>
+
+      <!-- 子课程信息卡片 -->
+      <div class="subcourse-info-section">
+        <div class="d-flex align-center justify-space-between">
+          <!-- 左侧：返回按钮 + 课程路径 -->
+          <div class="d-flex align-center course-breadcrumb">
+            <v-btn
+              icon="mdi-arrow-left"
+              variant="flat"
+              color="grey-lighten-4"
+              size="small"
+              class="mr-2"
+              @click="goBackToCourse"
+            ></v-btn>
+            <v-chip size="small" density="comfortable" color="grey-darken-1" variant="tonal">课程</v-chip>
+            <v-btn
+              variant="text"
+              class="course-link-btn px-1"
+              @click="goBackToCourse"
+            >
+              {{ courseData.title }}
+            </v-btn>
+            <v-icon icon="mdi-chevron-right" size="18" color="grey-darken-1" class="mx-1"></v-icon>
+            <v-chip size="small" density="comfortable" color="grey-darken-1" variant="tonal">子课程</v-chip>
+            <v-btn
+              variant="text"
+              class="course-link-btn px-1"
+              @click="goBackToCourse"
+            >
+              {{ currentSubCourse.name }}
+            </v-btn>
+            <span class="text-caption text-grey mx-2">·</span>
+            <span class="text-caption text-grey">{{ currentSubCourse.totalNodes }} 个节点</span>
+            <span class="text-caption text-grey mx-2">·</span>
+            <span class="text-caption text-grey">1,234 人学习</span>
+          </div>
+
+          <!-- 右侧按钮 -->
+          <div class="d-flex align-center flex-shrink-0" style="gap: 8px;">
+            <v-btn
+              :color="isLearning ? 'success' : 'primary'"
+              :variant="isLearning ? 'tonal' : 'flat'"
+              density="comfortable"
+              rounded="pill"
+              class="text-none px-4"
+              elevation="0"
+              @click="toggleLearning"
+            >
+              <v-icon size="16" class="mr-1">{{ isLearning ? 'mdi-check-circle' : 'mdi-play-circle' }}</v-icon>
+              {{ isLearning ? '学习中' : '开始学习' }}
+            </v-btn>
+            <v-btn
+              :icon="currentSubCourse.subscribed ? 'mdi-heart' : 'mdi-heart-outline'"
+              :color="currentSubCourse.subscribed ? 'error' : 'grey-lighten-1'"
+              :variant="currentSubCourse.subscribed ? 'flat' : 'text'"
+              density="comfortable"
+              rounded="circle"
+              @click="toggleSubscribe"
+            ></v-btn>
+          </div>
+        </div>
+      </div>
 
       <div class="read-content">
         <!-- 左侧目录 - 靠边固定 -->
@@ -297,48 +301,57 @@
               </div>
 
               <!-- 评论区 -->
-              <div class="comments-card">
-                <h3 class="text-h6 font-weight-bold mb-4">评论 ({{ currentPost.commentCount }})</h3>
+              <div class="comments-section">
+                <h3 class="section-title">评论 {{ currentPost.commentCount }}</h3>
 
-                <!-- 评论输入框 -->
-                <v-textarea
-                  v-model="newComment"
-                  variant="outlined"
-                  placeholder="写下你的评论..."
-                  rows="3"
-                  class="mb-4"
-                />
-                <v-btn color="primary" class="text-none">发表评论</v-btn>
+                <!-- 评论输入 -->
+                <div class="comment-input-section">
+                  <v-textarea
+                    v-model="newComment"
+                    placeholder="写下你的评论..."
+                    variant="outlined"
+                    rows="3"
+                    hide-details
+                    class="mb-3"
+                  ></v-textarea>
+                  <v-btn
+                    color="primary"
+                    variant="tonal"
+                    density="comfortable"
+                    :disabled="!newComment.trim()"
+                  >
+                    <v-icon icon="mdi-send" size="18" class="mr-1"></v-icon>
+                    发表评论
+                  </v-btn>
+                </div>
 
                 <!-- 评论列表 -->
-                <div class="comments-list mt-6">
-                  <div
-                    v-for="comment in comments"
-                    :key="comment.id"
-                    class="comment-item mb-4 pa-4"
-                  >
-                    <div class="d-flex align-start">
-                      <v-avatar size="40" class="mr-3">
-                        <v-icon>mdi-account-circle</v-icon>
+                <div class="comment-list">
+                  <div v-for="comment in comments" :key="comment.id" class="comment-item mb-4">
+                    <div class="d-flex">
+                      <v-avatar size="36" color="grey-lighten-2" class="mr-3 mt-1">
+                        <v-icon icon="mdi-account" color="grey" size="20"></v-icon>
                       </v-avatar>
                       <div class="flex-grow-1">
-                        <div class="d-flex align-center mb-1">
-                          <span class="font-weight-bold mr-2">{{ comment.author }}</span>
-                          <span class="text-caption text-medium-emphasis">{{ comment.time }}</span>
+                        <div class="d-flex align-center justify-space-between mb-1">
+                          <span class="text-body-2 font-weight-medium text-grey-darken-3">
+                            {{ comment.author }}
+                          </span>
+                          <span class="text-caption text-grey">
+                            {{ comment.time }}
+                          </span>
                         </div>
-                        <p class="mb-2">{{ comment.content }}</p>
-                        <div class="d-flex align-center ga-2">
-                          <v-btn icon variant="text" size="x-small">
-                            <v-icon size="small">mdi-arrow-up-bold</v-icon>
-                          </v-btn>
-                          <span class="text-caption">{{ comment.votes }}</span>
-                          <v-btn icon variant="text" size="x-small">
-                            <v-icon size="small">mdi-arrow-down-bold</v-icon>
-                          </v-btn>
-                          <v-btn variant="text" size="small" class="text-none ml-2">
-                            回复
-                          </v-btn>
-                        </div>
+                        <p class="text-body-2 text-grey-darken-2 mb-2">
+                          {{ comment.content }}
+                        </p>
+                        <v-btn
+                          size="x-small"
+                          variant="text"
+                          color="grey-darken-2"
+                        >
+                          <v-icon icon="mdi-thumb-up-outline" size="14" class="mr-1"></v-icon>
+                          {{ comment.votes }}
+                        </v-btn>
                       </div>
                     </div>
                   </div>
@@ -823,17 +836,19 @@ const memoryDecks = ref([
 
 /* 固定顶部横条 */
 .fixed-top-bar {
-  position: fixed;
+  position: sticky;
   top: 56px;
   left: 0;
   right: 0;
   height: 42px;
   background-color: white;
-  border-top: 1px solid #E5E5E5;
-  z-index: 999;
-  transform: translateY(-100%);
-  transition: transform 0.3s ease;
+  z-index: 998;
+  transform: translateY(calc(-100% - 80px));
   margin-top: -1px;
+  margin-bottom: -42px;
+  margin-left: -40px;
+  margin-right: -40px;
+  padding: 0 40px;
 }
 
 .fixed-top-bar.show {
@@ -841,10 +856,7 @@ const memoryDecks = ref([
 }
 
 .fixed-bar-content {
-  height: 100%;
-  padding: 0;
-  max-width: 1470px;
-  margin: 0 auto;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -871,6 +883,50 @@ const memoryDecks = ref([
   padding: 80px 40px 40px 40px;
   max-width: 1550px;
   width: calc(100% - max(160px, calc((100vw - 1550px) / 2)));
+}
+
+/* 子课程信息区域 */
+.subcourse-info-section {
+  padding: 0;
+}
+
+.course-breadcrumb {
+  display: flex;
+  align-items: center;
+}
+
+.course-link-btn {
+  font-size: 16px;
+  font-weight: 600;
+  color: #666;
+  text-transform: none;
+  letter-spacing: normal;
+  height: auto;
+  min-width: auto;
+}
+
+.course-link-btn:hover {
+  color: rgb(var(--v-theme-primary));
+}
+
+.course-main-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #666;
+}
+
+.course-sub-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #666;
+}
+
+.subcourse-description {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 800px;
 }
 
 .subcourse-info-card {
@@ -1121,9 +1177,42 @@ const memoryDecks = ref([
   color: #1A1A1B;
 }
 
+/* 评论区 */
+.comments-section {
+  margin-top: 40px;
+  padding-top: 40px;
+  border-top: 1px solid #E5E5E5;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1A1A1B;
+  margin-bottom: 24px;
+}
+
+.comment-input-section {
+  margin-bottom: 32px;
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  padding-top: 10px;
+}
+
 .comment-item {
-  background-color: #F6F7F8;
-  border-radius: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #F0F0F0;
+}
+
+.comment-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.comment-item .v-avatar {
+  padding-top: 0;
 }
 
 /* 右侧边栏 */

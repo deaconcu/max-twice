@@ -3,9 +3,8 @@
     <!-- 左侧简介栏 -->
     <v-col cols="12" md="2">
       <div class="sticky-sidebar">
-        <div class="pa-2 pr-10">
-          <div class="d-flex align-center mb-3">
-            <v-icon icon="mdi-information-outline" color="primary" size="20" class="mr-2"></v-icon>
+        <div class="pa-2 pr-10 pt-4">
+          <div class="mb-3">
             <h4 class="text-body-1 font-weight-bold">个人信息</h4>
           </div>
           <p class="text-body-2 text-grey-darken-2 mb-3">
@@ -32,13 +31,11 @@
 
     <!-- 右侧主内容 -->
     <v-col cols="12" md="10">
-      <div class="pa-2">
-        <h3 class="text-h6 font-weight-bold mb-6">编辑个人信息</h3>
-
+      <div class="pa-2 pt-10">
         <!-- 头像 -->
         <v-row align="start" class="mb-4">
           <v-col cols="auto" class="text-end pe-6 label-col">
-            <div class="font-weight-bold text-body-2">头像</div>
+            <div class="text-body-2 text-grey">头像</div>
           </v-col>
           <v-col cols="9" class="ps-6">
             <v-avatar
@@ -56,7 +53,7 @@
         <!-- 姓名 -->
         <v-row align="center" class="mb-3">
           <v-col cols="auto" class="text-end pe-6 py-3 label-col">
-            <div class="font-weight-bold text-body-2">姓名</div>
+            <div class="text-body-2 text-grey">姓名</div>
           </v-col>
           <v-col cols="9" class="ps-6 py-0">
             <div v-if="!displayModifyName" class="d-flex align-center">
@@ -97,7 +94,7 @@
         <!-- 简介 -->
         <v-row align="center" class="mb-3">
           <v-col cols="auto" class="text-end pe-6 py-3 label-col">
-            <div class="font-weight-bold text-body-2">简单介绍自己</div>
+            <div class="text-body-2 text-grey">简单介绍自己</div>
           </v-col>
           <v-col cols="9" class="ps-6 py-0">
             <div v-if="!displayModifyBio" class="d-flex align-center">
@@ -138,7 +135,7 @@
         <!-- 邮箱 -->
         <v-row align="center" class="mb-3">
           <v-col cols="auto" class="text-end pe-6 py-3 label-col">
-            <div class="font-weight-bold text-body-2">邮箱</div>
+            <div class="text-body-2 text-grey">邮箱</div>
           </v-col>
           <v-col cols="9" class="ps-6 py-0">
             <span class="text-body-1 text-grey">{{ localUserInfo.email }}</span>
@@ -148,7 +145,7 @@
         <!-- 加入日期 -->
         <v-row align="center" class="mb-3">
           <v-col cols="auto" class="text-end pe-6 py-3 label-col">
-            <div class="font-weight-bold text-body-2">加入日期</div>
+            <div class="text-body-2 text-grey">加入日期</div>
           </v-col>
           <v-col cols="9" class="ps-6 py-0">
             <span class="text-body-1 text-grey">{{ localUserInfo.joinDate }}</span>

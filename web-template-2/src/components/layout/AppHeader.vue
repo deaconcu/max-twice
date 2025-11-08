@@ -17,10 +17,6 @@
         <!-- Right side actions -->
         <v-col cols="auto">
           <div class="d-flex align-center ga-4">
-            <button class="icon-btn" title="搜索">
-              <v-icon size="20">mdi-magnify</v-icon>
-            </button>
-
             <!-- 通知菜单 -->
             <v-menu
               :close-on-content-click="false"
@@ -31,7 +27,7 @@
             >
               <template #activator="{ props }">
                 <button class="icon-btn notification-btn" title="通知" v-bind="props">
-                  <v-icon size="20">mdi-bell-outline</v-icon>
+                  <v-icon size="22">mdi-bell-outline</v-icon>
                   <span v-if="unreadCount > 0" class="notification-badge">{{ unreadCount }}</span>
                 </button>
               </template>
@@ -113,7 +109,7 @@
             >
               <template #activator="{ props }">
                 <button class="icon-btn" title="个人中心" v-bind="props">
-                  <v-icon size="20">mdi-account-circle-outline</v-icon>
+                  <v-icon size="22">mdi-account-circle-outline</v-icon>
                 </button>
               </template>
 

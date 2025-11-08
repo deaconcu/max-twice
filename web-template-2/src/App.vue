@@ -40,4 +40,28 @@ body {
 .rounded-lg {
   border-radius: 14px !important;
 }
+
+.rounded-md {
+  border-radius: 6px !important;
+}
+
+/* Tooltip 样式修复 */
+.v-tooltip .v-overlay__content {
+  background-color: rgba(97, 97, 97, 0.9) !important;
+  color: #FFFFFF !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+}
+
+/* 统一的卡片 hover 效果 */
+.v-card.hoverable {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.v-card.hoverable:hover {
+  transform: translateY(-4px);
+  background-color: #FAFAFA !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
 </style>

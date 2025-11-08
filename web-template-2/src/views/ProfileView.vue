@@ -70,63 +70,60 @@ const handleUpdateUserInfo = (updatedInfo: typeof userInfo.value) => {
     <LeftSidebar />
 
     <div class="main-content">
-      <!-- 页面标题 -->
-      <div class="mb-6">
-        <div class="d-flex align-center">
-          <v-avatar color="grey-lighten-3" size="64" rounded="lg" class="mr-3">
-            <v-icon size="32" color="#666666">mdi-account</v-icon>
-          </v-avatar>
-          <div>
-            <h1 class="text-h4 font-weight-bold text-grey-darken-4">我的</h1>
-            <p class="text-body-2 text-grey-darken-2 mt-1">管理您的个人信息和学习数据</p>
-          </div>
-        </div>
-      </div>
+      <!-- 用户信息和统计 -->
+      <v-row class="mb-6">
+        <!-- 左列：用户信息 -->
+        <v-col cols="12" md="6">
+          <v-card rounded="lg" flat class="h-100 no-border">
+            <v-card-text class="px-0 py-4 d-flex align-center">
+              <v-avatar size="56" color="primary" class="mr-4" rounded="md">
+                <v-icon icon="mdi-account" size="28" color="white"></v-icon>
+              </v-avatar>
+              <div class="flex-grow-1">
+                <div class="d-flex align-center mb-1">
+                  <h2 class="text-h6 font-weight-bold mr-3">{{ userInfo.name }}</h2>
+                  <v-btn color="grey" variant="text" rounded="lg" size="small" @click="activeTab = 'info'">
+                    <v-icon icon="mdi-pencil" size="16" class="mr-1"></v-icon>
+                    编辑资料
+                  </v-btn>
+                </div>
+                <p class="text-body-2 text-grey-darken-2 mb-1">{{ userInfo.email }}</p>
+                <p class="text-caption text-grey mb-0">加入于 {{ userInfo.joinDate }}</p>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
 
-      <!-- 用户卡片 -->
-      <v-card border rounded="lg" class="mb-6">
-        <v-card-text class="pa-6">
-          <div class="d-flex align-center mb-6">
-            <v-avatar size="80" color="primary" class="mr-4">
-              <v-icon icon="mdi-account" size="40" color="white"></v-icon>
-            </v-avatar>
-            <div class="flex-grow-1">
-              <h2 class="text-h5 font-weight-bold mb-1">{{ userInfo.name }}</h2>
-              <p class="text-body-2 text-grey-darken-2 mb-1">{{ userInfo.email }}</p>
-              <p class="text-caption text-grey">加入于 {{ userInfo.joinDate }}</p>
-            </div>
-            <v-btn color="primary" variant="outlined" rounded="lg">
-              <v-icon icon="mdi-pencil" size="18" class="mr-2"></v-icon>
-              编辑资料
-            </v-btn>
-          </div>
-
-          <!-- 统计信息 -->
-          <v-divider class="mb-4"></v-divider>
-          <div class="d-flex justify-space-around flex-wrap" style="gap: 16px;">
-            <div class="text-center">
-              <div class="text-h5 font-weight-bold text-primary mb-1">{{ stats.totalCourses }}</div>
-              <div class="text-caption text-grey">学习课程</div>
-            </div>
-            <div class="text-center">
-              <div class="text-h5 font-weight-bold text-success mb-1">{{ stats.completedCourses }}</div>
-              <div class="text-caption text-grey">完成课程</div>
-            </div>
-            <div class="text-center">
-              <div class="text-h5 font-weight-bold text-info mb-1">{{ stats.totalCareers }}</div>
-              <div class="text-caption text-grey">关注职业</div>
-            </div>
-            <div class="text-center">
-              <div class="text-h5 font-weight-bold text-warning mb-1">{{ stats.studyDays }}</div>
-              <div class="text-caption text-grey">学习天数</div>
-            </div>
-            <div class="text-center">
-              <div class="text-h5 font-weight-bold text-purple mb-1">{{ stats.studyHours }}</div>
-              <div class="text-caption text-grey">学习时长(h)</div>
-            </div>
-          </div>
-        </v-card-text>
-      </v-card>
+        <!-- 右列：统计信息 -->
+        <v-col cols="12" md="6">
+          <v-card rounded="lg" flat class="h-100 no-border">
+            <v-card-text class="px-0 py-4 d-flex align-center">
+              <div class="d-flex justify-space-between align-center flex-grow-1">
+                <div class="text-center">
+                  <div class="text-h6 font-weight-bold text-primary">{{ stats.totalCourses }}</div>
+                  <div class="text-caption text-grey">学习课程</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-h6 font-weight-bold text-success">{{ stats.completedCourses }}</div>
+                  <div class="text-caption text-grey">完成课程</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-h6 font-weight-bold text-info">{{ stats.totalCareers }}</div>
+                  <div class="text-caption text-grey">关注职业</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-h6 font-weight-bold text-warning">{{ stats.studyDays }}</div>
+                  <div class="text-caption text-grey">学习天数</div>
+                </div>
+                <div class="text-center">
+                  <div class="text-h6 font-weight-bold text-purple">{{ stats.studyHours }}</div>
+                  <div class="text-caption text-grey">学习时长(h)</div>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
 
       <!-- Tab 导航 -->
       <v-tabs v-model="activeTab" color="primary" class="mb-6 tabs-with-border">

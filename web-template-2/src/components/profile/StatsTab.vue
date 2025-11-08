@@ -3,9 +3,8 @@
     <!-- 左侧简介栏 -->
     <v-col cols="12" md="2">
       <div class="sticky-sidebar">
-        <div class="pa-2 pr-10">
-          <div class="d-flex align-center mb-3">
-            <v-icon icon="mdi-chart-line" color="primary" size="20" class="mr-2"></v-icon>
+        <div class="pa-2 pr-10 pt-4">
+          <div class="mb-3">
             <h4 class="text-body-1 font-weight-bold">数据统计</h4>
           </div>
           <p class="text-body-2 text-grey-darken-2 mb-3">
@@ -33,15 +32,12 @@
     <!-- 右侧主内容 -->
     <v-col cols="12" md="10">
       <div class="pa-2">
-        <div class="d-flex align-center justify-space-between mb-4">
-          <h3 class="text-h6 font-weight-bold">数据统计</h3>
-
-          <!-- 时间段选择 -->
+        <!-- 时间段选择 -->
+        <div class="mb-4">
           <v-btn-toggle
             v-model="selectedPeriod"
             color="primary"
-            variant="outlined"
-            divided
+            variant="plain"
             rounded="md"
             density="compact"
           >
@@ -55,7 +51,7 @@
         <!-- 统计卡片 -->
         <v-row class="mb-6">
           <v-col cols="12" md="6" lg="3">
-            <v-card border rounded="md" class="pa-4 stat-card">
+            <v-card border rounded="lg" class="pa-4 hoverable">
               <div class="d-flex align-center mb-2">
                 <v-avatar color="blue-lighten-5" size="48" class="mr-3">
                   <v-icon icon="mdi-book-open-outline" color="primary" size="24"></v-icon>
@@ -80,7 +76,7 @@
           </v-col>
 
           <v-col cols="12" md="6" lg="3">
-            <v-card border rounded="md" class="pa-4 stat-card">
+            <v-card border rounded="lg" class="pa-4 hoverable">
               <div class="d-flex align-center mb-2">
                 <v-avatar color="green-lighten-5" size="48" class="mr-3">
                   <v-icon icon="mdi-check-circle" color="success" size="24"></v-icon>
@@ -105,7 +101,7 @@
           </v-col>
 
           <v-col cols="12" md="6" lg="3">
-            <v-card border rounded="md" class="pa-4 stat-card">
+            <v-card border rounded="lg" class="pa-4 hoverable">
               <div class="d-flex align-center mb-2">
                 <v-avatar color="orange-lighten-5" size="48" class="mr-3">
                   <v-icon icon="mdi-calendar-check" color="warning" size="24"></v-icon>
@@ -130,7 +126,7 @@
           </v-col>
 
           <v-col cols="12" md="6" lg="3">
-            <v-card border rounded="md" class="pa-4 stat-card">
+            <v-card border rounded="lg" class="pa-4 hoverable">
               <div class="d-flex align-center mb-2">
                 <v-avatar color="purple-lighten-5" size="48" class="mr-3">
                   <v-icon icon="mdi-clock-outline" color="purple" size="24"></v-icon>
@@ -155,11 +151,9 @@
           </v-col>
         </v-row>
 
-        <v-divider class="my-6"></v-divider>
-
         <!-- 学习趋势图 -->
-        <h4 class="text-body-1 font-weight-bold mb-4">学习趋势</h4>
-        <v-card border rounded="md" class="pa-5">
+        <h4 class="text-body-1 mb-4">学习趋势</h4>
+        <v-card rounded="lg" class="pa-5">
           <div class="chart-container">
             <!-- 简单的趋势图展示 -->
             <div class="d-flex align-center justify-space-between mb-4">
@@ -324,15 +318,6 @@ const getBarColor = (value: number) => {
   top: 80px;
   max-height: calc(100vh - 100px);
   overflow-y: auto;
-}
-
-.stat-card {
-  transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .chart-container {
