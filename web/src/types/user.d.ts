@@ -96,15 +96,3 @@ export interface UserStatsDTO {
   totalComments: number // 评论总数
   dailyStats?: DailyStatsDTO[] // 每日明细（用于图表展示）
 }
-
-/**
- * 创建空的统计数据
- */
-export function createEmptyUserStats(): Partial<UserStatsDTO> {
-  return {
-    totalViews: 0,
-    totalTwice: 0,
-    totalHelpful: 0,
-    totalComments: 0,
-  }
-}

@@ -5,6 +5,7 @@ import axios, {
   type AxiosRequestConfig,
 } from 'axios'
 import type { ApiResponse } from '@/types/api'
+import { logger } from '@/utils/logger'
 
 /**
  * 自定义 API 错误类
@@ -51,7 +52,7 @@ axiosInstance.interceptors.request.use(
     return config
   },
   (error: AxiosError) => {
-    console.error('请求拦截器错误:', error)
+    logger.error('请求拦截器错误', error)
     return Promise.reject(error)
   }
 )
@@ -76,37 +77,35 @@ axiosInstance.interceptors.response.use(
           localStorage.removeItem('token')
           localStorage.removeItem('user')
           // TODO: 使用路由跳转到登录页
-          console.error('未授权，请重新登录')
+          logger.error('未授权，请重新登录')
           break
 
         case 403:
-          console.error('没有权限访问该资源')
+          logger.error('没有权限访问该资源')
           break
 
         case 404:
-          console.error('请求的资源不存在')
+          logger.error('请求的资源不存在')
           break
 
         case 500:
-          console.error('服务器内部错误')
+          logger.error('服务器内部错误')
           break
 
         default:
-          console.error(`请求错误 [${String(status)}]:`, error.message)
+          logger.error(`请求错误 [${String(status)}]`, error.message)
       }
 
       // 返回自定义 ApiError
-      const apiData = data as Record<string, unknown> | undefined
-      return Promise.reject(
-        new ApiError(status, (apiData?.message as string | undefined) ?? error.message, apiData)
-      )
+      const apiData = data as ApiResponse
+      return Promise.reject(new ApiError(status, apiData.message ?? error.message, apiData))
     } else if (error.request) {
       // 请求已发出但没有收到响应
-      console.error('网络错误：无法连接到服务器')
+      logger.error('网络错误：无法连接到服务器')
       return Promise.reject(new ApiError(0, '网络错误：无法连接到服务器'))
     } else {
       // 请求配置错误
-      console.error('请求配置错误:', error.message)
+      logger.error('请求配置错误', error.message)
       return Promise.reject(new ApiError(-1, error.message))
     }
   }

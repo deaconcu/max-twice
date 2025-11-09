@@ -10,9 +10,9 @@ export interface ApiResponse<T = unknown> {
 }
 
 /**
- * API 错误接口
+ * API 错误响应接口
  */
-export interface ApiError {
+export interface ApiErrorResponse {
   code: number
   message: string
   timestamp?: number

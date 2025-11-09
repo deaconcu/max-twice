@@ -2,6 +2,7 @@ import apiClient from '../client'
 import type { ApiResponse } from '@/types/api'
 import type { Course, ApprovalResponse } from '@/types/course'
 import type { UserCourse } from '@/types/userCourse'
+import type { SubscriptionInfo } from '@/types/user'
 
 /**
  * 课程管理相关 API
@@ -134,10 +135,11 @@ export const subscriptionApi = {
 
   /**
    * 更新订阅
+   * @param subscriptionIds 订阅的课程 ID，逗号分隔（例如："1,2,3"）
    */
-  updateSubscriptions(subscription: unknown): Promise<ApiResponse> {
+  updateSubscriptions(subscriptionIds: string): Promise<ApiResponse<SubscriptionInfo[]>> {
     return apiClient.put('/v1/users/current/subscriptions', {
-      subscription,
+      subscription: subscriptionIds,
     })
   },
 

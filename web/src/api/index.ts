@@ -17,5 +17,6 @@ export { statsApi } from './modules/stats'
 export { pageApi } from './modules/page'
 export { systemApi } from './modules/system'
 
-// 也可以导出 apiClient 供特殊场景使用
+// 导出 apiClient 和 ApiError 供特殊场景使用
 export { default as apiClient } from './client'
+export { ApiError } from './client'
