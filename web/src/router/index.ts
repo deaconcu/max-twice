@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteRecordRaw } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { isSuperAdmin, isAdmin, isModerator } from '@/utils/permission'
+import { routes } from './routes'
 
 /**
  * 扩展路由元信息类型
@@ -16,26 +16,8 @@ declare module 'vue-router' {
 }
 
 /**
- * 路由配置
+ * 创建路由实例
  */
-const routes: RouteRecordRaw[] = [
-  {
-    path: '/login',
-    name: 'login',
-    component: () => import('@/views/auth/LoginPage.vue'),
-  },
-  {
-    path: '/',
-    name: 'home',
-    component: () => import('@/views/home/HomePage.vue'),
-  },
-  {
-    path: '/error/:code',
-    name: 'error',
-    component: () => import('@/views/error/ErrorPage.vue'),
-  },
-]
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,

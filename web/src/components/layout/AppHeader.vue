@@ -1,6 +1,6 @@
 <template>
   <v-app-bar :elevation="0" class="app-header" height="56">
-    <v-container fluid class="px-4">
+    <v-container fluid class="px-2 px-sm-4">
       <v-row align="center" no-gutters>
         <!-- Logo -->
         <v-col cols="auto">
@@ -8,7 +8,8 @@
             <div class="logo-icon">
               <v-icon size="28" color="primary">mdi-reddit</v-icon>
             </div>
-            <h2 class="logo-text ml-2">MaxTwice</h2>
+            <!-- Logo 文字在小屏幕隐藏 -->
+            <h2 class="logo-text ml-2 d-none d-sm-block">MaxTwice</h2>
           </div>
         </v-col>
 
@@ -16,7 +17,7 @@
 
         <!-- Right side actions -->
         <v-col cols="auto">
-          <div class="d-flex align-center ga-4">
+          <div class="d-flex align-center" :class="$vuetify.display.xs ? 'ga-2' : 'ga-4'">
             <!-- 通知菜单 -->
             <NotificationMenu />
 
@@ -53,5 +54,12 @@ import UserMenu from '@/components/common/UserMenu.vue'
 .logo-text {
   font-size: 1.25rem;
   font-weight: 700;
+}
+
+/* 移动端优化 */
+@media (max-width: 599px) {
+  .logo-text {
+    font-size: 1.1rem;
+  }
 }
 </style>

@@ -1,4 +1,5 @@
 import { useI18n as useVueI18n } from 'vue-i18n'
+import { LOCALE_STORAGE_KEY, type Locale } from '@/constants/locale'
 
 /**
  * 国际化 composable
@@ -10,19 +11,24 @@ export function useI18n() {
   /**
    * 切换语言
    */
-  const switchLocale = (newLocale: string) => {
+  const switchLocale = (newLocale: Locale) => {
     if (availableLocales.includes(newLocale)) {
       locale.value = newLocale
-      localStorage.setItem('locale', newLocale)
+      // 持久化到 localStorage
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(LOCALE_STORAGE_KEY, newLocale)
+      }
       // 更新 HTML lang 属性
-      document.documentElement.lang = newLocale
+      if (typeof document !== 'undefined') {
+        document.documentElement.lang = newLocale
+      }
     }
   }
 
   /**
    * 获取当前语言
    */
-  const currentLocale = () => locale.value
+  const currentLocale = (): Locale => locale.value as Locale
 
   return {
     t,
