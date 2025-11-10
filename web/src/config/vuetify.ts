@@ -1,6 +1,5 @@
 // Vuetify 3 配置
-// 注意：使用 vite-plugin-vuetify 的 autoImport 后，
-// 样式和组件都会自动按需引入，无需手动导入
+import 'vuetify/styles/main.css'
 import '@mdi/font/css/materialdesignicons.css'
 import { createVuetify, type ThemeDefinition } from 'vuetify'
 
@@ -8,8 +7,8 @@ import { createVuetify, type ThemeDefinition } from 'vuetify'
 const lightTheme: ThemeDefinition = {
   dark: false,
   colors: {
-    primary: '#1976D2',
-    secondary: '#424242',
+    primary: '#1867C0',
+    secondary: '#5CBBF6',
     accent: '#82B1FF',
     error: '#FF5252',
     info: '#2196F3',
@@ -17,6 +16,10 @@ const lightTheme: ThemeDefinition = {
     warning: '#FB8C00',
     background: '#FFFFFF',
     surface: '#FFFFFF',
+    'surface-variant': '#F8F9FA',
+    'on-surface': '#1A1A1B',
+    'on-background': '#1A1A1B',
+    border: '#EDEFF1',
   },
 }
 
@@ -59,11 +62,13 @@ export default createVuetify({
   // 默认配置
   defaults: {
     VBtn: {
-      color: 'primary',
-      variant: 'flat',
+      elevation: 0,
+      flat: true,
     },
     VCard: {
-      elevation: 2,
+      elevation: 0,
+      flat: true,
+      variant: 'outlined',
     },
     VTextField: {
       variant: 'outlined',

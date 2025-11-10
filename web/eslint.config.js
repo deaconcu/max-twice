@@ -2,6 +2,7 @@ import js from '@eslint/js'
 import vue from 'eslint-plugin-vue'
 import ts from 'typescript-eslint'
 import prettier from 'eslint-plugin-prettier/recommended'
+import globals from 'globals'
 
 export default ts.config(
   // ESLint 推荐规则
@@ -29,6 +30,9 @@ export default ts.config(
         sourceType: 'module',
         ecmaVersion: 'latest',
       },
+      globals: {
+        ...globals.browser,
+      },
     },
 
     // 自定义规则
@@ -53,6 +57,7 @@ export default ts.config(
       // TypeScript 规则
       '@typescript-eslint/no-explicit-any': 'error', // 禁止 any
       '@typescript-eslint/explicit-function-return-type': 'off', // 允许推断返回类型
+      '@typescript-eslint/no-floating-promises': 'off', // 允许不处理 Promise（如 router.push）
       '@typescript-eslint/no-unsafe-argument': 'off', // Vue 组件类型推断问题，暂时关闭
       '@typescript-eslint/no-unsafe-assignment': 'off', // Vue 组件类型推断问题，暂时关闭
       '@typescript-eslint/no-unsafe-member-access': 'off', // Vue 组件类型推断问题，暂时关闭

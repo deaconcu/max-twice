@@ -1,14 +1,81 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { isSuperAdmin, isAdmin, isModerator } from '@/utils/permission'
+
+/**
+ * 扩展路由元信息类型
+ */
+declare module 'vue-router' {
+  interface RouteMeta {
+    requireAuth?: boolean // 是否需要登录
+    requireAdmin?: boolean // 是否需要管理员权限
+    requireModerator?: boolean // 是否需要审核员权限
+    requireSuperAdmin?: boolean // 是否需要超级管理员权限
+  }
+}
+
+/**
+ * 路由配置
+ */
+const routes: RouteRecordRaw[] = [
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/views/auth/LoginPage.vue'),
+  },
+  {
+    path: '/',
+    name: 'home',
+    component: () => import('@/views/home/HomePage.vue'),
+  },
+  {
+    path: '/error/:code',
+    name: 'error',
+    component: () => import('@/views/error/ErrorPage.vue'),
+  },
+]
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: () => import('@/views/home/HomePage.vue'),
-    },
-  ],
+  routes,
+})
+
+/**
+ * 全局前置守卫 - 权限检查
+ */
+router.beforeEach((to, _from, next) => {
+  const userStore = useUserStore()
+  const currentUser = userStore.currentUser
+
+  // 检查是否需要登录
+  if (to.meta.requireAuth && !currentUser) {
+    next({
+      path: '/login',
+      query: { redirect: to.fullPath },
+    })
+    return
+  }
+
+  // 检查是否需要超级管理员权限
+  if (to.meta.requireSuperAdmin && !isSuperAdmin(currentUser)) {
+    next('/error/403')
+    return
+  }
+
+  // 检查是否需要管理员权限
+  if (to.meta.requireAdmin && !isAdmin(currentUser)) {
+    next('/error/403')
+    return
+  }
+
+  // 检查是否需要审核员权限
+  if (to.meta.requireModerator && !isModerator(currentUser)) {
+    next('/error/403')
+    return
+  }
+
+  next()
 })
 
 export default router
