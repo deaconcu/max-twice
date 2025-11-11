@@ -9,23 +9,27 @@
 </script>
 
 <style>
-* {
+/* 全局重置 - 只重置 body，避免影响 Vuetify 组件 */
+body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-}
-
-body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background-color: #ffffff;
-  color: #000000;
+  background-color: rgb(var(--v-theme-background));
+  color: rgb(var(--v-theme-on-background));
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 /* 简约风格全局样式 */
 .v-card {
-  border: 1px solid #e5e5e5 !important;
-  background-color: #ffffff !important;
+  border: 1px solid rgb(var(--v-theme-border)) !important;
+  background-color: rgb(var(--v-theme-surface)) !important;
 }
 
 .v-card.no-border {
@@ -49,8 +53,8 @@ body {
 
 /* Tooltip 样式修复 */
 .v-tooltip .v-overlay__content {
-  background-color: rgba(97, 97, 97, 0.9) !important;
-  color: #ffffff !important;
+  background-color: rgba(var(--v-theme-on-surface), 0.9) !important;
+  color: rgb(var(--v-theme-surface)) !important;
   padding: 4px 8px !important;
   font-size: 12px !important;
 }
@@ -63,7 +67,7 @@ body {
 
 .v-card.hoverable:hover {
   transform: translateY(-4px);
-  background-color: #fafafa !important;
+  background-color: rgb(var(--v-theme-surface-variant)) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 </style>

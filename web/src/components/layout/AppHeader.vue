@@ -1,5 +1,11 @@
+<script setup lang="ts">
+import NotificationMenu from '@/components/common/NotificationMenu.vue'
+import UserMenu from '@/components/common/UserMenu.vue'
+import { HEADER_HEIGHT } from '@/constants/layout'
+</script>
+
 <template>
-  <v-app-bar :elevation="0" class="app-header" height="56">
+  <v-app-bar :elevation="0" class="app-header" :height="HEADER_HEIGHT">
     <v-container fluid class="px-2 px-sm-4">
       <v-row align="center" no-gutters>
         <!-- Logo -->
@@ -29,11 +35,6 @@
     </v-container>
   </v-app-bar>
 </template>
-
-<script setup lang="ts">
-import NotificationMenu from '@/components/common/NotificationMenu.vue'
-import UserMenu from '@/components/common/UserMenu.vue'
-</script>
 
 <style scoped>
 .app-header {

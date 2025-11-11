@@ -30,6 +30,11 @@
     "slogan": "争取本站大部分内容最多看两次就会，最好看一次就会",
     "about": "为什么有这个网站？"
   },
+  "home": {
+    "welcome": "欢迎来到 Max Twice",
+    "initSuccess": "项目初始化成功！",
+    "toggleTheme": "切换主题"
+  },
   "common": {
     "login": "登录",
     "register": "注册",
@@ -39,6 +44,9 @@
     "about": "关于",
     "profile": "个人资料",
     "settings": "设置",
+    "privacy": "隐私",
+    "favorites": "收藏",
+    "help": "帮助",
     "search": "搜索",
     "submit": "提交",
     "cancel": "取消",
@@ -52,7 +60,21 @@
     "loading": "加载中...",
     "success": "成功",
     "error": "错误",
-    "warning": "警告"
+    "warning": "警告",
+    "goBack": "返回上一页",
+    "goHome": "返回首页"
+  },
+  "notification": {
+    "title": "消息通知",
+    "refreshing": "正在刷新...",
+    "pullToRefresh": "下拉刷新",
+    "bottomTip": "已到底部"
+  },
+  "userMenu": {
+    "profileCenter": "个人中心",
+    "learner": "学习者",
+    "personalSettings": "个人设置",
+    "logout": "退出登录"
   },
   "error": {
     "loadFailed": "加载失败",
@@ -75,9 +97,13 @@
     }
   },
   "nav": {
+    "home": "首页",
     "dashboard": "仪表板",
     "learning": "学习",
     "courses": "课程",
+    "career": "职业中心",
+    "memoryReview": "复习中心",
+    "profile": "我的",
     "roadmap": "学习路线",
     "community": "社区",
     "messages": "消息",

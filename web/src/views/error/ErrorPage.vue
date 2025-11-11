@@ -84,10 +84,10 @@ const goBack = () => {
         <!-- 操作按钮 -->
         <div class="error-actions">
           <v-btn variant="outlined" prepend-icon="mdi-arrow-left" @click="goBack">
-            返回上一页
+            {{ t('common.goBack') }}
           </v-btn>
           <v-btn color="primary" variant="flat" prepend-icon="mdi-home" @click="goHome">
-            返回首页
+            {{ t('common.goHome') }}
           </v-btn>
         </div>
       </div>
@@ -97,7 +97,7 @@ const goBack = () => {
 
 <style scoped>
 .error-page {
-  background-color: #ffffff;
+  background-color: rgb(var(--v-theme-background));
 }
 
 .error-container {
@@ -119,12 +119,12 @@ const goBack = () => {
 .error-title {
   font-size: 24px;
   font-weight: 600;
-  color: #000000;
+  color: rgb(var(--v-theme-on-background));
 }
 
 .error-message {
   font-size: 15px;
-  color: #666666;
+  color: rgb(var(--v-theme-on-surface-variant));
   line-height: 1.6;
 }
 

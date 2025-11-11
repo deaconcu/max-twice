@@ -1,35 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
+import { MAIN_MENU_ITEMS, BOTTOM_TOOLS } from '@/constants/menu'
+import {
+  HEADER_HEIGHT,
+  SIDEBAR_WIDTH,
+  BOTTOM_NAV_HEIGHT,
+  MOBILE_BREAKPOINT,
+} from '@/constants/layout'
 
 const route = useRoute()
-
-// TODO: 后续根据用户权限动态过滤菜单项
-interface MenuItem {
-  icon: string
-  text: string
-  path: string
-  // TODO: 添加权限字段，用于权限控制
-  // permission?: string
-}
-
-// 核心菜单项
-const menuItems: MenuItem[] = [
-  { icon: 'mdi-home-variant-outline', text: '首页', path: '/home' },
-  { icon: 'mdi-briefcase-search-outline', text: '职业中心', path: '/career' },
-  { icon: 'mdi-book-open-page-variant-outline', text: '课程中心', path: '/learning' },
-  { icon: 'mdi-brain', text: '复习中心', path: '/memory-review' },
-  { icon: 'mdi-account-circle-outline', text: '我的', path: '/profile' },
-]
-
-// TODO: 实现底部工具按钮的实际功能
-// 底部工具按钮
-const bottomTools = [
-  { icon: 'mdi-cog', title: '设置' },
-  { icon: 'mdi-shield-lock', title: '隐私' },
-  { icon: 'mdi-star', title: '常用链接' },
-  { icon: 'mdi-help-circle', title: '帮助' },
-]
+const router = useRouter()
+const { t } = useI18n()
 
 // 判断是否是当前路由
 const isActive = (path: string) => {
@@ -39,12 +22,16 @@ const isActive = (path: string) => {
 // TODO: 根据用户权限过滤菜单
 const visibleMenuItems = computed(() => {
   // 这里可以添加权限过滤逻辑
-  return menuItems
+  return MAIN_MENU_ITEMS
 })
 
-// TODO: 实现工具按钮点击处理
-const handleToolClick = (_tool: (typeof bottomTools)[number]) => {
-  // 后续实现实际功能
+// 工具按钮点击处理
+const handleToolClick = (tool: (typeof BOTTOM_TOOLS)[number]) => {
+  if (tool.path) {
+    router.push(tool.path)
+  } else if (tool.action) {
+    tool.action()
+  }
 }
 </script>
 
@@ -60,7 +47,7 @@ const handleToolClick = (_tool: (typeof bottomTools)[number]) => {
       >
         <router-link :to="item.path" class="nav-link">
           <v-icon size="22" class="nav-icon">{{ item.icon }}</v-icon>
-          <span class="nav-text">{{ item.text }}</span>
+          <span class="nav-text">{{ t(item.textKey) }}</span>
         </router-link>
       </div>
     </nav>
@@ -69,12 +56,12 @@ const handleToolClick = (_tool: (typeof bottomTools)[number]) => {
     <div class="sidebar-bottom">
       <div class="bottom-tools">
         <v-btn
-          v-for="tool in bottomTools"
+          v-for="tool in BOTTOM_TOOLS"
           :key="tool.icon"
           icon
           variant="text"
           size="x-small"
-          :title="tool.title"
+          :title="t(tool.titleKey)"
           @click="handleToolClick(tool)"
         >
           <v-icon size="18">{{ tool.icon }}</v-icon>
@@ -86,13 +73,13 @@ const handleToolClick = (_tool: (typeof bottomTools)[number]) => {
 
 <style scoped>
 .app-sidebar {
-  width: 160px;
+  width: v-bind('`${SIDEBAR_WIDTH}px`');
   height: 100vh;
   position: fixed;
   left: 0;
   top: 0;
   background-color: rgb(var(--v-theme-surface));
-  padding: 80px 16px 20px 16px;
+  padding: v-bind('`${HEADER_HEIGHT + 24}px`') 16px 20px 16px;
   display: flex;
   flex-direction: column;
   border-right: 1px solid rgb(var(--v-theme-border));
@@ -111,7 +98,7 @@ const handleToolClick = (_tool: (typeof bottomTools)[number]) => {
   align-items: center;
   padding: 12px 14px;
   text-decoration: none;
-  color: #656d76;
+  color: rgb(var(--v-theme-on-surface-variant));
   border-radius: 8px;
   transition: all 0.15s ease;
   gap: 12px;
@@ -123,8 +110,8 @@ const handleToolClick = (_tool: (typeof bottomTools)[number]) => {
 }
 
 .nav-item.active .nav-link {
-  background-color: #eff6ff;
-  color: #2563eb;
+  background-color: rgba(var(--v-theme-primary), 0.1);
+  color: rgb(var(--v-theme-primary));
   font-weight: 600;
 }
 
@@ -148,7 +135,7 @@ const handleToolClick = (_tool: (typeof bottomTools)[number]) => {
 @media (max-width: 960px) {
   .app-sidebar {
     width: 100%;
-    height: auto;
+    height: v-bind('`${BOTTOM_NAV_HEIGHT}px`');
     position: fixed;
     left: 0;
     top: auto;

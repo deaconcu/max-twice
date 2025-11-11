@@ -1,13 +1,25 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
+import { useUserStore } from '@/stores'
 
 const router = useRouter()
+const { t } = useI18n()
+const userStore = useUserStore()
 
 // TODO: 替换为真实用户数据，从用户状态管理（Pinia store）或 API 获取
 // 用户信息（当前为模拟数据）
-const userInfo = ref({
-  name: '张三',
+const userInfo = computed(() => ({
+  name: userStore.userName || '张三',
+  role: userStore.userRole,
+}))
+
+// 用户角色显示文本
+const userRoleText = computed(() => {
+  // TODO: 这里应该根据 userStore.userRole 返回对应的 i18n key
+  // 目前暂时使用硬编码，后续需要在 zh.json 中添加角色相关的翻译
+  return t('userMenu.learner')
 })
 
 // TODO: 实现真实的设置页面跳转逻辑
@@ -24,6 +36,7 @@ const handleLogout = () => {
   // 1. 调用 API 通知后端退出
   // 2. 清除本地 token (localStorage/sessionStorage)
   // 3. 清除 Pinia store 中的用户信息
+  userStore.logout()
   // 4. 跳转到登录页
   router.push('/login')
 }
@@ -38,7 +51,7 @@ const handleLogout = () => {
     :open-delay="100"
   >
     <template #activator="{ props }">
-      <button class="icon-btn" title="个人中心" v-bind="props">
+      <button class="icon-btn" :title="t('userMenu.profileCenter')" v-bind="props">
         <v-icon size="22">mdi-account-circle-outline</v-icon>
       </button>
     </template>
@@ -51,7 +64,7 @@ const handleLogout = () => {
             <v-icon size="28" color="white">mdi-account</v-icon>
           </v-avatar>
           <div class="user-name text-center mb-1">{{ userInfo.name }}</div>
-          <div class="user-role">学习者</div>
+          <div class="user-role">{{ userRoleText }}</div>
         </div>
       </v-card-text>
 
@@ -61,11 +74,11 @@ const handleLogout = () => {
       <div class="menu-items py-2">
         <div class="menu-item" @click="goToSettings">
           <v-icon icon="mdi-cog-outline" size="18" color="grey-darken-1" class="menu-icon"></v-icon>
-          <span class="menu-title">个人设置</span>
+          <span class="menu-title">{{ t('userMenu.personalSettings') }}</span>
         </div>
         <div class="menu-item" @click="handleLogout">
           <v-icon icon="mdi-logout" size="18" color="error" class="menu-icon"></v-icon>
-          <span class="menu-title text-error">退出登录</span>
+          <span class="menu-title text-error">{{ t('userMenu.logout') }}</span>
         </div>
       </div>
     </v-card>
@@ -82,7 +95,7 @@ const handleLogout = () => {
   background: transparent;
   border: none;
   border-radius: 6px;
-  color: #656d76;
+  color: rgb(var(--v-theme-on-surface-variant));
   cursor: pointer;
   transition: all 0.15s ease;
   position: relative;
@@ -95,7 +108,7 @@ const handleLogout = () => {
 
 /* 用户菜单 */
 .user-menu {
-  border: 1px solid #e0e0e0;
+  border: 1px solid rgb(var(--v-theme-border));
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   overflow: hidden;
 }
@@ -109,15 +122,16 @@ const handleLogout = () => {
 .user-name {
   font-size: 15px;
   font-weight: 600;
-  color: #1a1a1b;
+  color: rgb(var(--v-theme-on-surface));
   line-height: 1.3;
 }
 
 .user-role {
   font-size: 12px;
-  color: #999;
+  color: rgb(var(--v-theme-on-surface-variant));
+  opacity: 0.7;
   padding: 2px 10px;
-  background-color: #f5f5f5;
+  background-color: rgb(var(--v-theme-surface-variant));
   border-radius: 12px;
 }
 
@@ -136,11 +150,11 @@ const handleLogout = () => {
 }
 
 .menu-item:hover {
-  background-color: #f8f9fa;
+  background-color: rgb(var(--v-theme-surface-variant));
 }
 
 .menu-item:active {
-  background-color: #f0f0f0;
+  background-color: rgba(var(--v-theme-surface-variant), 0.8);
   transform: scale(0.98);
 }
 
@@ -152,7 +166,7 @@ const handleLogout = () => {
 .menu-title {
   flex: 1;
   font-size: 14px;
-  color: #1a1a1b;
+  color: rgb(var(--v-theme-on-surface));
   font-weight: 500;
 }
 </style>

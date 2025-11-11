@@ -3,5 +3,5 @@
  * 使用方式：import { useAuthStore, useUserStore } from '@/stores'
  */
 
-export { useAuthStore } from './auth'
-export { useUserStore } from './user'
+export { useAuthStore } from './modules/auth'
+export { useUserStore } from './modules/user'

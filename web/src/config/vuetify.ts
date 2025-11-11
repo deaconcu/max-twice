@@ -18,7 +18,9 @@ const lightTheme: ThemeDefinition = {
     surface: '#FFFFFF',
     'surface-variant': '#F8F9FA',
     'on-surface': '#1A1A1B',
+    'on-surface-variant': '#666666',
     'on-background': '#1A1A1B',
+    'on-primary': '#FFFFFF',
     border: '#EDEFF1',
   },
 }
@@ -35,7 +37,13 @@ const darkTheme: ThemeDefinition = {
     success: '#4CAF50',
     warning: '#FB8C00',
     background: '#121212',
-    surface: '#212121',
+    surface: '#1E1E1E',
+    'surface-variant': '#2C2C2C',
+    'on-surface': '#E0E0E0',
+    'on-surface-variant': '#B0B0B0',
+    'on-background': '#E0E0E0',
+    'on-primary': '#FFFFFF',
+    border: '#333333',
   },
 }
 

@@ -1,16 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useI18n } from '@/composables/useI18n'
+import type { Notification } from '@/types/menu'
 
-// TODO: 定义通知接口，后续从 API 获取真实数据
-interface Notification {
-  id: number
-  title: string
-  content: string
-  time: string
-  read: boolean
-  icon: string
-  iconColor: string
-}
+const { t } = useI18n()
 
 // 通知列表引用
 const notificationList = ref<HTMLElement | null>(null)
@@ -64,8 +57,8 @@ const notifications = ref<Notification[]>([
   },
 ])
 
-// 未读通知数量
-const unreadCount = ref(notifications.value.filter((n) => !n.read).length)
+// 未读通知数量（使用 computed）
+const unreadCount = computed(() => notifications.value.filter((n) => !n.read).length)
 
 // 滚动处理
 const handleScroll = (event: Event) => {
@@ -137,7 +130,7 @@ defineExpose({
 <template>
   <v-menu :close-on-content-click="false" location="bottom end" offset="8">
     <template #activator="{ props }">
-      <button class="icon-btn" title="消息通知" v-bind="props">
+      <button class="icon-btn" :title="t('notification.title')" v-bind="props">
         <v-badge
           v-if="unreadCount > 0"
           :content="unreadCount"
@@ -154,7 +147,7 @@ defineExpose({
     <v-card rounded="lg" class="notification-menu" width="360">
       <!-- 标题栏 -->
       <v-card-title class="notification-header">
-        <span class="notification-title">消息通知</span>
+        <span class="notification-title">{{ t('notification.title') }}</span>
         <v-chip size="x-small" color="error" variant="flat">{{ unreadCount }}</v-chip>
       </v-card-title>
 
@@ -177,7 +170,9 @@ defineExpose({
             color="primary"
           ></v-progress-circular>
           <v-icon v-else size="20" color="primary">mdi-refresh</v-icon>
-          <span class="ml-2">{{ isRefreshing ? '正在刷新...' : '下拉刷新' }}</span>
+          <span class="ml-2">{{
+            isRefreshing ? t('notification.refreshing') : t('notification.pullToRefresh')
+          }}</span>
         </div>
 
         <div
@@ -204,7 +199,7 @@ defineExpose({
           <v-divider class="mb-2"></v-divider>
           <div class="text-center py-3">
             <v-icon size="16" color="grey">mdi-check-circle-outline</v-icon>
-            <span class="text-caption text-grey ml-1">已到底部</span>
+            <span class="text-caption text-grey ml-1">{{ t('notification.bottomTip') }}</span>
           </div>
         </div>
       </div>
@@ -227,11 +222,11 @@ defineExpose({
 }
 
 .icon-btn:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+  background-color: rgb(var(--v-theme-surface-variant));
 }
 
 .notification-menu {
-  border: 1px solid #e5e5e5 !important;
+  border: 1px solid rgb(var(--v-theme-border)) !important;
 }
 
 .notification-header {
@@ -259,18 +254,18 @@ defineExpose({
   justify-content: center;
   padding: 12px;
   font-size: 13px;
-  color: #666;
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 
 .notification-item {
   padding: 12px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid rgb(var(--v-theme-border));
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .notification-item:hover {
-  background-color: #fafafa;
+  background-color: rgb(var(--v-theme-surface-variant));
 }
 
 .notification-item:last-child {
@@ -278,33 +273,34 @@ defineExpose({
 }
 
 .notification-item.unread {
-  background-color: #f8f9ff;
+  background-color: rgba(var(--v-theme-primary), 0.05);
 }
 
 .notification-item .notification-title {
   font-size: 14px;
   font-weight: 600;
-  color: #000;
+  color: rgb(var(--v-theme-on-surface));
   margin-bottom: 4px;
 }
 
 .notification-item .notification-content {
   font-size: 13px;
-  color: #666;
+  color: rgb(var(--v-theme-on-surface-variant));
   margin-bottom: 4px;
   line-height: 1.4;
 }
 
 .notification-item .notification-time {
   font-size: 12px;
-  color: #999;
+  color: rgb(var(--v-theme-on-surface-variant));
+  opacity: 0.7;
 }
 
 .unread-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #ff5252;
+  background-color: rgb(var(--v-theme-error));
   flex-shrink: 0;
   margin-top: 4px;
 }
