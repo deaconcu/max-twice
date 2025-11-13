@@ -20,7 +20,7 @@ export const useAuthStore = defineStore(
     const isRegistering = ref(false)
 
     // 计算属性
-    const isAuthenticated = computed(() => !!token.value && !!userStore.currentUser)
+    const isAuthenticated = computed(() => !!userStore.currentUser)
 
     /**
      * 登录

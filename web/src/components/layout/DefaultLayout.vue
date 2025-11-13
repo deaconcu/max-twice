@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import AppHeader from './AppHeader.vue'
 import AppSidebar from './AppSidebar.vue'
-import {
-  HEADER_HEIGHT,
-  SIDEBAR_WIDTH,
-  BOTTOM_NAV_HEIGHT,
-  MOBILE_BREAKPOINT,
-} from '@/constants/layout'
+import { HEADER_HEIGHT, BOTTOM_NAV_HEIGHT } from '@/constants/layout'
 </script>
 
 <template>
@@ -31,10 +26,12 @@ import {
 }
 
 .main-content {
-  margin-left: v-bind('`${SIDEBAR_WIDTH}px`');
+  margin-left: max(160px, calc((100vw - 1550px) / 2));
   margin-top: v-bind('`${HEADER_HEIGHT}px`');
   min-height: v-bind('`calc(100vh - ${HEADER_HEIGHT}px)`');
-  padding: 24px;
+  padding: 24px 40px;
+  max-width: 1550px;
+  width: calc(100% - max(160px, calc((100vw - 1550px) / 2)));
 }
 
 /* 移动端布局 */

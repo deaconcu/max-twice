@@ -91,4 +91,13 @@ export const professionApi = {
       params: { limit },
     })
   },
+
+  /**
+   * 搜索职业
+   */
+  searchProfessions(keyword: string): Promise<ApiResponse<Profession[]>> {
+    return apiClient.get('/v1/professions/search', {
+      params: { keyword },
+    })
+  },
 }

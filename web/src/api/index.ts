@@ -16,6 +16,7 @@ export { progressApi } from './modules/progress'
 export { statsApi } from './modules/stats'
 export { pageApi } from './modules/page'
 export { systemApi } from './modules/system'
+export * as memoryApi from './modules/memory'
 
 // 导出 apiClient 和 ApiError 供特殊场景使用
 export { default as apiClient } from './client'

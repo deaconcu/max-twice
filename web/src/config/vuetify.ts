@@ -22,6 +22,7 @@ const lightTheme: ThemeDefinition = {
     'on-background': '#1A1A1B',
     'on-primary': '#FFFFFF',
     border: '#EDEFF1',
+    outline: '#E5E5E5', // 添加 outline 颜色
   },
 }
 
@@ -44,6 +45,7 @@ const darkTheme: ThemeDefinition = {
     'on-background': '#E0E0E0',
     'on-primary': '#FFFFFF',
     border: '#333333',
+    outline: '#424242', // 添加 outline 颜色
   },
 }
 

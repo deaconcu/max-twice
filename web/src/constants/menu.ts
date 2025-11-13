@@ -7,7 +7,7 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
   {
     icon: 'mdi-home-variant-outline',
     textKey: 'nav.home',
-    path: '/home',
+    path: '/',
   },
   {
     icon: 'mdi-briefcase-search-outline',
@@ -17,12 +17,12 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
   {
     icon: 'mdi-book-open-page-variant-outline',
     textKey: 'nav.courses',
-    path: '/learning',
+    path: '/courses',
   },
   {
     icon: 'mdi-brain',
     textKey: 'nav.memoryReview',
-    path: '/memory-review',
+    path: '/review',
   },
   {
     icon: 'mdi-account-circle-outline',

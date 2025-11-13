@@ -1,0 +1,169 @@
+/**
+ * 记忆卡片相关类型定义
+ */
+
+/**
+ * 复习结果枚举
+ */
+export enum ReviewResult {
+  AGAIN = 1, // 重来
+  HARD = 2, // 困难
+  GOOD = 3, // 良好
+  EASY = 4, // 简单
+}
+
+/**
+ * 复习频率设置
+ */
+export enum FrequencySetting {
+  HIGH = 'HIGH', // 高频
+  NORMAL = 'NORMAL', // 普通
+  LOW = 'LOW', // 低频
+}
+
+/**
+ * 课程学习状态
+ */
+export enum CourseStudyStatus {
+  STUDYING = 'STUDYING', // 学习中
+  PAUSED = 'PAUSED', // 已暂停
+  ARCHIVED = 'ARCHIVED', // 已归档
+}
+
+/**
+ * 卡片组状态
+ */
+export enum DeckState {
+  ACTIVE = 'ACTIVE', // 激活
+  ARCHIVED = 'ARCHIVED', // 归档
+}
+
+/**
+ * SRS 状态
+ */
+export interface UserCardSRSState {
+  repetitions: number // 重复次数
+  intervalDays: number // 间隔天数
+  easeFactor: number // 简易因子
+  reviewDueAt: string // 下次复习时间
+  lastReviewAt?: string // 上次复习时间
+}
+
+/**
+ * 记忆卡片视图
+ */
+export interface MemoryCardView {
+  id: number
+  front: string // 问题
+  back: string // 答案
+  deck?: MemoryCardDeck // 所属卡片组
+  srsState?: UserCardSRSState // SRS 状态
+  hasDeckUpdate?: boolean // 卡片组是否有更新
+  hasCardUpdate?: boolean // 卡片内容是否有更新
+}
+
+/**
+ * 记忆卡片组
+ */
+export interface MemoryCardDeck {
+  id: number
+  title: string // 标题
+  description?: string // 描述
+  courseId: number // 所属课程ID
+  cardCount: number // 卡片数量
+  state: DeckState // 状态
+  createdAt: string
+  updatedAt: string
+}
+
+/**
+ * 课程记忆库
+ */
+export interface CourseMemoryBank {
+  course: {
+    id: number
+    name: string
+  }
+  cardCount: number // 总卡片数
+  dueCardCount: number // 到期卡片数
+  setting: CourseMemorySetting
+}
+
+/**
+ * 课程记忆设置
+ */
+export interface CourseMemorySetting {
+  courseId: number
+  status: CourseStudyStatus // 学习状态
+  frequencySetting: FrequencySetting // 复习频率
+}
+
+/**
+ * 复习会话
+ */
+export interface ReviewSession {
+  startTime: string
+  endTime?: string
+  totalCards: number
+  reviewedCards: number
+  correctAnswers: number
+  results: ReviewCardResult[]
+}
+
+/**
+ * 单张卡片复习结果
+ */
+export interface ReviewCardResult {
+  cardId: number
+  result: ReviewResult
+  timeSpent: number // 秒
+}
+
+/**
+ * 卡片组更新差异
+ */
+export interface DeckUpdateDiff {
+  deckId: number
+  deckTitle: string
+  hasMetaUpdate: boolean // 是否有元信息更新
+  addedCards: MemoryCardView[] // 新增卡片
+  removedCards: MemoryCardView[] // 删除的卡片
+  updatedCards: MemoryCardView[] // 更新的卡片
+}
+
+/**
+ * 卡片内容差异
+ */
+export interface CardContentDiff {
+  cardId: number
+  oldFront: string
+  newFront: string
+  oldBack: string
+  newBack: string
+}
+
+/**
+ * 获取复习队列参数
+ */
+export interface GetReviewQueueParams {
+  courseId?: number
+}
+
+/**
+ * 获取卡片列表参数
+ */
+export interface GetCardListParams {
+  courseId?: number
+  limit?: number
+  lastId?: number
+}
+
+/**
+ * 复习统计数据
+ */
+export interface ReviewStats {
+  totalReviews: number // 总复习次数
+  streakDays: number // 连续天数
+  averageScore: number // 平均正确率
+  timeSpent: number // 总学习时长(分钟)
+}

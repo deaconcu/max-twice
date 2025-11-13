@@ -1,11 +1,75 @@
 <template>
   <v-app>
     <router-view />
+
+    <!-- 全局 Snackbar 提示 -->
+    <v-snackbar
+      v-for="(item, index) in snackbars"
+      :key="index"
+      v-model="item.visible"
+      :color="getSnackbarColor(item.type)"
+      :timeout="4000"
+      location="top"
+      rounded="lg"
+    >
+      {{ item.text }}
+    </v-snackbar>
   </v-app>
 </template>
 
 <script setup lang="ts">
-// Vue 3 Composition API with Vuetify
+import { provide, ref, onMounted } from 'vue'
+import type { Ref } from 'vue'
+import { setGlobalSnackbar } from '@/composables/utils'
+
+interface Snackbar {
+  text: string
+  visible: boolean
+  type: string
+}
+
+const snackbars: Ref<Snackbar[]> = ref([])
+
+/**
+ * 显示 Snackbar 提示
+ */
+const showSnackbar = (message: string, type = 'info'): void => {
+  const newSnackbar: Snackbar = {
+    text: message,
+    visible: true,
+    type,
+  }
+  snackbars.value.push(newSnackbar)
+
+  setTimeout(() => {
+    snackbars.value = snackbars.value.filter((snack) => snack !== newSnackbar)
+  }, 4000)
+}
+
+/**
+ * 根据类型获取颜色
+ */
+const getSnackbarColor = (type: string): string => {
+  switch (type) {
+    case 'success':
+      return 'success'
+    case 'error':
+      return 'error'
+    case 'warning':
+      return 'warning'
+    case 'info':
+    default:
+      return 'info'
+  }
+}
+
+// 提供给子组件使用
+provide('showSnackbar', showSnackbar)
+
+// 设置全局 snackbar 给 utils 使用
+onMounted(() => {
+  setGlobalSnackbar(showSnackbar)
+})
 </script>
 
 <style>

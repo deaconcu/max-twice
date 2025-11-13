@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useUserStore } from '@/stores'
+import { useUserStore, useAuthStore } from '@/stores'
 import { isSuperAdmin, isAdmin, isModerator } from '@/utils/permission'
 import { routes } from './routes'
 
@@ -28,10 +28,11 @@ const router = createRouter({
  */
 router.beforeEach((to, _from, next) => {
   const userStore = useUserStore()
+  const authStore = useAuthStore()
   const currentUser = userStore.currentUser
 
   // 检查是否需要登录
-  if (to.meta.requireAuth && !currentUser) {
+  if (to.meta.requireAuth && !authStore.isAuthenticated) {
     next({
       path: '/login',
       query: { redirect: to.fullPath },

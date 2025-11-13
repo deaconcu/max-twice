@@ -10,15 +10,20 @@ export const authRoutes: RouteRecordRaw[] = [
     name: 'login',
     component: () => import('@/views/auth/LoginPage.vue'),
   },
+  {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/views/auth/RegisterPage.vue'),
+  },
   // TODO: 添加更多认证相关路由
-  // {
-  //   path: '/register',
-  //   name: 'register',
-  //   component: () => import('@/views/auth/RegisterPage.vue'),
-  // },
   // {
   //   path: '/reset-password',
   //   name: 'reset-password',
   //   component: () => import('@/views/auth/ResetPasswordPage.vue'),
+  // },
+  // {
+  //   path: '/verify-email',
+  //   name: 'verify-email',
+  //   component: () => import('@/views/auth/VerifyEmailPage.vue'),
   // },
 ]

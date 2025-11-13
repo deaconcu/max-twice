@@ -52,7 +52,8 @@ public class AppConfiguration implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**") // 允许跨域的路径
-                .allowedOrigins("http://localhost:5175", "http://localhost:5174") // 允许的源
+                //.allowedOrigins("http://localhost:5175", "http://localhost:5174") // 允许的源
+                .allowedOriginPatterns("*") // 允许的源
                 .allowCredentials(true)
                 .allowedMethods("GET", "POST", "PUT", "DELETE") // 允许的请求方法
                 .allowedHeaders("*"); // 允许的请求头

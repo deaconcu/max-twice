@@ -54,6 +54,13 @@ export const courseApi = {
   },
 
   /**
+   * 获取子课程列表
+   */
+  getSubCourses(parentId: number): Promise<ApiResponse<Course[]>> {
+    return apiClient.get(`/v1/courses/${String(parentId)}/subcourses`)
+  },
+
+  /**
    * 获取课程排行榜
    */
   getCoursesRanking(): Promise<ApiResponse<Course[]>> {

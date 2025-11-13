@@ -1,0 +1,137 @@
+<template>
+  <v-card rounded="lg" class="course-card" border hover @click="handleClick">
+    <v-card-text class="pa-6">
+      <div class="d-flex align-center mb-4">
+        <div class="icon-container flex-shrink-0 mr-4">
+          <v-icon :icon="getRandomIcon()" :color="getRandomColor()" size="28" />
+        </div>
+        <div class="flex-grow-1">
+          <h3 class="text-h6 font-weight-bold text-grey-darken-4 mb-1">
+            {{ course.name }}
+          </h3>
+          <div class="d-flex align-center">
+            <v-icon icon="mdi-account-group" size="14" color="grey" class="mr-1" />
+            <span class="text-caption text-grey-darken-2">
+              {{ formatNumber(course.learnerCount) }} 人学习
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <p v-if="course.description" class="text-body-2 text-grey-darken-2 course-description">
+        {{ course.description }}
+      </p>
+    </v-card-text>
+  </v-card>
+</template>
+
+<script setup lang="ts">
+import { useRouter } from 'vue-router'
+import type { Course } from '@/types/course'
+
+interface Props {
+  course: Course
+}
+
+type Emits = (e: 'subscribe' | 'unsubscribe', courseId: number) => void
+
+const props = defineProps<Props>()
+defineEmits<Emits>()
+
+const router = useRouter()
+
+// 随机图标池
+const icons = [
+  'mdi-language-python',
+  'mdi-language-javascript',
+  'mdi-language-java',
+  'mdi-vuejs',
+  'mdi-react',
+  'mdi-nodejs',
+  'mdi-database',
+  'mdi-code-braces',
+  'mdi-cloud',
+  'mdi-server',
+  'mdi-laptop',
+  'mdi-book-open-variant',
+]
+
+// 随机颜色池
+const colors = [
+  'primary',
+  'success',
+  'warning',
+  'error',
+  'info',
+  'purple',
+  'indigo',
+  'blue',
+  'cyan',
+  'teal',
+  'green',
+  'orange',
+]
+
+/**
+ * 根据课程 ID 获取一致的随机图标
+ */
+const getRandomIcon = () => {
+  const index = props.course.id % icons.length
+  return icons[index]
+}
+
+/**
+ * 根据课程 ID 获取一致的随机颜色
+ */
+const getRandomColor = () => {
+  const index = props.course.id % colors.length
+  return colors[index]
+}
+
+/**
+ * 格式化数字（千位分隔）
+ */
+const formatNumber = (num?: number) => {
+  if (!num) return '0'
+  return num.toLocaleString()
+}
+
+/**
+ * 处理卡片点击 - 跳转到课程详情页
+ */
+const handleClick = () => {
+  void router.push(`/courses/${String(props.course.id)}`)
+}
+</script>
+
+<style scoped>
+.course-card {
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.course-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  border-color: #000000 !important;
+}
+
+.icon-container {
+  width: 56px;
+  height: 56px;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.course-description {
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>

@@ -3,12 +3,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { MAIN_MENU_ITEMS, BOTTOM_TOOLS } from '@/constants/menu'
-import {
-  HEADER_HEIGHT,
-  SIDEBAR_WIDTH,
-  BOTTOM_NAV_HEIGHT,
-  MOBILE_BREAKPOINT,
-} from '@/constants/layout'
+import { HEADER_HEIGHT, SIDEBAR_WIDTH, BOTTOM_NAV_HEIGHT } from '@/constants/layout'
 
 const route = useRoute()
 const router = useRouter()
@@ -82,7 +77,6 @@ const handleToolClick = (tool: (typeof BOTTOM_TOOLS)[number]) => {
   padding: v-bind('`${HEADER_HEIGHT + 24}px`') 16px 20px 16px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgb(var(--v-theme-border));
 }
 
 .nav-section {
