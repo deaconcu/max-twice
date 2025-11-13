@@ -1,41 +1,82 @@
 <template>
-  <div class="tiptap-editor">
+  <div class="tiptap-editor" :class="{ 'no-border': noBorder }">
     <!-- 工具栏 -->
     <div v-if="editor" class="editor-toolbar">
-      <!-- 文本样式 -->
-      <v-btn-group variant="outlined" density="compact">
+      <!-- 行1：基本操作和文本格式 -->
+      <div class="toolbar-row">
+        <!-- 撤销/重做/清除格式 -->
+        <v-btn
+          :disabled="!editor.can().undo()"
+          variant="text"
+          size="small"
+          icon="mdi-undo"
+          @click="editor.chain().focus().undo().run()"
+        />
+        <v-btn
+          :disabled="!editor.can().redo()"
+          variant="text"
+          size="small"
+          icon="mdi-redo"
+          @click="editor.chain().focus().redo().run()"
+        />
+        <v-btn variant="text" size="small" icon="mdi-eraser" @click="clearFormatting" />
+
+        <v-divider vertical class="mx-2" />
+
+        <!-- 文本样式 -->
         <v-btn
           :color="editor.isActive('bold') ? 'primary' : undefined"
+          variant="text"
           size="small"
           icon="mdi-format-bold"
           @click="editor.chain().focus().toggleBold().run()"
         />
         <v-btn
           :color="editor.isActive('italic') ? 'primary' : undefined"
+          variant="text"
           size="small"
           icon="mdi-format-italic"
           @click="editor.chain().focus().toggleItalic().run()"
         />
         <v-btn
+          :color="editor.isActive('underline') ? 'primary' : undefined"
+          variant="text"
+          size="small"
+          icon="mdi-format-underline"
+          @click="editor.chain().focus().toggleUnderline().run()"
+        />
+        <v-btn
           :color="editor.isActive('strike') ? 'primary' : undefined"
+          variant="text"
           size="small"
           icon="mdi-format-strikethrough"
           @click="editor.chain().focus().toggleStrike().run()"
         />
         <v-btn
-          :color="editor.isActive('code') ? 'primary' : undefined"
+          :color="editor.isActive('highlight') ? 'primary' : undefined"
+          variant="text"
           size="small"
-          icon="mdi-code-tags"
-          @click="editor.chain().focus().toggleCode().run()"
+          icon="mdi-marker"
+          @click="editor.chain().focus().toggleHighlight().run()"
         />
-      </v-btn-group>
 
-      <v-divider vertical class="mx-2" />
+        <v-divider vertical class="mx-2" />
 
-      <!-- 标题 -->
-      <v-btn-group variant="outlined" density="compact">
+        <!-- 颜色选择器 -->
+        <input
+          type="color"
+          :value="editor.getAttributes('textStyle').color || '#000000'"
+          class="color-input"
+          title="文本颜色"
+          @input="editor.chain().focus().setColor(($event.target as HTMLInputElement).value).run()"
+        />
+
+        <v-divider vertical class="mx-2" />
+
+        <!-- 标题 -->
         <v-btn
           :color="editor.isActive('heading', { level: 1 }) ? 'primary' : undefined"
+          variant="text"
           size="small"
           @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
         >
@@ -43,6 +84,7 @@
         </v-btn>
         <v-btn
           :color="editor.isActive('heading', { level: 2 }) ? 'primary' : undefined"
+          variant="text"
           size="small"
           @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
         >
@@ -50,90 +92,140 @@
         </v-btn>
         <v-btn
           :color="editor.isActive('heading', { level: 3 }) ? 'primary' : undefined"
+          variant="text"
           size="small"
           @click="editor.chain().focus().toggleHeading({ level: 3 }).run()"
         >
           H3
         </v-btn>
-      </v-btn-group>
 
-      <v-divider vertical class="mx-2" />
+        <v-divider vertical class="mx-2" />
 
-      <!-- 列表 -->
-      <v-btn-group variant="outlined" density="compact">
+        <!-- 上标/下标 -->
+        <v-btn
+          :color="editor.isActive('subscript') ? 'primary' : undefined"
+          variant="text"
+          size="small"
+          icon="mdi-format-subscript"
+          @click="editor.chain().focus().toggleSubscript().run()"
+        />
+        <v-btn
+          :color="editor.isActive('superscript') ? 'primary' : undefined"
+          variant="text"
+          size="small"
+          icon="mdi-format-superscript"
+          @click="editor.chain().focus().toggleSuperscript().run()"
+        />
+      </div>
+
+      <!-- 行2：对齐、列表、插入和操作 -->
+      <div class="toolbar-row mt-2">
+        <!-- 文本对齐 -->
+        <v-btn
+          :color="editor.isActive({ textAlign: 'left' }) ? 'primary' : undefined"
+          variant="text"
+          size="small"
+          icon="mdi-format-align-left"
+          @click="editor.chain().focus().setTextAlign('left').run()"
+        />
+        <v-btn
+          :color="editor.isActive({ textAlign: 'center' }) ? 'primary' : undefined"
+          variant="text"
+          size="small"
+          icon="mdi-format-align-center"
+          @click="editor.chain().focus().setTextAlign('center').run()"
+        />
+        <v-btn
+          :color="editor.isActive({ textAlign: 'right' }) ? 'primary' : undefined"
+          variant="text"
+          size="small"
+          icon="mdi-format-align-right"
+          @click="editor.chain().focus().setTextAlign('right').run()"
+        />
+        <v-btn
+          :color="editor.isActive({ textAlign: 'justify' }) ? 'primary' : undefined"
+          variant="text"
+          size="small"
+          icon="mdi-format-align-justify"
+          @click="editor.chain().focus().setTextAlign('justify').run()"
+        />
+
+        <v-divider vertical class="mx-2" />
+
+        <!-- 列表 -->
         <v-btn
           :color="editor.isActive('bulletList') ? 'primary' : undefined"
+          variant="text"
           size="small"
           icon="mdi-format-list-bulleted"
           @click="editor.chain().focus().toggleBulletList().run()"
         />
         <v-btn
           :color="editor.isActive('orderedList') ? 'primary' : undefined"
+          variant="text"
           size="small"
           icon="mdi-format-list-numbered"
           @click="editor.chain().focus().toggleOrderedList().run()"
         />
-      </v-btn-group>
-
-      <v-divider vertical class="mx-2" />
-
-      <!-- 其他格式 -->
-      <v-btn-group variant="outlined" density="compact">
         <v-btn
-          :color="editor.isActive('blockquote') ? 'primary' : undefined"
+          :disabled="!editor.can().sinkListItem('listItem')"
+          variant="text"
           size="small"
-          icon="mdi-format-quote-close"
-          @click="editor.chain().focus().toggleBlockquote().run()"
+          icon="mdi-format-indent-increase"
+          @click="editor.chain().focus().sinkListItem('listItem').run()"
+        />
+        <v-btn
+          :disabled="!editor.can().liftListItem('listItem')"
+          variant="text"
+          size="small"
+          icon="mdi-format-indent-decrease"
+          @click="editor.chain().focus().liftListItem('listItem').run()"
+        />
+
+        <v-divider vertical class="mx-2" />
+
+        <!-- 插入操作 -->
+        <v-btn
+          :color="editor.isActive('link') ? 'primary' : undefined"
+          variant="text"
+          size="small"
+          icon="mdi-link"
+          @click="toggleLink"
+        />
+        <v-btn variant="text" size="small" icon="mdi-image" @click="addImage" />
+        <v-btn
+          :color="editor.isActive('code') ? 'primary' : undefined"
+          variant="text"
+          size="small"
+          icon="mdi-code-tags"
+          @click="editor.chain().focus().toggleCode().run()"
         />
         <v-btn
           :color="editor.isActive('codeBlock') ? 'primary' : undefined"
+          variant="text"
           size="small"
           icon="mdi-code-braces"
           @click="editor.chain().focus().toggleCodeBlock().run()"
         />
         <v-btn
+          :color="editor.isActive('blockquote') ? 'primary' : undefined"
+          variant="text"
+          size="small"
+          icon="mdi-format-quote-close"
+          @click="editor.chain().focus().toggleBlockquote().run()"
+        />
+        <v-btn
+          variant="text"
           size="small"
           icon="mdi-minus"
           @click="editor.chain().focus().setHorizontalRule().run()"
         />
-      </v-btn-group>
-
-      <v-divider vertical class="mx-2" />
-
-      <!-- 链接和图片 -->
-      <v-btn-group variant="outlined" density="compact">
         <v-btn
-          :color="editor.isActive('link') ? 'primary' : undefined"
+          variant="text"
           size="small"
-          icon="mdi-link"
-          @click="toggleLink"
+          icon="mdi-table"
+          @click="editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()"
         />
-        <v-btn size="small" icon="mdi-image" @click="addImage" />
-      </v-btn-group>
-
-      <v-divider vertical class="mx-2" />
-
-      <!-- 撤销/重做 -->
-      <v-btn-group variant="outlined" density="compact">
-        <v-btn
-          :disabled="!editor.can().undo()"
-          size="small"
-          icon="mdi-undo"
-          @click="editor.chain().focus().undo().run()"
-        />
-        <v-btn
-          :disabled="!editor.can().redo()"
-          size="small"
-          icon="mdi-redo"
-          @click="editor.chain().focus().redo().run()"
-        />
-      </v-btn-group>
-
-      <v-spacer />
-
-      <!-- 字数统计 -->
-      <div class="word-count text-caption text-medium-emphasis">
-        {{ wordCount }} {{ t('editor.words') }}
       </div>
     </div>
 
@@ -177,7 +269,6 @@
             autofocus
             @keyup.enter="setImage"
           />
-          <!-- TODO: 添加图片上传功能 -->
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -201,6 +292,7 @@ interface Props {
   editable?: boolean
   autofocus?: boolean | 'start' | 'end' | number
   minHeight?: string
+  noBorder?: boolean
 }
 
 type Emits = (e: 'update:modelValue', value: string) => void
@@ -211,6 +303,7 @@ const props = withDefaults(defineProps<Props>(), {
   editable: true,
   autofocus: false,
   minHeight: '300px',
+  noBorder: false,
 })
 
 const emit = defineEmits<Emits>()
@@ -267,6 +360,14 @@ watch(
     }
   }
 )
+
+/**
+ * 清除格式
+ */
+const clearFormatting = () => {
+  editor.value?.chain().focus().unsetAllMarks().run()
+  editor.value?.chain().focus().clearNodes().run()
+}
 
 /**
  * 切换链接
@@ -335,19 +436,65 @@ onBeforeUnmount(() => {
 .tiptap-editor {
   border: 1px solid rgb(var(--v-theme-border));
   border-radius: 8px;
-  overflow: hidden;
   background-color: rgb(var(--v-theme-surface));
+}
+
+.tiptap-editor.no-border {
+  border: none;
+  border-radius: 0;
 }
 
 /* 工具栏 */
 .editor-toolbar {
+  padding: 0 12px 12px 12px;
+  background-color: rgb(var(--v-theme-surface));
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.toolbar-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px;
-  border-bottom: 1px solid rgb(var(--v-theme-border));
-  background-color: rgb(var(--v-theme-surface));
+  gap: 4px;
   flex-wrap: wrap;
+}
+
+.toolbar-row :deep(.v-btn) {
+  min-width: 36px !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 4px !important;
+}
+
+.toolbar-row :deep(.v-btn:hover) {
+  background-color: rgba(var(--v-theme-on-surface), 0.08) !important;
+}
+
+.toolbar-row :deep(.v-btn--variant-text.text-primary) {
+  background-color: rgb(var(--v-theme-primary)) !important;
+  color: white !important;
+}
+
+.toolbar-row :deep(.v-btn--variant-text.text-primary .v-icon) {
+  color: white !important;
+}
+
+.toolbar-row :deep(.v-btn--variant-text.text-primary .v-btn__content) {
+  color: white !important;
+}
+
+.toolbar-row :deep(.v-divider) {
+  height: 20px !important;
+  align-self: center !important;
+}
+
+.color-input {
+  height: 32px;
+  width: 42px;
+  border: 1px solid rgb(var(--v-theme-border));
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .word-count {
@@ -358,13 +505,11 @@ onBeforeUnmount(() => {
 /* 编辑器内容区 */
 .editor-content {
   min-height: v-bind(minHeight);
-  max-height: 600px;
-  overflow-y: auto;
 }
 
 /* 编辑器内容样式 */
 .editor-content :deep(.ProseMirror) {
-  padding: 16px;
+  padding: 16px 26px;
   outline: none;
   min-height: v-bind(minHeight);
 }
@@ -450,6 +595,52 @@ onBeforeUnmount(() => {
   margin: 2em 0;
 }
 
+/* 高亮样式 */
+.editor-content :deep(.ProseMirror mark) {
+  background-color: #faf594;
+  border-radius: 0.4rem;
+  padding: 0.1rem 0.3rem;
+}
+
+/* 下划线样式 */
+.editor-content :deep(.ProseMirror u) {
+  text-decoration: underline;
+}
+
+/* 上标/下标 */
+.editor-content :deep(.ProseMirror sup) {
+  vertical-align: super;
+  font-size: smaller;
+}
+
+.editor-content :deep(.ProseMirror sub) {
+  vertical-align: sub;
+  font-size: smaller;
+}
+
+/* 表格样式 */
+.editor-content :deep(.ProseMirror table) {
+  border-collapse: collapse;
+  margin: 1em 0;
+  overflow: hidden;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.editor-content :deep(.ProseMirror table td),
+.editor-content :deep(.ProseMirror table th) {
+  border: 1px solid rgb(var(--v-theme-border));
+  padding: 8px;
+  min-width: 1em;
+  vertical-align: top;
+}
+
+.editor-content :deep(.ProseMirror table th) {
+  background-color: rgb(var(--v-theme-surface-variant));
+  font-weight: bold;
+  text-align: left;
+}
+
 /* 选中样式 */
 .editor-content :deep(.ProseMirror ::selection) {
   background-color: rgba(var(--v-theme-primary), 0.2);
@@ -459,6 +650,9 @@ onBeforeUnmount(() => {
 @media (max-width: 600px) {
   .editor-toolbar {
     padding: 8px;
+  }
+
+  .toolbar-row {
     gap: 4px;
   }
 

@@ -11,6 +11,14 @@ export const baseRoutes: RouteRecordRaw[] = [
     component: () => import('@/views/home/HomePage.vue'),
   },
   {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/views/profile/ProfilePage.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/error/:code',
     name: 'error',
     component: () => import('@/views/error/ErrorPage.vue'),

@@ -4,586 +4,654 @@
     <AppSidebar />
 
     <div class="main-content">
-      <!-- 固定顶部横条 - 滚动时显示 -->
-      <div v-if="showFixedBar" class="fixed-top-bar">
-        <div class="fixed-bar-content">
-          <div class="d-flex align-center flex-grow-1" style="gap: 12px">
-            <v-btn variant="text" color="grey-darken-2" size="small" @click="goBackToCourse">
-              <v-icon icon="mdi-arrow-left" size="18" class="mr-1" />
-              返回课程
-            </v-btn>
-            <div class="d-flex align-center" style="gap: 6px">
-              <span class="fixed-bar-course-name">{{ courseName }}</span>
-              <v-icon icon="mdi-chevron-right" size="16" color="grey" />
-              <span class="fixed-bar-path">{{ currentNodeName }}</span>
-            </div>
-          </div>
-          <div class="d-flex align-center" style="gap: 8px">
-            <v-btn
-              :color="isLearning ? 'success' : 'primary'"
-              :variant="isLearning ? 'outlined' : 'flat'"
-              size="x-small"
-              rounded="lg"
-              class="text-none"
-              @click="toggleLearning"
-            >
-              <v-icon size="14" class="mr-1">
-                {{ isLearning ? 'mdi-check-circle' : 'mdi-play-circle' }}
-              </v-icon>
-              {{ isLearning ? '学习中' : '开始学习' }}
-            </v-btn>
-          </div>
-        </div>
-      </div>
-
-      <!-- 课程信息卡片 -->
-      <div class="course-info-section">
-        <div v-if="loadingPage" class="text-center py-4">
-          <v-progress-circular indeterminate size="32" />
-        </div>
-        <div v-else-if="pageError" class="text-center py-4">
-          <p class="text-error">加载失败</p>
-        </div>
-        <div v-else class="d-flex align-center justify-space-between">
-          <div class="d-flex align-center course-breadcrumb">
-            <v-btn
-              icon="mdi-arrow-left"
-              variant="flat"
-              color="grey-lighten-4"
-              size="small"
-              class="mr-2"
-              @click="goBackToCourse"
-            />
-            <v-chip size="small" density="comfortable" color="grey-darken-1" variant="tonal">
-              课程
-            </v-chip>
-            <v-btn variant="text" class="course-link-btn px-1" @click="goBackToCourse">
-              {{ courseName }}
-            </v-btn>
-            <span class="text-caption text-grey mx-2">·</span>
-            <span class="text-caption text-grey">{{ totalNodes }} 个节点</span>
-            <span class="text-caption text-grey mx-2">·</span>
-            <span class="text-caption text-grey">{{ learnerCount }} 人学习</span>
-          </div>
-          <div class="d-flex align-center flex-shrink-0" style="gap: 8px">
-            <v-btn
-              :color="isLearning ? 'success' : 'primary'"
-              :variant="isLearning ? 'tonal' : 'flat'"
-              density="comfortable"
-              rounded="pill"
-              class="text-none px-4"
-              elevation="0"
-              @click="toggleLearning"
-            >
-              <v-icon size="16" class="mr-1">
-                {{ isLearning ? 'mdi-check-circle' : 'mdi-play-circle' }}
-              </v-icon>
-              {{ isLearning ? '学习中' : '开始学习' }}
-            </v-btn>
-            <v-btn
-              :icon="isSubscribed ? 'mdi-heart' : 'mdi-heart-outline'"
-              :color="isSubscribed ? 'error' : 'grey-lighten-1'"
-              :variant="isSubscribed ? 'flat' : 'text'"
-              density="comfortable"
-              rounded="circle"
-              @click="toggleSubscribe"
-            />
-          </div>
-        </div>
+      <!-- 课程头部 - 固定在顶部 -->
+      <div class="course-header-sticky">
+        <CourseHeader
+          v-if="data"
+          :parent-course-info="data.parentCourse"
+          :current-course="data.course"
+          :sub-course-list="data.subCourseList"
+          :is-main-course="isMainCourse"
+          :is-learning="isLearning"
+          @start-learning="isLearning = $event"
+        />
       </div>
 
       <div class="read-content">
         <!-- 左侧目录 -->
         <div class="toc-sidebar">
           <div class="toc-sticky-wrapper">
-            <!-- 目录头部 -->
-            <div class="toc-card">
+            <!-- 目录组选择卡片 -->
+            <div class="toc-groups-card">
               <div class="toc-header">
                 <div class="d-flex align-center">
-                  <v-icon icon="mdi-view-list" size="14" color="grey" class="mr-2" />
+                  <v-icon icon="mdi-view-list" size="14" color="grey" class="mr-2"></v-icon>
                   <span class="toc-title">课程目录</span>
                 </div>
-              </div>
-              <!-- 目录树 -->
-              <div class="toc-tree">
-                <div v-for="node in tocData" :key="node.id" class="toc-node">
-                  <div
-                    class="toc-node-item"
-                    :class="{ active: activeNodeId === node.id }"
-                    @click="handleNodeClick(node)"
+                <div class="toc-actions">
+                  <v-btn
+                    icon
+                    size="x-small"
+                    variant="text"
+                    :class="{ 'rotate-180': openContentsList }"
+                    @click="openContentsList = !openContentsList"
                   >
-                    <v-icon
-                      :icon="node.completed ? 'mdi-check-circle' : 'mdi-circle-outline'"
-                      :color="node.completed ? 'success' : 'grey'"
-                      size="16"
-                      class="mr-2"
-                    />
-                    <span>{{ node.name }}</span>
-                  </div>
-                  <!-- 子节点 -->
-                  <div v-if="node.children" class="toc-children">
-                    <div
-                      v-for="child in node.children"
-                      :key="child.id"
-                      class="toc-node-item child"
-                      :class="{ active: activeNodeId === child.id }"
-                      @click="handleNodeClick(child)"
-                    >
-                      <v-icon
-                        :icon="child.completed ? 'mdi-check-circle' : 'mdi-circle-outline'"
-                        :color="child.completed ? 'success' : 'grey'"
-                        size="14"
-                        class="mr-2"
-                      />
-                      <span>{{ child.name }}</span>
+                    <v-icon size="16">mdi-chevron-down</v-icon>
+                  </v-btn>
+                  <v-btn icon size="x-small" variant="text" @click="configContents = true">
+                    <v-icon size="16">mdi-cog-outline</v-icon>
+                  </v-btn>
+                </div>
+              </div>
+              <v-expand-transition>
+                <div v-if="openContentsList && data && data.toc" class="toc-chips">
+                  <div
+                    v-for="(item, index) in data.toc"
+                    :key="index"
+                    class="toc-chip"
+                    :class="{
+                      'chip-active': currContentsIndex === index,
+                      'chip-primary': index === 0,
+                    }"
+                    @click="currContentsIndex = index"
+                  >
+                    <div class="chip-inner">
+                      <span class="chip-number">{{ index + 1 }}</span>
+                    </div>
+                    <div v-if="index === 0" class="corner-badge">
+                      <v-icon icon="mdi-chart-line-variant" size="8" color="white"></v-icon>
                     </div>
                   </div>
                 </div>
+              </v-expand-transition>
+            </div>
+
+            <!-- 目录树 -->
+            <div class="toc-card">
+              <h3 class="text-h6 mb-1">目录</h3>
+              <div class="toc-tree">
+                <TreeNode
+                  v-if="data && data.toc && data.toc[currContentsIndex]"
+                  :node-data="data.toc[currContentsIndex]"
+                  :node-infos="data.tocNodeInfos"
+                  :course-id="data.course?.id"
+                  :path="data.path"
+                  :curr-path="String(currContentsIndex + 1)"
+                  :depth="1"
+                  :is-learning="isLearning"
+                />
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 中间+右侧容器 -->
+        <!-- 中间+右侧容器包装 -->
         <div class="center-right-container">
+          <!-- 中间+右侧容器 - 居中 -->
           <div class="center-right-wrapper">
-            <!-- 中间内容区 -->
+            <!-- 中间内容区 - 固定宽度居中 -->
             <div class="center-content">
-              <!-- 节点路径 -->
-              <div class="node-path mb-2">
-                <span class="text-caption text-medium-emphasis">{{ nodePath }}</span>
-              </div>
-
-              <!-- 节点头部 -->
-              <div class="node-header mb-4">
-                <div class="d-flex align-center justify-space-between mb-3">
-                  <div class="d-flex align-center">
-                    <v-icon icon="mdi-list-box-outline" color="primary" size="24" />
-                    <h2 class="text-h5 font-weight-bold ms-3">{{ currentNodeName }}</h2>
-                  </div>
-                  <v-btn
-                    v-if="isLearning"
-                    :color="currentNodeCompleted ? 'success' : 'primary'"
-                    :variant="currentNodeCompleted ? 'tonal' : 'flat'"
-                    size="small"
-                    rounded="lg"
-                    @click="toggleNodeCompletion"
-                  >
-                    <v-icon size="16" class="mr-1">
-                      {{ currentNodeCompleted ? 'mdi-check-circle' : 'mdi-checkbox-blank-circle-outline' }}
-                    </v-icon>
-                    {{ currentNodeCompleted ? '已完成' : '标记完成' }}
-                  </v-btn>
-                </div>
-                <p v-if="currentNodeDescription" class="text-body-2 text-medium-emphasis">
-                  {{ currentNodeDescription }}
-                </p>
-              </div>
-
-              <!-- 文章列表 -->
-              <div class="articles-section">
-                <div v-if="loadingArticles" class="text-center py-8">
-                  <v-progress-circular indeterminate color="primary" />
-                </div>
-                <div v-else-if="articles.length === 0" class="text-center py-8">
-                  <v-icon icon="mdi-file-document-outline" size="64" color="grey-lighten-1" />
-                  <p class="text-body-1 text-medium-emphasis mt-4">暂无文章内容</p>
-                </div>
-                <div v-else>
-                  <v-card
-                    v-for="article in articles"
-                    :key="article.id"
-                    class="article-card mb-4"
-                    border
-                    @click="handleArticleClick(article)"
-                  >
-                    <v-card-title>{{ article.title }}</v-card-title>
-                    <v-card-subtitle v-if="article.author">
-                      {{ article.author.username }} · {{ formatTime(article.createTime) }}
-                    </v-card-subtitle>
-                    <v-card-text>
-                      <div class="article-preview" v-html="article.content"></div>
-                    </v-card-text>
-                  </v-card>
-                </div>
-              </div>
+              <!-- PostingList 组件 -->
+              <PostingList
+                v-if="data"
+                :data="data"
+                :nodes="nodes"
+                :curr-node-id="currNodeId"
+                :curr-node="lastPathNode"
+                :path-text="pathText"
+                :is-learning="isLearning"
+                @switch-tab="handleTabSwitch"
+              />
             </div>
 
-            <!-- 右侧辅助区 -->
-            <div class="right-assistant">
-              <div class="assistant-card">
-                <h4 class="text-subtitle-1 font-weight-bold mb-2">学习助手</h4>
-                <p class="text-caption text-medium-emphasis">辅助功能开发中...</p>
+            <!-- 右侧工具栏 -->
+            <div v-if="data" class="right-sidebar">
+              <div class="sidebar-sticky">
+                <!-- AI答疑助手 -->
+                <v-card class="sidebar-card mb-4 no-border" rounded="lg">
+                  <v-card-title class="pa-4">
+                    <div class="d-flex align-center justify-space-between w-100">
+                      <div class="d-flex align-center">
+                        <v-icon icon="mdi-robot-excited" color="primary" class="mr-2"></v-icon>
+                        <span>答疑助手</span>
+                      </div>
+                      <v-btn
+                        :icon="isAssistantExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                        variant="text"
+                        color="grey-darken-1"
+                        size="x-small"
+                        @click="isAssistantExpanded = !isAssistantExpanded"
+                      ></v-btn>
+                    </div>
+                  </v-card-title>
+
+                  <v-expand-transition>
+                    <v-card-text v-show="isAssistantExpanded" class="pa-4 pt-0">
+                      <div class="text-body-2 text-grey-darken-2 mb-3">
+                        <div class="font-weight-bold w-100">用法：</div>
+                        <div class="mt-2">1）在文章中选中您不太理解的内容</div>
+                        <div>2）在左侧竖线处拖动手柄，调整上下文范围</div>
+                        <div>3）点击面板中的"复制"，将引用和问题复制到剪贴板</div>
+                        <div>4）用复制的内容询问你常用的 AI 引擎</div>
+                      </div>
+
+                      <div class="d-flex flex-wrap mt-5" style="gap: 8px">
+                        <div class="text-body-2 w-100 text-grey-darken-2 font-weight-bold">
+                          常用 AI 引擎：
+                        </div>
+                        <v-chip
+                          v-for="e in aiEngines"
+                          :key="e.name"
+                          :href="e.href"
+                          target="_blank"
+                          rel="noopener"
+                          :color="e.color"
+                          variant="tonal"
+                          rounded="lg"
+                          size="small"
+                          class="engine-link"
+                          :prepend-icon="e.icon"
+                          :text="e.name"
+                        />
+                      </div>
+                    </v-card-text>
+                  </v-expand-transition>
+                </v-card>
+
+                <!-- 记忆卡片组 -->
+                <v-card class="sidebar-card mb-4 no-border" rounded="lg">
+                  <v-card-title class="pa-4">
+                    <v-icon left color="primary">mdi-cards</v-icon>
+                    记忆卡片组
+                  </v-card-title>
+                  <v-card-text class="pa-4 pt-0">
+                    <v-list>
+                      <v-list-item v-for="deck in memoryDecks" :key="deck.id" class="px-0">
+                        <v-list-item-title class="text-body-2">
+                          {{ deck.title }}
+                        </v-list-item-title>
+                        <v-list-item-subtitle class="text-caption">
+                          {{ deck.cardCount }} 张卡片
+                        </v-list-item-subtitle>
+                      </v-list-item>
+                    </v-list>
+                    <v-btn block color="primary" variant="outlined" class="text-none mt-2">
+                      创建卡片组
+                    </v-btn>
+                  </v-card-text>
+                </v-card>
+
+                <!-- 课程信息 -->
+                <v-card class="sidebar-card no-border" rounded="lg">
+                  <v-card-title class="pa-4"> 关于本课程 </v-card-title>
+                  <v-card-text class="pa-4 pt-0">
+                    <div class="info-item">
+                      <div class="text-caption text-medium-emphasis mb-2">课程描述</div>
+                      <div class="text-body-2">{{ data?.course?.description }}</div>
+                    </div>
+                  </v-card-text>
+                </v-card>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- 配置目录对话框 -->
+    <ConfigContentsDialog
+      v-if="data"
+      v-model="configContents"
+      :course-id="data.course?.id"
+      :contents="data.toc || []"
+      @load-data="loadData"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useFetch } from '@/composables'
-import { pageApi, type ReadResponse } from '@/api/modules/page'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
+import CourseHeader from '@/components/features/read/CourseHeader.vue'
+import TreeNode from '@/components/common/TreeNode.vue'
+import PostingList from '@/components/features/read/PostingList.vue'
+import ConfigContentsDialog from '@/components/features/read/ConfigContentsDialog.vue'
+import { pageApi } from '@/api'
+import type { ReadResponse } from '@/api/modules/page'
+import { useFetch } from '@/composables/useFetch'
 
 const router = useRouter()
 const route = useRoute()
 
-// ==================== 路由参数 ====================
-const courseId = computed(() => {
-  const id = route.params.id
-  return typeof id === 'string' ? parseInt(id, 10) : 0
+// 基本状态
+const showFixedBar = ref(false)
+const isLearning = ref(false)
+const openContentsList = ref(true)
+const configContents = ref(false)
+const currContentsIndex = ref(0)
+const isAssistantExpanded = ref(true)
+const currentTab = ref('list')
+const currentPosting = ref(null)
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+// 数据处理
+const nodes = ref<any[]>([])
+const currNodeId = ref(0)
+const lastPathNode = ref<any>(null)
+const pathText = ref('')
+
+// 使用 useFetch 加载页面数据
+const { data, loading: dataLoading, execute: loadData } = useFetch<ReadResponse>({
+  fetchFn: () => {
+    if (route.query.commentId) {
+      return pageApi.readByComment(Number(route.query.commentId))
+    } else if (route.query.postId) {
+      return pageApi.readByPost(Number(route.query.postId))
+    } else if (route.query.nodeId) {
+      return pageApi.readByNode(Number(route.query.nodeId))
+    } else if (route.params.id && route.query.path) {
+      return pageApi.readByCoursePath(
+        Number(route.params.id),
+        route.query.path as string
+      )
+    }
+    return Promise.reject(new Error('缺少必要参数'))
+  },
+  immediate: true,
+  onSuccess: (responseData) => {
+    // 处理投票类型
+    responseData.otherPostings?.forEach((posting: any) => {
+      if (posting.voteType === 0) {
+        posting.voteType = null
+      }
+    })
+
+    // 设置学习状态
+    isLearning.value = responseData.learning || false
+
+    // 处理数据
+    processData()
+  },
 })
 
-// ==================== 状态 ====================
-const showFixedBar = ref(false)
-const activeNodeId = ref<number | null>(null)
-const currentNodeCompleted = ref(false)
-const currentPath = computed(() => (route.query.path as string) || '')
+// 是否为主课程
+const isMainCourse = computed(() => {
+  if (data.value && data.value.course && data.value.parentCourse) {
+    return data.value.course.id === data.value.parentCourse.id
+  }
+  return true
+})
 
-// ==================== 页面数据加载函数 ====================
-const loadPageData = () => {
-  console.log('Loading page data, courseId:', courseId.value, 'path:', currentPath.value)
-  return pageApi.readByCoursePath(courseId.value, currentPath.value)
+// AI 引擎列表
+const aiEngines = [
+  { name: 'ChatGPT', href: 'https://chatgpt.com', color: 'green-darken-2', icon: 'mdi-robot' },
+  {
+    name: 'Claude',
+    href: 'https://claude.ai',
+    color: 'indigo-darken-2',
+    icon: 'mdi-alpha-c-circle-outline',
+  },
+  { name: 'Gemini', href: 'https://gemini.google.com', color: 'blue-darken-2', icon: 'mdi-google' },
+  { name: 'DeepSeek', href: 'https://chat.deepseek.com', color: 'red-darken-4', icon: 'mdi-radar' },
+]
+
+// 记忆卡片组
+const memoryDecks = ref([
+  { id: 1, title: 'Vue 3 核心 API', cardCount: 12 },
+  { id: 2, title: '响应式原理', cardCount: 8 },
+  { id: 3, title: '常见问题', cardCount: 15 },
+])
+
+// 处理数据
+const processData = () => {
+  if (!data.value || !data.value.path) return
+
+  // 解析路径
+  nodes.value = data.value.path.split('-')
+  nodes.value[0] = String(Number(nodes.value[0]) - 1)
+
+  // 遍历 toc 获取 lastPathNode
+  lastPathNode.value = nodes.value.reduce(
+    (acc: any, key: any) => acc && acc[key],
+    data.value.toc,
+  )
+
+  // 设置当前目录组索引
+  currContentsIndex.value = Number(nodes.value[0])
+  nodes.value.shift()
+
+  // 生成路径文本
+  pathText.value = `${data.value.course.name}/`
+  nodes.value.forEach((item: any, index: number) => {
+    if (index < 1) return
+    if (index < nodes.value.length - 1) {
+      pathText.value += `${data.value.tocNodeInfos[item]?.name}/`
+    } else {
+      pathText.value += data.value.tocNodeInfos[item]?.name
+    }
+  })
+
+  currNodeId.value = data.value.node.id
+  isLearning.value = data.value.learning
 }
 
-// ==================== 页面数据（使用 pageApi） ====================
-const {
-  data: pageData,
-  loading: loadingPage,
-  error: pageError,
-  refresh: refreshPage,
-} = useFetch<ReadResponse>({
-  fetchFn: loadPageData,
-  immediate: true,
-  defaultValue: null,
-})
-
-// ==================== 从 pageData 提取数据 ====================
-const courseName = computed(() => pageData.value?.course?.name || '加载中...')
-const learnerCount = computed(() => pageData.value?.course?.learnerCount || 0)
-const isLearning = computed(() => pageData.value?.learning || false)
-const isSubscribed = computed(() => pageData.value?.course?.subscribed || false)
-const tocData = computed(() => pageData.value?.toc || [])
-const tocNodeInfos = computed(() => pageData.value?.tocNodeInfos || {})
-const currentNode = computed(() => pageData.value?.node)
-const currentNodeName = computed(() => currentNode.value?.name || '')
-const currentNodeDescription = computed(() => currentNode.value?.description || '')
-const nodePath = computed(() => pageData.value?.path || '')
-const totalNodes = computed(() => Object.keys(tocNodeInfos.value).length)
-
-// ==================== 文章数据 ====================
-const articles = computed(() => {
-  const fixed = pageData.value?.fixedPostings || []
-  const other = pageData.value?.otherPostings || []
-  return [...fixed, ...other]
-})
-const loadingArticles = computed(() => loadingPage.value)
-
-// ==================== 滚动监听 ====================
+// 滚动监听
 const handleScroll = () => {
-  showFixedBar.value = window.scrollY > 150
+  showFixedBar.value = window.scrollY > 100
+}
+
+// 切换学习状态
+const toggleLearning = () => {
+  isLearning.value = !isLearning.value
+}
+
+// 返回课程详情页
+const goBackToCourse = () => {
+  const courseId = route.params.id || '1'
+  router.push({
+    name: 'course-detail',
+    params: { id: courseId },
+  })
+}
+
+// 处理Tab切换
+const handleTabSwitch = (tab: string, posting?: any) => {
+  currentTab.value = tab
+  if (posting && typeof posting === 'object') {
+    currentPosting.value = posting
+  } else if (tab === 'list') {
+    currentPosting.value = null
+  }
 }
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
 })
 
+// 监听路由变化，重新加载数据
+watch(
+  () => [route.params.id, route.query.path, route.query.nodeId, route.query.postId, route.query.commentId],
+  () => {
+    loadData()
+  },
+  { deep: true }
+)
+
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })
-
-// 监听路由 query 变化，重新加载数据
-watch(
-  () => route.query.path,
-  () => {
-    void refreshPage()
-  }
-)
-
-// ==================== 事件处理 ====================
-const toggleLearning = () => {
-  // TODO: 调用学习状态 API
-  void refreshPage()
-}
-
-const toggleSubscribe = async () => {
-  if (!pageData.value?.course) return
-
-  const { subscriptionApi } = await import('@/api')
-  const action = isSubscribed.value ? 'unsubscribe' : 'subscribe'
-
-  try {
-    if (action === 'subscribe') {
-      await subscriptionApi.subscribe(courseId.value)
-    } else {
-      await subscriptionApi.unsubscribe(courseId.value)
-    }
-    void refreshPage()
-  } catch (error) {
-    console.error('Toggle subscribe failed:', error)
-  }
-}
-
-const toggleNodeCompletion = () => {
-  currentNodeCompleted.value = !currentNodeCompleted.value
-  // TODO: 调用API更新节点完成状态
-}
-
-const goBackToCourse = () => {
-  void router.push({
-    name: 'course-detail',
-    params: { id: String(courseId.value) },
-  })
-}
-
-const handleNodeClick = (node: any) => {
-  activeNodeId.value = node.id
-
-  // 获取节点信息
-  const nodeInfo = tocNodeInfos.value[node.id]
-  if (nodeInfo && nodeInfo.path) {
-    // 通过路由更新 path 参数
-    void router.push({
-      name: 'content-read',
-      params: { id: String(courseId.value) },
-      query: { path: nodeInfo.path },
-    })
-  }
-}
-
-const handleArticleClick = (article: any) => {
-  // TODO: 展开文章详情
-  console.log('Article clicked:', article)
-}
-
-/**
- * 格式化时间
- */
-const formatTime = (time?: string | number) => {
-  if (!time) return ''
-  const date = new Date(time)
-  return date.toLocaleDateString('zh-CN')
-}
 </script>
 
 <style scoped>
 .read-page {
   min-height: 100vh;
+  background-color: #ffffff;
 }
 
 .main-content {
   margin-left: 240px;
-  padding-top: 64px;
-  min-height: calc(100vh - 64px);
+  padding: 80px 40px 40px 40px;
+  max-width: 1550px;
 }
 
-/* 固定顶部栏 */
-.fixed-top-bar {
-  position: fixed;
-  top: 64px;
-  left: 240px;
-  right: 0;
-  height: 48px;
-  background: rgb(var(--v-theme-surface));
-  border-bottom: 1px solid rgb(var(--v-theme-border));
-  z-index: 100;
-  padding: 0 24px;
+/* 固定课程头部 */
+.course-header-sticky {
+  position: sticky;
+  top: 56px;
+  background-color: white;
+  z-index: 999;
+  padding-bottom: 8px;
 }
 
-.fixed-bar-content {
-  display: flex;
-  align-items: center;
-  height: 100%;
-}
-
-.fixed-bar-course-name {
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.fixed-bar-path {
-  font-size: 13px;
-  color: #666;
-}
-
-/* 课程信息卡片 */
-.course-info-section {
-  padding: 20px 32px;
-  border-bottom: 1px solid rgb(var(--v-theme-border));
-}
-
-.course-breadcrumb {
-  gap: 8px;
-}
-
-.course-link-btn {
-  text-transform: none;
-  font-weight: 500;
-}
-
-/* 内容区 */
+/* 三栏布局 */
 .read-content {
   display: flex;
-  gap: 0;
-  padding: 24px 0;
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  width: 100%;
 }
 
-/* 左侧目录 */
+/* 左侧 TOC 目录栏 */
 .toc-sidebar {
-  width: 280px;
-  flex-shrink: 0;
-  padding: 0 16px;
-  border-right: 1px solid rgb(var(--v-theme-border));
+  flex: 0 1 360px;
+  max-width: 360px;
+  padding: 24px 42px 24px 0;
+  position: relative;
+  margin-right: 20px;
+}
+
+.toc-sidebar::after {
+  content: '';
+  position: absolute;
+  top: 24px;
+  right: 0;
+  bottom: 24px;
+  width: 1px;
+  background-color: rgb(var(--v-theme-border));
 }
 
 .toc-sticky-wrapper {
   position: sticky;
-  top: 88px;
+  top: 110px;
+  max-height: calc(100vh - 125px);
+  display: flex;
+  flex-direction: column;
+  transition: top 0.3s ease, max-height 0.3s ease;
+}
+
+.read-page:has(.fixed-top-bar.show) .toc-sticky-wrapper {
+  top: 109px;
+  max-height: calc(100vh - 124px);
 }
 
 .toc-card {
-  padding: 16px 0;
+  background-color: white;
+  padding: 14px 0;
+  border-radius: 16px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.toc-tree {
+  margin-top: 6px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.toc-tree::-webkit-scrollbar {
+  width: 1px;
+}
+
+.toc-tree::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 0.5px;
+}
+
+/* 目录组选择卡片 */
+.toc-groups-card {
+  background-color: white;
+  padding: 10px 12px;
+  border: 1px solid rgb(var(--v-theme-border));
+  border-radius: 16px;
+  margin-bottom: 4px;
 }
 
 .toc-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgb(var(--v-theme-border));
 }
 
 .toc-title {
+  font-size: 0.75rem;
   font-weight: 600;
-  font-size: 14px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.toc-tree {
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
+.toc-actions {
+  display: flex;
+  gap: 4px;
 }
 
-.toc-node {
-  margin-bottom: 4px;
+.rotate-180 {
+  transform: rotate(180deg);
+  transition: transform 0.3s ease;
 }
 
-.toc-node-item {
+.toc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.toc-chip {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background-color: #f6f7f8;
+  border: 1.5px solid rgb(var(--v-theme-border));
+  cursor: pointer;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  padding: 8px 12px;
-  cursor: pointer;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: all 0.2s;
+  justify-content: center;
 }
 
-.toc-node-item:hover {
-  background: #f5f5f5;
+.toc-chip:hover {
+  border-color: rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.05);
 }
 
-.toc-node-item.active {
-  background: #e3f2fd;
-  color: #1976d2;
-  font-weight: 500;
+.toc-chip.chip-active {
+  background-color: rgb(var(--v-theme-primary));
+  border-color: rgb(var(--v-theme-primary));
 }
 
-.toc-children {
-  margin-left: 16px;
+.toc-chip.chip-primary {
+  border-color: rgb(var(--v-theme-primary));
+  border-width: 2px;
 }
 
-.toc-node-item.child {
-  font-size: 13px;
-  padding: 6px 12px;
+.chip-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* 中间+右侧容器 */
+.chip-number {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.chip-active .chip-number {
+  color: white;
+}
+
+.corner-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: rgb(var(--v-theme-primary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+/* 中间+右侧容器包装 */
 .center-right-container {
+  display: flex;
+  flex-direction: column;
   flex: 1;
-  min-width: 0;
 }
 
 .center-right-wrapper {
   display: flex;
-  gap: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 24px;
-}
-
-/* 中间内容 */
-.center-content {
   flex: 1;
-  min-width: 0;
-  max-width: 900px;
+  justify-content: center;
+  max-width: 100%;
 }
 
-.node-path {
-  color: #666;
+/* 中间内容区 - 固定宽度 */
+.center-content {
+  flex: 1 1 750px;
+  max-width: 750px;
+  padding: 24px 26px 40px 26px;
 }
 
-.node-header {
-  padding: 20px 0;
-  border-bottom: 1px solid rgb(var(--v-theme-border));
+/* 右侧边栏 */
+.right-sidebar {
+  flex: 0 1 360px;
+  max-width: 360px;
+  padding: 24px 0 24px 24px;
 }
 
-/* 文章列表 */
-.articles-section {
-  margin-top: 24px;
-}
-
-.article-card {
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom: 16px;
-}
-
-.article-card:hover {
-  border-color: rgb(var(--v-theme-primary));
-}
-
-.article-preview {
-  max-height: 200px;
-  overflow: hidden;
-  position: relative;
-}
-
-/* 右侧辅助 */
-.right-assistant {
-  width: 280px;
-  flex-shrink: 0;
-}
-
-.assistant-card {
-  padding: 16px;
-  border: 1px solid rgb(var(--v-theme-border));
-  border-radius: 8px;
+.sidebar-sticky {
   position: sticky;
-  top: 88px;
+  top: 110px;
+  max-height: calc(100vh - 125px);
+  transition: top 0.3s ease, max-height 0.3s ease;
 }
 
-/* 响应式 */
-@media (max-width: 1400px) {
-  .right-assistant {
-    display: none;
-  }
+.read-page:has(.fixed-top-bar.show) .sidebar-sticky {
+  top: 109px;
+  max-height: calc(100vh - 124px);
 }
 
-@media (max-width: 1024px) {
-  .toc-sidebar {
-    display: none;
-  }
+.sidebar-card {
+  background-color: white;
+  border: 1px solid rgb(var(--v-theme-border));
+}
 
+.sidebar-card .v-card-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.engine-link {
+  text-decoration: none !important;
+}
+
+.info-item {
+  padding: 8px 0;
+}
+
+@media (max-width: 960px) {
   .main-content {
     margin-left: 0;
+    width: 100%;
+    padding: 80px 20px 80px 20px;
   }
 
-  .fixed-top-bar {
-    left: 0;
+  .toc-sidebar,
+  .right-sidebar {
+    display: none;
+  }
+
+  .center-content {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
   }
 }
 </style>

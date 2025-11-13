@@ -636,13 +636,13 @@
 
       <v-infinite-scroll
         :key="scrollKey"
-        :items="otherPostings"
+        :items="data.otherPostings"
         @load="loadMore"
         :no-more-text="t('postingList.reachedEnd')"
         class=""
       >
         <div
-          v-for="(posting, index) in otherPostings"
+          v-for="(posting, index) in data.otherPostings"
           v-show="
             !(
               (currNode['+'] && currNode['+'] == posting.id) ||

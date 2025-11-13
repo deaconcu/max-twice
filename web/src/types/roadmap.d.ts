@@ -19,6 +19,7 @@ export interface Roadmap {
   state?: number // 状态：0-待审核，1-已批准，2-已拒绝
   vote?: number // 投票数
   comment?: number // 评论数
+  commentCount?: number // 评论数量
   upvoted?: boolean // 是否已点赞
   pinned?: boolean // 是否置顶
   learning?: boolean // 是否正在学习
@@ -28,6 +29,8 @@ export interface Roadmap {
 
   // 前端独有字段
   learners?: number // 学习者数量
+  learnerCount?: number // 学习者数量
+  nodeCount?: number // 节点数量
   nodes?: Node[] // Vue Flow 节点
   edges?: Edge[] // Vue Flow 边
 }

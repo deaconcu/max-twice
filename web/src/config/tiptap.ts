@@ -5,9 +5,20 @@
 
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
-import Link from '@tiptap/extension-link'
-import Image from '@tiptap/extension-image'
+import { Link } from '@tiptap/extension-link'
+import { Image } from '@tiptap/extension-image'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { Underline } from '@tiptap/extension-underline'
+import { Subscript } from '@tiptap/extension-subscript'
+import { Superscript } from '@tiptap/extension-superscript'
+import { Highlight } from '@tiptap/extension-highlight'
+import { TextStyle } from '@tiptap/extension-text-style'
+import { Color } from '@tiptap/extension-color'
+import { TextAlign } from '@tiptap/extension-text-align'
+import { Table } from '@tiptap/extension-table'
+import { TableRow } from '@tiptap/extension-table-row'
+import { TableHeader } from '@tiptap/extension-table-header'
+import { TableCell } from '@tiptap/extension-table-cell'
 import { createLowlight } from 'lowlight'
 
 // 导入常用语言的语法高亮
@@ -84,6 +95,37 @@ export function getTipTapExtensions(placeholder = '请在这里输入内容...')
         class: 'tiptap-code-block',
       },
     }),
+
+    // 下划线
+    Underline,
+
+    // 下标
+    Subscript,
+
+    // 上标
+    Superscript,
+
+    // 高亮（多色）
+    Highlight.configure({
+      multicolor: true,
+    }),
+
+    // 文本样式和颜色
+    TextStyle,
+    Color,
+
+    // 文本对齐
+    TextAlign.configure({
+      types: ['heading', 'paragraph'],
+    }),
+
+    // 表格
+    Table.configure({
+      resizable: true,
+    }),
+    TableRow,
+    TableHeader,
+    TableCell,
   ]
 }
 

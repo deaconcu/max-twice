@@ -185,7 +185,7 @@
 
                   <!-- 中间：路径信息 -->
                   <div class="flex-grow-1">
-                    <!-- 标题和标签 -->
+                    <!-- 标签 -->
                     <div class="d-flex align-center mb-2">
                       <v-chip
                         v-if="roadmap.pinned"
@@ -202,14 +202,15 @@
                         color="success"
                         size="x-small"
                         variant="flat"
-                        class="mr-2"
                       >
                         <v-icon icon="mdi-school" size="12" class="mr-1" />
                         学习中
                       </v-chip>
-                      <h3 class="text-h6 font-weight-bold text-grey-darken-4">
-                        {{ roadmap.description }}
-                      </h3>
+                    </div>
+
+                    <!-- 描述 -->
+                    <div class="text-body-1 text-grey-darken-4 mb-2">
+                      {{ roadmap.description }}
                     </div>
 
                     <!-- 详细描述 -->
@@ -228,13 +229,13 @@
                       <div class="d-flex align-center">
                         <v-icon icon="mdi-account-group" size="16" color="grey" class="mr-1" />
                         <span class="text-caption text-grey-darken-2">
-                          {{ roadmap.learners }} 人学习
+                          {{ roadmap.learnerCount ?? 0 }} 人学习
                         </span>
                       </div>
                       <div class="d-flex align-center">
                         <v-icon icon="mdi-comment-outline" size="16" color="grey" class="mr-1" />
                         <span class="text-caption text-grey-darken-2">
-                          {{ roadmap.comment }} 评论
+                          {{ roadmap.commentCount ?? 0 }} 评论
                         </span>
                       </div>
                       <div class="d-flex align-center">
@@ -386,8 +387,9 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useFetch } from '@/composables'
-import { professionApi } from '@/api'
+import { professionApi, roadmapApi } from '@/api'
 import type { Profession } from '@/types/profession'
+import type { Roadmap } from '@/types/roadmap'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 
 const router = useRouter()
@@ -410,6 +412,19 @@ const {
   defaultValue: null,
 })
 
+// 使用 useFetch 加载路线图列表
+const {
+  data: roadmapsData,
+  loading: loadingRoadmaps,
+  error: roadmapsError,
+} = useFetch<Roadmap[]>({
+  fetchFn: () => roadmapApi.getProfessionRoadmaps(careerId.value),
+  immediate: true,
+  defaultValue: [],
+})
+
+const allRoadmaps = computed(() => roadmapsData.value ?? [])
+
 // 状态管理
 const searchText = ref('')
 const filterStatus = ref<string>('all')
@@ -421,75 +436,6 @@ const sortOptions = [
   { title: '最受欢迎', value: 'popular' },
   { title: '学习人数', value: 'learners' },
 ]
-
-// Mock 路线图数据 (实际应该从 API 获取)
-const allRoadmaps = ref([
-  {
-    id: 1,
-    professionId: 1,
-    description: 'Vue 3 + TypeScript 全栈开发路线',
-    detail:
-      '从基础到进阶，系统学习 Vue 3 组合式 API、TypeScript 类型系统、Pinia 状态管理，以及全栈项目开发实战。',
-    creator: {
-      id: 1,
-      username: 'techmaster',
-      avatar: null,
-    },
-    vote: 156,
-    upvoted: true,
-    comment: 23,
-    pinned: true,
-    learning: true,
-    learners: 450,
-    state: 1,
-    createdAt: '2024-01-15',
-    updatedAt: '2024-01-20',
-    nodeCount: 12,
-  },
-  {
-    id: 2,
-    professionId: 1,
-    description: 'React 18 现代前端开发完整路径',
-    detail: '掌握 React 18 新特性、Hooks 使用技巧、状态管理方案，构建高性能的现代化 Web 应用。',
-    creator: {
-      id: 2,
-      username: 'reactdev',
-      avatar: null,
-    },
-    vote: 142,
-    upvoted: false,
-    comment: 18,
-    pinned: true,
-    learning: false,
-    learners: 380,
-    state: 1,
-    createdAt: '2024-01-12',
-    updatedAt: '2024-01-18',
-    nodeCount: 15,
-  },
-  {
-    id: 3,
-    professionId: 1,
-    description: '前端工程化与性能优化实战',
-    detail:
-      '深入学习 Webpack、Vite 等构建工具，掌握代码分割、懒加载、性能监控等优化技巧。',
-    creator: {
-      id: 3,
-      username: 'frontend_guru',
-      avatar: null,
-    },
-    vote: 98,
-    upvoted: false,
-    comment: 12,
-    pinned: false,
-    learning: true,
-    learners: 220,
-    state: 1,
-    createdAt: '2024-01-10',
-    updatedAt: '2024-01-16',
-    nodeCount: 10,
-  },
-])
 
 const error = computed(() => (fetchError.value ? '加载职业信息失败' : null))
 
@@ -518,7 +464,7 @@ const filteredRoadmaps = computed(() => {
   } else if (sortBy.value === 'popular') {
     filtered.sort((a, b) => b.vote - a.vote)
   } else if (sortBy.value === 'learners') {
-    filtered.sort((a, b) => b.learners - a.learners)
+    filtered.sort((a, b) => (b.learnerCount ?? 0) - (a.learnerCount ?? 0))
   }
 
   // 置顶的始终在前面

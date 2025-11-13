@@ -562,9 +562,7 @@ const handleSearch = async () => {
  */
 const handleFilterChange = () => {
   searchText.value = '' // 清空搜索
-  if (selectedMainCategory.value && selectedSubCategory.value) {
-    void loadCareersByCategory(selectedMainCategory.value, selectedSubCategory.value)
-  }
+  // watch 会自动处理加载，不需要在这里重复调用
 }
 
 /**
@@ -597,7 +595,7 @@ const setupInfiniteScroll = () => {
     (entries) => {
       const entry = entries[0]
       if (entry?.isIntersecting && hasMore.value && !loadingMore.value) {
-        loadMore()
+        void loadMore()
       }
     },
     {

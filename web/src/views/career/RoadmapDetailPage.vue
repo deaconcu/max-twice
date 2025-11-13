@@ -15,11 +15,11 @@
         </v-col>
       </v-row>
 
-      <v-row v-else class="ma-0">
+      <v-row v-else-if="roadmap" class="ma-0">
         <!-- 左侧：路径信息和流程图 -->
         <v-col cols="12" lg="8" class="pa-0">
           <!-- 路径信息卡片 -->
-          <v-card border rounded="xl" class="roadmap-info-card mb-4">
+          <v-card rounded="xl" class="roadmap-info-card mb-4 no-border">
             <v-card-text class="pa-6">
               <!-- 标题和状态 -->
               <div class="d-flex align-center justify-space-between mb-4">
@@ -40,23 +40,24 @@
                       学习中
                     </v-chip>
                   </div>
-                  <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-3">
-                    {{ roadmap.description }}
-                  </h1>
 
                   <!-- 创建者信息 -->
                   <div class="d-flex align-center mb-3">
-                    <v-avatar size="40" color="grey-lighten-2" class="mr-3">
-                      <v-icon v-if="!roadmap.creator?.avatar" icon="mdi-account" color="grey" />
+                    <v-avatar size="24" color="grey-lighten-2" class="mr-2">
+                      <v-icon v-if="!roadmap.creator?.avatar" icon="mdi-account" color="grey" size="14" />
                     </v-avatar>
-                    <div>
-                      <div class="text-body-2 font-weight-medium text-grey-darken-3">
-                        {{ roadmap.creator?.username }}
-                      </div>
-                      <div class="text-caption text-grey">
-                        创建于 {{ getTimeDisplay(roadmap.createdAt) }}
-                      </div>
-                    </div>
+                    <span class="text-body-2 text-grey-darken-3">
+                      {{ roadmap.creator?.name }}
+                    </span>
+                    <span class="text-caption text-grey mx-2">·</span>
+                    <span class="text-caption text-grey">
+                      {{ getTimeDisplay(roadmap.createdAt) }}
+                    </span>
+                  </div>
+
+                  <!-- 描述 -->
+                  <div class="text-body-1 text-grey-darken-4 mb-3">
+                    {{ roadmap.description }}
                   </div>
 
                   <!-- 统计信息 -->
@@ -64,13 +65,13 @@
                     <div class="d-flex align-center">
                       <v-icon icon="mdi-account-group" size="18" color="grey" class="mr-1" />
                       <span class="text-body-2 text-grey-darken-2">
-                        {{ roadmap.learners }} 人学习
+                        {{ roadmap.learnerCount ?? 0 }} 人学习
                       </span>
                     </div>
                     <div class="d-flex align-center">
                       <v-icon icon="mdi-comment-outline" size="18" color="grey" class="mr-1" />
                       <span class="text-body-2 text-grey-darken-2">
-                        {{ roadmap.comment }} 评论
+                        {{ roadmap.commentCount ?? 0 }} 评论
                       </span>
                     </div>
                     <div class="d-flex align-center">
@@ -133,9 +134,9 @@
                   :nodes-draggable="false"
                   :nodes-connectable="false"
                   :elements-selectable="false"
-                  :zoom-on-scroll="false"
-                  :zoom-on-pinch="false"
-                  :zoom-on-double-click="false"
+                  :min-zoom="0.9"
+                  :max-zoom="1.2"
+                  :default-zoom="1.2"
                   @node-click="handleNodeClick"
                 >
                   <Background pattern-color="#bdbdbd" :gap="30" :size="2" variant="dots" />
@@ -148,7 +149,7 @@
 
         <!-- 右侧：评论区 -->
         <v-col cols="12" lg="4" class="pa-0 pl-6">
-          <v-card border rounded="xl" class="comments-card sticky-card">
+          <v-card rounded="xl" class="comments-card sticky-card no-border">
             <v-card-title class="pa-6 pb-4">
               <div class="d-flex align-center">
                 <v-icon icon="mdi-comment-multiple" color="primary" class="mr-2" />
@@ -173,7 +174,8 @@
                 color="primary"
                 variant="flat"
                 rounded="lg"
-                :disabled="!newComment.trim()"
+                :disabled="!newComment.trim() || submittingComment"
+                :loading="submittingComment"
                 @click="submitComment"
               >
                 <v-icon icon="mdi-send" size="18" class="mr-1" />
@@ -181,24 +183,17 @@
               </v-btn>
             </v-card-text>
 
-            <v-divider />
-
             <!-- 评论列表 -->
             <v-card-text class="pa-6 pt-4 comments-list">
               <div v-for="comment in comments" :key="comment.id" class="comment-item mb-4">
                 <div class="d-flex">
                   <v-avatar size="36" color="grey-lighten-2" class="mr-3">
-                    <v-icon
-                      v-if="!comment.user.avatar"
-                      icon="mdi-account"
-                      color="grey"
-                      size="20"
-                    />
+                    <v-icon icon="mdi-account" color="grey" size="20" />
                   </v-avatar>
                   <div class="flex-grow-1">
                     <div class="d-flex align-center justify-space-between mb-1">
                       <span class="text-body-2 font-weight-medium text-grey-darken-3">
-                        {{ comment.user.username }}
+                        {{ comment.creatorName }}
                       </span>
                       <span class="text-caption text-grey">
                         {{ getTimeDisplay(comment.createdAt) }}
@@ -209,12 +204,12 @@
                     </p>
                     <v-btn
                       size="x-small"
-                      variant="text"
-                      color="grey-darken-2"
+                      variant="tonal"
+                      color="grey"
                       @click="likeComment(comment)"
                     >
                       <v-icon icon="mdi-thumb-up-outline" size="14" class="mr-1" />
-                      {{ comment.likes }}
+                      <span class="text-caption">{{ comment.upvoteCount }}</span>
                     </v-btn>
                   </div>
                 </div>
@@ -233,7 +228,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -241,6 +236,11 @@ import { Controls } from '@vue-flow/controls'
 import { Position } from '@vue-flow/core'
 import type { Node, Edge } from '@vue-flow/core'
 import dagre from 'dagre'
+import { useFetch, useMutation } from '@/composables'
+import { roadmapApi, commentApi } from '@/api'
+import { ObjectType } from '@/enums'
+import type { Roadmap } from '@/types/roadmap'
+import type { Comment } from '@/types/comment'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 
 const router = useRouter()
@@ -256,96 +256,125 @@ const roadmapId = computed(() => {
   return typeof id === 'string' ? parseInt(id, 10) : 0
 })
 
-// 状态管理
-const loading = ref(true)
-
-// Mock 数据 - 路径详情
-const roadmap = ref({
-  id: 1,
-  professionId: 1,
-  description: 'Vue 3 + TypeScript 全栈开发路线',
-  creator: {
-    id: 1,
-    username: 'techmaster',
-    avatar: null,
-  },
-  vote: 156,
-  upvoted: true,
-  comment: 23,
-  pinned: true,
-  learning: true,
-  learners: 450,
-  state: 1,
-  createdAt: '2024-01-15',
-  updatedAt: '2024-01-20',
-  nodeCount: 12,
-  nodes: [
-    { id: '1', name: 'HTML 基础', description: '学习HTML基础语法和常用标签' },
-    { id: '2', name: 'CSS 基础', description: '学习CSS样式和布局' },
-    { id: '3', name: 'JavaScript 基础', description: 'JavaScript核心语法' },
-    { id: '4', name: 'Vue 3 基础', description: 'Vue 3组合式API' },
-    { id: '5', name: 'TypeScript', description: 'TypeScript类型系统' },
-    { id: '6', name: 'Pinia 状态管理', description: '学习Pinia状态管理' },
-    { id: '7', name: 'Vue Router', description: 'Vue路由管理' },
-    { id: '8', name: 'Vite 构建工具', description: '使用Vite构建项目' },
-    { id: '9', name: 'Node.js 基础', description: 'Node.js服务端开发' },
-    { id: '10', name: 'Express 框架', description: 'Express Web框架' },
-    { id: '11', name: '数据库 MySQL', description: 'MySQL数据库操作' },
-    { id: '12', name: '项目实战', description: '完整项目开发实战' },
-  ],
-  edges: [
-    { source: '0', target: '1' },
-    { source: '1', target: '2' },
-    { source: '2', target: '3' },
-    { source: '3', target: '4' },
-    { source: '3', target: '5' },
-    { source: '4', target: '6' },
-    { source: '4', target: '7' },
-    { source: '5', target: '8' },
-    { source: '6', target: '9' },
-    { source: '7', target: '9' },
-    { source: '8', target: '9' },
-    { source: '9', target: '10' },
-    { source: '10', target: '11' },
-    { source: '11', target: '12' },
-  ],
+// 使用 useFetch 加载路径详情
+const {
+  data: roadmapData,
+  loading,
+  error: fetchError,
+} = useFetch<Roadmap>({
+  fetchFn: () => roadmapApi.getRoadmap(roadmapId.value),
+  immediate: true,
+  defaultValue: null,
 })
 
-// Mock 数据 - 评论列表
-const comments = ref([
-  {
-    id: 1,
-    user: {
-      username: 'student01',
-      avatar: null,
-    },
-    content: '这个学习路径非常清晰,按照这个路线学习进步很快!',
-    createdAt: '2024-01-20',
-    likes: 12,
-  },
-  {
-    id: 2,
-    user: {
-      username: 'developer',
-      avatar: null,
-    },
-    content: '建议增加一些项目实战的内容,这样学习效果会更好。',
-    createdAt: '2024-01-19',
-    likes: 8,
-  },
-  {
-    id: 3,
-    user: {
-      username: 'frontender',
-      avatar: null,
-    },
-    content: '跟着这个路线学了一个月,现在已经可以独立开发项目了!',
-    createdAt: '2024-01-18',
-    likes: 15,
-  },
-])
+const roadmap = computed(() => roadmapData.value)
 
+// 使用 useFetch 加载评论列表
+const {
+  data: commentsData,
+  loading: loadingComments,
+  refresh: refreshComments,
+} = useFetch<Comment[]>({
+  fetchFn: () => commentApi.getComments(roadmapId.value, ObjectType.ROADMAP),
+  immediate: true,
+  defaultValue: [],
+})
+
+const comments = computed(() => commentsData.value ?? [])
 const newComment = ref('')
+
+// 使用 useMutation 创建评论
+const { execute: executeCreateComment, loading: submittingComment } = useMutation(
+  (content: string) =>
+    commentApi.createComment(roadmapId.value, ObjectType.ROADMAP, null, null, content),
+  {
+    successMessage: '评论发表成功',
+    onSuccess: () => {
+      newComment.value = ''
+      void refreshComments()
+    },
+  }
+)
+
+// 发表评论
+const submitComment = async (): Promise<void> => {
+  if (!newComment.value.trim()) return
+  await executeCreateComment(newComment.value.trim())
+}
+
+/**
+ * 解析路线图内容
+ */
+const parseContent = (
+  content: string | object
+): { nodes: Node[]; edges: Edge[] } => {
+  try {
+    const data = typeof content === 'string' ? JSON.parse(content) : content
+    const nodes = (data.nodes || []).map((node: any): Node => {
+      // 如果是根节点（id=0），设置为职业名称
+      if (node.id === 0 || node.id === '0') {
+        return {
+          id: node.id.toString(),
+          type: 'default',
+          data: {
+            label: roadmap.value?.profession?.name || '当前职业',
+            ...node.data,
+          },
+          position: node.position || { x: 0, y: 0 },
+          sourcePosition: Position.Top,
+          targetPosition: Position.Bottom,
+          style: {
+            background: '#616161',
+            color: '#ffffff',
+            border: '2px solid #9e9e9e',
+            borderRadius: '12px',
+            padding: '10px',
+            fontWeight: '600',
+            fontSize: '14px',
+          },
+        }
+      }
+
+      return {
+        id: node.id.toString(),
+        type: 'default',
+        data: {
+          label: node.name,
+          ...node.data,
+        },
+        position: node.position || { x: 0, y: 0 },
+        sourcePosition: Position.Top,
+        targetPosition: Position.Bottom,
+        style: {
+          background: '#fafafa',
+          color: '#424242',
+          border: '2px solid #bdbdbd',
+          borderRadius: '12px',
+          padding: '10px',
+          fontWeight: '500',
+          fontSize: '13px',
+        },
+      }
+    })
+
+    const edges = (data.edges || []).map((edge: any): Edge => ({
+      id: `${edge.source}-${edge.target}`,
+      source: edge.source.toString(),
+      target: edge.target.toString(),
+      type: 'default',
+      animated: true,
+      style: {
+        stroke: '#78909c',
+        strokeWidth: 2,
+      },
+    }))
+
+    return { nodes, edges }
+  } catch (error) {
+    console.error('解析路线图内容失败:', error)
+    return { nodes: [], edges: [] }
+  }
+}
 
 // 自动布局函数
 const applyAutoLayout = (nodeList: Node[], edgeList: Edge[], direction = 'TB'): Node[] => {
@@ -388,79 +417,19 @@ const applyAutoLayout = (nodeList: Node[], edgeList: Edge[], direction = 'TB'): 
 
 // 准备 Vue Flow 的节点和边
 const flowNodes = computed<Node[]>(() => {
-  // 创建根节点
-  const nodes: Node[] = [
-    {
-      id: '0',
-      type: 'default',
-      data: {
-        label: '前端工程师',
-      },
-      position: { x: 0, y: 0 },
-      sourcePosition: Position.Bottom,
-      style: {
-        background: '#616161',
-        color: '#ffffff',
-        border: '2px solid #9e9e9e',
-        borderRadius: '12px',
-        padding: '10px',
-        fontWeight: '600',
-        fontSize: '14px',
-      },
-    },
-  ]
+  if (!roadmap.value?.content) return []
 
-  // 添加学习节点
-  roadmap.value.nodes.forEach((node) => {
-    nodes.push({
-      id: node.id,
-      type: 'default',
-      data: {
-        label: node.name,
-      },
-      position: { x: 0, y: 0 },
-      sourcePosition: Position.Bottom,
-      targetPosition: Position.Top,
-      style: {
-        background: '#fafafa',
-        color: '#424242',
-        border: '2px solid #bdbdbd',
-        borderRadius: '12px',
-        padding: '10px',
-        fontWeight: '500',
-        fontSize: '13px',
-      },
-    })
-  })
+  const { nodes, edges } = parseContent(roadmap.value.content)
 
-  // 应用自动布局
-  const edges: Edge[] = roadmap.value.edges.map((edge) => ({
-    id: `${edge.source}-${edge.target}`,
-    source: edge.source,
-    target: edge.target,
-    type: 'default',
-    animated: true,
-    style: {
-      stroke: '#78909c',
-      strokeWidth: 2,
-    },
-  }))
-
-  return applyAutoLayout(nodes, edges, 'TB')
+  // 应用自动布局 - 使用 BT (Bottom to Top) 让根节点在上面
+  return applyAutoLayout(nodes, edges, 'BT')
 })
 
 const flowEdges = computed<Edge[]>(() => {
-  return roadmap.value.edges.map((edge) => ({
-    id: `${edge.source}-${edge.target}`,
-    source: edge.source,
-    target: edge.target,
-    type: 'default',
-    animated: true,
-    style: {
-      stroke: '#78909c',
-      strokeWidth: 2,
-    },
-  }))
+  if (!roadmap.value?.content) return []
+
+  const { edges } = parseContent(roadmap.value.content)
+  return edges
 })
 
 // 返回列表
@@ -484,27 +453,9 @@ const handleCopy = (): void => {
   void router.push(`/career/${careerId.value}/roadmap/create?copy=${roadmapId.value}`)
 }
 
-// 发表评论
-const submitComment = (): void => {
-  if (!newComment.value.trim()) return
-
-  comments.value.unshift({
-    id: comments.value.length + 1,
-    user: {
-      username: 'current_user',
-      avatar: null,
-    },
-    content: newComment.value,
-    createdAt: new Date().toISOString().split('T')[0],
-    likes: 0,
-  })
-
-  newComment.value = ''
-}
-
 // 点赞评论
-const likeComment = (comment: { likes: number }): void => {
-  comment.likes++
+const likeComment = (comment: Comment): void => {
+  comment.upvoteCount = (comment.upvoteCount || 0) + 1
 }
 
 // 获取时间显示
@@ -528,13 +479,6 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
   // 可以跳转到课程详情
   console.log('点击节点:', node.data.label)
 }
-
-onMounted(() => {
-  // 模拟加载
-  setTimeout(() => {
-    loading.value = false
-  }, 500)
-})
 </script>
 
 <style scoped>
@@ -551,11 +495,11 @@ onMounted(() => {
 }
 
 .flow-card {
-  min-height: 1200px;
+  min-height: 1000px;
 }
 
 .vue-flow-container {
-  height: 1200px;
+  height: 1000px;
   background: #ffffff;
   position: relative;
 }

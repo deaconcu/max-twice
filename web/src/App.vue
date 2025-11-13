@@ -11,8 +11,12 @@
       :timeout="4000"
       location="top"
       rounded="lg"
+      variant="tonal"
     >
-      {{ item.text }}
+      <div class="d-flex align-center">
+        <v-icon :icon="getSnackbarIcon(item.type)" class="mr-3"></v-icon>
+        <span>{{ item.text }}</span>
+      </div>
     </v-snackbar>
   </v-app>
 </template>
@@ -60,6 +64,23 @@ const getSnackbarColor = (type: string): string => {
     case 'info':
     default:
       return 'info'
+  }
+}
+
+/**
+ * 根据类型获取图标
+ */
+const getSnackbarIcon = (type: string): string => {
+  switch (type) {
+    case 'success':
+      return 'mdi-check-circle'
+    case 'error':
+      return 'mdi-alert-circle'
+    case 'warning':
+      return 'mdi-alert'
+    case 'info':
+    default:
+      return 'mdi-information'
   }
 }
 
