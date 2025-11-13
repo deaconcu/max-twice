@@ -22,53 +22,40 @@
         <div class="toc-sidebar">
           <div class="toc-sticky-wrapper">
             <!-- 目录组选择卡片 -->
-            <div class="toc-groups-card">
-              <div class="toc-header">
-                <div class="d-flex align-center">
-                  <v-icon icon="mdi-view-list" size="14" color="grey" class="mr-2"></v-icon>
-                  <span class="toc-title">课程目录</span>
-                </div>
-                <div class="toc-actions">
-                  <v-btn
-                    icon
-                    size="x-small"
-                    variant="text"
-                    :class="{ 'rotate-180': openContentsList }"
-                    @click="openContentsList = !openContentsList"
-                  >
-                    <v-icon size="16">mdi-chevron-down</v-icon>
-                  </v-btn>
-                  <v-btn icon size="x-small" variant="text" @click="configContents = true">
-                    <v-icon size="16">mdi-cog-outline</v-icon>
-                  </v-btn>
-                </div>
-              </div>
-              <v-expand-transition>
-                <div v-if="openContentsList && data && data.toc" class="toc-chips">
-                  <div
-                    v-for="(item, index) in data.toc"
-                    :key="index"
-                    class="toc-chip"
-                    :class="{
-                      'chip-active': currContentsIndex === index,
-                      'chip-primary': index === 0,
-                    }"
-                    @click="currContentsIndex = index"
-                  >
-                    <div class="chip-inner">
-                      <span class="chip-number">{{ index + 1 }}</span>
-                    </div>
-                    <div v-if="index === 0" class="corner-badge">
-                      <v-icon icon="mdi-chart-line-variant" size="8" color="white"></v-icon>
-                    </div>
+            <div v-if="data && data.toc" class="toc-groups-card">
+              <div class="toc-chips">
+                <h3 class="text-h6 mb-0 me-3">目录</h3>
+                <div
+                  v-for="(item, index) in data.toc"
+                  :key="index"
+                  class="toc-chip"
+                  :class="{
+                    'chip-active': currContentsIndex === index,
+                    'chip-primary': index === 0,
+                  }"
+                  @click="currContentsIndex = index"
+                >
+                  <div class="chip-inner">
+                    <span class="chip-number">{{ index + 1 }}</span>
+                  </div>
+                  <div v-if="index === 0" class="corner-badge">
+                    <v-icon icon="mdi-chart-line-variant" size="8" color="white"></v-icon>
                   </div>
                 </div>
-              </v-expand-transition>
+                <v-btn
+                  icon
+                  size="small"
+                  variant="text"
+                  class="config-btn ms-auto"
+                  @click="configContents = true"
+                >
+                  <v-icon size="20">mdi-cog-outline</v-icon>
+                </v-btn>
+              </div>
             </div>
 
             <!-- 目录树 -->
             <div class="toc-card">
-              <h3 class="text-h6 mb-1">目录</h3>
               <div class="toc-tree">
                 <TreeNode
                   v-if="data && data.toc && data.toc[currContentsIndex]"
@@ -477,53 +464,24 @@ onUnmounted(() => {
 
 /* 目录组选择卡片 */
 .toc-groups-card {
-  background-color: white;
-  padding: 10px 12px;
-  border: 1px solid rgb(var(--v-theme-border));
-  border-radius: 16px;
-  margin-bottom: 4px;
-}
-
-.toc-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgb(var(--v-theme-border));
-}
-
-.toc-title {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.toc-actions {
-  display: flex;
-  gap: 4px;
-}
-
-.rotate-180 {
-  transform: rotate(180deg);
-  transition: transform 0.3s ease;
+  padding: 0;
+  margin-bottom: 16px;
 }
 
 .toc-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding-top: 10px;
+  align-items: center;
 }
 
 .toc-chip {
   position: relative;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   background-color: #f6f7f8;
-  border: 1.5px solid rgb(var(--v-theme-border));
+  border: 1.5px solid transparent;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -532,18 +490,17 @@ onUnmounted(() => {
 }
 
 .toc-chip:hover {
-  border-color: rgb(var(--v-theme-primary));
-  background-color: rgba(var(--v-theme-primary), 0.05);
+  background-color: rgba(var(--v-theme-primary), 0.08);
+  transform: translateY(-2px);
 }
 
 .toc-chip.chip-active {
-  background-color: rgb(var(--v-theme-primary));
-  border-color: rgb(var(--v-theme-primary));
+  background: linear-gradient(135deg, rgb(var(--v-theme-primary)), rgba(var(--v-theme-primary), 0.85));
+  transform: translateY(-2px);
 }
 
 .toc-chip.chip-primary {
-  border-color: rgb(var(--v-theme-primary));
-  border-width: 2px;
+  border-color: rgba(var(--v-theme-primary), 0.3);
 }
 
 .chip-inner {
@@ -555,13 +512,14 @@ onUnmounted(() => {
 }
 
 .chip-number {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 600;
-  color: #666;
+  color: #555;
 }
 
 .chip-active .chip-number {
   color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .corner-badge {
@@ -576,6 +534,15 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   border: 2px solid white;
+}
+
+.config-btn {
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.config-btn:hover {
+  opacity: 1;
 }
 
 /* 中间+右侧容器包装 */
