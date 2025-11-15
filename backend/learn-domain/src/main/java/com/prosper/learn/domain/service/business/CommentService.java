@@ -9,6 +9,7 @@ import com.prosper.learn.domain.service.basic.ScoreCalculationService;
 import com.prosper.learn.domain.util.converter.CommentConverter;
 import com.prosper.learn.dto.request.CreateCommentRequest;
 import com.prosper.learn.dto.response.CommentDTO;
+import com.prosper.learn.dto.response.KeysetPageResponse;
 import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.domain.service.data.*;
 import lombok.RequiredArgsConstructor;
@@ -63,16 +64,7 @@ public class CommentService {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }
     }
-    
-    /**
-     * 验证偏移ID
-     */
-    private void validateOffsetId(Long offsetId) {
-        if (offsetId == null || offsetId < 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-    }
-    
+
     /**
      * 验证评论类型
      */
@@ -197,6 +189,7 @@ public class CommentService {
         commentDO.setToUserId(request.getToUser() == null ? 0 : request.getToUser());
         commentDO.setContent(request.getContent());
         commentDO.setCreatorId(commentor.getId());
+        commentDO.setState(Enums.ContentState.SUBMITTED.value());  // 设置为待审核状态
         //commentDO.setScore(scoreCalculationService.calculateCommentScore(commentDO));
         commentDO.setScore(0.0);
         commentDataService.insert(commentDO);
@@ -304,60 +297,100 @@ public class CommentService {
 
     /**
      * 获取对象(post, node, comment ...)评论，分页查询，按分数和ID倒序排列
+     * @param lastScore 上一页最后一条记录的分数，首页传null
+     * @param lastId 上一页最后一条记录的ID，首页传null
      */
-    public List<CommentDTO> getCommentsByObject(Long objectId, Integer type, Long offsetId, UserDO currentUser) {
+    public KeysetPageResponse<CommentDTO> getCommentsByObject(Long objectId, Integer type, Double lastScore, Long lastId, UserDO currentUser) {
         validateObjectId(objectId);
         validateCommentType(type);
-        validateOffsetId(offsetId);
+
+        int pageSize = systemProperties.getComment().getDefaultPageSize();
+        // 多查询一条以判断是否还有更多数据
+        int querySize = pageSize + 1;
 
         List<CommentDO> commentDOList;
-        int pageSize = systemProperties.getComment().getDefaultPageSize();
-        if (offsetId == 0) {
-            commentDOList = commentDataService.getByObjectId(objectId, type, pageSize);
+        // 第一页：lastScore 和 lastId 都为 null
+        if (lastScore == null && lastId == null) {
+            commentDOList = commentDataService.getByObjectId(objectId, type, querySize);
         } else {
-            CommentDO lastComment = commentDataService.getById(offsetId);
-            if (lastComment == null) {
-                return new ArrayList<>();
+            // 后续页：需要同时传递 lastScore 和 lastId
+            if (lastScore == null || lastId == null) {
+                throw ErrorCode.INVALID_PARAMETER.exception("分页查询需要同时提供 lastScore 和 lastId");
             }
-            commentDOList = commentDataService.getByObjectIdPaginated(objectId, type, lastComment.getScore(), offsetId, pageSize);
+            commentDOList = commentDataService.getByObjectIdPaginated(objectId, type, lastScore, lastId, querySize);
         }
 
-        return toDTOV1(commentDOList, currentUser.getId());
+        // 判断是否还有更多数据
+        boolean hasMore = commentDOList.size() > pageSize;
+        if (hasMore) {
+            // 移除多查询的那一条
+            commentDOList = commentDOList.subList(0, pageSize);
+        }
+
+        List<CommentDTO> commentDTOList = toDTOV1(commentDOList, currentUser.getId());
+
+        // 构建响应
+        if (commentDTOList.isEmpty()) {
+            return KeysetPageResponse.of(commentDTOList, false, null, null);
+        }
+
+        CommentDTO lastComment = commentDTOList.get(commentDTOList.size() - 1);
+        return KeysetPageResponse.of(commentDTOList, hasMore, lastComment.getScore(), lastComment.getId());
     }
 
 
 
     /**
-     * 获取子评论列表，分页查询(lastId)，按分数和ID倒序排列
+     * 获取子评论列表，分页查询，按分数和ID倒序排列
+     * @param lastScore 上一页最后一条记录的分数，首页传null
+     * @param lastId 上一页最后一条记录的ID，首页传null
      */
-    public List<CommentDTO> getCommentReplies(Long id, Long offsetId, UserDO currentUser) {
+    public KeysetPageResponse<CommentDTO> getCommentReplies(Long id, Double lastScore, Long lastId, UserDO currentUser) {
         validateCommentId(id);
-        validateOffsetId(offsetId);
+
+        int pageSize = systemProperties.getComment().getDefaultPageSize();
+        // 多查询一条以判断是否还有更多数据
+        int querySize = pageSize + 1;
 
         List<CommentDO> commentDOList;
-        int pageSize = systemProperties.getComment().getDefaultPageSize();
-        if (offsetId == 0) {
-            commentDOList = commentDataService.getByTopic(id, pageSize);
+        // 第一页：lastScore 和 lastId 都为 null
+        if (lastScore == null && lastId == null) {
+            commentDOList = commentDataService.getByTopic(id, querySize);
         } else {
-            CommentDO lastComment = commentDataService.getById(offsetId);
-            if (lastComment == null) {
-                return new ArrayList<>();
+            // 后续页：需要同时传递 lastScore 和 lastId
+            if (lastScore == null || lastId == null) {
+                throw ErrorCode.INVALID_PARAMETER.exception("分页查询需要同时提供 lastScore 和 lastId");
             }
-            commentDOList = commentDataService.getByTopicPaginated(id, lastComment.getScore(), offsetId, pageSize);
+            commentDOList = commentDataService.getByTopicPaginated(id, lastScore, lastId, querySize);
+        }
+
+        // 判断是否还有更多数据
+        boolean hasMore = commentDOList.size() > pageSize;
+        if (hasMore) {
+            // 移除多查询的那一条
+            commentDOList = commentDOList.subList(0, pageSize);
         }
 
         List<CommentDTO> commentDTOList = commentConverter.toDTO(commentDOList);
-        return toDTOV2(commentDTOList, currentUser.getId());
+        commentDTOList = toDTOV2(commentDTOList, currentUser.getId());
+
+        // 构建响应
+        if (commentDTOList.isEmpty()) {
+            return KeysetPageResponse.of(commentDTOList, false, null, null);
+        }
+
+        CommentDTO lastComment = commentDTOList.get(commentDTOList.size() - 1);
+        return KeysetPageResponse.of(commentDTOList, hasMore, lastComment.getScore(), lastComment.getId());
     }
 
 
     /**
-     * 根据状态获取评论列表（分页），按ID正序排列（越早的越靠前）
+     * 根据状态获取评论列表（分页），按ID倒序排列（越新的越靠前）
      * 仅管理员调用
      * @param state pending(待审核), approved(已通过), rejected(已拒绝), banned(已封禁)
+     * @param lastId 最后一条记录的ID，为null时加载第一页
      */
-    public List<CommentDTO> getCommentsByState(String state, Long offsetId) {
-        validateOffsetId(offsetId);
+    public List<CommentDTO> getCommentsByState(String state, Long lastId) {
         int pageSize = systemProperties.getComment().getDefaultPageSize();
 
         byte stateValue;
@@ -378,12 +411,7 @@ public class CommentService {
                 throw ErrorCode.INVALID_PARAMETER.exception("无效的状态参数: " + state);
         }
 
-        List<CommentDO> commentDOList;
-        if (offsetId == 0) {
-            commentDOList = commentDataService.getListByState(stateValue, pageSize);
-        } else {
-            commentDOList = commentDataService.getListByStatePaginated(stateValue, offsetId, pageSize);
-        }
+        List<CommentDO> commentDOList = commentDataService.getListByState(stateValue, lastId, pageSize);
         return commentConverter.toDTO(commentDOList);
     }
 

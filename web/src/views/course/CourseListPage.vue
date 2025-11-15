@@ -575,8 +575,7 @@ const handleCreateCourse = async (courseData: CreateCourseRequest) => {
 
 <style scoped>
 .course-list-page {
-  padding-top: 24px;
-  padding-bottom: 48px;
+  /* 使用 DefaultLayout 的默认 padding */
 }
 
 .page-header {
@@ -693,7 +692,7 @@ const handleCreateCourse = async (courseData: CreateCourseRequest) => {
 
 @media (max-width: 960px) {
   .course-list-page {
-    padding: 16px 0;
+    /* 使用 DefaultLayout 的默认 padding */
   }
 
   .course-grid {

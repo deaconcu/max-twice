@@ -1,6 +1,6 @@
 <template>
   <DefaultLayout>
-    <v-container fluid class="career-list-page">
+    <div class="career-list-page">
       <!-- 页面标题 -->
       <div class="page-header mb-6">
       <div class="d-flex align-center">
@@ -277,7 +277,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    </v-container>
+    </div>
   </DefaultLayout>
 </template>
 

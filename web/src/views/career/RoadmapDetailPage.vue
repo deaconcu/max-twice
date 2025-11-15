@@ -1,6 +1,6 @@
 <template>
   <DefaultLayout>
-    <v-container fluid class="roadmap-detail-page">
+    <div class="roadmap-detail-page">
       <!-- 返回按钮 -->
       <v-btn variant="text" color="grey-darken-2" class="mb-4" @click="handleBack">
         <v-icon icon="mdi-arrow-left" class="mr-1" />
@@ -223,7 +223,7 @@
           </v-card>
         </v-col>
       </v-row>
-    </v-container>
+    </div>
   </DefaultLayout>
 </template>
 
@@ -483,8 +483,7 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
 
 <style scoped>
 .roadmap-detail-page {
-  padding-top: 0;
-  padding-bottom: 48px;
+  /* 使用 DefaultLayout 的默认 padding */
 }
 
 .roadmap-info-card,

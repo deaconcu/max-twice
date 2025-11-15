@@ -1,6 +1,6 @@
 <template>
   <DefaultLayout>
-    <v-container fluid class="course-detail-page">
+    <div class="course-detail-page">
       <!-- 返回按钮 -->
       <v-btn variant="text" color="grey-darken-2" class="mb-4" @click="handleBack">
         <v-icon icon="mdi-arrow-left" class="mr-1" />
@@ -289,7 +289,7 @@
           </v-card>
         </div>
       </div>
-    </v-container>
+    </div>
 
     <!-- 申请子课程对话框 -->
     <SubCourseApplicationDialog
@@ -718,7 +718,7 @@ const handleConfirmCreateDefaultSubCourse = async () => {
 
 @media (max-width: 960px) {
   .course-detail-page {
-    padding: 16px 0;
+    /* 使用 DefaultLayout 的默认 padding */
   }
 
   .sub-course-grid {

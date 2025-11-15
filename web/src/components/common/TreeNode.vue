@@ -93,25 +93,32 @@ const scrollToTop = (): void => {
             <div class="d-flex align-center flex-grow-1">
               <!-- 完成状态图标 - 只在学习模式下显示 -->
               <template v-if="isLearning">
-                <!-- 有子节点的显示横线 -->
+                <!-- 有子节点的显示横线，但如果是根目录层级(depth=1)则不显示 -->
                 <template v-if="Object.keys(node).filter((key) => key !== '^').length > 0">
-                  <v-icon icon="mdi-minus" color="grey-darken-1" size="16"></v-icon>
-                </template>
-                <!-- 叶子节点显示完成状态 -->
-                <template v-else>
                   <v-icon
-                    v-if="nodeInfos[key]?.isCompleted"
-                    icon="mdi-check-circle"
-                    color="success"
+                    v-if="depth !== 1"
+                    icon="mdi-minus"
+                    color="grey-darken-1"
                     size="16"
                   ></v-icon>
-                  <v-icon v-else icon="mdi-circle-outline" color="grey-lighten-2" size="16"></v-icon>
+                </template>
+                <!-- 叶子节点显示完成状态，但如果是根目录层级(depth=1)则不显示 -->
+                <template v-else>
+                  <template v-if="depth !== 1">
+                    <v-icon
+                      v-if="nodeInfos[key]?.isCompleted"
+                      icon="mdi-check-circle"
+                      color="success"
+                      size="16"
+                    ></v-icon>
+                    <v-icon v-else icon="mdi-circle-outline" color="grey-lighten-2" size="16"></v-icon>
+                  </template>
                 </template>
               </template>
 
               <span
                 v-if="calculatePath(currPath, key as string) == path"
-                class="tree-node-text text-primary"
+                class="tree-node-text text-grey-darken-5 font-weight-black"
               >
                 {{ nodeInfos[key]?.name || key }}
               </span>
@@ -127,7 +134,7 @@ const scrollToTop = (): void => {
             class="slow"
             variant="text"
             size="small"
-            density="compact"
+            density="comfortable"
             @click="toggleNode(key as string)"
           ></v-btn>
         </div>
@@ -154,7 +161,7 @@ const scrollToTop = (): void => {
 <style scoped>
 .tree-node-item {
   user-select: none;
-  border-radius: 4px;
+  border-radius: 8px;
   transition: background-color 0.2s;
   margin-bottom: 2px;
 }
@@ -164,14 +171,14 @@ const scrollToTop = (): void => {
 }
 
 .tree-node-item.active-node {
-  background-color: rgba(var(--v-theme-primary), 0.1);
+  background-color: #f5f5f5;
 }
 
 .custom-link {
   display: flex;
   align-items: center;
   text-decoration: none;
-  padding: 6px 8px;
+  padding: 6px 4px;
   gap: 8px;
   flex: 1;
   transition: background-color 0.2s;

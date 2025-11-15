@@ -75,7 +75,7 @@ const ensureMermaidInitialized = () => {
       fontFamily: 'Arial, sans-serif',
       flowchart: { htmlLabels: true, useMaxWidth: true },
       sequence: { noteFontFamily: 'Arial, sans-serif' },
-      suppressErrorRendering: false,
+      suppressErrorRendering: true,
     })
     mermaidInitialized = true
   }
@@ -247,6 +247,15 @@ const handleUpvote = (type: string) => {
 // 查看评论
 const handleViewComments = () => {
   emit('switch-tab', 'two', props.posting)
+  // 等待DOM更新后滚动到评论区
+  nextTick(() => {
+    setTimeout(() => {
+      const commentSection = document.querySelector('.comments-section')
+      if (commentSection) {
+        commentSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 100)
+  })
 }
 
 onMounted(() => {
@@ -265,13 +274,14 @@ watch(
 <template>
   <div class="single-post">
     <!-- 作者信息 -->
-    <v-row class="ma-0 pb-1 d-flex align-center" :class="[detail ? 'sticky-top' : '']">
+    <v-row class="mx-0 my-2 py-1 d-flex align-center" :class="[detail ? 'sticky-top' : '']">
       <v-btn
         v-if="detail"
         variant="flat"
         class="me-2"
-        density="comfortable"
-        icon="mdi-chevron-left"
+        color="grey-lighten-4"
+        icon="mdi-arrow-left"
+        size="small"
         @click="emit('switch-tab', 'list')"
       ></v-btn>
       <v-avatar size="24" color="grey">
@@ -466,10 +476,19 @@ watch(
 }
 
 .text-limited {
+  position: relative;
   max-height: 800px;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
-  mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+}
+
+.text-limited::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(to bottom, transparent 0%, white 100%);
 }
 
 .article-content {
@@ -557,47 +576,6 @@ watch(
 
 .article-content :deep(a:hover) {
   text-decoration: underline;
-}
-
-/* KaTeX 数学公式样式 */
-.article-content :deep(.katex-display) {
-  overflow-x: auto;
-  overflow-y: hidden;
-  margin: 1.5rem 0;
-}
-
-.article-content :deep(.katex) {
-  font-size: inherit;
-  padding: 0px 4px 0 4px;
-}
-
-.article-content :deep(.katex-html) {
-  display: inline-block;
-  vertical-align: baseline;
-}
-
-/* Mermaid 图表样式 */
-.article-content :deep(.mermaid) {
-  padding: 12px 0;
-  margin: 1.5rem auto;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.article-content :deep(.mermaid > svg) {
-  max-width: 100%;
-}
-
-.article-content :deep(.mermaid-error) {
-  background: #fff7f7;
-  color: #c62828;
-  border: 1px solid #ffcdd2;
-  border-radius: 6px;
-  padding: 12px;
-  white-space: pre-wrap;
-  font-size: 13px;
-  line-height: 1.4;
 }
 
 .full-article {

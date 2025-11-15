@@ -36,16 +36,16 @@ public class AdminCommentsController {
 
     /**
      * 获取指定状态的评论（分页）
-     * 映射: GET /api/v1/admin/comments/{state}?offsetId=0
+     * 映射: GET /api/v1/admin/comments/{state}?lastId=123
      * state: pending(待审核), approved(已通过), rejected(已拒绝)
+     * lastId: 最后一条记录的ID，为null时加载第一页
      */
     @GetMapping("/comments/{state}")
     @RequireRole(UserRole.MODERATOR)
     public ApiResponse<List<CommentDTO>> getCommentsByState(
             @PathVariable String state,
-            @RequestParam(required = false) @Min(value = 0, message = "偏移ID不能小于0") Long offsetId) {
-        Long actualOffsetId = (offsetId == null) ? 0L : offsetId;
-        List<CommentDTO> comments = commentService.getCommentsByState(state, actualOffsetId);
+            @RequestParam(required = false) @Min(value = 1, message = "lastId必须大于0") Long lastId) {
+        List<CommentDTO> comments = commentService.getCommentsByState(state, lastId);
         return ApiResponse.success(comments);
     }
 

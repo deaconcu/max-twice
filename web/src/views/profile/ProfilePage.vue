@@ -94,7 +94,7 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
 
 <template>
   <DefaultLayout>
-    <v-container fluid class="profile-container">
+    <div class="profile-container">
       <!-- 用户信息和统计 -->
       <v-row class="mb-6">
         <!-- 左列：用户信息 -->
@@ -159,7 +159,7 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
       </v-row>
 
       <!-- Tab 导航 -->
-      <v-tabs v-model="activeTab" color="primary" class="mb-6 tabs-with-border">
+      <v-tabs v-model="activeTab" color="primary" class="mb-6 tabs-with-border" height="60">
         <v-tab value="careers">
           <v-icon icon="mdi-briefcase" size="18" class="mr-2" />
           学习的职业
@@ -254,13 +254,12 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
           <RoadmapsTab />
         </v-window-item>
       </v-window>
-    </v-container>
+    </div>
   </DefaultLayout>
 </template>
 
 <style scoped>
 .profile-container {
-  padding: 40px;
   max-width: 1550px;
   margin: 0 auto;
 }
@@ -268,6 +267,7 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
 /* Tab 标签字体颜色调整 */
 :deep(.v-tab) {
   color: rgba(0, 0, 0, 0.5) !important;
+  font-size: 0.92rem !important;
 }
 
 :deep(.v-tab--selected) {
@@ -286,7 +286,7 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
 /* 移动端 */
 @media (max-width: 960px) {
   .profile-container {
-    padding: 20px;
+    /* 使用 DefaultLayout 的默认 padding */
   }
 }
 </style>

@@ -143,10 +143,12 @@ export const adminPostServiceV1 = {
 
 // 管理员评论管理服务
 export const adminCommentServiceV1 = {
-  getCommentsByState(state: string, offsetId = 0): Promise<ApiResponse<Comment[]>> {
-    return adminApiClient.get(`${API_V1_PREFIX}/admin/comments/${state}`, {
-      params: { offsetId },
-    })
+  getCommentsByState(state: string, lastId?: number): Promise<ApiResponse<Comment[]>> {
+    const params: Record<string, any> = {}
+    if (lastId !== undefined) {
+      params.lastId = lastId
+    }
+    return adminApiClient.get(`${API_V1_PREFIX}/admin/comments/${state}`, { params })
   },
 
   getCommentsByFilter(objectType?: number, objectId?: number, creatorId?: number, lastId?: number, state?: number): Promise<ApiResponse<Comment[]>> {

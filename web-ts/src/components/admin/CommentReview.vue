@@ -98,15 +98,13 @@
           state
         )
       } else {
-        return adminCommentServiceV1.getCommentsByState(currentTab.value, params.lastId || 0)
+        return adminCommentServiceV1.getCommentsByState(currentTab.value, params.lastId)
       }
     },
     getNextParams: (lastItem) => ({
       lastId: lastItem.id
     }),
-    initialParams: {
-      lastId: 0
-    }
+    initialParams: {}
   })
 
   // 应用筛选

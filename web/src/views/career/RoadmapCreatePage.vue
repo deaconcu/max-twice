@@ -1,6 +1,6 @@
 <template>
   <DefaultLayout>
-    <v-container fluid class="roadmap-create-page">
+    <div class="roadmap-create-page">
       <!-- 返回按钮 -->
       <v-btn variant="text" color="grey-darken-2" class="mb-4" @click="handleBack">
         <v-icon icon="mdi-arrow-left" class="mr-1" />
@@ -134,7 +134,7 @@
           </v-card>
         </v-col>
       </v-row>
-    </v-container>
+    </div>
 
     <!-- 保存对话框 -->
     <v-dialog v-model="showSaveDialog" max-width="600px" persistent>
@@ -442,8 +442,7 @@ onMounted(() => {
 
 <style scoped>
 .roadmap-create-page {
-  padding-top: 0;
-  padding-bottom: 48px;
+  /* 使用 DefaultLayout 的默认 padding */
 }
 
 .flow-editor-card,

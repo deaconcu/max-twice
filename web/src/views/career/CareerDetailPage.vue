@@ -1,6 +1,6 @@
 <template>
   <DefaultLayout>
-    <v-container fluid class="career-detail-page">
+    <div class="career-detail-page">
       <!-- 返回按钮 -->
       <v-btn variant="text" color="grey-darken-2" class="mb-4" @click="handleBack">
         <v-icon icon="mdi-arrow-left" class="mr-1" />
@@ -379,7 +379,7 @@
           </v-col>
         </v-row>
       </div>
-    </v-container>
+    </div>
   </DefaultLayout>
 </template>
 
@@ -546,8 +546,7 @@ const handleCopy = (roadmap: { id: number }, event: Event): void => {
 
 <style scoped>
 .career-detail-page {
-  padding-top: 0;
-  padding-bottom: 48px;
+  /* 使用 DefaultLayout 的默认 padding */
 }
 
 .profession-header,
@@ -635,7 +634,7 @@ const handleCopy = (roadmap: { id: number }, event: Event): void => {
 /* 移动端 */
 @media (max-width: 1280px) {
   .career-detail-page {
-    padding-left: 20px;
+    /* 使用 DefaultLayout 的默认 padding */
   }
 }
 

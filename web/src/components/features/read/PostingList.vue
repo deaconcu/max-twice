@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import SinglePost from './SinglePost.vue'
 import CommentSection from '@/components/common/CommentSection.vue'
 import AddCatalogDialog from './AddCatalogDialog.vue'
 import AddArticleDialog from './AddArticleDialog.vue'
 import InviteUserDialog from './InviteUserDialog.vue'
+import { ObjectType } from '@/enums'
 
 interface Props {
   data: any
@@ -24,12 +26,22 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<Emits>()
+const route = useRoute()
 
 const tab = ref('list')
 const currPosting = ref<any>(null)
 const showAddCatalogDialog = ref(false)
 const showAddArticleDialog = ref(false)
 const showInviteUserDialog = ref(false)
+
+// 监听路由变化，重置 tab 为 list
+watch(
+  () => [route.params.id, route.query.path, route.query.nodeId],
+  () => {
+    tab.value = 'list'
+    currPosting.value = null
+  }
+)
 
 // 切换 Tab
 const switchTab = (newTab: string, posting?: any) => {
@@ -76,7 +88,7 @@ const handleLoadData = (data: any[]) => {
       </v-row>
 
       <!-- 节点头部 -->
-      <div class="px-0 pb-1 pt-4 ma-0 mb-0">
+      <div class="px-0 pb-1 ma-0 mb-0">
         <div class="d-flex align-center justify-space-between mb-2">
           <div class="d-flex align-center">
             <v-icon icon="mdi-list-box-outline" color="primary-darken-1" size="24"></v-icon>
@@ -221,7 +233,8 @@ const handleLoadData = (data: any[]) => {
       <CommentSection
         :post-id="currNodeId"
         :comment-count="data.node?.commentCount || 0"
-        class="mt-8"
+        :object-type="ObjectType.NODE"
+        class="mt-2"
       />
     </template>
 
@@ -248,7 +261,8 @@ const handleLoadData = (data: any[]) => {
         <CommentSection
           :post-id="currPosting?.id"
           :comment-count="currPosting?.commentCount || 0"
-          class="mt-8"
+          :object-type="ObjectType.POST"
+          class="mt-6"
         />
       </div>
     </template>

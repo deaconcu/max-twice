@@ -19,6 +19,9 @@ export interface FetchOptions<T> {
   // 可选：成功回调
   onSuccess?: (data: T) => void
 
+  // 可选：数据赋值完成后的钩子
+  onDataReady?: (data: T) => void
+
   // 可选：错误回调
   onError?: (error: Error) => void
 
@@ -78,6 +81,7 @@ export function useFetch<T>(options: FetchOptions<T>): FetchReturn<T> {
     transform,
     immediate = false,
     onSuccess,
+    onDataReady,
     onError,
     defaultValue = null,
     keepDataOnRefresh = true,
@@ -121,6 +125,11 @@ export function useFetch<T>(options: FetchOptions<T>): FetchReturn<T> {
           data.value = transform(result as T extends (infer U)[] ? U : T) as T
         } else {
           data.value = result
+        }
+
+        // 数据赋值完成后的钩子
+        if (onDataReady) {
+          await onDataReady(data.value as T)
         }
       }
     } catch (err) {

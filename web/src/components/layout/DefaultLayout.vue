@@ -29,7 +29,7 @@ import { HEADER_HEIGHT, BOTTOM_NAV_HEIGHT } from '@/constants/layout'
   margin-left: max(160px, calc((100vw - 1550px) / 2));
   margin-top: v-bind('`${HEADER_HEIGHT}px`');
   min-height: v-bind('`calc(100vh - ${HEADER_HEIGHT}px)`');
-  padding: 24px 40px;
+  padding: 20px 32px;
   max-width: 1550px;
   width: calc(100% - max(160px, calc((100vw - 1550px) / 2)));
 }

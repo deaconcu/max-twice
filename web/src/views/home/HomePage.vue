@@ -220,9 +220,8 @@ const addRecommendedCourse = (courseId: number): void => {
 
 <template>
   <DefaultLayout>
-    <div class="home-page">
-      <!-- 欢迎区域 -->
-      <div class="welcome-section mb-10">
+    <!-- 欢迎区域 -->
+    <div class="welcome-section mb-10">
         <div class="d-flex align-center justify-space-between">
           <div class="d-flex align-center ga-4">
             <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="64" rounded="lg">
@@ -653,7 +652,6 @@ const addRecommendedCourse = (courseId: number): void => {
           </v-card>
         </v-col>
       </v-row>
-    </div>
   </DefaultLayout>
 </template>
 

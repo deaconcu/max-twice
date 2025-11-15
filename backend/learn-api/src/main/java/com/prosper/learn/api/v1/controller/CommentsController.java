@@ -8,6 +8,7 @@ import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.CommentService;
 import com.prosper.learn.dto.request.CreateCommentRequest;
 import com.prosper.learn.dto.response.CommentDTO;
+import com.prosper.learn.dto.response.KeysetPageResponse;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -15,7 +16,6 @@ import org.springframework.validation.annotation.Validated;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -46,35 +46,36 @@ public class CommentsController {
 
     /**
      * 获取对象评论
-     * 映射: GET /comment → GET /api/v1/comments?objectId=123&type=1&offsetId=0
-     * TODO 要改成按score排序
+     * 映射: GET /comment → GET /api/v1/comments?objectId=123&type=1&lastScore=10.5&lastId=100
+     * 按 score 降序、id 降序排序（score 高的在前，score 相同时 id 大的在前）
      */
     @GetMapping("/comments")
     @SaCheckLogin
-    public ApiResponse<List<CommentDTO>> getCommentsByObject(
+    public ApiResponse<KeysetPageResponse<CommentDTO>> getCommentsByObject(
             @RequestParam @NotNull(message = "对象ID不能为空") @Positive(message = "对象ID必须大于0") Long objectId,
-            // TODO @Positive(message = "对象类型必须大于0")
-            @RequestParam @NotNull(message = "对象类型不能为空") Integer objectType,
-            @RequestParam @NotNull(message = "偏移ID不能为空") @Min(value = 0, message = "偏移ID不能小于0") Long offsetId,
+            @RequestParam @NotNull(message = "对象类型不能为空") @Positive(message = "对象类型必须大于0") Integer objectType,
+            @RequestParam(required = false) Double lastScore,
+            @RequestParam(required = false) @Positive(message = "lastId必须大于0") Long lastId,
             @CurrentUser UserDO currentUser) {
 
-        List<CommentDTO> comments = commentService.getCommentsByObject(objectId, objectType, offsetId, currentUser);
+        KeysetPageResponse<CommentDTO> comments = commentService.getCommentsByObject(objectId, objectType, lastScore, lastId, currentUser);
         return ApiResponse.success(comments);
     }
 
     /**
      * 获取评论回复
-     * 映射: GET /comment/{id}/reply → GET /api/v1/comments/{id}/replies?offsetId=0
-     * TODO 要改成按score排序
+     * 映射: GET /comment/{id}/reply → GET /api/v1/comments/{id}/replies?lastScore=10.5&lastId=100
+     * 按 score 降序、id 降序排序（score 高的在前，score 相同时 id 大的在前）
      */
     @GetMapping("/comments/{id}/replies")
     @SaCheckLogin
-    public ApiResponse<List<CommentDTO>> getCommentReplies(
+    public ApiResponse<KeysetPageResponse<CommentDTO>> getCommentReplies(
             @PathVariable @NotNull(message = "评论ID不能为空") @Positive(message = "评论ID必须大于0") Long id,
-            @RequestParam @NotNull(message = "偏移ID不能为空") @Min(value = 0, message = "偏移ID不能小于0") Long offsetId,
+            @RequestParam(required = false) Double lastScore,
+            @RequestParam(required = false) @Positive(message = "lastId必须大于0") Long lastId,
             @CurrentUser UserDO currentUser) {
 
-        List<CommentDTO> replies = commentService.getCommentReplies(id, offsetId, currentUser);
+        KeysetPageResponse<CommentDTO> replies = commentService.getCommentReplies(id, lastScore, lastId, currentUser);
         return ApiResponse.success(replies);
     }
 }

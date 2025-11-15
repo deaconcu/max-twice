@@ -24,22 +24,34 @@
             <!-- 目录组选择卡片 -->
             <div v-if="data && data.toc" class="toc-groups-card">
               <div class="toc-chips">
-                <h3 class="text-h6 mb-0 me-3">目录</h3>
+                <v-chip
+                  size="default"
+                  rounded="lg"
+                  label
+                  variant="tonal"
+                  color=""
+                  class="me-0 px-3"
+                  style="font-weight: 600"
+                >
+                  目录
+                </v-chip>
                 <div
                   v-for="(item, index) in data.toc"
                   :key="index"
-                  class="toc-chip"
-                  :class="{
-                    'chip-active': currContentsIndex === index,
-                    'chip-primary': index === 0,
-                  }"
-                  @click="currContentsIndex = index"
+                  class="position-relative d-inline-block"
                 >
-                  <div class="chip-inner">
-                    <span class="chip-number">{{ index + 1 }}</span>
-                  </div>
+                  <v-chip
+                    label
+                    rounded="lg"
+                    size="default"
+                    variant="flat"
+                    :color="currContentsIndex === index ? 'grey-darken-1' : 'grey-lighten-3'"
+                    @click="currContentsIndex = index"
+                  >
+                    {{ index + 1 }}
+                  </v-chip>
                   <div v-if="index === 0" class="corner-badge">
-                    <v-icon icon="mdi-chart-line-variant" size="8" color="white"></v-icon>
+                    <v-icon icon="mdi-chart-line-variant" size="8" color="white" />
                   </div>
                 </div>
                 <v-btn
@@ -152,19 +164,33 @@
                     记忆卡片组
                   </v-card-title>
                   <v-card-text class="pa-4 pt-0">
-                    <v-list>
-                      <v-list-item v-for="deck in memoryDecks" :key="deck.id" class="px-0">
-                        <v-list-item-title class="text-body-2">
-                          {{ deck.title }}
-                        </v-list-item-title>
-                        <v-list-item-subtitle class="text-caption">
-                          {{ deck.cardCount }} 张卡片
-                        </v-list-item-subtitle>
-                      </v-list-item>
-                    </v-list>
-                    <v-btn block color="primary" variant="outlined" class="text-none mt-2">
-                      创建卡片组
-                    </v-btn>
+                    <div v-if="loadingDecks" class="text-center py-4">
+                      <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+                    </div>
+                    <template v-else>
+                      <v-list v-if="memoryDecks.length > 0">
+                        <v-list-item v-for="deck in memoryDecks" :key="deck.id" class="px-0">
+                          <v-list-item-title class="text-body-2">
+                            {{ deck.title }}
+                          </v-list-item-title>
+                          <v-list-item-subtitle class="text-caption">
+                            {{ deck.cardCount }} 张卡片
+                          </v-list-item-subtitle>
+                        </v-list-item>
+                      </v-list>
+                      <div v-else class="text-body-2 text-grey text-center py-4">
+                        暂无卡片组
+                      </div>
+                      <v-btn
+                        block
+                        color="primary"
+                        variant="outlined"
+                        class="text-none mt-2"
+                        @click="showCreateDeckDialog = true"
+                      >
+                        创建卡片组
+                      </v-btn>
+                    </template>
                   </v-card-text>
                 </v-card>
 
@@ -193,6 +219,14 @@
       :contents="data.toc || []"
       @load-data="loadData"
     />
+
+    <!-- 创建卡片组对话框 -->
+    <CreateDeckDialog
+      v-if="currNodeId"
+      v-model="showCreateDeckDialog"
+      :node-id="currNodeId"
+      @created="handleDeckCreated"
+    />
   </div>
 </template>
 
@@ -205,8 +239,10 @@ import CourseHeader from '@/components/features/read/CourseHeader.vue'
 import TreeNode from '@/components/common/TreeNode.vue'
 import PostingList from '@/components/features/read/PostingList.vue'
 import ConfigContentsDialog from '@/components/features/read/ConfigContentsDialog.vue'
-import { pageApi } from '@/api'
+import CreateDeckDialog from '@/components/features/read/CreateDeckDialog.vue'
+import { pageApi, memoryApi } from '@/api'
 import type { ReadResponse } from '@/api/modules/page'
+import type { MemoryCardDeck } from '@/types/memory'
 import { useFetch } from '@/composables/useFetch'
 
 const router = useRouter()
@@ -217,6 +253,7 @@ const showFixedBar = ref(false)
 const isLearning = ref(false)
 const openContentsList = ref(true)
 const configContents = ref(false)
+const showCreateDeckDialog = ref(false)
 const currContentsIndex = ref(0)
 const isAssistantExpanded = ref(true)
 const currentTab = ref('list')
@@ -244,23 +281,30 @@ const { data, loading: dataLoading, execute: loadData } = useFetch<ReadResponse>
         Number(route.params.id),
         route.query.path as string
       )
+    } else if (route.params.id) {
+      return pageApi.readByCoursePath(
+        Number(route.params.id),
+        ''
+      )
     }
     return Promise.reject(new Error('缺少必要参数'))
   },
   immediate: true,
-  onSuccess: (responseData) => {
+  onDataReady: () => {
     // 处理投票类型
-    responseData.otherPostings?.forEach((posting: any) => {
+    data.value.otherPostings?.forEach((posting: any) => {
       if (posting.voteType === 0) {
         posting.voteType = null
       }
     })
-
     // 设置学习状态
-    isLearning.value = responseData.learning || false
+    isLearning.value = data.value.learning || false
+    // 数据赋值完成后处理数据
 
-    // 处理数据
     processData()
+
+    // 加载记忆卡片组
+    loadMemoryDecks()
   },
 })
 
@@ -286,14 +330,37 @@ const aiEngines = [
 ]
 
 // 记忆卡片组
-const memoryDecks = ref([
-  { id: 1, title: 'Vue 3 核心 API', cardCount: 12 },
-  { id: 2, title: '响应式原理', cardCount: 8 },
-  { id: 3, title: '常见问题', cardCount: 15 },
-])
+const memoryDecks = ref<MemoryCardDeck[]>([])
+const loadingDecks = ref(false)
+
+// 加载记忆卡片组
+const loadMemoryDecks = async () => {
+  if (!currNodeId.value) return
+
+  loadingDecks.value = true
+  try {
+    const response = await memoryApi.getDecksByNode(currNodeId.value, { limit: 10 })
+    if (response.data) {
+      memoryDecks.value = response.data.items || []
+    }
+  } catch (error) {
+    console.error('Failed to load memory decks:', error)
+    memoryDecks.value = []
+  } finally {
+    loadingDecks.value = false
+  }
+}
+
+// 处理创建卡片组成功
+const handleDeckCreated = (deck: MemoryCardDeck) => {
+  console.log('Deck created:', deck)
+  // 重新加载卡片组列表
+  loadMemoryDecks()
+}
 
 // 处理数据
 const processData = () => {
+  console.log('data:', data.value)
   if (!data.value || !data.value.path) return
 
   // 解析路径
@@ -309,6 +376,8 @@ const processData = () => {
   // 设置当前目录组索引
   currContentsIndex.value = Number(nodes.value[0])
   nodes.value.shift()
+
+  console.log('currContentsIndex:', currContentsIndex.value)
 
   // 生成路径文本
   pathText.value = `${data.value.course.name}/`
@@ -354,6 +423,26 @@ const handleTabSwitch = (tab: string, posting?: any) => {
   }
 }
 
+// 跳转到目录组的根目录
+const goToRootDirectory = (index: number) => {
+  // 获取该目录组的根节点ID
+  const tocGroup = data.value?.toc?.[index]
+  if (!tocGroup) return
+
+  // 找到第一个有效的根节点ID（排除 + 和 ^ 键）
+  const rootNodeId = Object.keys(tocGroup).find((key) => key !== '+' && key !== '^')
+  if (!rootNodeId) return
+
+  // 构建根目录路径：{目录组编号}-{根节点ID}
+  const rootPath = `${index + 1}-${rootNodeId}`
+
+  router.push({
+    name: 'content-read',
+    params: { id: route.params.id },
+    query: { path: rootPath },
+  })
+}
+
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
 })
@@ -380,7 +469,6 @@ onUnmounted(() => {
 
 .main-content {
   margin-left: 240px;
-  padding: 80px 40px 40px 40px;
   max-width: 1550px;
 }
 
@@ -437,7 +525,7 @@ onUnmounted(() => {
 
 .toc-card {
   background-color: white;
-  padding: 14px 0;
+  padding: 10px 0;
   border-radius: 16px;
   flex: 1;
   min-height: 0;
@@ -462,10 +550,20 @@ onUnmounted(() => {
   border-radius: 0.5px;
 }
 
+/* 目录标签样式 */
+.toc-label {
+  display: flex;
+  align-items: center;
+  margin-right: 2px;
+  padding: 6px 12px;
+  background-color: #f9f4f1;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
 /* 目录组选择卡片 */
 .toc-groups-card {
   padding: 0;
-  margin-bottom: 16px;
 }
 
 .toc-chips {
@@ -473,48 +571,6 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-}
-
-.toc-chip {
-  position: relative;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background-color: #f6f7f8;
-  border: 1.5px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.toc-chip:hover {
-  background-color: rgba(var(--v-theme-primary), 0.08);
-  transform: translateY(-2px);
-}
-
-.toc-chip.chip-active {
-  background: linear-gradient(135deg, rgb(var(--v-theme-primary)), rgba(var(--v-theme-primary), 0.85));
-  transform: translateY(-2px);
-}
-
-.toc-chip.chip-primary {
-  border-color: rgba(var(--v-theme-primary), 0.3);
-}
-
-.chip-inner {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.chip-number {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: #555;
 }
 
 .chip-active .chip-number {
@@ -529,7 +585,7 @@ onUnmounted(() => {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background-color: rgb(var(--v-theme-primary));
+  background-color: rgb(var(--v-theme-success));
   display: flex;
   align-items: center;
   justify-content: center;

@@ -6,6 +6,7 @@ import type { ApiResponse } from '@/types/api'
 import type {
   CourseMemoryBank,
   MemoryCardView,
+  MemoryCardDeck,
   GetReviewQueueParams,
   GetCardListParams,
   ReviewResult,
@@ -19,6 +20,35 @@ import type {
  */
 export function getMemoryBankCourses(): Promise<ApiResponse<CourseMemoryBank[]>> {
   return client.get('/api/memory/courses')
+}
+
+/**
+ * 根据节点ID获取卡片组列表
+ */
+export function getDecksByNode(
+  nodeId: number,
+  params?: {
+    lastScore?: number
+    lastId?: number
+    limit?: number
+  }
+): Promise<ApiResponse<{ items: MemoryCardDeck[]; hasMore: boolean }>> {
+  return client.get(`/v1/memory/decks/node/${nodeId}`, { params })
+}
+
+/**
+ * 创建卡片组
+ */
+export function createDeck(data: {
+  sourcePostId: number
+  title: string
+  description?: string
+  cards: Array<{
+    front: string
+    back: string
+  }>
+}): Promise<ApiResponse<MemoryCardDeck>> {
+  return client.post('/v1/memory/decks', data)
 }
 
 /**

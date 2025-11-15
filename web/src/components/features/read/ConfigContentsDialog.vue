@@ -38,6 +38,10 @@ const { execute: submitUpdate, loading: submitting } = useMutation(
   {
     successMessage: '目录更新成功',
     onSuccess: () => {
+      // 首先关闭对话框
+      dialog.value = false
+
+      // 然后处理路由逻辑
       const pathParts = (route.query.path as string).split('-')
       const currIndex = Number(pathParts[0])
       const index = list.value.indexOf(currIndex) + 1
@@ -48,8 +52,6 @@ const { execute: submitUpdate, loading: submitting } = useMutation(
       } else {
         nextPath = `${index}-${pathParts.slice(1).join('-')}`
       }
-
-      dialog.value = false
 
       if (nextPath === route.query.path) {
         emit('load-data', [])
@@ -147,7 +149,7 @@ const removeItem = (index: number) => {
       <v-divider></v-divider>
 
       <v-card-actions class="pa-4 d-flex justify-space-between">
-        <v-btn variant="outlined" color="primary" prepend-icon="mdi-plus" @click="addItem">
+        <v-btn variant="text" color="primary" prepend-icon="mdi-plus" @click="addItem">
           添加新目录
         </v-btn>
         <div class="d-flex" style="gap: 8px">

@@ -1,7 +1,6 @@
 <template>
   <DefaultLayout>
-    <div class="review-page pa-4">
-      <!-- 页面标题 -->
+    <!-- 页面标题 -->
       <div class="mb-6">
         <div class="d-flex align-center justify-space-between mb-4">
           <div class="d-flex align-center">
@@ -585,7 +584,6 @@
           </v-card>
         </v-col>
       </v-row>
-    </div>
   </DefaultLayout>
 </template>
 

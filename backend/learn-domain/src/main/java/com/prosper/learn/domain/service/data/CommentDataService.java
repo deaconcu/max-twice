@@ -136,16 +136,12 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
     
     /**
      * 根据状态获取评论列表（不缓存）
+     * @param state 评论状态
+     * @param lastId 最后一条记录的ID，为null时加载第一页
+     * @param limit 每页数量
      */
-    public List<CommentDO> getListByState(byte state, int limit) {
-        return commentMapper.getListByState(state, limit);
-    }
-
-    /**
-     * 根据状态分页获取评论列表（不缓存）
-     */
-    public List<CommentDO> getListByStatePaginated(byte state, long offsetId, int limit) {
-        return commentMapper.getListByStatePaginated(state, offsetId, limit);
+    public List<CommentDO> getListByState(byte state, Long lastId, int limit) {
+        return commentMapper.getListByState(state, lastId, limit);
     }
 
     /**
