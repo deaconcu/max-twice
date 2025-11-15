@@ -299,7 +299,7 @@ onBeforeUnmount(() => {
         density="comfortable"
         :disabled="!newComment.trim()"
         :loading="submitting"
-        @click="handleSubmitComment"
+        @mousedown.prevent="handleSubmitComment"
       >
         <v-icon icon="mdi-send" size="18" class="mr-1"></v-icon>
         发表评论
@@ -390,7 +390,7 @@ onBeforeUnmount(() => {
                   variant="tonal"
                   :disabled="!replyContent.trim()"
                   :loading="replying"
-                  @click="handleSubmitReply(comment.id)"
+                  @mousedown.prevent="handleSubmitReply(comment.id)"
                 >
                   发表回复
                 </v-btn>
@@ -475,7 +475,7 @@ onBeforeUnmount(() => {
                           variant="tonal"
                           :disabled="!replyContent.trim()"
                           :loading="replying"
-                          @click="handleSubmitReply(comment.id)"
+                          @mousedown.prevent="handleSubmitReply(comment.id)"
                         >
                           发表回复
                         </v-btn>

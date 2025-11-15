@@ -1,9 +1,6 @@
 <template>
-  <div class="read-page">
-    <AppHeader />
-    <AppSidebar />
-
-    <div class="main-content">
+  <DefaultLayout>
+    <div class="read-page">
       <!-- 课程头部 - 固定在顶部 -->
       <div class="course-header-sticky">
         <CourseHeader
@@ -100,101 +97,77 @@
                 :path-text="pathText"
                 :is-learning="isLearning"
                 @switch-tab="handleTabSwitch"
+                @view-deck="handleViewDeck"
               />
             </div>
 
             <!-- 右侧工具栏 -->
             <div v-if="data" class="right-sidebar">
               <div class="sidebar-sticky">
-                <!-- AI答疑助手 -->
-                <v-card class="sidebar-card mb-4 no-border" rounded="lg">
-                  <v-card-title class="pa-4">
-                    <div class="d-flex align-center justify-space-between w-100">
-                      <div class="d-flex align-center">
-                        <v-icon icon="mdi-robot-excited" color="primary" class="mr-2"></v-icon>
-                        <span>答疑助手</span>
-                      </div>
-                      <v-btn
-                        :icon="isAssistantExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-                        variant="text"
-                        color="grey-darken-1"
-                        size="x-small"
-                        @click="isAssistantExpanded = !isAssistantExpanded"
-                      ></v-btn>
-                    </div>
-                  </v-card-title>
-
-                  <v-expand-transition>
-                    <v-card-text v-show="isAssistantExpanded" class="pa-4 pt-0">
-                      <div class="text-body-2 text-grey-darken-2 mb-3">
-                        <div class="font-weight-bold w-100">用法：</div>
-                        <div class="mt-2">1）在文章中选中您不太理解的内容</div>
-                        <div>2）在左侧竖线处拖动手柄，调整上下文范围</div>
-                        <div>3）点击面板中的"复制"，将引用和问题复制到剪贴板</div>
-                        <div>4）用复制的内容询问你常用的 AI 引擎</div>
-                      </div>
-
-                      <div class="d-flex flex-wrap mt-5" style="gap: 8px">
-                        <div class="text-body-2 w-100 text-grey-darken-2 font-weight-bold">
-                          常用 AI 引擎：
+                <!-- 文章详情页：显示答疑助手和记忆卡片组侧边栏 -->
+                <template v-if="currentTab !== 'list' && currentTab !== 'comment' && currentTab !== 'memoryCards' && currentPosting">
+                  <!-- AI答疑助手 -->
+                  <v-card class="sidebar-card mb-4 no-border" rounded="lg">
+                    <v-card-title class="pa-4">
+                      <div class="d-flex align-center justify-space-between w-100">
+                        <div class="d-flex align-center">
+                          <v-icon icon="mdi-robot-excited" color="primary" class="mr-2"></v-icon>
+                          <span>答疑助手</span>
                         </div>
-                        <v-chip
-                          v-for="e in aiEngines"
-                          :key="e.name"
-                          :href="e.href"
-                          target="_blank"
-                          rel="noopener"
-                          :color="e.color"
-                          variant="tonal"
-                          rounded="lg"
-                          size="small"
-                          class="engine-link"
-                          :prepend-icon="e.icon"
-                          :text="e.name"
-                        />
+                        <v-btn
+                          :icon="isAssistantExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                          variant="text"
+                          color="grey-darken-1"
+                          size="x-small"
+                          @click="isAssistantExpanded = !isAssistantExpanded"
+                        ></v-btn>
                       </div>
-                    </v-card-text>
-                  </v-expand-transition>
-                </v-card>
+                    </v-card-title>
 
-                <!-- 记忆卡片组 -->
-                <v-card class="sidebar-card mb-4 no-border" rounded="lg">
-                  <v-card-title class="pa-4">
-                    <v-icon left color="primary">mdi-cards</v-icon>
-                    记忆卡片组
-                  </v-card-title>
-                  <v-card-text class="pa-4 pt-0">
-                    <div v-if="loadingDecks" class="text-center py-4">
-                      <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
-                    </div>
-                    <template v-else>
-                      <v-list v-if="memoryDecks.length > 0">
-                        <v-list-item v-for="deck in memoryDecks" :key="deck.id" class="px-0">
-                          <v-list-item-title class="text-body-2">
-                            {{ deck.title }}
-                          </v-list-item-title>
-                          <v-list-item-subtitle class="text-caption">
-                            {{ deck.cardCount }} 张卡片
-                          </v-list-item-subtitle>
-                        </v-list-item>
-                      </v-list>
-                      <div v-else class="text-body-2 text-grey text-center py-4">
-                        暂无卡片组
-                      </div>
-                      <v-btn
-                        block
-                        color="primary"
-                        variant="outlined"
-                        class="text-none mt-2"
-                        @click="showCreateDeckDialog = true"
-                      >
-                        创建卡片组
-                      </v-btn>
-                    </template>
-                  </v-card-text>
-                </v-card>
+                    <v-expand-transition>
+                      <v-card-text v-show="isAssistantExpanded" class="pa-4 pt-0">
+                        <div class="text-body-2 text-grey-darken-2 mb-3">
+                          <div class="font-weight-bold w-100">用法：</div>
+                          <div class="mt-2">1）在文章中选中您不太理解的内容</div>
+                          <div>2）在左侧竖线处拖动手柄，调整上下文范围</div>
+                          <div>3）点击面板中的"复制"，将引用和问题复制到剪贴板</div>
+                          <div>4）用复制的内容询问你常用的 AI 引擎</div>
+                        </div>
 
-                <!-- 课程信息 -->
+                        <div class="d-flex flex-wrap mt-5" style="gap: 8px">
+                          <div class="text-body-2 w-100 text-grey-darken-2 font-weight-bold">
+                            常用 AI 引擎：
+                          </div>
+                          <v-chip
+                            v-for="e in aiEngines"
+                            :key="e.name"
+                            :href="e.href"
+                            target="_blank"
+                            rel="noopener"
+                            :color="e.color"
+                            variant="tonal"
+                            rounded="lg"
+                            size="small"
+                            class="engine-link"
+                            :prepend-icon="e.icon"
+                            :text="e.name"
+                          />
+                        </div>
+                      </v-card-text>
+                    </v-expand-transition>
+                  </v-card>
+
+                  <!-- 记忆卡片组侧边栏 -->
+                  <MemoryCardSidebar
+                    :post-id="currentPosting.id"
+                    @create-deck="handleCreateDeck"
+                    @view-deck="handleViewDeck"
+                    class="mb-4"
+                  />
+                </template>
+
+                <!-- 其他页面：显示课程信息 -->
+                <template v-else>
                 <v-card class="sidebar-card no-border" rounded="lg">
                   <v-card-title class="pa-4"> 关于本课程 </v-card-title>
                   <v-card-text class="pa-4 pt-0">
@@ -204,6 +177,7 @@
                     </div>
                   </v-card-text>
                 </v-card>
+                </template>
               </div>
             </div>
           </div>
@@ -222,24 +196,28 @@
 
     <!-- 创建卡片组对话框 -->
     <CreateDeckDialog
-      v-if="currNodeId"
+      v-if="currentPosting"
       v-model="showCreateDeckDialog"
-      :node-id="currNodeId"
+      :post-id="currentPosting.id"
       @created="handleDeckCreated"
     />
-  </div>
+
+    <!-- 卡片组详情对话框 -->
+    <DeckDetailDialog v-model="showDeckDetailDialog" :deck="selectedDeck" @add-to-study="handleAddDeck" />
+  </DefaultLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import AppHeader from '@/components/layout/AppHeader.vue'
-import AppSidebar from '@/components/layout/AppSidebar.vue'
+import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import CourseHeader from '@/components/features/read/CourseHeader.vue'
 import TreeNode from '@/components/common/TreeNode.vue'
 import PostingList from '@/components/features/read/PostingList.vue'
 import ConfigContentsDialog from '@/components/features/read/ConfigContentsDialog.vue'
 import CreateDeckDialog from '@/components/features/read/CreateDeckDialog.vue'
+import MemoryCardSidebar from '@/components/features/read/MemoryCardSidebar.vue'
+import DeckDetailDialog from '@/components/features/read/DeckDetailDialog.vue'
 import { pageApi, memoryApi } from '@/api'
 import type { ReadResponse } from '@/api/modules/page'
 import type { MemoryCardDeck } from '@/types/memory'
@@ -258,6 +236,8 @@ const currContentsIndex = ref(0)
 const isAssistantExpanded = ref(true)
 const currentTab = ref('list')
 const currentPosting = ref(null)
+const selectedDeck = ref<MemoryCardDeck | null>(null)
+const showDeckDetailDialog = ref(false)
 const loading = ref(false)
 const error = ref<string | null>(null)
 
@@ -300,11 +280,7 @@ const { data, loading: dataLoading, execute: loadData } = useFetch<ReadResponse>
     // 设置学习状态
     isLearning.value = data.value.learning || false
     // 数据赋值完成后处理数据
-
     processData()
-
-    // 加载记忆卡片组
-    loadMemoryDecks()
   },
 })
 
@@ -318,44 +294,20 @@ const isMainCourse = computed(() => {
 
 // AI 引擎列表
 const aiEngines = [
-  { name: 'ChatGPT', href: 'https://chatgpt.com', color: 'green-darken-2', icon: 'mdi-robot' },
+  { name: 'ChatGPT', href: 'https://chatgpt.com', color: 'grey-darken-1', icon: 'mdi-robot' },
   {
     name: 'Claude',
     href: 'https://claude.ai',
-    color: 'indigo-darken-2',
+    color: 'grey-darken-1',
     icon: 'mdi-alpha-c-circle-outline',
   },
-  { name: 'Gemini', href: 'https://gemini.google.com', color: 'blue-darken-2', icon: 'mdi-google' },
-  { name: 'DeepSeek', href: 'https://chat.deepseek.com', color: 'red-darken-4', icon: 'mdi-radar' },
+  { name: 'Gemini', href: 'https://gemini.google.com', color: 'grey-darken-1', icon: 'mdi-google' },
+  { name: 'DeepSeek', href: 'https://chat.deepseek.com', color: 'grey-darken-1', icon: 'mdi-radar' },
 ]
-
-// 记忆卡片组
-const memoryDecks = ref<MemoryCardDeck[]>([])
-const loadingDecks = ref(false)
-
-// 加载记忆卡片组
-const loadMemoryDecks = async () => {
-  if (!currNodeId.value) return
-
-  loadingDecks.value = true
-  try {
-    const response = await memoryApi.getDecksByNode(currNodeId.value, { limit: 10 })
-    if (response.data) {
-      memoryDecks.value = response.data.items || []
-    }
-  } catch (error) {
-    console.error('Failed to load memory decks:', error)
-    memoryDecks.value = []
-  } finally {
-    loadingDecks.value = false
-  }
-}
 
 // 处理创建卡片组成功
 const handleDeckCreated = (deck: MemoryCardDeck) => {
   console.log('Deck created:', deck)
-  // 重新加载卡片组列表
-  loadMemoryDecks()
 }
 
 // 处理数据
@@ -423,6 +375,47 @@ const handleTabSwitch = (tab: string, posting?: any) => {
   }
 }
 
+// 处理创建卡片组
+const handleCreateDeck = () => {
+  if (currentPosting.value) {
+    showCreateDeckDialog.value = true
+  }
+}
+
+// 处理查看卡片组详情
+const handleViewDeck = (deck: MemoryCardDeck) => {
+  selectedDeck.value = deck
+  showDeckDetailDialog.value = true
+}
+
+// 处理添加卡片组到学习计划
+const handleAddDeck = async (deck: MemoryCardDeck) => {
+  console.log('ContentReadPage received addDeck event:', deck)
+
+  try {
+    // 获取当前课程ID
+    const courseId = data.value?.course?.id
+    if (!courseId) {
+      console.error('无法确定课程信息')
+      return
+    }
+
+    // 调用API添加卡片组到记忆库
+    const response = await memoryApi.addDeckToMemoryBank({
+      deckId: deck.id,
+      courseId: courseId,
+    })
+
+    if (response.code === 200) {
+      console.log(`已将"${deck.title}"添加到${data.value.course.name}课程的学习计划`)
+    } else {
+      console.error('添加失败，请重试')
+    }
+  } catch (error) {
+    console.error('Failed to add deck to memory bank:', error)
+  }
+}
+
 // 跳转到目录组的根目录
 const goToRootDirectory = (index: number) => {
   // 获取该目录组的根节点ID
@@ -465,11 +458,6 @@ onUnmounted(() => {
 .read-page {
   min-height: 100vh;
   background-color: #ffffff;
-}
-
-.main-content {
-  margin-left: 240px;
-  max-width: 1550px;
 }
 
 /* 固定课程头部 */

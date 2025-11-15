@@ -53,70 +53,96 @@ public class AdminMemoryCardDeckController {
     }
 
     /**
-     * 管理后台：卡片组审核操作（统一接口）
+     * 管理后台：批准卡片组
      * POST /api/v1/admin/memory/decks/{deckId}/approve
-     * 支持 approve/reject/ban/restore 操作
      */
     @PostMapping("/decks/{deckId}/approve")
     @RequireRole(UserRole.MODERATOR)
     @OperationLog(
         module = "内容管理",
-        type = "#request.action == 'APPROVE' ? '审核通过卡片组' : (#request.action == 'REJECT' ? '审核拒绝卡片组' : (#request.action == 'BAN' ? '屏蔽卡片组' : '恢复卡片组'))",
+        type = "审核通过卡片组",
+        level = Enums.OperationLevel.MEDIUM,
+        targetType = "MemoryCardDeck",
+        targetId = "#deckId"
+    )
+    public ApiResponse<Void> approveDeck(
+            @PathVariable @NotNull(message = "卡片组ID不能为空")
+            @Positive(message = "卡片组ID必须大于0") Long deckId,
+            @CurrentUser UserDO currentUser) {
+
+        deckService.approve(deckId, currentUser.getId());
+        return ApiResponse.success();
+    }
+
+    /**
+     * 管理后台：拒绝卡片组
+     * POST /api/v1/admin/memory/decks/{deckId}/reject
+     */
+    @PostMapping("/decks/{deckId}/reject")
+    @RequireRole(UserRole.MODERATOR)
+    @OperationLog(
+        module = "内容管理",
+        type = "审核拒绝卡片组",
         level = Enums.OperationLevel.MEDIUM,
         targetType = "MemoryCardDeck",
         targetId = "#deckId",
         reason = "#request.reason"
     )
-    public ApiResponse<ApprovalResponseDTO> approveDeck(
+    public ApiResponse<Void> rejectDeck(
             @PathVariable @NotNull(message = "卡片组ID不能为空")
             @Positive(message = "卡片组ID必须大于0") Long deckId,
-            @RequestBody @Valid OperateRequest request,
+            @RequestBody(required = false) OperateRequest request,
             @CurrentUser UserDO currentUser) {
 
-        ApprovalResponseDTO response = switch (request.getAction().toLowerCase()) {
-            case "approve" -> {
-                deckService.approve(deckId, currentUser.getId());
-                yield ApprovalResponseDTO.builder()
-                        .success(true)
-                        .message("批准成功")
-                        .objectId(deckId)
-                        .objectType("memoryDeck")
-                        .action("approve")
-                        .build();
-            }
-            case "reject" -> {
-                deckService.reject(deckId, currentUser.getId(), request.getReason());
-                yield ApprovalResponseDTO.builder()
-                        .success(true)
-                        .message("拒绝成功")
-                        .objectId(deckId)
-                        .objectType("memoryDeck")
-                        .action("reject")
-                        .build();
-            }
-            case "ban" -> {
-                deckService.ban(deckId, currentUser.getId(), request.getReason());
-                yield ApprovalResponseDTO.builder()
-                        .success(true)
-                        .message("封禁成功")
-                        .objectId(deckId)
-                        .objectType("memoryDeck")
-                        .action("ban")
-                        .build();
-            }
-            case "restore" -> {
-                deckService.restoreDeck(deckId, currentUser.getId());
-                yield ApprovalResponseDTO.builder()
-                        .success(true)
-                        .message("恢复成功")
-                        .objectId(deckId)
-                        .objectType("memoryDeck")
-                        .action("restore")
-                        .build();
-            }
-            default -> throw new IllegalArgumentException("不支持的操作类型: " + request.getAction());
-        };
+        String reason = (request != null) ? request.getReason() : "";
+        deckService.reject(deckId, currentUser.getId(), reason);
+        return ApiResponse.success();
+    }
 
-        return ApiResponse.success(response);
+    /**
+     * 管理后台：屏蔽卡片组
+     * POST /api/v1/admin/memory/decks/{deckId}/ban
+     */
+    @PostMapping("/decks/{deckId}/ban")
+    @RequireRole(UserRole.MODERATOR)
+    @OperationLog(
+        module = "内容管理",
+        type = "屏蔽卡片组",
+        level = Enums.OperationLevel.MEDIUM,
+        targetType = "MemoryCardDeck",
+        targetId = "#deckId",
+        reason = "#request.reason"
+    )
+    public ApiResponse<Void> banDeck(
+            @PathVariable @NotNull(message = "卡片组ID不能为空")
+            @Positive(message = "卡片组ID必须大于0") Long deckId,
+            @RequestBody(required = false) OperateRequest request,
+            @CurrentUser UserDO currentUser) {
+
+        String reason = (request != null) ? request.getReason() : "";
+        deckService.ban(deckId, currentUser.getId(), reason);
+        return ApiResponse.success();
+    }
+
+    /**
+     * 管理后台：恢复卡片组
+     * POST /api/v1/admin/memory/decks/{deckId}/restore
+     */
+    @PostMapping("/decks/{deckId}/restore")
+    @RequireRole(UserRole.MODERATOR)
+    @OperationLog(
+        module = "内容管理",
+        type = "恢复卡片组",
+        level = Enums.OperationLevel.MEDIUM,
+        targetType = "MemoryCardDeck",
+        targetId = "#deckId"
+    )
+    public ApiResponse<Void> restoreDeck(
+            @PathVariable @NotNull(message = "卡片组ID不能为空")
+            @Positive(message = "卡片组ID必须大于0") Long deckId,
+            @CurrentUser UserDO currentUser) {
+
+        deckService.restoreDeck(deckId, currentUser.getId());
+        return ApiResponse.success();
     }
 }

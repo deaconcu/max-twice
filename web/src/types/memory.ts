@@ -31,12 +31,16 @@ export enum CourseStudyStatus {
 }
 
 /**
- * 卡片组状态
+ * 卡片组状态（与后端 ContentState 对应）
  */
-export enum DeckState {
-  ACTIVE = 'ACTIVE', // 激活
-  ARCHIVED = 'ARCHIVED', // 归档
-}
+export const DeckState = {
+  SUBMITTED: 1,   // 已提交/审核中
+  PUBLISHED: 2,   // 已发布/正常
+  REJECTED: 3,    // 已拒绝
+  BANNED: 4       // 已封禁/屏蔽
+} as const
+
+export type DeckState = typeof DeckState[keyof typeof DeckState]
 
 /**
  * SRS 状态
@@ -69,11 +73,39 @@ export interface MemoryCardDeck {
   id: number
   title: string // 标题
   description?: string // 描述
-  courseId: number // 所属课程ID
+  sourcePostId?: number // 来源帖子ID
+  nodeId?: number // 所属节点ID
+  courseId?: number // 所属课程ID
   cardCount: number // 卡片数量
-  state: DeckState // 状态
+  state: number // 状态：1=审核中, 2=已通过, 3=已拒绝, 4=已屏蔽
+  upvoteCount: number // 点赞数
+  hasUpvoted?: boolean // 当前用户是否已点赞
+  creatorId?: number // 创建者ID
+  creator?: {
+    id: number
+    name: string
+    avatar?: string
+  } // 创建者信息
   createdAt: string
   updatedAt: string
+}
+
+/**
+ * 卡片组统计信息
+ */
+export interface DeckStats {
+  totalCards: number
+  newCards: number
+  reviewCards: number
+  learnedCards: number
+}
+
+/**
+ * 卡片组详情（包含卡片列表）
+ */
+export interface DeckDetail extends MemoryCardDeck {
+  cards: MemoryCardView[]
+  stats: DeckStats
 }
 
 /**

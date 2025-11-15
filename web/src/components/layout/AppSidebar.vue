@@ -50,17 +50,15 @@ const handleToolClick = (tool: (typeof BOTTOM_TOOLS)[number]) => {
     <!-- 底部工具栏 -->
     <div class="sidebar-bottom">
       <div class="bottom-tools">
-        <v-btn
+        <div
           v-for="tool in BOTTOM_TOOLS"
           :key="tool.icon"
-          icon
-          variant="text"
-          size="x-small"
+          class="tool-item"
           :title="t(tool.titleKey)"
           @click="handleToolClick(tool)"
         >
-          <v-icon size="18">{{ tool.icon }}</v-icon>
-        </v-btn>
+          <v-icon size="20" class="tool-icon">{{ tool.icon }}</v-icon>
+        </div>
       </div>
     </div>
   </aside>
@@ -74,7 +72,7 @@ const handleToolClick = (tool: (typeof BOTTOM_TOOLS)[number]) => {
   left: 0;
   top: 0;
   background-color: rgb(var(--v-theme-surface));
-  padding: v-bind('`${HEADER_HEIGHT + 24}px`') 16px 20px 16px;
+  padding: v-bind('`${HEADER_HEIGHT + 24}px`') 18px 20px 16px;
   display: flex;
   flex-direction: column;
 }
@@ -90,7 +88,7 @@ const handleToolClick = (tool: (typeof BOTTOM_TOOLS)[number]) => {
 .nav-link {
   display: flex;
   align-items: center;
-  padding: 12px 14px;
+  padding: 12px 12px 12px 14px;
   text-decoration: none;
   color: rgb(var(--v-theme-on-surface-variant));
   border-radius: 8px;
@@ -121,8 +119,29 @@ const handleToolClick = (tool: (typeof BOTTOM_TOOLS)[number]) => {
 
 .bottom-tools {
   display: flex;
-  justify-content: space-around;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tool-item {
+  display: flex;
   align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  border-radius: 8px;
+  color: rgb(var(--v-theme-on-surface-variant));
+  transition: all 0.15s ease;
+}
+
+.tool-item:hover {
+  background-color: rgb(var(--v-theme-surface-variant));
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.tool-icon {
+  flex-shrink: 0;
 }
 
 /* 移动端 - 转为底部导航栏 */

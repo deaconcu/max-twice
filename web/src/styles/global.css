@@ -3,6 +3,12 @@
  * 包含通用工具类和全局样式定义
  */
 
+/* 隐藏滚动条槽位 */
+html {
+  overflow-y: auto;
+  scrollbar-gutter: auto;
+}
+
 /* 通用工具类 */
 .no-border {
   border: none !important;

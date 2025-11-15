@@ -137,3 +137,181 @@ export function updateCourseMemorySetting(params: {
 export function removeCourseMemoryBank(courseId: number): Promise<ApiResponse<void>> {
   return client.delete(`/api/memory/courses/${String(courseId)}`)
 }
+
+/**
+ * 获取帖子下的公共卡片组列表
+ */
+export function getPostPublicDecks(
+  postId: number,
+  params?: {
+    sortBy?: string
+    sortOrder?: string
+    lastScore?: number
+    lastId?: number
+    limit?: number
+  }
+): Promise<
+  ApiResponse<{
+    items: MemoryCardDeck[]
+    hasMore: boolean
+    nextCursor?: {
+      lastScore?: number
+      lastId?: number
+    }
+  }>
+> {
+  return client.get(`/v1/memory/posts/${postId}/decks`, { params })
+}
+
+/**
+ * 获取帖子创建者提交的卡片组
+ */
+export function getPostCreatorDeck(
+  postId: number,
+  params?: {
+    sortBy?: string
+    sortOrder?: string
+    lastScore?: number
+    lastId?: number
+    limit?: number
+  }
+): Promise<
+  ApiResponse<{
+    items: MemoryCardDeck[]
+    hasMore: boolean
+    nextCursor?: {
+      lastScore?: number
+      lastId?: number
+    }
+  }>
+> {
+  return client.get(`/v1/memory/posts/${postId}/creator-deck`, { params })
+}
+
+/**
+ * 获取用户自己在指定帖子下提交的卡片组
+ */
+export function getMyPostDeck(
+  postId: number,
+  params?: {
+    sortBy?: string
+    sortOrder?: string
+    lastScore?: number
+    lastId?: number
+    limit?: number
+  }
+): Promise<
+  ApiResponse<{
+    items: MemoryCardDeck[]
+    hasMore: boolean
+    nextCursor?: {
+      lastScore?: number
+      lastId?: number
+    }
+  }>
+> {
+  return client.get(`/v1/memory/posts/${postId}/my-deck`, { params })
+}
+
+/**
+ * 点赞/取消点赞卡片组
+ */
+export function upvoteDeck(deckId: number): Promise<
+  ApiResponse<{
+    upvoted: boolean
+    upvotes: number
+  }>
+> {
+  return client.post('/v1/upvotes', {
+    objectId: deckId,
+    objectType: 'MEMORY_CARD_DECK',
+    type: 'NORMAL',
+  })
+}
+
+/**
+ * 获取卡片组详情
+ */
+export function getDeckDetail(deckId: number): Promise<ApiResponse<any>> {
+  return client.get(`/v1/memory/decks/${deckId}`)
+}
+
+/**
+ * 获取用户在指定节点下学习的所有卡片
+ */
+export function getUserCardsByNode(nodeId: number): Promise<ApiResponse<any[]>> {
+  return client.get(`/v1/memory/cards/node/${nodeId}`)
+}
+
+/**
+ * 添加卡片到学习
+ */
+export function addCardToStudy(cardId: number): Promise<ApiResponse<any>> {
+  return client.post(`/v1/memory/cards/${cardId}/study`)
+}
+
+/**
+ * 删除卡片
+ */
+export function deleteCard(cardId: number): Promise<ApiResponse<void>> {
+  return client.delete(`/v1/memory/cards/${cardId}`)
+}
+
+/**
+ * 更新卡片
+ */
+export function updateCard(
+  cardId: number,
+  data: { id: number; front: string; back: string }
+): Promise<ApiResponse<any>> {
+  return client.put(`/v1/memory/cards/${cardId}`, data)
+}
+
+/**
+ * 创建卡片
+ */
+export function createCard(data: {
+  deckId: number
+  front: string
+  back: string
+}): Promise<ApiResponse<any>> {
+  return client.post('/v1/memory/cards', data)
+}
+
+/**
+ * 管理员：批准卡片组
+ */
+export function approveDeck(deckId: number): Promise<ApiResponse<void>> {
+  return client.post(`/v1/admin/memory/decks/${deckId}/approve`)
+}
+
+/**
+ * 管理员：拒绝卡片组
+ */
+export function rejectDeck(deckId: number, reason?: string): Promise<ApiResponse<void>> {
+  return client.post(`/v1/admin/memory/decks/${deckId}/reject`, reason ? { reason } : undefined)
+}
+
+/**
+ * 管理员：屏蔽卡片组
+ */
+export function banDeck(deckId: number, reason?: string): Promise<ApiResponse<void>> {
+  return client.post(`/v1/admin/memory/decks/${deckId}/ban`, reason ? { reason } : undefined)
+}
+
+/**
+ * 管理员：恢复卡片组
+ */
+export function restoreDeck(deckId: number): Promise<ApiResponse<void>> {
+  return client.post(`/v1/admin/memory/decks/${deckId}/restore`)
+}
+
+/**
+ * 添加卡片组到记忆库
+ */
+export function addDeckToMemoryBank(request: {
+  deckId: number
+  courseId: number
+}): Promise<ApiResponse<any>> {
+  return client.post('/v1/memory/memory-bank/decks', request)
+}

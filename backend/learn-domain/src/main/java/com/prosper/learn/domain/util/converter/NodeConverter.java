@@ -48,6 +48,7 @@ public interface NodeConverter {
     @Mapping(target = "id")
     @Mapping(target = "name")
     @Mapping(target = "description")
+    @Mapping(target = "commentCount")
     NodeDTO toDTOV1Internal(NodeDO nodeDO);
 
     default NodeDTO toDTOV1(NodeDO nodeDO) {

@@ -10,7 +10,7 @@ interface Card {
 }
 
 interface Props {
-  nodeId: number
+  postId: number
 }
 
 interface Emits {
@@ -56,7 +56,7 @@ const cardFormValid = computed(() => {
 const { execute: createDeckMutation, loading } = useMutation(
   () =>
     memoryApi.createDeck({
-      sourcePostId: props.nodeId,
+      sourcePostId: props.postId,
       title: deckForm.value.title,
       description: deckForm.value.description || undefined,
       cards: cards.value.map((card) => ({

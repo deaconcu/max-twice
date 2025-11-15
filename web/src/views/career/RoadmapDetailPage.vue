@@ -149,78 +149,11 @@
 
         <!-- 右侧：评论区 -->
         <v-col cols="12" lg="4" class="pa-0 pl-6">
-          <v-card rounded="xl" class="comments-card sticky-card no-border">
-            <v-card-title class="pa-6 pb-4">
-              <div class="d-flex align-center">
-                <v-icon icon="mdi-comment-multiple" color="primary" class="mr-2" />
-                <span class="text-h6 font-weight-bold">评论</span>
-                <v-chip size="small" color="primary" variant="tonal" class="ml-2">
-                  {{ comments.length }}
-                </v-chip>
-              </div>
-            </v-card-title>
-
-            <!-- 发表评论 -->
-            <v-card-text class="pa-6 pt-0 pb-4">
-              <v-textarea
-                v-model="newComment"
-                placeholder="写下你的评论..."
-                variant="outlined"
-                rows="3"
-                hide-details
-                class="mb-3"
-              />
-              <v-btn
-                color="primary"
-                variant="flat"
-                rounded="lg"
-                :disabled="!newComment.trim() || submittingComment"
-                :loading="submittingComment"
-                @click="submitComment"
-              >
-                <v-icon icon="mdi-send" size="18" class="mr-1" />
-                发表评论
-              </v-btn>
-            </v-card-text>
-
-            <!-- 评论列表 -->
-            <v-card-text class="pa-6 pt-4 comments-list">
-              <div v-for="comment in comments" :key="comment.id" class="comment-item mb-4">
-                <div class="d-flex">
-                  <v-avatar size="36" color="grey-lighten-2" class="mr-3">
-                    <v-icon icon="mdi-account" color="grey" size="20" />
-                  </v-avatar>
-                  <div class="flex-grow-1">
-                    <div class="d-flex align-center justify-space-between mb-1">
-                      <span class="text-body-2 font-weight-medium text-grey-darken-3">
-                        {{ comment.creatorName }}
-                      </span>
-                      <span class="text-caption text-grey">
-                        {{ getTimeDisplay(comment.createdAt) }}
-                      </span>
-                    </div>
-                    <p class="text-body-2 text-grey-darken-2 mb-2">
-                      {{ comment.content }}
-                    </p>
-                    <v-btn
-                      size="x-small"
-                      variant="tonal"
-                      color="grey"
-                      @click="likeComment(comment)"
-                    >
-                      <v-icon icon="mdi-thumb-up-outline" size="14" class="mr-1" />
-                      <span class="text-caption">{{ comment.upvoteCount }}</span>
-                    </v-btn>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="comments.length === 0" class="text-center py-8">
-                <v-icon icon="mdi-comment-outline" size="48" color="grey-lighten-2" class="mb-2" />
-                <p class="text-body-2 text-grey">还没有评论</p>
-              </div>
-            </v-card-text>
-          </v-card>
+          <CommentSection
+            :post-id="roadmapId"
+            :object-type="ObjectType.ROADMAP"
+            :comment-count="roadmap.commentCount"
+          />
         </v-col>
       </v-row>
     </div>
@@ -237,11 +170,11 @@ import { Position } from '@vue-flow/core'
 import type { Node, Edge } from '@vue-flow/core'
 import dagre from 'dagre'
 import { useFetch, useMutation } from '@/composables'
-import { roadmapApi, commentApi } from '@/api'
+import { roadmapApi } from '@/api'
 import { ObjectType } from '@/enums'
 import type { Roadmap } from '@/types/roadmap'
-import type { Comment } from '@/types/comment'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
+import CommentSection from '@/components/common/CommentSection.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -269,38 +202,6 @@ const {
 
 const roadmap = computed(() => roadmapData.value)
 
-// 使用 useFetch 加载评论列表
-const {
-  data: commentsData,
-  loading: loadingComments,
-  refresh: refreshComments,
-} = useFetch<Comment[]>({
-  fetchFn: () => commentApi.getComments(roadmapId.value, ObjectType.ROADMAP),
-  immediate: true,
-  defaultValue: [],
-})
-
-const comments = computed(() => commentsData.value ?? [])
-const newComment = ref('')
-
-// 使用 useMutation 创建评论
-const { execute: executeCreateComment, loading: submittingComment } = useMutation(
-  (content: string) =>
-    commentApi.createComment(roadmapId.value, ObjectType.ROADMAP, null, null, content),
-  {
-    successMessage: '评论发表成功',
-    onSuccess: () => {
-      newComment.value = ''
-      void refreshComments()
-    },
-  }
-)
-
-// 发表评论
-const submitComment = async (): Promise<void> => {
-  if (!newComment.value.trim()) return
-  await executeCreateComment(newComment.value.trim())
-}
 
 /**
  * 解析路线图内容
@@ -453,11 +354,6 @@ const handleCopy = (): void => {
   void router.push(`/career/${careerId.value}/roadmap/create?copy=${roadmapId.value}`)
 }
 
-// 点赞评论
-const likeComment = (comment: Comment): void => {
-  comment.upvoteCount = (comment.upvoteCount || 0) + 1
-}
-
 // 获取时间显示
 const getTimeDisplay = (date: string): string => {
   const now = new Date()
@@ -487,8 +383,7 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
 }
 
 .roadmap-info-card,
-.flow-card,
-.comments-card {
+.flow-card {
   background-color: #ffffff;
   border: 1px solid #edeff1;
 }
@@ -529,47 +424,6 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
   height: 0 !important;
   border: none !important;
   background: transparent !important;
-}
-
-.sticky-card {
-  position: sticky;
-  top: 75px;
-  max-height: calc(100vh - 95px);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.comments-list {
-  overflow-y: auto;
-  flex: 1;
-}
-
-.comments-list::-webkit-scrollbar {
-  width: 4px;
-}
-
-.comments-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.comments-list::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.1);
-  border-radius: 2px;
-}
-
-.comments-list::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.2);
-}
-
-.comment-item {
-  padding-bottom: 16px;
-  border-bottom: 1px solid #edeff1;
-}
-
-.comment-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
 }
 
 .gap-4 {

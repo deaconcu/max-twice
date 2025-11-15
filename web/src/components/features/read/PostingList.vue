@@ -3,10 +3,12 @@ import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import SinglePost from './SinglePost.vue'
 import CommentSection from '@/components/common/CommentSection.vue'
+import MemoryCardList from './MemoryCardList.vue'
 import AddCatalogDialog from './AddCatalogDialog.vue'
 import AddArticleDialog from './AddArticleDialog.vue'
 import InviteUserDialog from './InviteUserDialog.vue'
 import { ObjectType } from '@/enums'
+import type { MemoryCardDeck } from '@/types/memory'
 
 interface Props {
   data: any
@@ -19,6 +21,7 @@ interface Props {
 
 interface Emits {
   (e: 'switch-tab', tab: string, posting?: any): void
+  (e: 'view-deck', deck: MemoryCardDeck): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -70,6 +73,11 @@ const handlePostSwitchTab = (newTab: string, posting?: any) => {
 const handleLoadData = (data: any[]) => {
   console.log('Reload data after adding catalog:', data)
   // TODO: 刷新页面数据
+}
+
+// 处理查看卡片组详情
+const handleViewDeck = (deck: MemoryCardDeck) => {
+  emit('view-deck', deck)
 }
 </script>
 
@@ -240,9 +248,10 @@ const handleLoadData = (data: any[]) => {
 
     <!-- 记忆卡片 -->
     <template v-else-if="tab === 'memoryCards'">
-      <v-row class="pa-0 ma-0 my-8">
-        <p class="text-body-1 text-grey">记忆卡片功能开发中...</p>
-      </v-row>
+      <MemoryCardList
+        :node-id="currNodeId"
+        @view-deck="handleViewDeck"
+      />
     </template>
 
     <!-- 文章详情 -->

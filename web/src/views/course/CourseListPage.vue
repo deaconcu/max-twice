@@ -1,22 +1,21 @@
 <template>
   <DefaultLayout>
-    <!-- 页面标题 -->
-    <div class="page-header mb-6">
-      <div class="d-flex align-center">
-        <v-avatar color="grey-lighten-3" size="64" rounded="lg" class="mr-3">
-          <v-icon icon="mdi-book-multiple" size="32" color="grey-darken-1" />
-        </v-avatar>
-        <div>
-          <h1 class="text-h4 font-weight-bold text-grey-darken-4">{{ t('course.center') }}</h1>
-          <p class="text-body-2 text-grey-darken-2 mt-1">探索知识，成就未来</p>
+    <!-- 页面标题和搜索栏 -->
+    <div class="page-header mb-10">
+      <div class="d-flex align-end justify-space-between">
+        <!-- 左侧：标题 -->
+        <div class="d-flex align-center">
+          <v-avatar color="grey-lighten-3" size="64" rounded="lg" class="mr-3">
+            <v-icon icon="mdi-book-multiple" size="32" color="grey-darken-1" />
+          </v-avatar>
+          <div>
+            <h1 class="text-h4 font-weight-bold text-grey-darken-4">{{ t('course.center') }}</h1>
+            <p class="text-body-2 text-grey-darken-2 mt-1">探索知识，成就未来</p>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <!-- 搜索栏 -->
-    <v-card rounded="lg" class="mb-4 search-card no-border" flat>
-      <v-card-text class="py-6 px-0">
-        <div class="d-flex align-center" style="gap: 16px">
+        <!-- 右侧：搜索栏 -->
+        <div class="d-flex align-center search-container">
           <v-text-field
             v-model="searchText"
             placeholder="搜索课程..."
@@ -24,36 +23,31 @@
             density="compact"
             hide-details
             clearable
-            class="flex-grow-1"
+            class="search-input"
+            color="primary"
             @keyup.enter="handleSearch"
           >
             <template #prepend-inner>
-              <v-icon icon="mdi-magnify" size="20" />
+              <v-icon icon="mdi-magnify" color="grey-darken-1" size="20" />
+            </template>
+            <template #append-inner>
+              <v-btn
+                icon="mdi-arrow-right"
+                color="grey-darken-1"
+                variant="text"
+                size="small"
+                density="comfortable"
+                @click="handleSearch"
+              ></v-btn>
             </template>
           </v-text-field>
-
-          <v-btn color="primary" variant="flat" size="default" rounded="lg" @click="handleSearch">
-            <v-icon icon="mdi-magnify" size="18" class="mr-2" />
-            {{ t('common.search') }}
-          </v-btn>
-
-          <v-btn
-            color="grey-darken-2"
-            variant="outlined"
-            size="default"
-            rounded="lg"
-            @click="openCreateDialog"
-          >
-            <v-icon icon="mdi-plus" size="18" class="mr-2" />
-            {{ t('course.createNew') }}
-          </v-btn>
         </div>
-      </v-card-text>
-    </v-card>
+      </div>
+    </div>
 
     <!-- 分类导航和课程网格 -->
     <v-row>
-      <v-col class="pr-8">
+      <v-col class="pr-12">
         <!-- 分类导航 -->
         <CourseFilter
           v-model:main-category="selectedMainCategory"
@@ -105,17 +99,22 @@
         <div v-else>
           <!-- 分类标题 -->
           <div v-if="selectedMainCategory || selectedSubCategory || searchText" class="mb-4 mt-10">
-            <h2 class="text-h5 text-grey-darken-4">
-              <span v-if="searchText">搜索结果</span>
-              <span v-else-if="selectedSubCategory">
-                {{ getCategoryName(selectedMainCategory) }} -
-                {{ getSubCategoryName(selectedSubCategory) }}
-              </span>
-              <span v-else>{{ getCategoryName(selectedMainCategory) }}</span>
-            </h2>
-            <p class="text-body-2 text-grey-darken-2 mt-1">
-              共 {{ filteredCourses.length }} 门课程
-            </p>
+            <div class="d-flex align-center justify-space-between">
+              <div class="d-flex align-center">
+                <v-icon icon="mdi-format-list-bulleted" size="20" class="mr-2 text-grey-darken-2"></v-icon>
+                <h2 class="text-h6 font-weight-regular text-grey-darken-4">
+                  <span v-if="searchText">搜索结果</span>
+                  <span v-else-if="selectedSubCategory">
+                    {{ getCategoryName(selectedMainCategory) }} -
+                    {{ getSubCategoryName(selectedSubCategory) }}
+                  </span>
+                  <span v-else>{{ getCategoryName(selectedMainCategory) }}</span>
+                </h2>
+              </div>
+              <p class="text-body-2 text-grey-darken-2">
+                共 {{ filteredCourses.length }} 门课程
+              </p>
+            </div>
           </div>
 
           <!-- 课程网格 -->
@@ -138,30 +137,45 @@
 
       <!-- 右侧热门课程栏 -->
       <v-col class="right-sidebar">
-        <v-card rounded="lg" class="popular-card sticky-card no-border" flat>
-          <v-card-title class="pa-4 pb-3">
-            <div class="d-flex align-center justify-space-between w-100">
-              <div class="d-flex align-center">
-                <v-icon icon="mdi-fire" color="error" class="mr-2" />
-                <span class="text-h6 font-weight-bold">热门课程</span>
+        <div class="sticky-wrapper">
+          <!-- 创建课程按钮 -->
+          <v-btn
+            color="grey-lighten-4"
+            variant="flat"
+            block
+            rounded="lg"
+            size="large"
+            class="mb-4 create-course-btn"
+            prepend-icon="mdi-plus-circle"
+            @click="openCreateDialog"
+          >
+            {{ t('course.createNew') }}
+          </v-btn>
+
+          <v-card rounded="lg" class="popular-card no-border" flat>
+            <v-card-title class="py-4 px-0 pb-3">
+              <div class="d-flex align-center justify-space-between w-100">
+                <div class="d-flex align-center">
+                  <v-icon icon="mdi-fire" color="error" class="mr-2" />
+                  <span class="text-h6 font-weight-bold">热门课程</span>
+                </div>
+                <v-btn
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  class="text-caption"
+                  @click="clearAll"
+                >
+                  全部
+                  <v-icon icon="mdi-chevron-right" size="14" class="ml-1" />
+                </v-btn>
               </div>
-              <v-btn
-                variant="text"
-                size="small"
-                color="primary"
-                class="text-caption"
-                @click="clearAll"
-              >
-                全部
-                <v-icon icon="mdi-chevron-right" size="14" class="ml-1" />
-              </v-btn>
-            </div>
-          </v-card-title>
-          <v-card-text class="pa-0 popular-list pb-4">
+            </v-card-title>
+            <v-card-text class="px-0 popular-list pb-4">
             <div
               v-for="(course, index) in popularCourses"
               :key="course.id"
-              class="popular-item"
+              class="popular-item rounded-lg"
               @click="goToCourseDetail(course)"
             >
               <div class="rank-badge" :class="index < 3 ? 'rank-top' : ''">
@@ -177,6 +191,7 @@
             </div>
           </v-card-text>
         </v-card>
+        </div>
       </v-col>
     </v-row>
 
@@ -582,8 +597,22 @@ const handleCreateCourse = async (courseData: CreateCourseRequest) => {
   margin-bottom: 24px;
 }
 
-.search-card {
-  background-color: transparent;
+/* 搜索容器样式 */
+.search-container {
+  gap: 0;
+}
+
+.search-input {
+  border-radius: 12px;
+  width: 600px;
+}
+
+.action-btn {
+  min-width: 120px;
+  height: 40px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .empty-state {
@@ -601,10 +630,31 @@ const handleCreateCourse = async (courseData: CreateCourseRequest) => {
   max-width: 280px;
 }
 
-.sticky-card {
+.sticky-wrapper {
   position: sticky;
   top: 75px;
   max-height: calc(100vh - 95px);
+  display: flex;
+  flex-direction: column;
+}
+
+.create-course-btn {
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  transition: all 0.25s ease;
+}
+
+.create-course-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  background-color: rgb(var(--v-theme-grey-lighten-3));
+}
+
+.popular-card {
+  flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -636,13 +686,9 @@ const handleCreateCourse = async (courseData: CreateCourseRequest) => {
 .popular-item {
   display: flex;
   align-items: center;
-  padding: 10px 20px;
+  padding: 10px 5px;
   cursor: pointer;
   transition: background-color 0.2s;
-}
-
-.popular-item:hover {
-  background-color: #f5f5f5;
 }
 
 .rank-badge {

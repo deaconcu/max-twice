@@ -608,9 +608,10 @@ export class MemoryService {
     data: any
     message?: string
   }> {
-    return apiClient.post(`${API_V1_PREFIX}/admin/memory/decks/${deckId}/reject`, {
-      reason: reason || ''
-    })
+    return apiClient.post(
+      `${API_V1_PREFIX}/admin/memory/decks/${deckId}/reject`,
+      reason ? { reason } : undefined
+    )
   }
 
   /**
@@ -621,9 +622,10 @@ export class MemoryService {
     data: any
     message?: string
   }> {
-    return apiClient.post(`${API_V1_PREFIX}/admin/memory/decks/${deckId}/ban`, {
-      reason: reason || ''
-    })
+    return apiClient.post(
+      `${API_V1_PREFIX}/admin/memory/decks/${deckId}/ban`,
+      reason ? { reason } : undefined
+    )
   }
 
   /**
