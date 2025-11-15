@@ -15,7 +15,7 @@
     </div>
 
     <!-- 搜索栏 -->
-    <v-card rounded="lg" class="mb-6 search-card no-border" flat>
+    <v-card rounded="lg" class="mb-4 search-card no-border" flat>
       <v-card-text class="py-6 px-0">
         <div class="d-flex align-center" style="gap: 16px">
           <v-text-field
