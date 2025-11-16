@@ -54,10 +54,27 @@ export const userApi = {
   /**
    * 获取当前用户的所有帖子
    */
-  getCurrentUserAllPosts(lastId?: number, type = 2): Promise<ApiResponse<Post[]>> {
-    return apiClient.get('/v1/users/me/posts', {
-      params: { lastId, type },
-    })
+  getCurrentUserAllPosts(
+    lastId?: number,
+    type?: number
+  ): Promise<
+    ApiResponse<{
+      items: Post[]
+      hasMore: boolean
+      nextCursor?: {
+        lastScore?: number
+        lastId?: number
+      }
+    }>
+  > {
+    const params: { lastId?: number; type?: number } = {}
+    if (lastId !== undefined && lastId !== null) {
+      params.lastId = lastId
+    }
+    if (type !== undefined && type !== null) {
+      params.type = type
+    }
+    return apiClient.get('/v1/users/me/posts', { params })
   },
 
   /**
@@ -111,8 +128,10 @@ export const followApi = {
    * 获取用户关注的人列表
    */
   getFollowees(userId: number, lastCreateTime?: string): Promise<ApiResponse<User[]>> {
-    return apiClient.get(`/v1/users/${String(userId)}/followees`, {
-      params: { lastCreateTime },
-    })
+    const params: { lastCreateTime?: string } = {}
+    if (lastCreateTime) {
+      params.lastCreateTime = lastCreateTime
+    }
+    return apiClient.get(`/v1/users/${String(userId)}/followees`, { params })
   },
 }

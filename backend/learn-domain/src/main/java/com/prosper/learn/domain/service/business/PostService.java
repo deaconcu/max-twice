@@ -235,7 +235,6 @@ public class PostService {
      * @param state 状态过滤（null表示所有状态，否则只返回指定状态）
      */
     public List<PostDTO> getUserPosts(Long userId, Long lastId, PostType postType, Byte state) {
-        validateUserId(lastId);
         userService.validateUserExists(userId);
 
         int count = systemProperties.getPosting().getUserContentsPageSize();
@@ -247,7 +246,7 @@ public class PostService {
 
         // 如果是目录类型，处理内容ID转名称
         if (PostType.contents == postType) {
-            processContentPostsIdToName(postings);
+            postings.forEach(this::idToName);
         }
 
         return toDTOV2(postings, userId);
@@ -288,6 +287,38 @@ public class PostService {
         }
         return postDTOList;
         */
+    }
+
+    /**
+     * 获取用户帖子（带分页信息）
+     */
+    public com.prosper.learn.dto.response.KeysetPageResponse<PostDTO> getUserPostsWithPagination(Long userId, Long lastId, PostType postType, Byte state) {
+        userService.validateUserExists(userId);
+
+        int count = systemProperties.getPosting().getUserContentsPageSize();
+
+        List<PostDO> postings = postDataService.getPostsByUser(userId, postType.value(), lastId, state, count + 1);
+        if (postings == null || postings.isEmpty()) {
+            return com.prosper.learn.dto.response.KeysetPageResponse.of(new ArrayList<>(), false, null, null);
+        }
+
+        // 判断是否还有更多数据
+        boolean hasMore = postings.size() > count;
+        if (hasMore) {
+            postings = postings.subList(0, count);
+        }
+
+        // 如果是目录类型，处理内容ID转名称
+        if (PostType.contents == postType) {
+            postings.forEach(this::idToName);
+        }
+
+        List<PostDTO> dtoList = toDTOV2(postings, userId);
+
+        // 获取最后一项的ID
+        Long nextLastId = hasMore && !dtoList.isEmpty() ? dtoList.get(dtoList.size() - 1).getId() : null;
+
+        return com.prosper.learn.dto.response.KeysetPageResponse.of(dtoList, hasMore, null, nextLastId);
     }
 
 

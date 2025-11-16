@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { inject, ref } from 'vue'
-import { useI18n } from '@/composables/useI18n'
-import { adminApi } from '@/api/modules/admin'
-import { ContentState, ApprovalAction, ObjectType } from '@/enums'
-import type { Comment } from '@/types/comment'
+import { adminApi } from '@/api'
+import { ContentState, ObjectType } from '@/enums'
+import type { Comment } from '@/types/comment.d'
 import RejectBanDialog from './RejectBanDialog.vue'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
 
-const { t } = useI18n()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
 const currentTab = ref<string>('pending')
@@ -23,14 +21,12 @@ const isFilterMode = ref<boolean>(false)
 const objectTypeOptions = [
   { title: '帖子', value: ObjectType.POST },
   { title: '节点', value: ObjectType.NODE },
-  { title: '评论', value: ObjectType.COMMENT },
-  { title: '路线图', value: ObjectType.ROADMAP },
-  { title: '记忆卡片组', value: ObjectType.MEMORY_CARD_DECK }
+  { title: '课程', value: ObjectType.COURSE },
 ]
 
 // 获取对象类型名称
 const getObjectTypeName = (type?: number): string => {
-  const option = objectTypeOptions.find(opt => opt.value === type)
+  const option = objectTypeOptions.find((opt) => opt.value === type)
   return option ? option.title : ''
 }
 
@@ -54,38 +50,30 @@ const tabs: TabConfig[] = [
     label: '待审核',
     state: ContentState.SUBMITTED,
     icon: 'mdi-clock-outline',
-    color: 'orange'
+    color: 'orange',
   },
   {
     key: 'approved',
     label: '已通过',
     state: ContentState.PUBLISHED,
     icon: 'mdi-check-circle',
-    color: 'green'
+    color: 'green',
   },
   {
     key: 'rejected',
     label: '已拒绝',
     state: ContentState.REJECTED,
     icon: 'mdi-close-circle',
-    color: 'red'
+    color: 'red',
   },
   {
     key: 'banned',
     label: '已封禁',
     state: ContentState.BANNED,
     icon: 'mdi-cancel',
-    color: 'grey'
-  }
+    color: 'grey',
+  },
 ]
-
-// 状态到标签key的映射
-const stateToTabKey: Record<ContentState, string> = {
-  [ContentState.SUBMITTED]: 'submitted',
-  [ContentState.PUBLISHED]: 'published',
-  [ContentState.REJECTED]: 'rejected',
-  [ContentState.BANNED]: 'banned'
-}
 
 // 使用 useInfiniteScroll 加载评论列表
 const {
@@ -93,52 +81,28 @@ const {
   loading,
   hasMore,
   loadMore,
-  reset: resetCommentList
-} = useInfiniteScroll<Comment>({
-  fetchFn: async (params) => {
-    const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
-    const stateKey = currentTabConfig?.key || 'pending'
+  reset: resetCommentList,
+} = useInfiniteScroll({
+  fetchFn: (params) => {
+    const currentTabConfig = tabs.find((tab) => tab.key === currentTab.value)
+    const state = currentTabConfig?.state
 
     if (isFilterMode.value) {
-      const response = await adminApi.getCommentsByFilter(
+      return adminApi.getCommentsByFilter(
         filterObjectType.value,
         filterObjectId.value,
         filterCreatorId.value,
         params.lastId,
-        currentTabConfig?.state
+        state
       )
-      if (response.code === 200) {
-        return {
-          code: 200,
-          data: response.data || [],
-          message: '',
-          hasMore: (response.data || []).length === 20,
-          nextCursor: undefined
-        }
-      }
-      throw new Error(response.message || '获取评论失败')
     } else {
-      const response = await adminApi.getCommentsByState(stateKey, params.lastId)
-      if (response.code === 200) {
-        return {
-          code: 200,
-          data: response.data || [],
-          message: '',
-          hasMore: (response.data || []).length === 20,
-          nextCursor: undefined
-        }
-      }
-      throw new Error(response.message || '获取评论失败')
+      return adminApi.getCommentsByState(currentTab.value, params.lastId)
     }
   },
   getNextParams: (lastItem) => ({
-    lastId: lastItem.id
+    lastId: lastItem.id,
   }),
   initialParams: {},
-  onError: (error) => {
-    console.error('Error loading comments:', error)
-    showSnackbar?.('加载评论失败', 'error')
-  }
 })
 
 // 应用筛选
@@ -162,15 +126,15 @@ const clearFilter = (): void => {
 
 // 使用 useMutation 批准评论
 const { execute: executeApproveComment } = useMutation(
-  (commentId: number) => adminApi.approveComment(commentId, { action: ApprovalAction.APPROVE }),
+  (commentId: number) => adminApi.approveComment(commentId, 'APPROVE'),
   {
     successMessage: '操作成功',
     onSuccess: (_, commentId) => {
-      const index = commentList.value.findIndex(c => c.id === commentId)
+      const index = commentList.value.findIndex((c) => c.id === commentId)
       if (index !== -1) {
         commentList.value.splice(index, 1)
       }
-    }
+    },
   }
 )
 
@@ -195,20 +159,20 @@ const showBanDialog = (comment: Comment) => {
 // 使用 useMutation 处理拒绝/屏蔽
 const { execute: executeRejectOrBan, loading: submitting } = useMutation(
   (data: { commentId: number; action: string; reason: string }) =>
-    adminApi.approveComment(data.commentId, { action: data.action, reason: data.reason }),
+    adminApi.approveComment(data.commentId, data.action, data.reason),
   {
     onSuccess: (_, data) => {
-      const message = data.action === ApprovalAction.BAN ? '已屏蔽' : '已拒绝'
+      const message = data.action === 'BAN' ? '已屏蔽' : '已拒绝'
       showSnackbar?.(message, 'success')
 
-      const index = commentList.value.findIndex(c => c.id === data.commentId)
+      const index = commentList.value.findIndex((c) => c.id === data.commentId)
       if (index !== -1) {
         commentList.value.splice(index, 1)
       }
 
       showReasonDialog.value = false
       currentComment.value = null
-    }
+    },
   }
 )
 
@@ -216,11 +180,11 @@ const { execute: executeRejectOrBan, loading: submitting } = useMutation(
 const handleConfirmAction = async (reason: string) => {
   if (!currentComment.value) return
 
-  const action = dialogType.value === 'reject' ? ApprovalAction.REJECT : ApprovalAction.BAN
+  const action = dialogType.value === 'reject' ? 'REJECT' : 'BAN'
   await executeRejectOrBan({
     commentId: currentComment.value.id,
     action,
-    reason
+    reason,
   })
 }
 
@@ -236,15 +200,15 @@ const banComment = async (comment: Comment): Promise<void> => {
 
 // 使用 useMutation 取消屏蔽评论
 const { execute: executeUnbanComment } = useMutation(
-  (commentId: number) => adminApi.approveComment(commentId, { action: ApprovalAction.APPROVE }),
+  (commentId: number) => adminApi.approveComment(commentId, 'APPROVE'),
   {
     successMessage: '已取消屏蔽',
     onSuccess: (_, commentId) => {
-      const index = commentList.value.findIndex(c => c.id === commentId)
+      const index = commentList.value.findIndex((c) => c.id === commentId)
       if (index !== -1) {
         commentList.value.splice(index, 1)
       }
-    }
+    },
   }
 )
 
@@ -265,10 +229,8 @@ const handleTabChange = (newTab: string) => {
           <v-icon icon="mdi-comment-check-outline" color="teal-darken-1" size="20"></v-icon>
         </div>
         <div>
-          <h3 class="text-h6 font-weight-bold text-grey-darken-3">
-            评论审核
-          </h3>
-          <p class="text-body-2 text-grey-darken-1 mb-0">审核用户提交的评论内容</p>
+          <h3 class="text-h6 font-weight-bold text-grey-darken-3">评论审核</h3>
+          <p class="text-body-2 text-grey-darken-1 mb-0">审核用户评论</p>
         </div>
       </div>
     </div>
@@ -324,13 +286,7 @@ const handleTabChange = (newTab: string) => {
           ></v-text-field>
         </v-col>
         <v-col cols="12" sm="2">
-          <v-btn
-            variant="flat"
-            color="primary"
-            rounded="lg"
-            block
-            @click="applyFilter"
-          >
+          <v-btn variant="flat" color="primary" rounded="lg" block @click="applyFilter">
             <v-icon icon="mdi-magnify" class="mr-1"></v-icon>
             筛选
           </v-btn>
@@ -353,9 +309,15 @@ const handleTabChange = (newTab: string) => {
       <div class="d-flex align-center justify-space-between">
         <div>
           <span class="font-weight-medium">筛选条件：</span>
-          <v-chip v-if="filterObjectType" size="small" class="mx-1">对象类型: {{ getObjectTypeName(filterObjectType) }}</v-chip>
-          <v-chip v-if="filterObjectId" size="small" class="mx-1">对象 ID: {{ filterObjectId }}</v-chip>
-          <v-chip v-if="filterCreatorId" size="small" class="mx-1">用户 ID: {{ filterCreatorId }}</v-chip>
+          <v-chip v-if="filterObjectType" size="small" class="mx-1"
+            >对象类型: {{ getObjectTypeName(filterObjectType) }}</v-chip
+          >
+          <v-chip v-if="filterObjectId" size="small" class="mx-1"
+            >对象 ID: {{ filterObjectId }}</v-chip
+          >
+          <v-chip v-if="filterCreatorId" size="small" class="mx-1"
+            >用户 ID: {{ filterCreatorId }}</v-chip
+          >
         </div>
       </div>
     </v-alert>
@@ -368,18 +330,8 @@ const handleTabChange = (newTab: string) => {
       show-arrows
       @update:model-value="handleTabChange"
     >
-      <v-tab
-        v-for="tab in tabs"
-        :key="tab.key"
-        :value="tab.key"
-        class="text-none"
-      >
-        <v-icon
-          :icon="tab.icon"
-          :color="`${tab.color}-darken-1`"
-          size="18"
-          class="mr-2"
-        ></v-icon>
+      <v-tab v-for="tab in tabs" :key="tab.key" :value="tab.key" class="text-none">
+        <v-icon :icon="tab.icon" :color="`${tab.color}-darken-1`" size="18" class="mr-2"></v-icon>
         {{ tab.label }}
       </v-tab>
     </v-tabs>
@@ -387,21 +339,30 @@ const handleTabChange = (newTab: string) => {
     <div v-if="commentList.length === 0 && !loading" class="text-center py-12">
       <v-icon icon="mdi-comment-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
       <p class="text-body-1 text-grey-darken-1">
-        {{ currentTab === 'pending' ? '暂无待审核评论' : `暂无${tabs.find(tab => tab.key === currentTab)?.label}的评论` }}
+        {{
+          currentTab === 'pending'
+            ? '暂无待审核的评论'
+            : `暂无${tabs.find((tab) => tab.key === currentTab)?.label}的评论`
+        }}
       </p>
     </div>
 
     <div
       v-for="comment in commentList"
       :key="comment.id"
-      class="mb-4"
       v-intersect="{
         handler: (isIntersecting: boolean) => {
-          if (isIntersecting && comment === commentList[commentList.length - 1] && hasMore && !loading) {
-            loadMore({ done: () => {} })
+          if (
+            isIntersecting &&
+            comment === commentList[commentList.length - 1] &&
+            hasMore &&
+            !loading
+          ) {
+            loadMore()
           }
-        }
+        },
       }"
+      class="mb-4"
     >
       <v-card flat class="border rounded-lg pa-5" hover>
         <div class="d-flex align-start">
@@ -550,7 +511,12 @@ const handleTabChange = (newTab: string) => {
                 size="small"
                 @click="rejectComment(comment)"
               >
-                <v-icon icon="mdi-arrow-down" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                <v-icon
+                  icon="mdi-arrow-down"
+                  color="orange-darken-2"
+                  size="16"
+                  class="mr-1"
+                ></v-icon>
                 降级为拒绝
               </v-btn>
             </div>
@@ -565,7 +531,7 @@ const handleTabChange = (newTab: string) => {
                 </v-avatar>
                 <div>
                   <div class="text-body-2 font-weight-medium text-grey-darken-2">
-                    评论ID: {{ comment.id }}
+                    评论 ID: {{ comment.id }}
                   </div>
                   <div class="text-caption text-grey-darken-1">{{ comment.createdAt }}</div>
                 </div>
@@ -584,9 +550,7 @@ const handleTabChange = (newTab: string) => {
             </div>
 
             <div class="bg-grey-lighten-5 rounded-lg pa-4">
-              <div class="text-caption text-grey-darken-1 mb-2">
-                评论内容
-              </div>
+              <div class="text-caption text-grey-darken-1 mb-2">评论内容</div>
               <div class="text-body-1 text-grey-darken-2 line-height-relaxed">
                 {{ comment.content }}
               </div>
@@ -598,11 +562,7 @@ const handleTabChange = (newTab: string) => {
 
     <!-- 加载更多指示器 -->
     <div v-if="loading" class="text-center py-4">
-      <v-progress-circular
-        indeterminate
-        color="primary"
-        size="24"
-      ></v-progress-circular>
+      <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
       <span class="ml-2 text-grey-darken-1">加载中...</span>
     </div>
 
@@ -632,13 +592,5 @@ const handleTabChange = (newTab: string) => {
 
 .status-actions-area {
   min-width: 200px;
-}
-
-.line-height-relaxed {
-  line-height: 1.6;
-}
-
-.border {
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 </style>

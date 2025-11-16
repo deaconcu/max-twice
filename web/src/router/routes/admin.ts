@@ -11,7 +11,7 @@ export const adminRoutes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: true,
       roles: ['admin', 'super_admin'], // 需要管理员权限
-      title: '管理后台'
-    }
-  }
+      title: '管理后台',
+    },
+  },
 ]

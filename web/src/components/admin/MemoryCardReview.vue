@@ -33,38 +33,38 @@ const tabs: TabConfig[] = [
     label: '待审核',
     state: ContentState.SUBMITTED,
     icon: 'mdi-clock-outline',
-    color: 'orange'
+    color: 'orange',
   },
   {
     key: 'approved',
     label: '已通过',
     state: ContentState.PUBLISHED,
     icon: 'mdi-check-circle',
-    color: 'green'
+    color: 'green',
   },
   {
     key: 'rejected',
     label: '已拒绝',
     state: ContentState.REJECTED,
     icon: 'mdi-close-circle',
-    color: 'red'
+    color: 'red',
   },
   {
     key: 'banned',
     label: '已封禁',
     state: ContentState.BANNED,
     icon: 'mdi-cancel',
-    color: 'grey'
-  }
+    color: 'grey',
+  },
 ]
 
 // 筛选条件
 const filterForm = ref({
   postId: null as number | null,
-  creatorId: null as number | null
+  creatorId: null as number | null,
 })
 
-const getCurrentTab = () => tabs.find(tab => tab.key === activeTab.value) || tabs[0]
+const getCurrentTab = () => tabs.find((tab) => tab.key === activeTab.value) || tabs[0]
 
 // 使用 useInfiniteScroll 加载卡片组列表
 const {
@@ -72,7 +72,7 @@ const {
   loading,
   hasMore,
   loadMore,
-  reset: resetDeckList
+  reset: resetDeckList,
 } = useInfiniteScroll({
   fetchFn: async (params) => {
     const currentTab = getCurrentTab()
@@ -88,11 +88,11 @@ const {
     return response.data
   },
   getNextParams: (lastItem) => ({
-    lastId: lastItem.id
+    lastId: lastItem.id,
   }),
   initialParams: {
-    lastId: undefined
-  }
+    lastId: undefined,
+  },
 })
 
 const applyFilter = () => {
@@ -102,7 +102,7 @@ const applyFilter = () => {
 const resetFilter = () => {
   filterForm.value = {
     postId: null,
-    creatorId: null
+    creatorId: null,
   }
   applyFilter()
 }
@@ -113,11 +113,11 @@ const { execute: executeApproveDeck } = useMutation(
   {
     successMessage: '卡片组审核通过',
     onSuccess: (_, deckId) => {
-      const index = deckList.value.findIndex(d => d.id === deckId)
+      const index = deckList.value.findIndex((d) => d.id === deckId)
       if (index > -1) {
         deckList.value.splice(index, 1)
       }
-    }
+    },
   }
 )
 
@@ -148,14 +148,14 @@ const { execute: executeRejectOrBan, loading: submitting } = useMutation(
       const message = data.action === ApprovalAction.BAN ? '卡片组已屏蔽' : '卡片组已拒绝'
       showSnackbar?.(message, 'success')
 
-      const index = deckList.value.findIndex(d => d.id === data.deckId)
+      const index = deckList.value.findIndex((d) => d.id === data.deckId)
       if (index > -1) {
         deckList.value.splice(index, 1)
       }
 
       showReasonDialog.value = false
       currentDeck.value = null
-    }
+    },
   }
 )
 
@@ -167,7 +167,7 @@ const handleConfirmAction = async (reason: string) => {
   await executeRejectOrBan({
     deckId: currentDeck.value.id,
     action,
-    reason
+    reason,
   })
 }
 
@@ -187,11 +187,11 @@ const { execute: executeUnbanDeck } = useMutation(
   {
     successMessage: '卡片组已取消屏蔽',
     onSuccess: (_, deckId) => {
-      const index = deckList.value.findIndex(d => d.id === deckId)
+      const index = deckList.value.findIndex((d) => d.id === deckId)
       if (index > -1) {
         deckList.value.splice(index, 1)
       }
-    }
+    },
   }
 )
 
@@ -205,21 +205,31 @@ const switchTab = (tabKey: string) => {
 
 const getStateText = (state: number): string => {
   switch (state) {
-    case ContentState.SUBMITTED: return '待审核'
-    case ContentState.PUBLISHED: return '已通过'
-    case ContentState.REJECTED: return '已拒绝'
-    case ContentState.BANNED: return '已封禁'
-    default: return '未知'
+    case ContentState.SUBMITTED:
+      return '待审核'
+    case ContentState.PUBLISHED:
+      return '已通过'
+    case ContentState.REJECTED:
+      return '已拒绝'
+    case ContentState.BANNED:
+      return '已封禁'
+    default:
+      return '未知'
   }
 }
 
 const getStateColor = (state: number): string => {
   switch (state) {
-    case ContentState.SUBMITTED: return 'orange-lighten-4'
-    case ContentState.PUBLISHED: return 'green-lighten-4'
-    case ContentState.REJECTED: return 'red-lighten-4'
-    case ContentState.BANNED: return 'grey-lighten-2'
-    default: return 'grey-lighten-3'
+    case ContentState.SUBMITTED:
+      return 'orange-lighten-4'
+    case ContentState.PUBLISHED:
+      return 'green-lighten-4'
+    case ContentState.REJECTED:
+      return 'red-lighten-4'
+    case ContentState.BANNED:
+      return 'grey-lighten-2'
+    default:
+      return 'grey-lighten-3'
   }
 }
 </script>
@@ -232,22 +242,13 @@ const getStateColor = (state: number): string => {
           <v-icon icon="mdi-cards-variant" color="purple-darken-1" size="20"></v-icon>
         </div>
         <div>
-          <h3 class="text-h6 font-weight-bold text-grey-darken-3">
-            记忆卡片审核
-          </h3>
+          <h3 class="text-h6 font-weight-bold text-grey-darken-3">记忆卡片审核</h3>
           <p class="text-body-2 text-grey-darken-1 mb-0">审核用户提交的记忆卡片组</p>
         </div>
       </div>
       <v-chip variant="flat" color="purple-lighten-4" rounded="lg">
-        <v-icon
-          icon="mdi-cards-outline"
-          color="purple-darken-2"
-          size="16"
-          class="mr-1"
-        ></v-icon>
-        <span class="text-purple-darken-2 text-caption">
-          {{ deckList.length }} 个卡片组
-        </span>
+        <v-icon icon="mdi-cards-outline" color="purple-darken-2" size="16" class="mr-1"></v-icon>
+        <span class="text-purple-darken-2 text-caption"> {{ deckList.length }} 个卡片组 </span>
       </v-chip>
     </div>
 
@@ -286,21 +287,11 @@ const getStateColor = (state: number): string => {
         </v-col>
         <v-col cols="12" md="4">
           <div class="d-flex gap-2">
-            <v-btn
-              variant="flat"
-              color="primary"
-              rounded="lg"
-              @click="applyFilter"
-            >
+            <v-btn variant="flat" color="primary" rounded="lg" @click="applyFilter">
               <v-icon icon="mdi-magnify" class="mr-1"></v-icon>
               筛选
             </v-btn>
-            <v-btn
-              variant="outlined"
-              color="grey"
-              rounded="lg"
-              @click="resetFilter"
-            >
+            <v-btn variant="outlined" color="grey" rounded="lg" @click="resetFilter">
               <v-icon icon="mdi-refresh" class="mr-1"></v-icon>
               重置
             </v-btn>
@@ -317,18 +308,8 @@ const getStateColor = (state: number): string => {
       show-arrows
       @update:model-value="switchTab"
     >
-      <v-tab
-        v-for="tab in tabs"
-        :key="tab.key"
-        :value="tab.key"
-        class="text-none"
-      >
-        <v-icon
-          :icon="tab.icon"
-          :color="`${tab.color}-darken-1`"
-          size="18"
-          class="mr-2"
-        ></v-icon>
+      <v-tab v-for="tab in tabs" :key="tab.key" :value="tab.key" class="text-none">
+        <v-icon :icon="tab.icon" :color="`${tab.color}-darken-1`" size="18" class="mr-2"></v-icon>
         {{ tab.label }}
       </v-tab>
     </v-tabs>
@@ -341,12 +322,7 @@ const getStateColor = (state: number): string => {
 
     <!-- 空状态 -->
     <div v-else-if="!loading && deckList.length === 0" class="text-center py-12">
-      <v-icon
-        icon="mdi-cards-outline"
-        size="48"
-        color="grey-lighten-1"
-        class="mb-4"
-      ></v-icon>
+      <v-icon icon="mdi-cards-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
       <p class="text-body-1 text-grey-darken-1">暂无需要审核的记忆卡片组</p>
     </div>
 
@@ -355,229 +331,270 @@ const getStateColor = (state: number): string => {
       <div
         v-for="deck in deckList"
         :key="deck.id"
-        class="mb-4"
         v-intersect="{
           handler: (isIntersecting: boolean) => {
             if (isIntersecting && deck === deckList[deckList.length - 1] && hasMore && !loading) {
               loadMore()
             }
-          }
+          },
         }"
+        class="mb-4"
       >
-          <v-card flat class="border rounded-lg pa-4" hover>
-            <div class="d-flex align-start">
-              <!-- 状态和操作区域 -->
-              <div class="mr-8 action-area">
-                <div class="mb-3">
-                  <v-chip
-                    v-if="deck.state === ContentState.SUBMITTED"
-                    variant="flat"
-                    color="orange-lighten-4"
-                    rounded="lg"
-                    size="small"
-                  >
-                    <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
-                    {{ t('admin.pending') }}
-                  </v-chip>
-                  <v-chip
-                    v-if="deck.state === ContentState.PUBLISHED"
-                    variant="flat"
-                    color="green-lighten-4"
-                    rounded="lg"
-                    size="small"
-                  >
-                    <v-icon icon="mdi-check-circle" size="14" class="mr-1"></v-icon>
-                    {{ t('admin.approved') }}
-                  </v-chip>
-                  <v-chip
-                    v-if="deck.state === ContentState.REJECTED"
-                    variant="flat"
-                    color="red-lighten-4"
-                    rounded="lg"
-                    size="small"
-                  >
-                    <v-icon icon="mdi-close-circle" size="14" class="mr-1"></v-icon>
-                    {{ t('admin.rejected') }}
-                  </v-chip>
-                  <v-chip
-                    v-if="deck.state === ContentState.BANNED"
-                    variant="flat"
-                    color="grey-lighten-2"
-                    rounded="lg"
-                    size="small"
-                  >
-                    <v-icon icon="mdi-cancel" size="14" class="mr-1"></v-icon>
-                    {{ t('admin.banned') }}
-                  </v-chip>
-                </div>
+        <v-card flat class="border rounded-lg pa-4" hover>
+          <div class="d-flex align-start">
+            <!-- 状态和操作区域 -->
+            <div class="mr-8 action-area">
+              <div class="mb-3">
+                <v-chip
+                  v-if="deck.state === ContentState.SUBMITTED"
+                  variant="flat"
+                  color="orange-lighten-4"
+                  rounded="lg"
+                  size="small"
+                >
+                  <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
+                  {{ t('admin.pending') }}
+                </v-chip>
+                <v-chip
+                  v-if="deck.state === ContentState.PUBLISHED"
+                  variant="flat"
+                  color="green-lighten-4"
+                  rounded="lg"
+                  size="small"
+                >
+                  <v-icon icon="mdi-check-circle" size="14" class="mr-1"></v-icon>
+                  {{ t('admin.approved') }}
+                </v-chip>
+                <v-chip
+                  v-if="deck.state === ContentState.REJECTED"
+                  variant="flat"
+                  color="red-lighten-4"
+                  rounded="lg"
+                  size="small"
+                >
+                  <v-icon icon="mdi-close-circle" size="14" class="mr-1"></v-icon>
+                  {{ t('admin.rejected') }}
+                </v-chip>
+                <v-chip
+                  v-if="deck.state === ContentState.BANNED"
+                  variant="flat"
+                  color="grey-lighten-2"
+                  rounded="lg"
+                  size="small"
+                >
+                  <v-icon icon="mdi-cancel" size="14" class="mr-1"></v-icon>
+                  {{ t('admin.banned') }}
+                </v-chip>
+              </div>
 
-                <!-- 待审核状态：批准、拒绝、屏蔽 -->
-                <div v-if="deck.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
-                  <v-btn
-                    variant="flat"
-                    color="green-lighten-4"
-                    rounded="lg"
-                    size="small"
-                    @click="approveDeck(deck)"
-                  >
-                    <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
-                    批准
-                  </v-btn>
-                  <v-btn
-                    variant="flat"
-                    color="red-lighten-4"
-                    rounded="lg"
-                    size="small"
-                    @click="rejectDeck(deck)"
-                  >
-                    <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
-                    拒绝
-                  </v-btn>
-                  <v-btn
-                    variant="flat"
-                    color="grey-lighten-2"
-                    rounded="lg"
-                    size="small"
-                    @click="banDeck(deck)"
-                  >
-                    <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
-                    屏蔽
-                  </v-btn>
-                </div>
+              <!-- 待审核状态：批准、拒绝、屏蔽 -->
+              <div v-if="deck.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
+                <v-btn
+                  variant="flat"
+                  color="green-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  @click="approveDeck(deck)"
+                >
+                  <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
+                  批准
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="red-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  @click="rejectDeck(deck)"
+                >
+                  <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
+                  拒绝
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="grey-lighten-2"
+                  rounded="lg"
+                  size="small"
+                  @click="banDeck(deck)"
+                >
+                  <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                  屏蔽
+                </v-btn>
+              </div>
 
-                <!-- 已通过状态：撤销通过、屏蔽 -->
-                <div v-if="deck.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
-                  <v-btn
-                    variant="flat"
-                    color="orange-lighten-4"
-                    rounded="lg"
-                    size="small"
-                    @click="rejectDeck(deck)"
-                  >
-                    <v-icon icon="mdi-undo" color="orange-darken-2" size="16" class="mr-1"></v-icon>
-                    撤销通过
-                  </v-btn>
-                  <v-btn
-                    variant="flat"
-                    color="grey-lighten-2"
-                    rounded="lg"
-                    size="small"
-                    @click="banDeck(deck)"
-                  >
-                    <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
-                    屏蔽
-                  </v-btn>
-                </div>
+              <!-- 已通过状态：撤销通过、屏蔽 -->
+              <div v-if="deck.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
+                <v-btn
+                  variant="flat"
+                  color="orange-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  @click="rejectDeck(deck)"
+                >
+                  <v-icon icon="mdi-undo" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                  撤销通过
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="grey-lighten-2"
+                  rounded="lg"
+                  size="small"
+                  @click="banDeck(deck)"
+                >
+                  <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                  屏蔽
+                </v-btn>
+              </div>
 
-                <!-- 已拒绝状态：通过、屏蔽 -->
-                <div v-if="deck.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
-                  <v-btn
-                    variant="flat"
-                    color="green-lighten-4"
-                    rounded="lg"
-                    size="small"
-                    @click="approveDeck(deck)"
-                  >
-                    <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
-                    通过
-                  </v-btn>
-                  <v-btn
-                    variant="flat"
-                    color="grey-lighten-2"
-                    rounded="lg"
-                    size="small"
-                    @click="banDeck(deck)"
-                  >
-                    <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
-                    屏蔽
-                  </v-btn>
-                </div>
+              <!-- 已拒绝状态：通过、屏蔽 -->
+              <div v-if="deck.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
+                <v-btn
+                  variant="flat"
+                  color="green-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  @click="approveDeck(deck)"
+                >
+                  <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
+                  通过
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="grey-lighten-2"
+                  rounded="lg"
+                  size="small"
+                  @click="banDeck(deck)"
+                >
+                  <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                  屏蔽
+                </v-btn>
+              </div>
 
-                <!-- 已封禁状态：取消屏蔽、降级为拒绝 -->
-                <div v-if="deck.state === ContentState.BANNED" class="d-flex flex-column ga-2">
-                  <v-btn
-                    variant="flat"
-                    color="blue-lighten-4"
-                    rounded="lg"
-                    size="small"
-                    @click="unbanDeck(deck)"
+              <!-- 已封禁状态：取消屏蔽、降级为拒绝 -->
+              <div v-if="deck.state === ContentState.BANNED" class="d-flex flex-column ga-2">
+                <v-btn
+                  variant="flat"
+                  color="blue-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  @click="unbanDeck(deck)"
+                >
+                  <v-icon
+                    icon="mdi-lock-open"
+                    color="blue-darken-2"
+                    size="16"
+                    class="mr-1"
+                  ></v-icon>
+                  取消屏蔽
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="orange-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  @click="rejectDeck(deck)"
+                >
+                  <v-icon
+                    icon="mdi-arrow-down"
+                    color="orange-darken-2"
+                    size="16"
+                    class="mr-1"
+                  ></v-icon>
+                  降级为拒绝
+                </v-btn>
+              </div>
+            </div>
+
+            <!-- 卡片组内容区域 -->
+            <div class="flex-grow-1">
+              <div class="d-flex align-center justify-space-between mb-2">
+                <h4 class="text-h6 font-weight-bold text-grey-darken-3">
+                  {{ deck.title }}
+                </h4>
+                <div class="d-flex align-center">
+                  <v-icon
+                    icon="mdi-cards-outline"
+                    size="16"
+                    color="grey-darken-2"
+                    class="mr-1"
+                  ></v-icon>
+                  <span class="text-body-2 text-grey-darken-2"
+                    >{{ deck.cardCount || 0 }} 张卡片</span
                   >
-                    <v-icon icon="mdi-lock-open" color="blue-darken-2" size="16" class="mr-1"></v-icon>
-                    取消屏蔽
-                  </v-btn>
-                  <v-btn
-                    variant="flat"
-                    color="orange-lighten-4"
-                    rounded="lg"
-                    size="small"
-                    @click="rejectDeck(deck)"
+                  <v-icon
+                    icon="mdi-thumb-up-outline"
+                    size="16"
+                    color="grey-darken-2"
+                    class="ml-3 mr-1"
+                  ></v-icon>
+                  <span class="text-body-2 text-grey-darken-2"
+                    >{{ deck.upvoteCount || 0 }} 点赞</span
                   >
-                    <v-icon icon="mdi-arrow-down" color="orange-darken-2" size="16" class="mr-1"></v-icon>
-                    降级为拒绝
-                  </v-btn>
                 </div>
               </div>
 
-              <!-- 卡片组内容区域 -->
-              <div class="flex-grow-1">
-                <div class="d-flex align-center justify-space-between mb-2">
-                  <h4 class="text-h6 font-weight-bold text-grey-darken-3">
-                    {{ deck.title }}
-                  </h4>
-                  <div class="d-flex align-center">
-                    <v-icon icon="mdi-cards-outline" size="16" color="grey-darken-2" class="mr-1"></v-icon>
-                    <span class="text-body-2 text-grey-darken-2">{{ deck.cardCount || 0 }} 张卡片</span>
-                    <v-icon icon="mdi-thumb-up-outline" size="16" color="grey-darken-2" class="ml-3 mr-1"></v-icon>
-                    <span class="text-body-2 text-grey-darken-2">{{ deck.upvoteCount || 0 }} 点赞</span>
-                  </div>
-                </div>
+              <div v-if="deck.description" class="mb-3">
+                <p class="text-body-2 text-grey-darken-1">{{ deck.description }}</p>
+              </div>
 
-                <div v-if="deck.description" class="mb-3">
-                  <p class="text-body-2 text-grey-darken-1">{{ deck.description }}</p>
+              <!-- 卡片预览区域 -->
+              <div class="cards-preview-area mb-3">
+                <div class="preview-header">
+                  <v-icon
+                    icon="mdi-cards-outline"
+                    size="18"
+                    color="purple-darken-1"
+                    class="mr-2"
+                  ></v-icon>
+                  <h5 class="text-subtitle-2 font-weight-medium text-grey-darken-2 mb-0">
+                    卡片内容预览 ({{ deck.cards?.length || 0 }})
+                  </h5>
                 </div>
-
-                <!-- 卡片预览区域 -->
-                <div class="cards-preview-area mb-3">
-                  <div class="preview-header">
-                    <v-icon icon="mdi-cards-outline" size="18" color="purple-darken-1" class="mr-2"></v-icon>
-                    <h5 class="text-subtitle-2 font-weight-medium text-grey-darken-2 mb-0">
-                      卡片内容预览 ({{ deck.cards?.length || 0 }})
-                    </h5>
+                <div class="cards-container">
+                  <div v-if="!deck.cards || deck.cards.length === 0" class="empty-state">
+                    <v-icon
+                      icon="mdi-cards-outline"
+                      size="24"
+                      color="grey-lighten-2"
+                      class="mb-2"
+                    ></v-icon>
+                    <p class="text-body-2 text-grey-darken-1 mb-0">暂无卡片内容</p>
                   </div>
-                  <div class="cards-container">
-                    <div v-if="!deck.cards || deck.cards.length === 0" class="empty-state">
-                      <v-icon icon="mdi-cards-outline" size="24" color="grey-lighten-2" class="mb-2"></v-icon>
-                      <p class="text-body-2 text-grey-darken-1 mb-0">暂无卡片内容</p>
-                    </div>
-                    <div v-else class="cards-list">
-                      <div
-                        v-for="(card, index) in deck.cards"
-                        :key="card.id"
-                        class="card-item"
-                        :class="{ 'border-bottom': index < deck.cards.length - 1 }"
-                      >
-                        <div class="card-index">
-                          <span class="index-number">{{ index + 1 }}</span>
-                        </div>
-                        <div class="card-content-wrapper">
-                          <div class="card-qa-pair">
-                            <div class="qa-item question">
-                              <div class="qa-row">
-                                <div class="qa-label">
-                                  <v-icon icon="mdi-help-circle-outline" size="14" color="blue-darken-2"></v-icon>
-                                  <span class="label-text">问题</span>
-                                </div>
-                                <div class="qa-content">{{ card.front }}</div>
+                  <div v-else class="cards-list">
+                    <div
+                      v-for="(card, index) in deck.cards"
+                      :key="card.id"
+                      class="card-item"
+                      :class="{ 'border-bottom': index < deck.cards.length - 1 }"
+                    >
+                      <div class="card-index">
+                        <span class="index-number">{{ index + 1 }}</span>
+                      </div>
+                      <div class="card-content-wrapper">
+                        <div class="card-qa-pair">
+                          <div class="qa-item question">
+                            <div class="qa-row">
+                              <div class="qa-label">
+                                <v-icon
+                                  icon="mdi-help-circle-outline"
+                                  size="14"
+                                  color="blue-darken-2"
+                                ></v-icon>
+                                <span class="label-text">问题</span>
                               </div>
+                              <div class="qa-content">{{ card.front }}</div>
                             </div>
-                            <div class="qa-item answer">
-                              <div class="qa-row">
-                                <div class="qa-label">
-                                  <v-icon icon="mdi-lightbulb-outline" size="14" color="green-darken-2"></v-icon>
-                                  <span class="label-text">答案</span>
-                                </div>
-                                <div class="qa-content">{{ card.back }}</div>
+                          </div>
+                          <div class="qa-item answer">
+                            <div class="qa-row">
+                              <div class="qa-label">
+                                <v-icon
+                                  icon="mdi-lightbulb-outline"
+                                  size="14"
+                                  color="green-darken-2"
+                                ></v-icon>
+                                <span class="label-text">答案</span>
                               </div>
+                              <div class="qa-content">{{ card.back }}</div>
                             </div>
                           </div>
                         </div>
@@ -585,34 +602,31 @@ const getStateColor = (state: number): string => {
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <div class="d-flex align-center justify-space-between">
-                  <div class="d-flex align-center">
-                    <v-avatar size="24" class="mr-2">
-                      <v-img v-if="deck.creator?.avatar" :src="deck.creator.avatar" />
-                      <v-icon v-else icon="mdi-account-circle" size="16" color="grey"></v-icon>
-                    </v-avatar>
-                    <span class="text-body-2 text-grey-darken-2">
-                      {{ deck.creator?.name || '匿名用户' }}
-                    </span>
-                  </div>
-                  <div class="text-body-2 text-grey-darken-1">
-                    创建时间：{{ new Date(deck.createdAt).toLocaleDateString() }}
-                  </div>
+              <div class="d-flex align-center justify-space-between">
+                <div class="d-flex align-center">
+                  <v-avatar size="24" class="mr-2">
+                    <v-img v-if="deck.creator?.avatar" :src="deck.creator.avatar" />
+                    <v-icon v-else icon="mdi-account-circle" size="16" color="grey"></v-icon>
+                  </v-avatar>
+                  <span class="text-body-2 text-grey-darken-2">
+                    {{ deck.creator?.name || '匿名用户' }}
+                  </span>
+                </div>
+                <div class="text-body-2 text-grey-darken-1">
+                  创建时间：{{ new Date(deck.createdAt).toLocaleDateString() }}
                 </div>
               </div>
             </div>
+          </div>
         </v-card>
       </div>
     </div>
 
     <!-- 加载更多指示器 -->
     <div v-if="loading" class="text-center py-4">
-      <v-progress-circular
-        indeterminate
-        color="primary"
-        size="24"
-      ></v-progress-circular>
+      <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
       <span class="ml-2 text-grey-darken-1">加载中...</span>
     </div>
 

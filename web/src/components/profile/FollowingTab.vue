@@ -94,13 +94,13 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useAuthStore } from '@/stores/modules/auth'
+import { useUserStore } from '@/stores/modules/user'
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
 import { followApi } from '@/api'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
-const authStore = useAuthStore()
+const userStore = useUserStore()
 
 // 获取关注的用户列表
 const {
@@ -109,7 +109,7 @@ const {
   execute: fetchFollowees,
 } = useFetch({
   fetchFn: () => {
-    const userId = authStore.user?.id
+    const userId = userStore.userId
     if (!userId) throw new Error('User ID not found')
     return followApi.getFollowees(userId)
   },

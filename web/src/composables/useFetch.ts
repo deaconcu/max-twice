@@ -129,7 +129,7 @@ export function useFetch<T>(options: FetchOptions<T>): FetchReturn<T> {
 
         // 数据赋值完成后的钩子
         if (onDataReady) {
-          await onDataReady(data.value as T)
+          await onDataReady(data.value)
         }
       }
     } catch (err) {

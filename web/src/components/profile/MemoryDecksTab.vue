@@ -49,9 +49,7 @@
                         </v-avatar>
                         <div>
                           <h4 class="text-body-1 font-weight-bold mb-1">{{ deck.name }}</h4>
-                          <p class="text-caption text-grey mb-0">
-                            {{ deck.cardCount }} 张卡片
-                          </p>
+                          <p class="text-caption text-grey mb-0">{{ deck.cardCount }} 张卡片</p>
                         </div>
                       </div>
 

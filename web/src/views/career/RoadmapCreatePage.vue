@@ -56,12 +56,12 @@
                 <VueFlow
                   :nodes="nodes"
                   :edges="edges"
-                  @connect="onConnect"
                   :min-zoom="0.9"
                   :max-zoom="1.1"
                   fit-view-on-init
                   :snap-to-grid="true"
                   :snap-grid="[20, 20]"
+                  @connect="onConnect"
                 >
                   <Background variant="dots" pattern-color="#bdbdbd" :gap="30" :size="2" />
                   <MiniMap />
@@ -77,7 +77,8 @@
                 <v-icon icon="mdi-information" color="info" class="mr-2" />
                 <div class="text-body-2 text-grey-darken-2">
                   <strong>操作提示:</strong>
-                  从右侧选择课程添加到画布 → 拖动节点调整位置 → 连接节点创建学习路径 → 点击节点可选中删除
+                  从右侧选择课程添加到画布 → 拖动节点调整位置 → 连接节点创建学习路径 →
+                  点击节点可选中删除
                 </div>
               </div>
             </v-card-text>
@@ -285,7 +286,7 @@ const addCourseNode = (course: { id: number; name: string }) => {
 // 添加自定义节点
 const addCustomNode = () => {
   const nodeName = prompt('请输入节点名称:')
-  if (!nodeName || !nodeName.trim()) return
+  if (!nodeName?.trim()) return
 
   const newId = `custom-${nodeIdCounter++}`
   const x = 300 + Math.random() * 300

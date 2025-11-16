@@ -36,11 +36,13 @@ public interface PostMapper {
     List<PostDO> getListByLastId(long nodeId, long lastId, int limit, byte state);
 
     @Select({"<script>",
-            "SELECT * FROM post WHERE creator_id = #{userId} and type = #{type} and id &lt; #{lastId} AND deleted_at IS NULL",
+            "SELECT * FROM post WHERE creator_id = #{userId} and type = #{type}",
+            "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
+            "AND deleted_at IS NULL",
             "<if test='state != null'> AND state = #{state}</if>",
             "ORDER BY id DESC LIMIT #{count}",
             "</script>"})
-    List<PostDO> getPostsByUser(@Param("userId") long userId, @Param("type") int type, @Param("lastId") long lastId, @Param("state") Byte state, @Param("count") int count);
+    List<PostDO> getPostsByUser(@Param("userId") long userId, @Param("type") int type, @Param("lastId") Long lastId, @Param("state") Byte state, @Param("count") int count);
 
     @Insert("INSERT INTO post (node_id, creator_id, type, content, state) " +
             "VALUES (#{nodeId}, #{creatorId}, #{type}, #{content}, #{state})")

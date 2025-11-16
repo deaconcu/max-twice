@@ -13,9 +13,7 @@ interface Props {
   postId: number
 }
 
-interface Emits {
-  (e: 'created', deck: MemoryCardDeck): void
-}
+type Emits = (e: 'created', deck: MemoryCardDeck) => void
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
@@ -115,9 +113,7 @@ const addCard = () => {
 
   // 聚焦到前面输入框
   nextTick(() => {
-    const frontInput = document.querySelector(
-      'textarea[placeholder="输入问题..."]'
-    ) as HTMLTextAreaElement
+    const frontInput = document.querySelector('textarea[placeholder="输入问题..."]')!
     if (frontInput) {
       frontInput.focus()
     }
@@ -206,7 +202,7 @@ const closeDialog = () => {
       <!-- 步骤2: 添加卡片 -->
       <v-card-text v-if="step === 2" class="pa-6">
         <!-- 卡片添加表单 -->
-        <v-form @submit.prevent="addCard" class="mb-6">
+        <v-form class="mb-6" @submit.prevent="addCard">
           <v-textarea
             v-model="cardForm.front"
             label="问题（卡片正面）"
@@ -291,7 +287,9 @@ const closeDialog = () => {
         <!-- 空状态提示 -->
         <div v-else class="text-center pa-6">
           <v-icon icon="mdi-cards-outline" size="48" color="grey-lighten-2" class="mb-3"></v-icon>
-          <p class="text-body-2 text-grey-darken-1">还没有添加任何卡片，请在上方表单中添加第一张卡片</p>
+          <p class="text-body-2 text-grey-darken-1">
+            还没有添加任何卡片，请在上方表单中添加第一张卡片
+          </p>
         </div>
       </v-card-text>
 

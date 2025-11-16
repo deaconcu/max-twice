@@ -36,7 +36,7 @@ export interface InfiniteScrollReturn<T> {
   items: Ref<T[]>
   loading: Ref<boolean>
   hasMore: Ref<boolean>
-  params: Ref<any>
+  params: Ref
   loadMore: (options: { done: () => void }) => Promise<void>
   reset: () => void
 }
@@ -47,9 +47,7 @@ export interface InfiniteScrollReturn<T> {
  * @param options 配置选项
  * @returns 无限滚动功能
  */
-export function useInfiniteScroll<T>(
-  options: InfiniteScrollOptions<T>
-): InfiniteScrollReturn<T> {
+export function useInfiniteScroll<T>(options: InfiniteScrollOptions<T>): InfiniteScrollReturn<T> {
   const { fetchFn, getNextParams, initialParams, onError } = options
 
   // 状态
@@ -112,6 +110,6 @@ export function useInfiniteScroll<T>(
     hasMore,
     params,
     loadMore,
-    reset
+    reset,
   }
 }

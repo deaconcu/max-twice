@@ -55,7 +55,7 @@ const { loading: loadingConfig } = useFetch({
   },
   onError: (error: any) => {
     console.error('加载配置时发生错误:', error)
-  }
+  },
 })
 
 // 使用 useMutation 保存配置
@@ -67,9 +67,7 @@ const { execute: saveConfig, loading: saving } = useMutation(
       promises.push(adminApi.updateConfigByKey('courseCategories', courseCategories.value))
     }
     if (professionCategories.value.trim()) {
-      promises.push(
-        adminApi.updateConfigByKey('professionCategories', professionCategories.value)
-      )
+      promises.push(adminApi.updateConfigByKey('professionCategories', professionCategories.value))
     }
 
     const responses = await Promise.all(promises)
@@ -84,14 +82,14 @@ const { execute: saveConfig, loading: saving } = useMutation(
     return {
       code: 200,
       message: '配置保存成功',
-      data: { success: true }
+      data: { success: true },
     }
   },
   {
     successMessage: '系统配置已保存',
     onSuccess: () => {
       lastUpdateTime.value = new Date().toLocaleString('zh-CN')
-    }
+    },
   }
 )
 

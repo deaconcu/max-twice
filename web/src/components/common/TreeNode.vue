@@ -6,9 +6,7 @@ interface NodeInfo {
   isCompleted?: boolean
 }
 
-interface NodeData {
-  [key: string]: any
-}
+type NodeData = Record<string, any>
 
 interface Props {
   nodeData: NodeData
@@ -59,7 +57,7 @@ watch(
       }
     })
   },
-  { immediate: true },
+  { immediate: true }
 )
 
 // 滚动到页面顶部
@@ -111,7 +109,12 @@ const scrollToTop = (): void => {
                       color="success"
                       size="16"
                     ></v-icon>
-                    <v-icon v-else icon="mdi-circle-outline" color="grey-lighten-2" size="16"></v-icon>
+                    <v-icon
+                      v-else
+                      icon="mdi-circle-outline"
+                      color="grey-lighten-2"
+                      size="16"
+                    ></v-icon>
                   </template>
                 </template>
               </template>

@@ -44,7 +44,12 @@
                   <!-- 创建者信息 -->
                   <div class="d-flex align-center mb-3">
                     <v-avatar size="24" color="grey-lighten-2" class="mr-2">
-                      <v-icon v-if="!roadmap.creator?.avatar" icon="mdi-account" color="grey" size="14" />
+                      <v-icon
+                        v-if="!roadmap.creator?.avatar"
+                        icon="mdi-account"
+                        color="grey"
+                        size="14"
+                      />
                     </v-avatar>
                     <span class="text-body-2 text-grey-darken-3">
                       {{ roadmap.creator?.name }}
@@ -202,13 +207,10 @@ const {
 
 const roadmap = computed(() => roadmapData.value)
 
-
 /**
  * 解析路线图内容
  */
-const parseContent = (
-  content: string | object
-): { nodes: Node[]; edges: Edge[] } => {
+const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] } => {
   try {
     const data = typeof content === 'string' ? JSON.parse(content) : content
     const nodes = (data.nodes || []).map((node: any): Node => {
@@ -258,17 +260,19 @@ const parseContent = (
       }
     })
 
-    const edges = (data.edges || []).map((edge: any): Edge => ({
-      id: `${edge.source}-${edge.target}`,
-      source: edge.source.toString(),
-      target: edge.target.toString(),
-      type: 'default',
-      animated: true,
-      style: {
-        stroke: '#78909c',
-        strokeWidth: 2,
-      },
-    }))
+    const edges = (data.edges || []).map(
+      (edge: any): Edge => ({
+        id: `${edge.source}-${edge.target}`,
+        source: edge.source.toString(),
+        target: edge.target.toString(),
+        type: 'default',
+        animated: true,
+        style: {
+          stroke: '#78909c',
+          strokeWidth: 2,
+        },
+      })
+    )
 
     return { nodes, edges }
   } catch (error) {

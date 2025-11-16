@@ -5,7 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import ProfessionManagement from '@/components/admin/ProfessionManagement.vue'
 import SystemConfiguration from '@/components/admin/SystemConfiguration.vue'
 import SystemOperations from '@/components/admin/SystemOperations.vue'
-// CourseManagement 暂时跳过，因为它太复杂
+import CourseManagement from '@/components/admin/CourseManagement.vue'
 import RoadmapManagement from '@/components/admin/RoadmapManagement.vue'
 import NodeManagement from '@/components/admin/NodeManagement.vue'
 import PostReview from '@/components/admin/PostReview.vue'
@@ -25,7 +25,7 @@ const validTabs = [
   'operation-logs',
   'user-management',
   'profession-management',
-  // 暂时跳过 course-management
+  'course-management',
   'roadmap-management',
   'node-management',
   'post-review',
@@ -38,9 +38,7 @@ type TabValue = (typeof validTabs)[number]
 // 从 URL 参数读取 tab,如果无效则使用默认值
 const getInitialTab = (): TabValue => {
   const tabFromUrl = route.query.tab as string
-  return validTabs.includes(tabFromUrl as TabValue)
-    ? (tabFromUrl as TabValue)
-    : 'system-config'
+  return validTabs.includes(tabFromUrl as TabValue) ? (tabFromUrl as TabValue) : 'system-config'
 }
 
 const tab = ref<string>(getInitialTab())
@@ -53,12 +51,13 @@ const menuItems = [
   { divider: true },
   { icon: 'mdi-account-multiple', text: '用户管理', value: 'user-management' },
   { icon: 'mdi-briefcase-check-outline', text: '职业管理', value: 'profession-management' },
+  { icon: 'mdi-book-check-outline', text: '课程管理', value: 'course-management' },
   { divider: true },
   { icon: 'mdi-map-marker-path', text: '路线图管理', value: 'roadmap-management' },
   { icon: 'mdi-file-tree-outline', text: '节点管理', value: 'node-management' },
   { icon: 'mdi-note-check-outline', text: '文章审核', value: 'post-review' },
   { icon: 'mdi-comment-check-outline', text: '评论审核', value: 'comment-review' },
-  { icon: 'mdi-cards-variant', text: '记忆卡片管理', value: 'memory-card-review' }
+  { icon: 'mdi-cards-variant', text: '记忆卡片管理', value: 'memory-card-review' },
 ]
 
 // 监听 tab 变化,同步更新 URL 参数
@@ -140,6 +139,11 @@ onMounted(async () => {
         <!-- 职业申请管理 -->
         <v-card v-if="tab == 'profession-management'" class="px-6 pt-2 pb-6 no-border" rounded="lg">
           <ProfessionManagement />
+        </v-card>
+
+        <!-- 课程管理 -->
+        <v-card v-if="tab == 'course-management'" class="px-6 pt-2 pb-6 no-border" rounded="lg">
+          <CourseManagement />
         </v-card>
 
         <!-- 路线图管理 -->

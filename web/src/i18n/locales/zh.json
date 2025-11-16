@@ -113,7 +113,11 @@
     "all": "全部",
     "clearFilters": "清空筛选",
     "loadMore": "加载更多",
-    "guest": "访客"
+    "guest": "访客",
+    "selectAll": "全选",
+    "deselectAll": "取消全选",
+    "saveSettings": "保存设置",
+    "noCards": "暂无卡片"
   },
   "notification": {
     "title": "消息通知",
@@ -226,7 +230,8 @@
     "frequencyLow": "低频",
     "statusStudying": "学习中",
     "statusPaused": "已暂停",
-    "statusArchived": "已归档"
+    "statusArchived": "已归档",
+    "nextReview": "下次复习"
   },
   "user": {
     "login": {

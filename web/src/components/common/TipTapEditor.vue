@@ -68,7 +68,13 @@
           :value="editor.getAttributes('textStyle').color || '#000000'"
           class="color-input"
           title="文本颜色"
-          @input="editor.chain().focus().setColor(($event.target as HTMLInputElement).value).run()"
+          @input="
+            editor
+              .chain()
+              .focus()
+              .setColor(($event.target as HTMLInputElement).value)
+              .run()
+          "
         />
 
         <v-divider vertical class="mx-2" />
@@ -224,7 +230,9 @@
           variant="text"
           size="small"
           icon="mdi-table"
-          @click="editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()"
+          @click="
+            editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+          "
         />
       </div>
     </div>

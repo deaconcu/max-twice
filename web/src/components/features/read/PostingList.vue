@@ -157,7 +157,12 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
             density="comfortable"
             @click="showAddCatalogDialog = true"
           >
-            <v-icon icon="mdi-format-list-group-plus" size="14" class="mr-2" color="grey-darken-3"></v-icon>
+            <v-icon
+              icon="mdi-format-list-group-plus"
+              size="14"
+              class="mr-2"
+              color="grey-darken-3"
+            ></v-icon>
             <span class="font-weight-medium text-grey-darken-3">添加目录</span>
           </v-btn>
 
@@ -169,7 +174,12 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
             class="px-3 me-2"
             @click="showAddArticleDialog = true"
           >
-            <v-icon icon="mdi-note-plus-outline" size="14" class="mr-2" color="grey-darken-3"></v-icon>
+            <v-icon
+              icon="mdi-note-plus-outline"
+              size="14"
+              class="mr-2"
+              color="grey-darken-3"
+            ></v-icon>
             <span class="font-weight-medium text-grey-darken-3">添加文章</span>
           </v-btn>
 
@@ -181,7 +191,12 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
             density="comfortable"
             @click="showInviteUserDialog = true"
           >
-            <v-icon icon="mdi-account-plus-outline" size="14" class="mr-2" color="grey-darken-3"></v-icon>
+            <v-icon
+              icon="mdi-account-plus-outline"
+              size="14"
+              class="mr-2"
+              color="grey-darken-3"
+            ></v-icon>
             <span class="font-weight-medium text-grey-darken-3">邀请回答</span>
           </v-btn>
         </div>
@@ -210,7 +225,11 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
           <div
             v-for="(posting, index) in data.otherPostings"
             :key="posting.id"
-            :class="index == 0 && (!data.fixedPostings || data.fixedPostings.length === 0) ? 'pt-4' : 'pt-8'"
+            :class="
+              index == 0 && (!data.fixedPostings || data.fixedPostings.length === 0)
+                ? 'pt-4'
+                : 'pt-8'
+            "
           >
             <SinglePost
               :posting="posting"
@@ -248,10 +267,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
 
     <!-- 记忆卡片 -->
     <template v-else-if="tab === 'memoryCards'">
-      <MemoryCardList
-        :node-id="currNodeId"
-        @view-deck="handleViewDeck"
-      />
+      <MemoryCardList :node-id="currNodeId" @view-deck="handleViewDeck" />
     </template>
 
     <!-- 文章详情 -->

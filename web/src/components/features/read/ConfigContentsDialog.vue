@@ -5,6 +5,8 @@ import draggable from 'vuedraggable'
 import { courseApi } from '@/api'
 import { useMutation } from '@/composables'
 
+const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
 const route = useRoute()
 const router = useRouter()
 
@@ -13,12 +15,7 @@ interface Props {
   contents: any[]
 }
 
-interface Emits {
-  (e: 'load-data', data: any[]): void
-}
-
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+type Emits = (e: 'load-data', data: any[]) => void
 
 const dialog = defineModel<boolean>({ default: false })
 const list = ref<number[]>([])
@@ -98,9 +95,7 @@ const removeItem = (index: number) => {
 
       <v-card-text class="pa-0">
         <div class="px-6 py-3 bg-grey-lighten-4">
-          <div class="text-body-2 text-grey-darken-2">
-            拖动调整顺序，添加新目录或复制现有目录
-          </div>
+          <div class="text-body-2 text-grey-darken-2">拖动调整顺序，添加新目录或复制现有目录</div>
         </div>
 
         <v-sheet height="400px" class="overflow-auto px-6 py-4">
@@ -154,9 +149,7 @@ const removeItem = (index: number) => {
         </v-btn>
         <div class="d-flex" style="gap: 8px">
           <v-btn variant="text" color="grey-darken-2" @click="dialog = false">取消</v-btn>
-          <v-btn color="primary" variant="flat" :loading="submitting" @click="submit">
-            确定
-          </v-btn>
+          <v-btn color="primary" variant="flat" :loading="submitting" @click="submit"> 确定 </v-btn>
         </div>
       </v-card-actions>
     </v-card>

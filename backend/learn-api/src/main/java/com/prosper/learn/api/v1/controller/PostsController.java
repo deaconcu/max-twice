@@ -10,6 +10,7 @@ import com.prosper.learn.domain.service.business.PostService;
 import com.prosper.learn.dto.request.CreatePostRequest;
 import com.prosper.learn.dto.request.UpdatePostRequest;
 import com.prosper.learn.dto.response.PostDTO;
+import com.prosper.learn.dto.response.KeysetPageResponse;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -130,7 +131,7 @@ public class PostsController {
     @GetMapping("/users/{userId}/posts")
     public ApiResponse<List<PostDTO>> getUserPosts(
             @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
-            @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
+            @RequestParam(required = false) Long lastId,
             @RequestParam(required = false, defaultValue = "2") Integer type) {
 
         Enums.PostType postType = Enums.PostType.getByValue(type);
@@ -148,8 +149,8 @@ public class PostsController {
      */
     @GetMapping("/users/me/posts")
     @SaCheckLogin
-    public ApiResponse<List<PostDTO>> getCurrentUserAllPosts(
-            @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
+    public ApiResponse<KeysetPageResponse<PostDTO>> getCurrentUserAllPosts(
+            @RequestParam(required = false) Long lastId,
             @RequestParam(required = false, defaultValue = "2") Integer type,
             @CurrentUser UserDO currentUser) {
 
@@ -157,7 +158,7 @@ public class PostsController {
         if (postType == null) {
             return ApiResponse.error(400, "无效的帖子类型");
         }
-        List<PostDTO> posts = postService.getUserPosts(currentUser.getId(), lastId, postType, null);
-        return ApiResponse.success(posts);
+        KeysetPageResponse<PostDTO> result = postService.getUserPostsWithPagination(currentUser.getId(), lastId, postType, null);
+        return ApiResponse.success(result);
     }
 }

@@ -9,9 +9,7 @@ interface Props {
   isLearning?: boolean
 }
 
-interface Emits {
-  (e: 'start-learning', data: any): void
-}
+type Emits = (e: 'start-learning', data: any) => void
 
 const props = withDefaults(defineProps<Props>(), {
   parentCourseInfo: null,

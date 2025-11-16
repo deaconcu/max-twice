@@ -88,7 +88,7 @@ const normalizeMermaidDefinition = (raw: string) => {
     .replace(/\u00a0/g, ' ')
     .trim()
 
-  const firstLineMatch = normalized.match(/^(graph\s+[^\s]+)(.*)$/i)
+  const firstLineMatch = /^(graph\s+[^\s]+)(.*)$/i.exec(normalized)
   if (firstLineMatch) {
     const graphLine = firstLineMatch[1]
     const rest = firstLineMatch[2]?.trimStart() ?? ''
@@ -154,7 +154,11 @@ const convertToMermaidContainers = (root: HTMLElement) => {
     }
     const text = element.textContent?.trim()
     if (!text) return
-    if (!/^(graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|timeline|pie)/i.test(text)) {
+    if (
+      !/^(graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|timeline|pie)/i.test(
+        text
+      )
+    ) {
       return
     }
     const container = document.createElement('div')
@@ -188,10 +192,7 @@ const renderMermaidDiagrams = async (root: HTMLElement) => {
         console.error('Mermaid render failed:', error, definition)
         el.dataset.processed = 'error'
         const escapeHtml = (str: string) =>
-          str
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
+          str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         el.innerHTML = `<pre class="mermaid-error">${escapeHtml(normalized)}</pre>`
       }
     })
@@ -310,7 +311,11 @@ watch(
               class="px-0 py-4 dashed-border"
             >
               <router-link
-                :to="{ name: 'content-read', params: { id: data.course?.id }, query: { nodeId: nodeInfo.id } }"
+                :to="{
+                  name: 'content-read',
+                  params: { id: data.course?.id },
+                  query: { nodeId: nodeInfo.id },
+                }"
                 target="_blank"
                 class="text-decoration-none d-block w-100"
               >
@@ -439,12 +444,7 @@ watch(
 
       <!-- 管理按钮（右侧） -->
       <div class="d-flex">
-        <v-btn
-          variant="text"
-          rounded="lg"
-          density="comfortable"
-          class="px-3"
-        >
+        <v-btn variant="text" rounded="lg" density="comfortable" class="px-3">
           <v-icon icon="mdi-share-variant" size="14" class="mr-2" color="grey-darken-2"></v-icon>
           <span class="font-weight-medium text-grey-darken-2">分享</span>
         </v-btn>

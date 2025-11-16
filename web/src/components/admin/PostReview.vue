@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { inject, ref, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { adminApi } from '@/api'
-import { ContentState, PostType, ApprovalAction } from '@/enums'
-import type { Post } from '@/types/post'
+import { ContentState, PostType } from '@/enums'
+import type { Post } from '@/types/post.d'
 import RejectBanDialog from './RejectBanDialog.vue'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
 
-const { t } = useI18n()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
 const currentTab = ref<string>('pending')
@@ -38,29 +36,29 @@ const tabs: TabConfig[] = [
     label: '待审核',
     state: ContentState.SUBMITTED,
     icon: 'mdi-clock-outline',
-    color: 'orange'
+    color: 'orange',
   },
   {
     key: 'approved',
     label: '已批准',
     state: ContentState.PUBLISHED,
     icon: 'mdi-check-circle',
-    color: 'green'
+    color: 'green',
   },
   {
     key: 'rejected',
     label: '已拒绝',
     state: ContentState.REJECTED,
     icon: 'mdi-close-circle',
-    color: 'red'
+    color: 'red',
   },
   {
     key: 'banned',
     label: '已屏蔽',
     state: ContentState.BANNED,
     icon: 'mdi-cancel',
-    color: 'grey'
-  }
+    color: 'grey',
+  },
 ]
 
 // 使用 useInfiniteScroll 加载帖子列表
@@ -69,31 +67,29 @@ const {
   loading,
   hasMore,
   loadMore,
-  reset: resetPostList
+  reset: resetPostList,
 } = useInfiniteScroll({
-  fetchFn: async (params) => {
-    const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
+  fetchFn: (params) => {
+    const currentTabConfig = tabs.find((tab) => tab.key === currentTab.value)
     const state = currentTabConfig?.state
 
     if (isFilterMode.value) {
-      const response = await adminApi.getPostsByFilter(
+      return adminApi.getPostsByFilter(
         filterNodeId.value,
         filterCreatorId.value,
         params.lastId,
         state
       )
-      return response.data
     } else {
-      const response = await adminApi.getPostsByState(currentTab.value, params.lastId)
-      return response.data
+      return adminApi.getPostsByState(currentTab.value, params.lastId, 20)
     }
   },
   getNextParams: (lastItem) => ({
-    lastId: lastItem.id
+    lastId: lastItem.id,
   }),
   initialParams: {
-    lastId: undefined
-  }
+    lastId: undefined,
+  },
 })
 
 // 应用筛选
@@ -116,25 +112,22 @@ const clearFilter = (): void => {
 
 // 使用 useMutation 批准/拒绝帖子
 const { execute: executeApprovePost } = useMutation(
-  (data: { postId: number; approve: boolean }) => {
-    const action = data.approve ? ApprovalAction.APPROVE : ApprovalAction.REJECT
-    return adminApi.approvePost(data.postId, { action })
-  },
+  (data: { postId: number; approve: boolean }) =>
+    adminApi.approvePost(data.postId, data.approve ? 'APPROVE' : 'REJECT'),
   {
     successMessage: '操作成功',
     onSuccess: (response, data) => {
-      const updatedPost = response.data as any
-      const index = postList.value.findIndex(p => p.id === data.postId)
+      const updatedPost = response as Post
+      const index = postList.value.findIndex((p) => p.id === data.postId)
       if (index !== -1) {
-        const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
-        const newState = data.approve ? ContentState.PUBLISHED : ContentState.REJECTED
-        if (newState !== currentTabConfig?.state) {
+        const currentTabConfig = tabs.find((tab) => tab.key === currentTab.value)
+        if (updatedPost.state !== currentTabConfig?.state) {
           postList.value.splice(index, 1)
         } else {
-          postList.value[index].state = newState
+          postList.value[index].state = updatedPost.state
         }
       }
-    }
+    },
   }
 )
 
@@ -158,17 +151,17 @@ const showBanDialog = (post: Post) => {
 
 // 使用 useMutation 处理拒绝/屏蔽
 const { execute: executeRejectOrBan, loading: submitting } = useMutation(
-  (data: { postId: number; action: ApprovalAction; reason: string }) =>
-    adminApi.approvePost(data.postId, { action: data.action, reason: data.reason }),
+  (data: { postId: number; action: string; reason: string }) =>
+    adminApi.approvePost(data.postId, data.action, data.reason),
   {
     onSuccess: (_, data) => {
-      const message = data.action === ApprovalAction.BAN ? '已屏蔽' : '已拒绝'
-      const targetState = data.action === ApprovalAction.BAN ? ContentState.BANNED : ContentState.REJECTED
+      const message = data.action === 'BAN' ? '已屏蔽' : '已拒绝'
+      const targetState = data.action === 'BAN' ? ContentState.BANNED : ContentState.REJECTED
       showSnackbar?.(message, 'success')
 
-      const index = postList.value.findIndex(p => p.id === data.postId)
+      const index = postList.value.findIndex((p) => p.id === data.postId)
       if (index !== -1) {
-        const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
+        const currentTabConfig = tabs.find((tab) => tab.key === currentTab.value)
         if (currentTabConfig?.state !== targetState) {
           postList.value.splice(index, 1)
         } else {
@@ -178,7 +171,7 @@ const { execute: executeRejectOrBan, loading: submitting } = useMutation(
 
       showReasonDialog.value = false
       currentPost.value = null
-    }
+    },
   }
 )
 
@@ -186,11 +179,11 @@ const { execute: executeRejectOrBan, loading: submitting } = useMutation(
 const handleConfirmAction = async (reason: string) => {
   if (!currentPost.value) return
 
-  const action = dialogType.value === 'ban' ? ApprovalAction.BAN : ApprovalAction.REJECT
+  const action = dialogType.value === 'ban' ? 'BAN' : 'REJECT'
   await executeRejectOrBan({
     postId: currentPost.value.id,
     action,
-    reason
+    reason,
   })
 }
 
@@ -206,20 +199,20 @@ const banPost = async (post: Post): Promise<void> => {
 
 // 使用 useMutation 取消屏蔽文章
 const { execute: executeUnbanPost } = useMutation(
-  (postId: number) => adminApi.approvePost(postId, { action: ApprovalAction.APPROVE }),
+  (postId: number) => adminApi.approvePost(postId, 'APPROVE'),
   {
     successMessage: '已取消屏蔽',
     onSuccess: (_, postId) => {
-      const index = postList.value.findIndex(p => p.id === postId)
+      const index = postList.value.findIndex((p) => p.id === postId)
       if (index !== -1) {
-        const currentTabConfig = tabs.find(tab => tab.key === currentTab.value)
+        const currentTabConfig = tabs.find((tab) => tab.key === currentTab.value)
         if (currentTabConfig?.state !== ContentState.PUBLISHED) {
           postList.value.splice(index, 1)
         } else {
           postList.value[index].state = ContentState.PUBLISHED
         }
       }
-    }
+    },
   }
 )
 
@@ -245,7 +238,7 @@ const parseContents = (content: string) => {
     return content.split(',').map((item, index) => ({
       id: index,
       name: item.trim(),
-      description: ''
+      description: '',
     }))
   }
 }
@@ -259,18 +252,12 @@ const parseContents = (content: string) => {
           <v-icon icon="mdi-note-check-outline" color="teal-darken-1" size="20"></v-icon>
         </div>
         <div>
-          <h3 class="text-h6 font-weight-bold text-grey-darken-3">
-            {{ t('admin.articleReview') }}
-          </h3>
-          <p class="text-body-2 text-grey-darken-1 mb-0">{{ t('admin.reviewUserArticles') }}</p>
+          <h3 class="text-h6 font-weight-bold text-grey-darken-3">文章审核</h3>
+          <p class="text-body-2 text-grey-darken-1 mb-0">审核用户提交的文章</p>
         </div>
       </div>
       <v-chip variant="tonal" color="teal" rounded="lg">
-        <v-icon
-          icon="mdi-file-document-multiple"
-          size="16"
-          class="mr-1"
-        ></v-icon>
+        <v-icon icon="mdi-file-document-multiple" size="16" class="mr-1"></v-icon>
         <span class="text-caption">{{ postList.length }}</span>
       </v-chip>
     </div>
@@ -309,13 +296,7 @@ const parseContents = (content: string) => {
           ></v-text-field>
         </v-col>
         <v-col cols="12" sm="2">
-          <v-btn
-            variant="flat"
-            color="primary"
-            rounded="lg"
-            block
-            @click="applyFilter"
-          >
+          <v-btn variant="flat" color="primary" rounded="lg" block @click="applyFilter">
             <v-icon icon="mdi-magnify" class="mr-1"></v-icon>
             筛选
           </v-btn>
@@ -339,7 +320,9 @@ const parseContents = (content: string) => {
         <div>
           <span class="font-weight-medium">筛选条件：</span>
           <v-chip v-if="filterNodeId" size="small" class="mx-1">节点 ID: {{ filterNodeId }}</v-chip>
-          <v-chip v-if="filterCreatorId" size="small" class="mx-1">用户 ID: {{ filterCreatorId }}</v-chip>
+          <v-chip v-if="filterCreatorId" size="small" class="mx-1"
+            >用户 ID: {{ filterCreatorId }}</v-chip
+          >
         </div>
       </div>
     </v-alert>
@@ -352,18 +335,8 @@ const parseContents = (content: string) => {
       show-arrows
       @update:model-value="handleTabChange"
     >
-      <v-tab
-        v-for="tab in tabs"
-        :key="tab.key"
-        :value="tab.key"
-        class="text-none"
-      >
-        <v-icon
-          :icon="tab.icon"
-          :color="`${tab.color}-darken-1`"
-          size="18"
-          class="mr-2"
-        ></v-icon>
+      <v-tab v-for="tab in tabs" :key="tab.key" :value="tab.key" class="text-none">
+        <v-icon :icon="tab.icon" :color="`${tab.color}-darken-1`" size="18" class="mr-2"></v-icon>
         {{ tab.label }}
       </v-tab>
     </v-tabs>
@@ -376,21 +349,25 @@ const parseContents = (content: string) => {
         class="mb-4"
       ></v-icon>
       <p class="text-body-1 text-grey-darken-1">
-        {{ currentTab === 'pending' ? t('admin.noArticlesToReview') : `暂无${tabs.find(tab => tab.key === currentTab)?.label}的文章` }}
+        {{
+          currentTab === 'pending'
+            ? '暂无待审核的文章'
+            : `暂无${tabs.find((tab) => tab.key === currentTab)?.label}的文章`
+        }}
       </p>
     </div>
 
     <div
       v-for="post in postList"
       :key="post.id"
-      class="mb-4"
       v-intersect="{
         handler: (isIntersecting: boolean) => {
           if (isIntersecting && post === postList[postList.length - 1] && hasMore && !loading) {
             loadMore()
           }
-        }
+        },
       }"
+      class="mb-4"
     >
       <v-card flat class="border rounded-lg pa-5" hover>
         <div class="d-flex align-start">
@@ -405,7 +382,7 @@ const parseContents = (content: string) => {
                 size="small"
               >
                 <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
-                {{ t('admin.pending') }}
+                待审核
               </v-chip>
               <v-chip
                 v-if="post.state == ContentState.PUBLISHED"
@@ -415,7 +392,7 @@ const parseContents = (content: string) => {
                 size="small"
               >
                 <v-icon icon="mdi-check-circle" size="14" class="mr-1"></v-icon>
-                {{ t('admin.approved') }}
+                已批准
               </v-chip>
               <v-chip
                 v-if="post.state == ContentState.REJECTED"
@@ -425,7 +402,7 @@ const parseContents = (content: string) => {
                 size="small"
               >
                 <v-icon icon="mdi-close-circle" size="14" class="mr-1"></v-icon>
-                {{ t('admin.rejected') }}
+                已拒绝
               </v-chip>
               <v-chip
                 v-if="post.state == ContentState.BANNED"
@@ -435,7 +412,7 @@ const parseContents = (content: string) => {
                 size="small"
               >
                 <v-icon icon="mdi-cancel" size="14" class="mr-1"></v-icon>
-                {{ t('admin.banned') }}
+                已屏蔽
               </v-chip>
             </div>
             <!-- 待审核状态：批准、拒绝、屏蔽 -->
@@ -539,7 +516,12 @@ const parseContents = (content: string) => {
                 size="small"
                 @click="rejectPost(post)"
               >
-                <v-icon icon="mdi-arrow-down" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                <v-icon
+                  icon="mdi-arrow-down"
+                  color="orange-darken-2"
+                  size="16"
+                  class="mr-1"
+                ></v-icon>
                 降级为拒绝
               </v-btn>
             </div>
@@ -553,7 +535,7 @@ const parseContents = (content: string) => {
               </v-avatar>
               <div>
                 <div class="text-body-2 font-weight-medium text-grey-darken-2">
-                  {{ t('admin.articleId') }}: {{ post.id }}
+                  文章 ID: {{ post.id }}
                 </div>
                 <div class="text-caption text-grey-darken-1">{{ post.createdAt }}</div>
               </div>
@@ -566,7 +548,7 @@ const parseContents = (content: string) => {
                 v-html="post.content"
               ></div>
               <div v-if="post.type == PostType.CONTENTS">
-                <div class="text-caption text-grey-darken-1 mb-3">{{ t('admin.directory') }}</div>
+                <div class="text-caption text-grey-darken-1 mb-3">目录</div>
                 <div class="contents-list">
                   <div
                     v-for="(item, index) in parseContents(post.content)"
@@ -574,9 +556,13 @@ const parseContents = (content: string) => {
                     class="content-item mb-3"
                   >
                     <div class="d-flex align-start">
-                      <div class="text-body-2 font-weight-medium text-grey-darken-3 mr-2">{{ index + 1 }}.</div>
+                      <div class="text-body-2 font-weight-medium text-grey-darken-3 mr-2">
+                        {{ index + 1 }}.
+                      </div>
                       <div class="flex-grow-1">
-                        <div class="text-body-2 font-weight-medium text-grey-darken-3">{{ item.name }}</div>
+                        <div class="text-body-2 font-weight-medium text-grey-darken-3">
+                          {{ item.name }}
+                        </div>
                         <div v-if="item.description" class="text-caption text-grey-darken-1 mt-1">
                           {{ item.description }}
                         </div>
@@ -593,11 +579,7 @@ const parseContents = (content: string) => {
 
     <!-- 加载更多指示器 -->
     <div v-if="loading" class="text-center py-4">
-      <v-progress-circular
-        indeterminate
-        color="primary"
-        size="24"
-      ></v-progress-circular>
+      <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
       <span class="ml-2 text-grey-darken-1">加载中...</span>
     </div>
 
@@ -620,47 +602,47 @@ const parseContents = (content: string) => {
 </template>
 
 <style scoped>
-  /* 防止flex子元素溢出 */
-  .post-content-area {
-    min-width: 0;
-    overflow: hidden;
-  }
+/* 防止flex子元素溢出 */
+.post-content-area {
+  min-width: 0;
+  overflow: hidden;
+}
 
-  .tiptap.post-content {
-    max-height: 200px;
-    overflow-y: auto;
-    overflow-x: auto;
-    word-wrap: break-word;
-    word-break: break-word;
-    overflow-wrap: break-word;
-  }
+.tiptap.post-content {
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: auto;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
 
-  /* 防止内容中的元素溢出 */
-  .tiptap.post-content :deep(*) {
-    max-width: 100%;
-  }
+/* 防止内容中的元素溢出 */
+.tiptap.post-content :deep(*) {
+  max-width: 100%;
+}
 
-  /* 代码块样式 */
-  .tiptap.post-content :deep(pre) {
-    overflow-x: auto;
-    white-space: pre;
-    word-wrap: normal;
-  }
+/* 代码块样式 */
+.tiptap.post-content :deep(pre) {
+  overflow-x: auto;
+  white-space: pre;
+  word-wrap: normal;
+}
 
-  /* 表格样式 */
-  .tiptap.post-content :deep(table) {
-    display: block;
-    overflow-x: auto;
-    max-width: 100%;
-  }
+/* 表格样式 */
+.tiptap.post-content :deep(table) {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
 
-  /* 图片样式 */
-  .tiptap.post-content :deep(img) {
-    max-width: 100%;
-    height: auto;
-  }
+/* 图片样式 */
+.tiptap.post-content :deep(img) {
+  max-width: 100%;
+  height: auto;
+}
 
-  .action-area {
-    min-width: 200px;
-  }
+.action-area {
+  min-width: 200px;
+}
 </style>

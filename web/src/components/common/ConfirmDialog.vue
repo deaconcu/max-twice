@@ -64,7 +64,9 @@ const emit = defineEmits<{
 
 const isOpen = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value),
+  set: (value) => {
+    emit('update:modelValue', value)
+  },
 })
 
 const handleConfirm = () => {

@@ -69,7 +69,11 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
               size="small"
               class="font-weight-medium"
             >
-              <v-icon :icon="getStateConfig(course.state || 0).icon" size="14" class="mr-1"></v-icon>
+              <v-icon
+                :icon="getStateConfig(course.state || 0).icon"
+                size="14"
+                class="mr-1"
+              ></v-icon>
               {{ getStateConfig(course.state || 0).text }}
             </v-chip>
           </div>
@@ -200,7 +204,12 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
                 class="text-none"
                 @click="$emit('reject', course)"
               >
-                <v-icon icon="mdi-arrow-down" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                <v-icon
+                  icon="mdi-arrow-down"
+                  color="orange-darken-2"
+                  size="16"
+                  class="mr-1"
+                ></v-icon>
                 降级为拒绝
               </v-btn>
             </template>
@@ -235,7 +244,13 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
               {{ course.name }}
             </h4>
             <div v-if="course.parentCourse" class="d-flex align-center">
-              <v-chip v-if="course.parentCourse" variant="flat" size="x-small" rounded="lg" color="teal">
+              <v-chip
+                v-if="course.parentCourse"
+                variant="flat"
+                size="x-small"
+                rounded="lg"
+                color="teal"
+              >
                 子课程
               </v-chip>
               <span class="text-caption text-grey-darken-1 ps-4">

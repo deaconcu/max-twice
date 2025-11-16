@@ -30,7 +30,7 @@
     <!-- 右侧主内容 -->
     <v-col cols="12" md="10">
       <div class="pa-2">
-        <div class="d-flex align-center justify-space-between mb-4">
+        <div class="d-flex align-center justify-space-between mb-0">
           <v-icon icon="mdi-menu" size="18" color="grey-lighten-1" />
 
           <!-- 搜索框 -->
@@ -48,64 +48,102 @@
         </div>
 
         <!-- 目录列表 -->
-        <div v-if="filteredCatalogs.length > 0">
-          <v-row>
-            <v-col v-for="catalog in filteredCatalogs" :key="catalog.id" cols="12" md="6">
-              <v-card border rounded="lg" hover class="hoverable">
-                <v-card-text class="pa-4">
-                  <div class="d-flex align-start justify-space-between mb-3">
+        <v-infinite-scroll
+          v-if="filteredCatalogs.length > 0"
+          :items="filteredCatalogs"
+          @load="onLoadMore"
+        >
+          <div v-for="(catalog, index) in filteredCatalogs" :key="catalog.id">
+            <div class="catalog-item pb-4" :class="index === 0 ? 'pt-1' : 'pt-8'">
+              <!-- 附加信息和删除按钮 -->
+              <div class="d-flex align-center justify-space-between mb-5">
+                <!-- 所属课程和节点 -->
+                <div class="d-flex align-center ga-2">
+                  <v-chip
+                    v-if="catalog.course"
+                    size="small"
+                    variant="tonal"
+                    color="primary"
+                    class="cursor-pointer"
+                    @click.stop="goToCourse(catalog.course.id)"
+                  >
+                    <v-icon icon="mdi-book-outline" size="14" class="mr-1" />
+                    {{ catalog.course.name }}
+                  </v-chip>
+                  <v-chip
+                    v-if="catalog.node"
+                    size="small"
+                    variant="tonal"
+                    color="grey-darken-2"
+                    class="cursor-pointer"
+                    @click.stop="goToCatalog(catalog.id)"
+                  >
+                    <v-icon icon="mdi-file-document-outline" size="14" class="mr-1" />
+                    {{ catalog.node }}
+                  </v-chip>
+                </div>
+
+                <!-- 删除按钮 -->
+                <v-btn
+                  color="error"
+                  variant="tonal"
+                  size="small"
+                  icon="mdi-delete"
+                  @click.stop="deleteCatalog(catalog.id)"
+                >
+                  <v-icon>mdi-delete</v-icon>
+                  <v-tooltip activator="parent" location="top">删除目录</v-tooltip>
+                </v-btn>
+              </div>
+
+              <!-- 主要内容：目录章节列表 -->
+              <div v-if="catalog.contentNodes.length > 0" class="catalog-nodes mb-5" style="cursor: pointer" @click="goToCatalog(catalog.id)">
                     <div
-                      class="flex-grow-1"
-                      @click="goToCatalog(catalog.id)"
-                      style="cursor: pointer"
+                      v-for="(node, idx) in catalog.contentNodes"
+                      :key="idx"
+                      class="catalog-node-item py-3 px-4"
                     >
-                      <h4 class="text-body-1 font-weight-bold mb-1">{{ catalog.name }}</h4>
-                      <p class="text-body-2 text-grey mb-0">{{ catalog.description }}</p>
+                      <div class="text-body-1 text-grey-darken-3 mb-1">
+                        {{ idx + 1 }}. {{ node.name }}
+                      </div>
+                      <div v-if="node.description" class="text-body-2 text-grey-darken-1">
+                        {{ node.description }}
+                      </div>
                     </div>
-                    <v-btn
-                      color="grey"
-                      variant="tonal"
-                      size="x-small"
-                      icon="mdi-delete"
-                      @click.stop="deleteCatalog(catalog.id)"
-                    >
-                      <v-icon>mdi-delete</v-icon>
-                      <v-tooltip activator="parent" location="top">删除目录</v-tooltip>
-                    </v-btn>
                   </div>
 
-                  <!-- 所属课程 -->
-                  <div v-if="catalog.course" class="mb-3">
-                    <v-chip
-                      size="small"
-                      variant="tonal"
-                      color="grey-darken-2"
-                      @click.stop="goToCourse(catalog.course.id)"
-                      class="cursor-pointer"
-                    >
-                      <v-icon icon="mdi-book-outline" size="14" class="mr-1" />
-                      {{ catalog.course.name }}
-                    </v-chip>
-                  </div>
-
-                  <div class="d-flex align-center justify-space-between text-caption text-grey">
-                    <div class="d-flex align-center ga-3">
-                      <div class="d-flex align-center">
-                        <v-icon icon="mdi-comment-text-outline" size="14" class="mr-1" />
-                        {{ catalog.commentCount }} 评论
-                      </div>
-                      <div class="d-flex align-center">
-                        <v-icon icon="mdi-cards-outline" size="14" class="mr-1" />
-                        {{ catalog.deckCount }} 卡片组
-                      </div>
+                  <!-- 统计信息 -->
+                  <div class="d-flex align-center text-body-2 text-grey">
+                    <div class="d-flex align-center mr-4">
+                      <v-icon icon="mdi-comment-text-outline" size="18" class="mr-1" />
+                      {{ catalog.commentCount }} 评论
+                    </div>
+                    <div class="d-flex align-center mr-4">
+                      <v-icon icon="mdi-cards-outline" size="18" class="mr-1" />
+                      {{ catalog.deckCount }} 卡片组
+                    </div>
+                    <div class="d-flex align-center mr-4">
+                      <v-icon icon="mdi-file-document-multiple-outline" size="18" class="mr-1" />
+                      {{ catalog.contentNodes.length }} 章节
                     </div>
                     <div>{{ formatDate(catalog.createdAt) }}</div>
                   </div>
-                </v-card-text>
-              </v-card>
-            </v-col>
-          </v-row>
-        </div>
+            </div>
+            <v-divider v-if="index < filteredCatalogs.length - 1" />
+          </div>
+
+          <template #loading>
+            <div class="text-center py-4">
+              <v-progress-circular indeterminate color="primary" size="32" />
+            </div>
+          </template>
+
+          <template #empty>
+            <div v-if="!searchQuery" class="text-center py-4">
+              <p class="text-body-2 text-grey">已加载所有数据</p>
+            </div>
+          </template>
+        </v-infinite-scroll>
 
         <!-- 空状态 -->
         <div v-else class="text-center py-12">
@@ -132,12 +170,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useFetch } from '@/composables/useFetch'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
 import { userApi, postApi } from '@/api'
 import { PostType } from '@/enums'
+import { parseContentNodes } from '@/utils/postUtils'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const router = useRouter()
@@ -149,43 +188,56 @@ const searchQuery = ref('')
 const showDeleteDialog = ref(false)
 const postToDelete = ref<number | null>(null)
 
-// 获取用户创建的目录（type=CONTENTS）
+// 使用 useInfiniteScroll 加载目录列表
 const {
-  data: posts,
+  items: posts,
   loading,
-  execute: fetchPosts,
-} = useFetch({
-  fetchFn: () => userApi.getCurrentUserAllPosts(undefined, PostType.CONTENTS),
-  immediate: true,
-  defaultValue: [],
+  hasMore,
+  loadMore: loadMorePosts,
+} = useInfiniteScroll({
+  fetchFn: async (params) => {
+    const response = await userApi.getCurrentUserAllPosts(params.lastId, PostType.CONTENTS)
+    return {
+      code: response.code,
+      data: response.data?.items || [],
+      message: response.message || '',
+      hasMore: response.data?.hasMore || false,
+    }
+  },
+  getNextParams: (lastItem) => ({
+    lastId: lastItem.id,
+  }),
+  initialParams: { lastId: undefined },
 })
 
 // 删除帖子
-const { execute: deletePost } = useMutation(
-  (postId: number) => postApi.deletePost(postId),
-  {
-    successMessage: '已删除该目录',
-    onSuccess: () => {
-      fetchPosts()
-    },
-  }
-)
+const { execute: deletePost } = useMutation((postId: number) => postApi.deletePost(postId), {
+  successMessage: '已删除该目录',
+  onSuccess: () => {
+    // 从列表中移除已删除的项
+    posts.value = posts.value.filter((p) => p.id !== postToDelete.value)
+  },
+})
 
 // 转换帖子数据为目录格式
 const catalogs = computed(() => {
   if (!posts.value) return []
 
-  return posts.value.map((post) => ({
-    id: post.id,
-    name: post.node?.name || '未知节点',
-    description: post.content.substring(0, 100) + (post.content.length > 100 ? '...' : ''),
-    commentCount: post.commentCount || 0,
-    deckCount: post.deckCount || 0,
-    createdAt: post.createdAt || '',
-    course: post.node?.course
-      ? { id: post.node.course.id, name: post.node.course.name }
-      : undefined,
-  }))
+  return posts.value.map((post) => {
+    const contentNodes = parseContentNodes(post.content)
+
+    return {
+      id: post.id,
+      node: post.node?.name, // 节点名称（附加信息）
+      contentNodes, // 章节列表（主要内容）
+      commentCount: post.commentCount || 0,
+      deckCount: post.deckCount || 0,
+      createdAt: post.createdAt || '',
+      course: post.node?.course
+        ? { id: post.node.course.id, name: post.node.course.name }
+        : undefined,
+    }
+  })
 })
 
 // 根据搜索关键词过滤目录
@@ -236,6 +288,24 @@ const formatDate = (date: string) => {
   if (!date) return ''
   return new Date(date).toLocaleDateString('zh-CN')
 }
+
+// 适配 v-infinite-scroll 的回调接口
+type LoadMoreCallback = (status: 'ok' | 'empty') => void
+
+const onLoadMore = async ({ done }: { done: LoadMoreCallback }): Promise<void> => {
+  if (!hasMore.value || loading.value || searchQuery.value) {
+    done('empty')
+    return
+  }
+
+  await loadMorePosts({ done: () => {} })
+  done(hasMore.value ? 'ok' : 'empty')
+}
+
+onMounted(() => {
+  // 加载第一页数据
+  loadMorePosts({ done: () => {} })
+})
 </script>
 
 <style scoped>
@@ -245,6 +315,29 @@ const formatDate = (date: string) => {
   top: 80px;
   max-height: calc(100vh - 100px);
   overflow-y: auto;
+}
+
+/* 目录章节列表容器 */
+.catalog-nodes {
+  background-color: #fafafa;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* 章节项 */
+.catalog-node-item {
+  background-color: #fcfcfc;
+  border-left: 3px solid #f0f0f0;
+  transition: all 0.2s ease;
+}
+
+.catalog-node-item:hover {
+  border-left-color: #90caf9;
+  background-color: #f0f7ff;
+}
+
+.catalog-node-item:not(:last-child) {
+  border-bottom: 1px solid #e0e0e0;
 }
 
 /* 移动端取消 sticky */

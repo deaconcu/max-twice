@@ -199,7 +199,8 @@ const displayModifyBio = ref(false)
 
 // 使用 useMutation 更新用户信息
 const { execute: updateUser, loading: updating } = useMutation(
-  (data: { name: string; biography: string }) => userApi.updateCurrentUser(data.name, data.biography),
+  (data: { name: string; biography: string }) =>
+    userApi.updateCurrentUser(data.name, data.biography),
   {
     successMessage: '个人信息已成功保存！',
     showToast: false, // 我们使用自定义的 alert

@@ -38,12 +38,16 @@ const { execute: fetchInitialComments } = useFetch({
   fetchFn: () => commentApi.getComments(props.postId, props.objectType),
   immediate: false,
   onSuccess: (result) => {
-    if (result && result.items && result.items.length > 0) {
+    if (result?.items && result.items.length > 0) {
       comments.value = result.items
       // 初始化每个评论的 hasMoreReplies 标志
       comments.value.forEach((comment) => {
         // 如果有子评论且子评论数量小于总回复数，说明还有更多
-        if (comment.children && comment.children.length > 0 && comment.replyCount > comment.children.length) {
+        if (
+          comment.children &&
+          comment.children.length > 0 &&
+          comment.replyCount > comment.children.length
+        ) {
           comment.hasMoreReplies = true
         } else {
           comment.hasMoreReplies = false
@@ -88,12 +92,18 @@ const loadComments = async (reset = false) => {
 
 // 加载更多评论
 const loadMore = async () => {
-  if (loadingMore.value || !hasMore.value || lastScore.value === undefined || lastId.value === undefined) return
+  if (
+    loadingMore.value ||
+    !hasMore.value ||
+    lastScore.value === undefined ||
+    lastId.value === undefined
+  )
+    return
 
   loadingMore.value = true
   const result = await fetchMoreComments({ lastScore: lastScore.value, lastId: lastId.value })
 
-  if (result && result.items && result.items.length > 0) {
+  if (result?.items && result.items.length > 0) {
     comments.value = [...comments.value, ...result.items]
     if (result.nextCursor) {
       lastScore.value = result.nextCursor.lastScore
@@ -130,11 +140,12 @@ const loadSubComments = async (comment: any) => {
   }
 
   // 首次加载不传参数，后续加载传 lastScore 和 lastId
-  const result = lastScore !== undefined && lastId !== undefined
-    ? await executeLoadSubComments({ commentId: comment.id, lastScore, lastId })
-    : await commentApi.getCommentReplies(comment.id)
+  const result =
+    lastScore !== undefined && lastId !== undefined
+      ? await executeLoadSubComments({ commentId: comment.id, lastScore, lastId })
+      : await commentApi.getCommentReplies(comment.id)
 
-  if (result && result.items && result.items.length > 0) {
+  if (result?.items && result.items.length > 0) {
     comment.children.push(...result.items)
   }
 
@@ -163,14 +174,20 @@ const { execute: submitComment, loading: submitting } = useMutation(
 const { execute: submitReply, loading: replying } = useMutation(
   () => {
     // 使用parentCommentId作为API参数
-    return commentApi.createComment(props.postId, props.objectType, parentCommentId.value, replyToUserId.value, replyContent.value)
+    return commentApi.createComment(
+      props.postId,
+      props.objectType,
+      parentCommentId.value,
+      replyToUserId.value,
+      replyContent.value
+    )
   },
   {
     successMessage: '回复发表成功',
     onSuccess: (result) => {
       replyContent.value = ''
       // 使用parentCommentId找到父评论
-      const parentComment = comments.value?.find(c => c.id === parentCommentId.value)
+      const parentComment = comments.value?.find((c) => c.id === parentCommentId.value)
 
       if (parentComment) {
         if (!parentComment.children) {
@@ -465,7 +482,12 @@ onBeforeUnmount(() => {
                           variant="text"
                           color="grey"
                           class="mr-2"
-                          @click="activeReplyId = null; parentCommentId = null; replyToUserId = null; replyToUserName = ''"
+                          @click="
+                            activeReplyId = null;
+                            parentCommentId = null;
+                            replyToUserId = null;
+                            replyToUserName = '';
+                          "
                         >
                           取消
                         </v-btn>

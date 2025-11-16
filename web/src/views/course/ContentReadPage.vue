@@ -105,7 +105,14 @@
             <div v-if="data" class="right-sidebar">
               <div class="sidebar-sticky">
                 <!-- 文章详情页：显示答疑助手和记忆卡片组侧边栏 -->
-                <template v-if="currentTab !== 'list' && currentTab !== 'comment' && currentTab !== 'memoryCards' && currentPosting">
+                <template
+                  v-if="
+                    currentTab !== 'list' &&
+                    currentTab !== 'comment' &&
+                    currentTab !== 'memoryCards' &&
+                    currentPosting
+                  "
+                >
                   <!-- AI答疑助手 -->
                   <v-card class="sidebar-card mb-4 no-border" rounded="lg">
                     <v-card-title class="pa-4">
@@ -160,23 +167,23 @@
                   <!-- 记忆卡片组侧边栏 -->
                   <MemoryCardSidebar
                     :post-id="currentPosting.id"
+                    class="mb-4"
                     @create-deck="handleCreateDeck"
                     @view-deck="handleViewDeck"
-                    class="mb-4"
                   />
                 </template>
 
                 <!-- 其他页面：显示课程信息 -->
                 <template v-else>
-                <v-card class="sidebar-card no-border" rounded="lg">
-                  <v-card-title class="pa-4"> 关于本课程 </v-card-title>
-                  <v-card-text class="pa-4 pt-0">
-                    <div class="info-item">
-                      <div class="text-caption text-medium-emphasis mb-2">课程描述</div>
-                      <div class="text-body-2">{{ data?.course?.description }}</div>
-                    </div>
-                  </v-card-text>
-                </v-card>
+                  <v-card class="sidebar-card no-border" rounded="lg">
+                    <v-card-title class="pa-4"> 关于本课程 </v-card-title>
+                    <v-card-text class="pa-4 pt-0">
+                      <div class="info-item">
+                        <div class="text-caption text-medium-emphasis mb-2">课程描述</div>
+                        <div class="text-body-2">{{ data?.course?.description }}</div>
+                      </div>
+                    </v-card-text>
+                  </v-card>
                 </template>
               </div>
             </div>
@@ -203,7 +210,11 @@
     />
 
     <!-- 卡片组详情对话框 -->
-    <DeckDetailDialog v-model="showDeckDetailDialog" :deck="selectedDeck" @add-to-study="handleAddDeck" />
+    <DeckDetailDialog
+      v-model="showDeckDetailDialog"
+      :deck="selectedDeck"
+      @add-to-study="handleAddDeck"
+    />
   </DefaultLayout>
 </template>
 
@@ -248,7 +259,11 @@ const lastPathNode = ref<any>(null)
 const pathText = ref('')
 
 // 使用 useFetch 加载页面数据
-const { data, loading: dataLoading, execute: loadData } = useFetch<ReadResponse>({
+const {
+  data,
+  loading: dataLoading,
+  execute: loadData,
+} = useFetch<ReadResponse>({
   fetchFn: () => {
     if (route.query.commentId) {
       return pageApi.readByComment(Number(route.query.commentId))
@@ -257,15 +272,9 @@ const { data, loading: dataLoading, execute: loadData } = useFetch<ReadResponse>
     } else if (route.query.nodeId) {
       return pageApi.readByNode(Number(route.query.nodeId))
     } else if (route.params.id && route.query.path) {
-      return pageApi.readByCoursePath(
-        Number(route.params.id),
-        route.query.path as string
-      )
+      return pageApi.readByCoursePath(Number(route.params.id), route.query.path as string)
     } else if (route.params.id) {
-      return pageApi.readByCoursePath(
-        Number(route.params.id),
-        ''
-      )
+      return pageApi.readByCoursePath(Number(route.params.id), '')
     }
     return Promise.reject(new Error('缺少必要参数'))
   },
@@ -286,7 +295,7 @@ const { data, loading: dataLoading, execute: loadData } = useFetch<ReadResponse>
 
 // 是否为主课程
 const isMainCourse = computed(() => {
-  if (data.value && data.value.course && data.value.parentCourse) {
+  if (data.value?.course && data.value.parentCourse) {
     return data.value.course.id === data.value.parentCourse.id
   }
   return true
@@ -302,7 +311,12 @@ const aiEngines = [
     icon: 'mdi-alpha-c-circle-outline',
   },
   { name: 'Gemini', href: 'https://gemini.google.com', color: 'grey-darken-1', icon: 'mdi-google' },
-  { name: 'DeepSeek', href: 'https://chat.deepseek.com', color: 'grey-darken-1', icon: 'mdi-radar' },
+  {
+    name: 'DeepSeek',
+    href: 'https://chat.deepseek.com',
+    color: 'grey-darken-1',
+    icon: 'mdi-radar',
+  },
 ]
 
 // 处理创建卡片组成功
@@ -313,17 +327,14 @@ const handleDeckCreated = (deck: MemoryCardDeck) => {
 // 处理数据
 const processData = () => {
   console.log('data:', data.value)
-  if (!data.value || !data.value.path) return
+  if (!data.value?.path) return
 
   // 解析路径
   nodes.value = data.value.path.split('-')
   nodes.value[0] = String(Number(nodes.value[0]) - 1)
 
   // 遍历 toc 获取 lastPathNode
-  lastPathNode.value = nodes.value.reduce(
-    (acc: any, key: any) => acc && acc[key],
-    data.value.toc,
-  )
+  lastPathNode.value = nodes.value.reduce((acc: any, key: any) => acc?.[key], data.value.toc)
 
   // 设置当前目录组索引
   currContentsIndex.value = Number(nodes.value[0])
@@ -442,7 +453,13 @@ onMounted(() => {
 
 // 监听路由变化，重新加载数据
 watch(
-  () => [route.params.id, route.query.path, route.query.nodeId, route.query.postId, route.query.commentId],
+  () => [
+    route.params.id,
+    route.query.path,
+    route.query.nodeId,
+    route.query.postId,
+    route.query.commentId,
+  ],
   () => {
     loadData()
   },
@@ -503,7 +520,9 @@ onUnmounted(() => {
   max-height: calc(100vh - 125px);
   display: flex;
   flex-direction: column;
-  transition: top 0.3s ease, max-height 0.3s ease;
+  transition:
+    top 0.3s ease,
+    max-height 0.3s ease;
 }
 
 .read-page:has(.fixed-top-bar.show) .toc-sticky-wrapper {
@@ -621,7 +640,9 @@ onUnmounted(() => {
   position: sticky;
   top: 110px;
   max-height: calc(100vh - 125px);
-  transition: top 0.3s ease, max-height 0.3s ease;
+  transition:
+    top 0.3s ease,
+    max-height 0.3s ease;
 }
 
 .read-page:has(.fixed-top-bar.show) .sidebar-sticky {

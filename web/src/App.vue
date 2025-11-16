@@ -11,7 +11,7 @@
       :timeout="4000"
       location="top"
       rounded="lg"
-      variant="tonal"
+      variant="flat"
     >
       <div class="d-flex align-center">
         <v-icon :icon="getSnackbarIcon(item.type)" class="mr-3"></v-icon>

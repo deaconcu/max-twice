@@ -34,13 +34,13 @@ export enum CourseStudyStatus {
  * 卡片组状态（与后端 ContentState 对应）
  */
 export const DeckState = {
-  SUBMITTED: 1,   // 已提交/审核中
-  PUBLISHED: 2,   // 已发布/正常
-  REJECTED: 3,    // 已拒绝
-  BANNED: 4       // 已封禁/屏蔽
+  SUBMITTED: 1, // 已提交/审核中
+  PUBLISHED: 2, // 已发布/正常
+  REJECTED: 3, // 已拒绝
+  BANNED: 4, // 已封禁/屏蔽
 } as const
 
-export type DeckState = typeof DeckState[keyof typeof DeckState]
+export type DeckState = (typeof DeckState)[keyof typeof DeckState]
 
 /**
  * SRS 状态

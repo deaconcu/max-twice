@@ -12,11 +12,9 @@ const props = withDefaults(defineProps<Props>(), {
   pathText: '',
 })
 
-interface Emits {
-  (e: 'load-data', data: any[]): void
-}
-
 const emit = defineEmits<Emits>()
+
+type Emits = (e: 'load-data', data: any[]) => void
 
 const dialog = defineModel<boolean>({ default: false })
 

@@ -10,7 +10,9 @@
               <v-icon icon="mdi-briefcase-search-outline" size="32" color="grey-darken-1" />
             </v-avatar>
             <div>
-              <h1 class="text-h4 font-weight-bold text-grey-darken-4">{{ t('careerCenter.title') }}</h1>
+              <h1 class="text-h4 font-weight-bold text-grey-darken-4">
+                {{ t('careerCenter.title') }}
+              </h1>
               <p class="text-body-2 text-grey-darken-2 mt-1">{{ t('careerCenter.subtitle') }}</p>
             </div>
           </div>
@@ -46,252 +48,256 @@
         </div>
       </div>
 
-    <!-- 分类导航和职业网格 -->
-    <v-row>
-      <v-col class="pr-12">
-        <!-- 分类导航 -->
-        <CareerFilter
-          v-model:main-category="selectedMainCategory"
-          v-model:sub-category="selectedSubCategory"
-          :categories="categories"
-          :sub-categories="subCategories"
-          @change="handleFilterChange"
-        />
+      <!-- 分类导航和职业网格 -->
+      <v-row>
+        <v-col class="pr-12">
+          <!-- 分类导航 -->
+          <CareerFilter
+            v-model:main-category="selectedMainCategory"
+            v-model:sub-category="selectedSubCategory"
+            :categories="categories"
+            :sub-categories="subCategories"
+            @change="handleFilterChange"
+          />
 
-        <!-- 加载状态 -->
-        <div v-if="loading" class="text-center py-12">
-          <v-progress-circular indeterminate color="primary" size="64" />
-          <p class="text-body-1 text-grey-darken-2 mt-4">{{ t('common.loading') }}</p>
-        </div>
+          <!-- 加载状态 -->
+          <div v-if="loading" class="text-center py-12">
+            <v-progress-circular indeterminate color="primary" size="64" />
+            <p class="text-body-1 text-grey-darken-2 mt-4">{{ t('common.loading') }}</p>
+          </div>
 
-        <!-- 空状态 -->
-        <div v-else-if="filteredCareers.length === 0" class="text-center py-12">
-          <v-card rounded="lg" class="pa-12 empty-state no-border">
-            <v-icon icon="mdi-briefcase-outline" size="80" color="grey-lighten-1" class="mb-4" />
-            <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">
-              {{ t('careerCenter.empty.noJobs') }}
-            </h3>
-            <p class="text-body-1 text-grey-darken-1 mb-4">
-              {{
-                searchText
-                  ? t('careerCenter.empty.noSearchResultsDesc')
-                  : t('careerCenter.empty.noRelatedJobsDesc')
-              }}
-            </p>
+          <!-- 空状态 -->
+          <div v-else-if="filteredCareers.length === 0" class="text-center py-12">
+            <v-card rounded="lg" class="pa-12 empty-state no-border">
+              <v-icon icon="mdi-briefcase-outline" size="80" color="grey-lighten-1" class="mb-4" />
+              <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">
+                {{ t('careerCenter.empty.noJobs') }}
+              </h3>
+              <p class="text-body-1 text-grey-darken-1 mb-4">
+                {{
+                  searchText
+                    ? t('careerCenter.empty.noSearchResultsDesc')
+                    : t('careerCenter.empty.noRelatedJobsDesc')
+                }}
+              </p>
+              <v-btn
+                v-if="selectedMainCategory || searchText"
+                color="primary"
+                variant="outlined"
+                rounded="lg"
+                @click="clearAll"
+              >
+                查看全部职业
+              </v-btn>
+            </v-card>
+          </div>
+
+          <!-- 职业列表 -->
+          <div v-else>
+            <!-- 分类标题 -->
+            <div class="mb-4 mt-10">
+              <div class="d-flex align-center justify-space-between">
+                <div class="d-flex align-center">
+                  <v-icon
+                    icon="mdi-format-list-bulleted"
+                    size="20"
+                    class="mr-2 text-grey-darken-2"
+                  ></v-icon>
+                  <h2 class="text-h6 font-weight-regular text-grey-darken-4">
+                    <span v-if="searchText">搜索结果</span>
+                    <span v-else-if="selectedSubCategory">
+                      {{ getCategoryName(selectedMainCategory) }} -
+                      {{ getSubCategoryName(selectedSubCategory) }}
+                    </span>
+                    <span v-else-if="selectedMainCategory">{{
+                      getCategoryName(selectedMainCategory)
+                    }}</span>
+                    <span v-else>全部职业</span>
+                  </h2>
+                </div>
+                <p class="text-body-2 text-grey-darken-2">共 {{ filteredCareers.length }} 个职业</p>
+              </div>
+            </div>
+
+            <!-- 职业网格 -->
+            <div class="career-grid mb-16">
+              <CareerCard
+                v-for="career in displayedCareers"
+                :key="career.id"
+                :career="career"
+                @click="goToCareerDetail"
+              />
+            </div>
+
+            <!-- 加载更多指示器 -->
+            <div v-if="hasMore" ref="loadMoreTrigger" class="text-center mt-6 py-4 mb-16">
+              <v-progress-circular v-if="loadingMore" indeterminate color="primary" size="32" />
+            </div>
+          </div>
+        </v-col>
+
+        <!-- 右侧热门职业栏 -->
+        <v-col class="right-sidebar">
+          <div class="sticky-wrapper">
+            <!-- 申请职业按钮 -->
             <v-btn
-              v-if="selectedMainCategory || searchText"
-              color="primary"
+              color="grey-lighten-4"
+              variant="flat"
+              block
+              rounded="lg"
+              size="large"
+              class="mb-4 create-course-btn"
+              prepend-icon="mdi-plus-circle"
+              @click="openApplicationDialog"
+            >
+              {{ t('careerCenter.search.applyJob') }}
+            </v-btn>
+
+            <v-card rounded="lg" class="popular-card no-border" flat>
+              <v-card-title class="py-4 px-0 pb-3">
+                <div class="d-flex align-center justify-space-between w-100">
+                  <div class="d-flex align-center">
+                    <v-icon icon="mdi-fire" color="error" class="mr-2" />
+                    <span class="text-h6 font-weight-bold">热门职业</span>
+                  </div>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    color="primary"
+                    class="text-caption"
+                    @click="clearAll"
+                  >
+                    全部
+                    <v-icon icon="mdi-chevron-right" size="14" class="ml-1" />
+                  </v-btn>
+                </div>
+              </v-card-title>
+              <v-card-text class="px-0 popular-list pb-4">
+                <div
+                  v-for="(career, index) in popularCareers"
+                  :key="career.id"
+                  class="popular-item"
+                  @click="goToCareerDetail(career)"
+                >
+                  <div class="rank-badge" :class="index < 3 ? 'rank-top' : ''">
+                    {{ index + 1 }}
+                  </div>
+                  <div class="flex-grow-1">
+                    <div class="popular-name">{{ career.name }}</div>
+                    <div class="popular-count">
+                      <v-icon icon="mdi-account-group" size="12" color="grey" />
+                      {{ formatNumber(career.learnerCount) }}
+                    </div>
+                  </div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </div>
+        </v-col>
+      </v-row>
+
+      <!-- 职业申请对话框 -->
+      <v-dialog v-model="applicationDialog" max-width="600px" persistent>
+        <v-card rounded="xl" border>
+          <v-card-title class="pa-6">
+            <div class="d-flex align-center">
+              <v-icon icon="mdi-plus-circle" color="primary" size="32" class="mr-3" />
+              <span class="text-h6 font-weight-bold">{{
+                t('careerCenter.application.title')
+              }}</span>
+            </div>
+          </v-card-title>
+
+          <v-card-text class="px-6 pb-0">
+            <p class="text-body-2 text-grey-darken-1 mb-4">
+              {{ t('careerCenter.application.subtitle') }}
+            </p>
+            <v-form v-model="applicationValid">
+              <v-text-field
+                v-model="applicationForm.name"
+                :label="t('careerCenter.application.jobName')"
+                :placeholder="t('careerCenter.application.jobNamePlaceholder')"
+                :rules="jobNameRules"
+                variant="outlined"
+                clearable
+                required
+                class="mb-4"
+              />
+
+              <v-select
+                v-model="applicationForm.mainCategory"
+                :items="categories"
+                item-title="title"
+                item-value="id"
+                :label="t('careerCenter.application.category')"
+                :rules="categoryRules"
+                variant="outlined"
+                class="mb-4"
+                clearable
+                required
+              />
+
+              <v-select
+                v-model="applicationForm.subCategory"
+                :items="getSubCategoriesForMain(applicationForm.mainCategory)"
+                item-title="name"
+                item-value="id"
+                :label="t('careerCenter.category.specificDirection')"
+                :rules="categoryRules"
+                variant="outlined"
+                class="mb-4"
+                :disabled="!applicationForm.mainCategory"
+                clearable
+                required
+              />
+
+              <v-textarea
+                v-model="applicationForm.description"
+                :label="t('careerCenter.application.description')"
+                :placeholder="t('careerCenter.application.descriptionPlaceholder')"
+                :rules="descriptionRules"
+                variant="outlined"
+                clearable
+                required
+                rows="3"
+                class="mb-4"
+              />
+
+              <v-text-field
+                v-model="applicationForm.skills"
+                :label="t('careerCenter.application.skills')"
+                :placeholder="t('careerCenter.application.skillsPlaceholder')"
+                :hint="t('careerCenter.application.skillsHint')"
+                variant="outlined"
+                persistent-hint
+                class="mb-4"
+              />
+            </v-form>
+          </v-card-text>
+
+          <v-card-actions class="px-6 pb-6">
+            <v-spacer />
+            <v-btn
               variant="outlined"
               rounded="lg"
-              @click="clearAll"
+              :disabled="submitting"
+              @click="closeApplicationDialog"
             >
-              查看全部职业
+              {{ t('careerCenter.application.cancel') }}
             </v-btn>
-          </v-card>
-        </div>
-
-        <!-- 职业列表 -->
-        <div v-else>
-          <!-- 分类标题 -->
-          <div class="mb-4 mt-10">
-            <div class="d-flex align-center justify-space-between">
-              <div class="d-flex align-center">
-                <v-icon icon="mdi-format-list-bulleted" size="20" class="mr-2 text-grey-darken-2"></v-icon>
-                <h2 class="text-h6 font-weight-regular text-grey-darken-4">
-                  <span v-if="searchText">搜索结果</span>
-                  <span v-else-if="selectedSubCategory">
-                    {{ getCategoryName(selectedMainCategory) }} -
-                    {{ getSubCategoryName(selectedSubCategory) }}
-                  </span>
-                  <span v-else-if="selectedMainCategory">{{
-                    getCategoryName(selectedMainCategory)
-                  }}</span>
-                  <span v-else>全部职业</span>
-                </h2>
-              </div>
-              <p class="text-body-2 text-grey-darken-2">
-                共 {{ filteredCareers.length }} 个职业
-              </p>
-            </div>
-          </div>
-
-          <!-- 职业网格 -->
-          <div class="career-grid mb-16">
-            <CareerCard
-              v-for="career in displayedCareers"
-              :key="career.id"
-              :career="career"
-              @click="goToCareerDetail"
-            />
-          </div>
-
-          <!-- 加载更多指示器 -->
-          <div v-if="hasMore" ref="loadMoreTrigger" class="text-center mt-6 py-4 mb-16">
-            <v-progress-circular v-if="loadingMore" indeterminate color="primary" size="32" />
-          </div>
-        </div>
-      </v-col>
-
-      <!-- 右侧热门职业栏 -->
-      <v-col class="right-sidebar">
-        <div class="sticky-wrapper">
-          <!-- 申请职业按钮 -->
-          <v-btn
-            color="grey-lighten-4"
-            variant="flat"
-            block
-            rounded="lg"
-            size="large"
-            class="mb-4 create-course-btn"
-            prepend-icon="mdi-plus-circle"
-            @click="openApplicationDialog"
-          >
-            {{ t('careerCenter.search.applyJob') }}
-          </v-btn>
-
-          <v-card rounded="lg" class="popular-card no-border" flat>
-            <v-card-title class="py-4 px-0 pb-3">
-              <div class="d-flex align-center justify-space-between w-100">
-                <div class="d-flex align-center">
-                  <v-icon icon="mdi-fire" color="error" class="mr-2" />
-                  <span class="text-h6 font-weight-bold">热门职业</span>
-                </div>
-                <v-btn
-                  variant="text"
-                  size="small"
-                  color="primary"
-                  class="text-caption"
-                  @click="clearAll"
-                >
-                  全部
-                  <v-icon icon="mdi-chevron-right" size="14" class="ml-1" />
-                </v-btn>
-              </div>
-            </v-card-title>
-            <v-card-text class="px-0 popular-list pb-4">
-            <div
-              v-for="(career, index) in popularCareers"
-              :key="career.id"
-              class="popular-item"
-              @click="goToCareerDetail(career)"
+            <v-btn
+              color="primary"
+              variant="flat"
+              rounded="lg"
+              :disabled="!applicationValid || submitting"
+              :loading="submitting"
+              @click="submitApplication"
             >
-              <div class="rank-badge" :class="index < 3 ? 'rank-top' : ''">
-                {{ index + 1 }}
-              </div>
-              <div class="flex-grow-1">
-                <div class="popular-name">{{ career.name }}</div>
-                <div class="popular-count">
-                  <v-icon icon="mdi-account-group" size="12" color="grey" />
-                  {{ formatNumber(career.learnerCount) }}
-                </div>
-              </div>
-            </div>
-          </v-card-text>
+              {{ t('careerCenter.application.submit') }}
+            </v-btn>
+          </v-card-actions>
         </v-card>
-        </div>
-      </v-col>
-    </v-row>
-
-    <!-- 职业申请对话框 -->
-    <v-dialog v-model="applicationDialog" max-width="600px" persistent>
-      <v-card rounded="xl" border>
-        <v-card-title class="pa-6">
-          <div class="d-flex align-center">
-            <v-icon icon="mdi-plus-circle" color="primary" size="32" class="mr-3" />
-            <span class="text-h6 font-weight-bold">{{ t('careerCenter.application.title') }}</span>
-          </div>
-        </v-card-title>
-
-        <v-card-text class="px-6 pb-0">
-          <p class="text-body-2 text-grey-darken-1 mb-4">
-            {{ t('careerCenter.application.subtitle') }}
-          </p>
-          <v-form v-model="applicationValid">
-            <v-text-field
-              v-model="applicationForm.name"
-              :label="t('careerCenter.application.jobName')"
-              :placeholder="t('careerCenter.application.jobNamePlaceholder')"
-              :rules="jobNameRules"
-              variant="outlined"
-              clearable
-              required
-              class="mb-4"
-            />
-
-            <v-select
-              v-model="applicationForm.mainCategory"
-              :items="categories"
-              item-title="title"
-              item-value="id"
-              :label="t('careerCenter.application.category')"
-              :rules="categoryRules"
-              variant="outlined"
-              class="mb-4"
-              clearable
-              required
-            />
-
-            <v-select
-              v-model="applicationForm.subCategory"
-              :items="getSubCategoriesForMain(applicationForm.mainCategory)"
-              item-title="name"
-              item-value="id"
-              :label="t('careerCenter.category.specificDirection')"
-              :rules="categoryRules"
-              variant="outlined"
-              class="mb-4"
-              :disabled="!applicationForm.mainCategory"
-              clearable
-              required
-            />
-
-            <v-textarea
-              v-model="applicationForm.description"
-              :label="t('careerCenter.application.description')"
-              :placeholder="t('careerCenter.application.descriptionPlaceholder')"
-              :rules="descriptionRules"
-              variant="outlined"
-              clearable
-              required
-              rows="3"
-              class="mb-4"
-            />
-
-            <v-text-field
-              v-model="applicationForm.skills"
-              :label="t('careerCenter.application.skills')"
-              :placeholder="t('careerCenter.application.skillsPlaceholder')"
-              :hint="t('careerCenter.application.skillsHint')"
-              variant="outlined"
-              persistent-hint
-              class="mb-4"
-            />
-          </v-form>
-        </v-card-text>
-
-        <v-card-actions class="px-6 pb-6">
-          <v-spacer />
-          <v-btn
-            variant="outlined"
-            rounded="lg"
-            :disabled="submitting"
-            @click="closeApplicationDialog"
-          >
-            {{ t('careerCenter.application.cancel') }}
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="flat"
-            rounded="lg"
-            :disabled="!applicationValid || submitting"
-            :loading="submitting"
-            @click="submitApplication"
-          >
-            {{ t('careerCenter.application.submit') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      </v-dialog>
     </div>
   </DefaultLayout>
 </template>

@@ -141,7 +141,7 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
     /**
      * 根据用户、类型和状态获取帖子列表
      */
-    public List<PostDO> getPostsByUser(long userId, int type, long lastId, Byte state, int limit) {
+    public List<PostDO> getPostsByUser(long userId, int type, Long lastId, Byte state, int limit) {
         return postMapper.getPostsByUser(userId, type, lastId, state, limit);
     }
 

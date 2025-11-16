@@ -58,7 +58,12 @@
                 ></v-icon>
                 {{ deck.upvoteCount }}
               </v-btn>
-              <v-icon icon="mdi-cards-outline" size="14" color="grey-darken-2" class="ml-3 mr-2"></v-icon>
+              <v-icon
+                icon="mdi-cards-outline"
+                size="14"
+                color="grey-darken-2"
+                class="ml-3 mr-2"
+              ></v-icon>
               <span class="text-body-2 text-grey-darken-2">{{ deck.cardCount }}</span>
             </div>
           </div>
@@ -90,9 +95,7 @@ interface Props {
   nodeId: number
 }
 
-interface Emits {
-  (e: 'viewDeck', deck: MemoryCardDeck): void
-}
+type Emits = (e: 'viewDeck', deck: MemoryCardDeck) => void
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
@@ -133,7 +136,7 @@ const loadDecks = async (reset = false) => {
 
     const response = await memoryApi.getDecksByNode(props.nodeId, queryParams)
 
-    if (response.data && response.data.items) {
+    if (response.data?.items) {
       const items = response.data.items
       decks.value = reset ? items : [...decks.value, ...items]
 
@@ -155,19 +158,16 @@ const loadDecks = async (reset = false) => {
 }
 
 // 使用 useMutation 处理点赞
-const { execute: upvoteDeck } = useMutation(
-  (deckId: number) => memoryApi.upvoteDeck(deckId),
-  {
-    showToast: false,
-    onSuccess: (result, deckId) => {
-      const deck = decks.value.find((d) => d.id === deckId)
-      if (deck && result) {
-        deck.hasUpvoted = result.upvoted
-        deck.upvoteCount = result.upvotes
-      }
-    },
-  }
-)
+const { execute: upvoteDeck } = useMutation((deckId: number) => memoryApi.upvoteDeck(deckId), {
+  showToast: false,
+  onSuccess: (result, deckId) => {
+    const deck = decks.value.find((d) => d.id === deckId)
+    if (deck && result) {
+      deck.hasUpvoted = result.upvoted
+      deck.upvoteCount = result.upvotes
+    }
+  },
+})
 
 const handleUpvote = async (deck: MemoryCardDeck) => {
   await upvoteDeck(deck.id)

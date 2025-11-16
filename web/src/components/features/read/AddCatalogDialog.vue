@@ -13,11 +13,9 @@ const props = withDefaults(defineProps<Props>(), {
   pathText: '',
 })
 
-interface Emits {
-  (e: 'load-data', data: any[]): void
-}
-
 const emit = defineEmits<Emits>()
+
+type Emits = (e: 'load-data', data: any[]) => void
 
 const route = useRoute()
 const dialog = defineModel<boolean>({ default: false })
@@ -39,7 +37,7 @@ watch(
   () => route.query.path,
   () => {
     catalogItems.value = []
-  },
+  }
 )
 
 // 添加目录项
@@ -229,10 +227,7 @@ const submitCatalog = () => {
               </draggable>
 
               <!-- 空状态 -->
-              <div
-                v-if="catalogItems.length === 0"
-                class="text-body-2 text-grey text-center py-8"
-              >
+              <div v-if="catalogItems.length === 0" class="text-body-2 text-grey text-center py-8">
                 暂无目录项，请在左侧添加
               </div>
             </div>

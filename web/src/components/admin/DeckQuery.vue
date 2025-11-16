@@ -14,7 +14,7 @@ const searchForm = ref({
   nodeId: null as number | null,
   creatorId: null as number | null,
   state: null as number | null,
-  keyword: ''
+  keyword: '',
 })
 
 // 使用 useInfiniteScroll 管理分页数据
@@ -24,7 +24,7 @@ const {
   hasMore,
   params,
   loadMore,
-  reset: resetList
+  reset: resetList,
 } = useInfiniteScroll<DeckDetail>({
   fetchFn: async (currentParams) => {
     const response = await adminApi.getDecksByFilter(
@@ -41,7 +41,7 @@ const {
         data: responseData || [],
         message: '',
         hasMore: responseData.length === 20, // 假设每页20条
-        nextCursor: undefined
+        nextCursor: undefined,
       }
     }
 
@@ -49,15 +49,15 @@ const {
   },
   getNextParams: (lastItem, currentParams) => ({
     ...currentParams,
-    lastId: lastItem.id
+    lastId: lastItem.id,
   }),
   initialParams: {
-    lastId: undefined
+    lastId: undefined,
   },
   onError: (error) => {
     console.error('Error searching decks:', error)
     showSnackbar?.('查询失败', 'error')
-  }
+  },
 })
 
 // 重置查询
@@ -66,7 +66,7 @@ const resetSearch = () => {
     nodeId: null,
     creatorId: null,
     state: null,
-    keyword: ''
+    keyword: '',
   }
   resetList()
 }
@@ -80,22 +80,32 @@ const handleSearch = () => {
 // 状态文本
 const getStateText = (state: number): string => {
   switch (state) {
-    case DeckState.SUBMITTED: return '待审核'
-    case DeckState.PUBLISHED: return '正常'
-    case DeckState.REJECTED: return '已拒绝'
-    case DeckState.BANNED: return '已封禁'
-    default: return '未知'
+    case DeckState.SUBMITTED:
+      return '待审核'
+    case DeckState.PUBLISHED:
+      return '正常'
+    case DeckState.REJECTED:
+      return '已拒绝'
+    case DeckState.BANNED:
+      return '已封禁'
+    default:
+      return '未知'
   }
 }
 
 // 状态颜色
 const getStateColor = (state: number): string => {
   switch (state) {
-    case DeckState.SUBMITTED: return 'orange-lighten-4'
-    case DeckState.PUBLISHED: return 'green-lighten-4'
-    case DeckState.REJECTED: return 'yellow-lighten-4'
-    case DeckState.BANNED: return 'red-lighten-4'
-    default: return 'grey-lighten-3'
+    case DeckState.SUBMITTED:
+      return 'orange-lighten-4'
+    case DeckState.PUBLISHED:
+      return 'green-lighten-4'
+    case DeckState.REJECTED:
+      return 'yellow-lighten-4'
+    case DeckState.BANNED:
+      return 'red-lighten-4'
+    default:
+      return 'grey-lighten-3'
   }
 }
 
@@ -114,9 +124,7 @@ const canSearch = computed(() => {
           <v-icon icon="mdi-magnify" color="blue-darken-1" size="20"></v-icon>
         </div>
         <div>
-          <h3 class="text-h6 font-weight-bold text-grey-darken-3">
-            卡片组查询
-          </h3>
+          <h3 class="text-h6 font-weight-bold text-grey-darken-3">卡片组查询</h3>
           <p class="text-body-2 text-grey-darken-1 mb-0">查询特定节点或用户的记忆卡片组</p>
         </div>
       </div>
@@ -163,7 +171,7 @@ const canSearch = computed(() => {
               { title: '待审核', value: DeckState.SUBMITTED },
               { title: '正常', value: DeckState.PUBLISHED },
               { title: '已拒绝', value: DeckState.REJECTED },
-              { title: '已封禁', value: DeckState.BANNED }
+              { title: '已封禁', value: DeckState.BANNED },
             ]"
             variant="outlined"
             density="compact"
@@ -201,9 +209,7 @@ const canSearch = computed(() => {
     <!-- 查询结果 -->
     <div v-if="deckList.length > 0 || loading">
       <div class="d-flex align-center justify-space-between mb-4">
-        <h4 class="text-h6 font-weight-bold text-grey-darken-3">
-          查询结果
-        </h4>
+        <h4 class="text-h6 font-weight-bold text-grey-darken-3">查询结果</h4>
         <v-chip variant="flat" color="blue-lighten-4" rounded="lg">
           <v-icon icon="mdi-cards-outline" color="blue-darken-2" size="16" class="mr-1"></v-icon>
           <span class="text-blue-darken-2 text-caption">{{ deckList.length }} 个卡片组</span>
@@ -218,12 +224,7 @@ const canSearch = computed(() => {
 
       <!-- 卡片组列表 -->
       <div v-else>
-        <v-infinite-scroll
-          @load="loadMore"
-          :loading="loading"
-          mode="intersect"
-          side="end"
-        >
+        <v-infinite-scroll :loading="loading" mode="intersect" side="end" @load="loadMore">
           <div v-for="deck in deckList" :key="deck.id" class="mb-4">
             <v-card flat class="border rounded-lg pa-4" hover>
               <div class="d-flex align-start">
@@ -235,12 +236,15 @@ const canSearch = computed(() => {
                     rounded="lg"
                     size="small"
                   >
-                    <span class="text-caption font-weight-medium" :class="{
-                      'text-orange-darken-2': deck.state === DeckState.SUBMITTED,
-                      'text-green-darken-2': deck.state === DeckState.PUBLISHED,
-                      'text-yellow-darken-2': deck.state === DeckState.REJECTED,
-                      'text-red-darken-2': deck.state === DeckState.BANNED
-                    }">
+                    <span
+                      class="text-caption font-weight-medium"
+                      :class="{
+                        'text-orange-darken-2': deck.state === DeckState.SUBMITTED,
+                        'text-green-darken-2': deck.state === DeckState.PUBLISHED,
+                        'text-yellow-darken-2': deck.state === DeckState.REJECTED,
+                        'text-red-darken-2': deck.state === DeckState.BANNED,
+                      }"
+                    >
                       {{ getStateText(deck.state) }}
                     </span>
                   </v-chip>
@@ -254,12 +258,26 @@ const canSearch = computed(() => {
                     </h4>
                     <div class="d-flex align-center gap-4">
                       <div class="d-flex align-center">
-                        <v-icon icon="mdi-cards-outline" size="16" color="grey-darken-2" class="mr-1"></v-icon>
-                        <span class="text-body-2 text-grey-darken-2">{{ deck.cardCount }} 张卡片</span>
+                        <v-icon
+                          icon="mdi-cards-outline"
+                          size="16"
+                          color="grey-darken-2"
+                          class="mr-1"
+                        ></v-icon>
+                        <span class="text-body-2 text-grey-darken-2"
+                          >{{ deck.cardCount }} 张卡片</span
+                        >
                       </div>
                       <div class="d-flex align-center">
-                        <v-icon icon="mdi-thumb-up-outline" size="16" color="grey-darken-2" class="mr-1"></v-icon>
-                        <span class="text-body-2 text-grey-darken-2">{{ deck.upvoteCount }} 点赞</span>
+                        <v-icon
+                          icon="mdi-thumb-up-outline"
+                          size="16"
+                          color="grey-darken-2"
+                          class="mr-1"
+                        ></v-icon>
+                        <span class="text-body-2 text-grey-darken-2"
+                          >{{ deck.upvoteCount }} 点赞</span
+                        >
                       </div>
                     </div>
                   </div>
@@ -271,14 +289,24 @@ const canSearch = computed(() => {
                   <!-- 卡片预览区域 -->
                   <div class="cards-preview-area mb-3">
                     <div class="preview-header">
-                      <v-icon icon="mdi-cards-outline" size="18" color="primary" class="mr-2"></v-icon>
+                      <v-icon
+                        icon="mdi-cards-outline"
+                        size="18"
+                        color="primary"
+                        class="mr-2"
+                      ></v-icon>
                       <h5 class="text-subtitle-2 font-weight-medium text-grey-darken-2 mb-0">
                         卡片内容预览 ({{ deck.cards?.length || 0 }})
                       </h5>
                     </div>
                     <div class="cards-container">
                       <div v-if="!deck.cards || deck.cards.length === 0" class="empty-state">
-                        <v-icon icon="mdi-cards-outline" size="24" color="grey-lighten-2" class="mb-2"></v-icon>
+                        <v-icon
+                          icon="mdi-cards-outline"
+                          size="24"
+                          color="grey-lighten-2"
+                          class="mb-2"
+                        ></v-icon>
                         <p class="text-body-2 text-grey-darken-1 mb-0">暂无卡片内容</p>
                       </div>
                       <div v-else class="cards-list">
@@ -296,7 +324,11 @@ const canSearch = computed(() => {
                               <div class="qa-item question">
                                 <div class="qa-row">
                                   <div class="qa-label">
-                                    <v-icon icon="mdi-help-circle-outline" size="14" color="blue-darken-2"></v-icon>
+                                    <v-icon
+                                      icon="mdi-help-circle-outline"
+                                      size="14"
+                                      color="blue-darken-2"
+                                    ></v-icon>
                                     <span class="label-text">问题</span>
                                   </div>
                                   <div class="qa-content">{{ card.front }}</div>
@@ -305,7 +337,11 @@ const canSearch = computed(() => {
                               <div class="qa-item answer">
                                 <div class="qa-row">
                                   <div class="qa-label">
-                                    <v-icon icon="mdi-lightbulb-outline" size="14" color="green-darken-2"></v-icon>
+                                    <v-icon
+                                      icon="mdi-lightbulb-outline"
+                                      size="14"
+                                      color="green-darken-2"
+                                    ></v-icon>
                                     <span class="label-text">答案</span>
                                   </div>
                                   <div class="qa-content">{{ card.back }}</div>

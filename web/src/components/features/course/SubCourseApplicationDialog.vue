@@ -11,7 +11,7 @@
       </v-card-title>
 
       <v-card-text class="px-6 pb-6">
-        <v-form ref="formRef" v-model="isFormValid">
+        <VForm ref="formRef" v-model="isFormValid">
           <!-- 子课程名称 -->
           <div class="mb-4">
             <label class="text-body-2 font-weight-medium text-grey-darken-3 mb-2 d-block">
@@ -46,7 +46,7 @@
               clearable
             />
           </div>
-        </v-form>
+        </VForm>
       </v-card-text>
 
       <v-card-actions class="px-6 pb-6 pt-2">

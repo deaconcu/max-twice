@@ -46,16 +46,12 @@ const nodeId = ref<string>('')
 /**
  * 添加操作记录到历史
  */
-const addOperationToHistory = (
-  title: string,
-  description: string,
-  success: boolean = true
-): void => {
+const addOperationToHistory = (title: string, description: string, success = true): void => {
   const operation: OperationRecord = {
     title,
     description,
     success,
-    time: new Date().toLocaleString()
+    time: new Date().toLocaleString(),
   }
 
   operationHistory.value.unshift(operation)
@@ -78,7 +74,7 @@ const { data: readonlyModeData, refresh: loadReadonlyMode } = useFetch({
   immediate: true,
   onError: (error) => {
     console.error('加载只读模式状态失败:', error)
-  }
+  },
 })
 
 // 响应式只读模式开关
@@ -107,7 +103,7 @@ const { execute: toggleReadonlyModeExecute, loading: togglingReadonlyMode } = us
       // 恢复原状态
       readonlyModeEnabled.value = !readonlyModeEnabled.value
       addOperationToHistory('只读模式', `切换失败: ${error.message}`, false)
-    }
+    },
   }
 )
 
@@ -123,7 +119,7 @@ const { execute: syncStatsManual, loading: syncingManual } = useMutation(statsAp
       type: 'success',
       title: '同步成功',
       message: 'Redis统计数据已成功同步到数据库',
-      details: `同步时间: ${new Date().toLocaleString()}`
+      details: `同步时间: ${new Date().toLocaleString()}`,
     }
     showSnackbar?.('统计数据同步成功', 'success')
     addOperationToHistory('Redis数据同步', '手动同步Redis统计数据到数据库', true)
@@ -134,10 +130,10 @@ const { execute: syncStatsManual, loading: syncingManual } = useMutation(statsAp
       type: 'error',
       title: '同步失败',
       message: error.message || '同步过程中发生错误',
-      details: `错误时间: ${new Date().toLocaleString()}`
+      details: `错误时间: ${new Date().toLocaleString()}`,
     }
     addOperationToHistory('Redis数据同步', `同步失败: ${error.message}`, false)
-  }
+  },
 })
 
 // 同步指定日期的Redis统计数据
@@ -151,7 +147,7 @@ const { execute: syncStatsSpecificDateExecute, loading: syncingSpecific } = useM
         type: 'success',
         title: '同步成功',
         message: `${displayDate}的统计数据已成功同步到数据库`,
-        details: result || `同步时间: ${new Date().toLocaleString()}`
+        details: result || `同步时间: ${new Date().toLocaleString()}`,
       }
       showSnackbar?.(`${displayDate}统计数据同步成功`, 'success')
       addOperationToHistory('指定日期数据同步', `同步${displayDate}的统计数据`, true)
@@ -163,10 +159,10 @@ const { execute: syncStatsSpecificDateExecute, loading: syncingSpecific } = useM
         type: 'error',
         title: '同步失败',
         message: `${displayDate}数据同步失败: ${error.message || '同步过程中发生错误'}`,
-        details: `错误时间: ${new Date().toLocaleString()}`
+        details: `错误时间: ${new Date().toLocaleString()}`,
       }
       addOperationToHistory('指定日期数据同步', `${displayDate}同步失败: ${error.message}`, false)
-    }
+    },
   }
 )
 
@@ -183,7 +179,7 @@ const { execute: checkSystemHealth, loading: checkingHealth } = useMutation(stat
       type: 'success',
       title: '系统健康',
       message: '所有系统组件运行正常',
-      details: typeof result === 'string' ? result : JSON.stringify(result, null, 2)
+      details: typeof result === 'string' ? result : JSON.stringify(result, null, 2),
     }
     lastHealthCheck.value = new Date().toLocaleString()
     addOperationToHistory('系统健康检查', '系统运行状态正常', true)
@@ -194,11 +190,11 @@ const { execute: checkSystemHealth, loading: checkingHealth } = useMutation(stat
       type: 'warning',
       title: '健康检查异常',
       message: error.message || '健康检查过程中发生错误',
-      details: `检查时间: ${new Date().toLocaleString()}`
+      details: `检查时间: ${new Date().toLocaleString()}`,
     }
     lastHealthCheck.value = new Date().toLocaleString()
     addOperationToHistory('系统健康检查', `检查异常: ${error.message}`, false)
-  }
+  },
 })
 
 // 将节点加入到 AutoAuthor 队列
@@ -217,7 +213,7 @@ const { execute: enqueueNodeExecute, loading: enqueuingNode } = useMutation(
         `节点 ${nodeId.value} 加入队列失败: ${error.message}`,
         false
       )
-    }
+    },
   }
 )
 
@@ -238,7 +234,7 @@ const { execute: scanNodes, loading: scanningNodes } = useMutation(adminApi.scan
   },
   onError: (error) => {
     addOperationToHistory('AutoAuthor扫描', `扫描失败: ${error.message}`, false)
-  }
+  },
 })
 
 // 重置 opencode 会话
@@ -251,7 +247,7 @@ const { execute: resetSession, loading: resettingSession } = useMutation(
     },
     onError: (error) => {
       addOperationToHistory('AutoAuthor会话', `重置失败: ${error.message}`, false)
-    }
+    },
   }
 )
 
@@ -273,7 +269,7 @@ const { execute: clearQueueExecute, loading: clearingQueue } = useMutation(
     },
     onError: (error) => {
       addOperationToHistory('AutoAuthor队列', `清空队列失败: ${error.message}`, false)
-    }
+    },
   }
 )
 
@@ -380,9 +376,7 @@ setTimeout(() => {
                 <v-icon icon="mdi-sync" color="orange-darken-2" size="20" class="mr-2"></v-icon>
                 <h5 class="text-subtitle-1 font-weight-bold text-orange-darken-2">手动同步</h5>
               </div>
-              <p class="text-body-2 text-grey-darken-1 mb-3">
-                立即同步 Redis 中的统计数据到数据库
-              </p>
+              <p class="text-body-2 text-grey-darken-1 mb-3">立即同步 Redis 中的统计数据到数据库</p>
               <v-btn
                 variant="flat"
                 color="orange-darken-1"
@@ -413,7 +407,7 @@ setTimeout(() => {
               <p class="text-body-2 text-grey-darken-1 mb-3">
                 同步指定日期的统计数据，留空则同步昨日数据
               </p>
-              <div class="d-flex align-center" style="gap: 12px;">
+              <div class="d-flex align-center" style="gap: 12px">
                 <v-text-field
                   v-model="syncDate"
                   type="date"
@@ -600,11 +594,16 @@ setTimeout(() => {
           <v-col cols="12" md="3">
             <v-card flat class="pa-4 bg-purple-lighten-5" rounded="lg" elevation="0">
               <div class="d-flex align-center mb-3">
-                <v-icon icon="mdi-playlist-plus" color="purple-darken-2" size="20" class="mr-2"></v-icon>
+                <v-icon
+                  icon="mdi-playlist-plus"
+                  color="purple-darken-2"
+                  size="20"
+                  class="mr-2"
+                ></v-icon>
                 <h5 class="text-subtitle-1 font-weight-bold text-purple-darken-2">加入创作队列</h5>
               </div>
               <p class="text-body-2 text-grey-darken-1 mb-3">将节点ID加入到AutoAuthor队列中</p>
-              <div class="d-flex align-center" style="gap: 12px;">
+              <div class="d-flex align-center" style="gap: 12px">
                 <v-text-field
                   v-model="nodeId"
                   label="节点ID"
@@ -638,12 +637,15 @@ setTimeout(() => {
           <v-col cols="12" md="3">
             <v-card flat class="pa-4 bg-green-lighten-5" rounded="lg" elevation="0">
               <div class="d-flex align-center mb-3">
-                <v-icon icon="mdi-magnify-scan" color="green-darken-2" size="20" class="mr-2"></v-icon>
+                <v-icon
+                  icon="mdi-magnify-scan"
+                  color="green-darken-2"
+                  size="20"
+                  class="mr-2"
+                ></v-icon>
                 <h5 class="text-subtitle-1 font-weight-bold text-green-darken-2">扫描节点</h5>
               </div>
-              <p class="text-body-2 text-grey-darken-1 mb-3">
-                扫描缺少AI内容的节点并批量加入队列
-              </p>
+              <p class="text-body-2 text-grey-darken-1 mb-3">扫描缺少AI内容的节点并批量加入队列</p>
               <v-btn
                 variant="flat"
                 color="green-darken-1"
@@ -664,7 +666,12 @@ setTimeout(() => {
           <v-col cols="12" md="3">
             <v-card flat class="pa-4 bg-orange-lighten-5" rounded="lg" elevation="0">
               <div class="d-flex align-center mb-3">
-                <v-icon icon="mdi-refresh-auto" color="orange-darken-2" size="20" class="mr-2"></v-icon>
+                <v-icon
+                  icon="mdi-refresh-auto"
+                  color="orange-darken-2"
+                  size="20"
+                  class="mr-2"
+                ></v-icon>
                 <h5 class="text-subtitle-1 font-weight-bold text-orange-darken-2">重置会话</h5>
               </div>
               <p class="text-body-2 text-grey-darken-1 mb-3">重置与opencode的连接会话</p>
@@ -688,12 +695,15 @@ setTimeout(() => {
           <v-col cols="12" md="3">
             <v-card flat class="pa-4 bg-red-lighten-5" rounded="lg" elevation="0">
               <div class="d-flex align-center mb-3">
-                <v-icon icon="mdi-delete-sweep" color="red-darken-2" size="20" class="mr-2"></v-icon>
+                <v-icon
+                  icon="mdi-delete-sweep"
+                  color="red-darken-2"
+                  size="20"
+                  class="mr-2"
+                ></v-icon>
                 <h5 class="text-subtitle-1 font-weight-bold text-red-darken-2">清空队列</h5>
               </div>
-              <p class="text-body-2 text-grey-darken-1 mb-3">
-                清空所有待处理的AutoAuthor创作队列
-              </p>
+              <p class="text-body-2 text-grey-darken-1 mb-3">清空所有待处理的AutoAuthor创作队列</p>
               <v-btn
                 variant="flat"
                 color="red-darken-1"

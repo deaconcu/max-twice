@@ -197,12 +197,7 @@
                         <v-icon icon="mdi-pin" size="12" class="mr-1" />
                         置顶
                       </v-chip>
-                      <v-chip
-                        v-if="roadmap.learning"
-                        color="success"
-                        size="x-small"
-                        variant="flat"
-                      >
+                      <v-chip v-if="roadmap.learning" color="success" size="x-small" variant="flat">
                         <v-icon icon="mdi-school" size="12" class="mr-1" />
                         学习中
                       </v-chip>
@@ -321,7 +316,12 @@
                     如何使用？
                   </h3>
                   <div class="d-flex align-start mb-2">
-                    <v-icon icon="mdi-numeric-1-circle" size="20" color="primary" class="mr-2 mt-1" />
+                    <v-icon
+                      icon="mdi-numeric-1-circle"
+                      size="20"
+                      color="primary"
+                      class="mr-2 mt-1"
+                    />
                     <div>
                       <p class="text-body-2 font-weight-medium text-grey-darken-3">浏览和筛选</p>
                       <p class="text-caption text-grey-darken-1">
@@ -330,16 +330,24 @@
                     </div>
                   </div>
                   <div class="d-flex align-start mb-2">
-                    <v-icon icon="mdi-numeric-2-circle" size="20" color="primary" class="mr-2 mt-1" />
+                    <v-icon
+                      icon="mdi-numeric-2-circle"
+                      size="20"
+                      color="primary"
+                      class="mr-2 mt-1"
+                    />
                     <div>
                       <p class="text-body-2 font-weight-medium text-grey-darken-3">开始学习</p>
-                      <p class="text-caption text-grey-darken-1">
-                        点击"开始学习"追踪你的学习进度
-                      </p>
+                      <p class="text-caption text-grey-darken-1">点击"开始学习"追踪你的学习进度</p>
                     </div>
                   </div>
                   <div class="d-flex align-start mb-2">
-                    <v-icon icon="mdi-numeric-3-circle" size="20" color="primary" class="mr-2 mt-1" />
+                    <v-icon
+                      icon="mdi-numeric-3-circle"
+                      size="20"
+                      color="primary"
+                      class="mr-2 mt-1"
+                    />
                     <div>
                       <p class="text-body-2 font-weight-medium text-grey-darken-3">查看详情</p>
                       <p class="text-caption text-grey-darken-1">
@@ -348,12 +356,15 @@
                     </div>
                   </div>
                   <div class="d-flex align-start">
-                    <v-icon icon="mdi-numeric-4-circle" size="20" color="primary" class="mr-2 mt-1" />
+                    <v-icon
+                      icon="mdi-numeric-4-circle"
+                      size="20"
+                      color="primary"
+                      class="mr-2 mt-1"
+                    />
                     <div>
                       <p class="text-body-2 font-weight-medium text-grey-darken-3">参与互动</p>
-                      <p class="text-caption text-grey-darken-1">
-                        点赞优质路径，评论分享学习经验
-                      </p>
+                      <p class="text-caption text-grey-darken-1">点赞优质路径，评论分享学习经验</p>
                     </div>
                   </div>
                 </div>
@@ -369,7 +380,13 @@
                   <p class="text-body-2 text-grey-darken-2 mb-3">
                     你可以创建自己的学习路径，或者复制现有路径进行个性化修改。
                   </p>
-                  <v-btn color="primary" variant="flat" block rounded="lg" @click="handleCreateRoadmap">
+                  <v-btn
+                    color="primary"
+                    variant="flat"
+                    block
+                    rounded="lg"
+                    @click="handleCreateRoadmap"
+                  >
                     <v-icon icon="mdi-plus" size="18" class="mr-1" />
                     创建新路径
                   </v-btn>

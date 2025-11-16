@@ -47,8 +47,8 @@
               :key="course.id"
               cols="12"
               sm="6"
-              md="4"
-              lg="3"
+              md="6"
+              lg="6"
             >
               <v-card border rounded="lg" hover class="hoverable">
                 <v-card-text class="pa-4" @click="goToCourse(course.courseId)">
@@ -129,14 +129,14 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/modules/auth'
+import { useUserStore } from '@/stores/modules/user'
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
 import { subscriptionApi } from '@/api'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const router = useRouter()
-const authStore = useAuthStore()
+const userStore = useUserStore()
 
 // 获取订阅课程数据
 const {
@@ -145,7 +145,7 @@ const {
   execute: fetchSubscriptions,
 } = useFetch({
   fetchFn: () => {
-    const userId = authStore.user?.id
+    const userId = userStore.userId
     if (!userId) throw new Error('User ID not found')
     return subscriptionApi.getUserSubscriptions(userId)
   },
@@ -168,18 +168,18 @@ const { execute: unsubscribeAction } = useMutation(
 const formattedSubscriptions = computed(() => {
   if (!subscriptions.value) return []
 
-  return subscriptions.value.map((userCourse, index) => {
-    const course = userCourse.course
+  // 后端直接返回 Course[] 而不是 UserCourse[]
+  return subscriptions.value.map((course, index) => {
     return {
-      id: userCourse.id,
-      courseId: course?.id || 0,
+      id: course.id,
+      courseId: course.id,
       course: {
-        id: course?.id || 0,
-        name: course?.name || '未知课程',
-        description: course?.description || '暂无描述',
+        id: course.id,
+        name: course.name || '未知课程',
+        description: course.description || '暂无描述',
         icon: 'mdi-school',
         iconColor: '#42b883',
-        learnerCount: course?.learnerCount || 0,
+        learnerCount: course.learnerCount || 0,
         category: '未分类',
       },
       order: index + 1,
@@ -191,9 +191,9 @@ const formattedSubscriptions = computed(() => {
 const showUnsubscribeDialog = ref(false)
 const unsubscribeCourseId = ref<number | null>(null)
 
-// 跳转到课程详情
+// 跳转到课程阅读页
 const goToCourse = (courseId: number) => {
-  router.push(`/course/${courseId}`)
+  router.push(`/courses/${courseId}/read`)
 }
 
 // 取消关注

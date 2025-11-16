@@ -5,7 +5,7 @@ import type { Post } from '@/types/post'
 import type {
   OperationLogDTO,
   OperationLogQueryRequest,
-  OperationLogPageResponse
+  OperationLogPageResponse,
 } from '@/types/operationLog'
 
 /**
@@ -171,7 +171,21 @@ export const adminApi = {
   // ========== 职业管理 ==========
 
   /**
-   * 获取指定状态的职业
+   * 获取指定状态的职业（管理端）
+   */
+  getAdminProfessions(state?: number, lastId?: number | null): Promise<ApiResponse<any[]>> {
+    const params: Record<string, unknown> = {}
+    if (state !== undefined && state !== null) {
+      params.state = state
+    }
+    if (lastId !== null && lastId !== undefined) {
+      params.lastId = lastId
+    }
+    return apiClient.get('/v1/admin/professions', { params })
+  },
+
+  /**
+   * 获取指定状态的职业（旧版本兼容）
    */
   getProfessionsByState(state: string, lastId?: number): Promise<ApiResponse<any[]>> {
     const params: Record<string, unknown> = {}
@@ -261,7 +275,7 @@ export const adminApi = {
    */
   adminSearchUser(name: string): Promise<ApiResponse<any[]>> {
     return apiClient.get('/v1/admin/users/search', {
-      params: { name }
+      params: { name },
     })
   },
 
@@ -270,7 +284,7 @@ export const adminApi = {
    */
   updateUserState(userId: number, ban: boolean): Promise<ApiResponse<any>> {
     return apiClient.put(`/v1/admin/users/${userId}/state`, null, {
-      params: { ban }
+      params: { ban },
     })
   },
 
@@ -316,7 +330,9 @@ export const adminApi = {
   /**
    * 获取操作日志
    */
-  getOperationLogs(query: OperationLogQueryRequest): Promise<ApiResponse<OperationLogPageResponse>> {
+  getOperationLogs(
+    query: OperationLogQueryRequest
+  ): Promise<ApiResponse<OperationLogPageResponse>> {
     const params: Record<string, unknown> = {}
     if (query.operatorId !== undefined && query.operatorId !== null) {
       params.operatorId = query.operatorId
@@ -378,11 +394,7 @@ export const adminApi = {
    * 更新配置（key-value模式）
    */
   updateConfigByKey(key: string, value: any): Promise<ApiResponse<string>> {
-    return apiClient.post(
-      '/v1/admin/system',
-      { value },
-      { params: { key } }
-    )
+    return apiClient.post('/v1/admin/system', { value }, { params: { key } })
   },
 
   /**

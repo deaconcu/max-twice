@@ -1,129 +1,237 @@
 <script setup lang="ts">
-import { inject, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { adminApi } from '@/api'
-import { ContentState, ApprovalAction } from '@/enums'
+import { inject, ref, onMounted } from 'vue'
+import { adminApi, systemApi, professionApi } from '@/api'
+import { ContentState } from '@/enums'
+import type { Profession, ProfessionCategory, CategoryMapping } from '@/types/profession.d'
+import type { StateOption } from '@/types/common'
+import CategorySelector from '../common/CategorySelector.vue'
 import RejectBanDialog from './RejectBanDialog.vue'
+import { professionNameRules, professionDescriptionRules } from '@/utils/validationRules'
+import { PROFESSION_VALIDATION } from '@/types/validation'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
 
-const { t } = useI18n()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
+
+// 扩展 Profession 接口以包含UI状态
+interface ProfessionWithUIState extends Profession {
+  approving?: boolean
+  restoring?: boolean
+  deleting?: boolean
+}
+
+// 编辑表单数据
+interface EditProfessionForm {
+  id?: number
+  name?: string
+  description?: string
+  price?: string
+  skillsText?: string
+  mainCategory?: number | null
+  subCategory?: number | null
+  icon?: string
+  reason?: string
+  state?: number
+}
 
 const selectedStateIndex = ref<number>(0)
 
 // 拒绝/屏蔽对话框
 const showReasonDialog = ref<boolean>(false)
-const currentProfession = ref<any | null>(null)
+const currentProfession = ref<ProfessionWithUIState | null>(null)
 const dialogType = ref<'reject' | 'ban'>('reject')
 
+// 编辑相关数据
+const showEditDialog = ref<boolean>(false)
+const editProfession = ref<EditProfessionForm>({})
+const editFormValid = ref<boolean>(false)
+const editForm = ref(null)
+
+// 动态类别数据
+const mainCategories = ref<ProfessionCategory[]>([])
+const categoryMapping = ref<CategoryMapping[]>([])
+
+// 动态类别功能函数
+const getCategoryName = (mainCategoryId?: number): string => {
+  if (!mainCategories.value || !mainCategoryId) return '未知类别'
+  const category = mainCategories.value.find((cat) => cat.id === mainCategoryId)
+  return category ? category.title : '未知类别'
+}
+
+const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): string => {
+  if (!categoryMapping.value || !mainCategoryId || !subCategoryId) return '未知子类别'
+  const mapping = categoryMapping.value.find((m) => m.mainCategoryId === mainCategoryId)
+  if (!mapping) return '未知子类别'
+  const subCategory = mapping.subcategories.find((sub) => sub.id === subCategoryId)
+  return subCategory ? subCategory.name : '未知子类别'
+}
+
+// 加载职业类别数据
+const loadProfessionCategories = async (): Promise<void> => {
+  try {
+    const response = await systemApi.getProfessionCategories()
+    if (response.code === 200 && response.data) {
+      mainCategories.value = response.data.mainCategories || []
+      categoryMapping.value = response.data.categoryMapping || []
+    }
+  } catch (error) {
+    console.error('加载职业类别失败:', error)
+  }
+}
+
 // 状态选项
-const stateOptions = [
+const stateOptions: StateOption[] = [
   {
     value: ContentState.SUBMITTED,
     text: '待审核',
     color: 'orange-lighten-4',
-    icon: 'mdi-clock-outline'
+    icon: 'mdi-clock-outline',
   },
   {
     value: ContentState.PUBLISHED,
-    text: '已批准',
+    text: '已通过',
     color: 'green-lighten-4',
-    icon: 'mdi-check-circle-outline'
+    icon: 'mdi-check-circle',
   },
   {
     value: ContentState.REJECTED,
     text: '已拒绝',
     color: 'red-lighten-4',
-    icon: 'mdi-close-circle-outline'
+    icon: 'mdi-close-circle',
   },
   {
     value: ContentState.BANNED,
-    text: '已屏蔽',
+    text: '已封禁',
     color: 'grey-lighten-2',
-    icon: 'mdi-cancel'
-  }
+    icon: 'mdi-cancel',
+  },
 ]
 
 // 获取当前选中的状态
-const getCurrentState = (): number => stateOptions[selectedStateIndex.value].value
-const getCurrentStateText = (): string => stateOptions[selectedStateIndex.value].text
+const getCurrentState = (): number =>
+  stateOptions[selectedStateIndex.value]?.value || ContentState.SUBMITTED
+const getCurrentStateText = (): string => stateOptions[selectedStateIndex.value]?.text || '待审核'
 
-// 获取状态配置
-const getStateConfig = (state: number) => {
-  return stateOptions.find(option => option.value === state) || stateOptions[0]
+// 根据状态获取配置
+const getStateConfig = (state?: number): StateOption => {
+  return stateOptions.find((option) => option.value === state) || stateOptions[0]
+}
+
+// 处理技能数组
+const getSkillsArray = (skills?: string): string[] => {
+  if (!skills) return []
+  if (typeof skills === 'string') {
+    return skills
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s)
+  }
+  return Array.isArray(skills) ? skills : []
 }
 
 // 使用 useInfiniteScroll 加载职业列表
 const {
   items: professionList,
   loading,
-  hasMore,
-  loadMore,
-  reset: resetProfessionList
+  hasMore: hasMoreData,
+  loadMore: loadMoreData,
+  reset: resetProfessionList,
 } = useInfiniteScroll({
-  fetchFn: async (params) => {
-    const currentState = getCurrentState()
-    let stateKey = 'pending'
-
-    switch (currentState) {
-      case ContentState.SUBMITTED:
-        stateKey = 'pending'
-        break
-      case ContentState.PUBLISHED:
-        stateKey = 'approved'
-        break
-      case ContentState.REJECTED:
-        stateKey = 'rejected'
-        break
-      case ContentState.BANNED:
-        stateKey = 'banned'
-        break
-    }
-
-    const response = await adminApi.getProfessionsByState(stateKey, params.lastId)
-    return response.data
+  fetchFn: (params) => {
+    const state = getCurrentState()
+    return adminApi.getAdminProfessions(state, params.lastId)
   },
   getNextParams: (lastItem) => ({
-    lastId: lastItem.id
+    lastId: lastItem.id,
   }),
   initialParams: {
-    lastId: undefined
-  }
+    lastId: null,
+  },
 })
 
-// 状态变化处理
+// 状态改变处理
 const onStateChange = (): void => {
   resetProfessionList()
 }
 
-// 使用 useMutation 批准职业
-const { execute: executeApproveProfession } = useMutation(
-  (professionId: number) => adminApi.approveProfession(professionId, { action: ApprovalAction.APPROVE }),
+// 使用 useMutation 操作职业申请
+const { execute: executeOperateProfession } = useMutation(
+  (data: { professionId: number; action: string; reason?: string }) =>
+    professionApi.approveProfession(data.professionId, data.action, data.reason || ''),
   {
-    successMessage: '职业已批准',
-    onSuccess: (_, professionId) => {
-      const index = professionList.value.findIndex((p: any) => p.id === professionId)
-      if (index > -1) {
-        professionList.value.splice(index, 1)
+    onSuccess: (_, data) => {
+      const index = professionList.value.findIndex((p) => p.id === data.professionId)
+      if (index !== -1) {
+        if (data.action === 'APPROVE') {
+          professionList.value[index].state = ContentState.PUBLISHED
+          professionList.value[index].reason = ''
+        } else if (data.action === 'REJECT') {
+          professionList.value[index].state = ContentState.REJECTED
+          professionList.value[index].reason = data.reason || ''
+        } else if (data.action === 'BAN') {
+          professionList.value[index].state = ContentState.BANNED
+          professionList.value[index].reason = data.reason || ''
+        }
+
+        // 如果当前筛选状态与操作结果不匹配，从列表中移除
+        const currentState = getCurrentState()
+        const shouldRemove =
+          (data.action === 'APPROVE' && currentState !== ContentState.PUBLISHED) ||
+          (data.action === 'REJECT' && currentState !== ContentState.REJECTED) ||
+          (data.action === 'BAN' && currentState !== ContentState.BANNED)
+
+        if (shouldRemove) {
+          professionList.value.splice(index, 1)
+        }
       }
-    }
+    },
   }
 )
 
-const approveProfession = async (profession: any): Promise<void> => {
-  await executeApproveProfession(profession.id)
+const operateProfession = async (
+  profession: ProfessionWithUIState,
+  action: string,
+  reason = ''
+): Promise<boolean> => {
+  try {
+    await executeOperateProfession({ professionId: profession.id, action, reason })
+    return true
+  } catch (error) {
+    return false
+  }
+}
+
+// 通过申请
+const approveProfession = async (profession: ProfessionWithUIState): Promise<void> => {
+  profession.approving = true
+  const success = await operateProfession(profession, 'APPROVE')
+  profession.approving = false
+
+  if (success) {
+    showSnackbar?.('操作成功')
+  }
+}
+
+// 恢复申请 - 将已拒绝的职业重新通过
+const restoreProfession = async (profession: ProfessionWithUIState): Promise<void> => {
+  profession.restoring = true
+  const success = await operateProfession(profession, 'APPROVE')
+  profession.restoring = false
+
+  if (success) {
+    showSnackbar?.('操作成功')
+  }
 }
 
 // 显示拒绝对话框
-const showRejectModal = (profession: any) => {
+const showRejectModal = (profession: ProfessionWithUIState): void => {
   currentProfession.value = profession
   dialogType.value = 'reject'
   showReasonDialog.value = true
 }
 
 // 显示屏蔽对话框
-const showBanModal = (profession: any) => {
+const showBanModal = (profession: ProfessionWithUIState): void => {
   currentProfession.value = profession
   dialogType.value = 'ban'
   showReasonDialog.value = true
@@ -131,58 +239,137 @@ const showBanModal = (profession: any) => {
 
 // 使用 useMutation 处理拒绝/屏蔽
 const { execute: executeRejectOrBan, loading: submitting } = useMutation(
-  (data: { professionId: number; action: ApprovalAction; reason: string }) =>
-    adminApi.approveProfession(data.professionId, { action: data.action, reason: data.reason }),
+  (data: { professionId: number; action: string; reason: string }) =>
+    professionApi.approveProfession(data.professionId, data.action, data.reason),
   {
+    successMessage: '操作成功',
     onSuccess: (_, data) => {
-      const message = data.action === ApprovalAction.BAN ? '已屏蔽' : '已拒绝'
-      showSnackbar?.(message, 'success')
+      const index = professionList.value.findIndex((p) => p.id === data.professionId)
+      if (index !== -1) {
+        const targetState = data.action === 'REJECT' ? ContentState.REJECTED : ContentState.BANNED
+        professionList.value[index].state = targetState
+        professionList.value[index].reason = data.reason
 
-      const index = professionList.value.findIndex((p: any) => p.id === data.professionId)
-      if (index > -1) {
-        professionList.value.splice(index, 1)
+        const currentState = getCurrentState()
+        if (currentState !== targetState) {
+          professionList.value.splice(index, 1)
+        }
       }
 
       showReasonDialog.value = false
       currentProfession.value = null
-    }
+    },
   }
 )
 
 // 处理对话框确认
-const handleConfirmAction = async (reason: string) => {
+const handleConfirmAction = async (reason: string): Promise<void> => {
   if (!currentProfession.value) return
 
-  const action = dialogType.value === 'ban' ? ApprovalAction.BAN : ApprovalAction.REJECT
+  const action = dialogType.value === 'reject' ? 'REJECT' : 'BAN'
   await executeRejectOrBan({
     professionId: currentProfession.value.id,
     action,
-    reason
+    reason,
   })
 }
 
 // 使用 useMutation 取消屏蔽职业
 const { execute: executeUnbanProfession } = useMutation(
-  (professionId: number) => adminApi.approveProfession(professionId, { action: ApprovalAction.APPROVE }),
+  (professionId: number) => professionApi.approveProfession(professionId, 'APPROVE'),
   {
-    successMessage: '已取消屏蔽',
+    successMessage: '操作成功',
     onSuccess: (_, professionId) => {
-      const index = professionList.value.findIndex((p: any) => p.id === professionId)
-      if (index > -1) {
-        professionList.value.splice(index, 1)
+      const index = professionList.value.findIndex((p) => p.id === professionId)
+      if (index !== -1) {
+        professionList.value[index].state = ContentState.PUBLISHED
+        professionList.value[index].reason = ''
+
+        const currentState = getCurrentState()
+        if (currentState !== ContentState.PUBLISHED) {
+          professionList.value.splice(index, 1)
+        }
       }
-    }
+    },
   }
 )
 
-const unbanProfession = async (profession: any): Promise<void> => {
+const unbanProfession = async (profession: ProfessionWithUIState): Promise<void> => {
   await executeUnbanProfession(profession.id)
 }
 
-// 恢复职业（从拒绝状态恢复）
-const restoreProfession = async (profession: any): Promise<void> => {
-  await executeApproveProfession(profession.id)
+// 显示编辑对话框
+const showEditModal = (profession: ProfessionWithUIState): void => {
+  currentProfession.value = profession
+  editProfession.value = {
+    id: profession.id,
+    name: profession.name || '',
+    description: profession.description || '',
+    price: profession.price || '',
+    skillsText: profession.skills || '',
+    mainCategory: profession.mainCategory || null,
+    subCategory: profession.subCategory || null,
+    icon: profession.icon || 'mdi-briefcase',
+    reason: profession.reason || '',
+    state: profession.state,
+  }
+
+  showEditDialog.value = true
 }
+
+// 关闭编辑对话框
+const closeEditDialog = (): void => {
+  showEditDialog.value = false
+  currentProfession.value = null
+  editProfession.value = {}
+  editFormValid.value = false
+}
+
+// 使用 useMutation 更新职业信息
+const { execute: executeUpdateProfession, loading: updating } = useMutation(
+  (data: { id: number; updateData: any }) =>
+    professionApi.updateProfession(data.id, data.updateData),
+  {
+    successMessage: '操作成功',
+    onSuccess: (_, data) => {
+      const index = professionList.value.findIndex((p) => p.id === data.id)
+      if (index !== -1) {
+        professionList.value[index] = {
+          ...professionList.value[index],
+          ...data.updateData,
+        }
+      }
+      closeEditDialog()
+    },
+  }
+)
+
+// 更新职业信息
+const updateProfession = async (): Promise<void> => {
+  if (!editFormValid.value) return
+
+  const updateData = {
+    id: editProfession.value.id!,
+    name: editProfession.value.name!,
+    description: editProfession.value.description!,
+    price: editProfession.value.price || '',
+    skills: editProfession.value.skillsText || '',
+    mainCategory: editProfession.value.mainCategory || 0,
+    subCategory: editProfession.value.subCategory || 0,
+    icon: editProfession.value.icon || 'mdi-briefcase',
+    reason: editProfession.value.reason || '',
+  }
+
+  await executeUpdateProfession({
+    id: editProfession.value.id!,
+    updateData,
+  })
+}
+
+// 组件挂载时加载数据
+onMounted(() => {
+  loadProfessionCategories()
+})
 </script>
 
 <template>
@@ -220,7 +407,15 @@ const restoreProfession = async (profession: any): Promise<void> => {
       >
         <v-icon
           :icon="state.icon"
-          :color="state.value === ContentState.SUBMITTED ? 'orange-darken-1' : state.value === ContentState.PUBLISHED ? 'green-darken-1' : state.value === ContentState.REJECTED ? 'red-darken-1' : 'grey-darken-1'"
+          :color="
+            state.value === ContentState.SUBMITTED
+              ? 'orange-darken-1'
+              : state.value === ContentState.PUBLISHED
+                ? 'green-darken-1'
+                : state.value === ContentState.REJECTED
+                  ? 'red-darken-1'
+                  : 'grey-darken-1'
+          "
           size="18"
           class="mr-2"
         ></v-icon>
@@ -242,194 +437,301 @@ const restoreProfession = async (profession: any): Promise<void> => {
 
     <!-- 职业申请列表 -->
     <div v-else>
-      <div
+      <v-card
         v-for="profession in professionList"
         :key="profession.id"
-        class="mb-4"
         v-intersect="{
-          handler: (isIntersecting: boolean) => {
-            if (isIntersecting && profession === professionList[professionList.length - 1] && hasMore && !loading) {
-              loadMore()
+          handler: (isIntersecting) => {
+            if (
+              isIntersecting &&
+              profession === professionList[professionList.length - 1] &&
+              hasMoreData &&
+              !loading
+            ) {
+              loadMoreData()
             }
-          }
+          },
         }"
+        flat
+        class="border rounded-lg pa-5 mb-4"
+        hover
       >
-        <v-card flat class="border rounded-lg pa-5" hover>
-          <div class="d-flex align-start">
-            <!-- 状态和操作区域 -->
-            <div class="mr-4 status-actions-area">
-              <div class="mb-3">
-                <v-chip
-                  :color="getStateConfig(profession.state).color"
-                  variant="flat"
-                  rounded="lg"
-                  size="small"
-                >
-                  <v-icon
-                    :icon="getStateConfig(profession.state).icon"
-                    size="14"
-                    class="mr-1"
-                  ></v-icon>
-                  {{ getStateConfig(profession.state).text }}
-                </v-chip>
-              </div>
-
-              <!-- 审核操作按钮 -->
-              <div class="d-flex flex-column ga-2">
-                <!-- 待审核状态：通过、拒绝、屏蔽 -->
-                <template v-if="profession.state === ContentState.SUBMITTED">
-                  <v-btn
-                    variant="flat"
-                    color="green-lighten-4"
-                    rounded="lg"
-                    size="small"
-                    @click="approveProfession(profession)"
-                  >
-                    <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
-                    批准
-                  </v-btn>
-                  <v-btn
-                    variant="flat"
-                    color="red-lighten-4"
-                    rounded="lg"
-                    size="small"
-                    @click="showRejectModal(profession)"
-                  >
-                    <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
-                    拒绝
-                  </v-btn>
-                  <v-btn
-                    variant="flat"
-                    color="grey-lighten-2"
-                    rounded="lg"
-                    size="small"
-                    @click="showBanModal(profession)"
-                  >
-                    <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
-                    屏蔽
-                  </v-btn>
-                </template>
-
-                <!-- 已发布状态：撤销通过、屏蔽 -->
-                <template v-if="profession.state === ContentState.PUBLISHED">
-                  <v-btn
-                    variant="flat"
-                    color="orange-lighten-4"
-                    rounded="lg"
-                    size="small"
-                    @click="showRejectModal(profession)"
-                  >
-                    <v-icon icon="mdi-undo" color="orange-darken-2" size="16" class="mr-1"></v-icon>
-                    撤销通过
-                  </v-btn>
-                  <v-btn
-                    variant="flat"
-                    color="grey-lighten-2"
-                    rounded="lg"
-                    size="small"
-                    @click="showBanModal(profession)"
-                  >
-                    <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
-                    屏蔽
-                  </v-btn>
-                </template>
-
-                <!-- 已拒绝状态：通过、屏蔽 -->
-                <template v-if="profession.state === ContentState.REJECTED">
-                  <v-btn
-                    variant="flat"
-                    color="green-lighten-4"
-                    rounded="lg"
-                    size="small"
-                    @click="restoreProfession(profession)"
-                  >
-                    <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
-                    通过
-                  </v-btn>
-                  <v-btn
-                    variant="flat"
-                    color="grey-lighten-2"
-                    rounded="lg"
-                    size="small"
-                    @click="showBanModal(profession)"
-                  >
-                    <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
-                    屏蔽
-                  </v-btn>
-                </template>
-
-                <!-- 已屏蔽状态：取消屏蔽、降级为拒绝 -->
-                <template v-if="profession.state === ContentState.BANNED">
-                  <v-btn
-                    variant="flat"
-                    color="blue-lighten-4"
-                    rounded="lg"
-                    size="small"
-                    @click="unbanProfession(profession)"
-                  >
-                    <v-icon icon="mdi-lock-open" color="blue-darken-2" size="16" class="mr-1"></v-icon>
-                    取消屏蔽
-                  </v-btn>
-                  <v-btn
-                    variant="flat"
-                    color="orange-lighten-4"
-                    rounded="lg"
-                    size="small"
-                    @click="showRejectModal(profession)"
-                  >
-                    <v-icon icon="mdi-arrow-down" color="orange-darken-2" size="16" class="mr-1"></v-icon>
-                    降级为拒绝
-                  </v-btn>
-                </template>
-              </div>
+        <div class="d-flex align-start">
+          <!-- 状态和操作区域 -->
+          <div class="mr-4 status-actions-area">
+            <div class="mb-3">
+              <v-chip
+                :color="getStateConfig(profession.state).color"
+                variant="flat"
+                rounded="lg"
+                size="small"
+              >
+                <v-icon
+                  :icon="getStateConfig(profession.state).icon"
+                  size="14"
+                  class="mr-1"
+                ></v-icon>
+                {{ getStateConfig(profession.state).text }}
+              </v-chip>
             </div>
 
-            <!-- 职业内容区域 -->
-            <div class="flex-grow-1">
-              <div class="d-flex align-center justify-space-between mb-3">
-                <h4 class="text-h6 font-weight-bold text-grey-darken-3">{{ profession.name }}</h4>
-                <div class="text-caption text-grey-darken-1">
-                  ID: {{ profession.id }}
-                </div>
-              </div>
+            <!-- 审核操作按钮 -->
+            <div class="d-flex flex-column ga-2">
+              <!-- 待审核状态：通过、拒绝、屏蔽 -->
+              <template v-if="profession.state === ContentState.SUBMITTED">
+                <v-btn
+                  variant="flat"
+                  color="green-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  :loading="profession.approving"
+                  @click="approveProfession(profession)"
+                >
+                  <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
+                  批准
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="red-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  @click="showRejectModal(profession)"
+                >
+                  <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
+                  拒绝
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="grey-lighten-2"
+                  rounded="lg"
+                  size="small"
+                  @click="showBanModal(profession)"
+                >
+                  <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                  屏蔽
+                </v-btn>
+              </template>
 
-              <div v-if="profession.description" class="mb-3">
-                <p class="text-body-2 text-grey-darken-1">{{ profession.description }}</p>
-              </div>
+              <!-- 已发布状态：撤销通过、屏蔽 -->
+              <template v-if="profession.state === ContentState.PUBLISHED">
+                <v-btn
+                  variant="flat"
+                  color="orange-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  @click="showRejectModal(profession)"
+                >
+                  <v-icon icon="mdi-undo" color="orange-darken-2" size="16" class="mr-1"></v-icon>
+                  撤销通过
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="grey-lighten-2"
+                  rounded="lg"
+                  size="small"
+                  @click="showBanModal(profession)"
+                >
+                  <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                  屏蔽
+                </v-btn>
+              </template>
 
-              <div class="d-flex align-center justify-space-between">
-                <div class="d-flex align-center">
-                  <v-avatar size="24" class="mr-2">
-                    <v-img v-if="profession.creator?.avatar" :src="profession.creator.avatar" />
-                    <v-icon v-else icon="mdi-account-circle" size="16" color="grey"></v-icon>
-                  </v-avatar>
-                  <span class="text-body-2 text-grey-darken-2">
-                    {{ profession.creator?.name || '匿名用户' }}
-                  </span>
-                </div>
-                <div class="text-body-2 text-grey-darken-1">
-                  创建时间：{{ new Date(profession.createdAt).toLocaleDateString() }}
-                </div>
+              <!-- 已拒绝状态：通过、屏蔽 -->
+              <template v-if="profession.state === ContentState.REJECTED">
+                <v-btn
+                  variant="flat"
+                  color="green-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  :loading="profession.restoring"
+                  @click="restoreProfession(profession)"
+                >
+                  <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
+                  通过
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="grey-lighten-2"
+                  rounded="lg"
+                  size="small"
+                  @click="showBanModal(profession)"
+                >
+                  <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
+                  屏蔽
+                </v-btn>
+              </template>
+
+              <!-- 已屏蔽状态：取消屏蔽、降级为拒绝 -->
+              <template v-if="profession.state === ContentState.BANNED">
+                <v-btn
+                  variant="flat"
+                  color="blue-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  @click="unbanProfession(profession)"
+                >
+                  <v-icon
+                    icon="mdi-lock-open"
+                    color="blue-darken-2"
+                    size="16"
+                    class="mr-1"
+                  ></v-icon>
+                  取消屏蔽
+                </v-btn>
+                <v-btn
+                  variant="flat"
+                  color="orange-lighten-4"
+                  rounded="lg"
+                  size="small"
+                  @click="showRejectModal(profession)"
+                >
+                  <v-icon
+                    icon="mdi-arrow-down"
+                    color="orange-darken-2"
+                    size="16"
+                    class="mr-1"
+                  ></v-icon>
+                  降级为拒绝
+                </v-btn>
+              </template>
+            </div>
+
+            <!-- 通用操作按钮 - 所有状态都显示编辑 -->
+            <div class="d-flex flex-column ga-2 mt-3">
+              <v-btn
+                variant="flat"
+                color="blue-lighten-4"
+                rounded="lg"
+                size="small"
+                @click="showEditModal(profession)"
+              >
+                <v-icon icon="mdi-pencil" color="blue-darken-2" size="16" class="mr-1"></v-icon>
+                编辑
+              </v-btn>
+            </div>
+
+            <!-- 拒绝原因显示 -->
+            <div
+              v-if="profession.state === ContentState.REJECTED && profession.reason"
+              class="mt-3"
+            >
+              <div class="text-caption text-grey-darken-1 mb-1">拒绝原因：</div>
+              <div class="text-body-2 text-red-darken-2 rejection-reason">
+                {{ profession.reason }}
               </div>
             </div>
           </div>
-        </v-card>
+
+          <!-- 内容区域 -->
+          <div class="flex-grow-1">
+            <div class="d-flex align-center mb-3">
+              <v-avatar size="32" color="grey-lighten-3" class="mr-3">
+                <v-icon
+                  :icon="profession.icon || 'mdi-briefcase'"
+                  color="grey-darken-1"
+                  size="18"
+                ></v-icon>
+              </v-avatar>
+              <div>
+                <div class="text-body-2 font-weight-medium text-grey-darken-2">
+                  职业ID: {{ profession.id }}
+                </div>
+                <div class="text-caption text-grey-darken-1">
+                  {{ profession.createdAt || '未知时间' }}
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-grey-lighten-5 rounded-lg pa-4">
+              <div class="mb-3">
+                <div class="text-h6 font-weight-bold text-grey-darken-3 mb-2">
+                  {{ profession.name || '职业名称' }}
+                  <v-chip
+                    v-if="profession.price"
+                    variant="flat"
+                    color="green-lighten-4"
+                    size="small"
+                    rounded="lg"
+                    class="ml-2"
+                  >
+                    $ {{ profession.price }}
+                  </v-chip>
+                </div>
+                <div class="text-body-2 text-grey-darken-1 my-6">
+                  {{ profession.description || '暂无描述' }}
+                </div>
+              </div>
+
+              <!-- 技能要求 -->
+              <div v-if="profession.skills" class="mb-3 d-flex align-center">
+                <div class="text-caption text-grey-darken-1 mr-2">技能：</div>
+                <div class="d-flex flex-wrap ga-2">
+                  <v-chip
+                    v-for="skill in getSkillsArray(profession.skills)"
+                    :key="skill"
+                    variant="flat"
+                    color="grey-lighten-3"
+                    size="small"
+                    rounded="lg"
+                  >
+                    {{ skill }}
+                  </v-chip>
+                </div>
+              </div>
+
+              <!-- 分类信息 -->
+              <div
+                v-if="profession.mainCategory !== undefined || profession.subCategory !== undefined"
+                class="mb-3 d-flex align-center"
+              >
+                <div class="text-caption text-grey-darken-1 mr-2">分类：</div>
+                <div class="d-flex ga-2">
+                  <v-chip
+                    v-if="profession.mainCategory !== undefined"
+                    variant="tonal"
+                    color="purple-lighten-1"
+                    size="small"
+                    rounded="lg"
+                  >
+                    <v-icon icon="mdi-folder" size="14" class="mr-1"></v-icon>
+                    {{ getCategoryName(profession.mainCategory) }}
+                  </v-chip>
+                  <v-chip
+                    v-if="profession.subCategory !== undefined"
+                    variant="tonal"
+                    color="orange-darken-4"
+                    size="small"
+                    rounded="lg"
+                  >
+                    <v-icon icon="mdi-folder-outline" size="14" class="mr-1"></v-icon>
+                    {{ getSubCategoryName(profession.mainCategory, profession.subCategory) }}
+                  </v-chip>
+                </div>
+              </div>
+
+              <!-- 创建者信息 -->
+              <div class="d-flex align-center text-caption text-grey-darken-1">
+                <v-icon icon="mdi-account-outline" size="14" class="mr-1"></v-icon>
+                创建者ID: {{ profession.creator || '未知' }}
+                <span class="mx-3">|</span>
+                <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
+                更新时间: {{ profession.updatedAt || '未知' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </v-card>
+
+      <!-- 加载状态提示 -->
+      <div v-if="loading && professionList.length > 0" class="text-center py-4">
+        <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+        <p class="mt-2 text-body-2 text-grey-darken-1">加载更多中...</p>
       </div>
-    </div>
 
-    <!-- 加载更多指示器 -->
-    <div v-if="loading" class="text-center py-4">
-      <v-progress-circular
-        indeterminate
-        color="primary"
-        size="24"
-      ></v-progress-circular>
-      <span class="ml-2 text-grey-darken-1">加载中...</span>
-    </div>
-
-    <!-- 没有更多数据提示 -->
-    <div v-if="!hasMore && professionList.length > 0" class="text-center py-4">
-      <span class="text-grey-darken-1">没有更多数据了</span>
+      <!-- 没有更多数据提示 -->
+      <div v-else-if="!hasMoreData && professionList.length > 0" class="text-center py-4">
+        <p class="text-body-2 text-grey-darken-1">已加载全部数据</p>
+      </div>
     </div>
 
     <!-- 拒绝/屏蔽对话框 -->
@@ -442,22 +744,159 @@ const restoreProfession = async (profession: any): Promise<void> => {
       :loading="submitting"
       @confirm="handleConfirmAction"
     />
+
+    <!-- 编辑职业对话框 -->
+    <v-dialog v-model="showEditDialog" max-width="700px" persistent>
+      <v-card rounded="lg">
+        <v-card-title class="text-h6 font-weight-bold pa-6 pb-4">
+          <v-icon icon="mdi-pencil-outline" color="blue-darken-2" class="mr-3"></v-icon>
+          编辑职业信息
+        </v-card-title>
+
+        <v-card-text class="pa-6 pt-0">
+          <v-form ref="editForm" v-model="editFormValid">
+            <v-row>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="editProfession.name"
+                  label="职业名称"
+                  :rules="professionNameRules"
+                  :counter="PROFESSION_VALIDATION.NAME_MAX_LENGTH"
+                  variant="outlined"
+                  rounded="lg"
+                  bg-color="grey-lighten-5"
+                  clearable
+                ></v-text-field>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="editProfession.price"
+                  label="价格"
+                  variant="outlined"
+                  rounded="lg"
+                  bg-color="grey-lighten-5"
+                  placeholder="例如：免费 或 ¥99"
+                ></v-text-field>
+              </v-col>
+            </v-row>
+
+            <v-textarea
+              v-model="editProfession.description"
+              label="职业描述"
+              :rules="professionDescriptionRules"
+              :counter="PROFESSION_VALIDATION.DESCRIPTION_MAX_LENGTH"
+              variant="outlined"
+              rounded="lg"
+              bg-color="grey-lighten-5"
+              rows="4"
+              clearable
+              class="mb-4"
+            ></v-textarea>
+
+            <v-text-field
+              v-model="editProfession.skillsText"
+              label="技能要求（用逗号分隔）"
+              variant="outlined"
+              rounded="lg"
+              bg-color="grey-lighten-5"
+              placeholder="例如：Java编程,数据库设计,项目管理"
+              class="mb-4"
+            ></v-text-field>
+
+            <!-- 分类选择 -->
+            <div class="mb-4">
+              <div class="text-body-2 font-weight-medium mb-2">职业分类</div>
+              <CategorySelector
+                v-model:model-main-category="editProfession.mainCategory"
+                v-model:model-sub-category="editProfession.subCategory"
+              />
+            </div>
+
+            <!-- 图标输入 -->
+            <v-text-field
+              v-model="editProfession.icon"
+              label="图标（Material Design Icons）"
+              variant="outlined"
+              rounded="lg"
+              bg-color="grey-lighten-5"
+              placeholder="例如：mdi-briefcase, mdi-laptop, mdi-palette"
+              class="mb-4"
+              hint="请输入Material Design Icons图标名称，如：mdi-briefcase"
+              persistent-hint
+            ></v-text-field>
+
+            <!-- 拒绝原因（仅在拒绝状态时显示） -->
+            <v-textarea
+              v-if="editProfession.state === ContentState.REJECTED"
+              v-model="editProfession.reason"
+              label="拒绝原因"
+              variant="outlined"
+              rounded="lg"
+              bg-color="red-lighten-5"
+              rows="3"
+              class="mb-4"
+              placeholder="请输入拒绝原因..."
+            ></v-textarea>
+          </v-form>
+        </v-card-text>
+
+        <v-card-actions class="pa-6 pt-0">
+          <v-spacer></v-spacer>
+          <v-btn variant="outlined" color="grey" rounded="lg" @click="closeEditDialog">
+            取消
+          </v-btn>
+          <v-btn
+            variant="flat"
+            color="blue-lighten-4"
+            rounded="lg"
+            :disabled="!editFormValid"
+            :loading="updating"
+            @click="updateProfession"
+          >
+            <v-icon icon="mdi-content-save" color="blue-darken-2" class="mr-2"></v-icon>
+            保存修改
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <style scoped>
 .profession-management {
-  max-width: 100%;
+  padding: 0;
 }
 
+/* 状态和操作区域最小宽度 */
+.status-actions-area {
+  min-width: 200px;
+}
+
+/* 卡片悬停效果 */
+:deep(.v-card[hover]:hover) {
+  transform: translateY(-2px);
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 边框样式 */
 .border {
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
-.status-actions-area {
-  min-width: 180px;
-  background-color: #fafafa;
-  border-radius: 8px;
-  padding: 18px;
+/* 芯片组样式优化 */
+:deep(.v-chip-group) {
+  column-gap: 8px;
+  row-gap: 8px;
+}
+
+/* 拒绝原因文本换行 */
+.rejection-reason {
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.4;
+  max-width: 180px;
 }
 </style>

@@ -53,7 +53,12 @@
             class="px-2"
             @click="handleShowAll"
           >
-            <v-icon v-if="!showAuthorOnly && !showMyOnly" icon="mdi-check" size="14" class="mr-1"></v-icon>
+            <v-icon
+              v-if="!showAuthorOnly && !showMyOnly"
+              icon="mdi-check"
+              size="14"
+              class="mr-1"
+            ></v-icon>
             全部
           </v-btn>
           <v-btn
@@ -126,14 +131,7 @@
 
       <!-- 卡片组列表 -->
       <div v-else>
-        <v-card
-          v-for="deck in decks"
-          :key="deck.id"
-          class="mb-3"
-          elevation="0"
-          rounded="lg"
-          border
-        >
+        <v-card v-for="deck in decks" :key="deck.id" class="mb-3" elevation="0" rounded="lg" border>
           <v-card-text class="pa-4">
             <div class="d-flex align-start justify-space-between mb-2">
               <h4
@@ -184,7 +182,12 @@
                   ></v-icon>
                   {{ deck.upvoteCount }}
                 </v-btn>
-                <v-icon icon="mdi-cards-outline" size="14" color="grey-darken-2" class="ml-3 mr-2"></v-icon>
+                <v-icon
+                  icon="mdi-cards-outline"
+                  size="14"
+                  color="grey-darken-2"
+                  class="ml-3 mr-2"
+                ></v-icon>
                 <span class="text-body-2 text-grey-darken-2">{{ deck.cardCount }}</span>
               </div>
             </div>
@@ -272,7 +275,7 @@ const loadDecks = async (reset = false) => {
       response = await memoryApi.getPostPublicDecks(props.postId, queryParams)
     }
 
-    if (response.data && response.data.items) {
+    if (response.data?.items) {
       const items = response.data.items
       decks.value = reset ? items : [...decks.value, ...items]
 
@@ -304,19 +307,16 @@ watch([sortBy, showAuthorOnly, showMyOnly], () => {
 })
 
 // 使用 useMutation 处理点赞
-const { execute: upvoteDeck } = useMutation(
-  (deckId: number) => memoryApi.upvoteDeck(deckId),
-  {
-    showToast: false,
-    onSuccess: (result, deckId) => {
-      const deck = decks.value.find((d) => d.id === deckId)
-      if (deck && result) {
-        deck.hasUpvoted = result.upvoted
-        deck.upvoteCount = result.upvotes
-      }
-    },
-  }
-)
+const { execute: upvoteDeck } = useMutation((deckId: number) => memoryApi.upvoteDeck(deckId), {
+  showToast: false,
+  onSuccess: (result, deckId) => {
+    const deck = decks.value.find((d) => d.id === deckId)
+    if (deck && result) {
+      deck.hasUpvoted = result.upvoted
+      deck.upvoteCount = result.upvotes
+    }
+  },
+})
 
 const handleSort = (newSortBy: typeof sortBy.value) => {
   sortBy.value = newSortBy

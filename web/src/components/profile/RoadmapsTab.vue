@@ -64,7 +64,10 @@
                       <p class="text-body-2 text-grey-darken-2 mb-3">{{ roadmap.description }}</p>
 
                       <!-- 统计信息 -->
-                      <div class="d-flex align-center mb-3 text-caption text-grey" style="gap: 16px">
+                      <div
+                        class="d-flex align-center mb-3 text-caption text-grey"
+                        style="gap: 16px"
+                      >
                         <div>
                           <v-icon icon="mdi-account-multiple" size="14" class="mr-1" />
                           {{ roadmap.usageCount }} 人使用
@@ -118,12 +121,7 @@
                     <div class="roadmap-thumbnail">
                       <div
                         class="d-flex align-center justify-center"
-                        style="
-                          width: 200px;
-                          height: 150px;
-                          background: #f5f5f5;
-                          border-radius: 8px;
-                        "
+                        style="width: 200px; height: 150px; background: #f5f5f5; border-radius: 8px"
                       >
                         <v-icon icon="mdi-sitemap" size="48" color="grey-lighten-1" />
                       </div>

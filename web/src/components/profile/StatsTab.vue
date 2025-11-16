@@ -109,7 +109,9 @@
                   <v-icon icon="mdi-calendar-check" color="warning" size="24" />
                 </v-avatar>
                 <div class="flex-grow-1">
-                  <div class="text-h5 font-weight-bold text-warning">{{ currentStats.studyDays }}</div>
+                  <div class="text-h5 font-weight-bold text-warning">
+                    {{ currentStats.studyDays }}
+                  </div>
                   <div class="text-caption text-grey">学习天数</div>
                 </div>
               </div>
@@ -134,7 +136,9 @@
                   <v-icon icon="mdi-clock-outline" color="purple" size="24" />
                 </v-avatar>
                 <div class="flex-grow-1">
-                  <div class="text-h5 font-weight-bold text-purple">{{ currentStats.studyHours }}</div>
+                  <div class="text-h5 font-weight-bold text-purple">
+                    {{ currentStats.studyHours }}
+                  </div>
                   <div class="text-caption text-grey">学习时长(h)</div>
                 </div>
               </div>

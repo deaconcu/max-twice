@@ -222,436 +222,434 @@ const addRecommendedCourse = (courseId: number): void => {
   <DefaultLayout>
     <!-- 欢迎区域 -->
     <div class="welcome-section mb-10">
-        <div class="d-flex align-center justify-space-between">
-          <div class="d-flex align-center ga-4">
-            <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="64" rounded="lg">
-              <v-icon size="32" :color="'rgb(var(--v-theme-on-surface-variant))'"
-                >mdi-account</v-icon
-              >
-            </v-avatar>
-            <div>
-              <h1
-                class="text-h4 font-weight-bold"
-                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-              >
-                {{ t('home.greeting', { name: userName }) }}
-              </h1>
-              <p
-                class="text-body-2 mt-1"
-                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-              >
-                {{ t('home.keepLearning') }}
-              </p>
-            </div>
-          </div>
-          <div class="text-center">
-            <div
-              class="text-h3 font-weight-bold"
+      <div class="d-flex align-center justify-space-between">
+        <div class="d-flex align-center ga-4">
+          <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="64" rounded="lg">
+            <v-icon size="32" :color="'rgb(var(--v-theme-on-surface-variant))'">mdi-account</v-icon>
+          </v-avatar>
+          <div>
+            <h1
+              class="text-h4 font-weight-bold"
               :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
             >
-              {{ stats.todayMinutes }}
-            </div>
-            <div class="text-caption" :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }">
-              {{ t('home.todayLearning') }}
-            </div>
+              {{ t('home.greeting', { name: userName }) }}
+            </h1>
+            <p
+              class="text-body-2 mt-1"
+              :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+            >
+              {{ t('home.keepLearning') }}
+            </p>
           </div>
         </div>
-      </div>
-
-      <!-- 平台介绍和学习路径 -->
-      <div class="guide-section mb-10">
-        <div class="text-center mb-8">
-          <h2
-            class="text-h5 font-weight-bold mb-2"
+        <div class="text-center">
+          <div
+            class="text-h3 font-weight-bold"
             :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
           >
-            {{ t('home.guideTitle') }}
-          </h2>
-          <p class="text-body-1" :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }">
-            {{ t('home.guideSubtitle') }}
-          </p>
-        </div>
-
-        <!-- 学习路径步骤 -->
-        <div class="path-steps">
-          <div v-for="(link, index) in quickLinks" :key="link.step" class="step-wrapper">
-            <v-card class="step-card" rounded="lg" border hover @click="navigateTo(link.path)">
-              <!-- STEP标签 -->
-              <v-chip class="step-badge" size="small" variant="flat" :color="'surface-variant'">
-                {{ t('home.step') }} {{ link.step }}
-              </v-chip>
-
-              <!-- 图标 -->
-              <v-avatar
-                :color="'rgb(var(--v-theme-surface-variant))'"
-                size="56"
-                rounded="lg"
-                class="mx-auto mb-4"
-              >
-                <v-icon :icon="link.icon" :color="link.color" size="28"></v-icon>
-              </v-avatar>
-
-              <!-- 标题和描述 -->
-              <h3
-                class="text-h6 font-weight-bold text-center mb-2"
-                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-              >
-                {{ link.title }}
-              </h3>
-              <p
-                class="text-body-2 text-center mb-4"
-                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-              >
-                {{ link.description }}
-              </p>
-
-              <!-- 平台数据 -->
-              <v-card class="step-data" rounded="lg" variant="outlined">
-                <div
-                  class="text-body-2 font-weight-bold text-center mb-1"
-                  :style="{ color: `rgb(var(--v-theme-${link.color}))` }"
-                >
-                  {{ link.stat }}
-                </div>
-                <p
-                  class="text-caption text-center ma-0"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-                >
-                  {{ link.statDetail }}
-                </p>
-              </v-card>
-            </v-card>
-
-            <!-- 箭头 -->
-            <div v-if="index < quickLinks.length - 1" class="step-arrow d-none d-md-flex">
-              <v-icon icon="mdi-arrow-right-thick" :color="'on-surface-variant'" size="36"></v-icon>
-            </div>
+            {{ stats.todayMinutes }}
+          </div>
+          <div class="text-caption" :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }">
+            {{ t('home.todayLearning') }}
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- 统计卡片 -->
-      <v-row class="mb-10">
-        <v-col cols="6" md="3">
-          <v-card rounded="lg" border>
-            <v-card-text class="d-flex align-center ga-4">
-              <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="48" rounded="lg">
-                <v-icon icon="mdi-book-open-variant" color="info" size="24"></v-icon>
-              </v-avatar>
-              <div>
-                <div
-                  class="text-h5 font-weight-bold"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                >
-                  {{ stats.coursesInProgress }}
-                </div>
-                <div
-                  class="text-caption"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-                >
-                  {{ t('home.stats.coursesInProgress') }}
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
+    <!-- 平台介绍和学习路径 -->
+    <div class="guide-section mb-10">
+      <div class="text-center mb-8">
+        <h2
+          class="text-h5 font-weight-bold mb-2"
+          :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+        >
+          {{ t('home.guideTitle') }}
+        </h2>
+        <p class="text-body-1" :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }">
+          {{ t('home.guideSubtitle') }}
+        </p>
+      </div>
 
-        <v-col cols="6" md="3">
-          <v-card rounded="lg" border>
-            <v-card-text class="d-flex align-center ga-4">
-              <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="48" rounded="lg">
-                <v-icon icon="mdi-check-circle" color="success" size="24"></v-icon>
-              </v-avatar>
-              <div>
-                <div
-                  class="text-h5 font-weight-bold"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                >
-                  {{ stats.completedCourses }}
-                </div>
-                <div
-                  class="text-caption"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-                >
-                  {{ t('home.stats.completedCourses') }}
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
+      <!-- 学习路径步骤 -->
+      <div class="path-steps">
+        <div v-for="(link, index) in quickLinks" :key="link.step" class="step-wrapper">
+          <v-card class="step-card" rounded="lg" border hover @click="navigateTo(link.path)">
+            <!-- STEP标签 -->
+            <v-chip class="step-badge" size="small" variant="flat" :color="'surface-variant'">
+              {{ t('home.step') }} {{ link.step }}
+            </v-chip>
 
-        <v-col cols="6" md="3">
-          <v-card rounded="lg" border>
-            <v-card-text class="d-flex align-center ga-4">
-              <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="48" rounded="lg">
-                <v-icon icon="mdi-briefcase-variant" color="warning" size="24"></v-icon>
-              </v-avatar>
-              <div>
-                <div
-                  class="text-h5 font-weight-bold"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                >
-                  {{ stats.careersInProgress }}
-                </div>
-                <div
-                  class="text-caption"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-                >
-                  {{ t('home.stats.careersInProgress') }}
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
+            <!-- 图标 -->
+            <v-avatar
+              :color="'rgb(var(--v-theme-surface-variant))'"
+              size="56"
+              rounded="lg"
+              class="mx-auto mb-4"
+            >
+              <v-icon :icon="link.icon" :color="link.color" size="28"></v-icon>
+            </v-avatar>
 
-        <v-col cols="6" md="3">
-          <v-card rounded="lg" border>
-            <v-card-text class="d-flex align-center ga-4">
-              <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="48" rounded="lg">
-                <v-icon icon="mdi-calendar-check" color="secondary" size="24"></v-icon>
-              </v-avatar>
-              <div>
-                <div
-                  class="text-h5 font-weight-bold"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                >
-                  {{ stats.learningDays }}
-                </div>
-                <div
-                  class="text-caption"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-                >
-                  {{ t('home.stats.learningDays') }}
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+            <!-- 标题和描述 -->
+            <h3
+              class="text-h6 font-weight-bold text-center mb-2"
+              :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+            >
+              {{ link.title }}
+            </h3>
+            <p
+              class="text-body-2 text-center mb-4"
+              :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+            >
+              {{ link.description }}
+            </p>
 
-      <!-- 主要内容区 -->
-      <v-row>
-        <!-- 左列 -->
-        <v-col cols="12" md="6">
-          <!-- 正在学习的课程 -->
-          <v-card class="mb-5" rounded="lg" border>
-            <v-card-text>
-              <div class="d-flex align-center justify-space-between mb-4">
-                <h2
-                  class="text-h6 font-weight-bold"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                >
-                  {{ t('home.learningCourses') }}
-                </h2>
-                <v-btn
-                  variant="text"
-                  size="small"
-                  :color="'on-surface'"
-                  @click="navigateTo('/my-courses')"
-                >
-                  {{ t('home.viewAll') }}
-                  <v-icon icon="mdi-arrow-right" size="16" class="ml-1"></v-icon>
-                </v-btn>
-              </div>
-
-              <v-card
-                v-for="course in recentCourses"
-                :key="course.id"
-                class="mb-3"
-                rounded="lg"
-                border
-                hover
-                @click="openCourse(course.courseId)"
-              >
-                <v-card-text>
-                  <div class="d-flex align-center ga-3 mb-3">
-                    <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="40" rounded="lg">
-                      <v-icon :icon="course.icon" :color="course.iconColor" size="20"></v-icon>
-                    </v-avatar>
-                    <div class="flex-grow-1">
-                      <div
-                        class="text-body-1 font-weight-bold mb-1"
-                        :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                      >
-                        {{ course.name }}
-                      </div>
-                      <div
-                        class="text-caption"
-                        :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-                      >
-                        {{ t('home.progress') }}: {{ course.progress }}%
-                      </div>
-                    </div>
-                  </div>
-                  <v-progress-linear
-                    :model-value="course.progress"
-                    :color="'outline'"
-                    height="5"
-                    rounded
-                  ></v-progress-linear>
-                </v-card-text>
-              </v-card>
-            </v-card-text>
-          </v-card>
-
-          <!-- 正在学习的职业 -->
-          <v-card rounded="lg" border>
-            <v-card-text>
-              <div class="d-flex align-center justify-space-between mb-4">
-                <h2
-                  class="text-h6 font-weight-bold"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                >
-                  {{ t('home.learningCareers') }}
-                </h2>
-                <v-btn
-                  variant="text"
-                  size="small"
-                  :color="'on-surface'"
-                  @click="navigateTo('/my-careers')"
-                >
-                  {{ t('home.viewAll') }}
-                  <v-icon icon="mdi-arrow-right" size="16" class="ml-1"></v-icon>
-                </v-btn>
-              </div>
-
-              <v-card
-                v-for="career in recentCareers"
-                :key="career.id"
-                class="mb-3"
-                rounded="lg"
-                border
-                hover
-                @click="openCareer(career.careerId)"
-              >
-                <v-card-text>
-                  <div class="d-flex align-center ga-3 mb-3">
-                    <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="40" rounded="lg">
-                      <v-icon :icon="career.icon" :color="career.iconColor" size="20"></v-icon>
-                    </v-avatar>
-                    <div class="flex-grow-1">
-                      <div
-                        class="text-body-1 font-weight-bold mb-1"
-                        :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                      >
-                        {{ career.name }}
-                      </div>
-                      <div
-                        class="text-caption"
-                        :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-                      >
-                        {{ t('home.progress') }}: {{ career.progress }}%
-                      </div>
-                    </div>
-                  </div>
-                  <v-progress-linear
-                    :model-value="career.progress"
-                    :color="'outline'"
-                    height="5"
-                    rounded
-                  ></v-progress-linear>
-                </v-card-text>
-              </v-card>
-            </v-card-text>
-          </v-card>
-        </v-col>
-
-        <!-- 右列 -->
-        <v-col cols="12" md="6">
-          <!-- 推荐课程 -->
-          <v-card class="mb-5" rounded="lg" border>
-            <v-card-text>
-              <div class="d-flex align-center justify-space-between mb-4">
-                <h2
-                  class="text-h6 font-weight-bold"
-                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                >
-                  {{ t('home.recommendedCourses') }}
-                </h2>
-                <v-btn
-                  variant="text"
-                  size="small"
-                  :color="'on-surface'"
-                  @click="navigateTo('/learning')"
-                >
-                  {{ t('home.more') }}
-                  <v-icon icon="mdi-arrow-right" size="16" class="ml-1"></v-icon>
-                </v-btn>
-              </div>
-
+            <!-- 平台数据 -->
+            <v-card class="step-data" rounded="lg" variant="outlined">
               <div
-                v-for="course in recommendedCourses"
-                :key="course.id"
-                class="recommend-item d-flex align-center ga-3 pa-3 mb-2 rounded-lg"
+                class="text-body-2 font-weight-bold text-center mb-1"
+                :style="{ color: `rgb(var(--v-theme-${link.color}))` }"
               >
-                <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="40" rounded="lg">
-                  <v-icon :icon="course.icon" :color="course.iconColor" size="18"></v-icon>
-                </v-avatar>
-                <div class="flex-grow-1">
-                  <div
-                    class="text-body-2 font-weight-medium mb-1"
-                    :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
-                  >
-                    {{ course.name }}
-                  </div>
-                  <div
-                    class="text-caption d-flex align-center"
-                    :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
-                  >
-                    <v-icon icon="mdi-account-multiple" size="12" class="mr-1"></v-icon>
-                    {{ course.learnerCount.toLocaleString() }} {{ t('home.learners') }}
-                  </div>
-                </div>
-                <v-btn
-                  icon="mdi-plus"
-                  size="small"
-                  variant="outlined"
-                  @click="addRecommendedCourse(course.courseId)"
-                ></v-btn>
+                {{ link.stat }}
               </div>
-            </v-card-text>
+              <p
+                class="text-caption text-center ma-0"
+                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+              >
+                {{ link.statDetail }}
+              </p>
+            </v-card>
           </v-card>
 
-          <!-- 最近活动 -->
-          <v-card rounded="lg" border>
-            <v-card-text>
-              <h2
-                class="text-h6 font-weight-bold mb-4"
+          <!-- 箭头 -->
+          <div v-if="index < quickLinks.length - 1" class="step-arrow d-none d-md-flex">
+            <v-icon icon="mdi-arrow-right-thick" :color="'on-surface-variant'" size="36"></v-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <v-row class="mb-10">
+      <v-col cols="6" md="3">
+        <v-card rounded="lg" border>
+          <v-card-text class="d-flex align-center ga-4">
+            <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="48" rounded="lg">
+              <v-icon icon="mdi-book-open-variant" color="info" size="24"></v-icon>
+            </v-avatar>
+            <div>
+              <div
+                class="text-h5 font-weight-bold"
                 :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
               >
-                {{ t('home.recentActivities') }}
-              </h2>
+                {{ stats.coursesInProgress }}
+              </div>
+              <div
+                class="text-caption"
+                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+              >
+                {{ t('home.stats.coursesInProgress') }}
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
 
-              <div class="activity-timeline">
-                <div
-                  v-for="(activity, index) in recentActivities"
-                  :key="activity.id"
-                  class="activity-item d-flex ga-3 mb-4"
-                  :class="{ 'last-item': index === recentActivities.length - 1 }"
-                >
-                  <v-avatar :color="activity.iconColor" size="24" class="activity-dot">
-                    <v-icon :icon="activity.icon" size="12" color="white"></v-icon>
+      <v-col cols="6" md="3">
+        <v-card rounded="lg" border>
+          <v-card-text class="d-flex align-center ga-4">
+            <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="48" rounded="lg">
+              <v-icon icon="mdi-check-circle" color="success" size="24"></v-icon>
+            </v-avatar>
+            <div>
+              <div
+                class="text-h5 font-weight-bold"
+                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+              >
+                {{ stats.completedCourses }}
+              </div>
+              <div
+                class="text-caption"
+                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+              >
+                {{ t('home.stats.completedCourses') }}
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col cols="6" md="3">
+        <v-card rounded="lg" border>
+          <v-card-text class="d-flex align-center ga-4">
+            <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="48" rounded="lg">
+              <v-icon icon="mdi-briefcase-variant" color="warning" size="24"></v-icon>
+            </v-avatar>
+            <div>
+              <div
+                class="text-h5 font-weight-bold"
+                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+              >
+                {{ stats.careersInProgress }}
+              </div>
+              <div
+                class="text-caption"
+                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+              >
+                {{ t('home.stats.careersInProgress') }}
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col cols="6" md="3">
+        <v-card rounded="lg" border>
+          <v-card-text class="d-flex align-center ga-4">
+            <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="48" rounded="lg">
+              <v-icon icon="mdi-calendar-check" color="secondary" size="24"></v-icon>
+            </v-avatar>
+            <div>
+              <div
+                class="text-h5 font-weight-bold"
+                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+              >
+                {{ stats.learningDays }}
+              </div>
+              <div
+                class="text-caption"
+                :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+              >
+                {{ t('home.stats.learningDays') }}
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- 主要内容区 -->
+    <v-row>
+      <!-- 左列 -->
+      <v-col cols="12" md="6">
+        <!-- 正在学习的课程 -->
+        <v-card class="mb-5" rounded="lg" border>
+          <v-card-text>
+            <div class="d-flex align-center justify-space-between mb-4">
+              <h2
+                class="text-h6 font-weight-bold"
+                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+              >
+                {{ t('home.learningCourses') }}
+              </h2>
+              <v-btn
+                variant="text"
+                size="small"
+                :color="'on-surface'"
+                @click="navigateTo('/my-courses')"
+              >
+                {{ t('home.viewAll') }}
+                <v-icon icon="mdi-arrow-right" size="16" class="ml-1"></v-icon>
+              </v-btn>
+            </div>
+
+            <v-card
+              v-for="course in recentCourses"
+              :key="course.id"
+              class="mb-3"
+              rounded="lg"
+              border
+              hover
+              @click="openCourse(course.courseId)"
+            >
+              <v-card-text>
+                <div class="d-flex align-center ga-3 mb-3">
+                  <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="40" rounded="lg">
+                    <v-icon :icon="course.icon" :color="course.iconColor" size="20"></v-icon>
                   </v-avatar>
                   <div class="flex-grow-1">
                     <div
-                      class="text-body-2 mb-1"
+                      class="text-body-1 font-weight-bold mb-1"
                       :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
                     >
-                      {{ activity.title }}
+                      {{ course.name }}
                     </div>
                     <div
                       class="text-caption"
                       :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
                     >
-                      {{ activity.time }}
+                      {{ t('home.progress') }}: {{ course.progress }}%
                     </div>
                   </div>
                 </div>
+                <v-progress-linear
+                  :model-value="course.progress"
+                  :color="'outline'"
+                  height="5"
+                  rounded
+                ></v-progress-linear>
+              </v-card-text>
+            </v-card>
+          </v-card-text>
+        </v-card>
+
+        <!-- 正在学习的职业 -->
+        <v-card rounded="lg" border>
+          <v-card-text>
+            <div class="d-flex align-center justify-space-between mb-4">
+              <h2
+                class="text-h6 font-weight-bold"
+                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+              >
+                {{ t('home.learningCareers') }}
+              </h2>
+              <v-btn
+                variant="text"
+                size="small"
+                :color="'on-surface'"
+                @click="navigateTo('/my-careers')"
+              >
+                {{ t('home.viewAll') }}
+                <v-icon icon="mdi-arrow-right" size="16" class="ml-1"></v-icon>
+              </v-btn>
+            </div>
+
+            <v-card
+              v-for="career in recentCareers"
+              :key="career.id"
+              class="mb-3"
+              rounded="lg"
+              border
+              hover
+              @click="openCareer(career.careerId)"
+            >
+              <v-card-text>
+                <div class="d-flex align-center ga-3 mb-3">
+                  <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="40" rounded="lg">
+                    <v-icon :icon="career.icon" :color="career.iconColor" size="20"></v-icon>
+                  </v-avatar>
+                  <div class="flex-grow-1">
+                    <div
+                      class="text-body-1 font-weight-bold mb-1"
+                      :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                    >
+                      {{ career.name }}
+                    </div>
+                    <div
+                      class="text-caption"
+                      :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+                    >
+                      {{ t('home.progress') }}: {{ career.progress }}%
+                    </div>
+                  </div>
+                </div>
+                <v-progress-linear
+                  :model-value="career.progress"
+                  :color="'outline'"
+                  height="5"
+                  rounded
+                ></v-progress-linear>
+              </v-card-text>
+            </v-card>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- 右列 -->
+      <v-col cols="12" md="6">
+        <!-- 推荐课程 -->
+        <v-card class="mb-5" rounded="lg" border>
+          <v-card-text>
+            <div class="d-flex align-center justify-space-between mb-4">
+              <h2
+                class="text-h6 font-weight-bold"
+                :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+              >
+                {{ t('home.recommendedCourses') }}
+              </h2>
+              <v-btn
+                variant="text"
+                size="small"
+                :color="'on-surface'"
+                @click="navigateTo('/learning')"
+              >
+                {{ t('home.more') }}
+                <v-icon icon="mdi-arrow-right" size="16" class="ml-1"></v-icon>
+              </v-btn>
+            </div>
+
+            <div
+              v-for="course in recommendedCourses"
+              :key="course.id"
+              class="recommend-item d-flex align-center ga-3 pa-3 mb-2 rounded-lg"
+            >
+              <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="40" rounded="lg">
+                <v-icon :icon="course.icon" :color="course.iconColor" size="18"></v-icon>
+              </v-avatar>
+              <div class="flex-grow-1">
+                <div
+                  class="text-body-2 font-weight-medium mb-1"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                >
+                  {{ course.name }}
+                </div>
+                <div
+                  class="text-caption d-flex align-center"
+                  :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+                >
+                  <v-icon icon="mdi-account-multiple" size="12" class="mr-1"></v-icon>
+                  {{ course.learnerCount.toLocaleString() }} {{ t('home.learners') }}
+                </div>
               </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+              <v-btn
+                icon="mdi-plus"
+                size="small"
+                variant="outlined"
+                @click="addRecommendedCourse(course.courseId)"
+              ></v-btn>
+            </div>
+          </v-card-text>
+        </v-card>
+
+        <!-- 最近活动 -->
+        <v-card rounded="lg" border>
+          <v-card-text>
+            <h2
+              class="text-h6 font-weight-bold mb-4"
+              :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+            >
+              {{ t('home.recentActivities') }}
+            </h2>
+
+            <div class="activity-timeline">
+              <div
+                v-for="(activity, index) in recentActivities"
+                :key="activity.id"
+                class="activity-item d-flex ga-3 mb-4"
+                :class="{ 'last-item': index === recentActivities.length - 1 }"
+              >
+                <v-avatar :color="activity.iconColor" size="24" class="activity-dot">
+                  <v-icon :icon="activity.icon" size="12" color="white"></v-icon>
+                </v-avatar>
+                <div class="flex-grow-1">
+                  <div
+                    class="text-body-2 mb-1"
+                    :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
+                  >
+                    {{ activity.title }}
+                  </div>
+                  <div
+                    class="text-caption"
+                    :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
+                  >
+                    {{ activity.time }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
   </DefaultLayout>
 </template>
 

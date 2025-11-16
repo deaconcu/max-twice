@@ -101,7 +101,11 @@
           <div v-if="selectedMainCategory || selectedSubCategory || searchText" class="mb-4 mt-10">
             <div class="d-flex align-center justify-space-between">
               <div class="d-flex align-center">
-                <v-icon icon="mdi-format-list-bulleted" size="20" class="mr-2 text-grey-darken-2"></v-icon>
+                <v-icon
+                  icon="mdi-format-list-bulleted"
+                  size="20"
+                  class="mr-2 text-grey-darken-2"
+                ></v-icon>
                 <h2 class="text-h6 font-weight-regular text-grey-darken-4">
                   <span v-if="searchText">搜索结果</span>
                   <span v-else-if="selectedSubCategory">
@@ -111,9 +115,7 @@
                   <span v-else>{{ getCategoryName(selectedMainCategory) }}</span>
                 </h2>
               </div>
-              <p class="text-body-2 text-grey-darken-2">
-                共 {{ filteredCourses.length }} 门课程
-              </p>
+              <p class="text-body-2 text-grey-darken-2">共 {{ filteredCourses.length }} 门课程</p>
             </div>
           </div>
 
@@ -172,25 +174,25 @@
               </div>
             </v-card-title>
             <v-card-text class="px-0 popular-list pb-4">
-            <div
-              v-for="(course, index) in popularCourses"
-              :key="course.id"
-              class="popular-item rounded-lg"
-              @click="goToCourseDetail(course)"
-            >
-              <div class="rank-badge" :class="index < 3 ? 'rank-top' : ''">
-                {{ index + 1 }}
-              </div>
-              <div class="flex-grow-1">
-                <div class="popular-name">{{ course.name }}</div>
-                <div class="popular-count">
-                  <v-icon icon="mdi-account-group" size="12" color="grey" />
-                  {{ formatNumber(course.learnerCount) }}
+              <div
+                v-for="(course, index) in popularCourses"
+                :key="course.id"
+                class="popular-item rounded-lg"
+                @click="goToCourseDetail(course)"
+              >
+                <div class="rank-badge" :class="index < 3 ? 'rank-top' : ''">
+                  {{ index + 1 }}
+                </div>
+                <div class="flex-grow-1">
+                  <div class="popular-name">{{ course.name }}</div>
+                  <div class="popular-count">
+                    <v-icon icon="mdi-account-group" size="12" color="grey" />
+                    {{ formatNumber(course.learnerCount) }}
+                  </div>
                 </div>
               </div>
-            </div>
-          </v-card-text>
-        </v-card>
+            </v-card-text>
+          </v-card>
         </div>
       </v-col>
     </v-row>

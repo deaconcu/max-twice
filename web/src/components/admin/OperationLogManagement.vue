@@ -20,14 +20,14 @@ const filters = reactive<Omit<OperationLogQueryRequest, 'lastId' | 'limit'>>({
   targetType: '',
   operationLevel: undefined,
   startTime: '',
-  endTime: ''
+  endTime: '',
 })
 
 // 操作级别选项
 const operationLevels = [
   { text: '低', value: OperationLevel.LOW },
   { text: '中', value: OperationLevel.MEDIUM },
-  { text: '高', value: OperationLevel.HIGH }
+  { text: '高', value: OperationLevel.HIGH },
 ]
 
 // 使用 useInfiniteScroll 管理分页数据
@@ -36,13 +36,13 @@ const {
   loading,
   hasMore,
   loadMore: loadMoreLogs,
-  reset: resetLogs
+  reset: resetLogs,
 } = useInfiniteScroll<OperationLogDTO>({
   fetchFn: async (params) => {
     const query: OperationLogQueryRequest = {
       ...filters,
       ...params,
-      limit: 20
+      limit: 20,
     }
 
     // 清空空字符串值
@@ -60,7 +60,7 @@ const {
         data: response.data.items || [],
         message: '',
         hasMore: response.data.hasMore,
-        nextLastId: response.data.nextLastId
+        nextLastId: response.data.nextLastId,
       }
     }
 
@@ -68,15 +68,15 @@ const {
   },
   getNextParams: (lastItem, currentParams) => ({
     ...currentParams,
-    lastId: lastItem.id
+    lastId: lastItem.id,
   }),
   initialParams: {
-    lastId: undefined
+    lastId: undefined,
   },
   onError: (error) => {
     console.error('获取操作日志失败:', error)
     showSnackbar?.(`获取操作日志失败: ${error.message}`, 'error')
-  }
+  },
 })
 
 /**
@@ -137,14 +137,14 @@ const formatDateTime = (dateTime: string): string => {
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit'
+    second: '2-digit',
   })
 }
 
 /**
  * 获取操作日志（用于查询按钮）
  */
-const fetchLogs = async (reset: boolean = false): Promise<void> => {
+const fetchLogs = async (reset = false): Promise<void> => {
   if (reset) {
     resetLogs()
   }
@@ -154,7 +154,11 @@ const fetchLogs = async (reset: boolean = false): Promise<void> => {
 /**
  * 加载更多数据（v-infinite-scroll 回调）
  */
-const loadMore = async ({ done }: { done: (status: 'ok' | 'empty' | 'error') => void }): Promise<void> => {
+const loadMore = async ({
+  done,
+}: {
+  done: (status: 'ok' | 'empty' | 'error') => void
+}): Promise<void> => {
   try {
     await loadMoreLogs({ done: () => {} } as any)
     done(hasMore.value ? 'ok' : 'empty')
@@ -248,8 +252,8 @@ fetchLogs(true)
               color="primary"
               rounded="lg"
               :loading="loading"
-              @click="fetchLogs(true)"
               block
+              @click="fetchLogs(true)"
             >
               <v-icon icon="mdi-magnify" size="16" class="mr-2"></v-icon>
               查询
@@ -301,13 +305,18 @@ fetchLogs(true)
 
     <!-- 操作日志列表 -->
     <div v-if="logs.length === 0 && !loading" class="text-center py-12">
-      <v-icon icon="mdi-clipboard-text-outline" size="64" color="grey-lighten-1" class="mb-4"></v-icon>
+      <v-icon
+        icon="mdi-clipboard-text-outline"
+        size="64"
+        color="grey-lighten-1"
+        class="mb-4"
+      ></v-icon>
       <p class="text-h6 text-grey-darken-1 mb-2">暂无操作日志</p>
       <p class="text-body-2 text-grey">请调整筛选条件后重新查询</p>
     </div>
 
     <!-- 日志列表 - 使用 v-infinite-scroll -->
-    <v-infinite-scroll v-else :items="logs" :onLoad="loadMore" class="logs-infinite-scroll">
+    <v-infinite-scroll v-else :items="logs" :on-load="loadMore" class="logs-infinite-scroll">
       <template v-for="log in logs" :key="log.id">
         <div class="log-item">
           <div class="d-flex align-start justify-space-between">
@@ -454,13 +463,17 @@ fetchLogs(true)
 
             <v-list-item>
               <v-list-item-title class="font-weight-bold">操作时间</v-list-item-title>
-              <v-list-item-subtitle>{{ formatDateTime(selectedLog.createdAt) }}</v-list-item-subtitle>
+              <v-list-item-subtitle>{{
+                formatDateTime(selectedLog.createdAt)
+              }}</v-list-item-subtitle>
             </v-list-item>
 
             <v-list-item v-if="selectedLog.extraData">
               <v-list-item-title class="font-weight-bold">额外数据</v-list-item-title>
               <v-list-item-subtitle>
-                <pre class="text-caption mt-2">{{ JSON.stringify(selectedLog.extraData, null, 2) }}</pre>
+                <pre class="text-caption mt-2">{{
+                  JSON.stringify(selectedLog.extraData, null, 2)
+                }}</pre>
               </v-list-item-subtitle>
             </v-list-item>
           </v-list>

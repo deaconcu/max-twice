@@ -19,7 +19,7 @@ import type {
  * 获取记忆库课程列表
  */
 export function getMemoryBankCourses(): Promise<ApiResponse<CourseMemoryBank[]>> {
-  return client.get('/api/memory/courses')
+  return client.get('/v1/memory/memory-bank/courses')
 }
 
 /**
@@ -43,10 +43,10 @@ export function createDeck(data: {
   sourcePostId: number
   title: string
   description?: string
-  cards: Array<{
+  cards: {
     front: string
     back: string
-  }>
+  }[]
 }): Promise<ApiResponse<MemoryCardDeck>> {
   return client.post('/v1/memory/decks', data)
 }
@@ -57,14 +57,14 @@ export function createDeck(data: {
 export function getReviewQueue(
   params: GetReviewQueueParams
 ): Promise<ApiResponse<MemoryCardView[]>> {
-  return client.get('/api/memory/review-queue', { params })
+  return client.get('/v1/memory/review/queue', { params })
 }
 
 /**
  * 获取卡片列表(所有卡片)
  */
 export function getCardList(params: GetCardListParams): Promise<ApiResponse<MemoryCardView[]>> {
-  return client.get('/api/memory/cards', { params })
+  return client.get('/v1/memory/review/cards', { params })
 }
 
 /**
@@ -75,49 +75,49 @@ export function reviewCard(params: {
   result: ReviewResult
   timeSpent: number
 }): Promise<ApiResponse<void>> {
-  return client.post('/api/memory/review', params)
+  return client.post('/v1/memory/review/submit', params)
 }
 
 /**
  * 获取复习统计
  */
 export function getReviewStats(): Promise<ApiResponse<ReviewStats>> {
-  return client.get('/api/memory/stats')
+  return client.get('/v1/memory/review/stats')
 }
 
 /**
  * 获取卡片组更新差异
  */
 export function getDeckDiff(deckId: number): Promise<ApiResponse<DeckUpdateDiff>> {
-  return client.get(`/api/memory/decks/${String(deckId)}/diff`)
+  return client.get(`/v1/memory/decks/${String(deckId)}/diff`)
 }
 
 /**
  * 获取卡片内容差异
  */
 export function getCardDiff(cardId: number): Promise<ApiResponse<CardContentDiff>> {
-  return client.get(`/api/memory/cards/${String(cardId)}/diff`)
+  return client.get(`/v1/memory/cards/${String(cardId)}/diff`)
 }
 
 /**
  * 接受卡片组更新
  */
 export function acceptDeckChanges(deckId: number, cardIds: number[]): Promise<ApiResponse<void>> {
-  return client.post(`/api/memory/decks/${String(deckId)}/accept`, { cardIds })
+  return client.post(`/v1/memory/decks/${String(deckId)}/accept-changes`, { cardIds })
 }
 
 /**
  * 删除卡片
  */
 export function deleteCards(cardIds: number[]): Promise<ApiResponse<void>> {
-  return client.post('/api/memory/cards/delete', { cardIds })
+  return client.post('/v1/memory/cards/delete', { cardIds })
 }
 
 /**
  * 重置卡片学习进度
  */
 export function resetCardProgress(cardIds: number[]): Promise<ApiResponse<void>> {
-  return client.post('/api/memory/cards/reset', { cardIds })
+  return client.post('/v1/memory/cards/reset', { cardIds })
 }
 
 /**
@@ -128,14 +128,14 @@ export function updateCourseMemorySetting(params: {
   status?: string
   frequencySetting?: string
 }): Promise<ApiResponse<void>> {
-  return client.put(`/api/memory/courses/${String(params.courseId)}/settings`, params)
+  return client.put(`/v1/memory/memory-bank/courses/${String(params.courseId)}/settings`, params)
 }
 
 /**
  * 移除课程记忆库
  */
 export function removeCourseMemoryBank(courseId: number): Promise<ApiResponse<void>> {
-  return client.delete(`/api/memory/courses/${String(courseId)}`)
+  return client.delete(`/v1/memory/memory-bank/courses/${String(courseId)}`)
 }
 
 /**

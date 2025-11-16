@@ -7,9 +7,7 @@
           <div class="mb-3">
             <h4 class="text-body-1 font-weight-bold">学习的职业</h4>
           </div>
-          <p class="text-body-2 text-grey-darken-2 mb-3">
-            查看您正在学习的职业路径和完成进度。
-          </p>
+          <p class="text-body-2 text-grey-darken-2 mb-3">查看您正在学习的职业路径和完成进度。</p>
           <v-divider class="my-3" />
           <div class="text-caption text-grey">
             <div class="mb-2">
