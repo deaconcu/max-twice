@@ -1,12 +1,6 @@
 <template>
   <DefaultLayout>
     <div class="career-detail-page">
-      <!-- 返回按钮 -->
-      <v-btn variant="text" color="grey-darken-2" class="mb-4" @click="handleBack">
-        <v-icon icon="mdi-arrow-left" class="mr-1" />
-        返回
-      </v-btn>
-
       <!-- 加载状态 -->
       <div v-if="loading" class="text-center py-12">
         <v-progress-circular indeterminate color="primary" size="64" />
@@ -21,38 +15,52 @@
       <!-- 内容区 -->
       <div v-else-if="career" class="content-wrapper">
         <!-- 职业信息头部 -->
-        <div class="profession-header mt-4 mb-8 pa-0">
+        <div class="profession-header mb-8 pa-0">
           <div class="d-flex align-center">
-            <!-- 职业图标 -->
-            <v-avatar color="primary" size="80" class="mr-5">
-              <v-icon :icon="getCareerIcon()" color="white" size="40" />
-            </v-avatar>
-
             <!-- 职业信息 -->
             <div class="flex-grow-1">
-              <h1 class="text-h4 font-weight-bold text-grey-darken-4 mb-2">
-                {{ career.name }}
-              </h1>
-              <p class="text-body-2 text-grey-darken-2 mb-3">
-                {{ career.description }}
-              </p>
-              <div class="d-flex align-center gap-4">
-                <div class="d-flex align-center">
-                  <v-icon icon="mdi-map-marker-path" size="18" color="primary" class="mr-1" />
-                  <span class="text-body-2 text-grey-darken-1">
-                    <span class="font-weight-bold text-grey-darken-4">{{ roadmapsCount }}</span>
-                    条学习路径
-                  </span>
-                </div>
-                <div class="d-flex align-center">
-                  <v-icon icon="mdi-account-group" size="18" color="success" class="mr-1" />
-                  <span class="text-body-2 text-grey-darken-1">
-                    <span class="font-weight-bold text-grey-darken-4">{{
-                      formatNumber(career.learnerCount)
-                    }}</span>
-                    人学习
-                  </span>
-                </div>
+              <div class="d-flex align-center mb-5 career-title-row">
+                <!-- 返回按钮 -->
+                <v-btn
+                  icon="mdi-arrow-left"
+                  variant="flat"
+                  color="grey-lighten-4"
+                  size="small"
+                  class="back-button mr-4"
+                  @click="handleBack"
+                ></v-btn>
+
+                <!-- 职业图标 -->
+                <v-avatar color="primary" size="48" class="mr-3">
+                  <v-icon :icon="getCareerIcon()" color="white" size="24" />
+                </v-avatar>
+                <h1 class="text-h4 font-weight-bold text-grey-darken-4">
+                  {{ career.name }}
+                </h1>
+              </div>
+              <!-- 简介和统计信息需要左边距对齐 -->
+              <div style="margin-left: 0px;">
+                <p class="text-body-2 text-grey-darken-2 mb-3">
+                  {{ career.description }}
+                </p>
+                <div class="d-flex align-center gap-4">
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-map-marker-path" size="18" color="primary" class="mr-1" />
+                      <span class="text-body-2 text-grey-darken-1">
+                        <span class="font-weight-bold text-grey-darken-4">{{ roadmapsCount }}</span>
+                        条学习路径
+                      </span>
+                    </div>
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-account-group" size="18" color="success" class="mr-1" />
+                      <span class="text-body-2 text-grey-darken-1">
+                        <span class="font-weight-bold text-grey-darken-4">{{
+                          formatNumber(career.learnerCount)
+                        }}</span>
+                        人学习
+                      </span>
+                    </div>
+                  </div>
               </div>
             </div>
 
@@ -564,6 +572,13 @@ const handleCopy = (roadmap: { id: number }, event: Event): void => {
 <style scoped>
 .career-detail-page {
   /* 使用 DefaultLayout 的默认 padding */
+}
+
+/* 宽屏时向左延伸，让后退按钮露出到页面外 */
+@media (min-width: 1800px) {
+  .career-title-row {
+    margin-left: -56px;
+  }
 }
 
 .profession-header,

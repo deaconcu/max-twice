@@ -30,7 +30,7 @@
     </v-col>
 
     <!-- 右侧主内容 -->
-    <v-col cols="12" md="10">
+    <v-col cols="12" md="10" class="mt-8">
       <div class="pa-2">
         <!-- 头像 -->
         <v-row align="start" class="mb-4">

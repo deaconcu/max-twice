@@ -1,11 +1,29 @@
 <template>
   <DefaultLayout>
     <div class="roadmap-detail-page">
-      <!-- 返回按钮 -->
-      <v-btn variant="text" color="grey-darken-2" class="mb-4" @click="handleBack">
-        <v-icon icon="mdi-arrow-left" class="mr-1" />
-        返回
-      </v-btn>
+      <!-- 返回按钮和职业信息 -->
+      <div class="back-button-wrapper mb-0">
+        <div class="d-flex align-center">
+          <v-btn
+            icon="mdi-arrow-left"
+            variant="flat"
+            color="grey-lighten-4"
+            size="small"
+            class="back-button"
+            @click="handleBack"
+          ></v-btn>
+
+          <!-- 职业信息 -->
+          <div v-if="roadmap?.profession" class="d-flex align-center ml-4">
+            <v-avatar color="primary" size="40" class="mr-3">
+              <v-icon icon="mdi-briefcase-outline" color="white" size="20" />
+            </v-avatar>
+            <span class="text-h6 font-weight-bold text-grey-darken-4">
+              {{ roadmap.profession.name }}
+            </span>
+          </div>
+        </div>
+      </div>
 
       <!-- 加载状态 -->
       <v-row v-if="loading">
@@ -153,7 +171,7 @@
         </v-col>
 
         <!-- 右侧：评论区 -->
-        <v-col cols="12" lg="4" class="pa-0 pl-6">
+        <v-col cols="12" lg="4" class="pa-0 pl-12">
           <CommentSection
             :post-id="roadmapId"
             :object-type="ObjectType.ROADMAP"
@@ -384,6 +402,13 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
 <style scoped>
 .roadmap-detail-page {
   /* 使用 DefaultLayout 的默认 padding */
+}
+
+/* 宽屏时向左延伸，让后退按钮露出到页面外 */
+@media (min-width: 1800px) {
+  .back-button-wrapper {
+    margin-left: -56px;
+  }
 }
 
 .roadmap-info-card,

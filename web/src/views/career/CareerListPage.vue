@@ -302,6 +302,12 @@
   </DefaultLayout>
 </template>
 
+<script lang="ts">
+export default {
+  name: 'CareerListPage',
+}
+</script>
+
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'

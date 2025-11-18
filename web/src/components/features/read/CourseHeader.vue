@@ -48,7 +48,7 @@ const toggleSubscribe = () => {
           variant="flat"
           color="grey-lighten-4"
           size="small"
-          class="mr-2"
+          class="mr-4"
           @click="goBackToCourse"
         ></v-btn>
         <v-chip size="small" density="comfortable" color="grey-darken-1" variant="tonal"
@@ -110,7 +110,7 @@ const toggleSubscribe = () => {
 /* 宽屏时向左延伸，让后退按钮露出到页面外 */
 @media (min-width: 1800px) {
   .subcourse-info-section {
-    margin-left: -50px;
+    margin-left: -56px;
   }
 }
 

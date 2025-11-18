@@ -208,6 +208,12 @@
   </DefaultLayout>
 </template>
 
+<script lang="ts">
+export default {
+  name: 'CourseListPage',
+}
+</script>
+
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'

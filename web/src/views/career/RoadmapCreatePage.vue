@@ -1,15 +1,19 @@
 <template>
   <DefaultLayout>
     <div class="roadmap-create-page">
-      <!-- 返回按钮 -->
-      <v-btn variant="text" color="grey-darken-2" class="mb-4" @click="handleBack">
-        <v-icon icon="mdi-arrow-left" class="mr-1" />
-        返回
-      </v-btn>
-
       <!-- 页面标题 -->
       <div class="mb-6">
-        <div class="d-flex align-center">
+        <div class="d-flex align-center title-row">
+          <!-- 返回按钮 -->
+          <v-btn
+            icon="mdi-arrow-left"
+            variant="flat"
+            color="grey-lighten-4"
+            size="small"
+            class="back-button mr-4"
+            @click="handleBack"
+          ></v-btn>
+
           <v-avatar color="primary" size="48" class="mr-3">
             <v-icon icon="mdi-briefcase-outline" color="white" size="24" />
           </v-avatar>
@@ -444,6 +448,13 @@ onMounted(() => {
 <style scoped>
 .roadmap-create-page {
   /* 使用 DefaultLayout 的默认 padding */
+}
+
+/* 宽屏时向左延伸，让后退按钮露出到页面外 */
+@media (min-width: 1800px) {
+  .title-row {
+    margin-left: -56px;
+  }
 }
 
 .flow-editor-card,

@@ -1,12 +1,6 @@
 <template>
   <DefaultLayout>
     <div class="course-detail-page">
-      <!-- 返回按钮 -->
-      <v-btn variant="text" color="grey-darken-2" class="mb-4" @click="handleBack">
-        <v-icon icon="mdi-arrow-left" class="mr-1" />
-        {{ t('common.back') }}
-      </v-btn>
-
       <!-- 加载状态 -->
       <div v-if="loading" class="text-center py-12">
         <v-progress-circular indeterminate color="primary" size="64" />
@@ -22,81 +16,89 @@
       <div v-else-if="course" class="content-wrapper">
         <!-- 左侧内容 -->
         <div class="left-content">
-          <!-- 课程信息卡片 -->
-          <v-card
-            rounded="lg"
-            class="course-info-card mb-6"
-            border
-            hover
-            @click="handleStartReading"
-          >
-            <v-card-text class="pa-6">
-              <!-- 课程头部信息 -->
-              <div class="d-flex align-start mb-4">
-                <v-avatar color="grey-lighten-3" size="80" rounded="lg" class="mr-4">
-                  <v-icon icon="mdi-book-open-variant" color="grey-darken-1" size="40" />
+          <!-- 课程头部信息 -->
+          <div class="course-info-section mb-0">
+            <div class="flex-grow-1">
+              <!-- 标题行：返回按钮 + 图标 + 标题 + 操作按钮 -->
+              <div class="d-flex align-center justify-space-between mb-5 course-title-row">
+                <!-- 返回按钮 -->
+                <v-btn
+                  icon="mdi-arrow-left"
+                  variant="flat"
+                  color="grey-lighten-4"
+                  size="small"
+                  class="back-button mr-4"
+                  @click="handleBack"
+                ></v-btn>
+
+                <v-avatar color="grey-lighten-3" size="64" rounded="lg" class="mr-4">
+                  <v-icon icon="mdi-book-open-variant" color="grey-darken-1" size="32" />
                 </v-avatar>
-                <div class="flex-grow-1">
-                  <!-- 标题和按钮在同一行 -->
-                  <div class="d-flex align-center justify-space-between mb-2">
-                    <h1 class="text-h4 font-weight-bold">
-                      {{ course.name }}
-                    </h1>
-                    <!-- 操作按钮 -->
-                    <div class="d-flex align-center flex-shrink-0 ml-4" style="gap: 8px">
-                      <v-btn
-                        color="primary"
-                        variant="flat"
-                        size="default"
-                        rounded="lg"
-                        class="text-none"
-                        @click.stop="handleStartReading"
-                      >
-                        <v-icon size="18" class="mr-2">mdi-book-open-page-variant</v-icon>
-                        {{ t('course.startReading') }}
-                      </v-btn>
-                      <v-btn
-                        :color="course.subscribed ? 'error' : 'grey-darken-2'"
-                        :variant="course.subscribed ? 'flat' : 'outlined'"
-                        size="default"
-                        rounded="lg"
-                        class="text-none"
-                        :loading="subscribing"
-                        @click.stop="handleToggleSubscribe"
-                      >
-                        <v-icon size="18" class="mr-2">
-                          {{ course.subscribed ? 'mdi-heart' : 'mdi-heart-outline' }}
-                        </v-icon>
-                        {{ course.subscribed ? t('course.subscribed') : t('course.subscribe') }}
-                      </v-btn>
-                    </div>
+
+                <h1 class="text-h4 font-weight-bold flex-grow-1">
+                  {{ course.name }}
+                </h1>
+
+                <!-- 操作按钮 -->
+                <div class="d-flex align-center flex-shrink-0 ml-4" style="gap: 8px">
+                  <v-btn
+                    color="primary"
+                    variant="flat"
+                    size="default"
+                    rounded="lg"
+                    class="text-none"
+                    @click="handleStartReading"
+                  >
+                    <v-icon size="18" class="mr-2">mdi-book-open-page-variant</v-icon>
+                    {{ t('course.startReading') }}
+                  </v-btn>
+                  <v-btn
+                    :color="course.subscribed ? 'error' : 'grey-darken-2'"
+                    :variant="course.subscribed ? 'flat' : 'outlined'"
+                    size="default"
+                    rounded="lg"
+                    class="text-none"
+                    :loading="subscribing"
+                    @click="handleToggleSubscribe"
+                  >
+                    <v-icon size="18" class="mr-2">
+                      {{ course.subscribed ? 'mdi-heart' : 'mdi-heart-outline' }}
+                    </v-icon>
+                    {{ course.subscribed ? t('course.subscribed') : t('course.subscribe') }}
+                  </v-btn>
+                </div>
+              </div>
+
+              <!-- 简介和统计信息 -->
+              <div>
+                <p v-if="course.description" class="text-body-1 text-medium-emphasis mb-3">
+                  {{ course.description }}
+                </p>
+                <!-- 统计信息 -->
+                <div class="d-flex align-center flex-wrap" style="gap: 24px">
+                  <div class="d-flex align-center">
+                    <v-icon icon="mdi-book-multiple" size="20" color="primary" class="mr-2" />
+                    <span class="text-body-2 text-medium-emphasis">
+                      <span class="font-weight-bold">{{ subCourses?.length ?? 0 }}</span>
+                      {{ t('course.subCourses') }}
+                    </span>
                   </div>
-                  <p v-if="course.description" class="text-body-1 text-medium-emphasis mb-3">
-                    {{ course.description }}
-                  </p>
-                  <!-- 统计信息 -->
-                  <div class="d-flex align-center flex-wrap" style="gap: 24px">
-                    <div class="d-flex align-center">
-                      <v-icon icon="mdi-book-multiple" size="20" color="primary" class="mr-2" />
-                      <span class="text-body-2 text-medium-emphasis">
-                        <span class="font-weight-bold">{{ subCourses?.length ?? 0 }}</span>
-                        {{ t('course.subCourses') }}
-                      </span>
-                    </div>
-                    <div class="d-flex align-center">
-                      <v-icon icon="mdi-account-group" size="20" color="primary" class="mr-2" />
-                      <span class="text-body-2 text-medium-emphasis">
-                        <span class="font-weight-bold">{{
-                          formatNumber(course.learnerCount)
-                        }}</span>
-                        {{ t('course.learning') }}
-                      </span>
-                    </div>
+                  <div class="d-flex align-center">
+                    <v-icon icon="mdi-account-group" size="20" color="primary" class="mr-2" />
+                    <span class="text-body-2 text-medium-emphasis">
+                      <span class="font-weight-bold">{{
+                        formatNumber(course.learnerCount)
+                      }}</span>
+                      {{ t('course.learning') }}
+                    </span>
                   </div>
                 </div>
               </div>
-            </v-card-text>
-          </v-card>
+            </div>
+          </div>
+
+          <!-- 分割线 -->
+          <v-divider class="my-12" />
 
           <!-- 子课程列表 -->
           <div class="sub-courses-section">
@@ -567,8 +569,15 @@ const handleConfirmCreateDefaultSubCourse = async () => {
 
 <style scoped>
 .course-detail-page {
-  padding-top: 24px;
+  padding-top: 12px;
   padding-bottom: 48px;
+}
+
+/* 宽屏时向左延伸，让后退按钮露出到页面外 */
+@media (min-width: 1800px) {
+  .course-title-row {
+    margin-left: -56px;
+  }
 }
 
 /* 使用flex布局实现左右结构 */
@@ -590,7 +599,6 @@ const handleConfirmCreateDefaultSubCourse = async () => {
 
 .course-info-card {
   background-color: rgb(var(--v-theme-surface));
-  border: 1px solid rgb(var(--v-theme-border));
   cursor: pointer;
   transition: all 0.3s ease;
 }

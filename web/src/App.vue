@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <router-view v-slot="{ Component }">
-      <keep-alive :include="['ProfilePage', 'ReadPageRouter']">
+      <keep-alive :include="cachedComponents">
         <component :is="Component" />
       </keep-alive>
     </router-view>
@@ -29,6 +29,7 @@
 import { provide, ref, onMounted } from 'vue'
 import type { Ref } from 'vue'
 import { setGlobalSnackbar } from '@/composables/utils'
+import { useRouter } from 'vue-router'
 
 interface Snackbar {
   text: string
@@ -37,6 +38,72 @@ interface Snackbar {
 }
 
 const snackbars: Ref<Snackbar[]> = ref([])
+const router = useRouter()
+
+// Keep-alive 缓存管理
+const CACHE_TIMEOUT = 12 * 60 * 60 * 1000 // 12小时（毫秒）
+const cachedComponents = ref<string[]>(['ProfilePage', 'ReadPageRouter', 'CareerListPage', 'CourseListPage'])
+const cacheTimestamps = new Map<string, number>()
+
+// 监听路由变化，更新缓存时间戳
+router.afterEach((to) => {
+  const componentName = to.matched[0]?.components?.default?.name
+  if (componentName && cachedComponents.value.includes(componentName)) {
+    cacheTimestamps.set(componentName, Date.now())
+  }
+})
+
+// 定期检查并清理过期缓存（每5分钟检查一次）
+const checkExpiredCache = () => {
+  const now = Date.now()
+  const expiredComponents: string[] = []
+
+  cacheTimestamps.forEach((timestamp, componentName) => {
+    if (now - timestamp > CACHE_TIMEOUT) {
+      expiredComponents.push(componentName)
+    }
+  })
+
+  if (expiredComponents.length > 0) {
+    // 从缓存列表中移除过期组件
+    cachedComponents.value = cachedComponents.value.filter(
+      name => !expiredComponents.includes(name)
+    )
+    // 清理时间戳记录
+    expiredComponents.forEach(name => cacheTimestamps.delete(name))
+
+    console.log(`[Keep-alive] 清理过期缓存: ${expiredComponents.join(', ')}`)
+
+    // 下次访问时重新添加到缓存
+    setTimeout(() => {
+      expiredComponents.forEach(name => {
+        if (!cachedComponents.value.includes(name)) {
+          cachedComponents.value.push(name)
+        }
+      })
+    }, 100)
+  }
+}
+
+// 启动定期检查
+let cleanupInterval: number | null = null
+onMounted(() => {
+  cleanupInterval = window.setInterval(checkExpiredCache, 5 * 60 * 1000) // 每5分钟检查
+
+  // 初始化所有组件的时间戳
+  cachedComponents.value.forEach(name => {
+    cacheTimestamps.set(name, Date.now())
+  })
+})
+
+// 清理定时器
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    if (cleanupInterval) {
+      clearInterval(cleanupInterval)
+    }
+  })
+}
 
 /**
  * 显示 Snackbar 提示
