@@ -35,11 +35,10 @@
         </div>
 
         <!-- 路线图列表 -->
-        <div v-if="roadmaps.length > 0">
-          <v-row>
-            <v-col v-for="roadmap in roadmaps" :key="roadmap.id" cols="12">
-              <v-card border rounded="lg" hover class="hoverable">
-                <v-card-text class="pa-4">
+        <v-infinite-scroll v-if="roadmaps.length > 0" :items="roadmaps" @load="onLoadMore">
+          <template v-for="(roadmap, index) in roadmaps" :key="roadmap.id">
+            <v-card border rounded="lg" hover class="hoverable mb-6" @click="goToRoadmap(roadmap.id)">
+              <v-card-text class="pa-4">
                   <div class="d-flex" style="gap: 16px">
                     <!-- 左侧内容区 -->
                     <div class="flex-grow-1">
@@ -129,9 +128,8 @@
                   </div>
                 </v-card-text>
               </v-card>
-            </v-col>
-          </v-row>
-        </div>
+            </template>
+          </v-infinite-scroll>
 
         <!-- 空状态 -->
         <div v-else class="text-center py-12">
@@ -145,24 +143,51 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useFetch } from '@/composables/useFetch'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
 import { userApi } from '@/api'
 
 const router = useRouter()
 
-// 获取用户创建的路线图
+// 使用无限滚动加载路线图
 const {
-  data: roadmapsData,
+  items: roadmapsData,
   loading,
-  execute: fetchRoadmaps,
-} = useFetch({
-  fetchFn: userApi.getCurrentUserRoadmaps,
-  immediate: true,
-  defaultValue: [],
+  hasMore,
+  loadMore: loadMoreRoadmaps,
+} = useInfiniteScroll({
+  fetchFn: async (params) => {
+    const response = await userApi.getCurrentUserRoadmaps(params.lastId)
+    return {
+      code: response.code,
+      data: response.data || [],
+      message: response.message || '',
+      hasMore: response.data && response.data.length > 0,
+    }
+  },
+  getNextParams: (lastItem) => ({
+    lastId: lastItem.id,
+  }),
+  initialParams: { lastId: undefined },
 })
+
+// 首次加载数据
+onMounted(() => {
+  if (roadmapsData.value.length === 0) {
+    loadMoreRoadmaps({ done: () => {} })
+  }
+})
+
+// 加载更多
+const onLoadMore = async ({ done }: { done: (status: string) => void }) => {
+  await loadMoreRoadmaps({
+    done: () => {
+      done(hasMore.value ? 'ok' : 'empty')
+    }
+  })
+}
 
 // 删除路线图
 const { execute: deleteRoadmapAction } = useMutation(
@@ -170,14 +195,16 @@ const { execute: deleteRoadmapAction } = useMutation(
   {
     successMessage: '已删除该路线图',
     onSuccess: () => {
-      fetchRoadmaps()
+      // 刷新列表
+      roadmapsData.value = []
+      loadMoreRoadmaps()
     },
   }
 )
 
 // 转换路线图数据
 const roadmaps = computed(() => {
-  if (!roadmapsData.value) return []
+  if (!roadmapsData || !roadmapsData.value || !Array.isArray(roadmapsData.value)) return []
 
   return roadmapsData.value.map((roadmap) => ({
     id: roadmap.id,

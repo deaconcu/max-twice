@@ -4,7 +4,7 @@
       <!-- 返回按钮 -->
       <v-btn variant="text" color="grey-darken-2" class="mb-4" @click="handleBack">
         <v-icon icon="mdi-arrow-left" class="mr-1" />
-        返回路径列表
+        返回
       </v-btn>
 
       <!-- 加载状态 -->
@@ -20,7 +20,7 @@
         <v-col cols="12" lg="8" class="pa-0">
           <!-- 路径信息卡片 -->
           <v-card rounded="xl" class="roadmap-info-card mb-4 no-border">
-            <v-card-text class="pa-6">
+            <v-card-text class="py-6 px-0">
               <!-- 标题和状态 -->
               <div class="d-flex align-center justify-space-between mb-4">
                 <div class="flex-grow-1">
@@ -127,7 +127,7 @@
 
           <!-- 流程图 -->
           <v-card border rounded="xl" class="flow-card">
-            <v-card-title class="pa-4 d-flex align-center justify-space-between">
+            <v-card-title class="pa-6 d-flex align-center justify-space-between">
               <span class="text-body-1">学习路线图</span>
             </v-card-title>
             <v-card-text class="pa-0">
@@ -186,8 +186,8 @@ const route = useRoute()
 
 // 从路由获取参数
 const careerId = computed(() => {
-  const id = route.params.careerId
-  return typeof id === 'string' ? parseInt(id, 10) : 0
+  // careerId 不再从路由获取，从 roadmap 数据中获取
+  return roadmap.value?.professionId || 0
 })
 const roadmapId = computed(() => {
   const id = route.params.id
@@ -337,9 +337,9 @@ const flowEdges = computed<Edge[]>(() => {
   return edges
 })
 
-// 返回列表
+// 返回上一页
 const handleBack = (): void => {
-  void router.push(`/career/${careerId.value}`)
+  router.back()
 }
 
 // 投票

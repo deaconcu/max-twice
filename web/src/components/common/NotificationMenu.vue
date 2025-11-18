@@ -481,12 +481,8 @@ const handleTouchMove = (event: TouchEvent) => {
 
 // 点击消息项
 const handleMessageClick = (message: Message) => {
-  console.log('点击的消息:', message)
-  console.log('消息类型:', message.type)
-
   try {
     const data = message.content ? JSON.parse(message.content) : {}
-    console.log('解析的内容:', data)
     const type = message.type
 
     // 构建跳转链接
@@ -598,7 +594,6 @@ const handleMessageClick = (message: Message) => {
     }
 
     // 如果有URL则跳转
-    console.log('跳转URL:', url)
     if (url) {
       router.push(url)
     }

@@ -24,11 +24,11 @@ export const courseRoutes: RouteRecordRaw[] = [
     },
   },
   {
-    path: '/courses/:id/read',
+    path: '/read',
     name: 'content-read',
-    component: () => import('@/views/course/ContentReadPage.vue'),
+    component: () => import('@/views/course/ReadPageRouter.vue'),
     meta: {
-      title: '课程阅读',
+      title: '内容阅读',
       requireAuth: true,
     },
   },

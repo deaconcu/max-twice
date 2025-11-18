@@ -29,7 +29,7 @@ export const careerRoutes: RouteRecordRaw[] = [
     },
   },
   {
-    path: '/roadmap/:careerId/detail/:id',
+    path: '/roadmap/:id',
     name: 'RoadmapDetail',
     component: () => import('@/views/career/RoadmapDetailPage.vue'),
     meta: {

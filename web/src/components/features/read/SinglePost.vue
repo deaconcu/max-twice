@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import renderMathInElement from 'katex/contrib/auto-render'
 import 'katex/dist/katex.min.css'
 import mermaid from 'mermaid'
@@ -16,6 +17,7 @@ interface Props {
   data?: any
   detail?: boolean
   isLearning?: boolean
+  showBackButton?: boolean
 }
 
 interface Emits {
@@ -26,9 +28,11 @@ interface Emits {
 const props = withDefaults(defineProps<Props>(), {
   detail: false,
   isLearning: false,
+  showBackButton: true,
 })
 
 const emit = defineEmits<Emits>()
+const router = useRouter()
 
 const isOverflow = ref(false)
 const contentRef = ref<HTMLElement | null>(null)
@@ -247,16 +251,33 @@ const handleUpvote = (type: string) => {
 
 // 查看评论
 const handleViewComments = () => {
-  emit('switch-tab', 'two', props.posting)
-  // 等待DOM更新后滚动到评论区
-  nextTick(() => {
-    setTimeout(() => {
-      const commentSection = document.querySelector('.comments-section')
-      if (commentSection) {
-        commentSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }
-    }, 100)
-  })
+  if (props.detail) {
+    // 详情页：滚动到评论区
+    nextTick(() => {
+      setTimeout(() => {
+        const commentSection = document.querySelector('.comments-section')
+        if (commentSection) {
+          commentSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 100)
+    })
+  } else {
+    // 列表页：跳转到详情页
+    router.push({
+      path: '/read',
+      query: { postId: String(props.posting.id) },
+    })
+  }
+}
+
+// 点击文章内容区域，跳转到详情页
+const handleClickContent = () => {
+  if (!props.detail && props.posting.id) {
+    router.push({
+      path: '/read',
+      query: { postId: String(props.posting.id) },
+    })
+  }
 }
 
 onMounted(() => {
@@ -277,7 +298,7 @@ watch(
     <!-- 作者信息 -->
     <v-row class="mx-0 my-2 py-1 d-flex align-center" :class="[detail ? 'sticky-top' : '']">
       <v-btn
-        v-if="detail"
+        v-if="detail && showBackButton"
         variant="flat"
         class="me-2"
         color="grey-lighten-4"
@@ -312,8 +333,7 @@ watch(
             >
               <router-link
                 :to="{
-                  name: 'content-read',
-                  params: { id: data.course?.id },
+                  path: '/read',
                   query: { nodeId: nodeInfo.id },
                 }"
                 target="_blank"
@@ -336,23 +356,34 @@ watch(
 
       <!-- 文章型 Post -->
       <template v-else>
-        <div ref="contentRef" :class="!detail ? 'text-limited' : ''" class="w-100">
-          <div class="article-content" :class="detail ? 'full-article' : ''">
+        <!-- 列表模式：使用 router-link 包裹，浏览器自动保存滚动位置 -->
+        <router-link
+          v-if="!detail && posting.id"
+          :to="{ path: '/read', query: { postId: String(posting.id) } }"
+          class="text-decoration-none d-block"
+        >
+          <div
+            ref="contentRef"
+            class="text-limited clickable-content cursor-pointer w-100"
+          >
+            <div class="article-content">
+              <div v-html="posting.content"></div>
+            </div>
+
+            <!-- 溢出提示（替代原来的"查看完整内容"按钮） -->
+            <div v-if="isOverflow" class="overflow-hint">
+              <v-icon icon="mdi-chevron-down" size="16" class="mr-1"></v-icon>
+              点击查看完整内容
+            </div>
+          </div>
+        </router-link>
+
+        <!-- 详情模式：普通div -->
+        <div v-else ref="contentRef" class="w-100">
+          <div class="article-content full-article">
             <div v-html="posting.content"></div>
           </div>
         </div>
-
-        <!-- 查看完整内容按钮 -->
-        <v-btn
-          v-if="isOverflow && !detail"
-          variant="text"
-          density="comfortable"
-          class="px-0 mt-3 text-body-2 text-primary"
-          @click="handleViewFullContent"
-        >
-          <v-icon icon="mdi-chevron-down" size="16" class="mr-1"></v-icon>
-          查看完整内容
-        </v-btn>
       </template>
     </v-row>
 
@@ -479,6 +510,34 @@ watch(
   position: relative;
   max-height: 800px;
   overflow: hidden;
+}
+
+/* 可点击内容区域 */
+.clickable-content {
+  transition: background-color 0.2s ease;
+  padding: 12px;
+  margin: -12px;
+  border-radius: 8px;
+}
+
+.clickable-content:hover {
+  background-color: #fafafa;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* 溢出提示 */
+.overflow-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+  color: rgb(var(--v-theme-primary));
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 8px;
 }
 
 .text-limited::after {

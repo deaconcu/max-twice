@@ -1,5 +1,11 @@
+<script lang="ts">
+export default {
+  name: 'ProfilePage',
+}
+</script>
+
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onActivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/modules/auth'
 import { useFetch } from '@/composables/useFetch'
@@ -23,6 +29,9 @@ const authStore = useAuthStore()
 // Tab 选择 - 支持路由参数
 const activeTab = ref((route.query.tab as string) || 'careers')
 
+// Tab 数据刷新时间记录（用于智能刷新）
+const tabRefreshKey = ref(0)
+
 // 使用 useFetch 获取用户信息
 const {
   data: currentUser,
@@ -31,6 +40,14 @@ const {
 } = useFetch({
   fetchFn: userApi.getCurrentUser,
   immediate: true,
+})
+
+// KeepAlive: 从其他页面返回时触发
+onActivated(() => {
+  console.log('ProfilePage activated')
+  // 可选：检查数据是否需要刷新
+  // 这里我们不做自动刷新，让各个Tab组件自己决定
+  // 如果需要自动刷新，可以在这里触发
 })
 
 // 计算用户信息
@@ -158,49 +175,51 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
         </v-col>
       </v-row>
 
-      <!-- Tab 导航 -->
-      <v-tabs v-model="activeTab" color="primary" class="mb-6 tabs-with-border" height="60">
-        <v-tab value="careers">
-          <v-icon icon="mdi-briefcase" size="18" class="mr-2" />
-          学习的职业
-        </v-tab>
-        <v-tab value="courses-learning">
-          <v-icon icon="mdi-school" size="18" class="mr-2" />
-          学习的课程
-        </v-tab>
-        <v-tab value="stats">
-          <v-icon icon="mdi-chart-line" size="18" class="mr-2" />
-          数据统计
-        </v-tab>
-        <v-tab value="courses">
-          <v-icon icon="mdi-book-multiple" size="18" class="mr-2" />
-          关注的课程
-        </v-tab>
-        <v-tab value="people">
-          <v-icon icon="mdi-account-multiple" size="18" class="mr-2" />
-          关注的人
-        </v-tab>
-        <v-tab value="catalogs">
-          <v-icon icon="mdi-folder-multiple" size="18" class="mr-2" />
-          创建的目录
-        </v-tab>
-        <v-tab value="articles">
-          <v-icon icon="mdi-file-document-multiple" size="18" class="mr-2" />
-          创建的文章
-        </v-tab>
-        <v-tab value="decks">
-          <v-icon icon="mdi-cards" size="18" class="mr-2" />
-          我的卡片组
-        </v-tab>
-        <v-tab value="roadmaps">
-          <v-icon icon="mdi-map-marker-path" size="18" class="mr-2" />
-          创建的路线图
-        </v-tab>
-        <v-tab value="info">
-          <v-icon icon="mdi-account-circle" size="18" class="mr-2" />
-          个人信息
-        </v-tab>
-      </v-tabs>
+      <!-- Tab 导航 - 固定在顶部 -->
+      <div class="tabs-sticky">
+        <v-tabs v-model="activeTab" color="primary" class="mb-6 tabs-with-border" height="60">
+          <v-tab value="careers">
+            <v-icon icon="mdi-briefcase" size="18" class="mr-2" />
+            学习的职业
+          </v-tab>
+          <v-tab value="courses-learning">
+            <v-icon icon="mdi-school" size="18" class="mr-2" />
+            学习的课程
+          </v-tab>
+          <v-tab value="stats">
+            <v-icon icon="mdi-chart-line" size="18" class="mr-2" />
+            数据统计
+          </v-tab>
+          <v-tab value="courses">
+            <v-icon icon="mdi-book-multiple" size="18" class="mr-2" />
+            关注的课程
+          </v-tab>
+          <v-tab value="people">
+            <v-icon icon="mdi-account-multiple" size="18" class="mr-2" />
+            关注的人
+          </v-tab>
+          <v-tab value="catalogs">
+            <v-icon icon="mdi-folder-multiple" size="18" class="mr-2" />
+            创建的目录
+          </v-tab>
+          <v-tab value="articles">
+            <v-icon icon="mdi-file-document-multiple" size="18" class="mr-2" />
+            创建的文章
+          </v-tab>
+          <v-tab value="decks">
+            <v-icon icon="mdi-cards" size="18" class="mr-2" />
+            我的卡片组
+          </v-tab>
+          <v-tab value="roadmaps">
+            <v-icon icon="mdi-map-marker-path" size="18" class="mr-2" />
+            创建的路线图
+          </v-tab>
+          <v-tab value="info">
+            <v-icon icon="mdi-account-circle" size="18" class="mr-2" />
+            个人信息
+          </v-tab>
+        </v-tabs>
+      </div>
 
       <!-- Tab 内容 -->
       <v-window v-model="activeTab">
@@ -264,6 +283,18 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
   margin: 0 auto;
 }
 
+/* Tab 固定在顶部 */
+.tabs-sticky {
+  position: sticky;
+  top: 56px;
+  background-color: white;
+  z-index: 100;
+  margin-left: -24px;
+  margin-right: -24px;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
 /* Tab 标签字体颜色调整 */
 :deep(.v-tab) {
   color: rgba(0, 0, 0, 0.5) !important;
@@ -287,6 +318,10 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
 @media (max-width: 960px) {
   .profile-container {
     /* 使用 DefaultLayout 的默认 padding */
+  }
+
+  .tabs-sticky {
+    top: 56px;
   }
 }
 </style>

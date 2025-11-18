@@ -81,9 +81,8 @@ const scrollToTop = (): void => {
         >
           <router-link
             :to="{
-              name: 'content-read',
-              params: { id: courseId },
-              query: { path: calculatePath(currPath, key as string) },
+              path: '/read',
+              query: { courseId: String(courseId), path: calculatePath(currPath, key as string) },
             }"
             class="custom-link"
             @click="scrollToTop"

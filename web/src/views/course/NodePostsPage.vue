@@ -1,7 +1,7 @@
 <template>
   <DefaultLayout>
     <div class="read-page">
-      <!-- 课程头部 - 固定在顶部 -->
+      <!-- 课程头部 -->
       <div class="course-header-sticky">
         <CourseHeader
           v-if="data"
@@ -9,83 +9,11 @@
           :current-course="data.course"
           :sub-course-list="data.subCourseList"
           :is-main-course="isMainCourse"
-          :is-learning="isLearning"
-          @start-learning="isLearning = $event"
+          :is-learning="false"
         />
       </div>
 
       <div class="read-content">
-        <!-- 左侧目录 -->
-        <div class="toc-sidebar">
-          <div class="toc-sticky-wrapper">
-            <!-- 目录组选择卡片 -->
-            <div v-if="data && data.toc" class="toc-groups-card">
-              <div class="toc-chips">
-                <v-chip
-                  size="default"
-                  rounded="lg"
-                  label
-                  variant="tonal"
-                  color=""
-                  class="me-0 px-3"
-                  style="font-weight: 600"
-                >
-                  目录
-                </v-chip>
-                <div
-                  v-for="(item, index) in data.toc"
-                  :key="index"
-                  class="position-relative d-inline-block"
-                >
-                  <v-chip
-                    label
-                    rounded="lg"
-                    size="default"
-                    variant="flat"
-                    :color="currContentsIndex === index ? 'grey-darken-1' : 'grey-lighten-3'"
-                    @click="currContentsIndex = index"
-                  >
-                    {{ index + 1 }}
-                  </v-chip>
-                  <div v-if="index === 0" class="corner-badge">
-                    <v-icon icon="mdi-chart-line-variant" size="8" color="white" />
-                  </div>
-                </div>
-                <v-btn
-                  icon
-                  size="small"
-                  variant="text"
-                  class="config-btn ms-auto"
-                  @click="configContents = true"
-                >
-                  <v-icon size="20">mdi-cog-outline</v-icon>
-                </v-btn>
-              </div>
-            </div>
-
-            <!-- 目录树 -->
-            <div class="toc-card">
-              <div
-                class="toc-tree"
-                :class="{ 'toc-tree-hover': isTocHovering }"
-                @mouseenter="isTocHovering = true"
-                @mouseleave="isTocHovering = false"
-              >
-                <TreeNode
-                  v-if="data && data.toc && data.toc[currContentsIndex]"
-                  :node-data="data.toc[currContentsIndex]"
-                  :node-infos="data.tocNodeInfos"
-                  :course-id="data.course?.id"
-                  :path="data.path"
-                  :curr-path="String(currContentsIndex + 1)"
-                  :depth="1"
-                  :is-learning="isLearning"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- 中间+右侧容器包装 -->
         <div class="center-right-container">
           <!-- 中间+右侧容器 - 居中 -->
@@ -100,7 +28,7 @@
                 :curr-node-id="currNodeId"
                 :curr-node="lastPathNode"
                 :path-text="pathText"
-                :is-learning="isLearning"
+                :is-learning="false"
                 @switch-tab="handleTabSwitch"
                 @view-deck="handleViewDeck"
               />
@@ -197,15 +125,6 @@
       </div>
     </div>
 
-    <!-- 配置目录对话框 -->
-    <ConfigContentsDialog
-      v-if="data"
-      v-model="configContents"
-      :course-id="data.course?.id"
-      :contents="data.toc || []"
-      @load-data="loadData"
-    />
-
     <!-- 创建卡片组对话框 -->
     <CreateDeckDialog
       v-if="currentPosting"
@@ -222,10 +141,9 @@
     />
   </DefaultLayout>
 </template>
-
 <script lang="ts">
 export default {
-  name: 'ContentReadPage',
+  name: 'NodePostsPage',
 }
 </script>
 
@@ -234,9 +152,7 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import CourseHeader from '@/components/features/read/CourseHeader.vue'
-import TreeNode from '@/components/common/TreeNode.vue'
 import PostingList from '@/components/features/read/PostingList.vue'
-import ConfigContentsDialog from '@/components/features/read/ConfigContentsDialog.vue'
 import CreateDeckDialog from '@/components/features/read/CreateDeckDialog.vue'
 import MemoryCardSidebar from '@/components/features/read/MemoryCardSidebar.vue'
 import DeckDetailDialog from '@/components/features/read/DeckDetailDialog.vue'
@@ -250,19 +166,20 @@ const route = useRoute()
 
 // 基本状态
 const showFixedBar = ref(false)
-const isLearning = ref(false)
-const openContentsList = ref(true)
-const configContents = ref(false)
 const showCreateDeckDialog = ref(false)
-const currContentsIndex = ref(0)
 const isAssistantExpanded = ref(true)
 const currentTab = ref('list')
 const currentPosting = ref(null)
 const selectedDeck = ref<MemoryCardDeck | null>(null)
 const showDeckDetailDialog = ref(false)
-const loading = ref(false)
-const error = ref<string | null>(null)
-const isTocHovering = ref(false)
+
+// 是否为主课程
+const isMainCourse = computed(() => {
+  if (data.value?.course && data.value.parentCourse) {
+    return data.value.course.id === data.value.parentCourse.id
+  }
+  return true
+})
 
 // 数据处理
 const nodes = ref<any[]>([])
@@ -277,18 +194,8 @@ const {
   execute: loadData,
 } = useFetch<ReadResponse>({
   fetchFn: () => {
-    if (route.query.commentId) {
-      return pageApi.readByComment(Number(route.query.commentId))
-    } else if (route.query.postId) {
-      return pageApi.readByPost(Number(route.query.postId))
-    } else if (route.query.nodeId) {
-      return pageApi.readByNode(Number(route.query.nodeId))
-    } else if (route.query.courseId && route.query.path) {
-      return pageApi.readByCoursePath(Number(route.query.courseId), route.query.path as string)
-    } else if (route.query.courseId) {
-      return pageApi.readByCoursePath(Number(route.query.courseId), '')
-    }
-    return Promise.reject(new Error('缺少必要参数'))
+    const nodeId = Number(route.query.nodeId)
+    return pageApi.readByNode(nodeId)
   },
   immediate: true,
   onDataReady: () => {
@@ -298,19 +205,9 @@ const {
         posting.voteType = null
       }
     })
-    // 设置学习状态
-    isLearning.value = data.value.learning || false
     // 数据赋值完成后处理数据
     processData()
   },
-})
-
-// 是否为主课程
-const isMainCourse = computed(() => {
-  if (data.value?.course && data.value.parentCourse) {
-    return data.value.course.id === data.value.parentCourse.id
-  }
-  return true
 })
 
 // AI 引擎列表
@@ -334,54 +231,26 @@ const aiEngines = [
 // 处理创建卡片组成功
 const handleDeckCreated = (deck: MemoryCardDeck) => {
   console.log('Deck created:', deck)
+  showCreateDeckDialog.value = false
 }
 
 // 处理数据
 const processData = () => {
-  console.log('data:', data.value)
-  if (!data.value?.path) return
+  if (!data.value) return
 
-  // 解析路径
-  nodes.value = data.value.path.split('-')
-  nodes.value[0] = String(Number(nodes.value[0]) - 1)
+  // 设置当前节点ID
+  currNodeId.value = data.value.node?.id || 0
 
-  // 遍历 toc 获取 lastPathNode
-  lastPathNode.value = nodes.value.reduce((acc: any, key: any) => acc?.[key], data.value.toc)
-
-  // 设置当前目录组索引
-  currContentsIndex.value = Number(nodes.value[0])
-  nodes.value.shift()
-
-  console.log('currContentsIndex:', currContentsIndex.value)
-
-  // 生成路径文本
-  pathText.value = `${data.value.course.name}/`
-  nodes.value.forEach((item: any, index: number) => {
-    if (index < 1) return
-    if (index < nodes.value.length - 1) {
-      pathText.value += `${data.value.tocNodeInfos[item]?.name}/`
-    } else {
-      pathText.value += data.value.tocNodeInfos[item]?.name
-    }
-  })
-
-  currNodeId.value = data.value.node.id
-  isLearning.value = data.value.learning
+  // 设置路径文本（如果有的话）
+  if (data.value.path) {
+    nodes.value = data.value.path.split('-')
+    pathText.value = `${data.value.course?.name || ''}/`
+  }
 }
 
 // 滚动监听
 const handleScroll = () => {
   showFixedBar.value = window.scrollY > 100
-}
-
-// 切换学习状态
-const toggleLearning = () => {
-  isLearning.value = !isLearning.value
-}
-
-// 返回上一页
-const goBackToCourse = () => {
-  router.back()
 }
 
 // 处理Tab切换
@@ -409,7 +278,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
 
 // 处理添加卡片组到学习计划
 const handleAddDeck = async (deck: MemoryCardDeck) => {
-  console.log('ContentReadPage received addDeck event:', deck)
+  console.log('NodePostsPage received addDeck event:', deck)
 
   try {
     // 获取当前课程ID
@@ -435,43 +304,16 @@ const handleAddDeck = async (deck: MemoryCardDeck) => {
   }
 }
 
-// 跳转到目录组的根目录
-const goToRootDirectory = (index: number) => {
-  // 获取该目录组的根节点ID
-  const tocGroup = data.value?.toc?.[index]
-  if (!tocGroup) return
-
-  // 找到第一个有效的根节点ID（排除 + 和 ^ 键）
-  const rootNodeId = Object.keys(tocGroup).find((key) => key !== '+' && key !== '^')
-  if (!rootNodeId) return
-
-  // 构建根目录路径：{目录组编号}-{根节点ID}
-  const rootPath = `${index + 1}-${rootNodeId}`
-
-  router.push({
-    name: 'content-read',
-    params: { id: route.params.id },
-    query: { path: rootPath },
-  })
-}
-
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
 })
 
 // 监听路由变化，重新加载数据
 watch(
-  () => [
-    route.params.id,
-    route.query.path,
-    route.query.nodeId,
-    route.query.postId,
-    route.query.commentId,
-  ],
+  () => route.query.nodeId,
   () => {
     loadData()
-  },
-  { deep: true }
+  }
 )
 
 onUnmounted(() => {
@@ -483,6 +325,8 @@ onUnmounted(() => {
 .read-page {
   min-height: 100vh;
   background-color: #ffffff;
+  max-width: 1110px;
+  margin: 0 auto;
 }
 
 /* 固定课程头部 */
@@ -494,138 +338,13 @@ onUnmounted(() => {
   padding-bottom: 8px;
 }
 
-/* 三栏布局 */
+/* 布局 - 无左侧目录 */
 .read-content {
   display: flex;
   position: relative;
   z-index: 1;
   max-width: 100%;
   width: 100%;
-}
-
-/* 左侧 TOC 目录栏 */
-.toc-sidebar {
-  flex: 0 1 360px;
-  max-width: 360px;
-  padding: 24px 42px 24px 0;
-  position: relative;
-  margin-right: 20px;
-}
-
-.toc-sidebar::after {
-  content: '';
-  position: absolute;
-  top: 24px;
-  right: 0;
-  bottom: 24px;
-  width: 1px;
-  background-color: rgb(var(--v-theme-border));
-}
-
-.toc-sticky-wrapper {
-  position: sticky;
-  top: 110px;
-  max-height: calc(100vh - 125px);
-  display: flex;
-  flex-direction: column;
-  transition:
-    top 0.3s ease,
-    max-height 0.3s ease;
-}
-
-.read-page:has(.fixed-top-bar.show) .toc-sticky-wrapper {
-  top: 109px;
-  max-height: calc(100vh - 124px);
-}
-
-.toc-card {
-  background-color: white;
-  padding: 10px 0;
-  border-radius: 16px;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.toc-tree {
-  margin-top: 6px;
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
-}
-
-.toc-tree::-webkit-scrollbar {
-  width: 2px;
-}
-
-.toc-tree::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.toc-tree::-webkit-scrollbar-thumb {
-  background-color: transparent;
-  border-radius: 2px;
-}
-
-.toc-tree-hover::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.1);
-}
-
-.toc-tree-hover::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.2);
-}
-
-/* 目录标签样式 */
-.toc-label {
-  display: flex;
-  align-items: center;
-  margin-right: 2px;
-  padding: 6px 12px;
-  background-color: #f9f4f1;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-/* 目录组选择卡片 */
-.toc-groups-card {
-  padding: 0;
-}
-
-.toc-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
-.chip-active .chip-number {
-  color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.corner-badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background-color: rgb(var(--v-theme-success));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid white;
-}
-
-.config-btn {
-  opacity: 0.5;
-  transition: opacity 0.2s ease;
-}
-
-.config-btn:hover {
-  opacity: 1;
 }
 
 /* 中间+右侧容器包装 */
@@ -638,7 +357,6 @@ onUnmounted(() => {
 .center-right-wrapper {
   display: flex;
   flex: 1;
-  justify-content: center;
   max-width: 100%;
 }
 
@@ -689,13 +407,6 @@ onUnmounted(() => {
 }
 
 @media (max-width: 960px) {
-  .main-content {
-    margin-left: 0;
-    width: 100%;
-    padding: 80px 20px 80px 20px;
-  }
-
-  .toc-sidebar,
   .right-sidebar {
     display: none;
   }

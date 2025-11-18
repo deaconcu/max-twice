@@ -4,7 +4,7 @@
       <!-- 返回按钮 -->
       <v-btn variant="text" color="grey-darken-2" class="mb-4" @click="handleBack">
         <v-icon icon="mdi-arrow-left" class="mr-1" />
-        返回路径列表
+        返回
       </v-btn>
 
       <!-- 页面标题 -->
@@ -350,12 +350,12 @@ const onConnect = (connection: Connection) => {
   })
 }
 
-// 返回列表
+// 返回上一页
 const handleBack = () => {
   if (nodes.value.length > 1 || edges.value.length > 0) {
     if (!confirm('有未保存的更改,确定要离开吗?')) return
   }
-  void router.push(`/career/${careerId.value}`)
+  router.back()
 }
 
 // 显示保存对话框
@@ -395,7 +395,7 @@ const saveRoadmap = async () => {
     console.log('保存路径:', data)
     saving.value = false
     showSaveDialog.value = false
-    void router.push(`/career/${careerId.value}`)
+    router.back()
   }, 1000)
 }
 

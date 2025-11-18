@@ -21,6 +21,24 @@ import { HEADER_HEIGHT } from '@/constants/layout'
 
         <v-spacer />
 
+        <!-- 中间搜索框 - 只在中大屏显示 -->
+        <v-col cols="auto" class="d-none d-md-block">
+          <div class="search-container">
+            <v-text-field
+              density="compact"
+              variant="solo"
+              placeholder="搜索课程、职业、文章..."
+              prepend-inner-icon="mdi-magnify"
+              hide-details
+              single-line
+              class="search-field"
+              style="width: 480px"
+            ></v-text-field>
+          </div>
+        </v-col>
+
+        <v-spacer />
+
         <!-- Right side actions -->
         <v-col cols="auto">
           <div class="d-flex align-center" :class="$vuetify.display.xs ? 'ga-2' : 'ga-4'">
@@ -55,6 +73,38 @@ import { HEADER_HEIGHT } from '@/constants/layout'
 .logo-text {
   font-size: 1.25rem;
   font-weight: 700;
+}
+
+/* 搜索框样式 */
+.search-container {
+  display: flex;
+  align-items: center;
+}
+
+.search-field :deep(.v-field) {
+  background-color: rgb(var(--v-theme-surface-variant)) !important;
+  border-radius: 24px !important;
+  box-shadow: none !important;
+  transition: all 0.2s ease;
+}
+
+.search-field :deep(.v-field):hover {
+  background-color: rgba(var(--v-theme-on-surface), 0.08) !important;
+}
+
+.search-field :deep(.v-field--focused) {
+  background-color: rgb(var(--v-theme-surface)) !important;
+  box-shadow: 0 0 0 2px rgb(var(--v-theme-primary)) !important;
+}
+
+.search-field :deep(.v-field__input) {
+  font-size: 14px;
+  padding: 8px 0;
+  min-height: 36px;
+}
+
+.search-field :deep(.v-field__prepend-inner) {
+  padding-left: 12px;
 }
 
 /* 移动端优化 */

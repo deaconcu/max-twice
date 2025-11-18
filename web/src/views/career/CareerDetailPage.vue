@@ -4,7 +4,7 @@
       <!-- 返回按钮 -->
       <v-btn variant="text" color="grey-darken-2" class="mb-4" @click="handleBack">
         <v-icon icon="mdi-arrow-left" class="mr-1" />
-        返回职业中心
+        返回
       </v-btn>
 
       <!-- 加载状态 -->
@@ -525,9 +525,9 @@ const getTimeDisplay = (date: string): string => {
   return date
 }
 
-// 返回职业中心
+// 返回上一页
 const handleBack = (): void => {
-  void router.push('/career')
+  router.back()
 }
 
 // 创建新路径
@@ -537,7 +537,7 @@ const handleCreateRoadmap = (): void => {
 
 // 打开路径详情
 const handleGoToRoadmap = (roadmap: { id: number }): void => {
-  void router.push(`/roadmap/${careerId.value}/detail/${roadmap.id}`)
+  void router.push(`/roadmap/${roadmap.id}`)
 }
 
 // 投票

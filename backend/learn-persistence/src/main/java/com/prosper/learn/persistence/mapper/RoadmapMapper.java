@@ -52,10 +52,10 @@ public interface RoadmapMapper {
     @Select({"<script>",
              "SELECT * FROM roadmap WHERE creator_id = #{creatorId} AND deleted_at IS NULL",
              "<if test='state != null'> AND state = #{state}</if>",
-             " AND id &lt; #{lastId}",
+             "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
              " ORDER BY id DESC LIMIT #{limit}",
              "</script>"})
-    List<RoadmapDO> getListByCreatorWithPaging(long creatorId, long lastId, int limit, Byte state);
+    List<RoadmapDO> getListByCreatorWithPaging(long creatorId, Long lastId, int limit, Byte state);
 
     @Select("SELECT * FROM roadmap WHERE content_hash = #{contentHash} AND deleted_at IS NULL")
     List<RoadmapDO> getByContentHash(String contentHash);

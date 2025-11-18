@@ -21,6 +21,18 @@ declare module 'vue-router' {
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    // 如果有保存的位置（浏览器前进/后退），恢复到该位置
+    if (savedPosition) {
+      return savedPosition
+    }
+    // 如果有hash锚点，滚动到对应元素
+    if (to.hash) {
+      return { el: to.hash, behavior: 'smooth' }
+    }
+    // 否则滚动到顶部
+    return { top: 0 }
+  },
 })
 
 /**

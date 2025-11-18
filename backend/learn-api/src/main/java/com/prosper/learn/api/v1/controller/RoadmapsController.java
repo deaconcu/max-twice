@@ -121,12 +121,12 @@ public class RoadmapsController {
     /**
      * 获取当前登录用户创建的路线图（所有状态）
      * 包含：待审核、已发布、审核拒绝、已屏蔽
-     * GET /api/v1/users/me/roadmaps?lastId=0
+     * GET /api/v1/users/me/roadmaps?lastId=123
      */
     @GetMapping("/users/me/roadmaps")
     @SaCheckLogin
     public ApiResponse<List<RoadmapDTO>> getCurrentUserRoadmaps(
-            @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
+            @RequestParam(required = false) Long lastId,
             @CurrentUser UserDO currentUser) {
 
         List<RoadmapDTO> roadmaps = roadmapService.getUserRoadmaps(currentUser.getId(), lastId, null);

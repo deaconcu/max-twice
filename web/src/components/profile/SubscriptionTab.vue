@@ -193,7 +193,12 @@ const unsubscribeCourseId = ref<number | null>(null)
 
 // 跳转到课程阅读页
 const goToCourse = (courseId: number) => {
-  router.push(`/courses/${courseId}/read`)
+  router.push({
+    path: '/read',
+    query: {
+      courseId: String(courseId),
+    },
+  })
 }
 
 // 取消关注

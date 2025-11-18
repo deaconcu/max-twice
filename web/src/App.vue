@@ -1,6 +1,10 @@
 <template>
   <v-app>
-    <router-view />
+    <router-view v-slot="{ Component }">
+      <keep-alive :include="['ProfilePage', 'ReadPageRouter']">
+        <component :is="Component" />
+      </keep-alive>
+    </router-view>
 
     <!-- 全局 Snackbar 提示 -->
     <v-snackbar

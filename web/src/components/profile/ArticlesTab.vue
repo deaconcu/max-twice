@@ -29,43 +29,60 @@
 
     <!-- 右侧主内容 -->
     <v-col cols="12" md="10">
-      <div class="pa-2">
+      <div class="py-2">
         <div class="d-flex align-center justify-space-between mb-4">
           <v-icon icon="mdi-menu" size="18" color="grey-lighten-1" />
         </div>
 
         <!-- 文章列表 -->
         <v-infinite-scroll v-if="articles.length > 0" :items="articles" @load="onLoadMore">
-          <v-card
-            v-for="article in articles"
-            :key="article.id"
-            border
-            rounded="lg"
-            hover
-            class="hoverable mb-4"
-          >
-            <v-card-text class="pa-4">
+          <div v-for="(article, index) in articles" :key="article.id">
+            <v-divider v-if="index > 0" class="mb-8" />
+            <div class="article-item pb-8" :class="index === 0 ? 'pt-1' : 'pt-0'">
               <div class="d-flex align-start justify-space-between mb-3">
-                <div class="flex-grow-1" style="cursor: pointer">
-                  <!-- 所属节点 -->
-                  <div v-if="article.node" class="mb-3">
+                <div class="flex-grow-1">
+                  <!-- 所属课程和节点 -->
+                  <div v-if="article.node || article.course" class="mb-3 d-flex align-center ga-2">
                     <v-chip
+                      v-if="article.course"
+                      size="small"
+                      variant="tonal"
+                      color="primary"
+                      class="cursor-pointer"
+                      @click.stop="goToCourse(article.courseId)"
+                    >
+                      <v-icon icon="mdi-book-outline" size="14" class="mr-1" />
+                      {{ article.course }}
+                    </v-chip>
+                    <v-chip
+                      v-if="article.node"
                       size="small"
                       variant="tonal"
                       color="grey-darken-2"
                       class="cursor-pointer"
+                      @click.stop="goToNode(article.nodeId)"
                     >
                       <v-icon icon="mdi-file-document-outline" size="14" class="mr-1" />
                       {{ article.node.name }}
                     </v-chip>
                   </div>
 
-                  <p class="text-body-2 text-grey-darken-2 mb-3 article-preview">
-                    {{ article.preview }}
-                  </p>
+                  <!-- 文章内容缩略 -->
+                  <router-link
+                    v-if="article.id"
+                    :to="{ path: '/read', query: { postId: article.id } }"
+                    class="text-decoration-none d-block"
+                  >
+                    <div :ref="(el) => setContentRef(el, index)" class="article-content-preview mb-3" :class="{ 'has-overflow': article.hasOverflow }">
+                      <div v-html="article.preview"></div>
+                    </div>
+                  </router-link>
+                  <div v-else :ref="(el) => setContentRef(el, index)" class="article-content-preview mb-3" :class="{ 'has-overflow': article.hasOverflow }">
+                    <div v-html="article.preview"></div>
+                  </div>
 
                   <!-- 统计信息 -->
-                  <div class="d-flex align-center text-caption text-grey" style="gap: 16px">
+                  <div class="d-flex align-center text-body-2 text-grey" style="gap: 16px">
                     <div>
                       <v-icon icon="mdi-eye-outline" size="14" class="mr-1" />
                       {{ article.views }} 阅读
@@ -84,18 +101,19 @@
 
                 <!-- 删除按钮 -->
                 <v-btn
-                  color="grey"
+                  color="error"
                   variant="tonal"
-                  size="x-small"
+                  size="small"
                   icon="mdi-delete"
+                  density="comfortable"
                   @click.stop="deleteArticle(article.id)"
                 >
                   <v-icon>mdi-delete</v-icon>
                   <v-tooltip activator="parent" location="top">删除文章</v-tooltip>
                 </v-btn>
               </div>
-            </v-card-text>
-          </v-card>
+            </div>
+          </div>
 
           <template #loading>
             <div class="text-center py-4">
@@ -131,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
@@ -176,25 +194,66 @@ const { execute: deletePost } = useMutation((postId: number) => postApi.deletePo
   },
 })
 
+// 存储每个文章的溢出状态
+const overflowStates = ref<Record<number, boolean>>({})
+
 // 转换文章数据
 const articles = computed(() => {
   if (!posts.value) return []
 
   return posts.value.map((post) => ({
     id: post.id,
-    preview: post.content.substring(0, 150) + (post.content.length > 150 ? '...' : ''),
+    nodeId: post.nodeId,
+    preview: post.content, // 使用完整 HTML 内容
     node: post.node ? { id: post.nodeId, name: post.node.name } : undefined,
+    course: post.node?.course?.name || undefined,
+    courseId: post.node?.course?.id || undefined,
     views: post.viewCount || 0,
     likes: post.helpful || 0,
     comments: post.commentCount || 0,
     publishedAt: post.createdAt || '',
+    hasOverflow: overflowStates.value[post.id] || false,
   }))
 })
+
+// 检测内容是否溢出
+const setContentRef = (el: any, index: number) => {
+  if (!el || !articles.value[index]) return
+
+  nextTick(() => {
+    // 检测整个容器的 scrollHeight 是否超过 max-height (300px)
+    if (el.scrollHeight > 300) {
+      const articleId = articles.value[index].id
+      overflowStates.value[articleId] = true
+    }
+  })
+}
 
 // 格式化日期
 const formatDate = (date: string) => {
   if (!date) return ''
   return new Date(date).toLocaleDateString('zh-CN')
+}
+
+// 跳转到课程
+const goToCourse = (courseId: number) => {
+  if (courseId) {
+    router.push({ path: '/read', query: { courseId } })
+  }
+}
+
+// 跳转到节点
+const goToNode = (nodeId: number) => {
+  if (nodeId) {
+    router.push({ path: '/read', query: { nodeId } })
+  }
+}
+
+// 跳转到文章详情（使用 postId）
+const goToArticle = (article: any) => {
+  if (article.id) {
+    router.push({ path: '/read', query: { postId: article.id } })
+  }
 }
 
 // 删除文章
@@ -234,17 +293,52 @@ onMounted(() => {
 /* 左侧边栏固定 */
 .sticky-sidebar {
   position: sticky;
-  top: 80px;
-  max-height: calc(100vh - 100px);
+  top: 56px;
+  max-height: calc(100vh - 76px);
   overflow-y: auto;
 }
 
-.article-preview {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+/* 文章内容缩略显示 */
+.article-content-preview {
+  position: relative;
+  max-height: 300px;
   overflow: hidden;
-  line-height: 1.6;
+  line-height: 1.8;
+  color: #1a1a1b;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.article-content-preview:hover {
+  background-color: #fafafa;
+}
+
+/* 只有溢出时才显示渐变和省略号 */
+.article-content-preview.has-overflow {
+  padding-bottom: 40px;
+}
+
+.article-content-preview.has-overflow::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.8) 50%, white 100%);
+  pointer-events: none;
+}
+
+.article-content-preview.has-overflow::after {
+  content: '...';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #666;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 3px;
 }
 
 /* 移动端取消 sticky */

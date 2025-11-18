@@ -54,9 +54,8 @@ const { execute: submitUpdate, loading: submitting } = useMutation(
         emit('load-data', [])
       } else {
         router.replace({
-          name: 'content-read',
-          params: { id: props.courseId },
-          query: { path: nextPath },
+          path: '/read',
+          query: { courseId: String(props.courseId), path: nextPath },
         })
       }
     },

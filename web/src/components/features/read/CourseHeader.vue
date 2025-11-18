@@ -7,6 +7,7 @@ interface Props {
   subCourseList?: any[]
   isMainCourse?: boolean
   isLearning?: boolean
+  showBackButton?: boolean
 }
 
 type Emits = (e: 'start-learning', data: any) => void
@@ -17,18 +18,14 @@ const props = withDefaults(defineProps<Props>(), {
   subCourseList: () => [],
   isMainCourse: true,
   isLearning: false,
+  showBackButton: true,
 })
 
 const emit = defineEmits<Emits>()
 const router = useRouter()
 
 const goBackToCourse = () => {
-  if (props.currentCourse?.id) {
-    router.push({
-      name: 'course-detail',
-      params: { id: props.currentCourse.id },
-    })
-  }
+  router.back()
 }
 
 const toggleLearning = () => {
@@ -46,6 +43,7 @@ const toggleSubscribe = () => {
       <!-- 左侧：返回按钮 + 课程路径 -->
       <div class="d-flex align-center course-breadcrumb">
         <v-btn
+          v-if="showBackButton"
           icon="mdi-arrow-left"
           variant="flat"
           color="grey-lighten-4"
@@ -104,13 +102,16 @@ const toggleSubscribe = () => {
 </template>
 
 <style scoped>
-.subcourse-info-section {
-  padding: 0 0 0px 0;
-}
-
 .course-breadcrumb {
   display: flex;
   align-items: center;
+}
+
+/* 宽屏时向左延伸，让后退按钮露出到页面外 */
+@media (min-width: 1800px) {
+  .subcourse-info-section {
+    margin-left: -50px;
+  }
 }
 
 .course-link-btn {

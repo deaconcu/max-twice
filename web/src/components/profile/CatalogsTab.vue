@@ -54,7 +54,8 @@
           @load="onLoadMore"
         >
           <div v-for="(catalog, index) in filteredCatalogs" :key="catalog.id">
-            <div class="catalog-item pb-4" :class="index === 0 ? 'pt-1' : 'pt-8'">
+            <v-divider v-if="index > 0" class="mb-8" />
+            <div class="catalog-item pb-8" :class="index === 0 ? 'pt-1' : 'pt-0'">
               <!-- 附加信息和删除按钮 -->
               <div class="d-flex align-center justify-space-between mb-5">
                 <!-- 所属课程和节点 -->
@@ -89,6 +90,7 @@
                   variant="tonal"
                   size="small"
                   icon="mdi-delete"
+                  density="comfortable"
                   @click.stop="deleteCatalog(catalog.id)"
                 >
                   <v-icon>mdi-delete</v-icon>
@@ -129,7 +131,6 @@
                     <div>{{ formatDate(catalog.createdAt) }}</div>
                   </div>
             </div>
-            <v-divider v-if="index < filteredCatalogs.length - 1" />
           </div>
 
           <template #loading>
@@ -337,7 +338,7 @@ onMounted(() => {
 }
 
 .catalog-node-item:not(:last-child) {
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px dashed #eeeeee;
 }
 
 /* 移动端取消 sticky */

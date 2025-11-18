@@ -118,7 +118,13 @@
     </v-card-text>
 
     <!-- 卡片组列表 -->
-    <v-card-text class="px-4 pb-4 pt-2" style="max-height: 500px; overflow-y: auto">
+    <v-card-text
+      class="px-4 pb-4 pt-2 deck-list"
+      :class="{ 'deck-list-hover': isHovering }"
+      style="max-height: 500px; overflow-y: auto"
+      @mouseenter="isHovering = true"
+      @mouseleave="isHovering = false"
+    >
       <!-- 空状态 -->
       <div v-if="decks.length === 0 && !loading" class="text-center pa-6">
         <v-icon icon="mdi-cards-outline" size="48" color="grey-lighten-2" class="mb-3"></v-icon>
@@ -237,6 +243,7 @@ const loading = ref(false)
 const hasMore = ref(true)
 const lastId = ref<number>(0)
 const lastScore = ref<number>(0)
+const isHovering = ref(false)
 
 const currentUserId = computed(() => userStore.user?.id)
 
@@ -414,21 +421,25 @@ loadDecks(true)
   text-decoration: underline;
 }
 
-/* 滚动条样式 */
-::-webkit-scrollbar {
-  width: 6px;
+/* 滚动条样式 - hover 时显示 */
+.deck-list::-webkit-scrollbar {
+  width: 2px;
 }
 
-::-webkit-scrollbar-track {
+.deck-list::-webkit-scrollbar-track {
   background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(var(--v-theme-on-surface), 0.2);
-  border-radius: 3px;
+.deck-list::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 2px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--v-theme-on-surface), 0.3);
+.deck-list-hover::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.deck-list-hover::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.2);
 }
 </style>

@@ -463,9 +463,9 @@ const handleBack = () => {
  */
 const handleStartReading = () => {
   void router.push({
-    name: 'content-read',
-    params: {
-      id: String(courseId.value),
+    path: '/read',
+    query: {
+      courseId: String(courseId.value),
     },
   })
 }
@@ -475,9 +475,9 @@ const handleStartReading = () => {
  */
 const handleGoToSubCourse = (_index: number) => {
   void router.push({
-    name: 'content-read',
-    params: {
-      id: String(courseId.value),
+    path: '/read',
+    query: {
+      courseId: String(courseId.value),
     },
   })
 }
