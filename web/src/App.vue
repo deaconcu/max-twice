@@ -11,15 +11,17 @@
       v-for="(item, index) in snackbars"
       :key="index"
       v-model="item.visible"
-      :color="getSnackbarColor(item.type)"
       :timeout="4000"
       location="top"
-      rounded="lg"
+      rounded="xl"
+      color="blue-grey-darken-1"
       variant="flat"
     >
-      <div class="d-flex align-center">
-        <v-icon :icon="getSnackbarIcon(item.type)" class="mr-3"></v-icon>
-        <span>{{ item.text }}</span>
+      <div class="d-flex align-center pa-1">
+        <v-avatar :color="getSnackbarIconBg(item.type)" size="32" class="mr-3">
+          <v-icon :icon="getSnackbarIcon(item.type)" size="18" color="white"></v-icon>
+        </v-avatar>
+        <span class="text-body-1 font-weight-medium">{{ item.text }}</span>
       </div>
     </v-snackbar>
   </v-app>
@@ -122,9 +124,9 @@ const showSnackbar = (message: string, type = 'info'): void => {
 }
 
 /**
- * 根据类型获取颜色
+ * 根据类型获取图标背景色
  */
-const getSnackbarColor = (type: string): string => {
+const getSnackbarIconBg = (type: string): string => {
   switch (type) {
     case 'success':
       return 'success'
@@ -134,7 +136,7 @@ const getSnackbarColor = (type: string): string => {
       return 'warning'
     case 'info':
     default:
-      return 'info'
+      return 'primary'
   }
 }
 
