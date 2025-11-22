@@ -44,6 +44,8 @@ import { HEADER_HEIGHT, BOTTOM_NAV_HEIGHT, SIDEBAR_WIDTH } from '@/constants/lay
     margin-left: 0;
     margin-bottom: v-bind('`${BOTTOM_NAV_HEIGHT}px`');
     padding: 16px;
+    width: 100%;
+    max-width: none;
   }
 }
 </style>
