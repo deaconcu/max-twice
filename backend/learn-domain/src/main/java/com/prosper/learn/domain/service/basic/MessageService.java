@@ -315,7 +315,7 @@ public class MessageService {
             NodeDO nodeDO = nodeDOMap.get(nodeId);
 
             m.setCommentId(Util.getLong(content, "commentId"));
-            m.setNode(nodeConverter.toDTOV1(nodeDO));
+            m.setNode(nodeConverter.toSummaryDTO(nodeDO));
             m.setCommenter(userConverter.toDTOV2(userDOMap.get(Util.getLong(content, "commenterId"))));
             messageDTO = m;
         } else if (messageDO.getType() == upvote.value()) {
@@ -330,7 +330,7 @@ public class MessageService {
                 m.setObjectType(Enums.ContentType.comment.value());
             }
 
-            m.setNode(nodeConverter.toDTOV1(nodeDOMap.get(Util.getLong(content, "nodeId"))));
+            m.setNode(nodeConverter.toSummaryDTO(nodeDOMap.get(Util.getLong(content, "nodeId"))));
             m.setVoteType(Util.getInteger(content, "type"));
             m.setUpvoter(userConverter.toDTOV2(userDOMap.get(Util.getLong(content, "upvoterId"))));
             messageDTO = m;
@@ -342,7 +342,7 @@ public class MessageService {
             InviteMessageDTO m = new InviteMessageDTO();
             m.setInviter(userConverter.toDTOV2(userDOMap.get(Util.getLong(content, "inviterId"))));
             long nodeId = Util.getLong(content, "nodeId");
-            m.setNode(nodeConverter.toDTOV1(nodeDOMap.get(nodeId)));
+            m.setNode(nodeConverter.toSummaryDTO(nodeDOMap.get(nodeId)));
             messageDTO = m;
         } else {
             // 其他类型消息(如审核消息)，使用基础 MessageDTO，保留原始 content

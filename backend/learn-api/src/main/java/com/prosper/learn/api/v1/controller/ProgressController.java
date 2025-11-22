@@ -9,7 +9,11 @@ import com.prosper.learn.domain.service.business.LearningProgressService;
 import com.prosper.learn.domain.service.business.UserCourseService;
 import com.prosper.learn.domain.service.business.UserRoadmapService;
 import com.prosper.learn.dto.response.*;
+import com.prosper.learn.dto.response.node.NodeWithProgressDTO;
 import com.prosper.learn.dto.response.old.NodeDTOV2;
+import com.prosper.learn.dto.response.usercourse.UserCourseWithCourseDTO;
+import com.prosper.learn.dto.response.userroadmap.UserRoadmapSummaryDTO;
+import com.prosper.learn.dto.response.userroadmap.UserRoadmapWithDetailDTO;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import lombok.RequiredArgsConstructor;
 import com.prosper.learn.api.v1.annotation.JsonParam;
@@ -77,12 +81,12 @@ public class ProgressController {
      */
     @GetMapping("/progress/nodes/{nodeId}/status")
     @SaCheckLogin
-    public ApiResponse<NodeDTO> getNodeCompletionStatus(
+    public ApiResponse<NodeWithProgressDTO> getNodeCompletionStatus(
             @PathVariable @NotNull(message = "节点ID不能为空")
             @Positive(message = "节点ID必须大于0")
             Long nodeId,
             @CurrentUser UserDO currentUser) {
-        NodeDTO result = learningProgressService.getNodeCompletionStatusResponse(currentUser.getId(), nodeId);
+        NodeWithProgressDTO result = learningProgressService.getNodeCompletionStatusResponse(currentUser.getId(), nodeId);
         return ApiResponse.success(result);
     }
 
@@ -107,12 +111,12 @@ public class ProgressController {
      */
     @GetMapping("/progress/courses/{courseId}")
     @SaCheckLogin
-    public ApiResponse<UserCourseDTO> getCourseProgress(
+    public ApiResponse<UserCourseWithCourseDTO> getCourseProgress(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
             Long courseId,
             @CurrentUser UserDO currentUser) {
-        UserCourseDTO progress = userCourseService.getUserCourse(currentUser.getId(), courseId);
+        UserCourseWithCourseDTO progress = userCourseService.getUserCourse(currentUser.getId(), courseId);
         return ApiResponse.success(progress);
     }
 
@@ -122,12 +126,12 @@ public class ProgressController {
      */
     @GetMapping("/progress/courses")
     @SaCheckLogin
-    public ApiResponse<List<UserCourseDTO>> getAllCoursesProgress(
+    public ApiResponse<List<UserCourseWithCourseDTO>> getAllCoursesProgress(
             @RequestParam(required = false, defaultValue = "0")
             @Min(value = 0, message = "最后ID不能小于0")
             Long lastId,
             @CurrentUser UserDO currentUser) {
-        List<UserCourseDTO> progressList = userCourseService.getUserCourseList(currentUser.getId(), lastId);
+        List<UserCourseWithCourseDTO> progressList = userCourseService.getUserCourseList(currentUser.getId(), lastId);
         return ApiResponse.success(progressList);
     }
 
@@ -137,7 +141,7 @@ public class ProgressController {
      */
     @PutMapping("/progress/courses/{courseId}")
     @SaCheckLogin
-    public ApiResponse<UserCourseDTO> updateCourseProgress(
+    public ApiResponse<UserCourseWithCourseDTO> updateCourseProgress(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
             Long courseId,
@@ -147,7 +151,7 @@ public class ProgressController {
             Integer progressPercent,
             @CurrentUser UserDO currentUser) {
 
-        UserCourseDTO progress = userCourseService.update(currentUser.getId(), courseId, progressPercent);
+        UserCourseWithCourseDTO progress = userCourseService.update(currentUser.getId(), courseId, progressPercent);
         return ApiResponse.success(progress);
     }
 
@@ -204,12 +208,12 @@ public class ProgressController {
      */
     @GetMapping("/progress/roadmaps/{roadmapId}")
     @SaCheckLogin
-    public ApiResponse<UserRoadmapDTO> getRoadmapProgress(
+    public ApiResponse<UserRoadmapWithDetailDTO> getRoadmapProgress(
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")
             Long roadmapId,
             @CurrentUser UserDO currentUser) {
-        UserRoadmapDTO progress = userRoadmapService.getUserRoadmap(currentUser.getId(), roadmapId);
+        UserRoadmapWithDetailDTO progress = userRoadmapService.getUserRoadmap(currentUser.getId(), roadmapId);
         return ApiResponse.success(progress);
     }
 
@@ -219,8 +223,8 @@ public class ProgressController {
      */
     @GetMapping("/progress/roadmaps")
     @SaCheckLogin
-    public ApiResponse<List<UserRoadmapDTO>> getAllRoadmapsProgress(@CurrentUser UserDO currentUser) {
-        List<UserRoadmapDTO> progressList = userRoadmapService.getUserAllRoadmap(currentUser.getId());
+    public ApiResponse<List<UserRoadmapWithDetailDTO>> getAllRoadmapsProgress(@CurrentUser UserDO currentUser) {
+        List<UserRoadmapWithDetailDTO> progressList = userRoadmapService.getUserAllRoadmap(currentUser.getId());
         return ApiResponse.success(progressList);
     }
 
@@ -230,7 +234,7 @@ public class ProgressController {
      */
     @PutMapping("/progress/roadmaps/{roadmapId}")
     @SaCheckLogin
-    public ApiResponse<UserRoadmapDTO> updateRoadmapProgress(
+    public ApiResponse<UserRoadmapSummaryDTO> updateRoadmapProgress(
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")
             Long roadmapId,
@@ -240,7 +244,7 @@ public class ProgressController {
             Integer progressPercent,
             @CurrentUser UserDO currentUser) {
 
-        UserRoadmapDTO progress = userRoadmapService.updateProgress(currentUser.getId(), roadmapId, progressPercent);
+        UserRoadmapSummaryDTO progress = userRoadmapService.updateProgress(currentUser.getId(), roadmapId, progressPercent);
         return ApiResponse.success(progress);
     }
 

@@ -1,6 +1,6 @@
 package com.prosper.learn.dto.response;
 
-import com.prosper.learn.dto.response.old.CourseDTOV4;
+import com.prosper.learn.dto.response.course.CourseBriefDTO;
 import lombok.Data;
 
 import java.util.List;
@@ -16,7 +16,11 @@ public class NodeDTO {
 
     private Long courseId;
 
-    private CourseDTO course;
+    /**
+     * 课程简要信息
+     * 说明：包含课程的 id 和 name，用于显示节点所属课程
+     */
+    private CourseBriefDTO course;
 
     private List<NodeDTO> children;
 

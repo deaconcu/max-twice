@@ -112,109 +112,112 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
 <template>
   <DefaultLayout>
     <div class="profile-container">
-      <!-- 用户信息和统计 -->
-      <v-row class="mb-6">
-        <!-- 左列：用户信息 -->
-        <v-col cols="12" md="6">
-          <v-card rounded="lg" flat class="h-100 no-border">
-            <v-card-text class="px-0 py-4 d-flex align-center">
-              <v-avatar size="56" color="primary" class="mr-4" rounded="md">
-                <v-icon icon="mdi-account" size="28" color="white" />
-              </v-avatar>
-              <div class="flex-grow-1">
-                <div class="d-flex align-center mb-1">
-                  <h2 class="text-h6 font-weight-bold mr-3">{{ userInfo.name }}</h2>
-                  <v-btn
-                    color="grey"
-                    variant="text"
-                    rounded="lg"
-                    size="small"
-                    @click="activeTab = 'info'"
-                  >
-                    <v-icon icon="mdi-pencil" size="16" class="mr-1" />
-                    编辑资料
-                  </v-btn>
-                </div>
-                <p class="text-body-2 text-grey-darken-2 mb-1">{{ userInfo.email }}</p>
-                <p class="text-caption text-grey mb-0">加入于 {{ userInfo.joinDate }}</p>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
+      <!-- 用户信息卡片 -->
+      <v-card rounded="xl" class="profile-header-card mb-8 no-border" elevation="0">
+        <v-card-text class="pa-8">
+          <div class="d-flex align-start">
+            <!-- 用户头像 -->
+            <v-avatar size="96" color="primary" class="mr-6" rounded="xl">
+              <v-icon icon="mdi-account" size="48" color="white" />
+            </v-avatar>
 
-        <!-- 右列：统计信息 -->
-        <v-col cols="12" md="6">
-          <v-card rounded="lg" flat class="h-100 no-border">
-            <v-card-text class="px-0 py-4 d-flex align-center">
-              <div class="d-flex justify-space-between align-center flex-grow-1">
-                <div class="text-center">
-                  <div class="text-h6 font-weight-bold text-primary">{{ stats.totalCourses }}</div>
-                  <div class="text-caption text-grey">学习课程</div>
+            <!-- 用户信息 -->
+            <div class="flex-grow-1">
+              <div class="d-flex align-center mb-3">
+                <h1 class="text-h4 font-weight-bold text-grey-darken-4 mr-4">
+                  {{ userInfo.name }}
+                </h1>
+                <v-btn
+                  color="grey-darken-2"
+                  variant="outlined"
+                  rounded="lg"
+                  size="default"
+                  @click="activeTab = 'info'"
+                >
+                  <v-icon icon="mdi-pencil" size="18" class="mr-2" />
+                  编辑资料
+                </v-btn>
+              </div>
+
+              <p class="text-body-1 text-grey-darken-2 mb-2">{{ userInfo.email }}</p>
+              <p class="text-body-2 text-grey mb-4">加入于 {{ userInfo.joinDate }}</p>
+
+              <!-- 统计信息 -->
+              <div class="d-flex align-center flex-wrap ga-8">
+                <div class="d-flex align-center">
+                  <v-icon icon="mdi-school" size="20" color="primary" class="mr-2" />
+                  <span class="text-body-2 text-grey-darken-2">
+                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{ stats.totalCourses }}</span>
+                    学习课程
+                  </span>
                 </div>
-                <div class="text-center">
-                  <div class="text-h6 font-weight-bold text-success">
-                    {{ stats.completedCourses }}
-                  </div>
-                  <div class="text-caption text-grey">完成课程</div>
+                <div class="d-flex align-center">
+                  <v-icon icon="mdi-check-circle" size="20" color="success" class="mr-2" />
+                  <span class="text-body-2 text-grey-darken-2">
+                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{ stats.completedCourses }}</span>
+                    完成课程
+                  </span>
                 </div>
-                <div class="text-center">
-                  <div class="text-h6 font-weight-bold text-info">{{ stats.totalCareers }}</div>
-                  <div class="text-caption text-grey">关注职业</div>
+                <div class="d-flex align-center">
+                  <v-icon icon="mdi-briefcase" size="20" color="info" class="mr-2" />
+                  <span class="text-body-2 text-grey-darken-2">
+                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{ stats.totalCareers }}</span>
+                    关注职业
+                  </span>
                 </div>
-                <div class="text-center">
-                  <div class="text-h6 font-weight-bold text-warning">{{ stats.studyDays }}</div>
-                  <div class="text-caption text-grey">学习天数</div>
-                </div>
-                <div class="text-center">
-                  <div class="text-h6 font-weight-bold text-purple">{{ stats.studyHours }}</div>
-                  <div class="text-caption text-grey">学习时长(h)</div>
+                <div class="d-flex align-center">
+                  <v-icon icon="mdi-calendar-check" size="20" color="warning" class="mr-2" />
+                  <span class="text-body-2 text-grey-darken-2">
+                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{ stats.studyDays }}</span>
+                    学习天数
+                  </span>
                 </div>
               </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+            </div>
+          </div>
+        </v-card-text>
+      </v-card>
 
-      <!-- Tab 导航 - 固定在顶部 -->
+      <!-- Tab 导航 -->
       <div class="tabs-sticky">
-        <v-tabs v-model="activeTab" color="primary" class="mb-6 tabs-with-border" height="60">
-          <v-tab value="careers">
+        <v-tabs v-model="activeTab" color="primary" class="profile-tabs" height="56" density="comfortable">
+          <v-tab value="careers" rounded="lg">
             <v-icon icon="mdi-briefcase" size="18" class="mr-2" />
             学习的职业
           </v-tab>
-          <v-tab value="courses-learning">
+          <v-tab value="courses-learning" rounded="lg">
             <v-icon icon="mdi-school" size="18" class="mr-2" />
             学习的课程
           </v-tab>
-          <v-tab value="stats">
+          <v-tab value="stats" rounded="lg">
             <v-icon icon="mdi-chart-line" size="18" class="mr-2" />
             数据统计
           </v-tab>
-          <v-tab value="courses">
+          <v-tab value="courses" rounded="lg">
             <v-icon icon="mdi-book-multiple" size="18" class="mr-2" />
             关注的课程
           </v-tab>
-          <v-tab value="people">
+          <v-tab value="people" rounded="lg">
             <v-icon icon="mdi-account-multiple" size="18" class="mr-2" />
             关注的人
           </v-tab>
-          <v-tab value="catalogs">
+          <v-tab value="catalogs" rounded="lg">
             <v-icon icon="mdi-folder-multiple" size="18" class="mr-2" />
             创建的目录
           </v-tab>
-          <v-tab value="articles">
+          <v-tab value="articles" rounded="lg">
             <v-icon icon="mdi-file-document-multiple" size="18" class="mr-2" />
             创建的文章
           </v-tab>
-          <v-tab value="decks">
+          <v-tab value="decks" rounded="lg">
             <v-icon icon="mdi-cards" size="18" class="mr-2" />
             我的卡片组
           </v-tab>
-          <v-tab value="roadmaps">
+          <v-tab value="roadmaps" rounded="lg">
             <v-icon icon="mdi-map-marker-path" size="18" class="mr-2" />
             创建的路线图
           </v-tab>
-          <v-tab value="info">
+          <v-tab value="info" rounded="lg">
             <v-icon icon="mdi-account-circle" size="18" class="mr-2" />
             个人信息
           </v-tab>
@@ -283,43 +286,46 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
   margin: 0 auto;
 }
 
+/* 用户信息卡片 */
+.profile-header-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 1px solid #e9ecef !important;
+}
+
 /* Tab 固定在顶部 */
 .tabs-sticky {
   position: sticky;
   top: 56px;
   background-color: white;
   z-index: 100;
-  margin-left: -24px;
-  margin-right: -24px;
-  padding-left: 24px;
-  padding-right: 24px;
+  padding-bottom: 24px;
 }
 
-/* Tab 标签字体颜色调整 */
+/* Tab 样式 */
+.profile-tabs {
+  background-color: transparent;
+}
+
 :deep(.v-tab) {
-  color: rgba(0, 0, 0, 0.5) !important;
-  font-size: 0.92rem !important;
+  color: rgba(0, 0, 0, 0.6) !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  min-width: auto !important;
 }
 
 :deep(.v-tab--selected) {
   color: rgb(var(--v-theme-primary)) !important;
+  font-weight: 600 !important;
 }
 
 :deep(.v-tab:hover) {
-  color: rgba(0, 0, 0, 0.7) !important;
-}
-
-/* Tab 下边框 */
-.tabs-with-border {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.8) !important;
+  background-color: rgba(var(--v-theme-primary), 0.05);
 }
 
 /* 移动端 */
 @media (max-width: 960px) {
-  .profile-container {
-    /* 使用 DefaultLayout 的默认 padding */
-  }
-
   .tabs-sticky {
     top: 56px;
   }

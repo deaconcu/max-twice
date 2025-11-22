@@ -11,6 +11,8 @@ import com.prosper.learn.dto.response.RoadmapDTO;
 import com.prosper.learn.dto.response.old.RoadmapDTOV1;
 import com.prosper.learn.dto.request.*;
 import com.prosper.learn.api.v1.annotation.JsonParam;
+import com.prosper.learn.dto.response.roadmap.RoadmapSummaryDTO;
+import com.prosper.learn.dto.response.roadmap.RoadmapWithStatusDTO;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +45,7 @@ public class RoadmapsController {
      */
     @GetMapping("/professions/{professionId}/roadmaps")
     @SaCheckLogin
-    public ApiResponse<List<RoadmapDTO>> getRoadmapsByProfession(
+    public ApiResponse<List<RoadmapWithStatusDTO>> getRoadmapsByProfession(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
             Long professionId,
@@ -51,7 +53,7 @@ public class RoadmapsController {
             Long lastId,
             @CurrentUser UserDO currentUser) {
 
-        List<RoadmapDTO> roadmaps = roadmapService.getRoadmapsByProfession(professionId, lastId, currentUser);
+        List<RoadmapWithStatusDTO> roadmaps = roadmapService.getRoadmapsByProfession(professionId, lastId, currentUser);
 
         return ApiResponse.success(roadmaps);
     }
@@ -93,12 +95,12 @@ public class RoadmapsController {
      */
     @GetMapping("/roadmaps/{id}")
     @SaCheckLogin
-    public ApiResponse<RoadmapDTO> getRoadmap(
+    public ApiResponse<RoadmapWithStatusDTO> getRoadmap(
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")
             Long id,
             @CurrentUser UserDO currentUser) {
-        RoadmapDTO roadmapDTOV1 = roadmapService.getRoadmapWithContent(id, currentUser.getId());
+        RoadmapWithStatusDTO roadmapDTOV1 = roadmapService.getRoadmapWithContent(id, currentUser.getId());
 
         return ApiResponse.success(roadmapDTOV1);
     }
@@ -125,11 +127,11 @@ public class RoadmapsController {
      */
     @GetMapping("/users/me/roadmaps")
     @SaCheckLogin
-    public ApiResponse<List<RoadmapDTO>> getCurrentUserRoadmaps(
+    public ApiResponse<List<RoadmapSummaryDTO>> getCurrentUserRoadmaps(
             @RequestParam(required = false) Long lastId,
             @CurrentUser UserDO currentUser) {
 
-        List<RoadmapDTO> roadmaps = roadmapService.getUserRoadmaps(currentUser.getId(), lastId, null);
+        List<RoadmapSummaryDTO> roadmaps = roadmapService.getUserRoadmaps(currentUser.getId(), lastId, null);
         return ApiResponse.success(roadmaps);
     }
 
@@ -138,11 +140,11 @@ public class RoadmapsController {
      * GET /api/v1/users/{userId}/roadmaps?lastId=0
      */
     @GetMapping("/users/{userId}/roadmaps")
-    public ApiResponse<List<RoadmapDTO>> getUserRoadmaps(
+    public ApiResponse<List<RoadmapSummaryDTO>> getUserRoadmaps(
             @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
             @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId) {
 
-        List<RoadmapDTO> roadmaps = roadmapService.getUserRoadmaps(userId, lastId, Enums.ContentState.PUBLISHED);
+        List<RoadmapSummaryDTO> roadmaps = roadmapService.getUserRoadmaps(userId, lastId, Enums.ContentState.PUBLISHED);
         return ApiResponse.success(roadmaps);
     }
 

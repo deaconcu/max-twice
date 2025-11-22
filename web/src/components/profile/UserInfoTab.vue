@@ -3,26 +3,26 @@
     <!-- 左侧简介栏 -->
     <v-col cols="12" md="2">
       <div class="sticky-sidebar">
-        <div class="pa-2 pr-10 pt-4">
-          <div class="mb-3">
-            <h4 class="text-body-1 font-weight-bold">个人信息</h4>
+        <div class="pa-4">
+          <div class="mb-4">
+            <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">个人信息</h4>
+            <p class="text-body-2 text-grey mb-0">
+              管理您的个人资料，包括头像、姓名和个人简介。
+            </p>
           </div>
-          <p class="text-body-2 text-grey-darken-2 mb-3">
-            管理您的个人资料，包括头像、姓名和个人简介。
-          </p>
-          <v-divider class="my-3" />
-          <div class="text-caption text-grey">
-            <div class="mb-2">
-              <v-icon icon="mdi-pencil" size="14" class="mr-1" />
-              点击链接修改信息
+          <v-divider class="my-4" />
+          <div class="text-body-2 text-grey">
+            <div class="d-flex align-start mb-3">
+              <v-icon icon="mdi-pencil" size="18" color="grey" class="mr-2 mt-1" />
+              <span>点击链接修改信息</span>
             </div>
-            <div class="mb-2">
-              <v-icon icon="mdi-shield-lock" size="14" class="mr-1" />
-              信息仅自己可见
+            <div class="d-flex align-start mb-3">
+              <v-icon icon="mdi-shield-lock" size="18" color="grey" class="mr-2 mt-1" />
+              <span>信息仅自己可见</span>
             </div>
-            <div>
-              <v-icon icon="mdi-check-circle" size="14" class="mr-1" />
-              点击确定保存修改
+            <div class="d-flex align-start">
+              <v-icon icon="mdi-check-circle" size="18" color="grey" class="mr-2 mt-1" />
+              <span>点击确定保存修改</span>
             </div>
           </div>
         </div>
@@ -30,133 +30,176 @@
     </v-col>
 
     <!-- 右侧主内容 -->
-    <v-col cols="12" md="10" class="mt-8">
+    <v-col cols="12" md="10">
       <div class="pa-2">
-        <!-- 头像 -->
-        <v-row align="start" class="mb-4">
-          <v-col cols="auto" class="text-end pe-6 label-col">
-            <div class="text-body-2 text-grey">头像</div>
-          </v-col>
-          <v-col cols="9" class="ps-6">
-            <v-avatar
-              :image="localUserInfo.avatar || undefined"
-              rounded="md"
-              size="120"
-              color="grey-lighten-3"
-              class="avatar-border"
-            >
-              <v-icon v-if="!localUserInfo.avatar" icon="mdi-account" size="60" color="grey" />
-            </v-avatar>
-          </v-col>
-        </v-row>
-
-        <!-- 姓名 -->
-        <v-row align="center" class="mb-3">
-          <v-col cols="auto" class="text-end pe-6 py-3 label-col">
-            <div class="text-body-2 text-grey">姓名</div>
-          </v-col>
-          <v-col cols="9" class="ps-6 py-0">
-            <div v-if="!displayModifyName" class="d-flex align-center">
-              <span class="text-body-1">{{ localUserInfo.name }}</span>
-              <v-btn
-                prepend-icon="mdi-pencil"
-                variant="plain"
-                color="grey"
-                density="compact"
-                class="text-body-2 ps-4"
-                @click="displayModifyName = true"
-              >
-                修改
-              </v-btn>
+        <!-- 信息卡片 -->
+        <v-card rounded="xl" border elevation="0" class="info-card">
+          <v-card-text class="pa-8">
+            <!-- 头像 -->
+            <div class="d-flex align-start mb-6">
+              <div class="label-section">
+                <span class="text-body-2 text-grey-darken-2 font-weight-medium">头像</span>
+              </div>
+              <div class="flex-grow-1">
+                <v-avatar
+                  :image="localUserInfo.avatar || undefined"
+                  rounded="xl"
+                  size="120"
+                  color="grey-lighten-3"
+                  class="avatar-border"
+                >
+                  <v-icon v-if="!localUserInfo.avatar" icon="mdi-account" size="60" color="grey" />
+                </v-avatar>
+              </div>
             </div>
-            <div v-else class="d-flex align-center">
-              <v-text-field
-                v-model="localUserInfo.name"
-                hide-details
-                density="compact"
-                variant="underlined"
-                style="max-width: 200px"
-              />
-              <v-btn
-                prepend-icon="mdi-check"
-                variant="plain"
-                color="grey"
-                density="compact"
-                class="text-body-2 ps-4"
-                @click="onModifyName"
-              >
-                确定
-              </v-btn>
-            </div>
-          </v-col>
-        </v-row>
 
-        <!-- 简介 -->
-        <v-row align="center" class="mb-3">
-          <v-col cols="auto" class="text-end pe-6 py-3 label-col">
-            <div class="text-body-2 text-grey">简单介绍自己</div>
-          </v-col>
-          <v-col cols="9" class="ps-6 py-0">
-            <div v-if="!displayModifyBio" class="d-flex align-center">
-              <span class="text-body-1">{{ localUserInfo.bio }}</span>
-              <v-btn
-                prepend-icon="mdi-pencil"
-                variant="plain"
-                color="grey"
-                density="compact"
-                class="text-body-2 ps-4"
-                @click="displayModifyBio = true"
-              >
-                修改
-              </v-btn>
-            </div>
-            <div v-else class="d-flex align-center">
-              <v-text-field
-                v-model="localUserInfo.bio"
-                hide-details
-                density="compact"
-                variant="underlined"
-                style="max-width: 400px"
-              />
-              <v-btn
-                prepend-icon="mdi-check"
-                variant="plain"
-                color="grey"
-                density="compact"
-                class="text-body-2 ps-4"
-                @click="onModifyBio"
-              >
-                确定
-              </v-btn>
-            </div>
-          </v-col>
-        </v-row>
+            <v-divider class="my-6" />
 
-        <!-- 邮箱 -->
-        <v-row align="center" class="mb-3">
-          <v-col cols="auto" class="text-end pe-6 py-3 label-col">
-            <div class="text-body-2 text-grey">邮箱</div>
-          </v-col>
-          <v-col cols="9" class="ps-6 py-0">
-            <span class="text-body-1 text-grey">{{ localUserInfo.email }}</span>
-          </v-col>
-        </v-row>
+            <!-- 姓名 -->
+            <div class="d-flex align-start mb-6">
+              <div class="label-section">
+                <span class="text-body-2 text-grey-darken-2 font-weight-medium">姓名</span>
+              </div>
+              <div class="flex-grow-1">
+                <div v-if="!displayModifyName" class="d-flex align-center">
+                  <span class="text-h6 text-grey-darken-4">{{ localUserInfo.name }}</span>
+                  <v-btn
+                    variant="text"
+                    color="primary"
+                    size="small"
+                    rounded="lg"
+                    class="ml-3"
+                    @click="displayModifyName = true"
+                  >
+                    <v-icon icon="mdi-pencil" size="18" class="mr-1" />
+                    修改
+                  </v-btn>
+                </div>
+                <div v-else class="d-flex align-center">
+                  <v-text-field
+                    v-model="localUserInfo.name"
+                    hide-details
+                    density="comfortable"
+                    variant="outlined"
+                    rounded="lg"
+                    style="max-width: 300px"
+                  />
+                  <v-btn
+                    variant="flat"
+                    color="primary"
+                    size="small"
+                    rounded="lg"
+                    class="ml-3"
+                    @click="onModifyName"
+                  >
+                    <v-icon icon="mdi-check" size="18" class="mr-1" />
+                    确定
+                  </v-btn>
+                  <v-btn
+                    variant="text"
+                    color="grey"
+                    size="small"
+                    rounded="lg"
+                    class="ml-2"
+                    @click="displayModifyName = false"
+                  >
+                    取消
+                  </v-btn>
+                </div>
+              </div>
+            </div>
 
-        <!-- 加入日期 -->
-        <v-row align="center" class="mb-3">
-          <v-col cols="auto" class="text-end pe-6 py-3 label-col">
-            <div class="text-body-2 text-grey">加入日期</div>
-          </v-col>
-          <v-col cols="9" class="ps-6 py-0">
-            <span class="text-body-1 text-grey">{{ localUserInfo.joinDate }}</span>
-          </v-col>
-        </v-row>
+            <v-divider class="my-6" />
+
+            <!-- 简介 -->
+            <div class="d-flex align-start mb-6">
+              <div class="label-section">
+                <span class="text-body-2 text-grey-darken-2 font-weight-medium">个人简介</span>
+              </div>
+              <div class="flex-grow-1">
+                <div v-if="!displayModifyBio" class="d-flex align-center">
+                  <span class="text-body-1 text-grey-darken-3">{{ localUserInfo.bio || '暂未设置' }}</span>
+                  <v-btn
+                    variant="text"
+                    color="primary"
+                    size="small"
+                    rounded="lg"
+                    class="ml-3"
+                    @click="displayModifyBio = true"
+                  >
+                    <v-icon icon="mdi-pencil" size="18" class="mr-1" />
+                    修改
+                  </v-btn>
+                </div>
+                <div v-else>
+                  <v-textarea
+                    v-model="localUserInfo.bio"
+                    hide-details
+                    density="comfortable"
+                    variant="outlined"
+                    rounded="lg"
+                    rows="3"
+                    placeholder="简单介绍一下自己..."
+                    style="max-width: 500px"
+                  />
+                  <div class="d-flex align-center mt-3">
+                    <v-btn
+                      variant="flat"
+                      color="primary"
+                      size="small"
+                      rounded="lg"
+                      @click="onModifyBio"
+                    >
+                      <v-icon icon="mdi-check" size="18" class="mr-1" />
+                      确定
+                    </v-btn>
+                    <v-btn
+                      variant="text"
+                      color="grey"
+                      size="small"
+                      rounded="lg"
+                      class="ml-2"
+                      @click="displayModifyBio = false"
+                    >
+                      取消
+                    </v-btn>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <v-divider class="my-6" />
+
+            <!-- 邮箱 -->
+            <div class="d-flex align-start mb-6">
+              <div class="label-section">
+                <span class="text-body-2 text-grey-darken-2 font-weight-medium">邮箱</span>
+              </div>
+              <div class="flex-grow-1">
+                <span class="text-body-1 text-grey">{{ localUserInfo.email }}</span>
+              </div>
+            </div>
+
+            <v-divider class="my-6" />
+
+            <!-- 加入日期 -->
+            <div class="d-flex align-start">
+              <div class="label-section">
+                <span class="text-body-2 text-grey-darken-2 font-weight-medium">加入日期</span>
+              </div>
+              <div class="flex-grow-1">
+                <span class="text-body-1 text-grey">{{ localUserInfo.joinDate }}</span>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
 
         <!-- 提示信息 -->
         <v-alert
           v-if="showSuccessAlert"
           type="success"
           variant="tonal"
+          rounded="lg"
           class="mt-6"
           closable
           @click:close="showSuccessAlert = false"
@@ -246,40 +289,30 @@ const onModifyBio = async () => {
 /* 左侧边栏固定 */
 .sticky-sidebar {
   position: sticky;
-  top: 80px;
-  max-height: calc(100vh - 100px);
+  top: 140px;
+  align-self: flex-start;
+  max-height: calc(100vh - 160px);
   overflow-y: auto;
 }
 
-/* 标签列宽度 */
-.label-col {
-  min-width: 135px;
+.info-card {
+  background-color: #ffffff;
+  border: 1px solid #e9ecef !important;
+}
+
+.label-section {
+  min-width: 120px;
+  padding-top: 4px;
 }
 
 /* 头像边框 */
 .avatar-border {
-  border: 3px solid #f5f5f5;
-  padding: 0px;
+  border: 4px solid #f5f5f5;
+  transition: all 0.3s ease;
 }
 
-/* 输入框边框颜色调整 */
-:deep(.v-field--variant-outlined .v-field__outline) {
-  color: rgba(0, 0, 0, 0.3);
-}
-
-/* 聚焦时的边框颜色保持原样 */
-:deep(.v-field--variant-outlined.v-field--focused .v-field__outline) {
-  color: rgb(var(--v-theme-primary));
-}
-
-/* 悬停时的边框颜色 */
-:deep(.v-field--variant-outlined:hover .v-field__outline) {
-  color: rgba(0, 0, 0, 0.42);
-}
-
-/* 禁用状态的边框颜色 */
-:deep(.v-field--variant-outlined.v-field--disabled .v-field__outline) {
-  color: rgba(0, 0, 0, 0.15);
+.avatar-border:hover {
+  border-color: #e0e0e0;
 }
 
 /* 移动端取消 sticky */
@@ -289,6 +322,10 @@ const onModifyBio = async () => {
     top: 0;
     max-height: none;
     margin-bottom: 16px;
+  }
+
+  .label-section {
+    min-width: 80px;
   }
 }
 </style>

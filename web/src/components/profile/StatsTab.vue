@@ -3,24 +3,26 @@
     <!-- 左侧简介栏 -->
     <v-col cols="12" md="2">
       <div class="sticky-sidebar">
-        <div class="pa-2 pr-10 pt-4">
-          <div class="mb-3">
-            <h4 class="text-body-1 font-weight-bold">数据统计</h4>
+        <div class="pa-4">
+          <div class="mb-4">
+            <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">数据统计</h4>
+            <p class="text-body-2 text-grey mb-0">
+              查看您的学习数据统计和趋势分析。
+            </p>
           </div>
-          <p class="text-body-2 text-grey-darken-2 mb-3">查看您的学习数据统计和趋势分析。</p>
-          <v-divider class="my-3" />
-          <div class="text-caption text-grey">
-            <div class="mb-2">
-              <v-icon icon="mdi-chart-box" size="14" class="mr-1" />
-              可视化数据展示
+          <v-divider class="my-4" />
+          <div class="text-body-2 text-grey">
+            <div class="d-flex align-start mb-3">
+              <v-icon icon="mdi-chart-box" size="18" color="grey" class="mr-2 mt-1" />
+              <span>可视化数据展示</span>
             </div>
-            <div class="mb-2">
-              <v-icon icon="mdi-calendar-range" size="14" class="mr-1" />
-              多时间段对比
+            <div class="d-flex align-start mb-3">
+              <v-icon icon="mdi-calendar-range" size="18" color="grey" class="mr-2 mt-1" />
+              <span>多时间段对比</span>
             </div>
-            <div>
-              <v-icon icon="mdi-trending-up" size="14" class="mr-1" />
-              学习趋势分析
+            <div class="d-flex align-start">
+              <v-icon icon="mdi-trending-up" size="18" color="grey" class="mr-2 mt-1" />
+              <span>学习趋势分析</span>
             </div>
           </div>
         </div>
@@ -31,28 +33,28 @@
     <v-col cols="12" md="10">
       <div class="pa-2">
         <!-- 时间段选择 -->
-        <div class="mb-4">
+        <div class="mb-6">
           <v-btn-toggle
             v-model="selectedPeriod"
-            color="primary"
-            variant="plain"
-            rounded="md"
+            color="grey-darken-3"
+            variant="text"
+            rounded="lg"
             density="compact"
           >
-            <v-btn value="today" size="small" rounded="md">今天</v-btn>
-            <v-btn value="7days" size="small" rounded="md">7天</v-btn>
-            <v-btn value="30days" size="small" rounded="md">30天</v-btn>
-            <v-btn value="all" size="small" rounded="md">全部</v-btn>
+            <v-btn value="today" rounded="lg">今天</v-btn>
+            <v-btn value="7days" rounded="lg">7天</v-btn>
+            <v-btn value="30days" rounded="lg">30天</v-btn>
+            <v-btn value="all" rounded="lg">全部</v-btn>
           </v-btn-toggle>
         </div>
 
         <!-- 统计卡片 -->
         <v-row class="mb-6">
           <v-col cols="12" md="6" lg="3">
-            <v-card border rounded="lg" class="pa-4 hoverable">
+            <v-card rounded="xl" hover border elevation="0" class="pa-6 stat-card hoverable">
               <div class="d-flex align-center mb-2">
-                <v-avatar color="blue-lighten-5" size="48" class="mr-3">
-                  <v-icon icon="mdi-book-open-outline" color="primary" size="24" />
+                <v-avatar color="blue-lighten-5" size="56" class="mr-4">
+                  <v-icon icon="mdi-book-open-outline" color="primary" size="28" />
                 </v-avatar>
                 <div class="flex-grow-1">
                   <div class="text-h5 font-weight-bold text-primary">
@@ -76,10 +78,10 @@
           </v-col>
 
           <v-col cols="12" md="6" lg="3">
-            <v-card border rounded="lg" class="pa-4 hoverable">
+            <v-card rounded="xl" hover border elevation="0" class="pa-6 stat-card hoverable">
               <div class="d-flex align-center mb-2">
-                <v-avatar color="green-lighten-5" size="48" class="mr-3">
-                  <v-icon icon="mdi-check-circle" color="success" size="24" />
+                <v-avatar color="green-lighten-5" size="56" class="mr-4">
+                  <v-icon icon="mdi-check-circle" color="success" size="28" />
                 </v-avatar>
                 <div class="flex-grow-1">
                   <div class="text-h5 font-weight-bold text-success">
@@ -103,10 +105,10 @@
           </v-col>
 
           <v-col cols="12" md="6" lg="3">
-            <v-card border rounded="lg" class="pa-4 hoverable">
+            <v-card rounded="xl" hover border elevation="0" class="pa-6 stat-card hoverable">
               <div class="d-flex align-center mb-2">
-                <v-avatar color="orange-lighten-5" size="48" class="mr-3">
-                  <v-icon icon="mdi-calendar-check" color="warning" size="24" />
+                <v-avatar color="orange-lighten-5" size="56" class="mr-4">
+                  <v-icon icon="mdi-calendar-check" color="warning" size="28" />
                 </v-avatar>
                 <div class="flex-grow-1">
                   <div class="text-h5 font-weight-bold text-warning">
@@ -130,10 +132,10 @@
           </v-col>
 
           <v-col cols="12" md="6" lg="3">
-            <v-card border rounded="lg" class="pa-4 hoverable">
+            <v-card rounded="xl" hover border elevation="0" class="pa-6 stat-card hoverable">
               <div class="d-flex align-center mb-2">
-                <v-avatar color="purple-lighten-5" size="48" class="mr-3">
-                  <v-icon icon="mdi-clock-outline" color="purple" size="24" />
+                <v-avatar color="purple-lighten-5" size="56" class="mr-4">
+                  <v-icon icon="mdi-clock-outline" color="purple" size="28" />
                 </v-avatar>
                 <div class="flex-grow-1">
                   <div class="text-h5 font-weight-bold text-purple">
@@ -317,9 +319,15 @@ const getBarColor = (value: number) => {
 /* 左侧边栏固定 */
 .sticky-sidebar {
   position: sticky;
-  top: 80px;
-  max-height: calc(100vh - 100px);
+  top: 140px;
+  align-self: flex-start;
+  max-height: calc(100vh - 160px);
   overflow-y: auto;
+}
+
+.stat-card {
+  background-color: #ffffff;
+  border: 1px solid #e9ecef !important;
 }
 
 .chart-container {

@@ -6,6 +6,7 @@ import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.domain.service.basic.ContentsService;
 import com.prosper.learn.domain.util.converter.NodeConverter;
 import com.prosper.learn.dto.response.NodeDTO;
+import com.prosper.learn.dto.response.node.NodeWithProgressDTO;
 import com.prosper.learn.persistence.dataobject.UserProgressDO;
 import com.prosper.learn.persistence.dataobject.UserCourseDO;
 import com.prosper.learn.domain.service.data.UserProgressDataService;
@@ -801,15 +802,15 @@ public class LearningProgressService {
     /**
      * 获取节点完成状态响应数据
      */
-    public NodeDTO getNodeCompletionStatusResponse(long userId, long nodeId) {
+    public NodeWithProgressDTO getNodeCompletionStatusResponse(long userId, long nodeId) {
         boolean isCompleted = isNodeCompleted(userId, nodeId);
-        
+
         NodeDO nodeDO = nodeDataService.getById(nodeId);
         if (nodeDO == null) {
             throw ErrorCode.LEARNING_PROGRESS_INVALID_NODE_ID.exception();
         }
-        
-        return nodeConverter.toDTOV2(nodeDO, isCompleted);
+
+        return nodeConverter.toWithProgressDTO(nodeDO, isCompleted);
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.prosper.learn.dto.response;
 
+import com.prosper.learn.dto.response.user.UserBriefDTO;
 import lombok.Data;
 
 /**
@@ -14,7 +15,7 @@ public class MemoryCardDeckDTO {
 
     private Long nodeId;  // 添加nodeId字段，方便前端直接使用
 
-    private UserDTO creator;
+    private UserBriefDTO creator;
 
     private String title;
 

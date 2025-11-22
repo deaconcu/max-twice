@@ -8,6 +8,8 @@ import com.prosper.learn.domain.service.autoauthor.AutoAuthorQueueService;
 import com.prosper.learn.domain.util.converter.*;
 import com.prosper.learn.dto.request.*;
 import com.prosper.learn.dto.response.*;
+import com.prosper.learn.dto.response.card.CardWithSrsDTO;
+import com.prosper.learn.dto.response.deck.*;
 import com.prosper.learn.persistence.dataobject.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,31 +60,29 @@ public class MemoryCardDeckService {
     }
 
     /**
-     * V1 = 基础信息 + 创建者信息
+     * 转换为卡片组（含创建者信息）
      */
-    public MemoryCardDeckDTO toDTOV1(MemoryCardDeckDO deckDO) {
+    public DeckWithCreatorDTO toDeckWithCreator(MemoryCardDeckDO deckDO) {
         if (deckDO == null) return null;
 
-        MemoryCardDeckDTO dto = deckConverter.toDTO(deckDO);
+        DeckWithCreatorDTO dto = deckConverter.toWithCreatorDTO(deckDO);
 
         // 填充创建者信息
-        UserDTO creator = userService.getUser(deckDO.getCreatorId(), Enums.DTOVersion.V2);
-        dto.setCreator(creator);
+        dto.setCreator(userService.toBriefDTO(userDataService.getById(deckDO.getCreatorId())));
 
         return dto;
     }
 
     /**
-     * V1 = 基础信息 + 创建者信息 + 点赞状态
+     * 转换为卡片组（含创建者信息和点赞状态）
      */
-    public MemoryCardDeckDTO toDTOV1(MemoryCardDeckDO deckDO, Long userId) {
+    public DeckWithVoteDTO toDeckWithVote(MemoryCardDeckDO deckDO, Long userId) {
         if (deckDO == null) return null;
 
-        MemoryCardDeckDTO dto = deckConverter.toDTO(deckDO);
+        DeckWithVoteDTO dto = deckConverter.toWithVoteDTO(deckDO);
 
         // 填充创建者信息
-        UserDTO creator = userService.getUser(deckDO.getCreatorId(), Enums.DTOVersion.V2);
-        dto.setCreator(creator);
+        dto.setCreator(userService.toBriefDTO(userDataService.getById(deckDO.getCreatorId())));
 
         // 填充点赞状态（如果提供了用户ID）
         if (userId != null) {
@@ -93,7 +93,7 @@ public class MemoryCardDeckService {
         return dto;
     }
 
-    public List<MemoryCardDeckDTO> toDTOV1(List<MemoryCardDeckDO> deckDOList) {
+    public List<DeckWithCreatorDTO> toDeckWithCreator(List<MemoryCardDeckDO> deckDOList) {
         if (deckDOList == null || deckDOList.isEmpty()) {
             return new ArrayList<>();
         }
@@ -106,10 +106,10 @@ public class MemoryCardDeckService {
 
         return deckDOList.stream()
             .map(deck -> {
-                MemoryCardDeckDTO dto = deckConverter.toDTO(deck);
+                DeckWithCreatorDTO dto = deckConverter.toWithCreatorDTO(deck);
                 UserDO creator = userMap.get(deck.getCreatorId());
                 if (creator != null) {
-                    dto.setCreator(userConverter.toDTO(creator));
+                    dto.setCreator(userConverter.toBriefDTO(creator));
                 } else {
                     log.warn("Cannot find creator with id: {}", deck.getCreatorId());
                 }
@@ -118,7 +118,7 @@ public class MemoryCardDeckService {
             .collect(Collectors.toList());
     }
 
-    public List<MemoryCardDeckDTO> toDTOV1(List<MemoryCardDeckDO> deckDOList, Long userId) {
+    public List<DeckWithVoteDTO> toDeckWithVote(List<MemoryCardDeckDO> deckDOList, Long userId) {
         if (deckDOList == null || deckDOList.isEmpty()) {
             return new ArrayList<>();
         }
@@ -144,10 +144,10 @@ public class MemoryCardDeckService {
 
         return deckDOList.stream()
             .map(deck -> {
-                MemoryCardDeckDTO dto = deckConverter.toDTO(deck);
+                DeckWithVoteDTO dto = deckConverter.toWithVoteDTO(deck);
                 UserDO creator = userMap.get(deck.getCreatorId());
                 if (creator != null) {
-                    dto.setCreator(userConverter.toDTO(creator));
+                    dto.setCreator(userConverter.toBriefDTO(creator));
                 } else {
                     log.warn("Cannot find creator with id: {}", deck.getCreatorId());
                 }
@@ -168,7 +168,7 @@ public class MemoryCardDeckService {
     /**
      * 需求1: 获取帖子下的公共卡片组列表 - keyset分页，normal状态
      */
-    public KeysetPageResponse<MemoryCardDeckDTO> getPostPublicDecks(
+    public KeysetPageResponse<DeckWithVoteDTO> getPostPublicDecks(
             Long postId, String sortBy, String sortOrder, Double lastScore, Long lastId, Integer limit) {
         // 参数验证
         if (limit == null || limit <= 0) limit = 10;
@@ -187,7 +187,7 @@ public class MemoryCardDeckService {
     /**
      * 需求2: 获取帖子创建者提交的卡片组 - 最新创建，limit通常为1
      */
-    public KeysetPageResponse<MemoryCardDeckDTO> getPostCreatorDeck(
+    public KeysetPageResponse<DeckWithVoteDTO> getPostCreatorDeck(
             Long postId, String sortBy, String sortOrder, Double lastScore, Long lastId, Integer limit, Long userId) {
         // 参数验证
         if (limit == null || limit <= 0) limit = 1;
@@ -223,7 +223,7 @@ public class MemoryCardDeckService {
     /**
      * 需求3: 获取用户自己在指定帖子下提交的卡片组 - 最新创建，limit通常为1
      */
-    public KeysetPageResponse<MemoryCardDeckDTO> getMyPostDeck(
+    public KeysetPageResponse<DeckWithVoteDTO> getMyPostDeck(
             Long postId, Long userId, String sortBy, String sortOrder, Double lastScore, Long lastId, Integer limit) {
         // 参数验证
         if (limit == null || limit <= 0) limit = 1;
@@ -249,7 +249,7 @@ public class MemoryCardDeckService {
      * @param lastId 最后一条记录的ID（用于分页）
      * @param limit 每页数量
      */
-    public KeysetPageResponse<MemoryCardDeckDTO> getUserDecks(
+    public KeysetPageResponse<DeckWithVoteDTO> getUserDecks(
             Long userId, Long currentUserId, Long lastId, Integer limit) {
         // 参数验证
         if (limit == null || limit <= 0) limit = 10;
@@ -269,7 +269,7 @@ public class MemoryCardDeckService {
     /**
      * 构建卡片组响应的通用方法
      */
-    private KeysetPageResponse<MemoryCardDeckDTO> buildDeckResponse(
+    private KeysetPageResponse<DeckWithVoteDTO> buildDeckResponse(
             List<MemoryCardDeckDO> deckList, Integer limit, Long userId) {
         // 判断是否有更多数据
         boolean hasMore = deckList.size() > limit;
@@ -278,10 +278,10 @@ public class MemoryCardDeckService {
         }
 
         // 转换为DTO (包含创建者信息和点赞状态)
-        List<MemoryCardDeckDTO> dtoList = toDTOV1(deckList, userId);
+        List<DeckWithVoteDTO> dtoList = toDeckWithVote(deckList, userId);
 
         // 构建响应
-        KeysetPageResponse<MemoryCardDeckDTO> response = new KeysetPageResponse<>();
+        KeysetPageResponse<DeckWithVoteDTO> response = new KeysetPageResponse<>();
         response.setItems(dtoList);
         response.setHasMore(hasMore);
 
@@ -299,7 +299,7 @@ public class MemoryCardDeckService {
     /**
      * 根据节点ID获取卡片组列表 - Keyset分页
      */
-    public KeysetPageResponse<MemoryCardDeckDTO> getDecksByNode(
+    public KeysetPageResponse<DeckWithVoteDTO> getDecksByNode(
             Long nodeId, Double lastScore, Long lastId, Integer limit, Long userId) {
         // 参数验证
         if (limit == null || limit <= 0) limit = 20;
@@ -323,10 +323,10 @@ public class MemoryCardDeckService {
         }
 
         // 转换为DTO (包含创建者信息和点赞状态)
-        List<MemoryCardDeckDTO> dtoList = toDTOV1(deckList, userId);
+        List<DeckWithVoteDTO> dtoList = toDeckWithVote(deckList, userId);
 
         // 构建响应
-        KeysetPageResponse<MemoryCardDeckDTO> response = new KeysetPageResponse<>();
+        KeysetPageResponse<DeckWithVoteDTO> response = new KeysetPageResponse<>();
         response.setItems(dtoList);
         response.setHasMore(hasMore);
 
@@ -393,11 +393,11 @@ public class MemoryCardDeckService {
         }
 
         // 转换为基础DTO列表(包含创建者信息和点赞状态)
-        List<MemoryCardDeckDTO> baseDTOList = toDTOV1(deckList, userId);
+        List<DeckWithVoteDTO> baseDTOList = toDeckWithVote(deckList, userId);
         
         // 批量获取所有卡片组的卡片信息
         Set<Long> deckIds = deckList.stream().map(MemoryCardDeckDO::getId).collect(Collectors.toSet());
-        Map<Long, List<MemoryCardViewDTO>> deckCardsMap = new HashMap<>();
+        Map<Long, List<CardWithSrsDTO>> deckCardsMap = new HashMap<>();
         
         if (!deckIds.isEmpty()) {
             // 直接从数据层批量查询卡片
@@ -409,7 +409,7 @@ public class MemoryCardDeckService {
             
             // 转换为DTO
             cardsByDeck.forEach((deckId, cards) -> {
-                List<MemoryCardViewDTO> cardViews = memoryCardService.toDTOV1(cards, null);
+                List<CardWithSrsDTO> cardViews = memoryCardService.toCardViewWithSrs(cards, null);
                 deckCardsMap.put(deckId, cardViews);
             });
         }
@@ -421,7 +421,7 @@ public class MemoryCardDeckService {
                 DeckDetailDTO detail = deckConverter.toDeckDetailDTO(baseDTO);
                 
                 // 从map中获取卡片列表
-                List<MemoryCardViewDTO> cards = deckCardsMap.getOrDefault(baseDTO.getId(), new ArrayList<>());
+                List<CardWithSrsDTO> cards = deckCardsMap.getOrDefault(baseDTO.getId(), new ArrayList<>());
                 detail.setCards(cards);
                 
                 return detail;
@@ -451,13 +451,13 @@ public class MemoryCardDeckService {
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
 
         // 先转换为基础DTO(包含创建者信息)
-        MemoryCardDeckDTO baseDTO = toDTOV1(deck);
+        DeckWithCreatorDTO baseDTO = toDeckWithCreator(deck);
         
         // 使用converter转换为详情DTO
         DeckDetailDTO detail = deckConverter.toDeckDetailDTO(baseDTO);
         
         // 获取卡片列表（所有卡片tab - 不包含用户学习状态，显示最新版本）
-        List<MemoryCardViewDTO> cards = memoryCardService.getCardsByDeck(deckId, null);
+        List<CardWithSrsDTO> cards = memoryCardService.getCardsByDeck(deckId, null);
         detail.setCards(cards);
         
         // 获取统计信息
@@ -473,7 +473,7 @@ public class MemoryCardDeckService {
      * 创建卡片组
      */
     @Transactional
-    public MemoryCardDeckDTO createDeck(Long userId, CreateDeckRequest request) {
+    public DeckWithCreatorDTO createDeck(Long userId, CreateDeckRequest request) {
         // 验证参数
         checkNotNull(request);
 
@@ -517,14 +517,14 @@ public class MemoryCardDeckService {
         }
 
         // 转换并返回 (包含创建者信息)
-        return toDTOV1(deck);
+        return toDeckWithCreator(deck);
     }
 
     /**
      * 更新卡片组
      */
     @Transactional
-    public MemoryCardDeckDTO updateDeck(Long userId, UpdateDeckRequest request) {
+    public DeckWithCreatorDTO updateDeck(Long userId, UpdateDeckRequest request) {
         // 验证参数
         checkNotNull(request);
 
@@ -551,7 +551,7 @@ public class MemoryCardDeckService {
         deckDataService.update(deck);
 
         // 获取更新后的数据并返回 (包含创建者信息)
-        return toDTOV1(deck);
+        return toDeckWithCreator(deck);
     }
 
     /**
@@ -959,7 +959,7 @@ public class MemoryCardDeckService {
      * 整体替换卡片组中的所有卡片
      */
     @Transactional
-    public MemoryCardDeckDTO replaceAllCards(Long userId, Long deckId, CreateDeckRequest request) {
+    public DeckWithVoteDTO replaceAllCards(Long userId, Long deckId, CreateDeckRequest request) {
         // 验证并获取卡片组
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
 
@@ -998,7 +998,7 @@ public class MemoryCardDeckService {
         log.info("Replaced all cards for deck {} by user {}", deckId, userId);
 
         // 返回更新后的卡片组信息
-        return toDTOV1(deck, userId);
+        return toDeckWithVote(deck, userId);
     }
 
     /**
@@ -1062,7 +1062,7 @@ public class MemoryCardDeckService {
      * @param limit 限制数量
      * @return 卡片组列表（分页响应）
      */
-    public KeysetPageResponse<MemoryCardDeckDTO> getDecksForAdmin(Integer state, Long postId, Long creatorId, Long lastId, Integer limit) {
+    public KeysetPageResponse<DeckWithCreatorDTO> getDecksForAdmin(Integer state, Long postId, Long creatorId, Long lastId, Integer limit) {
         // 设置默认值
         if (limit == null || limit <= 0) {
             limit = 20;
@@ -1114,10 +1114,10 @@ public class MemoryCardDeckService {
         }
 
         // 转换为 DTO
-        List<MemoryCardDeckDTO> dtoList = toDTOV1(deckDOList);
+        List<DeckWithCreatorDTO> dtoList = toDeckWithCreator(deckDOList);
 
         // 构建分页响应
-        KeysetPageResponse<MemoryCardDeckDTO> response = new KeysetPageResponse<>();
+        KeysetPageResponse<DeckWithCreatorDTO> response = new KeysetPageResponse<>();
         response.setItems(dtoList);
         response.setHasMore(hasMore);
 

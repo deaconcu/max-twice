@@ -47,7 +47,7 @@ public class MemoryBankService {
         CourseMemoryBankDO courseMemoryBankDO = userCardInCourseDataService.getCardStatsForCourses(userId, courseDO.getId());
         CourseMemoryBankDTO bankDTO = courseMemoryBankConverter.toCardStatsDTO(courseMemoryBankDO);
 
-        bankDTO.setCourse(courseConverter.toDTOV3(courseDO));
+        bankDTO.setCourse(courseConverter.toBriefDTO(courseDO));
         bankDTO.setSetting(courseSrsSettingConverter.toDTO(settingDO));
 
         return bankDTO;
@@ -61,7 +61,7 @@ public class MemoryBankService {
         List<CourseMemoryBankDTO> bankDTOList = new ArrayList<>();
         for (CourseMemoryBankDO bankDO: bankDOList) {
             CourseMemoryBankDTO courseMemoryBankDTO = courseMemoryBankConverter.toCardStatsDTO(bankDO);
-            courseMemoryBankDTO.setCourse(courseConverter.toDTOV3(courseMap.get(bankDO.getCourseId())));
+            courseMemoryBankDTO.setCourse(courseConverter.toBriefDTO(courseMap.get(bankDO.getCourseId())));
             courseMemoryBankDTO.setSetting(courseSrsSettingConverter.toDTO(settingMap.get(bankDO.getCourseId())));
             bankDTOList.add(courseMemoryBankDTO);
         }

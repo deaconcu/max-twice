@@ -11,8 +11,9 @@ import com.prosper.learn.domain.util.converter.ProfessionConverter;
 import com.prosper.learn.domain.util.converter.RoadmapConverter;
 import com.prosper.learn.domain.util.converter.UserConverter;
 import com.prosper.learn.domain.util.converter.UserRoadmapConverter;
-import com.prosper.learn.dto.response.RoadmapDTO;
-import com.prosper.learn.dto.response.UserRoadmapDTO;
+import com.prosper.learn.dto.response.roadmap.RoadmapWithStatusDTO;
+import com.prosper.learn.dto.response.userroadmap.UserRoadmapSummaryDTO;
+import com.prosper.learn.dto.response.userroadmap.UserRoadmapWithDetailDTO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
 import com.prosper.learn.persistence.dataobject.UserRoadmapDO;
 import com.prosper.learn.domain.service.data.ProfessionDataService;
@@ -51,35 +52,34 @@ public class UserRoadmapService {
     private static final double PROGRESS_PRECISION = 100.0;
     
     // ========== DTO转换方法 ==========
-    
+
     /**
-     * 转换单个对象为DTO
+     * 转换为摘要 DTO（基础信息，不含路线图详情）
      */
-    public UserRoadmapDTO toDTO(UserRoadmapDO userRoadmapDO) {
-        return userRoadmapConverter.toDTO(userRoadmapDO);
+    public UserRoadmapSummaryDTO toSummaryDTO(UserRoadmapDO userRoadmapDO) {
+        return userRoadmapConverter.toSummaryDTO(userRoadmapDO);
     }
-    
-    /**
-     * 转换列表为DTO列表
-     */
-    public List<UserRoadmapDTO> toDTO(List<UserRoadmapDO> userRoadmapDOList) {
-        return userRoadmapConverter.toDTO(userRoadmapDOList);
+
+    public List<UserRoadmapSummaryDTO> toSummaryDTO(List<UserRoadmapDO> userRoadmapDOList) {
+        return userRoadmapConverter.toSummaryDTO(userRoadmapDOList);
     }
 
     /**
-     * v1 = v0 + roadmap
+     * 转换为含路线图详细信息的 DTO（单个）
      */
-    public UserRoadmapDTO toDTOV1(UserRoadmapDO userRoadmapDO, Long userId) {
-        UserRoadmapDTO userRoadmapDTO = toDTO(userRoadmapDO);
-        RoadmapDTO roadmapDTO = roadmapService.getById(userRoadmapDO.getRoadmapId(), userId);
-        userRoadmapDTO.setRoadmap(roadmapDTO);
-        return userRoadmapDTO;
+    public UserRoadmapWithDetailDTO toWithDetailDTO(UserRoadmapDO userRoadmapDO, Long userId) {
+        if (userRoadmapDO == null) return null;
+
+        UserRoadmapWithDetailDTO dto = userRoadmapConverter.toWithDetailDTO(userRoadmapDO);
+        RoadmapWithStatusDTO roadmapDTO = roadmapService.getById(userRoadmapDO.getRoadmapId(), userId);
+        dto.setRoadmap(roadmapDTO);
+        return dto;
     }
 
     /**
-     * 转换列表为DTO列表
+     * 转换为含路线图详细信息的 DTO（批量）
      */
-    public List<UserRoadmapDTO> toDTOV1(List<UserRoadmapDO> userRoadmapList, long userId) {
+    public List<UserRoadmapWithDetailDTO> toWithDetailDTO(List<UserRoadmapDO> userRoadmapList, long userId) {
         if (userRoadmapList.isEmpty()) {
             return List.of();
         }
@@ -104,8 +104,6 @@ public class UserRoadmapService {
                 try {
                     String parsedContent = roadmapService.parseContentToGraphFormat(roadmapDO.getContent(), userId);
                     checkAndCollectRoadmapUpdate(userRoadmapDO, parsedContent, toUpdateList);
-                    // 将解析后的内容设置回去，避免重复解析
-                    // roadmapDO.setContent(parsedContent);
                 } catch (Exception e) {
                     // 解析失败时继续处理其他路线图
                     log.error("Failed to parse roadmap content: roadmapId={}", userRoadmapDO.getRoadmapId(), e);
@@ -121,12 +119,11 @@ public class UserRoadmapService {
         // 转换为 DTO 并填充 roadmap 信息，过滤掉 roadmap 已被删除的记录
         return userRoadmapList.stream()
                 .map(userRoadmapDO -> {
-                    UserRoadmapDTO dto = toDTO(userRoadmapDO);
+                    UserRoadmapWithDetailDTO dto = userRoadmapConverter.toWithDetailDTO(userRoadmapDO);
                     RoadmapDO roadmapDO = roadmapMap.get(userRoadmapDO.getRoadmapId());
 
                     if (roadmapDO != null) {
-                        // 这里的content已经在上面解析过了
-                        RoadmapDTO roadmapDTO = roadmapService.toDTOV1(roadmapDO, userId);
+                        RoadmapWithStatusDTO roadmapDTO = roadmapService.toRoadmapWithStatus(roadmapDO, userId);
                         dto.setRoadmap(roadmapDTO);
                         return dto;
                     }
@@ -219,12 +216,12 @@ public class UserRoadmapService {
     /**
      * 获取用户的路线图学习进度
      */
-    public UserRoadmapDTO getUserRoadmap(Long userId, Long roadmapId) {
+    public UserRoadmapWithDetailDTO getUserRoadmap(Long userId, Long roadmapId) {
         validateUserId(userId);
         validateRoadmapId(roadmapId);
 
         UserRoadmapDO userRoadmapDO = userRoadmapDataService.getByUserAndRoadmap(userId, roadmapId);
-        return toDTOV1(userRoadmapDO, userId);
+        return toWithDetailDTO(userRoadmapDO, userId);
     }
 
     /**
@@ -232,9 +229,9 @@ public class UserRoadmapService {
      * @param userId
      * @return
      */
-    public List<UserRoadmapDTO> getUserAllRoadmap(Long userId) {
+    public List<UserRoadmapWithDetailDTO> getUserAllRoadmap(Long userId) {
         List<UserRoadmapDO> userRoadmapList = userRoadmapDataService.getByUser(userId);
-        return toDTOV1(userRoadmapList, userId);
+        return toWithDetailDTO(userRoadmapList, userId);
     }
 
     /**
@@ -314,7 +311,7 @@ public class UserRoadmapService {
      * @param progressPercent 进度百分比
      * @return 更新后的学习进度记录
      */
-    public UserRoadmapDTO updateProgress(Long userId, Long roadmapId, Integer progressPercent) {
+    public UserRoadmapSummaryDTO updateProgress(Long userId, Long roadmapId, Integer progressPercent) {
         UserRoadmapDO userRoadmapDO = userRoadmapDataService.getByUserAndRoadmap(userId, roadmapId);
 
         if (userRoadmapDO == null) {
@@ -332,7 +329,7 @@ public class UserRoadmapService {
         }
 
         userRoadmapDataService.update(userRoadmapDO);
-        return toDTO(userRoadmapDO);
+        return toSummaryDTO(userRoadmapDO);
     }
 
     /**

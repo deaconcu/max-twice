@@ -140,18 +140,27 @@
         <v-col class="right-sidebar">
           <div class="sticky-wrapper">
             <!-- 申请职业按钮 -->
-            <v-btn
-              color="grey-lighten-4"
-              variant="flat"
-              block
-              rounded="lg"
-              size="large"
-              class="mb-4 create-course-btn"
-              prepend-icon="mdi-plus-circle"
+            <v-card
+              rounded="xl"
+              class="mb-4 create-career-card"
+              elevation="0"
               @click="openApplicationDialog"
             >
-              {{ t('careerCenter.search.applyJob') }}
-            </v-btn>
+              <v-card-text class="pa-6">
+                <div class="d-flex align-center">
+                  <v-avatar color="primary" size="40" class="mr-3">
+                    <v-icon icon="mdi-plus" size="22" color="white" />
+                  </v-avatar>
+                  <div class="flex-grow-1">
+                    <div class="text-subtitle-1 font-weight-bold text-grey-darken-4">
+                      {{ t('careerCenter.search.applyJob') }}
+                    </div>
+                    <div class="text-caption text-grey">申请新的职业方向</div>
+                  </div>
+                  <v-icon icon="mdi-chevron-right" size="20" color="grey-lighten-1" />
+                </div>
+              </v-card-text>
+            </v-card>
 
             <v-card rounded="lg" class="popular-card no-border" flat>
               <v-card-title class="py-4 px-0 pb-3">
@@ -783,19 +792,16 @@ const submitApplication = async () => {
   flex-direction: column;
 }
 
-.create-course-btn {
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: 0.3px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  transition: all 0.25s ease;
+.create-career-card {
+  cursor: pointer;
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.create-course-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  background-color: rgb(var(--v-theme-grey-lighten-3));
+.create-career-card:hover {
+  border-color: rgb(var(--v-theme-primary));
+  transform: translateY(-2px);
 }
 
 .popular-card {

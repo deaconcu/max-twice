@@ -8,7 +8,7 @@ import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.service.business.ReviewService;
 import com.prosper.learn.dto.request.ReviewCardRequest;
-import com.prosper.learn.dto.response.MemoryCardViewDTO;
+import com.prosper.learn.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.dto.request.ReviewSessionRequest;
 import com.prosper.learn.dto.response.ReviewStatsDTO;
 import com.prosper.learn.persistence.dataobject.UserDO;
@@ -40,12 +40,12 @@ public class ReviewController {
      */
     @GetMapping("/queue")
     @SaCheckLogin
-    public ApiResponse<List<MemoryCardViewDTO>> getReviewQueue(
+    public ApiResponse<List<CardWithSrsDTO>> getReviewQueue(
             @RequestParam(required = false) @Positive(message = "课程ID必须大于0") Long courseId,
             @CurrentUser UserDO currentUser) {
 
         // 固定参数：只查询到期的，限制100个
-        List<MemoryCardViewDTO> result = reviewService.getReviewQueue(currentUser.getId(), true, courseId, 100, null);
+        List<CardWithSrsDTO> result = reviewService.getReviewQueue(currentUser.getId(), true, courseId, 100, null);
         return ApiResponse.success(result);
     }
 
@@ -54,7 +54,7 @@ public class ReviewController {
      */
     @GetMapping("/cards")
     @SaCheckLogin
-    public ApiResponse<List<MemoryCardViewDTO>> getCardList(
+    public ApiResponse<List<CardWithSrsDTO>> getCardList(
             @RequestParam(required = false) @Positive(message = "课程ID必须大于0") Long courseId,
             @RequestParam(defaultValue = "20") @Positive(message = "限制数量必须大于0") Integer limit,
             @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
@@ -66,7 +66,7 @@ public class ReviewController {
         }
 
         // 固定参数：查询全部卡片（不限制到期）
-        List<MemoryCardViewDTO> result = reviewService.getReviewQueue(currentUser.getId(), false, courseId, limit, lastId);
+        List<CardWithSrsDTO> result = reviewService.getReviewQueue(currentUser.getId(), false, courseId, limit, lastId);
         return ApiResponse.success(result);
     }
 

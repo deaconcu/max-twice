@@ -7,6 +7,7 @@ import com.prosper.learn.domain.service.data.*;
 import com.prosper.learn.domain.util.converter.*;
 import com.prosper.learn.dto.request.*;
 import com.prosper.learn.dto.response.*;
+import com.prosper.learn.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.persistence.dataobject.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,7 +57,7 @@ public class ReviewService {
     /**
      * 获取复习队列
      */
-    public List<MemoryCardViewDTO> getReviewQueue(Long userId, Boolean dueOnly, Long courseId, Integer limit, Long lastId) {
+    public List<CardWithSrsDTO> getReviewQueue(Long userId, Boolean dueOnly, Long courseId, Integer limit, Long lastId) {
         if (userId == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("用户ID不能为空");
         }
@@ -86,7 +87,7 @@ public class ReviewService {
             .collect(Collectors.toSet());
 
         List<MemoryCardDO> cardList = cardDataService.getByIds(cardIds);
-        return memoryCardService.toDTOV1(cardList, userId);
+        return memoryCardService.toCardViewWithSrs(cardList, userId);
     }
 
     /**

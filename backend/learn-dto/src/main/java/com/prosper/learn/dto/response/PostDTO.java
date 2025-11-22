@@ -1,5 +1,7 @@
 package com.prosper.learn.dto.response;
 
+import com.prosper.learn.dto.response.node.NodeWithCourseDTO;
+import com.prosper.learn.dto.response.user.UserBriefDTO;
 import lombok.Data;
 
 @Data
@@ -11,11 +13,11 @@ public class PostDTO {
 
     private Long nodeId;
 
-    private NodeDTO node;
+    private NodeWithCourseDTO node;
 
     private Long creatorId;
 
-    private UserDTO creator;
+    private UserBriefDTO creator;
 
     private Integer type;
 

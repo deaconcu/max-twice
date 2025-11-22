@@ -6,6 +6,7 @@ import com.prosper.learn.domain.service.data.*;
 import com.prosper.learn.domain.util.converter.*;
 import com.prosper.learn.dto.request.*;
 import com.prosper.learn.dto.response.*;
+import com.prosper.learn.dto.response.card.*;
 import com.prosper.learn.persistence.dataobject.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,20 +43,19 @@ public class MemoryCardService {
     // ========== toDTO ==========
 
     /**
-     * V1 = 基础信息 + 创建者信息 + 卡片内容 + SRS状态(可选) + 更新检测
+     * 转换为卡片（含SRS状态）
      */
-    public MemoryCardViewDTO toDTOV1(MemoryCardDO cardDO, Long userId) {
+    public CardWithSrsDTO toCardWithSrs(MemoryCardDO cardDO, Long userId) {
         if (cardDO == null) return null;
 
-        MemoryCardViewDTO dto = new MemoryCardViewDTO();
+        CardWithSrsDTO dto = new CardWithSrsDTO();
         dto.setId(cardDO.getId());
 
         // 填充创建者信息
-        UserDTO creator = userService.getUser(cardDO.getCreatorId(), DTOVersion.V2);
-        dto.setCreator(creator);
+        dto.setCreator(userService.toBriefDTO(userDataService.getById(cardDO.getCreatorId())));
 
         MemoryCardDeckDO deck = deckDataService.validateAndGet(cardDO.getDeckId());
-        dto.setDeck(deckConverter.toDTOV2(deck));
+        dto.setDeck(deckConverter.toSummaryDTO(deck));
 
         // 获取SRS状态并检测更新
         UserCardSrsDO srsState = null;
@@ -63,7 +63,7 @@ public class MemoryCardService {
             srsState = userCardSrsDataService.getByUserAndCard(userId, cardDO.getId());
             if (srsState != null) {
                 dto.setSrsState(srsStateConverter.toDTO(srsState));
-                
+
                 // 检测deck是否有更新：比较用户学习时的deck版本和当前deck版本
                 boolean hasDeckUpdate = srsState.getDeckVersion() != null &&
                     !srsState.getDeckVersion().equals(deck.getVersion());
@@ -85,7 +85,7 @@ public class MemoryCardService {
             // 如果没有传入userId或用户没有学习记录，使用最新版本（所有卡片场景）
             versionIdToUse = cardDO.getCurrentVersionId();
         }
-        
+
         if (versionIdToUse != null) {
             MemoryCardVersionDO version = cardVersionDataService.getById(versionIdToUse);
             if (version != null) {
@@ -97,11 +97,11 @@ public class MemoryCardService {
         return dto;
     }
 
-    public MemoryCardViewDTO toDTOV1(MemoryCardDO cardDO) {
-        return toDTOV1(cardDO, null);
+    public CardWithSrsDTO toCardViewWithSrs(MemoryCardDO cardDO) {
+        return toCardWithSrs(cardDO, null);
     }
 
-    public List<MemoryCardViewDTO> toDTOV1(List<MemoryCardDO> cardDOList,
+    public List<CardWithSrsDTO> toCardViewWithSrs(List<MemoryCardDO> cardDOList,
                                            Map<Long, UserCardSrsDO> srsStateMap,
                                            Long userId) {
         if (cardDOList == null || cardDOList.isEmpty()) {
@@ -138,13 +138,13 @@ public class MemoryCardService {
 
         return cardDOList.stream()
                 .map(card -> {
-                    MemoryCardViewDTO dto = new MemoryCardViewDTO();
+                    CardWithSrsDTO dto = new CardWithSrsDTO();
                     dto.setId(card.getId());
 
                     // 设置创建者信息
                     UserDO creator = userMap.get(card.getCreatorId());
                     if (creator != null) {
-                        dto.setCreator(userConverter.toDTO(creator));
+                        dto.setCreator(userConverter.toBriefDTO(creator));
                     }
 
                     // 获取SRS状态并检测更新
@@ -185,7 +185,7 @@ public class MemoryCardService {
                     }
 
                     if (deckMap.containsKey(card.getDeckId())) {
-                        dto.setDeck(deckConverter.toDTOV2(deckMap.get(card.getDeckId())));
+                        dto.setDeck(deckConverter.toSummaryDTO(deckMap.get(card.getDeckId())));
                     }
 
                     return dto;
@@ -193,7 +193,7 @@ public class MemoryCardService {
                 .collect(Collectors.toList());
     }
 
-    public List<MemoryCardViewDTO> toDTOV1(List<MemoryCardDO> cardDOList, Long userId) {
+    public List<CardWithSrsDTO> toCardViewWithSrs(List<MemoryCardDO> cardDOList, Long userId) {
         if (cardDOList == null || cardDOList.isEmpty()) {
             return new ArrayList<>();
         }
@@ -211,7 +211,7 @@ public class MemoryCardService {
             srsStateMap = new HashMap<>();
         }
 
-        return toDTOV1(cardDOList, srsStateMap, userId);
+        return toCardViewWithSrs(cardDOList, srsStateMap, userId);
     }
 
 
@@ -221,19 +221,19 @@ public class MemoryCardService {
      * 根据卡片组获取卡片列表（包含SRS状态）
      * 在read页面点击卡片组tab时调用，显示该卡片组下的所有卡片
      */
-    public List<MemoryCardViewDTO> getCardsByDeck(Long deckId, Long userId) {
+    public List<CardWithSrsDTO> getCardsByDeck(Long deckId, Long userId) {
         // 验证卡片组存在
         deckDataService.validateExists(deckId);
 
         // 获取卡片列表并转换为DTO（包含SRS状态）
         List<MemoryCardDO> cards = cardDataService.getByDeckId(deckId);
-        return toDTOV1(cards, userId);
+        return toCardViewWithSrs(cards, userId);
     }
 
     /**
      * 根据节点ID获取用户学习的卡片列表
      */
-    public List<MemoryCardViewDTO> getCardsByNode(Long nodeId, Long userId) {
+    public List<CardWithSrsDTO> getCardsByNode(Long nodeId, Long userId) {
         // 获取用户在这个节点下的所有SRS学习记录
         List<UserCardSrsDO> srsList = userCardSrsDataService.getByUserAndNodeId(userId, nodeId);
 
@@ -254,7 +254,7 @@ public class MemoryCardService {
             .collect(Collectors.toMap(UserCardSrsDO::getCardId, srs -> srs));
 
         // 转换为DTO，使用用户学习时的版本
-        return toDTOV1(cards, srsStateMap, userId);
+        return toCardViewWithSrs(cards, srsStateMap, userId);
     }
 
     /**
@@ -310,7 +310,7 @@ public class MemoryCardService {
      * 创建卡片
      */
     @Transactional
-    public MemoryCardViewDTO createCard(Long userId, CreateCardRequest request) {
+    public CardWithSrsDTO createCard(Long userId, CreateCardRequest request) {
         // 验证参数
         checkNotNull(request);
 
@@ -363,14 +363,14 @@ public class MemoryCardService {
         log.info("Created card: {} in deck: {} by user: {}", card.getId(), request.getDeckId(), userId);
 
         // 转换并返回
-        return toDTOV1(card, userId);
+        return toCardWithSrs(card, userId);
     }
 
     /**
      * 批量创建卡片（用于创建卡片组时同时创建卡片）
      */
     @Transactional
-    public List<MemoryCardViewDTO> batchCreateCards(Long userId, Long deckId, List<CreateDeckRequest.CardInfo> cardInfos) {
+    public List<CardWithSrsDTO> batchCreateCards(Long userId, Long deckId, List<CreateDeckRequest.CardInfo> cardInfos) {
         // 验证参数
         checkNotNull(cardInfos);
         if (cardInfos.isEmpty()) {
@@ -445,7 +445,7 @@ public class MemoryCardService {
 
         // 转换为DTO返回
         return cardsToInsert.stream()
-            .map(card -> toDTOV1(card, userId))
+            .map(card -> toCardWithSrs(card, userId))
             .collect(Collectors.toList());
     }
 
@@ -453,7 +453,7 @@ public class MemoryCardService {
      * 更新卡片
      */
     @Transactional
-    public MemoryCardViewDTO updateCard(Long userId, UpdateCardRequest request) {
+    public CardWithSrsDTO updateCard(Long userId, UpdateCardRequest request) {
         // 验证参数
         checkNotNull(request);
 
@@ -477,7 +477,7 @@ public class MemoryCardService {
         String contentHash = calculateContentHash(request.getFront(), request.getBack());
         // 检查内容是否有变化，没有变化直接返回
         if (contentHash.equals(currentVersion.getContentHash())) {
-            return toDTOV1(existingCard, userId);
+            return toCardWithSrs(existingCard, userId);
         }
 
         // 创建新版本
@@ -509,7 +509,7 @@ public class MemoryCardService {
         // 卡片内容变化，将卡片组状态设置为审核中并增加版本
         deckDataService.updateStateAndIncrementVersion(existingCard.getDeckId(), ContentState.SUBMITTED.value());
 
-        return toDTOV1(card, userId);
+        return toCardWithSrs(card, userId);
     }
 
     /**

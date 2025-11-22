@@ -1,5 +1,5 @@
 <template>
-  <v-card rounded="lg" class="career-card" border hover @click="handleClick">
+  <v-card rounded="lg" class="career-card hoverable" border hover @click="handleClick">
     <v-card-text class="pa-6">
       <div class="d-flex align-center mb-4">
         <div class="icon-container flex-shrink-0 mr-4">
@@ -132,14 +132,6 @@ const handleClick = () => {
 <style scoped>
 .career-card {
   background-color: rgb(var(--v-theme-surface));
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.career-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-  border-color: rgb(var(--v-theme-on-surface)) !important;
 }
 
 .icon-container {

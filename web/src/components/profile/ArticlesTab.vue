@@ -3,24 +3,26 @@
     <!-- 左侧简介栏 -->
     <v-col cols="12" md="2">
       <div class="sticky-sidebar">
-        <div class="pa-2 pr-10 pt-4">
-          <div class="mb-3">
-            <h4 class="text-body-1 font-weight-bold">创建的文章</h4>
+        <div class="pa-4">
+          <div class="mb-4">
+            <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">创建的文章</h4>
+            <p class="text-body-2 text-grey mb-0">
+              管理您创作的文章，分享知识和经验。
+            </p>
           </div>
-          <p class="text-body-2 text-grey-darken-2 mb-3">管理您创作的文章，分享知识和经验。</p>
-          <v-divider class="my-3" />
-          <div class="text-caption text-grey">
-            <div class="mb-2">
-              <v-icon icon="mdi-pencil" size="14" class="mr-1" />
-              编辑发布文章
+          <v-divider class="my-4" />
+          <div class="text-body-2 text-grey">
+            <div class="d-flex align-start mb-3">
+              <v-icon icon="mdi-pencil" size="18" color="grey" class="mr-2 mt-1" />
+              <span>编辑发布文章</span>
             </div>
-            <div class="mb-2">
-              <v-icon icon="mdi-eye" size="14" class="mr-1" />
-              查看阅读统计
+            <div class="d-flex align-start mb-3">
+              <v-icon icon="mdi-eye" size="18" color="grey" class="mr-2 mt-1" />
+              <span>查看阅读统计</span>
             </div>
-            <div>
-              <v-icon icon="mdi-tag" size="14" class="mr-1" />
-              添加标签分类
+            <div class="d-flex align-start">
+              <v-icon icon="mdi-tag" size="18" color="grey" class="mr-2 mt-1" />
+              <span>添加标签分类</span>
             </div>
           </div>
         </div>
@@ -30,89 +32,97 @@
     <!-- 右侧主内容 -->
     <v-col cols="12" md="10">
       <div class="py-2">
-        <div class="d-flex align-center justify-space-between mb-4">
-          <v-icon icon="mdi-menu" size="18" color="grey-lighten-1" />
+        <div class="d-flex align-center justify-space-between mb-6">
+          <div></div>
         </div>
 
         <!-- 文章列表 -->
         <v-infinite-scroll v-if="articles.length > 0" :items="articles" @load="onLoadMore">
           <div v-for="(article, index) in articles" :key="article.id">
-            <v-divider v-if="index > 0" class="mb-8" />
-            <div class="article-item pb-8" :class="index === 0 ? 'pt-1' : 'pt-0'">
-              <div class="d-flex align-start justify-space-between mb-3">
-                <div class="flex-grow-1">
-                  <!-- 所属课程和节点 -->
-                  <div v-if="article.node || article.course" class="mb-3 d-flex align-center ga-2">
-                    <v-chip
-                      v-if="article.course"
-                      size="small"
-                      variant="tonal"
-                      color="primary"
-                      class="cursor-pointer"
-                      @click.stop="goToCourse(article.courseId)"
-                    >
-                      <v-icon icon="mdi-book-outline" size="14" class="mr-1" />
-                      {{ article.course }}
-                    </v-chip>
-                    <v-chip
-                      v-if="article.node"
-                      size="small"
-                      variant="tonal"
-                      color="grey-darken-2"
-                      class="cursor-pointer"
-                      @click.stop="goToNode(article.nodeId)"
-                    >
-                      <v-icon icon="mdi-file-document-outline" size="14" class="mr-1" />
-                      {{ article.node.name }}
-                    </v-chip>
-                  </div>
-
-                  <!-- 文章内容缩略 -->
-                  <router-link
-                    v-if="article.id"
-                    :to="{ path: '/read', query: { postId: article.id } }"
-                    class="text-decoration-none d-block"
-                  >
-                    <div :ref="(el) => setContentRef(el, index)" class="article-content-preview mb-3" :class="{ 'has-overflow': article.hasOverflow }">
-                      <div v-html="article.preview"></div>
-                    </div>
-                  </router-link>
-                  <div v-else :ref="(el) => setContentRef(el, index)" class="article-content-preview mb-3" :class="{ 'has-overflow': article.hasOverflow }">
-                    <div v-html="article.preview"></div>
-                  </div>
-
-                  <!-- 统计信息 -->
-                  <div class="d-flex align-center text-body-2 text-grey" style="gap: 16px">
-                    <div>
-                      <v-icon icon="mdi-eye-outline" size="14" class="mr-1" />
-                      {{ article.views }} 阅读
-                    </div>
-                    <div>
-                      <v-icon icon="mdi-heart-outline" size="14" class="mr-1" />
-                      {{ article.likes }} 点赞
-                    </div>
-                    <div>
-                      <v-icon icon="mdi-comment-outline" size="14" class="mr-1" />
-                      {{ article.comments }} 评论
-                    </div>
-                    <div>{{ formatDate(article.publishedAt) }}</div>
+            <v-card rounded="xl" hover border elevation="0" class="article-card mb-6 hoverable" @click="goToArticle(article)">
+              <v-card-text class="pa-6 pb-1">
+                <!-- 所属课程和节点 -->
+                <div v-if="article.node || article.course" class="mb-4">
+                  <div class="d-flex align-center ga-1 flex-wrap">
+                    <template v-if="article.course">
+                      <v-chip
+                        size="small"
+                        density="comfortable"
+                        color="grey-darken-1"
+                        variant="tonal"
+                      >
+                        课程
+                      </v-chip>
+                      <v-btn
+                        v-if="article.course"
+                        variant="text"
+                        class="course-link-btn px-2 text-body-1"
+                        @click.stop="goToCourse(article.courseId)"
+                      >
+                        {{ article.course }}
+                      </v-btn>
+                    </template>
+                    <template v-if="article.node">
+                      <v-icon icon="mdi-chevron-right" size="18" color="grey-darken-1" class="mx-1" />
+                      <v-chip
+                        size="small"
+                        density="comfortable"
+                        color="grey-darken-1"
+                        variant="tonal"
+                      >
+                        节点
+                      </v-chip>
+                      <v-btn
+                        variant="text"
+                        class="course-link-btn px-2 text-body-1"
+                        @click.stop="goToNode(article.nodeId)"
+                      >
+                        {{ article.node.name }}
+                      </v-btn>
+                    </template>
                   </div>
                 </div>
 
-                <!-- 删除按钮 -->
-                <v-btn
-                  color="error"
-                  variant="tonal"
-                  size="small"
-                  icon="mdi-delete"
-                  density="comfortable"
-                  @click.stop="deleteArticle(article.id)"
-                >
-                  <v-icon>mdi-delete</v-icon>
-                  <v-tooltip activator="parent" location="top">删除文章</v-tooltip>
-                </v-btn>
-              </div>
-            </div>
+                <!-- 文章内容缩略 -->
+                <div :ref="(el) => setContentRef(el, index)" class="article-content-preview mb-4" :class="{ 'has-overflow': article.hasOverflow }">
+                  <div v-html="article.preview"></div>
+                </div>
+
+                <div class="d-flex align-start justify-space-between">
+                  <!-- 统计信息 -->
+                  <div class="d-flex align-center text-body-2 text-grey" style="gap: 16px">
+                      <div class="d-flex align-center">
+                        <v-icon icon="mdi-eye-outline" size="16" color="grey" class="mr-1" />
+                        {{ article.views }} 阅读
+                      </div>
+                      <div class="d-flex align-center">
+                        <v-icon icon="mdi-heart-outline" size="16" color="grey" class="mr-1" />
+                        {{ article.likes }} 点赞
+                      </div>
+                      <div class="d-flex align-center">
+                        <v-icon icon="mdi-comment-outline" size="16" color="grey" class="mr-1" />
+                        {{ article.comments }} 评论
+                      </div>
+                      <div class="d-flex align-center">
+                        <v-icon icon="mdi-calendar-outline" size="16" color="grey" class="mr-1" />
+                        {{ formatDate(article.publishedAt) }}
+                      </div>
+                    </div>
+
+                  <!-- 删除按钮 -->
+                  <v-btn
+                    color="grey"
+                    variant="text"
+                    size="small"
+                    icon="mdi-delete"
+                    @click.stop="deleteArticle(article.id)"
+                  >
+                    <v-icon>mdi-delete</v-icon>
+                    <v-tooltip activator="parent" location="top">删除文章</v-tooltip>
+                  </v-btn>
+                </div>
+              </v-card-text>
+            </v-card>
           </div>
 
           <template #loading>
@@ -293,24 +303,28 @@ onMounted(() => {
 /* 左侧边栏固定 */
 .sticky-sidebar {
   position: sticky;
-  top: 56px;
-  max-height: calc(100vh - 76px);
+  top: 140px;
+  align-self: flex-start;
+  max-height: calc(100vh - 160px);
   overflow-y: auto;
+}
+
+.article-card {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #ffffff;
+  border: 1px solid #e9ecef !important;
 }
 
 /* 文章内容缩略显示 */
 .article-content-preview {
   position: relative;
   max-height: 300px;
+  min-height: 100px;
   overflow: hidden;
   line-height: 1.8;
   color: #1a1a1b;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.article-content-preview:hover {
-  background-color: #fafafa;
+  font-size: 1rem;
 }
 
 /* 只有溢出时才显示渐变和省略号 */
@@ -349,5 +363,14 @@ onMounted(() => {
     max-height: none;
     margin-bottom: 16px;
   }
+}
+
+/* 课程链接按钮样式 */
+.course-link-btn {
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  height: auto;
+  min-height: 0;
 }
 </style>

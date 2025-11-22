@@ -1,6 +1,6 @@
 package com.prosper.learn.dto.response;
 
-import com.prosper.learn.dto.response.old.CourseDTOV2;
+import com.prosper.learn.dto.response.course.CourseSummaryDTO;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -13,7 +13,11 @@ public class UserCourseDTO {
 
     private Long courseId;
 
-    private CourseDTO course;
+    /**
+     * 课程摘要信息
+     * 说明：包含课程的基本信息（id, name, description, 分类）
+     */
+    private CourseSummaryDTO course;
 
     private Integer progressPercent;
 

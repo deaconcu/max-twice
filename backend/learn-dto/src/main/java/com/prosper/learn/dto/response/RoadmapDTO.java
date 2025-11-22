@@ -1,6 +1,7 @@
 package com.prosper.learn.dto.response;
 
 import com.prosper.learn.dto.response.old.UserDTOV4;
+import com.prosper.learn.dto.response.user.UserBriefDTO;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -32,7 +33,7 @@ public class RoadmapDTO {
 
     private Long creatorId;
 
-    private UserDTO creator;
+    private UserBriefDTO creator;
 
     private LocalDateTime updatedAt;
 

@@ -10,7 +10,7 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.CommentService;
 import com.prosper.learn.dto.request.OperateRequest;
 import com.prosper.learn.dto.response.ApprovalResponseDTO;
-import com.prosper.learn.dto.response.CommentDTO;
+import com.prosper.learn.dto.response.comment.CommentAdminDTO;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -37,15 +37,15 @@ public class AdminCommentsController {
     /**
      * 获取指定状态的评论（分页）
      * 映射: GET /api/v1/admin/comments/{state}?lastId=123
-     * state: pending(待审核), approved(已通过), rejected(已拒绝)
+     * state: pending(待审核), approved(已通过), rejected(已拒绝), banned(已封禁)
      * lastId: 最后一条记录的ID，为null时加载第一页
      */
     @GetMapping("/comments/{state}")
     @RequireRole(UserRole.MODERATOR)
-    public ApiResponse<List<CommentDTO>> getCommentsByState(
+    public ApiResponse<List<CommentAdminDTO>> getCommentsByState(
             @PathVariable String state,
             @RequestParam(required = false) @Min(value = 1, message = "lastId必须大于0") Long lastId) {
-        List<CommentDTO> comments = commentService.getCommentsByState(state, lastId);
+        List<CommentAdminDTO> comments = commentService.getCommentsByState(state, lastId);
         return ApiResponse.success(comments);
     }
 
@@ -54,13 +54,13 @@ public class AdminCommentsController {
      */
     @GetMapping("/comments/filter")
     @RequireRole(UserRole.MODERATOR)
-    public ApiResponse<List<CommentDTO>> getCommentsByFilter(
+    public ApiResponse<List<CommentAdminDTO>> getCommentsByFilter(
             @RequestParam(value = "objectType", required = false) @Positive(message = "对象类型必须大于0") Integer objectType,
             @RequestParam(value = "objectId", required = false) @Positive(message = "对象ID必须大于0") Long objectId,
             @RequestParam(value = "creatorId", required = false) @Positive(message = "用户ID必须大于0") Long creatorId,
             @RequestParam(value = "lastId",  required = false) @Min(value = 0, message = "最后ID不能小于0") Long lastId,
             @RequestParam(value = "state", required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state) {
-        List<CommentDTO> comments = commentService.getCommentsByFilter(objectType, objectId, creatorId, lastId, state);
+        List<CommentAdminDTO> comments = commentService.getCommentsByFilter(objectType, objectId, creatorId, lastId, state);
         return ApiResponse.success(comments);
     }
 

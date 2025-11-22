@@ -3,24 +3,26 @@
     <!-- 左侧简介栏 -->
     <v-col cols="12" md="2">
       <div class="sticky-sidebar">
-        <div class="pa-2 pr-10 pt-4">
-          <div class="mb-3">
-            <h4 class="text-body-1 font-weight-bold">创建的路线图</h4>
+        <div class="pa-4">
+          <div class="mb-4">
+            <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">创建的路线图</h4>
+            <p class="text-body-2 text-grey mb-0">
+              规划您的学习路径，系统化掌握技能。
+            </p>
           </div>
-          <p class="text-body-2 text-grey-darken-2 mb-3">规划您的学习路径，系统化掌握技能。</p>
-          <v-divider class="my-3" />
-          <div class="text-caption text-grey">
-            <div class="mb-2">
-              <v-icon icon="mdi-map" size="14" class="mr-1" />
-              绘制学习路线
+          <v-divider class="my-4" />
+          <div class="text-body-2 text-grey">
+            <div class="d-flex align-start mb-3">
+              <v-icon icon="mdi-map" size="18" color="grey" class="mr-2 mt-1" />
+              <span>绘制学习路线</span>
             </div>
-            <div class="mb-2">
-              <v-icon icon="mdi-share-variant" size="14" class="mr-1" />
-              分享给他人
+            <div class="d-flex align-start mb-3">
+              <v-icon icon="mdi-share-variant" size="18" color="grey" class="mr-2 mt-1" />
+              <span>分享给他人</span>
             </div>
-            <div>
-              <v-icon icon="mdi-progress-check" size="14" class="mr-1" />
-              跟踪学习进度
+            <div class="d-flex align-start">
+              <v-icon icon="mdi-progress-check" size="18" color="grey" class="mr-2 mt-1" />
+              <span>跟踪学习进度</span>
             </div>
           </div>
         </div>
@@ -30,106 +32,93 @@
     <!-- 右侧主内容 -->
     <v-col cols="12" md="10">
       <div class="pa-2">
-        <div class="d-flex align-center justify-space-between mb-4">
-          <v-icon icon="mdi-menu" size="18" color="grey-lighten-1" />
+        <div class="d-flex align-center justify-space-between mb-6">
+          <div></div>
         </div>
 
         <!-- 路线图列表 -->
         <v-infinite-scroll v-if="roadmaps.length > 0" :items="roadmaps" @load="onLoadMore">
           <template v-for="(roadmap, index) in roadmaps" :key="roadmap.id">
-            <v-card border rounded="lg" hover class="hoverable mb-6" @click="goToRoadmap(roadmap.id)">
-              <v-card-text class="pa-4">
-                  <div class="d-flex" style="gap: 16px">
-                    <!-- 左侧内容区 -->
+            <v-card rounded="xl" hover border elevation="0" class="roadmap-card mb-6 hoverable" @click="goToRoadmap(roadmap.id)">
+              <v-card-text class="pa-6">
+                <div class="d-flex align-start justify-space-between mb-4">
+                  <!-- 左侧：图标和标题 -->
+                  <div class="d-flex align-center flex-grow-1">
+                    <v-avatar color="purple-lighten-5" size="56" rounded="lg" class="mr-4">
+                      <v-icon icon="mdi-map-marker-path" color="purple" size="28" />
+                    </v-avatar>
                     <div class="flex-grow-1">
-                      <!-- 路线图头部 -->
-                      <div class="d-flex align-center justify-space-between mb-3">
-                        <div class="d-flex align-center">
-                          <v-avatar color="purple-lighten-5" size="40" rounded="md" class="mr-3">
-                            <v-icon icon="mdi-map-marker-path" color="purple" size="20" />
-                          </v-avatar>
-                          <div>
-                            <h4 class="text-body-1 font-weight-bold mb-1">{{ roadmap.name }}</h4>
-                            <p class="text-caption text-grey mb-0">{{ roadmap.profession }}</p>
-                          </div>
-                        </div>
-                        <!-- 状态标签 -->
+                      <div class="d-flex align-center mb-1">
+                        <h4 class="text-h6 font-weight-bold text-grey-darken-4 mr-2">{{ roadmap.name }}</h4>
                         <v-chip :color="getStatusColor(roadmap.status)" size="small" variant="flat">
                           {{ getStatusText(roadmap.status) }}
                         </v-chip>
                       </div>
-
-                      <!-- 路线图描述 -->
-                      <p class="text-body-2 text-grey-darken-2 mb-3">{{ roadmap.description }}</p>
-
-                      <!-- 统计信息 -->
-                      <div
-                        class="d-flex align-center mb-3 text-caption text-grey"
-                        style="gap: 16px"
-                      >
-                        <div>
-                          <v-icon icon="mdi-account-multiple" size="14" class="mr-1" />
-                          {{ roadmap.usageCount }} 人使用
-                        </div>
-                        <div>
-                          <v-icon icon="mdi-star" size="14" class="mr-1" />
-                          {{ roadmap.starCount }} 收藏
-                        </div>
-                        <div>
-                          <v-icon icon="mdi-timeline" size="14" class="mr-1" />
-                          {{ roadmap.nodeCount }} 节点
-                        </div>
-                      </div>
-
-                      <!-- 操作按钮 -->
-                      <div class="d-flex" style="gap: 8px">
-                        <v-btn
-                          color="primary"
-                          variant="outlined"
-                          rounded="md"
-                          density="compact"
-                          @click.stop="goToRoadmap(roadmap.id)"
-                        >
-                          <v-icon icon="mdi-eye" size="16" class="mr-1" />
-                          查看
-                        </v-btn>
-                        <v-btn
-                          variant="text"
-                          rounded="md"
-                          density="compact"
-                          color="grey"
-                          @click.stop="goToRoadmap(roadmap.id)"
-                        >
-                          <v-icon icon="mdi-pencil" size="16" class="mr-1" />
-                          编辑
-                        </v-btn>
-                        <v-btn
-                          variant="text"
-                          rounded="md"
-                          density="compact"
-                          color="error"
-                          @click.stop="deleteRoadmap(roadmap.id)"
-                        >
-                          <v-icon icon="mdi-delete" size="16" class="mr-1" />
-                          删除
-                        </v-btn>
-                      </div>
-                    </div>
-
-                    <!-- 右侧缩略图 -->
-                    <div class="roadmap-thumbnail">
-                      <div
-                        class="d-flex align-center justify-center"
-                        style="width: 200px; height: 150px; background: #f5f5f5; border-radius: 8px"
-                      >
-                        <v-icon icon="mdi-sitemap" size="48" color="grey-lighten-1" />
-                      </div>
+                      <p class="text-caption text-grey mb-0">{{ roadmap.profession }}</p>
                     </div>
                   </div>
-                </v-card-text>
-              </v-card>
-            </template>
-          </v-infinite-scroll>
+
+                  <!-- 右侧：删除按钮 -->
+                  <v-btn
+                    color="grey"
+                    variant="text"
+                    size="small"
+                    icon="mdi-delete"
+                    @click.stop="deleteRoadmap(roadmap.id)"
+                  >
+                    <v-icon>mdi-delete</v-icon>
+                    <v-tooltip activator="parent" location="top">删除路线图</v-tooltip>
+                  </v-btn>
+                </div>
+
+                <!-- 路线图描述 -->
+                <p class="text-body-2 text-grey-darken-2 mb-4 roadmap-description">{{ roadmap.description }}</p>
+
+                <!-- 统计信息 -->
+                <div class="d-flex align-center justify-space-between">
+                  <div class="d-flex align-center text-body-2 text-grey" style="gap: 16px">
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-account-multiple" size="16" color="grey" class="mr-1" />
+                      {{ roadmap.usageCount }} 人使用
+                    </div>
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-star" size="16" color="grey" class="mr-1" />
+                      {{ roadmap.starCount }} 收藏
+                    </div>
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-timeline" size="16" color="grey" class="mr-1" />
+                      {{ roadmap.nodeCount }} 节点
+                    </div>
+                  </div>
+
+                  <!-- 操作按钮 -->
+                  <div class="d-flex align-center" style="gap: 8px">
+                    <v-btn
+                      color="primary"
+                      variant="flat"
+                      rounded="lg"
+                      size="small"
+                      @click.stop="goToRoadmap(roadmap.id)"
+                    >
+                      <v-icon icon="mdi-eye" size="18" class="mr-1" />
+                      查看
+                    </v-btn>
+                    <v-btn
+                      variant="tonal"
+                      rounded="lg"
+                      size="small"
+                      color="grey-darken-2"
+                      @click.stop="goToRoadmap(roadmap.id)"
+                    >
+                      <v-icon icon="mdi-pencil" size="18" class="mr-1" />
+                      编辑
+                    </v-btn>
+                  </div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </template>
+        </v-infinite-scroll>
 
         <!-- 空状态 -->
         <div v-else class="text-center py-12">
@@ -256,13 +245,25 @@ const deleteRoadmap = async (roadmapId: number) => {
 /* 左侧边栏固定 */
 .sticky-sidebar {
   position: sticky;
-  top: 80px;
-  max-height: calc(100vh - 100px);
+  top: 140px;
+  align-self: flex-start;
+  max-height: calc(100vh - 160px);
   overflow-y: auto;
 }
 
-.roadmap-thumbnail {
+.roadmap-card {
   cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #ffffff;
+  border: 1px solid #e9ecef !important;
+}
+
+.roadmap-description {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 48px;
 }
 
 /* 移动端取消 sticky */

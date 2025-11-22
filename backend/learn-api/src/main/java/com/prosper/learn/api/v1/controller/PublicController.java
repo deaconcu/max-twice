@@ -12,6 +12,7 @@ import com.prosper.learn.domain.service.business.RoadmapService;
 import com.prosper.learn.domain.service.data.SystemDataService;
 import com.prosper.learn.dto.response.ProfessionDTO;
 import com.prosper.learn.dto.response.RoadmapDTO;
+import com.prosper.learn.dto.response.roadmap.RoadmapSummaryDTO;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
@@ -143,14 +144,14 @@ public class PublicController {
      * GET /api/v1/public/professions/{professionId}/roadmaps?lastId=123&pageSize=20
      */
     @GetMapping("/professions/{professionId}/roadmaps")
-    public ApiResponse<List<RoadmapDTO>> getRoadmapsByProfession(
+    public ApiResponse<List<RoadmapSummaryDTO>> getRoadmapsByProfession(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
             Long professionId,
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false, defaultValue = "20") Integer pageSize) {
         try {
-            List<RoadmapDTO> roadmaps = roadmapService.getRoadmapsByProfessionPublic(professionId, lastId, pageSize);
+            List<RoadmapSummaryDTO> roadmaps = roadmapService.getRoadmapsByProfessionPublic(professionId, lastId, pageSize);
             return ApiResponse.success(roadmaps);
         } catch (Exception e) {
             log.error("Failed to get roadmaps for profession: {}", professionId, e);

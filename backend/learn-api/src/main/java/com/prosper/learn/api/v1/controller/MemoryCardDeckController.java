@@ -11,7 +11,7 @@ import com.prosper.learn.dto.request.CreateDeckRequest;
 import com.prosper.learn.dto.request.UpdateDeckRequest;
 import com.prosper.learn.dto.response.DeckDetailDTO;
 import com.prosper.learn.dto.response.KeysetPageResponse;
-import com.prosper.learn.dto.response.MemoryCardDeckDTO;
+import com.prosper.learn.dto.response.deck.*;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -40,7 +40,7 @@ public class MemoryCardDeckController {
      * 需求1: 获取帖子下的公共卡片组列表 - keyset分页，normal状态
      */
     @GetMapping("/posts/{postId}/decks")
-    public ApiResponse<KeysetPageResponse<MemoryCardDeckDTO>> getPostPublicDecks(
+    public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getPostPublicDecks(
             @PathVariable @NotNull(message = "帖子ID不能为空") @Positive(message = "帖子ID必须大于0") Long postId,
             @RequestParam(defaultValue = "score") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder,
@@ -53,7 +53,7 @@ public class MemoryCardDeckController {
             limit = 50;
         }
 
-        KeysetPageResponse<MemoryCardDeckDTO> result = deckService.getPostPublicDecks(
+        KeysetPageResponse<DeckWithVoteDTO> result = deckService.getPostPublicDecks(
             postId, sortBy, sortOrder, lastScore, lastId, limit);
 
         return ApiResponse.success(result);
@@ -64,7 +64,7 @@ public class MemoryCardDeckController {
      */
     @GetMapping("/posts/{postId}/creator-deck")
     @SaCheckLogin
-    public ApiResponse<KeysetPageResponse<MemoryCardDeckDTO>> getPostCreatorDeck(
+    public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getPostCreatorDeck(
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
             Long postId,
@@ -80,7 +80,7 @@ public class MemoryCardDeckController {
             limit = 50;
         }
 
-        KeysetPageResponse<MemoryCardDeckDTO> result = deckService.getPostCreatorDeck(
+        KeysetPageResponse<DeckWithVoteDTO> result = deckService.getPostCreatorDeck(
             postId, sortBy, sortOrder, lastScore, lastId, limit, currentUser.getId());
 
         return ApiResponse.success(result);
@@ -91,7 +91,7 @@ public class MemoryCardDeckController {
      */
     @GetMapping("/posts/{postId}/my-deck")
     @SaCheckLogin
-    public ApiResponse<KeysetPageResponse<MemoryCardDeckDTO>> getMyPostDeck(
+    public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getMyPostDeck(
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
             Long postId,
@@ -107,7 +107,7 @@ public class MemoryCardDeckController {
             limit = 50;
         }
 
-        KeysetPageResponse<MemoryCardDeckDTO> result = deckService.getMyPostDeck(
+        KeysetPageResponse<DeckWithVoteDTO> result = deckService.getMyPostDeck(
             postId, currentUser.getId(), sortBy, sortOrder, lastScore, lastId, limit);
 
         return ApiResponse.success(result);
@@ -120,7 +120,7 @@ public class MemoryCardDeckController {
      */
     @GetMapping("/users/me/memory-decks")
     @SaCheckLogin
-    public ApiResponse<KeysetPageResponse<MemoryCardDeckDTO>> getCurrentUserAllDecks(
+    public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getCurrentUserAllDecks(
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "10") Integer limit,
             @CurrentUser UserDO currentUser) {
@@ -129,7 +129,7 @@ public class MemoryCardDeckController {
             limit = 50;
         }
 
-        KeysetPageResponse<MemoryCardDeckDTO> result = deckService.getUserDecks(
+        KeysetPageResponse<DeckWithVoteDTO> result = deckService.getUserDecks(
                 currentUser.getId(), currentUser.getId(), lastId, limit);
 
         return ApiResponse.success(result);
@@ -142,7 +142,7 @@ public class MemoryCardDeckController {
      */
     @GetMapping("/users/{userId}/memory-decks")
     @SaCheckLogin
-    public ApiResponse<KeysetPageResponse<MemoryCardDeckDTO>> getUserDecks(
+    public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getUserDecks(
             @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
             @RequestParam(required = false) Long lastId,
             @RequestParam(defaultValue = "10") Integer limit,
@@ -152,7 +152,7 @@ public class MemoryCardDeckController {
             limit = 50;
         }
 
-        KeysetPageResponse<MemoryCardDeckDTO> result = deckService.getUserDecks(
+        KeysetPageResponse<DeckWithVoteDTO> result = deckService.getUserDecks(
             userId, currentUser.getId(), lastId, limit);
 
         return ApiResponse.success(result);
@@ -195,7 +195,7 @@ public class MemoryCardDeckController {
      */
     @GetMapping("/decks/node/{nodeId}")
     @SaCheckLogin
-    public ApiResponse<KeysetPageResponse<MemoryCardDeckDTO>> getDecksByNode(
+    public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getDecksByNode(
             @PathVariable @NotNull(message = "节点ID不能为空")
             @Positive(message = "节点ID必须大于0")
             Long nodeId,
@@ -209,7 +209,7 @@ public class MemoryCardDeckController {
             limit = 50;
         }
 
-        KeysetPageResponse<MemoryCardDeckDTO> result = deckService.getDecksByNode(
+        KeysetPageResponse<DeckWithVoteDTO> result = deckService.getDecksByNode(
             nodeId, lastScore, lastId, limit, currentUser.getId());
 
         return ApiResponse.success(result);
@@ -220,10 +220,10 @@ public class MemoryCardDeckController {
      */
     @PostMapping("/decks")
     @SaCheckLogin
-    public ApiResponse<MemoryCardDeckDTO> createDeck(
+    public ApiResponse<DeckWithCreatorDTO> createDeck(
             @Valid @RequestBody CreateDeckRequest request,
             @CurrentUser UserDO currentUser) {
-        MemoryCardDeckDTO result = deckService.createDeck(currentUser.getId(), request);
+        DeckWithCreatorDTO result = deckService.createDeck(currentUser.getId(), request);
         return ApiResponse.success(result);
     }
 
@@ -232,7 +232,7 @@ public class MemoryCardDeckController {
      */
     @PutMapping("/decks/{deckId}")
     @SaCheckLogin
-    public ApiResponse<MemoryCardDeckDTO> updateDeck(
+    public ApiResponse<DeckWithCreatorDTO> updateDeck(
             @PathVariable @NotNull(message = "卡片组ID不能为空")
             @Positive(message = "卡片组ID必须大于0")
             Long deckId,
@@ -241,7 +241,7 @@ public class MemoryCardDeckController {
 
         request.setId(deckId);
 
-        MemoryCardDeckDTO result = deckService.updateDeck(currentUser.getId(), request);
+        DeckWithCreatorDTO result = deckService.updateDeck(currentUser.getId(), request);
         return ApiResponse.success(result);
     }
 
@@ -280,14 +280,14 @@ public class MemoryCardDeckController {
      */
     @PutMapping("/decks/{deckId}/cards")
     @SaCheckLogin
-    public ApiResponse<MemoryCardDeckDTO> replaceAllCards(
+    public ApiResponse<DeckWithVoteDTO> replaceAllCards(
             @PathVariable @NotNull(message = "卡片组ID不能为空")
             @Positive(message = "卡片组ID必须大于0")
             Long deckId,
             @Valid @RequestBody CreateDeckRequest request,
             @CurrentUser UserDO currentUser) {
 
-        MemoryCardDeckDTO result = deckService.replaceAllCards(currentUser.getId(), deckId, request);
+        DeckWithVoteDTO result = deckService.replaceAllCards(currentUser.getId(), deckId, request);
         return ApiResponse.success(result);
     }
 

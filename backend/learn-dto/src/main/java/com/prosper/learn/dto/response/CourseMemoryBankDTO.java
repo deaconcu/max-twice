@@ -1,5 +1,6 @@
 package com.prosper.learn.dto.response;
 
+import com.prosper.learn.dto.response.course.CourseBriefDTO;
 import lombok.Data;
 
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.List;
 @Data
 public class CourseMemoryBankDTO {
 
-    private CourseDTO course;
+    private CourseBriefDTO course;
 
     private UserCourseSrsSettingDTO setting;
 

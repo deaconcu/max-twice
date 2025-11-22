@@ -1,5 +1,6 @@
 package com.prosper.learn.dto.response;
 
+import com.prosper.learn.dto.response.user.UserBriefDTO;
 import lombok.Data;
 
 /**
@@ -16,10 +17,10 @@ public class MemoryCardViewDTO {
 
     private MemoryCardDeckDTO deck;
 
-    private UserDTO creator;
+    private UserBriefDTO creator;
 
     private UserCardSrsDTO srsState;
-    
+
     private Boolean hasDeckUpdate;  // 所在deck是否有更新
     private Boolean hasCardUpdate;  // 卡片内容本身是否有更新
 

@@ -10,7 +10,7 @@ import com.prosper.learn.domain.service.business.MemoryCardDeckService;
 import com.prosper.learn.dto.request.OperateRequest;
 import com.prosper.learn.dto.response.ApprovalResponseDTO;
 import com.prosper.learn.dto.response.KeysetPageResponse;
-import com.prosper.learn.dto.response.MemoryCardDeckDTO;
+import com.prosper.learn.dto.response.deck.DeckWithCreatorDTO;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -41,14 +41,14 @@ public class AdminMemoryCardDeckController {
      */
     @GetMapping("/decks")
     @RequireRole(UserRole.MODERATOR)
-    public ApiResponse<KeysetPageResponse<MemoryCardDeckDTO>> getAdminDecks(
+    public ApiResponse<KeysetPageResponse<DeckWithCreatorDTO>> getAdminDecks(
             @RequestParam(required = false) @Positive(message = "状态必须大于0") Integer state,
             @RequestParam(required = false) @Positive(message = "帖子ID必须大于0") Long postId,
             @RequestParam(required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false) @Positive(message = "限制数量必须大于0") Integer limit) {
 
-        KeysetPageResponse<MemoryCardDeckDTO> response = deckService.getDecksForAdmin(state, postId, creatorId, lastId, limit);
+        KeysetPageResponse<DeckWithCreatorDTO> response = deckService.getDecksForAdmin(state, postId, creatorId, lastId, limit);
         return ApiResponse.success(response);
     }
 

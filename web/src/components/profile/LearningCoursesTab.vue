@@ -3,26 +3,26 @@
     <!-- 左侧简介栏 -->
     <v-col cols="12" md="2">
       <div class="sticky-sidebar">
-        <div class="pa-2 pr-10 pt-4">
-          <div class="mb-3">
-            <h4 class="text-body-1 font-weight-bold">学习的课程</h4>
+        <div class="pa-4">
+          <div class="mb-4">
+            <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">学习的课程</h4>
+            <p class="text-body-2 text-grey mb-0">
+              跟踪您当前学习的所有课程进度和完成情况。
+            </p>
           </div>
-          <p class="text-body-2 text-grey-darken-2 mb-3">
-            跟踪您当前学习的所有课程进度和完成情况。
-          </p>
-          <v-divider class="my-3" />
-          <div class="text-caption text-grey">
-            <div class="mb-2">
-              <v-icon icon="mdi-chart-line" size="14" class="mr-1" />
-              实时同步学习进度
+          <v-divider class="my-4" />
+          <div class="text-body-2 text-grey">
+            <div class="d-flex align-start mb-3">
+              <v-icon icon="mdi-chart-line" size="18" color="grey" class="mr-2 mt-1" />
+              <span>实时同步学习进度</span>
             </div>
-            <div class="mb-2">
-              <v-icon icon="mdi-clock-outline" size="14" class="mr-1" />
-              记录最近学习时间
+            <div class="d-flex align-start mb-3">
+              <v-icon icon="mdi-clock-outline" size="18" color="grey" class="mr-2 mt-1" />
+              <span>记录最近学习时间</span>
             </div>
-            <div>
-              <v-icon icon="mdi-target" size="14" class="mr-1" />
-              设定学习目标
+            <div class="d-flex align-start">
+              <v-icon icon="mdi-target" size="18" color="grey" class="mr-2 mt-1" />
+              <span>设定学习目标</span>
             </div>
           </div>
         </div>
@@ -32,26 +32,29 @@
     <!-- 右侧主内容 -->
     <v-col cols="12" md="10">
       <div class="pa-2">
-        <div class="d-flex align-center justify-space-between mb-4">
+        <div class="d-flex align-center justify-space-between mb-6">
           <!-- Tab 切换 -->
-          <div class="d-flex align-center ga-3">
-            <v-icon icon="mdi-menu" size="18" color="grey-lighten-1" />
-            <v-btn-toggle
-              v-model="statusTab"
-              mandatory
-              color="primary"
-              variant="plain"
-              rounded="md"
-              density="compact"
-            >
-              <v-btn value="learning" size="small" rounded="md">正在学习</v-btn>
-              <v-btn value="completed" size="small" rounded="md">已经完成</v-btn>
-            </v-btn-toggle>
-          </div>
+          <v-btn-toggle
+            v-model="statusTab"
+            mandatory
+            color="grey-darken-3"
+            variant="text"
+            rounded="lg"
+            density="compact"
+          >
+            <v-btn value="learning" rounded="lg">
+              <v-icon icon="mdi-school" size="18" class="mr-2" />
+              正在学习
+            </v-btn>
+            <v-btn value="completed" rounded="lg">
+              <v-icon icon="mdi-check-circle" size="18" class="mr-2" />
+              已经完成
+            </v-btn>
+          </v-btn-toggle>
 
-          <v-btn color="primary" variant="text" rounded="md" density="compact" to="/learning">
+          <v-btn color="primary" variant="text" rounded="lg" to="/learning">
             查看全部课程
-            <v-icon icon="mdi-chevron-right" class="ml-1" />
+            <v-icon icon="mdi-chevron-right" size="18" class="ml-1" />
           </v-btn>
         </div>
 
@@ -59,22 +62,22 @@
         <div v-if="filteredCourses.length > 0">
           <v-row>
             <v-col v-for="course in filteredCourses" :key="course.id" cols="12" md="6">
-              <v-card border rounded="lg" hover class="hoverable">
-                <v-card-text class="pa-4" @click="goToCourse(course.courseId)">
-                  <div class="d-flex align-start justify-space-between mb-3">
+              <v-card rounded="xl" hover border elevation="0" class="course-card hoverable">
+                <v-card-text class="pa-6" @click="goToCourse(course.courseId)">
+                  <div class="d-flex align-start justify-space-between mb-4">
                     <div class="d-flex align-center flex-grow-1">
-                      <v-avatar :color="course.iconColor" size="48" rounded="md" class="mr-3">
-                        <v-icon :icon="course.icon" color="white" size="24" />
+                      <v-avatar :color="course.iconColor" size="56" rounded="lg" class="mr-4">
+                        <v-icon :icon="course.icon" color="white" size="28" />
                       </v-avatar>
                       <div>
-                        <h4 class="text-body-1 font-weight-bold mb-1">{{ course.title }}</h4>
+                        <h4 class="text-h6 font-weight-bold mb-1">{{ course.title }}</h4>
                         <p class="text-caption text-grey mb-0">{{ course.lastActivity }}</p>
                       </div>
                     </div>
                     <v-btn
                       color="grey"
-                      variant="tonal"
-                      size="x-small"
+                      variant="text"
+                      size="small"
                       icon="mdi-close"
                       @click.stop="cancelLearning(course.id)"
                     />
@@ -82,18 +85,19 @@
 
                   <v-progress-linear
                     :model-value="course.progress"
-                    color="grey-lighten-1"
-                    height="6"
+                    color="primary"
+                    bg-color="grey-lighten-3"
+                    height="8"
                     rounded
-                    class="mb-2"
+                    class="mb-3"
                   />
 
-                  <div class="d-flex align-center justify-space-between text-caption text-grey">
-                    <div class="d-flex align-center">
-                      <v-icon icon="mdi-check-circle" size="14" class="mr-1" />
+                  <div class="d-flex align-center justify-space-between">
+                    <span class="text-body-2 text-grey-darken-2">
+                      <v-icon icon="mdi-check-circle" size="16" color="success" class="mr-1" />
                       {{ course.completedLessons }} / {{ course.totalLessons }} 节已完成
-                    </div>
-                    <div class="text-grey">{{ course.progress }}%</div>
+                    </span>
+                    <span class="text-body-1 font-weight-bold text-primary">{{ course.progress }}%</span>
                   </div>
                 </v-card-text>
               </v-card>
@@ -244,9 +248,17 @@ const confirmDelete = async () => {
 /* 左侧边栏固定 */
 .sticky-sidebar {
   position: sticky;
-  top: 80px;
-  max-height: calc(100vh - 100px);
+  top: 140px;
+  align-self: flex-start;
+  max-height: calc(100vh - 160px);
   overflow-y: auto;
+}
+
+.course-card {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #ffffff;
+  border: 1px solid #e9ecef !important;
 }
 
 /* 移动端取消 sticky */

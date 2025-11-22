@@ -5,7 +5,7 @@ import com.prosper.learn.api.v1.annotation.RequireRole;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.service.business.NodeService;
-import com.prosper.learn.dto.response.NodeDTO;
+import com.prosper.learn.dto.response.node.NodeDetailDTO;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
@@ -33,13 +33,13 @@ public class AdminNodesController {
      * 映射: GET /api/v1/admin/nodes?state=0&nodeId=1&courseId=2&creatorId=3&lastId=123
      */
     @GetMapping("/nodes")
-    public ApiResponse<List<NodeDTO>> getAdminNodes(
+    public ApiResponse<List<NodeDetailDTO>> getAdminNodes(
             @RequestParam(value = "state", required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state,
             @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
             @RequestParam(value = "courseId", required = false) @Positive(message = "课程ID必须大于0") Long courseId,
             @RequestParam(value = "creatorId", required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
             @RequestParam(value = "lastId", required = false) Long lastId) {
-        List<NodeDTO> nodes = nodeService.listByFilter(state, nodeId, courseId, creatorId, lastId);
+        List<NodeDetailDTO> nodes = nodeService.listByFilter(state, nodeId, courseId, creatorId, lastId);
         return ApiResponse.success(nodes);
     }
 
@@ -55,7 +55,7 @@ public class AdminNodesController {
         targetId = "#nodeId",
         reason = "#reason"
     )
-    public ApiResponse<NodeDTO> updateNodeState(
+    public ApiResponse<NodeDetailDTO> updateNodeState(
             @PathVariable @Positive(message = "节点ID必须大于0") Long nodeId,
             @RequestParam @Min(value = 0, message = "状态值必须大于等于0") Integer state,
             @RequestParam(required = false, defaultValue = "") String reason) {
@@ -63,7 +63,7 @@ public class AdminNodesController {
         if (contentState == null) {
             throw new IllegalArgumentException("Invalid state value: " + state);
         }
-        NodeDTO node = nodeService.updateNodeState(nodeId, contentState, reason);
+        NodeDetailDTO node = nodeService.updateNodeState(nodeId, contentState, reason);
         return ApiResponse.success(node);
     }
 }

@@ -8,6 +8,7 @@ import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.UserService;
 import com.prosper.learn.dto.response.UserDTO;
+import com.prosper.learn.dto.response.user.*;
 import com.prosper.learn.dto.request.*;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import lombok.RequiredArgsConstructor;
@@ -39,8 +40,8 @@ public class UsersController {
      */
     @GetMapping("/users/current")
     @SaCheckLogin
-    public ApiResponse<UserDTO> getCurrentUser(@CurrentUser UserDO currentUser) {
-        UserDTO userDTO = userService.getUser(currentUser.getId());
+    public ApiResponse<UserProfileDTO> getCurrentUser(@CurrentUser UserDO currentUser) {
+        UserProfileDTO userDTO = userService.getUser(currentUser.getId());
         return ApiResponse.success(userDTO);
     }
 
@@ -63,10 +64,10 @@ public class UsersController {
      */
     @GetMapping("/users/{username}")
     @SaCheckLogin
-    public ApiResponse<UserDTO> getUser(
+    public ApiResponse<UserPublicDTO> getUser(
             @PathVariable @NotBlank(message = "用户名不能为空") String username,
             @CurrentUser UserDO currentUser) {
-        UserDTO userDTO = userService.getUserByUsername(username, currentUser.getId());
+        UserPublicDTO userDTO = userService.getUserByUsername(username, currentUser.getId());
         return ApiResponse.success(userDTO);
     }
 
@@ -76,8 +77,8 @@ public class UsersController {
      */
     @GetMapping("/users/search")
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<List<UserDTO>> searchUsers(@RequestParam @NotBlank(message = "搜索名称不能为空") String name) {
-        List<UserDTO> users = userService.searchUsers(name);
+    public ApiResponse<List<UserBriefDTO>> searchUsers(@RequestParam @NotBlank(message = "搜索名称不能为空") String name) {
+        List<UserBriefDTO> users = userService.searchUsers(name);
         return ApiResponse.success(users);
     }
 
@@ -98,9 +99,9 @@ public class UsersController {
      */
     @PostMapping("/auth/login")
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<UserDTO> login(@RequestBody @Valid LoginRequest request) {
+    public ApiResponse<UserBriefDTO> login(@RequestBody @Valid LoginRequest request) {
         // Service 负责业务验证
-        UserDTO userDTO = userService.validateLogin(request.getEmail(), request.getPassword());
+        UserBriefDTO userDTO = userService.validateLogin(request.getEmail(), request.getPassword());
 
         // Controller 负责认证状态管理
         StpUtil.login(userDTO.getId());
@@ -114,9 +115,9 @@ public class UsersController {
      */
     @PostMapping("/auth/validate-email")
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
-    public ApiResponse<UserDTO> validateEmail(@RequestBody @Valid VerifyEmailRequest request) {
+    public ApiResponse<UserProfileDTO> validateEmail(@RequestBody @Valid VerifyEmailRequest request) {
         // Service 负责验证逻辑
-        UserDTO userDTO = userService.validateEmail(request.getEmail(), request.getCode());
+        UserProfileDTO userDTO = userService.validateEmail(request.getEmail(), request.getCode());
 
         // Controller 负责认证状态管理（验证成功后自动登录）
         StpUtil.login(userDTO.getId());

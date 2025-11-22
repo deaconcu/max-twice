@@ -8,6 +8,7 @@ import com.prosper.learn.domain.util.converter.UserConverter;
 import com.prosper.learn.domain.service.data.*;
 import com.prosper.learn.dto.response.*;
 import com.prosper.learn.dto.response.old.UserDTOV2;
+import com.prosper.learn.dto.response.user.*;
 import com.prosper.learn.persistence.dataobject.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,30 +59,19 @@ public class UserService {
     // ========== 公共方法 Query ==========
 
     /**
-     * 获取当前用户信息
+     * 获取当前用户完整信息（含订阅信息）
      */
-    public UserDTO getUser(Long userId) {
+    public UserProfileDTO getUser(Long userId) {
         validateUserId(userId);
         UserDO userDO = userDataService.getById(userId);
-        return toDTO(userDO);
-    }
-
-    public UserDTO getUser(Long userId, DTOVersion dtoVersion) {
-        validateUserId(userId);
-        UserDO userDO = userDataService.getById(userId);
-        switch (dtoVersion) {
-            case V1 -> { return toDTOV1(userDO); }
-            case V2 -> { return toDTOV2(userDO); }
-            case V3 -> { return toDTOV3(userDO); }
-        }
-        throw ErrorCode.USER_NOT_FOUND.exception();
+        return toProfileDTO(userDO);
     }
 
     /**
-     * 获取用户信息（包含关注状态）
+     * 获取用户公开信息（包含关注状态）
      * 被屏蔽的用户会抛出异常
      */
-    public UserDTO getUser(Long userId, Long viewerId) {
+    public UserPublicDTO getUser(Long userId, Long viewerId) {
         validateUserId(viewerId);
         UserDO userDO = validateUserExists(userId);
 
@@ -89,14 +79,14 @@ public class UserService {
             throw ErrorCode.USER_BANNED.exception();
         }
 
-        return toDTOV4(userDO, viewerId);
+        return toPublicDTO(userDO, viewerId);
     }
 
     /**
-     * 根据用户名获取用户信息（包含关注状态）
+     * 根据用户名获取用户公开信息（包含关注状态）
      * 被屏蔽的用户会抛出异常
      */
-    public UserDTO getUserByUsername(String username, Long viewerId) {
+    public UserPublicDTO getUserByUsername(String username, Long viewerId) {
         validateUserId(viewerId);
         UserDO userDO = userDataService.validateAndGetByName(username);
 
@@ -104,41 +94,48 @@ public class UserService {
             throw ErrorCode.USER_BANNED.exception();
         }
 
-        return toDTOV4(userDO, viewerId);
+        return toPublicDTO(userDO, viewerId);
     }
 
     /**
-     * 批量加载用户信息
+     * 批量加载用户简要信息
      */
-    public Map<Long, UserDTO> getUserMap(List<Long> ids) {
+    public Map<Long, UserBriefDTO> getUserMap(List<Long> ids) {
         if (ids.isEmpty()) {
             return new HashMap<>();
         }
 
-        List<UserDTO> userList = toDTOV2(userDataService.getByIds(ids));
-        return userList.stream().collect(Collectors.toMap(UserDTO::getId, user -> user));
+        List<UserBriefDTO> userList = toBriefDTO(userDataService.getByIds(ids));
+        return userList.stream().collect(Collectors.toMap(UserBriefDTO::getId, user -> user));
     }
 
     /**
-     * 搜索用户
+     * 搜索用户（返回简要信息）
      */
-    public List<UserDTO> searchUsers(String name) {
+    public List<UserBriefDTO> searchUsers(String name) {
         validateSearchName(name);
         List<UserDO> userDOList = userDataService.searchByName(name);
-        return userConverter.toDTOV2(userDOList);
+        return userConverter.toBriefDTO(userDOList);
     }
 
-    public List<UserDTO> getUsers(Long offsetId, int pageSize) {
+    /**
+     * 获取用户列表（管理员使用，返回完整信息）
+     */
+    public List<UserProfileDTO> getUsers(Long offsetId, int pageSize) {
         List<UserDO> userDOList;
         if (offsetId == null) {
             userDOList = userDataService.getList(pageSize);
         } else {
             userDOList = userDataService.getListPaginated(offsetId, pageSize);
         }
-        return userConverter.toDTO(userDOList);
+        // Note: 这里不填充 subscriptions，如需要可在 Controller 层调用
+        return userConverter.toProfileDTO(userDOList);
     }
 
-    public UserDTO updateUserState(Long userId, boolean ban, UserDO operator) {
+    /**
+     * 更新用户状态（管理员操作）
+     */
+    public UserProfileDTO updateUserState(Long userId, boolean ban, UserDO operator) {
         UserDO userDO = validateUserExists(userId);
 
         if (ban) {
@@ -151,15 +148,15 @@ public class UserService {
 
         log.info("管理员 {} {} 用户 {}", operator.getId(), ban ? "封禁" : "解封", userId);
 
-        return userConverter.toDTO(userDO);
+        return userConverter.toProfileDTO(userDO);
     }
 
     /**
-     * 修改用户角色
+     * 修改用户角色（管理员操作）
      * 只有管理员可以修改用户角色
      * 只有超级管理员可以设置超级管理员
      */
-    public UserDTO setUserRole(Long userId, Integer roleCode, UserDO operator) {
+    public UserProfileDTO setUserRole(Long userId, Integer roleCode, UserDO operator) {
         validateUserId(userId);
 
         UserDO targetUser = validateUserExists(userId);
@@ -181,7 +178,7 @@ public class UserService {
 
         log.info("管理员 {} 将用户 {} 的角色修改为 {}", operator.getId(), userId, newRole.getDescription());
 
-        return userConverter.toDTO(targetUser);
+        return userConverter.toProfileDTO(targetUser);
     }
 
     /**
@@ -246,7 +243,7 @@ public class UserService {
      * 用户登录验证
      * 只做业务验证，不操作认证状态
      */
-    public UserDTO validateLogin(String email, String password) {
+    public UserBriefDTO validateLogin(String email, String password) {
         validateEmail(email);
         validatePassword(password);
 
@@ -266,8 +263,7 @@ public class UserService {
             throw ErrorCode.USER_BANNED.exception();
         }
 
-        UserDTO userDTO = toDTOV2(userDO);
-        return userDTO;
+        return toBriefDTO(userDO);
     }
 
     /**
@@ -275,7 +271,7 @@ public class UserService {
      * 只做验证逻辑，不操作认证状态
      */
     @Transactional
-    public UserDTO validateEmail(String email, String code) {
+    public UserProfileDTO validateEmail(String email, String code) {
         validateEmail(email);
         validateVerificationCode(code);
         
@@ -296,12 +292,12 @@ public class UserService {
         }
         
         if (user.getEmailValidated()) {
-            return userConverter.toDTO(user);
+            return toProfileDTO(user);
         }
 
         user.setEmailValidated(true);
         userDataService.update(user);
-        return userConverter.toDTO(user);
+        return toProfileDTO(user);
     }
 
     /**
@@ -442,59 +438,71 @@ public class UserService {
 
     //=========== DTO转换方法 ==========
 
-    public UserDTO toDTO(UserDO userDO) {
-        return userConverter.toDTO(userDO);
+    /**
+     * 转换为用户简要 DTO（id + name）
+     * 用途：作者署名、用户引用
+     */
+    public UserBriefDTO toBriefDTO(UserDO userDO) {
+        return userConverter.toBriefDTO(userDO);
     }
 
-    public List<UserDTO> toDTO(List<UserDO> userDO) {
-        return userConverter.toDTO(userDO);
+    public List<UserBriefDTO> toBriefDTO(List<UserDO> userDOList) {
+        return userConverter.toBriefDTO(userDOList);
     }
 
     /**
-     * v1 = id + name + biography
+     * 转换为用户摘要 DTO（公开信息）
+     * 用途：用户列表、作者信息
+     * 替代：原 V1
      */
-    public UserDTO toDTOV1(UserDO userDO) {
-        return userConverter.toDTOV1(userDO);
+    public UserSummaryDTO toSummaryDTO(UserDO userDO) {
+        return userConverter.toSummaryDTO(userDO);
     }
 
-    public List<UserDTO> toDTOV1(List<UserDO> userDO) {
-        return userConverter.toDTOV1(userDO);
+    public List<UserSummaryDTO> toSummaryDTO(List<UserDO> userDOList) {
+        return userConverter.toSummaryDTO(userDOList);
     }
 
     /**
-     * v2 = id + name
+     * 转换为带订阅信息的用户 DTO
+     * 用途：用户个人中心
+     * 替代：原 V3
      */
-    public UserDTO toDTOV2(UserDO userDO) {
-        return userConverter.toDTOV2(userDO);
-    }
-
-    public List<UserDTO> toDTOV2(List<UserDO> userDO) {
-        return userConverter.toDTOV2(userDO);
-    }
-
-    /**
-     * v3 = id + name + subscriptions
-     */
-    public UserDTO toDTOV3(UserDO userDO) {
+    public UserWithSubscriptionsDTO toWithSubscriptionsDTO(UserDO userDO) {
         if (userDO == null) return null;
-        
-        UserDTO userDTO = userConverter.toDTOV2(userDO);
-        userDTO.setSubscriptions(getSubscriptions(userDO.getId()));
-        return userDTO;
+
+        UserWithSubscriptionsDTO dto = userConverter.toWithSubscriptionsDTO(userDO);
+        dto.setSubscriptions(getSubscriptions(userDO.getId()));
+        return dto;
     }
 
     /**
-     * v4 = v1 + followed (针对特定viewer)
+     * 转换为公开用户信息 DTO（含关注状态）
+     * 用途：查看其他用户主页
+     * 替代：原 V4
      */
-    public UserDTO toDTOV4(UserDO userDO, Long viewerId) {
-        UserDTO userDTO = userConverter.toDTOV1(userDO);
-        userDTO.setFollowing(false);
+    public UserPublicDTO toPublicDTO(UserDO userDO, Long viewerId) {
+        UserPublicDTO dto = userConverter.toPublicDTO(userDO);
+        dto.setIsFollowing(false);
 
         FollowDO followDO = followDataService.get(viewerId, userDO.getId());
         if (followDO != null) {
-            userDTO.setFollowing(true);
+            dto.setIsFollowing(true);
         }
-        return userDTO;
+        return dto;
+    }
+
+    /**
+     * 转换为用户完整资料 DTO（含敏感信息）
+     * 用途：用户查看自己的完整资料
+     * 替代：原 toDTO
+     */
+    public UserProfileDTO toProfileDTO(UserDO userDO) {
+        if (userDO == null) return null;
+
+        UserProfileDTO dto = userConverter.toProfileDTO(userDO);
+        dto.setSubscriptions(getSubscriptions(userDO.getId()));
+        return dto;
     }
 
 
@@ -683,9 +691,9 @@ public class UserService {
             }
 
             List<CourseDO> courseDOList = courseDataService.getByIds(ids);
-            log.info("查询到{}个收藏课程，课程信息: {}", courseDOList.size(), 
+            log.info("查询到{}个收藏课程，课程信息: {}", courseDOList.size(),
                 courseDOList.stream().map(c -> "id=" + c.getId() + ",name=" + c.getName()).collect(Collectors.toList()));
-            return courseService.toDTOV2(courseDOList);
+            return courseService.toSummaryDTO(courseDOList);
         } catch (Exception e) {
             log.error("获取用户{}收藏课程时出错: {}", userId, e.getMessage());
             throw ErrorCode.USER_SUBSCRIPTION_PARSE_ERROR.exception(e);

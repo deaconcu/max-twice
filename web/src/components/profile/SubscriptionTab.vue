@@ -3,24 +3,26 @@
     <!-- 左侧简介栏 -->
     <v-col cols="12" md="2">
       <div class="sticky-sidebar">
-        <div class="pa-2 pr-10 pt-4">
-          <div class="mb-3">
-            <h4 class="text-body-1 font-weight-bold">关注的课程</h4>
+        <div class="pa-4">
+          <div class="mb-4">
+            <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">关注的课程</h4>
+            <p class="text-body-2 text-grey mb-0">
+              管理您关注的所有课程，获取最新动态。
+            </p>
           </div>
-          <p class="text-body-2 text-grey-darken-2 mb-3">管理您关注的所有课程，获取最新动态。</p>
-          <v-divider class="my-3" />
-          <div class="text-caption text-grey">
-            <div class="mb-2">
-              <v-icon icon="mdi-bell-outline" size="14" class="mr-1" />
-              接收课程更新通知
+          <v-divider class="my-4" />
+          <div class="text-body-2 text-grey">
+            <div class="d-flex align-start mb-3">
+              <v-icon icon="mdi-bell-outline" size="18" color="grey" class="mr-2 mt-1" />
+              <span>接收课程更新通知</span>
             </div>
-            <div class="mb-2">
-              <v-icon icon="mdi-heart" size="14" class="mr-1" />
-              快速取消关注
+            <div class="d-flex align-start mb-3">
+              <v-icon icon="mdi-heart" size="18" color="grey" class="mr-2 mt-1" />
+              <span>快速取消关注</span>
             </div>
-            <div>
-              <v-icon icon="mdi-view-grid" size="14" class="mr-1" />
-              网格化浏览
+            <div class="d-flex align-start">
+              <v-icon icon="mdi-view-grid" size="18" color="grey" class="mr-2 mt-1" />
+              <span>网格化浏览</span>
             </div>
           </div>
         </div>
@@ -30,12 +32,11 @@
     <!-- 右侧主内容 -->
     <v-col cols="12" md="10">
       <div class="pa-2">
-        <div class="d-flex align-center justify-space-between mb-4">
-          <v-icon icon="mdi-menu" size="18" color="grey-lighten-1" />
-
-          <v-btn color="primary" variant="text" rounded="md" density="compact" to="/learning">
+        <div class="d-flex align-center justify-space-between mb-6">
+          <div></div>
+          <v-btn color="primary" variant="text" rounded="lg" to="/learning">
             浏览更多课程
-            <v-icon icon="mdi-chevron-right" class="ml-1" />
+            <v-icon icon="mdi-chevron-right" size="18" class="ml-1" />
           </v-btn>
         </div>
 
@@ -46,49 +47,34 @@
               v-for="course in formattedSubscriptions"
               :key="course.id"
               cols="12"
-              sm="6"
               md="6"
-              lg="6"
             >
-              <v-card border rounded="lg" hover class="hoverable">
-                <v-card-text class="pa-4" @click="goToCourse(course.courseId)">
+              <v-card rounded="xl" hover border elevation="0" class="subscription-card hoverable">
+                <v-card-text class="pa-6" @click="goToCourse(course.courseId)">
                   <!-- 课程图标和取消关注按钮 -->
-                  <div class="d-flex align-start justify-space-between mb-3">
-                    <v-avatar :color="course.course.iconColor" size="48" rounded="md">
-                      <v-icon :icon="course.course.icon" color="white" size="24" />
-                    </v-avatar>
+                  <div class="d-flex align-start justify-space-between mb-4">
+                    <div class="d-flex align-center flex-grow-1">
+                      <v-avatar :color="course.course.iconColor" size="56" rounded="lg" class="mr-4">
+                        <v-icon :icon="course.course.icon" color="white" size="28" />
+                      </v-avatar>
+                      <div>
+                        <h4 class="text-h6 font-weight-bold mb-1">{{ course.course.name }}</h4>
+                        <p class="text-caption text-grey mb-0">{{ course.course.learnerCount || 0 }} 人学习</p>
+                      </div>
+                    </div>
                     <v-btn
                       color="grey"
-                      variant="tonal"
-                      size="x-small"
+                      variant="text"
+                      size="small"
                       icon="mdi-close"
                       @click.stop="unsubscribe(course.courseId)"
                     />
                   </div>
 
-                  <!-- 课程信息 -->
-                  <h4 class="text-body-1 font-weight-bold mb-2 text-truncate">
-                    {{ course.course.name }}
-                  </h4>
-                  <p class="text-caption text-grey mb-3 course-description">
+                  <!-- 课程描述 -->
+                  <p class="text-body-2 text-grey-darken-2 mb-0 course-description">
                     {{ course.course.description }}
                   </p>
-
-                  <!-- 统计信息 -->
-                  <div class="d-flex align-center justify-space-between">
-                    <div class="d-flex align-center text-caption text-grey">
-                      <v-icon icon="mdi-account-multiple" size="14" class="mr-1" />
-                      {{ course.course.learnerCount || 0 }} 人学习
-                    </div>
-                    <v-chip
-                      v-if="course.course.category"
-                      size="x-small"
-                      variant="outlined"
-                      color="grey"
-                    >
-                      {{ course.course.category }}
-                    </v-chip>
-                  </div>
                 </v-card-text>
               </v-card>
             </v-col>
@@ -220,9 +206,17 @@ const confirmUnsubscribe = async () => {
 /* 左侧边栏固定 */
 .sticky-sidebar {
   position: sticky;
-  top: 80px;
-  max-height: calc(100vh - 100px);
+  top: 140px;
+  align-self: flex-start;
+  max-height: calc(100vh - 160px);
   overflow-y: auto;
+}
+
+.subscription-card {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #ffffff;
+  border: 1px solid #e9ecef !important;
 }
 
 .course-description {
@@ -230,7 +224,7 @@ const confirmUnsubscribe = async () => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 32px;
+  min-height: 40px;
 }
 
 /* 移动端取消 sticky */

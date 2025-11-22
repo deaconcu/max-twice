@@ -9,6 +9,7 @@ import com.prosper.learn.common.Enums.UserRole;
 import com.prosper.learn.api.v1.annotation.RequireRole;
 import com.prosper.learn.domain.service.business.RoadmapService;
 import com.prosper.learn.dto.response.RoadmapDTO;
+import com.prosper.learn.dto.response.roadmap.RoadmapSummaryDTO;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
@@ -37,13 +38,13 @@ public class AdminRoadmapsController {
      */
     @GetMapping("/roadmaps")
     @RequireRole(UserRole.MODERATOR)
-    public ApiResponse<List<RoadmapDTO>> getAdminRoadmaps(
+    public ApiResponse<List<RoadmapSummaryDTO>> getAdminRoadmaps(
             @RequestParam(required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state,
             @RequestParam(required = false) @Positive(message = "职业ID必须大于0") Long professionId,
             @RequestParam(required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
             @RequestParam(required = false) Long lastId) {
 
-        List<RoadmapDTO> roadmaps = roadmapService.listByFilter(state, professionId, creatorId, lastId);
+        List<RoadmapSummaryDTO> roadmaps = roadmapService.listByFilter(state, professionId, creatorId, lastId);
         return ApiResponse.success(roadmaps);
     }
 
@@ -60,14 +61,14 @@ public class AdminRoadmapsController {
         targetType = "Roadmap",
         targetId = "#id"
     )
-    public ApiResponse<RoadmapDTO> updateRoadmap(
+    public ApiResponse<RoadmapSummaryDTO> updateRoadmap(
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")
             Long id,
             @JsonParam("description") @Size(max = 500, message = "描述长度不能超过500个字符") String description,
             @CurrentUser UserDO currentUser) {
 
-        RoadmapDTO roadmap = roadmapService.updateDescription(id, description, currentUser);
+        RoadmapSummaryDTO roadmap = roadmapService.updateDescription(id, description, currentUser);
         return ApiResponse.success(roadmap);
     }
 }

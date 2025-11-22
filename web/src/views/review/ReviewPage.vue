@@ -111,7 +111,7 @@
           <!-- 复习中状态 -->
           <div v-else-if="currentCard">
             <!-- 进度条 -->
-            <v-card border rounded="lg" class="mb-0 pa-4 pb-2">
+            <v-card rounded="lg" class="mb-0 py-1 pb-2 no-border">
               <div class="d-flex align-center justify-space-between">
                 <span class="text-caption text-grey-darken-1">
                   {{
@@ -126,7 +126,7 @@
             </v-card>
 
             <!-- 卡片区域 -->
-            <v-card border rounded="lg" class="mb-4">
+            <v-card rounded="lg" class="mb-4">
               <div
                 class="card-container pa-8 d-flex align-center justify-center"
                 style="min-height: 500px"
@@ -234,7 +234,7 @@
 
             <!-- 操作按钮 -->
             <div class="d-flex justify-space-between">
-              <v-btn variant="outlined" rounded="lg" @click="resetReview">
+              <v-btn variant="tonal" rounded="lg" @click="resetReview">
                 <v-icon icon="mdi-stop" class="mr-2"></v-icon>
                 {{ t('review.stopReview') }}
               </v-btn>
@@ -467,7 +467,7 @@
 
       <!-- 右侧课程分类 -->
       <v-col cols="12" lg="3">
-        <v-card border rounded="lg" class="sticky-nav pa-4">
+        <v-card rounded="lg" class="sticky-nav px-4 no-border">
           <h3 class="text-h6 font-weight-bold text-grey-darken-4 mb-4">
             <v-icon icon="mdi-chart-line" color="primary" size="18" class="mr-2"></v-icon>
             {{ t('review.courseCategory') }}

@@ -7,8 +7,9 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.basic.CourseRankingService;
 import com.prosper.learn.domain.util.converter.CourseConverter;
 import com.prosper.learn.domain.util.converter.UserCourseConverter;
-import com.prosper.learn.dto.response.CourseDTO;
-import com.prosper.learn.dto.response.UserCourseDTO;
+import com.prosper.learn.dto.response.course.CourseSummaryDTO;
+import com.prosper.learn.dto.response.usercourse.UserCourseSummaryDTO;
+import com.prosper.learn.dto.response.usercourse.UserCourseWithCourseDTO;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.UserCourseDO;
 import com.prosper.learn.domain.service.data.CourseDataService;
@@ -36,32 +37,40 @@ public class UserCourseService {
     private static final int MIN_PROGRESS = 0;
     private static final int MAX_PROGRESS = 100;
     private static final long DEFAULT_MAX_ID = Long.MAX_VALUE;
-    
+
     // ========== DTO转换方法 ==========
-    
-    public UserCourseDTO toDTO(UserCourseDO userCourseDO) {
-        return userCourseConverter.toDTO(userCourseDO);
+
+    /**
+     * 转换为摘要 DTO（基础信息，不含课程详情）
+     */
+    public UserCourseSummaryDTO toSummaryDTO(UserCourseDO userCourseDO) {
+        return userCourseConverter.toSummaryDTO(userCourseDO);
     }
-    
-    public List<UserCourseDTO> toDTO(List<UserCourseDO> userCourseDOList) {
-        return userCourseConverter.toDTO(userCourseDOList);
+
+    public List<UserCourseSummaryDTO> toSummaryDTO(List<UserCourseDO> userCourseDOList) {
+        return userCourseConverter.toSummaryDTO(userCourseDOList);
     }
 
     /**
-     * v1 = v0 + course
+     * 转换为含课程信息的 DTO（单个）
      */
-    public UserCourseDTO toDTOV1(UserCourseDO userCourseDO) {
+    public UserCourseWithCourseDTO toWithCourseDTO(UserCourseDO userCourseDO) {
         if (userCourseDO == null) return null;
-        CourseDTO courseDTO = courseService.getById(userCourseDO.getCourseId(), Enums.DTOVersion.V2);
-        UserCourseDTO dto = userCourseConverter.toDTO(userCourseDO);
+
+        UserCourseWithCourseDTO dto = userCourseConverter.toWithCourseDTO(userCourseDO);
+
+        // 填充课程摘要信息
+        CourseDO courseDO = courseDataService.getById(userCourseDO.getCourseId());
+        CourseSummaryDTO courseDTO = courseService.toSummaryDTO(courseDO);
         dto.setCourse(courseDTO);
+
         return dto;
     }
 
     /**
-     * v2 = v1 + course (批量版本)
+     * 转换为含课程信息的 DTO（批量）
      */
-    public List<UserCourseDTO> toDTOV1(List<UserCourseDO> userCourseDOList) {
+    public List<UserCourseWithCourseDTO> toWithCourseDTO(List<UserCourseDO> userCourseDOList) {
         if (userCourseDOList.isEmpty()) {
             return List.of();
         }
@@ -73,15 +82,15 @@ public class UserCourseService {
 
         // 批量查询课程信息
         List<CourseDO> courseDOList = courseDataService.getByIds(courseIds);
-        List<CourseDTO> courseDTOList = courseService.toDTOV2(courseDOList);
-        Map<Long, CourseDTO> courseMap = courseDTOList.stream()
+        List<CourseSummaryDTO> courseDTOList = courseService.toSummaryDTO(courseDOList);
+        Map<Long, CourseSummaryDTO> courseMap = courseDTOList.stream()
                 .collect(Collectors.toMap(course -> (long) course.getId(), course -> course));
 
         // 转换为 DTO 并填充课程信息
         return userCourseDOList.stream()
                 .map(userCourseDO -> {
-                    UserCourseDTO dto = toDTO(userCourseDO);
-                    CourseDTO courseDTO = courseMap.get(userCourseDO.getCourseId());
+                    UserCourseWithCourseDTO dto = userCourseConverter.toWithCourseDTO(userCourseDO);
+                    CourseSummaryDTO courseDTO = courseMap.get(userCourseDO.getCourseId());
                     if (courseDTO != null) {
                         dto.setCourse(courseDTO);
                     }
@@ -192,12 +201,12 @@ public class UserCourseService {
      * @param courseId 课程ID
      * @return 学习进度记录，如果不存在返回null
      */
-    public UserCourseDTO getUserCourse(Long userId, Long courseId) {
+    public UserCourseWithCourseDTO getUserCourse(Long userId, Long courseId) {
         validateUserId(userId);
         validateCourseId(courseId);
-        
+
         UserCourseDO userCourseDo = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
-        return toDTOV1(userCourseDo);
+        return toWithCourseDTO(userCourseDo);
     }
 
     /**
@@ -205,15 +214,15 @@ public class UserCourseService {
      * @param userId 用户ID
      * @return 用户所有课程学习进度列表
      */
-    public List<UserCourseDTO> getUserCourseList(Long userId, Long lastId) {
+    public List<UserCourseWithCourseDTO> getUserCourseList(Long userId, Long lastId) {
         validateUserId(userId);
-        
+
         if (lastId == null || lastId <= 0) {
             lastId = DEFAULT_MAX_ID;
         }
-        
+
         List<UserCourseDO> userCourseDOList = userCourseDataService.getByUserId(userId, lastId);
-        return toDTOV1(userCourseDOList);
+        return toWithCourseDTO(userCourseDOList);
     }
 
     /**
@@ -223,17 +232,17 @@ public class UserCourseService {
      * @param progressPercent 进度百分比
      * @return 更新后的学习进度记录
      */
-    public UserCourseDTO update(Long userId, Long courseId, Integer progressPercent) {
+    public UserCourseWithCourseDTO update(Long userId, Long courseId, Integer progressPercent) {
         validateUserId(userId);
         validateCourseId(courseId);
         validateProgressPercent(progressPercent);
-        
+
         UserCourseDO userCourseDO = validateAndGetUserCourse(userId, courseId);
 
         updateLearningState(userCourseDO, progressPercent);
         userCourseDataService.update(userCourseDO);
 
-        return toDTOV1(userCourseDO);
+        return toWithCourseDTO(userCourseDO);
     }
 
     /**

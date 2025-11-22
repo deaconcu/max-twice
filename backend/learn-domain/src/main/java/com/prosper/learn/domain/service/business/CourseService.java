@@ -9,7 +9,7 @@ import com.prosper.learn.domain.service.basic.MessageService;
 import com.prosper.learn.domain.util.converter.CourseConverter;
 import com.prosper.learn.dto.request.CreateCourseRequest;
 import com.prosper.learn.dto.request.UpdateCourseRequest;
-import com.prosper.learn.dto.response.CourseDTO;
+import com.prosper.learn.dto.response.course.*;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.NodeDO;
 import com.prosper.learn.domain.service.data.CourseDataService;
@@ -115,67 +115,75 @@ public class CourseService {
     }
 
 
-    // ========== toDTO ==========
+    // ========== DTO 转换方法 ==========
 
     /**
-     * dtov1 = id + name + description + mainCategory + subCategory
+     * 转换为课程摘要 DTO（列表信息）
      */
-    public CourseDTO toDTOV2(CourseDO courseDO) {
-        return courseConverter.toDTOV2(courseDO);
+    public CourseSummaryDTO toSummaryDTO(CourseDO courseDO) {
+        return courseConverter.toSummaryDTO(courseDO);
     }
 
-    public List<CourseDTO> toDTOV2(List<CourseDO> courseDOList) {
-        return courseConverter.toDTOV2(courseDOList);
-    }
-
-    /**
-     * dtoV3 = id + name
-     */
-    public CourseDTO toDTOV3(CourseDO courseDO) {
-        return courseConverter.toDTOV3(courseDO);
-    }
-
-    public List<CourseDTO> toDTOV3(List<CourseDO> courseDOList) {
-        return courseConverter.toDTOV3(courseDOList);
+    public List<CourseSummaryDTO> toSummaryDTO(List<CourseDO> courseDOList) {
+        return courseConverter.toSummaryDTO(courseDOList);
     }
 
     /**
-     * dtoV4 = dto + parentCourse(dtoV3)
+     * 转换为课程简要 DTO（仅 id + name）
      */
-    public CourseDTO toDTOV4(CourseDO courseDO) {
+    public CourseBriefDTO toBriefDTO(CourseDO courseDO) {
+        return courseConverter.toBriefDTO(courseDO);
+    }
+
+    public List<CourseBriefDTO> toBriefDTO(List<CourseDO> courseDOList) {
+        return courseConverter.toBriefDTO(courseDOList);
+    }
+
+    /**
+     * 转换为课程详情 DTO（完整信息 + 父课程）
+     */
+    public CourseDetailDTO toDetailDTO(CourseDO courseDO) {
         if (courseDO == null) return null;
-        
-        CourseDTO dto = courseConverter.toDTO(courseDO);
-        
+
+        CourseDetailDTO dto = courseConverter.toDetailDTO(courseDO);
+
         // 填充父课程信息
         if (courseDO.getParentCourseId() != null && courseDO.getParentCourseId() > 0) {
             CourseDO parentCourseDO = courseDataService.getById(courseDO.getParentCourseId());
             if (parentCourseDO != null) {
-                CourseDTO parentDTO = courseConverter.toDTOV3(parentCourseDO);
+                CourseBriefDTO parentDTO = courseConverter.toBriefDTO(parentCourseDO);
                 dto.setParentCourse(parentDTO);
             }
         }
         return dto;
     }
-    
+
     /**
-     * dtov5 = dtov4 + subcribed + progress
+     * 转换为带学习进度的课程 DTO（详情 + 进度）
      */
-    public CourseDTO toDTOV5(CourseDO courseDO, boolean subscribed, int progress) {
+    public CourseWithProgressDTO toWithProgressDTO(CourseDO courseDO, boolean subscribed, int progress) {
         if (courseDO == null) return null;
 
-        CourseDTO dto = toDTOV4(courseDO);
+        // 先转换为详情 DTO（含 parentCourse）
+        CourseDetailDTO detailDTO = toDetailDTO(courseDO);
+
+        // 再转换为带进度的 DTO
+        CourseWithProgressDTO dto = courseConverter.toWithProgressDTO(courseDO);
+
+        // 复制 parentCourse 信息
+        dto.setParentCourse(detailDTO.getParentCourse());
+
+        // 设置进度信息
         dto.setSubscribed(subscribed);
         dto.setProgress(progress);
         return dto;
     }
 
     /**
-     * dtov6 = dto + learnerCount + subscriptionCount
+     * 转换为带统计信息的课程 DTO（摘要 + 统计）
      */
-    private CourseDTO toDTOV6(CourseDO courseDO) {
-        //CourseDTOV4 courseDTO = Converter.INSTANCE.toCourseDTOWithParent(courseDO, courseDataService);
-        CourseDTO courseDTO = courseConverter.toDTO(courseDO);
+    private CourseWithStatsDTO toWithStatsDTO(CourseDO courseDO) {
+        CourseWithStatsDTO courseDTO = courseConverter.toWithStatsDTO(courseDO);
 
         try {
             CourseRankingService.CourseStats stats = courseRankingService.getCourseStats(courseDO.getId());
@@ -191,15 +199,15 @@ public class CourseService {
 
     // ========== 公共业务方法 ==========
 
-    public CourseDTO getCourseById(Long id) {
+    public CourseDetailDTO getCourseById(Long id) {
         CourseDO course = validateCourseExists(id);
-        return toDTOV4(course);
+        return toDetailDTO(course);
     }
 
-    public List<CourseDTO> searchCoursesByName(String name) {
+    public List<CourseBriefDTO> searchCoursesByName(String name) {
         int searchLimit = systemProperties.getCourse().getSearchLimit();
         List<CourseDO> courseList = courseDataService.searchByName(name, searchLimit);
-        return toDTOV3(courseList);
+        return toBriefDTO(courseList);
     }
 
     public Map<Long, CourseDO> getCourseMap(List<Long> ids) {
@@ -216,8 +224,8 @@ public class CourseService {
      * @param parentCourseId
      * @return
      */
-    public List<CourseDTO> getSubCourses(long parentCourseId) {
-        return toDTOV2(courseDataService.listByParentAndState(ContentState.PUBLISHED, parentCourseId));
+    public List<CourseSummaryDTO> getSubCourses(long parentCourseId) {
+        return toSummaryDTO(courseDataService.listByParentAndState(ContentState.PUBLISHED, parentCourseId));
     }
 
     @Transactional
@@ -251,42 +259,31 @@ public class CourseService {
         return courseDO != null;
     }
 
-    public CourseDTO getById(long id, Enums.DTOVersion version) {
-        CourseDO courseDO = courseDataService.getById(id);
-        if (courseDO == null) return null;
-
-        switch (version) {
-            case V2 -> toDTOV2(courseDO);
-            case V4 -> toDTOV4(courseDO);
-        }
-        return null;
-    }
-
-    public CourseDTO getCourseDTOV4ById(Long courseId) {
+    public CourseDetailDTO getCourseDetailDTOById(Long courseId) {
         if (courseId == null) return null;
         CourseDO courseDO = courseDataService.getById(courseId);
-        return courseDO != null ? toDTOV4(courseDO) : null;
+        return courseDO != null ? toDetailDTO(courseDO) : null;
     }
 
     // 新增：根据状态和lastId获取课程列表
-    public List<CourseDTO> getListByStateAndLastId(ContentState state, Long lastId) {
+    public List<CourseDetailDTO> getListByStateAndLastId(ContentState state, Long lastId) {
         List<CourseDO> courseDOList = courseDataService.listByStateAndLastId(state, lastId);
         return courseDOList.stream()
-                .map(this::toDTOV4)
+                .map(this::toDetailDTO)
                 .collect(java.util.stream.Collectors.toList());
     }
 
     // 新增：根据主分类和子分类获取已批准的课程列表
-    public List<CourseDTO> getListByCategory(int mainCategory, int subCategory) {
+    public List<CourseDetailDTO> getListByCategory(int mainCategory, int subCategory) {
         List<CourseDO> courseDOList;
         courseDOList = courseDataService.listRootByCategory(mainCategory, subCategory);
         return courseDOList.stream()
-                .map(this::toDTOV4)
+                .map(this::toDetailDTO)
                 .collect(java.util.stream.Collectors.toList());
     }
 
     // 新增：根据父课程ID获取子课程列表
-    public List<CourseDTO> getListByParent(long parentId, ContentState state) {
+    public List<CourseDetailDTO> getListByParent(long parentId, ContentState state) {
         List<CourseDO> courseDOList;
         if (state == null) { // null表示获取所有状态
             courseDOList = courseDataService.listByParent(parentId);
@@ -294,7 +291,7 @@ public class CourseService {
             courseDOList = courseDataService.listByParentAndState(state, parentId);
         }
         return courseDOList.stream()
-                .map(this::toDTOV4)
+                .map(this::toDetailDTO)
                 .collect(java.util.stream.Collectors.toList());
     }
 
@@ -407,7 +404,7 @@ public class CourseService {
     }
 
     // 获取热门课程（使用Redis排行榜）
-    public List<CourseDTO> getHotCourses(int limit) {
+    public List<CourseWithStatsDTO> getHotCourses(int limit) {
         try {
             // 从Redis获取2倍数量，以防过滤后不足limit个
             int fetchLimit = limit * 2;
@@ -419,13 +416,13 @@ public class CourseService {
 
             List<CourseDO> courseDOList = courseDataService.getByIds(hotCourseIds);
 
-            List<CourseDTO> result = new ArrayList<>();
+            List<CourseWithStatsDTO> result = new ArrayList<>();
             for (CourseDO courseDO : courseDOList) {
                 // 只返回已发布状态的课程，过滤屏蔽、拒绝等状态
                 if (courseDO.getState() != ContentState.PUBLISHED.value()) {
                     continue;
                 }
-                result.add(toDTOV6(courseDO));
+                result.add(toWithStatsDTO(courseDO));
 
                 // 达到limit个后停止
                 if (result.size() >= limit) {
@@ -439,9 +436,9 @@ public class CourseService {
             throw ErrorCode.COURSE_OPERATION_FAILED.exception(e);
         }
     }
-    
+
     // 获取热门课程完整排行榜
-    public List<CourseDTO> getHotCoursesRanking() {
+    public List<CourseWithStatsDTO> getHotCoursesRanking() {
         try {
             int rankingLimit = systemProperties.getCourse().getHotCoursesRankingLimit();
             // 从Redis获取2倍数量，以防过滤后不足rankingLimit个
@@ -454,13 +451,13 @@ public class CourseService {
 
             List<CourseDO> courseDOList = courseDataService.getByIds(hotCourseIds);
 
-            List<CourseDTO> result = new ArrayList<>();
+            List<CourseWithStatsDTO> result = new ArrayList<>();
             for (CourseDO courseDO : courseDOList) {
                 // 只返回已发布状态的课程，过滤屏蔽、拒绝等状态
                 if (courseDO.getState() != ContentState.PUBLISHED.value()) {
                     continue;
                 }
-                result.add(toDTOV6(courseDO));
+                result.add(toWithStatsDTO(courseDO));
 
                 // 达到rankingLimit个后停止
                 if (result.size() >= rankingLimit) {

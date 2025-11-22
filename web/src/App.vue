@@ -14,12 +14,13 @@
       :timeout="4000"
       location="top"
       rounded="xl"
-      color="blue-grey-darken-1"
       variant="flat"
+      border
+      :class="`snackbar-${item.type}`"
     >
       <div class="d-flex align-center pa-1">
         <v-avatar :color="getSnackbarIconBg(item.type)" size="32" class="mr-3">
-          <v-icon :icon="getSnackbarIcon(item.type)" size="18" color="white"></v-icon>
+          <v-icon :icon="getSnackbarIcon(item.type)" size="32" color="white"></v-icon>
         </v-avatar>
         <span class="text-body-1 font-weight-medium">{{ item.text }}</span>
       </div>
@@ -225,7 +226,24 @@ body {
 
 .v-card.hoverable:hover {
   transform: translateY(-4px);
-  background-color: rgb(var(--v-theme-surface-variant)) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgb(var(--v-theme-grey-lighten-2)) !important;
+}
+
+/* Snackbar 边框样式 - 根据类型设置不同颜色 */
+.snackbar-success .v-snackbar__wrapper {
+  border: 2px solid rgb(var(--v-theme-success)) !important;
+}
+
+.snackbar-error .v-snackbar__wrapper {
+  border: 2px solid rgb(var(--v-theme-error)) !important;
+}
+
+.snackbar-warning .v-snackbar__wrapper {
+  border: 2px solid rgb(var(--v-theme-warning)) !important;
+}
+
+.snackbar-info .v-snackbar__wrapper {
+  border: 2px solid rgb(var(--v-theme-primary)) !important;
 }
 </style>

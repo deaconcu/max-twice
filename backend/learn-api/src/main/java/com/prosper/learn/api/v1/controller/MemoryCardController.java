@@ -8,7 +8,7 @@ import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.domain.service.business.MemoryCardService;
 import com.prosper.learn.dto.request.CreateCardRequest;
 import com.prosper.learn.dto.request.UpdateCardRequest;
-import com.prosper.learn.dto.response.MemoryCardViewDTO;
+import com.prosper.learn.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 /**
  * 记忆卡片控制器
@@ -36,10 +37,10 @@ public class MemoryCardController {
      */
     @PostMapping("/cards")
     @SaCheckLogin
-    public ApiResponse<MemoryCardViewDTO> createCard(
+    public ApiResponse<CardWithSrsDTO> createCard(
             @Valid @RequestBody CreateCardRequest request,
             @CurrentUser UserDO currentUser) {
-        MemoryCardViewDTO result = cardService.createCard(currentUser.getId(), request);
+        CardWithSrsDTO result = cardService.createCard(currentUser.getId(), request);
         return ApiResponse.success(result);
     }
 
@@ -48,7 +49,7 @@ public class MemoryCardController {
      */
     @PutMapping("/cards/{cardId}")
     @SaCheckLogin
-    public ApiResponse<MemoryCardViewDTO> updateCard(
+    public ApiResponse<CardWithSrsDTO> updateCard(
             @PathVariable @NotNull(message = "卡片ID不能为空")
             @Positive(message = "卡片ID必须大于0")
             Long cardId,
@@ -57,7 +58,7 @@ public class MemoryCardController {
 
         request.setId(cardId);
 
-        MemoryCardViewDTO result = cardService.updateCard(currentUser.getId(), request);
+        CardWithSrsDTO result = cardService.updateCard(currentUser.getId(), request);
         return ApiResponse.success(result);
     }
 
@@ -66,12 +67,12 @@ public class MemoryCardController {
      */
     @GetMapping("/cards/node/{nodeId}")
     @SaCheckLogin
-    public ApiResponse<java.util.List<MemoryCardViewDTO>> getUserCardsByNode(
+    public ApiResponse<List<CardWithSrsDTO>> getUserCardsByNode(
             @PathVariable @NotNull(message = "节点ID不能为空")
             @Positive(message = "节点ID必须大于0")
             Long nodeId,
             @CurrentUser UserDO currentUser) {
-        java.util.List<MemoryCardViewDTO> result = cardService.getCardsByNode(nodeId, currentUser.getId());
+        List<CardWithSrsDTO> result = cardService.getCardsByNode(nodeId, currentUser.getId());
         return ApiResponse.success(result);
     }
 

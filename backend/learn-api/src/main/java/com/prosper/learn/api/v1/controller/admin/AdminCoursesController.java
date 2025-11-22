@@ -12,7 +12,7 @@ import com.prosper.learn.domain.service.business.CourseService;
 import com.prosper.learn.dto.request.OperateRequest;
 import com.prosper.learn.dto.request.UpdateCourseRequest;
 import com.prosper.learn.dto.response.ApprovalResponseDTO;
-import com.prosper.learn.dto.response.CourseDTO;
+import com.prosper.learn.dto.response.course.*;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -56,14 +56,14 @@ public class AdminCoursesController {
             if (courseState == null) {
                 throw ErrorCode.INVALID_PARAMETER.exception("Invalid course state: " + state);
             }
-            List<CourseDTO> courseList = courseService.getListByStateAndLastId(courseState, lastId);
+            List<CourseDetailDTO> courseList = courseService.getListByStateAndLastId(courseState, lastId);
             return ApiResponse.success(courseList);
         }
 
         // 按分类查询（管理员版本）
         if (mainCategory != null && subCategory != null) {
             // TODO: 当前复用普通接口，只返回已发布课程。如需返回其他状态，需新增 Service 方法
-            List<CourseDTO> courseList = courseService.getListByCategory(mainCategory, subCategory);
+            List<CourseDetailDTO> courseList = courseService.getListByCategory(mainCategory, subCategory);
             return ApiResponse.success(courseList);
         }
 
@@ -77,10 +77,10 @@ public class AdminCoursesController {
      */
     @GetMapping("/courses/{id}")
     @RequireRole(UserRole.MODERATOR)
-    public ApiResponse<CourseDTO> getAdminCourse(
+    public ApiResponse<CourseDetailDTO> getAdminCourse(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0") Long id) {
-        CourseDTO course = courseService.getCourseById(id);
+        CourseDetailDTO course = courseService.getCourseById(id);
         return ApiResponse.success(course);
     }
 
@@ -91,13 +91,13 @@ public class AdminCoursesController {
      */
     @GetMapping("/courses/{parentId}/subcourses")
     @RequireRole(UserRole.MODERATOR)
-    public ApiResponse<List<CourseDTO>> getAdminSubcourses(
+    public ApiResponse<List<CourseDetailDTO>> getAdminSubcourses(
             @PathVariable @NotNull(message = "父课程ID不能为空")
             @Positive(message = "父课程ID必须大于0") Long parentId,
             @RequestParam(required = false) @Positive(message = "状态必须大于0") Integer state) {
 
         ContentState courseState = state != null ? ContentState.getByValue(state) : null;
-        List<CourseDTO> courseList = courseService.getListByParent(parentId, courseState);
+        List<CourseDetailDTO> courseList = courseService.getListByParent(parentId, courseState);
         return ApiResponse.success(courseList);
     }
 

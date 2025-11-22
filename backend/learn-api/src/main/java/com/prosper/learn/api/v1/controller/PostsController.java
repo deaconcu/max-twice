@@ -9,8 +9,9 @@ import com.prosper.learn.common.Enums;
 import com.prosper.learn.domain.service.business.PostService;
 import com.prosper.learn.dto.request.CreatePostRequest;
 import com.prosper.learn.dto.request.UpdatePostRequest;
-import com.prosper.learn.dto.response.PostDTO;
+import com.prosper.learn.dto.response.post.PostSummaryDTO;
 import com.prosper.learn.dto.response.KeysetPageResponse;
+import com.prosper.learn.dto.response.post.*;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -42,14 +43,14 @@ public class PostsController {
      */
     @GetMapping("/posts")
     @SaCheckLogin
-    public ApiResponse<List<PostDTO>> getPosts(
+    public ApiResponse<List<PostWithVoteDTO>> getPosts(
             @RequestParam(value = "ids", required = false) List<Long> ids,
             @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
             @RequestParam(value = "lastScore", required = false, defaultValue = "0") double lastScore,
             @RequestParam(value = "lastId", required = false, defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastPostingId,
             @CurrentUser UserDO currentUser) {
 
-        List<PostDTO> posts = postService.getPostsWithUserAndVoteInfo(ids, nodeId, lastScore, lastPostingId, currentUser.getId());
+        List<PostWithVoteDTO> posts = postService.getPostsWithUserAndVoteInfo(ids, nodeId, lastScore, lastPostingId, currentUser.getId());
         return ApiResponse.success(posts);
     }
 
@@ -72,13 +73,13 @@ public class PostsController {
      */
     @PutMapping("/posts/{id}")
     @SaCheckLogin
-    public ApiResponse<PostDTO> updatePost(
+    public ApiResponse<PostSummaryDTO> updatePost(
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
             Long id,
             @Valid @RequestBody UpdatePostRequest request,
             @CurrentUser UserDO currentUser) {
-        PostDTO postDTO = postService.updatePostAndReturn(id, request, currentUser);
+        PostSummaryDTO postDTO = postService.updatePostAndReturn(id, request, currentUser);
         return ApiResponse.success(postDTO);
     }
 
@@ -102,11 +103,11 @@ public class PostsController {
      * 映射: GET /posting/{id} → GET /api/v1/posts/{id}
      */
     @GetMapping("/posts/{id}")
-    public ApiResponse<PostDTO> getPost(
+    public ApiResponse<PostSummaryDTO> getPost(
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
             Long id) {
-        PostDTO post = postService.getDTO(id);
+        PostSummaryDTO post = postService.getDTO(id);
         return ApiResponse.success(post);
     }
 
@@ -115,11 +116,11 @@ public class PostsController {
      * 映射: GET /node/{nodeId}/posting → GET /api/v1/nodes/{nodeId}/posts
      */
     @GetMapping("/nodes/{nodeId}/posts")
-    public ApiResponse<List<PostDTO>> getNodePosts(
+    public ApiResponse<List<PostSummaryDTO>> getNodePosts(
             @PathVariable @NotNull(message = "节点ID不能为空")
             @Positive(message = "节点ID必须大于0")
             Long nodeId) {
-        List<PostDTO> posts = postService.getNodePostsList(nodeId);
+        List<PostSummaryDTO> posts = postService.getNodePostsList(nodeId);
         return ApiResponse.success(posts);
     }
 
@@ -129,7 +130,7 @@ public class PostsController {
      * 映射: GET /user/contents → GET /api/v1/users/{userId}/posts?type=1
      */
     @GetMapping("/users/{userId}/posts")
-    public ApiResponse<List<PostDTO>> getUserPosts(
+    public ApiResponse<List<PostFullDTO>> getUserPosts(
             @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false, defaultValue = "2") Integer type) {
@@ -138,7 +139,7 @@ public class PostsController {
         if (postType == null) {
             return ApiResponse.error(400, "无效的帖子类型");
         }
-        List<PostDTO> posts = postService.getUserPosts(userId, lastId, postType, Enums.ContentState.PUBLISHED.value());
+        List<PostFullDTO> posts = postService.getUserPosts(userId, lastId, postType, Enums.ContentState.PUBLISHED.value());
         return ApiResponse.success(posts);
     }
 
@@ -149,7 +150,7 @@ public class PostsController {
      */
     @GetMapping("/users/me/posts")
     @SaCheckLogin
-    public ApiResponse<KeysetPageResponse<PostDTO>> getCurrentUserAllPosts(
+    public ApiResponse<KeysetPageResponse<PostFullDTO>> getCurrentUserAllPosts(
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false, defaultValue = "2") Integer type,
             @CurrentUser UserDO currentUser) {
@@ -158,7 +159,7 @@ public class PostsController {
         if (postType == null) {
             return ApiResponse.error(400, "无效的帖子类型");
         }
-        KeysetPageResponse<PostDTO> result = postService.getUserPostsWithPagination(currentUser.getId(), lastId, postType, null);
+        KeysetPageResponse<PostFullDTO> result = postService.getUserPostsWithPagination(currentUser.getId(), lastId, postType, null);
         return ApiResponse.success(result);
     }
 }

@@ -9,7 +9,7 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.domain.service.business.PostService;
 import com.prosper.learn.dto.request.OperateRequest;
 import com.prosper.learn.dto.response.ApprovalResponseDTO;
-import com.prosper.learn.dto.response.PostDTO;
+import com.prosper.learn.dto.response.post.PostSummaryDTO;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -38,7 +38,7 @@ public class AdminPostsController {
      */
     @GetMapping("/posts")
     @RequireRole(Enums.UserRole.MODERATOR)
-    public ApiResponse<List<PostDTO>> getPostsByState(
+    public ApiResponse<List<PostSummaryDTO>> getPostsByState(
             @RequestParam("state") @NotBlank(message = "状态不能为空") String state,
             @RequestParam(value = "lastId", defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
             @RequestParam(value = "limit", defaultValue = "20") @Positive(message = "限制数量必须大于0") Integer limit) {
@@ -61,7 +61,7 @@ public class AdminPostsController {
                 postState = Enums.ContentState.SUBMITTED;
         }
 
-        List<PostDTO> posts = postService.getPostsByState(postState, lastId, limit);
+        List<PostSummaryDTO> posts = postService.getPostsByState(postState, lastId, limit);
         return ApiResponse.success(posts);
     }
 
@@ -70,12 +70,12 @@ public class AdminPostsController {
      */
     @GetMapping("/posts/filter")
     @RequireRole(Enums.UserRole.MODERATOR)
-    public ApiResponse<List<PostDTO>> getPostsByNodeAndCreator(
+    public ApiResponse<List<PostSummaryDTO>> getPostsByNodeAndCreator(
             @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
             @RequestParam(value = "creatorId", required = false) @Positive(message = "用户ID必须大于0") Long creatorId,
             @RequestParam(value = "lastId", defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
             @RequestParam(value = "state", required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state) {
-        List<PostDTO> posts = postService.getPostsByNodeAndCreator(nodeId, creatorId, lastId, state);
+        List<PostSummaryDTO> posts = postService.getPostsByNodeAndCreator(nodeId, creatorId, lastId, state);
         return ApiResponse.success(posts);
     }
 
@@ -85,8 +85,8 @@ public class AdminPostsController {
      */
     @GetMapping("/posts/pending")
     @RequireRole(Enums.UserRole.MODERATOR)
-    public ApiResponse<List<PostDTO>> getPendingPosts() {
-        List<PostDTO> posts = postService.getPendingPostsList();
+    public ApiResponse<List<PostSummaryDTO>> getPendingPosts() {
+        List<PostSummaryDTO> posts = postService.getPendingPostsList();
         return ApiResponse.success(posts);
     }
 

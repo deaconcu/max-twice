@@ -8,6 +8,7 @@ import com.prosper.learn.common.Enums.OperationLevel;
 import com.prosper.learn.common.Enums.UserRole;
 import com.prosper.learn.domain.service.business.UserService;
 import com.prosper.learn.dto.response.UserDTO;
+import com.prosper.learn.dto.response.user.*;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -38,10 +39,10 @@ public class AdminUserController {
      */
     @GetMapping("/users")
     @RequireRole(UserRole.ADMIN)
-    public ApiResponse<List<UserDTO>> getUsers(
+    public ApiResponse<List<UserProfileDTO>> getUsers(
             @RequestParam(required = false) @Min(value = 0, message = "偏移ID不能小于0") Long offsetId,
             @CurrentUser UserDO currentUser) {
-        List<UserDTO> users = userService.getUsers(offsetId, 20);
+        List<UserProfileDTO> users = userService.getUsers(offsetId, 20);
         return ApiResponse.success(users);
     }
 
@@ -51,13 +52,13 @@ public class AdminUserController {
      */
     @GetMapping("/users/{userId}")
     @RequireRole(UserRole.ADMIN)
-    public ApiResponse<UserDTO> getUserById(
+    public ApiResponse<UserProfileDTO> getUserById(
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
             Long userId,
             @CurrentUser UserDO currentUser) {
         // 复用现有方法：返回用户详情（包括被屏蔽用户）
-        UserDTO user = userService.getUser(userId);
+        UserProfileDTO user = userService.getUser(userId);
         return ApiResponse.success(user);
     }
 
@@ -68,11 +69,11 @@ public class AdminUserController {
      */
     @GetMapping("/users/search")
     @RequireRole(UserRole.ADMIN)
-    public ApiResponse<List<UserDTO>> searchUsers(
+    public ApiResponse<List<UserBriefDTO>> searchUsers(
             @RequestParam @NotNull(message = "搜索名称不能为空") String name,
             @CurrentUser UserDO currentUser) {
         // 复用现有方法
-        List<UserDTO> users = userService.searchUsers(name);
+        List<UserBriefDTO> users = userService.searchUsers(name);
         return ApiResponse.success(users);
     }
 
@@ -89,14 +90,14 @@ public class AdminUserController {
         targetType = "User",
         targetId = "#id"
     )
-    public ApiResponse<UserDTO> setUserRole(
+    public ApiResponse<UserProfileDTO> setUserRole(
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
             Long id,
             @RequestParam @NotNull(message = "角色代码不能为空") Integer roleCode,
             @CurrentUser UserDO currentUser) {
 
-        UserDTO user = userService.setUserRole(id, roleCode, currentUser);
+        UserProfileDTO user = userService.setUserRole(id, roleCode, currentUser);
         return ApiResponse.success(user);
     }
 
@@ -113,14 +114,14 @@ public class AdminUserController {
         targetType = "User",
         targetId = "#id"
     )
-    public ApiResponse<UserDTO> updateUserState(
+    public ApiResponse<UserProfileDTO> updateUserState(
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
             Long id,
             @RequestParam @NotNull(message = "封禁状态不能为空") Boolean ban,
             @CurrentUser UserDO currentUser) {
 
-        UserDTO user = userService.updateUserState(id, ban, currentUser);
+        UserProfileDTO user = userService.updateUserState(id, ban, currentUser);
         return ApiResponse.success(user);
     }
 
@@ -137,14 +138,14 @@ public class AdminUserController {
         targetType = "User",
         targetId = "#id"
     )
-    public ApiResponse<UserDTO> banUser(
+    public ApiResponse<UserProfileDTO> banUser(
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
             Long id,
             @RequestParam @NotNull(message = "封禁状态不能为空") Boolean ban,
             @CurrentUser UserDO currentUser) {
 
-        UserDTO user = userService.updateUserState(id, ban, currentUser);
+        UserProfileDTO user = userService.updateUserState(id, ban, currentUser);
         return ApiResponse.success(user);
     }
 }

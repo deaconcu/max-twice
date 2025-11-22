@@ -18,7 +18,9 @@ import com.prosper.learn.domain.util.converter.RoadmapConverter;
 import com.prosper.learn.domain.util.converter.UserConverter;
 import com.prosper.learn.dto.response.ProfessionDTO;
 import com.prosper.learn.dto.response.RoadmapDTO;
+import com.prosper.learn.dto.response.roadmap.*;
 import com.prosper.learn.dto.response.UserDTO;
+import com.prosper.learn.dto.response.user.*;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import com.prosper.learn.persistence.dataobject.CourseDO;
 import com.prosper.learn.persistence.dataobject.RoadmapDO;
@@ -68,32 +70,31 @@ public class RoadmapService {
     // ========== DTO转换方法 ==========
     
     /**
-     * 转换单个对象为DTO
+     * 转换单个对象为摘要DTO
      */
-    public RoadmapDTO toDTO(RoadmapDO roadmapDO) {
-        return roadmapConverter.toDTO(roadmapDO);
-    }
-    
-    /**
-     * 转换列表为DTO列表
-     */
-    public List<RoadmapDTO> toDTO(List<RoadmapDO> roadmapDOList) {
-        return roadmapConverter.toDTO(roadmapDOList);
+    public RoadmapSummaryDTO toSummaryDTO(RoadmapDO roadmapDO) {
+        return roadmapConverter.toSummaryDTO(roadmapDO);
     }
 
+    /**
+     * 转换列表为摘要DTO列表
+     */
+    public List<RoadmapSummaryDTO> toSummaryDTO(List<RoadmapDO> roadmapDOList) {
+        return roadmapConverter.toSummaryDTO(roadmapDOList);
+    }
 
     /**
-     * 转换为RoadmapDTO V2版本（包含完整业务信息）
-     * v1 = v0 + creator + profession + upvoted + formatted content
+     * 转换为路线图（包含完整业务信息）
+     * 包含：creator + profession + upvoted + formatted content
      */
-    public RoadmapDTO toDTOV1(RoadmapDO roadmapDO, long userId) {
+    public RoadmapWithStatusDTO toRoadmapWithStatus(RoadmapDO roadmapDO, long userId) {
         if (roadmapDO == null) return null;
 
-        RoadmapDTO dto = toDTO(roadmapDO);
+        RoadmapWithStatusDTO dto = roadmapConverter.toWithStatusDTO(roadmapDO);
 
         // 设置创建者信息
         if (roadmapDO.getCreatorId() != null) {
-            dto.setCreator(userConverter.toDTOV2(userDataService.getById(roadmapDO.getCreatorId())));
+            dto.setCreator(userConverter.toBriefDTO(userDataService.getById(roadmapDO.getCreatorId())));
         }
 
         // 设置专业信息
@@ -113,24 +114,24 @@ public class RoadmapService {
     }
 
     /**
-     * 转换为RoadmapDTO V2版本列表（包含完整业务信息）
-     * v1 = v0 + creator + profession + upvoted + pinned + learning + formatted content
+     * 转换为路线图（包含完整业务信息）
+     * 包含：creator + profession + upvoted + pinned + learning + formatted content
      */
-    private List<RoadmapDTO> toDTOV1(List<RoadmapDO> roadmapList, long userId, Long professionId, Long lastId, List<Long> pinnedRoadmapIds) {
-        List<RoadmapDTO> dtoList = toDTO(roadmapList);
+    private List<RoadmapWithStatusDTO> toRoadmapWithFullInfo(List<RoadmapDO> roadmapList, long userId, Long professionId, Long lastId, List<Long> pinnedRoadmapIds) {
+        List<RoadmapWithStatusDTO> dtoList = roadmapConverter.toWithStatusDTO(roadmapList);
 
         if (!dtoList.isEmpty()) {
             List<Long> roadmapIds = dtoList.stream()
-                    .map(RoadmapDTO::getId)
+                    .map(RoadmapSummaryDTO::getId)
                     .collect(Collectors.toList());
 
-            UserDTO userDTO = userConverter.toDTOV2(userDataService.getById(userId));
+            UserBriefDTO userDTO = userConverter.toBriefDTO(userDataService.getById(userId));
             ProfessionDTO professionDTO = professionService.getById(professionId, true);
             Set<Long> upvotedIds = upvoteService.getUpvotedRoadmapIds(roadmapIds, userId);
             Set<Long> pinnedIds = getPinnedIdsForCurrentRequest(userId, professionId, lastId, pinnedRoadmapIds);
             Set<Long> learningIds = getLearningIds(userId, roadmapIds);
 
-            for (RoadmapDTO dto : dtoList) {
+            for (RoadmapWithStatusDTO dto : dtoList) {
                 dto.setProfession(professionDTO);
                 dto.setCreator(userDTO);
                 dto.setUpvoted(upvotedIds.contains(dto.getId()));
@@ -152,7 +153,7 @@ public class RoadmapService {
      * 获取职业路线图列表（公开接口，无个性化信息）
      * 用于匿名用户浏览
      */
-    public List<RoadmapDTO> getRoadmapsByProfessionPublic(Long professionId, Long lastId, Integer pageSize) {
+    public List<RoadmapSummaryDTO> getRoadmapsByProfessionPublic(Long professionId, Long lastId, Integer pageSize) {
         validateProfessionId(professionId);
 
         int limit = pageSize != null && pageSize > 0 ? pageSize : systemProperties.getRoadmap().getDefaultPageSize();
@@ -172,34 +173,34 @@ public class RoadmapService {
         }
 
         // 转换为DTO，只包含基础信息
-        return toDTO(roadmapList);
+        return toSummaryDTO(roadmapList);
     }
 
     /**
      * return RoadmapDTO
      */
-    public RoadmapDTO getById(long id) {
+    public RoadmapSummaryDTO getById(long id) {
         validateRoadmapId(id);
 
         RoadmapDO roadmapDO = roadmapDataService.getById(id);
         if (roadmapDO == null) {
             return null;
         }
-        return toDTO(roadmapDO);
+        return toSummaryDTO(roadmapDO);
     }
 
     /**
-     * return RoadmapDTO v1
+     * return RoadmapWithStatusDTO (替代旧的 v1)
      */
-    public RoadmapDTO getById(long id, long userId) {
+    public RoadmapWithStatusDTO getById(long id, long userId) {
         validateRoadmapId(id);
         validateUserId(userId);
-        
+
         RoadmapDO roadmapDO = roadmapDataService.getById(id);
         if (roadmapDO == null) {
             return null;
         }
-        return toDTOV1(roadmapDO, userId);
+        return toRoadmapWithStatus(roadmapDO, userId);
     }
 
     /**
@@ -424,7 +425,7 @@ public class RoadmapService {
     /**
      * 获取职业路线图列表（带置顶和状态信息）
      */
-    public List<RoadmapDTO> getRoadmapsByProfession(Long professionId, Long lastId, UserDO currentUser) {
+    public List<RoadmapWithStatusDTO> getRoadmapsByProfession(Long professionId, Long lastId, UserDO currentUser) {
         validateProfessionId(professionId);
 
         List<RoadmapDO> roadmapList = new ArrayList<>();
@@ -453,7 +454,7 @@ public class RoadmapService {
             }
         }
 
-        return toDTOV1(roadmapList, currentUser.getId(), professionId, lastId, pinnedRoadmapIds);
+        return toRoadmapWithFullInfo(roadmapList, currentUser.getId(), professionId, lastId, pinnedRoadmapIds);
     }
 
     /**
@@ -462,13 +463,13 @@ public class RoadmapService {
      * @param lastId 分页游标
      * @return 路线图列表
      */
-    public List<RoadmapDTO> getUserRoadmaps(Long userId, Long lastId, Enums.ContentState state) {
+    public List<RoadmapSummaryDTO> getUserRoadmaps(Long userId, Long lastId, Enums.ContentState state) {
         validateUserId(userId);
 
         int limit = systemProperties.getRoadmap().getDefaultPageSize();
         List<RoadmapDO> roadmapList = roadmapDataService.getListByCreatorWithPaging(
                 userId, lastId, limit, state == null ? null : state.value());
-        return toDTO(roadmapList);
+        return toSummaryDTO(roadmapList);
     }
 
     /**
@@ -546,11 +547,11 @@ public class RoadmapService {
     /**
      * 获取路线图详情（带格式化内容）
      */
-    public RoadmapDTO getRoadmapWithContent(Long id, long userId) {
+    public RoadmapWithStatusDTO getRoadmapWithContent(Long id, long userId) {
         validateRoadmapId(id);
         validateUserId(userId);
-        
-        RoadmapDTO roadmapDTO = getById(id, userId);
+
+        RoadmapWithStatusDTO roadmapDTO = getById(id, userId);
 
         if (roadmapDTO == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
@@ -780,15 +781,15 @@ public class RoadmapService {
     /**
      * Admin管理：按条件获取路线图列表
      */
-    public List<RoadmapDTO> listByFilter(Byte state, Long professionId, Long creatorId, Long lastId) {
+    public List<RoadmapSummaryDTO> listByFilter(Byte state, Long professionId, Long creatorId, Long lastId) {
         List<RoadmapDO> roadmapDOList = roadmapDataService.listByFilter(state, professionId, creatorId, lastId);
-        return toDTO(roadmapDOList);
+        return toSummaryDTO(roadmapDOList);
     }
 
     /**
      * 批准路线图（直接通过，保留描述）
      */
-    public RoadmapDTO approve(long id, UserDO operator) {
+    public RoadmapSummaryDTO approve(long id, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
@@ -798,13 +799,13 @@ public class RoadmapService {
 
         roadmapDataService.approve(id);
         roadmap.setState(ContentState.PUBLISHED.value());
-        return toDTO(roadmap);
+        return toSummaryDTO(roadmap);
     }
 
     /**
      * 拒绝路线图
      */
-    public RoadmapDTO reject(long id, String reason, UserDO operator) {
+    public RoadmapSummaryDTO reject(long id, String reason, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
@@ -830,13 +831,13 @@ public class RoadmapService {
             );
         }
 
-        return toDTO(roadmap);
+        return toSummaryDTO(roadmap);
     }
 
     /**
      * 封禁路线图
      */
-    public RoadmapDTO ban(long id, String reason, UserDO operator) {
+    public RoadmapSummaryDTO ban(long id, String reason, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
@@ -862,13 +863,13 @@ public class RoadmapService {
             );
         }
 
-        return toDTO(roadmap);
+        return toSummaryDTO(roadmap);
     }
 
     /**
      * 清除描述并批准路线图
      */
-    public RoadmapDTO approveAndClearDescription(long id, UserDO operator) {
+    public RoadmapSummaryDTO approveAndClearDescription(long id, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
@@ -877,13 +878,13 @@ public class RoadmapService {
         roadmap.setDescription("");
         roadmap.setState(ContentState.PUBLISHED.value());
         roadmapDataService.update(roadmap);
-        return toDTO(roadmap);
+        return toSummaryDTO(roadmap);
     }
 
     /**
      * 更新路线图描述（管理员操作）
      */
-    public RoadmapDTO updateDescription(long id, String description, UserDO operator) {
+    public RoadmapSummaryDTO updateDescription(long id, String description, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
@@ -891,6 +892,6 @@ public class RoadmapService {
 
         roadmap.setDescription(description != null ? description : "");
         roadmapDataService.update(roadmap);
-        return toDTO(roadmap);
+        return toSummaryDTO(roadmap);
     }
 }

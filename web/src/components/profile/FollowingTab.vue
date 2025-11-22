@@ -3,24 +3,26 @@
     <!-- 左侧简介栏 -->
     <v-col cols="12" md="2">
       <div class="sticky-sidebar">
-        <div class="pa-2 pr-10 pt-4">
-          <div class="mb-3">
-            <h4 class="text-body-1 font-weight-bold">关注的人</h4>
+        <div class="pa-4">
+          <div class="mb-4">
+            <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">关注的人</h4>
+            <p class="text-body-2 text-grey mb-0">
+              管理您关注的用户，查看他们的最新动态。
+            </p>
           </div>
-          <p class="text-body-2 text-grey-darken-2 mb-3">管理您关注的用户，查看他们的最新动态。</p>
-          <v-divider class="my-3" />
-          <div class="text-caption text-grey">
-            <div class="mb-2">
-              <v-icon icon="mdi-rss" size="14" class="mr-1" />
-              订阅用户更新
+          <v-divider class="my-4" />
+          <div class="text-body-2 text-grey">
+            <div class="d-flex align-start mb-3">
+              <v-icon icon="mdi-rss" size="18" color="grey" class="mr-2 mt-1" />
+              <span>订阅用户更新</span>
             </div>
-            <div class="mb-2">
-              <v-icon icon="mdi-account-check" size="14" class="mr-1" />
-              互相关注提醒
+            <div class="d-flex align-start mb-3">
+              <v-icon icon="mdi-account-check" size="18" color="grey" class="mr-2 mt-1" />
+              <span>互相关注提醒</span>
             </div>
-            <div>
-              <v-icon icon="mdi-message" size="14" class="mr-1" />
-              私信交流
+            <div class="d-flex align-start">
+              <v-icon icon="mdi-message" size="18" color="grey" class="mr-2 mt-1" />
+              <span>私信交流</span>
             </div>
           </div>
         </div>
@@ -30,9 +32,8 @@
     <!-- 右侧主内容 -->
     <v-col cols="12" md="10">
       <div class="pa-2">
-        <div class="d-flex align-center justify-space-between mb-4">
-          <v-icon icon="mdi-menu" size="18" color="grey-lighten-1" />
-
+        <div class="d-flex align-center justify-space-between mb-6">
+          <div></div>
           <div class="text-body-2 text-grey">
             <span class="font-weight-bold text-primary">{{ stats.following }}</span> 关注 ·
             <span class="font-weight-bold text-success">{{ stats.followers }}</span> 粉丝
@@ -43,25 +44,27 @@
         <div v-if="formattedUsers.length > 0">
           <v-row>
             <v-col v-for="user in formattedUsers" :key="user.id" cols="12" sm="6" md="4">
-              <v-card border rounded="lg" hover class="hoverable">
-                <v-card-text class="pa-4">
-                  <div class="d-flex align-start">
+              <v-card rounded="xl" hover border elevation="0" class="user-card hoverable">
+                <v-card-text class="pa-6">
+                  <div class="d-flex align-start justify-space-between">
                     <!-- 用户头像 -->
-                    <v-avatar :color="user.avatarColor" size="48" class="mr-3">
-                      <span class="text-h6 font-weight-bold text-white">{{ user.initial }}</span>
-                    </v-avatar>
+                    <div class="d-flex align-center flex-grow-1">
+                      <v-avatar :color="user.avatarColor" size="56" rounded="lg" class="mr-4">
+                        <span class="text-h6 font-weight-bold text-white">{{ user.initial }}</span>
+                      </v-avatar>
 
-                    <!-- 用户信息 -->
-                    <div class="flex-grow-1">
-                      <h4 class="text-body-2 font-weight-bold mb-1">{{ user.name }}</h4>
-                      <p class="text-caption text-grey mb-0">{{ user.bio }}</p>
+                      <!-- 用户信息 -->
+                      <div>
+                        <h4 class="text-body-1 font-weight-bold mb-1">{{ user.name }}</h4>
+                        <p class="text-caption text-grey mb-0">{{ user.bio }}</p>
+                      </div>
                     </div>
 
                     <!-- 操作按钮 -->
                     <v-btn
                       color="grey"
-                      variant="tonal"
-                      size="x-small"
+                      variant="text"
+                      size="small"
                       icon="mdi-close"
                       @click.stop="unfollow(user.id)"
                     />
@@ -182,9 +185,15 @@ const confirmUnfollow = async () => {
 /* 左侧边栏固定 */
 .sticky-sidebar {
   position: sticky;
-  top: 80px;
-  max-height: calc(100vh - 100px);
+  top: 140px;
+  align-self: flex-start;
+  max-height: calc(100vh - 160px);
   overflow-y: auto;
+}
+
+.user-card {
+  background-color: #ffffff;
+  border: 1px solid #e9ecef !important;
 }
 
 /* 移动端取消 sticky */

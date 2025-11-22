@@ -7,7 +7,7 @@ import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.Enums.ContentState;
 import com.prosper.learn.dto.request.*;
-import com.prosper.learn.dto.response.CourseDTO;
+import com.prosper.learn.dto.response.course.*;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -39,10 +39,10 @@ public class CoursesController {
      * 映射: GET /course/{id} → GET /api/v1/courses/{id}
      */
     @GetMapping("/courses/{id}")
-    public ApiResponse<CourseDTO> getCourse(
+    public ApiResponse<CourseDetailDTO> getCourse(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID不正确") Long id) {
-        CourseDTO course = courseService.getCourseById(id);
+        CourseDetailDTO course = courseService.getCourseById(id);
         return ApiResponse.success(course);
     }
 
@@ -51,9 +51,9 @@ public class CoursesController {
      * 映射: GET /course/search?name=xxx → GET /api/v1/courses/search?name=xxx
      */
     @GetMapping("/courses/search")
-    public ApiResponse<List<CourseDTO>> searchCourses(
+    public ApiResponse<List<CourseBriefDTO>> searchCourses(
             @RequestParam @NotBlank(message = "搜索名称不能为空") String name) {
-        List<CourseDTO> courseList = courseService.searchCoursesByName(name);
+        List<CourseBriefDTO> courseList = courseService.searchCoursesByName(name);
         return ApiResponse.success(courseList);
     }
 
@@ -71,17 +71,17 @@ public class CoursesController {
 
         ContentState courseState = ContentState.getByValue(state);
         if (state != null && lastId != null) {
-            List<CourseDTO> courseList = courseService.getListByStateAndLastId(courseState, lastId);
+            List<CourseDetailDTO> courseList = courseService.getListByStateAndLastId(courseState, lastId);
             return ApiResponse.success(courseList);
         } else if (mainCategory != null && subCategory != null) {
-            List<CourseDTO> courseList = courseService.getListByCategory(mainCategory, subCategory);
+            List<CourseDetailDTO> courseList = courseService.getListByCategory(mainCategory, subCategory);
             return ApiResponse.success(courseList);
         } else if (parentId != null) {
             if (courseState != null && courseState == ContentState.PUBLISHED) {
-                List<CourseDTO> courseList = courseService.getListByParent(parentId, ContentState.PUBLISHED);
+                List<CourseDetailDTO> courseList = courseService.getListByParent(parentId, ContentState.PUBLISHED);
                 return ApiResponse.success(courseList);
             } else {
-                List<CourseDTO> courseList = courseService.getListByParent(parentId, null);
+                List<CourseDetailDTO> courseList = courseService.getListByParent(parentId, null);
                 return ApiResponse.success(courseList);
             }
         } else {
@@ -99,7 +99,7 @@ public class CoursesController {
             @Positive(message = "限制数量必须大于0")
             Integer limit) {
         log.info("开始获取热门课程，limit: {}", limit);
-        List<CourseDTO> hotCourses = courseService.getHotCourses(limit);
+        List<CourseWithStatsDTO> hotCourses = courseService.getHotCourses(limit);
         log.info("成功获取热门课程数量: {}", hotCourses.size());
         return ApiResponse.success(hotCourses);
     }
@@ -111,7 +111,7 @@ public class CoursesController {
     @GetMapping("/courses/ranking")
     public ApiResponse<Object> getCoursesRanking() {
         log.info("开始获取热门课程完整排行榜");
-        List<CourseDTO> hotCoursesRanking = courseService.getHotCoursesRanking();
+        List<CourseWithStatsDTO> hotCoursesRanking = courseService.getHotCoursesRanking();
         log.info("成功获取热门课程排行榜数量: {}", hotCoursesRanking.size());
         return ApiResponse.success(hotCoursesRanking);
     }
