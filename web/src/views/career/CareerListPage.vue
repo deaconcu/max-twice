@@ -2,18 +2,18 @@
   <DefaultLayout>
     <div class="career-list-page">
       <!-- 页面标题和搜索栏 -->
-      <div class="page-header mb-10">
-        <div class="d-flex align-end justify-space-between">
+      <div class="page-header mb-6 mb-md-10">
+        <div class="d-flex flex-column flex-md-row align-start align-md-end justify-space-between ga-4">
           <!-- 左侧：标题 -->
           <div class="d-flex align-center">
-            <v-avatar color="grey-lighten-3" size="64" rounded="lg" class="mr-3">
-              <v-icon icon="mdi-briefcase-search-outline" size="32" color="grey-darken-1" />
+            <v-avatar color="grey-lighten-3" :size="$vuetify.display.mobile ? 48 : 64" rounded="lg" class="mr-3 flex-shrink-0">
+              <v-icon icon="mdi-briefcase-search-outline" :size="$vuetify.display.mobile ? 24 : 32" color="grey-darken-1" />
             </v-avatar>
             <div>
-              <h1 class="text-h4 font-weight-bold text-grey-darken-4">
+              <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4">
                 {{ t('careerCenter.title') }}
               </h1>
-              <p class="text-body-2 text-grey-darken-2 mt-1">{{ t('careerCenter.subtitle') }}</p>
+              <p class="text-caption text-md-body-2 text-grey-darken-2 mt-1">{{ t('careerCenter.subtitle') }}</p>
             </div>
           </div>
 
@@ -49,8 +49,8 @@
       </div>
 
       <!-- 分类导航和职业网格 -->
-      <v-row>
-        <v-col class="pr-12">
+      <div class="content-layout">
+        <div class="main-content">
           <!-- 分类导航 -->
           <CareerFilter
             v-model:main-category="selectedMainCategory"
@@ -95,7 +95,7 @@
           <!-- 职业列表 -->
           <div v-else>
             <!-- 分类标题 -->
-            <div class="mb-4 mt-10">
+            <div class="mb-4 mt-6 mt-md-10">
               <div class="d-flex align-center justify-space-between">
                 <div class="d-flex align-center">
                   <v-icon
@@ -134,10 +134,10 @@
               <v-progress-circular v-if="loadingMore" indeterminate color="primary" size="32" />
             </div>
           </div>
-        </v-col>
+        </div>
 
         <!-- 右侧热门职业栏 -->
-        <v-col class="right-sidebar">
+        <div class="right-sidebar">
           <div class="sticky-wrapper">
             <!-- 申请职业按钮 -->
             <v-card
@@ -202,8 +202,8 @@
               </v-card-text>
             </v-card>
           </div>
-        </v-col>
-      </v-row>
+        </div>
+      </div>
 
       <!-- 职业申请对话框 -->
       <v-dialog v-model="applicationDialog" max-width="600px" persistent>
@@ -756,17 +756,42 @@ const submitApplication = async () => {
 
 <style scoped>
 .page-header {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 960px) {
+  .page-header {
+    margin-bottom: 24px;
+  }
 }
 
 /* 搜索容器样式 */
 .search-container {
   gap: 0;
+  width: 100%;
+}
+
+@media (min-width: 960px) {
+  .search-container {
+    width: auto;
+  }
 }
 
 .search-input {
   border-radius: 12px;
-  width: 600px;
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .search-input {
+    width: 400px;
+  }
+}
+
+@media (min-width: 960px) {
+  .search-input {
+    width: 600px;
+  }
 }
 
 .empty-state {
@@ -779,17 +804,50 @@ const submitApplication = async () => {
   gap: 20px;
 }
 
+/* 内容布局 */
+.content-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (min-width: 1280px) {
+  .content-layout {
+    flex-direction: row;
+    gap: 48px;
+  }
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+}
+
 /* 右侧热门职业栏 */
 .right-sidebar {
-  max-width: 280px;
+  width: 100%;
+}
+
+@media (min-width: 1280px) {
+  .right-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+  }
 }
 
 .sticky-wrapper {
-  position: sticky;
-  top: 75px;
-  max-height: calc(100vh - 95px);
+  position: static;
+  max-height: none;
   display: flex;
   flex-direction: column;
+}
+
+@media (min-width: 1280px) {
+  .sticky-wrapper {
+    position: sticky;
+    top: 75px;
+    max-height: calc(100vh - 95px);
+  }
 }
 
 .create-career-card {
@@ -885,20 +943,9 @@ const submitApplication = async () => {
 }
 
 /* 移动端响应式 */
-@media (max-width: 1264px) {
-  .right-sidebar {
-    max-width: 100%;
-  }
-}
-
 @media (max-width: 960px) {
   .career-grid {
     grid-template-columns: 1fr;
-  }
-
-  .sticky-card {
-    position: static;
-    max-height: none;
   }
 
   .popular-list {
