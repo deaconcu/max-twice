@@ -221,21 +221,21 @@ const addRecommendedCourse = (courseId: number): void => {
 <template>
   <DefaultLayout>
     <!-- 欢迎区域 -->
-    <div class="welcome-section mb-10">
-      <div class="d-flex align-center justify-space-between">
-        <div class="d-flex align-center ga-4">
-          <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="64" rounded="lg">
-            <v-icon size="32" :color="'rgb(var(--v-theme-on-surface-variant))'">mdi-account</v-icon>
+    <div class="welcome-section mb-6 mb-md-10">
+      <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-4">
+        <div class="d-flex align-center ga-3 ga-sm-4">
+          <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" :size="$vuetify.display.mobile ? 48 : 64" rounded="lg">
+            <v-icon :size="$vuetify.display.mobile ? 24 : 32" :color="'rgb(var(--v-theme-on-surface-variant))'">mdi-account</v-icon>
           </v-avatar>
           <div>
             <h1
-              class="text-h4 font-weight-bold"
+              class="text-h5 text-sm-h4 font-weight-bold"
               :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
             >
               {{ t('home.greeting', { name: userName }) }}
             </h1>
             <p
-              class="text-body-2 mt-1"
+              class="text-caption text-sm-body-2 mt-1"
               :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
             >
               {{ t('home.keepLearning') }}
@@ -244,7 +244,7 @@ const addRecommendedCourse = (courseId: number): void => {
         </div>
         <div class="text-center">
           <div
-            class="text-h3 font-weight-bold"
+            class="text-h4 text-sm-h3 font-weight-bold"
             :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
           >
             {{ stats.todayMinutes }}
@@ -257,15 +257,15 @@ const addRecommendedCourse = (courseId: number): void => {
     </div>
 
     <!-- 平台介绍和学习路径 -->
-    <div class="guide-section mb-10">
-      <div class="text-center mb-8">
+    <div class="guide-section mb-6 mb-md-10">
+      <div class="text-center mb-6 mb-md-8">
         <h2
-          class="text-h5 font-weight-bold mb-2"
+          class="text-h6 text-sm-h5 font-weight-bold mb-2"
           :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
         >
           {{ t('home.guideTitle') }}
         </h2>
-        <p class="text-body-1" :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }">
+        <p class="text-body-2 text-sm-body-1" :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }">
           {{ t('home.guideSubtitle') }}
         </p>
       </div>
@@ -291,13 +291,13 @@ const addRecommendedCourse = (courseId: number): void => {
 
             <!-- 标题和描述 -->
             <h3
-              class="text-h6 font-weight-bold text-center mb-2"
+              class="text-subtitle-1 text-sm-h6 font-weight-bold text-center mb-2"
               :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
             >
               {{ link.title }}
             </h3>
             <p
-              class="text-body-2 text-center mb-4"
+              class="text-caption text-sm-body-2 text-center mb-3 mb-sm-4"
               :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
             >
               {{ link.description }}
@@ -329,16 +329,16 @@ const addRecommendedCourse = (courseId: number): void => {
     </div>
 
     <!-- 统计卡片 -->
-    <v-row class="mb-10">
-      <v-col cols="6" md="3">
+    <v-row class="mb-6 mb-md-10">
+      <v-col cols="12" sm="6" md="3">
         <v-card rounded="lg" border>
-          <v-card-text class="d-flex align-center ga-4">
-            <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="48" rounded="lg">
-              <v-icon icon="mdi-book-open-variant" color="info" size="24"></v-icon>
+          <v-card-text class="d-flex align-center ga-3 ga-sm-4 pa-4 pa-sm-5">
+            <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" :size="$vuetify.display.mobile ? 40 : 48" rounded="lg">
+              <v-icon icon="mdi-book-open-variant" color="info" :size="$vuetify.display.mobile ? 20 : 24"></v-icon>
             </v-avatar>
             <div>
               <div
-                class="text-h5 font-weight-bold"
+                class="text-h6 text-sm-h5 font-weight-bold"
                 :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
               >
                 {{ stats.coursesInProgress }}
@@ -354,15 +354,15 @@ const addRecommendedCourse = (courseId: number): void => {
         </v-card>
       </v-col>
 
-      <v-col cols="6" md="3">
+      <v-col cols="12" sm="6" md="3">
         <v-card rounded="lg" border>
-          <v-card-text class="d-flex align-center ga-4">
-            <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="48" rounded="lg">
-              <v-icon icon="mdi-check-circle" color="success" size="24"></v-icon>
+          <v-card-text class="d-flex align-center ga-3 ga-sm-4 pa-4 pa-sm-5">
+            <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" :size="$vuetify.display.mobile ? 40 : 48" rounded="lg">
+              <v-icon icon="mdi-check-circle" color="success" :size="$vuetify.display.mobile ? 20 : 24"></v-icon>
             </v-avatar>
             <div>
               <div
-                class="text-h5 font-weight-bold"
+                class="text-h6 text-sm-h5 font-weight-bold"
                 :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
               >
                 {{ stats.completedCourses }}
@@ -378,15 +378,15 @@ const addRecommendedCourse = (courseId: number): void => {
         </v-card>
       </v-col>
 
-      <v-col cols="6" md="3">
+      <v-col cols="12" sm="6" md="3">
         <v-card rounded="lg" border>
-          <v-card-text class="d-flex align-center ga-4">
-            <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="48" rounded="lg">
-              <v-icon icon="mdi-briefcase-variant" color="warning" size="24"></v-icon>
+          <v-card-text class="d-flex align-center ga-3 ga-sm-4 pa-4 pa-sm-5">
+            <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" :size="$vuetify.display.mobile ? 40 : 48" rounded="lg">
+              <v-icon icon="mdi-briefcase-variant" color="warning" :size="$vuetify.display.mobile ? 20 : 24"></v-icon>
             </v-avatar>
             <div>
               <div
-                class="text-h5 font-weight-bold"
+                class="text-h6 text-sm-h5 font-weight-bold"
                 :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
               >
                 {{ stats.careersInProgress }}
@@ -402,15 +402,15 @@ const addRecommendedCourse = (courseId: number): void => {
         </v-card>
       </v-col>
 
-      <v-col cols="6" md="3">
+      <v-col cols="12" sm="6" md="3">
         <v-card rounded="lg" border>
-          <v-card-text class="d-flex align-center ga-4">
-            <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="48" rounded="lg">
-              <v-icon icon="mdi-calendar-check" color="secondary" size="24"></v-icon>
+          <v-card-text class="d-flex align-center ga-3 ga-sm-4 pa-4 pa-sm-5">
+            <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" :size="$vuetify.display.mobile ? 40 : 48" rounded="lg">
+              <v-icon icon="mdi-calendar-check" color="secondary" :size="$vuetify.display.mobile ? 20 : 24"></v-icon>
             </v-avatar>
             <div>
               <div
-                class="text-h5 font-weight-bold"
+                class="text-h6 text-sm-h5 font-weight-bold"
                 :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
               >
                 {{ stats.learningDays }}
@@ -436,7 +436,7 @@ const addRecommendedCourse = (courseId: number): void => {
           <v-card-text>
             <div class="d-flex align-center justify-space-between mb-4">
               <h2
-                class="text-h6 font-weight-bold"
+                class="text-subtitle-1 text-sm-h6 font-weight-bold"
                 :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
               >
                 {{ t('home.learningCourses') }}
@@ -497,7 +497,7 @@ const addRecommendedCourse = (courseId: number): void => {
           <v-card-text>
             <div class="d-flex align-center justify-space-between mb-4">
               <h2
-                class="text-h6 font-weight-bold"
+                class="text-subtitle-1 text-sm-h6 font-weight-bold"
                 :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
               >
                 {{ t('home.learningCareers') }}
@@ -561,7 +561,7 @@ const addRecommendedCourse = (courseId: number): void => {
           <v-card-text>
             <div class="d-flex align-center justify-space-between mb-4">
               <h2
-                class="text-h6 font-weight-bold"
+                class="text-subtitle-1 text-sm-h6 font-weight-bold"
                 :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
               >
                 {{ t('home.recommendedCourses') }}
@@ -614,7 +614,7 @@ const addRecommendedCourse = (courseId: number): void => {
         <v-card rounded="lg" border>
           <v-card-text>
             <h2
-              class="text-h6 font-weight-bold mb-4"
+              class="text-subtitle-1 text-sm-h6 font-weight-bold mb-4"
               :style="{ color: 'rgb(var(--v-theme-on-surface))' }"
             >
               {{ t('home.recentActivities') }}
@@ -655,20 +655,41 @@ const addRecommendedCourse = (courseId: number): void => {
 
 <style scoped>
 .home-page {
-  padding: 24px;
+  padding: 16px;
+}
+
+@media (min-width: 600px) {
+  .home-page {
+    padding: 24px;
+  }
 }
 
 /* 欢迎区域 */
 .welcome-section {
-  padding-bottom: 32px;
+  padding-bottom: 24px;
+}
+
+@media (min-width: 600px) {
+  .welcome-section {
+    padding-bottom: 32px;
+  }
 }
 
 /* 学习路径步骤 */
 .path-steps {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+}
+
+@media (min-width: 960px) {
+  .path-steps {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
 }
 
 .step-wrapper {
@@ -678,13 +699,26 @@ const addRecommendedCourse = (courseId: number): void => {
 }
 
 .step-card {
-  padding: 24px;
+  padding: 16px;
   cursor: pointer;
   transition: all 0.2s;
   width: 100%;
-  min-height: 260px;
+  min-height: auto;
   display: flex;
   flex-direction: column;
+}
+
+@media (min-width: 600px) {
+  .step-card {
+    padding: 20px;
+  }
+}
+
+@media (min-width: 960px) {
+  .step-card {
+    padding: 24px;
+    min-height: 260px;
+  }
 }
 
 .step-card:hover {
@@ -693,12 +727,24 @@ const addRecommendedCourse = (courseId: number): void => {
 }
 
 .step-badge {
-  margin: 0 auto 16px auto;
+  margin: 0 auto 12px auto;
+}
+
+@media (min-width: 960px) {
+  .step-badge {
+    margin: 0 auto 16px auto;
+  }
 }
 
 .step-data {
-  padding: 12px;
+  padding: 10px;
   margin-top: auto;
+}
+
+@media (min-width: 600px) {
+  .step-data {
+    padding: 12px;
+  }
 }
 
 .step-arrow {
@@ -756,24 +802,5 @@ const addRecommendedCourse = (courseId: number): void => {
   position: relative;
   z-index: 1;
   flex-shrink: 0;
-}
-
-/* 移动端 */
-@media (max-width: 960px) {
-  .home-page {
-    padding: 16px;
-  }
-
-  .path-steps {
-    flex-direction: column;
-  }
-
-  .step-wrapper {
-    width: 100%;
-  }
-
-  .step-card {
-    min-height: auto;
-  }
 }
 </style>
