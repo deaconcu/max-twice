@@ -41,7 +41,7 @@
     </v-card-title>
 
     <!-- 排序和筛选控件 -->
-    <v-card-text class="px-4 pb-2 pt-0">
+    <v-card-text class="filter-controls px-4 pb-2 pt-0">
       <div class="d-flex align-center justify-space-between">
         <!-- 左侧：筛选选项 -->
         <div class="d-flex gap-2">

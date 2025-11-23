@@ -77,16 +77,20 @@ const toggleSubscribe = () => {
         <v-btn
           :color="isLearning ? 'success' : 'primary'"
           :variant="isLearning ? 'tonal' : 'flat'"
+          :icon="$vuetify.display.smAndDown"
           density="comfortable"
           rounded="pill"
           class="text-none px-4"
           elevation="0"
           @click="toggleLearning"
         >
-          <v-icon size="16" class="mr-1">{{
+          <v-icon :size="$vuetify.display.smAndDown ? 20 : 16" :class="$vuetify.display.smAndDown ? '' : 'mr-1'">{{
             isLearning ? 'mdi-check-circle' : 'mdi-play-circle'
           }}</v-icon>
-          {{ isLearning ? '学习中' : '开始学习' }}
+          <span v-if="!$vuetify.display.smAndDown">{{ isLearning ? '学习中' : '开始学习' }}</span>
+          <v-tooltip v-if="$vuetify.display.smAndDown" activator="parent" location="bottom">
+            {{ isLearning ? '学习中' : '开始学习' }}
+          </v-tooltip>
         </v-btn>
         <v-btn
           :icon="parentCourseInfo?.subscribed ? 'mdi-heart' : 'mdi-heart-outline'"
@@ -108,7 +112,7 @@ const toggleSubscribe = () => {
 }
 
 /* 宽屏时向左延伸，让后退按钮露出到页面外 */
-@media (min-width: 1800px) {
+@media (min-width: 1500px) {
   .subcourse-info-section {
     margin-left: -56px;
   }

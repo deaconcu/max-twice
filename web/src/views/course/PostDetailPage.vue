@@ -522,6 +522,11 @@ onUnmounted(() => {
   .center-right-wrapper {
     justify-content: center;
   }
+
+  .course-header-wrapper {
+    max-width: 750px;
+    margin: 0 auto;
+  }
 }
 
 /* 小屏幕：内容区可以缩小，移除 padding */
@@ -536,6 +541,8 @@ onUnmounted(() => {
 
   .course-header-wrapper {
     padding: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
   }
 
   .read-content {
