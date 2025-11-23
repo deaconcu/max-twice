@@ -634,6 +634,15 @@ watch(
   text-decoration: underline;
 }
 
+/* 移动端：限制公式宽度 */
+@media (max-width: 750px) {
+  .article-content :deep(.katex-display) {
+    max-width: 100vw;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+}
+
 .full-article {
   max-height: none;
 }
