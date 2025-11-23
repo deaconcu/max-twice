@@ -46,9 +46,9 @@ const toggleSubscribe = () => {
           v-if="showBackButton"
           icon="mdi-arrow-left"
           variant="flat"
-          color="grey-lighten-4"
-          size="small"
-          class="mr-4"
+          color="grey-lighten-5"
+          :size="$vuetify.display.mobile ? 'small' : 'default'"
+          class="flex-shrink-0 mr-3"
           @click="goBackToCourse"
         ></v-btn>
         <v-chip size="small" density="comfortable" color="grey-darken-1" variant="tonal"

@@ -3,14 +3,16 @@
     <div class="read-page">
       <!-- 课程头部 -->
       <div class="course-header-sticky">
-        <CourseHeader
-          v-if="data"
-          :parent-course-info="data.parentCourse"
-          :current-course="data.course"
-          :sub-course-list="data.subCourseList"
-          :is-main-course="isMainCourse"
-          :is-learning="false"
-        />
+        <div class="course-header-wrapper">
+          <CourseHeader
+            v-if="data"
+            :parent-course-info="data.parentCourse"
+            :current-course="data.course"
+            :sub-course-list="data.subCourseList"
+            :is-main-course="isMainCourse"
+            :is-learning="false"
+          />
+        </div>
       </div>
 
       <div class="read-content">
@@ -339,6 +341,12 @@ onUnmounted(() => {
   margin: 0 auto;
 }
 
+.course-header-wrapper {
+  max-width: 1110px;
+  margin: 0 auto;
+  padding: 0 26px;
+}
+
 /* 布局 - 无左侧目录 */
 .read-content {
   display: flex;
@@ -409,14 +417,10 @@ onUnmounted(() => {
   padding: 8px 0;
 }
 
-/* 中等屏幕：隐藏右侧栏，保持左侧目录和内容区 */
+/* 中等屏幕：隐藏右侧栏 */
 @media (max-width: 1700px) {
-  .course-header-sticky {
-    max-width: 1110px;
-  }
-
-  .read-content {
-    max-width: 1110px;
+  .course-header-wrapper {
+    max-width: 750px;
   }
 
   .right-sidebar {
@@ -430,10 +434,6 @@ onUnmounted(() => {
 
 /* 小屏幕：内容区保持最大750px居中 */
 @media (max-width: 1280px) and (min-width: 751px) {
-  .course-header-sticky {
-    max-width: 750px;
-  }
-
   .read-content {
     max-width: 750px;
     overflow-x: hidden !important;
@@ -443,7 +443,7 @@ onUnmounted(() => {
     justify-content: center;
   }
 
-  .center-content {
+  .course-header-wrapper {
     padding: 0 !important;
   }
 }
@@ -460,6 +460,11 @@ onUnmounted(() => {
     overflow-x: hidden !important;
   }
 
+  .course-header-wrapper {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
   .center-right-wrapper {
     width: 100% !important;
     max-width: none !important;
@@ -469,7 +474,7 @@ onUnmounted(() => {
     flex: 1 !important;
     max-width: none !important;
     min-width: 0 !important;
-    padding: 16px 20px 32px 20px !important;
+    padding: 16px 16px 32px 16px !important;
     width: 100% !important;
   }
 }

@@ -902,7 +902,7 @@ onUnmounted(() => {
     flex: 1 !important;
     max-width: none !important;
     min-width: 0 !important;
-    padding: 0 !important;
+    padding: 0 4px 40px 4px !important;
     width: 100% !important;
   }
 }

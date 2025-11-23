@@ -417,7 +417,8 @@ onUnmounted(() => {
 }
 
 .course-header-wrapper {
-  max-width: 100%;
+  max-width: 1110px;
+  margin: 0 auto;
   padding: 0 26px;
 }
 
@@ -513,14 +514,10 @@ onUnmounted(() => {
   padding-top: 16px !important;
 }
 
-/* 中等屏幕：隐藏右侧栏，保持左侧目录和内容区 */
+/* 中等屏幕：隐藏右侧栏 */
 @media (max-width: 1700px) {
-  .course-header-sticky {
-    max-width: 1110px;
-  }
-
-  .read-content {
-    max-width: 1110px;
+  .course-header-wrapper {
+    max-width: 750px;
   }
 
   .right-sidebar {
@@ -593,7 +590,7 @@ onUnmounted(() => {
     flex: 1 !important;
     max-width: none !important;
     min-width: 0 !important;
-    padding: 16px 20px 32px 20px !important;
+    padding: 16px 4px 32px 4px !important;
     width: 100% !important;
   }
 
@@ -605,7 +602,7 @@ onUnmounted(() => {
 /* 超小屏幕：确保完全适配 */
 @media (max-width: 600px) {
   .center-content {
-    padding: 12px 16px 24px 16px !important;
+    padding: 12px 4px 24px 4px !important;
   }
 
   .node-header {
