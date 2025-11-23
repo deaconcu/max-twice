@@ -1,6 +1,79 @@
 <template>
   <DefaultLayout>
     <div class="read-page">
+      <!-- 移动端目录抽屉 -->
+      <v-navigation-drawer
+        v-model="drawerOpen"
+        temporary
+        location="left"
+        width="320"
+        class="mobile-toc-drawer"
+      >
+        <!-- 抽屉头部 -->
+        <div class="drawer-header pa-4 d-flex align-center justify-space-between">
+          <div class="d-flex align-center">
+            <v-icon icon="mdi-format-list-bulleted" color="primary" class="mr-2" size="24" />
+            <span class="text-h6 font-weight-bold">课程目录</span>
+          </div>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="drawerOpen = false" />
+        </div>
+
+        <v-divider />
+
+        <!-- 目录内容 -->
+        <div class="drawer-content pa-4">
+          <!-- 目录组选择 -->
+          <div v-if="data && data.toc" class="toc-chips mb-4">
+            <v-chip
+              size="default"
+              rounded="lg"
+              label
+              variant="tonal"
+              color=""
+              class="me-2 px-3"
+              style="font-weight: 600"
+            >
+              目录
+            </v-chip>
+            <div
+              v-for="(item, index) in data.toc"
+              :key="index"
+              class="position-relative d-inline-block"
+            >
+              <v-chip
+                label
+                rounded="lg"
+                size="default"
+                variant="flat"
+                :color="currContentsIndex === index ? 'grey-darken-1' : 'grey-lighten-3'"
+                class="me-2"
+                @click="currContentsIndex = index"
+              >
+                {{ index + 1 }}
+              </v-chip>
+              <div v-if="index === 0" class="corner-badge">
+                <v-icon icon="mdi-chart-line-variant" size="8" color="white" />
+              </div>
+            </div>
+          </div>
+
+          <!-- 目录树 -->
+          <div class="drawer-toc-tree">
+            <TreeNode
+              v-if="data && data.toc && data.toc[currContentsIndex]"
+              :node-data="data.toc[currContentsIndex]"
+              :node-infos="data.tocNodeInfos"
+              :course-id="data.course?.id"
+              :path="data.path"
+              :curr-path="String(currContentsIndex + 1)"
+              :depth="1"
+              :is-learning="isLearning"
+              @node-click="drawerOpen = false"
+            />
+          </div>
+        </div>
+      </v-navigation-drawer>
+
       <!-- 课程头部 - 固定在顶部 -->
       <div class="course-header-sticky">
         <CourseHeader
@@ -220,6 +293,20 @@
       :deck="selectedDeck"
       @add-to-study="handleAddDeck"
     />
+
+    <!-- 移动端浮动按钮 - 仅目录按钮 -->
+    <v-btn
+      v-if="$vuetify.display.mobile"
+      icon
+      color="primary"
+      size="large"
+      elevation="6"
+      class="mobile-toc-fab"
+      @click="drawerOpen = true"
+    >
+      <v-icon size="24">mdi-format-list-bulleted</v-icon>
+      <v-tooltip activator="parent" location="left">课程目录</v-tooltip>
+    </v-btn>
   </DefaultLayout>
 </template>
 
@@ -263,6 +350,7 @@ const showDeckDetailDialog = ref(false)
 const loading = ref(false)
 const error = ref<string | null>(null)
 const isTocHovering = ref(false)
+const drawerOpen = ref(false)
 
 // 数据处理
 const nodes = ref<any[]>([])
@@ -492,6 +580,8 @@ onUnmounted(() => {
   background-color: white;
   z-index: 999;
   padding-bottom: 8px;
+  max-width: 1470px;
+  margin: 0 auto;
 }
 
 /* 三栏布局 */
@@ -499,8 +589,9 @@ onUnmounted(() => {
   display: flex;
   position: relative;
   z-index: 1;
-  max-width: 100%;
+  max-width: 1470px;
   width: 100%;
+  margin: 0 auto;
 }
 
 /* 左侧 TOC 目录栏 */
@@ -688,11 +779,49 @@ onUnmounted(() => {
   padding: 8px 0;
 }
 
+/* 移动端目录抽屉样式 */
+.mobile-toc-drawer {
+  z-index: 2000;
+}
+
+.drawer-header {
+  border-bottom: 1px solid rgb(var(--v-theme-border));
+}
+
+.drawer-content {
+  overflow-y: auto;
+  height: calc(100vh - 73px);
+}
+
+.drawer-toc-tree {
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* 移动端浮动按钮 */
+.mobile-toc-fab {
+  position: fixed;
+  bottom: 80px;
+  right: 24px;
+  z-index: 1000;
+}
+
+/* 中等屏幕：隐藏右侧栏，内容区保持最大宽度并居中 */
+@media (max-width: 1280px) {
+  .right-sidebar {
+    display: none;
+  }
+
+  .center-right-wrapper {
+    justify-content: center;
+  }
+}
+
+/* 小屏幕：隐藏目录和右侧栏，内容区可以缩小 */
 @media (max-width: 960px) {
-  .main-content {
-    margin-left: 0;
-    width: 100%;
-    padding: 80px 20px 80px 20px;
+  .read-content {
+    width: 100% !important;
+    overflow-x: hidden !important;
   }
 
   .toc-sidebar,
@@ -700,10 +829,21 @@ onUnmounted(() => {
     display: none;
   }
 
+  .center-right-container {
+    width: 100% !important;
+  }
+
+  .center-right-wrapper {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
   .center-content {
-    width: 100%;
-    max-width: 100%;
-    padding: 0;
+    flex: 1 !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
   }
 }
 </style>

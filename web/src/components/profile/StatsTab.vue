@@ -1,25 +1,25 @@
 <template>
   <v-row dense align="start">
-    <!-- 左侧简介栏 -->
-    <v-col cols="12" md="2">
+    <!-- 左侧简介栏 - 宽度不够时隐藏 -->
+    <v-col cols="12" md="2" class="d-none d-lg-block">
       <div class="sticky-sidebar">
-        <div class="pa-4">
+        <div class="pa-3 pa-md-4">
           <div class="mb-4">
-            <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">数据统计</h4>
-            <p class="text-body-2 text-grey mb-0">查看您的学习数据统计和趋势分析。</p>
+            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">数据统计</h4>
+            <p class="text-caption text-md-body-2 text-grey mb-0">查看您的学习数据统计和趋势分析。</p>
           </div>
-          <v-divider class="my-4" />
-          <div class="text-body-2 text-grey">
-            <div class="d-flex align-start mb-3">
-              <v-icon icon="mdi-chart-box" size="18" color="grey" class="mr-2 mt-1" />
+          <v-divider class="my-3 my-md-4" />
+          <div class="text-caption text-md-body-2 text-grey">
+            <div class="d-flex align-start mb-2 mb-md-3">
+              <v-icon icon="mdi-chart-box" size="16" color="grey" class="mr-2 mt-1" />
               <span>可视化数据展示</span>
             </div>
-            <div class="d-flex align-start mb-3">
-              <v-icon icon="mdi-calendar-range" size="18" color="grey" class="mr-2 mt-1" />
+            <div class="d-flex align-start mb-2 mb-md-3">
+              <v-icon icon="mdi-calendar-range" size="16" color="grey" class="mr-2 mt-1" />
               <span>多时间段对比</span>
             </div>
             <div class="d-flex align-start">
-              <v-icon icon="mdi-trending-up" size="18" color="grey" class="mr-2 mt-1" />
+              <v-icon icon="mdi-trending-up" size="16" color="grey" class="mr-2 mt-1" />
               <span>学习趋势分析</span>
             </div>
           </div>
@@ -28,10 +28,10 @@
     </v-col>
 
     <!-- 右侧主内容 -->
-    <v-col cols="12" md="10">
-      <div class="pa-2">
+    <v-col cols="12" lg="10">
+      <div class="pa-0 pa-sm-2">
         <!-- 时间段选择 -->
-        <div class="mb-6">
+        <div class="mb-4 mb-md-6">
           <v-btn-toggle
             v-model="selectedPeriod"
             color="grey-darken-3"
@@ -39,33 +39,33 @@
             rounded="lg"
             density="compact"
           >
-            <v-btn value="today" rounded="lg">今天</v-btn>
-            <v-btn value="7days" rounded="lg">7天</v-btn>
-            <v-btn value="30days" rounded="lg">30天</v-btn>
-            <v-btn value="all" rounded="lg">全部</v-btn>
+            <v-btn value="today" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'">今天</v-btn>
+            <v-btn value="7days" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'">7天</v-btn>
+            <v-btn value="30days" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'">30天</v-btn>
+            <v-btn value="all" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'">全部</v-btn>
           </v-btn-toggle>
         </div>
 
         <!-- 统计卡片 -->
-        <v-row class="mb-6">
-          <v-col cols="12" md="6" lg="3">
-            <v-card rounded="xl" hover border elevation="0" class="pa-6 stat-card hoverable">
+        <v-row class="mb-4 mb-md-6">
+          <v-col cols="6" md="6" lg="3">
+            <v-card rounded="xl" hover border elevation="0" class="pa-4 pa-sm-6 stat-card hoverable">
               <div class="d-flex align-center mb-2">
-                <v-avatar color="blue-lighten-5" size="56" class="mr-4">
-                  <v-icon icon="mdi-book-open-outline" color="primary" size="28" />
+                <v-avatar color="blue-lighten-5" :size="$vuetify.display.mobile ? 48 : 56" class="mr-3 mr-sm-4">
+                  <v-icon icon="mdi-book-open-outline" color="primary" :size="$vuetify.display.mobile ? 24 : 28" />
                 </v-avatar>
-                <div class="flex-grow-1">
-                  <div class="text-h5 font-weight-bold text-primary">
+                <div class="flex-grow-1 min-w-0">
+                  <div class="text-body-1 text-md-h5 font-weight-bold text-primary">
                     {{ currentStats.totalCourses }}
                   </div>
-                  <div class="text-caption text-grey">学习课程</div>
+                  <div class="text-caption text-grey text-truncate">学习课程</div>
                 </div>
               </div>
               <div v-if="currentStats.coursesGrowth" class="d-flex align-center text-caption">
                 <v-icon
                   :icon="currentStats.coursesGrowth > 0 ? 'mdi-trending-up' : 'mdi-trending-down'"
                   :color="currentStats.coursesGrowth > 0 ? 'success' : 'error'"
-                  size="14"
+                  :size="$vuetify.display.mobile ? 12 : 14"
                   class="mr-1"
                 />
                 <span :class="currentStats.coursesGrowth > 0 ? 'text-success' : 'text-error'">
@@ -75,24 +75,24 @@
             </v-card>
           </v-col>
 
-          <v-col cols="12" md="6" lg="3">
-            <v-card rounded="xl" hover border elevation="0" class="pa-6 stat-card hoverable">
+          <v-col cols="6" md="6" lg="3">
+            <v-card rounded="xl" hover border elevation="0" class="pa-4 pa-sm-6 stat-card hoverable">
               <div class="d-flex align-center mb-2">
-                <v-avatar color="green-lighten-5" size="56" class="mr-4">
-                  <v-icon icon="mdi-check-circle" color="success" size="28" />
+                <v-avatar color="green-lighten-5" :size="$vuetify.display.mobile ? 48 : 56" class="mr-3 mr-sm-4">
+                  <v-icon icon="mdi-check-circle" color="success" :size="$vuetify.display.mobile ? 24 : 28" />
                 </v-avatar>
-                <div class="flex-grow-1">
-                  <div class="text-h5 font-weight-bold text-success">
+                <div class="flex-grow-1 min-w-0">
+                  <div class="text-body-1 text-md-h5 font-weight-bold text-success">
                     {{ currentStats.completedCourses }}
                   </div>
-                  <div class="text-caption text-grey">完成课程</div>
+                  <div class="text-caption text-grey text-truncate">完成课程</div>
                 </div>
               </div>
               <div v-if="currentStats.completedGrowth" class="d-flex align-center text-caption">
                 <v-icon
                   :icon="currentStats.completedGrowth > 0 ? 'mdi-trending-up' : 'mdi-trending-down'"
                   :color="currentStats.completedGrowth > 0 ? 'success' : 'error'"
-                  size="14"
+                  :size="$vuetify.display.mobile ? 12 : 14"
                   class="mr-1"
                 />
                 <span :class="currentStats.completedGrowth > 0 ? 'text-success' : 'text-error'">
@@ -102,24 +102,24 @@
             </v-card>
           </v-col>
 
-          <v-col cols="12" md="6" lg="3">
-            <v-card rounded="xl" hover border elevation="0" class="pa-6 stat-card hoverable">
+          <v-col cols="6" md="6" lg="3">
+            <v-card rounded="xl" hover border elevation="0" class="pa-4 pa-sm-6 stat-card hoverable">
               <div class="d-flex align-center mb-2">
-                <v-avatar color="orange-lighten-5" size="56" class="mr-4">
-                  <v-icon icon="mdi-calendar-check" color="warning" size="28" />
+                <v-avatar color="orange-lighten-5" :size="$vuetify.display.mobile ? 48 : 56" class="mr-3 mr-sm-4">
+                  <v-icon icon="mdi-calendar-check" color="warning" :size="$vuetify.display.mobile ? 24 : 28" />
                 </v-avatar>
-                <div class="flex-grow-1">
-                  <div class="text-h5 font-weight-bold text-warning">
+                <div class="flex-grow-1 min-w-0">
+                  <div class="text-body-1 text-md-h5 font-weight-bold text-warning">
                     {{ currentStats.studyDays }}
                   </div>
-                  <div class="text-caption text-grey">学习天数</div>
+                  <div class="text-caption text-grey text-truncate">学习天数</div>
                 </div>
               </div>
               <div v-if="currentStats.daysGrowth" class="d-flex align-center text-caption">
                 <v-icon
                   :icon="currentStats.daysGrowth > 0 ? 'mdi-trending-up' : 'mdi-trending-down'"
                   :color="currentStats.daysGrowth > 0 ? 'success' : 'error'"
-                  size="14"
+                  :size="$vuetify.display.mobile ? 12 : 14"
                   class="mr-1"
                 />
                 <span :class="currentStats.daysGrowth > 0 ? 'text-success' : 'text-error'">
@@ -129,24 +129,24 @@
             </v-card>
           </v-col>
 
-          <v-col cols="12" md="6" lg="3">
-            <v-card rounded="xl" hover border elevation="0" class="pa-6 stat-card hoverable">
+          <v-col cols="6" md="6" lg="3">
+            <v-card rounded="xl" hover border elevation="0" class="pa-4 pa-sm-6 stat-card hoverable">
               <div class="d-flex align-center mb-2">
-                <v-avatar color="purple-lighten-5" size="56" class="mr-4">
-                  <v-icon icon="mdi-clock-outline" color="purple" size="28" />
+                <v-avatar color="purple-lighten-5" :size="$vuetify.display.mobile ? 48 : 56" class="mr-3 mr-sm-4">
+                  <v-icon icon="mdi-clock-outline" color="purple" :size="$vuetify.display.mobile ? 24 : 28" />
                 </v-avatar>
-                <div class="flex-grow-1">
-                  <div class="text-h5 font-weight-bold text-purple">
+                <div class="flex-grow-1 min-w-0">
+                  <div class="text-body-1 text-md-h5 font-weight-bold text-purple">
                     {{ currentStats.studyHours }}
                   </div>
-                  <div class="text-caption text-grey">学习时长(h)</div>
+                  <div class="text-caption text-grey text-truncate">学习时长(h)</div>
                 </div>
               </div>
               <div v-if="currentStats.hoursGrowth" class="d-flex align-center text-caption">
                 <v-icon
                   :icon="currentStats.hoursGrowth > 0 ? 'mdi-trending-up' : 'mdi-trending-down'"
                   :color="currentStats.hoursGrowth > 0 ? 'success' : 'error'"
-                  size="14"
+                  :size="$vuetify.display.mobile ? 12 : 14"
                   class="mr-1"
                 />
                 <span :class="currentStats.hoursGrowth > 0 ? 'text-success' : 'text-error'">
@@ -158,8 +158,8 @@
         </v-row>
 
         <!-- 学习趋势图 -->
-        <h4 class="text-body-1 mb-4">学习趋势</h4>
-        <v-card rounded="lg" class="pa-5">
+        <h4 class="text-body-1 text-md-h6 mb-3 mb-md-4">学习趋势</h4>
+        <v-card rounded="lg" class="pa-3 pa-md-5">
           <div class="chart-container">
             <!-- 简单的趋势图展示 -->
             <div class="d-flex align-center justify-space-between mb-4">
@@ -324,21 +324,33 @@ const getBarColor = (value: number) => {
 }
 
 .stat-card {
-  background-color: #ffffff;
-  border: 1px solid #e9ecef !important;
+  background-color: rgb(var(--v-theme-surface));
+  border: 1.5px solid rgb(var(--v-theme-outline)) !important;
 }
 
 .chart-container {
-  min-height: 300px;
+  min-height: 250px;
+}
+
+@media (min-width: 600px) {
+  .chart-container {
+    min-height: 300px;
+  }
 }
 
 .simple-chart {
   display: flex;
   align-items: flex-end;
   justify-content: space-around;
-  height: 240px;
+  height: 180px;
   padding: 20px 0;
   border-bottom: 2px solid #e0e0e0;
+}
+
+@media (min-width: 600px) {
+  .simple-chart {
+    height: 240px;
+  }
 }
 
 .chart-bar-wrapper {
@@ -346,16 +358,29 @@ const getBarColor = (value: number) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: 80px;
+  max-width: 60px;
+}
+
+@media (min-width: 600px) {
+  .chart-bar-wrapper {
+    max-width: 80px;
+  }
 }
 
 .chart-bar-container {
   width: 100%;
-  height: 180px;
+  height: 120px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding: 0 8px;
+  padding: 0 4px;
+}
+
+@media (min-width: 600px) {
+  .chart-bar-container {
+    height: 180px;
+    padding: 0 8px;
+  }
 }
 
 .chart-bar {
@@ -371,19 +396,19 @@ const getBarColor = (value: number) => {
 }
 
 .chart-label {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: #757575;
   margin-top: 8px;
   text-align: center;
 }
 
-/* 移动端取消 sticky */
-@media (max-width: 960px) {
-  .sticky-sidebar {
-    position: relative;
-    top: 0;
-    max-height: none;
-    margin-bottom: 16px;
+@media (min-width: 600px) {
+  .chart-label {
+    font-size: 0.75rem;
   }
+}
+
+.min-w-0 {
+  min-width: 0;
 }
 </style>

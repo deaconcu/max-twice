@@ -1,25 +1,25 @@
 <template>
   <v-row dense align="start">
-    <!-- 左侧简介栏 -->
-    <v-col cols="12" md="2">
+    <!-- 左侧简介栏 - 宽度不够时隐藏 -->
+    <v-col cols="12" md="2" class="d-none d-lg-block">
       <div class="sticky-sidebar">
-        <div class="pa-4">
+        <div class="pa-3 pa-md-4">
           <div class="mb-4">
-            <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">创建的目录</h4>
-            <p class="text-body-2 text-grey mb-0">组织和管理您的学习内容集合。</p>
+            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">创建的目录</h4>
+            <p class="text-caption text-md-body-2 text-grey mb-0">组织和管理您的学习内容集合。</p>
           </div>
-          <v-divider class="my-4" />
-          <div class="text-body-2 text-grey">
-            <div class="d-flex align-start mb-3">
-              <v-icon icon="mdi-folder-plus" size="18" color="grey" class="mr-2 mt-1" />
+          <v-divider class="my-3 my-md-4" />
+          <div class="text-caption text-md-body-2 text-grey">
+            <div class="d-flex align-start mb-2 mb-md-3">
+              <v-icon icon="mdi-folder-plus" size="16" color="grey" class="mr-2 mt-1" />
               <span>创建内容目录</span>
             </div>
-            <div class="d-flex align-start mb-3">
-              <v-icon icon="mdi-lock" size="18" color="grey" class="mr-2 mt-1" />
+            <div class="d-flex align-start mb-2 mb-md-3">
+              <v-icon icon="mdi-lock" size="16" color="grey" class="mr-2 mt-1" />
               <span>公开/私密设置</span>
             </div>
             <div class="d-flex align-start">
-              <v-icon icon="mdi-tag-multiple" size="18" color="grey" class="mr-2 mt-1" />
+              <v-icon icon="mdi-tag-multiple" size="16" color="grey" class="mr-2 mt-1" />
               <span>内容分类管理</span>
             </div>
           </div>
@@ -28,22 +28,23 @@
     </v-col>
 
     <!-- 右侧主内容 -->
-    <v-col cols="12" md="10">
-      <div class="pa-2">
-        <div class="d-flex align-center justify-space-between mb-6">
+    <v-col cols="12" lg="10">
+      <div class="pa-0 pa-sm-2">
+        <!-- 顶部搜索栏 -->
+        <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3">
           <div></div>
 
           <!-- 搜索框 -->
           <v-text-field
             v-model="searchQuery"
-            placeholder="搜索课程目录..."
+            :placeholder="$vuetify.display.mobile ? '搜索目录...' : '搜索课程目录...'"
             prepend-inner-icon="mdi-magnify"
             variant="outlined"
             density="compact"
             rounded="lg"
             clearable
             hide-details
-            max-width="400"
+            :style="$vuetify.display.mobile ? 'max-width: 100%' : 'max-width: 400px'"
           />
         </div>
 
@@ -57,16 +58,16 @@
             <v-card
               rounded="xl"
               border
-              class="catalog-card mb-6 hoverable"
+              class="catalog-card mb-4 mb-md-6 hoverable"
               @click="goToCatalog(catalog.id)"
             >
-              <v-card-text class="pa-6 pb-1">
+              <v-card-text class="pa-4 pa-sm-6 pb-1">
                 <!-- 所属课程和节点 -->
-                <div v-if="catalog.node || catalog.course" class="mb-4">
+                <div v-if="catalog.node || catalog.course" class="mb-3 mb-md-4">
                   <div class="d-flex align-center ga-1 flex-wrap">
                     <template v-if="catalog.course">
                       <v-chip
-                        size="small"
+                        :size="$vuetify.display.mobile ? 'x-small' : 'small'"
                         density="comfortable"
                         color="grey-darken-1"
                         variant="tonal"
@@ -75,7 +76,7 @@
                       </v-chip>
                       <v-btn
                         variant="text"
-                        class="course-link-btn px-2 text-body-1"
+                        class="course-link-btn px-2 text-caption text-md-body-1"
                         @click.stop="goToCourse(catalog.course.id)"
                       >
                         {{ catalog.course.name }}
@@ -84,12 +85,12 @@
                     <template v-if="catalog.node">
                       <v-icon
                         icon="mdi-chevron-right"
-                        size="18"
+                        :size="$vuetify.display.mobile ? 16 : 18"
                         color="grey-darken-1"
                         class="mx-1"
                       />
                       <v-chip
-                        size="small"
+                        :size="$vuetify.display.mobile ? 'x-small' : 'small'"
                         density="comfortable"
                         color="grey-darken-1"
                         variant="tonal"
@@ -98,7 +99,7 @@
                       </v-chip>
                       <v-btn
                         variant="text"
-                        class="course-link-btn px-2 text-body-1"
+                        class="course-link-btn px-2 text-caption text-md-body-1"
                         @click.stop="goToCatalog(catalog.id)"
                       >
                         {{ catalog.node }}
@@ -108,43 +109,43 @@
                 </div>
 
                 <!-- 主要内容：目录章节列表 -->
-                <div v-if="catalog.contentNodes.length > 0" class="catalog-nodes mb-4">
+                <div v-if="catalog.contentNodes.length > 0" class="catalog-nodes mb-3 mb-md-4">
                   <div
                     v-for="(node, idx) in catalog.contentNodes"
                     :key="idx"
-                    class="catalog-node-item py-3 px-4"
+                    class="catalog-node-item py-2 py-md-3 px-3 px-md-4"
                   >
-                    <div class="text-body-1 text-grey-darken-3 mb-1">
+                    <div class="text-body-2 text-md-body-1 text-grey-darken-3 mb-1">
                       {{ idx + 1 }}. {{ node.name }}
                     </div>
-                    <div v-if="node.description" class="text-body-2 text-grey-darken-1">
+                    <div v-if="node.description" class="text-body-2 text-md-body-2 text-grey-darken-1">
                       {{ node.description }}
                     </div>
                   </div>
                 </div>
 
-                <div class="d-flex align-start justify-space-between">
+                <div class="d-flex align-center justify-space-between ga-2">
                   <!-- 统计信息 -->
-                  <div class="d-flex align-center text-body-2 text-grey" style="gap: 16px">
+                  <div class="d-flex align-center flex-wrap text-body-2 text-md-body-2 text-grey" style="gap: 8px">
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-comment-text-outline" size="16" color="grey" class="mr-1" />
-                      {{ catalog.commentCount }} 评论
+                      <v-icon icon="mdi-comment-text-outline" :size="$vuetify.display.mobile ? 14 : 16" color="grey" class="mr-1" />
+                      {{ catalog.commentCount }}
                     </div>
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-cards-outline" size="16" color="grey" class="mr-1" />
-                      {{ catalog.deckCount }} 卡片组
+                      <v-icon icon="mdi-cards-outline" :size="$vuetify.display.mobile ? 14 : 16" color="grey" class="mr-1" />
+                      {{ catalog.deckCount }}
                     </div>
                     <div class="d-flex align-center">
                       <v-icon
                         icon="mdi-file-document-multiple-outline"
-                        size="16"
+                        :size="$vuetify.display.mobile ? 14 : 16"
                         color="grey"
                         class="mr-1"
                       />
-                      {{ catalog.contentNodes.length }} 章节
+                      {{ catalog.contentNodes.length }}
                     </div>
-                    <div class="d-flex align-center">
-                      <v-icon icon="mdi-calendar-outline" size="16" color="grey" class="mr-1" />
+                    <div class="d-flex align-center d-none d-sm-flex">
+                      <v-icon icon="mdi-calendar-outline" :size="$vuetify.display.mobile ? 14 : 16" color="grey" class="mr-1" />
                       {{ formatDate(catalog.createdAt) }}
                     </div>
                   </div>
@@ -153,8 +154,9 @@
                   <v-btn
                     color="grey"
                     variant="text"
-                    size="small"
+                    :size="$vuetify.display.mobile ? 'x-small' : 'small'"
                     icon="mdi-delete"
+                    class="flex-shrink-0"
                     @click.stop="deleteCatalog(catalog.id)"
                   >
                     <v-icon>mdi-delete</v-icon>
@@ -179,12 +181,12 @@
         </v-infinite-scroll>
 
         <!-- 空状态 -->
-        <div v-else class="text-center py-12">
-          <v-icon icon="mdi-folder-multiple" size="64" color="grey-lighten-2" class="mb-4" />
-          <p class="text-body-1 text-grey-darken-2">
+        <div v-else class="text-center py-8 py-md-12">
+          <v-icon icon="mdi-folder-multiple" :size="$vuetify.display.mobile ? 48 : 64" color="grey-lighten-2" class="mb-3 mb-md-4" />
+          <p class="text-body-2 text-md-body-1 text-grey-darken-2">
             {{ searchQuery ? '未找到匹配的目录' : '暂无创建的目录' }}
           </p>
-          <p class="text-body-2 text-grey">
+          <p class="text-caption text-md-body-2 text-grey">
             {{ searchQuery ? '尝试使用其他关键词搜索' : '创建目录来组织您的学习内容' }}
           </p>
         </div>
@@ -354,15 +356,21 @@ onMounted(() => {
 .catalog-card {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: #ffffff;
-  border: 1px solid #e9ecef !important;
+  background-color: rgb(var(--v-theme-surface));
+  border: 1.5px solid rgb(var(--v-theme-outline)) !important;
 }
 
 /* 目录章节列表容器 */
 .catalog-nodes {
   border-radius: 12px;
   overflow: hidden;
-  min-height: 100px;
+  min-height: 80px;
+}
+
+@media (min-width: 600px) {
+  .catalog-nodes {
+    min-height: 100px;
+  }
 }
 
 /* 章节项 */
@@ -371,11 +379,11 @@ onMounted(() => {
 }
 
 .catalog-node-item:hover {
-  background-color: #fafafa;
+  background-color: rgb(var(--v-theme-surface-variant));
 }
 
 .catalog-node-item:not(:last-child) {
-  border-bottom: 1px dashed #eeeeee;
+  border-bottom: 1px dashed rgb(var(--v-theme-outline));
 }
 
 /* 课程链接按钮样式 */
@@ -385,15 +393,5 @@ onMounted(() => {
   letter-spacing: normal;
   height: auto;
   min-height: 0;
-}
-
-/* 移动端取消 sticky */
-@media (max-width: 960px) {
-  .sticky-sidebar {
-    position: relative;
-    top: 0;
-    max-height: none;
-    margin-bottom: 16px;
-  }
 }
 </style>

@@ -1,25 +1,25 @@
 <template>
   <v-row dense align="start">
-    <!-- 左侧简介栏 -->
-    <v-col cols="12" md="2">
+    <!-- 左侧简介栏 - 宽度不够时隐藏 -->
+    <v-col cols="12" md="2" class="d-none d-lg-block">
       <div class="sticky-sidebar">
-        <div class="pa-4">
+        <div class="pa-3 pa-md-4">
           <div class="mb-4">
-            <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">我的卡片组</h4>
-            <p class="text-body-2 text-grey mb-0">使用间隔重复算法高效记忆知识点。</p>
+            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">我的卡片组</h4>
+            <p class="text-caption text-md-body-2 text-grey mb-0">使用间隔重复算法高效记忆知识点。</p>
           </div>
-          <v-divider class="my-4" />
-          <div class="text-body-2 text-grey">
-            <div class="d-flex align-start mb-3">
-              <v-icon icon="mdi-brain" size="18" color="grey" class="mr-2 mt-1" />
+          <v-divider class="my-3 my-md-4" />
+          <div class="text-caption text-md-body-2 text-grey">
+            <div class="d-flex align-start mb-2 mb-md-3">
+              <v-icon icon="mdi-brain" size="16" color="grey" class="mr-2 mt-1" />
               <span>科学记忆方法</span>
             </div>
-            <div class="d-flex align-start mb-3">
-              <v-icon icon="mdi-calendar-clock" size="18" color="grey" class="mr-2 mt-1" />
+            <div class="d-flex align-start mb-2 mb-md-3">
+              <v-icon icon="mdi-calendar-clock" size="16" color="grey" class="mr-2 mt-1" />
               <span>定期复习提醒</span>
             </div>
             <div class="d-flex align-start">
-              <v-icon icon="mdi-chart-line" size="18" color="grey" class="mr-2 mt-1" />
+              <v-icon icon="mdi-chart-line" size="16" color="grey" class="mr-2 mt-1" />
               <span>进度统计分析</span>
             </div>
           </div>
@@ -28,9 +28,9 @@
     </v-col>
 
     <!-- 右侧主内容 -->
-    <v-col cols="12" md="10">
-      <div class="pa-2">
-        <div class="d-flex align-center justify-space-between mb-6">
+    <v-col cols="12" lg="10">
+      <div class="pa-0 pa-sm-2">
+        <div class="d-flex align-center justify-space-between mb-4 mb-md-6">
           <div></div>
         </div>
 
@@ -46,15 +46,15 @@
                 class="deck-card hoverable"
                 @click="goToReview(deck.id)"
               >
-                <v-card-text class="pa-6">
+                <v-card-text class="pa-4 pa-sm-6">
                   <!-- 卡片组头部 -->
-                  <div class="d-flex align-start justify-space-between mb-4">
+                  <div class="d-flex align-start justify-space-between mb-3 mb-md-4">
                     <div class="d-flex align-center flex-grow-1">
-                      <v-avatar :color="deck.color" size="56" rounded="lg" class="mr-4">
-                        <v-icon :icon="deck.icon" color="white" size="28" />
+                      <v-avatar :color="deck.color" :size="$vuetify.display.mobile ? 48 : 56" rounded="lg" class="mr-3 mr-sm-4 flex-shrink-0">
+                        <v-icon :icon="deck.icon" color="white" :size="$vuetify.display.mobile ? 24 : 28" />
                       </v-avatar>
-                      <div>
-                        <h4 class="text-h6 font-weight-bold mb-1">{{ deck.name }}</h4>
+                      <div class="min-w-0">
+                        <h4 class="text-body-1 text-md-h6 font-weight-bold mb-1 text-truncate">{{ deck.name }}</h4>
                         <p class="text-caption text-grey mb-0">{{ deck.cardCount }} 张卡片</p>
                       </div>
                     </div>
@@ -63,7 +63,7 @@
                     <v-btn
                       color="grey"
                       variant="text"
-                      size="small"
+                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
                       icon="mdi-delete"
                       @click.stop="deleteDeck(deck.id)"
                     >
@@ -75,14 +75,14 @@
                   <!-- 卡片组描述 -->
                   <p
                     v-if="deck.description"
-                    class="text-body-2 text-grey-darken-2 mb-3 deck-description"
+                    class="text-caption text-md-body-2 text-grey-darken-2 mb-2 mb-md-3 deck-description"
                   >
                     {{ deck.description }}
                   </p>
 
                   <!-- 创建时间 -->
                   <div class="text-caption text-grey">
-                    <v-icon icon="mdi-clock-outline" size="14" class="mr-1" />
+                    <v-icon icon="mdi-clock-outline" :size="$vuetify.display.mobile ? 12 : 14" class="mr-1" />
                     创建于 {{ formatDate(deck.createdAt) }}
                   </div>
                 </v-card-text>
@@ -92,19 +92,19 @@
         </div>
 
         <!-- 空状态 -->
-        <div v-else class="text-center py-12">
-          <v-icon icon="mdi-cards" size="64" color="grey-lighten-2" class="mb-4" />
-          <p class="text-body-1 text-grey-darken-2">暂无卡片组</p>
-          <p class="text-body-2 text-grey">创建记忆卡片，高效复习知识点</p>
+        <div v-else class="text-center py-8 py-md-12">
+          <v-icon icon="mdi-cards" :size="$vuetify.display.mobile ? 48 : 64" color="grey-lighten-2" class="mb-3 mb-md-4" />
+          <p class="text-body-2 text-md-body-1 text-grey-darken-2">暂无卡片组</p>
+          <p class="text-caption text-md-body-2 text-grey">创建记忆卡片,高效复习知识点</p>
           <v-btn
             color="primary"
             variant="outlined"
             rounded="md"
-            density="compact"
-            class="mt-4"
+            :size="$vuetify.display.mobile ? 'small' : 'default'"
+            class="mt-3 mt-md-4"
             to="/memory-review"
           >
-            <v-icon icon="mdi-brain" size="18" class="mr-2" />
+            <v-icon icon="mdi-brain" :size="$vuetify.display.mobile ? 16 : 18" class="mr-2" />
             前往复习中心
           </v-btn>
         </div>
@@ -223,8 +223,8 @@ const confirmDelete = async () => {
 .deck-card {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: #ffffff;
-  border: 1px solid #e9ecef !important;
+  background-color: rgb(var(--v-theme-surface));
+  border: 1.5px solid rgb(var(--v-theme-outline)) !important;
 }
 
 .deck-description {
@@ -232,7 +232,17 @@ const confirmDelete = async () => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 40px;
+  min-height: 32px;
+}
+
+@media (min-width: 600px) {
+  .deck-description {
+    min-height: 40px;
+  }
+}
+
+.min-w-0 {
+  min-width: 0;
 }
 
 /* 移动端取消 sticky */

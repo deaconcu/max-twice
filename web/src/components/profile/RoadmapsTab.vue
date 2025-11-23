@@ -1,25 +1,25 @@
 <template>
   <v-row dense align="start">
-    <!-- 左侧简介栏 -->
-    <v-col cols="12" md="2">
+    <!-- 左侧简介栏 - 宽度不够时隐藏 -->
+    <v-col cols="12" md="2" class="d-none d-lg-block">
       <div class="sticky-sidebar">
-        <div class="pa-4">
+        <div class="pa-3 pa-md-4">
           <div class="mb-4">
-            <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">创建的路线图</h4>
-            <p class="text-body-2 text-grey mb-0">规划您的学习路径，系统化掌握技能。</p>
+            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">创建的路线图</h4>
+            <p class="text-caption text-md-body-2 text-grey mb-0">规划您的学习路径，系统化掌握技能。</p>
           </div>
-          <v-divider class="my-4" />
-          <div class="text-body-2 text-grey">
-            <div class="d-flex align-start mb-3">
-              <v-icon icon="mdi-map" size="18" color="grey" class="mr-2 mt-1" />
+          <v-divider class="my-3 my-md-4" />
+          <div class="text-caption text-md-body-2 text-grey">
+            <div class="d-flex align-start mb-2 mb-md-3">
+              <v-icon icon="mdi-map" size="16" color="grey" class="mr-2 mt-1" />
               <span>绘制学习路线</span>
             </div>
-            <div class="d-flex align-start mb-3">
-              <v-icon icon="mdi-share-variant" size="18" color="grey" class="mr-2 mt-1" />
+            <div class="d-flex align-start mb-2 mb-md-3">
+              <v-icon icon="mdi-share-variant" size="16" color="grey" class="mr-2 mt-1" />
               <span>分享给他人</span>
             </div>
             <div class="d-flex align-start">
-              <v-icon icon="mdi-progress-check" size="18" color="grey" class="mr-2 mt-1" />
+              <v-icon icon="mdi-progress-check" size="16" color="grey" class="mr-2 mt-1" />
               <span>跟踪学习进度</span>
             </div>
           </div>
@@ -28,9 +28,9 @@
     </v-col>
 
     <!-- 右侧主内容 -->
-    <v-col cols="12" md="10">
-      <div class="pa-2">
-        <div class="d-flex align-center justify-space-between mb-6">
+    <v-col cols="12" lg="10">
+      <div class="pa-0 pa-sm-2">
+        <div class="d-flex align-center justify-space-between mb-4 mb-md-6">
           <div></div>
         </div>
 
@@ -42,26 +42,26 @@
               hover
               border
               elevation="0"
-              class="roadmap-card mb-6 hoverable"
+              class="roadmap-card mb-4 mb-md-6 hoverable"
               @click="goToRoadmap(roadmap.id)"
             >
-              <v-card-text class="pa-6">
-                <div class="d-flex align-start justify-space-between mb-4">
+              <v-card-text class="pa-4 pa-sm-6">
+                <div class="d-flex align-start justify-space-between mb-3 mb-md-4">
                   <!-- 左侧：图标和标题 -->
                   <div class="d-flex align-center flex-grow-1">
-                    <v-avatar color="purple-lighten-5" size="56" rounded="lg" class="mr-4">
-                      <v-icon icon="mdi-map-marker-path" color="purple" size="28" />
+                    <v-avatar color="purple-lighten-5" :size="$vuetify.display.mobile ? 48 : 56" rounded="lg" class="mr-3 mr-sm-4 flex-shrink-0">
+                      <v-icon icon="mdi-map-marker-path" color="purple" :size="$vuetify.display.mobile ? 24 : 28" />
                     </v-avatar>
-                    <div class="flex-grow-1">
-                      <div class="d-flex align-center mb-1">
-                        <h4 class="text-h6 font-weight-bold text-grey-darken-4 mr-2">
+                    <div class="flex-grow-1 min-w-0">
+                      <div class="d-flex flex-column flex-sm-row align-start align-sm-center mb-1 ga-2">
+                        <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 text-truncate">
                           {{ roadmap.name }}
                         </h4>
-                        <v-chip :color="getStatusColor(roadmap.status)" size="small" variant="flat">
+                        <v-chip :color="getStatusColor(roadmap.status)" :size="$vuetify.display.mobile ? 'x-small' : 'small'" variant="flat">
                           {{ getStatusText(roadmap.status) }}
                         </v-chip>
                       </div>
-                      <p class="text-caption text-grey mb-0">{{ roadmap.profession }}</p>
+                      <p class="text-caption text-grey mb-0 text-truncate">{{ roadmap.profession }}</p>
                     </div>
                   </div>
 
@@ -69,7 +69,7 @@
                   <v-btn
                     color="grey"
                     variant="text"
-                    size="small"
+                    :size="$vuetify.display.mobile ? 'x-small' : 'small'"
                     icon="mdi-delete"
                     @click.stop="deleteRoadmap(roadmap.id)"
                   >
@@ -79,24 +79,24 @@
                 </div>
 
                 <!-- 路线图描述 -->
-                <p class="text-body-2 text-grey-darken-2 mb-4 roadmap-description">
+                <p class="text-caption text-md-body-2 text-grey-darken-2 mb-3 mb-md-4 roadmap-description">
                   {{ roadmap.description }}
                 </p>
 
                 <!-- 统计信息 -->
-                <div class="d-flex align-center justify-space-between">
-                  <div class="d-flex align-center text-body-2 text-grey" style="gap: 16px">
+                <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3">
+                  <div class="d-flex align-center flex-wrap text-caption text-md-body-2 text-grey" style="gap: 12px">
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-account-multiple" size="16" color="grey" class="mr-1" />
-                      {{ roadmap.usageCount }} 人使用
+                      <v-icon icon="mdi-account-multiple" :size="$vuetify.display.mobile ? 14 : 16" color="grey" class="mr-1" />
+                      {{ roadmap.usageCount }} <span class="d-none d-sm-inline">人使用</span>
                     </div>
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-star" size="16" color="grey" class="mr-1" />
-                      {{ roadmap.starCount }} 收藏
+                      <v-icon icon="mdi-star" :size="$vuetify.display.mobile ? 14 : 16" color="grey" class="mr-1" />
+                      {{ roadmap.starCount }} <span class="d-none d-sm-inline">收藏</span>
                     </div>
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-timeline" size="16" color="grey" class="mr-1" />
-                      {{ roadmap.nodeCount }} 节点
+                      <v-icon icon="mdi-timeline" :size="$vuetify.display.mobile ? 14 : 16" color="grey" class="mr-1" />
+                      {{ roadmap.nodeCount }} <span class="d-none d-sm-inline">节点</span>
                     </div>
                   </div>
 
@@ -106,21 +106,21 @@
                       color="primary"
                       variant="flat"
                       rounded="lg"
-                      size="small"
+                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
                       @click.stop="goToRoadmap(roadmap.id)"
                     >
-                      <v-icon icon="mdi-eye" size="18" class="mr-1" />
-                      查看
+                      <v-icon icon="mdi-eye" :size="$vuetify.display.mobile ? 14 : 18" :class="$vuetify.display.mobile ? '' : 'mr-1'" />
+                      <span class="d-none d-sm-inline">查看</span>
                     </v-btn>
                     <v-btn
                       variant="tonal"
                       rounded="lg"
-                      size="small"
+                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
                       color="grey-darken-2"
                       @click.stop="goToRoadmap(roadmap.id)"
                     >
-                      <v-icon icon="mdi-pencil" size="18" class="mr-1" />
-                      编辑
+                      <v-icon icon="mdi-pencil" :size="$vuetify.display.mobile ? 14 : 18" :class="$vuetify.display.mobile ? '' : 'mr-1'" />
+                      <span class="d-none d-sm-inline">编辑</span>
                     </v-btn>
                   </div>
                 </div>
@@ -130,10 +130,10 @@
         </v-infinite-scroll>
 
         <!-- 空状态 -->
-        <div v-else class="text-center py-12">
-          <v-icon icon="mdi-map-marker-path" size="64" color="grey-lighten-2" class="mb-4" />
-          <p class="text-body-1 text-grey-darken-2">暂无创建的路线图</p>
-          <p class="text-body-2 text-grey">创建学习路线图，规划职业发展路径</p>
+        <div v-else class="text-center py-8 py-md-12">
+          <v-icon icon="mdi-map-marker-path" :size="$vuetify.display.mobile ? 48 : 64" color="grey-lighten-2" class="mb-3 mb-md-4" />
+          <p class="text-body-2 text-md-body-1 text-grey-darken-2">暂无创建的路线图</p>
+          <p class="text-caption text-md-body-2 text-grey">创建学习路线图，规划职业发展路径</p>
         </div>
       </div>
     </v-col>
@@ -263,8 +263,8 @@ const deleteRoadmap = async (roadmapId: number) => {
 .roadmap-card {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: #ffffff;
-  border: 1px solid #e9ecef !important;
+  background-color: rgb(var(--v-theme-surface));
+  border: 1.5px solid rgb(var(--v-theme-outline)) !important;
 }
 
 .roadmap-description {
@@ -272,7 +272,17 @@ const deleteRoadmap = async (roadmapId: number) => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 48px;
+  min-height: 32px;
+}
+
+@media (min-width: 600px) {
+  .roadmap-description {
+    min-height: 48px;
+  }
+}
+
+.min-w-0 {
+  min-width: 0;
 }
 
 /* 移动端取消 sticky */

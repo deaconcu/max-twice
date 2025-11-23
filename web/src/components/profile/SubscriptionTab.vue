@@ -1,25 +1,25 @@
 <template>
   <v-row dense align="start">
-    <!-- 左侧简介栏 -->
-    <v-col cols="12" md="2">
+    <!-- 左侧简介栏 - 宽度不够时隐藏 -->
+    <v-col cols="12" md="2" class="d-none d-lg-block">
       <div class="sticky-sidebar">
-        <div class="pa-4">
+        <div class="pa-3 pa-md-4">
           <div class="mb-4">
-            <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">关注的课程</h4>
-            <p class="text-body-2 text-grey mb-0">管理您关注的所有课程，获取最新动态。</p>
+            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">关注的课程</h4>
+            <p class="text-caption text-md-body-2 text-grey mb-0">管理您关注的所有课程，获取最新动态。</p>
           </div>
-          <v-divider class="my-4" />
-          <div class="text-body-2 text-grey">
-            <div class="d-flex align-start mb-3">
-              <v-icon icon="mdi-bell-outline" size="18" color="grey" class="mr-2 mt-1" />
+          <v-divider class="my-3 my-md-4" />
+          <div class="text-caption text-md-body-2 text-grey">
+            <div class="d-flex align-start mb-2 mb-md-3">
+              <v-icon icon="mdi-bell-outline" size="16" color="grey" class="mr-2 mt-1" />
               <span>接收课程更新通知</span>
             </div>
-            <div class="d-flex align-start mb-3">
-              <v-icon icon="mdi-heart" size="18" color="grey" class="mr-2 mt-1" />
+            <div class="d-flex align-start mb-2 mb-md-3">
+              <v-icon icon="mdi-heart" size="16" color="grey" class="mr-2 mt-1" />
               <span>快速取消关注</span>
             </div>
             <div class="d-flex align-start">
-              <v-icon icon="mdi-view-grid" size="18" color="grey" class="mr-2 mt-1" />
+              <v-icon icon="mdi-view-grid" size="16" color="grey" class="mr-2 mt-1" />
               <span>网格化浏览</span>
             </div>
           </div>
@@ -28,13 +28,15 @@
     </v-col>
 
     <!-- 右侧主内容 -->
-    <v-col cols="12" md="10">
-      <div class="pa-2">
-        <div class="d-flex align-center justify-space-between mb-6">
+    <v-col cols="12" lg="10">
+      <div class="pa-0 pa-sm-2">
+        <!-- 顶部操作栏 -->
+        <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3">
           <div></div>
-          <v-btn color="primary" variant="text" rounded="lg" to="/learning">
-            浏览更多课程
-            <v-icon icon="mdi-chevron-right" size="18" class="ml-1" />
+          <v-btn color="primary" variant="text" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'" to="/learning">
+            <span class="d-none d-sm-inline">浏览更多课程</span>
+            <span class="d-sm-none">浏览更多</span>
+            <v-icon icon="mdi-chevron-right" :size="$vuetify.display.mobile ? 16 : 18" class="ml-1" />
           </v-btn>
         </div>
 
@@ -43,20 +45,20 @@
           <v-row>
             <v-col v-for="course in formattedSubscriptions" :key="course.id" cols="12" md="6">
               <v-card rounded="xl" hover border elevation="0" class="subscription-card hoverable">
-                <v-card-text class="pa-6" @click="goToCourse(course.courseId)">
+                <v-card-text class="pa-4 pa-sm-6" @click="goToCourse(course.courseId)">
                   <!-- 课程图标和取消关注按钮 -->
-                  <div class="d-flex align-start justify-space-between mb-4">
+                  <div class="d-flex align-start justify-space-between mb-3 mb-md-4">
                     <div class="d-flex align-center flex-grow-1">
                       <v-avatar
                         :color="course.course.iconColor"
-                        size="56"
+                        :size="$vuetify.display.mobile ? 48 : 56"
                         rounded="lg"
-                        class="mr-4"
+                        class="mr-3 mr-sm-4 flex-shrink-0"
                       >
-                        <v-icon :icon="course.course.icon" color="white" size="28" />
+                        <v-icon :icon="course.course.icon" color="white" :size="$vuetify.display.mobile ? 24 : 28" />
                       </v-avatar>
-                      <div>
-                        <h4 class="text-h6 font-weight-bold mb-1">{{ course.course.name }}</h4>
+                      <div class="min-w-0">
+                        <h4 class="text-body-1 text-md-h6 font-weight-bold mb-1 text-truncate">{{ course.course.name }}</h4>
                         <p class="text-caption text-grey mb-0">
                           {{ course.course.learnerCount || 0 }} 人学习
                         </p>
@@ -65,14 +67,14 @@
                     <v-btn
                       color="grey"
                       variant="text"
-                      size="small"
+                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
                       icon="mdi-close"
                       @click.stop="unsubscribe(course.courseId)"
                     />
                   </div>
 
                   <!-- 课程描述 -->
-                  <p class="text-body-2 text-grey-darken-2 mb-0 course-description">
+                  <p class="text-caption text-md-body-2 text-grey-darken-2 mb-0 course-description">
                     {{ course.course.description }}
                   </p>
                 </v-card-text>
@@ -82,19 +84,19 @@
         </div>
 
         <!-- 空状态 -->
-        <div v-else class="text-center py-12">
-          <v-icon icon="mdi-book-multiple" size="64" color="grey-lighten-2" class="mb-4" />
-          <p class="text-body-1 text-grey-darken-2">暂无关注的课程</p>
-          <p class="text-body-2 text-grey">关注感兴趣的课程，及时获取更新</p>
+        <div v-else class="text-center py-8 py-md-12">
+          <v-icon icon="mdi-book-multiple" :size="$vuetify.display.mobile ? 48 : 64" color="grey-lighten-2" class="mb-3 mb-md-4" />
+          <p class="text-body-2 text-md-body-1 text-grey-darken-2">暂无关注的课程</p>
+          <p class="text-caption text-md-body-2 text-grey">关注感兴趣的课程，及时获取更新</p>
           <v-btn
             color="primary"
             variant="flat"
             rounded="md"
-            density="compact"
+            :size="$vuetify.display.mobile ? 'small' : 'default'"
             class="mt-4"
             to="/learning"
           >
-            <v-icon icon="mdi-plus" size="18" class="mr-2" />
+            <v-icon icon="mdi-plus" :size="$vuetify.display.mobile ? 16 : 18" class="mr-2" />
             浏览课程
           </v-btn>
         </div>
@@ -215,8 +217,8 @@ const confirmUnsubscribe = async () => {
 .subscription-card {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: #ffffff;
-  border: 1px solid #e9ecef !important;
+  background-color: rgb(var(--v-theme-surface));
+  border: 1.5px solid rgb(var(--v-theme-outline)) !important;
 }
 
 .course-description {
@@ -224,16 +226,16 @@ const confirmUnsubscribe = async () => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 40px;
+  min-height: 32px;
 }
 
-/* 移动端取消 sticky */
-@media (max-width: 960px) {
-  .sticky-sidebar {
-    position: relative;
-    top: 0;
-    max-height: none;
-    margin-bottom: 16px;
+@media (min-width: 600px) {
+  .course-description {
+    min-height: 40px;
   }
+}
+
+.min-w-0 {
+  min-width: 0;
 }
 </style>

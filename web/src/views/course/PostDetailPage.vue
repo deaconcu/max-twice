@@ -3,14 +3,16 @@
     <div class="read-page">
       <!-- 课程头部 -->
       <div class="course-header-sticky">
-        <CourseHeader
-          v-if="data"
-          :parent-course-info="data.parentCourse"
-          :current-course="data.course"
-          :sub-course-list="data.subCourseList"
-          :is-main-course="isMainCourse"
-          :is-learning="false"
-        />
+        <div class="course-header-wrapper">
+          <CourseHeader
+            v-if="data"
+            :parent-course-info="data.parentCourse"
+            :current-course="data.course"
+            :sub-course-list="data.subCourseList"
+            :is-main-course="isMainCourse"
+            :is-learning="false"
+          />
+        </div>
       </div>
 
       <div class="read-content">
@@ -130,59 +132,80 @@
       @add-to-study="handleAddDeck"
     />
 
-    <!-- 移动端底部工具面板 -->
-    <v-bottom-sheet v-if="$vuetify.display.mobile" v-model="toolsSheetOpen" max-height="70vh">
+    <!-- 移动端AI答疑助手底部面板 -->
+    <v-bottom-sheet v-if="$vuetify.display.mobile" v-model="assistantSheetOpen" max-height="70vh">
       <v-card rounded="t-xl">
         <v-card-title class="pa-4 d-flex align-center justify-space-between">
-          <span class="text-h6 font-weight-bold">文章工具</span>
-          <v-btn icon="mdi-close" variant="text" size="small" @click="toolsSheetOpen = false" />
+          <div class="d-flex align-center">
+            <v-icon icon="mdi-robot-excited" color="primary" class="mr-2" size="24" />
+            <span class="text-h6 font-weight-bold">答疑助手</span>
+          </div>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="assistantSheetOpen = false" />
         </v-card-title>
 
         <v-divider />
 
         <v-card-text class="pa-4" style="max-height: calc(70vh - 73px); overflow-y: auto">
-          <!-- AI答疑助手 -->
-          <v-card class="mb-4 no-border" rounded="lg" flat>
-            <v-card-title class="pa-4">
-              <div class="d-flex align-center">
-                <v-icon icon="mdi-robot-excited" color="primary" class="mr-2" size="24" />
-                <span>答疑助手</span>
-              </div>
-            </v-card-title>
-            <v-card-text class="pa-4 pt-0">
-              <div class="text-body-2 text-grey-darken-2 mb-3">
-                <div class="font-weight-bold">用法：</div>
-                <div class="mt-2">1）在文章中选中您不太理解的内容</div>
-                <div>2）在左侧竖线处拖动手柄，调整上下文范围</div>
-                <div>3）点击面板中的"复制"，将引用和问题复制到剪贴板</div>
-                <div>4）用复制的内容询问你常用的 AI 引擎</div>
-              </div>
+          <div class="text-body-2 text-grey-darken-2 mb-3">
+            <div class="font-weight-bold">用法：</div>
+            <div class="mt-2">1）在文章中选中您不太理解的内容</div>
+            <div>2）在左侧竖线处拖动手柄，调整上下文范围</div>
+            <div>3）点击面板中的"复制"，将引用和问题复制到剪贴板</div>
+            <div>4）用复制的内容询问你常用的 AI 引擎</div>
+          </div>
 
-              <div class="d-flex flex-wrap mt-4" style="gap: 8px">
-                <div class="text-body-2 w-100 text-grey-darken-2 font-weight-bold">
-                  常用 AI 引擎：
-                </div>
-                <v-chip
-                  v-for="e in aiEngines"
-                  :key="e.name"
-                  :href="e.href"
-                  target="_blank"
-                  rel="noopener"
-                  :color="e.color"
-                  variant="tonal"
-                  rounded="lg"
-                  size="small"
-                  :prepend-icon="e.icon"
-                  :text="e.name"
-                />
-              </div>
-            </v-card-text>
-          </v-card>
+          <div class="d-flex flex-wrap mt-4" style="gap: 8px">
+            <div class="text-body-2 w-100 text-grey-darken-2 font-weight-bold">
+              常用 AI 引擎：
+            </div>
+            <v-chip
+              v-for="e in aiEngines"
+              :key="e.name"
+              :href="e.href"
+              target="_blank"
+              rel="noopener"
+              :color="e.color"
+              variant="tonal"
+              rounded="lg"
+              size="small"
+              :prepend-icon="e.icon"
+              :text="e.name"
+            />
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-bottom-sheet>
 
-          <!-- 记忆卡片组 -->
+    <!-- 移动端记忆卡片底部面板 -->
+    <v-bottom-sheet v-if="$vuetify.display.mobile" v-model="memorySheetOpen" max-height="70vh">
+      <v-card rounded="t-xl">
+        <v-card-title class="pa-4 d-flex align-center justify-space-between">
+          <div class="d-flex align-center">
+            <v-icon icon="mdi-cards-outline" color="primary" class="mr-2" size="20" />
+            <span class="text-h6 font-weight-bold">记忆卡片组</span>
+          </div>
+          <div class="d-flex align-center" style="gap: 8px">
+            <v-btn
+              color="success"
+              variant="flat"
+              rounded="lg"
+              size="small"
+              prepend-icon="mdi-plus"
+              @click="handleCreateDeck"
+            >
+              创建
+            </v-btn>
+            <v-btn icon="mdi-close" variant="text" size="small" @click="memorySheetOpen = false" />
+          </div>
+        </v-card-title>
+
+        <v-divider />
+
+        <v-card-text class="pa-0" style="max-height: calc(70vh - 73px); overflow-y: auto">
           <MemoryCardSidebar
             v-if="data && (data.currPosting || data.post)"
             :post-id="(data.currPosting || data.post).id"
+            class="mobile-memory-sidebar"
             @create-deck="handleCreateDeck"
             @view-deck="handleViewDeck"
           />
@@ -190,19 +213,33 @@
       </v-card>
     </v-bottom-sheet>
 
-    <!-- 移动端浮动按钮 -->
-    <v-btn
-      v-if="$vuetify.display.mobile"
-      icon
-      color="primary"
-      size="large"
-      elevation="6"
-      class="mobile-tools-fab"
-      @click="toolsSheetOpen = true"
-    >
-      <v-icon size="24">mdi-toolbox</v-icon>
-      <v-tooltip activator="parent" location="left">文章工具</v-tooltip>
-    </v-btn>
+    <!-- 移动端浮动按钮组 -->
+    <div v-if="$vuetify.display.mobile" class="mobile-fab-group">
+      <!-- AI答疑助手按钮 -->
+      <v-btn
+        icon
+        color="primary"
+        size="large"
+        elevation="6"
+        class="mb-3"
+        @click="assistantSheetOpen = true"
+      >
+        <v-icon size="24">mdi-robot-excited</v-icon>
+        <v-tooltip activator="parent" location="left">答疑助手</v-tooltip>
+      </v-btn>
+
+      <!-- 记忆卡片按钮 -->
+      <v-btn
+        icon
+        color="success"
+        size="large"
+        elevation="6"
+        @click="memorySheetOpen = true"
+      >
+        <v-icon size="24">mdi-cards</v-icon>
+        <v-tooltip activator="parent" location="left">记忆卡片</v-tooltip>
+      </v-btn>
+    </div>
   </DefaultLayout>
 </template>
 
@@ -229,7 +266,8 @@ const showCreateDeckDialog = ref(false)
 const isAssistantExpanded = ref(true)
 const selectedDeck = ref<MemoryCardDeck | null>(null)
 const showDeckDetailDialog = ref(false)
-const toolsSheetOpen = ref(false)
+const assistantSheetOpen = ref(false)
+const memorySheetOpen = ref(false)
 
 // 是否为主课程
 const isMainCourse = computed(() => {
@@ -376,6 +414,11 @@ onUnmounted(() => {
   padding-bottom: 8px;
 }
 
+.course-header-wrapper {
+  max-width: 100%;
+  padding: 0 26px;
+}
+
 /* 节点标题区域 */
 .node-header {
   padding-top: 0;
@@ -449,12 +492,25 @@ onUnmounted(() => {
   padding: 8px 0;
 }
 
-/* 移动端浮动按钮 */
-.mobile-tools-fab {
+/* 移动端浮动按钮组 */
+.mobile-fab-group {
   position: fixed;
-  bottom: 24px;
+  bottom: 80px;
   right: 24px;
   z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* 移动端记忆卡片侧边栏 - 隐藏标题 */
+.mobile-memory-sidebar :deep(.v-card-title) {
+  display: none;
+}
+
+/* 移动端记忆卡片侧边栏 - 筛选控件区域增加顶部间距 */
+.mobile-memory-sidebar :deep(.filter-controls) {
+  padding-top: 16px !important;
 }
 
 /* 中等屏幕：隐藏右侧栏，内容区保持最大宽度并居中 */
@@ -471,22 +527,52 @@ onUnmounted(() => {
 /* 小屏幕：内容区可以缩小，移除 padding */
 @media (max-width: 960px) {
   .read-page {
-    max-width: none;
-    padding: 0;
-    margin: 0;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    padding-bottom: 32px !important;
+  }
+
+  .course-header-wrapper {
+    padding: 0 !important;
+  }
+
+  .read-content {
+    width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  .center-right-container {
+    width: 100% !important;
+  }
+
+  .center-right-wrapper {
+    width: 100% !important;
+    max-width: none !important;
   }
 
   .center-content {
-    flex: 1;
-    max-width: none;
-    padding: 0;
+    flex: 1 !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .node-header {
+    padding-top: 24px;
   }
 }
 
 /* 超小屏幕：确保完全适配 */
 @media (max-width: 600px) {
   .center-content {
-    padding: 0;
+    padding: 0 !important;
+  }
+
+  .node-header {
+    padding-top: 16px;
   }
 }
 </style>

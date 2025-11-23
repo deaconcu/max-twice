@@ -1,25 +1,25 @@
 <template>
   <v-row dense align="start">
-    <!-- 左侧简介栏 -->
-    <v-col cols="12" md="2">
+    <!-- 左侧简介栏 - 宽度不够时隐藏 -->
+    <v-col cols="12" md="2" class="d-none d-lg-block">
       <div class="sticky-sidebar">
-        <div class="pa-4">
+        <div class="pa-3 pa-md-4">
           <div class="mb-4">
-            <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">学习的课程</h4>
-            <p class="text-body-2 text-grey mb-0">跟踪您当前学习的所有课程进度和完成情况。</p>
+            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">学习的课程</h4>
+            <p class="text-caption text-md-body-2 text-grey mb-0">跟踪您当前学习的所有课程进度和完成情况。</p>
           </div>
-          <v-divider class="my-4" />
-          <div class="text-body-2 text-grey">
-            <div class="d-flex align-start mb-3">
-              <v-icon icon="mdi-chart-line" size="18" color="grey" class="mr-2 mt-1" />
+          <v-divider class="my-3 my-md-4" />
+          <div class="text-caption text-md-body-2 text-grey">
+            <div class="d-flex align-start mb-2 mb-md-3">
+              <v-icon icon="mdi-chart-line" size="16" color="grey" class="mr-2 mt-1" />
               <span>实时同步学习进度</span>
             </div>
-            <div class="d-flex align-start mb-3">
-              <v-icon icon="mdi-clock-outline" size="18" color="grey" class="mr-2 mt-1" />
+            <div class="d-flex align-start mb-2 mb-md-3">
+              <v-icon icon="mdi-clock-outline" size="16" color="grey" class="mr-2 mt-1" />
               <span>记录最近学习时间</span>
             </div>
             <div class="d-flex align-start">
-              <v-icon icon="mdi-target" size="18" color="grey" class="mr-2 mt-1" />
+              <v-icon icon="mdi-target" size="16" color="grey" class="mr-2 mt-1" />
               <span>设定学习目标</span>
             </div>
           </div>
@@ -28,9 +28,10 @@
     </v-col>
 
     <!-- 右侧主内容 -->
-    <v-col cols="12" md="10">
-      <div class="pa-2">
-        <div class="d-flex align-center justify-space-between mb-6">
+    <v-col cols="12" lg="10">
+      <div class="pa-0 pa-sm-2">
+        <!-- 顶部操作栏 -->
+        <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3">
           <!-- Tab 切换 -->
           <v-btn-toggle
             v-model="statusTab"
@@ -40,19 +41,22 @@
             rounded="lg"
             density="compact"
           >
-            <v-btn value="learning" rounded="lg">
-              <v-icon icon="mdi-school" size="18" class="mr-2" />
-              正在学习
+            <v-btn value="learning" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'">
+              <v-icon icon="mdi-school" :size="$vuetify.display.mobile ? 16 : 18" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'" />
+              <span class="d-none d-sm-inline">正在学习</span>
+              <span class="d-sm-none">学习中</span>
             </v-btn>
-            <v-btn value="completed" rounded="lg">
-              <v-icon icon="mdi-check-circle" size="18" class="mr-2" />
-              已经完成
+            <v-btn value="completed" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'">
+              <v-icon icon="mdi-check-circle" :size="$vuetify.display.mobile ? 16 : 18" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'" />
+              <span class="d-none d-sm-inline">已经完成</span>
+              <span class="d-sm-none">已完成</span>
             </v-btn>
           </v-btn-toggle>
 
-          <v-btn color="primary" variant="text" rounded="lg" to="/learning">
-            查看全部课程
-            <v-icon icon="mdi-chevron-right" size="18" class="ml-1" />
+          <v-btn color="primary" variant="text" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'" to="/learning">
+            <span class="d-none d-sm-inline">查看全部课程</span>
+            <span class="d-sm-none">查看全部</span>
+            <v-icon icon="mdi-chevron-right" :size="$vuetify.display.mobile ? 16 : 18" class="ml-1" />
           </v-btn>
         </div>
 
@@ -61,21 +65,21 @@
           <v-row>
             <v-col v-for="course in filteredCourses" :key="course.id" cols="12" md="6">
               <v-card rounded="xl" hover border elevation="0" class="course-card hoverable">
-                <v-card-text class="pa-6" @click="goToCourse(course.courseId)">
-                  <div class="d-flex align-start justify-space-between mb-4">
+                <v-card-text class="pa-4 pa-sm-6" @click="goToCourse(course.courseId)">
+                  <div class="d-flex align-start justify-space-between mb-3 mb-md-4">
                     <div class="d-flex align-center flex-grow-1">
-                      <v-avatar :color="course.iconColor" size="56" rounded="lg" class="mr-4">
-                        <v-icon :icon="course.icon" color="white" size="28" />
+                      <v-avatar :color="course.iconColor" :size="$vuetify.display.mobile ? 48 : 56" rounded="lg" class="mr-3 mr-sm-4 flex-shrink-0">
+                        <v-icon :icon="course.icon" color="white" :size="$vuetify.display.mobile ? 24 : 28" />
                       </v-avatar>
-                      <div>
-                        <h4 class="text-h6 font-weight-bold mb-1">{{ course.title }}</h4>
+                      <div class="min-w-0">
+                        <h4 class="text-body-1 text-md-h6 font-weight-bold mb-1 text-truncate">{{ course.title }}</h4>
                         <p class="text-caption text-grey mb-0">{{ course.lastActivity }}</p>
                       </div>
                     </div>
                     <v-btn
                       color="grey"
                       variant="text"
-                      size="small"
+                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
                       icon="mdi-close"
                       @click.stop="cancelLearning(course.id)"
                     />
@@ -85,17 +89,17 @@
                     :model-value="course.progress"
                     color="primary"
                     bg-color="grey-lighten-3"
-                    height="8"
+                    :height="$vuetify.display.mobile ? 6 : 8"
                     rounded
-                    class="mb-3"
+                    class="mb-2 mb-md-3"
                   />
 
                   <div class="d-flex align-center justify-space-between">
-                    <span class="text-body-2 text-grey-darken-2">
-                      <v-icon icon="mdi-check-circle" size="16" color="success" class="mr-1" />
+                    <span class="text-caption text-md-body-2 text-grey-darken-2">
+                      <v-icon icon="mdi-check-circle" :size="$vuetify.display.mobile ? 14 : 16" color="success" class="mr-1" />
                       {{ course.completedLessons }} / {{ course.totalLessons }} 节已完成
                     </span>
-                    <span class="text-body-1 font-weight-bold text-primary"
+                    <span class="text-body-2 text-md-body-1 font-weight-bold text-primary"
                       >{{ course.progress }}%</span
                     >
                   </div>
@@ -106,12 +110,12 @@
         </div>
 
         <!-- 空状态 -->
-        <div v-else class="text-center py-12">
-          <v-icon icon="mdi-school" size="64" color="grey-lighten-2" class="mb-4" />
-          <p class="text-body-1 text-grey-darken-2">
+        <div v-else class="text-center py-8 py-md-12">
+          <v-icon icon="mdi-school" :size="$vuetify.display.mobile ? 48 : 64" color="grey-lighten-2" class="mb-3 mb-md-4" />
+          <p class="text-body-2 text-md-body-1 text-grey-darken-2">
             {{ statusTab === 'learning' ? '暂无正在学习的课程' : '暂无已完成的课程' }}
           </p>
-          <p class="text-body-2 text-grey">开始学习新课程，掌握新技能</p>
+          <p class="text-caption text-md-body-2 text-grey">开始学习新课程，掌握新技能</p>
         </div>
 
         <!-- 删除确认对话框 -->
@@ -257,17 +261,11 @@ const confirmDelete = async () => {
 .course-card {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: #ffffff;
-  border: 1px solid #e9ecef !important;
+  background-color: rgb(var(--v-theme-surface));
+  border: 1.5px solid rgb(var(--v-theme-outline)) !important;
 }
 
-/* 移动端取消 sticky */
-@media (max-width: 960px) {
-  .sticky-sidebar {
-    position: relative;
-    top: 0;
-    max-height: none;
-    margin-bottom: 16px;
-  }
+.min-w-0 {
+  min-width: 0;
 }
 </style>
