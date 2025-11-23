@@ -6,7 +6,7 @@
         <div class="d-flex flex-column flex-sm-row align-start align-sm-end ga-4 header-wrapper">
           <!-- 左侧：标题 -->
           <div class="d-flex align-center title-container">
-            <v-avatar color="grey-lighten-5" :size="$vuetify.display.mobile ? 48 : 64" rounded="lg" class="mr-3 flex-shrink-0">
+            <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" :size="$vuetify.display.mobile ? 48 : 64" rounded="lg" class="mr-3 flex-shrink-0">
               <v-icon icon="mdi-briefcase-search-outline" :size="$vuetify.display.mobile ? 24 : 32" color="grey-darken-1" />
             </v-avatar>
             <div style="min-width: 0; overflow: hidden;">

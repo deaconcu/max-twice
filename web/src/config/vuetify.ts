@@ -66,7 +66,7 @@ export default createVuetify({
     },
     variations: {
       colors: ['primary', 'secondary', 'grey'],
-      lighten: 4,
+      lighten: 5,
       darken: 4,
     },
   },
