@@ -6,9 +6,7 @@
         <div class="pa-4">
           <div class="mb-4">
             <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">创建的文章</h4>
-            <p class="text-body-2 text-grey mb-0">
-              管理您创作的文章，分享知识和经验。
-            </p>
+            <p class="text-body-2 text-grey mb-0">管理您创作的文章，分享知识和经验。</p>
           </div>
           <v-divider class="my-4" />
           <div class="text-body-2 text-grey">
@@ -39,7 +37,14 @@
         <!-- 文章列表 -->
         <v-infinite-scroll v-if="articles.length > 0" :items="articles" @load="onLoadMore">
           <div v-for="(article, index) in articles" :key="article.id">
-            <v-card rounded="xl" hover border elevation="0" class="article-card mb-6 hoverable" @click="goToArticle(article)">
+            <v-card
+              rounded="xl"
+              hover
+              border
+              elevation="0"
+              class="article-card mb-6 hoverable"
+              @click="goToArticle(article)"
+            >
               <v-card-text class="pa-6 pb-1">
                 <!-- 所属课程和节点 -->
                 <div v-if="article.node || article.course" class="mb-4">
@@ -63,7 +68,12 @@
                       </v-btn>
                     </template>
                     <template v-if="article.node">
-                      <v-icon icon="mdi-chevron-right" size="18" color="grey-darken-1" class="mx-1" />
+                      <v-icon
+                        icon="mdi-chevron-right"
+                        size="18"
+                        color="grey-darken-1"
+                        class="mx-1"
+                      />
                       <v-chip
                         size="small"
                         density="comfortable"
@@ -84,30 +94,34 @@
                 </div>
 
                 <!-- 文章内容缩略 -->
-                <div :ref="(el) => setContentRef(el, index)" class="article-content-preview mb-4" :class="{ 'has-overflow': article.hasOverflow }">
+                <div
+                  :ref="(el) => setContentRef(el, index)"
+                  class="article-content-preview mb-4"
+                  :class="{ 'has-overflow': article.hasOverflow }"
+                >
                   <div v-html="article.preview"></div>
                 </div>
 
                 <div class="d-flex align-start justify-space-between">
                   <!-- 统计信息 -->
                   <div class="d-flex align-center text-body-2 text-grey" style="gap: 16px">
-                      <div class="d-flex align-center">
-                        <v-icon icon="mdi-eye-outline" size="16" color="grey" class="mr-1" />
-                        {{ article.views }} 阅读
-                      </div>
-                      <div class="d-flex align-center">
-                        <v-icon icon="mdi-heart-outline" size="16" color="grey" class="mr-1" />
-                        {{ article.likes }} 点赞
-                      </div>
-                      <div class="d-flex align-center">
-                        <v-icon icon="mdi-comment-outline" size="16" color="grey" class="mr-1" />
-                        {{ article.comments }} 评论
-                      </div>
-                      <div class="d-flex align-center">
-                        <v-icon icon="mdi-calendar-outline" size="16" color="grey" class="mr-1" />
-                        {{ formatDate(article.publishedAt) }}
-                      </div>
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-eye-outline" size="16" color="grey" class="mr-1" />
+                      {{ article.views }} 阅读
                     </div>
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-heart-outline" size="16" color="grey" class="mr-1" />
+                      {{ article.likes }} 点赞
+                    </div>
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-comment-outline" size="16" color="grey" class="mr-1" />
+                      {{ article.comments }} 评论
+                    </div>
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-calendar-outline" size="16" color="grey" class="mr-1" />
+                      {{ formatDate(article.publishedAt) }}
+                    </div>
+                  </div>
 
                   <!-- 删除按钮 -->
                   <v-btn

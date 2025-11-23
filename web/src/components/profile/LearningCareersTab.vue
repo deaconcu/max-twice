@@ -6,9 +6,7 @@
         <div class="pa-4">
           <div class="mb-4">
             <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">学习的职业</h4>
-            <p class="text-body-2 text-grey mb-0">
-              查看您正在学习的职业路径和完成进度。
-            </p>
+            <p class="text-body-2 text-grey mb-0">查看您正在学习的职业路径和完成进度。</p>
           </div>
           <v-divider class="my-4" />
           <div class="text-body-2 text-grey">
@@ -98,7 +96,9 @@
                       <v-icon icon="mdi-check-circle" size="16" color="success" class="mr-1" />
                       {{ career.completedCourses }} / {{ career.totalCourses }} 门课程
                     </span>
-                    <span class="text-body-1 font-weight-bold text-primary">{{ career.progress }}%</span>
+                    <span class="text-body-1 font-weight-bold text-primary"
+                      >{{ career.progress }}%</span
+                    >
                   </div>
                 </v-card-text>
               </v-card>
@@ -116,7 +116,6 @@
     </v-col>
 
     <!-- 空状态 -->
-    
 
     <!-- 删除确认对话框 -->
     <ConfirmDialog

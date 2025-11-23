@@ -6,9 +6,7 @@
         <div class="pa-4">
           <div class="mb-4">
             <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">学习的课程</h4>
-            <p class="text-body-2 text-grey mb-0">
-              跟踪您当前学习的所有课程进度和完成情况。
-            </p>
+            <p class="text-body-2 text-grey mb-0">跟踪您当前学习的所有课程进度和完成情况。</p>
           </div>
           <v-divider class="my-4" />
           <div class="text-body-2 text-grey">
@@ -97,7 +95,9 @@
                       <v-icon icon="mdi-check-circle" size="16" color="success" class="mr-1" />
                       {{ course.completedLessons }} / {{ course.totalLessons }} 节已完成
                     </span>
-                    <span class="text-body-1 font-weight-bold text-primary">{{ course.progress }}%</span>
+                    <span class="text-body-1 font-weight-bold text-primary"
+                      >{{ course.progress }}%</span
+                    >
                   </div>
                 </v-card-text>
               </v-card>

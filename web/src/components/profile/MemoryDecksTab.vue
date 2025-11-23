@@ -6,9 +6,7 @@
         <div class="pa-4">
           <div class="mb-4">
             <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">我的卡片组</h4>
-            <p class="text-body-2 text-grey mb-0">
-              使用间隔重复算法高效记忆知识点。
-            </p>
+            <p class="text-body-2 text-grey mb-0">使用间隔重复算法高效记忆知识点。</p>
           </div>
           <v-divider class="my-4" />
           <div class="text-body-2 text-grey">
@@ -40,7 +38,14 @@
         <div v-if="decks.length > 0">
           <v-row>
             <v-col v-for="deck in decks" :key="deck.id" cols="12" md="6">
-              <v-card rounded="xl" hover border elevation="0" class="deck-card hoverable" @click="goToReview(deck.id)">
+              <v-card
+                rounded="xl"
+                hover
+                border
+                elevation="0"
+                class="deck-card hoverable"
+                @click="goToReview(deck.id)"
+              >
                 <v-card-text class="pa-6">
                   <!-- 卡片组头部 -->
                   <div class="d-flex align-start justify-space-between mb-4">
@@ -68,7 +73,10 @@
                   </div>
 
                   <!-- 卡片组描述 -->
-                  <p v-if="deck.description" class="text-body-2 text-grey-darken-2 mb-3 deck-description">
+                  <p
+                    v-if="deck.description"
+                    class="text-body-2 text-grey-darken-2 mb-3 deck-description"
+                  >
                     {{ deck.description }}
                   </p>
 

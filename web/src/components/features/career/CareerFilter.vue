@@ -1,6 +1,6 @@
 <template>
   <v-card flat class="pa-1 category-nav-card" rounded="xl">
-    <div class="bg-grey-lighten-5 pa-3 pb-2 rounded-xl">
+    <div class="bg-surface-variant pa-3 pb-2 rounded-xl">
       <!-- 标题区域 -->
       <div class="d-flex align-center pb-4 title-divider">
         <div class="pa-3 rounded-xl bg-white mr-3">

@@ -6,9 +6,7 @@
         <div class="pa-4">
           <div class="mb-4">
             <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">个人信息</h4>
-            <p class="text-body-2 text-grey mb-0">
-              管理您的个人资料，包括头像、姓名和个人简介。
-            </p>
+            <p class="text-body-2 text-grey mb-0">管理您的个人资料，包括头像、姓名和个人简介。</p>
           </div>
           <v-divider class="my-4" />
           <div class="text-body-2 text-grey">
@@ -118,7 +116,9 @@
               </div>
               <div class="flex-grow-1">
                 <div v-if="!displayModifyBio" class="d-flex align-center">
-                  <span class="text-body-1 text-grey-darken-3">{{ localUserInfo.bio || '暂未设置' }}</span>
+                  <span class="text-body-1 text-grey-darken-3">{{
+                    localUserInfo.bio || '暂未设置'
+                  }}</span>
                   <v-btn
                     variant="text"
                     color="primary"

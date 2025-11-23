@@ -147,28 +147,36 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
                 <div class="d-flex align-center">
                   <v-icon icon="mdi-school" size="20" color="primary" class="mr-2" />
                   <span class="text-body-2 text-grey-darken-2">
-                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{ stats.totalCourses }}</span>
+                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{
+                      stats.totalCourses
+                    }}</span>
                     学习课程
                   </span>
                 </div>
                 <div class="d-flex align-center">
                   <v-icon icon="mdi-check-circle" size="20" color="success" class="mr-2" />
                   <span class="text-body-2 text-grey-darken-2">
-                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{ stats.completedCourses }}</span>
+                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{
+                      stats.completedCourses
+                    }}</span>
                     完成课程
                   </span>
                 </div>
                 <div class="d-flex align-center">
                   <v-icon icon="mdi-briefcase" size="20" color="info" class="mr-2" />
                   <span class="text-body-2 text-grey-darken-2">
-                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{ stats.totalCareers }}</span>
+                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{
+                      stats.totalCareers
+                    }}</span>
                     关注职业
                   </span>
                 </div>
                 <div class="d-flex align-center">
                   <v-icon icon="mdi-calendar-check" size="20" color="warning" class="mr-2" />
                   <span class="text-body-2 text-grey-darken-2">
-                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{ stats.studyDays }}</span>
+                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{
+                      stats.studyDays
+                    }}</span>
                     学习天数
                   </span>
                 </div>
@@ -180,7 +188,13 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
 
       <!-- Tab 导航 -->
       <div class="tabs-sticky">
-        <v-tabs v-model="activeTab" color="primary" class="profile-tabs" height="56" density="comfortable">
+        <v-tabs
+          v-model="activeTab"
+          color="primary"
+          class="profile-tabs"
+          height="56"
+          density="comfortable"
+        >
           <v-tab value="careers" rounded="lg">
             <v-icon icon="mdi-briefcase" size="18" class="mr-2" />
             学习的职业

@@ -1,5 +1,5 @@
 <template>
-  <v-card rounded="lg" class="career-card hoverable" border hover @click="handleClick">
+  <v-card rounded="xl" class="career-card hoverable" border hover @click="handleClick">
     <v-card-text class="pa-6">
       <div class="d-flex align-center mb-4">
         <div class="icon-container flex-shrink-0 mr-4">

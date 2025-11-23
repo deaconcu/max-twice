@@ -6,9 +6,7 @@
         <div class="pa-4">
           <div class="mb-4">
             <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">创建的目录</h4>
-            <p class="text-body-2 text-grey mb-0">
-              组织和管理您的学习内容集合。
-            </p>
+            <p class="text-body-2 text-grey mb-0">组织和管理您的学习内容集合。</p>
           </div>
           <v-divider class="my-4" />
           <div class="text-body-2 text-grey">
@@ -56,7 +54,12 @@
           @load="onLoadMore"
         >
           <div v-for="(catalog, index) in filteredCatalogs" :key="catalog.id">
-            <v-card rounded="xl" border class="catalog-card mb-6 hoverable" @click="goToCatalog(catalog.id)">
+            <v-card
+              rounded="xl"
+              border
+              class="catalog-card mb-6 hoverable"
+              @click="goToCatalog(catalog.id)"
+            >
               <v-card-text class="pa-6 pb-1">
                 <!-- 所属课程和节点 -->
                 <div v-if="catalog.node || catalog.course" class="mb-4">
@@ -79,7 +82,12 @@
                       </v-btn>
                     </template>
                     <template v-if="catalog.node">
-                      <v-icon icon="mdi-chevron-right" size="18" color="grey-darken-1" class="mx-1" />
+                      <v-icon
+                        icon="mdi-chevron-right"
+                        size="18"
+                        color="grey-darken-1"
+                        class="mx-1"
+                      />
                       <v-chip
                         size="small"
                         density="comfortable"
@@ -127,7 +135,12 @@
                       {{ catalog.deckCount }} 卡片组
                     </div>
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-file-document-multiple-outline" size="16" color="grey" class="mr-1" />
+                      <v-icon
+                        icon="mdi-file-document-multiple-outline"
+                        size="16"
+                        color="grey"
+                        class="mr-1"
+                      />
                       {{ catalog.contentNodes.length }} 章节
                     </div>
                     <div class="d-flex align-center">

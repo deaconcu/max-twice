@@ -45,7 +45,12 @@ const router = useRouter()
 
 // Keep-alive 缓存管理
 const CACHE_TIMEOUT = 12 * 60 * 60 * 1000 // 12小时（毫秒）
-const cachedComponents = ref<string[]>(['ProfilePage', 'ReadPageRouter', 'CareerListPage', 'CourseListPage'])
+const cachedComponents = ref<string[]>([
+  'ProfilePage',
+  'ReadPageRouter',
+  'CareerListPage',
+  'CourseListPage',
+])
 const cacheTimestamps = new Map<string, number>()
 
 // 监听路由变化，更新缓存时间戳
@@ -70,16 +75,16 @@ const checkExpiredCache = () => {
   if (expiredComponents.length > 0) {
     // 从缓存列表中移除过期组件
     cachedComponents.value = cachedComponents.value.filter(
-      name => !expiredComponents.includes(name)
+      (name) => !expiredComponents.includes(name)
     )
     // 清理时间戳记录
-    expiredComponents.forEach(name => cacheTimestamps.delete(name))
+    expiredComponents.forEach((name) => cacheTimestamps.delete(name))
 
     console.log(`[Keep-alive] 清理过期缓存: ${expiredComponents.join(', ')}`)
 
     // 下次访问时重新添加到缓存
     setTimeout(() => {
-      expiredComponents.forEach(name => {
+      expiredComponents.forEach((name) => {
         if (!cachedComponents.value.includes(name)) {
           cachedComponents.value.push(name)
         }
@@ -94,7 +99,7 @@ onMounted(() => {
   cleanupInterval = window.setInterval(checkExpiredCache, 5 * 60 * 1000) // 每5分钟检查
 
   // 初始化所有组件的时间戳
-  cachedComponents.value.forEach(name => {
+  cachedComponents.value.forEach((name) => {
     cacheTimestamps.set(name, Date.now())
   })
 })

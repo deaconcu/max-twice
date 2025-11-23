@@ -6,9 +6,7 @@
         <div class="pa-4">
           <div class="mb-4">
             <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">关注的课程</h4>
-            <p class="text-body-2 text-grey mb-0">
-              管理您关注的所有课程，获取最新动态。
-            </p>
+            <p class="text-body-2 text-grey mb-0">管理您关注的所有课程，获取最新动态。</p>
           </div>
           <v-divider class="my-4" />
           <div class="text-body-2 text-grey">
@@ -43,23 +41,25 @@
         <!-- 课程网格 -->
         <div v-if="formattedSubscriptions.length > 0">
           <v-row>
-            <v-col
-              v-for="course in formattedSubscriptions"
-              :key="course.id"
-              cols="12"
-              md="6"
-            >
+            <v-col v-for="course in formattedSubscriptions" :key="course.id" cols="12" md="6">
               <v-card rounded="xl" hover border elevation="0" class="subscription-card hoverable">
                 <v-card-text class="pa-6" @click="goToCourse(course.courseId)">
                   <!-- 课程图标和取消关注按钮 -->
                   <div class="d-flex align-start justify-space-between mb-4">
                     <div class="d-flex align-center flex-grow-1">
-                      <v-avatar :color="course.course.iconColor" size="56" rounded="lg" class="mr-4">
+                      <v-avatar
+                        :color="course.course.iconColor"
+                        size="56"
+                        rounded="lg"
+                        class="mr-4"
+                      >
                         <v-icon :icon="course.course.icon" color="white" size="28" />
                       </v-avatar>
                       <div>
                         <h4 class="text-h6 font-weight-bold mb-1">{{ course.course.name }}</h4>
-                        <p class="text-caption text-grey mb-0">{{ course.course.learnerCount || 0 }} 人学习</p>
+                        <p class="text-caption text-grey mb-0">
+                          {{ course.course.learnerCount || 0 }} 人学习
+                        </p>
                       </div>
                     </div>
                     <v-btn

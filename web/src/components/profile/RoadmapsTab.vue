@@ -6,9 +6,7 @@
         <div class="pa-4">
           <div class="mb-4">
             <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">创建的路线图</h4>
-            <p class="text-body-2 text-grey mb-0">
-              规划您的学习路径，系统化掌握技能。
-            </p>
+            <p class="text-body-2 text-grey mb-0">规划您的学习路径，系统化掌握技能。</p>
           </div>
           <v-divider class="my-4" />
           <div class="text-body-2 text-grey">
@@ -39,7 +37,14 @@
         <!-- 路线图列表 -->
         <v-infinite-scroll v-if="roadmaps.length > 0" :items="roadmaps" @load="onLoadMore">
           <template v-for="(roadmap, index) in roadmaps" :key="roadmap.id">
-            <v-card rounded="xl" hover border elevation="0" class="roadmap-card mb-6 hoverable" @click="goToRoadmap(roadmap.id)">
+            <v-card
+              rounded="xl"
+              hover
+              border
+              elevation="0"
+              class="roadmap-card mb-6 hoverable"
+              @click="goToRoadmap(roadmap.id)"
+            >
               <v-card-text class="pa-6">
                 <div class="d-flex align-start justify-space-between mb-4">
                   <!-- 左侧：图标和标题 -->
@@ -49,7 +54,9 @@
                     </v-avatar>
                     <div class="flex-grow-1">
                       <div class="d-flex align-center mb-1">
-                        <h4 class="text-h6 font-weight-bold text-grey-darken-4 mr-2">{{ roadmap.name }}</h4>
+                        <h4 class="text-h6 font-weight-bold text-grey-darken-4 mr-2">
+                          {{ roadmap.name }}
+                        </h4>
                         <v-chip :color="getStatusColor(roadmap.status)" size="small" variant="flat">
                           {{ getStatusText(roadmap.status) }}
                         </v-chip>
@@ -72,7 +79,9 @@
                 </div>
 
                 <!-- 路线图描述 -->
-                <p class="text-body-2 text-grey-darken-2 mb-4 roadmap-description">{{ roadmap.description }}</p>
+                <p class="text-body-2 text-grey-darken-2 mb-4 roadmap-description">
+                  {{ roadmap.description }}
+                </p>
 
                 <!-- 统计信息 -->
                 <div class="d-flex align-center justify-space-between">
@@ -174,7 +183,7 @@ const onLoadMore = async ({ done }: { done: (status: string) => void }) => {
   await loadMoreRoadmaps({
     done: () => {
       done(hasMore.value ? 'ok' : 'empty')
-    }
+    },
   })
 }
 
@@ -193,7 +202,7 @@ const { execute: deleteRoadmapAction } = useMutation(
 
 // 转换路线图数据
 const roadmaps = computed(() => {
-  if (!roadmapsData || !roadmapsData.value || !Array.isArray(roadmapsData.value)) return []
+  if (!roadmapsData?.value || !Array.isArray(roadmapsData.value)) return []
 
   return roadmapsData.value.map((roadmap) => ({
     id: roadmap.id,

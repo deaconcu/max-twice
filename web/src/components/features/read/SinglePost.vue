@@ -362,10 +362,7 @@ watch(
           :to="{ path: '/read', query: { postId: String(posting.id) } }"
           class="text-decoration-none d-block"
         >
-          <div
-            ref="contentRef"
-            class="text-limited clickable-content cursor-pointer w-100"
-          >
+          <div ref="contentRef" class="text-limited clickable-content cursor-pointer w-100">
             <div class="article-content">
               <div v-html="posting.content"></div>
             </div>

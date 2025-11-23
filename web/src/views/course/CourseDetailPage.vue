@@ -13,31 +13,37 @@
       </v-alert>
 
       <!-- 内容区 -->
-      <div v-else-if="course" class="content-wrapper">
-        <!-- 左侧内容 -->
-        <div class="left-content">
-          <!-- 课程头部区域 -->
-          <div class="course-header-wrapper">
-            <!-- 返回按钮 -->
-            <div class="back-button-container">
-              <v-btn
-                icon="mdi-arrow-left"
-                variant="flat"
-                color="grey-lighten-5"
-                :size="$vuetify.display.mobile ? 'small' : 'default'"
-                class="flex-shrink-0"
-                @click="handleBack"
-              ></v-btn>
-            </div>
+      <div v-else-if="course">
+        <!-- 返回按钮和标题行 -->
+        <div class="page-header-row d-flex align-center mb-4 mb-md-5">
+          <v-btn
+            icon="mdi-arrow-left"
+            variant="flat"
+            color="grey-lighten-5"
+            :size="$vuetify.display.mobile ? 'small' : 'default'"
+            class="flex-shrink-0 mr-3"
+            @click="handleBack"
+          ></v-btn>
+          <div class="d-flex align-center">
+            <v-icon icon="mdi-text-box-outline" size="20" color="grey" class="mr-2" />
+            <h2 class="text-subtitle-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-0">
+              课程详情
+            </h2>
+          </div>
+        </div>
 
+        <!-- 左右两栏内容 -->
+        <div class="content-wrapper">
+          <!-- 左侧内容 -->
+          <div class="left-content">
             <!-- 课程头部 - 卡片样式 -->
-            <v-card rounded="xl" class="course-header-card no-border" elevation="0">
+            <v-card rounded="xl" class="course-header-card no-border hoverable mb-6 mb-md-8" elevation="0" hover>
               <v-card-text class="pa-5 pa-sm-6 pa-md-8 pb-2">
                 <!-- 课程标题区 -->
                 <div class="ma-0">
                   <!-- 图标和标题行 -->
                   <div class="d-flex align-center mb-3 mb-md-4">
-                    <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" :size="$vuetify.display.mobile ? 48 : 60" rounded="lg" class="mr-3 mr-md-4 flex-shrink-0">
+                    <v-avatar color="surface-variant" :size="$vuetify.display.mobile ? 48 : 60" rounded="lg" class="mr-3 mr-md-4 flex-shrink-0">
                       <v-icon icon="mdi-school" color="grey" :size="$vuetify.display.mobile ? 24 : 32" />
                     </v-avatar>
                     <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 mb-0">
@@ -99,312 +105,318 @@
                 </div>
               </v-card-text>
             </v-card>
-          </div>
 
-          <!-- 子课程列表 -->
-          <div class="sub-courses-section">
-            <!-- 标题区 -->
-            <div class="d-flex align-center justify-space-between mb-5 mb-md-6">
-              <div class="d-flex align-center">
-                <div class="section-icon-wrapper mr-3 mr-md-4">
-                  <v-icon icon="mdi-book-multiple" color="grey" :size="$vuetify.display.mobile ? 22 : 24" />
+            <!-- 子课程列表 -->
+            <div class="sub-courses-section">
+              <!-- 标题区 -->
+              <div class="d-flex align-center justify-space-between mb-5 mb-md-6">
+                <div class="d-flex align-center">
+                  <div class="section-icon-wrapper mr-3 mr-md-4">
+                    <v-icon icon="mdi-book-multiple" color="grey" :size="$vuetify.display.mobile ? 22 : 24" />
+                  </div>
+                  <div>
+                    <h2 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-0">
+                      {{ t('course.subCoursesList') }}
+                    </h2>
+                    <p class="text-caption text-grey-darken-1 mb-0 mt-1 d-none d-sm-block">
+                      探索课程的各个学习模块
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 class="text-h6 text-md-h5 font-weight-bold text-grey-darken-4 mb-0">
-                    {{ t('course.subCoursesList') }}
-                  </h2>
-                  <p class="text-caption text-grey-darken-1 mb-0 mt-1 d-none d-sm-block">
-                    探索课程的各个学习模块
+                <v-btn
+                  color="primary"
+                  variant="text"
+                  :size="$vuetify.display.mobile ? 'default' : 'large'"
+                  rounded="lg"
+                  density="comfortable"
+                  class="text-none px-4 px-md-6"
+                  elevation="0"
+                  @click="handleApplySubCourse"
+                >
+                  <v-icon icon="mdi-plus" size="20" class="mr-2" />
+                  <span class="d-none d-sm-inline">{{ t('course.applySubCourse') }}</span>
+                  <span class="d-sm-none">申请</span>
+                </v-btn>
+              </div>
+
+              <!-- 子课程网格 -->
+              <div class="sub-course-grid">
+                <!-- 示例：已创建的子课程 -->
+                <v-card
+                  rounded="xl"
+                  class="sub-course-card hoverable"
+                  elevation="0"
+                  hover
+                  @click="handleGoToSubCourse(0)"
+                >
+                  <v-card-text class="pa-5 pa-sm-6">
+                    <!-- 顶部：序号和操作 -->
+                    <div class="d-flex align-center justify-space-between mb-4">
+                      <div class="course-number">
+                        1
+                      </div>
+                      <div class="d-flex align-center ga-1">
+                        <v-btn
+                          icon="mdi-book-open-page-variant"
+                          size="small"
+                          variant="text"
+                          color="primary"
+                          @click.stop="handleGoToSubCourse(0)"
+                        ></v-btn>
+                        <v-btn
+                          icon="mdi-heart"
+                          size="small"
+                          variant="text"
+                          color="error"
+                          @click.stop
+                        ></v-btn>
+                      </div>
+                    </div>
+
+                    <!-- 子课程信息 -->
+                    <h3 class="text-h6 text-md-h5 font-weight-bold mb-3 text-grey-darken-4 course-title">
+                      Vue 3 核心概念
+                    </h3>
+                    <p class="text-body-2 text-grey-darken-2 mb-4 course-description">
+                      深入学习 Vue 3 的响应式系统、组合式 API、生命周期钩子等核心概念，掌握现代前端框架的核心原理和最佳实践。
+                    </p>
+
+                    <!-- 底部统计 -->
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-account-group" size="18" color="grey" class="mr-2" />
+                      <span class="text-body-2 text-grey-darken-1">
+                        1,234
+                        <span class="text-grey">人学习</span>
+                      </span>
+                    </div>
+                  </v-card-text>
+                </v-card>
+
+                <!-- 真实子课程 -->
+                <v-card
+                  v-for="(subCourse, index) in subCourses"
+                  :key="subCourse.id"
+                  rounded="xl"
+                  class="sub-course-card hoverable"
+                  elevation="0"
+                  hover
+                  @click="handleGoToSubCourse(index)"
+                >
+                  <v-card-text class="pa-5 pa-sm-6">
+                    <!-- 顶部：序号和操作 -->
+                    <div class="d-flex align-center justify-space-between mb-4">
+                      <div class="course-number">
+                        {{ index + 2 }}
+                      </div>
+                      <div class="d-flex align-center ga-1">
+                        <v-btn
+                          icon="mdi-book-open-page-variant"
+                          size="small"
+                          variant="text"
+                          color="primary"
+                          @click.stop="handleGoToSubCourse(index)"
+                        ></v-btn>
+                        <v-btn
+                          :icon="subCourse.subscribed ? 'mdi-heart' : 'mdi-heart-outline'"
+                          size="small"
+                          variant="text"
+                          :color="subCourse.subscribed ? 'error' : 'grey'"
+                          @click.stop="handleToggleSubCourseSubscribe(subCourse.id)"
+                        ></v-btn>
+                      </div>
+                    </div>
+
+                    <!-- 子课程信息 -->
+                    <h3 class="text-h6 text-md-h5 font-weight-bold mb-3 text-grey-darken-4 course-title">
+                      {{ subCourse.name }}
+                    </h3>
+                    <p
+                      v-if="subCourse.description"
+                      class="text-body-2 text-grey-darken-2 mb-4 course-description"
+                    >
+                      {{ subCourse.description }}
+                    </p>
+
+                    <!-- 底部统计 -->
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-account-group" size="18" color="grey" class="mr-2" />
+                      <span class="text-body-2 text-grey-darken-1">
+                        {{ formatNumber(subCourse.learnerCount) }}
+                        <span class="text-grey">{{ t('course.learning') }}</span>
+                      </span>
+                    </div>
+                  </v-card-text>
+                </v-card>
+
+                <!-- 默认待创建卡片：快速入门 -->
+                <v-card
+                  rounded="xl"
+                  class="sub-course-card placeholder-card hoverable"
+                  elevation="0"
+                  hover
+                  @click="handleCreateDefaultSubCourse('quickstart')"
+                >
+                  <v-card-text class="pa-5 pa-sm-6">
+                    <div class="d-flex align-center justify-space-between mb-4">
+                      <div class="course-number placeholder-number">
+                        <v-icon icon="mdi-plus" size="20" />
+                      </div>
+                      <v-chip size="small" color="warning" variant="tonal">
+                        {{ t('course.toBeCreated') }}
+                      </v-chip>
+                    </div>
+                    <h3 class="text-h6 text-md-h5 font-weight-bold mb-3 text-grey-darken-4">
+                      {{ t('course.quickstart') }}
+                    </h3>
+                    <p class="text-body-2 text-grey-darken-2 mb-0 course-description">
+                      {{ t('course.quickstartDesc') }}
+                    </p>
+                  </v-card-text>
+                </v-card>
+
+                <!-- 默认待创建卡片：习题练习 -->
+                <v-card
+                  rounded="xl"
+                  class="sub-course-card placeholder-card hoverable"
+                  elevation="0"
+                  hover
+                  @click="handleCreateDefaultSubCourse('exercises')"
+                >
+                  <v-card-text class="pa-5 pa-sm-6">
+                    <div class="d-flex align-center justify-space-between mb-4">
+                      <div class="course-number placeholder-number">
+                        <v-icon icon="mdi-plus" size="20" />
+                      </div>
+                      <v-chip size="small" color="warning" variant="tonal">
+                        {{ t('course.toBeCreated') }}
+                      </v-chip>
+                    </div>
+                    <h3 class="text-h6 text-md-h5 font-weight-bold mb-3 text-grey-darken-4">
+                      {{ t('course.exercises') }}
+                    </h3>
+                    <p class="text-body-2 text-grey-darken-2 mb-0 course-description">
+                      {{ t('course.exercisesDesc') }}
+                    </p>
+                  </v-card-text>
+                </v-card>
+              </div>
+            </div>
+            <!-- 子课程列表结束 -->
+          </div>
+          <!-- 左侧内容结束 -->
+
+          <!-- 右侧帮助信息 -->
+          <div class="right-sidebar d-none d-lg-block">
+            <v-card rounded="lg" class="help-card sticky-card no-border" flat>
+              <v-card-title class="px-4 py-0 pb-3">
+                <div class="d-flex align-center">
+                  <v-icon icon="mdi-help-circle" color="primary" class="mr-2" />
+                  <span class="text-h6 font-weight-bold">{{ t('course.helpInfo') }}</span>
+                </div>
+              </v-card-title>
+              <v-card-text class="px-4 py-0">
+                <div class="help-section mb-4">
+                  <h4 class="text-subtitle-2 font-weight-bold mb-2">
+                    {{ t('course.howToLearn') }}
+                  </h4>
+                  <p class="text-body-2 text-medium-emphasis mb-0">
+                    {{ t('course.howToLearnDesc') }}
                   </p>
                 </div>
-              </div>
-              <v-btn
-                color="primary"
-                variant="text"
-                :size="$vuetify.display.mobile ? 'default' : 'large'"
-                rounded="lg"
-                density="comfortable"
-                class="text-none px-4 px-md-6"
-                elevation="0"
-                @click="handleApplySubCourse"
-              >
-                <v-icon icon="mdi-plus" size="20" class="mr-2" />
-                <span class="d-none d-sm-inline">{{ t('course.applySubCourse') }}</span>
-                <span class="d-sm-none">申请</span>
-              </v-btn>
-            </div>
 
-            <!-- 子课程网格 -->
-            <div class="sub-course-grid">
-              <!-- 示例：已创建的子课程 -->
-              <v-card
-                rounded="xl"
-                class="sub-course-card"
-                elevation="0"
-                hover
-                @click="handleGoToSubCourse(0)"
-              >
-                <v-card-text class="pa-5 pa-sm-6">
-                  <!-- 顶部：序号和操作 -->
-                  <div class="d-flex align-center justify-space-between mb-4">
-                    <div class="course-number">
-                      1
-                    </div>
-                    <div class="d-flex align-center ga-1">
-                      <v-btn
-                        icon="mdi-book-open-page-variant"
-                        size="small"
-                        variant="text"
-                        color="primary"
-                        @click.stop="handleGoToSubCourse(0)"
-                      ></v-btn>
-                      <v-btn
-                        icon="mdi-heart"
-                        size="small"
-                        variant="text"
-                        color="error"
-                        @click.stop
-                      ></v-btn>
-                    </div>
-                  </div>
-
-                  <!-- 子课程信息 -->
-                  <h3 class="text-h6 text-md-h5 font-weight-bold mb-3 text-grey-darken-4 course-title">
-                    Vue 3 核心概念
-                  </h3>
-                  <p class="text-body-2 text-grey-darken-2 mb-4 course-description">
-                    深入学习 Vue 3 的响应式系统、组合式 API、生命周期钩子等核心概念，掌握现代前端框架的核心原理和最佳实践。
+                <div class="help-section mb-4">
+                  <h4 class="text-subtitle-2 font-weight-bold mb-2">
+                    {{ t('course.learningProgress') }}
+                  </h4>
+                  <p class="text-body-2 text-medium-emphasis mb-0">
+                    {{ t('course.learningProgressDesc') }}
                   </p>
+                </div>
 
-                  <!-- 底部统计 -->
-                  <div class="d-flex align-center">
-                    <v-icon icon="mdi-account-group" size="18" color="grey" class="mr-2" />
-                    <span class="text-body-2 text-grey-darken-1">
-                      1,234
-                      <span class="text-grey">人学习</span>
-                    </span>
-                  </div>
-                </v-card-text>
-              </v-card>
-
-              <!-- 真实子课程 -->
-              <v-card
-                v-for="(subCourse, index) in subCourses"
-                :key="subCourse.id"
-                rounded="xl"
-                class="sub-course-card"
-                elevation="0"
-                hover
-                @click="handleGoToSubCourse(index)"
-              >
-                <v-card-text class="pa-5 pa-sm-6">
-                  <!-- 顶部：序号和操作 -->
-                  <div class="d-flex align-center justify-space-between mb-4">
-                    <div class="course-number">
-                      {{ index + 2 }}
-                    </div>
-                    <div class="d-flex align-center ga-1">
-                      <v-btn
-                        icon="mdi-book-open-page-variant"
-                        size="small"
-                        variant="text"
-                        color="primary"
-                        @click.stop="handleGoToSubCourse(index)"
-                      ></v-btn>
-                      <v-btn
-                        :icon="subCourse.subscribed ? 'mdi-heart' : 'mdi-heart-outline'"
-                        size="small"
-                        variant="text"
-                        :color="subCourse.subscribed ? 'error' : 'grey'"
-                        @click.stop="handleToggleSubCourseSubscribe(subCourse.id)"
-                      ></v-btn>
-                    </div>
-                  </div>
-
-                  <!-- 子课程信息 -->
-                  <h3 class="text-h6 text-md-h5 font-weight-bold mb-3 text-grey-darken-4 course-title">
-                    {{ subCourse.name }}
-                  </h3>
-                  <p
-                    v-if="subCourse.description"
-                    class="text-body-2 text-grey-darken-2 mb-4 course-description"
-                  >
-                    {{ subCourse.description }}
+                <div class="help-section mb-4">
+                  <h4 class="text-subtitle-2 font-weight-bold mb-2">
+                    {{ t('course.subscribeCourse') }}
+                  </h4>
+                  <p class="text-body-2 text-medium-emphasis mb-0">
+                    {{ t('course.subscribeCourseDesc') }}
                   </p>
+                </div>
 
-                  <!-- 底部统计 -->
-                  <div class="d-flex align-center">
-                    <v-icon icon="mdi-account-group" size="18" color="grey" class="mr-2" />
-                    <span class="text-body-2 text-grey-darken-1">
-                      {{ formatNumber(subCourse.learnerCount) }}
-                      <span class="text-grey">{{ t('course.learning') }}</span>
-                    </span>
-                  </div>
-                </v-card-text>
-              </v-card>
-
-              <!-- 默认待创建卡片：快速入门 -->
-              <v-card
-                rounded="xl"
-                class="sub-course-card placeholder-card"
-                elevation="0"
-                hover
-                @click="handleCreateDefaultSubCourse('quickstart')"
-              >
-                <v-card-text class="pa-5 pa-sm-6">
-                  <div class="d-flex align-center justify-space-between mb-4">
-                    <div class="course-number placeholder-number">
-                      <v-icon icon="mdi-plus" size="20" />
-                    </div>
-                    <v-chip size="small" color="warning" variant="tonal">
-                      {{ t('course.toBeCreated') }}
-                    </v-chip>
-                  </div>
-                  <h3 class="text-h6 text-md-h5 font-weight-bold mb-3 text-grey-darken-4">
-                    {{ t('course.quickstart') }}
-                  </h3>
-                  <p class="text-body-2 text-grey-darken-2 mb-0 course-description">
-                    {{ t('course.quickstartDesc') }}
+                <div class="help-section">
+                  <h4 class="text-subtitle-2 font-weight-bold mb-2">
+                    {{ t('course.memoryCards') }}
+                  </h4>
+                  <p class="text-body-2 text-medium-emphasis mb-0">
+                    {{ t('course.memoryCardsDesc') }}
                   </p>
-                </v-card-text>
-              </v-card>
-
-              <!-- 默认待创建卡片：习题练习 -->
-              <v-card
-                rounded="xl"
-                class="sub-course-card placeholder-card"
-                elevation="0"
-                hover
-                @click="handleCreateDefaultSubCourse('exercises')"
-              >
-                <v-card-text class="pa-5 pa-sm-6">
-                  <div class="d-flex align-center justify-space-between mb-4">
-                    <div class="course-number placeholder-number">
-                      <v-icon icon="mdi-plus" size="20" />
-                    </div>
-                    <v-chip size="small" color="warning" variant="tonal">
-                      {{ t('course.toBeCreated') }}
-                    </v-chip>
-                  </div>
-                  <h3 class="text-h6 text-md-h5 font-weight-bold mb-3 text-grey-darken-4">
-                    {{ t('course.exercises') }}
-                  </h3>
-                  <p class="text-body-2 text-grey-darken-2 mb-0 course-description">
-                    {{ t('course.exercisesDesc') }}
-                  </p>
-                </v-card-text>
-              </v-card>
-            </div>
+                </div>
+              </v-card-text>
+            </v-card>
           </div>
+          <!-- 右侧帮助信息结束 -->
         </div>
-
-        <!-- 右侧帮助信息 -->
-        <div class="right-sidebar d-none d-lg-block">
-          <v-card rounded="lg" class="help-card sticky-card" flat border>
-            <v-card-title class="pa-4 pb-3">
-              <div class="d-flex align-center">
-                <v-icon icon="mdi-help-circle" color="primary" class="mr-2" />
-                <span class="text-h6 font-weight-bold">{{ t('course.helpInfo') }}</span>
-              </div>
-            </v-card-title>
-            <v-card-text class="pa-4 pt-0">
-              <div class="help-section mb-4">
-                <h4 class="text-subtitle-2 font-weight-bold mb-2">
-                  {{ t('course.howToLearn') }}
-                </h4>
-                <p class="text-body-2 text-medium-emphasis mb-0">
-                  {{ t('course.howToLearnDesc') }}
-                </p>
-              </div>
-
-              <div class="help-section mb-4">
-                <h4 class="text-subtitle-2 font-weight-bold mb-2">
-                  {{ t('course.learningProgress') }}
-                </h4>
-                <p class="text-body-2 text-medium-emphasis mb-0">
-                  {{ t('course.learningProgressDesc') }}
-                </p>
-              </div>
-
-              <div class="help-section mb-4">
-                <h4 class="text-subtitle-2 font-weight-bold mb-2">
-                  {{ t('course.subscribeCourse') }}
-                </h4>
-                <p class="text-body-2 text-medium-emphasis mb-0">
-                  {{ t('course.subscribeCourseDesc') }}
-                </p>
-              </div>
-
-              <div class="help-section">
-                <h4 class="text-subtitle-2 font-weight-bold mb-2">
-                  {{ t('course.memoryCards') }}
-                </h4>
-                <p class="text-body-2 text-medium-emphasis mb-0">
-                  {{ t('course.memoryCardsDesc') }}
-                </p>
-              </div>
-            </v-card-text>
-          </v-card>
-        </div>
+        <!-- 左右两栏内容结束 -->
       </div>
+      <!-- 内容区结束 -->
+
+      <!-- 申请子课程对话框 -->
+      <SubCourseApplicationDialog
+        v-model="applicationDialog"
+        :parent-course-id="courseId"
+        :submitting="creatingSubCourse"
+        @submit="handleSubmitSubCourse"
+      />
+
+      <!-- 确认创建默认子课程对话框 -->
+      <v-dialog v-model="confirmDialog" max-width="480px">
+        <v-card rounded="xl">
+          <v-card-title class="pa-6 pb-4">
+            <div class="d-flex align-center">
+              <v-icon icon="mdi-information" color="primary" size="24" class="mr-3" />
+              <span class="text-h6 font-weight-bold">{{ t('course.createSubCourse') }}</span>
+            </div>
+          </v-card-title>
+
+          <v-card-text class="px-6 pb-2">
+            <p class="text-body-1 mb-2">
+              {{
+                t('course.confirmCreateSubCourse', {
+                  name:
+                    pendingSubCourseType === 'quickstart'
+                      ? t('course.quickstart')
+                      : t('course.exercises'),
+                })
+              }}
+            </p>
+            <p class="text-body-2 text-medium-emphasis">
+              {{
+                pendingSubCourseType === 'quickstart'
+                  ? t('course.quickstartDesc')
+                  : t('course.exercisesDesc')
+              }}
+            </p>
+          </v-card-text>
+
+          <v-card-actions class="px-6 pb-6 pt-4">
+            <v-spacer />
+            <v-btn variant="outlined" size="default" rounded="lg" @click="confirmDialog = false">
+              {{ t('common.cancel') }}
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="flat"
+              size="default"
+              rounded="lg"
+              :loading="creatingSubCourse"
+              @click="handleConfirmCreateDefaultSubCourse"
+            >
+              {{ t('common.confirm') }}
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </div>
-
-    <!-- 申请子课程对话框 -->
-    <SubCourseApplicationDialog
-      v-model="applicationDialog"
-      :parent-course-id="courseId"
-      :submitting="creatingSubCourse"
-      @submit="handleSubmitSubCourse"
-    />
-
-    <!-- 确认创建默认子课程对话框 -->
-    <v-dialog v-model="confirmDialog" max-width="480px">
-      <v-card rounded="xl">
-        <v-card-title class="pa-6 pb-4">
-          <div class="d-flex align-center">
-            <v-icon icon="mdi-information" color="primary" size="24" class="mr-3" />
-            <span class="text-h6 font-weight-bold">{{ t('course.createSubCourse') }}</span>
-          </div>
-        </v-card-title>
-
-        <v-card-text class="px-6 pb-2">
-          <p class="text-body-1 mb-2">
-            {{
-              t('course.confirmCreateSubCourse', {
-                name:
-                  pendingSubCourseType === 'quickstart'
-                    ? t('course.quickstart')
-                    : t('course.exercises'),
-              })
-            }}
-          </p>
-          <p class="text-body-2 text-medium-emphasis">
-            {{
-              pendingSubCourseType === 'quickstart'
-                ? t('course.quickstartDesc')
-                : t('course.exercisesDesc')
-            }}
-          </p>
-        </v-card-text>
-
-        <v-card-actions class="px-6 pb-6 pt-4">
-          <v-spacer />
-          <v-btn variant="outlined" size="default" rounded="lg" @click="confirmDialog = false">
-            {{ t('common.cancel') }}
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="flat"
-            size="default"
-            rounded="lg"
-            :loading="creatingSubCourse"
-            @click="handleConfirmCreateDefaultSubCourse"
-          >
-            {{ t('common.confirm') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <!-- course-detail-page 结束 -->
   </DefaultLayout>
 </template>
 
@@ -629,40 +641,21 @@ const handleConfirmCreateDefaultSubCourse = async () => {
   padding-bottom: 48px;
 }
 
-/* 课程头部包装器 */
-.course-header-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 32px;
+/* 页面标题行 */
+.page-header-row {
+  margin-bottom: 24px;
 }
 
-/* 返回按钮容器 */
-.back-button-container {
-  display: flex;
-  align-items: center;
+@media (min-width: 1800px) {
+  .page-header-row {
+    margin-left: -64px;
+  }
 }
 
 /* 课程头部卡片 */
 .course-header-card {
   background: rgb(var(--v-theme-surface));
   border: 1px double rgb(var(--v-theme-outline)) !important;
-  flex: 1;
-}
-
-/* 宽屏时：返回按钮和卡片同一行 */
-@media (min-width: 1800px) {
-  .course-header-wrapper {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 16px;
-  }
-
-  .back-button-container {
-    /* 让返回按钮向左延伸到页面外 */
-    margin-left: -64px;
-    padding-top: 0; /* 对齐卡片顶部 */
-  }
 }
 
 /* 使用flex布局实现左右结构 */
@@ -730,12 +723,6 @@ const handleConfirmCreateDefaultSubCourse = async () => {
   height: 100%;
 }
 
-.sub-course-card:hover {
-  border-color: rgb(var(--v-theme-primary)) !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
-  transform: translateY(-6px);
-}
-
 /* 课程编号 */
 .course-number {
   width: 48px;
@@ -778,7 +765,6 @@ const handleConfirmCreateDefaultSubCourse = async () => {
 
 .help-card {
   background-color: rgb(var(--v-theme-surface));
-  border: 1px solid rgb(var(--v-theme-border));
 }
 
 .help-section {

@@ -6,14 +6,25 @@
         <div class="d-flex flex-column flex-sm-row align-start align-sm-end ga-4 header-wrapper">
           <!-- 左侧：标题 -->
           <div class="d-flex align-center title-container">
-            <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" :size="$vuetify.display.mobile ? 48 : 64" rounded="lg" class="mr-3 flex-shrink-0">
-              <v-icon icon="mdi-briefcase-search-outline" :size="$vuetify.display.mobile ? 24 : 32" color="grey-darken-1" />
+            <v-avatar
+              :color="'rgb(var(--v-theme-surface-variant))'"
+              :size="$vuetify.display.mobile ? 48 : 64"
+              rounded="lg"
+              class="mr-3 flex-shrink-0"
+            >
+              <v-icon
+                icon="mdi-briefcase-search-outline"
+                :size="$vuetify.display.mobile ? 24 : 32"
+                color="grey-darken-1"
+              />
             </v-avatar>
-            <div style="min-width: 0; overflow: hidden;">
+            <div style="min-width: 0; overflow: hidden">
               <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 text-truncate">
                 {{ t('careerCenter.title') }}
               </h1>
-              <p class="text-caption text-md-body-2 text-grey-darken-2 mt-1 text-truncate">{{ t('careerCenter.subtitle') }}</p>
+              <p class="text-caption text-md-body-2 text-grey-darken-2 mt-1 text-truncate">
+                {{ t('careerCenter.subtitle') }}
+              </p>
             </div>
           </div>
 

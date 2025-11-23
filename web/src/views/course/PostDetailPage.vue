@@ -182,7 +182,7 @@ const {
   onDataReady: () => {
     // 处理投票类型
     const posting = data.value.currPosting || data.value.post
-    if (posting && posting.voteType === 0) {
+    if (posting?.voteType === 0) {
       posting.voteType = null
     }
 

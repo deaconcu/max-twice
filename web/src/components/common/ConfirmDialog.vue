@@ -15,7 +15,13 @@
         </div>
 
         <div class="d-flex align-center" style="gap: 12px">
-          <v-btn variant="outlined" rounded="lg" size="large" class="flex-grow-1" @click="handleCancel">
+          <v-btn
+            variant="outlined"
+            rounded="lg"
+            size="large"
+            class="flex-grow-1"
+            @click="handleCancel"
+          >
             {{ cancelText }}
           </v-btn>
           <v-btn

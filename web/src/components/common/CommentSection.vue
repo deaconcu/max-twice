@@ -242,6 +242,14 @@ const replyToSubComment = (parentCommentIdParam: number, subComment: any) => {
   replyContent.value = ''
 }
 
+// 取消回复
+const cancelReply = () => {
+  activeReplyId.value = null
+  parentCommentId.value = null
+  replyToUserId.value = null
+  replyToUserName.value = ''
+}
+
 // 点赞评论
 const handleUpvoteComment = (commentId: number) => {
   console.log('Upvote comment:', commentId)
@@ -482,12 +490,7 @@ onBeforeUnmount(() => {
                           variant="text"
                           color="grey"
                           class="mr-2"
-                          @click="
-                            activeReplyId = null;
-                            parentCommentId = null;
-                            replyToUserId = null;
-                            replyToUserName = '';
-                          "
+                          @click="cancelReply"
                         >
                           取消
                         </v-btn>

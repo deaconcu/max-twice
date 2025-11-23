@@ -6,9 +6,7 @@
         <div class="pa-4">
           <div class="mb-4">
             <h4 class="text-h6 font-weight-bold text-grey-darken-4 mb-2">数据统计</h4>
-            <p class="text-body-2 text-grey mb-0">
-              查看您的学习数据统计和趋势分析。
-            </p>
+            <p class="text-body-2 text-grey mb-0">查看您的学习数据统计和趋势分析。</p>
           </div>
           <v-divider class="my-4" />
           <div class="text-body-2 text-grey">

@@ -16,9 +16,11 @@
       <div v-else-if="career" class="content-wrapper">
         <!-- 职业信息头部 -->
         <div class="profession-header mb-6 mb-md-8 pa-0">
-          <div class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between ga-4">
+          <div
+            class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between ga-4"
+          >
             <!-- 左侧：职业信息 -->
-            <div class="flex-grow-1" style="min-width: 0;">
+            <div class="flex-grow-1" style="min-width: 0">
               <div class="d-flex align-center mb-4 mb-md-5 career-title-row">
                 <!-- 返回按钮 -->
                 <v-btn
@@ -31,9 +33,17 @@
                 ></v-btn>
 
                 <!-- 职业图标和标题 -->
-                <div class="d-flex align-center" style="min-width: 0;">
-                  <v-avatar color="primary" :size="$vuetify.display.mobile ? 40 : 48" class="mr-3 flex-shrink-0">
-                    <v-icon :icon="getCareerIcon()" color="white" :size="$vuetify.display.mobile ? 20 : 24" />
+                <div class="d-flex align-center" style="min-width: 0">
+                  <v-avatar
+                    color="primary"
+                    :size="$vuetify.display.mobile ? 40 : 48"
+                    class="mr-3 flex-shrink-0"
+                  >
+                    <v-icon
+                      :icon="getCareerIcon()"
+                      color="white"
+                      :size="$vuetify.display.mobile ? 20 : 24"
+                    />
                   </v-avatar>
                   <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 text-truncate">
                     {{ career.name }}
@@ -87,7 +97,9 @@
           <div class="main-content">
             <!-- 筛选和搜索 -->
             <div class="filter-card mb-6">
-              <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 ga-sm-4">
+              <div
+                class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 ga-sm-4"
+              >
                 <!-- 状态筛选 -->
                 <v-btn-toggle
                   v-model="filterStatus"
@@ -197,7 +209,7 @@
                   </div>
 
                   <!-- 中间：路径信息 -->
-                  <div class="flex-grow-1" style="min-width: 0;">
+                  <div class="flex-grow-1" style="min-width: 0">
                     <!-- 标签 -->
                     <div class="d-flex align-center mb-2">
                       <v-chip
@@ -293,7 +305,11 @@
 
                   <!-- 右侧：路线图图标 -->
                   <div class="ml-3 ml-sm-4 d-none d-sm-block roadmap-icon">
-                    <v-icon icon="mdi-graph-outline" :size="$vuetify.display.mdAndUp ? 80 : 60" color="grey-lighten-2" />
+                    <v-icon
+                      icon="mdi-graph-outline"
+                      :size="$vuetify.display.mdAndUp ? 80 : 60"
+                      color="grey-lighten-2"
+                    />
                   </div>
                 </div>
               </v-card-text>

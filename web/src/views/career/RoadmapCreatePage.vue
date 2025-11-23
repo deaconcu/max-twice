@@ -15,11 +15,19 @@
           ></v-btn>
 
           <!-- 图标和标题 -->
-          <div class="d-flex align-center" style="min-width: 0;">
-            <v-avatar color="primary" :size="$vuetify.display.mobile ? 40 : 48" class="mr-3 flex-shrink-0">
-              <v-icon icon="mdi-briefcase-outline" color="white" :size="$vuetify.display.mobile ? 20 : 24" />
+          <div class="d-flex align-center" style="min-width: 0">
+            <v-avatar
+              color="primary"
+              :size="$vuetify.display.mobile ? 40 : 48"
+              class="mr-3 flex-shrink-0"
+            >
+              <v-icon
+                icon="mdi-briefcase-outline"
+                color="white"
+                :size="$vuetify.display.mobile ? 20 : 24"
+              />
             </v-avatar>
-            <div style="min-width: 0;">
+            <div style="min-width: 0">
               <h1 class="text-h6 text-md-h5 font-weight-bold text-grey-darken-4 text-truncate">
                 {{ copyId ? '复制学习路径' : '创建学习路径' }}
               </h1>
@@ -41,19 +49,48 @@
         <!-- 左侧：流程图编辑器 -->
         <div class="main-content">
           <v-card border rounded="xl" class="flow-editor-card">
-            <v-card-title class="pa-3 pa-sm-4 d-flex flex-row align-center justify-space-between ga-2 ga-sm-3">
+            <v-card-title
+              class="pa-3 pa-sm-4 d-flex flex-row align-center justify-space-between ga-2 ga-sm-3"
+            >
               <span class="text-body-1 font-weight-bold">路径编辑器</span>
               <div class="d-flex flex-wrap align-center gap-2">
-                <v-btn :size="$vuetify.display.mobile ? 'small' : 'default'" variant="outlined" color="error" @click="deleteSelectedNodes">
-                  <v-icon icon="mdi-delete" :size="$vuetify.display.mobile ? 16 : 18" class="mr-1" />
+                <v-btn
+                  :size="$vuetify.display.mobile ? 'small' : 'default'"
+                  variant="outlined"
+                  color="error"
+                  @click="deleteSelectedNodes"
+                >
+                  <v-icon
+                    icon="mdi-delete"
+                    :size="$vuetify.display.mobile ? 16 : 18"
+                    class="mr-1"
+                  />
                   <span class="d-none d-sm-inline">删除</span>
                 </v-btn>
-                <v-btn :size="$vuetify.display.mobile ? 'small' : 'default'" variant="outlined" color="warning" @click="resetAll">
-                  <v-icon icon="mdi-refresh" :size="$vuetify.display.mobile ? 16 : 18" class="mr-1" />
+                <v-btn
+                  :size="$vuetify.display.mobile ? 'small' : 'default'"
+                  variant="outlined"
+                  color="warning"
+                  @click="resetAll"
+                >
+                  <v-icon
+                    icon="mdi-refresh"
+                    :size="$vuetify.display.mobile ? 16 : 18"
+                    class="mr-1"
+                  />
                   <span class="d-none d-sm-inline">重置</span>
                 </v-btn>
-                <v-btn :size="$vuetify.display.mobile ? 'small' : 'default'" variant="flat" color="primary" @click="showSave">
-                  <v-icon icon="mdi-content-save" :size="$vuetify.display.mobile ? 16 : 18" class="mr-1" />
+                <v-btn
+                  :size="$vuetify.display.mobile ? 'small' : 'default'"
+                  variant="flat"
+                  color="primary"
+                  @click="showSave"
+                >
+                  <v-icon
+                    icon="mdi-content-save"
+                    :size="$vuetify.display.mobile ? 16 : 18"
+                    class="mr-1"
+                  />
                   保存
                 </v-btn>
               </div>
@@ -84,7 +121,12 @@
         <div class="right-sidebar">
           <!-- 提示信息 -->
           <v-expansion-panels class="tips-expansion mb-4 d-lg-none">
-            <v-expansion-panel rounded="xl" elevation="0" class="tips-card" bg-color="warning-lighten-5">
+            <v-expansion-panel
+              rounded="xl"
+              elevation="0"
+              class="tips-card"
+              bg-color="warning-lighten-5"
+            >
               <v-expansion-panel-title class="pa-3 pa-sm-4">
                 <div class="d-flex align-center">
                   <v-avatar color="warning" size="28" class="mr-3">
@@ -96,19 +138,39 @@
               <v-expansion-panel-text class="pa-3 pa-sm-4 pt-0">
                 <div class="tips-list">
                   <div class="tip-item">
-                    <v-icon icon="mdi-numeric-1-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                    <v-icon
+                      icon="mdi-numeric-1-circle"
+                      color="grey"
+                      size="18"
+                      class="mr-2 flex-shrink-0"
+                    />
                     <span class="text-body-2 text-grey-darken-3">从下方选择课程添加到画布</span>
                   </div>
                   <div class="tip-item">
-                    <v-icon icon="mdi-numeric-2-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                    <v-icon
+                      icon="mdi-numeric-2-circle"
+                      color="grey"
+                      size="18"
+                      class="mr-2 flex-shrink-0"
+                    />
                     <span class="text-body-2 text-grey-darken-3">拖动节点调整位置</span>
                   </div>
                   <div class="tip-item">
-                    <v-icon icon="mdi-numeric-3-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                    <v-icon
+                      icon="mdi-numeric-3-circle"
+                      color="grey"
+                      size="18"
+                      class="mr-2 flex-shrink-0"
+                    />
                     <span class="text-body-2 text-grey-darken-3">连接节点创建学习路径</span>
                   </div>
                   <div class="tip-item">
-                    <v-icon icon="mdi-numeric-4-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                    <v-icon
+                      icon="mdi-numeric-4-circle"
+                      color="grey"
+                      size="18"
+                      class="mr-2 flex-shrink-0"
+                    />
                     <span class="text-body-2 text-grey-darken-3">点击节点可选中删除</span>
                   </div>
                 </div>
@@ -117,7 +179,12 @@
           </v-expansion-panels>
 
           <!-- 桌面端固定显示的提示 -->
-          <v-card border rounded="xl" class="tips-card mb-4 d-none d-lg-block" color="warning-lighten-5">
+          <v-card
+            border
+            rounded="xl"
+            class="tips-card mb-4 d-none d-lg-block"
+            color="warning-lighten-5"
+          >
             <v-card-text class="pa-3 pa-sm-4">
               <div class="d-flex align-center mb-3">
                 <v-avatar color="warning" size="28" class="mr-3">
@@ -127,19 +194,39 @@
               </div>
               <div class="tips-list">
                 <div class="tip-item">
-                  <v-icon icon="mdi-numeric-1-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                  <v-icon
+                    icon="mdi-numeric-1-circle"
+                    color="grey"
+                    size="18"
+                    class="mr-2 flex-shrink-0"
+                  />
                   <span class="text-body-2 text-grey-darken-3">从下方选择课程添加到画布</span>
                 </div>
                 <div class="tip-item">
-                  <v-icon icon="mdi-numeric-2-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                  <v-icon
+                    icon="mdi-numeric-2-circle"
+                    color="grey"
+                    size="18"
+                    class="mr-2 flex-shrink-0"
+                  />
                   <span class="text-body-2 text-grey-darken-3">拖动节点调整位置</span>
                 </div>
                 <div class="tip-item">
-                  <v-icon icon="mdi-numeric-3-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                  <v-icon
+                    icon="mdi-numeric-3-circle"
+                    color="grey"
+                    size="18"
+                    class="mr-2 flex-shrink-0"
+                  />
                   <span class="text-body-2 text-grey-darken-3">连接节点创建学习路径</span>
                 </div>
                 <div class="tip-item">
-                  <v-icon icon="mdi-numeric-4-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                  <v-icon
+                    icon="mdi-numeric-4-circle"
+                    color="grey"
+                    size="18"
+                    class="mr-2 flex-shrink-0"
+                  />
                   <span class="text-body-2 text-grey-darken-3">点击节点可选中删除</span>
                 </div>
               </div>

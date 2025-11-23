@@ -141,6 +141,7 @@
     />
   </DefaultLayout>
 </template>
+
 <script lang="ts">
 export default {
   name: 'NodePostsPage',

@@ -536,19 +536,13 @@ const handleMessageClick = (message: Message) => {
       if (courseId) {
         url = `/course/${courseId}`
       }
-    } else if (
-      type === MessageType.POST_REJECTED ||
-      type === MessageType.POST_BANNED
-    ) {
+    } else if (type === MessageType.POST_REJECTED || type === MessageType.POST_BANNED) {
       // 帖子审核 - 跳转到帖子
       const postId = data.postId
       if (postId) {
         url = `/read?postId=${postId}`
       }
-    } else if (
-      type === MessageType.COMMENT_REJECTED ||
-      type === MessageType.COMMENT_BANNED
-    ) {
+    } else if (type === MessageType.COMMENT_REJECTED || type === MessageType.COMMENT_BANNED) {
       // 评论审核 - 跳转到评论
       const commentId = data.commentId
       if (commentId) {
@@ -564,10 +558,7 @@ const handleMessageClick = (message: Message) => {
       if (professionId) {
         url = `/profession/${professionId}`
       }
-    } else if (
-      type === MessageType.ROADMAP_REJECTED ||
-      type === MessageType.ROADMAP_BANNED
-    ) {
+    } else if (type === MessageType.ROADMAP_REJECTED || type === MessageType.ROADMAP_BANNED) {
       // 路线图审核 - 跳转到职业/路线图
       const professionId = data.professionId
       if (professionId) {
@@ -582,10 +573,7 @@ const handleMessageClick = (message: Message) => {
       if (postId) {
         url = `/read?postId=${postId}`
       }
-    } else if (
-      type === MessageType.NODE_REJECTED ||
-      type === MessageType.NODE_BANNED
-    ) {
+    } else if (type === MessageType.NODE_REJECTED || type === MessageType.NODE_BANNED) {
       // 节点审核 - 跳转到节点
       const nodeId = data.nodeId
       if (nodeId) {

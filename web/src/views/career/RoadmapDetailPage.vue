@@ -15,8 +15,16 @@
 
           <!-- 职业信息 -->
           <div v-if="roadmap?.profession" class="d-flex align-center">
-            <v-avatar color="primary" :size="$vuetify.display.mobile ? 36 : 40" class="mr-3 flex-shrink-0">
-              <v-icon icon="mdi-briefcase-outline" color="white" :size="$vuetify.display.mobile ? 18 : 20" />
+            <v-avatar
+              color="primary"
+              :size="$vuetify.display.mobile ? 36 : 40"
+              class="mr-3 flex-shrink-0"
+            >
+              <v-icon
+                icon="mdi-briefcase-outline"
+                color="white"
+                :size="$vuetify.display.mobile ? 18 : 20"
+              />
             </v-avatar>
             <span class="text-subtitle-1 text-md-h6 font-weight-bold text-grey-darken-4">
               {{ roadmap.profession.name }}
