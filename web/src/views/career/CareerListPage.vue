@@ -3,22 +3,22 @@
     <div class="career-list-page">
       <!-- 页面标题和搜索栏 -->
       <div class="page-header mb-6 mb-md-10">
-        <div class="d-flex flex-column flex-md-row align-start align-md-end justify-space-between ga-4">
+        <div class="d-flex flex-column flex-sm-row align-start align-sm-end ga-4 header-wrapper">
           <!-- 左侧：标题 -->
-          <div class="d-flex align-center">
-            <v-avatar color="grey-lighten-3" :size="$vuetify.display.mobile ? 48 : 64" rounded="lg" class="mr-3 flex-shrink-0">
+          <div class="d-flex align-center title-container">
+            <v-avatar color="grey-lighten-5" :size="$vuetify.display.mobile ? 48 : 64" rounded="lg" class="mr-3 flex-shrink-0">
               <v-icon icon="mdi-briefcase-search-outline" :size="$vuetify.display.mobile ? 24 : 32" color="grey-darken-1" />
             </v-avatar>
-            <div>
-              <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4">
+            <div style="min-width: 0; overflow: hidden;">
+              <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 text-truncate">
                 {{ t('careerCenter.title') }}
               </h1>
-              <p class="text-caption text-md-body-2 text-grey-darken-2 mt-1">{{ t('careerCenter.subtitle') }}</p>
+              <p class="text-caption text-md-body-2 text-grey-darken-2 mt-1 text-truncate">{{ t('careerCenter.subtitle') }}</p>
             </div>
           </div>
 
-          <!-- 右侧：搜索栏 -->
-          <div class="d-flex align-center search-container">
+          <!-- 右侧：搜索栏和操作按钮 -->
+          <div class="d-flex align-center ga-3 actions-wrapper pb-1">
             <v-text-field
               v-model="searchText"
               :placeholder="t('careerCenter.search.placeholder')"
@@ -44,6 +44,17 @@
                 ></v-btn>
               </template>
             </v-text-field>
+            <!-- 添加职业按钮（仅在右侧栏隐藏时显示） -->
+            <v-btn
+              color="primary"
+              variant="flat"
+              rounded="lg"
+              class="d-lg-none flex-shrink-0"
+              @click="openApplicationDialog"
+            >
+              <v-icon icon="mdi-plus" size="20" class="mr-1" />
+              申请
+            </v-btn>
           </div>
         </div>
       </div>
@@ -137,7 +148,7 @@
         </div>
 
         <!-- 右侧热门职业栏 -->
-        <div class="right-sidebar">
+        <div class="right-sidebar d-none d-lg-block">
           <div class="sticky-wrapper">
             <!-- 申请职业按钮 -->
             <v-card
@@ -765,18 +776,32 @@ const submitApplication = async () => {
   }
 }
 
-/* 搜索容器样式 */
-.search-container {
-  gap: 0;
+/* 头部包装器 */
+.header-wrapper {
   width: 100%;
 }
 
-@media (min-width: 960px) {
-  .search-container {
+/* 标题容器 */
+.title-container {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* 操作按钮包装器（搜索框+按钮） */
+.actions-wrapper {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+@media (min-width: 600px) {
+  .actions-wrapper {
     width: auto;
+    flex-shrink: 0;
   }
 }
 
+/* 搜索输入框 */
 .search-input {
   border-radius: 12px;
   width: 100%;
@@ -784,13 +809,7 @@ const submitApplication = async () => {
 
 @media (min-width: 600px) {
   .search-input {
-    width: 400px;
-  }
-}
-
-@media (min-width: 960px) {
-  .search-input {
-    width: 600px;
+    width: clamp(280px, 40vw, 600px);
   }
 }
 
@@ -825,29 +844,16 @@ const submitApplication = async () => {
 
 /* 右侧热门职业栏 */
 .right-sidebar {
-  width: 100%;
-}
-
-@media (min-width: 1280px) {
-  .right-sidebar {
-    width: 280px;
-    flex-shrink: 0;
-  }
+  width: 280px;
+  flex-shrink: 0;
 }
 
 .sticky-wrapper {
-  position: static;
-  max-height: none;
+  position: sticky;
+  top: 75px;
+  max-height: calc(100vh - 95px);
   display: flex;
   flex-direction: column;
-}
-
-@media (min-width: 1280px) {
-  .sticky-wrapper {
-    position: sticky;
-    top: 75px;
-    max-height: calc(100vh - 95px);
-  }
 }
 
 .create-career-card {

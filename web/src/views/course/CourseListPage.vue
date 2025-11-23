@@ -1,21 +1,21 @@
 <template>
   <DefaultLayout>
     <!-- 页面标题和搜索栏 -->
-    <div class="page-header mb-10">
-      <div class="d-flex align-end justify-space-between">
+    <div class="page-header mb-6 mb-md-10">
+      <div class="d-flex flex-column flex-sm-row align-start align-sm-end ga-4 header-wrapper">
         <!-- 左侧：标题 -->
-        <div class="d-flex align-center">
-          <v-avatar color="grey-lighten-3" size="64" rounded="lg" class="mr-3">
-            <v-icon icon="mdi-book-multiple" size="32" color="grey-darken-1" />
+        <div class="d-flex align-center title-container">
+          <v-avatar color="grey-lighten-5" :size="$vuetify.display.mobile ? 48 : 64" rounded="lg" class="mr-3 flex-shrink-0">
+            <v-icon icon="mdi-book-multiple" :size="$vuetify.display.mobile ? 24 : 32" color="grey-darken-1" />
           </v-avatar>
-          <div>
-            <h1 class="text-h4 font-weight-bold text-grey-darken-4">{{ t('course.center') }}</h1>
-            <p class="text-body-2 text-grey-darken-2 mt-1">探索知识，成就未来</p>
+          <div style="min-width: 0; overflow: hidden;">
+            <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 text-truncate">{{ t('course.center') }}</h1>
+            <p class="text-caption text-md-body-2 text-grey-darken-2 mt-1 text-truncate">探索知识，成就未来</p>
           </div>
         </div>
 
-        <!-- 右侧：搜索栏 -->
-        <div class="d-flex align-center search-container">
+        <!-- 右侧：搜索栏和操作按钮 -->
+        <div class="d-flex align-center ga-3 actions-wrapper pb-1">
           <v-text-field
             v-model="searchText"
             placeholder="搜索课程..."
@@ -41,13 +41,24 @@
               ></v-btn>
             </template>
           </v-text-field>
+          <!-- 创建课程按钮（仅在右侧栏隐藏时显示） -->
+          <v-btn
+            color="primary"
+            variant="flat"
+            rounded="lg"
+            class="d-lg-none flex-shrink-0"
+            @click="openCreateDialog"
+          >
+            <v-icon icon="mdi-plus" size="20" class="mr-1" />
+            创建
+          </v-btn>
         </div>
       </div>
     </div>
 
     <!-- 分类导航和课程网格 -->
-    <v-row>
-      <v-col class="pr-12">
+    <div class="content-layout">
+      <div class="main-content">
         <!-- 分类导航 -->
         <CourseFilter
           v-model:main-category="selectedMainCategory"
@@ -98,7 +109,7 @@
         <!-- 课程列表 -->
         <div v-else>
           <!-- 分类标题 -->
-          <div v-if="selectedMainCategory || selectedSubCategory || searchText" class="mb-4 mt-10">
+          <div v-if="selectedMainCategory || selectedSubCategory || searchText" class="mb-4 mt-6 mt-md-10">
             <div class="d-flex align-center justify-space-between">
               <div class="d-flex align-center">
                 <v-icon
@@ -135,10 +146,10 @@
             <v-progress-circular v-if="loadingMore" indeterminate color="primary" size="32" />
           </div>
         </div>
-      </v-col>
+      </div>
 
       <!-- 右侧热门课程栏 -->
-      <v-col class="right-sidebar">
+      <div class="right-sidebar d-none d-lg-block">
         <div class="sticky-wrapper">
           <!-- 创建课程按钮 -->
           <v-card
@@ -203,8 +214,8 @@
             </v-card-text>
           </v-card>
         </div>
-      </v-col>
-    </v-row>
+      </div>
+    </div>
 
     <!-- 创建课程对话框 -->
     <CourseCreateDialog
@@ -611,29 +622,54 @@ const handleCreateCourse = async (courseData: CreateCourseRequest) => {
 }
 
 .page-header {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
-/* 搜索容器样式 */
-.search-container {
-  gap: 0;
+@media (min-width: 960px) {
+  .page-header {
+    margin-bottom: 24px;
+  }
 }
 
+/* 头部包装器 */
+.header-wrapper {
+  width: 100%;
+}
+
+/* 标题容器 */
+.title-container {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* 操作按钮包装器（搜索框+按钮） */
+.actions-wrapper {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+@media (min-width: 600px) {
+  .actions-wrapper {
+    width: auto;
+    flex-shrink: 0;
+  }
+}
+
+/* 搜索输入框 */
 .search-input {
   border-radius: 12px;
-  width: 600px;
+  width: 100%;
 }
 
-.action-btn {
-  min-width: 120px;
-  height: 40px;
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: normal;
+@media (min-width: 600px) {
+  .search-input {
+    width: clamp(280px, 40vw, 600px);
+  }
 }
 
 .empty-state {
-  background-color: #ffffff;
+  background-color: rgb(var(--v-theme-surface));
 }
 
 .course-grid {
@@ -642,9 +678,29 @@ const handleCreateCourse = async (courseData: CreateCourseRequest) => {
   gap: 20px;
 }
 
+/* 内容布局 */
+.content-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (min-width: 1280px) {
+  .content-layout {
+    flex-direction: row;
+    gap: 48px;
+  }
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+}
+
 /* 右侧热门课程栏 */
 .right-sidebar {
-  max-width: 280px;
+  width: 280px;
+  flex-shrink: 0;
 }
 
 .sticky-wrapper {
@@ -672,7 +728,7 @@ const handleCreateCourse = async (courseData: CreateCourseRequest) => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background-color: #ffffff;
+  background-color: rgb(var(--v-theme-surface));
 }
 
 .popular-list {
@@ -689,12 +745,12 @@ const handleCreateCourse = async (courseData: CreateCourseRequest) => {
 }
 
 .popular-list::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(var(--v-theme-on-surface), 0.1);
   border-radius: 2px;
 }
 
 .popular-list::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(var(--v-theme-on-surface), 0.2);
 }
 
 .popular-item {
@@ -703,14 +759,19 @@ const handleCreateCourse = async (courseData: CreateCourseRequest) => {
   padding: 10px 5px;
   cursor: pointer;
   transition: background-color 0.2s;
+  border-radius: 8px;
+}
+
+.popular-item:hover {
+  background-color: rgb(var(--v-theme-surface-variant));
 }
 
 .rank-badge {
   width: 24px;
   height: 24px;
   border-radius: 4px;
-  background-color: #e5e5e5;
-  color: #666666;
+  background-color: rgb(var(--v-theme-surface-variant));
+  color: rgb(var(--v-theme-on-surface-variant));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -722,13 +783,13 @@ const handleCreateCourse = async (courseData: CreateCourseRequest) => {
 
 .rank-badge.rank-top {
   background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%);
-  color: #ffffff;
+  color: rgb(var(--v-theme-surface));
 }
 
 .popular-name {
   font-size: 14px;
   font-weight: 500;
-  color: #000000;
+  color: rgb(var(--v-theme-on-surface));
   margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -737,31 +798,16 @@ const handleCreateCourse = async (courseData: CreateCourseRequest) => {
 
 .popular-count {
   font-size: 12px;
-  color: #666666;
+  color: rgb(var(--v-theme-on-surface-variant));
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
 /* 移动端响应式 */
-@media (max-width: 1264px) {
-  .right-sidebar {
-    max-width: 100%;
-  }
-}
-
 @media (max-width: 960px) {
-  .course-list-page {
-    /* 使用 DefaultLayout 的默认 padding */
-  }
-
   .course-grid {
     grid-template-columns: 1fr;
-  }
-
-  .sticky-card {
-    position: static;
-    max-height: none;
   }
 
   .popular-list {
