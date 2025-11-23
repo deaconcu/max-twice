@@ -37,7 +37,7 @@
           <!-- 左侧内容 -->
           <div class="left-content">
             <!-- 课程头部 - 卡片样式 -->
-            <v-card rounded="xl" class="course-header-card no-border hoverable mb-6 mb-md-8" elevation="0" hover>
+            <v-card rounded="xl" class="course-header-card no-border hoverable mb-6 mb-md-8" elevation="0" hover @click="handleStartReading">
               <v-card-text class="pa-5 pa-sm-6 pa-md-8 pb-2">
                 <!-- 课程标题区 -->
                 <div class="ma-0">
@@ -46,9 +46,14 @@
                     <v-avatar color="surface-variant" :size="$vuetify.display.mobile ? 48 : 60" rounded="lg" class="mr-3 mr-md-4 flex-shrink-0">
                       <v-icon icon="mdi-school" color="grey" :size="$vuetify.display.mobile ? 24 : 32" />
                     </v-avatar>
-                    <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 mb-0">
-                      {{ course.name }}
-                    </h1>
+                    <div class="d-flex align-center flex-wrap ga-4">
+                      <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 mb-0">
+                        {{ course.name }}
+                      </h1>
+                      <v-chip color="primary" variant="flat" size="small" rounded="lg">
+                        主课程
+                      </v-chip>
+                    </div>
                   </div>
 
                   <!-- 描述 -->
@@ -82,7 +87,7 @@
                       :size="$vuetify.display.mobile ? 'default' : 'large'"
                       rounded="lg"
                       class="text-none px-4 px-md-6"
-                      @click="handleStartReading"
+                      @click.stop="handleStartReading"
                     >
                       <v-icon size="20" class="mr-2">mdi-book-open-page-variant</v-icon>
                       {{ t('course.startReading') }}
@@ -94,7 +99,7 @@
                       rounded="lg"
                       class="text-none px-4 px-md-6"
                       :loading="subscribing"
-                      @click="handleToggleSubscribe"
+                      @click.stop="handleToggleSubscribe"
                     >
                       <v-icon size="20" class="mr-2">
                         {{ course.subscribed ? 'mdi-heart' : 'mdi-heart-outline' }}
@@ -637,7 +642,7 @@ const handleConfirmCreateDefaultSubCourse = async () => {
 
 <style scoped>
 .course-detail-page {
-  padding-top: 24px;
+  padding-top: 0;
   padding-bottom: 48px;
 }
 
@@ -648,7 +653,7 @@ const handleConfirmCreateDefaultSubCourse = async () => {
 
 @media (min-width: 1800px) {
   .page-header-row {
-    margin-left: -64px;
+    margin-left: -60px;
   }
 }
 
