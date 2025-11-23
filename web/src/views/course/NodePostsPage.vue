@@ -48,24 +48,24 @@
                 >
                   <!-- AI答疑助手 -->
                   <v-card class="sidebar-card mb-4 no-border" rounded="lg">
-                    <v-card-title class="pa-4">
+                    <v-card-title class="pa-4 pa-md-4">
                       <div class="d-flex align-center justify-space-between w-100">
                         <div class="d-flex align-center">
-                          <v-icon icon="mdi-robot-excited" color="primary" class="mr-2"></v-icon>
-                          <span>答疑助手</span>
+                          <v-icon icon="mdi-robot-excited" color="primary" :size="$vuetify.display.mobile ? 20 : 24" class="mr-2"></v-icon>
+                          <span class="text-body-1 text-md-h6">答疑助手</span>
                         </div>
                         <v-btn
                           :icon="isAssistantExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
                           variant="text"
                           color="grey-darken-1"
-                          size="x-small"
+                          :size="$vuetify.display.mobile ? 'x-small' : 'x-small'"
                           @click="isAssistantExpanded = !isAssistantExpanded"
                         ></v-btn>
                       </div>
                     </v-card-title>
 
                     <v-expand-transition>
-                      <v-card-text v-show="isAssistantExpanded" class="pa-4 pt-0">
+                      <v-card-text v-show="isAssistantExpanded" class="pa-4 pa-md-4 pt-0">
                         <div class="text-body-2 text-grey-darken-2 mb-3">
                           <div class="font-weight-bold w-100">用法：</div>
                           <div class="mt-2">1）在文章中选中您不太理解的内容</div>
@@ -87,8 +87,8 @@
                             :color="e.color"
                             variant="tonal"
                             rounded="lg"
-                            size="small"
-                            class="engine-link"
+                            :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                            class="engine-link text-caption text-md-body-2"
                             :prepend-icon="e.icon"
                             :text="e.name"
                           />
@@ -100,7 +100,7 @@
                   <!-- 记忆卡片组侧边栏 -->
                   <MemoryCardSidebar
                     :post-id="currentPosting.id"
-                    class="mb-4"
+                    class="mb-4 mb-md-4"
                     @create-deck="handleCreateDeck"
                     @view-deck="handleViewDeck"
                   />
@@ -109,8 +109,8 @@
                 <!-- 其他页面：显示课程信息 -->
                 <template v-else>
                   <v-card class="sidebar-card no-border" rounded="lg">
-                    <v-card-title class="pa-4"> 关于本课程 </v-card-title>
-                    <v-card-text class="pa-4 pt-0">
+                    <v-card-title class="pa-4 pa-md-4 text-body-1 text-md-h6"> 关于本课程 </v-card-title>
+                    <v-card-text class="pa-4 pa-md-4 pt-0">
                       <div class="info-item">
                         <div class="text-caption text-medium-emphasis mb-2">课程描述</div>
                         <div class="text-body-2">{{ data?.course?.description }}</div>
@@ -326,8 +326,6 @@ onUnmounted(() => {
 .read-page {
   min-height: 100vh;
   background-color: #ffffff;
-  max-width: 1110px;
-  margin: 0 auto;
 }
 
 /* 固定课程头部 */
@@ -337,6 +335,8 @@ onUnmounted(() => {
   background-color: white;
   z-index: 999;
   padding-bottom: 8px;
+  max-width: 1470px;
+  margin: 0 auto;
 }
 
 /* 布局 - 无左侧目录 */
@@ -344,8 +344,9 @@ onUnmounted(() => {
   display: flex;
   position: relative;
   z-index: 1;
-  max-width: 100%;
+  max-width: 1470px;
   width: 100%;
+  margin: 0 auto;
 }
 
 /* 中间+右侧容器包装 */
@@ -358,6 +359,7 @@ onUnmounted(() => {
 .center-right-wrapper {
   display: flex;
   flex: 1;
+  justify-content: center;
   max-width: 100%;
 }
 
@@ -407,15 +409,68 @@ onUnmounted(() => {
   padding: 8px 0;
 }
 
-@media (max-width: 960px) {
+/* 中等屏幕：隐藏右侧栏，保持左侧目录和内容区 */
+@media (max-width: 1700px) {
+  .course-header-sticky {
+    max-width: 1110px;
+  }
+
+  .read-content {
+    max-width: 1110px;
+  }
+
   .right-sidebar {
     display: none;
   }
 
+  .center-right-wrapper {
+    justify-content: center;
+  }
+}
+
+/* 小屏幕：内容区保持最大750px居中 */
+@media (max-width: 1280px) and (min-width: 751px) {
+  .course-header-sticky {
+    max-width: 750px;
+  }
+
+  .read-content {
+    max-width: 750px;
+    overflow-x: hidden !important;
+  }
+
+  .center-right-wrapper {
+    justify-content: center;
+  }
+
   .center-content {
-    width: 100%;
-    max-width: 100%;
-    padding: 0;
+    padding: 0 !important;
+  }
+}
+
+/* 超小屏幕：内容区可以缩小到屏幕宽度 */
+@media (max-width: 750px) {
+  .course-header-sticky {
+    max-width: none;
+  }
+
+  .read-content {
+    max-width: none;
+    width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  .center-right-wrapper {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .center-content {
+    flex: 1 !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    padding: 16px 20px 32px 20px !important;
+    width: 100% !important;
   }
 }
 </style>

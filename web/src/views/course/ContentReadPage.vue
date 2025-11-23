@@ -13,14 +13,14 @@
           <v-card-text class="pa-0 drawer-card-content">
             <div class="drawer-container">
               <!-- 目录组选择和关闭按钮 -->
-              <div v-if="data && data.toc" class="toc-chips-row pa-4 d-flex align-items-center flex-wrap">
+              <div v-if="data && data.toc" class="toc-chips-row pa-4 pa-md-4 d-flex align-items-center flex-wrap">
                 <v-chip
-                  size="default"
+                  :size="$vuetify.display.mobile ? 'small' : 'default'"
                   rounded="lg"
                   label
                   variant="tonal"
                   color=""
-                  class="me-2 px-3"
+                  class="me-2 px-3 text-body-2 text-md-body-1"
                   style="font-weight: 600"
                 >
                   目录
@@ -33,22 +33,22 @@
                   <v-chip
                     label
                     rounded="lg"
-                    size="default"
+                    :size="$vuetify.display.mobile ? 'small' : 'default'"
                     variant="flat"
                     :color="currContentsIndex === index ? 'grey-darken-1' : 'grey-lighten-3'"
-                    class="me-2"
+                    class="me-2 text-body-2 text-md-body-1"
                     @click="currContentsIndex = index"
                   >
                     {{ index + 1 }}
                   </v-chip>
                   <div v-if="index === 0" class="corner-badge">
-                    <v-icon icon="mdi-chart-line-variant" size="8" color="white" />
+                    <v-icon :icon="'mdi-chart-line-variant'" :size="$vuetify.display.mobile ? 6 : 8" color="white" />
                   </div>
                 </div>
                 <v-btn
                   icon="mdi-close"
                   variant="text"
-                  size="small"
+                  :size="$vuetify.display.mobile ? 'x-small' : 'small'"
                   class="ms-auto"
                   @click="drawerOpen = false"
                 />
@@ -94,12 +94,12 @@
             <div v-if="data && data.toc" class="toc-groups-card">
               <div class="toc-chips">
                 <v-chip
-                  size="default"
+                  :size="$vuetify.display.mobile ? 'small' : 'default'"
                   rounded="lg"
                   label
                   variant="tonal"
                   color=""
-                  class="me-0 px-3"
+                  class="me-0 px-3 text-body-2 text-md-body-1"
                   style="font-weight: 600"
                 >
                   目录
@@ -112,25 +112,26 @@
                   <v-chip
                     label
                     rounded="lg"
-                    size="default"
+                    :size="$vuetify.display.mobile ? 'small' : 'default'"
                     variant="flat"
                     :color="currContentsIndex === index ? 'grey-darken-1' : 'grey-lighten-3'"
+                    class="text-body-2 text-md-body-1"
                     @click="currContentsIndex = index"
                   >
                     {{ index + 1 }}
                   </v-chip>
                   <div v-if="index === 0" class="corner-badge">
-                    <v-icon icon="mdi-chart-line-variant" size="8" color="white" />
+                    <v-icon icon="mdi-chart-line-variant" :size="$vuetify.display.mobile ? 6 : 8" color="white" />
                   </div>
                 </div>
                 <v-btn
                   icon
-                  size="small"
+                  :size="$vuetify.display.mobile ? 'x-small' : 'small'"
                   variant="text"
                   class="config-btn ms-auto"
                   @click="configContents = true"
                 >
-                  <v-icon size="20">mdi-cog-outline</v-icon>
+                  <v-icon :size="$vuetify.display.mobile ? 16 : 20">mdi-cog-outline</v-icon>
                 </v-btn>
               </div>
             </div>
@@ -191,25 +192,25 @@
                   "
                 >
                   <!-- AI答疑助手 -->
-                  <v-card class="sidebar-card mb-4 no-border" rounded="lg">
-                    <v-card-title class="pa-4">
+                  <v-card class="sidebar-card mb-4 mb-md-4 no-border" rounded="lg">
+                    <v-card-title class="pa-4 pa-md-4">
                       <div class="d-flex align-center justify-space-between w-100">
                         <div class="d-flex align-center">
-                          <v-icon icon="mdi-robot-excited" color="primary" class="mr-2"></v-icon>
-                          <span>答疑助手</span>
+                          <v-icon icon="mdi-robot-excited" color="primary" :size="$vuetify.display.mobile ? 20 : 24" class="mr-2"></v-icon>
+                          <span class="text-body-1 text-md-h6">答疑助手</span>
                         </div>
                         <v-btn
                           :icon="isAssistantExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
                           variant="text"
                           color="grey-darken-1"
-                          size="x-small"
+                          :size="$vuetify.display.mobile ? 'x-small' : 'x-small'"
                           @click="isAssistantExpanded = !isAssistantExpanded"
                         ></v-btn>
                       </div>
                     </v-card-title>
 
                     <v-expand-transition>
-                      <v-card-text v-show="isAssistantExpanded" class="pa-4 pt-0">
+                      <v-card-text v-show="isAssistantExpanded" class="pa-4 pa-md-4 pt-0">
                         <div class="text-body-2 text-grey-darken-2 mb-3">
                           <div class="font-weight-bold w-100">用法：</div>
                           <div class="mt-2">1）在文章中选中您不太理解的内容</div>
@@ -231,8 +232,8 @@
                             :color="e.color"
                             variant="tonal"
                             rounded="lg"
-                            size="small"
-                            class="engine-link"
+                            :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                            class="engine-link text-caption text-md-body-2"
                             :prepend-icon="e.icon"
                             :text="e.name"
                           />
@@ -244,7 +245,7 @@
                   <!-- 记忆卡片组侧边栏 -->
                   <MemoryCardSidebar
                     :post-id="currentPosting.id"
-                    class="mb-4"
+                    class="mb-4 mb-md-4"
                     @create-deck="handleCreateDeck"
                     @view-deck="handleViewDeck"
                   />
@@ -253,8 +254,8 @@
                 <!-- 其他页面：显示课程信息 -->
                 <template v-else>
                   <v-card class="sidebar-card no-border" rounded="lg">
-                    <v-card-title class="pa-4"> 关于本课程 </v-card-title>
-                    <v-card-text class="pa-4 pt-0">
+                    <v-card-title class="pa-4 pa-md-4 text-body-1 text-md-h6"> 关于本课程 </v-card-title>
+                    <v-card-text class="pa-4 pa-md-4 pt-0">
                       <div class="info-item">
                         <div class="text-caption text-medium-emphasis mb-2">课程描述</div>
                         <div class="text-body-2">{{ data?.course?.description }}</div>
@@ -298,12 +299,12 @@
       v-if="$vuetify.display.mobile"
       icon
       color="primary"
-      size="large"
+      :size="$vuetify.display.mobile ? 'large' : 'large'"
       elevation="6"
       class="mobile-toc-fab"
       @click="drawerOpen = true"
     >
-      <v-icon size="24">mdi-format-list-bulleted</v-icon>
+      <v-icon :size="$vuetify.display.mobile ? 20 : 24">mdi-format-list-bulleted</v-icon>
       <v-tooltip activator="parent" location="left">课程目录</v-tooltip>
     </v-btn>
   </DefaultLayout>
@@ -742,6 +743,12 @@ onUnmounted(() => {
   flex: 1 1 750px;
   max-width: 750px;
   padding: 24px 26px 40px 26px;
+}
+
+@media (max-width: 750px) {
+  .center-content {
+    padding: 16px 20px 32px 20px;
+  }
 }
 
 /* 右侧边栏 */
