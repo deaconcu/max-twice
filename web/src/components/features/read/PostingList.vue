@@ -148,7 +148,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
             </v-tab>
           </v-tabs>
         </div>
-        <div class="d-flex align-center">
+        <div class="d-flex align-center action-buttons">
           <v-btn
             variant="flat"
             color="grey-lighten-4"
@@ -331,6 +331,22 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
 @media (max-width: 1280px) {
   .node-breadcrumb {
     padding-top: 16px !important;
+  }
+}
+
+/* 移动端：操作按钮只显示图标 */
+@media (max-width: 750px) {
+  .tabs-actions-bar .action-buttons span {
+    display: none !important;
+  }
+
+  .tabs-actions-bar .action-buttons .v-btn {
+    min-width: 36px !important;
+    padding: 0 8px !important;
+  }
+
+  .tabs-actions-bar .action-buttons .v-icon {
+    margin-right: 0 !important;
   }
 }
 </style>
