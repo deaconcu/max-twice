@@ -129,6 +129,80 @@
       :deck="selectedDeck"
       @add-to-study="handleAddDeck"
     />
+
+    <!-- 移动端底部工具面板 -->
+    <v-bottom-sheet v-if="$vuetify.display.mobile" v-model="toolsSheetOpen" max-height="70vh">
+      <v-card rounded="t-xl">
+        <v-card-title class="pa-4 d-flex align-center justify-space-between">
+          <span class="text-h6 font-weight-bold">文章工具</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="toolsSheetOpen = false" />
+        </v-card-title>
+
+        <v-divider />
+
+        <v-card-text class="pa-4" style="max-height: calc(70vh - 73px); overflow-y: auto">
+          <!-- AI答疑助手 -->
+          <v-card class="mb-4 no-border" rounded="lg" flat>
+            <v-card-title class="pa-4">
+              <div class="d-flex align-center">
+                <v-icon icon="mdi-robot-excited" color="primary" class="mr-2" size="24" />
+                <span>答疑助手</span>
+              </div>
+            </v-card-title>
+            <v-card-text class="pa-4 pt-0">
+              <div class="text-body-2 text-grey-darken-2 mb-3">
+                <div class="font-weight-bold">用法：</div>
+                <div class="mt-2">1）在文章中选中您不太理解的内容</div>
+                <div>2）在左侧竖线处拖动手柄，调整上下文范围</div>
+                <div>3）点击面板中的"复制"，将引用和问题复制到剪贴板</div>
+                <div>4）用复制的内容询问你常用的 AI 引擎</div>
+              </div>
+
+              <div class="d-flex flex-wrap mt-4" style="gap: 8px">
+                <div class="text-body-2 w-100 text-grey-darken-2 font-weight-bold">
+                  常用 AI 引擎：
+                </div>
+                <v-chip
+                  v-for="e in aiEngines"
+                  :key="e.name"
+                  :href="e.href"
+                  target="_blank"
+                  rel="noopener"
+                  :color="e.color"
+                  variant="tonal"
+                  rounded="lg"
+                  size="small"
+                  :prepend-icon="e.icon"
+                  :text="e.name"
+                />
+              </div>
+            </v-card-text>
+          </v-card>
+
+          <!-- 记忆卡片组 -->
+          <MemoryCardSidebar
+            v-if="data && (data.currPosting || data.post)"
+            :post-id="(data.currPosting || data.post).id"
+            @create-deck="handleCreateDeck"
+            @view-deck="handleViewDeck"
+          />
+        </v-card-text>
+      </v-card>
+    </v-bottom-sheet>
+
+    <!-- 移动端浮动按钮 -->
+    <v-btn
+      v-if="$vuetify.display.mobile"
+      icon
+      color="primary"
+      size="large"
+      elevation="6"
+      class="mobile-tools-fab"
+      @click="toolsSheetOpen = true"
+    >
+      <v-icon size="24">mdi-toolbox</v-icon>
+      <v-tooltip activator="parent" location="left">文章工具</v-tooltip>
+    </v-btn>
   </DefaultLayout>
 </template>
 
@@ -155,6 +229,7 @@ const showCreateDeckDialog = ref(false)
 const isAssistantExpanded = ref(true)
 const selectedDeck = ref<MemoryCardDeck | null>(null)
 const showDeckDetailDialog = ref(false)
+const toolsSheetOpen = ref(false)
 
 // 是否为主课程
 const isMainCourse = computed(() => {
@@ -374,14 +449,43 @@ onUnmounted(() => {
   padding: 8px 0;
 }
 
-@media (max-width: 960px) {
+/* 移动端浮动按钮 */
+.mobile-tools-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+}
+
+/* 中等屏幕：隐藏右侧栏，内容区保持最大宽度并居中 */
+@media (max-width: 1280px) {
   .right-sidebar {
     display: none;
   }
 
+  .center-right-wrapper {
+    justify-content: center;
+  }
+}
+
+/* 小屏幕：内容区可以缩小，移除 padding */
+@media (max-width: 960px) {
+  .read-page {
+    max-width: none;
+    padding: 0;
+    margin: 0;
+  }
+
   .center-content {
-    width: 100%;
-    max-width: 100%;
+    flex: 1;
+    max-width: none;
+    padding: 0;
+  }
+}
+
+/* 超小屏幕：确保完全适配 */
+@media (max-width: 600px) {
+  .center-content {
     padding: 0;
   }
 }
