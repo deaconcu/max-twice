@@ -74,7 +74,7 @@
           <div class="d-flex flex-wrap subcategory-buttons-gap">
             <!-- 二级全部 -->
             <v-btn
-              :color="!selectedSubCategory ? 'orange-darken-1' : 'grey-lighten-3'"
+              :color="!selectedSubCategory ? 'orange-darken-1' : 'grey-lighten-5'"
               variant="flat"
               rounded="xl"
               class="font-weight-medium subcategory-btn"
@@ -95,7 +95,7 @@
             <v-btn
               v-for="sub in subCategories"
               :key="sub.id"
-              :color="selectedSubCategory === sub.id ? 'orange-darken-1' : 'grey-lighten-3'"
+              :color="selectedSubCategory === sub.id ? 'orange-darken-1' : 'grey-lighten-5'"
               variant="flat"
               rounded="xl"
               class="font-weight-medium subcategory-btn"
@@ -248,7 +248,6 @@ const emitChange = () => {
 
 /* 二级分类按钮样式 */
 .subcategory-btn {
-  border: 1px solid #e0e0e0;
   transition: all 0.15s ease-in-out;
   text-transform: none;
   letter-spacing: normal;
