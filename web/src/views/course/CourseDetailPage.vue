@@ -34,64 +34,67 @@
             <v-card rounded="xl" class="course-header-card no-border" elevation="0">
               <v-card-text class="pa-5 pa-sm-6 pa-md-8 pb-2">
                 <!-- 课程标题区 -->
-                <div class="d-flex align-start ma-0">
-                  <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" :size="$vuetify.display.mobile ? 48 : 60" rounded="lg" class="mr-3 mr-md-5 flex-shrink-0">
-                    <v-icon icon="mdi-book-open-variant" color="grey" :size="$vuetify.display.mobile ? 24 : 32" />
-                  </v-avatar>
-                  <div class="flex-grow-1" style="min-width: 0;">
-                    <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 mb-2 mb-md-3">
+                <div class="ma-0">
+                  <!-- 图标和标题行 -->
+                  <div class="d-flex align-center mb-3 mb-md-4">
+                    <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" :size="$vuetify.display.mobile ? 48 : 60" rounded="lg" class="mr-3 mr-md-4 flex-shrink-0">
+                      <v-icon icon="mdi-school" color="grey" :size="$vuetify.display.mobile ? 24 : 32" />
+                    </v-avatar>
+                    <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 mb-0">
                       {{ course.name }}
                     </h1>
-                    <p v-if="course.description" class="text-body-2 text-md-body-1 font-weight-regular text-grey-darken-2 mb-3 mb-md-4">
-                      {{ course.description }}
-                    </p>
+                  </div>
 
-                    <!-- 统计信息 -->
-                    <div class="d-flex align-center flex-wrap mb-4 mb-md-6 ga-6 ga-md-12">
-                      <div class="d-flex align-center">
-                        <v-icon icon="mdi-book-multiple" :size="$vuetify.display.mobile ? 20 : 24" color="primary" class="mr-2 mr-md-4" />
-                        <span class="text-body-2 text-md-body-1 text-grey-darken-2">
-                          <span class="font-weight-bold text-grey-darken-4 mr-1">{{ subCourses?.length ?? 0 }}</span>
-                          <span class="text-caption text-md-body-2">{{ t('course.subCourses') }}</span>
-                        </span>
-                      </div>
-                      <div class="d-flex align-center">
-                        <v-icon icon="mdi-account-group" :size="$vuetify.display.mobile ? 20 : 24" color="success" class="mr-2 mr-md-4" />
-                        <span class="text-body-2 text-md-body-1 text-grey-darken-2">
-                          <span class="font-weight-bold text-grey-darken-4 mr-1">{{ formatNumber(course.learnerCount) }}</span>
-                          <span class="text-caption text-md-body-2">{{ t('course.learning') }}</span>
-                        </span>
-                      </div>
-                    </div>
+                  <!-- 描述 -->
+                  <p v-if="course.description" class="text-body-2 text-md-body-1 font-weight-regular text-grey-darken-2 mb-3 mb-md-4">
+                    {{ course.description }}
+                  </p>
 
-                    <!-- 操作按钮 -->
-                    <div class="d-flex flex-wrap align-center ga-3">
-                      <v-btn
-                        color="primary"
-                        variant="flat"
-                        :size="$vuetify.display.mobile ? 'default' : 'large'"
-                        rounded="lg"
-                        class="text-none px-4 px-md-6"
-                        @click="handleStartReading"
-                      >
-                        <v-icon size="20" class="mr-2">mdi-book-open-page-variant</v-icon>
-                        {{ t('course.startReading') }}
-                      </v-btn>
-                      <v-btn
-                        :color="course.subscribed ? 'error' : 'grey-darken-2'"
-                        :variant="course.subscribed ? 'flat' : 'tonal'"
-                        :size="$vuetify.display.mobile ? 'default' : 'large'"
-                        rounded="lg"
-                        class="text-none px-4 px-md-6"
-                        :loading="subscribing"
-                        @click="handleToggleSubscribe"
-                      >
-                        <v-icon size="20" class="mr-2">
-                          {{ course.subscribed ? 'mdi-heart' : 'mdi-heart-outline' }}
-                        </v-icon>
-                        {{ course.subscribed ? t('course.subscribed') : t('course.subscribe') }}
-                      </v-btn>
+                  <!-- 统计信息 -->
+                  <div class="d-flex align-center flex-wrap mb-4 mb-md-6 ga-6 ga-md-12">
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-book-multiple" :size="$vuetify.display.mobile ? 20 : 24" color="primary" class="mr-2 mr-md-4" />
+                      <span class="text-body-2 text-md-body-1 text-grey-darken-2">
+                        <span class="font-weight-bold text-grey-darken-4 mr-1">{{ subCourses?.length ?? 0 }}</span>
+                        <span class="text-caption text-md-body-2">{{ t('course.subCourses') }}</span>
+                      </span>
                     </div>
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-account-group" :size="$vuetify.display.mobile ? 20 : 24" color="success" class="mr-2 mr-md-4" />
+                      <span class="text-body-2 text-md-body-1 text-grey-darken-2">
+                        <span class="font-weight-bold text-grey-darken-4 mr-1">{{ formatNumber(course.learnerCount) }}</span>
+                        <span class="text-caption text-md-body-2">{{ t('course.learning') }}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- 操作按钮 -->
+                  <div class="d-flex flex-wrap align-center ga-3">
+                    <v-btn
+                      color="primary"
+                      variant="flat"
+                      :size="$vuetify.display.mobile ? 'default' : 'large'"
+                      rounded="lg"
+                      class="text-none px-4 px-md-6"
+                      @click="handleStartReading"
+                    >
+                      <v-icon size="20" class="mr-2">mdi-book-open-page-variant</v-icon>
+                      {{ t('course.startReading') }}
+                    </v-btn>
+                    <v-btn
+                      :color="course.subscribed ? 'error' : 'grey-darken-2'"
+                      :variant="course.subscribed ? 'flat' : 'tonal'"
+                      :size="$vuetify.display.mobile ? 'default' : 'large'"
+                      rounded="lg"
+                      class="text-none px-4 px-md-6"
+                      :loading="subscribing"
+                      @click="handleToggleSubscribe"
+                    >
+                      <v-icon size="20" class="mr-2">
+                        {{ course.subscribed ? 'mdi-heart' : 'mdi-heart-outline' }}
+                      </v-icon>
+                      {{ course.subscribed ? t('course.subscribed') : t('course.subscribe') }}
+                    </v-btn>
                   </div>
                 </div>
               </v-card-text>
@@ -120,6 +123,7 @@
                 variant="text"
                 :size="$vuetify.display.mobile ? 'default' : 'large'"
                 rounded="lg"
+                density="comfortable"
                 class="text-none px-4 px-md-6"
                 elevation="0"
                 @click="handleApplySubCourse"
