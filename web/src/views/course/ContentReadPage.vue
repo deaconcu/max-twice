@@ -2,77 +2,76 @@
   <DefaultLayout>
     <div class="read-page">
       <!-- 移动端目录抽屉 -->
-      <v-navigation-drawer
+      <v-dialog
+        v-if="$vuetify.display.mobile"
         v-model="drawerOpen"
-        temporary
-        location="left"
-        width="320"
-        class="mobile-toc-drawer"
+        fullscreen
+        transition="dialog-left-transition"
+        scrollable
       >
-        <!-- 抽屉头部 -->
-        <div class="drawer-header pa-4 d-flex align-center justify-space-between">
-          <div class="d-flex align-center">
-            <v-icon icon="mdi-format-list-bulleted" color="primary" class="mr-2" size="24" />
-            <span class="text-h6 font-weight-bold">课程目录</span>
-          </div>
-          <v-btn icon="mdi-close" variant="text" size="small" @click="drawerOpen = false" />
-        </div>
+        <v-card class="drawer-card">
+          <v-card-text class="pa-0 drawer-card-content">
+            <div class="drawer-container">
+              <!-- 目录组选择和关闭按钮 -->
+              <div v-if="data && data.toc" class="toc-chips-row pa-4 d-flex align-items-center flex-wrap">
+                <v-chip
+                  size="default"
+                  rounded="lg"
+                  label
+                  variant="tonal"
+                  color=""
+                  class="me-2 px-3"
+                  style="font-weight: 600"
+                >
+                  目录
+                </v-chip>
+                <div
+                  v-for="(item, index) in data.toc"
+                  :key="index"
+                  class="position-relative d-inline-block"
+                >
+                  <v-chip
+                    label
+                    rounded="lg"
+                    size="default"
+                    variant="flat"
+                    :color="currContentsIndex === index ? 'grey-darken-1' : 'grey-lighten-3'"
+                    class="me-2"
+                    @click="currContentsIndex = index"
+                  >
+                    {{ index + 1 }}
+                  </v-chip>
+                  <div v-if="index === 0" class="corner-badge">
+                    <v-icon icon="mdi-chart-line-variant" size="8" color="white" />
+                  </div>
+                </div>
+                <v-btn
+                  icon="mdi-close"
+                  variant="text"
+                  size="small"
+                  class="ms-auto"
+                  @click="drawerOpen = false"
+                />
+              </div>
 
-        <v-divider />
-
-        <!-- 目录内容 -->
-        <div class="drawer-content pa-4">
-          <!-- 目录组选择 -->
-          <div v-if="data && data.toc" class="toc-chips mb-4">
-            <v-chip
-              size="default"
-              rounded="lg"
-              label
-              variant="tonal"
-              color=""
-              class="me-2 px-3"
-              style="font-weight: 600"
-            >
-              目录
-            </v-chip>
-            <div
-              v-for="(item, index) in data.toc"
-              :key="index"
-              class="position-relative d-inline-block"
-            >
-              <v-chip
-                label
-                rounded="lg"
-                size="default"
-                variant="flat"
-                :color="currContentsIndex === index ? 'grey-darken-1' : 'grey-lighten-3'"
-                class="me-2"
-                @click="currContentsIndex = index"
-              >
-                {{ index + 1 }}
-              </v-chip>
-              <div v-if="index === 0" class="corner-badge">
-                <v-icon icon="mdi-chart-line-variant" size="8" color="white" />
+              <!-- 目录树 -->
+              <div class="drawer-toc-content pa-4 pt-0">
+                <TreeNode
+                  v-if="data && data.toc && data.toc[currContentsIndex]"
+                  :node-data="data.toc[currContentsIndex]"
+                  :node-infos="data.tocNodeInfos"
+                  :course-id="data.course?.id"
+                  :path="data.path"
+                  :curr-path="String(currContentsIndex + 1)"
+                  :depth="1"
+                  :is-learning="isLearning"
+                  @node-click="drawerOpen = false"
+                />
               </div>
             </div>
-          </div>
-
-          <!-- 目录树 -->
-          <div class="drawer-toc-tree">
-            <TreeNode
-              v-if="data && data.toc && data.toc[currContentsIndex]"
-              :node-data="data.toc[currContentsIndex]"
-              :node-infos="data.tocNodeInfos"
-              :course-id="data.course?.id"
-              :path="data.path"
-              :curr-path="String(currContentsIndex + 1)"
-              :depth="1"
-              :is-learning="isLearning"
-              @node-click="drawerOpen = false"
-            />
-          </div>
-        </div>
-      </v-navigation-drawer>
+          </v-card-text>
+        </v-card>
+      </v-dialog>
 
       <!-- 课程头部 - 固定在顶部 -->
       <div class="course-header-sticky">
@@ -351,6 +350,11 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const isTocHovering = ref(false)
 const drawerOpen = ref(false)
+
+// 关闭drawer
+const closeDrawer = () => {
+  drawerOpen.value = false
+}
 
 // 数据处理
 const nodes = ref<any[]>([])
@@ -780,22 +784,39 @@ onUnmounted(() => {
 }
 
 /* 移动端目录抽屉样式 */
-.mobile-toc-drawer {
-  z-index: 2000;
+.drawer-card {
+  overflow: hidden !important;
 }
 
-.drawer-header {
+.drawer-card-content {
+  overflow: hidden !important;
+}
+
+.drawer-card-content::-webkit-scrollbar {
+  display: none;
+}
+
+.drawer-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+}
+
+.toc-chips-row {
+  flex-shrink: 0;
   border-bottom: 1px solid rgb(var(--v-theme-border));
 }
 
-.drawer-content {
+.drawer-toc-content {
+  flex: 1;
   overflow-y: auto;
-  height: calc(100vh - 73px);
 }
 
-.drawer-toc-tree {
-  overflow-y: auto;
-  flex: 1;
+/* 隐藏drawer滚动条 */
+.drawer-toc-content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 /* 移动端浮动按钮 */
@@ -806,8 +827,16 @@ onUnmounted(() => {
   z-index: 1000;
 }
 
-/* 中等屏幕：隐藏右侧栏，内容区保持最大宽度并居中 */
-@media (max-width: 1280px) {
+/* 中等屏幕：隐藏右侧栏，保持左侧目录和内容区 */
+@media (max-width: 1700px) {
+  .course-header-sticky {
+    max-width: 1110px;
+  }
+
+  .read-content {
+    max-width: 1110px;
+  }
+
   .right-sidebar {
     display: none;
   }
@@ -817,20 +846,44 @@ onUnmounted(() => {
   }
 }
 
-/* 小屏幕：隐藏目录和右侧栏，内容区可以缩小 */
-@media (max-width: 960px) {
+/* 小屏幕：隐藏左侧目录，内容区保持最大750px居中 */
+@media (max-width: 1280px) and (min-width: 751px) {
+  .course-header-sticky {
+    max-width: 750px;
+  }
+
   .read-content {
+    max-width: 750px;
+    overflow-x: hidden !important;
+  }
+
+  .toc-sidebar {
+    display: none;
+  }
+
+  .center-right-wrapper {
+    justify-content: center;
+  }
+
+  .center-content {
+    padding: 0 !important;
+  }
+}
+
+/* 超小屏幕：内容区可以缩小到屏幕宽度 */
+@media (max-width: 750px) {
+  .course-header-sticky {
+    max-width: none;
+  }
+
+  .read-content {
+    max-width: none;
     width: 100% !important;
     overflow-x: hidden !important;
   }
 
-  .toc-sidebar,
-  .right-sidebar {
+  .toc-sidebar {
     display: none;
-  }
-
-  .center-right-container {
-    width: 100% !important;
   }
 
   .center-right-wrapper {

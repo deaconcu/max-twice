@@ -529,8 +529,41 @@ onUnmounted(() => {
   }
 }
 
-/* 小屏幕：内容区可以缩小，移除 padding */
-@media (max-width: 960px) {
+/* 中屏幕：960px-750px，内容区保持最大750px居中 */
+@media (max-width: 960px) and (min-width: 751px) {
+  .read-page {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    padding-bottom: 32px !important;
+  }
+
+  .course-header-wrapper {
+    padding: 0 !important;
+    max-width: 750px !important;
+    margin: 0 auto !important;
+  }
+
+  .read-content {
+    overflow-x: hidden !important;
+  }
+
+  .center-right-wrapper {
+    justify-content: center;
+  }
+
+  .center-content {
+    padding: 0 !important;
+  }
+
+  .node-header {
+    padding-top: 24px;
+  }
+}
+
+/* 小屏幕：小于750px，内容区可以缩小到屏幕宽度 */
+@media (max-width: 750px) {
   .read-page {
     max-width: none !important;
     padding: 0 !important;
