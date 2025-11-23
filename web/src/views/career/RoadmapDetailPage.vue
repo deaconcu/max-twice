@@ -2,23 +2,23 @@
   <DefaultLayout>
     <div class="roadmap-detail-page">
       <!-- 返回按钮和职业信息 -->
-      <div class="back-button-wrapper mb-0">
+      <div class="back-button-wrapper mb-6 mb-md-8">
         <div class="d-flex align-center">
           <v-btn
             icon="mdi-arrow-left"
             variant="flat"
-            color="grey-lighten-4"
-            size="small"
-            class="back-button"
+            color="grey-lighten-5"
+            :size="$vuetify.display.mobile ? 'small' : 'default'"
+            class="back-button mr-3 mr-md-4 flex-shrink-0"
             @click="handleBack"
           ></v-btn>
 
           <!-- 职业信息 -->
-          <div v-if="roadmap?.profession" class="d-flex align-center ml-4">
-            <v-avatar color="primary" size="40" class="mr-3">
-              <v-icon icon="mdi-briefcase-outline" color="white" size="20" />
+          <div v-if="roadmap?.profession" class="d-flex align-center">
+            <v-avatar color="primary" :size="$vuetify.display.mobile ? 36 : 40" class="mr-3 flex-shrink-0">
+              <v-icon icon="mdi-briefcase-outline" color="white" :size="$vuetify.display.mobile ? 18 : 20" />
             </v-avatar>
-            <span class="text-h6 font-weight-bold text-grey-darken-4">
+            <span class="text-subtitle-1 text-md-h6 font-weight-bold text-grey-darken-4">
               {{ roadmap.profession.name }}
             </span>
           </div>
@@ -26,19 +26,47 @@
       </div>
 
       <!-- 加载状态 -->
-      <v-row v-if="loading">
-        <v-col cols="12" class="text-center py-12">
-          <v-progress-circular indeterminate color="primary" size="64" />
-          <p class="text-body-2 text-grey mt-4">加载中...</p>
-        </v-col>
-      </v-row>
+      <div v-if="loading" class="text-center py-12">
+        <v-progress-circular indeterminate color="primary" size="64" />
+        <p class="text-body-2 text-grey mt-4">加载中...</p>
+      </div>
 
-      <v-row v-else-if="roadmap" class="ma-0">
-        <!-- 左侧：路径信息和流程图 -->
-        <v-col cols="12" lg="8" class="pa-0">
+      <div v-else-if="roadmap" class="content-layout">
+        <!-- 左侧：流程图 -->
+        <div class="main-content">
+          <!-- 流程图 -->
+          <v-card border rounded="xl" class="flow-card">
+            <v-card-title class="pa-4 pa-sm-6 d-flex align-center justify-space-between">
+              <span class="text-body-1 font-weight-bold">学习路线图</span>
+            </v-card-title>
+            <v-card-text class="pa-0">
+              <div class="vue-flow-container">
+                <VueFlow
+                  :nodes="flowNodes"
+                  :edges="flowEdges"
+                  fit-view-on-init
+                  :nodes-draggable="false"
+                  :nodes-connectable="false"
+                  :elements-selectable="false"
+                  :min-zoom="0.7"
+                  :max-zoom="1.2"
+                  :default-zoom="1.0"
+                  :zoom-on-scroll="false"
+                  @node-click="handleNodeClick"
+                >
+                  <Background pattern-color="#bdbdbd" :gap="30" :size="2" variant="dots" />
+                  <Controls :show-interactive="false" />
+                </VueFlow>
+              </div>
+            </v-card-text>
+          </v-card>
+        </div>
+
+        <!-- 右侧：路径信息和评论区 -->
+        <div class="right-sidebar">
           <!-- 路径信息卡片 -->
           <v-card rounded="xl" class="roadmap-info-card mb-4 no-border">
-            <v-card-text class="py-6 px-0">
+            <v-card-text class="px-0 pt-0 pb-4 pb-sm-5">
               <!-- 标题和状态 -->
               <div class="d-flex align-center justify-space-between mb-4">
                 <div class="flex-grow-1">
@@ -84,23 +112,25 @@
                   </div>
 
                   <!-- 统计信息 -->
-                  <div class="d-flex align-center gap-4">
+                  <div class="d-flex flex-wrap align-center gap-4 gap-md-5">
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-account-group" size="18" color="grey" class="mr-1" />
+                      <v-icon icon="mdi-account-group" size="18" color="grey" class="mr-2" />
                       <span class="text-body-2 text-grey-darken-2">
-                        {{ roadmap.learnerCount ?? 0 }} 人学习
+                        {{ roadmap.learnerCount ?? 0 }}
+                        <span class="d-none d-sm-inline">人学习</span>
                       </span>
                     </div>
-                    <div class="d-flex align-center">
-                      <v-icon icon="mdi-comment-outline" size="18" color="grey" class="mr-1" />
+                    <div class="d-flex align-center d-none d-sm-flex">
+                      <v-icon icon="mdi-comment-outline" size="18" color="grey" class="mr-2" />
                       <span class="text-body-2 text-grey-darken-2">
                         {{ roadmap.commentCount ?? 0 }} 评论
                       </span>
                     </div>
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-circle-medium" size="18" color="grey" class="mr-1" />
+                      <v-icon icon="mdi-graph-outline" size="18" color="grey" class="mr-2" />
                       <span class="text-body-2 text-grey-darken-2">
-                        {{ roadmap.nodeCount }} 个节点
+                        {{ roadmap.nodeCount }}
+                        <span class="d-none d-sm-inline">个</span>节点
                       </span>
                     </div>
                   </div>
@@ -108,10 +138,11 @@
               </div>
 
               <!-- 操作按钮 -->
-              <div class="d-flex align-center gap-2">
+              <div class="d-flex flex-wrap align-center gap-2">
                 <v-btn
                   :color="roadmap.upvoted ? 'primary' : 'grey-darken-2'"
                   :variant="roadmap.upvoted ? 'flat' : 'outlined'"
+                  :size="$vuetify.display.mobile ? 'small' : 'default'"
                   rounded="lg"
                   @click="handleVote"
                 >
@@ -125,6 +156,7 @@
                 <v-btn
                   :color="roadmap.learning ? 'success' : 'primary'"
                   :variant="roadmap.learning ? 'outlined' : 'flat'"
+                  :size="$vuetify.display.mobile ? 'small' : 'default'"
                   rounded="lg"
                   @click="handleStartLearning"
                 >
@@ -135,50 +167,29 @@
                   />
                   {{ roadmap.learning ? '正在学习' : '开始学习' }}
                 </v-btn>
-                <v-btn color="grey-darken-2" variant="outlined" rounded="lg" @click="handleCopy">
+                <v-btn
+                  color="grey-darken-2"
+                  variant="outlined"
+                  :size="$vuetify.display.mobile ? 'small' : 'default'"
+                  rounded="lg"
+                  @click="handleCopy"
+                >
                   <v-icon icon="mdi-content-copy" size="18" class="mr-1" />
-                  复制路径
+                  <span class="d-none d-sm-inline">复制路径</span>
+                  <span class="d-sm-none">复制</span>
                 </v-btn>
               </div>
             </v-card-text>
           </v-card>
 
-          <!-- 流程图 -->
-          <v-card border rounded="xl" class="flow-card">
-            <v-card-title class="pa-6 d-flex align-center justify-space-between">
-              <span class="text-body-1">学习路线图</span>
-            </v-card-title>
-            <v-card-text class="pa-0">
-              <div class="vue-flow-container">
-                <VueFlow
-                  :nodes="flowNodes"
-                  :edges="flowEdges"
-                  fit-view-on-init
-                  :nodes-draggable="false"
-                  :nodes-connectable="false"
-                  :elements-selectable="false"
-                  :min-zoom="0.9"
-                  :max-zoom="1.2"
-                  :default-zoom="1.2"
-                  @node-click="handleNodeClick"
-                >
-                  <Background pattern-color="#bdbdbd" :gap="30" :size="2" variant="dots" />
-                  <Controls :show-zoom="false" />
-                </VueFlow>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-
-        <!-- 右侧：评论区 -->
-        <v-col cols="12" lg="4" class="pa-0 pl-12">
+          <!-- 评论区 -->
           <CommentSection
             :post-id="roadmapId"
             :object-type="ObjectType.ROADMAP"
             :comment-count="roadmap.commentCount"
           />
-        </v-col>
-      </v-row>
+        </div>
+      </div>
     </div>
   </DefaultLayout>
 </template>
@@ -411,20 +422,89 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
   }
 }
 
-.roadmap-info-card,
-.flow-card {
-  background-color: #ffffff;
-  border: 1px solid #edeff1;
+/* 内容布局 */
+.content-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
+@media (min-width: 1280px) {
+  .content-layout {
+    flex-direction: row;
+    gap: 48px;
+    height: calc(100vh - 56px - 40px - 80px - 20px);
+  }
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 1280px) {
+  .flow-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .flow-card .v-card-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* 右侧评论区 */
+.right-sidebar {
+  width: 100%;
+}
+
+@media (min-width: 1280px) {
+  .right-sidebar {
+    width: 360px;
+    flex-shrink: 0;
+  }
+}
+
+.roadmap-info-card,
 .flow-card {
-  min-height: 1000px;
+  background-color: rgb(var(--v-theme-surface));
+  border: 1px solid rgb(var(--v-theme-outline));
 }
 
 .vue-flow-container {
-  height: 1000px;
-  background: #ffffff;
+  height: 600px;
+  background: rgb(var(--v-theme-surface));
   position: relative;
+}
+
+@media (min-width: 960px) {
+  .vue-flow-container {
+    height: 800px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .vue-flow-container {
+    height: 100%;
+    min-height: 600px;
+  }
+}
+
+.gap-3 {
+  gap: 12px;
+}
+
+.gap-4 {
+  gap: 16px;
+}
+
+.gap-2 {
+  gap: 8px;
 }
 
 /* Vue Flow 节点样式 */
@@ -453,25 +533,5 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
   height: 0 !important;
   border: none !important;
   background: transparent !important;
-}
-
-.gap-4 {
-  gap: 16px;
-}
-
-.gap-2 {
-  gap: 8px;
-}
-
-/* 移动端 */
-@media (max-width: 1280px) {
-  .sticky-card {
-    position: static;
-    max-height: none;
-  }
-
-  .vue-flow-container {
-    height: 400px;
-  }
 }
 </style>

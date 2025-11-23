@@ -2,55 +2,58 @@
   <DefaultLayout>
     <div class="roadmap-create-page">
       <!-- 页面标题 -->
-      <div class="mb-6">
+      <div class="mb-6 mb-md-8">
         <div class="d-flex align-center title-row">
           <!-- 返回按钮 -->
           <v-btn
             icon="mdi-arrow-left"
             variant="flat"
-            color="grey-lighten-4"
-            size="small"
-            class="back-button mr-4"
+            color="grey-lighten-5"
+            :size="$vuetify.display.mobile ? 'small' : 'default'"
+            class="back-button mr-3 mr-md-4 flex-shrink-0"
             @click="handleBack"
           ></v-btn>
 
-          <v-avatar color="primary" size="48" class="mr-3">
-            <v-icon icon="mdi-briefcase-outline" color="white" size="24" />
-          </v-avatar>
-          <div>
-            <h1 class="text-h5 font-weight-bold text-grey-darken-4">
-              {{ copyId ? '复制学习路径' : '创建学习路径' }}
-            </h1>
-            <p class="text-body-2 text-grey-darken-2">为 {{ careerName }} 创建新的学习路径</p>
+          <!-- 图标和标题 -->
+          <div class="d-flex align-center" style="min-width: 0;">
+            <v-avatar color="primary" :size="$vuetify.display.mobile ? 40 : 48" class="mr-3 flex-shrink-0">
+              <v-icon icon="mdi-briefcase-outline" color="white" :size="$vuetify.display.mobile ? 20 : 24" />
+            </v-avatar>
+            <div style="min-width: 0;">
+              <h1 class="text-h6 text-md-h5 font-weight-bold text-grey-darken-4 text-truncate">
+                {{ copyId ? '复制学习路径' : '创建学习路径' }}
+              </h1>
+              <p class="text-caption text-sm-body-2 text-grey-darken-2 text-truncate">
+                为 {{ careerName }} 创建新的学习路径
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- 加载状态 -->
-      <v-row v-if="loading">
-        <v-col cols="12" class="text-center py-12">
-          <v-progress-circular indeterminate color="primary" size="64" />
-          <p class="text-body-2 text-grey mt-4">加载中...</p>
-        </v-col>
-      </v-row>
+      <div v-if="loading" class="text-center py-12">
+        <v-progress-circular indeterminate color="primary" size="64" />
+        <p class="text-body-2 text-grey mt-4">加载中...</p>
+      </div>
 
-      <v-row v-else class="ma-0">
+      <div v-else class="content-layout">
         <!-- 左侧：流程图编辑器 -->
-        <v-col cols="12" lg="9" class="pa-0">
+        <div class="main-content">
           <v-card border rounded="xl" class="flow-editor-card">
-            <v-card-title class="pa-4 d-flex align-center justify-space-between">
-              <span class="text-body-1">路径编辑器</span>
-              <div class="d-flex align-center gap-2">
-                <v-btn size="small" variant="outlined" color="error" @click="deleteSelectedNodes">
-                  <v-icon icon="mdi-delete" size="18" class="mr-1" />
-                  删除节点
+            <v-card-title class="pa-3 pa-sm-4 d-flex flex-row align-center justify-space-between ga-2 ga-sm-3">
+              <span class="text-body-1 font-weight-bold">路径编辑器</span>
+              <div class="d-flex flex-wrap align-center gap-2">
+                <v-btn :size="$vuetify.display.mobile ? 'small' : 'default'" variant="outlined" color="error" @click="deleteSelectedNodes">
+                  <v-icon icon="mdi-delete" :size="$vuetify.display.mobile ? 16 : 18" class="mr-1" />
+                  <span class="d-none d-sm-inline">删除</span>
                 </v-btn>
-                <v-btn size="small" variant="outlined" color="warning" @click="resetAll">
-                  <v-icon icon="mdi-refresh" size="18" class="mr-1" />
-                  重置
+                <v-btn :size="$vuetify.display.mobile ? 'small' : 'default'" variant="outlined" color="warning" @click="resetAll">
+                  <v-icon icon="mdi-refresh" :size="$vuetify.display.mobile ? 16 : 18" class="mr-1" />
+                  <span class="d-none d-sm-inline">重置</span>
                 </v-btn>
-                <v-btn size="small" variant="flat" color="primary" @click="showSave">
-                  <v-icon icon="mdi-content-save" size="18" class="mr-1" />
+                <v-btn :size="$vuetify.display.mobile ? 'small' : 'default'" variant="flat" color="primary" @click="showSave">
+                  <v-icon icon="mdi-content-save" :size="$vuetify.display.mobile ? 16 : 18" class="mr-1" />
                   保存
                 </v-btn>
               </div>
@@ -60,37 +63,89 @@
                 <VueFlow
                   :nodes="nodes"
                   :edges="edges"
-                  :min-zoom="0.9"
+                  :min-zoom="0.7"
                   :max-zoom="1.1"
+                  :zoom-on-scroll="false"
                   fit-view-on-init
                   :snap-to-grid="true"
                   :snap-grid="[20, 20]"
                   @connect="onConnect"
                 >
                   <Background variant="dots" pattern-color="#bdbdbd" :gap="30" :size="2" />
-                  <MiniMap />
+                  <MiniMap v-if="$vuetify.display.mdAndUp" />
+                  <Controls :show-interactive="false" />
                 </VueFlow>
               </div>
             </v-card-text>
           </v-card>
+        </div>
 
+        <!-- 右侧：课程列表 -->
+        <div class="right-sidebar">
           <!-- 提示信息 -->
-          <v-card border rounded="xl" class="tips-card mt-4">
-            <v-card-text class="pa-4">
-              <div class="d-flex align-center">
-                <v-icon icon="mdi-information" color="info" class="mr-2" />
-                <div class="text-body-2 text-grey-darken-2">
-                  <strong>操作提示:</strong>
-                  从右侧选择课程添加到画布 → 拖动节点调整位置 → 连接节点创建学习路径 →
-                  点击节点可选中删除
+          <v-expansion-panels class="tips-expansion mb-4 d-lg-none">
+            <v-expansion-panel rounded="xl" elevation="0" class="tips-card" bg-color="warning-lighten-5">
+              <v-expansion-panel-title class="pa-3 pa-sm-4">
+                <div class="d-flex align-center">
+                  <v-avatar color="warning" size="28" class="mr-3">
+                    <v-icon icon="mdi-lightbulb-outline" color="white" size="16" />
+                  </v-avatar>
+                  <span class="text-subtitle-1 font-weight-bold text-grey-darken-4">操作提示</span>
+                </div>
+              </v-expansion-panel-title>
+              <v-expansion-panel-text class="pa-3 pa-sm-4 pt-0">
+                <div class="tips-list">
+                  <div class="tip-item">
+                    <v-icon icon="mdi-numeric-1-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                    <span class="text-body-2 text-grey-darken-3">从下方选择课程添加到画布</span>
+                  </div>
+                  <div class="tip-item">
+                    <v-icon icon="mdi-numeric-2-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                    <span class="text-body-2 text-grey-darken-3">拖动节点调整位置</span>
+                  </div>
+                  <div class="tip-item">
+                    <v-icon icon="mdi-numeric-3-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                    <span class="text-body-2 text-grey-darken-3">连接节点创建学习路径</span>
+                  </div>
+                  <div class="tip-item">
+                    <v-icon icon="mdi-numeric-4-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                    <span class="text-body-2 text-grey-darken-3">点击节点可选中删除</span>
+                  </div>
+                </div>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+
+          <!-- 桌面端固定显示的提示 -->
+          <v-card border rounded="xl" class="tips-card mb-4 d-none d-lg-block" color="warning-lighten-5">
+            <v-card-text class="pa-3 pa-sm-4">
+              <div class="d-flex align-center mb-3">
+                <v-avatar color="warning" size="28" class="mr-3">
+                  <v-icon icon="mdi-lightbulb-outline" color="white" size="16" />
+                </v-avatar>
+                <span class="text-subtitle-1 font-weight-bold text-grey-darken-4">操作提示</span>
+              </div>
+              <div class="tips-list">
+                <div class="tip-item">
+                  <v-icon icon="mdi-numeric-1-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                  <span class="text-body-2 text-grey-darken-3">从下方选择课程添加到画布</span>
+                </div>
+                <div class="tip-item">
+                  <v-icon icon="mdi-numeric-2-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                  <span class="text-body-2 text-grey-darken-3">拖动节点调整位置</span>
+                </div>
+                <div class="tip-item">
+                  <v-icon icon="mdi-numeric-3-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                  <span class="text-body-2 text-grey-darken-3">连接节点创建学习路径</span>
+                </div>
+                <div class="tip-item">
+                  <v-icon icon="mdi-numeric-4-circle" color="grey" size="18" class="mr-2 flex-shrink-0" />
+                  <span class="text-body-2 text-grey-darken-3">点击节点可选中删除</span>
                 </div>
               </div>
             </v-card-text>
           </v-card>
-        </v-col>
 
-        <!-- 右侧：课程列表 -->
-        <v-col cols="12" lg="3" class="pa-0 pl-6">
           <v-card border rounded="xl" class="course-list-card sticky-card">
             <v-card-title class="pa-4 pb-3">
               <div class="d-flex align-center">
@@ -124,11 +179,12 @@
                 <v-chip
                   v-for="course in filteredCourses"
                   :key="course.id"
-                  class="ma-1 course-chip"
-                  variant="outlined"
+                  class="ma-1"
+                  color="grey-lighten-5"
+                  variant="flat"
                   @click="addCourseNode(course)"
                 >
-                  <v-icon icon="mdi-plus-circle" size="16" class="mr-1" />
+                  <v-icon icon="mdi-plus-circle" size="16" class="mr-1" color="grey-darken-2" />
                   {{ course.name }}
                 </v-chip>
                 <div v-if="filteredCourses.length === 0" class="text-center py-4">
@@ -137,8 +193,8 @@
               </div>
             </v-card-text>
           </v-card>
-        </v-col>
-      </v-row>
+        </div>
+      </div>
     </div>
 
     <!-- 保存对话框 -->
@@ -189,6 +245,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { VueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { MiniMap } from '@vue-flow/minimap'
+import { Controls } from '@vue-flow/controls'
 import { Position } from '@vue-flow/core'
 import type { Node, Edge, Connection } from '@vue-flow/core'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
@@ -457,32 +514,115 @@ onMounted(() => {
   }
 }
 
-.flow-editor-card,
-.course-list-card,
-.tips-card {
-  background-color: #ffffff;
-  border: 1px solid #edeff1;
+/* 内容布局 */
+.content-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.flow-editor {
-  height: calc(100vh - 380px);
-  min-height: 400px;
-  background: #ffffff;
-  position: relative;
+@media (min-width: 1280px) {
+  .content-layout {
+    flex-direction: row;
+    gap: 24px;
+    height: calc(100vh - 56px - 40px - 80px);
+  }
 }
 
-.sticky-card {
-  position: sticky;
-  top: 75px;
-  max-height: calc(100vh - 95px);
-  overflow: hidden;
+.main-content {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
+@media (min-width: 1280px) {
+  .flow-editor-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .flow-editor-card .v-card-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* 右侧课程列表 */
+.right-sidebar {
+  width: 100%;
+}
+
+@media (min-width: 1280px) {
+  .right-sidebar {
+    width: 320px;
+    flex-shrink: 0;
+  }
+}
+
+.flow-editor-card,
+.course-list-card,
+.tips-card {
+  background-color: rgb(var(--v-theme-surface));
+  border: 1px solid rgb(var(--v-theme-outline));
+}
+
+/* 提示展开面板样式 */
+.tips-expansion {
+  background-color: transparent;
+}
+
+.tips-expansion :deep(.v-expansion-panel) {
+  border: 1px solid rgb(var(--v-theme-outline));
+}
+
+.tips-expansion :deep(.v-expansion-panel-title) {
+  min-height: auto;
+}
+
+.tips-expansion :deep(.v-expansion-panel-text__wrapper) {
+  padding: 0;
+}
+
+.flow-editor {
+  height: 500px;
+  min-height: 400px;
+  background: rgb(var(--v-theme-surface));
+  position: relative;
+}
+
+@media (min-width: 1280px) {
+  .flow-editor {
+    height: 100%;
+    min-height: 400px;
+  }
+}
+
+.sticky-card {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 1280px) {
+  .sticky-card {
+    position: sticky;
+    top: 75px;
+    max-height: calc(100vh - 95px);
+    overflow: hidden;
+  }
+}
+
 .course-list {
-  max-height: calc(100vh - 320px);
+  max-height: 400px;
   overflow-y: auto;
+}
+
+@media (min-width: 1280px) {
+  .course-list {
+    max-height: calc(100vh - 320px);
+  }
 }
 
 .course-list::-webkit-scrollbar {
@@ -494,22 +634,25 @@ onMounted(() => {
 }
 
 .course-list::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(var(--v-theme-on-surface), 0.1);
   border-radius: 2px;
-}
-
-.course-chip {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.course-chip:hover {
-  background-color: rgba(var(--v-theme-primary), 0.08);
-  border-color: rgb(var(--v-theme-primary));
 }
 
 .gap-2 {
   gap: 8px;
+}
+
+/* 提示列表样式 */
+.tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tip-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
 }
 
 /* Vue Flow 节点样式 */
@@ -519,17 +662,5 @@ onMounted(() => {
 
 :deep(.vue-flow__node.selected) {
   box-shadow: 0 0 0 2px rgb(var(--v-theme-primary));
-}
-
-/* 移动端 */
-@media (max-width: 1280px) {
-  .sticky-card {
-    position: static;
-    max-height: none;
-  }
-
-  .flow-editor {
-    height: 400px;
-  }
 }
 </style>

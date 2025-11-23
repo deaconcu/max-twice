@@ -15,61 +15,65 @@
       <!-- 内容区 -->
       <div v-else-if="career" class="content-wrapper">
         <!-- 职业信息头部 -->
-        <div class="profession-header mb-8 pa-0">
-          <div class="d-flex align-center">
-            <!-- 职业信息 -->
-            <div class="flex-grow-1">
-              <div class="d-flex align-center mb-5 career-title-row">
+        <div class="profession-header mb-6 mb-md-8 pa-0">
+          <div class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between ga-4">
+            <!-- 左侧：职业信息 -->
+            <div class="flex-grow-1" style="min-width: 0;">
+              <div class="d-flex align-center mb-4 mb-md-5 career-title-row">
                 <!-- 返回按钮 -->
                 <v-btn
                   icon="mdi-arrow-left"
                   variant="flat"
-                  color="grey-lighten-4"
-                  size="small"
-                  class="back-button mr-4"
+                  color="grey-lighten-5"
+                  :size="$vuetify.display.mobile ? 'small' : 'default'"
+                  class="back-button mr-3 mr-md-4 flex-shrink-0"
                   @click="handleBack"
                 ></v-btn>
 
-                <!-- 职业图标 -->
-                <v-avatar color="primary" size="48" class="mr-3">
-                  <v-icon :icon="getCareerIcon()" color="white" size="24" />
-                </v-avatar>
-                <h1 class="text-h4 font-weight-bold text-grey-darken-4">
-                  {{ career.name }}
-                </h1>
+                <!-- 职业图标和标题 -->
+                <div class="d-flex align-center" style="min-width: 0;">
+                  <v-avatar color="primary" :size="$vuetify.display.mobile ? 40 : 48" class="mr-3 flex-shrink-0">
+                    <v-icon :icon="getCareerIcon()" color="white" :size="$vuetify.display.mobile ? 20 : 24" />
+                  </v-avatar>
+                  <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 text-truncate">
+                    {{ career.name }}
+                  </h1>
+                </div>
               </div>
-              <!-- 简介和统计信息需要左边距对齐 -->
-              <div style="margin-left: 0px;">
+
+              <!-- 简介和统计信息 -->
+              <div>
                 <p class="text-body-2 text-grey-darken-2 mb-3">
                   {{ career.description }}
                 </p>
-                <div class="d-flex align-center gap-4">
-                    <div class="d-flex align-center">
-                      <v-icon icon="mdi-map-marker-path" size="18" color="primary" class="mr-1" />
-                      <span class="text-body-2 text-grey-darken-1">
-                        <span class="font-weight-bold text-grey-darken-4">{{ roadmapsCount }}</span>
-                        条学习路径
-                      </span>
-                    </div>
-                    <div class="d-flex align-center">
-                      <v-icon icon="mdi-account-group" size="18" color="success" class="mr-1" />
-                      <span class="text-body-2 text-grey-darken-1">
-                        <span class="font-weight-bold text-grey-darken-4">{{
-                          formatNumber(career.learnerCount)
-                        }}</span>
-                        人学习
-                      </span>
-                    </div>
+                <div class="d-flex flex-wrap align-center gap-3 gap-md-4">
+                  <div class="d-flex align-center">
+                    <v-icon icon="mdi-map-marker-path" size="18" color="primary" class="mr-1" />
+                    <span class="text-body-2 text-grey-darken-1">
+                      <span class="font-weight-bold text-grey-darken-4">{{ roadmapsCount }}</span>
+                      条学习路径
+                    </span>
                   </div>
+                  <div class="d-flex align-center">
+                    <v-icon icon="mdi-account-group" size="18" color="success" class="mr-1" />
+                    <span class="text-body-2 text-grey-darken-1">
+                      <span class="font-weight-bold text-grey-darken-4">{{
+                        formatNumber(career.learnerCount)
+                      }}</span>
+                      人学习
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- 创建按钮 -->
+            <!-- 右侧：创建按钮 -->
             <v-btn
               color="primary"
               variant="flat"
-              size="large"
+              :size="$vuetify.display.mobile ? 'default' : 'large'"
               rounded="lg"
+              class="flex-shrink-0"
               @click="handleCreateRoadmap"
             >
               <v-icon icon="mdi-plus" size="20" class="mr-1" />
@@ -79,11 +83,11 @@
         </div>
 
         <!-- 路径列表 -->
-        <v-row class="ma-0 mt-2">
-          <v-col cols="12" lg="8" class="pa-0">
+        <div class="content-layout">
+          <div class="main-content">
             <!-- 筛选和搜索 -->
             <div class="filter-card mb-6">
-              <div class="d-flex align-center justify-space-between">
+              <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 ga-sm-4">
                 <!-- 状态筛选 -->
                 <v-btn-toggle
                   v-model="filterStatus"
@@ -92,23 +96,24 @@
                   rounded="lg"
                   density="comfortable"
                   mandatory
+                  class="filter-toggle"
                   @update:model-value="filterRoadmaps"
                 >
-                  <v-btn value="all" size="default">
+                  <v-btn value="all" :size="$vuetify.display.mobile ? 'small' : 'default'">
                     <v-icon icon="mdi-format-list-bulleted" size="16" class="mr-1" />
-                    全部
+                    <span class="d-none d-sm-inline">全部</span>
                   </v-btn>
-                  <v-btn value="pinned" size="default">
+                  <v-btn value="pinned" :size="$vuetify.display.mobile ? 'small' : 'default'">
                     <v-icon icon="mdi-pin" size="16" class="mr-1" />
-                    置顶
+                    <span class="d-none d-sm-inline">置顶</span>
                   </v-btn>
-                  <v-btn value="learning" size="default">
+                  <v-btn value="learning" :size="$vuetify.display.mobile ? 'small' : 'default'">
                     <v-icon icon="mdi-school" size="16" class="mr-1" />
-                    学习中
+                    <span class="d-none d-sm-inline">学习中</span>
                   </v-btn>
-                  <v-btn value="upvoted" size="default">
+                  <v-btn value="upvoted" :size="$vuetify.display.mobile ? 'small' : 'default'">
                     <v-icon icon="mdi-heart" size="16" class="mr-1" />
-                    已点赞
+                    <span class="d-none d-sm-inline">已点赞</span>
                   </v-btn>
                 </v-btn-toggle>
 
@@ -168,10 +173,10 @@
               hover
               @click="handleGoToRoadmap(roadmap)"
             >
-              <v-card-text class="pa-5">
+              <v-card-text class="pa-4 pa-sm-5">
                 <div class="d-flex align-start">
                   <!-- 左侧：投票区域 -->
-                  <div class="vote-section mr-4">
+                  <div class="vote-section mr-3 mr-sm-4">
                     <v-btn
                       :color="roadmap.upvoted ? 'primary' : 'grey-lighten-1'"
                       :variant="roadmap.upvoted ? 'flat' : 'outlined'"
@@ -192,7 +197,7 @@
                   </div>
 
                   <!-- 中间：路径信息 -->
-                  <div class="flex-grow-1">
+                  <div class="flex-grow-1" style="min-width: 0;">
                     <!-- 标签 -->
                     <div class="d-flex align-center mb-2">
                       <v-chip
@@ -222,7 +227,7 @@
                     </p>
 
                     <!-- 统计信息 -->
-                    <div class="d-flex align-center gap-4 mb-3">
+                    <div class="d-flex flex-wrap align-center gap-2 gap-sm-3 gap-md-4 mb-3">
                       <div class="d-flex align-center">
                         <v-icon icon="mdi-account" size="16" color="grey" class="mr-1" />
                         <span class="text-caption text-grey-darken-2">
@@ -232,10 +237,11 @@
                       <div class="d-flex align-center">
                         <v-icon icon="mdi-account-group" size="16" color="grey" class="mr-1" />
                         <span class="text-caption text-grey-darken-2">
-                          {{ roadmap.learnerCount ?? 0 }} 人学习
+                          {{ roadmap.learnerCount ?? 0 }}
+                          <span class="d-none d-sm-inline">人学习</span>
                         </span>
                       </div>
-                      <div class="d-flex align-center">
+                      <div class="d-flex align-center d-none d-sm-flex">
                         <v-icon icon="mdi-comment-outline" size="16" color="grey" class="mr-1" />
                         <span class="text-caption text-grey-darken-2">
                           {{ roadmap.commentCount ?? 0 }} 评论
@@ -244,10 +250,11 @@
                       <div class="d-flex align-center">
                         <v-icon icon="mdi-circle-medium" size="16" color="grey" class="mr-1" />
                         <span class="text-caption text-grey-darken-2">
-                          {{ roadmap.nodeCount }} 个节点
+                          {{ roadmap.nodeCount }}
+                          <span class="d-none d-sm-inline">个</span>节点
                         </span>
                       </div>
-                      <div class="d-flex align-center">
+                      <div class="d-flex align-center d-none d-md-flex">
                         <v-icon icon="mdi-clock-outline" size="16" color="grey" class="mr-1" />
                         <span class="text-caption text-grey-darken-2">
                           {{ getTimeDisplay(roadmap.createdAt) }}
@@ -285,16 +292,16 @@
                   </div>
 
                   <!-- 右侧：路线图图标 -->
-                  <div class="ml-4">
-                    <v-icon icon="mdi-graph-outline" size="80" color="grey-lighten-2" />
+                  <div class="ml-3 ml-sm-4 d-none d-sm-block roadmap-icon">
+                    <v-icon icon="mdi-graph-outline" :size="$vuetify.display.mdAndUp ? 80 : 60" color="grey-lighten-2" />
                   </div>
                 </div>
               </v-card-text>
             </v-card>
-          </v-col>
+          </div>
 
           <!-- 右侧：说明卡片 -->
-          <v-col cols="12" lg="4" class="pa-0 pl-16">
+          <div class="right-sidebar d-none d-lg-block">
             <v-card rounded="xl" class="info-card sticky-card no-border">
               <v-card-title class="py-6 px-0 pb-4">
                 <div class="d-flex align-center">
@@ -401,8 +408,8 @@
                 </div>
               </v-card-text>
             </v-card>
-          </v-col>
-        </v-row>
+          </div>
+        </div>
       </div>
     </div>
   </DefaultLayout>
@@ -586,8 +593,33 @@ const handleCopy = (roadmap: { id: number }, event: Event): void => {
   background-color: transparent;
 }
 
+/* 内容布局 */
+.content-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (min-width: 1280px) {
+  .content-layout {
+    flex-direction: row;
+    gap: 48px;
+  }
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 右侧信息栏 */
+.right-sidebar {
+  width: 320px;
+  flex-shrink: 0;
+}
+
 .info-card {
-  background-color: #ffffff;
+  background-color: rgb(var(--v-theme-surface));
 }
 
 .sticky-card {
@@ -606,20 +638,35 @@ const handleCopy = (roadmap: { id: number }, event: Event): void => {
 }
 
 .sticky-card::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(var(--v-theme-on-surface), 0.1);
   border-radius: 2px;
 }
 
 .sticky-card::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(var(--v-theme-on-surface), 0.2);
 }
 
-.search-field {
-  max-width: 300px;
+/* 筛选切换按钮 */
+.filter-toggle {
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .filter-toggle {
+    width: auto;
+  }
 }
 
 .sort-select {
-  max-width: 180px;
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (min-width: 600px) {
+  .sort-select {
+    width: auto;
+    max-width: 180px;
+  }
 }
 
 .gap-3 {
@@ -635,8 +682,8 @@ const handleCopy = (roadmap: { id: number }, event: Event): void => {
 }
 
 .roadmap-card {
-  background-color: #ffffff;
-  border: 1px solid #edeff1;
+  background-color: rgb(var(--v-theme-surface));
+  border: 1px solid rgb(var(--v-theme-outline));
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -659,29 +706,18 @@ const handleCopy = (roadmap: { id: number }, event: Event): void => {
 }
 
 .empty-state {
-  background-color: #ffffff;
-  border: 1px solid #edeff1;
+  background-color: rgb(var(--v-theme-surface));
+  border: 1px solid rgb(var(--v-theme-outline));
 }
 
 /* 移动端 */
-@media (max-width: 1280px) {
-  .career-detail-page {
-    /* 使用 DefaultLayout 的默认 padding */
-  }
-}
-
 @media (max-width: 960px) {
   .gap-3 {
     gap: 8px;
   }
 
-  .search-field {
-    max-width: 100%;
-    width: 100%;
-  }
-
-  .sort-select {
-    max-width: 100%;
+  .gap-4 {
+    gap: 12px;
   }
 }
 </style>
