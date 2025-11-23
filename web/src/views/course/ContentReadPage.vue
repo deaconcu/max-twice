@@ -893,6 +893,10 @@ onUnmounted(() => {
     display: none;
   }
 
+  .center-right-container {
+    width: 100% !important;
+  }
+
   .center-right-wrapper {
     width: 100% !important;
     max-width: none !important;
