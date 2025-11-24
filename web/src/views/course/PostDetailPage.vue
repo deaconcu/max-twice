@@ -47,6 +47,15 @@
                 :detail="true"
                 :show-back-button="false"
               />
+
+              <!-- 评论区 -->
+              <CommentSection
+                v-if="data && (data.currPosting || data.post)"
+                :post-id="(data.currPosting || data.post).id"
+                :comment-count="(data.currPosting || data.post).commentCount || 0"
+                :object-type="ObjectType.POST"
+                class="mt-6"
+              />
             </div>
 
             <!-- 右侧工具栏 -->
@@ -251,6 +260,7 @@ import { useRouter, useRoute } from 'vue-router'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import CourseHeader from '@/components/features/read/CourseHeader.vue'
 import SinglePost from '@/components/features/read/SinglePost.vue'
+import CommentSection from '@/components/common/CommentSection.vue'
 import CreateDeckDialog from '@/components/features/read/CreateDeckDialog.vue'
 import MemoryCardSidebar from '@/components/features/read/MemoryCardSidebar.vue'
 import DeckDetailDialog from '@/components/features/read/DeckDetailDialog.vue'
@@ -258,6 +268,7 @@ import { pageApi, memoryApi } from '@/api'
 import type { ReadResponse } from '@/api/modules/page'
 import type { MemoryCardDeck } from '@/types/memory'
 import { useFetch } from '@/composables/useFetch'
+import { ObjectType } from '@/enums'
 
 const router = useRouter()
 const route = useRoute()

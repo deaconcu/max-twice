@@ -385,83 +385,91 @@ watch(
     </v-row>
 
     <!-- 交互按钮 -->
-    <v-row class="ma-0 pt-5 d-flex justify-space-between" align="center">
-      <div class="d-flex">
+    <v-row
+      class="ma-0 pt-5 d-flex justify-space-between action-bar"
+      :class="{ 'action-bar-sticky': detail }"
+      align="center"
+    >
+      <div class="d-flex core-actions">
         <!-- 二次理解按钮 -->
         <v-btn
           :variant="posting.voteType === 'twice' ? 'flat' : 'tonal'"
-          rounded="lg"
-          density="comfortable"
-          :color="posting.voteType === 'twice' ? 'primary' : 'primary'"
-          class="px-4"
+          rounded="pill"
+          size="default"
+          :color="posting.voteType === 'twice' ? 'primary' : 'grey-lighten-2'"
+          :class="['px-4', posting.voteType === 'twice' ? 'core-btn-active' : 'core-btn-inactive']"
           @click="handleUpvote('twice')"
         >
           <v-icon
-            v-if="posting.voteType === 'twice'"
-            icon="mdi-check-circle"
-            size="16"
+            :icon="posting.voteType === 'twice' ? 'mdi-lightbulb' : 'mdi-lightbulb-outline'"
+            size="18"
             class="mr-2"
-            color="white"
-          ></v-icon>
-          <v-icon
-            v-else
-            icon="mdi-lightbulb-on"
-            size="16"
-            class="mr-2"
+            :color="posting.voteType === 'twice' ? 'white' : 'primary'"
           ></v-icon>
           <span
             :class="
               posting.voteType === 'twice'
                 ? 'font-weight-bold text-white'
-                : 'font-weight-bold'
+                : 'font-weight-medium text-grey-darken-2'
             "
           >
-            二次理解 {{ posting.twice || 0 }}
+            两遍秒懂
           </span>
+          <v-chip
+            v-if="posting.twice > 0"
+            size="x-small"
+            :color="posting.voteType === 'twice' ? 'white' : 'grey-darken-1'"
+            :text-color="posting.voteType === 'twice' ? 'primary' : 'white'"
+            class="ml-2"
+          >
+            {{ posting.twice }}
+          </v-chip>
         </v-btn>
 
         <!-- 有用按钮 -->
         <v-btn
           :variant="posting.voteType === 'helpful' ? 'flat' : 'tonal'"
-          rounded="lg"
-          density="comfortable"
-          :color="posting.voteType === 'helpful' ? 'success' : 'success'"
-          class="px-4 ms-3"
+          rounded="pill"
+          size="default"
+          :color="posting.voteType === 'helpful' ? 'success' : 'grey-lighten-2'"
+          :class="['px-4 ms-3', posting.voteType === 'helpful' ? 'core-btn-active' : 'core-btn-inactive']"
           @click="handleUpvote('helpful')"
         >
           <v-icon
-            v-if="posting.voteType === 'helpful'"
-            icon="mdi-check-circle"
-            size="16"
+            :icon="posting.voteType === 'helpful' ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+            size="18"
             class="mr-2"
-            color="white"
-          ></v-icon>
-          <v-icon
-            v-else
-            icon="mdi-thumb-up"
-            size="16"
-            class="mr-2"
+            :color="posting.voteType === 'helpful' ? 'white' : 'success'"
           ></v-icon>
           <span
             :class="
               posting.voteType === 'helpful'
                 ? 'font-weight-bold text-white'
-                : 'font-weight-bold'
+                : 'font-weight-medium text-grey-darken-2'
             "
           >
-            有用 {{ posting.helpful || 0 }}
+            有用
           </span>
+          <v-chip
+            v-if="posting.helpful > 0"
+            size="x-small"
+            :color="posting.voteType === 'helpful' ? 'white' : 'grey-darken-1'"
+            :text-color="posting.voteType === 'helpful' ? 'success' : 'white'"
+            class="ml-2"
+          >
+            {{ posting.helpful }}
+          </v-chip>
         </v-btn>
 
         <!-- 评论按钮 -->
         <v-btn
           variant="text"
           rounded="lg"
-          density="comfortable"
+          size="default"
           class="px-3 ms-3"
           @click="handleViewComments"
         >
-          <v-icon icon="mdi-comment-outline" size="14" class="mr-2" color="grey-darken-2"></v-icon>
+          <v-icon icon="mdi-comment-outline" size="18" class="mr-2" color="grey-darken-2"></v-icon>
           <span class="font-weight-medium text-grey-darken-2">
             {{ posting.commentCount || 0 }} 评论
           </span>
@@ -470,8 +478,8 @@ watch(
 
       <!-- 管理按钮（右侧） -->
       <div class="d-flex">
-        <v-btn variant="text" rounded="lg" density="comfortable" class="px-3">
-          <v-icon icon="mdi-share-variant" size="14" class="mr-2" color="grey-darken-2"></v-icon>
+        <v-btn variant="text" rounded="lg" size="default" class="px-3">
+          <v-icon icon="mdi-share-variant" size="18" class="mr-2" color="grey-darken-2"></v-icon>
           <span class="font-weight-medium text-grey-darken-2">分享</span>
         </v-btn>
       </div>
@@ -638,6 +646,36 @@ watch(
     max-width: 100vw;
     overflow-x: auto;
     overflow-y: hidden;
+  }
+}
+
+/* 核心操作按钮样式和动画 */
+.core-actions .core-btn-inactive {
+  transition: all 0.2s ease;
+}
+
+.core-actions .core-btn-inactive:hover {
+  transform: scale(1.05);
+}
+
+.core-actions .core-btn-active {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* 详情页：点赞栏粘性固定到底部 */
+.action-bar-sticky {
+  position: sticky;
+  bottom: 0;
+  background-color: white;
+  padding-bottom: 20px;
+}
+
+@media (max-width: 750px) {
+  .action-bar-sticky {
+    margin-left: -4px !important;
+    margin-right: -4px !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
   }
 }
 
