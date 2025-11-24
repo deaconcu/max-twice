@@ -578,7 +578,6 @@ onUnmounted(() => {
   .read-content {
     max-width: none;
     width: 100% !important;
-    overflow-x: hidden !important;
   }
 
   .course-header-wrapper {

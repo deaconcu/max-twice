@@ -643,7 +643,7 @@ watch(
 /* 移动端：限制公式宽度 */
 @media (max-width: 750px) {
   .article-content :deep(.katex-display) {
-    max-width: 100vw;
+    max-width: calc(100vw - 32px);
     overflow-x: auto;
     overflow-y: hidden;
   }
