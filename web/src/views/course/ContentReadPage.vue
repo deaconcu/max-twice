@@ -15,12 +15,12 @@
               <!-- 目录组选择和关闭按钮 -->
               <div v-if="data && data.toc" class="toc-chips-row pa-4 pa-md-4 d-flex align-items-center flex-wrap">
                 <v-chip
-                  :size="$vuetify.display.mobile ? 'small' : 'default'"
+                  size="default"
                   rounded="lg"
                   label
                   variant="tonal"
                   color=""
-                  class="me-2 px-3 text-body-2 text-md-body-1"
+                  class="me-2 px-3 text-body-2 text-md-body-1 text-medium-emphasis"
                   style="font-weight: 600"
                 >
                   目录
@@ -33,10 +33,10 @@
                   <v-chip
                     label
                     rounded="lg"
-                    :size="$vuetify.display.mobile ? 'small' : 'default'"
+                    size="default"
                     variant="flat"
-                    :color="currContentsIndex === index ? 'grey-darken-1' : 'grey-lighten-3'"
-                    class="me-2 text-body-2 text-md-body-1"
+                    :color="currContentsIndex === index ? 'grey' : 'surface-variant'"
+                    class="me-2 text-body-2 text-md-body-1 font-weight-bold"
                     @click="currContentsIndex = index"
                   >
                     {{ index + 1 }}
@@ -94,12 +94,12 @@
             <div v-if="data && data.toc" class="toc-groups-card">
               <div class="toc-chips">
                 <v-chip
-                  :size="$vuetify.display.mobile ? 'small' : 'default'"
+                  size="default"
                   rounded="lg"
                   label
                   variant="tonal"
                   color=""
-                  class="me-0 px-3 text-body-2 text-md-body-1"
+                  class="me-0 px-3 text-body-2 text-md-body-1 text-medium-emphasis"
                   style="font-weight: 600"
                 >
                   目录
@@ -112,10 +112,10 @@
                   <v-chip
                     label
                     rounded="lg"
-                    :size="$vuetify.display.mobile ? 'small' : 'default'"
+                    size="default"
                     variant="flat"
-                    :color="currContentsIndex === index ? 'grey-darken-1' : 'grey-lighten-3'"
-                    class="text-body-2 text-md-body-1"
+                    :color="currContentsIndex === index ? 'grey' : 'surface-variant'"
+                    class="text-body-2 text-md-body-1 font-weight-bold"
                     @click="currContentsIndex = index"
                   >
                     {{ index + 1 }}
@@ -679,7 +679,7 @@ onUnmounted(() => {
   align-items: center;
   margin-right: 2px;
   padding: 6px 12px;
-  background-color: #f9f4f1;
+  background-color: rgb(var(--v-theme-surface-variant));
   border-radius: 8px;
   border: 1px solid rgba(0, 0, 0, 0.06);
 }

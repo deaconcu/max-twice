@@ -151,7 +151,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
         <div class="d-flex align-center action-buttons">
           <v-btn
             variant="flat"
-            color="grey-lighten-4"
+            color="surface-variant"
             rounded="lg"
             class="px-3 me-2"
             density="comfortable"
@@ -168,7 +168,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
 
           <v-btn
             variant="flat"
-            color="grey-lighten-4"
+            color="surface-variant"
             rounded="lg"
             density="comfortable"
             class="px-3 me-2"
@@ -185,7 +185,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
 
           <v-btn
             variant="flat"
-            color="grey-lighten-4"
+            color="surface-variant"
             rounded="lg"
             class="px-3"
             density="comfortable"
