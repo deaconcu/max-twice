@@ -77,6 +77,10 @@ const copyItem = (index: number, val: number) => {
 const removeItem = (index: number) => {
   list.value.splice(index, 1)
 }
+
+const resetList = () => {
+  list.value = Array.from({ length: props.contents.length }, (_, i) => i + 1)
+}
 </script>
 
 <template>
@@ -90,15 +94,14 @@ const removeItem = (index: number) => {
         <v-btn icon="mdi-close" variant="text" size="small" @click="dialog = false"></v-btn>
       </v-card-title>
 
-      <v-divider></v-divider>
-
       <v-card-text class="pa-0">
-        <div class="px-6 py-3 bg-grey-lighten-4">
-          <div class="text-body-2 text-grey-darken-2">拖动调整顺序，添加新目录或复制现有目录</div>
-        </div>
+        <v-sheet height="400px" class="overflow-auto">
+          <div class="px-6 py-3 bg-grey-lighten-5">
+            <div class="text-body-2 text-grey-darken-2">拖动调整顺序，添加新目录或复制现有目录</div>
+          </div>
 
-        <v-sheet height="400px" class="overflow-auto px-6 py-4">
-          <draggable v-model="list" item-key="id" handle=".drag-handle">
+          <div class="px-6 py-4">
+            <draggable v-model="list" item-key="id" handle=".drag-handle">
             <template #item="{ element, index }">
               <div class="toc-item d-flex align-center mb-3 pa-3">
                 <div class="drag-handle mr-3">
@@ -137,15 +140,19 @@ const removeItem = (index: number) => {
               </div>
             </template>
           </draggable>
+          </div>
         </v-sheet>
       </v-card-text>
 
-      <v-divider></v-divider>
-
       <v-card-actions class="pa-4 d-flex justify-space-between">
-        <v-btn variant="text" color="primary" prepend-icon="mdi-plus" @click="addItem">
-          添加新目录
-        </v-btn>
+        <div class="d-flex" style="gap: 8px">
+          <v-btn variant="text" color="primary" prepend-icon="mdi-plus" @click="addItem">
+            添加新目录
+          </v-btn>
+          <v-btn variant="text" color="primary" prepend-icon="mdi-refresh" @click="resetList">
+            重置
+          </v-btn>
+        </div>
         <div class="d-flex" style="gap: 8px">
           <v-btn variant="text" color="grey-darken-2" @click="dialog = false">取消</v-btn>
           <v-btn color="primary" variant="flat" :loading="submitting" @click="submit"> 确定 </v-btn>
