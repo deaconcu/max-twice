@@ -386,7 +386,7 @@ watch(
 
     <!-- 交互按钮 -->
     <v-row
-      class="ma-0 pt-5 d-flex justify-space-between action-bar"
+      class="ma-0 pt-3 d-flex justify-space-between action-bar"
       :class="{ 'action-bar-sticky': detail }"
       align="center"
     >
@@ -667,11 +667,18 @@ watch(
   position: sticky;
   bottom: 0;
   background-color: white;
-  padding-bottom: 20px;
+  padding-bottom: 12px;
+}
+
+@media (max-width: 960px) {
+  .action-bar-sticky {
+    bottom: 60px;
+  }
 }
 
 @media (max-width: 750px) {
   .action-bar-sticky {
+    bottom: 60px;
     margin-left: -4px !important;
     margin-right: -4px !important;
     padding-left: 4px !important;

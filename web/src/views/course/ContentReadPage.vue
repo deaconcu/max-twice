@@ -861,7 +861,6 @@ onUnmounted(() => {
 
   .read-content {
     max-width: 750px;
-    overflow-x: hidden !important;
   }
 
   .toc-sidebar {
