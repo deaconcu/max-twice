@@ -389,32 +389,31 @@ watch(
       <div class="d-flex">
         <!-- 二次理解按钮 -->
         <v-btn
-          :variant="posting.voteType === 'twice' ? 'flat' : 'flat'"
+          :variant="posting.voteType === 'twice' ? 'flat' : 'tonal'"
           rounded="lg"
           density="comfortable"
-          :color="posting.voteType === 'twice' ? 'primary' : 'grey-lighten-3'"
-          class="px-3"
+          :color="posting.voteType === 'twice' ? 'primary' : 'primary'"
+          class="px-4"
           @click="handleUpvote('twice')"
         >
           <v-icon
             v-if="posting.voteType === 'twice'"
-            icon="mdi-check"
-            size="14"
+            icon="mdi-check-circle"
+            size="16"
             class="mr-2"
             color="white"
           ></v-icon>
           <v-icon
             v-else
-            icon="mdi-lightbulb-outline"
-            size="14"
+            icon="mdi-lightbulb-on"
+            size="16"
             class="mr-2"
-            color="grey-darken-2"
           ></v-icon>
           <span
             :class="
               posting.voteType === 'twice'
-                ? 'font-weight-medium text-white'
-                : 'font-weight-medium text-grey-darken-2'
+                ? 'font-weight-bold text-white'
+                : 'font-weight-bold'
             "
           >
             二次理解 {{ posting.twice || 0 }}
@@ -423,32 +422,31 @@ watch(
 
         <!-- 有用按钮 -->
         <v-btn
-          :variant="posting.voteType === 'helpful' ? 'flat' : 'flat'"
+          :variant="posting.voteType === 'helpful' ? 'flat' : 'tonal'"
           rounded="lg"
           density="comfortable"
-          :color="posting.voteType === 'helpful' ? 'green' : 'grey-lighten-3'"
-          class="px-3 ms-3"
+          :color="posting.voteType === 'helpful' ? 'success' : 'success'"
+          class="px-4 ms-3"
           @click="handleUpvote('helpful')"
         >
           <v-icon
             v-if="posting.voteType === 'helpful'"
-            icon="mdi-check"
-            size="14"
+            icon="mdi-check-circle"
+            size="16"
             class="mr-2"
             color="white"
           ></v-icon>
           <v-icon
             v-else
-            icon="mdi-thumb-up-outline"
-            size="14"
+            icon="mdi-thumb-up"
+            size="16"
             class="mr-2"
-            color="grey-darken-2"
           ></v-icon>
           <span
             :class="
               posting.voteType === 'helpful'
-                ? 'font-weight-medium text-white'
-                : 'font-weight-medium text-grey-darken-2'
+                ? 'font-weight-bold text-white'
+                : 'font-weight-bold'
             "
           >
             有用 {{ posting.helpful || 0 }}
