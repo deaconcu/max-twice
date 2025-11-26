@@ -18,6 +18,11 @@
 
 ## 🎯 准备阶段
 
+### 架构理解
+- [ ] 团队成员已理解本项目的 **DataService 模式**
+- [ ] 理解 DataService 模式 vs 标准 JPA 做法的区别
+- [ ] 理解职责分离：BusinessService（业务逻辑）vs DataService（数据+缓存）
+
 ### 团队准备
 - [ ] 团队成员已了解 JPA 基础知识
 - [ ] 团队成员已阅读实施文档 `jpa-mybatis-migration-guide.md`
@@ -81,34 +86,55 @@
 - [ ] 创建 `UserRepository` 接口
 - [ ] 继承 `JpaRepository<UserDO, Long>`
 - [ ] 添加 `@Repository` 注解
-- [ ] 添加 `findByEmail(String email)` 方法
-- [ ] 添加 `findByName(String name)` 方法
+- [ ] 添加 `Optional<UserDO> findByEmail(String email)` 方法
+- [ ] 添加 `Optional<UserDO> findByName(String name)` 方法
+- [ ] 添加 `List<UserDO> findByIdIn(Collection<Long> ids)` 方法（批量查询）
+- [ ] **重要：不要在 Repository 添加缓存注解**（缓存在 DataService 管理）
 - [ ] 验证方法命名符合 JPA 规范
 
 ### 2.3 精简 UserMapper
-- [ ] 删除 `getById(long id)` 方法
-- [ ] 删除 `getByEmail(String email)` 方法
-- [ ] 删除 `getByName(String name)` 方法
-- [ ] 删除 `insert(UserDO user)` 方法
-- [ ] 删除 `update(UserDO user)` 方法
-- [ ] 保留 `getByIds(Collection<Long> ids)` 方法（动态 SQL）
-- [ ] 保留 `getMapByIds(Collection<Long> ids)` 方法
-- [ ] 保留 `searchByName(String name)` 方法（INSTR 查询）
-- [ ] 保留分页查询方法
+- [ ] **保留**：`getByIds(Collection<Long> ids)` - 动态 SQL
+- [ ] **保留**：`getMapByIds(Collection<Long> ids)` - 返回 Map 的查询
+- [ ] **保留**：`searchByName(String name)` - INSTR 模糊查询
+- [ ] **保留**：`getList(int count)` - 分页查询
+- [ ] **保留**：`getListPaginated(long offsetId, int count)` - 游标分页
+- [ ] **删除**：`getById(long id)` → 改用 JPA Repository
+- [ ] **删除**：`getByEmail(String email)` → 改用 JPA Repository
+- [ ] **删除**：`getByName(String name)` → 改用 JPA Repository
+- [ ] **删除**：`insert(UserDO user)` → 改用 JPA Repository
+- [ ] **删除**：`update(UserDO user)` → 改用 JPA Repository
 
-### 2.4 重构 UserService
-- [ ] 注入 `UserRepository`
-- [ ] 注入 `UserMapper`
-- [ ] 修改 `createUser()` 使用 `userRepository.save()`
-- [ ] 修改 `getUserById()` 使用 `userRepository.findById()`
-- [ ] 修改 `getUserByEmail()` 使用 `userRepository.findByEmail()`
-- [ ] 修改 `updateUser()` 使用 `userRepository.save()`
-- [ ] 保持复杂查询使用 `userMapper`
-- [ ] 删除手动设置 `createdAt` 和 `updatedAt` 的代码
+### 2.4 重构 UserDataService（保持现有架构）
+- [ ] **重要**：确认 UserDataService 已存在
+- [ ] 注入 `UserRepository`（新增）
+- [ ] 保留 `UserMapper` 注入
+- [ ] 修改 `getById()` 使用 `userRepository.findById()` 替换 `userMapper.getById()`
+- [ ] 修改 `getByEmail()` 使用 `userRepository.findByEmail()`
+- [ ] 修改 `getByName()` 使用 `userRepository.findByName()`
+- [ ] 修改 `getByIds()` 中的数据库查询部分，使用 `userRepository.findByIdIn()`
+- [ ] 修改 `insert()` 使用 `userRepository.save()`
+- [ ] 修改 `update()` 使用 `userRepository.save()`
+- [ ] **保留**：`getMapByIds()` 继续使用 `userMapper`
+- [ ] **保留**：`searchByName()` 继续使用 `userMapper`
+- [ ] **保留**：所有缓存逻辑（@Cacheable, @CacheEvict）
+- [ ] 删除手动设置 `createdAt` 和 `updatedAt` 的代码（JPA Auditing 自动填充）
 
-### 2.5 编写测试
-- [ ] 创建 `UserServiceTest` 测试类
-- [ ] 测试 `createUser()` - 验证时间自动填充
+### 2.5 验证 BusinessService 不需要修改
+- [ ] 确认 `UserService`（BusinessService）调用的是 `UserDataService`
+- [ ] 确认 BusinessService 不直接依赖 Repository/Mapper
+- [ ] **不需要修改 BusinessService 代码**（因为 DataService 接口不变）
+
+### 2.6 编写测试
+- [ ] 创建 `UserDataServiceTest` 测试类（测试数据访问层）
+- [ ] 测试 JPA 简单查询：`getById()`, `getByEmail()`, `getByName()`
+- [ ] 测试 JPA 批量查询：`getByIds()`
+- [ ] 测试 JPA 保存：`save()` - 验证时间自动填充
+- [ ] 测试 JPA 更新：`update()` - 验证 `updatedAt` 自动更新
+- [ ] 测试 MyBatis 复杂查询：`getMapByIds()`, `searchByName()`
+- [ ] 测试缓存功能：验证 `@Cacheable` 和 `@CacheEvict` 生效
+- [ ] 运行所有测试，确保通过
+
+### 2.7 回归测试
 - [ ] 测试 `getUserById()` - 验证 JPA 查询
 - [ ] 测试 `updateUser()` - 验证 `updatedAt` 自动更新
 - [ ] 测试 `getUsersByIds()` - 验证 MyBatis 复杂查询
