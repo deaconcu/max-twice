@@ -86,7 +86,10 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
     <!-- 以下内容只在 list/comment/memoryCards 时显示 -->
     <template v-if="tab === 'list' || tab === 'comment' || tab === 'memoryCards'">
       <!-- 节点路径（面包屑） -->
-      <v-row v-if="nodes && nodes.length > 0" class="node-breadcrumb ma-0 text-grey text-body-2 pb-2">
+      <v-row
+        v-if="nodes && nodes.length > 0"
+        class="node-breadcrumb ma-0 text-grey text-body-2 pb-2"
+      >
         <div class="d-flex align-center">
           <template v-for="(item, index) in nodes" :key="item">
             {{ data.tocNodeInfos?.[item]?.name || item }}

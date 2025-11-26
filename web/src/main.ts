@@ -4,6 +4,7 @@ import router from './router'
 import pinia from './config/pinia'
 import vuetify from './config/vuetify'
 import i18n from './i18n'
+import { useValidationConfigStore } from './stores/validationConfig'
 
 // 全局样式
 import './styles/global.css'
@@ -20,5 +21,11 @@ app.use(pinia)
 app.use(router)
 app.use(vuetify)
 app.use(i18n)
+
+// 初始化验证配置（后台异步加载，不阻塞页面）
+const validationStore = useValidationConfigStore()
+validationStore.init().catch((error) => {
+  console.error('[App] 验证配置初始化失败', error)
+})
 
 app.mount('#app')

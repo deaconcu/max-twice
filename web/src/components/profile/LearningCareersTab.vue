@@ -5,8 +5,12 @@
       <div class="sticky-sidebar">
         <div class="pa-3 pa-md-4">
           <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">学习的职业</h4>
-            <p class="text-caption text-md-body-2 text-grey mb-0">查看您正在学习的职业路径和完成进度。</p>
+            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
+              学习的职业
+            </h4>
+            <p class="text-caption text-md-body-2 text-grey mb-0">
+              查看您正在学习的职业路径和完成进度。
+            </p>
           </div>
           <v-divider class="my-3 my-md-4" />
           <div class="text-caption text-md-body-2 text-grey">
@@ -31,7 +35,9 @@
     <v-col cols="12" lg="10">
       <div class="pa-0 pa-sm-2">
         <!-- 顶部操作栏 -->
-        <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3">
+        <div
+          class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3"
+        >
           <!-- Tab 切换 -->
           <v-btn-toggle
             v-model="statusTab"
@@ -41,22 +47,48 @@
             rounded="lg"
             density="compact"
           >
-            <v-btn value="learning" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'">
-              <v-icon icon="mdi-school" :size="$vuetify.display.mobile ? 16 : 18" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'" />
+            <v-btn
+              value="learning"
+              rounded="lg"
+              :size="$vuetify.display.mobile ? 'small' : 'default'"
+            >
+              <v-icon
+                icon="mdi-school"
+                :size="$vuetify.display.mobile ? 16 : 18"
+                :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+              />
               <span class="d-none d-sm-inline">正在学习</span>
               <span class="d-sm-none">学习中</span>
             </v-btn>
-            <v-btn value="completed" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'">
-              <v-icon icon="mdi-check-circle" :size="$vuetify.display.mobile ? 16 : 18" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'" />
+            <v-btn
+              value="completed"
+              rounded="lg"
+              :size="$vuetify.display.mobile ? 'small' : 'default'"
+            >
+              <v-icon
+                icon="mdi-check-circle"
+                :size="$vuetify.display.mobile ? 16 : 18"
+                :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+              />
               <span class="d-none d-sm-inline">已经完成</span>
               <span class="d-sm-none">已完成</span>
             </v-btn>
           </v-btn-toggle>
 
-          <v-btn color="primary" variant="text" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'" to="/career">
+          <v-btn
+            color="primary"
+            variant="text"
+            rounded="lg"
+            :size="$vuetify.display.mobile ? 'small' : 'default'"
+            to="/career"
+          >
             <span class="d-none d-sm-inline">浏览全部职业</span>
             <span class="d-sm-none">浏览</span>
-            <v-icon icon="mdi-chevron-right" :size="$vuetify.display.mobile ? 16 : 18" class="ml-1" />
+            <v-icon
+              icon="mdi-chevron-right"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              class="ml-1"
+            />
           </v-btn>
         </div>
 
@@ -68,11 +100,22 @@
                 <v-card-text class="pa-4 pa-sm-6" @click="goToCareer(career.careerId)">
                   <div class="d-flex align-start justify-space-between mb-3 mb-md-4">
                     <div class="d-flex align-center flex-grow-1">
-                      <v-avatar :color="career.iconColor" :size="$vuetify.display.mobile ? 48 : 56" rounded="lg" class="mr-3 mr-sm-4 flex-shrink-0">
-                        <v-icon :icon="career.icon" color="white" :size="$vuetify.display.mobile ? 24 : 28" />
+                      <v-avatar
+                        :color="career.iconColor"
+                        :size="$vuetify.display.mobile ? 48 : 56"
+                        rounded="lg"
+                        class="mr-3 mr-sm-4 flex-shrink-0"
+                      >
+                        <v-icon
+                          :icon="career.icon"
+                          color="white"
+                          :size="$vuetify.display.mobile ? 24 : 28"
+                        />
                       </v-avatar>
                       <div class="min-w-0">
-                        <h4 class="text-body-1 text-md-h6 font-weight-bold mb-1 text-truncate">{{ career.title }}</h4>
+                        <h4 class="text-body-1 text-md-h6 font-weight-bold mb-1 text-truncate">
+                          {{ career.title }}
+                        </h4>
                         <p class="text-caption text-grey mb-0">{{ career.lastActivity }}</p>
                       </div>
                     </div>
@@ -96,7 +139,12 @@
 
                   <div class="d-flex align-center justify-space-between">
                     <span class="text-caption text-md-body-2 text-grey-darken-2">
-                      <v-icon icon="mdi-check-circle" :size="$vuetify.display.mobile ? 14 : 16" color="success" class="mr-1" />
+                      <v-icon
+                        icon="mdi-check-circle"
+                        :size="$vuetify.display.mobile ? 14 : 16"
+                        color="success"
+                        class="mr-1"
+                      />
                       {{ career.completedCourses }} / {{ career.totalCourses }} 门课程
                     </span>
                     <span class="text-body-2 text-md-body-1 font-weight-bold text-primary"
@@ -109,7 +157,12 @@
           </v-row>
         </div>
         <div v-else class="text-center py-8 py-md-12">
-          <v-icon icon="mdi-briefcase" :size="$vuetify.display.mobile ? 48 : 64" color="grey-lighten-2" class="mb-3 mb-md-4" />
+          <v-icon
+            icon="mdi-briefcase"
+            :size="$vuetify.display.mobile ? 48 : 64"
+            color="grey-lighten-2"
+            class="mb-3 mb-md-4"
+          />
           <p class="text-body-2 text-md-body-1 text-grey-darken-2">
             {{ statusTab === 'learning' ? '暂无正在学习的职业' : '暂无已完成的职业' }}
           </p>

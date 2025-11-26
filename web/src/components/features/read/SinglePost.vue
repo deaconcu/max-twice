@@ -432,7 +432,10 @@ watch(
           rounded="pill"
           size="default"
           :color="posting.voteType === 'helpful' ? 'success' : 'grey-lighten-2'"
-          :class="['px-4 ms-3', posting.voteType === 'helpful' ? 'core-btn-active' : 'core-btn-inactive']"
+          :class="[
+            'px-4 ms-3',
+            posting.voteType === 'helpful' ? 'core-btn-active' : 'core-btn-inactive',
+          ]"
           @click="handleUpvote('helpful')"
         >
           <v-icon

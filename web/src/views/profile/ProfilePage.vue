@@ -128,7 +128,9 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
 
             <!-- 用户信息 -->
             <div class="flex-grow-1 text-center text-sm-start w-100">
-              <div class="d-flex flex-column flex-sm-row align-center align-sm-start justify-center justify-sm-start mb-3 ga-3">
+              <div
+                class="d-flex flex-column flex-sm-row align-center align-sm-start justify-center justify-sm-start mb-3 ga-3"
+              >
                 <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4">
                   {{ userInfo.name }}
                 </h1>
@@ -139,18 +141,33 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
                   @click="activeTab = 'info'"
                 >
-                  <v-icon icon="mdi-pencil" :size="$vuetify.display.mobile ? 16 : 18" class="mr-1 mr-sm-2" />
+                  <v-icon
+                    icon="mdi-pencil"
+                    :size="$vuetify.display.mobile ? 16 : 18"
+                    class="mr-1 mr-sm-2"
+                  />
                   编辑资料
                 </v-btn>
               </div>
 
-              <p class="text-body-2 text-md-body-1 text-grey-darken-2 mb-1 mb-md-2">{{ userInfo.email }}</p>
-              <p class="text-caption text-md-body-2 text-grey mb-3 mb-md-4">加入于 {{ userInfo.joinDate }}</p>
+              <p class="text-body-2 text-md-body-1 text-grey-darken-2 mb-1 mb-md-2">
+                {{ userInfo.email }}
+              </p>
+              <p class="text-caption text-md-body-2 text-grey mb-3 mb-md-4">
+                加入于 {{ userInfo.joinDate }}
+              </p>
 
               <!-- 统计信息 -->
-              <div class="d-flex align-center justify-center justify-sm-start flex-wrap ga-4 ga-md-8">
+              <div
+                class="d-flex align-center justify-center justify-sm-start flex-wrap ga-4 ga-md-8"
+              >
                 <div class="d-flex align-center">
-                  <v-icon icon="mdi-school" :size="$vuetify.display.mobile ? 18 : 20" color="primary" class="mr-2" />
+                  <v-icon
+                    icon="mdi-school"
+                    :size="$vuetify.display.mobile ? 18 : 20"
+                    color="primary"
+                    class="mr-2"
+                  />
                   <span class="text-caption text-md-body-2 text-grey-darken-2">
                     <span class="font-weight-bold text-grey-darken-4 mr-1">{{
                       stats.totalCourses
@@ -159,7 +176,12 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
                   </span>
                 </div>
                 <div class="d-flex align-center">
-                  <v-icon icon="mdi-check-circle" :size="$vuetify.display.mobile ? 18 : 20" color="success" class="mr-2" />
+                  <v-icon
+                    icon="mdi-check-circle"
+                    :size="$vuetify.display.mobile ? 18 : 20"
+                    color="success"
+                    class="mr-2"
+                  />
                   <span class="text-caption text-md-body-2 text-grey-darken-2">
                     <span class="font-weight-bold text-grey-darken-4 mr-1">{{
                       stats.completedCourses
@@ -168,7 +190,12 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
                   </span>
                 </div>
                 <div class="d-flex align-center">
-                  <v-icon icon="mdi-briefcase" :size="$vuetify.display.mobile ? 18 : 20" color="info" class="mr-2" />
+                  <v-icon
+                    icon="mdi-briefcase"
+                    :size="$vuetify.display.mobile ? 18 : 20"
+                    color="info"
+                    class="mr-2"
+                  />
                   <span class="text-caption text-md-body-2 text-grey-darken-2">
                     <span class="font-weight-bold text-grey-darken-4 mr-1">{{
                       stats.totalCareers
@@ -177,7 +204,12 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
                   </span>
                 </div>
                 <div class="d-flex align-center">
-                  <v-icon icon="mdi-calendar-check" :size="$vuetify.display.mobile ? 18 : 20" color="warning" class="mr-2" />
+                  <v-icon
+                    icon="mdi-calendar-check"
+                    :size="$vuetify.display.mobile ? 18 : 20"
+                    color="warning"
+                    class="mr-2"
+                  />
                   <span class="text-caption text-md-body-2 text-grey-darken-2">
                     <span class="font-weight-bold text-grey-darken-4 mr-1">{{
                       stats.studyDays
@@ -202,52 +234,92 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
           show-arrows
         >
           <v-tab value="careers" rounded="lg">
-            <v-icon icon="mdi-briefcase" :size="$vuetify.display.mobile ? 16 : 18" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'" />
+            <v-icon
+              icon="mdi-briefcase"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
             <span class="d-none d-sm-inline">学习的职业</span>
             <span class="d-sm-none">职业</span>
           </v-tab>
           <v-tab value="courses-learning" rounded="lg">
-            <v-icon icon="mdi-school" :size="$vuetify.display.mobile ? 16 : 18" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'" />
+            <v-icon
+              icon="mdi-school"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
             <span class="d-none d-sm-inline">学习的课程</span>
             <span class="d-sm-none">课程</span>
           </v-tab>
           <v-tab value="stats" rounded="lg">
-            <v-icon icon="mdi-chart-line" :size="$vuetify.display.mobile ? 16 : 18" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'" />
+            <v-icon
+              icon="mdi-chart-line"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
             <span class="d-none d-sm-inline">数据统计</span>
             <span class="d-sm-none">统计</span>
           </v-tab>
           <v-tab value="courses" rounded="lg">
-            <v-icon icon="mdi-book-multiple" :size="$vuetify.display.mobile ? 16 : 18" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'" />
+            <v-icon
+              icon="mdi-book-multiple"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
             <span class="d-none d-sm-inline">关注的课程</span>
             <span class="d-sm-none">关注</span>
           </v-tab>
           <v-tab value="people" rounded="lg">
-            <v-icon icon="mdi-account-multiple" :size="$vuetify.display.mobile ? 16 : 18" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'" />
+            <v-icon
+              icon="mdi-account-multiple"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
             <span class="d-none d-sm-inline">关注的人</span>
             <span class="d-sm-none">好友</span>
           </v-tab>
           <v-tab value="catalogs" rounded="lg">
-            <v-icon icon="mdi-folder-multiple" :size="$vuetify.display.mobile ? 16 : 18" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'" />
+            <v-icon
+              icon="mdi-folder-multiple"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
             <span class="d-none d-sm-inline">创建的目录</span>
             <span class="d-sm-none">目录</span>
           </v-tab>
           <v-tab value="articles" rounded="lg">
-            <v-icon icon="mdi-file-document-multiple" :size="$vuetify.display.mobile ? 16 : 18" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'" />
+            <v-icon
+              icon="mdi-file-document-multiple"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
             <span class="d-none d-sm-inline">创建的文章</span>
             <span class="d-sm-none">文章</span>
           </v-tab>
           <v-tab value="decks" rounded="lg">
-            <v-icon icon="mdi-cards" :size="$vuetify.display.mobile ? 16 : 18" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'" />
+            <v-icon
+              icon="mdi-cards"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
             <span class="d-none d-sm-inline">我的卡片组</span>
             <span class="d-sm-none">卡片</span>
           </v-tab>
           <v-tab value="roadmaps" rounded="lg">
-            <v-icon icon="mdi-map-marker-path" :size="$vuetify.display.mobile ? 16 : 18" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'" />
+            <v-icon
+              icon="mdi-map-marker-path"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
             <span class="d-none d-sm-inline">创建的路线图</span>
             <span class="d-sm-none">路线</span>
           </v-tab>
           <v-tab value="info" rounded="lg">
-            <v-icon icon="mdi-account-circle" :size="$vuetify.display.mobile ? 16 : 18" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'" />
+            <v-icon
+              icon="mdi-account-circle"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
             <span class="d-none d-sm-inline">个人信息</span>
             <span class="d-sm-none">资料</span>
           </v-tab>

@@ -91,8 +91,15 @@ public class UserCourseService {
                 .map(userCourseDO -> {
                     UserCourseWithCourseDTO dto = userCourseConverter.toWithCourseDTO(userCourseDO);
                     CourseSummaryDTO courseDTO = courseMap.get(userCourseDO.getCourseId());
+
                     if (courseDTO != null) {
                         dto.setCourse(courseDTO);
+                    } else {
+                        // course 已被删除，创建占位DTO
+                        CourseSummaryDTO placeholderDTO = new CourseSummaryDTO();
+                        placeholderDTO.setId(userCourseDO.getCourseId());
+                        placeholderDTO.setAvailable(false);
+                        dto.setCourse(placeholderDTO);
                     }
                     return dto;
                 }).collect(Collectors.toList());

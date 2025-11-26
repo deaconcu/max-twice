@@ -2,6 +2,7 @@ package com.prosper.learn.domain.service.business;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.common.Enums.ContentState;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
 
@@ -116,7 +117,7 @@ public class UserRoadmapService {
             userRoadmapDataService.updateBatch(toUpdateList);
         }
 
-        // 转换为 DTO 并填充 roadmap 信息，过滤掉 roadmap 已被删除的记录
+        // 转换为 DTO 并填充 roadmap 信息
         return userRoadmapList.stream()
                 .map(userRoadmapDO -> {
                     UserRoadmapWithDetailDTO dto = userRoadmapConverter.toWithDetailDTO(userRoadmapDO);
@@ -124,13 +125,23 @@ public class UserRoadmapService {
 
                     if (roadmapDO != null) {
                         RoadmapWithStatusDTO roadmapDTO = roadmapService.toRoadmapWithStatus(roadmapDO, userId);
+
+                        // 检查是否被屏蔽或拒绝
+                        if (roadmapDO.getState() == ContentState.REJECTED.value() ||
+                            roadmapDO.getState() == ContentState.BANNED.value()) {
+                            roadmapDTO.setAvailable(false);
+                        }
+
                         dto.setRoadmap(roadmapDTO);
-                        return dto;
+                    } else {
+                        // roadmap 已被删除，创建占位DTO
+                        RoadmapWithStatusDTO placeholderDTO = new RoadmapWithStatusDTO();
+                        placeholderDTO.setId(userRoadmapDO.getRoadmapId());
+                        placeholderDTO.setAvailable(false);
+                        dto.setRoadmap(placeholderDTO);
                     }
-                    // roadmap 已被删除，返回 null
-                    return null;
+                    return dto;
                 })
-                .filter(dto -> dto != null && dto.getRoadmap() != null) // 过滤掉 roadmap 为 null 的记录
                 .collect(Collectors.toList());
     }
 

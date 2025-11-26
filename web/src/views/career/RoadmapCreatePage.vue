@@ -298,6 +298,8 @@
             v-model="roadmapDescription"
             label="路径描述 *"
             placeholder="例如: Vue 3 + TypeScript 全栈开发路线"
+            :rules="roadmapDescriptionRules"
+            :counter="roadmapDescriptionMaxLength"
             variant="outlined"
             clearable
             required
@@ -336,9 +338,14 @@ import { Controls } from '@vue-flow/controls'
 import { Position } from '@vue-flow/core'
 import type { Node, Edge, Connection } from '@vue-flow/core'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
+import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 
 const router = useRouter()
 const route = useRoute()
+
+// 验证规则
+const roadmapDescriptionRules = useValidationRules('roadmap-description')
+const roadmapDescriptionMaxLength = useMaxLength('roadmap-description')
 
 // 从路由获取参数
 const careerId = computed(() => {

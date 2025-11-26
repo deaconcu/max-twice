@@ -31,6 +31,14 @@ public class RoadmapSummaryDTO {
 
     private Long creatorId;
 
+    /**
+     * 内容是否可用
+     * true: 内容可用
+     * false: 内容不可用（已删除、已屏蔽、已拒绝等）
+     * null: 默认可用
+     */
+    private Boolean available;
+
     private LocalDateTime updatedAt;
 
     private LocalDateTime createdAt;

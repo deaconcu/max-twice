@@ -33,10 +33,10 @@
                     :label="t('user.login.email')"
                     :placeholder="t('user.login.emailPlaceholder')"
                     :rules="emailRules"
+                    :counter="emailMaxLength"
                     :disabled="isLoggingIn"
                     variant="outlined"
                     density="comfortable"
-                    hide-details="auto"
                     class="mb-4"
                   />
 
@@ -47,11 +47,11 @@
                     :placeholder="t('user.login.passwordPlaceholder')"
                     :type="showPassword ? 'text' : 'password'"
                     :rules="passwordRules"
+                    :counter="passwordMaxLength"
                     :disabled="isLoggingIn"
                     :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
                     variant="outlined"
                     density="comfortable"
-                    hide-details="auto"
                     class="mb-2"
                     @click:append-inner="showPassword = !showPassword"
                   />
@@ -127,7 +127,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useAuth } from '@/composables/useAuth'
-import { emailRules, passwordRules } from '@/utils/validation'
+import { useEmailRules, useValidationRules, useMaxLength } from '@/composables/useValidation'
 import { RIGHTS_DECLARATION } from '@/constants/site'
 import { HEADER_HEIGHT } from '@/constants/layout'
 import AppHeader from '@/components/layout/AppHeader.vue'
@@ -136,6 +136,12 @@ import IntroSection from '@/components/common/IntroSection.vue'
 const router = useRouter()
 const { t } = useI18n()
 const { login, isLoggingIn } = useAuth()
+
+// 验证规则
+const emailRules = useEmailRules()
+const passwordRules = useValidationRules('password')
+const emailMaxLength = useMaxLength('email')
+const passwordMaxLength = useMaxLength('password')
 
 // 表单引用
 const loginFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)

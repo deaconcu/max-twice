@@ -5,8 +5,12 @@
       <div class="sticky-sidebar">
         <div class="pa-3 pa-md-4">
           <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">我的卡片组</h4>
-            <p class="text-caption text-md-body-2 text-grey mb-0">使用间隔重复算法高效记忆知识点。</p>
+            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
+              我的卡片组
+            </h4>
+            <p class="text-caption text-md-body-2 text-grey mb-0">
+              使用间隔重复算法高效记忆知识点。
+            </p>
           </div>
           <v-divider class="my-3 my-md-4" />
           <div class="text-caption text-md-body-2 text-grey">
@@ -50,11 +54,22 @@
                   <!-- 卡片组头部 -->
                   <div class="d-flex align-start justify-space-between mb-3 mb-md-4">
                     <div class="d-flex align-center flex-grow-1">
-                      <v-avatar :color="deck.color" :size="$vuetify.display.mobile ? 48 : 56" rounded="lg" class="mr-3 mr-sm-4 flex-shrink-0">
-                        <v-icon :icon="deck.icon" color="white" :size="$vuetify.display.mobile ? 24 : 28" />
+                      <v-avatar
+                        :color="deck.color"
+                        :size="$vuetify.display.mobile ? 48 : 56"
+                        rounded="lg"
+                        class="mr-3 mr-sm-4 flex-shrink-0"
+                      >
+                        <v-icon
+                          :icon="deck.icon"
+                          color="white"
+                          :size="$vuetify.display.mobile ? 24 : 28"
+                        />
                       </v-avatar>
                       <div class="min-w-0">
-                        <h4 class="text-body-1 text-md-h6 font-weight-bold mb-1 text-truncate">{{ deck.name }}</h4>
+                        <h4 class="text-body-1 text-md-h6 font-weight-bold mb-1 text-truncate">
+                          {{ deck.name }}
+                        </h4>
                         <p class="text-caption text-grey mb-0">{{ deck.cardCount }} 张卡片</p>
                       </div>
                     </div>
@@ -82,7 +97,11 @@
 
                   <!-- 创建时间 -->
                   <div class="text-caption text-grey">
-                    <v-icon icon="mdi-clock-outline" :size="$vuetify.display.mobile ? 12 : 14" class="mr-1" />
+                    <v-icon
+                      icon="mdi-clock-outline"
+                      :size="$vuetify.display.mobile ? 12 : 14"
+                      class="mr-1"
+                    />
                     创建于 {{ formatDate(deck.createdAt) }}
                   </div>
                 </v-card-text>
@@ -93,7 +112,12 @@
 
         <!-- 空状态 -->
         <div v-else class="text-center py-8 py-md-12">
-          <v-icon icon="mdi-cards" :size="$vuetify.display.mobile ? 48 : 64" color="grey-lighten-2" class="mb-3 mb-md-4" />
+          <v-icon
+            icon="mdi-cards"
+            :size="$vuetify.display.mobile ? 48 : 64"
+            color="grey-lighten-2"
+            class="mb-3 mb-md-4"
+          />
           <p class="text-body-2 text-md-body-1 text-grey-darken-2">暂无卡片组</p>
           <p class="text-caption text-md-body-2 text-grey">创建记忆卡片,高效复习知识点</p>
           <v-btn

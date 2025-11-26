@@ -249,6 +249,7 @@
                 :label="t('careerCenter.application.jobName')"
                 :placeholder="t('careerCenter.application.jobNamePlaceholder')"
                 :rules="jobNameRules"
+                :counter="professionNameMaxLength"
                 variant="outlined"
                 clearable
                 required
@@ -287,6 +288,7 @@
                 :label="t('careerCenter.application.description')"
                 :placeholder="t('careerCenter.application.descriptionPlaceholder')"
                 :rules="descriptionRules"
+                :counter="professionDescriptionMaxLength"
                 variant="outlined"
                 clearable
                 required
@@ -347,12 +349,19 @@ import { useFetch, useMutation } from '@/composables'
 import { handleApiCall } from '@/composables/utils'
 import { professionApi, systemApi } from '@/api'
 import type { Profession } from '@/types/profession'
+import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import CareerCard from '@/components/features/career/CareerCard.vue'
 import CareerFilter from '@/components/features/career/CareerFilter.vue'
 
 const router = useRouter()
 const { t } = useI18n()
+
+// 验证规则
+const professionNameRules = useValidationRules('profession-name')
+const professionDescriptionRules = useValidationRules('profession-description')
+const professionNameMaxLength = useMaxLength('profession-name')
+const professionDescriptionMaxLength = useMaxLength('profession-description')
 
 // 状态管理
 const searchText = ref('')
@@ -724,18 +733,11 @@ const closeApplicationDialog = () => {
 /**
  * 表单验证规则
  */
-const jobNameRules = [
-  (v: string) => !!v || t('careerCenter.application.nameRequired'),
-  (v: string) => (v && v.length <= 50) || '职业名称不能超过50个字符',
-]
+const jobNameRules = professionNameRules
 
 const categoryRules = [(v: number) => !!v || '请选择分类']
 
-const descriptionRules = [
-  (v: string) => !!v || t('careerCenter.application.descriptionRequired'),
-  (v: string) => (v && v.length >= 10) || '职业描述至少需要10个字符',
-  (v: string) => (v && v.length <= 500) || '职业描述不能超过500个字符',
-]
+const descriptionRules = professionDescriptionRules
 
 /**
  * 使用 useMutation 提交职业申请

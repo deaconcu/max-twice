@@ -5,8 +5,12 @@
       <div class="sticky-sidebar">
         <div class="pa-3 pa-md-4">
           <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">创建的文章</h4>
-            <p class="text-caption text-md-body-2 text-grey mb-0">管理您创作的文章，分享知识和经验。</p>
+            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
+              创建的文章
+            </h4>
+            <p class="text-caption text-md-body-2 text-grey mb-0">
+              管理您创作的文章，分享知识和经验。
+            </p>
           </div>
           <v-divider class="my-3 my-md-4" />
           <div class="text-caption text-md-body-2 text-grey">
@@ -104,21 +108,44 @@
 
                 <div class="d-flex align-center justify-space-between ga-2">
                   <!-- 统计信息 -->
-                  <div class="d-flex align-center flex-wrap text-caption text-md-body-2 text-grey" style="gap: 8px">
+                  <div
+                    class="d-flex align-center flex-wrap text-caption text-md-body-2 text-grey"
+                    style="gap: 8px"
+                  >
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-eye-outline" :size="$vuetify.display.mobile ? 14 : 16" color="grey" class="mr-1" />
+                      <v-icon
+                        icon="mdi-eye-outline"
+                        :size="$vuetify.display.mobile ? 14 : 16"
+                        color="grey"
+                        class="mr-1"
+                      />
                       {{ article.views }}
                     </div>
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-heart-outline" :size="$vuetify.display.mobile ? 14 : 16" color="grey" class="mr-1" />
+                      <v-icon
+                        icon="mdi-heart-outline"
+                        :size="$vuetify.display.mobile ? 14 : 16"
+                        color="grey"
+                        class="mr-1"
+                      />
                       {{ article.likes }}
                     </div>
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-comment-outline" :size="$vuetify.display.mobile ? 14 : 16" color="grey" class="mr-1" />
+                      <v-icon
+                        icon="mdi-comment-outline"
+                        :size="$vuetify.display.mobile ? 14 : 16"
+                        color="grey"
+                        class="mr-1"
+                      />
                       {{ article.comments }}
                     </div>
                     <div class="d-flex align-center d-none d-sm-flex">
-                      <v-icon icon="mdi-calendar-outline" :size="$vuetify.display.mobile ? 14 : 16" color="grey" class="mr-1" />
+                      <v-icon
+                        icon="mdi-calendar-outline"
+                        :size="$vuetify.display.mobile ? 14 : 16"
+                        color="grey"
+                        class="mr-1"
+                      />
                       {{ formatDate(article.publishedAt) }}
                     </div>
                   </div>
@@ -155,7 +182,12 @@
 
         <!-- 空状态 -->
         <div v-else class="text-center py-8 py-md-12">
-          <v-icon icon="mdi-file-document-multiple" :size="$vuetify.display.mobile ? 48 : 64" color="grey-lighten-2" class="mb-3 mb-md-4" />
+          <v-icon
+            icon="mdi-file-document-multiple"
+            :size="$vuetify.display.mobile ? 48 : 64"
+            color="grey-lighten-2"
+            class="mb-3 mb-md-4"
+          />
           <p class="text-body-2 text-md-body-1 text-grey-darken-2">暂无创建的文章</p>
           <p class="text-caption text-md-body-2 text-grey">分享您的学习心得和经验</p>
         </div>
@@ -361,7 +393,12 @@ onMounted(() => {
   left: 0;
   right: 0;
   height: 60px;
-  background: linear-gradient(to bottom, transparent 0%, rgba(var(--v-theme-surface-rgb), 0.8) 50%, rgb(var(--v-theme-surface)) 100%);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(var(--v-theme-surface-rgb), 0.8) 50%,
+    rgb(var(--v-theme-surface)) 100%
+  );
   pointer-events: none;
 }
 

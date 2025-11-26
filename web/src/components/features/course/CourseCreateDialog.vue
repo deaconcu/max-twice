@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
+import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 
 interface Category {
   id: number
@@ -43,6 +44,12 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
 
+// 验证规则
+const courseNameRules = useValidationRules('course-name')
+const courseDescriptionRules = useValidationRules('course-description')
+const courseNameMaxLength = useMaxLength('course-name')
+const courseDescriptionMaxLength = useMaxLength('course-description')
+
 // 表单数据
 const courseData = ref({
   name: '',
@@ -77,17 +84,6 @@ const filteredSubCategories = computed(() => {
   }
   return props.subCategories.filter((sub) => sub.mainCategoryId === courseData.value.mainCategoryId)
 })
-
-// 验证规则
-const nameRules = [
-  (v: string) => !!v || '请输入课程名称',
-  (v: string) => (v && v.length <= 100) || '课程名称不能超过100个字符',
-]
-
-const descriptionRules = [
-  (v: string) => !!v || '请输入课程描述',
-  (v: string) => (v && v.length <= 500) || '课程描述不能超过500个字符',
-]
 
 const categoryRules = [(v: number | null) => v !== null || '请选择分类']
 
@@ -167,11 +163,11 @@ const closeDialog = () => {
             </label>
             <v-text-field
               v-model="courseData.name"
-              :rules="nameRules"
+              :rules="courseNameRules"
+              :counter="courseNameMaxLength"
               placeholder="请输入课程名称"
               variant="outlined"
               density="compact"
-              hide-details="auto"
               clearable
             />
           </div>
@@ -184,11 +180,11 @@ const closeDialog = () => {
             </label>
             <v-textarea
               v-model="courseData.description"
-              :rules="descriptionRules"
+              :rules="courseDescriptionRules"
+              :counter="courseDescriptionMaxLength"
               placeholder="请输入课程描述"
               variant="outlined"
               density="compact"
-              hide-details="auto"
               rows="10"
               clearable
             />
@@ -209,7 +205,6 @@ const closeDialog = () => {
               placeholder="请选择主分类"
               variant="outlined"
               density="compact"
-              hide-details="auto"
               clearable
             >
               <template #prepend-inner>
@@ -233,7 +228,6 @@ const closeDialog = () => {
               placeholder="请先选择主分类"
               variant="outlined"
               density="compact"
-              hide-details="auto"
               :disabled="!courseData.mainCategoryId"
               clearable
             >

@@ -33,10 +33,10 @@
                     :label="t('user.register.email')"
                     type="email"
                     :rules="emailRules"
+                    :counter="emailMaxLength"
                     :disabled="isRegistering"
                     variant="outlined"
                     density="comfortable"
-                    hide-details="auto"
                     class="mb-4"
                   />
 
@@ -46,11 +46,11 @@
                     :label="t('user.register.password')"
                     :type="showPassword ? 'text' : 'password'"
                     :rules="passwordRules"
+                    :counter="passwordMaxLength"
                     :disabled="isRegistering"
                     :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
                     variant="outlined"
                     density="comfortable"
-                    hide-details="auto"
                     class="mb-4"
                     @click:append-inner="showPassword = !showPassword"
                   />
@@ -61,11 +61,11 @@
                     :label="t('user.register.confirmPassword')"
                     :type="showConfirmPassword ? 'text' : 'password'"
                     :rules="confirmPasswordRules"
+                    :counter="passwordMaxLength"
                     :disabled="isRegistering"
                     :append-inner-icon="showConfirmPassword ? 'mdi-eye-off' : 'mdi-eye'"
                     variant="outlined"
                     density="comfortable"
-                    hide-details="auto"
                     class="mb-2"
                     @click:append-inner="showConfirmPassword = !showConfirmPassword"
                   />
@@ -136,7 +136,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useAuth } from '@/composables/useAuth'
-import { emailRules, passwordRules, confirmPassword } from '@/utils/validation'
+import { useEmailRules, useValidationRules, useMaxLength, confirmPasswordRule } from '@/composables/useValidation'
 import { RIGHTS_DECLARATION } from '@/constants/site'
 import { HEADER_HEIGHT } from '@/constants/layout'
 import AppHeader from '@/components/layout/AppHeader.vue'
@@ -145,6 +145,12 @@ import IntroSection from '@/components/common/IntroSection.vue'
 const router = useRouter()
 const { t } = useI18n()
 const { register, isRegistering } = useAuth()
+
+// 验证规则
+const emailRules = useEmailRules()
+const passwordRules = useValidationRules('password')
+const emailMaxLength = useMaxLength('email')
+const passwordMaxLength = useMaxLength('password')
 
 // 表单引用
 const registerFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
@@ -163,8 +169,8 @@ const errorMessage = ref('')
 
 // 确认密码验证规则
 const confirmPasswordRules = computed(() => [
-  ...passwordRules,
-  confirmPassword(formData.value.password, '两次输入的密码不一致'),
+  ...passwordRules.value,
+  confirmPasswordRule(formData.value.password),
 ])
 
 /**

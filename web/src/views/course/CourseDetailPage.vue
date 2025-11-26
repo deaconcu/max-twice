@@ -37,14 +37,29 @@
           <!-- 左侧内容 -->
           <div class="left-content">
             <!-- 课程头部 - 卡片样式 -->
-            <v-card rounded="xl" class="course-header-card no-border hoverable mb-6 mb-md-8" elevation="0" hover @click="handleStartReading">
+            <v-card
+              rounded="xl"
+              class="course-header-card no-border hoverable mb-6 mb-md-8"
+              elevation="0"
+              hover
+              @click="handleStartReading"
+            >
               <v-card-text class="pa-5 pa-sm-6 pa-md-8 pb-2">
                 <!-- 课程标题区 -->
                 <div class="ma-0">
                   <!-- 图标和标题行 -->
                   <div class="d-flex align-center mb-3 mb-md-4">
-                    <v-avatar color="surface-variant" :size="$vuetify.display.mobile ? 48 : 60" rounded="lg" class="mr-3 mr-md-4 flex-shrink-0">
-                      <v-icon icon="mdi-school" color="grey" :size="$vuetify.display.mobile ? 24 : 32" />
+                    <v-avatar
+                      color="surface-variant"
+                      :size="$vuetify.display.mobile ? 48 : 60"
+                      rounded="lg"
+                      class="mr-3 mr-md-4 flex-shrink-0"
+                    >
+                      <v-icon
+                        icon="mdi-school"
+                        color="grey"
+                        :size="$vuetify.display.mobile ? 24 : 32"
+                      />
                     </v-avatar>
                     <div class="d-flex align-center flex-wrap ga-4">
                       <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4 mb-0">
@@ -57,23 +72,42 @@
                   </div>
 
                   <!-- 描述 -->
-                  <p v-if="course.description" class="text-body-2 text-md-body-1 font-weight-regular text-grey-darken-2 mb-3 mb-md-4">
+                  <p
+                    v-if="course.description"
+                    class="text-body-2 text-md-body-1 font-weight-regular text-grey-darken-2 mb-3 mb-md-4"
+                  >
                     {{ course.description }}
                   </p>
 
                   <!-- 统计信息 -->
                   <div class="d-flex align-center flex-wrap mb-4 mb-md-6 ga-6 ga-md-12">
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-book-multiple" :size="$vuetify.display.mobile ? 20 : 24" color="primary" class="mr-2 mr-md-4" />
+                      <v-icon
+                        icon="mdi-book-multiple"
+                        :size="$vuetify.display.mobile ? 20 : 24"
+                        color="primary"
+                        class="mr-2 mr-md-4"
+                      />
                       <span class="text-body-2 text-md-body-1 text-grey-darken-2">
-                        <span class="font-weight-bold text-grey-darken-4 mr-1">{{ subCourses?.length ?? 0 }}</span>
-                        <span class="text-caption text-md-body-2">{{ t('course.subCourses') }}</span>
+                        <span class="font-weight-bold text-grey-darken-4 mr-1">{{
+                          subCourses?.length ?? 0
+                        }}</span>
+                        <span class="text-caption text-md-body-2">{{
+                          t('course.subCourses')
+                        }}</span>
                       </span>
                     </div>
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-account-group" :size="$vuetify.display.mobile ? 20 : 24" color="success" class="mr-2 mr-md-4" />
+                      <v-icon
+                        icon="mdi-account-group"
+                        :size="$vuetify.display.mobile ? 20 : 24"
+                        color="success"
+                        class="mr-2 mr-md-4"
+                      />
                       <span class="text-body-2 text-md-body-1 text-grey-darken-2">
-                        <span class="font-weight-bold text-grey-darken-4 mr-1">{{ formatNumber(course.learnerCount) }}</span>
+                        <span class="font-weight-bold text-grey-darken-4 mr-1">{{
+                          formatNumber(course.learnerCount)
+                        }}</span>
                         <span class="text-caption text-md-body-2">{{ t('course.learning') }}</span>
                       </span>
                     </div>
@@ -117,7 +151,11 @@
               <div class="d-flex align-center justify-space-between mb-5 mb-md-6">
                 <div class="d-flex align-center">
                   <div class="section-icon-wrapper mr-3 mr-md-4">
-                    <v-icon icon="mdi-book-multiple" color="grey" :size="$vuetify.display.mobile ? 22 : 24" />
+                    <v-icon
+                      icon="mdi-book-multiple"
+                      color="grey"
+                      :size="$vuetify.display.mobile ? 22 : 24"
+                    />
                   </div>
                   <div>
                     <h2 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-0">
@@ -157,9 +195,7 @@
                   <v-card-text class="pa-5 pa-sm-6">
                     <!-- 顶部：序号和操作 -->
                     <div class="d-flex align-center justify-space-between mb-4">
-                      <div class="course-number">
-                        1
-                      </div>
+                      <div class="course-number">1</div>
                       <div class="d-flex align-center ga-1">
                         <v-btn
                           icon="mdi-book-open-page-variant"
@@ -179,11 +215,14 @@
                     </div>
 
                     <!-- 子课程信息 -->
-                    <h3 class="text-h6 text-md-h5 font-weight-bold mb-3 text-grey-darken-4 course-title">
+                    <h3
+                      class="text-h6 text-md-h5 font-weight-bold mb-3 text-grey-darken-4 course-title"
+                    >
                       Vue 3 核心概念
                     </h3>
                     <p class="text-body-2 text-grey-darken-2 mb-4 course-description">
-                      深入学习 Vue 3 的响应式系统、组合式 API、生命周期钩子等核心概念，掌握现代前端框架的核心原理和最佳实践。
+                      深入学习 Vue 3 的响应式系统、组合式
+                      API、生命周期钩子等核心概念，掌握现代前端框架的核心原理和最佳实践。
                     </p>
 
                     <!-- 底部统计 -->
@@ -232,7 +271,9 @@
                     </div>
 
                     <!-- 子课程信息 -->
-                    <h3 class="text-h6 text-md-h5 font-weight-bold mb-3 text-grey-darken-4 course-title">
+                    <h3
+                      class="text-h6 text-md-h5 font-weight-bold mb-3 text-grey-darken-4 course-title"
+                    >
                       {{ subCourse.name }}
                     </h3>
                     <p
@@ -735,7 +776,11 @@ const handleConfirmCreateDefaultSubCourse = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-primary-darken-1)) 100%);
+  background: linear-gradient(
+    135deg,
+    rgb(var(--v-theme-primary)) 0%,
+    rgb(var(--v-theme-primary-darken-1)) 100%
+  );
   color: white;
   border-radius: 12px;
   font-size: 20px;

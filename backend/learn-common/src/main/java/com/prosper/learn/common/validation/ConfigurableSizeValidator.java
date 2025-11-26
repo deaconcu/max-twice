@@ -19,6 +19,7 @@ public class ConfigurableSizeValidator implements ConstraintValidator<Configurab
     private String configKey;
     private int minLength;
     private int maxLength;
+    private String fieldName;
 
     @Override
     public void initialize(ConfigurableSize annotation) {
@@ -36,70 +37,87 @@ public class ConfigurableSizeValidator implements ConstraintValidator<Configurab
             case "comment-content":
                 this.minLength = validation.getCommentContentMinLength();
                 this.maxLength = validation.getCommentContentMaxLength();
+                this.fieldName = "评论内容";
                 break;
             case "username":
                 this.minLength = validation.getUsernameMinLength();
                 this.maxLength = validation.getUsernameMaxLength();
+                this.fieldName = "用户名";
                 break;
             case "password":
                 this.minLength = validation.getPasswordMinLength();
                 this.maxLength = validation.getPasswordMaxLength();
+                this.fieldName = "密码";
                 break;
             case "biography":
                 this.minLength = 0;
                 this.maxLength = validation.getBiographyMaxLength();
+                this.fieldName = "个人简介";
                 break;
             case "email":
                 this.minLength = 0;
                 this.maxLength = validation.getEmailMaxLength();
+                this.fieldName = "邮箱";
                 break;
             case "course-name":
                 this.minLength = validation.getCourseNameMinLength();
                 this.maxLength = validation.getCourseNameMaxLength();
+                this.fieldName = "课程名称";
                 break;
             case "course-description":
                 this.minLength = validation.getCourseDescriptionMinLength();
                 this.maxLength = validation.getCourseDescriptionMaxLength();
+                this.fieldName = "课程描述";
                 break;
             case "post-content":
                 this.minLength = validation.getPostContentMinLength();
                 this.maxLength = validation.getPostContentMaxLength();
+                this.fieldName = "帖子内容";
                 break;
             case "profession-name":
                 this.minLength = validation.getProfessionNameMinLength();
                 this.maxLength = validation.getProfessionNameMaxLength();
+                this.fieldName = "职业名称";
                 break;
             case "profession-description":
                 this.minLength = validation.getProfessionDescriptionMinLength();
                 this.maxLength = validation.getProfessionDescriptionMaxLength();
+                this.fieldName = "职业描述";
                 break;
             case "card-front":
                 this.minLength = validation.getCardFrontMinLength();
                 this.maxLength = validation.getCardFrontMaxLength();
+                this.fieldName = "问题";
                 break;
             case "card-back":
                 this.minLength = validation.getCardBackMinLength();
                 this.maxLength = validation.getCardBackMaxLength();
+                this.fieldName = "答案";
                 break;
             case "deck-title":
                 this.minLength = validation.getDeckTitleMinLength();
                 this.maxLength = validation.getDeckTitleMaxLength();
+                this.fieldName = "卡片组标题";
                 break;
             case "deck-description":
                 this.minLength = 0;
                 this.maxLength = validation.getDeckDescriptionMaxLength();
+                this.fieldName = "卡片组描述";
                 break;
             case "message-content":
                 this.minLength = validation.getMessageContentMinLength();
                 this.maxLength = validation.getMessageContentMaxLength();
+                this.fieldName = "消息内容";
                 break;
             case "roadmap-content":
                 this.minLength = validation.getRoadmapContentMinLength();
                 this.maxLength = validation.getRoadmapContentMaxLength();
+                this.fieldName = "路线图内容";
                 break;
             case "roadmap-description":
                 this.minLength = validation.getRoadmapDescriptionMinLength();
                 this.maxLength = validation.getRoadmapDescriptionMaxLength();
+                this.fieldName = "路线图描述";
                 break;
             default:
                 throw new IllegalArgumentException("未知的配置键: " + configKey + ", 请在 SystemProperties.Validation 中添加对应配置");
@@ -118,7 +136,7 @@ public class ConfigurableSizeValidator implements ConstraintValidator<Configurab
             // 自定义错误消息
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate(
-                    String.format("长度必须在%d-%d字符之间,当前长度:%d", minLength, maxLength, length)
+                    String.format("%s长度必须在%d-%d字符之间，当前长度：%d", fieldName, minLength, maxLength, length)
             ).addConstraintViolation();
             return false;
         }

@@ -5,8 +5,12 @@
       <div class="sticky-sidebar">
         <div class="pa-3 pa-md-4">
           <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">关注的人</h4>
-            <p class="text-caption text-md-body-2 text-grey mb-0">管理您关注的用户，查看他们的最新动态。</p>
+            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
+              关注的人
+            </h4>
+            <p class="text-caption text-md-body-2 text-grey mb-0">
+              管理您关注的用户，查看他们的最新动态。
+            </p>
           </div>
           <v-divider class="my-3 my-md-4" />
           <div class="text-caption text-md-body-2 text-grey">
@@ -31,7 +35,9 @@
     <v-col cols="12" lg="10">
       <div class="pa-0 pa-sm-2">
         <!-- 顶部信息栏 -->
-        <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3">
+        <div
+          class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3"
+        >
           <div></div>
           <div class="text-caption text-md-body-2 text-grey">
             <span class="font-weight-bold text-primary">{{ stats.following }}</span> 关注 ·
@@ -48,13 +54,22 @@
                   <div class="d-flex align-start justify-space-between">
                     <!-- 用户头像 -->
                     <div class="d-flex align-center flex-grow-1">
-                      <v-avatar :color="user.avatarColor" :size="$vuetify.display.mobile ? 48 : 56" rounded="lg" class="mr-3 mr-sm-4 flex-shrink-0">
-                        <span class="text-body-2 text-md-h6 font-weight-bold text-white">{{ user.initial }}</span>
+                      <v-avatar
+                        :color="user.avatarColor"
+                        :size="$vuetify.display.mobile ? 48 : 56"
+                        rounded="lg"
+                        class="mr-3 mr-sm-4 flex-shrink-0"
+                      >
+                        <span class="text-body-2 text-md-h6 font-weight-bold text-white">{{
+                          user.initial
+                        }}</span>
                       </v-avatar>
 
                       <!-- 用户信息 -->
                       <div class="min-w-0">
-                        <h4 class="text-body-1 text-md-body-1 font-weight-bold mb-1 text-truncate">{{ user.name }}</h4>
+                        <h4 class="text-body-1 text-md-body-1 font-weight-bold mb-1 text-truncate">
+                          {{ user.name }}
+                        </h4>
                         <p class="text-caption text-grey mb-0 text-truncate">{{ user.bio }}</p>
                       </div>
                     </div>
@@ -76,7 +91,12 @@
 
         <!-- 空状态 -->
         <div v-else class="text-center py-8 py-md-12">
-          <v-icon icon="mdi-account-multiple" :size="$vuetify.display.mobile ? 48 : 64" color="grey-lighten-2" class="mb-3 mb-md-4" />
+          <v-icon
+            icon="mdi-account-multiple"
+            :size="$vuetify.display.mobile ? 48 : 64"
+            color="grey-lighten-2"
+            class="mb-3 mb-md-4"
+          />
           <p class="text-body-2 text-md-body-1 text-grey-darken-2">暂无关注的人</p>
           <p class="text-caption text-md-body-2 text-grey">关注优秀的创作者，获取精彩内容</p>
         </div>

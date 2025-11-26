@@ -121,11 +121,21 @@ public class CourseService {
      * 转换为课程摘要 DTO（列表信息）
      */
     public CourseSummaryDTO toSummaryDTO(CourseDO courseDO) {
-        return courseConverter.toSummaryDTO(courseDO);
+        CourseSummaryDTO dto = courseConverter.toSummaryDTO(courseDO);
+
+        // 检查课程是否被屏蔽或拒绝
+        if (courseDO.getState() == Enums.ContentState.REJECTED.value() ||
+            courseDO.getState() == Enums.ContentState.BANNED.value()) {
+            dto.setAvailable(false);
+        }
+
+        return dto;
     }
 
     public List<CourseSummaryDTO> toSummaryDTO(List<CourseDO> courseDOList) {
-        return courseConverter.toSummaryDTO(courseDOList);
+        return courseDOList.stream()
+                .map(this::toSummaryDTO)
+                .collect(Collectors.toList());
     }
 
     /**

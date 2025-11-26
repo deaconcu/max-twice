@@ -234,21 +234,4 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border: 1px solid rgb(var(--v-theme-grey-lighten-2)) !important;
 }
-
-/* Snackbar 边框样式 - 根据类型设置不同颜色 */
-.snackbar-success .v-snackbar__wrapper {
-  border: 2px solid rgb(var(--v-theme-success)) !important;
-}
-
-.snackbar-error .v-snackbar__wrapper {
-  border: 2px solid rgb(var(--v-theme-error)) !important;
-}
-
-.snackbar-warning .v-snackbar__wrapper {
-  border: 2px solid rgb(var(--v-theme-warning)) !important;
-}
-
-.snackbar-info .v-snackbar__wrapper {
-  border: 2px solid rgb(var(--v-theme-primary)) !important;
-}
 </style>

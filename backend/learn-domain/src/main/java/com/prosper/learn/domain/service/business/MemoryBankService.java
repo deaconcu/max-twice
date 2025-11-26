@@ -127,6 +127,11 @@ public class MemoryBankService {
         MemoryCardDeckDO deck = deckDataService.validateAndGet(request.getDeckId());
         CourseDO course = courseDataService.validateAndGet(request.getCourseId());
 
+        // 验证卡片组状态：只有已发布的卡片组才能加入复习序列
+        if (!ContentState.PUBLISHED.value().equals(deck.getState())) {
+            throw ErrorCode.OBJECT_STATE_INVALID.exception();
+        }
+
         // 创建或更新课程学习设置
         UserCourseSrsSettingDO existingSetting = courseSrsSettingDataService.getByUserAndCourse(userId, request.getCourseId());
         if (existingSetting == null) {

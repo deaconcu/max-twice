@@ -5,8 +5,12 @@
       <div class="sticky-sidebar">
         <div class="pa-3 pa-md-4">
           <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">关注的课程</h4>
-            <p class="text-caption text-md-body-2 text-grey mb-0">管理您关注的所有课程，获取最新动态。</p>
+            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
+              关注的课程
+            </h4>
+            <p class="text-caption text-md-body-2 text-grey mb-0">
+              管理您关注的所有课程，获取最新动态。
+            </p>
           </div>
           <v-divider class="my-3 my-md-4" />
           <div class="text-caption text-md-body-2 text-grey">
@@ -31,12 +35,24 @@
     <v-col cols="12" lg="10">
       <div class="pa-0 pa-sm-2">
         <!-- 顶部操作栏 -->
-        <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3">
+        <div
+          class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3"
+        >
           <div></div>
-          <v-btn color="primary" variant="text" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'" to="/learning">
+          <v-btn
+            color="primary"
+            variant="text"
+            rounded="lg"
+            :size="$vuetify.display.mobile ? 'small' : 'default'"
+            to="/learning"
+          >
             <span class="d-none d-sm-inline">浏览更多课程</span>
             <span class="d-sm-none">浏览更多</span>
-            <v-icon icon="mdi-chevron-right" :size="$vuetify.display.mobile ? 16 : 18" class="ml-1" />
+            <v-icon
+              icon="mdi-chevron-right"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              class="ml-1"
+            />
           </v-btn>
         </div>
 
@@ -55,10 +71,16 @@
                         rounded="lg"
                         class="mr-3 mr-sm-4 flex-shrink-0"
                       >
-                        <v-icon :icon="course.course.icon" color="white" :size="$vuetify.display.mobile ? 24 : 28" />
+                        <v-icon
+                          :icon="course.course.icon"
+                          color="white"
+                          :size="$vuetify.display.mobile ? 24 : 28"
+                        />
                       </v-avatar>
                       <div class="min-w-0">
-                        <h4 class="text-body-1 text-md-h6 font-weight-bold mb-1 text-truncate">{{ course.course.name }}</h4>
+                        <h4 class="text-body-1 text-md-h6 font-weight-bold mb-1 text-truncate">
+                          {{ course.course.name }}
+                        </h4>
                         <p class="text-caption text-grey mb-0">
                           {{ course.course.learnerCount || 0 }} 人学习
                         </p>
@@ -85,7 +107,12 @@
 
         <!-- 空状态 -->
         <div v-else class="text-center py-8 py-md-12">
-          <v-icon icon="mdi-book-multiple" :size="$vuetify.display.mobile ? 48 : 64" color="grey-lighten-2" class="mb-3 mb-md-4" />
+          <v-icon
+            icon="mdi-book-multiple"
+            :size="$vuetify.display.mobile ? 48 : 64"
+            color="grey-lighten-2"
+            class="mb-3 mb-md-4"
+          />
           <p class="text-body-2 text-md-body-1 text-grey-darken-2">暂无关注的课程</p>
           <p class="text-caption text-md-body-2 text-grey">关注感兴趣的课程，及时获取更新</p>
           <v-btn

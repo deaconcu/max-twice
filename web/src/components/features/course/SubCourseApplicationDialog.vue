@@ -20,11 +20,11 @@
             </label>
             <v-text-field
               v-model="formData.name"
-              :rules="nameRules"
+              :rules="courseNameRules"
+              :counter="courseNameMaxLength"
               placeholder="请输入子课程名称"
               variant="outlined"
               density="compact"
-              hide-details="auto"
               clearable
             />
           </div>
@@ -37,11 +37,11 @@
             </label>
             <v-textarea
               v-model="formData.description"
-              :rules="descriptionRules"
+              :rules="courseDescriptionRules"
+              :counter="courseDescriptionMaxLength"
               placeholder="请输入子课程描述"
               variant="outlined"
               density="compact"
-              hide-details="auto"
               rows="10"
               clearable
             />
@@ -74,6 +74,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
+import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 
 interface Props {
   modelValue?: boolean
@@ -94,6 +95,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
+
+// 验证规则
+const courseNameRules = useValidationRules('course-name')
+const courseDescriptionRules = useValidationRules('course-description')
+const courseNameMaxLength = useMaxLength('course-name')
+const courseDescriptionMaxLength = useMaxLength('course-description')
 
 // 表单数据
 const formData = ref({
@@ -119,17 +126,6 @@ const dialogModel = computed({
     emit('update:modelValue', value)
   },
 })
-
-// 验证规则
-const nameRules = [
-  (v: string) => !!v || '请输入子课程名称',
-  (v: string) => (v && v.length <= 100) || '子课程名称不能超过100个字符',
-]
-
-const descriptionRules = [
-  (v: string) => !!v || '请输入子课程描述',
-  (v: string) => (v && v.length <= 500) || '子课程描述不能超过500个字符',
-]
 
 // 重置表单
 const handleResetForm = () => {

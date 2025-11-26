@@ -26,7 +26,11 @@
               <div v-if="data && data.node" class="node-header mb-4 mb-md-6">
                 <div class="d-flex align-center justify-space-between mb-3 mb-md-4">
                   <div class="d-flex align-center">
-                    <v-icon icon="mdi-list-box-outline" color="primary-darken-1" :size="$vuetify.display.mobile ? 20 : 24"></v-icon>
+                    <v-icon
+                      icon="mdi-list-box-outline"
+                      color="primary-darken-1"
+                      :size="$vuetify.display.mobile ? 20 : 24"
+                    ></v-icon>
                     <h2 class="text-h6 text-md-h5 font-weight-bold text-grey-darken-4 ms-2 ms-md-3">
                       {{ data.node.name }}
                     </h2>
@@ -66,7 +70,12 @@
                   <v-card-title class="pa-4 pa-md-4">
                     <div class="d-flex align-center justify-space-between w-100">
                       <div class="d-flex align-center">
-                        <v-icon icon="mdi-robot-excited" color="primary" :size="$vuetify.display.mobile ? 20 : 24" class="mr-2"></v-icon>
+                        <v-icon
+                          icon="mdi-robot-excited"
+                          color="primary"
+                          :size="$vuetify.display.mobile ? 20 : 24"
+                          class="mr-2"
+                        ></v-icon>
                         <span class="text-body-1 text-md-h6">答疑助手</span>
                       </div>
                       <v-btn
@@ -146,10 +155,20 @@
       <v-card rounded="t-xl">
         <v-card-title class="pa-4 pa-md-4 d-flex align-center justify-space-between">
           <div class="d-flex align-center">
-            <v-icon icon="mdi-robot-excited" color="primary" class="mr-2" :size="$vuetify.display.mobile ? 20 : 24" />
+            <v-icon
+              icon="mdi-robot-excited"
+              color="primary"
+              class="mr-2"
+              :size="$vuetify.display.mobile ? 20 : 24"
+            />
             <span class="text-h6 text-md-h5 font-weight-bold">答疑助手</span>
           </div>
-          <v-btn icon="mdi-close" variant="text" :size="$vuetify.display.mobile ? 'small' : 'default'" @click="assistantSheetOpen = false" />
+          <v-btn
+            icon="mdi-close"
+            variant="text"
+            :size="$vuetify.display.mobile ? 'small' : 'default'"
+            @click="assistantSheetOpen = false"
+          />
         </v-card-title>
 
         <v-divider />
@@ -164,9 +183,7 @@
           </div>
 
           <div class="d-flex flex-wrap mt-4" style="gap: 8px">
-            <div class="text-body-2 w-100 text-grey-darken-2 font-weight-bold">
-              常用 AI 引擎：
-            </div>
+            <div class="text-body-2 w-100 text-grey-darken-2 font-weight-bold">常用 AI 引擎：</div>
             <v-chip
               v-for="e in aiEngines"
               :key="e.name"
@@ -191,7 +208,12 @@
       <v-card rounded="t-xl">
         <v-card-title class="pa-4 pa-md-4 d-flex align-center justify-space-between">
           <div class="d-flex align-center">
-            <v-icon icon="mdi-cards-outline" color="primary" class="mr-2" :size="$vuetify.display.mobile ? 18 : 20" />
+            <v-icon
+              icon="mdi-cards-outline"
+              color="primary"
+              class="mr-2"
+              :size="$vuetify.display.mobile ? 18 : 20"
+            />
             <span class="text-h6 text-md-h5 font-weight-bold">记忆卡片组</span>
           </div>
           <div class="d-flex align-center" style="gap: 8px">
@@ -206,7 +228,12 @@
             >
               创建
             </v-btn>
-            <v-btn icon="mdi-close" variant="text" :size="$vuetify.display.mobile ? 'small' : 'default'" @click="memorySheetOpen = false" />
+            <v-btn
+              icon="mdi-close"
+              variant="text"
+              :size="$vuetify.display.mobile ? 'small' : 'default'"
+              @click="memorySheetOpen = false"
+            />
           </div>
         </v-card-title>
 

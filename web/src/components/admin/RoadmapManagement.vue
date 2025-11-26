@@ -348,7 +348,8 @@
             <v-textarea
               v-model="editDescription"
               label="路线图描述"
-              :counter="500"
+              :rules="roadmapContentRules"
+              :counter="roadmapContentMaxLength"
               variant="outlined"
               rounded="lg"
               bg-color="grey-lighten-5"
@@ -400,10 +401,15 @@ import type { StateOption } from '@/types/common.d'
 import RejectBanDialog from './RejectBanDialog.vue'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
+import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 
 const professionIdFilter = ref<number | null>(null)
 const creatorIdFilter = ref<number | null>(null)
 const selectedStateIndex = ref<number>(0)
+
+// 验证规则
+const roadmapContentRules = useValidationRules('roadmap-content')
+const roadmapContentMaxLength = useMaxLength('roadmap-content')
 
 const showEditDialog = ref<boolean>(false)
 const editFormValid = ref<boolean>(false)

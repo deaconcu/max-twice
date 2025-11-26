@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore, useAuthStore } from '@/stores'
+import { useValidationConfigStore } from '@/stores/validationConfig'
 import { isSuperAdmin, isAdmin, isModerator } from '@/utils/permission'
 import { routes } from './routes'
 
@@ -38,10 +39,19 @@ const router = createRouter({
 /**
  * 全局前置守卫 - 权限检查
  */
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore()
   const authStore = useAuthStore()
   const currentUser = userStore.currentUser
+
+  // 定期检查验证配置更新（带节流，避免频繁请求）
+  // 仅在跨页面导航时检查（不是首次加载）
+  if (from.name) {
+    const validationStore = useValidationConfigStore()
+    validationStore.checkAndLoad().catch((error) => {
+      console.error('[Router] 检查验证配置失败', error)
+    })
+  }
 
   // 检查是否需要登录
   if (to.meta.requireAuth && !authStore.isAuthenticated) {

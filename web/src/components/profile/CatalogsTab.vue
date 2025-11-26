@@ -5,7 +5,9 @@
       <div class="sticky-sidebar">
         <div class="pa-3 pa-md-4">
           <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">创建的目录</h4>
+            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
+              创建的目录
+            </h4>
             <p class="text-caption text-md-body-2 text-grey mb-0">组织和管理您的学习内容集合。</p>
           </div>
           <v-divider class="my-3 my-md-4" />
@@ -31,7 +33,9 @@
     <v-col cols="12" lg="10">
       <div class="pa-0 pa-sm-2">
         <!-- 顶部搜索栏 -->
-        <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3">
+        <div
+          class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 mb-md-6 ga-3"
+        >
           <div></div>
 
           <!-- 搜索框 -->
@@ -118,7 +122,10 @@
                     <div class="text-body-2 text-md-body-1 text-grey-darken-3 mb-1">
                       {{ idx + 1 }}. {{ node.name }}
                     </div>
-                    <div v-if="node.description" class="text-body-2 text-md-body-2 text-grey-darken-1">
+                    <div
+                      v-if="node.description"
+                      class="text-body-2 text-md-body-2 text-grey-darken-1"
+                    >
                       {{ node.description }}
                     </div>
                   </div>
@@ -126,13 +133,26 @@
 
                 <div class="d-flex align-center justify-space-between ga-2">
                   <!-- 统计信息 -->
-                  <div class="d-flex align-center flex-wrap text-body-2 text-md-body-2 text-grey" style="gap: 8px">
+                  <div
+                    class="d-flex align-center flex-wrap text-body-2 text-md-body-2 text-grey"
+                    style="gap: 8px"
+                  >
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-comment-text-outline" :size="$vuetify.display.mobile ? 14 : 16" color="grey" class="mr-1" />
+                      <v-icon
+                        icon="mdi-comment-text-outline"
+                        :size="$vuetify.display.mobile ? 14 : 16"
+                        color="grey"
+                        class="mr-1"
+                      />
                       {{ catalog.commentCount }}
                     </div>
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-cards-outline" :size="$vuetify.display.mobile ? 14 : 16" color="grey" class="mr-1" />
+                      <v-icon
+                        icon="mdi-cards-outline"
+                        :size="$vuetify.display.mobile ? 14 : 16"
+                        color="grey"
+                        class="mr-1"
+                      />
                       {{ catalog.deckCount }}
                     </div>
                     <div class="d-flex align-center">
@@ -145,7 +165,12 @@
                       {{ catalog.contentNodes.length }}
                     </div>
                     <div class="d-flex align-center d-none d-sm-flex">
-                      <v-icon icon="mdi-calendar-outline" :size="$vuetify.display.mobile ? 14 : 16" color="grey" class="mr-1" />
+                      <v-icon
+                        icon="mdi-calendar-outline"
+                        :size="$vuetify.display.mobile ? 14 : 16"
+                        color="grey"
+                        class="mr-1"
+                      />
                       {{ formatDate(catalog.createdAt) }}
                     </div>
                   </div>
@@ -182,7 +207,12 @@
 
         <!-- 空状态 -->
         <div v-else class="text-center py-8 py-md-12">
-          <v-icon icon="mdi-folder-multiple" :size="$vuetify.display.mobile ? 48 : 64" color="grey-lighten-2" class="mb-3 mb-md-4" />
+          <v-icon
+            icon="mdi-folder-multiple"
+            :size="$vuetify.display.mobile ? 48 : 64"
+            color="grey-lighten-2"
+            class="mb-3 mb-md-4"
+          />
           <p class="text-body-2 text-md-body-1 text-grey-darken-2">
             {{ searchQuery ? '未找到匹配的目录' : '暂无创建的目录' }}
           </p>

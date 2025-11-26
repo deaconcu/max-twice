@@ -2,6 +2,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { commentApi } from '@/api'
 import { useFetch, useMutation } from '@/composables'
+import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 import { ObjectType } from '@/enums'
 
 interface Props {
@@ -15,6 +16,10 @@ const props = withDefaults(defineProps<Props>(), {
   commentCount: 0,
   objectType: ObjectType.POST,
 })
+
+// 验证规则
+const commentRules = useValidationRules('comment-content')
+const commentMaxLength = useMaxLength('comment-content')
 
 const newComment = ref('')
 const isCommentFocused = ref(false)
@@ -312,8 +317,9 @@ onBeforeUnmount(() => {
         density="comfortable"
         rounded="lg"
         :rows="isCommentFocused ? 3 : 1"
+        :rules="commentRules"
+        :counter="commentMaxLength"
         auto-grow
-        hide-details
         class="mb-3"
         @focus="isCommentFocused = true"
         @blur="isCommentFocused = false"
@@ -395,8 +401,9 @@ onBeforeUnmount(() => {
                 density="comfortable"
                 rounded="lg"
                 rows="2"
+                :rules="commentRules"
+                :counter="commentMaxLength"
                 auto-grow
-                hide-details
                 class="mb-2"
               ></v-textarea>
               <div class="d-flex justify-end">
@@ -480,8 +487,9 @@ onBeforeUnmount(() => {
                         density="comfortable"
                         rounded="lg"
                         rows="2"
+                        :rules="commentRules"
+                        :counter="commentMaxLength"
                         auto-grow
-                        hide-details
                         class="mb-2"
                       ></v-textarea>
                       <div class="d-flex justify-end">

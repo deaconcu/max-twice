@@ -1036,7 +1036,8 @@
                 rounded="lg"
                 placeholder="请输入问题内容..."
                 rows="3"
-                :counter="500"
+                :rules="frontRules"
+                :counter="frontMaxLength"
               ></v-textarea>
             </div>
 
@@ -1051,7 +1052,8 @@
                 rounded="lg"
                 placeholder="请输入答案内容..."
                 rows="4"
-                :counter="2000"
+                :rules="backRules"
+                :counter="backMaxLength"
               ></v-textarea>
             </div>
           </v-form>
@@ -1080,6 +1082,7 @@
 import { ref, watch, computed } from 'vue'
 import { memoryApi } from '@/api'
 import { useFetch, useMutation } from '@/composables'
+import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 import { useUserStore } from '@/stores'
 import type { MemoryCardDeck } from '@/types/memory'
 
@@ -1093,6 +1096,12 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const dialog = defineModel<boolean>({ default: false })
 const userStore = useUserStore()
+
+// 验证规则
+const frontRules = useValidationRules('card-front')
+const backRules = useValidationRules('card-back')
+const frontMaxLength = useMaxLength('card-front')
+const backMaxLength = useMaxLength('card-back')
 
 // Tab相关状态
 const currentTab = ref('all') // 'all' | 'study' | 'diff'

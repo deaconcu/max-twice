@@ -3,6 +3,7 @@ import { ref, watch, nextTick, computed } from 'vue'
 import { memoryApi } from '@/api'
 import type { MemoryCardDeck } from '@/types/memory'
 import { useMutation } from '@/composables'
+import { useValidationConfigStore } from '@/stores/validationConfig'
 
 interface Card {
   front: string
@@ -19,11 +20,25 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const dialog = defineModel<boolean>({ default: false })
-const step = ref(1) // 1: 创建卡片组, 2: 添加卡片
+const step = ref(1) // 1: 添加卡片, 2: 填写说明
+
+// 获取验证配置
+const validationStore = useValidationConfigStore()
+
+// 生成验证规则
+const frontRules = computed(() => validationStore.createRules('card-front'))
+const backRules = computed(() => validationStore.createRules('card-back'))
+const descriptionRules = computed(() => validationStore.createRules('deck-description'))
+
+// 获取最大长度（用于 counter）
+const frontMaxLength = computed(() => validationStore.getRule('card-front')?.maxLength || 500)
+const backMaxLength = computed(() => validationStore.getRule('card-back')?.maxLength || 500)
+const descriptionMaxLength = computed(
+  () => validationStore.getRule('deck-description')?.maxLength || 200
+)
 
 // 卡片组表单
 const deckForm = ref({
-  title: '',
   description: '',
 })
 
@@ -36,26 +51,11 @@ const cardForm = ref({
 const cards = ref<Card[]>([])
 const showEmptyError = ref(false)
 
-// 表单验证
-const deckFormValid = computed(() => {
-  return deckForm.value.title.trim().length > 0 && deckForm.value.title.length <= 100
-})
-
-const cardFormValid = computed(() => {
-  return (
-    cardForm.value.front.trim().length > 0 &&
-    cardForm.value.front.length <= 500 &&
-    cardForm.value.back.trim().length > 0 &&
-    cardForm.value.back.length <= 2000
-  )
-})
-
 // 使用 useMutation 处理创建卡片组
 const { execute: createDeckMutation, loading } = useMutation(
   () =>
     memoryApi.createDeck({
       sourcePostId: props.postId,
-      title: deckForm.value.title,
       description: deckForm.value.description || undefined,
       cards: cards.value.map((card) => ({
         front: card.front,
@@ -82,7 +82,6 @@ watch(dialog, (newVal) => {
 const resetForm = () => {
   step.value = 1
   deckForm.value = {
-    title: '',
     description: '',
   }
   cardForm.value = {
@@ -93,8 +92,12 @@ const resetForm = () => {
   showEmptyError.value = false
 }
 
-const createDeck = () => {
-  if (!deckFormValid.value) return
+const goToDescription = () => {
+  if (cards.value.length === 0) {
+    showEmptyError.value = true
+    return
+  }
+  showEmptyError.value = false
   step.value = 2
 }
 
@@ -125,12 +128,6 @@ const removeCard = (index: number) => {
 }
 
 const finishCreation = async () => {
-  if (cards.value.length === 0) {
-    showEmptyError.value = true
-    return
-  }
-
-  showEmptyError.value = false
   await createDeckMutation()
 }
 
@@ -149,7 +146,7 @@ const closeDialog = () => {
   <v-dialog v-model="dialog" width="600" persistent>
     <v-card rounded="xl" elevation="8">
       <!-- 头部 -->
-      <div class="d-flex align-center justify-space-between pa-6 pb-4">
+      <div class="d-flex align-center justify-space-between pa-6 pb-2">
         <div class="d-flex align-center">
           <v-btn
             v-if="step === 2"
@@ -161,53 +158,26 @@ const closeDialog = () => {
           ></v-btn>
           <div>
             <h3 class="text-h5 font-weight-bold text-grey-darken-3">
-              {{ step === 1 ? '创建记忆卡片组' : '添加记忆卡片' }}
+              {{ step === 1 ? '添加记忆卡片' : '填写说明' }}
             </h3>
             <p class="text-body-2 text-grey-darken-1 mb-0">
-              {{ step === 1 ? '为文章创建新的记忆卡片组' : `为"${deckForm.title}"添加卡片` }}
+              {{ step === 1 ? '先添加卡片，然后填写说明' : '为卡片组添加描述说明' }}
             </p>
           </div>
         </div>
         <v-btn icon="mdi-close" variant="text" @click="closeDialog"></v-btn>
       </div>
 
-      <v-divider></v-divider>
-
-      <!-- 步骤1: 创建卡片组 -->
-      <v-card-text v-if="step === 1" class="pa-6">
-        <v-form @submit.prevent="createDeck">
-          <v-text-field
-            v-model="deckForm.title"
-            label="卡片组标题"
-            placeholder="为你的卡片组起一个有意义的名字"
-            :counter="100"
-            variant="outlined"
-            rounded="lg"
-            class="mb-4"
-          ></v-text-field>
-
-          <v-textarea
-            v-model="deckForm.description"
-            label="描述（可选）"
-            placeholder="简要描述这个卡片组的内容和用途"
-            :counter="500"
-            variant="outlined"
-            rounded="lg"
-            rows="3"
-            no-resize
-          ></v-textarea>
-        </v-form>
-      </v-card-text>
-
-      <!-- 步骤2: 添加卡片 -->
-      <v-card-text v-if="step === 2" class="pa-6">
+      <!-- 步骤1: 添加卡片 -->
+      <v-card-text v-if="step === 1" class="px-6 pt-2 pb-6">
         <!-- 卡片添加表单 -->
         <v-form class="mb-6" @submit.prevent="addCard">
           <v-textarea
             v-model="cardForm.front"
             label="问题（卡片正面）"
             placeholder="输入问题..."
-            :counter="500"
+            :rules="frontRules"
+            :counter="frontMaxLength"
             variant="outlined"
             rounded="lg"
             rows="2"
@@ -219,7 +189,8 @@ const closeDialog = () => {
             v-model="cardForm.back"
             label="答案（卡片背面）"
             placeholder="输入答案..."
-            :counter="2000"
+            :rules="backRules"
+            :counter="backMaxLength"
             variant="outlined"
             rounded="lg"
             rows="3"
@@ -233,7 +204,6 @@ const closeDialog = () => {
             variant="outlined"
             rounded="lg"
             prepend-icon="mdi-plus"
-            :disabled="!cardFormValid"
             block
           >
             添加卡片
@@ -293,12 +263,37 @@ const closeDialog = () => {
         </div>
       </v-card-text>
 
+      <!-- 步骤2: 填写说明 -->
+      <v-card-text v-if="step === 2" class="px-6 pt-2 pb-6">
+        <v-form @submit.prevent="finishCreation">
+          <!-- 已添加的卡片数量提示 -->
+          <div class="d-flex align-center pa-3 rounded-lg mb-4" style="background-color: #f5f5f5">
+            <v-icon icon="mdi-information-outline" size="20" color="primary" class="mr-2"></v-icon>
+            <span class="text-body-2 text-grey-darken-2">
+              已添加 <strong>{{ cards.length }}</strong> 张卡片
+            </span>
+          </div>
+
+          <v-textarea
+            v-model="deckForm.description"
+            label="描述（可选）"
+            placeholder="说说你为什么要创建这个卡片组，它和别的卡片组相比有什么不一样的地方"
+            :rules="descriptionRules"
+            :counter="descriptionMaxLength"
+            variant="outlined"
+            rounded="lg"
+            rows="4"
+            no-resize
+          ></v-textarea>
+        </v-form>
+      </v-card-text>
+
       <!-- 底部操作按钮 -->
       <v-card-actions class="pa-6 pt-0">
         <!-- 空卡片错误提示 -->
-        <div v-if="step === 2 && showEmptyError" class="d-flex align-center">
-          <v-icon icon="mdi-alert-circle" size="14" color="grey-darken-1" class="mr-1"></v-icon>
-          <p class="text-caption text-grey-darken-1 mb-0">至少需要添加一张卡片才能完成创建</p>
+        <div v-if="step === 1 && showEmptyError" class="d-flex align-center">
+          <v-icon icon="mdi-alert-circle" size="14" color="error" class="mr-1"></v-icon>
+          <p class="text-caption text-error mb-0">至少需要添加一张卡片才能进入下一步</p>
         </div>
 
         <v-spacer></v-spacer>
@@ -310,9 +305,8 @@ const closeDialog = () => {
           color="primary"
           variant="flat"
           rounded="lg"
-          :loading="loading"
-          :disabled="!deckFormValid"
-          @click="createDeck"
+          :disabled="cards.length === 0"
+          @click="goToDescription"
         >
           下一步
         </v-btn>
@@ -323,7 +317,6 @@ const closeDialog = () => {
           variant="flat"
           rounded="lg"
           :loading="loading"
-          :disabled="cards.length === 0"
           @click="finishCreation"
         >
           完成创建

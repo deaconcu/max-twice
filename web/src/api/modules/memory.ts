@@ -41,7 +41,6 @@ export function getDecksByNode(
  */
 export function createDeck(data: {
   sourcePostId: number
-  title: string
   description?: string
   cards: {
     front: string

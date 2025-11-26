@@ -5,8 +5,12 @@
       <div class="sticky-sidebar">
         <div class="pa-3 pa-md-4">
           <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">个人信息</h4>
-            <p class="text-caption text-md-body-2 text-grey mb-0">管理您的个人资料，包括头像、姓名和个人简介。</p>
+            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
+              个人信息
+            </h4>
+            <p class="text-caption text-md-body-2 text-grey mb-0">
+              管理您的个人资料，包括头像、姓名和个人简介。
+            </p>
           </div>
           <v-divider class="my-3 my-md-4" />
           <div class="text-caption text-md-body-2 text-grey">
@@ -36,7 +40,9 @@
             <!-- 头像 -->
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
               <div class="label-section mb-2 mb-sm-0">
-                <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium">头像</span>
+                <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
+                  >头像</span
+                >
               </div>
               <div class="flex-grow-1 d-flex justify-center justify-sm-start">
                 <v-avatar
@@ -46,7 +52,12 @@
                   color="grey-lighten-3"
                   class="avatar-border"
                 >
-                  <v-icon v-if="!localUserInfo.avatar" icon="mdi-account" :size="$vuetify.display.mobile ? 48 : 60" color="grey" />
+                  <v-icon
+                    v-if="!localUserInfo.avatar"
+                    icon="mdi-account"
+                    :size="$vuetify.display.mobile ? 48 : 60"
+                    color="grey"
+                  />
                 </v-avatar>
               </div>
             </div>
@@ -56,11 +67,18 @@
             <!-- 姓名 -->
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
               <div class="label-section mb-2 mb-sm-0">
-                <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium">姓名</span>
+                <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
+                  >姓名</span
+                >
               </div>
               <div class="flex-grow-1">
-                <div v-if="!displayModifyName" class="d-flex flex-column flex-sm-row align-start align-sm-center">
-                  <span class="text-body-1 text-md-h6 text-grey-darken-4 mb-2 mb-sm-0">{{ localUserInfo.name }}</span>
+                <div
+                  v-if="!displayModifyName"
+                  class="d-flex flex-column flex-sm-row align-start align-sm-center"
+                >
+                  <span class="text-body-1 text-md-h6 text-grey-darken-4 mb-2 mb-sm-0">{{
+                    localUserInfo.name
+                  }}</span>
                   <v-btn
                     variant="text"
                     color="primary"
@@ -76,10 +94,11 @@
                 <div v-else class="d-flex flex-column flex-sm-row align-start">
                   <v-text-field
                     v-model="localUserInfo.name"
-                    hide-details
                     density="comfortable"
                     variant="outlined"
                     rounded="lg"
+                    :rules="usernameRules"
+                    :counter="usernameMaxLength"
                     class="mb-2 mb-sm-0"
                     style="max-width: 300px"
                   />
@@ -114,10 +133,15 @@
             <!-- 简介 -->
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
               <div class="label-section mb-2 mb-sm-0">
-                <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium">个人简介</span>
+                <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
+                  >个人简介</span
+                >
               </div>
               <div class="flex-grow-1">
-                <div v-if="!displayModifyBio" class="d-flex flex-column flex-sm-row align-start align-sm-center">
+                <div
+                  v-if="!displayModifyBio"
+                  class="d-flex flex-column flex-sm-row align-start align-sm-center"
+                >
                   <span class="text-body-2 text-md-body-1 text-grey-darken-3 mb-2 mb-sm-0">{{
                     localUserInfo.bio || '暂未设置'
                   }}</span>
@@ -136,12 +160,13 @@
                 <div v-else>
                   <v-textarea
                     v-model="localUserInfo.bio"
-                    hide-details
                     density="comfortable"
                     variant="outlined"
                     rounded="lg"
                     rows="3"
                     placeholder="简单介绍一下自己..."
+                    :rules="biographyRules"
+                    :counter="biographyMaxLength"
                     style="max-width: 500px"
                   />
                   <div class="d-flex align-center mt-3 ga-2">
@@ -174,7 +199,9 @@
             <!-- 邮箱 -->
             <div class="d-flex flex-column flex-sm-row align-start mb-4 mb-md-6">
               <div class="label-section mb-2 mb-sm-0">
-                <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium">邮箱</span>
+                <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
+                  >邮箱</span
+                >
               </div>
               <div class="flex-grow-1">
                 <span class="text-body-2 text-md-body-1 text-grey">{{ localUserInfo.email }}</span>
@@ -186,10 +213,14 @@
             <!-- 加入日期 -->
             <div class="d-flex flex-column flex-sm-row align-start">
               <div class="label-section mb-2 mb-sm-0">
-                <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium">加入日期</span>
+                <span class="text-caption text-md-body-2 text-grey-darken-2 font-weight-medium"
+                  >加入日期</span
+                >
               </div>
               <div class="flex-grow-1">
-                <span class="text-body-2 text-md-body-1 text-grey">{{ localUserInfo.joinDate }}</span>
+                <span class="text-body-2 text-md-body-1 text-grey">{{
+                  localUserInfo.joinDate
+                }}</span>
               </div>
             </div>
           </v-card-text>
@@ -215,7 +246,14 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useMutation } from '@/composables/useMutation'
+import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 import { userApi } from '@/api'
+
+// 验证规则
+const usernameRules = useValidationRules('username')
+const biographyRules = useValidationRules('biography')
+const usernameMaxLength = useMaxLength('username')
+const biographyMaxLength = useMaxLength('biography')
 
 // Props
 const props = defineProps<{

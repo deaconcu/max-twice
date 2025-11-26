@@ -102,44 +102,44 @@ const resetList = () => {
 
           <div class="px-6 py-4">
             <draggable v-model="list" item-key="id" handle=".drag-handle">
-            <template #item="{ element, index }">
-              <div class="toc-item d-flex align-center mb-3 pa-3">
-                <div class="drag-handle mr-3">
-                  <v-icon icon="mdi-drag" size="20" color="grey"></v-icon>
-                </div>
+              <template #item="{ element, index }">
+                <div class="toc-item d-flex align-center mb-3 pa-3">
+                  <div class="drag-handle mr-3">
+                    <v-icon icon="mdi-drag" size="20" color="grey"></v-icon>
+                  </div>
 
-                <div class="flex-grow-1">
-                  <span v-if="element > 0" class="text-body-1">目录 {{ element }}</span>
-                  <span v-if="element === 0" class="text-body-1 text-error">新目录</span>
-                  <span v-if="element < 0" class="text-body-1 text-error">
-                    目录 {{ -element }} 的副本
-                  </span>
-                </div>
+                  <div class="flex-grow-1">
+                    <span v-if="element > 0" class="text-body-1">目录 {{ element }}</span>
+                    <span v-if="element === 0" class="text-body-1 text-error">新目录</span>
+                    <span v-if="element < 0" class="text-body-1 text-error">
+                      目录 {{ -element }} 的副本
+                    </span>
+                  </div>
 
-                <div class="d-flex" style="gap: 8px">
-                  <v-btn
-                    v-if="element > 0"
-                    variant="text"
-                    size="small"
-                    color="grey-darken-2"
-                    prepend-icon="mdi-content-copy"
-                    @click="copyItem(index, element)"
-                  >
-                    复制
-                  </v-btn>
-                  <v-btn
-                    variant="text"
-                    size="small"
-                    color="error"
-                    prepend-icon="mdi-close"
-                    @click="removeItem(index)"
-                  >
-                    删除
-                  </v-btn>
+                  <div class="d-flex" style="gap: 8px">
+                    <v-btn
+                      v-if="element > 0"
+                      variant="text"
+                      size="small"
+                      color="grey-darken-2"
+                      prepend-icon="mdi-content-copy"
+                      @click="copyItem(index, element)"
+                    >
+                      复制
+                    </v-btn>
+                    <v-btn
+                      variant="text"
+                      size="small"
+                      color="error"
+                      prepend-icon="mdi-close"
+                      @click="removeItem(index)"
+                    >
+                      删除
+                    </v-btn>
+                  </div>
                 </div>
-              </div>
-            </template>
-          </draggable>
+              </template>
+            </draggable>
           </div>
         </v-sheet>
       </v-card-text>

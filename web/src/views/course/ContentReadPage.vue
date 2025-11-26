@@ -13,7 +13,10 @@
           <v-card-text class="pa-0 drawer-card-content">
             <div class="drawer-container">
               <!-- 目录组选择和关闭按钮 -->
-              <div v-if="data && data.toc" class="toc-chips-row pa-4 pa-md-4 d-flex align-items-center flex-wrap">
+              <div
+                v-if="data && data.toc"
+                class="toc-chips-row pa-4 pa-md-4 d-flex align-items-center flex-wrap"
+              >
                 <v-chip
                   size="default"
                   rounded="lg"
@@ -42,7 +45,11 @@
                     {{ index + 1 }}
                   </v-chip>
                   <div v-if="index === 0" class="corner-badge">
-                    <v-icon :icon="'mdi-chart-line-variant'" :size="$vuetify.display.mobile ? 6 : 8" color="white" />
+                    <v-icon
+                      :icon="'mdi-chart-line-variant'"
+                      :size="$vuetify.display.mobile ? 6 : 8"
+                      color="white"
+                    />
                   </div>
                 </div>
                 <v-btn
@@ -121,7 +128,11 @@
                     {{ index + 1 }}
                   </v-chip>
                   <div v-if="index === 0" class="corner-badge">
-                    <v-icon icon="mdi-chart-line-variant" :size="$vuetify.display.mobile ? 6 : 8" color="white" />
+                    <v-icon
+                      icon="mdi-chart-line-variant"
+                      :size="$vuetify.display.mobile ? 6 : 8"
+                      color="white"
+                    />
                   </div>
                 </div>
                 <v-btn
@@ -196,7 +207,12 @@
                     <v-card-title class="pa-4 pa-md-4">
                       <div class="d-flex align-center justify-space-between w-100">
                         <div class="d-flex align-center">
-                          <v-icon icon="mdi-robot-excited" color="primary" :size="$vuetify.display.mobile ? 20 : 24" class="mr-2"></v-icon>
+                          <v-icon
+                            icon="mdi-robot-excited"
+                            color="primary"
+                            :size="$vuetify.display.mobile ? 20 : 24"
+                            class="mr-2"
+                          ></v-icon>
                           <span class="text-body-1 text-md-h6">答疑助手</span>
                         </div>
                         <v-btn
@@ -254,7 +270,9 @@
                 <!-- 其他页面：显示课程信息 -->
                 <template v-else>
                   <v-card class="sidebar-card no-border" rounded="lg">
-                    <v-card-title class="pa-4 pa-md-4 text-body-1 text-md-h6"> 关于本课程 </v-card-title>
+                    <v-card-title class="pa-4 pa-md-4 text-body-1 text-md-h6">
+                      关于本课程
+                    </v-card-title>
                     <v-card-text class="pa-4 pa-md-4 pt-0">
                       <div class="info-item">
                         <div class="text-caption text-medium-emphasis mb-2">课程描述</div>

@@ -18,10 +18,6 @@ public class CreateDeckRequest {
     @NotNull(message = "源帖子ID不能为空")
     private Long sourcePostId;
 
-    @NotBlank(message = "标题不能为空")
-    @ConfigurableSize(configKey = "deck-title")
-    private String title;
-
     @ConfigurableSize(configKey = "deck-description")
     private String description;
 

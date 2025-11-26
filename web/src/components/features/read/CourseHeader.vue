@@ -84,9 +84,11 @@ const toggleSubscribe = () => {
           elevation="0"
           @click="toggleLearning"
         >
-          <v-icon :size="$vuetify.display.smAndDown ? 20 : 16" :class="$vuetify.display.smAndDown ? '' : 'mr-1'">{{
-            isLearning ? 'mdi-check-circle' : 'mdi-play-circle'
-          }}</v-icon>
+          <v-icon
+            :size="$vuetify.display.smAndDown ? 20 : 16"
+            :class="$vuetify.display.smAndDown ? '' : 'mr-1'"
+            >{{ isLearning ? 'mdi-check-circle' : 'mdi-play-circle' }}</v-icon
+          >
           <span v-if="!$vuetify.display.smAndDown">{{ isLearning ? '学习中' : '开始学习' }}</span>
           <v-tooltip v-if="$vuetify.display.smAndDown" activator="parent" location="bottom">
             {{ isLearning ? '学习中' : '开始学习' }}

@@ -318,7 +318,7 @@ public class AutoAuthorGenerationService {
             // 创建记忆卡片组请求
             CreateDeckRequest deckRequest = new CreateDeckRequest();
             deckRequest.setSourcePostId(postId);
-            deckRequest.setTitle("AI生成记忆卡片");
+            //deckRequest.setTitle("AI生成记忆卡片");
             deckRequest.setDescription("基于文章内容自动生成的记忆卡片组");
 
             // 生成示例记忆卡片
@@ -456,7 +456,7 @@ public class AutoAuthorGenerationService {
         // 创建记忆卡片组请求
         CreateDeckRequest deckRequest = new CreateDeckRequest();
         deckRequest.setSourcePostId(postId);
-        deckRequest.setTitle("AI生成记忆卡片");
+        //deckRequest.setTitle("AI生成记忆卡片");
         deckRequest.setDescription("基于文章内容AI生成的记忆卡片组");
         deckRequest.setCards(cards);
 

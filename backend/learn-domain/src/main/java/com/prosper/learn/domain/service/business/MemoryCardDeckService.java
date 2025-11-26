@@ -493,7 +493,7 @@ public class MemoryCardDeckService {
         deck.setPostId(request.getSourcePostId());
         deck.setNodeId(nodeId);
         deck.setCreatorId(userId);
-        deck.setTitle(request.getTitle());
+        deck.setTitle(""); // 创建时设置为空字符串
         deck.setDescription(request.getDescription());
         deck.setVersion(1);
         deck.setState(Enums.ContentState.SUBMITTED.value()); // 默认审核中
@@ -972,9 +972,6 @@ public class MemoryCardDeckService {
         memoryCardService.deleteCardsByDeck(userId, deckId);
 
         // 更新卡片组信息（如果提供了）
-        if (request.getTitle() != null) {
-            deck.setTitle(request.getTitle());
-        }
         if (request.getDescription() != null) {
             deck.setDescription(request.getDescription());
         }

@@ -5,3 +5,4 @@
 
 export { useAuthStore } from './modules/auth'
 export { useUserStore } from './modules/user'
+export { useValidationConfigStore } from './validationConfig'

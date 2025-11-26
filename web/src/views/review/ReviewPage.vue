@@ -4,11 +4,20 @@
     <div class="mb-4 mb-md-6">
       <div class="d-flex align-center justify-space-between mb-4">
         <div class="d-flex align-center">
-          <v-avatar color="surface-variant" :size="$vuetify.display.mobile ? 48 : 64" rounded="lg" class="mr-3 flex-shrink-0">
-            <v-icon :size="$vuetify.display.mobile ? 24 : 32" color="grey-darken-1">mdi-brain</v-icon>
+          <v-avatar
+            color="surface-variant"
+            :size="$vuetify.display.mobile ? 48 : 64"
+            rounded="lg"
+            class="mr-3 flex-shrink-0"
+          >
+            <v-icon :size="$vuetify.display.mobile ? 24 : 32" color="grey-darken-1"
+              >mdi-brain</v-icon
+            >
           </v-avatar>
           <div>
-            <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4">{{ t('review.title') }}</h1>
+            <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4">
+              {{ t('review.title') }}
+            </h1>
             <p class="text-caption text-md-body-2 text-grey-darken-2 mt-1">
               {{
                 activeTab === 'all'
@@ -28,7 +37,11 @@
             :size="$vuetify.display.mobile ? 'small' : 'default'"
             @click="switchViewMode('review')"
           >
-            <v-icon icon="mdi-play" :size="$vuetify.display.mobile ? 14 : 16" class="mr-1 mr-sm-2"></v-icon>
+            <v-icon
+              icon="mdi-play"
+              :size="$vuetify.display.mobile ? 14 : 16"
+              class="mr-1 mr-sm-2"
+            ></v-icon>
             <span class="d-none d-sm-inline">{{ t('review.modeReview') }}</span>
             <span class="d-sm-none">复习</span>
           </v-btn>
@@ -40,7 +53,11 @@
             :size="$vuetify.display.mobile ? 'small' : 'default'"
             @click="switchViewMode('list')"
           >
-            <v-icon icon="mdi-format-list-bulleted" :size="$vuetify.display.mobile ? 14 : 16" class="mr-1 mr-sm-2"></v-icon>
+            <v-icon
+              icon="mdi-format-list-bulleted"
+              :size="$vuetify.display.mobile ? 14 : 16"
+              class="mr-1 mr-sm-2"
+            ></v-icon>
             <span class="d-none d-sm-inline">{{ t('review.modeList') }}</span>
             <span class="d-sm-none">列表</span>
           </v-btn>
@@ -53,7 +70,11 @@
             :size="$vuetify.display.mobile ? 'small' : 'default'"
             @click="switchViewMode('manage')"
           >
-            <v-icon icon="mdi-cog" :size="$vuetify.display.mobile ? 14 : 16" class="mr-1 mr-sm-2"></v-icon>
+            <v-icon
+              icon="mdi-cog"
+              :size="$vuetify.display.mobile ? 14 : 16"
+              class="mr-1 mr-sm-2"
+            ></v-icon>
             <span class="d-none d-sm-inline">{{ t('review.modeManage') }}</span>
             <span class="d-sm-none">管理</span>
           </v-btn>
@@ -71,19 +92,29 @@
               <v-expansion-panel-title class="px-4 py-3">
                 <div class="d-flex align-center w-100">
                   <v-avatar
-                    :color="activeTab === 'all' ? 'primary' : getCourseStatusColor(selectedCourse?.setting.status || 'STUDYING')"
+                    :color="
+                      activeTab === 'all'
+                        ? 'primary'
+                        : getCourseStatusColor(selectedCourse?.setting.status || 'STUDYING')
+                    "
                     size="36"
                     class="mr-3 flex-shrink-0"
                   >
                     <v-icon
-                      :icon="activeTab === 'all' ? 'mdi-view-dashboard' : 'mdi-book-open-page-variant'"
+                      :icon="
+                        activeTab === 'all' ? 'mdi-view-dashboard' : 'mdi-book-open-page-variant'
+                      "
                       color="white"
                       size="18"
                     ></v-icon>
                   </v-avatar>
                   <div class="flex-grow-1 min-w-0">
                     <div class="text-body-2 font-weight-bold text-grey-darken-4 text-truncate">
-                      {{ activeTab === 'all' ? t('review.allCourses') : (selectedCourse?.course.name || t('review.allCourses')) }}
+                      {{
+                        activeTab === 'all'
+                          ? t('review.allCourses')
+                          : selectedCourse?.course.name || t('review.allCourses')
+                      }}
                     </div>
                     <div class="text-caption text-grey text-truncate">
                       {{
@@ -95,11 +126,15 @@
                   </div>
                   <v-chip
                     size="small"
-                    :color="(activeTab === 'all' ? totalDueCards : (selectedCourse?.dueCardCount || 0)) > 0 ? 'error' : 'success'"
+                    :color="
+                      (activeTab === 'all' ? totalDueCards : selectedCourse?.dueCardCount || 0) > 0
+                        ? 'error'
+                        : 'success'
+                    "
                     variant="flat"
                     class="ml-2"
                   >
-                    {{ activeTab === 'all' ? totalDueCards : (selectedCourse?.dueCardCount || 0) }}
+                    {{ activeTab === 'all' ? totalDueCards : selectedCourse?.dueCardCount || 0 }}
                   </v-chip>
                 </div>
               </v-expansion-panel-title>
@@ -143,7 +178,9 @@
                   :key="bank.course.id"
                   class="nav-item pa-2 pa-sm-3 rounded-lg mb-2"
                   :class="[
-                    activeTab === bank.course.id.toString() ? 'nav-item-active' : 'nav-item-inactive',
+                    activeTab === bank.course.id.toString()
+                      ? 'nav-item-active'
+                      : 'nav-item-inactive',
                   ]"
                   @click="switchTab(bank.course.id.toString())"
                 >
@@ -163,7 +200,9 @@
                       <div
                         class="text-caption text-md-body-2 font-weight-bold text-truncate"
                         :class="
-                          activeTab === bank.course.id.toString() ? 'text-primary' : 'text-grey-darken-3'
+                          activeTab === bank.course.id.toString()
+                            ? 'text-primary'
+                            : 'text-grey-darken-3'
                         "
                       >
                         {{ bank.course.name }}
@@ -376,7 +415,9 @@
         <!-- 列表模式 -->
         <div v-else-if="viewMode === 'list'">
           <div>
-            <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 ga-3">
+            <div
+              class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 ga-3"
+            >
               <h3 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4">
                 {{ t('review.cardList') }} ({{ listCards.length }} {{ t('review.cards') }})
               </h3>
@@ -391,8 +432,14 @@
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
                   @click="reviewSelectedCards"
                 >
-                  <v-icon icon="mdi-play" :size="$vuetify.display.mobile ? 14 : 16" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"></v-icon>
-                  <span class="d-none d-sm-inline">{{ t('review.reviewSelected') }} ({{ selectedCards.length }})</span>
+                  <v-icon
+                    icon="mdi-play"
+                    :size="$vuetify.display.mobile ? 14 : 16"
+                    :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+                  ></v-icon>
+                  <span class="d-none d-sm-inline"
+                    >{{ t('review.reviewSelected') }} ({{ selectedCards.length }})</span
+                  >
                   <span class="d-sm-none">复习 ({{ selectedCards.length }})</span>
                 </v-btn>
 
@@ -404,7 +451,11 @@
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
                   @click="resetSelectedCards"
                 >
-                  <v-icon icon="mdi-restart" :size="$vuetify.display.mobile ? 14 : 16" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"></v-icon>
+                  <v-icon
+                    icon="mdi-restart"
+                    :size="$vuetify.display.mobile ? 14 : 16"
+                    :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+                  ></v-icon>
                   <span class="d-none d-sm-inline">{{ t('review.resetLearning') }}</span>
                   <span class="d-sm-none">重置</span>
                 </v-btn>
@@ -417,7 +468,11 @@
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
                   @click="deleteSelectedCards"
                 >
-                  <v-icon icon="mdi-delete" :size="$vuetify.display.mobile ? 14 : 16" :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"></v-icon>
+                  <v-icon
+                    icon="mdi-delete"
+                    :size="$vuetify.display.mobile ? 14 : 16"
+                    :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+                  ></v-icon>
                   <span class="d-none d-sm-inline">{{ t('common.delete') }}</span>
                   <span class="d-sm-none">删除</span>
                 </v-btn>
@@ -471,7 +526,9 @@
               <h3 class="text-subtitle-1 text-md-h5 font-weight-bold text-grey-darken-2 mb-2">
                 {{ t('review.noCards') }}
               </h3>
-              <p class="text-body-2 text-md-body-1 text-grey-darken-1">{{ t('review.noCardsInCourse') }}</p>
+              <p class="text-body-2 text-md-body-1 text-grey-darken-1">
+                {{ t('review.noCardsInCourse') }}
+              </p>
             </div>
 
             <div v-else>
@@ -494,7 +551,10 @@
                   </div>
 
                   <!-- 序号 -->
-                  <div class="rank-number mr-3 mr-sm-4 text-center d-none d-sm-flex" style="min-width: 40px">
+                  <div
+                    class="rank-number mr-3 mr-sm-4 text-center d-none d-sm-flex"
+                    style="min-width: 40px"
+                  >
                     <div class="text-body-2 text-md-body-1 font-weight-bold text-grey-darken-2">
                       {{ index + 1 }}
                     </div>
@@ -503,15 +563,26 @@
                   <!-- 卡片内容 -->
                   <div class="flex-grow-1 min-w-0">
                     <div class="d-flex align-center mb-1">
-                      <div class="text-body-2 text-md-body-1 font-weight-medium text-truncate">{{ card.front }}</div>
-                      <span v-if="card.deck" class="text-caption text-md-body-2 text-grey ml-2 flex-shrink-0 d-none d-sm-inline">
+                      <div class="text-body-2 text-md-body-1 font-weight-medium text-truncate">
+                        {{ card.front }}
+                      </div>
+                      <span
+                        v-if="card.deck"
+                        class="text-caption text-md-body-2 text-grey ml-2 flex-shrink-0 d-none d-sm-inline"
+                      >
                         - {{ card.deck.title }}
                       </span>
                     </div>
-                    <div class="text-caption text-md-body-2 text-grey-darken-2 mb-1 line-clamp-2">{{ card.back }}</div>
+                    <div class="text-caption text-md-body-2 text-grey-darken-2 mb-1 line-clamp-2">
+                      {{ card.back }}
+                    </div>
                     <!-- 到期时间 -->
                     <div v-if="card.srsState" class="text-caption text-grey-darken-1">
-                      <v-icon icon="mdi-clock-outline" :size="$vuetify.display.mobile ? 12 : 14" class="mr-1"></v-icon>
+                      <v-icon
+                        icon="mdi-clock-outline"
+                        :size="$vuetify.display.mobile ? 12 : 14"
+                        class="mr-1"
+                      ></v-icon>
                       {{ t('review.nextReview') }}: {{ formatDueDate(card.srsState.reviewDueAt) }}
                     </div>
                   </div>
@@ -551,11 +622,18 @@
         <div v-else-if="viewMode === 'manage'">
           <div v-if="!selectedCourse" class="text-center pa-6 pa-sm-8">
             <v-card border rounded="lg" class="pa-6 pa-sm-8">
-              <v-icon icon="mdi-cog" :size="$vuetify.display.mobile ? 48 : 64" color="grey-lighten-2" class="mb-3 mb-md-4"></v-icon>
+              <v-icon
+                icon="mdi-cog"
+                :size="$vuetify.display.mobile ? 48 : 64"
+                color="grey-lighten-2"
+                class="mb-3 mb-md-4"
+              ></v-icon>
               <h3 class="text-subtitle-1 text-md-h5 font-weight-bold text-grey-darken-2 mb-2">
                 {{ t('review.selectCourse') }}
               </h3>
-              <p class="text-body-2 text-md-body-1 text-grey-darken-1">{{ t('review.selectCourseHint') }}</p>
+              <p class="text-body-2 text-md-body-1 text-grey-darken-1">
+                {{ t('review.selectCourseHint') }}
+              </p>
             </v-card>
           </div>
 
@@ -700,8 +778,13 @@
           </div>
 
           <!-- 统计信息 -->
-          <div class="mt-3 mt-md-4 pa-2 pa-sm-3 rounded-lg" style="background-color: rgb(var(--v-theme-surface))">
-            <h4 class="text-caption text-md-body-1 font-weight-bold text-grey-darken-4 mb-2 mb-md-3">
+          <div
+            class="mt-3 mt-md-4 pa-2 pa-sm-3 rounded-lg"
+            style="background-color: rgb(var(--v-theme-surface))"
+          >
+            <h4
+              class="text-caption text-md-body-1 font-weight-bold text-grey-darken-4 mb-2 mb-md-3"
+            >
               {{ t('review.learningStats') }}
             </h4>
             <div class="d-flex justify-space-between text-caption text-md-body-2 mb-2">

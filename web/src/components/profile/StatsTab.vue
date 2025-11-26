@@ -5,8 +5,12 @@
       <div class="sticky-sidebar">
         <div class="pa-3 pa-md-4">
           <div class="mb-4">
-            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">数据统计</h4>
-            <p class="text-caption text-md-body-2 text-grey mb-0">查看您的学习数据统计和趋势分析。</p>
+            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
+              数据统计
+            </h4>
+            <p class="text-caption text-md-body-2 text-grey mb-0">
+              查看您的学习数据统计和趋势分析。
+            </p>
           </div>
           <v-divider class="my-3 my-md-4" />
           <div class="text-caption text-md-body-2 text-grey">
@@ -39,20 +43,42 @@
             rounded="lg"
             density="compact"
           >
-            <v-btn value="today" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'">今天</v-btn>
-            <v-btn value="7days" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'">7天</v-btn>
-            <v-btn value="30days" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'">30天</v-btn>
-            <v-btn value="all" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'">全部</v-btn>
+            <v-btn value="today" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'"
+              >今天</v-btn
+            >
+            <v-btn value="7days" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'"
+              >7天</v-btn
+            >
+            <v-btn value="30days" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'"
+              >30天</v-btn
+            >
+            <v-btn value="all" rounded="lg" :size="$vuetify.display.mobile ? 'small' : 'default'"
+              >全部</v-btn
+            >
           </v-btn-toggle>
         </div>
 
         <!-- 统计卡片 -->
         <v-row class="mb-4 mb-md-6">
           <v-col cols="6" md="6" lg="3">
-            <v-card rounded="xl" hover border elevation="0" class="pa-4 pa-sm-6 stat-card hoverable">
+            <v-card
+              rounded="xl"
+              hover
+              border
+              elevation="0"
+              class="pa-4 pa-sm-6 stat-card hoverable"
+            >
               <div class="d-flex align-center mb-2">
-                <v-avatar color="blue-lighten-5" :size="$vuetify.display.mobile ? 48 : 56" class="mr-3 mr-sm-4">
-                  <v-icon icon="mdi-book-open-outline" color="primary" :size="$vuetify.display.mobile ? 24 : 28" />
+                <v-avatar
+                  color="blue-lighten-5"
+                  :size="$vuetify.display.mobile ? 48 : 56"
+                  class="mr-3 mr-sm-4"
+                >
+                  <v-icon
+                    icon="mdi-book-open-outline"
+                    color="primary"
+                    :size="$vuetify.display.mobile ? 24 : 28"
+                  />
                 </v-avatar>
                 <div class="flex-grow-1 min-w-0">
                   <div class="text-body-1 text-md-h5 font-weight-bold text-primary">
@@ -76,10 +102,24 @@
           </v-col>
 
           <v-col cols="6" md="6" lg="3">
-            <v-card rounded="xl" hover border elevation="0" class="pa-4 pa-sm-6 stat-card hoverable">
+            <v-card
+              rounded="xl"
+              hover
+              border
+              elevation="0"
+              class="pa-4 pa-sm-6 stat-card hoverable"
+            >
               <div class="d-flex align-center mb-2">
-                <v-avatar color="green-lighten-5" :size="$vuetify.display.mobile ? 48 : 56" class="mr-3 mr-sm-4">
-                  <v-icon icon="mdi-check-circle" color="success" :size="$vuetify.display.mobile ? 24 : 28" />
+                <v-avatar
+                  color="green-lighten-5"
+                  :size="$vuetify.display.mobile ? 48 : 56"
+                  class="mr-3 mr-sm-4"
+                >
+                  <v-icon
+                    icon="mdi-check-circle"
+                    color="success"
+                    :size="$vuetify.display.mobile ? 24 : 28"
+                  />
                 </v-avatar>
                 <div class="flex-grow-1 min-w-0">
                   <div class="text-body-1 text-md-h5 font-weight-bold text-success">
@@ -103,10 +143,24 @@
           </v-col>
 
           <v-col cols="6" md="6" lg="3">
-            <v-card rounded="xl" hover border elevation="0" class="pa-4 pa-sm-6 stat-card hoverable">
+            <v-card
+              rounded="xl"
+              hover
+              border
+              elevation="0"
+              class="pa-4 pa-sm-6 stat-card hoverable"
+            >
               <div class="d-flex align-center mb-2">
-                <v-avatar color="orange-lighten-5" :size="$vuetify.display.mobile ? 48 : 56" class="mr-3 mr-sm-4">
-                  <v-icon icon="mdi-calendar-check" color="warning" :size="$vuetify.display.mobile ? 24 : 28" />
+                <v-avatar
+                  color="orange-lighten-5"
+                  :size="$vuetify.display.mobile ? 48 : 56"
+                  class="mr-3 mr-sm-4"
+                >
+                  <v-icon
+                    icon="mdi-calendar-check"
+                    color="warning"
+                    :size="$vuetify.display.mobile ? 24 : 28"
+                  />
                 </v-avatar>
                 <div class="flex-grow-1 min-w-0">
                   <div class="text-body-1 text-md-h5 font-weight-bold text-warning">
@@ -130,10 +184,24 @@
           </v-col>
 
           <v-col cols="6" md="6" lg="3">
-            <v-card rounded="xl" hover border elevation="0" class="pa-4 pa-sm-6 stat-card hoverable">
+            <v-card
+              rounded="xl"
+              hover
+              border
+              elevation="0"
+              class="pa-4 pa-sm-6 stat-card hoverable"
+            >
               <div class="d-flex align-center mb-2">
-                <v-avatar color="purple-lighten-5" :size="$vuetify.display.mobile ? 48 : 56" class="mr-3 mr-sm-4">
-                  <v-icon icon="mdi-clock-outline" color="purple" :size="$vuetify.display.mobile ? 24 : 28" />
+                <v-avatar
+                  color="purple-lighten-5"
+                  :size="$vuetify.display.mobile ? 48 : 56"
+                  class="mr-3 mr-sm-4"
+                >
+                  <v-icon
+                    icon="mdi-clock-outline"
+                    color="purple"
+                    :size="$vuetify.display.mobile ? 24 : 28"
+                  />
                 </v-avatar>
                 <div class="flex-grow-1 min-w-0">
                   <div class="text-body-1 text-md-h5 font-weight-bold text-purple">
