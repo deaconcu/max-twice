@@ -72,7 +72,7 @@ export const useValidationConfigStore = defineStore(
       try {
         const response = await apiClient.get<ValidationConfig>('/v1/config/validation')
 
-        if (response.status === 200 && response.data) {
+        if (response.data) {
           const oldConfig = JSON.stringify(config.value)
           const newConfig = JSON.stringify(response.data)
 

@@ -163,6 +163,9 @@ const apiClient = {
   },
 }
 
+// 命名导出（供新代码使用）
+export { apiClient }
+
 /**
  * Token 刷新函数（预留）
  * TODO: 根据后端实现调整
@@ -174,4 +177,5 @@ export function refreshToken(): Promise<string | null> {
   return Promise.resolve(null)
 }
 
+// 默认导出（向后兼容）
 export default apiClient
