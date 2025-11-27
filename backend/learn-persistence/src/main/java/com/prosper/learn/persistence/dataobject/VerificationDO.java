@@ -1,5 +1,7 @@
 package com.prosper.learn.persistence.dataobject;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.prosper.learn.common.Utils;
 import lombok.Data;
 
@@ -14,6 +16,7 @@ public class VerificationDO {
 
     private String code;
 
+    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
     private Boolean used;

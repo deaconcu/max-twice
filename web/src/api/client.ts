@@ -37,10 +37,21 @@ const axiosInstance = axios.create({
 })
 
 /**
- * 请求拦截器 - 添加认证 token
+ * 开发环境：API 延时配置（用于测试 loading 状态）
+ * 设置为 0 则禁用延时
+ */
+const API_DELAY = import.meta.env.DEV ? 1000 : 0 // 开发环境延时 1 秒
+
+/**
+ * 请求拦截器 - 添加认证 token 和开发延时
  */
 axiosInstance.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+  async (config: InternalAxiosRequestConfig) => {
+    // 开发环境：添加延时以便测试 loading 状态
+    if (API_DELAY > 0) {
+      await new Promise((resolve) => setTimeout(resolve, API_DELAY))
+    }
+
     // 从 localStorage 获取 token
     const token = localStorage.getItem('token')
 

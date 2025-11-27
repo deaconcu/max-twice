@@ -1,6 +1,10 @@
 <template>
   <DefaultLayout>
-    <div class="read-page">
+    <!-- 加载状态 -->
+    <LoadingSpinner v-if="dataLoading" />
+
+    <!-- 内容区 -->
+    <div v-else-if="data" class="read-page">
       <!-- 课程头部 -->
       <div class="course-header-sticky">
         <div class="course-header-wrapper">
@@ -285,6 +289,7 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import CourseHeader from '@/components/features/read/CourseHeader.vue'
 import SinglePost from '@/components/features/read/SinglePost.vue'
 import CommentSection from '@/components/common/CommentSection.vue'

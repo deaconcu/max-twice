@@ -2,10 +2,7 @@
   <DefaultLayout>
     <div class="course-detail-page">
       <!-- 加载状态 -->
-      <div v-if="loading" class="text-center py-12">
-        <v-progress-circular indeterminate color="primary" size="64" />
-        <p class="text-body-1 text-medium-emphasis mt-4">{{ t('common.loading') }}</p>
-      </div>
+      <LoadingSpinner v-if="loading" />
 
       <!-- 错误状态 -->
       <v-alert v-else-if="error" type="error" variant="tonal" class="mb-6">
@@ -474,6 +471,7 @@ import { useFetch, useMutation } from '@/composables'
 import { courseApi, subscriptionApi } from '@/api'
 import type { Course } from '@/types/course'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import SubCourseApplicationDialog from '@/components/features/course/SubCourseApplicationDialog.vue'
 
 const router = useRouter()

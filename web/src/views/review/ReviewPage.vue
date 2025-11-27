@@ -229,10 +229,7 @@
         <!-- 复习模式 -->
         <div v-if="viewMode === 'review'">
           <!-- 加载状态 -->
-          <div v-if="loading" class="text-center py-12">
-            <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
-            <p class="text-body-1 text-grey-darken-2 mt-4">{{ t('common.loading') }}</p>
-          </div>
+          <LoadingSpinner v-if="loading" />
 
           <!-- 空队列状态 -->
           <div v-else-if="!isReviewing && reviewCards.length === 0" class="text-center">
@@ -827,6 +824,7 @@ import type {
 } from '@/types/memory'
 import { ReviewResult, FrequencySetting, CourseStudyStatus as Status } from '@/types/memory'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 const { t } = useI18n()
 

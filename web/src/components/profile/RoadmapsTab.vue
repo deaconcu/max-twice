@@ -38,8 +38,11 @@
           <div></div>
         </div>
 
+        <!-- 加载状态 -->
+        <LoadingSpinner v-if="loading && roadmaps.length === 0" />
+
         <!-- 路线图列表 -->
-        <v-infinite-scroll v-if="roadmaps.length > 0" :items="roadmaps" @load="onLoadMore">
+        <v-infinite-scroll v-else-if="roadmaps.length > 0" :items="roadmaps" @load="onLoadMore">
           <template v-for="(roadmap, index) in roadmaps" :key="roadmap.id">
             <v-card
               rounded="xl"
@@ -204,6 +207,7 @@ import { useRouter } from 'vue-router'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
 import { userApi } from '@/api'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 const router = useRouter()
 

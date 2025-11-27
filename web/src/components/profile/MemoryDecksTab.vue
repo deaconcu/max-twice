@@ -38,8 +38,11 @@
           <div></div>
         </div>
 
+        <!-- 加载状态 -->
+        <LoadingSpinner v-if="loading" />
+
         <!-- 卡片组列表 -->
-        <div v-if="decks.length > 0">
+        <div v-else-if="decks.length > 0">
           <v-row>
             <v-col v-for="deck in decks" :key="deck.id" cols="12" md="6">
               <v-card
@@ -152,6 +155,7 @@ import { useRouter } from 'vue-router'
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
 import { memoryApi } from '@/api'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const router = useRouter()

@@ -1,5 +1,7 @@
 package com.prosper.learn.persistence.dataobject;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -20,7 +22,9 @@ public class UserRoadmapDO {
 
     private LocalDateTime completedAt;
 
+    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

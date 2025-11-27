@@ -51,6 +51,23 @@ const cardForm = ref({
 const cards = ref<Card[]>([])
 const showEmptyError = ref(false)
 
+// 卡片表单验证状态
+const cardFormValid = computed(() => {
+  const front = cardForm.value.front.trim()
+  const back = cardForm.value.back.trim()
+
+  // 检查是否为空
+  if (!front || !back) return false
+
+  // 检查长度限制
+  const frontMaxLen = validationStore.getRule('card-front')?.maxLength || 500
+  const backMaxLen = validationStore.getRule('card-back')?.maxLength || 500
+
+  if (front.length > frontMaxLen || back.length > backMaxLen) return false
+
+  return true
+})
+
 // 使用 useMutation 处理创建卡片组
 const { execute: createDeckMutation, loading } = useMutation(
   () =>

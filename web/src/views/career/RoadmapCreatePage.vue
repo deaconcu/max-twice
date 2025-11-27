@@ -40,10 +40,7 @@
       </div>
 
       <!-- 加载状态 -->
-      <div v-if="loading" class="text-center py-12">
-        <v-progress-circular indeterminate color="primary" size="64" />
-        <p class="text-body-2 text-grey mt-4">加载中...</p>
-      </div>
+      <LoadingSpinner v-if="loading" />
 
       <div v-else class="content-layout">
         <!-- 左侧：流程图编辑器 -->
@@ -338,6 +335,7 @@ import { Controls } from '@vue-flow/controls'
 import { Position } from '@vue-flow/core'
 import type { Node, Edge, Connection } from '@vue-flow/core'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 
 const router = useRouter()

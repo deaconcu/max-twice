@@ -45,8 +45,11 @@
           </div>
         </div>
 
+        <!-- 加载状态 -->
+        <LoadingSpinner v-if="loading" />
+
         <!-- 用户列表 -->
-        <div v-if="formattedUsers.length > 0">
+        <div v-else-if="formattedUsers.length > 0">
           <v-row>
             <v-col v-for="user in formattedUsers" :key="user.id" cols="12" sm="6" md="4">
               <v-card rounded="xl" hover border elevation="0" class="user-card hoverable">
@@ -120,6 +123,7 @@ import { useUserStore } from '@/stores/modules/user'
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
 import { followApi } from '@/api'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const userStore = useUserStore()

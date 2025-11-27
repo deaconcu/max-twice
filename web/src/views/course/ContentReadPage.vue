@@ -1,6 +1,10 @@
 <template>
   <DefaultLayout>
-    <div class="read-page">
+    <!-- 加载状态 -->
+    <LoadingSpinner v-if="dataLoading" />
+
+    <!-- 内容区 -->
+    <div v-else-if="data" class="read-page">
       <!-- 移动端目录抽屉 -->
       <v-dialog
         v-if="$vuetify.display.mobile"
@@ -338,6 +342,7 @@ export default {
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import CourseHeader from '@/components/features/read/CourseHeader.vue'
 import TreeNode from '@/components/common/TreeNode.vue'
 import PostingList from '@/components/features/read/PostingList.vue'

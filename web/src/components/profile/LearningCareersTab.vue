@@ -92,8 +92,11 @@
           </v-btn>
         </div>
 
+        <!-- 加载状态 -->
+        <LoadingSpinner v-if="loading" />
+
         <!-- 职业列表 -->
-        <div v-if="filteredCareers.length > 0">
+        <div v-else-if="filteredCareers.length > 0">
           <v-row>
             <v-col v-for="career in filteredCareers" :key="career.id" cols="12" md="6">
               <v-card rounded="xl" hover border elevation="0" class="career-card hoverable">
@@ -191,6 +194,7 @@ import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
 import { progressApi } from '@/api'
 import { UserProgressState } from '@/enums'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const router = useRouter()

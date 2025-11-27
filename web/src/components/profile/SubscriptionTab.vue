@@ -56,8 +56,11 @@
           </v-btn>
         </div>
 
+        <!-- 加载状态 -->
+        <LoadingSpinner v-if="loading" />
+
         <!-- 课程网格 -->
-        <div v-if="formattedSubscriptions.length > 0">
+        <div v-else-if="formattedSubscriptions.length > 0">
           <v-row>
             <v-col v-for="course in formattedSubscriptions" :key="course.id" cols="12" md="6">
               <v-card rounded="xl" hover border elevation="0" class="subscription-card hoverable">
@@ -148,6 +151,7 @@ import { useUserStore } from '@/stores/modules/user'
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
 import { subscriptionApi } from '@/api'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const router = useRouter()

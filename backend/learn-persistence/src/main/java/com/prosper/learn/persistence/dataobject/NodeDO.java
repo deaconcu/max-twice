@@ -1,5 +1,7 @@
 package com.prosper.learn.persistence.dataobject;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.prosper.learn.common.Enums;
 import lombok.Data;
 
@@ -24,8 +26,10 @@ public class NodeDO {
 
     private String reason;  // 拒绝/封禁原因
 
+    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
     public static NodeDO createRoot(Long creator, Long courseId) {

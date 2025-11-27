@@ -11,6 +11,7 @@ import { useAuthStore } from '@/stores/modules/auth'
 import { useFetch } from '@/composables/useFetch'
 import { userApi } from '@/api'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import UserInfoTab from '@/components/profile/UserInfoTab.vue'
 import LearningCareersTab from '@/components/profile/LearningCareersTab.vue'
 import LearningCoursesTab from '@/components/profile/LearningCoursesTab.vue'
@@ -111,7 +112,11 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
 
 <template>
   <DefaultLayout>
-    <div class="profile-container">
+    <!-- 加载状态 -->
+    <LoadingSpinner v-if="userLoading" />
+
+    <!-- 内容区 -->
+    <div v-else-if="currentUser" class="profile-container">
       <!-- 用户信息卡片 -->
       <v-card rounded="xl" class="profile-header-card mb-6 mb-md-8 no-border" elevation="0">
         <v-card-text class="pa-4 pa-sm-6 pa-md-8">

@@ -4,6 +4,10 @@ import { useRouter } from 'vue-router'
 import renderMathInElement from 'katex/contrib/auto-render'
 import 'katex/dist/katex.min.css'
 import mermaid from 'mermaid'
+import { upvoteApi, postApi } from '@/api'
+import { useMutation } from '@/composables'
+import { ObjectType, VoteType } from '@/enums'
+import type { UpvoteStatusResponse } from '@/types/upvote'
 
 interface NodeInfo {
   id: number
@@ -23,6 +27,7 @@ interface Props {
 interface Emits {
   (e: 'switch-tab', tab: string, posting?: any): void
   (e: 'load-data', parts: string[]): void
+  (e: 'mark-node-completed'): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -243,10 +248,64 @@ const handleViewFullContent = () => {
   emit('switch-tab', 'two', props.posting)
 }
 
+// 使用 useMutation 处理投票
+const { execute: executeUpvote } = useMutation(
+  (voteType: VoteType) => upvoteApi.upvote(props.posting.id, ObjectType.POST, voteType),
+  {
+    showToast: false,
+    onSuccess: (response: UpvoteStatusResponse) => {
+      // 更新帖子的点赞统计数据
+      props.posting.twice = response.twiceUpvotes || 0
+      props.posting.helpful = response.helpfulUpvotes || 0
+
+      // 根据点赞状态设置 voteType
+      if (response.twiceUpvoted) {
+        props.posting.voteType = 'twice'
+      } else if (response.helpfulUpvoted) {
+        props.posting.voteType = 'helpful'
+      } else {
+        props.posting.voteType = null
+      }
+
+      // 如果是"看两遍就懂"，只有在学习模式下才标记节点完成
+      if (response.twiceUpvoted && props.isLearning) {
+        console.log('看两遍就懂被点击，用户在学习模式下，标记节点完成')
+        emit('mark-node-completed')
+      }
+    },
+  }
+)
+
 // 点赞
-const handleUpvote = (type: string) => {
-  console.log('Upvote:', type, props.posting.id)
-  // TODO: 实现点赞逻辑
+const handleUpvote = async (type: string) => {
+  const voteType = type === 'twice' ? VoteType.TWICE : VoteType.HELPFUL
+  await executeUpvote(voteType)
+}
+
+// 使用 useMutation 修改内容操作
+const { execute: executeModifyContents } = useMutation(
+  (data: { postingId: number; action: number }) =>
+    postApi.operateContent({
+      path: props.data?.path || '',
+      courseId: props.data?.course?.id || 0,
+      postingId: data.postingId,
+      action: data.action,
+    }),
+  {
+    successMessage: '操作成功',
+    onSuccess: (_, data) => {
+      if (data.action === 1 || data.action === 2) {
+        emit('load-data', ['contents', 'chosenPosting'])
+      } else if (data.action === 3 || data.action === 4) {
+        emit('load-data', ['contents', 'fixedPostings'])
+      }
+    },
+  }
+)
+
+// 修改内容操作（设置/取消目录、置顶/取消置顶）
+const handleModifyContents = async (postingId: number, action: number) => {
+  await executeModifyContents({ postingId, action })
 }
 
 // 查看评论
@@ -390,59 +449,21 @@ watch(
       :class="{ 'action-bar-sticky': detail }"
       align="center"
     >
-      <div class="d-flex core-actions">
-        <!-- 二次理解按钮 -->
-        <v-btn
-          :variant="posting.voteType === 'twice' ? 'flat' : 'tonal'"
-          rounded="pill"
-          size="default"
-          :color="posting.voteType === 'twice' ? 'primary' : 'grey-lighten-2'"
-          :class="['px-4', posting.voteType === 'twice' ? 'core-btn-active' : 'core-btn-inactive']"
-          @click="handleUpvote('twice')"
-        >
-          <v-icon
-            :icon="posting.voteType === 'twice' ? 'mdi-lightbulb' : 'mdi-lightbulb-outline'"
-            size="18"
-            class="mr-2"
-            :color="posting.voteType === 'twice' ? 'white' : 'primary'"
-          ></v-icon>
-          <span
-            :class="
-              posting.voteType === 'twice'
-                ? 'font-weight-bold text-white'
-                : 'font-weight-medium text-grey-darken-2'
-            "
-          >
-            两遍秒懂
-          </span>
-          <v-chip
-            v-if="posting.twice > 0"
-            size="x-small"
-            :color="posting.voteType === 'twice' ? 'white' : 'grey-darken-1'"
-            :text-color="posting.voteType === 'twice' ? 'primary' : 'white'"
-            class="ml-2"
-          >
-            {{ posting.twice }}
-          </v-chip>
-        </v-btn>
-
-        <!-- 有用按钮 -->
+      <!-- 目录型 Post：只显示"赞同"按钮 -->
+      <template v-if="posting.type === PostType.CONTENTS">
         <v-btn
           :variant="posting.voteType === 'helpful' ? 'flat' : 'tonal'"
           rounded="pill"
           size="default"
-          :color="posting.voteType === 'helpful' ? 'success' : 'grey-lighten-2'"
-          :class="[
-            'px-4 ms-3',
-            posting.voteType === 'helpful' ? 'core-btn-active' : 'core-btn-inactive',
-          ]"
+          :color="posting.voteType === 'helpful' ? 'primary' : 'grey-lighten-2'"
+          :class="['px-4', posting.voteType === 'helpful' ? 'core-btn-active' : 'core-btn-inactive']"
           @click="handleUpvote('helpful')"
         >
           <v-icon
-            :icon="posting.voteType === 'helpful' ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+            :icon="posting.voteType === 'helpful' ? 'mdi-check' : 'mdi-thumb-up-outline'"
             size="18"
             class="mr-2"
-            :color="posting.voteType === 'helpful' ? 'white' : 'success'"
+            :color="posting.voteType === 'helpful' ? 'white' : 'grey-darken-2'"
           ></v-icon>
           <span
             :class="
@@ -451,41 +472,246 @@ watch(
                 : 'font-weight-medium text-grey-darken-2'
             "
           >
-            有用
+            赞同
           </span>
           <v-chip
             v-if="posting.helpful > 0"
             size="x-small"
             :color="posting.voteType === 'helpful' ? 'white' : 'grey-darken-1'"
-            :text-color="posting.voteType === 'helpful' ? 'success' : 'white'"
+            :text-color="posting.voteType === 'helpful' ? 'primary' : 'white'"
             class="ml-2"
           >
             {{ posting.helpful }}
           </v-chip>
         </v-btn>
+      </template>
 
-        <!-- 评论按钮 -->
+      <!-- 文章型 Post：显示"两遍秒懂"和"有用"按钮 -->
+      <template v-else>
+        <div class="d-flex core-actions">
+          <!-- 二次理解按钮 -->
+          <v-btn
+            :variant="posting.voteType === 'twice' ? 'flat' : 'tonal'"
+            rounded="pill"
+            size="default"
+            :color="posting.voteType === 'twice' ? 'primary' : 'grey-lighten-2'"
+            :class="['px-4', posting.voteType === 'twice' ? 'core-btn-active' : 'core-btn-inactive']"
+            @click="handleUpvote('twice')"
+          >
+            <v-icon
+              :icon="posting.voteType === 'twice' ? 'mdi-check' : 'mdi-lightbulb-outline'"
+              size="18"
+              class="mr-2"
+              :color="posting.voteType === 'twice' ? 'white' : 'grey-darken-2'"
+            ></v-icon>
+            <span
+              :class="
+                posting.voteType === 'twice'
+                  ? 'font-weight-bold text-white'
+                  : 'font-weight-medium text-grey-darken-2'
+              "
+            >
+              两遍秒懂
+            </span>
+            <v-chip
+              v-if="posting.twice > 0"
+              size="x-small"
+              :color="posting.voteType === 'twice' ? 'white' : 'grey-darken-1'"
+              :text-color="posting.voteType === 'twice' ? 'primary' : 'white'"
+              class="ml-2"
+            >
+              {{ posting.twice }}
+            </v-chip>
+          </v-btn>
+
+          <!-- 有用按钮 -->
+          <v-btn
+            :variant="posting.voteType === 'helpful' ? 'flat' : 'tonal'"
+            rounded="pill"
+            size="default"
+            :color="posting.voteType === 'helpful' ? 'primary' : 'grey-lighten-2'"
+            :class="[
+              'px-4 ms-3',
+              posting.voteType === 'helpful' ? 'core-btn-active' : 'core-btn-inactive',
+            ]"
+            @click="handleUpvote('helpful')"
+          >
+            <v-icon
+              :icon="posting.voteType === 'helpful' ? 'mdi-check' : 'mdi-thumb-up-outline'"
+              size="18"
+              class="mr-2"
+              :color="posting.voteType === 'helpful' ? 'white' : 'grey-darken-2'"
+            ></v-icon>
+            <span
+              :class="
+                posting.voteType === 'helpful'
+                  ? 'font-weight-bold text-white'
+                  : 'font-weight-medium text-grey-darken-2'
+              "
+            >
+              有用
+            </span>
+            <v-chip
+              v-if="posting.helpful > 0"
+              size="x-small"
+              :color="posting.voteType === 'helpful' ? 'white' : 'grey-darken-1'"
+              :text-color="posting.voteType === 'helpful' ? 'primary' : 'white'"
+              class="ml-2"
+            >
+              {{ posting.helpful }}
+            </v-chip>
+          </v-btn>
+        </div>
+      </template>
+
+      <v-spacer></v-spacer>
+
+      <!-- 记忆卡片数量按钮 -->
+      <v-tooltip location="top">
+        <template v-slot:activator="{ props: tooltipProps }">
+          <v-btn
+            v-bind="tooltipProps"
+            variant="text"
+            color="grey-lighten-3"
+            rounded="lg"
+            size="default"
+            class="px-3"
+          >
+            <v-icon icon="mdi-cards-outline" size="18" class="mr-2" color="purple-darken-2"></v-icon>
+            <span class="font-weight-medium text-purple-darken-2">
+              {{ posting.deckCount || 0 }}
+            </span>
+          </v-btn>
+        </template>
+        <span>查看详情页以浏览和添加记忆卡片组</span>
+      </v-tooltip>
+
+      <!-- 评论按钮（列表模式） -->
+      <v-btn
+        v-if="!detail"
+        variant="text"
+        rounded="lg"
+        size="default"
+        class="px-3 ms-3"
+        @click="handleViewComments"
+      >
+        <v-icon icon="mdi-comment-outline" size="18" class="mr-2" color="grey-darken-2"></v-icon>
+        <span class="font-weight-medium text-grey-darken-2">
+          {{ posting.commentCount || 0 }}
+        </span>
+      </v-btn>
+
+      <!-- 评论按钮（详情模式） - 不可点击 -->
+      <v-btn
+        v-if="detail"
+        variant="text"
+        rounded="lg"
+        size="default"
+        class="px-3 ms-3"
+        :ripple="false"
+        @click.stop.prevent="null"
+      >
+        <v-icon icon="mdi-comment-outline" size="18" class="mr-2" color="grey-darken-2"></v-icon>
+        <span class="font-weight-medium text-grey-darken-2">
+          {{ posting.commentCount || 0 }}
+        </span>
+      </v-btn>
+
+      <!-- 目录型 Post 管理按钮：设置/取消设置为目录 -->
+      <template v-if="posting.type === PostType.CONTENTS">
         <v-btn
           variant="text"
           rounded="lg"
+          :color="
+            currNode && currNode['+'] && currNode['+'] === posting.id
+              ? 'red-lighten-4'
+              : 'grey-lighten-3'
+          "
           size="default"
-          class="px-3 ms-3"
-          @click="handleViewComments"
+          class="px-3 mx-3"
+          @click="
+            handleModifyContents(
+              posting.id,
+              currNode && currNode['+'] && currNode['+'] === posting.id ? 2 : 1
+            )
+          "
         >
-          <v-icon icon="mdi-comment-outline" size="18" class="mr-2" color="grey-darken-2"></v-icon>
-          <span class="font-weight-medium text-grey-darken-2">
-            {{ posting.commentCount || 0 }} 评论
+          <v-icon
+            :icon="
+              currNode && currNode['+'] && currNode['+'] === posting.id
+                ? 'mdi-playlist-remove'
+                : 'mdi-playlist-plus'
+            "
+            size="18"
+            class="mr-2"
+            :color="
+              currNode && currNode['+'] && currNode['+'] === posting.id
+                ? 'red-darken-2'
+                : 'grey-darken-2'
+            "
+          ></v-icon>
+          <span
+            :class="
+              currNode && currNode['+'] && currNode['+'] === posting.id
+                ? 'font-weight-medium text-red-darken-2'
+                : 'font-weight-medium text-grey-darken-2'
+            "
+          >
+            {{
+              currNode && currNode['+'] && currNode['+'] === posting.id
+                ? '取消设置为目录'
+                : '设置为目录'
+            }}
           </span>
         </v-btn>
-      </div>
+      </template>
 
-      <!-- 管理按钮（右侧） -->
-      <div class="d-flex">
-        <v-btn variant="text" rounded="lg" size="default" class="px-3">
-          <v-icon icon="mdi-share-variant" size="18" class="mr-2" color="grey-darken-2"></v-icon>
-          <span class="font-weight-medium text-grey-darken-2">分享</span>
+      <!-- 文章型 Post 管理按钮：置顶/取消置顶 -->
+      <template v-else>
+        <v-btn
+          variant="text"
+          rounded="lg"
+          :color="
+            currNode && currNode['^'] && currNode['^'].includes(posting.id)
+              ? 'orange-lighten-4'
+              : 'grey-lighten-3'
+          "
+          size="default"
+          class="px-3 ms-3"
+          @click="
+            handleModifyContents(
+              posting.id,
+              currNode && currNode['^'] && currNode['^'].includes(posting.id) ? 4 : 3
+            )
+          "
+        >
+          <v-icon
+            :icon="
+              currNode && currNode['^'] && currNode['^'].includes(posting.id)
+                ? 'mdi-arrow-collapse-down'
+                : 'mdi-arrow-collapse-up'
+            "
+            size="18"
+            class="mr-2"
+            :color="
+              currNode && currNode['^'] && currNode['^'].includes(posting.id)
+                ? 'orange-darken-2'
+                : 'grey-darken-2'
+            "
+          ></v-icon>
+          <span
+            :class="
+              currNode && currNode['^'] && currNode['^'].includes(posting.id)
+                ? 'font-weight-medium text-orange-darken-2'
+                : 'font-weight-medium text-grey-darken-2'
+            "
+          >
+            {{
+              currNode && currNode['^'] && currNode['^'].includes(posting.id) ? '取消置顶' : '置顶'
+            }}
+          </span>
         </v-btn>
-      </div>
+      </template>
     </v-row>
   </div>
 </template>
@@ -641,6 +867,25 @@ watch(
 
 .article-content :deep(a:hover) {
   text-decoration: underline;
+}
+
+/* Mermaid 图表和错误内容宽度限制 */
+.article-content :deep(.mermaid) {
+  max-width: 100%;
+  overflow: auto;
+}
+
+.article-content :deep(.mermaid-error) {
+  max-width: 100%;
+  overflow-x: auto;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  padding: 1rem;
+  border-radius: 8px;
+  color: #856404;
+  font-size: 0.875rem;
 }
 
 /* 移动端：限制公式宽度 */

@@ -1,13 +1,20 @@
 package com.prosper.learn.persistence.dataobject;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.prosper.learn.common.Enums;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
+@TableName("user")
 public class UserDO {
 
+    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     private String password;
@@ -28,8 +35,10 @@ public class UserDO {
 
     private Integer role;  // 角色代码字段
 
+    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
     // ========== 角色相关便捷方法 ==========

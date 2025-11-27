@@ -83,10 +83,7 @@
           />
 
           <!-- 加载状态 -->
-          <div v-if="loading" class="text-center py-12">
-            <v-progress-circular indeterminate color="primary" size="64" />
-            <p class="text-body-1 text-grey-darken-2 mt-4">{{ t('common.loading') }}</p>
-          </div>
+          <LoadingSpinner v-if="loading" />
 
           <!-- 空状态 -->
           <div v-else-if="filteredCareers.length === 0" class="text-center py-12">
@@ -351,6 +348,7 @@ import { professionApi, systemApi } from '@/api'
 import type { Profession } from '@/types/profession'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import CareerCard from '@/components/features/career/CareerCard.vue'
 import CareerFilter from '@/components/features/career/CareerFilter.vue'
 

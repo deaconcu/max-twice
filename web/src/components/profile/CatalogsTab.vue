@@ -52,9 +52,12 @@
           />
         </div>
 
+        <!-- 加载状态 -->
+        <LoadingSpinner v-if="loading && filteredCatalogs.length === 0" />
+
         <!-- 目录列表 -->
         <v-infinite-scroll
-          v-if="filteredCatalogs.length > 0"
+          v-else-if="filteredCatalogs.length > 0"
           :items="filteredCatalogs"
           @load="onLoadMore"
         >
@@ -242,6 +245,7 @@ import { useMutation } from '@/composables/useMutation'
 import { userApi, postApi } from '@/api'
 import { PostType } from '@/enums'
 import { parseContentNodes } from '@/utils/postUtils'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const router = useRouter()

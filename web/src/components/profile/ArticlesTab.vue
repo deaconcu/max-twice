@@ -38,8 +38,11 @@
           <div></div>
         </div>
 
+        <!-- 加载状态 -->
+        <LoadingSpinner v-if="loading && articles.length === 0" />
+
         <!-- 文章列表 -->
-        <v-infinite-scroll v-if="articles.length > 0" :items="articles" @load="onLoadMore">
+        <v-infinite-scroll v-else-if="articles.length > 0" :items="articles" @load="onLoadMore">
           <div v-for="(article, index) in articles" :key="article.id">
             <v-card
               rounded="xl"
@@ -212,6 +215,7 @@ import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
 import { userApi, postApi } from '@/api'
 import { PostType } from '@/enums'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const router = useRouter()

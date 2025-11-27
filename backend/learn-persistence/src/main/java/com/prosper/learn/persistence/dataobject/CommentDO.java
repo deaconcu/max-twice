@@ -1,5 +1,7 @@
 package com.prosper.learn.persistence.dataobject;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -31,5 +33,6 @@ public class CommentDO {
 
     private Double score;
 
+    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 }
