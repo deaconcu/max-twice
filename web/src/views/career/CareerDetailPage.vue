@@ -2,10 +2,7 @@
   <DefaultLayout>
     <div class="career-detail-page">
       <!-- 加载状态 -->
-      <div v-if="loading" class="text-center py-12">
-        <v-progress-circular indeterminate color="primary" size="64" />
-        <p class="text-body-2 text-grey mt-4">加载中...</p>
-      </div>
+      <LoadingSpinner v-if="loading" />
 
       <!-- 错误状态 -->
       <v-alert v-else-if="error" type="error" variant="tonal" class="mb-6">
@@ -148,10 +145,7 @@
             </div>
 
             <!-- 加载状态 -->
-            <div v-if="loading" class="text-center py-12">
-              <v-progress-circular indeterminate color="primary" size="64" />
-              <p class="text-body-2 text-grey mt-4">加载中...</p>
-            </div>
+            <LoadingSpinner v-if="loadingRoadmaps" />
 
             <!-- 空状态 -->
             <div v-else-if="filteredRoadmaps.length === 0" class="text-center py-12">
@@ -439,6 +433,7 @@ import { professionApi, roadmapApi } from '@/api'
 import type { Profession } from '@/types/profession'
 import type { Roadmap } from '@/types/roadmap'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 const router = useRouter()
 const route = useRoute()

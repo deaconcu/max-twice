@@ -34,10 +34,7 @@
       </div>
 
       <!-- 加载状态 -->
-      <div v-if="loading" class="text-center py-12">
-        <v-progress-circular indeterminate color="primary" size="64" />
-        <p class="text-body-2 text-grey mt-4">加载中...</p>
-      </div>
+      <LoadingSpinner v-if="loading" />
 
       <div v-else-if="roadmap" class="content-layout">
         <!-- 左侧：流程图 -->
@@ -216,6 +213,7 @@ import { roadmapApi } from '@/api'
 import { ObjectType } from '@/enums'
 import type { Roadmap } from '@/types/roadmap'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import CommentSection from '@/components/common/CommentSection.vue'
 
 const router = useRouter()

@@ -60,4 +60,17 @@ export const postApi = {
   getNodePosts(nodeId: number): Promise<ApiResponse<Post[]>> {
     return apiClient.get(`/v1/nodes/${String(nodeId)}/posts`)
   },
+
+  /**
+   * 内容操作（选择目录、固定等）
+   * action: 1=设置为目录, 2=取消设置为目录, 3=置顶, 4=取消置顶
+   */
+  operateContent(data: {
+    path: string
+    courseId: number
+    postingId: number
+    action: number
+  }): Promise<ApiResponse<void>> {
+    return apiClient.post('/v1/contents', data)
+  },
 }

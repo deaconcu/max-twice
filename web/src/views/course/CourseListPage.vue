@@ -82,10 +82,7 @@
         />
 
         <!-- 加载状态 -->
-        <div v-if="loading" class="text-center py-12">
-          <v-progress-circular indeterminate color="primary" size="64" />
-          <p class="text-body-1 text-grey-darken-2 mt-4">{{ t('common.loading') }}</p>
-        </div>
+        <LoadingSpinner v-if="loading" />
 
         <!-- 提示：请选择分类 -->
         <div
@@ -258,6 +255,7 @@ import { useFetch, useMutation } from '@/composables'
 import { courseApi, subscriptionApi, systemApi } from '@/api'
 import type { Course, CreateCourseRequest } from '@/types/course'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import CourseCard from '@/components/features/course/CourseCard.vue'
 import CourseFilter from '@/components/features/course/CourseFilter.vue'
 import CourseCreateDialog from '@/components/features/course/CourseCreateDialog.vue'
