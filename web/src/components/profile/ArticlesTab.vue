@@ -42,7 +42,7 @@
         <LoadingSpinner v-if="loading && articles.length === 0" />
 
         <!-- 文章列表 -->
-        <v-infinite-scroll v-else-if="articles.length > 0" :items="articles" @load="onLoadMore">
+        <v-infinite-scroll v-if="articles.length > 0" :items="articles" @load="onLoadMore">
           <div v-for="(article, index) in articles" :key="article.id">
             <v-card
               rounded="xl"
@@ -153,18 +153,31 @@
                     </div>
                   </div>
 
-                  <!-- 删除按钮 -->
-                  <v-btn
-                    color="grey"
-                    variant="text"
-                    :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                    icon="mdi-delete"
-                    class="flex-shrink-0"
-                    @click.stop="deleteArticle(article.id)"
-                  >
-                    <v-icon>mdi-delete</v-icon>
-                    <v-tooltip activator="parent" location="top">删除文章</v-tooltip>
-                  </v-btn>
+                  <!-- 操作按钮 -->
+                  <div class="d-flex align-center ga-1">
+                    <v-btn
+                      color="primary"
+                      variant="text"
+                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                      icon="mdi-pencil"
+                      class="flex-shrink-0"
+                      @click.stop="editArticle(article)"
+                    >
+                      <v-icon>mdi-pencil</v-icon>
+                      <v-tooltip activator="parent" location="top">编辑文章</v-tooltip>
+                    </v-btn>
+                    <v-btn
+                      color="grey"
+                      variant="text"
+                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                      icon="mdi-delete"
+                      class="flex-shrink-0"
+                      @click.stop="deleteArticle(article.id)"
+                    >
+                      <v-icon>mdi-delete</v-icon>
+                      <v-tooltip activator="parent" location="top">删除文章</v-tooltip>
+                    </v-btn>
+                  </div>
                 </div>
               </v-card-text>
             </v-card>
@@ -195,6 +208,15 @@
           <p class="text-caption text-md-body-2 text-grey">分享您的学习心得和经验</p>
         </div>
 
+        <!-- 文章编辑对话框 -->
+        <ArticleEditModal
+          v-model="showEditModal"
+          :article="editingArticle"
+          :loading="updateLoading"
+          @save="handleSaveArticle"
+          @cancel="handleCancelEdit"
+        />
+
         <!-- 删除确认对话框 -->
         <ConfirmDialog
           v-model="showDeleteDialog"
@@ -217,8 +239,13 @@ import { userApi, postApi } from '@/api'
 import { PostType } from '@/enums'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import ArticleEditModal from '@/components/profile/ArticleEditModal.vue'
 
 const router = useRouter()
+
+// 编辑功能状态
+const showEditModal = ref(false)
+const editingArticle = ref<any>(null)
 
 // 删除确认对话框
 const showDeleteDialog = ref(false)
@@ -254,6 +281,27 @@ const { execute: deletePost } = useMutation((postId: number) => postApi.deletePo
     posts.value = posts.value.filter((p) => p.id !== articleToDelete.value)
   },
 })
+
+// 更新文章
+const { execute: updatePost, loading: updateLoading } = useMutation(
+  (data: { id: number; content: string }) =>
+    postApi.updatePost(data.id, { content: data.content }),
+  {
+    successMessage: '文章已更新',
+    onSuccess: (response) => {
+      if (editingArticle.value && response) {
+        // 更新文章内容
+        const index = posts.value.findIndex(p => p.id === editingArticle.value.id)
+        if (index !== -1) {
+          posts.value[index].content = response.content
+        }
+        // 关闭编辑对话框
+        showEditModal.value = false
+        editingArticle.value = null
+      }
+    },
+  }
+)
 
 // 存储每个文章的溢出状态
 const overflowStates = ref<Record<number, boolean>>({})
@@ -329,6 +377,23 @@ const confirmDelete = async () => {
     await deletePost(articleToDelete.value)
   }
   articleToDelete.value = null
+}
+
+// 编辑文章
+const editArticle = (article: any) => {
+  editingArticle.value = article
+  showEditModal.value = true
+}
+
+// 处理保存文章
+const handleSaveArticle = async (data: { id: number; content: string }) => {
+  await updatePost(data)
+}
+
+// 取消编辑
+const handleCancelEdit = () => {
+  showEditModal.value = false
+  editingArticle.value = null
 }
 
 // 适配 v-infinite-scroll 的回调接口

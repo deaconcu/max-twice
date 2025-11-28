@@ -15,7 +15,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import UserInfoTab from '@/components/profile/UserInfoTab.vue'
 import LearningCareersTab from '@/components/profile/LearningCareersTab.vue'
 import LearningCoursesTab from '@/components/profile/LearningCoursesTab.vue'
-import StatsTab from '@/components/profile/StatsTab.vue'
+import CreatorStatsTab from '@/components/profile/CreatorStatsTab.vue'
 import SubscriptionTab from '@/components/profile/SubscriptionTab.vue'
 import FollowingTab from '@/components/profile/FollowingTab.vue'
 import CatalogsTab from '@/components/profile/CatalogsTab.vue'
@@ -27,8 +27,11 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-// Tab 选择 - 支持路由参数
-const activeTab = ref((route.query.tab as string) || 'careers')
+// 模式选择：learner 或 creator
+const currentMode = ref((route.query.mode as string) || 'learner')
+
+// Tab 选择 - 支持路由参数，没有则让 v-tabs 使用默认值（第一个）
+const activeTab = ref((route.query.tab as string) || '')
 
 // Tab 数据刷新时间记录（用于智能刷新）
 const tabRefreshKey = ref(0)
@@ -51,12 +54,14 @@ onActivated(() => {
   // 如果需要自动刷新，可以在这里触发
 })
 
-// 计算用户信息
+// 计算用户信息 - 优先使用 authStore 的数据
 const userInfo = computed(() => {
-  if (!currentUser.value) {
+  const user = currentUser.value || authStore.user
+
+  if (!user) {
     return {
-      name: authStore.user?.name || '',
-      email: authStore.user?.email || '',
+      name: '',
+      email: '',
       avatar: '',
       joinDate: '',
       bio: '',
@@ -64,13 +69,13 @@ const userInfo = computed(() => {
   }
 
   return {
-    name: currentUser.value.name || '',
-    email: currentUser.value.email || '',
-    avatar: currentUser.value.avatar || '',
-    joinDate: currentUser.value.createdAt
-      ? new Date(currentUser.value.createdAt).toLocaleDateString('zh-CN')
+    name: user.name || '',
+    email: user.email || '',
+    avatar: user.avatar || '',
+    joinDate: user.createdAt
+      ? new Date(user.createdAt).toLocaleDateString('zh-CN')
       : '',
-    bio: currentUser.value.biography || '',
+    bio: user.biography || '',
   }
 })
 
@@ -87,10 +92,26 @@ const stats = ref({
   roadmaps: 0,
 })
 
+// 创作者统计数据
+const creatorStats = ref({
+  articles: 0,
+  catalogs: 0,
+  roadmaps: 0,
+  decks: 0,
+})
+
+// 模式切换函数
+const switchMode = (mode: 'learner' | 'creator') => {
+  currentMode.value = mode
+}
+
 // 监听路由变化
 watch(
-  () => route.query.tab,
-  (newTab) => {
+  () => [route.query.tab, route.query.mode],
+  ([newTab, newMode]) => {
+    if (newMode && typeof newMode === 'string') {
+      currentMode.value = newMode as 'learner' | 'creator'
+    }
     if (newTab && typeof newTab === 'string') {
       activeTab.value = newTab
     }
@@ -99,8 +120,8 @@ watch(
 
 // Tab 切换时更新 URL
 watch(activeTab, (newTab) => {
-  if (route.query.tab !== newTab) {
-    router.push({ query: { tab: newTab } })
+  if (route.query.tab !== newTab || route.query.mode !== currentMode.value) {
+    router.push({ query: { mode: currentMode.value, tab: newTab } })
   }
 })
 
@@ -140,6 +161,7 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
                   {{ userInfo.name }}
                 </h1>
                 <v-btn
+                  v-if="currentMode === 'learner'"
                   color="grey-darken-2"
                   variant="outlined"
                   rounded="lg"
@@ -166,71 +188,155 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
               <div
                 class="d-flex align-center justify-center justify-sm-start flex-wrap ga-4 ga-md-8"
               >
-                <div class="d-flex align-center">
-                  <v-icon
-                    icon="mdi-school"
-                    :size="$vuetify.display.mobile ? 18 : 20"
-                    color="primary"
-                    class="mr-2"
-                  />
-                  <span class="text-caption text-md-body-2 text-grey-darken-2">
-                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{
-                      stats.totalCourses
-                    }}</span>
-                    学习课程
-                  </span>
-                </div>
-                <div class="d-flex align-center">
-                  <v-icon
-                    icon="mdi-check-circle"
-                    :size="$vuetify.display.mobile ? 18 : 20"
-                    color="success"
-                    class="mr-2"
-                  />
-                  <span class="text-caption text-md-body-2 text-grey-darken-2">
-                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{
-                      stats.completedCourses
-                    }}</span>
-                    完成课程
-                  </span>
-                </div>
-                <div class="d-flex align-center">
-                  <v-icon
-                    icon="mdi-briefcase"
-                    :size="$vuetify.display.mobile ? 18 : 20"
-                    color="info"
-                    class="mr-2"
-                  />
-                  <span class="text-caption text-md-body-2 text-grey-darken-2">
-                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{
-                      stats.totalCareers
-                    }}</span>
-                    关注职业
-                  </span>
-                </div>
-                <div class="d-flex align-center">
-                  <v-icon
-                    icon="mdi-calendar-check"
-                    :size="$vuetify.display.mobile ? 18 : 20"
-                    color="warning"
-                    class="mr-2"
-                  />
-                  <span class="text-caption text-md-body-2 text-grey-darken-2">
-                    <span class="font-weight-bold text-grey-darken-4 mr-1">{{
-                      stats.studyDays
-                    }}</span>
-                    学习天数
-                  </span>
-                </div>
+                <!-- 学习者模式统计 -->
+                <template v-if="currentMode === 'learner'">
+                  <div class="d-flex align-center">
+                    <v-icon
+                      icon="mdi-school"
+                      :size="$vuetify.display.mobile ? 18 : 20"
+                      color="primary"
+                      class="mr-2"
+                    />
+                    <span class="text-caption text-md-body-2 text-grey-darken-2">
+                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{
+                        stats.totalCourses
+                      }}</span>
+                      学习课程
+                    </span>
+                  </div>
+                  <div class="d-flex align-center">
+                    <v-icon
+                      icon="mdi-check-circle"
+                      :size="$vuetify.display.mobile ? 18 : 20"
+                      color="success"
+                      class="mr-2"
+                    />
+                    <span class="text-caption text-md-body-2 text-grey-darken-2">
+                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{
+                        stats.completedCourses
+                      }}</span>
+                      完成课程
+                    </span>
+                  </div>
+                  <div class="d-flex align-center">
+                    <v-icon
+                      icon="mdi-briefcase"
+                      :size="$vuetify.display.mobile ? 18 : 20"
+                      color="info"
+                      class="mr-2"
+                    />
+                    <span class="text-caption text-md-body-2 text-grey-darken-2">
+                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{
+                        stats.totalCareers
+                      }}</span>
+                      关注职业
+                    </span>
+                  </div>
+                  <div class="d-flex align-center">
+                    <v-icon
+                      icon="mdi-calendar-check"
+                      :size="$vuetify.display.mobile ? 18 : 20"
+                      color="warning"
+                      class="mr-2"
+                    />
+                    <span class="text-caption text-md-body-2 text-grey-darken-2">
+                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{
+                        stats.studyDays
+                      }}</span>
+                      学习天数
+                    </span>
+                  </div>
+                </template>
+
+                <!-- 创作者模式统计 -->
+                <template v-else>
+                  <div class="d-flex align-center">
+                    <v-icon
+                      icon="mdi-file-document-multiple"
+                      :size="$vuetify.display.mobile ? 18 : 20"
+                      color="primary"
+                      class="mr-2"
+                    />
+                    <span class="text-caption text-md-body-2 text-grey-darken-2">
+                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{
+                        creatorStats.articles
+                      }}</span>
+                      创建文章
+                    </span>
+                  </div>
+                  <div class="d-flex align-center">
+                    <v-icon
+                      icon="mdi-folder-multiple"
+                      :size="$vuetify.display.mobile ? 18 : 20"
+                      color="success"
+                      class="mr-2"
+                    />
+                    <span class="text-caption text-md-body-2 text-grey-darken-2">
+                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{
+                        creatorStats.catalogs
+                      }}</span>
+                      创建目录
+                    </span>
+                  </div>
+                  <div class="d-flex align-center">
+                    <v-icon
+                      icon="mdi-map-marker-path"
+                      :size="$vuetify.display.mobile ? 18 : 20"
+                      color="info"
+                      class="mr-2"
+                    />
+                    <span class="text-caption text-md-body-2 text-grey-darken-2">
+                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{
+                        creatorStats.roadmaps
+                      }}</span>
+                      创建路线
+                    </span>
+                  </div>
+                  <div class="d-flex align-center">
+                    <v-icon
+                      icon="mdi-cards"
+                      :size="$vuetify.display.mobile ? 18 : 20"
+                      color="warning"
+                      class="mr-2"
+                    />
+                    <span class="text-caption text-md-body-2 text-grey-darken-2">
+                      <span class="font-weight-bold text-grey-darken-4 mr-1">{{ creatorStats.decks }}</span>
+                      卡片组
+                    </span>
+                  </div>
+                </template>
               </div>
             </div>
           </div>
         </v-card-text>
       </v-card>
 
+      <!-- 模式切换栏 -->
+      <div class="mode-switcher-bar d-flex align-center mb-4 mb-md-6">
+        <h2 class="text-h6 text-md-h5 font-weight-bold text-grey-darken-3 d-flex align-center">
+          <v-icon
+            :icon="currentMode === 'learner' ? 'mdi-school' : 'mdi-pen'"
+            class="mr-2"
+            color="primary"
+          />
+          {{ currentMode === 'learner' ? '学习者' : '创作者' }}
+        </h2>
+        <v-btn
+          variant="text"
+          size="default"
+          class="text-body-2 font-weight-medium ml-3"
+          @click="switchMode(currentMode === 'learner' ? 'creator' : 'learner')"
+        >
+          切换到{{ currentMode === 'learner' ? '创作者' : '学习者' }}
+          <v-icon icon="mdi-chevron-right" size="16" class="ml-1" />
+        </v-btn>
+      </div>
+
       <!-- Tab 导航 -->
       <div class="tabs-sticky">
+        <!-- 学习者模式的 tabs -->
         <v-tabs
+          v-if="currentMode === 'learner'"
           v-model="activeTab"
           color="primary"
           class="profile-tabs"
@@ -256,15 +362,6 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
             <span class="d-none d-sm-inline">学习的课程</span>
             <span class="d-sm-none">课程</span>
           </v-tab>
-          <v-tab value="stats" rounded="lg">
-            <v-icon
-              icon="mdi-chart-line"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">数据统计</span>
-            <span class="d-sm-none">统计</span>
-          </v-tab>
           <v-tab value="courses" rounded="lg">
             <v-icon
               icon="mdi-book-multiple"
@@ -283,42 +380,6 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
             <span class="d-none d-sm-inline">关注的人</span>
             <span class="d-sm-none">好友</span>
           </v-tab>
-          <v-tab value="catalogs" rounded="lg">
-            <v-icon
-              icon="mdi-folder-multiple"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">创建的目录</span>
-            <span class="d-sm-none">目录</span>
-          </v-tab>
-          <v-tab value="articles" rounded="lg">
-            <v-icon
-              icon="mdi-file-document-multiple"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">创建的文章</span>
-            <span class="d-sm-none">文章</span>
-          </v-tab>
-          <v-tab value="decks" rounded="lg">
-            <v-icon
-              icon="mdi-cards"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">我的卡片组</span>
-            <span class="d-sm-none">卡片</span>
-          </v-tab>
-          <v-tab value="roadmaps" rounded="lg">
-            <v-icon
-              icon="mdi-map-marker-path"
-              :size="$vuetify.display.mobile ? 16 : 18"
-              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
-            />
-            <span class="d-none d-sm-inline">创建的路线图</span>
-            <span class="d-sm-none">路线</span>
-          </v-tab>
           <v-tab value="info" rounded="lg">
             <v-icon
               icon="mdi-account-circle"
@@ -329,59 +390,122 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
             <span class="d-sm-none">资料</span>
           </v-tab>
         </v-tabs>
+
+        <!-- 创作者模式的 tabs -->
+        <v-tabs
+          v-else
+          v-model="activeTab"
+          color="primary"
+          class="profile-tabs"
+          :height="$vuetify.display.mobile ? 48 : 56"
+          density="comfortable"
+          show-arrows
+        >
+          <v-tab value="stats" rounded="lg">
+            <v-icon
+              icon="mdi-chart-line"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
+            <span class="d-none d-sm-inline">创作统计</span>
+            <span class="d-sm-none">统计</span>
+          </v-tab>
+          <v-tab value="articles" rounded="lg">
+            <v-icon
+              icon="mdi-file-document-multiple"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
+            <span class="d-none d-sm-inline">创建的文章</span>
+            <span class="d-sm-none">文章</span>
+          </v-tab>
+          <v-tab value="catalogs" rounded="lg">
+            <v-icon
+              icon="mdi-folder-multiple"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
+            <span class="d-none d-sm-inline">创建的目录</span>
+            <span class="d-sm-none">目录</span>
+          </v-tab>
+          <v-tab value="roadmaps" rounded="lg">
+            <v-icon
+              icon="mdi-map-marker-path"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
+            <span class="d-none d-sm-inline">创建的路线图</span>
+            <span class="d-sm-none">路线</span>
+          </v-tab>
+          <v-tab value="decks" rounded="lg">
+            <v-icon
+              icon="mdi-cards"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
+            <span class="d-none d-sm-inline">我的卡片组</span>
+            <span class="d-sm-none">卡片</span>
+          </v-tab>
+        </v-tabs>
       </div>
 
       <!-- Tab 内容 -->
       <v-window v-model="activeTab">
-        <!-- 个人信息 -->
-        <v-window-item value="info">
-          <UserInfoTab :user-info="userInfo" @update="handleUpdateUserInfo" />
-        </v-window-item>
+        <!-- 学习者模式的内容 -->
+        <template v-if="currentMode === 'learner'">
+          <!-- 学习的职业 -->
+          <v-window-item value="careers">
+            <LearningCareersTab />
+          </v-window-item>
 
-        <!-- 学习的职业 -->
-        <v-window-item value="careers">
-          <LearningCareersTab />
-        </v-window-item>
+          <!-- 学习的课程 -->
+          <v-window-item value="courses-learning">
+            <LearningCoursesTab />
+          </v-window-item>
 
-        <!-- 学习的课程 -->
-        <v-window-item value="courses-learning">
-          <LearningCoursesTab />
-        </v-window-item>
+          <!-- 关注的课程 -->
+          <v-window-item value="courses">
+            <SubscriptionTab />
+          </v-window-item>
 
-        <!-- 数据统计 -->
-        <v-window-item value="stats">
-          <StatsTab />
-        </v-window-item>
+          <!-- 关注的人 -->
+          <v-window-item value="people">
+            <FollowingTab />
+          </v-window-item>
 
-        <!-- 关注的课程 -->
-        <v-window-item value="courses">
-          <SubscriptionTab />
-        </v-window-item>
+          <!-- 个人信息 -->
+          <v-window-item value="info">
+            <UserInfoTab :user-info="userInfo" @update="handleUpdateUserInfo" />
+          </v-window-item>
+        </template>
 
-        <!-- 关注的人 -->
-        <v-window-item value="people">
-          <FollowingTab />
-        </v-window-item>
+        <!-- 创作者模式的内容 -->
+        <template v-else>
+          <!-- 创作统计 -->
+          <v-window-item value="stats">
+            <CreatorStatsTab />
+          </v-window-item>
 
-        <!-- 创建的目录 -->
-        <v-window-item value="catalogs">
-          <CatalogsTab />
-        </v-window-item>
+          <!-- 创建的文章 -->
+          <v-window-item value="articles">
+            <ArticlesTab />
+          </v-window-item>
 
-        <!-- 创建的文章 -->
-        <v-window-item value="articles">
-          <ArticlesTab />
-        </v-window-item>
+          <!-- 创建的目录 -->
+          <v-window-item value="catalogs">
+            <CatalogsTab />
+          </v-window-item>
 
-        <!-- 我的卡片组 -->
-        <v-window-item value="decks">
-          <MemoryDecksTab />
-        </v-window-item>
+          <!-- 创建的路线图 -->
+          <v-window-item value="roadmaps">
+            <RoadmapsTab />
+          </v-window-item>
 
-        <!-- 创建的路线图 -->
-        <v-window-item value="roadmaps">
-          <RoadmapsTab />
-        </v-window-item>
+          <!-- 我的卡片组 -->
+          <v-window-item value="decks">
+            <MemoryDecksTab />
+          </v-window-item>
+        </template>
       </v-window>
     </div>
   </DefaultLayout>

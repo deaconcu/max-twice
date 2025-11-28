@@ -1,34 +1,108 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
+import { useFetch } from '@/composables'
 import { useUserStore } from '@/stores/modules/user'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
+import { statsApi } from '@/api/modules/stats'
+import { courseApi, subscriptionApi } from '@/api/modules/course'
+import type { PlatformStats } from '@/types/stats'
+import type { UserStatsDTO } from '@/types/user'
+import type { Course } from '@/types/course'
 
 const router = useRouter()
 const { t } = useI18n()
 const userStore = useUserStore()
 
 // 用户信息
-const userName = computed(() => userStore.currentUser?.username || t('common.guest'))
+const userName = computed(() => userStore.currentUser?.name || t('common.guest'))
 
-// Mock 学习统计数据
+// 用户学习统计数据
 const stats = ref({
-  coursesInProgress: 5,
-  completedCourses: 12,
-  careersInProgress: 3,
-  learningDays: 45,
-  todayMinutes: 30,
+  coursesInProgress: 0, // 从用户订阅课程获取
+  completedCourses: 0, // 暂时保持 mock，需要新接口
+  careersInProgress: 0, // 暂时保持 mock，需要新接口
+  learningDays: 0, // 暂时保持 mock，需要新接口
+  todayMinutes: 0, // 从今日统计获取
 })
 
-// Mock 平台统计数据
-const platformStats = ref({
-  totalCourses: 1280,
-  totalNodes: 15600,
-  totalCareers: 156,
-  totalLearners: 89420,
-  coursesGrowth: '2.3k',
-  completionRate: 85,
+// 1. 加载平台统计数据（GET /api/v1/stats/platform）
+const { data: platformStatsData } = useFetch<PlatformStats>({
+  fetchFn: () => statsApi.getPlatformStats(),
+  immediate: true,
+  defaultValue: {
+    courseCount: 0,
+    careerPathCount: 0,
+    roadmapCount: 0,
+    knowledgeNodeCount: 0,
+    articleCount: 0,
+    lastUpdated: '',
+  },
+})
+
+// 2. 加载用户今日统计（GET /api/v1/stats/users/{userId}/today）
+const { data: userTodayStatsData } = useFetch<UserStatsDTO>({
+  fetchFn: () => {
+    if (!userStore.userId) {
+      return Promise.reject(new Error('用户未登录'))
+    }
+    return statsApi.getUserTodayStats(userStore.userId)
+  },
+  immediate: userStore.isLoggedIn,
+})
+
+// 3. 加载用户订阅的课程（GET /api/v1/users/{userId}/subscriptions）
+const { data: userSubscriptionsData } = useFetch<Course[]>({
+  fetchFn: () => {
+    if (!userStore.userId) {
+      return Promise.reject(new Error('用户未登录'))
+    }
+    return subscriptionApi.getUserSubscriptions(userStore.userId)
+  },
+  immediate: userStore.isLoggedIn,
+  defaultValue: [],
+})
+
+// 4. 加载热门课程（GET /api/v1/courses/hot）
+const { data: hotCoursesData } = useFetch<Course[]>({
+  fetchFn: () => courseApi.getHotCourses(),
+  immediate: true,
+  defaultValue: [],
+})
+
+// 计算属性：平台统计数据
+const platformStats = computed(() => platformStatsData.value || {
+  courseCount: 0,
+  careerPathCount: 0,
+  roadmapCount: 0,
+  knowledgeNodeCount: 0,
+  articleCount: 0,
+  lastUpdated: '',
+})
+
+// 计算属性：正在学习的课程（取前3个订阅的课程）
+const recentCourses = computed(() => {
+  return (userSubscriptionsData.value || []).slice(0, 3)
+})
+
+// 计算属性：推荐课程（取前4个热门课程）
+const recommendedCourses = computed(() => {
+  return (hotCoursesData.value || []).slice(0, 4)
+})
+
+// 监听数据变化，更新统计数据
+watch([userSubscriptionsData, userTodayStatsData], () => {
+  // 更新正在学习的课程数
+  if (userSubscriptionsData.value) {
+    stats.value.coursesInProgress = userSubscriptionsData.value.length
+  }
+
+  // 更新今日学习统计（根据后端实际返回字段调整）
+  if (userTodayStatsData.value) {
+    // TODO: 根据后端实际返回的字段更新
+    // stats.value.todayMinutes = userTodayStatsData.value.xxx
+  }
 })
 
 // 快速入口 - 4步学习路径
@@ -40,74 +114,48 @@ const quickLinks = computed(() => [
     icon: 'mdi-briefcase-variant',
     color: 'warning',
     path: '/career',
-    stat: t('home.exploreCareer.stat', { count: platformStats.value.totalCareers }),
+    stat: t('home.exploreCareer.stat', { count: platformStats.value.careerPathCount }),
     statDetail: t('home.exploreCareer.statDetail'),
   },
   {
     step: 2,
+    title: t('home.trackCareers.title'),
+    description: t('home.trackCareers.description'),
+    icon: 'mdi-flag-checkered',
+    color: 'success',
+    path: '/roadmap',
+    stat: t('home.trackCareers.stat', {
+      count: platformStats.value.roadmapCount.toLocaleString()
+    }),
+    statDetail: t('home.trackCareers.statDetail'),
+  },
+  {
+    step: 3,
     title: t('home.browseCourses.title'),
     description: t('home.browseCourses.description'),
     icon: 'mdi-book-multiple',
     color: 'info',
     path: '/learning',
-    stat: t('home.browseCourses.stat', { count: platformStats.value.totalCourses }),
+    stat: t('home.browseCourses.stat', { count: platformStats.value.courseCount }),
     statDetail: t('home.browseCourses.statDetail', {
-      nodes: platformStats.value.totalNodes.toLocaleString(),
+      nodes: platformStats.value.knowledgeNodeCount.toLocaleString(),
     }),
-  },
-  {
-    step: 3,
-    title: t('home.trackCourses.title'),
-    description: t('home.trackCourses.description'),
-    icon: 'mdi-book-open-variant',
-    color: 'secondary',
-    path: '/my-courses',
-    stat: t('home.trackCourses.stat', {
-      count: (platformStats.value.totalLearners / 1000).toFixed(1),
-    }),
-    statDetail: t('home.trackCourses.statDetail', { growth: platformStats.value.coursesGrowth }),
   },
   {
     step: 4,
-    title: t('home.trackCareers.title'),
-    description: t('home.trackCareers.description'),
-    icon: 'mdi-flag-checkered',
-    color: 'success',
-    path: '/my-careers',
-    stat: t('home.trackCareers.stat', { rate: platformStats.value.completionRate }),
-    statDetail: t('home.trackCareers.statDetail'),
+    title: t('home.trackCourses.title'),
+    description: t('home.trackCourses.description'),
+    icon: 'mdi-book-open-variant',
+    color: 'purple',
+    path: '/my-courses',
+    stat: t('home.trackCourses.stat', {
+      count: platformStats.value.articleCount.toLocaleString(),
+    }),
+    statDetail: t('home.trackCourses.statDetail'),
   },
 ])
 
-// 正在学习的课程
-const recentCourses = ref([
-  {
-    id: 1,
-    courseId: 101,
-    name: 'Python编程入门',
-    progress: 45,
-    icon: 'mdi-language-python',
-    iconColor: 'info',
-  },
-  {
-    id: 2,
-    courseId: 102,
-    name: '数据结构与算法',
-    progress: 78,
-    icon: 'mdi-chart-tree',
-    iconColor: 'success',
-  },
-  {
-    id: 3,
-    courseId: 103,
-    name: '机器学习入门',
-    progress: 23,
-    icon: 'mdi-brain',
-    iconColor: 'secondary',
-  },
-])
-
-// 正在学习的职业
+// 正在学习的职业（暂时保持 mock，需要新接口）
 const recentCareers = ref([
   {
     id: 1,
@@ -124,42 +172,6 @@ const recentCareers = ref([
     progress: 30,
     icon: 'mdi-account-heart',
     iconColor: 'success',
-  },
-])
-
-// 推荐课程
-const recommendedCourses = ref([
-  {
-    id: 10,
-    courseId: 110,
-    name: '微积分基础',
-    learnerCount: 8765,
-    icon: 'mdi-function',
-    iconColor: 'info',
-  },
-  {
-    id: 13,
-    courseId: 113,
-    name: '英语语法精讲',
-    learnerCount: 20123,
-    icon: 'mdi-book-alphabet',
-    iconColor: 'error',
-  },
-  {
-    id: 18,
-    courseId: 118,
-    name: 'UI设计基础',
-    learnerCount: 13890,
-    icon: 'mdi-cellphone',
-    iconColor: 'info',
-  },
-  {
-    id: 6,
-    courseId: 106,
-    name: 'MySQL数据库设计',
-    learnerCount: 11234,
-    icon: 'mdi-database',
-    iconColor: 'teal',
   },
 ])
 
@@ -210,11 +222,6 @@ const openCourse = (courseId: number): void => {
 
 const openCareer = (careerId: number): void => {
   router.push(`/careers/${careerId}`)
-}
-
-const addRecommendedCourse = (courseId: number): void => {
-  console.log('添加推荐课程:', courseId)
-  // TODO: 调用 API 添加课程到学习列表
 }
 </script>
 
@@ -323,7 +330,7 @@ const addRecommendedCourse = (courseId: number): void => {
               <v-card class="step-data" rounded="lg" variant="outlined">
                 <div
                   class="text-body-2 font-weight-bold text-center mb-1"
-                  :style="{ color: `rgb(var(--v-theme-${link.color}))` }"
+                  :class="`text-${link.color}`"
                 >
                   {{ link.stat }}
                 </div>
@@ -508,12 +515,12 @@ const addRecommendedCourse = (courseId: number): void => {
               rounded="lg"
               border
               hover
-              @click="openCourse(course.courseId)"
+              @click="openCourse(course.id)"
             >
               <v-card-text>
                 <div class="d-flex align-center ga-3 mb-3">
                   <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="40" rounded="lg">
-                    <v-icon :icon="course.icon" :color="course.iconColor" size="20"></v-icon>
+                    <v-icon icon="mdi-book-open-variant" color="info" size="20"></v-icon>
                   </v-avatar>
                   <div class="flex-grow-1">
                     <div
@@ -526,16 +533,10 @@ const addRecommendedCourse = (courseId: number): void => {
                       class="text-caption"
                       :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
                     >
-                      {{ t('home.progress') }}: {{ course.progress }}%
+                      {{ course.description || '点击查看详情' }}
                     </div>
                   </div>
                 </div>
-                <v-progress-linear
-                  :model-value="course.progress"
-                  :color="'outline'"
-                  height="5"
-                  rounded
-                ></v-progress-linear>
               </v-card-text>
             </v-card>
           </v-card-text>
@@ -630,9 +631,11 @@ const addRecommendedCourse = (courseId: number): void => {
               v-for="course in recommendedCourses"
               :key="course.id"
               class="recommend-item d-flex align-center ga-3 pa-3 mb-2 rounded-lg"
+              style="cursor: pointer"
+              @click="openCourse(course.id)"
             >
               <v-avatar :color="'rgb(var(--v-theme-surface-variant))'" size="40" rounded="lg">
-                <v-icon :icon="course.icon" :color="course.iconColor" size="18"></v-icon>
+                <v-icon icon="mdi-book-multiple" color="info" size="18"></v-icon>
               </v-avatar>
               <div class="flex-grow-1">
                 <div
@@ -646,15 +649,10 @@ const addRecommendedCourse = (courseId: number): void => {
                   :style="{ color: 'rgb(var(--v-theme-on-surface-variant))' }"
                 >
                   <v-icon icon="mdi-account-multiple" size="12" class="mr-1"></v-icon>
-                  {{ course.learnerCount.toLocaleString() }} {{ t('home.learners') }}
+                  {{ course.learnerCount?.toLocaleString() || 0 }} {{ t('home.learners') }}
                 </div>
               </div>
-              <v-btn
-                icon="mdi-plus"
-                size="small"
-                variant="outlined"
-                @click="addRecommendedCourse(course.courseId)"
-              ></v-btn>
+              <v-icon icon="mdi-chevron-right" size="20" :color="'on-surface-variant'"></v-icon>
             </div>
           </v-card-text>
         </v-card>

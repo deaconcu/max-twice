@@ -370,7 +370,7 @@ watch(
       </v-avatar>
       <div class="pl-3 d-flex align-center">
         <span class="text-body-2 font-weight-medium text-grey-darken-3">
-          {{ posting.author?.name || '匿名用户' }}
+          {{ posting.creator?.name || '匿名用户' }}
         </span>
         <span class="text-caption text-grey mx-2">·</span>
         <span class="text-body-2 text-grey-darken-2">
