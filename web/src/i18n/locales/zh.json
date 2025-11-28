@@ -53,16 +53,16 @@
       "statDetail": "{nodes}个精心编排的知识节点"
     },
     "trackCourses": {
-      "title": "跟踪课程学习",
-      "description": "在我的课程中查看进度，持续学习",
-      "stat": "{count}+位学习者",
-      "statDetail": "每天{growth}+新增活跃用户"
+      "title": "阅读文章",
+      "description": "阅读平台优质文章，深入学习各种知识",
+      "stat": "{count}篇文章",
+      "statDetail": "涵盖技术、理论和实战经验分享"
     },
     "trackCareers": {
-      "title": "跟踪职业进度",
-      "description": "跟踪职业进度，实现职业目标",
-      "stat": "{rate}%完成率",
-      "statDetail": "系统化路径助力目标实现"
+      "title": "选择学习路径",
+      "description": "选择适合的学习路径，进行系统化学习",
+      "stat": "{count}个学习路径",
+      "statDetail": "精心设计的知识体系和技能路线"
     },
     "stats": {
       "coursesInProgress": "进行中课程",

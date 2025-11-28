@@ -19,6 +19,10 @@ export const baseRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/profile/creator',
+    redirect: '/profile?mode=creator',
+  },
+  {
     path: '/error/:code',
     name: 'error',
     component: () => import('@/views/error/ErrorPage.vue'),

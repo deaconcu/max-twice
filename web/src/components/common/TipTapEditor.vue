@@ -438,6 +438,13 @@ const setImage = () => {
 onBeforeUnmount(() => {
   editor.value?.destroy()
 })
+
+/**
+ * 暴露给父组件的方法和属性
+ */
+defineExpose({
+  editor
+})
 </script>
 
 <style scoped>
