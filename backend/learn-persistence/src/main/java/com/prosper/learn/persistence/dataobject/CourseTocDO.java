@@ -1,7 +1,5 @@
 package com.prosper.learn.persistence.dataobject;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -15,7 +13,6 @@ public class CourseTocDO {
 
     private Integer refCount;
 
-    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
     public CourseTocDO() {}

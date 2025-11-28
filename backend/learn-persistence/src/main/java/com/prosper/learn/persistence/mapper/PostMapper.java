@@ -1,6 +1,5 @@
 package com.prosper.learn.persistence.mapper;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.prosper.learn.persistence.dataobject.PostDO;
 import org.apache.ibatis.annotations.*;
 
@@ -10,7 +9,7 @@ import java.util.Map;
 
 import static com.prosper.learn.common.Enums.ContentState.*;
 
-public interface PostMapper extends BaseMapper<PostDO> {
+public interface PostMapper {
 
     @Select("SELECT * FROM post WHERE id = #{id} AND deleted_at IS NULL")
     PostDO get(long id);

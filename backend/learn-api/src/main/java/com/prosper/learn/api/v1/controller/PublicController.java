@@ -13,15 +13,21 @@ import com.prosper.learn.domain.service.data.SystemDataService;
 import com.prosper.learn.dto.response.ProfessionDTO;
 import com.prosper.learn.dto.response.RoadmapDTO;
 import com.prosper.learn.dto.response.roadmap.RoadmapSummaryDTO;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -44,15 +50,15 @@ public class PublicController {
     private final PageService pageService;
 
     /**
-     * 获取课程分类数据（公开接口）
+     * 获取课程分类数据（公开接口，支持 ETag 缓存）
      * GET /api/v1/public/course-categories
      */
     @GetMapping("/course-categories")
-    public ApiResponse<JsonNode> getCourseCategories() {
+    public ResponseEntity<ApiResponse<JsonNode>> getCourseCategories(HttpServletRequest request) {
         try {
             String configValue = systemDataService.getValue("courseCategories");
             if (configValue == null) {
-                return ApiResponse.error("课程分类配置不存在");
+                return ResponseEntity.ok(ApiResponse.error("课程分类配置不存在"));
             }
 
             try {
@@ -63,10 +69,26 @@ public class PublicController {
                     categoryNode = categoryNode.get("courseCategories");
                 }
 
-                return ApiResponse.success(categoryNode);
+                // 计算 ETag
+                String etag = generateETag(categoryNode.toString());
+
+                // 检查客户端 If-None-Match 头
+                String clientETag = request.getHeader("If-None-Match");
+                if (etag.equals(clientETag)) {
+                    // 数据未变化，返回 304
+                    return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
+                            .eTag(etag)
+                            .build();
+                }
+
+                // 返回数据并设置 ETag
+                return ResponseEntity.ok()
+                        .eTag(etag)
+                        .body(ApiResponse.success(categoryNode));
+
             } catch (IOException e) {
                 log.error("Failed to parse course categories config", e);
-                return ApiResponse.error("课程分类配置格式错误");
+                return ResponseEntity.ok(ApiResponse.error("课程分类配置格式错误"));
             }
         } catch (Exception e) {
             log.error("Failed to get course categories", e);
@@ -75,27 +97,59 @@ public class PublicController {
     }
 
     /**
-     * 获取职业分类数据（公开接口）
+     * 获取职业分类数据（公开接口，支持 ETag 缓存）
      * GET /api/v1/public/profession-categories
      */
     @GetMapping("/profession-categories")
-    public ApiResponse<JsonNode> getProfessionCategories() {
+    public ResponseEntity<ApiResponse<JsonNode>> getProfessionCategories(HttpServletRequest request) {
         try {
             String configValue = systemDataService.getValue("professionCategories");
             if (configValue == null) {
-                return ApiResponse.error("职业分类配置不存在");
+                return ResponseEntity.ok(ApiResponse.error("职业分类配置不存在"));
             }
 
             try {
                 JsonNode categoryNode = objectMapper.readTree(configValue);
-                return ApiResponse.success(categoryNode);
+
+                // 计算 ETag
+                String etag = generateETag(categoryNode.toString());
+
+                // 检查客户端 If-None-Match 头
+                String clientETag = request.getHeader("If-None-Match");
+                if (etag.equals(clientETag)) {
+                    // 数据未变化，返回 304
+                    return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
+                            .eTag(etag)
+                            .build();
+                }
+
+                // 返回数据并设置 ETag
+                return ResponseEntity.ok()
+                        .eTag(etag)
+                        .body(ApiResponse.success(categoryNode));
+
             } catch (IOException e) {
                 log.error("Failed to parse profession categories config", e);
-                return ApiResponse.error("职业分类配置格式错误");
+                return ResponseEntity.ok(ApiResponse.error("职业分类配置格式错误"));
             }
         } catch (Exception e) {
             log.error("Failed to get profession categories", e);
             throw ErrorCode.SYSTEM_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 生成 ETag（使用 MD5 哈希）
+     */
+    private String generateETag(String content) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] hash = md.digest(content.getBytes());
+            return "\"" + HexFormat.of().formatHex(hash) + "\"";
+        } catch (NoSuchAlgorithmException e) {
+            log.error("Failed to generate ETag", e);
+            // 降级：使用 hashCode
+            return "\"" + Integer.toHexString(content.hashCode()) + "\"";
         }
     }
 

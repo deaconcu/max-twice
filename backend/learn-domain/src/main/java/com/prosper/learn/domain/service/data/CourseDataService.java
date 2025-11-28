@@ -80,7 +80,7 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
     @Cacheable(value = "coursesByCategory", key = "#mainCategory + '_' + #subCategory")
     public List<CourseDO> getByCategory(int mainCategory, int subCategory) {
         try {
-            return courseMapper.listRootByCategory(mainCategory, subCategory);
+            return courseMapper.listRootByCategory(mainCategory, subCategory, null);
         } catch (Exception e) {
             log.error("Error querying courses by category: {}, {}", mainCategory, subCategory, e);
             throw ErrorCode.DATABASE_ERROR.exception(e);
@@ -154,10 +154,17 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
     }
     
     /**
-     * 根据主分类和子分类获取根课程列表（不缓存）
+     * 根据主分类获取根课程列表（不缓存，支持分页）
      */
-    public List<CourseDO> listRootByCategory(int mainCategory, int subCategory) {
-        return courseMapper.listRootByCategory(mainCategory, subCategory);
+    public List<CourseDO> listRootByMainCategory(int mainCategory, Long lastId) {
+        return courseMapper.listRootByMainCategory(mainCategory, lastId);
+    }
+
+    /**
+     * 根据主分类和子分类获取根课程列表（不缓存，支持分页）
+     */
+    public List<CourseDO> listRootByCategory(int mainCategory, int subCategory, Long lastId) {
+        return courseMapper.listRootByCategory(mainCategory, subCategory, lastId);
     }
     
     /**

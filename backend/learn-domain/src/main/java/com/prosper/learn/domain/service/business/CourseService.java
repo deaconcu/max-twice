@@ -283,10 +283,19 @@ public class CourseService {
                 .collect(java.util.stream.Collectors.toList());
     }
 
-    // 新增：根据主分类和子分类获取已批准的课程列表
-    public List<CourseDetailDTO> getListByCategory(int mainCategory, int subCategory) {
+    // 新增：根据分类获取已批准的课程列表（支持只传主分类，支持分页）
+    public List<CourseDetailDTO> getListByCategory(Integer mainCategory, Integer subCategory, Long lastId) {
         List<CourseDO> courseDOList;
-        courseDOList = courseDataService.listRootByCategory(mainCategory, subCategory);
+
+        // 如果传了子分类，按主分类+子分类查询
+        if (subCategory != null) {
+            courseDOList = courseDataService.listRootByCategory(mainCategory, subCategory, lastId);
+        }
+        // 只传了主分类，按主分类查询
+        else {
+            courseDOList = courseDataService.listRootByMainCategory(mainCategory, lastId);
+        }
+
         return courseDOList.stream()
                 .map(this::toDetailDTO)
                 .collect(java.util.stream.Collectors.toList());

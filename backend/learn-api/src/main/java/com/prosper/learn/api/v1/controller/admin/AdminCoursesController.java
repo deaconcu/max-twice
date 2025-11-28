@@ -41,6 +41,12 @@ public class AdminCoursesController {
     /**
      * 管理后台：按状态获取课程列表
      * 映射: GET /api/v1/admin/courses?state=0&lastId=123
+     *
+     * 参数组合：
+     * 1. state：按状态分页（state 必填，lastId 可选）
+     * 2. mainCategory + subCategory：按分类筛选（暂不支持，返回错误）
+     * 3. parentId：使用 /courses/{parentId}/subcourses 接口
+     * 4. 无参数：返回所有课程（不限状态，分页）
      */
     @GetMapping("/courses")
     @RequireRole(UserRole.MODERATOR)
@@ -50,7 +56,7 @@ public class AdminCoursesController {
             @RequestParam(required = false) @Positive(message = "主分类必须大于0") Integer mainCategory,
             @RequestParam(required = false) @Positive(message = "子分类必须大于0") Integer subCategory) {
 
-        // 按状态查询
+        // 1. 按状态查询（state 必填）
         if (state != null) {
             ContentState courseState = ContentState.getByValue(state.intValue());
             if (courseState == null) {
@@ -60,14 +66,15 @@ public class AdminCoursesController {
             return ApiResponse.success(courseList);
         }
 
-        // 按分类查询（管理员版本）
-        if (mainCategory != null && subCategory != null) {
-            // TODO: 当前复用普通接口，只返回已发布课程。如需返回其他状态，需新增 Service 方法
-            List<CourseDetailDTO> courseList = courseService.getListByCategory(mainCategory, subCategory);
-            return ApiResponse.success(courseList);
+        // 2. 按分类查询（暂不支持管理员按分类查询）
+        if (mainCategory != null || subCategory != null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("管理后台暂不支持按分类查询，请使用 state 参数");
         }
 
-        throw ErrorCode.INVALID_PARAMETER.exception("缺少必要参数：state 或 mainCategory+subCategory");
+        // 3. 默认：返回所有课程（不限状态，分页）
+        // 使用 null 作为状态参数，Service 层应返回所有状态的课程
+        List<CourseDetailDTO> courseList = courseService.getListByStateAndLastId(null, lastId);
+        return ApiResponse.success(courseList);
     }
 
     /**

@@ -58,34 +58,37 @@ public class CoursesController {
     }
 
     /**
-     * 按状态获取课程列表
-     * 映射: GET /course/list?state=xxx&lastId=123 → GET /api/v1/courses?state=xxx&lastId=123
+     * 获取课程列表（普通用户接口）
+     * 映射: GET /course/list?mainCategory=1&subCategory=2 → GET /api/v1/courses?mainCategory=1&subCategory=2
+     *
+     * 参数组合：
+     * 1. mainCategory（可选 subCategory）：按分类筛选
+     * 2. parentId：获取子课程
+     * 3. 无参数或只有 lastId：返回所有已发布课程（分页）
+     *
+     * 注意：不支持按状态查询，普通用户只能看到已发布课程
      */
     @GetMapping("/courses")
-    public ApiResponse<Object> getCoursesByState(
-            @RequestParam(required = false) @Positive(message = "状态必须大于0") Integer state,
+    public ApiResponse<Object> getCourses(
             @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
             @RequestParam(required = false) @Positive(message = "主分类必须大于0") Integer mainCategory,
             @RequestParam(required = false) @Positive(message = "子分类必须大于0") Integer subCategory,
             @RequestParam(required = false) @Positive(message = "父课程ID必须大于0") Long parentId) {
 
-        ContentState courseState = ContentState.getByValue(state);
-        if (state != null && lastId != null) {
-            List<CourseDetailDTO> courseList = courseService.getListByStateAndLastId(courseState, lastId);
+        // 1. 按分类筛选（支持只传主分类）
+        if (mainCategory != null) {
+            List<CourseDetailDTO> courseList = courseService.getListByCategory(mainCategory, subCategory, lastId);
             return ApiResponse.success(courseList);
-        } else if (mainCategory != null && subCategory != null) {
-            List<CourseDetailDTO> courseList = courseService.getListByCategory(mainCategory, subCategory);
+        }
+        // 2. 获取子课程
+        else if (parentId != null) {
+            List<CourseDetailDTO> courseList = courseService.getListByParent(parentId, ContentState.PUBLISHED);
             return ApiResponse.success(courseList);
-        } else if (parentId != null) {
-            if (courseState != null && courseState == ContentState.PUBLISHED) {
-                List<CourseDetailDTO> courseList = courseService.getListByParent(parentId, ContentState.PUBLISHED);
-                return ApiResponse.success(courseList);
-            } else {
-                List<CourseDetailDTO> courseList = courseService.getListByParent(parentId, null);
-                return ApiResponse.success(courseList);
-            }
-        } else {
-            throw new IllegalArgumentException("缺少必要参数");
+        }
+        // 3. 默认：返回所有已发布课程（分页）
+        else {
+            List<CourseDetailDTO> courseList = courseService.getListByStateAndLastId(ContentState.PUBLISHED, lastId);
+            return ApiResponse.success(courseList);
         }
     }
 

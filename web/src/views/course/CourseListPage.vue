@@ -72,32 +72,24 @@
     <!-- 分类导航和课程网格 -->
     <div class="content-layout">
       <div class="main-content">
-        <!-- 分类导航 -->
-        <CourseFilter
-          v-model:main-category="selectedMainCategory"
-          v-model:sub-category="selectedSubCategory"
-          :categories="categories"
-          :sub-categories="subCategories"
-          @change="handleFilterChange"
-        />
+        <!-- 页面初始加载状态 -->
+        <LoadingSpinner v-if="categoryStore.loading && categories.length === 0" />
 
-        <!-- 加载状态 -->
-        <LoadingSpinner v-if="loading" />
+        <template v-else>
+          <!-- 分类导航 -->
+          <CourseFilter
+            v-model:main-category="selectedMainCategory"
+            v-model:sub-category="selectedSubCategory"
+            :categories="categories"
+            :sub-categories="subCategories"
+            @change="handleFilterChange"
+          />
 
-        <!-- 提示：请选择分类 -->
-        <div
-          v-else-if="!selectedMainCategory && !selectedSubCategory && !searchText"
-          class="text-center py-12"
-        >
-          <v-card rounded="lg" class="pa-12 empty-state no-border">
-            <v-icon icon="mdi-filter" size="80" color="grey-lighten-1" class="mb-4" />
-            <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">请选择分类</h3>
-            <p class="text-body-1 text-grey-darken-1">请从上方选择主分类和子分类来查看课程</p>
-          </v-card>
-        </div>
+          <!-- 加载状态 -->
+          <LoadingSpinner v-if="loading" />
 
-        <!-- 空状态 -->
-        <div v-else-if="filteredCourses.length === 0" class="text-center py-12">
+          <!-- 空状态 -->
+          <div v-else-if="filteredCourses.length === 0" class="text-center py-12">
           <v-card rounded="lg" class="pa-12 empty-state no-border">
             <v-icon icon="mdi-book-open-variant" size="80" color="grey-lighten-1" class="mb-4" />
             <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">未找到相关课程</h3>
@@ -119,10 +111,7 @@
         <!-- 课程列表 -->
         <div v-else>
           <!-- 分类标题 -->
-          <div
-            v-if="selectedMainCategory || selectedSubCategory || searchText"
-            class="mb-4 mt-6 mt-md-10"
-          >
+          <div class="mb-4 mt-6 mt-md-10">
             <div class="d-flex align-center justify-space-between">
               <div class="d-flex align-center">
                 <v-icon
@@ -136,7 +125,8 @@
                     {{ getCategoryName(selectedMainCategory) }} -
                     {{ getSubCategoryName(selectedSubCategory) }}
                   </span>
-                  <span v-else>{{ getCategoryName(selectedMainCategory) }}</span>
+                  <span v-else-if="selectedMainCategory">{{ getCategoryName(selectedMainCategory) }}</span>
+                  <span v-else>全部课程</span>
                 </h2>
               </div>
               <p class="text-body-2 text-grey-darken-2">共 {{ filteredCourses.length }} 门课程</p>
@@ -155,10 +145,11 @@
           </div>
 
           <!-- 加载更多指示器 -->
-          <div v-if="hasMore" ref="loadMoreTrigger" class="text-center mt-6 py-4 mb-16">
+          <div v-if="hasMoreCourses" ref="loadMoreTrigger" class="text-center mt-6 py-4 mb-16">
             <v-progress-circular v-if="loadingMore" indeterminate color="primary" size="32" />
           </div>
         </div>
+        </template>
       </div>
 
       <!-- 右侧热门课程栏 -->
@@ -252,8 +243,9 @@ import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useFetch, useMutation } from '@/composables'
-import { courseApi, subscriptionApi, systemApi } from '@/api'
+import { courseApi, subscriptionApi } from '@/api'
 import type { Course, CreateCourseRequest } from '@/types/course'
+import { useCategoryStore } from '@/stores'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import CourseCard from '@/components/features/course/CourseCard.vue'
@@ -262,9 +254,9 @@ import CourseCreateDialog from '@/components/features/course/CourseCreateDialog.
 
 const router = useRouter()
 const { t } = useI18n()
+const categoryStore = useCategoryStore()
 
 // 状态管理
-const loadingMore = ref(false)
 const searchText = ref('')
 const selectedMainCategory = ref<number | undefined>()
 const selectedSubCategory = ref<number | undefined>()
@@ -272,15 +264,8 @@ const createDialog = ref(false)
 const resetCreateForm = ref(false)
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 
-// 当前分类查询参数
-const currentCategory = ref<{ mainCategory: number; subCategory: number } | null>(null)
-
-// 使用 useFetch 加载课程分类
-const { data: categoriesData, loading: _loadingCategories } = useFetch({
-  fetchFn: () => systemApi.getCourseCategories(),
-  immediate: true,
-  defaultValue: { mainCategories: [], categoryMapping: [] },
-})
+// 当前分类查询参数（subCategory 可选）
+const currentCategory = ref<{ mainCategory: number; subCategory?: number } | null>(null)
 
 // 使用 useFetch 加载热门课程
 const { data: hotCoursesData, loading: _loadingHotCourses } = useFetch<Course[]>({
@@ -289,46 +274,79 @@ const { data: hotCoursesData, loading: _loadingHotCourses } = useFetch<Course[]>
   defaultValue: [],
 })
 
-// 使用 useFetch 加载分类下的课程
-const {
-  data: coursesData,
-  loading,
-  refresh: refreshCourses,
-} = useFetch<Course[]>({
-  fetchFn: async () => {
-    if (!currentCategory.value) {
-      return { code: 200, data: [], message: '' }
-    }
-    const { mainCategory, subCategory } = currentCategory.value
-    return courseApi.getCoursesByCategory(mainCategory, subCategory)
-  },
-  immediate: false,
-  defaultValue: [],
-})
+// 使用 ref 直接管理课程列表（不用 useFetch，因为需要追加数据）
+const coursesData = ref<Course[]>([])
+const loading = ref(false)
+const loadingMore = ref(false)
 
-// 计算属性 - 从 useFetch 数据中提取
+// 分页状态
+const lastId = ref<number | undefined>(undefined)
+const hasMoreCourses = ref(true)
+
+/**
+ * 加载课程列表（初始加载或刷新）
+ */
+const loadCourses = async (reset = false) => {
+  if (reset) {
+    loading.value = true
+    lastId.value = undefined
+    hasMoreCourses.value = true
+  } else {
+    loadingMore.value = true
+  }
+
+  try {
+    let response
+    if (!currentCategory.value) {
+      // 不选分类时，返回所有已发布课程
+      response = await courseApi.getCoursesByCategory(undefined, undefined, lastId.value)
+    } else {
+      const { mainCategory, subCategory } = currentCategory.value
+      response = await courseApi.getCoursesByCategory(mainCategory, subCategory, lastId.value)
+    }
+
+    if (response.data) {
+      const newCourses = response.data
+
+      if (reset) {
+        coursesData.value = newCourses
+      } else {
+        coursesData.value = [...coursesData.value, ...newCourses]
+      }
+
+      // 更新分页状态
+      if (newCourses.length < 20) {
+        // 返回数据少于 20 条，说明没有更多了
+        hasMoreCourses.value = false
+      } else {
+        // 更新 lastId 为最后一条的 id
+        const lastCourse = newCourses[newCourses.length - 1]
+        lastId.value = lastCourse?.id
+      }
+    }
+  } catch (error) {
+    console.error('加载课程失败:', error)
+  } finally {
+    loading.value = false
+    loadingMore.value = false
+  }
+}
+
+// 计算属性 - 从 Store 中获取分类数据
 const categories = computed(() => {
-  const data = categoriesData.value
-  if (!data?.mainCategories) return []
-  return data.mainCategories as { id: number; name: string; icon?: string }[]
+  return categoryStore.getCourseMainCategories()
 })
 
 const subCategories = computed(() => {
-  const data = categoriesData.value
-  if (!data?.categoryMapping) return []
-
   const allSubCategories: { id: number; name: string; mainCategoryId: number }[] = []
-  const categoryMapping = data.categoryMapping as {
-    mainCategoryId: number
-    subCategories: { id: number; name: string }[]
-  }[]
 
-  categoryMapping.forEach((mapping) => {
-    mapping.subCategories.forEach((sub) => {
+  categories.value.forEach((mainCategory) => {
+    const subs = categoryStore.getCourseSubCategories(mainCategory.id)
+    subs.forEach((sub) => {
       allSubCategories.push({
         id: sub.id,
         name: sub.name,
-        mainCategoryId: mapping.mainCategoryId,
+        mainCategoryId: mainCategory.id,
       })
     })
   })
@@ -338,10 +356,6 @@ const subCategories = computed(() => {
 
 const courses = computed(() => coursesData.value ?? [])
 const hotCourses = computed(() => hotCoursesData.value ?? [])
-
-// 分页
-const pageSize = 12
-const currentPage = ref(1)
 
 // 筛选后的课程（只在前端筛选搜索关键词）
 const filteredCourses = computed(() => {
@@ -360,14 +374,9 @@ const filteredCourses = computed(() => {
   return result
 })
 
-// 显示的课程（分页）
+// 显示的课程就是筛选后的课程（服务端分页）
 const displayedCourses = computed(() => {
-  return filteredCourses.value.slice(0, currentPage.value * pageSize)
-})
-
-// 是否还有更多
-const hasMore = computed(() => {
-  return displayedCourses.value.length < filteredCourses.value.length
+  return filteredCourses.value
 })
 
 // 热门课程 - 前15个
@@ -406,16 +415,19 @@ const clearAll = () => {
   selectedMainCategory.value = undefined
   selectedSubCategory.value = undefined
   searchText.value = ''
-  currentPage.value = 1
   currentCategory.value = null
+  void loadCourses(true) // 重新加载
 }
 
 /**
- * 根据分类加载课程
+ * 根据分类加载课程（subCategory 可选）
  */
-const loadCoursesByCategory = async (mainCategory: number, subCategory: number): Promise<void> => {
+const loadCoursesByCategory = async (
+  mainCategory: number,
+  subCategory?: number
+): Promise<void> => {
   currentCategory.value = { mainCategory, subCategory }
-  await refreshCourses()
+  await loadCourses(true) // 重置并加载
 }
 
 /**
@@ -444,9 +456,9 @@ const handleSearch = async () => {
  * 处理筛选变化
  */
 const handleFilterChange = () => {
-  currentPage.value = 1
   searchText.value = '' // 清空搜索
-  if (selectedMainCategory.value && selectedSubCategory.value) {
+  // 支持只传主分类或主分类+子分类
+  if (selectedMainCategory.value) {
     void loadCoursesByCategory(selectedMainCategory.value, selectedSubCategory.value)
   }
 }
@@ -454,15 +466,19 @@ const handleFilterChange = () => {
 /**
  * 监听分类变化，自动加载课程
  */
-watch([selectedMainCategory, selectedSubCategory], () => {
-  if (selectedMainCategory.value && selectedSubCategory.value) {
-    void loadCoursesByCategory(selectedMainCategory.value, selectedSubCategory.value)
+watch([selectedMainCategory, selectedSubCategory], async () => {
+  // 先清理旧的 observer
+  cleanupInfiniteScroll()
+
+  // 只要选了主分类就加载（子分类可选）
+  if (selectedMainCategory.value) {
+    await loadCoursesByCategory(selectedMainCategory.value, selectedSubCategory.value)
   } else {
     currentCategory.value = null
+    await loadCourses(true)
   }
-  // 重置分页并重新设置无限滚动
-  currentPage.value = 1
-  cleanupInfiniteScroll()
+
+  // 数据加载完成后，重新设置无限滚动
   setTimeout(setupInfiniteScroll, 100)
 })
 
@@ -470,13 +486,8 @@ watch([selectedMainCategory, selectedSubCategory], () => {
  * 加载更多
  */
 const loadMore = () => {
-  if (loadingMore.value) return
-  loadingMore.value = true
-  currentPage.value += 1
-  // 模拟加载延迟，实际情况下这里会立即显示数据
-  setTimeout(() => {
-    loadingMore.value = false
-  }, 300)
+  if (loadingMore.value || !hasMoreCourses.value) return
+  void loadCourses(false) // 追加加载
 }
 
 /**
@@ -493,7 +504,7 @@ const setupInfiniteScroll = () => {
   observer = new IntersectionObserver(
     (entries) => {
       const entry = entries[0]
-      if (entry?.isIntersecting && hasMore.value && !loadingMore.value) {
+      if (entry?.isIntersecting && hasMoreCourses.value && !loadingMore.value) {
         loadMore()
       }
     },
@@ -521,7 +532,11 @@ const cleanupInfiniteScroll = () => {
 /**
  * 组件挂载时设置无限滚动
  */
-onMounted(() => {
+onMounted(async () => {
+  // 加载分类数据
+  await categoryStore.checkAndLoad()
+  // 初始加载课程
+  await loadCourses(true)
   // 延迟设置无限滚动，确保 DOM 已渲染
   setTimeout(setupInfiniteScroll, 100)
 })

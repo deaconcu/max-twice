@@ -73,20 +73,24 @@
       <!-- 分类导航和职业网格 -->
       <div class="content-layout">
         <div class="main-content">
-          <!-- 分类导航 -->
-          <CareerFilter
-            v-model:main-category="selectedMainCategory"
-            v-model:sub-category="selectedSubCategory"
-            :categories="categories"
-            :sub-categories="subCategories"
-            @change="handleFilterChange"
-          />
+          <!-- 页面初始加载状态 -->
+          <LoadingSpinner v-if="categoryStore.loading && categories.length === 0" />
 
-          <!-- 加载状态 -->
-          <LoadingSpinner v-if="loading" />
+          <template v-else>
+            <!-- 分类导航 -->
+            <CareerFilter
+              v-model:main-category="selectedMainCategory"
+              v-model:sub-category="selectedSubCategory"
+              :categories="categories"
+              :sub-categories="subCategories"
+              @change="handleFilterChange"
+            />
 
-          <!-- 空状态 -->
-          <div v-else-if="filteredCareers.length === 0" class="text-center py-12">
+            <!-- 加载状态 -->
+            <LoadingSpinner v-if="loading" />
+
+            <!-- 空状态 -->
+            <div v-else-if="filteredCareers.length === 0" class="text-center py-12">
             <v-card rounded="lg" class="pa-12 empty-state no-border">
               <v-icon icon="mdi-briefcase-outline" size="80" color="grey-lighten-1" class="mb-4" />
               <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">
@@ -153,6 +157,7 @@
               <v-progress-circular v-if="loadingMore" indeterminate color="primary" size="32" />
             </div>
           </div>
+          </template>
         </div>
 
         <!-- 右侧热门职业栏 -->
@@ -344,9 +349,10 @@ import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useFetch, useMutation } from '@/composables'
 import { handleApiCall } from '@/composables/utils'
-import { professionApi, systemApi } from '@/api'
+import { professionApi } from '@/api'
 import type { Profession } from '@/types/profession'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
+import { useCategoryStore } from '@/stores'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import CareerCard from '@/components/features/career/CareerCard.vue'
@@ -354,6 +360,7 @@ import CareerFilter from '@/components/features/career/CareerFilter.vue'
 
 const router = useRouter()
 const { t } = useI18n()
+const categoryStore = useCategoryStore()
 
 // 验证规则
 const professionNameRules = useValidationRules('profession-name')
@@ -388,11 +395,9 @@ const loadingMore = ref(false)
 const hasMore = ref(true)
 const lastId = ref<number | undefined>(undefined)
 
-// 使用 useFetch 加载职业分类
-const { data: categoriesData, loading: _loadingCategories } = useFetch({
-  fetchFn: () => systemApi.getProfessionCategories(),
-  immediate: true,
-  defaultValue: { mainCategories: [], categoryMapping: [] },
+// 页面加载时获取分类数据
+onMounted(async () => {
+  await categoryStore.checkAndLoad()
 })
 
 // 使用 useFetch 加载热门职业
@@ -402,34 +407,23 @@ const { data: hotCareersData, loading: _loadingHotCareers } = useFetch<Professio
   defaultValue: [],
 })
 
-// 计算属性 - 从 useFetch 数据中提取
+// 计算属性 - 从 Store 中获取分类数据
 const categories = computed(() => {
-  const data = categoriesData.value
-  if (!data?.mainCategories) return []
-  return data.mainCategories as { id: number; title: string; icon?: string }[]
+  return categoryStore.getProfessionMainCategories()
 })
 
 const subCategories = computed(() => {
-  const data = categoriesData.value
-  if (!data?.categoryMapping) return []
-
   const allSubCategories: { id: number; name: string; mainCategoryId: number }[] = []
-  const categoryMapping = data.categoryMapping as {
-    mainCategoryId: number
-    subcategories?: { id: number; name: string }[] // 注意：是 subcategories 不是 subCategories
-  }[]
 
-  categoryMapping.forEach((mapping) => {
-    if (mapping.subcategories) {
-      mapping.subcategories.forEach((sub) => {
-        // 注意：是 subcategories 不是 subCategories
-        allSubCategories.push({
-          id: sub.id,
-          name: sub.name,
-          mainCategoryId: mapping.mainCategoryId,
-        })
+  categories.value.forEach((mainCategory) => {
+    const subs = categoryStore.getProfessionSubCategories(mainCategory.id)
+    subs.forEach((sub) => {
+      allSubCategories.push({
+        id: sub.id,
+        name: sub.name,
+        mainCategoryId: mainCategory.id,
       })
-    }
+    })
   })
 
   return allSubCategories
@@ -633,15 +627,18 @@ const handleFilterChange = () => {
 /**
  * 监听分类变化，自动加载职业
  */
-watch([selectedMainCategory, selectedSubCategory], () => {
+watch([selectedMainCategory, selectedSubCategory], async () => {
+  // 先清理旧的 observer
+  cleanupInfiniteScroll()
+
   if (selectedMainCategory.value && selectedSubCategory.value) {
-    void loadCareersByCategory(selectedMainCategory.value, selectedSubCategory.value)
+    await loadCareersByCategory(selectedMainCategory.value, selectedSubCategory.value)
   } else {
     currentCategory.value = null
-    void loadCareers(true)
+    await loadCareers(true)
   }
-  // 重新设置无限滚动
-  cleanupInfiniteScroll()
+
+  // 数据加载完成后，重新设置无限滚动
   setTimeout(setupInfiniteScroll, 100)
 })
 
@@ -687,8 +684,12 @@ const cleanupInfiniteScroll = () => {
 /**
  * 组件挂载时设置无限滚动和加载初始数据
  */
-onMounted(() => {
-  void loadCareers(true)
+onMounted(async () => {
+  // 加载分类数据
+  await categoryStore.checkAndLoad()
+  // 加载职业数据
+  await loadCareers(true)
+  // 数据加载完成后设置无限滚动
   setTimeout(setupInfiniteScroll, 100)
 })
 

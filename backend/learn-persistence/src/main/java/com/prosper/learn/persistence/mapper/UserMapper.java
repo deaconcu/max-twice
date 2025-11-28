@@ -1,6 +1,5 @@
 package com.prosper.learn.persistence.mapper;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.prosper.learn.persistence.dataobject.NodeDO;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import org.apache.ibatis.annotations.*;
@@ -9,7 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public interface UserMapper extends BaseMapper<UserDO> {
+public interface UserMapper {
 
     @Select("SELECT * FROM user WHERE id = #{id}")
     UserDO getById(long id);

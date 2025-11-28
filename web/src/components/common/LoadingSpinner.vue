@@ -1,15 +1,38 @@
 <script setup lang="ts">
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+
 interface Props {
   size?: number | string
+  delay?: number // 延迟显示时间（毫秒）
 }
 
-withDefaults(defineProps<Props>(), {
-  size: 64,
+const props = withDefaults(defineProps<Props>(), {
+  size: 40,
+  delay: 300, // 默认延迟 300ms
+})
+
+// 控制是否显示 loading
+const visible = ref(false)
+let timer: ReturnType<typeof setTimeout> | null = null
+
+onMounted(() => {
+  // 延迟显示，防止闪现
+  timer = setTimeout(() => {
+    visible.value = true
+  }, props.delay)
+})
+
+onBeforeUnmount(() => {
+  // 清理定时器
+  if (timer) {
+    clearTimeout(timer)
+    timer = null
+  }
 })
 </script>
 
 <template>
-  <div class="loading-spinner">
+  <div v-if="visible" class="loading-spinner">
     <v-progress-circular indeterminate color="primary" :size="size" />
   </div>
 </template>

@@ -1,7 +1,5 @@
 package com.prosper.learn.persistence.dataobject;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -21,7 +19,6 @@ public class MessageDO {
 
     private Integer category;  // 新增字段：消息分类 1=互动消息, 2=系统消息, 3=私信
 
-    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
 }

@@ -25,6 +25,35 @@ export class ApiError extends Error {
 }
 
 /**
+ * ETag 缓存管理
+ */
+class ETagCache {
+  private cache = new Map<string, { etag: string; data: any }>()
+
+  set(url: string, etag: string, data: any) {
+    this.cache.set(url, { etag, data })
+  }
+
+  get(url: string): { etag: string; data: any } | undefined {
+    return this.cache.get(url)
+  }
+
+  getETag(url: string): string | undefined {
+    return this.cache.get(url)?.etag
+  }
+
+  getData(url: string): any | undefined {
+    return this.cache.get(url)?.data
+  }
+
+  clear() {
+    this.cache.clear()
+  }
+}
+
+const etagCache = new ETagCache()
+
+/**
  * 创建 Axios 实例
  */
 const axiosInstance = axios.create({
@@ -40,10 +69,10 @@ const axiosInstance = axios.create({
  * 开发环境：API 延时配置（用于测试 loading 状态）
  * 设置为 0 则禁用延时
  */
-const API_DELAY = import.meta.env.DEV ? 1000 : 0 // 开发环境延时 1 秒
+const API_DELAY = import.meta.env.DEV ? 500 : 0 // 开发环境延时 500ms
 
 /**
- * 请求拦截器 - 添加认证 token 和开发延时
+ * 请求拦截器 - 添加认证 token、开发延时和 ETag
  */
 axiosInstance.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
@@ -60,6 +89,14 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
 
+    // 添加 ETag 缓存头（If-None-Match）
+    if (config.url) {
+      const cachedETag = etagCache.getETag(config.url)
+      if (cachedETag) {
+        config.headers['If-None-Match'] = cachedETag
+      }
+    }
+
     return config
   },
   (error: AxiosError) => {
@@ -69,14 +106,36 @@ axiosInstance.interceptors.request.use(
 )
 
 /**
- * 响应拦截器 - 统一处理响应和错误
+ * 响应拦截器 - 统一处理响应、错误和 ETag
  */
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
+    // 处理 ETag 缓存
+    const etag = response.headers['etag']
+    if (etag && response.config.url) {
+      // 保存 ETag 和响应数据
+      etagCache.set(response.config.url, etag, response.data)
+      console.log(`[ETag] 缓存已保存: ${response.config.url} -> ${etag}`)
+    }
+
     // 不在这里解包，让包装方法处理
     return response
   },
   (error: AxiosError) => {
+    // 处理 304 Not Modified
+    if (error.response?.status === 304) {
+      const cachedData = etagCache.getData(error.config?.url || '')
+      if (cachedData) {
+        console.log(`[ETag] 使用缓存数据: ${error.config?.url}`)
+        // 返回缓存的数据
+        return {
+          ...error.response,
+          data: cachedData,
+          status: 200,
+        } as AxiosResponse<ApiResponse>
+      }
+    }
+
     // 错误处理
     if (error.response) {
       const { status, data } = error.response

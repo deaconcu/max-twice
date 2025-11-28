@@ -1,7 +1,5 @@
 package com.prosper.learn.persistence.dataobject;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -29,9 +27,7 @@ public class CourseDO {
 
     private String reason; // 拒绝原因，默认为空字符串
 
-    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

@@ -26,7 +26,8 @@ export const courseApi = {
   },
 
   /**
-   * 根据状态获取课程列表
+   * 根据状态获取课程列表（已废弃 - 普通用户不应查询任意状态）
+   * @deprecated 请使用 getCoursesByCategory() 获取已发布课程
    */
   getCoursesByState(state: number, lastId?: number): Promise<ApiResponse<Course[]>> {
     return apiClient.get('/v1/courses', {
@@ -36,13 +37,18 @@ export const courseApi = {
 
   /**
    * 根据分类获取课程列表
+   * @param mainCategory 主分类ID（可选）
+   * @param subCategory 子分类ID（可选）
+   * @param lastId 分页参数（可选）
+   * 不传任何参数时，返回所有已发布课程
    */
   getCoursesByCategory(
     mainCategory?: number,
-    subCategory?: number
+    subCategory?: number,
+    lastId?: number
   ): Promise<ApiResponse<Course[]>> {
     return apiClient.get('/v1/courses', {
-      params: { mainCategory, subCategory },
+      params: { mainCategory, subCategory, lastId },
     })
   },
 
@@ -55,9 +61,12 @@ export const courseApi = {
 
   /**
    * 获取子课程列表
+   * 修正：使用 parentId 查询参数而不是路径参数
    */
   getSubCourses(parentId: number): Promise<ApiResponse<Course[]>> {
-    return apiClient.get(`/v1/courses/${String(parentId)}/subcourses`)
+    return apiClient.get('/v1/courses', {
+      params: { parentId },
+    })
   },
 
   /**

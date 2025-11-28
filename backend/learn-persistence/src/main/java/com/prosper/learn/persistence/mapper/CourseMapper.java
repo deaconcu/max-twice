@@ -38,10 +38,23 @@ public interface CourseMapper {
             "</script>")
     List<CourseDO> listByStateAndLastId(ContentState state, Long lastId);
 
-    // 新增：根据主分类和子分类获取已批准的课程列表
-    @Select("SELECT * FROM course WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} " +
-            "AND state = " + PUBLISHED_VALUE + " AND parent_course_id = 0 ORDER BY id ASC LIMIT 20")
-    List<CourseDO> listRootByCategory(int mainCategory, int subCategory);
+    // 新增：根据主分类获取已批准的课程列表（支持分页）
+    @Select("<script>" +
+            "SELECT * FROM course WHERE main_category = #{mainCategory} " +
+            "AND state = " + PUBLISHED_VALUE + " AND parent_course_id = 0 " +
+            "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
+            "ORDER BY id DESC LIMIT 20" +
+            "</script>")
+    List<CourseDO> listRootByMainCategory(int mainCategory, Long lastId);
+
+    // 新增：根据主分类和子分类获取已批准的课程列表（支持分页）
+    @Select("<script>" +
+            "SELECT * FROM course WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} " +
+            "AND state = " + PUBLISHED_VALUE + " AND parent_course_id = 0 " +
+            "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
+            "ORDER BY id DESC LIMIT 20" +
+            "</script>")
+    List<CourseDO> listRootByCategory(int mainCategory, int subCategory, Long lastId);
 
     @Insert("INSERT INTO course(name, description, creator_id, parent_course_id, state, root_node_id, main_category, sub_category) " +
             "VALUES (#{name}, #{description}, #{creatorId}, #{parentCourseId}, #{state}, #{rootNodeId}, #{mainCategory}, #{subCategory})")

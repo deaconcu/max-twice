@@ -1,7 +1,5 @@
 package com.prosper.learn.persistence.dataobject;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -26,7 +24,6 @@ public class MemoryCardVersionDO {
 
     private Boolean isActive;
 
-    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
 }

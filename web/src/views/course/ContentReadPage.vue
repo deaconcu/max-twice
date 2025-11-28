@@ -1,10 +1,10 @@
 <template>
   <DefaultLayout>
-    <!-- 加载状态 -->
-    <LoadingSpinner v-if="dataLoading" />
+    <!-- 首次加载 - 全页 loading -->
+    <LoadingSpinner v-if="dataLoading && isInitialLoad" />
 
     <!-- 内容区 -->
-    <div v-else-if="data" class="read-page">
+    <div v-else-if="data || dataLoading" class="read-page">
       <!-- 移动端目录抽屉 -->
       <v-dialog
         v-if="$vuetify.display.mobile"
@@ -85,9 +85,8 @@
       </v-dialog>
 
       <!-- 课程头部 - 固定在顶部 -->
-      <div class="course-header-sticky">
+      <div v-if="data" class="course-header-sticky">
         <CourseHeader
-          v-if="data"
           :parent-course-info="data.parentCourse"
           :current-course="data.course"
           :sub-course-list="data.subCourseList"
@@ -180,9 +179,12 @@
           <div class="center-right-wrapper">
             <!-- 中间内容区 - 固定宽度居中 -->
             <div class="center-content">
+              <!-- 加载状态 - 只在非首次加载时显示在内容区 -->
+              <LoadingSpinner v-if="dataLoading && !isInitialLoad" />
+
               <!-- PostingList 组件 -->
               <PostingList
-                v-if="data"
+                v-else-if="data"
                 :data="data"
                 :nodes="nodes"
                 :curr-node-id="currNodeId"
@@ -386,6 +388,9 @@ const currNodeId = ref(0)
 const lastPathNode = ref<any>(null)
 const pathText = ref('')
 
+// 标记是否为首次加载
+const isInitialLoad = ref(true)
+
 // 使用 useFetch 加载页面数据
 const {
   data,
@@ -408,6 +413,8 @@ const {
   },
   immediate: true,
   onDataReady: () => {
+    // 首次加载完成后，标记为非首次
+    isInitialLoad.value = false
     // 处理投票类型
     data.value.otherPostings?.forEach((posting: any) => {
       if (posting.voteType === 0) {
