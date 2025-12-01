@@ -31,8 +31,6 @@ public class MemoryCardDeckDO {
 
     private LocalDateTime updatedAt;
 
-    private Integer upvoteCount;
-
     private Integer cardCount;
 
     private Double score;

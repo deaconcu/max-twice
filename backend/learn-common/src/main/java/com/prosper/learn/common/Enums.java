@@ -706,4 +706,68 @@ public class Enums {
             return ValueEnum.isValid(Period.class, value);
         }
     }
+
+    /**
+     * 日度增量统计类型枚举
+     */
+    public enum DailyStatType {
+        VIEWS("daily_views", "当日浏览量"),
+        TWICE("daily_twice", "当日两次能懂点赞数"),
+        HELPFUL("daily_helpful", "当日有帮助点赞数"),
+        COMMENTS("daily_comments", "当日评论数");
+
+        private final String fieldName;
+        private final String description;
+
+        DailyStatType(String fieldName, String description) {
+            this.fieldName = fieldName;
+            this.description = description;
+        }
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+    }
+
+    /**
+     * 累计统计类型枚举
+     */
+    public enum CumulativeStatType {
+        // 学习统计
+        LEARNING_COURSES("learning_courses", "正在学习课程数"),
+        COMPLETED_COURSES("completed_courses", "已完成课程数"),
+        IN_PROGRESS_PROFESSIONS("in_progress_professions", "正在进行职业数"),
+        COMPLETED_PROFESSIONS("completed_professions", "已完成职业数"),
+
+        // 社交统计
+        FOLLOWING_USERS("following_users", "关注的人数"),
+        FOLLOWING_COURSES("following_courses", "关注的课程数"),
+        FOLLOWING_PROFESSIONS("following_professions", "关注的职业数"),
+
+        // 创作统计
+        CREATED_ARTICLES("created_articles", "创建的文章数"),
+        CREATED_INDEXS("created_indexs", "创建的目录数"),
+        CREATED_ROADMAPS("created_roadmaps", "创建的路线图数"),
+        CREATED_CARD_DECKS("created_card_decks", "创建的卡片组数");
+
+        private final String fieldName;
+        private final String description;
+
+        CumulativeStatType(String fieldName, String description) {
+            this.fieldName = fieldName;
+            this.description = description;
+        }
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+    }
 }

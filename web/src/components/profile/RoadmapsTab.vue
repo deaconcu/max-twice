@@ -6,27 +6,29 @@
         <div class="pa-3 pa-md-4">
           <div class="mb-4">
             <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
-              创建的路线图
+              {{ isOwnProfile ? '创建的路线图' : 'TA的路线图' }}
             </h4>
             <p class="text-caption text-md-body-2 text-grey mb-0">
-              规划您的学习路径，系统化掌握技能。
+              {{ isOwnProfile ? '规划您的学习路径，系统化掌握技能。' : '查看TA规划的学习路径和技能图谱。' }}
             </p>
           </div>
-          <v-divider class="my-3 my-md-4" />
-          <div class="text-caption text-md-body-2 text-grey">
-            <div class="d-flex align-start mb-2 mb-md-3">
-              <v-icon icon="mdi-map" size="16" color="grey" class="mr-2 mt-1" />
-              <span>绘制学习路线</span>
+          <template v-if="isOwnProfile">
+            <v-divider class="my-3 my-md-4" />
+            <div class="text-caption text-md-body-2 text-grey">
+              <div class="d-flex align-start mb-2 mb-md-3">
+                <v-icon icon="mdi-map" size="16" color="grey" class="mr-2 mt-1" />
+                <span>绘制学习路线</span>
+              </div>
+              <div class="d-flex align-start mb-2 mb-md-3">
+                <v-icon icon="mdi-share-variant" size="16" color="grey" class="mr-2 mt-1" />
+                <span>分享给他人</span>
+              </div>
+              <div class="d-flex align-start">
+                <v-icon icon="mdi-progress-check" size="16" color="grey" class="mr-2 mt-1" />
+                <span>跟踪学习进度</span>
+              </div>
             </div>
-            <div class="d-flex align-start mb-2 mb-md-3">
-              <v-icon icon="mdi-share-variant" size="16" color="grey" class="mr-2 mt-1" />
-              <span>分享给他人</span>
-            </div>
-            <div class="d-flex align-start">
-              <v-icon icon="mdi-progress-check" size="16" color="grey" class="mr-2 mt-1" />
-              <span>跟踪学习进度</span>
-            </div>
-          </div>
+          </template>
         </div>
       </div>
     </v-col>
@@ -93,6 +95,7 @@
 
                   <!-- 右侧：删除按钮 -->
                   <v-btn
+                    v-if="isOwnProfile"
                     color="grey"
                     variant="text"
                     :size="$vuetify.display.mobile ? 'x-small' : 'small'"
@@ -207,6 +210,16 @@ import { useRouter } from 'vue-router'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
 import { userApi } from '@/api'
+
+interface Props {
+  userId?: number | null
+  isOwnProfile?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  userId: null,
+  isOwnProfile: false,
+})
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 const router = useRouter()
@@ -219,12 +232,24 @@ const {
   loadMore: loadMoreRoadmaps,
 } = useInfiniteScroll({
   fetchFn: async (params) => {
-    const response = await userApi.getCurrentUserRoadmaps(params.lastId)
-    return {
-      code: response.code,
-      data: response.data || [],
-      message: response.message || '',
-      hasMore: response.data && response.data.length > 0,
+    if (props.isOwnProfile || props.userId === null) {
+      // 获取当前用户的路线图
+      const response = await userApi.getCurrentUserRoadmaps(params.lastId)
+      return {
+        code: response.code,
+        data: response.data || [],
+        message: response.message || '',
+        hasMore: response.data?.length === 20, // 假设每页20条
+      }
+    } else {
+      // 获取指定用户的路线图
+      const response = await userApi.getUserRoadmaps(props.userId, params.lastId)
+      return {
+        code: response.code,
+        data: response.data || [],
+        message: response.message || '',
+        hasMore: response.data?.length === 20, // 假设每页20条
+      }
     }
   },
   getNextParams: (lastItem) => ({

@@ -6,33 +6,33 @@ import org.apache.ibatis.annotations.*;
 import java.util.List;
 
 @Mapper
-public interface PostStatsMapper {
+public interface ContentStatsYearlyMapper {
 
     // ===== 基础CRUD操作 =====
     
-    @Insert("INSERT INTO post_stats (object_type, object_id, stats, stat_year, created_at, updated_at) " +
+    @Insert("INSERT INTO content_stats_yearly (object_type, object_id, stats, stat_year, created_at, updated_at) " +
             "VALUES (#{objectType}, #{objectId}, #{stats}, #{statYear}, NOW(), NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(PostStatsDO stats);
 
-    @Update("UPDATE post_stats SET stats = #{stats}, updated_at = NOW() " +
+    @Update("UPDATE content_stats_yearly SET stats = #{stats}, updated_at = NOW() " +
             "WHERE object_type = #{objectType} AND object_id = #{objectId} AND stat_year = #{statYear}")
     int updateStats(PostStatsDO stats);
 
-    @Select("SELECT * FROM post_stats WHERE object_type = #{objectType} AND object_id = #{objectId} AND stat_year = #{statYear}")
+    @Select("SELECT * FROM content_stats_yearly WHERE object_type = #{objectType} AND object_id = #{objectId} AND stat_year = #{statYear}")
     PostStatsDO getByTypeAndObjectIdAndYear(int objectType, long objectId, Integer statYear);
 
-    @Select("SELECT * FROM post_stats WHERE object_type = #{objectType} AND object_id = #{objectId} " +
+    @Select("SELECT * FROM content_stats_yearly WHERE object_type = #{objectType} AND object_id = #{objectId} " +
             "AND stat_year >= #{startYear} ORDER BY stat_year DESC")
     List<PostStatsDO> getStatsInYearRange(int objectType, long objectId, Integer startYear);
 
-    @Select("SELECT DISTINCT object_id FROM post_stats WHERE object_type = #{objectType}")
+    @Select("SELECT DISTINCT object_id FROM content_stats_yearly WHERE object_type = #{objectType}")
     List<Long> getAllObjectIdsByType(int objectType);
 
     // ===== 实时统计操作（增量更新）=====
     
     // 使用MySQL JSON函数直接增加计数（用于实时统计）
-    @Update("UPDATE post_stats SET " +
+    @Update("UPDATE content_stats_yearly SET " +
             "stats = JSON_SET(" +
             "  COALESCE(stats, JSON_OBJECT()), " +
             "  CONCAT('$.\"', #{dayKey}, '\"'), " +
@@ -47,7 +47,7 @@ public interface PostStatsMapper {
     int incrementStatsCount(int objectType, long objectId, int statYear, String dayKey, String statType, int count);
 
     // 使用MySQL JSON函数直接减少计数（用于撤销操作）
-    @Update("UPDATE post_stats SET " +
+    @Update("UPDATE content_stats_yearly SET " +
             "stats = JSON_SET(" +
             "  stats, " +
             "  CONCAT('$.\"', #{dayKey}, '\".', #{statType}), " +
@@ -61,7 +61,7 @@ public interface PostStatsMapper {
     // ===== 同步操作（直接覆盖）=====
     
     // 直接设置当天完整统计数据（用于同步）
-    @Update("UPDATE post_stats SET " +
+    @Update("UPDATE content_stats_yearly SET " +
             "stats = JSON_SET(" +
             "  COALESCE(stats, JSON_OBJECT()), " +
             "  CONCAT('$.\"', #{dayKey}, '\"'), " +
@@ -81,7 +81,7 @@ public interface PostStatsMapper {
     
     // 获取指定日期的统计数据
     @Select("SELECT JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\"')) " +
-            "FROM post_stats " +
+            "FROM content_stats_yearly " +
             "WHERE object_type = #{objectType} AND object_id = #{objectId} AND stat_year = #{statYear}")
     String getDayStats(int objectType, long objectId, int statYear, String dayKey);
 }

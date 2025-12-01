@@ -15,15 +15,11 @@ public class CommentDO {
 
     private Long objectId;
 
-    private Integer replyCount;
-
     private Long replyToCommentId;
 
     private Long creatorId;
 
     private Long toUserId;
-
-    private Integer upvoteCount;
 
     private Byte state;
 

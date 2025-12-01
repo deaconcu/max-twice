@@ -8,13 +8,13 @@ import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.dto.response.DailyStatsDTO;
-import com.prosper.learn.dto.response.PostDTO;
 import com.prosper.learn.dto.response.UserStatsDTO;
 import com.prosper.learn.dto.response.post.PostSummaryDTO;
-import com.prosper.learn.persistence.dataobject.UserStatsDO;
+import com.prosper.learn.persistence.dataobject.UserStatsYearlyDO;
 import com.prosper.learn.persistence.dataobject.PostStatsDO;
-import com.prosper.learn.persistence.mapper.PostStatsMapper;
-import com.prosper.learn.persistence.mapper.UserStatsMapper;
+import com.prosper.learn.persistence.mapper.ContentStatsYearlyMapper;
+import com.prosper.learn.domain.service.data.UserStatsDataService;
+import com.prosper.learn.domain.service.data.UserStatsYearlyDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -58,8 +58,9 @@ import java.util.Map;
 public class DailyStatsService {
 
     private final RedisTemplate<String, String> redisTemplate;
-    private final UserStatsMapper userStatsMapper;
-    private final PostStatsMapper postStatsMapper;
+    private final UserStatsDataService userStatsDataService;
+    private final UserStatsYearlyDataService userStatsYearlyDataService;
+    private final ContentStatsYearlyMapper contentStatsYearlyMapper;
     private final ObjectMapper objectMapper;
     private final SystemProperties systemProperties;
 
@@ -278,9 +279,9 @@ public class DailyStatsService {
      * 确保用户的年度统计记录存在
      */
     private void ensureUserYearRecord(long userId, int year) {
-        UserStatsDO existing = userStatsMapper.getByUserIdAndYear(userId, year);
+        UserStatsYearlyDO existing = userStatsMapper.getByUserIdAndYear(userId, year);
         if (existing == null) {
-            UserStatsDO yearRecord = new UserStatsDO();
+            UserStatsYearlyDO yearRecord = new UserStatsYearlyDO();
             yearRecord.setUserId(userId);
             yearRecord.setStatYear(year);
             yearRecord.setStats("{}"); // 初始化为空JSON对象
@@ -361,7 +362,7 @@ public class DailyStatsService {
                 ensurePostYearRecord(Enums.ContentType.post.value(), postId, year);
                 
                 // 直接设置当天的完整数据（覆盖而非增量）
-                int updated = postStatsMapper.setDayStats(Enums.ContentType.post.value(), postId, year, dayKey,
+                int updated = contentStatsYearlyMapper.setDayStats(Enums.ContentType.post.value(), postId, year, dayKey,
                         dayStats.views, dayStats.twice, dayStats.helpful, dayStats.comments);
                 
                 if (updated > 0) {
@@ -427,7 +428,7 @@ public class DailyStatsService {
             
             dayStats.put(dbField, count);
             
-            int updated = postStatsMapper.setDayStats(type, objectId, year, dayKey,
+            int updated = contentStatsYearlyMapper.setDayStats(type, objectId, year, dayKey,
                     dayStats.getOrDefault("views", 0),
                     dayStats.getOrDefault("twice", 0),
                     dayStats.getOrDefault("helpful", 0),
@@ -450,14 +451,14 @@ public class DailyStatsService {
      * 确保post_stats的年度记录存在
      */
     private void ensurePostYearRecord(int type, Long objectId, int year) {
-        PostStatsDO existing = postStatsMapper.getByTypeAndObjectIdAndYear(type, objectId, year);
+        PostStatsDO existing = contentStatsYearlyMapper.getByTypeAndObjectIdAndYear(type, objectId, year);
         if (existing == null) {
             PostStatsDO yearRecord = new PostStatsDO();
             yearRecord.setObjectType(type);
             yearRecord.setObjectId(objectId);
             yearRecord.setStatYear(year);
             yearRecord.setStats("{}");
-            postStatsMapper.insert(yearRecord);
+            contentStatsYearlyMapper.insert(yearRecord);
             log.debug("创建{}对象{}的{}年度统计记录", type, objectId, year);
         }
     }
@@ -467,7 +468,7 @@ public class DailyStatsService {
      */
     private Map<String, Integer> getCurrentPostDayStats(byte type, Long objectId, int year, String dayKey) {
         try {
-            String dayStatsJson = postStatsMapper.getDayStats(type, objectId, year, dayKey);
+            String dayStatsJson = contentStatsYearlyMapper.getDayStats(type, objectId, year, dayKey);
             if (dayStatsJson != null) {
                 return objectMapper.readValue(dayStatsJson, new TypeReference<Map<String, Integer>>() {});
             }
@@ -763,7 +764,7 @@ public class DailyStatsService {
      */
     public Map<String, Map<String, Integer>> getUserYearStats(long userId, int year) {
         try {
-            UserStatsDO yearStats = userStatsMapper.getByUserIdAndYear(userId, year);
+            UserStatsYearlyDO yearStats = userStatsMapper.getByUserIdAndYear(userId, year);
             if (yearStats == null || yearStats.getStats() == null) {
                 return new HashMap<>();
             }
@@ -1031,7 +1032,7 @@ public class DailyStatsService {
             int currentYear = today.getYear();
             
             // 获取所有年份的统计数据
-            List<PostStatsDO> statsList = postStatsMapper.getStatsInYearRange(Enums.ContentType.post.value(),
+            List<PostStatsDO> statsList = contentStatsYearlyMapper.getStatsInYearRange(Enums.ContentType.post.value(),
                 Long.valueOf(postId), currentYear - 1); // 查询最近2年的数据
             
             for (PostStatsDO stats : statsList) {

@@ -27,7 +27,7 @@ export const MAIN_MENU_ITEMS: MenuItem[] = [
   {
     icon: 'mdi-account-circle-outline',
     textKey: 'nav.profile',
-    path: '/profile',
+    path: '/users/me',
   },
 ]
 

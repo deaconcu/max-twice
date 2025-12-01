@@ -11,16 +11,10 @@ export const baseRoutes: RouteRecordRaw[] = [
     component: () => import('@/views/home/HomePage.vue'),
   },
   {
-    path: '/profile',
-    name: 'Profile',
+    path: '/users/:id',
+    name: 'UserProfile',
     component: () => import('@/views/profile/ProfilePage.vue'),
-    meta: {
-      requiresAuth: true,
-    },
-  },
-  {
-    path: '/profile/creator',
-    redirect: '/profile?mode=creator',
+    props: true,
   },
   {
     path: '/error/:code',

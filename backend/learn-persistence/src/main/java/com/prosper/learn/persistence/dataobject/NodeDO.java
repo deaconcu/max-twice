@@ -18,8 +18,6 @@ public class NodeDO {
 
     private Long creatorId;
 
-    private Integer commentCount;
-
     private Byte state;
 
     private String reason;  // 拒绝/封禁原因

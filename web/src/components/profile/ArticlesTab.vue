@@ -6,27 +6,29 @@
         <div class="pa-3 pa-md-4">
           <div class="mb-4">
             <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-4 mb-2">
-              创建的文章
+              {{ isOwnProfile ? '创建的文章' : 'TA的文章' }}
             </h4>
             <p class="text-caption text-md-body-2 text-grey mb-0">
-              管理您创作的文章，分享知识和经验。
+              {{ isOwnProfile ? '管理您创作的文章，分享知识和经验。' : '查看TA创作的文章和知识分享。' }}
             </p>
           </div>
-          <v-divider class="my-3 my-md-4" />
-          <div class="text-caption text-md-body-2 text-grey">
-            <div class="d-flex align-start mb-2 mb-md-3">
-              <v-icon icon="mdi-pencil" size="16" color="grey" class="mr-2 mt-1" />
-              <span>编辑发布文章</span>
+          <template v-if="isOwnProfile">
+            <v-divider class="my-3 my-md-4" />
+            <div class="text-caption text-md-body-2 text-grey">
+              <div class="d-flex align-start mb-2 mb-md-3">
+                <v-icon icon="mdi-pencil" size="16" color="grey" class="mr-2 mt-1" />
+                <span>编辑发布文章</span>
+              </div>
+              <div class="d-flex align-start mb-2 mb-md-3">
+                <v-icon icon="mdi-eye" size="16" color="grey" class="mr-2 mt-1" />
+                <span>查看阅读统计</span>
+              </div>
+              <div class="d-flex align-start">
+                <v-icon icon="mdi-tag" size="16" color="grey" class="mr-2 mt-1" />
+                <span>添加标签分类</span>
+              </div>
             </div>
-            <div class="d-flex align-start mb-2 mb-md-3">
-              <v-icon icon="mdi-eye" size="16" color="grey" class="mr-2 mt-1" />
-              <span>查看阅读统计</span>
-            </div>
-            <div class="d-flex align-start">
-              <v-icon icon="mdi-tag" size="16" color="grey" class="mr-2 mt-1" />
-              <span>添加标签分类</span>
-            </div>
-          </div>
+          </template>
         </div>
       </div>
     </v-col>
@@ -154,7 +156,7 @@
                   </div>
 
                   <!-- 操作按钮 -->
-                  <div class="d-flex align-center ga-1">
+                  <div v-if="isOwnProfile" class="d-flex align-center ga-1">
                     <v-btn
                       color="primary"
                       variant="text"
@@ -237,6 +239,16 @@ import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
 import { userApi, postApi } from '@/api'
 import { PostType } from '@/enums'
+
+interface Props {
+  userId?: number | null
+  isOwnProfile?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  userId: null,
+  isOwnProfile: false,
+})
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import ArticleEditModal from '@/components/profile/ArticleEditModal.vue'
@@ -259,12 +271,24 @@ const {
   loadMore: loadMorePosts,
 } = useInfiniteScroll({
   fetchFn: async (params) => {
-    const response = await userApi.getCurrentUserAllPosts(params.lastId, PostType.ARTICLE)
-    return {
-      code: response.code,
-      data: response.data?.items || [],
-      message: response.message || '',
-      hasMore: response.data?.hasMore || false,
+    if (props.isOwnProfile || props.userId === null) {
+      // 获取当前用户的文章
+      const response = await userApi.getCurrentUserAllPosts(params.lastId, PostType.ARTICLE)
+      return {
+        code: response.code,
+        data: response.data?.items || [],
+        message: response.message || '',
+        hasMore: response.data?.hasMore || false,
+      }
+    } else {
+      // 获取指定用户的文章
+      const response = await userApi.getUserPosts(props.userId, params.lastId, PostType.ARTICLE)
+      return {
+        code: response.code,
+        data: response.data || [],
+        message: response.message || '',
+        hasMore: response.data.length === 20, // 假设每页20条，实际应该从后端返回
+      }
     }
   },
   getNextParams: (lastItem) => ({

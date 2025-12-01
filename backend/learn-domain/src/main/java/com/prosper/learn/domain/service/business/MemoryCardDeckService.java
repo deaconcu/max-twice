@@ -10,6 +10,8 @@ import com.prosper.learn.dto.request.*;
 import com.prosper.learn.dto.response.*;
 import com.prosper.learn.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.dto.response.deck.*;
+import com.prosper.learn.dto.response.course.CourseBriefDTO;
+import com.prosper.learn.dto.response.node.NodeBriefDTO;
 import com.prosper.learn.persistence.dataobject.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,9 +37,12 @@ public class MemoryCardDeckService {
     private final MemoryCardDataService memoryCardDataService;
     private final UserDataService userDataService;
     private final PostDataService postDataService;
+    private final NodeDataService nodeDataService;
+    private final CourseDataService courseDataService;
     private final MessageService messageService;
     private final MemoryCardDeckConverter deckConverter;
     private final UserConverter userConverter;
+    private final CourseConverter courseConverter;
     private final UserService userService;
     private final MemoryCardService memoryCardService;
     private final MemoryCardVersionDataService cardVersionDataService;
@@ -88,6 +93,27 @@ public class MemoryCardDeckService {
         if (userId != null) {
             boolean hasUpvoted = upvoteService.getUpvoteStatus(deckDO.getId(), Enums.ContentType.memory_card_deck.value(), userId).getUpvoted();
             dto.setHasUpvoted(hasUpvoted);
+        }
+
+        // 填充课程和节点信息
+        if (deckDO.getNodeId() != null) {
+            NodeDO nodeDO = nodeDataService.getById(deckDO.getNodeId());
+            if (nodeDO != null) {
+                // 设置节点信息
+                NodeBriefDTO nodeDTO = new NodeBriefDTO();
+                nodeDTO.setId(nodeDO.getId());
+                nodeDTO.setName(nodeDO.getName());
+                dto.setNode(nodeDTO);
+
+                // 设置课程信息
+                if (nodeDO.getCourseId() != null) {
+                    dto.setCourseId(nodeDO.getCourseId());
+                    CourseDO courseDO = courseDataService.getById(nodeDO.getCourseId());
+                    if (courseDO != null) {
+                        dto.setCourse(courseConverter.toBriefDTO(courseDO));
+                    }
+                }
+            }
         }
 
         return dto;
@@ -142,6 +168,47 @@ public class MemoryCardDeckService {
             }
         }
 
+        // 批量获取课程和节点信息
+        Map<Long, CourseBriefDTO> courseMap = new HashMap<>();
+        Map<Long, NodeBriefDTO> nodeMap = new HashMap<>();
+        Map<Long, Long> nodeToCourseMap = new HashMap<>(); // nodeId -> courseId的映射
+
+        // 收集所有需要查询的nodeId
+        Set<Long> nodeIds = deckDOList.stream()
+            .map(MemoryCardDeckDO::getNodeId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        // 批量查询节点信息
+        if (!nodeIds.isEmpty()) {
+            Map<Long, NodeDO> nodeDOMap = nodeDataService.getMapByIds(nodeIds);
+
+            // 收集courseId并建立nodeId到courseId的映射
+            Set<Long> courseIds = new HashSet<>();
+            for (NodeDO nodeDO : nodeDOMap.values()) {
+                if (nodeDO.getCourseId() != null) {
+                    courseIds.add(nodeDO.getCourseId());
+                    nodeToCourseMap.put(nodeDO.getId(), nodeDO.getCourseId());
+                }
+            }
+
+            // 批量查询课程信息
+            if (!courseIds.isEmpty()) {
+                Map<Long, CourseDO> courseDOMap = courseDataService.getMapByIds(courseIds);
+                for (CourseDO courseDO : courseDOMap.values()) {
+                    courseMap.put(courseDO.getId(), courseConverter.toBriefDTO(courseDO));
+                }
+            }
+
+            // 转换节点信息
+            for (NodeDO nodeDO : nodeDOMap.values()) {
+                NodeBriefDTO nodeDTO = new NodeBriefDTO();
+                nodeDTO.setId(nodeDO.getId());
+                nodeDTO.setName(nodeDO.getName());
+                nodeMap.put(nodeDO.getId(), nodeDTO);
+            }
+        }
+
         return deckDOList.stream()
             .map(deck -> {
                 DeckWithVoteDTO dto = deckConverter.toWithVoteDTO(deck);
@@ -155,6 +222,25 @@ public class MemoryCardDeckService {
                 // 设置点赞状态
                 if (userId != null) {
                     dto.setHasUpvoted(upvoteStatusMap.get(deck.getId()));
+                }
+
+                // 设置课程和节点信息
+                if (deck.getNodeId() != null) {
+                    // 设置节点信息
+                    NodeBriefDTO node = nodeMap.get(deck.getNodeId());
+                    if (node != null) {
+                        dto.setNode(node);
+                    }
+
+                    // 设置课程信息
+                    Long courseId = nodeToCourseMap.get(deck.getNodeId());
+                    if (courseId != null) {
+                        dto.setCourseId(courseId);
+                        CourseBriefDTO course = courseMap.get(courseId);
+                        if (course != null) {
+                            dto.setCourse(course);
+                        }
+                    }
                 }
 
                 return dto;

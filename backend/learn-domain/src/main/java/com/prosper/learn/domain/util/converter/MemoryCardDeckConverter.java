@@ -27,7 +27,6 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "state")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
-    @Mapping(target = "upvoteCount")
     @Mapping(target = "cardCount")
     MemoryCardDeckDTO toDTO(MemoryCardDeckDO deckDO);
 
@@ -49,7 +48,6 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "postId")
     @Mapping(target = "nodeId")
     @Mapping(target = "state")
-    @Mapping(target = "upvoteCount")
     @Mapping(target = "cardCount")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
@@ -68,7 +66,6 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "state")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
-    @Mapping(target = "upvoteCount")
     @Mapping(target = "cardCount")
     DeckSummaryDTO toSummaryDTO(MemoryCardDeckDO deckDO);
 
@@ -85,7 +82,6 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "state")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
-    @Mapping(target = "upvoteCount")
     @Mapping(target = "cardCount")
     DeckWithCreatorDTO toWithCreatorDTO(MemoryCardDeckDO deckDO);
 
@@ -102,7 +98,6 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "state")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
-    @Mapping(target = "upvoteCount")
     @Mapping(target = "cardCount")
     DeckWithVoteDTO toWithVoteDTO(MemoryCardDeckDO deckDO);
 

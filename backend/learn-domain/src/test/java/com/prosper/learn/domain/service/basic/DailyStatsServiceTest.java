@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.dto.response.DailyStatsDTO;
 import com.prosper.learn.dto.response.UserStatsDTO;
 import com.prosper.learn.persistence.dataobject.PostStatsDO;
-import com.prosper.learn.persistence.dataobject.UserStatsDO;
-import com.prosper.learn.persistence.mapper.PostStatsMapper;
+import com.prosper.learn.persistence.dataobject.UserStatsYearlyDO;
+import com.prosper.learn.persistence.mapper.ContentStatsYearlyMapper;
 import com.prosper.learn.persistence.mapper.UserStatsMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,7 +48,7 @@ class DailyStatsServiceTest {
     private UserStatsMapper userStatsMapper;
     
     @Mock
-    private PostStatsMapper postStatsMapper;
+    private ContentStatsYearlyMapper contentStatsYearlyMapper;
     
     @InjectMocks
     private DailyStatsService dailyStatsService;
@@ -84,9 +84,9 @@ class DailyStatsServiceTest {
             .thenReturn(createMockUserStatsDO());
         when(userStatsMapper.setUserDayStats(anyInt(), anyInt(), anyString(), anyInt(), anyInt(), anyInt(), anyInt()))
             .thenReturn(1);
-        when(postStatsMapper.getByTypeAndObjectIdAndYear(anyByte(), anyLong(), anyInt()))
+        when(contentStatsYearlyMapper.getByTypeAndObjectIdAndYear(anyByte(), anyLong(), anyInt()))
             .thenReturn(createMockPostStatsDO());
-        when(postStatsMapper.setDayStats(anyByte(), anyLong(), anyInt(), anyString(), anyInt(), anyInt(), anyInt(), anyInt()))
+        when(contentStatsYearlyMapper.setDayStats(anyByte(), anyLong(), anyInt(), anyString(), anyInt(), anyInt(), anyInt(), anyInt()))
             .thenReturn(1);
         
         // When
@@ -138,7 +138,7 @@ class DailyStatsServiceTest {
         
         // 验证没有进行任何数据库操作
         verify(userStatsMapper, never()).setUserDayStats(anyInt(), anyInt(), anyString(), anyInt(), anyInt(), anyInt(), anyInt());
-        verify(postStatsMapper, never()).setDayStats(anyByte(), anyLong(), anyInt(), anyString(), anyInt(), anyInt(), anyInt(), anyInt());
+        verify(contentStatsYearlyMapper, never()).setDayStats(anyByte(), anyLong(), anyInt(), anyString(), anyInt(), anyInt(), anyInt(), anyInt());
     }
 
     @Test
@@ -249,11 +249,11 @@ class DailyStatsServiceTest {
             .thenReturn(createMockUserStatsDO());
         when(userStatsMapper.setUserDayStats(anyInt(), anyInt(), anyString(), anyInt(), anyInt(), anyInt(), anyInt()))
             .thenReturn(1);
-        when(postStatsMapper.getByTypeAndObjectIdAndYear(anyByte(), anyLong(), anyInt()))
+        when(contentStatsYearlyMapper.getByTypeAndObjectIdAndYear(anyByte(), anyLong(), anyInt()))
             .thenReturn(createMockPostStatsDO());
-        when(postStatsMapper.setDayStats(anyByte(), anyLong(), anyInt(), anyString(), anyInt(), anyInt(), anyInt(), anyInt()))
+        when(contentStatsYearlyMapper.setDayStats(anyByte(), anyLong(), anyInt(), anyString(), anyInt(), anyInt(), anyInt(), anyInt()))
             .thenReturn(1);
-        when(postStatsMapper.getDayStats(anyByte(), anyLong(), anyInt(), anyString()))
+        when(contentStatsYearlyMapper.getDayStats(anyByte(), anyLong(), anyInt(), anyString()))
             .thenReturn("{\"views\": 0, \"twice\": 0, \"helpful\": 0, \"comments\": 0}");
         
         // When
@@ -262,7 +262,7 @@ class DailyStatsServiceTest {
         // Then
         verify(userStatsMapper).setUserDayStats(anyInt(), anyInt(), anyString(), anyInt(), anyInt(), anyInt(), anyInt());
         // 验证 setDayStats 被调用了 4 次（每种统计类型一次）
-        verify(postStatsMapper, times(4)).setDayStats(anyByte(), anyLong(), anyInt(), anyString(), anyInt(), anyInt(), anyInt(), anyInt());
+        verify(contentStatsYearlyMapper, times(4)).setDayStats(anyByte(), anyLong(), anyInt(), anyString(), anyInt(), anyInt(), anyInt(), anyInt());
         verify(redisTemplate).delete("stats:" + yesterday + ":user");
         verify(redisTemplate).delete("stats:" + yesterday + ":post");
     }
@@ -407,7 +407,7 @@ class DailyStatsServiceTest {
                   "1-2": {"views": 8, "twice": 4, "helpful": 2, "comments": 1}
                 }""";
         
-        UserStatsDO mockUserStats = createMockUserStatsDO();
+        UserStatsYearlyDO mockUserStats = createMockUserStatsDO();
         mockUserStats.setStats(mockStatsJson);
         when(userStatsMapper.getByUserIdAndYear(TEST_USER_ID, year)).thenReturn(mockUserStats);
         
@@ -556,11 +556,11 @@ class DailyStatsServiceTest {
         when(redisTemplate.hasKey("stats:" + dateStr + ":user")).thenReturn(false);
         when(redisTemplate.hasKey("stats:" + dateStr + ":post")).thenReturn(true);
         when(hashOperations.entries("stats:" + dateStr + ":post")).thenReturn(postStats);
-        when(postStatsMapper.getByTypeAndObjectIdAndYear((byte)1, TEST_POST_ID, 2024))
+        when(contentStatsYearlyMapper.getByTypeAndObjectIdAndYear((byte)1, TEST_POST_ID, 2024))
             .thenReturn(createMockPostStatsDO());
-        when(postStatsMapper.getDayStats((byte)1, TEST_POST_ID, 2024, "8-24"))
+        when(contentStatsYearlyMapper.getDayStats((byte)1, TEST_POST_ID, 2024, "8-24"))
             .thenReturn("{\"views\": 0, \"twice\": 0, \"helpful\": 0, \"comments\": 0}");
-        when(postStatsMapper.setDayStats(anyByte(), anyLong(), anyInt(), anyString(), anyInt(), anyInt(), anyInt(), anyInt()))
+        when(contentStatsYearlyMapper.setDayStats(anyByte(), anyLong(), anyInt(), anyString(), anyInt(), anyInt(), anyInt(), anyInt()))
             .thenReturn(1);
         
         // When - 通过调用 syncSpecificDate 来间接测试 syncPostStats
@@ -571,7 +571,7 @@ class DailyStatsServiceTest {
         assertNotNull(result);
         assertTrue(result.contains("同步") && result.contains("数据完成"));
         // 验证 setDayStats 被调用了 1 次（每个文章一次，包含所有统计类型）
-        verify(postStatsMapper, times(1)).setDayStats(eq((byte)1), eq(TEST_POST_ID), eq(2024), anyString(), anyInt(), anyInt(), anyInt(), anyInt());
+        verify(contentStatsYearlyMapper, times(1)).setDayStats(eq((byte)1), eq(TEST_POST_ID), eq(2024), anyString(), anyInt(), anyInt(), anyInt(), anyInt());
     }
 
     @Test
@@ -591,7 +591,7 @@ class DailyStatsServiceTest {
         dailyStatsService.syncSpecificDate(LocalDate.of(2024, 8, 24));
         
         // Then
-        verify(userStatsMapper, never()).insert(any(UserStatsDO.class));
+        verify(userStatsMapper, never()).insert(any(UserStatsYearlyDO.class));
     }
 
     @Test
@@ -611,7 +611,7 @@ class DailyStatsServiceTest {
         dailyStatsService.syncSpecificDate(LocalDate.of(2024, 8, 24));
         
         // Then
-        verify(userStatsMapper).insert(any(UserStatsDO.class));
+        verify(userStatsMapper).insert(any(UserStatsYearlyDO.class));
     }
 
     // ========== 辅助方法 ==========
@@ -643,8 +643,8 @@ class DailyStatsServiceTest {
     /**
      * 创建模拟的UserStatsDO对象
      */
-    private UserStatsDO createMockUserStatsDO() {
-        UserStatsDO userStats = new UserStatsDO();
+    private UserStatsYearlyDO createMockUserStatsDO() {
+        UserStatsYearlyDO userStats = new UserStatsYearlyDO();
         // userStats.setId(1L); // Remove this line as UserStatsDO might not have setId method
         userStats.setUserId(TEST_USER_ID.longValue());
         userStats.setStatYear(LocalDate.now().getYear());

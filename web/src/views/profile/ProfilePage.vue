@@ -8,6 +8,7 @@ export default {
 import { ref, watch, computed, onActivated } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/modules/auth'
+import { useUserStore } from '@/stores/modules/user'
 import { useFetch } from '@/composables/useFetch'
 import { userApi } from '@/api'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
@@ -23,9 +24,15 @@ import ArticlesTab from '@/components/profile/ArticlesTab.vue'
 import MemoryDecksTab from '@/components/profile/MemoryDecksTab.vue'
 import RoadmapsTab from '@/components/profile/RoadmapsTab.vue'
 
+interface Props {
+  id: string
+}
+
+const props = defineProps<Props>()
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const userStore = useUserStore()
 
 // 模式选择：learner 或 creator
 const currentMode = ref((route.query.mode as string) || 'learner')
@@ -36,13 +43,25 @@ const activeTab = ref((route.query.tab as string) || '')
 // Tab 数据刷新时间记录（用于智能刷新）
 const tabRefreshKey = ref(0)
 
-// 使用 useFetch 获取用户信息
+// 判断是否查看自己的资料
+const isOwnProfile = computed(() => {
+  return props.id === 'me' || (userStore.currentUser && props.id === userStore.currentUser.name)
+})
+
+// 根据ID获取用户信息
 const {
-  data: currentUser,
+  data: profileUser,
   loading: userLoading,
   execute: fetchUser,
 } = useFetch({
-  fetchFn: userApi.getCurrentUser,
+  fetchFn: () => {
+    if (props.id === 'me') {
+      return userApi.getCurrentUser()
+    } else {
+      // 假设props.id是用户名，使用现有的getUser方法
+      return userApi.getUser(props.id)
+    }
+  },
   immediate: true,
 })
 
@@ -54,9 +73,9 @@ onActivated(() => {
   // 如果需要自动刷新，可以在这里触发
 })
 
-// 计算用户信息 - 优先使用 authStore 的数据
+// 计算用户信息 - 优先使用获取的用户数据
 const userInfo = computed(() => {
-  const user = currentUser.value || authStore.user
+  const user = profileUser.value || (isOwnProfile.value ? authStore.user : null)
 
   if (!user) {
     return {
@@ -137,7 +156,7 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
     <LoadingSpinner v-if="userLoading" />
 
     <!-- 内容区 -->
-    <div v-else-if="currentUser" class="profile-container">
+    <div v-else-if="profileUser" class="profile-container">
       <!-- 用户信息卡片 -->
       <v-card rounded="xl" class="profile-header-card mb-6 mb-md-8 no-border" elevation="0">
         <v-card-text class="pa-4 pa-sm-6 pa-md-8">
@@ -161,7 +180,7 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
                   {{ userInfo.name }}
                 </h1>
                 <v-btn
-                  v-if="currentMode === 'learner'"
+                  v-if="currentMode === 'learner' && isOwnProfile"
                   color="grey-darken-2"
                   variant="outlined"
                   rounded="lg"
@@ -380,7 +399,7 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
             <span class="d-none d-sm-inline">关注的人</span>
             <span class="d-sm-none">好友</span>
           </v-tab>
-          <v-tab value="info" rounded="lg">
+          <v-tab v-if="isOwnProfile" value="info" rounded="lg">
             <v-icon
               icon="mdi-account-circle"
               :size="$vuetify.display.mobile ? 16 : 18"
@@ -401,7 +420,7 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
           density="comfortable"
           show-arrows
         >
-          <v-tab value="stats" rounded="lg">
+          <v-tab v-if="isOwnProfile" value="stats" rounded="lg">
             <v-icon
               icon="mdi-chart-line"
               :size="$vuetify.display.mobile ? 16 : 18"
@@ -474,7 +493,7 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
           </v-window-item>
 
           <!-- 个人信息 -->
-          <v-window-item value="info">
+          <v-window-item v-if="isOwnProfile" value="info">
             <UserInfoTab :user-info="userInfo" @update="handleUpdateUserInfo" />
           </v-window-item>
         </template>
@@ -482,13 +501,13 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
         <!-- 创作者模式的内容 -->
         <template v-else>
           <!-- 创作统计 -->
-          <v-window-item value="stats">
+          <v-window-item v-if="isOwnProfile" value="stats">
             <CreatorStatsTab />
           </v-window-item>
 
           <!-- 创建的文章 -->
           <v-window-item value="articles">
-            <ArticlesTab />
+            <ArticlesTab :user-id="profileUser?.id" :is-own-profile="isOwnProfile" />
           </v-window-item>
 
           <!-- 创建的目录 -->
@@ -498,12 +517,12 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
 
           <!-- 创建的路线图 -->
           <v-window-item value="roadmaps">
-            <RoadmapsTab />
+            <RoadmapsTab :user-id="profileUser?.id" :is-own-profile="isOwnProfile" />
           </v-window-item>
 
           <!-- 我的卡片组 -->
           <v-window-item value="decks">
-            <MemoryDecksTab />
+            <MemoryDecksTab :user-id="profileUser?.id" :is-own-profile="isOwnProfile" />
           </v-window-item>
         </template>
       </v-window>

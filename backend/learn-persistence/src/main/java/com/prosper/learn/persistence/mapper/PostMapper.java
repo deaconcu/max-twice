@@ -51,8 +51,7 @@ public interface PostMapper {
 
     @Update("UPDATE post " +
             "SET " +
-            "node_id = #{nodeId}, content = #{content}, twice = #{twice}, helpful = #{helpful}, " +
-            "comment_count=#{commentCount}, view_count=#{viewCount}, state=#{state} where id = #{id}")
+            "node_id = #{nodeId}, content = #{content}, state=#{state} where id = #{id}")
     void update(PostDO posting);
 
     // 新增分数相关方法
@@ -68,7 +67,7 @@ public interface PostMapper {
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<PostDO> getListByNodeAndScoreAndPaginated(long nodeId, double lastScore, long lastId, int limit, byte state);
 
-    @Select("SELECT id, twice, helpful, created_at FROM post WHERE state = #{state} AND deleted_at IS NULL")
+    @Select("SELECT id, created_at FROM post WHERE state = #{state} AND deleted_at IS NULL")
     List<PostDO> getAllPostsForScoreCalculation(byte state);
 
     @Select("SELECT * FROM post where state = #{state} AND deleted_at IS NULL order by id DESC limit #{count}")

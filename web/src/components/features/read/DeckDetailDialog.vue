@@ -29,32 +29,29 @@
         <!-- 作者和统计信息 -->
         <div class="d-flex align-center justify-space-between text-white">
           <div class="d-flex align-center">
-            <v-avatar size="36" class="mr-3">
+            <v-avatar size="36" class="mr-2">
               <v-img v-if="deck.creatorAvatar" :src="deck.creatorAvatar" />
               <v-icon v-else icon="mdi-account-circle" color="white"></v-icon>
             </v-avatar>
-            <div>
-              <div class="text-subtitle-2 font-weight-medium">
-                {{ deck.creatorName || '匿名用户' }}
-              </div>
-              <div class="text-caption opacity-80">创建者</div>
+            <div class="text-subtitle-2 font-weight-medium">
+              {{ deck.creatorName || '匿名用户' }}
             </div>
           </div>
 
-          <div class="d-flex align-center">
-            <div class="text-center mr-4">
-              <div class="text-subtitle-1 font-weight-bold">
+          <div class="d-flex align-center ga-6">
+            <div class="d-flex align-center">
+              <span class="text-caption opacity-80 mr-2">卡片</span>
+              <span class="text-subtitle-1 font-weight-bold">
                 {{ deckDetail?.cardCount || deck.cardCount || 0 }}
-              </div>
-              <div class="text-caption opacity-80">卡片</div>
+              </span>
             </div>
             <div
-              class="text-center upvote-area"
+              class="d-flex align-center upvote-area"
               :class="{ upvoted: deck.hasUpvoted }"
               @click="handleUpvote"
             >
-              <div class="text-subtitle-1 font-weight-bold">{{ deck.upvoteCount || 0 }}</div>
-              <div class="text-caption opacity-80">点赞</div>
+              <span class="text-caption opacity-80 mr-2">点赞</span>
+              <span class="text-subtitle-1 font-weight-bold">{{ deck.upvoteCount || 0 }}</span>
             </div>
           </div>
         </div>

@@ -77,7 +77,7 @@ public interface CommentMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(CommentDO commentDO);
 
-    @Update("UPDATE comment SET reply_count = #{replyCount}, upvote_count = #{upvoteCount}, State = #{state}, score = #{score} where id = #{id}")
+    @Update("UPDATE comment SET state = #{state}, score = #{score} where id = #{id}")
     void update(CommentDO commentDO);
 
     @Update("UPDATE comment SET state = #{state} WHERE id = #{id}")

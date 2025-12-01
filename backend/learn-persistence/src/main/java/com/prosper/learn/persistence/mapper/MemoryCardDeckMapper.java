@@ -24,7 +24,7 @@ public interface MemoryCardDeckMapper {
     Map<Long, MemoryCardDeckDO> getMapByIds(Collection<Long> ids);
 
     @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND state = #{state} AND deleted_at IS NULL " +
-            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+            "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPost(long postId, int state, int limit);
 
     @Select({"<script>",
@@ -36,7 +36,7 @@ public interface MemoryCardDeckMapper {
 
     @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND state = #{state} AND deleted_at IS NULL AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
-            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+            "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostKeyset(long postId, double lastScore, long lastId, int state, int limit);
 
     @Select("SELECT * FROM memory_card_deck WHERE creator_id = #{creatorId} AND deleted_at IS NULL " +
@@ -101,7 +101,7 @@ public interface MemoryCardDeckMapper {
     int countByCreator(long creatorId, int state);
 
     @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} AND deleted_at IS NULL " +
-            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+            "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostAndCreator(long postId, long creatorId, int state, int limit);
 
     @Select({"<script>",
@@ -113,25 +113,25 @@ public interface MemoryCardDeckMapper {
 
     @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} AND deleted_at IS NULL AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
-            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+            "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostAndCreatorKeyset(long postId, long creatorId, double lastScore, long lastId, int state, int limit);
 
     @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND deleted_at IS NULL " +
-            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+            "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostAndCreatorAllStates(long postId, long creatorId, int limit);
 
     @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND deleted_at IS NULL AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
-            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+            "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostAndCreatorKeysetAllStates(long postId, long creatorId, double lastScore, long lastId, int limit);
 
     @Select("SELECT * FROM memory_card_deck WHERE node_id = #{nodeId} AND state = #{state} AND deleted_at IS NULL " +
-            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+            "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByNode(long nodeId, int state, int limit);
 
     @Select("SELECT * FROM memory_card_deck WHERE node_id = #{nodeId} AND state = #{state} AND deleted_at IS NULL AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
-            "ORDER BY score DESC, upvote_count DESC, id DESC LIMIT #{limit}")
+            "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByNodeKeyset(long nodeId, double lastScore, long lastId, int state, int limit);
 
     @Insert("INSERT INTO memory_card_deck " +
@@ -144,7 +144,7 @@ public interface MemoryCardDeckMapper {
     @Update("UPDATE memory_card_deck SET " +
             "title = #{title}, description = #{description}, version = #{version}, " +
             "state = #{state}, reason = #{reason}, card_count = #{cardCount}, node_id = #{nodeId}, " +
-            "upvote_count = #{upvoteCount}, score = #{score} " +
+            "score = #{score} " +
             "WHERE id = #{id}")
     void update(MemoryCardDeckDO deck);
 
@@ -153,10 +153,8 @@ public interface MemoryCardDeckMapper {
             "WHERE id = #{id}")
     int updateAuditStatus(long id, int state, long auditorId);
 
-    @Update("UPDATE memory_card_deck SET " +
-            "upvote_count = #{upvoteCount}, score = #{score} " +
-            "WHERE id = #{id}")
-    int updateScore(long id, int upvoteCount, double score);
+    @Update("UPDATE memory_card_deck SET score = #{score} WHERE id = #{id}")
+    int updateScore(long id, double score);
 
     @Update("UPDATE memory_card_deck SET card_count = #{cardCount} WHERE id = #{id}")
     int updateCardCount(long id, int cardCount);
@@ -178,12 +176,6 @@ public interface MemoryCardDeckMapper {
 
     @Update("UPDATE memory_card_deck SET state = #{state}, version = version + 1, updated_at = NOW() WHERE id = #{id}")
     int updateStateAndIncrementVersion(long id, byte state);
-
-    @Update("UPDATE memory_card_deck SET upvote_count = upvote_count + 1 WHERE id = #{id}")
-    int incrementUpvoteCount(long id);
-
-    @Update("UPDATE memory_card_deck SET upvote_count = GREATEST(0, upvote_count - 1) WHERE id = #{id}")
-    int decrementUpvoteCount(long id);
 
     @Update("UPDATE memory_card_deck SET deleted_at = NOW() WHERE id = #{id} AND deleted_at IS NULL")
     int softDelete(long id);

@@ -66,12 +66,9 @@ public interface RoadmapMapper {
     int insert(RoadmapDO roadmapDO);
 
     @Update("UPDATE roadmap SET content = #{content}, content_hash = #{contentHash}, description = #{description}, " +
-            "vote = #{vote}, comment = #{comment}, state = #{state} where id = #{id}")
+            "state = #{state} where id = #{id}")
     @MapKey("id")
     void update(RoadmapDO roadmapDO);
-
-    @Update("UPDATE roadmap SET vote = vote + #{delta} WHERE id = #{id} AND (vote + #{delta}) >= 0")
-    int updateVoteCount(long id, int delta);
 
     @Update("UPDATE roadmap SET score = #{score}, score_calculated_at = NOW() WHERE id = #{id}")
     int updateScore(long id, double score);

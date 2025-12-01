@@ -7,7 +7,7 @@ import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.persistence.dataobject.*;
-import com.prosper.learn.persistence.mapper.PostStatsMapper;
+import com.prosper.learn.persistence.mapper.ContentStatsYearlyMapper;
 import com.prosper.learn.persistence.mapper.PostMapper;
 import com.prosper.learn.persistence.mapper.RoadmapMapper;
 import com.prosper.learn.persistence.mapper.CommentMapper;
@@ -61,7 +61,7 @@ import java.util.Map;
 public class ScoreCalculationService {
 
     /** 帖子统计数据访问接口 */
-    private final PostStatsMapper postStatsMapper;
+    private final ContentStatsYearlyMapper contentStatsYearlyMapper;
 
     /** 帖子数据访问接口 */
     private final PostMapper postMapper;
@@ -305,7 +305,7 @@ public class ScoreCalculationService {
         int endYear = endDate.getYear();
 
         for (int year = startYear; year <= endYear; year++) {
-            PostStatsDO yearStats = postStatsMapper.getByTypeAndObjectIdAndYear( contentType.value(), (long) objectId, year);
+            PostStatsDO yearStats = contentStatsYearlyMapper.getByTypeAndObjectIdAndYear( contentType.value(), (long) objectId, year);
 
             if (yearStats != null) {
                 try {

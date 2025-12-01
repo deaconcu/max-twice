@@ -19,13 +19,6 @@ public class PostDO {
 
     private Integer once;
 
-    private Integer twice;
-
-    private Integer helpful;
-
-    private Integer commentCount;
-
-    private Integer viewCount;
 
     private Byte state;
 

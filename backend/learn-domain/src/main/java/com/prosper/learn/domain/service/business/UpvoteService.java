@@ -209,7 +209,7 @@ public class UpvoteService {
      * 包含点赞、取消点赞、切换点赞类型的完整逻辑
      * 
      * @param postingId 帖子ID
-     * @param userId 用户ID
+     * @param user 用户
      * @param type 点赞类型（1-once, 2-twice, 3-helpful）
      * @throws BusinessException 当参数无效或对象不存在时抛出异常
      */

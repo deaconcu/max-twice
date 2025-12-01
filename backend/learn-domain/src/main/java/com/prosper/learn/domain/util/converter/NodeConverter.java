@@ -19,7 +19,6 @@ public interface NodeConverter {
     @Mapping(target = "description")
     @Mapping(target = "courseId")
     @Mapping(target = "creatorId")
-    @Mapping(target = "commentCount")
     @Mapping(target = "state")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
@@ -49,7 +48,6 @@ public interface NodeConverter {
     @Mapping(target = "id")
     @Mapping(target = "name")
     @Mapping(target = "description")
-    @Mapping(target = "commentCount")
     NodeDTO toDTOV1Internal(NodeDO nodeDO);
 
     default NodeDTO toDTOV1(NodeDO nodeDO) {
@@ -90,7 +88,6 @@ public interface NodeConverter {
     @Mapping(target = "id")
     @Mapping(target = "name")
     @Mapping(target = "description")
-    @Mapping(target = "commentCount")
     NodeSummaryDTO toSummaryDTOInternal(NodeDO nodeDO);
 
     default NodeSummaryDTO toSummaryDTO(NodeDO nodeDO) {
@@ -120,7 +117,6 @@ public interface NodeConverter {
     @Mapping(target = "id")
     @Mapping(target = "name")
     @Mapping(target = "description")
-    @Mapping(target = "commentCount")
     @Mapping(target = "courseId")
     @Mapping(target = "creatorId")
     @Mapping(target = "state")
@@ -155,7 +151,6 @@ public interface NodeConverter {
     @Mapping(target = "id")
     @Mapping(target = "name")
     @Mapping(target = "description")
-    @Mapping(target = "commentCount")
     @Mapping(target = "courseId")
     @Mapping(target = "creatorId")
     @Mapping(target = "state")
@@ -190,7 +185,6 @@ public interface NodeConverter {
     @Mapping(target = "id")
     @Mapping(target = "name")
     @Mapping(target = "description")
-    @Mapping(target = "commentCount")
     NodeWithProgressDTO toWithProgressDTOInternal(NodeDO nodeDO);
 
     default NodeWithProgressDTO toWithProgressDTO(NodeDO nodeDO, boolean isCompleted) {

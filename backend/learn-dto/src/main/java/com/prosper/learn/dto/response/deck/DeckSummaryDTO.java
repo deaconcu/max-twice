@@ -1,5 +1,7 @@
 package com.prosper.learn.dto.response.deck;
 
+import com.prosper.learn.dto.response.course.CourseBriefDTO;
+import com.prosper.learn.dto.response.node.NodeBriefDTO;
 import lombok.Data;
 
 /**
@@ -19,6 +21,8 @@ public class DeckSummaryDTO {
 
     private Long nodeId;
 
+    private Long courseId;
+
     private String title;
 
     private String description;
@@ -32,4 +36,8 @@ public class DeckSummaryDTO {
     private Integer upvoteCount;
 
     private Integer cardCount;
+
+    private CourseBriefDTO course;
+
+    private NodeBriefDTO node;
 }

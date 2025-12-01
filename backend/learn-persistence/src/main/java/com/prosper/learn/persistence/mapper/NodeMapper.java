@@ -43,7 +43,7 @@ public interface NodeMapper {
     int insert(NodeDO Node);
 
     @Update("UPDATE node SET name = #{name}, description = #{description}, " +
-            "creator_id = #{creatorId}, course_id = #{courseId}, comment_count = #{commentCount} where id = #{id}")
+            "creator_id = #{creatorId}, course_id = #{courseId} where id = #{id}")
     void update(NodeDO Node);
 
     @Update("UPDATE node SET state = #{state}, reason = #{reason} where id = #{id}")

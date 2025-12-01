@@ -306,6 +306,36 @@ export function restoreDeck(deckId: number): Promise<ApiResponse<void>> {
 }
 
 /**
+ * 获取当前用户的所有卡片组
+ */
+export function getCurrentUserDecks(params?: {
+  lastId?: number
+  limit?: number
+}): Promise<ApiResponse<{ items: MemoryCardDeck[]; hasMore: boolean }>> {
+  return client.get('/v1/memory/users/me/memory-decks', { params })
+}
+
+/**
+ * 获取指定用户的卡片组列表
+ */
+export function getUserDecks(
+  userId: number,
+  params?: {
+    lastId?: number
+    limit?: number
+  }
+): Promise<ApiResponse<{ items: MemoryCardDeck[]; hasMore: boolean }>> {
+  return client.get(`/v1/memory/users/${userId}/memory-decks`, { params })
+}
+
+/**
+ * 删除卡片组
+ */
+export function deleteDeck(deckId: number): Promise<ApiResponse<void>> {
+  return client.delete(`/v1/memory/decks/${deckId}`)
+}
+
+/**
  * 添加卡片组到记忆库
  */
 export function addDeckToMemoryBank(request: {

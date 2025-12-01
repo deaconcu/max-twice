@@ -22,10 +22,6 @@ public class RoadmapDO {
 
     private String reason;  // 拒绝/封禁原因
 
-    private Integer vote;
-
-    private Integer comment;
-
     private Double score;  // 计算出的排序分数
 
     private LocalDateTime scoreCalculatedAt;  // 分数计算时间

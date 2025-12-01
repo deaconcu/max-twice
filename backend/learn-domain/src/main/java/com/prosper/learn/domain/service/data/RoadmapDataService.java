@@ -107,10 +107,12 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
     /**
      * 更新投票数
      */
+    /*
     @CacheEvict(value = "roadmaps", key = "#roadmapId")
     public void updateVoteCount(Long roadmapId, int voteDelta) {
         roadmapMapper.updateVoteCount(roadmapId, voteDelta);
     }
+     */
 
     /**
      * 根据职业和分数排序获取路线图列表（排除指定路线图）

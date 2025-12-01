@@ -123,7 +123,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     @CacheEvict(value = "memory_card_decks", key = "#id")
     public boolean updateScore(long id, int upvoteCount, double score) {
         try {
-            int result = memoryCardDeckMapper.updateScore(id, upvoteCount, score);
+            int result = memoryCardDeckMapper.updateScore(id, score);
             return result > 0;
         } catch (Exception e) {
             log.error("Error updating deck score: {}", id, e);
@@ -388,20 +388,6 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
      */
     public List<MemoryCardDeckDO> getListByNodeKeyset(long nodeId, double lastScore, long lastId, int state, int limit) {
         return memoryCardDeckMapper.getListByNodeKeyset(nodeId, lastScore, lastId, state, limit);
-    }
-
-    /**
-     * 原子操作：增加点赞数
-     */
-    @CacheEvict(value = "memory_card_decks", key = "#id")
-    public boolean incrementUpvoteCount(long id) {
-        try {
-            int result = memoryCardDeckMapper.incrementUpvoteCount(id);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error incrementing upvote count: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
-        }
     }
 
     /**
