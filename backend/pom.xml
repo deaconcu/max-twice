@@ -9,12 +9,23 @@
     <packaging>pom</packaging>
     <version>0.0.1</version>
     <modules>
+        <!-- 旧模块（待迁移） -->
         <module>learn-web</module>
         <module>learn-common</module>
         <module>learn-external</module>
         <module>learn-business</module>
         <module>learn-persistence</module>
         <module>learn-dto</module>
+
+        <!-- 新架构模块 -->
+        <module>learn-shared</module>
+        <module>learn-content</module>
+        <module>learn-interaction</module>
+        <module>learn-learning</module>
+        <module>learn-memory</module>
+        <module>learn-user</module>
+        <module>learn-analytics</module>
+        <module>learn-application</module>
     </modules>
 
     <properties>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.prosper</groupId>
+        <artifactId>Learn</artifactId>
+        <version>0.0.1</version>
+    </parent>
+
+    <artifactId>learn-application</artifactId>
+    <name>learn-application</name>
+    <description>应用编排层：跨域业务流程编排</description>
+
+    <dependencies>
+        <!-- 依赖各个业务域 -->
+        <dependency>
+            <groupId>com.prosper</groupId>
+            <artifactId>learn-content</artifactId>
+            <version>0.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.prosper</groupId>
+            <artifactId>learn-interaction</artifactId>
+            <version>0.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.prosper</groupId>
+            <artifactId>learn-learning</artifactId>
+            <version>0.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.prosper</groupId>
+            <artifactId>learn-memory</artifactId>
+            <version>0.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.prosper</groupId>
+            <artifactId>learn-user</artifactId>
+            <version>0.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.prosper</groupId>
+            <artifactId>learn-analytics</artifactId>
+            <version>0.0.1</version>
+        </dependency>
+    </dependencies>
+
+</project>

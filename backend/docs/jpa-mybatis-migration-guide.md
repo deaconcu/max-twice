@@ -157,7 +157,7 @@ public class UserDO {
 ```java
 package com.prosper.learn.persistence.repository;
 
-import com.prosper.learn.persistence.dataobject.UserDO;
+import com.prosper.learn.user.profile.UserDO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -676,7 +676,7 @@ public class UserDO extends BaseEntity {
 ```java
 package com.prosper.learn.persistence.repository;
 
-import com.prosper.learn.persistence.dataobject.UserDO;
+import com.prosper.learn.user.profile.UserDO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

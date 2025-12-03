@@ -13,7 +13,6 @@ import com.prosper.learn.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.dto.response.deck.*;
 import com.prosper.learn.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.dto.response.node.NodeBriefDTO;
-import com.prosper.learn.persistence.dataobject.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

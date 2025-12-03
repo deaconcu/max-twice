@@ -24,7 +24,6 @@ import com.prosper.learn.dto.response.node.NodeSummaryDTO;
 import com.prosper.learn.dto.response.node.NodeWithCourseDTO;
 import com.prosper.learn.dto.response.user.*;
 import com.prosper.learn.dto.response.post.*;
-import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.business.service.data.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

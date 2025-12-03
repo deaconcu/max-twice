@@ -9,7 +9,6 @@ import com.prosper.learn.business.service.data.*;
 import com.prosper.learn.dto.response.*;
 import com.prosper.learn.dto.response.old.UserDTOV2;
 import com.prosper.learn.dto.response.user.*;
-import com.prosper.learn.persistence.dataobject.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;

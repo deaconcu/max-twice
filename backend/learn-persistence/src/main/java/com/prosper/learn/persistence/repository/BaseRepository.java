@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * @deprecated
  * 基础Repository接口，提供通用的缓存数据访问方法
  * 
  * @param <T> 实体类型

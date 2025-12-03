@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.constants.RedisStatsConstants;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.config.SystemProperties;
@@ -15,8 +14,6 @@ import com.prosper.learn.persistence.dataobject.UserStatsYearlyDO;
 import com.prosper.learn.persistence.dataobject.PostStatsDO;
 import com.prosper.learn.persistence.mapper.ContentStatsYearlyMapper;
 import com.prosper.learn.persistence.mapper.UserStatsYearlyMapper;
-import com.prosper.learn.business.service.data.UserStatsDataService;
-import com.prosper.learn.business.service.data.UserStatsYearlyDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;

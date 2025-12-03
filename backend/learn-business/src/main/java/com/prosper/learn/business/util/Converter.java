@@ -6,7 +6,6 @@ import com.prosper.learn.business.service.data.UserDataService;
 import com.prosper.learn.dto.response.message.MessageDTO;
 import com.prosper.learn.dto.response.*;
 import com.prosper.learn.dto.response.old.*;
-import com.prosper.learn.persistence.dataobject.*;
 import com.prosper.learn.persistence.mapper.CourseMapper;
 import com.prosper.learn.persistence.mapper.UserMapper;
 import org.mapstruct.Mapper;

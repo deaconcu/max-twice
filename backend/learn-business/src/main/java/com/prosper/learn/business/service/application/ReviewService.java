@@ -8,7 +8,6 @@ import com.prosper.learn.business.util.converter.*;
 import com.prosper.learn.dto.request.*;
 import com.prosper.learn.dto.response.*;
 import com.prosper.learn.dto.response.card.CardWithSrsDTO;
-import com.prosper.learn.persistence.dataobject.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
