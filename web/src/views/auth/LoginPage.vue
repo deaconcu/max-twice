@@ -1,6 +1,6 @@
 <template>
   <div class="login-page">
-    <AppHeader />
+    <SimpleHeader />
 
     <v-container fluid class="login-container">
       <v-row align="center" justify="center">
@@ -130,7 +130,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useEmailRules, useValidationRules, useMaxLength } from '@/composables/useValidation'
 import { RIGHTS_DECLARATION } from '@/constants/site'
 import { HEADER_HEIGHT } from '@/constants/layout'
-import AppHeader from '@/components/layout/AppHeader.vue'
+import SimpleHeader from '@/components/layout/SimpleHeader.vue'
 import IntroSection from '@/components/common/IntroSection.vue'
 
 const router = useRouter()

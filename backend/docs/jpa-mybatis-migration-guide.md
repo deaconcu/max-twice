@@ -210,7 +210,7 @@ public interface UserMapper {
 **重要：这是本项目的核心设计！**
 
 ```java
-package com.prosper.learn.domain.service.data;
+package com.prosper.learn.business.service.data;
 
 /**
  * 用户数据服务
@@ -266,8 +266,8 @@ public class UserDataService {
 
         // 2. 找出缓存未命中的 ID
         List<Long> missedIds = ids.stream()
-            .filter(id -> !cachedUsers.containsKey(id))
-            .collect(Collectors.toList());
+                .filter(id -> !cachedUsers.containsKey(id))
+                .collect(Collectors.toList());
 
         // 3. 从 JPA 查询未命中的（简单查询用 JPA）
         if (!missedIds.isEmpty()) {
@@ -324,8 +324,8 @@ public class UserDataService {
     private Map<Long, UserDO> batchGetFromCache(Collection<Long> ids) {
         // 使用 MGET 批量获取
         List<String> keys = ids.stream()
-            .map(id -> "users::" + id)
-            .collect(Collectors.toList());
+                .map(id -> "users::" + id)
+                .collect(Collectors.toList());
 
         List<Object> values = redisTemplate.opsForValue().multiGet(keys);
 
@@ -346,7 +346,7 @@ public class UserDataService {
 #### 4. BusinessService 层（纯业务逻辑）
 
 ```java
-package com.prosper.learn.domain.service.business;
+package com.prosper.learn.business.service.application;
 
 /**
  * 用户业务服务
@@ -358,104 +358,104 @@ package com.prosper.learn.domain.service.business;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserDataService userDataService;  // ← 只依赖 DataService
-    private final EmailService emailService;
-    private final ValidationService validationService;
+   private final UserDataService userDataService;  // ← 只依赖 DataService
+   private final EmailService emailService;
+   private final ValidationService validationService;
 
-    /**
-     * 注册用户（业务流程）
-     */
-    @Transactional
-    public void registerUser(RegisterRequest request) {
-        // 1. 业务验证
-        validationService.validateRegistration(request);
+   /**
+    * 注册用户（业务流程）
+    */
+   @Transactional
+   public void registerUser(RegisterRequest request) {
+      // 1. 业务验证
+      validationService.validateRegistration(request);
 
-        // 2. 检查用户是否已存在
-        UserDO existingUser = userDataService.getByEmail(request.getEmail());
-        if (existingUser != null) {
-            throw ErrorCode.USER_ALREADY_EXISTS.exception();
-        }
+      // 2. 检查用户是否已存在
+      UserDO existingUser = userDataService.getByEmail(request.getEmail());
+      if (existingUser != null) {
+         throw ErrorCode.USER_ALREADY_EXISTS.exception();
+      }
 
-        // 3. 创建用户实体
-        UserDO user = new UserDO();
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setPassword(hashPassword(request.getPassword()));
+      // 3. 创建用户实体
+      UserDO user = new UserDO();
+      user.setName(request.getName());
+      user.setEmail(request.getEmail());
+      user.setPassword(hashPassword(request.getPassword()));
 
-        // 4. 保存用户（时间字段自动填充）
-        userDataService.save(user);
+      // 4. 保存用户（时间字段自动填充）
+      userDataService.save(user);
 
-        // 5. 发送欢迎邮件
-        emailService.sendWelcomeEmail(user);
+      // 5. 发送欢迎邮件
+      emailService.sendWelcomeEmail(user);
 
-        // 6. 创建默认设置
-        createDefaultSettings(user);
-    }
+      // 6. 创建默认设置
+      createDefaultSettings(user);
+   }
 
-    /**
-     * 获取用户信息（简单查询）
-     */
-    public UserDO getUserById(Long userId) {
-        UserDO user = userDataService.getById(userId);
-        if (user == null) {
-            throw ErrorCode.USER_NOT_FOUND.exception();
-        }
-        return user;
-    }
+   /**
+    * 获取用户信息（简单查询）
+    */
+   public UserDO getUserById(Long userId) {
+      UserDO user = userDataService.getById(userId);
+      if (user == null) {
+         throw ErrorCode.USER_NOT_FOUND.exception();
+      }
+      return user;
+   }
 
-    /**
-     * 批量获取用户（带缓存优化）
-     */
-    public List<UserDO> getUsersByIds(List<Long> userIds) {
-        return userDataService.getByIds(userIds);
-    }
+   /**
+    * 批量获取用户（带缓存优化）
+    */
+   public List<UserDO> getUsersByIds(List<Long> userIds) {
+      return userDataService.getByIds(userIds);
+   }
 
-    /**
-     * 搜索用户（复杂查询）
-     */
-    public List<UserDO> searchUsers(String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-        return userDataService.searchByName(keyword);
-    }
+   /**
+    * 搜索用户（复杂查询）
+    */
+   public List<UserDO> searchUsers(String keyword) {
+      if (keyword == null || keyword.trim().isEmpty()) {
+         throw ErrorCode.INVALID_PARAMETER.exception();
+      }
+      return userDataService.searchByName(keyword);
+   }
 
-    /**
-     * 更新用户信息（业务逻辑）
-     */
-    @Transactional
-    public void updateUserProfile(Long userId, UpdateProfileRequest request) {
-        // 1. 获取用户
-        UserDO user = getUserById(userId);
+   /**
+    * 更新用户信息（业务逻辑）
+    */
+   @Transactional
+   public void updateUserProfile(Long userId, UpdateProfileRequest request) {
+      // 1. 获取用户
+      UserDO user = getUserById(userId);
 
-        // 2. 业务验证
-        validationService.validateProfile(request);
+      // 2. 业务验证
+      validationService.validateProfile(request);
 
-        // 3. 更新字段
-        user.setName(request.getName());
-        user.setBiography(request.getBiography());
+      // 3. 更新字段
+      user.setName(request.getName());
+      user.setBiography(request.getBiography());
 
-        // 4. 保存（updatedAt 自动更新）
-        userDataService.update(user);
+      // 4. 保存（updatedAt 自动更新）
+      userDataService.update(user);
 
-        // 5. 通知相关系统
-        notifyProfileUpdated(user);
-    }
+      // 5. 通知相关系统
+      notifyProfileUpdated(user);
+   }
 
-    // ========== 私有方法：业务逻辑 ==========
+   // ========== 私有方法：业务逻辑 ==========
 
-    private String hashPassword(String password) {
-        // 密码加密逻辑
-        return BCrypt.hashpw(password, BCrypt.gensalt());
-    }
+   private String hashPassword(String password) {
+      // 密码加密逻辑
+      return BCrypt.hashpw(password, BCrypt.gensalt());
+   }
 
-    private void createDefaultSettings(UserDO user) {
-        // 创建默认设置
-    }
+   private void createDefaultSettings(UserDO user) {
+      // 创建默认设置
+   }
 
-    private void notifyProfileUpdated(UserDO user) {
-        // 通知相关系统
-    }
+   private void notifyProfileUpdated(UserDO user) {
+      // 通知相关系统
+   }
 }
 ```
 

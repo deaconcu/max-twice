@@ -16,7 +16,7 @@ public class UpvoteStatusDTO {
     private Long objectId;
     
     /**
-     * 对象类型（1=post, 2=comment）
+     * 对象类型
      */
     private Integer objectType;
     

@@ -190,7 +190,7 @@ public class ValidationRuleDTO {
 
 ```java
 // ValidationConfigService.java
-package com.prosper.learn.domain.service.business;
+package com.prosper.learn.business.service.application;
 
 import com.prosper.learn.common.config.SystemProperties;
 import com.prosper.learn.dto.response.ValidationRuleDTO;
@@ -230,113 +230,113 @@ public class ValidationConfigService {
 
         // 卡片相关
         rules.put("card-front", ValidationRuleDTO.builder()
-            .minLength(validation.getCardFrontMinLength())
-            .maxLength(validation.getCardFrontMaxLength())
-            .label("问题")
-            .build());
+                .minLength(validation.getCardFrontMinLength())
+                .maxLength(validation.getCardFrontMaxLength())
+                .label("问题")
+                .build());
 
         rules.put("card-back", ValidationRuleDTO.builder()
-            .minLength(validation.getCardBackMinLength())
-            .maxLength(validation.getCardBackMaxLength())
-            .label("答案")
-            .build());
+                .minLength(validation.getCardBackMinLength())
+                .maxLength(validation.getCardBackMaxLength())
+                .label("答案")
+                .build());
 
         rules.put("deck-title", ValidationRuleDTO.builder()
-            .minLength(validation.getDeckTitleMinLength())
-            .maxLength(validation.getDeckTitleMaxLength())
-            .label("卡片组标题")
-            .build());
+                .minLength(validation.getDeckTitleMinLength())
+                .maxLength(validation.getDeckTitleMaxLength())
+                .label("卡片组标题")
+                .build());
 
         rules.put("deck-description", ValidationRuleDTO.builder()
-            .minLength(0)
-            .maxLength(validation.getDeckDescriptionMaxLength())
-            .label("卡片组描述")
-            .build());
+                .minLength(0)
+                .maxLength(validation.getDeckDescriptionMaxLength())
+                .label("卡片组描述")
+                .build());
 
         // 评论相关
         rules.put("comment-content", ValidationRuleDTO.builder()
-            .minLength(validation.getCommentContentMinLength())
-            .maxLength(validation.getCommentContentMaxLength())
-            .label("评论内容")
-            .build());
+                .minLength(validation.getCommentContentMinLength())
+                .maxLength(validation.getCommentContentMaxLength())
+                .label("评论内容")
+                .build());
 
         // 用户相关
         rules.put("username", ValidationRuleDTO.builder()
-            .minLength(validation.getUsernameMinLength())
-            .maxLength(validation.getUsernameMaxLength())
-            .label("用户名")
-            .build());
+                .minLength(validation.getUsernameMinLength())
+                .maxLength(validation.getUsernameMaxLength())
+                .label("用户名")
+                .build());
 
         rules.put("password", ValidationRuleDTO.builder()
-            .minLength(validation.getPasswordMinLength())
-            .maxLength(validation.getPasswordMaxLength())
-            .label("密码")
-            .build());
+                .minLength(validation.getPasswordMinLength())
+                .maxLength(validation.getPasswordMaxLength())
+                .label("密码")
+                .build());
 
         rules.put("biography", ValidationRuleDTO.builder()
-            .minLength(0)
-            .maxLength(validation.getBiographyMaxLength())
-            .label("个人简介")
-            .build());
+                .minLength(0)
+                .maxLength(validation.getBiographyMaxLength())
+                .label("个人简介")
+                .build());
 
         rules.put("email", ValidationRuleDTO.builder()
-            .minLength(0)
-            .maxLength(validation.getEmailMaxLength())
-            .label("邮箱")
-            .build());
+                .minLength(0)
+                .maxLength(validation.getEmailMaxLength())
+                .label("邮箱")
+                .build());
 
         // 课程相关
         rules.put("course-name", ValidationRuleDTO.builder()
-            .minLength(validation.getCourseNameMinLength())
-            .maxLength(validation.getCourseNameMaxLength())
-            .label("课程名称")
-            .build());
+                .minLength(validation.getCourseNameMinLength())
+                .maxLength(validation.getCourseNameMaxLength())
+                .label("课程名称")
+                .build());
 
         rules.put("course-description", ValidationRuleDTO.builder()
-            .minLength(validation.getCourseDescriptionMinLength())
-            .maxLength(validation.getCourseDescriptionMaxLength())
-            .label("课程描述")
-            .build());
+                .minLength(validation.getCourseDescriptionMinLength())
+                .maxLength(validation.getCourseDescriptionMaxLength())
+                .label("课程描述")
+                .build());
 
         // 帖子相关
         rules.put("post-content", ValidationRuleDTO.builder()
-            .minLength(validation.getPostContentMinLength())
-            .maxLength(validation.getPostContentMaxLength())
-            .label("帖子内容")
-            .build());
+                .minLength(validation.getPostContentMinLength())
+                .maxLength(validation.getPostContentMaxLength())
+                .label("帖子内容")
+                .build());
 
         // 职业相关
         rules.put("profession-name", ValidationRuleDTO.builder()
-            .minLength(validation.getProfessionNameMinLength())
-            .maxLength(validation.getProfessionNameMaxLength())
-            .label("职业名称")
-            .build());
+                .minLength(validation.getProfessionNameMinLength())
+                .maxLength(validation.getProfessionNameMaxLength())
+                .label("职业名称")
+                .build());
 
         rules.put("profession-description", ValidationRuleDTO.builder()
-            .minLength(validation.getProfessionDescriptionMinLength())
-            .maxLength(validation.getProfessionDescriptionMaxLength())
-            .label("职业描述")
-            .build());
+                .minLength(validation.getProfessionDescriptionMinLength())
+                .maxLength(validation.getProfessionDescriptionMaxLength())
+                .label("职业描述")
+                .build());
 
         // 消息相关
         rules.put("message-content", ValidationRuleDTO.builder()
-            .minLength(validation.getMessageContentMinLength())
-            .maxLength(validation.getMessageContentMaxLength())
-            .label("消息内容")
-            .build());
+                .minLength(validation.getMessageContentMinLength())
+                .maxLength(validation.getMessageContentMaxLength())
+                .label("消息内容")
+                .build());
 
         // 路线图相关
         rules.put("roadmap-content", ValidationRuleDTO.builder()
-            .minLength(validation.getRoadmapContentMinLength())
-            .maxLength(validation.getRoadmapContentMaxLength())
-            .label("路线图内容")
-            .build());
+                .minLength(validation.getRoadmapContentMinLength())
+                .maxLength(validation.getRoadmapContentMaxLength())
+                .label("路线图内容")
+                .build());
 
         rules.put("roadmap-description", ValidationRuleDTO.builder()
-            .minLength(validation.getRoadmapDescriptionMinLength())
-            .maxLength(validation.getRoadmapDescriptionMaxLength())
-            .label("路线图描述")
-            .build());
+                .minLength(validation.getRoadmapDescriptionMinLength())
+                .maxLength(validation.getRoadmapDescriptionMaxLength())
+                .label("路线图描述")
+                .build());
 
         return rules;
     }
@@ -364,7 +364,7 @@ public class ValidationConfigService {
 package com.prosper.learn.api.v1.controller;
 
 import com.prosper.learn.api.v1.dto.ApiResponse;
-import com.prosper.learn.domain.service.business.ValidationConfigService;
+import com.prosper.learn.business.service.application.ValidationConfigService;
 import com.prosper.learn.dto.response.ValidationRuleDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;

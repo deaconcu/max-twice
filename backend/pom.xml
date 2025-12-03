@@ -9,10 +9,10 @@
     <packaging>pom</packaging>
     <version>0.0.1</version>
     <modules>
-        <module>learn-api</module>
+        <module>learn-web</module>
         <module>learn-common</module>
         <module>learn-external</module>
-        <module>learn-domain</module>
+        <module>learn-business</module>
         <module>learn-persistence</module>
         <module>learn-dto</module>
     </modules>

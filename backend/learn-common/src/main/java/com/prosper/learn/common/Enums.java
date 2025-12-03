@@ -220,9 +220,8 @@ public class Enums {
     }
 
     public enum VoteType implements ValueEnum<Integer> {
-        normal(1),
-        twice(2),
-        helpful(3);
+        twice(1),
+        like(2);
 
         private final int value;
 

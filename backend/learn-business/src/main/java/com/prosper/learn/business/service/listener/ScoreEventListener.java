@@ -1,0 +1,155 @@
+package com.prosper.learn.business.service.listener;
+
+import com.prosper.learn.business.event.content.voting.*;
+import com.prosper.learn.business.service.domain.ScoreCalculationService;
+import com.prosper.learn.persistence.dataobject.PostDO;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+
+/**
+ * 分数计算事件监听器
+ *
+ * 专门负责处理需要重新计算分数的事件：
+ * - 帖子点赞相关事件（影响帖子分数）
+ * - 评论相关事件（可能影响帖子分数）
+ *
+ * 注意：只有帖子需要分数计算，其他内容类型暂不支持
+ */
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class ScoreEventListener {
+
+    private final ScoreCalculationService scoreCalculationService;
+
+    // ==================== 帖子点赞事件 ====================
+
+    /**
+     * 帖子两次能懂点赞 - 重新计算分数
+     */
+    @EventListener
+    @Async
+    public void onPostTwiceUpvoted(TwiceUpvotedEvent<PostDO> event) {
+        if (event.getContentType() == com.prosper.learn.common.Enums.ContentType.post) {
+            try {
+                scoreCalculationService.checkAndUpdatePostScore(event.getContentObject());
+                log.debug("重新计算帖子分数: postId={}", event.getContentId());
+            } catch (Exception e) {
+                log.error("帖子两次能懂点赞分数计算失败: postId={}", event.getContentId(), e);
+            }
+        }
+    }
+
+    /**
+     * 帖子点赞 - 重新计算分数
+     */
+    @EventListener
+    @Async
+    public void onPostLikeUpvoted(LikeUpvotedEvent<PostDO> event) {
+        if (event.getContentType() == com.prosper.learn.common.Enums.ContentType.post) {
+            try {
+                scoreCalculationService.checkAndUpdatePostScore(event.getContentObject());
+                log.debug("重新计算帖子分数: postId={}", event.getContentId());
+            } catch (Exception e) {
+                log.error("帖子点赞分数计算失败: postId={}", event.getContentId(), e);
+            }
+        }
+    }
+
+    /**
+     * 取消帖子两次能懂点赞 - 重新计算分数
+     */
+    @EventListener
+    @Async
+    public void onPostTwiceUpvoteCancelled(TwiceUpvoteCancelledEvent<PostDO> event) {
+        if (event.getContentType() == com.prosper.learn.common.Enums.ContentType.post) {
+            try {
+                scoreCalculationService.checkAndUpdatePostScore(event.getContentObject());
+                log.debug("重新计算帖子分数（取消两次能懂）: postId={}", event.getContentId());
+            } catch (Exception e) {
+                log.error("取消帖子两次能懂点赞分数计算失败: postId={}", event.getContentId(), e);
+            }
+        }
+    }
+
+    /**
+     * 取消帖子点赞 - 重新计算分数
+     */
+    @EventListener
+    @Async
+    public void onPostLikeUpvoteCancelled(LikeUpvoteCancelledEvent<PostDO> event) {
+        if (event.getContentType() == com.prosper.learn.common.Enums.ContentType.post) {
+            try {
+                scoreCalculationService.checkAndUpdatePostScore(event.getContentObject());
+                log.debug("重新计算帖子分数（取消点赞）: postId={}", event.getContentId());
+            } catch (Exception e) {
+                log.error("取消帖子点赞分数计算失败: postId={}", event.getContentId(), e);
+            }
+        }
+    }
+
+    /**
+     * 点赞类型切换事件 - 重新计算分数（只计算一次）
+     */
+    @EventListener
+    @Async
+    public void onUpvoteTypeSwitched(UpvoteTypeSwitchedEvent<PostDO> event) {
+        if (event.getContentType() == com.prosper.learn.common.Enums.ContentType.post) {
+            try {
+                scoreCalculationService.checkAndUpdatePostScore(event.getContentObject());
+                log.debug("重新计算帖子分数（切换点赞类型）: postId={}, from={}, to={}",
+                    event.getContentId(), event.getFromType(), event.getToType());
+            } catch (Exception e) {
+                log.error("点赞类型切换分数计算失败: postId={}", event.getContentId(), e);
+            }
+        }
+    }
+
+    // ==================== 记忆卡片组点赞事件 ====================
+
+    /**
+     * 记忆卡片组点赞 - 重新计算分数
+     */
+    @EventListener
+    @Async
+    public void onMemoryDeckLikeUpvoted(LikeUpvotedEvent<com.prosper.learn.persistence.dataobject.MemoryCardDeckDO> event) {
+        if (event.getContentType() == com.prosper.learn.common.Enums.ContentType.memory_card_deck) {
+            try {
+                scoreCalculationService.checkAndUpdateMemoryCardDeckScore(event.getContentObject());
+                log.debug("重新计算记忆卡片组分数: deckId={}", event.getContentId());
+            } catch (Exception e) {
+                log.error("记忆卡片组点赞分数计算失败: deckId={}", event.getContentId(), e);
+            }
+        }
+    }
+
+    /**
+     * 取消记忆卡片组点赞 - 重新计算分数
+     */
+    @EventListener
+    @Async
+    public void onMemoryDeckLikeUpvoteCancelled(LikeUpvoteCancelledEvent<com.prosper.learn.persistence.dataobject.MemoryCardDeckDO> event) {
+        if (event.getContentType() == com.prosper.learn.common.Enums.ContentType.memory_card_deck) {
+            try {
+                scoreCalculationService.checkAndUpdateMemoryCardDeckScore(event.getContentObject());
+                log.debug("重新计算记忆卡片组分数（取消点赞）: deckId={}", event.getContentId());
+            } catch (Exception e) {
+                log.error("取消记忆卡片组点赞分数计算失败: deckId={}", event.getContentId(), e);
+            }
+        }
+    }
+
+    // ==================== 其他可能影响分数的事件 ====================
+
+    /**
+     * 评论创建 - 可能影响帖子分数（评论数增加）
+     * 暂时不实现，如有需要可以后续添加
+     */
+    // @EventListener
+    // public void onCommentCreated(CommentCreatedEvent event) {
+    //     // 如果评论的是帖子，可能需要重新计算帖子分数
+    // }
+}
