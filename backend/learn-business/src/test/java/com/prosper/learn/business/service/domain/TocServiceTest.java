@@ -43,7 +43,7 @@ import static org.mockito.Mockito.*;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ContentsService 测试")
-class ContentsServiceTest {
+class TocServiceTest {
 
     @Mock
     private CourseMapper courseMapper;
@@ -70,7 +70,7 @@ class ContentsServiceTest {
     private SystemProperties.Contents contentsConfig;
 
     @InjectMocks
-    private ContentsService contentsService;
+    private TocService tocService;
 
     // 测试数据常量
     private static final long TEST_USER_ID = 1L;
@@ -143,7 +143,7 @@ class ContentsServiceTest {
 
             // When & Then - 通过调用公共方法间接测试验证逻辑
             assertDoesNotThrow(() -> {
-                contentsService.getToc(TEST_USER_ID, TEST_COURSE_ID, false);
+                tocService.getToc(TEST_USER_ID, TEST_COURSE_ID, false);
             });
             
             // 验证courseMapper被调用
@@ -158,7 +158,7 @@ class ContentsServiceTest {
 
             // When & Then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
-                contentsService.getToc(TEST_USER_ID, TEST_COURSE_ID, false);
+                tocService.getToc(TEST_USER_ID, TEST_COURSE_ID, false);
             });
             
             assertEquals(ErrorCode.CONTENTS_COURSE_NOT_FOUND.getCode(), exception.getCode());
@@ -200,7 +200,7 @@ class ContentsServiceTest {
 
                 // When & Then - 内容类型帖子应该正常处理
                 assertDoesNotThrow(() -> {
-                    contentsService.choose(TEST_USER_ID, TEST_PATH, TEST_COURSE_ID, TEST_POST_ID);
+                    tocService.choose(TEST_USER_ID, TEST_PATH, TEST_COURSE_ID, TEST_POST_ID);
                 });
             }
         }
@@ -214,7 +214,7 @@ class ContentsServiceTest {
 
             // When & Then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
-                contentsService.choose(TEST_USER_ID, TEST_PATH, TEST_COURSE_ID, TEST_POST_ID);
+                tocService.choose(TEST_USER_ID, TEST_PATH, TEST_COURSE_ID, TEST_POST_ID);
             });
             
             assertEquals(ErrorCode.CONTENTS_INVALID_POST_TYPE.getCode(), exception.getCode());
@@ -228,7 +228,7 @@ class ContentsServiceTest {
 
             // When & Then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
-                contentsService.choose(TEST_USER_ID, TEST_PATH, TEST_COURSE_ID, TEST_POST_ID);
+                tocService.choose(TEST_USER_ID, TEST_PATH, TEST_COURSE_ID, TEST_POST_ID);
             });
             
             assertEquals(ErrorCode.CONTENTS_POST_NOT_FOUND.getCode(), exception.getCode());
@@ -255,7 +255,7 @@ class ContentsServiceTest {
 
             // When & Then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
-                contentsService.choose(TEST_USER_ID, TEST_PATH, TEST_COURSE_ID, TEST_POST_ID);
+                tocService.choose(TEST_USER_ID, TEST_PATH, TEST_COURSE_ID, TEST_POST_ID);
             });
             
             assertEquals(ErrorCode.TOC_USER_TOC_NOT_FOUND.getCode(), exception.getCode());
@@ -285,7 +285,7 @@ class ContentsServiceTest {
             // When & Then - 尝试访问第3个索引（超出范围）
             String invalidPath = "3-chapter1-section1";
             BusinessException exception = assertThrows(BusinessException.class, () -> {
-                contentsService.choose(TEST_USER_ID, invalidPath, TEST_COURSE_ID, TEST_POST_ID);
+                tocService.choose(TEST_USER_ID, invalidPath, TEST_COURSE_ID, TEST_POST_ID);
             });
             
             assertEquals(ErrorCode.TOC_INDEX_OUT_OF_BOUNDS.getCode(), exception.getCode());
@@ -318,7 +318,7 @@ class ContentsServiceTest {
             when(objectMapper.readTree(courseToc.getToc())).thenReturn(jsonNode);
 
             // When
-            ArrayNode result = contentsService.getToc(TEST_USER_ID, TEST_COURSE_ID, false);
+            ArrayNode result = tocService.getToc(TEST_USER_ID, TEST_COURSE_ID, false);
 
             // Then
             assertNotNull(result);
@@ -334,7 +334,7 @@ class ContentsServiceTest {
             when(userCourseTocMapper.getByUserAndCourse(TEST_USER_ID, TEST_COURSE_ID)).thenReturn(null);
 
             // When
-            ArrayNode result = contentsService.getToc(TEST_USER_ID, TEST_COURSE_ID, false);
+            ArrayNode result = tocService.getToc(TEST_USER_ID, TEST_COURSE_ID, false);
 
             // Then
             assertNull(result);
@@ -371,7 +371,7 @@ class ContentsServiceTest {
                 when(objectMapper.readTree(courseToc.getToc())).thenReturn(jsonNode);
 
                 // When
-                ArrayNode result = contentsService.getToc(TEST_USER_ID, TEST_COURSE_ID, true);
+                ArrayNode result = tocService.getToc(TEST_USER_ID, TEST_COURSE_ID, true);
 
                 // Then
                 assertNotNull(result);
@@ -394,7 +394,7 @@ class ContentsServiceTest {
             when(courseTocMapper.get(TEST_TOC_HASH)).thenReturn(courseToc);
 
             // When
-            String result = contentsService.getToc(TEST_USER_ID, TEST_COURSE_ID, 1);
+            String result = tocService.getToc(TEST_USER_ID, TEST_COURSE_ID, 1);
 
             // Then
             assertEquals(courseToc.getToc(), result);
@@ -424,7 +424,7 @@ class ContentsServiceTest {
 
                 // When
                 assertDoesNotThrow(() -> {
-                    contentsService.choose(TEST_USER_ID, TEST_PATH, TEST_COURSE_ID, TEST_POST_ID);
+                    tocService.choose(TEST_USER_ID, TEST_PATH, TEST_COURSE_ID, TEST_POST_ID);
                 });
 
                 // Then
@@ -450,7 +450,7 @@ class ContentsServiceTest {
 
                 // When
                 assertDoesNotThrow(() -> {
-                    contentsService.unchoose(TEST_USER_ID, TEST_COURSE_ID, TEST_PATH);
+                    tocService.unchoose(TEST_USER_ID, TEST_COURSE_ID, TEST_PATH);
                 });
 
                 // Then
@@ -513,7 +513,7 @@ class ContentsServiceTest {
 
                 // When
                 assertDoesNotThrow(() -> {
-                    contentsService.pin(TEST_USER_ID, TEST_COURSE_ID, TEST_PATH, TEST_POST_ID, true);
+                    tocService.pin(TEST_USER_ID, TEST_COURSE_ID, TEST_PATH, TEST_POST_ID, true);
                 });
 
                 // Then
@@ -555,7 +555,7 @@ class ContentsServiceTest {
 
                 // When
                 assertDoesNotThrow(() -> {
-                    contentsService.pin(TEST_USER_ID, TEST_COURSE_ID, TEST_PATH, TEST_POST_ID, false);
+                    tocService.pin(TEST_USER_ID, TEST_COURSE_ID, TEST_PATH, TEST_POST_ID, false);
                 });
 
                 // Then
@@ -594,7 +594,7 @@ class ContentsServiceTest {
 
             // When & Then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
-                contentsService.getToc(TEST_USER_ID, TEST_COURSE_ID, false);
+                tocService.getToc(TEST_USER_ID, TEST_COURSE_ID, false);
             });
             
             assertEquals(ErrorCode.JSON_PROCESSING_ERROR.getCode(), exception.getCode());
@@ -619,7 +619,7 @@ class ContentsServiceTest {
 
             // When & Then
             BusinessException exception = assertThrows(BusinessException.class, () -> {
-                contentsService.getToc(TEST_USER_ID, TEST_COURSE_ID, false);
+                tocService.getToc(TEST_USER_ID, TEST_COURSE_ID, false);
             });
             
             assertEquals(ErrorCode.TOC_INDEX_OUT_OF_BOUNDS.getCode(), exception.getCode());

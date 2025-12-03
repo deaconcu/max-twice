@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.prosper.learn.common.Enums;
+import com.prosper.learn.common.constants.RedisStatsConstants;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.config.SystemProperties;
@@ -13,6 +14,7 @@ import com.prosper.learn.dto.response.post.PostSummaryDTO;
 import com.prosper.learn.persistence.dataobject.UserStatsYearlyDO;
 import com.prosper.learn.persistence.dataobject.PostStatsDO;
 import com.prosper.learn.persistence.mapper.ContentStatsYearlyMapper;
+import com.prosper.learn.persistence.mapper.UserStatsYearlyMapper;
 import com.prosper.learn.business.service.data.UserStatsDataService;
 import com.prosper.learn.business.service.data.UserStatsYearlyDataService;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.prosper.learn.common.constants.RedisStatsConstants.*;
+
 /**
  * 日常统计数据同步服务
  * 
@@ -40,16 +44,16 @@ import java.util.Map;
  * 
  * Redis数据结构:
  * - 用户统计: stats:YYYY-MM-DD:user -> {userId:statType: count}
- * - 文章统计: stats:YYYY-MM-DD:post -> {postId:statType: count}
+ * - 内容统计: stats:YYYY-MM-DD:content -> {contentType:contentId:statType: count}
  * 
  * 数据库存储结构（JSON格式）:
- * - 用户统计: user_stats.stats -> {"1-1":{"views": 10, "twice": 3, "helpful": 2, "comments": 5}, ...}
- * - 文章统计: post_stats.stats -> {"1-1":{"views": 100, "twice": 3, "helpful": 2, "comments": 8}, ...}
- * 
+ * - 用户统计: user_stats.stats -> {"1-1":{"views": 10, "twice": 3, "like": 2, "comments": 5}, ...}
+ * - 文章统计: post_stats.stats -> {"1-1":{"views": 100, "twice": 3, "like": 2, "comments": 8}, ...}
+ *
  * 统计类型包括:
  * - view/views: 浏览量
  * - twice: 两次能懂
- * - helpful: 有用点赞
+ * - like: 有用点赞
  * - comment/comments: 评论数
  */
 @Slf4j
@@ -58,9 +62,8 @@ import java.util.Map;
 public class DailyStatsService {
 
     private final RedisTemplate<String, String> redisTemplate;
-    private final UserStatsDataService userStatsDataService;
-    private final UserStatsYearlyDataService userStatsYearlyDataService;
     private final ContentStatsYearlyMapper contentStatsYearlyMapper;
+    private final UserStatsYearlyMapper userStatsYearlyMapper;
     private final ObjectMapper objectMapper;
     private final SystemProperties systemProperties;
 
@@ -196,16 +199,16 @@ public class DailyStatsService {
             
             // 聚合当天的完整数据
             switch (statType) {
-                case "view":
+                case STAT_TYPE_VIEW:
                     dayStats.views += count;
                     break;
-                case "twice":
+                case STAT_TYPE_TWICE:
                     dayStats.twice += count;
                     break;
-                case "helpful":
-                    dayStats.helpful += count;
+                case STAT_TYPE_LIKE:
+                    dayStats.like += count;
                     break;
-                case "comment":
+                case STAT_TYPE_COMMENT:
                     dayStats.comments += count;
                     break;
                 default:
@@ -224,14 +227,14 @@ public class DailyStatsService {
                 ensureUserYearRecord(userId, year);
                 
                 // 直接设置当天的完整数据（覆盖而非增量）
-                int updated = userStatsMapper.setUserDayStats(
+                int updated = userStatsYearlyMapper.updateYearlyStatsArray(
                         userId, year, dayKey,
-                        dayStats.views, dayStats.twice, dayStats.helpful,
+                        dayStats.views, dayStats.twice, dayStats.like,
                         dayStats.comments);
                 
                 if (updated > 0) {
-                    log.debug("覆盖用户{}在{}的统计数据: views={}, twice={}, helpful={}, comments={}", 
-                        userId, dateStr, dayStats.views, dayStats.twice, dayStats.helpful, dayStats.comments);
+                    log.debug("覆盖用户{}在{}的统计数据: views={}, twice={}, like={}, comments={}",
+                        userId, dateStr, dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
                     updateCount++;
                 } else {
                     log.warn("用户{}的{}年度记录不存在，无法更新统计", userId, year);
@@ -261,7 +264,7 @@ public class DailyStatsService {
     private static class UserDayStats {
         int views = 0;
         int twice = 0;
-        int helpful = 0;
+        int like = 0;
         int comments = 0;
     }
     
@@ -271,7 +274,7 @@ public class DailyStatsService {
     private static class PostDayStats {
         int views = 0;
         int twice = 0;
-        int helpful = 0;
+        int like = 0;
         int comments = 0;
     }
     
@@ -279,13 +282,13 @@ public class DailyStatsService {
      * 确保用户的年度统计记录存在
      */
     private void ensureUserYearRecord(long userId, int year) {
-        UserStatsYearlyDO existing = userStatsMapper.getByUserIdAndYear(userId, year);
+        UserStatsYearlyDO existing = userStatsYearlyMapper.getByUserIdAndYear(userId, year);
         if (existing == null) {
             UserStatsYearlyDO yearRecord = new UserStatsYearlyDO();
             yearRecord.setUserId(userId);
             yearRecord.setStatYear(year);
             yearRecord.setStats("{}"); // 初始化为空JSON对象
-            userStatsMapper.insert(yearRecord);
+            userStatsYearlyMapper.insert(yearRecord);
             log.debug("创建用户{}的{}年度统计记录", userId, year);
         }
     }
@@ -318,29 +321,36 @@ public class DailyStatsService {
         for (Map.Entry<Object, Object> entry : postStats.entrySet()) {
             String field = (String) entry.getKey();
             Integer count = Integer.parseInt((String) entry.getValue());
-            
+
             if (count <= 0) continue;
-            
+
             String[] parts = field.split(":");
-            if (parts.length != 2) continue;
-            
-            Long postId = Long.parseLong(parts[0]);
-            String redisStatType = parts[1];
+            if (parts.length != 3) continue; // 现在格式是 contentType:contentId:statType
+
+            // 解析新格式: contentType:contentId:statType
+            String contentType = parts[0];
+            Long postId = Long.parseLong(parts[1]);
+            String redisStatType = parts[2];
+
+            // 只处理 POST 类型的内容
+            if (!String.valueOf(Enums.ContentType.post.value()).equals(contentType)) {
+                continue;
+            }
             
             PostDayStats dayStats = postStatsMap.computeIfAbsent(postId, k -> new PostDayStats());
             
             // 🔴 修复字段名映射：Redis使用单数，数据库使用复数
             switch (redisStatType) {
-                case "view":
+                case STAT_TYPE_VIEW:
                     dayStats.views += count;
                     break;
-                case "twice":
+                case STAT_TYPE_TWICE:
                     dayStats.twice += count;
                     break;
-                case "helpful":
-                    dayStats.helpful += count;
+                case STAT_TYPE_LIKE:
+                    dayStats.like += count;
                     break;
-                case "comment":
+                case STAT_TYPE_COMMENT:
                     dayStats.comments += count;
                     break;
                 default:
@@ -363,11 +373,11 @@ public class DailyStatsService {
                 
                 // 直接设置当天的完整数据（覆盖而非增量）
                 int updated = contentStatsYearlyMapper.setDayStats(Enums.ContentType.post.value(), postId, year, dayKey,
-                        dayStats.views, dayStats.twice, dayStats.helpful, dayStats.comments);
+                        dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
                 
                 if (updated > 0) {
-                    log.debug("覆盖文章{}在{}的统计数据: views={}, twice={}, helpful={}, comments={}", 
-                        postId, dateStr, dayStats.views, dayStats.twice, dayStats.helpful, dayStats.comments);
+                    log.debug("覆盖文章{}在{}的统计数据: views={}, twice={}, like={}, comments={}",
+                        postId, dateStr, dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
                     updateCount++;
                 } else {
                     log.warn("文章{}的{}年度记录不存在，无法更新统计", postId, year);
@@ -403,7 +413,7 @@ public class DailyStatsService {
      * @param objectId 对象ID
      * @param year 统计年份
      * @param dayKey 日期键，格式如"8-22"
-     * @param field 统计字段，如"view", "twice", "helpful", "comment"
+     * @param field 统计字段，如"view", "twice", "like", "comment"
      * @param count 统计数值
      */
     private void updatePostStatsField(byte type, Long objectId, int year, String dayKey, String field, int count) {
@@ -417,13 +427,13 @@ public class DailyStatsService {
             // 🔴 字段名映射：Redis使用单数，数据库使用复数
             String dbField = field;
             switch (field) {
-                case "view":
+                case STAT_TYPE_VIEW:
                     dbField = "views";
                     break;
-                case "comment":
+                case STAT_TYPE_COMMENT:
                     dbField = "comments";
                     break;
-                // twice 和 helpful 保持不变
+                // twice 和 like 保持不变，不需要映射
             }
             
             dayStats.put(dbField, count);
@@ -431,7 +441,7 @@ public class DailyStatsService {
             int updated = contentStatsYearlyMapper.setDayStats(type, objectId, year, dayKey,
                     dayStats.getOrDefault("views", 0),
                     dayStats.getOrDefault("twice", 0),
-                    dayStats.getOrDefault("helpful", 0),
+                    dayStats.getOrDefault("like", 0),
                     dayStats.getOrDefault("comments", 0));
             
             if (updated > 0) {
@@ -479,7 +489,7 @@ public class DailyStatsService {
         Map<String, Integer> defaultStats = new HashMap<>();
         defaultStats.put("views", 0);
         defaultStats.put("twice", 0);
-        defaultStats.put("helpful", 0);
+        defaultStats.put("like", 0);
         defaultStats.put("comments", 0);
         return defaultStats;
     }
@@ -541,7 +551,7 @@ public class DailyStatsService {
                 .endDate(yesterday.toString())
                 .totalViews(stats.get("views").longValue())
                 .totalTwice(stats.get("twice").longValue())
-                .totalHelpful(stats.get("helpful").longValue())
+                .totalHelpful(stats.get("like").longValue())
                 .totalComments(stats.get("comments").longValue())
                 .build();
                 
@@ -576,7 +586,7 @@ public class DailyStatsService {
                 .endDate(endDate.toString())
                 .totalViews(totalStats.get("views").longValue())
                 .totalTwice(totalStats.get("twice").longValue())
-                .totalHelpful(totalStats.get("helpful").longValue())
+                .totalHelpful(totalStats.get("like").longValue())
                 .totalComments(totalStats.get("comments").longValue())
                 .build();
                 
@@ -686,16 +696,16 @@ public class DailyStatsService {
             
             String statType = field.substring(userPrefix.length());
             switch (statType) {
-                case "view":
+                case STAT_TYPE_VIEW:
                     totalViews += count;
                     break;
-                case "twice":
+                case STAT_TYPE_TWICE:
                     totalTwice += count;
                     break;
-                case "helpful":
+                case STAT_TYPE_LIKE:
                     totalHelpful += count;
                     break;
-                case "comment":
+                case STAT_TYPE_COMMENT:
                     totalComments += count;
                     break;
             }
@@ -730,14 +740,23 @@ public class DailyStatsService {
             String dayKey = generateDayKey(date);
 
             // 使用MySQL JSON_EXTRACT函数直接查询特定日期的数据
-            String dayStatsJson = userStatsMapper.getDayStats(userId, year, dayKey);
+            String dayStatsJson = userStatsYearlyMapper.getDayStats(userId, year, dayKey);
 
             if (dayStatsJson != null) {
-                // 解析JSON字符串为Map对象
+                // 解析JSON数组为Map对象
+                // JSON_ARRAY格式：[views, twice, like, comments]
                 try {
-                    return objectMapper.readValue(dayStatsJson, new TypeReference<Map<String, Integer>>() {});
+                    List<Integer> statsArray = objectMapper.readValue(dayStatsJson, new TypeReference<List<Integer>>() {});
+                    if (statsArray != null && statsArray.size() >= 4) {
+                        Map<String, Integer> statsMap = new HashMap<>();
+                        statsMap.put("views", statsArray.get(0));
+                        statsMap.put("twice", statsArray.get(1));
+                        statsMap.put("like", statsArray.get(2));
+                        statsMap.put("comments", statsArray.get(3));
+                        return statsMap;
+                    }
                 } catch (Exception jsonEx) {
-                    log.error("JSON解析失败: userId={}, date={}, json={}", userId, date, dayStatsJson, jsonEx);
+                    log.error("JSON数组解析失败: userId={}, date={}, json={}", userId, date, dayStatsJson, jsonEx);
                     throw ErrorCode.JSON_PROCESSING_ERROR.exception(jsonEx);
                 }
             }
@@ -764,14 +783,31 @@ public class DailyStatsService {
      */
     public Map<String, Map<String, Integer>> getUserYearStats(long userId, int year) {
         try {
-            UserStatsYearlyDO yearStats = userStatsMapper.getByUserIdAndYear(userId, year);
+            UserStatsYearlyDO yearStats = userStatsYearlyMapper.getByUserIdAndYear(userId, year);
             if (yearStats == null || yearStats.getStats() == null) {
                 return new HashMap<>();
             }
 
             // 解析完整的年度JSON数据
-            return objectMapper.readValue(yearStats.getStats(), 
-                new TypeReference<Map<String, Map<String, Integer>>>() {});
+            // 用户统计使用JSON_ARRAY格式：{"1-15": [views, twice, like, comments], "1-16": [...]}
+            Map<String, List<Integer>> yearStatsArray = objectMapper.readValue(yearStats.getStats(),
+                new TypeReference<Map<String, List<Integer>>>() {});
+
+            // 转换为Map<String, Map<String, Integer>>格式以保持接口一致
+            Map<String, Map<String, Integer>> result = new HashMap<>();
+            for (Map.Entry<String, List<Integer>> entry : yearStatsArray.entrySet()) {
+                String dayKey = entry.getKey();
+                List<Integer> statsArray = entry.getValue();
+                if (statsArray != null && statsArray.size() >= 4) {
+                    Map<String, Integer> dayStats = new HashMap<>();
+                    dayStats.put("views", statsArray.get(0));
+                    dayStats.put("twice", statsArray.get(1));
+                    dayStats.put("like", statsArray.get(2));
+                    dayStats.put("comments", statsArray.get(3));
+                    result.put(dayKey, dayStats);
+                }
+            }
+            return result;
         } catch (Exception e) {
             log.error("获取用户年度统计失败: userId={}, year={}", userId, year, e);
             return new HashMap<>();
@@ -891,7 +927,7 @@ public class DailyStatsService {
                 .endDate(yesterday.toString())
                 .totalViews(totalStats.get("views").longValue())
                 .totalTwice(totalStats.get("twice").longValue())
-                .totalHelpful(totalStats.get("helpful").longValue())
+                .totalHelpful(totalStats.get("like").longValue())
                 .totalComments(totalStats.get("comments").longValue())
                 .build();
                 
@@ -964,7 +1000,7 @@ public class DailyStatsService {
         Map<String, Integer> empty = new HashMap<>();
         empty.put("views", 0);
         empty.put("twice", 0);
-        empty.put("helpful", 0);
+        empty.put("like", 0);
         empty.put("comments", 0);
         return empty;
     }
@@ -1126,12 +1162,6 @@ public class DailyStatsService {
         }
     }
 
-    // ========== 常量定义 ==========
-
-    private static final String STATS_KEY_PREFIX = "stats:";
-    private static final String USER_STATS_SUFFIX = ":user";
-    private static final String POST_STATS_SUFFIX = ":post";
-
     // ========== 私有辅助方法 ==========
 
     /**
@@ -1145,7 +1175,7 @@ public class DailyStatsService {
      * 生成文章统计Redis键名
      */
     private String generatePostStatsKey(String dateStr) {
-        return STATS_KEY_PREFIX + dateStr + POST_STATS_SUFFIX;
+        return STATS_KEY_PREFIX + dateStr + CONTENT_STATS_SUFFIX;
     }
 
     /**

@@ -56,7 +56,7 @@ public class UpvoteDomainService {
     private final PostDataService postDataService;
 
     /** 内容统计业务服务 */
-    private final ContentStatsService contentStatsService;
+    private final ContentStatsDomainService contentStatsDomainService;
     
     /** 事件发布器，用于发布点赞相关事件 */
     private final ApplicationEventPublisher eventPublisher;
@@ -92,11 +92,11 @@ public class UpvoteDomainService {
             // 发布取消点赞事件
             if (type == Enums.VoteType.twice.value()) {
                 eventPublisher.publishEvent(new TwiceUpvoteCancelledEvent<>(
-                    user.getId(), postDO.getId(), Enums.ContentType.post, postDO.getCreatorId(), postDO
+                    user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO
                 ));
             } else {
                 eventPublisher.publishEvent(new LikeUpvoteCancelledEvent<>(
-                    user.getId(), postDO.getId(), Enums.ContentType.post, postDO.getCreatorId(), postDO, postDO.getNodeId()
+                    user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO, postDO.getNodeId()
                 ));
             }
             return;
@@ -115,11 +115,11 @@ public class UpvoteDomainService {
             // 发布点赞事件
             if (type == Enums.VoteType.twice.value()) {
                 eventPublisher.publishEvent(new TwiceUpvotedEvent<>(
-                    user.getId(), postDO.getId(), Enums.ContentType.post, postDO.getCreatorId(), postDO
+                    user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO
                 ));
             } else {
                 eventPublisher.publishEvent(new LikeUpvotedEvent<>(
-                    user.getId(), postDO.getId(), Enums.ContentType.post, postDO.getCreatorId(), postDO, postDO.getNodeId()
+                    user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO, postDO.getNodeId()
                 ));
             }
         } else {
@@ -132,7 +132,7 @@ public class UpvoteDomainService {
 
             // 发布点赞类型切换事件（一次性处理，避免重复计算）
             eventPublisher.publishEvent(new UpvoteTypeSwitchedEvent<>(
-                user.getId(), postDO.getId(), Enums.ContentType.post, postDO.getCreatorId(), postDO, oldType, type
+                user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO, oldType, type
             ));
         }
     }
@@ -147,7 +147,7 @@ public class UpvoteDomainService {
     private long getNodeIdFromComment(CommentDO commentDO) {
         if (commentDO.getObjectType() == ContentType.node.value()) {
             return commentDO.getObjectId();
-        } else if (commentDO.getObjectType() == Enums.ContentType.post.value()) {
+        } else if (commentDO.getObjectType() == ContentType.post.value()) {
             PostDO postDO = postDataService.validateAndGet(commentDO.getObjectId());
             return postDO.getNodeId();
         } else {
@@ -176,7 +176,7 @@ public class UpvoteDomainService {
 
             // 发布取消点赞事件（评论只有一种点赞类型，使用 LikeUpvoteCancelledEvent）
             eventPublisher.publishEvent(new LikeUpvoteCancelledEvent<>(
-                user.getId(), commentDO.getId(), Enums.ContentType.comment,
+                user.getId(), commentDO.getId(), ContentType.comment,
                 commentDO.getCreatorId(), commentDO, getNodeIdFromComment(commentDO)
             ));
         } else {
@@ -190,7 +190,7 @@ public class UpvoteDomainService {
 
             // 发布点赞事件（评论只有一种点赞类型，使用 LikeUpvotedEvent）
             eventPublisher.publishEvent(new LikeUpvotedEvent<>(
-                user.getId(), commentDO.getId(), Enums.ContentType.comment,
+                user.getId(), commentDO.getId(), ContentType.comment,
                 commentDO.getCreatorId(), commentDO, getNodeIdFromComment(commentDO)
             ));
         }
@@ -218,7 +218,7 @@ public class UpvoteDomainService {
 
             // 发布取消投票事件
             eventPublisher.publishEvent(new LikeUpvoteCancelledEvent<>(
-                user.getId(), roadmapDO.getId(), Enums.ContentType.roadmap,
+                user.getId(), roadmapDO.getId(), ContentType.roadmap,
                 roadmapDO.getCreatorId(), roadmapDO, roadmapDO.getProfessionId()
             ));
 
@@ -234,7 +234,7 @@ public class UpvoteDomainService {
 
             // 发布投票事件
             eventPublisher.publishEvent(new LikeUpvotedEvent<>(
-                user.getId(), roadmapDO.getId(), Enums.ContentType.roadmap,
+                user.getId(), roadmapDO.getId(), ContentType.roadmap,
                 roadmapDO.getCreatorId(), roadmapDO, roadmapDO.getProfessionId()
             ));
 
@@ -262,7 +262,7 @@ public class UpvoteDomainService {
 
             // 发布取消点赞事件
             eventPublisher.publishEvent(new LikeUpvoteCancelledEvent<>(
-                user.getId(), deck.getId(), Enums.ContentType.memory_card_deck,
+                user.getId(), deck.getId(), ContentType.memory_card_deck,
                 deck.getCreatorId(), deck, deck.getNodeId()
             ));
 
@@ -278,7 +278,7 @@ public class UpvoteDomainService {
 
             // 发布点赞事件
             eventPublisher.publishEvent(new LikeUpvotedEvent<>(
-                user.getId(), deck.getId(), Enums.ContentType.memory_card_deck,
+                user.getId(), deck.getId(), ContentType.memory_card_deck,
                 deck.getCreatorId(), deck, deck.getNodeId()
             ));
 
@@ -293,7 +293,7 @@ public class UpvoteDomainService {
      * @param userId 用户ID
      * @return true表示已投票，false表示未投票
      */
-    public boolean hasUpvoted(long contentId, Enums.ContentType contentType, long userId) {
+    public boolean hasUpvoted(long contentId, ContentType contentType, long userId) {
         if (userId <= 0) {
             throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
         }
@@ -312,7 +312,7 @@ public class UpvoteDomainService {
      * @param userId 用户ID
      * @return 已投票的内容ID集合
      */
-    public Set<Long> getUpvotedIds(List<Long> contentIds, Enums.ContentType contentType, long userId) {
+    public Set<Long> getUpvotedIds(List<Long> contentIds, ContentType contentType, long userId) {
         if (contentIds == null || contentIds.isEmpty() || userId <= 0) {
             return new HashSet<>();
         }
@@ -327,12 +327,41 @@ public class UpvoteDomainService {
      * 获取用户对指定对象的点赞状态
      *
      * @param objectId 对象ID
-     * @param objectType 对象类型
+     * @param contentType 对象类型
      * @param userId 用户ID
-     * @return 点赞状态DTO
+     * @return 用户点赞状态DTO
      */
-    public UpvoteStatusDTO getUpvoteStatus(Long objectId, int objectType, long userId) {
-        return contentStatsService.getUpvoteStatus(objectId, objectType, userId);
+    public UpvoteStatusDTO getUpvoteStatus(Long objectId, ContentType contentType, long userId) {
+        // 参数验证
+        if (objectId == null || objectId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("对象ID无效: " + objectId);
+        }
+        if (userId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
+        }
+
+        // 查询用户点赞记录
+        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, objectId, contentType.value());
+
+        // 构建用户点赞状态DTO
+        boolean twiceUpvoted = false;
+        boolean likeUpvoted = false;
+
+        if (upvoteDO != null) {
+            // 帖子特殊处理：支持 twice 和 like 分别统计
+            if (contentType == ContentType.post) {
+                twiceUpvoted = upvoteDO.getType() == Enums.VoteType.twice.value();
+                likeUpvoted = upvoteDO.getType() == Enums.VoteType.like.value();
+            } else {
+                // 其他内容类型只有 like 统计
+                likeUpvoted = true;
+            }
+        }
+
+        return UpvoteStatusDTO.builder()
+                .twiceUpvoted(twiceUpvoted)
+                .likeUpvoted(likeUpvoted)
+                .build();
     }
 
 }

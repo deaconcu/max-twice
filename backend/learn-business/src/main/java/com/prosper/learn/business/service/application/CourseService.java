@@ -4,7 +4,7 @@ import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.Enums.ContentState;
 import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.CourseRankingService;
+import com.prosper.learn.business.service.domain.CourseRankingDomainService;
 import com.prosper.learn.business.service.domain.MessageService;
 import com.prosper.learn.business.util.converter.CourseConverter;
 import com.prosper.learn.dto.request.CreateCourseRequest;
@@ -32,7 +32,7 @@ public class CourseService {
 
     private final CourseDataService courseDataService;
     private final NodeDataService nodeDataService;
-    private final CourseRankingService courseRankingService;
+    private final CourseRankingDomainService courseRankingDomainService;
     private final MessageService messageService;
     private final SystemProperties systemProperties;
     private final CourseConverter courseConverter;
@@ -196,7 +196,7 @@ public class CourseService {
         CourseWithStatsDTO courseDTO = courseConverter.toWithStatsDTO(courseDO);
 
         try {
-            CourseRankingService.CourseStats stats = courseRankingService.getCourseStats(courseDO.getId());
+            CourseRankingDomainService.CourseStats stats = courseRankingDomainService.getCourseStats(courseDO.getId());
             courseDTO.setLearnerCount((int) stats.getLearningCount());
             courseDTO.setSubscriptionCount((int) stats.getSubscriptionCount());
         } catch (Exception e) {
@@ -427,7 +427,7 @@ public class CourseService {
         try {
             // 从Redis获取2倍数量，以防过滤后不足limit个
             int fetchLimit = limit * 2;
-            List<Long> hotCourseIds = courseRankingService.getHotCourseIds(fetchLimit);
+            List<Long> hotCourseIds = courseRankingDomainService.getHotCourseIds(fetchLimit);
 
             if (hotCourseIds.isEmpty()) {
                 return new ArrayList<>();
@@ -462,7 +462,7 @@ public class CourseService {
             int rankingLimit = systemProperties.getCourse().getHotCoursesRankingLimit();
             // 从Redis获取2倍数量，以防过滤后不足rankingLimit个
             int fetchLimit = rankingLimit * 2;
-            List<Long> hotCourseIds = courseRankingService.getHotCourseIds(fetchLimit);
+            List<Long> hotCourseIds = courseRankingDomainService.getHotCourseIds(fetchLimit);
 
             if (hotCourseIds.isEmpty()) {
                 return new ArrayList<>();

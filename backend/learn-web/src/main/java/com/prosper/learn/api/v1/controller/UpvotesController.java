@@ -7,7 +7,7 @@ import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.business.service.application.ContentInteractionService;
-import com.prosper.learn.business.service.domain.ContentStatsService;
+import com.prosper.learn.business.service.domain.ContentStatsDomainService;
 import com.prosper.learn.dto.response.UpvoteStatusDTO;
 import com.prosper.learn.dto.request.UpvoteRequest;
 import com.prosper.learn.persistence.dataobject.UserDO;
@@ -43,7 +43,7 @@ public class UpvotesController {
     private final ContentInteractionService contentInteractionService;
 
     /** 内容统计业务服务 - 处理简单的查询操作 */
-    private final ContentStatsService contentStatsService;
+    private final ContentStatsDomainService contentStatsDomainService;
 
     /**
      * 点赞操作
@@ -71,7 +71,7 @@ public class UpvotesController {
         }
 
         // 查询操作直接使用业务服务
-        UpvoteStatusDTO result = contentStatsService.getUpvoteStatus(request.getObjectId(), request.getObjectType(), currentUser.getId());
+        UpvoteStatusDTO result = contentStatsDomainService.getUpvoteStatus(request.getObjectId(), request.getObjectType(), currentUser.getId());
         return ApiResponse.success(result);
     }
 
@@ -93,7 +93,7 @@ public class UpvotesController {
             @CurrentUser UserDO currentUser) {
 
         // 简单查询直接使用业务服务，无需应用服务包装
-        UpvoteStatusDTO result = contentStatsService.getUpvoteStatus(objectId, objectType, currentUser.getId());
+        UpvoteStatusDTO result = contentStatsDomainService.getUpvoteStatus(objectId, objectType, currentUser.getId());
 
         return ApiResponse.success(result);
     }

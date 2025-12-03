@@ -31,12 +31,12 @@ public interface UserStatsYearlyMapper {
             "SET stats = JSON_SET(" +
             "  COALESCE(stats, JSON_OBJECT()), " +
             "  CONCAT('$.', #{dateKey}), " +
-            "  JSON_ARRAY(#{views}, #{twice}, #{helpful}, #{comments})" +
+            "  JSON_ARRAY(#{views}, #{twice}, #{like}, #{comments})" +
             ") " +
             "WHERE user_id = #{userId} AND stat_year = #{statYear}")
     int updateYearlyStatsArray(@Param("userId") long userId, @Param("statYear") int statYear,
                               @Param("dateKey") String dateKey, @Param("views") int views,
-                              @Param("twice") int twice, @Param("helpful") int helpful,
+                              @Param("twice") int twice, @Param("like") int like,
                               @Param("comments") int comments);
 
     // 获取指定日期的统计数据

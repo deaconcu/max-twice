@@ -3,7 +3,7 @@ package com.prosper.learn.business.service.application;
 import static com.prosper.learn.common.Enums.UserProgressState;
 
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.business.service.domain.CourseRankingService;
+import com.prosper.learn.business.service.domain.CourseRankingDomainService;
 import com.prosper.learn.business.util.converter.CourseConverter;
 import com.prosper.learn.business.util.converter.UserCourseConverter;
 import com.prosper.learn.dto.response.course.CourseSummaryDTO;
@@ -27,7 +27,7 @@ public class UserCourseService {
 
     private final UserCourseDataService userCourseDataService;
     private final CourseDataService courseDataService;
-    private final CourseRankingService courseRankingService;
+    private final CourseRankingDomainService courseRankingDomainService;
     private final CourseConverter courseConverter;
     private final UserCourseConverter userCourseConverter;
     private final CourseService courseService;
@@ -181,7 +181,7 @@ public class UserCourseService {
             // 如果已存在，删除记录并更新Redis
             userCourseDataService.deleteByUserAndCourse(userId, courseId);
             // 减少学习人数
-            courseRankingService.decrementLearning(courseId);
+            courseRankingDomainService.decrementLearning(courseId);
             return false;
         }
 
@@ -196,7 +196,7 @@ public class UserCourseService {
         userCourseDataService.insert(progressDO);
         
         // 增加学习人数
-        courseRankingService.incrementLearning(courseId);
+        courseRankingDomainService.incrementLearning(courseId);
 
         return true;
     }
@@ -262,7 +262,7 @@ public class UserCourseService {
         
         userCourseDataService.deleteByUserAndCourse(userId, courseId);
         // 减少学习人数
-        courseRankingService.decrementLearning(courseId);
+        courseRankingDomainService.decrementLearning(courseId);
     }
 
     /**

@@ -2,7 +2,7 @@ package com.prosper.learn.business.service.scheduler;
 
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.CourseRankingService;
+import com.prosper.learn.business.service.domain.CourseRankingDomainService;
 import com.prosper.learn.persistence.dataobject.UserProfileDO;
 import com.prosper.learn.persistence.mapper.UserProfileMapper;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ import java.util.Map;
 @Slf4j
 public class CourseRankingScheduler {
 
-    private final CourseRankingService courseRankingService;
+    private final CourseRankingDomainService courseRankingDomainService;
     private final JdbcTemplate jdbcTemplate;
     private final UserProfileMapper userProfileMapper;
     private final SystemProperties systemProperties;
@@ -101,7 +101,7 @@ public class CourseRankingScheduler {
                     for (String courseIdStr : courseIds) {
                         try {
                             long courseId = Long.parseLong(courseIdStr.trim());
-                            courseRankingService.incrementSubscription(courseId);
+                            courseRankingDomainService.incrementSubscription(courseId);
                             subscriptionCount++;
                         } catch (NumberFormatException e) {
                             log.warn("无效的课程ID: {}", courseIdStr);
@@ -128,7 +128,7 @@ public class CourseRankingScheduler {
             if (courseId != null && count != null) {
                 try {
                     for (int i = 0; i < count; i++) {
-                        courseRankingService.incrementLearning(courseId);
+                        courseRankingDomainService.incrementLearning(courseId);
                     }
                     processedCount++;
                 } catch (Exception e) {
@@ -154,7 +154,7 @@ public class CourseRankingScheduler {
         
         try {
             // 先清空Redis中的统计数据
-            courseRankingService.clearAllStats();
+            courseRankingDomainService.clearAllStats();
             
             // 处理用户收藏数据
             int subscriptionCount = processUserSubscriptions();

@@ -1,5 +1,7 @@
 package com.prosper.learn.business.service.domain;
 
+import com.prosper.learn.common.Enums;
+import com.prosper.learn.common.constants.RedisStatsConstants;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
@@ -24,7 +26,7 @@ import java.time.LocalDate;
  * 
  * Redis数据结构:
  * - 用户统计: stats:YYYY-MM-DD:user -> {userId:statType: count}
- * - 文章统计: stats:YYYY-MM-DD:post -> {postId:statType: count}
+ * - 内容统计: stats:YYYY-MM-DD:content -> {contentType:contentId:statType: count}
  * 
  * 统计类型包括:
  * - view: 浏览量
@@ -37,31 +39,10 @@ import java.time.LocalDate;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class RedisStatsService {
-
-    /** Redis键前缀常量 */
-    private static final String STATS_KEY_PREFIX = "stats:";
-    
-    /** 用户统计键后缀常量 */
-    private static final String USER_STATS_SUFFIX = ":user";
-    
-    /** 帖子统计键后缀常量 */
-    private static final String POST_STATS_SUFFIX = ":post";
-    
-    /** 统计类型常量 */
-    private static final String STAT_TYPE_VIEW = "view";
-    private static final String STAT_TYPE_TWICE = "twice";
-    private static final String STAT_TYPE_HELPFUL = "helpful";
-    private static final String STAT_TYPE_COMMENT = "comment";
-    
-    /** Redis过期时间（天数）常量 */
-    private static final int DEFAULT_EXPIRE_DAYS = 3;
+public class RedisStatsDomainService {
 
     /** Redis模板，用于统计数据的存储和操作 */
     private final RedisTemplate<String, String> redisTemplate;
-    
-    /** 系统配置属性 */
-    private final SystemProperties systemProperties;
 
     /**
      * 验证文章ID有效性
@@ -89,16 +70,16 @@ public class RedisStatsService {
     
     /**
      * 验证点赞类型有效性
-     * 
-     * @param upvoteType 点赞类型
+     *
+     * @param voteType 点赞类型枚举
      * @throws BusinessException 当点赞类型无效时抛出异常
      */
-    private void validateUpvoteType(String upvoteType) {
-        if (upvoteType == null || upvoteType.trim().isEmpty()) {
+    private void validateVoteType(Enums.VoteType voteType) {
+        if (voteType == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("点赞类型不能为空");
         }
-        if (!STAT_TYPE_TWICE.equals(upvoteType) && !STAT_TYPE_HELPFUL.equals(upvoteType)) {
-            throw ErrorCode.INVALID_PARAMETER.exception("无效的点赞类型: " + upvoteType);
+        if (voteType != Enums.VoteType.twice && voteType != Enums.VoteType.like) {
+            throw ErrorCode.INVALID_PARAMETER.exception("无效的点赞类型: " + voteType);
         }
     }
     
@@ -109,67 +90,83 @@ public class RedisStatsService {
      * @return 用户统计键名
      */
     private String generateUserStatsKey(String dateStr) {
-        return STATS_KEY_PREFIX + dateStr + USER_STATS_SUFFIX;
+        return RedisStatsConstants.STATS_KEY_PREFIX + dateStr + RedisStatsConstants.USER_STATS_SUFFIX;
     }
     
     /**
-     * 生成帖子统计Redis键名
-     * 
+     * 生成内容统计Redis键名
+     *
      * @param dateStr 日期字符串
-     * @return 帖子统计键名
+     * @return 内容统计键名
      */
-    private String generatePostStatsKey(String dateStr) {
-        return STATS_KEY_PREFIX + dateStr + POST_STATS_SUFFIX;
+    private String generateContentStatsKey(String dateStr) {
+        return RedisStatsConstants.STATS_KEY_PREFIX + dateStr + RedisStatsConstants.CONTENT_STATS_SUFFIX;
     }
     
     /**
-     * 生成统计字段名
-     * 
-     * @param id 对象ID（文章ID或用户ID）
+     * 生成内容统计字段名
+     *
+     * @param contentType 内容类型
+     * @param contentId 内容ID
      * @param statType 统计类型
-     * @return 统计字段名
+     * @return 内容统计字段名，格式：contentType:contentId:statType
      */
-    private String generateStatField(long id, String statType) {
-        return id + ":" + statType;
+    private String generateContentStatField(Enums.ContentType contentType, long contentId, String statType) {
+        return contentType.value() + ":" + contentId + ":" + statType;
+    }
+
+    /**
+     * 生成用户统计字段名
+     *
+     * @param userId 用户ID
+     * @param statType 统计类型
+     * @return 用户统计字段名，格式：userId:statType
+     */
+    private String generateUserStatField(long userId, String statType) {
+        return userId + ":" + statType;
     }
     
     /**
      * 安全地执行Redis操作并记录统计
-     * 
-     * @param articleId 文章ID
+     *
+     * @param contentType 内容类型
+     * @param contentId 内容ID
      * @param userId 用户ID（可选）
      * @param statType 统计类型
      * @param increment 增量（正数为增加，负数为减少）
      * @param operation 操作描述（用于日志）
      */
-    private void performStatsOperation(long articleId, Long userId, String statType, int increment, String operation) {
+    private void performStatsOperation(Enums.ContentType contentType, long contentId, Long userId, String statType,
+                                       int increment, String operation) {
         String today = LocalDate.now().toString();
-        
+
         try {
-            // 文章维度统计
-            String postKey = generatePostStatsKey(today);
-            String postField = generateStatField(articleId, statType);
-            redisTemplate.opsForHash().increment(postKey, postField, increment);
-            
+            // 内容维度统计
+            String contentKey = generateContentStatsKey(today);
+            String contentField = generateContentStatField(contentType, contentId, statType);
+            redisTemplate.opsForHash().increment(contentKey, contentField, increment);
+
             // 设置过期时间（只在增加时设置，避免重置已有数据的过期时间）
             if (increment > 0) {
-                redisTemplate.expire(postKey, Duration.ofDays(DEFAULT_EXPIRE_DAYS));
+                redisTemplate.expire(contentKey, Duration.ofDays(RedisStatsConstants.DEFAULT_EXPIRE_DAYS));
             }
-            
+
             // 用户维度统计（如果提供了用户ID）
             if (userId != null && userId > 0) {
                 String userKey = generateUserStatsKey(today);
-                String userField = generateStatField(userId, statType);
+                String userField = generateUserStatField(userId, statType);
                 redisTemplate.opsForHash().increment(userKey, userField, increment);
-                
+
                 if (increment > 0) {
-                    redisTemplate.expire(userKey, Duration.ofDays(DEFAULT_EXPIRE_DAYS));
+                    redisTemplate.expire(userKey, Duration.ofDays(RedisStatsConstants.DEFAULT_EXPIRE_DAYS));
                 }
             }
-            
-            log.debug("{}: articleId={}, userId={}, type={}", operation, articleId, userId, statType);
+
+            log.debug("{}: contentType={}, contentId={}, userId={}, statType={}",
+                    operation, contentType, contentId, userId, statType);
         } catch (Exception e) {
-            log.error("{}失败: articleId={}, userId={}, type={}", operation, articleId, userId, statType, e);
+            log.error("{}失败: contentType={}, contentId={}, userId={}, statType={}",
+                    operation, contentType, contentId, userId, statType, e);
             throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
     }
@@ -203,7 +200,7 @@ public class RedisStatsService {
         }
         
         Long userIdForStats = userId > 0 ? userId : null;
-        performStatsOperation(articleId, userIdForStats, STAT_TYPE_VIEW, 1, "记录文章访问");
+        performStatsOperation(Enums.ContentType.post, articleId, userIdForStats, RedisStatsConstants.STAT_TYPE_VIEW, 1, "记录文章访问");
     }
 
     /**
@@ -226,18 +223,18 @@ public class RedisStatsService {
      */
     /**
      * 记录点赞统计
-     * 
+     *
      * @param articleId 文章ID
      * @param userId 用户ID
-     * @param upvoteType 点赞类型（twice, helpful）
+     * @param voteType 点赞类型枚举（twice, like）
      * @throws BusinessException 当参数无效时抛出异常
      */
-    public void recordUpvote(long articleId, long userId, String upvoteType) {
+    public void recordUpvote(long articleId, long userId, Enums.VoteType voteType) {
         validateArticleId(articleId);
         validateUserId(userId);
-        validateUpvoteType(upvoteType);
-        
-        performStatsOperation(articleId, userId, upvoteType, 1, "记录点赞");
+        validateVoteType(voteType);
+
+        performStatsOperation(Enums.ContentType.post, articleId, userId, voteType.name(), 1, "记录点赞");
     }
 
     /**
@@ -260,18 +257,18 @@ public class RedisStatsService {
      */
     /**
      * 撤销点赞统计
-     * 
+     *
      * @param articleId 文章ID
      * @param userId 用户ID
-     * @param upvoteType 点赞类型（twice, helpful）
+     * @param voteType 点赞类型枚举（twice, like）
      * @throws BusinessException 当参数无效时抛出异常
      */
-    public void removeUpvote(long articleId, long userId, String upvoteType) {
+    public void removeUpvote(long articleId, long userId, Enums.VoteType voteType) {
         validateArticleId(articleId);
         validateUserId(userId);
-        validateUpvoteType(upvoteType);
-        
-        performStatsOperation(articleId, userId, upvoteType, -1, "撤销点赞");
+        validateVoteType(voteType);
+
+        performStatsOperation(Enums.ContentType.post, articleId, userId, voteType.name(), -1, "撤销点赞");
     }
 
     /**
@@ -303,7 +300,7 @@ public class RedisStatsService {
         validateArticleId(articleId);
         validateUserId(userId);
         
-        performStatsOperation(articleId, userId, STAT_TYPE_COMMENT, 1, "记录评论");
+        performStatsOperation(Enums.ContentType.post, articleId, userId, RedisStatsConstants.STAT_TYPE_COMMENT, 1, "记录评论");
     }
 
     /**
@@ -347,6 +344,6 @@ public class RedisStatsService {
         validateArticleId(articleId);
         validateUserId(userId);
         
-        performStatsOperation(articleId, userId.longValue(), STAT_TYPE_COMMENT, -1, "删除评论");
+        performStatsOperation(Enums.ContentType.post, articleId, userId.longValue(), RedisStatsConstants.STAT_TYPE_COMMENT, -1, "删除评论");
     }
 }

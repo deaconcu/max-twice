@@ -37,16 +37,13 @@ import java.util.*;
  */
 @Service
 @RequiredArgsConstructor
-public class ContentsService {
+public class TocService {
 
     /** 课程数据访问接口 */
     private final CourseDataService courseDataService;
     
     /** JSON 对象映射器，用于目录结构的序列化和反序列化 */
     private final ObjectMapper objectMapper;
-    
-    /** 节点数据访问接口 */
-    private final NodeDataService nodeDataService;
     
     /** 帖子数据访问接口 */
     private final PostDataService postDataService;

@@ -8,7 +8,7 @@ import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.ContentsService;
+import com.prosper.learn.business.service.domain.TocService;
 import com.prosper.learn.business.util.converter.NodeConverter;
 import com.prosper.learn.business.util.converter.PostConverter;
 import com.prosper.learn.business.util.converter.UserConverter;
@@ -34,7 +34,7 @@ import static com.prosper.learn.common.Enums.ContentType.post;
 @RequiredArgsConstructor
 public class PageService {
 
-    private final ContentsService contentsService;
+    private final TocService tocService;
     private final LearningProgressService learningProgressService;
     private final NodeDataService nodeDataService;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -67,7 +67,7 @@ public class PageService {
 
     public Utils.Pair<String, Map<Long, NodeWithProgressDTO>> getToc(long userId, long courseId, boolean create) {
 
-        ArrayNode arrayNode = contentsService.getToc(userId, courseId, create);
+        ArrayNode arrayNode = tocService.getToc(userId, courseId, create);
 
         Set<Long> keys = new HashSet<>();
         Utils.collectKeys(arrayNode, keys);
@@ -93,7 +93,7 @@ public class PageService {
      * 所有节点的完成状态都为false
      */
     public Utils.Pair<String, Map<Long, NodeWithProgressDTO>> getTocPublic(long courseId) {
-        ArrayNode arrayNode = contentsService.getToc(0L, courseId, true);
+        ArrayNode arrayNode = tocService.getToc(0L, courseId, true);
 
         Set<Long> keys = new HashSet<>();
         Utils.collectKeys(arrayNode, keys);

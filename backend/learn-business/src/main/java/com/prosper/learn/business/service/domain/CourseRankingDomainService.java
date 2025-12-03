@@ -12,10 +12,19 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * 课程排行榜业务服务
+ *
+ * 负责课程相关的排行榜和热度统计功能，包括：
+ * - 热门课程排行榜维护
+ * - 课程收藏数统计
+ * - 课程学习人数统计
+ * - 基于Redis的实时统计缓存
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class CourseRankingService {
+public class CourseRankingDomainService {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final SystemProperties systemProperties;

@@ -3,7 +3,7 @@ package com.prosper.learn.business.service.application;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.ContentsService;
+import com.prosper.learn.business.service.domain.TocService;
 import com.prosper.learn.business.util.converter.NodeConverter;
 import com.prosper.learn.dto.response.node.NodeWithProgressDTO;
 import com.prosper.learn.persistence.dataobject.UserProgressDO;
@@ -40,7 +40,7 @@ public class LearningProgressService {
     private final UserProgressDataService userProgressDataService;
     private final UserCourseDataService userCourseDataService;
     private final NodeDataService nodeDataService;
-    private final ContentsService contentsService;
+    private final TocService tocService;
     private final ObjectMapper objectMapper;
     private final SystemProperties systemProperties;
     private final NodeConverter nodeConverter;
@@ -657,7 +657,7 @@ public class LearningProgressService {
     private void updateCourseProgress(long userId, long nodeId, long courseId) {
         try {
             // 1. 获取用户目录1的内容
-            String toc1Content = contentsService.getToc(userId, courseId, 1);
+            String toc1Content = tocService.getToc(userId, courseId, 1);
             if (toc1Content == null) return;
             
             // 2. 解析目录结构

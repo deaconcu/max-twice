@@ -6,7 +6,7 @@ import com.prosper.learn.api.ratelimit.RateLimit;
 import com.prosper.learn.api.v1.annotation.CurrentUser;
 import com.prosper.learn.api.v1.dto.ApiResponse;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.business.service.domain.ContentsService;
+import com.prosper.learn.business.service.domain.TocService;
 import com.prosper.learn.dto.request.PostContentsRequest;
 import com.prosper.learn.persistence.dataobject.UserDO;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 @RateLimit(capacity = 80, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class ContentsController {
 
-    private final ContentsService contentsService;
+    private final TocService tocService;
 
     /**
      * 内容操作（选择、固定等）
@@ -43,16 +43,16 @@ public class ContentsController {
 
         switch (request.getAction()) {
             case 1:
-                contentsService.choose(currentUser.getId(), request.getPath(), request.getCourseId(), request.getPostingId());
+                tocService.choose(currentUser.getId(), request.getPath(), request.getCourseId(), request.getPostingId());
                 break;
             case 2:
-                contentsService.unchoose(currentUser.getId(), request.getCourseId(), request.getPath());
+                tocService.unchoose(currentUser.getId(), request.getCourseId(), request.getPath());
                 break;
             case 3:
-                contentsService.pin(currentUser.getId(), request.getCourseId(), request.getPath(), request.getPostingId(), true);
+                tocService.pin(currentUser.getId(), request.getCourseId(), request.getPath(), request.getPostingId(), true);
                 break;
             case 4:
-                contentsService.pin(currentUser.getId(), request.getCourseId(), request.getPath(), request.getPostingId(), false);
+                tocService.pin(currentUser.getId(), request.getCourseId(), request.getPath(), request.getPostingId(), false);
                 break;
             default:
                 throw ErrorCode.NOT_SUPPORTED.exception();
