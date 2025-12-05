@@ -242,7 +242,7 @@ public class CourseService {
         CourseDO courseDO = validateCourseExists(id);
 
         // 验证权限：只有所有者或管理员可以修改
-        if (!courseDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(UserRole.ADMIN)) {
+        if (!courseDO.getCreatorId().equals(operator.getId()) || !operator.hasRole(UserRole.ADMIN)) {
             throw ErrorCode.PERMISSION_DENIED.exception();
         }
 
