@@ -1,15 +1,18 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.shared.converter.CourseConverter;
+import com.prosper.learn.analytics.ranking.service.CourseRankingDomainService;
+import com.prosper.learn.application.dto.request.CreateCourseRequest;
+import com.prosper.learn.application.dto.response.course.*;
+import com.prosper.learn.content.node.NodeDO;
+import com.prosper.learn.interaction.message.MessageDomainService;
+import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
-import com.prosper.learn.application.dto.CourseBriefDTO;
-import com.prosper.learn.application.dto.CourseDetailDTO;
-import com.prosper.learn.application.dto.CourseSummaryDTO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
-import com.prosper.learn.shared.dto.request.UpdateCourseRequest;
+import com.prosper.learn.application.dto.request.UpdateCourseRequest;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
+import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
