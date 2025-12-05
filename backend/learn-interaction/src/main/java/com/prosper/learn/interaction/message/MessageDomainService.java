@@ -787,24 +787,24 @@ public class MessageDomainService {
 
         for (MessageDO messageDO : messageDOList) {
             userIdSet.add(messageDO.getReceiverId());
-            Map<String, Object> map = Util.readValueToMap(messageDO.getContent());
+            Map<String, Object> map = Utils.readValueToMap(messageDO.getContent());
 
             if (messageDO.getType() == upvote.value()) {
-                Long postingId = Util.getLong(map, "postingId");
+                Long postingId = Utils.getLong(map, "postingId");
                 if (postingId != null) {
                     postingIdSet.add(postingId);
                 }
-                nodeIdSet.add(Util.getLong(map, "nodeId"));
-                userIdSet.add(Util.getLong(map, "upvoterId"));
+                nodeIdSet.add(Utils.getLong(map, "nodeId"));
+                userIdSet.add(Utils.getLong(map, "upvoterId"));
             } else if (messageDO.getType() == invite.value()) {
-                nodeIdSet.add(Util.getLong(map, "nodeId"));
-                userIdSet.add(Util.getLong(map, "InviterId"));
+                nodeIdSet.add(Utils.getLong(map, "nodeId"));
+                userIdSet.add(Utils.getLong(map, "InviterId"));
             } else if (messageDO.getType() == follow.value()) {
-                userIdSet.add(Util.getLong(map, "followerId"));
+                userIdSet.add(Utils.getLong(map, "followerId"));
             } else if (messageDO.getType() == postComment.value() || messageDO.getType() == replyPostingComment.value() ||
                        messageDO.getType() == nodeComment.value() || messageDO.getType() == replyNodeComment.value()) {
-                nodeIdSet.add(Util.getLong(map, "nodeId"));
-                userIdSet.add(Util.getLong(map, "commenterId"));
+                nodeIdSet.add(Utils.getLong(map, "nodeId"));
+                userIdSet.add(Utils.getLong(map, "commenterId"));
             }
         }
 

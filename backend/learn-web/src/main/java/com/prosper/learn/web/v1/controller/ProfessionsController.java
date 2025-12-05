@@ -1,17 +1,17 @@
 package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.analytics.ranking.scheduler.ProfessionRankingScheduler;
+import com.prosper.learn.application.dto.request.CreateProfessionRequest;
+import com.prosper.learn.application.dto.response.ProfessionDTO;
+import com.prosper.learn.application.service.ProfessionService;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.web.v1.dto.ApiResponse;
 
-import static com.prosper.learn.common.Enums.ContentState;
-
-import com.prosper.learn.business.service.application.ProfessionService;
-import com.prosper.learn.business.service.scheduler.ProfessionRankingScheduler;
-import com.prosper.learn.dto.response.ProfessionDTO;
-import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 职业管理接口

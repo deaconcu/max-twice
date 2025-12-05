@@ -1,7 +1,11 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.persistence.dataobject.MemoryCardDO;
-import com.prosper.learn.persistence.dataobject.MemoryCardVersionDO;
+import com.prosper.learn.application.dto.response.card.CardContentDTO;
+import com.prosper.learn.application.dto.response.card.CardWithCreatorDTO;
+import com.prosper.learn.application.dto.response.card.CardWithDeckDTO;
+import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
+import com.prosper.learn.memory.card.MemoryCardDO;
+import com.prosper.learn.memory.card.MemoryCardVersionDO;
 import org.mapstruct.*;
 
 /**

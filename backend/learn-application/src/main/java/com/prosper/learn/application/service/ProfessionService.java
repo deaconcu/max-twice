@@ -1,25 +1,25 @@
 package com.prosper.learn.application.service;
 
-import static com.prosper.learn.common.Enums.ContentState;
-
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.MessageDomainService;
-import com.prosper.learn.business.service.domain.ProfessionRankingDomainService;
-import com.prosper.learn.business.util.converter.ProfessionConverter;
-import com.prosper.learn.dto.request.CreateProfessionRequest;
-import com.prosper.learn.dto.request.UpdateProfessionRequest;
-import com.prosper.learn.dto.response.ProfessionDTO;
-import com.prosper.learn.persistence.dataobject.ProfessionDO;
-import com.prosper.learn.persistence.dataobject.UserDO;
-import com.prosper.learn.business.service.data.ProfessionDataService;
+import com.prosper.learn.analytics.ranking.service.ProfessionRankingDomainService;
+import com.prosper.learn.application.converter.ProfessionConverter;
+import com.prosper.learn.application.dto.request.CreateProfessionRequest;
+import com.prosper.learn.application.dto.request.UpdateProfessionRequest;
+import com.prosper.learn.application.dto.response.ProfessionDTO;
+import com.prosper.learn.content.profession.ProfessionDO;
+import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.interaction.message.MessageDomainService;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
+import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 @Slf4j
 @Service
@@ -113,7 +113,7 @@ public class ProfessionService {
         }
 
         // 验证权限：只有所有者或管理员可以修改
-        if (!professionDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(Enums.UserRole.ADMIN)) {
+        if (!professionDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(UserRole.ADMIN)) {
             throw ErrorCode.PERMISSION_DENIED.exception();
         }
 
@@ -151,7 +151,7 @@ public class ProfessionService {
             profession.getCreatorId(),
             profession.getId(),
             profession.getName(),
-            Enums.ModerationAction.APPROVED,
+            ModerationAction.APPROVED,
             null
         );
     }
@@ -179,7 +179,7 @@ public class ProfessionService {
             profession.getCreatorId(),
             profession.getId(),
             profession.getName(),
-            Enums.ModerationAction.REJECTED,
+            ModerationAction.REJECTED,
             reasonValue
         );
     }
@@ -207,7 +207,7 @@ public class ProfessionService {
             profession.getCreatorId(),
             profession.getId(),
             profession.getName(),
-            Enums.ModerationAction.BANNED,
+            ModerationAction.BANNED,
             reasonValue
         );
     }
@@ -223,7 +223,7 @@ public class ProfessionService {
         }
 
         // 验证权限：只有所有者或管理员可以删除
-        if (!professionDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(Enums.UserRole.ADMIN)) {
+        if (!professionDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(UserRole.ADMIN)) {
             throw ErrorCode.PERMISSION_DENIED.exception();
         }
 

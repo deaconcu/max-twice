@@ -1,16 +1,18 @@
 package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.application.dto.request.CreateRoadmapRequest;
+import com.prosper.learn.application.dto.request.SetRoadmapProgressRequest;
+import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
+import com.prosper.learn.application.dto.response.roadmap.RoadmapWithStatusDTO;
+import com.prosper.learn.application.service.RoadmapService;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
-import com.prosper.learn.web.v1.dto.ApiResponse;
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.business.service.application.RoadmapService;
 import com.prosper.learn.web.v1.annotation.JsonParam;
-import com.prosper.learn.dto.response.roadmap.RoadmapSummaryDTO;
-import com.prosper.learn.dto.response.roadmap.RoadmapWithStatusDTO;
-import com.prosper.learn.persistence.dataobject.UserDO;
+import com.prosper.learn.web.v1.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +22,8 @@ import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 路线图接口
@@ -140,7 +144,7 @@ public class RoadmapsController {
             @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
             @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId) {
 
-        List<RoadmapSummaryDTO> roadmaps = roadmapService.getUserRoadmaps(userId, lastId, Enums.ContentState.PUBLISHED);
+        List<RoadmapSummaryDTO> roadmaps = roadmapService.getUserRoadmaps(userId, lastId, ContentState.PUBLISHED);
         return ApiResponse.success(roadmaps);
     }
 

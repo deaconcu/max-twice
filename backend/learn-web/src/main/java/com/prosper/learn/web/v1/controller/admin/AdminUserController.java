@@ -1,13 +1,14 @@
 package com.prosper.learn.web.v1.controller.admin;
 
+import com.prosper.learn.application.dto.response.user.UserBriefDTO;
+import com.prosper.learn.application.dto.response.user.UserProfileDTO;
+import com.prosper.learn.application.service.UserService;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.web.v1.annotation.OperationLog;
 import com.prosper.learn.web.v1.annotation.RequireRole;
 import com.prosper.learn.web.v1.dto.ApiResponse;
-import com.prosper.learn.common.Enums.OperationLevel;
-import com.prosper.learn.common.Enums.UserRole;
-import com.prosper.learn.business.service.application.UserService;
-import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -17,6 +18,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 用户管理后台接口

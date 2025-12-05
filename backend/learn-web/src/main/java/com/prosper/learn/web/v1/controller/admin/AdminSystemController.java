@@ -3,21 +3,23 @@ package com.prosper.learn.web.v1.controller.admin;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.infrastructure.config.SystemDataService;
 import com.prosper.learn.web.v1.dto.ApiResponse;
 import com.prosper.learn.web.v1.annotation.JsonParam;
 import com.prosper.learn.web.v1.annotation.OperationLog;
 import com.prosper.learn.web.v1.annotation.RequireRole;
-import com.prosper.learn.common.Enums;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.business.service.data.SystemDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.Map;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 系统配置管理后台接口
@@ -28,7 +30,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 @SaCheckLogin
-@RequireRole(Enums.UserRole.ADMIN)
+@RequireRole(UserRole.ADMIN)
 @Validated
 public class AdminSystemController {
 
@@ -94,7 +96,7 @@ public class AdminSystemController {
     @OperationLog(
         module = "系统配置",
         type = "修改系统配置",
-        level = Enums.OperationLevel.HIGH,
+        level = OperationLevel.HIGH,
         targetType = "SystemConfig",
         targetId = "0",
         targetName = "#key"
@@ -127,7 +129,7 @@ public class AdminSystemController {
     @OperationLog(
         module = "系统配置",
         type = "删除系统配置",
-        level = Enums.OperationLevel.HIGH,
+        level = OperationLevel.HIGH,
         targetType = "SystemConfig",
         targetId = "0",
         targetName = "#key"
@@ -176,7 +178,7 @@ public class AdminSystemController {
     @OperationLog(
         module = "系统配置",
         type = "#enable ? '开启只读模式' : '关闭只读模式'",
-        level = Enums.OperationLevel.HIGH,
+        level = OperationLevel.HIGH,
         targetType = "SystemConfig",
         targetId = "0",
         targetName = "'readonly_mode'"

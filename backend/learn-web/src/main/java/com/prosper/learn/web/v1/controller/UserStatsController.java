@@ -1,17 +1,18 @@
 package com.prosper.learn.web.v1.controller;
 
+import com.prosper.learn.analytics.stats.service.UserStatsDomainService;
+import com.prosper.learn.application.dto.response.UserStatsDTO;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.web.v1.dto.ApiResponse;
 import com.prosper.learn.web.v1.annotation.RequireLogin;
-import com.prosper.learn.common.Enums.DailyStatType;
-import com.prosper.learn.common.Enums.CumulativeStatType;
-import com.prosper.learn.business.service.UserStatsService;
-import com.prosper.learn.dto.response.UserStatsDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 用户统计API接口
@@ -23,7 +24,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UserStatsController {
 
-    private final UserStatsService userStatsService;
+    private final UserStatsDomainService userStatsService;
 
     /**
      * 获取用户当前统计

@@ -1,10 +1,10 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.business.service.data.OperationLogDataService;
-import com.prosper.learn.business.util.converter.OperationLogConverter;
-import com.prosper.learn.dto.response.OperationLogDTO;
-import com.prosper.learn.dto.request.OperationLogRequest;
-import com.prosper.learn.persistence.dataobject.OperationLogDO;
+import com.prosper.learn.analytics.monitoring.OperationLogDO;
+import com.prosper.learn.analytics.monitoring.OperationLogDataService;
+import com.prosper.learn.application.converter.OperationLogConverter;
+import com.prosper.learn.application.dto.request.OperationLogRequest;
+import com.prosper.learn.application.dto.response.OperationLogDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -1,17 +1,16 @@
 package com.prosper.learn.web.v1.controller.admin;
 
+import com.prosper.learn.application.dto.request.OperateRequest;
+import com.prosper.learn.application.dto.response.ApprovalResponseDTO;
+import com.prosper.learn.application.dto.response.comment.CommentAdminDTO;
+import com.prosper.learn.application.service.CommentService;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.web.v1.annotation.OperationLog;
 import com.prosper.learn.web.v1.annotation.RequireRole;
 import com.prosper.learn.web.v1.dto.ApiResponse;
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.Enums.UserRole;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.business.service.application.CommentService;
-import com.prosper.learn.dto.request.OperateRequest;
-import com.prosper.learn.dto.response.ApprovalResponseDTO;
-import com.prosper.learn.dto.response.comment.CommentAdminDTO;
-import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +19,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 评论管理后台接口
@@ -73,7 +74,7 @@ public class AdminCommentsController {
     @OperationLog(
         module = "内容管理",
         type = "#request.action == 'APPROVE' ? '审核通过评论' : (#request.action == 'REJECT' ? '审核拒绝评论' : '屏蔽评论')",
-        level = Enums.OperationLevel.MEDIUM,
+        level = OperationLevel.MEDIUM,
         targetType = "Comment",
         targetId = "#id",
         reason = "#request.reason"

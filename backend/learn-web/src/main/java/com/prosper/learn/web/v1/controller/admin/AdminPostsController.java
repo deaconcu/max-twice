@@ -1,16 +1,16 @@
 package com.prosper.learn.web.v1.controller.admin;
 
+import com.prosper.learn.application.dto.request.OperateRequest;
+import com.prosper.learn.application.dto.response.ApprovalResponseDTO;
+import com.prosper.learn.application.dto.response.post.PostSummaryDTO;
+import com.prosper.learn.application.service.PostService;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.web.v1.annotation.OperationLog;
 import com.prosper.learn.web.v1.annotation.RequireRole;
 import com.prosper.learn.web.v1.dto.ApiResponse;
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.business.service.application.PostService;
-import com.prosper.learn.dto.request.OperateRequest;
-import com.prosper.learn.dto.response.ApprovalResponseDTO;
-import com.prosper.learn.dto.response.post.PostSummaryDTO;
-import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static com.prosper.learn.shared.domain.Enums.*;
+
 /**
  * 帖子管理后台接口
  */
@@ -27,7 +29,7 @@ import java.util.List;
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
 @Slf4j
-@RequireRole(Enums.UserRole.ADMIN)
+@RequireRole(UserRole.ADMIN)
 @Validated
 public class AdminPostsController {
 
@@ -37,28 +39,28 @@ public class AdminPostsController {
      * 根据状态获取帖子列表
      */
     @GetMapping("/posts")
-    @RequireRole(Enums.UserRole.MODERATOR)
+    @RequireRole(UserRole.MODERATOR)
     public ApiResponse<List<PostSummaryDTO>> getPostsByState(
             @RequestParam("state") @NotBlank(message = "状态不能为空") String state,
             @RequestParam(value = "lastId", defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
             @RequestParam(value = "limit", defaultValue = "20") @Positive(message = "限制数量必须大于0") Integer limit) {
-        Enums.ContentState postState;
+        ContentState postState;
 
         switch (state) {
             case "pending":
-                postState = Enums.ContentState.SUBMITTED;
+                postState = ContentState.SUBMITTED;
                 break;
             case "approved":
-                postState = Enums.ContentState.PUBLISHED;
+                postState = ContentState.PUBLISHED;
                 break;
             case "rejected":
-                postState = Enums.ContentState.REJECTED;
+                postState = ContentState.REJECTED;
                 break;
             case "banned":
-                postState = Enums.ContentState.BANNED;
+                postState = ContentState.BANNED;
                 break;
             default:
-                postState = Enums.ContentState.SUBMITTED;
+                postState = ContentState.SUBMITTED;
         }
 
         List<PostSummaryDTO> posts = postService.getPostsByState(postState, lastId, limit);
@@ -69,7 +71,7 @@ public class AdminPostsController {
      * 根据节点、用户和状态筛选帖子列表
      */
     @GetMapping("/posts/filter")
-    @RequireRole(Enums.UserRole.MODERATOR)
+    @RequireRole(UserRole.MODERATOR)
     public ApiResponse<List<PostSummaryDTO>> getPostsByNodeAndCreator(
             @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
             @RequestParam(value = "creatorId", required = false) @Positive(message = "用户ID必须大于0") Long creatorId,
@@ -84,7 +86,7 @@ public class AdminPostsController {
      * 映射: GET /post/censor → GET /api/v1/admin/posts/pending
      */
     @GetMapping("/posts/pending")
-    @RequireRole(Enums.UserRole.MODERATOR)
+    @RequireRole(UserRole.MODERATOR)
     public ApiResponse<List<PostSummaryDTO>> getPendingPosts() {
         List<PostSummaryDTO> posts = postService.getPendingPostsList();
         return ApiResponse.success(posts);
@@ -95,11 +97,11 @@ public class AdminPostsController {
      * 映射: POST /post/operate → POST /api/v1/admin/posts/{id}/approve
      */
     @PostMapping("/posts/{id}/approve")
-    @RequireRole(Enums.UserRole.MODERATOR)
+    @RequireRole(UserRole.MODERATOR)
     @OperationLog(
         module = "内容管理",
         type = "#request.action == 'APPROVE' ? '审核通过帖子' : (#request.action == 'REJECT' ? '审核拒绝帖子' : '屏蔽帖子')",
-        level = Enums.OperationLevel.MEDIUM,
+        level = OperationLevel.MEDIUM,
         targetType = "Post",
         targetId = "#id",
         reason = "#request.reason"

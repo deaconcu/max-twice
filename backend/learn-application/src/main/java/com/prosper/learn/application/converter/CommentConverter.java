@@ -1,11 +1,11 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.dto.response.CommentDTO;
-import com.prosper.learn.dto.response.comment.CommentAdminDTO;
-import com.prosper.learn.dto.response.comment.CommentDetailDTO;
-import com.prosper.learn.dto.response.comment.CommentSummaryDTO;
-import com.prosper.learn.dto.response.comment.CommentWithRepliesDTO;
-import com.prosper.learn.persistence.dataobject.CommentDO;
+import com.prosper.learn.application.dto.response.CommentDTO;
+import com.prosper.learn.application.dto.response.comment.CommentAdminDTO;
+import com.prosper.learn.application.dto.response.comment.CommentDetailDTO;
+import com.prosper.learn.application.dto.response.comment.CommentSummaryDTO;
+import com.prosper.learn.application.dto.response.comment.CommentWithRepliesDTO;
+import com.prosper.learn.interaction.comment.CommentDO;
 import org.mapstruct.*;
 
 import java.util.List;

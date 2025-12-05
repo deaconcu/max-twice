@@ -1,13 +1,15 @@
 package com.prosper.learn.web.v1.interceptor;
 
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.business.service.data.SystemDataService;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.infrastructure.config.SystemDataService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+
+import static com.prosper.learn.shared.domain.exception.ErrorCode.*;
 
 /**
  * 只读模式拦截器
@@ -36,7 +38,7 @@ public class ReadOnlyModeInterceptor implements HandlerInterceptor {
             // 检查是否只读模式
             if (systemDataService.isReadOnlyMode()) {
                 log.warn("只读模式拦截: {} {}", method, request.getRequestURI());
-                throw ErrorCode.SYSTEM_READONLY_MODE.exception();
+                throw SYSTEM_READONLY_MODE.exception();
             }
         }
         return true;

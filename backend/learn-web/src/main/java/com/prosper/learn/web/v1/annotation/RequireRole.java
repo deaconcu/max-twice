@@ -1,6 +1,6 @@
 package com.prosper.learn.web.v1.annotation;
 
-import com.prosper.learn.common.Enums;
+import com.prosper.learn.shared.domain.Enums;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -3,6 +3,7 @@ package com.prosper.learn.application.service;
 import com.prosper.learn.analytics.ranking.service.CourseRankingDomainService;
 import com.prosper.learn.application.dto.request.CreateCourseRequest;
 import com.prosper.learn.application.dto.response.course.*;
+import com.prosper.learn.content.course.CourseDomainService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.interaction.message.MessageDomainService;
 import com.prosper.learn.application.converter.CourseConverter;
@@ -30,89 +31,13 @@ import static com.prosper.learn.shared.domain.Enums.*;
 @RequiredArgsConstructor
 public class CourseService {
 
+    private final CourseDomainService courseDomainService;
     private final CourseDataService courseDataService;
     private final NodeDataService nodeDataService;
     private final CourseRankingDomainService courseRankingDomainService;
     private final MessageDomainService messageDomainService;
     private final SystemProperties systemProperties;
     private final CourseConverter courseConverter;
-
-    // ========== 私有辅助方法 ==========
-
-    /**
-     * 验证课程是否存在
-     */
-    private CourseDO validateCourseExists(long courseId) {
-        CourseDO courseDO = courseDataService.getById(courseId);
-        if (courseDO == null) {
-            throw ErrorCode.COURSE_NOT_FOUND.exception();
-        }
-        return courseDO;
-    }
-
-    /**
-     * 验证父课程是否存在
-     */
-    private void validateParentCourseExists(long parentId) {
-        if (!systemProperties.getCourse().isEnableParentValidation()) {
-            return;
-        }
-        if (parentId > 0) {
-            CourseDO parentCourse = courseDataService.getById(parentId);
-            if (parentCourse == null) {
-                throw ErrorCode.COURSE_PARENT_NOT_FOUND.exception();
-            }
-        }
-    }
-
-    /**
-     * 验证课程状态并检查重复操作
-     */
-    private void validateCommonStateForApproval(CourseDO courseDO) {
-        if (!systemProperties.getCourse().isEnableStateValidation()) {
-            return;
-        }
-        if (ContentState.PUBLISHED.value().equals(courseDO.getState())) {
-            throw ErrorCode.COURSE_ALREADY_APPROVED.exception();
-        }
-    }
-
-    /**
-     * 验证课程状态并检查重复操作（审核不通过）
-     */
-    private void validateCommonStateForRejection(CourseDO courseDO) {
-        if (!systemProperties.getCourse().isEnableStateValidation()) {
-            return;
-        }
-        if (ContentState.REJECTED.value().equals(courseDO.getState())) {
-            throw ErrorCode.COURSE_ALREADY_BANNED.exception();
-        }
-        if (ContentState.BANNED.value().equals(courseDO.getState())) {
-            throw ErrorCode.COURSE_ALREADY_BANNED.exception();
-        }
-    }
-
-    /**
-     * 验证课程是否可以被封禁
-     * SUBMITTED、APPROVED、REJECTED 状态都可以被封禁
-     */
-    private void validateStateForBan(CourseDO courseDO) {
-        if (!systemProperties.getCourse().isEnableStateValidation()) {
-            return;
-        }
-        if (ContentState.BANNED.value().equals(courseDO.getState())) {
-            throw ErrorCode.COURSE_ALREADY_BANNED.exception();
-        }
-    }
-
-    /**
-     * 验证数据库操作结果
-     */
-    private void validateOperationResult(int rowsAffected) {
-        if (rowsAffected == 0) {
-            throw ErrorCode.COURSE_STATE_CONFLICT.exception();
-        }
-    }
 
 
     // ========== DTO 转换方法 ==========
@@ -210,7 +135,7 @@ public class CourseService {
     // ========== 公共业务方法 ==========
 
     public CourseDetailDTO getCourseById(Long id) {
-        CourseDO course = validateCourseExists(id);
+        CourseDO course = courseDomainService.validateAndGet(id);
         return toDetailDTO(course);
     }
 
@@ -221,12 +146,7 @@ public class CourseService {
     }
 
     public Map<Long, CourseDO> getCourseMap(List<Long> ids) {
-        Map<Long, CourseDO> courseMap = new HashMap<>();
-        if (ids == null || ids.isEmpty()) return courseMap;
-
-        List<CourseDO> courseList = courseDataService.getByIds(ids);
-        courseMap = courseList.stream().collect(Collectors.toMap(CourseDO::getId, course -> course));
-        return courseMap;
+        return courseDomainService.getByIds(ids);
     }
 
     /**
@@ -238,6 +158,13 @@ public class CourseService {
         return toSummaryDTO(courseDataService.listByParentAndState(ContentState.PUBLISHED, parentCourseId));
     }
 
+    /**
+     * 更新课程信息
+     *
+     * 应用层职责：
+     * 1. 权限验证（跨User域）
+     * 2. 调用领域服务执行更新
+     */
     @Transactional
     public void updateCourse(Long id, UpdateCourseRequest request, UserDO operator) {
         // 先验证参数
@@ -245,28 +172,30 @@ public class CourseService {
             throw ErrorCode.INVALID_PARAMETER.exception("课程更新请求不能为空");
         }
 
-        CourseDO courseDO = validateCourseExists(id);
-
         // 验证权限：只有所有者或管理员可以修改
-        if (!courseDO.getCreatorId().equals(operator.getId()) || !operator.hasRole(UserRole.ADMIN)) {
+        if (!courseDomainService.isCreator(id, operator.getId()) && !operator.hasRole(UserRole.ADMIN)) {
             throw ErrorCode.PERMISSION_DENIED.exception();
         }
 
-        courseDO.setName(request.getName());
-        courseDO.setDescription(request.getDescription());
-        courseDO.setMainCategory(request.getMainCategory());
-        courseDO.setSubCategory(request.getSubCategory());
-        courseDataService.update(courseDO);
+        // 调用领域服务执行更新
+        courseDomainService.updateCourse(
+            id,
+            request.getName(),
+            request.getDescription(),
+            request.getMainCategory(),
+            request.getSubCategory()
+        );
     }
 
-    @Cacheable(value = "cs", key = "#id")
+    /**
+     * 获取课程 DO
+     */
     public CourseDO getCourseDOById(long id) {
-        return courseDataService.getById(id);
+        return courseDomainService.getById(id);
     }
 
     public boolean exist(long id) {
-        CourseDO courseDO = courseDataService.getById(id);
-        return courseDO != null;
+        return courseDomainService.exists(id);
     }
 
     public CourseDetailDTO getCourseDetailDTOById(Long courseId) {
@@ -314,14 +243,19 @@ public class CourseService {
                 .collect(java.util.stream.Collectors.toList());
     }
 
+    /**
+     * 审核通过课程
+     *
+     * 应用层职责：编排领域服务 + 发送通知（跨Interaction域）
+     */
     public void approve(long id, UserDO operator) {
-        CourseDO courseDO = validateCourseExists(id);
-        validateCommonStateForApproval(courseDO);
+        CourseDO courseDO = courseDomainService.validateAndGet(id);
+        courseDomainService.validateStateForApproval(courseDO);
 
         int rowsAffected = courseDataService.approve(id);
-        validateOperationResult(rowsAffected);
+        courseDomainService.validateOperationResult(rowsAffected);
 
-        // 发送审核通过通知
+        // 发送审核通过通知（跨域调用）
         messageDomainService.sendCourseModeration(
             courseDO.getCreatorId(),
             courseDO.getId(),
@@ -331,14 +265,19 @@ public class CourseService {
         );
     }
 
+    /**
+     * 拒绝课程
+     *
+     * 应用层职责：编排领域服务 + 发送通知（跨Interaction域）
+     */
     public void reject(long id, String reason, UserDO operator) {
-        CourseDO courseDO = validateCourseExists(id);
-        validateCommonStateForRejection(courseDO);
+        CourseDO courseDO = courseDomainService.validateAndGet(id);
+        courseDomainService.validateStateForRejection(courseDO);
 
         int rowsAffected = courseDataService.reject(id, reason);
-        validateOperationResult(rowsAffected);
+        courseDomainService.validateOperationResult(rowsAffected);
 
-        // 发送拒绝通知
+        // 发送拒绝通知（跨域调用）
         messageDomainService.sendCourseModeration(
             courseDO.getCreatorId(),
             courseDO.getId(),
@@ -348,14 +287,19 @@ public class CourseService {
         );
     }
 
+    /**
+     * 封禁课程
+     *
+     * 应用层职责：编排领域服务 + 发送通知（跨Interaction域）
+     */
     public void ban(long id, String reason, UserDO operator) {
-        CourseDO courseDO = validateCourseExists(id);
-        validateStateForBan(courseDO);
+        CourseDO courseDO = courseDomainService.validateAndGet(id);
+        courseDomainService.validateStateForBan(courseDO);
 
         int rowsAffected = courseDataService.ban(id, reason);
-        validateOperationResult(rowsAffected);
+        courseDomainService.validateOperationResult(rowsAffected);
 
-        // 发送封禁通知
+        // 发送封禁通知（跨域调用）
         messageDomainService.sendCourseModeration(
             courseDO.getCreatorId(),
             courseDO.getId(),
@@ -365,13 +309,11 @@ public class CourseService {
         );
     }
 
+    /**
+     * 删除课程
+     */
     public void delete(long id, UserDO operator) {
-        validateCourseExists(id);
-
-        int rowsAffected = courseDataService.delete(id);
-        if (rowsAffected == 0) {
-            throw ErrorCode.COURSE_DELETE_FAILED.exception();
-        }
+        courseDomainService.deleteCourse(id);
     }
 
     public void createCourse(CreateCourseRequest request, UserDO creator) {
@@ -400,7 +342,7 @@ public class CourseService {
     }
 
     public void createSubcourse(String name, String description, long parentId, UserDO creator) {
-        validateParentCourseExists(parentId);
+        courseDomainService.validateParentExists(parentId);
         CourseDO parentCourse = courseDataService.getById(parentId);
 
         CourseDO subCourse = new CourseDO();

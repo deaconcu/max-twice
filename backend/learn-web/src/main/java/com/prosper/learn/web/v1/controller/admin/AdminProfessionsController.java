@@ -1,19 +1,17 @@
 package com.prosper.learn.web.v1.controller.admin;
 
+import com.prosper.learn.application.dto.request.OperateRequest;
+import com.prosper.learn.application.dto.request.UpdateProfessionRequest;
+import com.prosper.learn.application.dto.response.ApprovalResponseDTO;
+import com.prosper.learn.application.dto.response.ProfessionDTO;
+import com.prosper.learn.application.service.ProfessionService;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.web.v1.annotation.OperationLog;
-import com.prosper.learn.web.v1.dto.ApiResponse;
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.Enums.ContentState;
-import com.prosper.learn.common.Enums.UserRole;
 import com.prosper.learn.web.v1.annotation.RequireRole;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.business.service.application.ProfessionService;
-import com.prosper.learn.dto.request.OperateRequest;
-import com.prosper.learn.dto.request.UpdateProfessionRequest;
-import com.prosper.learn.dto.response.ApprovalResponseDTO;
-import com.prosper.learn.dto.response.ProfessionDTO;
-import com.prosper.learn.persistence.dataobject.UserDO;
+import com.prosper.learn.web.v1.dto.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -23,6 +21,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 职业管理后台接口
@@ -65,7 +65,7 @@ public class AdminProfessionsController {
     @OperationLog(
         module = "内容管理",
         type = "更新职业信息",
-        level = Enums.OperationLevel.MEDIUM,
+        level = OperationLevel.MEDIUM,
         targetType = "Profession",
         targetId = "#id"
     )
@@ -88,7 +88,7 @@ public class AdminProfessionsController {
     @OperationLog(
         module = "内容管理",
         type = "#request.action == 'APPROVE' ? '审核通过职业' : (#request.action == 'REJECT' ? '审核拒绝职业' : '屏蔽职业')",
-        level = Enums.OperationLevel.MEDIUM,
+        level = OperationLevel.MEDIUM,
         targetType = "Profession",
         targetId = "#id",
         reason = "#request.reason"

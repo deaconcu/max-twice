@@ -1,18 +1,17 @@
 package com.prosper.learn.application.service;
 
-import static com.prosper.learn.common.Enums.UserProgressState;
-
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.business.service.domain.CourseRankingDomainService;
-import com.prosper.learn.business.util.converter.CourseConverter;
-import com.prosper.learn.business.util.converter.UserCourseConverter;
-import com.prosper.learn.dto.response.course.CourseSummaryDTO;
-import com.prosper.learn.dto.response.usercourse.UserCourseSummaryDTO;
-import com.prosper.learn.dto.response.usercourse.UserCourseWithCourseDTO;
-import com.prosper.learn.persistence.dataobject.CourseDO;
-import com.prosper.learn.persistence.dataobject.UserCourseDO;
-import com.prosper.learn.business.service.data.CourseDataService;
-import com.prosper.learn.business.service.data.UserCourseDataService;
+import com.prosper.learn.analytics.ranking.service.CourseRankingDomainService;
+import com.prosper.learn.application.converter.CourseConverter;
+import com.prosper.learn.application.converter.UserCourseConverter;
+import com.prosper.learn.application.dto.response.course.CourseSummaryDTO;
+import com.prosper.learn.application.dto.response.usercourse.UserCourseSummaryDTO;
+import com.prosper.learn.application.dto.response.usercourse.UserCourseWithCourseDTO;
+import com.prosper.learn.content.course.CourseDO;
+import com.prosper.learn.content.course.CourseDataService;
+import com.prosper.learn.learning.enrollment.UserCourseDO;
+import com.prosper.learn.learning.enrollment.UserCourseDataService;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +19,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 @Service
 @RequiredArgsConstructor

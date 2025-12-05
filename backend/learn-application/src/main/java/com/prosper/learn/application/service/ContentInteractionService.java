@@ -1,11 +1,16 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.business.service.domain.UpvoteDomainService;
-import com.prosper.learn.persistence.dataobject.CommentDO;
-import com.prosper.learn.persistence.dataobject.PostDO;
-import com.prosper.learn.persistence.dataobject.RoadmapDO;
-import com.prosper.learn.persistence.dataobject.MemoryCardDeckDO;
-import com.prosper.learn.persistence.dataobject.UserDO;
+import com.prosper.learn.content.post.PostDO;
+import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.content.roadmap.RoadmapDO;
+import com.prosper.learn.content.roadmap.RoadmapDataService;
+import com.prosper.learn.interaction.comment.CommentDO;
+import com.prosper.learn.interaction.comment.CommentDataService;
+import com.prosper.learn.interaction.upvote.UpvoteDomainService;
+import com.prosper.learn.memory.deck.MemoryCardDeckDO;
+import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
+
+import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

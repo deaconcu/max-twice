@@ -1,15 +1,15 @@
 package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.application.service.PageService;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.web.v1.dto.ApiResponse;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
-import com.prosper.learn.business.service.application.PageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 

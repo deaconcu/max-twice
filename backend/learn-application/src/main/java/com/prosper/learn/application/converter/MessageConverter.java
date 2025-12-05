@@ -1,7 +1,7 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.dto.response.message.MessageDTO;
-import com.prosper.learn.persistence.dataobject.MessageDO;
+import com.prosper.learn.application.dto.response.message.MessageDTO;
+import com.prosper.learn.interaction.message.MessageDO;
 import org.mapstruct.*;
 
 import java.util.List;

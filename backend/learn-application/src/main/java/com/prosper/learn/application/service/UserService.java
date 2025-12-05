@@ -1,11 +1,25 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.common.Utils;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.MessageDomainService;
-import com.prosper.learn.business.util.converter.UserConverter;
-import com.prosper.learn.dto.response.old.UserDTOV2;
+import com.prosper.learn.application.converter.UserConverter;
+import com.prosper.learn.application.dto.response.FolloweeDTO;
+import com.prosper.learn.application.dto.response.SubscriptionDTO;
+import com.prosper.learn.application.dto.response.old.UserDTOV2;
+import com.prosper.learn.application.dto.response.user.*;
+import com.prosper.learn.content.course.CourseDO;
+import com.prosper.learn.content.course.CourseDataService;
+import com.prosper.learn.interaction.follow.FollowDO;
+import com.prosper.learn.interaction.follow.FollowDataService;
+import com.prosper.learn.interaction.message.MessageDomainService;
+import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
+import com.prosper.learn.user.auth.VerificationDO;
+import com.prosper.learn.user.auth.VerificationDataService;
+import com.prosper.learn.user.profile.UserDO;
+import com.prosper.learn.user.profile.UserDataService;
+import com.prosper.learn.user.profile.UserProfileDO;
+import com.prosper.learn.user.profile.UserProfileDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
@@ -19,7 +33,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.prosper.learn.common.Enums.*;
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 用户业务服务

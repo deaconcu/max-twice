@@ -1,7 +1,7 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.dto.response.ValidationRuleDTO;
+import com.prosper.learn.application.dto.response.ValidationRuleDTO;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,7 +1,7 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.dto.response.FollowDTO;
-import com.prosper.learn.persistence.dataobject.FollowDO;
+import com.prosper.learn.application.dto.response.FollowDTO;
+import com.prosper.learn.interaction.follow.FollowDO;
 import org.mapstruct.*;
 
 import java.util.List;

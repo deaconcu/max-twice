@@ -1,18 +1,17 @@
 package com.prosper.learn.web.v1.controller.admin;
 
+import com.prosper.learn.application.dto.request.OperateRequest;
+import com.prosper.learn.application.dto.request.UpdateCourseRequest;
+import com.prosper.learn.application.dto.response.ApprovalResponseDTO;
+import com.prosper.learn.application.dto.response.course.CourseDetailDTO;
+import com.prosper.learn.application.service.CourseService;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.web.v1.annotation.OperationLog;
-import com.prosper.learn.web.v1.dto.ApiResponse;
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.Enums.ContentState;
-import com.prosper.learn.common.Enums.UserRole;
 import com.prosper.learn.web.v1.annotation.RequireRole;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.business.service.application.CourseService;
-import com.prosper.learn.dto.request.OperateRequest;
-import com.prosper.learn.dto.request.UpdateCourseRequest;
-import com.prosper.learn.dto.response.ApprovalResponseDTO;
-import com.prosper.learn.persistence.dataobject.UserDO;
+import com.prosper.learn.web.v1.dto.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -24,6 +23,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static com.prosper.learn.shared.domain.Enums.*;
+
 /**
  * 课程管理后台接口
  */
@@ -31,7 +32,7 @@ import java.util.List;
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
 @Slf4j
-@RequireRole(Enums.UserRole.ADMIN)
+@RequireRole(UserRole.ADMIN)
 @Validated
 public class AdminCoursesController {
 
@@ -116,7 +117,7 @@ public class AdminCoursesController {
     @OperationLog(
         module = "内容管理",
         type = "#request.action == 'APPROVE' ? '审核通过课程' : (#request.action == 'REJECT' ? '审核拒绝课程' : (#request.action == 'BAN' ? '屏蔽课程' : (#request.action == 'DELETE' ? '删除课程' : '恢复课程')))",
-        level = Enums.OperationLevel.MEDIUM,
+        level = OperationLevel.MEDIUM,
         targetType = "Course",
         targetId = "#id",
         reason = "#request.reason"
@@ -195,7 +196,7 @@ public class AdminCoursesController {
     @OperationLog(
         module = "内容管理",
         type = "更新课程信息",
-        level = Enums.OperationLevel.MEDIUM,
+        level = OperationLevel.MEDIUM,
         targetType = "Course",
         targetId = "#id"
     )

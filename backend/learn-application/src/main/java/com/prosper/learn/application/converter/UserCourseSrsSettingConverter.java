@@ -1,7 +1,7 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.dto.response.UserCourseSrsSettingDTO;
-import com.prosper.learn.persistence.dataobject.UserCourseSrsSettingDO;
+import com.prosper.learn.application.dto.response.UserCourseSrsSettingDTO;
+import com.prosper.learn.memory.review.UserCourseSrsSettingDO;
 import org.mapstruct.*;
 
 import java.util.List;

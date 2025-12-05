@@ -1,25 +1,37 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.MessageDomainService;
-import com.prosper.learn.business.service.domain.RedisStatsService;
-import com.prosper.learn.business.service.domain.ScoreCalculationService;
-import com.prosper.learn.business.util.converter.CommentConverter;
-import com.prosper.learn.dto.request.CreateCommentRequest;
-import com.prosper.learn.dto.response.CommentDTO;
-import com.prosper.learn.dto.response.KeysetPageResponse;
-import com.prosper.learn.dto.response.comment.CommentAdminDTO;
-import com.prosper.learn.dto.response.comment.CommentDetailDTO;
-import com.prosper.learn.dto.response.comment.CommentWithRepliesDTO;
+import com.prosper.learn.analytics.stats.service.RedisStatsDomainService;
+import com.prosper.learn.application.converter.CommentConverter;
+import com.prosper.learn.application.dto.request.CreateCommentRequest;
+import com.prosper.learn.application.dto.response.CommentDTO;
+import com.prosper.learn.application.dto.response.KeysetPageResponse;
+import com.prosper.learn.application.dto.response.comment.CommentAdminDTO;
+import com.prosper.learn.application.dto.response.comment.CommentDetailDTO;
+import com.prosper.learn.application.dto.response.comment.CommentWithRepliesDTO;
+import com.prosper.learn.content.node.NodeDO;
+import com.prosper.learn.content.node.NodeDataService;
+import com.prosper.learn.content.post.PostDO;
+import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.content.roadmap.RoadmapDO;
+import com.prosper.learn.content.roadmap.RoadmapDataService;
+import com.prosper.learn.interaction.comment.CommentDO;
+import com.prosper.learn.interaction.comment.CommentDataService;
+import com.prosper.learn.interaction.message.MessageDomainService;
+import com.prosper.learn.interaction.upvote.UpvoteDO;
+import com.prosper.learn.interaction.upvote.UpvoteDataService;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
+import com.prosper.learn.user.profile.UserDO;
+import com.prosper.learn.user.profile.UserDataService;
+import lombok.RequiredArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
-import static com.prosper.learn.common.Enums.MessageType.*;
+import static com.prosper.learn.shared.domain.Enums.*;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +45,7 @@ public class CommentService {
     private final RoadmapDataService roadmapDataService;
     private final MessageDomainService messageDomainService;
     private final ScoreCalculationService scoreCalculationService;
-    private final RedisStatsService redisStatsService;
+    private final RedisStatsDomainService redisStatsService;
     private final SystemProperties systemProperties;
     private final CommentConverter commentConverter;
 
@@ -70,9 +82,9 @@ public class CommentService {
      * 验证评论类型
      */
     private void validateCommentType(int type) {
-        if (type != Enums.ContentType.post.value() &&
-            type != Enums.ContentType.node.value() &&
-            type != Enums.ContentType.roadmap.value()) {
+        if (type != ContentType.post.value() &&
+            type != ContentType.node.value() &&
+            type != ContentType.roadmap.value()) {
             throw ErrorCode.COMMENT_INVALID_TYPE.exception();
         }
     }
@@ -172,11 +184,11 @@ public class CommentService {
         NodeDO nodeDO = null;
         RoadmapDO roadmapDO = null;
 
-        if (request.getObjectType() == Enums.ContentType.post.value()) {
+        if (request.getObjectType() == ContentType.post.value()) {
             postDO = validateAndGetPost(request.getObjectId());
-        } else if (request.getObjectType() == Enums.ContentType.node.value()) {
+        } else if (request.getObjectType() == ContentType.node.value()) {
             nodeDO = validateAndGetNode(request.getObjectId());
-        } else if (request.getObjectType() == Enums.ContentType.roadmap.value()) {
+        } else if (request.getObjectType() == ContentType.roadmap.value()) {
             roadmapDO = validateAndGetRoadmap(request.getObjectId());
         } else {
             throw ErrorCode.COMMENT_INVALID_TYPE.exception();
@@ -190,7 +202,7 @@ public class CommentService {
         commentDO.setToUserId(request.getToUser() == null ? 0 : request.getToUser());
         commentDO.setContent(request.getContent());
         commentDO.setCreatorId(commentor.getId());
-        commentDO.setState(Enums.ContentState.SUBMITTED.value());  // 设置为待审核状态
+        commentDO.setState(ContentState.SUBMITTED.value());  // 设置为待审核状态
         //commentDO.setScore(scoreCalculationService.calculateCommentScore(commentDO));
         commentDO.setScore(0.0);
         commentDataService.insert(commentDO);
@@ -214,13 +226,13 @@ public class CommentService {
      */
     private void createCommentNotification(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
                                          PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO) {
-        if (request.getObjectType() == Enums.ContentType.post.value() && postDO != null) {
+        if (request.getObjectType() == ContentType.post.value() && postDO != null) {
             messageDomainService.createCommentMessage(postDO.getCreatorId(), fromUser.getId(),
                                               postDO.getNodeId(), commentDO.getId(), MessageType.postComment.value());
-        } else if (request.getObjectType() == Enums.ContentType.node.value() && nodeDO != null) {
+        } else if (request.getObjectType() == ContentType.node.value() && nodeDO != null) {
             messageDomainService.createCommentMessage(nodeDO.getCreatorId(), fromUser.getId(),
                                               nodeDO.getId(), commentDO.getId(), MessageType.nodeComment.value());
-        } else if (request.getObjectType() == Enums.ContentType.roadmap.value() && roadmapDO != null) {
+        } else if (request.getObjectType() == ContentType.roadmap.value() && roadmapDO != null) {
             messageDomainService.createCommentMessage(roadmapDO.getCreatorId(), fromUser.getId(),
                                               roadmapDO.getId(), commentDO.getId(), MessageType.roadmapComment.value());
         }
@@ -231,13 +243,13 @@ public class CommentService {
      */
     private void createReplyNotification(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
                                        PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO, Long parentUserId) {
-        if (request.getObjectType() == Enums.ContentType.node.value() && nodeDO != null) {
+        if (request.getObjectType() == ContentType.node.value() && nodeDO != null) {
             messageDomainService.createCommentMessage(parentUserId, fromUser.getId(),
                                               nodeDO.getId(), commentDO.getId(), MessageType.replyNodeComment.value());
-        } else if (request.getObjectType() == Enums.ContentType.post.value() && postDO != null) {
+        } else if (request.getObjectType() == ContentType.post.value() && postDO != null) {
             messageDomainService.createCommentMessage(parentUserId, fromUser.getId(),
                                               postDO.getNodeId(), commentDO.getId(), MessageType.replyPostingComment.value());
-        } else if (request.getObjectType() == Enums.ContentType.roadmap.value() && roadmapDO != null) {
+        } else if (request.getObjectType() == ContentType.roadmap.value() && roadmapDO != null) {
             messageDomainService.createCommentMessage(parentUserId, fromUser.getId(),
                                               roadmapDO.getId(), commentDO.getId(), MessageType.replyRoadmapComment.value());
         }
@@ -281,7 +293,7 @@ public class CommentService {
             return commentDTOList;
         }
 
-        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, allIds, Enums.ContentType.comment.value());
+        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, allIds, ContentType.comment.value());
 
         Set<Long> upvotedSet = new HashSet<>();
         for (UpvoteDO upvoteDO : upvoteList) {
@@ -404,16 +416,16 @@ public class CommentService {
         byte stateValue;
         switch (state.toLowerCase()) {
             case "pending":
-                stateValue = Enums.ContentState.SUBMITTED.value();
+                stateValue = ContentState.SUBMITTED.value();
                 break;
             case "approved":
-                stateValue = Enums.ContentState.PUBLISHED.value();
+                stateValue = ContentState.PUBLISHED.value();
                 break;
             case "rejected":
-                stateValue = Enums.ContentState.REJECTED.value();
+                stateValue = ContentState.REJECTED.value();
                 break;
             case "banned":
-                stateValue = Enums.ContentState.BANNED.value();
+                stateValue = ContentState.BANNED.value();
                 break;
             default:
                 throw ErrorCode.INVALID_PARAMETER.exception("无效的状态参数: " + state);
@@ -444,22 +456,22 @@ public class CommentService {
         CommentDO commentDO = validateAndGetComment(id);
         int oldState = commentDO.getState();
 
-        if (approve && oldState != Enums.ContentState.PUBLISHED.value()) {
-            commentDO.setState(Enums.ContentState.PUBLISHED.value());
+        if (approve && oldState != ContentState.PUBLISHED.value()) {
+            commentDO.setState(ContentState.PUBLISHED.value());
             commentDataService.update(commentDO);
 
             // 通过审核，评论数+1
-            if (oldState == Enums.ContentState.SUBMITTED.value() || oldState == Enums.ContentState.REJECTED.value()) {
+            if (oldState == ContentState.SUBMITTED.value() || oldState == ContentState.REJECTED.value()) {
                 updateObjectCommentCount(commentDO, 1);
             }
         }
 
-        if (!approve && oldState != Enums.ContentState.REJECTED.value()) {
-            commentDO.setState(Enums.ContentState.REJECTED.value());
+        if (!approve && oldState != ContentState.REJECTED.value()) {
+            commentDO.setState(ContentState.REJECTED.value());
             commentDataService.update(commentDO);
 
             // 拒绝评论，评论数-1
-            if (oldState == Enums.ContentState.PUBLISHED.value()) {
+            if (oldState == ContentState.PUBLISHED.value()) {
                 updateObjectCommentCount(commentDO, -1);
             }
         }
@@ -476,8 +488,8 @@ public class CommentService {
         CommentDO commentDO = validateAndGetComment(id);
         int oldState = commentDO.getState();
 
-        if (oldState != Enums.ContentState.PUBLISHED.value()) {
-            commentDO.setState(Enums.ContentState.PUBLISHED.value());
+        if (oldState != ContentState.PUBLISHED.value()) {
+            commentDO.setState(ContentState.PUBLISHED.value());
             commentDO.setReason(null);  // 清空拒绝原因
             commentDataService.update(commentDO);
 
@@ -497,15 +509,15 @@ public class CommentService {
 
         // 获取评论对象信息用于通知
         String objectType = "node"; // 默认为 node
-        if (commentDO.getObjectType() == Enums.ContentType.post.value()) {
+        if (commentDO.getObjectType() == ContentType.post.value()) {
             objectType = "post";
-        } else if (commentDO.getObjectType() == Enums.ContentType.roadmap.value()) {
+        } else if (commentDO.getObjectType() == ContentType.roadmap.value()) {
             objectType = "roadmap";
         }
 
         String objectTitle = "";
 
-        if (commentDO.getObjectType() == Enums.ContentType.post.value()) {
+        if (commentDO.getObjectType() == ContentType.post.value()) {
             PostDO postDO = postDataService.getById(commentDO.getObjectId());
             if (postDO != null && postDO.getContent() != null) {
                 objectTitle = com.prosper.learn.business.util.Util.stripFormatting(postDO.getContent());
@@ -513,10 +525,10 @@ public class CommentService {
                     objectTitle = objectTitle.substring(0, 50) + "...";
                 }
             }
-        } else if (commentDO.getObjectType() == Enums.ContentType.node.value()) {
+        } else if (commentDO.getObjectType() == ContentType.node.value()) {
             NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
             if (nodeDO != null) objectTitle = nodeDO.getName();
-        } else if (commentDO.getObjectType() == Enums.ContentType.roadmap.value()) {
+        } else if (commentDO.getObjectType() == ContentType.roadmap.value()) {
             objectTitle = "路线图";
         }
 
@@ -529,7 +541,7 @@ public class CommentService {
         commentDataService.reject(id, reason);
 
         // 拒绝评论，如果之前是已批准状态，评论数-1
-        if (oldState == Enums.ContentState.PUBLISHED.value()) {
+        if (oldState == ContentState.PUBLISHED.value()) {
             updateObjectCommentCount(commentDO, -1);
         }
 
@@ -541,7 +553,7 @@ public class CommentService {
             objectType,
             commentDO.getObjectId(),
             objectTitle,
-            Enums.ModerationAction.REJECTED,
+            ModerationAction.REJECTED,
             reason
         );
     }
@@ -557,15 +569,15 @@ public class CommentService {
 
         // 获取评论对象信息用于通知
         String objectType = "node"; // 默认为 node
-        if (commentDO.getObjectType() == Enums.ContentType.post.value()) {
+        if (commentDO.getObjectType() == ContentType.post.value()) {
             objectType = "post";
-        } else if (commentDO.getObjectType() == Enums.ContentType.roadmap.value()) {
+        } else if (commentDO.getObjectType() == ContentType.roadmap.value()) {
             objectType = "roadmap";
         }
 
         String objectTitle = "";
 
-        if (commentDO.getObjectType() == Enums.ContentType.post.value()) {
+        if (commentDO.getObjectType() == ContentType.post.value()) {
             PostDO postDO = postDataService.getById(commentDO.getObjectId());
             if (postDO != null && postDO.getContent() != null) {
                 objectTitle = com.prosper.learn.business.util.Util.stripFormatting(postDO.getContent());
@@ -573,10 +585,10 @@ public class CommentService {
                     objectTitle = objectTitle.substring(0, 50) + "...";
                 }
             }
-        } else if (commentDO.getObjectType() == Enums.ContentType.node.value()) {
+        } else if (commentDO.getObjectType() == ContentType.node.value()) {
             NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
             if (nodeDO != null) objectTitle = nodeDO.getName();
-        } else if (commentDO.getObjectType() == Enums.ContentType.roadmap.value()) {
+        } else if (commentDO.getObjectType() == ContentType.roadmap.value()) {
             objectTitle = "路线图";
         }
 
@@ -589,7 +601,7 @@ public class CommentService {
         commentDataService.ban(id, reason);
 
         // 封禁评论，如果之前是已批准状态，评论数-1
-        if (oldState == Enums.ContentState.PUBLISHED.value()) {
+        if (oldState == ContentState.PUBLISHED.value()) {
             updateObjectCommentCount(commentDO, -1);
         }
 
@@ -601,7 +613,7 @@ public class CommentService {
             objectType,
             commentDO.getObjectId(),
             objectTitle,
-            Enums.ModerationAction.BANNED,
+            ModerationAction.BANNED,
             reason
         );
     }
@@ -618,7 +630,7 @@ public class CommentService {
         commentDataService.reject(id);
 
         // 拒绝评论，如果之前是已批准状态，评论数-1
-        if (oldState == Enums.ContentState.PUBLISHED.value()) {
+        if (oldState == ContentState.PUBLISHED.value()) {
             updateObjectCommentCount(commentDO, -1);
         }
     }
@@ -635,7 +647,7 @@ public class CommentService {
         commentDataService.ban(id);
 
         // 封禁评论，如果之前是已批准状态，评论数-1
-        if (oldState == Enums.ContentState.PUBLISHED.value()) {
+        if (oldState == ContentState.PUBLISHED.value()) {
             updateObjectCommentCount(commentDO, -1);
         }
     }
@@ -644,19 +656,19 @@ public class CommentService {
      * 更新对象的评论数
      */
     private void updateObjectCommentCount(CommentDO commentDO, int delta) {
-        if (commentDO.getObjectType() == Enums.ContentType.post.value()) {
+        if (commentDO.getObjectType() == ContentType.post.value()) {
             PostDO postDO = postDataService.getById(commentDO.getObjectId());
             if (postDO != null) {
                 postDO.setCommentCount(Math.max(0, postDO.getCommentCount() + delta));
                 postDataService.update(postDO);
             }
-        } else if (commentDO.getObjectType() == Enums.ContentType.node.value()) {
+        } else if (commentDO.getObjectType() == ContentType.node.value()) {
             NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
             if (nodeDO != null) {
                 nodeDO.setCommentCount(Math.max(0, nodeDO.getCommentCount() + delta));
                 nodeDataService.update(nodeDO);
             }
-        } else if (commentDO.getObjectType() == Enums.ContentType.roadmap.value()) {
+        } else if (commentDO.getObjectType() == ContentType.roadmap.value()) {
             RoadmapDO roadmapDO = roadmapDataService.getById(commentDO.getObjectId());
             if (roadmapDO != null) {
                 roadmapDO.setComment(Math.max(0, roadmapDO.getComment() + delta));
@@ -729,7 +741,7 @@ public class CommentService {
         }
 
         List<Long> ids = commentDTOList.stream().map(CommentDetailDTO::getId).toList();
-        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, ids, Enums.ContentType.comment.value());
+        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, ids, ContentType.comment.value());
 
         Set<Long> upvotedSet = new HashSet<>();
         for (UpvoteDO upvoteDO : upvoteList) {

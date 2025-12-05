@@ -1,11 +1,11 @@
 package com.prosper.learn.web.v1.controller.admin;
 
+import com.prosper.learn.application.dto.response.node.NodeDetailDTO;
+import com.prosper.learn.application.service.NodeService;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.web.v1.annotation.OperationLog;
 import com.prosper.learn.web.v1.annotation.RequireRole;
 import com.prosper.learn.web.v1.dto.ApiResponse;
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.business.service.application.NodeService;
-import com.prosper.learn.dto.response.node.NodeDetailDTO;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static com.prosper.learn.shared.domain.Enums.*;
+
 /**
  * 节点管理后台接口
  */
@@ -22,7 +24,7 @@ import java.util.List;
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
 @Slf4j
-@RequireRole(Enums.UserRole.ADMIN)
+@RequireRole(UserRole.ADMIN)
 @Validated
 public class AdminNodesController {
 
@@ -50,7 +52,7 @@ public class AdminNodesController {
     @OperationLog(
         module = "内容管理",
         type = "#state == 2 ? '审核通过节点' : (#state == 3 ? '审核拒绝节点' : '修改节点状态')",
-        level = Enums.OperationLevel.MEDIUM,
+        level = OperationLevel.MEDIUM,
         targetType = "Node",
         targetId = "#nodeId",
         reason = "#reason"
@@ -59,7 +61,7 @@ public class AdminNodesController {
             @PathVariable @Positive(message = "节点ID必须大于0") Long nodeId,
             @RequestParam @Min(value = 0, message = "状态值必须大于等于0") Integer state,
             @RequestParam(required = false, defaultValue = "") String reason) {
-        Enums.ContentState contentState = Enums.ContentState.getByValue(state);
+        ContentState contentState = ContentState.getByValue(state);
         if (contentState == null) {
             throw new IllegalArgumentException("Invalid state value: " + state);
         }

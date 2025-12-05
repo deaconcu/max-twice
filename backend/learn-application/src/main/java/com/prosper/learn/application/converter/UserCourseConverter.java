@@ -1,8 +1,8 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.dto.response.usercourse.UserCourseSummaryDTO;
-import com.prosper.learn.dto.response.usercourse.UserCourseWithCourseDTO;
-import com.prosper.learn.persistence.dataobject.UserCourseDO;
+import com.prosper.learn.application.dto.response.usercourse.UserCourseSummaryDTO;
+import com.prosper.learn.application.dto.response.usercourse.UserCourseWithCourseDTO;
+import com.prosper.learn.learning.enrollment.UserCourseDO;
 import org.mapstruct.*;
 
 import java.util.List;

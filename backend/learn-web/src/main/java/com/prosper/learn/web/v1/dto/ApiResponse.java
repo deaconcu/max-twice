@@ -1,7 +1,6 @@
 package com.prosper.learn.web.v1.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.prosper.learn.common.exception.ErrorCode;
 import lombok.Data;
 
 /**

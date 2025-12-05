@@ -1,10 +1,10 @@
 package com.prosper.learn.web.v1.resolver;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.user.profile.UserDO;
+import com.prosper.learn.user.profile.UserDataService;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.business.service.data.UserDataService;
-import com.prosper.learn.persistence.dataobject.UserDO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
@@ -12,6 +12,8 @@ import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
+
+import static com.prosper.learn.shared.domain.exception.ErrorCode.*;
 
 /**
  * CurrentUser 参数解析器
@@ -45,13 +47,13 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
             UserDO user = userDataService.getById(userId);
 
             if (user == null) {
-                throw ErrorCode.USER_NOT_FOUND.exception();
+                throw USER_NOT_FOUND.exception();
             }
 
             return user;
 
         } catch (Exception e) {
-            throw ErrorCode.USER_NOT_LOGIN.exception();
+            throw USER_NOT_LOGIN.exception();
         }
     }
 }

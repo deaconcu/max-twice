@@ -1,12 +1,15 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.business.service.domain.MessageDomainService;
-import com.prosper.learn.business.service.data.CourseDataService;
-import com.prosper.learn.business.service.data.NodeDataService;
-import com.prosper.learn.business.util.converter.NodeConverter;
-import com.prosper.learn.persistence.dataobject.CourseDO;
-import com.prosper.learn.persistence.dataobject.NodeDO;
+import com.prosper.learn.application.converter.NodeConverter;
+import com.prosper.learn.application.dto.response.node.NodeDetailDTO;
+import com.prosper.learn.application.dto.response.node.NodeWithCourseDTO;
+import com.prosper.learn.content.course.CourseDO;
+import com.prosper.learn.content.course.CourseDataService;
+import com.prosper.learn.content.node.NodeDO;
+import com.prosper.learn.content.node.NodeDataService;
+import com.prosper.learn.interaction.message.MessageDomainService;
+import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.Enums;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 @Slf4j
 @Service
@@ -28,13 +33,13 @@ public class NodeService {
     private final NodeConverter nodeConverter;
     private final CourseService courseService;
 
-    public NodeWithCourseDTO getById(Long id, Enums.DTOVersion dtoVersion) {
+    public NodeWithCourseDTO getById(Long id, DTOVersion dtoVersion) {
         if (id == null || id <= 0) {
             throw new IllegalArgumentException("Invalid node ID");
         }
         NodeDO nodeDO = nodeDataService.getById(id);
         switch (dtoVersion) {
-            case DTOVersion.V3 -> {
+            case V3 -> {
                 return toWithCourseDTO(nodeDO);
             }
             default -> throw new IllegalArgumentException("Unsupported DTO version: " + dtoVersion);
@@ -73,7 +78,7 @@ public class NodeService {
 
         List<NodeWithCourseDTO> dtoList = nodeConverter.toWithCourseDTO(nodeDOList);
         // 批量加载课程信息（基于节点）
-        List<Long> courseIds = Util.getIds(nodeDOList, dto -> ((NodeDO) dto).getCourseId());
+        List<Long> courseIds = Utils.getIds(nodeDOList, dto -> ((NodeDO) dto).getCourseId());
         Map<Long, CourseDO> courseMap = courseService.getCourseMap(courseIds);
 
         for (NodeWithCourseDTO dto : dtoList) {
@@ -107,7 +112,7 @@ public class NodeService {
      * 修改节点状态
      */
     @Transactional
-    public NodeDetailDTO updateNodeState(Long nodeId, Enums.ContentState state, String reason) {
+    public NodeDetailDTO updateNodeState(Long nodeId, ContentState state, String reason) {
         if (state == null) {
             throw new IllegalArgumentException("State cannot be null");
         }
@@ -116,9 +121,9 @@ public class NodeService {
 
         // 根据状态调用相应的方法，以便发送通知
         switch (state) {
-            case ContentState.REJECTED -> reject(nodeId, reason);
-            case ContentState.BANNED -> ban(nodeId, reason);
-            case ContentState.PUBLISHED -> approve(nodeId);
+            case REJECTED -> reject(nodeId, reason);
+            case BANNED -> ban(nodeId, reason);
+            case PUBLISHED -> approve(nodeId);
             default -> throw new IllegalArgumentException("Unsupported state: " + state);
         }
 
@@ -134,7 +139,7 @@ public class NodeService {
         nodeDataService.validateExists(nodeId);
 
         NodeDO nodeDO = nodeDataService.getById(nodeId);
-        Util.validateStateTransition(nodeDO.getState(), Enums.ContentState.PUBLISHED);
+        Utils.validateStateTransition(nodeDO.getState(), ContentState.PUBLISHED);
 
         nodeDataService.approve(nodeId);
     }
@@ -148,7 +153,7 @@ public class NodeService {
 
         // 获取节点和课程信息
         NodeDO nodeDO = nodeDataService.getById(nodeId);
-        Util.validateStateTransition(nodeDO.getState(), Enums.ContentState.REJECTED);
+        Utils.validateStateTransition(nodeDO.getState(), ContentState.REJECTED);
 
         CourseDO courseDO = courseDataService.getById(nodeDO.getCourseId());
 
@@ -162,7 +167,7 @@ public class NodeService {
                 nodeDO.getName(),
                 courseDO.getId(),
                 courseDO.getName(),
-                Enums.ModerationAction.REJECTED,
+                ModerationAction.REJECTED,
                 reason
             );
         }
@@ -177,7 +182,7 @@ public class NodeService {
 
         // 获取节点和课程信息
         NodeDO nodeDO = nodeDataService.getById(nodeId);
-        Util.validateStateTransition(nodeDO.getState(), Enums.ContentState.BANNED);
+        Utils.validateStateTransition(nodeDO.getState(), ContentState.BANNED);
 
         CourseDO courseDO = courseDataService.getById(nodeDO.getCourseId());
 
@@ -191,7 +196,7 @@ public class NodeService {
                 nodeDO.getName(),
                 courseDO.getId(),
                 courseDO.getName(),
-                Enums.ModerationAction.BANNED,
+                ModerationAction.BANNED,
                 reason
             );
         }

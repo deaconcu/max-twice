@@ -1,7 +1,7 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.dto.response.ProfessionDTO;
-import com.prosper.learn.persistence.dataobject.ProfessionDO;
+import com.prosper.learn.application.dto.response.ProfessionDTO;
+import com.prosper.learn.content.profession.ProfessionDO;
 import org.mapstruct.*;
 
 import java.util.List;

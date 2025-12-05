@@ -1,15 +1,15 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.common.Utils;
-import com.prosper.learn.common.exception.BusinessException;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.MessageDomainService;
-import com.prosper.learn.dto.response.FolloweeDTO;
-import com.prosper.learn.persistence.dataobject.FollowDO;
-import com.prosper.learn.persistence.dataobject.UserDO;
-import com.prosper.learn.business.service.data.FollowDataService;
-import com.prosper.learn.business.service.data.UserDataService;
+import com.prosper.learn.application.dto.response.FolloweeDTO;
+import com.prosper.learn.interaction.follow.FollowDO;
+import com.prosper.learn.interaction.follow.FollowDataService;
+import com.prosper.learn.interaction.message.MessageDomainService;
+import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.exception.BusinessException;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
+import com.prosper.learn.user.profile.UserDO;
+import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

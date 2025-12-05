@@ -1,15 +1,14 @@
 package com.prosper.learn.web.v1.controller.admin;
 
+import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
+import com.prosper.learn.application.service.RoadmapService;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.web.v1.annotation.JsonParam;
 import com.prosper.learn.web.v1.annotation.OperationLog;
-import com.prosper.learn.web.v1.dto.ApiResponse;
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.Enums.UserRole;
 import com.prosper.learn.web.v1.annotation.RequireRole;
-import com.prosper.learn.business.service.application.RoadmapService;
-import com.prosper.learn.dto.response.roadmap.RoadmapSummaryDTO;
-import com.prosper.learn.persistence.dataobject.UserDO;
+import com.prosper.learn.web.v1.dto.ApiResponse;
 import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +16,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 路线图管理后台接口
@@ -56,7 +57,7 @@ public class AdminRoadmapsController {
     @OperationLog(
         module = "内容管理",
         type = "更新路线图信息",
-        level = Enums.OperationLevel.MEDIUM,
+        level = OperationLevel.MEDIUM,
         targetType = "Roadmap",
         targetId = "#id"
     )

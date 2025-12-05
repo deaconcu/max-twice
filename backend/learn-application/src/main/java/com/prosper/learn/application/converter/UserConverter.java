@@ -1,7 +1,8 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.dto.response.UserDTO;
-import com.prosper.learn.persistence.dataobject.UserDO;
+import com.prosper.learn.application.dto.response.UserDTO;
+import com.prosper.learn.application.dto.response.user.*;
+import com.prosper.learn.user.profile.UserDO;
 import org.mapstruct.*;
 
 import java.util.List;

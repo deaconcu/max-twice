@@ -1,11 +1,13 @@
 package com.prosper.learn.web.v1.annotation;
 
-import com.prosper.learn.common.Enums;
+import com.prosper.learn.shared.domain.Enums;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 操作日志注解
@@ -22,7 +24,7 @@ public @interface OperationLog {
     String type();
 
     /** 操作级别 */
-    Enums.OperationLevel level() default Enums.OperationLevel.MEDIUM;
+    OperationLevel level() default OperationLevel.MEDIUM;
 
     /** 目标类型（如 "User", "Post", "Course"） */
     String targetType();

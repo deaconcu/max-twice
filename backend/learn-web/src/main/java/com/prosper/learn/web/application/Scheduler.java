@@ -1,5 +1,7 @@
 package com.prosper.learn.web.application;
 
+import com.prosper.learn.analytics.ranking.scheduler.CourseRankingScheduler;
+import com.prosper.learn.analytics.stats.service.DailyStatsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;

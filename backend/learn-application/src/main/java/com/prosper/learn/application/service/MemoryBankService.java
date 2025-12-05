@@ -1,6 +1,24 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.common.exception.ErrorCode;
+import com.prosper.learn.application.converter.CourseConverter;
+import com.prosper.learn.application.converter.CourseMemoryBankConverter;
+import com.prosper.learn.application.converter.UserCourseSrsSettingConverter;
+import com.prosper.learn.application.dto.request.AddDeckToMemoryBankRequest;
+import com.prosper.learn.application.dto.request.UpdateCourseSettingRequest;
+import com.prosper.learn.application.dto.response.CourseMemoryBankDTO;
+import com.prosper.learn.content.course.CourseDO;
+import com.prosper.learn.content.course.CourseDataService;
+import com.prosper.learn.content.post.PostDO;
+import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.memory.card.MemoryCardDO;
+import com.prosper.learn.memory.card.MemoryCardDataService;
+import com.prosper.learn.memory.deck.MemoryCardDeckDO;
+import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
+import com.prosper.learn.memory.review.*;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.user.profile.UserDO;
+import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -11,7 +29,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.prosper.learn.common.Enums.*;
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 记忆库管理业务服务

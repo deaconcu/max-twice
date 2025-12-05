@@ -1,15 +1,15 @@
 package com.prosper.learn.web.v1.controller;
 
+import com.prosper.learn.analytics.monitoring.service.PlatformStatsService;
+import com.prosper.learn.analytics.monitoring.service.StatsMonitorService;
+import com.prosper.learn.analytics.stats.service.DailyStatsService;
+import com.prosper.learn.analytics.stats.service.RedisStatsDomainService;
+import com.prosper.learn.application.dto.request.RecordViewRequest;
+import com.prosper.learn.application.dto.response.PlatformStatsDTO;
+import com.prosper.learn.application.dto.response.UserStatsDTO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.dto.ApiResponse;
-import com.prosper.learn.business.service.domain.RedisStatsService;
-import com.prosper.learn.business.service.domain.DailyStatsService;
-import com.prosper.learn.business.service.domain.StatsMonitorService;
-import com.prosper.learn.business.service.domain.PlatformStatsService;
-import com.prosper.learn.dto.response.UserStatsDTO;
-import com.prosper.learn.dto.response.PlatformStatsDTO;
-import com.prosper.learn.dto.request.RecordViewRequest;
 import com.prosper.learn.web.v1.annotation.JsonParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class StatsController {
 
     private final DailyStatsService dailyStatsService;
-    private final RedisStatsService redisStatsService;
+    private final RedisStatsDomainService redisStatsService;
     private final StatsMonitorService statsMonitorService;
     private final PlatformStatsService platformStatsService;
 

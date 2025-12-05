@@ -1,8 +1,11 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.dto.response.MemoryCardDeckDTO;
-import com.prosper.learn.dto.response.DeckDetailDTO;
-import com.prosper.learn.persistence.dataobject.MemoryCardDeckDO;
+import com.prosper.learn.application.dto.response.DeckDetailDTO;
+import com.prosper.learn.application.dto.response.MemoryCardDeckDTO;
+import com.prosper.learn.application.dto.response.deck.DeckSummaryDTO;
+import com.prosper.learn.application.dto.response.deck.DeckWithCreatorDTO;
+import com.prosper.learn.application.dto.response.deck.DeckWithVoteDTO;
+import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import org.mapstruct.*;
 
 import java.util.List;

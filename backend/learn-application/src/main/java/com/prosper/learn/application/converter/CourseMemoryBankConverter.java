@@ -1,7 +1,7 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.dto.response.CourseMemoryBankDTO;
-import com.prosper.learn.persistence.dataobject.CourseMemoryBankDO;
+import com.prosper.learn.application.dto.response.CourseMemoryBankDTO;
+import com.prosper.learn.memory.review.CourseMemoryBankDO;
 import org.mapstruct.*;
 
 import java.util.List;

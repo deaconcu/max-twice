@@ -6,23 +6,30 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.prosper.learn.business.service.domain.UpvoteDomainService;
-import com.prosper.learn.common.UnionFind;
-import com.prosper.learn.common.Utils;
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.MessageDomainService;
-import com.prosper.learn.business.service.domain.ScoreCalculationService;
-import com.prosper.learn.business.util.converter.RoadmapConverter;
-import com.prosper.learn.business.util.converter.UserConverter;
+import com.prosper.learn.application.converter.RoadmapConverter;
+import com.prosper.learn.application.converter.UserConverter;
+import com.prosper.learn.application.dto.response.ProfessionDTO;
+import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
+import com.prosper.learn.application.dto.response.roadmap.RoadmapWithStatusDTO;
+import com.prosper.learn.application.dto.response.user.UserBriefDTO;
+import com.prosper.learn.content.course.CourseDO;
+import com.prosper.learn.content.course.CourseDataService;
+import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
-import com.prosper.learn.dto.response.ProfessionDTO;
-import com.prosper.learn.persistence.dataobject.UserDO;
-import com.prosper.learn.persistence.dataobject.CourseDO;
-import com.prosper.learn.persistence.dataobject.RoadmapDO;
-import com.prosper.learn.persistence.dataobject.UserCourseDO;
-import com.prosper.learn.persistence.dataobject.UserProfileDO;
+import com.prosper.learn.interaction.message.MessageDomainService;
+import com.prosper.learn.interaction.upvote.UpvoteDomainService;
+import com.prosper.learn.learning.enrollment.UserCourseDO;
+import com.prosper.learn.learning.enrollment.UserRoadmapDataService;
+import com.prosper.learn.shared.common.utils.UnionFind;
+import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
+import com.prosper.learn.user.profile.UserDO;
+import com.prosper.learn.user.profile.UserDataService;
+import com.prosper.learn.user.profile.UserProfileDO;
+import com.prosper.learn.user.profile.UserProfileDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,8 +42,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.prosper.learn.common.Enums.*;
-import static com.prosper.learn.common.Enums.ContentState;
+import static com.prosper.learn.shared.domain.Enums.*;
 
 @Service
 @RequiredArgsConstructor
@@ -460,7 +466,7 @@ public class RoadmapService {
      * @param lastId 分页游标
      * @return 路线图列表
      */
-    public List<RoadmapSummaryDTO> getUserRoadmaps(Long userId, Long lastId, Enums.ContentState state) {
+    public List<RoadmapSummaryDTO> getUserRoadmaps(Long userId, Long lastId, ContentState state) {
         validateUserId(userId);
 
         int limit = systemProperties.getRoadmap().getDefaultPageSize();
@@ -675,7 +681,7 @@ public class RoadmapService {
         }
 
         Map<Long, String> courseNames = getCourseNames(nodeIds);
-        Map<Long, UserCourseDO> userCourseMap = systemProperties.getRoadmap().isEnableBatchStatusQuery() 
+        Map<Long, UserCourseDO> userCourseMap = systemProperties.getRoadmap().isEnableBatchStatusQuery()
             ? userCourseService.getUserCoursesBatch(userId, new ArrayList<>(nodeIds))
             : new HashMap<>();
 
@@ -792,7 +798,7 @@ public class RoadmapService {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
 
-        Util.validateStateTransition(roadmap.getState(), ContentState.PUBLISHED);
+        Utils.validateStateTransition(roadmap.getState(), ContentState.PUBLISHED);
 
         roadmapDataService.approve(id);
         roadmap.setState(ContentState.PUBLISHED.value());
@@ -840,7 +846,7 @@ public class RoadmapService {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
 
-        Util.validateStateTransition(roadmap.getState(), ContentState.BANNED);
+        Utils.validateStateTransition(roadmap.getState(), ContentState.BANNED);
 
         // 获取职业信息用于通知
         ProfessionDTO profession = professionService.getById(roadmap.getProfessionId(), false);

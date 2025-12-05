@@ -1,8 +1,12 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.dto.response.NodeDTO;
-import com.prosper.learn.persistence.dataobject.NodeDO;
+import com.prosper.learn.application.dto.response.NodeDTO;
+import com.prosper.learn.application.dto.response.node.NodeDetailDTO;
+import com.prosper.learn.application.dto.response.node.NodeSummaryDTO;
+import com.prosper.learn.application.dto.response.node.NodeWithCourseDTO;
+import com.prosper.learn.application.dto.response.node.NodeWithProgressDTO;
+import com.prosper.learn.content.node.NodeDO;
+import com.prosper.learn.shared.domain.Enums;
 import org.mapstruct.*;
 
 import java.util.List;

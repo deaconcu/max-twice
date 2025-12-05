@@ -3,26 +3,39 @@ package com.prosper.learn.application.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.Enums.PostType;
-import com.prosper.learn.common.Utils;
-import com.prosper.learn.common.exception.BusinessException;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.DailyStatsService;
-import com.prosper.learn.business.service.domain.MessageDomainService;
-import com.prosper.learn.business.util.converter.CourseConverter;
-import com.prosper.learn.business.util.converter.NodeConverter;
-import com.prosper.learn.business.util.converter.PostConverter;
-import com.prosper.learn.business.util.converter.UserConverter;
+import com.prosper.learn.analytics.stats.service.DailyStatsService;
+import com.prosper.learn.application.converter.CourseConverter;
+import com.prosper.learn.application.converter.NodeConverter;
+import com.prosper.learn.application.converter.PostConverter;
+import com.prosper.learn.application.converter.UserConverter;
+import com.prosper.learn.application.dto.request.CreatePostRequest;
+import com.prosper.learn.application.dto.request.UpdatePostRequest;
+import com.prosper.learn.application.dto.response.KeysetPageResponse;
+import com.prosper.learn.application.dto.response.NodeDTO;
+import com.prosper.learn.application.dto.response.PostDTO;
+import com.prosper.learn.application.dto.response.node.NodeSummaryDTO;
+import com.prosper.learn.application.dto.response.node.NodeWithCourseDTO;
+import com.prosper.learn.application.dto.response.post.PostFullDTO;
+import com.prosper.learn.application.dto.response.post.PostSummaryDTO;
+import com.prosper.learn.application.dto.response.post.PostWithCreatorDTO;
+import com.prosper.learn.application.dto.response.post.PostWithVoteDTO;
+import com.prosper.learn.application.dto.response.user.UserBriefDTO;
+import com.prosper.learn.content.course.CourseDO;
+import com.prosper.learn.content.course.CourseDataService;
+import com.prosper.learn.content.node.NodeDO;
+import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
-import com.prosper.learn.dto.request.CreatePostRequest;
-import com.prosper.learn.dto.request.UpdatePostRequest;
-import com.prosper.learn.dto.response.NodeDTO;
-import com.prosper.learn.dto.response.PostDTO;
-import com.prosper.learn.dto.response.node.NodeSummaryDTO;
-import com.prosper.learn.dto.response.node.NodeWithCourseDTO;
+import com.prosper.learn.interaction.message.MessageDomainService;
+import com.prosper.learn.interaction.upvote.UpvoteDO;
+import com.prosper.learn.interaction.upvote.UpvoteDataService;
+import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.BusinessException;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
+import com.prosper.learn.user.profile.UserDO;
+import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,6 +43,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 帖子服务
@@ -134,7 +149,7 @@ public class PostService {
 
         Map<Long, Integer> types = new HashMap<>();
         if (allPostingIds.size() > 0) {
-            List<UpvoteDO> upvotes = upvoteDataService.getList(userId, allPostingIds, Enums.ContentType.post.value());
+            List<UpvoteDO> upvotes = upvoteDataService.getList(userId, allPostingIds, ContentType.post.value());
             for (UpvoteDO upvote : upvotes) {
                 types.put(upvote.getObjectId(), upvote.getType());
             }
@@ -186,7 +201,7 @@ public class PostService {
         });
 
         if (allPostingIds.size() > 0) {
-            List<UpvoteDO> upvotes = upvoteDataService.getList(userId, allPostingIds, Enums.ContentType.post.value());
+            List<UpvoteDO> upvotes = upvoteDataService.getList(userId, allPostingIds, ContentType.post.value());
             Map<Long, Integer> types = new HashMap<>();
             for (UpvoteDO upvote : upvotes) {
                 types.put(upvote.getObjectId(), upvote.getType());
@@ -241,7 +256,7 @@ public class PostService {
     public List<PostDO> getList(long nodeId) {
         validateNodeId(nodeId);
         List<PostDO> posts = postDataService.getListByNodeAndScore(
-                nodeId, systemProperties.getPosting().getDefaultNodePostCount(), Enums.ContentState.PUBLISHED.value());
+                nodeId, systemProperties.getPosting().getDefaultNodePostCount(), ContentState.PUBLISHED.value());
         posts.forEach(this::idToName);
         return posts;
     }
@@ -312,14 +327,14 @@ public class PostService {
     /**
      * 获取用户帖子（带分页信息）
      */
-    public com.prosper.learn.dto.response.KeysetPageResponse<PostFullDTO> getUserPostsWithPagination(Long userId, Long lastId, PostType postType, Byte state) {
+    public KeysetPageResponse<PostFullDTO> getUserPostsWithPagination(Long userId, Long lastId, PostType postType, Byte state) {
         userService.validateUserExists(userId);
 
         int count = systemProperties.getPosting().getUserContentsPageSize();
 
         List<PostDO> postings = postDataService.getPostsByUser(userId, postType.value(), lastId, state, count + 1);
         if (postings == null || postings.isEmpty()) {
-            return com.prosper.learn.dto.response.KeysetPageResponse.of(new ArrayList<>(), false, null, null);
+            return KeysetPageResponse.of(new ArrayList<>(), false, null, null);
         }
 
         // 判断是否还有更多数据
@@ -338,7 +353,7 @@ public class PostService {
         // 获取最后一项的ID
         Long nextLastId = hasMore && !dtoList.isEmpty() ? dtoList.get(dtoList.size() - 1).getId() : null;
 
-        return com.prosper.learn.dto.response.KeysetPageResponse.of(dtoList, hasMore, null, nextLastId);
+        return KeysetPageResponse.of(dtoList, hasMore, null, nextLastId);
     }
 
 
@@ -353,7 +368,7 @@ public class PostService {
         } else if (nodeId != null && nodeId > 0) {
             int count = 2;
             postDOList = postDataService.getListByNodeAndScoreAndPaginated(
-                    nodeId, lastScore, lastPostingId, count, Enums.ContentState.PUBLISHED.value());
+                    nodeId, lastScore, lastPostingId, count, ContentState.PUBLISHED.value());
         }
         return toPostWithVote(postDOList, userId);
     }
@@ -363,7 +378,7 @@ public class PostService {
      */
     public List<PostSummaryDTO> getNodePostsList(Long nodeId) {
         int count = systemProperties.getPosting().getDefaultNodeListCount();
-        List<PostDO> postings = postDataService.getListByNode(nodeId, count, Enums.ContentState.PUBLISHED.value());
+        List<PostDO> postings = postDataService.getListByNode(nodeId, count, ContentState.PUBLISHED.value());
         postings.forEach(this::idToName);
         return toSummaryDTO(postings);
     }
@@ -371,7 +386,7 @@ public class PostService {
     /**
      * 根据状态获取帖子列表
      */
-    public List<PostSummaryDTO> getPostsByState(Enums.ContentState state) {
+    public List<PostSummaryDTO> getPostsByState(ContentState state) {
         List<PostDO> postDOList = postDataService.getListByState(state.value(), systemProperties.getPosting().getPendingPostsLimit());
         for (PostDO postDO : postDOList) {
             if (postDO.getType() == PostType.contents.value()) {
@@ -384,7 +399,7 @@ public class PostService {
     /**
      * 根据状态获取帖子列表（支持分页）
      */
-    public List<PostSummaryDTO> getPostsByState(Enums.ContentState state, Long lastId, Integer limit) {
+    public List<PostSummaryDTO> getPostsByState(ContentState state, Long lastId, Integer limit) {
         List<PostDO> postDOList = postDataService.getListByState(state.value(), lastId, limit);
         for (PostDO postDO : postDOList) {
             if (postDO.getType() == PostType.contents.value()) {
@@ -398,7 +413,7 @@ public class PostService {
      * 获取待审核帖子列表
      */
     public List<PostSummaryDTO> getPendingPostsList() {
-        return getPostsByState(Enums.ContentState.SUBMITTED);
+        return getPostsByState(ContentState.SUBMITTED);
     }
 
     /**
@@ -428,7 +443,7 @@ public class PostService {
      */
     @Transactional
     public void createPost(UserDO currentUser, CreatePostRequest request) {
-        createPost(currentUser, request, Enums.ContentState.SUBMITTED);
+        createPost(currentUser, request, ContentState.SUBMITTED);
     }
 
     /**
@@ -440,7 +455,7 @@ public class PostService {
      * @throws BusinessException 当节点不存在或JSON处理失败时抛出异常
      */
     @Transactional
-    public Long createPost(UserDO currentUser, CreatePostRequest request, Enums.ContentState postState) {
+    public Long createPost(UserDO currentUser, CreatePostRequest request, ContentState postState) {
         // 先验证参数
         if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子对象不能为空");
@@ -491,7 +506,7 @@ public class PostService {
                     newNode.setDescription(chapterInfo.right());
                     newNode.setCourseId(courseId);
                     newNode.setCreatorId(userId);
-                    newNode.setState(Enums.ContentState.PUBLISHED.value());
+                    newNode.setState(ContentState.PUBLISHED.value());
                     nodeDataService.insert(newNode);
                     ids[i] = Long.toString(newNode.getId());
                     log.info("Created new node: {} (id: {}) in course: {}", nodeName, newNode.getId(), courseId);
@@ -535,7 +550,7 @@ public class PostService {
         PostDO postDO = validateAndGetPost(id);
 
         // 验证权限：只有所有者或管理员可以修改
-        if (!postDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(Enums.UserRole.ADMIN)) {
+        if (!postDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(UserRole.ADMIN)) {
             throw ErrorCode.PERMISSION_DENIED.exception();
         }
 
@@ -547,7 +562,7 @@ public class PostService {
         postDO.setContent(request.getContent());
         postDO.setUpdatedAt(Utils.getLocalDateTime());
         // 修改后重新设置为待审核状态
-        postDO.setState(Enums.ContentState.SUBMITTED.value());
+        postDO.setState(ContentState.SUBMITTED.value());
         postDO.setReason(null);  // 清空之前的拒绝原因
         postDataService.update(postDO);
     }
@@ -580,7 +595,7 @@ public class PostService {
         PostDO postDO = validateAndGetPost(id);
 
         // 验证权限：只有所有者或管理员可以删除
-        if (!postDO.getCreatorId().equals(currentUser.getId()) && !currentUser.hasRole(Enums.UserRole.ADMIN)) {
+        if (!postDO.getCreatorId().equals(currentUser.getId()) && !currentUser.hasRole(UserRole.ADMIN)) {
             throw ErrorCode.PERMISSION_DENIED.exception();
         }
 
@@ -599,12 +614,12 @@ public class PostService {
     public PostSummaryDTO approvePost(Long id, boolean approve) {
         PostDO postDO = validateAndGetPost(id);
 
-        if (approve && postDO.getState() != Enums.ContentState.PUBLISHED.value()) {
-            postDO.setState(Enums.ContentState.PUBLISHED.value());
+        if (approve && postDO.getState() != ContentState.PUBLISHED.value()) {
+            postDO.setState(ContentState.PUBLISHED.value());
             postDataService.update(postDO);
         }
-        if (!approve && postDO.getState() != Enums.ContentState.REJECTED.value()) {
-            postDO.setState(Enums.ContentState.REJECTED.value());
+        if (!approve && postDO.getState() != ContentState.REJECTED.value()) {
+            postDO.setState(ContentState.REJECTED.value());
             postDataService.update(postDO);
         }
         return postConverter.toSummaryDTO(postDO);
@@ -619,7 +634,7 @@ public class PostService {
     @Transactional
     public void approve(Long id, UserDO currentUser) {
         PostDO postDO = validateAndGetPost(id);
-        postDO.setState(Enums.ContentState.PUBLISHED.value());
+        postDO.setState(ContentState.PUBLISHED.value());
         postDO.setReason(null);  // 清空拒绝原因
         postDataService.update(postDO);
 
@@ -660,7 +675,7 @@ public class PostService {
                     nodeDO.getId(),
                     nodeDO.getName(),
                     courseDO.getName(),
-                    Enums.ModerationAction.REJECTED,
+                    ModerationAction.REJECTED,
                     reason
                 );
             }
@@ -705,7 +720,7 @@ public class PostService {
                     nodeDO.getId(),
                     nodeDO.getName(),
                     courseDO.getName(),
-                    Enums.ModerationAction.BANNED,
+                    ModerationAction.BANNED,
                     reason
                 );
             }
@@ -785,11 +800,11 @@ public class PostService {
         }
         
         // 批量加载用户信息
-        List<Long> userIds = Util.getIds(postDTOList, dto -> ((PostDTO) dto).getCreatorId());
+        List<Long> userIds = Utils.getIds(postDTOList, dto -> ((PostDTO) dto).getCreatorId());
         Map<Long, UserBriefDTO> userMap = userService.getUserMap(userIds);
         
         // 批量加载节点信息
-        List<Long> nodeIds = Util.getIds(postDTOList, dto -> ((PostDTO) dto).getNodeId());
+        List<Long> nodeIds = Utils.getIds(postDTOList, dto -> ((PostDTO) dto).getNodeId());
         Map<Long, NodeWithCourseDTO> nodeMap = nodeService.getNodeMap(nodeIds);
 
         // 设置关联信息
@@ -858,7 +873,7 @@ public class PostService {
             return new HashMap<>();
         }
         
-        List<UpvoteDO> upvotes = upvoteDataService.getList(userId, postIds, Enums.ContentType.post.value());
+        List<UpvoteDO> upvotes = upvoteDataService.getList(userId, postIds, ContentType.post.value());
         Map<Long, Integer> types = new HashMap<>();
         for (UpvoteDO upvote : upvotes) {
             types.put(upvote.getObjectId(), upvote.getType());

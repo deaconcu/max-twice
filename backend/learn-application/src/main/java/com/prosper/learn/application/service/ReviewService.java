@@ -1,9 +1,19 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.dto.response.card.CardWithSrsDTO;
+import com.prosper.learn.application.converter.UserCardSrsConverter;
+import com.prosper.learn.application.dto.request.ReviewCardRequest;
+import com.prosper.learn.application.dto.request.ReviewSessionRequest;
+import com.prosper.learn.application.dto.response.ReviewCardResultDTO;
+import com.prosper.learn.application.dto.response.ReviewStatsDTO;
+import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
+import com.prosper.learn.memory.card.MemoryCardDO;
+import com.prosper.learn.memory.card.MemoryCardDataService;
+import com.prosper.learn.memory.review.UserCardSrsDO;
+import com.prosper.learn.memory.review.UserCardSrsDataService;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
+import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,7 +24,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.prosper.learn.persistence.dataobject.UserCardSrsDO.*;
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 复习功能业务服务 - Anki 算法实现
@@ -176,12 +186,12 @@ public class ReviewService {
     /**
      * 获取复习统计
      */
-    public ReviewStatsDTO getReviewStats(Long userId, Enums.Period period) {
+    public ReviewStatsDTO getReviewStats(Long userId, Period period) {
         if (userId == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("用户ID不能为空");
         }
         if (period == null) {
-            period = Enums.Period.WEEK;
+            period = Period.WEEK;
         }
 
         // 计算时间范围
@@ -388,15 +398,15 @@ public class ReviewService {
     /**
      * 根据周期计算开始时间
      */
-    private LocalDateTime calculateStartTime(LocalDateTime endTime, Enums.Period period) {
+    private LocalDateTime calculateStartTime(LocalDateTime endTime, Period period) {
         switch (period) {
-            case Period.DAY:
+            case DAY:
                 return endTime.minusDays(1);
-            case Period.WEEK:
+            case WEEK:
                 return endTime.minusDays(7);
-            case Period.MONTH:
+            case MONTH:
                 return endTime.minusDays(30);
-            case Period.YEAR:
+            case YEAR:
                 return endTime.minusDays(365);
             default:
                 return endTime.minusDays(7);

@@ -2,9 +2,9 @@ package com.prosper.learn.web.ratelimit;
 
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.stp.StpUtil;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
 import io.github.bucket4j.*;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
-import com.prosper.learn.common.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

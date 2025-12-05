@@ -1,16 +1,16 @@
 package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
+import com.prosper.learn.application.dto.request.UpvoteRequest;
+import com.prosper.learn.application.dto.response.UpvoteStatusDTO;
+import com.prosper.learn.application.service.ContentInteractionService;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.web.v1.dto.ApiResponse;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.business.service.application.ContentInteractionService;
-import com.prosper.learn.business.service.domain.ContentStatsDomainService;
-import com.prosper.learn.dto.response.UpvoteStatusDTO;
-import com.prosper.learn.dto.request.UpvoteRequest;
-import com.prosper.learn.persistence.dataobject.UserDO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,10 +19,8 @@ import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 import java.util.concurrent.TimeUnit;
 
-import static com.prosper.learn.common.Enums.ContentType.comment;
-import static com.prosper.learn.common.Enums.ContentType.post;
-import static com.prosper.learn.common.Enums.ContentType.roadmap;
-import static com.prosper.learn.common.Enums.ContentType.memory_card_deck;
+import static com.prosper.learn.shared.domain.Enums.ContentType.*;
+
 
 /**
  * 点赞接口

@@ -4,16 +4,35 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.Utils;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.TocDomainService;
-import com.prosper.learn.business.util.converter.NodeConverter;
-import com.prosper.learn.business.util.converter.PostConverter;
-import com.prosper.learn.business.util.converter.UserConverter;
-import com.prosper.learn.dto.response.node.NodeWithProgressDTO;
-import com.prosper.learn.dto.response.post.PostWithVoteDTO;
+import com.prosper.learn.application.converter.NodeConverter;
+import com.prosper.learn.application.converter.PostConverter;
+import com.prosper.learn.application.converter.UserConverter;
+import com.prosper.learn.application.dto.response.CourseTocDTO;
+import com.prosper.learn.application.dto.response.course.CourseSummaryDTO;
+import com.prosper.learn.application.dto.response.course.CourseWithProgressDTO;
+import com.prosper.learn.application.dto.response.node.NodeWithProgressDTO;
+import com.prosper.learn.application.dto.response.post.PostWithVoteDTO;
+import com.prosper.learn.application.dto.response.user.UserBriefDTO;
+import com.prosper.learn.content.course.CourseDO;
+import com.prosper.learn.content.course.CourseDataService;
+import com.prosper.learn.content.node.NodeDO;
+import com.prosper.learn.content.node.NodeDataService;
+import com.prosper.learn.content.post.PostDO;
+import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.content.toc.TocDomainService;
+import com.prosper.learn.interaction.comment.CommentDO;
+import com.prosper.learn.interaction.comment.CommentDataService;
+import com.prosper.learn.interaction.upvote.UpvoteDO;
+import com.prosper.learn.interaction.upvote.UpvoteDataService;
+import com.prosper.learn.learning.enrollment.UserCourseDO;
+import com.prosper.learn.learning.enrollment.UserCourseDataService;
+import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
+import com.prosper.learn.user.profile.UserDataService;
+import com.prosper.learn.user.profile.UserProfileDO;
+import com.prosper.learn.user.profile.UserProfileDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,7 +41,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.prosper.learn.common.Enums.ContentType.post;
+import static com.prosper.learn.shared.domain.Enums.*;
 
 @Slf4j
 @Service
@@ -201,7 +220,7 @@ public class PageService {
             nodeDO = nodeDataService.validateAndGet(nodeId);
         }
 
-        if (nodeDO.getState() != null && nodeDO.getState() != Enums.ContentState.PUBLISHED.value()) {
+        if (nodeDO.getState() != null && nodeDO.getState() != ContentState.PUBLISHED.value()) {
             throw ErrorCode.NODE_STATE_INVALID.exception();
         }
 
@@ -250,7 +269,7 @@ public class PageService {
         long nodeId = pair.left();
         NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
 
-        if (nodeDO.getState() != null && nodeDO.getState() != Enums.ContentState.PUBLISHED.value()) {
+        if (nodeDO.getState() != null && nodeDO.getState() != ContentState.PUBLISHED.value()) {
             throw ErrorCode.NODE_STATE_INVALID.exception();
         }
 
@@ -283,7 +302,7 @@ public class PageService {
 
     private CourseDO validateCourseExists(Long courseId) {
         CourseDO courseDO = courseDataService.validateAndGet(courseId);
-        if (courseDO.getState() != Enums.ContentState.PUBLISHED.value()) {
+        if (courseDO.getState() != ContentState.PUBLISHED.value()) {
             throw ErrorCode.COURSE_IS_NOT_PUBLISHED.exception();
         }
         return courseDO;

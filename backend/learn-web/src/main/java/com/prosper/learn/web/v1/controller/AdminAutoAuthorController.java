@@ -1,13 +1,13 @@
 package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.content.autoauthor.AutoAuthorGenerationService;
+import com.prosper.learn.content.autoauthor.AutoAuthorQueueService;
+import com.prosper.learn.content.autoauthor.AutoAuthorScanner;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.dto.ApiResponse;
-import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.autoauthor.AutoAuthorGenerationService;
-import com.prosper.learn.business.service.autoauthor.AutoAuthorQueueService;
-import com.prosper.learn.business.service.autoauthor.AutoAuthorScanner;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;

@@ -1,22 +1,29 @@
 package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.application.dto.request.CreateCourseRequest;
+import com.prosper.learn.application.dto.request.CreateSubcourseRequest;
+import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
+import com.prosper.learn.application.dto.response.course.CourseDetailDTO;
+import com.prosper.learn.application.dto.response.course.CourseWithStatsDTO;
+import com.prosper.learn.application.service.CourseService;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.web.v1.dto.ApiResponse;
-import com.prosper.learn.common.Enums.ContentState;
-import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
-import com.prosper.learn.business.service.application.CourseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 课程管理接口

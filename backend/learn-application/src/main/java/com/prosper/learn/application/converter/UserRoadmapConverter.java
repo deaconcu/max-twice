@@ -1,8 +1,8 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.dto.response.userroadmap.UserRoadmapSummaryDTO;
-import com.prosper.learn.dto.response.userroadmap.UserRoadmapWithDetailDTO;
-import com.prosper.learn.persistence.dataobject.UserRoadmapDO;
+import com.prosper.learn.application.dto.response.userroadmap.UserRoadmapSummaryDTO;
+import com.prosper.learn.application.dto.response.userroadmap.UserRoadmapWithDetailDTO;
+import com.prosper.learn.learning.enrollment.UserRoadmapDO;
 import org.mapstruct.*;
 
 import java.util.List;

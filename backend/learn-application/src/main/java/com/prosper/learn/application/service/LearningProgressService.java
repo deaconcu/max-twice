@@ -1,18 +1,21 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.TocDomainService;
-import com.prosper.learn.business.util.converter.NodeConverter;
-import com.prosper.learn.dto.response.node.NodeWithProgressDTO;
-import com.prosper.learn.persistence.dataobject.UserProgressDO;
-import com.prosper.learn.persistence.dataobject.UserCourseDO;
-import com.prosper.learn.business.service.data.UserProgressDataService;
-import com.prosper.learn.business.service.data.UserCourseDataService;
-import com.prosper.learn.business.service.data.NodeDataService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.prosper.learn.application.converter.NodeConverter;
+import com.prosper.learn.application.dto.response.CourseCompletionResponseDTO;
+import com.prosper.learn.application.dto.response.NodeProgressResponseDTO;
+import com.prosper.learn.application.dto.response.node.NodeWithProgressDTO;
+import com.prosper.learn.content.node.NodeDO;
+import com.prosper.learn.content.node.NodeDataService;
+import com.prosper.learn.content.toc.TocDomainService;
+import com.prosper.learn.learning.enrollment.UserCourseDO;
+import com.prosper.learn.learning.enrollment.UserCourseDataService;
+import com.prosper.learn.learning.progress.UserProgressDO;
+import com.prosper.learn.learning.progress.UserProgressDataService;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -22,9 +25,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import com.prosper.learn.dto.response.NodeProgressResponseDTO;
-import com.prosper.learn.dto.response.CourseCompletionResponseDTO;
-import com.prosper.learn.persistence.dataobject.NodeDO;
 
 /**
  * 学习进度服务

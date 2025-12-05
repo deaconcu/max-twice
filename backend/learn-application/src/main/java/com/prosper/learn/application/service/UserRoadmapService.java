@@ -2,25 +2,22 @@ package com.prosper.learn.application.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.prosper.learn.common.Enums.ContentState;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.common.config.SystemProperties;
-
-import static com.prosper.learn.common.Enums.UserProgressState;
-
-import com.prosper.learn.business.util.converter.ProfessionConverter;
-import com.prosper.learn.business.util.converter.RoadmapConverter;
-import com.prosper.learn.business.util.converter.UserConverter;
-import com.prosper.learn.business.util.converter.UserRoadmapConverter;
-import com.prosper.learn.dto.response.roadmap.RoadmapWithStatusDTO;
-import com.prosper.learn.dto.response.userroadmap.UserRoadmapSummaryDTO;
-import com.prosper.learn.dto.response.userroadmap.UserRoadmapWithDetailDTO;
-import com.prosper.learn.persistence.dataobject.RoadmapDO;
-import com.prosper.learn.persistence.dataobject.UserRoadmapDO;
-import com.prosper.learn.business.service.data.ProfessionDataService;
-import com.prosper.learn.business.service.data.RoadmapDataService;
-import com.prosper.learn.business.service.data.UserRoadmapDataService;
-import com.prosper.learn.business.service.data.UserDataService;
+import com.prosper.learn.application.converter.ProfessionConverter;
+import com.prosper.learn.application.converter.RoadmapConverter;
+import com.prosper.learn.application.converter.UserConverter;
+import com.prosper.learn.application.converter.UserRoadmapConverter;
+import com.prosper.learn.application.dto.response.roadmap.RoadmapWithStatusDTO;
+import com.prosper.learn.application.dto.response.userroadmap.UserRoadmapSummaryDTO;
+import com.prosper.learn.application.dto.response.userroadmap.UserRoadmapWithDetailDTO;
+import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.roadmap.RoadmapDO;
+import com.prosper.learn.content.roadmap.RoadmapDataService;
+import com.prosper.learn.learning.enrollment.UserRoadmapDO;
+import com.prosper.learn.learning.enrollment.UserRoadmapDataService;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
+import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 @Service
 @RequiredArgsConstructor

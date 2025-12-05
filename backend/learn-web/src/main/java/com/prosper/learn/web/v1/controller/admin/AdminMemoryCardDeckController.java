@@ -1,22 +1,19 @@
 package com.prosper.learn.web.v1.controller.admin;
 
+import com.prosper.learn.application.service.MemoryCardDeckService;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.web.v1.annotation.OperationLog;
 import com.prosper.learn.web.v1.annotation.RequireRole;
 import com.prosper.learn.web.v1.dto.ApiResponse;
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.Enums.UserRole;
-import com.prosper.learn.business.service.application.MemoryCardDeckService;
-import com.prosper.learn.dto.request.OperateRequest;
-import com.prosper.learn.dto.response.KeysetPageResponse;
-import com.prosper.learn.dto.response.deck.DeckWithCreatorDTO;
-import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 记忆卡片管理后台接口
@@ -57,7 +54,7 @@ public class AdminMemoryCardDeckController {
     @OperationLog(
         module = "内容管理",
         type = "审核通过卡片组",
-        level = Enums.OperationLevel.MEDIUM,
+        level = OperationLevel.MEDIUM,
         targetType = "MemoryCardDeck",
         targetId = "#deckId"
     )
@@ -79,7 +76,7 @@ public class AdminMemoryCardDeckController {
     @OperationLog(
         module = "内容管理",
         type = "审核拒绝卡片组",
-        level = Enums.OperationLevel.MEDIUM,
+        level = OperationLevel.MEDIUM,
         targetType = "MemoryCardDeck",
         targetId = "#deckId",
         reason = "#request.reason"
@@ -104,7 +101,7 @@ public class AdminMemoryCardDeckController {
     @OperationLog(
         module = "内容管理",
         type = "屏蔽卡片组",
-        level = Enums.OperationLevel.MEDIUM,
+        level = OperationLevel.MEDIUM,
         targetType = "MemoryCardDeck",
         targetId = "#deckId",
         reason = "#request.reason"
@@ -129,7 +126,7 @@ public class AdminMemoryCardDeckController {
     @OperationLog(
         module = "内容管理",
         type = "恢复卡片组",
-        level = Enums.OperationLevel.MEDIUM,
+        level = OperationLevel.MEDIUM,
         targetType = "MemoryCardDeck",
         targetId = "#deckId"
     )

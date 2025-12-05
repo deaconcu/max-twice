@@ -1,7 +1,8 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.dto.response.PostDTO;
-import com.prosper.learn.persistence.dataobject.PostDO;
+import com.prosper.learn.application.dto.response.PostDTO;
+import com.prosper.learn.application.dto.response.post.*;
+import com.prosper.learn.content.post.PostDO;
 import org.mapstruct.*;
 
 import java.util.List;

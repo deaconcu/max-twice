@@ -1,15 +1,15 @@
 package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import com.prosper.learn.application.dto.request.AddDeckToMemoryBankRequest;
+import com.prosper.learn.application.dto.request.UpdateCourseSettingRequest;
+import com.prosper.learn.application.dto.response.CourseMemoryBankDTO;
+import com.prosper.learn.application.service.MemoryBankService;
+import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.web.v1.dto.ApiResponse;
-import com.prosper.learn.business.service.application.MemoryBankService;
-import com.prosper.learn.dto.request.AddDeckToMemoryBankRequest;
-import com.prosper.learn.dto.request.UpdateCourseSettingRequest;
-import com.prosper.learn.dto.response.CourseMemoryBankDTO;
-import com.prosper.learn.persistence.dataobject.UserDO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;

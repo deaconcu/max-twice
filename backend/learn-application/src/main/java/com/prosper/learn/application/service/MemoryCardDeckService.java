@@ -1,13 +1,41 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.business.service.domain.UpvoteDomainService;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.business.service.domain.MessageDomainService;
-import com.prosper.learn.business.service.domain.ScoreCalculationService;
-import com.prosper.learn.business.service.autoauthor.AutoAuthorQueueService;
-import com.prosper.learn.dto.response.card.CardWithSrsDTO;
-import com.prosper.learn.dto.response.course.CourseBriefDTO;
-import com.prosper.learn.dto.response.node.NodeBriefDTO;
+
+import com.prosper.learn.application.converter.CourseConverter;
+import com.prosper.learn.application.converter.MemoryCardDeckConverter;
+import com.prosper.learn.application.converter.UserConverter;
+import com.prosper.learn.application.dto.request.CreateDeckRequest;
+import com.prosper.learn.application.dto.request.UpdateDeckRequest;
+import com.prosper.learn.application.dto.response.DeckDetailDTO;
+import com.prosper.learn.application.dto.response.KeysetPageResponse;
+import com.prosper.learn.application.dto.response.MemoryCardDeckDTO;
+import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
+import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
+import com.prosper.learn.application.dto.response.deck.DeckWithCreatorDTO;
+import com.prosper.learn.application.dto.response.deck.DeckWithVoteDTO;
+import com.prosper.learn.application.dto.response.node.NodeBriefDTO;
+import com.prosper.learn.content.autoauthor.AutoAuthorQueueService;
+import com.prosper.learn.content.course.CourseDO;
+import com.prosper.learn.content.course.CourseDataService;
+import com.prosper.learn.content.node.NodeDO;
+import com.prosper.learn.content.node.NodeDataService;
+import com.prosper.learn.content.post.PostDO;
+import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.interaction.message.MessageDomainService;
+import com.prosper.learn.interaction.upvote.UpvoteDomainService;
+import com.prosper.learn.memory.card.MemoryCardDO;
+import com.prosper.learn.memory.card.MemoryCardDataService;
+import com.prosper.learn.memory.card.MemoryCardVersionDO;
+import com.prosper.learn.memory.card.MemoryCardVersionDataService;
+import com.prosper.learn.memory.deck.MemoryCardDeckDO;
+import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
+import com.prosper.learn.memory.review.UserCardSrsDO;
+import com.prosper.learn.memory.review.UserCardSrsDataService;
+import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.user.profile.UserDO;
+import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,7 +46,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.*;
-import com.prosper.learn.common.Enums;
 
 /**
  * 记忆卡片组业务服务
@@ -706,7 +733,7 @@ public class MemoryCardDeckService {
         PostDO postDO = postDataService.getById(deck.getPostId());
         String postContentPreview = "";
         if (postDO != null && postDO.getContent() != null) {
-            postContentPreview = com.prosper.learn.business.util.Util.stripFormatting(postDO.getContent());
+            postContentPreview = Utils.stripFormatting(postDO.getContent());
             if (postContentPreview.length() > 50) {
                 postContentPreview = postContentPreview.substring(0, 50) + "...";
             }

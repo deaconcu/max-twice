@@ -1,7 +1,7 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.dto.response.OperationLogDTO;
-import com.prosper.learn.persistence.dataobject.OperationLogDO;
+import com.prosper.learn.analytics.monitoring.OperationLogDO;
+import com.prosper.learn.application.dto.response.OperationLogDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
