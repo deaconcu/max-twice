@@ -3,7 +3,7 @@ package com.prosper.learn.business.service.application;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.MessageService;
+import com.prosper.learn.business.service.domain.MessageDomainService;
 import com.prosper.learn.business.service.domain.RedisStatsService;
 import com.prosper.learn.business.service.domain.ScoreCalculationService;
 import com.prosper.learn.business.util.converter.CommentConverter;
@@ -13,7 +13,6 @@ import com.prosper.learn.dto.response.KeysetPageResponse;
 import com.prosper.learn.dto.response.comment.CommentAdminDTO;
 import com.prosper.learn.dto.response.comment.CommentDetailDTO;
 import com.prosper.learn.dto.response.comment.CommentWithRepliesDTO;
-import com.prosper.learn.business.service.data.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +31,7 @@ public class CommentService {
     private final PostDataService postDataService;
     private final NodeDataService nodeDataService;
     private final RoadmapDataService roadmapDataService;
-    private final MessageService messageService;
+    private final MessageDomainService messageDomainService;
     private final ScoreCalculationService scoreCalculationService;
     private final RedisStatsService redisStatsService;
     private final SystemProperties systemProperties;
@@ -216,13 +215,13 @@ public class CommentService {
     private void createCommentNotification(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
                                          PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO) {
         if (request.getObjectType() == Enums.ContentType.post.value() && postDO != null) {
-            messageService.createCommentMessage(postDO.getCreatorId(), fromUser.getId(),
+            messageDomainService.createCommentMessage(postDO.getCreatorId(), fromUser.getId(),
                                               postDO.getNodeId(), commentDO.getId(), postComment.value());
         } else if (request.getObjectType() == Enums.ContentType.node.value() && nodeDO != null) {
-            messageService.createCommentMessage(nodeDO.getCreatorId(), fromUser.getId(),
+            messageDomainService.createCommentMessage(nodeDO.getCreatorId(), fromUser.getId(),
                                               nodeDO.getId(), commentDO.getId(), nodeComment.value());
         } else if (request.getObjectType() == Enums.ContentType.roadmap.value() && roadmapDO != null) {
-            messageService.createCommentMessage(roadmapDO.getCreatorId(), fromUser.getId(), 
+            messageDomainService.createCommentMessage(roadmapDO.getCreatorId(), fromUser.getId(),
                                               roadmapDO.getId(), commentDO.getId(), roadmapComment.value());
         }
     }
@@ -233,13 +232,13 @@ public class CommentService {
     private void createReplyNotification(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
                                        PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO, Long parentUserId) {
         if (request.getObjectType() == Enums.ContentType.node.value() && nodeDO != null) {
-            messageService.createCommentMessage(parentUserId, fromUser.getId(), 
+            messageDomainService.createCommentMessage(parentUserId, fromUser.getId(),
                                               nodeDO.getId(), commentDO.getId(), replyNodeComment.value());
         } else if (request.getObjectType() == Enums.ContentType.post.value() && postDO != null) {
-            messageService.createCommentMessage(parentUserId, fromUser.getId(), 
+            messageDomainService.createCommentMessage(parentUserId, fromUser.getId(),
                                               postDO.getNodeId(), commentDO.getId(), replyPostingComment.value());
         } else if (request.getObjectType() == Enums.ContentType.roadmap.value() && roadmapDO != null) {
-            messageService.createCommentMessage(parentUserId, fromUser.getId(), 
+            messageDomainService.createCommentMessage(parentUserId, fromUser.getId(),
                                               roadmapDO.getId(), commentDO.getId(), replyRoadmapComment.value());
         }
     }
@@ -535,7 +534,7 @@ public class CommentService {
         }
 
         // 发送拒绝通知
-        messageService.sendCommentModeration(
+        messageDomainService.sendCommentModeration(
             commentDO.getCreatorId(),
             commentDO.getId(),
             preview,
@@ -595,7 +594,7 @@ public class CommentService {
         }
 
         // 发送封禁通知
-        messageService.sendCommentModeration(
+        messageDomainService.sendCommentModeration(
             commentDO.getCreatorId(),
             commentDO.getId(),
             preview,

@@ -1,9 +1,5 @@
 package com.prosper.learn.interaction.message;
 
-import com.prosper.learn.persistence.dataobject.CourseDO;
-import com.prosper.learn.persistence.dataobject.MessageDO;
-import com.prosper.learn.persistence.dataobject.NodeDO;
-import com.prosper.learn.persistence.dataobject.UpvoteDO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;

@@ -1,13 +1,13 @@
 package com.prosper.learn.content.post;
 
-import com.prosper.learn.persistence.dataobject.PostDO;
+import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.prosper.learn.common.Enums.ContentState.*;
+import static com.prosper.learn.shared.domain.Enums.*;
 
 public interface PostMapper {
 

@@ -1,7 +1,6 @@
 package com.prosper.learn.business.service.application;
 
 import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.data.*;
 import com.prosper.learn.dto.request.ReviewCardRequest;
 import com.prosper.learn.persistence.dataobject.UserCardSrsDO;
 import org.junit.jupiter.api.BeforeEach;

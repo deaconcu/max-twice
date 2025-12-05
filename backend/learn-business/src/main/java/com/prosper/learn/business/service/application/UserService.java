@@ -3,12 +3,9 @@ package com.prosper.learn.business.service.application;
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.MessageService;
+import com.prosper.learn.business.service.domain.MessageDomainService;
 import com.prosper.learn.business.util.converter.UserConverter;
-import com.prosper.learn.business.service.data.*;
-import com.prosper.learn.dto.response.*;
 import com.prosper.learn.dto.response.old.UserDTOV2;
-import com.prosper.learn.dto.response.user.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
@@ -38,7 +35,7 @@ public class UserService {
     private final FollowDataService followDataService;
     private final VerificationDataService verificationDataService;
     private final JavaMailSender mailSender;
-    private final MessageService messageService;
+    private final MessageDomainService messageDomainService;
     private final SystemProperties systemProperties;
     private final UserConverter userConverter;
     private final CourseService courseService;
@@ -396,7 +393,7 @@ public class UserService {
         if (followDO == null) {
             UserDO follower = userDataService.getById(followerId);
             followDataService.insert(followerId, followeeId);
-            messageService.createFollowMessage(followeeId, follower.getId());
+            messageDomainService.createFollowMessage(followeeId, follower.getId());
         }
     }
 

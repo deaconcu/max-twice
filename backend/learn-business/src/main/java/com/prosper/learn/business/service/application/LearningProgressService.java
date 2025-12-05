@@ -3,7 +3,7 @@ package com.prosper.learn.business.service.application;
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.TocService;
+import com.prosper.learn.business.service.domain.TocDomainService;
 import com.prosper.learn.business.util.converter.NodeConverter;
 import com.prosper.learn.dto.response.node.NodeWithProgressDTO;
 import com.prosper.learn.persistence.dataobject.UserProgressDO;
@@ -40,7 +40,7 @@ public class LearningProgressService {
     private final UserProgressDataService userProgressDataService;
     private final UserCourseDataService userCourseDataService;
     private final NodeDataService nodeDataService;
-    private final TocService tocService;
+    private final TocDomainService tocService;
     private final ObjectMapper objectMapper;
     private final SystemProperties systemProperties;
     private final NodeConverter nodeConverter;

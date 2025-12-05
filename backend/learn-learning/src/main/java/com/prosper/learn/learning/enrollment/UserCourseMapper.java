@@ -1,13 +1,12 @@
 package com.prosper.learn.learning.enrollment;
 
-import com.prosper.learn.persistence.dataobject.UserCourseDO;
+import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 import java.util.Map;
 
-import static com.prosper.learn.common.Enums.ContentState.*;
-import static com.prosper.learn.common.Enums.UserProgressState.*;
+import static com.prosper.learn.shared.domain.Enums.*;
 
 @Mapper
 public interface UserCourseMapper {

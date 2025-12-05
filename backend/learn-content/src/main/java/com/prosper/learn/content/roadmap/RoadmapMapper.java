@@ -1,11 +1,10 @@
 package com.prosper.learn.content.roadmap;
 
-import com.prosper.learn.persistence.dataobject.RoadmapDO;
+import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
-
 import java.util.List;
 
-import static com.prosper.learn.common.Enums.ContentState.*;
+import static com.prosper.learn.shared.domain.Enums.*;
 
 public interface RoadmapMapper {
 

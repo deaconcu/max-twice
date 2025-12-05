@@ -1,6 +1,5 @@
 package com.prosper.learn.memory.review;
 
-import com.prosper.learn.persistence.dataobject.UserCourseSrsSettingDO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.Collection;

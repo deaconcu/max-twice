@@ -1,7 +1,5 @@
 package com.prosper.learn.interaction.upvote;
 
-import com.prosper.learn.persistence.dataobject.CommentDO;
-import com.prosper.learn.persistence.dataobject.UpvoteDO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;

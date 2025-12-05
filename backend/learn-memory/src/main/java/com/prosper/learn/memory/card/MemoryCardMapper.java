@@ -1,14 +1,11 @@
 package com.prosper.learn.memory.card;
 
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.persistence.dataobject.MemoryCardDO;
+import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
-import static com.prosper.learn.common.Enums.ContentState.*;
 
 public interface MemoryCardMapper {
 
@@ -90,7 +87,7 @@ public interface MemoryCardMapper {
     @Select("SELECT COUNT(*) FROM memory_card WHERE deck_id = #{deckId} AND state = #{state}")
     int countByDeck(long deckId, int state);
 
-    @Select("SELECT id FROM memory_card WHERE deck_id = #{deckId} AND state = " + ContentState.PUBLISHED_VALUE + " ORDER BY id")
+    @Select("SELECT id FROM memory_card WHERE deck_id = #{deckId} AND state = " + Enums.ContentState.PUBLISHED_VALUE + " ORDER BY id")
     List<Long> getCardIdsByDeckId(long deckId);
 
     @Select("SELECT COUNT(*) FROM memory_card WHERE creator_id = #{creatorId} AND state = #{state}")

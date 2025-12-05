@@ -1,7 +1,6 @@
 package com.prosper.learn.memory.review;
 
-import com.prosper.learn.persistence.dataobject.CourseMemoryBankDO;
-import com.prosper.learn.persistence.dataobject.UserCardInCourseDO;
+import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
 
 import java.time.LocalDateTime;
@@ -9,8 +8,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static com.prosper.learn.common.Enums.ContentState.*;
 
 public interface UserCardInCourseMapper {
 
@@ -101,7 +98,7 @@ public interface UserCardInCourseMapper {
           "    user_card_srs srs ON ucc.user_id = srs.user_id AND ucc.card_id = srs.card_id",
           "WHERE",
           "    ucc.user_id = #{userId}",
-          "    AND deck.state = " + ContentState.PUBLISHED_VALUE,
+          "    AND deck.state = " + Enums.ContentState.PUBLISHED_VALUE,
           "    AND ucc.course_id IN",
           "    <foreach item=\"courseId\" collection=\"courseIds\" open=\"(\" separator=\",\" close=\")\">",
           "        #{courseId}",
@@ -128,7 +125,7 @@ public interface UserCardInCourseMapper {
           "WHERE",
           "    ucc.user_id = #{userId}",
           "    AND ucc.course_id = #{courseId}",
-          "    AND deck.state = " + ContentState.PUBLISHED_VALUE,
+          "    AND deck.state = " + Enums.ContentState.PUBLISHED_VALUE,
           "</script>"})
     CourseMemoryBankDO getCardStatsForCourses(@Param("userId") Long userId, @Param("courseId") Long courseId, @Param("now") LocalDateTime now);
 

@@ -1,6 +1,6 @@
 package com.prosper.learn.content.node;
 
-import com.prosper.learn.common.Enums;
+import com.prosper.learn.shared.domain.Enums;
 import lombok.Data;
 
 import java.time.LocalDateTime;

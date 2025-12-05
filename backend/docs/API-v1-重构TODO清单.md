@@ -6,7 +6,7 @@
 ## 总体任务分解
 
 ### 阶段1：基础结构搭建
-- [ ] 创建 `com.prosper.learn.api.v1` 包结构
+- [ ] 创建 `com.prosper.learn.web.v1` 包结构
 - [ ] 定义统一的响应格式 `ApiResponse<T>`
 - [ ] 创建通用的异常处理器
 - [ ] 配置统一的参数验证

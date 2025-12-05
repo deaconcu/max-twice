@@ -1,9 +1,11 @@
 package com.prosper.learn.user.profile;
 
-import com.prosper.learn.common.Enums;
+import com.prosper.learn.shared.domain.Enums;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 @Data
 public class UserDO {
@@ -37,21 +39,21 @@ public class UserDO {
     /**
      * 获取用户角色枚举
      */
-    public Enums.UserRole getRoleEnum() {
-        return Enums.UserRole.fromCode(this.role);
+    public UserRole getRoleEnum() {
+        return UserRole.fromCode(this.role);
     }
 
     /**
      * 设置用户角色
      */
-    public void setRoleEnum(Enums.UserRole role) {
-        this.role = role != null ? role.getCode() : Enums.UserRole.USER.getCode();
+    public void setRoleEnum(UserRole role) {
+        this.role = role != null ? role.getCode() : UserRole.USER.getCode();
     }
 
     /**
      * 判断是否等于或高于指定角色
      */
-    public boolean hasRole(Enums.UserRole role) {
+    public boolean hasRole(UserRole role) {
         return getRoleEnum().equalOrHigher(role);
     }
 }

@@ -1,6 +1,5 @@
 package com.prosper.learn.learning.progress;
 
-import com.prosper.learn.persistence.dataobject.UserProgressDO;
 import org.apache.ibatis.annotations.*;
 
 /**

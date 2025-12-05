@@ -11,11 +11,8 @@
     <modules>
         <!-- 旧模块（待迁移） -->
         <module>learn-web</module>
-        <module>learn-common</module>
         <module>learn-external</module>
         <module>learn-business</module>
-        <module>learn-persistence</module>
-        <module>learn-dto</module>
 
         <!-- 新架构模块 -->
         <module>learn-shared</module>

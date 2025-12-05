@@ -2,15 +2,10 @@ package com.prosper.learn.business.service.application;
 
 import com.prosper.learn.business.service.domain.UpvoteDomainService;
 import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.business.service.domain.MessageService;
+import com.prosper.learn.business.service.domain.MessageDomainService;
 import com.prosper.learn.business.service.domain.ScoreCalculationService;
-import com.prosper.learn.business.service.data.*;
 import com.prosper.learn.business.service.autoauthor.AutoAuthorQueueService;
-import com.prosper.learn.business.util.converter.*;
-import com.prosper.learn.dto.request.*;
-import com.prosper.learn.dto.response.*;
 import com.prosper.learn.dto.response.card.CardWithSrsDTO;
-import com.prosper.learn.dto.response.deck.*;
 import com.prosper.learn.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.dto.response.node.NodeBriefDTO;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +34,7 @@ public class MemoryCardDeckService {
     private final PostDataService postDataService;
     private final NodeDataService nodeDataService;
     private final CourseDataService courseDataService;
-    private final MessageService messageService;
+    private final MessageDomainService messageDomainService;
     private final MemoryCardDeckConverter deckConverter;
     private final UserConverter userConverter;
     private final CourseConverter courseConverter;
@@ -688,7 +683,7 @@ public class MemoryCardDeckService {
         log.info("Deck {} rejected by user {}, reason: {}", deckId, auditorId, reason);
 
         // 发送拒绝通知
-        messageService.sendMemoryDeckModeration(
+        messageDomainService.sendMemoryDeckModeration(
             deck.getCreatorId(),
             deck.getId(),
             deck.getTitle(),
@@ -726,7 +721,7 @@ public class MemoryCardDeckService {
         log.info("Deck {} banned by user {}, reason: {}", deckId, auditorId, reason);
 
         // 发送封禁通知
-        messageService.sendMemoryDeckModeration(
+        messageDomainService.sendMemoryDeckModeration(
             deck.getCreatorId(),
             deck.getId(),
             deck.getTitle(),

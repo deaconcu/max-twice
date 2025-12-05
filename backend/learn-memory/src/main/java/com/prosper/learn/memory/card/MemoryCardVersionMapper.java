@@ -1,6 +1,5 @@
 package com.prosper.learn.memory.card;
 
-import com.prosper.learn.persistence.dataobject.MemoryCardVersionDO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.Collection;

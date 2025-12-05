@@ -1,6 +1,5 @@
 package com.prosper.learn.user.auth;
 
-import com.prosper.learn.common.Utils;
 import lombok.Data;
 
 import java.time.LocalDateTime;

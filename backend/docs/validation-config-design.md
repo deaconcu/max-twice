@@ -192,7 +192,7 @@ public class ValidationRuleDTO {
 // ValidationConfigService.java
 package com.prosper.learn.business.service.application;
 
-import com.prosper.learn.common.config.SystemProperties;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.dto.response.ValidationRuleDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -361,9 +361,9 @@ public class ValidationConfigService {
 
 ```java
 // ConfigController.java
-package com.prosper.learn.api.v1.controller;
+package com.prosper.learn.web.v1.controller;
 
-import com.prosper.learn.api.v1.dto.ApiResponse;
+import com.prosper.learn.web.v1.dto.ApiResponse;
 import com.prosper.learn.business.service.application.ValidationConfigService;
 import com.prosper.learn.dto.response.ValidationRuleDTO;
 import lombok.RequiredArgsConstructor;

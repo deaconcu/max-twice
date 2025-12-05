@@ -1,6 +1,5 @@
 package com.prosper.learn.memory.deck;
 
-import com.prosper.learn.persistence.dataobject.MemoryCardDeckDO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.Collection;

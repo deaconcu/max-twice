@@ -1,6 +1,5 @@
 package com.prosper.learn.content.node;
 
-import com.prosper.learn.common.Enums;
 import org.apache.ibatis.annotations.*;
 
 import java.util.Collection;

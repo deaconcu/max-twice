@@ -1,11 +1,9 @@
 package com.prosper.learn.learning.enrollment;
 
-import com.prosper.learn.persistence.dataobject.UserRoadmapDO;
+import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
-
-import static com.prosper.learn.common.Enums.UserProgressState.*;
 
 @Mapper
 public interface UserRoadmapMapper {
@@ -68,6 +66,6 @@ public interface UserRoadmapMapper {
     /**
      * 统计用户正在学习的路线图数量
      */
-    @Select("SELECT COUNT(*) FROM user_roadmap WHERE user_id = #{userId} AND state = " + UserProgressState.IN_PROGRESS_VALUE)
+    @Select("SELECT COUNT(*) FROM user_roadmap WHERE user_id = #{userId} AND state = " + Enums.UserProgressState.IN_PROGRESS_VALUE)
     Integer countActiveRoadmapsByUserId(long userId);
 }

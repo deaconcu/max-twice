@@ -52,7 +52,7 @@ class TocServiceSimpleTest {
     private SystemProperties.Contents contentsConfig;
 
     @InjectMocks
-    private TocService tocService;
+    private TocDomainService tocService;
 
     // 测试数据常量
     private static final long TEST_USER_ID = 1L;

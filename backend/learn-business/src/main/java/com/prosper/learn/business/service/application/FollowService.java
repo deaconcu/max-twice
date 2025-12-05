@@ -4,7 +4,7 @@ import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.BusinessException;
 import com.prosper.learn.common.exception.ErrorCode;
 import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.business.service.domain.MessageService;
+import com.prosper.learn.business.service.domain.MessageDomainService;
 import com.prosper.learn.dto.response.FolloweeDTO;
 import com.prosper.learn.persistence.dataobject.FollowDO;
 import com.prosper.learn.persistence.dataobject.UserDO;
@@ -48,7 +48,7 @@ public class FollowService {
     private final UserDataService userDataService;
     
     /** 消息服务，用于发送关注通知 */
-    private final MessageService messageService;
+    private final MessageDomainService messageDomainService;
     
     /** 系统配置属性 */
     private final SystemProperties systemProperties;
@@ -164,7 +164,7 @@ public class FollowService {
             followDataService.insert(follower.getId(), followeeId);
 
             // 发送关注通知消息
-            messageService.createFollowMessage(followeeId, follower.getId());
+            messageDomainService.createFollowMessage(followeeId, follower.getId());
         }
     }
 

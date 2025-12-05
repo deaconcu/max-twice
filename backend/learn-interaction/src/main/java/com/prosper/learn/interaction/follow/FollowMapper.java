@@ -1,6 +1,5 @@
 package com.prosper.learn.interaction.follow;
 
-import com.prosper.learn.persistence.dataobject.FollowDO;
 import org.apache.ibatis.annotations.*;
 
 import java.time.LocalDateTime;
