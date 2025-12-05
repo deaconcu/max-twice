@@ -1,4 +1,4 @@
-package com.prosper.learn.business.service.application;
+package com.prosper.learn.application.service;
 
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.config.SystemProperties;
@@ -106,16 +106,16 @@ public class ReviewService {
 
         // 根据卡片类型分发到不同的处理方法
         switch (card.getType()) {
-            case TYPE_NEW:
+            case UserCardSrsDO.TYPE_NEW:
                 handleNewCard(card, rating);
                 break;
-            case TYPE_LEARNING:
+            case UserCardSrsDO.TYPE_LEARNING:
                 handleLearningCard(card, rating, systemProperties.getSrs().getAlgorithm().getLearningSteps());
                 break;
-            case TYPE_REVIEW:
+            case UserCardSrsDO.TYPE_REVIEW:
                 handleReviewCard(card, rating);
                 break;
-            case TYPE_RELEARNING:
+            case UserCardSrsDO.TYPE_RELEARNING:
                 handleLearningCard(card, rating, systemProperties.getSrs().getAlgorithm().getRelearningSteps());
                 break;
             default:
@@ -207,7 +207,7 @@ public class ReviewService {
 
         if (rating == 1 || rating == 2) {
             // 评级"重来"(1) 或 "困难"(2): 进入学习流程
-            card.setType(TYPE_LEARNING);
+            card.setType(UserCardSrsDO.TYPE_LEARNING);
             card.setCurrentStep((byte) 0);
             card.setInterval(config.getLearningSteps()[0]);
             card.setReviewDueAt(LocalDateTime.now().plusMinutes(config.getLearningSteps()[0]));
@@ -220,7 +220,7 @@ public class ReviewService {
                 graduateToReview(card, config.getGraduatingInterval());
             } else {
                 // 跳到第二步
-                card.setType(TYPE_LEARNING);
+                card.setType(UserCardSrsDO.TYPE_LEARNING);
                 card.setCurrentStep((byte) 1);
                 card.setInterval(steps[1]);
                 card.setReviewDueAt(LocalDateTime.now().plusMinutes(steps[1]));
@@ -238,7 +238,7 @@ public class ReviewService {
     private void handleLearningCard(UserCardSrsDO card, int rating, int[] steps) {
         SystemProperties.Srs.Algorithm config = systemProperties.getSrs().getAlgorithm();
         byte currentStep = card.getCurrentStep();
-        boolean isRelearning = (card.getType() == TYPE_RELEARNING);
+        boolean isRelearning = (card.getType() == UserCardSrsDO.TYPE_RELEARNING);
 
         if (rating == 1) {
             // 评级"重来"(1): 重置到第一步
@@ -299,7 +299,7 @@ public class ReviewService {
         if (rating == 1) {
             // 评级"重来"(1): 遗忘，进入重新学习
             card.setLapseOldInterval((short) currentInterval);  // 保存遗忘前的间隔
-            card.setType(TYPE_RELEARNING);
+            card.setType(UserCardSrsDO.TYPE_RELEARNING);
             card.setCurrentStep((byte) 0);
             card.setRepetitions(0);  // 重置连续正确次数
             card.setLapseCount(card.getLapseCount() + 1);
@@ -339,7 +339,7 @@ public class ReviewService {
      * 毕业到复习状态 (LEARNING -> REVIEW)
      */
     private void graduateToReview(UserCardSrsDO card, int intervalDays) {
-        card.setType(TYPE_REVIEW);
+        card.setType(UserCardSrsDO.TYPE_REVIEW);
         card.setCurrentStep((byte) 0);
         card.setInterval(intervalDays);
         card.setLapseOldInterval(null);
@@ -353,7 +353,7 @@ public class ReviewService {
      * @param useEasyInterval 是否使用 easyInterval（true=评级4简单，false=评级3良好）
      */
     private void regraduateToReview(UserCardSrsDO card, SystemProperties.Srs.Algorithm config, boolean useEasyInterval) {
-        card.setType(TYPE_REVIEW);
+        card.setType(UserCardSrsDO.TYPE_REVIEW);
         card.setCurrentStep((byte) 0);
 
         // 计算恢复间隔
@@ -390,13 +390,13 @@ public class ReviewService {
      */
     private LocalDateTime calculateStartTime(LocalDateTime endTime, Enums.Period period) {
         switch (period) {
-            case DAY:
+            case Period.DAY:
                 return endTime.minusDays(1);
-            case WEEK:
+            case Period.WEEK:
                 return endTime.minusDays(7);
-            case MONTH:
+            case Period.MONTH:
                 return endTime.minusDays(30);
-            case YEAR:
+            case Period.YEAR:
                 return endTime.minusDays(365);
             default:
                 return endTime.minusDays(7);

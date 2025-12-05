@@ -1,4 +1,4 @@
-package com.prosper.learn.business.service.application;
+package com.prosper.learn.application.service;
 
 import static com.prosper.learn.common.Enums.UserProgressState;
 

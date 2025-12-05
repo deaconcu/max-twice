@@ -1,4 +1,4 @@
-package com.prosper.learn.business.service.application;
+package com.prosper.learn.application.service;
 
 import com.prosper.learn.business.service.domain.UpvoteDomainService;
 import com.prosper.learn.persistence.dataobject.CommentDO;

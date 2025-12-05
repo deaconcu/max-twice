@@ -1,4 +1,4 @@
-package com.prosper.learn.content.course.dto;
+package com.prosper.learn.application.dto;
 
 import lombok.Data;
 

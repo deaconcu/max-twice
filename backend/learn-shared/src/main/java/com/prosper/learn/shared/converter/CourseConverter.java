@@ -1,9 +1,8 @@
-package com.prosper.learn.content.course;
+package com.prosper.learn.shared.converter;
 
 import com.prosper.learn.content.course.dto.CourseBriefDTO;
 import com.prosper.learn.content.course.dto.CourseDetailDTO;
 import com.prosper.learn.content.course.dto.CourseSummaryDTO;
-import com.prosper.learn.shared.converter.CommonConverter;
 import com.prosper.learn.shared.dto.response.CourseDTO;
 import org.mapstruct.*;
 

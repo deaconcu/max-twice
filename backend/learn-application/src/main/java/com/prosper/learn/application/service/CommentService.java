@@ -1,4 +1,4 @@
-package com.prosper.learn.business.service.application;
+package com.prosper.learn.application.service;
 
 import com.prosper.learn.common.Enums;
 import com.prosper.learn.common.exception.ErrorCode;
@@ -216,13 +216,13 @@ public class CommentService {
                                          PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO) {
         if (request.getObjectType() == Enums.ContentType.post.value() && postDO != null) {
             messageDomainService.createCommentMessage(postDO.getCreatorId(), fromUser.getId(),
-                                              postDO.getNodeId(), commentDO.getId(), postComment.value());
+                                              postDO.getNodeId(), commentDO.getId(), MessageType.postComment.value());
         } else if (request.getObjectType() == Enums.ContentType.node.value() && nodeDO != null) {
             messageDomainService.createCommentMessage(nodeDO.getCreatorId(), fromUser.getId(),
-                                              nodeDO.getId(), commentDO.getId(), nodeComment.value());
+                                              nodeDO.getId(), commentDO.getId(), MessageType.nodeComment.value());
         } else if (request.getObjectType() == Enums.ContentType.roadmap.value() && roadmapDO != null) {
             messageDomainService.createCommentMessage(roadmapDO.getCreatorId(), fromUser.getId(),
-                                              roadmapDO.getId(), commentDO.getId(), roadmapComment.value());
+                                              roadmapDO.getId(), commentDO.getId(), MessageType.roadmapComment.value());
         }
     }
     
@@ -233,13 +233,13 @@ public class CommentService {
                                        PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO, Long parentUserId) {
         if (request.getObjectType() == Enums.ContentType.node.value() && nodeDO != null) {
             messageDomainService.createCommentMessage(parentUserId, fromUser.getId(),
-                                              nodeDO.getId(), commentDO.getId(), replyNodeComment.value());
+                                              nodeDO.getId(), commentDO.getId(), MessageType.replyNodeComment.value());
         } else if (request.getObjectType() == Enums.ContentType.post.value() && postDO != null) {
             messageDomainService.createCommentMessage(parentUserId, fromUser.getId(),
-                                              postDO.getNodeId(), commentDO.getId(), replyPostingComment.value());
+                                              postDO.getNodeId(), commentDO.getId(), MessageType.replyPostingComment.value());
         } else if (request.getObjectType() == Enums.ContentType.roadmap.value() && roadmapDO != null) {
             messageDomainService.createCommentMessage(parentUserId, fromUser.getId(),
-                                              roadmapDO.getId(), commentDO.getId(), replyRoadmapComment.value());
+                                              roadmapDO.getId(), commentDO.getId(), MessageType.replyRoadmapComment.value());
         }
     }
 

@@ -1,8 +1,11 @@
-package com.prosper.learn.content.course;
+package com.prosper.learn.application.service;
 
-import com.prosper.learn.content.course.dto.CourseBriefDTO;
-import com.prosper.learn.content.course.dto.CourseDetailDTO;
-import com.prosper.learn.content.course.dto.CourseSummaryDTO;
+import com.prosper.learn.shared.converter.CourseConverter;
+import com.prosper.learn.content.course.CourseDO;
+import com.prosper.learn.content.course.CourseDataService;
+import com.prosper.learn.application.dto.CourseBriefDTO;
+import com.prosper.learn.application.dto.CourseDetailDTO;
+import com.prosper.learn.application.dto.CourseSummaryDTO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.dto.request.UpdateCourseRequest;

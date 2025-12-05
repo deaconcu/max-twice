@@ -1,4 +1,4 @@
-package com.prosper.learn.business.service.application;
+package com.prosper.learn.application.service;
 
 import com.prosper.learn.common.Utils;
 import com.prosper.learn.common.exception.BusinessException;
