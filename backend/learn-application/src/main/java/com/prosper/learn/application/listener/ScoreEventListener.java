@@ -2,8 +2,12 @@ package com.prosper.learn.application.listener;
 
 import com.prosper.learn.application.service.ScoreCalculationService;
 import com.prosper.learn.content.post.PostDO;
+import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.interaction.comment.CommentDO;
+import com.prosper.learn.interaction.comment.CommentDataService;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.event.content.lifecycle.CommentCreatedEvent;
 import com.prosper.learn.shared.domain.event.content.voting.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +32,8 @@ import static com.prosper.learn.shared.domain.Enums.*;
 public class ScoreEventListener {
 
     private final ScoreCalculationService scoreCalculationService;
+    private final PostDataService postDataService;
+    private final CommentDataService commentDataService;
 
     // ==================== 帖子点赞事件 ====================
 
@@ -149,11 +155,31 @@ public class ScoreEventListener {
     // ==================== 其他可能影响分数的事件 ====================
 
     /**
-     * 评论创建 - 可能影响帖子分数（评论数增加）
-     * 暂时不实现，如有需要可以后续添加
+     * 评论创建 - 可能影响帖子/父评论分数（评论数增加）
      */
-    // @EventListener
-    // public void onCommentCreated(CommentCreatedEvent event) {
-    //     // 如果评论的是帖子，可能需要重新计算帖子分数
-    // }
+    @EventListener
+    @Async
+    public void onCommentCreated(CommentCreatedEvent event) {
+        try {
+            // 如果评论的是帖子，重新计算帖子分数
+            if (event.getContentType() == ContentType.post) {
+                PostDO postDO = postDataService.getById(event.getContentId());
+                if (postDO != null) {
+                    scoreCalculationService.checkAndUpdatePostScore(postDO);
+                    log.debug("重新计算帖子分数（新评论）: postId={}", event.getContentId());
+                }
+            }
+            // 如果评论的是评论（回复），重新计算父评论分数
+            else if (event.getContentType() == ContentType.comment) {
+                CommentDO commentDO = commentDataService.getById(event.getContentId());
+                if (commentDO != null) {
+                    scoreCalculationService.checkAndUpdateCommentScore(commentDO);
+                    log.debug("重新计算评论分数（新回复）: commentId={}", event.getContentId());
+                }
+            }
+        } catch (Exception e) {
+            log.error("评论创建分数计算失败: contentType={}, contentId={}",
+                event.getContentType(), event.getContentId(), e);
+        }
+    }
 }

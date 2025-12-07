@@ -1,6 +1,5 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.service.RedisStatsDomainService;
 import com.prosper.learn.application.converter.CommentConverter;
 import com.prosper.learn.application.dto.request.CreateCommentRequest;
@@ -20,11 +19,13 @@ import com.prosper.learn.interaction.comment.CommentDataService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
 import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.event.content.lifecycle.CommentCreatedEvent;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,41 +44,11 @@ public class CommentService {
     private final PostDataService postDataService;
     private final NodeDataService nodeDataService;
     private final RoadmapDataService roadmapDataService;
-    private final ContentStatsDataService contentStatsDataService;
-    private final MessageService messageService;
-    private final ScoreCalculationService scoreCalculationService;
-    private final RedisStatsDomainService redisStatsService;
     private final SystemProperties systemProperties;
     private final CommentConverter commentConverter;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ========== 私有验证方法 ==========
-    
-    /**
-     * 验证用户ID
-     */
-    private void validateUserId(Long userId) {
-        if (userId == null || userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-    }
-    
-    /**
-     * 验证对象ID
-     */
-    private void validateObjectId(Long objectId) {
-        if (objectId == null || objectId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-    }
-    
-    /**
-     * 验证评论ID
-     */
-    private void validateCommentId(Long commentId) {
-        if (commentId == null || commentId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-    }
 
     /**
      * 验证评论类型
@@ -88,66 +59,6 @@ public class CommentService {
             type != roadmap.value()) {
             throw ErrorCode.COMMENT_INVALID_TYPE.exception();
         }
-    }
-    
-    /**
-     * 验证并获取帖子
-     */
-    private PostDO validateAndGetPost(Long postId) {
-        validateObjectId(postId);
-        PostDO postDO = postDataService.getById(postId);
-        if (postDO == null) {
-            throw ErrorCode.CONTENTS_POST_NOT_FOUND.exception();
-        }
-        return postDO;
-    }
-    
-    /**
-     * 验证并获取节点
-     */
-    private NodeDO validateAndGetNode(Long nodeId) {
-        validateObjectId(nodeId);
-        NodeDO nodeDO = nodeDataService.getById(nodeId);
-        if (nodeDO == null) {
-            throw ErrorCode.COMMENT_OBJECT_NOT_FOUND.exception();
-        }
-        return nodeDO;
-    }
-    
-    /**
-     * 验证并获取路线图
-     */
-    private RoadmapDO validateAndGetRoadmap(Long roadmapId) {
-        validateObjectId(roadmapId);
-        RoadmapDO roadmapDO = roadmapDataService.getById(roadmapId);
-        if (roadmapDO == null) {
-            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
-        }
-        return roadmapDO;
-    }
-    
-    /**
-     * 验证并获取评论
-     */
-    private CommentDO validateAndGetComment(Long commentId) {
-        validateCommentId(commentId);
-        CommentDO commentDO = commentDataService.getById(commentId);
-        if (commentDO == null) {
-            throw ErrorCode.COMMENT_NOT_FOUND.exception();
-        }
-        return commentDO;
-    }
-    
-    /**
-     * 验证并获取用户
-     */
-    private UserDO validateAndGetUser(Long userId) {
-        validateUserId(userId);
-        UserDO userDO = userDataService.getById(userId);
-        if (userDO == null) {
-            throw ErrorCode.USER_NOT_FOUND.exception();
-        }
-        return userDO;
     }
 
     /**
@@ -163,12 +74,11 @@ public class CommentService {
             throw ErrorCode.INVALID_PARAMETER.exception("评论请求不能为空");
         }
 
-        validateObjectId(request.getObjectId());
         validateCommentType(request.getObjectType());
 
         // 验证 replyTo 评论是否存在
         if (request.getReplyTo() != null && request.getReplyTo() > 0) {
-            CommentDO replyToComment = validateAndGetComment(request.getReplyTo());
+            CommentDO replyToComment = commentDataService.validateAndGet(request.getReplyTo());
             // 确保回复的评论属于同一个对象
             if (!replyToComment.getObjectId().equals(request.getObjectId()) ||
                 !replyToComment.getObjectType().equals(request.getObjectType())) {
@@ -178,19 +88,16 @@ public class CommentService {
 
         // 验证 toUser 用户是否存在
         if (request.getToUser() != null && request.getToUser() > 0) {
-            validateAndGetUser(request.getToUser());
+            userDataService.validateAndGet(request.getToUser());
         }
 
-        PostDO postDO = null;
-        NodeDO nodeDO = null;
-        RoadmapDO roadmapDO = null;
-
+        // 验证被评论的对象是否存在
         if (request.getObjectType() == post.value()) {
-            postDO = validateAndGetPost(request.getObjectId());
+            postDataService.validateAndGet(request.getObjectId());
         } else if (request.getObjectType() == node.value()) {
-            nodeDO = validateAndGetNode(request.getObjectId());
+            nodeDataService.validateAndGet(request.getObjectId());
         } else if (request.getObjectType() == roadmap.value()) {
-            roadmapDO = validateAndGetRoadmap(request.getObjectId());
+            roadmapDataService.validateAndGet(request.getObjectId());
         } else {
             throw ErrorCode.COMMENT_INVALID_TYPE.exception();
         }
@@ -208,73 +115,12 @@ public class CommentService {
         commentDO.setScore(0.0);
         commentDataService.insert(commentDO);
 
-        // 处理回复和通知 - 重构现有方法以直接使用 request 和 commentDO
-        if (request.getReplyTo() != null && request.getReplyTo() > 0) {
-            handleReplyComment(request, commentDO, commentor, postDO, nodeDO, roadmapDO);
-        }
-
-        // 创建评论通知（不更新评论数，等审核通过后再更新）
-        createCommentNotification(request, commentDO, commentor, postDO, nodeDO, roadmapDO);
+        // 注意：评论创建时为待审核状态，不发送通知、不更新统计
+        // 审核通过后会发布 CommentCreatedEvent，由事件监听器处理通知和统计
 
         // 重新查询并转换为 DTO，填充 toUserName
         CommentDO savedComment = commentDataService.getById(commentDO.getId());
         return toCommentWithUserNames(savedComment);
-    }
-
-    /**
-     * 创建评论消息通知，提交评论时调用
-     * 主要功能是给被评论的用户发送评论通知
-     */
-    private void createCommentNotification(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
-                                         PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO) {
-        if (request.getObjectType() == post.value() && postDO != null) {
-            messageService.createCommentMessage(postDO.getCreatorId(), fromUser.getId(),
-                                              postDO.getNodeId(), commentDO.getId(), MessageType.postComment.value());
-        } else if (request.getObjectType() == node.value() && nodeDO != null) {
-            messageService.createCommentMessage(nodeDO.getCreatorId(), fromUser.getId(),
-                                              nodeDO.getId(), commentDO.getId(), MessageType.nodeComment.value());
-        } else if (request.getObjectType() == roadmap.value() && roadmapDO != null) {
-            messageService.createCommentMessage(roadmapDO.getCreatorId(), fromUser.getId(),
-                                              roadmapDO.getId(), commentDO.getId(), MessageType.roadmapComment.value());
-        }
-    }
-    
-    /**
-     * 创建回复评论消息通知，回复评论时调用
-     */
-    private void createReplyNotification(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
-                                       PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO, Long parentUserId) {
-        if (request.getObjectType() == node.value() && nodeDO != null) {
-            messageService.createCommentMessage(parentUserId, fromUser.getId(),
-                                              nodeDO.getId(), commentDO.getId(), MessageType.replyNodeComment.value());
-        } else if (request.getObjectType() == post.value() && postDO != null) {
-            messageService.createCommentMessage(parentUserId, fromUser.getId(),
-                                              postDO.getNodeId(), commentDO.getId(), MessageType.replyPostingComment.value());
-        } else if (request.getObjectType() == roadmap.value() && roadmapDO != null) {
-            messageService.createCommentMessage(parentUserId, fromUser.getId(),
-                                              roadmapDO.getId(), commentDO.getId(), MessageType.replyRoadmapComment.value());
-        }
-    }
-
-    /**
-     * 处理回复评论的一些逻辑，回复评论时调用
-     * 主要功能：
-     * 1. 更新父评论的回复数（通过 content_stats 表）
-     * 2. 更新父评论的分数
-     * 3. 创建回复通知
-     */
-    private void handleReplyComment(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
-                                   PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO) {
-        CommentDO parentCommentDO = validateAndGetComment(request.getReplyTo());
-
-        // 增加父评论的回复数（存储在 content_stats 表中）
-        contentStatsDataService.atomicIncrement(comment, parentCommentDO.getId(), "comments", 1);
-
-        // 更新评论分数并保存
-        scoreCalculationService.checkAndUpdateCommentScore(parentCommentDO);
-        commentDataService.update(parentCommentDO);
-
-        createReplyNotification(request, commentDO, fromUser, postDO, nodeDO, roadmapDO, parentCommentDO.getCreatorId());
     }
 
     /**
@@ -323,7 +169,6 @@ public class CommentService {
      * @return KeysetPageResponse<CommentWithRepliesDTO> 包含子评论的评论列表
      */
     public KeysetPageResponse<CommentWithRepliesDTO> getCommentsByObject(Long objectId, Integer type, Double lastScore, Long lastId, UserDO currentUser) {
-        validateObjectId(objectId);
         validateCommentType(type);
 
         int pageSize = systemProperties.getComment().getDefaultPageSize();
@@ -369,7 +214,7 @@ public class CommentService {
      * @return KeysetPageResponse<CommentDetailDTO> 不包含子评论的评论详情列表
      */
     public KeysetPageResponse<CommentDetailDTO> getCommentReplies(Long id, Double lastScore, Long lastId, UserDO currentUser) {
-        validateCommentId(id);
+        // id 会在 getByTopic 时被验证
 
         int pageSize = systemProperties.getComment().getDefaultPageSize();
         // 多查询一条以判断是否还有更多数据
@@ -451,45 +296,11 @@ public class CommentService {
     }
 
     /**
-     * 审核评论，批准或拒绝评论
-     * 仅管理员调用
-     */
-    @Transactional
-    public CommentDTO approveComment(Long id, boolean approve) {
-        validateCommentId(id);
-        CommentDO commentDO = validateAndGetComment(id);
-        int oldState = commentDO.getState();
-
-        if (approve && oldState != ContentState.PUBLISHED.value()) {
-            commentDO.setState(ContentState.PUBLISHED.value());
-            commentDataService.update(commentDO);
-
-            // 通过审核，评论数+1
-            if (oldState == ContentState.SUBMITTED.value() || oldState == ContentState.REJECTED.value()) {
-                updateObjectCommentCount(commentDO, 1);
-            }
-        }
-
-        if (!approve && oldState != ContentState.REJECTED.value()) {
-            commentDO.setState(ContentState.REJECTED.value());
-            commentDataService.update(commentDO);
-
-            // 拒绝评论，评论数-1
-            if (oldState == ContentState.PUBLISHED.value()) {
-                updateObjectCommentCount(commentDO, -1);
-            }
-        }
-
-        return toDTO(commentDO);
-    }
-
-    /**
      * 批准评论
      */
     @Transactional
     public void approve(Long id, UserDO operator) {
-        validateCommentId(id);
-        CommentDO commentDO = validateAndGetComment(id);
+        CommentDO commentDO = commentDataService.validateAndGet(id);
         int oldState = commentDO.getState();
 
         if (oldState != ContentState.PUBLISHED.value()) {
@@ -497,182 +308,59 @@ public class CommentService {
             commentDO.setReason(null);  // 清空拒绝原因
             commentDataService.update(commentDO);
 
-            // 批准评论，评论数+1
-            updateObjectCommentCount(commentDO, 1);
+            // 发布评论创建事件，触发 Redis 统计更新、消息通知、分数计算等副作用
+            Long contentCreatorId = getContentCreatorId(commentDO);
+            ContentType contentType = ContentType.getByValue(commentDO.getObjectType());
+
+            eventPublisher.publishEvent(new CommentCreatedEvent(
+                commentDO.getCreatorId(),  // 评论者ID
+                commentDO.getId(),         // 评论ID
+                commentDO.getObjectId(),   // 被评论内容ID
+                contentType,               // 内容类型
+                contentCreatorId           // 被评论内容的创建者ID
+            ));
         }
     }
 
     /**
      * 拒绝评论（审核不通过，带原因）
+     * 只能拒绝 SUBMITTED 状态的评论，拒绝后状态变为 REJECTED
+     * 不涉及统计回滚（因为从未发布）
+     * 暂不发送通知
      */
     @Transactional
     public void reject(Long id, String reason, UserDO operator) {
-        validateCommentId(id);
-        CommentDO commentDO = validateAndGetComment(id);
-        int oldState = commentDO.getState();
-
-        // 获取评论对象信息用于通知
-        String objectType = "node"; // 默认为 node
-        if (commentDO.getObjectType() == post.value()) {
-            objectType = "post";
-        } else if (commentDO.getObjectType() == roadmap.value()) {
-            objectType = "roadmap";
-        }
-
-        String objectTitle = "";
-
-        if (commentDO.getObjectType() == post.value()) {
-            PostDO postDO = postDataService.getById(commentDO.getObjectId());
-            if (postDO != null && postDO.getContent() != null) {
-                objectTitle = Utils.stripFormatting(postDO.getContent());
-                if (objectTitle.length() > 50) {
-                    objectTitle = objectTitle.substring(0, 50) + "...";
-                }
-            }
-        } else if (commentDO.getObjectType() == node.value()) {
-            NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
-            if (nodeDO != null) objectTitle = nodeDO.getName();
-        } else if (commentDO.getObjectType() == roadmap.value()) {
-            objectTitle = "路线图";
-        }
-
-        // 截取评论预览（前50个字符）
-        String preview = commentDO.getContent();
-        if (preview != null && preview.length() > 50) {
-            preview = preview.substring(0, 50) + "...";
-        }
-
+        commentDataService.validateAndGet(id);
         commentDataService.reject(id, reason);
-
-        // 拒绝评论，如果之前是已批准状态，评论数-1
-        if (oldState == ContentState.PUBLISHED.value()) {
-            updateObjectCommentCount(commentDO, -1);
-        }
-
-        // 发送拒绝通知
-        messageService.sendCommentModeration(
-            commentDO.getCreatorId(),
-            commentDO.getId(),
-            preview,
-            objectType,
-            commentDO.getObjectId(),
-            objectTitle,
-            ModerationAction.REJECTED,
-            reason
-        );
     }
 
     /**
      * 封禁评论（违规封禁，带原因）
+     * 可以封禁任何状态的评论，封禁后状态变为 BANNED
+     * TODO: 如果之前是 PUBLISHED 状态，需要统计回滚（评论数-1）
+     * TODO: 发送封禁通知
      */
     @Transactional
     public void ban(Long id, String reason, UserDO operator) {
-        validateCommentId(id);
-        CommentDO commentDO = validateAndGetComment(id);
-        int oldState = commentDO.getState();
+        commentDataService.validateAndGet(id);
+        commentDataService.ban(id, reason);
+    }
 
-        // 获取评论对象信息用于通知
-        String objectType = "node"; // 默认为 node
-        if (commentDO.getObjectType() == post.value()) {
-            objectType = "post";
-        } else if (commentDO.getObjectType() == roadmap.value()) {
-            objectType = "roadmap";
-        }
-
-        String objectTitle = "";
-
+    /**
+     * 获取被评论内容的创建者ID
+     */
+    private Long getContentCreatorId(CommentDO commentDO) {
         if (commentDO.getObjectType() == post.value()) {
             PostDO postDO = postDataService.getById(commentDO.getObjectId());
-            if (postDO != null && postDO.getContent() != null) {
-                objectTitle = Utils.stripFormatting(postDO.getContent());
-                if (objectTitle.length() > 50) {
-                    objectTitle = objectTitle.substring(0, 50) + "...";
-                }
-            }
+            return postDO != null ? postDO.getCreatorId() : null;
         } else if (commentDO.getObjectType() == node.value()) {
             NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
-            if (nodeDO != null) objectTitle = nodeDO.getName();
+            return nodeDO != null ? nodeDO.getCreatorId() : null;
         } else if (commentDO.getObjectType() == roadmap.value()) {
-            objectTitle = "路线图";
+            RoadmapDO roadmapDO = roadmapDataService.getById(commentDO.getObjectId());
+            return roadmapDO != null ? roadmapDO.getCreatorId() : null;
         }
-
-        // 截取评论预览（前50个字符）
-        String preview = commentDO.getContent();
-        if (preview != null && preview.length() > 50) {
-            preview = preview.substring(0, 50) + "...";
-        }
-
-        commentDataService.ban(id, reason);
-
-        // 封禁评论，如果之前是已批准状态，评论数-1
-        if (oldState == ContentState.PUBLISHED.value()) {
-            updateObjectCommentCount(commentDO, -1);
-        }
-
-        // 发送封禁通知
-        messageService.sendCommentModeration(
-            commentDO.getCreatorId(),
-            commentDO.getId(),
-            preview,
-            objectType,
-            commentDO.getObjectId(),
-            objectTitle,
-            ModerationAction.BANNED,
-            reason
-        );
-    }
-
-    /**
-     * 拒绝评论（审核不通过）- 无原因版本
-     */
-    @Transactional
-    public void rejectComment(Long id) {
-        validateCommentId(id);
-        CommentDO commentDO = validateAndGetComment(id);
-        int oldState = commentDO.getState();
-
-        commentDataService.reject(id);
-
-        // 拒绝评论，如果之前是已批准状态，评论数-1
-        if (oldState == ContentState.PUBLISHED.value()) {
-            updateObjectCommentCount(commentDO, -1);
-        }
-    }
-
-    /**
-     * 封禁评论（违规封禁）- 无原因版本
-     */
-    @Transactional
-    public void banComment(Long id) {
-        validateCommentId(id);
-        CommentDO commentDO = validateAndGetComment(id);
-        int oldState = commentDO.getState();
-
-        commentDataService.ban(id);
-
-        // 封禁评论，如果之前是已批准状态，评论数-1
-        if (oldState == ContentState.PUBLISHED.value()) {
-            updateObjectCommentCount(commentDO, -1);
-        }
-    }
-
-    /**
-     * 更新对象的评论数（通过 content_stats 表）
-     */
-    private void updateObjectCommentCount(CommentDO commentDO, int delta) {
-        ContentType contentType = null;
-
-        if (commentDO.getObjectType() == post.value()) {
-            contentType = post;
-        } else if (commentDO.getObjectType() == node.value()) {
-            contentType = node;
-        } else if (commentDO.getObjectType() == roadmap.value()) {
-            contentType = roadmap;
-        }
-
-        if (contentType != null) {
-            contentStatsDataService.atomicIncrement(contentType, commentDO.getObjectId(), "comments", delta);
-        }
+        return null;
     }
 
     // ========== DTO 转换方法 ==========

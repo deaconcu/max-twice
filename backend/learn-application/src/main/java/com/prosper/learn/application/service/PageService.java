@@ -28,6 +28,7 @@ import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.learning.enrollment.UserCourseDataService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.event.content.interaction.ContentViewedEvent;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDataService;
@@ -35,6 +36,7 @@ import com.prosper.learn.user.profile.UserProfileDO;
 import com.prosper.learn.user.profile.UserProfileDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -66,8 +68,9 @@ public class PageService {
     private final UserConverter userConverter;
     private final CourseService courseService;
     private final UserCourseService userCourseService;
+    private final ApplicationEventPublisher eventPublisher;
 
-    
+
     // ========== 常量定义 ==========
     
     private static final String DEFAULT_PATH_PREFIX = "1-";
@@ -145,6 +148,15 @@ public class PageService {
         if (commentDO.getObjectType() == ContentType.post.value()) {
             long postId = commentDO.getObjectId();
             postDO = postService.validateAndGetPost(postId);
+
+            // 发布内容浏览事件
+            eventPublisher.publishEvent(new ContentViewedEvent(
+                userId,
+                postDO.getId(),
+                ContentType.post,
+                postDO.getCreatorId()
+            ));
+
             nodeDO = nodeDataService.validateAndGet(postDO.getNodeId());
             courseDO = validateCourseExists(nodeDO.getCourseId());
             path = generateDefaultPath(courseDO.getRootNodeId());
@@ -162,6 +174,15 @@ public class PageService {
      */
     public Map<String, Object> readPageByPost(Long postId, long userId) {
         PostDO postDO = postService.validateAndGetPost(postId);
+
+        // 发布内容浏览事件
+        eventPublisher.publishEvent(new ContentViewedEvent(
+            userId,
+            postDO.getId(),
+            ContentType.post,
+            postDO.getCreatorId()
+        ));
+
         NodeDO nodeDO = nodeDataService.validateAndGet(postDO.getNodeId());
         CourseDO courseDO = validateCourseExists(nodeDO.getCourseId());
         String path = generateDefaultPath(courseDO.getRootNodeId());
