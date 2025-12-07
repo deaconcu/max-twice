@@ -2,7 +2,6 @@ package com.prosper.learn.memory.review;
 
 import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
-
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -10,6 +9,7 @@ import java.util.Map;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
+@Mapper
 public interface UserCardSrsMapper {
 
     @Select("SELECT * FROM user_card_srs WHERE id = #{id}")

@@ -1,11 +1,11 @@
 package com.prosper.learn.memory.review;
 
 import org.apache.ibatis.annotations.*;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+@Mapper
 public interface UserCourseSrsSettingMapper {
 
     @Select("SELECT * FROM user_course_srs_setting WHERE id = #{id}")

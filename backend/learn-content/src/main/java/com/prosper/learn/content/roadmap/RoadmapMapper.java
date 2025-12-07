@@ -6,6 +6,7 @@ import java.util.List;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
+@Mapper
 public interface RoadmapMapper {
 
     @Select("SELECT * FROM roadmap WHERE id = #{id} AND deleted_at IS NULL")

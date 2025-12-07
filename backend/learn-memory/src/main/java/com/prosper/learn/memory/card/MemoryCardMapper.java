@@ -2,11 +2,11 @@ package com.prosper.learn.memory.card;
 
 import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+@Mapper
 public interface MemoryCardMapper {
 
     @Select("SELECT * FROM memory_card WHERE id = #{id}")

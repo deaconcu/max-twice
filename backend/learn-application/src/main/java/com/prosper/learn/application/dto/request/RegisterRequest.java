@@ -1,6 +1,6 @@
 package com.prosper.learn.application.dto.request;
 
-import com.prosper.learn.common.validation.ConfigurableSize;
+import com.prosper.learn.shared.common.validator.ConfigurableSize;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

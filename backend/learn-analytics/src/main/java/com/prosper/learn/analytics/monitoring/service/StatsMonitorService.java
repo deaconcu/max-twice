@@ -1,8 +1,8 @@
 package com.prosper.learn.analytics.monitoring.service;
 
 import com.prosper.learn.analytics.stats.service.DailyStatsService;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.common.config.SystemProperties;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.ContextClosedEvent;

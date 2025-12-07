@@ -1,9 +1,9 @@
 package com.prosper.learn.interaction.upvote;
 
 import org.apache.ibatis.annotations.*;
-
 import java.util.List;
 
+@Mapper
 public interface UpvoteMapper {
 
     @Select("SELECT * FROM upvote where id = #{id}")

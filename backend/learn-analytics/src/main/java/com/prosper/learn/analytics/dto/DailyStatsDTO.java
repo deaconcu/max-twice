@@ -1,4 +1,4 @@
-package com.prosper.learn.application.dto.response;
+package com.prosper.learn.analytics.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,11 +13,11 @@ public class DailyStatsDTO {
     
     private String date; // 格式: yyyy-MM-dd
     
-    private Long views;
+    private Integer views;
     
-    private Long twice;
+    private Integer twice;
     
-    private Long helpful;
+    private Integer likes;
     
-    private Long comments;
+    private Integer comments;
 }

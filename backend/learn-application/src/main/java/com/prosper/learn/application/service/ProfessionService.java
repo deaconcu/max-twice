@@ -7,8 +7,6 @@ import com.prosper.learn.application.dto.request.UpdateProfessionRequest;
 import com.prosper.learn.application.dto.response.ProfessionDTO;
 import com.prosper.learn.content.profession.ProfessionDO;
 import com.prosper.learn.content.profession.ProfessionDataService;
-import com.prosper.learn.interaction.message.MessageDomainService;
-import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
@@ -28,7 +26,7 @@ public class ProfessionService {
 
     private final ProfessionDataService professionDataService;
     private final ProfessionRankingDomainService professionRankingService;
-    private final MessageDomainService messageDomainService;
+    private final MessageService messageService;
     private final SystemProperties systemProperties;
     private final ProfessionConverter professionConverter;
     
@@ -147,7 +145,7 @@ public class ProfessionService {
         }
 
         // 发送审核通过通知
-        messageDomainService.sendProfessionModeration(
+        messageService.sendProfessionModeration(
             profession.getCreatorId(),
             profession.getId(),
             profession.getName(),
@@ -175,7 +173,7 @@ public class ProfessionService {
         }
 
         // 发送拒绝通知
-        messageDomainService.sendProfessionModeration(
+        messageService.sendProfessionModeration(
             profession.getCreatorId(),
             profession.getId(),
             profession.getName(),
@@ -203,7 +201,7 @@ public class ProfessionService {
         }
 
         // 发送封禁通知
-        messageDomainService.sendProfessionModeration(
+        messageService.sendProfessionModeration(
             profession.getCreatorId(),
             profession.getId(),
             profession.getName(),

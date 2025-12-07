@@ -9,9 +9,9 @@ import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.interaction.follow.FollowDO;
 import com.prosper.learn.interaction.follow.FollowDataService;
-import com.prosper.learn.interaction.message.MessageDomainService;
 import com.prosper.learn.shared.common.utils.Utils;
-import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.event.content.interaction.ContentBookmarkedEvent;
+import com.prosper.learn.shared.domain.event.content.interaction.ContentUnbookmarkedEvent;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.auth.VerificationDO;
@@ -22,6 +22,7 @@ import com.prosper.learn.user.profile.UserProfileDO;
 import com.prosper.learn.user.profile.UserProfileDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -49,10 +50,11 @@ public class UserService {
     private final FollowDataService followDataService;
     private final VerificationDataService verificationDataService;
     private final JavaMailSender mailSender;
-    private final MessageDomainService messageDomainService;
+    private final MessageService messageService;
     private final SystemProperties systemProperties;
     private final UserConverter userConverter;
     private final CourseService courseService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ========== 常量定义 ==========
 
@@ -337,6 +339,13 @@ public class UserService {
             userProfileDataService.update(userProfileDO);
         }
 
+        // 发布收藏事件
+        eventPublisher.publishEvent(new ContentBookmarkedEvent(
+            userId,
+            courseId,
+            ContentType.course
+        ));
+
         return parseSubscriptionIdsToArray(idsStr);
     }
 
@@ -373,17 +382,24 @@ public class UserService {
         if (userProfileDO == null || !StringUtils.hasText(userProfileDO.getSubscription())) {
             throw ErrorCode.USER_COURSE_NOT_SUBSCRIBED.exception();
         }
-        
+
         List<Long> ids = parseSubscriptionIds(userProfileDO.getSubscription());
         if (!ids.contains(courseId)) {
             throw ErrorCode.USER_COURSE_NOT_SUBSCRIBED.exception();
         }
-        
+
         ids.remove(courseId);
         String idsStr = formatSubscriptionIds(ids);
         userProfileDO.setSubscription(idsStr);
         userProfileDataService.update(userProfileDO);
-        
+
+        // 发布取消收藏事件
+        eventPublisher.publishEvent(new ContentUnbookmarkedEvent(
+            userId,
+            courseId,
+            ContentType.course
+        ));
+
         return parseSubscriptionIdsToArray(idsStr);
     }
 
@@ -407,7 +423,7 @@ public class UserService {
         if (followDO == null) {
             UserDO follower = userDataService.getById(followerId);
             followDataService.insert(followerId, followeeId);
-            messageDomainService.createFollowMessage(followeeId, follower.getId());
+            messageService.createFollowMessage(followeeId, follower.getId());
         }
     }
 

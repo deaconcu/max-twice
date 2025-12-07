@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
+@Mapper
 public interface SystemMapper {
 
     @Select("SELECT * FROM `system` WHERE `key` = #{key} LIMIT 1" )

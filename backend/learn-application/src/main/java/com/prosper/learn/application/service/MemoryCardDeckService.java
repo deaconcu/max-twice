@@ -14,15 +14,13 @@ import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.application.dto.response.deck.DeckWithCreatorDTO;
 import com.prosper.learn.application.dto.response.deck.DeckWithVoteDTO;
 import com.prosper.learn.application.dto.response.node.NodeBriefDTO;
-import com.prosper.learn.content.autoauthor.AutoAuthorQueueService;
+import com.prosper.learn.application.service.autoauthor.AutoAuthorQueueService;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
-import com.prosper.learn.interaction.message.MessageDomainService;
-import com.prosper.learn.interaction.upvote.UpvoteDomainService;
 import com.prosper.learn.memory.card.MemoryCardDO;
 import com.prosper.learn.memory.card.MemoryCardDataService;
 import com.prosper.learn.memory.card.MemoryCardVersionDO;
@@ -61,7 +59,7 @@ public class MemoryCardDeckService {
     private final PostDataService postDataService;
     private final NodeDataService nodeDataService;
     private final CourseDataService courseDataService;
-    private final MessageDomainService messageDomainService;
+    private final MessageService messageService;
     private final MemoryCardDeckConverter deckConverter;
     private final UserConverter userConverter;
     private final CourseConverter courseConverter;
@@ -69,7 +67,7 @@ public class MemoryCardDeckService {
     private final MemoryCardService memoryCardService;
     private final MemoryCardVersionDataService cardVersionDataService;
     private final UserCardSrsDataService userCardSrsDataService;
-    private final UpvoteDomainService upvoteDomainService;
+    private final UpvoteService upvoteService;
     private final ScoreCalculationService scoreCalculationService;
     private final AutoAuthorQueueService autoAuthorQueueService;
 
@@ -113,7 +111,7 @@ public class MemoryCardDeckService {
 
         // 填充点赞状态（如果提供了用户ID）
         if (userId != null) {
-            boolean hasUpvoted = upvoteDomainService.getUpvoteStatus(deckDO.getId(), Enums.ContentType.memory_card_deck.value(), userId).getUpvoted();
+            boolean hasUpvoted = upvoteService.getUpvoteStatus(deckDO.getId(), Enums.ContentType.memory_card_deck, userId).getLikeUpvoted();
             dto.setHasUpvoted(hasUpvoted);
         }
 
@@ -185,7 +183,7 @@ public class MemoryCardDeckService {
                 .collect(Collectors.toSet());
             // 批量查询点赞状态
             for (Long deckId : deckIds) {
-                boolean hasUpvoted = upvoteDomainService.getUpvoteStatus(deckId, Enums.ContentType.memory_card_deck.value(), userId).getUpvoted();
+                boolean hasUpvoted = upvoteService.getUpvoteStatus(deckId, Enums.ContentType.memory_card_deck, userId).getLikeUpvoted();
                 upvoteStatusMap.put(deckId, hasUpvoted);
             }
         }
@@ -695,7 +693,7 @@ public class MemoryCardDeckService {
         PostDO postDO = postDataService.getById(deck.getPostId());
         String postContentPreview = "";
         if (postDO != null && postDO.getContent() != null) {
-            postContentPreview = com.prosper.learn.business.util.Util.stripFormatting(postDO.getContent());
+            postContentPreview = Utils.stripFormatting(postDO.getContent());
             if (postContentPreview.length() > 50) {
                 postContentPreview = postContentPreview.substring(0, 50) + "...";
             }
@@ -710,7 +708,7 @@ public class MemoryCardDeckService {
         log.info("Deck {} rejected by user {}, reason: {}", deckId, auditorId, reason);
 
         // 发送拒绝通知
-        messageDomainService.sendMemoryDeckModeration(
+        messageService.sendMemoryDeckModeration(
             deck.getCreatorId(),
             deck.getId(),
             deck.getTitle(),
@@ -748,7 +746,7 @@ public class MemoryCardDeckService {
         log.info("Deck {} banned by user {}, reason: {}", deckId, auditorId, reason);
 
         // 发送封禁通知
-        messageDomainService.sendMemoryDeckModeration(
+        messageService.sendMemoryDeckModeration(
             deck.getCreatorId(),
             deck.getId(),
             deck.getTitle(),

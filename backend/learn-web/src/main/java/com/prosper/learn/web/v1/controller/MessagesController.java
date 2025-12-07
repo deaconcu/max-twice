@@ -5,7 +5,7 @@ import com.prosper.learn.application.dto.request.CreateMessageRequest;
 import com.prosper.learn.application.dto.request.CreateNotificationRequest;
 import com.prosper.learn.application.dto.request.SendMessageRequest;
 import com.prosper.learn.application.dto.response.message.MessageDTO;
-import com.prosper.learn.interaction.message.MessageDomainService;
+import com.prosper.learn.application.service.MessageService;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserMapper;
 import com.prosper.learn.web.ratelimit.LimitType;
@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 @RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class MessagesController {
 
-    private final MessageDomainService messageDomainService;
+    private final MessageService messageService;
     private final UserMapper userMapper;
 
     /**
@@ -46,7 +46,7 @@ public class MessagesController {
             @RequestBody @Valid CreateMessageRequest request,
             @CurrentUser UserDO currentUser) {
 
-        messageDomainService.applyCourse(request.getTitle(), request.getSummary(), request.getExplanation(), request.getParentId(), currentUser.getId());
+        messageService.applyCourse(request.getTitle(), request.getSummary(), request.getExplanation(), request.getParentId(), currentUser.getId());
         return ApiResponse.success();
     }
 
@@ -65,7 +65,7 @@ public class MessagesController {
             Long lastId,
             @CurrentUser UserDO currentUser) {
 
-        List<MessageDTO> messageDTOList = messageDomainService.getSystemList(type, currentUser.getId(), lastId);
+        List<MessageDTO> messageDTOList = messageService.getSystemList(type, currentUser.getId(), lastId);
         return ApiResponse.success(messageDTOList);
     }
 
@@ -87,7 +87,7 @@ public class MessagesController {
             @RequestParam(required = false) Integer type,
             @CurrentUser UserDO currentUser) {
 
-        List<MessageDTO> messageDTOList = messageDomainService.getListByCategory(category, currentUser.getId(), lastId, type);
+        List<MessageDTO> messageDTOList = messageService.getListByCategory(category, currentUser.getId(), lastId, type);
         return ApiResponse.success(messageDTOList);
     }
 
@@ -112,7 +112,7 @@ public class MessagesController {
             int conversation,
             @CurrentUser UserDO currentUser) {
 
-        List<MessageDTO> messageDTOList = messageDomainService.getList(type, currentUser.getId(), userId, lastId, conversation);
+        List<MessageDTO> messageDTOList = messageService.getList(type, currentUser.getId(), userId, lastId, conversation);
         return ApiResponse.success(messageDTOList);
     }
 
@@ -138,7 +138,7 @@ public class MessagesController {
             Long id,
             @JsonParam("reply") @NotBlank(message = "回复内容不能为空") String reply) {
 
-        messageDomainService.modifyCourseApply(id, reply);
+        messageService.modifyCourseApply(id, reply);
         return ApiResponse.success();
     }
 
@@ -164,7 +164,7 @@ public class MessagesController {
             throw new IllegalArgumentException("用户不存在");
         }
 
-        messageDomainService.createInviteMessage(request.getUserId(), currentUser.getId(), request.getNodeId());
+        messageService.createInviteMessage(request.getUserId(), currentUser.getId(), request.getNodeId());
         return ApiResponse.success();
     }
 }

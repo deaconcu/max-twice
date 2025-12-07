@@ -3,17 +3,19 @@ package com.prosper.learn.analytics.stats.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.prosper.learn.analytics.dto.ContentStatsDTO;
+import com.prosper.learn.analytics.dto.DailyStatsDTO;
+import com.prosper.learn.analytics.dto.UserStatsDTO;
+import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
+import com.prosper.learn.analytics.stats.dataservice.UserStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyMapper;
-import com.prosper.learn.analytics.stats.mapper.PostStatsDO;
+import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyDO;
 import com.prosper.learn.analytics.stats.mapper.UserStatsYearlyDO;
 import com.prosper.learn.analytics.stats.mapper.UserStatsYearlyMapper;
-import com.prosper.learn.common.Enums;
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.common.exception.BusinessException;
-import com.prosper.learn.common.config.SystemProperties;
-import com.prosper.learn.dto.response.DailyStatsDTO;
-import com.prosper.learn.dto.response.UserStatsDTO;
-import com.prosper.learn.dto.response.post.PostSummaryDTO;
+import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
+import com.prosper.learn.shared.domain.exception.BusinessException;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -25,32 +27,44 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.prosper.learn.shared.common.constants.RedisStatsConstants.*;
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 日常统计数据同步服务
- * 
+ *
  * 该服务负责将Redis中的实时统计数据同步到数据库进行持久化存储，同时提供统计数据的查询功能。
- * 
+ *
  * 设计思路:
  * 1. 实时统计数据存储在Redis中，性能高但非持久化
  * 2. 定期将Redis数据同步到数据库，确保数据不丢失
  * 3. 支持补偿机制，处理同步失败的情况
- * 4. 提供统一的用户和文章统计数据查询接口
- * 
+ * 4. 提供统一的用户和内容统计数据查询接口
+ *
  * Redis数据结构:
  * - 用户统计: stats:YYYY-MM-DD:user -> {userId:statType: count}
+ *   例如: stats:2025-12-06:user -> {"123:view": 10, "123:twice": 5}
+ *
  * - 内容统计: stats:YYYY-MM-DD:content -> {contentType:contentId:statType: count}
- * 
- * 数据库存储结构（JSON格式）:
- * - 用户统计: user_stats.stats -> {"1-1":{"views": 10, "twice": 3, "like": 2, "comments": 5}, ...}
- * - 文章统计: post_stats.stats -> {"1-1":{"views": 100, "twice": 3, "like": 2, "comments": 8}, ...}
+ *   例如: stats:2025-12-06:content -> {"1:456:view": 100, "1:456:twice": 20}
+ *
+ * 数据库存储结构（JSON 数组格式，节省空间）:
+ * - user_stats_yearly.stats -> {"1-1": [10, 5, 2, 7], "1-2": [15, 8, 3, 9], ...}
+ *   数组顺序：[views, twice, like, comments]
+ *
+ * - content_stats_yearly.stats -> {"1-1": [100, 20, 15, 30], "1-2": [120, 25, 18, 35], ...}
+ *   数组顺序：[views, twice, likes, comments]
+ *
+ * 数据库累计表（content_stats）:
+ * - content_stats 表存储累计总数（不是明细）
+ * - 用于快速查询总统计：总统计 = content_stats 累计 + 今日 Redis 增量
  *
  * 统计类型包括:
  * - view/views: 浏览量
- * - twice: 两次能懂
- * - like: 有用点赞
+ * - twice: 两次能懂点赞
+ * - like/likes: 有用点赞
  * - comment/comments: 评论数
  */
 @Slf4j
@@ -61,6 +75,8 @@ public class DailyStatsService {
     private final RedisTemplate<String, String> redisTemplate;
     private final ContentStatsYearlyMapper contentStatsYearlyMapper;
     private final UserStatsYearlyMapper userStatsYearlyMapper;
+    private final ContentStatsDataService contentStatsDataService;
+    private final UserStatsDataService userStatsDataService;
     private final ObjectMapper objectMapper;
     private final SystemProperties systemProperties;
 
@@ -218,25 +234,29 @@ public class DailyStatsService {
         for (Map.Entry<Long, UserDayStats> entry : userDayStatsMap.entrySet()) {
             Long userId = entry.getKey();
             UserDayStats dayStats = entry.getValue();
-            
+
             try {
                 // 确保用户的年度记录存在
                 ensureUserYearRecord(userId, year);
-                
+
                 // 直接设置当天的完整数据（覆盖而非增量）
                 int updated = userStatsYearlyMapper.updateYearlyStatsArray(
                         userId, year, dayKey,
                         dayStats.views, dayStats.twice, dayStats.like,
                         dayStats.comments);
-                
+
                 if (updated > 0) {
                     log.debug("覆盖用户{}在{}的统计数据: views={}, twice={}, like={}, comments={}",
                         userId, dateStr, dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
+
+                    // 同步更新用户总计表
+                    userStatsDataService.increase(userId, dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
+
                     updateCount++;
                 } else {
                     log.warn("用户{}的{}年度记录不存在，无法更新统计", userId, year);
                 }
-                
+
             } catch (Exception e) {
                 log.error("同步用户{}在{}的统计数据失败", userId, dateStr, e);
             }
@@ -330,7 +350,7 @@ public class DailyStatsService {
             String redisStatType = parts[2];
 
             // 只处理 POST 类型的内容
-            if (!String.valueOf(Enums.ContentType.post.value()).equals(contentType)) {
+            if (!String.valueOf(ContentType.post.value()).equals(contentType)) {
                 continue;
             }
             
@@ -366,15 +386,20 @@ public class DailyStatsService {
             
             try {
                 // 确保post_stats年度记录存在
-                ensurePostYearRecord(Enums.ContentType.post.value(), postId, year);
+                ensurePostYearRecord(ContentType.post.value(), postId, year);
                 
                 // 直接设置当天的完整数据（覆盖而非增量）
-                int updated = contentStatsYearlyMapper.setDayStats(Enums.ContentType.post.value(), postId, year, dayKey,
+                int updated = contentStatsYearlyMapper.setDayStats(ContentType.post.value(), postId, year, dayKey,
                         dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
                 
                 if (updated > 0) {
                     log.debug("覆盖文章{}在{}的统计数据: views={}, twice={}, like={}, comments={}",
                         postId, dateStr, dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
+
+                    // 同步更新内容总计表
+                    contentStatsDataService.increase(ContentType.post, postId,
+                        dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
+
                     updateCount++;
                 } else {
                     log.warn("文章{}的{}年度记录不存在，无法更新统计", postId, year);
@@ -458,9 +483,9 @@ public class DailyStatsService {
      * 确保post_stats的年度记录存在
      */
     private void ensurePostYearRecord(int type, Long objectId, int year) {
-        PostStatsDO existing = contentStatsYearlyMapper.getByTypeAndObjectIdAndYear(type, objectId, year);
+        ContentStatsYearlyDO existing = contentStatsYearlyMapper.getByTypeAndObjectIdAndYear(type, objectId, year);
         if (existing == null) {
-            PostStatsDO yearRecord = new PostStatsDO();
+            ContentStatsYearlyDO yearRecord = new ContentStatsYearlyDO();
             yearRecord.setObjectType(type);
             yearRecord.setObjectId(objectId);
             yearRecord.setStatYear(year);
@@ -543,13 +568,10 @@ public class DailyStatsService {
             
             UserStatsDTO dto = UserStatsDTO.builder()
                 .userId(userId)
-                .period("yesterday")
-                .startDate(yesterday.toString())
-                .endDate(yesterday.toString())
-                .totalViews(stats.get("views").longValue())
-                .totalTwice(stats.get("twice").longValue())
-                .totalHelpful(stats.get("like").longValue())
-                .totalComments(stats.get("comments").longValue())
+                .views(stats.get("views"))
+                .twices(stats.get("twice"))
+                .likes(stats.get("like"))
+                .comments(stats.get("comments"))
                 .build();
                 
             return dto;
@@ -578,13 +600,10 @@ public class DailyStatsService {
             
             UserStatsDTO dto = UserStatsDTO.builder()
                 .userId(userId)
-                .period(days + "days")
-                .startDate(startDate.toString())
-                .endDate(endDate.toString())
-                .totalViews(totalStats.get("views").longValue())
-                .totalTwice(totalStats.get("twice").longValue())
-                .totalHelpful(totalStats.get("like").longValue())
-                .totalComments(totalStats.get("comments").longValue())
+                .views(totalStats.get("views"))
+                .twices(totalStats.get("twice"))
+                .likes(totalStats.get("like"))
+                .comments(totalStats.get("comments"))
                 .build();
                 
             return dto;
@@ -603,12 +622,12 @@ public class DailyStatsService {
         
         try {
             List<DailyStatsDTO> dailyStats = new ArrayList<>();
-            
+
             // 总计数据
-            long totalViews = 0;
-            long totalTwice = 0;
-            long totalHelpful = 0;
-            long totalComments = 0;
+            int totalViews = 0;
+            int totalTwice = 0;
+            int totalLikes = 0;
+            int totalComments = 0;
             
             for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
                 DailyStatsDTO dailyStat;
@@ -618,43 +637,39 @@ public class DailyStatsService {
                     UserStatsDTO todayStats = getUserTodayStats(userId);
                     dailyStat = DailyStatsDTO.builder()
                         .date(date.toString())
-                        .views(todayStats.getTotalViews())
-                        .twice(todayStats.getTotalTwice())
-                        .helpful(todayStats.getTotalHelpful())
-                        .comments(todayStats.getTotalComments())
+                        .views(todayStats.getViews())
+                        .twice(todayStats.getTwices())
+                        .likes(todayStats.getLikes())
+                        .comments(todayStats.getComments())
                         .build();
                 } else {
                     // 历史数据从数据库获取
                     Map<String, Integer> dayStats = getUserDayStats(userId, date);
-                        
+
                     dailyStat = DailyStatsDTO.builder()
                         .date(date.toString())
-                        .views(dayStats.get("views").longValue())
-                        .twice(dayStats.get("twice").longValue())
-                        .helpful(dayStats.get("helpful").longValue())
-                        .comments(dayStats.get("comments").longValue())
+                        .views(dayStats.get("views"))
+                        .twice(dayStats.get("twice"))
+                        .likes(dayStats.get("like"))
+                        .comments(dayStats.get("comments"))
                         .build();
                 }
                 
                 dailyStats.add(dailyStat);
-                
+
                 // 累计总数
                 totalViews += dailyStat.getViews();
                 totalTwice += dailyStat.getTwice();
-                totalHelpful += dailyStat.getHelpful();
+                totalLikes += dailyStat.getLikes();
                 totalComments += dailyStat.getComments();
             }
-            
+
             return UserStatsDTO.builder()
                 .userId(userId)
-                .period(days + "days")
-                .startDate(startDate.toString())
-                .endDate(endDate.toString())
-                .totalViews(totalViews)
-                .totalTwice(totalTwice)
-                .totalHelpful(totalHelpful)
-                .totalComments(totalComments)
-                .dailyStats(dailyStats)
+                .views(totalViews)
+                .twices(totalTwice)
+                .likes(totalLikes)
+                .comments(totalComments)
                 .build();
                 
         } catch (Exception e) {
@@ -678,19 +693,19 @@ public class DailyStatsService {
      * @return 解析后的用户统计对象
      */
     private UserStatsDTO parseUserStatsFromRedis(long userId, Map<Object, Object> stats, String date) {
-        long totalViews = 0;
-        long totalTwice = 0;
-        long totalHelpful = 0;
-        long totalComments = 0;
-        
+        int totalViews = 0;
+        int totalTwice = 0;
+        int totalLikes = 0;
+        int totalComments = 0;
+
         String userPrefix = userId + ":";  // Redis field格式: "userId:statType"
-        
+
         for (Map.Entry<Object, Object> entry : stats.entrySet()) {
             String field = (String) entry.getKey();
             Integer count = Integer.parseInt((String) entry.getValue());
-            
+
             if (!field.startsWith(userPrefix)) continue;
-            
+
             String statType = field.substring(userPrefix.length());
             switch (statType) {
                 case STAT_TYPE_VIEW:
@@ -700,23 +715,20 @@ public class DailyStatsService {
                     totalTwice += count;
                     break;
                 case STAT_TYPE_LIKE:
-                    totalHelpful += count;
+                    totalLikes += count;
                     break;
                 case STAT_TYPE_COMMENT:
                     totalComments += count;
                     break;
             }
         }
-        
+
         return UserStatsDTO.builder()
             .userId(userId)
-            .period("today")
-            .startDate(date)
-            .endDate(date)
-            .totalViews(totalViews)
-            .totalTwice(totalTwice)
-            .totalHelpful(totalHelpful)
-            .totalComments(totalComments)
+            .views(totalViews)
+            .twices(totalTwice)
+            .likes(totalLikes)
+            .comments(totalComments)
             .build();
     }
 
@@ -870,27 +882,28 @@ public class DailyStatsService {
         try {
             // 1. 获取昨天以前的所有历史数据（带缓存）
             UserStatsDTO historicalStats = getUserHistoricalStats(userId);
-            
+
             // 2. 获取今天的实时数据
             UserStatsDTO todayStats = getUserTodayStats(userId);
-            
+
             // 3. 合并数据
-            long totalViews = historicalStats.getTotalViews() + todayStats.getTotalViews();
-            long totalTwice = historicalStats.getTotalTwice() + todayStats.getTotalTwice();
-            long totalHelpful = historicalStats.getTotalHelpful() + todayStats.getTotalHelpful();
-            long totalComments = historicalStats.getTotalComments() + todayStats.getTotalComments();
-            
+            int totalViews = (historicalStats.getViews() != null ? historicalStats.getViews() : 0) +
+                            (todayStats.getViews() != null ? todayStats.getViews() : 0);
+            int totalTwices = (historicalStats.getTwices() != null ? historicalStats.getTwices() : 0) +
+                             (todayStats.getTwices() != null ? todayStats.getTwices() : 0);
+            int totalLikes = (historicalStats.getLikes() != null ? historicalStats.getLikes() : 0) +
+                            (todayStats.getLikes() != null ? todayStats.getLikes() : 0);
+            int totalComments = (historicalStats.getComments() != null ? historicalStats.getComments() : 0) +
+                               (todayStats.getComments() != null ? todayStats.getComments() : 0);
+
             return UserStatsDTO.builder()
                 .userId(userId)
-                .period("all_time")
-                .startDate("2020-01-01") // 系统开始日期
-                .endDate(LocalDate.now().toString())
-                .totalViews(totalViews)
-                .totalTwice(totalTwice)
-                .totalHelpful(totalHelpful)
-                .totalComments(totalComments)
+                .views(totalViews)
+                .twices(totalTwices)
+                .likes(totalLikes)
+                .comments(totalComments)
                 .build();
-                
+
         } catch (Exception e) {
             log.error("获取用户{}全部时间统计失败", userId, e);
             return UserStatsDTO.empty();
@@ -913,21 +926,18 @@ public class DailyStatsService {
         try {
             LocalDate yesterday = LocalDate.now().minusDays(1);
             LocalDate startDate = LocalDate.of(2020, 1, 1); // 系统开始日期
-            
+
             // 使用现有的日期范围统计方法
             Map<String, Integer> totalStats = getUserDateRangeStats(userId, startDate, yesterday);
-            
+
             return UserStatsDTO.builder()
                 .userId(userId)
-                .period("historical")
-                .startDate(startDate.toString())
-                .endDate(yesterday.toString())
-                .totalViews(totalStats.get("views").longValue())
-                .totalTwice(totalStats.get("twice").longValue())
-                .totalHelpful(totalStats.get("like").longValue())
-                .totalComments(totalStats.get("comments").longValue())
+                .views(totalStats.get("views"))
+                .twices(totalStats.get("twice"))
+                .likes(totalStats.get("like"))
+                .comments(totalStats.get("comments"))
                 .build();
-                
+
         } catch (Exception e) {
             log.error("获取用户{}历史统计数据失败", userId, e);
             return UserStatsDTO.empty();
@@ -1025,141 +1035,24 @@ public class DailyStatsService {
         return null;
     }
 
-    // ====== 文章阅读量查询方法 ======
 
-    /**
-     * 获取文章的总阅读量（历史数据 + 今日实时数据）
-     * 
-     * @param postId 文章ID
-     * @return 总阅读量
-     */
-    public int getPostTotalViews(long postId) {
-        try {
-            // 获取历史阅读量（昨天以前的数据，带缓存）
-            int historicalViews = getHistoricalViews(postId);
-            
-            // 获取今日实时阅读量
-            int todayViews = getTodayViews(postId);
-            
-            // 总阅读量 = 历史数据 + 今日数据
-            int totalViews = historicalViews + todayViews;
-            
-            log.debug("Post {} views: historical={}, today={}, total={}", 
-                postId, historicalViews, todayViews, totalViews);
-                
-            return totalViews;
-        } catch (Exception e) {
-            log.error("Failed to get total views for post {}: {}", postId, e.getMessage(), e);
-            return 0;
-        }
-    }
-
-    /**
-     * 获取历史阅读量（昨天以前的数据，每天最多计算一次）
-     */
-    @Cacheable(value = "postHistoricalViews", key = "#postId + '_' + T(java.time.LocalDate).now().toString()")
-    private int getHistoricalViews(long postId) {
-        try {
-            int totalViews = 0;
-            LocalDate today = LocalDate.now();
-            int currentYear = today.getYear();
-            
-            // 获取所有年份的统计数据
-            List<PostStatsDO> statsList = contentStatsYearlyMapper.getStatsInYearRange(Enums.ContentType.post.value(),
-                Long.valueOf(postId), currentYear - 1); // 查询最近2年的数据
-            
-            for (PostStatsDO stats : statsList) {
-                if (stats.getStats() != null && !stats.getStats().isEmpty()) {
-                    try {
-                        Map<String, Map<String, Integer>> yearStats = objectMapper.readValue(
-                            stats.getStats(), new TypeReference<Map<String, Map<String, Integer>>>() {});
-                        
-                        for (Map.Entry<String, Map<String, Integer>> entry : yearStats.entrySet()) {
-                            String dayKey = entry.getKey(); // 格式: "M-d"
-                            Map<String, Integer> dayStats = entry.getValue();
-                            
-                            // 解析日期，只计算昨天以前的数据
-                            try {
-                                String[] parts = dayKey.split("-");
-                                int month = Integer.parseInt(parts[0]);
-                                int day = Integer.parseInt(parts[1]);
-                                LocalDate statDate = LocalDate.of(stats.getStatYear(), month, day);
-                                
-                                // 只统计昨天以前的数据
-                                if (statDate.isBefore(today)) {
-                                    totalViews += dayStats.getOrDefault("views", 0);
-                                }
-                            } catch (Exception e) {
-                                log.warn("Failed to parse date key {} for post {}", dayKey, postId);
-                            }
-                        }
-                    } catch (Exception e) {
-                        log.warn("Failed to parse stats for post {}: {}", postId, e.getMessage());
-                    }
-                }
-            }
-            
-            log.debug("Post {} historical views: {}", postId, totalViews);
-            return totalViews;
-        } catch (Exception e) {
-            log.error("Failed to get historical views for post {}: {}", postId, e.getMessage());
-            return 0;
-        }
-    }
-
-    /**
-     * 获取今日实时阅读量（从Redis获取）
-     */
-    public int getTodayViews(long postId) {
-        validatePostId(postId);
-        try {
-            String today = LocalDate.now().toString();
-            String redisKey = generatePostStatsKey(today);
-            String fieldKey = postId + ":view";
-            
-            // 首先检查这个key是否存在
-            Boolean keyExists = redisTemplate.hasKey(redisKey);
-
-            if (keyExists) {
-                Object viewCount = redisTemplate.opsForHash().get(redisKey, fieldKey); // postId:view
-                if (viewCount != null) {
-                    return Integer.parseInt(viewCount.toString());
-                }
-            }
-            return 0;
-        } catch (Exception e) {
-            log.error("Failed to get today views for post {} from Redis: {}", postId, e.getMessage(), e);
-            return 0;
-        }
-    }
-
-    /**
-     * 为文章列表设置阅读量（历史数据 + 今日实时数据）
-     * 
-     * @param postList 需要设置阅读量的文章列表
-     */
-    public void setViewsForPosts(List<? extends PostSummaryDTO> postList) {
-        if (postList == null || postList.isEmpty()) {
-            return;
-        }
-
-        log.debug("Setting views for {} posts", postList.size());
-
-        for (PostSummaryDTO postObj : postList) {
-            try {
-                // 使用反射获取postId和设置views
-                Long postId = postObj.getId();
-                if (postId != null) {
-                    int totalViews = getPostTotalViews(postId);
-                    postObj.setViewCount(totalViews);
-                }
-            } catch (Exception e) {
-                log.error("Failed to set views for post: {}", e.getMessage(), e);
-            }
-        }
-    }
 
     // ========== 私有辅助方法 ==========
+
+    /**
+     * 从 Redis Hash 中获取整数字段值
+     */
+    private int getRedisHashFieldAsInt(String key, String field) {
+        try {
+            Object value = redisTemplate.opsForHash().get(key, field);
+            if (value != null) {
+                return Integer.parseInt(value.toString());
+            }
+        } catch (Exception e) {
+            log.debug("获取 Redis 字段失败: key={}, field={}, error={}", key, field, e.getMessage());
+        }
+        return 0;
+    }
 
     /**
      * 生成用户统计Redis键名
@@ -1220,5 +1113,131 @@ public class DailyStatsService {
         if (days <= 0 || days > systemProperties.getStats().getMaxQueryDaysRange()) {
             throw ErrorCode.INVALID_DAYS_RANGE.exception();
         }
+    }
+
+    // ========== 新方法：返回统计数据而不是修改 DTO ==========
+
+    /**
+     * 批量获取内容统计数据
+     *
+     * 逻辑：
+     * - 按日统计字段（views, twice, likes, comments）: content_stats 累计 + 今日 Redis 增量
+     * - 非按日统计字段（shares, bookmarks, completedUsers, inProgressUsers）: 直接从 content_stats 获取
+     *
+     * @param contentType 内容类型
+     * @param contentIds 内容ID列表
+     * @return Map<ContentId, ContentStatsDTO>
+     */
+    public Map<Long, ContentStatsDTO> batchGetContentStats(ContentType contentType, List<Long> contentIds) {
+        Map<Long, ContentStatsDTO> result = new HashMap<>();
+
+        if (contentIds == null || contentIds.isEmpty()) {
+            return result;
+        }
+
+        log.debug("批量获取 {} 个{}的统计数据", contentIds.size(), contentType);
+
+        try {
+            // 1. 批量查询 content_stats 表的累计数据
+            List<ContentStatsDO> contentStatsList =
+                contentStatsDataService.batchGetByContentIds(contentType, contentIds);
+
+            Map<Long, ContentStatsDO> statsMap = contentStatsList.stream()
+                .collect(Collectors.toMap(ContentStatsDO::getContentId, stats -> stats));
+
+            // 2. 批量获取今日 Redis 实时增量（只有 views, twice, likes, comments 四个字段）
+            Map<Long, DailyStatsDTO> todayStatsMap = batchGetTodayStatsForContent(contentType, contentIds);
+
+            // 3. 组装返回
+            for (Long contentId : contentIds) {
+                ContentStatsDO baseStats = statsMap.get(contentId);
+                DailyStatsDTO todayStats = todayStatsMap.get(contentId);
+
+                // 按日统计字段：累计 + 今日增量
+                int baseViews = baseStats != null && baseStats.getViews() != null ? baseStats.getViews() : 0;
+                int baseTwice = baseStats != null && baseStats.getTwices() != null ? baseStats.getTwices() : 0;
+                int baseLikes = baseStats != null && baseStats.getLikes() != null ? baseStats.getLikes() : 0;
+                int baseComments = baseStats != null && baseStats.getComments() != null ? baseStats.getComments() : 0;
+
+                int todayViews = todayStats != null && todayStats.getViews() != null ? todayStats.getViews() : 0;
+                int todayTwice = todayStats != null && todayStats.getTwice() != null ? todayStats.getTwice() : 0;
+                int todayLikes = todayStats != null && todayStats.getLikes() != null ? todayStats.getLikes() : 0;
+                int todayComments = todayStats != null && todayStats.getComments() != null ? todayStats.getComments() : 0;
+
+                // 非按日统计字段：直接从 content_stats 获取（不加今日增量）
+                int baseShares = baseStats != null && baseStats.getShares() != null ? baseStats.getShares() : 0;
+                int baseBookmarks = baseStats != null && baseStats.getBookmarks() != null ? baseStats.getBookmarks() : 0;
+                int baseCompleted = baseStats != null && baseStats.getCompletedUsers() != null ? baseStats.getCompletedUsers() : 0;
+                int baseInProgress = baseStats != null && baseStats.getInProgressUsers() != null ? baseStats.getInProgressUsers() : 0;
+
+                // 构建 DTO
+                ContentStatsDTO dto = ContentStatsDTO.builder()
+                    .contentId(contentId)
+                    .views(baseViews + todayViews)              // 累计 + 今日增量
+                    .twiceUpvotes(baseTwice + todayTwice)       // 累计 + 今日增量
+                    .likeUpvotes(baseLikes + todayLikes)        // 累计 + 今日增量
+                    .comments(baseComments + todayComments)     // 累计 + 今日增量
+                    .shares(baseShares)                         // 只用累计值
+                    .bookmarks(baseBookmarks)                   // 只用累计值
+                    .completedUsers(baseCompleted)              // 只用累计值
+                    .inProgressUsers(baseInProgress)            // 只用累计值
+                    .build();
+
+                result.put(contentId, dto);
+            }
+
+            log.debug("成功获取 {} 个{}的统计数据", contentIds.size(), contentType);
+
+        } catch (Exception e) {
+            log.error("批量获取统计数据失败: contentType={}", contentType, e);
+        }
+
+        return result;
+    }
+
+    /**
+     * 批量获取今日 Redis 实时统计增量
+     *
+     * 注意：只包含按日统计的字段（views, twice, likes, comments）
+     *
+     * @param contentType 内容类型
+     * @param contentIds 内容ID列表
+     * @return Map<ContentId, DailyStatsDTO>
+     */
+    private Map<Long, DailyStatsDTO> batchGetTodayStatsForContent(ContentType contentType, List<Long> contentIds) {
+        Map<Long, DailyStatsDTO> result = new HashMap<>();
+
+        String today = LocalDate.now().toString();
+        String redisKey = STATS_KEY_PREFIX + today + CONTENT_STATS_SUFFIX;
+
+        // 检查 Redis key 是否存在
+        Boolean keyExists = redisTemplate.hasKey(redisKey);
+        if (keyExists == null || !keyExists) {
+            log.debug("今日 Redis 统计数据不存在: {}", redisKey);
+            return result;
+        }
+
+        int contentTypeValue = contentType.value();
+
+        // 批量获取今日各项统计（只有4个按日统计的字段）
+        for (Long contentId : contentIds) {
+            // Redis 字段格式：contentType:contentId:statType
+            // 例如：1:123:view (ContentType.post=1, contentId=123, statType=view)
+            int views = getRedisHashFieldAsInt(redisKey, contentTypeValue + ":" + contentId + ":" + STAT_TYPE_VIEW);
+            int twice = getRedisHashFieldAsInt(redisKey, contentTypeValue + ":" + contentId + ":" + STAT_TYPE_TWICE);
+            int likes = getRedisHashFieldAsInt(redisKey, contentTypeValue + ":" + contentId + ":" + STAT_TYPE_LIKE);
+            int comments = getRedisHashFieldAsInt(redisKey, contentTypeValue + ":" + contentId + ":" + STAT_TYPE_COMMENT);
+
+            DailyStatsDTO stats = DailyStatsDTO.builder()
+                .views(views)
+                .twice(twice)
+                .likes(likes)
+                .comments(comments)
+                .build();
+
+            result.put(contentId, stats);
+        }
+
+        return result;
     }
 }

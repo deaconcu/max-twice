@@ -1,10 +1,10 @@
 package com.prosper.learn.user.profile;
 
 import org.apache.ibatis.annotations.*;
-
 import java.util.Collection;
 import java.util.List;
 
+@Mapper
 public interface UserProfileMapper {
 
     @Select("SELECT * FROM user_profile WHERE user_id = #{userId}")

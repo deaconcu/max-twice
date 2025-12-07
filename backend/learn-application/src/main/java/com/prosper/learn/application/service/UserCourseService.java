@@ -1,6 +1,5 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.analytics.ranking.service.CourseRankingDomainService;
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.UserCourseConverter;
 import com.prosper.learn.application.dto.response.course.CourseSummaryDTO;
@@ -28,7 +27,6 @@ public class UserCourseService {
 
     private final UserCourseDataService userCourseDataService;
     private final CourseDataService courseDataService;
-    private final CourseRankingDomainService courseRankingDomainService;
     private final CourseConverter courseConverter;
     private final UserCourseConverter userCourseConverter;
     private final CourseService courseService;
@@ -174,15 +172,13 @@ public class UserCourseService {
     public boolean startCourse(Long userId, Long courseId) {
         validateUserId(userId);
         validateCourseId(courseId);
-        
+
         // 检查是否已经存在学习记录
         UserCourseDO existing = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
 
         if (existing != null) {
-            // 如果已存在，删除记录并更新Redis
+            // 如果已存在，删除记录
             userCourseDataService.deleteByUserAndCourse(userId, courseId);
-            // 减少学习人数
-            courseRankingDomainService.decrementLearning(courseId);
             return false;
         }
 
@@ -195,9 +191,6 @@ public class UserCourseService {
         progressDO.setStartedAt(LocalDateTime.now());
 
         userCourseDataService.insert(progressDO);
-        
-        // 增加学习人数
-        courseRankingDomainService.incrementLearning(courseId);
 
         return true;
     }
@@ -260,10 +253,8 @@ public class UserCourseService {
     public void delete(Long userId, Long courseId) {
         validateUserId(userId);
         validateCourseId(courseId);
-        
+
         userCourseDataService.deleteByUserAndCourse(userId, courseId);
-        // 减少学习人数
-        courseRankingDomainService.decrementLearning(courseId);
     }
 
     /**

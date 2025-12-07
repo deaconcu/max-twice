@@ -6,6 +6,7 @@ import java.util.List;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
+@Mapper
 public interface CourseMapper {
 
     @Select("SELECT * FROM course WHERE id = #{id}")

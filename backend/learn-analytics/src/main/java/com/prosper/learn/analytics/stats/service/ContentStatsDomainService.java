@@ -1,10 +1,10 @@
 package com.prosper.learn.analytics.stats.service;
 
+import com.prosper.learn.analytics.dto.ContentStatsDTO;
 import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
-import com.prosper.learn.shared.dto.response.ContentStatsDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -53,7 +53,7 @@ public class ContentStatsDomainService {
 
         // 帖子特殊处理：支持 twice 和 like 分别统计
         if (contentType == Enums.ContentType.post) {
-            builder.twiceUpvotes(stats.getTwice() != null ? stats.getTwice() : 0)
+            builder.twiceUpvotes(stats.getTwices() != null ? stats.getTwices() : 0)
                    .likeUpvotes(stats.getLikes() != null ? stats.getLikes() : 0);
         } else {
             // 其他内容类型只有 like 统计

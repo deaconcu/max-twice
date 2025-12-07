@@ -40,7 +40,7 @@ public class ContentStatsDO {
      * 总两次能懂数
      * 记录该内容获得的"两次能懂"点赞总数
      */
-    private Integer twice;
+    private Integer twices;
 
     /**
      * 总点赞数

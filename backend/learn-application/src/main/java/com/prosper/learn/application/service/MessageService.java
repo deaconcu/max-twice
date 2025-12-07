@@ -1,18 +1,32 @@
-package com.prosper.learn.interaction.message;
+package com.prosper.learn.application.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.application.converter.MessageConverter;
+import com.prosper.learn.application.converter.NodeConverter;
+import com.prosper.learn.application.converter.UserConverter;
+import com.prosper.learn.application.dto.response.message.*;
+import com.prosper.learn.content.course.CourseDO;
+import com.prosper.learn.content.course.CourseDataService;
+import com.prosper.learn.content.node.NodeDO;
+import com.prosper.learn.content.node.NodeDataService;
+import com.prosper.learn.content.post.PostDO;
+import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.interaction.message.MessageDO;
+import com.prosper.learn.interaction.message.MessageDataService;
 import com.prosper.learn.shared.common.utils.Utils;
-import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
+import com.prosper.learn.user.profile.UserDO;
+import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 import static com.prosper.learn.shared.domain.Enums.*;
+import static com.prosper.learn.shared.domain.Enums.MessageType.*;
 
 /**
  * 消息管理服务
@@ -33,7 +47,7 @@ import static com.prosper.learn.shared.domain.Enums.*;
  */
 @Service
 @RequiredArgsConstructor
-public class MessageDomainService {
+public class MessageService {
 
     /** 系统消息内容常量 - 固定内容，定义为静态常量 */
     private static final Map<Integer, String> SYSTEM_MESSAGES = new HashMap<>();
@@ -294,42 +308,42 @@ public class MessageDomainService {
     private MessageDTO convertMessage(MessageDO messageDO, Map<Long, UserDO> userDOMap,
                                       Map<Long, PostDO> postingDOMap, Map<Long, NodeDO> nodeDOMap) {
         MessageDTO messageDTO = null;
-        Map<String, Object> content = Util.readValueToMap(messageDO.getContent());
+        Map<String, Object> content = Utils.readValueToMap(messageDO.getContent());
         if (messageDO.getType() == postComment.value() || messageDO.getType() == replyPostingComment.value() ||
             messageDO.getType() == nodeComment.value() || messageDO.getType() == replyNodeComment.value()) {
 
             CommentMessageDTO m = new CommentMessageDTO();
-            long nodeId = Util.getLong(content, "nodeId");
+            long nodeId = Utils.getLong(content, "nodeId");
             NodeDO nodeDO = nodeDOMap.get(nodeId);
 
-            m.setCommentId(Util.getLong(content, "commentId"));
+            m.setCommentId(Utils.getLong(content, "commentId"));
             m.setNode(nodeConverter.toSummaryDTO(nodeDO));
-            m.setCommenter(userConverter.toDTOV2(userDOMap.get(Util.getLong(content, "commenterId"))));
+            m.setCommenter(userConverter.toDTOV2(userDOMap.get(Utils.getLong(content, "commenterId"))));
             messageDTO = m;
         } else if (messageDO.getType() == upvote.value()) {
             UpvoteMessageDTO m = new UpvoteMessageDTO();
             if (content.containsKey("postingId")) {
-                long postId = Util.getLong(content, "postingId");
+                long postId = Utils.getLong(content, "postingId");
                 m.setObjectId(postId);
                 m.setObjectType(ContentType.post.value());
             } else if (content.containsKey("commentId")) {
-                long commentId = Util.getLong(content, "commentId");
+                long commentId = Utils.getLong(content, "commentId");
                 m.setObjectId(commentId);
                 m.setObjectType(ContentType.comment.value());
             }
 
-            m.setNode(nodeConverter.toSummaryDTO(nodeDOMap.get(Util.getLong(content, "nodeId"))));
-            m.setVoteType(Util.getInteger(content, "type"));
-            m.setUpvoter(userConverter.toDTOV2(userDOMap.get(Util.getLong(content, "upvoterId"))));
+            m.setNode(nodeConverter.toSummaryDTO(nodeDOMap.get(Utils.getLong(content, "nodeId"))));
+            m.setVoteType(Utils.getInteger(content, "type"));
+            m.setUpvoter(userConverter.toDTOV2(userDOMap.get(Utils.getLong(content, "upvoterId"))));
             messageDTO = m;
         } else if (messageDO.getType() == follow.value()) {
             FollowMessageDTO m = new FollowMessageDTO();
-            m.setFollower(userConverter.toDTOV2(userDOMap.get(Util.getLong(content,"followerId"))));
+            m.setFollower(userConverter.toDTOV2(userDOMap.get(Utils.getLong(content,"followerId"))));
             messageDTO = m;
         } else if (messageDO.getType() == invite.value()) {
             InviteMessageDTO m = new InviteMessageDTO();
-            m.setInviter(userConverter.toDTOV2(userDOMap.get(Util.getLong(content, "inviterId"))));
-            long nodeId = Util.getLong(content, "nodeId");
+            m.setInviter(userConverter.toDTOV2(userDOMap.get(Utils.getLong(content, "inviterId"))));
+            long nodeId = Utils.getLong(content, "nodeId");
             m.setNode(nodeConverter.toSummaryDTO(nodeDOMap.get(nodeId)));
             messageDTO = m;
         } else {
@@ -396,14 +410,14 @@ public class MessageDomainService {
         messageMap.put("nodeId", nodeId);
         messageMap.put("commentId", commentId);
 
-        createSystemMessage(type, recieverId, Util.toJson(messageMap));
+        createSystemMessage(type, recieverId, Utils.toJson(messageMap));
     }
 
     public void createFollowMessage(long recieverId, long followerId) {
         Map<String, Object> messageMap = new HashMap<>();
         messageMap.put("followerId", followerId);
 
-        createSystemMessage(follow.value(), recieverId, Util.toJson(messageMap));
+        createSystemMessage(follow.value(), recieverId, Utils.toJson(messageMap));
     }
 
     // ========== 专门化点赞消息方法 ==========
@@ -425,7 +439,7 @@ public class MessageDomainService {
         messageMap.put("postId", postId);
         messageMap.put("contentType", "post");
 
-        createSystemMessage(upvote.value(), receiverId, Util.toJson(messageMap));
+        createSystemMessage(upvote.value(), receiverId, Utils.toJson(messageMap));
     }
 
     /**
@@ -443,7 +457,7 @@ public class MessageDomainService {
         messageMap.put("commentId", commentId);
         messageMap.put("contentType", "comment");
 
-        createSystemMessage(upvote.value(), receiverId, Util.toJson(messageMap));
+        createSystemMessage(upvote.value(), receiverId, Utils.toJson(messageMap));
     }
 
     /**
@@ -461,7 +475,7 @@ public class MessageDomainService {
         messageMap.put("roadmapId", roadmapId);
         messageMap.put("contentType", "roadmap");
 
-        createSystemMessage(upvote.value(), receiverId, Util.toJson(messageMap));
+        createSystemMessage(upvote.value(), receiverId, Utils.toJson(messageMap));
     }
 
     /**
@@ -479,7 +493,7 @@ public class MessageDomainService {
         messageMap.put("deckId", deckId);
         messageMap.put("contentType", "memory_deck");
 
-        createSystemMessage(upvote.value(), receiverId, Util.toJson(messageMap));
+        createSystemMessage(upvote.value(), receiverId, Utils.toJson(messageMap));
     }
 
     public void createInviteMessage(long recieverId, long InviterId, long nodeId) {
@@ -487,7 +501,7 @@ public class MessageDomainService {
         messageMap.put("inviterId", InviterId);
         messageMap.put("nodeId", nodeId);
 
-        createSystemMessage(invite.value(), recieverId, Util.toJson(messageMap));
+        createSystemMessage(invite.value(), recieverId, Utils.toJson(messageMap));
     }
 
     public void createSystemMessage(int type, long userId, String content) {
@@ -554,7 +568,7 @@ public class MessageDomainService {
             throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
 
-        create(jsonString, userId, 0, MessageType.applyCourse);
+        create(jsonString, userId, 0, applyCourse);
     }
 
     /**
@@ -609,7 +623,7 @@ public class MessageDomainService {
             default -> throw ErrorCode.INVALID_PARAMETER.exception("无效的审核操作: " + action);
         }
 
-        createSystemMessage(type, userId, Util.toJson(data));
+        createSystemMessage(type, userId, Utils.toJson(data));
     }
 
     /**
@@ -620,7 +634,7 @@ public class MessageDomainService {
                                    ModerationAction action, String reason) {
         Map<String, Object> data = new HashMap<>();
         data.put("postId", postId);
-        data.put("postPreview", Util.stripFormatting(postPreview));
+        data.put("postPreview", Utils.stripFormatting(postPreview));
         data.put("nodeId", nodeId);
         data.put("nodeName", nodeName);
         data.put("courseName", courseName);
@@ -633,7 +647,7 @@ public class MessageDomainService {
             default -> throw ErrorCode.INVALID_PARAMETER.exception("帖子审核操作只支持 REJECTED 和 BANNED");
         };
 
-        createSystemMessage(type, userId, Util.toJson(data));
+        createSystemMessage(type, userId, Utils.toJson(data));
     }
 
     /**
@@ -644,7 +658,7 @@ public class MessageDomainService {
                                       ModerationAction action, String reason) {
         Map<String, Object> data = new HashMap<>();
         data.put("commentId", commentId);
-        data.put("commentPreview", Util.stripFormatting(commentPreview));
+        data.put("commentPreview", Utils.stripFormatting(commentPreview));
         data.put("objectType", objectType);
         data.put("objectId", objectId);
         data.put("objectTitle", objectTitle);
@@ -656,7 +670,7 @@ public class MessageDomainService {
             default -> throw ErrorCode.INVALID_PARAMETER.exception("评论审核操作只支持 REJECTED 和 BANNED");
         };
 
-        createSystemMessage(type, userId, Util.toJson(data));
+        createSystemMessage(type, userId, Utils.toJson(data));
     }
 
     /**
@@ -685,7 +699,7 @@ public class MessageDomainService {
             default -> throw ErrorCode.INVALID_PARAMETER.exception("无效的审核操作: " + action);
         }
 
-        createSystemMessage(type, userId, Util.toJson(data));
+        createSystemMessage(type, userId, Utils.toJson(data));
     }
 
     /**
@@ -706,7 +720,7 @@ public class MessageDomainService {
             default -> throw ErrorCode.INVALID_PARAMETER.exception("路线图审核操作只支持 REJECTED 和 BANNED");
         };
 
-        createSystemMessage(type, userId, Util.toJson(data));
+        createSystemMessage(type, userId, Utils.toJson(data));
     }
 
     /**
@@ -729,7 +743,7 @@ public class MessageDomainService {
             default -> throw ErrorCode.INVALID_PARAMETER.exception("记忆卡片组审核操作只支持 REJECTED 和 BANNED");
         };
 
-        createSystemMessage(type, userId, Util.toJson(data));
+        createSystemMessage(type, userId, Utils.toJson(data));
     }
 
     /**
@@ -751,7 +765,7 @@ public class MessageDomainService {
             default -> throw ErrorCode.INVALID_PARAMETER.exception("节点审核操作只支持 REJECTED 和 BANNED");
         };
 
-        createSystemMessage(type, userId, Util.toJson(data));
+        createSystemMessage(type, userId, Utils.toJson(data));
     }
 
     /**

@@ -1,11 +1,11 @@
 package com.prosper.learn.memory.card;
 
 import org.apache.ibatis.annotations.*;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+@Mapper
 public interface MemoryCardVersionMapper {
 
     @Select("SELECT * FROM memory_card_version WHERE id = #{id}")

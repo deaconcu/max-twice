@@ -1,10 +1,10 @@
 package com.prosper.learn.interaction.follow;
 
 import org.apache.ibatis.annotations.*;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Mapper
 public interface FollowMapper {
 
     @Select("SELECT * FROM `follow` WHERE follower_id = #{followerId} and followee_id = #{followeeId}")

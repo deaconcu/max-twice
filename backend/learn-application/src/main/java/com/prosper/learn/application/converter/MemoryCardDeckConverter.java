@@ -18,7 +18,6 @@ public interface MemoryCardDeckConverter {
 
     // ==================== 旧版方法 ====================
 
-    @Deprecated
     @Named("toDTO")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
@@ -32,17 +31,10 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "cardCount")
     MemoryCardDeckDTO toDTO(MemoryCardDeckDO deckDO);
 
-    @Deprecated
     @IterableMapping(qualifiedByName = "toDTO")
     List<MemoryCardDeckDTO> toDTO(List<MemoryCardDeckDO> deckDOList);
 
-    @Deprecated
-    @BeanMapping(ignoreByDefault = true)
-    @Mapping(target = "id")
-    @Mapping(target = "title")
-    MemoryCardDeckDTO toDTOV2(MemoryCardDeckDO deckDTO);
-
-    @Deprecated
+    @Named("toDeckDetailDTO")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "title")

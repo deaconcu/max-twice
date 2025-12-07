@@ -6,7 +6,6 @@ import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.interaction.comment.CommentDO;
 import com.prosper.learn.interaction.comment.CommentDataService;
-import com.prosper.learn.interaction.upvote.UpvoteDomainService;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 
@@ -40,7 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContentInteractionService {
 
     /** 点赞领域服务 */
-    private final UpvoteDomainService upvoteDomainService;
+    private final UpvoteService upvoteService;
 
     /** 帖子数据访问接口 */
     private final PostDataService postDataService;
@@ -75,7 +74,7 @@ public class ContentInteractionService {
         PostDO postDO = postDataService.validateAndGet(postId);
 
         // 2. 调用领域服务执行业务逻辑（包含事件发布）
-        upvoteDomainService.upvotePost(postDO, user, type);
+        upvoteService.upvotePost(postDO, user, type);
     }
 
     /**
@@ -97,7 +96,7 @@ public class ContentInteractionService {
         CommentDO commentDO = commentDataService.validateAndGet(commentId);
 
         // 2. 调用领域服务执行业务逻辑（包含事件发布）
-        upvoteDomainService.upvoteComment(commentDO, user);
+        upvoteService.upvoteComment(commentDO, user);
     }
 
     /**
@@ -120,7 +119,7 @@ public class ContentInteractionService {
         RoadmapDO roadmapDO = roadmapDataService.validateAndGet(roadmapId);
 
         // 2. 调用领域服务执行业务逻辑（包含事件发布）
-        return upvoteDomainService.upvoteRoadmap(roadmapDO, user);
+        return upvoteService.upvoteRoadmap(roadmapDO, user);
     }
 
     /**
@@ -142,6 +141,6 @@ public class ContentInteractionService {
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
 
         // 2. 调用领域服务执行业务逻辑（包含事件发布）
-        return upvoteDomainService.upvoteMemoryCardDeck(deck, user);
+        return upvoteService.upvoteMemoryCardDeck(deck, user);
     }
 }

@@ -1,11 +1,11 @@
 package com.prosper.learn.content.node;
 
 import org.apache.ibatis.annotations.*;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+@Mapper
 public interface NodeMapper {
 
     @Select("SELECT n.id FROM node n WHERE n.id > #{afterId} AND NOT EXISTS (SELECT 1 FROM post p WHERE p.node_id = n.id AND p.creator_id = #{userId} AND p.state != 2) ORDER BY n.id ASC LIMIT #{limit}")

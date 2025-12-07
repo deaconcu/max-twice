@@ -3,7 +3,6 @@ package com.prosper.learn.application.service;
 import com.prosper.learn.application.dto.response.FolloweeDTO;
 import com.prosper.learn.interaction.follow.FollowDO;
 import com.prosper.learn.interaction.follow.FollowDataService;
-import com.prosper.learn.interaction.message.MessageDomainService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
@@ -48,7 +47,7 @@ public class FollowService {
     private final UserDataService userDataService;
     
     /** 消息服务，用于发送关注通知 */
-    private final MessageDomainService messageDomainService;
+    private final MessageService messageService;
     
     /** 系统配置属性 */
     private final SystemProperties systemProperties;
@@ -164,7 +163,7 @@ public class FollowService {
             followDataService.insert(follower.getId(), followeeId);
 
             // 发送关注通知消息
-            messageDomainService.createFollowMessage(followeeId, follower.getId());
+            messageService.createFollowMessage(followeeId, follower.getId());
         }
     }
 

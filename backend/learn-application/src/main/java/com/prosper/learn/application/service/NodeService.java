@@ -7,9 +7,7 @@ import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
-import com.prosper.learn.interaction.message.MessageDomainService;
 import com.prosper.learn.shared.common.utils.Utils;
-import com.prosper.learn.shared.domain.Enums;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,7 +27,7 @@ public class NodeService {
 
     private final NodeDataService nodeDataService;
     private final CourseDataService courseDataService;
-    private final MessageDomainService messageDomainService;
+    private final MessageService messageService;
     private final NodeConverter nodeConverter;
     private final CourseService courseService;
 
@@ -161,7 +159,7 @@ public class NodeService {
 
         // 发送拒绝通知
         if (courseDO != null) {
-            messageDomainService.sendNodeModeration(
+            messageService.sendNodeModeration(
                 nodeDO.getCreatorId(),
                 nodeDO.getId(),
                 nodeDO.getName(),
@@ -190,7 +188,7 @@ public class NodeService {
 
         // 发送封禁通知
         if (courseDO != null) {
-            messageDomainService.sendNodeModeration(
+            messageService.sendNodeModeration(
                 nodeDO.getCreatorId(),
                 nodeDO.getId(),
                 nodeDO.getName(),

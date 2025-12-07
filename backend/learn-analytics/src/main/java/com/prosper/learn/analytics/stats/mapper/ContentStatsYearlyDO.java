@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class PostStatsDO {
+public class ContentStatsYearlyDO {
 
     private Long id;
 

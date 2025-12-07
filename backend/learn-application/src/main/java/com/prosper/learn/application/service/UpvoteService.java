@@ -1,8 +1,19 @@
-package com.prosper.learn.interaction.upvote;
+package com.prosper.learn.application.service;
 
+import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
+import com.prosper.learn.application.dto.response.UpvoteStatusDTO;
+import com.prosper.learn.content.post.PostDO;
+import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.content.roadmap.RoadmapDO;
+import com.prosper.learn.interaction.comment.CommentDO;
+import com.prosper.learn.interaction.upvote.UpvoteDO;
+import com.prosper.learn.interaction.upvote.UpvoteDataService;
+import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.event.content.voting.*;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -12,6 +23,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 点赞服务
@@ -33,7 +46,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
-public class UpvoteDomainService {
+public class UpvoteService {
 
     /** 点赞类型名称常量 */
     private static final String UPVOTE_TYPE_TWICE = "twice";
@@ -67,7 +80,7 @@ public class UpvoteDomainService {
     @Transactional
     public void upvotePost(PostDO postDO, UserDO user, int type) {
         // 验证点赞类型
-        if (type != Enums.VoteType.twice.value() && type != Enums.VoteType.like.value()) {
+        if (type != VoteType.twice.value() && type != VoteType.like.value()) {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子仅支持 twice 或 like 点赞类型: " + type);
         }
 
@@ -80,7 +93,7 @@ public class UpvoteDomainService {
             upvoteDataService.delete(upvoteDO.getId());
 
             // 发布取消点赞事件
-            if (type == Enums.VoteType.twice.value()) {
+            if (type == VoteType.twice.value()) {
                 eventPublisher.publishEvent(new TwiceUpvoteCancelledEvent<>(
                     user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO
                 ));
@@ -103,7 +116,7 @@ public class UpvoteDomainService {
             upvoteDataService.insert(upvoteDO);
 
             // 发布点赞事件
-            if (type == Enums.VoteType.twice.value()) {
+            if (type == VoteType.twice.value()) {
                 eventPublisher.publishEvent(new TwiceUpvotedEvent<>(
                     user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO
                 ));
@@ -340,8 +353,8 @@ public class UpvoteDomainService {
         if (upvoteDO != null) {
             // 帖子特殊处理：支持 twice 和 like 分别统计
             if (contentType == ContentType.post) {
-                twiceUpvoted = upvoteDO.getType() == Enums.VoteType.twice.value();
-                likeUpvoted = upvoteDO.getType() == Enums.VoteType.like.value();
+                twiceUpvoted = upvoteDO.getType() == VoteType.twice.value();
+                likeUpvoted = upvoteDO.getType() == VoteType.like.value();
             } else {
                 // 其他内容类型只有 like 统计
                 likeUpvoted = true;

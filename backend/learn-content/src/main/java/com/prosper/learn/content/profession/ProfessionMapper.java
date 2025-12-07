@@ -2,13 +2,13 @@ package com.prosper.learn.content.profession;
 
 import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
+@Mapper
 public interface ProfessionMapper {
 
     @Select("SELECT * FROM profession WHERE id = #{id}")

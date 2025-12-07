@@ -2,11 +2,11 @@ package com.prosper.learn.interaction.comment;
 
 import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
-
 import java.util.List;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
+@Mapper
 public interface CommentMapper {
 
     @Select("SELECT * FROM comment where id = #{id}")

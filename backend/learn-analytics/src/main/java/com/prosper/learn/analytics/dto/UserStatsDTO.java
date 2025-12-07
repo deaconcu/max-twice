@@ -1,4 +1,4 @@
-package com.prosper.learn.application.dto.response;
+package com.prosper.learn.analytics.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,13 +16,12 @@ public class UserStatsDTO {
 
     // 用户基础信息
     private Long userId;
-    private LocalDate statDate;
 
-    // 当日活动统计
-    private Integer dailyViews;
-    private Integer dailyTwice;
-    private Integer dailyHelpful;
-    private Integer dailyComments;
+    // 累计统计字段（总计数）
+    private Integer views;          // 总浏览量
+    private Integer twices;         // 总两次能懂点赞数
+    private Integer likes;          // 总有用点赞数
+    private Integer comments;       // 总评论数
 
     // 学习进度统计
     private Integer learningCourses;
@@ -48,10 +47,10 @@ public class UserStatsDTO {
 
     public static UserStatsDTO empty() {
         return UserStatsDTO.builder()
-            .dailyViews(0)
-            .dailyTwice(0)
-            .dailyHelpful(0)
-            .dailyComments(0)
+            .views(0)
+            .twices(0)
+            .likes(0)
+            .comments(0)
             .learningCourses(0)
             .completedCourses(0)
             .inProgressProfessions(0)

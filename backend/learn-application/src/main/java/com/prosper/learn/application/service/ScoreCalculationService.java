@@ -2,8 +2,10 @@ package com.prosper.learn.application.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyMapper;
-import com.prosper.learn.analytics.stats.mapper.PostStatsDO;
+import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyDO;
+import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostMapper;
 import com.prosper.learn.content.roadmap.RoadmapDO;
@@ -66,6 +68,9 @@ public class ScoreCalculationService {
 
     /** 帖子统计数据访问接口 */
     private final ContentStatsYearlyMapper contentStatsYearlyMapper;
+
+    /** 内容统计数据服务 */
+    private final ContentStatsDataService contentStatsDataService;
 
     /** 帖子数据访问接口 */
     private final PostMapper postMapper;
@@ -309,7 +314,7 @@ public class ScoreCalculationService {
         int endYear = endDate.getYear();
 
         for (int year = startYear; year <= endYear; year++) {
-            PostStatsDO yearStats = contentStatsYearlyMapper.getByTypeAndObjectIdAndYear( contentType.value(), (long) objectId, year);
+            ContentStatsYearlyDO yearStats = contentStatsYearlyMapper.getByTypeAndObjectIdAndYear( contentType.value(), (long) objectId, year);
 
             if (yearStats != null) {
                 try {
@@ -501,7 +506,7 @@ public class ScoreCalculationService {
 
     /**
      * 计算评论的综合评分
-     * 
+     *
      * 综合排序规则：
      * 1. 点赞数（降序）
      * 2. 回复数（降序）
@@ -513,11 +518,23 @@ public class ScoreCalculationService {
      */
     public double calculateCommentScore(CommentDO comment) {
         validateComment(comment);
-        
+
         try {
+            // 从统计表获取点赞数和回复数
+            ContentStatsDO stats = contentStatsDataService.getByContent(Enums.ContentType.comment, comment.getId())
+                .orElse(null);
+
+            int upvoteCount = 0;
+            int replyCount = 0;
+
+            if (stats != null) {
+                upvoteCount = stats.getLikes() != null ? stats.getLikes() : 0;
+                replyCount = stats.getComments() != null ? stats.getComments() : 0;
+            }
+
             // 基础分数：点赞数 + 回复数权重
-            double upvoteScore = comment.getUpvoteCount() * COMMENT_UPVOTE_WEIGHT;
-            double replyScore = comment.getReplyCount() * COMMENT_REPLY_WEIGHT;
+            double upvoteScore = upvoteCount * COMMENT_UPVOTE_WEIGHT;
+            double replyScore = replyCount * COMMENT_REPLY_WEIGHT;
 
             // 时间正向增加因子：越新的评论权重越高
             double timeWeight = calculateCommentTimeWeight(comment.getCreatedAt());
@@ -526,7 +543,7 @@ public class ScoreCalculationService {
             double finalScore = (upvoteScore + replyScore) * timeWeight;
 
             log.debug("评论ID: {}, 点赞数: {}, 回复数: {}, 时间权重: {}, 最终评分: {}",
-                     comment.getId(), comment.getUpvoteCount(), comment.getReplyCount(),
+                     comment.getId(), upvoteCount, replyCount,
                      timeWeight, finalScore);
 
             return Math.max(0.0, finalScore);
@@ -575,20 +592,30 @@ public class ScoreCalculationService {
         }
 
         try {
+            // 从统计表获取点赞数
+            ContentStatsDO stats = contentStatsDataService.getByContent(Enums.ContentType.memory_card_deck, deck.getId())
+                .orElse(null);
+
+            int upvoteCount = 0;
+            if (stats != null && stats.getLikes() != null) {
+                upvoteCount = stats.getLikes();
+            }
+
             // 基础分数：点赞数
-            double upvoteScore = deck.getUpvoteCount() * 1.0;
+            double upvoteScore = upvoteCount * 1.0;
 
             // 时间权重：基于创建时间，越新的权重越高
             double timeWeight = calculateTimeWeightFromBaseline(deck.getCreatedAt().toLocalDate());
 
             // 卡片数量因子：鼓励内容丰富的卡片组
-            double cardCountFactor = Math.log1p(deck.getCardCount() * 0.1);
+            int cardCount = deck.getCardCount() != null ? deck.getCardCount() : 0;
+            double cardCountFactor = Math.log1p(cardCount * 0.1);
 
             // 综合分数 = 点赞分数 * 时间权重 + 卡片数量因子
             double finalScore = upvoteScore * timeWeight + cardCountFactor;
 
             log.debug("卡片组ID: {}, 点赞数: {}, 卡片数: {}, 时间权重: {}, 最终评分: {}",
-                     deck.getId(), deck.getUpvoteCount(), deck.getCardCount(), timeWeight, finalScore);
+                     deck.getId(), upvoteCount, cardCount, timeWeight, finalScore);
 
             return Math.max(0.0, finalScore);
 

@@ -3,6 +3,7 @@ package com.prosper.learn.application.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.analytics.dto.ContentStatsDTO;
 import com.prosper.learn.analytics.stats.service.DailyStatsService;
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.NodeConverter;
@@ -26,11 +27,9 @@ import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
-import com.prosper.learn.interaction.message.MessageDomainService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
 import com.prosper.learn.shared.common.utils.Utils;
-import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
@@ -76,7 +75,7 @@ public class PostService {
     private final UpvoteDataService upvoteDataService;
     private final UserDataService userDataService;
     private final DailyStatsService dailyStatsService;
-    private final MessageDomainService messageDomainService;
+    private final MessageService messageService;
     private final ObjectMapper objectMapper;
     private final SystemProperties systemProperties;
     private final UserConverter userConverter;
@@ -128,7 +127,6 @@ public class PostService {
     /**
      * 转换为完整帖子信息（含节点、创建者、浏览量、投票类型）
      * 用途：帖子详情页、帖子列表（完整信息）
-     * 替代：原 V2
      */
     PostFullDTO toPostWithFullInfo(PostDO postDO) {
         return postConverter.toFullDTO(postDO);
@@ -137,8 +135,20 @@ public class PostService {
     List<PostFullDTO> toPostWithFullInfo(List<PostDO> postDOList, long userId) {
         List<PostFullDTO> postDTOList = postConverter.toFullDTO(postDOList);
 
-        // 设置views字段
-        dailyStatsService.setViewsForPosts(postDTOList);
+        // 批量获取统计数据
+        List<Long> postIds = postDTOList.stream().map(PostSummaryDTO::getId).collect(Collectors.toList());
+        Map<Long, ContentStatsDTO> statsMap = dailyStatsService.batchGetContentStats(ContentType.post, postIds);
+
+        // 填充统计字段
+        postDTOList.forEach(post -> {
+            ContentStatsDTO stats = statsMap.get(post.getId());
+            if (stats != null) {
+                post.setViewCount(stats.getViews());
+                post.setTwice(stats.getTwiceUpvotes());
+                post.setHelpful(stats.getLikeUpvotes());
+                post.setCommentCount(stats.getComments());
+            }
+        });
 
         List<Long> nodeIds = postDTOList.stream().map(PostSummaryDTO::getNodeId).collect(Collectors.toList());
         List<NodeDO> nodeList = nodeDataService.getByIds(nodeIds);
@@ -284,44 +294,6 @@ public class PostService {
         }
 
         return toPostWithFullInfo(postings, userId);
-
-        /*
-        // 设置views字段
-        dailyStatsService.setViewsForPosts(postDTOList);
-
-        List<Long> nodeIds = postDTOList.stream().map(PostDTO::getNodeId).collect(Collectors.toList());
-        List<NodeDO> nodeList = nodeDataService.getByIds(nodeIds);
-        Map<Long, NodeDO> nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
-
-        List<Long> allPostingIds = new LinkedList<>();
-        if (postings != null) postings.stream().forEach(item -> allPostingIds.add(item.getId()));
-
-        Map<Long, Integer> types = new HashMap<>();
-        if (allPostingIds.size() > 0) {
-            List<UpvoteDO> upvotes = upvoteDataService.getList(userId, allPostingIds, Enums.ObjectType.post.value());
-            for (UpvoteDO upvote : upvotes) {
-                types.put(upvote.getObjectId(), upvote.getType());
-            }
-        }
-
-        // get all user
-        List<Long> userIds = postDTOList.stream().map(PostDTO::getCreatorId).collect(Collectors.toList());
-        List<UserDO> userList = userDataService.getByIds(userIds);
-        Map<Long, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
-
-        for (PostDTO postDTO : postDTOList) {
-            postDTO.setNode(nodeConverter.toDTO(nodeMap.get(postDTO.getNodeId())));
-            NodeDTO node = postDTO.getNode();
-            CourseDO courseDO = courseDataService.getById(node.getCourseId());
-            node.setCourse(courseService.toBriefDTO(courseDO));
-
-            if (types.containsKey(postDTO.getId()))
-                postDTO.setVoteType(types.get(postDTO.getId()));
-
-            postDTO.setCreator(userConverter.toBriefDTO(userMap.get(postDTO.getCreatorId())));
-        }
-        return postDTOList;
-        */
     }
 
     /**
@@ -659,7 +631,7 @@ public class PostService {
             CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
 
             // 截取内容前50个字符作为预览
-            String contentPreview = com.prosper.learn.business.util.Util.stripFormatting(postDO.getContent());
+            String contentPreview = Utils.stripFormatting(postDO.getContent());
             if (contentPreview != null && contentPreview.length() > 50) {
                 contentPreview = contentPreview.substring(0, 50) + "...";
             }
@@ -668,7 +640,7 @@ public class PostService {
 
             // 发送拒绝通知
             if (nodeDO != null && courseDO != null) {
-                messageDomainService.sendPostModeration(
+                messageService.sendPostModeration(
                     postDO.getCreatorId(),
                     postDO.getId(),
                     contentPreview,
@@ -704,7 +676,7 @@ public class PostService {
             CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
 
             // 截取内容前50个字符作为预览
-            String contentPreview = com.prosper.learn.business.util.Util.stripFormatting(postDO.getContent());
+            String contentPreview = Utils.stripFormatting(postDO.getContent());
             if (contentPreview != null && contentPreview.length() > 50) {
                 contentPreview = contentPreview.substring(0, 50) + "...";
             }
@@ -713,7 +685,7 @@ public class PostService {
 
             // 发送封禁通知
             if (nodeDO != null && courseDO != null) {
-                messageDomainService.sendPostModeration(
+                messageService.sendPostModeration(
                     postDO.getCreatorId(),
                     postDO.getId(),
                     contentPreview,

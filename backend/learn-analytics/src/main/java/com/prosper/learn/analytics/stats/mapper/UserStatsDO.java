@@ -12,13 +12,11 @@ public class UserStatsDO {
 
     private Long userId;
 
-    private LocalDate dailyStatDate;
-
-    // 日度增量统计
-    private Integer dailyViews;
-    private Integer dailyTwice;
-    private Integer dailyHelpful;
-    private Integer dailyComments;
+    // 累计统计（总计数）
+    private Integer views;          // 总浏览量
+    private Integer twices;         // 总两次能懂点赞数
+    private Integer likes;          // 总有用点赞数
+    private Integer comments;       // 总评论数
 
     // 学习统计（累计快照）
     private Integer learningCourses;

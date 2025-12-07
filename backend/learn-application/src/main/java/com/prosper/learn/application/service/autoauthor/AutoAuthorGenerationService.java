@@ -1,9 +1,13 @@
-package com.prosper.learn.content.autoauthor;
+package com.prosper.learn.application.service.autoauthor;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.prosper.learn.application.dto.request.CreateDeckRequest;
+import com.prosper.learn.application.dto.request.CreatePostRequest;
+import com.prosper.learn.application.service.MemoryCardDeckService;
+import com.prosper.learn.application.service.PostService;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDO;
@@ -11,9 +15,8 @@ import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
 import com.prosper.learn.shared.domain.Enums;
-import com.prosper.learn.shared.dto.request.CreateDeckRequest;
-import com.prosper.learn.shared.dto.request.CreatePostRequest;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
+import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;

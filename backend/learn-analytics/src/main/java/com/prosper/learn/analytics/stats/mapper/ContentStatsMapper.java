@@ -55,21 +55,21 @@ public interface ContentStatsMapper {
                        @Param("delta") int delta);
 
     /**
-     * 批量原子增量更新（用于高效更新多个字段）
+     * 增量更新多个统计字段
      */
     @Update("UPDATE content_stats SET " +
-            "views = GREATEST(0, views + #{viewsDelta}), " +
-            "twice = GREATEST(0, twice + #{twiceDelta}), " +
-            "likes = GREATEST(0, likes + #{likesDelta}), " +
-            "comments = GREATEST(0, comments + #{commentsDelta}), " +
+            "views = views + #{viewsDelta}, " +
+            "twices = twices + #{twicesDelta}, " +
+            "likes = likes + #{likesDelta}, " +
+            "comments = comments + #{commentsDelta}, " +
             "updated_at = NOW() " +
             "WHERE content_type = #{contentType} AND content_id = #{contentId}")
-    int batchAtomicIncrement(@Param("contentType") Integer contentType,
-                            @Param("contentId") Long contentId,
-                            @Param("viewsDelta") int viewsDelta,
-                            @Param("twiceDelta") int twiceDelta,
-                            @Param("likesDelta") int likesDelta,
-                            @Param("commentsDelta") int commentsDelta);
+    int increase(@Param("contentType") Integer contentType,
+                 @Param("contentId") Long contentId,
+                 @Param("viewsDelta") int viewsDelta,
+                 @Param("twicesDelta") int twicesDelta,
+                 @Param("likesDelta") int likesDelta,
+                 @Param("commentsDelta") int commentsDelta);
 
     // ==================== 排行榜查询 ====================
 
@@ -114,6 +114,18 @@ public interface ContentStatsMapper {
      */
     @Select("SELECT COUNT(*) FROM content_stats WHERE content_type = #{contentType}")
     int countByContentType(@Param("contentType") String contentType);
+
+    /**
+     * 获取热门课程ID列表（按综合热度排序）
+     * 综合热度 = 收藏数 + 学习中人数 + 已完成人数
+     */
+    @Select("SELECT content_id " +
+            "FROM content_stats " +
+            "WHERE content_type = #{contentType} " +
+            "ORDER BY (bookmarks + in_progress_users + completed_users) DESC " +
+            "LIMIT #{limit}")
+    List<Long> getTopContentIdsByPopularity(@Param("contentType") Integer contentType,
+                                            @Param("limit") int limit);
 
     // ==================== 数据维护 ====================
 

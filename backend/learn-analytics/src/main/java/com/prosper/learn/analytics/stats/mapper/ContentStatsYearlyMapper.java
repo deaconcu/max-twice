@@ -12,18 +12,18 @@ public interface ContentStatsYearlyMapper {
     @Insert("INSERT INTO content_stats_yearly (object_type, object_id, stats, stat_year, created_at, updated_at) " +
             "VALUES (#{objectType}, #{objectId}, #{stats}, #{statYear}, NOW(), NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id")
-    int insert(PostStatsDO stats);
+    int insert(ContentStatsYearlyDO stats);
 
     @Update("UPDATE content_stats_yearly SET stats = #{stats}, updated_at = NOW() " +
             "WHERE object_type = #{objectType} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    int updateStats(PostStatsDO stats);
+    int updateStats(ContentStatsYearlyDO stats);
 
     @Select("SELECT * FROM content_stats_yearly WHERE object_type = #{objectType} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    PostStatsDO getByTypeAndObjectIdAndYear(int objectType, long objectId, Integer statYear);
+    ContentStatsYearlyDO getByTypeAndObjectIdAndYear(int objectType, long objectId, Integer statYear);
 
     @Select("SELECT * FROM content_stats_yearly WHERE object_type = #{objectType} AND object_id = #{objectId} " +
             "AND stat_year >= #{startYear} ORDER BY stat_year DESC")
-    List<PostStatsDO> getStatsInYearRange(int objectType, long objectId, Integer startYear);
+    List<ContentStatsYearlyDO> getStatsInYearRange(int objectType, long objectId, Integer startYear);
 
     @Select("SELECT DISTINCT object_id FROM content_stats_yearly WHERE object_type = #{objectType}")
     List<Long> getAllObjectIdsByType(int objectType);

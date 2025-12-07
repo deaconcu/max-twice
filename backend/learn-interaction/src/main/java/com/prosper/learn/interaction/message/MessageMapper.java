@@ -1,9 +1,9 @@
 package com.prosper.learn.interaction.message;
 
 import org.apache.ibatis.annotations.*;
-
 import java.util.List;
 
+@Mapper
 public interface MessageMapper {
 
     @Select("SELECT * FROM message " +

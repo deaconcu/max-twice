@@ -1,12 +1,12 @@
 package com.prosper.learn.web.v1.controller;
 
-import com.prosper.learn.analytics.monitoring.service.PlatformStatsService;
+import com.prosper.learn.application.service.PlatformStatsService;
 import com.prosper.learn.analytics.monitoring.service.StatsMonitorService;
 import com.prosper.learn.analytics.stats.service.DailyStatsService;
 import com.prosper.learn.analytics.stats.service.RedisStatsDomainService;
 import com.prosper.learn.application.dto.request.RecordViewRequest;
 import com.prosper.learn.application.dto.response.PlatformStatsDTO;
-import com.prosper.learn.application.dto.response.UserStatsDTO;
+import com.prosper.learn.analytics.dto.UserStatsDTO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.dto.ApiResponse;

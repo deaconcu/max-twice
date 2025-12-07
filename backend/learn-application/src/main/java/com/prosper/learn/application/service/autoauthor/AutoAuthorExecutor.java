@@ -1,7 +1,15 @@
-package com.prosper.learn.content.autoauthor;
+package com.prosper.learn.application.service.autoauthor;
 
+import com.prosper.learn.application.dto.request.CreateDeckRequest;
+import com.prosper.learn.application.service.MemoryCardDeckService;
+import com.prosper.learn.application.service.PostService;
+import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.memory.deck.MemoryCardDeckDO;
+import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
+import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,7 +40,7 @@ public class AutoAuthorExecutor {
     private final MemoryCardDeckService memoryCardDeckService;
     private final SystemProperties systemProperties;
 
-    @Scheduled(fixedDelayString = "#{systemProperties.autoAuthor.pollIntervalSec * 1000}")
+    //@Scheduled(fixedDelayString = "#{systemProperties.autoAuthor.pollIntervalSec * 1000}")
     public void poll() {
         log.info("Auto Author Poll Start");
         if (!systemProperties.getAutoAuthor().isEnabled()) return;
@@ -99,7 +107,7 @@ public class AutoAuthorExecutor {
         long postId = Long.parseLong(taskId.substring(2)); // 去掉 "C:" 前缀
 
         // 检查是否已存在AI生成的卡片组（查找所有状态）
-        List<com.prosper.learn.persistence.dataobject.MemoryCardDeckDO> existingDecks =
+        List<MemoryCardDeckDO> existingDecks =
             deckDataService.getListByPostAndCreatorAllStates(postId, aiUserId, 10);
 
         if (!existingDecks.isEmpty()) {

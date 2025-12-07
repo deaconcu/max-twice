@@ -1,11 +1,12 @@
 package com.prosper.learn.application.service;
 
 import com.prosper.learn.analytics.ranking.service.CourseRankingDomainService;
+import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
+import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.application.dto.request.CreateCourseRequest;
 import com.prosper.learn.application.dto.response.course.*;
 import com.prosper.learn.content.course.CourseDomainService;
 import com.prosper.learn.content.node.NodeDO;
-import com.prosper.learn.interaction.message.MessageDomainService;
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
@@ -15,12 +16,10 @@ import com.prosper.learn.application.dto.request.UpdateCourseRequest;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -35,7 +34,8 @@ public class CourseService {
     private final CourseDataService courseDataService;
     private final NodeDataService nodeDataService;
     private final CourseRankingDomainService courseRankingDomainService;
-    private final MessageDomainService messageDomainService;
+    private final ContentStatsDataService contentStatsDataService;
+    private final MessageService messageService;
     private final SystemProperties systemProperties;
     private final CourseConverter courseConverter;
 
@@ -121,9 +121,16 @@ public class CourseService {
         CourseWithStatsDTO courseDTO = courseConverter.toWithStatsDTO(courseDO);
 
         try {
-            CourseRankingDomainService.CourseStats stats = courseRankingDomainService.getCourseStats(courseDO.getId());
-            courseDTO.setLearnerCount((int) stats.getLearningCount());
-            courseDTO.setSubscriptionCount((int) stats.getSubscriptionCount());
+            ContentStatsDO stats = contentStatsDataService.getByContent(ContentType.course, courseDO.getId())
+                .orElse(null);
+
+            if (stats != null) {
+                courseDTO.setLearnerCount(stats.getInProgressUsers());
+                courseDTO.setSubscriptionCount(stats.getBookmarks());
+            } else {
+                courseDTO.setLearnerCount(0);
+                courseDTO.setSubscriptionCount(0);
+            }
         } catch (Exception e) {
             // 统计信息获取失败时设置默认值
             courseDTO.setLearnerCount(0);
@@ -256,7 +263,7 @@ public class CourseService {
         courseDomainService.validateOperationResult(rowsAffected);
 
         // 发送审核通过通知（跨域调用）
-        messageDomainService.sendCourseModeration(
+        messageService.sendCourseModeration(
             courseDO.getCreatorId(),
             courseDO.getId(),
             courseDO.getName(),
@@ -278,7 +285,7 @@ public class CourseService {
         courseDomainService.validateOperationResult(rowsAffected);
 
         // 发送拒绝通知（跨域调用）
-        messageDomainService.sendCourseModeration(
+        messageService.sendCourseModeration(
             courseDO.getCreatorId(),
             courseDO.getId(),
             courseDO.getName(),
@@ -300,7 +307,7 @@ public class CourseService {
         courseDomainService.validateOperationResult(rowsAffected);
 
         // 发送封禁通知（跨域调用）
-        messageDomainService.sendCourseModeration(
+        messageService.sendCourseModeration(
             courseDO.getCreatorId(),
             courseDO.getId(),
             courseDO.getName(),

@@ -2,6 +2,7 @@ package com.prosper.learn.content.toc;
 
 import org.apache.ibatis.annotations.*;
 
+@Mapper
 public interface UserCourseTocMapper {
 
     @Select("SELECT * FROM user_course_toc WHERE id = #{id}")

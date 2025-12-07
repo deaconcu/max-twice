@@ -1,5 +1,6 @@
 package com.prosper.learn.application.service;
 
+import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.service.RedisStatsDomainService;
 import com.prosper.learn.application.converter.CommentConverter;
 import com.prosper.learn.application.dto.request.CreateCommentRequest;
@@ -16,15 +17,13 @@ import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.interaction.comment.CommentDO;
 import com.prosper.learn.interaction.comment.CommentDataService;
-import com.prosper.learn.interaction.message.MessageDomainService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
-import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
-import lombok.RequiredArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 
 import static com.prosper.learn.shared.domain.Enums.*;
+import static com.prosper.learn.shared.domain.Enums.ContentType.*;
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +43,8 @@ public class CommentService {
     private final PostDataService postDataService;
     private final NodeDataService nodeDataService;
     private final RoadmapDataService roadmapDataService;
-    private final MessageDomainService messageDomainService;
+    private final ContentStatsDataService contentStatsDataService;
+    private final MessageService messageService;
     private final ScoreCalculationService scoreCalculationService;
     private final RedisStatsDomainService redisStatsService;
     private final SystemProperties systemProperties;
@@ -82,9 +83,9 @@ public class CommentService {
      * 验证评论类型
      */
     private void validateCommentType(int type) {
-        if (type != ContentType.post.value() &&
-            type != ContentType.node.value() &&
-            type != ContentType.roadmap.value()) {
+        if (type != post.value() &&
+            type != node.value() &&
+            type != roadmap.value()) {
             throw ErrorCode.COMMENT_INVALID_TYPE.exception();
         }
     }
@@ -184,11 +185,11 @@ public class CommentService {
         NodeDO nodeDO = null;
         RoadmapDO roadmapDO = null;
 
-        if (request.getObjectType() == ContentType.post.value()) {
+        if (request.getObjectType() == post.value()) {
             postDO = validateAndGetPost(request.getObjectId());
-        } else if (request.getObjectType() == ContentType.node.value()) {
+        } else if (request.getObjectType() == node.value()) {
             nodeDO = validateAndGetNode(request.getObjectId());
-        } else if (request.getObjectType() == ContentType.roadmap.value()) {
+        } else if (request.getObjectType() == roadmap.value()) {
             roadmapDO = validateAndGetRoadmap(request.getObjectId());
         } else {
             throw ErrorCode.COMMENT_INVALID_TYPE.exception();
@@ -226,14 +227,14 @@ public class CommentService {
      */
     private void createCommentNotification(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
                                          PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO) {
-        if (request.getObjectType() == ContentType.post.value() && postDO != null) {
-            messageDomainService.createCommentMessage(postDO.getCreatorId(), fromUser.getId(),
+        if (request.getObjectType() == post.value() && postDO != null) {
+            messageService.createCommentMessage(postDO.getCreatorId(), fromUser.getId(),
                                               postDO.getNodeId(), commentDO.getId(), MessageType.postComment.value());
-        } else if (request.getObjectType() == ContentType.node.value() && nodeDO != null) {
-            messageDomainService.createCommentMessage(nodeDO.getCreatorId(), fromUser.getId(),
+        } else if (request.getObjectType() == node.value() && nodeDO != null) {
+            messageService.createCommentMessage(nodeDO.getCreatorId(), fromUser.getId(),
                                               nodeDO.getId(), commentDO.getId(), MessageType.nodeComment.value());
-        } else if (request.getObjectType() == ContentType.roadmap.value() && roadmapDO != null) {
-            messageDomainService.createCommentMessage(roadmapDO.getCreatorId(), fromUser.getId(),
+        } else if (request.getObjectType() == roadmap.value() && roadmapDO != null) {
+            messageService.createCommentMessage(roadmapDO.getCreatorId(), fromUser.getId(),
                                               roadmapDO.getId(), commentDO.getId(), MessageType.roadmapComment.value());
         }
     }
@@ -243,14 +244,14 @@ public class CommentService {
      */
     private void createReplyNotification(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
                                        PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO, Long parentUserId) {
-        if (request.getObjectType() == ContentType.node.value() && nodeDO != null) {
-            messageDomainService.createCommentMessage(parentUserId, fromUser.getId(),
+        if (request.getObjectType() == node.value() && nodeDO != null) {
+            messageService.createCommentMessage(parentUserId, fromUser.getId(),
                                               nodeDO.getId(), commentDO.getId(), MessageType.replyNodeComment.value());
-        } else if (request.getObjectType() == ContentType.post.value() && postDO != null) {
-            messageDomainService.createCommentMessage(parentUserId, fromUser.getId(),
+        } else if (request.getObjectType() == post.value() && postDO != null) {
+            messageService.createCommentMessage(parentUserId, fromUser.getId(),
                                               postDO.getNodeId(), commentDO.getId(), MessageType.replyPostingComment.value());
-        } else if (request.getObjectType() == ContentType.roadmap.value() && roadmapDO != null) {
-            messageDomainService.createCommentMessage(parentUserId, fromUser.getId(),
+        } else if (request.getObjectType() == roadmap.value() && roadmapDO != null) {
+            messageService.createCommentMessage(parentUserId, fromUser.getId(),
                                               roadmapDO.getId(), commentDO.getId(), MessageType.replyRoadmapComment.value());
         }
     }
@@ -258,13 +259,16 @@ public class CommentService {
     /**
      * 处理回复评论的一些逻辑，回复评论时调用
      * 主要功能：
-     * 1. 更新父评论的回复数和分数
-     * 2. 创建回复通知
+     * 1. 更新父评论的回复数（通过 content_stats 表）
+     * 2. 更新父评论的分数
+     * 3. 创建回复通知
      */
-    private void handleReplyComment(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser, 
+    private void handleReplyComment(CreateCommentRequest request, CommentDO commentDO, UserDO fromUser,
                                    PostDO postDO, NodeDO nodeDO, RoadmapDO roadmapDO) {
         CommentDO parentCommentDO = validateAndGetComment(request.getReplyTo());
-        parentCommentDO.setReplyCount(parentCommentDO.getReplyCount() + 1);
+
+        // 增加父评论的回复数（存储在 content_stats 表中）
+        contentStatsDataService.atomicIncrement(comment, parentCommentDO.getId(), "comments", 1);
 
         // 更新评论分数并保存
         scoreCalculationService.checkAndUpdateCommentScore(parentCommentDO);
@@ -293,7 +297,7 @@ public class CommentService {
             return commentDTOList;
         }
 
-        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, allIds, ContentType.comment.value());
+        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, allIds, comment.value());
 
         Set<Long> upvotedSet = new HashSet<>();
         for (UpvoteDO upvoteDO : upvoteList) {
@@ -509,26 +513,26 @@ public class CommentService {
 
         // 获取评论对象信息用于通知
         String objectType = "node"; // 默认为 node
-        if (commentDO.getObjectType() == ContentType.post.value()) {
+        if (commentDO.getObjectType() == post.value()) {
             objectType = "post";
-        } else if (commentDO.getObjectType() == ContentType.roadmap.value()) {
+        } else if (commentDO.getObjectType() == roadmap.value()) {
             objectType = "roadmap";
         }
 
         String objectTitle = "";
 
-        if (commentDO.getObjectType() == ContentType.post.value()) {
+        if (commentDO.getObjectType() == post.value()) {
             PostDO postDO = postDataService.getById(commentDO.getObjectId());
             if (postDO != null && postDO.getContent() != null) {
-                objectTitle = com.prosper.learn.business.util.Util.stripFormatting(postDO.getContent());
+                objectTitle = Utils.stripFormatting(postDO.getContent());
                 if (objectTitle.length() > 50) {
                     objectTitle = objectTitle.substring(0, 50) + "...";
                 }
             }
-        } else if (commentDO.getObjectType() == ContentType.node.value()) {
+        } else if (commentDO.getObjectType() == node.value()) {
             NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
             if (nodeDO != null) objectTitle = nodeDO.getName();
-        } else if (commentDO.getObjectType() == ContentType.roadmap.value()) {
+        } else if (commentDO.getObjectType() == roadmap.value()) {
             objectTitle = "路线图";
         }
 
@@ -546,7 +550,7 @@ public class CommentService {
         }
 
         // 发送拒绝通知
-        messageDomainService.sendCommentModeration(
+        messageService.sendCommentModeration(
             commentDO.getCreatorId(),
             commentDO.getId(),
             preview,
@@ -569,26 +573,26 @@ public class CommentService {
 
         // 获取评论对象信息用于通知
         String objectType = "node"; // 默认为 node
-        if (commentDO.getObjectType() == ContentType.post.value()) {
+        if (commentDO.getObjectType() == post.value()) {
             objectType = "post";
-        } else if (commentDO.getObjectType() == ContentType.roadmap.value()) {
+        } else if (commentDO.getObjectType() == roadmap.value()) {
             objectType = "roadmap";
         }
 
         String objectTitle = "";
 
-        if (commentDO.getObjectType() == ContentType.post.value()) {
+        if (commentDO.getObjectType() == post.value()) {
             PostDO postDO = postDataService.getById(commentDO.getObjectId());
             if (postDO != null && postDO.getContent() != null) {
-                objectTitle = com.prosper.learn.business.util.Util.stripFormatting(postDO.getContent());
+                objectTitle = Utils.stripFormatting(postDO.getContent());
                 if (objectTitle.length() > 50) {
                     objectTitle = objectTitle.substring(0, 50) + "...";
                 }
             }
-        } else if (commentDO.getObjectType() == ContentType.node.value()) {
+        } else if (commentDO.getObjectType() == node.value()) {
             NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
             if (nodeDO != null) objectTitle = nodeDO.getName();
-        } else if (commentDO.getObjectType() == ContentType.roadmap.value()) {
+        } else if (commentDO.getObjectType() == roadmap.value()) {
             objectTitle = "路线图";
         }
 
@@ -606,7 +610,7 @@ public class CommentService {
         }
 
         // 发送封禁通知
-        messageDomainService.sendCommentModeration(
+        messageService.sendCommentModeration(
             commentDO.getCreatorId(),
             commentDO.getId(),
             preview,
@@ -653,27 +657,21 @@ public class CommentService {
     }
 
     /**
-     * 更新对象的评论数
+     * 更新对象的评论数（通过 content_stats 表）
      */
     private void updateObjectCommentCount(CommentDO commentDO, int delta) {
-        if (commentDO.getObjectType() == ContentType.post.value()) {
-            PostDO postDO = postDataService.getById(commentDO.getObjectId());
-            if (postDO != null) {
-                postDO.setCommentCount(Math.max(0, postDO.getCommentCount() + delta));
-                postDataService.update(postDO);
-            }
-        } else if (commentDO.getObjectType() == ContentType.node.value()) {
-            NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
-            if (nodeDO != null) {
-                nodeDO.setCommentCount(Math.max(0, nodeDO.getCommentCount() + delta));
-                nodeDataService.update(nodeDO);
-            }
-        } else if (commentDO.getObjectType() == ContentType.roadmap.value()) {
-            RoadmapDO roadmapDO = roadmapDataService.getById(commentDO.getObjectId());
-            if (roadmapDO != null) {
-                roadmapDO.setComment(Math.max(0, roadmapDO.getComment() + delta));
-                roadmapDataService.update(roadmapDO);
-            }
+        ContentType contentType = null;
+
+        if (commentDO.getObjectType() == post.value()) {
+            contentType = post;
+        } else if (commentDO.getObjectType() == node.value()) {
+            contentType = node;
+        } else if (commentDO.getObjectType() == roadmap.value()) {
+            contentType = roadmap;
+        }
+
+        if (contentType != null) {
+            contentStatsDataService.atomicIncrement(contentType, commentDO.getObjectId(), "comments", delta);
         }
     }
 
@@ -741,7 +739,7 @@ public class CommentService {
         }
 
         List<Long> ids = commentDTOList.stream().map(CommentDetailDTO::getId).toList();
-        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, ids, ContentType.comment.value());
+        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, ids, comment.value());
 
         Set<Long> upvotedSet = new HashSet<>();
         for (UpvoteDO upvoteDO : upvoteList) {

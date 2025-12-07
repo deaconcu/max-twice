@@ -1,7 +1,12 @@
-package com.prosper.learn.analytics.monitoring.service;
+package com.prosper.learn.application.service;
 
-import com.prosper.learn.common.exception.ErrorCode;
-import com.prosper.learn.dto.response.PlatformStatsDTO;
+import com.prosper.learn.application.dto.response.PlatformStatsDTO;
+import com.prosper.learn.content.course.CourseDataService;
+import com.prosper.learn.content.node.NodeDataService;
+import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.roadmap.RoadmapDataService;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;

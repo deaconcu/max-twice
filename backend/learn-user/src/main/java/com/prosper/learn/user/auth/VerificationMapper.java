@@ -2,6 +2,7 @@ package com.prosper.learn.user.auth;
 
 import org.apache.ibatis.annotations.*;
 
+@Mapper
 public interface VerificationMapper {
 
     @Select("SELECT * FROM verification WHERE id = #{id}")

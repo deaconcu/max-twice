@@ -2,13 +2,13 @@ package com.prosper.learn.memory.review;
 
 import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
-
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Mapper
 public interface UserCardInCourseMapper {
 
     @Select("SELECT * FROM user_card_in_course WHERE id = #{id}")

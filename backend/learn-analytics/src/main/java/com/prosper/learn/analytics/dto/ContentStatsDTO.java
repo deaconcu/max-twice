@@ -1,4 +1,4 @@
-package com.prosper.learn.application.dto.response;
+package com.prosper.learn.analytics.dto;
 
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +12,11 @@ import lombok.Data;
 @Data
 @Builder
 public class ContentStatsDTO {
+
+    /**
+     * 内容ID
+     */
+    private Long contentId;
 
     // ==================== 核心统计字段 ====================
 

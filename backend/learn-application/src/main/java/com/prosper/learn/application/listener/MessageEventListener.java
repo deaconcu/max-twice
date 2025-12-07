@@ -1,8 +1,12 @@
-package com.prosper.learn.interaction.listener;
+package com.prosper.learn.application.listener;
 
-import com.prosper.learn.interaction.message.MessageDomainService;
-import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.application.service.MessageService;
+import com.prosper.learn.content.post.PostDO;
+import com.prosper.learn.shared.domain.event.content.lifecycle.CommentCreatedEvent;
 import com.prosper.learn.shared.domain.event.content.voting.LikeUpvotedEvent;
+import com.prosper.learn.shared.domain.event.content.voting.TwiceUpvotedEvent;
+import com.prosper.learn.shared.domain.event.content.voting.UpvoteTypeSwitchedEvent;
+import com.prosper.learn.shared.domain.event.user.relationship.UserFollowedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -14,18 +18,21 @@ import static com.prosper.learn.shared.domain.Enums.*;
 /**
  * 消息事件监听器
  *
- * 专门负责处理各种业务事件产生的消息通知：
- * - 内容互动通知（点赞、评论、分享等）
- * - 用户关系通知（关注、取关等）
- * - 内容创建通知
- * - 学习进度通知
+ * 专门负责处理用户互动产生的消息通知：
+ * - 点赞通知（帖子、评论、路线图、记忆卡片组）
+ * - 评论通知
+ * - 关注通知
+ *
+ * 注意：
+ * - 内容创建/分享/学习完成等通知由页面提示处理，不发送消息
+ * - 只在用户与内容或其他用户互动时通知对方
  */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class MessageEventListener {
 
-    private final MessageDomainService messageService;
+    private final MessageService messageService;
 
     // ==================== 内容互动通知 ====================
 
@@ -176,27 +183,6 @@ public class MessageEventListener {
         }
     }
 
-    /**
-     * 内容分享通知
-     */
-    @EventListener
-    @Async
-    public void onContentShared(ContentSharedEvent event) {
-        try {
-            // 发送分享通知给内容创建者
-            messageService.createShareMessage(
-                event.getCreatorId(),          // 接收者
-                event.getSharerId(),            // 发送者
-                event.getContentId(),
-                event.getContentType().name()
-            );
-            log.debug("发送分享通知: contentId={}, sharerId={}, creatorId={}",
-                event.getContentId(), event.getSharerId(), event.getCreatorId());
-        } catch (Exception e) {
-            log.error("发送分享通知失败", e);
-        }
-    }
-
     // ==================== 用户关系通知 ====================
 
     /**
@@ -215,68 +201,6 @@ public class MessageEventListener {
                 event.getFollowerId(), event.getFolloweeId());
         } catch (Exception e) {
             log.error("发送关注通知失败", e);
-        }
-    }
-
-    // ==================== 学习进度通知 ====================
-
-    /**
-     * 学习完成通知
-     */
-    @EventListener
-    @Async
-    public void onLearningCompleted(LearningCompletedEvent event) {
-        try {
-            // 发送学习完成祝贺消息
-            messageService.createLearningCompletionMessage(
-                event.getUserId(),
-                event.getContentId(),
-                event.getContentType().name()
-            );
-            log.debug("发送学习完成通知: userId={}, contentId={}, contentType={}",
-                event.getUserId(), event.getContentId(), event.getContentType());
-        } catch (Exception e) {
-            log.error("发送学习完成通知失败", e);
-        }
-    }
-
-    // ==================== 内容创建通知 ====================
-
-    /**
-     * 内容创建通知
-     * 通知关注者有新内容发布
-     */
-    @EventListener
-    @Async
-    public void onContentCreated(ContentCreatedEvent event) {
-        try {
-            // 根据内容类型发送不同的创建通知
-            switch (event.getContentType()) {
-                case post:
-                    messageService.createArticlePublishMessage(
-                        event.getCreatorId(),
-                        event.getContentId()
-                    );
-                    break;
-                case roadmap:
-                    messageService.createRoadmapPublishMessage(
-                        event.getCreatorId(),
-                        event.getContentId()
-                    );
-                    break;
-                case memory_card_deck:
-                    messageService.createCardDeckPublishMessage(
-                        event.getCreatorId(),
-                        event.getContentId()
-                    );
-                    break;
-                default:
-                    log.debug("内容创建通知，暂不支持类型: {}", event.getContentType());
-            }
-            log.debug("发送内容创建通知: creatorId={}, contentId={}, contentType={}",
-                event.getCreatorId(), event.getContentId(), event.getContentType());
-        } catch (Exception e) {
-            log.error("发送内容创建通知失败", e);
         }
     }
 }

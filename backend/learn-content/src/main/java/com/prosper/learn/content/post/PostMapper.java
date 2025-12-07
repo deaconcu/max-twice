@@ -2,13 +2,13 @@ package com.prosper.learn.content.post;
 
 import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
+@Mapper
 public interface PostMapper {
 
     @Select("SELECT * FROM post WHERE id = #{id} AND deleted_at IS NULL")

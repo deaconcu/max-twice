@@ -1,9 +1,9 @@
 package com.prosper.learn.content.toc;
 
 import org.apache.ibatis.annotations.*;
-
 import java.util.Map;
 
+@Mapper
 public interface CourseTocMapper {
 
     @Select("SELECT * FROM course_toc WHERE hash = #{hash}")

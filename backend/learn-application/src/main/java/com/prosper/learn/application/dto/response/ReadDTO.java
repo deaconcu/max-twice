@@ -1,6 +1,5 @@
 package com.prosper.learn.application.dto.response;
 
-import com.prosper.learn.dto.response.old.*;
 import com.prosper.learn.application.dto.response.old.CourseDTOV2;
 import com.prosper.learn.application.dto.response.old.CourseDTOV4;
 import com.prosper.learn.application.dto.response.old.NodeDTOV2;

@@ -17,13 +17,10 @@ import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.profession.ProfessionDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
-import com.prosper.learn.interaction.message.MessageDomainService;
-import com.prosper.learn.interaction.upvote.UpvoteDomainService;
 import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.learning.enrollment.UserRoadmapDataService;
 import com.prosper.learn.shared.common.utils.UnionFind;
 import com.prosper.learn.shared.common.utils.Utils;
-import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
@@ -57,10 +54,10 @@ public class RoadmapService {
     private final UserProfileDataService userProfileDataService;
     private final UserRoadmapDataService userRoadmapDataService;
     private final ProfessionDataService professionDataService;
-    private final UpvoteDomainService upvoteDomainService;
+    private final UpvoteService upvoteService;
     private final UserCourseService userCourseService;
     private final ScoreCalculationService scoreCalculationService;
-    private final MessageDomainService messageDomainService;
+    private final MessageService messageService;
     private final RoadmapConverter roadmapConverter;
     private final UserConverter userConverter;
     private final ProfessionService professionService;
@@ -106,7 +103,7 @@ public class RoadmapService {
         }
 
         // 设置点赞状态
-        dto.setUpvoted(upvoteDomainService.hasUpvoted(roadmapDO.getId(), ContentType.roadmap, userId));
+        dto.setUpvoted(upvoteService.hasUpvoted(roadmapDO.getId(), ContentType.roadmap, userId));
 
         // 设置格式化内容
         if (roadmapDO.getContent() != null) {
@@ -130,7 +127,7 @@ public class RoadmapService {
 
             UserBriefDTO userDTO = userConverter.toBriefDTO(userDataService.getById(userId));
             ProfessionDTO professionDTO = professionService.getById(professionId, true);
-            Set<Long> upvotedIds = upvoteDomainService.getUpvotedIds(roadmapIds, ContentType.roadmap, userId);
+            Set<Long> upvotedIds = upvoteService.getUpvotedIds(roadmapIds, ContentType.roadmap, userId);
             Set<Long> pinnedIds = getPinnedIdsForCurrentRequest(userId, professionId, lastId, pinnedRoadmapIds);
             Set<Long> learningIds = getLearningIds(userId, roadmapIds);
 
@@ -814,7 +811,7 @@ public class RoadmapService {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
 
-        Util.validateStateTransition(roadmap.getState(), ContentState.REJECTED);
+        Utils.validateStateTransition(roadmap.getState(), ContentState.REJECTED);
 
         // 获取职业信息用于通知
         ProfessionDTO profession = professionService.getById(roadmap.getProfessionId(), false);
@@ -824,7 +821,7 @@ public class RoadmapService {
 
         // 发送拒绝通知
         if (profession != null) {
-            messageDomainService.sendRoadmapModeration(
+            messageService.sendRoadmapModeration(
                 roadmap.getCreatorId(),
                 roadmap.getId(),
                 profession.getId(),
@@ -856,7 +853,7 @@ public class RoadmapService {
 
         // 发送封禁通知
         if (profession != null) {
-            messageDomainService.sendRoadmapModeration(
+            messageService.sendRoadmapModeration(
                 roadmap.getCreatorId(),
                 roadmap.getId(),
                 profession.getId(),

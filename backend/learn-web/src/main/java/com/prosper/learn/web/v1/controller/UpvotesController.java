@@ -1,10 +1,10 @@
 package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.application.dto.request.UpvoteRequest;
 import com.prosper.learn.application.dto.response.UpvoteStatusDTO;
 import com.prosper.learn.application.service.ContentInteractionService;
+import com.prosper.learn.application.service.UpvoteService;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
@@ -19,6 +19,7 @@ import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
 import java.util.concurrent.TimeUnit;
 
+import static com.prosper.learn.shared.domain.Enums.*;
 import static com.prosper.learn.shared.domain.Enums.ContentType.*;
 
 
@@ -28,7 +29,7 @@ import static com.prosper.learn.shared.domain.Enums.ContentType.*;
  *
  * 架构说明：
  * - 复杂的写操作（点赞）通过 ContentInteractionService（应用服务）处理
- * - 简单的查询操作直接调用 ContentStatsService（领域服务）
+ * - 点赞状态查询通过 UpvoteService（应用服务）处理
  */
 @RestController
 @RequestMapping("/api/v1")
@@ -40,8 +41,8 @@ public class UpvotesController {
     /** 内容交互应用服务 - 处理复杂的写操作 */
     private final ContentInteractionService contentInteractionService;
 
-    /** 内容统计业务服务 - 处理简单的查询操作 */
-    private final ContentStatsDomainService contentStatsDomainService;
+    /** 点赞应用服务 - 处理点赞状态查询 */
+    private final UpvoteService upvoteService;
 
     /**
      * 点赞操作
@@ -68,8 +69,12 @@ public class UpvotesController {
             throw ErrorCode.INVALID_PARAMETER.exception();
         }
 
-        // 查询操作直接使用业务服务
-        UpvoteStatusDTO result = contentStatsDomainService.getUpvoteStatus(request.getObjectId(), request.getObjectType(), currentUser.getId());
+        // 查询操作使用 UpvoteService
+        UpvoteStatusDTO result = upvoteService.getUpvoteStatus(
+            request.getObjectId(),
+            ContentType.getByValue(request.getObjectType()),
+            currentUser.getId()
+        );
         return ApiResponse.success(result);
     }
 
@@ -77,7 +82,7 @@ public class UpvotesController {
      * 获取点赞状态
      * 映射: 新增接口 → GET /api/v1/upvotes/status?objectId=123&objectType=1
      *
-     * 简单查询操作直接调用业务服务
+     * 简单查询操作直接调用 UpvoteService
      */
     @GetMapping("/upvotes/status")
     @SaCheckLogin
@@ -90,8 +95,12 @@ public class UpvotesController {
             int objectType,
             @CurrentUser UserDO currentUser) {
 
-        // 简单查询直接使用业务服务，无需应用服务包装
-        UpvoteStatusDTO result = contentStatsDomainService.getUpvoteStatus(objectId, objectType, currentUser.getId());
+        // 查询使用 UpvoteService
+        UpvoteStatusDTO result = upvoteService.getUpvoteStatus(
+            objectId,
+            ContentType.getByValue(objectType),
+            currentUser.getId()
+        );
 
         return ApiResponse.success(result);
     }

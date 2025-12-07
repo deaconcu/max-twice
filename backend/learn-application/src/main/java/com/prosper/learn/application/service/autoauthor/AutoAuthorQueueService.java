@@ -1,4 +1,4 @@
-package com.prosper.learn.content.autoauthor;
+package com.prosper.learn.application.service.autoauthor;
 
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
