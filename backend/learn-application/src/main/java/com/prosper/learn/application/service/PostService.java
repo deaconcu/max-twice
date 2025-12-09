@@ -27,6 +27,7 @@ import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.content.post.PostDomainService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
 import com.prosper.learn.shared.common.utils.Utils;
@@ -49,21 +50,22 @@ import java.util.stream.Collectors;
 import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
- * 帖子服务
- * 
+ * 帖子应用服务
+ * 负责跨域协调、DTO转换、用户验证、事件发布
+ *
  * 负责管理系统中的帖子功能，包括：
  * - 帖子的创建、更新、删除和查询
  * - 支持文章类型和内容类型帖子
  * - 帖子审核流程
  * - 帖子点赞状态和用户信息的关联查询
  * - 分页和排序查询
- * 
+ *
  * 核心功能：
  * - 帖子内容的ID到名称转换
  * - 批量数据关联查询优化
  * - 支持基于分数的排序和分页
  * - 集成阅读量统计
- * 
+ *
  * @author Claude
  * @since 2024-01-20
  */
@@ -72,19 +74,31 @@ import static com.prosper.learn.shared.domain.Enums.*;
 @RequiredArgsConstructor
 public class PostService {
 
+    // 领域服务
+    private final PostDomainService domainService;
+
+    // 数据服务
     private final NodeDataService nodeDataService;
     private final PostDataService postDataService;
     private final CourseDataService courseDataService;
     private final UpvoteDataService upvoteDataService;
     private final UserDataService userDataService;
     private final DailyStatsService dailyStatsService;
+
+    // 事件发布
     private final ApplicationEventPublisher eventPublisher;
+
+    // 工具和配置
     private final ObjectMapper objectMapper;
     private final SystemProperties systemProperties;
+
+    // 转换器
     private final UserConverter userConverter;
     private final NodeConverter nodeConverter;
     private final CourseConverter courseConverter;
     private final PostConverter postConverter;
+
+    // 其他 ApplicationService
     private final CourseService courseService;
     private final NodeService nodeService;
     private final UserService userService;
@@ -235,18 +249,14 @@ public class PostService {
      * 获取单个帖子
      */
     public PostDO get(long id) {
-        PostDO post = validateAndGetPost(id);
-        idToName(post);
-        return post;
+        return domainService.getWithIdToName(id);
     }
 
     /**
      * 获取单个帖子DTO
      */
     public PostSummaryDTO getDTO(long id) {
-        PostDO post = validateAndGetPost(id);
-        idToName(post);
-
+        PostDO post = domainService.getWithIdToName(id);
         return postConverter.toSummaryDTO(post);
     }
 
@@ -258,8 +268,7 @@ public class PostService {
             return new ArrayList<>();
         }
 
-        List<PostDO> postings = postDataService.getByIds(ids);
-        postings.forEach(this::idToName);
+        List<PostDO> postings = domainService.getByIdsWithIdToName(ids);
         return postConverter.toSummaryDTO(postings);
     }
 
@@ -267,11 +276,9 @@ public class PostService {
      * 获取节点下的帖子列表（按分数排序），获取前 N 条
      */
     public List<PostDO> getList(long nodeId) {
-        validateNodeId(nodeId);
-        List<PostDO> posts = postDataService.getListByNodeAndScore(
+        domainService.validateNodeId(nodeId);
+        return domainService.getListByNodeAndScore(
                 nodeId, systemProperties.getPosting().getDefaultNodePostCount(), ContentState.PUBLISHED.value());
-        posts.forEach(this::idToName);
-        return posts;
     }
 
     /**
@@ -286,14 +293,10 @@ public class PostService {
 
         int count = systemProperties.getPosting().getUserContentsPageSize();
 
-        List<PostDO> postings = postDataService.getPostsByUser(userId, postType.value(), lastId, state, count);
+        // 调用 DomainService 查询（包含 idToName 处理）
+        List<PostDO> postings = domainService.getUserPosts(userId, postType.value(), lastId, state, count);
         if (postings == null || postings.isEmpty()) {
             return new ArrayList<>();
-        }
-
-        // 如果是目录类型，处理内容ID转名称
-        if (PostType.contents == postType) {
-            postings.forEach(this::idToName);
         }
 
         return toPostWithFullInfo(postings, userId);
@@ -307,7 +310,8 @@ public class PostService {
 
         int count = systemProperties.getPosting().getUserContentsPageSize();
 
-        List<PostDO> postings = postDataService.getPostsByUser(userId, postType.value(), lastId, state, count + 1);
+        // 调用 DomainService 查询（包含 idToName 处理）
+        List<PostDO> postings = domainService.getUserPosts(userId, postType.value(), lastId, state, count + 1);
         if (postings == null || postings.isEmpty()) {
             return KeysetPageResponse.of(new ArrayList<>(), false, null, null);
         }
@@ -316,11 +320,6 @@ public class PostService {
         boolean hasMore = postings.size() > count;
         if (hasMore) {
             postings = postings.subList(0, count);
-        }
-
-        // 如果是目录类型，处理内容ID转名称
-        if (PostType.contents == postType) {
-            postings.forEach(this::idToName);
         }
 
         List<PostFullDTO> dtoList = toPostWithFullInfo(postings, userId);
@@ -337,14 +336,11 @@ public class PostService {
      */
     public List<PostWithVoteDTO> getPostsWithUserAndVoteInfo(
             List<Long> ids, Long nodeId, double lastScore, Long lastPostingId, long userId) {
-        List<PostDO> postDOList = null;
-        if (ids != null && ids.size() > 0) {
-            postDOList = postDataService.getByIds(ids);
-        } else if (nodeId != null && nodeId > 0) {
-            int count = 2;
-            postDOList = postDataService.getListByNodeAndScoreAndPaginated(
-                    nodeId, lastScore, lastPostingId, count, ContentState.PUBLISHED.value());
-        }
+        // 调用 DomainService 查询
+        List<PostDO> postDOList = domainService.getPostsByIdsOrNode(
+                ids, nodeId, lastScore, lastPostingId, 2, ContentState.PUBLISHED.value());
+
+        // DTO 转换（填充用户和点赞信息）
         return toPostWithVote(postDOList, userId);
     }
 
@@ -353,8 +349,10 @@ public class PostService {
      */
     public List<PostSummaryDTO> getNodePostsList(Long nodeId) {
         int count = systemProperties.getPosting().getDefaultNodeListCount();
-        List<PostDO> postings = postDataService.getListByNode(nodeId, count, ContentState.PUBLISHED.value());
-        postings.forEach(this::idToName);
+
+        // 调用 DomainService 查询（包含 idToName 处理）
+        List<PostDO> postings = domainService.getNodePostsList(nodeId, count, ContentState.PUBLISHED.value());
+
         return toSummaryDTO(postings);
     }
 
@@ -362,12 +360,11 @@ public class PostService {
      * 根据状态获取帖子列表
      */
     public List<PostSummaryDTO> getPostsByState(ContentState state) {
-        List<PostDO> postDOList = postDataService.getListByState(state.value(), systemProperties.getPosting().getPendingPostsLimit());
-        for (PostDO postDO : postDOList) {
-            if (postDO.getType() == PostType.contents.value()) {
-                idToName(postDO);
-            }
-        }
+        int limit = systemProperties.getPosting().getPendingPostsLimit();
+
+        // 调用 DomainService 查询（包含 idToName 处理）
+        List<PostDO> postDOList = domainService.getListByState(state.value(), limit);
+
         return toSummaryDTO(postDOList);
     }
 
@@ -375,12 +372,9 @@ public class PostService {
      * 根据状态获取帖子列表（支持分页）
      */
     public List<PostSummaryDTO> getPostsByState(ContentState state, Long lastId, Integer limit) {
-        List<PostDO> postDOList = postDataService.getListByState(state.value(), lastId, limit);
-        for (PostDO postDO : postDOList) {
-            if (postDO.getType() == PostType.contents.value()) {
-                idToName(postDO);
-            }
-        }
+        // 调用 DomainService 查询（包含 idToName 处理）
+        List<PostDO> postDOList = domainService.getListByState(state.value(), lastId, limit);
+
         return toSummaryDTO(postDOList);
     }
 
@@ -396,12 +390,10 @@ public class PostService {
      */
     public List<PostSummaryDTO> getPostsByNodeAndCreator(Long nodeId, Long creatorId, Long lastId, Byte state) {
         int limit = systemProperties.getPosting().getPendingPostsLimit();
-        List<PostDO> postDOList = postDataService.getListByNodeAndCreator(nodeId, creatorId, lastId, state, limit);
-        for (PostDO postDO : postDOList) {
-            if (postDO.getType() == PostType.contents.value()) {
-                idToName(postDO);
-            }
-        }
+
+        // 调用 DomainService 查询（已包含 idToName 处理）
+        List<PostDO> postDOList = domainService.getListByNodeAndCreator(nodeId, creatorId, lastId, state, limit);
+
         return toSummaryDTO(postDOList);
     }
 
@@ -431,7 +423,6 @@ public class PostService {
      */
     @Transactional
     public Long createPost(UserDO currentUser, CreatePostRequest request, ContentState postState) {
-        // 先验证参数
         if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子对象不能为空");
         }
@@ -441,71 +432,12 @@ public class PostService {
 
         long userId = currentUser.getId();
 
-        // 验证节点
-        validateNodeId(request.getNodeId());
-
-        PostDO postDO = new PostDO();
+        // 根据类型调用不同的 DomainService 方法
         if (request.getType() == PostType.contents.value()) {
-            NodeDO nodeDO = nodeDataService.getById(request.getNodeId());
-            if (nodeDO == null) {
-                throw ErrorCode.POSTING_NODE_NOT_FOUND.exception();
-            }
-
-            log.info("content:" + request.getContent());
-            List<Utils.Pair<String, String>> chapterInfos = parseJsonToChapterInfoList(request.getContent());
-
-            // 验证目录型 post 的子目录数量必须大于等于2
-            if (chapterInfos.size() < 2) {
-                throw ErrorCode.INVALID_PARAMETER.exception("至少需要2个子目录");
-            }
-
-            String[] ids = new String[chapterInfos.size()];
-
-            // 检查node name是否已存在，避免重复创建
-            for (int i = 0; i < chapterInfos.size(); i++) {
-                Utils.Pair<String, String> chapterInfo = chapterInfos.get(i);
-                String nodeName = chapterInfo.left();
-                Long courseId = nodeDO.getCourseId();
-
-                // 先查询是否已存在相同名称的节点
-                NodeDO existingNode = nodeDataService.getByCourseAndName(courseId, nodeName);
-
-                if (existingNode != null) {
-                    // 如果节点已存在，复用该节点
-                    ids[i] = Long.toString(existingNode.getId());
-                    log.info("Reusing existing node: {} (id: {}) in course: {}", nodeName, existingNode.getId(), courseId);
-                } else {
-                    // 如果节点不存在，创建新节点
-                    NodeDO newNode = new NodeDO();
-                    newNode.setName(nodeName);
-                    newNode.setDescription(chapterInfo.right());
-                    newNode.setCourseId(courseId);
-                    newNode.setCreatorId(userId);
-                    newNode.setState(ContentState.PUBLISHED.value());
-                    nodeDataService.insert(newNode);
-                    ids[i] = Long.toString(newNode.getId());
-                    log.info("Created new node: {} (id: {}) in course: {}", nodeName, newNode.getId(), courseId);
-                }
-            }
-
-            // 创建 PostDO 对象
-
-            postDO.setNodeId(request.getNodeId());
-            postDO.setCreatorId(userId);
-            postDO.setType(request.getType());
-            postDO.setContent(String.join(",", ids));
-            postDO.setState(postState.value());
-            postDataService.insert(postDO);
+            return domainService.createContentsPost(userId, request.getNodeId(), request.getContent(), postState);
         } else {
-            // 非 contents 类型的帖子
-            postDO.setNodeId(request.getNodeId());
-            postDO.setCreatorId(userId);
-            postDO.setType(request.getType());
-            postDO.setContent(request.getContent());
-            postDO.setState(postState.value());
-            postDataService.insert(postDO);
+            return domainService.createArticlePost(userId, request.getNodeId(), request.getType(), request.getContent(), postState);
         }
-        return postDO.getId();
     }
 
     /**
@@ -522,24 +454,18 @@ public class PostService {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子对象不能为空");
         }
 
-        PostDO postDO = validateAndGetPost(id);
+        PostDO postDO = domainService.validateAndGet(id);
 
         // 验证权限：只有所有者或管理员可以修改
         if (!postDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(UserRole.ADMIN)) {
             throw ErrorCode.PERMISSION_DENIED.exception();
         }
 
-        // 目录类型不允许修改
-        if (postDO.getType() == PostType.contents.value()) {
-            throw ErrorCode.INVALID_OPERATION.exception("目录类型的帖子不允许修改");
-        }
+        // 调用 DomainService 更新
+        domainService.updatePost(id, request.getContent());
 
-        postDO.setContent(request.getContent());
-        postDO.setUpdatedAt(Utils.getLocalDateTime());
         // 修改后重新设置为待审核状态
-        postDO.setState(ContentState.SUBMITTED.value());
-        postDO.setReason(null);  // 清空之前的拒绝原因
-        postDataService.update(postDO);
+        domainService.updateState(id, ContentState.SUBMITTED, null);
     }
 
     /**
@@ -554,7 +480,7 @@ public class PostService {
     @Transactional
     public PostSummaryDTO updatePostAndReturn(Long id, UpdatePostRequest request, UserDO currentUser) {
         updatePost(id, request, currentUser);
-        PostDO postDO = validateAndGetPost(id);
+        PostDO postDO = domainService.validateAndGet(id);
         return postConverter.toSummaryDTO(postDO);
     }
 
@@ -567,17 +493,14 @@ public class PostService {
      */
     @Transactional
     public void deletePost(Long id, UserDO currentUser) {
-        PostDO postDO = validateAndGetPost(id);
+        PostDO postDO = domainService.validateAndGet(id);
 
         // 验证权限：只有所有者或管理员可以删除
         if (!postDO.getCreatorId().equals(currentUser.getId()) && !currentUser.hasRole(UserRole.ADMIN)) {
             throw ErrorCode.PERMISSION_DENIED.exception();
         }
 
-        int result = postDataService.softDelete(id);
-        if (result == 0) {
-            throw ErrorCode.NOT_FOUND.exception();
-        }
+        domainService.softDelete(id);
 
         log.info("用户 {} 删除了帖子 {}", currentUser.getId(), id);
     }
@@ -608,10 +531,10 @@ public class PostService {
      */
     @Transactional
     public void approve(Long id, UserDO currentUser) {
-        PostDO postDO = validateAndGetPost(id);
-        postDO.setState(ContentState.PUBLISHED.value());
-        postDO.setReason(null);  // 清空拒绝原因
-        postDataService.update(postDO);
+        PostDO postDO = domainService.validateAndGet(id);
+
+        // 调用 DomainService 更新状态
+        domainService.approve(id);
 
         // 发布审核通过事件，触发统计更新（不发送消息）
         eventPublisher.publishEvent(ContentApprovedEvent.forPost(
@@ -709,41 +632,11 @@ public class PostService {
     /**
      * 将帖子内容中的ID转换为名称（向后兼容方法）
      */
+    /**
+     * 将目录型帖子的内容ID转换为节点信息（委托给 DomainService）
+     */
     public void idToName(PostDO post) {
-        if (post == null || post.getType() == PostType.article.value() ||
-                post.getContent() == null || post.getContent().isEmpty()) {
-            return;
-        }
-
-        try {
-            List<Long> ids = Arrays.stream(post.getContent().split(","))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .map(Long::parseLong)
-                    .toList();
-
-            if (!ids.isEmpty()) {
-                List<NodeDO> nodeList = nodeDataService.getByIds(ids);
-
-                List<Map<String, Object>> nodeInfoList = nodeList.stream()
-                        .map(node -> {
-                            NodeSummaryDTO nodeDTO = nodeConverter.toSummaryDTO(node);
-                            Map<String, Object> nodeInfo = new java.util.HashMap<>();
-                            nodeInfo.put("id", nodeDTO.getId());
-                            nodeInfo.put("name", nodeDTO.getName());
-                            nodeInfo.put("description", nodeDTO.getDescription() != null ? nodeDTO.getDescription() : "");
-                            return nodeInfo;
-                        })
-                        .collect(Collectors.toList());
-
-                String jsonContent = objectMapper.writeValueAsString(nodeInfoList);
-                post.setContent(jsonContent);
-            }
-        } catch (NumberFormatException e) {
-            log.warn("Failed to parse content IDs for post {}: {}", post.getId(), post.getContent(), e);
-        } catch (Exception e) {
-            log.error("Failed to convert node info to JSON for post {}", post.getId(), e);
-        }
+        domainService.processIdToName(post);
     }
 
     // ========== 私有方法 ==========
@@ -920,24 +813,17 @@ public class PostService {
  // ========== 验证方法 ==========
 
     /**
-     * 验证帖子ID
+     * 验证帖子ID（委托给 DomainService）
      */
     public void validatePostId(Long postId) {
-        if (postId == null || postId <= 0) {
-            throw ErrorCode.POSTING_INVALID_PARAMETER.exception();
-        }
+        domainService.validatePostId(postId);
     }
 
     /**
-     * 验证并获取帖子
+     * 验证并获取帖子（委托给 DomainService）
      */
     public PostDO validateAndGetPost(Long postId) {
-        validatePostId(postId);
-        PostDO postDO = postDataService.getById(postId);
-        if (postDO == null) {
-            throw ErrorCode.CONTENTS_POST_NOT_FOUND.exception();
-        }
-        return postDO;
+        return domainService.validateAndGet(postId);
     }
 
     /**

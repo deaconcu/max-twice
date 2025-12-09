@@ -1,7 +1,7 @@
 package com.prosper.learn.application.service;
 
 import com.prosper.learn.analytics.monitoring.OperationLogDO;
-import com.prosper.learn.analytics.monitoring.OperationLogDataService;
+import com.prosper.learn.analytics.monitoring.service.OperationLogDomainService;
 import com.prosper.learn.application.converter.OperationLogConverter;
 import com.prosper.learn.application.dto.request.OperationLogRequest;
 import com.prosper.learn.application.dto.response.OperationLogDTO;
@@ -17,14 +17,21 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 操作日志服务
+ * 操作日志应用服务
+ *
+ * 负责协调操作日志相关的应用层逻辑
+ *
+ * 核心功能：
+ * - DTO 转换（OperationLogDTO ↔ OperationLogDO）
+ * - 请求参数验证和转换
+ * - 分页响应构建
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class OperationLogService {
 
-    private final OperationLogDataService operationLogDataService;
+    private final OperationLogDomainService operationLogDomainService;
     private final OperationLogConverter operationLogConverter;
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -34,9 +41,12 @@ public class OperationLogService {
      */
     public void recordLog(OperationLogDTO logDTO) {
         try {
+            // DTO 转换为 DO
             OperationLogDO logDO = operationLogConverter.toDataObject(logDTO);
-            logDO.setCreatedAt(LocalDateTime.now());
-            operationLogDataService.insert(logDO);
+
+            // 调用 DomainService 记录日志
+            operationLogDomainService.recordLog(logDO);
+
             log.info("Operation log recorded: operator={}, module={}, type={}, target={}:{}",
                     logDTO.getOperatorName(), logDTO.getModule(), logDTO.getOperationType(),
                     logDTO.getTargetType(), logDTO.getTargetId());
@@ -62,8 +72,8 @@ public class OperationLogService {
         LocalDateTime startTime = parseDateTime(query.getStartTime());
         LocalDateTime endTime = parseDateTime(query.getEndTime());
 
-        // 查询数据（多查一条用于判断是否还有更多数据）
-        List<OperationLogDO> logs = operationLogDataService.queryLogs(
+        // 调用 DomainService 查询数据（多查一条用于判断是否还有更多数据）
+        List<OperationLogDO> logs = operationLogDomainService.queryLogs(
                 query.getOperatorId(),
                 query.getModule(),
                 query.getOperationType(),
@@ -106,7 +116,10 @@ public class OperationLogService {
      * 根据ID查询操作日志详情
      */
     public OperationLogDTO getLogById(Long id) {
-        OperationLogDO logDO = operationLogDataService.getById(id);
+        // 调用 DomainService 查询
+        OperationLogDO logDO = operationLogDomainService.getById(id);
+
+        // 转换为DTO
         return logDO != null ? operationLogConverter.toDTO(logDO) : null;
     }
 

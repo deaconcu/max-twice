@@ -2,13 +2,12 @@ package com.prosper.learn.application.service;
 
 import com.prosper.learn.application.dto.response.FolloweeDTO;
 import com.prosper.learn.interaction.follow.FollowDO;
-import com.prosper.learn.interaction.follow.FollowDataService;
+import com.prosper.learn.interaction.follow.FollowDomainService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.event.user.relationship.UserFollowedEvent;
 import com.prosper.learn.shared.domain.event.user.relationship.UserUnfollowedEvent;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
-import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
@@ -20,19 +19,15 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 /**
- * 关注服务
- * 
- * 负责管理用户之间的关注关系，包括：
- * - 关注和取消关注用户
- * - 获取关注列表
- * - 发送关注通知消息
- * 
+ * 关注应用服务
+ *
+ * 负责协调跨领域逻辑、事件发布
+ *
  * 核心功能：
- * - 关注操作的事务性保证
- * - 防止重复关注和取消关注
- * - 自动发送关注通知消息
- * - 分页获取关注列表
- * 
+ * - 验证用户存在性（跨域查询）
+ * - 协调关注操作并发布事件
+ * - 聚合关注列表和用户信息（跨域查询）
+ *
  * @author Claude
  * @since 2024-01-20
  */
@@ -40,71 +35,126 @@ import java.util.*;
 @RequiredArgsConstructor
 public class FollowService {
 
-    /** 默认分页大小常量 */
-    private static final int DEFAULT_PAGE_SIZE = 10;
-
-    /** 关注数据访问接口 */
-    private final FollowDataService followDataService;
+    /** 关注领域服务 */
+    private final FollowDomainService followDomainService;
 
     /** 用户数据访问接口 */
     private final UserDataService userDataService;
 
-    /** 消息服务，用于发送关注通知 */
-    private final MessageService messageService;
-
-    /** 系统配置属性 */
-    private final SystemProperties systemProperties;
-
     /** 事件发布器 */
     private final ApplicationEventPublisher eventPublisher;
 
+    // ========== Command 方法（写操作）==========
+
     /**
-     * 验证用户ID有效性
-     * 
-     * @param userId 用户ID
-     * @throws BusinessException 当用户ID无效时抛出异常
+     * 关注用户
+     *
+     * 执行关注操作，包括验证用户存在性、创建关注记录和发布事件。
+     * 使用事件驱动架构，通过发布事件来处理消息通知和统计更新等副作用操作。
+     *
+     * @param follower 关注者（当前用户）
+     * @param followeeId 被关注者ID
+     * @throws BusinessException 当参数无效或用户不存在时抛出异常
      */
-    private void validateUserId(Long userId) {
-        if (userId == null || userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
+    @Transactional
+    public void follow(UserDO follower, Long followeeId) {
+        // 验证被关注者存在性（跨域查询）
+        UserDO followee = validateUserExists(followeeId);
+
+        // 调用 DomainService 执行关注逻辑
+        boolean added = followDomainService.follow(follower.getId(), followeeId);
+
+        // 如果成功关注（非幂等重复操作），发布关注事件
+        if (added) {
+            eventPublisher.publishEvent(new UserFollowedEvent(follower.getId(), followeeId));
         }
     }
-    
+
     /**
-     * 验证用户存在性
-     * 
+     * 取消关注用户
+     *
+     * 执行取消关注操作，包括验证用户存在性、删除关注记录和发布事件。
+     * 使用事件驱动架构，通过发布事件来处理统计更新等副作用操作。
+     *
+     * @param followerId 关注者ID
+     * @param followeeId 被关注者ID
+     * @throws BusinessException 当参数无效或用户不存在时抛出异常
+     */
+    @Transactional
+    public void unfollow(Long followerId, Long followeeId) {
+        // 验证被关注者存在性（跨域查询）
+        UserDO followee = validateUserExists(followeeId);
+
+        // 调用 DomainService 执行取消关注逻辑
+        boolean removed = followDomainService.unfollow(followerId, followeeId);
+
+        // 如果成功取消关注（非幂等重复操作），发布取消关注事件
+        if (removed) {
+            eventPublisher.publishEvent(new UserUnfollowedEvent(followerId, followeeId));
+        }
+    }
+
+    // ========== Query 方法（读操作）==========
+
+    /**
+     * 获取用户的关注列表
+     *
+     * 分页获取指定用户关注的用户列表，包含用户基本信息和关注时间。
+     * 这是一个跨域查询方法，需要聚合 interaction 域和 user 域的数据。
+     *
+     * @param userId 用户ID
+     * @param lastCreateTime 最后一条记录的创建时间（用于分页）
+     * @return 关注者DTO列表
+     * @throws BusinessException 当用户不存在时抛出异常
+     */
+    public List<FolloweeDTO> getFollowees(Long userId, LocalDateTime lastCreateTime) {
+        // 验证用户存在性（跨域查询）
+        UserDO follower = validateUserExists(userId);
+
+        // 获取关注记录列表（interaction 域）
+        List<FollowDO> followDOList = followDomainService.getFollowees(userId, lastCreateTime);
+
+        if (followDOList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 提取被关注者ID列表
+        List<Long> userIds = new ArrayList<>();
+        for (FollowDO followDO : followDOList) {
+            userIds.add(followDO.getFolloweeId());
+        }
+
+        // 批量获取用户信息（user 域）
+        Map<Long, UserDO> userDOMap = getUserMap(userIds);
+
+        // 转换为DTO列表
+        return convertToFolloweeDTOList(followDOList, userDOMap);
+    }
+
+    // ========== Private 辅助方法 ==========
+
+    /**
+     * 验证用户存在性（跨域查询）
+     *
      * @param userId 用户ID
      * @return 用户实体对象
      * @throws BusinessException 当用户不存在时抛出异常
      */
     private UserDO validateUserExists(Long userId) {
-        validateUserId(userId);
+        if (userId == null || userId <= 0) {
+            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
+        }
+
         UserDO userDO = userDataService.getById(userId);
         if (userDO == null) {
             throw ErrorCode.USER_NOT_FOUND.exception();
         }
         return userDO;
     }
-    
+
     /**
-     * 验证关注参数有效性
-     * 
-     * @param followerId 关注者ID
-     * @param followeeId 被关注者ID
-     * @throws BusinessException 当参数无效时抛出异常
-     */
-    private void validateFollowParams(Long followerId, Long followeeId) {
-        validateUserId(followerId);
-        validateUserId(followeeId);
-        
-        if (followerId.equals(followeeId)) {
-            throw ErrorCode.INVALID_PARAMETER.exception("不能关注自己");
-        }
-    }
-    
-    /**
-     * 批量获取用户信息并转换为Map
-     * 
+     * 批量获取用户信息并转换为Map（跨域查询）
+     *
      * @param userIds 用户ID列表
      * @return 用户ID到用户对象的映射
      */
@@ -112,7 +162,7 @@ public class FollowService {
         if (userIds.isEmpty()) {
             return new HashMap<>();
         }
-        
+
         List<UserDO> userDOList = userDataService.getByIds(userIds);
         Map<Long, UserDO> userDOMap = new HashMap<>();
         for (UserDO userDO : userDOList) {
@@ -120,17 +170,17 @@ public class FollowService {
         }
         return userDOMap;
     }
-    
+
     /**
      * 将关注数据转换为DTO列表
-     * 
+     *
      * @param followDOList 关注数据列表
      * @param userDOMap 用户信息映射
      * @return 关注者DTO列表
      */
     private List<FolloweeDTO> convertToFolloweeDTOList(List<FollowDO> followDOList, Map<Long, UserDO> userDOMap) {
         List<FolloweeDTO> followeeDTOList = new ArrayList<>();
-        
+
         for (FollowDO followDO : followDOList) {
             UserDO userDO = userDOMap.get(followDO.getFolloweeId());
             if (userDO != null) {
@@ -142,98 +192,7 @@ public class FollowService {
                 followeeDTOList.add(followeeDTO);
             }
         }
-        
+
         return followeeDTOList;
-    }
-
-    /**
-     * 关注用户
-     *
-     * 执行关注操作，包括验证用户存在性、检查重复关注、创建关注记录和发送通知。
-     *
-     * @param follower 关注者（当前用户）
-     * @param followeeId 被关注者ID
-     * @throws BusinessException 当参数无效或用户不存在时抛出异常
-     */
-    @Transactional
-    public void follow(UserDO follower, Long followeeId) {
-        validateFollowParams(follower.getId(), followeeId);
-
-        // 验证被关注者存在性
-        UserDO followee = validateUserExists(followeeId);
-
-        // 检查是否已经关注
-        FollowDO existingFollow = followDataService.get(follower.getId(), followeeId);
-        if (existingFollow == null) {
-            // 创建关注记录
-            followDataService.insert(follower.getId(), followeeId);
-
-            // 发送关注通知消息
-            messageService.createFollowMessage(followeeId, follower.getId());
-
-            // 发布关注事件
-            eventPublisher.publishEvent(new UserFollowedEvent(follower.getId(), followeeId));
-        }
-    }
-
-    /**
-     * 取消关注用户
-     *
-     * 执行取消关注操作，包括验证用户存在性、检查关注关系存在性、删除关注记录。
-     *
-     * @param followerId 关注者ID
-     * @param followeeId 被关注者ID
-     * @throws BusinessException 当参数无效或用户不存在时抛出异常
-     */
-    @Transactional
-    public void unfollow(Long followerId, Long followeeId) {
-        validateFollowParams(followerId, followeeId);
-
-        // 验证被关注者存在性
-        UserDO followee = validateUserExists(followeeId);
-
-        // 检查关注关系是否存在
-        FollowDO existingFollow = followDataService.get(followerId, followeeId);
-        if (existingFollow != null) {
-            // 删除关注记录
-            followDataService.delete(followerId, followeeId);
-
-            // 发布取消关注事件
-            eventPublisher.publishEvent(new UserUnfollowedEvent(followerId, followeeId));
-        }
-    }
-
-    /**
-     * 获取用户的关注列表
-     * 
-     * 分页获取指定用户关注的用户列表，包含用户基本信息和关注时间。
-     * 
-     * @param userId 用户ID
-     * @param lastCreateTime 最后一条记录的创建时间（用于分页）
-     * @return 关注者DTO列表
-     * @throws BusinessException 当用户不存在时抛出异常
-     */
-    public List<FolloweeDTO> getFollowees(Long userId, LocalDateTime lastCreateTime) {
-        // 验证用户存在性
-        UserDO follower = validateUserExists(userId);
-        
-        // 获取关注记录列表
-        List<FollowDO> followDOList = followDataService.getList(userId, lastCreateTime, DEFAULT_PAGE_SIZE);
-        
-        if (followDOList.isEmpty()) {
-            return new ArrayList<>();
-        }
-        
-        // 提取被关注者ID列表
-        List<Long> userIds = new ArrayList<>();
-        for (FollowDO followDO : followDOList) {
-            userIds.add(followDO.getFolloweeId());
-        }
-        
-        // 批量获取用户信息
-        Map<Long, UserDO> userDOMap = getUserMap(userIds);
-        
-        // 转换为DTO列表
-        return convertToFolloweeDTOList(followDOList, userDOMap);
     }
 }

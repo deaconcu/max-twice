@@ -1,9 +1,9 @@
 package com.prosper.learn.application.service;
 
+import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.response.FolloweeDTO;
 import com.prosper.learn.application.dto.response.SubscriptionDTO;
-import com.prosper.learn.application.dto.response.old.UserDTOV2;
 import com.prosper.learn.application.dto.response.user.*;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
@@ -14,12 +14,9 @@ import com.prosper.learn.shared.domain.event.content.interaction.ContentBookmark
 import com.prosper.learn.shared.domain.event.content.interaction.ContentUnbookmarkedEvent;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
-import com.prosper.learn.user.auth.VerificationDO;
-import com.prosper.learn.user.auth.VerificationDataService;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
-import com.prosper.learn.user.profile.UserProfileDO;
-import com.prosper.learn.user.profile.UserProfileDataService;
+import com.prosper.learn.user.profile.UserDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -29,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -44,29 +40,23 @@ import static com.prosper.learn.shared.domain.Enums.*;
 @RequiredArgsConstructor
 public class UserService {
 
+    private final UserDomainService userDomainService;
     private final UserDataService userDataService;
-    private final UserProfileDataService userProfileDataService;
     private final CourseDataService courseDataService;
     private final FollowDataService followDataService;
-    private final VerificationDataService verificationDataService;
     private final JavaMailSender mailSender;
     private final MessageService messageService;
     private final SystemProperties systemProperties;
     private final UserConverter userConverter;
-    private final CourseService courseService;
+    private final CourseConverter courseConverter;
     private final ApplicationEventPublisher eventPublisher;
 
     // ========== 常量定义 ==========
 
-    private static final String DEFAULT_EMPTY_STRING = "";
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
         "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
     );
-    private static final DateTimeFormatter DATE_TIME_FORMATTER =
-        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    private static final String BASE62_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private static final int USERNAME_RANDOM_LENGTH = 8;
-    
+
     // ========== 公共方法 Query ==========
 
     /**
@@ -147,18 +137,13 @@ public class UserService {
      * 更新用户状态（管理员操作）
      */
     public UserProfileDTO updateUserState(Long userId, boolean ban, UserDO operator) {
-        UserDO userDO = validateUserExists(userId);
-
-        if (ban) {
-            userDO.setState(UserState.BANNED.value());
-        } else {
-            userDO.setState(UserState.ACTIVE.value());
-        }
-
-        userDataService.update(userDO);
+        // 委托给 DomainService
+        userDomainService.updateUserState(userId, ban);
 
         log.info("管理员 {} {} 用户 {}", operator.getId(), ban ? "封禁" : "解封", userId);
 
+        // 查询并返回 DTO
+        UserDO userDO = userDataService.getById(userId);
         return userConverter.toProfileDTO(userDO);
     }
 
@@ -170,26 +155,16 @@ public class UserService {
     public UserProfileDTO setUserRole(Long userId, Integer roleCode, UserDO operator) {
         validateUserId(userId);
 
-        UserDO targetUser = validateUserExists(userId);
+        // 委托给 DomainService，传入操作者信息
         UserRole newRole = UserRole.fromCode(roleCode);
-
-        // 1. 防止用户修改自己的角色
-        if (userId.equals(operator.getId())) {
-            throw ErrorCode.PERMISSION_DENIED.exception("不能修改自己的角色");
-        }
-
-        // 2. 只有超级管理员可以设置超级管理员
-        if (newRole == UserRole.SUPER_ADMIN && !operator.hasRole(UserRole.SUPER_ADMIN)) {
-            throw ErrorCode.PERMISSION_DENIED.exception("只有超级管理员可以设置超级管理员");
-        }
-
-        // 3. 执行角色修改
-        targetUser.setRole(roleCode);
-        userDataService.update(targetUser);
+        UserRole operatorRole = UserRole.fromCode(operator.getRole());
+        userDomainService.setUserRole(userId, operator.getId(), operatorRole, roleCode);
 
         log.info("管理员 {} 将用户 {} 的角色修改为 {}", operator.getId(), userId, newRole.getDescription());
 
-        return userConverter.toProfileDTO(targetUser);
+        // 查询并返回 DTO
+        UserDO userDO = userDataService.getById(userId);
+        return userConverter.toProfileDTO(userDO);
     }
 
     /**
@@ -198,12 +173,19 @@ public class UserService {
     public Object getUserSubscriptions(Long userId) {
         validateUserExists(userId);
 
-        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
-        if (userProfileDO == null || !StringUtils.hasText(userProfileDO.getSubscription())) {
+        // 获取订阅ID列表
+        List<Long> subscriptionIds = userDomainService.getSubscriptionIds(userId);
+        if (subscriptionIds.isEmpty()) {
             return new ArrayList<>();
         }
 
-        return parseUserSubscriptions(userProfileDO.getSubscription(), userId);
+        // 跨域查询：获取课程信息
+        List<CourseDO> courseDOList = courseDataService.getByIds(subscriptionIds);
+        log.info("查询到{}个收藏课程，课程信息: {}", courseDOList.size(),
+            courseDOList.stream().map(c -> "id=" + c.getId() + ",name=" + c.getName()).collect(Collectors.toList()));
+
+        // 转换为DTO
+        return courseConverter.toSummaryDTO(courseDOList);
     }
 
 
@@ -213,12 +195,10 @@ public class UserService {
      * 更新当前用户信息
      */
     public void updateCurrentUser(Long userId, String name, String biography) {
-        UserDO userDO = validateUserExists(userId);
         validateUsername(name);
-        
-        userDO.setName(name);
-        userDO.setBiography(biography);
-        userDataService.update(userDO);
+
+        // 委托给 DomainService
+        userDomainService.updateUserInfo(userId, name, biography);
     }
 
     /**
@@ -229,23 +209,13 @@ public class UserService {
         validateEmail(email);
         validatePassword(password);
 
-        UserDO existingUser = userDataService.getByEmail(email);
-        if (existingUser != null) {
-            throw ErrorCode.USER_ALREADY_EXISTS.exception();
-        }
+        // 委托给 DomainService 创建用户
+        UserDO user = userDomainService.createUser(email, password);
 
-        UserDO user = new UserDO();
-        user.setName("MT_" + generateRandomBase62(USERNAME_RANDOM_LENGTH));
-        user.setPassword(Utils.md5(password));
-        user.setEmail(email);
-        user.setBiography("");
-        user.setState(UserState.ACTIVE.value());
-        userDataService.insert(user);
-
+        // 跨域操作：发送验证邮件
         if (systemProperties.getUser().isEnableEmailValidation()) {
             String code = generateVerificationCode();
-            VerificationDO verification = new VerificationDO(email, code);
-            verificationDataService.insert(verification);
+            userDomainService.createVerificationCode(email, code);
             sendVerificationEmail(email, code);
         }
     }
@@ -258,21 +228,8 @@ public class UserService {
         validateEmail(email);
         validatePassword(password);
 
-        UserDO userDO = userDataService.getByEmail(email);
-        if (userDO == null) {
-            throw ErrorCode.USER_NOT_FOUND.exception();
-        }
-
-        // TODO: 密码验证
-        // if (!userDO.getPassword().equals(Utils.md5(password))) throw ErrorCode.USER_PASSWORD_WRONG.exception();
-
-        if (!userDO.getEmailValidated()) {
-            throw ErrorCode.USER_EMAIL_NOT_VALIDATED.exception();
-        }
-
-        if (userDO.getState() != null && userDO.getState() == UserState.BANNED.value()) {
-            throw ErrorCode.USER_BANNED.exception();
-        }
+        // 委托给 DomainService 验证
+        UserDO userDO = userDomainService.validateLogin(email, password);
 
         return toBriefDTO(userDO);
     }
@@ -285,29 +242,10 @@ public class UserService {
     public UserProfileDTO validateEmail(String email, String code) {
         validateEmail(email);
         validateVerificationCode(code);
-        
-        VerificationDO verificationDO = verificationDataService.getByEmail(email, false);
-        if (verificationDO == null) {
-            throw ErrorCode.USER_VERIFICATION_CODE_NOT_FOUND.exception();
-        }
-        if (!verificationDO.getCode().equals(code)) {
-            throw ErrorCode.USER_VERIFICATION_CODE_INVALID.exception();
-        }
 
-        verificationDO.setUsed(true);
-        verificationDataService.update(verificationDO);
+        // 委托给 DomainService 验证
+        UserDO user = userDomainService.validateEmail(email, code);
 
-        UserDO user = userDataService.getByEmail(email);
-        if (user == null) {
-            throw ErrorCode.USER_NOT_FOUND.exception();
-        }
-        
-        if (user.getEmailValidated()) {
-            return toProfileDTO(user);
-        }
-
-        user.setEmailValidated(true);
-        userDataService.update(user);
         return toProfileDTO(user);
     }
 
@@ -319,25 +257,9 @@ public class UserService {
         validateCourseExists(courseId);
         validateUserId(userId);
 
-        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
-        String idsStr;
-        if (userProfileDO == null) {
-            userProfileDO = new UserProfileDO();
-            userProfileDO.setUserId(userId);
-            idsStr = String.valueOf(courseId);
-            userProfileDO.setSubscription(idsStr);
-            userProfileDO.setRoadmapPin("");
-            userProfileDataService.insert(userProfileDO);
-        } else {
-            List<Long> ids = parseSubscriptionIds(userProfileDO.getSubscription());
-            if (systemProperties.getUser().isEnableDuplicateSubscriptionCheck() && ids.contains(courseId)) {
-                throw ErrorCode.USER_COURSE_ALREADY_SUBSCRIBED.exception();
-            }
-            ids.add(courseId);
-            idsStr = formatSubscriptionIds(ids);
-            userProfileDO.setSubscription(idsStr);
-            userProfileDataService.update(userProfileDO);
-        }
+        // 委托给 DomainService 添加订阅
+        boolean checkDuplicate = systemProperties.getUser().isEnableDuplicateSubscriptionCheck();
+        List<Long> subscriptionIds = userDomainService.addSubscription(userId, courseId, checkDuplicate);
 
         // 发布收藏事件
         eventPublisher.publishEvent(new ContentBookmarkedEvent(
@@ -346,7 +268,7 @@ public class UserService {
             ContentType.course
         ));
 
-        return parseSubscriptionIdsToArray(idsStr);
+        return subscriptionIds.stream().mapToInt(Long::intValue).toArray();
     }
 
     /**
@@ -356,17 +278,19 @@ public class UserService {
     public Object updateSubscriptions(Long userId, String subscription) {
         validateUserId(userId);
         validateSubscriptionString(subscription);
-        
+
+        // 解析并验证订阅ID
         List<Long> ids = parseAndValidateSubscriptionIds(subscription);
+
+        // 跨域验证：验证课程是否存在
         List<CourseDO> courseDOList = courseDataService.getByIds(ids);
-        
         List<Long> validIds = courseDOList.stream()
             .map(CourseDO::getId)
             .collect(Collectors.toList());
-        
-        String idsStr = formatSubscriptionIds(validIds);
-        updateUserProfile(userId, idsStr);
-        
+
+        // 委托给 DomainService 更新订阅
+        userDomainService.updateSubscriptions(userId, validIds);
+
         return validIds;
     }
 
@@ -378,20 +302,8 @@ public class UserService {
         validateCourseExists(courseId);
         validateUserId(userId);
 
-        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
-        if (userProfileDO == null || !StringUtils.hasText(userProfileDO.getSubscription())) {
-            throw ErrorCode.USER_COURSE_NOT_SUBSCRIBED.exception();
-        }
-
-        List<Long> ids = parseSubscriptionIds(userProfileDO.getSubscription());
-        if (!ids.contains(courseId)) {
-            throw ErrorCode.USER_COURSE_NOT_SUBSCRIBED.exception();
-        }
-
-        ids.remove(courseId);
-        String idsStr = formatSubscriptionIds(ids);
-        userProfileDO.setSubscription(idsStr);
-        userProfileDataService.update(userProfileDO);
+        // 委托给 DomainService 取消订阅
+        List<Long> subscriptionIds = userDomainService.removeSubscription(userId, courseId);
 
         // 发布取消收藏事件
         eventPublisher.publishEvent(new ContentUnbookmarkedEvent(
@@ -400,7 +312,7 @@ public class UserService {
             ContentType.course
         ));
 
-        return parseSubscriptionIdsToArray(idsStr);
+        return subscriptionIds.stream().mapToInt(Long::intValue).toArray();
     }
 
     /**
@@ -532,27 +444,25 @@ public class UserService {
 
 
     // ========== 私有辅助方法 ==========
-    
+
     /**
      * 获取用户订阅信息
      */
     private SubscriptionDTO[] getSubscriptions(Long userId) {
-        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
-
-        if (userProfileDO != null && userProfileDO.getSubscription() != null
-                && !userProfileDO.getSubscription().trim().isEmpty()) {
-            List<Long> ids = Arrays.stream(userProfileDO.getSubscription().split(","))
-                    .map(Long::parseLong).collect(Collectors.toCollection(ArrayList::new));
-            List<CourseDO> courseDOList = courseDataService.getByIds(ids);
-            SubscriptionDTO[] subscriptionDTOS = new SubscriptionDTO[courseDOList.size()];
-            int i = 0;
-            for (CourseDO courseDO : courseDOList) {
-                subscriptionDTOS[i++] = new SubscriptionDTO(courseDO.getId(), courseDO.getName());
-            }
-            return subscriptionDTOS;
-        } else {
+        // 使用 DomainService 获取订阅ID列表
+        List<Long> ids = userDomainService.getSubscriptionIds(userId);
+        if (ids.isEmpty()) {
             return new SubscriptionDTO[0];
         }
+
+        // 跨域查询：获取课程信息
+        List<CourseDO> courseDOList = courseDataService.getByIds(ids);
+        SubscriptionDTO[] subscriptionDTOS = new SubscriptionDTO[courseDOList.size()];
+        int i = 0;
+        for (CourseDO courseDO : courseDOList) {
+            subscriptionDTOS[i++] = new SubscriptionDTO(courseDO.getId(), courseDO.getName());
+        }
+        return subscriptionDTOS;
     }
 
     private void validateUserId(Long userId) {
@@ -622,18 +532,6 @@ public class UserService {
         }
     }
 
-    private List<Long> parseSubscriptionIds(String subscription) {
-        try {
-            return Arrays.stream(subscription.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .map(Long::parseLong)
-                .collect(Collectors.toCollection(ArrayList::new));
-        } catch (NumberFormatException e) {
-            throw ErrorCode.USER_SUBSCRIPTION_PARSE_ERROR.exception(e);
-        }
-    }
-    
     private List<Long> parseAndValidateSubscriptionIds(String subscription) {
         List<Long> ids = new ArrayList<>();
         String[] parts = subscription.split(",");
@@ -649,82 +547,7 @@ public class UserService {
         }
         return ids;
     }
-    
-    private String formatSubscriptionIds(List<Long> ids) {
-        if (ids.isEmpty()) {
-            return DEFAULT_EMPTY_STRING;
-        }
-        return ids.stream().map(String::valueOf).collect(Collectors.joining(","));
-    }
-    
-    private int[] parseSubscriptionIdsToArray(String idsStr) {
-        if (idsStr == null || idsStr.trim().isEmpty()) {
-            return new int[0];
-        }
-        try {
-            return Arrays.stream(idsStr.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .mapToInt(Integer::parseInt)
-                .toArray();
-        } catch (NumberFormatException e) {
-            log.error("解析订阅ID数组失败: {}", idsStr, e);
-            return new int[0];
-        }
-    }
-    
-    private void updateUserProfile(Long userId, String subscription) {
-        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
-        if (userProfileDO == null) {
-            userProfileDO = new UserProfileDO(userId, subscription);
-            userProfileDataService.insert(userProfileDO);
-        } else {
-            userProfileDO.setSubscription(subscription);
-            userProfileDataService.update(userProfileDO);
-        }
-    }
-    
-    private void setUserSubscriptions(UserDTOV2 userDTOV2, Long userId) {
-        UserProfileDO userProfileDO = userProfileDataService.getById(userId);
-        if (userProfileDO != null && StringUtils.hasText(userProfileDO.getSubscription())) {
-            try {
-                List<Long> ids = parseSubscriptionIds(userProfileDO.getSubscription());
-                List<CourseDO> courseDOList = courseDataService.getByIds(ids);
-                SubscriptionDTO[] subscriptionDTOS = courseDOList.stream()
-                    .map(course -> new SubscriptionDTO(course.getId(), course.getName()))
-                    .toArray(SubscriptionDTO[]::new);
-                userDTOV2.setSubscriptions(subscriptionDTOS);
-            } catch (Exception e) {
-                log.error("获取用户{}订阅信息失败", userId, e);
-                userDTOV2.setSubscriptions(new SubscriptionDTO[0]);
-            }
-        } else {
-            userDTOV2.setSubscriptions(new SubscriptionDTO[0]);
-        }
-    }
-    
-    private Object parseUserSubscriptions(String subscription, Long userId) {
-        try {
-            List<Long> ids = Arrays.stream(subscription.split(","))
-                .map(String::trim)
-                .filter(trim -> !trim.isEmpty())
-                .map(Long::parseLong)
-                .collect(Collectors.toList());
 
-            if (ids.isEmpty()) {
-                return new ArrayList<>();
-            }
-
-            List<CourseDO> courseDOList = courseDataService.getByIds(ids);
-            log.info("查询到{}个收藏课程，课程信息: {}", courseDOList.size(),
-                courseDOList.stream().map(c -> "id=" + c.getId() + ",name=" + c.getName()).collect(Collectors.toList()));
-            return courseService.toSummaryDTO(courseDOList);
-        } catch (Exception e) {
-            log.error("获取用户{}收藏课程时出错: {}", userId, e.getMessage());
-            throw ErrorCode.USER_SUBSCRIPTION_PARSE_ERROR.exception(e);
-        }
-    }
-    
     private FolloweeDTO createFolloweeDTO(FollowDO followDO, UserDO userDO) {
         FolloweeDTO followeeDTO = new FolloweeDTO();
         followeeDTO.setId(followDO.getFolloweeId());
@@ -732,21 +555,5 @@ public class UserService {
         followeeDTO.setBiography(userDO.getBiography());
         followeeDTO.setCreatedAt(Utils.getTimeString(followDO.getCreatedAt()));
         return followeeDTO;
-    }
-
-    /**
-     * 生成随机Base62字符串
-     * Base62: 0-9a-zA-Z (62个字符)
-     *
-     * @param length 字符串长度
-     * @return 随机Base62字符串
-     */
-    private String generateRandomBase62(int length) {
-        Random random = new Random();
-        StringBuilder sb = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            sb.append(BASE62_CHARS.charAt(random.nextInt(62)));
-        }
-        return sb.toString();
     }
 }

@@ -6,9 +6,9 @@ import com.prosper.learn.application.dto.request.CreateProfessionRequest;
 import com.prosper.learn.application.dto.request.UpdateProfessionRequest;
 import com.prosper.learn.application.dto.response.ProfessionDTO;
 import com.prosper.learn.content.profession.ProfessionDO;
-import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.profession.ProfessionDomainService;
+import com.prosper.learn.shared.common.utils.ValidationUtils;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
-import com.prosper.learn.shared.domain.event.content.lifecycle.ContentDeletedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
@@ -23,31 +23,49 @@ import java.util.List;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
+/**
+ * 职业应用服务
+ *
+ * 负责协调跨领域逻辑、事件发布、DTO转换
+ *
+ * 核心功能：
+ * - DTO 转换（ProfessionDTO ↔ ProfessionDO）
+ * - 事件发布（ContentApprovedEvent、ContentRejectedEvent）
+ * - 跨域数据聚合（getHotProfessions - 聚合 Ranking 数据）
+ * - 配置管理（SystemProperties）
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProfessionService {
 
-    private final ProfessionDataService professionDataService;
+    // 领域服务
+    private final ProfessionDomainService professionDomainService;
+
+    // 跨域服务依赖
     private final ProfessionRankingDomainService professionRankingService;
+
+    // 事件发布
     private final ApplicationEventPublisher eventPublisher;
+
+    // 配置
     private final SystemProperties systemProperties;
+
+    // DTO转换器
     private final ProfessionConverter professionConverter;
     
     // ========== 常量定义 ==========
     
     private static final String DEFAULT_EMPTY_STRING = "";
 
-    // ========== 公共方法 ==========
+    // ========== Query 方法 ==========
 
     /**
      * 返回正常状态的职业信息
      * 职业被拒绝或屏蔽时抛出异常
-     * @param id
-     * @return
      */
     public ProfessionDTO getById(long id, boolean published) {
-        ProfessionDO professionDO = professionDataService.getById(id);
+        ProfessionDO professionDO = professionDomainService.getById(id);
         if (professionDO == null) return null;
         if (published &&
             (professionDO.getState() == ContentState.REJECTED.value() ||
@@ -58,95 +76,76 @@ public class ProfessionService {
     }
 
     public List<ProfessionDTO> getListByStateAndLastId(ContentState state, Long lastId) {
-        List<ProfessionDO> professionDOList = professionDataService.listByStateAndLastId(state.value(), lastId);
+        List<ProfessionDO> professionDOList = professionDomainService.listByStateAndLastId(state.value(), lastId);
         return toDTO(professionDOList);
     }
 
     public List<ProfessionDTO> getListByMainCategoryAndLastId(int mainCategory, Long lastId) {
-        List<ProfessionDO> professionDOList = professionDataService.listByMainCategoryAndLastId(mainCategory, lastId);
+        List<ProfessionDO> professionDOList = professionDomainService.listByMainCategoryAndLastId(mainCategory, lastId);
         return toDTO(professionDOList);
     }
 
     public List<ProfessionDTO> getListBySubCategoryAndLastId(int subCategory, Long lastId) {
-        List<ProfessionDO> professionDOList = professionDataService.listBySubCategoryAndLastId(subCategory, lastId);
+        List<ProfessionDO> professionDOList = professionDomainService.listBySubCategoryAndLastId(subCategory, lastId);
         return toDTO(professionDOList);
     }
 
     public List<ProfessionDTO> getListByCategoryAndLastId(int mainCategory, int subCategory, Long lastId) {
-        List<ProfessionDO> professionDOList = professionDataService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
+        List<ProfessionDO> professionDOList = professionDomainService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
         return toDTO(professionDOList);
     }
 
     public List<ProfessionDTO> getListByPage(int page) {
         validatePageNumber(page);
         int pageSize = systemProperties.getProfession().getDefaultPageSize();
-        List<ProfessionDO> professionDOList = professionDataService.listByPage((page - 1) * pageSize, pageSize);
+        List<ProfessionDO> professionDOList = professionDomainService.listByPage((page - 1) * pageSize, pageSize);
         return toDTO(professionDOList);
     }
 
+    // ========== Command 方法 ==========
+
     public Long create(CreateProfessionRequest request, UserDO creator) {
-        ProfessionDO professionDO = new ProfessionDO();
-        professionDO.setName(request.getName());
-        professionDO.setDescription(request.getDescription());
-        professionDO.setSkills(request.getSkills());
-        professionDO.setMainCategory(request.getMainCategory());
-        professionDO.setSubCategory(request.getSubCategory());
-        professionDO.setCreatorId(creator.getId());
-        professionDO.setState(ContentState.SUBMITTED.value());
-        professionDO.setReason("");
-        professionDO.setIcon("");
-        professionDataService.insert(professionDO);
-        return professionDO.getId();
+        // 调用 DomainService 创建职业
+        return professionDomainService.create(
+            creator.getId(),
+            request.getName(),
+            request.getDescription(),
+            request.getSkills(),
+            request.getMainCategory(),
+            request.getSubCategory()
+        );
     }
 
     public void update(Long id, UpdateProfessionRequest request, UserDO operator) {
-        // 先验证参数
+        // 参数验证
         if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("更新请求不能为空");
         }
-        if (request.getName() == null || request.getName().trim().isEmpty()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("职业名称不能为空");
-        }
 
-        // 验证职业是否存在并获取
-        ProfessionDO professionDO = professionDataService.getById(id);
-        if (professionDO == null) {
-            throw ErrorCode.PROFESSION_NOT_FOUND.exception();
-        }
-
-        // 验证权限：只有所有者或管理员可以修改
-        if (!professionDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(UserRole.ADMIN)) {
-            throw ErrorCode.PERMISSION_DENIED.exception();
-        }
-
-        // 更新字段
-        professionDO.setName(request.getName());
-        professionDO.setDescription(request.getDescription());
-        professionDO.setPrice(request.getPrice());
-        professionDO.setSkills(request.getSkills());
-        professionDO.setMainCategory(request.getMainCategory());
-        professionDO.setSubCategory(request.getSubCategory());
-        professionDO.setIcon(request.getIcon());
-        professionDO.setReason(request.getReason());
-
-        professionDataService.update(professionDO);
+        // 调用 DomainService 更新职业
+        professionDomainService.update(
+            id,
+            request.getName(),
+            request.getDescription(),
+            request.getPrice() != null ? String.valueOf(request.getPrice()) : null,
+            request.getSkills(),
+            request.getMainCategory(),
+            request.getSubCategory(),
+            request.getIcon(),
+            request.getReason()
+        );
     }
 
     public void approve(long id, UserDO operator) {
-        ProfessionDO profession = professionDataService.validateAndGet(id);
+        // 调用 DomainService 执行审核通过
+        professionDomainService.approve(
+            id,
+            systemProperties.getProfession().isEnableStateValidation(),
+            systemProperties.getProfession().isEnableConcurrencyCheck()
+        );
 
-        // 状态验证:只有已批准的职业不能重复批准,已拒绝和已屏蔽的可以重新批准
-        if (systemProperties.getProfession().isEnableStateValidation()) {
-            if (ContentState.PUBLISHED.value() == profession.getState()) {
-                throw ErrorCode.ALREADY_APPROVED.exception();
-            }
-        }
-
-        if (systemProperties.getProfession().isEnableConcurrencyCheck()) {
-            validateConcurrentStateChange(professionDataService.approve(id));
-        } else {
-            professionDataService.approve(id);
-        }
+        // 获取职业信息
+        ProfessionDO profession = professionDomainService.getById(id);
 
         // 发布审核通过事件，触发消息通知
         eventPublisher.publishEvent(ContentApprovedEvent.forProfession(
@@ -157,22 +156,17 @@ public class ProfessionService {
     }
 
     public void reject(long id, String reason, UserDO operator) {
-        ProfessionDO profession = professionDataService.validateAndGet(id);
+        // 调用 DomainService 执行拒绝
+        professionDomainService.reject(
+            id,
+            reason,
+            systemProperties.getProfession().isEnableStateValidation(),
+            systemProperties.getProfession().isEnableConcurrencyCheck()
+        );
 
-        // 状态验证:已拒绝和已屏蔽的不能重复拒绝
-        if (systemProperties.getProfession().isEnableStateValidation()) {
-            if (ContentState.REJECTED.value() == profession.getState()) {
-                throw ErrorCode.ALREADY_REJECTED.exception();
-            }
-        }
-
+        // 获取职业信息
+        ProfessionDO profession = professionDomainService.getById(id);
         String reasonValue = reason != null ? reason : DEFAULT_EMPTY_STRING;
-
-        if (systemProperties.getProfession().isEnableConcurrencyCheck()) {
-            validateConcurrentStateChange(professionDataService.reject(id, reasonValue));
-        } else {
-            professionDataService.reject(id, reasonValue);
-        }
 
         // 发布审核拒绝事件，触发消息通知
         eventPublisher.publishEvent(ContentRejectedEvent.forProfession(
@@ -184,22 +178,15 @@ public class ProfessionService {
     }
 
     public void ban(long id, String reason, UserDO operator) {
-        ProfessionDO profession = professionDataService.validateAndGet(id);
-
-        // 状态验证:已屏蔽的不能重复屏蔽
-        if (systemProperties.getProfession().isEnableStateValidation()) {
-            if (ContentState.BANNED.value() == profession.getState()) {
-                throw ErrorCode.ALREADY_BANNED.exception();
-            }
-        }
+        // 调用 DomainService 执行封禁
+        professionDomainService.ban(
+            id,
+            reason,
+            systemProperties.getProfession().isEnableStateValidation(),
+            systemProperties.getProfession().isEnableConcurrencyCheck()
+        );
 
         String reasonValue = reason != null ? reason : DEFAULT_EMPTY_STRING;
-
-        if (systemProperties.getProfession().isEnableConcurrencyCheck()) {
-            validateConcurrentStateChange(professionDataService.ban(id, reasonValue));
-        } else {
-            professionDataService.ban(id, reasonValue);
-        }
 
         // ban 不发送任何消息或事件
         log.info("职业 {} 被封禁，操作者: {}, 原因: {}", id, operator.getId(), reasonValue);
@@ -207,53 +194,49 @@ public class ProfessionService {
 
     /**
      * 删除职业
-     * 只有创建者或管理员可以删除
      */
     public void delete(long id, UserDO operator) {
-        ProfessionDO professionDO = professionDataService.getById(id);
-        if (professionDO == null) {
-            throw ErrorCode.PROFESSION_NOT_FOUND.exception();
-        }
-
-        // 验证权限：只有所有者或管理员可以删除
-        if (!professionDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(UserRole.ADMIN)) {
-            throw ErrorCode.PERMISSION_DENIED.exception();
-        }
-
-        // 执行删除
-        professionDataService.delete(id);
-
-        log.info("用户 {} 删除了职业 {}", operator.getId(), id);
+        // 调用 DomainService 执行删除
+        professionDomainService.delete(id);
     }
 
+    /**
+     * 获取热门职业列表
+     * 跨域查询：聚合 profession 数据和 ranking 数据
+     */
     public List<ProfessionDTO> getHotProfessions(int limit) {
         validateHotProfessionsLimit(limit);
-        
+
         try {
+            // 从 Ranking 域获取热门职业ID列表
             List<Long> hotProfessionIds = professionRankingService.getHotProfessionIds(limit);
-            
+
             if (hotProfessionIds.isEmpty()) {
                 return new ArrayList<>();
             }
-            
-            List<ProfessionDO> professionDOList = professionDataService.getByIds(hotProfessionIds);
+
+            // 从 Profession 域获取职业信息
+            List<ProfessionDO> professionDOList = professionDomainService.getByIds(hotProfessionIds);
 
             List<ProfessionDTO> result = new ArrayList<>();
             for (ProfessionDO professionDO : professionDOList) {
+                // 只返回已发布状态的职业
                 if (professionDO.getState() != ContentState.PUBLISHED.value()) {
                     continue;
                 }
 
+                // 转换为 DTO
                 ProfessionDTO professionDTO = toDTO(professionDO);
 
+                // 从 Ranking 域获取学习人数
                 long learningCount = professionRankingService.getProfessionLearningCount(professionDO.getId());
                 professionDTO.setLearnerCount((int) learningCount);
 
                 result.add(professionDTO);
             }
-            
+
             return result;
-            
+
         } catch (Exception e) {
             log.error("获取热门专业失败，limit: {}", limit, e);
             throw ErrorCode.PROFESSION_HOT_LIST_FAILED.exception(e);
@@ -276,26 +259,17 @@ public class ProfessionService {
         return professionConverter.toDTO(professionDOList);
     }
 
-    // ========== 私有辅助方法 ==========
+    // ========== Private 辅助方法 ==========
 
     private void validatePageNumber(int page) {
-        if (page <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
+        ValidationUtils.require(page > 0, "页码必须大于0");
     }
 
-    private void validateConcurrentStateChange(int rowsAffected) {
-        if (rowsAffected == 0) {
-            throw ErrorCode.PROFESSION_STATE_CONFLICT.exception();
-        }
-    }
-    
     private void validateHotProfessionsLimit(int limit) {
-        if (limit <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-        if (limit > systemProperties.getProfession().getMaxHotProfessionsLimit()) {
-            throw ErrorCode.PROFESSION_INVALID_LIMIT.exception();
-        }
+        ValidationUtils.require(limit > 0, "限制数量必须大于0");
+        ValidationUtils.require(
+            limit <= systemProperties.getProfession().getMaxHotProfessionsLimit(),
+            "限制数量超过最大值"
+        );
     }
 }

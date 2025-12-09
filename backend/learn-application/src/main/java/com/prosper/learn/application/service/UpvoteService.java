@@ -4,12 +4,13 @@ import com.prosper.learn.application.dto.response.UpvoteStatusDTO;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
+import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.interaction.comment.CommentDO;
+import com.prosper.learn.interaction.comment.CommentDataService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
-import com.prosper.learn.interaction.upvote.UpvoteDataService;
 import com.prosper.learn.interaction.upvote.UpvoteDomainService;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
-import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.shared.domain.event.content.voting.*;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
@@ -19,7 +20,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -42,8 +42,10 @@ import static com.prosper.learn.shared.domain.Enums.*;
 public class UpvoteService {
 
     private final UpvoteDomainService upvoteDomainService;
-    private final UpvoteDataService upvoteDataService;
     private final PostDataService postDataService;
+    private final CommentDataService commentDataService;
+    private final RoadmapDataService roadmapDataService;
+    private final MemoryCardDeckDataService deckDataService;
     private final ApplicationEventPublisher eventPublisher;
 
     // ========== Command 方法（写操作）==========
@@ -55,13 +57,16 @@ public class UpvoteService {
      * 包含点赞、取消点赞、切换点赞类型的完整逻辑
      * 使用事件驱动架构，通过发布事件来处理统计更新、消息通知等副作用操作
      *
-     * @param postDO 帖子对象（已验证存在）
+     * @param postId 帖子ID
      * @param user 用户
      * @param type 点赞类型（1-twice, 2-like）
-     * @throws BusinessException 当参数无效时抛出异常
+     * @throws BusinessException 当参数无效或对象不存在时抛出异常
      */
     @Transactional
-    public void upvotePost(PostDO postDO, UserDO user, int type) {
+    public void upvotePost(long postId, UserDO user, int type) {
+        // 验证和获取帖子对象
+        PostDO postDO = postDataService.validateAndGet(postId);
+
         // 验证点赞类型
         if (type != VoteType.twice.value() && type != VoteType.like.value()) {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子仅支持 twice 或 like 点赞类型: " + type);
@@ -118,12 +123,15 @@ public class UpvoteService {
      * 支持评论的点赞和取消点赞
      * 使用事件驱动架构，通过发布事件来处理统计更新、消息通知等副作用操作
      *
-     * @param commentDO 评论对象（已验证存在）
+     * @param commentId 评论ID
      * @param user 用户对象
-     * @throws BusinessException 当参数无效时抛出异常
+     * @throws BusinessException 当参数无效或对象不存在时抛出异常
      */
     @Transactional
-    public void upvoteComment(CommentDO commentDO, UserDO user) {
+    public void upvoteComment(long commentId, UserDO user) {
+        // 验证和获取评论对象
+        CommentDO commentDO = commentDataService.validateAndGet(commentId);
+
         // 调用 DomainService 执行点赞/取消操作
         boolean added = upvoteDomainService.toggleUpvote(
             user.getId(),
@@ -154,13 +162,16 @@ public class UpvoteService {
      * 支持路线图的投票和取消投票
      * 使用事件驱动架构，通过发布事件来处理统计更新、消息通知等副作用操作
      *
-     * @param roadmapDO 路线图对象（已验证存在）
+     * @param roadmapId 路线图ID
      * @param user 用户对象
      * @return true表示投票成功，false表示取消投票
-     * @throws BusinessException 当参数无效时抛出异常
+     * @throws BusinessException 当参数无效或对象不存在时抛出异常
      */
     @Transactional
-    public boolean upvoteRoadmap(RoadmapDO roadmapDO, UserDO user) {
+    public boolean upvoteRoadmap(long roadmapId, UserDO user) {
+        // 验证和获取路线图对象
+        RoadmapDO roadmapDO = roadmapDataService.validateAndGet(roadmapId);
+
         // 调用 DomainService 执行投票/取消操作
         boolean added = upvoteDomainService.toggleUpvote(
             user.getId(),
@@ -190,12 +201,16 @@ public class UpvoteService {
      * 支持记忆卡片组的点赞和取消点赞
      * 使用事件驱动架构，通过发布事件来处理统计更新、消息通知等副作用操作
      *
-     * @param deck 卡片组对象（已验证存在）
+     * @param deckId 卡片组ID
      * @param user 用户对象
      * @return true表示点赞成功，false表示取消点赞
+     * @throws BusinessException 当参数无效或对象不存在时抛出异常
      */
     @Transactional
-    public boolean upvoteMemoryCardDeck(MemoryCardDeckDO deck, UserDO user) {
+    public boolean upvoteMemoryCardDeck(long deckId, UserDO user) {
+        // 验证和获取卡片组对象
+        MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
+
         // 调用 DomainService 执行点赞/取消操作
         boolean added = upvoteDomainService.toggleUpvote(
             user.getId(),

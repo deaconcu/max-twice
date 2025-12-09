@@ -26,7 +26,7 @@ import com.prosper.learn.memory.card.MemoryCardDataService;
 import com.prosper.learn.memory.card.MemoryCardVersionDO;
 import com.prosper.learn.memory.card.MemoryCardVersionDataService;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
-import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
+import com.prosper.learn.memory.deck.MemoryCardDeckDomainService;
 import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.shared.common.utils.Utils;
@@ -49,30 +49,43 @@ import java.util.stream.Collectors;
 import static com.google.common.base.Preconditions.*;
 
 /**
- * 记忆卡片组业务服务
+ * 记忆卡片组应用服务
+ *
+ * 负责协调跨领域逻辑、事件发布、DTO转换
+ *
+ * 核心功能：
+ * - 跨域数据聚合（User + Post + Node + Course + Upvote）
+ * - DTO转换（DO → DTO with Creator/Vote/Course）
+ * - 事件发布（ContentApprovedEvent、ContentRejectedEvent）
+ * - 复杂查询编排（审核列表、用户卡片组列表）
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MemoryCardDeckService {
 
-    private final MemoryCardDeckDataService deckDataService;
+    // 领域服务
+    private final MemoryCardDeckDomainService deckDomainService;
+
+    // 跨域服务依赖
     private final MemoryCardDataService memoryCardDataService;
     private final UserDataService userDataService;
     private final PostDataService postDataService;
     private final NodeDataService nodeDataService;
     private final CourseDataService courseDataService;
+    private final UpvoteService upvoteService;
+    private final UserService userService;
+    private final MemoryCardService memoryCardService;
+    private final ScoreCalculationService scoreCalculationService;
+    private final AutoAuthorQueueService autoAuthorQueueService;
+
+    // 事件发布
     private final ApplicationEventPublisher eventPublisher;
+
+    // DTO转换器
     private final MemoryCardDeckConverter deckConverter;
     private final UserConverter userConverter;
     private final CourseConverter courseConverter;
-    private final UserService userService;
-    private final MemoryCardService memoryCardService;
-    private final MemoryCardVersionDataService cardVersionDataService;
-    private final UserCardSrsDataService userCardSrsDataService;
-    private final UpvoteService upvoteService;
-    private final ScoreCalculationService scoreCalculationService;
-    private final AutoAuthorQueueService autoAuthorQueueService;
 
     // ========== toDTO ==========
 
@@ -283,11 +296,12 @@ public class MemoryCardDeckService {
         if (limit == null || limit <= 0) limit = 10;
         if (limit > 50) limit = 50;
 
+        // 调用 DomainService 查询
         List<MemoryCardDeckDO> deckList;
         if (lastScore != null && lastId != null) {
-            deckList = deckDataService.getListByPostKeyset(postId, lastScore, lastId, Enums.ContentState.PUBLISHED.value(), limit + 1);
+            deckList = deckDomainService.getListByPostKeyset(postId, lastScore, lastId, Enums.ContentState.PUBLISHED, limit + 1);
         } else {
-            deckList = deckDataService.getListByPost(postId, Enums.ContentState.PUBLISHED.value(), limit + 1);
+            deckList = deckDomainService.getListByPost(postId, Enums.ContentState.PUBLISHED, limit + 1);
         }
 
         return buildDeckResponse(deckList, limit, null);
@@ -309,19 +323,19 @@ public class MemoryCardDeckService {
         if (!postCreatorId.equals(userId)) {
             // post创建者不是当前用户，只查询normal状态
             if (lastScore != null && lastId != null) {
-                deckList = deckDataService.getListByPostAndCreatorKeyset(
-                        postId, postCreatorId, lastScore, lastId, Enums.ContentState.PUBLISHED.value(), limit + 1);
+                deckList = deckDomainService.getListByPostAndCreatorKeyset(
+                        postId, postCreatorId, lastScore, lastId, Enums.ContentState.PUBLISHED, limit + 1);
             } else {
-                deckList = deckDataService.getListByPostAndCreator(
-                        postId, postCreatorId, Enums.ContentState.PUBLISHED.value(), limit + 1);
+                deckList = deckDomainService.getListByPostAndCreator(
+                        postId, postCreatorId, Enums.ContentState.PUBLISHED, limit + 1);
             }
         } else {
             // post创建者就是当前用户，查询所有状态
             if (lastScore != null && lastId != null) {
-                deckList = deckDataService.getListByPostAndCreatorKeysetAllStates(
+                deckList = deckDomainService.getListByPostAndCreatorKeysetAllStates(
                         postId, postCreatorId, lastScore, lastId, limit + 1);
             } else {
-                deckList = deckDataService.getListByPostAndCreatorAllStates(
+                deckList = deckDomainService.getListByPostAndCreatorAllStates(
                         postId, postCreatorId, limit + 1);
             }
         }
@@ -340,9 +354,9 @@ public class MemoryCardDeckService {
 
         List<MemoryCardDeckDO> deckList;
         if (lastScore != null && lastId != null) {
-            deckList = deckDataService.getListByPostAndCreatorKeysetAllStates(postId, userId, lastScore, lastId, limit + 1);
+            deckList = deckDomainService.getListByPostAndCreatorKeysetAllStates(postId, userId, lastScore, lastId, limit + 1);
         } else {
-            deckList = deckDataService.getListByPostAndCreatorAllStates(postId, userId, limit + 1);
+            deckList = deckDomainService.getListByPostAndCreatorAllStates(postId, userId, limit + 1);
         }
 
         return buildDeckResponse(deckList, limit, userId);
@@ -367,9 +381,9 @@ public class MemoryCardDeckService {
         List<MemoryCardDeckDO> deckList;
         // 使用 ID 分页查询
         if (lastId != null) {
-            deckList = deckDataService.getListByCreatorWithIdPaging(userId, lastId, limit + 1);
+            deckList = deckDomainService.getListByCreatorWithIdPaging(userId, lastId, limit + 1);
         } else {
-            deckList = deckDataService.getListByCreator(userId, limit + 1);
+            deckList = deckDomainService.getListByCreator(userId, limit + 1);
         }
 
         return buildDeckResponse(deckList, limit, currentUserId);
@@ -420,9 +434,9 @@ public class MemoryCardDeckService {
         int state = Enums.ContentState.PUBLISHED.value();
 
         if (lastScore != null && lastId != null) {
-            deckList = deckDataService.getListByNodeKeyset(nodeId, lastScore, lastId, state, limit + 1);
+            deckList = deckDomainService.getListByNodeKeyset(nodeId, lastScore, lastId, state, limit + 1);
         } else {
-            deckList = deckDataService.getListByNode(nodeId, state, limit + 1);
+            deckList = deckDomainService.getListByNode(nodeId, state, limit + 1);
         }
 
         // 判断是否有更多数据
@@ -468,30 +482,30 @@ public class MemoryCardDeckService {
         if (postId != null && creatorId != null) {
             // 同时按帖子和创建者查询
             if (lastId != null) {
-                deckList = deckDataService.getListByPostAndCreatorWithIdPaging(postId, creatorId, defaultState, lastId, limit + 1);
+                deckList = deckDomainService.getListByPostAndCreatorWithIdPaging(postId, creatorId, defaultState, lastId, limit + 1);
             } else {
-                deckList = deckDataService.getListByPostAndCreatorForReview(postId, creatorId, defaultState, limit + 1);
+                deckList = deckDomainService.getListByPostAndCreatorForReview(postId, creatorId, defaultState, limit + 1);
             }
         } else if (postId != null) {
             // 只按帖子查询
             if (lastId != null) {
-                deckList = deckDataService.getListByPostWithIdPaging(postId, defaultState, lastId, limit + 1);
+                deckList = deckDomainService.getListByPostWithIdPaging(postId, defaultState, lastId, limit + 1);
             } else {
-                deckList = deckDataService.getListByPostForReview(postId, defaultState, limit + 1);
+                deckList = deckDomainService.getListByPostForReview(postId, defaultState, limit + 1);
             }
         } else if (creatorId != null) {
             // 只按创建者查询
             if (lastId != null) {
-                deckList = deckDataService.getListByCreatorWithIdPagingAndState(creatorId, defaultState, lastId, limit + 1);
+                deckList = deckDomainService.getListByCreatorWithIdPagingAndState(creatorId, defaultState, lastId, limit + 1);
             } else {
-                deckList = deckDataService.getListByCreatorForReview(creatorId, defaultState, limit + 1);
+                deckList = deckDomainService.getListByCreatorForReview(creatorId, defaultState, limit + 1);
             }
         } else {
             // 按状态查询，管理员审核页面
             if (lastId != null) {
-                deckList = deckDataService.getListByStateWithIdPaging(defaultState, lastId, limit + 1);
+                deckList = deckDomainService.getListByStateWithIdPaging(defaultState, lastId, limit + 1);
             } else {
-                deckList = deckDataService.getListByStateForReview(defaultState, limit + 1);
+                deckList = deckDomainService.getListByStateForReview(defaultState, limit + 1);
             }
         }
 
@@ -557,7 +571,7 @@ public class MemoryCardDeckService {
      */
     public DeckDetailDTO getDeckDetail(Long deckId, Long userId) {
         // 获取卡片组信息
-        MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
+        MemoryCardDeckDO deck = deckDomainService.validateAndGet(deckId);
 
         // 先转换为基础DTO(包含创建者信息)
         DeckWithCreatorDTO baseDTO = toDeckWithCreator(deck);
@@ -586,10 +600,10 @@ public class MemoryCardDeckService {
         // 验证参数
         checkNotNull(request);
 
-        // 验证用户存在性
+        // 验证用户存在性（跨域查询）
         userDataService.validateExists(userId);
 
-        // 验证源帖子存在（如果指定了）
+        // 验证源帖子存在（跨域查询）
         Long nodeId = null;
         if (request.getSourcePostId() != null) {
             PostDO post = postDataService.validateAndGet(request.getSourcePostId());
@@ -597,35 +611,22 @@ public class MemoryCardDeckService {
         }
         checkNotNull(nodeId, "无法获取卡片组关联的节点ID");
 
-        // 构建卡片组DO
-        MemoryCardDeckDO deck = new MemoryCardDeckDO();
-        deck.setPostId(request.getSourcePostId());
-        deck.setNodeId(nodeId);
-        deck.setCreatorId(userId);
-        deck.setTitle(""); // 创建时设置为空字符串
-        deck.setDescription(request.getDescription());
-        deck.setVersion(1);
-        deck.setState(Enums.ContentState.SUBMITTED.value()); // 默认审核中
-        deck.setCardCount(request.getCards() != null ? request.getCards().size() : 0);
+        // 调用 DomainService 创建卡片组
+        MemoryCardDeckDO deck = deckDomainService.createDeck(
+            userId,
+            request.getSourcePostId(),
+            nodeId,
+            request.getDescription(),
+            request.getCards() != null ? request.getCards().size() : 0
+        );
 
-        // 插入数据库
-        int result = deckDataService.insert(deck);
-        if (result <= 0) {
-            throw ErrorCode.SYSTEM_ERROR.exception("创建卡片组失败");
-        }
-
-        // 创建完成后立即计算初始分数
-        // TODO: 先注释掉，新deck需要有一个启动分数，后续再调整分数计算逻辑
-        //scoreCalculationService.checkAndUpdateMemoryCardDeckScore(deck);
-        //deckDataService.update(deck);
-
-        // 如果有卡片数据，批量创建卡片
+        // 如果有卡片数据，批量创建卡片（调用 MemoryCardService）
         if (request.getCards() != null && !request.getCards().isEmpty()) {
             memoryCardService.batchCreateCards(userId, deck.getId(), request.getCards());
             log.info("Created deck {} with {} cards", deck.getId(), request.getCards().size());
         }
 
-        // 转换并返回 (包含创建者信息)
+        // 转换并返回（包含创建者信息）
         return toDeckWithCreator(deck);
     }
 
@@ -637,29 +638,15 @@ public class MemoryCardDeckService {
         // 验证参数
         checkNotNull(request);
 
-        // 获取现有卡片组
-        MemoryCardDeckDO existingDeck = deckDataService.validateAndGet(request.getId());
+        // 调用 DomainService 更新卡片组
+        MemoryCardDeckDO deck = deckDomainService.updateDeck(
+            request.getId(),
+            userId,
+            request.getTitle(),
+            request.getDescription()
+        );
 
-        // 验证权限：只有创建者可以修改
-        if (!existingDeck.getCreatorId().equals(userId)) {
-            throw ErrorCode.PERMISSION_DENIED.exception("无权限修改此卡片组");
-        }
-
-        // 更新字段
-        MemoryCardDeckDO deck = deckDataService.getById(request.getId());
-        if (request.getTitle() != null) {
-            deck.setTitle(request.getTitle());
-        }
-        if (request.getDescription() != null) {
-            deck.setDescription(request.getDescription());
-        }
-        //deck.setUpdatedBy(userId);
-        deck.setUpdatedAt(LocalDateTime.now());
-
-        // 更新数据库
-        deckDataService.update(deck);
-
-        // 获取更新后的数据并返回 (包含创建者信息)
+        // 获取更新后的数据并返回（包含创建者信息）
         return toDeckWithCreator(deck);
     }
 
@@ -668,15 +655,13 @@ public class MemoryCardDeckService {
      */
     @Transactional
     public void approve(Long deckId, Long auditorId) {
-        // 获取卡片组
-        MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
+        // 调用 DomainService 执行审核通过
+        deckDomainService.approve(deckId);
 
-        // 验证状态：只有待审核的卡片组才能通过
-        if (deck.getState() != Enums.ContentState.SUBMITTED.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只有待审核状态的卡片组才能通过审核");
-        }
+        // 获取卡片组信息
+        MemoryCardDeckDO deck = deckDomainService.getById(deckId);
 
-        // 获取帖子信息
+        // 获取帖子信息用于事件（跨域查询）
         PostDO postDO = postDataService.getById(deck.getPostId());
         String postContentPreview = "";
         if (postDO != null && postDO.getContent() != null) {
@@ -685,12 +670,6 @@ public class MemoryCardDeckService {
                 postContentPreview = postContentPreview.substring(0, 50) + "...";
             }
         }
-
-        // 更新状态为正常
-        deck.setState(Enums.ContentState.PUBLISHED.value());
-        deck.setUpdatedAt(LocalDateTime.now());
-
-        deckDataService.update(deck);
 
         // 发布审核通过事件，触发统计更新（不发送消息）
         eventPublisher.publishEvent(ContentApprovedEvent.forMemoryCardDeck(
@@ -709,10 +688,13 @@ public class MemoryCardDeckService {
      */
     @Transactional
     public void reject(Long deckId, Long auditorId, String reason) {
-        // 获取卡片组
-        MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
+        // 调用 DomainService 执行拒绝
+        deckDomainService.reject(deckId, reason);
 
-        // 获取帖子信息用于通知
+        // 获取卡片组信息
+        MemoryCardDeckDO deck = deckDomainService.getById(deckId);
+
+        // 获取帖子信息用于通知（跨域查询）
         PostDO postDO = postDataService.getById(deck.getPostId());
         String postContentPreview = "";
         if (postDO != null && postDO.getContent() != null) {
@@ -721,14 +703,6 @@ public class MemoryCardDeckService {
                 postContentPreview = postContentPreview.substring(0, 50) + "...";
             }
         }
-
-        // 更新状态为审核不通过
-        deck.setState(Enums.ContentState.REJECTED.value());
-        deck.setReason(reason);
-        deck.setUpdatedAt(LocalDateTime.now());
-
-        deckDataService.update(deck);
-        log.info("Deck {} rejected by user {}, reason: {}", deckId, auditorId, reason);
 
         // 发布审核拒绝事件，触发消息通知
         eventPublisher.publishEvent(ContentRejectedEvent.forMemoryCardDeck(
@@ -739,6 +713,8 @@ public class MemoryCardDeckService {
             postContentPreview,
             reason
         ));
+
+        log.info("Deck {} rejected by user {}, reason: {}", deckId, auditorId, reason);
     }
 
     /**
@@ -746,15 +722,8 @@ public class MemoryCardDeckService {
      */
     @Transactional
     public void ban(Long deckId, Long auditorId, String reason) {
-        // 获取卡片组
-        MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
-
-        // 更新状态为封禁
-        deck.setState(Enums.ContentState.BANNED.value());
-        deck.setReason(reason);
-        deck.setUpdatedAt(LocalDateTime.now());
-
-        deckDataService.update(deck);
+        // 调用 DomainService 执行封禁
+        deckDomainService.ban(deckId, reason);
 
         // ban 不发送任何消息或事件
         log.info("Deck {} banned by user {}, reason: {}", deckId, auditorId, reason);
@@ -765,20 +734,9 @@ public class MemoryCardDeckService {
      */
     @Transactional
     public void restoreDeck(Long deckId, Long auditorId) {
-        // 获取卡片组
-        MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
-        
-        // 验证状态：只有屏蔽状态的卡片组才能恢复
-        if (deck.getState() != Enums.ContentState.BANNED.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只有屏蔽状态的卡片组才能恢复");
-        }
-        
-        // 更新状态为正常
-        deck.setState(Enums.ContentState.PUBLISHED.value());
-        //deck.setUpdatedBy(auditorId);
-        deck.setUpdatedAt(LocalDateTime.now());
-        
-        deckDataService.update(deck);
+        // 调用 DomainService 执行恢复
+        deckDomainService.restore(deckId);
+
         log.info("Deck {} restored by user {}", deckId, auditorId);
     }
 
@@ -792,7 +750,7 @@ public class MemoryCardDeckService {
         }
         
         // 获取卡片组信息
-        MemoryCardDeckDO deck = deckDataService.getById(deckId);
+        MemoryCardDeckDO deck = deckDomainService.getById(deckId);
         if (deck == null) {
             return new DeckStatsDTO();
         }
@@ -816,141 +774,8 @@ public class MemoryCardDeckService {
      * 获取卡片组更新差异
      */
     public Map<String, Object> getDeckDiff(Long deckId, Integer userCurrentVersion, Long userId) {
-        // 获取当前版本的卡片组
-        MemoryCardDeckDO currentDeck = deckDataService.validateAndGet(deckId);
-        
-        // 获取当前所有卡片
-        List<MemoryCardDO> currentCards = memoryCardDataService.getByDeckId(deckId);
-        Set<Long> currentCardIds = currentCards.stream()
-            .map(MemoryCardDO::getId)
-            .collect(Collectors.toSet());
-        
-        // 获取用户在这个deck下的所有学习记录
-        List<UserCardSrsDO> userStates = userCardSrsDataService.getByUserAndDeckId(userId, deckId);
-        Set<Long> userStudiedCardIds = userStates.stream()
-            .map(UserCardSrsDO::getCardId)
-            .collect(Collectors.toSet());
-        
-        Map<String, Object> diffResult = new HashMap<>();
-        diffResult.put("deckId", deckId);
-        diffResult.put("currentVersion", currentDeck.getVersion());
-        diffResult.put("title", currentDeck.getTitle());
-        diffResult.put("description", currentDeck.getDescription());
-        
-        List<Map<String, Object>> cardDiffs = new ArrayList<>();
-        int addedCount = 0;
-        int modifiedCount = 0;
-        int deletedCount = 0;
-        
-        // 批量获取卡片版本内容
-        Set<Long> versionIds = currentCards.stream()
-            .map(MemoryCardDO::getCurrentVersionId)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
-        
-        // 获取用户学习记录中的版本ID
-        Set<Long> userVersionIds = userStates.stream()
-            .map(UserCardSrsDO::getCardVersionId)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
-        
-        versionIds.addAll(userVersionIds);
-        Map<Long, MemoryCardVersionDO> versionMap = cardVersionDataService.getMapByIds(versionIds);
-        
-        // 检查新增和修改的卡片
-        for (MemoryCardDO card : currentCards) {
-            Map<String, Object> cardDiff = new HashMap<>();
-            cardDiff.put("cardId", card.getId());
-            
-            if (!userStudiedCardIds.contains(card.getId())) {
-                // 新增的卡片
-                cardDiff.put("type", "added");
-                
-                // 获取卡片内容
-                MemoryCardVersionDO version = versionMap.get(card.getCurrentVersionId());
-                if (version != null) {
-                    Map<String, Object> newVersion = new HashMap<>();
-                    newVersion.put("front", version.getFront());
-                    newVersion.put("back", version.getBack());
-                    cardDiff.put("newVersion", newVersion);
-                }
-                addedCount++;
-                cardDiffs.add(cardDiff);
-            } else {
-                // 检查卡片是否真正有变化
-                UserCardSrsDO userState = userStates.stream()
-                    .filter(state -> state.getCardId().equals(card.getId()))
-                    .findFirst()
-                    .orElse(null);
-                
-                // 只有当卡片版本实际发生变化时才标记为修改
-                if (userState != null && userState.getCardVersionId() != null && 
-                    !userState.getCardVersionId().equals(card.getCurrentVersionId())) {
-                    // 修改的卡片
-                    cardDiff.put("type", "modified");
-                    
-                    // 获取当前版本内容
-                    MemoryCardVersionDO currentVersion = versionMap.get(card.getCurrentVersionId());
-                    if (currentVersion != null) {
-                        Map<String, Object> newVersion = new HashMap<>();
-                        newVersion.put("front", currentVersion.getFront());
-                        newVersion.put("back", currentVersion.getBack());
-                        cardDiff.put("newVersion", newVersion);
-                    }
-                    
-                    // 获取用户学习时的版本内容
-                    MemoryCardVersionDO oldVersion = versionMap.get(userState.getCardVersionId());
-                    if (oldVersion != null) {
-                        Map<String, Object> oldVersionMap = new HashMap<>();
-                        oldVersionMap.put("front", oldVersion.getFront());
-                        oldVersionMap.put("back", oldVersion.getBack());
-                        cardDiff.put("oldVersion", oldVersionMap);
-                    }
-                    
-                    modifiedCount++;
-                    cardDiffs.add(cardDiff);
-                }
-                // 如果卡片版本没有变化，则不添加到diff结果中
-            }
-        }
-        
-        // 检查删除的卡片（用户之前学过但现在不存在的）
-        for (Long studiedCardId : userStudiedCardIds) {
-            if (!currentCardIds.contains(studiedCardId)) {
-                Map<String, Object> cardDiff = new HashMap<>();
-                cardDiff.put("cardId", studiedCardId);
-                cardDiff.put("type", "deleted");
-                
-                // 获取删除的卡片内容（从用户学习记录的版本快照获取）
-                UserCardSrsDO userState = userStates.stream()
-                    .filter(state -> state.getCardId().equals(studiedCardId))
-                    .findFirst()
-                    .orElse(null);
-                
-                if (userState != null && userState.getCardVersionId() != null) {
-                    MemoryCardVersionDO oldVersion = versionMap.get(userState.getCardVersionId());
-                    if (oldVersion != null) {
-                        Map<String, Object> oldVersionMap = new HashMap<>();
-                        oldVersionMap.put("front", oldVersion.getFront());
-                        oldVersionMap.put("back", oldVersion.getBack());
-                        cardDiff.put("oldVersion", oldVersionMap);
-                    }
-                }
-                
-                deletedCount++;
-                cardDiffs.add(cardDiff);
-            }
-        }
-        
-        diffResult.put("cardDiffs", cardDiffs);
-        
-        Map<String, Object> summary = new HashMap<>();
-        summary.put("addedCount", addedCount);
-        summary.put("modifiedCount", modifiedCount);
-        summary.put("deletedCount", deletedCount);
-        diffResult.put("summary", summary);
-        
-        return diffResult;
+        // 直接调用 DomainService
+        return deckDomainService.getDeckDiff(deckId, userCurrentVersion, userId);
     }
 
     /**
@@ -959,9 +784,9 @@ public class MemoryCardDeckService {
     @Transactional
     public void acceptDeckChanges(Long deckId, List<Long> cardIds, Long userId) {
         // 验证卡片组存在
-        MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
-        
-        // 获取nodeId：deck.sourcePostId → post.nodeId
+        MemoryCardDeckDO deck = deckDomainService.validateAndGet(deckId);
+
+        // 获取nodeId：deck.sourcePostId → post.nodeId（跨域查询）
         Long nodeId = null;
         if (deck.getPostId() != null) {
             PostDO post = postDataService.getById(deck.getPostId());
@@ -970,98 +795,9 @@ public class MemoryCardDeckService {
             }
         }
         checkNotNull(nodeId, "无法获取卡片组关联的节点ID");
-        
-        // 获取用户在这个deck下的所有学习记录
-        List<UserCardSrsDO> userStates = userCardSrsDataService.getByUserAndDeckId(userId, deckId);
-        Map<Long, UserCardSrsDO> userStateMap = userStates.stream()
-            .collect(Collectors.toMap(UserCardSrsDO::getCardId, state -> state));
-        
-        // 获取当前deck中的所有有效卡片
-        List<MemoryCardDO> currentCards = memoryCardDataService.getByDeckId(deckId);
-        Map<Long, MemoryCardDO> currentCardMap = currentCards.stream()
-            .collect(Collectors.toMap(MemoryCardDO::getId, card -> card));
-        
-        // 准备新增卡片的SRS状态列表
-        List<UserCardSrsDO> newSrsStates = new ArrayList<>();
-        LocalDateTime now = LocalDateTime.now();
-        
-        if (cardIds.isEmpty()) {
-            // 如果没有指定卡片，则接受所有更新
-            
-            // 1. 处理现有学习记录
-            for (UserCardSrsDO userState : userStates) {
-                MemoryCardDO card = currentCardMap.get(userState.getCardId());
-                if (card != null) {
-                    // 存在的卡片：更新版本快照
-                    userState.setDeckVersion(deck.getVersion());
-                    userState.setCardVersionId(card.getCurrentVersionId());
-                    userState.setUpdatedAt(now);
-                    userCardSrsDataService.update(userState);
-                } else {
-                    // 已删除的卡片：删除学习记录
-                    userCardSrsDataService.deleteByUserAndCard(userId, userState.getCardId());
-                    log.info("Deleted SRS state for removed card: {} for user: {}", userState.getCardId(), userId);
-                }
-            }
-            
-            // 2. 处理新增卡片
-            for (MemoryCardDO card : currentCards) {
-                if (!userStateMap.containsKey(card.getId())) {
-                    // 新增的卡片：创建SRS学习记录
-                    UserCardSrsDO newState = userCardSrsDataService.createNewSrsState(
-                        userId, card.getId(), nodeId, deck.getId(), deck.getVersion(), card.getCurrentVersionId());
-                    newSrsStates.add(newState);
-                }
-            }
-            
-        } else {
-            // 只处理指定的卡片，但所有学习记录的deck_version都要更新
-            
-            // 1. 先更新所有学习记录的deck_version（表示用户已经处理过这个版本）
-            for (UserCardSrsDO userState : userStates) {
-                MemoryCardDO card = currentCardMap.get(userState.getCardId());
-                if (card != null) {
-                    // 存在的卡片：至少更新deck_version
-                    userState.setDeckVersion(deck.getVersion());
-                    
-                    // 如果是选中的卡片，还要更新card_version_id
-                    if (cardIds.contains(userState.getCardId())) {
-                        userState.setCardVersionId(card.getCurrentVersionId());
-                    }
-                    
-                    userState.setUpdatedAt(now);
-                    userCardSrsDataService.update(userState);
-                } else {
-                    // 已删除的卡片：如果在选中列表中，则删除学习记录
-                    if (cardIds.contains(userState.getCardId())) {
-                        userCardSrsDataService.deleteByUserAndCard(userId, userState.getCardId());
-                        log.info("Deleted SRS state for removed card: {} for user: {}", userState.getCardId(), userId);
-                    }
-                }
-            }
-            
-            // 2. 处理选中的新增卡片
-            for (Long cardId : cardIds) {
-                if (!userStateMap.containsKey(cardId)) {
-                    MemoryCardDO card = currentCardMap.get(cardId);
-                    if (card != null) {
-                        // 新增的卡片：创建SRS学习记录
-                        UserCardSrsDO newState = userCardSrsDataService.createNewSrsState(
-                            userId, card.getId(), nodeId, deck.getId(), deck.getVersion(), card.getCurrentVersionId());
-                        newSrsStates.add(newState);
-                    }
-                }
-            }
-        }
-        
-        // 批量插入新增卡片的SRS状态
-        if (!newSrsStates.isEmpty()) {
-            userCardSrsDataService.batchInsertIgnoreSrsStates(newSrsStates);
-            log.info("Created {} new SRS states for added cards for user: {}", newSrsStates.size(), userId);
-        }
-        
-        log.info("User {} accepted changes for deck {} with {} target items",
-                userId, deckId, cardIds.isEmpty() ? userStates.size() + newSrsStates.size() : cardIds.size());
+
+        // 调用 DomainService 执行接受更新
+        deckDomainService.acceptDeckChanges(deckId, cardIds, userId, nodeId);
     }
 
     /**
@@ -1069,37 +805,22 @@ public class MemoryCardDeckService {
      */
     @Transactional
     public DeckWithVoteDTO replaceAllCards(Long userId, Long deckId, CreateDeckRequest request) {
-        // 验证并获取卡片组
-        MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
-
-        // 验证权限：只有创建者可以替换卡片
-        if (!deck.getCreatorId().equals(userId)) {
-            throw ErrorCode.PERMISSION_DENIED.exception("无权限修改此卡片组");
-        }
-
-        // 删除现有所有卡片
+        // 删除现有所有卡片（调用 MemoryCardService）
         memoryCardService.deleteCardsByDeck(userId, deckId);
 
-        // 更新卡片组信息（如果提供了）
-        if (request.getDescription() != null) {
-            deck.setDescription(request.getDescription());
-        }
+        // 调用 DomainService 执行替换
+        MemoryCardDeckDO deck = deckDomainService.replaceAllCards(deckId, userId, request.getDescription());
 
-        // 设置为待审核状态
-        deck.setState(Enums.ContentState.SUBMITTED.value());
-        deck.setUpdatedAt(LocalDateTime.now());
-        //deck.setUpdatedBy(userId);
-        deckDataService.update(deck);
-
-        // 批量创建新卡片
+        // 批量创建新卡片（调用 MemoryCardService）
         if (request.getCards() != null && !request.getCards().isEmpty()) {
             memoryCardService.batchCreateCards(userId, deckId, request.getCards());
             log.info("Replaced with {} new cards for deck {}", request.getCards().size(), deckId);
         }
 
-        // 重新计算分数
+        // 重新计算分数（跨域服务）
         scoreCalculationService.checkAndUpdateMemoryCardDeckScore(deck);
-        deckDataService.update(deck);
+        // 需要再次更新 deck（因为分数被修改了）
+        deckDomainService.updateDeck(deckId, userId, null, null);
 
         log.info("Replaced all cards for deck {} by user {}", deckId, userId);
 
@@ -1112,7 +833,7 @@ public class MemoryCardDeckService {
      */
     @Transactional
     public void createAIDeck(Long userId, Long postId) {
-        // 验证用户和帖子
+        // 验证用户和帖子（跨域查询）
         userDataService.validateExists(userId);
         PostDO post = postDataService.validateAndGet(postId);
 
@@ -1121,7 +842,7 @@ public class MemoryCardDeckService {
             throw ErrorCode.INVALID_PARAMETER.exception("只能为文章类型的帖子生成记忆卡片");
         }
 
-        // 将任务加入队列
+        // 将任务加入队列（跨域服务）
         autoAuthorQueueService.enqueueMemoryCards(postId);
 
         log.info("Queued AI memory card generation task for post {} requested by user {}", postId, userId);
@@ -1134,27 +855,8 @@ public class MemoryCardDeckService {
      */
     @Transactional
     public void deleteDeck(Long deckId, Long userId) {
-        if (deckId == null || deckId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("卡片组ID无效");
-        }
-        if (userId == null || userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效");
-        }
-
-        MemoryCardDeckDO deck = deckDataService.getById(deckId);
-        if (deck == null) {
-            throw ErrorCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
-        }
-
-        // 验证权限：只能删除自己创建的卡片组
-        if (!deck.getCreatorId().equals(userId)) {
-            throw ErrorCode.PERMISSION_DENIED.exception();
-        }
-
-        int result = deckDataService.softDelete(deckId);
-        if (result == 0) {
-            throw ErrorCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
-        }
+        // 调用 DomainService 执行删除
+        deckDomainService.deleteDeck(deckId, userId);
     }
 
     // ========== 管理后台方法 ==========
@@ -1187,27 +889,27 @@ public class MemoryCardDeckService {
         if (postId != null && creatorId != null) {
             // 按帖子和创建者查询
             if (state != null) {
-                deckDOList = deckDataService.getListByPostAndCreatorWithIdPaging(postId, creatorId, state, lastId, queryLimit);
+                deckDOList = deckDomainService.getListByPostAndCreatorWithIdPaging(postId, creatorId, state, lastId, queryLimit);
             } else {
-                deckDOList = deckDataService.getListByPostAndCreatorAllStates(postId, creatorId, queryLimit);
+                deckDOList = deckDomainService.getListByPostAndCreatorAllStates(postId, creatorId, queryLimit);
             }
         } else if (postId != null) {
             // 按帖子查询
             if (state != null) {
-                deckDOList = deckDataService.getListByPostWithIdPaging(postId, state, lastId, queryLimit);
+                deckDOList = deckDomainService.getListByPostWithIdPaging(postId, state, lastId, queryLimit);
             } else {
-                deckDOList = deckDataService.getListByPost(postId, Enums.ContentState.SUBMITTED.value(), queryLimit);
+                deckDOList = deckDomainService.getListByPost(postId, Enums.ContentState.SUBMITTED, queryLimit);
             }
         } else if (creatorId != null) {
             // 按创建者查询
             if (state != null) {
-                deckDOList = deckDataService.getListByCreatorWithIdPagingAndState(creatorId, state, lastId, queryLimit);
+                deckDOList = deckDomainService.getListByCreatorWithIdPagingAndState(creatorId, state, lastId, queryLimit);
             } else {
-                deckDOList = deckDataService.getListByCreatorWithIdPaging(creatorId, lastId, queryLimit);
+                deckDOList = deckDomainService.getListByCreatorWithIdPaging(creatorId, lastId, queryLimit);
             }
         } else if (state != null) {
             // 只按状态查询
-            deckDOList = deckDataService.getListByStateWithIdPaging(state, lastId, queryLimit);
+            deckDOList = deckDomainService.getListByStateWithIdPaging(state, lastId, queryLimit);
         } else {
             // 没有任何筛选条件，返回空列表
             throw ErrorCode.INVALID_PARAMETER.exception("至少需要提供一个查询条件（state、postId 或 creatorId）");

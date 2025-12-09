@@ -1,5 +1,6 @@
 package com.prosper.learn.application.service;
 
+import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.NodeConverter;
 import com.prosper.learn.application.dto.response.node.NodeDetailDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithCourseDTO;
@@ -7,6 +8,7 @@ import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
+import com.prosper.learn.content.node.NodeDomainService;
 import com.prosper.learn.shared.common.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,16 +22,23 @@ import java.util.stream.Collectors;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
+/**
+ * 节点应用服务
+ *
+ * 负责协调跨子域逻辑、DTO转换
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class NodeService {
 
+    private final NodeDomainService domainService;
     private final NodeDataService nodeDataService;
     private final CourseDataService courseDataService;
-    private final MessageService messageService;
     private final NodeConverter nodeConverter;
-    private final CourseService courseService;
+    private final CourseConverter courseConverter;
+
+    // ========== Query 方法（读操作）==========
 
     public NodeWithCourseDTO getById(Long id, DTOVersion dtoVersion) {
         if (id == null || id <= 0) {
@@ -55,7 +64,20 @@ public class NodeService {
                 Collectors.toMap(NodeWithCourseDTO::getId, node -> node));
     }
 
-    // ========== DTO转换方法 ==========
+    /**
+     * 管理后台：按条件筛选节点列表
+     */
+    public List<NodeDetailDTO> listByFilter(Byte state, Long nodeId, Long courseId, Long creatorId, Long lastId) {
+        // 调用 DomainService 查询
+        List<NodeDO> nodeDOList = domainService.listByFilter(nodeId, courseId, creatorId, state, lastId);
+
+        // 管理后台使用 toDetailDTOInternal，返回原始数据，不做屏蔽处理
+        return nodeDOList.stream()
+                .map(nodeConverter::toDetailDTOInternal)
+                .toList();
+    }
+
+    // ========== DTO 转换方法 ==========
 
     /**
      * v3 = 包含课程对象的节点
@@ -66,7 +88,7 @@ public class NodeService {
         NodeWithCourseDTO dto = nodeConverter.toWithCourseDTO(nodeDO);
         if (dto != null && nodeDO.getCourseId() != null) {
             CourseDO courseDO = courseDataService.getById(nodeDO.getCourseId());
-            dto.setCourse(courseService.toSummaryDTO(courseDO));
+            dto.setCourse(courseConverter.toSummaryDTO(courseDO));
         }
         return dto;
     }
@@ -75,56 +97,28 @@ public class NodeService {
         if (nodeDOList == null || nodeDOList.isEmpty()) return List.of();
 
         List<NodeWithCourseDTO> dtoList = nodeConverter.toWithCourseDTO(nodeDOList);
+
         // 批量加载课程信息（基于节点）
         List<Long> courseIds = Utils.getIds(nodeDOList, dto -> ((NodeDO) dto).getCourseId());
-        Map<Long, CourseDO> courseMap = courseService.getCourseMap(courseIds);
+        Map<Long, CourseDO> courseMap = courseDataService.getMapByIds(courseIds);
 
         for (NodeWithCourseDTO dto : dtoList) {
-            dto.setCourse(courseService.toSummaryDTO(courseMap.get(dto.getCourseId())));
+            dto.setCourse(courseConverter.toSummaryDTO(courseMap.get(dto.getCourseId())));
         }
         return dtoList;
     }
 
-    // ========== 查询方法 ==========
-
-    /**
-     * 管理后台：按条件筛选节点列表
-     * 如果提供了 nodeId，其他参数将被忽略
-     */
-    public List<NodeDetailDTO> listByFilter(Byte state, Long nodeId, Long courseId, Long creatorId, Long lastId) {
-        if (nodeId != null) {
-            state = null;
-            courseId = null;
-            creatorId = null;
-            lastId = null;
-        }
-
-        List<NodeDO> nodeDOList = nodeDataService.getListByFilter(nodeId, courseId, creatorId, state, lastId);
-        // 管理后台使用 toDetailDTOInternal，返回原始数据，不做屏蔽处理
-        return nodeDOList.stream()
-                .map(nodeConverter::toDetailDTOInternal)
-                .toList();
-    }
+    // ========== Command 方法（写操作）==========
 
     /**
      * 修改节点状态
      */
     @Transactional
     public NodeDetailDTO updateNodeState(Long nodeId, ContentState state, String reason) {
-        if (state == null) {
-            throw new IllegalArgumentException("State cannot be null");
-        }
+        // 调用 DomainService 执行状态变更
+        domainService.updateNodeState(nodeId, state, reason);
 
-        nodeDataService.validateExists(nodeId);
-
-        // 根据状态调用相应的方法，以便发送通知
-        switch (state) {
-            case REJECTED -> reject(nodeId, reason);
-            case BANNED -> ban(nodeId, reason);
-            case PUBLISHED -> approve(nodeId);
-            default -> throw new IllegalArgumentException("Unsupported state: " + state);
-        }
-
+        // 查询并返回 DTO
         NodeDO nodeDO = nodeDataService.getById(nodeId);
         return nodeConverter.toDetailDTO(nodeDO);
     }
@@ -134,12 +128,7 @@ public class NodeService {
      */
     @Transactional
     public void approve(Long nodeId) {
-        nodeDataService.validateExists(nodeId);
-
-        NodeDO nodeDO = nodeDataService.getById(nodeId);
-        Utils.validateStateTransition(nodeDO.getState(), ContentState.PUBLISHED);
-
-        nodeDataService.approve(nodeId);
+        domainService.approve(nodeId);
     }
 
     /**
@@ -147,28 +136,7 @@ public class NodeService {
      */
     @Transactional
     public void reject(Long nodeId, String reason) {
-        nodeDataService.validateExists(nodeId);
-
-        // 获取节点和课程信息
-        NodeDO nodeDO = nodeDataService.getById(nodeId);
-        Utils.validateStateTransition(nodeDO.getState(), ContentState.REJECTED);
-
-        CourseDO courseDO = courseDataService.getById(nodeDO.getCourseId());
-
-        nodeDataService.reject(nodeId, reason);
-
-        // 发送拒绝通知
-        if (courseDO != null) {
-            messageService.sendNodeModeration(
-                nodeDO.getCreatorId(),
-                nodeDO.getId(),
-                nodeDO.getName(),
-                courseDO.getId(),
-                courseDO.getName(),
-                ModerationAction.REJECTED,
-                reason
-            );
-        }
+        domainService.reject(nodeId, reason);
     }
 
     /**
@@ -176,27 +144,6 @@ public class NodeService {
      */
     @Transactional
     public void ban(Long nodeId, String reason) {
-        nodeDataService.validateExists(nodeId);
-
-        // 获取节点和课程信息
-        NodeDO nodeDO = nodeDataService.getById(nodeId);
-        Utils.validateStateTransition(nodeDO.getState(), ContentState.BANNED);
-
-        CourseDO courseDO = courseDataService.getById(nodeDO.getCourseId());
-
-        nodeDataService.ban(nodeId, reason);
-
-        // 发送封禁通知
-        if (courseDO != null) {
-            messageService.sendNodeModeration(
-                nodeDO.getCreatorId(),
-                nodeDO.getId(),
-                nodeDO.getName(),
-                courseDO.getId(),
-                courseDO.getName(),
-                ModerationAction.BANNED,
-                reason
-            );
-        }
+        domainService.ban(nodeId, reason);
     }
 }

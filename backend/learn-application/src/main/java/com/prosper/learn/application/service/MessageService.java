@@ -14,8 +14,8 @@ import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
 import com.prosper.learn.interaction.message.MessageDO;
 import com.prosper.learn.interaction.message.MessageDataService;
+import com.prosper.learn.interaction.message.MessageDomainService;
 import com.prosper.learn.shared.common.utils.Utils;
-import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
@@ -29,19 +29,19 @@ import static com.prosper.learn.shared.domain.Enums.*;
 import static com.prosper.learn.shared.domain.Enums.MessageType.*;
 
 /**
- * 消息管理服务
- * 
+ * 消息管理应用服务
+ *
  * 负责管理系统中的各种消息类型，包括：
  * - 用户之间的私信
  * - 系统通知消息
  * - 课程申请消息
  * - 评论、点赞、关注等系统事件消息
- * 
+ *
  * 核心功能：
- * - 消息的创建和查询
- * - 不同类型消息的格式化和转换
- * - 批量消息处理和分页查询
- * 
+ * - 跨域验证和协调
+ * - DTO转换和关联数据填充
+ * - 业务流程处理
+ *
  * @author Claude
  * @since 2024-01-20
  */
@@ -51,10 +51,10 @@ public class MessageService {
 
     /** 系统消息内容常量 - 固定内容，定义为静态常量 */
     private static final Map<Integer, String> SYSTEM_MESSAGES = new HashMap<>();
-    
+
     /** 默认分页大小常量 */
     private static final int DEFAULT_PAGE_SIZE = 20;
-    
+
     /** 最大分页大小常量 */
     private static final int MAX_PAGE_SIZE = 100;
 
@@ -62,112 +62,251 @@ public class MessageService {
         SYSTEM_MESSAGES.put(1, "你的课程申请请求被拒绝了");
     }
 
+    // 领域服务依赖
+    private final MessageDomainService messageDomainService;
+
+    // 跨域依赖
     private final PostDataService postDataService;
     private final NodeDataService nodeDataService;
     private final MessageDataService messageDataService;
     private final UserDataService userDataService;
     private final CourseDataService courseDataService;
+
+    // 转换器依赖
     private final MessageConverter messageConverter;
     private final UserConverter userConverter;
     private final NodeConverter nodeConverter;
     private final ObjectMapper objectMapper;
-    
+
     /** 系统配置属性 */
     private final SystemProperties systemProperties;
 
-    /**
-     * 验证用户存在性
-     * 
-     * @param userId 用户ID
-     * @return 用户实体对象
-     * @throws BusinessException 当用户不存在时抛出异常
-     */
-    private UserDO validateUserExists(long userId) {
-        if (userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
-        }
-        UserDO userDO = userDataService.getById(userId);
-        if (userDO == null) {
-            throw ErrorCode.USER_NOT_FOUND.exception();
-        }
-        return userDO;
-    }
-
-    /**
-     * 验证消息存在性
-     * 
-     * @param messageId 消息ID
-     * @return 消息实体对象
-     * @throws BusinessException 当消息不存在时抛出异常
-     */
-    private MessageDO validateMessageExists(long messageId) {
-        if (messageId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("消息ID无效: " + messageId);
-        }
-        MessageDO messageDO = messageDataService.getById(messageId);
-        if (messageDO == null) {
-            throw ErrorCode.MESSAGE_NOT_FOUND.exception();
-        }
-        return messageDO;
-    }
-
-    /**
-     * 验证课程存在性
-     * 
-     * @param courseId 课程ID
-     * @return 课程实体对象
-     * @throws BusinessException 当课程不存在时抛出异常
-     */
-    private CourseDO validateCourseExists(long courseId) {
-        if (courseId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("课程ID无效: " + courseId);
-        }
-        CourseDO courseDO = courseDataService.getById(courseId);
-        if (courseDO == null) {
-            throw ErrorCode.COURSE_NOT_FOUND.exception();
-        }
-        return courseDO;
-    }
+    // ========== Command 方法（写操作）==========
 
     /**
      * 创建消息
-     * 
+     *
      * @param content 消息内容
      * @param senderId 发送者ID（系统消息时为0）
      * @param receiverId 接收者ID
      * @param messageType 消息类型
      */
     public void create(String content, long senderId, long receiverId, MessageType messageType) {
-        // 验证发送者（系统消息发送者ID为0时跳过验证）
+        // 跨域验证：验证发送者（系统消息发送者ID为0时跳过验证）
         if (senderId != 0) {
-            validateUserExists(senderId);
-        }
-        
-        // 验证接收者
-        if (receiverId != 0) {
-            validateUserExists(receiverId);
+            userDataService.validateAndGet(senderId);
         }
 
-        MessageDO messageDO = new MessageDO();
-        messageDO.setSenderId(senderId);
-        messageDO.setReceiverId(receiverId);
-        messageDO.setContent(content);
-        messageDO.setType(messageType.value());
-        messageDataService.insert(messageDO);
+        // 跨域验证：验证接收者
+        if (receiverId != 0) {
+            userDataService.validateAndGet(receiverId);
+        }
+
+        // 委托给领域服务处理核心逻辑
+        messageDomainService.createMessage(content, senderId, receiverId,
+                messageType.value(), messageType.getCategory());
     }
 
     /**
+     * 创建评论消息
+     */
+    public void createCommentMessage(long receiverId, long commenterId, long nodeId, long commentId, int type) {
+        messageDomainService.createCommentMessage(receiverId, commenterId, nodeId, commentId, type);
+    }
+
+    /**
+     * 创建关注消息
+     */
+    public void createFollowMessage(long receiverId, long followerId) {
+        messageDomainService.createFollowMessage(receiverId, followerId);
+    }
+
+    /**
+     * 创建帖子点赞消息
+     */
+    public void createPostUpvoteMessage(long receiverId, long voterId, long nodeId, long postId, VoteType voteType) {
+        messageDomainService.createPostUpvoteMessage(receiverId, voterId, nodeId, postId, voteType);
+    }
+
+    /**
+     * 创建评论点赞消息
+     */
+    public void createCommentUpvoteMessage(long receiverId, long voterId, long nodeId, long commentId) {
+        messageDomainService.createCommentUpvoteMessage(receiverId, voterId, nodeId, commentId);
+    }
+
+    /**
+     * 创建路线图点赞消息
+     */
+    public void createRoadmapUpvoteMessage(long receiverId, long voterId, long professionId, long roadmapId) {
+        messageDomainService.createRoadmapUpvoteMessage(receiverId, voterId, professionId, roadmapId);
+    }
+
+    /**
+     * 创建记忆卡片组点赞消息
+     */
+    public void createMemoryDeckUpvoteMessage(long receiverId, long voterId, long nodeId, long deckId) {
+        messageDomainService.createMemoryDeckUpvoteMessage(receiverId, voterId, nodeId, deckId);
+    }
+
+    /**
+     * 创建邀请消息
+     */
+    public void createInviteMessage(long receiverId, long inviterId, long nodeId) {
+        messageDomainService.createInviteMessage(receiverId, inviterId, nodeId);
+    }
+
+    /**
+     * 修改课程申请回复
+     */
+    public void modifyCourseApply(long messageId, String reply) {
+        messageDomainService.modifyCourseApply(messageId, reply);
+    }
+
+    /**
+     * 申请课程（带完整业务逻辑）
+     */
+    public void applyCourse(String title, String summary, String explanation, Long parentId, long userId) {
+        CourseDO course = null;
+        if (parentId != 0) {
+            course = courseDataService.validateAndGet(parentId);
+        }
+
+        Map<String, String> data = new HashMap<>();
+        data.put("title", title);
+        data.put("summary", summary);
+        data.put("explanation", explanation);
+        data.put("parentId", Long.toString(parentId));
+        if (course != null) {
+            data.put("parentName", course.getName());
+        }
+
+        String jsonString;
+        try {
+            jsonString = objectMapper.writeValueAsString(data);
+        } catch (JsonProcessingException e) {
+            throw ErrorCode.SYSTEM_ERROR.exception(e);
+        }
+
+        create(jsonString, userId, 0, applyCourse);
+    }
+
+    // ========== Query 方法（读操作）==========
+
+    /**
      * 获取指定ID的消息详情
-     * 
+     *
      * @param id 消息ID
      * @return 消息DTO对象
      */
     public MessageDTO get(long id) {
-        MessageDO messageDO = validateMessageExists(id);
+        MessageDO messageDO = messageDomainService.getById(id);
         return toDTOV1(messageDO);
     }
 
-    // ========== toDTO ==========
+    /**
+     * 获取消息列表
+     *
+     * @param type 消息类型
+     * @param senderId 发送者ID
+     * @param receiverId 接收者ID
+     * @param lastId 最后一条消息ID
+     * @param conversation 是否为对话模式
+     * @return 消息DTO列表
+     */
+    public List<MessageDTO> getList(int type, long senderId, long receiverId, long lastId, int conversation) {
+        // 委托给领域服务获取数据
+        List<MessageDO> messageDOList = messageDomainService.getMessagesList(
+                type, senderId, receiverId, lastId, DEFAULT_PAGE_SIZE, conversation);
+
+        // DTO转换
+        return toDTOV1(messageDOList);
+    }
+
+    /**
+     * 获取系统消息列表
+     *
+     * @param type 消息类型
+     * @param receiverId 接收者ID
+     * @param lastId 最后一条消息ID
+     * @return 消息DTO列表
+     */
+    public List<MessageDTO> getSystemList(int type, long receiverId, long lastId) {
+        // 委托给领域服务获取数据
+        List<MessageDO> messageDOList = messageDomainService.getSystemMessagesList(type, receiverId, lastId, 20);
+
+        // 跨域数据聚合和DTO转换
+        return convertSystemMessages(messageDOList);
+    }
+
+    /**
+     * 获取课程申请消息列表
+     */
+    public List<MessageDTO> getApplyCourseMessage(int page, int length) {
+        if (page < 1) return new ArrayList<>();
+
+        List<MessageDO> messageDOList = messageDomainService.getApplyCourseMessages((page - 1) * length, length);
+        return messageConverter.toDTO(messageDOList);
+    }
+
+    /**
+     * 获取系统消息
+     */
+    public List<MessageDTO> getSystemMessage(int page, int length) {
+        if (page < 1) return new ArrayList<>();
+
+        List<MessageDO> messageDOList = messageDomainService.getApplyCourseMessages((page - 1) * length, length);
+        return messageConverter.toDTO(messageDOList);
+    }
+
+    /**
+     * 获取课程申请数量
+     */
+    public long getApplyCourseCount() {
+        return messageDomainService.getApplyCourseCount();
+    }
+
+    /**
+     * 获取课程申请列表（带分页信息）
+     */
+    public Map<String, Object> getApplyCourseListWithPagination(int page, int length) {
+        if (page < 1) page = 1;
+        if (length < 1) length = 1;
+        if (length > 100) length = 100;
+        int count = (int) getApplyCourseCount();
+        int totalPage = count / length + 1;
+        if (page > totalPage) page = totalPage;
+
+        Map<String, Object> resultMap = new HashMap<>();
+        List<MessageDTO> messageDTOList = getApplyCourseMessage(page, length);
+        resultMap.put("messages", messageDTOList);
+
+        Map<String, Integer> pagination = new HashMap<>();
+        pagination.put("total", count);
+        pagination.put("pageSize", length);
+        pagination.put("currentPage", page);
+        pagination.put("totalPages", totalPage);
+        resultMap.put("pagination", pagination);
+        return resultMap;
+    }
+
+    /**
+     * 按分类获取消息列表
+     */
+    public List<MessageDTO> getListByCategory(int category, long receiverId, Long lastId, Integer type) {
+        // 参数校验
+        if (category < 1 || category > 3) {
+            throw ErrorCode.INVALID_PARAMETER.exception("消息分类必须为1-3");
+        }
+
+        // 委托给领域服务获取数据
+        List<MessageDO> messageDOList = messageDomainService.getByCategory(receiverId, category, lastId, 20, type);
+
+        // 跨域数据聚合和DTO转换
+        return convertSystemMessages(messageDOList);
+    }
+
+    // ========== DTO转换方法 ==========
 
     /**
      * 将消息DO转换为DTO（包含发送者和接收者信息）
@@ -225,43 +364,74 @@ public class MessageService {
         return messageDTOList;
     }
 
-    /**
-     * 获取消息列表
-     * 
-     * @param type 消息类型
-     * @param senderId 发送者ID
-     * @param receiverId 接收者ID  
-     * @param lastId 最后一条消息ID
-     * @param conversation 是否为对话模式
-     * @return 消息DTO列表
-     */
-    public List<MessageDTO> getList(int type, long senderId, long receiverId, long lastId, int conversation) {
-        List<MessageDO> messageDOList;
-        
-        if (type == applyCourse.value()) {
-            messageDOList = messageDataService.listByPull(type, lastId, DEFAULT_PAGE_SIZE);
-        } else if (senderId == 0) {
-            messageDOList = messageDataService.listByPull(type, lastId, DEFAULT_PAGE_SIZE);
-        } else if (conversation == 0) {
-            messageDOList = messageDataService.getListByUser(type, senderId, receiverId, lastId, DEFAULT_PAGE_SIZE);
-        } else {
-            messageDOList = messageDataService.getConversationByUser(senderId, receiverId, lastId, DEFAULT_PAGE_SIZE);
-        }
-        
-        return toDTOV1(messageDOList);
-    }
-    
-    /**
-     * 将消息DO列表转换为DTO列表的通用方法
-     */
-    public List<MessageDTO> getSystemList(int type, long receiverId, long lastId) {
-        List<MessageDO> messageDOList;
-        if (type == system.value()) {
-            messageDOList = messageDataService.getSystemListByUser(receiverId, lastId, 20);
-        } else {
-            messageDOList = messageDataService.getSystemItemListByUser(type, receiverId, lastId, 20);
-        }
+    // ========== 审核通知方法 ==========
 
+    /**
+     * 发送课程审核通知
+     */
+    public void sendCourseModeration(long userId, long courseId, String courseName,
+                                     ModerationAction action, String reason) {
+        messageDomainService.sendCourseModeration(userId, courseId, courseName, action, reason);
+    }
+
+    /**
+     * 发送帖子审核通知
+     */
+    public void sendPostModeration(long userId, long postId, String postPreview,
+                                   long nodeId, String nodeName, String courseName,
+                                   ModerationAction action, String reason) {
+        messageDomainService.sendPostModeration(userId, postId, postPreview, nodeId, nodeName, courseName, action, reason);
+    }
+
+    /**
+     * 发送评论审核通知
+     */
+    public void sendCommentModeration(long userId, long commentId, String commentPreview,
+                                      String objectType, long objectId, String objectTitle,
+                                      ModerationAction action, String reason) {
+        messageDomainService.sendCommentModeration(userId, commentId, commentPreview, objectType, objectId, objectTitle, action, reason);
+    }
+
+    /**
+     * 发送职业审核通知
+     */
+    public void sendProfessionModeration(long userId, long professionId, String professionName,
+                                         ModerationAction action, String reason) {
+        messageDomainService.sendProfessionModeration(userId, professionId, professionName, action, reason);
+    }
+
+    /**
+     * 发送路线图审核通知
+     */
+    public void sendRoadmapModeration(long userId, long roadmapId, long professionId,
+                                      String professionName, ModerationAction action, String reason) {
+        messageDomainService.sendRoadmapModeration(userId, roadmapId, professionId, professionName, action, reason);
+    }
+
+    /**
+     * 发送记忆卡片组审核通知
+     */
+    public void sendMemoryDeckModeration(long userId, long deckId, String deckTitle,
+                                         long postId, String postTitle,
+                                         ModerationAction action, String reason) {
+        messageDomainService.sendMemoryDeckModeration(userId, deckId, deckTitle, postId, postTitle, action, reason);
+    }
+
+    /**
+     * 发送节点审核通知
+     */
+    public void sendNodeModeration(long userId, long nodeId, String nodeName,
+                                   long courseId, String courseName,
+                                   ModerationAction action, String reason) {
+        messageDomainService.sendNodeModeration(userId, nodeId, nodeName, courseId, courseName, action, reason);
+    }
+
+    // ========== Private 辅助方法 ==========
+
+    /**
+     * 转换系统消息列表（处理跨域数据聚合）
+     */
+    private List<MessageDTO> convertSystemMessages(List<MessageDO> messageDOList) {
         Set<Long> userIdSet = new HashSet<>();
         Set<Long> nodeIdSet = new HashSet<>();
         Set<Long> postingIdSet = new HashSet<>();
@@ -289,14 +459,14 @@ public class MessageService {
             }
         }
 
-        Map<Long, UserDO> userDOMap = userIdSet.size() == 0 ? new HashMap<>() : userDataService.getMapByIds(userIdSet);
-        Map<Long, PostDO> postingDOMap = postingIdSet.size() == 0 ? new HashMap<>() : postDataService.getMapByIds(postingIdSet);
+        Map<Long, UserDO> userDOMap = userIdSet.isEmpty() ? new HashMap<>() : userDataService.getMapByIds(userIdSet);
+        Map<Long, PostDO> postingDOMap = postingIdSet.isEmpty() ? new HashMap<>() : postDataService.getMapByIds(postingIdSet);
 
         for (PostDO postDO : postingDOMap.values()) {
             nodeIdSet.add(postDO.getNodeId());
         }
 
-        Map<Long, NodeDO> nodeDOMap = nodeIdSet.size() == 0 ? new HashMap<>() : nodeDataService.getMapByIds(nodeIdSet);
+        Map<Long, NodeDO> nodeDOMap = nodeIdSet.isEmpty() ? new HashMap<>() : nodeDataService.getMapByIds(nodeIdSet);
 
         List<MessageDTO> messageDTOList = new ArrayList<>();
         for (MessageDO messageDO : messageDOList) {
@@ -307,7 +477,7 @@ public class MessageService {
 
     private MessageDTO convertMessage(MessageDO messageDO, Map<Long, UserDO> userDOMap,
                                       Map<Long, PostDO> postingDOMap, Map<Long, NodeDO> nodeDOMap) {
-        MessageDTO messageDTO = null;
+        MessageDTO messageDTO;
         Map<String, Object> content = Utils.readValueToMap(messageDO.getContent());
         if (messageDO.getType() == postComment.value() || messageDO.getType() == replyPostingComment.value() ||
             messageDO.getType() == nodeComment.value() || messageDO.getType() == replyNodeComment.value()) {
@@ -338,7 +508,7 @@ public class MessageService {
             messageDTO = m;
         } else if (messageDO.getType() == follow.value()) {
             FollowMessageDTO m = new FollowMessageDTO();
-            m.setFollower(userConverter.toDTOV2(userDOMap.get(Utils.getLong(content,"followerId"))));
+            m.setFollower(userConverter.toDTOV2(userDOMap.get(Utils.getLong(content, "followerId"))));
             messageDTO = m;
         } else if (messageDO.getType() == invite.value()) {
             InviteMessageDTO m = new InviteMessageDTO();
@@ -358,485 +528,5 @@ public class MessageService {
         messageDTO.setCreatedAt(Utils.getTimeString(messageDO.getCreatedAt()));
 
         return messageDTO;
-    }
-
-    // @Deprecated
-    public List<MessageDTO> getCourseApplyList(long senderId, long lastId) {
-        /*
-        List<MessageDO> messageDOList = messageDataService.getApplyCourseListByUser(senderId, lastId, 20);
-
-        Set<Long> userIdSet = new HashSet<>();
-        for (MessageDO messageDO : messageDOList) {
-            userIdSet.add(messageDO.getSenderId());
-        }
-
-        Map<Long, UserDO> userMap = new HashMap<>();
-        if (userIdSet.size() != 0) {
-            List<UserDO> userDOList = userDataService.getByIds(userIdSet);
-            for (UserDO userDO : userDOList) {
-                userMap.put(userDO.getId(), userDO);
-            }
-        }
-
-        List<MessageDTO> messageDTOList = new ArrayList<>();
-        for (MessageDO messageDO : messageDOList) {
-            MessageDTO messageDTO = messageConverter.toDTO(messageDO);
-            messageDTO.setSender(userConverter.toDTOV4(userMap.get(messageDO.getSenderId())));
-            messageDTOList.add(messageDTO);
-
-        }
-        return messageDTOList;
-         */
-        return null;
-    }
-
-    public List<MessageDTO> getApplyCourseMessage(int page, int length) {
-        if (page < 1) return new ArrayList<>();
-        return messageConverter.toDTO(messageDataService.getApplyCourseList((page - 1) * length, length));
-    }
-
-    public List<MessageDTO> getSystemMessage(int page, int length) {
-        if (page < 1) return new ArrayList<>();
-        return messageConverter.toDTO(messageDataService.getApplyCourseList((page - 1) * length, length));
-    }
-
-    public long getApplyCourseCount() {
-        return messageDataService.getApplyCourseCount();
-    }
-
-    public void createCommentMessage(long recieverId, long commenterId, long nodeId, long commentId, int type) {
-        Map<String, Object> messageMap = new HashMap<>();
-        messageMap.put("commenterId", commenterId);
-        messageMap.put("nodeId", nodeId);
-        messageMap.put("commentId", commentId);
-
-        createSystemMessage(type, recieverId, Utils.toJson(messageMap));
-    }
-
-    public void createFollowMessage(long recieverId, long followerId) {
-        Map<String, Object> messageMap = new HashMap<>();
-        messageMap.put("followerId", followerId);
-
-        createSystemMessage(follow.value(), recieverId, Utils.toJson(messageMap));
-    }
-
-    // ========== 专门化点赞消息方法 ==========
-
-    /**
-     * 创建帖子点赞消息
-     *
-     * @param receiverId 接收者ID（内容创建者）
-     * @param voterId 点赞者ID
-     * @param nodeId 节点ID（用于显示标题）
-     * @param postId 帖子ID
-     * @param voteType 点赞类型（twice, like）
-     */
-    public void createPostUpvoteMessage(long receiverId, long voterId, long nodeId, long postId, VoteType voteType) {
-        Map<String, Object> messageMap = new HashMap<>();
-        messageMap.put("voterId", voterId);
-        messageMap.put("voteType", voteType.toString());
-        messageMap.put("nodeId", nodeId);
-        messageMap.put("postId", postId);
-        messageMap.put("contentType", "post");
-
-        createSystemMessage(upvote.value(), receiverId, Utils.toJson(messageMap));
-    }
-
-    /**
-     * 创建评论点赞消息
-     *
-     * @param receiverId 接收者ID（评论创建者）
-     * @param voterId 点赞者ID
-     * @param nodeId 节点ID（用于显示标题）
-     * @param commentId 评论ID
-     */
-    public void createCommentUpvoteMessage(long receiverId, long voterId, long nodeId, long commentId) {
-        Map<String, Object> messageMap = new HashMap<>();
-        messageMap.put("voterId", voterId);
-        messageMap.put("nodeId", nodeId);
-        messageMap.put("commentId", commentId);
-        messageMap.put("contentType", "comment");
-
-        createSystemMessage(upvote.value(), receiverId, Utils.toJson(messageMap));
-    }
-
-    /**
-     * 创建路线图点赞消息
-     *
-     * @param receiverId 接收者ID（路线图创建者）
-     * @param voterId 点赞者ID
-     * @param professionId 职业ID（用于显示标题）
-     * @param roadmapId 路线图ID
-     */
-    public void createRoadmapUpvoteMessage(long receiverId, long voterId, long professionId, long roadmapId) {
-        Map<String, Object> messageMap = new HashMap<>();
-        messageMap.put("voterId", voterId);
-        messageMap.put("professionId", professionId);
-        messageMap.put("roadmapId", roadmapId);
-        messageMap.put("contentType", "roadmap");
-
-        createSystemMessage(upvote.value(), receiverId, Utils.toJson(messageMap));
-    }
-
-    /**
-     * 创建记忆卡片组点赞消息
-     *
-     * @param receiverId 接收者ID（卡片组创建者）
-     * @param voterId 点赞者ID
-     * @param nodeId 节点ID（用于显示标题）
-     * @param deckId 卡片组ID
-     */
-    public void createMemoryDeckUpvoteMessage(long receiverId, long voterId, long nodeId, long deckId) {
-        Map<String, Object> messageMap = new HashMap<>();
-        messageMap.put("voterId", voterId);
-        messageMap.put("nodeId", nodeId);
-        messageMap.put("deckId", deckId);
-        messageMap.put("contentType", "memory_deck");
-
-        createSystemMessage(upvote.value(), receiverId, Utils.toJson(messageMap));
-    }
-
-    public void createInviteMessage(long recieverId, long InviterId, long nodeId) {
-        Map<String, Object> messageMap = new HashMap<>();
-        messageMap.put("inviterId", InviterId);
-        messageMap.put("nodeId", nodeId);
-
-        createSystemMessage(invite.value(), recieverId, Utils.toJson(messageMap));
-    }
-
-    public void createSystemMessage(int type, long userId, String content) {
-        MessageDO messageDO = new MessageDO();
-        messageDO.setSenderId(0L);
-        messageDO.setReceiverId(userId);
-        messageDO.setContent(content);
-        messageDO.setType(type);
-
-        // 自动设置 category
-        MessageType messageType = MessageType.getByValue(type);
-        if (messageType != null) {
-            messageDO.setCategory(messageType.getCategory());
-        } else {
-            // 默认系统消息
-            messageDO.setCategory(2);
-        }
-
-        messageDataService.insert(messageDO);
-    }
-
-    public void modifyCourseApply(long messageId, String reply) {
-        MessageDO messageDO = messageDataService.getById(messageId);
-        if (messageDO == null) throw new RuntimeException("Message not found");
-
-        String content = messageDO.getContent();
-        try {
-            Map<String, String> map = objectMapper.readValue(content, Map.class);
-            map.put("reply", reply);
-
-            content = objectMapper.writeValueAsString(map);
-            messageDO.setContent(content);
-            messageDataService.update(messageDO);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 申请课程（带完整业务逻辑）
-     */
-    public void applyCourse(String title, String summary, String explanation, Long parentId, long userId) {
-        CourseDO course = null;
-        if (parentId != 0) {
-            course = courseDataService.getById(parentId);
-            if (course == null) {
-                throw new RuntimeException("course not found");
-            }
-        }
-
-        Map<String, String> data = new HashMap<>();
-        data.put("title", title);
-        data.put("summary", summary);
-        data.put("explanation", explanation);
-        data.put("parentId", Long.toString(parentId));
-        if (course != null) {
-            data.put("parentName", course.getName());
-        }
-
-        String jsonString = null;
-        try {
-            jsonString = objectMapper.writeValueAsString(data);
-        } catch (JsonProcessingException e) {
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
-        }
-
-        create(jsonString, userId, 0, applyCourse);
-    }
-
-    /**
-     * 获取课程申请列表（带分页信息）
-     */
-    public Map<String, Object> getApplyCourseListWithPagination(int page, int length) {
-        if (page < 1) page = 1;
-        if (length < 1) length = 1;
-        if (length > 100) length = 100;
-        int count = (int)getApplyCourseCount();
-        int totalPage = count / length + 1;
-        if (page > totalPage) page = totalPage;
-
-        Map<String, Object> resultMap = new HashMap<>();
-        List<MessageDTO> messageDTOList = getApplyCourseMessage(page, length);
-        resultMap.put("messages", messageDTOList);
-
-        Map<String, Integer> pagination = new HashMap<>();
-        pagination.put("total", count);
-        pagination.put("pageSize", length);
-        pagination.put("currentPage", page);
-        pagination.put("totalPages", totalPage);
-        resultMap.put("pagination", pagination);
-        return resultMap;
-    }
-
-    // ========== 审核通知方法 ==========
-
-    /**
-     * 1. 发送课程审核通知
-     */
-    public void sendCourseModeration(long userId, long courseId, String courseName,
-                                     ModerationAction action, String reason) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("courseId", courseId);
-        data.put("courseName", courseName);
-
-        int type;
-        switch (action) {
-            case APPROVED -> {
-                data.put("linkUrl", "/read?courseId=" + courseId);
-                type = MessageType.courseApproved.value();
-            }
-            case REJECTED -> {
-                data.put("reason", reason != null ? reason : "");
-                type = MessageType.courseRejected.value();
-            }
-            case BANNED -> {
-                data.put("reason", reason != null ? reason : "");
-                type = MessageType.courseBanned.value();
-            }
-            default -> throw ErrorCode.INVALID_PARAMETER.exception("无效的审核操作: " + action);
-        }
-
-        createSystemMessage(type, userId, Utils.toJson(data));
-    }
-
-    /**
-     * 2. 发送帖子审核通知
-     */
-    public void sendPostModeration(long userId, long postId, String postPreview,
-                                   long nodeId, String nodeName, String courseName,
-                                   ModerationAction action, String reason) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("postId", postId);
-        data.put("postPreview", Utils.stripFormatting(postPreview));
-        data.put("nodeId", nodeId);
-        data.put("nodeName", nodeName);
-        data.put("courseName", courseName);
-        data.put("reason", reason != null ? reason : "");
-        data.put("linkUrl", "/self?tab=posts");
-
-        int type = switch (action) {
-            case REJECTED -> MessageType.postRejected.value();
-            case BANNED -> MessageType.postBanned.value();
-            default -> throw ErrorCode.INVALID_PARAMETER.exception("帖子审核操作只支持 REJECTED 和 BANNED");
-        };
-
-        createSystemMessage(type, userId, Utils.toJson(data));
-    }
-
-    /**
-     * 3. 发送评论审核通知
-     */
-    public void sendCommentModeration(long userId, long commentId, String commentPreview,
-                                      String objectType, long objectId, String objectTitle,
-                                      ModerationAction action, String reason) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("commentId", commentId);
-        data.put("commentPreview", Utils.stripFormatting(commentPreview));
-        data.put("objectType", objectType);
-        data.put("objectId", objectId);
-        data.put("objectTitle", objectTitle);
-        data.put("reason", reason != null ? reason : "");
-
-        int type = switch (action) {
-            case REJECTED -> MessageType.commentRejected.value();
-            case BANNED -> MessageType.commentBanned.value();
-            default -> throw ErrorCode.INVALID_PARAMETER.exception("评论审核操作只支持 REJECTED 和 BANNED");
-        };
-
-        createSystemMessage(type, userId, Utils.toJson(data));
-    }
-
-    /**
-     * 4. 发送职业审核通知
-     */
-    public void sendProfessionModeration(long userId, long professionId, String professionName,
-                                         ModerationAction action, String reason) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("professionId", professionId);
-        data.put("professionName", professionName);
-
-        int type;
-        switch (action) {
-            case APPROVED -> {
-                data.put("linkUrl", "/roadmap/" + professionId);
-                type = MessageType.professionApproved.value();
-            }
-            case REJECTED -> {
-                data.put("reason", reason != null ? reason : "");
-                type = MessageType.professionRejected.value();
-            }
-            case BANNED -> {
-                data.put("reason", reason != null ? reason : "");
-                type = MessageType.professionBanned.value();
-            }
-            default -> throw ErrorCode.INVALID_PARAMETER.exception("无效的审核操作: " + action);
-        }
-
-        createSystemMessage(type, userId, Utils.toJson(data));
-    }
-
-    /**
-     * 5. 发送路线图审核通知
-     */
-    public void sendRoadmapModeration(long userId, long roadmapId, long professionId,
-                                      String professionName, ModerationAction action, String reason) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("roadmapId", roadmapId);
-        data.put("professionId", professionId);
-        data.put("professionName", professionName);
-        data.put("reason", reason != null ? reason : "");
-        data.put("linkUrl", "/self?tab=roadmaps");
-
-        int type = switch (action) {
-            case REJECTED -> MessageType.roadmapRejected.value();
-            case BANNED -> MessageType.roadmapBanned.value();
-            default -> throw ErrorCode.INVALID_PARAMETER.exception("路线图审核操作只支持 REJECTED 和 BANNED");
-        };
-
-        createSystemMessage(type, userId, Utils.toJson(data));
-    }
-
-    /**
-     * 6. 发送记忆卡片组审核通知
-     */
-    public void sendMemoryDeckModeration(long userId, long deckId, String deckTitle,
-                                         long postId, String postTitle,
-                                         ModerationAction action, String reason) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("deckId", deckId);
-        data.put("deckTitle", deckTitle);
-        data.put("postId", postId);
-        data.put("postTitle", postTitle);
-        data.put("reason", reason != null ? reason : "");
-        data.put("linkUrl", "/self?tab=memory-decks");
-
-        int type = switch (action) {
-            case REJECTED -> MessageType.memoryDeckRejected.value();
-            case BANNED -> MessageType.memoryDeckBanned.value();
-            default -> throw ErrorCode.INVALID_PARAMETER.exception("记忆卡片组审核操作只支持 REJECTED 和 BANNED");
-        };
-
-        createSystemMessage(type, userId, Utils.toJson(data));
-    }
-
-    /**
-     * 7. 发送节点审核通知
-     */
-    public void sendNodeModeration(long userId, long nodeId, String nodeName,
-                                   long courseId, String courseName,
-                                   ModerationAction action, String reason) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("nodeId", nodeId);
-        data.put("nodeName", nodeName);
-        data.put("courseId", courseId);
-        data.put("courseName", courseName);
-        data.put("reason", reason != null ? reason : "");
-
-        int type = switch (action) {
-            case REJECTED -> MessageType.nodeRejected.value();
-            case BANNED -> MessageType.nodeBanned.value();
-            default -> throw ErrorCode.INVALID_PARAMETER.exception("节点审核操作只支持 REJECTED 和 BANNED");
-        };
-
-        createSystemMessage(type, userId, Utils.toJson(data));
-    }
-
-    /**
-     * 按分类获取消息列表
-     * @param category 消息分类 1=互动消息, 2=系统消息, 3=私信
-     * @param receiverId 接收者ID
-     * @param lastId 最后一条消息的ID，用于分页，首次请求传null
-     * @param type 可选的消息类型过滤，传null表示查询该分类下所有消息
-     * @return 消息列表
-     */
-    public List<MessageDTO> getListByCategory(int category, long receiverId, Long lastId, Integer type) {
-        // 参数校验
-        if (category < 1 || category > 3) {
-            throw ErrorCode.INVALID_PARAMETER.exception("消息分类必须为1-3");
-        }
-
-        // 查询消息列表
-        // 如果指定了 type，则按 type 查询（使用现有的精确查询）
-        // 如果未指定 type，则按 category 查询该分类下所有消息
-        List<MessageDO> messageDOList;
-        if (type != null && type > 0) {
-            // 按类型查询
-            messageDOList = messageDataService.listByType(type, receiverId, lastId, 20);
-        } else {
-            // 按分类查询
-            messageDOList = messageDataService.listByCategory(receiverId, category, lastId, 20);
-        }
-
-        // 收集需要查询的关联数据的ID
-        Set<Long> userIdSet = new HashSet<>();
-        Set<Long> nodeIdSet = new HashSet<>();
-        Set<Long> postingIdSet = new HashSet<>();
-
-        for (MessageDO messageDO : messageDOList) {
-            userIdSet.add(messageDO.getReceiverId());
-            Map<String, Object> map = Utils.readValueToMap(messageDO.getContent());
-
-            if (messageDO.getType() == upvote.value()) {
-                Long postingId = Utils.getLong(map, "postingId");
-                if (postingId != null) {
-                    postingIdSet.add(postingId);
-                }
-                nodeIdSet.add(Utils.getLong(map, "nodeId"));
-                userIdSet.add(Utils.getLong(map, "upvoterId"));
-            } else if (messageDO.getType() == invite.value()) {
-                nodeIdSet.add(Utils.getLong(map, "nodeId"));
-                userIdSet.add(Utils.getLong(map, "InviterId"));
-            } else if (messageDO.getType() == follow.value()) {
-                userIdSet.add(Utils.getLong(map, "followerId"));
-            } else if (messageDO.getType() == postComment.value() || messageDO.getType() == replyPostingComment.value() ||
-                       messageDO.getType() == nodeComment.value() || messageDO.getType() == replyNodeComment.value()) {
-                nodeIdSet.add(Utils.getLong(map, "nodeId"));
-                userIdSet.add(Utils.getLong(map, "commenterId"));
-            }
-        }
-
-        // 批量查询关联数据
-        Map<Long, UserDO> userDOMap = userIdSet.isEmpty() ? new HashMap<>() : userDataService.getMapByIds(userIdSet);
-        Map<Long, PostDO> postingDOMap = postingIdSet.isEmpty() ? new HashMap<>() : postDataService.getMapByIds(postingIdSet);
-
-        for (PostDO postDO : postingDOMap.values()) {
-            nodeIdSet.add(postDO.getNodeId());
-        }
-
-        Map<Long, NodeDO> nodeDOMap = nodeIdSet.isEmpty() ? new HashMap<>() : nodeDataService.getMapByIds(nodeIdSet);
-
-        // 转换为DTO
-        List<MessageDTO> messageDTOList = new ArrayList<>();
-        for (MessageDO messageDO : messageDOList) {
-            messageDTOList.add(convertMessage(messageDO, userDOMap, postingDOMap, nodeDOMap));
-        }
-        return messageDTOList;
     }
 }

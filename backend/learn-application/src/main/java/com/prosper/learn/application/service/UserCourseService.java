@@ -9,9 +9,11 @@ import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.learning.enrollment.UserCourseDataService;
+import com.prosper.learn.learning.enrollment.UserCourseDomainService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
+import com.prosper.learn.shared.common.utils.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -23,21 +25,30 @@ import java.util.stream.Collectors;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
+/**
+ * 用户课程应用服务
+ * 负责跨域协调、DTO转换、事件发布
+ */
 @Service
 @RequiredArgsConstructor
 public class UserCourseService {
 
+    // 领域服务
+    private final UserCourseDomainService domainService;
+
+    // 数据服务
     private final UserCourseDataService userCourseDataService;
     private final CourseDataService courseDataService;
+
+    // 其他 ApplicationService
+    private final CourseService courseService;
+
+    // 转换器
     private final CourseConverter courseConverter;
     private final UserCourseConverter userCourseConverter;
-    private final CourseService courseService;
-    private final ApplicationEventPublisher eventPublisher;
 
-    // ========== 常量定义 ==========
-    private static final int MIN_PROGRESS = 0;
-    private static final int MAX_PROGRESS = 100;
-    private static final long DEFAULT_MAX_ID = Long.MAX_VALUE;
+    // 事件发布
+    private final ApplicationEventPublisher eventPublisher;
 
     // ========== DTO转换方法 ==========
 
@@ -106,182 +117,70 @@ public class UserCourseService {
                 }).collect(Collectors.toList());
     }
 
-    // ========== 私有验证方法 ==========
-    
-    /**
-     * 验证用户ID
-     */
-    private void validateUserId(Long userId) {
-        if (userId == null || userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-    }
-    
-    /**
-     * 验证课程ID
-     */
-    private void validateCourseId(Long courseId) {
-        if (courseId == null || courseId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
-        }
-    }
-    
-    /**
-     * 验证进度百分比
-     */
-    private void validateProgressPercent(Integer progressPercent) {
-        if (progressPercent == null || progressPercent < MIN_PROGRESS || progressPercent > MAX_PROGRESS) {
-            throw ErrorCode.USER_COURSE_PROGRESS_INVALID.exception();
-        }
-    }
-    
-    /**
-     * 验证并获取用户课程记录
-     */
-    private UserCourseDO validateAndGetUserCourse(Long userId, Long courseId) {
-        UserCourseDO userCourseDO = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
-        if (userCourseDO == null) {
-            throw ErrorCode.USER_COURSE_NOT_FOUND.exception();
-        }
-        return userCourseDO;
-    }
-
-    
-    /**
-     * 更新学习状态
-     */
-    private void updateLearningState(UserCourseDO progressDO, Integer progressPercent) {
-        progressDO.setProgressPercent(progressPercent);
-        
-        if (progressPercent >= MAX_PROGRESS) {
-            progressDO.setState(UserProgressState.COMPLETED.value());
-            progressDO.setCompletedAt(LocalDateTime.now());
-        } else if (progressPercent > MIN_PROGRESS) {
-            progressDO.setState(UserProgressState.IN_PROGRESS.value());
-        }
-    }
+    // ========== 业务方法 ==========
 
     public Integer getCourseProgress(long userId, Long courseId) {
-        UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
-        return userCourse != null ? userCourse.getProgressPercent() : 0;
+        return domainService.getCourseProgress(userId, courseId);
     }
 
     /**
      * 用户开始学习课程
-     * @param userId 用户ID
-     * @param courseId 课程ID
-     * @return 学习进度记录
      */
     public boolean startCourse(Long userId, Long courseId) {
-        validateUserId(userId);
-        validateCourseId(courseId);
+        // 调用 DomainService 执行核心逻辑
+        boolean isNew = domainService.startCourse(userId, courseId);
 
-        // 检查是否已经存在学习记录
-        UserCourseDO existing = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
-
-        if (existing != null) {
-            // 如果已存在，删除记录
-            userCourseDataService.deleteByUserAndCourse(userId, courseId);
-            return false;
+        // 如果是新建记录，发布学习开始事件
+        if (isNew) {
+            eventPublisher.publishEvent(new LearningStartedEvent(
+                userId,
+                courseId,
+                ContentType.course
+            ));
         }
 
-        // 创建新的学习记录
-        UserCourseDO progressDO = new UserCourseDO();
-        progressDO.setUserId(userId);
-        progressDO.setCourseId(courseId);
-        progressDO.setProgressPercent(MIN_PROGRESS);
-        progressDO.setState(UserProgressState.IN_PROGRESS.value());
-        progressDO.setStartedAt(LocalDateTime.now());
-
-        userCourseDataService.insert(progressDO);
-
-        // 发布学习开始事件
-        eventPublisher.publishEvent(new LearningStartedEvent(
-            userId,
-            courseId,
-            ContentType.course
-        ));
-
-        return true;
+        return isNew;
     }
 
     /**
      * 获取用户的课程学习进度
-     * @param userId 用户ID
-     * @param courseId 课程ID
-     * @return 学习进度记录，如果不存在返回null
      */
     public UserCourseWithCourseDTO getUserCourse(Long userId, Long courseId) {
-        validateUserId(userId);
-        validateCourseId(courseId);
-
-        UserCourseDO userCourseDo = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
+        UserCourseDO userCourseDo = domainService.getByUserAndCourse(userId, courseId);
         return toWithCourseDTO(userCourseDo);
     }
 
     /**
      * 获取用户所有课程学习进度
-     * @param userId 用户ID
-     * @return 用户所有课程学习进度列表
      */
     public List<UserCourseWithCourseDTO> getUserCourseList(Long userId, Long lastId) {
-        validateUserId(userId);
-
-        if (lastId == null || lastId <= 0) {
-            lastId = DEFAULT_MAX_ID;
-        }
-
-        List<UserCourseDO> userCourseDOList = userCourseDataService.getByUserId(userId, lastId);
+        List<UserCourseDO> userCourseDOList = domainService.getByUserId(userId, lastId);
         return toWithCourseDTO(userCourseDOList);
     }
 
     /**
      * 更新课程学习进度
-     * @param userId 用户ID
-     * @param courseId 课程ID
-     * @param progressPercent 进度百分比
-     * @return 更新后的学习进度记录
      */
     public UserCourseWithCourseDTO update(Long userId, Long courseId, Integer progressPercent) {
-        validateUserId(userId);
-        validateCourseId(courseId);
-        validateProgressPercent(progressPercent);
+        // 调用 DomainService 更新
+        domainService.updateProgress(userId, courseId, progressPercent);
 
-        UserCourseDO userCourseDO = validateAndGetUserCourse(userId, courseId);
-
-        updateLearningState(userCourseDO, progressPercent);
-        userCourseDataService.update(userCourseDO);
-
+        // 查询更新后的数据并转换为DTO
+        UserCourseDO userCourseDO = domainService.getByUserAndCourse(userId, courseId);
         return toWithCourseDTO(userCourseDO);
     }
 
     /**
      * 删除课程学习记录
-     * @param userId 用户ID
-     * @param courseId 课程ID
      */
     public void delete(Long userId, Long courseId) {
-        validateUserId(userId);
-        validateCourseId(courseId);
-
-        userCourseDataService.deleteByUserAndCourse(userId, courseId);
+        domainService.delete(userId, courseId);
     }
 
     /**
      * 批量查询用户对多个课程的学习进度
-     * @param userId 用户ID
-     * @param courseIds 课程ID列表
-     * @return 课程ID到用户课程DTO的映射
      */
     public Map<Long, UserCourseDO> getUserCoursesBatch(long userId, List<Long> courseIds) {
-        validateUserId(userId);
-        
-        if (courseIds == null || courseIds.isEmpty()) {
-            return Map.of();
-        }
-        
-        // 批量查询用户课程记录，直接返回Map
-        Map<Long, UserCourseDO> userCourseMap = userCourseDataService.getByUserIdAndCourseIdsAsMap((long) userId, courseIds);
-        return userCourseMap;
+        return domainService.getUserCoursesBatch(userId, courseIds);
     }
 }

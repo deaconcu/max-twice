@@ -6,20 +6,17 @@ import com.prosper.learn.application.dto.request.ReviewSessionRequest;
 import com.prosper.learn.application.dto.response.ReviewCardResultDTO;
 import com.prosper.learn.application.dto.response.ReviewStatsDTO;
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
-import com.prosper.learn.memory.card.MemoryCardDO;
 import com.prosper.learn.memory.card.MemoryCardDataService;
+import com.prosper.learn.memory.card.MemoryCardDO;
+import com.prosper.learn.memory.review.ReviewDomainService;
 import com.prosper.learn.memory.review.UserCardSrsDO;
-import com.prosper.learn.memory.review.UserCardSrsDataService;
-import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
-import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,19 +24,20 @@ import java.util.stream.Collectors;
 import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
- * 复习功能业务服务 - Anki 算法实现
+ * 复习应用服务
+ *
+ * 负责协调跨领域逻辑、DTO转换
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReviewService {
 
-    private final UserCardSrsDataService srsStateDataService;
+    private final ReviewDomainService reviewDomainService;
     private final MemoryCardDataService cardDataService;
+    private final UserDataService userDataService;
     private final UserCardSrsConverter srsStateConverter;
     private final MemoryCardService memoryCardService;
-    private final UserDataService userDataService;
-    private final SystemProperties systemProperties;
 
 
     // ========== toDTO ==========
@@ -47,12 +45,12 @@ public class ReviewService {
     /**
      * 转换为复习统计DTO
      */
-    public ReviewStatsDTO toReviewStatsDTO(Long totalReviews, Integer streakDays, Double averageScore, Long timeSpent) {
+    public ReviewStatsDTO toReviewStatsDTO(ReviewDomainService.ReviewStats stats) {
         ReviewStatsDTO dto = new ReviewStatsDTO();
-        dto.setTotalReviews(totalReviews != null ? totalReviews.intValue() : 0);
-        dto.setStreakDays(streakDays != null ? streakDays : 0);
-        dto.setAverageScore(averageScore != null ? averageScore : 0.0);
-        dto.setTimeSpent(timeSpent != null ? timeSpent.intValue() : 0);
+        dto.setTotalReviews(stats.getTotalReviews() != null ? stats.getTotalReviews().intValue() : 0);
+        dto.setStreakDays(stats.getStreakDays() != null ? stats.getStreakDays() : 0);
+        dto.setAverageScore(stats.getAverageScore() != null ? stats.getAverageScore() : 0.0);
+        dto.setTimeSpent(stats.getTimeSpent() != null ? stats.getTimeSpent().intValue() : 0);
         return dto;
     }
 
@@ -65,32 +63,22 @@ public class ReviewService {
         if (userId == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("用户ID不能为空");
         }
-        
-        // 参数默认值
-        if (dueOnly == null) dueOnly = true;
-        if (limit == null) limit = 50;
-        if (limit > 500) limit = 500;
 
-        List<UserCardSrsDO> userCardList;
-        
-        if (courseId != null) {
-            // 按课程筛选
-            userCardList = srsStateDataService.getReviewQueueByCourse(userId, courseId, dueOnly, limit, lastId);
-        } else {
-            // 获取所有课程的复习队列
-            userCardList = srsStateDataService.getReviewQueue(userId, dueOnly, limit, lastId);
-        }
+        // 委托给 DomainService 查询复习队列
+        List<UserCardSrsDO> userCardList = reviewDomainService.getReviewQueue(userId, dueOnly, courseId, limit, lastId);
 
         if (userCardList.isEmpty()) {
             return new ArrayList<>();
         }
 
-        // 获取卡片信息
+        // 跨域查询：获取卡片信息
         Set<Long> cardIds = userCardList.stream()
             .map(UserCardSrsDO::getCardId)
             .collect(Collectors.toSet());
 
         List<MemoryCardDO> cardList = cardDataService.getByIds(cardIds);
+
+        // 使用 MemoryCardService 转换为 DTO（包含 SRS 信息）
         return memoryCardService.toCardViewWithSrs(cardList, userId);
     }
 
@@ -106,41 +94,8 @@ public class ReviewService {
             throw ErrorCode.INVALID_PARAMETER.exception("请求参数不能为空");
         }
 
-        // 获取SRS状态
-        UserCardSrsDO card = srsStateDataService.getByUserAndCard(userId, request.getCardId());
-        if (card == null) {
-            throw ErrorCode.SRS_STATE_NOT_FOUND.exception();
-        }
-
-        int rating = request.getResult();
-
-        // 根据卡片类型分发到不同的处理方法
-        switch (card.getType()) {
-            case UserCardSrsDO.TYPE_NEW:
-                handleNewCard(card, rating);
-                break;
-            case UserCardSrsDO.TYPE_LEARNING:
-                handleLearningCard(card, rating, systemProperties.getSrs().getAlgorithm().getLearningSteps());
-                break;
-            case UserCardSrsDO.TYPE_REVIEW:
-                handleReviewCard(card, rating);
-                break;
-            case UserCardSrsDO.TYPE_RELEARNING:
-                handleLearningCard(card, rating, systemProperties.getSrs().getAlgorithm().getRelearningSteps());
-                break;
-            default:
-                throw ErrorCode.INVALID_PARAMETER.exception("未知的卡片类型: " + card.getType());
-        }
-
-        // 更新时间戳
-        card.setLastReviewedAt(LocalDateTime.now());
-        card.setUpdatedAt(LocalDateTime.now());
-
-        // 更新数据库
-        srsStateDataService.update(card);
-
-        log.info("Submitted review for user: {} card: {} type: {} rating: {} nextDue: {}",
-                userId, request.getCardId(), card.getType(), rating, card.getReviewDueAt());
+        // 委托给 DomainService 处理复习逻辑
+        reviewDomainService.submitReview(userId, request.getCardId(), request.getResult());
     }
 
     /**
@@ -171,7 +126,7 @@ public class ReviewService {
             request.setCardId(result.getCardId());
             request.setResult(result.getResult());
             request.setTimeSpent(result.getTimeSpent());
-            
+
             try {
                 submitReview(userId, request);
             } catch (Exception e) {
@@ -196,221 +151,11 @@ public class ReviewService {
 
         // 计算时间范围
         LocalDateTime endTime = LocalDateTime.now();
-        LocalDateTime startTime = calculateStartTime(endTime, period);
+        LocalDateTime startTime = reviewDomainService.calculateStartTime(endTime, period.name());
 
-        // 实现统计查询
-        Long totalReviews = srsStateDataService.countReviewsInPeriod(userId, startTime, endTime);
-        Integer streakDays = srsStateDataService.calculateStreakDays(userId);
-        Double averageScore = srsStateDataService.calculateAverageScore(userId, startTime, endTime);
-        Long timeSpent = srsStateDataService.calculateTimeSpent(userId, startTime, endTime);
+        // 委托给 DomainService 获取统计
+        ReviewDomainService.ReviewStats stats = reviewDomainService.getReviewStats(userId, startTime, endTime);
 
-        return toReviewStatsDTO(totalReviews, streakDays, averageScore, timeSpent);
+        return toReviewStatsDTO(stats);
     }
-
-    // ========== Anki 算法核心实现 ==========
-
-    /**
-     * 处理新卡片 (NEW -> LEARNING 或 REVIEW)
-     */
-    private void handleNewCard(UserCardSrsDO card, int rating) {
-        SystemProperties.Srs.Algorithm config = systemProperties.getSrs().getAlgorithm();
-
-        if (rating == 1 || rating == 2) {
-            // 评级"重来"(1) 或 "困难"(2): 进入学习流程
-            card.setType(UserCardSrsDO.TYPE_LEARNING);
-            card.setCurrentStep((byte) 0);
-            card.setInterval(config.getLearningSteps()[0]);
-            card.setReviewDueAt(LocalDateTime.now().plusMinutes(config.getLearningSteps()[0]));
-
-        } else if (rating == 3) {
-            // 评级"良好"(3): 跳过第一步或直接毕业
-            int[] steps = config.getLearningSteps();
-            if (steps.length <= 1) {
-                // 只有一步，直接毕业
-                graduateToReview(card, config.getGraduatingInterval());
-            } else {
-                // 跳到第二步
-                card.setType(UserCardSrsDO.TYPE_LEARNING);
-                card.setCurrentStep((byte) 1);
-                card.setInterval(steps[1]);
-                card.setReviewDueAt(LocalDateTime.now().plusMinutes(steps[1]));
-            }
-
-        } else if (rating == 4) {
-            // 评级"简单"(4): 立即毕业
-            graduateToReview(card, config.getEasyInterval());
-        }
-    }
-
-    /**
-     * 处理学习中/重新学习中的卡片 (LEARNING/RELEARNING)
-     */
-    private void handleLearningCard(UserCardSrsDO card, int rating, int[] steps) {
-        SystemProperties.Srs.Algorithm config = systemProperties.getSrs().getAlgorithm();
-        byte currentStep = card.getCurrentStep();
-        boolean isRelearning = (card.getType() == UserCardSrsDO.TYPE_RELEARNING);
-
-        if (rating == 1) {
-            // 评级"重来"(1): 重置到第一步
-            card.setCurrentStep((byte) 0);
-            card.setInterval(steps[0]);
-            card.setReviewDueAt(LocalDateTime.now().plusMinutes(steps[0]));
-            // 保持 lapseOldInterval 不变（如果是 RELEARNING）
-
-        } else if (rating == 2) {
-            // 评级"困难"(2): 当前步骤延长
-            int extendedInterval;
-            if (currentStep >= steps.length - 1) {
-                // 最后一步，保持当前间隔
-                extendedInterval = steps[currentStep];
-            } else {
-                // 中间步骤，取当前和下一步的平均值
-                extendedInterval = (steps[currentStep] + steps[currentStep + 1]) / 2;
-            }
-            card.setInterval(extendedInterval);
-            card.setReviewDueAt(LocalDateTime.now().plusMinutes(extendedInterval));
-            // currentStep 不变
-
-        } else if (rating == 3) {
-            // 评级"良好"(3): 推进到下一步或毕业
-            byte nextStep = (byte) (currentStep + 1);
-            if (nextStep >= steps.length) {
-                // 完成所有步骤，毕业
-                if (isRelearning) {
-                    regraduateToReview(card, config, false);  // 使用 graduatingInterval
-                } else {
-                    graduateToReview(card, config.getGraduatingInterval());
-                }
-            } else {
-                // 进入下一步
-                card.setCurrentStep(nextStep);
-                card.setInterval(steps[nextStep]);
-                card.setReviewDueAt(LocalDateTime.now().plusMinutes(steps[nextStep]));
-            }
-
-        } else if (rating == 4) {
-            // 评级"简单"(4): 立即毕业
-            if (isRelearning) {
-                regraduateToReview(card, config, true);  // 使用 easyInterval
-            } else {
-                graduateToReview(card, config.getEasyInterval());
-            }
-        }
-    }
-
-    /**
-     * 处理复习卡片 (REVIEW)
-     */
-    private void handleReviewCard(UserCardSrsDO card, int rating) {
-        SystemProperties.Srs.Algorithm config = systemProperties.getSrs().getAlgorithm();
-        int currentInterval = card.getInterval();
-        BigDecimal ef = card.getEaseFactor();
-
-        if (rating == 1) {
-            // 评级"重来"(1): 遗忘，进入重新学习
-            card.setLapseOldInterval((short) currentInterval);  // 保存遗忘前的间隔
-            card.setType(UserCardSrsDO.TYPE_RELEARNING);
-            card.setCurrentStep((byte) 0);
-            card.setRepetitions(0);  // 重置连续正确次数
-            card.setLapseCount(card.getLapseCount() + 1);
-            card.setEaseFactor(updateEaseFactor(ef, -0.20, config.getMinEaseFactor()));
-
-            int[] relearningSteps = config.getRelearningSteps();
-            card.setInterval(relearningSteps[0]);
-            card.setReviewDueAt(LocalDateTime.now().plusMinutes(relearningSteps[0]));
-
-        } else if (rating == 2) {
-            // 评级"困难"(2): 间隔增长放缓
-            card.setRepetitions(card.getRepetitions() + 1);
-            int newInterval = (int) (currentInterval * 1.2);
-            card.setInterval(newInterval);
-            card.setReviewDueAt(LocalDateTime.now().plusDays(newInterval));
-            card.setEaseFactor(updateEaseFactor(ef, -0.15, config.getMinEaseFactor()));
-
-        } else if (rating == 3) {
-            // 评级"良好"(3): 标准间隔增长
-            card.setRepetitions(card.getRepetitions() + 1);
-            int newInterval = (int) (currentInterval * ef.doubleValue());
-            card.setInterval(newInterval);
-            card.setReviewDueAt(LocalDateTime.now().plusDays(newInterval));
-            // EF 不变
-
-        } else if (rating == 4) {
-            // 评级"简单"(4): 额外奖励
-            card.setRepetitions(card.getRepetitions() + 1);
-            int newInterval = (int) (currentInterval * ef.doubleValue() * config.getEasyBonus());
-            card.setInterval(newInterval);
-            card.setReviewDueAt(LocalDateTime.now().plusDays(newInterval));
-            card.setEaseFactor(updateEaseFactor(ef, 0.15, config.getMinEaseFactor()));
-        }
-    }
-
-    /**
-     * 毕业到复习状态 (LEARNING -> REVIEW)
-     */
-    private void graduateToReview(UserCardSrsDO card, int intervalDays) {
-        card.setType(UserCardSrsDO.TYPE_REVIEW);
-        card.setCurrentStep((byte) 0);
-        card.setInterval(intervalDays);
-        card.setLapseOldInterval(null);
-        card.setReviewDueAt(LocalDateTime.now().plusDays(intervalDays));
-    }
-
-    /**
-     * 重新毕业到复习状态 (RELEARNING -> REVIEW)
-     * @param card 卡片对象
-     * @param config 算法配置
-     * @param useEasyInterval 是否使用 easyInterval（true=评级4简单，false=评级3良好）
-     */
-    private void regraduateToReview(UserCardSrsDO card, SystemProperties.Srs.Algorithm config, boolean useEasyInterval) {
-        card.setType(UserCardSrsDO.TYPE_REVIEW);
-        card.setCurrentStep((byte) 0);
-
-        // 计算恢复间隔
-        Short lapseOldInterval = card.getLapseOldInterval();
-        int baseInterval = useEasyInterval ? config.getEasyInterval() : config.getGraduatingInterval();
-        int recoveredInterval;
-
-        if (lapseOldInterval != null && lapseOldInterval > 0) {
-            recoveredInterval = Math.max(
-                    baseInterval,
-                    (int) Math.floor(lapseOldInterval * config.getNewIntervalMultiplier())
-            );
-        } else {
-            recoveredInterval = baseInterval;
-        }
-
-        card.setInterval(recoveredInterval);
-        card.setLapseOldInterval(null);  // 清空
-        card.setReviewDueAt(LocalDateTime.now().plusDays(recoveredInterval));
-    }
-
-    /**
-     * 更新难度系数 (EF)
-     */
-    private BigDecimal updateEaseFactor(BigDecimal currentEF, double delta, double minEF) {
-        double newEF = currentEF.doubleValue() + delta;
-        return BigDecimal.valueOf(Math.max(newEF, minEF));
-    }
-
-    // ========== 工具方法 ==========
-
-    /**
-     * 根据周期计算开始时间
-     */
-    private LocalDateTime calculateStartTime(LocalDateTime endTime, Period period) {
-        switch (period) {
-            case DAY:
-                return endTime.minusDays(1);
-            case WEEK:
-                return endTime.minusDays(7);
-            case MONTH:
-                return endTime.minusDays(30);
-            case YEAR:
-                return endTime.minusDays(365);
-            default:
-                return endTime.minusDays(7);
-        }
-    }
-
 }
