@@ -21,6 +21,8 @@ import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.learning.enrollment.UserRoadmapDataService;
 import com.prosper.learn.shared.common.utils.UnionFind;
 import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
@@ -29,6 +31,7 @@ import com.prosper.learn.user.profile.UserProfileDO;
 import com.prosper.learn.user.profile.UserProfileDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,7 +60,7 @@ public class RoadmapService {
     private final UpvoteService upvoteService;
     private final UserCourseService userCourseService;
     private final ScoreCalculationService scoreCalculationService;
-    private final MessageService messageService;
+    private final ApplicationEventPublisher eventPublisher;
     private final RoadmapConverter roadmapConverter;
     private final UserConverter userConverter;
     private final ProfessionService professionService;
@@ -797,8 +800,20 @@ public class RoadmapService {
 
         Utils.validateStateTransition(roadmap.getState(), ContentState.PUBLISHED);
 
+        // 获取职业信息
+        ProfessionDTO profession = professionService.getById(roadmap.getProfessionId(), false);
+
         roadmapDataService.approve(id);
         roadmap.setState(ContentState.PUBLISHED.value());
+
+        // 发布审核通过事件，触发统计更新（不发送消息）
+        eventPublisher.publishEvent(ContentApprovedEvent.forRoadmap(
+            roadmap.getCreatorId(),
+            roadmap.getId(),
+            profession != null ? profession.getId() : null,
+            profession != null ? profession.getName() : null
+        ));
+
         return toSummaryDTO(roadmap);
     }
 
@@ -819,17 +834,14 @@ public class RoadmapService {
         roadmapDataService.reject(id, reason);
         roadmap.setState(ContentState.REJECTED.value());
 
-        // 发送拒绝通知
-        if (profession != null) {
-            messageService.sendRoadmapModeration(
-                roadmap.getCreatorId(),
-                roadmap.getId(),
-                profession.getId(),
-                profession.getName(),
-                ModerationAction.REJECTED,
-                reason
-            );
-        }
+        // 发布审核拒绝事件，触发消息通知
+        eventPublisher.publishEvent(ContentRejectedEvent.forRoadmap(
+            roadmap.getCreatorId(),
+            roadmap.getId(),
+            profession != null ? profession.getId() : null,
+            profession != null ? profession.getName() : null,
+            reason
+        ));
 
         return toSummaryDTO(roadmap);
     }
@@ -845,23 +857,11 @@ public class RoadmapService {
 
         Utils.validateStateTransition(roadmap.getState(), ContentState.BANNED);
 
-        // 获取职业信息用于通知
-        ProfessionDTO profession = professionService.getById(roadmap.getProfessionId(), false);
-
         roadmapDataService.ban(id, reason);
         roadmap.setState(ContentState.BANNED.value());
 
-        // 发送封禁通知
-        if (profession != null) {
-            messageService.sendRoadmapModeration(
-                roadmap.getCreatorId(),
-                roadmap.getId(),
-                profession.getId(),
-                profession.getName(),
-                ModerationAction.BANNED,
-                reason
-            );
-        }
+        // ban 不发送任何消息或事件
+        log.info("路线图 {} 被封禁，操作者: {}, 原因: {}", id, operator.getId(), reason);
 
         return toSummaryDTO(roadmap);
     }

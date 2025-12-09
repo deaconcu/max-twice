@@ -30,6 +30,8 @@ import com.prosper.learn.content.post.PostDataService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
 import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
@@ -37,6 +39,7 @@ import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,7 +78,7 @@ public class PostService {
     private final UpvoteDataService upvoteDataService;
     private final UserDataService userDataService;
     private final DailyStatsService dailyStatsService;
-    private final MessageService messageService;
+    private final ApplicationEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
     private final SystemProperties systemProperties;
     private final UserConverter userConverter;
@@ -610,6 +613,16 @@ public class PostService {
         postDO.setReason(null);  // 清空拒绝原因
         postDataService.update(postDO);
 
+        // 发布审核通过事件，触发统计更新（不发送消息）
+        eventPublisher.publishEvent(ContentApprovedEvent.forPost(
+            postDO.getCreatorId(),
+            postDO.getId(),
+            null,  // postPreview - approve 不需要
+            null,  // nodeId
+            null,  // nodeName
+            null   // courseName
+        ));
+
         log.info("审核员 {} 批准了帖子 {}", currentUser.getId(), id);
     }
 
@@ -624,7 +637,7 @@ public class PostService {
     public void reject(Long id, String reason, UserDO currentUser) {
         validatePostId(id);
 
-        // 获取帖子信息用于通知
+        // 获取帖子信息
         PostDO postDO = postDataService.getById(id);
         if (postDO != null) {
             NodeDO nodeDO = nodeDataService.getById(postDO.getNodeId());
@@ -638,19 +651,16 @@ public class PostService {
 
             postDataService.reject(id, reason);
 
-            // 发送拒绝通知
-            if (nodeDO != null && courseDO != null) {
-                messageService.sendPostModeration(
-                    postDO.getCreatorId(),
-                    postDO.getId(),
-                    contentPreview,
-                    nodeDO.getId(),
-                    nodeDO.getName(),
-                    courseDO.getName(),
-                    ModerationAction.REJECTED,
-                    reason
-                );
-            }
+            // 发布审核拒绝事件，触发消息通知
+            eventPublisher.publishEvent(ContentRejectedEvent.forPost(
+                postDO.getCreatorId(),
+                postDO.getId(),
+                contentPreview,
+                nodeDO != null ? nodeDO.getId() : null,
+                nodeDO != null ? nodeDO.getName() : null,
+                courseDO != null ? courseDO.getName() : null,
+                reason
+            ));
 
             log.info("审核员 {} 拒绝了帖子 {}, 原因: {}", currentUser.getId(), id, reason);
         } else {
@@ -669,34 +679,9 @@ public class PostService {
     public void ban(Long id, String reason, UserDO currentUser) {
         validatePostId(id);
 
-        // 获取帖子信息用于通知
         PostDO postDO = postDataService.getById(id);
         if (postDO != null) {
-            NodeDO nodeDO = nodeDataService.getById(postDO.getNodeId());
-            CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
-
-            // 截取内容前50个字符作为预览
-            String contentPreview = Utils.stripFormatting(postDO.getContent());
-            if (contentPreview != null && contentPreview.length() > 50) {
-                contentPreview = contentPreview.substring(0, 50) + "...";
-            }
-
             postDataService.ban(id, reason);
-
-            // 发送封禁通知
-            if (nodeDO != null && courseDO != null) {
-                messageService.sendPostModeration(
-                    postDO.getCreatorId(),
-                    postDO.getId(),
-                    contentPreview,
-                    nodeDO.getId(),
-                    nodeDO.getName(),
-                    courseDO.getName(),
-                    ModerationAction.BANNED,
-                    reason
-                );
-            }
-
             log.info("审核员 {} 封禁了帖子 {}, 原因: {}", currentUser.getId(), id, reason);
         } else {
             postDataService.ban(id, reason);

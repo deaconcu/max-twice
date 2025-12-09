@@ -7,11 +7,15 @@ import com.prosper.learn.application.dto.request.UpdateProfessionRequest;
 import com.prosper.learn.application.dto.response.ProfessionDTO;
 import com.prosper.learn.content.profession.ProfessionDO;
 import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentDeletedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -26,7 +30,7 @@ public class ProfessionService {
 
     private final ProfessionDataService professionDataService;
     private final ProfessionRankingDomainService professionRankingService;
-    private final MessageService messageService;
+    private final ApplicationEventPublisher eventPublisher;
     private final SystemProperties systemProperties;
     private final ProfessionConverter professionConverter;
     
@@ -144,14 +148,12 @@ public class ProfessionService {
             professionDataService.approve(id);
         }
 
-        // 发送审核通过通知
-        messageService.sendProfessionModeration(
+        // 发布审核通过事件，触发消息通知
+        eventPublisher.publishEvent(ContentApprovedEvent.forProfession(
             profession.getCreatorId(),
             profession.getId(),
-            profession.getName(),
-            ModerationAction.APPROVED,
-            null
-        );
+            profession.getName()
+        ));
     }
 
     public void reject(long id, String reason, UserDO operator) {
@@ -172,14 +174,13 @@ public class ProfessionService {
             professionDataService.reject(id, reasonValue);
         }
 
-        // 发送拒绝通知
-        messageService.sendProfessionModeration(
+        // 发布审核拒绝事件，触发消息通知
+        eventPublisher.publishEvent(ContentRejectedEvent.forProfession(
             profession.getCreatorId(),
             profession.getId(),
             profession.getName(),
-            ModerationAction.REJECTED,
             reasonValue
-        );
+        ));
     }
 
     public void ban(long id, String reason, UserDO operator) {
@@ -200,14 +201,8 @@ public class ProfessionService {
             professionDataService.ban(id, reasonValue);
         }
 
-        // 发送封禁通知
-        messageService.sendProfessionModeration(
-            profession.getCreatorId(),
-            profession.getId(),
-            profession.getName(),
-            ModerationAction.BANNED,
-            reasonValue
-        );
+        // ban 不发送任何消息或事件
+        log.info("职业 {} 被封禁，操作者: {}, 原因: {}", id, operator.getId(), reasonValue);
     }
 
     /**

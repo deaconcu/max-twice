@@ -15,9 +15,11 @@ import com.prosper.learn.learning.progress.UserProgressDO;
 import com.prosper.learn.learning.progress.UserProgressDataService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.event.user.learning.LearningCompletedEvent;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -44,6 +46,7 @@ public class LearningProgressService {
     private final ObjectMapper objectMapper;
     private final SystemProperties systemProperties;
     private final NodeConverter nodeConverter;
+    private final ApplicationEventPublisher eventPublisher;
 
     private static final String USER_COMPLETED_KEY_PREFIX = "user:completed:";
     private static final String SYNC_FAILED_USERS_KEY = "sync:failed:users";
@@ -608,16 +611,37 @@ public class LearningProgressService {
                 
                 userCourseDataService.insert(userCourse);
                 log.info("Successfully created and marked course {} as completed for user {}", courseId, userId);
+
+                // 发布学习完成事件
+                eventPublisher.publishEvent(new LearningCompletedEvent(
+                    (long)userId,
+                    (long)courseId,
+                    Enums.ContentType.course
+                ));
+
                 return true;
             } else {
                 // 如果已有记录，更新完成状态
+                boolean wasAlreadyCompleted = userCourse.getState() != null &&
+                    userCourse.getState() == Enums.UserProgressState.COMPLETED.value();
+
                 userCourse.setProgressPercent(100);
                 userCourse.setState(Enums.UserProgressState.COMPLETED.value());
                 userCourse.setCompletedAt(java.time.LocalDateTime.now());
-                
+
                 int updated = userCourseDataService.update(userCourse);
                 if (updated > 0) {
                     log.info("Successfully updated course {} as completed for user {}", courseId, userId);
+
+                    // 只在首次完成时发布事件
+                    if (!wasAlreadyCompleted) {
+                        eventPublisher.publishEvent(new LearningCompletedEvent(
+                            (long)userId,
+                            (long)courseId,
+                            Enums.ContentType.course
+                        ));
+                    }
+
                     return true;
                 } else {
                     log.error("Failed to update user course record for user {} course {}", userId, courseId);
@@ -682,13 +706,28 @@ public class LearningProgressService {
                 userCourse.setStartedAt(LocalDateTime.now());
                 if (finalProgress >= 10000) {
                     userCourse.setCompletedAt(LocalDateTime.now());
+                    // 发布学习完成事件（新创建的记录）
+                    eventPublisher.publishEvent(new LearningCompletedEvent(
+                        (long)userId,
+                        (long)courseId,
+                        Enums.ContentType.course
+                    ));
                 }
                 userCourseDataService.insert(userCourse);
             } else {
+                int oldProgress = userCourse.getProgressPercent() != null ? userCourse.getProgressPercent() : 0;
                 userCourse.setProgressPercent(finalProgress);
                 userCourse.setState(finalProgress >= 10000 ? Enums.UserProgressState.COMPLETED.value() : Enums.UserProgressState.IN_PROGRESS.value());
                 if (finalProgress >= 10000 && userCourse.getCompletedAt() == null) {
                     userCourse.setCompletedAt(LocalDateTime.now());
+                    // 发布学习完成事件（从进行中变为完成）
+                    if (oldProgress < 10000) {
+                        eventPublisher.publishEvent(new LearningCompletedEvent(
+                            (long)userId,
+                            (long)courseId,
+                            Enums.ContentType.course
+                        ));
+                    }
                 }
                 userCourseDataService.update(userCourse);
             }

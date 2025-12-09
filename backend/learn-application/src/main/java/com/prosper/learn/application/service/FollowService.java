@@ -4,12 +4,15 @@ import com.prosper.learn.application.dto.response.FolloweeDTO;
 import com.prosper.learn.interaction.follow.FollowDO;
 import com.prosper.learn.interaction.follow.FollowDataService;
 import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.event.user.relationship.UserFollowedEvent;
+import com.prosper.learn.shared.domain.event.user.relationship.UserUnfollowedEvent;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,15 +45,18 @@ public class FollowService {
 
     /** 关注数据访问接口 */
     private final FollowDataService followDataService;
-    
+
     /** 用户数据访问接口 */
     private final UserDataService userDataService;
-    
+
     /** 消息服务，用于发送关注通知 */
     private final MessageService messageService;
-    
+
     /** 系统配置属性 */
     private final SystemProperties systemProperties;
+
+    /** 事件发布器 */
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 验证用户ID有效性
@@ -164,14 +170,17 @@ public class FollowService {
 
             // 发送关注通知消息
             messageService.createFollowMessage(followeeId, follower.getId());
+
+            // 发布关注事件
+            eventPublisher.publishEvent(new UserFollowedEvent(follower.getId(), followeeId));
         }
     }
 
     /**
      * 取消关注用户
-     * 
+     *
      * 执行取消关注操作，包括验证用户存在性、检查关注关系存在性、删除关注记录。
-     * 
+     *
      * @param followerId 关注者ID
      * @param followeeId 被关注者ID
      * @throws BusinessException 当参数无效或用户不存在时抛出异常
@@ -179,15 +188,18 @@ public class FollowService {
     @Transactional
     public void unfollow(Long followerId, Long followeeId) {
         validateFollowParams(followerId, followeeId);
-        
+
         // 验证被关注者存在性
         UserDO followee = validateUserExists(followeeId);
-        
+
         // 检查关注关系是否存在
         FollowDO existingFollow = followDataService.get(followerId, followeeId);
         if (existingFollow != null) {
             // 删除关注记录
             followDataService.delete(followerId, followeeId);
+
+            // 发布取消关注事件
+            eventPublisher.publishEvent(new UserUnfollowedEvent(followerId, followeeId));
         }
     }
 

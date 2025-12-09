@@ -11,7 +11,9 @@ import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.learning.enrollment.UserCourseDataService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -30,6 +32,7 @@ public class UserCourseService {
     private final CourseConverter courseConverter;
     private final UserCourseConverter userCourseConverter;
     private final CourseService courseService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ========== 常量定义 ==========
     private static final int MIN_PROGRESS = 0;
@@ -191,6 +194,13 @@ public class UserCourseService {
         progressDO.setStartedAt(LocalDateTime.now());
 
         userCourseDataService.insert(progressDO);
+
+        // 发布学习开始事件
+        eventPublisher.publishEvent(new LearningStartedEvent(
+            userId,
+            courseId,
+            ContentType.course
+        ));
 
         return true;
     }

@@ -1,6 +1,5 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.analytics.stats.service.RedisStatsDomainService;
 import com.prosper.learn.application.converter.CommentConverter;
 import com.prosper.learn.application.dto.request.CreateCommentRequest;
 import com.prosper.learn.application.dto.response.CommentDTO;
@@ -16,6 +15,7 @@ import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.interaction.comment.CommentDO;
 import com.prosper.learn.interaction.comment.CommentDataService;
+import com.prosper.learn.interaction.comment.CommentDomainService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
 import com.prosper.learn.shared.common.utils.Utils;
@@ -34,13 +34,17 @@ import java.util.*;
 import static com.prosper.learn.shared.domain.Enums.*;
 import static com.prosper.learn.shared.domain.Enums.ContentType.*;
 
+/**
+ * 评论应用服务
+ * 负责协调跨领域逻辑、DTO转换、事件发布
+ */
 @Service
 @RequiredArgsConstructor
 public class CommentService {
 
+    private final CommentDomainService commentDomainService;
     private final UserDataService userDataService;
     private final UpvoteDataService upvoteDataService;
-    private final CommentDataService commentDataService;
     private final PostDataService postDataService;
     private final NodeDataService nodeDataService;
     private final RoadmapDataService roadmapDataService;
@@ -48,18 +52,7 @@ public class CommentService {
     private final CommentConverter commentConverter;
     private final ApplicationEventPublisher eventPublisher;
 
-    // ========== 私有验证方法 ==========
-
-    /**
-     * 验证评论类型
-     */
-    private void validateCommentType(int type) {
-        if (type != post.value() &&
-            type != node.value() &&
-            type != roadmap.value()) {
-            throw ErrorCode.COMMENT_INVALID_TYPE.exception();
-        }
-    }
+    // ========== Command 方法（写操作）==========
 
     /**
      * 创建评论，用户提交评论时调用
@@ -69,29 +62,19 @@ public class CommentService {
      */
     @Transactional
     public CommentDetailDTO createComment(CreateCommentRequest request, UserDO commentor) {
-        // 先验证参数
+        // 验证参数
         if (request == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("评论请求不能为空");
         }
 
         validateCommentType(request.getObjectType());
 
-        // 验证 replyTo 评论是否存在
-        if (request.getReplyTo() != null && request.getReplyTo() > 0) {
-            CommentDO replyToComment = commentDataService.validateAndGet(request.getReplyTo());
-            // 确保回复的评论属于同一个对象
-            if (!replyToComment.getObjectId().equals(request.getObjectId()) ||
-                !replyToComment.getObjectType().equals(request.getObjectType())) {
-                throw ErrorCode.INVALID_PARAMETER.exception("回复的评论不属于当前对象");
-            }
-        }
-
-        // 验证 toUser 用户是否存在
+        // 验证 toUser 用户是否存在（跨域验证）
         if (request.getToUser() != null && request.getToUser() > 0) {
             userDataService.validateAndGet(request.getToUser());
         }
 
-        // 验证被评论的对象是否存在
+        // 验证被评论的对象是否存在（跨域验证）
         if (request.getObjectType() == post.value()) {
             postDataService.validateAndGet(request.getObjectId());
         } else if (request.getObjectType() == node.value()) {
@@ -102,65 +85,68 @@ public class CommentService {
             throw ErrorCode.COMMENT_INVALID_TYPE.exception();
         }
 
-        // 直接创建 CommentDO
-        CommentDO commentDO = new CommentDO();
-        commentDO.setObjectId(request.getObjectId());
-        commentDO.setObjectType(request.getObjectType());
-        commentDO.setReplyToCommentId(request.getReplyTo() == null ? 0 : request.getReplyTo());
-        commentDO.setToUserId(request.getToUser() == null ? 0 : request.getToUser());
-        commentDO.setContent(request.getContent());
-        commentDO.setCreatorId(commentor.getId());
-        commentDO.setState(ContentState.SUBMITTED.value());  // 设置为待审核状态
-        //commentDO.setScore(scoreCalculationService.calculateCommentScore(commentDO));
-        commentDO.setScore(0.0);
-        commentDataService.insert(commentDO);
+        // 调用 DomainService 创建评论（包含 interaction 领域内的验证和业务逻辑）
+        CommentDO savedComment = commentDomainService.createComment(
+            request.getObjectId(),
+            request.getObjectType(),
+            request.getReplyTo(),
+            request.getToUser(),
+            request.getContent(),
+            commentor.getId()
+        );
 
         // 注意：评论创建时为待审核状态，不发送通知、不更新统计
         // 审核通过后会发布 CommentCreatedEvent，由事件监听器处理通知和统计
 
-        // 重新查询并转换为 DTO，填充 toUserName
-        CommentDO savedComment = commentDataService.getById(commentDO.getId());
+        // 转换为 DTO，填充 toUserName
         return toCommentWithUserNames(savedComment);
     }
 
     /**
-     * 给查询到的评论列表及其子评论设置点赞状态 upvoted
-     * @param commentDTOList 父评论列表
-     * @param childrenMap 子评论映射（parentId -> childDTO）
-     * @param userId 当前用户ID
-     * @return 填充了点赞状态的父评论列表
+     * 批准评论
      */
-    private List<CommentWithRepliesDTO> processUpvoteStatusWithChildren(List<CommentWithRepliesDTO> commentDTOList, HashMap<Long, CommentDetailDTO> childrenMap, Long userId) {
-        List<Long> allIds = new ArrayList<>();
+    @Transactional
+    public void approve(Long id, UserDO operator) {
+        // 调用 DomainService 审核通过
+        CommentDO commentDO = commentDomainService.approveComment(id);
 
-        // 收集所有评论ID（父评论和子评论）
-        for (CommentWithRepliesDTO commentDTO : commentDTOList) {
-            allIds.add(commentDTO.getId());
-        }
-        allIds.addAll(childrenMap.values().stream().map(CommentDetailDTO::getId).toList());
+        // 获取被评论内容的创建者ID（跨域逻辑）
+        Long contentCreatorId = getContentCreatorId(commentDO);
+        ContentType contentType = ContentType.getByValue(commentDO.getObjectType());
 
-        if (allIds.isEmpty()) {
-            return commentDTOList;
-        }
-
-        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, allIds, comment.value());
-
-        Set<Long> upvotedSet = new HashSet<>();
-        for (UpvoteDO upvoteDO : upvoteList) {
-            upvotedSet.add(upvoteDO.getObjectId());
-        }
-
-        // 设置父评论点赞状态
-        for (CommentWithRepliesDTO commentDTO : commentDTOList) {
-            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
-        }
-
-        // 设置子评论点赞状态
-        for (CommentDetailDTO commentDTO: childrenMap.values()) {
-            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
-        }
-        return commentDTOList;
+        // 发布评论创建事件，触发 Redis 统计更新、消息通知、分数计算等副作用
+        eventPublisher.publishEvent(new CommentCreatedEvent(
+            commentDO.getCreatorId(),  // 评论者ID
+            commentDO.getId(),         // 评论ID
+            commentDO.getObjectId(),   // 被评论内容ID
+            contentType,               // 内容类型
+            contentCreatorId           // 被评论内容的创建者ID
+        ));
     }
+
+    /**
+     * 拒绝评论（审核不通过，带原因）
+     * 只能拒绝 SUBMITTED 状态的评论，拒绝后状态变为 REJECTED
+     * 不涉及统计回滚（因为从未发布）
+     * 暂不发送通知
+     */
+    @Transactional
+    public void reject(Long id, String reason, UserDO operator) {
+        commentDomainService.rejectComment(id, reason);
+    }
+
+    /**
+     * 封禁评论（违规封禁，带原因）
+     * 可以封禁任何状态的评论，封禁后状态变为 BANNED
+     * TODO: 如果之前是 PUBLISHED 状态，需要统计回滚（评论数-1）
+     * TODO: 发送封禁通知
+     */
+    @Transactional
+    public void ban(Long id, String reason, UserDO operator) {
+        commentDomainService.banComment(id, reason);
+    }
+
+    // ========== Query 方法（读操作）==========
 
     /**
      * 获取对象(post, node, comment ...)评论，分页查询，按分数和ID倒序排列
@@ -172,20 +158,9 @@ public class CommentService {
         validateCommentType(type);
 
         int pageSize = systemProperties.getComment().getDefaultPageSize();
-        // 多查询一条以判断是否还有更多数据
-        int querySize = pageSize + 1;
 
-        List<CommentDO> commentDOList;
-        // 第一页：lastScore 和 lastId 都为 null
-        if (lastScore == null && lastId == null) {
-            commentDOList = commentDataService.getByObjectId(objectId, type, querySize);
-        } else {
-            // 后续页：需要同时传递 lastScore 和 lastId
-            if (lastScore == null || lastId == null) {
-                throw ErrorCode.INVALID_PARAMETER.exception("分页查询需要同时提供 lastScore 和 lastId");
-            }
-            commentDOList = commentDataService.getByObjectIdPaginated(objectId, type, lastScore, lastId, querySize);
-        }
+        // 调用 DomainService 获取评论列表
+        List<CommentDO> commentDOList = commentDomainService.getCommentsByObject(objectId, type, lastScore, lastId, pageSize);
 
         // 判断是否还有更多数据
         boolean hasMore = commentDOList.size() > pageSize;
@@ -194,6 +169,7 @@ public class CommentService {
             commentDOList = commentDOList.subList(0, pageSize);
         }
 
+        // DTO转换 + 填充点赞状态 + 填充用户名
         List<CommentWithRepliesDTO> commentDTOList = toCommentsWithReplies(commentDOList, currentUser.getId());
 
         // 构建响应
@@ -205,8 +181,6 @@ public class CommentService {
         return KeysetPageResponse.of(commentDTOList, hasMore, lastComment.getScore(), lastComment.getId());
     }
 
-
-
     /**
      * 获取子评论列表，分页查询，按分数和ID倒序排列
      * @param lastScore 上一页最后一条记录的分数，首页传null
@@ -214,23 +188,10 @@ public class CommentService {
      * @return KeysetPageResponse<CommentDetailDTO> 不包含子评论的评论详情列表
      */
     public KeysetPageResponse<CommentDetailDTO> getCommentReplies(Long id, Double lastScore, Long lastId, UserDO currentUser) {
-        // id 会在 getByTopic 时被验证
-
         int pageSize = systemProperties.getComment().getDefaultPageSize();
-        // 多查询一条以判断是否还有更多数据
-        int querySize = pageSize + 1;
 
-        List<CommentDO> commentDOList;
-        // 第一页：lastScore 和 lastId 都为 null
-        if (lastScore == null && lastId == null) {
-            commentDOList = commentDataService.getByTopic(id, querySize);
-        } else {
-            // 后续页：需要同时传递 lastScore 和 lastId
-            if (lastScore == null || lastId == null) {
-                throw ErrorCode.INVALID_PARAMETER.exception("分页查询需要同时提供 lastScore 和 lastId");
-            }
-            commentDOList = commentDataService.getByTopicPaginated(id, lastScore, lastId, querySize);
-        }
+        // 调用 DomainService 获取子评论列表
+        List<CommentDO> commentDOList = commentDomainService.getCommentReplies(id, lastScore, lastId, pageSize);
 
         // 判断是否还有更多数据
         boolean hasMore = commentDOList.size() > pageSize;
@@ -239,6 +200,7 @@ public class CommentService {
             commentDOList = commentDOList.subList(0, pageSize);
         }
 
+        // DTO转换 + 填充点赞状态 + 填充用户名
         List<CommentDetailDTO> commentDTOList = commentConverter.toDetailDTO(commentDOList);
         commentDTOList = toCommentsWithVoteStatus(commentDTOList, currentUser.getId());
 
@@ -251,7 +213,6 @@ public class CommentService {
         return KeysetPageResponse.of(commentDTOList, hasMore, lastComment.getScore(), lastComment.getId());
     }
 
-
     /**
      * 根据状态获取评论列表（分页），按ID倒序排列（越新的越靠前）
      * 仅管理员调用
@@ -262,25 +223,10 @@ public class CommentService {
     public List<CommentAdminDTO> getCommentsByState(String state, Long lastId) {
         int pageSize = systemProperties.getComment().getDefaultPageSize();
 
-        byte stateValue;
-        switch (state.toLowerCase()) {
-            case "pending":
-                stateValue = ContentState.SUBMITTED.value();
-                break;
-            case "approved":
-                stateValue = ContentState.PUBLISHED.value();
-                break;
-            case "rejected":
-                stateValue = ContentState.REJECTED.value();
-                break;
-            case "banned":
-                stateValue = ContentState.BANNED.value();
-                break;
-            default:
-                throw ErrorCode.INVALID_PARAMETER.exception("无效的状态参数: " + state);
-        }
+        // 调用 DomainService 获取评论列表（包含状态转换逻辑）
+        List<CommentDO> commentDOList = commentDomainService.getCommentsByState(state, lastId, pageSize);
 
-        List<CommentDO> commentDOList = commentDataService.getListByState(stateValue, lastId, pageSize);
+        // DTO转换
         return commentConverter.toAdminDTO(commentDOList);
     }
 
@@ -291,76 +237,12 @@ public class CommentService {
      */
     public List<CommentAdminDTO> getCommentsByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId, Byte state) {
         int pageSize = systemProperties.getComment().getDefaultPageSize();
-        List<CommentDO> commentDOList = commentDataService.getListByFilter(objectType, objectId, creatorId, lastId, state, pageSize);
+
+        // 调用 DomainService 获取评论列表
+        List<CommentDO> commentDOList = commentDomainService.getCommentsByFilter(objectType, objectId, creatorId, lastId, state, pageSize);
+
+        // DTO转换
         return commentConverter.toAdminDTO(commentDOList);
-    }
-
-    /**
-     * 批准评论
-     */
-    @Transactional
-    public void approve(Long id, UserDO operator) {
-        CommentDO commentDO = commentDataService.validateAndGet(id);
-        int oldState = commentDO.getState();
-
-        if (oldState != ContentState.PUBLISHED.value()) {
-            commentDO.setState(ContentState.PUBLISHED.value());
-            commentDO.setReason(null);  // 清空拒绝原因
-            commentDataService.update(commentDO);
-
-            // 发布评论创建事件，触发 Redis 统计更新、消息通知、分数计算等副作用
-            Long contentCreatorId = getContentCreatorId(commentDO);
-            ContentType contentType = ContentType.getByValue(commentDO.getObjectType());
-
-            eventPublisher.publishEvent(new CommentCreatedEvent(
-                commentDO.getCreatorId(),  // 评论者ID
-                commentDO.getId(),         // 评论ID
-                commentDO.getObjectId(),   // 被评论内容ID
-                contentType,               // 内容类型
-                contentCreatorId           // 被评论内容的创建者ID
-            ));
-        }
-    }
-
-    /**
-     * 拒绝评论（审核不通过，带原因）
-     * 只能拒绝 SUBMITTED 状态的评论，拒绝后状态变为 REJECTED
-     * 不涉及统计回滚（因为从未发布）
-     * 暂不发送通知
-     */
-    @Transactional
-    public void reject(Long id, String reason, UserDO operator) {
-        commentDataService.validateAndGet(id);
-        commentDataService.reject(id, reason);
-    }
-
-    /**
-     * 封禁评论（违规封禁，带原因）
-     * 可以封禁任何状态的评论，封禁后状态变为 BANNED
-     * TODO: 如果之前是 PUBLISHED 状态，需要统计回滚（评论数-1）
-     * TODO: 发送封禁通知
-     */
-    @Transactional
-    public void ban(Long id, String reason, UserDO operator) {
-        commentDataService.validateAndGet(id);
-        commentDataService.ban(id, reason);
-    }
-
-    /**
-     * 获取被评论内容的创建者ID
-     */
-    private Long getContentCreatorId(CommentDO commentDO) {
-        if (commentDO.getObjectType() == post.value()) {
-            PostDO postDO = postDataService.getById(commentDO.getObjectId());
-            return postDO != null ? postDO.getCreatorId() : null;
-        } else if (commentDO.getObjectType() == node.value()) {
-            NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
-            return nodeDO != null ? nodeDO.getCreatorId() : null;
-        } else if (commentDO.getObjectType() == roadmap.value()) {
-            RoadmapDO roadmapDO = roadmapDataService.getById(commentDO.getObjectId());
-            return roadmapDO != null ? roadmapDO.getCreatorId() : null;
-        }
-        return null;
     }
 
     // ========== DTO 转换方法 ==========
@@ -389,7 +271,9 @@ public class CommentService {
         }
 
         List<CommentWithRepliesDTO> commentDTOList = commentConverter.toWithRepliesDTO(commentDOList);
-        List<CommentDO> children = commentDataService.getChildren(ids);
+
+        // 调用 DomainService 获取子评论
+        List<CommentDO> children = commentDomainService.getChildren(ids);
 
         HashMap<Long, CommentDetailDTO> map = new HashMap<>();
         for (CommentDO commentDO : children) {
@@ -466,6 +350,46 @@ public class CommentService {
     }
 
     /**
+     * 给查询到的评论列表及其子评论设置点赞状态 upvoted
+     * @param commentDTOList 父评论列表
+     * @param childrenMap 子评论映射（parentId -> childDTO）
+     * @param userId 当前用户ID
+     * @return 填充了点赞状态的父评论列表
+     */
+    private List<CommentWithRepliesDTO> processUpvoteStatusWithChildren(
+            List<CommentWithRepliesDTO> commentDTOList, HashMap<Long, CommentDetailDTO> childrenMap, Long userId) {
+        List<Long> allIds = new ArrayList<>();
+
+        // 收集所有评论ID（父评论和子评论）
+        for (CommentWithRepliesDTO commentDTO : commentDTOList) {
+            allIds.add(commentDTO.getId());
+        }
+        allIds.addAll(childrenMap.values().stream().map(CommentDetailDTO::getId).toList());
+
+        if (allIds.isEmpty()) {
+            return commentDTOList;
+        }
+
+        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, allIds, comment.value());
+
+        Set<Long> upvotedSet = new HashSet<>();
+        for (UpvoteDO upvoteDO : upvoteList) {
+            upvotedSet.add(upvoteDO.getObjectId());
+        }
+
+        // 设置父评论点赞状态
+        for (CommentWithRepliesDTO commentDTO : commentDTOList) {
+            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
+        }
+
+        // 设置子评论点赞状态
+        for (CommentDetailDTO commentDTO: childrenMap.values()) {
+            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
+        }
+        return commentDTOList;
+    }
+
+    /**
      * 填充评论列表中的 creatorName 和 toUserName 字段
      * 通用方法，支持 CommentDetailDTO 及其子类（CommentWithRepliesDTO）
      *
@@ -524,5 +448,33 @@ public class CommentService {
         }
     }
 
+    // ========== Private 辅助方法 ==========
 
+    /**
+     * 验证评论类型
+     */
+    private void validateCommentType(int type) {
+        if (type != post.value() &&
+            type != node.value() &&
+            type != roadmap.value()) {
+            throw ErrorCode.COMMENT_INVALID_TYPE.exception();
+        }
+    }
+
+    /**
+     * 获取被评论内容的创建者ID（跨域查询）
+     */
+    private Long getContentCreatorId(CommentDO commentDO) {
+        if (commentDO.getObjectType() == post.value()) {
+            PostDO postDO = postDataService.getById(commentDO.getObjectId());
+            return postDO != null ? postDO.getCreatorId() : null;
+        } else if (commentDO.getObjectType() == node.value()) {
+            NodeDO nodeDO = nodeDataService.getById(commentDO.getObjectId());
+            return nodeDO != null ? nodeDO.getCreatorId() : null;
+        } else if (commentDO.getObjectType() == roadmap.value()) {
+            RoadmapDO roadmapDO = roadmapDataService.getById(commentDO.getObjectId());
+            return roadmapDO != null ? roadmapDO.getCreatorId() : null;
+        }
+        return null;
+    }
 }

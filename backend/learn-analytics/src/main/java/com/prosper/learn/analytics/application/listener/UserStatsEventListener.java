@@ -3,7 +3,7 @@ package com.prosper.learn.analytics.application.listener;
 import com.prosper.learn.analytics.stats.service.UserStatsDomainService;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentBookmarkedEvent;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentUnbookmarkedEvent;
-import com.prosper.learn.shared.domain.event.content.lifecycle.ContentCreatedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentDeletedEvent;
 import com.prosper.learn.shared.domain.event.user.learning.LearningCompletedEvent;
 import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
@@ -162,12 +162,12 @@ public class UserStatsEventListener {
     // ==================== 内容创作统计 ====================
 
     /**
-     * 内容创建事件 - 直接写数据库
+     * 内容审核通过事件 - 直接写数据库
      * 统一处理文章、路线图、目录、卡片组创建等
      */
     @EventListener
     @Async
-    public void onContentCreated(ContentCreatedEvent event) {
+    public void onContentApproved(ContentApprovedEvent event) {
         try {
             switch (event.getContentType()) {
                 case post:

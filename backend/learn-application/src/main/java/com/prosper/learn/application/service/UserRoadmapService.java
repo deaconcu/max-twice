@@ -16,10 +16,13 @@ import com.prosper.learn.learning.enrollment.UserRoadmapDO;
 import com.prosper.learn.learning.enrollment.UserRoadmapDataService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
+import com.prosper.learn.shared.domain.event.user.learning.LearningCompletedEvent;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -45,6 +48,7 @@ public class UserRoadmapService {
     private final RoadmapConverter roadmapConverter;
     private final UserConverter userConverter;
     private final ProfessionConverter professionConverter;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 不变常量 - 进度相关
     private static final int INITIAL_PROGRESS = 0;
@@ -213,7 +217,14 @@ public class UserRoadmapService {
             // 创建新的学习记录
             UserRoadmapDO userRoadmapDO = createInitialUserRoadmap(userId, roadmapId);
             userRoadmapDataService.insert(userRoadmapDO);
-            
+
+            // 发布学习开始事件
+            eventPublisher.publishEvent(new LearningStartedEvent(
+                userId,
+                roadmapId,
+                ContentType.roadmap
+            ));
+
             log.info("用户 {} 开始学习路线图 {}", userId, roadmapId);
             return true;
             
@@ -288,11 +299,22 @@ public class UserRoadmapService {
                 
                 // 如果完成度达到100%，更新状态为COMPLETED
                 if (overallProgress >= 100.0) {
+                    boolean wasNotCompleted = userRoadmapDO.getState() != UserProgressState.COMPLETED.value();
                     userRoadmapDO.setState(UserProgressState.COMPLETED.value());
                     userRoadmapDO.setProgressPercent(100);
                     if (userRoadmapDO.getCompletedAt() == null) {
                         userRoadmapDO.setCompletedAt(LocalDateTime.now());
                     }
+
+                    // 如果是首次完成，发布学习完成事件
+                    if (wasNotCompleted) {
+                        eventPublisher.publishEvent(new LearningCompletedEvent(
+                            userRoadmapDO.getUserId(),
+                            userRoadmapDO.getRoadmapId(),
+                            ContentType.roadmap
+                        ));
+                    }
+
                     needUpdate = true;
                 } else if (overallProgress > 0 && UserProgressState.NOT_STARTED.value() == userRoadmapDO.getState()) {
                     // 如果有进度但状态还是NOT_STARTED，更新为IN_PROGRESS
@@ -332,8 +354,18 @@ public class UserRoadmapService {
 
         // 如果进度达到100%，标记为完成
         if (progressPercent >= 100) {
+            boolean wasNotCompleted = userRoadmapDO.getState() != UserProgressState.COMPLETED.value();
             userRoadmapDO.setState(UserProgressState.COMPLETED.value());
             userRoadmapDO.setCompletedAt(LocalDateTime.now());
+
+            // 如果是首次完成，发布学习完成事件
+            if (wasNotCompleted) {
+                eventPublisher.publishEvent(new LearningCompletedEvent(
+                    userId,
+                    roadmapId,
+                    ContentType.roadmap
+                ));
+            }
         } else if (progressPercent > 0) {
             userRoadmapDO.setState(UserProgressState.IN_PROGRESS.value());
         }

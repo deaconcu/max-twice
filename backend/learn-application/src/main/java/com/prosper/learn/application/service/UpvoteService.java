@@ -1,6 +1,5 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.application.dto.response.UpvoteStatusDTO;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
@@ -8,6 +7,7 @@ import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.interaction.comment.CommentDO;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
+import com.prosper.learn.interaction.upvote.UpvoteDomainService;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.voting.*;
@@ -22,48 +22,31 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
- * 点赞服务
- * 
- * 负责管理系统中的点赞功能，包括：
- * - 帖子点赞（支持多种点赞类型：once, twice, helpful）
+ * 点赞应用服务
+ *
+ * 负责协调跨领域逻辑、事件发布
+ *
+ * 核心功能：
+ * - 帖子点赞（支持多种点赞类型：twice, like）
  * - 评论点赞
  * - 路线图投票
- * - 点赞状态查询和批量查询
- * 
- * 核心功能：
- * - 支持点赞/取消点赞/切换点赞类型
- * - 自动更新统计数据和分数
- * - 发送点赞通知消息
- * - Redis统计数据记录
- * 
- * @author Claude
- * @since 2024-01-20
+ * - 记忆卡片组点赞
+ * - 点赞状态查询
  */
 @Service
 @RequiredArgsConstructor
 public class UpvoteService {
 
-    /** 点赞类型名称常量 */
-    private static final String UPVOTE_TYPE_TWICE = "twice";
-    private static final String UPVOTE_TYPE_LIKE = "like";
-
-    /** 点赞数据访问接口 */
+    private final UpvoteDomainService upvoteDomainService;
     private final UpvoteDataService upvoteDataService;
-    
-    /** 帖子数据访问接口 */
     private final PostDataService postDataService;
-
-    /** 内容统计业务服务 */
-    private final ContentStatsDomainService contentStatsDomainService;
-    
-    /** 事件发布器，用于发布点赞相关事件 */
     private final ApplicationEventPublisher eventPublisher;
 
+    // ========== Command 方法（写操作）==========
 
     /**
      * 帖子点赞
@@ -84,77 +67,48 @@ public class UpvoteService {
             throw ErrorCode.INVALID_PARAMETER.exception("帖子仅支持 twice 或 like 点赞类型: " + type);
         }
 
-        // 查询现有点赞记录
-        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(user.getId(), postDO.getId(), ContentType.post.value());
+        // 调用 DomainService 执行点赞逻辑
+        UpvoteDomainService.UpvoteAction action = upvoteDomainService.upvote(
+            user.getId(),
+            postDO.getId(),
+            ContentType.post.value(),
+            type
+        );
 
-        // 场景1：如果已经是同类型点赞，则取消点赞
-        if (upvoteDO != null && upvoteDO.getType() == type) {
-            // 删除点赞记录
-            upvoteDataService.delete(upvoteDO.getId());
+        // 根据操作类型发布相应事件
+        switch (action.getActionType()) {
+            case REMOVED:
+                // 取消点赞
+                if (type == VoteType.twice.value()) {
+                    eventPublisher.publishEvent(new TwiceUpvoteCancelledEvent<>(
+                        user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO
+                    ));
+                } else {
+                    eventPublisher.publishEvent(new LikeUpvoteCancelledEvent<>(
+                        user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO, postDO.getNodeId()
+                    ));
+                }
+                break;
 
-            // 发布取消点赞事件
-            if (type == VoteType.twice.value()) {
-                eventPublisher.publishEvent(new TwiceUpvoteCancelledEvent<>(
-                    user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO
+            case ADDED:
+                // 新增点赞
+                if (type == VoteType.twice.value()) {
+                    eventPublisher.publishEvent(new TwiceUpvotedEvent<>(
+                        user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO
+                    ));
+                } else {
+                    eventPublisher.publishEvent(new LikeUpvotedEvent<>(
+                        user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO, postDO.getNodeId()
+                    ));
+                }
+                break;
+
+            case SWITCHED:
+                // 切换点赞类型
+                eventPublisher.publishEvent(new UpvoteTypeSwitchedEvent<>(
+                    user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO, action.getOldType(), type
                 ));
-            } else {
-                eventPublisher.publishEvent(new LikeUpvoteCancelledEvent<>(
-                    user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO, postDO.getNodeId()
-                ));
-            }
-            return;
-        }
-
-        if (upvoteDO == null) {
-            // 场景2：新增点赞
-
-            upvoteDO = new UpvoteDO();
-            upvoteDO.setUserId(user.getId());
-            upvoteDO.setObjectId(postDO.getId());
-            upvoteDO.setObjectType(ContentType.post.value());
-            upvoteDO.setType(type);
-            upvoteDataService.insert(upvoteDO);
-
-            // 发布点赞事件
-            if (type == VoteType.twice.value()) {
-                eventPublisher.publishEvent(new TwiceUpvotedEvent<>(
-                    user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO
-                ));
-            } else {
-                eventPublisher.publishEvent(new LikeUpvotedEvent<>(
-                    user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO, postDO.getNodeId()
-                ));
-            }
-        } else {
-            // 场景3：切换点赞类型
-            int oldType = upvoteDO.getType();
-
-            // 更新点赞记录类型
-            upvoteDO.setType(type);
-            upvoteDataService.update(upvoteDO);
-
-            // 发布点赞类型切换事件（一次性处理，避免重复计算）
-            eventPublisher.publishEvent(new UpvoteTypeSwitchedEvent<>(
-                user.getId(), postDO.getId(), ContentType.post, postDO.getCreatorId(), postDO, oldType, type
-            ));
-        }
-    }
-
-    /**
-     * 获取评论对应的节点ID
-     * 
-     * @param commentDO 评论对象
-     * @return 节点ID
-     * @throws BusinessException 当评论类型无效时抛出异常
-     */
-    private long getNodeIdFromComment(CommentDO commentDO) {
-        if (commentDO.getObjectType() == ContentType.node.value()) {
-            return commentDO.getObjectId();
-        } else if (commentDO.getObjectType() == ContentType.post.value()) {
-            PostDO postDO = postDataService.validateAndGet(commentDO.getObjectId());
-            return postDO.getNodeId();
-        } else {
-            throw ErrorCode.INVALID_PARAMETER.exception("无效的评论类型: " + commentDO.getObjectType());
+                break;
         }
     }
 
@@ -170,31 +124,26 @@ public class UpvoteService {
      */
     @Transactional
     public void upvoteComment(CommentDO commentDO, UserDO user) {
-        // 查询现有点赞记录
-        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(user.getId(), commentDO.getId(), ContentType.comment.value());
+        // 调用 DomainService 执行点赞/取消操作
+        boolean added = upvoteDomainService.toggleUpvote(
+            user.getId(),
+            commentDO.getId(),
+            ContentType.comment.value()
+        );
 
-        if (upvoteDO != null) {
-            // 场景1：取消点赞
-            upvoteDataService.delete(upvoteDO.getId());
+        // 获取 nodeId（跨域逻辑）
+        long nodeId = getNodeIdFromComment(commentDO);
 
-            // 发布取消点赞事件（评论只有一种点赞类型，使用 LikeUpvoteCancelledEvent）
-            eventPublisher.publishEvent(new LikeUpvoteCancelledEvent<>(
-                user.getId(), commentDO.getId(), ContentType.comment,
-                commentDO.getCreatorId(), commentDO, getNodeIdFromComment(commentDO)
-            ));
-        } else {
-            // 场景2：新增点赞
-            upvoteDO = new UpvoteDO();
-            upvoteDO.setUserId(user.getId());
-            upvoteDO.setObjectId(commentDO.getId());
-            upvoteDO.setObjectType(ContentType.comment.value());
-            upvoteDO.setType(0); // 评论点赞类型设为0
-            upvoteDataService.insert(upvoteDO);
-
-            // 发布点赞事件（评论只有一种点赞类型，使用 LikeUpvotedEvent）
+        // 发布相应事件
+        if (added) {
             eventPublisher.publishEvent(new LikeUpvotedEvent<>(
                 user.getId(), commentDO.getId(), ContentType.comment,
-                commentDO.getCreatorId(), commentDO, getNodeIdFromComment(commentDO)
+                commentDO.getCreatorId(), commentDO, nodeId
+            ));
+        } else {
+            eventPublisher.publishEvent(new LikeUpvoteCancelledEvent<>(
+                user.getId(), commentDO.getId(), ContentType.comment,
+                commentDO.getCreatorId(), commentDO, nodeId
             ));
         }
     }
@@ -212,37 +161,27 @@ public class UpvoteService {
      */
     @Transactional
     public boolean upvoteRoadmap(RoadmapDO roadmapDO, UserDO user) {
-        // 检查是否已经投过票
-        UpvoteDO existingUpvote = upvoteDataService.getByUserAndObject(user.getId(), roadmapDO.getId(), ContentType.roadmap.value());
+        // 调用 DomainService 执行投票/取消操作
+        boolean added = upvoteDomainService.toggleUpvote(
+            user.getId(),
+            roadmapDO.getId(),
+            ContentType.roadmap.value()
+        );
 
-        if (existingUpvote != null) {
-            // 如果已经投过票，则取消投票
-            upvoteDataService.delete(existingUpvote.getId());
-
-            // 发布取消投票事件
-            eventPublisher.publishEvent(new LikeUpvoteCancelledEvent<>(
-                user.getId(), roadmapDO.getId(), ContentType.roadmap,
-                roadmapDO.getCreatorId(), roadmapDO, roadmapDO.getProfessionId()
-            ));
-
-            return false; // 返回false表示取消投票
-        } else {
-            // 如果没有投过票，则投票
-            UpvoteDO upvoteDO = new UpvoteDO();
-            upvoteDO.setUserId(user.getId());
-            upvoteDO.setObjectId(roadmapDO.getId());
-            upvoteDO.setObjectType(ContentType.roadmap.value());
-            upvoteDO.setType(0); // roadmap投票类型设为0，对应"once"
-            upvoteDataService.insert(upvoteDO);
-
-            // 发布投票事件
+        // 发布相应事件
+        if (added) {
             eventPublisher.publishEvent(new LikeUpvotedEvent<>(
                 user.getId(), roadmapDO.getId(), ContentType.roadmap,
                 roadmapDO.getCreatorId(), roadmapDO, roadmapDO.getProfessionId()
             ));
-
-            return true; // 返回true表示投票成功
+        } else {
+            eventPublisher.publishEvent(new LikeUpvoteCancelledEvent<>(
+                user.getId(), roadmapDO.getId(), ContentType.roadmap,
+                roadmapDO.getCreatorId(), roadmapDO, roadmapDO.getProfessionId()
+            ));
         }
+
+        return added;
     }
 
     /**
@@ -257,73 +196,44 @@ public class UpvoteService {
      */
     @Transactional
     public boolean upvoteMemoryCardDeck(MemoryCardDeckDO deck, UserDO user) {
-        // 检查是否已经点过赞
-        UpvoteDO existingUpvote = upvoteDataService.getByUserAndObject(user.getId(), deck.getId(), ContentType.memory_card_deck.value());
-        if (existingUpvote != null) {
-            // 如果已经点过赞，则取消点赞
-            upvoteDataService.delete(existingUpvote.getId());
+        // 调用 DomainService 执行点赞/取消操作
+        boolean added = upvoteDomainService.toggleUpvote(
+            user.getId(),
+            deck.getId(),
+            ContentType.memory_card_deck.value()
+        );
 
-            // 发布取消点赞事件
-            eventPublisher.publishEvent(new LikeUpvoteCancelledEvent<>(
-                user.getId(), deck.getId(), ContentType.memory_card_deck,
-                deck.getCreatorId(), deck, deck.getNodeId()
-            ));
-
-            return false; // 返回false表示取消点赞
-        } else {
-            // 如果没有点过赞，则点赞
-            UpvoteDO upvoteDO = new UpvoteDO();
-            upvoteDO.setUserId(user.getId());
-            upvoteDO.setObjectId(deck.getId());
-            upvoteDO.setObjectType(ContentType.memory_card_deck.value());
-            upvoteDO.setType(0); // 卡片组点赞类型设为0
-            upvoteDataService.insert(upvoteDO);
-
-            // 发布点赞事件
+        // 发布相应事件
+        if (added) {
             eventPublisher.publishEvent(new LikeUpvotedEvent<>(
                 user.getId(), deck.getId(), ContentType.memory_card_deck,
                 deck.getCreatorId(), deck, deck.getNodeId()
             ));
-
-            return true; // 返回true表示点赞成功
+        } else {
+            eventPublisher.publishEvent(new LikeUpvoteCancelledEvent<>(
+                user.getId(), deck.getId(), ContentType.memory_card_deck,
+                deck.getCreatorId(), deck, deck.getNodeId()
+            ));
         }
+
+        return added;
     }
+
+    // ========== Query 方法（读操作）==========
 
     /**
      * 检查用户是否已经给指定内容投过票
-     * @param contentId 内容ID
-     * @param contentType 内容类型
-     * @param userId 用户ID
-     * @return true表示已投票，false表示未投票
      */
     public boolean hasUpvoted(long contentId, ContentType contentType, long userId) {
-        if (userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
-        }
-        if (contentId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("内容ID无效: " + contentId);
-        }
-
-        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, contentId, contentType.value());
-        return upvoteDO != null;
+        return upvoteDomainService.hasUpvoted(contentId, contentType.value(), userId);
     }
 
     /**
      * 批量检查用户对指定内容的投票状态
-     * @param contentIds 内容ID列表
-     * @param contentType 内容类型
-     * @param userId 用户ID
      * @return 已投票的内容ID集合
      */
     public Set<Long> getUpvotedIds(List<Long> contentIds, ContentType contentType, long userId) {
-        if (contentIds == null || contentIds.isEmpty() || userId <= 0) {
-            return new HashSet<>();
-        }
-
-        List<UpvoteDO> upvotes = upvoteDataService.getList(userId, contentIds, contentType.value());
-        return upvotes.stream()
-                .map(UpvoteDO::getObjectId)
-                .collect(Collectors.toSet());
+        return upvoteDomainService.getUpvotedIds(contentIds, contentType.value(), userId);
     }
 
     /**
@@ -344,7 +254,7 @@ public class UpvoteService {
         }
 
         // 查询用户点赞记录
-        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, objectId, contentType.value());
+        UpvoteDO upvoteDO = upvoteDomainService.getUpvoteRecord(userId, objectId, contentType.value());
 
         // 构建用户点赞状态DTO
         boolean twiceUpvoted = false;
@@ -367,4 +277,19 @@ public class UpvoteService {
                 .build();
     }
 
+    // ========== Private 辅助方法 ==========
+
+    /**
+     * 获取评论对应的节点ID（跨域逻辑）
+     */
+    private long getNodeIdFromComment(CommentDO commentDO) {
+        if (commentDO.getObjectType() == ContentType.node.value()) {
+            return commentDO.getObjectId();
+        } else if (commentDO.getObjectType() == ContentType.post.value()) {
+            PostDO postDO = postDataService.validateAndGet(commentDO.getObjectId());
+            return postDO.getNodeId();
+        } else {
+            throw ErrorCode.INVALID_PARAMETER.exception("无效的评论类型: " + commentDO.getObjectType());
+        }
+    }
 }

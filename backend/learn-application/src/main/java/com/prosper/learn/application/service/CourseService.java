@@ -11,11 +11,15 @@ import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDataService;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.application.dto.request.UpdateCourseRequest;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +30,7 @@ import java.util.stream.Collectors;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CourseService {
@@ -35,7 +40,7 @@ public class CourseService {
     private final NodeDataService nodeDataService;
     private final CourseRankingDomainService courseRankingDomainService;
     private final ContentStatsDataService contentStatsDataService;
-    private final MessageService messageService;
+    private final ApplicationEventPublisher eventPublisher;
     private final SystemProperties systemProperties;
     private final CourseConverter courseConverter;
 
@@ -262,14 +267,12 @@ public class CourseService {
         int rowsAffected = courseDataService.approve(id);
         courseDomainService.validateOperationResult(rowsAffected);
 
-        // 发送审核通过通知（跨域调用）
-        messageService.sendCourseModeration(
+        // 发布审核通过事件，触发消息通知
+        eventPublisher.publishEvent(ContentApprovedEvent.forCourse(
             courseDO.getCreatorId(),
             courseDO.getId(),
-            courseDO.getName(),
-            ModerationAction.APPROVED,
-            null
-        );
+            courseDO.getName()
+        ));
     }
 
     /**
@@ -284,20 +287,19 @@ public class CourseService {
         int rowsAffected = courseDataService.reject(id, reason);
         courseDomainService.validateOperationResult(rowsAffected);
 
-        // 发送拒绝通知（跨域调用）
-        messageService.sendCourseModeration(
+        // 发布审核拒绝事件，触发消息通知
+        eventPublisher.publishEvent(ContentRejectedEvent.forCourse(
             courseDO.getCreatorId(),
             courseDO.getId(),
             courseDO.getName(),
-            ModerationAction.REJECTED,
             reason
-        );
+        ));
     }
 
     /**
      * 封禁课程
      *
-     * 应用层职责：编排领域服务 + 发送通知（跨Interaction域）
+     * 应用层职责：编排领域服务，ban 不发送消息
      */
     public void ban(long id, String reason, UserDO operator) {
         CourseDO courseDO = courseDomainService.validateAndGet(id);
@@ -306,14 +308,8 @@ public class CourseService {
         int rowsAffected = courseDataService.ban(id, reason);
         courseDomainService.validateOperationResult(rowsAffected);
 
-        // 发送封禁通知（跨域调用）
-        messageService.sendCourseModeration(
-            courseDO.getCreatorId(),
-            courseDO.getId(),
-            courseDO.getName(),
-            ModerationAction.BANNED,
-            reason
-        );
+        // ban 不发送任何消息或事件
+        log.info("课程 {} 被封禁，操作者: {}, 原因: {}", id, operator.getId(), reason);
     }
 
     /**

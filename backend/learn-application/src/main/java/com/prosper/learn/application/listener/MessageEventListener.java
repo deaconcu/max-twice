@@ -3,6 +3,8 @@ package com.prosper.learn.application.listener;
 import com.prosper.learn.application.service.MessageService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.shared.domain.event.content.lifecycle.CommentCreatedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
 import com.prosper.learn.shared.domain.event.content.voting.LikeUpvotedEvent;
 import com.prosper.learn.shared.domain.event.content.voting.TwiceUpvotedEvent;
 import com.prosper.learn.shared.domain.event.content.voting.UpvoteTypeSwitchedEvent;
@@ -201,6 +203,126 @@ public class MessageEventListener {
                 event.getFollowerId(), event.getFolloweeId());
         } catch (Exception e) {
             log.error("发送关注通知失败", e);
+        }
+    }
+
+    // ==================== 内容审核通知 ====================
+
+    /**
+     * 内容审核通过通知
+     * 只有 profession 和 course 需要发送审核通过消息
+     * 其他内容类型（post, roadmap, memory_card_deck）不发送，用户可以看到内容已发布
+     */
+    @EventListener
+    @Async
+    public void onContentApproved(ContentApprovedEvent event) {
+        try {
+            switch (event.getContentType()) {
+                case profession -> {
+                    messageService.sendProfessionModeration(
+                        event.getCreatorId(),
+                        event.getContentId(),
+                        event.getProfessionName(),
+                        ModerationAction.APPROVED,
+                        null
+                    );
+                    log.debug("发送职业审核通过通知: professionId={}, creatorId={}",
+                        event.getContentId(), event.getCreatorId());
+                }
+                case course -> {
+                    messageService.sendCourseModeration(
+                        event.getCreatorId(),
+                        event.getContentId(),
+                        event.getCourseName(),
+                        ModerationAction.APPROVED,
+                        null
+                    );
+                    log.debug("发送课程审核通过通知: courseId={}, creatorId={}",
+                        event.getContentId(), event.getCreatorId());
+                }
+                // post, roadmap, memory_card_deck 等不发送审核通过消息
+                default -> log.debug("内容审核通过，不发送消息: contentType={}, contentId={}",
+                        event.getContentType(), event.getContentId());
+            }
+        } catch (Exception e) {
+            log.error("发送审核通过通知失败", e);
+        }
+    }
+
+    /**
+     * 内容审核拒绝通知
+     * 处理所有内容类型的审核拒绝事件
+     */
+    @EventListener
+    @Async
+    public void onContentRejected(ContentRejectedEvent event) {
+        try {
+            switch (event.getContentType()) {
+                case profession -> {
+                    messageService.sendProfessionModeration(
+                        event.getCreatorId(),
+                        event.getContentId(),
+                        event.getProfessionName(),
+                        ModerationAction.REJECTED,
+                        event.getReason()
+                    );
+                    log.debug("发送职业审核拒绝通知: professionId={}, creatorId={}, reason={}",
+                        event.getContentId(), event.getCreatorId(), event.getReason());
+                }
+                case course -> {
+                    messageService.sendCourseModeration(
+                        event.getCreatorId(),
+                        event.getContentId(),
+                        event.getCourseName(),
+                        ModerationAction.REJECTED,
+                        event.getReason()
+                    );
+                    log.debug("发送课程审核拒绝通知: courseId={}, creatorId={}, reason={}",
+                        event.getContentId(), event.getCreatorId(), event.getReason());
+                }
+                case post -> {
+                    messageService.sendPostModeration(
+                        event.getCreatorId(),
+                        event.getContentId(),
+                        event.getPostContentPreview(),
+                        event.getNodeId(),
+                        event.getNodeName(),
+                        event.getCourseName(),
+                        ModerationAction.REJECTED,
+                        event.getReason()
+                    );
+                    log.debug("发送帖子审核拒绝通知: postId={}, creatorId={}, reason={}",
+                        event.getContentId(), event.getCreatorId(), event.getReason());
+                }
+                case roadmap -> {
+                    messageService.sendRoadmapModeration(
+                        event.getCreatorId(),
+                        event.getContentId(),
+                        event.getProfessionId(),
+                        event.getProfessionName(),
+                        ModerationAction.REJECTED,
+                        event.getReason()
+                    );
+                    log.debug("发送路线图审核拒绝通知: roadmapId={}, creatorId={}, reason={}",
+                        event.getContentId(), event.getCreatorId(), event.getReason());
+                }
+                case memory_card_deck -> {
+                    messageService.sendMemoryDeckModeration(
+                        event.getCreatorId(),
+                        event.getContentId(),
+                        event.getDeckTitle(),
+                        event.getPostId(),
+                        event.getPostContentPreview(),
+                        ModerationAction.REJECTED,
+                        event.getReason()
+                    );
+                    log.debug("发送记忆卡片组审核拒绝通知: deckId={}, creatorId={}, reason={}",
+                        event.getContentId(), event.getCreatorId(), event.getReason());
+                }
+                default -> log.warn("不支持的审核拒绝通知类型: contentType={}", event.getContentType());
+            }
+        } catch (Exception e) {
+            log.error("发送审核拒绝通知失败", e);
         }
     }
 }

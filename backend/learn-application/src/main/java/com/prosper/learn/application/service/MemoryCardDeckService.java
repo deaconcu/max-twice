@@ -31,11 +31,14 @@ import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,7 +62,7 @@ public class MemoryCardDeckService {
     private final PostDataService postDataService;
     private final NodeDataService nodeDataService;
     private final CourseDataService courseDataService;
-    private final MessageService messageService;
+    private final ApplicationEventPublisher eventPublisher;
     private final MemoryCardDeckConverter deckConverter;
     private final UserConverter userConverter;
     private final CourseConverter courseConverter;
@@ -673,11 +676,31 @@ public class MemoryCardDeckService {
             throw ErrorCode.INVALID_PARAMETER.exception("只有待审核状态的卡片组才能通过审核");
         }
 
+        // 获取帖子信息
+        PostDO postDO = postDataService.getById(deck.getPostId());
+        String postContentPreview = "";
+        if (postDO != null && postDO.getContent() != null) {
+            postContentPreview = Utils.stripFormatting(postDO.getContent());
+            if (postContentPreview.length() > 50) {
+                postContentPreview = postContentPreview.substring(0, 50) + "...";
+            }
+        }
+
         // 更新状态为正常
         deck.setState(Enums.ContentState.PUBLISHED.value());
         deck.setUpdatedAt(LocalDateTime.now());
 
         deckDataService.update(deck);
+
+        // 发布审核通过事件，触发统计更新（不发送消息）
+        eventPublisher.publishEvent(ContentApprovedEvent.forMemoryCardDeck(
+            deck.getCreatorId(),
+            deck.getId(),
+            deck.getTitle(),
+            deck.getPostId(),
+            postContentPreview
+        ));
+
         log.info("Deck {} approved by user {}", deckId, auditorId);
     }
 
@@ -707,16 +730,15 @@ public class MemoryCardDeckService {
         deckDataService.update(deck);
         log.info("Deck {} rejected by user {}, reason: {}", deckId, auditorId, reason);
 
-        // 发送拒绝通知
-        messageService.sendMemoryDeckModeration(
+        // 发布审核拒绝事件，触发消息通知
+        eventPublisher.publishEvent(ContentRejectedEvent.forMemoryCardDeck(
             deck.getCreatorId(),
             deck.getId(),
             deck.getTitle(),
             deck.getPostId(),
             postContentPreview,
-            Enums.ModerationAction.REJECTED,
             reason
-        );
+        ));
     }
 
     /**
@@ -727,34 +749,15 @@ public class MemoryCardDeckService {
         // 获取卡片组
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
 
-        // 获取帖子信息用于通知
-        PostDO postDO = postDataService.getById(deck.getPostId());
-        String postContentPreview = "";
-        if (postDO != null && postDO.getContent() != null) {
-            postContentPreview = Utils.stripFormatting(postDO.getContent());
-            if (postContentPreview.length() > 50) {
-                postContentPreview = postContentPreview.substring(0, 50) + "...";
-            }
-        }
-
         // 更新状态为封禁
         deck.setState(Enums.ContentState.BANNED.value());
         deck.setReason(reason);
         deck.setUpdatedAt(LocalDateTime.now());
 
         deckDataService.update(deck);
-        log.info("Deck {} banned by user {}, reason: {}", deckId, auditorId, reason);
 
-        // 发送封禁通知
-        messageService.sendMemoryDeckModeration(
-            deck.getCreatorId(),
-            deck.getId(),
-            deck.getTitle(),
-            deck.getPostId(),
-            postContentPreview,
-            Enums.ModerationAction.BANNED,
-            reason
-        );
+        // ban 不发送任何消息或事件
+        log.info("Deck {} banned by user {}, reason: {}", deckId, auditorId, reason);
     }
 
     /**
