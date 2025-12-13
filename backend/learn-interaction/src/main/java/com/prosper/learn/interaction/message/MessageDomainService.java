@@ -424,26 +424,6 @@ public class MessageDomainService {
     }
 
     /**
-     * 获取课程申请消息数量
-     *
-     * @return 课程申请消息数量
-     */
-    public long getApplyCourseCount() {
-        return messageDataService.getApplyCourseCount();
-    }
-
-    /**
-     * 分页获取课程申请消息（核心查询逻辑）
-     *
-     * @param offset 偏移量
-     * @param limit 限制数量
-     * @return 消息DO列表
-     */
-    public List<MessageDO> getApplyCourseMessages(int offset, int limit) {
-        return messageDataService.getApplyCourseList(offset, limit);
-    }
-
-    /**
      * 根据ID获取消息
      *
      * @param id 消息ID

@@ -158,9 +158,11 @@ public class CommentDomainService {
      * 根据状态获取评论列表（分页）
      * @return List<CommentDO>
      */
+    /*
     public List<CommentDO> getCommentsByState(byte stateValue, Long lastId, int pageSize) {
         return commentDataService.getListByState(stateValue, lastId, pageSize);
     }
+     */
 
     /**
      * 根据状态字符串获取评论列表（分页）

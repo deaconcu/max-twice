@@ -45,8 +45,10 @@ public interface ProfessionMapper {
             "</script>")
     List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, Long lastId);
 
-    @Select("SELECT * FROM profession WHERE INSTR(name, #{name}) > 0 limit 20")
-    List<ProfessionDO> searchByName(String name);
+// --注释掉检查 START (2025/12/10 12:03):
+//    @Select("SELECT * FROM profession WHERE INSTR(name, #{name}) > 0 limit 20")
+//    List<ProfessionDO> searchByName(String name);
+// --注释掉检查 STOP (2025/12/10 12:03)
 
     @Select({"<script>SELECT * FROM profession where id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +

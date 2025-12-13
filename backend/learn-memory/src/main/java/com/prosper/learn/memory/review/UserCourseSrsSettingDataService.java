@@ -103,49 +103,53 @@ public class UserCourseSrsSettingDataService extends AbstractDataService<UserCou
         }
     }
 
-    /**
-     * 更新复习频率设置
-     */
-    public boolean updateFrequencySetting(long userId, long courseId, int frequencySetting) {
-        try {
-            // 先获取现有记录以获得ID用于清除缓存
-            UserCourseSrsSettingDO existingSetting = userCourseSrsSettingMapper.getByUserAndCourse(userId, courseId);
-            
-            int result = userCourseSrsSettingMapper.updateFrequencySetting(userId, courseId, frequencySetting);
-            
-            // 如果更新成功且存在记录，清除对应的缓存
-            if (result > 0 && existingSetting != null) {
-                evictCache(existingSetting.getId());
-            }
-            
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error updating frequency setting: userId={}, courseId={}", userId, courseId, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
-        }
-    }
+// --注释掉检查 START (2025/12/10 11:31):
+//    /**
+//     * 更新复习频率设置
+//     */
+//    public boolean updateFrequencySetting(long userId, long courseId, int frequencySetting) {
+//        try {
+//            // 先获取现有记录以获得ID用于清除缓存
+//            UserCourseSrsSettingDO existingSetting = userCourseSrsSettingMapper.getByUserAndCourse(userId, courseId);
+//
+//            int result = userCourseSrsSettingMapper.updateFrequencySetting(userId, courseId, frequencySetting);
+//
+//            // 如果更新成功且存在记录，清除对应的缓存
+//            if (result > 0 && existingSetting != null) {
+//                evictCache(existingSetting.getId());
+//            }
+//
+//            return result > 0;
+//        } catch (Exception e) {
+//            log.error("Error updating frequency setting: userId={}, courseId={}", userId, courseId, e);
+//            throw ErrorCode.DATABASE_ERROR.exception(e);
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:31)
 
-    /**
-     * 更新学习状态
-     */
-    public boolean updateStatus(long userId, long courseId, int status) {
-        try {
-            // 先获取现有记录以获得ID用于清除缓存
-            UserCourseSrsSettingDO existingSetting = userCourseSrsSettingMapper.getByUserAndCourse(userId, courseId);
-            
-            int result = userCourseSrsSettingMapper.updateState(userId, courseId, status);
-            
-            // 如果更新成功且存在记录，清除对应的缓存
-            if (result > 0 && existingSetting != null) {
-                evictCache(existingSetting.getId());
-            }
-            
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error updating status: userId={}, courseId={}", userId, courseId, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
-        }
-    }
+// --注释掉检查 START (2025/12/10 11:31):
+//    /**
+//     * 更新学习状态
+//     */
+//    public boolean updateStatus(long userId, long courseId, int status) {
+//        try {
+//            // 先获取现有记录以获得ID用于清除缓存
+//            UserCourseSrsSettingDO existingSetting = userCourseSrsSettingMapper.getByUserAndCourse(userId, courseId);
+//
+//            int result = userCourseSrsSettingMapper.updateState(userId, courseId, status);
+//
+//            // 如果更新成功且存在记录，清除对应的缓存
+//            if (result > 0 && existingSetting != null) {
+//                evictCache(existingSetting.getId());
+//            }
+//
+//            return result > 0;
+//        } catch (Exception e) {
+//            log.error("Error updating status: userId={}, courseId={}", userId, courseId, e);
+//            throw ErrorCode.DATABASE_ERROR.exception(e);
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:31)
 
     /**
      * 根据用户和课程获取设置
@@ -161,54 +165,64 @@ public class UserCourseSrsSettingDataService extends AbstractDataService<UserCou
         return userCourseSrsSettingMapper.getByUser(userId);
     }
 
-    /**
-     * 根据用户和状态获取设置列表
-     */
-    public List<UserCourseSrsSettingDO> getByUserAndStatus(long userId, int status) {
-        return userCourseSrsSettingMapper.getByUserAndState(userId, status);
-    }
+// --注释掉检查 START (2025/12/10 11:30):
+//    /**
+//     * 根据用户和状态获取设置列表
+//     */
+//    public List<UserCourseSrsSettingDO> getByUserAndStatus(long userId, int status) {
+//        return userCourseSrsSettingMapper.getByUserAndState(userId, status);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:30)
 
-    /**
-     * 根据课程和状态获取设置列表
-     */
-    public List<UserCourseSrsSettingDO> getByCourseAndStatus(long courseId, int status) {
-        return userCourseSrsSettingMapper.getByCourseAndState(courseId, status);
-    }
+// --注释掉检查 START (2025/12/10 11:30):
+//    /**
+//     * 根据课程和状态获取设置列表
+//     */
+//    public List<UserCourseSrsSettingDO> getByCourseAndStatus(long courseId, int status) {
+//        return userCourseSrsSettingMapper.getByCourseAndState(courseId, status);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:30)
 
-    /**
-     * 删除用户课程设置
-     */
-    public boolean deleteByUserAndCourse(long userId, long courseId) {
-        try {
-            // 先获取现有记录以获得ID用于清除缓存
-            UserCourseSrsSettingDO existingSetting = userCourseSrsSettingMapper.getByUserAndCourse(userId, courseId);
-            
-            int result = userCourseSrsSettingMapper.deleteByUserAndCourse(userId, courseId);
-            
-            // 如果删除成功且存在记录，清除对应的缓存
-            if (result > 0 && existingSetting != null) {
-                evictCache(existingSetting.getId());
-            }
-            
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error deleting course setting: userId={}, courseId={}", userId, courseId, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
-        }
-    }
+// --注释掉检查 START (2025/12/10 11:30):
+//    /**
+//     * 删除用户课程设置
+//     */
+//    public boolean deleteByUserAndCourse(long userId, long courseId) {
+//        try {
+//            // 先获取现有记录以获得ID用于清除缓存
+//            UserCourseSrsSettingDO existingSetting = userCourseSrsSettingMapper.getByUserAndCourse(userId, courseId);
+//
+//            int result = userCourseSrsSettingMapper.deleteByUserAndCourse(userId, courseId);
+//
+//            // 如果删除成功且存在记录，清除对应的缓存
+//            if (result > 0 && existingSetting != null) {
+//                evictCache(existingSetting.getId());
+//            }
+//
+//            return result > 0;
+//        } catch (Exception e) {
+//            log.error("Error deleting course setting: userId={}, courseId={}", userId, courseId, e);
+//            throw ErrorCode.DATABASE_ERROR.exception(e);
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:30)
 
-    /**
-     * 统计用户的课程设置数量
-     */
-    public int countByUser(long userId) {
-        return userCourseSrsSettingMapper.countByUser(userId);
-    }
+// --注释掉检查 START (2025/12/10 11:30):
+//    /**
+//     * 统计用户的课程设置数量
+//     */
+//    public int countByUser(long userId) {
+//        return userCourseSrsSettingMapper.countByUser(userId);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:30)
 
-    /**
-     * 统计用户指定状态的课程设置数量
-     */
-    public int countByUserAndStatus(long userId, int status) {
-        return userCourseSrsSettingMapper.countByUserAndState(userId, status);
-    }
+// --注释掉检查 START (2025/12/10 11:30):
+//    /**
+//     * 统计用户指定状态的课程设置数量
+//     */
+//    public int countByUserAndStatus(long userId, int status) {
+//        return userCourseSrsSettingMapper.countByUserAndState(userId, status);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:30)
 
 }

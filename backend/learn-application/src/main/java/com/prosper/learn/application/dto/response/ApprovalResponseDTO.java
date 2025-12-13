@@ -8,6 +8,7 @@ import lombok.Data;
  */
 @Data
 @Builder
+@Deprecated
 public class ApprovalResponseDTO {
     
     /**
@@ -31,7 +32,7 @@ public class ApprovalResponseDTO {
     private String objectType;
     
     /**
-     * 操作类型（approve/reject/delete） TODO: 使用枚举值
+     * 操作类型（approve/reject/delete）
      */
     private String action;
 }

@@ -12,37 +12,45 @@ import type {
  * 审批操作请求
  */
 export interface OperateRequest {
-  action: 'approve' | 'reject' | 'ban'
+  action: 'approve' | 'reject' | 'remove' | 'ban' | 'restore' | 'delete'
   reason?: string
 }
 
 /**
- * 审批响应
+ * 内容类型
  */
-export interface ApprovalResponse {
-  success: boolean
-  message: string
-  objectId: number
-  objectType: string
-  action: string
-}
+export type ContentType = 'post' | 'roadmap' | 'memory_card_deck' | 'comment' | 'course' | 'profession' | 'node'
 
 /**
  * 管理后台 API
  */
 export const adminApi = {
-  // ========== 评论管理 ==========
+  // ========== 统一内容管理接口 ==========
 
   /**
-   * 获取指定状态的评论
+   * 获取指定类型和状态的内容（统一接口）
+   * @param contentType 内容类型
+   * @param state 状态: draft, pending/submitted, approved/published, rejected, banned
+   * @param lastId 分页游标
    */
-  getCommentsByState(state: string, lastId?: number): Promise<ApiResponse<Comment[]>> {
+  getContentsByState(contentType: ContentType, state?: string, lastId?: number): Promise<ApiResponse<any[]>> {
     const params: Record<string, unknown> = {}
-    if (lastId !== undefined) {
-      params.lastId = lastId
-    }
-    return apiClient.get(`/v1/admin/comments/${state}`, { params })
+    if (state) params.state = state
+    if (lastId !== undefined) params.lastId = lastId
+    return apiClient.get(`/v1/admin/contents/${contentType}`, { params })
   },
+
+  /**
+   * 内容操作（统一接口）
+   * @param contentType 内容类型
+   * @param id 内容ID
+   * @param request 操作请求
+   */
+  operateContent(contentType: ContentType, id: number, request: OperateRequest): Promise<ApiResponse<void>> {
+    return apiClient.post(`/v1/admin/contents/${contentType}/${id}/operate`, request)
+  },
+
+  // ========== 评论管理 ==========
 
   /**
    * 根据筛选条件获取评论
@@ -60,28 +68,10 @@ export const adminApi = {
     if (creatorId !== undefined) params.creatorId = creatorId
     if (lastId !== undefined) params.lastId = lastId
     if (state !== undefined) params.state = state
-    return apiClient.get('/v1/admin/comments/filter', { params })
-  },
-
-  /**
-   * 审核评论
-   */
-  approveComment(id: number, request: OperateRequest): Promise<ApiResponse<ApprovalResponse>> {
-    return apiClient.post(`/v1/admin/comments/${id}/approve`, request)
+    return apiClient.get('/v1/admin/contents/comment/filter', { params })
   },
 
   // ========== 文章管理 ==========
-
-  /**
-   * 获取指定状态的文章
-   */
-  getPostsByState(state: string, lastId?: number): Promise<ApiResponse<Post[]>> {
-    const params: Record<string, unknown> = {}
-    if (lastId !== undefined) {
-      params.lastId = lastId
-    }
-    return apiClient.get(`/v1/admin/posts/${state}`, { params })
-  },
 
   /**
    * 根据筛选条件获取文章
@@ -97,129 +87,106 @@ export const adminApi = {
     if (creatorId !== undefined) params.creatorId = creatorId
     if (lastId !== undefined) params.lastId = lastId
     if (state !== undefined) params.state = state
-    return apiClient.get('/v1/admin/posts/filter', { params })
-  },
-
-  /**
-   * 审核文章
-   */
-  approvePost(id: number, request: OperateRequest): Promise<ApiResponse<ApprovalResponse>> {
-    return apiClient.post(`/v1/admin/posts/${id}/approve`, request)
+    return apiClient.get('/v1/admin/contents/post/filter', { params })
   },
 
   // ========== 记忆卡片管理 ==========
 
   /**
-   * 获取指定状态的卡片组
-   */
-  getDecksByState(state: string, lastId?: number): Promise<ApiResponse<any[]>> {
-    const params: Record<string, unknown> = {}
-    if (lastId !== undefined) {
-      params.lastId = lastId
-    }
-    return apiClient.get(`/v1/admin/decks/${state}`, { params })
-  },
-
-  /**
-   * 根据筛选条件获取卡片组（用于查询功能）
+   * 根据筛选条件获取卡片组
    */
   getDecksByFilter(
-    nodeId?: number,
+    postId?: number,
     creatorId?: number,
     state?: number,
     lastId?: number
   ): Promise<ApiResponse<any[]>> {
     const params: Record<string, unknown> = {}
-    if (nodeId !== undefined) params.postId = nodeId // 对应后端的postId字段
+    if (postId !== undefined) params.postId = postId
     if (creatorId !== undefined) params.creatorId = creatorId
     if (state !== undefined) params.state = state
     if (lastId !== undefined) params.lastId = lastId
-    params.limit = 20
-    params.sortBy = 'createdAt'
-    params.sortOrder = 'desc'
-
-    return apiClient.get('/v1/admin/memory/decks', { params })
-  },
-
-  /**
-   * 审核卡片组
-   */
-  approveDeck(id: number, request: OperateRequest): Promise<ApiResponse<ApprovalResponse>> {
-    return apiClient.post(`/v1/admin/decks/${id}/approve`, request)
+    return apiClient.get('/v1/admin/contents/memory_card_deck/filter', { params })
   },
 
   // ========== 课程管理 ==========
 
   /**
-   * 获取指定状态的课程
+   * 根据筛选条件获取课程
    */
-  getCoursesByState(state: string, lastId?: number): Promise<ApiResponse<any[]>> {
+  getCoursesByFilter(state?: number, lastId?: number): Promise<ApiResponse<any[]>> {
     const params: Record<string, unknown> = {}
-    if (lastId !== undefined) {
-      params.lastId = lastId
-    }
-    return apiClient.get(`/v1/admin/courses/${state}`, { params })
+    if (state !== undefined) params.state = state
+    if (lastId !== undefined) params.lastId = lastId
+    return apiClient.get('/v1/admin/contents/course/filter', { params })
   },
 
   /**
-   * 审核课程
+   * 获取课程详情
    */
-  approveCourse(id: number, request: OperateRequest): Promise<ApiResponse<ApprovalResponse>> {
-    return apiClient.post(`/v1/admin/courses/${id}/approve`, request)
+  getCourseDetail(id: number): Promise<ApiResponse<any>> {
+    return apiClient.get(`/v1/admin/contents/course/${id}`)
+  },
+
+  /**
+   * 获取子课程列表
+   */
+  getSubcourses(parentId: number, state?: number): Promise<ApiResponse<any[]>> {
+    const params: Record<string, unknown> = {}
+    if (state !== undefined) params.state = state
+    return apiClient.get(`/v1/admin/contents/course/${parentId}/subcourses`, { params })
+  },
+
+  /**
+   * 更新课程信息
+   */
+  updateCourse(id: number, request: any): Promise<ApiResponse<void>> {
+    return apiClient.put(`/v1/admin/contents/course/${id}`, request)
   },
 
   // ========== 职业管理 ==========
 
   /**
-   * 获取指定状态的职业（管理端）
+   * 根据筛选条件获取职业
    */
-  getAdminProfessions(state?: number, lastId?: number | null): Promise<ApiResponse<any[]>> {
+  getProfessionsByFilter(state?: number, lastId?: number): Promise<ApiResponse<any[]>> {
     const params: Record<string, unknown> = {}
-    if (state !== undefined && state !== null) {
-      params.state = state
-    }
-    if (lastId !== null && lastId !== undefined) {
-      params.lastId = lastId
-    }
-    return apiClient.get('/v1/admin/professions', { params })
+    if (state !== undefined) params.state = state
+    if (lastId !== undefined) params.lastId = lastId
+    return apiClient.get('/v1/admin/contents/profession/filter', { params })
   },
 
   /**
-   * 获取指定状态的职业（旧版本兼容）
+   * 更新职业信息
    */
-  getProfessionsByState(state: string, lastId?: number): Promise<ApiResponse<any[]>> {
-    const params: Record<string, unknown> = {}
-    if (lastId !== undefined) {
-      params.lastId = lastId
-    }
-    return apiClient.get(`/v1/admin/professions/${state}`, { params })
-  },
-
-  /**
-   * 审核职业
-   */
-  approveProfession(id: number, request: OperateRequest): Promise<ApiResponse<ApprovalResponse>> {
-    return apiClient.post(`/v1/admin/professions/${id}/approve`, request)
+  updateProfession(id: number, request: any): Promise<ApiResponse<void>> {
+    return apiClient.put(`/v1/admin/contents/profession/${id}`, request)
   },
 
   // ========== 路线图管理 ==========
 
   /**
-   * 获取指定状态的路线图
+   * 根据筛选条件获取路线图
    */
-  getRoadmapsByState(state: string, lastId?: number): Promise<ApiResponse<any[]>> {
+  getRoadmapsByFilter(
+    state?: number,
+    professionId?: number,
+    creatorId?: number,
+    lastId?: number
+  ): Promise<ApiResponse<any[]>> {
     const params: Record<string, unknown> = {}
-    if (lastId !== undefined) {
-      params.lastId = lastId
-    }
-    return apiClient.get(`/v1/admin/roadmaps/${state}`, { params })
+    if (state !== undefined) params.state = state
+    if (professionId !== undefined) params.professionId = professionId
+    if (creatorId !== undefined) params.creatorId = creatorId
+    if (lastId !== undefined) params.lastId = lastId
+    return apiClient.get('/v1/admin/contents/roadmap/filter', { params })
   },
 
   /**
-   * 审核路线图
+   * 更新路线图描述
    */
-  approveRoadmap(id: number, request: OperateRequest): Promise<ApiResponse<ApprovalResponse>> {
-    return apiClient.post(`/v1/admin/roadmaps/${id}/approve`, request)
+  updateRoadmap(id: number, description: string): Promise<ApiResponse<void>> {
+    return apiClient.put(`/v1/admin/contents/roadmap/${id}`, { description })
   },
 
   // ========== 节点管理 ==========
@@ -228,26 +195,28 @@ export const adminApi = {
    * 根据筛选条件获取节点
    */
   getNodesByFilter(
+    state?: number,
     nodeId?: number,
     courseId?: number,
     creatorId?: number,
-    state?: number,
     lastId?: number
   ): Promise<ApiResponse<any[]>> {
     const params: Record<string, unknown> = {}
+    if (state !== undefined) params.state = state
     if (nodeId !== undefined) params.nodeId = nodeId
     if (courseId !== undefined) params.courseId = courseId
     if (creatorId !== undefined) params.creatorId = creatorId
-    if (state !== undefined) params.state = state
     if (lastId !== undefined) params.lastId = lastId
-    return apiClient.get('/v1/admin/nodes/filter', { params })
+    return apiClient.get('/v1/admin/contents/node/filter', { params })
   },
 
   /**
-   * 审核节点
+   * 更新节点状态
    */
-  approveNode(id: number, request: OperateRequest): Promise<ApiResponse<ApprovalResponse>> {
-    return apiClient.post(`/v1/admin/nodes/${id}/approve`, request)
+  updateNodeState(id: number, state: number, reason?: string): Promise<ApiResponse<void>> {
+    const params: Record<string, unknown> = { state }
+    if (reason) params.reason = reason
+    return apiClient.put(`/v1/admin/contents/node/${id}/state`, null, { params })
   },
 
   // ========== 用户管理 ==========

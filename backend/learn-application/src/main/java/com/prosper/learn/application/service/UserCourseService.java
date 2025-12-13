@@ -177,10 +177,12 @@ public class UserCourseService {
         domainService.delete(userId, courseId);
     }
 
-    /**
-     * 批量查询用户对多个课程的学习进度
-     */
-    public Map<Long, UserCourseDO> getUserCoursesBatch(long userId, List<Long> courseIds) {
-        return domainService.getUserCoursesBatch(userId, courseIds);
-    }
+// --注释掉检查 START (2025/12/10 11:30):
+//    /**
+//     * 批量查询用户对多个课程的学习进度
+//     */
+//    public Map<Long, UserCourseDO> getUserCoursesBatch(long userId, List<Long> courseIds) {
+//        return domainService.getUserCoursesBatch(userId, courseIds);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:30)
 }

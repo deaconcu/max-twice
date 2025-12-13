@@ -87,20 +87,22 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
         }
     }
     
-    /**
-     * 更新帖子分数并清除缓存
-     */
-    @CacheEvict(value = "posts", key = "#id")
-    public boolean updateScore(long id, double score) {
-        try {
-            int result = postMapper.updateScore(id, score);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error updating post score: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
-        }
-    }
-    
+// --注释掉检查 START (2025/12/10 11:17):
+//    /**
+//     * 更新帖子分数并清除缓存
+//     */
+//    @CacheEvict(value = "posts", key = "#id")
+//    public boolean updateScore(long id, double score) {
+//        try {
+//            int result = postMapper.updateScore(id, score);
+//            return result > 0;
+//        } catch (Exception e) {
+//            log.error("Error updating post score: {}", id, e);
+//            throw ErrorCode.DATABASE_ERROR.exception(e);
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:17)
+
     /**
      * 统计活跃文章数量
      */
@@ -182,12 +184,14 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
         return postMapper.getListByNodeAndScore(nodeId, limit, state);
     }
 
-    /**
-     * 根据节点和分页获取帖子列表
-     */
-    public List<PostDO> getListByLastId(long nodeId, long lastId, int limit, Byte state) {
-        return postMapper.getListByLastId(nodeId, lastId, limit, state);
-    }
+// --注释掉检查 START (2025/12/10 11:17):
+//    /**
+//     * 根据节点和分页获取帖子列表
+//     */
+//    public List<PostDO> getListByLastId(long nodeId, long lastId, int limit, Byte state) {
+//        return postMapper.getListByLastId(nodeId, lastId, limit, state);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:17)
 
     /**
      * 拒绝帖子（审核不通过）

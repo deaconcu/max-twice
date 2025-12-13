@@ -2,7 +2,7 @@ package com.prosper.learn.web.v1.controller;
 
 import com.prosper.learn.analytics.stats.service.UserStatsDomainService;
 import com.prosper.learn.analytics.dto.UserStatsDTO;
-import com.prosper.learn.web.v1.dto.ApiResponse;
+import com.prosper.learn.application.dto.ApiResponse;
 import com.prosper.learn.web.v1.annotation.RequireLogin;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

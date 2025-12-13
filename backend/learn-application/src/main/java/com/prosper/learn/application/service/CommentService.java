@@ -20,6 +20,8 @@ import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.event.content.lifecycle.CommentCreatedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEvent;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
@@ -110,16 +112,26 @@ public class CommentService {
         // 调用 DomainService 审核通过
         CommentDO commentDO = commentDomainService.approveComment(id);
 
+        // 获取被评论内容的类型
+        ContentType commentTargetType = ContentType.getByValue(commentDO.getObjectType());
+
+        // 发布审核通过事件，触发统计更新（评论不发送消息）
+        eventPublisher.publishEvent(ContentApprovedEvent.forComment(
+            commentDO.getCreatorId(),
+            commentDO.getId(),
+            commentTargetType,
+            commentDO.getObjectId()
+        ));
+
         // 获取被评论内容的创建者ID（跨域逻辑）
         Long contentCreatorId = getContentCreatorId(commentDO);
-        ContentType contentType = ContentType.getByValue(commentDO.getObjectType());
 
         // 发布评论创建事件，触发 Redis 统计更新、消息通知、分数计算等副作用
         eventPublisher.publishEvent(new CommentCreatedEvent(
             commentDO.getCreatorId(),  // 评论者ID
             commentDO.getId(),         // 评论ID
             commentDO.getObjectId(),   // 被评论内容ID
-            contentType,               // 内容类型
+            commentTargetType,         // 内容类型
             contentCreatorId           // 被评论内容的创建者ID
         ));
     }
@@ -128,22 +140,45 @@ public class CommentService {
      * 拒绝评论（审核不通过，带原因）
      * 只能拒绝 SUBMITTED 状态的评论，拒绝后状态变为 REJECTED
      * 不涉及统计回滚（因为从未发布）
-     * 暂不发送通知
+     * 不发送通知
      */
     @Transactional
     public void reject(Long id, String reason, UserDO operator) {
         commentDomainService.rejectComment(id, reason);
+        // 评论不发送拒绝通知
     }
 
     /**
      * 封禁评论（违规封禁，带原因）
      * 可以封禁任何状态的评论，封禁后状态变为 BANNED
-     * TODO: 如果之前是 PUBLISHED 状态，需要统计回滚（评论数-1）
-     * TODO: 发送封禁通知
+     * 需要统计回滚（如果之前是 PUBLISHED 状态）
+     * 不发送通知
      */
     @Transactional
     public void ban(Long id, String reason, UserDO operator) {
+        CommentDO commentDO = commentDomainService.getById(id);
+        if (commentDO == null) {
+            throw ErrorCode.COMMENT_NOT_FOUND.exception();
+        }
+
+        // 记录之前的状态
+        Byte previousState = commentDO.getState();
+
+        // 获取被评论内容的类型
+        ContentType commentTargetType = ContentType.getByValue(commentDO.getObjectType());
+
+        // 调用 DomainService 执行封禁
         commentDomainService.banComment(id, reason);
+
+        // 发布内容封禁事件，触发统计更新（评论不发送消息）
+        eventPublisher.publishEvent(ContentBannedEvent.forComment(
+            commentDO.getCreatorId(),
+            commentDO.getId(),
+            previousState,
+            commentTargetType,
+            commentDO.getObjectId(),
+            reason
+        ));
     }
 
     // ========== Query 方法（读操作）==========

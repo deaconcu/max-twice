@@ -100,6 +100,7 @@ export interface CourseCompletionResponse {
 /**
  * 审批响应
  * 用于课程审核操作的响应
+ * @deprecated 已废弃，所有审核接口已改为返回 ApiResponse<void>
  */
 export interface ApprovalResponse {
   success: boolean

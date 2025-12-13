@@ -38,8 +38,10 @@ public interface UserCourseMapper {
             "ORDER BY user_course.id DESC LIMIT 20")
     List<UserCourseDO> getByUserId(long userId, long lastId);
 
-    @Select("SELECT * FROM user_course WHERE course_id = #{courseId}")
-    List<UserCourseDO> getByCourseId(long courseId);
+// --注释掉检查 START (2025/12/10 12:04):
+//    @Select("SELECT * FROM user_course WHERE course_id = #{courseId}")
+//    List<UserCourseDO> getByCourseId(long courseId);
+// --注释掉检查 STOP (2025/12/10 12:04)
 
     @Delete("DELETE FROM user_course WHERE id = #{id}")
     void delete(long id);
@@ -47,11 +49,13 @@ public interface UserCourseMapper {
     @Delete("DELETE FROM user_course WHERE user_id = #{userId} AND course_id = #{courseId}")
     void deleteByUserAndCourse(long userId, long courseId);
     
-    /**
-     * 统计用户正在学习的课程数量
-     */
-    @Select("SELECT COUNT(*) FROM user_course WHERE user_id = #{userId} AND state = " + UserProgressState.IN_PROGRESS_VALUE)
-    Integer countActiveCoursesByUserId(long userId);
+// --注释掉检查 START (2025/12/10 12:04):
+//    /**
+//     * 统计用户正在学习的课程数量
+//     */
+//    @Select("SELECT COUNT(*) FROM user_course WHERE user_id = #{userId} AND state = " + UserProgressState.IN_PROGRESS_VALUE)
+//    Integer countActiveCoursesByUserId(long userId);
+// --注释掉检查 STOP (2025/12/10 12:04)
 
     /**
      * 批量查询用户对多个课程的学习进度，返回Map<courseId, UserCourseDO>

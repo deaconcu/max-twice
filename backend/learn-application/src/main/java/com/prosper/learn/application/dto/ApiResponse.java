@@ -1,4 +1,4 @@
-package com.prosper.learn.web.v1.dto;
+package com.prosper.learn.application.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;

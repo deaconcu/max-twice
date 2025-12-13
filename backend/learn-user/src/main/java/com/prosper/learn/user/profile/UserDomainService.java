@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.auth.VerificationDO;
 import com.prosper.learn.user.auth.VerificationDataService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,6 +39,7 @@ public class UserDomainService {
     private final UserDataService userDataService;
     private final UserProfileDataService userProfileDataService;
     private final VerificationDataService verificationDataService;
+    private final SystemProperties systemProperties;
 
     // ========== 用户状态和角色管理 ==========
 
@@ -156,20 +159,30 @@ public class UserDomainService {
      */
     @Transactional
     public UserDO validateEmail(String email, String code) {
-        // 验证验证码
+        // 1. 查询未使用的验证码
         VerificationDO verificationDO = verificationDataService.getByEmail(email, false);
         if (verificationDO == null) {
             throw ErrorCode.USER_VERIFICATION_CODE_NOT_FOUND.exception();
         }
+
+        // 2. 检查验证码是否过期
+        int expiryMinutes = systemProperties.getUser().getVerificationCodeExpiryMinutes();
+        LocalDateTime expiresAt = verificationDO.getCreatedAt().plusMinutes(expiryMinutes);
+        if (LocalDateTime.now().isAfter(expiresAt)) {
+            log.warn("Verification code expired for email: {}", email);
+            throw ErrorCode.USER_VERIFICATION_CODE_EXPIRED.exception();
+        }
+
+        // 3. 验证验证码
         if (!verificationDO.getCode().equals(code)) {
             throw ErrorCode.USER_VERIFICATION_CODE_INVALID.exception();
         }
 
-        // 标记验证码已使用
+        // 4. 标记验证码已使用
         verificationDO.setUsed(true);
         verificationDataService.update(verificationDO);
 
-        // 更新用户邮箱验证状态
+        // 5. 更新用户邮箱验证状态
         UserDO user = userDataService.getByEmail(email);
         if (user == null) {
             throw ErrorCode.USER_NOT_FOUND.exception();

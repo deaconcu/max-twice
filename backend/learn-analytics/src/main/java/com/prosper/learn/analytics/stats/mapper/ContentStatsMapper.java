@@ -14,10 +14,12 @@ public interface ContentStatsMapper {
     /**
      * 插入内容统计记录
      */
-    @Insert("INSERT INTO content_stats (content_type, content_id, total_views, total_twice, total_likes, " +
-            "total_comments, total_shares, total_bookmarks, total_completed_users, total_in_progress_users) " +
-            "VALUES (#{contentType}, #{contentId}, #{totalViews}, #{totalTwice}, #{totalLikes}, " +
-            "#{totalComments}, #{totalShares}, #{totalBookmarks}, #{totalCompletedUsers}, #{totalInProgressUsers})")
+    @Insert("INSERT INTO content_stats (content_type, content_id, views, twices, likes, " +
+            "comments, shares, bookmarks, completed_users, in_progress_users, " +
+            "posts, articles, indexes, roadmaps, card_decks, reject_count) " +
+            "VALUES (#{contentType}, #{contentId}, #{views}, #{twices}, #{likes}, " +
+            "#{comments}, #{shares}, #{bookmarks}, #{completedUsers}, #{inProgressUsers}, " +
+            "#{posts}, #{articles}, #{indexes}, #{roadmaps}, #{cardDecks}, #{rejectCount})")
     int insert(ContentStatsDO contentStats);
 
     /**
@@ -25,18 +27,6 @@ public interface ContentStatsMapper {
      */
     @Select("SELECT * FROM content_stats WHERE content_type = #{contentType} AND content_id = #{contentId}")
     ContentStatsDO getByContent(@Param("contentType") Integer contentType, @Param("contentId") Long contentId);
-
-    /**
-     * 根据主键ID删除记录
-     */
-    @Delete("DELETE FROM content_stats WHERE id = #{id}")
-    int deleteById(Long id);
-
-    /**
-     * 根据内容类型和ID删除记录
-     */
-    @Delete("DELETE FROM content_stats WHERE content_type = #{contentType} AND content_id = #{contentId}")
-    int deleteByContent(@Param("contentType") Integer contentType, @Param("contentId") Long contentId);
 
     // ==================== 原子增量更新操作 ====================
 
@@ -71,19 +61,6 @@ public interface ContentStatsMapper {
                  @Param("likesDelta") int likesDelta,
                  @Param("commentsDelta") int commentsDelta);
 
-    // ==================== 排行榜查询 ====================
-
-    /**
-     * 根据指定字段获取热门内容排行榜
-     * @param contentType 内容类型
-     * @param orderField 排序字段（如：views, likes等）
-     * @param limit 返回记录数限制
-     */
-    @Select("SELECT * FROM content_stats WHERE content_type = #{contentType} " +
-            "ORDER BY ${orderField} DESC LIMIT #{limit}")
-    List<ContentStatsDO> getTopByField(@Param("contentType") Integer contentType,
-                                      @Param("orderField") String orderField,
-                                      @Param("limit") int limit);
 
     // ==================== 批量查询 ====================
 
@@ -101,21 +78,6 @@ public interface ContentStatsMapper {
                                              @Param("contentIds") List<Long> contentIds);
 
     /**
-     * 获取指定内容类型的所有统计记录（分页）
-     */
-    @Select("SELECT * FROM content_stats WHERE content_type = #{contentType} " +
-            "ORDER BY updated_at DESC LIMIT #{offset}, #{limit}")
-    List<ContentStatsDO> getByContentTypeWithPaging(@Param("contentType") String contentType,
-                                                    @Param("offset") int offset,
-                                                    @Param("limit") int limit);
-
-    /**
-     * 统计指定内容类型的记录总数
-     */
-    @Select("SELECT COUNT(*) FROM content_stats WHERE content_type = #{contentType}")
-    int countByContentType(@Param("contentType") String contentType);
-
-    /**
      * 获取热门课程ID列表（按综合热度排序）
      * 综合热度 = 收藏数 + 学习中人数 + 已完成人数
      */
@@ -126,14 +88,4 @@ public interface ContentStatsMapper {
             "LIMIT #{limit}")
     List<Long> getTopContentIdsByPopularity(@Param("contentType") Integer contentType,
                                             @Param("limit") int limit);
-
-    // ==================== 数据维护 ====================
-
-    /**
-     * 清理统计值全为0的记录
-     */
-    @Delete("DELETE FROM content_stats WHERE total_views = 0 AND total_twice = 0 AND total_likes = 0 " +
-            "AND total_comments = 0 AND total_shares = 0 AND total_bookmarks = 0 " +
-            "AND total_completed_users = 0 AND total_in_progress_users = 0")
-    int cleanupEmptyStats();
 }

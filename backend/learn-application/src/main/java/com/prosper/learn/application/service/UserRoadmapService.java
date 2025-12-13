@@ -165,15 +165,17 @@ public class UserRoadmapService {
         }
     }
 
-    /**
-     * 验证进度百分比
-     */
-    private void validateProgressPercent(int progressPercent) {
-        int threshold = systemProperties.getRoadmap().getCompletionThreshold();
-        if (progressPercent < 0 || progressPercent > threshold) {
-            throw ErrorCode.USER_COURSE_PROGRESS_INVALID.exception();
-        }
-    }
+// --注释掉检查 START (2025/12/10 11:32):
+//    /**
+//     * 验证进度百分比
+//     */
+//    private void validateProgressPercent(int progressPercent) {
+//        int threshold = systemProperties.getRoadmap().getCompletionThreshold();
+//        if (progressPercent < 0 || progressPercent > threshold) {
+//            throw ErrorCode.USER_COURSE_PROGRESS_INVALID.exception();
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:32)
 
     // ========== Command 方法（写操作）==========
 

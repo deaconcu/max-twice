@@ -62,6 +62,16 @@ public class ContentStatsDataService {
         stats.setCompletedUsers(0);
         stats.setInProgressUsers(0);
 
+        // 对象维度统计字段
+        stats.setPosts(0);
+        stats.setArticles(0);
+        stats.setIndexes(0);
+        stats.setRoadmaps(0);
+        stats.setCardDecks(0);
+
+        // 违规统计字段
+        stats.setRejectCount(0);
+
         int result = contentStatsMapper.insert(stats);
         if (result <= 0) {
             log.error("创建内容统计记录失败: contentType={}, contentId={}", contentType, contentId);

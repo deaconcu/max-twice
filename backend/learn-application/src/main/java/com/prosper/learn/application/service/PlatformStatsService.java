@@ -74,15 +74,4 @@ public class PlatformStatsService {
             throw ErrorCode.SYSTEM_ERROR.exception(e);
         }
     }
-    
-    /**
-     * 刷新平台统计数据缓存
-     * 
-     * @return 最新的平台统计数据
-     */
-    @CacheEvict(value = "platformStats", key = "'stats'")
-    public PlatformStatsDTO refreshPlatformStats() {
-        log.info("刷新平台统计数据缓存");
-        return getPlatformStats();
-    }
 }

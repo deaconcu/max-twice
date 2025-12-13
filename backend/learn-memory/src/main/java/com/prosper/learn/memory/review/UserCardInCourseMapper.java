@@ -14,9 +14,11 @@ public interface UserCardInCourseMapper {
     @Select("SELECT * FROM user_card_in_course WHERE id = #{id}")
     UserCardInCourseDO get(long id);
 
-    @Select("SELECT * FROM user_card_in_course " +
-            "WHERE user_id = #{userId} AND card_id = #{cardId} AND course_id = #{courseId}")
-    UserCardInCourseDO getByUserCardAndCourse(long userId, long cardId, long courseId);
+// --注释掉检查 START (2025/12/10 12:03):
+//    @Select("SELECT * FROM user_card_in_course " +
+//            "WHERE user_id = #{userId} AND card_id = #{cardId} AND course_id = #{courseId}")
+//    UserCardInCourseDO getByUserCardAndCourse(long userId, long cardId, long courseId);
+// --注释掉检查 STOP (2025/12/10 12:03)
 
     @Select({"<script>SELECT * FROM user_card_in_course WHERE id IN " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
@@ -29,22 +31,32 @@ public interface UserCardInCourseMapper {
     @MapKey("id")
     Map<Long, UserCardInCourseDO> getMapByIds(Collection<Long> ids);
 
-    @Select("SELECT * FROM user_card_in_course WHERE user_id = #{userId} AND course_id = #{courseId} " +
-            "ORDER BY created_at DESC")
-    List<UserCardInCourseDO> getByUserAndCourse(long userId, long courseId);
+// --注释掉检查 START (2025/12/10 12:03):
+//    @Select("SELECT * FROM user_card_in_course WHERE user_id = #{userId} AND course_id = #{courseId} " +
+//            "ORDER BY created_at DESC")
+//    List<UserCardInCourseDO> getByUserAndCourse(long userId, long courseId);
+// --注释掉检查 STOP (2025/12/10 12:03)
 
-    @Select("SELECT * FROM user_card_in_course WHERE user_id = #{userId} AND card_id = #{cardId}")
-    List<UserCardInCourseDO> getByUserAndCard(long userId, long cardId);
+// --注释掉检查 START (2025/12/10 12:03):
+//    @Select("SELECT * FROM user_card_in_course WHERE user_id = #{userId} AND card_id = #{cardId}")
+//    List<UserCardInCourseDO> getByUserAndCard(long userId, long cardId);
+// --注释掉检查 STOP (2025/12/10 12:03)
 
-    @Select("SELECT * FROM user_card_in_course WHERE course_id = #{courseId}")
-    List<UserCardInCourseDO> getByCourse(long courseId);
+// --注释掉检查 START (2025/12/10 12:03):
+//    @Select("SELECT * FROM user_card_in_course WHERE course_id = #{courseId}")
+//    List<UserCardInCourseDO> getByCourse(long courseId);
+// --注释掉检查 STOP (2025/12/10 12:03)
 
-    @Select("SELECT DISTINCT course_id FROM user_card_in_course WHERE user_id = #{userId}")
-    List<Long> getCourseIdsByUser(long userId);
+// --注释掉检查 START (2025/12/10 12:04):
+//    @Select("SELECT DISTINCT course_id FROM user_card_in_course WHERE user_id = #{userId}")
+//    List<Long> getCourseIdsByUser(long userId);
+// --注释掉检查 STOP (2025/12/10 12:04)
 
-    @Select("SELECT DISTINCT card_id FROM user_card_in_course " +
-            "WHERE user_id = #{userId} AND course_id = #{courseId}")
-    List<Long> getCardIdsByUserAndCourse(long userId, long courseId);
+// --注释掉检查 START (2025/12/10 12:03):
+//    @Select("SELECT DISTINCT card_id FROM user_card_in_course " +
+//            "WHERE user_id = #{userId} AND course_id = #{courseId}")
+//    List<Long> getCardIdsByUserAndCourse(long userId, long courseId);
+// --注释掉检查 STOP (2025/12/10 12:03)
 
     @Insert("INSERT INTO user_card_in_course " +
             "(user_id, card_id, deck_id, course_id) " +
@@ -53,34 +65,48 @@ public interface UserCardInCourseMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserCardInCourseDO relation);
 
-    @Insert({"<script>INSERT INTO user_card_in_course (user_id, card_id, deck_id, course_id) VALUES " +
-            "<foreach collection='list' item='item' separator=','>" +
-            "(#{item.userId}, #{item.cardId}, #{item.deckId}, #{item.courseId})" +
-            "</foreach>" +
-            "</script>"})
-    int batchInsert(List<UserCardInCourseDO> relations);
+// --注释掉检查 START (2025/12/10 12:03):
+//    @Insert({"<script>INSERT INTO user_card_in_course (user_id, card_id, deck_id, course_id) VALUES " +
+//            "<foreach collection='list' item='item' separator=','>" +
+//            "(#{item.userId}, #{item.cardId}, #{item.deckId}, #{item.courseId})" +
+//            "</foreach>" +
+//            "</script>"})
+//    int batchInsert(List<UserCardInCourseDO> relations);
+// --注释掉检查 STOP (2025/12/10 12:03)
 
     @Delete("DELETE FROM user_card_in_course WHERE id = #{id}")
     int deleteById(long id);
 
-    @Delete("DELETE FROM user_card_in_course " +
-            "WHERE user_id = #{userId} AND card_id = #{cardId} AND course_id = #{courseId}")
-    int deleteByUserCardAndCourse(long userId, long cardId, long courseId);
+// --注释掉检查 START (2025/12/10 12:03):
+//    @Delete("DELETE FROM user_card_in_course " +
+//            "WHERE user_id = #{userId} AND card_id = #{cardId} AND course_id = #{courseId}")
+//    int deleteByUserCardAndCourse(long userId, long cardId, long courseId);
+// --注释掉检查 STOP (2025/12/10 12:03)
 
-    @Delete("DELETE FROM user_card_in_course WHERE user_id = #{userId} AND course_id = #{courseId}")
-    int deleteByUserAndCourse(long userId, long courseId);
+// --注释掉检查 START (2025/12/10 12:03):
+//    @Delete("DELETE FROM user_card_in_course WHERE user_id = #{userId} AND course_id = #{courseId}")
+//    int deleteByUserAndCourse(long userId, long courseId);
+// --注释掉检查 STOP (2025/12/10 12:03)
 
-    @Delete("DELETE FROM user_card_in_course WHERE user_id = #{userId} AND card_id = #{cardId}")
-    int deleteByUserAndCard(long userId, long cardId);
+// --注释掉检查 START (2025/12/10 12:03):
+//    @Delete("DELETE FROM user_card_in_course WHERE user_id = #{userId} AND card_id = #{cardId}")
+//    int deleteByUserAndCard(long userId, long cardId);
+// --注释掉检查 STOP (2025/12/10 12:03)
 
-    @Select("SELECT COUNT(*) FROM user_card_in_course WHERE user_id = #{userId}")
-    int countByUser(long userId);
+// --注释掉检查 START (2025/12/10 12:03):
+//    @Select("SELECT COUNT(*) FROM user_card_in_course WHERE user_id = #{userId}")
+//    int countByUser(long userId);
+// --注释掉检查 STOP (2025/12/10 12:03)
 
-    @Select("SELECT COUNT(*) FROM user_card_in_course WHERE user_id = #{userId} AND course_id = #{courseId}")
-    int countByUserAndCourse(long userId, long courseId);
+// --注释掉检查 START (2025/12/10 12:03):
+//    @Select("SELECT COUNT(*) FROM user_card_in_course WHERE user_id = #{userId} AND course_id = #{courseId}")
+//    int countByUserAndCourse(long userId, long courseId);
+// --注释掉检查 STOP (2025/12/10 12:03)
 
-    @Select("SELECT COUNT(*) FROM user_card_in_course WHERE course_id = #{courseId}")
-    int countByCourse(long courseId);
+// --注释掉检查 START (2025/12/10 12:03):
+//    @Select("SELECT COUNT(*) FROM user_card_in_course WHERE course_id = #{courseId}")
+//    int countByCourse(long courseId);
+// --注释掉检查 STOP (2025/12/10 12:03)
 
     @Select({"<script>",
           "SELECT",

@@ -26,11 +26,15 @@ public interface NodeMapper {
     @MapKey("id")
     Map<Long, NodeDO> getMapByIds(Collection<Long> ids);
 
-    @Select("SELECT * FROM node where parent = #{parentId}")
-    List<NodeDO> getByParent(long parentId);
+// --注释掉检查 START (2025/12/10 12:02):
+//    @Select("SELECT * FROM node where parent = #{parentId}")
+//    List<NodeDO> getByParent(long parentId);
+// --注释掉检查 STOP (2025/12/10 12:02)
 
-    @Select("SELECT * FROM node where course_id = #{courseId}")
-    List<NodeDO> listBySubcourse(long courseId);
+// --注释掉检查 START (2025/12/10 12:02):
+//    @Select("SELECT * FROM node where course_id = #{courseId}")
+//    List<NodeDO> listBySubcourse(long courseId);
+// --注释掉检查 STOP (2025/12/10 12:02)
 
     @Select("SELECT * FROM node WHERE course_id = #{courseId} AND name = #{name} LIMIT 1")
     NodeDO getByCourseAndName(@Param("courseId") long courseId, @Param("name") String name);

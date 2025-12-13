@@ -10,7 +10,7 @@ import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
-import com.prosper.learn.web.v1.dto.ApiResponse;
+import com.prosper.learn.application.dto.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;

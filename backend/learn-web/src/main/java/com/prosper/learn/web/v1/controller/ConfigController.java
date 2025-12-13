@@ -2,7 +2,7 @@ package com.prosper.learn.web.v1.controller;
 
 import com.prosper.learn.application.dto.response.ValidationRuleDTO;
 import com.prosper.learn.application.service.ValidationConfigService;
-import com.prosper.learn.web.v1.dto.ApiResponse;
+import com.prosper.learn.application.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;

@@ -19,7 +19,6 @@ public class PostDO {
 
     private Integer once;
 
-
     private Byte state;
 
     private String reason;  // 拒绝/封禁原因

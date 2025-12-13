@@ -18,7 +18,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.web.v1.annotation.JsonParam;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
-import com.prosper.learn.web.v1.dto.ApiResponse;
+import com.prosper.learn.application.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;

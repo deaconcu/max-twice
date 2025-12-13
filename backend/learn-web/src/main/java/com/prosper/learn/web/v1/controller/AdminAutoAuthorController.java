@@ -7,7 +7,7 @@ import com.prosper.learn.application.service.autoauthor.AutoAuthorScanner;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
-import com.prosper.learn.web.v1.dto.ApiResponse;
+import com.prosper.learn.application.dto.ApiResponse;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;

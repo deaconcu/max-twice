@@ -3,6 +3,7 @@ package com.prosper.learn.application.dto.response;
 import lombok.Data;
 
 @Data
+@Deprecated
 public class Response<T> {
 
     public static int SUCCESS = 200;

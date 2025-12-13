@@ -423,62 +423,64 @@ public class DailyStatsService {
         return updateCount;
     }
 
-    /**
-     * 更新post_stats表中的字段
-     * 
-     * 该方法负责将Redis中的统计数据写入数据库的post_stats表:
-     * 1. 确保年度记录存在
-     * 2. 使用PostStatsMapper进行原子性的数值设置
-     * 3. 支持直接覆盖，确保数据一致性
-     * 
-     * @param type 对象类型，如"POST", "NODE", "ROADMAP"
-     * @param objectId 对象ID
-     * @param year 统计年份
-     * @param dayKey 日期键，格式如"8-22"
-     * @param field 统计字段，如"view", "twice", "like", "comment"
-     * @param count 统计数值
-     */
-    private void updatePostStatsField(byte type, Long objectId, int year, String dayKey, String field, int count) {
-        try {
-            // 确保post_stats年度记录存在
-            ensurePostYearRecord(type, objectId, year);
-            
-            // 使用PostStatsMapper直接设置当天的统计值
-            Map<String, Integer> dayStats = getCurrentPostDayStats(type, objectId, year, dayKey);
-            
-            // 🔴 字段名映射：Redis使用单数，数据库使用复数
-            String dbField = field;
-            switch (field) {
-                case STAT_TYPE_VIEW:
-                    dbField = "views";
-                    break;
-                case STAT_TYPE_COMMENT:
-                    dbField = "comments";
-                    break;
-                // twice 和 like 保持不变，不需要映射
-            }
-            
-            dayStats.put(dbField, count);
-            
-            int updated = contentStatsYearlyMapper.setDayStats(type, objectId, year, dayKey,
-                    dayStats.getOrDefault("views", 0),
-                    dayStats.getOrDefault("twice", 0),
-                    dayStats.getOrDefault("like", 0),
-                    dayStats.getOrDefault("comments", 0));
-            
-            if (updated > 0) {
-                log.debug("设置post_stats: type={}, objectId={}, dayKey={}, field={}->{}, count={}", 
-                    type, objectId, dayKey, field, dbField, count);
-            } else {
-                log.warn("post_stats记录不存在: type={}, objectId={}, year={}", type, objectId, year);
-            }
-                
-        } catch (Exception e) {
-            log.error("更新post_stats失败: type={}, objectId={}, field={}, count={}", 
-                type, objectId, field, count, e);
-        }
-    }
-    
+// --注释掉检查 START (2025/12/10 11:34):
+//    /**
+//     * 更新post_stats表中的字段
+//     *
+//     * 该方法负责将Redis中的统计数据写入数据库的post_stats表:
+//     * 1. 确保年度记录存在
+//     * 2. 使用PostStatsMapper进行原子性的数值设置
+//     * 3. 支持直接覆盖，确保数据一致性
+//     *
+//     * @param type 对象类型，如"POST", "NODE", "ROADMAP"
+//     * @param objectId 对象ID
+//     * @param year 统计年份
+//     * @param dayKey 日期键，格式如"8-22"
+//     * @param field 统计字段，如"view", "twice", "like", "comment"
+//     * @param count 统计数值
+//     */
+//    private void updatePostStatsField(byte type, Long objectId, int year, String dayKey, String field, int count) {
+//        try {
+//            // 确保post_stats年度记录存在
+//            ensurePostYearRecord(type, objectId, year);
+//
+//            // 使用PostStatsMapper直接设置当天的统计值
+//            Map<String, Integer> dayStats = getCurrentPostDayStats(type, objectId, year, dayKey);
+//
+//            // 🔴 字段名映射：Redis使用单数，数据库使用复数
+//            String dbField = field;
+//            switch (field) {
+//                case STAT_TYPE_VIEW:
+//                    dbField = "views";
+//                    break;
+//                case STAT_TYPE_COMMENT:
+//                    dbField = "comments";
+//                    break;
+//                // twice 和 like 保持不变，不需要映射
+//            }
+//
+//            dayStats.put(dbField, count);
+//
+//            int updated = contentStatsYearlyMapper.setDayStats(type, objectId, year, dayKey,
+//                    dayStats.getOrDefault("views", 0),
+//                    dayStats.getOrDefault("twice", 0),
+//                    dayStats.getOrDefault("like", 0),
+//                    dayStats.getOrDefault("comments", 0));
+//
+//            if (updated > 0) {
+//                log.debug("设置post_stats: type={}, objectId={}, dayKey={}, field={}->{}, count={}",
+//                    type, objectId, dayKey, field, dbField, count);
+//            } else {
+//                log.warn("post_stats记录不存在: type={}, objectId={}, year={}", type, objectId, year);
+//            }
+//
+//        } catch (Exception e) {
+//            log.error("更新post_stats失败: type={}, objectId={}, field={}, count={}",
+//                type, objectId, field, count, e);
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:34)
+
     /**
      * 确保post_stats的年度记录存在
      */
@@ -1084,14 +1086,16 @@ public class DailyStatsService {
         }
     }
 
-    /**
-     * 验证文章ID有效性
-     */
-    private void validatePostId(long postId) {
-        if (postId <= 0) {
-            throw ErrorCode.CONTENTS_POST_NOT_FOUND.exception();
-        }
-    }
+// --注释掉检查 START (2025/12/10 11:34):
+//    /**
+//     * 验证文章ID有效性
+//     */
+//    private void validatePostId(long postId) {
+//        if (postId <= 0) {
+//            throw ErrorCode.CONTENTS_POST_NOT_FOUND.exception();
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:34)
 
     /**
      * 验证日期有效性

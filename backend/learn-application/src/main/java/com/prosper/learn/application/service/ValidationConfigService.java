@@ -158,11 +158,4 @@ public class ValidationConfigService {
     public Map<String, ValidationRuleDTO> getAllRules() {
         return new HashMap<>(cachedRules);
     }
-
-    /**
-     * 获取指定字段的验证规则
-     */
-    public ValidationRuleDTO getRule(String fieldKey) {
-        return cachedRules.get(fieldKey);
-    }
 }

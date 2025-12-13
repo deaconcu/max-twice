@@ -32,7 +32,10 @@ import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRemovedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRestoredEvent;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
@@ -126,28 +129,34 @@ public class PostService {
         return postConverter.toDTO(postDOList);
     }
 
-    /**
-     * 转换为帖子（含创建者信息）
-     * 用途：基础帖子展示
-     * 替代：原 V1
-     */
-    PostWithCreatorDTO toPostWithCreator(PostDO postDO) {
-        PostWithCreatorDTO postDTO = postConverter.toWithCreatorDTO(postDO);
-        postDTO.setCreator(userService.toBriefDTO(userDataService.getById(postDO.getCreatorId())));
-        return postDTO;
-    }
+// --注释掉检查 START (2025/12/10 11:18):
+//    /**
+//     * 转换为帖子（含创建者信息）
+//     * 用途：基础帖子展示
+//     * 替代：原 V1
+//     */
+//    PostWithCreatorDTO toPostWithCreator(PostDO postDO) {
+//        PostWithCreatorDTO postDTO = postConverter.toWithCreatorDTO(postDO);
+//        postDTO.setCreator(userService.toBriefDTO(userDataService.getById(postDO.getCreatorId())));
+//        return postDTO;
+//    }
+// --注释掉检查 STOP (2025/12/10 11:18)
 
-    List<PostWithCreatorDTO> toPostWithCreator(List<PostDO> postDOList) {
-        return postConverter.toWithCreatorDTO(postDOList);
-    }
+// --注释掉检查 START (2025/12/10 11:18):
+//    List<PostWithCreatorDTO> toPostWithCreator(List<PostDO> postDOList) {
+//        return postConverter.toWithCreatorDTO(postDOList);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:18)
 
-    /**
-     * 转换为完整帖子信息（含节点、创建者、浏览量、投票类型）
-     * 用途：帖子详情页、帖子列表（完整信息）
-     */
-    PostFullDTO toPostWithFullInfo(PostDO postDO) {
-        return postConverter.toFullDTO(postDO);
-    }
+// --注释掉检查 START (2025/12/10 11:18):
+//    /**
+//     * 转换为完整帖子信息（含节点、创建者、浏览量、投票类型）
+//     * 用途：帖子详情页、帖子列表（完整信息）
+//     */
+//    PostFullDTO toPostWithFullInfo(PostDO postDO) {
+//        return postConverter.toFullDTO(postDO);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:18)
 
     List<PostFullDTO> toPostWithFullInfo(List<PostDO> postDOList, long userId) {
         List<PostFullDTO> postDTOList = postConverter.toFullDTO(postDOList);
@@ -260,17 +269,19 @@ public class PostService {
         return postConverter.toSummaryDTO(post);
     }
 
-    /**
-     * 批量获取帖子列表
-     */
-    public List<PostSummaryDTO> getDTOList(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        List<PostDO> postings = domainService.getByIdsWithIdToName(ids);
-        return postConverter.toSummaryDTO(postings);
-    }
+// --注释掉检查 START (2025/12/10 11:17):
+//    /**
+//     * 批量获取帖子列表
+//     */
+//    public List<PostSummaryDTO> getDTOList(List<Long> ids) {
+//        if (ids == null || ids.isEmpty()) {
+//            return new ArrayList<>();
+//        }
+//
+//        List<PostDO> postings = domainService.getByIdsWithIdToName(ids);
+//        return postConverter.toSummaryDTO(postings);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:17)
 
     /**
      * 获取节点下的帖子列表（按分数排序），获取前 N 条
@@ -505,23 +516,25 @@ public class PostService {
         log.info("用户 {} 删除了帖子 {}", currentUser.getId(), id);
     }
 
-    /**
-     * 审核帖子
-     */
-    @Transactional
-    public PostSummaryDTO approvePost(Long id, boolean approve) {
-        PostDO postDO = validateAndGetPost(id);
-
-        if (approve && postDO.getState() != ContentState.PUBLISHED.value()) {
-            postDO.setState(ContentState.PUBLISHED.value());
-            postDataService.update(postDO);
-        }
-        if (!approve && postDO.getState() != ContentState.REJECTED.value()) {
-            postDO.setState(ContentState.REJECTED.value());
-            postDataService.update(postDO);
-        }
-        return postConverter.toSummaryDTO(postDO);
-    }
+// --注释掉检查 START (2025/12/10 11:17):
+//    /**
+//     * 审核帖子
+//     */
+//    @Transactional
+//    public PostSummaryDTO approvePost(Long id, boolean approve) {
+//        PostDO postDO = validateAndGetPost(id);
+//
+//        if (approve && postDO.getState() != ContentState.PUBLISHED.value()) {
+//            postDO.setState(ContentState.PUBLISHED.value());
+//            postDataService.update(postDO);
+//        }
+//        if (!approve && postDO.getState() != ContentState.REJECTED.value()) {
+//            postDO.setState(ContentState.REJECTED.value());
+//            postDataService.update(postDO);
+//        }
+//        return postConverter.toSummaryDTO(postDO);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:17)
 
     /**
      * 批准帖子
@@ -536,14 +549,15 @@ public class PostService {
         // 调用 DomainService 更新状态
         domainService.approve(id);
 
-        // 发布审核通过事件，触发统计更新（不发送消息）
+        // 发布审核通过事件，触发统计更新和通知
         eventPublisher.publishEvent(ContentApprovedEvent.forPost(
             postDO.getCreatorId(),
             postDO.getId(),
             null,  // postPreview - approve 不需要
-            null,  // nodeId
+            postDO.getNodeId(),  // nodeId - 用于统计
             null,  // nodeName
-            null   // courseName
+            null,  // courseName
+            postDO.getType()  // postType - 用于区分 ARTICLE/INDEX
         ));
 
         log.info("审核员 {} 批准了帖子 {}", currentUser.getId(), id);
@@ -592,6 +606,112 @@ public class PostService {
     }
 
     /**
+     * 下架帖子（已发布内容违规，降级为REJECTED状态）
+     *
+     * @param id 帖子ID
+     * @param reason 下架原因
+     * @param currentUser 当前审核员
+     */
+    @Transactional
+    public void remove(Long id, String reason, UserDO currentUser) {
+        validatePostId(id);
+
+        PostDO postDO = postDataService.getById(id);
+        if (postDO == null) {
+            throw ErrorCode.POSTING_NOT_FOUND.exception();
+        }
+
+        // 检查状态：只能下架已发布的内容
+        if (postDO.getState() != ContentState.PUBLISHED.value()) {
+            throw ErrorCode.INVALID_PARAMETER.exception("只能下架已发布的内容");
+        }
+
+        NodeDO nodeDO = nodeDataService.getById(postDO.getNodeId());
+        CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
+
+        // 截取内容前50个字符作为预览
+        String contentPreview = Utils.stripFormatting(postDO.getContent());
+        if (contentPreview != null && contentPreview.length() > 50) {
+            contentPreview = contentPreview.substring(0, 50) + "...";
+        }
+
+        // 更新状态为 REJECTED
+        postDataService.reject(id, reason);
+
+        // 发布内容下架事件，触发统计更新和消息通知
+        eventPublisher.publishEvent(ContentRemovedEvent.forPost(
+            postDO.getCreatorId(),
+            postDO.getId(),
+            postDO.getNodeId(),
+            postDO.getType(),
+            contentPreview,
+            nodeDO != null ? nodeDO.getName() : null,
+            courseDO != null ? courseDO.getName() : null,
+            reason
+        ));
+
+        log.info("审核员 {} 下架了帖子 {}, 原因: {}", currentUser.getId(), id, reason);
+    }
+
+    /**
+     * 恢复帖子（管理员撤销误操作）
+     *
+     * @param id 帖子ID
+     * @param reason 恢复原因
+     * @param currentUser 当前管理员
+     */
+    @Transactional
+    public void restore(Long id, String reason, UserDO currentUser) {
+        validatePostId(id);
+
+        PostDO postDO = postDataService.getById(id);
+        if (postDO == null) {
+            throw ErrorCode.POSTING_NOT_FOUND.exception();
+        }
+
+        // 记录之前的状态
+        Byte previousState = postDO.getState();
+
+        // 检查状态：只能恢复 REJECTED 或 BANNED 的内容
+        if (previousState != ContentState.REJECTED.value() && previousState != ContentState.BANNED.value()) {
+            throw ErrorCode.INVALID_PARAMETER.exception("只能恢复被拒绝或被封禁的内容");
+        }
+
+        // 从 BANNED 恢复需要 ADMIN 权限
+        if (previousState == ContentState.BANNED.value() && !currentUser.hasRole(UserRole.ADMIN)) {
+            throw ErrorCode.PERMISSION_DENIED.exception("只有管理员可以解封内容");
+        }
+
+        NodeDO nodeDO = nodeDataService.getById(postDO.getNodeId());
+        CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
+
+        // 截取内容前50个字符作为预览
+        String contentPreview = Utils.stripFormatting(postDO.getContent());
+        if (contentPreview != null && contentPreview.length() > 50) {
+            contentPreview = contentPreview.substring(0, 50) + "...";
+        }
+
+        // 恢复为 PUBLISHED 状态
+        domainService.updateState(id, ContentState.PUBLISHED, null);
+
+        // 发布内容恢复事件，触发统计恢复和消息通知
+        eventPublisher.publishEvent(ContentRestoredEvent.forPost(
+            currentUser.getId(),  // operatorId
+            postDO.getCreatorId(),
+            postDO.getId(),
+            previousState,
+            postDO.getNodeId(),
+            postDO.getType(),
+            contentPreview,
+            nodeDO != null ? nodeDO.getName() : null,
+            courseDO != null ? courseDO.getName() : null,
+            reason
+        ));
+
+        log.info("管理员 {} 恢复了帖子 {}, 原因: {}", currentUser.getId(), id, reason);
+    }
+
+    /**
      * 封禁帖子（违规封禁）
      *
      * @param id 帖子ID
@@ -603,22 +723,51 @@ public class PostService {
         validatePostId(id);
 
         PostDO postDO = postDataService.getById(id);
-        if (postDO != null) {
-            postDataService.ban(id, reason);
-            log.info("审核员 {} 封禁了帖子 {}, 原因: {}", currentUser.getId(), id, reason);
-        } else {
-            postDataService.ban(id, reason);
+        if (postDO == null) {
+            throw ErrorCode.POSTING_NOT_FOUND.exception();
         }
+
+        // 记录之前的状态
+        Byte previousState = postDO.getState();
+
+        NodeDO nodeDO = nodeDataService.getById(postDO.getNodeId());
+        CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
+
+        // 截取内容前50个字符作为预览
+        String contentPreview = Utils.stripFormatting(postDO.getContent());
+        if (contentPreview != null && contentPreview.length() > 50) {
+            contentPreview = contentPreview.substring(0, 50) + "...";
+        }
+
+        // 更新状态为 BANNED
+        postDataService.ban(id, reason);
+
+        // 发布内容封禁事件，触发统计更新和消息通知
+        eventPublisher.publishEvent(ContentBannedEvent.forPost(
+            postDO.getCreatorId(),
+            postDO.getId(),
+            previousState,
+            postDO.getNodeId(),
+            postDO.getType(),
+            contentPreview,
+            nodeDO != null ? nodeDO.getName() : null,
+            courseDO != null ? courseDO.getName() : null,
+            reason
+        ));
+
+        log.info("审核员 {} 封禁了帖子 {}, 原因: {}", currentUser.getId(), id, reason);
     }
 
-    /**
-     * 拒绝帖子（审核不通过）- 无原因版本
-     */
-    @Transactional
-    public void rejectPost(Long id) {
-        validatePostId(id);
-        postDataService.reject(id);
-    }
+// --注释掉检查 START (2025/12/10 11:17):
+//    /**
+//     * 拒绝帖子（审核不通过）- 无原因版本
+//     */
+//    @Transactional
+//    public void rejectPost(Long id) {
+//        validatePostId(id);
+//        postDataService.reject(id);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:17)
 
     /**
      * 封禁帖子（违规封禁）- 无原因版本
@@ -641,173 +790,183 @@ public class PostService {
 
     // ========== 私有方法 ==========
     
-    /**
-     * 为PostDTO列表设置完整的关联信息（用户、节点、课程）
-     */
-    private void setPostDTOAssociations(List<PostDTO> postDTOList) {
-        if (postDTOList == null || postDTOList.isEmpty()) {
-            return;
-        }
-        
-        // 批量加载用户信息
-        List<Long> userIds = Utils.getIds(postDTOList, dto -> ((PostDTO) dto).getCreatorId());
-        Map<Long, UserBriefDTO> userMap = userService.getUserMap(userIds);
-        
-        // 批量加载节点信息
-        List<Long> nodeIds = Utils.getIds(postDTOList, dto -> ((PostDTO) dto).getNodeId());
-        Map<Long, NodeWithCourseDTO> nodeMap = nodeService.getNodeMap(nodeIds);
+// --注释掉检查 START (2025/12/10 11:18):
+//    /**
+//     * 为PostDTO列表设置完整的关联信息（用户、节点、课程）
+//     */
+//    private void setPostDTOAssociations(List<PostDTO> postDTOList) {
+//        if (postDTOList == null || postDTOList.isEmpty()) {
+//            return;
+//        }
+//
+//        // 批量加载用户信息
+//        List<Long> userIds = Utils.getIds(postDTOList, dto -> ((PostDTO) dto).getCreatorId());
+//        Map<Long, UserBriefDTO> userMap = userService.getUserMap(userIds);
+//
+//        // 批量加载节点信息
+//        List<Long> nodeIds = Utils.getIds(postDTOList, dto -> ((PostDTO) dto).getNodeId());
+//        Map<Long, NodeWithCourseDTO> nodeMap = nodeService.getNodeMap(nodeIds);
+//
+//        // 设置关联信息
+//        for (PostDTO postDTO : postDTOList) {
+//            postDTO.setCreator(userMap.get(postDTO.getCreatorId()));
+//            postDTO.setNode(nodeMap.get(postDTO.getNodeId()));
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:18)
 
-        // 设置关联信息
-        for (PostDTO postDTO : postDTOList) {
-            postDTO.setCreator(userMap.get(postDTO.getCreatorId()));
-            postDTO.setNode(nodeMap.get(postDTO.getNodeId()));
-        }
-    }
-    
-    /**
-     * 为PostDTOV2列表设置完整的关联信息（用户、节点、课程、投票状态）
-     */
-    private void setPostDTOV2Associations(List<PostDTO> postDTOList, Long currentUserId) {
-        if (postDTOList == null || postDTOList.isEmpty()) {
-            return;
-        }
-        
-        // 批量加载用户信息
-        List<Long> userIds = postDTOList.stream().map(PostDTO::getCreatorId).distinct().collect(Collectors.toList());
-        Map<Long, UserDO> userMap = new HashMap<>();
-        if (!userIds.isEmpty()) {
-            List<UserDO> userList = userDataService.getByIds(userIds);
-            userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, user -> user));
-        }
-        
-        // 批量加载节点信息
-        List<Long> nodeIds = postDTOList.stream().map(PostDTO::getNodeId).distinct().collect(Collectors.toList());
-        Map<Long, NodeDO> nodeMap = new HashMap<>();
-        if (!nodeIds.isEmpty()) {
-            List<NodeDO> nodeList = nodeDataService.getByIds(nodeIds);
-            nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
-        }
-        
-        // 批量加载投票状态
-        Map<Long, Integer> voteTypes = new HashMap<>();
-        if (currentUserId != null) {
-            List<Long> postIds = postDTOList.stream().map(PostDTO::getId).collect(Collectors.toList());
-            voteTypes = loadVoteTypes(currentUserId, postIds);
-        }
-        
-        // 设置关联信息
-        for (PostDTO postDTO : postDTOList) {
-            // 设置用户信息
-            postDTO.setCreator(userConverter.toBriefDTO(userMap.get(postDTO.getCreatorId())));
-            
-            // 设置节点信息
-            NodeDO nodeDO = nodeMap.get(postDTO.getNodeId());
-            if (nodeDO != null) {
-                // 使用 NodeService 的转换方法，会自动填充 course 信息
-                NodeWithCourseDTO nodeDTO = nodeService.toWithCourseDTO(nodeDO);
-                postDTO.setNode(nodeDTO);
-            }
-            
-            // 设置投票状态
-            if (voteTypes.containsKey(postDTO.getId())) {
-                postDTO.setVoteType(voteTypes.get(postDTO.getId()));
-            }
-        }
-    }
-    
-    /**
-     * 处理投票状态
-     */
-    private Map<Long, Integer> loadVoteTypes(Long userId, List<Long> postIds) {
-        if (userId == null || postIds == null || postIds.isEmpty()) {
-            return new HashMap<>();
-        }
-        
-        List<UpvoteDO> upvotes = upvoteDataService.getList(userId, postIds, ContentType.post.value());
-        Map<Long, Integer> types = new HashMap<>();
-        for (UpvoteDO upvote : upvotes) {
-            types.put(upvote.getObjectId(), upvote.getType());
-        }
-        return types;
-    }
-    
-    /**
-     * 解析JSON字符串到章节信息列表
-     * 格式：[{"章节1": "描述1"}, {"章节2": "描述2"}, {"章节3": "描述3"}]
-     */
-    private List<Utils.Pair<String, String>> parseJsonToChapterInfoList(String jsonContent) {
-        try {
-            List<Map<String, String>> chapterMaps = objectMapper.readValue(jsonContent, new TypeReference<>() {});
-            return chapterMaps.stream().map(chapterMap -> {
-                if (chapterMap.size() != 1) {
-                    throw ErrorCode.INVALID_PARAMETER.exception("每个章节对象必须包含且仅包含一个键值对");
-                }
-                Map.Entry<String, String> entry = chapterMap.entrySet().iterator().next();
-                return new Utils.Pair<>(entry.getKey(), entry.getValue() != null ? entry.getValue() : "");
-            }).collect(Collectors.toList());
-        } catch (JsonProcessingException e) {
-            throw ErrorCode.INVALID_PARAMETER.exception("目录内容格式错误，请使用正确的JSON格式");
-        }
-    }
-    
-    /**
-     * 批量处理内容类型帖子的ID转名称
-     */
-    private void processContentPostsIdToName(List<PostDO> postings) {
-        if (postings == null || postings.isEmpty()) {
-            return;
-        }
-        
-        // 收集所有内容ID
-        List<Long> allContentIds = postings.stream()
-                .filter(post -> post.getType() != PostType.article.value())
-                .map(PostDO::getContent)
-                .filter(content -> content != null && !content.isEmpty())
-                .flatMap(content -> Arrays.stream(content.split(","))
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .map(Long::parseLong))
-                .distinct()
-                .collect(Collectors.toList());
-        
-        if (allContentIds.isEmpty()) {
-            return;
-        }
-        
-        // 批量查询节点信息
-        List<NodeDO> nodeList = nodeDataService.getByIds(allContentIds);
-        Map<Long, NodeSummaryDTO> nodeDTOMap = nodeList.stream()
-                .map(nodeDO -> nodeConverter.toSummaryDTO(nodeDO))
-                .collect(Collectors.toMap(NodeSummaryDTO::getId, node -> node));
+// --注释掉检查 START (2025/12/10 11:18):
+//    /**
+//     * 为PostDTOV2列表设置完整的关联信息（用户、节点、课程、投票状态）
+//     */
+//    private void setPostDTOV2Associations(List<PostDTO> postDTOList, Long currentUserId) {
+//        if (postDTOList == null || postDTOList.isEmpty()) {
+//            return;
+//        }
+//
+//        // 批量加载用户信息
+//        List<Long> userIds = postDTOList.stream().map(PostDTO::getCreatorId).distinct().collect(Collectors.toList());
+//        Map<Long, UserDO> userMap = new HashMap<>();
+//        if (!userIds.isEmpty()) {
+//            List<UserDO> userList = userDataService.getByIds(userIds);
+//            userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, user -> user));
+//        }
+//
+//        // 批量加载节点信息
+//        List<Long> nodeIds = postDTOList.stream().map(PostDTO::getNodeId).distinct().collect(Collectors.toList());
+//        Map<Long, NodeDO> nodeMap = new HashMap<>();
+//        if (!nodeIds.isEmpty()) {
+//            List<NodeDO> nodeList = nodeDataService.getByIds(nodeIds);
+//            nodeMap = nodeList.stream().collect(Collectors.toMap(NodeDO::getId, node -> node));
+//        }
+//
+//        // 批量加载投票状态
+//        Map<Long, Integer> voteTypes = new HashMap<>();
+//        if (currentUserId != null) {
+//            List<Long> postIds = postDTOList.stream().map(PostDTO::getId).collect(Collectors.toList());
+//            voteTypes = loadVoteTypes(currentUserId, postIds);
+//        }
+//
+//        // 设置关联信息
+//        for (PostDTO postDTO : postDTOList) {
+//            // 设置用户信息
+//            postDTO.setCreator(userConverter.toBriefDTO(userMap.get(postDTO.getCreatorId())));
+//
+//            // 设置节点信息
+//            NodeDO nodeDO = nodeMap.get(postDTO.getNodeId());
+//            if (nodeDO != null) {
+//                // 使用 NodeService 的转换方法，会自动填充 course 信息
+//                NodeWithCourseDTO nodeDTO = nodeService.toWithCourseDTO(nodeDO);
+//                postDTO.setNode(nodeDTO);
+//            }
+//
+//            // 设置投票状态
+//            if (voteTypes.containsKey(postDTO.getId())) {
+//                postDTO.setVoteType(voteTypes.get(postDTO.getId()));
+//            }
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:18)
 
-        // 为每个帖子转换内容ID为名称
-        for (PostDO postDO : postings) {
-            if (postDO.getType() == PostType.article.value() ||
-                postDO.getContent() == null || postDO.getContent().isEmpty()) {
-                continue;
-            }
+// --注释掉检查 START (2025/12/10 11:35):
+//    /**
+//     * 处理投票状态
+//     */
+//    private Map<Long, Integer> loadVoteTypes(Long userId, List<Long> postIds) {
+//        if (userId == null || postIds == null || postIds.isEmpty()) {
+//            return new HashMap<>();
+//        }
+//
+//        List<UpvoteDO> upvotes = upvoteDataService.getList(userId, postIds, ContentType.post.value());
+//        Map<Long, Integer> types = new HashMap<>();
+//        for (UpvoteDO upvote : upvotes) {
+//            types.put(upvote.getObjectId(), upvote.getType());
+//        }
+//        return types;
+//    }
+// --注释掉检查 STOP (2025/12/10 11:35)
 
-            String[] contentIds = postDO.getContent().split(",");
-            StringBuilder newContent = new StringBuilder();
+// --注释掉检查 START (2025/12/10 11:18):
+//    /**
+//     * 解析JSON字符串到章节信息列表
+//     * 格式：[{"章节1": "描述1"}, {"章节2": "描述2"}, {"章节3": "描述3"}]
+//     */
+//    private List<Utils.Pair<String, String>> parseJsonToChapterInfoList(String jsonContent) {
+//        try {
+//            List<Map<String, String>> chapterMaps = objectMapper.readValue(jsonContent, new TypeReference<>() {});
+//            return chapterMaps.stream().map(chapterMap -> {
+//                if (chapterMap.size() != 1) {
+//                    throw ErrorCode.INVALID_PARAMETER.exception("每个章节对象必须包含且仅包含一个键值对");
+//                }
+//                Map.Entry<String, String> entry = chapterMap.entrySet().iterator().next();
+//                return new Utils.Pair<>(entry.getKey(), entry.getValue() != null ? entry.getValue() : "");
+//            }).collect(Collectors.toList());
+//        } catch (JsonProcessingException e) {
+//            throw ErrorCode.INVALID_PARAMETER.exception("目录内容格式错误，请使用正确的JSON格式");
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:18)
 
-            for (int i = 0; i < contentIds.length; i++) {
-                try {
-                    long nodeId = Long.parseLong(contentIds[i].trim());
-                    NodeSummaryDTO nodeDTO = nodeDTOMap.get(nodeId);
-                    if (nodeDTO != null) {
-                        if (i > 0) {
-                            newContent.append(",");
-                        }
-                        newContent.append(nodeDTO.getName());
-                    }
-                } catch (NumberFormatException e) {
-                    log.warn("Failed to parse content ID: {}", contentIds[i], e);
-                }
-            }
-
-            postDO.setContent(newContent.toString());
-        }
-    }
+// --注释掉检查 START (2025/12/10 11:17):
+//    /**
+//     * 批量处理内容类型帖子的ID转名称
+//     */
+//    private void processContentPostsIdToName(List<PostDO> postings) {
+//        if (postings == null || postings.isEmpty()) {
+//            return;
+//        }
+//
+//        // 收集所有内容ID
+//        List<Long> allContentIds = postings.stream()
+//                .filter(post -> post.getType() != PostType.article.value())
+//                .map(PostDO::getContent)
+//                .filter(content -> content != null && !content.isEmpty())
+//                .flatMap(content -> Arrays.stream(content.split(","))
+//                        .map(String::trim)
+//                        .filter(s -> !s.isEmpty())
+//                        .map(Long::parseLong))
+//                .distinct()
+//                .collect(Collectors.toList());
+//
+//        if (allContentIds.isEmpty()) {
+//            return;
+//        }
+//
+//        // 批量查询节点信息
+//        List<NodeDO> nodeList = nodeDataService.getByIds(allContentIds);
+//        Map<Long, NodeSummaryDTO> nodeDTOMap = nodeList.stream()
+//                .map(nodeDO -> nodeConverter.toSummaryDTO(nodeDO))
+//                .collect(Collectors.toMap(NodeSummaryDTO::getId, node -> node));
+//
+//        // 为每个帖子转换内容ID为名称
+//        for (PostDO postDO : postings) {
+//            if (postDO.getType() == PostType.article.value() ||
+//                postDO.getContent() == null || postDO.getContent().isEmpty()) {
+//                continue;
+//            }
+//
+//            String[] contentIds = postDO.getContent().split(",");
+//            StringBuilder newContent = new StringBuilder();
+//
+//            for (int i = 0; i < contentIds.length; i++) {
+//                try {
+//                    long nodeId = Long.parseLong(contentIds[i].trim());
+//                    NodeSummaryDTO nodeDTO = nodeDTOMap.get(nodeId);
+//                    if (nodeDTO != null) {
+//                        if (i > 0) {
+//                            newContent.append(",");
+//                        }
+//                        newContent.append(nodeDTO.getName());
+//                    }
+//                } catch (NumberFormatException e) {
+//                    log.warn("Failed to parse content ID: {}", contentIds[i], e);
+//                }
+//            }
+//
+//            postDO.setContent(newContent.toString());
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:17)
 
 
  // ========== 验证方法 ==========
@@ -826,21 +985,25 @@ public class PostService {
         return domainService.validateAndGet(postId);
     }
 
-    /**
-     * 验证用户ID
-     */
-    private void validateUserId(Long userId) {
-        if (userId == null || userId <= 0) {
-            throw ErrorCode.POSTING_INVALID_PARAMETER.exception();
-        }
-    }
+// --注释掉检查 START (2025/12/10 11:18):
+//    /**
+//     * 验证用户ID
+//     */
+//    private void validateUserId(Long userId) {
+//        if (userId == null || userId <= 0) {
+//            throw ErrorCode.POSTING_INVALID_PARAMETER.exception();
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:18)
 
-    /**
-     * 验证节点ID
-     */
-    private void validateNodeId(Long nodeId) {
-        if (nodeId == null || nodeId <= 0) {
-            throw ErrorCode.POSTING_INVALID_PARAMETER.exception();
-        }
-    }
+// --注释掉检查 START (2025/12/10 11:18):
+//    /**
+//     * 验证节点ID
+//     */
+//    private void validateNodeId(Long nodeId) {
+//        if (nodeId == null || nodeId <= 0) {
+//            throw ErrorCode.POSTING_INVALID_PARAMETER.exception();
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:18)
 }

@@ -115,9 +115,11 @@ public class MemoryCardService {
         return dto;
     }
 
-    public CardWithSrsDTO toCardViewWithSrs(MemoryCardDO cardDO) {
-        return toCardWithSrs(cardDO, null);
-    }
+// --注释掉检查 START (2025/12/10 11:15):
+//    public CardWithSrsDTO toCardViewWithSrs(MemoryCardDO cardDO) {
+//        return toCardWithSrs(cardDO, null);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:15)
 
     public List<CardWithSrsDTO> toCardViewWithSrs(List<MemoryCardDO> cardDOList,
                                            Map<Long, UserCardSrsDO> srsStateMap,

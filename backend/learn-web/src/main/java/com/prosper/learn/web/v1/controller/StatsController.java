@@ -9,7 +9,7 @@ import com.prosper.learn.application.dto.response.PlatformStatsDTO;
 import com.prosper.learn.analytics.dto.UserStatsDTO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
-import com.prosper.learn.web.v1.dto.ApiResponse;
+import com.prosper.learn.application.dto.ApiResponse;
 import com.prosper.learn.web.v1.annotation.JsonParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,7 +1,6 @@
 import apiClient from '../client'
 import type { ApiResponse } from '@/types/api'
 import type { Profession } from '@/types/profession'
-import type { ApprovalResponse } from '@/types/course'
 
 /**
  * 职业管理相关 API
@@ -69,7 +68,7 @@ export const professionApi = {
     id: number,
     action: string,
     reason?: string
-  ): Promise<ApiResponse<ApprovalResponse>> {
+  ): Promise<ApiResponse<void>> {
     return apiClient.post(`/v1/admin/professions/${String(id)}/approve`, {
       action,
       reason,

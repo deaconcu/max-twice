@@ -2,7 +2,6 @@ package com.prosper.learn.shared.domain.event.content.lifecycle;
 
 import static com.prosper.learn.shared.domain.Enums.ContentType;
 import lombok.Data;
-import lombok.AllArgsConstructor;
 
 /**
  * 内容审核通过事件
@@ -10,7 +9,6 @@ import lombok.AllArgsConstructor;
  * 用于发送审核通过通知、更新统计等
  */
 @Data
-@AllArgsConstructor
 public class ContentApprovedEvent {
 
     /** 创建者ID */
@@ -49,59 +47,95 @@ public class ContentApprovedEvent {
     /** 帖子ID（memory_card_deck 类型使用）*/
     private Long postId;
 
+    /** 帖子类型（post 类型使用，1=ARTICLE, 2=INDEX）*/
+    private Integer postType;
+
+    /** 被评论对象的类型（comment 类型使用）*/
+    private ContentType commentTargetType;
+
+    /** 被评论对象的ID（comment 类型使用）*/
+    private Long commentTargetId;
+
     // ========== 各类型专用构造函数 ==========
 
     /** Profession 类型构造函数 */
     public static ContentApprovedEvent forProfession(Long creatorId, Long professionId, String professionName) {
-        return new ContentApprovedEvent(
-            creatorId, professionId, ContentType.profession,
-            null, null, null, null, null,
-            professionName, null, null, null
-        );
+        ContentApprovedEvent event = new ContentApprovedEvent();
+        event.creatorId = creatorId;
+        event.contentId = professionId;
+        event.contentType = ContentType.profession;
+        event.professionName = professionName;
+        return event;
     }
 
     /** Course 类型构造函数 */
     public static ContentApprovedEvent forCourse(Long creatorId, Long courseId, String courseName) {
-        return new ContentApprovedEvent(
-            creatorId, courseId, ContentType.course,
-            courseName, null, null, null, null,
-            null, null, null, null
-        );
+        ContentApprovedEvent event = new ContentApprovedEvent();
+        event.creatorId = creatorId;
+        event.contentId = courseId;
+        event.contentType = ContentType.course;
+        event.courseName = courseName;
+        return event;
     }
 
     /** Node 类型构造函数 */
     public static ContentApprovedEvent forNode(Long creatorId, Long nodeId, String nodeName, Long courseId, String courseName) {
-        return new ContentApprovedEvent(
-            creatorId, nodeId, ContentType.node,
-            courseName, nodeName, courseId, null, null,
-            null, null, null, null
-        );
+        ContentApprovedEvent event = new ContentApprovedEvent();
+        event.creatorId = creatorId;
+        event.contentId = nodeId;
+        event.contentType = ContentType.node;
+        event.nodeName = nodeName;
+        event.courseId = courseId;
+        event.courseName = courseName;
+        return event;
     }
 
     /** Post 类型构造函数 */
-    public static ContentApprovedEvent forPost(Long creatorId, Long postId, String postPreview, Long nodeId, String nodeName, String courseName) {
-        return new ContentApprovedEvent(
-            creatorId, postId, ContentType.post,
-            courseName, nodeName, null, postPreview, nodeId,
-            null, null, null, null
-        );
+    public static ContentApprovedEvent forPost(Long creatorId, Long postId, String postPreview, Long nodeId, String nodeName, String courseName, Integer postType) {
+        ContentApprovedEvent event = new ContentApprovedEvent();
+        event.creatorId = creatorId;
+        event.contentId = postId;
+        event.contentType = ContentType.post;
+        event.postContentPreview = postPreview;
+        event.nodeId = nodeId;
+        event.nodeName = nodeName;
+        event.courseName = courseName;
+        event.postType = postType;
+        return event;
     }
 
     /** Roadmap 类型构造函数 */
     public static ContentApprovedEvent forRoadmap(Long creatorId, Long roadmapId, Long professionId, String professionName) {
-        return new ContentApprovedEvent(
-            creatorId, roadmapId, ContentType.roadmap,
-            null, null, null, null, null,
-            professionName, professionId, null, null
-        );
+        ContentApprovedEvent event = new ContentApprovedEvent();
+        event.creatorId = creatorId;
+        event.contentId = roadmapId;
+        event.contentType = ContentType.roadmap;
+        event.professionId = professionId;
+        event.professionName = professionName;
+        return event;
     }
 
     /** MemoryCardDeck 类型构造函数 */
-    public static ContentApprovedEvent forMemoryCardDeck(Long creatorId, Long deckId, String deckTitle, Long postId, String postContentPreview) {
-        return new ContentApprovedEvent(
-            creatorId, deckId, ContentType.memory_card_deck,
-            null, null, null, postContentPreview, null,
-            null, null, deckTitle, postId
-        );
+    public static ContentApprovedEvent forMemoryCardDeck(Long creatorId, Long deckId, String deckTitle, Long postId, String postContentPreview, Long nodeId) {
+        ContentApprovedEvent event = new ContentApprovedEvent();
+        event.creatorId = creatorId;
+        event.contentId = deckId;
+        event.contentType = ContentType.memory_card_deck;
+        event.deckTitle = deckTitle;
+        event.postId = postId;
+        event.postContentPreview = postContentPreview;
+        event.nodeId = nodeId;
+        return event;
+    }
+
+    /** Comment 类型构造函数 */
+    public static ContentApprovedEvent forComment(Long creatorId, Long commentId, ContentType commentTargetType, Long commentTargetId) {
+        ContentApprovedEvent event = new ContentApprovedEvent();
+        event.creatorId = creatorId;
+        event.contentId = commentId;
+        event.contentType = ContentType.comment;
+        event.commentTargetType = commentTargetType;
+        event.commentTargetId = commentTargetId;
+        return event;
     }
 }

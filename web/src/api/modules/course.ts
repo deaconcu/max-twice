@@ -111,7 +111,7 @@ export const courseApi = {
     id: number,
     action: string,
     reason?: string
-  ): Promise<ApiResponse<ApprovalResponse>> {
+  ): Promise<ApiResponse<void>> {
     return apiClient.post(`/v1/courses/${String(id)}/approve`, {
       action,
       reason,

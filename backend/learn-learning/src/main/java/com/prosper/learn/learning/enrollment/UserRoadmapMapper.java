@@ -36,17 +36,19 @@ public interface UserRoadmapMapper {
             "WHERE user_id = #{userId} AND roadmap_id = #{roadmapId}")
     void update(UserRoadmapDO progressDO);
 
-    /**
-     * 批量更新学习进度
-     */
-    @Update({"<script>",
-             "<foreach collection='list' item='item' separator=';'>",
-             "UPDATE user_roadmap SET progress_percent = #{item.progressPercent}, state = #{item.state}, " +
-             "completed_at = #{item.completedAt} " +
-             "WHERE user_id = #{item.userId} AND roadmap_id = #{item.roadmapId}",
-             "</foreach>",
-             "</script>"})
-    void updateBatch(List<UserRoadmapDO> progressList);
+// --注释掉检查 START (2025/12/10 12:05):
+//    /**
+//     * 批量更新学习进度
+//     */
+//    @Update({"<script>",
+//             "<foreach collection='list' item='item' separator=';'>",
+//             "UPDATE user_roadmap SET progress_percent = #{item.progressPercent}, state = #{item.state}, " +
+//             "completed_at = #{item.completedAt} " +
+//             "WHERE user_id = #{item.userId} AND roadmap_id = #{item.roadmapId}",
+//             "</foreach>",
+//             "</script>"})
+//    void updateBatch(List<UserRoadmapDO> progressList);
+// --注释掉检查 STOP (2025/12/10 12:05)
 
     /**
      * 删除学习进度记录
@@ -63,9 +65,11 @@ public interface UserRoadmapMapper {
              "</script>"})
     List<Long> getBatchLearningStatus(long userId, List<Long> roadmapIds);
     
-    /**
-     * 统计用户正在学习的路线图数量
-     */
-    @Select("SELECT COUNT(*) FROM user_roadmap WHERE user_id = #{userId} AND state = " + Enums.UserProgressState.IN_PROGRESS_VALUE)
-    Integer countActiveRoadmapsByUserId(long userId);
+// --注释掉检查 START (2025/12/10 12:05):
+//    /**
+//     * 统计用户正在学习的路线图数量
+//     */
+//    @Select("SELECT COUNT(*) FROM user_roadmap WHERE user_id = #{userId} AND state = " + Enums.UserProgressState.IN_PROGRESS_VALUE)
+//    Integer countActiveRoadmapsByUserId(long userId);
+// --注释掉检查 STOP (2025/12/10 12:05)
 }

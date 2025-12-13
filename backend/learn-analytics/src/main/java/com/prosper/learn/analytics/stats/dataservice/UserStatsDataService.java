@@ -96,26 +96,28 @@ public class UserStatsDataService {
         return false;
     }
 
-    /**
-     * 原子性增量更新（带下限保护，不会小于0）
-     */
-    public boolean atomicIncrementWithFloor(Long userId, String field, int delta) {
-        if (delta == 0) {
-            return true;
-        }
-
-        // 确保统计记录存在
-        getOrCreate(userId);
-
-        int result = userStatsMapper.atomicIncrementWithFloor(userId, field, delta);
-        if (result > 0) {
-            log.debug("原子增量更新（带下限）: userId={}, field={}, delta={}", userId, field, delta);
-            return true;
-        }
-
-        log.warn("原子增量更新（带下限）失败: userId={}, field={}, delta={}", userId, field, delta);
-        return false;
-    }
+// --注释掉检查 START (2025/12/10 11:32):
+//    /**
+//     * 原子性增量更新（带下限保护，不会小于0）
+//     */
+//    public boolean atomicIncrementWithFloor(Long userId, String field, int delta) {
+//        if (delta == 0) {
+//            return true;
+//        }
+//
+//        // 确保统计记录存在
+//        getOrCreate(userId);
+//
+//        int result = userStatsMapper.atomicIncrementWithFloor(userId, field, delta);
+//        if (result > 0) {
+//            log.debug("原子增量更新（带下限）: userId={}, field={}, delta={}", userId, field, delta);
+//            return true;
+//        }
+//
+//        log.warn("原子增量更新（带下限）失败: userId={}, field={}, delta={}", userId, field, delta);
+//        return false;
+//    }
+// --注释掉检查 STOP (2025/12/10 11:32)
 
     /**
      * 设置字段绝对值
@@ -164,12 +166,14 @@ public class UserStatsDataService {
         return userStatsMapper.insert(userStats);
     }
 
-    /**
-     * 根据ID删除
-     */
-    public int deleteById(Long id) {
-        return userStatsMapper.deleteById(id);
-    }
+// --注释掉检查 START (2025/12/10 11:32):
+//    /**
+//     * 根据ID删除
+//     */
+//    public int deleteById(Long id) {
+//        return userStatsMapper.deleteById(id);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:32)
 
     // ==================== 便捷方法 ====================
 

@@ -138,34 +138,6 @@ public class LearningProgressService {
     // ========== 委托方法（直接委托给DomainService）==========
 
     /**
-     * 标记节点为已完成
-     */
-    public boolean markNodeCompleted(long userId, long nodeId, long courseId) {
-        boolean result = domainService.markNodeCompleted(userId, nodeId, courseId);
-
-        // 如果启用层级进度，更新课程进度
-        if (result && systemProperties.getLearningProgress().isEnableHierarchicalProgress()) {
-            updateCourseProgress(userId, nodeId, courseId);
-        }
-
-        return result;
-    }
-
-    /**
-     * 取消标记节点为已完成
-     */
-    public boolean unmarkNodeCompleted(long userId, long nodeId, long courseId) {
-        boolean result = domainService.unmarkNodeCompleted(userId, nodeId, courseId);
-
-        // 如果启用层级进度，更新课程进度
-        if (result && systemProperties.getLearningProgress().isEnableHierarchicalProgress()) {
-            updateCourseProgress(userId, nodeId, courseId);
-        }
-
-        return result;
-    }
-
-    /**
      * 检查用户是否完成了指定节点
      */
     public boolean isNodeCompleted(Long userId, Long nodeId) {
@@ -179,40 +151,50 @@ public class LearningProgressService {
         return domainService.getUserCompletedNodes(userId);
     }
 
-    /**
-     * 获取用户完成的节点总数
-     */
-    public long getUserCompletedCount(long userId) {
-        return domainService.getUserCompletedCount(userId);
-    }
+// --注释掉检查 START (2025/12/10 11:12):
+//    /**
+//     * 获取用户完成的节点总数
+//     */
+//    public long getUserCompletedCount(long userId) {
+//        return domainService.getUserCompletedCount(userId);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:12)
 
-    /**
-     * 标记课程为已完成
-     */
-    public boolean markCourseCompleted(long userId, long courseId) {
-        return domainService.markCourseCompleted(userId, courseId);
-    }
+// --注释掉检查 START (2025/12/10 11:13):
+//    /**
+//     * 标记课程为已完成
+//     */
+//    public boolean markCourseCompleted(long userId, long courseId) {
+//        return domainService.markCourseCompleted(userId, courseId);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:13)
 
-    /**
-     * 获取课程进度百分比
-     */
-    public Integer getCourseProgress(long userId, Long courseId) {
-        return domainService.getCourseProgress(userId, courseId);
-    }
+// --注释掉检查 START (2025/12/10 11:12):
+//    /**
+//     * 获取课程进度百分比
+//     */
+//    public Integer getCourseProgress(long userId, Long courseId) {
+//        return domainService.getCourseProgress(userId, courseId);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:12)
 
-    /**
-     * 手动触发数据同步（用于运维）
-     */
-    public boolean manualSync(Long userId) {
-        return domainService.manualSync(userId);
-    }
+// --注释掉检查 START (2025/12/10 11:13):
+//    /**
+//     * 手动触发数据同步（用于运维）
+//     */
+//    public boolean manualSync(Long userId) {
+//        return domainService.manualSync(userId);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:13)
 
-    /**
-     * 获取当前失败队列中的用户数量（用于监控）
-     */
-    public long getFailedSyncQueueSize() {
-        return domainService.getFailedSyncQueueSize();
-    }
+// --注释掉检查 START (2025/12/10 11:12):
+//    /**
+//     * 获取当前失败队列中的用户数量（用于监控）
+//     */
+//    public long getFailedSyncQueueSize() {
+//        return domainService.getFailedSyncQueueSize();
+//    }
+// --注释掉检查 STOP (2025/12/10 11:12)
 
     // ========== 私有辅助方法（跨域逻辑）==========
 

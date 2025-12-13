@@ -2,15 +2,14 @@ package com.prosper.learn.shared.domain.event.content.lifecycle;
 
 import static com.prosper.learn.shared.domain.Enums.ContentType;
 import lombok.Data;
-import lombok.AllArgsConstructor;
 
 /**
  * 内容审核拒绝事件
  * 当内容审核不通过时触发（SUBMITTED → REJECTED）
  * 用于发送拒绝通知，告知用户拒绝原因
+ * 注意：REJECT 操作不需要减少统计，因为内容从未发布过
  */
 @Data
-@AllArgsConstructor
 public class ContentRejectedEvent {
 
     /** 创建者ID（消息接收者）*/
@@ -56,61 +55,76 @@ public class ContentRejectedEvent {
 
     /** Profession 类型构造函数 */
     public static ContentRejectedEvent forProfession(Long creatorId, Long professionId, String professionName, String reason) {
-        return new ContentRejectedEvent(
-            creatorId, professionId, ContentType.profession,
-            null, null, null, null, null,
-            professionName, null, null, null,
-            reason
-        );
+        ContentRejectedEvent event = new ContentRejectedEvent();
+        event.creatorId = creatorId;
+        event.contentId = professionId;
+        event.contentType = ContentType.profession;
+        event.professionName = professionName;
+        event.reason = reason;
+        return event;
     }
 
     /** Course 类型构造函数 */
     public static ContentRejectedEvent forCourse(Long creatorId, Long courseId, String courseName, String reason) {
-        return new ContentRejectedEvent(
-            creatorId, courseId, ContentType.course,
-            courseName, null, null, null, null,
-            null, null, null, null,
-            reason
-        );
+        ContentRejectedEvent event = new ContentRejectedEvent();
+        event.creatorId = creatorId;
+        event.contentId = courseId;
+        event.contentType = ContentType.course;
+        event.courseName = courseName;
+        event.reason = reason;
+        return event;
     }
 
     /** Node 类型构造函数 */
     public static ContentRejectedEvent forNode(Long creatorId, Long nodeId, String nodeName, Long courseId, String courseName, String reason) {
-        return new ContentRejectedEvent(
-            creatorId, nodeId, ContentType.node,
-            courseName, nodeName, courseId, null, null,
-            null, null, null, null,
-            reason
-        );
+        ContentRejectedEvent event = new ContentRejectedEvent();
+        event.creatorId = creatorId;
+        event.contentId = nodeId;
+        event.contentType = ContentType.node;
+        event.nodeName = nodeName;
+        event.courseId = courseId;
+        event.courseName = courseName;
+        event.reason = reason;
+        return event;
     }
 
     /** Post 类型构造函数 */
     public static ContentRejectedEvent forPost(Long creatorId, Long postId, String postPreview, Long nodeId, String nodeName, String courseName, String reason) {
-        return new ContentRejectedEvent(
-            creatorId, postId, ContentType.post,
-            courseName, nodeName, null, postPreview, nodeId,
-            null, null, null, null,
-            reason
-        );
+        ContentRejectedEvent event = new ContentRejectedEvent();
+        event.creatorId = creatorId;
+        event.contentId = postId;
+        event.contentType = ContentType.post;
+        event.postContentPreview = postPreview;
+        event.nodeId = nodeId;
+        event.nodeName = nodeName;
+        event.courseName = courseName;
+        event.reason = reason;
+        return event;
     }
 
     /** Roadmap 类型构造函数 */
     public static ContentRejectedEvent forRoadmap(Long creatorId, Long roadmapId, Long professionId, String professionName, String reason) {
-        return new ContentRejectedEvent(
-            creatorId, roadmapId, ContentType.roadmap,
-            null, null, null, null, null,
-            professionName, professionId, null, null,
-            reason
-        );
+        ContentRejectedEvent event = new ContentRejectedEvent();
+        event.creatorId = creatorId;
+        event.contentId = roadmapId;
+        event.contentType = ContentType.roadmap;
+        event.professionId = professionId;
+        event.professionName = professionName;
+        event.reason = reason;
+        return event;
     }
 
     /** MemoryCardDeck 类型构造函数 */
     public static ContentRejectedEvent forMemoryCardDeck(Long creatorId, Long deckId, String deckTitle, Long postId, String postContentPreview, String reason) {
-        return new ContentRejectedEvent(
-            creatorId, deckId, ContentType.memory_card_deck,
-            null, null, null, postContentPreview, null,
-            null, null, deckTitle, postId,
-            reason
-        );
+        ContentRejectedEvent event = new ContentRejectedEvent();
+        event.creatorId = creatorId;
+        event.contentId = deckId;
+        event.contentType = ContentType.memory_card_deck;
+        event.deckTitle = deckTitle;
+        event.postId = postId;
+        event.postContentPreview = postContentPreview;
+        event.reason = reason;
+        return event;
     }
 }
+

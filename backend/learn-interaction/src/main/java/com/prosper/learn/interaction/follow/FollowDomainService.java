@@ -102,18 +102,20 @@ public class FollowDomainService {
         return followDataService.getList(userId, lastCreateTime, DEFAULT_PAGE_SIZE);
     }
 
-    /**
-     * 获取关注记录
-     *
-     * @param followerId 关注者ID
-     * @param followeeId 被关注者ID
-     * @return 关注记录，如果不存在则返回 null
-     */
-    public FollowDO getFollowRecord(Long followerId, Long followeeId) {
-        validateUserId(followerId, "关注者ID");
-        validateUserId(followeeId, "被关注者ID");
-        return followDataService.get(followerId, followeeId);
-    }
+// --注释掉检查 START (2025/12/10 11:12):
+//    /**
+//     * 获取关注记录
+//     *
+//     * @param followerId 关注者ID
+//     * @param followeeId 被关注者ID
+//     * @return 关注记录，如果不存在则返回 null
+//     */
+//    public FollowDO getFollowRecord(Long followerId, Long followeeId) {
+//        validateUserId(followerId, "关注者ID");
+//        validateUserId(followeeId, "被关注者ID");
+//        return followDataService.get(followerId, followeeId);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:12)
 
     // ========== Private 辅助方法 ==========
 

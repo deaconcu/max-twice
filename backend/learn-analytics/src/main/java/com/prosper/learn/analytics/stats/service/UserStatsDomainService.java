@@ -3,13 +3,18 @@ package com.prosper.learn.analytics.stats.service;
 import com.prosper.learn.analytics.dto.UserStatsDTO;
 import com.prosper.learn.analytics.stats.dataservice.UserStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.UserStatsDO;
+import com.prosper.learn.shared.domain.event.content.lifecycle.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+
+import static com.prosper.learn.shared.domain.Enums.ContentState;
 
 /**
  * 用户统计领域服务
@@ -18,6 +23,7 @@ import java.util.Map;
  * - 用户累计统计数据查询
  * - 统计数据增量更新
  * - 排行榜查询
+ * - 监听内容审核事件，更新用户维度的统计（user_stats表）
  */
 @Slf4j
 @Service
@@ -118,21 +124,25 @@ public class UserStatsDomainService {
         userStatsDataService.atomicIncrement(userId, "completed_courses", delta);
     }
 
-    /**
-     * 增量更新正在进行职业数
-     */
-    @Transactional
-    public void incrementInProgressProfessions(Long userId, int delta) {
-        userStatsDataService.atomicIncrement(userId, "in_progress_professions", delta);
-    }
+// --注释掉检查 START (2025/12/10 11:32):
+//    /**
+//     * 增量更新正在进行职业数
+//     */
+//    @Transactional
+//    public void incrementInProgressProfessions(Long userId, int delta) {
+//        userStatsDataService.atomicIncrement(userId, "in_progress_professions", delta);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:32)
 
-    /**
-     * 增量更新已完成职业数
-     */
-    @Transactional
-    public void incrementCompletedProfessions(Long userId, int delta) {
-        userStatsDataService.atomicIncrement(userId, "completed_professions", delta);
-    }
+// --注释掉检查 START (2025/12/10 11:32):
+//    /**
+//     * 增量更新已完成职业数
+//     */
+//    @Transactional
+//    public void incrementCompletedProfessions(Long userId, int delta) {
+//        userStatsDataService.atomicIncrement(userId, "completed_professions", delta);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:32)
 
     // ==================== 内容创作统计 ====================
 
@@ -222,5 +232,120 @@ public class UserStatsDomainService {
                 .createdCardDecks(statsDO.getCreatedCardDecks())
                 .lastUpdated(statsDO.getUpdatedAt())
                 .build();
+    }
+
+    // ==================== 事件监听：用户维度统计更新 ====================
+
+    /**
+     * 监听内容审核通过事件 - 增加用户创作统计
+     */
+    @EventListener
+    @Async
+    public void onContentApproved(ContentApprovedEvent event) {
+        try {
+            switch (event.getContentType()) {
+                case post -> handlePostApproved(event);
+                case roadmap -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_roadmaps", 1);
+                case memory_card_deck -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_card_decks", 1);
+                case comment -> userStatsDataService.atomicIncrement(event.getCreatorId(), "comments", 1);
+            }
+        } catch (Exception e) {
+            log.error("处理内容审核通过事件失败(用户统计): {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 监听内容下架事件 - 减少用户创作统计
+     */
+    @EventListener
+    @Async
+    public void onContentRemoved(ContentRemovedEvent event) {
+        try {
+            switch (event.getContentType()) {
+                case post -> handlePostRemoved(event);
+                case roadmap -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_roadmaps", -1);
+                case memory_card_deck -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_card_decks", -1);
+            }
+        } catch (Exception e) {
+            log.error("处理内容下架事件失败(用户统计): {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 监听内容封禁事件 - 减少用户创作统计（仅 PUBLISHED 状态）
+     */
+    @EventListener
+    @Async
+    public void onContentBanned(ContentBannedEvent event) {
+        try {
+            if (event.getPreviousState() != ContentState.PUBLISHED.value()) {
+                return;
+            }
+
+            switch (event.getContentType()) {
+                case post -> handlePostBanned(event);
+                case roadmap -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_roadmaps", -1);
+                case memory_card_deck -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_card_decks", -1);
+                case comment -> userStatsDataService.atomicIncrement(event.getCreatorId(), "comments", -1);
+            }
+        } catch (Exception e) {
+            log.error("处理内容封禁事件失败(用户统计): {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 监听内容恢复事件 - 恢复用户创作统计
+     */
+    @EventListener
+    @Async
+    public void onContentRestored(ContentRestoredEvent event) {
+        try {
+            if (event.getPreviousState() != ContentState.BANNED.value()) {
+                return;
+            }
+
+            switch (event.getContentType()) {
+                case post -> handlePostRestored(event);
+                case roadmap -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_roadmaps", 1);
+                case memory_card_deck -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_card_decks", 1);
+                case comment -> userStatsDataService.atomicIncrement(event.getCreatorId(), "comments", 1);
+            }
+        } catch (Exception e) {
+            log.error("处理内容恢复事件失败(用户统计): {}", e.getMessage());
+        }
+    }
+
+    // ==================== Post 处理 ====================
+
+    private void handlePostApproved(ContentApprovedEvent event) {
+        if (event.getPostType() == 1) {
+            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_articles", 1);
+        } else if (event.getPostType() == 2) {
+            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_indexs", 1);
+        }
+    }
+
+    private void handlePostRemoved(ContentRemovedEvent event) {
+        if (event.getPostType() == 1) {
+            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_articles", -1);
+        } else if (event.getPostType() == 2) {
+            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_indexs", -1);
+        }
+    }
+
+    private void handlePostBanned(ContentBannedEvent event) {
+        if (event.getPostType() == 1) {
+            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_articles", -1);
+        } else if (event.getPostType() == 2) {
+            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_indexs", -1);
+        }
+    }
+
+    private void handlePostRestored(ContentRestoredEvent event) {
+        if (event.getPostType() == 1) {
+            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_articles", 1);
+        } else if (event.getPostType() == 2) {
+            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_indexs", 1);
+        }
     }
 }

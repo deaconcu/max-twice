@@ -157,10 +157,6 @@ public class CourseService {
         return toBriefDTO(courseList);
     }
 
-    public Map<Long, CourseDO> getCourseMap(List<Long> ids) {
-        return courseDomainService.getByIds(ids);
-    }
-
     /**
      * 获取子课程列表（仅包含已批准的子课程）, 用于展示在课程详情页面
      * @param parentCourseId
@@ -197,23 +193,6 @@ public class CourseService {
             request.getMainCategory(),
             request.getSubCategory()
         );
-    }
-
-    /**
-     * 获取课程 DO
-     */
-    public CourseDO getCourseDOById(long id) {
-        return courseDomainService.getById(id);
-    }
-
-    public boolean exist(long id) {
-        return courseDomainService.exists(id);
-    }
-
-    public CourseDetailDTO getCourseDetailDTOById(Long courseId) {
-        if (courseId == null) return null;
-        CourseDO courseDO = courseDataService.getById(courseId);
-        return courseDO != null ? toDetailDTO(courseDO) : null;
     }
 
     // 新增：根据状态和lastId获取课程列表

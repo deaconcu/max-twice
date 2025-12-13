@@ -80,8 +80,10 @@ public interface CommentMapper {
     @Update("UPDATE comment SET state = #{state}, score = #{score} where id = #{id}")
     void update(CommentDO commentDO);
 
-    @Update("UPDATE comment SET state = #{state} WHERE id = #{id}")
-    int updateState(@Param("id") long id, @Param("state") byte state);
+// --注释掉检查 START (2025/12/10 11:38):
+//    @Update("UPDATE comment SET state = #{state} WHERE id = #{id}")
+//    int updateState(@Param("id") long id, @Param("state") byte state);
+// --注释掉检查 STOP (2025/12/10 11:38)
 
     @Update("UPDATE comment SET state = #{state}, reason = #{reason} WHERE id = #{id}")
     int updateStateWithReason(@Param("id") long id, @Param("state") byte state, @Param("reason") String reason);

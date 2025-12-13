@@ -11,19 +11,14 @@ import java.time.LocalDateTime;
 public class ContentStatsDO {
 
     /**
-     * 主键ID
-     */
-    private Long id;
-
-    /**
-     * 内容类型
+     * 内容类型（主键字段1）
      * 对应 Enums.ContentType 枚举值
      * 1=post, 2=node, 3=comment, 4=roadmap, 5=memory_card_deck, 6=memory_card, 7=profession, 8=course
      */
     private Integer contentType;
 
     /**
-     * 内容ID
+     * 内容ID（主键字段2）
      * 对应各个内容表的主键ID
      */
     private Long contentId;
@@ -77,6 +72,46 @@ public class ContentStatsDO {
      * 主要用于课程、路线图等学习内容，记录当前正在学习的用户数
      */
     private Integer inProgressUsers;
+
+    // ==================== 对象维度统计字段 ====================
+
+    /**
+     * 帖子总数
+     * 用于 Node 统计其下的帖子总数（articles + indexes）
+     */
+    private Integer posts;
+
+    /**
+     * 文章数量
+     * 用于 Node 统计其下的文章类型帖子数量
+     */
+    private Integer articles;
+
+    /**
+     * 目录数量
+     * 用于 Node 统计其下的目录类型帖子数量
+     */
+    private Integer indexes;
+
+    /**
+     * 路线图数量
+     * 用于 Profession 统计其下的路线图数量
+     */
+    private Integer roadmaps;
+
+    /**
+     * 记忆卡片组数量
+     * 用于 Post/Node 统计其下的卡片组数量
+     */
+    private Integer cardDecks;
+
+    // ==================== 违规统计字段 ====================
+
+    /**
+     * 被拒绝/下架次数
+     * 用于判断是否需要自动升级为 BANNED 状态（≥3次）
+     */
+    private Integer rejectCount;
 
     // ==================== 时间戳字段 ====================
 

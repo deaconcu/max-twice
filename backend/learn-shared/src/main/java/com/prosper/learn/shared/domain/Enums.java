@@ -158,13 +158,16 @@ public class Enums {
         }
     }
 
+    // TODO 上线前需要都+1
     public enum ContentState implements ValueEnum<Byte> {
+        DRAFT((byte)0),
         SUBMITTED((byte)1),
         PUBLISHED((byte)2),
         REJECTED((byte)3),
         BANNED((byte)4);
 
         // 静态常量用于 MyBatis 注解（注解需要编译时常量）
+        public static final byte DRAFT_VALUE = 0;
         public static final byte SUBMITTED_VALUE = 1;
         public static final byte PUBLISHED_VALUE = 2;
         public static final byte REJECTED_VALUE = 3;
@@ -181,8 +184,8 @@ public class Enums {
             return value;
         }
 
-        public static ContentState getByValue(Integer value) {
-            return value == null ? null : ValueEnum.getByValue(ContentState.class, value.byteValue());
+        public static ContentState getByValue(Byte value) {
+            return value == null ? null : ValueEnum.getByValue(ContentState.class, value);
         }
 
         public static boolean isValid(int value) {

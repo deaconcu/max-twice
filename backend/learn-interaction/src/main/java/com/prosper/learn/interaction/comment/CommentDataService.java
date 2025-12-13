@@ -152,27 +152,11 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
     }
 
     /**
-     * 拒绝评论（审核不通过）
-     */
-    @CacheEvict(value = "comments", key = "#id")
-    public int reject(long id) {
-        return commentMapper.updateState(id, Enums.ContentState.REJECTED.value());
-    }
-
-    /**
      * 拒绝评论（审核不通过，带原因）
      */
     @CacheEvict(value = "comments", key = "#id")
     public int reject(long id, String reason) {
         return commentMapper.updateStateWithReason(id, Enums.ContentState.REJECTED.value(), reason);
-    }
-
-    /**
-     * 封禁评论（违规封禁）
-     */
-    @CacheEvict(value = "comments", key = "#id")
-    public int ban(long id) {
-        return commentMapper.updateState(id, Enums.ContentState.BANNED.value());
     }
 
     /**

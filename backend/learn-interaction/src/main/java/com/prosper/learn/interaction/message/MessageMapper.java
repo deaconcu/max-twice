@@ -10,11 +10,13 @@ public interface MessageMapper {
             "WHERE id = #{id}")
     MessageDO getById(long id);
 
-    @Select("SELECT * FROM message " +
-            "WHERE type = #{type} " +
-            "ORDER BY created_at DESC " +
-            "LIMIT #{offset}, #{limit}")
-    List<MessageDO> listAll(int type, int limit, int offset);
+// --注释掉检查 START (2025/12/10 12:02):
+//    @Select("SELECT * FROM message " +
+//            "WHERE type = #{type} " +
+//            "ORDER BY created_at DESC " +
+//            "LIMIT #{offset}, #{limit}")
+//    List<MessageDO> listAll(int type, int limit, int offset);
+// --注释掉检查 STOP (2025/12/10 12:02)
 
     @Select("SELECT * FROM message " +
             "WHERE type = #{type} and id < #{lastId}" +
@@ -65,22 +67,6 @@ public interface MessageMapper {
                                @Param("userId") long userId,
                                @Param("lastId") Long lastId,
                                @Param("limit") int limit);
-
-    @Select("SELECT * FROM message " +
-            "where sender_id = #{userId} and type = 1 and id < #{lastId} " +
-            "ORDER BY created_at DESC " +
-            "LIMIT #{limit}")
-    List<MessageDO> getApplyCourseListByUser(long userId, long lastId, int limit);
-
-    @Select("SELECT * FROM message " +
-            "where receiver_id = 0 and type = 1 " +
-            "ORDER BY created_at DESC " +
-            "LIMIT #{offset}, #{limit}")
-    List<MessageDO> getApplyCourseList(int offset, int limit);
-
-    @Select("SELECT count(*) FROM message " +
-            "where receiver_id = 0 and type = 1 ")
-    int getApplyCourseCount();
 
     @Insert("INSERT INTO message(sender_id, receiver_id, content, type, category) " +
             "VALUES (#{senderId}, #{receiverId}, #{content}, #{type}, #{category})")

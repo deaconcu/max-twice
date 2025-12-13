@@ -1,9 +1,11 @@
 package com.prosper.learn.analytics.application.listener;
 
 import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
+import com.prosper.learn.analytics.stats.dataservice.UserStatsDataService;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentBookmarkedEvent;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentSharedEvent;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentUnbookmarkedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.*;
 import com.prosper.learn.shared.domain.event.user.learning.LearningCompletedEvent;
 import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+
+import static com.prosper.learn.shared.domain.Enums.ContentState;
+import static com.prosper.learn.shared.domain.Enums.ContentType;
 
 /**
  * 内容统计事件监听器
@@ -22,6 +27,10 @@ import org.springframework.stereotype.Component;
  * - bookmarks: 收藏数
  * - in_progress_users: 学习中用户数
  * - completed_users: 已完成用户数
+ * - posts, articles, indexes: 帖子统计（审核通过/删除时更新）
+ * - roadmaps: 路线图统计（审核通过/删除时更新）
+ * - card_decks: 卡片组统计（审核通过/删除时更新）
+ * - reject_count: 被拒绝次数（reject/remove时更新）
  *
  * 【由 RedisStatsEventListener 处理的字段】（写 Redis，定时同步）:
  * - views: 浏览量
@@ -35,6 +44,7 @@ import org.springframework.stereotype.Component;
 public class ContentStatsEventListener {
 
     private final ContentStatsDataService contentStatsDataService;
+    private final UserStatsDataService userStatsDataService;
 
     // ==================== 分享事件 ====================
 

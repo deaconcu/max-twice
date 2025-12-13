@@ -3,7 +3,7 @@ package com.prosper.learn.web.handler;
 import cn.dev33.satoken.exception.NotLoginException;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.web.util.MessageUtils;
-import com.prosper.learn.web.v1.dto.ApiResponse;
+import com.prosper.learn.application.dto.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;

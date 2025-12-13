@@ -32,7 +32,10 @@ import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRemovedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRestoredEvent;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
@@ -661,13 +664,17 @@ public class MemoryCardDeckService {
         // 获取卡片组信息
         MemoryCardDeckDO deck = deckDomainService.getById(deckId);
 
-        // 获取帖子信息用于事件（跨域查询）
+        // 获取帖子和节点信息用于事件（跨域查询）
         PostDO postDO = postDataService.getById(deck.getPostId());
+        Long nodeId = null;
         String postContentPreview = "";
-        if (postDO != null && postDO.getContent() != null) {
-            postContentPreview = Utils.stripFormatting(postDO.getContent());
-            if (postContentPreview.length() > 50) {
-                postContentPreview = postContentPreview.substring(0, 50) + "...";
+        if (postDO != null) {
+            nodeId = postDO.getNodeId();
+            if (postDO.getContent() != null) {
+                postContentPreview = Utils.stripFormatting(postDO.getContent());
+                if (postContentPreview.length() > 50) {
+                    postContentPreview = postContentPreview.substring(0, 50) + "...";
+                }
             }
         }
 
@@ -677,6 +684,7 @@ public class MemoryCardDeckService {
             deck.getId(),
             deck.getTitle(),
             deck.getPostId(),
+            nodeId,  // NEW: 需要更新 node 统计
             postContentPreview
         ));
 
@@ -722,20 +730,142 @@ public class MemoryCardDeckService {
      */
     @Transactional
     public void ban(Long deckId, Long auditorId, String reason) {
+        // 获取卡片组信息
+        MemoryCardDeckDO deck = deckDomainService.getById(deckId);
+        if (deck == null) {
+            throw ErrorCode.DECK_NOT_FOUND.exception();
+        }
+
+        // 记录之前的状态
+        Byte previousState = deck.getState();
+
+        // 获取帖子和节点信息用于事件（跨域查询）
+        PostDO postDO = postDataService.getById(deck.getPostId());
+        Long nodeId = null;
+        String postContentPreview = "";
+        if (postDO != null) {
+            nodeId = postDO.getNodeId();
+            if (postDO.getContent() != null) {
+                postContentPreview = Utils.stripFormatting(postDO.getContent());
+                if (postContentPreview.length() > 50) {
+                    postContentPreview = postContentPreview.substring(0, 50) + "...";
+                }
+            }
+        }
+
         // 调用 DomainService 执行封禁
         deckDomainService.ban(deckId, reason);
 
-        // ban 不发送任何消息或事件
+        // 发布内容封禁事件，触发统计更新和消息通知
+        eventPublisher.publishEvent(ContentBannedEvent.forMemoryCardDeck(
+            deck.getCreatorId(),
+            deck.getId(),
+            previousState,
+            deck.getPostId(),
+            nodeId,
+            deck.getTitle(),
+            postContentPreview,
+            reason
+        ));
+
         log.info("Deck {} banned by user {}, reason: {}", deckId, auditorId, reason);
     }
 
     /**
-     * 恢复卡片组
+     * 下架卡片组（已发布内容违规，降级为REJECTED状态）
      */
     @Transactional
-    public void restoreDeck(Long deckId, Long auditorId) {
+    public void remove(Long deckId, Long auditorId, String reason) {
+        // 获取卡片组信息
+        MemoryCardDeckDO deck = deckDomainService.getById(deckId);
+        if (deck == null) {
+            throw ErrorCode.DECK_NOT_FOUND.exception();
+        }
+
+        // 检查状态：只能下架已发布的内容
+        if (deck.getState() != Enums.ContentState.PUBLISHED.value()) {
+            throw ErrorCode.INVALID_PARAMETER.exception("只能下架已发布的内容");
+        }
+
+        // 获取帖子和节点信息用于事件（跨域查询）
+        PostDO postDO = postDataService.getById(deck.getPostId());
+        Long nodeId = null;
+        String postContentPreview = "";
+        if (postDO != null) {
+            nodeId = postDO.getNodeId();
+            if (postDO.getContent() != null) {
+                postContentPreview = Utils.stripFormatting(postDO.getContent());
+                if (postContentPreview.length() > 50) {
+                    postContentPreview = postContentPreview.substring(0, 50) + "...";
+                }
+            }
+        }
+
+        // 调用 DomainService 执行下架（设置为REJECTED状态）
+        deckDomainService.reject(deckId, reason);
+
+        // 发布内容下架事件，触发统计更新和消息通知
+        eventPublisher.publishEvent(ContentRemovedEvent.forMemoryCardDeck(
+            deck.getCreatorId(),
+            deck.getId(),
+            deck.getPostId(),
+            nodeId,
+            deck.getTitle(),
+            postContentPreview,
+            reason
+        ));
+
+        log.info("Deck {} removed by user {}, reason: {}", deckId, auditorId, reason);
+    }
+
+    /**
+     * 恢复卡片组（管理员撤销误操作）
+     */
+    @Transactional
+    public void restoreDeck(Long deckId, Long auditorId, String reason) {
+        // 获取卡片组信息
+        MemoryCardDeckDO deck = deckDomainService.getById(deckId);
+        if (deck == null) {
+            throw ErrorCode.DECK_NOT_FOUND.exception();
+        }
+
+        // 记录之前的状态
+        Byte previousState = deck.getState();
+
+        // 检查状态：只能恢复 REJECTED 或 BANNED 的内容
+        if (previousState != Enums.ContentState.REJECTED.value() && previousState != Enums.ContentState.BANNED.value()) {
+            throw ErrorCode.INVALID_PARAMETER.exception("只能恢复被拒绝或被封禁的内容");
+        }
+
+        // 获取帖子和节点信息用于事件（跨域查询）
+        PostDO postDO = postDataService.getById(deck.getPostId());
+        Long nodeId = null;
+        String postContentPreview = "";
+        if (postDO != null) {
+            nodeId = postDO.getNodeId();
+            if (postDO.getContent() != null) {
+                postContentPreview = Utils.stripFormatting(postDO.getContent());
+                if (postContentPreview.length() > 50) {
+                    postContentPreview = postContentPreview.substring(0, 50) + "...";
+                }
+            }
+        }
+
         // 调用 DomainService 执行恢复
         deckDomainService.restore(deckId);
+
+        // 发布内容恢复事件，触发统计恢复和消息通知
+        eventPublisher.publishEvent(ContentRestoredEvent.forMemoryCardDeck(
+            auditorId,  // operatorId
+            deck.getCreatorId(),
+            deck.getId(),
+            previousState,
+            deck.getPostId(),
+            nodeId,
+            deck.getTitle(),
+            postContentPreview,
+            reason
+        ));
 
         log.info("Deck {} restored by user {}", deckId, auditorId);
     }

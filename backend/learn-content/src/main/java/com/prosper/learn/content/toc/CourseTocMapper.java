@@ -21,6 +21,8 @@ public interface CourseTocMapper {
     @Update("UPDATE course_toc SET ref_count = ref_count + #{n} where hash = #{hash}")
     void incrRef(String hash, int n);
 
-    @Delete("DELETE FROM course_toc where id = #{id}")
-    void delete(long id);
+// --注释掉检查 START (2025/12/10 12:02):
+//    @Delete("DELETE FROM course_toc where id = #{id}")
+//    void delete(long id);
+// --注释掉检查 STOP (2025/12/10 12:02)
 }

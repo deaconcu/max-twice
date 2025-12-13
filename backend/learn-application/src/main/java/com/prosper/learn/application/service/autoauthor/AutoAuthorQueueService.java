@@ -76,14 +76,6 @@ public class AutoAuthorQueueService {
     }
 
     /**
-     * 从集合中移除指定节点任务（兼容旧接口）
-     * @param nodeId 节点ID
-     */
-    public void remove(long nodeId) {
-        remove("N:" + nodeId);
-    }
-
-    /**
      * 清空所有队列
      * @return 清空的节点数量
      */

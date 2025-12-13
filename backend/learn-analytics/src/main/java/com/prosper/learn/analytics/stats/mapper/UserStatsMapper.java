@@ -23,8 +23,10 @@ public interface UserStatsMapper {
     @Select("SELECT * FROM user_stats WHERE user_id = #{userId}")
     UserStatsDO getByUserId(long userId);
 
-    @Delete("DELETE FROM user_stats WHERE id = #{id}")
-    int deleteById(long id);
+// --注释掉检查 START (2025/12/10 12:05):
+//    @Delete("DELETE FROM user_stats WHERE id = #{id}")
+//    int deleteById(long id);
+// --注释掉检查 STOP (2025/12/10 12:05)
 
     // ===== 原子增量更新操作 =====
 
@@ -33,10 +35,12 @@ public interface UserStatsMapper {
     int atomicIncrement(@Param("userId") long userId,
                        @Param("field") String field, @Param("delta") int delta);
 
-    @Update("UPDATE user_stats SET ${field} = GREATEST(0, ${field} + #{delta}) " +
-            "WHERE user_id = #{userId}")
-    int atomicIncrementWithFloor(@Param("userId") long userId,
-                                  @Param("field") String field, @Param("delta") int delta);
+// --注释掉检查 START (2025/12/10 12:05):
+//    @Update("UPDATE user_stats SET ${field} = GREATEST(0, ${field} + #{delta}) " +
+//            "WHERE user_id = #{userId}")
+//    int atomicIncrementWithFloor(@Param("userId") long userId,
+//                                  @Param("field") String field, @Param("delta") int delta);
+// --注释掉检查 STOP (2025/12/10 12:05)
 
     @Update("UPDATE user_stats SET ${field} = #{newValue} " +
             "WHERE user_id = #{userId}")

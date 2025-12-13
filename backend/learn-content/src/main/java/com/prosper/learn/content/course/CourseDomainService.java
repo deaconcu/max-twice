@@ -117,13 +117,15 @@ public class CourseDomainService {
         return courseDataService.getById(id);
     }
 
-    /**
-     * 检查课程是否存在
-     */
-    public boolean exists(long id) {
-        CourseDO courseDO = courseDataService.getById(id);
-        return courseDO != null;
-    }
+// --注释掉检查 START (2025/12/10 11:11):
+//    /**
+//     * 检查课程是否存在
+//     */
+//    public boolean exists(long id) {
+//        CourseDO courseDO = courseDataService.getById(id);
+//        return courseDO != null;
+//    }
+// --注释掉检查 STOP (2025/12/10 11:11)
 
     /**
      * 批量获取课程，返回 Map

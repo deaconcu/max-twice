@@ -8,8 +8,7 @@ import java.time.LocalDateTime;
 @Data
 public class UserStatsDO {
 
-    private Long id;
-
+    // 主键：user_id
     private Long userId;
 
     // 累计统计（总计数）

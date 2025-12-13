@@ -22,7 +22,10 @@ import com.prosper.learn.learning.enrollment.UserCourseDataService;
 import com.prosper.learn.learning.enrollment.UserRoadmapDataService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRemovedEvent;
+import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRestoredEvent;
 import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
@@ -527,33 +530,132 @@ public class RoadmapService {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
 
+        // 记录之前的状态
+        Byte previousState = roadmap.getState();
+
+        // 获取职业信息用于通知
+        ProfessionDO profession = professionDataService.getById(roadmap.getProfessionId());
+
         // 委托给 DomainService 执行状态变更
         domainService.ban(id, reason);
-        roadmap.setState(ContentState.BANNED.value());
 
-        // ban 不发送任何消息或事件
+        // 发布内容封禁事件，触发统计更新和消息通知
+        eventPublisher.publishEvent(ContentBannedEvent.forRoadmap(
+            roadmap.getCreatorId(),
+            roadmap.getId(),
+            previousState,
+            roadmap.getProfessionId(),
+            profession != null ? profession.getName() : null,
+            reason
+        ));
+
         log.info("路线图 {} 被封禁，操作者: {}, 原因: {}", id, operator.getId(), reason);
 
+        roadmap.setState(ContentState.BANNED.value());
         return toSummaryDTO(roadmap);
     }
 
     /**
-     * 清除描述并批准路线图
+     * 下架路线图（已发布内容违规，降级为REJECTED状态）
      */
     @Transactional
-    public RoadmapSummaryDTO approveAndClearDescription(long id, UserDO operator) {
+    public RoadmapSummaryDTO remove(long id, String reason, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
             throw ErrorCode.ROADMAP_NOT_FOUND.exception();
         }
 
-        // 委托给 DomainService
-        domainService.approveAndClearDescription(id);
-        roadmap.setDescription("");
-        roadmap.setState(ContentState.PUBLISHED.value());
+        // 检查状态：只能下架已发布的内容
+        if (roadmap.getState() != ContentState.PUBLISHED.value()) {
+            throw ErrorCode.INVALID_PARAMETER.exception("只能下架已发布的内容");
+        }
 
+        // 获取职业信息用于通知
+        ProfessionDO profession = professionDataService.getById(roadmap.getProfessionId());
+
+        // 委托给 DomainService 执行状态变更
+        domainService.reject(id, reason);
+
+        // 发布内容下架事件，触发统计更新和消息通知
+        eventPublisher.publishEvent(ContentRemovedEvent.forRoadmap(
+            roadmap.getCreatorId(),
+            roadmap.getId(),
+            roadmap.getProfessionId(),
+            profession != null ? profession.getName() : null,
+            reason
+        ));
+
+        log.info("路线图 {} 被下架，操作者: {}, 原因: {}", id, operator.getId(), reason);
+
+        roadmap.setState(ContentState.REJECTED.value());
         return toSummaryDTO(roadmap);
     }
+
+    /**
+     * 恢复路线图（管理员撤销误操作）
+     */
+    @Transactional
+    public RoadmapSummaryDTO restore(long id, String reason, UserDO operator) {
+        RoadmapDO roadmap = roadmapDataService.getById(id);
+        if (roadmap == null) {
+            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+        }
+
+        // 记录之前的状态
+        Byte previousState = roadmap.getState();
+
+        // 检查状态：只能恢复 REJECTED 或 BANNED 的内容
+        if (previousState != ContentState.REJECTED.value() && previousState != ContentState.BANNED.value()) {
+            throw ErrorCode.INVALID_PARAMETER.exception("只能恢复被拒绝或被封禁的内容");
+        }
+
+        // 从 BANNED 恢复需要 ADMIN 权限
+        if (previousState == ContentState.BANNED.value() && !operator.hasRole(UserRole.ADMIN)) {
+            throw ErrorCode.PERMISSION_DENIED.exception("只有管理员可以解封内容");
+        }
+
+        // 获取职业信息用于通知
+        ProfessionDO profession = professionDataService.getById(roadmap.getProfessionId());
+
+        // 委托给 DomainService 执行状态变更
+        domainService.approve(id);
+
+        // 发布内容恢复事件，触发统计恢复和消息通知
+        eventPublisher.publishEvent(ContentRestoredEvent.forRoadmap(
+            operator.getId(),  // operatorId
+            roadmap.getCreatorId(),
+            roadmap.getId(),
+            previousState,
+            roadmap.getProfessionId(),
+            profession != null ? profession.getName() : null,
+            reason
+        ));
+
+        log.info("路线图 {} 被恢复，操作者: {}, 原因: {}", id, operator.getId(), reason);
+
+        roadmap.setState(ContentState.PUBLISHED.value());
+        return toSummaryDTO(roadmap);
+    }
+
+// --注释掉检查 START (2025/12/10 11:24):
+//    /**
+//     * 清除描述并批准路线图
+//     */
+//    @Transactional
+//    public RoadmapSummaryDTO approveAndClearDescription(long id, UserDO operator) {
+//        RoadmapDO roadmap = roadmapDataService.getById(id);
+//        if (roadmap == null) {
+//            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+//        }
+//
+//        // 委托给 DomainService
+//        domainService.approveAndClearDescription(id);
+//        roadmap.setDescription("");
+//        roadmap.setState(ContentState.PUBLISHED.value());
+//
+//        return toSummaryDTO(roadmap);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:24)
 
     /**
      * 更新路线图描述（管理员操作）

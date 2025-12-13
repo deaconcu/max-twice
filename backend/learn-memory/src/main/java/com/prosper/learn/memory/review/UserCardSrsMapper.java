@@ -34,42 +34,50 @@ public interface UserCardSrsMapper {
     @MapKey("id")
     Map<Long, UserCardSrsDO> getMapByIds(Collection<Long> ids);
 
-    @Select("SELECT srs.* FROM user_card_srs srs " +
-            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
-            "WHERE srs.user_id = #{userId} AND srs.review_due_at <= #{dueTime} " +
-            "AND deck.state = " + ContentState.PUBLISHED_VALUE + " " +
-            "AND EXISTS (" +
-            "    SELECT 1 FROM user_card_in_course ctx " +
-            "    JOIN user_course_srs_setting s ON ctx.course_id = s.course_id AND ctx.user_id = s.user_id " +
-            "    WHERE ctx.card_id = srs.card_id AND s.status = 1 AND s.user_id = srs.user_id" +
-            ") " +
-            "ORDER BY srs.review_due_at ASC LIMIT #{limit}")
-    List<UserCardSrsDO> getDueCardsForReview(long userId, LocalDateTime dueTime, int limit);
+// --注释掉检查 START (2025/12/10 12:04):
+//    @Select("SELECT srs.* FROM user_card_srs srs " +
+//            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
+//            "WHERE srs.user_id = #{userId} AND srs.review_due_at <= #{dueTime} " +
+//            "AND deck.state = " + ContentState.PUBLISHED_VALUE + " " +
+//            "AND EXISTS (" +
+//            "    SELECT 1 FROM user_card_in_course ctx " +
+//            "    JOIN user_course_srs_setting s ON ctx.course_id = s.course_id AND ctx.user_id = s.user_id " +
+//            "    WHERE ctx.card_id = srs.card_id AND s.status = 1 AND s.user_id = srs.user_id" +
+//            ") " +
+//            "ORDER BY srs.review_due_at ASC LIMIT #{limit}")
+//    List<UserCardSrsDO> getDueCardsForReview(long userId, LocalDateTime dueTime, int limit);
+// --注释掉检查 STOP (2025/12/10 12:04)
 
-    @Select("SELECT srs.* FROM user_card_srs srs " +
-            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
-            "WHERE srs.user_id = #{userId} AND srs.review_due_at <= #{dueTime} " +
-            "AND deck.state = " + ContentState.PUBLISHED_VALUE + " " +
-            "AND EXISTS (" +
-            "    SELECT 1 FROM user_card_in_course ctx " +
-            "    WHERE ctx.card_id = srs.card_id AND ctx.user_id = #{userId} AND ctx.course_id = #{courseId}" +
-            ") " +
-            "ORDER BY srs.review_due_at ASC LIMIT #{limit}")
-    List<UserCardSrsDO> getDueCardsByCourseForReview(long userId, long courseId, LocalDateTime dueTime, int limit);
+// --注释掉检查 START (2025/12/10 12:04):
+//    @Select("SELECT srs.* FROM user_card_srs srs " +
+//            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
+//            "WHERE srs.user_id = #{userId} AND srs.review_due_at <= #{dueTime} " +
+//            "AND deck.state = " + ContentState.PUBLISHED_VALUE + " " +
+//            "AND EXISTS (" +
+//            "    SELECT 1 FROM user_card_in_course ctx " +
+//            "    WHERE ctx.card_id = srs.card_id AND ctx.user_id = #{userId} AND ctx.course_id = #{courseId}" +
+//            ") " +
+//            "ORDER BY srs.review_due_at ASC LIMIT #{limit}")
+//    List<UserCardSrsDO> getDueCardsByCourseForReview(long userId, long courseId, LocalDateTime dueTime, int limit);
+// --注释掉检查 STOP (2025/12/10 12:04)
 
-    @Select("SELECT srs.* FROM user_card_srs srs " +
-            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
-            "WHERE srs.user_id = #{userId} AND deck.state = " + ContentState.PUBLISHED_VALUE + " " +
-            "ORDER BY srs.review_due_at ASC LIMIT #{limit}")
-    List<UserCardSrsDO> getByUser(long userId, int limit);
+// --注释掉检查 START (2025/12/10 12:04):
+//    @Select("SELECT srs.* FROM user_card_srs srs " +
+//            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
+//            "WHERE srs.user_id = #{userId} AND deck.state = " + ContentState.PUBLISHED_VALUE + " " +
+//            "ORDER BY srs.review_due_at ASC LIMIT #{limit}")
+//    List<UserCardSrsDO> getByUser(long userId, int limit);
+// --注释掉检查 STOP (2025/12/10 12:04)
 
-    @Select("SELECT srs.* FROM user_card_srs srs " +
-            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
-            "WHERE srs.user_id = #{userId} AND deck.state = " + ContentState.PUBLISHED_VALUE + " " +
-            "AND srs.card_id IN " +
-            "(SELECT card_id FROM user_card_in_course WHERE course_id = #{courseId} AND user_id = #{userId}) " +
-            "ORDER BY srs.review_due_at ASC")
-    List<UserCardSrsDO> getByUserAndCourse(long userId, long courseId);
+// --注释掉检查 START (2025/12/10 12:04):
+//    @Select("SELECT srs.* FROM user_card_srs srs " +
+//            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id " +
+//            "WHERE srs.user_id = #{userId} AND deck.state = " + ContentState.PUBLISHED_VALUE + " " +
+//            "AND srs.card_id IN " +
+//            "(SELECT card_id FROM user_card_in_course WHERE course_id = #{courseId} AND user_id = #{userId}) " +
+//            "ORDER BY srs.review_due_at ASC")
+//    List<UserCardSrsDO> getByUserAndCourse(long userId, long courseId);
+// --注释掉检查 STOP (2025/12/10 12:04)
 
     @Insert("INSERT INTO user_card_srs " +
             "(user_id, card_id, node_id, deck_id, deck_version, card_version_id, review_due_at, " +
@@ -89,51 +97,67 @@ public interface UserCardSrsMapper {
             "WHERE id = #{id}")
     void update(UserCardSrsDO state);
 
-    @Update("UPDATE user_card_srs SET review_due_at = #{reviewDueAt} WHERE id = #{id}")
-    int updateReviewDueAt(long id, LocalDateTime reviewDueAt);
+// --注释掉检查 START (2025/12/10 12:04):
+//    @Update("UPDATE user_card_srs SET review_due_at = #{reviewDueAt} WHERE id = #{id}")
+//    int updateReviewDueAt(long id, LocalDateTime reviewDueAt);
+// --注释掉检查 STOP (2025/12/10 12:04)
 
-    @Update("UPDATE user_card_srs SET " +
-            "review_due_at = #{reviewDueAt}, last_reviewed_at = NOW(), " +
-            "type = #{type}, current_step = #{currentStep}, `interval` = #{interval}, lapse_old_interval = #{lapseOldInterval}, " +
-            "ease_factor = #{easeFactor}, repetitions = #{repetitions}, lapse_count = #{lapseCount} " +
-            "WHERE user_id = #{userId} AND card_id = #{cardId}")
-    int updateAfterReview(long userId, long cardId, LocalDateTime reviewDueAt,
-                         byte type, byte currentStep, int interval, Short lapseOldInterval,
-                         java.math.BigDecimal easeFactor, int repetitions, int lapseCount);
+// --注释掉检查 START (2025/12/10 12:04):
+//    @Update("UPDATE user_card_srs SET " +
+//            "review_due_at = #{reviewDueAt}, last_reviewed_at = NOW(), " +
+//            "type = #{type}, current_step = #{currentStep}, `interval` = #{interval}, lapse_old_interval = #{lapseOldInterval}, " +
+//            "ease_factor = #{easeFactor}, repetitions = #{repetitions}, lapse_count = #{lapseCount} " +
+//            "WHERE user_id = #{userId} AND card_id = #{cardId}")
+//    int updateAfterReview(long userId, long cardId, LocalDateTime reviewDueAt,
+//                         byte type, byte currentStep, int interval, Short lapseOldInterval,
+//                         java.math.BigDecimal easeFactor, int repetitions, int lapseCount);
+// --注释掉检查 STOP (2025/12/10 12:04)
 
     @Delete("DELETE FROM user_card_srs WHERE user_id = #{userId} AND card_id = #{cardId}")
     int deleteByUserAndCard(long userId, long cardId);
 
-    @Select("SELECT COUNT(*) FROM user_card_srs WHERE user_id = #{userId}")
-    int countByUser(long userId);
+// --注释掉检查 START (2025/12/10 12:04):
+//    @Select("SELECT COUNT(*) FROM user_card_srs WHERE user_id = #{userId}")
+//    int countByUser(long userId);
+// --注释掉检查 STOP (2025/12/10 12:04)
 
-    @Select("SELECT COUNT(*) FROM user_card_srs " +
-            "WHERE user_id = #{userId} AND review_due_at <= #{dueTime}")
-    int countDueCards(long userId, LocalDateTime dueTime);
+// --注释掉检查 START (2025/12/10 12:04):
+//    @Select("SELECT COUNT(*) FROM user_card_srs " +
+//            "WHERE user_id = #{userId} AND review_due_at <= #{dueTime}")
+//    int countDueCards(long userId, LocalDateTime dueTime);
+// --注释掉检查 STOP (2025/12/10 12:04)
 
-    @Select("SELECT COUNT(*) FROM user_card_srs srs " +
-            "WHERE srs.user_id = #{userId} AND srs.review_due_at <= NOW() " +
-            "AND EXISTS (SELECT 1 FROM user_card_in_course ctx WHERE ctx.card_id = srs.card_id " +
-            "AND ctx.user_id = #{userId} AND ctx.course_id = #{courseId})")
-    long countDueCardsByUserAndCourse(long userId, long courseId);
+// --注释掉检查 START (2025/12/10 12:04):
+//    @Select("SELECT COUNT(*) FROM user_card_srs srs " +
+//            "WHERE srs.user_id = #{userId} AND srs.review_due_at <= NOW() " +
+//            "AND EXISTS (SELECT 1 FROM user_card_in_course ctx WHERE ctx.card_id = srs.card_id " +
+//            "AND ctx.user_id = #{userId} AND ctx.course_id = #{courseId})")
+//    long countDueCardsByUserAndCourse(long userId, long courseId);
+// --注释掉检查 STOP (2025/12/10 12:04)
 
-    @Select("SELECT COUNT(*) FROM user_card_in_course ctx " +
-            "WHERE ctx.user_id = #{userId} AND ctx.course_id = #{courseId} " +
-            "AND NOT EXISTS (SELECT 1 FROM user_card_srs srs WHERE srs.card_id = ctx.card_id " +
-            "AND srs.user_id = #{userId})")
-    long countNewCardsByUserAndCourse(long userId, long courseId);
+// --注释掉检查 START (2025/12/10 12:04):
+//    @Select("SELECT COUNT(*) FROM user_card_in_course ctx " +
+//            "WHERE ctx.user_id = #{userId} AND ctx.course_id = #{courseId} " +
+//            "AND NOT EXISTS (SELECT 1 FROM user_card_srs srs WHERE srs.card_id = ctx.card_id " +
+//            "AND srs.user_id = #{userId})")
+//    long countNewCardsByUserAndCourse(long userId, long courseId);
+// --注释掉检查 STOP (2025/12/10 12:04)
 
-    @Select("SELECT COUNT(*) FROM user_card_srs srs " +
-            "WHERE srs.user_id = #{userId} AND srs.review_due_at > NOW() " +
-            "AND EXISTS (SELECT 1 FROM user_card_in_course ctx WHERE ctx.card_id = srs.card_id " +
-            "AND ctx.user_id = #{userId} AND ctx.course_id = #{courseId})")
-    long countReviewCardsByUserAndCourse(long userId, long courseId);
+// --注释掉检查 START (2025/12/10 12:04):
+//    @Select("SELECT COUNT(*) FROM user_card_srs srs " +
+//            "WHERE srs.user_id = #{userId} AND srs.review_due_at > NOW() " +
+//            "AND EXISTS (SELECT 1 FROM user_card_in_course ctx WHERE ctx.card_id = srs.card_id " +
+//            "AND ctx.user_id = #{userId} AND ctx.course_id = #{courseId})")
+//    long countReviewCardsByUserAndCourse(long userId, long courseId);
+// --注释掉检查 STOP (2025/12/10 12:04)
 
-    @Select("SELECT COUNT(*) FROM user_card_srs srs " +
-            "WHERE srs.user_id = #{userId} AND srs.repetitions >= 3 " +
-            "AND EXISTS (SELECT 1 FROM user_card_in_course ctx WHERE ctx.card_id = srs.card_id " +
-            "AND ctx.user_id = #{userId} AND ctx.course_id = #{courseId})")
-    long countLearnedCardsByUserAndCourse(long userId, long courseId);
+// --注释掉检查 START (2025/12/10 12:04):
+//    @Select("SELECT COUNT(*) FROM user_card_srs srs " +
+//            "WHERE srs.user_id = #{userId} AND srs.repetitions >= 3 " +
+//            "AND EXISTS (SELECT 1 FROM user_card_in_course ctx WHERE ctx.card_id = srs.card_id " +
+//            "AND ctx.user_id = #{userId} AND ctx.course_id = #{courseId})")
+//    long countLearnedCardsByUserAndCourse(long userId, long courseId);
+// --注释掉检查 STOP (2025/12/10 12:04)
 
     @Insert("""
           <script>

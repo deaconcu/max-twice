@@ -121,19 +121,21 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
         }
     }
 
-    /**
-     * 更新卡片状态并清除缓存
-     */
-    @CacheEvict(value = "memory_cards", key = "#id")
-    public boolean updateState(long id, int state) {
-        try {
-            int result = memoryCardMapper.updateState(id, state);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error updating card state: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
-        }
-    }
+// --注释掉检查 START (2025/12/10 11:13):
+//    /**
+//     * 更新卡片状态并清除缓存
+//     */
+//    @CacheEvict(value = "memory_cards", key = "#id")
+//    public boolean updateState(long id, int state) {
+//        try {
+//            int result = memoryCardMapper.updateState(id, state);
+//            return result > 0;
+//        } catch (Exception e) {
+//            log.error("Error updating card state: {}", id, e);
+//            throw ErrorCode.DATABASE_ERROR.exception(e);
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:13)
 
     /**
      * 根据卡片组获取卡片列表
@@ -142,12 +144,14 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
         return memoryCardMapper.getListByDeck(deckId, state);
     }
 
-    /**
-     * 根据创建者获取卡片列表
-     */
-    public List<MemoryCardDO> getListByCreator(long creatorId, int state, int limit) {
-        return memoryCardMapper.getListByCreator(creatorId, state, limit);
-    }
+// --注释掉检查 START (2025/12/10 11:13):
+//    /**
+//     * 根据创建者获取卡片列表
+//     */
+//    public List<MemoryCardDO> getListByCreator(long creatorId, int state, int limit) {
+//        return memoryCardMapper.getListByCreator(creatorId, state, limit);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:13)
 
     /**
      * 统计卡片组下的卡片数量
@@ -156,12 +160,14 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
         return memoryCardMapper.countByDeck(deckId, state);
     }
 
-    /**
-     * 统计创建者的卡片数量
-     */
-    public int countByCreator(long creatorId, int state) {
-        return memoryCardMapper.countByCreator(creatorId, state);
-    }
+// --注释掉检查 START (2025/12/10 11:13):
+//    /**
+//     * 统计创建者的卡片数量
+//     */
+//    public int countByCreator(long creatorId, int state) {
+//        return memoryCardMapper.countByCreator(creatorId, state);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:13)
 
     /**
      * 根据卡片组ID获取卡片列表（只获取已发布状态的卡片）
@@ -183,15 +189,17 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
         return memoryCardMapper.getByDeckIds(deckIds, Enums.ContentState.PUBLISHED.value());
     }
 
-    /**
-     * 根据卡片组ID获取卡片ID列表（只获取正常状态的卡片）
-     */
-    public List<Long> getCardIdsByDeckId(Long deckId) {
-        if (deckId == null) {
-            return List.of();
-        }
-        return memoryCardMapper.getCardIdsByDeckId(deckId);
-    }
+// --注释掉检查 START (2025/12/10 11:13):
+//    /**
+//     * 根据卡片组ID获取卡片ID列表（只获取正常状态的卡片）
+//     */
+//    public List<Long> getCardIdsByDeckId(Long deckId) {
+//        if (deckId == null) {
+//            return List.of();
+//        }
+//        return memoryCardMapper.getCardIdsByDeckId(deckId);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:13)
 
     /**
      * 批量更新卡片的当前版本ID

@@ -239,56 +239,43 @@ public class MessageService {
         return convertSystemMessages(messageDOList);
     }
 
-    /**
-     * 获取课程申请消息列表
-     */
-    public List<MessageDTO> getApplyCourseMessage(int page, int length) {
-        if (page < 1) return new ArrayList<>();
+// --注释掉检查 START (2025/12/10 11:16):
+//    /**
+//     * 获取系统消息
+//     */
+//    public List<MessageDTO> getSystemMessage(int page, int length) {
+//        if (page < 1) return new ArrayList<>();
+//
+//        List<MessageDO> messageDOList = messageDomainService.getApplyCourseMessages((page - 1) * length, length);
+//        return messageConverter.toDTO(messageDOList);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:16)
 
-        List<MessageDO> messageDOList = messageDomainService.getApplyCourseMessages((page - 1) * length, length);
-        return messageConverter.toDTO(messageDOList);
-    }
-
-    /**
-     * 获取系统消息
-     */
-    public List<MessageDTO> getSystemMessage(int page, int length) {
-        if (page < 1) return new ArrayList<>();
-
-        List<MessageDO> messageDOList = messageDomainService.getApplyCourseMessages((page - 1) * length, length);
-        return messageConverter.toDTO(messageDOList);
-    }
-
-    /**
-     * 获取课程申请数量
-     */
-    public long getApplyCourseCount() {
-        return messageDomainService.getApplyCourseCount();
-    }
-
-    /**
-     * 获取课程申请列表（带分页信息）
-     */
-    public Map<String, Object> getApplyCourseListWithPagination(int page, int length) {
-        if (page < 1) page = 1;
-        if (length < 1) length = 1;
-        if (length > 100) length = 100;
-        int count = (int) getApplyCourseCount();
-        int totalPage = count / length + 1;
-        if (page > totalPage) page = totalPage;
-
-        Map<String, Object> resultMap = new HashMap<>();
-        List<MessageDTO> messageDTOList = getApplyCourseMessage(page, length);
-        resultMap.put("messages", messageDTOList);
-
-        Map<String, Integer> pagination = new HashMap<>();
-        pagination.put("total", count);
-        pagination.put("pageSize", length);
-        pagination.put("currentPage", page);
-        pagination.put("totalPages", totalPage);
-        resultMap.put("pagination", pagination);
-        return resultMap;
-    }
+// --注释掉检查 START (2025/12/10 11:16):
+//    /**
+//     * 获取课程申请列表（带分页信息）
+//     */
+//    public Map<String, Object> getApplyCourseListWithPagination(int page, int length) {
+//        if (page < 1) page = 1;
+//        if (length < 1) length = 1;
+//        if (length > 100) length = 100;
+//        int count = (int) getApplyCourseCount();
+//        int totalPage = count / length + 1;
+//        if (page > totalPage) page = totalPage;
+//
+//        Map<String, Object> resultMap = new HashMap<>();
+//        List<MessageDTO> messageDTOList = getApplyCourseMessage(page, length);
+//        resultMap.put("messages", messageDTOList);
+//
+//        Map<String, Integer> pagination = new HashMap<>();
+//        pagination.put("total", count);
+//        pagination.put("pageSize", length);
+//        pagination.put("currentPage", page);
+//        pagination.put("totalPages", totalPage);
+//        resultMap.put("pagination", pagination);
+//        return resultMap;
+//    }
+// --注释掉检查 STOP (2025/12/10 11:16)
 
     /**
      * 按分类获取消息列表
@@ -383,14 +370,16 @@ public class MessageService {
         messageDomainService.sendPostModeration(userId, postId, postPreview, nodeId, nodeName, courseName, action, reason);
     }
 
-    /**
-     * 发送评论审核通知
-     */
-    public void sendCommentModeration(long userId, long commentId, String commentPreview,
-                                      String objectType, long objectId, String objectTitle,
-                                      ModerationAction action, String reason) {
-        messageDomainService.sendCommentModeration(userId, commentId, commentPreview, objectType, objectId, objectTitle, action, reason);
-    }
+// --注释掉检查 START (2025/12/10 11:16):
+//    /**
+//     * 发送评论审核通知
+//     */
+//    public void sendCommentModeration(long userId, long commentId, String commentPreview,
+//                                      String objectType, long objectId, String objectTitle,
+//                                      ModerationAction action, String reason) {
+//        messageDomainService.sendCommentModeration(userId, commentId, commentPreview, objectType, objectId, objectTitle, action, reason);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:16)
 
     /**
      * 发送职业审核通知
@@ -417,14 +406,16 @@ public class MessageService {
         messageDomainService.sendMemoryDeckModeration(userId, deckId, deckTitle, postId, postTitle, action, reason);
     }
 
-    /**
-     * 发送节点审核通知
-     */
-    public void sendNodeModeration(long userId, long nodeId, String nodeName,
-                                   long courseId, String courseName,
-                                   ModerationAction action, String reason) {
-        messageDomainService.sendNodeModeration(userId, nodeId, nodeName, courseId, courseName, action, reason);
-    }
+// --注释掉检查 START (2025/12/10 11:16):
+//    /**
+//     * 发送节点审核通知
+//     */
+//    public void sendNodeModeration(long userId, long nodeId, String nodeName,
+//                                   long courseId, String courseName,
+//                                   ModerationAction action, String reason) {
+//        messageDomainService.sendNodeModeration(userId, nodeId, nodeName, courseId, courseName, action, reason);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:16)
 
     // ========== Private 辅助方法 ==========
 

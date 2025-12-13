@@ -1,0 +1,489 @@
+package com.prosper.learn.web.v1.controller.admin;
+
+import com.prosper.learn.application.dto.request.OperateRequest;
+import com.prosper.learn.application.dto.request.UpdateCourseRequest;
+import com.prosper.learn.application.dto.request.UpdateProfessionRequest;
+import com.prosper.learn.application.service.CommentService;
+import com.prosper.learn.application.service.CourseService;
+import com.prosper.learn.application.service.MemoryCardDeckService;
+import com.prosper.learn.application.service.NodeService;
+import com.prosper.learn.application.service.PostService;
+import com.prosper.learn.application.service.ProfessionService;
+import com.prosper.learn.application.service.RoadmapService;
+import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.user.profile.UserDO;
+import com.prosper.learn.web.v1.annotation.CurrentUser;
+import com.prosper.learn.web.v1.annotation.JsonParam;
+import com.prosper.learn.web.v1.annotation.OperationLog;
+import com.prosper.learn.web.v1.annotation.RequireRole;
+import com.prosper.learn.application.dto.ApiResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import static com.prosper.learn.shared.domain.Enums.*;
+
+/**
+ * 内容管理统一后台接口
+ * 支持所有内容类型的统一管理：post, roadmap, memory_card_deck, comment, course, profession, node
+ *
+ * 统一接口：
+ * - GET  /contents/{contentType}?state=xxx&lastId=xxx - 按状态分页查询（每页20条）
+ * - POST /contents/{contentType}/{id}/operate - 审核操作
+ */
+@RestController
+@RequestMapping("/api/v1/admin/contents")
+@RequiredArgsConstructor
+@Slf4j
+@RequireRole(UserRole.ADMIN)
+@Validated
+public class AdminContentsController {
+
+    private final PostService postService;
+    private final RoadmapService roadmapService;
+    private final MemoryCardDeckService memoryCardDeckService;
+    private final CommentService commentService;
+    private final CourseService courseService;
+    private final ProfessionService professionService;
+    private final NodeService nodeService;
+
+    private static final int DEFAULT_PAGE_SIZE = 20;
+
+    // ==================== 统一查询接口 ====================
+
+    /**
+     * 按状态查询内容列表（分页）
+     * GET /api/v1/admin/contents/{contentType}?state=xxx&lastId=xxx
+     *
+     * @param contentType 内容类型: post, roadmap, memory_card_deck, comment, course, profession
+     * @param state 状态: pending/submitted, approved/published, rejected, banned
+     * @param lastId 分页游标（默认0）
+     * @return 内容列表（每页20条）
+     */
+    @GetMapping("/{contentType}")
+    @RequireRole(UserRole.MODERATOR)
+    public ApiResponse<?> getContentsByState(
+            @PathVariable @NotBlank(message = "内容类型不能为空") String contentType,
+            @RequestParam(required = false) String state,
+            @RequestParam(required = false) @Min(value = 0, message = "lastId不能小于0") Long lastId) {
+
+        // 设置默认值
+        Long effectiveLastId = (lastId != null) ? lastId : 0L;
+
+        // 解析状态
+        Byte stateValue = parseState(state);
+
+        return switch (contentType.toLowerCase()) {
+            case "post" -> ApiResponse.success(
+                postService.getPostsByState(
+                    stateValue != null ? ContentState.getByValue(stateValue) : ContentState.SUBMITTED,
+                    effectiveLastId,
+                    DEFAULT_PAGE_SIZE
+                )
+            );
+            case "roadmap" -> ApiResponse.success(
+                roadmapService.listByFilter(stateValue, null, null, effectiveLastId)
+            );
+            case "memory_card_deck" -> ApiResponse.success(
+                memoryCardDeckService.getDecksForAdmin(
+                    stateValue != null ? stateValue.intValue() : null,
+                    null, null, effectiveLastId, DEFAULT_PAGE_SIZE
+                )
+            );
+            case "comment" -> ApiResponse.success(
+                commentService.getCommentsByFilter(null, null, null, effectiveLastId, stateValue)
+            );
+            case "course" -> ApiResponse.success(
+                courseService.getListByStateAndLastId(
+                    stateValue != null ? ContentState.getByValue(stateValue) : null,
+                    effectiveLastId
+                )
+            );
+            case "profession" -> ApiResponse.success(
+                professionService.getListByStateAndLastId(
+                    stateValue != null ? ContentState.getByValue(stateValue) : null,
+                    effectiveLastId
+                )
+            );
+            case "node" -> ApiResponse.success(
+                nodeService.listByFilter(stateValue, null, null, null, effectiveLastId)
+            );
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的内容类型: " + contentType);
+        };
+    }
+
+    /**
+     * 帖子高级筛选
+     * GET /api/v1/admin/contents/post/filter?nodeId=xxx&creatorId=xxx&state=xxx&lastId=xxx
+     */
+    @GetMapping("/post/filter")
+    @RequireRole(UserRole.MODERATOR)
+    public ApiResponse<?> filterPosts(
+            @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
+            @RequestParam(value = "creatorId", required = false) @Positive(message = "用户ID必须大于0") Long creatorId,
+            @RequestParam(value = "lastId", defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
+            @RequestParam(value = "state", required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state) {
+        return ApiResponse.success(postService.getPostsByNodeAndCreator(nodeId, creatorId, lastId, state));
+    }
+
+    /**
+     * 评论高级筛选
+     * GET /api/v1/admin/contents/comment/filter?objectType=xxx&objectId=xxx&creatorId=xxx&state=xxx&lastId=xxx
+     */
+    @GetMapping("/comment/filter")
+    @RequireRole(UserRole.MODERATOR)
+    public ApiResponse<?> filterComments(
+            @RequestParam(value = "objectType", required = false) @Positive(message = "对象类型必须大于0") Integer objectType,
+            @RequestParam(value = "objectId", required = false) @Positive(message = "对象ID必须大于0") Long objectId,
+            @RequestParam(value = "creatorId", required = false) @Positive(message = "用户ID必须大于0") Long creatorId,
+            @RequestParam(value = "lastId", required = false) @Min(value = 0, message = "最后ID不能小于0") Long lastId,
+            @RequestParam(value = "state", required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state) {
+        return ApiResponse.success(commentService.getCommentsByFilter(objectType, objectId, creatorId, lastId, state));
+    }
+
+    /**
+     * 路线图高级筛选
+     * GET /api/v1/admin/contents/roadmap/filter?professionId=xxx&creatorId=xxx&state=xxx&lastId=xxx
+     */
+    @GetMapping("/roadmap/filter")
+    @RequireRole(UserRole.MODERATOR)
+    public ApiResponse<?> filterRoadmaps(
+            @RequestParam(required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state,
+            @RequestParam(required = false) @Positive(message = "职业ID必须大于0") Long professionId,
+            @RequestParam(required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
+            @RequestParam(required = false) Long lastId) {
+        return ApiResponse.success(roadmapService.listByFilter(state, professionId, creatorId, lastId));
+    }
+
+    /**
+     * 卡片组高级筛选
+     * GET /api/v1/admin/contents/memory_card_deck/filter?state=xxx&postId=xxx&creatorId=xxx&lastId=xxx
+     */
+    @GetMapping("/memory_card_deck/filter")
+    @RequireRole(UserRole.MODERATOR)
+    public ApiResponse<?> filterMemoryCardDecks(
+            @RequestParam(required = false) @Positive(message = "状态必须大于0") Integer state,
+            @RequestParam(required = false) @Positive(message = "帖子ID必须大于0") Long postId,
+            @RequestParam(required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
+            @RequestParam(required = false) Long lastId) {
+        return ApiResponse.success(memoryCardDeckService.getDecksForAdmin(state, postId, creatorId, lastId, DEFAULT_PAGE_SIZE));
+    }
+
+    /**
+     * 课程高级筛选
+     * GET /api/v1/admin/contents/course/filter?state=xxx&parentId=xxx&lastId=xxx
+     */
+    @GetMapping("/course/filter")
+    @RequireRole(UserRole.MODERATOR)
+    public ApiResponse<?> filterCourses(
+            @RequestParam(required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state,
+            @RequestParam(required = false) Long lastId) {
+        ContentState courseState = state != null ? ContentState.getByValue(state) : null;
+        return ApiResponse.success(courseService.getListByStateAndLastId(courseState, lastId));
+    }
+
+    /**
+     * 节点高级筛选
+     * GET /api/v1/admin/contents/node/filter?state=xxx&nodeId=xxx&courseId=xxx&creatorId=xxx&lastId=xxx
+     */
+    @GetMapping("/node/filter")
+    @RequireRole(UserRole.MODERATOR)
+    public ApiResponse<?> filterNodes(
+            @RequestParam(value = "state", required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state,
+            @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
+            @RequestParam(value = "courseId", required = false) @Positive(message = "课程ID必须大于0") Long courseId,
+            @RequestParam(value = "creatorId", required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
+            @RequestParam(value = "lastId", required = false) Long lastId) {
+        return ApiResponse.success(nodeService.listByFilter(state, nodeId, courseId, creatorId, lastId));
+    }
+
+    /**
+     * 获取课程详情
+     * GET /api/v1/admin/contents/course/{id}
+     */
+    @GetMapping("/course/{id}")
+    @RequireRole(UserRole.MODERATOR)
+    public ApiResponse<?> getCourseDetail(@PathVariable @Positive(message = "课程ID必须大于0") Long id) {
+        return ApiResponse.success(courseService.getCourseById(id));
+    }
+
+    /**
+     * 获取子课程列表
+     * GET /api/v1/admin/contents/course/{parentId}/subcourses?state=xxx
+     */
+    @GetMapping("/course/{parentId}/subcourses")
+    @RequireRole(UserRole.MODERATOR)
+    public ApiResponse<?> getSubcourses(
+            @PathVariable @Positive(message = "父课程ID必须大于0") Long parentId,
+            @RequestParam(required = false) @Positive(message = "状态必须大于0") Integer state) {
+        ContentState courseState = state != null ? ContentState.getByValue(state.byteValue()) : null;
+        return ApiResponse.success(courseService.getListByParent(parentId, courseState));
+    }
+
+    // ==================== 更新接口 ====================
+
+    /**
+     * 更新路线图描述
+     * PUT /api/v1/admin/contents/roadmap/{id}
+     */
+    @PutMapping("/roadmap/{id}")
+    @RequireRole(UserRole.MODERATOR)
+    @OperationLog(
+        module = "内容管理",
+        type = "更新路线图信息",
+        level = OperationLevel.MEDIUM,
+        targetType = "Roadmap",
+        targetId = "#id"
+    )
+    public ApiResponse<?> updateRoadmap(
+            @PathVariable @NotNull(message = "路线图ID不能为空")
+            @Positive(message = "路线图ID必须大于0") Long id,
+            @JsonParam("description") @Size(max = 500, message = "描述长度不能超过500个字符") String description,
+            @CurrentUser UserDO currentUser) {
+        return ApiResponse.success(roadmapService.updateDescription(id, description, currentUser));
+    }
+
+    /**
+     * 更新课程信息
+     * PUT /api/v1/admin/contents/course/{id}
+     */
+    @PutMapping("/course/{id}")
+    @RequireRole(UserRole.MODERATOR)
+    @OperationLog(
+        module = "内容管理",
+        type = "更新课程信息",
+        level = OperationLevel.MEDIUM,
+        targetType = "Course",
+        targetId = "#id"
+    )
+    public ApiResponse<?> updateCourse(
+            @PathVariable @NotNull(message = "课程ID不能为空")
+            @Positive(message = "课程ID必须大于0") Long id,
+            @Valid @RequestBody UpdateCourseRequest request,
+            @CurrentUser UserDO currentUser) {
+        courseService.updateCourse(id, request, currentUser);
+        return ApiResponse.success("更新成功");
+    }
+
+    /**
+     * 更新职业信息
+     * PUT /api/v1/admin/contents/profession/{id}
+     */
+    @PutMapping("/profession/{id}")
+    @RequireRole(UserRole.ADMIN)
+    @OperationLog(
+        module = "内容管理",
+        type = "更新职业信息",
+        level = OperationLevel.MEDIUM,
+        targetType = "Profession",
+        targetId = "#id"
+    )
+    public ApiResponse<?> updateProfession(
+            @PathVariable @NotNull(message = "职业ID不能为空")
+            @Positive(message = "职业ID必须大于0") Long id,
+            @Valid @RequestBody UpdateProfessionRequest request,
+            @CurrentUser UserDO currentUser) {
+        professionService.update(id, request, currentUser);
+        return ApiResponse.success();
+    }
+
+    /**
+     * 更新节点状态
+     * PUT /api/v1/admin/contents/node/{id}/state?state=xxx&reason=xxx
+     */
+    @PutMapping("/node/{id}/state")
+    @RequireRole(UserRole.MODERATOR)
+    @OperationLog(
+        module = "内容管理",
+        type = "#state == 2 ? '审核通过节点' : (#state == 3 ? '审核拒绝节点' : '修改节点状态')",
+        level = OperationLevel.MEDIUM,
+        targetType = "Node",
+        targetId = "#id",
+        reason = "#reason"
+    )
+    public ApiResponse<?> updateNodeState(
+            @PathVariable @Positive(message = "节点ID必须大于0") Long id,
+            @RequestParam @Min(value = 0, message = "状态值必须大于等于0") Integer state,
+            @RequestParam(required = false, defaultValue = "") String reason) {
+        ContentState contentState = ContentState.getByValue(state.byteValue());
+        if (contentState == null) {
+            throw ErrorCode.INVALID_PARAMETER.exception("无效的状态值: " + state);
+        }
+        return ApiResponse.success(nodeService.updateNodeState(id, contentState, reason));
+    }
+
+    /**
+     * 解析状态字符串为数值
+     */
+    private Byte parseState(String state) {
+        if (state == null || state.isBlank()) {
+            return null;
+        }
+
+        return switch (state.toLowerCase()) {
+            case "draft" -> ContentState.DRAFT.value();
+            case "pending", "submitted" -> ContentState.SUBMITTED.value();
+            case "approved", "published" -> ContentState.PUBLISHED.value();
+            case "rejected" -> ContentState.REJECTED.value();
+            case "banned" -> ContentState.BANNED.value();
+            default -> {
+                try {
+                    yield Byte.parseByte(state);
+                } catch (NumberFormatException e) {
+                    throw ErrorCode.INVALID_PARAMETER.exception("无效的状态值: " + state);
+                }
+            }
+        };
+    }
+
+    // ==================== 审核操作接口 ====================
+
+    /**
+     * 内容审核操作（统一接口）
+     * 支持操作: approve(审核通过), reject(审核拒绝), remove(下架), ban(封禁), restore(恢复), delete(删除)
+     *
+     * @param contentType 内容类型: post, roadmap, memory_card_deck, comment, course, profession, node
+     * @param id 内容ID
+     * @param request 操作请求 { action, reason }
+     * @param currentUser 当前操作员
+     *
+     * 注意:
+     * - remove 操作仅支持 post, roadmap, memory_card_deck
+     * - restore 操作仅支持 post, roadmap, memory_card_deck, course, profession
+     * - delete 操作仅支持 course, profession
+     * - comment 不发送审核通知
+     */
+    @PostMapping("/{contentType}/{id}/operate")
+    @RequireRole(UserRole.MODERATOR)
+    @OperationLog(
+        module = "内容管理",
+        type = "#request.action == 'APPROVE' ? '审核通过内容' : " +
+               "(#request.action == 'REJECT' ? '审核拒绝内容' : " +
+               "(#request.action == 'REMOVE' ? '下架内容' : " +
+               "(#request.action == 'BAN' ? '封禁内容' : '恢复内容')))",
+        level = OperationLevel.MEDIUM,
+        targetType = "#contentType",
+        targetId = "#id",
+        reason = "#request.reason"
+    )
+    public ApiResponse<Void> operateContent(
+            @PathVariable @NotBlank(message = "内容类型不能为空") String contentType,
+            @PathVariable @NotNull(message = "内容ID不能为空")
+            @Positive(message = "内容ID必须大于0") Long id,
+            @RequestBody @Valid OperateRequest request,
+            @CurrentUser UserDO currentUser) {
+
+        String action = request.getAction().toLowerCase();
+        String reason = request.getReason();
+
+        // 验证操作的合法性
+        validateOperation(contentType, action);
+
+        switch (contentType.toLowerCase()) {
+            case "post" -> operatePost(id, action, reason, currentUser);
+            case "roadmap" -> operateRoadmap(id, action, reason, currentUser);
+            case "memory_card_deck" -> operateMemoryCardDeck(id, action, reason, currentUser);
+            case "comment" -> operateComment(id, action, reason, currentUser);
+            case "course" -> operateCourse(id, action, reason, currentUser);
+            case "profession" -> operateProfession(id, action, reason, currentUser);
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的内容类型: " + contentType);
+        }
+
+        return ApiResponse.success();
+    }
+
+    // ==================== 操作验证 ====================
+
+    private void validateOperation(String contentType, String action) {
+        // remove 操作只支持特定内容类型
+        if ("remove".equals(action)) {
+            if (!"post".equals(contentType) && !"roadmap".equals(contentType) && !"memory_card_deck".equals(contentType)) {
+                throw ErrorCode.INVALID_PARAMETER.exception(contentType + " 不支持下架操作");
+            }
+        }
+
+        // delete 操作只支持 course 和 profession
+        if ("delete".equals(action)) {
+            if (!"course".equals(contentType) && !"profession".equals(contentType)) {
+                throw ErrorCode.INVALID_PARAMETER.exception(contentType + " 不支持删除操作");
+            }
+        }
+
+        // restore 验证
+        if ("restore".equals(action)) {
+            if ("comment".equals(contentType)) {
+                throw ErrorCode.INVALID_PARAMETER.exception("评论不支持恢复操作");
+            }
+        }
+    }
+
+    // ==================== 内容类型具体操作 ====================
+
+    private void operatePost(Long id, String action, String reason, UserDO currentUser) {
+        switch (action) {
+            case "approve" -> postService.approve(id, currentUser);
+            case "reject" -> postService.reject(id, reason, currentUser);
+            case "remove" -> postService.remove(id, reason, currentUser);
+            case "ban" -> postService.ban(id, reason, currentUser);
+            case "restore" -> postService.restore(id, reason, currentUser);
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
+        }
+    }
+
+    private void operateRoadmap(Long id, String action, String reason, UserDO currentUser) {
+        switch (action) {
+            case "approve" -> roadmapService.approve(id, currentUser);
+            case "reject" -> roadmapService.reject(id, reason, currentUser);
+            case "remove" -> roadmapService.remove(id, reason, currentUser);
+            case "ban" -> roadmapService.ban(id, reason, currentUser);
+            case "restore" -> roadmapService.restore(id, reason, currentUser);
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
+        }
+    }
+
+    private void operateMemoryCardDeck(Long id, String action, String reason, UserDO currentUser) {
+        switch (action) {
+            case "approve" -> memoryCardDeckService.approve(id, currentUser.getId());
+            case "reject" -> memoryCardDeckService.reject(id, currentUser.getId(), reason);
+            case "remove" -> memoryCardDeckService.remove(id, currentUser.getId(), reason);
+            case "ban" -> memoryCardDeckService.ban(id, currentUser.getId(), reason);
+            case "restore" -> memoryCardDeckService.restoreDeck(id, currentUser.getId(), reason);
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
+        }
+    }
+
+    private void operateComment(Long id, String action, String reason, UserDO currentUser) {
+        // 评论不支持 remove 和 restore 操作
+        switch (action) {
+            case "approve" -> commentService.approve(id, currentUser);
+            case "reject" -> commentService.reject(id, reason, currentUser);
+            case "ban" -> commentService.ban(id, reason, currentUser);
+            case "restore" -> throw ErrorCode.INVALID_PARAMETER.exception("评论不支持恢复操作");
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
+        }
+    }
+
+    private void operateCourse(Long id, String action, String reason, UserDO currentUser) {
+        switch (action) {
+            case "approve" -> courseService.approve(id, currentUser);
+            case "reject" -> courseService.reject(id, reason, currentUser);
+            case "ban" -> courseService.ban(id, reason, currentUser);
+            case "delete" -> courseService.delete(id, currentUser);
+            case "restore" -> courseService.approve(id, currentUser);  // restore 等同于 approve
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
+        }
+    }
+
+    private void operateProfession(Long id, String action, String reason, UserDO currentUser) {
+        switch (action) {
+            case "approve" -> professionService.approve(id, currentUser);
+            case "reject" -> professionService.reject(id, reason, currentUser);
+            case "ban" -> professionService.ban(id, reason, currentUser);
+            case "delete" -> professionService.delete(id, currentUser);
+            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
+        }
+    }
+}

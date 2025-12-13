@@ -120,26 +120,14 @@ public class MessageDataService extends AbstractDataService<MessageDO, MessageMa
         return messageMapper.listByType(type, receiverId, lastId, limit);
     }
 
-    /**
-     * 获取课程申请消息列表
-     */
-    public List<MessageDO> getApplyCourseListByUser(long senderId, long lastId, int limit) {
-        return messageMapper.getApplyCourseListByUser(senderId, lastId, limit);
-    }
-
-    /**
-     * 获取课程申请消息列表（分页）
-     */
-    public List<MessageDO> getApplyCourseList(int offset, int limit) {
-        return messageMapper.getApplyCourseList(offset, limit);
-    }
-
-    /**
-     * 获取课程申请消息数量
-     */
-    public long getApplyCourseCount() {
-        return messageMapper.getApplyCourseCount();
-    }
+// --注释掉检查 START (2025/12/10 11:15):
+//    /**
+//     * 获取课程申请消息列表
+//     */
+//    public List<MessageDO> getApplyCourseListByUser(long senderId, long lastId, int limit) {
+//        return messageMapper.getApplyCourseListByUser(senderId, lastId, limit);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:15)
 
     /**
      * 按分类查询消息（支持分页）

@@ -105,45 +105,49 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
         }
     }
 
-    /**
-     * 更新复习到期时间
-     */
-    //@CacheEvict(value = "user_card_srs", key = "#id")
-    public boolean updateReviewDueAt(long id, LocalDateTime reviewDueAt) {
-        try {
-            int result = userCardSrsMapper.updateReviewDueAt(id, reviewDueAt);
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error updating review due at: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
-        }
-    }
+// --注释掉检查 START (2025/12/10 11:29):
+//    /**
+//     * 更新复习到期时间
+//     */
+//    //@CacheEvict(value = "user_card_srs", key = "#id")
+//    public boolean updateReviewDueAt(long id, LocalDateTime reviewDueAt) {
+//        try {
+//            int result = userCardSrsMapper.updateReviewDueAt(id, reviewDueAt);
+//            return result > 0;
+//        } catch (Exception e) {
+//            log.error("Error updating review due at: {}", id, e);
+//            throw ErrorCode.DATABASE_ERROR.exception(e);
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:29)
 
-    /**
-     * 复习后更新状态
-     */
-    public boolean updateAfterReview(long userId, long cardId, LocalDateTime reviewDueAt,
-                                     byte type, byte currentStep, int interval, Short lapseOldInterval,
-                                     BigDecimal easeFactor, int repetitions, int lapseCount) {
-        try {
-            // 先获取现有记录以获得ID用于清除缓存
-            UserCardSrsDO existingState = userCardSrsMapper.getByUserAndCard(userId, cardId);
-
-            int result = userCardSrsMapper.updateAfterReview(
-                userId, cardId, reviewDueAt, type, currentStep, interval, lapseOldInterval,
-                easeFactor, repetitions, lapseCount);
-
-            // 如果更新成功且存在记录，清除对应的缓存
-            if (result > 0 && existingState != null) {
-                evictCache(existingState.getId());
-            }
-
-            return result > 0;
-        } catch (Exception e) {
-            log.error("Error updating after review: userId={}, cardId={}", userId, cardId, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
-        }
-    }
+// --注释掉检查 START (2025/12/10 11:29):
+//    /**
+//     * 复习后更新状态
+//     */
+//    public boolean updateAfterReview(long userId, long cardId, LocalDateTime reviewDueAt,
+//                                     byte type, byte currentStep, int interval, Short lapseOldInterval,
+//                                     BigDecimal easeFactor, int repetitions, int lapseCount) {
+//        try {
+//            // 先获取现有记录以获得ID用于清除缓存
+//            UserCardSrsDO existingState = userCardSrsMapper.getByUserAndCard(userId, cardId);
+//
+//            int result = userCardSrsMapper.updateAfterReview(
+//                userId, cardId, reviewDueAt, type, currentStep, interval, lapseOldInterval,
+//                easeFactor, repetitions, lapseCount);
+//
+//            // 如果更新成功且存在记录，清除对应的缓存
+//            if (result > 0 && existingState != null) {
+//                evictCache(existingState.getId());
+//            }
+//
+//            return result > 0;
+//        } catch (Exception e) {
+//            log.error("Error updating after review: userId={}, cardId={}", userId, cardId, e);
+//            throw ErrorCode.DATABASE_ERROR.exception(e);
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/10 11:29)
 
     /**
      * 根据用户和卡片获取SRS状态
@@ -176,26 +180,32 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
         return userCardSrsMapper.getByUserAndNodeId(userId, nodeId);
     }
 
-    /**
-     * 获取到期的复习卡片
-     */
-    public List<UserCardSrsDO> getDueCardsForReview(long userId, LocalDateTime dueTime, int limit) {
-        return userCardSrsMapper.getDueCardsForReview(userId, dueTime, limit);
-    }
+// --注释掉检查 START (2025/12/10 11:29):
+//    /**
+//     * 获取到期的复习卡片
+//     */
+//    public List<UserCardSrsDO> getDueCardsForReview(long userId, LocalDateTime dueTime, int limit) {
+//        return userCardSrsMapper.getDueCardsForReview(userId, dueTime, limit);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:29)
 
-    /**
-     * 根据用户获取SRS状态列表
-     */
-    public List<UserCardSrsDO> getByUser(long userId, int limit) {
-        return userCardSrsMapper.getByUser(userId, limit);
-    }
+// --注释掉检查 START (2025/12/10 11:29):
+//    /**
+//     * 根据用户获取SRS状态列表
+//     */
+//    public List<UserCardSrsDO> getByUser(long userId, int limit) {
+//        return userCardSrsMapper.getByUser(userId, limit);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:29)
 
-    /**
-     * 根据用户和课程获取SRS状态列表
-     */
-    public List<UserCardSrsDO> getByUserAndCourse(long userId, long courseId) {
-        return userCardSrsMapper.getByUserAndCourse(userId, courseId);
-    }
+// --注释掉检查 START (2025/12/10 11:29):
+//    /**
+//     * 根据用户和课程获取SRS状态列表
+//     */
+//    public List<UserCardSrsDO> getByUserAndCourse(long userId, long courseId) {
+//        return userCardSrsMapper.getByUserAndCourse(userId, courseId);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:29)
 
     /**
      * 删除用户卡片的SRS状态
@@ -219,47 +229,59 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
         }
     }
 
-    /**
-     * 统计用户的卡片数量
-     */
-    public int countByUser(long userId) {
-        return userCardSrsMapper.countByUser(userId);
-    }
+// --注释掉检查 START (2025/12/10 11:28):
+//    /**
+//     * 统计用户的卡片数量
+//     */
+//    public int countByUser(long userId) {
+//        return userCardSrsMapper.countByUser(userId);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:28)
 
-    /**
-     * 统计到期卡片数量
-     */
-    public int countDueCards(long userId, LocalDateTime dueTime) {
-        return userCardSrsMapper.countDueCards(userId, dueTime);
-    }
+// --注释掉检查 START (2025/12/10 11:28):
+//    /**
+//     * 统计到期卡片数量
+//     */
+//    public int countDueCards(long userId, LocalDateTime dueTime) {
+//        return userCardSrsMapper.countDueCards(userId, dueTime);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:28)
 
-    /**
-     * 统计用户指定课程的到期卡片数量
-     */
-    public long countDueCardsByUserAndCourse(long userId, long courseId) {
-        return userCardSrsMapper.countDueCardsByUserAndCourse(userId, courseId);
-    }
+// --注释掉检查 START (2025/12/10 11:28):
+//    /**
+//     * 统计用户指定课程的到期卡片数量
+//     */
+//    public long countDueCardsByUserAndCourse(long userId, long courseId) {
+//        return userCardSrsMapper.countDueCardsByUserAndCourse(userId, courseId);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:28)
 
-    /**
-     * 统计用户指定课程的新卡片数量（没有SRS状态的卡片）
-     */
-    public long countNewCardsByUserAndCourse(long userId, long courseId) {
-        return userCardSrsMapper.countNewCardsByUserAndCourse(userId, courseId);
-    }
+// --注释掉检查 START (2025/12/10 11:29):
+//    /**
+//     * 统计用户指定课程的新卡片数量（没有SRS状态的卡片）
+//     */
+//    public long countNewCardsByUserAndCourse(long userId, long courseId) {
+//        return userCardSrsMapper.countNewCardsByUserAndCourse(userId, courseId);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:29)
 
-    /**
-     * 统计用户指定课程的复习卡片数量（有SRS状态且不到期的卡片）
-     */
-    public long countReviewCardsByUserAndCourse(long userId, long courseId) {
-        return userCardSrsMapper.countReviewCardsByUserAndCourse(userId, courseId);
-    }
+// --注释掉检查 START (2025/12/10 11:29):
+//    /**
+//     * 统计用户指定课程的复习卡片数量（有SRS状态且不到期的卡片）
+//     */
+//    public long countReviewCardsByUserAndCourse(long userId, long courseId) {
+//        return userCardSrsMapper.countReviewCardsByUserAndCourse(userId, courseId);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:29)
 
-    /**
-     * 统计用户指定课程的已学会卡片数量（重复次数 >= 3的卡片）
-     */
-    public long countLearnedCardsByUserAndCourse(long userId, long courseId) {
-        return userCardSrsMapper.countLearnedCardsByUserAndCourse(userId, courseId);
-    }
+// --注释掉检查 START (2025/12/10 11:28):
+//    /**
+//     * 统计用户指定课程的已学会卡片数量（重复次数 >= 3的卡片）
+//     */
+//    public long countLearnedCardsByUserAndCourse(long userId, long courseId) {
+//        return userCardSrsMapper.countLearnedCardsByUserAndCourse(userId, courseId);
+//    }
+// --注释掉检查 STOP (2025/12/10 11:28)
 
     /**
      * 获取用户的复习队列（所有课程）
