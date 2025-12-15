@@ -28,6 +28,10 @@ public class Enums {
         ACTIVE((byte)1),
         BANNED((byte)2);
 
+        // 静态常量用于 MyBatis 注解（注解需要编译时常量）
+        public static final byte ACTIVE_VALUE = 1;
+        public static final byte BANNED_VALUE = 2;
+
         private final byte value;
 
         UserState(byte value) {

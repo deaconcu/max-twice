@@ -84,15 +84,19 @@ public class ReviewController {
 
     /**
      * 批量提交复习结果
+     *
+     * @deprecated 此接口未被前端使用，且后端实现存在严重bug。
+     *             前端已采用单次提交模式 (POST /submit)，体验更好。
+     *             如需重新启用，必须先修复 ReviewService.batchSubmitReview() 的实现。
      */
-    @PostMapping("/batch-submit")
-    @SaCheckLogin
-    public ApiResponse<Void> batchSubmitReview(
-            @Valid @RequestBody ReviewSessionRequest session,
-            @CurrentUser UserDO currentUser) {
-        reviewService.batchSubmitReview(currentUser.getId(), session);
-        return ApiResponse.success();
-    }
+//    @PostMapping("/batch-submit")
+//    @SaCheckLogin
+//    public ApiResponse<Void> batchSubmitReview(
+//            @Valid @RequestBody ReviewSessionRequest session,
+//            @CurrentUser UserDO currentUser) {
+//        reviewService.batchSubmitReview(currentUser.getId(), session);
+//        return ApiResponse.success();
+//    }
 
     /**
      * 获取复习统计

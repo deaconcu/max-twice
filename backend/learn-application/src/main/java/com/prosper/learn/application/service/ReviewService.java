@@ -99,44 +99,43 @@ public class ReviewService {
     }
 
     /**
-     * TODO
-     * 该方法通过一个 for 循环，逐个调用 submitReview 方法。submitReview 内部又包含了 SELECT 和 UPDATE 操作。
-     *   - 后果: 如果用户一次性提交了 50 张卡片的复习结果，这个操作会串行地执行 50 次数据库 SELECT 和 50 次数据库 UPDATE。这不仅效率低下，而且由于 try-catch
-     *   的存在，如果中间有一次失败，事务不会回滚，导致数据部分更新，可能会让用户感到困惑。
-     *   - 修复建议: 必须对这个方法进行批量化重构。
-     *     a. 批量查询：在循环开始前，一次性通过 srsStateDataService.getByUserAndCards(userId, cardIds) 获取所有需要处理的 UserCardSrsStateDO，并放入一个 Map。
-     *     b. 在内存中计算：在 for 循环中，从 Map 中获取卡片状态，然后调用 calculateSM2 计算出新的状态。将这些需要更新的状态（UserCardSrsStateDO
-     *   对象）收集到一个 List 中。
-     *     c. 批量更新：循环结束后，调用 srsStateDataService.batchUpdateAfterReview(List<UserCardSrsStateDO> statesToUpdate)。这个新方法需要使用 MyBatis 的
-     *   <foreach> 标签实现批量 UPDATE (通常使用 CASE WHEN ... THEN ... 语法)。
-     *     d. 错误处理：移除 for 循环中的 try-catch。整个方法由 @Transactional
-     *   包裹，任何一次计算或数据库批量更新失败，都会导致整个批次的回滚，保证了数据的一致性。
      * 批量提交复习结果
+     *
+     * @deprecated 此方法未被前端使用，且实现存在严重问题：
+     *   1. 性能问题: N+1 查询，50张卡片 = 100次数据库操作
+     *   2. 一致性问题: try-catch 吞掉异常，事务无法回滚，导致数据部分更新
+     *   3. 无实际需求: 前端已使用单次提交模式 (reviewCard)，体验更好
+     *
+     * 如需重新启用，必须按以下方式重构:
+     *   a. 批量查询: srsStateDataService.getByUserAndCards(userId, cardIds)
+     *   b. 内存计算: 在循环中计算新状态，收集到 List
+     *   c. 批量更新: srsStateDataService.batchUpdateAfterReview(List<UserCardSrsStateDO>)
+     *   d. 错误处理: 移除 try-catch，让 @Transactional 自然回滚
      */
-    @Transactional
-    public void batchSubmitReview(Long userId, ReviewSessionRequest session) {
-        userDataService.validateExists(userId);
-        if (session == null || session.getResults() == null || session.getResults().isEmpty()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("请求参数不能为空");
-        }
-
-        // 逐个处理复习结果
-        for (ReviewCardResultDTO result : session.getResults()) {
-            ReviewCardRequest request = new ReviewCardRequest();
-            request.setCardId(result.getCardId());
-            request.setResult(result.getResult());
-            request.setTimeSpent(result.getTimeSpent());
-
-            try {
-                submitReview(userId, request);
-            } catch (Exception e) {
-                log.warn("Failed to submit review for card: {} user: {}", result.getCardId(), userId, e);
-                // 继续处理其他卡片，不因单个失败中断整个批次
-            }
-        }
-
-        log.info("Batch submitted {} reviews for user: {}", session.getResults().size(), userId);
-    }
+//    @Transactional
+//    public void batchSubmitReview(Long userId, ReviewSessionRequest session) {
+//        userDataService.validateExists(userId);
+//        if (session == null || session.getResults() == null || session.getResults().isEmpty()) {
+//            throw ErrorCode.INVALID_PARAMETER.exception("请求参数不能为空");
+//        }
+//
+//        // 逐个处理复习结果
+//        for (ReviewCardResultDTO result : session.getResults()) {
+//            ReviewCardRequest request = new ReviewCardRequest();
+//            request.setCardId(result.getCardId());
+//            request.setResult(result.getResult());
+//            request.setTimeSpent(result.getTimeSpent());
+//
+//            try {
+//                submitReview(userId, request);
+//            } catch (Exception e) {
+//                log.warn("Failed to submit review for card: {} user: {}", result.getCardId(), userId, e);
+//                // 继续处理其他卡片，不因单个失败中断整个批次
+//            }
+//        }
+//
+//        log.info("Batch submitted {} reviews for user: {}", session.getResults().size(), userId);
+//    }
 
     /**
      * 获取复习统计

@@ -79,6 +79,19 @@
                 </v-btn>
                 <v-btn
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
+                  variant="outlined"
+                  color="info"
+                  @click="applyAutoLayout"
+                >
+                  <v-icon
+                    icon="mdi-auto-fix"
+                    :size="$vuetify.display.mobile ? 16 : 18"
+                    class="mr-1"
+                  />
+                  <span class="d-none d-sm-inline">自动布局</span>
+                </v-btn>
+                <v-btn
+                  :size="$vuetify.display.mobile ? 'small' : 'default'"
                   variant="flat"
                   color="primary"
                   @click="showSave"
@@ -103,7 +116,10 @@
                   fit-view-on-init
                   :snap-to-grid="true"
                   :snap-grid="[20, 20]"
+                  :edges-selectable="true"
                   @connect="onConnect"
+                  @nodes-change="onNodesChange"
+                  @edges-change="onEdgesChange"
                 >
                   <Background variant="dots" pattern-color="#bdbdbd" :gap="30" :size="2" />
                   <MiniMap v-if="$vuetify.display.mdAndUp" />
@@ -121,18 +137,16 @@
             <v-expansion-panel
               rounded="xl"
               elevation="0"
-              class="tips-card"
+              class="tips-card no-border"
               bg-color="warning-lighten-5"
             >
-              <v-expansion-panel-title class="pa-3 pa-sm-4">
+              <v-expansion-panel-title>
                 <div class="d-flex align-center">
-                  <v-avatar color="warning" size="28" class="mr-3">
-                    <v-icon icon="mdi-lightbulb-outline" color="white" size="16" />
-                  </v-avatar>
-                  <span class="text-subtitle-1 font-weight-bold text-grey-darken-4">操作提示</span>
+                  <v-icon icon="mdi-lightbulb-outline" color="warning" size="20" class="mr-2" />
+                  <span class="text-h6 font-weight-bold text-grey-darken-4">操作提示</span>
                 </div>
               </v-expansion-panel-title>
-              <v-expansion-panel-text class="pa-3 pa-sm-4 pt-0">
+              <v-expansion-panel-text>
                 <div class="tips-list">
                   <div class="tip-item">
                     <v-icon
@@ -177,17 +191,14 @@
 
           <!-- 桌面端固定显示的提示 -->
           <v-card
-            border
             rounded="xl"
-            class="tips-card mb-4 d-none d-lg-block"
+            class="tips-card mb-4 d-none d-lg-block no-border"
             color="warning-lighten-5"
           >
-            <v-card-text class="pa-3 pa-sm-4">
+            <v-card-text>
               <div class="d-flex align-center mb-3">
-                <v-avatar color="warning" size="28" class="mr-3">
-                  <v-icon icon="mdi-lightbulb-outline" color="white" size="16" />
-                </v-avatar>
-                <span class="text-subtitle-1 font-weight-bold text-grey-darken-4">操作提示</span>
+                <v-icon icon="mdi-lightbulb-outline" color="warning" size="20" class="mr-2" />
+                <span class="text-h6 font-weight-bold text-grey-darken-4">操作提示</span>
               </div>
               <div class="tips-list">
                 <div class="tip-item">
@@ -230,14 +241,14 @@
             </v-card-text>
           </v-card>
 
-          <v-card border rounded="xl" class="course-list-card sticky-card">
-            <v-card-title class="pa-4 pb-3">
+          <v-card rounded="xl" class="course-list-card sticky-card no-border">
+            <v-card-title>
               <div class="d-flex align-center">
                 <v-icon icon="mdi-book-multiple" color="primary" class="mr-2" />
                 <span class="text-h6 font-weight-bold">可用课程</span>
               </div>
             </v-card-title>
-            <v-card-text class="pa-4 pt-0">
+            <v-card-text>
               <v-text-field
                 v-model="searchText"
                 placeholder="搜索课程..."
@@ -252,14 +263,17 @@
                 </template>
               </v-text-field>
 
-              <v-btn block variant="outlined" color="primary" class="mb-4" @click="addCustomNode">
-                <v-icon icon="mdi-plus" size="18" class="mr-1" />
-                添加自定义节点
-              </v-btn>
+              <div v-if="coursesLoading" class="text-center py-8">
+                <v-progress-circular indeterminate color="primary" />
+                <p class="text-body-2 text-grey mt-2">加载课程中...</p>
+              </div>
 
-              <v-divider class="mb-3" />
+              <div v-else-if="!searchText.trim()" class="text-center py-8">
+                <v-icon icon="mdi-magnify" size="48" color="grey-lighten-1" class="mb-2" />
+                <p class="text-body-2 text-grey">输入课程名进行搜索</p>
+              </div>
 
-              <div class="course-list">
+              <div v-else class="course-list">
                 <v-chip
                   v-for="course in filteredCourses"
                   :key="course.id"
@@ -322,24 +336,48 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- 统一确认对话框 -->
+    <ConfirmDialog
+      v-model="confirmDialogVisible"
+      :title="confirmDialogConfig.title"
+      :message="confirmDialogConfig.message"
+      :confirm-text="confirmDialogConfig.confirmText"
+      :cancel-text="confirmDialogConfig.cancelText"
+      :confirm-color="confirmDialogConfig.confirmColor"
+      :icon="confirmDialogConfig.icon"
+      :icon-color="confirmDialogConfig.iconColor"
+      :icon-foreground="confirmDialogConfig.iconForeground"
+      @confirm="confirmDialogConfig.onConfirm"
+    />
   </DefaultLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, inject, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { VueFlow } from '@vue-flow/core'
+import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { MiniMap } from '@vue-flow/minimap'
 import { Controls } from '@vue-flow/controls'
 import { Position } from '@vue-flow/core'
 import type { Node, Edge, Connection } from '@vue-flow/core'
+import dagre from 'dagre'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
+import { courseApi } from '@/api/modules/course'
+import type { Course } from '@/types/course'
 
 const router = useRouter()
 const route = useRoute()
+
+// 注入全局 snackbar
+const showSnackbar = inject('showSnackbar') as (message: string, type?: string) => void
+
+// 获取 VueFlow 实例
+const { fitView } = useVueFlow()
 
 // 验证规则
 const roadmapDescriptionRules = useValidationRules('roadmap-description')
@@ -359,28 +397,60 @@ const showSaveDialog = ref(false)
 const roadmapDescription = ref('')
 const careerName = ref('前端工程师') // TODO: 从 API 获取
 
-// Mock 数据 - 可用课程列表
-const availableCourses = ref([
-  { id: 1, name: 'HTML 基础' },
-  { id: 2, name: 'CSS 基础' },
-  { id: 3, name: 'JavaScript 基础' },
-  { id: 4, name: 'Vue 3 基础' },
-  { id: 5, name: 'TypeScript' },
-  { id: 6, name: 'Pinia 状态管理' },
-  { id: 7, name: 'Vue Router' },
-  { id: 8, name: 'Vite 构建工具' },
-  { id: 9, name: 'Node.js 基础' },
-  { id: 10, name: 'Express 框架' },
-  { id: 11, name: '数据库 MySQL' },
-  { id: 12, name: '项目实战' },
-])
-
-const searchText = ref('')
-const filteredCourses = computed(() => {
-  if (!searchText.value.trim()) return availableCourses.value
-  const lower = searchText.value.toLowerCase()
-  return availableCourses.value.filter((c) => c.name.toLowerCase().includes(lower))
+// 确认对话框状态
+const confirmDialogVisible = ref(false)
+const confirmDialogConfig = ref({
+  title: '',
+  message: '',
+  confirmText: '确认',
+  cancelText: '取消',
+  confirmColor: 'error',
+  icon: 'mdi-alert-circle-outline',
+  iconColor: 'error-lighten-4',
+  iconForeground: 'error',
+  onConfirm: () => {},
 })
+
+// 可用课程列表
+const availableCourses = ref<Course[]>([])
+const coursesLoading = ref(false)
+const searchText = ref('')
+
+// 搜索课程
+const searchCourses = async () => {
+  if (!searchText.value.trim()) {
+    availableCourses.value = []
+    return
+  }
+
+  coursesLoading.value = true
+  try {
+    const response = await courseApi.searchCourses(searchText.value.trim())
+    if (response.code === 200) {
+      availableCourses.value = response.data
+    } else {
+      showSnackbar('搜索课程失败', 'error')
+    }
+  } catch (error) {
+    console.error('搜索课程失败:', error)
+    showSnackbar('搜索课程失败', 'error')
+  } finally {
+    coursesLoading.value = false
+  }
+}
+
+// 使用 watch 添加防抖
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+watch(searchText, () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  searchTimeout = setTimeout(() => {
+    searchCourses()
+  }, 500)
+})
+
+const filteredCourses = computed(() => availableCourses.value)
 
 // 节点和边
 const nodes = ref<Node[]>([
@@ -389,7 +459,8 @@ const nodes = ref<Node[]>([
     type: 'default',
     data: { label: careerName.value },
     position: { x: 400, y: 100 },
-    targetPosition: Position.Bottom,
+    targetPosition: Position.Bottom, // 入口在底部，只能被其他节点指向
+    // 没有 sourcePosition，表示不能作为连接起点
     style: {
       background: '#616161',
       color: '#ffffff',
@@ -404,12 +475,11 @@ const nodes = ref<Node[]>([
 
 const edges = ref<Edge[]>([])
 
-let nodeIdCounter = 1
-
 // 添加课程节点
-const addCourseNode = (course: { id: number; name: string }) => {
+const addCourseNode = (course: Course) => {
   // 检查是否已存在
   if (nodes.value.find((n) => n.id === course.id.toString())) {
+    showSnackbar('该课程已添加', 'warning')
     return
   }
 
@@ -436,53 +506,55 @@ const addCourseNode = (course: { id: number; name: string }) => {
   })
 }
 
-// 添加自定义节点
-const addCustomNode = () => {
-  const nodeName = prompt('请输入节点名称:')
-  if (!nodeName?.trim()) return
-
-  const newId = `custom-${nodeIdCounter++}`
-  const x = 300 + Math.random() * 300
-  const y = 250 + Math.random() * 200
-
-  nodes.value.push({
-    id: newId,
-    type: 'default',
-    data: { label: nodeName.trim() },
-    position: { x, y },
-    sourcePosition: Position.Top,
-    targetPosition: Position.Bottom,
-    style: {
-      background: '#e3f2fd',
-      color: '#1976d2',
-      border: '2px solid #90caf9',
-      borderRadius: '12px',
-      padding: '10px',
-      fontWeight: '500',
-      fontSize: '13px',
-    },
-  })
-}
-
-// 删除选中的节点
+// 删除选中的节点和边
 const deleteSelectedNodes = () => {
   const selectedNodes = nodes.value.filter((n) => n.selected && n.id !== '0')
-  if (selectedNodes.length === 0) {
-    alert('请先选中要删除的节点 (根节点不能删除)')
+  const selectedEdges = edges.value.filter((e) => e.selected)
+
+  const totalSelected = selectedNodes.length + selectedEdges.length
+
+  if (totalSelected === 0) {
+    showSnackbar('请先选中要删除的节点或连接线 (根节点不能删除)', 'warning')
     return
   }
 
-  if (!confirm(`确定要删除 ${selectedNodes.length} 个节点吗?`)) return
+  const itemsText = []
+  if (selectedNodes.length > 0) itemsText.push(`${selectedNodes.length} 个节点`)
+  if (selectedEdges.length > 0) itemsText.push(`${selectedEdges.length} 条连接线`)
 
-  const selectedIds = new Set(selectedNodes.map((n) => n.id))
-  nodes.value = nodes.value.filter((n) => !selectedIds.has(n.id))
-  edges.value = edges.value.filter((e) => !selectedIds.has(e.source) && !selectedIds.has(e.target))
+  confirmDialogConfig.value = {
+    title: '删除确认',
+    message: `确定要删除 ${itemsText.join('和')} 吗？此操作不可撤销。`,
+    confirmText: '删除',
+    cancelText: '取消',
+    confirmColor: 'error',
+    icon: 'mdi-delete-outline',
+    iconColor: 'error-lighten-4',
+    iconForeground: 'error',
+    onConfirm: () => {
+      // 删除选中的节点
+      const selectedNodeIds = new Set(selectedNodes.map((n) => n.id))
+      nodes.value = nodes.value.filter((n) => !selectedNodeIds.has(n.id))
+
+      // 删除选中的边，以及与被删除节点相关的边
+      const selectedEdgeIds = new Set(selectedEdges.map((e) => e.id))
+      edges.value = edges.value.filter(
+        (e) => !selectedEdgeIds.has(e.id) && !selectedNodeIds.has(e.source) && !selectedNodeIds.has(e.target)
+      )
+
+      showSnackbar(`已删除 ${itemsText.join('和')}`, 'success')
+    },
+  }
+  confirmDialogVisible.value = true
 }
 
 // 处理连接
 const onConnect = (connection: Connection) => {
-  // 不允许连接到根节点
-  if (connection.target === '0') return
+  // 不允许从根节点出发的连接（根节点只有入口，没有出口）
+  if (connection.source === '0') return
+
+  // 允许连接到根节点（根节点作为终点）
+  // if (connection.target === '0') return  // 删除这行限制
 
   // 检查是否已存在相同的连接
   const exists = edges.value.find(
@@ -503,18 +575,61 @@ const onConnect = (connection: Connection) => {
   })
 }
 
+// 处理节点变化（包括选中状态）
+const onNodesChange = (changes: any[]) => {
+  changes.forEach((change) => {
+    if (change.type === 'select') {
+      const node = nodes.value.find((n) => n.id === change.id)
+      if (node) {
+        node.selected = change.selected
+      }
+    } else if (change.type === 'position' && change.dragging === false) {
+      const node = nodes.value.find((n) => n.id === change.id)
+      if (node && change.position) {
+        node.position = change.position
+      }
+    }
+  })
+}
+
+// 处理边变化（包括选中状态）
+const onEdgesChange = (changes: any[]) => {
+  changes.forEach((change) => {
+    if (change.type === 'select') {
+      const edge = edges.value.find((e) => e.id === change.id)
+      if (edge) {
+        edge.selected = change.selected
+      }
+    }
+  })
+}
+
 // 返回上一页
 const handleBack = () => {
   if (nodes.value.length > 1 || edges.value.length > 0) {
-    if (!confirm('有未保存的更改,确定要离开吗?')) return
+    confirmDialogConfig.value = {
+      title: '确认离开',
+      message: '有未保存的更改，确定要离开吗？',
+      confirmText: '离开',
+      cancelText: '取消',
+      confirmColor: 'warning',
+      icon: 'mdi-alert-outline',
+      iconColor: 'warning-lighten-4',
+      iconForeground: 'warning',
+      onConfirm: () => {
+        router.back()
+      },
+    }
+    confirmDialogVisible.value = true
+  } else {
+    router.back()
   }
-  router.back()
 }
 
 // 显示保存对话框
 const showSave = () => {
   if (nodes.value.length <= 1) {
-    alert('请至少添加一个学习节点')
+    showSnackbar('请至少添加一个学习节点', 'warning')
     return
   }
   showSaveDialog.value = true
@@ -523,7 +638,7 @@ const showSave = () => {
 // 保存路径
 const saveRoadmap = async () => {
   if (!roadmapDescription.value.trim()) {
-    alert('请输入路径描述')
+    showSnackbar('请输入路径描述', 'warning')
     return
   }
 
@@ -548,34 +663,101 @@ const saveRoadmap = async () => {
     console.log('保存路径:', data)
     saving.value = false
     showSaveDialog.value = false
+    showSnackbar('路径保存成功', 'success')
     router.back()
   }, 1000)
 }
 
+// 自动布局
+const applyAutoLayout = () => {
+  if (nodes.value.length <= 1) {
+    showSnackbar('请至少添加一个节点才能使用自动布局', 'warning')
+    return
+  }
+
+  const dagreGraph = new dagre.graphlib.Graph()
+  dagreGraph.setDefaultEdgeLabel(() => ({}))
+  dagreGraph.setGraph({
+    rankdir: 'BT', // Bottom to Top - 根节点在上方
+    nodesep: 150,
+    ranksep: 80,
+    marginx: 20,
+    marginy: 20,
+  })
+
+  const nodeWidth = 120
+  const nodeHeight = 40
+
+  // 添加节点到 dagre 图
+  nodes.value.forEach((node) => {
+    dagreGraph.setNode(node.id.toString(), { width: nodeWidth, height: nodeHeight })
+  })
+
+  // 添加边到 dagre 图
+  edges.value.forEach((edge) => {
+    dagreGraph.setEdge(edge.source.toString(), edge.target.toString())
+  })
+
+  // 计算布局
+  dagre.layout(dagreGraph)
+
+  // 更新节点位置
+  nodes.value = nodes.value.map((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id.toString())
+    return {
+      ...node,
+      position: {
+        x: nodeWithPosition.x - nodeWidth / 2,
+        y: nodeWithPosition.y - nodeHeight / 2,
+      },
+    }
+  })
+
+  // 布局完成后，调用 fitView 聚焦到所有节点
+  setTimeout(() => {
+    fitView({ padding: 0.2, duration: 300 })
+  }, 50)
+
+  showSnackbar('自动布局完成', 'success')
+}
+
 // 重置
 const resetAll = () => {
-  if (!confirm('确定要重置所有内容吗? 此操作不可撤销。')) return
-
-  nodes.value = [
-    {
-      id: '0',
-      type: 'default',
-      data: { label: careerName.value },
-      position: { x: 400, y: 100 },
-      targetPosition: Position.Bottom,
-      style: {
-        background: '#616161',
-        color: '#ffffff',
-        border: '2px solid #9e9e9e',
-        borderRadius: '12px',
-        padding: '10px',
-        fontWeight: '600',
-        fontSize: '14px',
-      },
+  confirmDialogConfig.value = {
+    title: '重置所有内容',
+    message: '确定要重置所有内容吗？此操作不可撤销。',
+    confirmText: '重置',
+    cancelText: '取消',
+    confirmColor: 'warning',
+    icon: 'mdi-refresh',
+    iconColor: 'warning-lighten-4',
+    iconForeground: 'warning',
+    onConfirm: () => {
+      nodes.value = [
+        {
+          id: '0',
+          type: 'default',
+          data: { label: careerName.value },
+          position: { x: 400, y: 100 },
+          targetPosition: Position.Bottom, // 入口在底部，只能被其他节点指向
+          // 没有 sourcePosition，表示不能作为连接起点
+          style: {
+            background: '#616161',
+            color: '#ffffff',
+            border: '2px solid #9e9e9e',
+            borderRadius: '12px',
+            padding: '10px',
+            fontWeight: '600',
+            fontSize: '14px',
+          },
+        },
+      ]
+      edges.value = []
+      roadmapDescription.value = ''
+      showSnackbar('已重置所有内容', 'success')
     },
-  ]
-  edges.value = []
-  roadmapDescription.value = ''
+  }
+  confirmDialogVisible.value = true
 }
 
 // 如果是复制模式,加载数据
@@ -584,10 +766,7 @@ onMounted(() => {
     loading.value = true
     setTimeout(() => {
       roadmapDescription.value = 'Vue 3 + TypeScript 全栈开发路线 (副本)'
-      // 添加一些示例节点
-      addCourseNode({ id: 1, name: 'HTML 基础' })
-      addCourseNode({ id: 2, name: 'CSS 基础' })
-      addCourseNode({ id: 3, name: 'JavaScript 基础' })
+      // 添加一些示例节点（如果需要）
       loading.value = false
     }, 500)
   }
@@ -654,11 +833,14 @@ onMounted(() => {
   }
 }
 
-.flow-editor-card,
+.flow-editor-card {
+  background-color: rgb(var(--v-theme-surface));
+  border: 1px solid rgb(var(--v-theme-outline));
+}
+
 .course-list-card,
 .tips-card {
   background-color: rgb(var(--v-theme-surface));
-  border: 1px solid rgb(var(--v-theme-outline));
 }
 
 /* 提示展开面板样式 */
@@ -667,7 +849,7 @@ onMounted(() => {
 }
 
 .tips-expansion :deep(.v-expansion-panel) {
-  border: 1px solid rgb(var(--v-theme-outline));
+  border: none;
 }
 
 .tips-expansion :deep(.v-expansion-panel-title) {
@@ -754,5 +936,19 @@ onMounted(() => {
 
 :deep(.vue-flow__node.selected) {
   box-shadow: 0 0 0 2px rgb(var(--v-theme-primary));
+}
+
+/* Vue Flow 边（连接线）样式 */
+:deep(.vue-flow__edge) {
+  cursor: pointer;
+}
+
+:deep(.vue-flow__edge.selected) {
+  z-index: 1000;
+}
+
+:deep(.vue-flow__edge.selected .vue-flow__edge-path) {
+  stroke: rgb(var(--v-theme-primary)) !important;
+  stroke-width: 3px !important;
 }
 </style>

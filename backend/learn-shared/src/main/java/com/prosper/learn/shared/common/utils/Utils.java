@@ -235,25 +235,42 @@ public class Utils {
      * @param currentState 当前状态
      * @param targetState 目标状态
      * @throws BusinessException 如果状态转换不合法
+     *
+     * 支持的状态转换:
+     * - approve: SUBMITTED → PUBLISHED
+     * - reject: SUBMITTED → REJECTED
+     * - remove: PUBLISHED → REJECTED (下架已发布内容)
+     * - ban: 任何状态 → BANNED
+     * - restore: REJECTED/BANNED → PUBLISHED (恢复被拒绝或被封禁的内容)
      */
     public static void validateStateTransition(Byte currentState, Enums.ContentState targetState) {
         if (currentState == null || targetState == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("状态不能为空");
         }
 
-        Enums.ContentState current = Enums.ContentState.getByValue(currentState.intValue());
+        Enums.ContentState current = Enums.ContentState.getByValue(currentState);
         if (current == null) {
             throw ErrorCode.INVALID_PARAMETER.exception("无效的当前状态: " + currentState);
         }
 
         boolean isValid = switch (targetState) {
-            case PUBLISHED -> current == Enums.ContentState.SUBMITTED
+            case PUBLISHED ->
+                // approve: SUBMITTED → PUBLISHED
+                // restore: REJECTED/BANNED → PUBLISHED
+                current == Enums.ContentState.SUBMITTED
                     || current == Enums.ContentState.REJECTED
-                    || current == Enums.ContentState.BANNED;  // 待审核/已拒绝/已封禁 都可以发布
-            case REJECTED -> current == Enums.ContentState.SUBMITTED
-                    || current == Enums.ContentState.BANNED;   // 待审核/已封禁 可以拒绝
-            case BANNED -> current != Enums.ContentState.BANNED;     // 除了已封禁，其他状态都可以封禁
-            case SUBMITTED -> false;  // 不允许转回待审核状态
+                    || current == Enums.ContentState.BANNED;
+            case REJECTED ->
+                // reject: SUBMITTED → REJECTED
+                // remove: PUBLISHED → REJECTED
+                current == Enums.ContentState.SUBMITTED
+                    || current == Enums.ContentState.PUBLISHED;
+            case BANNED ->
+                // ban: 任何状态 → BANNED (除了已经是 BANNED)
+                current != Enums.ContentState.BANNED;
+            case DRAFT, SUBMITTED ->
+                // 不允许转回 DRAFT 或 SUBMITTED 状态
+                false;
         };
 
         if (!isValid) {

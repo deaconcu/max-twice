@@ -6,30 +6,31 @@
       </keep-alive>
     </router-view>
 
-    <!-- 全局 Snackbar 提示 -->
+    <!-- 全局 Snackbar 提示 - 只显示队列中的最后一个（最新的） -->
     <v-snackbar
-      v-for="(item, index) in snackbars"
-      :key="index"
-      v-model="item.visible"
-      :timeout="4000"
+      v-if="currentSnackbar"
+      :model-value="true"
+      :timeout="2500"
       location="top"
       rounded="xl"
       variant="flat"
       border
-      :class="`snackbar-${item.type}`"
+      transition="slide-y-transition"
+      :class="`snackbar-${currentSnackbar.type}`"
+      @update:model-value="onSnackbarClose"
     >
       <div class="d-flex align-center pa-1">
-        <v-avatar :color="getSnackbarIconBg(item.type)" size="32" class="mr-3">
-          <v-icon :icon="getSnackbarIcon(item.type)" size="32" color="white"></v-icon>
+        <v-avatar :color="getSnackbarIconBg(currentSnackbar.type)" size="32" class="mr-3">
+          <v-icon :icon="getSnackbarIcon(currentSnackbar.type)" size="18" color="white"></v-icon>
         </v-avatar>
-        <span class="text-body-1 font-weight-medium">{{ item.text }}</span>
+        <span class="text-body-1 font-weight-medium">{{ currentSnackbar.text }}</span>
       </div>
     </v-snackbar>
   </v-app>
 </template>
 
 <script setup lang="ts">
-import { provide, ref, onMounted } from 'vue'
+import { provide, ref, onMounted, computed } from 'vue'
 import type { Ref } from 'vue'
 import { setGlobalSnackbar } from '@/composables/utils'
 import { useRouter } from 'vue-router'
@@ -42,6 +43,9 @@ interface Snackbar {
 
 const snackbars: Ref<Snackbar[]> = ref([])
 const router = useRouter()
+
+// 当前显示的 snackbar（队列中的最后一个，即最新的）
+const currentSnackbar = computed(() => snackbars.value[snackbars.value.length - 1] || null)
 
 // Keep-alive 缓存管理
 const CACHE_TIMEOUT = 12 * 60 * 60 * 1000 // 12小时（毫秒）
@@ -123,10 +127,16 @@ const showSnackbar = (message: string, type = 'info'): void => {
     type,
   }
   snackbars.value.push(newSnackbar)
+}
 
-  setTimeout(() => {
-    snackbars.value = snackbars.value.filter((snack) => snack !== newSnackbar)
-  }, 4000)
+/**
+ * 处理 snackbar 关闭事件（由 v-snackbar 的 timeout 或用户手动关闭触发）
+ */
+const onSnackbarClose = (visible: boolean) => {
+  if (!visible && snackbars.value.length > 0) {
+    // 移除队列中的最后一个（当前显示的）
+    snackbars.value.pop()
+  }
 }
 
 /**

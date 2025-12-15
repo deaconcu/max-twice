@@ -184,7 +184,7 @@ public class PostDomainService {
 
         NodeDO nodeDO = nodeDataService.getById(nodeId);
         if (nodeDO == null) {
-            throw ErrorCode.POSTING_NODE_NOT_FOUND.exception();
+            throw ErrorCode.NODE_NOT_FOUND.exception();
         }
 
         log.info("Creating contents post with content: {}", jsonContent);

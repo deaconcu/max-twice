@@ -1,9 +1,12 @@
 package com.prosper.learn.user.profile;
 
+import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import static com.prosper.learn.shared.domain.Enums.UserState.*;
 
 @Mapper
 public interface UserMapper {
@@ -11,7 +14,7 @@ public interface UserMapper {
     @Select("SELECT * FROM user WHERE id = #{id}")
     UserDO getById(long id);
 
-    @Select("SELECT * FROM user WHERE INSTR(name, #{name}) > 0 limit 20")
+    @Select("SELECT * FROM user WHERE INSTR(name, #{name}) > 0 AND state = " + ACTIVE_VALUE + " LIMIT 20")
     List<UserDO> searchByName(String name);
 
     @Select({"<script>SELECT * FROM user where id in " +

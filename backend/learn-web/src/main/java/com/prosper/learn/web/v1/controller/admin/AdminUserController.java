@@ -65,7 +65,6 @@ public class AdminUserController {
     /**
      * 搜索用户（管理员）
      * GET /api/v1/admin/users/search?name=xxx
-     * TODO: 当前实现可能不会过滤被屏蔽用户，需要验证。如果过滤了，需要新增 Service 方法
      */
     @GetMapping("/users/search")
     @RequireRole(UserRole.ADMIN)

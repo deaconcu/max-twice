@@ -116,7 +116,8 @@ public class ContentApprovedEvent {
     }
 
     /** MemoryCardDeck 类型构造函数 */
-    public static ContentApprovedEvent forMemoryCardDeck(Long creatorId, Long deckId, String deckTitle, Long postId, String postContentPreview, Long nodeId) {
+    public static ContentApprovedEvent forMemoryCardDeck(Long creatorId, Long deckId, String deckTitle, Long postId,
+                                                         String postContentPreview, Long nodeId) {
         ContentApprovedEvent event = new ContentApprovedEvent();
         event.creatorId = creatorId;
         event.contentId = deckId;

@@ -85,14 +85,13 @@ public enum ErrorCode {
     COMMENT_OBJECT_NOT_FOUND(1404, "评论对象不存在"),
 
     // 内容管理相关 13xx
-    CONTENTS_COURSE_NOT_FOUND(1301, "课程不存在"),
-    CONTENTS_POST_NOT_FOUND(1302, "帖子不存在"),
-    CONTENTS_PINNED_ITEMS_LIMIT_EXCEEDED(1303, "置顶帖子数量超限"),
-    CONTENTS_INVALID_POST_TYPE(1304, "无效的帖子类型"),
-    POSTING_INVALID_PARAMETER(1305, "帖子参数无效"),
-    POSTING_CONTENT_PARSE_FAILED(1306, "帖子内容解析失败"),
-    POSTING_NODE_NOT_FOUND(1307, "节点不存在"),
-    POSTING_LIST_QUERY_FAILED(1308, "帖子列表查询失败"),
+    POST_NOT_FOUND(1302, "帖子不存在"),
+    TOC_PINNED_ITEMS_LIMIT_EXCEEDED(1303, "置顶帖子数量超限"),
+    INVALID_POST_TYPE(1304, "无效的帖子类型"),
+    POST_INVALID_PARAMETER(1305, "帖子参数无效"),
+    POST_CONTENT_PARSE_FAILED(1306, "帖子内容解析失败"),
+    NODE_NOT_FOUND(1307, "节点不存在"),
+    POST_LIST_QUERY_FAILED(1308, "帖子列表查询失败"),
     NODE_STATE_INVALID(1309, "节点不是发布状态，暂时无法访问"),
 
     // 目录管理相关 18xx

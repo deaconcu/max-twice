@@ -618,7 +618,7 @@ public class PostService {
 
         PostDO postDO = postDataService.getById(id);
         if (postDO == null) {
-            throw ErrorCode.POSTING_NOT_FOUND.exception();
+            throw ErrorCode.POST_NOT_FOUND.exception();
         }
 
         // 检查状态：只能下架已发布的内容
@@ -666,7 +666,7 @@ public class PostService {
 
         PostDO postDO = postDataService.getById(id);
         if (postDO == null) {
-            throw ErrorCode.POSTING_NOT_FOUND.exception();
+            throw ErrorCode.POST_NOT_FOUND.exception();
         }
 
         // 记录之前的状态
@@ -724,7 +724,7 @@ public class PostService {
 
         PostDO postDO = postDataService.getById(id);
         if (postDO == null) {
-            throw ErrorCode.POSTING_NOT_FOUND.exception();
+            throw ErrorCode.POST_NOT_FOUND.exception();
         }
 
         // 记录之前的状态

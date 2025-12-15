@@ -45,6 +45,7 @@ import static com.prosper.learn.shared.domain.Enums.ContentType.*;
 public class CommentService {
 
     private final CommentDomainService commentDomainService;
+    private final CommentDataService commentDataService;
     private final UserDataService userDataService;
     private final UpvoteDataService upvoteDataService;
     private final PostDataService postDataService;
@@ -156,7 +157,7 @@ public class CommentService {
      */
     @Transactional
     public void ban(Long id, String reason, UserDO operator) {
-        CommentDO commentDO = commentDomainService.getById(id);
+        CommentDO commentDO = commentDataService.getById(id);
         if (commentDO == null) {
             throw ErrorCode.COMMENT_NOT_FOUND.exception();
         }

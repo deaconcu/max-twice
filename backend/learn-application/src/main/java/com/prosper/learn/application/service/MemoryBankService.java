@@ -163,6 +163,37 @@ public class MemoryBankService {
 
     /**
      * 更新课程复习策略
+     *
+     * <p>支持更新以下设置：
+     * <ul>
+     *   <li>frequencySetting - 复习频率：0=高频(0.75x间隔), 1=普通(1.0x间隔), 2=低频(1.5x间隔)</li>
+     *   <li>status - 课程状态：1=学习中, 2=已暂停, 3=已归档</li>
+     * </ul>
+     *
+     * <p><b>关于 frequencySetting 的应用时机：</b>
+     * <p>修改 frequencySetting 后，<b>不需要</b>重新计算已有卡片的 reviewDueAt。
+     * 新的频率设置会在每次复习提交时自动应用到间隔计算中，实现平滑过渡。
+     *
+     * <p><b>为什么不重新计算：</b>
+     * <ol>
+     *   <li>避免打乱用户已建立的复习节奏</li>
+     *   <li>防止大量卡片突然变为到期，造成复习压力</li>
+     *   <li>reviewDueAt 是基于历史复习时间计算的，改变它会破坏 SRS 算法的连续性</li>
+     * </ol>
+     *
+     * <p><b>实际效果：</b>
+     * <p>例如：将频率从"普通"改为"高频"后
+     * <ul>
+     *   <li>已到期的卡片：保持原定时间，复习后按高频计算下次间隔</li>
+     *   <li>未到期的卡片：保持原定时间，到期复习后按高频计算下次间隔</li>
+     *   <li>新添加的卡片：从一开始就按高频计算间隔</li>
+     * </ul>
+     *
+     * <p>这种渐进式应用方式确保了复习体验的平滑性，避免突然的负担变化。
+     *
+     * @param userId 用户ID
+     * @param courseId 课程ID
+     * @param request 更新请求，包含 frequencySetting 和/或 status
      */
     @Transactional
     public void updateCourseSetting(Long userId, Long courseId, UpdateCourseSettingRequest request) {
@@ -180,9 +211,6 @@ public class MemoryBankService {
             request.getFrequencySetting(),
             request.getStatus() != null ? request.getStatus().byteValue() : null
         );
-
-        // TODO: 触发异步任务重新计算复习时间
-        // asyncRecalculationService.recalculateDueDates(userId, courseId);
     }
 
     /**

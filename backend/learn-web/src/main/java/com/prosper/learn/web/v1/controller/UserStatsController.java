@@ -68,89 +68,108 @@ public class UserStatsController {
         return ApiResponse.success(topUsers);
     }
 
+
     /**
      * 内部API：增量更新浏览量
-     * 注意：这个接口应该只供内部服务调用，不对外暴露
+     *
+     * @deprecated 此接口不应该对外暴露。统计更新已通过事件驱动自动完成：
+     *   - UserStatsEventListener 监听各种业务事件
+     *   - 自动调用 UserStatsDomainService 的 increment 方法
+     *   - 前端未使用此接口
+     *   - 对外暴露有安全风险：用户可随意刷统计数据
+     *
+     * 如需手动修复数据，应使用管理后台工具或数据库脚本，而非HTTP接口。
      */
-    @PostMapping("/{userId}/stats/views/increment")
-    @RequireLogin // TODO: 改为内部服务认证
-    public ApiResponse<Void> incrementViews(
-            @PathVariable Long userId,
-            @RequestParam(defaultValue = "1") int delta) {
-
-        userStatsService.incrementViews(userId, delta);
-        return ApiResponse.success();
-    }
+//    @PostMapping("/{userId}/stats/views/increment")
+//    @RequireLogin
+//    public ApiResponse<Void> incrementViews(
+//            @PathVariable Long userId,
+//            @RequestParam(defaultValue = "1") int delta) {
+//
+//        userStatsService.incrementViews(userId, delta);
+//        return ApiResponse.success();
+//    }
 
     /**
      * 内部API：增量更新两次能懂数
-     * 注意：这个接口应该只供内部服务调用，不对外暴露
+     *
+     * @deprecated 此接口不应该对外暴露。统计更新已通过事件驱动自动完成。
+     *             详见 incrementViews 的注释说明。
      */
-    @PostMapping("/{userId}/stats/twices/increment")
-    @RequireLogin // TODO: 改为内部服务认证
-    public ApiResponse<Void> incrementTwices(
-            @PathVariable Long userId,
-            @RequestParam(defaultValue = "1") int delta) {
-
-        userStatsService.incrementTwices(userId, delta);
-        return ApiResponse.success();
-    }
+//    @PostMapping("/{userId}/stats/twices/increment")
+//    @RequireLogin
+//    public ApiResponse<Void> incrementTwices(
+//            @PathVariable Long userId,
+//            @RequestParam(defaultValue = "1") int delta) {
+//
+//        userStatsService.incrementTwices(userId, delta);
+//        return ApiResponse.success();
+//    }
 
     /**
      * 内部API：增量更新有用点赞数
-     * 注意：这个接口应该只供内部服务调用，不对外暴露
+     *
+     * @deprecated 此接口不应该对外暴露。统计更新已通过事件驱动自动完成。
+     *             详见 incrementViews 的注释说明。
      */
-    @PostMapping("/{userId}/stats/likes/increment")
-    @RequireLogin // TODO: 改为内部服务认证
-    public ApiResponse<Void> incrementLikes(
-            @PathVariable Long userId,
-            @RequestParam(defaultValue = "1") int delta) {
-
-        userStatsService.incrementLikes(userId, delta);
-        return ApiResponse.success();
-    }
+//    @PostMapping("/{userId}/stats/likes/increment")
+//    @RequireLogin
+//    public ApiResponse<Void> incrementLikes(
+//            @PathVariable Long userId,
+//            @RequestParam(defaultValue = "1") int delta) {
+//
+//        userStatsService.incrementLikes(userId, delta);
+//        return ApiResponse.success();
+//    }
 
     /**
      * 内部API：增量更新评论数
-     * 注意：这个接口应该只供内部服务调用，不对外暴露
+     *
+     * @deprecated 此接口不应该对外暴露。统计更新已通过事件驱动自动完成。
+     *             详见 incrementViews 的注释说明。
      */
-    @PostMapping("/{userId}/stats/comments/increment")
-    @RequireLogin // TODO: 改为内部服务认证
-    public ApiResponse<Void> incrementComments(
-            @PathVariable Long userId,
-            @RequestParam(defaultValue = "1") int delta) {
-
-        userStatsService.incrementComments(userId, delta);
-        return ApiResponse.success();
-    }
+//    @PostMapping("/{userId}/stats/comments/increment")
+//    @RequireLogin
+//    public ApiResponse<Void> incrementComments(
+//            @PathVariable Long userId,
+//            @RequestParam(defaultValue = "1") int delta) {
+//
+//        userStatsService.incrementComments(userId, delta);
+//        return ApiResponse.success();
+//    }
 
     /**
      * 内部API：设置统计字段绝对值（数据修复用）
-     * 注意：这个接口应该只供管理员使用
+     *
+     * @deprecated 此接口不应该对外暴露。数据修复应该通过：
+     *   - 管理后台专用工具
+     *   - 数据库脚本
+     *   - 定时任务重新计算
+     *   而不是暴露为HTTP接口，避免被滥用。
      */
-    @PostMapping("/{userId}/stats/set")
-    @RequireLogin // TODO: 改为管理员权限检查
-    public ApiResponse<Void> setStatField(
-            @PathVariable Long userId,
-            @RequestParam String field,
-            @RequestParam int newValue) {
-
-        // 验证字段名
-        List<String> validFields = List.of(
-            "views", "twices", "likes", "comments",
-            "learning_courses", "completed_courses",
-            "in_progress_professions", "completed_professions",
-            "following_users", "following_courses", "following_professions",
-            "created_articles", "created_indexs", "created_roadmaps", "created_card_decks"
-        );
-
-        if (!validFields.contains(field)) {
-            return ApiResponse.error(400, "无效的字段名");
-        }
-
-        userStatsService.setField(userId, field, newValue);
-        return ApiResponse.success();
-    }
+//    @PostMapping("/{userId}/stats/set")
+//    @RequireLogin
+//    public ApiResponse<Void> setStatField(
+//            @PathVariable Long userId,
+//            @RequestParam String field,
+//            @RequestParam int newValue) {
+//
+//        // 验证字段名
+//        List<String> validFields = List.of(
+//            "views", "twices", "likes", "comments",
+//            "learning_courses", "completed_courses",
+//            "in_progress_professions", "completed_professions",
+//            "following_users", "following_courses", "following_professions",
+//            "created_articles", "created_indexs", "created_roadmaps", "created_card_decks"
+//        );
+//
+//        if (!validFields.contains(field)) {
+//            return ApiResponse.error(400, "无效的字段名");
+//        }
+//
+//        userStatsService.setField(userId, field, newValue);
+//        return ApiResponse.success();
+//    }
 
     /**
      * 获取统计字段列表（前端用）

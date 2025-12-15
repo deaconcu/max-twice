@@ -69,7 +69,7 @@ public class TocDomainService {
     private CourseDO validateCourseExists(long courseId) {
         CourseDO courseDO = courseDataService.getById(courseId);
         if (courseDO == null) {
-            throw ErrorCode.CONTENTS_COURSE_NOT_FOUND.exception();
+            throw ErrorCode.COURSE_NOT_FOUND.exception();
         }
         return courseDO;
     }
@@ -88,10 +88,10 @@ public class TocDomainService {
     private PostDO validatePostForContents(long postId) {
         PostDO postDO = postDataService.getById(postId);
         if (postDO == null) {
-            throw ErrorCode.CONTENTS_POST_NOT_FOUND.exception();
+            throw ErrorCode.POST_NOT_FOUND.exception();
         }
         if (postDO.getType() == Enums.PostType.article.value()) {
-            throw ErrorCode.CONTENTS_INVALID_POST_TYPE.exception();
+            throw ErrorCode.INVALID_POST_TYPE.exception();
         }
         return postDO;
     }
@@ -469,7 +469,7 @@ public class TocDomainService {
                     }
                 }
                 if (pinedArray.size() >= systemProperties.getContents().getMaxPinnedItems()) {
-                    throw ErrorCode.CONTENTS_PINNED_ITEMS_LIMIT_EXCEEDED.exception();
+                    throw ErrorCode.TOC_PINNED_ITEMS_LIMIT_EXCEEDED.exception();
                 }
                 if (!exist) pinedArray.add(value);
             } else {

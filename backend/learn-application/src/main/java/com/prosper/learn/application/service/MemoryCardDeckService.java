@@ -684,8 +684,8 @@ public class MemoryCardDeckService {
             deck.getId(),
             deck.getTitle(),
             deck.getPostId(),
-            nodeId,  // NEW: 需要更新 node 统计
-            postContentPreview
+            postContentPreview,
+            nodeId  // NEW: 需要更新 node 统计
         ));
 
         log.info("Deck {} approved by user {}", deckId, auditorId);
@@ -733,7 +733,7 @@ public class MemoryCardDeckService {
         // 获取卡片组信息
         MemoryCardDeckDO deck = deckDomainService.getById(deckId);
         if (deck == null) {
-            throw ErrorCode.DECK_NOT_FOUND.exception();
+            throw ErrorCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
         }
 
         // 记录之前的状态
@@ -779,7 +779,7 @@ public class MemoryCardDeckService {
         // 获取卡片组信息
         MemoryCardDeckDO deck = deckDomainService.getById(deckId);
         if (deck == null) {
-            throw ErrorCode.DECK_NOT_FOUND.exception();
+            throw ErrorCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
         }
 
         // 检查状态：只能下架已发布的内容
@@ -826,7 +826,7 @@ public class MemoryCardDeckService {
         // 获取卡片组信息
         MemoryCardDeckDO deck = deckDomainService.getById(deckId);
         if (deck == null) {
-            throw ErrorCode.DECK_NOT_FOUND.exception();
+            throw ErrorCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
         }
 
         // 记录之前的状态
