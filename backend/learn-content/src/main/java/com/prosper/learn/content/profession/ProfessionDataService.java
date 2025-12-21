@@ -132,10 +132,10 @@ public class ProfessionDataService extends AbstractDataService<ProfessionDO, Pro
     }
 
     /**
-     * 分页查询职业
+     * 搜索职业（按关键词）
      */
-    public List<ProfessionDO> listByPage(int offset, int limit) {
-        return professionMapper.listByPage(offset, limit);
+    public List<ProfessionDO> searchByKeyword(String keyword) {
+        return professionMapper.searchByKeyword(keyword);
     }
 
     /**

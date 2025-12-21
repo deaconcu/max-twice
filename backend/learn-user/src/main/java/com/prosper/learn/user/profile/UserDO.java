@@ -24,6 +24,8 @@ public class UserDO {
 
     private String biography;
 
+    private String avatar;
+
     private LocalDateTime msgReadTime;
 
     private Byte state;

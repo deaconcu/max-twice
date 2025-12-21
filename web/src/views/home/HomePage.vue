@@ -5,6 +5,7 @@ import { useI18n } from '@/composables/useI18n'
 import { useFetch } from '@/composables'
 import { useUserStore } from '@/stores/modules/user'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
+import UserAvatar from '@/components/common/UserAvatar.vue'
 import { statsApi } from '@/api/modules/stats'
 import { courseApi, subscriptionApi } from '@/api/modules/course'
 import type { PlatformStats } from '@/types/stats'
@@ -231,18 +232,13 @@ const openCareer = (careerId: number): void => {
     <div class="welcome-section mb-6 mb-md-10">
       <div class="d-flex flex-row align-center justify-space-between ga-3 ga-sm-4">
         <div class="d-flex align-center ga-3 ga-sm-4 flex-grow-1" style="min-width: 0">
-          <v-avatar
-            :color="'rgb(var(--v-theme-surface-variant))'"
+          <UserAvatar
+            :name="userName"
+            :avatar-url="userStore.currentUser?.avatar"
             :size="$vuetify.display.mobile ? 48 : 64"
             rounded="lg"
-            class="flex-shrink-0"
-          >
-            <v-icon
-              :size="$vuetify.display.mobile ? 24 : 32"
-              :color="'rgb(var(--v-theme-on-surface-variant))'"
-              >mdi-account</v-icon
-            >
-          </v-avatar>
+            avatar-class="flex-shrink-0"
+          />
           <div style="min-width: 0">
             <h1
               class="text-h5 text-sm-h4 font-weight-bold text-truncate"

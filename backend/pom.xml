@@ -10,7 +10,7 @@
     <version>0.0.1</version>
     <modules>
         <module>learn-web</module>
-        <module>learn-external</module>
+        <module>learn-infrastructure</module>
         <module>learn-shared</module>
         <module>learn-content</module>
         <module>learn-interaction</module>

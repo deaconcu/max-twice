@@ -202,4 +202,24 @@ public interface CourseConverter {
      */
     @IterableMapping(qualifiedByName = "toWithStatsDTO")
     List<CourseWithStatsDTO> toWithStatsDTO(List<CourseDO> courseDOList);
+
+    /**
+     * 转换为课程摘要（含统计和进度）DTO
+     * 用途：课程详情页面
+     * 注意：learnerCount, subscriptionCount, subscribed, progress 需要在 Service 层额外填充
+     */
+    @Named("toSummaryWithStatsAndProgressDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    @Mapping(target = "description")
+    @Mapping(target = "mainCategory")
+    @Mapping(target = "subCategory")
+    CourseSummaryWithStatsAndProgressDTO toSummaryWithStatsAndProgressDTO(CourseDO courseDO);
+
+    /**
+     * 批量转换为课程摘要（含统计和进度）DTO
+     */
+    @IterableMapping(qualifiedByName = "toSummaryWithStatsAndProgressDTO")
+    List<CourseSummaryWithStatsAndProgressDTO> toSummaryWithStatsAndProgressDTO(List<CourseDO> courseDOList);
 }

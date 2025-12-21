@@ -4,6 +4,7 @@ import { commentApi } from '@/api'
 import { useFetch, useMutation } from '@/composables'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 import { ObjectType } from '@/enums'
+import UserAvatar from '@/components/common/UserAvatar.vue'
 
 interface Props {
   postId?: number
@@ -352,9 +353,13 @@ onBeforeUnmount(() => {
     <div v-else class="comment-list">
       <div v-for="comment in comments" :key="comment.id" class="comment-item mb-2">
         <div class="d-flex">
-          <v-avatar size="36" color="grey-lighten-2" class="mr-3 mt-1">
-            <v-icon icon="mdi-account" color="grey" size="20"></v-icon>
-          </v-avatar>
+          <UserAvatar
+            :name="comment.creator?.name || '匿名用户'"
+            :avatar-url="comment.creator?.avatar"
+            size="36"
+            rounded="lg"
+            class="mr-3 mt-1"
+          />
           <div class="flex-grow-1">
             <div class="d-flex align-center mb-2">
               <span class="text-body-2 font-weight-medium text-grey-darken-3">
@@ -437,9 +442,13 @@ onBeforeUnmount(() => {
                 class="sub-comment-item mb-2"
               >
                 <div class="d-flex">
-                  <v-avatar size="32" color="grey-lighten-2" class="mr-2">
-                    <v-icon icon="mdi-account" color="grey" size="16"></v-icon>
-                  </v-avatar>
+                  <UserAvatar
+                    :name="subComment.creator?.name || '匿名用户'"
+                    :avatar-url="subComment.creator?.avatar"
+                    size="32"
+                    rounded="lg"
+                    class="mr-2"
+                  />
                   <div class="flex-grow-1">
                     <div class="d-flex align-center mb-2">
                       <span class="text-body-2 font-weight-medium text-grey-darken-3">

@@ -25,7 +25,7 @@
           <!-- 中间+右侧容器 - 居中 -->
           <div class="center-right-wrapper">
             <!-- 中间内容区 - 固定宽度居中 -->
-            <div class="center-content">
+            <v-infinite-scroll :onLoad="loadMore" class="center-content">
               <!-- PostingList 组件 -->
               <PostingList
                 v-if="data"
@@ -38,7 +38,7 @@
                 @switch-tab="handleTabSwitch"
                 @view-deck="handleViewDeck"
               />
-            </div>
+            </v-infinite-scroll>
 
             <!-- 右侧工具栏 -->
             <div v-if="data" class="right-sidebar">
@@ -171,7 +171,7 @@ import PostingList from '@/components/features/read/PostingList.vue'
 import CreateDeckDialog from '@/components/features/read/CreateDeckDialog.vue'
 import MemoryCardSidebar from '@/components/features/read/MemoryCardSidebar.vue'
 import DeckDetailDialog from '@/components/features/read/DeckDetailDialog.vue'
-import { pageApi, memoryApi } from '@/api'
+import { pageApi, memoryApi, postApi } from '@/api'
 import type { ReadResponse } from '@/api/modules/page'
 import type { MemoryCardDeck } from '@/types/memory'
 import { useFetch } from '@/composables/useFetch'
@@ -187,6 +187,8 @@ const currentTab = ref('list')
 const currentPosting = ref(null)
 const selectedDeck = ref<MemoryCardDeck | null>(null)
 const showDeckDetailDialog = ref(false)
+const loadingMore = ref(false)
+const hasMore = ref(true)
 
 // 是否为主课程
 const isMainCourse = computed(() => {
@@ -220,10 +222,76 @@ const {
         posting.voteType = null
       }
     })
-    // 数据赋值完成后处理数据
+
     processData()
+
+    // 检查是否有更多数据
+    hasMore.value = data.value.otherPostings && data.value.otherPostings.length > 0
   },
 })
+
+// 使用第二个 useFetch 加载更多帖子
+const {
+  data: morePosts,
+  loading: loadingMorePosts,
+  execute: loadMorePosts,
+} = useFetch<any[]>({
+  fetchFn: () => {
+    if (!data.value || !data.value.otherPostings) {
+      return Promise.reject(new Error('No data'))
+    }
+    const lastPosting = data.value.otherPostings[data.value.otherPostings.length - 1]
+    const nodeId = Number(route.query.nodeId)
+    return postApi.getPosts(undefined, nodeId, lastPosting.score, lastPosting.id)
+  },
+  immediate: false,
+  onDataReady: () => {
+    if (morePosts.value && morePosts.value.length > 0) {
+      // 处理投票类型
+      morePosts.value.forEach((posting: any) => {
+        if (posting.voteType === 0) {
+          posting.voteType = null
+        }
+      })
+      // 追加到现有列表
+      data.value.otherPostings = [...(data.value.otherPostings || []), ...morePosts.value]
+      hasMore.value = true
+    } else {
+      hasMore.value = false
+    }
+  },
+})
+
+// 加载更多数据
+const loadMore = async ({ done }: { done: (status: 'ok' | 'empty' | 'error') => void }) => {
+  if (loadingMore.value || !hasMore.value || !data.value || !data.value.otherPostings) {
+    done('ok')
+    return
+  }
+
+  const lastPosting = data.value.otherPostings[data.value.otherPostings.length - 1]
+  if (!lastPosting) {
+    done('ok')
+    return
+  }
+
+  loadingMore.value = true
+  try {
+    await loadMorePosts()
+
+    if (morePosts.value && morePosts.value.length > 0) {
+      done('ok')
+    } else {
+      hasMore.value = false
+      done('empty')
+    }
+  } catch (error) {
+    console.error('Failed to load more posts:', error)
+    done('error')
+  } finally {
+    loadingMore.value = false
+  }
+}
 
 // AI 引擎列表
 const aiEngines = [
@@ -327,6 +395,7 @@ onMounted(() => {
 watch(
   () => route.query.nodeId,
   () => {
+    hasMore.value = true
     loadData()
   }
 )

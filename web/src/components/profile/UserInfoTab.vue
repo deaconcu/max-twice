@@ -44,21 +44,36 @@
                   >头像</span
                 >
               </div>
-              <div class="flex-grow-1 d-flex justify-center justify-sm-start">
-                <v-avatar
-                  :image="localUserInfo.avatar || undefined"
-                  rounded="xl"
-                  :size="$vuetify.display.mobile ? 96 : 120"
-                  color="grey-lighten-3"
-                  class="avatar-border"
-                >
-                  <v-icon
-                    v-if="!localUserInfo.avatar"
-                    icon="mdi-account"
-                    :size="$vuetify.display.mobile ? 48 : 60"
-                    color="grey"
+              <div class="flex-grow-1 d-flex flex-column align-center align-sm-start">
+                <div class="position-relative">
+                  <UserAvatar
+                    :name="localUserInfo.name"
+                    :avatar-url="localUserInfo.avatar"
+                    :size="$vuetify.display.mobile ? 64 : 80"
+                    rounded="lg"
+                    avatar-class="avatar-border"
                   />
-                </v-avatar>
+                  <v-btn
+                    icon
+                    size="small"
+                    color="primary"
+                    class="avatar-edit-btn"
+                    :loading="uploadingAvatar"
+                    @click="triggerFileInput"
+                  >
+                    <v-icon icon="mdi-camera" />
+                  </v-btn>
+                  <input
+                    ref="fileInput"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    style="display: none"
+                    @change="handleAvatarUpload"
+                  />
+                </div>
+                <p class="text-caption text-grey mt-2 text-center text-sm-start">
+                  支持 JPG、PNG、WebP 格式，最大 5MB
+                </p>
               </div>
             </div>
 
@@ -244,10 +259,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, inject } from 'vue'
 import { useMutation } from '@/composables/useMutation'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 import { userApi } from '@/api'
+import UserAvatar from '@/components/common/UserAvatar.vue'
+
+// 注入全局 showSnackbar
+const showSnackbar = inject<(message: string, type: string) => void>('showSnackbar')
 
 // 验证规则
 const usernameRules = useValidationRules('username')
@@ -268,7 +287,7 @@ const props = defineProps<{
 
 // Emit
 const emit = defineEmits<{
-  update: [userInfo: typeof props.userInfo]
+  updateAvatar: [avatarUrl: string]
 }>()
 
 // 本地状态
@@ -279,10 +298,65 @@ const showSuccessAlert = ref(false)
 const displayModifyName = ref(false)
 const displayModifyBio = ref(false)
 
+// 头像上传相关
+const fileInput = ref<HTMLInputElement>()
+
+// 使用 useMutation 上传头像（调用新的一体化接口）
+const { execute: uploadAvatar, loading: uploadingAvatar } = useMutation(
+  (file: File) => userApi.updateAvatar(file),
+  {
+    showToast: false,
+  }
+)
+
+// 触发文件选择
+const triggerFileInput = () => {
+  fileInput.value?.click()
+}
+
+// 处理头像上传
+const handleAvatarUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+
+  if (!file) return
+
+  // 验证文件类型
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    showSnackbar?.('只支持 JPG、PNG、WebP 格式的图片', 'error')
+    return
+  }
+
+  // 验证文件大小 (5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    showSnackbar?.('图片大小不能超过 5MB', 'error')
+    return
+  }
+
+  try {
+    // 调用接口：上传图片 + 更新数据库，返回头像地址
+    const avatarUrl = await uploadAvatar(file)
+
+    // 通知父组件更新 profileUser
+    if (avatarUrl) {
+      emit('updateAvatar', avatarUrl)
+    }
+
+    showSnackbar?.('头像更新成功', 'success')
+  } catch (error: any) {
+    console.error('头像上传失败:', error)
+    showSnackbar?.(error.message || '头像上传失败', 'error')
+  } finally {
+    // 清空 input，允许重复选择同一文件
+    if (target) target.value = ''
+  }
+}
+
 // 使用 useMutation 更新用户信息
 const { execute: updateUser, loading: updating } = useMutation(
-  (data: { name: string; biography: string }) =>
-    userApi.updateCurrentUser(data.name, data.biography),
+  (data: { name: string; biography: string; avatar?: string }) =>
+    userApi.updateCurrentUser(data.name, data.biography, data.avatar),
   {
     successMessage: '个人信息已成功保存！',
     showToast: false, // 我们使用自定义的 alert
@@ -291,7 +365,6 @@ const { execute: updateUser, loading: updating } = useMutation(
       setTimeout(() => {
         showSuccessAlert.value = false
       }, 3000)
-      emit('update', localUserInfo.value)
     },
   }
 )
@@ -348,6 +421,18 @@ const onModifyBio = async () => {
   .label-section {
     min-width: 120px;
   }
+}
+
+/* 头像编辑按钮 */
+.position-relative {
+  position: relative;
+}
+
+.avatar-edit-btn {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* 头像边框 */

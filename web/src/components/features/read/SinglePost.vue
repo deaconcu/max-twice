@@ -8,6 +8,8 @@ import { upvoteApi, postApi } from '@/api'
 import { useMutation } from '@/composables'
 import { ObjectType, VoteType } from '@/enums'
 import type { UpvoteStatusResponse } from '@/types/upvote'
+import UserAvatar from '@/components/common/UserAvatar.vue'
+import ImageViewer from '@/components/common/ImageViewer.vue'
 
 interface NodeInfo {
   id: number
@@ -43,6 +45,22 @@ const isOverflow = ref(false)
 const contentRef = ref<HTMLElement | null>(null)
 let mermaidInitialized = false
 let mermaidIdCounter = 0
+
+// 图片查看器
+const imageViewerVisible = ref(false)
+const viewerImageSrc = ref('')
+
+// 处理内容点击事件（图片点击放大）
+const handleContentClick = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  if (target.tagName === 'IMG') {
+    event.preventDefault()
+    event.stopPropagation()
+    const img = target as HTMLImageElement
+    viewerImageSrc.value = img.src
+    imageViewerVisible.value = true
+  }
+}
 
 // PostType 枚举
 const PostType = {
@@ -365,9 +383,12 @@ watch(
         size="small"
         @click="emit('switch-tab', 'list')"
       ></v-btn>
-      <v-avatar size="24" color="grey">
-        <v-icon icon="mdi-account-circle" size="23" color="white"></v-icon>
-      </v-avatar>
+      <UserAvatar
+        :name="posting.creator?.name || '匿名用户'"
+        :avatar-url="posting.creator?.avatar"
+        size="24"
+        rounded="circle"
+      />
       <div class="pl-3 d-flex align-center">
         <span class="text-body-2 font-weight-medium text-grey-darken-3">
           {{ posting.creator?.name || '匿名用户' }}
@@ -435,7 +456,7 @@ watch(
         </router-link>
 
         <!-- 详情模式：普通div -->
-        <div v-else ref="contentRef" class="w-100">
+        <div v-else ref="contentRef" class="w-100" @click="handleContentClick">
           <div class="article-content full-article">
             <div v-html="posting.content"></div>
           </div>
@@ -713,6 +734,9 @@ watch(
         </v-btn>
       </template>
     </v-row>
+
+    <!-- 图片查看器 -->
+    <ImageViewer v-model="imageViewerVisible" :src="viewerImageSrc" />
   </div>
 </template>
 
@@ -843,6 +867,7 @@ watch(
   border-radius: 8px;
   overflow-x: auto;
   margin: 1.5rem 0;
+  max-width: 680px;
 }
 
 .article-content :deep(blockquote) {
@@ -858,6 +883,12 @@ watch(
   height: auto;
   margin: 1.5rem 0;
   border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.article-content :deep(img:hover) {
+  opacity: 0.8;
 }
 
 .article-content :deep(a) {

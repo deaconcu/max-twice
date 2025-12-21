@@ -53,7 +53,9 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
             return user;
 
         } catch (Exception e) {
-            throw USER_NOT_LOGIN.exception();
+            // 未登录时返回 null
+            // 注意：如果方法标注了 @SaCheckLogin，SaInterceptor 会在此之前就抛出异常
+            return null;
         }
     }
 }

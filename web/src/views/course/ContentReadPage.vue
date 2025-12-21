@@ -352,7 +352,7 @@ import ConfigContentsDialog from '@/components/features/read/ConfigContentsDialo
 import CreateDeckDialog from '@/components/features/read/CreateDeckDialog.vue'
 import MemoryCardSidebar from '@/components/features/read/MemoryCardSidebar.vue'
 import DeckDetailDialog from '@/components/features/read/DeckDetailDialog.vue'
-import { pageApi, memoryApi } from '@/api'
+import { pageApi, memoryApi, postApi } from '@/api'
 import type { ReadResponse } from '@/api/modules/page'
 import type { MemoryCardDeck } from '@/types/memory'
 import { useFetch } from '@/composables/useFetch'
@@ -376,6 +376,8 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const isTocHovering = ref(false)
 const drawerOpen = ref(false)
+const loadingMore = ref(false)
+const hasMore = ref(true)
 
 // 关闭drawer
 const closeDrawer = () => {
@@ -425,8 +427,65 @@ const {
     isLearning.value = data.value.learning || false
     // 数据赋值完成后处理数据
     processData()
+    // 检查是否有更多数据
+    hasMore.value = data.value.otherPostings && data.value.otherPostings.length > 0
   },
 })
+
+// 使用第二个 useFetch 加载更多帖子
+const {
+  data: morePosts,
+  loading: loadingMorePosts,
+  execute: loadMorePosts,
+} = useFetch<any[]>({
+  fetchFn: () => {
+    if (!data.value || !data.value.otherPostings || !data.value.node) {
+      return Promise.reject(new Error('No data'))
+    }
+    const lastPosting = data.value.otherPostings[data.value.otherPostings.length - 1]
+    const nodeId = data.value.node.id
+    return postApi.getPosts(undefined, nodeId, lastPosting.score, lastPosting.id)
+  },
+  immediate: false,
+  onDataReady: () => {
+    if (morePosts.value && morePosts.value.length > 0) {
+      // 处理投票类型
+      morePosts.value.forEach((posting: any) => {
+        if (posting.voteType === 0) {
+          posting.voteType = null
+        }
+      })
+      // 追加到现有列表
+      data.value.otherPostings = [...(data.value.otherPostings || []), ...morePosts.value]
+      hasMore.value = true
+    } else {
+      hasMore.value = false
+    }
+  },
+})
+
+// 加载更多数据
+const loadMore = async () => {
+  if (loadingMore.value || !hasMore.value || !data.value || !data.value.otherPostings) return
+
+  const lastPosting = data.value.otherPostings[data.value.otherPostings.length - 1]
+  if (!lastPosting) return
+
+  loadingMore.value = true
+  try {
+    await loadMorePosts()
+
+    if (morePosts.value && morePosts.value.length > 0) {
+      // 成功加载
+    } else {
+      hasMore.value = false
+    }
+  } catch (error) {
+    console.error('Failed to load more posts:', error)
+  } finally {
+    loadingMore.value = false
+  }
+}
 
 // 是否为主课程
 const isMainCourse = computed(() => {
@@ -495,6 +554,15 @@ const processData = () => {
 // 滚动监听
 const handleScroll = () => {
   showFixedBar.value = window.scrollY > 100
+
+  // 检查是否接近页面底部
+  const scrollPosition = window.scrollY + window.innerHeight
+  const pageHeight = document.documentElement.scrollHeight
+  const threshold = 200 // 距离底部200px时触发加载
+
+  if (scrollPosition >= pageHeight - threshold) {
+    loadMore()
+  }
 }
 
 // 切换学习状态

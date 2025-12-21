@@ -130,6 +130,17 @@ public enum ErrorCode {
     RATE_LIMIT_EXCEEDED(2301, "访问过于频繁，请稍后再试"),
     RATE_LIMIT_CONFIG_ERROR(2302, "限流配置错误"),
 
+    // 图片上传相关 24xx
+    FILE_UPLOAD_FAILED(2401, "文件上传失败"),
+    FILE_DELETE_FAILED(2402, "文件删除失败"),
+    FILE_TOO_LARGE(2403, "文件大小超出限制"),
+    FILE_TYPE_NOT_ALLOWED(2404, "不支持的文件类型"),
+    INVALID_IMAGE(2405, "无效的图片文件"),
+    IMAGE_COMPRESSION_FAILED(2406, "图片压缩失败"),
+    UPLOAD_TOO_FREQUENT(2407, "上传过于频繁"),
+    UPLOAD_QUOTA_EXCEEDED(2408, "上传配额已用尽"),
+    IMAGE_DIMENSION_TOO_LARGE(2409, "图片尺寸超出限制"),
+
     // 系统错误 9xxx
     SYSTEM_ERROR(9999, "系统繁忙，请稍后重试"),
     SYSTEM_READONLY_MODE(9010, "系统维护中，暂时无法进行此操作"),

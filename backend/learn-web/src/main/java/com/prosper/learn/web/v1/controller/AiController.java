@@ -1,7 +1,7 @@
 package com.prosper.learn.web.v1.controller;
 
 import com.prosper.learn.application.dto.request.ChatRequest;
-import com.prosper.learn.external.AiService;
+import com.prosper.learn.infrastructure.AiService;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.application.dto.ApiResponse;

@@ -97,10 +97,8 @@ public class ProfessionService {
         return toDTO(professionDOList);
     }
 
-    public List<ProfessionDTO> getListByPage(int page) {
-        validatePageNumber(page);
-        int pageSize = systemProperties.getProfession().getDefaultPageSize();
-        List<ProfessionDO> professionDOList = professionDomainService.listByPage((page - 1) * pageSize, pageSize);
+    public List<ProfessionDTO> searchByKeyword(String keyword) {
+        List<ProfessionDO> professionDOList = professionDomainService.searchByKeyword(keyword);
         return toDTO(professionDOList);
     }
 
@@ -262,10 +260,6 @@ public class ProfessionService {
     }
 
     // ========== Private 辅助方法 ==========
-
-    private void validatePageNumber(int page) {
-        ValidationUtils.require(page > 0, "页码必须大于0");
-    }
 
     private void validateHotProfessionsLimit(int limit) {
         ValidationUtils.require(limit > 0, "限制数量必须大于0");

@@ -1,6 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
+import { useMutation } from '@/composables/useMutation'
+import { postApi } from '@/api'
+import { PostType } from '@/enums'
 import TipTapEditor from '@/components/common/TipTapEditor.vue'
+
+// 注入全局 showSnackbar
+const showSnackbar = inject<(message: string, type: string) => void>('showSnackbar')
 
 interface Props {
   nodeId?: number
@@ -19,7 +25,6 @@ type Emits = (e: 'load-data', data: any[]) => void
 const dialog = defineModel<boolean>({ default: false })
 
 const articleContent = ref('')
-const submitting = ref(false)
 
 // 字符限制
 const MIN_LENGTH = 100
@@ -39,29 +44,30 @@ const isFormValid = computed(() => {
   return contentLength.value >= MIN_LENGTH && contentLength.value <= MAX_LENGTH
 })
 
+// 使用 useMutation 创建文章
+const { execute: createPost, loading: submitting } = useMutation(
+  (data: { nodeId: number; content: string; type: number }) => postApi.createPost(data),
+  {
+    successMessage: '文章发布成功',
+    onSuccess: () => {
+      dialog.value = false
+      articleContent.value = ''
+      emit('load-data', [])
+    },
+  }
+)
+
 // 提交文章
-const submitArticle = () => {
+const submitArticle = async () => {
   if (!isFormValid.value) {
     return
   }
 
-  submitting.value = true
-
-  // Mock 提交
-  setTimeout(() => {
-    console.log('提交文章:', {
-      nodeId: props.nodeId,
-      content: articleContent.value,
-      contentLength: contentLength.value,
-    })
-
-    submitting.value = false
-    dialog.value = false
-    emit('load-data', [])
-
-    // 清空内容
-    articleContent.value = ''
-  }, 500)
+  await createPost({
+    nodeId: props.nodeId,
+    content: articleContent.value,
+    type: PostType.ARTICLE, // 文章
+  })
 }
 
 // 关闭对话框

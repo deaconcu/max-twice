@@ -17,6 +17,7 @@ import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.application.dto.request.UpdateCourseRequest;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
+import com.prosper.learn.user.profile.UserDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -43,6 +44,8 @@ public class CourseService {
     private final ApplicationEventPublisher eventPublisher;
     private final SystemProperties systemProperties;
     private final CourseConverter courseConverter;
+    private final UserCourseService userCourseService;
+    private final UserDomainService userDomainService;
 
 
     // ========== DTO 转换方法 ==========
@@ -51,15 +54,7 @@ public class CourseService {
      * 转换为课程摘要 DTO（列表信息）
      */
     public CourseSummaryDTO toSummaryDTO(CourseDO courseDO) {
-        CourseSummaryDTO dto = courseConverter.toSummaryDTO(courseDO);
-
-        // 检查课程是否被屏蔽或拒绝
-        if (courseDO.getState() == ContentState.REJECTED.value() ||
-            courseDO.getState() == ContentState.BANNED.value()) {
-            dto.setAvailable(false);
-        }
-
-        return dto;
+        return courseConverter.toSummaryDTO(courseDO);
     }
 
     public List<CourseSummaryDTO> toSummaryDTO(List<CourseDO> courseDOList) {
@@ -144,11 +139,140 @@ public class CourseService {
         return courseDTO;
     }
 
+    /**
+     * 转换为课程摘要（含统计和进度）DTO
+     * 用于课程详情页面，包含统计信息和用户个人数据
+     *
+     * @param courseDO 课程实体
+     * @param userId 当前用户ID（未登录时为null）
+     * @return CourseSummaryWithStatsAndProgressDTO
+     */
+    public CourseSummaryWithStatsAndProgressDTO toSummaryWithStatsAndProgressDTO(CourseDO courseDO, Long userId) {
+        if (courseDO == null) return null;
+
+        // 基础转换
+        CourseSummaryWithStatsAndProgressDTO dto = courseConverter.toSummaryWithStatsAndProgressDTO(courseDO);
+
+        // 填充统计信息（learnerCount, subscriptionCount）
+        try {
+            ContentStatsDO stats = contentStatsDataService.getByContent(ContentType.course, courseDO.getId())
+                .orElse(null);
+
+            if (stats != null) {
+                dto.setLearnerCount(stats.getInProgressUsers());
+                dto.setSubscriptionCount(stats.getBookmarks());
+            } else {
+                dto.setLearnerCount(0);
+                dto.setSubscriptionCount(0);
+            }
+        } catch (Exception e) {
+            log.error("获取课程统计信息失败, courseId={}", courseDO.getId(), e);
+            dto.setLearnerCount(0);
+            dto.setSubscriptionCount(0);
+        }
+
+        // 填充用户相关信息（subscribed, progress）
+        if (userId != null) {
+            // 检查订阅状态
+            dto.setSubscribed(userDomainService.isSubscribed(userId, courseDO.getId()));
+
+            // 获取学习进度
+            Integer progress = userCourseService.getCourseProgress(userId, courseDO.getId());
+            dto.setProgress(progress != null ? progress : 0);
+        } else {
+            // 未登录用户
+            dto.setSubscribed(false);
+            dto.setProgress(0);
+        }
+
+        return dto;
+    }
+
+    /**
+     * 批量转换为课程摘要（含统计和进度）DTO
+     * 用于课程列表页面
+     */
+    public List<CourseSummaryWithStatsAndProgressDTO> toSummaryWithStatsAndProgressDTOList(List<CourseDO> courseDOList, Long userId) {
+        if (courseDOList == null || courseDOList.isEmpty()) {
+            return List.of();
+        }
+
+        // 批量查询所有课程的统计信息
+        List<Long> courseIds = courseDOList.stream()
+            .map(CourseDO::getId)
+            .collect(Collectors.toList());
+
+        Map<Long, ContentStatsDO> statsMap = new java.util.HashMap<>();
+        try {
+            for (Long courseId : courseIds) {
+                contentStatsDataService.getByContent(ContentType.course, courseId)
+                    .ifPresent(stats -> statsMap.put(courseId, stats));
+            }
+        } catch (Exception e) {
+            log.error("批量获取课程统计信息失败", e);
+        }
+
+        // 批量查询用户订阅状态（如果已登录）
+        java.util.Set<Long> subscribedCourseIds = new java.util.HashSet<>();
+        if (userId != null) {
+            List<Long> userSubscriptions = userDomainService.getSubscriptionIds(userId);
+            subscribedCourseIds.addAll(userSubscriptions);
+        }
+
+        // 批量查询用户学习进度（如果已登录）
+        Map<Long, Integer> progressMap = new java.util.HashMap<>();
+        if (userId != null) {
+            for (Long courseId : courseIds) {
+                Integer progress = userCourseService.getCourseProgress(userId, courseId);
+                if (progress != null) {
+                    progressMap.put(courseId, progress);
+                }
+            }
+        }
+
+        // 转换每个课程
+        return courseDOList.stream()
+            .map(courseDO -> {
+                CourseSummaryWithStatsAndProgressDTO dto = courseConverter.toSummaryWithStatsAndProgressDTO(courseDO);
+
+                // 填充统计信息
+                ContentStatsDO stats = statsMap.get(courseDO.getId());
+                if (stats != null) {
+                    dto.setLearnerCount(stats.getInProgressUsers());
+                    dto.setSubscriptionCount(stats.getBookmarks());
+                } else {
+                    dto.setLearnerCount(0);
+                    dto.setSubscriptionCount(0);
+                }
+
+                // 填充用户信息
+                if (userId != null) {
+                    dto.setSubscribed(subscribedCourseIds.contains(courseDO.getId()));
+                    dto.setProgress(progressMap.getOrDefault(courseDO.getId(), 0));
+                } else {
+                    dto.setSubscribed(false);
+                    dto.setProgress(0);
+                }
+
+                return dto;
+            })
+            .collect(Collectors.toList());
+    }
+
     // ========== 公共业务方法 ==========
 
     public CourseDetailDTO getCourseById(Long id) {
         CourseDO course = courseDomainService.validateAndGet(id);
         return toDetailDTO(course);
+    }
+
+    /**
+     * 获取课程详情（含统计和用户数据）
+     * 用于课程详情页面
+     */
+    public CourseSummaryWithStatsAndProgressDTO getCourseWithStatsAndProgress(Long id, Long userId) {
+        CourseDO course = courseDomainService.validateAndGet(id);
+        return toSummaryWithStatsAndProgressDTO(course, userId);
     }
 
     public List<CourseBriefDTO> searchCoursesByName(String name) {
@@ -195,6 +319,40 @@ public class CourseService {
         );
     }
 
+    // 新增：根据状态和lastId获取课程列表
+    public List<CourseSummaryWithStatsAndProgressDTO> getListByStateAndLastIdWithStats(ContentState state, Long lastId, Long userId) {
+        List<CourseDO> courseDOList = courseDataService.listByStateAndLastId(state, lastId);
+        return toSummaryWithStatsAndProgressDTOList(courseDOList, userId);
+    }
+
+    // 新增：根据分类获取已批准的课程列表（支持只传主分类，支持分页）
+    public List<CourseSummaryWithStatsAndProgressDTO> getListByCategoryWithStats(Integer mainCategory, Integer subCategory, Long lastId, Long userId) {
+        List<CourseDO> courseDOList;
+
+        // 如果传了子分类，按主分类+子分类查询
+        if (subCategory != null) {
+            courseDOList = courseDataService.listRootByCategory(mainCategory, subCategory, lastId);
+        }
+        // 只传了主分类，按主分类查询
+        else {
+            courseDOList = courseDataService.listRootByMainCategory(mainCategory, lastId);
+        }
+
+        return toSummaryWithStatsAndProgressDTOList(courseDOList, userId);
+    }
+
+    // 新增：根据父课程ID获取子课程列表
+    public List<CourseSummaryWithStatsAndProgressDTO> getListByParentWithStats(long parentId, ContentState state, Long userId) {
+        List<CourseDO> courseDOList;
+        if (state == null) { // null表示获取所有状态
+            courseDOList = courseDataService.listByParent(parentId);
+        } else {
+            courseDOList = courseDataService.listByParentAndState(state, parentId);
+        }
+        return toSummaryWithStatsAndProgressDTOList(courseDOList, userId);
+    }
+
+    // 保留旧方法用于管理后台
     // 新增：根据状态和lastId获取课程列表
     public List<CourseDetailDTO> getListByStateAndLastId(ContentState state, Long lastId) {
         List<CourseDO> courseDOList = courseDataService.listByStateAndLastId(state, lastId);

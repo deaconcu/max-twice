@@ -107,13 +107,14 @@ public interface UserConverter {
     // ==================== 新版语义化方法 ====================
 
     /**
-     * 转换为用户简要 DTO（仅 id + name）
+     * 转换为用户简要 DTO（仅 id + name + avatar）
      * 用途：作者署名、用户引用
      */
     @Named("toBriefDTO")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
     @Mapping(target = "name")
+    @Mapping(target = "avatar")
     UserBriefDTO toBriefDTO(UserDO userDO);
 
     /**
@@ -132,6 +133,7 @@ public interface UserConverter {
     @Mapping(target = "name")
     @Mapping(target = "state")
     @Mapping(target = "biography")
+    @Mapping(target = "avatar")
     UserSummaryDTO toSummaryDTO(UserDO userDO);
 
     /**
@@ -170,6 +172,7 @@ public interface UserConverter {
     @Mapping(target = "name")
     @Mapping(target = "state")
     @Mapping(target = "biography")
+    @Mapping(target = "avatar")
     UserPublicDTO toPublicDTO(UserDO userDO);
 
     /**
@@ -191,6 +194,7 @@ public interface UserConverter {
     @Mapping(target = "email")
     @Mapping(target = "emailValidated")
     @Mapping(target = "biography")
+    @Mapping(target = "avatar")
     @Mapping(target = "state")
     @Mapping(target = "role")
     @Mapping(target = "createdAt")

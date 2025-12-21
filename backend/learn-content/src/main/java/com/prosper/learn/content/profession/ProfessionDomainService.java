@@ -267,10 +267,10 @@ public class ProfessionDomainService {
     }
 
     /**
-     * 分页获取职业列表
+     * 搜索职业（按关键词）
      */
-    public List<ProfessionDO> listByPage(int offset, int limit) {
-        return professionDataService.listByPage(offset, limit);
+    public List<ProfessionDO> searchByKeyword(String keyword) {
+        return professionDataService.searchByKeyword(keyword);
     }
 
     /**

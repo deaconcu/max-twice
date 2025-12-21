@@ -11,51 +11,46 @@ import static com.prosper.learn.shared.domain.Enums.*;
 @Mapper
 public interface ProfessionMapper {
 
-    @Select("SELECT * FROM profession WHERE id = #{id}")
+    @Select("SELECT * FROM profession WHERE id = #{id} AND deleted_at IS NULL")
     ProfessionDO getById(long id);
 
-    @Select("SELECT * FROM profession ORDER BY id DESC LIMIT #{size} OFFSET #{offset}")
-    List<ProfessionDO> listByPage(int offset, int size);
-
     @Select("<script>" +
-            "SELECT * FROM profession WHERE state = #{state} " +
+            "SELECT * FROM profession WHERE state = #{state} AND deleted_at IS NULL " +
             "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
             "ORDER BY id DESC LIMIT 20" +
             "</script>")
     List<ProfessionDO> listByStateAndLastId(byte state, Long lastId);
 
     @Select("<script>" +
-            "SELECT * FROM profession WHERE main_category = #{mainCategory} AND state = " + ContentState.PUBLISHED_VALUE + " " +
+            "SELECT * FROM profession WHERE main_category = #{mainCategory} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
             "<if test='lastId != null'>AND id &gt; #{lastId}</if> " +
             "ORDER BY id ASC LIMIT 20" +
             "</script>")
     List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, Long lastId);
 
     @Select("<script>" +
-            "SELECT * FROM profession WHERE sub_category = #{subCategory} AND state = " + ContentState.PUBLISHED_VALUE + " " +
+            "SELECT * FROM profession WHERE sub_category = #{subCategory} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
             "<if test='lastId != null'>AND id &gt; #{lastId}</if> " +
             "ORDER BY id ASC LIMIT 20" +
             "</script>")
     List<ProfessionDO> listBySubCategoryAndLastId(int subCategory, Long lastId);
 
     @Select("<script>" +
-            "SELECT * FROM profession WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} AND state = " + ContentState.PUBLISHED_VALUE + " " +
+            "SELECT * FROM profession WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
             "<if test='lastId != null'>AND id &gt; #{lastId}</if> " +
             "ORDER BY id ASC LIMIT 20" +
             "</script>")
     List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, Long lastId);
 
-// --注释掉检查 START (2025/12/10 12:03):
-//    @Select("SELECT * FROM profession WHERE INSTR(name, #{name}) > 0 limit 20")
-//    List<ProfessionDO> searchByName(String name);
-// --注释掉检查 STOP (2025/12/10 12:03)
+    @Select("SELECT * FROM profession WHERE state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL AND name LIKE CONCAT('%', #{keyword}, '%') ORDER BY id DESC LIMIT 20")
+    List<ProfessionDO> searchByKeyword(String keyword);
 
-    @Select({"<script>SELECT * FROM profession where id in " +
+    @Select({"<script>SELECT * FROM profession WHERE deleted_at IS NULL AND id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
     List<ProfessionDO> getByIds(Collection<Long> ids);
 
-    @Select({"<script>SELECT * FROM profession where id in " +
+    @Select({"<script>SELECT * FROM profession WHERE deleted_at IS NULL AND id in " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
             "</script>"})
     @MapKey("id")
@@ -76,13 +71,13 @@ public interface ProfessionMapper {
             "WHERE id = #{id}")
     void update(ProfessionDO professionDO);
 
-    @Update("UPDATE profession SET state = #{state}, reason = #{reason} WHERE id = #{id}")
+    @Update("UPDATE profession SET state = #{state}, reason = #{reason} WHERE id = #{id} AND deleted_at IS NULL")
     int updateState(long id, byte state, String reason);
 
-    @Delete("DELETE FROM profession WHERE id = #{id}")
+    @Update("UPDATE profession SET deleted_at = NOW() WHERE id = #{id} AND deleted_at IS NULL")
     void delete(long id);
 
     // 平台统计相关方法
-    @Select("SELECT COUNT(*) FROM profession WHERE state = " + ContentState.PUBLISHED_VALUE)
+    @Select("SELECT COUNT(*) FROM profession WHERE state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL")
     Long countActiveProfessions();
 }

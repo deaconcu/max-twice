@@ -29,10 +29,13 @@
         <!-- 作者和统计信息 -->
         <div class="d-flex align-center justify-space-between text-white">
           <div class="d-flex align-center">
-            <v-avatar size="36" class="mr-2">
-              <v-img v-if="deck.creatorAvatar" :src="deck.creatorAvatar" />
-              <v-icon v-else icon="mdi-account-circle" color="white"></v-icon>
-            </v-avatar>
+            <UserAvatar
+              :name="deck.creatorName || '匿名用户'"
+              :avatar-url="deck.creatorAvatar"
+              size="36"
+              rounded="circle"
+              class="mr-2"
+            />
             <div class="text-subtitle-2 font-weight-medium">
               {{ deck.creatorName || '匿名用户' }}
             </div>
@@ -1081,6 +1084,7 @@ import { memoryApi } from '@/api'
 import { useFetch, useMutation } from '@/composables'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 import { useUserStore } from '@/stores'
+import UserAvatar from '@/components/common/UserAvatar.vue'
 import type { MemoryCardDeck } from '@/types/memory'
 
 interface Props {

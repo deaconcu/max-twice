@@ -112,6 +112,15 @@ public class PostDomainService {
     }
 
     /**
+     * 根据节点和分数获取帖子列表（分页版本）
+     */
+    public List<PostDO> getListByNodeAndScorePaginated(long nodeId, double lastScore, long lastId, int limit, Byte state) {
+        List<PostDO> posts = postDataService.getListByNodeAndScoreAndPaginated(nodeId, lastScore, lastId, limit, state);
+        posts.forEach(this::processIdToName);
+        return posts;
+    }
+
+    /**
      * 根据状态获取帖子列表
      */
     public List<PostDO> getListByState(Byte state, int limit) {

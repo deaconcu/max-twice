@@ -204,6 +204,15 @@ public class UserService {
     }
 
     /**
+     * 更新用户头像
+     */
+    @Transactional
+    public void updateUserAvatar(Long userId, String avatarUrl) {
+        log.info("更新用户 {} 头像: {}", userId, avatarUrl);
+        userDomainService.updateUserAvatar(userId, avatarUrl);
+    }
+
+    /**
      * 用户注册
      */
     @Transactional

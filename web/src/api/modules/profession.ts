@@ -8,16 +8,11 @@ import type { Profession } from '@/types/profession'
  */
 export const professionApi = {
   /**
-   * 分页获取职业列表
-   */
-  getProfessionsByPage(page = 1): Promise<ApiResponse<Profession[]>> {
-    return apiClient.get('/v1/professions', {
-      params: { page },
-    })
-  },
-
-  /**
-   * 按分类获取职业（前端使用）
+   * 获取职业列表
+   * @param lastId 分页游标
+   * @param mainCategory 主分类ID（可选）
+   * @param subCategory 子分类ID（可选）
+   * 不传分类参数时返回所有已发布职业
    */
   getProfessionsByCategory(
     lastId?: number,
@@ -27,14 +22,6 @@ export const professionApi = {
     return apiClient.get('/v1/professions', {
       params: { lastId, mainCategory, subCategory },
     })
-  },
-
-  /**
-   * 获取已审核通过的职业列表
-   */
-  getApprovedProfessions(lastId?: number | null): Promise<ApiResponse<Profession[]>> {
-    const params = lastId !== undefined && lastId !== null ? { lastId } : {}
-    return apiClient.get('/v1/professions/approved', { params })
   },
 
   /**
@@ -52,34 +39,27 @@ export const professionApi = {
   },
 
   /**
-   * 更新职业
+   * 更新职业（管理接口）
    */
   updateProfession(
     id: number,
     professionData: Partial<Profession>
   ): Promise<ApiResponse<Profession>> {
-    return apiClient.put(`/v1/admin/professions/${String(id)}`, professionData)
+    return apiClient.put(`/v1/admin/contents/profession/${String(id)}`, professionData)
   },
 
   /**
-   * 审核职业
+   * 审核职业（管理接口）
    */
   approveProfession(
     id: number,
     action: string,
     reason?: string
   ): Promise<ApiResponse<void>> {
-    return apiClient.post(`/v1/admin/professions/${String(id)}/approve`, {
+    return apiClient.post(`/v1/admin/contents/profession/${String(id)}/operate`, {
       action,
       reason,
     })
-  },
-
-  /**
-   * 删除职业
-   */
-  deleteProfession(id: number): Promise<ApiResponse<void>> {
-    return apiClient.delete(`/v1/professions/${String(id)}`)
   },
 
   /**

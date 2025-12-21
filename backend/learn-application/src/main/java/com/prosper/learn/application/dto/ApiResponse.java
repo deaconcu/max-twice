@@ -62,10 +62,18 @@ public class ApiResponse<T> {
     }
 
     /**
-     * 成功响应 (带数据)
+     * 成功响应 (带数据，用于命令操作)
      */
     public static <T> ApiResponse<T> success(T data) {
         return new ApiResponse<>(200, "操作成功", data);
+    }
+
+    /**
+     * 查询响应 (带数据，不返回message)
+     * 用于查询类接口，只返回 code 和 data
+     */
+    public static <T> ApiResponse<T> query(T data) {
+        return new ApiResponse<>(200, null, data);
     }
 
     // ========== 请求到达业务层，但是发生系统异常或者未知错误 ==========

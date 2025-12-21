@@ -39,44 +39,29 @@ public class ProfessionsController {
     private final ProfessionRankingScheduler professionRankingScheduler;
 
     /**
-     * 分页获取职业
-     * 映射: GET /profession/list?page=1 → GET /api/v1/professions?page=0&size=20
+     * 获取职业列表
+     * 支持按分类筛选和游标分页
+     * 不传分类参数时返回所有已发布职业
      */
     @GetMapping("/professions")
-    public ApiResponse<Object> getProfessionsByPage(
-            @RequestParam(required = false) @Min(value = 0, message = "页码不能小于0") Integer page,
+    public ApiResponse<Object> getProfessions(
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false) @Positive(message = "主分类必须大于0") Integer mainCategory,
             @RequestParam(required = false) @Positive(message = "子分类必须大于0") Integer subCategory) {
 
-        if (page != null) {
-            // 分页获取职业
-            List<ProfessionDTO> professionList = professionService.getListByPage(page);
-            return ApiResponse.success(professionList);
-        } else if (mainCategory != null && subCategory != null) {
-            // 按分类获取（允许 lastId 为 null）
+        if (mainCategory != null && subCategory != null) {
+            // 按主分类+子分类获取
             List<ProfessionDTO> professionList = professionService.getListByCategoryAndLastId(mainCategory, subCategory, lastId);
-            return ApiResponse.success(professionList);
+            return ApiResponse.query(professionList);
         } else if (mainCategory != null) {
-            // 按主分类获取（允许 lastId 为 null）
+            // 按主分类获取
             List<ProfessionDTO> professionList = professionService.getListByMainCategoryAndLastId(mainCategory, lastId);
-            return ApiResponse.success(professionList);
+            return ApiResponse.query(professionList);
         } else {
-            throw new IllegalArgumentException("缺少必要参数");
+            // 获取所有已发布职业
+            List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(ContentState.PUBLISHED, lastId);
+            return ApiResponse.query(professionList);
         }
-    }
-
-    /**
-     * 获取已批准职业
-     * 映射: GET /profession/list/approved → GET /api/v1/professions/approved?lastId=123
-     */
-    @GetMapping("/professions/approved")
-    public ApiResponse<Object> getApprovedProfessions(
-            @RequestParam(required = false)
-            @Min(value = 0, message = "最后ID不能小于0")
-            Long lastId) {
-        List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(ContentState.PUBLISHED, lastId);
-        return ApiResponse.success(professionList);
     }
 
     /**
@@ -89,7 +74,17 @@ public class ProfessionsController {
             @Positive(message = "职业ID必须大于0")
             Long id) {
         ProfessionDTO profession = professionService.getById(id, true);
-        return ApiResponse.success(profession);
+        return ApiResponse.query(profession);
+    }
+
+    /**
+     * 搜索职业
+     */
+    @GetMapping("/professions/search")
+    public ApiResponse<Object> searchProfessions(
+            @RequestParam @NotBlank(message = "搜索关键词不能为空") String keyword) {
+        List<ProfessionDTO> professionList = professionService.searchByKeyword(keyword);
+        return ApiResponse.query(professionList);
     }
 
     /**
@@ -104,23 +99,6 @@ public class ProfessionsController {
         professionService.create(request, currentUser);
         return ApiResponse.success();
     }
-
-
-    /**
-     * 删除职业
-     * 映射: DELETE /profession → DELETE /api/v1/professions/{id}
-     */
-    @DeleteMapping("/professions/{id}")
-    @SaCheckLogin
-    public ApiResponse<Object> deleteProfession(
-            @PathVariable @NotNull(message = "职业ID不能为空")
-            @Positive(message = "职业ID必须大于0")
-            Long id,
-            @CurrentUser UserDO currentUser) {
-        professionService.delete(id, currentUser);
-        return ApiResponse.success("删除成功");
-    }
-
     /**
      * 热门职业
      * 映射: GET /profession/hot → GET /api/v1/professions/hot?limit=10
@@ -133,6 +111,6 @@ public class ProfessionsController {
         log.info("开始获取热门职业，limit: {}", limit);
         List<ProfessionDTO> hotProfessions = professionService.getHotProfessions(limit);
         log.info("成功获取热门职业数量: {}", hotProfessions.size());
-        return ApiResponse.success(hotProfessions);
+        return ApiResponse.query(hotProfessions);
     }
 }

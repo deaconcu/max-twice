@@ -4,6 +4,7 @@ import { adminApi } from '@/api'
 import type { User } from '@/types/user.d'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
+import UserAvatar from '@/components/common/UserAvatar.vue'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
@@ -187,9 +188,13 @@ const updateUserState = async (user: User, ban: boolean): Promise<void> => {
     >
       <v-card flat class="border rounded-lg pa-5" hover>
         <div class="d-flex align-start">
-          <v-avatar size="48" color="grey-lighten-3" class="mr-4">
-            <v-icon icon="mdi-account" color="grey-darken-1" size="28"></v-icon>
-          </v-avatar>
+          <UserAvatar
+            :name="user.name"
+            :avatar-url="user.avatar"
+            size="48"
+            rounded="lg"
+            class="mr-4"
+          />
 
           <div class="flex-grow-1">
             <div class="d-flex align-center justify-space-between mb-2">

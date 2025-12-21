@@ -15,6 +15,7 @@ export interface ReadResponse {
   fixedPostings?: any[]
   otherPostings?: any[]
   lastId?: number
+  lastScore?: number
   toc?: any[]
   tocNodeInfos?: Record<number, any>
   path?: string
@@ -29,18 +30,23 @@ export const pageApi = {
   /**
    * 根据课程路径读取内容
    */
-  readByCoursePath(courseId: number, path: string): Promise<ApiResponse<ReadResponse>> {
+  readByCoursePath(
+    courseId: number,
+    path: string,
+    lastScore?: number,
+    lastId?: number
+  ): Promise<ApiResponse<ReadResponse>> {
     return apiClient.get('/v1/pages/read', {
-      params: { courseId, path },
+      params: { courseId, path, lastScore, lastId },
     })
   },
 
   /**
    * 根据节点ID读取内容
    */
-  readByNode(nodeId: number): Promise<ApiResponse<ReadResponse>> {
+  readByNode(nodeId: number, lastScore?: number, lastId?: number): Promise<ApiResponse<ReadResponse>> {
     return apiClient.get('/v1/pages/read', {
-      params: { nodeId },
+      params: { nodeId, lastScore, lastId },
     })
   },
 

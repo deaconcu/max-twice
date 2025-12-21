@@ -31,4 +31,6 @@ public class ProfessionDO {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    private LocalDateTime deletedAt; // 删除时间，NULL表示未删除（软删除字段）
 }

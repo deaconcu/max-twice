@@ -243,6 +243,51 @@ app:
     roadmap-content-max-length: 5000
     roadmap-description-min-length: 1
     roadmap-description-max-length: 500
+
+# 图片上传配置
+upload:
+  quota:
+    # 最小上传间隔(秒)
+    min-interval: 1
+    # 每分钟限制
+    minute-limit: 20
+    # 每小时限制
+    hour-limit: 100
+    # 每天限制
+    daily-limit: 200
+  file:
+    # 文件大小限制(字节，5MB)
+    max-size: 5242880
+    # 图片尺寸限制(像素)
+    max-dimension: 4096
+    # 允许的文件类型（逗号分隔）
+    allowed-types: image/jpeg,image/png,image/webp
+  compression:
+    # 是否启用压缩
+    enabled: true
+    # 最大宽度
+    max-width: 2048
+    # 最大高度
+    max-height: 2048
+    # 压缩质量(0.0-1.0)
+    quality: 0.85
+    # 输出格式（jpg 原生支持，稳定可靠）
+    format: jpg
+
+# Cloudflare R2配置
+cloudflare:
+  r2:
+    # 账号ID
+    account-id: ${CLOUDFLARE_R2_ACCOUNT_ID:your-account-id}
+    # 访问密钥ID
+    access-key-id: ${CLOUDFLARE_R2_ACCESS_KEY_ID:your-access-key-id}
+    # 访问密钥
+    secret-access-key: ${CLOUDFLARE_R2_SECRET_ACCESS_KEY:your-secret-access-key}
+    # 存储桶名称
+    bucket-name: ${CLOUDFLARE_R2_BUCKET_NAME:maxtwice-images}
+    # 公开域名
+    public-domain: ${CLOUDFLARE_R2_PUBLIC_DOMAIN:https://images.maxtwice.com}
+
   # SRS复习算法配置
   srs:
     algorithm:

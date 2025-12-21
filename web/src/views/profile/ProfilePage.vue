@@ -13,6 +13,7 @@ import { useFetch } from '@/composables/useFetch'
 import { userApi } from '@/api'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import UserAvatar from '@/components/common/UserAvatar.vue'
 import UserInfoTab from '@/components/profile/UserInfoTab.vue'
 import LearningCareersTab from '@/components/profile/LearningCareersTab.vue'
 import LearningCoursesTab from '@/components/profile/LearningCoursesTab.vue'
@@ -73,9 +74,9 @@ onActivated(() => {
   // 如果需要自动刷新，可以在这里触发
 })
 
-// 计算用户信息 - 优先使用获取的用户数据
+// 计算用户信息 - 优先使用 profileUser
 const userInfo = computed(() => {
-  const user = profileUser.value || (isOwnProfile.value ? authStore.user : null)
+  const user = profileUser.value || (isOwnProfile.value ? userStore.currentUser : null)
 
   if (!user) {
     return {
@@ -97,6 +98,16 @@ const userInfo = computed(() => {
     bio: user.biography || '',
   }
 })
+
+// 更新头像
+const handleUpdateAvatar = (avatarUrl: string) => {
+  if (profileUser.value) {
+    profileUser.value = {
+      ...profileUser.value,
+      avatar: avatarUrl,
+    }
+  }
+}
 
 // 统计数据（暂时用默认值，各个Tab自己加载数据）
 const stats = ref({
@@ -143,11 +154,6 @@ watch(activeTab, (newTab) => {
     router.push({ query: { mode: currentMode.value, tab: newTab } })
   }
 })
-
-// 更新用户信息后刷新
-const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
-  await fetchUser()
-}
 </script>
 
 <template>
@@ -160,22 +166,18 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
       <!-- 用户信息卡片 -->
       <v-card rounded="xl" class="profile-header-card mb-6 mb-md-8 no-border" elevation="0">
         <v-card-text class="pa-4 pa-sm-6 pa-md-8">
-          <div class="d-flex flex-column flex-sm-row align-center align-sm-start">
-            <!-- 用户头像 -->
-            <v-avatar
-              :size="$vuetify.display.mobile ? 72 : 96"
-              color="primary"
-              class="mb-4 mb-sm-0 mr-sm-4 mr-md-6"
-              rounded="xl"
-            >
-              <v-icon icon="mdi-account" :size="$vuetify.display.mobile ? 36 : 48" color="white" />
-            </v-avatar>
-
-            <!-- 用户信息 -->
-            <div class="flex-grow-1 text-center text-sm-start w-100">
-              <div
-                class="d-flex flex-column flex-sm-row align-center align-sm-start justify-center justify-sm-start mb-3 ga-3"
-              >
+          <!-- 用户信息 -->
+          <div>
+            <!-- 头像和用户名一行 -->
+            <div class="d-flex align-center mb-3">
+              <UserAvatar
+                :name="userInfo.name"
+                :avatar-url="userInfo.avatar"
+                :size="$vuetify.display.mobile ? 40 : 48"
+                rounded="lg"
+                class="mr-4"
+              />
+              <div class="d-flex align-center flex-wrap ga-3">
                 <h1 class="text-h5 text-md-h4 font-weight-bold text-grey-darken-4">
                   {{ userInfo.name }}
                 </h1>
@@ -184,29 +186,25 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
                   color="grey-darken-2"
                   variant="outlined"
                   rounded="lg"
-                  :size="$vuetify.display.mobile ? 'small' : 'default'"
+                  size="small"
                   @click="activeTab = 'info'"
                 >
-                  <v-icon
-                    icon="mdi-pencil"
-                    :size="$vuetify.display.mobile ? 16 : 18"
-                    class="mr-1 mr-sm-2"
-                  />
+                  <v-icon icon="mdi-pencil" size="16" class="mr-1" />
                   编辑资料
                 </v-btn>
               </div>
+            </div>
 
-              <p class="text-body-2 text-md-body-1 text-grey-darken-2 mb-1 mb-md-2">
-                {{ userInfo.email }}
-              </p>
-              <p class="text-caption text-md-body-2 text-grey mb-3 mb-md-4">
-                加入于 {{ userInfo.joinDate }}
-              </p>
+            <!-- 其他信息靠左 -->
+            <p class="text-body-2 text-md-body-1 text-grey-darken-2 mb-1 mb-md-2">
+              {{ userInfo.email }}
+            </p>
+            <p class="text-caption text-md-body-2 text-grey mb-3 mb-md-4">
+              加入于 {{ userInfo.joinDate }}
+            </p>
 
-              <!-- 统计信息 -->
-              <div
-                class="d-flex align-center justify-center justify-sm-start flex-wrap ga-4 ga-md-8"
-              >
+            <!-- 统计信息 -->
+            <div class="d-flex align-center flex-wrap ga-4 ga-md-8">
                 <!-- 学习者模式统计 -->
                 <template v-if="currentMode === 'learner'">
                   <div class="d-flex align-center">
@@ -326,7 +324,6 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
                 </template>
               </div>
             </div>
-          </div>
         </v-card-text>
       </v-card>
 
@@ -494,7 +491,7 @@ const handleUpdateUserInfo = async (updatedInfo: typeof userInfo.value) => {
 
           <!-- 个人信息 -->
           <v-window-item v-if="isOwnProfile" value="info">
-            <UserInfoTab :user-info="userInfo" @update="handleUpdateUserInfo" />
+            <UserInfoTab :user-info="userInfo" @update-avatar="handleUpdateAvatar" />
           </v-window-item>
         </template>
 

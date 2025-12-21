@@ -57,16 +57,13 @@
                   <div class="d-flex align-start justify-space-between">
                     <!-- 用户头像 -->
                     <div class="d-flex align-center flex-grow-1">
-                      <v-avatar
-                        :color="user.avatarColor"
+                      <UserAvatar
+                        :name="user.name"
+                        :avatar-url="user.avatar"
                         :size="$vuetify.display.mobile ? 48 : 56"
                         rounded="lg"
                         class="mr-3 mr-sm-4 flex-shrink-0"
-                      >
-                        <span class="text-body-2 text-md-h6 font-weight-bold text-white">{{
-                          user.initial
-                        }}</span>
-                      </v-avatar>
+                      />
 
                       <!-- 用户信息 -->
                       <div class="min-w-0">
@@ -125,6 +122,7 @@ import { useMutation } from '@/composables/useMutation'
 import { followApi } from '@/api'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import UserAvatar from '@/components/common/UserAvatar.vue'
 
 const userStore = useUserStore()
 
@@ -165,22 +163,13 @@ const formattedUsers = computed(() => {
   if (!followingUsers.value) return []
 
   return followingUsers.value.map((user) => {
-    // 获取用户名首字母
-    const initial = user.name ? user.name.charAt(0).toUpperCase() : '?'
-
-    // 生成头像颜色
-    const colors = ['blue', 'pink', 'green', 'purple', 'orange', 'teal', 'indigo', 'red']
-    const colorIndex = user.id % colors.length
-    const avatarColor = colors[colorIndex]
-
     return {
       id: user.id,
       name: user.name || '未知用户',
       bio: user.biography || '暂无简介',
+      avatar: user.avatar || '',
       posts: 0, // TODO: 如果需要显示帖子数，需要额外的 API
       followers: 0, // TODO: 如果需要显示粉丝数，需要额外的 API
-      initial,
-      avatarColor,
     }
   })
 })

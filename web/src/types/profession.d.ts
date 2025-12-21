@@ -1,8 +1,6 @@
-import type { ContentState } from '@/enums'
-
 /**
  * 职业相关的类型定义
- * 参考：web-ts/src/types/profession.ts
+ * 参考：backend/learn-application/src/main/java/com/prosper/learn/application/dto/response/ProfessionDTO.java
  */
 
 /**
@@ -16,13 +14,9 @@ export interface Profession {
   skills?: string // 技能要求
   mainCategory?: number // 主分类
   subCategory?: number // 子分类
-  state?: ContentState // 状态：SUBMITTED(1), PUBLISHED(2), REJECTED(3), BANNED(4)
-  reason?: string // 拒绝原因
   icon?: string // 图标
-  creator?: number // 创建者ID
   learnerCount?: number // 学习人数
   createdAt?: string // 创建时间
-  updatedAt?: string // 更新时间
 }
 
 /**

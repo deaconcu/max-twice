@@ -173,6 +173,15 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
         return userMapper.insert(user);
     }
 
+    /**
+     * 更新用户头像并清除缓存
+     */
+    @CacheEvict(value = "users", key = "#userId")
+    public int updateAvatar(Long userId, String avatarUrl) {
+        log.debug("Updating avatar for user {}: {}", userId, avatarUrl);
+        return userMapper.updateAvatar(userId, avatarUrl);
+    }
+
     public List<UserDO> getList(int count) {
         return userMapper.getList(count);
     }

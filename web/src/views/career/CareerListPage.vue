@@ -479,7 +479,7 @@ const loadCareers = async (reset = false) => {
             currentCategory.value!.mainCategory,
             currentCategory.value!.subCategory
           )
-      : () => professionApi.getApprovedProfessions(lastId.value)
+      : () => professionApi.getProfessionsByCategory(lastId.value)
 
     const result = await handleApiCall(fetchFn, {
       showToast: false,
@@ -516,7 +516,7 @@ const loadMore = async () => {
             currentCategory.value!.mainCategory,
             currentCategory.value!.subCategory
           )
-      : () => professionApi.getApprovedProfessions(lastId.value)
+      : () => professionApi.getProfessionsByCategory(lastId.value)
 
     const result = await handleApiCall(fetchFn, {
       showToast: false,

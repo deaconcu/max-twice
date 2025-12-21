@@ -107,6 +107,18 @@ public class UserDomainService {
         log.info("User {} info updated: name={}", userId, name);
     }
 
+    /**
+     * 更新用户头像
+     */
+    @Transactional
+    public void updateUserAvatar(Long userId, String avatarUrl) {
+        int updated = userDataService.updateAvatar(userId, avatarUrl);
+        if (updated == 0) {
+            throw ErrorCode.USER_NOT_FOUND.exception();
+        }
+        log.info("User {} avatar updated: {}", userId, avatarUrl);
+    }
+
     // ========== 用户注册和验证 ==========
 
     /**
@@ -324,6 +336,17 @@ public class UserDomainService {
             return new ArrayList<>();
         }
         return parseSubscriptionIds(userProfileDO.getSubscription());
+    }
+
+    /**
+     * 检查用户是否订阅了指定课程
+     */
+    public boolean isSubscribed(Long userId, Long courseId) {
+        if (userId == null || courseId == null) {
+            return false;
+        }
+        List<Long> subscriptionIds = getSubscriptionIds(userId);
+        return subscriptionIds.contains(courseId);
     }
 
     // ========== 路线图置顶相关方法 ==========

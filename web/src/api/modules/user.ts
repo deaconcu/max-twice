@@ -19,10 +19,28 @@ export const userApi = {
   /**
    * 更新当前用户信息
    */
-  updateCurrentUser(name: string, biography: string): Promise<ApiResponse<User>> {
-    return apiClient.put('/v1/users/current', {
-      name,
-      biography,
+  updateCurrentUser(
+    name: string,
+    biography: string,
+    avatar?: string
+  ): Promise<ApiResponse<User>> {
+    const data: any = { name, biography }
+    if (avatar) {
+      data.avatar = avatar
+    }
+    return apiClient.put('/v1/users/current', data)
+  },
+
+  /**
+   * 更新用户头像
+   */
+  updateAvatar(file: File): Promise<ApiResponse<string>> {
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiClient.post('/v1/users/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     })
   },
 

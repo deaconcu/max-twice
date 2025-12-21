@@ -34,10 +34,13 @@
 
           <div class="d-flex align-center justify-space-between">
             <div class="d-flex align-center">
-              <v-avatar size="28" class="mr-2">
-                <v-img v-if="deck.creatorAvatar" :src="deck.creatorAvatar" />
-                <v-icon v-else icon="mdi-account-circle" size="16" color="grey"></v-icon>
-              </v-avatar>
+              <UserAvatar
+                :name="deck.creatorName || '匿名用户'"
+                :avatar-url="deck.creatorAvatar"
+                size="28"
+                rounded="circle"
+                class="mr-2"
+              />
               <span class="text-body-2 text-grey-darken-2">
                 {{ deck.creatorName || '匿名用户' }}
               </span>
@@ -89,6 +92,7 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { memoryApi } from '@/api'
 import { useMutation } from '@/composables'
 import { useUserStore } from '@/stores'
+import UserAvatar from '@/components/common/UserAvatar.vue'
 import type { MemoryCardDeck } from '@/types/memory'
 
 interface Props {

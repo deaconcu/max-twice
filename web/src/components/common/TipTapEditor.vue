@@ -199,6 +199,7 @@
           @click="toggleLink"
         />
         <v-btn variant="text" size="small" icon="mdi-image" @click="addImage" />
+        <v-btn variant="text" size="small" icon="mdi-upload" title="上传图片" @click="triggerFileUpload" />
         <v-btn
           :color="editor.isActive('code') ? 'primary' : undefined"
           variant="text"
@@ -240,6 +241,15 @@
     <!-- 编辑器内容区 -->
     <EditorContent :editor="editor" class="editor-content" />
 
+    <!-- 隐藏的文件上传input -->
+    <input
+      ref="fileInput"
+      type="file"
+      accept="image/jpeg,image/png,image/webp"
+      style="display: none"
+      @change="handleFileUpload"
+    />
+
     <!-- 链接编辑对话框 -->
     <v-dialog v-model="linkDialog" max-width="500">
       <v-card>
@@ -265,23 +275,64 @@
 
     <!-- 图片编辑对话框 -->
     <v-dialog v-model="imageDialog" max-width="500">
-      <v-card>
-        <v-card-title>{{ t('editor.insertImage') }}</v-card-title>
-        <v-card-text>
+      <v-card rounded="xl">
+        <v-card-title class="d-flex align-center justify-space-between pa-4">
+          <span class="text-h6">插入图片</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="imageDialog = false" />
+        </v-card-title>
+
+        <v-card-text class="pa-4">
+          <!-- 上传按钮 -->
+          <v-btn
+            variant="tonal"
+            color="primary"
+            block
+            class="mb-2"
+            :loading="uploadingImage"
+            @click="triggerFileUpload"
+          >
+            <v-icon icon="mdi-upload" class="mr-2" />
+            上传图片
+          </v-btn>
+
+          <!-- 图片说明 -->
+          <div class="text-caption mb-1 d-flex align-center">
+            <v-icon icon="mdi-information-outline" size="16" color="grey" class="mr-1" />
+            <span class="text-grey mr-1">图片说明:</span>
+            <span class="text-grey">支持 JPG、PNG、WebP 格式，最大 5MB</span>
+          </div>
+
+          <v-divider class="my-4">
+            <span class="text-caption text-grey">或</span>
+          </v-divider>
+
           <v-text-field
             v-model="imageUrl"
-            :label="t('editor.imageUrl')"
-            :placeholder="t('editor.imageUrlPlaceholder')"
+            label="图片链接"
+            placeholder="https://example.com/image.jpg"
             variant="outlined"
             density="comfortable"
-            autofocus
+            hide-details
+            class="mt-2"
             @keyup.enter="setImage"
-          />
+          >
+            <template #prepend-inner>
+              <v-icon icon="mdi-link-variant" size="20" color="grey" />
+            </template>
+          </v-text-field>
         </v-card-text>
-        <v-card-actions>
+
+        <v-card-actions class="pa-4">
           <v-spacer />
-          <v-btn @click="imageDialog = false">{{ t('common.cancel') }}</v-btn>
-          <v-btn color="primary" @click="setImage">{{ t('common.confirm') }}</v-btn>
+          <v-btn variant="tonal" color="grey" @click="imageDialog = false">取消</v-btn>
+          <v-btn
+            color="primary"
+            variant="tonal"
+            :disabled="!imageUrl.trim()"
+            @click="setImage"
+          >
+            插入
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -289,10 +340,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onBeforeUnmount } from 'vue'
+import { ref, watch, computed, onBeforeUnmount, inject } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import { useI18n } from '@/composables/useI18n'
+import { useMutation } from '@/composables/useMutation'
 import { getTipTapExtensions } from '@/config/tiptap'
+import { imageApi } from '@/api'
 
 interface Props {
   modelValue?: string
@@ -316,6 +369,20 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 const { t } = useI18n()
+
+// 注入全局 showSnackbar
+const showSnackbar = inject<(message: string, type: string) => void>('showSnackbar')
+
+// 文件上传相关
+const fileInput = ref<HTMLInputElement>()
+
+// 使用 useMutation 上传图片
+const { execute: uploadImage, loading: uploadingImage } = useMutation(
+  (file: File) => imageApi.upload(file, 'post'),
+  {
+    showToast: false,
+  }
+)
 
 // 编辑器实例
 const editor = useEditor({
@@ -433,6 +500,58 @@ const setImage = () => {
 }
 
 /**
+ * 触发文件上传
+ */
+const triggerFileUpload = () => {
+  fileInput.value?.click()
+}
+
+/**
+ * 处理文件上传
+ */
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+
+  if (!file) return
+
+  // 验证文件类型
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    showSnackbar?.('只支持 JPG、PNG、WebP 格式的图片', 'error')
+    return
+  }
+
+  // 验证文件大小 (5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    showSnackbar?.('图片大小不能超过 5MB', 'error')
+    return
+  }
+
+  try {
+    // 上传图片
+    const response = await uploadImage(file)
+
+    // response 已经是 ImageUploadResponse 对象，不需要 .data
+    if (response && response.fileUrl) {
+      const fileUrl = response.fileUrl
+
+      // 插入图片到编辑器
+      editor.value?.chain().focus().setImage({ src: fileUrl }).run()
+
+      showSnackbar?.('图片上传成功', 'success')
+      imageDialog.value = false
+    }
+  } catch (error: any) {
+    console.error('图片上传失败:', error)
+    showSnackbar?.(error.message || '图片上传失败', 'error')
+  } finally {
+    // 清空 input
+    if (target) target.value = ''
+  }
+}
+
+/**
  * 组件卸载时销毁编辑器
  */
 onBeforeUnmount(() => {
@@ -536,6 +655,13 @@ defineExpose({
   color: rgb(var(--v-theme-on-surface-variant));
   pointer-events: none;
   height: 0;
+}
+
+/* 图片样式 */
+.editor-content :deep(.ProseMirror img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
 }
 
 /* 标题样式 */
@@ -679,5 +805,29 @@ defineExpose({
     padding: 12px;
     min-height: 200px;
   }
+}
+
+/* 图片插入对话框样式 */
+.image-guide {
+  padding: 12px 0;
+  background-color: rgb(var(--v-theme-grey-lighten-5));
+  border-radius: 8px;
+}
+
+.guide-header {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+}
+
+.image-guide p {
+  padding: 0 12px;
+}
+
+.image-hosts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0 12px;
 }
 </style>

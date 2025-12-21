@@ -50,4 +50,11 @@ public class UserSummaryDTO {
      * 何时填充：在需要显示个人信息时填充
      */
     private String biography;
+
+    /**
+     * 用户头像
+     * 说明：用户的头像 URL
+     * 何时填充：在需要显示用户头像时填充
+     */
+    private String avatar;
 }

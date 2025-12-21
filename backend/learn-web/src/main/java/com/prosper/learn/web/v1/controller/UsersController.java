@@ -6,9 +6,11 @@ import com.prosper.learn.application.dto.request.LoginRequest;
 import com.prosper.learn.application.dto.request.RegisterRequest;
 import com.prosper.learn.application.dto.request.UpdateUserRequest;
 import com.prosper.learn.application.dto.request.VerifyEmailRequest;
+import com.prosper.learn.application.dto.response.ImageUploadResponse;
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import com.prosper.learn.application.dto.response.user.UserProfileDTO;
 import com.prosper.learn.application.dto.response.user.UserPublicDTO;
+import com.prosper.learn.application.service.ImageUploadService;
 import com.prosper.learn.application.service.UserService;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
@@ -18,6 +20,7 @@ import com.prosper.learn.application.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -37,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 public class UsersController {
 
     private final UserService userService;
+    private final ImageUploadService imageUploadService;
 
     /**
      * 获取当前用户信息
@@ -60,6 +64,28 @@ public class UsersController {
             @CurrentUser UserDO currentUser) {
         userService.updateCurrentUser(currentUser.getId(), request.getName(), request.getBiography());
         return ApiResponse.success();
+    }
+
+    /**
+     * 更新用户头像
+     * POST /api/v1/users/avatar
+     */
+    @PostMapping("/users/avatar")
+    @SaCheckLogin
+    @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<String> updateAvatar(
+            @RequestParam("file") @NotNull(message = "文件不能为空") MultipartFile file,
+            @CurrentUser UserDO currentUser) {
+        log.info("用户 {} 开始更新头像", currentUser.getId());
+
+        // 上传图片
+        ImageUploadResponse response = imageUploadService.upload(file, currentUser.getId(), "avatar");
+
+        // 更新用户头像
+        userService.updateUserAvatar(currentUser.getId(), response.getFileUrl());
+
+        log.info("用户 {} 头像更新成功: {}", currentUser.getId(), response.getFileUrl());
+        return ApiResponse.success(response.getFileUrl());
     }
 
     /**

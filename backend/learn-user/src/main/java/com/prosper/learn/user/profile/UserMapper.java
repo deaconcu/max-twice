@@ -44,6 +44,9 @@ public interface UserMapper {
             "msg_read_time = #{msgReadTime} where id = #{id}")
     void update(UserDO user);
 
+    @Update("UPDATE user SET avatar = #{avatar} WHERE id = #{userId}")
+    int updateAvatar(@Param("userId") Long userId, @Param("avatar") String avatar);
+
     @Select("SELECT * FROM user ORDER BY id DESC LIMIT #{count}")
     List<UserDO> getList(int count);
 

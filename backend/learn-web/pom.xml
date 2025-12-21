@@ -66,7 +66,7 @@
         </dependency>
         <dependency>
             <groupId>com.prosper</groupId>
-            <artifactId>learn-external</artifactId>
+            <artifactId>learn-infrastructure</artifactId>
             <version>0.0.1</version>
             <scope>compile</scope>
         </dependency>

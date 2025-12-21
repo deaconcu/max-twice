@@ -52,12 +52,4 @@ public class CourseSummaryDTO {
      * 何时填充：始终填充，用于精细化分类筛选
      */
     private Integer subCategory;
-
-    /**
-     * 内容是否可用
-     * true: 内容可用
-     * false: 内容不可用（已删除、已屏蔽、已拒绝等）
-     * null: 默认可用
-     */
-    private Boolean available;
 }
