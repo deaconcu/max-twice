@@ -3,6 +3,7 @@ package com.prosper.learn.application.dto.request;
 import com.prosper.learn.shared.common.validator.ConfigurableSize;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 /**
@@ -31,11 +32,13 @@ public class CreateCourseRequest {
      * 主分类ID
      */
     @NotNull(message = "主分类不能为空")
+    @Positive
     private Integer mainCategory;
 
     /**
      * 子分类ID
      */
     @NotNull(message = "子分类不能为空")
+    @Positive
     private Integer subCategory;
 }

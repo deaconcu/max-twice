@@ -42,6 +42,20 @@ export interface PaginationResponse<T> {
 }
 
 /**
+ * Keyset 分页响应接口（游标分页）
+ */
+export interface KeysetPageResponse<T> {
+  items: T[] // 数据列表
+  hasMore: boolean // 是否有更多数据
+  nextCursor?: {
+    // 下一页游标（当 hasMore=false 时不存在）
+    lastScore?: number // 最后一条记录的分数（可选）
+    lastId?: number // 最后一条记录的ID（可选）
+  }
+}
+
+
+/**
  * HTTP 请求方法
  */
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'

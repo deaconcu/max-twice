@@ -2,7 +2,7 @@ package com.prosper.learn.content.post;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
 import com.prosper.learn.shared.domain.Enums;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -83,7 +83,7 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
             log.debug("Updated post {}", post.getId());
         } catch (Exception e) {
             log.error("Error updating post: {}", post.getId(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
     

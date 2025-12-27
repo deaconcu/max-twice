@@ -1,6 +1,6 @@
 package com.prosper.learn.interaction.follow;
 
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -128,7 +128,7 @@ public class FollowDomainService {
      */
     private void validateUserId(Long userId, String fieldName) {
         if (userId == null || userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception(fieldName + "无效: " + userId);
+            throw StatusCode.INVALID_PARAMETER.exception(fieldName + "无效: " + userId);
         }
     }
 
@@ -144,7 +144,7 @@ public class FollowDomainService {
         validateUserId(followeeId, "被关注者ID");
 
         if (followerId.equals(followeeId)) {
-            throw ErrorCode.INVALID_PARAMETER.exception("不能关注自己");
+            throw StatusCode.INVALID_PARAMETER.exception("不能关注自己");
         }
     }
 }

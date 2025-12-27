@@ -4,7 +4,7 @@ package com.prosper.learn.shared.domain.exception;
  * 错误码枚举
  * 
  * 错误码分段规则：
- * - 0: 成功
+ * - 200: 成功
  * - 1xxx: 业务异常
  *   - 10xx: 通用错误（参数、权限等）
  *   - 11xx: 用户模块错误
@@ -14,25 +14,26 @@ package com.prosper.learn.shared.domain.exception;
  *   - 15xx: 路线图模块错误
  * - 9xxx: 系统错误
  */
-public enum ErrorCode {
+public enum StatusCode {
+
+    // HTTP 响应码
+    OK(200, "成功"),
 
     // 通用业务相关 10xx
-    NOT_SUPPORTED(1001, "不支持的操作类型"),
+    UNKNOWN_EXCEPTION(1001, "系统繁忙，请稍后重试"),
     INVALID_PARAMETER(1002, "参数异常"),
     JSON_PROCESSING_ERROR(1003, "JSON处理异常"),
     INVALID_DATE(1004, "无效的日期"),
     INVALID_DAYS_RANGE(1005, "无效的天数范围"),
     PERMISSION_DENIED(1006, "权限不足"),
     NOT_FOUND(1007, "没有找到对象"),
-    ALREADY_APPROVED(1008, "专业状态已是批准状态，无需重复操作"),
-    ALREADY_REJECTED(1009, "专业状态已是拒绝状态，无需重复操作"),
-    ALREADY_BANNED(1010, "专业状态已是屏蔽状态，无需重复操作"),
     INVALID_OPERATION(1011, "不合法的操作类型"),
     OBJECT_STATE_INVALID(1012, "您访问的对象处于非正常状态，当前无法访问"),
+    OPERATION_FAILED(1013, "操作失败"),
+    NOT_SUPPORTED(1014, "不支持的操作类型"),
 
     // 用户认证相关 11xx
-    USER_NOT_LOGIN(1001, "用户未登录"),
-    USER_NOT_FOUND(1101, "用户不存在"),
+    USER_NOT_LOGIN(1101, "用户未登录"),
     USER_ALREADY_EXISTS(1102, "用户已存在"),
     USER_PASSWORD_WRONG(1103, "密码错误"),
     USER_EMAIL_NOT_VALIDATED(1104, "邮箱未验证"),
@@ -47,6 +48,7 @@ public enum ErrorCode {
     USER_COURSE_ALREADY_SUBSCRIBED(1113, "课程已订阅"),
     USER_COURSE_NOT_SUBSCRIBED(1114, "课程未订阅"),
     USER_BANNED(1115, "用户已被屏蔽"),
+    USER_NOT_FOUND(1116, "用户不存在"),
 
     // 课程相关 12xx
     COURSE_NOT_FOUND(1201, "课程不存在"),
@@ -58,6 +60,7 @@ public enum ErrorCode {
     COURSE_OPERATION_FAILED(1207, "课程操作失败"),
     COURSE_IS_NOT_PUBLISHED(1208, "该课程不是公开发布状态，暂时无法访问"),
     COURSE_ALREADY_BANNED(1209, "课程状态已是被屏蔽状态，无需重复操作"),
+    COURSE_CATEGORY_INVALID(1210, "课程分类无效"),
 
     // 路线图相关 15xx
     ROADMAP_NOT_FOUND(1501, "路线图不存在"),
@@ -92,7 +95,7 @@ public enum ErrorCode {
     POST_CONTENT_PARSE_FAILED(1306, "帖子内容解析失败"),
     NODE_NOT_FOUND(1307, "节点不存在"),
     POST_LIST_QUERY_FAILED(1308, "帖子列表查询失败"),
-    NODE_STATE_INVALID(1309, "节点不是发布状态，暂时无法访问"),
+    NODE_STATE_INVALID(1309, "节点不是发布状态，暂时无法访问或提交内容"),
 
     // 目录管理相关 18xx
     TOC_USER_TOC_NOT_FOUND(1801, "用户目录不存在"),
@@ -114,6 +117,7 @@ public enum ErrorCode {
     PROFESSION_HOT_LIST_FAILED(2106, "获取热门专业失败"),
     PROFESSION_INVALID_LIMIT(2107, "专业查询数量超出限制"),
     PROFESSION_BLOCKED(2108, "该职业已被屏蔽，暂时无法访问"),
+    PROFESSION_CATEGORY_INVALID(2109, "职业分类无效"),
 
     // 记忆卡片相关 22xx
     MEMORY_CARD_DECK_NOT_FOUND(2201, "卡片组不存在"),
@@ -157,7 +161,7 @@ public enum ErrorCode {
     private final int code;
     private final String message;
     
-    ErrorCode(int code, String message) {
+    StatusCode(int code, String message) {
         this.code = code;
         this.message = message;
     }

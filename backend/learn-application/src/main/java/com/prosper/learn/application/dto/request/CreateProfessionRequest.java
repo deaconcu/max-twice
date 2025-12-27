@@ -2,12 +2,13 @@ package com.prosper.learn.application.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
  * 创建职业请求DTO
- * 
+ *
  * @author Claude Code
  */
 @Data
@@ -31,12 +32,14 @@ public class CreateProfessionRequest {
      * 主分类ID
      */
     @NotNull(message = "主分类不能为空")
+    @Positive(message = "主分类ID必须大于0")
     private Integer mainCategory;
 
     /**
      * 子分类ID
      */
     @NotNull(message = "子分类不能为空")
+    @Positive(message = "子分类ID必须大于0")
     private Integer subCategory;
 
     /**

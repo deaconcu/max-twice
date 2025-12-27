@@ -1,12 +1,13 @@
 package com.prosper.learn.application.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
  * 更新职业请求DTO
- * 
+ *
  * @author Claude Code
  */
 @Data
@@ -40,11 +41,13 @@ public class UpdateProfessionRequest {
     /**
      * 主分类ID
      */
+    @Positive(message = "主分类ID必须大于0")
     private Integer mainCategory;
 
     /**
      * 子分类ID
      */
+    @Positive(message = "子分类ID必须大于0")
     private Integer subCategory;
 
     /**

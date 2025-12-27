@@ -8,7 +8,7 @@ import com.prosper.learn.content.toc.CourseTocDataService;
 import com.prosper.learn.content.toc.UserCourseTocDO;
 import com.prosper.learn.content.toc.UserCourseTocDataService;
 import com.prosper.learn.shared.common.utils.Utils;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
@@ -58,13 +58,13 @@ public class TocController {
         // 验证课程存在性
         CourseDO courseDO = courseMapper.getById(courseId);
         if (courseDO == null) {
-            throw ErrorCode.SYSTEM_ERROR.exception();
+            throw StatusCode.SYSTEM_ERROR.exception();
         }
 
         // 获取当前用户课程目录
         UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(currentUser.getId(), courseId);
         if (userCourseTocDO == null) {
-            throw ErrorCode.SYSTEM_ERROR.exception();
+            throw StatusCode.SYSTEM_ERROR.exception();
         }
 
         String toc = userCourseTocDO.getToc();
@@ -73,7 +73,7 @@ public class TocController {
         // 解析并验证索引数组
         String[] indexStrings = indexArray.split(",");
         if (indexStrings.length > 9) {
-            throw ErrorCode.SYSTEM_ERROR.exception();
+            throw StatusCode.SYSTEM_ERROR.exception();
         }
 
         int[] indexes = new int[indexStrings.length];
@@ -81,10 +81,10 @@ public class TocController {
             try {
                 indexes[i] = Integer.parseInt(indexStrings[i]);
                 if (Math.abs(indexes[i]) > tocHashes.length) {
-                    throw ErrorCode.SYSTEM_ERROR.exception();
+                    throw StatusCode.SYSTEM_ERROR.exception();
                 }
             } catch (NumberFormatException e) {
-                throw ErrorCode.SYSTEM_ERROR.exception();
+                throw StatusCode.SYSTEM_ERROR.exception();
             }
         }
 
@@ -136,7 +136,7 @@ public class TocController {
         UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(currentUser.getId(), courseId);
 
         if (userCourseTocDO == null) {
-            throw ErrorCode.SYSTEM_ERROR.exception();
+            throw StatusCode.SYSTEM_ERROR.exception();
         }
 
         return ApiResponse.success(userCourseTocDO.getToc());

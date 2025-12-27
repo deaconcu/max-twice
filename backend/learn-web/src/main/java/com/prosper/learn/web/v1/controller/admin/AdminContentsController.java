@@ -10,7 +10,7 @@ import com.prosper.learn.application.service.NodeService;
 import com.prosper.learn.application.service.PostService;
 import com.prosper.learn.application.service.ProfessionService;
 import com.prosper.learn.application.service.RoadmapService;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.web.v1.annotation.JsonParam;
@@ -105,13 +105,14 @@ public class AdminContentsController {
             case "profession" -> ApiResponse.success(
                 professionService.getListByStateAndLastId(
                     stateValue != null ? ContentState.getByValue(stateValue) : null,
-                    effectiveLastId
+                    effectiveLastId,
+                    DEFAULT_PAGE_SIZE
                 )
             );
             case "node" -> ApiResponse.success(
                 nodeService.listByFilter(stateValue, null, null, null, effectiveLastId)
             );
-            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的内容类型: " + contentType);
+            default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的内容类型: " + contentType);
         };
     }
 
@@ -310,7 +311,7 @@ public class AdminContentsController {
             @RequestParam(required = false, defaultValue = "") String reason) {
         ContentState contentState = ContentState.getByValue(state.byteValue());
         if (contentState == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("无效的状态值: " + state);
+            throw StatusCode.INVALID_PARAMETER.exception("无效的状态值: " + state);
         }
         return ApiResponse.success(nodeService.updateNodeState(id, contentState, reason));
     }
@@ -333,7 +334,7 @@ public class AdminContentsController {
                 try {
                     yield Byte.parseByte(state);
                 } catch (NumberFormatException e) {
-                    throw ErrorCode.INVALID_PARAMETER.exception("无效的状态值: " + state);
+                    throw StatusCode.INVALID_PARAMETER.exception("无效的状态值: " + state);
                 }
             }
         };
@@ -389,7 +390,7 @@ public class AdminContentsController {
             case "comment" -> operateComment(id, action, reason, currentUser);
             case "course" -> operateCourse(id, action, reason, currentUser);
             case "profession" -> operateProfession(id, action, reason, currentUser);
-            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的内容类型: " + contentType);
+            default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的内容类型: " + contentType);
         }
 
         return ApiResponse.success();
@@ -401,21 +402,21 @@ public class AdminContentsController {
         // remove 操作只支持特定内容类型
         if ("remove".equals(action)) {
             if (!"post".equals(contentType) && !"roadmap".equals(contentType) && !"memory_card_deck".equals(contentType)) {
-                throw ErrorCode.INVALID_PARAMETER.exception(contentType + " 不支持下架操作");
+                throw StatusCode.INVALID_PARAMETER.exception(contentType + " 不支持下架操作");
             }
         }
 
         // delete 操作只支持 course 和 profession
         if ("delete".equals(action)) {
             if (!"course".equals(contentType) && !"profession".equals(contentType)) {
-                throw ErrorCode.INVALID_PARAMETER.exception(contentType + " 不支持删除操作");
+                throw StatusCode.INVALID_PARAMETER.exception(contentType + " 不支持删除操作");
             }
         }
 
         // restore 验证
         if ("restore".equals(action)) {
             if ("comment".equals(contentType)) {
-                throw ErrorCode.INVALID_PARAMETER.exception("评论不支持恢复操作");
+                throw StatusCode.INVALID_PARAMETER.exception("评论不支持恢复操作");
             }
         }
     }
@@ -429,7 +430,7 @@ public class AdminContentsController {
             case "remove" -> postService.remove(id, reason, currentUser);
             case "ban" -> postService.ban(id, reason, currentUser);
             case "restore" -> postService.restore(id, reason, currentUser);
-            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
+            default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
         }
     }
 
@@ -440,7 +441,7 @@ public class AdminContentsController {
             case "remove" -> roadmapService.remove(id, reason, currentUser);
             case "ban" -> roadmapService.ban(id, reason, currentUser);
             case "restore" -> roadmapService.restore(id, reason, currentUser);
-            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
+            default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
         }
     }
 
@@ -451,7 +452,7 @@ public class AdminContentsController {
             case "remove" -> memoryCardDeckService.remove(id, currentUser.getId(), reason);
             case "ban" -> memoryCardDeckService.ban(id, currentUser.getId(), reason);
             case "restore" -> memoryCardDeckService.restoreDeck(id, currentUser.getId(), reason);
-            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
+            default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
         }
     }
 
@@ -461,8 +462,8 @@ public class AdminContentsController {
             case "approve" -> commentService.approve(id, currentUser);
             case "reject" -> commentService.reject(id, reason, currentUser);
             case "ban" -> commentService.ban(id, reason, currentUser);
-            case "restore" -> throw ErrorCode.INVALID_PARAMETER.exception("评论不支持恢复操作");
-            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
+            case "restore" -> throw StatusCode.INVALID_PARAMETER.exception("评论不支持恢复操作");
+            default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
         }
     }
 
@@ -473,7 +474,7 @@ public class AdminContentsController {
             case "ban" -> courseService.ban(id, reason, currentUser);
             case "delete" -> courseService.delete(id, currentUser);
             case "restore" -> courseService.approve(id, currentUser);  // restore 等同于 approve
-            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
+            default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
         }
     }
 
@@ -483,7 +484,7 @@ public class AdminContentsController {
             case "reject" -> professionService.reject(id, reason, currentUser);
             case "ban" -> professionService.ban(id, reason, currentUser);
             case "delete" -> professionService.delete(id, currentUser);
-            default -> throw ErrorCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
+            default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
         }
     }
 }

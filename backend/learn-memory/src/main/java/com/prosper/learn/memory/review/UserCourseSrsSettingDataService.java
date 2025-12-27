@@ -1,7 +1,7 @@
 package com.prosper.learn.memory.review;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -81,7 +81,7 @@ public class UserCourseSrsSettingDataService extends AbstractDataService<UserCou
         } catch (Exception e) {
             log.error("Error inserting course setting: userId={}, courseId={}", 
                      setting.getUserId(), setting.getCourseId(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -99,7 +99,7 @@ public class UserCourseSrsSettingDataService extends AbstractDataService<UserCou
             log.debug("Updated course setting {}", setting.getId());
         } catch (Exception e) {
             log.error("Error updating course setting: {}", setting.getId(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 

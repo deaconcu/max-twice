@@ -80,8 +80,7 @@
   "updatedAt": "2025-01-18 15:30:00",
   "creator": {
     "id": 83,
-    "username": "user123",
-    "nickname": "用户昵称",
+    "name": "user123",
     "avatar": "https://example.com/avatar.jpg"
   }
 }
@@ -95,8 +94,7 @@
 **PostWithCreatorDTO 特有字段**：
 - `creator` (UserBriefDTO): 创建者信息
   - `id`: 用户ID
-  - `username`: 用户名
-  - `nickname`: 昵称
+  - `name`: 用户名
   - `avatar`: 头像URL
 
 **使用场景**：
@@ -127,24 +125,16 @@
   "updatedAt": "2025-01-18 15:30:00",
   "creator": {
     "id": 83,
-    "username": "user123",
-    "nickname": "用户昵称",
+    "name": "user123",
     "avatar": "https://example.com/avatar.jpg"
   },
   "node": {
     "id": 10,
     "name": "节点名称",
-    "description": "节点描述",
-    "courseId": 608,
     "course": {
       "id": 608,
       "name": "高三政治"
-    },
-    "state": 1,
-    "commentCount": 20,
-    "createdAt": "2025-01-18 10:00:00",
-    "updatedAt": "2025-01-18 15:30:00",
-    "isCompleted": false
+    }
   }
 }
 ```
@@ -156,21 +146,12 @@
 - `creator`: 创建者信息
 
 **PostDetailDTO 特有字段**：
-- `node` (NodeDTO): 节点信息
+- `node` (NodeWithCourseBriefDTO): 节点信息
   - `id`: 节点ID
   - `name`: 节点名称
-  - `description`: 节点描述
-  - `courseId`: 课程ID
   - `course`: 课程简要信息（CourseBriefDTO）
     - `id`: 课程ID
     - `name`: 课程名称
-  - `children`: 子节点列表（可选）
-  - `creatorId`: 创建者ID
-  - `commentCount`: 评论数
-  - `state`: 节点状态
-  - `createdAt`: 创建时间
-  - `updatedAt`: 更新时间
-  - `isCompleted`: 是否已完成
 
 **使用场景**：
 - 帖子详情页
@@ -200,8 +181,7 @@
   "updatedAt": "2025-01-18 15:30:00",
   "creator": {
     "id": 83,
-    "username": "user123",
-    "nickname": "用户昵称",
+    "name": "user123",
     "avatar": "https://example.com/avatar.jpg"
   },
   "voteType": 1
@@ -217,8 +197,8 @@
 **PostWithVoteDTO 特有字段**：
 - `voteType` (Integer): 投票类型（需要登录）
   - `0`: 未投票
-  - `1`: 点赞
-  - `-1`: 踩
+  - `1`: Twice（双倍点赞）
+  - `2`: Like（喜欢）
 
 **使用场景**：
 - 帖子列表（含用户投票状态）
@@ -249,24 +229,16 @@
   "updatedAt": "2025-01-18 15:30:00",
   "creator": {
     "id": 83,
-    "username": "user123",
-    "nickname": "用户昵称",
+    "name": "user123",
     "avatar": "https://example.com/avatar.jpg"
   },
   "node": {
     "id": 10,
     "name": "节点名称",
-    "description": "节点描述",
-    "courseId": 608,
     "course": {
       "id": 608,
       "name": "高三政治"
-    },
-    "state": 1,
-    "commentCount": 20,
-    "createdAt": "2025-01-18 10:00:00",
-    "updatedAt": "2025-01-18 15:30:00",
-    "isCompleted": false
+    }
   },
   "voteType": 1
 }
@@ -282,8 +254,8 @@
 **PostFullDTO 特有字段**：
 - `voteType` (Integer): 投票类型（需要登录）
   - `0`: 未投票
-  - `1`: 点赞
-  - `-1`: 踩
+  - `1`: Twice（双倍点赞）
+  - `2`: Like（喜欢）
 
 **使用场景**：
 - 用户个人中心的帖子列表
@@ -309,15 +281,17 @@
 
 **参数组合规则**:
 1. **按ID批量查询**: 传 `ids` 参数
+   - 返回 `List<PostWithVoteDTO>` 格式
    - 返回指定ID的帖子列表
-2. **按节点查询**: 传 `nodeId` 参数（可配合分页参数）
+2. **按节点分页查询**: 传 `nodeId` 参数（可配合分页参数）
+   - 返回 `KeysetPageResponse<PostWithVoteDTO>` 格式
    - 返回该节点下的帖子列表，按分数排序
-3. **分页查询**: 传 `lastScore` 和 `lastId`
-   - 使用 Keyset 分页方式，性能优于 offset
 
-**返回类型**: `List<PostWithVoteDTO>`
+**返回类型**:
+- 按 IDs 查询: `List<PostWithVoteDTO>`
+- 按节点查询: `KeysetPageResponse<PostWithVoteDTO>`
 
-**返回示例**:
+**返回示例 - 按 IDs 查询**:
 ```json
 {
   "code": 200,
@@ -339,8 +313,7 @@
       "updatedAt": "2025-01-18 15:30:00",
       "creator": {
         "id": 83,
-        "username": "user123",
-        "nickname": "用户昵称",
+        "name": "user123",
         "avatar": "https://example.com/avatar.jpg"
       },
       "voteType": 1
@@ -349,22 +322,72 @@
 }
 ```
 
+**返回示例 - 按节点分页查询**:
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "content": "帖子内容...",
+        "nodeId": 10,
+        "creatorId": 83,
+        "type": 2,
+        "twice": 5,
+        "helpful": 10,
+        "commentCount": 15,
+        "viewCount": 100,
+        "state": 1,
+        "score": 95.5,
+        "createdAt": "2025-01-18 10:00:00",
+        "updatedAt": "2025-01-18 15:30:00",
+        "creator": {
+          "id": 83,
+          "name": "user123",
+          "avatar": "https://example.com/avatar.jpg"
+        },
+        "voteType": 1
+      }
+    ],
+    "hasMore": true,
+    "nextCursor": {
+      "lastScore": 95.5,
+      "lastId": 1
+    }
+  }
+}
+```
+
+**KeysetPageResponse 字段说明**:
+- `items` (List): 帖子列表
+- `hasMore` (Boolean): 是否有更多数据
+- `nextCursor` (Object): 下一页游标信息
+  - `lastScore` (Double): 最后一条记录的分数
+  - `lastId` (Long): 最后一条记录的ID
+
 **前端调用**:
 ```typescript
-// API 调用
-postApi.getPosts(ids?, nodeId?, lastScore?, lastPostingId?)
-
-// 实际使用 (NodePostsPage.vue:120)
-const { data: posts, execute: loadPosts } = useFetch<Post[]>({
-  fetchFn: () => postApi.getPosts(undefined, nodeId.value, lastScore.value, lastId.value),
+// 按 IDs 批量查询
+const { data: posts } = useFetch<Post[]>({
+  fetchFn: () => postApi.getPosts([1, 2, 3]),
   immediate: true,
   defaultValue: []
 })
+
+// 按节点分页查询 (NodePostsPage.vue:245)
+const { data: response } = useFetch<KeysetPageResponse<Post>>({
+  fetchFn: () => postApi.getNodePosts(nodeId.value, lastScore.value, lastId.value),
+  immediate: true
+})
+const posts = response.items
+const hasMore = response.hasMore
 ```
 
 **使用场景**:
-- `NodePostsPage.vue` - 节点帖子列表页
-- 需要显示用户投票状态的帖子列表
+- `NodePostsPage.vue` - 节点帖子列表页（分页查询）
+- 批量获取指定帖子（IDs 查询）
 
 ---
 
@@ -625,64 +648,7 @@ const { data: post } = useFetch<Post>({
 
 ---
 
-## 6. 获取节点帖子列表
-
-**接口路径**: `GET /api/v1/nodes/{nodeId}/posts`
-
-**是否需要登录**: 否
-
-**路径参数**:
-| 参数名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
-| nodeId | Long | 是 | 节点ID，必须大于0 |
-
-**返回类型**: `List<PostSummaryDTO>`
-
-**返回示例**:
-```json
-{
-  "code": 200,
-  "message": "操作成功",
-  "data": [
-    {
-      "id": 1,
-      "content": "帖子内容...",
-      "nodeId": 10,
-      "creatorId": 83,
-      "type": 2,
-      "twice": 5,
-      "helpful": 10,
-      "commentCount": 15,
-      "viewCount": 100,
-      "state": 1,
-      "score": 95.5,
-      "createdAt": "2025-01-18 10:00:00",
-      "updatedAt": "2025-01-18 15:30:00"
-    }
-  ]
-}
-```
-
-**前端调用**:
-```typescript
-// API 调用
-postApi.getNodePosts(nodeId)
-
-// 实际使用
-const { data: posts } = useFetch<Post[]>({
-  fetchFn: () => postApi.getNodePosts(nodeId.value),
-  immediate: true,
-  defaultValue: []
-})
-```
-
-**使用场景**:
-- 节点详情页显示该节点下的所有帖子
-- 不需要分页的简单列表场景
-
----
-
-## 7. 获取用户帖子列表
+## 6. 获取用户帖子列表
 
 **接口路径**: `GET /api/v1/users/{userId}/posts`
 
@@ -704,64 +670,76 @@ const { data: posts } = useFetch<Post[]>({
 - 用于公开展示用户的发布内容
 - 不显示待审核、已拒绝等状态的帖子
 
-**返回类型**: `List<PostFullDTO>`
+**返回类型**: `KeysetPageResponse<PostFullDTO>`
 
 **返回示例**:
 ```json
 {
   "code": 200,
   "message": "操作成功",
-  "data": [
-    {
-      "id": 1,
-      "content": "帖子内容...",
-      "nodeId": 10,
-      "creatorId": 83,
-      "type": 2,
-      "twice": 5,
-      "helpful": 10,
-      "commentCount": 15,
-      "viewCount": 100,
-      "state": 1,
-      "score": 95.5,
-      "createdAt": "2025-01-18 10:00:00",
-      "updatedAt": "2025-01-18 15:30:00",
-      "creator": {
-        "id": 83,
-        "username": "user123",
-        "nickname": "用户昵称",
-        "avatar": "https://example.com/avatar.jpg"
-      },
-      "node": {
-        "id": 10,
-        "name": "节点名称",
-        "courseId": 608,
-        "course": {
-          "id": 608,
-          "name": "高三政治"
-        }
-      },
-      "voteType": 0
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "content": "帖子内容...",
+        "nodeId": 10,
+        "creatorId": 83,
+        "type": 2,
+        "twice": 5,
+        "helpful": 10,
+        "commentCount": 15,
+        "viewCount": 100,
+        "state": 1,
+        "score": 95.5,
+        "createdAt": "2025-01-18 10:00:00",
+        "updatedAt": "2025-01-18 15:30:00",
+        "creator": {
+          "id": 83,
+          "name": "user123",
+          "avatar": "https://example.com/avatar.jpg"
+        },
+        "node": {
+          "id": 10,
+          "name": "节点名称",
+          "course": {
+            "id": 608,
+            "name": "高三政治"
+          }
+        },
+        "voteType": 0
+      }
+    ],
+    "hasMore": true,
+    "nextCursor": {
+      "lastId": 1
     }
-  ]
+  }
 }
 ```
+
+**KeysetPageResponse 字段说明**:
+- `items` (List): 帖子列表
+- `hasMore` (Boolean): 是否有更多数据
+- `nextCursor` (Object): 下一页游标信息（当 hasMore=false 时不出现）
+  - `lastScore` (Double): 最后一条记录的分数（用户帖子列表不使用分数排序，不出现）
+  - `lastId` (Long): 最后一条记录的ID
 
 **前端调用**:
 ```typescript
 // 获取用户文章
-const { data: articles } = useFetch<Post[]>({
-  fetchFn: () => postApi.getUserPosts(userId, undefined, 2),
-  immediate: true,
-  defaultValue: []
+const { data: response } = useFetch<KeysetPageResponse<Post>>({
+  fetchFn: () => postApi.getUserPosts(userId, lastId.value, 2),
+  immediate: true
 })
+const articles = response.items
+const hasMore = response.hasMore
 
 // 获取用户目录
-const { data: catalogs } = useFetch<Post[]>({
-  fetchFn: () => postApi.getUserPosts(userId, undefined, 1),
-  immediate: true,
-  defaultValue: []
+const { data: response } = useFetch<KeysetPageResponse<Post>>({
+  fetchFn: () => postApi.getUserPosts(userId, lastId.value, 1),
+  immediate: true
 })
+const catalogs = response.items
 ```
 
 **使用场景**:
@@ -771,7 +749,7 @@ const { data: catalogs } = useFetch<Post[]>({
 
 ---
 
-## 8. 获取当前用户所有状态的帖子
+## 7. 获取当前用户所有状态的帖子
 
 **接口路径**: `GET /api/v1/users/me/posts`
 
@@ -813,14 +791,12 @@ const { data: catalogs } = useFetch<Post[]>({
         "updatedAt": "2025-01-18 15:30:00",
         "creator": {
           "id": 83,
-          "username": "user123",
-          "nickname": "用户昵称",
+          "name": "user123",
           "avatar": "https://example.com/avatar.jpg"
         },
         "node": {
           "id": 10,
           "name": "节点名称",
-          "courseId": 608,
           "course": {
             "id": 608,
             "name": "高三政治"
@@ -830,7 +806,9 @@ const { data: catalogs } = useFetch<Post[]>({
       }
     ],
     "hasMore": true,
-    "nextCursor": "2"
+    "nextCursor": {
+      "lastId": 2
+    }
   }
 }
 ```
@@ -838,7 +816,9 @@ const { data: catalogs } = useFetch<Post[]>({
 **KeysetPageResponse 字段说明**:
 - `items` (List): 帖子列表
 - `hasMore` (Boolean): 是否有更多数据
-- `nextCursor` (String): 下一页的游标值（lastId）
+- `nextCursor` (Object): 下一页游标信息（当 hasMore=false 时不出现）
+  - `lastScore` (Double): 最后一条记录的分数（用户帖子列表不使用分数排序，不出现）
+  - `lastId` (Long): 最后一条记录的ID
 
 **前端调用**:
 ```typescript

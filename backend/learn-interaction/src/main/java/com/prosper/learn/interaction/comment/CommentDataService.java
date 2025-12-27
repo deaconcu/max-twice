@@ -2,7 +2,7 @@ package com.prosper.learn.interaction.comment;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
 import com.prosper.learn.shared.domain.Enums;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -85,7 +85,7 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
             log.debug("Updated comment {}", comment.getId());
         } catch (Exception e) {
             log.error("Error updating comment: {}", comment.getId(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
     

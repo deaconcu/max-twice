@@ -3,7 +3,7 @@ package com.prosper.learn.analytics.stats.service;
 import com.prosper.learn.shared.common.constants.RedisStatsConstants;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.BusinessException;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -51,7 +51,7 @@ public class RedisStatsDomainService {
      */
     private void validateArticleId(long articleId) {
         if (articleId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("文章ID无效: " + articleId);
+            throw StatusCode.INVALID_PARAMETER.exception("文章ID无效: " + articleId);
         }
     }
     
@@ -63,7 +63,7 @@ public class RedisStatsDomainService {
      */
     private void validateUserId(long userId) {
         if (userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
+            throw StatusCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
         }
     }
     
@@ -75,10 +75,10 @@ public class RedisStatsDomainService {
      */
     private void validateVoteType(Enums.VoteType voteType) {
         if (voteType == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("点赞类型不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("点赞类型不能为空");
         }
         if (voteType != Enums.VoteType.twice && voteType != Enums.VoteType.like) {
-            throw ErrorCode.INVALID_PARAMETER.exception("无效的点赞类型: " + voteType);
+            throw StatusCode.INVALID_PARAMETER.exception("无效的点赞类型: " + voteType);
         }
     }
     
@@ -166,7 +166,7 @@ public class RedisStatsDomainService {
         } catch (Exception e) {
             log.error("{}失败: contentType={}, contentId={}, userId={}, statType={}",
                     operation, contentType, contentId, userId, statType, e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -334,10 +334,10 @@ public class RedisStatsDomainService {
     public void removeComment(Long articleId, Long userId) {
         // 参数类型转换和验证
         if (articleId == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("文章ID不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("文章ID不能为空");
         }
         if (userId == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户ID不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("用户ID不能为空");
         }
         
         validateArticleId(articleId);

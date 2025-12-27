@@ -7,7 +7,7 @@ import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyMapper;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyDO;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.shared.domain.Enums;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -83,7 +83,7 @@ public class ScoreCalculationDomainService {
 
         } catch (Exception e) {
             log.error("计算内容分数失败, objectId: {}, contentType: {}", objectId, contentType, e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -116,7 +116,7 @@ public class ScoreCalculationDomainService {
 
         } catch (Exception e) {
             log.error("计算评论分数失败, commentId: {}", commentId, e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -148,7 +148,7 @@ public class ScoreCalculationDomainService {
 
         } catch (Exception e) {
             log.error("计算卡片组分数失败, deckId: {}", deckId, e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 

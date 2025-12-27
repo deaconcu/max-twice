@@ -1,7 +1,7 @@
 package com.prosper.learn.memory.deck;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -80,7 +80,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
             return memoryCardDeckMapper.insert(deck);
         } catch (Exception e) {
             log.error("Error inserting deck: {}", deck.getTitle(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -98,7 +98,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
             log.debug("Updated deck {}", deck.getId());
         } catch (Exception e) {
             log.error("Error updating deck: {}", deck.getId(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -112,7 +112,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
             return result > 0;
         } catch (Exception e) {
             log.error("Error updating deck audit status: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -126,7 +126,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
             return result > 0;
         } catch (Exception e) {
             log.error("Error updating deck score: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -140,7 +140,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
             return result > 0;
         } catch (Exception e) {
             log.error("Error updating deck card count: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -154,7 +154,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
             return result > 0;
         } catch (Exception e) {
             log.error("Error updating deck state: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -168,7 +168,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
             return result > 0;
         } catch (Exception e) {
             log.error("Error incrementing card count and setting state: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -182,7 +182,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
             return result > 0;
         } catch (Exception e) {
             log.error("Error incrementing card count, setting state and incrementing version: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -196,7 +196,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
             return result > 0;
         } catch (Exception e) {
             log.error("Error decrementing card count: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -210,7 +210,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
             return result > 0;
         } catch (Exception e) {
             log.error("Error decrementing card count and incrementing version: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -224,7 +224,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
             return result > 0;
         } catch (Exception e) {
             log.error("Error updating state and incrementing version: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 

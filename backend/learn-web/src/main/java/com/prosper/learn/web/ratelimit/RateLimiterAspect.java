@@ -2,7 +2,7 @@ package com.prosper.learn.web.ratelimit;
 
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.stp.StpUtil;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import io.github.bucket4j.*;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
 import lombok.extern.slf4j.Slf4j;
@@ -81,7 +81,7 @@ public class RateLimiterAspect {
             return joinPoint.proceed();
         } else {
             log.warn("Rate limit exceeded - key: {}, method: {}", key, joinPoint.getSignature().toShortString());
-            throw ErrorCode.RATE_LIMIT_EXCEEDED.exception();
+            throw StatusCode.RATE_LIMIT_EXCEEDED.exception();
         }
     }
 
@@ -98,7 +98,7 @@ public class RateLimiterAspect {
             case IP:
                 ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
                 if (attributes == null) {
-                    throw ErrorCode.RATE_LIMIT_CONFIG_ERROR.exception("IP 限流类型只能用于 HTTP 请求上下文");
+                    throw StatusCode.RATE_LIMIT_CONFIG_ERROR.exception("IP 限流类型只能用于 HTTP 请求上下文");
                 }
                 HttpServletRequest request = attributes.getRequest();
                 String ip = Optional.ofNullable(request.getHeader("X-Forwarded-For"))

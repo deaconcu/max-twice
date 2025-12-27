@@ -1,7 +1,7 @@
 package com.prosper.learn.user.profile;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -97,11 +97,11 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
      */
     public UserDO validateAndGetByName(String name) {
         if (name == null || name.trim().isEmpty()) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
         }
         UserDO userDO = getByName(name);
         if (userDO == null) {
-            throw ErrorCode.USER_NOT_FOUND.exception();
+            throw StatusCode.USER_NOT_FOUND.exception();
         }
         return userDO;
     }

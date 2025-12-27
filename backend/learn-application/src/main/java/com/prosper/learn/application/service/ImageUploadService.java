@@ -9,7 +9,7 @@ import com.prosper.learn.infrastructure.image.ImageQuotaService;
 import com.prosper.learn.infrastructure.image.ImageUploadDO;
 import com.prosper.learn.infrastructure.image.ImageUploadDataService;
 import com.prosper.learn.infrastructure.image.R2Service;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -114,7 +114,7 @@ public class ImageUploadService {
 
         } catch (Exception e) {
             log.error("图片上传失败", e);
-            throw ErrorCode.FILE_UPLOAD_FAILED.exception("图片上传失败：" + e.getMessage());
+            throw StatusCode.FILE_UPLOAD_FAILED.exception("图片上传失败：" + e.getMessage());
         }
     }
 
@@ -149,11 +149,11 @@ public class ImageUploadService {
     public void delete(String fileUrl, Long userId) {
         ImageUploadDO imageUpload = imageUploadDataService.getByFileUrl(fileUrl);
         if (imageUpload == null) {
-            throw ErrorCode.NOT_FOUND.exception("图片不存在");
+            throw StatusCode.NOT_FOUND.exception("图片不存在");
         }
 
         if (!imageUpload.getUserId().equals(userId)) {
-            throw ErrorCode.PERMISSION_DENIED.exception("无权删除该图片");
+            throw StatusCode.PERMISSION_DENIED.exception("无权删除该图片");
         }
 
         // 删除R2文件
@@ -226,18 +226,18 @@ public class ImageUploadService {
      */
     private void validateFile(MultipartFile file) {
         if (file.isEmpty()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("文件不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("文件不能为空");
         }
 
         // 检查文件大小
         if (file.getSize() > maxFileSize) {
-            throw ErrorCode.FILE_TOO_LARGE.exception("文件大小不能超过" + (maxFileSize / 1024 / 1024) + "MB");
+            throw StatusCode.FILE_TOO_LARGE.exception("文件大小不能超过" + (maxFileSize / 1024 / 1024) + "MB");
         }
 
         // 检查文件类型
         String contentType = file.getContentType();
         if (contentType == null || !Arrays.asList(allowedTypes).contains(contentType)) {
-            throw ErrorCode.FILE_TYPE_NOT_ALLOWED.exception("只支持JPG、PNG、WebP格式");
+            throw StatusCode.FILE_TYPE_NOT_ALLOWED.exception("只支持JPG、PNG、WebP格式");
         }
     }
 
@@ -257,7 +257,7 @@ public class ImageUploadService {
             case "roadmap":
                 return "roadmaps";
             default:
-                throw ErrorCode.INVALID_PARAMETER.exception("不支持的引用类型：" + refType);
+                throw StatusCode.INVALID_PARAMETER.exception("不支持的引用类型：" + refType);
         }
     }
 

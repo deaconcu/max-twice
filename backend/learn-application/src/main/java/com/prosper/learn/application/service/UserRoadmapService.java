@@ -1,7 +1,5 @@
 package com.prosper.learn.application.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.application.converter.ProfessionConverter;
 import com.prosper.learn.application.converter.RoadmapConverter;
 import com.prosper.learn.application.converter.UserConverter;
@@ -15,18 +13,13 @@ import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.learning.enrollment.UserRoadmapDO;
 import com.prosper.learn.learning.enrollment.UserRoadmapDataService;
 import com.prosper.learn.learning.enrollment.UserRoadmapDomainService;
-import com.prosper.learn.shared.domain.Enums;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
-import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
-import com.prosper.learn.shared.domain.event.user.learning.LearningCompletedEvent;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -152,7 +145,7 @@ public class UserRoadmapService {
      */
     private void validateUserId(Long userId) {
         if (userId == null || userId <= 0) {
-            throw ErrorCode.USER_NOT_FOUND.exception();
+            throw StatusCode.USER_NOT_FOUND.exception();
         }
     }
 
@@ -161,7 +154,7 @@ public class UserRoadmapService {
      */
     private void validateRoadmapId(Long roadmapId) {
         if (roadmapId == null || roadmapId <= 0) {
-            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+            throw StatusCode.ROADMAP_NOT_FOUND.exception();
         }
     }
 

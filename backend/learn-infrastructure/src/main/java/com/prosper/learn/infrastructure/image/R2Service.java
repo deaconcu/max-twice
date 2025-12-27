@@ -1,6 +1,6 @@
 package com.prosper.learn.infrastructure.image;
 
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -56,10 +56,10 @@ public class R2Service {
 
         } catch (S3Exception e) {
             log.error("R2上传失败", e);
-            throw ErrorCode.FILE_UPLOAD_FAILED.exception("上传失败: " + e.getMessage());
+            throw StatusCode.FILE_UPLOAD_FAILED.exception("上传失败: " + e.getMessage());
         } catch (Exception e) {
             log.error("文件上传异常", e);
-            throw ErrorCode.FILE_UPLOAD_FAILED.exception("上传失败");
+            throw StatusCode.FILE_UPLOAD_FAILED.exception("上传失败");
         }
     }
 
@@ -86,10 +86,10 @@ public class R2Service {
 
         } catch (S3Exception e) {
             log.error("R2删除失败: {}", fileUrl, e);
-            throw ErrorCode.FILE_DELETE_FAILED.exception("删除失败: " + e.getMessage());
+            throw StatusCode.FILE_DELETE_FAILED.exception("删除失败: " + e.getMessage());
         } catch (Exception e) {
             log.error("文件删除异常: {}", fileUrl, e);
-            throw ErrorCode.FILE_DELETE_FAILED.exception("删除失败");
+            throw StatusCode.FILE_DELETE_FAILED.exception("删除失败");
         }
     }
 

@@ -10,15 +10,11 @@ import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.learning.enrollment.UserCourseDataService;
 import com.prosper.learn.learning.enrollment.UserCourseDomainService;
-import com.prosper.learn.shared.domain.Enums;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
-import com.prosper.learn.shared.common.utils.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;

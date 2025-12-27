@@ -3,7 +3,7 @@ package com.prosper.learn.memory.bank;
 import com.prosper.learn.memory.card.MemoryCardDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.memory.review.*;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -98,7 +98,7 @@ public class MemoryBankDomainService {
         // 获取现有设置
         UserCourseSrsSettingDO existingSetting = courseSrsSettingDataService.getByUserAndCourse(userId, courseId);
         if (existingSetting == null) {
-            throw ErrorCode.MEMORY_BANK_COURSE_NOT_FOUND.exception("课程设置不存在");
+            throw StatusCode.MEMORY_BANK_COURSE_NOT_FOUND.exception("课程设置不存在");
         }
 
         // 更新设置
@@ -126,7 +126,7 @@ public class MemoryBankDomainService {
         // 验证业务逻辑 - 课程设置存在
         UserCourseSrsSettingDO courseSetting = courseSrsSettingDataService.getByUserAndCourse(userId, courseId);
         if (courseSetting == null) {
-            throw ErrorCode.MEMORY_BANK_COURSE_NOT_FOUND.exception("课程设置不存在");
+            throw StatusCode.MEMORY_BANK_COURSE_NOT_FOUND.exception("课程设置不存在");
         }
 
         if (cardIds != null && !cardIds.isEmpty()) {

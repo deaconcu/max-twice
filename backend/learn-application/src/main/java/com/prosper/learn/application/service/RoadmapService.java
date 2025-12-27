@@ -1,6 +1,5 @@
 package com.prosper.learn.application.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.application.converter.ProfessionConverter;
@@ -20,13 +19,12 @@ import com.prosper.learn.interaction.upvote.UpvoteDomainService;
 import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.learning.enrollment.UserCourseDataService;
 import com.prosper.learn.learning.enrollment.UserRoadmapDataService;
-import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRemovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRestoredEvent;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
@@ -214,7 +212,7 @@ public class RoadmapService {
             return domainService.parseContentToGraphFormat(content, courseNames, courseProgress);
         } catch (Exception e) {
             log.error("内容解析为图形格式失败", e);
-            throw ErrorCode.JSON_PROCESSING_ERROR.exception(e);
+            throw StatusCode.JSON_PROCESSING_ERROR.exception(e);
         }
     }
 
@@ -332,7 +330,7 @@ public class RoadmapService {
 
         // 验证权限：只能删除自己创建的路线图，除非是管理员
         if (!roadmapDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(UserRole.ADMIN)) {
-            throw ErrorCode.PERMISSION_DENIED.exception();
+            throw StatusCode.PERMISSION_DENIED.exception();
         }
 
         // 委托给 DomainService
@@ -348,14 +346,14 @@ public class RoadmapService {
         validateContent(content);
 
         if (systemProperties.getRoadmap().isEnableContentValidation() && !domainService.isValidContentFormat(content)) {
-            throw ErrorCode.ROADMAP_CONTENT_INVALID.exception();
+            throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
         }
 
         RoadmapDO roadmapDO = roadmapDataService.validateAndGet(id);
 
         // 验证权限：只有所有者或管理员可以修改
         if (!roadmapDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(UserRole.ADMIN)) {
-            throw ErrorCode.PERMISSION_DENIED.exception();
+            throw StatusCode.PERMISSION_DENIED.exception();
         }
 
         // 委托给 DomainService
@@ -376,7 +374,7 @@ public class RoadmapService {
         userDataService.validateExists(userId);
 
         if (systemProperties.getRoadmap().isEnableContentValidation() && !domainService.isValidContentFormat(content)) {
-            throw ErrorCode.ROADMAP_CONTENT_INVALID.exception();
+            throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
         }
 
         // 委托给 DomainService
@@ -393,7 +391,7 @@ public class RoadmapService {
         RoadmapWithStatusDTO roadmapDTO = getById(id, userId);
 
         if (roadmapDTO == null) {
-            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+            throw StatusCode.ROADMAP_NOT_FOUND.exception();
         }
 
         return roadmapDTO;
@@ -412,25 +410,25 @@ public class RoadmapService {
     
     private void validateUserId(long userId) {
         if (userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
         }
     }
     
     private void validateRoadmapId(Long roadmapId) {
         if (roadmapId == null || roadmapId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
         }
     }
     
     private void validateProfessionId(Long professionId) {
         if (professionId == null || professionId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
         }
     }
     
     private void validateContent(String content) {
         if (content == null || content.trim().isEmpty()) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
         }
     }
 
@@ -470,7 +468,7 @@ public class RoadmapService {
     public RoadmapSummaryDTO approve(long id, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
-            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+            throw StatusCode.ROADMAP_NOT_FOUND.exception();
         }
 
         // 委托给 DomainService 执行状态变更
@@ -498,7 +496,7 @@ public class RoadmapService {
     public RoadmapSummaryDTO reject(long id, String reason, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
-            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+            throw StatusCode.ROADMAP_NOT_FOUND.exception();
         }
 
         // 委托给 DomainService 执行状态变更
@@ -527,7 +525,7 @@ public class RoadmapService {
     public RoadmapSummaryDTO ban(long id, String reason, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
-            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+            throw StatusCode.ROADMAP_NOT_FOUND.exception();
         }
 
         // 记录之前的状态
@@ -562,12 +560,12 @@ public class RoadmapService {
     public RoadmapSummaryDTO remove(long id, String reason, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
-            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+            throw StatusCode.ROADMAP_NOT_FOUND.exception();
         }
 
         // 检查状态：只能下架已发布的内容
         if (roadmap.getState() != ContentState.PUBLISHED.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只能下架已发布的内容");
+            throw StatusCode.INVALID_PARAMETER.exception("只能下架已发布的内容");
         }
 
         // 获取职业信息用于通知
@@ -598,7 +596,7 @@ public class RoadmapService {
     public RoadmapSummaryDTO restore(long id, String reason, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
-            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+            throw StatusCode.ROADMAP_NOT_FOUND.exception();
         }
 
         // 记录之前的状态
@@ -606,12 +604,12 @@ public class RoadmapService {
 
         // 检查状态：只能恢复 REJECTED 或 BANNED 的内容
         if (previousState != ContentState.REJECTED.value() && previousState != ContentState.BANNED.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只能恢复被拒绝或被封禁的内容");
+            throw StatusCode.INVALID_PARAMETER.exception("只能恢复被拒绝或被封禁的内容");
         }
 
         // 从 BANNED 恢复需要 ADMIN 权限
         if (previousState == ContentState.BANNED.value() && !operator.hasRole(UserRole.ADMIN)) {
-            throw ErrorCode.PERMISSION_DENIED.exception("只有管理员可以解封内容");
+            throw StatusCode.PERMISSION_DENIED.exception("只有管理员可以解封内容");
         }
 
         // 获取职业信息用于通知
@@ -664,7 +662,7 @@ public class RoadmapService {
     public RoadmapSummaryDTO updateDescription(long id, String description, UserDO operator) {
         RoadmapDO roadmap = roadmapDataService.getById(id);
         if (roadmap == null) {
-            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+            throw StatusCode.ROADMAP_NOT_FOUND.exception();
         }
 
         // 委托给 DomainService

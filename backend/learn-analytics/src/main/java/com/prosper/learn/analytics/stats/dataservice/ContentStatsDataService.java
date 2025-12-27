@@ -3,7 +3,7 @@ package com.prosper.learn.analytics.stats.dataservice;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsMapper;
 import com.prosper.learn.shared.domain.Enums;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -75,7 +75,7 @@ public class ContentStatsDataService {
         int result = contentStatsMapper.insert(stats);
         if (result <= 0) {
             log.error("创建内容统计记录失败: contentType={}, contentId={}", contentType, contentId);
-            throw ErrorCode.DATABASE_ERROR.exception("创建内容统计记录失败");
+            throw StatusCode.DATABASE_ERROR.exception("创建内容统计记录失败");
         }
 
         log.debug("创建内容统计记录: contentType={}, contentId={}", contentType, contentId);
@@ -172,7 +172,7 @@ public class ContentStatsDataService {
     public List<ContentStatsDO> batchGetByContentIds(Enums.ContentType contentType, List<Long> contentIds) {
         validateContentParams(contentType, null);
         if (contentIds == null || contentIds.isEmpty()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("内容ID列表不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("内容ID列表不能为空");
         }
 
         return contentStatsMapper.batchGetByContentIds(contentType.name(), contentIds);
@@ -182,16 +182,16 @@ public class ContentStatsDataService {
 
     private void validateContentParams(Enums.ContentType contentType, Long contentId) {
         if (contentType == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("内容类型不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("内容类型不能为空");
         }
         if (contentId != null && contentId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("内容ID必须大于0");
+            throw StatusCode.INVALID_PARAMETER.exception("内容ID必须大于0");
         }
     }
 
     private void validateField(String field) {
         if (field == null || field.trim().isEmpty()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("字段名不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("字段名不能为空");
         }
 
         // 验证字段名是否合法（非按日统计字段）
@@ -205,13 +205,13 @@ public class ContentStatsDataService {
         }
 
         if (!isValid) {
-            throw ErrorCode.INVALID_PARAMETER.exception("不支持的字段名: " + field);
+            throw StatusCode.INVALID_PARAMETER.exception("不支持的字段名: " + field);
         }
     }
 
     private void validateLimit(int limit) {
         if (limit <= 0 || limit > 1000) {
-            throw ErrorCode.INVALID_PARAMETER.exception("限制数量必须在1-1000之间");
+            throw StatusCode.INVALID_PARAMETER.exception("限制数量必须在1-1000之间");
         }
     }
 }

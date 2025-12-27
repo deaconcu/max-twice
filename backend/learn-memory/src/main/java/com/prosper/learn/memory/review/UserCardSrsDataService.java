@@ -1,12 +1,11 @@
 package com.prosper.learn.memory.review;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -83,7 +82,7 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
         } catch (Exception e) {
             log.error("Error inserting SRS state: userId={}, cardId={}", 
                      state.getUserId(), state.getCardId(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -101,7 +100,7 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
             log.debug("Updated SRS state {}", state.getId());
         } catch (Exception e) {
             log.error("Error updating SRS state: {}", state.getId(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -225,7 +224,7 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
             return result > 0;
         } catch (Exception e) {
             log.error("Error deleting SRS state: userId={}, cardId={}", userId, cardId, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -348,7 +347,7 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
             return result;
         } catch (Exception e) {
             log.error("Error batch inserting SRS states: stateCount={}", states.size(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -393,7 +392,7 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
         } catch (Exception e) {
             log.error("Error batch deleting SRS states: userId={}, cardCount={}", 
                      userId, cardIds.size(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 

@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.application.dto.request.CreateCourseRequest;
 import com.prosper.learn.application.dto.request.CreateSubcourseRequest;
+import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.application.dto.response.course.CourseDetailDTO;
 import com.prosper.learn.application.dto.response.course.CourseSummaryWithStatsAndProgressDTO;
@@ -82,7 +83,7 @@ public class CoursesController {
      * 返回带统计信息和用户学习状态的课程列表
      */
     @GetMapping("/courses")
-    public ApiResponse<List<CourseSummaryWithStatsAndProgressDTO>> getCourses(
+    public ApiResponse<KeysetPageResponse<CourseSummaryWithStatsAndProgressDTO>> getCourses(
             @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
             @RequestParam(required = false) @Positive(message = "主分类必须大于0") Integer mainCategory,
             @RequestParam(required = false) @Positive(message = "子分类必须大于0") Integer subCategory,
@@ -91,21 +92,22 @@ public class CoursesController {
 
         Long userId = currentUser != null ? currentUser.getId() : null;
 
+        KeysetPageResponse<CourseSummaryWithStatsAndProgressDTO> response;
+
         // 1. 按分类筛选（支持只传主分类）
         if (mainCategory != null) {
-            List<CourseSummaryWithStatsAndProgressDTO> courseList = courseService.getListByCategoryWithStats(mainCategory, subCategory, lastId, userId);
-            return ApiResponse.query(courseList);
+            response = courseService.getListByCategoryWithStatsPage(mainCategory, subCategory, lastId, userId);
         }
         // 2. 获取子课程
         else if (parentId != null) {
-            List<CourseSummaryWithStatsAndProgressDTO> courseList = courseService.getListByParentWithStats(parentId, ContentState.PUBLISHED, userId);
-            return ApiResponse.query(courseList);
+            response = courseService.getListByParentWithStatsPage(parentId, ContentState.PUBLISHED, lastId, userId);
         }
         // 3. 默认：返回所有已发布课程（分页）
         else {
-            List<CourseSummaryWithStatsAndProgressDTO> courseList = courseService.getListByStateAndLastIdWithStats(ContentState.PUBLISHED, lastId, userId);
-            return ApiResponse.query(courseList);
+            response = courseService.getListByStateAndLastIdWithStatsPage(ContentState.PUBLISHED, lastId, userId);
         }
+
+        return ApiResponse.query(response);
     }
 
     /**
@@ -121,18 +123,6 @@ public class CoursesController {
         List<CourseWithStatsDTO> hotCourses = courseService.getHotCourses(limit);
         log.info("成功获取热门课程数量: {}", hotCourses.size());
         return ApiResponse.query(hotCourses);
-    }
-
-    /**
-     * 课程排行榜
-     * 映射: GET /course/ranking → GET /api/v1/courses/ranking
-     */
-    @GetMapping("/courses/ranking")
-    public ApiResponse<Object> getCoursesRanking() {
-        log.info("开始获取热门课程完整排行榜");
-        List<CourseWithStatsDTO> hotCoursesRanking = courseService.getHotCoursesRanking();
-        log.info("成功获取热门课程排行榜数量: {}", hotCoursesRanking.size());
-        return ApiResponse.query(hotCoursesRanking);
     }
 
     /**

@@ -322,29 +322,40 @@ const isMainCourse = computed(() => {
   return true
 })
 
-// 使用 useFetch 加载页面数据
+// 使用 useFetch 加载页面数据（使用优化后的接口）
 const {
   data,
   loading: dataLoading,
   execute: loadData,
 } = useFetch<ReadResponse>({
   fetchFn: () => {
+    // 使用优化后的 API，只返回帖子详情需要的数据
+    const params: { postId?: number; commentId?: number } = {}
     if (route.query.postId) {
-      return pageApi.readByPost(Number(route.query.postId))
+      params.postId = Number(route.query.postId)
     } else if (route.query.commentId) {
-      return pageApi.readByComment(Number(route.query.commentId))
+      params.commentId = Number(route.query.commentId)
+    } else {
+      return Promise.reject(new Error('缺少 postId 或 commentId 参数'))
     }
-    return Promise.reject(new Error('缺少 postId 或 commentId 参数'))
+    return pageApi.readPostDetail(params)
   },
   immediate: true,
   onDataReady: () => {
+    // 特殊处理：如果返回了 commentId 和 subCommentId，说明需要重定向
+    if (data.value.commentId && data.value.subCommentId) {
+      // 这是一个回复评论，前端需要重定向到主评论的 URL
+      // TODO: 实现重定向逻辑
+      console.warn('回复评论重定向:', data.value)
+    }
+
     // 处理投票类型
     const posting = data.value.currPosting || data.value.post
     if (posting?.voteType === 0) {
       posting.voteType = null
     }
 
-    // 处理 otherPostings
+    // 处理 otherPostings（新接口不返回 otherPostings，这里保留兼容性）
     data.value.otherPostings?.forEach((posting: any) => {
       if (posting.voteType === 0) {
         posting.voteType = null

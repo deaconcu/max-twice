@@ -1,7 +1,7 @@
 package com.prosper.learn.memory.card;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -80,7 +80,7 @@ public class MemoryCardVersionDataService extends AbstractDataService<MemoryCard
             return memoryCardVersionMapper.insert(version);
         } catch (Exception e) {
             log.error("Error inserting card version: cardId={}", version.getCardId(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -98,7 +98,7 @@ public class MemoryCardVersionDataService extends AbstractDataService<MemoryCard
             return result;
         } catch (Exception e) {
             log.error("Error batch inserting memory card versions: count={}", versions.size(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -112,7 +112,7 @@ public class MemoryCardVersionDataService extends AbstractDataService<MemoryCard
             return result > 0;
         } catch (Exception e) {
             log.error("Error updating version active status: {}", id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -137,7 +137,7 @@ public class MemoryCardVersionDataService extends AbstractDataService<MemoryCard
             return result > 0;
         } catch (Exception e) {
             log.error("Error deactivating all versions for card: {}", cardId, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 

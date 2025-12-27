@@ -17,30 +17,30 @@ public interface ProfessionMapper {
     @Select("<script>" +
             "SELECT * FROM profession WHERE state = #{state} AND deleted_at IS NULL " +
             "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
-            "ORDER BY id DESC LIMIT 20" +
+            "ORDER BY id DESC LIMIT #{limit}" +
             "</script>")
-    List<ProfessionDO> listByStateAndLastId(byte state, Long lastId);
+    List<ProfessionDO> listByStateAndLastId(byte state, Long lastId, int limit);
 
     @Select("<script>" +
             "SELECT * FROM profession WHERE main_category = #{mainCategory} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
-            "<if test='lastId != null'>AND id &gt; #{lastId}</if> " +
-            "ORDER BY id ASC LIMIT 20" +
+            "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
+            "ORDER BY id DESC LIMIT #{limit}" +
             "</script>")
-    List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, Long lastId);
+    List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, Long lastId, int limit);
 
     @Select("<script>" +
             "SELECT * FROM profession WHERE sub_category = #{subCategory} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
-            "<if test='lastId != null'>AND id &gt; #{lastId}</if> " +
-            "ORDER BY id ASC LIMIT 20" +
+            "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
+            "ORDER BY id DESC LIMIT #{limit}" +
             "</script>")
-    List<ProfessionDO> listBySubCategoryAndLastId(int subCategory, Long lastId);
+    List<ProfessionDO> listBySubCategoryAndLastId(int subCategory, Long lastId, int limit);
 
     @Select("<script>" +
             "SELECT * FROM profession WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
-            "<if test='lastId != null'>AND id &gt; #{lastId}</if> " +
-            "ORDER BY id ASC LIMIT 20" +
+            "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
+            "ORDER BY id DESC LIMIT #{limit}" +
             "</script>")
-    List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, Long lastId);
+    List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, Long lastId, int limit);
 
     @Select("SELECT * FROM profession WHERE state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL AND name LIKE CONCAT('%', #{keyword}, '%') ORDER BY id DESC LIMIT 20")
     List<ProfessionDO> searchByKeyword(String keyword);

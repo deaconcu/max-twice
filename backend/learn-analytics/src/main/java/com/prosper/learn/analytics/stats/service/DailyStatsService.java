@@ -14,7 +14,7 @@ import com.prosper.learn.analytics.stats.mapper.UserStatsYearlyDO;
 import com.prosper.learn.analytics.stats.mapper.UserStatsYearlyMapper;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.shared.domain.exception.BusinessException;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -768,7 +768,7 @@ public class DailyStatsService {
                     }
                 } catch (Exception jsonEx) {
                     log.error("JSON数组解析失败: userId={}, date={}, json={}", userId, date, dayStatsJson, jsonEx);
-                    throw ErrorCode.JSON_PROCESSING_ERROR.exception(jsonEx);
+                    throw StatusCode.JSON_PROCESSING_ERROR.exception(jsonEx);
                 }
             }
 
@@ -779,7 +779,7 @@ public class DailyStatsService {
                 throw e; // 重新抛出业务异常（如JSON_PROCESSING_ERROR）
             }
             log.error("获取用户日统计失败: userId={}, date={}", userId, date, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -1082,7 +1082,7 @@ public class DailyStatsService {
      */
     private void validateUserId(long userId) {
         if (userId <= 0) {
-            throw ErrorCode.USER_NOT_FOUND.exception();
+            throw StatusCode.USER_NOT_FOUND.exception();
         }
     }
 
@@ -1102,11 +1102,11 @@ public class DailyStatsService {
      */
     private void validateDate(LocalDate date) {
         if (date == null) {
-            throw ErrorCode.INVALID_DATE.exception();
+            throw StatusCode.INVALID_DATE.exception();
         }
         LocalDate systemStart = LocalDate.parse(systemProperties.getStats().getSystemStartDate());
         if (date.isBefore(systemStart) || date.isAfter(LocalDate.now())) {
-            throw ErrorCode.INVALID_DATE.exception();
+            throw StatusCode.INVALID_DATE.exception();
         }
     }
 
@@ -1115,7 +1115,7 @@ public class DailyStatsService {
      */
     private void validateDaysRange(int days) {
         if (days <= 0 || days > systemProperties.getStats().getMaxQueryDaysRange()) {
-            throw ErrorCode.INVALID_DAYS_RANGE.exception();
+            throw StatusCode.INVALID_DAYS_RANGE.exception();
         }
     }
 

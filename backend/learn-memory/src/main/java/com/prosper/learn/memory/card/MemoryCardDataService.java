@@ -2,7 +2,7 @@ package com.prosper.learn.memory.card;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
 import com.prosper.learn.shared.domain.Enums;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -81,7 +81,7 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
             return memoryCardMapper.insert(card);
         } catch (Exception e) {
             log.error("Error inserting card: deckId={}", card.getDeckId(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -99,7 +99,7 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
             return result;
         } catch (Exception e) {
             log.error("Error batch inserting memory cards: count={}", cards.size(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -117,7 +117,7 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
             log.debug("Updated card {}", card.getId());
         } catch (Exception e) {
             log.error("Error updating card: {}", card.getId(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -221,7 +221,7 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
             return result;
         } catch (Exception e) {
             log.error("Error batch updating current version id: count={}", cards.size(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -245,7 +245,7 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
             return result;
         } catch (Exception e) {
             log.error("Error batch updating memory cards: count={}", cards.size(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 

@@ -2,7 +2,7 @@ package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.service.PageService;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
@@ -58,7 +58,48 @@ public class PagesController {
         } else if (courseId != null) {
             result = pageService.readPageByPath(courseId, path, currentUser.getId());
         } else {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
+        }
+
+        return ApiResponse.success(result);
+    }
+
+    /**
+     * 读取节点帖子列表（优化版本）
+     * 仅返回 NodePostsPage 需要的数据：node, course, parentCourse, subCourseList, otherPostings, users, learning
+     * 不返回 TOC、fixedPostings、chosenPosting，节省带宽和查询
+     */
+    @GetMapping("/pages/node")
+    @SaCheckLogin
+    public ApiResponse<Map<String, Object>> readNode(
+            @RequestParam @NotNull(message = "节点ID不能为空") @Positive(message = "节点ID必须大于0") Long nodeId,
+            @CurrentUser UserDO currentUser) {
+        Map<String, Object> result = pageService.readPageForNode(nodeId, currentUser.getId());
+        return ApiResponse.success(result);
+    }
+
+    /**
+     * 读取帖子详情（优化版本）
+     * 仅返回 PostDetailPage 需要的数据：node, course, parentCourse, subCourseList, post, users, learning
+     * 不返回 TOC、fixedPostings、otherPostings，节省带宽和查询
+     * 支持通过 postId 或 commentId 定位
+     */
+    @GetMapping("/pages/post")
+    @SaCheckLogin
+    public ApiResponse<Map<String, Object>> readPost(
+            @RequestParam(required = false) @Positive(message = "帖子ID必须大于0") Long postId,
+            @RequestParam(required = false) @Positive(message = "评论ID必须大于0") Long commentId,
+            @CurrentUser UserDO currentUser) {
+
+        if (postId == null && commentId == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("必须提供 postId 或 commentId");
+        }
+
+        Map<String, Object> result;
+        if (commentId != null) {
+            result = pageService.readPageForComment(commentId, currentUser.getId());
+        } else {
+            result = pageService.readPageForPost(postId, currentUser.getId());
         }
 
         return ApiResponse.success(result);

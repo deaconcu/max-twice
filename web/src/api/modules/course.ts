@@ -1,5 +1,5 @@
 import apiClient from '../client'
-import type { ApiResponse } from '@/types/api'
+import type { ApiResponse, KeysetPageResponse } from '@/types/api'
 import type { Course, ApprovalResponse } from '@/types/course'
 import type { UserCourse } from '@/types/userCourse'
 import type { SubscriptionInfo } from '@/types/user'
@@ -29,7 +29,7 @@ export const courseApi = {
    * 根据状态获取课程列表（已废弃 - 普通用户不应查询任意状态）
    * @deprecated 请使用 getCoursesByCategory() 获取已发布课程
    */
-  getCoursesByState(state: number, lastId?: number): Promise<ApiResponse<Course[]>> {
+  getCoursesByState(state: number, lastId?: number): Promise<ApiResponse<KeysetPageResponse<Course>>> {
     return apiClient.get('/v1/courses', {
       params: { state, lastId },
     })
@@ -46,7 +46,7 @@ export const courseApi = {
     mainCategory?: number,
     subCategory?: number,
     lastId?: number
-  ): Promise<ApiResponse<Course[]>> {
+  ): Promise<ApiResponse<KeysetPageResponse<Course>>> {
     return apiClient.get('/v1/courses', {
       params: { mainCategory, subCategory, lastId },
     })
@@ -63,17 +63,10 @@ export const courseApi = {
    * 获取子课程列表
    * 修正：使用 parentId 查询参数而不是路径参数
    */
-  getSubCourses(parentId: number): Promise<ApiResponse<Course[]>> {
+  getSubCourses(parentId: number): Promise<ApiResponse<KeysetPageResponse<Course>>> {
     return apiClient.get('/v1/courses', {
       params: { parentId },
     })
-  },
-
-  /**
-   * 获取课程排行榜
-   */
-  getCoursesRanking(): Promise<ApiResponse<Course[]>> {
-    return apiClient.get('/v1/courses/ranking')
   },
 
   /**

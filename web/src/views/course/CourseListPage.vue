@@ -306,7 +306,8 @@ const loadCourses = async (reset = false) => {
     }
 
     if (response.data) {
-      const newCourses = response.data
+      const pageResponse = response.data
+      const newCourses = pageResponse.items
 
       if (reset) {
         coursesData.value = newCourses
@@ -315,13 +316,9 @@ const loadCourses = async (reset = false) => {
       }
 
       // 更新分页状态
-      if (newCourses.length < 20) {
-        // 返回数据少于 20 条，说明没有更多了
-        hasMoreCourses.value = false
-      } else {
-        // 更新 lastId 为最后一条的 id
-        const lastCourse = newCourses[newCourses.length - 1]
-        lastId.value = lastCourse?.id
+      hasMoreCourses.value = pageResponse.hasMore
+      if (pageResponse.hasMore && pageResponse.nextCursor?.lastId) {
+        lastId.value = pageResponse.nextCursor.lastId
       }
     }
   } catch (error) {

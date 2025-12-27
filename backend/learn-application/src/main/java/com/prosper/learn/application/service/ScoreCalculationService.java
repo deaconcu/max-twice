@@ -9,7 +9,7 @@ import com.prosper.learn.interaction.comment.CommentDO;
 import com.prosper.learn.interaction.comment.CommentMapper;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.shared.domain.Enums;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -43,7 +43,7 @@ public class ScoreCalculationService {
      */
     public boolean checkAndUpdatePostScore(PostDO post) {
         if (post == null || post.getId() <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("帖子对象无效");
+            throw StatusCode.INVALID_PARAMETER.exception("帖子对象无效");
         }
 
         try {
@@ -56,7 +56,7 @@ public class ScoreCalculationService {
             return false;
         } catch (Exception e) {
             log.error("检查并更新文章分数失败: postId={}", post.getId(), e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -65,7 +65,7 @@ public class ScoreCalculationService {
      */
     public boolean checkAndUpdateRoadmapScore(RoadmapDO roadmap) {
         if (roadmap == null || roadmap.getId() <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("路线图对象无效");
+            throw StatusCode.INVALID_PARAMETER.exception("路线图对象无效");
         }
 
         try {
@@ -78,7 +78,7 @@ public class ScoreCalculationService {
             return false;
         } catch (Exception e) {
             log.error("检查并更新路线图分数失败: roadmapId={}", roadmap.getId(), e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -87,7 +87,7 @@ public class ScoreCalculationService {
      */
     public boolean checkAndUpdateCommentScore(CommentDO comment) {
         if (comment == null || comment.getId() <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("评论对象无效");
+            throw StatusCode.INVALID_PARAMETER.exception("评论对象无效");
         }
 
         try {
@@ -100,7 +100,7 @@ public class ScoreCalculationService {
             return false;
         } catch (Exception e) {
             log.error("检查并更新评论分数失败: commentId={}", comment.getId(), e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -109,7 +109,7 @@ public class ScoreCalculationService {
      */
     public boolean checkAndUpdateMemoryCardDeckScore(MemoryCardDeckDO deck) {
         if (deck == null || deck.getId() <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("卡片组对象无效");
+            throw StatusCode.INVALID_PARAMETER.exception("卡片组对象无效");
         }
 
         try {
@@ -122,7 +122,7 @@ public class ScoreCalculationService {
             return false;
         } catch (Exception e) {
             log.error("检查并更新卡片组分数失败: deckId={}", deck.getId(), e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.prosper.learn.analytics.ranking.service;
 
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -86,7 +86,7 @@ public class ProfessionRankingDomainService {
                     .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("Failed to get hot profession ids with limit: {}", limit, e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -101,7 +101,7 @@ public class ProfessionRankingDomainService {
             return learningCountStr != null ? Long.parseLong(learningCountStr) : 0;
         } catch (Exception e) {
             log.error("Failed to get profession learning count for professionId: {}", professionId, e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -119,7 +119,7 @@ public class ProfessionRankingDomainService {
                      professionId, learningCount);
         } catch (Exception e) {
             log.error("Failed to initialize profession stats for professionId: {}", professionId, e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -141,7 +141,7 @@ public class ProfessionRankingDomainService {
             log.info("Cleared all profession stats from Redis");
         } catch (Exception e) {
             log.error("Failed to clear profession stats", e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -159,7 +159,7 @@ public class ProfessionRankingDomainService {
      */
     private void validateProfessionId(long professionId) {
         if (professionId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
         }
     }
 
@@ -168,7 +168,7 @@ public class ProfessionRankingDomainService {
      */
     private void validateLimit(int limit) {
         if (limit <= 0 || limit > systemProperties.getCourseRanking().getMaxHotCoursesLimit()) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
         }
     }
 }

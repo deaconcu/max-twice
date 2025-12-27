@@ -1,6 +1,6 @@
 package com.prosper.learn.infrastructure.image;
 
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.extern.slf4j.Slf4j;
 import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Value;
@@ -77,7 +77,7 @@ public class ImageCompressionService {
             // 读取原始图片
             BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(imageData));
             if (originalImage == null) {
-                throw ErrorCode.INVALID_IMAGE.exception("无法读取图片");
+                throw StatusCode.INVALID_IMAGE.exception("无法读取图片");
             }
 
             int originalWidth = originalImage.getWidth();
@@ -131,7 +131,7 @@ public class ImageCompressionService {
 
         } catch (IOException e) {
             log.error("图片压缩失败", e);
-            throw ErrorCode.IMAGE_COMPRESSION_FAILED.exception("图片压缩失败");
+            throw StatusCode.IMAGE_COMPRESSION_FAILED.exception("图片压缩失败");
         }
     }
 

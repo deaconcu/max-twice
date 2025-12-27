@@ -34,14 +34,14 @@ public interface UserMapper {
     @Select("SELECT * FROM user WHERE name = #{name} limit 1")
     UserDO getByName(String name);
 
-    @Insert("INSERT INTO user(name, password, phone, email, biography) " +
-            "VALUES (#{name}, #{password}, #{phone}, #{email}, #{biography})")
+    @Insert("INSERT INTO user(name, password, phone, email, biography, role, state) " +
+            "VALUES (#{name}, #{password}, #{phone}, #{email}, #{biography}, #{role}, #{state})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserDO user);
 
     @Update("UPDATE user SET name = #{name}, password = #{password}, phone = #{phone}, email = #{email}, " +
             "email_validated = #{emailValidated}, biography = #{biography}, state = #{state}, " +
-            "msg_read_time = #{msgReadTime} where id = #{id}")
+            "role = #{role}, msg_read_time = #{msgReadTime} where id = #{id}")
     void update(UserDO user);
 
     @Update("UPDATE user SET avatar = #{avatar} WHERE id = #{userId}")

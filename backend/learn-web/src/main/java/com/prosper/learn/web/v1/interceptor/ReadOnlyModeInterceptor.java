@@ -1,6 +1,5 @@
 package com.prosper.learn.web.v1.interceptor;
 
-import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.shared.infrastructure.config.SystemDataService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -9,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-import static com.prosper.learn.shared.domain.exception.ErrorCode.*;
+import static com.prosper.learn.shared.domain.exception.StatusCode.*;
 
 /**
  * 只读模式拦截器

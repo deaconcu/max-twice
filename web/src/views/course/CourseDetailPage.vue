@@ -496,11 +496,20 @@ const {
 })
 
 // 使用 useFetch 加载子课程列表
-const { data: subCourses, loading: _loadingSubCourses } = useFetch<Course[]>({
-  fetchFn: () => courseApi.getSubCourses(courseId.value),
+const {
+  data: subCoursesResponse,
+  loading: _loadingSubCourses,
+} = useFetch<{ items: Course[]; hasMore: boolean }>({
+  fetchFn: async () => {
+    const response = await courseApi.getSubCourses(courseId.value)
+    return response.data ?? { items: [], hasMore: false }
+  },
   immediate: true,
-  defaultValue: [],
+  defaultValue: { items: [], hasMore: false },
 })
+
+// 计算属性：从响应中提取子课程列表
+const subCourses = computed(() => subCoursesResponse.value?.items ?? [])
 
 // 使用 useMutation 处理订阅/取消订阅
 const { execute: executeSubscribe, loading: subscribing } = useMutation(

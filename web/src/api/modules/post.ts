@@ -1,5 +1,5 @@
 import apiClient from '../client'
-import type { ApiResponse } from '@/types/api'
+import type { ApiResponse, KeysetPageResponse } from '@/types/api'
 import type { Post } from '@/types/post'
 
 /**
@@ -8,20 +8,29 @@ import type { Post } from '@/types/post'
  */
 export const postApi = {
   /**
-   * 获取帖子列表
+   * 按 IDs 批量获取帖子
    */
-  getPosts(
-    ids?: number[],
-    nodeId?: number,
-    lastScore?: number,
-    lastPostingId?: number
-  ): Promise<ApiResponse<Post[]>> {
+  getPostsByIds(ids: number[]): Promise<ApiResponse<Post[]>> {
     return apiClient.get('/v1/posts', {
       params: {
-        ids: ids?.join(','),
+        ids: ids.join(','),
+      },
+    })
+  },
+
+  /**
+   * 获取节点帖子列表（分页）
+   */
+  getNodePosts(
+    nodeId: number,
+    lastScore?: number,
+    lastId?: number
+  ): Promise<ApiResponse<KeysetPageResponse<Post>>> {
+    return apiClient.get('/v1/posts', {
+      params: {
         nodeId,
         lastScore,
-        lastId: lastPostingId,
+        lastId,
       },
     })
   },
@@ -52,13 +61,6 @@ export const postApi = {
    */
   getPost(id: number): Promise<ApiResponse<Post>> {
     return apiClient.get(`/v1/posts/${String(id)}`)
-  },
-
-  /**
-   * 获取节点下的帖子列表
-   */
-  getNodePosts(nodeId: number): Promise<ApiResponse<Post[]>> {
-    return apiClient.get(`/v1/nodes/${String(nodeId)}/posts`)
   },
 
   /**

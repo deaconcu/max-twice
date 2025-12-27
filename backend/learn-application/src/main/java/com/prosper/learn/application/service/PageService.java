@@ -27,9 +27,8 @@ import com.prosper.learn.interaction.upvote.UpvoteDataService;
 import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.learning.enrollment.UserCourseDataService;
 import com.prosper.learn.shared.common.utils.Utils;
-import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentViewedEvent;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDataService;
 import com.prosper.learn.user.profile.UserProfileDO;
@@ -202,6 +201,179 @@ public class PageService {
     }
 
     /**
+     * 根据节点ID读取页面数据（仅返回节点帖子列表需要的数据）
+     * 用于 NodePostsPage，不返回 TOC、fixedPostings、chosenPosting
+     */
+    public Map<String, Object> readPageForNode(Long nodeId, long userId) {
+        NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
+
+        if (nodeDO.getState() != null && nodeDO.getState() != ContentState.PUBLISHED.value()) {
+            throw StatusCode.NODE_STATE_INVALID.exception();
+        }
+
+        CourseDO courseDO = validateCourseExists(nodeDO.getCourseId());
+
+        // 获取帖子列表
+        List<Long> userIds = new LinkedList<>();
+        List<PostDO> otherPostings = getOtherPostings(nodeDO.getId(), userIds);
+        Map<Long, UserBriefDTO> userMap = buildUserMap(userIds);
+
+        // 转换帖子为 DTO
+        List<PostWithVoteDTO> otherPostingsDTO = convertPostListToDTO(otherPostings, userMap, userId);
+
+        // 获取学习状态
+        boolean learning = checkLearningStatus(userId, courseDO.getId());
+        boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
+        Integer courseProgress = userCourseService.getCourseProgress(userId, courseDO.getId());
+
+        // 构建课程信息
+        CourseWithProgressDTO parentCourse = buildParentCourse(courseDO, userId);
+        List<CourseSummaryDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
+
+        // 构建响应
+        Map<String, Object> data = new HashMap<>();
+        data.put("node", nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted));
+        data.put("parentCourse", parentCourse);
+        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getSubscribed(), courseProgress));
+        data.put("subCourseList", subCourseList);
+        data.put("otherPostings", otherPostingsDTO);
+        data.put("users", new ArrayList<>(userMap.values()));
+        data.put("learning", learning);
+
+        return data;
+    }
+
+    /**
+     * 根据帖子ID读取页面数据（仅返回帖子详情页需要的数据）
+     * 用于 PostDetailPage，不返回 TOC、fixedPostings、otherPostings
+     */
+    public Map<String, Object> readPageForPost(Long postId, long userId) {
+        PostDO postDO = postService.validateAndGetPost(postId);
+
+        // 发布内容浏览事件
+        eventPublisher.publishEvent(new ContentViewedEvent(
+            userId,
+            postDO.getId(),
+            ContentType.post,
+            postDO.getCreatorId()
+        ));
+
+        NodeDO nodeDO = nodeDataService.validateAndGet(postDO.getNodeId());
+
+        if (nodeDO.getState() != null && nodeDO.getState() != ContentState.PUBLISHED.value()) {
+            throw StatusCode.NODE_STATE_INVALID.exception();
+        }
+
+        CourseDO courseDO = validateCourseExists(nodeDO.getCourseId());
+
+        // 构建用户信息
+        List<Long> userIds = new LinkedList<>();
+        userIds.add(postDO.getCreatorId());
+        Map<Long, UserBriefDTO> userMap = buildUserMap(userIds);
+
+        // 转换帖子为 DTO
+        PostWithVoteDTO postDTO = buildPostDTO(postDO, userMap, userId);
+
+        // 获取学习状态
+        boolean learning = checkLearningStatus(userId, courseDO.getId());
+        boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
+        Integer courseProgress = userCourseService.getCourseProgress(userId, courseDO.getId());
+
+        // 构建课程信息
+        CourseWithProgressDTO parentCourse = buildParentCourse(courseDO, userId);
+        List<CourseSummaryDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
+
+        // 构建响应
+        Map<String, Object> data = new HashMap<>();
+        data.put("node", nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted));
+        data.put("parentCourse", parentCourse);
+        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getSubscribed(), courseProgress));
+        data.put("subCourseList", subCourseList);
+        data.put("post", postDTO);
+        data.put("users", new ArrayList<>(userMap.values()));
+        data.put("learning", learning);
+
+        return data;
+    }
+
+    /**
+     * 根据评论ID读取页面数据（仅返回帖子详情页需要的数据）
+     * 用于 PostDetailPage，不返回 TOC、fixedPostings、otherPostings
+     * 特殊处理：如果评论是回复评论，返回重定向信息
+     */
+    public Map<String, Object> readPageForComment(Long commentId, long userId) {
+        CommentDO commentDO = commentDataService.validateAndGet(commentId);
+
+        // 特殊处理：回复评论返回重定向信息
+        if (commentDO.getReplyToCommentId() != 0) {
+            Map<String, Object> data = new HashMap<>();
+            data.put("commentId", commentDO.getReplyToCommentId());
+            data.put("subCommentId", commentDO.getId());
+            return data;
+        }
+
+        PostDO postDO = null;
+        NodeDO nodeDO;
+        CourseDO courseDO;
+
+        if (commentDO.getObjectType() == ContentType.post.value()) {
+            long postId = commentDO.getObjectId();
+            postDO = postService.validateAndGetPost(postId);
+
+            // 发布内容浏览事件
+            eventPublisher.publishEvent(new ContentViewedEvent(
+                userId,
+                postDO.getId(),
+                ContentType.post,
+                postDO.getCreatorId()
+            ));
+
+            nodeDO = nodeDataService.validateAndGet(postDO.getNodeId());
+        } else {
+            nodeDO = nodeDataService.validateAndGet(commentDO.getObjectId());
+        }
+
+        if (nodeDO.getState() != null && nodeDO.getState() != ContentState.PUBLISHED.value()) {
+            throw StatusCode.NODE_STATE_INVALID.exception();
+        }
+
+        courseDO = validateCourseExists(nodeDO.getCourseId());
+
+        // 构建用户信息
+        List<Long> userIds = new LinkedList<>();
+        if (postDO != null) {
+            userIds.add(postDO.getCreatorId());
+        }
+        Map<Long, UserBriefDTO> userMap = buildUserMap(userIds);
+
+        // 转换帖子为 DTO
+        PostWithVoteDTO postDTO = postDO != null ? buildPostDTO(postDO, userMap, userId) : null;
+
+        // 获取学习状态
+        boolean learning = checkLearningStatus(userId, courseDO.getId());
+        boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
+        Integer courseProgress = userCourseService.getCourseProgress(userId, courseDO.getId());
+
+        // 构建课程信息
+        CourseWithProgressDTO parentCourse = buildParentCourse(courseDO, userId);
+        List<CourseSummaryDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
+
+        // 构建响应
+        Map<String, Object> data = new HashMap<>();
+        data.put("node", nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted));
+        data.put("parentCourse", parentCourse);
+        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getSubscribed(), courseProgress));
+        data.put("subCourseList", subCourseList);
+        if (postDTO != null) {
+            data.put("post", postDTO);
+        }
+        data.put("users", new ArrayList<>(userMap.values()));
+        data.put("learning", learning);
+
+        return data;
+    }
+
+    /**
      * 根据课程ID和路径读取页面数据
      */
     public Map<String, Object> readPageByPath(Long courseId, String path, long userId) {
@@ -242,7 +414,7 @@ public class PageService {
         }
 
         if (nodeDO.getState() != null && nodeDO.getState() != ContentState.PUBLISHED.value()) {
-            throw ErrorCode.NODE_STATE_INVALID.exception();
+            throw StatusCode.NODE_STATE_INVALID.exception();
         }
 
         List<PostDO> otherPostings = getOtherPostings(nodeDO.getId(), userIds);
@@ -291,7 +463,7 @@ public class PageService {
         NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
 
         if (nodeDO.getState() != null && nodeDO.getState() != ContentState.PUBLISHED.value()) {
-            throw ErrorCode.NODE_STATE_INVALID.exception();
+            throw StatusCode.NODE_STATE_INVALID.exception();
         }
 
         List<PostDO> otherPostings = getOtherPostings(nodeDO.getId(), userIds);
@@ -324,7 +496,7 @@ public class PageService {
     private CourseDO validateCourseExists(Long courseId) {
         CourseDO courseDO = courseDataService.validateAndGet(courseId);
         if (courseDO.getState() != ContentState.PUBLISHED.value()) {
-            throw ErrorCode.COURSE_IS_NOT_PUBLISHED.exception();
+            throw StatusCode.COURSE_IS_NOT_PUBLISHED.exception();
         }
         return courseDO;
     }
@@ -349,7 +521,7 @@ public class PageService {
             return objectMapper.readTree(json);
         } catch (JsonProcessingException e) {
             log.error("JSON解析失败: {}", json, e);
-            throw ErrorCode.JSON_PROCESSING_ERROR.exception(e);
+            throw StatusCode.JSON_PROCESSING_ERROR.exception(e);
         }
     }
     

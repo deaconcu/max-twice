@@ -12,7 +12,7 @@ import com.prosper.learn.content.post.PostDataService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.BusinessException;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -69,7 +69,7 @@ public class TocDomainService {
     private CourseDO validateCourseExists(long courseId) {
         CourseDO courseDO = courseDataService.getById(courseId);
         if (courseDO == null) {
-            throw ErrorCode.COURSE_NOT_FOUND.exception();
+            throw StatusCode.COURSE_NOT_FOUND.exception();
         }
         return courseDO;
     }
@@ -88,10 +88,10 @@ public class TocDomainService {
     private PostDO validatePostForContents(long postId) {
         PostDO postDO = postDataService.getById(postId);
         if (postDO == null) {
-            throw ErrorCode.POST_NOT_FOUND.exception();
+            throw StatusCode.POST_NOT_FOUND.exception();
         }
         if (postDO.getType() == Enums.PostType.article.value()) {
-            throw ErrorCode.INVALID_POST_TYPE.exception();
+            throw StatusCode.INVALID_POST_TYPE.exception();
         }
         return postDO;
     }
@@ -109,7 +109,7 @@ public class TocDomainService {
     private UserCourseTocDO validateUserTocExists(long userId, long courseId) {
         UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(userId, courseId);
         if (userCourseTocDO == null) {
-            throw ErrorCode.TOC_USER_TOC_NOT_FOUND.exception();
+            throw StatusCode.TOC_USER_TOC_NOT_FOUND.exception();
         }
         return userCourseTocDO;
     }
@@ -126,7 +126,7 @@ public class TocDomainService {
      */
     private void validateTocIndex(int tocIndex, String[] tocHashArr) {
         if (tocIndex > tocHashArr.length) {
-            throw ErrorCode.TOC_INDEX_OUT_OF_BOUNDS.exception();
+            throw StatusCode.TOC_INDEX_OUT_OF_BOUNDS.exception();
         }
     }
 
@@ -248,11 +248,11 @@ public class TocDomainService {
                 CourseTocDO courseTocDO = map.get(tocHash);
                 if (courseTocDO == null) {
                     // 数据不一致：目录哈希在数据库中不存在
-                    throw ErrorCode.TOC_USER_TOC_NOT_FOUND.exception();
+                    throw StatusCode.TOC_USER_TOC_NOT_FOUND.exception();
                 }
                 arrayNode.add(objectMapper.readTree(courseTocDO.getToc()));
             } catch (IOException e) {
-                throw ErrorCode.JSON_PROCESSING_ERROR.exception(e);
+                throw StatusCode.JSON_PROCESSING_ERROR.exception(e);
             }
         }
 
@@ -423,7 +423,7 @@ public class TocDomainService {
             node.set(finalPart, newNode);
             return objectMapper.writeValueAsString(rootNode);
         } catch (JsonProcessingException e) {
-            throw ErrorCode.JSON_PROCESSING_ERROR.exception(e);
+            throw StatusCode.JSON_PROCESSING_ERROR.exception(e);
         }
     }
 
@@ -469,7 +469,7 @@ public class TocDomainService {
                     }
                 }
                 if (pinedArray.size() >= systemProperties.getContents().getMaxPinnedItems()) {
-                    throw ErrorCode.TOC_PINNED_ITEMS_LIMIT_EXCEEDED.exception();
+                    throw StatusCode.TOC_PINNED_ITEMS_LIMIT_EXCEEDED.exception();
                 }
                 if (!exist) pinedArray.add(value);
             } else {
@@ -482,7 +482,7 @@ public class TocDomainService {
             }
             return objectMapper.writeValueAsString(rootNode);
         } catch (JsonProcessingException e) {
-            throw ErrorCode.JSON_PROCESSING_ERROR.exception(e);
+            throw StatusCode.JSON_PROCESSING_ERROR.exception(e);
         }
     }
 }

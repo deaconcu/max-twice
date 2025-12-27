@@ -3,6 +3,7 @@ package com.prosper.learn.web.v1.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.analytics.ranking.scheduler.ProfessionRankingScheduler;
 import com.prosper.learn.application.dto.request.CreateProfessionRequest;
+import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.ProfessionDTO;
 import com.prosper.learn.application.service.ProfessionService;
 import com.prosper.learn.user.profile.UserDO;
@@ -44,24 +45,42 @@ public class ProfessionsController {
      * 不传分类参数时返回所有已发布职业
      */
     @GetMapping("/professions")
-    public ApiResponse<Object> getProfessions(
+    public ApiResponse<KeysetPageResponse<ProfessionDTO>> getProfessions(
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false) @Positive(message = "主分类必须大于0") Integer mainCategory,
             @RequestParam(required = false) @Positive(message = "子分类必须大于0") Integer subCategory) {
 
+        int pageSize = 20;
+        int limit = pageSize + 1;
+        List<ProfessionDTO> professionList;
+
         if (mainCategory != null && subCategory != null) {
             // 按主分类+子分类获取
-            List<ProfessionDTO> professionList = professionService.getListByCategoryAndLastId(mainCategory, subCategory, lastId);
-            return ApiResponse.query(professionList);
+            professionList = professionService.getListByCategoryAndLastId(mainCategory, subCategory, lastId, limit);
         } else if (mainCategory != null) {
             // 按主分类获取
-            List<ProfessionDTO> professionList = professionService.getListByMainCategoryAndLastId(mainCategory, lastId);
-            return ApiResponse.query(professionList);
+            professionList = professionService.getListByMainCategoryAndLastId(mainCategory, lastId, limit);
         } else {
             // 获取所有已发布职业
-            List<ProfessionDTO> professionList = professionService.getListByStateAndLastId(ContentState.PUBLISHED, lastId);
-            return ApiResponse.query(professionList);
+            professionList = professionService.getListByStateAndLastId(ContentState.PUBLISHED, lastId, limit);
         }
+
+        // 判断是否有更多数据
+        boolean hasMore = professionList.size() > pageSize;
+
+        // 如果有更多数据，只返回 pageSize 条
+        if (hasMore) {
+            professionList = professionList.subList(0, pageSize);
+        }
+
+        // 提取下一页的游标
+        Long nextLastId = null;
+        if (hasMore && !professionList.isEmpty()) {
+            nextLastId = professionList.get(professionList.size() - 1).getId();
+        }
+
+        KeysetPageResponse<ProfessionDTO> response = KeysetPageResponse.of(professionList, hasMore, null, nextLastId);
+        return ApiResponse.query(response);
     }
 
     /**

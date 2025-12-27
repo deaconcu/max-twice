@@ -16,7 +16,7 @@ import com.prosper.learn.interaction.message.MessageDO;
 import com.prosper.learn.interaction.message.MessageDataService;
 import com.prosper.learn.interaction.message.MessageDomainService;
 import com.prosper.learn.shared.common.utils.Utils;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
@@ -185,7 +185,7 @@ public class MessageService {
         try {
             jsonString = objectMapper.writeValueAsString(data);
         } catch (JsonProcessingException e) {
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
 
         create(jsonString, userId, 0, applyCourse);
@@ -283,7 +283,7 @@ public class MessageService {
     public List<MessageDTO> getListByCategory(int category, long receiverId, Long lastId, Integer type) {
         // 参数校验
         if (category < 1 || category > 3) {
-            throw ErrorCode.INVALID_PARAMETER.exception("消息分类必须为1-3");
+            throw StatusCode.INVALID_PARAMETER.exception("消息分类必须为1-3");
         }
 
         // 委托给领域服务获取数据

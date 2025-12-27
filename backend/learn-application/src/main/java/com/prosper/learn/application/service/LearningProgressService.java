@@ -13,7 +13,7 @@ import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.learning.enrollment.UserCourseDataService;
 import com.prosper.learn.learning.progress.LearningProgressDomainService;
 import com.prosper.learn.shared.domain.Enums;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.domain.event.user.learning.LearningCompletedEvent;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
@@ -125,7 +125,7 @@ public class LearningProgressService {
         // 验证节点存在（跨域依赖）
         NodeDO nodeDO = nodeDataService.getById(nodeId);
         if (nodeDO == null) {
-            throw ErrorCode.LEARNING_PROGRESS_INVALID_NODE_ID.exception();
+            throw StatusCode.LEARNING_PROGRESS_INVALID_NODE_ID.exception();
         }
 
         // 检查完成状态

@@ -1,7 +1,9 @@
 package com.prosper.learn.content.profession;
 
+import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.common.utils.ValidationUtils;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
+import com.prosper.learn.shared.infrastructure.config.SystemDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,7 @@ import static com.prosper.learn.shared.domain.Enums.*;
 public class ProfessionDomainService {
 
     private final ProfessionDataService professionDataService;
+    private final SystemDomainService systemDomainService;
 
     // ========== Command 方法（写操作）==========
 
@@ -45,6 +48,9 @@ public class ProfessionDomainService {
     @Transactional
     public Long create(Long creatorId, String name, String description, String skills,
                        int mainCategory, int subCategory) {
+        // 验证分类是否有效
+        systemDomainService.validateProfessionCategory(mainCategory, subCategory);
+
         ProfessionDO professionDO = new ProfessionDO();
         professionDO.setName(name);
         professionDO.setDescription(description);
@@ -84,10 +90,13 @@ public class ProfessionDomainService {
         // 参数验证
         ValidationUtils.requireNonBlank(name, "职业名称");
 
+        // 验证分类是否有效
+        systemDomainService.validateProfessionCategory(mainCategory, subCategory);
+
         // 验证职业是否存在并获取
         ProfessionDO professionDO = professionDataService.getById(id);
         if (professionDO == null) {
-            throw ErrorCode.PROFESSION_NOT_FOUND.exception();
+            throw StatusCode.PROFESSION_NOT_FOUND.exception();
         }
 
         // 更新字段
@@ -119,9 +128,7 @@ public class ProfessionDomainService {
 
         // 状态验证：只有已批准的职业不能重复批准，已拒绝和已屏蔽的可以重新批准
         if (enableStateValidation) {
-            if (ContentState.PUBLISHED.value() == profession.getState()) {
-                throw ErrorCode.ALREADY_APPROVED.exception();
-            }
+            Utils.validateStateTransition(profession.getState(), ContentState.PUBLISHED);
         }
 
         // 执行审核
@@ -129,7 +136,7 @@ public class ProfessionDomainService {
 
         // 并发检查
         if (enableConcurrencyCheck && rowsAffected == 0) {
-            throw ErrorCode.PROFESSION_STATE_CONFLICT.exception();
+            throw StatusCode.PROFESSION_STATE_CONFLICT.exception();
         }
 
         log.info("Approved profession: id={}", id);
@@ -151,9 +158,7 @@ public class ProfessionDomainService {
 
         // 状态验证：已拒绝和已屏蔽的不能重复拒绝
         if (enableStateValidation) {
-            if (ContentState.REJECTED.value() == profession.getState()) {
-                throw ErrorCode.ALREADY_REJECTED.exception();
-            }
+            Utils.validateStateTransition(profession.getState(), ContentState.REJECTED);
         }
 
         String reasonValue = reason != null ? reason : "";
@@ -163,7 +168,7 @@ public class ProfessionDomainService {
 
         // 并发检查
         if (enableConcurrencyCheck && rowsAffected == 0) {
-            throw ErrorCode.PROFESSION_STATE_CONFLICT.exception();
+            throw StatusCode.PROFESSION_STATE_CONFLICT.exception();
         }
 
         log.info("Rejected profession: id={}, reason={}", id, reasonValue);
@@ -185,9 +190,7 @@ public class ProfessionDomainService {
 
         // 状态验证：已屏蔽的不能重复屏蔽
         if (enableStateValidation) {
-            if (ContentState.BANNED.value() == profession.getState()) {
-                throw ErrorCode.ALREADY_BANNED.exception();
-            }
+            Utils.validateStateTransition(profession.getState(), ContentState.BANNED);
         }
 
         String reasonValue = reason != null ? reason : "";
@@ -197,7 +200,7 @@ public class ProfessionDomainService {
 
         // 并发检查
         if (enableConcurrencyCheck && rowsAffected == 0) {
-            throw ErrorCode.PROFESSION_STATE_CONFLICT.exception();
+            throw StatusCode.PROFESSION_STATE_CONFLICT.exception();
         }
 
         log.info("Banned profession: id={}, reason={}", id, reasonValue);
@@ -213,7 +216,7 @@ public class ProfessionDomainService {
     public void delete(Long id) {
         ProfessionDO professionDO = professionDataService.getById(id);
         if (professionDO == null) {
-            throw ErrorCode.PROFESSION_NOT_FOUND.exception();
+            throw StatusCode.PROFESSION_NOT_FOUND.exception();
         }
 
         // 执行删除
@@ -241,29 +244,29 @@ public class ProfessionDomainService {
     /**
      * 根据状态和最后ID获取职业列表
      */
-    public List<ProfessionDO> listByStateAndLastId(int state, Long lastId) {
-        return professionDataService.listByStateAndLastId((byte) state, lastId);
+    public List<ProfessionDO> listByStateAndLastId(int state, Long lastId, int limit) {
+        return professionDataService.listByStateAndLastId((byte) state, lastId, limit);
     }
 
     /**
      * 根据主分类和最后ID获取职业列表
      */
-    public List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, Long lastId) {
-        return professionDataService.listByMainCategoryAndLastId(mainCategory, lastId);
+    public List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, Long lastId, int limit) {
+        return professionDataService.listByMainCategoryAndLastId(mainCategory, lastId, limit);
     }
 
     /**
      * 根据子分类和最后ID获取职业列表
      */
-    public List<ProfessionDO> listBySubCategoryAndLastId(int subCategory, Long lastId) {
-        return professionDataService.listBySubCategoryAndLastId(subCategory, lastId);
+    public List<ProfessionDO> listBySubCategoryAndLastId(int subCategory, Long lastId, int limit) {
+        return professionDataService.listBySubCategoryAndLastId(subCategory, lastId, limit);
     }
 
     /**
      * 根据主分类和子分类获取职业列表
      */
-    public List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, Long lastId) {
-        return professionDataService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
+    public List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, Long lastId, int limit) {
+        return professionDataService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId, limit);
     }
 
     /**

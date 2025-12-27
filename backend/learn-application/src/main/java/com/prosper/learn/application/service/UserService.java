@@ -2,17 +2,15 @@ package com.prosper.learn.application.service;
 
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.UserConverter;
-import com.prosper.learn.application.dto.response.FolloweeDTO;
 import com.prosper.learn.application.dto.response.SubscriptionDTO;
 import com.prosper.learn.application.dto.response.user.*;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.interaction.follow.FollowDO;
 import com.prosper.learn.interaction.follow.FollowDataService;
-import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentBookmarkedEvent;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentUnbookmarkedEvent;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
@@ -94,7 +92,7 @@ public class UserService {
         UserDO userDO = userDataService.validateAndGetByName(username);
 
         if (userDO.getState() != null && userDO.getState() == UserState.BANNED.value()) {
-            throw ErrorCode.USER_BANNED.exception();
+            throw StatusCode.USER_BANNED.exception();
         }
 
         return toPublicDTO(userDO, viewerId);
@@ -484,7 +482,7 @@ public class UserService {
 
     private void validateUserId(Long userId) {
         if (userId == null || userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
         }
     }
     
@@ -492,60 +490,60 @@ public class UserService {
         validateUserId(userId);
         UserDO userDO = userDataService.getById(userId);
         if (userDO == null) {
-            throw ErrorCode.USER_NOT_FOUND.exception();
+            throw StatusCode.USER_NOT_FOUND.exception();
         }
         return userDO;
     }
 
     private void validateCourseExists(Long courseId) {
         if (courseId == null || courseId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
         }
         CourseDO courseDO = courseDataService.getById(courseId);
         if (courseDO == null) {
-            throw ErrorCode.COURSE_NOT_FOUND.exception();
+            throw StatusCode.COURSE_NOT_FOUND.exception();
         }
     }
     
     private void validateEmail(String email) {
         if (!StringUtils.hasText(email)) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
         }
         if (!EMAIL_PATTERN.matcher(email).matches()) {
-            throw ErrorCode.USER_INVALID_EMAIL_FORMAT.exception();
+            throw StatusCode.USER_INVALID_EMAIL_FORMAT.exception();
         }
     }
 
     private void validateUsername(String username) {
         if (!StringUtils.hasText(username)) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
         }
         if (username.length() > systemProperties.getUser().getMaxUsernameLength()) {
-            throw ErrorCode.USER_INVALID_USERNAME_LENGTH.exception();
+            throw StatusCode.USER_INVALID_USERNAME_LENGTH.exception();
         }
     }
 
     private void validatePassword(String password) {
         if (password == null || password.length() < systemProperties.getUser().getMinPasswordLength()) {
-            throw ErrorCode.USER_INVALID_PASSWORD_LENGTH.exception();
+            throw StatusCode.USER_INVALID_PASSWORD_LENGTH.exception();
         }
     }
 
     private void validateSearchName(String name) {
         if (!StringUtils.hasText(name)) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
         }
     }
 
     private void validateVerificationCode(String code) {
         if (!StringUtils.hasText(code)) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
         }
     }
 
     private void validateSubscriptionString(String subscription) {
         if (subscription == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
         }
     }
 

@@ -4,7 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.dto.request.UpvoteRequest;
 import com.prosper.learn.application.dto.response.UpvoteStatusDTO;
 import com.prosper.learn.application.service.UpvoteService;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
@@ -55,7 +55,7 @@ public class UpvotesController {
         } else if (request.getObjectType() == memory_card_deck.value()) {
             upvoteService.upvoteMemoryCardDeck(request.getObjectId(), currentUser);
         } else {
-            throw ErrorCode.INVALID_PARAMETER.exception();
+            throw StatusCode.INVALID_PARAMETER.exception();
         }
 
         // 查询操作使用 UpvoteService

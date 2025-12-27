@@ -10,7 +10,7 @@ import com.prosper.learn.content.profession.ProfessionDomainService;
 import com.prosper.learn.shared.common.utils.ValidationUtils;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
@@ -65,23 +65,23 @@ public class ProfessionService {
      * 职业被拒绝或屏蔽时抛出异常
      */
     public ProfessionDTO getById(long id, boolean published) {
-        ProfessionDO professionDO = professionDomainService.getById(id);
+        ProfessionDO professionDO = professionDomainService.validateAndGet(id);
         if (professionDO == null) return null;
         if (published &&
             (professionDO.getState() == ContentState.REJECTED.value() ||
              professionDO.getState() == ContentState.BANNED.value())) {
-            throw ErrorCode.PROFESSION_BLOCKED.exception();
+            throw StatusCode.PROFESSION_BLOCKED.exception();
         }
         return toDTO(professionDO);
     }
 
-    public List<ProfessionDTO> getListByStateAndLastId(ContentState state, Long lastId) {
-        List<ProfessionDO> professionDOList = professionDomainService.listByStateAndLastId(state.value(), lastId);
+    public List<ProfessionDTO> getListByStateAndLastId(ContentState state, Long lastId, int limit) {
+        List<ProfessionDO> professionDOList = professionDomainService.listByStateAndLastId(state.value(), lastId, limit);
         return toDTO(professionDOList);
     }
 
-    public List<ProfessionDTO> getListByMainCategoryAndLastId(int mainCategory, Long lastId) {
-        List<ProfessionDO> professionDOList = professionDomainService.listByMainCategoryAndLastId(mainCategory, lastId);
+    public List<ProfessionDTO> getListByMainCategoryAndLastId(int mainCategory, Long lastId, int limit) {
+        List<ProfessionDO> professionDOList = professionDomainService.listByMainCategoryAndLastId(mainCategory, lastId, limit);
         return toDTO(professionDOList);
     }
 
@@ -92,8 +92,8 @@ public class ProfessionService {
 //    }
 // --注释掉检查 STOP (2025/12/10 11:23)
 
-    public List<ProfessionDTO> getListByCategoryAndLastId(int mainCategory, int subCategory, Long lastId) {
-        List<ProfessionDO> professionDOList = professionDomainService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
+    public List<ProfessionDTO> getListByCategoryAndLastId(int mainCategory, int subCategory, Long lastId, int limit) {
+        List<ProfessionDO> professionDOList = professionDomainService.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId, limit);
         return toDTO(professionDOList);
     }
 
@@ -119,7 +119,7 @@ public class ProfessionService {
     public void update(Long id, UpdateProfessionRequest request, UserDO operator) {
         // 参数验证
         if (request == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("更新请求不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("更新请求不能为空");
         }
 
         // 调用 DomainService 更新职业
@@ -239,7 +239,7 @@ public class ProfessionService {
 
         } catch (Exception e) {
             log.error("获取热门专业失败，limit: {}", limit, e);
-            throw ErrorCode.PROFESSION_HOT_LIST_FAILED.exception(e);
+            throw StatusCode.PROFESSION_HOT_LIST_FAILED.exception(e);
         }
     }
 

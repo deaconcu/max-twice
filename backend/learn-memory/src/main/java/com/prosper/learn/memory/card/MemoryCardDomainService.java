@@ -6,7 +6,7 @@ import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums.ContentState;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -70,17 +70,17 @@ public class MemoryCardDomainService {
 
         UserCardSrsDO srsState = userCardSrsDataService.getByUserAndCard(userId, cardId);
         if (srsState == null || srsState.getCardVersionId() == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户未学习此卡片，无法查看差异");
+            throw StatusCode.INVALID_PARAMETER.exception("用户未学习此卡片，无法查看差异");
         }
 
         MemoryCardVersionDO oldVersion = cardVersionDataService.getById(srsState.getCardVersionId());
         if (oldVersion == null) {
-            throw ErrorCode.SYSTEM_ERROR.exception("用户学习版本不存在");
+            throw StatusCode.SYSTEM_ERROR.exception("用户学习版本不存在");
         }
 
         MemoryCardVersionDO newVersion = cardVersionDataService.getById(card.getCurrentVersionId());
         if (newVersion == null) {
-            throw ErrorCode.SYSTEM_ERROR.exception("卡片最新版本不存在");
+            throw StatusCode.SYSTEM_ERROR.exception("卡片最新版本不存在");
         }
 
         Map<String, Object> result = new HashMap<>();
@@ -109,7 +109,7 @@ public class MemoryCardDomainService {
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
 
         if (!deck.getCreatorId().equals(userId)) {
-            throw ErrorCode.PERMISSION_DENIED.exception("无权限在此卡片组中创建卡片");
+            throw StatusCode.PERMISSION_DENIED.exception("无权限在此卡片组中创建卡片");
         }
 
         String contentHash = calculateContentHash(front, back);
@@ -122,7 +122,7 @@ public class MemoryCardDomainService {
 
         int cardResult = cardDataService.insert(card);
         if (cardResult <= 0) {
-            throw ErrorCode.SYSTEM_ERROR.exception("创建卡片失败");
+            throw StatusCode.SYSTEM_ERROR.exception("创建卡片失败");
         }
 
         MemoryCardVersionDO version = new MemoryCardVersionDO();
@@ -136,7 +136,7 @@ public class MemoryCardDomainService {
 
         int versionResult = cardVersionDataService.insert(version);
         if (versionResult <= 0) {
-            throw ErrorCode.SYSTEM_ERROR.exception("创建卡片版本失败");
+            throw StatusCode.SYSTEM_ERROR.exception("创建卡片版本失败");
         }
 
         card.setCurrentVersionId(version.getId());
@@ -161,7 +161,7 @@ public class MemoryCardDomainService {
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
 
         if (!deck.getCreatorId().equals(userId)) {
-            throw ErrorCode.PERMISSION_DENIED.exception("无权限在此卡片组中创建卡片");
+            throw StatusCode.PERMISSION_DENIED.exception("无权限在此卡片组中创建卡片");
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -180,7 +180,7 @@ public class MemoryCardDomainService {
 
         int cardResult = cardDataService.batchInsert(cardsToInsert);
         if (cardResult <= 0) {
-            throw ErrorCode.SYSTEM_ERROR.exception("批量创建卡片失败");
+            throw StatusCode.SYSTEM_ERROR.exception("批量创建卡片失败");
         }
 
         List<MemoryCardVersionDO> versionsToInsert = new ArrayList<>();
@@ -204,7 +204,7 @@ public class MemoryCardDomainService {
 
         int versionResult = cardVersionDataService.batchInsert(versionsToInsert);
         if (versionResult <= 0) {
-            throw ErrorCode.SYSTEM_ERROR.exception("批量创建卡片版本失败");
+            throw StatusCode.SYSTEM_ERROR.exception("批量创建卡片版本失败");
         }
 
         for (int i = 0; i < cardsToInsert.size(); i++) {
@@ -227,12 +227,12 @@ public class MemoryCardDomainService {
         MemoryCardDO existingCard = cardDataService.validateAndGet(cardId);
 
         if (!existingCard.getCreatorId().equals(userId)) {
-            throw ErrorCode.PERMISSION_DENIED.exception("无权限修改此卡片");
+            throw StatusCode.PERMISSION_DENIED.exception("无权限修改此卡片");
         }
 
         MemoryCardVersionDO currentVersion = cardVersionDataService.getById(existingCard.getCurrentVersionId());
         if (currentVersion == null) {
-            throw ErrorCode.SYSTEM_ERROR.exception("卡片版本不存在");
+            throw StatusCode.SYSTEM_ERROR.exception("卡片版本不存在");
         }
 
         String contentHash = calculateContentHash(front, back);
@@ -251,7 +251,7 @@ public class MemoryCardDomainService {
 
         int versionResult = cardVersionDataService.insert(newVersion);
         if (versionResult <= 0) {
-            throw ErrorCode.SYSTEM_ERROR.exception("创建新版本失败");
+            throw StatusCode.SYSTEM_ERROR.exception("创建新版本失败");
         }
 
         cardVersionDataService.updateActiveStatus(currentVersion.getId(), false);
@@ -276,12 +276,12 @@ public class MemoryCardDomainService {
         MemoryCardDO card = cardDataService.validateAndGet(cardId);
 
         if (!card.getCreatorId().equals(userId)) {
-            throw ErrorCode.PERMISSION_DENIED.exception("无权限删除此卡片");
+            throw StatusCode.PERMISSION_DENIED.exception("无权限删除此卡片");
         }
 
         MemoryCardDeckDO deck = deckDataService.getById(card.getDeckId());
         if (deck == null) {
-            throw ErrorCode.SYSTEM_ERROR.exception("卡片组不存在");
+            throw StatusCode.SYSTEM_ERROR.exception("卡片组不存在");
         }
 
         card.setState(ContentState.BANNED.value());
@@ -301,7 +301,7 @@ public class MemoryCardDomainService {
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
 
         if (!deck.getCreatorId().equals(userId)) {
-            throw ErrorCode.PERMISSION_DENIED.exception("无权限删除此卡片组中的卡片");
+            throw StatusCode.PERMISSION_DENIED.exception("无权限删除此卡片组中的卡片");
         }
 
         List<MemoryCardDO> cards = cardDataService.getByDeckId(deckId);

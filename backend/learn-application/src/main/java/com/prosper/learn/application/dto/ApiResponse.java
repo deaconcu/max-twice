@@ -1,10 +1,12 @@
 package com.prosper.learn.application.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.Data;
 
 /**
  * 统一API响应格式
+ * HTTP状态码均返回200，具体业务状态通过code字段区分
  * 
  * @param <T> 数据类型
  */
@@ -32,17 +34,17 @@ public class ApiResponse<T> {
     // ========== 请求未到达业务层 ==========
 
     /**
-     * 参数错误响应，没到达业务逻辑层，默认422
+     * 参数错误响应，没到达业务逻辑层，默认400
      */
     public static <T> ApiResponse<T> paramError(String message) {
-        return new ApiResponse<>(422, message, null);
+        return new ApiResponse<>(StatusCode.INVALID_PARAMETER.getCode(), message, null);
     }
 
     /**
-     * 未授权响应, 默认401
+     * 未授权响应，返回用户未登录错误码 1101
      */
     public static <T> ApiResponse<T> unauthorized(String message) {
-        return new ApiResponse<>(401, message, null);
+        return new ApiResponse<>(StatusCode.USER_NOT_LOGIN.getCode(), message, null);
     }
 
     // ========== 请求到达业务层且成功响应 ==========
@@ -51,21 +53,21 @@ public class ApiResponse<T> {
      * 成功响应（无数据）
      */
     public static <T> ApiResponse<T> success() {
-        return new ApiResponse<>(200, "操作成功", null);
+        return new ApiResponse<>(StatusCode.OK.getCode(), "操作成功", null);
     }
 
     /**
      * 成功响应（自定义消息）
      */
     public static <T> ApiResponse<T> success(String message, T data) {
-        return new ApiResponse<>(200, message, data);
+        return new ApiResponse<>(StatusCode.OK.getCode(), message, data);
     }
 
     /**
      * 成功响应 (带数据，用于命令操作)
      */
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(200, "操作成功", data);
+        return new ApiResponse<>(StatusCode.OK.getCode(), "操作成功", data);
     }
 
     /**
@@ -73,7 +75,7 @@ public class ApiResponse<T> {
      * 用于查询类接口，只返回 code 和 data
      */
     public static <T> ApiResponse<T> query(T data) {
-        return new ApiResponse<>(200, null, data);
+        return new ApiResponse<>(StatusCode.OK.getCode(), null, data);
     }
 
     // ========== 请求到达业务层，但是发生系统异常或者未知错误 ==========
@@ -86,10 +88,10 @@ public class ApiResponse<T> {
     }
 
     /**
-     * 错误响应（默认500）
+     * 错误响应（默认系统错误）
      */
     public static <T> ApiResponse<T> error(String message) {
-        return new ApiResponse<>(500, message, null);
+        return new ApiResponse<>(StatusCode.UNKNOWN_EXCEPTION.getCode(), message, null);
     }
 
     // ========== 其他方法 ==========

@@ -2,15 +2,13 @@ package com.prosper.learn.application.service;
 
 import com.prosper.learn.application.converter.UserCardSrsConverter;
 import com.prosper.learn.application.dto.request.ReviewCardRequest;
-import com.prosper.learn.application.dto.request.ReviewSessionRequest;
-import com.prosper.learn.application.dto.response.ReviewCardResultDTO;
 import com.prosper.learn.application.dto.response.ReviewStatsDTO;
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.memory.card.MemoryCardDataService;
 import com.prosper.learn.memory.card.MemoryCardDO;
 import com.prosper.learn.memory.review.ReviewDomainService;
 import com.prosper.learn.memory.review.UserCardSrsDO;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,7 +59,7 @@ public class ReviewService {
      */
     public List<CardWithSrsDTO> getReviewQueue(Long userId, Boolean dueOnly, Long courseId, Integer limit, Long lastId) {
         if (userId == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户ID不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("用户ID不能为空");
         }
 
         // 委托给 DomainService 查询复习队列
@@ -88,10 +86,10 @@ public class ReviewService {
     @Transactional
     public void submitReview(Long userId, ReviewCardRequest request) {
         if (userId == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户ID不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("用户ID不能为空");
         }
         if (request == null || request.getCardId() == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("请求参数不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("请求参数不能为空");
         }
 
         // 委托给 DomainService 处理复习逻辑
@@ -142,7 +140,7 @@ public class ReviewService {
      */
     public ReviewStatsDTO getReviewStats(Long userId, Period period) {
         if (userId == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户ID不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("用户ID不能为空");
         }
         if (period == null) {
             period = Period.WEEK;

@@ -40,19 +40,35 @@ public class PostsController {
 
     /**
      * 批量获取帖子
+     * 支持两种查询方式：
+     * 1. 按IDs批量查询：传 ids 参数，返回 List
+     * 2. 按节点分页查询：传 nodeId + 分页参数，返回 KeysetPageResponse
+     *
      * 映射: GET /postings?ids=1,2,3 → GET /api/v1/posts?ids=1,2,3
      */
     @GetMapping("/posts")
     @SaCheckLogin
-    public ApiResponse<List<PostWithVoteDTO>> getPosts(
+    public ApiResponse<?> getPosts(
             @RequestParam(value = "ids", required = false) List<Long> ids,
             @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
-            @RequestParam(value = "lastScore", required = false, defaultValue = "0") double lastScore,
-            @RequestParam(value = "lastId", required = false, defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastPostingId,
+            @RequestParam(value = "lastScore", required = false) Double lastScore,
+            @RequestParam(value = "lastId", required = false) @Min(value = 0, message = "最后ID不能小于0") Long lastPostingId,
             @CurrentUser UserDO currentUser) {
 
-        List<PostWithVoteDTO> posts = postService.getPostsWithUserAndVoteInfo(ids, nodeId, lastScore, lastPostingId, currentUser.getId());
-        return ApiResponse.success(posts);
+        // 按 IDs 批量查询 - 返回 List
+        if (ids != null && !ids.isEmpty()) {
+            List<PostWithVoteDTO> posts = postService.getPostsByIds(ids, currentUser.getId());
+            return ApiResponse.success(posts);
+        }
+
+        // 按节点分页查询 - 返回 KeysetPageResponse
+        if (nodeId != null) {
+            KeysetPageResponse<PostWithVoteDTO> response = postService.getNodePostsPage(nodeId, lastScore, lastPostingId, currentUser.getId());
+            return ApiResponse.success(response);
+        }
+
+        // 参数不足
+        return ApiResponse.error(400, "必须提供 ids 或 nodeId 参数");
     }
 
     /**
@@ -113,25 +129,12 @@ public class PostsController {
     }
 
     /**
-     * 获取节点帖子
-     * 映射: GET /node/{nodeId}/posting → GET /api/v1/nodes/{nodeId}/posts
-     */
-    @GetMapping("/nodes/{nodeId}/posts")
-    public ApiResponse<List<PostSummaryDTO>> getNodePosts(
-            @PathVariable @NotNull(message = "节点ID不能为空")
-            @Positive(message = "节点ID必须大于0")
-            Long nodeId) {
-        List<PostSummaryDTO> posts = postService.getNodePostsList(nodeId);
-        return ApiResponse.success(posts);
-    }
-
-    /**
      * 获取用户文章或内容（仅已发布）
      * 映射: GET /user/article → GET /api/v1/users/{userId}/posts?type=2
      * 映射: GET /user/contents → GET /api/v1/users/{userId}/posts?type=1
      */
     @GetMapping("/users/{userId}/posts")
-    public ApiResponse<List<PostFullDTO>> getUserPosts(
+    public ApiResponse<KeysetPageResponse<PostFullDTO>> getUserPosts(
             @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false, defaultValue = "2") Integer type) {
@@ -140,8 +143,9 @@ public class PostsController {
         if (postType == null) {
             return ApiResponse.error(400, "无效的帖子类型");
         }
-        List<PostFullDTO> posts = postService.getUserPosts(userId, lastId, postType, Enums.ContentState.PUBLISHED.value());
-        return ApiResponse.success(posts);
+        KeysetPageResponse<PostFullDTO> response = postService.getUserPostsWithPagination(
+                userId, lastId, postType, Enums.ContentState.PUBLISHED.value());
+        return ApiResponse.success(response);
     }
 
     /**

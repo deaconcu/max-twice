@@ -1,7 +1,7 @@
 package com.prosper.learn.memory.review;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -82,7 +82,7 @@ public class UserCardInCourseDataService extends AbstractDataService<UserCardInC
         } catch (Exception e) {
             log.error("Error inserting relation: userId={}, cardId={}, courseId={}", 
                      relation.getUserId(), relation.getCardId(), relation.getCourseId(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -303,7 +303,7 @@ public class UserCardInCourseDataService extends AbstractDataService<UserCardInC
         } catch (Exception e) {
             log.error("Error batch inserting card-course relations: userId={}, courseId={}, cardCount={}",
                      userId, courseId, cardIds.size(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 
@@ -323,7 +323,7 @@ public class UserCardInCourseDataService extends AbstractDataService<UserCardInC
         } catch (Exception e) {
             log.error("Error batch deleting card-course relations: userId={}, courseId={}, cardCount={}", 
                      userId, courseId, cardIds.size(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
 

@@ -204,7 +204,7 @@ const currNodeId = ref(0)
 const lastPathNode = ref<any>(null)
 const pathText = ref('')
 
-// 使用 useFetch 加载页面数据
+// 使用 useFetch 加载页面数据（使用优化后的接口）
 const {
   data,
   loading: dataLoading,
@@ -212,7 +212,8 @@ const {
 } = useFetch<ReadResponse>({
   fetchFn: () => {
     const nodeId = Number(route.query.nodeId)
-    return pageApi.readByNode(nodeId)
+    // 使用优化后的 API，只返回需要的数据
+    return pageApi.readNodePosts(nodeId)
   },
   immediate: true,
   onDataReady: () => {
@@ -235,27 +236,27 @@ const {
   data: morePosts,
   loading: loadingMorePosts,
   execute: loadMorePosts,
-} = useFetch<any[]>({
+} = useFetch<any>({
   fetchFn: () => {
     if (!data.value || !data.value.otherPostings) {
       return Promise.reject(new Error('No data'))
     }
     const lastPosting = data.value.otherPostings[data.value.otherPostings.length - 1]
     const nodeId = Number(route.query.nodeId)
-    return postApi.getPosts(undefined, nodeId, lastPosting.score, lastPosting.id)
+    return postApi.getNodePosts(nodeId, lastPosting.score, lastPosting.id)
   },
   immediate: false,
   onDataReady: () => {
-    if (morePosts.value && morePosts.value.length > 0) {
+    if (morePosts.value && morePosts.value.items && morePosts.value.items.length > 0) {
       // 处理投票类型
-      morePosts.value.forEach((posting: any) => {
+      morePosts.value.items.forEach((posting: any) => {
         if (posting.voteType === 0) {
           posting.voteType = null
         }
       })
       // 追加到现有列表
-      data.value.otherPostings = [...(data.value.otherPostings || []), ...morePosts.value]
-      hasMore.value = true
+      data.value.otherPostings = [...(data.value.otherPostings || []), ...morePosts.value.items]
+      hasMore.value = morePosts.value.hasMore
     } else {
       hasMore.value = false
     }

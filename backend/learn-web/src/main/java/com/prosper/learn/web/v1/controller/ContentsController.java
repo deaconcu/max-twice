@@ -3,7 +3,7 @@ package com.prosper.learn.web.v1.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.dto.request.PostContentsRequest;
 import com.prosper.learn.content.toc.TocDomainService;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
@@ -55,7 +55,7 @@ public class ContentsController {
                 tocService.pin(currentUser.getId(), request.getCourseId(), request.getPath(), request.getPostingId(), false);
                 break;
             default:
-                throw ErrorCode.NOT_SUPPORTED.exception();
+                throw StatusCode.NOT_SUPPORTED.exception();
         }
         return ApiResponse.success();
     }

@@ -23,12 +23,8 @@ import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
 import com.prosper.learn.memory.card.MemoryCardDO;
 import com.prosper.learn.memory.card.MemoryCardDataService;
-import com.prosper.learn.memory.card.MemoryCardVersionDO;
-import com.prosper.learn.memory.card.MemoryCardVersionDataService;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDomainService;
-import com.prosper.learn.memory.review.UserCardSrsDO;
-import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
@@ -36,7 +32,7 @@ import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEven
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRemovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRestoredEvent;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
@@ -45,7 +41,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -733,7 +728,7 @@ public class MemoryCardDeckService {
         // 获取卡片组信息
         MemoryCardDeckDO deck = deckDomainService.getById(deckId);
         if (deck == null) {
-            throw ErrorCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
+            throw StatusCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
         }
 
         // 记录之前的状态
@@ -779,12 +774,12 @@ public class MemoryCardDeckService {
         // 获取卡片组信息
         MemoryCardDeckDO deck = deckDomainService.getById(deckId);
         if (deck == null) {
-            throw ErrorCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
+            throw StatusCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
         }
 
         // 检查状态：只能下架已发布的内容
         if (deck.getState() != Enums.ContentState.PUBLISHED.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只能下架已发布的内容");
+            throw StatusCode.INVALID_PARAMETER.exception("只能下架已发布的内容");
         }
 
         // 获取帖子和节点信息用于事件（跨域查询）
@@ -826,7 +821,7 @@ public class MemoryCardDeckService {
         // 获取卡片组信息
         MemoryCardDeckDO deck = deckDomainService.getById(deckId);
         if (deck == null) {
-            throw ErrorCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
+            throw StatusCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
         }
 
         // 记录之前的状态
@@ -834,7 +829,7 @@ public class MemoryCardDeckService {
 
         // 检查状态：只能恢复 REJECTED 或 BANNED 的内容
         if (previousState != Enums.ContentState.REJECTED.value() && previousState != Enums.ContentState.BANNED.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只能恢复被拒绝或被封禁的内容");
+            throw StatusCode.INVALID_PARAMETER.exception("只能恢复被拒绝或被封禁的内容");
         }
 
         // 获取帖子和节点信息用于事件（跨域查询）
@@ -969,7 +964,7 @@ public class MemoryCardDeckService {
 
         // 只为文章类型的帖子生成记忆卡片
         if (!post.getType().equals(Enums.PostType.article.value())) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只能为文章类型的帖子生成记忆卡片");
+            throw StatusCode.INVALID_PARAMETER.exception("只能为文章类型的帖子生成记忆卡片");
         }
 
         // 将任务加入队列（跨域服务）
@@ -1042,7 +1037,7 @@ public class MemoryCardDeckService {
             deckDOList = deckDomainService.getListByStateWithIdPaging(state, lastId, queryLimit);
         } else {
             // 没有任何筛选条件，返回空列表
-            throw ErrorCode.INVALID_PARAMETER.exception("至少需要提供一个查询条件（state、postId 或 creatorId）");
+            throw StatusCode.INVALID_PARAMETER.exception("至少需要提供一个查询条件（state、postId 或 creatorId）");
         }
 
         // 判断是否有更多数据

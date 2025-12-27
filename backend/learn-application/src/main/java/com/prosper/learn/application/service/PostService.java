@@ -1,7 +1,5 @@
 package com.prosper.learn.application.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.analytics.dto.ContentStatsDTO;
 import com.prosper.learn.analytics.stats.service.DailyStatsService;
@@ -14,11 +12,9 @@ import com.prosper.learn.application.dto.request.UpdatePostRequest;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.NodeDTO;
 import com.prosper.learn.application.dto.response.PostDTO;
-import com.prosper.learn.application.dto.response.node.NodeSummaryDTO;
-import com.prosper.learn.application.dto.response.node.NodeWithCourseDTO;
+import com.prosper.learn.application.dto.response.node.NodeWithCourseBriefDTO;
 import com.prosper.learn.application.dto.response.post.PostFullDTO;
 import com.prosper.learn.application.dto.response.post.PostSummaryDTO;
-import com.prosper.learn.application.dto.response.post.PostWithCreatorDTO;
 import com.prosper.learn.application.dto.response.post.PostWithVoteDTO;
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import com.prosper.learn.content.course.CourseDO;
@@ -37,7 +33,7 @@ import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEv
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRemovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRestoredEvent;
 import com.prosper.learn.shared.domain.exception.BusinessException;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
@@ -197,14 +193,24 @@ public class PostService {
         Map<Long, UserDO> userMap = userList.stream().collect(Collectors.toMap(UserDO::getId, node -> node));
 
         for (PostFullDTO postDTO : postDTOList) {
-            postDTO.setNode(nodeConverter.toDTO(nodeMap.get(postDTO.getNodeId())));
-            NodeDTO node = postDTO.getNode();
-            CourseDO courseDO = courseDataService.getById(node.getCourseId());
-            node.setCourse(courseService.toBriefDTO(courseDO));
+            // 转换并填充节点信息
+            NodeDO nodeDO = nodeMap.get(postDTO.getNodeId());
+            if (nodeDO != null) {
+                NodeWithCourseBriefDTO nodeDTO = nodeConverter.toWithCourseBriefDTO(nodeDO);
+                // 填充课程简要信息
+                CourseDO courseDO = courseDataService.getById(nodeDO.getCourseId());
+                if (courseDO != null) {
+                    nodeDTO.setCourse(courseService.toBriefDTO(courseDO));
+                }
+                postDTO.setNode(nodeDTO);
+            }
 
-            if (types.containsKey(postDTO.getId()))
+            // 填充投票状态
+            if (types.containsKey(postDTO.getId())) {
                 postDTO.setVoteType(types.get(postDTO.getId()));
+            }
 
+            // 填充创建者信息
             postDTO.setCreator(userConverter.toBriefDTO(userMap.get(postDTO.getCreatorId())));
         }
         return postDTOList;
@@ -343,16 +349,47 @@ public class PostService {
 
 
     /**
-     * 批量获取帖子（带用户信息和投票状态）
+     * 按 IDs 批量获取帖子（带用户信息和投票状态）
      */
-    public List<PostWithVoteDTO> getPostsWithUserAndVoteInfo(
-            List<Long> ids, Long nodeId, double lastScore, Long lastPostingId, long userId) {
-        // 调用 DomainService 查询
-        List<PostDO> postDOList = domainService.getPostsByIdsOrNode(
-                ids, nodeId, lastScore, lastPostingId, 2, ContentState.PUBLISHED.value());
+    public List<PostWithVoteDTO> getPostsByIds(List<Long> ids, long userId) {
+        // 调用 DomainService 查询（带 idToName 处理）
+        List<PostDO> postDOList = domainService.getByIdsWithIdToName(ids);
 
         // DTO 转换（填充用户和点赞信息）
         return toPostWithVote(postDOList, userId);
+    }
+
+    /**
+     * 获取节点帖子分页列表（带用户信息和投票状态）
+     * 返回 KeysetPageResponse 格式
+     */
+    public KeysetPageResponse<PostWithVoteDTO> getNodePostsPage(
+            Long nodeId, Double lastScore, Long lastPostingId, long userId) {
+        int pageSize = 20; // 每页数量
+
+        // 查询 pageSize + 1 条数据，用于判断是否有更多
+        List<PostDO> postDOList = domainService.getPostsByIdsOrNode(
+                null, nodeId, lastScore, lastPostingId, pageSize + 1, ContentState.PUBLISHED.value());
+
+        // 判断是否有更多数据
+        boolean hasMore = postDOList.size() > pageSize;
+        if (hasMore) {
+            postDOList = postDOList.subList(0, pageSize); // 只返回 pageSize 条
+        }
+
+        // DTO 转换
+        List<PostWithVoteDTO> items = toPostWithVote(postDOList, userId);
+
+        // 构建 nextCursor
+        Double nextLastScore = null;
+        Long nextLastId = null;
+        if (hasMore && !items.isEmpty()) {
+            PostWithVoteDTO lastItem = items.get(items.size() - 1);
+            nextLastScore = lastItem.getScore();
+            nextLastId = lastItem.getId();
+        }
+
+        return KeysetPageResponse.of(items, hasMore, nextLastScore, nextLastId);
     }
 
     /**
@@ -435,10 +472,10 @@ public class PostService {
     @Transactional
     public Long createPost(UserDO currentUser, CreatePostRequest request, ContentState postState) {
         if (request == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("帖子对象不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("帖子对象不能为空");
         }
         if (currentUser == null || currentUser.getId() == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户信息无效");
+            throw StatusCode.INVALID_PARAMETER.exception("用户信息无效");
         }
 
         long userId = currentUser.getId();
@@ -462,14 +499,14 @@ public class PostService {
     @Transactional
     public void updatePost(Long id, UpdatePostRequest request, UserDO operator) {
         if (request == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("帖子对象不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("帖子对象不能为空");
         }
 
         PostDO postDO = domainService.validateAndGet(id);
 
         // 验证权限：只有所有者或管理员可以修改
         if (!postDO.getCreatorId().equals(operator.getId()) && !operator.hasRole(UserRole.ADMIN)) {
-            throw ErrorCode.PERMISSION_DENIED.exception();
+            throw StatusCode.PERMISSION_DENIED.exception();
         }
 
         // 调用 DomainService 更新
@@ -508,7 +545,7 @@ public class PostService {
 
         // 验证权限：只有所有者或管理员可以删除
         if (!postDO.getCreatorId().equals(currentUser.getId()) && !currentUser.hasRole(UserRole.ADMIN)) {
-            throw ErrorCode.PERMISSION_DENIED.exception();
+            throw StatusCode.PERMISSION_DENIED.exception();
         }
 
         domainService.softDelete(id);
@@ -618,12 +655,12 @@ public class PostService {
 
         PostDO postDO = postDataService.getById(id);
         if (postDO == null) {
-            throw ErrorCode.POST_NOT_FOUND.exception();
+            throw StatusCode.POST_NOT_FOUND.exception();
         }
 
         // 检查状态：只能下架已发布的内容
         if (postDO.getState() != ContentState.PUBLISHED.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只能下架已发布的内容");
+            throw StatusCode.INVALID_PARAMETER.exception("只能下架已发布的内容");
         }
 
         NodeDO nodeDO = nodeDataService.getById(postDO.getNodeId());
@@ -666,7 +703,7 @@ public class PostService {
 
         PostDO postDO = postDataService.getById(id);
         if (postDO == null) {
-            throw ErrorCode.POST_NOT_FOUND.exception();
+            throw StatusCode.POST_NOT_FOUND.exception();
         }
 
         // 记录之前的状态
@@ -674,12 +711,12 @@ public class PostService {
 
         // 检查状态：只能恢复 REJECTED 或 BANNED 的内容
         if (previousState != ContentState.REJECTED.value() && previousState != ContentState.BANNED.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只能恢复被拒绝或被封禁的内容");
+            throw StatusCode.INVALID_PARAMETER.exception("只能恢复被拒绝或被封禁的内容");
         }
 
         // 从 BANNED 恢复需要 ADMIN 权限
         if (previousState == ContentState.BANNED.value() && !currentUser.hasRole(UserRole.ADMIN)) {
-            throw ErrorCode.PERMISSION_DENIED.exception("只有管理员可以解封内容");
+            throw StatusCode.PERMISSION_DENIED.exception("只有管理员可以解封内容");
         }
 
         NodeDO nodeDO = nodeDataService.getById(postDO.getNodeId());
@@ -724,7 +761,7 @@ public class PostService {
 
         PostDO postDO = postDataService.getById(id);
         if (postDO == null) {
-            throw ErrorCode.POST_NOT_FOUND.exception();
+            throw StatusCode.POST_NOT_FOUND.exception();
         }
 
         // 记录之前的状态

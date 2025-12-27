@@ -35,7 +35,7 @@ public interface CourseMapper {
     @Select("<script>" +
             "SELECT * FROM course WHERE state = #{state.value} " +
             "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
-            "ORDER BY id DESC LIMIT 20" +
+            "ORDER BY id DESC LIMIT 21" +
             "</script>")
     List<CourseDO> listByStateAndLastId(ContentState state, Long lastId);
 
@@ -44,7 +44,7 @@ public interface CourseMapper {
             "SELECT * FROM course WHERE main_category = #{mainCategory} " +
             "AND state = " + ContentState.PUBLISHED_VALUE + " AND parent_course_id = 0 " +
             "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
-            "ORDER BY id DESC LIMIT 20" +
+            "ORDER BY id DESC LIMIT 21" +
             "</script>")
     List<CourseDO> listRootByMainCategory(int mainCategory, Long lastId);
 
@@ -53,7 +53,7 @@ public interface CourseMapper {
             "SELECT * FROM course WHERE main_category = #{mainCategory} AND sub_category = #{subCategory} " +
             "AND state = " + ContentState.PUBLISHED_VALUE + " AND parent_course_id = 0 " +
             "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
-            "ORDER BY id DESC LIMIT 20" +
+            "ORDER BY id DESC LIMIT 21" +
             "</script>")
     List<CourseDO> listRootByCategory(int mainCategory, int subCategory, Long lastId);
 

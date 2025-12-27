@@ -1,7 +1,7 @@
 package com.prosper.learn.analytics.monitoring.service;
 
 import com.prosper.learn.analytics.stats.service.DailyStatsService;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +53,7 @@ public class StatsMonitorService {
         try {
             redisTemplate.opsForValue().get(HEALTH_CHECK_KEY);
         } catch (Exception e) {
-            throw ErrorCode.REDIS_CONNECTION_ERROR.exception(e);
+            throw StatusCode.REDIS_CONNECTION_ERROR.exception(e);
         }
     }
 
@@ -74,10 +74,10 @@ public class StatsMonitorService {
      */
     private void validateDate(LocalDate date) {
         if (date == null) {
-            throw ErrorCode.INVALID_DATE.exception();
+            throw StatusCode.INVALID_DATE.exception();
         }
         if (date.isAfter(LocalDate.now())) {
-            throw ErrorCode.INVALID_DATE.exception();
+            throw StatusCode.INVALID_DATE.exception();
         }
     }
 
@@ -139,7 +139,7 @@ public class StatsMonitorService {
             
         } catch (Exception e) {
             log.error("监控Redis内存失败", e);
-            throw ErrorCode.REDIS_OPERATION_ERROR.exception(e);
+            throw StatusCode.REDIS_OPERATION_ERROR.exception(e);
         }
     }
 
@@ -172,7 +172,7 @@ public class StatsMonitorService {
             
         } catch (Exception e) {
             log.error("检查同步状态失败", e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -224,7 +224,7 @@ public class StatsMonitorService {
             return status.toString();
         } catch (Exception e) {
             log.error("获取系统状态失败", e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 }

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,10 +47,10 @@ public class AiService {
      */
     private void validatePrompt(String prompt) {
         if (prompt == null || prompt.trim().isEmpty()) {
-            throw ErrorCode.AI_SERVICE_INVALID_PARAMETER.exception("提示词不能为空");
+            throw StatusCode.AI_SERVICE_INVALID_PARAMETER.exception("提示词不能为空");
         }
         if (prompt.length() > 10000) {
-            throw ErrorCode.AI_SERVICE_INVALID_PARAMETER.exception("提示词长度不能超过10000字符");
+            throw StatusCode.AI_SERVICE_INVALID_PARAMETER.exception("提示词长度不能超过10000字符");
         }
     }
     
@@ -59,7 +59,7 @@ public class AiService {
      */
     private void validateModel(String model) {
         if (model == null || model.trim().isEmpty()) {
-            throw ErrorCode.AI_SERVICE_INVALID_PARAMETER.exception("模型名称不能为空");
+            throw StatusCode.AI_SERVICE_INVALID_PARAMETER.exception("模型名称不能为空");
         }
     }
     
@@ -137,7 +137,7 @@ public class AiService {
             return objectMapper.writeValueAsString(requestBody);
         } catch (JsonProcessingException e) {
             log.error("构建AI请求体失败", e);
-            throw ErrorCode.AI_SERVICE_REQUEST_FAILED.exception(e);
+            throw StatusCode.AI_SERVICE_REQUEST_FAILED.exception(e);
         }
     }
 
@@ -159,14 +159,14 @@ public class AiService {
                         Thread.sleep(1000 * attempt); // 指数退避
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
-                        throw ErrorCode.AI_SERVICE_REQUEST_FAILED.exception(ie);
+                        throw StatusCode.AI_SERVICE_REQUEST_FAILED.exception(ie);
                     }
                 }
             }
         }
         
         log.error("AI服务调用失败，已重试{}次", maxAttempts, lastException);
-        throw ErrorCode.AI_SERVICE_REQUEST_FAILED.exception(lastException);
+        throw StatusCode.AI_SERVICE_REQUEST_FAILED.exception(lastException);
     }
 
     /**
@@ -187,13 +187,13 @@ public class AiService {
             
             if (response.statusCode() != 200) {
                 log.error("AI服务返回错误状态码: {}, 响应: {}", response.statusCode(), response.body());
-                throw ErrorCode.AI_SERVICE_REQUEST_FAILED.exception("AI服务返回错误状态码: " + response.statusCode());
+                throw StatusCode.AI_SERVICE_REQUEST_FAILED.exception("AI服务返回错误状态码: " + response.statusCode());
             }
             
             return response.body();
         } catch (IOException | InterruptedException e) {
             log.error("AI服务网络请求失败", e);
-            throw ErrorCode.AI_SERVICE_REQUEST_FAILED.exception(e);
+            throw StatusCode.AI_SERVICE_REQUEST_FAILED.exception(e);
         }
     }
 
@@ -208,24 +208,24 @@ public class AiService {
             if (root.has("error")) {
                 String errorMessage = root.path("error").path("message").asText("未知错误");
                 log.error("AI服务返回错误: {}", errorMessage);
-                throw ErrorCode.AI_SERVICE_REQUEST_FAILED.exception("AI服务错误: " + errorMessage);
+                throw StatusCode.AI_SERVICE_REQUEST_FAILED.exception("AI服务错误: " + errorMessage);
             }
             
             // 提取回复内容
             JsonNode choices = root.path("choices");
             if (choices.isEmpty()) {
-                throw ErrorCode.AI_SERVICE_RESPONSE_PARSE_FAILED.exception("响应中没有choices字段");
+                throw StatusCode.AI_SERVICE_RESPONSE_PARSE_FAILED.exception("响应中没有choices字段");
             }
             
             String content = choices.get(0).path("message").path("content").asText();
             if (content.isEmpty()) {
-                throw ErrorCode.AI_SERVICE_RESPONSE_PARSE_FAILED.exception("响应内容为空");
+                throw StatusCode.AI_SERVICE_RESPONSE_PARSE_FAILED.exception("响应内容为空");
             }
             
             return content;
         } catch (JsonProcessingException e) {
             log.error("解析AI服务响应失败: {}", responseBody, e);
-            throw ErrorCode.AI_SERVICE_RESPONSE_PARSE_FAILED.exception(e);
+            throw StatusCode.AI_SERVICE_RESPONSE_PARSE_FAILED.exception(e);
         }
     }
 }

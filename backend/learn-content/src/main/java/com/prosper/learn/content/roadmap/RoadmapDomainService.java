@@ -1,6 +1,5 @@
 package com.prosper.learn.content.roadmap;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,7 +7,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.prosper.learn.shared.common.utils.UnionFind;
 import com.prosper.learn.shared.common.utils.Utils;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -133,7 +132,7 @@ public class RoadmapDomainService {
         try {
             JsonNode rootNode = objectMapper.readTree(content);
             if (!rootNode.isArray() || rootNode.size() != 2) {
-                throw ErrorCode.ROADMAP_CONTENT_INVALID.exception();
+                throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
             }
 
             JsonNode edgesNode = rootNode.get(0);
@@ -180,7 +179,7 @@ public class RoadmapDomainService {
 
         } catch (Exception e) {
             log.error("内容哈希计算失败: {}", content, e);
-            throw ErrorCode.CONTENT_HASH_ERROR.exception(e);
+            throw StatusCode.CONTENT_HASH_ERROR.exception(e);
         }
     }
 
@@ -323,7 +322,7 @@ public class RoadmapDomainService {
 
         int result = roadmapDataService.softDelete(id);
         if (result == 0) {
-            throw ErrorCode.ROADMAP_NOT_FOUND.exception();
+            throw StatusCode.ROADMAP_NOT_FOUND.exception();
         }
         log.info("Deleted roadmap: {}", id);
     }
@@ -430,7 +429,7 @@ public class RoadmapDomainService {
             return objectMapper.writeValueAsString(graphData);
         } catch (Exception e) {
             log.error("内容解析为图形格式失败", e);
-            throw ErrorCode.JSON_PROCESSING_ERROR.exception(e);
+            throw StatusCode.JSON_PROCESSING_ERROR.exception(e);
         }
     }
 

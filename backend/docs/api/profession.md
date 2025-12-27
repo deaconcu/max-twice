@@ -182,7 +182,6 @@ const fetchFn = currentCategory.value
 ```json
 {
   "code": 200,
-  "message": "操作成功",
   "data": [
     {
       "id": 1,
@@ -252,8 +251,7 @@ const { data: hotCareersData } = useFetch<Profession[]>({
 ```json
 {
   "code": 200,
-  "message": "操作成功",
-  "data": null
+  "message": "操作成功"
 }
 ```
 
@@ -383,8 +381,7 @@ professionApi.searchProfessions(keyword)
 ```json
 {
   "code": 200,
-  "message": "操作成功",
-  "data": null
+  "message": "操作成功"
 }
 ```
 
@@ -451,8 +448,7 @@ const { execute: executeUpdate } = useMutation(
 ```json
 {
   "code": 200,
-  "message": "操作成功",
-  "data": null
+  "message": "操作成功"
 }
 ```
 

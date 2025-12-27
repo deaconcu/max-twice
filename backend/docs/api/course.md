@@ -348,28 +348,46 @@ const handleSearch = async () => {
 - 普通用户只能看到已发布课程（state=1）
 - 不支持按状态查询（由管理接口提供）
 - 登录后会包含用户个人数据（订阅状态、学习进度）
+- **返回格式为 KeysetPageResponse 分页响应**
 
-**返回类型**: `List<CourseSummaryWithStatsAndProgressDTO>`
+**返回类型**: `KeysetPageResponse<CourseSummaryWithStatsAndProgressDTO>`
 
 **返回示例**:
 ```json
 {
   "code": 200,
-  "data": [
-    {
-      "id": 608,
-      "name": "高三政治",
-      "description": "高三政治相关的专业课程和实践内容",
-      "mainCategory": 10,
-      "subCategory": 9,
-      "learnerCount": 150,
-      "subscriptionCount": 89,
-      "subscribed": true,
-      "progress": 45
+  "data": {
+    "items": [
+      {
+        "id": 608,
+        "name": "高三政治",
+        "description": "高三政治相关的专业课程和实践内容",
+        "mainCategory": 10,
+        "subCategory": 9,
+        "learnerCount": 150,
+        "subscriptionCount": 89,
+        "subscribed": true,
+        "progress": 45
+      }
+    ],
+    "hasMore": true,
+    "nextCursor": {
+      "lastId": 608
     }
-  ]
+  }
 }
 ```
+
+**返回字段说明**:
+- `items`: 课程列表数组（每页最多20条）
+- `hasMore`: 是否有更多数据（boolean）
+- `nextCursor`: 下一页游标（当 hasMore=true 时存在）
+  - `lastId`: 当前页最后一条数据的ID，用于下一页查询
+
+**分页逻辑**:
+1. 首次查询：不传 `lastId` 参数，返回前20条数据
+2. 翻页查询：传入上一页返回的 `nextCursor.lastId`，获取下20条数据
+3. 结束判断：当 `hasMore=false` 时，表示没有更多数据
 
 **前端调用**:
 ```typescript
@@ -382,17 +400,37 @@ courseApi.getSubCourses(parentId)
 // API 调用方式3: 获取所有课程（分页）
 courseApi.getCourses(lastId?)
 
-// 实际使用 (CourseListPage.vue:302-305)
-const loadCourses = async () => {
-  let response
-  if (!currentCategory.value) {
-    // 不选分类时，返回所有已发布课程
-    response = await courseApi.getCoursesByCategory(undefined, undefined, lastId.value)
-  } else {
-    const { mainCategory, subCategory } = currentCategory.value
-    response = await courseApi.getCoursesByCategory(mainCategory, subCategory, lastId.value)
+// 实际使用 (CourseListPage.vue:289-330)
+const loadCourses = async (reset = false) => {
+  try {
+    let response
+    if (!currentCategory.value) {
+      // 不选分类时，返回所有已发布课程
+      response = await courseApi.getCoursesByCategory(undefined, undefined, lastId.value)
+    } else {
+      const { mainCategory, subCategory } = currentCategory.value
+      response = await courseApi.getCoursesByCategory(mainCategory, subCategory, lastId.value)
+    }
+
+    if (response.data) {
+      const pageResponse = response.data
+      const newCourses = pageResponse.items
+
+      if (reset) {
+        coursesData.value = newCourses
+      } else {
+        coursesData.value = [...coursesData.value, ...newCourses]
+      }
+
+      // 更新分页状态
+      hasMoreCourses.value = pageResponse.hasMore
+      if (pageResponse.hasMore && pageResponse.nextCursor?.lastId) {
+        lastId.value = pageResponse.nextCursor.lastId
+      }
+    }
+  } catch (error) {
+    console.error('加载课程失败:', error)
   }
-  // ... 处理响应
 }
 ```
 
@@ -411,9 +449,23 @@ const loadCourses = async () => {
 **查询参数**:
 | 参数名 | 类型 | 必填 | 默认值 | 说明 |
 |--------|------|------|--------|------|
-| limit | Integer | 否 | 10 | 返回数量，必须大于0 |
+| limit | Integer | 否 | 10 | 返回数量，必须大于0，最大200 |
 
 **返回类型**: `List<CourseWithStatsDTO>`
+
+**热度计算规则**:
+```
+综合热度 = 收藏数(bookmarks) + 学习中人数(in_progress_users) + 已完成人数(completed_users)
+```
+
+**排序规则**: 按综合热度降序排列
+
+**数据源**: `content_stats` 表（实时统计）
+
+**缓存策略**:
+- 缓存时间：5分钟
+- 缓存键：`hotCourses:{limit}`
+- 不同的 limit 参数有独立缓存
 
 **返回示例**:
 ```json
@@ -435,17 +487,23 @@ const loadCourses = async () => {
 
 **前端调用**:
 ```typescript
-// API 调用
-courseApi.getHotCourses(limit?)
+// 获取默认数量（10个）
+courseApi.getHotCourses()
 
-// 实际使用示例1 (HomePage.vue:70)
+// 获取指定数量
+courseApi.getHotCourses(20)
+
+// 获取完整排行榜（100个）
+courseApi.getHotCourses(100)
+
+// 实际使用示例1 (HomePage.vue:70) - 首页推荐
 const { data: hotCoursesData } = useFetch<Course[]>({
   fetchFn: () => courseApi.getHotCourses(),
   immediate: true,
   defaultValue: []
 })
 
-// 实际使用示例2 (CourseListPage.vue:272)
+// 实际使用示例2 (CourseListPage.vue:272) - 课程列表页
 const { data: hotCoursesData } = useFetch<Course[]>({
   fetchFn: () => courseApi.getHotCourses(),
   immediate: true,
@@ -454,63 +512,18 @@ const { data: hotCoursesData } = useFetch<Course[]>({
 ```
 
 **使用场景**:
-- `HomePage.vue` - 首页热门课程展示
-- `CourseListPage.vue` - 课程列表页热门推荐
+- `HomePage.vue` - 首页热门课程展示（默认10个，取前4个）
+- `CourseListPage.vue` - 课程列表页热门推荐（默认10个）
+- 排行榜专门页面 - 传入 `limit=100` 获取完整排行榜
+
+**注意事项**:
+- 只返回**已发布**状态的课程（state=1）
+- 后端会获取 `limit × 2` 的数据，过滤后保证返回足够数量
+- limit 参数最大值为 200，超过会自动限制
 
 ---
 
-## 5. 获取课程排行榜
-
-**接口路径**: `GET /api/v1/courses/ranking`
-
-**是否需要登录**: 否
-
-**查询参数**: 无
-
-**返回类型**: `List<CourseWithStatsDTO>`
-
-**返回示例**:
-```json
-{
-  "code": 200,
-  "data": [
-    {
-      "id": 1,
-      "name": "Java基础课程",
-      "description": "从零开始学习Java",
-      "mainCategory": 1,
-      "subCategory": 2,
-      "learnerCount": 1000,
-      "subscriptionCount": 500
-    },
-    {
-      "id": 2,
-      "name": "Python基础课程",
-      "description": "从零开始学习Python",
-      "mainCategory": 1,
-      "subCategory": 3,
-      "learnerCount": 800,
-      "subscriptionCount": 400
-    }
-  ]
-}
-```
-
-**前端调用**:
-```typescript
-// API 调用
-courseApi.getCoursesRanking()
-
-// 注意：当前前端代码中未找到实际调用此接口的页面
-// 可能用于课程排行榜专门页面（待实现）
-```
-
-**使用场景**:
-- 课程排行榜专门页面（待实现）
-
----
-
-## 6. 创建课程
+## 5. 创建课程
 
 **接口路径**: `POST /api/v1/courses`
 
@@ -576,7 +589,7 @@ await executeCreateCourse({
 
 ---
 
-## 7. 创建子课程
+## 6. 创建子课程
 
 **接口路径**: `POST /api/v1/courses/{parentId}/subcourses`
 

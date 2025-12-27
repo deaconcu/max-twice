@@ -3,7 +3,7 @@ package com.prosper.learn.web.v1.controller.admin;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemDataService;
 import com.prosper.learn.application.dto.ApiResponse;
 import com.prosper.learn.web.v1.annotation.JsonParam;
@@ -57,7 +57,7 @@ public class AdminSystemController {
             }
         } catch (Exception e) {
             log.error("Failed to get system config", e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -117,7 +117,7 @@ public class AdminSystemController {
             return ApiResponse.success("配置更新成功");
         } catch (Exception e) {
             log.error("Failed to update system config for key: {}", key, e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -146,7 +146,7 @@ public class AdminSystemController {
             return ApiResponse.success("配置删除成功");
         } catch (Exception e) {
             log.error("Failed to delete system config for key: {}", key, e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -164,7 +164,7 @@ public class AdminSystemController {
             return ApiResponse.success(value);
         } catch (Exception e) {
             log.error("Failed to get system config for key: {}", key, e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -196,7 +196,7 @@ public class AdminSystemController {
             }
         } catch (Exception e) {
             log.error("Failed to set readonly mode", e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 }

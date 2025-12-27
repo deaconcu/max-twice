@@ -1,7 +1,6 @@
 package com.prosper.learn.web.v1.resolver;
 
 import cn.dev33.satoken.stp.StpUtil;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
@@ -13,7 +12,7 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-import static com.prosper.learn.shared.domain.exception.ErrorCode.*;
+import static com.prosper.learn.shared.domain.exception.StatusCode.*;
 
 /**
  * CurrentUser 参数解析器

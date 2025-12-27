@@ -1,6 +1,5 @@
 package com.prosper.learn.application.service;
 
-import com.prosper.learn.application.converter.MemoryCardConverter;
 import com.prosper.learn.application.converter.MemoryCardDeckConverter;
 import com.prosper.learn.application.converter.UserCardSrsConverter;
 import com.prosper.learn.application.converter.UserConverter;
@@ -9,7 +8,6 @@ import com.prosper.learn.application.dto.request.CreateDeckRequest;
 import com.prosper.learn.application.dto.request.UpdateCardRequest;
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.memory.card.MemoryCardDO;
-import com.prosper.learn.memory.card.MemoryCardDataService;
 import com.prosper.learn.memory.card.MemoryCardDomainService;
 import com.prosper.learn.memory.card.MemoryCardVersionDO;
 import com.prosper.learn.memory.card.MemoryCardVersionDataService;
@@ -17,9 +15,6 @@ import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.memory.review.UserCardSrsDataService;
-import com.prosper.learn.shared.common.utils.Utils;
-import com.prosper.learn.shared.domain.Enums;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
@@ -27,12 +22,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.*;
-import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
  * 记忆卡片应用服务

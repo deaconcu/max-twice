@@ -1,9 +1,11 @@
 package com.prosper.learn.application.converter;
 
 import com.prosper.learn.application.dto.response.NodeDTO;
+import com.prosper.learn.application.dto.response.node.NodeBriefDTO;
 import com.prosper.learn.application.dto.response.node.NodeDetailDTO;
 import com.prosper.learn.application.dto.response.node.NodeSummaryDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithCourseDTO;
+import com.prosper.learn.application.dto.response.node.NodeWithCourseBriefDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithProgressDTO;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.shared.domain.Enums;
@@ -201,5 +203,34 @@ public interface NodeConverter {
         }
 
         return dto;
+    }
+
+    /**
+     * 转换为 NodeWithCourseBriefDTO（节点名称 + 课程简要信息）
+     * 用途：帖子详情中的节点引用
+     * 注意：course 字段需要在 Service 层额外填充
+     */
+    @Named("toWithCourseBriefDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    NodeWithCourseBriefDTO toWithCourseBriefDTOInternal(NodeDO nodeDO);
+
+    default NodeWithCourseBriefDTO toWithCourseBriefDTO(NodeDO nodeDO) {
+        if (nodeDO == null) return null;
+
+        NodeWithCourseBriefDTO dto = toWithCourseBriefDTOInternal(nodeDO);
+
+        if (nodeDO.getState() != null && nodeDO.getState() == Enums.ContentState.BANNED.value()) {
+            dto.setName("目录节点已被屏蔽");
+        }
+
+        return dto;
+    }
+
+    @IterableMapping(qualifiedByName = "toWithCourseBriefDTO")
+    default List<NodeWithCourseBriefDTO> toWithCourseBriefDTO(List<NodeDO> nodeDOList) {
+        if (nodeDOList == null) return null;
+        return nodeDOList.stream().map(this::toWithCourseBriefDTO).toList();
     }
 }

@@ -18,11 +18,10 @@ import com.prosper.learn.interaction.comment.CommentDataService;
 import com.prosper.learn.interaction.comment.CommentDomainService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
-import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.event.content.lifecycle.CommentCreatedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEvent;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
@@ -67,7 +66,7 @@ public class CommentService {
     public CommentDetailDTO createComment(CreateCommentRequest request, UserDO commentor) {
         // 验证参数
         if (request == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("评论请求不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("评论请求不能为空");
         }
 
         validateCommentType(request.getObjectType());
@@ -85,7 +84,7 @@ public class CommentService {
         } else if (request.getObjectType() == roadmap.value()) {
             roadmapDataService.validateAndGet(request.getObjectId());
         } else {
-            throw ErrorCode.COMMENT_INVALID_TYPE.exception();
+            throw StatusCode.COMMENT_INVALID_TYPE.exception();
         }
 
         // 调用 DomainService 创建评论（包含 interaction 领域内的验证和业务逻辑）
@@ -159,7 +158,7 @@ public class CommentService {
     public void ban(Long id, String reason, UserDO operator) {
         CommentDO commentDO = commentDataService.getById(id);
         if (commentDO == null) {
-            throw ErrorCode.COMMENT_NOT_FOUND.exception();
+            throw StatusCode.COMMENT_NOT_FOUND.exception();
         }
 
         // 记录之前的状态
@@ -493,7 +492,7 @@ public class CommentService {
         if (type != post.value() &&
             type != node.value() &&
             type != roadmap.value()) {
-            throw ErrorCode.COMMENT_INVALID_TYPE.exception();
+            throw StatusCode.COMMENT_INVALID_TYPE.exception();
         }
     }
 

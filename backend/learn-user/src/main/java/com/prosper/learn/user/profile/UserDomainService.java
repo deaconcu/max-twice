@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.shared.common.utils.Utils;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.auth.VerificationDO;
 import com.prosper.learn.user.auth.VerificationDataService;
@@ -78,12 +78,12 @@ public class UserDomainService {
 
         // 1. 防止用户修改自己的角色
         if (userId.equals(operatorId)) {
-            throw ErrorCode.PERMISSION_DENIED.exception("不能修改自己的角色");
+            throw StatusCode.PERMISSION_DENIED.exception("不能修改自己的角色");
         }
 
         // 2. 只有超级管理员可以设置超级管理员
         if (newRole == UserRole.SUPER_ADMIN && operatorRole != UserRole.SUPER_ADMIN) {
-            throw ErrorCode.PERMISSION_DENIED.exception("只有超级管理员可以设置超级管理员");
+            throw StatusCode.PERMISSION_DENIED.exception("只有超级管理员可以设置超级管理员");
         }
 
         // 3. 执行角色修改
@@ -114,7 +114,7 @@ public class UserDomainService {
     public void updateUserAvatar(Long userId, String avatarUrl) {
         int updated = userDataService.updateAvatar(userId, avatarUrl);
         if (updated == 0) {
-            throw ErrorCode.USER_NOT_FOUND.exception();
+            throw StatusCode.USER_NOT_FOUND.exception();
         }
         log.info("User {} avatar updated: {}", userId, avatarUrl);
     }
@@ -133,7 +133,7 @@ public class UserDomainService {
         // 检查用户是否已存在
         UserDO existingUser = userDataService.getByEmail(email);
         if (existingUser != null) {
-            throw ErrorCode.USER_ALREADY_EXISTS.exception();
+            throw StatusCode.USER_ALREADY_EXISTS.exception();
         }
 
         // 创建用户
@@ -143,6 +143,7 @@ public class UserDomainService {
         user.setEmail(email);
         user.setBiography("");
         user.setState(UserState.ACTIVE.value());
+        user.setRole(UserRole.USER.getCode());
         userDataService.insert(user);
 
         log.info("User created: userId={}, email={}", user.getId(), email);
@@ -174,7 +175,7 @@ public class UserDomainService {
         // 1. 查询未使用的验证码
         VerificationDO verificationDO = verificationDataService.getByEmail(email, false);
         if (verificationDO == null) {
-            throw ErrorCode.USER_VERIFICATION_CODE_NOT_FOUND.exception();
+            throw StatusCode.USER_VERIFICATION_CODE_NOT_FOUND.exception();
         }
 
         // 2. 检查验证码是否过期
@@ -182,12 +183,12 @@ public class UserDomainService {
         LocalDateTime expiresAt = verificationDO.getCreatedAt().plusMinutes(expiryMinutes);
         if (LocalDateTime.now().isAfter(expiresAt)) {
             log.warn("Verification code expired for email: {}", email);
-            throw ErrorCode.USER_VERIFICATION_CODE_EXPIRED.exception();
+            throw StatusCode.USER_VERIFICATION_CODE_EXPIRED.exception();
         }
 
         // 3. 验证验证码
         if (!verificationDO.getCode().equals(code)) {
-            throw ErrorCode.USER_VERIFICATION_CODE_INVALID.exception();
+            throw StatusCode.USER_VERIFICATION_CODE_INVALID.exception();
         }
 
         // 4. 标记验证码已使用
@@ -197,7 +198,7 @@ public class UserDomainService {
         // 5. 更新用户邮箱验证状态
         UserDO user = userDataService.getByEmail(email);
         if (user == null) {
-            throw ErrorCode.USER_NOT_FOUND.exception();
+            throw StatusCode.USER_NOT_FOUND.exception();
         }
 
         if (!user.getEmailValidated()) {
@@ -219,7 +220,7 @@ public class UserDomainService {
     public UserDO validateLogin(String email, String password) {
         UserDO userDO = userDataService.getByEmail(email);
         if (userDO == null) {
-            throw ErrorCode.USER_NOT_FOUND.exception();
+            throw StatusCode.USER_NOT_FOUND.exception();
         }
 
         // TODO: 密码验证
@@ -228,11 +229,11 @@ public class UserDomainService {
         // }
 
         if (!userDO.getEmailValidated()) {
-            throw ErrorCode.USER_EMAIL_NOT_VALIDATED.exception();
+            throw StatusCode.USER_EMAIL_NOT_VALIDATED.exception();
         }
 
         if (userDO.getState() != null && userDO.getState() == UserState.BANNED.value()) {
-            throw ErrorCode.USER_BANNED.exception();
+            throw StatusCode.USER_BANNED.exception();
         }
 
         return userDO;
@@ -257,7 +258,7 @@ public class UserDomainService {
             userProfileDO = new UserProfileDO();
             userProfileDO.setUserId(userId);
             userProfileDO.setSubscription(String.valueOf(courseId));
-            userProfileDO.setRoadmapPin("");
+            userProfileDO.setRoadmapPin("{}");
             userProfileDataService.insert(userProfileDO);
             log.info("User {} subscribed to course {}", userId, courseId);
             return Collections.singletonList(courseId);
@@ -265,7 +266,7 @@ public class UserDomainService {
             // 更新现有订阅
             List<Long> ids = parseSubscriptionIds(userProfileDO.getSubscription());
             if (checkDuplicate && ids.contains(courseId)) {
-                throw ErrorCode.USER_COURSE_ALREADY_SUBSCRIBED.exception();
+                throw StatusCode.USER_COURSE_ALREADY_SUBSCRIBED.exception();
             }
             ids.add(courseId);
             userProfileDO.setSubscription(formatSubscriptionIds(ids));
@@ -286,12 +287,12 @@ public class UserDomainService {
     public List<Long> removeSubscription(Long userId, Long courseId) {
         UserProfileDO userProfileDO = userProfileDataService.getById(userId);
         if (userProfileDO == null || !StringUtils.hasText(userProfileDO.getSubscription())) {
-            throw ErrorCode.USER_COURSE_NOT_SUBSCRIBED.exception();
+            throw StatusCode.USER_COURSE_NOT_SUBSCRIBED.exception();
         }
 
         List<Long> ids = parseSubscriptionIds(userProfileDO.getSubscription());
         if (!ids.contains(courseId)) {
-            throw ErrorCode.USER_COURSE_NOT_SUBSCRIBED.exception();
+            throw StatusCode.USER_COURSE_NOT_SUBSCRIBED.exception();
         }
 
         ids.remove(courseId);
@@ -317,7 +318,7 @@ public class UserDomainService {
             userProfileDO = new UserProfileDO();
             userProfileDO.setUserId(userId);
             userProfileDO.setSubscription(idsStr);
-            userProfileDO.setRoadmapPin("");
+            userProfileDO.setRoadmapPin("{}");
             userProfileDataService.insert(userProfileDO);
         } else {
             userProfileDO.setSubscription(idsStr);
@@ -380,7 +381,7 @@ public class UserDomainService {
         } else {
             // 添加置顶
             if (professionPins.size() >= MAX_PINNED_ROADMAPS) {
-                throw ErrorCode.ROADMAP_PIN_LIMIT_EXCEEDED.exception();
+                throw StatusCode.ROADMAP_PIN_LIMIT_EXCEEDED.exception();
             }
             professionPins.add(roadmapId);
             result = true;
@@ -440,7 +441,7 @@ public class UserDomainService {
             return objectMapper.readValue(userProfile.getRoadmapPin(), new TypeReference<>() {});
         } catch (JsonProcessingException e) {
             log.error("解析置顶数据失败: userId={}", userProfile.getUserId(), e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -464,7 +465,7 @@ public class UserDomainService {
             }
         } catch (JsonProcessingException e) {
             log.error("保存置顶数据失败: userId={}", userId, e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -484,7 +485,7 @@ public class UserDomainService {
                 .collect(Collectors.toList());
         } catch (NumberFormatException e) {
             log.error("解析订阅ID失败: {}", subscription, e);
-            throw ErrorCode.USER_SUBSCRIPTION_PARSE_ERROR.exception(e);
+            throw StatusCode.USER_SUBSCRIPTION_PARSE_ERROR.exception(e);
         }
     }
 

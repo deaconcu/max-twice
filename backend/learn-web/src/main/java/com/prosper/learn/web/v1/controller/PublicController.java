@@ -7,8 +7,9 @@ import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
 import com.prosper.learn.application.service.PageService;
 import com.prosper.learn.application.service.ProfessionService;
 import com.prosper.learn.application.service.RoadmapService;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemDataService;
+import com.prosper.learn.shared.infrastructure.config.SystemDomainService;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.application.dto.ApiResponse;
@@ -22,7 +23,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 public class PublicController {
 
     private final SystemDataService systemDataService;
+    private final SystemDomainService systemDomainService;
     private final ObjectMapper objectMapper;
     private final ProfessionService professionService;
     private final RoadmapService roadmapService;
@@ -55,43 +56,28 @@ public class PublicController {
     @GetMapping("/course-categories")
     public ResponseEntity<ApiResponse<JsonNode>> getCourseCategories(HttpServletRequest request) {
         try {
-            String configValue = systemDataService.getValue("courseCategories");
-            if (configValue == null) {
-                return ResponseEntity.ok(ApiResponse.error("课程分类配置不存在"));
-            }
+            // 从领域服务获取解析好的数据
+            JsonNode categoryNode = systemDomainService.getCourseCategories();
 
-            try {
-                JsonNode categoryNode = objectMapper.readTree(configValue);
+            // Web层处理 ETag 缓存
+            String etag = generateETag(categoryNode.toString());
+            String clientETag = request.getHeader("If-None-Match");
 
-                // 处理嵌套的 courseCategories 结构
-                if (categoryNode.has("courseCategories")) {
-                    categoryNode = categoryNode.get("courseCategories");
-                }
-
-                // 计算 ETag
-                String etag = generateETag(categoryNode.toString());
-
-                // 检查客户端 If-None-Match 头
-                String clientETag = request.getHeader("If-None-Match");
-                if (etag.equals(clientETag)) {
-                    // 数据未变化，返回 304
-                    return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
-                            .eTag(etag)
-                            .build();
-                }
-
-                // 返回数据并设置 ETag
-                return ResponseEntity.ok()
+            if (etag.equals(clientETag)) {
+                // 数据未变化，返回 304
+                return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
                         .eTag(etag)
-                        .body(ApiResponse.success(categoryNode));
-
-            } catch (IOException e) {
-                log.error("Failed to parse course categories config", e);
-                return ResponseEntity.ok(ApiResponse.error("课程分类配置格式错误"));
+                        .build();
             }
+
+            // 返回数据并设置 ETag
+            return ResponseEntity.ok()
+                    .eTag(etag)
+                    .body(ApiResponse.success(categoryNode));
+
         } catch (Exception e) {
             log.error("Failed to get course categories", e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -102,38 +88,28 @@ public class PublicController {
     @GetMapping("/profession-categories")
     public ResponseEntity<ApiResponse<JsonNode>> getProfessionCategories(HttpServletRequest request) {
         try {
-            String configValue = systemDataService.getValue("professionCategories");
-            if (configValue == null) {
-                return ResponseEntity.ok(ApiResponse.error("职业分类配置不存在"));
-            }
+            // 从领域服务获取解析好的数据
+            JsonNode categoryNode = systemDomainService.getProfessionCategories();
 
-            try {
-                JsonNode categoryNode = objectMapper.readTree(configValue);
+            // Web层处理 ETag 缓存
+            String etag = generateETag(categoryNode.toString());
+            String clientETag = request.getHeader("If-None-Match");
 
-                // 计算 ETag
-                String etag = generateETag(categoryNode.toString());
-
-                // 检查客户端 If-None-Match 头
-                String clientETag = request.getHeader("If-None-Match");
-                if (etag.equals(clientETag)) {
-                    // 数据未变化，返回 304
-                    return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
-                            .eTag(etag)
-                            .build();
-                }
-
-                // 返回数据并设置 ETag
-                return ResponseEntity.ok()
+            if (etag.equals(clientETag)) {
+                // 数据未变化，返回 304
+                return ResponseEntity.status(HttpStatus.NOT_MODIFIED)
                         .eTag(etag)
-                        .body(ApiResponse.success(categoryNode));
-
-            } catch (IOException e) {
-                log.error("Failed to parse profession categories config", e);
-                return ResponseEntity.ok(ApiResponse.error("职业分类配置格式错误"));
+                        .build();
             }
+
+            // 返回数据并设置 ETag
+            return ResponseEntity.ok()
+                    .eTag(etag)
+                    .body(ApiResponse.success(categoryNode));
+
         } catch (Exception e) {
             log.error("Failed to get profession categories", e);
-            throw ErrorCode.SYSTEM_ERROR.exception(e);
+            throw StatusCode.SYSTEM_ERROR.exception(e);
         }
     }
 
@@ -183,7 +159,7 @@ public class PublicController {
         try {
             ProfessionDTO profession = professionService.getById(id, true);
             if (profession == null) {
-                return ApiResponse.error(ErrorCode.PROFESSION_NOT_FOUND.getCode(), "职业不存在");
+                return ApiResponse.error(StatusCode.PROFESSION_NOT_FOUND.getCode(), "职业不存在");
             }
             return ApiResponse.success(profession);
         } catch (Exception e) {

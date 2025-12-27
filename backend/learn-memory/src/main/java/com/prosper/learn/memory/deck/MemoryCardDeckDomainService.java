@@ -7,7 +7,7 @@ import com.prosper.learn.memory.card.MemoryCardVersionDataService;
 import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.shared.domain.Enums.ContentState;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -73,7 +73,7 @@ public class MemoryCardDeckDomainService {
         // 插入数据库
         int result = deckDataService.insert(deck);
         if (result <= 0) {
-            throw ErrorCode.SYSTEM_ERROR.exception("创建卡片组失败");
+            throw StatusCode.SYSTEM_ERROR.exception("创建卡片组失败");
         }
 
         log.info("Created deck {} with {} cards by user {}", deck.getId(), cardCount, creatorId);
@@ -96,7 +96,7 @@ public class MemoryCardDeckDomainService {
 
         // 验证权限：只有创建者可以修改
         if (!existingDeck.getCreatorId().equals(userId)) {
-            throw ErrorCode.PERMISSION_DENIED.exception("无权限修改此卡片组");
+            throw StatusCode.PERMISSION_DENIED.exception("无权限修改此卡片组");
         }
 
         // 更新字段
@@ -125,25 +125,25 @@ public class MemoryCardDeckDomainService {
     @Transactional
     public void deleteDeck(Long deckId, Long userId) {
         if (deckId == null || deckId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("卡片组ID无效");
+            throw StatusCode.INVALID_PARAMETER.exception("卡片组ID无效");
         }
         if (userId == null || userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效");
+            throw StatusCode.INVALID_PARAMETER.exception("用户ID无效");
         }
 
         MemoryCardDeckDO deck = deckDataService.getById(deckId);
         if (deck == null) {
-            throw ErrorCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
+            throw StatusCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
         }
 
         // 验证权限：只能删除自己创建的卡片组
         if (!deck.getCreatorId().equals(userId)) {
-            throw ErrorCode.PERMISSION_DENIED.exception();
+            throw StatusCode.PERMISSION_DENIED.exception();
         }
 
         int result = deckDataService.softDelete(deckId);
         if (result == 0) {
-            throw ErrorCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
+            throw StatusCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
         }
 
         log.info("Deleted deck {} by user {}", deckId, userId);
@@ -161,7 +161,7 @@ public class MemoryCardDeckDomainService {
 
         // 验证状态：只有待审核的卡片组才能通过
         if (deck.getState() != ContentState.SUBMITTED.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只有待审核状态的卡片组才能通过审核");
+            throw StatusCode.INVALID_PARAMETER.exception("只有待审核状态的卡片组才能通过审核");
         }
 
         // 更新状态为正常
@@ -227,7 +227,7 @@ public class MemoryCardDeckDomainService {
 
         // 验证状态：只有屏蔽状态的卡片组才能恢复
         if (deck.getState() != ContentState.BANNED.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("只有屏蔽状态的卡片组才能恢复");
+            throw StatusCode.INVALID_PARAMETER.exception("只有屏蔽状态的卡片组才能恢复");
         }
 
         // 更新状态为正常
@@ -255,7 +255,7 @@ public class MemoryCardDeckDomainService {
 
         // 验证权限：只有创建者可以替换卡片
         if (!deck.getCreatorId().equals(userId)) {
-            throw ErrorCode.PERMISSION_DENIED.exception("无权限修改此卡片组");
+            throw StatusCode.PERMISSION_DENIED.exception("无权限修改此卡片组");
         }
 
         // 更新卡片组信息（如果提供了）

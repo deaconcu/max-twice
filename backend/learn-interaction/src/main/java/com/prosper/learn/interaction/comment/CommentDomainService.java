@@ -1,7 +1,6 @@
 package com.prosper.learn.interaction.comment;
 
-import com.prosper.learn.shared.domain.Enums.ContentState;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -43,7 +42,7 @@ public class CommentDomainService {
             // 确保回复的评论属于同一个对象
             if (!replyToComment.getObjectId().equals(objectId) ||
                 !replyToComment.getObjectType().equals(objectType)) {
-                throw ErrorCode.INVALID_PARAMETER.exception("回复的评论不属于当前对象");
+                throw StatusCode.INVALID_PARAMETER.exception("回复的评论不属于当前对象");
             }
         }
 
@@ -112,7 +111,7 @@ public class CommentDomainService {
         } else {
             // 后续页：需要同时传递 lastScore 和 lastId
             if (lastScore == null || lastId == null) {
-                throw ErrorCode.INVALID_PARAMETER.exception("分页查询需要同时提供 lastScore 和 lastId");
+                throw StatusCode.INVALID_PARAMETER.exception("分页查询需要同时提供 lastScore 和 lastId");
             }
             commentDOList = commentDataService.getByObjectIdPaginated(objectId, type, lastScore, lastId, querySize);
         }
@@ -146,7 +145,7 @@ public class CommentDomainService {
         } else {
             // 后续页：需要同时传递 lastScore 和 lastId
             if (lastScore == null || lastId == null) {
-                throw ErrorCode.INVALID_PARAMETER.exception("分页查询需要同时提供 lastScore 和 lastId");
+                throw StatusCode.INVALID_PARAMETER.exception("分页查询需要同时提供 lastScore 和 lastId");
             }
             commentDOList = commentDataService.getByTopicPaginated(id, lastScore, lastId, querySize);
         }
@@ -188,7 +187,7 @@ public class CommentDomainService {
             case "banned":
                 return BANNED.value();
             default:
-                throw ErrorCode.INVALID_PARAMETER.exception("无效的状态参数: " + state);
+                throw StatusCode.INVALID_PARAMETER.exception("无效的状态参数: " + state);
         }
     }
 

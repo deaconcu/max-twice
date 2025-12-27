@@ -2,7 +2,7 @@ package com.prosper.learn.learning.enrollment;
 
 import com.prosper.learn.shared.common.utils.ValidationUtils;
 import com.prosper.learn.shared.domain.Enums.UserProgressState;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -112,7 +112,7 @@ public class UserCourseDomainService {
 
         UserCourseDO userCourseDO = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
         if (userCourseDO == null) {
-            throw ErrorCode.USER_COURSE_NOT_FOUND.exception();
+            throw StatusCode.USER_COURSE_NOT_FOUND.exception();
         }
 
         updateLearningState(userCourseDO, progressPercent);

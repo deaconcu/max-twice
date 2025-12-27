@@ -1,6 +1,6 @@
 package com.prosper.learn.memory.review;
 
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -86,7 +86,7 @@ public class ReviewDomainService {
         // 获取SRS状态
         UserCardSrsDO card = srsStateDataService.getByUserAndCard(userId, cardId);
         if (card == null) {
-            throw ErrorCode.SRS_STATE_NOT_FOUND.exception();
+            throw StatusCode.SRS_STATE_NOT_FOUND.exception();
         }
 
         // 根据卡片类型分发到不同的处理方法
@@ -104,7 +104,7 @@ public class ReviewDomainService {
                 handleLearningCard(card, rating, systemProperties.getSrs().getAlgorithm().getRelearningSteps());
                 break;
             default:
-                throw ErrorCode.INVALID_PARAMETER.exception("未知的卡片类型: " + card.getType());
+                throw StatusCode.INVALID_PARAMETER.exception("未知的卡片类型: " + card.getType());
         }
 
         // 更新时间戳

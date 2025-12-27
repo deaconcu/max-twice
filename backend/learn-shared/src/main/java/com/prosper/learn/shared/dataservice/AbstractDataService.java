@@ -1,6 +1,6 @@
 package com.prosper.learn.shared.dataservice;
 
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,7 +107,7 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
             return result;
         } catch (Exception e) {
             log.error("Error querying {} with id: {}", getEntityName(), id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
     
@@ -136,7 +136,7 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
                 return result;
             } catch (Exception e) {
                 log.error("Error querying {} from DB when cache disabled", getEntityName(), e);
-                throw ErrorCode.DATABASE_ERROR.exception(e);
+                throw StatusCode.DATABASE_ERROR.exception(e);
             }
         }
         
@@ -185,7 +185,7 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
             
         } catch (Exception e) {
             log.error("Error batch querying {} with ids: {}", getEntityName(), validIds, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
     
@@ -325,12 +325,12 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
      */
     public T validateAndGet(Y id) {
         if (id == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception(getEntityName() + "ID不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception(getEntityName() + "ID不能为空");
         }
 
         T entity = getById(id);
         if (entity == null) {
-            throw ErrorCode.NOT_FOUND.exception(getEntityName() + "不存在");
+            throw StatusCode.NOT_FOUND.exception(getEntityName() + "不存在");
         }
         
         return entity;
@@ -341,11 +341,11 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
      */
     public void validateId(Y id) {
         if (id == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception(getEntityName() + "ID不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception(getEntityName() + "ID不能为空");
         }
         // 如果ID是Long类型，检查是否大于0
         if (id instanceof Long && ((Long) id) <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception(getEntityName() + "ID必须大于0");
+            throw StatusCode.INVALID_PARAMETER.exception(getEntityName() + "ID必须大于0");
         }
     }
     
@@ -411,7 +411,7 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
             return result > 0;
         } catch (Exception e) {
             log.error("Error deleting {} with id: {}", getEntityName(), id, e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
     

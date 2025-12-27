@@ -17,6 +17,6 @@ public class UpvoteRequest {
     
     @NotNull(message = "投票类型不能为空")
     @Min(value = 1, message = "投票类型不正确")
-    @Max(value = 3, message = "投票类型不正确")
+    @Max(value = 2, message = "投票类型不正确")
     private Integer type;
 }

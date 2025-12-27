@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.BusinessException;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import org.springframework.stereotype.Component;
 
 import java.security.MessageDigest;
@@ -245,12 +245,12 @@ public class Utils {
      */
     public static void validateStateTransition(Byte currentState, Enums.ContentState targetState) {
         if (currentState == null || targetState == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("状态不能为空");
+            throw StatusCode.INVALID_PARAMETER.exception("状态不能为空");
         }
 
         Enums.ContentState current = Enums.ContentState.getByValue(currentState);
         if (current == null) {
-            throw ErrorCode.INVALID_PARAMETER.exception("无效的当前状态: " + currentState);
+            throw StatusCode.INVALID_PARAMETER.exception("无效的当前状态: " + currentState);
         }
 
         boolean isValid = switch (targetState) {
@@ -274,7 +274,7 @@ public class Utils {
         };
 
         if (!isValid) {
-            throw ErrorCode.INVALID_OPERATION.exception(
+            throw StatusCode.INVALID_OPERATION.exception(
                     String.format("不允许从 %s 状态转换到 %s 状态", current, targetState)
             );
         }

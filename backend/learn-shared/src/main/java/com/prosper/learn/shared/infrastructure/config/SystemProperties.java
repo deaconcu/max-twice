@@ -234,16 +234,6 @@ public class SystemProperties {
          * 热门课程排行榜数量限制
          */
         private int hotCoursesRankingLimit = 100;
-
-        /**
-         * 是否启用课程状态验证
-         */
-        private boolean enableStateValidation = true;
-
-        /**
-         * 是否启用父课程存在性验证
-         */
-        private boolean enableParentValidation = true;
     }
 
     @Data

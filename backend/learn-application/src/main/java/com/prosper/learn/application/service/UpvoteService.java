@@ -13,15 +13,12 @@ import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.shared.domain.event.content.voting.*;
 import com.prosper.learn.shared.domain.exception.BusinessException;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Set;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
@@ -69,7 +66,7 @@ public class UpvoteService {
 
         // 验证点赞类型
         if (type != VoteType.twice.value() && type != VoteType.like.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("帖子仅支持 twice 或 like 点赞类型: " + type);
+            throw StatusCode.INVALID_PARAMETER.exception("帖子仅支持 twice 或 like 点赞类型: " + type);
         }
 
         // 调用 DomainService 执行点赞逻辑
@@ -266,10 +263,10 @@ public class UpvoteService {
     public UpvoteStatusDTO getUpvoteStatus(Long objectId, ContentType contentType, long userId) {
         // 参数验证
         if (objectId == null || objectId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("对象ID无效: " + objectId);
+            throw StatusCode.INVALID_PARAMETER.exception("对象ID无效: " + objectId);
         }
         if (userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
+            throw StatusCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
         }
 
         // 查询用户点赞记录
@@ -308,7 +305,7 @@ public class UpvoteService {
             PostDO postDO = postDataService.validateAndGet(commentDO.getObjectId());
             return postDO.getNodeId();
         } else {
-            throw ErrorCode.INVALID_PARAMETER.exception("无效的评论类型: " + commentDO.getObjectType());
+            throw StatusCode.INVALID_PARAMETER.exception("无效的评论类型: " + commentDO.getObjectType());
         }
     }
 }

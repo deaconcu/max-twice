@@ -2,7 +2,7 @@ package com.prosper.learn.content.profession;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
 import com.prosper.learn.shared.domain.Enums;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -85,7 +85,7 @@ public class ProfessionDataService extends AbstractDataService<ProfessionDO, Pro
             log.debug("Updated profession {}", profession.getId());
         } catch (Exception e) {
             log.error("Error updating profession: {}", profession.getId(), e);
-            throw ErrorCode.DATABASE_ERROR.exception(e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }
     
@@ -99,29 +99,29 @@ public class ProfessionDataService extends AbstractDataService<ProfessionDO, Pro
     /**
      * 根据状态和最后ID查询
      */
-    public List<ProfessionDO> listByStateAndLastId(Byte state, Long lastId) {
-        return professionMapper.listByStateAndLastId(state, lastId);
+    public List<ProfessionDO> listByStateAndLastId(Byte state, Long lastId, int limit) {
+        return professionMapper.listByStateAndLastId(state, lastId, limit);
     }
-    
+
     /**
      * 根据主分类和最后ID查询
      */
-    public List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, Long lastId) {
-        return professionMapper.listByMainCategoryAndLastId(mainCategory, lastId);
+    public List<ProfessionDO> listByMainCategoryAndLastId(int mainCategory, Long lastId, int limit) {
+        return professionMapper.listByMainCategoryAndLastId(mainCategory, lastId, limit);
     }
 
     /**
      * 根据子分类和最后ID查询
      */
-    public List<ProfessionDO> listBySubCategoryAndLastId(int subCategory, Long lastId) {
-        return professionMapper.listBySubCategoryAndLastId(subCategory, lastId);
+    public List<ProfessionDO> listBySubCategoryAndLastId(int subCategory, Long lastId, int limit) {
+        return professionMapper.listBySubCategoryAndLastId(subCategory, lastId, limit);
     }
 
     /**
      * 根据主分类、子分类和最后ID查询
      */
-    public List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, Long lastId) {
-        return professionMapper.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId);
+    public List<ProfessionDO> listByMainCategoryAndSubCategoryAndLastId(int mainCategory, int subCategory, Long lastId, int limit) {
+        return professionMapper.listByMainCategoryAndSubCategoryAndLastId(mainCategory, subCategory, lastId, limit);
     }
 
     /**

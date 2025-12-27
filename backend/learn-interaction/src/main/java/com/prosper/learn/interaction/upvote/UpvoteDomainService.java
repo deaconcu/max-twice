@@ -1,7 +1,6 @@
 package com.prosper.learn.interaction.upvote;
 
-import com.prosper.learn.shared.domain.Enums.VoteType;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -94,10 +93,10 @@ public class UpvoteDomainService {
      */
     public boolean hasUpvoted(Long contentId, Integer contentType, Long userId) {
         if (userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
+            throw StatusCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
         }
         if (contentId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("内容ID无效: " + contentId);
+            throw StatusCode.INVALID_PARAMETER.exception("内容ID无效: " + contentId);
         }
 
         UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, contentId, contentType);

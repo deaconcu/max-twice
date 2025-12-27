@@ -1,6 +1,6 @@
 package com.prosper.learn.infrastructure.image;
 
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -52,28 +51,28 @@ public class ImageQuotaService {
         String intervalKey = KEY_PREFIX_INTERVAL + userId;
         if (Boolean.TRUE.equals(redisTemplate.hasKey(intervalKey))) {
             Long ttl = redisTemplate.getExpire(intervalKey, TimeUnit.SECONDS);
-            throw ErrorCode.UPLOAD_TOO_FREQUENT.exception("上传过于频繁，请" + ttl + "秒后重试");
+            throw StatusCode.UPLOAD_TOO_FREQUENT.exception("上传过于频繁，请" + ttl + "秒后重试");
         }
 
         // 2. 检查每分钟限制
         String minuteKey = KEY_PREFIX_MINUTE + userId + ":" + getCurrentMinute();
         Integer minuteCount = getCount(minuteKey);
         if (minuteCount != null && minuteCount >= minuteLimit) {
-            throw ErrorCode.UPLOAD_QUOTA_EXCEEDED.exception("每分钟最多上传" + minuteLimit + "张图片");
+            throw StatusCode.UPLOAD_QUOTA_EXCEEDED.exception("每分钟最多上传" + minuteLimit + "张图片");
         }
 
         // 3. 检查每小时限制
         String hourKey = KEY_PREFIX_HOUR + userId + ":" + getCurrentHour();
         Integer hourCount = getCount(hourKey);
         if (hourCount != null && hourCount >= hourLimit) {
-            throw ErrorCode.UPLOAD_QUOTA_EXCEEDED.exception("每小时最多上传" + hourLimit + "张图片");
+            throw StatusCode.UPLOAD_QUOTA_EXCEEDED.exception("每小时最多上传" + hourLimit + "张图片");
         }
 
         // 4. 检查每天限制
         String dailyKey = KEY_PREFIX_DAILY + userId + ":" + getCurrentDate();
         Integer dailyCount = getCount(dailyKey);
         if (dailyCount != null && dailyCount >= dailyLimit) {
-            throw ErrorCode.UPLOAD_QUOTA_EXCEEDED.exception("每天最多上传" + dailyLimit + "张图片");
+            throw StatusCode.UPLOAD_QUOTA_EXCEEDED.exception("每天最多上传" + dailyLimit + "张图片");
         }
 
         log.debug("用户{}配额检查通过: 分钟{}/{}, 小时{}/{}, 每天{}/{}",

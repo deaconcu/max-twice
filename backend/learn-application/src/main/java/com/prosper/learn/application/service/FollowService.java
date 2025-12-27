@@ -7,7 +7,7 @@ import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.event.user.relationship.UserFollowedEvent;
 import com.prosper.learn.shared.domain.event.user.relationship.UserUnfollowedEvent;
 import com.prosper.learn.shared.domain.exception.BusinessException;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
@@ -142,12 +142,12 @@ public class FollowService {
      */
     private UserDO validateUserExists(Long userId) {
         if (userId == null || userId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
+            throw StatusCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
         }
 
         UserDO userDO = userDataService.getById(userId);
         if (userDO == null) {
-            throw ErrorCode.USER_NOT_FOUND.exception();
+            throw StatusCode.USER_NOT_FOUND.exception();
         }
         return userDO;
     }

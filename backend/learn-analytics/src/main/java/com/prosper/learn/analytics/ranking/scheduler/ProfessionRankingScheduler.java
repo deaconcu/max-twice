@@ -1,7 +1,7 @@
 package com.prosper.learn.analytics.ranking.scheduler;
 
 import com.prosper.learn.analytics.ranking.service.ProfessionRankingDomainService;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +38,7 @@ public class ProfessionRankingScheduler {
      */
     private void validateQueryResult(List<Map<String, Object>> data) {
         if (data == null) {
-            throw ErrorCode.DATABASE_ERROR.exception();
+            throw StatusCode.DATABASE_ERROR.exception();
         }
     }
 
@@ -130,7 +130,7 @@ public class ProfessionRankingScheduler {
             
         } catch (Exception e) {
             log.error("同步职业统计数据失败", e);
-            throw ErrorCode.SCHEDULER_DATA_SYNC_FAILED.exception(e);
+            throw StatusCode.SCHEDULER_DATA_SYNC_FAILED.exception(e);
         }
     }
 
@@ -148,7 +148,7 @@ public class ProfessionRankingScheduler {
             syncProfessionStats();
         } catch (Exception e) {
             log.error("初始化职业统计数据失败", e);
-            throw ErrorCode.SCHEDULER_TASK_FAILED.exception(e);
+            throw StatusCode.SCHEDULER_TASK_FAILED.exception(e);
         }
     }
 
@@ -161,7 +161,7 @@ public class ProfessionRankingScheduler {
             syncProfessionStats();
         } catch (Exception e) {
             log.error("手动同步失败", e);
-            throw ErrorCode.SCHEDULER_TASK_FAILED.exception(e);
+            throw StatusCode.SCHEDULER_TASK_FAILED.exception(e);
         }
     }
 }

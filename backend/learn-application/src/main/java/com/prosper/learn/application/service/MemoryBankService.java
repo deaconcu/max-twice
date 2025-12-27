@@ -16,7 +16,7 @@ import com.prosper.learn.memory.card.MemoryCardDataService;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.memory.review.*;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
@@ -134,7 +134,7 @@ public class MemoryBankService {
 
         // 验证卡片组状态：只有已发布的卡片组才能加入复习序列
         if (!ContentState.PUBLISHED.value().equals(deck.getState())) {
-            throw ErrorCode.OBJECT_STATE_INVALID.exception();
+            throw StatusCode.OBJECT_STATE_INVALID.exception();
         }
 
         // 跨域查询：获取卡片列表

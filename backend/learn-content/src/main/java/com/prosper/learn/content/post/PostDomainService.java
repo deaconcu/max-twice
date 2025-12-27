@@ -9,7 +9,7 @@ import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums.ContentState;
 import com.prosper.learn.shared.domain.Enums.PostType;
-import com.prosper.learn.shared.domain.exception.ErrorCode;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -153,11 +153,20 @@ public class PostDomainService {
     /**
      * 根据ID列表或节点查询帖子
      */
-    public List<PostDO> getPostsByIdsOrNode(List<Long> ids, Long nodeId, double lastScore, Long lastPostingId, int count, Byte state) {
+    public List<PostDO> getPostsByIdsOrNode(List<Long> ids, Long nodeId, Double lastScore, Long lastPostingId, int count, Byte state) {
         if (ids != null && !ids.isEmpty()) {
             return postDataService.getByIds(ids);
         } else if (nodeId != null && nodeId > 0) {
-            return postDataService.getListByNodeAndScoreAndPaginated(nodeId, lastScore, lastPostingId, count, state);
+            List<PostDO> posts;
+            // 首次请求（无分页参数）：使用不带分页条件的查询
+            if (lastScore == null || lastPostingId == null) {
+                posts = postDataService.getListByNodeAndScore(nodeId, count, state);
+            } else {
+                // 后续请求（有分页参数）：使用带分页条件的查询
+                posts = postDataService.getListByNodeAndScoreAndPaginated(nodeId, lastScore, lastPostingId, count, state);
+            }
+            posts.forEach(this::processIdToName);
+            return posts;
         }
         return List.of();
     }
@@ -170,6 +179,17 @@ public class PostDomainService {
     @Transactional
     public Long createArticlePost(Long userId, Long nodeId, Integer type, String content, ContentState state) {
         validateNodeId(nodeId);
+
+        // 验证节点是否存在
+        NodeDO nodeDO = nodeDataService.getById(nodeId);
+        if (nodeDO == null) {
+            throw StatusCode.NODE_NOT_FOUND.exception();
+        }
+
+        // 验证节点状态是否为已发布
+        if (nodeDO.getState() != ContentState.PUBLISHED.value()) {
+            throw StatusCode.NODE_STATE_INVALID.exception();
+        }
 
         PostDO postDO = new PostDO();
         postDO.setNodeId(nodeId);
@@ -193,14 +213,19 @@ public class PostDomainService {
 
         NodeDO nodeDO = nodeDataService.getById(nodeId);
         if (nodeDO == null) {
-            throw ErrorCode.NODE_NOT_FOUND.exception();
+            throw StatusCode.NODE_NOT_FOUND.exception();
+        }
+
+        // 验证节点状态是否为已发布
+        if (nodeDO.getState() != ContentState.PUBLISHED.value()) {
+            throw StatusCode.NODE_STATE_INVALID.exception();
         }
 
         log.info("Creating contents post with content: {}", jsonContent);
         List<Utils.Pair<String, String>> chapterInfos = parseJsonToChapterInfoList(jsonContent);
 
         if (chapterInfos.size() < 2) {
-            throw ErrorCode.INVALID_PARAMETER.exception("至少需要2个子目录");
+            throw StatusCode.INVALID_PARAMETER.exception("至少需要2个子目录");
         }
 
         String[] ids = new String[chapterInfos.size()];
@@ -251,7 +276,7 @@ public class PostDomainService {
         PostDO postDO = validateAndGet(id);
 
         if (postDO.getType() == PostType.contents.value()) {
-            throw ErrorCode.INVALID_PARAMETER.exception("目录类型帖子不支持修改");
+            throw StatusCode.INVALID_PARAMETER.exception("目录类型帖子不支持修改");
         }
 
         postDO.setContent(content);
@@ -269,7 +294,7 @@ public class PostDomainService {
 
         int result = postDataService.softDelete(id);
         if (result == 0) {
-            throw ErrorCode.NOT_FOUND.exception();
+            throw StatusCode.NOT_FOUND.exception();
         }
 
         log.info("Soft deleted post: {}", id);
@@ -330,7 +355,7 @@ public class PostDomainService {
      */
     public void validatePostId(Long postId) {
         if (postId == null || postId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("帖子ID无效");
+            throw StatusCode.INVALID_PARAMETER.exception("帖子ID无效");
         }
     }
 
@@ -341,7 +366,7 @@ public class PostDomainService {
         validatePostId(postId);
         PostDO postDO = postDataService.getById(postId);
         if (postDO == null) {
-            throw ErrorCode.NOT_FOUND.exception("帖子不存在");
+            throw StatusCode.POST_NOT_FOUND.exception();
         }
         return postDO;
     }
@@ -351,7 +376,7 @@ public class PostDomainService {
      */
     public void validateNodeId(Long nodeId) {
         if (nodeId == null || nodeId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("节点ID无效");
+            throw StatusCode.INVALID_PARAMETER.exception("节点ID无效");
         }
     }
 
@@ -365,13 +390,13 @@ public class PostDomainService {
             List<Map<String, String>> chapterMaps = objectMapper.readValue(jsonContent, new TypeReference<>() {});
             return chapterMaps.stream().map(chapterMap -> {
                 if (chapterMap.size() != 1) {
-                    throw ErrorCode.INVALID_PARAMETER.exception("每个章节对象必须包含且仅包含一个键值对");
+                    throw StatusCode.INVALID_PARAMETER.exception("每个章节对象必须包含且仅包含一个键值对");
                 }
                 Map.Entry<String, String> entry = chapterMap.entrySet().iterator().next();
                 return new Utils.Pair<>(entry.getKey(), entry.getValue() != null ? entry.getValue() : "");
             }).collect(Collectors.toList());
         } catch (JsonProcessingException e) {
-            throw ErrorCode.INVALID_PARAMETER.exception("目录内容格式错误，请使用正确的JSON格式");
+            throw StatusCode.INVALID_PARAMETER.exception("目录内容格式错误，请使用正确的JSON格式");
         }
     }
 
