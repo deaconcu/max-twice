@@ -1,0 +1,29 @@
+# 测试环境配置
+# 使用独立的测试数据库，避免污染开发数据
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    jdbc-url: jdbc:mysql://127.0.0.1:3307/learn_test?useSSL=false&characterEncoding=utf-8&tcpKeepAlive=true&autoReconnect=true&zeroDateTimeBehavior=convertToNull
+    username: root
+    password: root123
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 5
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      connection-timeout: 500
+
+  # Redis 配置（使用独立的测试DB）
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 15  # 使用 DB15 作为测试数据库
+      timeout: 5000
+
+# 日志级别（测试环境可以更详细）
+logging:
+  level:
+    com.prosper.learn: DEBUG
+    org.springframework.test: INFO
