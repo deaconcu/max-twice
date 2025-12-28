@@ -328,6 +328,14 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
             throw StatusCode.INVALID_PARAMETER.exception(getEntityName() + "ID不能为空");
         }
 
+        // 确保是数值类型且大于0
+        if (id instanceof Number) {
+            long numericId = ((Number) id).longValue();
+            if (numericId <= 0) {
+                throw StatusCode.INVALID_PARAMETER.exception(getEntityName() + "ID必须大于0");
+            }
+        }
+
         T entity = getById(id);
         if (entity == null) {
             throw StatusCode.NOT_FOUND.exception(getEntityName() + "不存在");

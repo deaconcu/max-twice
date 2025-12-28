@@ -1,6 +1,6 @@
 package com.prosper.learn.application.dto.response.usercourse;
 
-import com.prosper.learn.application.dto.response.course.CourseSummaryDTO;
+import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -20,8 +20,8 @@ import lombok.EqualsAndHashCode;
 public class UserCourseWithCourseDTO extends UserCourseSummaryDTO {
 
     /**
-     * 课程摘要信息
-     * 说明：包含课程的基本信息（id, name, description, 分类等）
+     * 课程简要信息
+     * 说明：包含课程的 id 和 name
      */
-    private CourseSummaryDTO course;
+    private CourseBriefDTO course;
 }

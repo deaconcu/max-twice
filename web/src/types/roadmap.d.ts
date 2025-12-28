@@ -34,3 +34,13 @@ export interface Roadmap {
   nodes?: Node[] // Vue Flow 节点
   edges?: Edge[] // Vue Flow 边
 }
+
+/**
+ * 路线图简要信息
+ * 用于学习进度列表
+ */
+export interface RoadmapBrief {
+  id: number
+  professionName: string
+  nodeCount: number
+}

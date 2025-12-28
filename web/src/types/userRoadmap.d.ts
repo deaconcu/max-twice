@@ -1,4 +1,4 @@
-import type { Roadmap } from './roadmap'
+import type { Roadmap, RoadmapBrief } from './roadmap'
 import type { User } from './user'
 import type { UserProgressState } from '@/enums'
 import type { Node, Edge } from '@vue-flow/core'
@@ -21,6 +21,14 @@ export interface UserRoadmap {
   completedAt?: string // 完成时间
   createdAt?: string // 创建时间
   updatedAt?: string // 更新时间
+}
+
+/**
+ * 用户路线图信息（含简要路线图信息）
+ * 用于学习进度列表
+ */
+export interface UserRoadmapBrief extends UserRoadmap {
+  roadmap: RoadmapBrief
 }
 
 /**

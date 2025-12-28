@@ -421,8 +421,7 @@ const hasMore = response.hasMore
 ```json
 {
   "code": 200,
-  "message": "操作成功",
-  "data": null
+  "message": "操作成功"
 }
 ```
 
@@ -562,8 +561,7 @@ await executeUpdatePost({
 ```json
 {
   "code": 200,
-  "message": "操作成功",
-  "data": null
+  "message": "操作成功"
 }
 ```
 

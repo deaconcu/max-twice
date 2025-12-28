@@ -32,8 +32,4 @@ export interface Node {
 export interface NodeProgressResponse {
   nodeId: number
   completed: boolean
-  isNewlyCompleted?: boolean
-  wasRemoved?: boolean
-  courseProgress: number
-  totalCompletedNodes: number
 }

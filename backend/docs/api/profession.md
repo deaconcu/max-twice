@@ -23,7 +23,7 @@
   "subCategory": 2,
   "icon": "mdi-coffee",
   "learnerCount": 500,
-  "createdAt": "2025-01-15T10:30:00"
+  "createdAt": "2025-01-15 10:30:00"
 }
 ```
 
@@ -75,7 +75,7 @@
     "subCategory": 2,
     "icon": "mdi-coffee",
     "learnerCount": 500,
-    "createdAt": "2025-01-15T10:30:00"
+    "createdAt": "2025-01-15 10:30:00"
   }
 }
 ```
@@ -139,7 +139,7 @@ const { data: profession } = useFetch<Profession>({
       "subCategory": 2,
       "icon": "mdi-coffee",
       "learnerCount": 500,
-      "createdAt": "2025-01-15T10:30:00"
+      "createdAt": "2025-01-15 10:30:00"
     }
   ]
 }
@@ -193,7 +193,7 @@ const fetchFn = currentCategory.value
       "subCategory": 2,
       "icon": "mdi-coffee",
       "learnerCount": 1000,
-      "createdAt": "2025-01-15T10:30:00"
+      "createdAt": "2025-01-15 10:30:00"
     }
   ]
 }
@@ -325,7 +325,7 @@ await executeCreateProfession({
       "subCategory": 2,
       "icon": "mdi-coffee",
       "learnerCount": 500,
-      "createdAt": "2025-01-15T10:30:00"
+      "createdAt": "2025-01-15 10:30:00"
     }
   ]
 }

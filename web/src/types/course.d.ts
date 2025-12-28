@@ -98,6 +98,24 @@ export interface CourseCompletionResponse {
 }
 
 /**
+ * 课程进度响应
+ * 用于开始/取消学习课程的响应
+ */
+export interface CourseProgressResponse {
+  courseId: number
+  learning: boolean
+}
+
+/**
+ * 路线图进度响应
+ * 用于开始/取消学习路线图的响应
+ */
+export interface RoadmapProgressResponse {
+  roadmapId: number
+  learning: boolean
+}
+
+/**
  * 审批响应
  * 用于课程审核操作的响应
  * @deprecated 已废弃，所有审核接口已改为返回 ApiResponse<void>

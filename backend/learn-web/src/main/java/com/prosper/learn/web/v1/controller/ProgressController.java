@@ -2,10 +2,13 @@ package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.dto.response.CourseCompletionResponseDTO;
+import com.prosper.learn.application.dto.response.CourseProgressResponseDTO;
 import com.prosper.learn.application.dto.response.NodeProgressResponseDTO;
+import com.prosper.learn.application.dto.response.RoadmapProgressResponseDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithProgressDTO;
 import com.prosper.learn.application.dto.response.usercourse.UserCourseWithCourseDTO;
 import com.prosper.learn.application.dto.response.userroadmap.UserRoadmapSummaryDTO;
+import com.prosper.learn.application.dto.response.userroadmap.UserRoadmapWithBriefDTO;
 import com.prosper.learn.application.dto.response.userroadmap.UserRoadmapWithDetailDTO;
 import com.prosper.learn.application.service.LearningProgressService;
 import com.prosper.learn.application.service.UserCourseService;
@@ -81,12 +84,12 @@ public class ProgressController {
      */
     @GetMapping("/progress/nodes/{nodeId}/status")
     @SaCheckLogin
-    public ApiResponse<NodeWithProgressDTO> getNodeCompletionStatus(
+    public ApiResponse<NodeProgressResponseDTO> getNodeCompletionStatus(
             @PathVariable @NotNull(message = "节点ID不能为空")
             @Positive(message = "节点ID必须大于0")
             Long nodeId,
             @CurrentUser UserDO currentUser) {
-        NodeWithProgressDTO result = learningProgressService.getNodeCompletionStatusResponse(currentUser.getId(), nodeId);
+        NodeProgressResponseDTO result = learningProgressService.getNodeCompletionStatusResponse(currentUser.getId(), nodeId);
         return ApiResponse.success(result);
     }
 
@@ -96,13 +99,40 @@ public class ProgressController {
      */
     @PostMapping("/progress/courses/{courseId}/start")
     @SaCheckLogin
-    public ApiResponse<Boolean> startCourse(
+    public ApiResponse<CourseProgressResponseDTO> startCourse(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
             Long courseId,
             @CurrentUser UserDO currentUser) {
-        boolean result = userCourseService.startCourse(currentUser.getId(), courseId);
-        return ApiResponse.success(result);
+        userCourseService.startCourse(currentUser.getId(), courseId);
+
+        CourseProgressResponseDTO response = CourseProgressResponseDTO.builder()
+                .courseId(courseId)
+                .learning(true)
+                .build();
+
+        return ApiResponse.success(response);
+    }
+
+    /**
+     * 取消学习课程
+     * 映射: DELETE /api/v1/progress/courses/{courseId}/start
+     */
+    @DeleteMapping("/progress/courses/{courseId}/start")
+    @SaCheckLogin
+    public ApiResponse<CourseProgressResponseDTO> cancelCourse(
+            @PathVariable @NotNull(message = "课程ID不能为空")
+            @Positive(message = "课程ID必须大于0")
+            Long courseId,
+            @CurrentUser UserDO currentUser) {
+        userCourseService.cancelCourse(currentUser.getId(), courseId);
+
+        CourseProgressResponseDTO response = CourseProgressResponseDTO.builder()
+                .courseId(courseId)
+                .learning(false)
+                .build();
+
+        return ApiResponse.success(response);
     }
 
     /**
@@ -161,13 +191,19 @@ public class ProgressController {
      */
     @DeleteMapping("/progress/courses/{courseId}")
     @SaCheckLogin
-    public ApiResponse<String> deleteCourseProgress(
+    public ApiResponse<CourseProgressResponseDTO> deleteCourseProgress(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
             Long courseId,
             @CurrentUser UserDO currentUser) {
         userCourseService.delete(currentUser.getId(), courseId);
-        return ApiResponse.success("删除成功");
+
+        CourseProgressResponseDTO response = CourseProgressResponseDTO.builder()
+                .courseId(courseId)
+                .learning(false)
+                .build();
+
+        return ApiResponse.success(response);
     }
 
     /**
@@ -193,13 +229,40 @@ public class ProgressController {
      */
     @PostMapping("/progress/roadmaps/{roadmapId}/start")
     @SaCheckLogin
-    public ApiResponse<Boolean> startRoadmap(
+    public ApiResponse<RoadmapProgressResponseDTO> startRoadmap(
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")
             Long roadmapId,
             @CurrentUser UserDO currentUser) {
-        boolean result = userRoadmapService.startRoadmap(currentUser.getId(), roadmapId);
-        return ApiResponse.success(result);
+        userRoadmapService.startRoadmap(currentUser.getId(), roadmapId);
+
+        RoadmapProgressResponseDTO response = RoadmapProgressResponseDTO.builder()
+                .roadmapId(roadmapId)
+                .learning(true)
+                .build();
+
+        return ApiResponse.success(response);
+    }
+
+    /**
+     * 取消学习路线图
+     * 映射: DELETE /api/v1/progress/roadmaps/{roadmapId}/start
+     */
+    @DeleteMapping("/progress/roadmaps/{roadmapId}/start")
+    @SaCheckLogin
+    public ApiResponse<RoadmapProgressResponseDTO> cancelRoadmap(
+            @PathVariable @NotNull(message = "路线图ID不能为空")
+            @Positive(message = "路线图ID必须大于0")
+            Long roadmapId,
+            @CurrentUser UserDO currentUser) {
+        userRoadmapService.cancelRoadmap(currentUser.getId(), roadmapId);
+
+        RoadmapProgressResponseDTO response = RoadmapProgressResponseDTO.builder()
+                .roadmapId(roadmapId)
+                .learning(false)
+                .build();
+
+        return ApiResponse.success(response);
     }
 
     /**
@@ -223,8 +286,8 @@ public class ProgressController {
      */
     @GetMapping("/progress/roadmaps")
     @SaCheckLogin
-    public ApiResponse<List<UserRoadmapWithDetailDTO>> getAllRoadmapsProgress(@CurrentUser UserDO currentUser) {
-        List<UserRoadmapWithDetailDTO> progressList = userRoadmapService.getUserAllRoadmap(currentUser.getId());
+    public ApiResponse<List<UserRoadmapWithBriefDTO>> getAllRoadmapsProgress(@CurrentUser UserDO currentUser) {
+        List<UserRoadmapWithBriefDTO> progressList = userRoadmapService.getUserAllRoadmapBrief(currentUser.getId());
         return ApiResponse.success(progressList);
     }
 
@@ -246,20 +309,5 @@ public class ProgressController {
 
         UserRoadmapSummaryDTO progress = userRoadmapService.updateProgress(currentUser.getId(), roadmapId, progressPercent);
         return ApiResponse.success(progress);
-    }
-
-    /**
-     * 删除路线图进度
-     * 映射: DELETE /user/roadmap → DELETE /api/v1/progress/roadmaps/{roadmapId}
-     */
-    @DeleteMapping("/progress/roadmaps/{roadmapId}")
-    @SaCheckLogin
-    public ApiResponse<String> deleteRoadmapProgress(
-            @PathVariable @NotNull(message = "路线图ID不能为空")
-            @Positive(message = "路线图ID必须大于0")
-            Long roadmapId,
-            @CurrentUser UserDO currentUser) {
-        userRoadmapService.deleteRoadmap(currentUser.getId(), roadmapId);
-        return ApiResponse.success("删除成功");
     }
 }

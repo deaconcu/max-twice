@@ -293,7 +293,7 @@ public class PostService {
      * 获取节点下的帖子列表（按分数排序），获取前 N 条
      */
     public List<PostDO> getList(long nodeId) {
-        domainService.validateNodeId(nodeId);
+        nodeDataService.validateAndGet(nodeId);
         return domainService.getListByNodeAndScore(
                 nodeId, systemProperties.getPosting().getDefaultNodePostCount(), ContentState.PUBLISHED.value());
     }
@@ -609,24 +609,22 @@ public class PostService {
      */
     @Transactional
     public void reject(Long id, String reason, UserDO currentUser) {
-        validatePostId(id);
-
         // 获取帖子信息
-        PostDO postDO = postDataService.getById(id);
-        if (postDO != null) {
-            NodeDO nodeDO = nodeDataService.getById(postDO.getNodeId());
-            CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
+        PostDO postDO = postDataService.validateAndGet(id);
 
-            // 截取内容前50个字符作为预览
-            String contentPreview = Utils.stripFormatting(postDO.getContent());
-            if (contentPreview != null && contentPreview.length() > 50) {
-                contentPreview = contentPreview.substring(0, 50) + "...";
-            }
+        NodeDO nodeDO = nodeDataService.getById(postDO.getNodeId());
+        CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
 
-            postDataService.reject(id, reason);
+        // 截取内容前50个字符作为预览
+        String contentPreview = Utils.stripFormatting(postDO.getContent());
+        if (contentPreview != null && contentPreview.length() > 50) {
+            contentPreview = contentPreview.substring(0, 50) + "...";
+        }
 
-            // 发布审核拒绝事件，触发消息通知
-            eventPublisher.publishEvent(ContentRejectedEvent.forPost(
+        postDataService.reject(id, reason);
+
+        // 发布审核拒绝事件，触发消息通知
+        eventPublisher.publishEvent(ContentRejectedEvent.forPost(
                 postDO.getCreatorId(),
                 postDO.getId(),
                 contentPreview,
@@ -634,12 +632,9 @@ public class PostService {
                 nodeDO != null ? nodeDO.getName() : null,
                 courseDO != null ? courseDO.getName() : null,
                 reason
-            ));
+        ));
 
-            log.info("审核员 {} 拒绝了帖子 {}, 原因: {}", currentUser.getId(), id, reason);
-        } else {
-            postDataService.reject(id, reason);
-        }
+        log.info("审核员 {} 拒绝了帖子 {}, 原因: {}", currentUser.getId(), id, reason);
     }
 
     /**
@@ -651,12 +646,7 @@ public class PostService {
      */
     @Transactional
     public void remove(Long id, String reason, UserDO currentUser) {
-        validatePostId(id);
-
-        PostDO postDO = postDataService.getById(id);
-        if (postDO == null) {
-            throw StatusCode.POST_NOT_FOUND.exception();
-        }
+        PostDO postDO = postDataService.validateAndGet(id);
 
         // 检查状态：只能下架已发布的内容
         if (postDO.getState() != ContentState.PUBLISHED.value()) {
@@ -699,12 +689,7 @@ public class PostService {
      */
     @Transactional
     public void restore(Long id, String reason, UserDO currentUser) {
-        validatePostId(id);
-
-        PostDO postDO = postDataService.getById(id);
-        if (postDO == null) {
-            throw StatusCode.POST_NOT_FOUND.exception();
-        }
+        PostDO postDO = postDataService.validateAndGet(id);
 
         // 记录之前的状态
         Byte previousState = postDO.getState();
@@ -757,12 +742,7 @@ public class PostService {
      */
     @Transactional
     public void ban(Long id, String reason, UserDO currentUser) {
-        validatePostId(id);
-
-        PostDO postDO = postDataService.getById(id);
-        if (postDO == null) {
-            throw StatusCode.POST_NOT_FOUND.exception();
-        }
+        PostDO postDO = postDataService.validateAndGet(id);
 
         // 记录之前的状态
         Byte previousState = postDO.getState();
@@ -811,7 +791,7 @@ public class PostService {
      */
     @Transactional
     public void banPost(Long id) {
-        validatePostId(id);
+        postDataService.validateAndGet(id);
         postDataService.ban(id);
     }
 
@@ -1007,13 +987,6 @@ public class PostService {
 
 
  // ========== 验证方法 ==========
-
-    /**
-     * 验证帖子ID（委托给 DomainService）
-     */
-    public void validatePostId(Long postId) {
-        domainService.validatePostId(postId);
-    }
 
     /**
      * 验证并获取帖子（委托给 DomainService）

@@ -115,6 +115,29 @@ public class RoadmapService {
     }
 
     /**
+     * 统计路线图内容中的节点数量
+     * @param content 路线图内容JSON字符串
+     * @return 节点数量
+     */
+    public Integer countNodesInContent(String content) {
+        if (content == null || content.trim().isEmpty()) {
+            return 0;
+        }
+
+        try {
+            List<List<Object>> contentData = objectMapper.readValue(content, new TypeReference<>() {});
+            if (contentData.size() >= 2) {
+                List<Object> nodeIdsRaw = contentData.get(1);
+                return nodeIdsRaw.size();
+            }
+            return 0;
+        } catch (Exception e) {
+            log.error("Failed to count nodes in content", e);
+            return 0;
+        }
+    }
+
+    /**
      * 转换为路线图（包含完整业务信息）
      * 包含：creator + profession + upvoted + pinned + learning + formatted content
      */
@@ -356,8 +379,11 @@ public class RoadmapService {
             throw StatusCode.PERMISSION_DENIED.exception();
         }
 
+        // 计算节点数量
+        Integer nodeCount = countNodesInContent(content);
+
         // 委托给 DomainService
-        domainService.updateRoadmap(id, content);
+        domainService.updateRoadmap(id, content, nodeCount);
     }
 
     /**
@@ -377,8 +403,11 @@ public class RoadmapService {
             throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
         }
 
+        // 计算节点数量
+        Integer nodeCount = countNodesInContent(content);
+
         // 委托给 DomainService
-        return domainService.createRoadmap(professionId, content, description, userId);
+        return domainService.createRoadmap(professionId, content, description, userId, nodeCount);
     }
 
     /**

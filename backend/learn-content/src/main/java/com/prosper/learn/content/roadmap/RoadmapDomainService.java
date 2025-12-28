@@ -283,13 +283,14 @@ public class RoadmapDomainService {
      * 创建路线图
      */
     @Transactional
-    public Long createRoadmap(Long professionId, String content, String description, Long userId) {
+    public Long createRoadmap(Long professionId, String content, String description, Long userId, Integer nodeCount) {
         RoadmapDO roadmapDO = new RoadmapDO();
         roadmapDO.setContent(content);
         roadmapDO.setContentHash(calculateContentHash(content));
         roadmapDO.setDescription(description);
         roadmapDO.setProfessionId(professionId);
         roadmapDO.setCreatorId(userId);
+        roadmapDO.setNodeCount(nodeCount);
 
         roadmapDataService.insert(roadmapDO);
         log.info("Created roadmap: {} for profession: {} by user: {}", roadmapDO.getId(), professionId, userId);
@@ -301,12 +302,13 @@ public class RoadmapDomainService {
      * 更新路线图
      */
     @Transactional
-    public void updateRoadmap(Long id, String content) {
+    public void updateRoadmap(Long id, String content, Integer nodeCount) {
         roadmapDataService.validateExists(id);
 
         RoadmapDO roadmapDO = roadmapDataService.getById(id);
         roadmapDO.setContent(content);
         roadmapDO.setContentHash(calculateContentHash(content));
+        roadmapDO.setNodeCount(nodeCount);
         roadmapDO.setUpdatedAt(LocalDateTime.now());
 
         roadmapDataService.update(roadmapDO);

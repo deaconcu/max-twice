@@ -14,6 +14,7 @@ import com.prosper.learn.interaction.comment.CommentDataService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
 import com.prosper.learn.shared.domain.Enums.*;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import com.prosper.learn.user.profile.UserDomainService;
@@ -183,7 +184,7 @@ public class CommentsControllerTest extends BaseControllerTest {
         upvote.setObjectId(commentId);
         upvote.setObjectType(ContentType.comment.value());
         upvote.setUserId(userId);
-        upvote.setType(1);  // 点赞
+        upvote.setType(VoteType.like.value());  // 点赞
         upvoteDataService.insert(upvote);
     }
 
@@ -220,10 +221,10 @@ public class CommentsControllerTest extends BaseControllerTest {
         String requestBody = String.format("""
             {
                 "objectId": %d,
-                "objectType": 0,
+                "objectType": %d,
                 "content": "这是一条顶级评论"
             }
-            """, post.getId());
+            """, post.getId(), ContentType.post.value());
 
         // 执行请求
         String response = mockMvc.perform(post("/api/v1/comments")
@@ -235,11 +236,11 @@ public class CommentsControllerTest extends BaseControllerTest {
                 .andExpect(jsonPath("$.data.id").exists())
                 .andExpect(jsonPath("$.data.content").value("这是一条顶级评论"))
                 .andExpect(jsonPath("$.data.objectId").value(post.getId()))
-                .andExpect(jsonPath("$.data.objectType").value(0))
+                .andExpect(jsonPath("$.data.objectType").value(ContentType.post.value()))
                 .andExpect(jsonPath("$.data.creatorId").value(user.getId()))
-                .andExpect(jsonPath("$.data.replyToCommentId").isEmpty())
-                .andExpect(jsonPath("$.data.toUserId").isEmpty())
-                .andExpect(jsonPath("$.data.state").value(ContentState.PUBLISHED.value()))
+                .andExpect(jsonPath("$.data.replyToCommentId").value(0))
+                .andExpect(jsonPath("$.data.toUserId").value(0))
+                .andExpect(jsonPath("$.data.state").value((int)ContentState.SUBMITTED.value()))
                 .andExpect(jsonPath("$.data.score").value(0.0))
                 .andExpect(jsonPath("$.data.upvoteCount").value(0))
                 .andExpect(jsonPath("$.data.replyCount").value(0))
@@ -255,7 +256,7 @@ public class CommentsControllerTest extends BaseControllerTest {
         CommentDO comment = commentDataService.getById(commentId);
         assertThat(comment).isNotNull();
         assertThat(comment.getContent()).isEqualTo("这是一条顶级评论");
-        assertThat(comment.getReplyToCommentId()).isNull();
+        assertThat(comment.getReplyToCommentId()).isEqualTo(0L);  // 顶级评论使用0，不是null
 
         // 清理登录状态
         StpUtil.logout();
@@ -279,10 +280,10 @@ public class CommentsControllerTest extends BaseControllerTest {
         String requestBody = String.format("""
             {
                 "objectId": %d,
-                "objectType": 1,
+                "objectType": %d,
                 "content": "这是节点评论"
             }
-            """, node.getId());
+            """, node.getId(), ContentType.node.value());
 
         // 执行请求
         mockMvc.perform(post("/api/v1/comments")
@@ -291,8 +292,8 @@ public class CommentsControllerTest extends BaseControllerTest {
                         .content(requestBody))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data.objectType").value(1))
-                .andExpect(jsonPath("$.data.replyToCommentId").isEmpty());
+                .andExpect(jsonPath("$.data.objectType").value(ContentType.node.value()))
+                .andExpect(jsonPath("$.data.replyToCommentId").value(0));
 
         StpUtil.logout();
     }
@@ -309,7 +310,7 @@ public class CommentsControllerTest extends BaseControllerTest {
         CourseDO course = createPublishedCourse("测试课程", userA.getId());
         NodeDO node = createPublishedNode("测试节点", course.getId(), userA.getId());
         PostDO post = createPublishedPost("测试帖子", node.getId(), userA.getId());
-        CommentDO topComment = createApprovedComment("顶级评论", post.getId(), 0, userA.getId());
+        CommentDO topComment = createApprovedComment("顶级评论", post.getId(), ContentType.post.value(), userA.getId());
 
         // 模拟用户B登录
         StpUtil.login(userB.getId());
@@ -318,12 +319,12 @@ public class CommentsControllerTest extends BaseControllerTest {
         String requestBody = String.format("""
             {
                 "objectId": %d,
-                "objectType": 0,
+                "objectType": %d,
                 "replyTo": %d,
                 "toUser": %d,
                 "content": "回复顶级评论"
             }
-            """, post.getId(), topComment.getId(), userA.getId());
+            """, post.getId(), ContentType.post.value(), topComment.getId(), userA.getId());
 
         // 执行请求
         mockMvc.perform(post("/api/v1/comments")
@@ -357,9 +358,9 @@ public class CommentsControllerTest extends BaseControllerTest {
         PostDO post = createPublishedPost("测试帖子", node.getId(), userA.getId());
 
         // 用户A创建顶级评论
-        CommentDO topComment = createApprovedComment("顶级评论", post.getId(), 0, userA.getId());
+        CommentDO topComment = createApprovedComment("顶级评论", post.getId(), ContentType.post.value(), userA.getId());
         // 用户B回复顶级评论
-        CommentDO reply1 = createApprovedReply("回复A", post.getId(), 0, userB.getId(), topComment.getId(), userA.getId());
+        CommentDO reply1 = createApprovedReply("回复A", post.getId(), ContentType.post.value(), userB.getId(), topComment.getId(), userA.getId());
 
         // 模拟用户C登录
         StpUtil.login(userC.getId());
@@ -368,12 +369,12 @@ public class CommentsControllerTest extends BaseControllerTest {
         String requestBody = String.format("""
             {
                 "objectId": %d,
-                "objectType": 0,
+                "objectType": %d,
                 "replyTo": %d,
                 "toUser": %d,
                 "content": "回复B的评论"
             }
-            """, post.getId(), topComment.getId(), userB.getId());
+            """, post.getId(), ContentType.post.value(), topComment.getId(), userB.getId());
 
         // 执行请求
         mockMvc.perform(post("/api/v1/comments")
@@ -404,7 +405,7 @@ public class CommentsControllerTest extends BaseControllerTest {
         String requestBody = String.format("""
             {
                 "objectId": %d,
-                "objectType": 0,
+                "objectType": 1,
                 "content": ""
             }
             """, post.getId());
@@ -413,8 +414,8 @@ public class CommentsControllerTest extends BaseControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("token", StpUtil.getTokenValue())
                         .content(requestBody))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(400));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(1002));  // StatusCode.INVALID_PARAMETER
 
         StpUtil.logout();
     }
@@ -430,7 +431,7 @@ public class CommentsControllerTest extends BaseControllerTest {
 
         String requestBody = """
             {
-                "objectType": 0,
+                "objectType": 1,
                 "content": "评论内容"
             }
             """;
@@ -439,8 +440,8 @@ public class CommentsControllerTest extends BaseControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("token", StpUtil.getTokenValue())
                         .content(requestBody))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(400));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(1002));  // StatusCode.INVALID_PARAMETER
 
         StpUtil.logout();
     }
@@ -454,20 +455,20 @@ public class CommentsControllerTest extends BaseControllerTest {
         UserDO user = createUser("user@test.com");
         StpUtil.login(user.getId());
 
-        String requestBody = """
+        String requestBody = String.format("""
             {
                 "objectId": 0,
-                "objectType": 0,
+                "objectType": %d,
                 "content": "评论内容"
             }
-            """;
+            """, ContentType.post.value());
 
         mockMvc.perform(post("/api/v1/comments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("token", StpUtil.getTokenValue())
                         .content(requestBody))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(400));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
 
         StpUtil.logout();
     }
@@ -493,8 +494,8 @@ public class CommentsControllerTest extends BaseControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("token", StpUtil.getTokenValue())
                         .content(requestBody))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(400));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
 
         StpUtil.logout();
     }
@@ -505,19 +506,19 @@ public class CommentsControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("权限验证 - 未登录创建评论")
     void testCreateComment_NotLoggedIn_Fail() throws Exception {
-        String requestBody = """
+        String requestBody = String.format("""
             {
                 "objectId": 123,
-                "objectType": 0,
+                "objectType": %d,
                 "content": "评论内容"
             }
-            """;
+            """, ContentType.post.value());
 
         mockMvc.perform(post("/api/v1/comments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value(401));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
     }
 
     // ==================== Query 测试（读操作） ====================
@@ -535,16 +536,16 @@ public class CommentsControllerTest extends BaseControllerTest {
         PostDO post = createPublishedPost("测试帖子", node.getId(), user.getId());
 
         // 创建3条顶级评论
-        CommentDO comment1 = createApprovedComment("评论1", post.getId(), 0, user.getId());
-        CommentDO comment2 = createApprovedComment("评论2", post.getId(), 0, user.getId());
-        CommentDO comment3 = createApprovedComment("评论3", post.getId(), 0, user.getId());
+        CommentDO comment1 = createApprovedComment("评论1", post.getId(), ContentType.post.value(), user.getId());
+        CommentDO comment2 = createApprovedComment("评论2", post.getId(), ContentType.post.value(), user.getId());
+        CommentDO comment3 = createApprovedComment("评论3", post.getId(), ContentType.post.value(), user.getId());
 
         // 评论1有2条回复
-        createApprovedReply("回复1-1", post.getId(), 0, user.getId(), comment1.getId(), user.getId());
-        createApprovedReply("回复1-2", post.getId(), 0, user.getId(), comment1.getId(), user.getId());
+        createApprovedReply("回复1-1", post.getId(), ContentType.post.value(), user.getId(), comment1.getId(), user.getId());
+        createApprovedReply("回复1-2", post.getId(), ContentType.post.value(), user.getId(), comment1.getId(), user.getId());
 
         // 评论2有1条回复
-        createApprovedReply("回复2-1", post.getId(), 0, user.getId(), comment2.getId(), user.getId());
+        createApprovedReply("回复2-1", post.getId(), ContentType.post.value(), user.getId(), comment2.getId(), user.getId());
 
         // 模拟登录
         StpUtil.login(user.getId());
@@ -552,7 +553,7 @@ public class CommentsControllerTest extends BaseControllerTest {
         // 执行请求
         String response = mockMvc.perform(get("/api/v1/comments")
                         .param("objectId", post.getId().toString())
-                        .param("objectType", "0")
+                        .param("objectType", String.valueOf(ContentType.post.value()))
                         .header("token", StpUtil.getTokenValue()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
@@ -566,12 +567,12 @@ public class CommentsControllerTest extends BaseControllerTest {
         JsonNode jsonNode = objectMapper.readTree(response);
         JsonNode items = jsonNode.get("data").get("items");
 
-        // 查找comment1，验证它有2条子评论
+        // 查找comment1，验证它有子评论（注意：getChildren只返回每个父评论最热门的1条）
         JsonNode comment1Node = findById(items, comment1.getId());
         assertThat(comment1Node).isNotNull();
-        assertThat(comment1Node.get("children").size()).isEqualTo(2);
+        assertThat(comment1Node.get("children").size()).isEqualTo(1);  // 只返回最热门的1条
 
-        // 查找comment2，验证它有1条子评论
+        // 查找comment2，验证它有子评论
         JsonNode comment2Node = findById(items, comment2.getId());
         assertThat(comment2Node).isNotNull();
         assertThat(comment2Node.get("children").size()).isEqualTo(1);
@@ -597,7 +598,7 @@ public class CommentsControllerTest extends BaseControllerTest {
 
         // 在节点下创建5条评论
         for (int i = 1; i <= 5; i++) {
-            createApprovedComment("节点评论" + i, node.getId(), 1, user.getId());
+            createApprovedComment("节点评论" + i, node.getId(), ContentType.node.value(), user.getId());
         }
 
         // 模拟登录
@@ -606,13 +607,13 @@ public class CommentsControllerTest extends BaseControllerTest {
         // 执行请求
         mockMvc.perform(get("/api/v1/comments")
                         .param("objectId", node.getId().toString())
-                        .param("objectType", "1")
+                        .param("objectType", String.valueOf(ContentType.node.value()))
                         .header("token", StpUtil.getTokenValue()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.items").isArray())
                 .andExpect(jsonPath("$.data.items.length()").value(5))
-                .andExpect(jsonPath("$.data.items[0].objectType").value(1));
+                .andExpect(jsonPath("$.data.items[0].objectType").value(ContentType.node.value()));
 
         StpUtil.logout();
     }
@@ -628,7 +629,7 @@ public class CommentsControllerTest extends BaseControllerTest {
         CourseDO course = createPublishedCourse("测试课程", user.getId());
         NodeDO node = createPublishedNode("测试节点", course.getId(), user.getId());
         PostDO post = createPublishedPost("测试帖子", node.getId(), user.getId());
-        CommentDO comment = createApprovedComment("测试评论", post.getId(), 0, user.getId());
+        CommentDO comment = createApprovedComment("测试评论", post.getId(), ContentType.post.value(), user.getId());
 
         // 用户对评论点赞
         createCommentUpvote(user.getId(), comment.getId());
@@ -639,7 +640,7 @@ public class CommentsControllerTest extends BaseControllerTest {
         // 执行请求
         mockMvc.perform(get("/api/v1/comments")
                         .param("objectId", post.getId().toString())
-                        .param("objectType", "0")
+                        .param("objectType", String.valueOf(ContentType.post.value()))
                         .header("token", StpUtil.getTokenValue()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
@@ -667,7 +668,7 @@ public class CommentsControllerTest extends BaseControllerTest {
         // 执行请求
         mockMvc.perform(get("/api/v1/comments")
                         .param("objectId", post.getId().toString())
-                        .param("objectType", "0")
+                        .param("objectType", String.valueOf(ContentType.post.value()))
                         .header("token", StpUtil.getTokenValue()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
@@ -688,10 +689,10 @@ public class CommentsControllerTest extends BaseControllerTest {
         StpUtil.login(user.getId());
 
         mockMvc.perform(get("/api/v1/comments")
-                        .param("objectType", "0")
+                        .param("objectType", String.valueOf(ContentType.post.value()))
                         .header("token", StpUtil.getTokenValue()))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(400));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
 
         StpUtil.logout();
     }
@@ -704,9 +705,9 @@ public class CommentsControllerTest extends BaseControllerTest {
     void testGetComments_NotLoggedIn_Fail() throws Exception {
         mockMvc.perform(get("/api/v1/comments")
                         .param("objectId", "123")
-                        .param("objectType", "0"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value(401));
+                        .param("objectType", String.valueOf(ContentType.post.value())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
     }
 
     /**
@@ -722,11 +723,11 @@ public class CommentsControllerTest extends BaseControllerTest {
         PostDO post = createPublishedPost("测试帖子", node.getId(), user.getId());
 
         // 创建顶级评论
-        CommentDO topComment = createApprovedComment("顶级评论", post.getId(), 0, user.getId());
+        CommentDO topComment = createApprovedComment("顶级评论", post.getId(), ContentType.post.value(), user.getId());
 
         // 创建5条回复
         for (int i = 1; i <= 5; i++) {
-            createApprovedReply("回复" + i, post.getId(), 0, user.getId(), topComment.getId(), user.getId());
+            createApprovedReply("回复" + i, post.getId(), ContentType.post.value(), user.getId(), topComment.getId(), user.getId());
         }
 
         // 模拟登录
@@ -755,7 +756,7 @@ public class CommentsControllerTest extends BaseControllerTest {
         CourseDO course = createPublishedCourse("测试课程", user.getId());
         NodeDO node = createPublishedNode("测试节点", course.getId(), user.getId());
         PostDO post = createPublishedPost("测试帖子", node.getId(), user.getId());
-        CommentDO topComment = createApprovedComment("顶级评论", post.getId(), 0, user.getId());
+        CommentDO topComment = createApprovedComment("顶级评论", post.getId(), ContentType.post.value(), user.getId());
 
         // 模拟登录
         StpUtil.login(user.getId());
@@ -779,7 +780,7 @@ public class CommentsControllerTest extends BaseControllerTest {
     @DisplayName("权限验证 - 获取评论回复需要登录")
     void testGetCommentReplies_NotLoggedIn_Fail() throws Exception {
         mockMvc.perform(get("/api/v1/comments/123/replies"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value(401));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
     }
 }

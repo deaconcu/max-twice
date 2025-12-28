@@ -143,16 +143,6 @@ export const subscriptionApi = {
   },
 
   /**
-   * 更新订阅
-   * @param subscriptionIds 订阅的课程 ID，逗号分隔（例如："1,2,3"）
-   */
-  updateSubscriptions(subscriptionIds: string): Promise<ApiResponse<SubscriptionInfo[]>> {
-    return apiClient.put('/v1/users/current/subscriptions', {
-      subscription: subscriptionIds,
-    })
-  },
-
-  /**
    * 取消订阅课程
    */
   unsubscribe(courseId: number): Promise<ApiResponse<void>> {

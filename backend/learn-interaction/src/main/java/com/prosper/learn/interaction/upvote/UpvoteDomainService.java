@@ -1,5 +1,6 @@
 package com.prosper.learn.interaction.upvote;
 
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -80,7 +81,7 @@ public class UpvoteDomainService {
             upvoteDO.setUserId(userId);
             upvoteDO.setObjectId(objectId);
             upvoteDO.setObjectType(objectType);
-            upvoteDO.setType(0); // 默认类型为 0
+            upvoteDO.setType(Enums.VoteType.like.value()); // 评论、路线图、卡片组都使用 like 类型
             upvoteDataService.insert(upvoteDO);
             return true;
         }

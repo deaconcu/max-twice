@@ -58,20 +58,6 @@ public class SubscriptionsController {
     }
 
     /**
-     * 批量更新订阅
-     * 映射: PUT /user/subscription → PUT /api/v1/users/current/subscriptions
-     */
-    @PutMapping("/users/current/subscriptions")
-    @SaCheckLogin
-    public ApiResponse<Object> updateSubscriptions(
-            @JsonParam("subscription") @NotBlank(message = "订阅内容不能为空")
-            String subscription,
-            @CurrentUser UserDO currentUser) {
-        Object result = userService.updateSubscriptions(currentUser.getId(), subscription);
-        return ApiResponse.success(result);
-    }
-
-    /**
      * 取消订阅
      * 映射: DELETE /user/subscription → DELETE /api/v1/users/current/subscriptions/{courseId}
      */

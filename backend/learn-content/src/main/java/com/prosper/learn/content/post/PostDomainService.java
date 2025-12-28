@@ -178,13 +178,8 @@ public class PostDomainService {
      */
     @Transactional
     public Long createArticlePost(Long userId, Long nodeId, Integer type, String content, ContentState state) {
-        validateNodeId(nodeId);
-
         // 验证节点是否存在
-        NodeDO nodeDO = nodeDataService.getById(nodeId);
-        if (nodeDO == null) {
-            throw StatusCode.NODE_NOT_FOUND.exception();
-        }
+        NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
 
         // 验证节点状态是否为已发布
         if (nodeDO.getState() != ContentState.PUBLISHED.value()) {
@@ -209,12 +204,7 @@ public class PostDomainService {
      */
     @Transactional
     public Long createContentsPost(Long userId, Long nodeId, String jsonContent, ContentState state) {
-        validateNodeId(nodeId);
-
-        NodeDO nodeDO = nodeDataService.getById(nodeId);
-        if (nodeDO == null) {
-            throw StatusCode.NODE_NOT_FOUND.exception();
-        }
+        NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
 
         // 验证节点状态是否为已发布
         if (nodeDO.getState() != ContentState.PUBLISHED.value()) {
@@ -290,7 +280,7 @@ public class PostDomainService {
      */
     @Transactional
     public void softDelete(Long id) {
-        validatePostId(id);
+        postDataService.validateAndGet(id);
 
         int result = postDataService.softDelete(id);
         if (result == 0) {
@@ -331,7 +321,7 @@ public class PostDomainService {
      */
     @Transactional
     public void reject(Long id, String reason) {
-        validatePostId(id);
+        postDataService.validateAndGet(id);
         postDataService.reject(id, reason);
 
         log.info("Rejected post: {} with reason: {}", id, reason);
@@ -342,7 +332,7 @@ public class PostDomainService {
      */
     @Transactional
     public void ban(Long id, String reason) {
-        validatePostId(id);
+        postDataService.validateAndGet(id);
         postDataService.ban(id, reason);
 
         log.info("Banned post: {} with reason: {}", id, reason);
@@ -351,33 +341,10 @@ public class PostDomainService {
     // ========== 验证方法 ==========
 
     /**
-     * 验证帖子ID
-     */
-    public void validatePostId(Long postId) {
-        if (postId == null || postId <= 0) {
-            throw StatusCode.INVALID_PARAMETER.exception("帖子ID无效");
-        }
-    }
-
-    /**
      * 验证并获取帖子
      */
     public PostDO validateAndGet(Long postId) {
-        validatePostId(postId);
-        PostDO postDO = postDataService.getById(postId);
-        if (postDO == null) {
-            throw StatusCode.POST_NOT_FOUND.exception();
-        }
-        return postDO;
-    }
-
-    /**
-     * 验证节点ID
-     */
-    public void validateNodeId(Long nodeId) {
-        if (nodeId == null || nodeId <= 0) {
-            throw StatusCode.INVALID_PARAMETER.exception("节点ID无效");
-        }
+        return postDataService.validateAndGet(postId);
     }
 
     // ========== Private 辅助方法 ==========

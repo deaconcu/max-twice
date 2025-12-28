@@ -39,18 +39,18 @@ public class UserRoadmapDomainService {
 
     /**
      * 用户开始学习路线图（核心领域逻辑）
+     * 如果已存在学习记录，抛出异常
+     *
      * @param userId 用户ID
      * @param roadmapId 路线图ID
-     * @return 是否为新创建的记录
+     * @throws BusinessException 如果路线图已开始学习
      */
-    public boolean startRoadmap(Long userId, Long roadmapId) {
+    public void startRoadmap(Long userId, Long roadmapId) {
         // 检查是否已经存在学习记录
         UserRoadmapDO existing = userRoadmapDataService.getByUserAndRoadmap(userId, roadmapId);
 
         if (existing != null) {
-            // 如果已存在，删除现有记录重新开始
-            userRoadmapDataService.deleteByUserAndRoadmap(userId, roadmapId);
-            return false;
+            throw StatusCode.USER_ROADMAP_ALREADY_STARTED.exception();
         }
 
         // 创建新的学习记录
@@ -65,7 +65,26 @@ public class UserRoadmapDomainService {
         ));
 
         log.info("用户 {} 开始学习路线图 {}", userId, roadmapId);
-        return true;
+    }
+
+    /**
+     * 取消学习路线图（删除学习记录）
+     * 如果不存在学习记录，抛出异常
+     *
+     * @param userId 用户ID
+     * @param roadmapId 路线图ID
+     * @throws BusinessException 如果路线图尚未开始学习
+     */
+    public void cancelRoadmap(Long userId, Long roadmapId) {
+        UserRoadmapDO existing = userRoadmapDataService.getByUserAndRoadmap(userId, roadmapId);
+
+        if (existing == null) {
+            throw StatusCode.USER_ROADMAP_NOT_STARTED.exception();
+        }
+
+        userRoadmapDataService.deleteByUserAndRoadmap(userId, roadmapId);
+
+        log.info("用户 {} 取消学习路线图 {}", userId, roadmapId);
     }
 
     /**
@@ -79,7 +98,7 @@ public class UserRoadmapDomainService {
         UserRoadmapDO userRoadmapDO = userRoadmapDataService.getByUserAndRoadmap(userId, roadmapId);
 
         if (userRoadmapDO == null) {
-            throw new RuntimeException("用户路线图记录不存在");
+            throw StatusCode.USER_ROADMAP_NOT_FOUND.exception();
         }
 
         userRoadmapDO.setProgressPercent(progressPercent);
@@ -104,16 +123,6 @@ public class UserRoadmapDomainService {
 
         userRoadmapDataService.update(userRoadmapDO);
         return userRoadmapDO;
-    }
-
-    /**
-     * 删除路线图学习记录（核心领域逻辑）
-     * @param userId 用户ID
-     * @param roadmapId 路线图ID
-     */
-    public void deleteRoadmap(Long userId, Long roadmapId) {
-        userRoadmapDataService.deleteByUserAndRoadmap(userId, roadmapId);
-        log.info("删除用户 {} 的路线图 {} 学习记录", userId, roadmapId);
     }
 
     /**

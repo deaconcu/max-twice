@@ -2,8 +2,12 @@ import apiClient from '../client'
 import type { ApiResponse } from '@/types/api'
 import type { Node, NodeProgressResponse } from '@/types/node'
 import type { UserCourse } from '@/types/userCourse'
-import type { UserRoadmap } from '@/types/userRoadmap'
-import type { CourseCompletionResponse } from '@/types/course'
+import type { UserRoadmap, UserRoadmapBrief } from '@/types/userRoadmap'
+import type {
+  CourseCompletionResponse,
+  CourseProgressResponse,
+  RoadmapProgressResponse,
+} from '@/types/course'
 
 /**
  * 学习进度相关 API
@@ -29,15 +33,22 @@ export const progressApi = {
   /**
    * 获取节点状态
    */
-  getNodeStatus(nodeId: number): Promise<ApiResponse<Node>> {
+  getNodeStatus(nodeId: number): Promise<ApiResponse<NodeProgressResponse>> {
     return apiClient.get(`/v1/progress/nodes/${String(nodeId)}/status`)
   },
 
   /**
    * 开始学习课程
    */
-  startCourse(courseId: number): Promise<ApiResponse<boolean>> {
-    return apiClient.post(`/v1/progress/courses/${String(courseId)}/start`, { courseId })
+  startCourse(courseId: number): Promise<ApiResponse<CourseProgressResponse>> {
+    return apiClient.post(`/v1/progress/courses/${String(courseId)}/start`)
+  },
+
+  /**
+   * 取消学习课程
+   */
+  cancelCourse(courseId: number): Promise<ApiResponse<CourseProgressResponse>> {
+    return apiClient.delete(`/v1/progress/courses/${String(courseId)}/start`)
   },
 
   /**
@@ -69,7 +80,7 @@ export const progressApi = {
   /**
    * 删除课程进度
    */
-  deleteCourseProgress(courseId: number): Promise<ApiResponse<string>> {
+  deleteCourseProgress(courseId: number): Promise<ApiResponse<CourseProgressResponse>> {
     return apiClient.delete(`/v1/progress/courses/${String(courseId)}`)
   },
 
@@ -83,8 +94,15 @@ export const progressApi = {
   /**
    * 开始学习路线图
    */
-  startRoadmap(roadmapId: number): Promise<ApiResponse<boolean>> {
+  startRoadmap(roadmapId: number): Promise<ApiResponse<RoadmapProgressResponse>> {
     return apiClient.post(`/v1/progress/roadmaps/${String(roadmapId)}/start`)
+  },
+
+  /**
+   * 取消学习路线图
+   */
+  cancelRoadmap(roadmapId: number): Promise<ApiResponse<RoadmapProgressResponse>> {
+    return apiClient.delete(`/v1/progress/roadmaps/${String(roadmapId)}/start`)
   },
 
   /**
@@ -97,7 +115,7 @@ export const progressApi = {
   /**
    * 获取用户的路线图列表
    */
-  getUserRoadmaps(): Promise<ApiResponse<UserRoadmap[]>> {
+  getUserRoadmaps(): Promise<ApiResponse<UserRoadmapBrief[]>> {
     return apiClient.get('/v1/progress/roadmaps')
   },
 
@@ -109,12 +127,5 @@ export const progressApi = {
     progressPercent: number
   ): Promise<ApiResponse<UserRoadmap>> {
     return apiClient.put(`/v1/progress/roadmaps/${String(roadmapId)}`, { progressPercent })
-  },
-
-  /**
-   * 删除路线图进度
-   */
-  deleteRoadmapProgress(roadmapId: number): Promise<ApiResponse<string>> {
-    return apiClient.delete(`/v1/progress/roadmaps/${String(roadmapId)}`)
   },
 }

@@ -101,7 +101,7 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
         }
         UserDO userDO = getByName(name);
         if (userDO == null) {
-            throw StatusCode.USER_NOT_FOUND.exception();
+            throw StatusCode.NOT_FOUND.exception("用户不存在");
         }
         return userDO;
     }

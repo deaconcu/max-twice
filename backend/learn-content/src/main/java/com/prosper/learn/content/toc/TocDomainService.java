@@ -86,10 +86,7 @@ public class TocDomainService {
      * @throws BusinessException 当帖子类型为文章时抛出 CONTENTS_INVALID_POST_TYPE 异常
      */
     private PostDO validatePostForContents(long postId) {
-        PostDO postDO = postDataService.getById(postId);
-        if (postDO == null) {
-            throw StatusCode.POST_NOT_FOUND.exception();
-        }
+        PostDO postDO = postDataService.validateAndGet(postId);
         if (postDO.getType() == Enums.PostType.article.value()) {
             throw StatusCode.INVALID_POST_TYPE.exception();
         }

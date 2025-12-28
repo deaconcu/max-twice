@@ -67,9 +67,9 @@ public class UserCourseService {
 
         UserCourseWithCourseDTO dto = userCourseConverter.toWithCourseDTO(userCourseDO);
 
-        // 填充课程摘要信息
+        // 填充课程简要信息
         CourseDO courseDO = courseDataService.getById(userCourseDO.getCourseId());
-        CourseSummaryDTO courseDTO = courseService.toSummaryDTO(courseDO);
+        CourseBriefDTO courseDTO = courseService.toBriefDTO(courseDO);
         dto.setCourse(courseDTO);
 
         return dto;
@@ -90,15 +90,15 @@ public class UserCourseService {
 
         // 批量查询课程信息
         List<CourseDO> courseDOList = courseDataService.getByIds(courseIds);
-        List<CourseSummaryDTO> courseDTOList = courseService.toSummaryDTO(courseDOList);
-        Map<Long, CourseSummaryDTO> courseMap = courseDTOList.stream()
+        List<CourseBriefDTO> courseDTOList = courseService.toBriefDTO(courseDOList);
+        Map<Long, CourseBriefDTO> courseMap = courseDTOList.stream()
                 .collect(Collectors.toMap(course -> (long) course.getId(), course -> course));
 
         // 转换为 DTO 并填充课程信息
         return userCourseDOList.stream()
                 .map(userCourseDO -> {
                     UserCourseWithCourseDTO dto = userCourseConverter.toWithCourseDTO(userCourseDO);
-                    CourseSummaryDTO courseDTO = courseMap.get(userCourseDO.getCourseId());
+                    CourseBriefDTO courseDTO = courseMap.get(userCourseDO.getCourseId());
                     dto.setCourse(courseDTO);  // 课程已删除时为 null
                     return dto;
                 }).collect(Collectors.toList());
@@ -113,20 +113,27 @@ public class UserCourseService {
     /**
      * 用户开始学习课程
      */
-    public boolean startCourse(Long userId, Long courseId) {
+    public void startCourse(Long userId, Long courseId) {
+        // 验证课程是否存在
+        courseDataService.validateAndGet(courseId);
+
         // 调用 DomainService 执行核心逻辑
-        boolean isNew = domainService.startCourse(userId, courseId);
+        domainService.startCourse(userId, courseId);
 
-        // 如果是新建记录，发布学习开始事件
-        if (isNew) {
-            eventPublisher.publishEvent(new LearningStartedEvent(
-                userId,
-                courseId,
-                ContentType.course
-            ));
-        }
+        // 发布学习开始事件
+        eventPublisher.publishEvent(new LearningStartedEvent(
+            userId,
+            courseId,
+            ContentType.course
+        ));
+    }
 
-        return isNew;
+    /**
+     * 取消学习课程
+     */
+    public void cancelCourse(Long userId, Long courseId) {
+        // 调用 DomainService 执行核心逻辑
+        domainService.cancelCourse(userId, courseId);
     }
 
     /**
@@ -149,6 +156,9 @@ public class UserCourseService {
      * 更新课程学习进度
      */
     public UserCourseWithCourseDTO update(Long userId, Long courseId, Integer progressPercent) {
+        // 验证课程是否存在
+        courseDataService.validateAndGet(courseId);
+
         // 调用 DomainService 更新
         domainService.updateProgress(userId, courseId, progressPercent);
 

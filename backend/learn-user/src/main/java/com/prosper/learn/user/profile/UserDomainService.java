@@ -114,7 +114,7 @@ public class UserDomainService {
     public void updateUserAvatar(Long userId, String avatarUrl) {
         int updated = userDataService.updateAvatar(userId, avatarUrl);
         if (updated == 0) {
-            throw StatusCode.USER_NOT_FOUND.exception();
+            throw StatusCode.NOT_FOUND.exception("用户不存在");
         }
         log.info("User {} avatar updated: {}", userId, avatarUrl);
     }
@@ -144,6 +144,8 @@ public class UserDomainService {
         user.setBiography("");
         user.setState(UserState.ACTIVE.value());
         user.setRole(UserRole.USER.getCode());
+        user.setEmailValidated(false); // 设置邮箱验证状态默认值
+        user.setMsgReadTime(LocalDateTime.now()); // 设置消息已读时间默认值
         userDataService.insert(user);
 
         log.info("User created: userId={}, email={}", user.getId(), email);
@@ -198,7 +200,7 @@ public class UserDomainService {
         // 5. 更新用户邮箱验证状态
         UserDO user = userDataService.getByEmail(email);
         if (user == null) {
-            throw StatusCode.USER_NOT_FOUND.exception();
+            throw StatusCode.NOT_FOUND.exception("用户不存在");
         }
 
         if (!user.getEmailValidated()) {
@@ -220,7 +222,7 @@ public class UserDomainService {
     public UserDO validateLogin(String email, String password) {
         UserDO userDO = userDataService.getByEmail(email);
         if (userDO == null) {
-            throw StatusCode.USER_NOT_FOUND.exception();
+            throw StatusCode.NOT_FOUND.exception("用户不存在");
         }
 
         // TODO: 密码验证

@@ -97,6 +97,7 @@ public class UpvotesControllerTest extends BaseControllerTest {
      * 创建测试课程
      */
     private CourseDO createCourse(Long creatorId) {
+        // 先创建临时课程用于获取ID
         CourseDO course = new CourseDO();
         course.setCreatorId(creatorId);
         course.setName("测试课程");
@@ -104,6 +105,7 @@ public class UpvotesControllerTest extends BaseControllerTest {
         course.setMainCategory(1);
         course.setSubCategory(1);
         course.setParentCourseId(0L);
+        course.setRootNodeId(0L); // 临时设置为0
         course.setState(ContentState.PUBLISHED.value());
         courseDataService.insert(course);
 
@@ -111,10 +113,12 @@ public class UpvotesControllerTest extends BaseControllerTest {
         NodeDO rootNode = new NodeDO();
         rootNode.setCourseId(course.getId());
         rootNode.setName("根节点");
+        rootNode.setDescription("根节点描述");
         rootNode.setCreatorId(creatorId);
         rootNode.setState(ContentState.PUBLISHED.value());
         nodeDataService.insert(rootNode);
 
+        // 更新课程的 rootNodeId
         course.setRootNodeId(rootNode.getId());
         courseDataService.update(course);
 
@@ -129,6 +133,7 @@ public class UpvotesControllerTest extends BaseControllerTest {
         node.setCourseId(courseId);
         node.setCreatorId(creatorId);
         node.setName("测试节点");
+        node.setDescription("测试节点描述");
         node.setState(ContentState.PUBLISHED.value());
         nodeDataService.insert(node);
         return node;
@@ -157,6 +162,10 @@ public class UpvotesControllerTest extends BaseControllerTest {
         comment.setObjectId(objectId);
         comment.setObjectType(objectType.value());
         comment.setContent("这是一条测试评论");
+        comment.setReplyToCommentId(0L);
+        comment.setToUserId(0L);
+        comment.setState(ContentState.PUBLISHED.value());
+        comment.setScore(0.0);
         commentDataService.insert(comment);
         return comment;
     }
@@ -170,6 +179,7 @@ public class UpvotesControllerTest extends BaseControllerTest {
         roadmap.setContent("{}");
         roadmap.setContentHash("test-hash");
         roadmap.setDescription("这是一个测试路线图");
+        roadmap.setProfessionId(0L);
         roadmap.setState(ContentState.PUBLISHED.value());
         roadmapDataService.insert(roadmap);
         return roadmap;

@@ -1,11 +1,14 @@
 package com.prosper.learn.application.service;
 
+import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
+import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.application.converter.CommentConverter;
 import com.prosper.learn.application.dto.request.CreateCommentRequest;
 import com.prosper.learn.application.dto.response.CommentDTO;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.comment.CommentAdminDTO;
 import com.prosper.learn.application.dto.response.comment.CommentDetailDTO;
+import com.prosper.learn.application.dto.response.comment.CommentSummaryDTO;
 import com.prosper.learn.application.dto.response.comment.CommentWithRepliesDTO;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
@@ -18,6 +21,7 @@ import com.prosper.learn.interaction.comment.CommentDataService;
 import com.prosper.learn.interaction.comment.CommentDomainService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.lifecycle.CommentCreatedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEvent;
@@ -26,11 +30,13 @@ import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
+import lombok.val;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 import static com.prosper.learn.shared.domain.Enums.ContentType.*;
@@ -53,6 +59,7 @@ public class CommentService {
     private final SystemProperties systemProperties;
     private final CommentConverter commentConverter;
     private final ApplicationEventPublisher eventPublisher;
+    private final ContentStatsDataService contentStatsDataService;
 
     // ========== Command 方法（写操作）==========
 
@@ -101,7 +108,7 @@ public class CommentService {
         // 审核通过后会发布 CommentCreatedEvent，由事件监听器处理通知和统计
 
         // 转换为 DTO，填充 toUserName
-        return toCommentWithUserNames(savedComment);
+        return toDetailDTO(savedComment, commentor.getId());
     }
 
     /**
@@ -235,9 +242,17 @@ public class CommentService {
             commentDOList = commentDOList.subList(0, pageSize);
         }
 
-        // DTO转换 + 填充点赞状态 + 填充用户名
+        // DTO转换
         List<CommentDetailDTO> commentDTOList = commentConverter.toDetailDTO(commentDOList);
-        commentDTOList = toCommentsWithVoteStatus(commentDTOList, currentUser.getId());
+
+        // 填充统计字段
+        fillStatsForComments(commentDTOList);
+
+        // 填充用户名
+        fillUserNamesForComments(commentDTOList);
+
+        // 填充点赞状态
+        fillUpvoteStatusForComments(commentDTOList, currentUser.getId());
 
         // 构建响应
         if (commentDTOList.isEmpty()) {
@@ -300,151 +315,92 @@ public class CommentService {
      * @return 包含子评论的评论DTO列表
      */
     private List<CommentWithRepliesDTO> toCommentsWithReplies(List<CommentDO> commentDOList, Long userId) {
-        List<Long> ids = new ArrayList<>();
-        for (CommentDO commentDO : commentDOList) {
-            ids.add(commentDO.getId());
-        }
-
+        // 转换为 DTO
         List<CommentWithRepliesDTO> commentDTOList = commentConverter.toWithRepliesDTO(commentDOList);
 
-        // 调用 DomainService 获取子评论
-        List<CommentDO> children = commentDomainService.getChildren(ids);
+        // 收集父评论ID
+        List<Long> parentIds = commentDTOList.stream()
+                .map(CommentWithRepliesDTO::getId)
+                .toList();
 
-        HashMap<Long, CommentDetailDTO> map = new HashMap<>();
-        for (CommentDO commentDO : children) {
-            map.put(commentDO.getReplyToCommentId(), commentConverter.toDetailDTO(commentDO));
-        }
+        // 调用 DomainService 获取所有子评论
+        List<CommentDO> children = commentDomainService.getChildren(parentIds);
+        List<CommentDetailDTO> childrenDTOList = commentConverter.toDetailDTO(children);
 
-        for (CommentWithRepliesDTO commentDTO: commentDTOList) {
-            if (map.containsKey(commentDTO.getId())) {
-                CommentDetailDTO childCommentDTO = map.get(commentDTO.getId());
-                ids.add(childCommentDTO.getId());
-                // 设置子评论列表
-                List<CommentDetailDTO> childrenList = new ArrayList<>();
-                childrenList.add(childCommentDTO);
-                commentDTO.setChildren(childrenList);
+        // 合并所有评论（父+子）
+        List<CommentDetailDTO> allComments = new ArrayList<>(commentDTOList);
+        allComments.addAll(childrenDTOList);
+
+        // 统一填充统计字段
+        fillStatsForComments(allComments);
+
+        // 统一填充用户名
+        fillUserNamesForComments(allComments);
+
+        // 统一填充点赞状态
+        fillUpvoteStatusForComments(allComments, userId);
+
+        // 按父评论ID分组子评论
+        Map<Long, List<CommentDetailDTO>> childrenMap = new HashMap<>();
+        for (CommentDetailDTO childDTO : childrenDTOList) {
+            Long parentId = childDTO.getReplyToCommentId();
+            if (parentId != null && parentId > 0) {
+                childrenMap.computeIfAbsent(parentId, k -> new ArrayList<>()).add(childDTO);
             }
         }
 
-        fillUserNames(commentDTOList, map);
-
-        return processUpvoteStatusWithChildren(commentDTOList, map, userId);
-    }
-
-    /**
-     * 给查询到的评论列表设置点赞状态 upvoted
-     * 转换为 CommentDetailDTO（点赞状态+用户名）
-     * 在加载更多子评论时调用，因为它已经是子评论了，所以它没有子评论列表
-     *
-     * @param commentDTOList 评论DTO列表
-     * @param userId 当前用户ID
-     * @return 填充了点赞状态和用户名的评论DTO列表
-     */
-    private List<CommentDetailDTO> toCommentsWithVoteStatus(List<CommentDetailDTO> commentDTOList, Long userId) {
-        if (commentDTOList.isEmpty()) {
-            return commentDTOList;
+        // 组织父子关系
+        for (CommentWithRepliesDTO commentDTO : commentDTOList) {
+            List<CommentDetailDTO> childrenList = childrenMap.getOrDefault(commentDTO.getId(), new ArrayList<>());
+            commentDTO.setChildren(childrenList);
         }
-
-        List<Long> ids = commentDTOList.stream().map(CommentDetailDTO::getId).toList();
-        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, ids, comment.value());
-
-        Set<Long> upvotedSet = new HashSet<>();
-        for (UpvoteDO upvoteDO : upvoteList) {
-            upvotedSet.add(upvoteDO.getObjectId());
-        }
-
-        for (CommentDetailDTO commentDTO : commentDTOList) {
-            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
-        }
-
-        // 填充用户名（传入空map表示没有子评论）
-        fillUserNames(commentDTOList, new HashMap<>());
 
         return commentDTOList;
     }
 
     /**
-     * 转换单个评论为 DTO 并填充 toUserName（用于创建评论后返回）
-     * 转换为 CommentDetailDTO（用户名）
-     *
-     * @param commentDO 评论DO
-     * @return 填充了用户名的评论DTO
+     * 批量填充评论的统计字段
      */
-    private CommentDetailDTO toCommentWithUserNames(CommentDO commentDO) {
-        CommentDetailDTO commentDTO = commentConverter.toDetailDTO(commentDO);
+    private void fillStatsForComments(List<? extends CommentSummaryDTO> commentDTOList) {
+        if (commentDTOList == null || commentDTOList.isEmpty()) {
+            return;
+        }
 
-        // 填充 toUserName
-        if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0) {
-            UserDO toUser = userDataService.getById(commentDTO.getToUserId());
-            if (toUser != null) {
-                commentDTO.setToUserName(toUser.getName());
+        // 收集所有评论ID
+        List<Long> commentIds = commentDTOList.stream()
+                .map(CommentSummaryDTO::getId)
+                .toList();
+
+        // 批量查询统计数据
+        List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(comment, commentIds);
+        Map<Long, ContentStatsDO> statsMap = statsList.stream()
+                .collect(HashMap::new, (map, stats) -> map.put(stats.getContentId(), stats), HashMap::putAll);
+
+        // 填充每个评论的统计字段
+        for (CommentSummaryDTO commentDTO : commentDTOList) {
+            ContentStatsDO stats = statsMap.get(commentDTO.getId());
+            if (stats != null) {
+                commentDTO.setUpvoteCount(stats.getLikes() != null ? stats.getLikes() : 0);
+                commentDTO.setReplyCount(stats.getComments() != null ? stats.getComments() : 0);
+            } else {
+                // 没有统计记录，设置为0
+                commentDTO.setUpvoteCount(0);
+                commentDTO.setReplyCount(0);
             }
         }
-
-        return commentDTO;
     }
 
     /**
-     * 给查询到的评论列表及其子评论设置点赞状态 upvoted
-     * @param commentDTOList 父评论列表
-     * @param childrenMap 子评论映射（parentId -> childDTO）
-     * @param userId 当前用户ID
-     * @return 填充了点赞状态的父评论列表
+     * 批量填充评论的用户名（creatorName 和 toUserName）
      */
-    private List<CommentWithRepliesDTO> processUpvoteStatusWithChildren(
-            List<CommentWithRepliesDTO> commentDTOList, HashMap<Long, CommentDetailDTO> childrenMap, Long userId) {
-        List<Long> allIds = new ArrayList<>();
-
-        // 收集所有评论ID（父评论和子评论）
-        for (CommentWithRepliesDTO commentDTO : commentDTOList) {
-            allIds.add(commentDTO.getId());
-        }
-        allIds.addAll(childrenMap.values().stream().map(CommentDetailDTO::getId).toList());
-
-        if (allIds.isEmpty()) {
-            return commentDTOList;
+    private void fillUserNamesForComments(List<? extends CommentDetailDTO> commentDTOList) {
+        if (commentDTOList == null || commentDTOList.isEmpty()) {
+            return;
         }
 
-        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, allIds, comment.value());
-
-        Set<Long> upvotedSet = new HashSet<>();
-        for (UpvoteDO upvoteDO : upvoteList) {
-            upvotedSet.add(upvoteDO.getObjectId());
-        }
-
-        // 设置父评论点赞状态
-        for (CommentWithRepliesDTO commentDTO : commentDTOList) {
-            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
-        }
-
-        // 设置子评论点赞状态
-        for (CommentDetailDTO commentDTO: childrenMap.values()) {
-            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
-        }
-        return commentDTOList;
-    }
-
-    /**
-     * 填充评论列表中的 creatorName 和 toUserName 字段
-     * 通用方法，支持 CommentDetailDTO 及其子类（CommentWithRepliesDTO）
-     *
-     * @param commentDTOList 评论列表（父评论）
-     * @param childrenMap 子评论映射（parentId -> childDTO），如果没有子评论传空map
-     */
-    private void fillUserNames(List<? extends CommentDetailDTO> commentDTOList, HashMap<Long, CommentDetailDTO> childrenMap) {
+        // 收集所有需要查询的用户ID
         Set<Long> userIds = new HashSet<>();
-
-        // 收集所有需要查询的用户ID（包括 creatorId 和 toUserId）
         for (CommentDetailDTO commentDTO : commentDTOList) {
-            if (commentDTO.getCreatorId() != null && commentDTO.getCreatorId() > 0) {
-                userIds.add(commentDTO.getCreatorId());
-            }
-            if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0) {
-                userIds.add(commentDTO.getToUserId());
-            }
-        }
-
-        for (CommentDetailDTO commentDTO : childrenMap.values()) {
             if (commentDTO.getCreatorId() != null && commentDTO.getCreatorId() > 0) {
                 userIds.add(commentDTO.getCreatorId());
             }
@@ -457,30 +413,128 @@ public class CommentService {
             return;
         }
 
-        Map<Long, UserDO> userMap = userDataService.getMapByIds(userIds);
+        // 批量查询用户信息
+        Map<Long, UserDO> userMap = userDataService.getMapByIds(new ArrayList<>(userIds));
 
-        // 填充 creatorName 和 toUserName
+        // 填充用户名
         for (CommentDetailDTO commentDTO : commentDTOList) {
-            if (commentDTO.getCreatorId() != null && commentDTO.getCreatorId() > 0 && userMap.containsKey(commentDTO.getCreatorId())) {
+            if (commentDTO.getCreatorId() != null && commentDTO.getCreatorId() > 0) {
                 UserDO creator = userMap.get(commentDTO.getCreatorId());
-                commentDTO.setCreatorName(creator.getName());
+                if (creator != null) {
+                    commentDTO.setCreatorName(creator.getName());
+                }
             }
-            if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0 && userMap.containsKey(commentDTO.getToUserId())) {
-                UserDO user = userMap.get(commentDTO.getToUserId());
-                commentDTO.setToUserName(user.getName());
+            if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0) {
+                UserDO toUser = userMap.get(commentDTO.getToUserId());
+                if (toUser != null) {
+                    commentDTO.setToUserName(toUser.getName());
+                }
+            }
+        }
+    }
+
+    /**
+     * 批量填充评论的点赞状态
+     */
+    private void fillUpvoteStatusForComments(List<? extends CommentDetailDTO> commentDTOList, Long userId) {
+        if (commentDTOList == null || commentDTOList.isEmpty()) {
+            return;
+        }
+
+        // 收集所有评论ID
+        List<Long> commentIds = commentDTOList.stream()
+                .map(CommentDetailDTO::getId)
+                .toList();
+
+        // 批量查询点赞记录
+        List<UpvoteDO> upvoteList = upvoteDataService.getList(userId, commentIds, comment.value());
+        Set<Long> upvotedSet = upvoteList.stream()
+                .filter(upvote -> upvote.getType() == VoteType.like.value())
+                .map(UpvoteDO::getObjectId)
+                .collect(Collectors.toSet());
+
+        // 填充点赞状态
+        for (CommentDetailDTO commentDTO : commentDTOList) {
+            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
+        }
+    }
+
+    /**
+     * 转换单个评论为 DTO 并填充 toUserName（用于创建评论后返回）
+     * 转换为 CommentDetailDTO（用户名）
+     *
+     * @param commentDO 评论DO
+     * @return 填充了用户名的评论DTO
+     */
+    private CommentDetailDTO toDetailDTO(CommentDO commentDO, long userId) {
+        CommentDetailDTO commentDTO = commentConverter.toDetailDTO(commentDO);
+
+        commentDTO.setUpvoteCount(0);
+        commentDTO.setReplyCount(0);
+
+        // 填充统计字段
+        Optional<ContentStatsDO> contentState = contentStatsDataService.getByContent(comment, commentDO.getId());
+        contentState.ifPresent(contentStatsDO -> {
+            commentDTO.setUpvoteCount(contentStatsDO.getLikes());
+            commentDTO.setReplyCount(contentStatsDO.getComments());
+        });
+
+        // 填充点赞状态
+        commentDTO.setUpvoted(false);
+        UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, commentDO.getId(), comment.value());
+        if (upvoteDO != null && upvoteDO.getType() == VoteType.like.value()) {
+            commentDTO.setUpvoted(true);
+        }
+
+        // 批量查询用户信息（creatorName 和 toUserName）
+        List<Long> userIds = new ArrayList<>();
+        if (commentDTO.getCreatorId() != null && commentDTO.getCreatorId() > 0) {
+            userIds.add(commentDTO.getCreatorId());
+        }
+        if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0) {
+            userIds.add(commentDTO.getToUserId());
+        }
+
+        if (!userIds.isEmpty()) {
+            Map<Long, UserDO> userMap = userDataService.getMapByIds(userIds);
+
+            // 填充 creatorName
+            if (commentDTO.getCreatorId() != null && commentDTO.getCreatorId() > 0) {
+                UserDO creator = userMap.get(commentDTO.getCreatorId());
+                if (creator != null) {
+                    commentDTO.setCreatorName(creator.getName());
+                }
+            }
+
+            // 填充 toUserName
+            if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0) {
+                UserDO toUser = userMap.get(commentDTO.getToUserId());
+                if (toUser != null) {
+                    commentDTO.setToUserName(toUser.getName());
+                }
             }
         }
 
-        for (CommentDetailDTO commentDTO : childrenMap.values()) {
-            if (commentDTO.getCreatorId() != null && commentDTO.getCreatorId() > 0 && userMap.containsKey(commentDTO.getCreatorId())) {
-                UserDO creator = userMap.get(commentDTO.getCreatorId());
-                commentDTO.setCreatorName(creator.getName());
-            }
-            if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0 && userMap.containsKey(commentDTO.getToUserId())) {
-                UserDO user = userMap.get(commentDTO.getToUserId());
-                commentDTO.setToUserName(user.getName());
-            }
-        }
+        return commentDTO;
+    }
+
+    /**
+     * 转换为完整的 CommentSummaryDTO（包含统计字段）
+     * 用于需要返回基础统计信息的场景
+     */
+    private CommentSummaryDTO toSummaryDTO(CommentDO commentDO) {
+        CommentSummaryDTO commentDTO = commentConverter.toSummaryDTO(commentDO);
+        commentDTO.setUpvoteCount(0);
+        commentDTO.setReplyCount(0);
+
+        // 填充统计字段（刚创建的评论，初始值为0）
+        Optional<ContentStatsDO> contentState = contentStatsDataService.getByContent(comment, commentDO.getId());
+        contentState.ifPresent(contentStatsDO -> {
+            commentDTO.setUpvoteCount(contentStatsDO.getLikes());
+            commentDTO.setReplyCount(contentStatsDO.getComments());
+        });
+
+        return commentDTO;
     }
 
     // ========== Private 辅助方法 ==========

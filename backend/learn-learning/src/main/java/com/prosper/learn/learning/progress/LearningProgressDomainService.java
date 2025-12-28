@@ -4,6 +4,8 @@ import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.learning.enrollment.UserCourseDataService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.user.learning.LearningCompletedEvent;
+import com.prosper.learn.shared.domain.exception.BusinessException;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.shared.common.utils.ValidationUtils;
 import lombok.RequiredArgsConstructor;
@@ -263,14 +265,14 @@ public class LearningProgressDomainService {
 
     /**
      * 标记节点为已完成
-     * 主流程：Redis + 数据库都更新，数据库失败不影响用户体验，记录到补偿队列
+     * 如果节点已完成，抛出异常
      *
      * @param userId 用户ID
      * @param nodeId 节点ID
      * @param courseId 课程ID
-     * @return 是否成功添加（如果已存在则返回false）
+     * @throws BusinessException 如果节点已是完成状态
      */
-    public boolean markNodeCompleted(long userId, long nodeId, long courseId) {
+    public void markNodeCompleted(long userId, long nodeId, long courseId) {
         ValidationUtils.requirePositiveId(userId);
         ValidationUtils.requirePositiveId(nodeId);
         ValidationUtils.requirePositiveId(courseId);
@@ -284,48 +286,48 @@ public class LearningProgressDomainService {
             Long added = redisTemplate.opsForSet().add(key, Long.toString(nodeId));
             redisTemplate.expire(key, getCacheExpireTime());
 
-            boolean isNewlyAdded = added > 0;
-
-            if (isNewlyAdded) {
-                log.info("Successfully marked node {} as completed for user {} in Redis", nodeId, userId);
-
-                // 2. 尝试同步更新数据库
-                try {
-                    syncUserToDatabase(userId);
-                } catch (Exception dbException) {
-                    // 数据库更新失败，记录到待补偿队列
-                    log.warn("Database sync failed for user {}, added to retry queue: {}",
-                        userId, dbException.getMessage());
-                    redisTemplate.opsForSet().add(SYNC_FAILED_USERS_KEY, Long.toString(userId));
-                }
-            } else {
-                log.debug("Node {} already completed by user {}", nodeId, userId);
+            if (added == null || added == 0) {
+                // 节点已在完成集合中，抛出异常
+                throw StatusCode.NODE_ALREADY_COMPLETED.exception();
             }
 
-            return isNewlyAdded;
+            log.info("Successfully marked node {} as completed for user {} in Redis", nodeId, userId);
 
+            // 2. 尝试同步更新数据库
+            try {
+                syncUserToDatabase(userId);
+            } catch (Exception dbException) {
+                // 数据库更新失败，记录到待补偿队列
+                log.warn("Database sync failed for user {}, added to retry queue: {}",
+                    userId, dbException.getMessage());
+                redisTemplate.opsForSet().add(SYNC_FAILED_USERS_KEY, Long.toString(userId));
+            }
+
+        } catch (BusinessException e) {
+            throw e; // 重新抛出业务异常
         } catch (Exception redisException) {
             // Redis失败，降级到只写数据库
             if (systemProperties.getLearningProgress().isEnableDatabaseFallback()) {
                 log.error("Redis update failed for user {} node {}, fallback to database only: {}",
                     userId, nodeId, redisException.getMessage());
-                return fallbackToDatabase(userId, nodeId);
+                fallbackToDatabase(userId, nodeId);
             } else {
                 log.error("Redis update failed and database fallback disabled", redisException);
-                return false;
+                throw StatusCode.LEARNING_PROGRESS_REDIS_FAILED.exception();
             }
         }
     }
 
     /**
      * 取消标记节点为已完成
+     * 如果节点未完成，抛出异常
      *
      * @param userId 用户ID
      * @param nodeId 节点ID
      * @param courseId 课程ID
-     * @return 是否成功移除（如果不存在则返回false）
+     * @throws BusinessException 如果节点已是未完成状态
      */
-    public boolean unmarkNodeCompleted(long userId, long nodeId, long courseId) {
+    public void unmarkNodeCompleted(long userId, long nodeId, long courseId) {
         ValidationUtils.requirePositiveId(userId);
         ValidationUtils.requirePositiveId(nodeId);
         ValidationUtils.requirePositiveId(courseId);
@@ -341,31 +343,30 @@ public class LearningProgressDomainService {
             // 1. 立即更新Redis
             Long removed = redisTemplate.opsForSet().remove(key, Long.toString(nodeId));
 
-            boolean wasRemoved = removed > 0;
-
-            if (wasRemoved) {
-                log.info("Successfully unmarked node {} as completed for user {} in Redis", nodeId, userId);
-
-                // 2. 尝试同步更新数据库
-                try {
-                    syncUserToDatabase(userId);
-                } catch (Exception dbException) {
-                    // 数据库更新失败，记录到待补偿队列
-                    log.warn("Database sync failed for user {}, added to retry queue: {}",
-                        userId, dbException.getMessage());
-                    redisTemplate.opsForSet().add(SYNC_FAILED_USERS_KEY, Long.toString(userId));
-                }
-            } else {
-                log.debug("Node {} was not completed by user {}", nodeId, userId);
+            if (removed == null || removed == 0) {
+                // 节点不在完成集合中，抛出异常
+                throw StatusCode.NODE_ALREADY_NOT_COMPLETED.exception();
             }
 
-            return wasRemoved;
+            log.info("Successfully unmarked node {} as completed for user {} in Redis", nodeId, userId);
 
+            // 2. 尝试同步更新数据库
+            try {
+                syncUserToDatabase(userId);
+            } catch (Exception dbException) {
+                // 数据库更新失败，记录到待补偿队列
+                log.warn("Database sync failed for user {}, added to retry queue: {}",
+                    userId, dbException.getMessage());
+                redisTemplate.opsForSet().add(SYNC_FAILED_USERS_KEY, Long.toString(userId));
+            }
+
+        } catch (BusinessException e) {
+            throw e; // 重新抛出业务异常
         } catch (Exception redisException) {
             // Redis失败，降级到只操作数据库
             log.error("Redis update failed for user {} node {}, fallback to database only: {}",
                 userId, nodeId, redisException.getMessage());
-            return fallbackUnmarkToDatabase(userId, nodeId);
+            fallbackUnmarkToDatabase(userId, nodeId);
         }
     }
 

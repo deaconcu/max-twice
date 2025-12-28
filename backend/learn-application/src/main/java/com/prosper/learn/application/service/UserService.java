@@ -1,8 +1,11 @@
 package com.prosper.learn.application.service;
 
+import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
+import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.response.SubscriptionDTO;
+import com.prosper.learn.application.dto.response.course.CourseSummaryWithStatsAndProgressDTO;
 import com.prosper.learn.application.dto.response.user.*;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
@@ -42,6 +45,7 @@ public class UserService {
     private final UserDataService userDataService;
     private final CourseDataService courseDataService;
     private final FollowDataService followDataService;
+    private final ContentStatsDataService contentStatsDataService;
     private final JavaMailSender mailSender;
     private final MessageService messageService;
     private final SystemProperties systemProperties;
@@ -184,8 +188,13 @@ public class UserService {
         log.info("查询到{}个收藏课程，课程信息: {}", courseDOList.size(),
             courseDOList.stream().map(c -> "id=" + c.getId() + ",name=" + c.getName()).collect(Collectors.toList()));
 
-        // 转换为DTO
-        return courseConverter.toSummaryDTO(courseDOList);
+        // 转换为DTO（包含统计字段）
+        List<CourseSummaryWithStatsAndProgressDTO> dtoList = courseConverter.toSummaryWithStatsAndProgressDTO(courseDOList);
+
+        // 批量填充统计信息（learnerCount, subscriptionCount）
+        fillStatsForCourses(dtoList);
+
+        return dtoList;
     }
 
 
@@ -278,29 +287,6 @@ public class UserService {
         ));
 
         return subscriptionIds.stream().mapToInt(Long::intValue).toArray();
-    }
-
-    /**
-     * 批量更新订阅
-     */
-    @Transactional
-    public Object updateSubscriptions(Long userId, String subscription) {
-        validateUserId(userId);
-        validateSubscriptionString(subscription);
-
-        // 解析并验证订阅ID
-        List<Long> ids = parseAndValidateSubscriptionIds(subscription);
-
-        // 跨域验证：验证课程是否存在
-        List<CourseDO> courseDOList = courseDataService.getByIds(ids);
-        List<Long> validIds = courseDOList.stream()
-            .map(CourseDO::getId)
-            .collect(Collectors.toList());
-
-        // 委托给 DomainService 更新订阅
-        userDomainService.updateSubscriptions(userId, validIds);
-
-        return validIds;
     }
 
     /**
@@ -490,7 +476,7 @@ public class UserService {
         validateUserId(userId);
         UserDO userDO = userDataService.getById(userId);
         if (userDO == null) {
-            throw StatusCode.USER_NOT_FOUND.exception();
+            throw StatusCode.NOT_FOUND.exception("用户不存在");
         }
         return userDO;
     }

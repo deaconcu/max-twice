@@ -26,6 +26,8 @@ public class RoadmapDO {
 
     private LocalDateTime scoreCalculatedAt;  // 分数计算时间
 
+    private Integer nodeCount;  // 路线图包含的节点数量
+
     private LocalDateTime updatedAt;
 
     private LocalDateTime createdAt;

@@ -217,9 +217,9 @@ const {
   defaultValue: [],
 })
 
-// 删除路线图进度
+// 取消学习路线图
 const { execute: deleteProgress } = useMutation(
-  (roadmapId: number) => progressApi.deleteRoadmapProgress(roadmapId),
+  (roadmapId: number) => progressApi.cancelRoadmap(roadmapId),
   {
     successMessage: '已取消学习该职业',
     onSuccess: () => {

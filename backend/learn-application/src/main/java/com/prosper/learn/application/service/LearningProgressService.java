@@ -6,6 +6,7 @@ import com.prosper.learn.application.converter.NodeConverter;
 import com.prosper.learn.application.dto.response.CourseCompletionResponseDTO;
 import com.prosper.learn.application.dto.response.NodeProgressResponseDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithProgressDTO;
+import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.toc.TocDomainService;
@@ -37,6 +38,7 @@ public class LearningProgressService {
     // 跨域依赖
     private final LearningProgressDomainService domainService;
     private final NodeDataService nodeDataService;
+    private final CourseDataService courseDataService;
     private final TocDomainService tocService;
     private final NodeConverter nodeConverter;
     private final UserCourseDataService userCourseDataService;
@@ -50,8 +52,14 @@ public class LearningProgressService {
      * 标记节点完成并返回完整的响应数据
      */
     public NodeProgressResponseDTO markNodeCompletedWithResponse(long userId, long nodeId, long courseId) {
+        // 验证节点是否存在
+        nodeDataService.validateAndGet(nodeId);
+
+        // 验证课程是否存在
+        courseDataService.validateAndGet(courseId);
+
         // 调用领域服务处理核心逻辑
-        boolean isNewlyCompleted = domainService.markNodeCompleted(userId, nodeId, courseId);
+        domainService.markNodeCompleted(userId, nodeId, courseId);
 
         // 如果启用层级进度，更新课程进度
         if (systemProperties.getLearningProgress().isEnableHierarchicalProgress()) {
@@ -59,16 +67,9 @@ public class LearningProgressService {
         }
 
         // 构建响应DTO
-        UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
-        Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
-        long totalCompleted = domainService.getUserCompletedCount(userId);
-
         return NodeProgressResponseDTO.builder()
                 .nodeId(nodeId)
                 .completed(true)
-                .isNewlyCompleted(isNewlyCompleted)
-                .courseProgress(courseProgress)
-                .totalCompletedNodes(totalCompleted)
                 .build();
     }
 
@@ -76,8 +77,14 @@ public class LearningProgressService {
      * 取消节点完成并返回完整的响应数据
      */
     public NodeProgressResponseDTO unmarkNodeCompletedWithResponse(long userId, long nodeId, long courseId) {
+        // 验证节点是否存在
+        nodeDataService.validateAndGet(nodeId);
+
+        // 验证课程是否存在
+        courseDataService.validateAndGet(courseId);
+
         // 调用领域服务处理核心逻辑
-        boolean wasRemoved = domainService.unmarkNodeCompleted(userId, nodeId, courseId);
+        domainService.unmarkNodeCompleted(userId, nodeId, courseId);
 
         // 如果启用层级进度，更新课程进度
         if (systemProperties.getLearningProgress().isEnableHierarchicalProgress()) {
@@ -85,16 +92,9 @@ public class LearningProgressService {
         }
 
         // 构建响应DTO
-        UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
-        Integer courseProgress = userCourse != null ? userCourse.getProgressPercent() : 0;
-        long totalCompleted = domainService.getUserCompletedCount(userId);
-
         return NodeProgressResponseDTO.builder()
                 .nodeId(nodeId)
                 .completed(false)
-                .wasRemoved(wasRemoved)
-                .courseProgress(courseProgress)
-                .totalCompletedNodes(totalCompleted)
                 .build();
     }
 
@@ -121,7 +121,7 @@ public class LearningProgressService {
     /**
      * 获取节点完成状态响应数据
      */
-    public NodeWithProgressDTO getNodeCompletionStatusResponse(long userId, long nodeId) {
+    public NodeProgressResponseDTO getNodeCompletionStatusResponse(long userId, long nodeId) {
         // 验证节点存在（跨域依赖）
         NodeDO nodeDO = nodeDataService.getById(nodeId);
         if (nodeDO == null) {
@@ -131,8 +131,11 @@ public class LearningProgressService {
         // 检查完成状态
         boolean isCompleted = domainService.isNodeCompleted(userId, nodeId);
 
-        // DTO转换
-        return nodeConverter.toWithProgressDTO(nodeDO, isCompleted);
+        // 构建响应DTO
+        return NodeProgressResponseDTO.builder()
+                .nodeId(nodeId)
+                .completed(isCompleted)
+                .build();
     }
 
     // ========== 委托方法（直接委托给DomainService）==========

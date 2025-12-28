@@ -70,6 +70,61 @@ public class UserRoadmapService {
     }
 
     /**
+     * 转换为含路线图简要信息的 DTO（批量）
+     * 用于学习进度列表,不包含完整路线图内容和进度计算
+     */
+    public List<UserRoadmapWithBriefDTO> toWithBriefDTO(List<UserRoadmapDO> userRoadmapList) {
+        if (userRoadmapList.isEmpty()) {
+            return List.of();
+        }
+
+        // 提取所有 roadmap IDs
+        List<Long> roadmapIds = userRoadmapList.stream()
+                .map(UserRoadmapDO::getRoadmapId)
+                .distinct()
+                .toList();
+
+        // 批量查询 roadmap 信息
+        List<RoadmapDO> roadmapDOList = roadmapDataService.getByIds(roadmapIds);
+
+        // 提取所有 profession IDs
+        List<Long> professionIds = roadmapDOList.stream()
+                .map(RoadmapDO::getProfessionId)
+                .distinct()
+                .toList();
+
+        // 批量查询 profession 信息
+        Map<Long, String> professionNameMap = professionDataService.getByIds(professionIds).stream()
+                .collect(Collectors.toMap(
+                    profession -> profession.getId(),
+                    profession -> profession.getName()
+                ));
+
+        // 构建 roadmap ID -> RoadmapBriefDTO 映射
+        Map<Long, RoadmapBriefDTO> roadmapBriefMap = roadmapDOList.stream()
+                .collect(Collectors.toMap(
+                    RoadmapDO::getId,
+                    roadmapDO -> {
+                        RoadmapBriefDTO brief = new RoadmapBriefDTO();
+                        brief.setId(roadmapDO.getId());
+                        brief.setProfessionName(professionNameMap.get(roadmapDO.getProfessionId()));
+                        brief.setNodeCount(roadmapDO.getNodeCount());
+                        return brief;
+                    }
+                ));
+
+        // 转换为 DTO 并填充路线图信息
+        return userRoadmapList.stream()
+                .map(userRoadmapDO -> {
+                    UserRoadmapWithBriefDTO dto = userRoadmapConverter.toWithBriefDTO(userRoadmapDO);
+                    RoadmapBriefDTO roadmapBrief = roadmapBriefMap.get(userRoadmapDO.getRoadmapId());
+                    dto.setRoadmap(roadmapBrief);
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 转换为含路线图详细信息的 DTO（批量）
      */
     public List<UserRoadmapWithDetailDTO> toWithDetailDTO(List<UserRoadmapDO> userRoadmapList, long userId) {
@@ -145,7 +200,7 @@ public class UserRoadmapService {
      */
     private void validateUserId(Long userId) {
         if (userId == null || userId <= 0) {
-            throw StatusCode.USER_NOT_FOUND.exception();
+            throw StatusCode.NOT_FOUND.exception("用户不存在");
         }
     }
 
@@ -176,20 +231,26 @@ public class UserRoadmapService {
      * 用户开始学习路线图
      * @param userId 用户ID
      * @param roadmapId 路线图ID
-     * @return 是否为新创建的学习记录
      */
-    public boolean startRoadmap(Long userId, Long roadmapId) {
+    public void startRoadmap(Long userId, Long roadmapId) {
         validateUserId(userId);
         validateRoadmapId(roadmapId);
 
-        try {
-            // 委托给领域服务处理核心逻辑
-            return userRoadmapDomainService.startRoadmap(userId, roadmapId);
+        // 委托给领域服务处理核心逻辑
+        userRoadmapDomainService.startRoadmap(userId, roadmapId);
+    }
 
-        } catch (Exception e) {
-            log.error("用户开始学习路线图失败: userId={}, roadmapId={}", userId, roadmapId, e);
-            throw new RuntimeException("用户开始学习路线图失败", e);
-        }
+    /**
+     * 取消学习路线图
+     * @param userId 用户ID
+     * @param roadmapId 路线图ID
+     */
+    public void cancelRoadmap(Long userId, Long roadmapId) {
+        validateUserId(userId);
+        validateRoadmapId(roadmapId);
+
+        // 委托给领域服务处理核心逻辑
+        userRoadmapDomainService.cancelRoadmap(userId, roadmapId);
     }
 
     /**
@@ -207,15 +268,6 @@ public class UserRoadmapService {
         return toSummaryDTO(userRoadmapDO);
     }
 
-    /**
-     * 删除路线图学习记录
-     * @param userId 用户ID
-     * @param roadmapId 路线图ID
-     */
-    public void deleteRoadmap(Long userId, Long roadmapId) {
-        userRoadmapDomainService.deleteRoadmap(userId, roadmapId);
-    }
-
     // ========== Query 方法（读操作）==========
 
     /**
@@ -230,6 +282,19 @@ public class UserRoadmapService {
 
         // DTO转换和跨域数据填充
         return toWithDetailDTO(userRoadmapDO, userId);
+    }
+
+    /**
+     * 获取用户的全部路线图学习进度（含简要路线图信息）
+     * @param userId 用户ID
+     * @return 路线图进度列表（含简要信息）
+     */
+    public List<UserRoadmapWithBriefDTO> getUserAllRoadmapBrief(Long userId) {
+        // 委托给领域服务获取数据
+        List<UserRoadmapDO> userRoadmapList = userRoadmapDomainService.getByUser(userId);
+
+        // DTO转换和跨域数据填充
+        return toWithBriefDTO(userRoadmapList);
     }
 
     /**

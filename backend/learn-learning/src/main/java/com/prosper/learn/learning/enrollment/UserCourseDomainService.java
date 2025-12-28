@@ -75,17 +75,17 @@ public class UserCourseDomainService {
 
     /**
      * 用户开始学习课程（不发布事件）
+     * 如果已存在学习记录，抛出异常
      */
     @Transactional
-    public boolean startCourse(Long userId, Long courseId) {
+    public void startCourse(Long userId, Long courseId) {
         ValidationUtils.requirePositiveId(userId);
         ValidationUtils.requirePositiveId(courseId);
 
         UserCourseDO existing = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
 
         if (existing != null) {
-            userCourseDataService.deleteByUserAndCourse(userId, courseId);
-            return false;
+            throw StatusCode.USER_COURSE_ALREADY_STARTED.exception();
         }
 
         UserCourseDO progressDO = new UserCourseDO();
@@ -98,7 +98,26 @@ public class UserCourseDomainService {
         userCourseDataService.insert(progressDO);
 
         log.info("用户 {} 开始学习课程 {}", userId, courseId);
-        return true;
+    }
+
+    /**
+     * 取消学习课程（删除学习记录）
+     * 如果不存在学习记录，抛出异常
+     */
+    @Transactional
+    public void cancelCourse(Long userId, Long courseId) {
+        ValidationUtils.requirePositiveId(userId);
+        ValidationUtils.requirePositiveId(courseId);
+
+        UserCourseDO existing = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
+
+        if (existing == null) {
+            throw StatusCode.USER_COURSE_NOT_STARTED.exception();
+        }
+
+        userCourseDataService.deleteByUserAndCourse(userId, courseId);
+
+        log.info("用户 {} 取消学习课程 {}", userId, courseId);
     }
 
     /**

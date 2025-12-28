@@ -147,7 +147,7 @@ public class FollowService {
 
         UserDO userDO = userDataService.getById(userId);
         if (userDO == null) {
-            throw StatusCode.USER_NOT_FOUND.exception();
+            throw StatusCode.NOT_FOUND.exception("用户不存在");
         }
         return userDO;
     }

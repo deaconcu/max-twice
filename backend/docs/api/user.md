@@ -44,7 +44,6 @@
 {
   "code": 200,
   "message": "操作成功",
-  "data": null,
   "timestamp": 1703001234567
 }
 ```
@@ -112,10 +111,10 @@
 }
 ```
 
-**失败 - 用户不存在 (1116)**:
+**失败 - 用户不存在 (1007)**:
 ```json
 {
-  "code": 1116,
+  "code": 1007,
   "message": "用户不存在",
   "timestamp": 1703001234567
 }
@@ -173,7 +172,7 @@
     "avatar": "https://example.com/avatar.jpg",
     "biography": "个人简介",
     "emailValidated": true,
-    "createdAt": "2024-01-01T00:00:00"
+    "createdAt": "2024-01-01 00:00:00"
   },
   "timestamp": 1703001234567
 }
@@ -232,7 +231,7 @@ token: your-auth-token
     "avatar": "https://example.com/avatar.jpg",
     "biography": "个人简介",
     "emailValidated": true,
-    "createdAt": "2024-01-01T00:00:00"
+    "createdAt": "2024-01-01 00:00:00"
   },
   "timestamp": 1703001234567
 }
@@ -288,7 +287,6 @@ token: your-auth-token
 {
   "code": 200,
   "message": "操作成功",
-  "data": null,
   "timestamp": 1703001234567
 }
 ```
@@ -401,17 +399,17 @@ token: your-auth-token
     "name": "其他用户",
     "avatar": "https://example.com/avatar.jpg",
     "biography": "个人简介",
-    "createdAt": "2024-01-01T00:00:00",
+    "createdAt": "2024-01-01 00:00:00",
     "isFollowing": false
   },
   "timestamp": 1703001234567
 }
 ```
 
-**失败 - 用户不存在 (1116)**:
+**失败 - 用户不存在 (1007)**:
 ```json
 {
-  "code": 1116,
+  "code": 1007,
   "message": "用户不存在",
   "timestamp": 1703001234567
 }
@@ -488,12 +486,12 @@ GET /api/v1/users/search?name=张三
 |--------|------|
 | 200 | 成功 |
 | 1002 | 参数异常 |
+| 1007 | 没有找到对象 |
 | 1101 | 用户未登录 |
 | 1102 | 用户已存在 |
 | 1103 | 密码错误 |
 | 1108 | 验证码无效 |
 | 1110 | 验证码已过期 |
-| 1116 | 用户不存在 |
 | 2301 | 访问过于频繁，请稍后再试 |
 | 2403 | 文件大小超出限制 |
 | 2404 | 不支持的文件类型 |

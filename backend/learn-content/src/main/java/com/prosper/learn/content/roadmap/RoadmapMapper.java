@@ -71,12 +71,12 @@ public interface RoadmapMapper {
 // --注释掉检查 STOP (2025/12/10 12:03)
 
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
-    @Insert("INSERT INTO roadmap(content, content_hash, description, profession_id, creator_id, state) " +
-            "VALUES (#{content}, #{contentHash}, #{description}, #{professionId}, #{creatorId}, " + ContentState.SUBMITTED_VALUE + ")")
+    @Insert("INSERT INTO roadmap(content, content_hash, description, profession_id, creator_id, node_count, state) " +
+            "VALUES (#{content}, #{contentHash}, #{description}, #{professionId}, #{creatorId}, #{nodeCount}, " + ContentState.SUBMITTED_VALUE + ")")
     int insert(RoadmapDO roadmapDO);
 
     @Update("UPDATE roadmap SET content = #{content}, content_hash = #{contentHash}, description = #{description}, " +
-            "state = #{state} where id = #{id}")
+            "node_count = #{nodeCount}, state = #{state} where id = #{id}")
     @MapKey("id")
     void update(RoadmapDO roadmapDO);
 

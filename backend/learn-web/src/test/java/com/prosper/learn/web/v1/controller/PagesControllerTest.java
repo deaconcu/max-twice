@@ -72,6 +72,9 @@ public class PagesControllerTest extends BaseControllerTest {
     private CommentDataService commentDataService;
 
     @Autowired
+    private CommentDomainService commentDomainService;
+
+    @Autowired
     private UserDomainService userDomainService;
 
     @BeforeEach
@@ -122,16 +125,7 @@ public class PagesControllerTest extends BaseControllerTest {
                 .orElseThrow(() -> new RuntimeException("课程未创建"));
 
         courseDataService.approve(course.getId());
-        course = courseDataService.getById(course.getId());
-
-        // 确保根节点是发布状态
-        NodeDO rootNode = nodeDataService.getById(course.getRootNodeId());
-        if (rootNode.getState() != ContentState.PUBLISHED.value()) {
-            rootNode.setState(ContentState.PUBLISHED.value());
-            nodeDataService.update(rootNode);
-        }
-
-        return course;
+        return courseDataService.getById(course.getId());
     }
 
     /**
@@ -200,10 +194,10 @@ public class PagesControllerTest extends BaseControllerTest {
         String createRequest = String.format("""
             {
                 "objectId": %d,
-                "objectType": "%s",
+                "objectType": %d,
                 "content": "%s"
             }
-            """, objectId, objectType.name(), content);
+            """, objectId, objectType.value(), content);
 
         mockMvc.perform(post("/api/v1/comments")
                 .header("token", StpUtil.getTokenValue())
@@ -214,12 +208,17 @@ public class PagesControllerTest extends BaseControllerTest {
 
         StpUtil.logout();
 
-        // 从数据库查询创建的评论
-        List<CommentDO> comments = commentDataService.getByObjectId(objectId, objectType.value(), 100);
-        return comments.stream()
-                .filter(c -> content.equals(c.getContent()) && c.getReplyToCommentId() == 0)
+        // 从数据库查询创建的评论（SUBMITTED 状态）
+        List<CommentDO> comments = commentDataService.getListByFilter(
+                objectType.value(), objectId, creatorId, null, ContentState.SUBMITTED.value(), 100);
+        CommentDO comment = comments.stream()
+                .filter(c -> content.equals(c.getContent()) && (c.getReplyToCommentId() == null || c.getReplyToCommentId() == 0))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("评论未创建"));
+
+        // 审核通过评论
+        commentDomainService.approveComment(comment.getId());
+        return commentDataService.getById(comment.getId());
     }
 
     /**
@@ -227,17 +226,18 @@ public class PagesControllerTest extends BaseControllerTest {
      * 通过 HTTP API 创建
      */
     private CommentDO createReplyComment(Long objectId, ContentType objectType, Long creatorId,
-                                         String content, Long replyToCommentId) throws Exception {
+                                         String content, Long replyToCommentId, Long toUserId) throws Exception {
         StpUtil.login(creatorId);
 
         String createRequest = String.format("""
             {
                 "objectId": %d,
-                "objectType": "%s",
+                "objectType": %d,
                 "content": "%s",
-                "replyToCommentId": %d
+                "replyTo": %d,
+                "toUser": %d
             }
-            """, objectId, objectType.name(), content, replyToCommentId);
+            """, objectId, objectType.value(), content, replyToCommentId, toUserId);
 
         mockMvc.perform(post("/api/v1/comments")
                 .header("token", StpUtil.getTokenValue())
@@ -248,12 +248,17 @@ public class PagesControllerTest extends BaseControllerTest {
 
         StpUtil.logout();
 
-        // 从数据库查询创建的回复评论
-        List<CommentDO> comments = commentDataService.getByObjectId(objectId, objectType.value(), 100);
-        return comments.stream()
+        // 从数据库查询创建的回复评论（SUBMITTED 状态）
+        List<CommentDO> comments = commentDataService.getListByFilter(
+                objectType.value(), objectId, creatorId, null, ContentState.SUBMITTED.value(), 100);
+        CommentDO comment = comments.stream()
                 .filter(c -> content.equals(c.getContent()) && replyToCommentId.equals(c.getReplyToCommentId()))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("回复评论未创建"));
+
+        // 审核通过评论
+        commentDomainService.approveComment(comment.getId());
+        return commentDataService.getById(comment.getId());
     }
 
     // ==================== Query 测试（读操作）====================
@@ -469,7 +474,7 @@ public class PagesControllerTest extends BaseControllerTest {
         // 创建顶级评论和回复评论
         CommentDO topComment = createComment(post.getId(), ContentType.post, user.getId(), "顶级评论");
         CommentDO replyComment = createReplyComment(post.getId(), ContentType.post, user.getId(),
-                "回复评论", topComment.getId());
+                "回复评论", topComment.getId(), user.getId());
 
         StpUtil.login(user.getId());
 
@@ -654,7 +659,7 @@ public class PagesControllerTest extends BaseControllerTest {
 
         CommentDO topComment = createComment(post.getId(), ContentType.post, user.getId(), "顶级评论");
         CommentDO replyComment = createReplyComment(post.getId(), ContentType.post, user.getId(),
-                "回复评论", topComment.getId());
+                "回复评论", topComment.getId(), user.getId());
 
         StpUtil.login(user.getId());
 

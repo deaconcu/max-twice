@@ -76,6 +76,12 @@ public enum StatusCode {
     LEARNING_PROGRESS_DATABASE_FAILED(1606, "学习进度数据库操作失败"),
     LEARNING_PROGRESS_INVALID_NODE_ID(1607, "无效的节点ID"),
     LEARNING_PROGRESS_TOC_PARSE_FAILED(1608, "目录结构解析失败"),
+    NODE_ALREADY_COMPLETED(1609, "节点已是完成状态"),
+    NODE_ALREADY_NOT_COMPLETED(1610, "节点已是未完成状态"),
+    USER_COURSE_ALREADY_STARTED(1611, "课程已开始学习"),
+    USER_COURSE_NOT_STARTED(1612, "课程尚未开始学习"),
+    USER_ROADMAP_ALREADY_STARTED(1613, "路线图已开始学习"),
+    USER_ROADMAP_NOT_STARTED(1614, "路线图尚未开始学习"),
     
     // 数据解析相关 17xx
     JSON_PARSE_ERROR(1701, "数据格式解析失败"),
@@ -88,12 +94,10 @@ public enum StatusCode {
     COMMENT_OBJECT_NOT_FOUND(1404, "评论对象不存在"),
 
     // 内容管理相关 13xx
-    POST_NOT_FOUND(1302, "帖子不存在"),
     TOC_PINNED_ITEMS_LIMIT_EXCEEDED(1303, "置顶帖子数量超限"),
     INVALID_POST_TYPE(1304, "无效的帖子类型"),
     POST_INVALID_PARAMETER(1305, "帖子参数无效"),
     POST_CONTENT_PARSE_FAILED(1306, "帖子内容解析失败"),
-    NODE_NOT_FOUND(1307, "节点不存在"),
     POST_LIST_QUERY_FAILED(1308, "帖子列表查询失败"),
     NODE_STATE_INVALID(1309, "节点不是发布状态，暂时无法访问或提交内容"),
 
