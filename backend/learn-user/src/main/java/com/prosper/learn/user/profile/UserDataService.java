@@ -101,7 +101,23 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
         }
         UserDO userDO = getByName(name);
         if (userDO == null) {
-            throw StatusCode.NOT_FOUND.exception("用户不存在");
+            throw StatusCode.USER_NOT_FOUND.exception();
+        }
+        return userDO;
+    }
+
+    /**
+     * 根据ID查询用户并验证存在
+     * 重写父类方法，抛出 USER_NOT_FOUND 而不是通用的 NOT_FOUND
+     */
+    @Override
+    public UserDO validateAndGet(Long userId) {
+        if (userId == null || userId <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception();
+        }
+        UserDO userDO = getById(userId);
+        if (userDO == null) {
+            throw StatusCode.USER_NOT_FOUND.exception();
         }
         return userDO;
     }

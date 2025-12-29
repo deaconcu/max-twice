@@ -76,6 +76,28 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
         return 0;
     }
 
+    /**
+     * 验证课程ID并获取课程实体
+     * 重写父类方法以抛出更具体的 COURSE_NOT_FOUND 异常
+     *
+     * @param id 课程ID
+     * @return 课程实体
+     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当课程不存在时抛出 COURSE_NOT_FOUND (1201)
+     */
+    @Override
+    public CourseDO validateAndGet(Long id) {
+        if (id == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("课程ID不能为空");
+        }
+
+        CourseDO course = getById(id);
+        if (course == null) {
+            throw StatusCode.COURSE_NOT_FOUND.exception();
+        }
+
+        return course;
+    }
+
     // ========== QUERY 查询操作 ==========
 
     /**

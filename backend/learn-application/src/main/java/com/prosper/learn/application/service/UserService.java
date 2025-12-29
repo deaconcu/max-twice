@@ -11,6 +11,7 @@ import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.interaction.follow.FollowDO;
 import com.prosper.learn.interaction.follow.FollowDataService;
+import com.prosper.learn.learning.enrollment.UserCourseDomainService;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentBookmarkedEvent;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentUnbookmarkedEvent;
 import com.prosper.learn.shared.domain.exception.StatusCode;
@@ -46,6 +47,7 @@ public class UserService {
     private final CourseDataService courseDataService;
     private final FollowDataService followDataService;
     private final ContentStatsDataService contentStatsDataService;
+    private final UserCourseDomainService userCourseDomainService;
     private final JavaMailSender mailSender;
     private final MessageService messageService;
     private final SystemProperties systemProperties;
@@ -175,7 +177,7 @@ public class UserService {
      * 获取用户订阅
      */
     public Object getUserSubscriptions(Long userId) {
-        validateUserExists(userId);
+        userDataService.validateAndGet(userId);
 
         // 获取订阅ID列表
         List<Long> subscriptionIds = userDomainService.getSubscriptionIds(userId);
@@ -191,8 +193,8 @@ public class UserService {
         // 转换为DTO（包含统计字段）
         List<CourseSummaryWithStatsAndProgressDTO> dtoList = courseConverter.toSummaryWithStatsAndProgressDTO(courseDOList);
 
-        // 批量填充统计信息（learnerCount, subscriptionCount）
-        fillStatsForCourses(dtoList);
+        // 批量填充统计信息和用户信息（learnerCount, subscriptionCount, subscribed, progress）
+        fillStatsAndProgressForCourses(dtoList, userId);
 
         return dtoList;
     }
@@ -271,13 +273,13 @@ public class UserService {
      * 添加订阅
      */
     @Transactional
-    public Object subscribe(Long userId, Long courseId) {
+    public void subscribe(Long userId, Long courseId) {
         validateCourseExists(courseId);
         validateUserId(userId);
 
         // 委托给 DomainService 添加订阅
         boolean checkDuplicate = systemProperties.getUser().isEnableDuplicateSubscriptionCheck();
-        List<Long> subscriptionIds = userDomainService.addSubscription(userId, courseId, checkDuplicate);
+        userDomainService.addSubscription(userId, courseId, checkDuplicate);
 
         // 发布收藏事件
         eventPublisher.publishEvent(new ContentBookmarkedEvent(
@@ -285,20 +287,18 @@ public class UserService {
             courseId,
             ContentType.course
         ));
-
-        return subscriptionIds.stream().mapToInt(Long::intValue).toArray();
     }
 
     /**
      * 取消订阅
      */
     @Transactional
-    public Object unsubscribe(Long userId, Long courseId) {
+    public void unsubscribe(Long userId, Long courseId) {
         validateCourseExists(courseId);
         validateUserId(userId);
 
         // 委托给 DomainService 取消订阅
-        List<Long> subscriptionIds = userDomainService.removeSubscription(userId, courseId);
+        userDomainService.removeSubscription(userId, courseId);
 
         // 发布取消收藏事件
         eventPublisher.publishEvent(new ContentUnbookmarkedEvent(
@@ -306,8 +306,6 @@ public class UserService {
             courseId,
             ContentType.course
         ));
-
-        return subscriptionIds.stream().mapToInt(Long::intValue).toArray();
     }
 
 // --注释掉检查 START (2025/12/10 11:32):
@@ -472,15 +470,6 @@ public class UserService {
         }
     }
     
-    public UserDO validateUserExists(Long userId) {
-        validateUserId(userId);
-        UserDO userDO = userDataService.getById(userId);
-        if (userDO == null) {
-            throw StatusCode.NOT_FOUND.exception("用户不存在");
-        }
-        return userDO;
-    }
-
     private void validateCourseExists(Long courseId) {
         if (courseId == null || courseId <= 0) {
             throw StatusCode.INVALID_PARAMETER.exception();
@@ -547,6 +536,49 @@ public class UserService {
             }
         }
         return ids;
+    }
+
+    /**
+     * 批量填充课程统计信息和用户进度信息
+     */
+    private void fillStatsAndProgressForCourses(List<CourseSummaryWithStatsAndProgressDTO> dtoList, Long userId) {
+        if (dtoList == null || dtoList.isEmpty()) {
+            return;
+        }
+
+        // 收集所有课程ID
+        List<Long> courseIds = dtoList.stream()
+                .map(CourseSummaryWithStatsAndProgressDTO::getId)
+                .toList();
+
+        // 批量查询统计数据
+        List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(ContentType.course, courseIds);
+        Map<Long, ContentStatsDO> statsMap = statsList.stream()
+                .collect(Collectors.toMap(ContentStatsDO::getContentId, stats -> stats, (a, b) -> a));
+
+        // 批量查询学习进度
+        Map<Long, Integer> progressMap = new HashMap<>();
+        for (Long courseId : courseIds) {
+            Integer progress = userCourseDomainService.getCourseProgress(userId, courseId);
+            progressMap.put(courseId, progress != null ? progress : 0);
+        }
+
+        // 填充每个课程的统计字段和用户字段
+        for (CourseSummaryWithStatsAndProgressDTO dto : dtoList) {
+            // 填充统计信息
+            ContentStatsDO stats = statsMap.get(dto.getId());
+            if (stats != null) {
+                dto.setLearnerCount(stats.getInProgressUsers() != null ? stats.getInProgressUsers() : 0);
+                dto.setSubscriptionCount(stats.getBookmarks() != null ? stats.getBookmarks() : 0);
+            } else {
+                dto.setLearnerCount(0);
+                dto.setSubscriptionCount(0);
+            }
+
+            // 填充用户信息（userId不为null时，说明用户已登录且正在查看自己的订阅，所以subscribed应该是true）
+            dto.setSubscribed(true);  // 用户订阅列表中的课程，subscribed 始终为 true
+            dto.setProgress(progressMap.getOrDefault(dto.getId(), 0));
+        }
     }
 
 // --注释掉检查 START (2025/12/10 11:32):

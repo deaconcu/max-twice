@@ -48,13 +48,13 @@ public class SubscriptionsController {
      */
     @PostMapping("/users/current/subscriptions")
     @SaCheckLogin
-    public ApiResponse<Object> subscribe(
+    public ApiResponse<Void> subscribe(
             @JsonParam("courseId") @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
             Long courseId,
             @CurrentUser UserDO currentUser) {
-        Object result = userService.subscribe(currentUser.getId(), courseId);
-        return ApiResponse.success(result);
+        userService.subscribe(currentUser.getId(), courseId);
+        return ApiResponse.success();
     }
 
     /**
@@ -63,12 +63,12 @@ public class SubscriptionsController {
      */
     @DeleteMapping("/users/current/subscriptions/{courseId}")
     @SaCheckLogin
-    public ApiResponse<Object> unsubscribe(
+    public ApiResponse<Void> unsubscribe(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
             Long courseId,
             @CurrentUser UserDO currentUser) {
-        Object result = userService.unsubscribe(currentUser.getId(), courseId);
-        return ApiResponse.success(result);
+        userService.unsubscribe(currentUser.getId(), courseId);
+        return ApiResponse.success();
     }
 }

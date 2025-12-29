@@ -4,8 +4,10 @@ import com.prosper.learn.application.converter.ProfessionConverter;
 import com.prosper.learn.application.converter.RoadmapConverter;
 import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.converter.UserRoadmapConverter;
+import com.prosper.learn.application.dto.response.roadmap.RoadmapBriefDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapWithStatusDTO;
 import com.prosper.learn.application.dto.response.userroadmap.UserRoadmapSummaryDTO;
+import com.prosper.learn.application.dto.response.userroadmap.UserRoadmapWithBriefDTO;
 import com.prosper.learn.application.dto.response.userroadmap.UserRoadmapWithDetailDTO;
 import com.prosper.learn.content.profession.ProfessionDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
@@ -279,6 +281,10 @@ public class UserRoadmapService {
 
         // 委托给领域服务获取数据
         UserRoadmapDO userRoadmapDO = userRoadmapDomainService.getByUserAndRoadmap(userId, roadmapId);
+
+        if (userRoadmapDO == null) {
+            throw StatusCode.USER_ROADMAP_NOT_FOUND.exception();
+        }
 
         // DTO转换和跨域数据填充
         return toWithDetailDTO(userRoadmapDO, userId);

@@ -2,6 +2,7 @@ package com.prosper.learn.application.service;
 
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.UserCourseConverter;
+import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.application.dto.response.course.CourseSummaryDTO;
 import com.prosper.learn.application.dto.response.usercourse.UserCourseSummaryDTO;
 import com.prosper.learn.application.dto.response.usercourse.UserCourseWithCourseDTO;
@@ -11,6 +12,7 @@ import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.learning.enrollment.UserCourseDataService;
 import com.prosper.learn.learning.enrollment.UserCourseDomainService;
 import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -141,6 +143,9 @@ public class UserCourseService {
      */
     public UserCourseWithCourseDTO getUserCourse(Long userId, Long courseId) {
         UserCourseDO userCourseDo = domainService.getByUserAndCourse(userId, courseId);
+        if (userCourseDo == null) {
+            throw StatusCode.USER_COURSE_NOT_FOUND.exception();
+        }
         return toWithCourseDTO(userCourseDo);
     }
 

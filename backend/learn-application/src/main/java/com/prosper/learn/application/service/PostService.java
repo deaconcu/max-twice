@@ -306,7 +306,7 @@ public class PostService {
      * @param state 状态过滤（null表示所有状态，否则只返回指定状态）
      */
     public List<PostFullDTO> getUserPosts(Long userId, Long lastId, PostType postType, Byte state) {
-        userService.validateUserExists(userId);
+        userDataService.validateAndGet(userId);
 
         int count = systemProperties.getPosting().getUserContentsPageSize();
 
@@ -323,7 +323,7 @@ public class PostService {
      * 获取用户帖子（带分页信息）
      */
     public KeysetPageResponse<PostFullDTO> getUserPostsWithPagination(Long userId, Long lastId, PostType postType, Byte state) {
-        userService.validateUserExists(userId);
+        userDataService.validateAndGet(userId);
 
         int count = systemProperties.getPosting().getUserContentsPageSize();
 

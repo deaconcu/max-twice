@@ -267,9 +267,17 @@ public class UserDomainService {
         } else {
             // 更新现有订阅
             List<Long> ids = parseSubscriptionIds(userProfileDO.getSubscription());
+
+            // 检查是否已订阅
             if (checkDuplicate && ids.contains(courseId)) {
                 throw StatusCode.USER_COURSE_ALREADY_SUBSCRIBED.exception();
             }
+
+            // 检查订阅数量上限
+            if (ids.size() >= systemProperties.getUser().getMaxSubscriptions()) {
+                throw StatusCode.USER_SUBSCRIPTION_LIMIT_EXCEEDED.exception();
+            }
+
             ids.add(courseId);
             userProfileDO.setSubscription(formatSubscriptionIds(ids));
             userProfileDataService.update(userProfileDO);

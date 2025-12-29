@@ -300,6 +300,11 @@ public class SystemProperties {
         private int followPageSize = 10;
 
         /**
+         * 最大订阅数量
+         */
+        private int maxSubscriptions = 100;
+
+        /**
          * 验证码最小值
          */
         private int verificationCodeMin = 100000;

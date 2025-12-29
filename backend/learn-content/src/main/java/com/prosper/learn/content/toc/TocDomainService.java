@@ -113,10 +113,10 @@ public class TocDomainService {
 
     /**
      * 验证目录索引有效性
-     * 
+     *
      * 检查给定的目录索引是否在有效范围内。
      * 目录索引从1开始，不能超过目录哈希数组的长度。
-     * 
+     *
      * @param tocIndex 目录索引（从1开始）
      * @param tocHashArr 目录哈希数组
      * @throws BusinessException 当索引超出范围时抛出 TOC_INDEX_OUT_OF_BOUNDS 异常
@@ -125,6 +125,102 @@ public class TocDomainService {
         if (tocIndex > tocHashArr.length) {
             throw StatusCode.TOC_INDEX_OUT_OF_BOUNDS.exception();
         }
+    }
+
+    /**
+     * 验证并解析索引数组
+     *
+     * @param indexArray 索引数组字符串（逗号分隔）
+     * @param maxLength 允许的最大长度
+     * @param tocHashesLength 当前目录哈希数组的长度
+     * @return 解析后的索引数组
+     * @throws BusinessException 当索引数组格式错误、长度超限或值超出范围时抛出异常
+     */
+    private int[] validateAndParseIndexArray(String indexArray, int maxLength, int tocHashesLength) {
+        String[] indexStrings = indexArray.split(",");
+
+        // 验证长度
+        if (indexStrings.length > maxLength) {
+            throw StatusCode.INVALID_PARAMETER.exception("索引数组长度不能超过" + maxLength);
+        }
+
+        int[] indexes = new int[indexStrings.length];
+        for (int i = 0; i < indexStrings.length; i++) {
+            try {
+                indexes[i] = Integer.parseInt(indexStrings[i]);
+                // 验证索引值范围
+                if (Math.abs(indexes[i]) > tocHashesLength) {
+                    throw StatusCode.TOC_INDEX_OUT_OF_BOUNDS.exception();
+                }
+            } catch (NumberFormatException e) {
+                throw StatusCode.INVALID_PARAMETER.exception("索引值必须是有效的整数");
+            }
+        }
+
+        return indexes;
+    }
+
+    /**
+     * 更新用户课程目录
+     *
+     * 根据提供的索引数组重新组织用户的课程目录结构。
+     * 索引数组中的每个值对应当前目录哈希数组中的位置（从1开始），
+     * 特殊值0表示使用默认目录（只包含根节点）。
+     *
+     * @param userId 用户ID
+     * @param courseId 课程ID
+     * @param indexArray 索引数组字符串（逗号分隔），如 "1,2,0,3"
+     *                   - 0: 使用默认目录
+     *                   - 正整数: 使用现有目录数组中对应位置的哈希（从1开始）
+     * @throws BusinessException 当课程不存在、用户目录不存在、索引无效等情况时抛出异常
+     */
+    @Transactional
+    public void updateUserCourseToc(long userId, long courseId, String indexArray) {
+        // 1. 验证课程存在性
+        CourseDO courseDO = courseDataService.validateAndGet(courseId);
+
+        // 2. 验证用户目录存在性
+        UserCourseTocDO userCourseTocDO = validateUserTocExists(userId, courseId);
+
+        // 3. 解析当前目录哈希数组
+        String toc = userCourseTocDO.getToc();
+        String[] tocHashes = toc.split(",");
+
+        // 4. 验证并解析索引数组
+        int[] indexes = validateAndParseIndexArray(indexArray, 9, tocHashes.length);
+
+        // 5. 生成默认目录结构
+        ObjectNode defaultTocNode = objectMapper.createObjectNode();
+        defaultTocNode.set(Long.toString(courseDO.getRootNodeId()), objectMapper.createObjectNode());
+        String defaultTocStr = defaultTocNode.toString();
+        String defaultTocHash = Utils.hashSHA(defaultTocStr);
+
+        // 6. 如果默认目录不存在则创建
+        if (courseTocDataService.get(defaultTocHash) == null) {
+            courseTocDataService.insert(new CourseTocDO(defaultTocHash, defaultTocStr));
+        }
+
+        // 7. 构建新的目录数组
+        String[] newTocArr = new String[indexes.length];
+        int defaultCount = 0;
+        for (int i = 0; i < indexes.length; i++) {
+            if (indexes[i] != 0) {
+                newTocArr[i] = tocHashes[Math.abs(indexes[i]) - 1];
+            } else {
+                newTocArr[i] = defaultTocHash;
+                defaultCount++;
+            }
+        }
+
+        // 8. 增加默认目录的引用计数
+        if (defaultCount > 0) {
+            courseTocDataService.incrRef(defaultTocHash, defaultCount);
+        }
+
+        // 9. 更新用户课程目录
+        String newToc = String.join(",", newTocArr);
+        userCourseTocDO.setToc(newToc);
+        userCourseTocDataService.update(userCourseTocDO);
     }
 
     /**

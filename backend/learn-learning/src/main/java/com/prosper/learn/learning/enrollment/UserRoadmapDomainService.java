@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
 import com.prosper.learn.shared.domain.event.user.learning.LearningCompletedEvent;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;

@@ -5,33 +5,32 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
-import com.prosper.learn.content.course.CourseDomainService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.profession.ProfessionDO;
 import com.prosper.learn.content.profession.ProfessionDataService;
-import com.prosper.learn.content.profession.ProfessionDomainService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
-import com.prosper.learn.content.roadmap.RoadmapDomainService;
 import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.learning.enrollment.UserCourseDataService;
 import com.prosper.learn.learning.enrollment.UserRoadmapDO;
 import com.prosper.learn.learning.enrollment.UserRoadmapDataService;
 import com.prosper.learn.shared.domain.Enums.UserProgressState;
 import com.prosper.learn.shared.domain.Enums.UserState;
+import com.prosper.learn.shared.domain.Enums.UserRole;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
 
 import java.util.Map;
 import java.util.Set;
@@ -42,13 +41,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
 @Transactional
-public class ProgressControllerTest {
+public class ProgressControllerTest extends BaseControllerTest {
+
+    private MockMvc mockMvc;
 
     @Autowired
-    private MockMvc mockMvc;
+    private WebApplicationContext webApplicationContext;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -57,13 +56,10 @@ public class ProgressControllerTest {
     private UserDataService userDataService;
 
     @Autowired
-    private NodeDataService nodeDataService;
-
-    @Autowired
     private CourseDataService courseDataService;
 
     @Autowired
-    private CourseDomainService courseDomainService;
+    private NodeDataService nodeDataService;
 
     @Autowired
     private UserCourseDataService userCourseDataService;
@@ -72,13 +68,7 @@ public class ProgressControllerTest {
     private ProfessionDataService professionDataService;
 
     @Autowired
-    private ProfessionDomainService professionDomainService;
-
-    @Autowired
     private RoadmapDataService roadmapDataService;
-
-    @Autowired
-    private RoadmapDomainService roadmapDomainService;
 
     @Autowired
     private UserRoadmapDataService userRoadmapDataService;
@@ -88,6 +78,9 @@ public class ProgressControllerTest {
 
     @BeforeEach
     void setUp() {
+        // 初始化 MockMvc
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
         // 清理 Redis 测试数据
         Set<String> keys = redisTemplate.keys("user:*:course:*:completed");
         if (keys != null && !keys.isEmpty()) {
@@ -103,57 +96,85 @@ public class ProgressControllerTest {
     private UserDO createUser(String email) {
         UserDO user = new UserDO();
         user.setEmail(email);
-        user.setUsername(email.split("@")[0]);
+        user.setName(email.split("@")[0]);
         user.setPassword("hashed_password");
         user.setState(UserState.ACTIVE.value());
+        user.setEmailValidated(true);
+        user.setBiography("");
+        user.setRole(UserRole.USER.value());
+        user.setMsgReadTime(java.time.LocalDateTime.now());
         userDataService.insert(user);
         return user;
     }
 
     /**
-     * 创建已发布课程
+     * 创建测试课程（简化版-直接插入数据库）
      */
-    private CourseDO createPublishedCourse(String name, String description) {
-        Long courseId = courseDomainService.create(1L, name, description, 1, 1);
-        courseDomainService.approve(courseId, false, false);
-        return courseDataService.getById(courseId);
+    private CourseDO createCourse(String name) {
+        CourseDO course = new CourseDO();
+        course.setName(name);
+        course.setDescription("测试课程");
+        course.setCreatorId(1L);
+        course.setParentCourseId(0L);
+        course.setRootNodeId(0L);
+        course.setMainCategory(1);
+        course.setSubCategory(1);
+        course.setState((byte) 2); // PUBLISHED
+        courseDataService.insert(course);
+        return course;
     }
 
     /**
-     * 创建课程节点
+     * 创建测试节点
      */
     private NodeDO createNode(Long courseId, String name) {
         NodeDO node = new NodeDO();
         node.setCourseId(courseId);
         node.setName(name);
         node.setDescription("测试节点");
+        node.setCreatorId(1L);
+        node.setState((byte) 2); // PUBLISHED
         nodeDataService.insert(node);
         return node;
     }
 
     /**
-     * 创建测试专业
+     * 创建测试专业（简化版-直接插入数据库）
      */
     private ProfessionDO createProfession(String name) {
-        Long professionId = professionDomainService.create(1L, name, "测试专业描述");
-        professionDomainService.approve(professionId);
-        return professionDataService.getById(professionId);
+        ProfessionDO profession = new ProfessionDO();
+        profession.setName(name);
+        profession.setDescription("测试专业");
+        profession.setCreatorId(1L);
+        profession.setState((byte) 2); // PUBLISHED
+        profession.setIcon("");
+        profession.setSkills("");
+        profession.setMainCategory(1);
+        profession.setSubCategory(1);
+        professionDataService.insert(profession);
+        return profession;
     }
 
     /**
-     * 创建已发布路线图
+     * 创建测试路线图（简化版-直接插入数据库）
      */
-    private RoadmapDO createPublishedRoadmap(Long professionId, String description, int nodeCount) {
+    private RoadmapDO createRoadmap(Long professionId, int nodeCount) {
         // content 格式: [[[edges]], [nodeIds]]
         String content = String.format("[[[1,2],[2,3]],%s]",
             IntStream.rangeClosed(1, nodeCount)
                 .mapToObj(String::valueOf)
                 .collect(Collectors.joining(",", "[", "]")));
 
-        Long roadmapId = roadmapDomainService.createRoadmap(
-            professionId, content, description, 1L, nodeCount);
-        roadmapDomainService.approve(roadmapId);
-        return roadmapDataService.getById(roadmapId);
+        RoadmapDO roadmap = new RoadmapDO();
+        roadmap.setProfessionId(professionId);
+        roadmap.setContent(content);
+        roadmap.setContentHash(String.valueOf(content.hashCode()));
+        roadmap.setDescription("测试路线图");
+        roadmap.setCreatorId(1L);
+        roadmap.setNodeCount(nodeCount);
+        roadmap.setState((byte) 2); // PUBLISHED
+        roadmapDataService.insert(roadmap);
+        return roadmap;
     }
 
     /**
@@ -170,7 +191,7 @@ public class ProgressControllerTest {
     void testMarkNodeComplete_Success() throws Exception {
         // 准备数据
         UserDO user = createUser("user1@test.com");
-        CourseDO course = createPublishedCourse("Java基础", "Java基础课程");
+        CourseDO course = createCourse("Java基础");
         NodeDO node = createNode(course.getId(), "变量与数据类型");
         String token = generateToken(user.getId());
 
@@ -192,7 +213,7 @@ public class ProgressControllerTest {
     void testMarkNodeComplete_AlreadyCompleted() throws Exception {
         // 准备数据
         UserDO user = createUser("user2@test.com");
-        CourseDO course = createPublishedCourse("Python入门", "Python入门课程");
+        CourseDO course = createCourse("Python入门");
         NodeDO node = createNode(course.getId(), "环境搭建");
         String token = generateToken(user.getId());
 
@@ -211,38 +232,40 @@ public class ProgressControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1609))
+            .andExpect(jsonPath("$.code").value(StatusCode.NODE_ALREADY_COMPLETED.getCode()))
             .andExpect(jsonPath("$.message").value("节点已是完成状态"));
     }
 
     @Test
     void testMarkNodeComplete_InvalidId() throws Exception {
         UserDO user = createUser("user3@test.com");
-        CourseDO course = createPublishedCourse("测试课程", "测试");
+        CourseDO course = createCourse("测试课程");
         String token = generateToken(user.getId());
 
         Map<String, Object> requestBody = Map.of("courseId", course.getId());
 
-        // 测试负数ID
+        // 测试负数ID - 应该返回参数异常
         mockMvc.perform(post("/api/v1/progress/nodes/{nodeId}/complete", -1)
                 .header("token", token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
 
-        // 测试0
+        // 测试0 - 应该返回参数异常
         mockMvc.perform(post("/api/v1/progress/nodes/{nodeId}/complete", 0)
                 .header("token", token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     @Test
     void testUnmarkNodeComplete_Success() throws Exception {
         // 准备数据
         UserDO user = createUser("user4@test.com");
-        CourseDO course = createPublishedCourse("Go语言", "Go语言课程");
+        CourseDO course = createCourse("Go语言");
         NodeDO node = createNode(course.getId(), "基础语法");
         String token = generateToken(user.getId());
 
@@ -270,7 +293,7 @@ public class ProgressControllerTest {
     void testUnmarkNodeComplete_AlreadyNotCompleted() throws Exception {
         // 准备数据
         UserDO user = createUser("user5@test.com");
-        CourseDO course = createPublishedCourse("Rust编程", "Rust编程课程");
+        CourseDO course = createCourse("Rust编程");
         NodeDO node = createNode(course.getId(), "所有权系统");
         String token = generateToken(user.getId());
 
@@ -282,7 +305,7 @@ public class ProgressControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1610))
+            .andExpect(jsonPath("$.code").value(StatusCode.NODE_ALREADY_NOT_COMPLETED.getCode()))
             .andExpect(jsonPath("$.message").value("节点已是未完成状态"));
     }
 
@@ -290,7 +313,7 @@ public class ProgressControllerTest {
     void testGetNodeStatus_Completed() throws Exception {
         // 准备数据
         UserDO user = createUser("user6@test.com");
-        CourseDO course = createPublishedCourse("C++高级", "C++高级课程");
+        CourseDO course = createCourse("C++高级");
         NodeDO node = createNode(course.getId(), "模板编程");
         String token = generateToken(user.getId());
 
@@ -316,7 +339,7 @@ public class ProgressControllerTest {
     void testGetNodeStatus_NotCompleted() throws Exception {
         // 准备数据
         UserDO user = createUser("user7@test.com");
-        CourseDO course = createPublishedCourse("测试课程", "测试");
+        CourseDO course = createCourse("测试课程");
         NodeDO node = createNode(course.getId(), "测试节点");
         String token = generateToken(user.getId());
 
@@ -335,7 +358,7 @@ public class ProgressControllerTest {
     void testStartCourse_Success() throws Exception {
         // 准备数据
         UserDO user = createUser("user8@test.com");
-        CourseDO course = createPublishedCourse("JavaScript基础", "JavaScript基础课程");
+        CourseDO course = createCourse("JavaScript基础");
         String token = generateToken(user.getId());
 
         // 执行请求
@@ -356,7 +379,7 @@ public class ProgressControllerTest {
     void testStartCourse_AlreadyStarted() throws Exception {
         // 准备数据
         UserDO user = createUser("user9@test.com");
-        CourseDO course = createPublishedCourse("Vue框架", "Vue框架课程");
+        CourseDO course = createCourse("Vue框架");
         String token = generateToken(user.getId());
 
         // 第一次开始学习
@@ -368,7 +391,7 @@ public class ProgressControllerTest {
         mockMvc.perform(post("/api/v1/progress/courses/{courseId}/start", course.getId())
                 .header("token", token))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1611))
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_COURSE_ALREADY_STARTED.getCode()))
             .andExpect(jsonPath("$.message").value("课程已开始学习"));
     }
 
@@ -376,7 +399,7 @@ public class ProgressControllerTest {
     void testCancelCourse_Success() throws Exception {
         // 准备数据
         UserDO user = createUser("user10@test.com");
-        CourseDO course = createPublishedCourse("React框架", "React框架课程");
+        CourseDO course = createCourse("React框架");
         String token = generateToken(user.getId());
 
         // 开始学习
@@ -401,14 +424,14 @@ public class ProgressControllerTest {
     void testCancelCourse_NotStarted() throws Exception {
         // 准备数据
         UserDO user = createUser("user11@test.com");
-        CourseDO course = createPublishedCourse("Angular框架", "Angular框架课程");
+        CourseDO course = createCourse("Angular框架");
         String token = generateToken(user.getId());
 
         // 取消未开始的学习 - 期望失败
         mockMvc.perform(delete("/api/v1/progress/courses/{courseId}/start", course.getId())
                 .header("token", token))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1612))
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_COURSE_NOT_STARTED.getCode()))
             .andExpect(jsonPath("$.message").value("课程尚未开始学习"));
     }
 
@@ -416,7 +439,7 @@ public class ProgressControllerTest {
     void testGetCourseProgress_Success() throws Exception {
         // 准备数据
         UserDO user = createUser("user12@test.com");
-        CourseDO course = createPublishedCourse("TypeScript", "TypeScript课程");
+        CourseDO course = createCourse("TypeScript");
         String token = generateToken(user.getId());
 
         // 开始学习
@@ -440,23 +463,23 @@ public class ProgressControllerTest {
     void testGetCourseProgress_NotFound() throws Exception {
         // 准备数据
         UserDO user = createUser("user13@test.com");
-        CourseDO course = createPublishedCourse("测试课程", "测试");
+        CourseDO course = createCourse("测试课程");
         String token = generateToken(user.getId());
 
         // 查询不存在的进度 - 期望失败
         mockMvc.perform(get("/api/v1/progress/courses/{courseId}", course.getId())
                 .header("token", token))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1601))
-            .andExpect(jsonPath("$.message").value("学习记录不存在"));
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_COURSE_NOT_FOUND.getCode()))
+            .andExpect(jsonPath("$.message").value("课程学习记录不存在"));
     }
 
     @Test
     void testGetAllCoursesProgress_Multiple() throws Exception {
         // 准备数据
         UserDO user = createUser("user14@test.com");
-        CourseDO course1 = createPublishedCourse("课程1", "描述1");
-        CourseDO course2 = createPublishedCourse("课程2", "描述2");
+        CourseDO course1 = createCourse("课程1");
+        CourseDO course2 = createCourse("课程2");
         String token = generateToken(user.getId());
 
         // 开始学习两门课程
@@ -495,7 +518,7 @@ public class ProgressControllerTest {
     void testUpdateCourseProgress_Success() throws Exception {
         // 准备数据
         UserDO user = createUser("user16@test.com");
-        CourseDO course = createPublishedCourse("Spring Boot", "Spring Boot课程");
+        CourseDO course = createCourse("Spring Boot");
         String token = generateToken(user.getId());
 
         // 开始学习
@@ -522,7 +545,7 @@ public class ProgressControllerTest {
     void testUpdateCourseProgress_Complete() throws Exception {
         // 准备数据
         UserDO user = createUser("user17@test.com");
-        CourseDO course = createPublishedCourse("MyBatis", "MyBatis课程");
+        CourseDO course = createCourse("MyBatis");
         String token = generateToken(user.getId());
 
         // 开始学习
@@ -539,7 +562,7 @@ public class ProgressControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(200))
             .andExpect(jsonPath("$.data.progressPercent").value(100))
-            .andExpect(jsonPath("$.data.state").value(UserProgressState.COMPLETED.value()))
+            .andExpect(jsonPath("$.data.state").value((int) UserProgressState.COMPLETED.value()))
             .andExpect(jsonPath("$.data.completedAt").isNotEmpty());
 
         // 验证数据库
@@ -553,7 +576,7 @@ public class ProgressControllerTest {
     void testUpdateCourseProgress_NotFound() throws Exception {
         // 准备数据
         UserDO user = createUser("user18@test.com");
-        CourseDO course = createPublishedCourse("测试课程", "测试");
+        CourseDO course = createCourse("测试课程");
         String token = generateToken(user.getId());
 
         // 更新不存在的进度 - 期望失败
@@ -563,15 +586,15 @@ public class ProgressControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1601))
-            .andExpect(jsonPath("$.message").value("学习记录不存在"));
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_COURSE_NOT_FOUND.getCode()))
+            .andExpect(jsonPath("$.message").value("课程学习记录不存在"));
     }
 
     @Test
     void testUpdateCourseProgress_InvalidProgressPercent() throws Exception {
         // 准备数据
         UserDO user = createUser("user19@test.com");
-        CourseDO course = createPublishedCourse("测试课程", "测试");
+        CourseDO course = createCourse("测试课程");
         String token = generateToken(user.getId());
 
         // 开始学习
@@ -579,21 +602,23 @@ public class ProgressControllerTest {
                 .header("token", token))
             .andExpect(status().isOk());
 
-        // 测试负数
+        // 测试负数 - 验证注解失败，返回 INVALID_PARAMETER
         Map<String, Object> requestBody1 = Map.of("progressPercent", -10);
         mockMvc.perform(put("/api/v1/progress/courses/{courseId}", course.getId())
                 .header("token", token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody1)))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
 
-        // 测试超过100
+        // 测试超过100 - 验证注解失败，返回 INVALID_PARAMETER
         Map<String, Object> requestBody2 = Map.of("progressPercent", 150);
         mockMvc.perform(put("/api/v1/progress/courses/{courseId}", course.getId())
                 .header("token", token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody2)))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     // ========== 路线图进度测试 ==========
@@ -603,7 +628,7 @@ public class ProgressControllerTest {
         // 准备数据
         UserDO user = createUser("user20@test.com");
         ProfessionDO profession = createProfession("后端开发");
-        RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), "Java学习路线", 10);
+        RoadmapDO roadmap = createRoadmap(profession.getId(), 10);
         String token = generateToken(user.getId());
 
         // 执行请求
@@ -626,7 +651,7 @@ public class ProgressControllerTest {
         // 准备数据
         UserDO user = createUser("user21@test.com");
         ProfessionDO profession = createProfession("前端开发");
-        RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), "Vue学习路线", 8);
+        RoadmapDO roadmap = createRoadmap(profession.getId(), 8);
         String token = generateToken(user.getId());
 
         // 第一次开始学习
@@ -638,7 +663,7 @@ public class ProgressControllerTest {
         mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/start", roadmap.getId())
                 .header("token", token))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1613))
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_ROADMAP_ALREADY_STARTED.getCode()))
             .andExpect(jsonPath("$.message").value("路线图已开始学习"));
     }
 
@@ -647,7 +672,7 @@ public class ProgressControllerTest {
         // 准备数据
         UserDO user = createUser("user22@test.com");
         ProfessionDO profession = createProfession("数据科学");
-        RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), "Python学习路线", 12);
+        RoadmapDO roadmap = createRoadmap(profession.getId(), 12);
         String token = generateToken(user.getId());
 
         // 开始学习
@@ -673,14 +698,14 @@ public class ProgressControllerTest {
         // 准备数据
         UserDO user = createUser("user23@test.com");
         ProfessionDO profession = createProfession("移动开发");
-        RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), "Flutter学习路线", 9);
+        RoadmapDO roadmap = createRoadmap(profession.getId(), 9);
         String token = generateToken(user.getId());
 
         // 取消未开始的学习 - 期望失败
         mockMvc.perform(delete("/api/v1/progress/roadmaps/{roadmapId}/start", roadmap.getId())
                 .header("token", token))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1614))
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_ROADMAP_NOT_STARTED.getCode()))
             .andExpect(jsonPath("$.message").value("路线图尚未开始学习"));
     }
 
@@ -689,7 +714,7 @@ public class ProgressControllerTest {
         // 准备数据
         UserDO user = createUser("user24@test.com");
         ProfessionDO profession = createProfession("网络安全");
-        RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), "安全工程师路线", 16);
+        RoadmapDO roadmap = createRoadmap(profession.getId(), 16);
         String token = generateToken(user.getId());
 
         // 开始学习
@@ -704,7 +729,7 @@ public class ProgressControllerTest {
             .andExpect(jsonPath("$.code").value(200))
             .andExpect(jsonPath("$.data.roadmapId").value(roadmap.getId()))
             .andExpect(jsonPath("$.data.progressPercent").value(0))
-            .andExpect(jsonPath("$.data.state").value(UserProgressState.IN_PROGRESS.value()))
+            .andExpect(jsonPath("$.data.state").value((int) UserProgressState.IN_PROGRESS.value()))
             .andExpect(jsonPath("$.data.roadmap").isNotEmpty());
     }
 
@@ -713,14 +738,14 @@ public class ProgressControllerTest {
         // 准备数据
         UserDO user = createUser("user25@test.com");
         ProfessionDO profession = createProfession("DevOps");
-        RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), "DevOps学习路线", 14);
+        RoadmapDO roadmap = createRoadmap(profession.getId(), 14);
         String token = generateToken(user.getId());
 
         // 查询不存在的进度 - 期望失败
         mockMvc.perform(get("/api/v1/progress/roadmaps/{roadmapId}", roadmap.getId())
                 .header("token", token))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1601))
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_ROADMAP_NOT_FOUND.getCode()))
             .andExpect(jsonPath("$.message").value("学习记录不存在"));
     }
 
@@ -730,8 +755,8 @@ public class ProgressControllerTest {
         UserDO user = createUser("user26@test.com");
         ProfessionDO profession1 = createProfession("后端");
         ProfessionDO profession2 = createProfession("前端");
-        RoadmapDO roadmap1 = createPublishedRoadmap(profession1.getId(), "Java路线", 10);
-        RoadmapDO roadmap2 = createPublishedRoadmap(profession2.getId(), "React路线", 8);
+        RoadmapDO roadmap1 = createRoadmap(profession1.getId(), 10);
+        RoadmapDO roadmap2 = createRoadmap(profession2.getId(), 8);
         String token = generateToken(user.getId());
 
         // 开始学习两个路线图
@@ -787,7 +812,7 @@ public class ProgressControllerTest {
         // 准备数据
         UserDO user = createUser("user28@test.com");
         ProfessionDO profession = createProfession("云计算");
-        RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), "AWS学习路线", 15);
+        RoadmapDO roadmap = createRoadmap(profession.getId(), 15);
         String token = generateToken(user.getId());
 
         // 开始学习
@@ -815,7 +840,7 @@ public class ProgressControllerTest {
         // 准备数据
         UserDO user = createUser("user29@test.com");
         ProfessionDO profession = createProfession("人工智能");
-        RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), "机器学习路线", 20);
+        RoadmapDO roadmap = createRoadmap(profession.getId(), 20);
         String token = generateToken(user.getId());
 
         // 开始学习
@@ -832,7 +857,7 @@ public class ProgressControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(200))
             .andExpect(jsonPath("$.data.progressPercent").value(100))
-            .andExpect(jsonPath("$.data.state").value(UserProgressState.COMPLETED.value()))
+            .andExpect(jsonPath("$.data.state").value((int) UserProgressState.COMPLETED.value()))
             .andExpect(jsonPath("$.data.completedAt").isNotEmpty());
 
         // 验证数据库
@@ -847,7 +872,7 @@ public class ProgressControllerTest {
         // 准备数据
         UserDO user = createUser("user30@test.com");
         ProfessionDO profession = createProfession("区块链");
-        RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), "区块链学习路线", 10);
+        RoadmapDO roadmap = createRoadmap(profession.getId(), 10);
         String token = generateToken(user.getId());
 
         // 更新不存在的进度 - 期望失败
@@ -857,7 +882,7 @@ public class ProgressControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1601))
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_ROADMAP_NOT_FOUND.getCode()))
             .andExpect(jsonPath("$.message").value("学习记录不存在"));
     }
 
@@ -866,7 +891,7 @@ public class ProgressControllerTest {
         // 准备数据
         UserDO user = createUser("user31@test.com");
         ProfessionDO profession = createProfession("游戏开发");
-        RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), "Unity学习路线", 18);
+        RoadmapDO roadmap = createRoadmap(profession.getId(), 18);
         String token = generateToken(user.getId());
 
         // 开始学习
@@ -874,35 +899,40 @@ public class ProgressControllerTest {
                 .header("token", token))
             .andExpect(status().isOk());
 
-        // 测试负数
+        // 测试负数 - 验证注解失败，返回 INVALID_PARAMETER
         Map<String, Object> requestBody1 = Map.of("progressPercent", -10);
         mockMvc.perform(put("/api/v1/progress/roadmaps/{roadmapId}", roadmap.getId())
                 .header("token", token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody1)))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
 
-        // 测试超过100
+        // 测试超过100 - 验证注解失败，返回 INVALID_PARAMETER
         Map<String, Object> requestBody2 = Map.of("progressPercent", 150);
         mockMvc.perform(put("/api/v1/progress/roadmaps/{roadmapId}", roadmap.getId())
                 .header("token", token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestBody2)))
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     // ========== 参数验证测试 ==========
 
     @Test
     void testUnauthorized() throws Exception {
-        // 测试未登录访问
+        // 测试未登录访问 - 返回 200 + USER_NOT_LOGIN 错误码
         mockMvc.perform(post("/api/v1/progress/courses/1/start"))
-            .andExpect(status().isUnauthorized());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
 
         mockMvc.perform(get("/api/v1/progress/courses"))
-            .andExpect(status().isUnauthorized());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
 
         mockMvc.perform(post("/api/v1/progress/roadmaps/1/start"))
-            .andExpect(status().isUnauthorized());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
     }
 }

@@ -49,6 +49,7 @@ public enum StatusCode {
     USER_COURSE_NOT_SUBSCRIBED(1114, "课程未订阅"),
     USER_BANNED(1115, "用户已被屏蔽"),
     USER_NOT_FOUND(1116, "用户不存在"),
+    USER_SUBSCRIPTION_LIMIT_EXCEEDED(1117, "订阅数量已达上限"),
 
     // 课程相关 12xx
     COURSE_NOT_FOUND(1201, "课程不存在"),

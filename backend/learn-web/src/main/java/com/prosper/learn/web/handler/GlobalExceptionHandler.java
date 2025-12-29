@@ -71,7 +71,8 @@ public class GlobalExceptionHandler {
             MethodArgumentTypeMismatchException.class,
             HttpMessageNotReadableException.class,
             HttpRequestMethodNotSupportedException.class,
-            HttpMediaTypeNotSupportedException.class
+            HttpMediaTypeNotSupportedException.class,
+            IllegalArgumentException.class
     })
     public ApiResponse<Object> handleParameterException(Exception e, HttpServletRequest request) {
         String message = "参数错误";
@@ -104,6 +105,9 @@ public class GlobalExceptionHandler {
             message = String.format("不支持的请求方法: %s", ex.getMethod());
         } else if (e instanceof HttpMediaTypeNotSupportedException) {
             message = "不支持的Content-Type，请使用application/json";
+        } else if (e instanceof IllegalArgumentException) {
+            // @JsonParam 参数解析异常或其他参数异常
+            message = "参数格式错误";
         }
 
         log.warn("参数异常: {} - {}", e.getClass().getSimpleName(), message);

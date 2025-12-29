@@ -1,20 +1,13 @@
 package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import com.prosper.learn.content.course.CourseDO;
-import com.prosper.learn.content.course.CourseMapper;
-import com.prosper.learn.content.toc.CourseTocDO;
-import com.prosper.learn.content.toc.CourseTocDataService;
+import com.prosper.learn.content.toc.TocDomainService;
 import com.prosper.learn.content.toc.UserCourseTocDO;
 import com.prosper.learn.content.toc.UserCourseTocDataService;
-import com.prosper.learn.shared.common.utils.Utils;
-import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.web.v1.annotation.JsonParam;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
@@ -37,10 +30,8 @@ import java.util.concurrent.TimeUnit;
 @RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class TocController {
 
-    private final CourseMapper courseMapper;
+    private final TocDomainService tocDomainService;
     private final UserCourseTocDataService userCourseTocDataService;
-    private final CourseTocDataService courseTocDataService;
-    private final ObjectMapper objectMapper;
 
     /**
      * 更新用户课程目录
@@ -48,78 +39,15 @@ public class TocController {
      */
     @PutMapping("/users/current/courses/{courseId}/toc")
     @SaCheckLogin
-    public ApiResponse<String> updateUserCourseToc(
+    public ApiResponse<Void> updateUserCourseToc(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
             Long courseId,
             @JsonParam("indexArray") @NotBlank(message = "索引数组不能为空") String indexArray,
             @CurrentUser UserDO currentUser) {
 
-        // 验证课程存在性
-        CourseDO courseDO = courseMapper.getById(courseId);
-        if (courseDO == null) {
-            throw StatusCode.SYSTEM_ERROR.exception();
-        }
-
-        // 获取当前用户课程目录
-        UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(currentUser.getId(), courseId);
-        if (userCourseTocDO == null) {
-            throw StatusCode.SYSTEM_ERROR.exception();
-        }
-
-        String toc = userCourseTocDO.getToc();
-        String[] tocHashes = toc.split(",");
-
-        // 解析并验证索引数组
-        String[] indexStrings = indexArray.split(",");
-        if (indexStrings.length > 9) {
-            throw StatusCode.SYSTEM_ERROR.exception();
-        }
-
-        int[] indexes = new int[indexStrings.length];
-        for (int i = 0; i < indexStrings.length; i++) {
-            try {
-                indexes[i] = Integer.parseInt(indexStrings[i]);
-                if (Math.abs(indexes[i]) > tocHashes.length) {
-                    throw StatusCode.SYSTEM_ERROR.exception();
-                }
-            } catch (NumberFormatException e) {
-                throw StatusCode.SYSTEM_ERROR.exception();
-            }
-        }
-
-        // 创建默认目录结构
-        ObjectNode defaultTocNode = objectMapper.createObjectNode();
-        defaultTocNode.set(Long.toString(courseDO.getRootNodeId()), objectMapper.createObjectNode());
-        String defaultTocStr = defaultTocNode.toString();
-        String defaultTocHash = Utils.hashSHA(defaultTocStr);
-
-        // 如果默认目录不存在则创建
-        if (courseTocDataService.get(defaultTocHash) == null) {
-            courseTocDataService.insert(new CourseTocDO(defaultTocHash, defaultTocStr));
-        }
-
-        // 构建新的目录数组
-        String[] newTocArr = new String[indexes.length];
-        int count = 0;
-        for (int i = 0; i < indexes.length; i++) {
-            if (indexes[i] != 0) {
-                newTocArr[i] = tocHashes[Math.abs(indexes[i]) - 1];
-            } else {
-                newTocArr[i] = defaultTocHash;
-                count++;
-            }
-        }
-
-        // 增加默认目录的引用计数
-        courseTocDataService.incrRef(defaultTocHash, count);
-
-        // 更新用户课程目录
-        String newToc = String.join(",", newTocArr);
-        userCourseTocDO.setToc(newToc);
-        userCourseTocDataService.update(userCourseTocDO);
-
-        return ApiResponse.success("目录更新成功");
+        tocDomainService.updateUserCourseToc(currentUser.getId(), courseId, indexArray);
+        return ApiResponse.success("目录更新成功", null);
     }
 
     /**
@@ -133,10 +61,10 @@ public class TocController {
             @Positive(message = "课程ID必须大于0")
             Long courseId,
             @CurrentUser UserDO currentUser) {
-        UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(currentUser.getId(), courseId);
 
+        UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(currentUser.getId(), courseId);
         if (userCourseTocDO == null) {
-            throw StatusCode.SYSTEM_ERROR.exception();
+            return ApiResponse.success(null);
         }
 
         return ApiResponse.success(userCourseTocDO.getToc());
