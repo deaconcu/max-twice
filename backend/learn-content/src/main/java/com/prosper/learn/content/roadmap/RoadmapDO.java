@@ -28,6 +28,8 @@ public class RoadmapDO {
 
     private Integer nodeCount;  // 路线图包含的节点数量
 
+    private LocalDateTime deletedAt;  // 软删除时间
+
     private LocalDateTime updatedAt;
 
     private LocalDateTime createdAt;

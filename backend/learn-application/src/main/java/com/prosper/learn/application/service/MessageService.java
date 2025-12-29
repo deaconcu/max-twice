@@ -1,13 +1,9 @@
 package com.prosper.learn.application.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.application.converter.MessageConverter;
 import com.prosper.learn.application.converter.NodeConverter;
 import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.response.message.*;
-import com.prosper.learn.content.course.CourseDO;
-import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
@@ -70,13 +66,11 @@ public class MessageService {
     private final NodeDataService nodeDataService;
     private final MessageDataService messageDataService;
     private final UserDataService userDataService;
-    private final CourseDataService courseDataService;
 
     // 转换器依赖
     private final MessageConverter messageConverter;
     private final UserConverter userConverter;
     private final NodeConverter nodeConverter;
-    private final ObjectMapper objectMapper;
 
     /** 系统配置属性 */
     private final SystemProperties systemProperties;
@@ -154,41 +148,6 @@ public class MessageService {
      */
     public void createInviteMessage(long receiverId, long inviterId, long nodeId) {
         messageDomainService.createInviteMessage(receiverId, inviterId, nodeId);
-    }
-
-    /**
-     * 修改课程申请回复
-     */
-    public void modifyCourseApply(long messageId, String reply) {
-        messageDomainService.modifyCourseApply(messageId, reply);
-    }
-
-    /**
-     * 申请课程（带完整业务逻辑）
-     */
-    public void applyCourse(String title, String summary, String explanation, Long parentId, long userId) {
-        CourseDO course = null;
-        if (parentId != 0) {
-            course = courseDataService.validateAndGet(parentId);
-        }
-
-        Map<String, String> data = new HashMap<>();
-        data.put("title", title);
-        data.put("summary", summary);
-        data.put("explanation", explanation);
-        data.put("parentId", Long.toString(parentId));
-        if (course != null) {
-            data.put("parentName", course.getName());
-        }
-
-        String jsonString;
-        try {
-            jsonString = objectMapper.writeValueAsString(data);
-        } catch (JsonProcessingException e) {
-            throw StatusCode.SYSTEM_ERROR.exception(e);
-        }
-
-        create(jsonString, userId, 0, applyCourse);
     }
 
     // ========== Query 方法（读操作）==========

@@ -3,6 +3,8 @@ package com.prosper.learn.web.v1.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.dto.request.CreateRoadmapRequest;
 import com.prosper.learn.application.dto.request.SetRoadmapProgressRequest;
+import com.prosper.learn.application.dto.request.UpdateRoadmapRequest;
+import com.prosper.learn.application.dto.response.roadmap.RoadmapDetailDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapWithStatusDTO;
 import com.prosper.learn.application.service.RoadmapService;
@@ -67,10 +69,10 @@ public class RoadmapsController {
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")
             Long id,
-            @JsonParam("content") @NotBlank(message = "内容不能为空") String content,
+            @RequestBody @Valid UpdateRoadmapRequest request,
             @CurrentUser UserDO currentUser) {
 
-        roadmapService.updateRoadmap(id, content, currentUser);
+        roadmapService.updateRoadmap(id, request.getContent(), request.getDescription(), currentUser);
         return ApiResponse.success();
     }
 
@@ -126,11 +128,11 @@ public class RoadmapsController {
      */
     @GetMapping("/users/me/roadmaps")
     @SaCheckLogin
-    public ApiResponse<List<RoadmapSummaryDTO>> getCurrentUserRoadmaps(
+    public ApiResponse<List<RoadmapDetailDTO>> getCurrentUserRoadmaps(
             @RequestParam(required = false) Long lastId,
             @CurrentUser UserDO currentUser) {
 
-        List<RoadmapSummaryDTO> roadmaps = roadmapService.getUserRoadmaps(currentUser.getId(), lastId, null);
+        List<RoadmapDetailDTO> roadmaps = roadmapService.getUserRoadmaps(currentUser.getId(), lastId, null);
         return ApiResponse.success(roadmaps);
     }
 
@@ -139,11 +141,11 @@ public class RoadmapsController {
      * GET /api/v1/users/{userId}/roadmaps?lastId=0
      */
     @GetMapping("/users/{userId}/roadmaps")
-    public ApiResponse<List<RoadmapSummaryDTO>> getUserRoadmaps(
+    public ApiResponse<List<RoadmapDetailDTO>> getUserRoadmaps(
             @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
             @RequestParam @NotNull(message = "最后ID不能为空") @Min(value = 0, message = "最后ID不能小于0") Long lastId) {
 
-        List<RoadmapSummaryDTO> roadmaps = roadmapService.getUserRoadmaps(userId, lastId, ContentState.PUBLISHED);
+        List<RoadmapDetailDTO> roadmaps = roadmapService.getUserRoadmaps(userId, lastId, ContentState.PUBLISHED);
         return ApiResponse.success(roadmaps);
     }
 

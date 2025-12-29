@@ -265,7 +265,7 @@ public class UsersControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_FOUND.getCode()));
     }
 
     /**
@@ -470,7 +470,7 @@ public class UsersControllerTest extends BaseControllerTest {
             mockMvc.perform(get("/api/v1/users/nonexistent")
                     .header("token", StpUtil.getTokenValue()))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_FOUND.getCode()));
         } finally {
             StpUtil.logout();
         }

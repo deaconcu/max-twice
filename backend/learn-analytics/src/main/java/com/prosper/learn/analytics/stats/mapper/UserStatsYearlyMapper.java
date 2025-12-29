@@ -33,7 +33,7 @@ public interface UserStatsYearlyMapper {
     @Update("UPDATE user_stats_yearly " +
             "SET stats = JSON_SET(" +
             "  COALESCE(stats, JSON_OBJECT()), " +
-            "  CONCAT('$.', #{dateKey}), " +
+            "  CONCAT('$.\"', #{dateKey}, '\"'), " +
             "  JSON_ARRAY(#{views}, #{twice}, #{like}, #{comments})" +
             ") " +
             "WHERE user_id = #{userId} AND stat_year = #{statYear}")

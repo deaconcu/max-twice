@@ -291,6 +291,8 @@ public class RoadmapDomainService {
         roadmapDO.setProfessionId(professionId);
         roadmapDO.setCreatorId(userId);
         roadmapDO.setNodeCount(nodeCount);
+        roadmapDO.setState(ContentState.SUBMITTED.value());
+        roadmapDO.setScore(0.0);
 
         roadmapDataService.insert(roadmapDO);
         log.info("Created roadmap: {} for profession: {} by user: {}", roadmapDO.getId(), professionId, userId);

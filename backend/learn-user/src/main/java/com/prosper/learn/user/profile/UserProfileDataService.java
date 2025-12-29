@@ -69,9 +69,9 @@ public class UserProfileDataService extends AbstractDataService<UserProfileDO, U
     /**
      * 更新路线图置顶
      */
-    @CacheEvict(value = "userProfiles", key = "#id")
-    public void updateRoadmapPin(long id, String roadmapPin) {
-        userProfileMapper.updateRoadmapPin(id, roadmapPin);
+    @CacheEvict(value = "userProfiles", key = "#userId")
+    public void updateRoadmapPin(long userId, String roadmapPin) {
+        userProfileMapper.updateRoadmapPin(userId, roadmapPin);
     }
 
     /**

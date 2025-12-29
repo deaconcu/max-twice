@@ -142,6 +142,7 @@ public class UserDomainService {
         user.setPassword(Utils.md5(password));
         user.setEmail(email);
         user.setBiography("");
+        user.setAvatar("");
         user.setState(UserState.ACTIVE.value());
         user.setRole(UserRole.USER.getCode());
         user.setEmailValidated(false); // 设置邮箱验证状态默认值
@@ -385,8 +386,8 @@ public class UserDomainService {
         boolean result;
 
         if (isPinned) {
-            // 取消置顶
-            professionPins.remove(roadmapId);
+            // 取消置顶 - 使用对象方式remove，避免被当作索引
+            professionPins.remove((Object) roadmapId);
             result = false;
         } else {
             // 添加置顶

@@ -24,7 +24,7 @@ public interface UserProfileMapper {
     void update(UserProfileDO user);
 
     @Update("UPDATE user_profile SET roadmap_pin = #{roadmapPin} where user_id = #{userId}")
-    void updateRoadmapPin(long id, String roadmapPin);
+    void updateRoadmapPin(long userId, String roadmapPin);
 
 // --注释掉检查 START (2025/12/10 12:05):
 //    @Select("SELECT user_id, subscription FROM user_profile LIMIT #{offset}, #{limit}")

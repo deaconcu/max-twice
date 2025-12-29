@@ -165,4 +165,19 @@ public class ProfessionDataService extends AbstractDataService<ProfessionDO, Pro
     public void delete(long id) {
         professionMapper.delete(id);
     }
+
+    /**
+     * 重写父类方法，抛出 PROFESSION_NOT_FOUND 而不是通用的 NOT_FOUND
+     */
+    @Override
+    public ProfessionDO validateAndGet(Long id) {
+        if (id == null || id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception();
+        }
+        ProfessionDO profession = getById(id);
+        if (profession == null) {
+            throw StatusCode.PROFESSION_NOT_FOUND.exception();
+        }
+        return profession;
+    }
 }

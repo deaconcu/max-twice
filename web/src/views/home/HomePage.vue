@@ -9,7 +9,7 @@ import UserAvatar from '@/components/common/UserAvatar.vue'
 import { statsApi } from '@/api/modules/stats'
 import { courseApi, subscriptionApi } from '@/api/modules/course'
 import type { PlatformStats } from '@/types/stats'
-import type { UserStatsDTO } from '@/types/user'
+import type { UserDailyStatsDTO } from '@/types/user'
 import type { Course } from '@/types/course'
 
 const router = useRouter()
@@ -43,7 +43,7 @@ const { data: platformStatsData } = useFetch<PlatformStats>({
 })
 
 // 2. 加载用户今日统计（GET /api/v1/stats/users/{userId}/today）
-const { data: userTodayStatsData } = useFetch<UserStatsDTO>({
+const { data: userTodayStatsData } = useFetch<UserDailyStatsDTO>({
   fetchFn: () => {
     if (!userStore.userId) {
       return Promise.reject(new Error('用户未登录'))
@@ -99,9 +99,10 @@ watch([userSubscriptionsData, userTodayStatsData], () => {
     stats.value.coursesInProgress = userSubscriptionsData.value.length
   }
 
-  // 更新今日学习统计（根据后端实际返回字段调整）
+  // 更新今日学习统计
   if (userTodayStatsData.value) {
-    // TODO: 根据后端实际返回的字段更新
+    // 目前后端只返回基础统计数据（views, twices, likes, comments）
+    // 暂时不更新 todayMinutes，等待后端添加学习时长统计
     // stats.value.todayMinutes = userTodayStatsData.value.xxx
   }
 })

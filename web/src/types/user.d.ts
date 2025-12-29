@@ -78,21 +78,43 @@ export interface DailyStatsDTO {
   date: string // 格式: yyyy-MM-dd
   views: number
   twice: number
-  helpful: number
+  likes: number
   comments: number
 }
 
 /**
- * 用户统计信息
+ * 用户当日统计数据
+ * 用于今日统计接口，仅包含基础统计字段
+ */
+export interface UserDailyStatsDTO {
+  userId: number
+  views: number // 总浏览量
+  twices: number // 总"两次能懂"点赞数
+  likes: number // 总"有用"点赞数
+  comments: number // 总评论数
+}
+
+/**
+ * 用户统计数据（包含总计和每日明细）
+ * 用于历史统计接口
+ */
+export interface UserStatsWithDailyDTO {
+  userId: number
+  views: number // 总浏览量（累计）
+  twices: number // 总"两次能懂"点赞数（累计）
+  likes: number // 总"有用"点赞数（累计）
+  comments: number // 总评论数（累计）
+  dailyStats: DailyStatsDTO[] // 每日明细列表
+}
+
+/**
+ * 用户统计信息（完整版）
+ * 用于全部时间统计
  */
 export interface UserStatsDTO {
   userId: number
-  period: 'today' | '7days' | '15days' | '30days' | '1year' | 'all' // 统计周期
-  startDate: string // 格式: yyyy-MM-dd
-  endDate: string // 格式: yyyy-MM-dd
-  totalViews: number // 总阅读量
-  totalTwice: number // max twice 总数
-  totalHelpful: number // 有帮助总数
-  totalComments: number // 评论总数
-  dailyStats?: DailyStatsDTO[] // 每日明细（用于图表展示）
+  views: number // 总浏览量
+  twices: number // 总"两次能懂"点赞数
+  likes: number // 总"有用"点赞数
+  comments: number // 总评论数
 }

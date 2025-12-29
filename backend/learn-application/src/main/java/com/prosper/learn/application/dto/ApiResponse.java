@@ -47,6 +47,13 @@ public class ApiResponse<T> {
         return new ApiResponse<>(StatusCode.USER_NOT_LOGIN.getCode(), message, null);
     }
 
+    /**
+     * 权限不足响应，返回固定错误码 1006
+     */
+    public static <T> ApiResponse<T> forbidden() {
+        return new ApiResponse<>(StatusCode.PERMISSION_DENIED.getCode(), "权限不足", null);
+    }
+
     // ========== 请求到达业务层且成功响应 ==========
 
     /**

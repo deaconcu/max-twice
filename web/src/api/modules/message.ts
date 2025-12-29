@@ -9,23 +9,6 @@ import type { MessageType } from '@/enums'
  */
 export const messageApi = {
   /**
-   * 申请课程
-   */
-  applyCourse(
-    title: string,
-    summary: string,
-    explanation: string,
-    parentId?: number
-  ): Promise<ApiResponse<void>> {
-    return apiClient.post('/v1/messages/course-applications', {
-      title,
-      summary,
-      explanation,
-      parentId,
-    })
-  },
-
-  /**
    * 获取系统消息
    */
   getSystemMessages(type?: MessageType, lastId?: number): Promise<ApiResponse<Message[]>> {
@@ -71,13 +54,6 @@ export const messageApi = {
       to,
       content,
     })
-  },
-
-  /**
-   * 更新课程申请
-   */
-  updateCourseApplication(id: number, reply: string): Promise<ApiResponse<void>> {
-    return apiClient.put(`/v1/messages/course-applications/${String(id)}`, { reply })
   },
 
   /**

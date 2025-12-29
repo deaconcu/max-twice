@@ -32,12 +32,12 @@
 - `content` (String): 路线图内容（JSON格式，已转换为图形格式）
 - `professionId` (Long): 专业ID
 - `description` (String): 路线图描述
-- `state` (Integer): 状态（0=草稿, 1=待审核, 2=已发布, 3=已拒绝, 4=已删除, 5=已封禁）
+- `state` (Integer): 状态（0=草稿, 1=待审核, 2=已发布, 3=已拒绝, 4=已封禁）
 - `vote` (Integer): 点赞数
 - `comment` (Integer): 评论数
 - `creatorId` (Long): 创建者ID
-- `available` (Integer): 可用节点数
-- `nodeCount` (Integer): 总节点数
+- `available` (Boolean): 内容是否可用（true=可用, false=不可用, null=默认可用）
+- `nodeCount` (Integer): 路线图包含的节点总数
 - `createdAt` (String): 创建时间（格式化字符串）
 - `updatedAt` (String): 更新时间（格式化字符串）
 - `creator` (UserBriefDTO): 创建者信息 { id, name }
@@ -61,7 +61,7 @@
       "vote": 150,
       "comment": 32,
       "creatorId": 5,
-      "available": 8,
+      "available": true,
       "nodeCount": 12,
       "createdAt": "2025-01-01 10:00:00",
       "updatedAt": "2025-01-02 15:30:00",
@@ -125,7 +125,8 @@ const { data: roadmaps } = await roadmapApi.getRoadmapsByProfession(10, null)
 **请求体**:
 ```json
 {
-  "content": "[[edges],[nodeIds]]"
+  "content": "[[edges],[nodeIds]]",
+  "description": "路线图描述"
 }
 ```
 
@@ -133,6 +134,7 @@ const { data: roadmaps } = await roadmapApi.getRoadmapsByProfession(10, null)
 - `content` (String, 必填): 路线图内容，JSON格式字符串，格式为 `[[edges],[nodeIds]]`
   - edges: 边的数组，每个边是 `[fromNodeId, toNodeId]`
   - nodeIds: 节点ID数组
+- `description` (String, 可选): 路线图描述
 
 **返回类型**: `void` (无返回数据)
 
@@ -150,15 +152,20 @@ const { data: roadmaps } = await roadmapApi.getRoadmapsByProfession(10, null)
 3. 权限验证：只有创建者或管理员可以修改
 4. 如果启用内容验证（配置），验证内容格式是否有效
 5. 计算节点数量（从 nodeIds 数组）
-6. 委托给 DomainService 更新路线图
+6. 更新路线图内容和节点数量
+7. 如果提供了 description 参数，则更新描述
 
 **前端调用**:
 ```typescript
 // API 调用
-roadmapApi.updateRoadmap(roadmapId, content)
+roadmapApi.updateRoadmap(roadmapId, content, description)
 
 // 实际使用
-await roadmapApi.updateRoadmap(1, JSON.stringify([[edges],[nodeIds]]))
+await roadmapApi.updateRoadmap(
+  1,
+  JSON.stringify([[edges],[nodeIds]]),
+  "更新后的路线图描述"
+)
 // 成功后刷新路线图详情
 ```
 
@@ -390,21 +397,22 @@ if (pinned) {
 |--------|------|------|--------|------|
 | lastId | Long | 否 | null | 分页游标，上一页的最后一个路线图ID |
 
-**返回类型**: `List<RoadmapSummaryDTO>`
+**返回类型**: `List<RoadmapDetailDTO>`
 
-**RoadmapSummaryDTO 字段说明**:
+**RoadmapDetailDTO 字段说明**:
 - `id` (Long): 路线图ID
 - `content` (String): 路线图内容（JSON格式）
 - `professionId` (Long): 专业ID
 - `description` (String): 路线图描述
-- `state` (Integer): 状态（0=草稿, 1=待审核, 2=已发布, 3=已拒绝, 4=已删除, 5=已封禁）
+- `state` (Integer): 状态（0=草稿, 1=待审核, 2=已发布, 3=已拒绝, 4=已封禁）
 - `vote` (Integer): 点赞数
 - `comment` (Integer): 评论数
 - `creatorId` (Long): 创建者ID
-- `available` (Integer): 可用节点数
-- `nodeCount` (Integer): 总节点数
+- `available` (Boolean): 内容是否可用（true=可用, false=不可用, null=默认可用）
+- `nodeCount` (Integer): 路线图包含的节点总数
 - `createdAt` (String): 创建时间
 - `updatedAt` (String): 更新时间
+- `profession` (ProfessionBriefDTO): 专业信息 { id, name, icon }
 
 **返回示例**:
 ```json
@@ -421,10 +429,15 @@ if (pinned) {
       "vote": 150,
       "comment": 32,
       "creatorId": 5,
-      "available": 8,
+      "available": true,
       "nodeCount": 12,
       "createdAt": "2025-01-01 10:00:00",
-      "updatedAt": "2025-01-02 15:30:00"
+      "updatedAt": "2025-01-02 15:30:00",
+      "profession": {
+        "id": 10,
+        "name": "后端开发",
+        "icon": "mdi-server"
+      }
     }
   ]
 }
@@ -433,7 +446,8 @@ if (pinned) {
 **业务逻辑**:
 1. 从认证信息中获取当前用户ID
 2. 委托给 DomainService 查询用户创建的所有状态的路线图（包括草稿、待审核、已发布、已拒绝等）
-3. 返回 RoadmapSummaryDTO 列表（不包含跨域信息）
+3. 批量查询专业信息（id, name, icon）
+4. 返回 RoadmapDetailDTO 列表（包含专业信息）
 
 **前端调用**:
 ```typescript
@@ -470,7 +484,7 @@ const { data: myRoadmaps } = await roadmapApi.getCurrentUserRoadmaps(null)
 |--------|------|------|--------|------|
 | lastId | Long | 否 | null | 分页游标，上一页的最后一个路线图ID |
 
-**返回类型**: `List<RoadmapSummaryDTO>`
+**返回类型**: `List<RoadmapDetailDTO>`
 
 **返回示例**:
 ```json
@@ -487,10 +501,15 @@ const { data: myRoadmaps } = await roadmapApi.getCurrentUserRoadmaps(null)
       "vote": 150,
       "comment": 32,
       "creatorId": 5,
-      "available": 8,
+      "available": true,
       "nodeCount": 12,
       "createdAt": "2025-01-01 10:00:00",
-      "updatedAt": "2025-01-02 15:30:00"
+      "updatedAt": "2025-01-02 15:30:00",
+      "profession": {
+        "id": 10,
+        "name": "后端开发",
+        "icon": "mdi-server"
+      }
     }
   ]
 }
@@ -499,7 +518,8 @@ const { data: myRoadmaps } = await roadmapApi.getCurrentUserRoadmaps(null)
 **业务逻辑**:
 1. 验证用户ID是否有效
 2. 委托给 DomainService 查询用户创建的已发布（PUBLISHED）路线图
-3. 返回 RoadmapSummaryDTO 列表
+3. 批量查询专业信息（id, name, icon）
+4. 返回 RoadmapDetailDTO 列表（包含专业信息）
 
 **前端调用**:
 ```typescript
@@ -545,7 +565,7 @@ const { data: userRoadmaps } = await roadmapApi.getUserRoadmaps(5, null)
 1. 验证路线图ID是否有效
 2. 查询路线图是否存在
 3. 权限验证：只能删除自己创建的路线图，除非是管理员
-4. 委托给 DomainService 执行软删除（状态改为 DELETED）
+4. 委托给 DomainService 执行软删除（设置 deleted_at 字段，不改变 state）
 
 **前端调用**:
 ```typescript
@@ -585,8 +605,8 @@ interface RoadmapSummaryDTO {
   vote: number            // 点赞数
   comment: number         // 评论数
   creatorId: number       // 创建者ID
-  available: number       // 可用节点数
-  nodeCount: number       // 总节点数
+  available: boolean      // 内容是否可用（true/false/null）
+  nodeCount: number       // 路线图包含的节点总数
   createdAt: string       // 创建时间
   updatedAt: string       // 更新时间
 }
@@ -838,12 +858,14 @@ public static class Roadmap {
    - content 转换会查询：课程名称、用户课程进度
 
 7. **软删除**:
-   - 删除路线图是软删除，state 改为 DELETED（4）
-   - 软删除的路线图不会在列表中显示
+   - 删除路线图是软删除，设置 deleted_at 字段为当前时间
+   - state 字段不会改变
+   - 软删除的路线图不会在列表中显示（查询时过滤 deleted_at IS NULL）
 
 8. **状态机**:
-   - 路线图状态：DRAFT(0) → PENDING(1) → PUBLISHED(2) / REJECTED(3) / BANNED(5)
-   - DELETED(4) 是软删除状态
+   - 路线图状态：DRAFT(0) → SUBMITTED(1) → PUBLISHED(2) / REJECTED(3)
+   - BANNED(4) 是封禁状态
+   - 软删除通过 deleted_at 字段标记，不改变 state
    - 只有已发布（PUBLISHED）的路线图会在公开列表中显示
 
 ---

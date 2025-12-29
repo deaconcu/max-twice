@@ -1,5 +1,6 @@
 package com.prosper.learn.application.converter;
 
+import com.prosper.learn.application.dto.response.roadmap.RoadmapDetailDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapWithStatusDTO;
 import com.prosper.learn.content.roadmap.RoadmapDO;
@@ -27,6 +28,24 @@ public interface RoadmapConverter {
 
     @IterableMapping(qualifiedByName = "toSummaryDTO")
     List<RoadmapSummaryDTO> toSummaryDTO(List<RoadmapDO> roadmapDOList);
+
+    /**
+     * 转换为详情DTO（需要在 Service 层填充 profession 信息）
+     */
+    @Named("toDetailDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "content")
+    @Mapping(target = "professionId")
+    @Mapping(target = "creatorId")
+    @Mapping(target = "description")
+    @Mapping(target = "state")
+    @Mapping(target = "updatedAt")
+    @Mapping(target = "createdAt")
+    RoadmapDetailDTO toDetailDTO(RoadmapDO roadmapDO);
+
+    @IterableMapping(qualifiedByName = "toDetailDTO")
+    List<RoadmapDetailDTO> toDetailDTO(List<RoadmapDO> roadmapDOList);
 
     /**
      * 转换为带状态的DTO（需要在 Service 层填充 creator, profession, upvoted, pinned, learning）

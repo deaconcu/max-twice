@@ -103,16 +103,16 @@ public class FollowService {
      * 这是一个跨域查询方法，需要聚合 interaction 域和 user 域的数据。
      *
      * @param userId 用户ID
-     * @param lastCreateTime 最后一条记录的创建时间（用于分页）
+     * @param lastId 最后一条记录的ID（用于分页，null 表示第一页）
      * @return 关注者DTO列表
      * @throws BusinessException 当用户不存在时抛出异常
      */
-    public List<FolloweeDTO> getFollowees(Long userId, LocalDateTime lastCreateTime) {
+    public List<FolloweeDTO> getFollowees(Long userId, Long lastId) {
         // 验证用户存在性（跨域查询）
         UserDO follower = validateUserExists(userId);
 
         // 获取关注记录列表（interaction 域）
-        List<FollowDO> followDOList = followDomainService.getFollowees(userId, lastCreateTime);
+        List<FollowDO> followDOList = followDomainService.getFollowees(userId, lastId);
 
         if (followDOList.isEmpty()) {
             return new ArrayList<>();
@@ -185,9 +185,11 @@ public class FollowService {
             UserDO userDO = userDOMap.get(followDO.getFolloweeId());
             if (userDO != null) {
                 FolloweeDTO followeeDTO = new FolloweeDTO();
-                followeeDTO.setId(followDO.getFolloweeId());
+                followeeDTO.setId(followDO.getId());  // 关注记录ID
+                followeeDTO.setUserId(followDO.getFolloweeId());  // 被关注用户ID
                 followeeDTO.setName(userDO.getName());
                 followeeDTO.setBiography(userDO.getBiography());
+                followeeDTO.setAvatar(userDO.getAvatar());
                 followeeDTO.setCreatedAt(Utils.getTimeString(followDO.getCreatedAt()));
                 followeeDTOList.add(followeeDTO);
             }

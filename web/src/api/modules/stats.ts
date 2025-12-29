@@ -1,6 +1,6 @@
 import apiClient from '../client'
 import type { ApiResponse } from '@/types/api'
-import type { DailyStatsDTO, UserStatsDTO } from '@/types/user'
+import type { UserDailyStatsDTO, UserStatsWithDailyDTO, UserStatsDTO } from '@/types/user'
 import type { PlatformStats } from '@/types/stats'
 
 /**
@@ -22,31 +22,15 @@ export const statsApi = {
   /**
    * 获取用户今日统计
    */
-  getUserTodayStats(userId: number): Promise<ApiResponse<DailyStatsDTO>> {
+  getUserTodayStats(userId: number): Promise<ApiResponse<UserDailyStatsDTO>> {
     return apiClient.get(`/v1/stats/users/${String(userId)}/today`)
   },
 
   /**
-   * 获取用户昨日统计
+   * 获取用户历史统计（包含总计和每日明细）
    */
-  getUserYesterdayStats(userId: number): Promise<ApiResponse<DailyStatsDTO>> {
-    return apiClient.get(`/v1/stats/users/${String(userId)}/yesterday`)
-  },
-
-  /**
-   * 获取用户历史统计
-   */
-  getUserHistoryStats(userId: number, days = 7): Promise<ApiResponse<DailyStatsDTO[]>> {
+  getUserHistoryStats(userId: number, days = 7): Promise<ApiResponse<UserStatsWithDailyDTO>> {
     return apiClient.get(`/v1/stats/users/${String(userId)}/history`, {
-      params: { days },
-    })
-  },
-
-  /**
-   * 获取用户周期统计
-   */
-  getUserPeriodStats(userId: number, days = 7): Promise<ApiResponse<UserStatsDTO>> {
-    return apiClient.get(`/v1/stats/users/${String(userId)}/period`, {
       params: { days },
     })
   },
@@ -63,13 +47,6 @@ export const statsApi = {
    */
   syncManual(): Promise<ApiResponse<string>> {
     return apiClient.post('/v1/stats/sync/manual')
-  },
-
-  /**
-   * 健康检查
-   */
-  getHealth(): Promise<ApiResponse<string>> {
-    return apiClient.get('/v1/stats/health')
   },
 
   /**

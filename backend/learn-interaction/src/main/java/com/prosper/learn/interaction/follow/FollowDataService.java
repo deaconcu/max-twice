@@ -85,7 +85,7 @@ public class FollowDataService extends AbstractDataService<FollowDO, FollowMappe
     /**
      * 获取关注列表
      */
-    public List<FollowDO> getList(Long followerId, java.time.LocalDateTime lastCreateTime, int limit) {
-        return followMapper.getList(followerId, lastCreateTime, limit);
+    public List<FollowDO> getList(Long followerId, Long lastId, int limit) {
+        return followMapper.getList(followerId, lastId, limit);
     }
 }

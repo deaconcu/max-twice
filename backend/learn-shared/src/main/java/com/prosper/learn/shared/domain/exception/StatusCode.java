@@ -95,6 +95,7 @@ public enum StatusCode {
     COMMENT_OBJECT_NOT_FOUND(1404, "评论对象不存在"),
 
     // 内容管理相关 13xx
+    POST_NOT_FOUND(1301, "帖子不存在"),
     TOC_PINNED_ITEMS_LIMIT_EXCEEDED(1303, "置顶帖子数量超限"),
     INVALID_POST_TYPE(1304, "无效的帖子类型"),
     POST_INVALID_PARAMETER(1305, "帖子参数无效"),

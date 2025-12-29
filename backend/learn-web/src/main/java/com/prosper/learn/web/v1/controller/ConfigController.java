@@ -76,8 +76,8 @@ public class ConfigController {
         return ResponseEntity.ok()
                 .eTag(etag)
                 .cacheControl(CacheControl
-                        .maxAge(3, TimeUnit.MINUTES)  // 浏览器缓存 3 分钟
-                        .mustRevalidate())             // 过期后必须验证
+                        .noCache()           // 每次都验证 ETag，但可以使用缓存
+                        .mustRevalidate())   // 必须验证
                 .body(ApiResponse.success(rules));
     }
 }

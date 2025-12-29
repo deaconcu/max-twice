@@ -13,18 +13,15 @@
 
 ### 用户统计数据
 2. [用户今日统计](#2-用户今日统计)
-3. [用户昨日统计](#3-用户昨日统计)
-4. [用户历史统计](#4-用户历史统计)
-5. [用户时间段统计](#5-用户时间段统计)
-6. [用户全部时间统计](#6-用户全部时间统计)
+3. [用户历史统计](#3-用户历史统计)
+4. [用户全部时间统计](#4-用户全部时间统计)
 
 ### 平台统计
-7. [获取平台统计数据](#7-获取平台统计数据)
+5. [获取平台统计数据](#5-获取平台统计数据)
 
 ### 管理功能
-8. [手动同步统计](#8-手动同步统计)
-9. [同步指定日期](#9-同步指定日期)
-10. [健康状态检查](#10-健康状态检查)
+6. [手动同步统计](#6-手动同步统计)
+7. [同步指定日期](#7-同步指定日期)
 
 ---
 
@@ -99,21 +96,7 @@
     "views": 50,
     "twices": 10,
     "likes": 5,
-    "comments": 3,
-    "learningCourses": 2,
-    "completedCourses": 1,
-    "inProgressProfessions": 1,
-    "completedProfessions": 0,
-    "followingUsers": 5,
-    "followingCourses": 8,
-    "followingProfessions": 3,
-    "createdArticles": 2,
-    "createdIndexs": 0,
-    "createdRoadmaps": 1,
-    "createdCardDecks": 0,
-    "totalLearningItems": 4,
-    "totalCreatedItems": 3,
-    "lastUpdated": "2024-01-20 10:30:00"
+    "comments": 3
   },
   "timestamp": 1703001234567
 }
@@ -121,93 +104,20 @@
 
 #### 字段说明
 
-**累计统计**:
-- `views`: 总浏览量
-- `twices`: 总"两次能懂"点赞数
-- `likes`: 总"有用"点赞数
-- `comments`: 总评论数
-
-**学习进度**:
-- `learningCourses`: 正在学习的课程数
-- `completedCourses`: 已完成的课程数
-- `inProgressProfessions`: 正在学习的职业路径数
-- `completedProfessions`: 已完成的职业路径数
-
-**社交关系**:
-- `followingUsers`: 关注的用户数
-- `followingCourses`: 收藏的课程数
-- `followingProfessions`: 关注的职业路径数
-
-**创作内容**:
-- `createdArticles`: 创建的文章数
-- `createdIndexs`: 创建的索引数
-- `createdRoadmaps`: 创建的路线图数
-- `createdCardDecks`: 创建的卡片组数
-
-**汇总信息**:
-- `totalLearningItems`: 学习项总数
-- `totalCreatedItems`: 创作项总数
-- `lastUpdated`: 最后更新时间
+- `userId`: 用户ID
+- `views`: 今日总浏览量
+- `twices`: 今日总"两次能懂"点赞数
+- `likes`: 今日总"有用"点赞数
+- `comments`: 今日总评论数
 
 #### 业务说明
-- 返回用户今天的统计数据
-- 数据来源于 Redis 和数据库
+- 返回用户今天的基础统计数据（仅包含浏览、点赞、评论等数据）
+- 数据来源于 Redis 实时统计
+- 不包含学习进度、社交关系、创作内容等字段
 
 ---
 
-### 3. 用户昨日统计
-
-#### 接口信息
-- **路径**: `GET /api/v1/stats/users/{userId}/yesterday`
-- **认证**: 不需要
-- **限流**: 100次/分钟 (按用户)
-
-#### 请求参数
-
-**路径参数**:
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| userId | Long | 是 | 用户ID，必须大于0 |
-
-#### 响应示例
-
-**成功 (200)**:
-```json
-{
-  "code": 200,
-  "message": "操作成功",
-  "data": {
-    "userId": 123,
-    "views": 45,
-    "twices": 8,
-    "likes": 4,
-    "comments": 2,
-    "learningCourses": 2,
-    "completedCourses": 0,
-    "inProgressProfessions": 1,
-    "completedProfessions": 0,
-    "followingUsers": 5,
-    "followingCourses": 8,
-    "followingProfessions": 3,
-    "createdArticles": 1,
-    "createdIndexs": 0,
-    "createdRoadmaps": 0,
-    "createdCardDecks": 0,
-    "totalLearningItems": 3,
-    "totalCreatedItems": 1,
-    "lastUpdated": "2024-01-19 23:59:59"
-  },
-  "timestamp": 1703001234567
-}
-```
-
-#### 业务说明
-- 返回用户昨天的统计数据
-- 数据来源于持久化的每日统计表
-
----
-
-### 4. 用户历史统计
+### 3. 用户历史统计
 
 #### 接口信息
 - **路径**: `GET /api/v1/stats/users/{userId}/history`
@@ -239,91 +149,59 @@
     "twices": 70,
     "likes": 35,
     "comments": 21,
-    "learningCourses": 2,
-    "completedCourses": 3,
-    "inProgressProfessions": 1,
-    "completedProfessions": 1,
-    "followingUsers": 5,
-    "followingCourses": 8,
-    "followingProfessions": 3,
-    "createdArticles": 5,
-    "createdIndexs": 0,
-    "createdRoadmaps": 2,
-    "createdCardDecks": 0,
-    "totalLearningItems": 7,
-    "totalCreatedItems": 7,
-    "lastUpdated": "2024-01-20 10:30:00"
+    "dailyStats": [
+      {
+        "date": "2024-01-14",
+        "views": 45,
+        "twice": 8,
+        "likes": 4,
+        "comments": 2
+      },
+      {
+        "date": "2024-01-15",
+        "views": 52,
+        "twice": 11,
+        "likes": 6,
+        "comments": 3
+      },
+      {
+        "date": "2024-01-20",
+        "views": 50,
+        "twice": 10,
+        "likes": 5,
+        "comments": 3
+      }
+    ]
   },
   "timestamp": 1703001234567
 }
 ```
 
+#### 字段说明
+
+**总计统计**:
+- `userId`: 用户ID
+- `views`: 总浏览量（累计）
+- `twices`: 总"两次能懂"点赞数（累计）
+- `likes`: 总"有用"点赞数（累计）
+- `comments`: 总评论数（累计）
+
+**每日明细** (`dailyStats`):
+- `date`: 日期（格式: yyyy-MM-dd）
+- `views`: 当日浏览量
+- `twice`: 当日"两次能懂"点赞数
+- `likes`: 当日"有用"点赞数
+- `comments`: 当日评论数
+
 #### 业务说明
-- 返回用户过去N天的累计统计数据
-- 默认查询最近7天
-- 数据来源于每日统计表的聚合
+- 返回用户指定时间段的统计数据（包含总计和每日明细）
+- 默认查询最近7天，包含今天
+- 今日数据从 Redis 实时获取，历史数据从数据库获取
+- 数据按日期升序排列
 
 ---
 
-### 5. 用户时间段统计
-
-#### 接口信息
-- **路径**: `GET /api/v1/stats/users/{userId}/period`
-- **认证**: 不需要
-- **限流**: 100次/分钟 (按用户)
-
-#### 请求参数
-
-**路径参数**:
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| userId | Long | 是 | 用户ID，必须大于0 |
-
-**Query 参数**:
-| 参数 | 类型 | 必填 | 默认值 | 校验规则 | 说明 |
-|------|------|------|---------|----------|------|
-| days | int | 否 | 7 | @Positive | 统计天数，必须大于0 |
-
-#### 响应示例
-
-**成功 (200)**:
-```json
-{
-  "code": 200,
-  "message": "操作成功",
-  "data": {
-    "userId": 123,
-    "views": 350,
-    "twices": 70,
-    "likes": 35,
-    "comments": 21,
-    "learningCourses": 2,
-    "completedCourses": 3,
-    "inProgressProfessions": 1,
-    "completedProfessions": 1,
-    "followingUsers": 5,
-    "followingCourses": 8,
-    "followingProfessions": 3,
-    "createdArticles": 5,
-    "createdIndexs": 0,
-    "createdRoadmaps": 2,
-    "createdCardDecks": 0,
-    "totalLearningItems": 7,
-    "totalCreatedItems": 7,
-    "lastUpdated": "2024-01-20 10:30:00"
-  },
-  "timestamp": 1703001234567
-}
-```
-
-#### 业务说明
-- 返回用户指定时间段的统计数据（包含每日明细）
-- 默认查询最近7天
-- 与 history 接口的区别：包含每日明细数据
-
----
-
-### 6. 用户全部时间统计
+### 4. 用户全部时间统计
 
 #### 接口信息
 - **路径**: `GET /api/v1/stats/users/{userId}/all-time`
@@ -375,7 +253,7 @@
 
 ---
 
-### 7. 获取平台统计数据
+### 5. 获取平台统计数据
 
 #### 接口信息
 - **路径**: `GET /api/v1/stats/platform`
@@ -419,7 +297,7 @@
 
 ---
 
-### 8. 手动同步统计
+### 6. 手动同步统计
 
 #### 接口信息
 - **路径**: `POST /api/v1/stats/sync/manual`
@@ -448,7 +326,7 @@
 
 ---
 
-### 9. 同步指定日期
+### 7. 同步指定日期
 
 #### 接口信息
 - **路径**: `POST /api/v1/stats/sync/date`
@@ -493,35 +371,6 @@
 - 手动同步指定日期的统计数据
 - 用于补录历史数据或修复数据不一致
 - 日期格式必须为 yyyy-MM-dd
-
----
-
-### 10. 健康状态检查
-
-#### 接口信息
-- **路径**: `GET /api/v1/stats/health`
-- **认证**: 不需要
-- **限流**: 100次/分钟 (按用户)
-
-#### 请求参数
-无
-
-#### 响应示例
-
-**成功 (200)**:
-```json
-{
-  "code": 200,
-  "message": "操作成功",
-  "data": "OK",
-  "timestamp": 1703001234567
-}
-```
-
-#### 业务说明
-- 检查统计系统的健康状态
-- 返回系统运行状态信息
-- 用于监控和告警
 
 ---
 

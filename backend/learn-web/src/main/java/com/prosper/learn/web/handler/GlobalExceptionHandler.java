@@ -1,6 +1,7 @@
 package com.prosper.learn.web.handler;
 
 import cn.dev33.satoken.exception.NotLoginException;
+import cn.dev33.satoken.exception.NotPermissionException;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.web.util.MessageUtils;
 import com.prosper.learn.application.dto.ApiResponse;
@@ -43,6 +44,15 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理权限不足异常 - 返回200 + 业务错误码
+     */
+    @ExceptionHandler(NotPermissionException.class)
+    public ApiResponse<Object> handleNotPermissionException(NotPermissionException e, HttpServletRequest request) {
+        log.warn("权限不足: {}", e.getMessage());
+        return ApiResponse.forbidden();
+    }
+
+    /**
      * 处理业务异常 - 返回200 + 业务错误码
      */
     @ExceptionHandler(BusinessException.class)
@@ -62,7 +72,7 @@ public class GlobalExceptionHandler {
     
     /**
      * 处理参数相关异常 - 返回200 + 参数错误码
-     * 包括：验证失败、参数缺失、类型不匹配、JSON解析错误、方法不支持、Content-Type不支持
+     * 包括：验证失败、参数缺失、类型不匹配、JSON解析错误、方法不支持、Content-Type不支持、日期格式错误
      */
     @ExceptionHandler({
             MethodArgumentNotValidException.class,
@@ -72,7 +82,8 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException.class,
             HttpRequestMethodNotSupportedException.class,
             HttpMediaTypeNotSupportedException.class,
-            IllegalArgumentException.class
+            IllegalArgumentException.class,
+            java.time.format.DateTimeParseException.class
     })
     public ApiResponse<Object> handleParameterException(Exception e, HttpServletRequest request) {
         String message = "参数错误";
@@ -105,6 +116,8 @@ public class GlobalExceptionHandler {
             message = String.format("不支持的请求方法: %s", ex.getMethod());
         } else if (e instanceof HttpMediaTypeNotSupportedException) {
             message = "不支持的Content-Type，请使用application/json";
+        } else if (e instanceof java.time.format.DateTimeParseException) {
+            message = "无效的日期格式，请使用 yyyy-MM-dd";
         } else if (e instanceof IllegalArgumentException) {
             // @JsonParam 参数解析异常或其他参数异常
             message = "参数格式错误";

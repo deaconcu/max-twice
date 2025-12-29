@@ -1,7 +1,6 @@
 package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import com.prosper.learn.application.dto.request.CreateMessageRequest;
 import com.prosper.learn.application.dto.request.CreateNotificationRequest;
 import com.prosper.learn.application.dto.request.SendMessageRequest;
 import com.prosper.learn.application.dto.response.message.MessageDTO;
@@ -35,20 +34,6 @@ public class MessagesController {
 
     private final MessageService messageService;
     private final UserMapper userMapper;
-
-    /**
-     * 申请课程
-     * 映射: POST /message/new-course → POST /api/v1/messages/course-applications
-     */
-    @PostMapping("/messages/course-applications")
-    @SaCheckLogin
-    public ApiResponse<Void> applyCourse(
-            @RequestBody @Valid CreateMessageRequest request,
-            @CurrentUser UserDO currentUser) {
-
-        messageService.applyCourse(request.getTitle(), request.getSummary(), request.getExplanation(), request.getParentId(), currentUser.getId());
-        return ApiResponse.success();
-    }
 
     /**
      * 获取消息列表
@@ -124,21 +109,6 @@ public class MessagesController {
     public ApiResponse<Void> postSystemMessage(@RequestBody @Valid SendMessageRequest request) {
 
         //messageService.createSystemMessage(request.getType(), request.getUserId(), request.getContent());
-        return ApiResponse.success();
-    }
-
-    /**
-     * 修改课程申请
-     * 映射: PUT /message/system → PUT /api/v1/messages/course-applications/{id}
-     */
-    @PutMapping("/messages/course-applications/{id}")
-    public ApiResponse<Void> modifyCourseApply(
-            @PathVariable @NotNull(message = "申请ID不能为空")
-            @Positive(message = "申请ID必须大于0")
-            Long id,
-            @JsonParam("reply") @NotBlank(message = "回复内容不能为空") String reply) {
-
-        messageService.modifyCourseApply(id, reply);
         return ApiResponse.success();
     }
 

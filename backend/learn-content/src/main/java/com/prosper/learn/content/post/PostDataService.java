@@ -48,6 +48,21 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
     protected PostDO getByIdFromMapper(PostMapper mapper, Long id) {
         return mapper.get(id);  // 注意PostMapper的方法名是get而不是getById
     }
+
+    /**
+     * 重写父类方法，抛出 POST_NOT_FOUND 而不是通用的 NOT_FOUND
+     */
+    @Override
+    public PostDO validateAndGet(Long postId) {
+        if (postId == null || postId <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("帖子ID无效");
+        }
+        PostDO post = getById(postId);
+        if (post == null) {
+            throw StatusCode.POST_NOT_FOUND.exception();
+        }
+        return post;
+    }
     
     @Override
     protected List<PostDO> getByIdsFromMapper(PostMapper mapper, Collection<Long> ids) {

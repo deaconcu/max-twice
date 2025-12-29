@@ -54,13 +54,13 @@ public interface RoadmapMapper {
 //            long professionId, long lastId, int limit, List<Long> excludeIds);
 // --注释掉检查 STOP (2025/12/10 12:03)
 
-    @Select("SELECT * FROM roadmap WHERE creator_id = #{creatorId} AND deleted_at IS NULL ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
-    List<RoadmapDO> getListByCreator(long creatorId, int offset, int limit);
+//    @Select("SELECT * FROM roadmap WHERE creator_id = #{creatorId} AND deleted_at IS NULL ORDER BY created_at DESC LIMIT #{offset}, #{limit}")
+//    List<RoadmapDO> getListByCreator(long creatorId, int offset, int limit);
 
     @Select({"<script>",
              "SELECT * FROM roadmap WHERE creator_id = #{creatorId} AND deleted_at IS NULL",
              "<if test='state != null'> AND state = #{state}</if>",
-             "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
+             "<if test='lastId != null and lastId > 0'> AND id &lt; #{lastId}</if>",
              " ORDER BY id DESC LIMIT #{limit}",
              "</script>"})
     List<RoadmapDO> getListByCreatorWithPaging(long creatorId, Long lastId, int limit, Byte state);
@@ -71,8 +71,8 @@ public interface RoadmapMapper {
 // --注释掉检查 STOP (2025/12/10 12:03)
 
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
-    @Insert("INSERT INTO roadmap(content, content_hash, description, profession_id, creator_id, node_count, state) " +
-            "VALUES (#{content}, #{contentHash}, #{description}, #{professionId}, #{creatorId}, #{nodeCount}, " + ContentState.SUBMITTED_VALUE + ")")
+    @Insert("INSERT INTO roadmap(content, content_hash, description, profession_id, creator_id, node_count, state, score) " +
+            "VALUES (#{content}, #{contentHash}, #{description}, #{professionId}, #{creatorId}, #{nodeCount}, #{state}, #{score})")
     int insert(RoadmapDO roadmapDO);
 
     @Update("UPDATE roadmap SET content = #{content}, content_hash = #{contentHash}, description = #{description}, " +
@@ -114,7 +114,7 @@ public interface RoadmapMapper {
             long professionId, double lastScore, long lastId, int limit, List<Long> excludeIds);
 
     // 平台统计相关方法
-    @Select("SELECT COUNT(*) FROM roadmap WHERE vote >= 0 AND deleted_at IS NULL")
+    @Select("SELECT COUNT(*) FROM roadmap WHERE state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL")
     Long countPublicRoadmaps();
 
     // Admin管理接口

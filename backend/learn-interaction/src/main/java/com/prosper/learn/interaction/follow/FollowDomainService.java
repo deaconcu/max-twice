@@ -94,12 +94,12 @@ public class FollowDomainService {
      * 获取用户的关注列表
      *
      * @param userId 用户ID
-     * @param lastCreateTime 最后一条记录的创建时间（用于分页）
+     * @param lastId 上一页最后一条记录的ID（用于分页）
      * @return 关注记录列表
      */
-    public List<FollowDO> getFollowees(Long userId, LocalDateTime lastCreateTime) {
+    public List<FollowDO> getFollowees(Long userId, Long lastId) {
         validateUserId(userId, "用户ID");
-        return followDataService.getList(userId, lastCreateTime, DEFAULT_PAGE_SIZE);
+        return followDataService.getList(userId, lastId, DEFAULT_PAGE_SIZE);
     }
 
 // --注释掉检查 START (2025/12/10 11:12):

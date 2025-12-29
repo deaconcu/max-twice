@@ -397,9 +397,9 @@ public class TocDomainService {
      */
     @Transactional
     public void choose(long userId, String path, long courseId, long postId) {
-        // validate
-        PostDO postDO = validatePostForContents(postId);
+        // validate - 先验证课程，再验证帖子
         CourseDO courseDO = validateCourseExists(courseId);
+        PostDO postDO = validatePostForContents(postId);
 
         // 创建childNode
         ObjectNode childNode = objectMapper.createObjectNode();

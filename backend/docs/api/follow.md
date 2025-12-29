@@ -29,6 +29,7 @@
   "id": 123,
   "name": "用户名",
   "biography": "个人简介",
+  "avatar": "https://images.maxtwice.com/avatars/user123.jpg",
   "createdAt": "2025-01-20 10:30:00"
 }
 ```
@@ -37,6 +38,9 @@
 - `id` (Long): 用户ID
 - `name` (String): 用户名
 - `biography` (String): 个人简介/签名
+- `avatar` (String): 用户头像URL
+  - 完整的图片URL地址
+  - 可能为 null（用户未设置头像）
 - `createdAt` (String): 关注时间
   - 格式：`yyyy-MM-dd HH:mm:ss`
   - 表示当前用户关注该用户的时间
@@ -248,18 +252,21 @@ const handleUnfollow = async (userId: number) => {
       "id": 456,
       "name": "张三",
       "biography": "全栈开发工程师",
+      "avatar": "https://images.maxtwice.com/avatars/user456.jpg",
       "createdAt": "2025-01-20 15:30:00"
     },
     {
       "id": 789,
       "name": "李四",
       "biography": "产品经理",
+      "avatar": "https://images.maxtwice.com/avatars/user789.jpg",
       "createdAt": "2025-01-20 14:20:00"
     },
     {
       "id": 321,
       "name": "王五",
       "biography": "UI设计师",
+      "avatar": null,
       "createdAt": "2025-01-20 10:15:00"
     }
   ],

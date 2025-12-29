@@ -10,11 +10,18 @@ public interface FollowMapper {
     @Select("SELECT * FROM `follow` WHERE follower_id = #{followerId} and followee_id = #{followeeId}")
     FollowDO get(long followerId, long followeeId);
 
-    @Select("SELECT * FROM `follow` " +
-            "WHERE follower_id = #{followerId} and created_at < #{createdAt} " +
-            "order by created_at DESC " +
-            "LIMIT #{limit} ")
-    List<FollowDO> getList(long followerId, LocalDateTime createdAt, int limit);
+    @Select({"<script>",
+            "SELECT * FROM `follow` ",
+            "WHERE follower_id = #{followerId} ",
+            "<if test='lastId != null'>",
+            "  AND id &lt; #{lastId} ",
+            "</if>",
+            "ORDER BY id DESC ",
+            "LIMIT #{limit}",
+            "</script>"})
+    List<FollowDO> getList(@Param("followerId") long followerId,
+                           @Param("lastId") Long lastId,
+                           @Param("limit") int limit);
 
     @Insert("INSERT INTO follow(follower_id, followee_id) VALUES (#{followerId}, #{followeeId})")
     int insert(long followerId, long followeeId);

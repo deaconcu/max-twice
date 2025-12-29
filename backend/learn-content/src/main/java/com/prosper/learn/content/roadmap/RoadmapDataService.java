@@ -131,9 +131,6 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
      * 根据创建者获取路线图列表（支持分页）
      */
     public List<RoadmapDO> getListByCreatorWithPaging(Long creatorId, Long lastId, int limit, Byte state) {
-        if (lastId == null || lastId == 0) {
-            return roadmapMapper.getListByCreator(creatorId, 0, limit);
-        }
         return roadmapMapper.getListByCreatorWithPaging(creatorId, lastId, limit, state);
     }
 
@@ -174,5 +171,20 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
     @CacheEvict(value = "roadmaps", key = "#id")
     public int softDelete(long id) {
         return roadmapMapper.softDelete(id);
+    }
+
+    /**
+     * 重写父类方法，抛出 ROADMAP_NOT_FOUND 而不是通用的 NOT_FOUND
+     */
+    @Override
+    public RoadmapDO validateAndGet(Long id) {
+        if (id == null || id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception();
+        }
+        RoadmapDO roadmap = getById(id);
+        if (roadmap == null) {
+            throw StatusCode.ROADMAP_NOT_FOUND.exception();
+        }
+        return roadmap;
     }
 }

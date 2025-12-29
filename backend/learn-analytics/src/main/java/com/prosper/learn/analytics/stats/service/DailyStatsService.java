@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.prosper.learn.analytics.dto.ContentStatsDTO;
 import com.prosper.learn.analytics.dto.DailyStatsDTO;
+import com.prosper.learn.analytics.dto.UserDailyStatsDTO;
 import com.prosper.learn.analytics.dto.UserStatsDTO;
+import com.prosper.learn.analytics.dto.UserStatsWithDailyDTO;
 import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.dataservice.UserStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyMapper;
@@ -537,7 +539,7 @@ public class DailyStatsService {
                key = "'user:' + #userId + ':' + T(java.time.LocalDate).now().toString()",
                unless = "#result == null")
      */
-    public UserStatsDTO getUserTodayStats(long userId) {
+    public UserDailyStatsDTO getUserTodayStats(long userId) {
         validateUserId(userId);
         String today = LocalDate.now().toString();
         String userKey = generateUserStatsKey(today);
@@ -547,81 +549,32 @@ public class DailyStatsService {
 
         try {
             Map<Object, Object> stats = redisTemplate.opsForHash().entries(userKey);
-            return parseUserStatsFromRedis(userId, stats, today);
+            return parseUserDailyStatsFromRedis(userId, stats);
         } catch (Exception e) {
             log.error("获取用户{}今日统计失败", userId, e);
-            return UserStatsDTO.empty();
+            return UserDailyStatsDTO.empty();
         }
     }
 
     /**
-     * 获取用户昨日统计（从数据库）
-     * 
-     * 缓存策略：按用户ID+昨日日期缓存，确保不同日期的"昨日"数据独立
+     * 获取用户历史统计（包含总计和每日明细）
+     *
+     * 缓存策略：按用户ID+天数+当前日期缓存，确保不同时间窗口的历史数据独立
+     *
+     * @param userId 用户ID
+     * @param days 统计天数
+     * @return 统计数据（包含总计和每日明细）
      */
-    @Cacheable(value = "yesterdayStats", 
-               key = "'user:' + #userId + ':' + T(java.time.LocalDate).now().minusDays(1).toString()", 
+    @Cacheable(value = "historyStats",
+               key = "'user:' + #userId + ':' + #days + ':' + T(java.time.LocalDate).now().toString()",
                unless = "#result == null")
-    public UserStatsDTO getUserYesterdayStats(long userId) {
-        LocalDate yesterday = LocalDate.now().minusDays(1);
-        
-        try {
-            Map<String, Integer> stats = getUserDayStats(userId, yesterday);
-            
-            UserStatsDTO dto = UserStatsDTO.builder()
-                .userId(userId)
-                .views(stats.get("views"))
-                .twices(stats.get("twice"))
-                .likes(stats.get("like"))
-                .comments(stats.get("comments"))
-                .build();
-                
-            return dto;
-        } catch (Exception e) {
-            log.error("获取用户{}昨日统计失败", userId, e);
-            return UserStatsDTO.empty();
-        }
-    }
-
-    /**
-     * 获取用户历史统计（从数据库）
-     * 
-     * 缓存策略：按用户ID+天数+结束日期缓存，确保不同时间窗口的历史数据独立
-     */
-    @Cacheable(value = "historyStats", 
-               key = "'user:' + #userId + ':' + #days + ':' + T(java.time.LocalDate).now().minusDays(1).toString()", 
-               unless = "#result == null")
-    public UserStatsDTO getUserHistoryStats(long userId, int days) {
+    public UserStatsWithDailyDTO getUserHistoryStats(long userId, int days) {
         validateUserId(userId);
         validateDaysRange(days);
-        LocalDate endDate = LocalDate.now().minusDays(1); // 不包括今天
-        LocalDate startDate = endDate.minusDays(days - 1);
-        
-        try {
-            Map<String, Integer> totalStats = getUserDateRangeStats(userId, startDate, endDate);
-            
-            UserStatsDTO dto = UserStatsDTO.builder()
-                .userId(userId)
-                .views(totalStats.get("views"))
-                .twices(totalStats.get("twice"))
-                .likes(totalStats.get("like"))
-                .comments(totalStats.get("comments"))
-                .build();
-                
-            return dto;
-        } catch (Exception e) {
-            log.error("获取用户{}历史{}天统计失败", userId, days, e);
-            return UserStatsDTO.empty();
-        }
-    }
 
-    /**
-     * 获取用户时间段统计（包含每日明细）
-     */
-    public UserStatsDTO getUserPeriodStatsWithDaily(long userId, int days) {
-        LocalDate endDate = LocalDate.now();
+        LocalDate endDate = LocalDate.now(); // 包含今天
         LocalDate startDate = endDate.minusDays(days - 1);
-        
+
         try {
             List<DailyStatsDTO> dailyStats = new ArrayList<>();
 
@@ -630,13 +583,13 @@ public class DailyStatsService {
             int totalTwice = 0;
             int totalLikes = 0;
             int totalComments = 0;
-            
+
             for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
                 DailyStatsDTO dailyStat;
-                
+
                 if (date.equals(LocalDate.now())) {
                     // 今日数据从Redis获取
-                    UserStatsDTO todayStats = getUserTodayStats(userId);
+                    UserDailyStatsDTO todayStats = getUserTodayStats(userId);
                     dailyStat = DailyStatsDTO.builder()
                         .date(date.toString())
                         .views(todayStats.getViews())
@@ -656,7 +609,7 @@ public class DailyStatsService {
                         .comments(dayStats.get("comments"))
                         .build();
                 }
-                
+
                 dailyStats.add(dailyStat);
 
                 // 累计总数
@@ -666,17 +619,18 @@ public class DailyStatsService {
                 totalComments += dailyStat.getComments();
             }
 
-            return UserStatsDTO.builder()
+            return UserStatsWithDailyDTO.builder()
                 .userId(userId)
                 .views(totalViews)
                 .twices(totalTwice)
                 .likes(totalLikes)
                 .comments(totalComments)
+                .dailyStats(dailyStats)
                 .build();
-                
+
         } catch (Exception e) {
-            log.error("获取用户{}时间段统计失败: days={}", userId, days, e);
-            return UserStatsDTO.empty();
+            log.error("获取用户{}历史统计失败: days={}", userId, days, e);
+            return UserStatsWithDailyDTO.empty();
         }
     }
 
@@ -733,6 +687,50 @@ public class DailyStatsService {
             .comments(totalComments)
             .build();
     }
+
+    /**
+     * 从Redis解析用户当日统计数据
+     */
+    private UserDailyStatsDTO parseUserDailyStatsFromRedis(long userId, Map<Object, Object> stats) {
+        int totalViews = 0;
+        int totalTwice = 0;
+        int totalLikes = 0;
+        int totalComments = 0;
+
+        String userPrefix = userId + ":";  // Redis field格式: "userId:statType"
+
+        for (Map.Entry<Object, Object> entry : stats.entrySet()) {
+            String field = (String) entry.getKey();
+            Integer count = Integer.parseInt((String) entry.getValue());
+
+            if (!field.startsWith(userPrefix)) continue;
+
+            String statType = field.substring(userPrefix.length());
+            switch (statType) {
+                case STAT_TYPE_VIEW:
+                    totalViews += count;
+                    break;
+                case STAT_TYPE_TWICE:
+                    totalTwice += count;
+                    break;
+                case STAT_TYPE_LIKE:
+                    totalLikes += count;
+                    break;
+                case STAT_TYPE_COMMENT:
+                    totalComments += count;
+                    break;
+            }
+        }
+
+        return UserDailyStatsDTO.builder()
+            .userId(userId)
+            .views(totalViews)
+            .twices(totalTwice)
+            .likes(totalLikes)
+            .comments(totalComments)
+            .build();
+    }
+
 
     /**
      * 获取用户指定日期的统计数据
@@ -886,7 +884,7 @@ public class DailyStatsService {
             UserStatsDTO historicalStats = getUserHistoricalStats(userId);
 
             // 2. 获取今天的实时数据
-            UserStatsDTO todayStats = getUserTodayStats(userId);
+            UserDailyStatsDTO todayStats = getUserTodayStats(userId);
 
             // 3. 合并数据
             int totalViews = (historicalStats.getViews() != null ? historicalStats.getViews() : 0) +

@@ -71,18 +71,9 @@ public class FollowsController {
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
             Long userId,
-            @RequestParam(required = false) String lastCreateTime) {
-        LocalDateTime time;
-        if (lastCreateTime == null || lastCreateTime.isBlank()) {
-            // 如果没有提供lastCreateTime，使用当前时间（加载第一页）
-            time = LocalDateTime.now();
-        } else {
-            // 解析提供的时间
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            time = LocalDateTime.parse(lastCreateTime, formatter);
-        }
-
-        List<FolloweeDTO> followees = followService.getFollowees(userId, time);
+            @RequestParam(required = false) Long lastId) {
+        // lastId 为 null 时查询第一页
+        List<FolloweeDTO> followees = followService.getFollowees(userId, lastId);
         return ApiResponse.success(followees);
     }
 }
