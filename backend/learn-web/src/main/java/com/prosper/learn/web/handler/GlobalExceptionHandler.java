@@ -3,6 +3,7 @@ package com.prosper.learn.web.handler;
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.NotPermissionException;
 import com.prosper.learn.shared.domain.exception.BusinessException;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.web.util.MessageUtils;
 import com.prosper.learn.application.dto.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * 全局异常处理器
@@ -140,7 +142,17 @@ public class GlobalExceptionHandler {
         log.warn("参数验证异常: {}", message);
         return ApiResponse.paramError(message).path(request.getRequestURI());
     }
-    
+
+    /**
+     * 处理资源未找到异常（路径参数缺失或路径不存在）- 返回200 + NOT_FOUND错误码
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ApiResponse<Object> handleNoResourceFound(NoResourceFoundException e, HttpServletRequest request) {
+        log.warn("资源未找到: {}", e.getMessage());
+        return ApiResponse.error(StatusCode.NOT_FOUND.getCode(), StatusCode.NOT_FOUND.getMessage())
+                .path(request.getRequestURI());
+    }
+
     /**
      * 处理所有其他异常 - 返回500 + 系统繁忙
      */

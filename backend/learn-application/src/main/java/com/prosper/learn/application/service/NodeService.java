@@ -67,7 +67,7 @@ public class NodeService {
     /**
      * 管理后台：按条件筛选节点列表
      */
-    public List<NodeDetailDTO> listByFilter(Byte state, Long nodeId, Long courseId, Long creatorId, Long lastId) {
+    public List<NodeDetailDTO> listByFilter(ContentState state, Long nodeId, Long courseId, Long creatorId, Long lastId) {
         // 调用 DomainService 查询
         List<NodeDO> nodeDOList = domainService.listByFilter(nodeId, courseId, creatorId, state, lastId);
 

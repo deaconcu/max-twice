@@ -69,6 +69,31 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     }
 
     /**
+     * 验证并获取卡片组
+     *
+     * @param id 卡片组ID
+     * @return 卡片组实体
+     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当卡片组不存在时抛出 MEMORY_CARD_DECK_NOT_FOUND (2201)
+     */
+    @Override
+    public MemoryCardDeckDO validateAndGet(Long id) {
+        if (id == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("卡片组ID不能为空");
+        }
+
+        if (id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("卡片组ID必须大于0");
+        }
+
+        MemoryCardDeckDO deck = getById(id);
+        if (deck == null) {
+            throw StatusCode.MEMORY_CARD_DECK_NOT_FOUND.exception();
+        }
+
+        return deck;
+    }
+
+    /**
      * 插入卡片组
      */
     public int insert(MemoryCardDeckDO deck) {
@@ -359,7 +384,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     /**
      * 根据帖子和创建者获取卡片组列表 - ID分页
      */
-    public List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPaging(long postId, long creatorId, int state, Long lastId, int limit) {
+    public List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPaging(long postId, long creatorId, byte state, Long lastId, int limit) {
         return memoryCardDeckMapper.getListByPostAndCreatorWithIdPaging(postId, creatorId, state, lastId, limit);
     }
 

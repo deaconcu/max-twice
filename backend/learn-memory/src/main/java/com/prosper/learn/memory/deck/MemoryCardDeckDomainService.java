@@ -400,57 +400,57 @@ public class MemoryCardDeckDomainService {
     /**
      * 根据状态获取卡片组列表 - ID分页
      */
-    public List<MemoryCardDeckDO> getListByStateWithIdPaging(Integer state, Long lastId, Integer limit) {
-        return deckDataService.getListByStateWithIdPaging(state, lastId, limit);
+    public List<MemoryCardDeckDO> getListByStateWithIdPaging(ContentState state, Long lastId, Integer limit) {
+        return deckDataService.getListByStateWithIdPaging(state.value(), lastId, limit);
     }
 
     /**
      * 根据状态获取卡片组列表 - 用于审核
      */
-    public List<MemoryCardDeckDO> getListByStateForReview(Integer state, Integer limit) {
-        return deckDataService.getListByStateForReview(state, limit);
+    public List<MemoryCardDeckDO> getListByStateForReview(ContentState state, Integer limit) {
+        return deckDataService.getListByStateForReview(state.value(), limit);
     }
 
     /**
      * 根据帖子获取卡片组列表 - ID分页
      */
-    public List<MemoryCardDeckDO> getListByPostWithIdPaging(Long postId, Integer state, Long lastId, Integer limit) {
-        return deckDataService.getListByPostWithIdPaging(postId, state, lastId, limit);
+    public List<MemoryCardDeckDO> getListByPostWithIdPaging(Long postId, ContentState state, Long lastId, Integer limit) {
+        return deckDataService.getListByPostWithIdPaging(postId, state.value(), lastId, limit);
     }
 
     /**
      * 根据帖子获取卡片组列表 - 用于审核
      */
-    public List<MemoryCardDeckDO> getListByPostForReview(Long postId, Integer state, Integer limit) {
-        return deckDataService.getListByPostForReview(postId, state, limit);
+    public List<MemoryCardDeckDO> getListByPostForReview(Long postId, ContentState state, Integer limit) {
+        return deckDataService.getListByPostForReview(postId, state.value(), limit);
     }
 
     /**
      * 根据帖子和创建者获取卡片组列表 - ID分页
      */
-    public List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPaging(Long postId, Long creatorId, Integer state, Long lastId, Integer limit) {
-        return deckDataService.getListByPostAndCreatorWithIdPaging(postId, creatorId, state, lastId, limit);
+    public List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPaging(Long postId, Long creatorId, ContentState state, Long lastId, Integer limit) {
+        return deckDataService.getListByPostAndCreatorWithIdPaging(postId, creatorId, state.value(), lastId, limit);
     }
 
     /**
      * 根据帖子和创建者获取卡片组列表 - 用于审核
      */
-    public List<MemoryCardDeckDO> getListByPostAndCreatorForReview(Long postId, Long creatorId, Integer state, Integer limit) {
-        return deckDataService.getListByPostAndCreatorForReview(postId, creatorId, state, limit);
+    public List<MemoryCardDeckDO> getListByPostAndCreatorForReview(Long postId, Long creatorId, ContentState state, Integer limit) {
+        return deckDataService.getListByPostAndCreatorForReview(postId, creatorId, state.value(), limit);
     }
 
     /**
      * 根据创建者和状态获取卡片组列表 - ID分页
      */
-    public List<MemoryCardDeckDO> getListByCreatorWithIdPagingAndState(Long creatorId, Integer state, Long lastId, Integer limit) {
-        return deckDataService.getListByCreatorWithIdPagingAndState(creatorId, state, lastId, limit);
+    public List<MemoryCardDeckDO> getListByCreatorWithIdPagingAndState(Long creatorId, ContentState state, Long lastId, Integer limit) {
+        return deckDataService.getListByCreatorWithIdPagingAndState(creatorId, state.value(), lastId, limit);
     }
 
     /**
      * 根据创建者获取卡片组列表 - 用于审核
      */
-    public List<MemoryCardDeckDO> getListByCreatorForReview(Long creatorId, Integer state, Integer limit) {
-        return deckDataService.getListByCreatorForReview(creatorId, state, limit);
+    public List<MemoryCardDeckDO> getListByCreatorForReview(Long creatorId, ContentState state, Integer limit) {
+        return deckDataService.getListByCreatorForReview(creatorId, state.value(), limit);
     }
 
     // ========== 版本管理方法 ==========

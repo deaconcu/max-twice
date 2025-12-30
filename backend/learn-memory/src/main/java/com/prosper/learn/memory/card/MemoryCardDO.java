@@ -21,4 +21,6 @@ public class MemoryCardDO {
 
     private LocalDateTime updatedAt;
 
+    private LocalDateTime deletedAt;
+
 }

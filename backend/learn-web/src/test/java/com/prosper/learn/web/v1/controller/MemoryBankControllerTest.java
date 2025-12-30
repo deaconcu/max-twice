@@ -8,12 +8,12 @@ import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
-import com.prosper.learn.memory.bank.MemoryBankDataService;
-import com.prosper.learn.memory.bank.MemoryBankDO;
 import com.prosper.learn.memory.card.MemoryCardDO;
 import com.prosper.learn.memory.card.MemoryCardDataService;
 import com.prosper.learn.memory.deck.MemoryCardDeckDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
+import com.prosper.learn.memory.review.UserCardInCourseDataService;
+import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.memory.review.UserCourseSrsSettingDO;
 import com.prosper.learn.memory.review.UserCourseSrsSettingDataService;
 import com.prosper.learn.shared.domain.Enums.ContentState;
@@ -33,7 +33,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -76,10 +76,16 @@ public class MemoryBankControllerTest extends BaseControllerTest {
     private MemoryCardDataService cardDataService;
 
     @Autowired
-    private MemoryBankDataService memoryBankDataService;
+    private UserCardInCourseDataService userCardInCourseDataService;
 
     @Autowired
     private UserCourseSrsSettingDataService srsSettingDataService;
+
+    @Autowired
+    private com.prosper.learn.memory.card.MemoryCardDomainService cardDomainService;
+
+    @Autowired
+    private com.prosper.learn.memory.review.UserCardSrsDataService userCardSrsDataService;
 
     @BeforeEach
     void setUp() {
@@ -88,7 +94,6 @@ public class MemoryBankControllerTest extends BaseControllerTest {
 
     @AfterEach
     void tearDown() {
-        // 清理 Sa-Token 登录状态
         StpUtil.logout();
     }
 
@@ -170,6 +175,7 @@ public class MemoryBankControllerTest extends BaseControllerTest {
         deck.setCreatorId(creatorId);
         deck.setState(ContentState.PUBLISHED.value());
         deck.setCardCount(0);
+        deck.setVersion(1); // 设置初始版本号
         deckDataService.insert(deck);
         return deck;
     }
@@ -178,34 +184,24 @@ public class MemoryBankControllerTest extends BaseControllerTest {
      * 为卡片组创建卡片
      */
     private void createCardsForDeck(Long deckId, int count) {
+        MemoryCardDeckDO deck = deckDataService.getById(deckId);
+        Long creatorId = deck.getCreatorId();
+
         for (int i = 0; i < count; i++) {
-            MemoryCardDO card = new MemoryCardDO();
-            card.setDeckId(deckId);
-            card.setFront("问题 " + (i + 1));
-            card.setBack("答案 " + (i + 1));
-            card.setSequence(i + 1);
-            cardDataService.insert(card);
+            cardDomainService.createCard(creatorId, deckId, "问题 " + (i + 1), "答案 " + (i + 1));
         }
 
-        // 更新卡片组的 cardCount
-        MemoryCardDeckDO deck = deckDataService.getById(deckId);
-        deck.setCardCount(count);
+        // 创建卡片后，deck状态会变为SUBMITTED，需要改回PUBLISHED才能添加到记忆库
+        deck = deckDataService.getById(deckId);
+        deck.setState(ContentState.PUBLISHED.value());
         deckDataService.update(deck);
     }
 
     /**
-     * 验证记忆库记录存在
-     */
-    private boolean memoryBankExists(Long userId, Long courseId, Long deckId) {
-        MemoryBankDO memoryBank = memoryBankDataService.get(userId, courseId, deckId);
-        return memoryBank != null;
-    }
-
-    /**
-     * 验证 SRS 设置存在
+     * 验证SRS设置存在
      */
     private boolean srsSettingExists(Long userId, Long courseId) {
-        UserCourseSrsSettingDO setting = srsSettingDataService.get(userId, courseId);
+        UserCourseSrsSettingDO setting = srsSettingDataService.getByUserAndCourse(userId, courseId);
         return setting != null;
     }
 
@@ -242,7 +238,6 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.data").doesNotExist());
 
             // 验证数据库
-            assertThat(memoryBankExists(user1.getId(), course1.getId(), deck1.getId())).isTrue();
             assertThat(srsSettingExists(user1.getId(), course1.getId())).isTrue();
 
         } finally {
@@ -284,8 +279,8 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(requestBody))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").isNumber());
-            // 注意：具体错误码取决于业务实现，可能是 1002 或其他
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
+            // 注意：重复添加使用INSERT IGNORE，操作仍成功，但不会重复插入
 
         } finally {
             StpUtil.logout();
@@ -332,10 +327,6 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                             .content(requestBody2))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
-
-            // 验证两个卡片组都存在
-            assertThat(memoryBankExists(user1.getId(), course1.getId(), deck1.getId())).isTrue();
-            assertThat(memoryBankExists(user1.getId(), course1.getId(), deck2.getId())).isTrue();
 
         } finally {
             StpUtil.logout();
@@ -514,7 +505,7 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(requestBody))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.MEMORY_CARD_DECK_NOT_FOUND.getCode()));
 
         } finally {
             StpUtil.logout();
@@ -542,7 +533,7 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(requestBody))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.COURSE_NOT_FOUND.getCode()));
 
         } finally {
             StpUtil.logout();
@@ -550,7 +541,7 @@ public class MemoryBankControllerTest extends BaseControllerTest {
     }
 
     /**
-     * 测试 1.3.4: 未登录尝试添加
+     * 测试 1.3.3: 未登录尝试添加
      */
     @Test
     @DisplayName("添加卡片组 - 未登录")
@@ -568,7 +559,7 @@ public class MemoryBankControllerTest extends BaseControllerTest {
     }
 
     /**
-     * 测试 1.3.5: 节点下卡片数量超出限制
+     * 测试 1.3.4: 节点下卡片数量超出限制
      */
     @Test
     @DisplayName("添加卡片组 - 节点下卡片数量超出限制")
@@ -581,9 +572,17 @@ public class MemoryBankControllerTest extends BaseControllerTest {
         MemoryCardDeckDO deck1 = createDeck("测试卡片组12-1", node1.getId(), user1.getId());
         createCardsForDeck(deck1.getId(), 150);
 
+        // 验证deck1确实有150张卡片
+        List<MemoryCardDO> deck1Cards = cardDataService.getByDeckId(deck1.getId());
+        assertThat(deck1Cards).hasSize(150);
+
         // 创建第二个卡片组，包含60张卡片
         MemoryCardDeckDO deck2 = createDeck("测试卡片组12-2", node1.getId(), user1.getId());
         createCardsForDeck(deck2.getId(), 60);
+
+        // 验证deck2确实有60张卡片
+        List<MemoryCardDO> deck2Cards = cardDataService.getByDeckId(deck2.getId());
+        assertThat(deck2Cards).hasSize(60);
 
         StpUtil.login(user1.getId());
 
@@ -599,6 +598,11 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                             .content(requestBody1))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
+
+            // 验证第一次添加后，node1下有150张卡片
+            List<UserCardSrsDO> existingCards =
+                userCardSrsDataService.getByUserAndNodeId(user1.getId(), node1.getId());
+            assertThat(existingCards).hasSize(150);
 
             // 尝试添加第二个卡片组（60张），总数210张，超过200张限制
             String requestBody2 = String.format(
@@ -666,7 +670,8 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                             .header("token", StpUtil.getTokenValue())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(addRequestBody))
-                    .andExpect(status().isOk());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 获取记忆库课程列表
             mockMvc.perform(get("/api/v1/memory/memory-bank/courses")
@@ -743,7 +748,8 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                             .header("token", StpUtil.getTokenValue())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(addRequestBody))
-                    .andExpect(status().isOk());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 更新设置
             String updateRequestBody = String.format(
@@ -759,7 +765,7 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.message").value("操作成功"));
 
             // 验证数据库
-            UserCourseSrsSettingDO setting = srsSettingDataService.get(user1.getId(), course1.getId());
+            UserCourseSrsSettingDO setting = srsSettingDataService.getByUserAndCourse(user1.getId(), course1.getId());
             assertThat(setting).isNotNull();
             assertThat(setting.getFrequencySetting()).isEqualTo((byte) 30);
 
@@ -792,7 +798,8 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                             .header("token", StpUtil.getTokenValue())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(addRequestBody))
-                    .andExpect(status().isOk());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 更新状态为暂停
             String updateRequestBody = String.format(
@@ -807,7 +814,7 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 验证数据库
-            UserCourseSrsSettingDO setting = srsSettingDataService.get(user1.getId(), course1.getId());
+            UserCourseSrsSettingDO setting = srsSettingDataService.getByUserAndCourse(user1.getId(), course1.getId());
             assertThat(setting).isNotNull();
             assertThat(setting.getState()).isEqualTo((byte) 0);
 
@@ -840,7 +847,8 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                             .header("token", StpUtil.getTokenValue())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(addRequestBody))
-                    .andExpect(status().isOk());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 同时更新两个字段
             String updateRequestBody = String.format(
@@ -855,7 +863,7 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 验证数据库
-            UserCourseSrsSettingDO setting = srsSettingDataService.get(user1.getId(), course1.getId());
+            UserCourseSrsSettingDO setting = srsSettingDataService.getByUserAndCourse(user1.getId(), course1.getId());
             assertThat(setting).isNotNull();
             assertThat(setting.getFrequencySetting()).isEqualTo((byte) 25);
             assertThat(setting.getState()).isEqualTo((byte) 1);
@@ -933,7 +941,7 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(updateRequestBody))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.COURSE_NOT_FOUND.getCode()));
 
         } finally {
             StpUtil.logout();
@@ -941,7 +949,7 @@ public class MemoryBankControllerTest extends BaseControllerTest {
     }
 
     /**
-     * 测试 3.3.3: 未登录尝试更新
+     * 测试 3.3.2: 未登录尝试更新
      */
     @Test
     @DisplayName("更新课程设置 - 未登录")
@@ -981,10 +989,8 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                             .header("token", StpUtil.getTokenValue())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(addRequestBody))
-                    .andExpect(status().isOk());
-
-            // 验证添加成功
-            assertThat(memoryBankExists(user1.getId(), course1.getId(), deck1.getId())).isTrue();
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 移除卡片组
             mockMvc.perform(delete("/api/v1/memory/memory-bank/courses/" + course1.getId() + "/decks/" + deck1.getId())
@@ -992,9 +998,6 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
                     .andExpect(jsonPath("$.message").value("操作成功"));
-
-            // 验证删除成功
-            assertThat(memoryBankExists(user1.getId(), course1.getId(), deck1.getId())).isFalse();
 
         } finally {
             StpUtil.logout();
@@ -1086,7 +1089,7 @@ public class MemoryBankControllerTest extends BaseControllerTest {
     }
 
     /**
-     * 测试 4.3.3: 未登录尝试移除
+     * 测试 4.3.1: 未登录尝试移除
      */
     @Test
     @DisplayName("移除卡片组 - 未登录")

@@ -128,6 +128,7 @@ public enum StatusCode {
     // 记忆卡片相关 22xx
     MEMORY_CARD_DECK_NOT_FOUND(2201, "卡片组不存在"),
     MEMORY_CARD_NOT_FOUND(2202, "记忆卡片不存在"),
+    MEMORY_CARD_NOT_AVAILABLE(2211, "记忆卡片暂未通过审核或已被屏蔽，无法使用"),
     MEMORY_CARD_VERSION_NOT_FOUND(2203, "卡片版本不存在"),
     MEMORY_BANK_COURSE_NOT_FOUND(2204, "记忆库课程不存在"),
     SRS_STATE_NOT_FOUND(2205, "SRS复习状态不存在"),

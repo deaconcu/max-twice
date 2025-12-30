@@ -15,9 +15,11 @@ public interface UserCardSrsConverter {
     @Named("toDTO")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
+    @Mapping(target = "type")
+    @Mapping(target = "currentStep")
+    @Mapping(target = "interval")
     @Mapping(target = "reviewDueAt")
     @Mapping(target = "lastReviewedAt")
-    @Mapping(target = "interval")
     @Mapping(target = "repetitions")
     @Mapping(target = "lapseCount")
     UserCardSrsDTO toDTO(UserCardSrsDO srsStateDO);

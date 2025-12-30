@@ -1,5 +1,6 @@
 package com.prosper.learn.interaction.comment;
 
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
@@ -195,7 +196,7 @@ public class CommentDomainService {
      * 根据筛选条件获取评论列表
      * @return List<CommentDO>
      */
-    public List<CommentDO> getCommentsByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId, Byte state, int pageSize) {
-        return commentDataService.getListByFilter(objectType, objectId, creatorId, lastId, state, pageSize);
+    public List<CommentDO> getCommentsByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId, Enums.ContentState state, int pageSize) {
+        return commentDataService.getListByFilter(objectType, objectId, creatorId, lastId, state.value(), pageSize);
     }
 }

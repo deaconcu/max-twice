@@ -9,27 +9,27 @@ import java.util.Map;
 @Mapper
 public interface MemoryCardMapper {
 
-    @Select("SELECT * FROM memory_card WHERE id = #{id}")
+    @Select("SELECT * FROM memory_card WHERE id = #{id} AND deleted_at IS NULL")
     MemoryCardDO get(long id);
 
     @Select({"<script>SELECT * FROM memory_card WHERE id IN " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
-            "</script>"})
+            " AND deleted_at IS NULL</script>"})
     List<MemoryCardDO> getByIds(List<Long> ids);
 
     @Select({"<script>SELECT * FROM memory_card WHERE id IN " +
             "<foreach item='id' collection='ids' open='(' separator=', ' close=')'>#{id}</foreach>" +
-            "</script>"})
+            " AND deleted_at IS NULL</script>"})
     @MapKey("id")
     Map<Long, MemoryCardDO> getMapByIds(Collection<Long> ids);
 
-    @Select("SELECT * FROM memory_card WHERE deck_id = #{deckId} AND state = #{state} " +
+    @Select("SELECT * FROM memory_card WHERE deck_id = #{deckId} AND state = #{state} AND deleted_at IS NULL " +
             "ORDER BY created_at ASC")
     List<MemoryCardDO> getListByDeck(long deckId, int state);
 
     @Select({"<script>SELECT * FROM memory_card WHERE deck_id IN " +
             "<foreach item='deckId' collection='deckIds' open='(' separator=', ' close=')'>#{deckId}</foreach>" +
-            " AND state = #{state} ORDER BY deck_id, created_at ASC" +
+            " AND state = #{state} AND deleted_at IS NULL ORDER BY deck_id, created_at ASC" +
             "</script>"})
     List<MemoryCardDO> getByDeckIds(@Param("deckIds") List<Long> deckIds, @Param("state") int state);
 
@@ -56,7 +56,7 @@ public interface MemoryCardMapper {
 
     @Update("UPDATE memory_card SET " +
             "current_version_id = #{currentVersionId}, state = #{state} " +
-            "WHERE id = #{id}")
+            "WHERE id = #{id} AND deleted_at IS NULL")
     void update(MemoryCardDO card);
 
     @Update({"<script>" +
@@ -69,6 +69,7 @@ public interface MemoryCardMapper {
             "<foreach collection='cards' item='card' open='(' separator=',' close=')'>" +
             "#{card.id}" +
             "</foreach>" +
+            " AND deleted_at IS NULL" +
             "</script>"})
     int batchUpdateCurrentVersionId(@Param("cards") List<MemoryCardDO> cards);
 
@@ -83,13 +84,17 @@ public interface MemoryCardMapper {
             "current_version_id = #{card.currentVersionId}, " +
             "state = #{card.state}, " +
             "updated_at = #{card.updatedAt} " +
-            "WHERE id = #{card.id}" +
+            "WHERE id = #{card.id} AND deleted_at IS NULL" +
             "</foreach>" +
             "</script>"})
     int batchUpdate(@Param("cards") List<MemoryCardDO> cards);
 
-    @Select("SELECT COUNT(*) FROM memory_card WHERE deck_id = #{deckId} AND state = #{state}")
+    @Select("SELECT COUNT(*) FROM memory_card WHERE deck_id = #{deckId} AND state = #{state} AND deleted_at IS NULL")
     int countByDeck(long deckId, int state);
+
+    @Update("UPDATE memory_card SET deleted_at = #{deletedAt}, updated_at = #{updatedAt} " +
+            "WHERE id = #{id} AND deleted_at IS NULL")
+    int softDelete(MemoryCardDO card);
 
 // --注释掉检查 START (2025/12/10 12:01):
 //    @Select("SELECT id FROM memory_card WHERE deck_id = #{deckId} AND state = " + Enums.ContentState.PUBLISHED_VALUE + " ORDER BY id")

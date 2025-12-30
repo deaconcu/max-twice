@@ -67,6 +67,9 @@ public class MemoryCardDomainService {
      */
     public Map<String, Object> getCardContentDiff(Long userId, Long cardId) {
         MemoryCardDO card = cardDataService.validateAndGet(cardId);
+        if (card.getState() != ContentState.PUBLISHED.value()) {
+            throw StatusCode.MEMORY_CARD_NOT_AVAILABLE.exception();
+        }
 
         UserCardSrsDO srsState = userCardSrsDataService.getByUserAndCard(userId, cardId);
         if (srsState == null || srsState.getCardVersionId() == null) {
@@ -284,9 +287,13 @@ public class MemoryCardDomainService {
             throw StatusCode.SYSTEM_ERROR.exception("卡片组不存在");
         }
 
-        card.setState(ContentState.BANNED.value());
+        card.setDeletedAt(LocalDateTime.now());
         card.setUpdatedAt(LocalDateTime.now());
-        cardDataService.update(card);
+        int result = cardDataService.softDelete(card);
+
+        if (result == 0) {
+            throw StatusCode.MEMORY_CARD_NOT_FOUND.exception("卡片已被删除或不存在");
+        }
 
         deckDataService.decrementCardCountAndIncrementVersion(card.getDeckId());
 

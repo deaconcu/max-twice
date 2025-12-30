@@ -124,7 +124,7 @@ public interface MemoryCardDeckMapper {
             "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
             " AND deleted_at IS NULL ORDER BY id DESC LIMIT #{limit}",
             "</script>"})
-    List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPaging(long postId, long creatorId, int state, Long lastId, int limit);
+    List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPaging(long postId, long creatorId, byte state, Long lastId, int limit);
 
     @Select({"<script>",
             "SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} AND deleted_at IS NULL",

@@ -289,7 +289,7 @@ public class MemoryCardDeckService {
      * 需求1: 获取帖子下的公共卡片组列表 - keyset分页，normal状态
      */
     public KeysetPageResponse<DeckWithVoteDTO> getPostPublicDecks(
-            Long postId, String sortBy, Double lastScore, Long lastId, Integer limit) {
+            Long postId, String sortBy, Double lastScore, Long lastId, Integer limit, Long userId) {
         // 参数验证
         if (limit == null || limit <= 0) limit = 10;
         if (limit > 50) limit = 50;
@@ -298,7 +298,7 @@ public class MemoryCardDeckService {
         List<MemoryCardDeckDO> deckList = deckDomainService.getListByPostDynamic(
             postId, Enums.ContentState.PUBLISHED, sortBy, lastScore, lastId, limit + 1);
 
-        return buildDeckResponse(deckList, limit, null);
+        return buildDeckResponse(deckList, limit, userId);
     }
 
     /**
@@ -318,7 +318,7 @@ public class MemoryCardDeckService {
             // post创建者不是当前用户，只查询normal状态，按ID降序
             if (lastId != null) {
                 deckList = deckDomainService.getListByPostAndCreatorWithIdPaging(
-                        postId, postCreatorId, Enums.ContentState.PUBLISHED.value(), lastId, limit + 1);
+                        postId, postCreatorId, Enums.ContentState.PUBLISHED, lastId, limit + 1);
             } else {
                 // 首次查询，没有 lastId
                 deckList = deckDomainService.getListByPostAndCreator(
@@ -466,7 +466,8 @@ public class MemoryCardDeckService {
         int limit = 20;
 
         // 默认查询待审核状态的卡片组
-        int defaultState = state != null ? state : Enums.ContentState.SUBMITTED.value();
+        Enums.ContentState defaultState =
+                state != null ? Enums.ContentState.getByValue(state.byteValue()): Enums.ContentState.SUBMITTED;
 
         List<MemoryCardDeckDO> deckList;
 
@@ -626,20 +627,14 @@ public class MemoryCardDeckService {
      * 更新卡片组
      */
     @Transactional
-    public DeckWithCreatorDTO updateDeck(Long userId, UpdateDeckRequest request) {
-        // 验证参数
-        checkNotNull(request);
-
+    public void updateDeck(Long userId, Long deckId, String description) {
         // 调用 DomainService 更新卡片组（只更新描述，不更新标题）
-        MemoryCardDeckDO deck = deckDomainService.updateDeck(
-            request.getId(),
+        deckDomainService.updateDeck(
+            deckId,
             userId,
             null,  // title 设为 null，不更新
-            request.getDescription()
+            description
         );
-
-        // 获取更新后的数据并返回（包含创建者信息）
-        return toDeckWithCreator(deck);
     }
 
     /**
@@ -989,7 +984,7 @@ public class MemoryCardDeckService {
      * @param limit 限制数量
      * @return 卡片组列表（分页响应）
      */
-    public KeysetPageResponse<DeckWithCreatorDTO> getDecksForAdmin(Integer state, Long postId, Long creatorId, Long lastId, Integer limit) {
+    public KeysetPageResponse<DeckWithCreatorDTO> getDecksForAdmin(Enums.ContentState state, Long postId, Long creatorId, Long lastId, Integer limit) {
         // 设置默认值
         if (limit == null || limit <= 0) {
             limit = 20;

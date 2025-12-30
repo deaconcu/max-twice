@@ -56,9 +56,7 @@ public class MemoryCardController {
             @Valid @RequestBody UpdateCardRequest request,
             @CurrentUser UserDO currentUser) {
 
-        request.setId(cardId);
-
-        cardService.updateCard(currentUser.getId(), request);
+        cardService.updateCard(currentUser.getId(), cardId, request);
         return ApiResponse.success("更新成功", null);
     }
 

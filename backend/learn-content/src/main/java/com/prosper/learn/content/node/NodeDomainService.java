@@ -34,7 +34,7 @@ public class NodeDomainService {
      * @param lastId 分页游标
      * @return 节点列表
      */
-    public List<NodeDO> listByFilter(Long nodeId, Long courseId, Long creatorId, Byte state, Long lastId) {
+    public List<NodeDO> listByFilter(Long nodeId, Long courseId, Long creatorId, ContentState state, Long lastId) {
         // 如果提供了 nodeId，其他参数将被忽略
         if (nodeId != null) {
             courseId = null;
@@ -43,7 +43,7 @@ public class NodeDomainService {
             lastId = null;
         }
 
-        return nodeDataService.getListByFilter(nodeId, courseId, creatorId, state, lastId);
+        return nodeDataService.getListByFilter(nodeId, courseId, creatorId, state.value(), lastId);
     }
 
     // ========== Command 方法 ==========

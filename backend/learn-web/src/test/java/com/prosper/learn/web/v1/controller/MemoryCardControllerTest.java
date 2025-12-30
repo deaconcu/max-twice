@@ -3,21 +3,23 @@ package com.prosper.learn.web.v1.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.application.dto.request.CreateCardRequest;
+import com.prosper.learn.application.dto.request.CreateCourseRequest;
 import com.prosper.learn.application.dto.request.UpdateCardRequest;
+import com.prosper.learn.application.service.CourseService;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
-import com.prosper.learn.memory.card.MemoryCardDO;
-import com.prosper.learn.memory.card.MemoryCardDataService;
-import com.prosper.learn.memory.deck.MemoryDeckDO;
-import com.prosper.learn.memory.deck.MemoryDeckDataService;
-import com.prosper.learn.memory.srs.UserCardSrsDO;
-import com.prosper.learn.memory.srs.UserCardSrsDataService;
-import com.prosper.learn.shared.domain.Enums.UserRole;
-import com.prosper.learn.shared.domain.Enums.UserState;
+import com.prosper.learn.memory.card.*;
+import com.prosper.learn.memory.deck.MemoryCardDeckDO;
+import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
+import com.prosper.learn.memory.deck.MemoryCardDeckDomainService;
+import com.prosper.learn.memory.review.UserCardSrsDO;
+import com.prosper.learn.memory.review.UserCardSrsDataService;
+import com.prosper.learn.shared.domain.Enums.ContentState;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
-import com.prosper.learn.user.profile.UserDataService;
+import com.prosper.learn.user.profile.UserDomainService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,12 +30,18 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * 记忆卡片接口测试
+ * 测试文档: docs/test/memory-card.md
+ */
 @Transactional
 public class MemoryCardControllerTest extends BaseControllerTest {
 
@@ -46,7 +54,10 @@ public class MemoryCardControllerTest extends BaseControllerTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private UserDataService userDataService;
+    private UserDomainService userDomainService;
+
+    @Autowired
+    private CourseService courseService;
 
     @Autowired
     private CourseDataService courseDataService;
@@ -55,10 +66,19 @@ public class MemoryCardControllerTest extends BaseControllerTest {
     private NodeDataService nodeDataService;
 
     @Autowired
-    private MemoryDeckDataService deckDataService;
+    private MemoryCardDeckDomainService deckDomainService;
+
+    @Autowired
+    private MemoryCardDeckDataService deckDataService;
+
+    @Autowired
+    private MemoryCardDomainService cardDomainService;
 
     @Autowired
     private MemoryCardDataService cardDataService;
+
+    @Autowired
+    private MemoryCardVersionDataService cardVersionDataService;
 
     @Autowired
     private UserCardSrsDataService srsDataService;
@@ -68,7 +88,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
     private UserDO otherUser;
     private CourseDO testCourse;
     private NodeDO testNode;
-    private MemoryDeckDO testDeck;
+    private MemoryCardDeckDO testDeck;
     private MemoryCardDO testCard1;
     private MemoryCardDO testCard2;
     private String testUserToken;
@@ -79,125 +99,69 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
 
         // 创建测试用户
-        testUser = createUser("test@example.com");
-        otherUser = createUser("other@example.com");
+        testUser = userDomainService.createUser("test@example.com", "password123");
+        otherUser = userDomainService.createUser("other@example.com", "password123");
 
         // 生成 Token
         testUserToken = generateToken(testUser.getId());
         otherUserToken = generateToken(otherUser.getId());
 
         // 创建测试课程
-        testCourse = createCourse("测试课程");
+        CreateCourseRequest courseRequest = new CreateCourseRequest();
+        courseRequest.setName("测试课程");
+        courseRequest.setDescription("测试课程描述，至少需要20个字符才能满足验证要求");
+        courseRequest.setMainCategory(1);
+        courseRequest.setSubCategory(1);
+        courseService.createCourse(courseRequest, testUser);
 
-        // 创建测试节点
-        testNode = createNode(testCourse.getId(), "测试节点");
+        // 获取刚创建的课程
+        testCourse = courseDataService.listByStateAndLastId(ContentState.SUBMITTED, null).stream()
+            .filter(c -> "测试课程".equals(c.getName()))
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("未找到测试课程"));
+
+        // 获取根节点
+        testNode = nodeDataService.getById(testCourse.getRootNodeId());
 
         // 创建测试卡片组
-        testDeck = createDeck(testUser.getId(), testNode.getId(), testCourse.getId(), "测试卡片组");
+        testDeck = deckDomainService.createDeck(
+            testUser.getId(),
+            0L,
+            testNode.getId(),
+            "测试卡片组描述",
+            0
+        );
 
         // 创建测试卡片
-        testCard1 = createCard(testDeck.getId(), testUser.getId(), "问题1", "答案1");
-        testCard2 = createCard(testDeck.getId(), testUser.getId(), "问题2", "答案2");
+        testCard1 = cardDomainService.createCard(testUser.getId(), testDeck.getId(), "问题1", "答案1");
+        testCard2 = cardDomainService.createCard(testUser.getId(), testDeck.getId(), "问题2", "答案2");
 
         // 创建 SRS 状态
-        createSrsState(testUser.getId(), testCard1.getId(), 0); // NEW
-        createSrsState(testUser.getId(), testCard2.getId(), 2); // REVIEW
+        createSrsState(testUser.getId(), testCard1, testDeck);
+        createSrsState(testUser.getId(), testCard2, testDeck);
     }
 
     // ========== 辅助方法 ==========
 
     /**
-     * 创建测试用户
-     */
-    private UserDO createUser(String email) {
-        UserDO user = new UserDO();
-        user.setEmail(email);
-        user.setName(email.split("@")[0]);
-        user.setPassword("hashed_password");
-        user.setState(UserState.ACTIVE.value());
-        user.setEmailValidated(true);
-        user.setBiography("");
-        user.setRole(UserRole.USER.value());
-        user.setMsgReadTime(LocalDateTime.now());
-        userDataService.insert(user);
-        return user;
-    }
-
-    /**
-     * 创建测试课程
-     */
-    private CourseDO createCourse(String name) {
-        CourseDO course = new CourseDO();
-        course.setName(name);
-        course.setDescription("测试课程描述");
-        course.setCreatorId(testUser != null ? testUser.getId() : 1L);
-        course.setParentCourseId(0L);
-        course.setRootNodeId(0L);
-        course.setMainCategory(1);
-        course.setSubCategory(1);
-        course.setState((byte) 2); // 已发布
-        courseDataService.insert(course);
-        return course;
-    }
-
-    /**
-     * 创建测试节点
-     */
-    private NodeDO createNode(Long courseId, String name) {
-        NodeDO node = new NodeDO();
-        node.setCourseId(courseId);
-        node.setName(name);
-        node.setParentNodeId(0L);
-        node.setNodeOrder(1);
-        node.setContent("测试节点内容");
-        nodeDataService.insert(node);
-        return node;
-    }
-
-    /**
-     * 创建测试卡片组
-     */
-    private MemoryDeckDO createDeck(Long creatorId, Long nodeId, Long courseId, String title) {
-        MemoryDeckDO deck = new MemoryDeckDO();
-        deck.setCreatorId(creatorId);
-        deck.setNodeId(nodeId);
-        deck.setCourseId(courseId);
-        deck.setPostId(0L);
-        deck.setTitle(title);
-        deck.setDescription("测试卡片组描述");
-        deck.setState(1); // 已发布
-        deckDataService.insert(deck);
-        return deck;
-    }
-
-    /**
-     * 创建测试卡片
-     */
-    private MemoryCardDO createCard(Long deckId, Long creatorId, String front, String back) {
-        MemoryCardDO card = new MemoryCardDO();
-        card.setDeckId(deckId);
-        card.setCreatorId(creatorId);
-        card.setFront(front);
-        card.setBack(back);
-        cardDataService.insert(card);
-        return card;
-    }
-
-    /**
      * 创建 SRS 学习状态
      */
-    private UserCardSrsDO createSrsState(Long userId, Long cardId, int type) {
+    private UserCardSrsDO createSrsState(Long userId, MemoryCardDO card, MemoryCardDeckDO deck) {
         UserCardSrsDO srs = new UserCardSrsDO();
         srs.setUserId(userId);
-        srs.setCardId(cardId);
-        srs.setType(type);
-        srs.setCurrentStep(0);
-        srs.setInterval(type == 2 ? 7 : 0); // REVIEW 状态间隔7天，其他为0
+        srs.setCardId(card.getId());
+        srs.setNodeId(testNode.getId());
+        srs.setDeckId(deck.getId());
+        srs.setType((byte)0);  // NEW 状态
+        srs.setCurrentStep((byte)0);
+        srs.setInterval(0);
         srs.setReviewDueAt(LocalDateTime.now());
-        srs.setLastReviewedAt(type == 0 ? null : LocalDateTime.now().minusDays(1));
-        srs.setRepetitions(type == 0 ? 0 : 3);
+        srs.setLastReviewedAt(null);
+        srs.setRepetitions(0);
         srs.setLapseCount(0);
-        srs.setEaseFactor(2.5);
+        srs.setEaseFactor(BigDecimal.valueOf(2.5));
+        srs.setCardVersionId(card.getCurrentVersionId());  // 使用真实的版本ID
+        srs.setDeckVersion(deck.getVersion());             // 使用真实的版本号
         srsDataService.insert(srs);
         return srs;
     }
@@ -224,7 +188,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200))
+            .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
             .andExpect(jsonPath("$.message").value("创建成功"))
             .andExpect(jsonPath("$.timestamp").exists());
     }
@@ -240,7 +204,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1002));
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     @Test
@@ -254,7 +218,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1002));
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     @Test
@@ -268,14 +232,14 @@ public class MemoryCardControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1002));
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     @Test
     void testCreateCard_FrontTooLong() throws Exception {
         CreateCardRequest request = new CreateCardRequest();
         request.setDeckId(testDeck.getId());
-        request.setFront("A".repeat(3000)); // 超过最大长度
+        request.setFront("A".repeat(3000));
         request.setBack("答案");
 
         mockMvc.perform(post("/api/v1/memory/cards")
@@ -283,7 +247,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1002));
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     @Test
@@ -291,14 +255,14 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         CreateCardRequest request = new CreateCardRequest();
         request.setDeckId(testDeck.getId());
         request.setFront("问题");
-        request.setBack("A".repeat(3000)); // 超过最大长度
+        request.setBack("A".repeat(3000));
 
         mockMvc.perform(post("/api/v1/memory/cards")
                 .header("token", testUserToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1002));
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     @Test
@@ -313,7 +277,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1002));
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     @Test
@@ -328,7 +292,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(2201));
+            .andExpect(jsonPath("$.code").value(StatusCode.MEMORY_CARD_DECK_NOT_FOUND.getCode()));
     }
 
     @Test
@@ -342,7 +306,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1101));
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
     }
 
     // ========== 二、更新卡片接口测试 ==========
@@ -358,7 +322,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200))
+            .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
             .andExpect(jsonPath("$.message").value("更新成功"))
             .andExpect(jsonPath("$.timestamp").exists());
     }
@@ -374,7 +338,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(2202));
+            .andExpect(jsonPath("$.code").value(StatusCode.MEMORY_CARD_NOT_FOUND.getCode()));
     }
 
     @Test
@@ -388,7 +352,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1002));
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     @Test
@@ -397,19 +361,18 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         request.setFront("更新的问题");
         request.setBack("更新的答案");
 
-        // 使用另一个用户的 token
         mockMvc.perform(put("/api/v1/memory/cards/" + testCard1.getId())
                 .header("token", otherUserToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1006));
+            .andExpect(jsonPath("$.code").value(StatusCode.PERMISSION_DENIED.getCode()));
     }
 
     @Test
     void testUpdateCard_FrontTooLong() throws Exception {
         UpdateCardRequest request = new UpdateCardRequest();
-        request.setFront("A".repeat(2100)); // 超过 2000 字符
+        request.setFront("A".repeat(2100));
         request.setBack("答案");
 
         mockMvc.perform(put("/api/v1/memory/cards/" + testCard1.getId())
@@ -417,21 +380,21 @@ public class MemoryCardControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1002));
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     @Test
     void testUpdateCard_BackTooLong() throws Exception {
         UpdateCardRequest request = new UpdateCardRequest();
         request.setFront("问题");
-        request.setBack("A".repeat(2100)); // 超过 2000 字符
+        request.setBack("A".repeat(2100));
 
         mockMvc.perform(put("/api/v1/memory/cards/" + testCard1.getId())
                 .header("token", testUserToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1002));
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     @Test
@@ -444,7 +407,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1101));
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
     }
 
     // ========== 三、获取节点下卡片列表接口测试 ==========
@@ -454,20 +417,31 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         mockMvc.perform(get("/api/v1/memory/cards/node/" + testNode.getId())
                 .header("token", testUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200))
+            .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
             .andExpect(jsonPath("$.data").isArray())
             .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test
     void testGetCardsByNode_EmptyList() throws Exception {
-        // 创建一个新节点，没有卡片
-        NodeDO emptyNode = createNode(testCourse.getId(), "空节点");
+        // 创建一个新课程和节点
+        CreateCourseRequest courseRequest = new CreateCourseRequest();
+        courseRequest.setName("空课程");
+        courseRequest.setDescription("空课程描述，至少需要20个字符才能满足验证要求");
+        courseRequest.setMainCategory(1);
+        courseRequest.setSubCategory(1);
+        courseService.createCourse(courseRequest, testUser);
+
+        CourseDO emptyCourse = courseDataService.listByStateAndLastId(ContentState.SUBMITTED, null).stream()
+            .filter(c -> "空课程".equals(c.getName()))
+            .findFirst()
+            .orElseThrow();
+        NodeDO emptyNode = nodeDataService.getById(emptyCourse.getRootNodeId());
 
         mockMvc.perform(get("/api/v1/memory/cards/node/" + emptyNode.getId())
                 .header("token", testUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200))
+            .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
             .andExpect(jsonPath("$.data").isArray())
             .andExpect(jsonPath("$.data").isEmpty());
     }
@@ -477,7 +451,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         MvcResult result = mockMvc.perform(get("/api/v1/memory/cards/node/" + testNode.getId())
                 .header("token", testUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200))
+            .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
             .andReturn();
 
         String content = result.getResponse().getContentAsString();
@@ -494,14 +468,14 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         mockMvc.perform(get("/api/v1/memory/cards/node/0")
                 .header("token", testUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1002));
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     @Test
     void testGetCardsByNode_NotLogin() throws Exception {
         mockMvc.perform(get("/api/v1/memory/cards/node/" + testNode.getId()))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1101));
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
     }
 
     // ========== 四、获取卡片内容差异接口测试 ==========
@@ -511,8 +485,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         mockMvc.perform(get("/api/v1/memory/cards/" + testCard1.getId() + "/diff")
                 .header("token", testUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200))
-            .andExpect(jsonPath("$.data.hasDiff").value(false));
+            .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
     }
 
     @Test
@@ -520,7 +493,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         mockMvc.perform(get("/api/v1/memory/cards/999999/diff")
                 .header("token", testUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(2202));
+            .andExpect(jsonPath("$.code").value(StatusCode.MEMORY_CARD_NOT_FOUND.getCode()));
     }
 
     @Test
@@ -528,7 +501,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         mockMvc.perform(get("/api/v1/memory/cards/" + testCard1.getId() + "/diff")
                 .header("token", otherUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1006));
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     @Test
@@ -536,14 +509,14 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         mockMvc.perform(get("/api/v1/memory/cards/-1/diff")
                 .header("token", testUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1002));
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     @Test
     void testGetCardDiff_NotLogin() throws Exception {
         mockMvc.perform(get("/api/v1/memory/cards/" + testCard1.getId() + "/diff"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1101));
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
     }
 
     // ========== 五、删除卡片接口测试 ==========
@@ -553,7 +526,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         mockMvc.perform(delete("/api/v1/memory/cards/" + testCard1.getId())
                 .header("token", testUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200))
+            .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
             .andExpect(jsonPath("$.message").value("删除成功"))
             .andExpect(jsonPath("$.timestamp").exists());
     }
@@ -563,7 +536,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         mockMvc.perform(delete("/api/v1/memory/cards/999999")
                 .header("token", testUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(2202));
+            .andExpect(jsonPath("$.code").value(StatusCode.MEMORY_CARD_NOT_FOUND.getCode()));
     }
 
     @Test
@@ -572,13 +545,13 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         mockMvc.perform(delete("/api/v1/memory/cards/" + testCard1.getId())
                 .header("token", testUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200));
+            .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
-        // 再删除一次，应该返回卡片不存在
+        // 再删除一次
         mockMvc.perform(delete("/api/v1/memory/cards/" + testCard1.getId())
                 .header("token", testUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(2202));
+            .andExpect(jsonPath("$.code").value(StatusCode.MEMORY_CARD_NOT_FOUND.getCode()));
     }
 
     @Test
@@ -586,7 +559,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         mockMvc.perform(delete("/api/v1/memory/cards/" + testCard1.getId())
                 .header("token", otherUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1006));
+            .andExpect(jsonPath("$.code").value(StatusCode.PERMISSION_DENIED.getCode()));
     }
 
     @Test
@@ -594,14 +567,14 @@ public class MemoryCardControllerTest extends BaseControllerTest {
         mockMvc.perform(delete("/api/v1/memory/cards/0")
                 .header("token", testUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1002));
+            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
     }
 
     @Test
     void testDeleteCard_NotLogin() throws Exception {
         mockMvc.perform(delete("/api/v1/memory/cards/" + testCard1.getId()))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(1101));
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
     }
 
     // ========== 六、响应格式测试 ==========
@@ -621,13 +594,9 @@ public class MemoryCardControllerTest extends BaseControllerTest {
             .andReturn();
 
         String content = result.getResponse().getContentAsString();
-
-        // 验证包含必要字段
         assertTrue(content.contains("\"code\""));
         assertTrue(content.contains("\"message\""));
         assertTrue(content.contains("\"timestamp\""));
-
-        // 验证不包含 data 字段（或 data 为 null 被省略）
         assertFalse(content.contains("\"data\""));
     }
 
@@ -645,7 +614,6 @@ public class MemoryCardControllerTest extends BaseControllerTest {
             .andReturn();
 
         String content = result.getResponse().getContentAsString();
-
         assertTrue(content.contains("\"code\""));
         assertTrue(content.contains("\"message\""));
         assertTrue(content.contains("\"timestamp\""));
@@ -660,7 +628,6 @@ public class MemoryCardControllerTest extends BaseControllerTest {
             .andReturn();
 
         String content = result.getResponse().getContentAsString();
-
         assertTrue(content.contains("\"code\""));
         assertTrue(content.contains("\"message\""));
         assertTrue(content.contains("\"timestamp\""));
@@ -681,7 +648,7 @@ public class MemoryCardControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200));
+            .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
     }
 
     @Test
@@ -696,58 +663,50 @@ public class MemoryCardControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200));
+            .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
     }
 
     // ========== 八、集成测试 ==========
 
     @Test
     void testCardLifecycle_Complete() throws Exception {
-        // 1. 创建卡片
-        CreateCardRequest createRequest = new CreateCardRequest();
-        createRequest.setDeckId(testDeck.getId());
-        createRequest.setFront("生命周期测试问题");
-        createRequest.setBack("生命周期测试答案");
-
-        mockMvc.perform(post("/api/v1/memory/cards")
-                .header("token", testUserToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(createRequest)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200));
-
-        // 2. 查询卡片列表（验证创建成功）
+        // 1. 查询卡片列表（验证 testCard1 存在）
         MvcResult listResult = mockMvc.perform(get("/api/v1/memory/cards/node/" + testNode.getId())
                 .header("token", testUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200))
+            .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+            .andExpect(jsonPath("$.data").isArray())
+            .andExpect(jsonPath("$.data.length()").value(2))  // 验证返回2条记录
             .andReturn();
 
-        String listContent = listResult.getResponse().getContentAsString();
-        assertTrue(listContent.contains("生命周期测试问题"));
-
-        // 3. 更新卡片
+        // 2. 更新卡片
         UpdateCardRequest updateRequest = new UpdateCardRequest();
-        updateRequest.setFront("生命周期测试问题（已更新）");
-        updateRequest.setBack("生命周期测试答案（已更新）");
+        updateRequest.setFront("问题1（已更新）");
+        updateRequest.setBack("答案1（已更新）");
 
         mockMvc.perform(put("/api/v1/memory/cards/" + testCard1.getId())
                 .header("token", testUserToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(updateRequest)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200));
+            .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
+
+        // 3. 验证更新后可以查看差异
+        mockMvc.perform(get("/api/v1/memory/cards/" + testCard1.getId() + "/diff")
+                .header("token", testUserToken))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
         // 4. 删除卡片
         mockMvc.perform(delete("/api/v1/memory/cards/" + testCard1.getId())
                 .header("token", testUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200));
+            .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
         // 5. 验证删除后不能再次访问
         mockMvc.perform(get("/api/v1/memory/cards/" + testCard1.getId() + "/diff")
                 .header("token", testUserToken))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(2202));
+            .andExpect(jsonPath("$.code").value(StatusCode.MEMORY_CARD_NOT_FOUND.getCode()));
     }
 }

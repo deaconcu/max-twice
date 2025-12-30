@@ -528,7 +528,7 @@ public class RoadmapService {
     /**
      * Admin管理：按条件获取路线图列表
      */
-    public List<RoadmapSummaryDTO> listByFilter(Byte state, Long professionId, Long creatorId, Long lastId) {
+    public List<RoadmapSummaryDTO> listByFilter(ContentState state, Long professionId, Long creatorId, Long lastId) {
         List<RoadmapDO> roadmapDOList = domainService.listByFilter(state, professionId, creatorId, lastId);
         return toSummaryDTO(roadmapDOList);
     }

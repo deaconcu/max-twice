@@ -37,8 +37,8 @@ public class RoadmapDomainService {
     /**
      * 按条件筛选路线图列表
      */
-    public List<RoadmapDO> listByFilter(Byte state, Long professionId, Long creatorId, Long lastId) {
-        return roadmapDataService.listByFilter(state, professionId, creatorId, lastId);
+    public List<RoadmapDO> listByFilter(ContentState state, Long professionId, Long creatorId, Long lastId) {
+        return roadmapDataService.listByFilter(state.value(), professionId, creatorId, lastId);
     }
 
     /**

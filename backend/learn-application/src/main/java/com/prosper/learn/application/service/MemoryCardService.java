@@ -312,7 +312,7 @@ public class MemoryCardService {
      * 更新卡片
      */
     @Transactional
-    public CardWithSrsDTO updateCard(Long userId, UpdateCardRequest request) {
+    public CardWithSrsDTO updateCard(Long userId, Long cardId, UpdateCardRequest request) {
         checkNotNull(request);
 
         // 跨域验证
@@ -321,7 +321,7 @@ public class MemoryCardService {
         // 调用 DomainService
         MemoryCardDO card = domainService.updateCard(
             userId,
-            request.getId(),
+            cardId,
             request.getFront(),
             request.getBack()
         );

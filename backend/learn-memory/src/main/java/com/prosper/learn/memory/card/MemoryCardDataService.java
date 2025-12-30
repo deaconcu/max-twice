@@ -70,6 +70,31 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
     }
 
     /**
+     * 验证并获取卡片
+     *
+     * @param id 卡片ID
+     * @return 卡片实体
+     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当卡片不存在时抛出 MEMORY_CARD_NOT_FOUND (2202)
+     */
+    @Override
+    public MemoryCardDO validateAndGet(Long id) {
+        if (id == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("卡片ID不能为空");
+        }
+
+        if (id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("卡片ID必须大于0");
+        }
+
+        MemoryCardDO card = getById(id);
+        if (card == null) {
+            throw StatusCode.MEMORY_CARD_NOT_FOUND.exception();
+        }
+
+        return card;
+    }
+
+    /**
      * 插入卡片
      */
     public int insert(MemoryCardDO card) {
@@ -245,6 +270,27 @@ public class MemoryCardDataService extends AbstractDataService<MemoryCardDO, Mem
             return result;
         } catch (Exception e) {
             log.error("Error batch updating memory cards: count={}", cards.size(), e);
+            throw StatusCode.DATABASE_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 软删除卡片
+     */
+    public int softDelete(MemoryCardDO card) {
+        if (card == null || card.getId() == null) {
+            throw new IllegalArgumentException("Card or card ID cannot be null");
+        }
+
+        try {
+            int result = memoryCardMapper.softDelete(card);
+            if (result > 0) {
+                evictCache(card.getId());
+                log.debug("Soft deleted card {}", card.getId());
+            }
+            return result;
+        } catch (Exception e) {
+            log.error("Error soft deleting card: {}", card.getId(), e);
             throw StatusCode.DATABASE_ERROR.exception(e);
         }
     }

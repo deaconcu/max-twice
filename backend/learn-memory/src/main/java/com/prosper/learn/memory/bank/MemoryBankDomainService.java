@@ -87,7 +87,7 @@ public class MemoryBankDomainService {
             List<UserCardSrsDO> srsList = new ArrayList<>();
             for (MemoryCardDO card : cards) {
                 UserCardSrsDO srs = userCardSrsDataService.createNewSrsState(
-                    userId, card.getId(), nodeId, deckId, deckVersion, card.getCurrentVersionId());
+                    userId, card.getId(), deckId, nodeId, deckVersion, card.getCurrentVersionId());
                 srsList.add(srs);
             }
 

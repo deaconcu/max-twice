@@ -41,14 +41,16 @@ public class MemoryCardDeckController {
      * sortBy=createdAt: 按ID降序（最新的在前）
      */
     @GetMapping("/posts/{postId}/decks")
+    @SaCheckLogin
     public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getPostPublicDecks(
             @PathVariable @NotNull(message = "帖子ID不能为空") @Positive(message = "帖子ID必须大于0") Long postId,
             @RequestParam(defaultValue = "score") String sortBy,
             @RequestParam(required = false) Double lastScore,
-            @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId) {
+            @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
+            @CurrentUser UserDO currentUser) {
 
         KeysetPageResponse<DeckWithVoteDTO> result = deckService.getPostPublicDecks(
-            postId, sortBy, lastScore, lastId, 20);
+            postId, sortBy, lastScore, lastId, 20, currentUser != null ? currentUser.getId() : null);
 
         return ApiResponse.success(result);
     }
@@ -102,7 +104,7 @@ public class MemoryCardDeckController {
     @GetMapping("/users/me/memory-decks")
     @SaCheckLogin
     public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getCurrentUserAllDecks(
-            @RequestParam(required = false) Long lastId,
+            @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
             @CurrentUser UserDO currentUser) {
 
         KeysetPageResponse<DeckWithVoteDTO> result = deckService.getUserDecks(
@@ -192,9 +194,7 @@ public class MemoryCardDeckController {
             @Valid @RequestBody UpdateDeckRequest request,
             @CurrentUser UserDO currentUser) {
 
-        request.setId(deckId);
-
-        deckService.updateDeck(currentUser.getId(), request);
+        deckService.updateDeck(currentUser.getId(), deckId, request.getDescription());
         return ApiResponse.success();
     }
 

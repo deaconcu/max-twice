@@ -285,7 +285,7 @@ public class CommentService {
      * 仅管理员调用
      * @return List<CommentAdminDTO> 管理员视图（含审核原因）
      */
-    public List<CommentAdminDTO> getCommentsByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId, Byte state) {
+    public List<CommentAdminDTO> getCommentsByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId, ContentState state) {
         int pageSize = systemProperties.getComment().getDefaultPageSize();
 
         // 调用 DomainService 获取评论列表

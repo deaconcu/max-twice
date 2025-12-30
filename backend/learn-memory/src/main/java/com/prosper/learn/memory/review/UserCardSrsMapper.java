@@ -80,10 +80,10 @@ public interface UserCardSrsMapper {
 // --注释掉检查 STOP (2025/12/10 12:04)
 
     @Insert("INSERT INTO user_card_srs " +
-            "(user_id, card_id, node_id, deck_id, deck_version, card_version_id, review_due_at, " +
+            "(user_id, card_id, node_id, deck_id, deck_version, card_version_id, review_due_at, last_reviewed_at, " +
             "type, current_step, `interval`, lapse_old_interval, ease_factor, repetitions, lapse_count, created_at, updated_at) " +
             "VALUES " +
-            "(#{userId}, #{cardId}, #{nodeId}, #{deckId}, #{deckVersion}, #{cardVersionId}, #{reviewDueAt}, " +
+            "(#{userId}, #{cardId}, #{nodeId}, #{deckId}, #{deckVersion}, #{cardVersionId}, #{reviewDueAt}, #{lastReviewedAt}, " +
             "#{type}, #{currentStep}, #{interval}, #{lapseOldInterval}, #{easeFactor}, #{repetitions}, #{lapseCount}, NOW(), NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserCardSrsDO state);
@@ -178,7 +178,7 @@ public interface UserCardSrsMapper {
             "WHERE user_id = #{userId} AND last_reviewed_at BETWEEN #{startTime} AND #{endTime}")
     long countReviewsInPeriod(long userId, LocalDateTime startTime, LocalDateTime endTime);
 
-    @Select("SELECT DATEDIFF(CURDATE(), DATE(MAX(last_reviewed_at))) AS days_since_last " +
+    @Select("SELECT COALESCE(DATEDIFF(CURDATE(), DATE(MAX(last_reviewed_at))), 0) AS days_since_last " +
             "FROM user_card_srs WHERE user_id = #{userId} AND last_reviewed_at IS NOT NULL")
     int calculateStreakDays(long userId);
 

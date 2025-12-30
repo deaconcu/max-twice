@@ -74,12 +74,12 @@ public class AdminContentsController {
         Long effectiveLastId = (lastId != null) ? lastId : 0L;
 
         // 解析状态
-        Byte stateValue = parseState(state);
+        ContentState stateValue = ContentState.valueOf(state);
 
         return switch (contentType.toLowerCase()) {
             case "post" -> ApiResponse.success(
                 postService.getPostsByState(
-                    stateValue != null ? ContentState.getByValue(stateValue) : ContentState.SUBMITTED,
+                    stateValue != null ? stateValue : ContentState.SUBMITTED,
                     effectiveLastId,
                     DEFAULT_PAGE_SIZE
                 )
@@ -88,26 +88,17 @@ public class AdminContentsController {
                 roadmapService.listByFilter(stateValue, null, null, effectiveLastId)
             );
             case "memory_card_deck" -> ApiResponse.success(
-                memoryCardDeckService.getDecksForAdmin(
-                    stateValue != null ? stateValue.intValue() : null,
-                    null, null, effectiveLastId, DEFAULT_PAGE_SIZE
+                memoryCardDeckService.getDecksForAdmin(stateValue, null, null, effectiveLastId, DEFAULT_PAGE_SIZE
                 )
             );
             case "comment" -> ApiResponse.success(
                 commentService.getCommentsByFilter(null, null, null, effectiveLastId, stateValue)
             );
             case "course" -> ApiResponse.success(
-                courseService.getListByStateAndLastId(
-                    stateValue != null ? ContentState.getByValue(stateValue) : null,
-                    effectiveLastId
-                )
+                courseService.getListByStateAndLastId(stateValue, effectiveLastId)
             );
             case "profession" -> ApiResponse.success(
-                professionService.getListByStateAndLastId(
-                    stateValue != null ? ContentState.getByValue(stateValue) : null,
-                    effectiveLastId,
-                    DEFAULT_PAGE_SIZE
-                )
+                professionService.getListByStateAndLastId(stateValue, effectiveLastId, DEFAULT_PAGE_SIZE)
             );
             case "node" -> ApiResponse.success(
                 nodeService.listByFilter(stateValue, null, null, null, effectiveLastId)
@@ -142,7 +133,7 @@ public class AdminContentsController {
             @RequestParam(value = "creatorId", required = false) @Positive(message = "用户ID必须大于0") Long creatorId,
             @RequestParam(value = "lastId", required = false) @Min(value = 0, message = "最后ID不能小于0") Long lastId,
             @RequestParam(value = "state", required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state) {
-        return ApiResponse.success(commentService.getCommentsByFilter(objectType, objectId, creatorId, lastId, state));
+        return ApiResponse.success(commentService.getCommentsByFilter(objectType, objectId, creatorId, lastId, ContentState.getByValue(state)));
     }
 
     /**
@@ -156,7 +147,7 @@ public class AdminContentsController {
             @RequestParam(required = false) @Positive(message = "职业ID必须大于0") Long professionId,
             @RequestParam(required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
             @RequestParam(required = false) Long lastId) {
-        return ApiResponse.success(roadmapService.listByFilter(state, professionId, creatorId, lastId));
+        return ApiResponse.success(roadmapService.listByFilter(ContentState.getByValue(state), professionId, creatorId, lastId));
     }
 
     /**
@@ -166,11 +157,11 @@ public class AdminContentsController {
     @GetMapping("/memory_card_deck/filter")
     @RequireRole(UserRole.MODERATOR)
     public ApiResponse<?> filterMemoryCardDecks(
-            @RequestParam(required = false) @Positive(message = "状态必须大于0") Integer state,
+            @RequestParam(required = false) @Positive(message = "状态必须大于0") Byte state,
             @RequestParam(required = false) @Positive(message = "帖子ID必须大于0") Long postId,
             @RequestParam(required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
             @RequestParam(required = false) Long lastId) {
-        return ApiResponse.success(memoryCardDeckService.getDecksForAdmin(state, postId, creatorId, lastId, DEFAULT_PAGE_SIZE));
+        return ApiResponse.success(memoryCardDeckService.getDecksForAdmin(ContentState.getByValue(state), postId, creatorId, lastId, DEFAULT_PAGE_SIZE));
     }
 
     /**
@@ -198,7 +189,8 @@ public class AdminContentsController {
             @RequestParam(value = "courseId", required = false) @Positive(message = "课程ID必须大于0") Long courseId,
             @RequestParam(value = "creatorId", required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
             @RequestParam(value = "lastId", required = false) Long lastId) {
-        return ApiResponse.success(nodeService.listByFilter(state, nodeId, courseId, creatorId, lastId));
+        return ApiResponse.success(nodeService.listByFilter(
+                ContentState.getByValue(state), nodeId, courseId, creatorId, lastId));
     }
 
     /**
