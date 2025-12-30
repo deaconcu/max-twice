@@ -4,6 +4,7 @@ import com.prosper.learn.memory.card.MemoryCardDO;
 import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.memory.review.*;
 import com.prosper.learn.shared.domain.exception.StatusCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class MemoryBankDomainService {
     private final UserCardInCourseDataService userCardInCourseDataService;
     private final UserCardSrsDataService userCardSrsDataService;
     private final MemoryCardDeckDataService deckDataService;
+    private final SystemProperties systemProperties;
 
     // ========== Command 方法 ==========
 
@@ -45,7 +47,20 @@ public class MemoryBankDomainService {
     @Transactional
     public void addDeckToMemoryBank(Long userId, Long courseId, Long deckId,
                                      List<MemoryCardDO> cards, Integer deckVersion, Long nodeId) {
-        // 1. 创建或更新课程学习设置
+        // 1. 检查节点下的卡片数量限制
+        int maxCardsPerNode = systemProperties.getSrs().getMaxCardsPerNode();
+        List<UserCardSrsDO> existingCards = userCardSrsDataService.getByUserAndNodeId(userId, nodeId);
+        int currentCardCount = existingCards.size();
+        int newCardCount = cards != null ? cards.size() : 0;
+
+        if (currentCardCount + newCardCount > maxCardsPerNode) {
+            throw StatusCode.NODE_CARD_LIMIT_EXCEEDED.exception(
+                String.format("该节点已有%d张卡片，添加%d张新卡片将超过%d张的限制",
+                    currentCardCount, newCardCount, maxCardsPerNode)
+            );
+        }
+
+        // 2. 创建或更新课程学习设置
         UserCourseSrsSettingDO existingSetting = courseSrsSettingDataService.getByUserAndCourse(userId, courseId);
         if (existingSetting == null) {
             UserCourseSrsSettingDO setting = new UserCourseSrsSettingDO();
@@ -56,7 +71,7 @@ public class MemoryBankDomainService {
             courseSrsSettingDataService.insert(setting);
         }
 
-        // 2. 批量添加卡片到课程
+        // 3. 批量添加卡片到课程
         if (cards != null && !cards.isEmpty()) {
             log.info("Adding {} cards from deck: {} to memory bank for user: {} in course: {}",
                 cards.size(), deckId, userId, courseId);

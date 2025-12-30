@@ -289,27 +289,23 @@ public class MemoryCardDeckService {
      * 需求1: 获取帖子下的公共卡片组列表 - keyset分页，normal状态
      */
     public KeysetPageResponse<DeckWithVoteDTO> getPostPublicDecks(
-            Long postId, String sortBy, String sortOrder, Double lastScore, Long lastId, Integer limit) {
+            Long postId, String sortBy, Double lastScore, Long lastId, Integer limit) {
         // 参数验证
         if (limit == null || limit <= 0) limit = 10;
         if (limit > 50) limit = 50;
 
-        // 调用 DomainService 查询
-        List<MemoryCardDeckDO> deckList;
-        if (lastScore != null && lastId != null) {
-            deckList = deckDomainService.getListByPostKeyset(postId, lastScore, lastId, Enums.ContentState.PUBLISHED, limit + 1);
-        } else {
-            deckList = deckDomainService.getListByPost(postId, Enums.ContentState.PUBLISHED, limit + 1);
-        }
+        // 使用动态方法，Mapper 根据 sortBy 和分页参数自动选择排序方式
+        List<MemoryCardDeckDO> deckList = deckDomainService.getListByPostDynamic(
+            postId, Enums.ContentState.PUBLISHED, sortBy, lastScore, lastId, limit + 1);
 
         return buildDeckResponse(deckList, limit, null);
     }
 
     /**
-     * 需求2: 获取帖子创建者提交的卡片组 - 最新创建，limit通常为1
+     * 需求2: 获取帖子创建者提交的卡片组 - 固定按ID降序
      */
     public KeysetPageResponse<DeckWithVoteDTO> getPostCreatorDeck(
-            Long postId, String sortBy, String sortOrder, Double lastScore, Long lastId, Integer limit, Long userId) {
+            Long postId, Long lastId, Integer limit, Long userId) {
         // 参数验证
         if (limit == null || limit <= 0) limit = 1;
         if (limit > 50) limit = 50;
@@ -319,19 +315,20 @@ public class MemoryCardDeckService {
 
         List<MemoryCardDeckDO> deckList;
         if (!postCreatorId.equals(userId)) {
-            // post创建者不是当前用户，只查询normal状态
-            if (lastScore != null && lastId != null) {
-                deckList = deckDomainService.getListByPostAndCreatorKeyset(
-                        postId, postCreatorId, lastScore, lastId, Enums.ContentState.PUBLISHED, limit + 1);
+            // post创建者不是当前用户，只查询normal状态，按ID降序
+            if (lastId != null) {
+                deckList = deckDomainService.getListByPostAndCreatorWithIdPaging(
+                        postId, postCreatorId, Enums.ContentState.PUBLISHED.value(), lastId, limit + 1);
             } else {
+                // 首次查询，没有 lastId
                 deckList = deckDomainService.getListByPostAndCreator(
                         postId, postCreatorId, Enums.ContentState.PUBLISHED, limit + 1);
             }
         } else {
-            // post创建者就是当前用户，查询所有状态
-            if (lastScore != null && lastId != null) {
-                deckList = deckDomainService.getListByPostAndCreatorKeysetAllStates(
-                        postId, postCreatorId, lastScore, lastId, limit + 1);
+            // post创建者就是当前用户，查询所有状态，按ID降序
+            if (lastId != null) {
+                deckList = deckDomainService.getListByPostAndCreatorWithIdPagingAllStates(
+                        postId, postCreatorId, lastId, limit + 1);
             } else {
                 deckList = deckDomainService.getListByPostAndCreatorAllStates(
                         postId, postCreatorId, limit + 1);
@@ -342,20 +339,17 @@ public class MemoryCardDeckService {
     }
 
     /**
-     * 需求3: 获取用户自己在指定帖子下提交的卡片组 - 最新创建，limit通常为1
+     * 需求3: 获取用户自己在指定帖子下提交的卡片组
      */
     public KeysetPageResponse<DeckWithVoteDTO> getMyPostDeck(
-            Long postId, Long userId, String sortBy, String sortOrder, Double lastScore, Long lastId, Integer limit) {
+            Long postId, Long userId, String sortBy, Double lastScore, Long lastId, Integer limit) {
         // 参数验证
         if (limit == null || limit <= 0) limit = 1;
         if (limit > 50) limit = 50;
 
-        List<MemoryCardDeckDO> deckList;
-        if (lastScore != null && lastId != null) {
-            deckList = deckDomainService.getListByPostAndCreatorKeysetAllStates(postId, userId, lastScore, lastId, limit + 1);
-        } else {
-            deckList = deckDomainService.getListByPostAndCreatorAllStates(postId, userId, limit + 1);
-        }
+        // 查询所有状态的卡片组
+        List<MemoryCardDeckDO> deckList = deckDomainService.getListByPostAndCreatorDynamicAllStates(
+                postId, userId, sortBy, lastScore, lastId, limit + 1);
 
         return buildDeckResponse(deckList, limit, userId);
     }
@@ -636,11 +630,11 @@ public class MemoryCardDeckService {
         // 验证参数
         checkNotNull(request);
 
-        // 调用 DomainService 更新卡片组
+        // 调用 DomainService 更新卡片组（只更新描述，不更新标题）
         MemoryCardDeckDO deck = deckDomainService.updateDeck(
             request.getId(),
             userId,
-            request.getTitle(),
+            null,  // title 设为 null，不更新
             request.getDescription()
         );
 

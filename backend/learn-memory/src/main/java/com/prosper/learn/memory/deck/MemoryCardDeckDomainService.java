@@ -310,6 +310,15 @@ public class MemoryCardDeckDomainService {
     }
 
     /**
+     * 根据帖子ID获取卡片组列表 - 动态排序和分页
+     * sortBy=createdAt: 按ID降序
+     * sortBy=score: 按分数降序
+     */
+    public List<MemoryCardDeckDO> getListByPostDynamic(Long postId, ContentState state, String sortBy, Double lastScore, Long lastId, Integer limit) {
+        return deckDataService.getListByPostDynamic(postId, state.value(), sortBy, lastScore, lastId, limit);
+    }
+
+    /**
      * 根据帖子和创建者获取卡片组列表
      */
     public List<MemoryCardDeckDO> getListByPostAndCreator(Long postId, Long creatorId, ContentState state, Integer limit) {
@@ -325,6 +334,14 @@ public class MemoryCardDeckDomainService {
     }
 
     /**
+     * 根据帖子和创建者获取卡片组列表 - 动态排序和分页
+     */
+    public List<MemoryCardDeckDO> getListByPostAndCreatorDynamic(
+            Long postId, Long creatorId, ContentState state, String sortBy, Double lastScore, Long lastId, Integer limit) {
+        return deckDataService.getListByPostAndCreatorDynamic(postId, creatorId, state.value(), sortBy, lastScore, lastId, limit);
+    }
+
+    /**
      * 根据帖子和创建者获取所有状态的卡片组列表
      */
     public List<MemoryCardDeckDO> getListByPostAndCreatorAllStates(Long postId, Long creatorId, Integer limit) {
@@ -332,10 +349,24 @@ public class MemoryCardDeckDomainService {
     }
 
     /**
+     * 根据帖子和创建者获取所有状态的卡片组列表 - ID分页
+     */
+    public List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPagingAllStates(Long postId, Long creatorId, Long lastId, Integer limit) {
+        return deckDataService.getListByPostAndCreatorWithIdPagingAllStates(postId, creatorId, lastId, limit);
+    }
+
+    /**
      * 根据帖子和创建者获取所有状态的卡片组列表 - Keyset分页
      */
     public List<MemoryCardDeckDO> getListByPostAndCreatorKeysetAllStates(Long postId, Long creatorId, Double lastScore, Long lastId, Integer limit) {
         return deckDataService.getListByPostAndCreatorKeysetAllStates(postId, creatorId, lastScore, lastId, limit);
+    }
+
+    /**
+     * 根据帖子和创建者获取所有状态的卡片组列表 - 动态排序和分页
+     */
+    public List<MemoryCardDeckDO> getListByPostAndCreatorDynamicAllStates(Long postId, Long creatorId, String sortBy, Double lastScore, Long lastId, Integer limit) {
+        return deckDataService.getListByPostAndCreatorDynamicAllStates(postId, creatorId, sortBy, lastScore, lastId, limit);
     }
 
     /**

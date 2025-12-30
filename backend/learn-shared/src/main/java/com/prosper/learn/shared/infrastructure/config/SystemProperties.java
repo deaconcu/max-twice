@@ -674,6 +674,11 @@ public class SystemProperties {
     @Data
     public static class Srs {
         /**
+         * 节点下最大卡片数量限制
+         */
+        private int maxCardsPerNode = 200;
+
+        /**
          * SRS复习算法配置
          */
         private Algorithm algorithm = new Algorithm();

@@ -19,6 +19,12 @@ public class MarkImageUsedRequest {
     private List<String> fileUrls;
 
     /**
+     * 引用类型（post/comment等）
+     */
+    @NotNull(message = "引用类型不能为空")
+    private String refType;
+
+    /**
      * 引用的资源ID（文章ID、评论ID等）
      */
     @NotNull(message = "引用资源ID不能为空")

@@ -163,40 +163,26 @@ public class MessageService {
         return toDTOV1(messageDO);
     }
 
-    /**
-     * 获取消息列表
-     *
-     * @param type 消息类型
-     * @param senderId 发送者ID
-     * @param receiverId 接收者ID
-     * @param lastId 最后一条消息ID
-     * @param conversation 是否为对话模式
-     * @return 消息DTO列表
-     */
-    public List<MessageDTO> getList(int type, long senderId, long receiverId, long lastId, int conversation) {
-        // 委托给领域服务获取数据
-        List<MessageDO> messageDOList = messageDomainService.getMessagesList(
-                type, senderId, receiverId, lastId, DEFAULT_PAGE_SIZE, conversation);
-
-        // DTO转换
-        return toDTOV1(messageDOList);
-    }
-
-    /**
-     * 获取系统消息列表
-     *
-     * @param type 消息类型
-     * @param receiverId 接收者ID
-     * @param lastId 最后一条消息ID
-     * @return 消息DTO列表
-     */
-    public List<MessageDTO> getSystemList(int type, long receiverId, long lastId) {
-        // 委托给领域服务获取数据
-        List<MessageDO> messageDOList = messageDomainService.getSystemMessagesList(type, receiverId, lastId, 20);
-
-        // 跨域数据聚合和DTO转换
-        return convertSystemMessages(messageDOList);
-    }
+// --注释掉检查 START (2025/12/29 待私信功能开发时启用)
+//    /**
+//     * 获取消息列表
+//     *
+//     * @param type 消息类型
+//     * @param senderId 发送者ID
+//     * @param receiverId 接收者ID
+//     * @param lastId 最后一条消息ID
+//     * @param conversation 是否为对话模式
+//     * @return 消息DTO列表
+//     */
+//    public List<MessageDTO> getList(int type, long senderId, long receiverId, long lastId, int conversation) {
+//        // 委托给领域服务获取数据
+//        List<MessageDO> messageDOList = messageDomainService.getMessagesList(
+//                type, senderId, receiverId, lastId, DEFAULT_PAGE_SIZE, conversation);
+//
+//        // DTO转换
+//        return toDTOV1(messageDOList);
+//    }
+// --注释掉检查 STOP (2025/12/29 待私信功能开发时启用)
 
 // --注释掉检查 START (2025/12/10 11:16):
 //    /**

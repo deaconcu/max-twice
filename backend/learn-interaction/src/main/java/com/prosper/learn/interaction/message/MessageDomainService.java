@@ -362,46 +362,31 @@ public class MessageDomainService {
 
     // ========== Query 方法（读操作）==========
 
-    /**
-     * 获取消息列表（核心查询逻辑）
-     *
-     * @param type 消息类型
-     * @param senderId 发送者ID
-     * @param receiverId 接收者ID
-     * @param lastId 最后一条消息ID
-     * @param pageSize 分页大小
-     * @param conversation 是否为对话模式
-     * @return 消息DO列表
-     */
-    public List<MessageDO> getMessagesList(int type, long senderId, long receiverId,
-                                         long lastId, int pageSize, int conversation) {
-        if (type == MessageType.applyCourse.value()) {
-            return messageDataService.listByPull(type, lastId, pageSize);
-        } else if (senderId == 0) {
-            return messageDataService.listByPull(type, lastId, pageSize);
-        } else if (conversation == 0) {
-            return messageDataService.getListByUser(type, senderId, receiverId, lastId, pageSize);
-        } else {
-            return messageDataService.getConversationByUser(senderId, receiverId, lastId, pageSize);
-        }
-    }
-
-    /**
-     * 获取系统消息列表（核心查询逻辑）
-     *
-     * @param type 消息类型
-     * @param receiverId 接收者ID
-     * @param lastId 最后一条消息ID
-     * @param pageSize 分页大小
-     * @return 消息DO列表
-     */
-    public List<MessageDO> getSystemMessagesList(int type, long receiverId, long lastId, int pageSize) {
-        if (type == MessageType.system.value()) {
-            return messageDataService.getSystemListByUser(receiverId, lastId, pageSize);
-        } else {
-            return messageDataService.getSystemItemListByUser(type, receiverId, lastId, pageSize);
-        }
-    }
+// --注释掉检查 START (2025/12/29 待私信功能开发时启用)
+//    /**
+//     * 获取消息列表（核心查询逻辑）
+//     *
+//     * @param type 消息类型
+//     * @param senderId 发送者ID
+//     * @param receiverId 接收者ID
+//     * @param lastId 最后一条消息ID
+//     * @param pageSize 分页大小
+//     * @param conversation 是否为对话模式
+//     * @return 消息DO列表
+//     */
+//    public List<MessageDO> getMessagesList(int type, long senderId, long receiverId,
+//                                         long lastId, int pageSize, int conversation) {
+//        if (type == MessageType.applyCourse.value()) {
+//            return messageDataService.listByPull(type, lastId, pageSize);
+//        } else if (senderId == 0) {
+//            return messageDataService.listByPull(type, lastId, pageSize);
+//        } else if (conversation == 0) {
+//            return messageDataService.getListByUser(type, senderId, receiverId, lastId, pageSize);
+//        } else {
+//            return messageDataService.getConversationByUser(senderId, receiverId, lastId, pageSize);
+//        }
+//    }
+// --注释掉检查 STOP (2025/12/29 待私信功能开发时启用)
 
     /**
      * 按分类获取消息列表（核心查询逻辑）

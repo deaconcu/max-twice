@@ -1270,11 +1270,8 @@ const { execute: addCardToStudyMutation } = useMutation(
   (cardId: number) => memoryApi.addCardToStudy(cardId),
   {
     successMessage: '添加成功',
-    onSuccess: (result, cardId) => {
-      const card = deckDetail.value?.cards.find((c: any) => c.id === cardId)
-      if (card) {
-        card.srsState = result
-      }
+    onSuccess: () => {
+      refreshDeckDetail()
     },
   }
 )
@@ -1284,17 +1281,8 @@ const { execute: deleteCardMutation } = useMutation(
   (cardId: number) => memoryApi.deleteCard(cardId),
   {
     successMessage: '删除成功',
-    onSuccess: (result, cardId) => {
-      if (deckDetail.value) {
-        const index = deckDetail.value.cards.findIndex((c: any) => c.id === cardId)
-        if (index > -1) {
-          deckDetail.value.cards.splice(index, 1)
-          deckDetail.value.cardCount--
-          if (props.deck) {
-            props.deck.cardCount--
-          }
-        }
-      }
+    onSuccess: () => {
+      refreshDeckDetail()
     },
   }
 )
@@ -1317,15 +1305,9 @@ const { execute: createCardMutation, loading: creatingCard } = useMutation(
   (data: { deckId: number; front: string; back: string }) => memoryApi.createCard(data),
   {
     successMessage: '创建成功',
-    onSuccess: (result) => {
-      if (deckDetail.value) {
-        deckDetail.value.cards.push(result)
-        deckDetail.value.cardCount++
-        if (props.deck) {
-          props.deck.cardCount++
-        }
-      }
+    onSuccess: () => {
       showEditDialog.value = false
+      refreshDeckDetail()
     },
   }
 )

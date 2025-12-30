@@ -4,102 +4,14 @@
 
 | 接口 | 方法 | 路径 | 认证 | 说明 |
 |------|------|------|------|------|
-| 获取系统消息 | GET | `/api/v1/messages/system` | 是 | 获取特定类型的系统消息列表 |
-| 按分类获取消息 | GET | `/api/v1/messages/category` | 是 | 按消息分类获取消息列表（互动/系统/私信） |
-| 获取消息列表 | GET | `/api/v1/messages` | 是 | 获取与指定用户的消息列表 |
-| 发送系统消息 | POST | `/api/v1/messages/system` | 否 | 发送系统通知消息（管理后台使用） |
+| 按分类获取消息 | GET | `/api/v1/messages/category` | 是 | 按消息分类获取消息列表（互动/系统/私信），支持按类型过滤 |
+| ~~获取消息列表~~ | ~~GET~~ | ~~/api/v1/messages~~ | ~~是~~ | ~~已注释，待私信功能开发时启用~~ |
+| ~~发送系统消息~~ | ~~POST~~ | ~~/api/v1/messages/system~~ | ~~否~~ | ~~已注释，待管理后台开发时启用~~ |
 | 邀请用户 | POST | `/api/v1/messages/invite` | 是 | 邀请用户查看节点内容 |
 
 ---
 
-## 1. 获取系统消息
-
-### 接口信息
-- **路径**: `GET /api/v1/messages/system`
-- **认证**: 需要登录
-- **限流**: 60次/分钟 (按用户)
-
-### 请求参数
-
-**Query Parameters**:
-```
-GET /api/v1/messages/system?type=2&lastId=0
-```
-
-| 参数 | 类型 | 必填 | 校验规则 | 说明 |
-|------|------|------|----------|------|
-| type | Integer | 是 | @NotNull, @Positive | 消息类型，必须大于0 |
-| lastId | Long | 是 | @NotNull, @Min(0) | 最后一条消息ID，首次查询传0 |
-
-### 请求头
-```
-token: your-auth-token
-```
-
-### 响应示例
-
-**成功 (200)**:
-```json
-{
-  "code": 200,
-  "message": "成功",
-  "timestamp": 1703001234567,
-  "data": [
-    {
-      "id": 123,
-      "senderId": 0,
-      "sender": null,
-      "receiverId": 456,
-      "receiver": {
-        "id": 456,
-        "name": "张三",
-        "avatar": "https://example.com/avatar.jpg",
-        "biography": "Java开发工程师"
-      },
-      "content": "{\"title\":\"深入理解Java虚拟机\",\"summary\":\"系统学习JVM原理与调优\"}",
-      "type": 2,
-      "createdAt": "2024-01-01 00:00:00"
-    }
-  ]
-}
-```
-
-### 消息类型
-
-| type | 名称 | 分类 | 说明 |
-|------|------|------|------|
-| 1 | applyCourse | 系统消息 | 课程申请 |
-| 11 | courseRejected | 系统消息 | 课程被拒绝 |
-| 12 | courseBanned | 系统消息 | 课程被封禁 |
-| 13 | postRejected | 系统消息 | 帖子被拒绝 |
-| 14 | postBanned | 系统消息 | 帖子被封禁 |
-| 15 | commentRejected | 系统消息 | 评论被拒绝 |
-| 16 | commentBanned | 系统消息 | 评论被封禁 |
-| 17 | professionRejected | 系统消息 | 职业被拒绝 |
-| 18 | professionBanned | 系统消息 | 职业被封禁 |
-| 19 | roadmapRejected | 系统消息 | 路线图被拒绝 |
-| 20 | roadmapBanned | 系统消息 | 路线图被封禁 |
-| 21 | memoryDeckRejected | 系统消息 | 卡片组被拒绝 |
-| 22 | memoryDeckBanned | 系统消息 | 卡片组被封禁 |
-| 23 | nodeRejected | 系统消息 | 节点被拒绝 |
-| 24 | nodeBanned | 系统消息 | 节点被封禁 |
-
-### 业务说明
-
-1. **分页**:
-   - 使用 `lastId` 进行游标分页
-   - 首次查询传 `lastId=0`
-   - 后续查询传上一页最后一条消息的ID
-   - 每页默认返回20条
-
-2. **系统消息**:
-   - `senderId` 为 0，表示系统发送
-   - `sender` 为 null
-   - 内容为JSON格式，包含具体的业务数据
-
----
-
-## 2. 按分类获取消息
+## 1. 按分类获取消息
 
 ### 接口信息
 - **路径**: `GET /api/v1/messages/category`
@@ -126,7 +38,9 @@ token: your-auth-token
 
 ### 响应示例
 
-**成功 (200) - 互动消息**:
+#### 互动消息响应格式 (category=1)
+
+**成功 (200) - 关注消息 (type=2)**:
 ```json
 {
   "code": 200,
@@ -148,36 +62,7 @@ token: your-auth-token
 }
 ```
 
-**成功 (200) - 评论消息**:
-```json
-{
-  "code": 200,
-  "message": "成功",
-  "timestamp": 1703001234567,
-  "data": [
-    {
-      "id": 124,
-      "type": 6,
-      "createdAt": "2024-01-01 00:01:00",
-      "commentId": 456,
-      "commenter": {
-        "id": 789,
-        "name": "李四",
-        "avatar": "https://example.com/avatar2.jpg",
-        "biography": "前端开发工程师"
-      },
-      "node": {
-        "id": 123,
-        "name": "Java基础",
-        "courseId": 100,
-        "courseName": "Java编程入门"
-      }
-    }
-  ]
-}
-```
-
-**成功 (200) - 点赞消息**:
+**成功 (200) - 点赞消息 (type=3)**:
 ```json
 {
   "code": 200,
@@ -208,7 +93,7 @@ token: your-auth-token
 }
 ```
 
-**成功 (200) - 邀请消息**:
+**成功 (200) - 邀请消息 (type=4)**:
 ```json
 {
   "code": 200,
@@ -236,6 +121,454 @@ token: your-auth-token
 }
 ```
 
+**成功 (200) - 节点评论消息 (type=5)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 127,
+      "type": 5,
+      "createdAt": "2024-01-01 00:04:00",
+      "commentId": 456,
+      "commenter": {
+        "id": 789,
+        "name": "李四",
+        "avatar": "https://example.com/avatar2.jpg",
+        "biography": "前端开发工程师"
+      },
+      "node": {
+        "id": 123,
+        "name": "Java基础",
+        "courseId": 100,
+        "courseName": "Java编程入门"
+      }
+    }
+  ]
+}
+```
+
+**成功 (200) - 帖子评论消息 (type=6)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 128,
+      "type": 6,
+      "createdAt": "2024-01-01 00:05:00",
+      "commentId": 457,
+      "commenter": {
+        "id": 789,
+        "name": "李四",
+        "avatar": "https://example.com/avatar2.jpg",
+        "biography": "前端开发工程师"
+      },
+      "node": {
+        "id": 123,
+        "name": "Java基础",
+        "courseId": 100,
+        "courseName": "Java编程入门"
+      }
+    }
+  ]
+}
+```
+
+**成功 (200) - 回复节点评论消息 (type=7)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 129,
+      "type": 7,
+      "createdAt": "2024-01-01 00:06:00",
+      "commentId": 458,
+      "commenter": {
+        "id": 789,
+        "name": "李四",
+        "avatar": "https://example.com/avatar2.jpg",
+        "biography": "前端开发工程师"
+      },
+      "node": {
+        "id": 123,
+        "name": "Java基础",
+        "courseId": 100,
+        "courseName": "Java编程入门"
+      }
+    }
+  ]
+}
+```
+
+**成功 (200) - 回复帖子评论消息 (type=8)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 130,
+      "type": 8,
+      "createdAt": "2024-01-01 00:07:00",
+      "commentId": 459,
+      "commenter": {
+        "id": 789,
+        "name": "李四",
+        "avatar": "https://example.com/avatar2.jpg",
+        "biography": "前端开发工程师"
+      },
+      "node": {
+        "id": 123,
+        "name": "Java基础",
+        "courseId": 100,
+        "courseName": "Java编程入门"
+      }
+    }
+  ]
+}
+```
+
+**成功 (200) - 回复路线图评论消息 (type=9)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 131,
+      "type": 9,
+      "createdAt": "2024-01-01 00:08:00",
+      "commentId": 460,
+      "commenter": {
+        "id": 789,
+        "name": "李四",
+        "avatar": "https://example.com/avatar2.jpg",
+        "biography": "前端开发工程师"
+      },
+      "node": {
+        "id": 123,
+        "name": "Java基础",
+        "courseId": 100,
+        "courseName": "Java编程入门"
+      }
+    }
+  ]
+}
+```
+
+**成功 (200) - 路线图评论消息 (type=10)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 132,
+      "type": 10,
+      "createdAt": "2024-01-01 00:09:00",
+      "commentId": 461,
+      "commenter": {
+        "id": 789,
+        "name": "李四",
+        "avatar": "https://example.com/avatar2.jpg",
+        "biography": "前端开发工程师"
+      },
+      "node": {
+        "id": 123,
+        "name": "Java基础",
+        "courseId": 100,
+        "courseName": "Java编程入门"
+      }
+    }
+  ]
+}
+```
+
+#### 系统消息响应格式 (category=2)
+
+**成功 (200) - 课程被拒绝 (type=11)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 201,
+      "type": 11,
+      "createdAt": "2024-01-01 10:00:00",
+      "content": "{\"courseId\":100,\"courseName\":\"Java编程入门\",\"reason\":\"课程内容不符合平台规范\"}"
+    }
+  ]
+}
+```
+
+**成功 (200) - 课程被封禁 (type=12)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 202,
+      "type": 12,
+      "createdAt": "2024-01-01 10:05:00",
+      "content": "{\"courseId\":101,\"courseName\":\"Python入门\",\"reason\":\"包含违规内容\"}"
+    }
+  ]
+}
+```
+
+**成功 (200) - 帖子被拒绝 (type=13)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 203,
+      "type": 13,
+      "createdAt": "2024-01-01 10:10:00",
+      "content": "{\"postId\":456,\"postPreview\":\"这是一篇关于...\",\"nodeId\":123,\"nodeName\":\"Java基础\",\"courseName\":\"Java编程入门\",\"reason\":\"内容质量不达标\",\"linkUrl\":\"/self?tab=posts\"}"
+    }
+  ]
+}
+```
+
+**成功 (200) - 帖子被封禁 (type=14)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 204,
+      "type": 14,
+      "createdAt": "2024-01-01 10:15:00",
+      "content": "{\"postId\":457,\"postPreview\":\"这是一篇...\",\"nodeId\":124,\"nodeName\":\"Python基础\",\"courseName\":\"Python入门\",\"reason\":\"包含敏感信息\",\"linkUrl\":\"/self?tab=posts\"}"
+    }
+  ]
+}
+```
+
+**成功 (200) - 评论被拒绝 (type=15)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 205,
+      "type": 15,
+      "createdAt": "2024-01-01 10:20:00",
+      "content": "{\"commentId\":789,\"commentPreview\":\"我觉得...\",\"objectType\":\"post\",\"objectId\":456,\"objectTitle\":\"如何学习Java\",\"reason\":\"评论内容不当\"}"
+    }
+  ]
+}
+```
+
+**成功 (200) - 评论被封禁 (type=16)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 206,
+      "type": 16,
+      "createdAt": "2024-01-01 10:25:00",
+      "content": "{\"commentId\":790,\"commentPreview\":\"这个...\",\"objectType\":\"post\",\"objectId\":457,\"objectTitle\":\"Python学习路线\",\"reason\":\"包含广告信息\"}"
+    }
+  ]
+}
+```
+
+**成功 (200) - 职业被拒绝 (type=17)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 207,
+      "type": 17,
+      "createdAt": "2024-01-01 10:30:00",
+      "content": "{\"professionId\":10,\"professionName\":\"全栈开发工程师\",\"reason\":\"职业定义不清晰\"}"
+    }
+  ]
+}
+```
+
+**成功 (200) - 职业被封禁 (type=18)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 208,
+      "type": 18,
+      "createdAt": "2024-01-01 10:35:00",
+      "content": "{\"professionId\":11,\"professionName\":\"区块链专家\",\"reason\":\"包含误导性信息\"}"
+    }
+  ]
+}
+```
+
+**成功 (200) - 路线图被拒绝 (type=19)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 209,
+      "type": 19,
+      "createdAt": "2024-01-01 10:40:00",
+      "content": "{\"roadmapId\":50,\"professionId\":10,\"professionName\":\"全栈开发工程师\",\"reason\":\"路线图结构不完整\",\"linkUrl\":\"/self?tab=roadmaps\"}"
+    }
+  ]
+}
+```
+
+**成功 (200) - 路线图被封禁 (type=20)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 210,
+      "type": 20,
+      "createdAt": "2024-01-01 10:45:00",
+      "content": "{\"roadmapId\":51,\"professionId\":11,\"professionName\":\"AI工程师\",\"reason\":\"包含错误引导\",\"linkUrl\":\"/self?tab=roadmaps\"}"
+    }
+  ]
+}
+```
+
+**成功 (200) - 记忆卡片组被拒绝 (type=21)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 211,
+      "type": 21,
+      "createdAt": "2024-01-01 10:50:00",
+      "content": "{\"deckId\":300,\"deckTitle\":\"Java核心知识点\",\"postId\":456,\"postTitle\":\"Java学习笔记\",\"reason\":\"卡片内容质量不达标\",\"linkUrl\":\"/self?tab=memory-decks\"}"
+    }
+  ]
+}
+```
+
+**成功 (200) - 记忆卡片组被封禁 (type=22)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 212,
+      "type": 22,
+      "createdAt": "2024-01-01 10:55:00",
+      "content": "{\"deckId\":301,\"deckTitle\":\"Python速成\",\"postId\":457,\"postTitle\":\"Python快速入门\",\"reason\":\"包含抄袭内容\",\"linkUrl\":\"/self?tab=memory-decks\"}"
+    }
+  ]
+}
+```
+
+**成功 (200) - 节点被拒绝 (type=23)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 213,
+      "type": 23,
+      "createdAt": "2024-01-01 11:00:00",
+      "content": "{\"nodeId\":123,\"nodeName\":\"高级特性\",\"courseId\":100,\"courseName\":\"Java编程入门\",\"reason\":\"节点定义不清晰\"}"
+    }
+  ]
+}
+```
+
+**成功 (200) - 节点被封禁 (type=24)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 214,
+      "type": 24,
+      "createdAt": "2024-01-01 11:05:00",
+      "content": "{\"nodeId\":124,\"nodeName\":\"实战项目\",\"courseId\":101,\"courseName\":\"Python入门\",\"reason\":\"包含版权问题\"}"
+    }
+  ]
+}
+```
+
+**成功 (200) - 课程审核通过 (type=25)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 215,
+      "type": 25,
+      "createdAt": "2024-01-01 11:10:00",
+      "content": "{\"courseId\":102,\"courseName\":\"JavaScript全栈开发\",\"linkUrl\":\"/read?courseId=102\"}"
+    }
+  ]
+}
+```
+
+**成功 (200) - 职业审核通过 (type=26)**:
+```json
+{
+  "code": 200,
+  "message": "成功",
+  "timestamp": 1703001234567,
+  "data": [
+    {
+      "id": 216,
+      "type": 26,
+      "createdAt": "2024-01-01 11:15:00",
+      "content": "{\"professionId\":12,\"professionName\":\"前端开发工程师\",\"linkUrl\":\"/roadmap/12\"}"
+    }
+  ]
+}
+```
+
 ### 消息分类
 
 | category | 名称 | 说明 |
@@ -244,41 +577,90 @@ token: your-auth-token
 | 2 | 系统消息 | 审核结果、课程申请等系统通知 |
 | 3 | 私信 | 用户之间的私信对话 |
 
-### 互动消息类型
+### 互动消息类型 (category=1)
 
-| type | 名称 | 说明 |
-|------|------|------|
-| 2 | follow | 关注通知 |
-| 3 | upvote | 点赞通知 |
-| 4 | invite | 邀请通知 |
-| 5 | nodeComment | 节点评论通知 |
-| 6 | postComment | 帖子评论通知 |
-| 7 | replyNodeComment | 回复节点评论通知 |
-| 8 | replyPostingComment | 回复帖子评论通知 |
-| 9 | replyRoadmapComment | 回复路线图评论通知 |
-| 10 | roadmapComment | 路线图评论通知 |
+| type | 名称 | 说明 | 字段 |
+|------|------|------|------|
+| 2 | follow | 关注通知 | follower (关注者信息) |
+| 3 | upvote | 点赞通知 | upvoter (点赞者), node, objectId, objectType, voteType |
+| 4 | invite | 邀请通知 | inviter (邀请者), node |
+| 5 | nodeComment | 节点评论通知 | commenter (评论者), node, commentId |
+| 6 | postComment | 帖子评论通知 | commenter (评论者), node, commentId |
+| 7 | replyNodeComment | 回复节点评论通知 | commenter (评论者), node, commentId |
+| 8 | replyPostingComment | 回复帖子评论通知 | commenter (评论者), node, commentId |
+| 9 | replyRoadmapComment | 回复路线图评论通知 | commenter (评论者), node, commentId |
+| 10 | roadmapComment | 路线图评论通知 | commenter (评论者), node, commentId |
+
+### 系统消息类型 (category=2)
+
+| type | 名称 | 说明 | content 字段 (JSON) |
+|------|------|------|---------------------|
+| 1 | applyCourse | 课程申请 (已废弃) | title, summary, explanation, parentId |
+| 11 | courseRejected | 课程被拒绝 | courseId, courseName, reason |
+| 12 | courseBanned | 课程被封禁 | courseId, courseName, reason |
+| 13 | postRejected | 帖子被拒绝 | postId, postPreview, nodeId, nodeName, courseName, reason, linkUrl |
+| 14 | postBanned | 帖子被封禁 | postId, postPreview, nodeId, nodeName, courseName, reason, linkUrl |
+| 15 | commentRejected | 评论被拒绝 | commentId, commentPreview, objectType, objectId, objectTitle, reason |
+| 16 | commentBanned | 评论被封禁 | commentId, commentPreview, objectType, objectId, objectTitle, reason |
+| 17 | professionRejected | 职业被拒绝 | professionId, professionName, reason |
+| 18 | professionBanned | 职业被封禁 | professionId, professionName, reason |
+| 19 | roadmapRejected | 路线图被拒绝 | roadmapId, professionId, professionName, reason, linkUrl |
+| 20 | roadmapBanned | 路线图被封禁 | roadmapId, professionId, professionName, reason, linkUrl |
+| 21 | memoryDeckRejected | 记忆卡片组被拒绝 | deckId, deckTitle, postId, postTitle, reason, linkUrl |
+| 22 | memoryDeckBanned | 记忆卡片组被封禁 | deckId, deckTitle, postId, postTitle, reason, linkUrl |
+| 23 | nodeRejected | 节点被拒绝 | nodeId, nodeName, courseId, courseName, reason |
+| 24 | nodeBanned | 节点被封禁 | nodeId, nodeName, courseId, courseName, reason |
+| 25 | courseApproved | 课程审核通过 | courseId, courseName, linkUrl |
+| 26 | professionApproved | 职业审核通过 | professionId, professionName, linkUrl |
+| 99 | system | 其他系统消息 | 自定义内容 |
 
 ### 业务说明
 
-1. **消息结构**:
-   - 不同类型的消息返回不同的DTO结构
-   - 关注消息：包含 follower（关注者信息）
-   - 评论消息：包含 commenter（评论者信息）、node（节点信息）、commentId
-   - 点赞消息：包含 upvoter（点赞者信息）、node、objectId、objectType、voteType
-   - 邀请消息：包含 inviter（邀请者信息）、node
+1. **互动消息结构** (category=1):
+   - 不同类型的消息返回不同的DTO结构，后端会根据type自动转换
+   - **关注消息 (type=2)**:
+     - DTO: `FollowMessageDTO`
+     - 包含字段: `follower` (关注者用户信息)
+   - **点赞消息 (type=3)**:
+     - DTO: `UpvoteMessageDTO`
+     - 包含字段: `upvoter` (点赞者), `node` (节点信息), `objectId` (被点赞对象ID), `objectType` (1=帖子, 2=评论), `voteType` (点赞类型)
+   - **邀请消息 (type=4)**:
+     - DTO: `InviteMessageDTO`
+     - 包含字段: `inviter` (邀请者), `node` (节点信息)
+   - **评论消息 (type=5-10)**:
+     - DTO: `CommentMessageDTO`
+     - 包含字段: `commenter` (评论者), `node` (节点信息), `commentId` (评论ID)
+     - 类型包括: 节点评论、帖子评论、回复节点评论、回复帖子评论、回复路线图评论、路线图评论
 
-2. **分页**:
+2. **系统消息结构** (category=2):
+   - 系统消息使用基础 `MessageDTO`，`content` 字段为 JSON 字符串
+   - 前端需要根据 `type` 解析 `content` 字段
+   - **审核拒绝消息 (type=11,13,15,17,19,21,23)**:
+     - 包含 `reason` 字段说明拒绝原因
+     - 部分包含 `linkUrl` 字段指向相关页面
+   - **审核封禁消息 (type=12,14,16,18,20,22,24)**:
+     - 包含 `reason` 字段说明封禁原因
+     - 部分包含 `linkUrl` 字段指向相关页面
+   - **审核通过消息 (type=25,26)**:
+     - 包含 `linkUrl` 字段，可直接跳转到已通过的内容
+   - **系统消息 senderId 为 0**，sender 字段为 null
+
+3. **分页**:
    - 使用 `lastId` 进行游标分页
    - 每页默认返回20条
-   - 首次查询可不传 `lastId`
+   - 首次查询可不传 `lastId`，或传 0
+   - 按消息ID倒序排列（最新的在前）
 
-3. **类型过滤**:
+4. **类型过滤**:
    - 如果传入 `type` 参数，只返回该类型的消息
    - 不传 `type` 则返回该分类下的所有消息
+   - 例如查询所有系统消息: `?category=2`
+   - 例如只查询课程审核通过消息: `?category=2&type=25`
 
 ---
 
-## 3. 获取消息列表
+<!-- 已注释接口 (2025/12/29 待私信功能开发时启用)
+## 2. 获取消息列表
 
 ### 接口信息
 - **路径**: `GET /api/v1/messages`
@@ -348,9 +730,12 @@ token: your-auth-token
    - 每页默认返回20条
    - 按时间倒序排列（最新的在前）
 
+-->
+
 ---
 
-## 4. 发送系统消息
+<!-- 已注释接口 (2025/12/29 待管理后台开发时启用)
+## 2. 发送系统消息
 
 ### 接口信息
 - **路径**: `POST /api/v1/messages/system`
@@ -396,9 +781,11 @@ token: your-auth-token
    - 使用 `@ConfigurableSize(configKey = "message-content")` 配置长度限制
    - 具体长度由系统配置决定
 
+-->
+
 ---
 
-## 5. 邀请用户
+## 2. 邀请用户
 
 ### 接口信息
 - **路径**: `POST /api/v1/messages/invite`
@@ -613,14 +1000,8 @@ curl -X POST http://localhost:9202/api/v1/messages/invite \
 // 定义在 web/src/api/modules/message.ts
 import { get, post } from '@/api'
 
-// 获取系统消息
-export const getSystemMessages = (type: number, lastId: number) => {
-  return get<MessageDTO[]>('/api/v1/messages/system', {
-    params: { type, lastId }
-  })
-}
 
-// 按分类获取消息
+// 按分类获取消息（支持按类型过滤）
 export const getMessagesByCategory = (
   category: number,
   lastId?: number,

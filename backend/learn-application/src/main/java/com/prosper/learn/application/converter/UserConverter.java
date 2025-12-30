@@ -81,6 +81,8 @@ public interface UserConverter {
     @Mapping(target = "name")
     @Mapping(target = "state")
     @Mapping(target = "role")
+    @Mapping(target = "biography")
+    @Mapping(target = "avatar")
     UserDTO toDTOV2(UserDO userDO);
 
     /**

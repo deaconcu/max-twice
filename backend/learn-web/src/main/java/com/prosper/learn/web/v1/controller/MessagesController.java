@@ -36,25 +36,6 @@ public class MessagesController {
     private final UserMapper userMapper;
 
     /**
-     * 获取消息列表
-     * 映射: GET /message → GET /api/v1/messages
-     */
-    @GetMapping("/messages/system")
-    @SaCheckLogin
-    public ApiResponse<List<MessageDTO>> getSystemMessageList(
-            @RequestParam @NotNull(message = "消息类型不能为空")
-            @Positive(message = "消息类型必须大于0")
-            int type,
-            @RequestParam @NotNull(message = "最后ID不能为空")
-            @Min(value = 0, message = "最后ID不能小于0")
-            Long lastId,
-            @CurrentUser UserDO currentUser) {
-
-        List<MessageDTO> messageDTOList = messageService.getSystemList(type, currentUser.getId(), lastId);
-        return ApiResponse.success(messageDTOList);
-    }
-
-    /**
      * 按分类获取消息列表
      * 映射: GET /api/v1/messages/category
      * @param category 消息分类 1=互动消息, 2=系统消息, 3=私信
@@ -76,41 +57,45 @@ public class MessagesController {
         return ApiResponse.success(messageDTOList);
     }
 
-    /**
-     * 获取消息列表
-     * 映射: GET /message → GET /api/v1/messages
-     */
-    @GetMapping("/messages")
-    @SaCheckLogin
-    public ApiResponse<List<MessageDTO>> getMessageList(
-            @RequestParam @NotNull(message = "用户ID不能为空")
-            @Positive(message = "用户ID必须大于0")
-            Long userId,
-            @RequestParam @NotNull(message = "消息类型不能为空")
-            @Positive(message = "消息类型必须大于0")
-            int type,
-            @RequestParam @NotNull(message = "最后ID不能为空")
-            @Min(value = 0, message = "最后ID不能小于0")
-            Long lastId,
-            @RequestParam @NotNull(message = "会话类型不能为空")
-            @Min(value = 0, message = "会话类型不能小于0")
-            int conversation,
-            @CurrentUser UserDO currentUser) {
+// --注释掉检查 START (2025/12/29 待私信功能开发时启用)
+//    /**
+//     * 获取消息列表
+//     * 映射: GET /message → GET /api/v1/messages
+//     */
+//    @GetMapping("/messages")
+//    @SaCheckLogin
+//    public ApiResponse<List<MessageDTO>> getMessageList(
+//            @RequestParam @NotNull(message = "用户ID不能为空")
+//            @Positive(message = "用户ID必须大于0")
+//            Long userId,
+//            @RequestParam @NotNull(message = "消息类型不能为空")
+//            @Positive(message = "消息类型必须大于0")
+//            int type,
+//            @RequestParam @NotNull(message = "最后ID不能为空")
+//            @Min(value = 0, message = "最后ID不能小于0")
+//            Long lastId,
+//            @RequestParam @NotNull(message = "会话类型不能为空")
+//            @Min(value = 0, message = "会话类型不能小于0")
+//            int conversation,
+//            @CurrentUser UserDO currentUser) {
+//
+//        List<MessageDTO> messageDTOList = messageService.getList(type, currentUser.getId(), userId, lastId, conversation);
+//        return ApiResponse.success(messageDTOList);
+//    }
+// --注释掉检查 STOP (2025/12/29 待私信功能开发时启用)
 
-        List<MessageDTO> messageDTOList = messageService.getList(type, currentUser.getId(), userId, lastId, conversation);
-        return ApiResponse.success(messageDTOList);
-    }
-
-    /**
-     * 发送系统消息
-     * 映射: POST /message/system → POST /api/v1/messages/system
-     */
-    @PostMapping("/messages/system")
-    public ApiResponse<Void> postSystemMessage(@RequestBody @Valid SendMessageRequest request) {
-
-        //messageService.createSystemMessage(request.getType(), request.getUserId(), request.getContent());
-        return ApiResponse.success();
-    }
+// --注释掉检查 START (2025/12/29 待管理后台开发时启用)
+//    /**
+//     * 发送系统消息
+//     * 映射: POST /message/system → POST /api/v1/messages/system
+//     */
+//    @PostMapping("/messages/system")
+//    public ApiResponse<Void> postSystemMessage(@RequestBody @Valid SendMessageRequest request) {
+//
+//        //messageService.createSystemMessage(request.getType(), request.getUserId(), request.getContent());
+//        return ApiResponse.success();
+//    }
+// --注释掉检查 STOP (2025/12/29 待管理后台开发时启用)
 
     /**
      * 邀请用户

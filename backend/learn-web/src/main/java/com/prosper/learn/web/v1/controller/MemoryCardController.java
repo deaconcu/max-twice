@@ -37,11 +37,11 @@ public class MemoryCardController {
      */
     @PostMapping("/cards")
     @SaCheckLogin
-    public ApiResponse<CardWithSrsDTO> createCard(
+    public ApiResponse<Void> createCard(
             @Valid @RequestBody CreateCardRequest request,
             @CurrentUser UserDO currentUser) {
-        CardWithSrsDTO result = cardService.createCard(currentUser.getId(), request);
-        return ApiResponse.success(result);
+        cardService.createCard(currentUser.getId(), request);
+        return ApiResponse.success("创建成功", null);
     }
 
     /**
@@ -49,7 +49,7 @@ public class MemoryCardController {
      */
     @PutMapping("/cards/{cardId}")
     @SaCheckLogin
-    public ApiResponse<CardWithSrsDTO> updateCard(
+    public ApiResponse<Void> updateCard(
             @PathVariable @NotNull(message = "卡片ID不能为空")
             @Positive(message = "卡片ID必须大于0")
             Long cardId,
@@ -58,8 +58,8 @@ public class MemoryCardController {
 
         request.setId(cardId);
 
-        CardWithSrsDTO result = cardService.updateCard(currentUser.getId(), request);
-        return ApiResponse.success(result);
+        cardService.updateCard(currentUser.getId(), request);
+        return ApiResponse.success("更新成功", null);
     }
 
     /**
@@ -101,7 +101,7 @@ public class MemoryCardController {
             Long cardId,
             @CurrentUser UserDO currentUser) {
         cardService.deleteCard(currentUser.getId(), cardId);
-        return ApiResponse.success();
+        return ApiResponse.success("删除成功", null);
     }
 
 }

@@ -33,6 +33,22 @@ public interface MemoryCardDeckMapper {
             "</script>"})
     List<MemoryCardDeckDO> getListByPostWithIdPaging(long postId, int state, Long lastId, int limit);
 
+    @Select({"<script>",
+            "SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND state = #{state} AND deleted_at IS NULL",
+            "<if test='sortBy == \"createdAt\"'>",
+            "  <if test='lastId != null'> AND id &lt; #{lastId}</if>",
+            "  ORDER BY id DESC",
+            "</if>",
+            "<if test='sortBy != \"createdAt\"'>",
+            "  <if test='lastScore != null and lastId != null'>",
+            "    AND (score &lt; #{lastScore} OR (score = #{lastScore} AND id &lt; #{lastId}))",
+            "  </if>",
+            "  ORDER BY score DESC, id DESC",
+            "</if>",
+            " LIMIT #{limit}",
+            "</script>"})
+    List<MemoryCardDeckDO> getListByPostDynamic(long postId, int state, String sortBy, Double lastScore, Long lastId, int limit);
+
     @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND state = #{state} AND deleted_at IS NULL AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
@@ -110,6 +126,22 @@ public interface MemoryCardDeckMapper {
             "</script>"})
     List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPaging(long postId, long creatorId, int state, Long lastId, int limit);
 
+    @Select({"<script>",
+            "SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} AND deleted_at IS NULL",
+            "<if test='sortBy == \"createdAt\"'>",
+            "  <if test='lastId != null'> AND id &lt; #{lastId}</if>",
+            "  ORDER BY id DESC",
+            "</if>",
+            "<if test='sortBy != \"createdAt\"'>",
+            "  <if test='lastScore != null and lastId != null'>",
+            "    AND (score &lt; #{lastScore} OR (score = #{lastScore} AND id &lt; #{lastId}))",
+            "  </if>",
+            "  ORDER BY score DESC, id DESC",
+            "</if>",
+            " LIMIT #{limit}",
+            "</script>"})
+    List<MemoryCardDeckDO> getListByPostAndCreatorDynamic(long postId, long creatorId, int state, String sortBy, Double lastScore, Long lastId, int limit);
+
     @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} AND deleted_at IS NULL AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
@@ -118,6 +150,29 @@ public interface MemoryCardDeckMapper {
     @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND deleted_at IS NULL " +
             "ORDER BY score DESC, id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByPostAndCreatorAllStates(long postId, long creatorId, int limit);
+
+    @Select({"<script>",
+            "SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND deleted_at IS NULL",
+            "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
+            " ORDER BY id DESC LIMIT #{limit}",
+            "</script>"})
+    List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPagingAllStates(long postId, long creatorId, Long lastId, int limit);
+
+    @Select({"<script>",
+            "SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND deleted_at IS NULL",
+            "<if test='sortBy == \"createdAt\"'>",
+            "  <if test='lastId != null'> AND id &lt; #{lastId}</if>",
+            "  ORDER BY id DESC",
+            "</if>",
+            "<if test='sortBy != \"createdAt\"'>",
+            "  <if test='lastScore != null and lastId != null'>",
+            "    AND (score &lt; #{lastScore} OR (score = #{lastScore} AND id &lt; #{lastId}))",
+            "  </if>",
+            "  ORDER BY score DESC, id DESC",
+            "</if>",
+            " LIMIT #{limit}",
+            "</script>"})
+    List<MemoryCardDeckDO> getListByPostAndCreatorDynamicAllStates(long postId, long creatorId, String sortBy, Double lastScore, Long lastId, int limit);
 
     @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND deleted_at IS NULL AND " +
             "(score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +

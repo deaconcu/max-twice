@@ -130,6 +130,7 @@ public class ImageUploadService {
             ImageUploadDO imageUpload = imageUploadDataService.getByFileUrl(fileUrl);
             if (imageUpload != null && imageUpload.getStatus() == 0) {
                 imageUpload.setStatus(1);
+                imageUpload.setRefType(request.getRefType());
                 imageUpload.setRefId(request.getRefId());
                 imageUpload.setUsedAt(LocalDateTime.now());
                 imageUploadDataService.update(imageUpload);

@@ -36,30 +36,26 @@ public class MemoryCardDeckController {
     private final MemoryCardDeckService deckService;
 
     /**
-     * 需求1: 获取帖子下的公共卡片组列表 - keyset分页，normal状态
+     * 需求1: 获取帖子下的公共卡片组列表 - keyset分页，normal状态，固定每页20条
+     * sortBy=score: 按分数降序（最高分在前）
+     * sortBy=createdAt: 按ID降序（最新的在前）
      */
     @GetMapping("/posts/{postId}/decks")
     public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getPostPublicDecks(
             @PathVariable @NotNull(message = "帖子ID不能为空") @Positive(message = "帖子ID必须大于0") Long postId,
             @RequestParam(defaultValue = "score") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortOrder,
             @RequestParam(required = false) Double lastScore,
-            @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
-            @RequestParam(defaultValue = "10") @Positive(message = "限制数量必须大于0") Integer limit) {
-
-        // 限制每页最大数量
-        if (limit > 50) {
-            limit = 50;
-        }
+            @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId) {
 
         KeysetPageResponse<DeckWithVoteDTO> result = deckService.getPostPublicDecks(
-            postId, sortBy, sortOrder, lastScore, lastId, limit);
+            postId, sortBy, lastScore, lastId, 20);
 
         return ApiResponse.success(result);
     }
 
     /**
-     * 需求2: 获取帖子创建者提交的卡片组 - 最新创建，limit通常为1
+     * 需求2: 获取帖子创建者提交的卡片组 - 固定每页20条
+     * 固定按ID降序（最新的在前）
      */
     @GetMapping("/posts/{postId}/creator-deck")
     @SaCheckLogin
@@ -67,26 +63,19 @@ public class MemoryCardDeckController {
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
             Long postId,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortOrder,
-            @RequestParam(required = false) Double lastScore,
             @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
-            @RequestParam(defaultValue = "1") @Positive(message = "限制数量必须大于0") Integer limit,
             @CurrentUser UserDO currentUser) {
 
-        // 限制每页最大数量
-        if (limit > 50) {
-            limit = 50;
-        }
-
         KeysetPageResponse<DeckWithVoteDTO> result = deckService.getPostCreatorDeck(
-            postId, sortBy, sortOrder, lastScore, lastId, limit, currentUser.getId());
+            postId, lastId, 20, currentUser.getId());
 
         return ApiResponse.success(result);
     }
 
     /**
-     * 需求3: 获取用户自己在指定帖子下提交的卡片组 - 最新创建，limit通常为1
+     * 需求3: 获取用户自己在指定帖子下提交的卡片组 - 固定每页20条
+     * sortBy=score: 按分数降序（最高分在前）
+     * sortBy=createdAt: 按ID降序（最新的在前）
      */
     @GetMapping("/posts/{postId}/my-deck")
     @SaCheckLogin
@@ -95,19 +84,12 @@ public class MemoryCardDeckController {
             @Positive(message = "帖子ID必须大于0")
             Long postId,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortOrder,
             @RequestParam(required = false) Double lastScore,
             @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
-            @RequestParam(defaultValue = "1") @Positive(message = "限制数量必须大于0") Integer limit,
             @CurrentUser UserDO currentUser) {
 
-        // 限制每页最大数量
-        if (limit > 50) {
-            limit = 50;
-        }
-
         KeysetPageResponse<DeckWithVoteDTO> result = deckService.getMyPostDeck(
-            postId, currentUser.getId(), sortBy, sortOrder, lastScore, lastId, limit);
+            postId, currentUser.getId(), sortBy, lastScore, lastId, 20);
 
         return ApiResponse.success(result);
     }
@@ -115,21 +97,16 @@ public class MemoryCardDeckController {
     /**
      * 获取当前用户自己的所有卡片组（所有状态）
      * GET /api/v1/memory/users/me/memory-decks
-     * 按ID逆序排序
+     * 按ID逆序排序，固定每页20条
      */
     @GetMapping("/users/me/memory-decks")
     @SaCheckLogin
     public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getCurrentUserAllDecks(
             @RequestParam(required = false) Long lastId,
-            @RequestParam(defaultValue = "10") Integer limit,
             @CurrentUser UserDO currentUser) {
 
-        if (limit > 50) {
-            limit = 50;
-        }
-
         KeysetPageResponse<DeckWithVoteDTO> result = deckService.getUserDecks(
-                currentUser.getId(), currentUser.getId(), lastId, limit);
+                currentUser.getId(), currentUser.getId(), lastId, 20);
 
         return ApiResponse.success(result);
     }
@@ -137,40 +114,17 @@ public class MemoryCardDeckController {
     /**
      * 获取指定用户的卡片组（所有状态）
      * GET /api/v1/memory/users/{userId}/memory-decks
-     * 按ID逆序排序
+     * 按ID逆序排序，固定每页20条
      */
     @GetMapping("/users/{userId}/memory-decks")
     @SaCheckLogin
     public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getUserDecks(
             @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
             @RequestParam(required = false) Long lastId,
-            @RequestParam(defaultValue = "10") Integer limit,
             @CurrentUser UserDO currentUser) {
-
-        if (limit > 50) {
-            limit = 50;
-        }
 
         KeysetPageResponse<DeckWithVoteDTO> result = deckService.getUserDecks(
-            userId, currentUser.getId(), lastId, limit);
-
-        return ApiResponse.success(result);
-    }
-
-    /**
-     * 获取卡片组审核列表 - 包含卡片详情
-     */
-    @GetMapping("/decks/review")
-    @SaCheckLogin
-    public ApiResponse<KeysetPageResponse<DeckDetailDTO>> getDecksForReview(
-            @RequestParam(required = false) @Positive(message = "帖子ID必须大于0") Long postId,
-            @RequestParam(required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
-            @RequestParam(required = false) @Min(value = 0, message = "状态不能小于0") Integer state,
-            @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
-            @CurrentUser UserDO currentUser) {
-
-        KeysetPageResponse<DeckDetailDTO> result =
-                deckService.getDecksForReview(postId, creatorId, state, lastId, currentUser.getId());
+            userId, currentUser.getId(), lastId, 20);
 
         return ApiResponse.success(result);
     }
@@ -219,11 +173,11 @@ public class MemoryCardDeckController {
      */
     @PostMapping("/decks")
     @SaCheckLogin
-    public ApiResponse<DeckWithCreatorDTO> createDeck(
+    public ApiResponse<Void> createDeck(
             @Valid @RequestBody CreateDeckRequest request,
             @CurrentUser UserDO currentUser) {
-        DeckWithCreatorDTO result = deckService.createDeck(currentUser.getId(), request);
-        return ApiResponse.success(result);
+        deckService.createDeck(currentUser.getId(), request);
+        return ApiResponse.success();
     }
 
     /**
@@ -231,7 +185,7 @@ public class MemoryCardDeckController {
      */
     @PutMapping("/decks/{deckId}")
     @SaCheckLogin
-    public ApiResponse<DeckWithCreatorDTO> updateDeck(
+    public ApiResponse<Void> updateDeck(
             @PathVariable @NotNull(message = "卡片组ID不能为空")
             @Positive(message = "卡片组ID必须大于0")
             Long deckId,
@@ -240,8 +194,8 @@ public class MemoryCardDeckController {
 
         request.setId(deckId);
 
-        DeckWithCreatorDTO result = deckService.updateDeck(currentUser.getId(), request);
-        return ApiResponse.success(result);
+        deckService.updateDeck(currentUser.getId(), request);
+        return ApiResponse.success();
     }
 
     /**
@@ -279,15 +233,15 @@ public class MemoryCardDeckController {
      */
     @PutMapping("/decks/{deckId}/cards")
     @SaCheckLogin
-    public ApiResponse<DeckWithVoteDTO> replaceAllCards(
+    public ApiResponse<Void> replaceAllCards(
             @PathVariable @NotNull(message = "卡片组ID不能为空")
             @Positive(message = "卡片组ID必须大于0")
             Long deckId,
             @Valid @RequestBody CreateDeckRequest request,
             @CurrentUser UserDO currentUser) {
 
-        DeckWithVoteDTO result = deckService.replaceAllCards(currentUser.getId(), deckId, request);
-        return ApiResponse.success(result);
+        deckService.replaceAllCards(currentUser.getId(), deckId, request);
+        return ApiResponse.success();
     }
 
     /**

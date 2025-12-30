@@ -135,6 +135,7 @@ public enum StatusCode {
     INVALID_REVIEW_RESULT(2207, "无效的复习结果"),
     INVALID_FREQUENCY_SETTING(2208, "无效的复习频率设置"),
     INVALID_COURSE_STUDY_STATUS(2209, "无效的课程学习状态"),
+    NODE_CARD_LIMIT_EXCEEDED(2210, "节点下的卡片数量已达到上限"),
 
     // 限流相关 23xx
     RATE_LIMIT_EXCEEDED(2301, "访问过于频繁，请稍后再试"),

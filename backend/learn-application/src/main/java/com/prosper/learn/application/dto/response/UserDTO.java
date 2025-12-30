@@ -19,6 +19,8 @@ public class UserDTO {
 
     private String biography;
 
+    private String avatar;
+
     private Byte state;
 
     private Integer role;  // 新增：用户角色（0=USER, 1=MODERATOR, 2=ADMIN, 3=SUPER_ADMIN）

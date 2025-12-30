@@ -7,10 +7,12 @@ import com.prosper.learn.application.dto.response.ImageUploadHistoryDTO;
 import com.prosper.learn.application.dto.response.ImageUploadResponse;
 import com.prosper.learn.application.dto.response.QuotaUsageDTO;
 import com.prosper.learn.application.service.ImageUploadService;
+import com.prosper.learn.shared.domain.Enums.UserRole;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
+import com.prosper.learn.web.v1.annotation.RequireRole;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -57,7 +59,7 @@ public class ImageUploadController {
     }
 
     /**
-     * 标记图片为使用中
+     * 标记图片为使用中（管理员维护接口）
      * POST /api/v1/images/mark-used
      *
      * @param request 标记请求
@@ -65,18 +67,18 @@ public class ImageUploadController {
      * @return 成功响应
      */
     @PostMapping("/mark-used")
-    @SaCheckLogin
+    @RequireRole(UserRole.ADMIN)
     public ApiResponse<Void> markAsUsed(
             @Valid @RequestBody MarkImageUsedRequest request,
             @CurrentUser UserDO currentUser) {
 
-        log.info("用户{}标记图片为使用中，数量：{}", currentUser.getId(), request.getFileUrls().size());
+        log.info("管理员{}标记图片为使用中，数量：{}", currentUser.getId(), request.getFileUrls().size());
         imageUploadService.markAsUsed(request);
         return ApiResponse.success();
     }
 
     /**
-     * 删除图片
+     * 删除图片（管理员维护接口）
      * DELETE /api/v1/images
      *
      * @param fileUrl 图片URL
@@ -84,7 +86,7 @@ public class ImageUploadController {
      * @return 成功响应
      */
     @DeleteMapping
-    @SaCheckLogin
+    @RequireRole(UserRole.ADMIN)
     public ApiResponse<Void> delete(
             @RequestParam("fileUrl") @NotBlank(message = "图片URL不能为空") String fileUrl,
             @CurrentUser UserDO currentUser) {

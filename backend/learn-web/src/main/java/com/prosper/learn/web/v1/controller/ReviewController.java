@@ -36,7 +36,7 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     /**
-     * 获取复习队列 - 只查询到期的卡片，限制100个
+     * 获取复习队列 - 只查询到期的卡片，限制20个
      */
     @GetMapping("/queue")
     @SaCheckLogin
@@ -44,8 +44,8 @@ public class ReviewController {
             @RequestParam(required = false) @Positive(message = "课程ID必须大于0") Long courseId,
             @CurrentUser UserDO currentUser) {
 
-        // 固定参数：只查询到期的，限制100个
-        List<CardWithSrsDTO> result = reviewService.getReviewQueue(currentUser.getId(), true, courseId, 100, null);
+        // 固定参数：只查询到期的，限制20个
+        List<CardWithSrsDTO> result = reviewService.getReviewQueue(currentUser.getId(), true, courseId, 20, null);
         return ApiResponse.success(result);
     }
 
@@ -56,17 +56,11 @@ public class ReviewController {
     @SaCheckLogin
     public ApiResponse<List<CardWithSrsDTO>> getCardList(
             @RequestParam(required = false) @Positive(message = "课程ID必须大于0") Long courseId,
-            @RequestParam(defaultValue = "20") @Positive(message = "限制数量必须大于0") Integer limit,
             @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
             @CurrentUser UserDO currentUser) {
 
-        // 限制最大数量
-        if (limit > 100) {
-            limit = 100;
-        }
-
-        // 固定参数：查询全部卡片（不限制到期）
-        List<CardWithSrsDTO> result = reviewService.getReviewQueue(currentUser.getId(), false, courseId, limit, lastId);
+        // 固定参数：查询全部卡片（不限制到期），每次返回20个
+        List<CardWithSrsDTO> result = reviewService.getReviewQueue(currentUser.getId(), false, courseId, 20, lastId);
         return ApiResponse.success(result);
     }
 

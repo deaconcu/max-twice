@@ -9,15 +9,6 @@ import type { MessageType } from '@/enums'
  */
 export const messageApi = {
   /**
-   * 获取系统消息
-   */
-  getSystemMessages(type?: MessageType, lastId?: number): Promise<ApiResponse<Message[]>> {
-    return apiClient.get('/v1/messages/system', {
-      params: { type, lastId },
-    })
-  },
-
-  /**
    * 按分类获取消息
    * @param category 消息分类 (1=互动消息, 2=系统消息, 3=私信)
    * @param lastId 最后一条消息的 ID，用于分页
@@ -38,23 +29,25 @@ export const messageApi = {
     return apiClient.get('/v1/messages/category', { params })
   },
 
-  /**
-   * 获取所有消息
-   */
-  getMessages(): Promise<ApiResponse<Message[]>> {
-    return apiClient.get('/v1/messages')
-  },
+  // 注释掉 (2025/12/29 待私信功能开发时启用)
+  // /**
+  //  * 获取所有消息
+  //  */
+  // getMessages(): Promise<ApiResponse<Message[]>> {
+  //   return apiClient.get('/v1/messages')
+  // },
 
-  /**
-   * 发送系统消息
-   */
-  sendSystemMessage(type: MessageType, to: number, content: string): Promise<ApiResponse<void>> {
-    return apiClient.post('/v1/messages/system', {
-      type,
-      to,
-      content,
-    })
-  },
+  // 注释掉 (2025/12/29 待管理后台开发时启用)
+  // /**
+  //  * 发送系统消息
+  //  */
+  // sendSystemMessage(type: MessageType, to: number, content: string): Promise<ApiResponse<void>> {
+  //   return apiClient.post('/v1/messages/system', {
+  //     type,
+  //     to,
+  //     content,
+  //   })
+  // },
 
   /**
    * 邀请用户

@@ -8,6 +8,7 @@ import com.prosper.learn.application.converter.NodeConverter;
 import com.prosper.learn.application.converter.PostConverter;
 import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.request.CreatePostRequest;
+import com.prosper.learn.application.dto.request.MarkImageUsedRequest;
 import com.prosper.learn.application.dto.request.UpdatePostRequest;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.NodeDTO;
@@ -101,6 +102,7 @@ public class PostService {
     private final CourseService courseService;
     private final NodeService nodeService;
     private final UserService userService;
+    private final ImageUploadService imageUploadService;
 
     // =========== 公共方法 DTO ==========
 
@@ -481,11 +483,17 @@ public class PostService {
         long userId = currentUser.getId();
 
         // 根据类型调用不同的 DomainService 方法
+        Long postId;
         if (request.getType() == PostType.contents.value()) {
-            return domainService.createContentsPost(userId, request.getNodeId(), request.getContent(), postState);
+            postId = domainService.createContentsPost(userId, request.getNodeId(), request.getContent(), postState);
         } else {
-            return domainService.createArticlePost(userId, request.getNodeId(), request.getType(), request.getContent(), postState);
+            postId = domainService.createArticlePost(userId, request.getNodeId(), request.getType(), request.getContent(), postState);
         }
+
+        // 自动标记内容中的图片为使用中
+        markImagesAsUsed(request.getContent(), "post", postId);
+
+        return postId;
     }
 
     /**
@@ -514,6 +522,9 @@ public class PostService {
 
         // 修改后重新设置为待审核状态
         domainService.updateState(id, ContentState.SUBMITTED, null);
+
+        // 自动标记内容中的图片为使用中
+        markImagesAsUsed(request.getContent(), "post", id);
     }
 
     /**
@@ -1016,4 +1027,58 @@ public class PostService {
 //        }
 //    }
 // --注释掉检查 STOP (2025/12/10 11:18)
+
+    /**
+     * 从HTML内容中提取图片URL并标记为使用中
+     *
+     * @param content HTML内容
+     * @param refType 引用类型（post/comment等）
+     * @param refId 引用ID（帖子ID、评论ID等）
+     */
+    private void markImagesAsUsed(String content, String refType, Long refId) {
+        if (content == null || content.trim().isEmpty()) {
+            return;
+        }
+
+        try {
+            List<String> imageUrls = extractImageUrls(content);
+            if (!imageUrls.isEmpty()) {
+                MarkImageUsedRequest request = new MarkImageUsedRequest();
+                request.setFileUrls(imageUrls);
+                request.setRefType(refType);
+                request.setRefId(refId);
+                imageUploadService.markAsUsed(request);
+                log.info("标记 {} 张图片为使用中，refType={}, refId={}", imageUrls.size(), refType, refId);
+            }
+        } catch (Exception e) {
+            // 标记失败不应影响主流程
+            log.error("标记图片失败，refType={}, refId={}", refType, refId, e);
+        }
+    }
+
+    /**
+     * 从HTML内容中提取所有图片URL
+     *
+     * @param html HTML内容
+     * @return 图片URL列表
+     */
+    private List<String> extractImageUrls(String html) {
+        List<String> urls = new ArrayList<>();
+        if (html == null || html.isEmpty()) {
+            return urls;
+        }
+
+        // 使用正则提取 <img src="..."> 标签
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("<img[^>]+src=[\"']([^\"']+)[\"']");
+        java.util.regex.Matcher matcher = pattern.matcher(html);
+
+        while (matcher.find()) {
+            String url = matcher.group(1);
+            if (url != null && !url.trim().isEmpty()) {
+                urls.add(url);
+            }
+        }
+
+        return urls;
+    }
 }

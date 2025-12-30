@@ -95,20 +95,6 @@ public class MessageDataService extends AbstractDataService<MessageDO, MessageMa
     }
 
     /**
-     * 获取系统消息列表
-     */
-    public List<MessageDO> getSystemListByUser(long receiverId, long lastId, int limit) {
-        return messageMapper.getSystemListByUser(receiverId, lastId, limit);
-    }
-
-    /**
-     * 获取系统消息详情列表
-     */
-    public List<MessageDO> getSystemItemListByUser(int type, long receiverId, Long lastId, int limit) {
-        return messageMapper.getSystemItemListByUser(type, receiverId, lastId, limit);
-    }
-
-    /**
      * 按类型查询消息列表
      * @param type 消息类型
      * @param receiverId 接收者ID

@@ -36,25 +36,6 @@ public interface MessageMapper {
             "LIMIT #{limit}")
     List<MessageDO> getListByUser(int type, long sender, long receiver, long lastId, int limit);
 
-    @Select("SELECT * FROM message " +
-            "where (sender_id = 0 and receiver_id = #{userId}) and type in (2, 3, 4, 5, 6, 7, 8) and id < #{lastId} " +
-            "ORDER BY created_at DESC " +
-            "LIMIT #{limit}")
-    List<MessageDO> getSystemListByUser(long userId, long lastId, int limit);
-
-    @Select("<script>" +
-            "SELECT * FROM message " +
-            "WHERE sender_id = 0 AND receiver_id = #{userId} AND type = #{type} " +
-            "<if test='lastId != null and lastId > 0'>" +
-            "AND id &lt; #{lastId} " +
-            "</if>" +
-            "ORDER BY id DESC LIMIT #{limit}" +
-            "</script>")
-    List<MessageDO> getSystemItemListByUser(@Param("type") int type,
-                                            @Param("userId") long userId,
-                                            @Param("lastId") Long lastId,
-                                            @Param("limit") int limit);
-
     @Select("<script>" +
             "SELECT * FROM message " +
             "WHERE sender_id = 0 AND receiver_id = #{userId} AND type = #{type} " +

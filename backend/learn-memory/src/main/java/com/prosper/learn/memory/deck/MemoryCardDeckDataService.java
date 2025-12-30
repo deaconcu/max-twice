@@ -250,6 +250,15 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     }
 
     /**
+     * 根据帖子获取卡片组列表 - 动态排序和分页
+     * sortBy=createdAt: 按ID降序
+     * sortBy=score: 按分数降序
+     */
+    public List<MemoryCardDeckDO> getListByPostDynamic(long postId, int state, String sortBy, Double lastScore, Long lastId, int limit) {
+        return memoryCardDeckMapper.getListByPostDynamic(postId, state, sortBy, lastScore, lastId, limit);
+    }
+
+    /**
      * 根据创建者获取卡片组列表
      */
     public List<MemoryCardDeckDO> getListByCreator(long creatorId, int limit) {
@@ -362,6 +371,13 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     }
 
     /**
+     * 根据帖子和创建者获取卡片组列表 - 动态排序和分页
+     */
+    public List<MemoryCardDeckDO> getListByPostAndCreatorDynamic(long postId, long creatorId, int state, String sortBy, Double lastScore, Long lastId, int limit) {
+        return memoryCardDeckMapper.getListByPostAndCreatorDynamic(postId, creatorId, state, sortBy, lastScore, lastId, limit);
+    }
+
+    /**
      * 根据帖子和创建者获取卡片组列表 - 所有状态
      */
     public List<MemoryCardDeckDO> getListByPostAndCreatorAllStates(long postId, long creatorId, int limit) {
@@ -369,10 +385,24 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     }
 
     /**
+     * 根据帖子和创建者获取卡片组列表 - ID分页，所有状态
+     */
+    public List<MemoryCardDeckDO> getListByPostAndCreatorWithIdPagingAllStates(long postId, long creatorId, Long lastId, int limit) {
+        return memoryCardDeckMapper.getListByPostAndCreatorWithIdPagingAllStates(postId, creatorId, lastId, limit);
+    }
+
+    /**
      * 根据帖子和创建者获取卡片组列表 - Keyset分页，所有状态
      */
     public List<MemoryCardDeckDO> getListByPostAndCreatorKeysetAllStates(long postId, long creatorId, double lastScore, long lastId, int limit) {
         return memoryCardDeckMapper.getListByPostAndCreatorKeysetAllStates(postId, creatorId, lastScore, lastId, limit);
+    }
+
+    /**
+     * 根据帖子和创建者获取卡片组列表 - 动态排序和分页，所有状态
+     */
+    public List<MemoryCardDeckDO> getListByPostAndCreatorDynamicAllStates(long postId, long creatorId, String sortBy, Double lastScore, Long lastId, int limit) {
+        return memoryCardDeckMapper.getListByPostAndCreatorDynamicAllStates(postId, creatorId, sortBy, lastScore, lastId, limit);
     }
 
     /**
