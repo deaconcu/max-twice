@@ -1,6 +1,7 @@
 package com.prosper.learn.user.auth;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -59,6 +60,31 @@ public class VerificationDataService extends AbstractDataService<VerificationDO,
     @Override
     protected int deleteByIdFromMapper(VerificationMapper mapper, Long id) {
         return 0;
+    }
+
+    /**
+     * 验证并获取验证码
+     *
+     * @param id 验证码ID
+     * @return 验证码实体
+     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当验证码不存在时抛出 USER_VERIFICATION_CODE_NOT_FOUND (1109)
+     */
+    @Override
+    public VerificationDO validateAndGet(Long id) {
+        if (id == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("验证码ID不能为空");
+        }
+
+        if (id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("验证码ID必须大于0");
+        }
+
+        VerificationDO verification = getById(id);
+        if (verification == null) {
+            throw StatusCode.USER_VERIFICATION_CODE_NOT_FOUND.exception();
+        }
+
+        return verification;
     }
 
     /**

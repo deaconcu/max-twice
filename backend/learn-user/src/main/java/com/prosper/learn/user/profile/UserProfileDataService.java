@@ -1,6 +1,7 @@
 package com.prosper.learn.user.profile;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -56,6 +57,31 @@ public class UserProfileDataService extends AbstractDataService<UserProfileDO, U
     @Override
     protected int deleteByIdFromMapper(UserProfileMapper mapper, Long id) {
         return 0;
+    }
+
+    /**
+     * 验证并获取用户资料
+     *
+     * @param id 用户ID
+     * @return 用户资料实体
+     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当用户资料不存在时抛出 USER_PROFILE_NOT_FOUND (1118)
+     */
+    @Override
+    public UserProfileDO validateAndGet(Long id) {
+        if (id == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("用户ID不能为空");
+        }
+
+        if (id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("用户ID必须大于0");
+        }
+
+        UserProfileDO profile = getById(id);
+        if (profile == null) {
+            throw StatusCode.USER_PROFILE_NOT_FOUND.exception();
+        }
+
+        return profile;
     }
 
     /**

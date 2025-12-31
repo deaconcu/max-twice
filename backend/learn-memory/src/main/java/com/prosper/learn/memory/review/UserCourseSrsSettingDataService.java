@@ -69,6 +69,31 @@ public class UserCourseSrsSettingDataService extends AbstractDataService<UserCou
     }
 
     /**
+     * 验证并获取课程SRS设置
+     *
+     * @param id 课程SRS设置ID
+     * @return 课程SRS设置实体
+     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当课程SRS设置不存在时抛出 MEMORY_BANK_COURSE_NOT_FOUND (2204)
+     */
+    @Override
+    public UserCourseSrsSettingDO validateAndGet(Long id) {
+        if (id == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("课程SRS设置ID不能为空");
+        }
+
+        if (id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("课程SRS设置ID必须大于0");
+        }
+
+        UserCourseSrsSettingDO setting = getById(id);
+        if (setting == null) {
+            throw StatusCode.MEMORY_BANK_COURSE_NOT_FOUND.exception();
+        }
+
+        return setting;
+    }
+
+    /**
      * 插入课程设置
      */
     public int insert(UserCourseSrsSettingDO setting) {

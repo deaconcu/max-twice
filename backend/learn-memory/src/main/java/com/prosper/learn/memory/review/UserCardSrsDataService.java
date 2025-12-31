@@ -70,6 +70,31 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
     }
 
     /**
+     * 验证并获取SRS状态
+     *
+     * @param id SRS状态ID
+     * @return SRS状态实体
+     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当SRS状态不存在时抛出 SRS_STATE_NOT_FOUND (2205)
+     */
+    @Override
+    public UserCardSrsDO validateAndGet(Long id) {
+        if (id == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("SRS状态ID不能为空");
+        }
+
+        if (id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("SRS状态ID必须大于0");
+        }
+
+        UserCardSrsDO srs = getById(id);
+        if (srs == null) {
+            throw StatusCode.SRS_STATE_NOT_FOUND.exception();
+        }
+
+        return srs;
+    }
+
+    /**
      * 插入SRS状态
      */
     public int insert(UserCardSrsDO state) {

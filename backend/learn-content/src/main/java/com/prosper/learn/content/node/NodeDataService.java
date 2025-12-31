@@ -71,6 +71,31 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
     }
 
     /**
+     * 验证并获取节点
+     *
+     * @param id 节点ID
+     * @return 节点实体
+     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当节点不存在时抛出 NODE_NOT_FOUND (1302)
+     */
+    @Override
+    public NodeDO validateAndGet(Long id) {
+        if (id == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("节点ID不能为空");
+        }
+
+        if (id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("节点ID必须大于0");
+        }
+
+        NodeDO node = getById(id);
+        if (node == null) {
+            throw StatusCode.NODE_NOT_FOUND.exception();
+        }
+
+        return node;
+    }
+
+    /**
      * 更新节点并清除缓存
      */
     @CacheEvict(value = "nodes", key = "#node.id")

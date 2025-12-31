@@ -70,6 +70,31 @@ public class UserCardInCourseDataService extends AbstractDataService<UserCardInC
     }
 
     /**
+     * 验证并获取用户课程卡片关系
+     *
+     * @param id 关系ID
+     * @return 用户课程卡片关系实体
+     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当关系不存在时抛出 USER_CARD_IN_COURSE_NOT_FOUND (2212)
+     */
+    @Override
+    public UserCardInCourseDO validateAndGet(Long id) {
+        if (id == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("用户课程卡片关系ID不能为空");
+        }
+
+        if (id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("用户课程卡片关系ID必须大于0");
+        }
+
+        UserCardInCourseDO relation = getById(id);
+        if (relation == null) {
+            throw StatusCode.USER_CARD_IN_COURSE_NOT_FOUND.exception();
+        }
+
+        return relation;
+    }
+
+    /**
      * 插入关系记录
      */
     public int insert(UserCardInCourseDO relation) {

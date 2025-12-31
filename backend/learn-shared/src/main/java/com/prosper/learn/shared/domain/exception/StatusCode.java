@@ -50,6 +50,7 @@ public enum StatusCode {
     USER_BANNED(1115, "用户已被屏蔽"),
     USER_NOT_FOUND(1116, "用户不存在"),
     USER_SUBSCRIPTION_LIMIT_EXCEEDED(1117, "订阅数量已达上限"),
+    USER_PROFILE_NOT_FOUND(1118, "用户资料不存在"),
 
     // 课程相关 12xx
     COURSE_NOT_FOUND(1201, "课程不存在"),
@@ -96,6 +97,7 @@ public enum StatusCode {
 
     // 内容管理相关 13xx
     POST_NOT_FOUND(1301, "帖子不存在"),
+    NODE_NOT_FOUND(1302, "节点不存在"),
     TOC_PINNED_ITEMS_LIMIT_EXCEEDED(1303, "置顶帖子数量超限"),
     INVALID_POST_TYPE(1304, "无效的帖子类型"),
     POST_INVALID_PARAMETER(1305, "帖子参数无效"),
@@ -106,6 +108,7 @@ public enum StatusCode {
     // 目录管理相关 18xx
     TOC_USER_TOC_NOT_FOUND(1801, "用户目录不存在"),
     TOC_INDEX_OUT_OF_BOUNDS(1802, "目录索引超出范围"),
+    COURSE_TOC_NOT_FOUND(1803, "课程目录不存在"),
 
     // 课程排行相关 19xx
     COURSE_RANKING_INVALID_LIMIT(1901, "排行榜查询数量超出限制"),
@@ -137,6 +140,7 @@ public enum StatusCode {
     INVALID_FREQUENCY_SETTING(2208, "无效的复习频率设置"),
     INVALID_COURSE_STUDY_STATUS(2209, "无效的课程学习状态"),
     NODE_CARD_LIMIT_EXCEEDED(2210, "节点下的卡片数量已达到上限"),
+    USER_CARD_IN_COURSE_NOT_FOUND(2212, "用户课程卡片关系不存在"),
 
     // 限流相关 23xx
     RATE_LIMIT_EXCEEDED(2301, "访问过于频繁，请稍后再试"),

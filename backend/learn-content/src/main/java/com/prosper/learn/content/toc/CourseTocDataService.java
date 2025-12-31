@@ -1,6 +1,7 @@
 package com.prosper.learn.content.toc;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -51,6 +52,27 @@ public class CourseTocDataService extends AbstractDataService<CourseTocDO, Cours
     @CacheEvict(value = "courseTocs", key = "#hash")
     public void incrRef(String hash, int n) {
         courseTocMapper.incrRef(hash, n);
+    }
+
+    /**
+     * 验证并获取课程目录
+     *
+     * @param hash 目录hash
+     * @return 课程目录实体
+     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当目录不存在时抛出 COURSE_TOC_NOT_FOUND (1803)
+     */
+    @Override
+    public CourseTocDO validateAndGet(String hash) {
+        if (hash == null || hash.trim().isEmpty()) {
+            throw StatusCode.INVALID_PARAMETER.exception("目录hash不能为空");
+        }
+
+        CourseTocDO toc = getById(hash);
+        if (toc == null) {
+            throw StatusCode.COURSE_TOC_NOT_FOUND.exception();
+        }
+
+        return toc;
     }
 
     /**

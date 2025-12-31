@@ -69,6 +69,31 @@ public class MemoryCardVersionDataService extends AbstractDataService<MemoryCard
     }
 
     /**
+     * 验证并获取卡片版本
+     *
+     * @param id 卡片版本ID
+     * @return 卡片版本实体
+     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当卡片版本不存在时抛出 MEMORY_CARD_VERSION_NOT_FOUND (2203)
+     */
+    @Override
+    public MemoryCardVersionDO validateAndGet(Long id) {
+        if (id == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("卡片版本ID不能为空");
+        }
+
+        if (id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("卡片版本ID必须大于0");
+        }
+
+        MemoryCardVersionDO version = getById(id);
+        if (version == null) {
+            throw StatusCode.MEMORY_CARD_VERSION_NOT_FOUND.exception();
+        }
+
+        return version;
+    }
+
+    /**
      * 插入卡片版本
      */
     public int insert(MemoryCardVersionDO version) {

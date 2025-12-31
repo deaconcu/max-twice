@@ -1,6 +1,7 @@
 package com.prosper.learn.content.toc;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -57,6 +58,31 @@ public class UserCourseTocDataService extends AbstractDataService<UserCourseTocD
     @Override
     protected int deleteByIdFromMapper(UserCourseTocMapper mapper, Long id) {
         return 0;
+    }
+
+    /**
+     * 验证并获取用户课程目录
+     *
+     * @param id 用户课程目录ID
+     * @return 用户课程目录实体
+     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当用户课程目录不存在时抛出 TOC_USER_TOC_NOT_FOUND (1801)
+     */
+    @Override
+    public UserCourseTocDO validateAndGet(Long id) {
+        if (id == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("用户课程目录ID不能为空");
+        }
+
+        if (id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("用户课程目录ID必须大于0");
+        }
+
+        UserCourseTocDO toc = getById(id);
+        if (toc == null) {
+            throw StatusCode.TOC_USER_TOC_NOT_FOUND.exception();
+        }
+
+        return toc;
     }
 
     /**
