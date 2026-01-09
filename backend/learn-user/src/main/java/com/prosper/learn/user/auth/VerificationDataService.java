@@ -88,11 +88,11 @@ public class VerificationDataService extends AbstractDataService<VerificationDO,
     }
 
     /**
-     * 根据邮箱获取验证码信息
+     * 根据邮箱和类型获取验证码信息
      */
-    @Cacheable(value = "verifications", key = "'email:' + #email + ':used:' + #used")
-    public VerificationDO getByEmail(String email, boolean used) {
-        return verificationMapper.getByEmail(email, used);
+    @Cacheable(value = "verifications", key = "'email:' + #email + ':type:' + #type + ':used:' + #used")
+    public VerificationDO getByEmailAndType(String email, byte type, boolean used) {
+        return verificationMapper.getByEmailAndType(email, type, used);
     }
     
     /**

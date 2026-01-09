@@ -2,7 +2,10 @@ package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.StatusCode;
+import com.prosper.learn.user.auth.VerificationDO;
+import com.prosper.learn.user.auth.VerificationDataService;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import com.prosper.learn.user.profile.UserDomainService;
@@ -46,6 +49,9 @@ public class UsersControllerTest extends BaseControllerTest {
 
     @Autowired
     private UserDomainService userDomainService;
+
+    @Autowired
+    private VerificationDataService verificationDataService;
 
     @BeforeEach
     void setUp() {
@@ -588,5 +594,221 @@ public class UsersControllerTest extends BaseControllerTest {
                 .param("name", "测试"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
+    }
+
+    // ==================== 验证码类型测试 ====================
+
+    /**
+     * 测试26: 邮箱验证 - 成功验证（type=REGISTER）
+     */
+    @Test
+    @DisplayName("邮箱验证 - 成功验证注册类型验证码")
+    void testValidateEmail_RegisterType_Success() throws Exception {
+        // 1. 创建用户
+        UserDO user = createUser("test@example.com");
+
+        // 2. 创建注册类型验证码
+        userDomainService.createVerificationCode("test@example.com", "123456");
+
+        // 3. 验证邮箱
+        String requestBody = """
+            {
+                "email": "test@example.com",
+                "code": "123456"
+            }
+            """;
+
+        mockMvc.perform(post("/api/v1/auth/validate-email")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                .andExpect(jsonPath("$.data.id").exists());
+
+        // 4. 验证用户邮箱已验证
+        UserDO updatedUser = userDataService.getByEmail("test@example.com");
+        assertThat(updatedUser.getEmailValidated()).isTrue();
+
+        // 5. 验证验证码已被标记为已使用
+        VerificationDO verification = verificationDataService.getByEmailAndType(
+            "test@example.com", Enums.VerificationType.REGISTER.value(), false);
+        assertThat(verification).isNull();  // 未使用的验证码已经不存在了
+    }
+
+    /**
+     * 测试27: 验证码类型 - 注册类型验证码默认值
+     */
+    @Test
+    @DisplayName("验证码类型 - 注册类型验证码默认值为type=1")
+    void testVerificationCode_RegisterTypeDefault() throws Exception {
+        // 1. 创建验证码（使用默认构造方法，应该默认为REGISTER类型）
+        userDomainService.createVerificationCode("test@example.com", "123456");
+
+        // 2. 查询验证码,验证type=1(REGISTER)
+        VerificationDO verification = verificationDataService.getByEmailAndType(
+            "test@example.com", Enums.VerificationType.REGISTER.value(), false);
+
+        assertThat(verification).isNotNull();
+        assertThat(verification.getType()).isEqualTo(Enums.VerificationType.REGISTER.value());
+        assertThat(verification.getEmail()).isEqualTo("test@example.com");
+        assertThat(verification.getCode()).isEqualTo("123456");
+        assertThat(verification.getUsed()).isFalse();
+    }
+
+    /**
+     * 测试28: 验证码类型 - 不同类型验证码互不干扰
+     */
+    @Test
+    @DisplayName("验证码类型 - 不同类型验证码互不干扰")
+    void testVerificationCode_DifferentTypesIndependent() throws Exception {
+        String email = "test@example.com";
+
+        // 1. 创建不同类型的验证码
+        VerificationDO registerCode = new VerificationDO(email, "111111", Enums.VerificationType.REGISTER.value());
+        verificationDataService.insert(registerCode);
+
+        VerificationDO resetPasswordCode = new VerificationDO(email, "222222", Enums.VerificationType.RESET_PASSWORD.value());
+        verificationDataService.insert(resetPasswordCode);
+
+        VerificationDO changeEmailCode = new VerificationDO(email, "333333", Enums.VerificationType.CHANGE_EMAIL.value());
+        verificationDataService.insert(changeEmailCode);
+
+        // 2. 验证可以分别查询到不同类型的验证码
+        VerificationDO queriedRegister = verificationDataService.getByEmailAndType(
+            email, Enums.VerificationType.REGISTER.value(), false);
+        assertThat(queriedRegister).isNotNull();
+        assertThat(queriedRegister.getCode()).isEqualTo("111111");
+
+        VerificationDO queriedResetPassword = verificationDataService.getByEmailAndType(
+            email, Enums.VerificationType.RESET_PASSWORD.value(), false);
+        assertThat(queriedResetPassword).isNotNull();
+        assertThat(queriedResetPassword.getCode()).isEqualTo("222222");
+
+        VerificationDO queriedChangeEmail = verificationDataService.getByEmailAndType(
+            email, Enums.VerificationType.CHANGE_EMAIL.value(), false);
+        assertThat(queriedChangeEmail).isNotNull();
+        assertThat(queriedChangeEmail.getCode()).isEqualTo("333333");
+    }
+
+    /**
+     * 测试29: 验证码类型 - 查询错误类型返回null
+     */
+    @Test
+    @DisplayName("验证码类型 - 查询错误类型返回null")
+    void testVerificationCode_WrongTypeReturnsNull() throws Exception {
+        String email = "test@example.com";
+
+        // 1. 创建REGISTER类型验证码
+        VerificationDO registerCode = new VerificationDO(email, "123456", Enums.VerificationType.REGISTER.value());
+        verificationDataService.insert(registerCode);
+
+        // 2. 用RESET_PASSWORD类型查询,应该返回null
+        VerificationDO queried = verificationDataService.getByEmailAndType(
+            email, Enums.VerificationType.RESET_PASSWORD.value(), false);
+        assertThat(queried).isNull();
+    }
+
+    /**
+     * 测试30: 邮箱验证 - 只能使用REGISTER类型验证码
+     */
+    @Test
+    @DisplayName("邮箱验证 - 只能使用REGISTER类型验证码")
+    void testValidateEmail_OnlyRegisterTypeWorks() throws Exception {
+        String email = "test@example.com";
+
+        // 1. 创建用户
+        createUser(email);
+
+        // 2. 创建RESET_PASSWORD类型验证码(非REGISTER类型)
+        VerificationDO resetPasswordCode = new VerificationDO(email, "123456", Enums.VerificationType.RESET_PASSWORD.value());
+        verificationDataService.insert(resetPasswordCode);
+
+        // 3. 尝试验证邮箱,应该失败(因为查询的是REGISTER类型)
+        String requestBody = """
+            {
+                "email": "test@example.com",
+                "code": "123456"
+            }
+            """;
+
+        mockMvc.perform(post("/api/v1/auth/validate-email")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.USER_VERIFICATION_CODE_NOT_FOUND.getCode()));
+    }
+
+    /**
+     * 测试31: 验证码类型 - 使用后标记为已使用
+     */
+    @Test
+    @DisplayName("验证码类型 - 使用后标记为已使用")
+    void testVerificationCode_MarkedAsUsedAfterValidation() throws Exception {
+        String email = "test@example.com";
+
+        // 1. 创建用户和验证码
+        createUser(email);
+        userDomainService.createVerificationCode(email, "123456");
+
+        // 2. 验证前确认验证码存在且未使用
+        VerificationDO beforeValidation = verificationDataService.getByEmailAndType(
+            email, Enums.VerificationType.REGISTER.value(), false);
+        assertThat(beforeValidation).isNotNull();
+        assertThat(beforeValidation.getUsed()).isFalse();
+
+        // 3. 进行验证
+        String requestBody = """
+            {
+                "email": "test@example.com",
+                "code": "123456"
+            }
+            """;
+
+        mockMvc.perform(post("/api/v1/auth/validate-email")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
+
+        // 4. 验证后确认未使用的验证码查询不到
+        VerificationDO afterValidation = verificationDataService.getByEmailAndType(
+            email, Enums.VerificationType.REGISTER.value(), false);
+        assertThat(afterValidation).isNull();
+
+        // 5. 但是查询已使用的验证码可以找到
+        VerificationDO usedVerification = verificationDataService.getByEmailAndType(
+            email, Enums.VerificationType.REGISTER.value(), true);
+        assertThat(usedVerification).isNotNull();
+        assertThat(usedVerification.getUsed()).isTrue();
+    }
+
+    /**
+     * 测试32: 验证码发送间隔 - 60秒内重复发送被拒绝
+     */
+    @Test
+    @DisplayName("验证码发送间隔 - 60秒内重复发送被拒绝")
+    void testVerificationCode_SendIntervalCheck() throws Exception {
+        String email = "test@example.com";
+
+        // 1. 第一次发送验证码
+        userDomainService.createVerificationCode(email, "123456");
+
+        // 2. 立即再次发送,应该失败
+        try {
+            userDomainService.createVerificationCode(email, "654321");
+            assert false : "应该抛出异常";
+        } catch (Exception e) {
+            assertThat(e.getMessage()).contains("验证码发送过于频繁");
+        }
+
+        // 3. 等待2秒后(测试配置中设置为2秒)再发送,应该成功
+        Thread.sleep(2100);
+        userDomainService.createVerificationCode(email, "654321");
+
+        // 4. 验证最新的验证码是654321
+        VerificationDO latestVerification = verificationDataService.getByEmailAndType(
+            email, Enums.VerificationType.REGISTER.value(), false);
+        assertThat(latestVerification).isNotNull();
+        assertThat(latestVerification.getCode()).isEqualTo("654321");
     }
 }

@@ -15,7 +15,7 @@ public interface ImageUploadMapper {
      * 根据ID查询
      */
     @Select("SELECT * FROM image_uploads WHERE id = #{id}")
-    ImageUploadDO getById(Long id);
+    ImageUploadDO getById(long id);
 
     /**
      * 根据URL查询
@@ -27,19 +27,19 @@ public interface ImageUploadMapper {
      * 根据引用类型和引用ID查询
      */
     @Select("SELECT * FROM image_uploads WHERE ref_type = #{refType} AND ref_id = #{refId}")
-    List<ImageUploadDO> getByRef(String refType, Long refId);
+    List<ImageUploadDO> getByRef(String refType, long refId);
 
     /**
      * 根据用户ID、引用类型和状态查询
      */
     @Select("SELECT * FROM image_uploads WHERE user_id = #{userId} AND ref_type = #{refType} AND status = #{status} LIMIT 1")
-    ImageUploadDO getByUserIdAndRefTypeAndStatus(Long userId, String refType, Integer status);
+    ImageUploadDO getByUserIdAndRefTypeAndStatus(long userId, String refType, int status);
 
     /**
      * 查询未使用且超过指定时间的图片
      */
     @Select("SELECT * FROM image_uploads WHERE status = #{status} AND created_at < #{createdAt}")
-    List<ImageUploadDO> getByStatusAndCreatedAtBefore(Integer status, LocalDateTime createdAt);
+    List<ImageUploadDO> getByStatusAndCreatedAtBefore(int status, LocalDateTime createdAt);
 
     /**
      * 插入图片记录
@@ -60,11 +60,11 @@ public interface ImageUploadMapper {
      * 删除图片记录
      */
     @Delete("DELETE FROM image_uploads WHERE id = #{id}")
-    int delete(Long id);
+    int delete(long id);
 
     /**
      * 根据用户ID查询上传历史
      */
     @Select("SELECT * FROM image_uploads WHERE user_id = #{userId} ORDER BY created_at DESC LIMIT #{limit}")
-    List<ImageUploadDO> getByUserId(Long userId, int limit);
+    List<ImageUploadDO> getByUserId(long userId, int limit);
 }

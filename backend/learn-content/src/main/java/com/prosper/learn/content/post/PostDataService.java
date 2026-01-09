@@ -164,28 +164,28 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
     /**
      * 根据节点和分页获取帖子列表
      */
-    public List<PostDO> getListByNodeAndScoreAndPaginated(Long nodeId, double score, Long offsetId, int limit, Byte type) {
+    public List<PostDO> getListByNodeAndScoreAndPaginated(long nodeId, double score, long offsetId, int limit, byte type) {
         return postMapper.getListByNodeAndScoreAndPaginated(nodeId, score, offsetId, limit, type);
     }
 
     /**
      * 根据节点获取帖子列表
      */
-    public List<PostDO> getListByNode(Long nodeId, int limit, Byte type) {
+    public List<PostDO> getListByNode(long nodeId, int limit, byte type) {
         return postMapper.getListByNode(nodeId, limit, type);
     }
 
     /**
      * 根据状态获取帖子列表
      */
-    public List<PostDO> getListByState(Byte state, int limit) {
+    public List<PostDO> getListByState(byte state, int limit) {
         return postMapper.getListByState(state, limit);
     }
 
     /**
      * 根据状态获取帖子列表（支持分页）
      */
-    public List<PostDO> getListByState(Byte state, Long lastId, Integer limit) {
+    public List<PostDO> getListByState(byte state, Long lastId, int limit) {
         if (lastId == null || lastId == 0) {
             return postMapper.getListByState(state, limit);
         }
@@ -195,7 +195,7 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
     /**
      * 根据节点和分数获取帖子列表
      */
-    public List<PostDO> getListByNodeAndScore(long nodeId, int limit, Byte state) {
+    public List<PostDO> getListByNodeAndScore(long nodeId, int limit, byte state) {
         return postMapper.getListByNodeAndScore(nodeId, limit, state);
     }
 

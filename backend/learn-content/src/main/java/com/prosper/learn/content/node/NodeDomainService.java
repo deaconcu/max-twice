@@ -27,7 +27,7 @@ public class NodeDomainService {
     /**
      * 按条件筛选节点列表
      *
-     * @param nodeId 节点ID（优先级最高，如果提供则其他参数被忽略）
+     * @param nodeId 节点ID（如果提供则直接按ID查询单个节点）
      * @param courseId 课程ID
      * @param creatorId 创建者ID
      * @param state 状态
@@ -35,15 +35,14 @@ public class NodeDomainService {
      * @return 节点列表
      */
     public List<NodeDO> listByFilter(Long nodeId, Long courseId, Long creatorId, ContentState state, Long lastId) {
-        // 如果提供了 nodeId，其他参数将被忽略
+        // 如果提供了 nodeId，直接按 ID 查询
         if (nodeId != null) {
-            courseId = null;
-            creatorId = null;
-            state = null;
-            lastId = null;
+            NodeDO node = nodeDataService.getById(nodeId);
+            return node != null ? List.of(node) : List.of();
         }
 
-        return nodeDataService.getListByFilter(nodeId, courseId, creatorId, state.value(), lastId);
+        // 否则按其他条件组合查询
+        return nodeDataService.getListByFilter(null, courseId, creatorId, state.value(), lastId);
     }
 
     // ========== Command 方法 ==========
@@ -54,7 +53,7 @@ public class NodeDomainService {
      * @param nodeId 节点ID
      */
     @Transactional
-    public void approve(Long nodeId) {
+    public void approve(long nodeId) {
         nodeDataService.validateExists(nodeId);
 
         NodeDO nodeDO = nodeDataService.getById(nodeId);
@@ -73,7 +72,7 @@ public class NodeDomainService {
      * @param reason 拒绝原因
      */
     @Transactional
-    public void reject(Long nodeId, String reason) {
+    public void reject(long nodeId, String reason) {
         nodeDataService.validateExists(nodeId);
 
         NodeDO nodeDO = nodeDataService.getById(nodeId);
@@ -92,7 +91,7 @@ public class NodeDomainService {
      * @param reason 封禁原因
      */
     @Transactional
-    public void ban(Long nodeId, String reason) {
+    public void ban(long nodeId, String reason) {
         nodeDataService.validateExists(nodeId);
 
         NodeDO nodeDO = nodeDataService.getById(nodeId);
@@ -110,7 +109,7 @@ public class NodeDomainService {
      * @param reason 原因（拒绝或封禁时需要）
      */
     @Transactional
-    public void updateNodeState(Long nodeId, ContentState state, String reason) {
+    public void updateNodeState(long nodeId, ContentState state, String reason) {
         if (state == null) {
             throw new IllegalArgumentException("State cannot be null");
         }

@@ -23,10 +23,15 @@ public class RateLimitConfig {
     @Bean
     public CacheManager rateLimitCacheManager(RedissonClient redissonClient) {
         CacheManager manager = Caching.getCachingProvider().getCacheManager();
-        MutableConfiguration<String, byte[]> config = new MutableConfiguration<>();
-        // 设置缓存过期策略为10分钟，防止Redis内存泄漏
-        config.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(Duration.TEN_MINUTES));
-        manager.createCache("rateLimitBuckets", RedissonConfiguration.fromConfig(redissonClient.getConfig(), config));
+
+        // 检查缓存是否已存在，避免重复创建（特别是在测试环境中）
+        if (manager.getCache("rateLimitBuckets") == null) {
+            MutableConfiguration<String, byte[]> config = new MutableConfiguration<>();
+            // 设置缓存过期策略为10分钟，防止Redis内存泄漏
+            config.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(Duration.TEN_MINUTES));
+            manager.createCache("rateLimitBuckets", RedissonConfiguration.fromConfig(redissonClient.getConfig(), config));
+        }
+
         return manager;
     }
 

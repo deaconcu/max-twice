@@ -302,21 +302,21 @@ public class UserCardInCourseDataService extends AbstractDataService<UserCardInC
 // --注释掉检查 STOP (2025/12/10 11:27)
 
 
-    public List<CourseMemoryBankDO> getBatchCardStatsForCourses(Long userId, Set<Long> courseIds) {
+    public List<CourseMemoryBankDO> getBatchCardStatsForCourses(long userId, Set<Long> courseIds) {
         if (courseIds == null || courseIds.isEmpty()) {
             return List.of();
         }
         return userCardInCourseMapper.getBatchCardStatsForCourses(userId, courseIds, LocalDateTime.now());
     }
 
-    public CourseMemoryBankDO getCardStatsForCourses(Long userId, Long courseId) {
+    public CourseMemoryBankDO getCardStatsForCourses(long userId, long courseId) {
         return userCardInCourseMapper.getCardStatsForCourses(userId, courseId, LocalDateTime.now());
     }
 
     /**
      * 批量插入用户卡片课程关系（使用INSERT IGNORE自动跳过重复）
      */
-    public int batchInsertIgnore(Long userId, Long deckId, Long courseId, List<Long> cardIds) {
+    public int batchInsertIgnore(long userId, long deckId, long courseId, List<Long> cardIds) {
         if (cardIds == null || cardIds.isEmpty()) {
             return 0;
         }

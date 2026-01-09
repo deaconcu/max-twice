@@ -199,7 +199,7 @@ public interface UserCardSrsMapper {
           </foreach>
           </script>
           """)
-    int batchDeleteByUserAndCards(@Param("userId") Long userId, 
+    int batchDeleteByUserAndCards(@Param("userId") long userId,
                                  @Param("cardIds") List<Long> cardIds);
 
     // ========== 支持分页的查询方法 ==========

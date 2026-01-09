@@ -102,7 +102,7 @@ public class UserRoadmapDataService extends AbstractDataService<UserRoadmapDO, U
     /**
      * 根据用户ID查询学习记录
      */
-    public List<UserRoadmapDO> getByUser(Long userId) {
+    public List<UserRoadmapDO> getByUser(long userId) {
         return userRoadmapMapper.getByUser(userId);
     }
 

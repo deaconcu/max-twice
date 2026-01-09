@@ -8,19 +8,18 @@ import java.util.List;
 public interface UserProfileMapper {
 
     @Select("SELECT * FROM user_profile WHERE user_id = #{userId}")
-    UserProfileDO getById(long id);
+    UserProfileDO getById(long userId);
 
     @Select({"<script>SELECT * FROM user_profile where user_id in " +
             "<foreach item='userId' collection='userIds' open='(' separator=', ' close=')'>#{userId}</foreach>" +
             "</script>"})
     List<UserProfileDO> getByIds(Collection<Integer> userIds);
 
-    @Insert("INSERT INTO user_profile(user_id, subscription, roadmap_pin) " +
-            "VALUES (#{userId}, #{subscription}, #{roadmapPin})")
-    @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
+    @Insert("INSERT INTO user_profile(user_id, subscription, roadmap_pin, created_at, updated_at) " +
+            "VALUES (#{userId}, #{subscription}, #{roadmapPin}, #{createdAt}, #{updatedAt})")
     void insert(UserProfileDO user);
 
-    @Update("UPDATE user_profile SET subscription = #{subscription}, roadmap_pin = #{roadmapPin} where user_id = #{userId}")
+    @Update("UPDATE user_profile SET subscription = #{subscription}, roadmap_pin = #{roadmapPin}, updated_at = #{updatedAt} where user_id = #{userId}")
     void update(UserProfileDO user);
 
     @Update("UPDATE user_profile SET roadmap_pin = #{roadmapPin} where user_id = #{userId}")

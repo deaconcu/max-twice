@@ -21,7 +21,7 @@ public interface ContentStatsYearlyMapper {
 // --注释掉检查 STOP (2025/12/10 11:38)
 
     @Select("SELECT * FROM content_stats_yearly WHERE object_type = #{objectType} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    ContentStatsYearlyDO getByTypeAndObjectIdAndYear(int objectType, long objectId, Integer statYear);
+    ContentStatsYearlyDO getByTypeAndObjectIdAndYear(int objectType, long objectId, int statYear);
 
 // --注释掉检查 START (2025/12/10 11:38):
 //    @Select("SELECT * FROM content_stats_yearly WHERE object_type = #{objectType} AND object_id = #{objectId} " +

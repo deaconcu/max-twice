@@ -46,7 +46,7 @@ public class ProfessionDomainService {
      * @return 职业ID
      */
     @Transactional
-    public Long create(Long creatorId, String name, String description, String skills,
+    public Long create(long creatorId, String name, String description, String skills,
                        int mainCategory, int subCategory) {
         // 验证分类是否有效
         systemDomainService.validateProfessionCategory(mainCategory, subCategory);
@@ -85,7 +85,7 @@ public class ProfessionDomainService {
      * @param reason 原因
      */
     @Transactional
-    public void update(Long id, String name, String description, String price, String skills,
+    public void update(long id, String name, String description, String price, String skills,
                        int mainCategory, int subCategory, String icon, String reason) {
         // 参数验证
         ValidationUtils.requireNonBlank(name, "职业名称");
@@ -123,7 +123,7 @@ public class ProfessionDomainService {
      * @return 受影响的行数
      */
     @Transactional
-    public int approve(Long id, boolean enableStateValidation, boolean enableConcurrencyCheck) {
+    public int approve(long id, boolean enableStateValidation, boolean enableConcurrencyCheck) {
         ProfessionDO profession = professionDataService.validateAndGet(id);
 
         // 状态验证：只有已批准的职业不能重复批准，已拒绝和已屏蔽的可以重新批准
@@ -153,7 +153,7 @@ public class ProfessionDomainService {
      * @return 受影响的行数
      */
     @Transactional
-    public int reject(Long id, String reason, boolean enableStateValidation, boolean enableConcurrencyCheck) {
+    public int reject(long id, String reason, boolean enableStateValidation, boolean enableConcurrencyCheck) {
         ProfessionDO profession = professionDataService.validateAndGet(id);
 
         // 状态验证：已拒绝和已屏蔽的不能重复拒绝
@@ -185,7 +185,7 @@ public class ProfessionDomainService {
      * @return 受影响的行数
      */
     @Transactional
-    public int ban(Long id, String reason, boolean enableStateValidation, boolean enableConcurrencyCheck) {
+    public int ban(long id, String reason, boolean enableStateValidation, boolean enableConcurrencyCheck) {
         ProfessionDO profession = professionDataService.validateAndGet(id);
 
         // 状态验证：已屏蔽的不能重复屏蔽
@@ -213,7 +213,7 @@ public class ProfessionDomainService {
      * @param id 职业ID
      */
     @Transactional
-    public void delete(Long id) {
+    public void delete(long id) {
         ProfessionDO professionDO = professionDataService.getById(id);
         if (professionDO == null) {
             throw StatusCode.PROFESSION_NOT_FOUND.exception();

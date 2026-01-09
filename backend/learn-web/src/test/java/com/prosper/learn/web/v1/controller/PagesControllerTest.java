@@ -328,7 +328,7 @@ public class PagesControllerTest extends BaseControllerTest {
                     .param("courseId", "99999")
                     .param("path", path))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.COURSE_NOT_FOUND.getCode()));
 
             // 4. 权限验证：未登录
             StpUtil.logout();
@@ -393,7 +393,7 @@ public class PagesControllerTest extends BaseControllerTest {
                     .header("token", StpUtil.getTokenValue())
                     .param("nodeId", "99999"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.NODE_NOT_FOUND.getCode()));
 
         } finally {
             StpUtil.logout();
@@ -446,7 +446,7 @@ public class PagesControllerTest extends BaseControllerTest {
                     .header("token", StpUtil.getTokenValue())
                     .param("postId", "99999"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.POST_NOT_FOUND.getCode()));
 
         } finally {
             StpUtil.logout();
@@ -514,7 +514,7 @@ public class PagesControllerTest extends BaseControllerTest {
                     .header("token", StpUtil.getTokenValue())
                     .param("commentId", "99999"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.COMMENT_NOT_FOUND.getCode()));
 
         } finally {
             StpUtil.logout();
@@ -619,7 +619,7 @@ public class PagesControllerTest extends BaseControllerTest {
                     .header("token", StpUtil.getTokenValue())
                     .param("nodeId", "99999"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.NODE_NOT_FOUND.getCode()));
 
             // 7. 权限验证：未登录
             StpUtil.logout();
@@ -729,7 +729,7 @@ public class PagesControllerTest extends BaseControllerTest {
                     .header("token", StpUtil.getTokenValue())
                     .param("postId", "99999"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.POST_NOT_FOUND.getCode()));
 
             // 8. 权限验证：未登录
             StpUtil.logout();

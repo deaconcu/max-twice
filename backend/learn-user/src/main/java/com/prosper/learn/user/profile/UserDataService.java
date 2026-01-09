@@ -9,6 +9,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -124,35 +125,17 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
 
     /**
      * 更新用户信息并清除缓存
+     * 注意：update方法只更新基本信息字段（name, phone, biography, avatar, msg_read_time）
+     * 敏感字段使用专用方法更新
      */
-    @CacheEvict(value = "users", key = "#user.id")
+    @CacheEvict(value = {"users", "usersByEmail", "usersByName"}, allEntries = true)
     public void update(UserDO user) {
         if (user == null || user.getId() == null) {
             throw new IllegalArgumentException("User or user ID cannot be null");
         }
 
-        // 如果用户名可能变更，先获取旧用户名用于清除缓存
-        UserDO oldUser = userMapper.getById(user.getId());
-        String oldName = oldUser != null ? oldUser.getName() : null;
-
         userMapper.update(user);
-
-        // 如果邮箱可能变更，也要清除邮箱缓存
-        if (user.getEmail() != null) {
-            evictEmailCache(user.getEmail());
-        }
-
-        // 清除旧用户名的缓存
-        if (oldName != null) {
-            evictNameCache(oldName);
-        }
-
-        // 清除新用户名的缓存（如果用户名变更了）
-        if (user.getName() != null && !user.getName().equals(oldName)) {
-            evictNameCache(user.getName());
-        }
-
-        log.debug("Updated user {}", user.getId());
+        log.debug("Updated user {}, all user caches evicted", user.getId());
     }
 
     /**
@@ -193,9 +176,36 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
      * 更新用户头像并清除缓存
      */
     @CacheEvict(value = "users", key = "#userId")
-    public int updateAvatar(Long userId, String avatarUrl) {
+    public int updateAvatar(long userId, String avatarUrl) {
         log.debug("Updating avatar for user {}: {}", userId, avatarUrl);
         return userMapper.updateAvatar(userId, avatarUrl);
+    }
+
+    /**
+     * 更新用户状态并清除缓存
+     */
+    @CacheEvict(value = "users", key = "#userId")
+    public void updateState(long userId, byte state) {
+        log.debug("Updating state for user {}: {}", userId, state);
+        userMapper.updateState(userId, state, LocalDateTime.now());
+    }
+
+    /**
+     * 更新用户角色并清除缓存
+     */
+    @CacheEvict(value = "users", key = "#userId")
+    public void updateRole(long userId, int role) {
+        log.debug("Updating role for user {}: {}", userId, role);
+        userMapper.updateRole(userId, role, LocalDateTime.now());
+    }
+
+    /**
+     * 更新邮箱验证状态并清除缓存
+     */
+    @CacheEvict(value = "users", key = "#userId")
+    public void updateEmailValidated(long userId, boolean emailValidated) {
+        log.debug("Updating email_validated for user {}: {}", userId, emailValidated);
+        userMapper.updateEmailValidated(userId, emailValidated, LocalDateTime.now());
     }
 
     public List<UserDO> getList(int count) {

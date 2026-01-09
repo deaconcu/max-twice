@@ -40,8 +40,8 @@ public class UserProfileDataService extends AbstractDataService<UserProfileDO, U
     }
 
     @Override
-    protected UserProfileDO getByIdFromMapper(UserProfileMapper mapper, Long id) {
-        return userProfileMapper.getById(id);
+    protected UserProfileDO getByIdFromMapper(UserProfileMapper mapper, Long userId) {
+        return userProfileMapper.getById(userId);
     }
 
     @Override
@@ -97,7 +97,17 @@ public class UserProfileDataService extends AbstractDataService<UserProfileDO, U
      */
     @CacheEvict(value = "userProfiles", key = "#userId")
     public void updateRoadmapPin(long userId, String roadmapPin) {
-        userProfileMapper.updateRoadmapPin(userId, roadmapPin);
+        // 查询现有数据
+        UserProfileDO userProfile = getById(userId);
+        if (userProfile == null) {
+            throw StatusCode.USER_PROFILE_NOT_FOUND.exception();
+        }
+
+        // 更新字段
+        userProfile.setRoadmapPin(roadmapPin);
+
+        // 调用update方法，TimestampInterceptor会自动设置updatedAt
+        update(userProfile);
     }
 
     /**

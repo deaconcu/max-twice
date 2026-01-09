@@ -116,21 +116,21 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
     /**
      * 根据职业和分数排序获取路线图列表（排除指定路线图）
      */
-    public List<RoadmapDO> getListByProfessionExcludingOrderByScore(Long professionId, int limit, List<Long> excludeIds) {
+    public List<RoadmapDO> getListByProfessionExcludingOrderByScore(long professionId, int limit, List<Long> excludeIds) {
         return roadmapMapper.getListByProfessionExcludingOrderByScore(professionId, limit, excludeIds);
     }
 
     /**
      * 根据职业和分数分页获取路线图列表（排除指定路线图）
      */
-    public List<RoadmapDO> getListByProfessionAfterScoreExcluding(Long professionId, Double lastScore, Long lastId, int limit, List<Long> excludeIds) {
+    public List<RoadmapDO> getListByProfessionAfterScoreExcluding(long professionId, double lastScore, long lastId, int limit, List<Long> excludeIds) {
         return roadmapMapper.getListByProfessionAfterScoreExcluding(professionId, lastScore, lastId, limit, excludeIds);
     }
 
     /**
      * 根据创建者获取路线图列表（支持分页）
      */
-    public List<RoadmapDO> getListByCreatorWithPaging(Long creatorId, Long lastId, int limit, Byte state) {
+    public List<RoadmapDO> getListByCreatorWithPaging(long creatorId, Long lastId, int limit, Byte state) {
         return roadmapMapper.getListByCreatorWithPaging(creatorId, lastId, limit, state);
     }
 

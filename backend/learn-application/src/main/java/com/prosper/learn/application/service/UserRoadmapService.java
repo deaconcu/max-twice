@@ -202,7 +202,7 @@ public class UserRoadmapService {
      */
     private void validateUserId(Long userId) {
         if (userId == null || userId <= 0) {
-            throw StatusCode.NOT_FOUND.exception("用户不存在");
+            throw StatusCode.USER_NOT_FOUND.exception("用户不存在");
         }
     }
 

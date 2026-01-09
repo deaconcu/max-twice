@@ -26,7 +26,7 @@ public interface ContentStatsMapper {
      * 根据内容类型和ID查询统计记录
      */
     @Select("SELECT * FROM content_stats WHERE content_type = #{contentType} AND content_id = #{contentId}")
-    ContentStatsDO getByContent(@Param("contentType") Integer contentType, @Param("contentId") Long contentId);
+    ContentStatsDO getByContent(@Param("contentType") int contentType, @Param("contentId") long contentId);
 
     // ==================== 原子增量更新操作 ====================
 
@@ -39,8 +39,8 @@ public interface ContentStatsMapper {
      */
     @Update("UPDATE content_stats SET ${field} = GREATEST(0, ${field} + #{delta}), updated_at = NOW() " +
             "WHERE content_type = #{contentType} AND content_id = #{contentId}")
-    int atomicIncrement(@Param("contentType") Integer contentType,
-                       @Param("contentId") Long contentId,
+    int atomicIncrement(@Param("contentType") int contentType,
+                       @Param("contentId") long contentId,
                        @Param("field") String field,
                        @Param("delta") int delta);
 
@@ -54,8 +54,8 @@ public interface ContentStatsMapper {
             "comments = comments + #{commentsDelta}, " +
             "updated_at = NOW() " +
             "WHERE content_type = #{contentType} AND content_id = #{contentId}")
-    int increase(@Param("contentType") Integer contentType,
-                 @Param("contentId") Long contentId,
+    int increase(@Param("contentType") int contentType,
+                 @Param("contentId") long contentId,
                  @Param("viewsDelta") int viewsDelta,
                  @Param("twicesDelta") int twicesDelta,
                  @Param("likesDelta") int likesDelta,
@@ -86,6 +86,6 @@ public interface ContentStatsMapper {
             "WHERE content_type = #{contentType} " +
             "ORDER BY (bookmarks + in_progress_users + completed_users) DESC " +
             "LIMIT #{limit}")
-    List<Long> getTopContentIdsByPopularity(@Param("contentType") Integer contentType,
+    List<Long> getTopContentIdsByPopularity(@Param("contentType") int contentType,
                                             @Param("limit") int limit);
 }

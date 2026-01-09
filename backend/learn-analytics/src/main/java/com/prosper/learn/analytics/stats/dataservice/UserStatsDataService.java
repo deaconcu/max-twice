@@ -24,14 +24,14 @@ public class UserStatsDataService {
     /**
      * 根据用户ID获取统计记录
      */
-    public UserStatsDO getByUserId(Long userId) {
+    public UserStatsDO getByUserId(long userId) {
         return userStatsMapper.getByUserId(userId);
     }
 
     /**
      * 获取或创建用户统计记录
      */
-    public UserStatsDO getOrCreate(Long userId) {
+    public UserStatsDO getOrCreate(long userId) {
         UserStatsDO stats = getByUserId(userId);
         if (stats == null) {
             stats = createInitialStats(userId);
@@ -42,7 +42,7 @@ public class UserStatsDataService {
     /**
      * 创建初始统计记录
      */
-    private UserStatsDO createInitialStats(Long userId) {
+    private UserStatsDO createInitialStats(long userId) {
         UserStatsDO stats = new UserStatsDO();
         stats.setUserId(userId);
 
@@ -78,7 +78,7 @@ public class UserStatsDataService {
     /**
      * 原子性增量更新指定字段
      */
-    public boolean atomicIncrement(Long userId, String field, int delta) {
+    public boolean atomicIncrement(long userId, String field, int delta) {
         if (delta == 0) {
             return true;
         }
@@ -122,7 +122,7 @@ public class UserStatsDataService {
     /**
      * 设置字段绝对值
      */
-    public boolean setField(Long userId, String field, int newValue) {
+    public boolean setField(long userId, String field, int newValue) {
         // 确保统计记录存在
         getOrCreate(userId);
 
@@ -180,35 +180,35 @@ public class UserStatsDataService {
     /**
      * 增加浏览量
      */
-    public boolean incrementViews(Long userId, int count) {
+    public boolean incrementViews(long userId, int count) {
         return atomicIncrement(userId, "views", count);
     }
 
     /**
      * 增加两次能懂数
      */
-    public boolean incrementTwices(Long userId, int count) {
+    public boolean incrementTwices(long userId, int count) {
         return atomicIncrement(userId, "twices", count);
     }
 
     /**
      * 增加有用点赞数
      */
-    public boolean incrementLikes(Long userId, int count) {
+    public boolean incrementLikes(long userId, int count) {
         return atomicIncrement(userId, "likes", count);
     }
 
     /**
      * 增加评论数
      */
-    public boolean incrementComments(Long userId, int count) {
+    public boolean incrementComments(long userId, int count) {
         return atomicIncrement(userId, "comments", count);
     }
 
     /**
      * 增量更新多个统计字段
      */
-    public boolean increase(Long userId, int viewsDelta, int twicesDelta, int likesDelta, int commentsDelta) {
+    public boolean increase(long userId, int viewsDelta, int twicesDelta, int likesDelta, int commentsDelta) {
         if (viewsDelta == 0 && twicesDelta == 0 && likesDelta == 0 && commentsDelta == 0) {
             return true;
         }

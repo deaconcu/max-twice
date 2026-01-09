@@ -479,7 +479,7 @@ public class CoursesControllerTest extends BaseControllerTest {
             // 4. 课程不存在
             mockMvc.perform(get("/api/v1/courses/{id}", 99999L))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.COURSE_NOT_FOUND.getCode()));
 
             // 5. 课程ID无效 - ID = 0
             mockMvc.perform(get("/api/v1/courses/{id}", 0L))
@@ -1483,7 +1483,7 @@ public class CoursesControllerTest extends BaseControllerTest {
             mockMvc.perform(get("/api/v1/courses/{id}", 999999999L)
                     .header("token", StpUtil.getTokenValue()))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.COURSE_NOT_FOUND.getCode()));
 
         } finally {
             StpUtil.logout();

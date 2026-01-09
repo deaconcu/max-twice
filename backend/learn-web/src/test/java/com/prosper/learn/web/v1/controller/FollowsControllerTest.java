@@ -285,7 +285,7 @@ public class FollowsControllerTest extends BaseControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(requestBody))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_FOUND.getCode()));
 
         } finally {
             StpUtil.logout();
@@ -444,7 +444,7 @@ public class FollowsControllerTest extends BaseControllerTest {
             mockMvc.perform(delete("/api/v1/follows/99999")
                             .header("token", StpUtil.getTokenValue()))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_FOUND.getCode()));
 
         } finally {
             StpUtil.logout();
@@ -652,7 +652,7 @@ public class FollowsControllerTest extends BaseControllerTest {
     void testGetFollowees_UserNotFound() throws Exception {
         mockMvc.perform(get("/api/v1/users/99999/followees"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_FOUND.getCode()));
     }
 
     /**

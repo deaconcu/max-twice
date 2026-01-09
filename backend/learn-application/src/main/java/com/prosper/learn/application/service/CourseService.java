@@ -523,6 +523,7 @@ public class CourseService {
         courseDomainService.deleteCourse(id);
     }
 
+    @Transactional
     public void createCourse(CreateCourseRequest request, UserDO creator) {
         // 先验证参数
         if (request == null) {
@@ -551,6 +552,7 @@ public class CourseService {
         courseDataService.update(course);
     }
 
+    @Transactional
     public void createSubcourse(String name, String description, long parentId, UserDO creator) {
         CourseDO parentCourse = courseDataService.getById(parentId);
         if (parentCourse == null) {

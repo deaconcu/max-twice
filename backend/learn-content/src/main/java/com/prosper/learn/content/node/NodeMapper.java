@@ -49,7 +49,7 @@ public interface NodeMapper {
     void update(NodeDO Node);
 
     @Update("UPDATE node SET state = #{state}, reason = #{reason} where id = #{id}")
-    void updateStateAndReason(@Param("id") Long id, @Param("state") Byte state, @Param("reason") String reason);
+    void updateStateAndReason(@Param("id") long id, @Param("state") byte state, @Param("reason") String reason);
 
     // 平台统计相关方法
     @Select("SELECT COUNT(*) FROM node WHERE course_id > 0")

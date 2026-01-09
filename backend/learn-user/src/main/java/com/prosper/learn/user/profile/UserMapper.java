@@ -2,6 +2,7 @@ package com.prosper.learn.user.profile;
 
 import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -39,13 +40,23 @@ public interface UserMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserDO user);
 
-    @Update("UPDATE user SET name = #{name}, password = #{password}, phone = #{phone}, email = #{email}, " +
-            "email_validated = #{emailValidated}, biography = #{biography}, avatar = #{avatar}, state = #{state}, " +
-            "role = #{role}, msg_read_time = #{msgReadTime} where id = #{id}")
+    // 只更新基本信息字段，不更新敏感字段(password, email, email_validated, state, role)
+    @Update("UPDATE user SET name = #{name}, phone = #{phone}, biography = #{biography}, " +
+            "avatar = #{avatar}, msg_read_time = #{msgReadTime}, updated_at = #{updatedAt} WHERE id = #{id}")
     void update(UserDO user);
 
     @Update("UPDATE user SET avatar = #{avatar} WHERE id = #{userId}")
-    int updateAvatar(@Param("userId") Long userId, @Param("avatar") String avatar);
+    int updateAvatar(@Param("userId") long userId, @Param("avatar") String avatar);
+
+    // 敏感字段的专用更新方法
+    @Update("UPDATE user SET state = #{state}, updated_at = #{updatedAt} WHERE id = #{userId}")
+    void updateState(@Param("userId") long userId, @Param("state") byte state, @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Update("UPDATE user SET role = #{role}, updated_at = #{updatedAt} WHERE id = #{userId}")
+    void updateRole(@Param("userId") long userId, @Param("role") int role, @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Update("UPDATE user SET email_validated = #{emailValidated}, updated_at = #{updatedAt} WHERE id = #{userId}")
+    void updateEmailValidated(@Param("userId") long userId, @Param("emailValidated") boolean emailValidated, @Param("updatedAt") LocalDateTime updatedAt);
 
     @Select("SELECT * FROM user ORDER BY id DESC LIMIT #{count}")
     List<UserDO> getList(int count);

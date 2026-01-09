@@ -283,7 +283,7 @@ public class RoadmapDomainService {
      * 创建路线图
      */
     @Transactional
-    public Long createRoadmap(Long professionId, String content, String description, Long userId, Integer nodeCount) {
+    public Long createRoadmap(long professionId, String content, String description, long userId, int nodeCount) {
         RoadmapDO roadmapDO = new RoadmapDO();
         roadmapDO.setContent(content);
         roadmapDO.setContentHash(calculateContentHash(content));
@@ -304,7 +304,7 @@ public class RoadmapDomainService {
      * 更新路线图
      */
     @Transactional
-    public void updateRoadmap(Long id, String content, Integer nodeCount) {
+    public void updateRoadmap(long id, String content, int nodeCount) {
         roadmapDataService.validateExists(id);
 
         RoadmapDO roadmapDO = roadmapDataService.getById(id);
@@ -321,7 +321,7 @@ public class RoadmapDomainService {
      * 删除路线图（软删除）
      */
     @Transactional
-    public void deleteRoadmap(Long id) {
+    public void deleteRoadmap(long id) {
         roadmapDataService.validateExists(id);
 
         int result = roadmapDataService.softDelete(id);
@@ -335,7 +335,7 @@ public class RoadmapDomainService {
      * 批准路线图
      */
     @Transactional
-    public void approve(Long id) {
+    public void approve(long id) {
         roadmapDataService.validateExists(id);
 
         RoadmapDO roadmap = roadmapDataService.getById(id);
@@ -349,7 +349,7 @@ public class RoadmapDomainService {
      * 拒绝路线图
      */
     @Transactional
-    public void reject(Long id, String reason) {
+    public void reject(long id, String reason) {
         roadmapDataService.validateExists(id);
 
         RoadmapDO roadmap = roadmapDataService.getById(id);
@@ -363,7 +363,7 @@ public class RoadmapDomainService {
      * 封禁路线图
      */
     @Transactional
-    public void ban(Long id, String reason) {
+    public void ban(long id, String reason) {
         roadmapDataService.validateExists(id);
 
         RoadmapDO roadmap = roadmapDataService.getById(id);
@@ -377,7 +377,7 @@ public class RoadmapDomainService {
      * 更新路线图描述（管理员操作）
      */
     @Transactional
-    public void updateDescription(Long id, String description) {
+    public void updateDescription(long id, String description) {
         roadmapDataService.validateExists(id);
 
         RoadmapDO roadmap = roadmapDataService.getById(id);
@@ -391,7 +391,7 @@ public class RoadmapDomainService {
      * 清除描述并批准路线图
      */
     @Transactional
-    public void approveAndClearDescription(Long id) {
+    public void approveAndClearDescription(long id) {
         roadmapDataService.validateExists(id);
 
         RoadmapDO roadmap = roadmapDataService.getById(id);

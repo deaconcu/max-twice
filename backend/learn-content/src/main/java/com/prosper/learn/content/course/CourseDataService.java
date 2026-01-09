@@ -131,14 +131,14 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
     /**
      * 根据父ID获取子课程列表（不缓存）
      */
-    public List<CourseDO> listByParent(Long parentId) {
+    public List<CourseDO> listByParent(long parentId) {
         return courseMapper.listByParent(parentId);
     }
 
     /**
      * 根据父ID和状态获取子课程列表（不缓存）
      */
-    public List<CourseDO> listByParentAndState(Enums.ContentState state, Long parentId) {
+    public List<CourseDO> listByParentAndState(Enums.ContentState state, long parentId) {
         return courseMapper.listByParentAndState(state, parentId);
     }
 
@@ -204,7 +204,7 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
      * 删除课程
      */
     @CacheEvict(value = "courses", key = "#id")
-    public int delete(Long id) {
+    public int delete(long id) {
         return courseMapper.delete(id);
     }
 }

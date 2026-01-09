@@ -51,6 +51,8 @@ public enum StatusCode {
     USER_NOT_FOUND(1116, "用户不存在"),
     USER_SUBSCRIPTION_LIMIT_EXCEEDED(1117, "订阅数量已达上限"),
     USER_PROFILE_NOT_FOUND(1118, "用户资料不存在"),
+    USER_VERIFICATION_CODE_SEND_TOO_FREQUENT(1119, "验证码发送过于频繁,请稍后再试"),
+    USER_PASSWORD_TOO_WEAK(1120, "密码强度不足,请使用至少8位且包含字母和数字的密码"),
 
     // 课程相关 12xx
     COURSE_NOT_FOUND(1201, "课程不存在"),

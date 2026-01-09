@@ -181,6 +181,7 @@ public class UpvotesControllerTest extends BaseControllerTest {
         roadmap.setDescription("这是一个测试路线图");
         roadmap.setProfessionId(0L);
         roadmap.setState(ContentState.PUBLISHED.value());
+        roadmap.setScore(0.0);
         roadmapDataService.insert(roadmap);
         return roadmap;
     }
@@ -409,7 +410,7 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(invalidCommentRequest))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.COMMENT_NOT_FOUND.getCode()));
 
         } finally {
             StpUtil.logout();
@@ -469,7 +470,7 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(invalidRequest))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.ROADMAP_NOT_FOUND.getCode()));
 
         } finally {
             StpUtil.logout();

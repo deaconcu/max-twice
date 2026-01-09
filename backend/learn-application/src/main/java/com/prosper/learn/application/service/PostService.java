@@ -482,12 +482,18 @@ public class PostService {
 
         long userId = currentUser.getId();
 
+        // 验证帖子类型
+        PostType postType = PostType.getByValue(request.getType());
+        if (postType == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("无效的帖子类型");
+        }
+
         // 根据类型调用不同的 DomainService 方法
         Long postId;
-        if (request.getType() == PostType.contents.value()) {
+        if (postType == PostType.contents) {
             postId = domainService.createContentsPost(userId, request.getNodeId(), request.getContent(), postState);
         } else {
-            postId = domainService.createArticlePost(userId, request.getNodeId(), request.getType(), request.getContent(), postState);
+            postId = domainService.createArticlePost(userId, request.getNodeId(), postType.value(), request.getContent(), postState);
         }
 
         // 自动标记内容中的图片为使用中

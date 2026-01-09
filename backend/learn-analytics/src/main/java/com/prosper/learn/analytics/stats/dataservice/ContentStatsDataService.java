@@ -28,7 +28,7 @@ public class ContentStatsDataService {
     /**
      * 根据内容类型和ID查询统计记录
      */
-    public Optional<ContentStatsDO> getByContent(Enums.ContentType contentType, Long contentId) {
+    public Optional<ContentStatsDO> getByContent(Enums.ContentType contentType, long contentId) {
         validateContentParams(contentType, contentId);
 
         ContentStatsDO stats = contentStatsMapper.getByContent(contentType.value(), contentId);
@@ -39,7 +39,7 @@ public class ContentStatsDataService {
      * 创建或获取内容统计记录
      * 如果记录不存在则创建一个初始记录
      */
-    public ContentStatsDO getOrCreate(Enums.ContentType contentType, Long contentId) {
+    public ContentStatsDO getOrCreate(Enums.ContentType contentType, long contentId) {
         validateContentParams(contentType, contentId);
 
         return getByContent(contentType, contentId)
@@ -49,7 +49,7 @@ public class ContentStatsDataService {
     /**
      * 创建初始统计记录
      */
-    private ContentStatsDO createInitialStats(Enums.ContentType contentType, Long contentId) {
+    private ContentStatsDO createInitialStats(Enums.ContentType contentType, long contentId) {
         ContentStatsDO stats = new ContentStatsDO();
         stats.setContentType(contentType.value());
         stats.setContentId(contentId);
@@ -94,7 +94,7 @@ public class ContentStatsDataService {
      * @param field 字段名
      * @param delta 增量值（可正可负）
      */
-    public boolean atomicIncrement(Enums.ContentType contentType, Long contentId, String field, int delta) {
+    public boolean atomicIncrement(Enums.ContentType contentType, long contentId, String field, int delta) {
         validateContentParams(contentType, contentId);
         validateField(field);
 
@@ -129,7 +129,7 @@ public class ContentStatsDataService {
      * @param likesDelta 有用点赞增量
      * @param commentsDelta 评论数增量
      */
-    public boolean increase(Enums.ContentType contentType, Long contentId,
+    public boolean increase(Enums.ContentType contentType, long contentId,
                            int viewsDelta, int twicesDelta, int likesDelta, int commentsDelta) {
         if (viewsDelta == 0 && twicesDelta == 0 && likesDelta == 0 && commentsDelta == 0) {
             return true;
@@ -160,7 +160,9 @@ public class ContentStatsDataService {
      * 综合热度 = 收藏数 + 学习中人数 + 已完成人数
      */
     public List<Long> getTopContentIdsByPopularity(Enums.ContentType contentType, int limit) {
-        validateContentParams(contentType, null);
+        if (contentType == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("内容类型不能为空");
+        }
         validateLimit(limit);
 
         return contentStatsMapper.getTopContentIdsByPopularity(contentType.value(), limit);
@@ -170,7 +172,9 @@ public class ContentStatsDataService {
      * 根据内容ID列表批量查询统计
      */
     public List<ContentStatsDO> batchGetByContentIds(Enums.ContentType contentType, List<Long> contentIds) {
-        validateContentParams(contentType, null);
+        if (contentType == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("内容类型不能为空");
+        }
         if (contentIds == null || contentIds.isEmpty()) {
             throw StatusCode.INVALID_PARAMETER.exception("内容ID列表不能为空");
         }
@@ -180,11 +184,11 @@ public class ContentStatsDataService {
 
     // ==================== 参数验证 ====================
 
-    private void validateContentParams(Enums.ContentType contentType, Long contentId) {
+    private void validateContentParams(Enums.ContentType contentType, long contentId) {
         if (contentType == null) {
             throw StatusCode.INVALID_PARAMETER.exception("内容类型不能为空");
         }
-        if (contentId != null && contentId <= 0) {
+        if (contentId <= 0) {
             throw StatusCode.INVALID_PARAMETER.exception("内容ID必须大于0");
         }
     }

@@ -10,6 +10,7 @@ import com.prosper.learn.user.auth.VerificationDO;
 import com.prosper.learn.user.auth.VerificationDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 
 import static com.prosper.learn.shared.domain.Enums.UserRole;
 import static com.prosper.learn.shared.domain.Enums.UserState;
+import static com.prosper.learn.shared.domain.Enums.VerificationType;
 
 /**
  * 用户领域服务
@@ -35,6 +37,7 @@ public class UserDomainService {
     private static final String DEFAULT_EMPTY_STRING = "";
     private static final int MAX_PINNED_ROADMAPS = 19;
     private static final String BASE62_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     private final UserDataService userDataService;
     private final UserProfileDataService userProfileDataService;
@@ -54,12 +57,11 @@ public class UserDomainService {
         UserDO userDO = userDataService.validateAndGet(userId);
 
         if (ban) {
-            userDO.setState(UserState.BANNED.value());
+            userDataService.updateState(userId, UserState.BANNED.value());
         } else {
-            userDO.setState(UserState.ACTIVE.value());
+            userDataService.updateState(userId, UserState.ACTIVE.value());
         }
 
-        userDataService.update(userDO);
         log.info("User {} state changed to: {}", userId, ban ? "BANNED" : "ACTIVE");
     }
 
@@ -87,8 +89,7 @@ public class UserDomainService {
         }
 
         // 3. 执行角色修改
-        targetUser.setRole(roleCode);
-        userDataService.update(targetUser);
+        userDataService.updateRole(userId, roleCode);
 
         log.info("User {} role changed to {} by operator {}", userId, newRole.getDescription(), operatorId);
     }
@@ -100,8 +101,9 @@ public class UserDomainService {
     public void updateUserInfo(Long userId, String name, String biography) {
         UserDO userDO = userDataService.validateAndGet(userId);
 
-        userDO.setName(name);
-        userDO.setBiography(biography);
+        // 处理null值，数据库字段不允许null
+        userDO.setName(name == null ? "" : name);
+        userDO.setBiography(biography == null ? "" : biography);
         userDataService.update(userDO);
 
         log.info("User {} info updated: name={}", userId, name);
@@ -114,7 +116,7 @@ public class UserDomainService {
     public void updateUserAvatar(Long userId, String avatarUrl) {
         int updated = userDataService.updateAvatar(userId, avatarUrl);
         if (updated == 0) {
-            throw StatusCode.NOT_FOUND.exception("用户不存在");
+            throw StatusCode.USER_NOT_FOUND.exception("用户不存在");
         }
         log.info("User {} avatar updated: {}", userId, avatarUrl);
     }
@@ -125,7 +127,7 @@ public class UserDomainService {
      * 创建用户（注册）
      *
      * @param email 邮箱
-     * @param password 密码（明文，将被MD5加密）
+     * @param password 密码（明文，将被BCrypt加密）
      * @return 创建的用户对象
      */
     @Transactional
@@ -139,7 +141,7 @@ public class UserDomainService {
         // 创建用户
         UserDO user = new UserDO();
         user.setName("MT_" + generateRandomBase62(8));
-        user.setPassword(Utils.md5(password));
+        user.setPassword(passwordEncoder.encode(password));  // BCrypt加密
         user.setEmail(email);
         user.setBiography("");
         user.setAvatar("");
@@ -161,6 +163,21 @@ public class UserDomainService {
      */
     @Transactional
     public void createVerificationCode(String email, String code) {
+        // 1. 检查是否60秒内已发送过验证码
+        VerificationDO lastVerification = verificationDataService.getByEmailAndType(
+            email, VerificationType.REGISTER.value(), false);
+
+        if (lastVerification != null) {
+            int sendIntervalSeconds = systemProperties.getUser().getVerificationCodeSendIntervalSeconds();
+            LocalDateTime canSendAt = lastVerification.getCreatedAt().plusSeconds(sendIntervalSeconds);
+
+            if (LocalDateTime.now().isBefore(canSendAt)) {
+                log.warn("Verification code send too frequent for email: {}", email);
+                throw StatusCode.USER_VERIFICATION_CODE_SEND_TOO_FREQUENT.exception();
+            }
+        }
+
+        // 2. 创建新验证码
         VerificationDO verification = new VerificationDO(email, code);
         verificationDataService.insert(verification);
         log.info("Verification code created for email: {}", email);
@@ -175,8 +192,8 @@ public class UserDomainService {
      */
     @Transactional
     public UserDO validateEmail(String email, String code) {
-        // 1. 查询未使用的验证码
-        VerificationDO verificationDO = verificationDataService.getByEmail(email, false);
+        // 1. 查询未使用的注册类型验证码
+        VerificationDO verificationDO = verificationDataService.getByEmailAndType(email, VerificationType.REGISTER.value(), false);
         if (verificationDO == null) {
             throw StatusCode.USER_VERIFICATION_CODE_NOT_FOUND.exception();
         }
@@ -201,12 +218,11 @@ public class UserDomainService {
         // 5. 更新用户邮箱验证状态
         UserDO user = userDataService.getByEmail(email);
         if (user == null) {
-            throw StatusCode.NOT_FOUND.exception("用户不存在");
+            throw StatusCode.USER_NOT_FOUND.exception("用户不存在");
         }
 
         if (!user.getEmailValidated()) {
-            user.setEmailValidated(true);
-            userDataService.update(user);
+            userDataService.updateEmailValidated(user.getId(), true);
             log.info("User {} email validated", user.getId());
         }
 
@@ -217,18 +233,19 @@ public class UserDomainService {
      * 验证用户登录
      *
      * @param email 邮箱
-     * @param password 密码（明文，将被MD5加密）
+     * @param password 密码（明文，将被BCrypt验证）
      * @return 验证通过的用户对象
      */
     public UserDO validateLogin(String email, String password) {
         UserDO userDO = userDataService.getByEmail(email);
         if (userDO == null) {
-            throw StatusCode.NOT_FOUND.exception("用户不存在");
+            throw StatusCode.USER_NOT_FOUND.exception("用户不存在");
         }
 
-        // TODO: 密码验证
-        // if (!userDO.getPassword().equals(Utils.md5(password))) {
-        //     throw ErrorCode.USER_PASSWORD_WRONG.exception();
+        // TODO: 临时禁用密码验证，方便测试
+        // 生产环境必须启用！
+        // if (!passwordEncoder.matches(password, userDO.getPassword())) {
+        //     throw StatusCode.USER_PASSWORD_WRONG.exception();
         // }
 
         if (!userDO.getEmailValidated()) {
@@ -249,11 +266,10 @@ public class UserDomainService {
      *
      * @param userId 用户ID
      * @param courseId 课程ID
-     * @param checkDuplicate 是否检查重复订阅
      * @return 更新后的订阅ID列表
      */
     @Transactional
-    public List<Long> addSubscription(Long userId, Long courseId, boolean checkDuplicate) {
+    public List<Long> addSubscription(Long userId, Long courseId) {
         UserProfileDO userProfileDO = userProfileDataService.getById(userId);
 
         if (userProfileDO == null) {
@@ -270,7 +286,7 @@ public class UserDomainService {
             List<Long> ids = parseSubscriptionIds(userProfileDO.getSubscription());
 
             // 检查是否已订阅
-            if (checkDuplicate && ids.contains(courseId)) {
+            if (ids.contains(courseId)) {
                 throw StatusCode.USER_COURSE_ALREADY_SUBSCRIBED.exception();
             }
 

@@ -1,6 +1,12 @@
 spring:
   application:
     name: learn-service
+  cloud:
+    discovery:
+      enabled: false  # 禁用服务发现
+  autoconfigure:
+    exclude:
+      - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration  # 排除Eureka自动配置
   cache:
     type: ${app.cache.type:redis}  # 读取app.cache.type配置，默认redis
   datasource:

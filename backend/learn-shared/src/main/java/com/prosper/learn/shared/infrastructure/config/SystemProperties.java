@@ -335,14 +335,14 @@ public class SystemProperties {
         private boolean enableDuplicateFollowCheck = true;
 
         /**
-         * 是否启用订阅重复检查
-         */
-        private boolean enableDuplicateSubscriptionCheck = true;
-
-        /**
          * 验证码过期时间（分钟）
          */
         private int verificationCodeExpiryMinutes = 10;
+
+        /**
+         * 验证码发送间隔（秒）
+         */
+        private int verificationCodeSendIntervalSeconds = 60;
     }
 
     @Data

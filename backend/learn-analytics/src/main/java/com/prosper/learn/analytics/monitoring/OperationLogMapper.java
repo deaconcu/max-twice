@@ -25,7 +25,7 @@ public interface OperationLogMapper {
      * 根据ID查询
      */
     @Select("SELECT * FROM operation_log WHERE id = #{id}")
-    OperationLogDO getById(Long id);
+    OperationLogDO getById(long id);
 
 // --注释掉检查 START (2025/12/10 12:02):
 //    /**

@@ -151,6 +151,7 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
     /**
      * 审批通过节点
      */
+    @CacheEvict(value = "nodes", key = "#id")
     public void approve(long id) {
         nodeMapper.updateStateAndReason(id, Enums.ContentState.PUBLISHED.value(), "");
     }

@@ -59,7 +59,7 @@ public class FollowService {
     @Transactional
     public void follow(UserDO follower, Long followeeId) {
         // 验证被关注者存在性（跨域查询）
-        UserDO followee = validateUserExists(followeeId);
+        userDataService.validateAndGet(followeeId);
 
         // 调用 DomainService 执行关注逻辑
         boolean added = followDomainService.follow(follower.getId(), followeeId);
@@ -83,7 +83,7 @@ public class FollowService {
     @Transactional
     public void unfollow(Long followerId, Long followeeId) {
         // 验证被关注者存在性（跨域查询）
-        UserDO followee = validateUserExists(followeeId);
+        userDataService.validateAndGet(followeeId);
 
         // 调用 DomainService 执行取消关注逻辑
         boolean removed = followDomainService.unfollow(followerId, followeeId);
@@ -109,7 +109,7 @@ public class FollowService {
      */
     public List<FolloweeDTO> getFollowees(Long userId, Long lastId) {
         // 验证用户存在性（跨域查询）
-        UserDO follower = validateUserExists(userId);
+        userDataService.validateAndGet(userId);
 
         // 获取关注记录列表（interaction 域）
         List<FollowDO> followDOList = followDomainService.getFollowees(userId, lastId);
@@ -132,25 +132,6 @@ public class FollowService {
     }
 
     // ========== Private 辅助方法 ==========
-
-    /**
-     * 验证用户存在性（跨域查询）
-     *
-     * @param userId 用户ID
-     * @return 用户实体对象
-     * @throws BusinessException 当用户不存在时抛出异常
-     */
-    private UserDO validateUserExists(Long userId) {
-        if (userId == null || userId <= 0) {
-            throw StatusCode.INVALID_PARAMETER.exception("用户ID无效: " + userId);
-        }
-
-        UserDO userDO = userDataService.getById(userId);
-        if (userDO == null) {
-            throw StatusCode.NOT_FOUND.exception("用户不存在");
-        }
-        return userDO;
-    }
 
     /**
      * 批量获取用户信息并转换为Map（跨域查询）

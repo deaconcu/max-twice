@@ -346,7 +346,7 @@ public class PostsControllerTest extends BaseControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(nonExistentNodeRequest))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.NODE_NOT_FOUND.getCode()));
 
         } finally {
             StpUtil.logout();
@@ -419,7 +419,7 @@ public class PostsControllerTest extends BaseControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(updateRequest))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.POST_NOT_FOUND.getCode()));
 
             // 4. 参数验证 - 帖子ID = 0
             mockMvc.perform(put("/api/v1/posts/0")
@@ -489,7 +489,7 @@ public class PostsControllerTest extends BaseControllerTest {
             mockMvc.perform(delete("/api/v1/posts/99999")
                     .header("token", StpUtil.getTokenValue()))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                    .andExpect(jsonPath("$.code").value(StatusCode.POST_NOT_FOUND.getCode()));
 
             // 3. 参数验证 - 帖子ID = 0
             mockMvc.perform(delete("/api/v1/posts/0")
@@ -562,7 +562,7 @@ public class PostsControllerTest extends BaseControllerTest {
         // 3. 帖子不存在
         mockMvc.perform(get("/api/v1/posts/99999"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                .andExpect(jsonPath("$.code").value(StatusCode.POST_NOT_FOUND.getCode()));
 
         // 4. 帖子ID无效 - ID = 0
         mockMvc.perform(get("/api/v1/posts/0"))

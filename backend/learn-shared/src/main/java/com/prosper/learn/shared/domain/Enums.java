@@ -465,6 +465,46 @@ public class Enums {
         }
     }
 
+    /**
+     * 验证码类型枚举
+     * REGISTER=1, RESET_PASSWORD=2, CHANGE_EMAIL=3
+     */
+    public enum VerificationType implements ValueEnum<Byte> {
+        REGISTER((byte)1, "注册"),
+        RESET_PASSWORD((byte)2, "找回密码"),
+        CHANGE_EMAIL((byte)3, "修改邮箱");
+
+        // 静态常量用于 MyBatis 注解
+        public static final byte REGISTER_VALUE = 1;
+        public static final byte RESET_PASSWORD_VALUE = 2;
+        public static final byte CHANGE_EMAIL_VALUE = 3;
+
+        private final byte value;
+        private final String description;
+
+        VerificationType(byte value, String description) {
+            this.value = value;
+            this.description = description;
+        }
+
+        @Override
+        public Byte value() {
+            return value;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public static VerificationType getByValue(Integer value) {
+            return value == null ? null : ValueEnum.getByValue(VerificationType.class, value.byteValue());
+        }
+
+        public static boolean isValid(int value) {
+            return ValueEnum.isValid(VerificationType.class, (byte)value);
+        }
+    }
+
 
     public enum DTOVersion {
         V1, V2, V3, V4, V5, V6, V7, V8, V9, V10

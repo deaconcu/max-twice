@@ -38,13 +38,6 @@ public class PostDomainService {
     // ========== Query 方法 ==========
 
     /**
-     * 根据ID获取帖子
-     */
-    public PostDO get(long id) {
-        return postDataService.getById(id);
-    }
-
-    /**
      * 根据ID获取帖子（包含 idToName 处理）
      */
     public PostDO getWithIdToName(long id) {
@@ -66,17 +59,12 @@ public class PostDomainService {
     }
 
     /**
-     * 根据节点ID获取帖子列表
-     */
-    public List<PostDO> getListByNode(Long nodeId, int limit, Byte type) {
-        return postDataService.getListByNode(nodeId, limit, type);
-    }
-
-    /**
      * 根据节点和创建者获取帖子列表
      */
     public List<PostDO> getListByNodeAndCreator(Long nodeId, Long creatorId, Long lastId, Byte state, int limit) {
-        return postDataService.getListByNodeAndCreator(nodeId, creatorId, lastId, state, limit);
+        List<PostDO> posts = postDataService.getListByNodeAndCreator(nodeId, creatorId, lastId, state, limit);
+        posts.forEach(this::processIdToName);
+        return posts;
     }
 
     /**
@@ -84,12 +72,7 @@ public class PostDomainService {
      */
     public List<PostDO> getUserPosts(Long userId, Integer type, Long lastId, Byte state, int count) {
         List<PostDO> posts = postDataService.getPostsByUser(userId, type, lastId, state, count);
-
-        // 如果是目录类型，处理内容ID转名称
-        if (PostType.contents.value() == type) {
-            posts.forEach(this::processIdToName);
-        }
-
+        posts.forEach(this::processIdToName);
         return posts;
     }
 
@@ -125,13 +108,7 @@ public class PostDomainService {
      */
     public List<PostDO> getListByState(Byte state, int limit) {
         List<PostDO> posts = postDataService.getListByState(state, limit);
-
-        for (PostDO post : posts) {
-            if (post.getType() == PostType.contents.value()) {
-                processIdToName(post);
-            }
-        }
-
+        posts.forEach(this::processIdToName);
         return posts;
     }
 
@@ -140,13 +117,7 @@ public class PostDomainService {
      */
     public List<PostDO> getListByState(Byte state, Long lastId, Integer limit) {
         List<PostDO> posts = postDataService.getListByState(state, lastId, limit);
-
-        for (PostDO post : posts) {
-            if (post.getType() == PostType.contents.value()) {
-                processIdToName(post);
-            }
-        }
-
+        posts.forEach(this::processIdToName);
         return posts;
     }
 
@@ -154,10 +125,10 @@ public class PostDomainService {
      * 根据ID列表或节点查询帖子
      */
     public List<PostDO> getPostsByIdsOrNode(List<Long> ids, Long nodeId, Double lastScore, Long lastPostingId, int count, Byte state) {
+        List<PostDO> posts = null;
         if (ids != null && !ids.isEmpty()) {
-            return postDataService.getByIds(ids);
+            posts = postDataService.getByIds(ids);
         } else if (nodeId != null && nodeId > 0) {
-            List<PostDO> posts;
             // 首次请求（无分页参数）：使用不带分页条件的查询
             if (lastScore == null || lastPostingId == null) {
                 posts = postDataService.getListByNodeAndScore(nodeId, count, state);
@@ -165,10 +136,11 @@ public class PostDomainService {
                 // 后续请求（有分页参数）：使用带分页条件的查询
                 posts = postDataService.getListByNodeAndScoreAndPaginated(nodeId, lastScore, lastPostingId, count, state);
             }
-            posts.forEach(this::processIdToName);
-            return posts;
         }
-        return List.of();
+
+        if (posts == null) return List.of();
+        posts.forEach(this::processIdToName);
+        return posts;
     }
 
     // ========== Command 方法 ==========
@@ -177,7 +149,7 @@ public class PostDomainService {
      * 创建普通帖子
      */
     @Transactional
-    public Long createArticlePost(Long userId, Long nodeId, Integer type, String content, ContentState state) {
+    public Long createArticlePost(long userId, long nodeId, int type, String content, ContentState state) {
         // 验证节点是否存在
         NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
 
@@ -203,7 +175,7 @@ public class PostDomainService {
      * 创建目录型帖子（contents类型）
      */
     @Transactional
-    public Long createContentsPost(Long userId, Long nodeId, String jsonContent, ContentState state) {
+    public Long createContentsPost(long userId, long nodeId, String jsonContent, ContentState state) {
         NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
 
         // 验证节点状态是否为已发布
@@ -262,7 +234,7 @@ public class PostDomainService {
      * 更新帖子内容
      */
     @Transactional
-    public void updatePost(Long id, String content) {
+    public void updatePost(long id, String content) {
         PostDO postDO = validateAndGet(id);
 
         if (postDO.getType() == PostType.contents.value()) {
@@ -279,12 +251,12 @@ public class PostDomainService {
      * 软删除帖子
      */
     @Transactional
-    public void softDelete(Long id) {
+    public void softDelete(long id) {
         postDataService.validateAndGet(id);
 
         int result = postDataService.softDelete(id);
         if (result == 0) {
-            throw StatusCode.NOT_FOUND.exception();
+            throw StatusCode.POST_NOT_FOUND.exception();
         }
 
         log.info("Soft deleted post: {}", id);
@@ -294,7 +266,7 @@ public class PostDomainService {
      * 更新帖子状态
      */
     @Transactional
-    public void updateState(Long id, ContentState state, String reason) {
+    public void updateState(long id, ContentState state, String reason) {
         PostDO postDO = validateAndGet(id);
         postDO.setState(state.value());
         postDO.setReason(reason);
@@ -307,7 +279,7 @@ public class PostDomainService {
      * 批准帖子
      */
     @Transactional
-    public void approve(Long id) {
+    public void approve(long id) {
         PostDO postDO = validateAndGet(id);
         postDO.setState(ContentState.PUBLISHED.value());
         postDO.setReason(null);
@@ -320,7 +292,7 @@ public class PostDomainService {
      * 拒绝帖子
      */
     @Transactional
-    public void reject(Long id, String reason) {
+    public void reject(long id, String reason) {
         postDataService.validateAndGet(id);
         postDataService.reject(id, reason);
 
@@ -331,7 +303,7 @@ public class PostDomainService {
      * 封禁帖子
      */
     @Transactional
-    public void ban(Long id, String reason) {
+    public void ban(long id, String reason) {
         postDataService.validateAndGet(id);
         postDataService.ban(id, reason);
 
@@ -343,7 +315,7 @@ public class PostDomainService {
     /**
      * 验证并获取帖子
      */
-    public PostDO validateAndGet(Long postId) {
+    public PostDO validateAndGet(long postId) {
         return postDataService.validateAndGet(postId);
     }
 

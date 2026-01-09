@@ -452,7 +452,7 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
         return false;
     }
 
-    public int softDelete(Long deckId) {
+    public int softDelete(long deckId) {
         return memoryCardDeckMapper.softDelete(deckId);
     }
 }

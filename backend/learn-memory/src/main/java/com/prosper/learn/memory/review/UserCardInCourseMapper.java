@@ -132,7 +132,7 @@ public interface UserCardInCourseMapper {
           "GROUP BY",
           "    ucc.course_id",
           "</script>"})
-    List<CourseMemoryBankDO> getBatchCardStatsForCourses(@Param("userId") Long userId, @Param("courseIds") Set<Long> courseIds, @Param("now") LocalDateTime now);
+    List<CourseMemoryBankDO> getBatchCardStatsForCourses(@Param("userId") long userId, @Param("courseIds") Set<Long> courseIds, @Param("now") LocalDateTime now);
 
     @Select({"<script>",
           "SELECT",
@@ -153,7 +153,7 @@ public interface UserCardInCourseMapper {
           "    AND ucc.course_id = #{courseId}",
           "    AND deck.state = " + Enums.ContentState.PUBLISHED_VALUE,
           "</script>"})
-    CourseMemoryBankDO getCardStatsForCourses(@Param("userId") Long userId, @Param("courseId") Long courseId, @Param("now") LocalDateTime now);
+    CourseMemoryBankDO getCardStatsForCourses(@Param("userId") long userId, @Param("courseId") long courseId, @Param("now") LocalDateTime now);
 
     @Insert("""
           <script>
@@ -164,34 +164,34 @@ public interface UserCardInCourseMapper {
           </foreach>
           </script>
           """)
-    int batchInsertIgnore(@Param("userId") Long userId,
-                         @Param("deckId") Long deckId,
-                         @Param("courseId") Long courseId,
+    int batchInsertIgnore(@Param("userId") long userId,
+                         @Param("deckId") long deckId,
+                         @Param("courseId") long courseId,
                          @Param("cardIds") List<Long> cardIds);
 
     @Delete("""
           <script>
-          DELETE FROM user_card_in_course 
+          DELETE FROM user_card_in_course
           WHERE user_id = #{userId} AND course_id = #{courseId} AND card_id IN
           <foreach collection="cardIds" item="cardId" open="(" separator="," close=")">
               #{cardId}
           </foreach>
           </script>
           """)
-    int batchDeleteByUserCourseAndCards(@Param("userId") Long userId, 
-                                       @Param("courseId") Long courseId, 
+    int batchDeleteByUserCourseAndCards(@Param("userId") long userId,
+                                       @Param("courseId") long courseId,
                                        @Param("cardIds") List<Long> cardIds);
 
     @Select("""
           <script>
-          SELECT DISTINCT card_id FROM user_card_in_course 
+          SELECT DISTINCT card_id FROM user_card_in_course
           WHERE user_id = #{userId} AND card_id IN
           <foreach collection="cardIds" item="cardId" open="(" separator="," close=")">
               #{cardId}
           </foreach>
           </script>
           """)
-    List<Long> getExistingCardIdsByUserAndCards(@Param("userId") Long userId, 
+    List<Long> getExistingCardIdsByUserAndCards(@Param("userId") long userId, 
                                                @Param("cardIds") List<Long> cardIds);
 
 

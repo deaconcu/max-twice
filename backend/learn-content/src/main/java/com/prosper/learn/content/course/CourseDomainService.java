@@ -26,7 +26,7 @@ public class CourseDomainService {
     /**
      * 检查用户是否是课程创建者
      */
-    public boolean isCreator(Long courseId, Long userId) {
+    public boolean isCreator(long courseId, long userId) {
         CourseDO course = courseDataService.validateAndGet(courseId);
         return course.getCreatorId().equals(userId);
     }
@@ -39,7 +39,7 @@ public class CourseDomainService {
      * 注意：权限验证应该由调用方（ApplicationService）完成
      */
     @Transactional
-    public void updateCourse(Long courseId, String name, String description,
+    public void updateCourse(long courseId, String name, String description,
                             Integer mainCategory, Integer subCategory) {
         CourseDO courseDO = courseDataService.validateAndGet(courseId);
 

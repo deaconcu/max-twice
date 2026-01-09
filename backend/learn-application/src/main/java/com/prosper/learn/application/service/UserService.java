@@ -274,12 +274,11 @@ public class UserService {
      */
     @Transactional
     public void subscribe(Long userId, Long courseId) {
-        validateCourseExists(courseId);
+        courseDataService.validateAndGet(courseId);
         validateUserId(userId);
 
         // 委托给 DomainService 添加订阅
-        boolean checkDuplicate = systemProperties.getUser().isEnableDuplicateSubscriptionCheck();
-        userDomainService.addSubscription(userId, courseId, checkDuplicate);
+        userDomainService.addSubscription(userId, courseId);
 
         // 发布收藏事件
         eventPublisher.publishEvent(new ContentBookmarkedEvent(
@@ -294,7 +293,7 @@ public class UserService {
      */
     @Transactional
     public void unsubscribe(Long userId, Long courseId) {
-        validateCourseExists(courseId);
+        courseDataService.validateAndGet(courseId);
         validateUserId(userId);
 
         // 委托给 DomainService 取消订阅
@@ -469,17 +468,7 @@ public class UserService {
             throw StatusCode.INVALID_PARAMETER.exception();
         }
     }
-    
-    private void validateCourseExists(Long courseId) {
-        if (courseId == null || courseId <= 0) {
-            throw StatusCode.INVALID_PARAMETER.exception();
-        }
-        CourseDO courseDO = courseDataService.getById(courseId);
-        if (courseDO == null) {
-            throw StatusCode.COURSE_NOT_FOUND.exception();
-        }
-    }
-    
+
     private void validateEmail(String email) {
         if (!StringUtils.hasText(email)) {
             throw StatusCode.INVALID_PARAMETER.exception();
@@ -499,8 +488,17 @@ public class UserService {
     }
 
     private void validatePassword(String password) {
+        // 长度检查
         if (password == null || password.length() < systemProperties.getUser().getMinPasswordLength()) {
             throw StatusCode.USER_INVALID_PASSWORD_LENGTH.exception();
+        }
+
+        // 强度检查：必须包含字母和数字
+        boolean hasLetter = password.matches(".*[a-zA-Z].*");
+        boolean hasDigit = password.matches(".*[0-9].*");
+
+        if (!hasLetter || !hasDigit) {
+            throw StatusCode.USER_PASSWORD_TOO_WEAK.exception();
         }
     }
 

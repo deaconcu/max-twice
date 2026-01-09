@@ -173,6 +173,7 @@ public class ProgressControllerTest extends BaseControllerTest {
         roadmap.setCreatorId(1L);
         roadmap.setNodeCount(nodeCount);
         roadmap.setState((byte) 2); // PUBLISHED
+        roadmap.setScore(0.0);
         roadmapDataService.insert(roadmap);
         return roadmap;
     }

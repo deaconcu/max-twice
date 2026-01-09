@@ -72,6 +72,31 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
     }
 
     /**
+     * 验证并获取评论
+     *
+     * @param id 评论ID
+     * @return 评论实体
+     * @throws com.prosper.learn.shared.domain.exception.BusinessException 当评论不存在时抛出 COMMENT_NOT_FOUND (1401)
+     */
+    @Override
+    public CommentDO validateAndGet(Long id) {
+        if (id == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("评论ID不能为空");
+        }
+
+        if (id <= 0) {
+            throw StatusCode.INVALID_PARAMETER.exception("评论ID必须大于0");
+        }
+
+        CommentDO comment = getById(id);
+        if (comment == null) {
+            throw StatusCode.COMMENT_NOT_FOUND.exception();
+        }
+
+        return comment;
+    }
+
+    /**
      * 更新评论并清除缓存
      */
     @CacheEvict(value = "comments", key = "#comment.id")
@@ -99,14 +124,14 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
     /**
      * 根据对象ID获取评论列表（不缓存）
      */
-    public List<CommentDO> getByObjectId(Long objectId, int type, int pageSize) {
+    public List<CommentDO> getByObjectId(long objectId, int type, int pageSize) {
         return commentMapper.getByObjectId(objectId, type, pageSize);
     }
     
     /**
      * 根据对象ID分页获取评论列表（不缓存）
      */
-    public List<CommentDO> getByObjectIdPaginated(Long objectId, int type, double score, Long offsetId, int pageSize) {
+    public List<CommentDO> getByObjectIdPaginated(long objectId, int type, double score, long offsetId, int pageSize) {
         return commentMapper.getByObjectIdPaginated(objectId, type, score, offsetId, pageSize);
     }
     
@@ -123,14 +148,14 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
     /**
      * 根据主题获取评论列表（不缓存）
      */
-    public List<CommentDO> getByTopic(Long id, int pageSize) {
+    public List<CommentDO> getByTopic(long id, int pageSize) {
         return commentMapper.getByTopic(id, pageSize);
     }
     
     /**
      * 根据主题分页获取评论列表（不缓存）
      */
-    public List<CommentDO> getByTopicPaginated(Long id, double score, Long offsetId, int pageSize) {
+    public List<CommentDO> getByTopicPaginated(long id, double score, long offsetId, int pageSize) {
         return commentMapper.getByTopicPaginated(id, score, offsetId, pageSize);
     }
     

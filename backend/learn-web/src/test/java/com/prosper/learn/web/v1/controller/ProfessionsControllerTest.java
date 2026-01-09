@@ -316,7 +316,7 @@ public class ProfessionsControllerTest extends BaseControllerTest {
         // 3. 职业不存在
         mockMvc.perform(get("/api/v1/professions/{id}", 99999L))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.NOT_FOUND.getCode()));
+                .andExpect(jsonPath("$.code").value(StatusCode.PROFESSION_NOT_FOUND.getCode()));
 
         // 4. 职业ID无效 - ID = 0
         mockMvc.perform(get("/api/v1/professions/{id}", 0L))

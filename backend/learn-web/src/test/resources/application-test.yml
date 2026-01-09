@@ -27,6 +27,8 @@ app:
   user:
     # 测试环境禁用邮件验证
     enable-email-validation: false
+    # 测试环境设置较短的发送间隔,方便测试
+    verification-code-send-interval-seconds: 2
 
 # 日志级别（测试环境可以更详细）
 logging:
