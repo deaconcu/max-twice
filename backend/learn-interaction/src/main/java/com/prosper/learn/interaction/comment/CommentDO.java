@@ -28,4 +28,6 @@ public class CommentDO {
     private Double score;
 
     private LocalDateTime createdAt;
+
+    private LocalDateTime deletedAt;  // 软删除时间
 }

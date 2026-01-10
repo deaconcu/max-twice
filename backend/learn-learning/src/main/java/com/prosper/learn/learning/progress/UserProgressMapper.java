@@ -26,7 +26,7 @@ public interface UserProgressMapper {
      */
     @Update("UPDATE user_progress SET " +
             "node_ids = #{nodeIds}, " +
-            "count = #{count}, " +
+            "count = #{count} " +
             "WHERE user_id = #{userId}")
     int update(UserProgressDO record);
 

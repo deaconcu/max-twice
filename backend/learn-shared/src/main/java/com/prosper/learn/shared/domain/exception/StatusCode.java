@@ -31,6 +31,7 @@ public enum StatusCode {
     OBJECT_STATE_INVALID(1012, "您访问的对象处于非正常状态，当前无法访问"),
     OPERATION_FAILED(1013, "操作失败"),
     NOT_SUPPORTED(1014, "不支持的操作类型"),
+    BATCH_SIZE_EXCEEDED(1015, "批量操作数量超出限制"),
 
     // 用户认证相关 11xx
     USER_NOT_LOGIN(1101, "用户未登录"),

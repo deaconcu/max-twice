@@ -15,6 +15,7 @@ import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyDO;
 import com.prosper.learn.analytics.stats.mapper.UserStatsYearlyDO;
 import com.prosper.learn.analytics.stats.mapper.UserStatsYearlyMapper;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
@@ -82,29 +83,33 @@ public class DailyStatsService {
     private final ObjectMapper objectMapper;
     private final SystemProperties systemProperties;
 
+    // 新增：注入拆分后的同步服务
+    private final UserStatsSyncService userStatsSyncService;
+    private final ContentStatsSyncService contentStatsSyncService;
+
     /**
      * 同步昨天的统计数据
-     * 
+     *
      * 主要同步任务，通常在每日凌晨执行:
      * 1. 从Redis读取昨天的用户和文章统计数据
      * 2. 将数据写入数据库对应的统计表
      * 3. 删除Redis中已同步的数据以节省内存
      */
     public void syncYesterdayStats() {
-        LocalDate yesterday = LocalDate.now().minusDays(1);
+        LocalDate yesterday = TimeZoneUtil.yesterday();
         String dateStr = yesterday.toString();
-        
+
         log.info("开始同步{}的统计数据", dateStr);
-        
+
         try {
-            // 同步用户统计
-            int userStatsCount = syncUserStats(dateStr);
-            
-            // 同步文章统计
-            int postStatsCount = syncPostStats(dateStr);
-            
+            // 同步用户统计（使用UserStatsSyncService）
+            int userStatsCount = userStatsSyncService.syncUserStats(dateStr);
+
+            // 同步文章统计（使用ContentStatsSyncService）
+            int postStatsCount = contentStatsSyncService.syncPostStats(dateStr);
+
             log.info("同步{}的数据完成: 用户统计{}条, 文章统计{}条", dateStr, userStatsCount, postStatsCount);
-            
+
         } catch (Exception e) {
             log.error("同步{}的数据失败", dateStr, e);
         }
@@ -112,55 +117,57 @@ public class DailyStatsService {
 
     /**
      * 同步指定日期的统计数据
-     * 
+     *
      * 手动触发同步任务，用于重新处理指定日期的数据:
      * 1. 检查Redis中是否有指定日期的数据
      * 2. 如果有数据，则重新同步到数据库
      * 3. 如果没有数据，直接退出，不覆盖数据库中的现有数据
-     * 
+     *
      * @param date 要同步的日期，如果为null则默认为今天
      * @return 同步结果信息
      */
     public String syncSpecificDate(LocalDate date) {
         if (date == null) {
-            date = LocalDate.now();
+            date = TimeZoneUtil.now();
         }
-        
+
         String dateStr = date.toString();
         log.info("开始同步{}的统计数据", dateStr);
-        
+
         try {
             // 检查Redis中是否有这个日期的数据
             String userKey = generateUserStatsKey(dateStr);
             String postKey = generatePostStatsKey(dateStr);
-            
+
             boolean hasUserData = redisTemplate.hasKey(userKey);
             boolean hasPostData = redisTemplate.hasKey(postKey);
-            
+
             if (!hasUserData && !hasPostData) {
                 String message = String.format("Redis中没有%s的统计数据，跳过同步", dateStr);
                 log.info(message);
                 return message;
             }
-            
+
             int userStatsCount = 0;
             int postStatsCount = 0;
-            
+
             if (hasUserData) {
-                userStatsCount = syncUserStats(dateStr);
+                // 使用UserStatsSyncService
+                userStatsCount = userStatsSyncService.syncUserStats(dateStr);
                 log.info("同步{}的用户数据: {}条", dateStr, userStatsCount);
             }
-            
+
             if (hasPostData) {
-                postStatsCount = syncPostStats(dateStr);
+                // 使用ContentStatsSyncService
+                postStatsCount = contentStatsSyncService.syncPostStats(dateStr);
                 log.info("同步{}的文章数据: {}条", dateStr, postStatsCount);
             }
-            
-            String message = String.format("同步%s的数据完成: 用户统计%d条, 文章统计%d条", 
+
+            String message = String.format("同步%s的数据完成: 用户统计%d条, 文章统计%d条",
                 dateStr, userStatsCount, postStatsCount);
             log.info(message);
             return message;
-            
+
         } catch (Exception e) {
             String message = String.format("同步%s的数据失败: %s", dateStr, e.getMessage());
             log.error(message, e);
@@ -168,364 +175,12 @@ public class DailyStatsService {
         }
     }
 
-
-    /**
-     * 同步用户统计数据
-     * 
-     * 同步逻辑，直接覆盖当天的完整统计数据:
-     * 1. 从Redis获取指定日期的用户统计数据
-     * 2. 解析并聚合每个用户当天的完整数据
-     * 3. 直接覆盖数据库中当天的数据（而非增量更新）
-     * 4. 删除Redis中的原始数据
-     * 
-     * @param dateStr 日期字符串，格式: YYYY-MM-DD
-     * @return 成功同步的记录数
-     */
-    private int syncUserStats(String dateStr) {
-        String userKey = generateUserStatsKey(dateStr);
-        Map<Object, Object> userStats = redisTemplate.opsForHash().entries(userKey);
-        
-        if (userStats.isEmpty()) {
-            log.info("{}没有用户统计数据", dateStr);
-            return 0;
-        }
-        
-        // 解析日期信息
-        LocalDate date = LocalDate.parse(dateStr);
-        int year = date.getYear();
-        String dayKey = generateDayKey(date);
-        
-        // 按用户ID分组并聚合当天的完整统计数据
-        Map<Long, UserDayStats> userDayStatsMap = new HashMap<>();
-        
-        for (Map.Entry<Object, Object> entry : userStats.entrySet()) {
-            String field = (String) entry.getKey();
-            Integer count = Integer.parseInt((String) entry.getValue());
-            
-            if (count <= 0) continue; // 跳过无效数据
-            
-            String[] parts = field.split(":");
-            if (parts.length != 2) continue;
-            
-            Long userId = Long.parseLong(parts[0]);
-            String statType = parts[1];
-            
-            UserDayStats dayStats = userDayStatsMap.computeIfAbsent(userId, k -> new UserDayStats());
-            
-            // 聚合当天的完整数据
-            switch (statType) {
-                case STAT_TYPE_VIEW:
-                    dayStats.views += count;
-                    break;
-                case STAT_TYPE_TWICE:
-                    dayStats.twice += count;
-                    break;
-                case STAT_TYPE_LIKE:
-                    dayStats.like += count;
-                    break;
-                case STAT_TYPE_COMMENT:
-                    dayStats.comments += count;
-                    break;
-                default:
-                    log.debug("忽略未知的统计类型: {}", statType);
-            }
-        }
-        
-        // 直接覆盖数据库中当天的数据
-        int updateCount = 0;
-        for (Map.Entry<Long, UserDayStats> entry : userDayStatsMap.entrySet()) {
-            Long userId = entry.getKey();
-            UserDayStats dayStats = entry.getValue();
-
-            try {
-                // 确保用户的年度记录存在
-                ensureUserYearRecord(userId, year);
-
-                // 直接设置当天的完整数据（覆盖而非增量）
-                int updated = userStatsYearlyMapper.updateYearlyStatsArray(
-                        userId, year, dayKey,
-                        dayStats.views, dayStats.twice, dayStats.like,
-                        dayStats.comments);
-
-                if (updated > 0) {
-                    log.debug("覆盖用户{}在{}的统计数据: views={}, twice={}, like={}, comments={}",
-                        userId, dateStr, dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
-
-                    // 同步更新用户总计表
-                    userStatsDataService.increase(userId, dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
-
-                    updateCount++;
-                } else {
-                    log.warn("用户{}的{}年度记录不存在，无法更新统计", userId, year);
-                }
-
-            } catch (Exception e) {
-                log.error("同步用户{}在{}的统计数据失败", userId, dateStr, e);
-            }
-        }
-        
-        // 删除Redis数据，释放内存空间（只有非当天的数据才删除）
-        LocalDate today = LocalDate.now();
-        LocalDate syncDate = LocalDate.parse(dateStr);
-        if (!syncDate.equals(today)) {
-            redisTemplate.delete(userKey);
-            log.info("删除Redis中{}的用户统计数据", dateStr);
-        } else {
-            log.info("当天数据同步完成，保留Redis中{}的用户统计数据以继续收集", dateStr);
-        }
-        
-        return updateCount;
-    }
-    
-    /**
-     * 用户单日统计数据结构
-     */
-    private static class UserDayStats {
-        int views = 0;
-        int twice = 0;
-        int like = 0;
-        int comments = 0;
-    }
-    
-    /**
-     * 文章单日统计数据结构
-     */
-    private static class PostDayStats {
-        int views = 0;
-        int twice = 0;
-        int like = 0;
-        int comments = 0;
-    }
-    
-    /**
-     * 确保用户的年度统计记录存在
-     */
-    private void ensureUserYearRecord(long userId, int year) {
-        UserStatsYearlyDO existing = userStatsYearlyMapper.getByUserIdAndYear(userId, year);
-        if (existing == null) {
-            UserStatsYearlyDO yearRecord = new UserStatsYearlyDO();
-            yearRecord.setUserId(userId);
-            yearRecord.setStatYear(year);
-            yearRecord.setStats("{}"); // 初始化为空JSON对象
-            userStatsYearlyMapper.insert(yearRecord);
-            log.debug("创建用户{}的{}年度统计记录", userId, year);
-        }
-    }
-
-    /**
-     * 同步文章统计数据
-     * 
-     * 处理逻辑:
-     * 1. 从Redis获取指定日期的文章统计数据
-     * 2. 解析field格式: "postId:statType" -> count
-     * 3. 按文章ID分组聚合各种统计类型的数据，同时进行字段名映射
-     * 4. 更新post_stats表中的JSON字段
-     * 5. 删除Redis中的原始数据
-     * 
-     * @param dateStr 日期字符串，格式: YYYY-MM-DD
-     * @return 成功同步的记录数
-     */
-    private int syncPostStats(String dateStr) {
-        String postKey = generatePostStatsKey(dateStr);
-        Map<Object, Object> postStats = redisTemplate.opsForHash().entries(postKey);
-        
-        if (postStats.isEmpty()) {
-            log.info("{}没有文章统计数据", dateStr);
-            return 0;
-        }
-        
-        // 按文章ID分组，使用数据库字段名
-        Map<Long, PostDayStats> postStatsMap = new HashMap<>();
-        
-        for (Map.Entry<Object, Object> entry : postStats.entrySet()) {
-            String field = (String) entry.getKey();
-            Integer count = Integer.parseInt((String) entry.getValue());
-
-            if (count <= 0) continue;
-
-            String[] parts = field.split(":");
-            if (parts.length != 3) continue; // 现在格式是 contentType:contentId:statType
-
-            // 解析新格式: contentType:contentId:statType
-            String contentType = parts[0];
-            Long postId = Long.parseLong(parts[1]);
-            String redisStatType = parts[2];
-
-            // 只处理 POST 类型的内容
-            if (!String.valueOf(ContentType.post.value()).equals(contentType)) {
-                continue;
-            }
-            
-            PostDayStats dayStats = postStatsMap.computeIfAbsent(postId, k -> new PostDayStats());
-            
-            // 🔴 修复字段名映射：Redis使用单数，数据库使用复数
-            switch (redisStatType) {
-                case STAT_TYPE_VIEW:
-                    dayStats.views += count;
-                    break;
-                case STAT_TYPE_TWICE:
-                    dayStats.twice += count;
-                    break;
-                case STAT_TYPE_LIKE:
-                    dayStats.like += count;
-                    break;
-                case STAT_TYPE_COMMENT:
-                    dayStats.comments += count;
-                    break;
-                default:
-                    log.debug("忽略未知的统计类型: {}", redisStatType);
-            }
-        }
-        
-        // 更新post_stats表，直接覆盖当天的完整数据
-        int updateCount = 0;
-        int year = LocalDate.parse(dateStr).getYear();
-        String dayKey = dateStr.substring(5).replace("-", "-"); // "08-22"
-        
-        for (Map.Entry<Long, PostDayStats> entry : postStatsMap.entrySet()) {
-            Long postId = entry.getKey();
-            PostDayStats dayStats = entry.getValue();
-            
-            try {
-                // 确保post_stats年度记录存在
-                ensurePostYearRecord(ContentType.post.value(), postId, year);
-                
-                // 直接设置当天的完整数据（覆盖而非增量）
-                int updated = contentStatsYearlyMapper.setDayStats(ContentType.post.value(), postId, year, dayKey,
-                        dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
-                
-                if (updated > 0) {
-                    log.debug("覆盖文章{}在{}的统计数据: views={}, twice={}, like={}, comments={}",
-                        postId, dateStr, dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
-
-                    // 同步更新内容总计表
-                    contentStatsDataService.increase(ContentType.post, postId,
-                        dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
-
-                    updateCount++;
-                } else {
-                    log.warn("文章{}的{}年度记录不存在，无法更新统计", postId, year);
-                }
-                
-            } catch (Exception e) {
-                log.error("同步文章{}在{}的统计数据失败", postId, dateStr, e);
-            }
-        }
-        
-        // 同步成功后删除Redis数据（只有非当天的数据才删除）
-        LocalDate today = LocalDate.now();
-        LocalDate syncDate = LocalDate.parse(dateStr);
-        if (!syncDate.equals(today)) {
-            redisTemplate.delete(postKey);
-            log.info("删除Redis中{}的文章统计数据", dateStr);
-        } else {
-            log.info("当天数据同步完成，保留Redis中{}的文章统计数据以继续收集", dateStr);
-        }
-        
-        return updateCount;
-    }
-
-// --注释掉检查 START (2025/12/10 11:34):
-//    /**
-//     * 更新post_stats表中的字段
-//     *
-//     * 该方法负责将Redis中的统计数据写入数据库的post_stats表:
-//     * 1. 确保年度记录存在
-//     * 2. 使用PostStatsMapper进行原子性的数值设置
-//     * 3. 支持直接覆盖，确保数据一致性
-//     *
-//     * @param type 对象类型，如"POST", "NODE", "ROADMAP"
-//     * @param objectId 对象ID
-//     * @param year 统计年份
-//     * @param dayKey 日期键，格式如"8-22"
-//     * @param field 统计字段，如"view", "twice", "like", "comment"
-//     * @param count 统计数值
-//     */
-//    private void updatePostStatsField(byte type, Long objectId, int year, String dayKey, String field, int count) {
-//        try {
-//            // 确保post_stats年度记录存在
-//            ensurePostYearRecord(type, objectId, year);
-//
-//            // 使用PostStatsMapper直接设置当天的统计值
-//            Map<String, Integer> dayStats = getCurrentPostDayStats(type, objectId, year, dayKey);
-//
-//            // 🔴 字段名映射：Redis使用单数，数据库使用复数
-//            String dbField = field;
-//            switch (field) {
-//                case STAT_TYPE_VIEW:
-//                    dbField = "views";
-//                    break;
-//                case STAT_TYPE_COMMENT:
-//                    dbField = "comments";
-//                    break;
-//                // twice 和 like 保持不变，不需要映射
-//            }
-//
-//            dayStats.put(dbField, count);
-//
-//            int updated = contentStatsYearlyMapper.setDayStats(type, objectId, year, dayKey,
-//                    dayStats.getOrDefault("views", 0),
-//                    dayStats.getOrDefault("twice", 0),
-//                    dayStats.getOrDefault("like", 0),
-//                    dayStats.getOrDefault("comments", 0));
-//
-//            if (updated > 0) {
-//                log.debug("设置post_stats: type={}, objectId={}, dayKey={}, field={}->{}, count={}",
-//                    type, objectId, dayKey, field, dbField, count);
-//            } else {
-//                log.warn("post_stats记录不存在: type={}, objectId={}, year={}", type, objectId, year);
-//            }
-//
-//        } catch (Exception e) {
-//            log.error("更新post_stats失败: type={}, objectId={}, field={}, count={}",
-//                type, objectId, field, count, e);
-//        }
-//    }
-// --注释掉检查 STOP (2025/12/10 11:34)
-
-    /**
-     * 确保post_stats的年度记录存在
-     */
-    private void ensurePostYearRecord(int type, Long objectId, int year) {
-        ContentStatsYearlyDO existing = contentStatsYearlyMapper.getByTypeAndObjectIdAndYear(type, objectId, year);
-        if (existing == null) {
-            ContentStatsYearlyDO yearRecord = new ContentStatsYearlyDO();
-            yearRecord.setObjectType(type);
-            yearRecord.setObjectId(objectId);
-            yearRecord.setStatYear(year);
-            yearRecord.setStats("{}");
-            contentStatsYearlyMapper.insert(yearRecord);
-            log.debug("创建{}对象{}的{}年度统计记录", type, objectId, year);
-        }
-    }
-    
-    /**
-     * 获取当前post指定日期的统计数据
-     */
-    private Map<String, Integer> getCurrentPostDayStats(byte type, Long objectId, int year, String dayKey) {
-        try {
-            String dayStatsJson = contentStatsYearlyMapper.getDayStats(type, objectId, year, dayKey);
-            if (dayStatsJson != null) {
-                return objectMapper.readValue(dayStatsJson, new TypeReference<Map<String, Integer>>() {});
-            }
-        } catch (Exception e) {
-            log.debug("获取post当日统计失败，使用默认值: type={}, objectId={}, dayKey={}", type, objectId, dayKey);
-        }
-        
-        Map<String, Integer> defaultStats = new HashMap<>();
-        defaultStats.put("views", 0);
-        defaultStats.put("twice", 0);
-        defaultStats.put("like", 0);
-        defaultStats.put("comments", 0);
-        return defaultStats;
-    }
-
     // ====== 查询服务方法 ======
     // 以下方法提供统计数据的查询功能，支持从Redis读取实时数据和从数据库读取历史数据
 
     /**
      * 获取用户今日统计（从Redis）
-     * 
+     *
      * 读取当天的实时统计数据，数据来源是Redis:
      * 1. 构造今日的Redis key
      * 2. 获取该用户的所有统计数据
@@ -541,7 +196,7 @@ public class DailyStatsService {
      */
     public UserDailyStatsDTO getUserTodayStats(long userId) {
         validateUserId(userId);
-        String today = LocalDate.now().toString();
+        String today = TimeZoneUtil.todayString();
         String userKey = generateUserStatsKey(today);
 
         String uKey = generatePostStatsKey(today);
@@ -572,7 +227,7 @@ public class DailyStatsService {
         validateUserId(userId);
         validateDaysRange(days);
 
-        LocalDate endDate = LocalDate.now(); // 包含今天
+        LocalDate endDate = TimeZoneUtil.now(); // 包含今天
         LocalDate startDate = endDate.minusDays(days - 1);
 
         try {
@@ -587,7 +242,7 @@ public class DailyStatsService {
             for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
                 DailyStatsDTO dailyStat;
 
-                if (date.equals(LocalDate.now())) {
+                if (TimeZoneUtil.isToday(date)) {
                     // 今日数据从Redis获取
                     UserDailyStatsDTO todayStats = getUserTodayStats(userId);
                     dailyStat = DailyStatsDTO.builder()
@@ -1201,6 +856,7 @@ public class DailyStatsService {
      * 批量获取今日 Redis 实时统计增量
      *
      * 注意：只包含按日统计的字段（views, twice, likes, comments）
+     * 使用 HMGET 批量获取，避免N+1查询问题
      *
      * @param contentType 内容类型
      * @param contentIds 内容ID列表
@@ -1208,6 +864,10 @@ public class DailyStatsService {
      */
     private Map<Long, DailyStatsDTO> batchGetTodayStatsForContent(ContentType contentType, List<Long> contentIds) {
         Map<Long, DailyStatsDTO> result = new HashMap<>();
+
+        if (contentIds == null || contentIds.isEmpty()) {
+            return result;
+        }
 
         String today = LocalDate.now().toString();
         String redisKey = STATS_KEY_PREFIX + today + CONTENT_STATS_SUFFIX;
@@ -1221,23 +881,101 @@ public class DailyStatsService {
 
         int contentTypeValue = contentType.value();
 
-        // 批量获取今日各项统计（只有4个按日统计的字段）
+        // 构建所有需要查询的字段名列表
+        // 对于N个内容，需要查询 4*N 个字段（views, twice, likes, comments）
+        List<Object> fields = new ArrayList<>(contentIds.size() * 4);
         for (Long contentId : contentIds) {
             // Redis 字段格式：contentType:contentId:statType
             // 例如：1:123:view (ContentType.post=1, contentId=123, statType=view)
-            int views = getRedisHashFieldAsInt(redisKey, contentTypeValue + ":" + contentId + ":" + STAT_TYPE_VIEW);
-            int twice = getRedisHashFieldAsInt(redisKey, contentTypeValue + ":" + contentId + ":" + STAT_TYPE_TWICE);
-            int likes = getRedisHashFieldAsInt(redisKey, contentTypeValue + ":" + contentId + ":" + STAT_TYPE_LIKE);
-            int comments = getRedisHashFieldAsInt(redisKey, contentTypeValue + ":" + contentId + ":" + STAT_TYPE_COMMENT);
+            fields.add(contentTypeValue + ":" + contentId + ":" + STAT_TYPE_VIEW);
+            fields.add(contentTypeValue + ":" + contentId + ":" + STAT_TYPE_TWICE);
+            fields.add(contentTypeValue + ":" + contentId + ":" + STAT_TYPE_LIKE);
+            fields.add(contentTypeValue + ":" + contentId + ":" + STAT_TYPE_COMMENT);
+        }
 
-            DailyStatsDTO stats = DailyStatsDTO.builder()
-                .views(views)
-                .twice(twice)
-                .likes(likes)
-                .comments(comments)
-                .build();
+        try {
+            // 使用 HMGET 批量获取所有字段值，只需要一次 Redis 调用
+            List<Object> values = redisTemplate.opsForHash().multiGet(redisKey, fields);
 
-            result.put(contentId, stats);
+            // 解析返回的结果，每4个值对应一个内容的统计
+            for (int i = 0; i < contentIds.size(); i++) {
+                Long contentId = contentIds.get(i);
+                int baseIndex = i * 4;
+
+                // 解析四个统计字段（按照构建fields时的顺序）
+                int views = parseRedisValue(values.get(baseIndex));
+                int twice = parseRedisValue(values.get(baseIndex + 1));
+                int likes = parseRedisValue(values.get(baseIndex + 2));
+                int comments = parseRedisValue(values.get(baseIndex + 3));
+
+                DailyStatsDTO stats = DailyStatsDTO.builder()
+                    .views(views)
+                    .twice(twice)
+                    .likes(likes)
+                    .comments(comments)
+                    .build();
+
+                result.put(contentId, stats);
+            }
+
+            log.debug("批量获取{}个内容的今日统计，使用HMGET一次查询完成", contentIds.size());
+
+        } catch (Exception e) {
+            log.error("批量获取今日统计失败，回退到逐个查询: contentType={}, contentIds.size={}",
+                contentType, contentIds.size(), e);
+            // 降级：如果批量查询失败，回退到逐个查询
+            return batchGetTodayStatsForContentFallback(contentType, contentIds, redisKey, contentTypeValue);
+        }
+
+        return result;
+    }
+
+    /**
+     * 解析Redis返回值为整数
+     *
+     * @param value Redis返回的值，可能为null或字符串
+     * @return 解析后的整数值，如果为null或解析失败则返回0
+     */
+    private int parseRedisValue(Object value) {
+        if (value == null) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (NumberFormatException e) {
+            log.debug("解析Redis值失败: value={}", value);
+            return 0;
+        }
+    }
+
+    /**
+     * 批量获取今日统计的降级方法（逐个查询）
+     *
+     * 当批量查询失败时使用此方法作为后备方案
+     */
+    private Map<Long, DailyStatsDTO> batchGetTodayStatsForContentFallback(
+            ContentType contentType, List<Long> contentIds, String redisKey, int contentTypeValue) {
+
+        Map<Long, DailyStatsDTO> result = new HashMap<>();
+
+        for (Long contentId : contentIds) {
+            try {
+                int views = getRedisHashFieldAsInt(redisKey, contentTypeValue + ":" + contentId + ":" + STAT_TYPE_VIEW);
+                int twice = getRedisHashFieldAsInt(redisKey, contentTypeValue + ":" + contentId + ":" + STAT_TYPE_TWICE);
+                int likes = getRedisHashFieldAsInt(redisKey, contentTypeValue + ":" + contentId + ":" + STAT_TYPE_LIKE);
+                int comments = getRedisHashFieldAsInt(redisKey, contentTypeValue + ":" + contentId + ":" + STAT_TYPE_COMMENT);
+
+                DailyStatsDTO stats = DailyStatsDTO.builder()
+                    .views(views)
+                    .twice(twice)
+                    .likes(likes)
+                    .comments(comments)
+                    .build();
+
+                result.put(contentId, stats);
+            } catch (Exception e) {
+                log.warn("获取内容{}的今日统计失败", contentId, e);
+            }
         }
 
         return result;

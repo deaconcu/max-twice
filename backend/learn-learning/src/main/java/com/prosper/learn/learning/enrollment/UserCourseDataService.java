@@ -41,17 +41,17 @@ public class UserCourseDataService extends AbstractDataService<UserCourseDO, Use
 
     @Override
     protected UserCourseDO getByIdFromMapper(UserCourseMapper mapper, Long id) {
-        return null; // UserCourseMapper没有getById方法
+        throw new UnsupportedOperationException("不支持按ID查询");
     }
 
     @Override
     protected List<UserCourseDO> getByIdsFromMapper(UserCourseMapper mapper, Collection<Long> ids) {
-        return List.of(); // UserCourseMapper没有批量按ID查询方法
+        throw new UnsupportedOperationException("不支持按ID查询");
     }
 
     @Override
     protected Map<Long, UserCourseDO> getMapByIdsFromMapper(UserCourseMapper mapper, Collection<Long> ids) {
-        return Map.of(); // UserCourseMapper没有批量按ID查询方法
+        throw new UnsupportedOperationException("不支持按ID查询");
     }
 
     @Override

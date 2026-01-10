@@ -1,6 +1,7 @@
 package com.prosper.learn.analytics.stats.service;
 
 import com.prosper.learn.shared.common.constants.RedisStatsConstants;
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.StatusCode;
@@ -10,7 +11,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.time.LocalDate;
 
 /**
  * Redis统计数据服务
@@ -137,7 +137,7 @@ public class RedisStatsDomainService {
      */
     private void performStatsOperation(Enums.ContentType contentType, long contentId, Long userId, String statType,
                                        int increment, String operation) {
-        String today = LocalDate.now().toString();
+        String today = TimeZoneUtil.todayString();
 
         try {
             // 内容维度统计

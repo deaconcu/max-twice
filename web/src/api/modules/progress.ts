@@ -38,17 +38,17 @@ export const progressApi = {
   },
 
   /**
-   * 开始学习课程
+   * 注册学习课程
    */
   startCourse(courseId: number): Promise<ApiResponse<CourseProgressResponse>> {
-    return apiClient.post(`/v1/progress/courses/${String(courseId)}/start`)
+    return apiClient.post(`/v1/progress/courses/${String(courseId)}/enrollment`)
   },
 
   /**
-   * 取消学习课程
+   * 取消注册学习课程
    */
   cancelCourse(courseId: number): Promise<ApiResponse<CourseProgressResponse>> {
-    return apiClient.delete(`/v1/progress/courses/${String(courseId)}/start`)
+    return apiClient.delete(`/v1/progress/courses/${String(courseId)}/enrollment`)
   },
 
   /**
@@ -92,17 +92,17 @@ export const progressApi = {
   },
 
   /**
-   * 开始学习路线图
+   * 注册学习路线图
    */
   startRoadmap(roadmapId: number): Promise<ApiResponse<RoadmapProgressResponse>> {
-    return apiClient.post(`/v1/progress/roadmaps/${String(roadmapId)}/start`)
+    return apiClient.post(`/v1/progress/roadmaps/${String(roadmapId)}/enrollment`)
   },
 
   /**
-   * 取消学习路线图
+   * 取消注册学习路线图
    */
   cancelRoadmap(roadmapId: number): Promise<ApiResponse<RoadmapProgressResponse>> {
-    return apiClient.delete(`/v1/progress/roadmaps/${String(roadmapId)}/start`)
+    return apiClient.delete(`/v1/progress/roadmaps/${String(roadmapId)}/enrollment`)
   },
 
   /**

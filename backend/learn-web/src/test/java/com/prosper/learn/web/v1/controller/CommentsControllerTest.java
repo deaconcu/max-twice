@@ -783,4 +783,178 @@ public class CommentsControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
     }
+
+    // ==================== 软删除功能测试 ====================
+
+    /**
+     * 4.1 软删除评论 - 成功
+     */
+    @Test
+    @DisplayName("软删除评论 - 成功")
+    void testSoftDeleteComment_Success() {
+        // 准备数据
+        UserDO user = createUser("user@test.com");
+        CourseDO course = createPublishedCourse("测试课程", user.getId());
+        NodeDO node = createPublishedNode("测试节点", course.getId(), user.getId());
+        PostDO post = createPublishedPost("测试帖子", node.getId(), user.getId());
+        CommentDO comment = createApprovedComment("测试评论", post.getId(), ContentType.post.value(), user.getId());
+
+        Long commentId = comment.getId();
+        assertThat(commentDataService.getById(commentId)).isNotNull();
+
+        // 执行软删除
+        int result = commentDataService.deleteById(commentId);
+
+        // 验证软删除成功，查询不到该评论
+        assertThat(result).isEqualTo(1);
+        assertThat(commentDataService.getById(commentId)).isNull();
+    }
+
+    /**
+     * 4.2 软删除后查询评论列表 - 不包含已删除评论
+     */
+    @Test
+    @DisplayName("软删除后查询评论列表 - 不包含已删除评论")
+    void testGetComments_ExcludesDeletedComments() throws Exception {
+        // 准备数据
+        UserDO user = createUser("user@test.com");
+        CourseDO course = createPublishedCourse("测试课程", user.getId());
+        NodeDO node = createPublishedNode("测试节点", course.getId(), user.getId());
+        PostDO post = createPublishedPost("测试帖子", node.getId(), user.getId());
+
+        // 创建3条评论
+        CommentDO comment1 = createApprovedComment("评论1", post.getId(), ContentType.post.value(), user.getId());
+        CommentDO comment2 = createApprovedComment("评论2", post.getId(), ContentType.post.value(), user.getId());
+        CommentDO comment3 = createApprovedComment("评论3", post.getId(), ContentType.post.value(), user.getId());
+
+        // 软删除第2条评论
+        commentDataService.deleteById(comment2.getId());
+
+        // 模拟登录
+        StpUtil.login(user.getId());
+
+        // 查询评论列表
+        String response = mockMvc.perform(get("/api/v1/comments")
+                        .param("objectId", post.getId().toString())
+                        .param("objectType", String.valueOf(ContentType.post.value()))
+                        .header("token", StpUtil.getTokenValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.items").isArray())
+                .andExpect(jsonPath("$.data.items.length()").value(2))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        // 验证返回的评论不包含已删除的评论2
+        JsonNode jsonNode = objectMapper.readTree(response);
+        JsonNode items = jsonNode.get("data").get("items");
+
+        assertThat(findById(items, comment1.getId())).isNotNull();
+        assertThat(findById(items, comment2.getId())).isNull();
+        assertThat(findById(items, comment3.getId())).isNotNull();
+
+        StpUtil.logout();
+    }
+
+    /**
+     * 4.3 软删除父评论后 - 子评论查询不包含已删除父评论的子评论
+     */
+    @Test
+    @DisplayName("软删除父评论后 - 子评论查询不包含已删除父评论")
+    void testGetChildren_ExcludesDeletedParentComments() {
+        // 准备数据
+        UserDO user = createUser("user@test.com");
+        CourseDO course = createPublishedCourse("测试课程", user.getId());
+        NodeDO node = createPublishedNode("测试节点", course.getId(), user.getId());
+        PostDO post = createPublishedPost("测试帖子", node.getId(), user.getId());
+
+        // 创建两个父评论
+        CommentDO parent1 = createApprovedComment("父评论1", post.getId(), ContentType.post.value(), user.getId());
+        CommentDO parent2 = createApprovedComment("父评论2", post.getId(), ContentType.post.value(), user.getId());
+
+        // 每个父评论创建子评论
+        CommentDO child1 = createApprovedReply("子评论1", post.getId(), ContentType.post.value(), user.getId(), parent1.getId(), user.getId());
+        CommentDO child2 = createApprovedReply("子评论2", post.getId(), ContentType.post.value(), user.getId(), parent2.getId(), user.getId());
+
+        // 软删除第一个子评论
+        commentDataService.deleteById(child1.getId());
+
+        // 查询子评论（getChildren 返回每个父评论最高分的一条）
+        List<CommentDO> children = commentDataService.getChildren(java.util.List.of(parent1.getId(), parent2.getId()));
+
+        // 验证只返回未删除的子评论
+        assertThat(children).hasSize(1);
+        assertThat(children.get(0).getId()).isEqualTo(child2.getId());
+    }
+
+    /**
+     * 4.4 软删除评论后 - 按状态查询不包含已删除评论
+     */
+    @Test
+    @DisplayName("软删除评论后 - 按状态查询不包含已删除评论")
+    void testGetListByState_ExcludesDeletedComments() {
+        // 准备数据
+        UserDO user = createUser("user@test.com");
+        CourseDO course = createPublishedCourse("测试课程", user.getId());
+        NodeDO node = createPublishedNode("测试节点", course.getId(), user.getId());
+        PostDO post = createPublishedPost("测试帖子", node.getId(), user.getId());
+
+        // 创建3条已发布评论
+        CommentDO comment1 = createApprovedComment("评论1", post.getId(), ContentType.post.value(), user.getId());
+        CommentDO comment2 = createApprovedComment("评论2", post.getId(), ContentType.post.value(), user.getId());
+        CommentDO comment3 = createApprovedComment("评论3", post.getId(), ContentType.post.value(), user.getId());
+
+        // 软删除第2条评论
+        commentDataService.deleteById(comment2.getId());
+
+        // 按状态查询
+        List<CommentDO> comments = commentDataService.getListByState(
+            ContentState.PUBLISHED.value(),
+            null,
+            10
+        );
+
+        // 验证只返回未删除的评论
+        assertThat(comments).extracting(CommentDO::getId)
+            .contains(comment1.getId(), comment3.getId())
+            .doesNotContain(comment2.getId());
+    }
+
+    /**
+     * 4.5 软删除评论后 - 条件过滤查询不包含已删除评论
+     */
+    @Test
+    @DisplayName("软删除评论后 - 条件过滤查询不包含已删除评论")
+    void testGetListByFilter_ExcludesDeletedComments() {
+        // 准备数据
+        UserDO user = createUser("user@test.com");
+        CourseDO course = createPublishedCourse("测试课程", user.getId());
+        NodeDO node = createPublishedNode("测试节点", course.getId(), user.getId());
+        PostDO post = createPublishedPost("测试帖子", node.getId(), user.getId());
+
+        // 创建3条评论
+        CommentDO comment1 = createApprovedComment("评论1", post.getId(), ContentType.post.value(), user.getId());
+        CommentDO comment2 = createApprovedComment("评论2", post.getId(), ContentType.post.value(), user.getId());
+        CommentDO comment3 = createApprovedComment("评论3", post.getId(), ContentType.post.value(), user.getId());
+
+        // 软删除第1条评论
+        commentDataService.deleteById(comment1.getId());
+
+        // 使用过滤条件查询
+        List<CommentDO> comments = commentDataService.getListByFilter(
+            ContentType.post.value(),
+            post.getId(),
+            null,
+            null,
+            ContentState.PUBLISHED.value(),
+            10
+        );
+
+        // 验证只返回未删除的评论
+        assertThat(comments).hasSize(2);
+        assertThat(comments).extracting(CommentDO::getId)
+            .contains(comment2.getId(), comment3.getId())
+            .doesNotContain(comment1.getId());
+    }
 }

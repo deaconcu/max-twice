@@ -1,6 +1,8 @@
 package com.prosper.learn.learning.enrollment;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
+import com.prosper.learn.shared.domain.exception.StatusCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -18,6 +20,9 @@ public class UserRoadmapDataService extends AbstractDataService<UserRoadmapDO, U
 
     @Autowired
     private UserRoadmapMapper userRoadmapMapper;
+
+    @Autowired
+    private SystemProperties systemProperties;
 
     @Override
     protected UserRoadmapMapper mapper() {
@@ -94,8 +99,19 @@ public class UserRoadmapDataService extends AbstractDataService<UserRoadmapDO, U
      * 批量更新学习记录
      */
     public void updateBatch(List<UserRoadmapDO> userRoadmapList) {
+        if (userRoadmapList == null || userRoadmapList.isEmpty()) {
+            return;
+        }
+
+        // 限制批量更新数量，防止性能问题
+        int maxBatchSize = systemProperties.getDataService().getMaxBatchUpdateSize();
+        if (userRoadmapList.size() > maxBatchSize) {
+            throw StatusCode.BATCH_SIZE_EXCEEDED.exception();
+        }
+
+        // 循环调用带缓存清理的 update 方法
         for (UserRoadmapDO userRoadmapDO : userRoadmapList) {
-            userRoadmapMapper.update(userRoadmapDO);
+            update(userRoadmapDO);
         }
     }
 

@@ -61,7 +61,7 @@ public class RedisStatsEventListener {
      * 同时更新内容统计和用户统计（创建者获得浏览量）
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentViewed(ContentViewedEvent event) {
         try {
             // 内容维度统计
@@ -88,7 +88,7 @@ public class RedisStatsEventListener {
      * 同时更新：1) 内容统计 2) 用户统计 3) 点赞关系
      */
     @EventListener
-    @Async
+    //@Async
     public void onTwiceUpvoted(TwiceUpvotedEvent<?> event) {
         try {
             // 1. 内容维度统计
@@ -116,7 +116,7 @@ public class RedisStatsEventListener {
      * 同时更新：1) 内容统计 2) 用户统计 3) 点赞关系
      */
     @EventListener
-    @Async
+    //@Async
     public void onLikeUpvoted(LikeUpvotedEvent<?> event) {
         try {
             // 1. 内容维度统计
@@ -144,7 +144,7 @@ public class RedisStatsEventListener {
      * 同时更新：1) 内容统计 2) 用户统计 3) 点赞关系
      */
     @EventListener
-    @Async
+    //@Async
     public void onTwiceUpvoteCancelled(TwiceUpvoteCancelledEvent<?> event) {
         try {
             // 1. 内容维度统计
@@ -172,7 +172,7 @@ public class RedisStatsEventListener {
      * 同时更新：1) 内容统计 2) 用户统计 3) 点赞关系
      */
     @EventListener
-    @Async
+    //@Async
     public void onLikeUpvoteCancelled(LikeUpvoteCancelledEvent<?> event) {
         try {
             // 1. 内容维度统计
@@ -200,7 +200,7 @@ public class RedisStatsEventListener {
      * 同时更新：1) 内容统计 2) 用户统计 3) 点赞关系
      */
     @EventListener
-    @Async
+    //@Async
     public void onUpvoteTypeSwitched(UpvoteTypeSwitchedEvent<?> event) {
         try {
             // 1. 内容维度统计
@@ -257,7 +257,7 @@ public class RedisStatsEventListener {
      * 同时更新内容统计和用户统计（创建者获得评论）
      */
     @EventListener
-    @Async
+    //@Async
     public void onCommentCreated(CommentCreatedEvent event) {
         try {
             // 内容维度统计
@@ -282,7 +282,7 @@ public class RedisStatsEventListener {
      * 同时更新内容统计和用户统计（创建者失去评论）
      */
     @EventListener
-    @Async
+    //@Async
     public void onCommentDeleted(CommentDeletedEvent event) {
         try {
             // 内容维度统计

@@ -26,6 +26,6 @@ public interface FollowMapper {
     @Insert("INSERT INTO follow(follower_id, followee_id) VALUES (#{followerId}, #{followeeId})")
     int insert(long followerId, long followeeId);
 
-    @Update("DELETE FROM `follow` WHERE follower_id = #{followerId} and followee_id = #{followeeId}")
+    @Delete("DELETE FROM `follow` WHERE follower_id = #{followerId} and followee_id = #{followeeId}")
     void delete(long followerId, long followeeId);
 }

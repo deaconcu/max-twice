@@ -94,10 +94,10 @@ public class ProgressController {
     }
 
     /**
-     * 开始学习课程
-     * 映射: POST /user/course → POST /api/v1/progress/courses/{courseId}/start
+     * 注册学习课程
+     * 映射: POST /user/course → POST /api/v1/progress/courses/{courseId}/enrollment
      */
-    @PostMapping("/progress/courses/{courseId}/start")
+    @PostMapping("/progress/courses/{courseId}/enrollment")
     @SaCheckLogin
     public ApiResponse<CourseProgressResponseDTO> startCourse(
             @PathVariable @NotNull(message = "课程ID不能为空")
@@ -115,10 +115,10 @@ public class ProgressController {
     }
 
     /**
-     * 取消学习课程
-     * 映射: DELETE /api/v1/progress/courses/{courseId}/start
+     * 取消注册学习课程
+     * 映射: DELETE /api/v1/progress/courses/{courseId}/enrollment
      */
-    @DeleteMapping("/progress/courses/{courseId}/start")
+    @DeleteMapping("/progress/courses/{courseId}/enrollment")
     @SaCheckLogin
     public ApiResponse<CourseProgressResponseDTO> cancelCourse(
             @PathVariable @NotNull(message = "课程ID不能为空")
@@ -224,10 +224,10 @@ public class ProgressController {
     // =================== 路线图进度相关接口 ===================
 
     /**
-     * 开始学习路线图
-     * 映射: POST /user/roadmap → POST /api/v1/progress/roadmaps/{roadmapId}/start
+     * 注册学习路线图
+     * 映射: POST /user/roadmap → POST /api/v1/progress/roadmaps/{roadmapId}/enrollment
      */
-    @PostMapping("/progress/roadmaps/{roadmapId}/start")
+    @PostMapping("/progress/roadmaps/{roadmapId}/enrollment")
     @SaCheckLogin
     public ApiResponse<RoadmapProgressResponseDTO> startRoadmap(
             @PathVariable @NotNull(message = "路线图ID不能为空")
@@ -245,10 +245,10 @@ public class ProgressController {
     }
 
     /**
-     * 取消学习路线图
-     * 映射: DELETE /api/v1/progress/roadmaps/{roadmapId}/start
+     * 取消注册学习路线图
+     * 映射: DELETE /api/v1/progress/roadmaps/{roadmapId}/enrollment
      */
-    @DeleteMapping("/progress/roadmaps/{roadmapId}/start")
+    @DeleteMapping("/progress/roadmaps/{roadmapId}/enrollment")
     @SaCheckLogin
     public ApiResponse<RoadmapProgressResponseDTO> cancelRoadmap(
             @PathVariable @NotNull(message = "路线图ID不能为空")

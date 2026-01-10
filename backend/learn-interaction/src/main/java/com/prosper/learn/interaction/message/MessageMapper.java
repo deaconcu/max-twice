@@ -25,9 +25,11 @@ public interface MessageMapper {
     List<MessageDO> listByPull(int type, long lastId, int limit);
 
     @Select("SELECT * FROM message " +
-            "where (sender_id = #{userId1} and receiver_id = #{userId2}) or (sender_id = #{userId2} and receiver_id = #{userId1}) and id < #{lastId}" +
+            "WHERE ((sender_id = #{userId1} AND receiver_id = #{userId2}) " +
+            "OR (sender_id = #{userId2} AND receiver_id = #{userId1})) " +
+            "AND id < #{lastId} " +
             "ORDER BY created_at DESC " +
-            "LIMIT #{offset}, #{limit}")
+            "LIMIT #{limit}")
     List<MessageDO> getConversationByUser(long userId1, long userId2, long lastId, int limit);
 
     @Select("SELECT * FROM message " +

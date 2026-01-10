@@ -76,9 +76,9 @@ public class UserStatsDataService {
     }
 
     /**
-     * 原子性增量更新指定字段
+     * 原子性增量更新指定字段（内部方法）
      */
-    public boolean atomicIncrement(long userId, String field, int delta) {
+    private boolean atomicIncrement(long userId, String field, int delta) {
         if (delta == 0) {
             return true;
         }
@@ -94,6 +94,67 @@ public class UserStatsDataService {
 
         log.warn("原子增量更新失败: userId={}, field={}, delta={}", userId, field, delta);
         return false;
+    }
+
+    // ==================== 关注类统计字段更新方法 ====================
+
+    /** 增量更新关注用户数 */
+    public boolean incrementFollowingUsers(long userId, int delta) {
+        return atomicIncrement(userId, "following_users", delta);
+    }
+
+    /** 增量更新关注课程数 */
+    public boolean incrementFollowingCourses(long userId, int delta) {
+        return atomicIncrement(userId, "following_courses", delta);
+    }
+
+    /** 增量更新关注职业数 */
+    public boolean incrementFollowingProfessions(long userId, int delta) {
+        return atomicIncrement(userId, "following_professions", delta);
+    }
+
+    // ==================== 学习类统计字段更新方法 ====================
+
+    /** 增量更新学习中课程数 */
+    public boolean incrementLearningCourses(long userId, int delta) {
+        return atomicIncrement(userId, "learning_courses", delta);
+    }
+
+    /** 增量更新已完成课程数 */
+    public boolean incrementCompletedCourses(long userId, int delta) {
+        return atomicIncrement(userId, "completed_courses", delta);
+    }
+
+    /** 增量更新进行中职业数 */
+    public boolean incrementInProgressProfessions(long userId, int delta) {
+        return atomicIncrement(userId, "in_progress_professions", delta);
+    }
+
+    /** 增量更新已完成职业数 */
+    public boolean incrementCompletedProfessions(long userId, int delta) {
+        return atomicIncrement(userId, "completed_professions", delta);
+    }
+
+    // ==================== 创作类统计字段更新方法 ====================
+
+    /** 增量更新创建文章数 */
+    public boolean incrementCreatedArticles(long userId, int delta) {
+        return atomicIncrement(userId, "created_articles", delta);
+    }
+
+    /** 增量更新创建目录数 */
+    public boolean incrementCreatedIndexs(long userId, int delta) {
+        return atomicIncrement(userId, "created_indexs", delta);
+    }
+
+    /** 增量更新创建路线图数 */
+    public boolean incrementCreatedRoadmaps(long userId, int delta) {
+        return atomicIncrement(userId, "created_roadmaps", delta);
+    }
+
+    /** 增量更新创建卡片组数 */
+    public boolean incrementCreatedCardDecks(long userId, int delta) {
+        return atomicIncrement(userId, "created_card_decks", delta);
     }
 
 // --注释掉检查 START (2025/12/10 11:32):
@@ -120,9 +181,9 @@ public class UserStatsDataService {
 // --注释掉检查 STOP (2025/12/10 11:32)
 
     /**
-     * 设置字段绝对值
+     * 设置字段绝对值（内部方法）
      */
-    public boolean setField(long userId, String field, int newValue) {
+    private boolean setField(long userId, String field, int newValue) {
         // 确保统计记录存在
         getOrCreate(userId);
 
@@ -134,6 +195,41 @@ public class UserStatsDataService {
 
         log.warn("设置字段值失败: userId={}, field={}, newValue={}", userId, field, newValue);
         return false;
+    }
+
+    /** 设置关注用户数 */
+    public boolean setFollowingUsers(long userId, int newValue) {
+        return setField(userId, "following_users", newValue);
+    }
+
+    /** 设置关注课程数 */
+    public boolean setFollowingCourses(long userId, int newValue) {
+        return setField(userId, "following_courses", newValue);
+    }
+
+    /** 设置关注职业数 */
+    public boolean setFollowingProfessions(long userId, int newValue) {
+        return setField(userId, "following_professions", newValue);
+    }
+
+    /** 设置学习中课程数 */
+    public boolean setLearningCourses(long userId, int newValue) {
+        return setField(userId, "learning_courses", newValue);
+    }
+
+    /** 设置已完成课程数 */
+    public boolean setCompletedCourses(long userId, int newValue) {
+        return setField(userId, "completed_courses", newValue);
+    }
+
+    /** 设置进行中职业数 */
+    public boolean setInProgressProfessions(long userId, int newValue) {
+        return setField(userId, "in_progress_professions", newValue);
+    }
+
+    /** 设置已完成职业数 */
+    public boolean setCompletedProfessions(long userId, int newValue) {
+        return setField(userId, "completed_professions", newValue);
     }
 
     /**
@@ -153,10 +249,50 @@ public class UserStatsDataService {
     }
 
     /**
-     * 获取排行榜数据
+     * 获取排行榜数据（内部方法）
      */
-    public List<UserStatsDO> getTopUsersByField(String field, int limit) {
+    private List<UserStatsDO> getTopUsersByField(String field, int limit) {
         return userStatsMapper.getTopUsersByField(field, limit);
+    }
+
+    /** 按浏览量排行 */
+    public List<UserStatsDO> getTopUsersByViews(int limit) {
+        return getTopUsersByField("views", limit);
+    }
+
+    /** 按两次能懂数排行 */
+    public List<UserStatsDO> getTopUsersByTwices(int limit) {
+        return getTopUsersByField("twices", limit);
+    }
+
+    /** 按有用点赞数排行 */
+    public List<UserStatsDO> getTopUsersByLikes(int limit) {
+        return getTopUsersByField("likes", limit);
+    }
+
+    /** 按评论数排行 */
+    public List<UserStatsDO> getTopUsersByComments(int limit) {
+        return getTopUsersByField("comments", limit);
+    }
+
+    /** 按创建文章数排行 */
+    public List<UserStatsDO> getTopUsersByCreatedArticles(int limit) {
+        return getTopUsersByField("created_articles", limit);
+    }
+
+    /** 按创建目录数排行 */
+    public List<UserStatsDO> getTopUsersByCreatedIndexs(int limit) {
+        return getTopUsersByField("created_indexs", limit);
+    }
+
+    /** 按创建路线图数排行 */
+    public List<UserStatsDO> getTopUsersByCreatedRoadmaps(int limit) {
+        return getTopUsersByField("created_roadmaps", limit);
+    }
+
+    /** 按创建卡片组数排行 */
+    public List<UserStatsDO> getTopUsersByCreatedCardDecks(int limit) {
+        return getTopUsersByField("created_card_decks", limit);
     }
 
     /**

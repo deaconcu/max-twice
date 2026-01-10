@@ -41,17 +41,22 @@ public class UserProgressDataService extends AbstractDataService<UserProgressDO,
 
     @Override
     protected UserProgressDO getByIdFromMapper(UserProgressMapper mapper, Long id) {
-        return userProgressMapper.getByUserId(id);
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public UserProgressDO getById(Long id) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     protected List<UserProgressDO> getByIdsFromMapper(UserProgressMapper mapper, Collection<Long> ids) {
-        return List.of(); // UserProgressMapper没有批量查询方法
+        throw new UnsupportedOperationException();
     }
 
     @Override
     protected Map<Long, UserProgressDO> getMapByIdsFromMapper(UserProgressMapper mapper, Collection<Long> ids) {
-        return Map.of(); // UserProgressMapper没有批量查询方法
+        throw new UnsupportedOperationException();
     }
 
     @Override

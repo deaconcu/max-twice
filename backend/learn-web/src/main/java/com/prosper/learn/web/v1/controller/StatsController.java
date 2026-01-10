@@ -75,6 +75,7 @@ public class StatsController {
             Long userId,
             @RequestParam(defaultValue = "7")
             @Positive(message = "天数必须大于0")
+            @Max(value = 365, message = "天数不能超过365天")
             int days) {
 
         UserStatsWithDailyDTO stats = dailyStatsService.getUserHistoryStats(userId, days);

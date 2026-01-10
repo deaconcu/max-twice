@@ -24,7 +24,7 @@ spring:
       validation-timeout: 3000
       keepalive-time: 15000
   jackson:
-    time-zone: GMT+8
+    time-zone: America/Los_Angeles
     date-format: yyyy-MM-dd HH:mm:ss
     serialization:
       write-dates-as-timestamps: false
@@ -175,6 +175,8 @@ app:
     default-page-size: 10
     # 待审核评论查询数量
     pending-comments-limit: 50
+    # 评论缓存过期时间（分钟）
+    cache-ttl-minutes: 30
   page:
     # 是否启用路径格式验证
     enable-path-validation: true
@@ -249,6 +251,9 @@ app:
     roadmap-content-max-length: 5000
     roadmap-description-min-length: 1
     roadmap-description-max-length: 500
+  data-service:
+    # 批量更新最大数量限制
+    max-batch-update-size: 50
 
 # 图片上传配置
 upload:

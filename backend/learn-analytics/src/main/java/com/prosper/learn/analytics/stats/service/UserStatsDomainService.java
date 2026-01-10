@@ -73,11 +73,37 @@ public class UserStatsDomainService {
     }
 
     /**
-     * 设置字段绝对值（用于数据修复）
+     * 设置字段绝对值（用于数据修复，内部使用，不暴露给外部）
      */
     @Transactional
-    public void setField(Long userId, String field, int newValue) {
-        userStatsDataService.setField(userId, field, newValue);
+    private void setField(Long userId, String field, int newValue) {
+        // 根据field调用对应的专用方法
+        switch (field) {
+            case "following_users":
+                userStatsDataService.setFollowingUsers(userId, newValue);
+                break;
+            case "following_courses":
+                userStatsDataService.setFollowingCourses(userId, newValue);
+                break;
+            case "following_professions":
+                userStatsDataService.setFollowingProfessions(userId, newValue);
+                break;
+            case "learning_courses":
+                userStatsDataService.setLearningCourses(userId, newValue);
+                break;
+            case "completed_courses":
+                userStatsDataService.setCompletedCourses(userId, newValue);
+                break;
+            case "in_progress_professions":
+                userStatsDataService.setInProgressProfessions(userId, newValue);
+                break;
+            case "completed_professions":
+                userStatsDataService.setCompletedProfessions(userId, newValue);
+                break;
+            default:
+                log.warn("不支持的字段: {}", field);
+                throw new IllegalArgumentException("不支持的字段: " + field);
+        }
     }
 
     // ==================== 社交关系统计 ====================
@@ -87,7 +113,7 @@ public class UserStatsDomainService {
      */
     @Transactional
     public void incrementFollowingUsers(Long userId, int delta) {
-        userStatsDataService.atomicIncrement(userId, "following_users", delta);
+        userStatsDataService.incrementFollowingUsers(userId, delta);
     }
 
     /**
@@ -95,7 +121,7 @@ public class UserStatsDomainService {
      */
     @Transactional
     public void incrementFollowingCourses(Long userId, int delta) {
-        userStatsDataService.atomicIncrement(userId, "following_courses", delta);
+        userStatsDataService.incrementFollowingCourses(userId, delta);
     }
 
     /**
@@ -103,7 +129,7 @@ public class UserStatsDomainService {
      */
     @Transactional
     public void incrementFollowingProfessions(Long userId, int delta) {
-        userStatsDataService.atomicIncrement(userId, "following_professions", delta);
+        userStatsDataService.incrementFollowingProfessions(userId, delta);
     }
 
     // ==================== 学习进度统计 ====================
@@ -113,7 +139,7 @@ public class UserStatsDomainService {
      */
     @Transactional
     public void incrementLearningCourses(Long userId, int delta) {
-        userStatsDataService.atomicIncrement(userId, "learning_courses", delta);
+        userStatsDataService.incrementLearningCourses(userId, delta);
     }
 
     /**
@@ -121,7 +147,7 @@ public class UserStatsDomainService {
      */
     @Transactional
     public void incrementCompletedCourses(Long userId, int delta) {
-        userStatsDataService.atomicIncrement(userId, "completed_courses", delta);
+        userStatsDataService.incrementCompletedCourses(userId, delta);
     }
 
 // --注释掉检查 START (2025/12/10 11:32):
@@ -130,7 +156,7 @@ public class UserStatsDomainService {
 //     */
 //    @Transactional
 //    public void incrementInProgressProfessions(Long userId, int delta) {
-//        userStatsDataService.atomicIncrement(userId, "in_progress_professions", delta);
+//        userStatsDataService.incrementInProgressProfessions(userId, delta);
 //    }
 // --注释掉检查 STOP (2025/12/10 11:32)
 
@@ -140,7 +166,7 @@ public class UserStatsDomainService {
 //     */
 //    @Transactional
 //    public void incrementCompletedProfessions(Long userId, int delta) {
-//        userStatsDataService.atomicIncrement(userId, "completed_professions", delta);
+//        userStatsDataService.incrementCompletedProfessions(userId, delta);
 //    }
 // --注释掉检查 STOP (2025/12/10 11:32)
 
@@ -151,7 +177,7 @@ public class UserStatsDomainService {
      */
     @Transactional
     public void incrementCreatedArticles(Long userId, int delta) {
-        userStatsDataService.atomicIncrement(userId, "created_articles", delta);
+        userStatsDataService.incrementCreatedArticles(userId, delta);
     }
 
     /**
@@ -159,7 +185,7 @@ public class UserStatsDomainService {
      */
     @Transactional
     public void incrementCreatedIndexs(Long userId, int delta) {
-        userStatsDataService.atomicIncrement(userId, "created_indexs", delta);
+        userStatsDataService.incrementCreatedIndexs(userId, delta);
     }
 
     /**
@@ -167,7 +193,7 @@ public class UserStatsDomainService {
      */
     @Transactional
     public void incrementCreatedRoadmaps(Long userId, int delta) {
-        userStatsDataService.atomicIncrement(userId, "created_roadmaps", delta);
+        userStatsDataService.incrementCreatedRoadmaps(userId, delta);
     }
 
     /**
@@ -175,7 +201,7 @@ public class UserStatsDomainService {
      */
     @Transactional
     public void incrementCreatedCardDecks(Long userId, int delta) {
-        userStatsDataService.atomicIncrement(userId, "created_card_decks", delta);
+        userStatsDataService.incrementCreatedCardDecks(userId, delta);
     }
 
     // ==================== 查询方法 ====================
@@ -197,7 +223,17 @@ public class UserStatsDomainService {
      * 获取排行榜 Top N 用户
      */
     public List<UserStatsDTO> getTopUsersByField(String field, int limit) {
-        List<UserStatsDO> topUsers = userStatsDataService.getTopUsersByField(field, limit);
+        List<UserStatsDO> topUsers = switch (field) {
+            case "views" -> userStatsDataService.getTopUsersByViews(limit);
+            case "twices" -> userStatsDataService.getTopUsersByTwices(limit);
+            case "likes" -> userStatsDataService.getTopUsersByLikes(limit);
+            case "comments" -> userStatsDataService.getTopUsersByComments(limit);
+            case "created_articles" -> userStatsDataService.getTopUsersByCreatedArticles(limit);
+            case "created_indexs" -> userStatsDataService.getTopUsersByCreatedIndexs(limit);
+            case "created_roadmaps" -> userStatsDataService.getTopUsersByCreatedRoadmaps(limit);
+            case "created_card_decks" -> userStatsDataService.getTopUsersByCreatedCardDecks(limit);
+            default -> throw new IllegalArgumentException("不支持的排序字段: " + field);
+        };
         return topUsers.stream()
                 .map(this::convertToDTO)
                 .collect(java.util.stream.Collectors.toList());
@@ -240,14 +276,14 @@ public class UserStatsDomainService {
      * 监听内容审核通过事件 - 增加用户创作统计
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentApproved(ContentApprovedEvent event) {
         try {
             switch (event.getContentType()) {
                 case post -> handlePostApproved(event);
-                case roadmap -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_roadmaps", 1);
-                case memory_card_deck -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_card_decks", 1);
-                case comment -> userStatsDataService.atomicIncrement(event.getCreatorId(), "comments", 1);
+                case roadmap -> userStatsDataService.incrementCreatedRoadmaps(event.getCreatorId(), 1);
+                case memory_card_deck -> userStatsDataService.incrementCreatedCardDecks(event.getCreatorId(), 1);
+                case comment -> userStatsDataService.incrementComments(event.getCreatorId(), 1);
             }
         } catch (Exception e) {
             log.error("处理内容审核通过事件失败(用户统计): {}", e.getMessage());
@@ -258,13 +294,13 @@ public class UserStatsDomainService {
      * 监听内容下架事件 - 减少用户创作统计
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentRemoved(ContentRemovedEvent event) {
         try {
             switch (event.getContentType()) {
                 case post -> handlePostRemoved(event);
-                case roadmap -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_roadmaps", -1);
-                case memory_card_deck -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_card_decks", -1);
+                case roadmap -> userStatsDataService.incrementCreatedRoadmaps(event.getCreatorId(), -1);
+                case memory_card_deck -> userStatsDataService.incrementCreatedCardDecks(event.getCreatorId(), -1);
             }
         } catch (Exception e) {
             log.error("处理内容下架事件失败(用户统计): {}", e.getMessage());
@@ -275,7 +311,7 @@ public class UserStatsDomainService {
      * 监听内容封禁事件 - 减少用户创作统计（仅 PUBLISHED 状态）
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentBanned(ContentBannedEvent event) {
         try {
             if (event.getPreviousState() != ContentState.PUBLISHED.value()) {
@@ -284,9 +320,9 @@ public class UserStatsDomainService {
 
             switch (event.getContentType()) {
                 case post -> handlePostBanned(event);
-                case roadmap -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_roadmaps", -1);
-                case memory_card_deck -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_card_decks", -1);
-                case comment -> userStatsDataService.atomicIncrement(event.getCreatorId(), "comments", -1);
+                case roadmap -> userStatsDataService.incrementCreatedRoadmaps(event.getCreatorId(), -1);
+                case memory_card_deck -> userStatsDataService.incrementCreatedCardDecks(event.getCreatorId(), -1);
+                case comment -> userStatsDataService.incrementComments(event.getCreatorId(), -1);
             }
         } catch (Exception e) {
             log.error("处理内容封禁事件失败(用户统计): {}", e.getMessage());
@@ -297,7 +333,7 @@ public class UserStatsDomainService {
      * 监听内容恢复事件 - 恢复用户创作统计
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentRestored(ContentRestoredEvent event) {
         try {
             if (event.getPreviousState() != ContentState.BANNED.value()) {
@@ -306,9 +342,9 @@ public class UserStatsDomainService {
 
             switch (event.getContentType()) {
                 case post -> handlePostRestored(event);
-                case roadmap -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_roadmaps", 1);
-                case memory_card_deck -> userStatsDataService.atomicIncrement(event.getCreatorId(), "created_card_decks", 1);
-                case comment -> userStatsDataService.atomicIncrement(event.getCreatorId(), "comments", 1);
+                case roadmap -> userStatsDataService.incrementCreatedRoadmaps(event.getCreatorId(), 1);
+                case memory_card_deck -> userStatsDataService.incrementCreatedCardDecks(event.getCreatorId(), 1);
+                case comment -> userStatsDataService.incrementComments(event.getCreatorId(), 1);
             }
         } catch (Exception e) {
             log.error("处理内容恢复事件失败(用户统计): {}", e.getMessage());
@@ -319,33 +355,33 @@ public class UserStatsDomainService {
 
     private void handlePostApproved(ContentApprovedEvent event) {
         if (event.getPostType() == 1) {
-            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_articles", 1);
+            userStatsDataService.incrementCreatedArticles(event.getCreatorId(), 1);
         } else if (event.getPostType() == 2) {
-            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_indexs", 1);
+            userStatsDataService.incrementCreatedIndexs(event.getCreatorId(), 1);
         }
     }
 
     private void handlePostRemoved(ContentRemovedEvent event) {
         if (event.getPostType() == 1) {
-            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_articles", -1);
+            userStatsDataService.incrementCreatedArticles(event.getCreatorId(), -1);
         } else if (event.getPostType() == 2) {
-            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_indexs", -1);
+            userStatsDataService.incrementCreatedIndexs(event.getCreatorId(), -1);
         }
     }
 
     private void handlePostBanned(ContentBannedEvent event) {
         if (event.getPostType() == 1) {
-            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_articles", -1);
+            userStatsDataService.incrementCreatedArticles(event.getCreatorId(), -1);
         } else if (event.getPostType() == 2) {
-            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_indexs", -1);
+            userStatsDataService.incrementCreatedIndexs(event.getCreatorId(), -1);
         }
     }
 
     private void handlePostRestored(ContentRestoredEvent event) {
         if (event.getPostType() == 1) {
-            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_articles", 1);
+            userStatsDataService.incrementCreatedArticles(event.getCreatorId(), 1);
         } else if (event.getPostType() == 2) {
-            userStatsDataService.atomicIncrement(event.getCreatorId(), "created_indexs", 1);
+            userStatsDataService.incrementCreatedIndexs(event.getCreatorId(), 1);
         }
     }
 }

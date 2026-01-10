@@ -3,6 +3,7 @@ package com.prosper.learn.interaction.comment;
 import com.prosper.learn.shared.dataservice.AbstractDataService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.StatusCode;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -21,9 +22,12 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class CommentDataService extends AbstractDataService<CommentDO, CommentMapper, Long> {
-    
+
     @Autowired
     private CommentMapper commentMapper;
+
+    @Autowired
+    private SystemProperties systemProperties;
     
     @Override
     protected CommentMapper mapper() {
@@ -63,12 +67,12 @@ public class CommentDataService extends AbstractDataService<CommentDO, CommentMa
     
     @Override
     protected Duration getCacheTtl() {
-        return Duration.ofMinutes(5);  // 评论内容变化频繁，较短缓存时间
+        return Duration.ofMinutes(systemProperties.getComment().getCacheTtlMinutes());
     }
 
     @Override
     protected int deleteByIdFromMapper(CommentMapper mapper, Long id) {
-        return 0;
+        return mapper.softDelete(id);
     }
 
     /**

@@ -48,7 +48,7 @@ public class MessageEventListener {
      * 两次能懂点赞通知
      */
     @EventListener
-    @Async
+    //@Async
     public void onTwiceUpvoted(TwiceUpvotedEvent<PostDO> event) {
         try {
             // 两次能懂点赞只对帖子有效
@@ -72,7 +72,7 @@ public class MessageEventListener {
      * 点赞通知 - 支持帖子、评论、路线图、记忆卡片组
      */
     @EventListener
-    @Async
+    //@Async
     public void onLikeUpvoted(LikeUpvotedEvent<?> event) {
         try {
             // 使用事件中的contextId，避免额外数据库查询
@@ -140,7 +140,7 @@ public class MessageEventListener {
      * 点赞类型切换通知 - 只发送新类型的通知
      */
     @EventListener
-    @Async
+    //@Async
     public void onUpvoteTypeSwitched(UpvoteTypeSwitchedEvent<PostDO> event) {
         try {
             // 点赞类型切换只对帖子有效
@@ -167,7 +167,7 @@ public class MessageEventListener {
      * 评论创建通知
      */
     @EventListener
-    @Async
+    //@Async
     public void onCommentCreated(CommentCreatedEvent event) {
         try {
             // 发送评论通知给内容创建者
@@ -191,7 +191,7 @@ public class MessageEventListener {
      * 用户关注通知
      */
     @EventListener
-    @Async
+    //@Async
     public void onUserFollowed(UserFollowedEvent event) {
         try {
             // 发送关注通知给被关注者
@@ -214,7 +214,7 @@ public class MessageEventListener {
      * 其他内容类型（post, roadmap, memory_card_deck）不发送，用户可以看到内容已发布
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentApproved(ContentApprovedEvent event) {
         try {
             switch (event.getContentType()) {
@@ -254,7 +254,7 @@ public class MessageEventListener {
      * 处理所有内容类型的审核拒绝事件
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentRejected(ContentRejectedEvent event) {
         try {
             switch (event.getContentType()) {

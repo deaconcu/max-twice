@@ -52,10 +52,10 @@ public class ContentStatsEventListener {
      * 内容分享事件 - 直接写数据库
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentShared(ContentSharedEvent event) {
         try {
-            contentStatsDataService.atomicIncrement(event.getContentType(), event.getContentId(), "shares", 1);
+            contentStatsDataService.incrementShares(event.getContentType(), event.getContentId(), 1);
             log.debug("增加分享数: contentType={}, contentId={}", event.getContentType(), event.getContentId());
         } catch (Exception e) {
             log.error("处理内容分享事件失败: contentType={}, contentId={}",
@@ -69,10 +69,10 @@ public class ContentStatsEventListener {
      * 内容收藏事件 - 直接写数据库
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentBookmarked(ContentBookmarkedEvent event) {
         try {
-            contentStatsDataService.atomicIncrement(event.getContentType(), event.getContentId(), "bookmarks", 1);
+            contentStatsDataService.incrementBookmarks(event.getContentType(), event.getContentId(), 1);
             log.debug("增加收藏数: contentType={}, contentId={}", event.getContentType(), event.getContentId());
         } catch (Exception e) {
             log.error("处理内容收藏事件失败: contentType={}, contentId={}",
@@ -84,10 +84,10 @@ public class ContentStatsEventListener {
      * 取消内容收藏事件 - 直接写数据库
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentUnbookmarked(ContentUnbookmarkedEvent event) {
         try {
-            contentStatsDataService.atomicIncrement(event.getContentType(), event.getContentId(), "bookmarks", -1);
+            contentStatsDataService.incrementBookmarks(event.getContentType(), event.getContentId(), -1);
             log.debug("减少收藏数: contentType={}, contentId={}", event.getContentType(), event.getContentId());
         } catch (Exception e) {
             log.error("处理取消内容收藏事件失败: contentType={}, contentId={}",
@@ -101,10 +101,10 @@ public class ContentStatsEventListener {
      * 课程/路线图学习开始事件 - 直接写数据库
      */
     @EventListener
-    @Async
+    //@Async
     public void onLearningStarted(LearningStartedEvent event) {
         try {
-            contentStatsDataService.atomicIncrement(event.getContentType(), event.getContentId(), "in_progress_users", 1);
+            contentStatsDataService.incrementInProgressUsers(event.getContentType(), event.getContentId(), 1);
             log.debug("增加学习中用户数: contentType={}, contentId={}", event.getContentType(), event.getContentId());
         } catch (Exception e) {
             log.error("处理学习开始事件失败: contentType={}, contentId={}",
@@ -117,11 +117,11 @@ public class ContentStatsEventListener {
      * 学习中用户减1，完成用户加1
      */
     @EventListener
-    @Async
+    //@Async
     public void onLearningCompleted(LearningCompletedEvent event) {
         try {
-            contentStatsDataService.atomicIncrement(event.getContentType(), event.getContentId(), "in_progress_users", -1);
-            contentStatsDataService.atomicIncrement(event.getContentType(), event.getContentId(), "completed_users", 1);
+            contentStatsDataService.incrementInProgressUsers(event.getContentType(), event.getContentId(), -1);
+            contentStatsDataService.incrementCompletedUsers(event.getContentType(), event.getContentId(), 1);
             log.debug("学习完成状态转换: contentType={}, contentId={}", event.getContentType(), event.getContentId());
         } catch (Exception e) {
             log.error("处理学习完成事件失败: contentType={}, contentId={}",

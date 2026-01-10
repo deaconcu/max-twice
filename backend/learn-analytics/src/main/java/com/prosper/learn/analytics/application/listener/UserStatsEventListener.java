@@ -52,7 +52,7 @@ public class UserStatsEventListener {
      * 关注用户事件 - 直接写数据库
      */
     @EventListener
-    @Async
+    //@Async
     public void onUserFollowed(UserFollowedEvent event) {
         try {
             userStatsService.incrementFollowingUsers(event.getFollowerId(), 1);
@@ -66,7 +66,7 @@ public class UserStatsEventListener {
      * 取关用户事件 - 直接写数据库
      */
     @EventListener
-    @Async
+    //@Async
     public void onUserUnfollowed(UserUnfollowedEvent event) {
         try {
             userStatsService.incrementFollowingUsers(event.getFollowerId(), -1);
@@ -81,7 +81,7 @@ public class UserStatsEventListener {
      * 统一处理课程关注、职业关注等
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentBookmarked(ContentBookmarkedEvent event) {
         try {
             switch (event.getContentType()) {
@@ -106,7 +106,7 @@ public class UserStatsEventListener {
      * 取消内容收藏事件 - 直接写数据库
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentUnbookmarked(ContentUnbookmarkedEvent event) {
         try {
             switch (event.getContentType()) {
@@ -133,7 +133,7 @@ public class UserStatsEventListener {
      * 学习开始事件 - 直接写数据库
      */
     @EventListener
-    @Async
+    //@Async
     public void onLearningStarted(LearningStartedEvent event) {
         try {
             userStatsService.incrementLearningCourses(event.getUserId(), 1);
@@ -148,7 +148,7 @@ public class UserStatsEventListener {
      * 学习中的课程减1，已完成课程加1
      */
     @EventListener
-    @Async
+    //@Async
     public void onLearningCompleted(LearningCompletedEvent event) {
         try {
             userStatsService.incrementLearningCourses(event.getUserId(), -1);
@@ -166,7 +166,7 @@ public class UserStatsEventListener {
      * 统一处理文章、路线图、目录、卡片组创建等
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentApproved(ContentApprovedEvent event) {
         try {
             switch (event.getContentType()) {
@@ -199,7 +199,7 @@ public class UserStatsEventListener {
      * 内容删除事件 - 直接写数据库
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentDeleted(ContentDeletedEvent event) {
         try {
             switch (event.getContentType()) {

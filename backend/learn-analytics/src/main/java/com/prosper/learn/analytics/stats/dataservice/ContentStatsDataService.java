@@ -85,7 +85,7 @@ public class ContentStatsDataService {
     // ==================== 原子增量更新操作 ====================
 
     /**
-     * 原子性增量更新指定字段
+     * 原子性增量更新指定字段（内部方法）
      *
      * 用于非按日统计字段的更新：shares, bookmarks, in_progress_users, completed_users
      *
@@ -94,9 +94,8 @@ public class ContentStatsDataService {
      * @param field 字段名
      * @param delta 增量值（可正可负）
      */
-    public boolean atomicIncrement(Enums.ContentType contentType, long contentId, String field, int delta) {
+    private boolean atomicIncrement(Enums.ContentType contentType, long contentId, String field, int delta) {
         validateContentParams(contentType, contentId);
-        validateField(field);
 
         if (delta == 0) {
             return true;
@@ -115,6 +114,61 @@ public class ContentStatsDataService {
         log.warn("原子增量更新失败: contentType={}, contentId={}, field={}, delta={}",
             contentType, contentId, field, delta);
         return false;
+    }
+
+    /** 增量更新分享数 */
+    public boolean incrementShares(Enums.ContentType contentType, long contentId, int delta) {
+        return atomicIncrement(contentType, contentId, "shares", delta);
+    }
+
+    /** 增量更新收藏数 */
+    public boolean incrementBookmarks(Enums.ContentType contentType, long contentId, int delta) {
+        return atomicIncrement(contentType, contentId, "bookmarks", delta);
+    }
+
+    /** 增量更新学习中用户数 */
+    public boolean incrementInProgressUsers(Enums.ContentType contentType, long contentId, int delta) {
+        return atomicIncrement(contentType, contentId, "in_progress_users", delta);
+    }
+
+    /** 增量更新已完成用户数 */
+    public boolean incrementCompletedUsers(Enums.ContentType contentType, long contentId, int delta) {
+        return atomicIncrement(contentType, contentId, "completed_users", delta);
+    }
+
+    /** 增量更新帖子数 */
+    public boolean incrementPosts(Enums.ContentType contentType, long contentId, int delta) {
+        return atomicIncrement(contentType, contentId, "posts", delta);
+    }
+
+    /** 增量更新文章数 */
+    public boolean incrementArticles(Enums.ContentType contentType, long contentId, int delta) {
+        return atomicIncrement(contentType, contentId, "articles", delta);
+    }
+
+    /** 增量更新目录数 */
+    public boolean incrementIndexes(Enums.ContentType contentType, long contentId, int delta) {
+        return atomicIncrement(contentType, contentId, "indexes", delta);
+    }
+
+    /** 增量更新路线图数 */
+    public boolean incrementRoadmaps(Enums.ContentType contentType, long contentId, int delta) {
+        return atomicIncrement(contentType, contentId, "roadmaps", delta);
+    }
+
+    /** 增量更新卡片组数 */
+    public boolean incrementCardDecks(Enums.ContentType contentType, long contentId, int delta) {
+        return atomicIncrement(contentType, contentId, "card_decks", delta);
+    }
+
+    /** 增量更新评论数 */
+    public boolean incrementComments(Enums.ContentType contentType, long contentId, int delta) {
+        return atomicIncrement(contentType, contentId, "comments", delta);
+    }
+
+    /** 增量更新拒绝次数 */
+    public boolean incrementRejectCount(Enums.ContentType contentType, long contentId, int delta) {
+        return atomicIncrement(contentType, contentId, "reject_count", delta);
     }
 
     /**
@@ -190,26 +244,6 @@ public class ContentStatsDataService {
         }
         if (contentId <= 0) {
             throw StatusCode.INVALID_PARAMETER.exception("内容ID必须大于0");
-        }
-    }
-
-    private void validateField(String field) {
-        if (field == null || field.trim().isEmpty()) {
-            throw StatusCode.INVALID_PARAMETER.exception("字段名不能为空");
-        }
-
-        // 验证字段名是否合法（非按日统计字段）
-        String[] validFields = {"shares", "bookmarks", "completed_users", "in_progress_users"};
-        boolean isValid = false;
-        for (String validField : validFields) {
-            if (validField.equals(field)) {
-                isValid = true;
-                break;
-            }
-        }
-
-        if (!isValid) {
-            throw StatusCode.INVALID_PARAMETER.exception("不支持的字段名: " + field);
         }
     }
 

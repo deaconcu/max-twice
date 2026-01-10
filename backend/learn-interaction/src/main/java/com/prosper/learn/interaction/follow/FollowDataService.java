@@ -36,12 +36,26 @@ public class FollowDataService extends AbstractDataService<FollowDO, FollowMappe
 
     @Override
     protected Long getEntityId(FollowDO entity) {
-        return null; // Follow实体没有ID字段
+        return entity.getId();
     }
 
     @Override
     protected FollowDO getByIdFromMapper(FollowMapper mapper, Long id) {
-        return null; // Follow实体不支持按ID查询
+        throw new UnsupportedOperationException();
+    }
+
+    public FollowDO getById(Long id) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<FollowDO> getByIds(Collection<Long> ids) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Map<Long, FollowDO> getMapByIds(Collection<Long> ids) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -85,7 +99,7 @@ public class FollowDataService extends AbstractDataService<FollowDO, FollowMappe
     /**
      * 获取关注列表
      */
-    public List<FollowDO> getList(Long followerId, Long lastId, int limit) {
+    public List<FollowDO> getList(long followerId, Long lastId, int limit) {
         return followMapper.getList(followerId, lastId, limit);
     }
 }

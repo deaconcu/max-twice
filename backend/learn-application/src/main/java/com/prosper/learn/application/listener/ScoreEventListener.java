@@ -41,7 +41,7 @@ public class ScoreEventListener {
      * 帖子两次能懂点赞 - 重新计算分数
      */
     @EventListener
-    @Async
+    //@Async
     public void onPostTwiceUpvoted(TwiceUpvotedEvent<PostDO> event) {
         if (event.getContentType() == ContentType.post) {
             try {
@@ -57,7 +57,7 @@ public class ScoreEventListener {
      * 帖子点赞 - 重新计算分数
      */
     @EventListener
-    @Async
+    //@Async
     public void onPostLikeUpvoted(LikeUpvotedEvent<PostDO> event) {
         if (event.getContentType() == ContentType.post) {
             try {
@@ -73,7 +73,7 @@ public class ScoreEventListener {
      * 取消帖子两次能懂点赞 - 重新计算分数
      */
     @EventListener
-    @Async
+    //@Async
     public void onPostTwiceUpvoteCancelled(TwiceUpvoteCancelledEvent<PostDO> event) {
         if (event.getContentType() == ContentType.post) {
             try {
@@ -89,7 +89,7 @@ public class ScoreEventListener {
      * 取消帖子点赞 - 重新计算分数
      */
     @EventListener
-    @Async
+    //@Async
     public void onPostLikeUpvoteCancelled(LikeUpvoteCancelledEvent<PostDO> event) {
         if (event.getContentType() == ContentType.post) {
             try {
@@ -105,7 +105,7 @@ public class ScoreEventListener {
      * 点赞类型切换事件 - 重新计算分数（只计算一次）
      */
     @EventListener
-    @Async
+    //@Async
     public void onUpvoteTypeSwitched(UpvoteTypeSwitchedEvent<PostDO> event) {
         if (event.getContentType() == ContentType.post) {
             try {
@@ -124,7 +124,7 @@ public class ScoreEventListener {
      * 记忆卡片组点赞 - 重新计算分数
      */
     @EventListener
-    @Async
+    //@Async
     public void onMemoryDeckLikeUpvoted(LikeUpvotedEvent<MemoryCardDeckDO> event) {
         if (event.getContentType() == ContentType.memory_card_deck) {
             try {
@@ -140,7 +140,7 @@ public class ScoreEventListener {
      * 取消记忆卡片组点赞 - 重新计算分数
      */
     @EventListener
-    @Async
+    //@Async
     public void onMemoryDeckLikeUpvoteCancelled(LikeUpvoteCancelledEvent<MemoryCardDeckDO> event) {
         if (event.getContentType() == ContentType.memory_card_deck) {
             try {
@@ -158,7 +158,7 @@ public class ScoreEventListener {
      * 评论创建 - 可能影响帖子/父评论分数（评论数增加）
      */
     @EventListener
-    @Async
+    //@Async
     public void onCommentCreated(CommentCreatedEvent event) {
         try {
             // 如果评论的是帖子，重新计算帖子分数

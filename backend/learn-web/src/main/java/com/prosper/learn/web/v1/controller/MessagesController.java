@@ -5,6 +5,7 @@ import com.prosper.learn.application.dto.request.CreateNotificationRequest;
 import com.prosper.learn.application.dto.request.SendMessageRequest;
 import com.prosper.learn.application.dto.response.message.MessageDTO;
 import com.prosper.learn.application.service.MessageService;
+import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserMapper;
 import com.prosper.learn.web.ratelimit.LimitType;
@@ -107,16 +108,9 @@ public class MessagesController {
             @RequestBody @Valid CreateNotificationRequest request,
             @CurrentUser UserDO currentUser) {
 
-        if (request.getUserId() <= 0) {
-            throw new IllegalArgumentException("用户ID无效");
-        }
-        if (request.getNodeId() <= 0) {
-            throw new IllegalArgumentException("节点ID无效");
-        }
-
         UserDO userDO = userMapper.getById(request.getUserId());
         if (userDO == null) {
-            throw new IllegalArgumentException("用户不存在");
+            throw StatusCode.USER_NOT_FOUND.exception();
         }
 
         messageService.createInviteMessage(request.getUserId(), currentUser.getId(), request.getNodeId());

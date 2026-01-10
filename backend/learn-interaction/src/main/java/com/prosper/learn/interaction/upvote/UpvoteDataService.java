@@ -1,5 +1,6 @@
 package com.prosper.learn.interaction.upvote;
 
+import com.prosper.learn.interaction.follow.FollowDO;
 import com.prosper.learn.shared.dataservice.AbstractDataService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -41,7 +42,21 @@ public class UpvoteDataService extends AbstractDataService<UpvoteDO, UpvoteMappe
 
     @Override
     protected UpvoteDO getByIdFromMapper(UpvoteMapper mapper, Long id) {
-        return upvoteMapper.getById(id);
+        throw new UnsupportedOperationException();
+    }
+
+    public UpvoteDO getById(Long id) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<UpvoteDO> getByIds(Collection<Long> ids) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Map<Long, UpvoteDO> getMapByIds(Collection<Long> ids) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

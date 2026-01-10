@@ -21,7 +21,7 @@ public interface UpvoteMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UpvoteDO upvoteDO);
 
-    @Update("UPDATE upvote SET user_id = #{userId}, object_id = #{objectId}, object_type = #{objectType}, type = #{type} where id = #{id}")
+    @Update("UPDATE upvote SET type = #{type} WHERE id = #{id}")
     void update(UpvoteDO upvoteDO);
 
     @Delete("DELETE FROM upvote where id = #{id}")

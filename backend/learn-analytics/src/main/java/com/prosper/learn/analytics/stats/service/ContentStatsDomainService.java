@@ -74,7 +74,7 @@ public class ContentStatsDomainService {
      * 监听内容审核通过事件 - 增加对象维度统计
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentApproved(ContentApprovedEvent event) {
         try {
             switch (event.getContentType()) {
@@ -94,11 +94,11 @@ public class ContentStatsDomainService {
      * 监听内容审核拒绝事件 - 增加 reject_count
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentRejected(ContentRejectedEvent event) {
         try {
             // 增加 reject_count
-            contentStatsDataService.atomicIncrement(event.getContentType(), event.getContentId(), "reject_count", 1);
+            contentStatsDataService.incrementRejectCount(event.getContentType(), event.getContentId(), 1);
 
             // 检查是否需要自动升级为 BANNED
             ContentStatsDO stats = contentStatsDataService.getByContent(event.getContentType(), event.getContentId()).orElse(null);
@@ -118,11 +118,11 @@ public class ContentStatsDomainService {
      * 监听内容下架事件 - 减少对象维度统计 + reject_count++
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentRemoved(ContentRemovedEvent event) {
         try {
             // 增加 reject_count
-            contentStatsDataService.atomicIncrement(event.getContentType(), event.getContentId(), "reject_count", 1);
+            contentStatsDataService.incrementRejectCount(event.getContentType(), event.getContentId(), 1);
 
             // 检查是否需要自动升级为 BANNED
             ContentStatsDO stats = contentStatsDataService.getByContent(event.getContentType(), event.getContentId()).orElse(null);
@@ -148,7 +148,7 @@ public class ContentStatsDomainService {
      * 监听内容封禁事件 - 减少对象维度统计（仅 PUBLISHED 状态）
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentBanned(ContentBannedEvent event) {
         try {
             // 只有之前是 PUBLISHED 状态才需要减少统计
@@ -176,7 +176,7 @@ public class ContentStatsDomainService {
      * 监听内容恢复事件 - 恢复对象维度统计 / reject_count--
      */
     @EventListener
-    @Async
+    //@Async
     public void onContentRestored(ContentRestoredEvent event) {
         try {
             // 从 BANNED 恢复，需要恢复统计
@@ -187,7 +187,7 @@ public class ContentStatsDomainService {
 
             // 从 REJECTED 恢复，只需 reject_count--
             if (event.getPreviousState() == ContentState.REJECTED.value()) {
-                contentStatsDataService.atomicIncrement(event.getContentType(), event.getContentId(), "reject_count", -1);
+                contentStatsDataService.incrementRejectCount(event.getContentType(), event.getContentId(), -1);
                 log.debug("从REJECTED恢复，reject_count--: contentType={}, contentId={}",
                     event.getContentType(), event.getContentId());
             }
@@ -205,12 +205,12 @@ public class ContentStatsDomainService {
             return;
         }
 
-        contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "posts", 1);
+        contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), 1);
 
         if (event.getPostType() == 1) { // ARTICLE
-            contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "articles", 1);
+            contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), 1);
         } else if (event.getPostType() == 2) { // INDEX
-            contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "indexes", 1);
+            contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), 1);
         }
 
         log.debug("Post统计已增加: nodeId={}, postType={}", event.getNodeId(), event.getPostType());
@@ -219,12 +219,12 @@ public class ContentStatsDomainService {
     private void handlePostRemoved(ContentRemovedEvent event) {
         if (event.getNodeId() == null || event.getPostType() == null) return;
 
-        contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "posts", -1);
+        contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), -1);
 
         if (event.getPostType() == 1) {
-            contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "articles", -1);
+            contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), -1);
         } else if (event.getPostType() == 2) {
-            contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "indexes", -1);
+            contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), -1);
         }
 
         log.debug("Post统计已减少: nodeId={}, postType={}", event.getNodeId(), event.getPostType());
@@ -233,12 +233,12 @@ public class ContentStatsDomainService {
     private void handlePostBanned(ContentBannedEvent event) {
         if (event.getNodeId() == null || event.getPostType() == null) return;
 
-        contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "posts", -1);
+        contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), -1);
 
         if (event.getPostType() == 1) {
-            contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "articles", -1);
+            contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), -1);
         } else if (event.getPostType() == 2) {
-            contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "indexes", -1);
+            contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), -1);
         }
     }
 
@@ -246,17 +246,17 @@ public class ContentStatsDomainService {
 
     private void handleRoadmapApproved(ContentApprovedEvent event) {
         if (event.getProfessionId() == null) return;
-        contentStatsDataService.atomicIncrement(ContentType.profession, event.getProfessionId(), "roadmaps", 1);
+        contentStatsDataService.incrementRoadmaps(ContentType.profession, event.getProfessionId(), 1);
     }
 
     private void handleRoadmapRemoved(ContentRemovedEvent event) {
         if (event.getProfessionId() == null) return;
-        contentStatsDataService.atomicIncrement(ContentType.profession, event.getProfessionId(), "roadmaps", -1);
+        contentStatsDataService.incrementRoadmaps(ContentType.profession, event.getProfessionId(), -1);
     }
 
     private void handleRoadmapBanned(ContentBannedEvent event) {
         if (event.getProfessionId() == null) return;
-        contentStatsDataService.atomicIncrement(ContentType.profession, event.getProfessionId(), "roadmaps", -1);
+        contentStatsDataService.incrementRoadmaps(ContentType.profession, event.getProfessionId(), -1);
     }
 
     // ==================== MemoryCardDeck 处理 ====================
@@ -264,30 +264,30 @@ public class ContentStatsDomainService {
     private void handleCardDeckApproved(ContentApprovedEvent event) {
         // CardDeck 同时属于 Post 和 Node，需要同时更新两者的统计
         if (event.getPostId() != null) {
-            contentStatsDataService.atomicIncrement(ContentType.post, event.getPostId(), "card_decks", 1);
+            contentStatsDataService.incrementCardDecks(ContentType.post, event.getPostId(), 1);
         }
         if (event.getNodeId() != null) {
-            contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "card_decks", 1);
+            contentStatsDataService.incrementCardDecks(ContentType.node, event.getNodeId(), 1);
         }
     }
 
     private void handleCardDeckRemoved(ContentRemovedEvent event) {
         // CardDeck 同时属于 Post 和 Node，需要同时减少两者的统计
         if (event.getPostId() != null) {
-            contentStatsDataService.atomicIncrement(ContentType.post, event.getPostId(), "card_decks", -1);
+            contentStatsDataService.incrementCardDecks(ContentType.post, event.getPostId(), -1);
         }
         if (event.getNodeId() != null) {
-            contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "card_decks", -1);
+            contentStatsDataService.incrementCardDecks(ContentType.node, event.getNodeId(), -1);
         }
     }
 
     private void handleCardDeckBanned(ContentBannedEvent event) {
         // CardDeck 同时属于 Post 和 Node，需要同时减少两者的统计
         if (event.getPostId() != null) {
-            contentStatsDataService.atomicIncrement(ContentType.post, event.getPostId(), "card_decks", -1);
+            contentStatsDataService.incrementCardDecks(ContentType.post, event.getPostId(), -1);
         }
         if (event.getNodeId() != null) {
-            contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "card_decks", -1);
+            contentStatsDataService.incrementCardDecks(ContentType.node, event.getNodeId(), -1);
         }
     }
 
@@ -295,12 +295,12 @@ public class ContentStatsDomainService {
 
     private void handleCommentApproved(ContentApprovedEvent event) {
         if (event.getCommentTargetType() == null || event.getCommentTargetId() == null) return;
-        contentStatsDataService.atomicIncrement(event.getCommentTargetType(), event.getCommentTargetId(), "comments", 1);
+        contentStatsDataService.incrementComments(event.getCommentTargetType(), event.getCommentTargetId(), 1);
     }
 
     private void handleCommentBanned(ContentBannedEvent event) {
         if (event.getCommentTargetType() == null || event.getCommentTargetId() == null) return;
-        contentStatsDataService.atomicIncrement(event.getCommentTargetType(), event.getCommentTargetId(), "comments", -1);
+        contentStatsDataService.incrementComments(event.getCommentTargetType(), event.getCommentTargetId(), -1);
     }
 
     // ==================== 恢复处理 ====================
@@ -309,31 +309,31 @@ public class ContentStatsDomainService {
         switch (event.getContentType()) {
             case post -> {
                 if (event.getNodeId() != null && event.getPostType() != null) {
-                    contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "posts", 1);
+                    contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), 1);
                     if (event.getPostType() == 1) {
-                        contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "articles", 1);
+                        contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), 1);
                     } else if (event.getPostType() == 2) {
-                        contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "indexes", 1);
+                        contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), 1);
                     }
                 }
             }
             case roadmap -> {
                 if (event.getProfessionId() != null) {
-                    contentStatsDataService.atomicIncrement(ContentType.profession, event.getProfessionId(), "roadmaps", 1);
+                    contentStatsDataService.incrementRoadmaps(ContentType.profession, event.getProfessionId(), 1);
                 }
             }
             case memory_card_deck -> {
                 // CardDeck 同时属于 Post 和 Node，需要同时恢复两者的统计
                 if (event.getPostId() != null) {
-                    contentStatsDataService.atomicIncrement(ContentType.post, event.getPostId(), "card_decks", 1);
+                    contentStatsDataService.incrementCardDecks(ContentType.post, event.getPostId(), 1);
                 }
                 if (event.getNodeId() != null) {
-                    contentStatsDataService.atomicIncrement(ContentType.node, event.getNodeId(), "card_decks", 1);
+                    contentStatsDataService.incrementCardDecks(ContentType.node, event.getNodeId(), 1);
                 }
             }
             case comment -> {
                 if (event.getCommentTargetType() != null && event.getCommentTargetId() != null) {
-                    contentStatsDataService.atomicIncrement(event.getCommentTargetType(), event.getCommentTargetId(), "comments", 1);
+                    contentStatsDataService.incrementComments(event.getCommentTargetType(), event.getCommentTargetId(), 1);
                 }
             }
         }

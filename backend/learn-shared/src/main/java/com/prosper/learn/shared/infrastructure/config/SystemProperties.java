@@ -91,6 +91,12 @@ public class SystemProperties {
      * 缓存相关配置
      */
     private Cache cache = new Cache();
+
+    /**
+     * 数据服务相关配置
+     */
+    private DataService dataService = new DataService();
+
     private AutoAuthor autoAuthor = new AutoAuthor();
 
     /**
@@ -221,6 +227,11 @@ public class SystemProperties {
          * 待审核评论查询数量
          */
         private int pendingCommentsLimit = 50;
+
+        /**
+         * 评论缓存过期时间（分钟）
+         */
+        private int cacheTtlMinutes = 30;
     }
 
     @Data
@@ -727,5 +738,13 @@ public class SystemProperties {
              */
             private double minEaseFactor = 1.3;
         }
+    }
+
+    @Data
+    public static class DataService {
+        /**
+         * 批量更新最大数量限制
+         */
+        private int maxBatchUpdateSize = 50;
     }
 }
