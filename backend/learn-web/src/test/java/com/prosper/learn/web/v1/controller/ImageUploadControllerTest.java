@@ -114,9 +114,10 @@ public class ImageUploadControllerTest extends BaseControllerTest {
      */
     private UserDO createAdminUser(String email) {
         UserDO user = userDomainService.createUser(email, "password123");
-        user.setRole(UserRole.ADMIN.value());
-        userDataService.update(user);
-        return user;
+        // 使用专用方法更新角色（update方法不会更新role字段）
+        userDataService.updateRole(user.getId(), UserRole.ADMIN.value());
+        // 重新获取用户，确保拿到更新后的数据
+        return userDataService.getById(user.getId());
     }
 
     /**

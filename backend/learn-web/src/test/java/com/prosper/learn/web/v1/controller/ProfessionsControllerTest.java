@@ -299,22 +299,26 @@ public class ProfessionsControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
                 .andExpect(jsonPath("$.data.id").value(professionId));
-        StpUtil.logout();
 
         // 2. 职业不存在
-        mockMvc.perform(get("/api/v1/professions/{id}", 99999L))
+        mockMvc.perform(get("/api/v1/professions/{id}", 99999L)
+                .header("token", StpUtil.getTokenValue()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(StatusCode.PROFESSION_NOT_FOUND.getCode()));
 
         // 3. 职业ID无效 - ID = 0
-        mockMvc.perform(get("/api/v1/professions/{id}", 0L))
+        mockMvc.perform(get("/api/v1/professions/{id}", 0L)
+                .header("token", StpUtil.getTokenValue()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
 
         // 4. 职业ID无效 - ID = -1
-        mockMvc.perform(get("/api/v1/professions/{id}", -1L))
+        mockMvc.perform(get("/api/v1/professions/{id}", -1L)
+                .header("token", StpUtil.getTokenValue()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+
+        StpUtil.logout();
     }
 
     /**

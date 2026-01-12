@@ -179,17 +179,23 @@ public class StatsControllerTest extends BaseControllerTest {
             "userId", user.getId()
         );
 
-        mockMvc.perform(post("/api/v1/stats/views")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(requestBody)))
+        StpUtil.login(user.getId());
 
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200));
+        try {
+            mockMvc.perform(post("/api/v1/stats/views")
+                    .header("token", StpUtil.getTokenValue())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
 
-        // 验证 Redis 中写入了数据
-        String today = LocalDate.now().toString();
-        String contentKey = "stats:" + today + ":content";
-        assertTrue(redisTemplate.hasKey(contentKey));
+            // 验证 Redis 中写入了数据
+            String today = LocalDate.now().toString();
+            String contentKey = "stats:" + today + ":content";
+            assertTrue(redisTemplate.hasKey(contentKey));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     @Test
@@ -198,11 +204,18 @@ public class StatsControllerTest extends BaseControllerTest {
 
         Map<String, Object> requestBody = Map.of("userId", user.getId());
 
-        mockMvc.perform(post("/api/v1/stats/views")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(requestBody)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(post("/api/v1/stats/views")
+                    .header("token", StpUtil.getTokenValue())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     @Test
@@ -214,11 +227,18 @@ public class StatsControllerTest extends BaseControllerTest {
             "userId", user.getId()
         );
 
-        mockMvc.perform(post("/api/v1/stats/views")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(requestBody)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(post("/api/v1/stats/views")
+                    .header("token", StpUtil.getTokenValue())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     @Test
@@ -232,11 +252,18 @@ public class StatsControllerTest extends BaseControllerTest {
             "ipAddress", "192.168.1.100"
         );
 
-        mockMvc.perform(post("/api/v1/stats/views")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(requestBody)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200));
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(post("/api/v1/stats/views")
+                    .header("token", StpUtil.getTokenValue())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     // ========== 用户今日统计接口测试 ==========
@@ -408,43 +435,65 @@ public class StatsControllerTest extends BaseControllerTest {
         // 只有今日数据
         insertUserTodayStats(user.getId(), 50, 10, 5, 3);
 
-        mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
-                .param("days", "7"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200))
-            .andExpect(jsonPath("$.data.views").value(50));
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
+                    .param("days", "7")
+                    .header("token", StpUtil.getTokenValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.views").value(50));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     @Test
     void testGetUserHistoryStats_NoData() throws Exception {
         UserDO user = createUser("user13@test.com");
 
-        mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId()))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200))
-            .andExpect(jsonPath("$.data.views").value(0))
-            .andExpect(jsonPath("$.data.twices").value(0))
-            .andExpect(jsonPath("$.data.likes").value(0))
-            .andExpect(jsonPath("$.data.comments").value(0))
-            .andExpect(jsonPath("$.data.dailyStats").isArray())
-            .andExpect(jsonPath("$.data.dailyStats.length()").value(7))
-            .andExpect(jsonPath("$.data.dailyStats[0].views").value(0))
-            .andExpect(jsonPath("$.data.dailyStats[0].twice").value(0));
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
+                    .header("token", StpUtil.getTokenValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.views").value(0))
+                .andExpect(jsonPath("$.data.twices").value(0))
+                .andExpect(jsonPath("$.data.likes").value(0))
+                .andExpect(jsonPath("$.data.comments").value(0))
+                .andExpect(jsonPath("$.data.dailyStats").isArray())
+                .andExpect(jsonPath("$.data.dailyStats.length()").value(7))
+                .andExpect(jsonPath("$.data.dailyStats[0].views").value(0))
+                .andExpect(jsonPath("$.data.dailyStats[0].twice").value(0));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     @Test
     void testGetUserHistoryStats_InvalidDays() throws Exception {
         UserDO user = createUser("user14@test.com");
 
-        mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
-                .param("days", "-1"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        StpUtil.login(user.getId());
 
-        mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
-                .param("days", "0"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        try {
+            mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
+                    .param("days", "-1")
+                    .header("token", StpUtil.getTokenValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+
+            mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
+                    .param("days", "0")
+                    .header("token", StpUtil.getTokenValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     // ========== 用户全部时间统计接口测试 ==========
@@ -541,27 +590,36 @@ public class StatsControllerTest extends BaseControllerTest {
 
     @Test
     void testGetPlatformStats_Success() throws Exception {
+        UserDO user = createUser("platform-user@test.com");
+
         // 创建平台数据
         createCourse("课程1");
         createCourse("课程2");
 
-        mockMvc.perform(get("/api/v1/stats/platform"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200))
-            .andExpect(jsonPath("$.data.courseCount").exists())
-            .andExpect(jsonPath("$.data.careerPathCount").exists())
-            .andExpect(jsonPath("$.data.roadmapCount").exists())
-            .andExpect(jsonPath("$.data.knowledgeNodeCount").exists())
-            .andExpect(jsonPath("$.data.articleCount").exists())
-            .andExpect(jsonPath("$.data.lastUpdated").exists());
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/stats/platform")
+                    .header("token", StpUtil.getTokenValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.courseCount").exists())
+                .andExpect(jsonPath("$.data.careerPathCount").exists())
+                .andExpect(jsonPath("$.data.roadmapCount").exists())
+                .andExpect(jsonPath("$.data.knowledgeNodeCount").exists())
+                .andExpect(jsonPath("$.data.articleCount").exists())
+                .andExpect(jsonPath("$.data.lastUpdated").exists());
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     @Test
     void testGetPlatformStats_NoAuth() throws Exception {
-        // 不需要认证
+        // 测试未登录访问
         mockMvc.perform(get("/api/v1/stats/platform"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200));
+            .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
     }
 
     // ========== 手动同步统计接口测试 ==========
@@ -690,11 +748,18 @@ public class StatsControllerTest extends BaseControllerTest {
         UserDO user = createUser("user19@test.com");
         insertUserTodayStats(user.getId(), 50, 10, 5, 3);
 
-        mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
-                .param("days", "1"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200))
-            .andExpect(jsonPath("$.data.dailyStats.length()").value(1));
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
+                    .param("days", "1")
+                    .header("token", StpUtil.getTokenValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.dailyStats.length()").value(1));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     @Test
@@ -702,10 +767,17 @@ public class StatsControllerTest extends BaseControllerTest {
         UserDO user = createUser("user20@test.com");
         insertUserTodayStats(user.getId(), 10, 2, 1, 1);
 
-        mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
-                .param("days", "365"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200));
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
+                    .param("days", "365")
+                    .header("token", StpUtil.getTokenValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     @Test
@@ -726,10 +798,17 @@ public class StatsControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk());
         }
 
-        // 验证统计正确
-        mockMvc.perform(get("/api/v1/stats/users/{userId}/today", user.getId()))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.views").exists());
+        StpUtil.login(user.getId());
+
+        try {
+            // 验证统计正确
+            mockMvc.perform(get("/api/v1/stats/users/{userId}/today", user.getId())
+                    .header("token", StpUtil.getTokenValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.views").exists());
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     // ========== 数据一致性测试 ==========
@@ -751,44 +830,68 @@ public class StatsControllerTest extends BaseControllerTest {
                 .header("token", token))
             .andExpect(status().isOk());
 
-        // 查询历史统计验证数据已同步
-        mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
-                .param("days", "7"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.views").value(100))
-            .andExpect(jsonPath("$.data.twices").value(20));
+        StpUtil.login(user.getId());
+
+        try {
+            // 查询历史统计验证数据已同步
+            mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
+                    .param("days", "7")
+                    .header("token", StpUtil.getTokenValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.views").value(100))
+                .andExpect(jsonPath("$.data.twices").value(20));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     // ========== 参数验证测试 ==========
 
     @Test
     void testParameterValidation_PathVariable() throws Exception {
-        // userId 为负数
-        mockMvc.perform(get("/api/v1/stats/users/{userId}/today", -1))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        UserDO user = createUser("user-param-path@test.com");
+        StpUtil.login(user.getId());
 
-        // userId 为 0
-        mockMvc.perform(get("/api/v1/stats/users/{userId}/all-time", 0))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        try {
+            // userId 为负数
+            mockMvc.perform(get("/api/v1/stats/users/{userId}/today", -1)
+                    .header("token", StpUtil.getTokenValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+
+            // userId 为 0
+            mockMvc.perform(get("/api/v1/stats/users/{userId}/all-time", 0)
+                    .header("token", StpUtil.getTokenValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     @Test
     void testParameterValidation_RequestParam() throws Exception {
         UserDO user = createUser("user23@test.com");
 
-        // days 为负数
-        mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
-                .param("days", "-10"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        StpUtil.login(user.getId());
 
-        // days 为 0
-        mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
-                .param("days", "0"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        try {
+            // days 为负数
+            mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
+                    .param("days", "-10")
+                    .header("token", StpUtil.getTokenValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+
+            // days 为 0
+            mockMvc.perform(get("/api/v1/stats/users/{userId}/history", user.getId())
+                    .param("days", "0")
+                    .header("token", StpUtil.getTokenValue()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     @Test

@@ -144,7 +144,13 @@ public class ImageQuotaService {
                 KEY_PREFIX_DAILY + userId + ":" + getCurrentDate()
         );
 
-        Object[] args = {minInterval, minuteLimit, hourLimit, dailyLimit};
+        // 将配额参数转换为字符串（RedisTemplate<String, String> 要求所有参数都是String）
+        Object[] args = {
+                String.valueOf(minInterval),
+                String.valueOf(minuteLimit),
+                String.valueOf(hourLimit),
+                String.valueOf(dailyLimit)
+        };
 
         // 执行 Lua 脚本
         DefaultRedisScript<List> script = new DefaultRedisScript<>(luaScript, List.class);

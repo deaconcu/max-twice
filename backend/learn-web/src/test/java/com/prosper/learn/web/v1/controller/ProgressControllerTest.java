@@ -363,7 +363,7 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 执行请求
-        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/start", course.getId())
+        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/enrollment", course.getId())
                 .header("token", token))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(200))
@@ -384,12 +384,12 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 第一次开始学习
-        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/start", course.getId())
+        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/enrollment", course.getId())
                 .header("token", token))
             .andExpect(status().isOk());
 
         // 第二次开始学习 - 期望失败
-        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/start", course.getId())
+        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/enrollment", course.getId())
                 .header("token", token))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(StatusCode.USER_COURSE_ALREADY_STARTED.getCode()))
@@ -404,12 +404,12 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 开始学习
-        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/start", course.getId())
+        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/enrollment", course.getId())
                 .header("token", token))
             .andExpect(status().isOk());
 
         // 取消学习
-        mockMvc.perform(delete("/api/v1/progress/courses/{courseId}/start", course.getId())
+        mockMvc.perform(delete("/api/v1/progress/courses/{courseId}/enrollment", course.getId())
                 .header("token", token))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(200))
@@ -429,7 +429,7 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 取消未开始的学习 - 期望失败
-        mockMvc.perform(delete("/api/v1/progress/courses/{courseId}/start", course.getId())
+        mockMvc.perform(delete("/api/v1/progress/courses/{courseId}/enrollment", course.getId())
                 .header("token", token))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(StatusCode.USER_COURSE_NOT_STARTED.getCode()))
@@ -444,7 +444,7 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 开始学习
-        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/start", course.getId())
+        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/enrollment", course.getId())
                 .header("token", token))
             .andExpect(status().isOk());
 
@@ -484,10 +484,10 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 开始学习两门课程
-        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/start", course1.getId())
+        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/enrollment", course1.getId())
                 .header("token", token))
             .andExpect(status().isOk());
-        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/start", course2.getId())
+        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/enrollment", course2.getId())
                 .header("token", token))
             .andExpect(status().isOk());
 
@@ -523,7 +523,7 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 开始学习
-        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/start", course.getId())
+        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/enrollment", course.getId())
                 .header("token", token))
             .andExpect(status().isOk());
 
@@ -550,7 +550,7 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 开始学习
-        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/start", course.getId())
+        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/enrollment", course.getId())
                 .header("token", token))
             .andExpect(status().isOk());
 
@@ -599,7 +599,7 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 开始学习
-        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/start", course.getId())
+        mockMvc.perform(post("/api/v1/progress/courses/{courseId}/enrollment", course.getId())
                 .header("token", token))
             .andExpect(status().isOk());
 
@@ -633,7 +633,7 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 执行请求
-        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/start", roadmap.getId())
+        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/enrollment", roadmap.getId())
                 .header("token", token))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(200))
@@ -656,12 +656,12 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 第一次开始学习
-        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/start", roadmap.getId())
+        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/enrollment", roadmap.getId())
                 .header("token", token))
             .andExpect(status().isOk());
 
         // 第二次开始学习 - 期望失败
-        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/start", roadmap.getId())
+        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/enrollment", roadmap.getId())
                 .header("token", token))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(StatusCode.USER_ROADMAP_ALREADY_STARTED.getCode()))
@@ -677,12 +677,12 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 开始学习
-        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/start", roadmap.getId())
+        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/enrollment", roadmap.getId())
                 .header("token", token))
             .andExpect(status().isOk());
 
         // 取消学习
-        mockMvc.perform(delete("/api/v1/progress/roadmaps/{roadmapId}/start", roadmap.getId())
+        mockMvc.perform(delete("/api/v1/progress/roadmaps/{roadmapId}/enrollment", roadmap.getId())
                 .header("token", token))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(200))
@@ -703,7 +703,7 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 取消未开始的学习 - 期望失败
-        mockMvc.perform(delete("/api/v1/progress/roadmaps/{roadmapId}/start", roadmap.getId())
+        mockMvc.perform(delete("/api/v1/progress/roadmaps/{roadmapId}/enrollment", roadmap.getId())
                 .header("token", token))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(StatusCode.USER_ROADMAP_NOT_STARTED.getCode()))
@@ -719,7 +719,7 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 开始学习
-        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/start", roadmap.getId())
+        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/enrollment", roadmap.getId())
                 .header("token", token))
             .andExpect(status().isOk());
 
@@ -761,10 +761,10 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 开始学习两个路线图
-        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/start", roadmap1.getId())
+        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/enrollment", roadmap1.getId())
                 .header("token", token))
             .andExpect(status().isOk());
-        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/start", roadmap2.getId())
+        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/enrollment", roadmap2.getId())
                 .header("token", token))
             .andExpect(status().isOk());
 
@@ -817,7 +817,7 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 开始学习
-        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/start", roadmap.getId())
+        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/enrollment", roadmap.getId())
                 .header("token", token))
             .andExpect(status().isOk());
 
@@ -844,8 +844,8 @@ public class ProgressControllerTest extends BaseControllerTest {
         RoadmapDO roadmap = createRoadmap(profession.getId(), 20);
         String token = generateToken(user.getId());
 
-        // 开始学习
-        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/start", roadmap.getId())
+        // 开始学习（注册路线图）
+        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/enrollment", roadmap.getId())
                 .header("token", token))
             .andExpect(status().isOk());
 
@@ -896,7 +896,7 @@ public class ProgressControllerTest extends BaseControllerTest {
         String token = generateToken(user.getId());
 
         // 开始学习
-        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/start", roadmap.getId())
+        mockMvc.perform(post("/api/v1/progress/roadmaps/{roadmapId}/enrollment", roadmap.getId())
                 .header("token", token))
             .andExpect(status().isOk());
 
@@ -924,7 +924,7 @@ public class ProgressControllerTest extends BaseControllerTest {
     @Test
     void testUnauthorized() throws Exception {
         // 测试未登录访问 - 返回 200 + USER_NOT_LOGIN 错误码
-        mockMvc.perform(post("/api/v1/progress/courses/1/start"))
+        mockMvc.perform(post("/api/v1/progress/courses/1/enrollment"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
 
@@ -932,7 +932,7 @@ public class ProgressControllerTest extends BaseControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
 
-        mockMvc.perform(post("/api/v1/progress/roadmaps/1/start"))
+        mockMvc.perform(post("/api/v1/progress/roadmaps/1/enrollment"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
     }
