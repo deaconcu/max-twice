@@ -543,41 +543,53 @@ public class PostsControllerTest extends BaseControllerTest {
         PostDO publishedPost = createPublishedPost("已发布帖子内容", node.getId(), user.getId(), PostType.article);
         PostDO submittedPost = createPostWithState("待审核帖子内容", node.getId(), user.getId(), ContentState.SUBMITTED);
 
-        // 1. 获取已发布帖子
-        mockMvc.perform(get("/api/v1/posts/" + publishedPost.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                .andExpect(jsonPath("$.data").exists())
-                .andExpect(jsonPath("$.data.id").value(publishedPost.getId()))
-                .andExpect(jsonPath("$.data.content").value("已发布帖子内容"))
-                .andExpect(jsonPath("$.data.state").value((int) ContentState.PUBLISHED.value()));
+        StpUtil.login(user.getId());
 
-        // 2. 获取待审核帖子
-        mockMvc.perform(get("/api/v1/posts/" + submittedPost.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                .andExpect(jsonPath("$.data.id").value(submittedPost.getId()))
-                .andExpect(jsonPath("$.data.state").value((int) ContentState.SUBMITTED.value()));
+        try {
+            // 1. 获取已发布帖子
+            mockMvc.perform(get("/api/v1/posts/" + publishedPost.getId())
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data").exists())
+                    .andExpect(jsonPath("$.data.id").value(publishedPost.getId()))
+                    .andExpect(jsonPath("$.data.content").value("已发布帖子内容"))
+                    .andExpect(jsonPath("$.data.state").value((int) ContentState.PUBLISHED.value()));
 
-        // 3. 帖子不存在
-        mockMvc.perform(get("/api/v1/posts/99999"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.POST_NOT_FOUND.getCode()));
+            // 2. 获取待审核帖子
+            mockMvc.perform(get("/api/v1/posts/" + submittedPost.getId())
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data.id").value(submittedPost.getId()))
+                    .andExpect(jsonPath("$.data.state").value((int) ContentState.SUBMITTED.value()));
 
-        // 4. 帖子ID无效 - ID = 0
-        mockMvc.perform(get("/api/v1/posts/0"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+            // 3. 帖子不存在
+            mockMvc.perform(get("/api/v1/posts/99999")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.POST_NOT_FOUND.getCode()));
 
-        // 5. 帖子ID无效 - ID = -1
-        mockMvc.perform(get("/api/v1/posts/-1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+            // 4. 帖子ID无效 - ID = 0
+            mockMvc.perform(get("/api/v1/posts/0")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
 
-        // 6. 不需要登录 - 未登录也可以访问
-        mockMvc.perform(get("/api/v1/posts/" + publishedPost.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
+            // 5. 帖子ID无效 - ID = -1
+            mockMvc.perform(get("/api/v1/posts/-1")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+
+            // 6. 需要登录才能访问
+            mockMvc.perform(get("/api/v1/posts/" + publishedPost.getId())
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -839,73 +851,86 @@ public class PostsControllerTest extends BaseControllerTest {
         createPostWithState("待审核文章2", node.getId(), user.getId(), ContentState.SUBMITTED);
         createPostWithState("已拒绝文章", node.getId(), user.getId(), ContentState.REJECTED);
 
-        // 1. 获取用户的文章列表（type=2）
-        String articlesResponse = mockMvc.perform(get("/api/v1/users/" + user.getId() + "/posts")
-                .param("type", "2")
-                .characterEncoding("UTF-8"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                .andExpect(jsonPath("$.data.items").isArray())
-                .andReturn().getResponse().getContentAsString(Charset.forName("UTF-8"));
+        StpUtil.login(user.getId());
 
-        JsonNode articlesData = objectMapper.readTree(articlesResponse).get("data").get("items");
-        assertThat(articlesData.size()).isEqualTo(5); // 只返回5篇已发布文章
+        try {
+            // 1. 获取用户的文章列表（type=2）
+            String articlesResponse = mockMvc.perform(get("/api/v1/users/" + user.getId() + "/posts")
+                            .param("type", "2")
+                            .header("token", StpUtil.getTokenValue())
+                            .characterEncoding("UTF-8"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data.items").isArray())
+                    .andReturn().getResponse().getContentAsString(Charset.forName("UTF-8"));
 
-        // 验证：所有返回的都是文章类型
-        for (JsonNode article : articlesData) {
-            assertThat(article.get("type").asInt()).isEqualTo((int) PostType.article.value());
-            assertThat(article.get("state").asInt()).isEqualTo((int) ContentState.PUBLISHED.value());
+            JsonNode articlesData = objectMapper.readTree(articlesResponse).get("data").get("items");
+            assertThat(articlesData.size()).isEqualTo(5); // 只返回5篇已发布文章
+
+            // 验证：所有返回的都是文章类型
+            for (JsonNode article : articlesData) {
+                assertThat(article.get("type").asInt()).isEqualTo((int) PostType.article.value());
+                assertThat(article.get("state").asInt()).isEqualTo((int) ContentState.PUBLISHED.value());
+            }
+
+            // 2. 获取用户的内容帖列表（type=1）
+            String contentsResponse = mockMvc.perform(get("/api/v1/users/" + user.getId() + "/posts")
+                            .param("type", "1")
+                            .header("token", StpUtil.getTokenValue())
+                            .characterEncoding("UTF-8"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andReturn().getResponse().getContentAsString(Charset.forName("UTF-8"));
+
+            JsonNode contentsData = objectMapper.readTree(contentsResponse).get("data").get("items");
+            assertThat(contentsData.size()).isEqualTo(3); // 只返回3个内容帖
+
+            // 3. 默认类型 - 不传 type 参数
+            String defaultResponse = mockMvc.perform(get("/api/v1/users/" + user.getId() + "/posts")
+                            .header("token", StpUtil.getTokenValue())
+                            .characterEncoding("UTF-8"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andReturn().getResponse().getContentAsString(Charset.forName("UTF-8"));
+
+            JsonNode defaultData = objectMapper.readTree(defaultResponse).get("data").get("items");
+            // 默认 type=2（文章）
+            for (JsonNode item : defaultData) {
+                assertThat(item.get("type").asInt()).isEqualTo((int) PostType.article.value());
+            }
+
+            // 4. 参数验证 - userId = 0
+            mockMvc.perform(get("/api/v1/users/0/posts")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+
+            // 5. 参数验证 - userId = -1
+            mockMvc.perform(get("/api/v1/users/-1/posts")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+
+            // 6. 参数验证 - type 无效
+            mockMvc.perform(get("/api/v1/users/" + user.getId() + "/posts")
+                            .param("type", "99")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(400))
+                    .andExpect(jsonPath("$.message").value("无效的帖子类型"));
+
+            // 7. 空结果 - 用户无帖子
+            UserDO newUser = createUser("newuser@example.com");
+            mockMvc.perform(get("/api/v1/users/" + newUser.getId() + "/posts")
+                            .param("type", "2")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data.items").isArray())
+                    .andExpect(jsonPath("$.data.items").isEmpty());
+        } finally {
+            StpUtil.logout();
         }
-
-        // 2. 获取用户的内容帖列表（type=1）
-        String contentsResponse = mockMvc.perform(get("/api/v1/users/" + user.getId() + "/posts")
-                .param("type", "1")
-                .characterEncoding("UTF-8"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                .andReturn().getResponse().getContentAsString(Charset.forName("UTF-8"));
-
-        JsonNode contentsData = objectMapper.readTree(contentsResponse).get("data").get("items");
-        assertThat(contentsData.size()).isEqualTo(3); // 只返回3个内容帖
-
-        // 3. 默认类型 - 不传 type 参数
-        String defaultResponse = mockMvc.perform(get("/api/v1/users/" + user.getId() + "/posts")
-                .characterEncoding("UTF-8"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                .andReturn().getResponse().getContentAsString(Charset.forName("UTF-8"));
-
-        JsonNode defaultData = objectMapper.readTree(defaultResponse).get("data").get("items");
-        // 默认 type=2（文章）
-        for (JsonNode item : defaultData) {
-            assertThat(item.get("type").asInt()).isEqualTo((int) PostType.article.value());
-        }
-
-        // 4. 参数验证 - userId = 0
-        mockMvc.perform(get("/api/v1/users/0/posts"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
-
-        // 5. 参数验证 - userId = -1
-        mockMvc.perform(get("/api/v1/users/-1/posts"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
-
-        // 6. 参数验证 - type 无效
-        mockMvc.perform(get("/api/v1/users/" + user.getId() + "/posts")
-                .param("type", "99"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(400))
-                .andExpect(jsonPath("$.message").value("无效的帖子类型"));
-
-        // 7. 空结果 - 用户无帖子
-        UserDO newUser = createUser("newuser@example.com");
-        mockMvc.perform(get("/api/v1/users/" + newUser.getId() + "/posts")
-                .param("type", "2"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                .andExpect(jsonPath("$.data.items").isArray())
-                .andExpect(jsonPath("$.data.items").isEmpty());
     }
 
     /**
@@ -963,6 +988,7 @@ public class PostsControllerTest extends BaseControllerTest {
             // 2. 与公开接口对比
             String publicResponse = mockMvc.perform(get("/api/v1/users/" + user.getId() + "/posts")
                     .param("type", "2")
+                    .header("token", StpUtil.getTokenValue())
                     .characterEncoding("UTF-8"))
                     .andExpect(status().isOk())
                     .andReturn().getResponse().getContentAsString(Charset.forName("UTF-8"));

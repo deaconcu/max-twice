@@ -39,8 +39,9 @@ public class SystemDataService {
 
     /**
      * 设置配置值（如果不存在则插入，存在则更新）
+     * 清除所有相关缓存，包括单个配置和全部配置缓存
      */
-    @CacheEvict(value = "system", key = "#key")
+    @CacheEvict(value = "system", allEntries = true)
     public void setValue(String key, String value) {
         if (systemMapper.existsByKey(key) > 0) {
             SystemDO systemDO = new SystemDO();
@@ -57,8 +58,9 @@ public class SystemDataService {
 
     /**
      * 删除配置
+     * 清除所有相关缓存，包括单个配置和全部配置缓存
      */
-    @CacheEvict(value = "system", key = "#key")
+    @CacheEvict(value = "system", allEntries = true)
     public void deleteConfig(String key) {
         systemMapper.deleteByKey(key);
     }

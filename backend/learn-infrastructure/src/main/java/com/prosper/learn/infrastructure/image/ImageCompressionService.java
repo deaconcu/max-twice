@@ -1,6 +1,7 @@
 package com.prosper.learn.infrastructure.image;
 
 import com.prosper.learn.shared.domain.exception.StatusCode;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +12,8 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * 图片压缩服务
@@ -33,6 +36,39 @@ public class ImageCompressionService {
 
     @Value("${upload.compression.format:webp}")
     private String format;
+
+    /**
+     * 验证配置参数
+     * 在 Bean 初始化时检查配置的合法性，避免运行时错误
+     */
+    @PostConstruct
+    public void validateConfig() {
+        // 1. 验证 quality 范围
+        if (quality < 0.0 || quality > 1.0) {
+            throw new IllegalStateException(
+                    "upload.compression.quality 必须在 0.0-1.0 之间，当前值: " + quality);
+        }
+
+        // 2. 验证 maxWidth 和 maxHeight
+        if (maxWidth <= 0) {
+            throw new IllegalStateException(
+                    "upload.compression.max-width 必须大于0，当前值: " + maxWidth);
+        }
+        if (maxHeight <= 0) {
+            throw new IllegalStateException(
+                    "upload.compression.max-height 必须大于0，当前值: " + maxHeight);
+        }
+
+        // 3. 验证 format
+        List<String> supportedFormats = Arrays.asList("jpg", "jpeg", "png", "webp");
+        if (!supportedFormats.contains(format.toLowerCase())) {
+            throw new IllegalStateException(
+                    "不支持的图片格式: " + format + "，支持的格式: " + supportedFormats);
+        }
+
+        log.info("图片压缩配置验证通过: enabled={}, maxWidth={}, maxHeight={}, quality={}, format={}",
+                compressionEnabled, maxWidth, maxHeight, quality, format);
+    }
 
     /**
      * 压缩图片
@@ -73,9 +109,10 @@ public class ImageCompressionService {
             return imageData;
         }
 
+        BufferedImage originalImage = null;
         try {
             // 读取原始图片
-            BufferedImage originalImage = ImageIO.read(new ByteArrayInputStream(imageData));
+            originalImage = ImageIO.read(new ByteArrayInputStream(imageData));
             if (originalImage == null) {
                 throw StatusCode.INVALID_IMAGE.exception("无法读取图片");
             }
@@ -100,8 +137,13 @@ public class ImageCompressionService {
                         .outputQuality(quality)
                         .toOutputStream(outputStream);
 
+                // 只调用一次 toByteArray()，避免重复创建数组
+                byte[] compressedData = outputStream.toByteArray();
+
                 log.info("裁切后尺寸: {}x{}, 大小: {} bytes",
-                        targetMaxWidth, targetMaxHeight, outputStream.toByteArray().length);
+                        targetMaxWidth, targetMaxHeight, compressedData.length);
+
+                return compressedData;
             } else {
                 // 等比例缩放模式
                 int targetWidth = originalWidth;
@@ -122,16 +164,25 @@ public class ImageCompressionService {
                         .outputQuality(quality)
                         .toOutputStream(outputStream);
 
-                log.info("压缩后尺寸: {}x{}, 大小: {} bytes, 压缩率: {:.2f}%",
-                        targetWidth, targetHeight, outputStream.toByteArray().length,
-                        (1 - (double) outputStream.toByteArray().length / imageData.length) * 100);
-            }
+                // 只调用一次 toByteArray()，避免重复创建数组
+                byte[] compressedData = outputStream.toByteArray();
+                double compressionRatio = (1 - (double) compressedData.length / imageData.length) * 100;
 
-            return outputStream.toByteArray();
+                log.info("压缩后尺寸: {}x{}, 大小: {} bytes, 压缩率: {}%",
+                        targetWidth, targetHeight, compressedData.length,
+                        String.format("%.2f", compressionRatio));
+
+                return compressedData;
+            }
 
         } catch (IOException e) {
             log.error("图片压缩失败", e);
             throw StatusCode.IMAGE_COMPRESSION_FAILED.exception("图片压缩失败");
+        } finally {
+            // 显式释放 BufferedImage 的图像缓冲区，帮助 GC 更快回收内存
+            if (originalImage != null) {
+                originalImage.flush();
+            }
         }
     }
 

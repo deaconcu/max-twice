@@ -141,10 +141,10 @@ public class SubscriptionsControllerTest extends BaseControllerTest {
                         .header("token", StpUtil.getTokenValue())
                         .content(String.format("{\"courseId\": %d}", course3.getId())))
                 .andExpect(status().isOk());
-        StpUtil.logout();
 
-        // 获取订阅列表
-        mockMvc.perform(get("/api/v1/users/" + user.getId() + "/subscriptions"))
+        // 获取订阅列表（保持登录状态）
+        mockMvc.perform(get("/api/v1/users/" + user.getId() + "/subscriptions")
+                        .header("token", StpUtil.getTokenValue()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data").isArray())
@@ -158,6 +158,8 @@ public class SubscriptionsControllerTest extends BaseControllerTest {
                 .andExpect(jsonPath("$.data[0].subscriptionCount").exists())
                 .andExpect(jsonPath("$.data[0].subscribed").value(true))
                 .andExpect(jsonPath("$.data[0].progress").exists());
+
+        StpUtil.logout();
     }
 
     /**
@@ -168,11 +170,18 @@ public class SubscriptionsControllerTest extends BaseControllerTest {
     void testGetUserSubscriptions_NoSubscriptions_Success() throws Exception {
         UserDO user = createUser("user2@test.com");
 
-        mockMvc.perform(get("/api/v1/users/" + user.getId() + "/subscriptions"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data.length()").value(0));
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/users/" + user.getId() + "/subscriptions")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(200))
+                    .andExpect(jsonPath("$.data").isArray())
+                    .andExpect(jsonPath("$.data.length()").value(0));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -181,9 +190,17 @@ public class SubscriptionsControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("字段验证 - userId 无效为0")
     void testGetUserSubscriptions_UserIdZero_Fail() throws Exception {
-        mockMvc.perform(get("/api/v1/users/0/subscriptions"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        UserDO user = createUser("user-param-1@test.com");
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/users/0/subscriptions")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -192,9 +209,17 @@ public class SubscriptionsControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("字段验证 - userId 无效为负数")
     void testGetUserSubscriptions_UserIdNegative_Fail() throws Exception {
-        mockMvc.perform(get("/api/v1/users/-1/subscriptions"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        UserDO user = createUser("user-param-2@test.com");
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/users/-1/subscriptions")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -203,24 +228,39 @@ public class SubscriptionsControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("业务验证 - 用户不存在")
     void testGetUserSubscriptions_UserNotFound_Fail() throws Exception {
-        mockMvc.perform(get("/api/v1/users/99999/subscriptions"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_FOUND.getCode()));
+        UserDO user = createUser("user-param-3@test.com");
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/users/99999/subscriptions")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_FOUND.getCode()));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
-     * 1.7 权限验证 - 不需要登录
+     * 1.7 权限验证 - 需要登录才能访问
      */
     @Test
-    @DisplayName("权限验证 - 不需要登录")
+    @DisplayName("权限验证 - 需要登录才能访问")
     void testGetUserSubscriptions_NoLoginRequired_Success() throws Exception {
         UserDO user = createUser("user3@test.com");
 
-        // 不传token也能获取订阅列表
-        mockMvc.perform(get("/api/v1/users/" + user.getId() + "/subscriptions"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data").isArray());
+        StpUtil.login(user.getId());
+
+        try {
+            // 需要传token才能获取订阅列表
+            mockMvc.perform(get("/api/v1/users/" + user.getId() + "/subscriptions")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(200))
+                    .andExpect(jsonPath("$.data").isArray());
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -239,13 +279,15 @@ public class SubscriptionsControllerTest extends BaseControllerTest {
                         .header("token", StpUtil.getTokenValue())
                         .content(String.format("{\"courseId\": %d}", course.getId())))
                 .andExpect(status().isOk());
-        StpUtil.logout();
 
-        // 获取订阅列表
-        mockMvc.perform(get("/api/v1/users/" + user.getId() + "/subscriptions"))
+        // 获取订阅列表（保持登录状态）
+        mockMvc.perform(get("/api/v1/users/" + user.getId() + "/subscriptions")
+                        .header("token", StpUtil.getTokenValue()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data[0].subscribed").value(true));
+
+        StpUtil.logout();
     }
 
     // ==================== 接口2: 订阅课程 ====================
@@ -373,20 +415,24 @@ public class SubscriptionsControllerTest extends BaseControllerTest {
     void testSubscribe_LimitExceeded_Fail() throws Exception {
         UserDO user = createUser("user22@test.com");
 
-        StpUtil.login(user.getId());
-
-        // 订阅100个课程（达到上限）
-        for (int i = 1; i <= 100; i++) {
+        // 直接在数据库层面添加99个订阅，避免触发限流
+        for (int i = 1; i <= 99; i++) {
             CourseDO course = createPublishedCourse("课程" + i, user.getId());
-            mockMvc.perform(post("/api/v1/users/current/subscriptions")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .header("token", StpUtil.getTokenValue())
-                            .content(String.format("{\"courseId\": %d}", course.getId())))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(200));
+            userDomainService.addSubscription(user.getId(), course.getId());
         }
 
-        // 尝试订阅第101个课程
+        StpUtil.login(user.getId());
+
+        // 通过API订阅第100个课程（应该成功）
+        CourseDO course100 = createPublishedCourse("课程100", user.getId());
+        mockMvc.perform(post("/api/v1/users/current/subscriptions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("token", StpUtil.getTokenValue())
+                        .content(String.format("{\"courseId\": %d}", course100.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+
+        // 尝试订阅第101个课程（应该失败）
         CourseDO course101 = createPublishedCourse("课程101", user.getId());
         mockMvc.perform(post("/api/v1/users/current/subscriptions")
                         .contentType(MediaType.APPLICATION_JSON)

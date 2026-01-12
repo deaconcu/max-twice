@@ -267,35 +267,31 @@ public abstract class AbstractDataService<T, M, Y> implements BaseDataService<T,
         log.debug("Cached {} entities for {}", entities.size(), getEntityName());
     }
     
+    /**
+     * 清除单个缓存
+     * 使用 Spring Cache 注解自动清除
+     */
     @Override
     @CacheEvict(value = "#{getCacheName()}", key = "#id")
     public void evictCache(Y id) {
         if (id != null && isCacheEnabled()) {
-            try {
-                redisTemplate.delete(buildCacheKey(id));
-                log.debug("Evicted cache for {} with id: {}", getEntityName(), id);
-            } catch (Exception e) {
-                log.warn("Error evicting cache for {} with id: {}", getEntityName(), id, e);
-            }
+            log.debug("Evicted cache for {} with id: {}", getEntityName(), id);
         }
     }
     
+    /**
+     * 清除所有缓存
+     * 使用 Spring Cache 的 allEntries 机制，由框架自动清除所有相关缓存
+     * 避免使用 Redis KEYS 命令（KEYS 会阻塞 Redis）
+     */
     @Override
     @CacheEvict(value = "#{getCacheName()}", allEntries = true)
     public void evictAllCache() {
         if (!isCacheEnabled()) {
             return;
         }
-        
-        try {
-            Set<String> keys = redisTemplate.keys(getCacheName() + "::*");
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-                log.info("Evicted {} cache entries for {}", keys.size(), getEntityName());
-            }
-        } catch (Exception e) {
-            log.warn("Error evicting all cache for {}: {}", getEntityName(), e.getMessage());
-        }
+
+        log.info("Evicted all cache entries for {}", getEntityName());
     }
     
     /**

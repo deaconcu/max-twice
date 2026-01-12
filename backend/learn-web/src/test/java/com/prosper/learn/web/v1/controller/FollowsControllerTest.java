@@ -473,12 +473,18 @@ public class FollowsControllerTest extends BaseControllerTest {
     @DisplayName("获取关注列表 - 空列表")
     void testGetFollowees_EmptyList() throws Exception {
         UserDO user1 = createUser("test-followees-1@test.com");
+        StpUtil.login(user1.getId());
 
-        mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data.length()").value(0));
+        try {
+            mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data").isArray())
+                    .andExpect(jsonPath("$.data.length()").value(0));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -496,16 +502,23 @@ public class FollowsControllerTest extends BaseControllerTest {
         Thread.sleep(10); // 确保时间不同
         createFollow(user1.getId(), user3.getId());
 
-        mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.data.length()").value(2))
-                .andExpect(jsonPath("$.data[0].id").exists())
-                .andExpect(jsonPath("$.data[0].name").exists())
-                .andExpect(jsonPath("$.data[0].biography").exists())
-                .andExpect(jsonPath("$.data[0].avatar").exists())
-                .andExpect(jsonPath("$.data[0].createdAt").exists());
+        StpUtil.login(user1.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data").isArray())
+                    .andExpect(jsonPath("$.data.length()").value(2))
+                    .andExpect(jsonPath("$.data[0].id").exists())
+                    .andExpect(jsonPath("$.data[0].name").exists())
+                    .andExpect(jsonPath("$.data[0].biography").exists())
+                    .andExpect(jsonPath("$.data[0].avatar").exists())
+                    .andExpect(jsonPath("$.data[0].createdAt").exists());
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -522,27 +535,35 @@ public class FollowsControllerTest extends BaseControllerTest {
             createFollow(user1.getId(), followee.getId());
         }
 
-        // 获取第一页
-        String response = mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                .andExpect(jsonPath("$.data.length()").value(10))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        StpUtil.login(user1.getId());
 
-        // 从响应中提取最后一条记录的ID（用于分页）
-        int lastIdIndex = response.lastIndexOf("\"id\":");
-        String idSubstring = response.substring(lastIdIndex + 5);
-        int commaIndex = idSubstring.indexOf(",");
-        Long lastId = Long.parseLong(idSubstring.substring(0, commaIndex).trim());
+        try {
+            // 获取第一页
+            String response = mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data.length()").value(10))
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
 
-        // 获取第二页
-        mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
-                        .param("lastId", String.valueOf(lastId)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                .andExpect(jsonPath("$.data.length()").value(2));
+            // 从响应中提取最后一条记录的ID（用于分页）
+            int lastIdIndex = response.lastIndexOf("\"id\":");
+            String idSubstring = response.substring(lastIdIndex + 5);
+            int commaIndex = idSubstring.indexOf(",");
+            Long lastId = Long.parseLong(idSubstring.substring(0, commaIndex).trim());
+
+            // 获取第二页
+            mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue())
+                            .param("lastId", String.valueOf(lastId)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data.length()").value(2));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -556,26 +577,34 @@ public class FollowsControllerTest extends BaseControllerTest {
 
         createFollow(user1.getId(), user2.getId());
 
-        // 获取第一页
-        String response = mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(1))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        StpUtil.login(user1.getId());
 
-        // 提取记录的ID
-        int idIndex = response.indexOf("\"id\":");
-        String idSubstring = response.substring(idIndex + 5);
-        int commaIndex = idSubstring.indexOf(",");
-        Long lastId = Long.parseLong(idSubstring.substring(0, commaIndex).trim());
+        try {
+            // 获取第一页
+            String response = mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.length()").value(1))
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
 
-        // 获取第二页（应该为空）
-        mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
-                        .param("lastId", String.valueOf(lastId)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                .andExpect(jsonPath("$.data.length()").value(0));
+            // 提取记录的ID
+            int idIndex = response.indexOf("\"id\":");
+            String idSubstring = response.substring(idIndex + 5);
+            int commaIndex = idSubstring.indexOf(",");
+            Long lastId = Long.parseLong(idSubstring.substring(0, commaIndex).trim());
+
+            // 获取第二页（应该为空）
+            mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue())
+                            .param("lastId", String.valueOf(lastId)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data.length()").value(0));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -590,11 +619,18 @@ public class FollowsControllerTest extends BaseControllerTest {
 
         createFollow(user1.getId(), user2.getId());
 
-        // visitor 查看 user1 的关注列表（不需要登录）
-        mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                .andExpect(jsonPath("$.data.length()").value(1));
+        // visitor 登录后查看 user1 的关注列表
+        StpUtil.login(visitor.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data.length()").value(1));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -603,9 +639,17 @@ public class FollowsControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("参数验证 - userId 为 null 字符串")
     void testGetFollowees_NullUserId() throws Exception {
-        mockMvc.perform(get("/api/v1/users/null/followees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        UserDO user = createUser("test-param-1@test.com");
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/users/null/followees")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -614,9 +658,17 @@ public class FollowsControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("参数验证 - userId 为 0")
     void testGetFollowees_ZeroUserId() throws Exception {
-        mockMvc.perform(get("/api/v1/users/0/followees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        UserDO user = createUser("test-param-2@test.com");
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/users/0/followees")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -625,9 +677,17 @@ public class FollowsControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("参数验证 - userId 为负数")
     void testGetFollowees_NegativeUserId() throws Exception {
-        mockMvc.perform(get("/api/v1/users/-1/followees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        UserDO user = createUser("test-param-3@test.com");
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/users/-1/followees")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -638,10 +698,17 @@ public class FollowsControllerTest extends BaseControllerTest {
     void testGetFollowees_InvalidIdFormat() throws Exception {
         UserDO user1 = createUser("test-followees-11@test.com");
 
-        mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
-                        .param("lastId", "invalid-id"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        StpUtil.login(user1.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue())
+                            .param("lastId", "invalid-id"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -650,9 +717,17 @@ public class FollowsControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("业务错误 - 用户不存在")
     void testGetFollowees_UserNotFound() throws Exception {
-        mockMvc.perform(get("/api/v1/users/99999/followees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_FOUND.getCode()));
+        UserDO user = createUser("test-param-4@test.com");
+        StpUtil.login(user.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/users/99999/followees")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_FOUND.getCode()));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -666,10 +741,17 @@ public class FollowsControllerTest extends BaseControllerTest {
 
         createFollow(user1.getId(), user2.getId());
 
-        mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                .andExpect(jsonPath("$.data[0].avatar").value("https://example.com/avatar.jpg"));
+        StpUtil.login(user1.getId());
+
+        try {
+            mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data[0].avatar").value("https://example.com/avatar.jpg"));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     /**
@@ -687,26 +769,33 @@ public class FollowsControllerTest extends BaseControllerTest {
         FollowDO followDO = followDataService.get(user1.getId(), user2.getId());
         LocalDateTime actualTime = followDO.getCreatedAt();
 
-        String response = mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].createdAt").exists())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+        StpUtil.login(user1.getId());
 
-        // 验证时间格式
-        int createdAtIndex = response.indexOf("\"createdAt\":\"");
-        String createdAt = response.substring(
-                createdAtIndex + 13,
-                response.indexOf("\"", createdAtIndex + 13)
-        );
+        try {
+            String response = mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data[0].createdAt").exists())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
 
-        // 解析返回的时间字符串
-        LocalDateTime parsedTime = LocalDateTime.parse(createdAt, TIME_FORMATTER);
+            // 验证时间格式
+            int createdAtIndex = response.indexOf("\"createdAt\":\"");
+            String createdAt = response.substring(
+                    createdAtIndex + 13,
+                    response.indexOf("\"", createdAtIndex + 13)
+            );
 
-        // 验证返回的时间与数据库中的时间一致（允许1秒误差）
-        assertThat(parsedTime).isAfterOrEqualTo(actualTime.minusSeconds(1));
-        assertThat(parsedTime).isBeforeOrEqualTo(actualTime.plusSeconds(1));
+            // 解析返回的时间字符串
+            LocalDateTime parsedTime = LocalDateTime.parse(createdAt, TIME_FORMATTER);
+
+            // 验证返回的时间与数据库中的时间一致（允许1秒误差）
+            assertThat(parsedTime).isAfterOrEqualTo(actualTime.minusSeconds(1));
+            assertThat(parsedTime).isBeforeOrEqualTo(actualTime.plusSeconds(1));
+        } finally {
+            StpUtil.logout();
+        }
     }
 
     // ==================== 4. 集成测试场景 ====================
@@ -733,7 +822,8 @@ public class FollowsControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 2. 验证关注列表包含 user2
-            mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees"))
+            mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data.length()").value(1))
                     .andExpect(jsonPath("$.data[0].userId").value(user2.getId()));
@@ -745,7 +835,8 @@ public class FollowsControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 4. 验证关注列表为空
-            mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees"))
+            mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data.length()").value(0));
 
@@ -779,23 +870,47 @@ public class FollowsControllerTest extends BaseControllerTest {
         createFollow(user3.getId(), user4.getId());
 
         // 验证 user1 关注列表
-        mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(2));
+        StpUtil.login(user1.getId());
+        try {
+            mockMvc.perform(get("/api/v1/users/" + user1.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.length()").value(2));
+        } finally {
+            StpUtil.logout();
+        }
 
         // 验证 user2 关注列表
-        mockMvc.perform(get("/api/v1/users/" + user2.getId() + "/followees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(2));
+        StpUtil.login(user2.getId());
+        try {
+            mockMvc.perform(get("/api/v1/users/" + user2.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.length()").value(2));
+        } finally {
+            StpUtil.logout();
+        }
 
         // 验证 user3 关注列表
-        mockMvc.perform(get("/api/v1/users/" + user3.getId() + "/followees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(2));
+        StpUtil.login(user3.getId());
+        try {
+            mockMvc.perform(get("/api/v1/users/" + user3.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.length()").value(2));
+        } finally {
+            StpUtil.logout();
+        }
 
         // 验证 user4 关注列表（为空）
-        mockMvc.perform(get("/api/v1/users/" + user4.getId() + "/followees"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(0));
+        StpUtil.login(user4.getId());
+        try {
+            mockMvc.perform(get("/api/v1/users/" + user4.getId() + "/followees")
+                            .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.length()").value(0));
+        } finally {
+            StpUtil.logout();
+        }
     }
 }

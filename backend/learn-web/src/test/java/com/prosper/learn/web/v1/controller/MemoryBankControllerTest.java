@@ -1112,36 +1112,38 @@ public class MemoryBankControllerTest extends BaseControllerTest {
     void testDistributedLock_AddDeck() throws Exception {
         // 准备测试数据
         UserDO user = createUser("test-lock@test.com");
-        CourseDO course = createCourse("Test Course", user.getId());
-        NodeDO node = createNode("Test Node", course.getId(), user.getId());
-        MemoryCardDeckDO deck = createDeck("Test Deck", "Description", course.getId(), node.getId(), user.getId());
-
-        // 创建 10 张卡片
-        for (int i = 0; i < 10; i++) {
-            createCard("Front " + i, "Back " + i, deck.getId(), user.getId());
-        }
+        CourseDO course = createPublishedCourse("Test Course", user.getId());
+        NodeDO node = createPublishedNode("Test Node", course.getId(), user.getId());
+        MemoryCardDeckDO deck = createDeck("Test Deck", node.getId(), user.getId());
+        createCardsForDeck(deck.getId(), 10);
 
         // 登录用户
         StpUtil.login(user.getId());
 
         try {
             // 第一次添加卡片组（应该成功）
-            mockMvc.perform(post("/api/v1/memory/memory-bank/courses/" + course.getId() + "/decks/" + deck.getId())
+            String requestBody = String.format(
+                    "{\"deckId\": %d, \"courseId\": %d}",
+                    deck.getId(), course.getId()
+            );
+            mockMvc.perform(post("/api/v1/memory/memory-bank/decks")
                             .header("token", StpUtil.getTokenValue())
-                            .contentType(MediaType.APPLICATION_JSON))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(0));
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 验证：卡片已添加到记忆库
             int cardCount = userCardSrsDataService.getByUserAndNodeId(user.getId(), node.getId()).size();
             assertThat(cardCount).isEqualTo(10);
 
             // 再次添加相同的卡片组（因为使用 INSERT IGNORE，应该成功但不增加卡片）
-            mockMvc.perform(post("/api/v1/memory/memory-bank/courses/" + course.getId() + "/decks/" + deck.getId())
+            mockMvc.perform(post("/api/v1/memory/memory-bank/decks")
                             .header("token", StpUtil.getTokenValue())
-                            .contentType(MediaType.APPLICATION_JSON))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(0));
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 验证：卡片数量没有增加（幂等性）
             int cardCount2 = userCardSrsDataService.getByUserAndNodeId(user.getId(), node.getId()).size();

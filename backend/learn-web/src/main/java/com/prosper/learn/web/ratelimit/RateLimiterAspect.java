@@ -3,6 +3,7 @@ package com.prosper.learn.web.ratelimit;
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.shared.domain.exception.StatusCode;
+import com.prosper.learn.web.util.IpUtils;
 import io.github.bucket4j.*;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
-import java.util.Optional;
 
 /**
  * 限流切面
@@ -101,9 +101,10 @@ public class RateLimiterAspect {
                     throw StatusCode.RATE_LIMIT_CONFIG_ERROR.exception("IP 限流类型只能用于 HTTP 请求上下文");
                 }
                 HttpServletRequest request = attributes.getRequest();
-                String ip = Optional.ofNullable(request.getHeader("X-Forwarded-For"))
-                                  .map(xff -> xff.split(",")[0].trim())
-                                  .orElseGet(request::getRemoteAddr);
+                String ip = IpUtils.getIpAddress(request);
+                if (ip == null) {
+                    ip = "unknown";
+                }
                 return "rate_limit:ip:" + ip + ":" + methodSignature;
 
             case GLOBAL:

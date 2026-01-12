@@ -28,6 +28,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -803,10 +805,10 @@ public class CommentsControllerTest extends BaseControllerTest {
         assertThat(commentDataService.getById(commentId)).isNotNull();
 
         // 执行软删除
-        int result = commentDataService.deleteById(commentId);
+        boolean result = commentDataService.deleteById(commentId);
 
         // 验证软删除成功，查询不到该评论
-        assertThat(result).isEqualTo(1);
+        assertThat(result).isEqualTo(true);
         assertThat(commentDataService.getById(commentId)).isNull();
     }
 

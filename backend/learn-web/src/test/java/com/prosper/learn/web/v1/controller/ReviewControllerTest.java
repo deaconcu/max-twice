@@ -891,19 +891,19 @@ public class ReviewControllerTest extends BaseControllerTest {
         UserCardSrsDO srs1 = createSrsState(user.getId(), card1.getId(), deck.getId(),
                                             node.getId(), UserCardSrsDO.TYPE_REVIEW, now.plusDays(1));
         srs1.setLastReviewedAt(now);
-        userCardSrsDataService.insert(srs1);
+        userCardSrsDataService.update(srs1);
 
         // 昨天复习 card2
         UserCardSrsDO srs2 = createSrsState(user.getId(), card2.getId(), deck.getId(),
                                             node.getId(), UserCardSrsDO.TYPE_REVIEW, now.plusDays(1));
         srs2.setLastReviewedAt(now.minusDays(1));
-        userCardSrsDataService.insert(srs2);
+        userCardSrsDataService.update(srs2);
 
         // 前天复习 card3
         UserCardSrsDO srs3 = createSrsState(user.getId(), card3.getId(), deck.getId(),
                                             node.getId(), UserCardSrsDO.TYPE_REVIEW, now.plusDays(1));
         srs3.setLastReviewedAt(now.minusDays(2));
-        userCardSrsDataService.insert(srs3);
+        userCardSrsDataService.update(srs3);
 
         // 执行测试
         int streakDays = userCardSrsDataService.calculateStreakDays(user.getId());
@@ -932,13 +932,13 @@ public class ReviewControllerTest extends BaseControllerTest {
         UserCardSrsDO srs1 = createSrsState(user.getId(), card1.getId(), deck.getId(),
                                             node.getId(), UserCardSrsDO.TYPE_REVIEW, now.plusDays(1));
         srs1.setLastReviewedAt(now);
-        userCardSrsDataService.insert(srs1);
+        userCardSrsDataService.update(srs1);
 
         // 3天前复习（中间有中断）
         UserCardSrsDO srs2 = createSrsState(user.getId(), card2.getId(), deck.getId(),
                                             node.getId(), UserCardSrsDO.TYPE_REVIEW, now.plusDays(1));
         srs2.setLastReviewedAt(now.minusDays(3));
-        userCardSrsDataService.insert(srs2);
+        userCardSrsDataService.update(srs2);
 
         // 执行测试
         int streakDays = userCardSrsDataService.calculateStreakDays(user.getId());
@@ -983,13 +983,13 @@ public class ReviewControllerTest extends BaseControllerTest {
         UserCardSrsDO srs1 = createSrsState(user.getId(), card1.getId(), deck.getId(),
                                             node.getId(), UserCardSrsDO.TYPE_REVIEW, now.plusDays(1));
         srs1.setLastReviewedAt(now.minusDays(1));
-        userCardSrsDataService.insert(srs1);
+        userCardSrsDataService.update(srs1);
 
         // 前天复习
         UserCardSrsDO srs2 = createSrsState(user.getId(), card2.getId(), deck.getId(),
                                             node.getId(), UserCardSrsDO.TYPE_REVIEW, now.plusDays(1));
         srs2.setLastReviewedAt(now.minusDays(2));
-        userCardSrsDataService.insert(srs2);
+        userCardSrsDataService.update(srs2);
 
         // 执行测试
         int streakDays = userCardSrsDataService.calculateStreakDays(user.getId());

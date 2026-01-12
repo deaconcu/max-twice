@@ -2,6 +2,7 @@ package com.prosper.learn.infrastructure.image;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -88,6 +89,7 @@ public class ImageUploadDataService extends AbstractDataService<ImageUploadDO, I
 
     /**
      * 插入图片记录
+     * 注意：insert 不需要 @CacheEvict，因为新记录还未被缓存
      */
     public void insert(ImageUploadDO imageUpload) {
         imageUploadMapper.insert(imageUpload);
@@ -95,14 +97,18 @@ public class ImageUploadDataService extends AbstractDataService<ImageUploadDO, I
 
     /**
      * 更新图片记录
+     * 清除缓存，确保下次查询时读取最新数据
      */
+    @CacheEvict(value = "imageUploads", key = "#imageUpload.id")
     public void update(ImageUploadDO imageUpload) {
         imageUploadMapper.update(imageUpload);
     }
 
     /**
      * 删除图片记录
+     * 清除缓存
      */
+    @CacheEvict(value = "imageUploads", key = "#id")
     public void delete(Long id) {
         imageUploadMapper.delete(id);
     }

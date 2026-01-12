@@ -51,9 +51,14 @@ public class ImageUploadDO {
     private Integer status;
 
     /**
-     * 创建时间
+     * 创建时间（不可变）
      */
     private LocalDateTime createdAt;
+
+    /**
+     * 更新时间（最后修改时间）
+     */
+    private LocalDateTime updatedAt;
 
     /**
      * 首次被引用时间

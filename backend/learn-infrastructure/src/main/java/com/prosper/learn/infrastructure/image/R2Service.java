@@ -95,13 +95,43 @@ public class R2Service {
 
     /**
      * 从URL提取R2的key
-     * https://images.maxtwice.com/posts/abc.jpg -> posts/abc.jpg
+     *
+     * 验证流程：
+     * 1. 验证 URL 不为空
+     * 2. 验证 URL 来自配置的公开域名
+     * 3. 提取文件路径
+     * 4. 验证路径不包含危险字符（路径遍历）
+     *
+     * @param url 完整的文件URL，例如: https://images.maxtwice.com/posts/abc.jpg
+     * @return R2的key，例如: posts/abc.jpg
      */
     private String extractKeyFromUrl(String url) {
-        int index = url.indexOf(".com/");
-        if (index != -1) {
-            return url.substring(index + 5);
+        // 1. 验证 URL 不为空
+        if (url == null || url.trim().isEmpty()) {
+            throw StatusCode.INVALID_PARAMETER.exception("图片URL不能为空");
         }
-        throw new IllegalArgumentException("Invalid image URL: " + url);
+
+        // 2. 验证 URL 必须来自配置的公开域名
+        String expectedPrefix = r2Config.getPublicDomain() + "/";
+        if (!url.startsWith(expectedPrefix)) {
+            log.warn("URL域名不匹配，预期: {}, 实际: {}", expectedPrefix, url);
+            throw StatusCode.INVALID_PARAMETER.exception("无效的图片URL");
+        }
+
+        // 3. 提取 key
+        String key = url.substring(expectedPrefix.length());
+
+        // 4. 验证 key 不包含路径遍历字符
+        if (key.contains("..") || key.contains("//") || key.startsWith("/")) {
+            log.error("检测到路径遍历攻击尝试: {}", url);
+            throw StatusCode.INVALID_PARAMETER.exception("无效的文件路径");
+        }
+
+        // 5. 验证 key 不为空
+        if (key.isEmpty()) {
+            throw StatusCode.INVALID_PARAMETER.exception("文件路径不能为空");
+        }
+
+        return key;
     }
 }

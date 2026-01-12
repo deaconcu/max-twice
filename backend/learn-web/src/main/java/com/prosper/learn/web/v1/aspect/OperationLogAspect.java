@@ -3,6 +3,7 @@ package com.prosper.learn.web.v1.aspect;
 import com.prosper.learn.application.dto.response.OperationLogDTO;
 import com.prosper.learn.application.service.OperationLogService;
 import com.prosper.learn.user.profile.UserDO;
+import com.prosper.learn.web.util.IpUtils;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.web.v1.annotation.OperationLog;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +18,7 @@ import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
@@ -64,7 +62,7 @@ public class OperationLogAspect {
             String reason = parseExpression(operationLog.reason(), context, String.class);
 
             // 4. 获取IP地址
-            String ipAddress = getIpAddress();
+            String ipAddress = IpUtils.getIpAddress();
 
             // 5. 构建日志DTO
             OperationLogDTO logDTO = OperationLogDTO.builder()
@@ -153,39 +151,6 @@ public class OperationLogAspect {
             return expression.getValue(context, desiredResultType);
         } catch (Exception e) {
             log.warn("解析SpEL表达式失败: {}", expressionString, e);
-            return null;
-        }
-    }
-
-    /**
-     * 获取请求IP地址
-     */
-    private String getIpAddress() {
-        try {
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes == null) {
-                return null;
-            }
-
-            HttpServletRequest request = attributes.getRequest();
-
-            // 考虑反向代理的情况
-            String ip = request.getHeader("X-Forwarded-For");
-            if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-                ip = request.getHeader("X-Real-IP");
-            }
-            if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-                ip = request.getRemoteAddr();
-            }
-
-            // X-Forwarded-For 可能包含多个IP，取第一个
-            if (ip != null && ip.contains(",")) {
-                ip = ip.split(",")[0].trim();
-            }
-
-            return ip;
-        } catch (Exception e) {
-            log.warn("获取IP地址失败", e);
             return null;
         }
     }

@@ -1,5 +1,6 @@
 package com.prosper.learn.web.v1.aspect;
 
+import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.NotPermissionException;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.shared.domain.Enums;
@@ -58,6 +59,12 @@ public class PermissionAspect {
     private void checkRolePermission(JoinPoint joinPoint, RequireRole requireRole) {
         // 获取当前用户
         UserDO currentUser = getCurrentUser(joinPoint);
+
+        // 用户不存在时抛出异常
+        if (currentUser == null) {
+            log.error("权限检查失败：无法获取当前用户信息");
+            throw new NotLoginException("用户未登录或会话已失效", StpUtil.getLoginType(), NotLoginException.NOT_TOKEN);
+        }
 
         // 获取需要的角色
         Enums.UserRole requiredRole = requireRole.value();

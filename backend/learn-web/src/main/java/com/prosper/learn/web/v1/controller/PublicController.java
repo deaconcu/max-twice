@@ -2,8 +2,11 @@ package com.prosper.learn.web.v1.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.ProfessionDTO;
+import com.prosper.learn.application.dto.response.course.CourseSummaryWithStatsAndProgressDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
+import com.prosper.learn.application.service.CourseService;
 import com.prosper.learn.application.service.PageService;
 import com.prosper.learn.application.service.ProfessionService;
 import com.prosper.learn.application.service.RoadmapService;
@@ -31,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.prosper.learn.shared.domain.Enums.ContentState;
+
 /**
  * 公开接口 - 无需登录
  */
@@ -47,6 +52,7 @@ public class PublicController {
     private final ProfessionService professionService;
     private final RoadmapService roadmapService;
     private final PageService pageService;
+    private final CourseService courseService;
 
     /**
      * 获取课程分类数据（公开接口，支持 ETag 缓存）
@@ -213,5 +219,49 @@ public class PublicController {
             log.error("Failed to read page: courseId={}, path={}", courseId, path, e);
             throw e;
         }
+    }
+
+    /**
+     * 获取课程列表（公开接口）
+     * 不需要登录，不返回用户个性化数据（订阅状态、学习进度等）
+     *
+     * 参数组合：
+     * 1. mainCategory（可选 subCategory）：按分类筛选
+     * 2. parentId：获取子课程
+     * 3. 无参数或只有 lastId：返回所有已发布课程（分页）
+     */
+    @GetMapping("/courses")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
+    public ApiResponse<KeysetPageResponse<CourseSummaryWithStatsAndProgressDTO>> getCourses(
+            @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
+            @RequestParam(required = false) @Positive(message = "主分类必须大于0") Integer mainCategory,
+            @RequestParam(required = false) @Positive(message = "子分类必须大于0") Integer subCategory,
+            @RequestParam(required = false) @Positive(message = "父课程ID必须大于0") Long parentId) {
+
+        KeysetPageResponse<CourseSummaryWithStatsAndProgressDTO> response;
+
+        // userId = null 表示未登录用户，不返回个性化数据
+        if (mainCategory != null) {
+            response = courseService.getListByCategoryWithStatsPage(mainCategory, subCategory, lastId, null);
+        } else if (parentId != null) {
+            response = courseService.getListByParentWithStatsPage(parentId, ContentState.PUBLISHED, lastId, null);
+        } else {
+            response = courseService.getListByStateAndLastIdWithStatsPage(ContentState.PUBLISHED, lastId, null);
+        }
+
+        return ApiResponse.query(response);
+    }
+
+    /**
+     * 获取课程详情（公开接口）
+     * 不需要登录，不返回用户个性化数据（订阅状态、学习进度等）
+     */
+    @GetMapping("/courses/{id}")
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
+    public ApiResponse<CourseSummaryWithStatsAndProgressDTO> getCourse(
+            @PathVariable @Positive(message = "课程ID必须大于0") Long id) {
+        // userId = null 表示未登录用户，不返回个性化数据
+        CourseSummaryWithStatsAndProgressDTO course = courseService.getCourseWithStatsAndProgress(id, null);
+        return ApiResponse.query(course);
     }
 }

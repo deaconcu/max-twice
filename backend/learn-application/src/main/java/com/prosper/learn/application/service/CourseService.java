@@ -208,35 +208,20 @@ public class CourseService {
             .map(CourseDO::getId)
             .collect(Collectors.toList());
 
-        Map<Long, ContentStatsDO> statsMap = new java.util.HashMap<>();
-        try {
-            // 使用批量查询避免 N+1 问题
-            List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(ContentType.course, courseIds);
-            statsMap = statsList.stream()
-                .collect(Collectors.toMap(ContentStatsDO::getContentId, stats -> stats));
-        } catch (Exception e) {
-            log.error("批量获取课程统计信息失败", e);
-        }
+        // 批量查询统计信息（异常时返回空 Map）
+        final Map<Long, ContentStatsDO> statsMap = getBatchStats(courseIds);
 
         // 批量查询用户订阅状态（如果已登录）
-        java.util.Set<Long> subscribedCourseIds = new java.util.HashSet<>();
+        final java.util.Set<Long> subscribedCourseIds;
         if (userId != null) {
             List<Long> userSubscriptions = userDomainService.getSubscriptionIds(userId);
-            subscribedCourseIds.addAll(userSubscriptions);
+            subscribedCourseIds = new java.util.HashSet<>(userSubscriptions);
+        } else {
+            subscribedCourseIds = new java.util.HashSet<>();
         }
 
         // 批量查询用户学习进度（如果已登录）
-        Map<Long, Integer> progressMap = new java.util.HashMap<>();
-        if (userId != null) {
-            // 使用批量查询避免 N+1 问题
-            Map<Long, UserCourseDO> userCoursesMap = userCourseDomainService.getUserCoursesBatch(userId, courseIds);
-            progressMap = userCoursesMap.entrySet().stream()
-                .collect(Collectors.toMap(
-                    Map.Entry::getKey,
-                    entry -> entry.getValue().getProgressPercent() != null ?
-                            entry.getValue().getProgressPercent() : 0
-                ));
-        }
+        final Map<Long, Integer> progressMap = getBatchProgress(userId, courseIds);
 
         // 转换每个课程
         return courseDOList.stream()
@@ -265,6 +250,38 @@ public class CourseService {
                 return dto;
             })
             .collect(Collectors.toList());
+    }
+
+    /**
+     * 批量获取课程统计信息（异常安全）
+     */
+    private Map<Long, ContentStatsDO> getBatchStats(List<Long> courseIds) {
+        try {
+            List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(ContentType.course, courseIds);
+            return statsList.stream()
+                .collect(Collectors.toMap(ContentStatsDO::getContentId, stats -> stats));
+        } catch (Exception e) {
+            log.error("批量获取课程统计信息失败", e);
+            return new java.util.HashMap<>();
+        }
+    }
+
+    /**
+     * 批量获取用户学习进度
+     */
+    private Map<Long, Integer> getBatchProgress(Long userId, List<Long> courseIds) {
+        if (userId == null) {
+            return new java.util.HashMap<>();
+        }
+
+        // 使用批量查询避免 N+1 问题
+        Map<Long, UserCourseDO> userCoursesMap = userCourseDomainService.getUserCoursesBatch(userId, courseIds);
+        return userCoursesMap.entrySet().stream()
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                entry -> entry.getValue().getProgressPercent() != null ?
+                        entry.getValue().getProgressPercent() : 0
+            ));
     }
 
     // ========== 公共业务方法 ==========

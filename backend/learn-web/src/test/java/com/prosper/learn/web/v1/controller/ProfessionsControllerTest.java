@@ -292,19 +292,7 @@ public class ProfessionsControllerTest extends BaseControllerTest {
         // 准备：审核通过职业
         professionDataService.approve(professionId);
 
-        // 1. 获取已发布职业（未登录）
-        mockMvc.perform(get("/api/v1/professions/{id}", professionId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                .andExpect(jsonPath("$.data").exists())
-                .andExpect(jsonPath("$.data.id").value(professionId))
-                .andExpect(jsonPath("$.data.name").value("产品经理"))
-                .andExpect(jsonPath("$.data.description").value("负责产品规划和需求分析工作，协调各部门推进产品开发"))
-                .andExpect(jsonPath("$.data.mainCategory").value(1))
-                .andExpect(jsonPath("$.data.subCategory").value(2))
-                .andExpect(jsonPath("$.data.skills").value("产品设计, 需求分析, 项目管理"));
-
-        // 2. 获取已发布职业（已登录）
+        // 1. 获取已发布职业（已登录）
         StpUtil.login(user.getId());
         mockMvc.perform(get("/api/v1/professions/{id}", professionId)
                 .header("token", StpUtil.getTokenValue()))
@@ -313,17 +301,17 @@ public class ProfessionsControllerTest extends BaseControllerTest {
                 .andExpect(jsonPath("$.data.id").value(professionId));
         StpUtil.logout();
 
-        // 3. 职业不存在
+        // 2. 职业不存在
         mockMvc.perform(get("/api/v1/professions/{id}", 99999L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(StatusCode.PROFESSION_NOT_FOUND.getCode()));
 
-        // 4. 职业ID无效 - ID = 0
+        // 3. 职业ID无效 - ID = 0
         mockMvc.perform(get("/api/v1/professions/{id}", 0L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
 
-        // 5. 职业ID无效 - ID = -1
+        // 4. 职业ID无效 - ID = -1
         mockMvc.perform(get("/api/v1/professions/{id}", -1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));

@@ -48,7 +48,7 @@ public class DistributedLockAspect {
 
             if (!acquired) {
                 log.warn("Failed to acquire lock: {}", lockKey);
-                throw StatusCode.SYSTEM_BUSY.exception("系统繁忙，请稍后重试");
+                throw StatusCode.SYSTEM_ERROR.exception();
             }
 
             log.debug("Acquired lock: {}", lockKey);
@@ -59,7 +59,7 @@ public class DistributedLockAspect {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("Thread interrupted while acquiring lock: {}", lockKey, e);
-            throw StatusCode.SYSTEM_ERROR.exception("操作被中断，请重试");
+            throw StatusCode.SYSTEM_ERROR.exception();
         } finally {
             // 释放锁
             if (lock.isHeldByCurrentThread()) {

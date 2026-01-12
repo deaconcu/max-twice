@@ -19,9 +19,9 @@ import static com.prosper.learn.shared.domain.exception.StatusCode.*;
  * CurrentUser 参数解析器
  * 自动将当前登录用户注入到标注了 @CurrentUser 的参数
  *
- * 注意：此解析器必须和 @SaCheckLogin 一起使用
- * - @SaCheckLogin 确保用户已登录，否则在此之前就会抛出异常
- * - 此解析器仅负责加载用户数据
+ * 注意：此解析器要求用户必须已登录
+ * - 如果未登录，会抛出 NotLoginException
+ * - 使用此注解的接口必须配合 @SaCheckLogin 或确保有登录拦截
  */
 @Component
 public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolver {
@@ -45,8 +45,7 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
 
         try {
             // 从 Sa-Token 获取当前用户ID
-            // 注意：如果未登录，会抛出 NotLoginException，但这种情况不应该发生，
-            // 因为 @SaCheckLogin 应该已经在拦截器中检查过了
+            // 如果未登录，会抛出 NotLoginException
             Long userId = StpUtil.getLoginIdAsLong();
 
             // 从缓存/数据库获取用户信息（自动使用 Redis 缓存）
@@ -60,12 +59,10 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
             return user;
 
         } catch (NotLoginException e) {
-            // 未登录异常：理论上不应该到这里（@SaCheckLogin 应该已拦截）
-            // 如果到了这里，说明配置有问题，抛出异常让全局异常处理器处理
+            // 未登录异常：抛出异常，由全局异常处理器处理
             throw e;
         } catch (Exception e) {
-            // 其他异常（如数据库异常）：不应该静默处理，应该抛出
-            // 让全局异常处理器统一处理
+            // 其他异常（如数据库异常）：抛出异常，由全局异常处理器处理
             throw e;
         }
     }

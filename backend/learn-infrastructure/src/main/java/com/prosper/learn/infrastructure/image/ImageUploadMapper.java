@@ -51,9 +51,10 @@ public interface ImageUploadMapper {
 
     /**
      * 更新图片记录
+     * 只更新业务相关字段，不更新 created_at（创建时间不可变）
      */
-    @Update("UPDATE image_uploads SET ref_type = #{refType}, ref_id = #{refId}, status = #{status}, " +
-            "used_at = #{usedAt}, created_at = #{createdAt} WHERE id = #{id}")
+    @Update("UPDATE image_uploads SET ref_type = #{refType}, ref_id = #{refId}, " +
+            "status = #{status}, used_at = #{usedAt} WHERE id = #{id}")
     int update(ImageUploadDO imageUpload);
 
     /**

@@ -156,7 +156,13 @@ public class AiService {
                 if (attempt < maxAttempts) {
                     log.warn("AI服务调用失败，第{}次重试", attempt, e);
                     try {
-                        Thread.sleep(1000 * attempt); // 指数退避
+                        // 指数退避 + 抖动：2^(attempt-1) * 1000ms + random(0-1000ms)
+                        // 第1次: ~1s, 第2次: ~2s, 第3次: ~4s, 第4次: ~8s, 第5次: ~16s
+                        long exponentialDelay = (long) Math.pow(2, attempt - 1) * 1000;
+                        long jitter = (long) (Math.random() * 1000);
+                        long delayMs = exponentialDelay + jitter;
+                        Thread.sleep(delayMs);
+                        log.debug("重试延迟: {}ms (指数: {}ms + 抖动: {}ms)", delayMs, exponentialDelay, jitter);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         throw StatusCode.AI_SERVICE_REQUEST_FAILED.exception(ie);

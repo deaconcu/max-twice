@@ -382,10 +382,9 @@ public class CoursesControllerTest extends BaseControllerTest {
      * 测试场景:
      * 1. 已登录用户获取已订阅课程（有进度、有统计数据）
      * 2. 已登录用户获取未订阅课程
-     * 3. 未登录用户获取课程
-     * 4. 课程不存在
-     * 5. 课程ID无效（0、负数）
-     * 6. 无统计数据的课程
+     * 3. 课程不存在
+     * 4. 课程ID无效（0、负数）
+     * 5. 无统计数据的课程
      */
     @Test
     void testGetCourseDetail() throws Exception {
@@ -428,7 +427,7 @@ public class CoursesControllerTest extends BaseControllerTest {
             StpUtil.login(user.getId());
 
             // 添加订阅
-            userDomainService.addSubscription(user.getId(), courseId, false);
+            userDomainService.addSubscription(user.getId(), courseId);
 
             // 开始学习课程（创建学习记录）
             userCourseDomainService.startCourse(user.getId(), courseId);
@@ -466,37 +465,28 @@ public class CoursesControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.data.subscribed").value(false))
                     .andExpect(jsonPath("$.data.progress").value(0));
 
-            StpUtil.logout();
-
-            // 3. 未登录用户获取课程
-            mockMvc.perform(get("/api/v1/courses/{id}", courseId))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.id").value(courseId))
-                    .andExpect(jsonPath("$.data.subscribed").value(false))
-                    .andExpect(jsonPath("$.data.progress").value(0));
-
-            // 4. 课程不存在
-            mockMvc.perform(get("/api/v1/courses/{id}", 99999L))
+            // 3. 课程不存在
+            mockMvc.perform(get("/api/v1/courses/{id}", 99999L)
+                    .header("token", StpUtil.getTokenValue()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.COURSE_NOT_FOUND.getCode()));
 
-            // 5. 课程ID无效 - ID = 0
-            mockMvc.perform(get("/api/v1/courses/{id}", 0L))
+            // 4. 课程ID无效 - ID = 0
+            mockMvc.perform(get("/api/v1/courses/{id}", 0L)
+                    .header("token", StpUtil.getTokenValue()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
 
-            // 6. 无统计数据的课程 - 应该返回默认值0
-            mockMvc.perform(get("/api/v1/courses/{id}", courseId))
+            // 5. 无统计数据的课程 - 应该返回默认值0
+            mockMvc.perform(get("/api/v1/courses/{id}", courseId)
+                    .header("token", StpUtil.getTokenValue()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
                     .andExpect(jsonPath("$.data.learnerCount").exists())
                     .andExpect(jsonPath("$.data.subscriptionCount").exists());
 
         } finally {
-            if (StpUtil.isLogin()) {
-                StpUtil.logout();
-            }
+            StpUtil.logout();
         }
     }
 
@@ -1232,7 +1222,7 @@ public class CoursesControllerTest extends BaseControllerTest {
             // 为部分课程添加订阅和学习进度
             for (int i = 0; i < Math.min(5, publishedCourses.size()); i++) {
                 CourseDO course = publishedCourses.get(i);
-                userDomainService.addSubscription(user.getId(), course.getId(), false);
+                userDomainService.addSubscription(user.getId(), course.getId());
                 userCourseDomainService.startCourse(user.getId(), course.getId());
                 userCourseDomainService.updateProgress(user.getId(), course.getId(), (i + 1) * 10);
             }
@@ -1278,24 +1268,6 @@ public class CoursesControllerTest extends BaseControllerTest {
             // 验证：我们订阅了5个课程，所以应该有5个subscribed=true的课程
             // 但由于列表可能包含其他课程，只验证至少有部分课程被订阅
             assertThat(subscribedCount).isGreaterThanOrEqualTo(0);
-
-            // 3. 未登录用户查询列表（不包含用户个人数据）
-            StpUtil.logout();
-            String anonymousResponse = mockMvc.perform(get("/api/v1/courses")
-                    .param("mainCategory", "1")
-                    .characterEncoding("UTF-8"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.items").isArray())
-                    .andExpect(jsonPath("$.data.hasMore").exists())
-                    .andReturn().getResponse().getContentAsString(Charset.forName("UTF-8"));
-
-            JsonNode anonymousData = objectMapper.readTree(anonymousResponse).get("data").get("items");
-            // 验证：未登录用户的subscribed和progress都是默认值
-            for (JsonNode course : anonymousData) {
-                assertThat(course.get("subscribed").asBoolean()).isFalse();
-                assertThat(course.get("progress").asInt()).isEqualTo(0);
-            }
 
             // 性能提示：实际执行时间会因环境而异，这里只是验证功能正确性
             System.out.println("批量查询执行时间: " + (endTime - startTime) + "ms");

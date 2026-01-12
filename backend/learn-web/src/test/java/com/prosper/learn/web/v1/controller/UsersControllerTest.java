@@ -72,13 +72,10 @@ public class UsersControllerTest extends BaseControllerTest {
      */
     private UserDO createValidatedUser(String email) {
         UserDO user = userDomainService.createUser(email, "password123");
-        user.setEmailValidated(true);
-        // 设置 msgReadTime 避免数据库约束错误
-        if (user.getMsgReadTime() == null) {
-            user.setMsgReadTime(LocalDateTime.now());
-        }
-        userDataService.update(user);
-        return user;
+        // 使用专用方法更新邮箱验证状态
+        userDataService.updateEmailValidated(user.getId(), true);
+        // 重新获取用户以获得最新状态
+        return userDataService.getById(user.getId());
     }
 
     // ==================== Command 测试（写操作） ====================

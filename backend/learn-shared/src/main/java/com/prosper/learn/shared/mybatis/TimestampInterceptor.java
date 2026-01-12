@@ -9,7 +9,9 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * MyBatis 拦截器：自动填充 createdAt 和 updatedAt 字段
@@ -20,6 +22,12 @@ import java.util.Properties;
     @Signature(type = Executor.class, method = "update", args = {MappedStatement.class, Object.class})
 })
 public class TimestampInterceptor implements Interceptor {
+
+    /**
+     * 字段缓存：Class -> (FieldName -> Field)
+     * 避免每次都通过反射查找字段，提升性能
+     */
+    private final Map<Class<?>, Map<String, Field>> fieldCache = new ConcurrentHashMap<>();
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
@@ -48,11 +56,18 @@ public class TimestampInterceptor implements Interceptor {
     }
 
     /**
-     * 使用反射设置字段值
+     * 使用反射设置字段值（带字段缓存优化）
+     *
+     * 使用 ConcurrentHashMap 缓存 Field 对象，避免每次都通过反射查找
+     * 性能提升：从 O(n) 反射查找 → O(1) Map 查找
      */
     private void setFieldValue(Object obj, String fieldName, Object value) {
         try {
-            Field field = findField(obj.getClass(), fieldName);
+            // 从缓存获取或查找 Field
+            Field field = fieldCache
+                    .computeIfAbsent(obj.getClass(), k -> new ConcurrentHashMap<>())
+                    .computeIfAbsent(fieldName, k -> findField(obj.getClass(), k));
+
             if (field != null) {
                 field.setAccessible(true);
                 // 只在字段为 null 时设置值

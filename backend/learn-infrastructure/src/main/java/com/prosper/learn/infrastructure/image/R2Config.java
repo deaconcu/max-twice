@@ -39,15 +39,17 @@ public class R2Config {
 
     @PostConstruct
     public void init() {
-        log.info("=== R2 配置信息 ===");
-        log.info("Account ID: {}", accountId);
-        log.info("Access Key ID: {}", accessKeyId);
-        log.info("Secret Access Key: {}***", secretAccessKey.substring(0, Math.min(10, secretAccessKey.length())));
-        log.info("Bucket Name: {}", bucketName);
-        log.info("Public Domain: {}", publicDomain);
-
         String endpoint = String.format("https://%s.r2.cloudflarestorage.com", accountId);
-        log.info("Endpoint: {}", endpoint);
+
+        // 仅在 DEBUG 级别打印配置信息，且脱敏处理
+        if (log.isDebugEnabled()) {
+            log.debug("=== R2 Configuration ===");
+            log.debug("Account ID: {}***", accountId.substring(0, Math.min(5, accountId.length())));
+            log.debug("Access Key ID: {}***", accessKeyId.substring(0, Math.min(5, accessKeyId.length())));
+            log.debug("Bucket Name: {}", bucketName);
+            log.debug("Public Domain: {}", publicDomain);
+            log.debug("Endpoint: {}", endpoint);
+        }
 
         AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKeyId, secretAccessKey);
 
@@ -58,8 +60,7 @@ public class R2Config {
                 .forcePathStyle(true)  // 使用路径样式访问，R2 要求
                 .build();
 
-        log.info("R2 客户端初始化成功");
-        log.info("==================");
+        log.info("R2 client initialized successfully");
     }
 
     public S3Client getS3Client() {

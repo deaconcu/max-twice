@@ -62,8 +62,8 @@ public class ImageUploadService {
         // 1. 验证文件
         validateFile(file);
 
-        // 2. 检查配额
-        imageQuotaService.checkQuota(userId);
+        // 2. 原子性地检查并记录配额
+        imageQuotaService.checkAndRecordQuota(userId);
 
         try {
             // 3. 压缩图片 - 根据类型使用不同尺寸
@@ -105,9 +105,6 @@ public class ImageUploadService {
             }
 
             imageUploadDataService.insert(imageUpload);
-
-            // 6. 记录配额使用
-            imageQuotaService.recordUpload(userId);
 
             log.info("图片上传成功: userId={}, fileUrl={}, size={} bytes", userId, fileUrl, compressedData.length);
 

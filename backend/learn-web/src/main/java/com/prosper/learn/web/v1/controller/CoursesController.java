@@ -41,10 +41,12 @@ public class CoursesController {
     private final CourseService courseService;
 
     /**
-     * 获取课程详情
+     * 获取课程详情（用户接口）
      * 映射: GET /course/{id} → GET /api/v1/courses/{id}
      *
-     * 返回课程基本信息、统计数据和用户学习状态（如果已登录）
+     * 注意：需要登录才能访问
+     * 返回课程基本信息、统计数据和用户学习状态
+     * 如果不需要登录，请使用 GET /api/v1/public/courses/{id}
      */
     @GetMapping("/courses/{id}")
     @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
@@ -54,7 +56,7 @@ public class CoursesController {
             @CurrentUser UserDO currentUser) {
         CourseSummaryWithStatsAndProgressDTO course = courseService.getCourseWithStatsAndProgress(
             id,
-            currentUser != null ? currentUser.getId() : null
+            currentUser.getId()
         );
         return ApiResponse.query(course);
     }
@@ -72,16 +74,17 @@ public class CoursesController {
     }
 
     /**
-     * 获取课程列表（普通用户接口）
+     * 获取课程列表（用户接口）
      * 映射: GET /course/list?mainCategory=1&subCategory=2 → GET /api/v1/courses?mainCategory=1&subCategory=2
+     *
+     * 注意：需要登录才能访问
+     * 返回带统计信息和用户学习状态的课程列表（订阅状态、学习进度等）
+     * 如果不需要登录，请使用 GET /api/v1/public/courses
      *
      * 参数组合：
      * 1. mainCategory（可选 subCategory）：按分类筛选
      * 2. parentId：获取子课程
      * 3. 无参数或只有 lastId：返回所有已发布课程（分页）
-     *
-     * 注意：不支持按状态查询，普通用户只能看到已发布课程
-     * 返回带统计信息和用户学习状态的课程列表
      */
     @GetMapping("/courses")
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
@@ -92,7 +95,7 @@ public class CoursesController {
             @RequestParam(required = false) @Positive(message = "父课程ID必须大于0") Long parentId,
             @CurrentUser UserDO currentUser) {
 
-        Long userId = currentUser != null ? currentUser.getId() : null;
+        Long userId = currentUser.getId();
 
         KeysetPageResponse<CourseSummaryWithStatsAndProgressDTO> response;
 
