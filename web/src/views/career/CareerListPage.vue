@@ -488,10 +488,10 @@ const loadCareers = async (reset = false) => {
       },
     })
 
-    if (result && result.length > 0) {
-      careers.value = [...careers.value, ...result]
-      lastId.value = result[result.length - 1].id
-      hasMore.value = result.length >= 12 // 假设每页12条
+    if (result && result.items && result.items.length > 0) {
+      careers.value = [...careers.value, ...result.items]
+      lastId.value = result.items[result.items.length - 1].id
+      hasMore.value = result.hasMore
     } else {
       hasMore.value = false
     }
@@ -525,10 +525,10 @@ const loadMore = async () => {
       },
     })
 
-    if (result && result.length > 0) {
-      careers.value = [...careers.value, ...result]
-      lastId.value = result[result.length - 1].id
-      hasMore.value = result.length >= 12
+    if (result && result.items && result.items.length > 0) {
+      careers.value = [...careers.value, ...result.items]
+      lastId.value = result.items[result.items.length - 1].id
+      hasMore.value = result.hasMore
     } else {
       hasMore.value = false
     }

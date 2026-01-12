@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -29,12 +30,20 @@ public class RateLimiterAspect {
 
     private final ProxyManager<String> proxyManager;
 
+    @Value("${rate-limit.enabled:true}")
+    private boolean rateLimitEnabled;
+
     public RateLimiterAspect(ProxyManager<String> proxyManager) {
         this.proxyManager = proxyManager;
     }
 
     @Around("@annotation(com.prosper.learn.web.ratelimit.RateLimit) || @within(com.prosper.learn.web.ratelimit.RateLimit)")
     public Object rateLimit(ProceedingJoinPoint joinPoint) throws Throwable {
+        // 如果限流被禁用，直接放行
+        if (!rateLimitEnabled) {
+            return joinPoint.proceed();
+        }
+
         // 明确获取注解：优先使用方法级别的注解，如果没有则使用类级别的注解
         RateLimit rateLimit = null;
 

@@ -14,11 +14,13 @@ import com.prosper.learn.shared.domain.Enums.UserState;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
+import com.prosper.learn.web.ratelimit.RateLimiterAspect;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,6 +65,9 @@ public class StatsControllerTest extends BaseControllerTest {
 
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
+
+    @Autowired
+    private RateLimiterAspect rateLimiterAspect;
 
     @BeforeEach
     void setUp() {
@@ -790,24 +795,32 @@ public class StatsControllerTest extends BaseControllerTest {
             "userId", user.getId()
         );
 
-        // 多次记录访问
-        for (int i = 0; i < 1000; i++) {
-            mockMvc.perform(post("/api/v1/stats/views")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(requestBody)))
-                .andExpect(status().isOk());
-        }
+        // 临时禁用限流以便测试大量请求
+        ReflectionTestUtils.setField(rateLimiterAspect, "rateLimitEnabled", false);
 
         StpUtil.login(user.getId());
 
         try {
+            // 多次记录访问
+            for (int i = 0; i < 1000; i++) {
+                mockMvc.perform(post("/api/v1/stats/views")
+                        .header("token", StpUtil.getTokenValue())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(200));
+            }
+
             // 验证统计正确
             mockMvc.perform(get("/api/v1/stats/users/{userId}/today", user.getId())
                     .header("token", StpUtil.getTokenValue()))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.views").exists());
         } finally {
             StpUtil.logout();
+            // 恢复限流设置
+            ReflectionTestUtils.setField(rateLimiterAspect, "rateLimitEnabled", true);
         }
     }
 
@@ -828,7 +841,8 @@ public class StatsControllerTest extends BaseControllerTest {
         // 执行同步
         mockMvc.perform(post("/api/v1/stats/sync/manual")
                 .header("token", token))
-            .andExpect(status().isOk());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value(200));
 
         StpUtil.login(user.getId());
 
@@ -838,6 +852,7 @@ public class StatsControllerTest extends BaseControllerTest {
                     .param("days", "7")
                     .header("token", StpUtil.getTokenValue()))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.views").value(100))
                 .andExpect(jsonPath("$.data.twices").value(20));
         } finally {

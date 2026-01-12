@@ -178,7 +178,7 @@ export const useCategoryStore = defineStore(
       const mapping = courseCategories.value.categoryMapping.find(
         (m) => m.mainCategoryId === mainCategoryId
       )
-      return mapping?.subCategories || []
+      return mapping?.subcategories || []
     }
 
     /**

@@ -1,5 +1,5 @@
 import apiClient from '../client'
-import type { ApiResponse } from '@/types/api'
+import type { ApiResponse, KeysetPageResponse } from '@/types/api'
 import type { Profession } from '@/types/profession'
 
 /**
@@ -8,7 +8,7 @@ import type { Profession } from '@/types/profession'
  */
 export const professionApi = {
   /**
-   * 获取职业列表
+   * 获取职业列表（分页）
    * @param lastId 分页游标
    * @param mainCategory 主分类ID（可选）
    * @param subCategory 子分类ID（可选）
@@ -18,7 +18,7 @@ export const professionApi = {
     lastId?: number,
     mainCategory?: number,
     subCategory?: number
-  ): Promise<ApiResponse<Profession[]>> {
+  ): Promise<ApiResponse<KeysetPageResponse<Profession>>> {
     return apiClient.get('/v1/professions', {
       params: { lastId, mainCategory, subCategory },
     })

@@ -22,6 +22,10 @@ spring:
       database: 15  # 使用 DB15 作为测试数据库
       timeout: 5000
 
+# 限流配置
+rate-limit:
+  enabled: true # 测试环境禁用限流
+
 # 应用配置
 app:
   user:

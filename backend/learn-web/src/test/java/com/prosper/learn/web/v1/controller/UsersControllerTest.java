@@ -799,7 +799,8 @@ public class UsersControllerTest extends BaseControllerTest {
         }
 
         // 3. 等待2秒后(测试配置中设置为2秒)再发送,应该成功
-        Thread.sleep(2100);
+        // 增加等待时间以确保超过间隔限制（考虑数据库时间精度和系统时间波动，使用 3秒 buffer）
+        Thread.sleep(3000);
         userDomainService.createVerificationCode(email, "654321");
 
         // 4. 验证最新的验证码是654321

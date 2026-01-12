@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemDataService;
+import com.prosper.learn.shared.infrastructure.config.SystemDomainService;
 import com.prosper.learn.application.dto.ApiResponse;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
@@ -37,6 +38,7 @@ import static com.prosper.learn.shared.domain.Enums.*;
 public class AdminSystemController {
 
     private final SystemDataService systemDataService;
+    private final SystemDomainService systemDomainService;
     private final ObjectMapper objectMapper;
 
     /**
@@ -118,6 +120,7 @@ public class AdminSystemController {
 
             systemDataService.setValue(key, value);
 
+            systemDomainService.reload();
             log.info("System config updated successfully for key: {}", key);
             return ApiResponse.success("配置更新成功");
         } catch (Exception e) {
