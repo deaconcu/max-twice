@@ -13,6 +13,7 @@ import com.prosper.learn.content.toc.TocDomainService;
 import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.learning.enrollment.UserCourseDataService;
 import com.prosper.learn.learning.progress.LearningProgressDomainService;
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.domain.event.user.learning.LearningCompletedEvent;
@@ -234,9 +235,9 @@ public class LearningProgressService {
                 userCourse.setCourseId(courseId);
                 userCourse.setProgressPercent(finalProgress);
                 userCourse.setState(finalProgress >= 10000 ? Enums.UserProgressState.COMPLETED.value() : Enums.UserProgressState.IN_PROGRESS.value());
-                userCourse.setStartedAt(LocalDateTime.now());
+                userCourse.setStartedAt(TimeZoneUtil.nowDateTime());
                 if (finalProgress >= 10000) {
-                    userCourse.setCompletedAt(LocalDateTime.now());
+                    userCourse.setCompletedAt(TimeZoneUtil.nowDateTime());
                     // 发布学习完成事件（新创建的记录）
                     eventPublisher.publishEvent(new LearningCompletedEvent(
                         userId,
@@ -250,7 +251,7 @@ public class LearningProgressService {
                 userCourse.setProgressPercent(finalProgress);
                 userCourse.setState(finalProgress >= 10000 ? Enums.UserProgressState.COMPLETED.value() : Enums.UserProgressState.IN_PROGRESS.value());
                 if (finalProgress >= 10000 && userCourse.getCompletedAt() == null) {
-                    userCourse.setCompletedAt(LocalDateTime.now());
+                    userCourse.setCompletedAt(TimeZoneUtil.nowDateTime());
                     // 发布学习完成事件（从进行中变为完成）
                     if (oldProgress < 10000) {
                         eventPublisher.publishEvent(new LearningCompletedEvent(

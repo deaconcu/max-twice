@@ -2,6 +2,7 @@ package com.prosper.learn.memory.review;
 
 import com.prosper.learn.shared.domain.Enums;
 import org.apache.ibatis.annotations.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -178,9 +179,15 @@ public interface UserCardSrsMapper {
             "WHERE user_id = #{userId} AND last_reviewed_at BETWEEN #{startTime} AND #{endTime}")
     long countReviewsInPeriod(long userId, LocalDateTime startTime, LocalDateTime endTime);
 
-    @Select("SELECT COALESCE(DATEDIFF(CURDATE(), DATE(MAX(last_reviewed_at))), 0) AS days_since_last " +
-            "FROM user_card_srs WHERE user_id = #{userId} AND last_reviewed_at IS NOT NULL")
-    int calculateStreakDays(long userId);
+    /**
+     * 获取用户的所有复习日期（去重且降序）
+     * 用于计算连续复习天数
+     */
+    @Select("SELECT DISTINCT DATE(last_reviewed_at) as review_date " +
+            "FROM user_card_srs " +
+            "WHERE user_id = #{userId} AND last_reviewed_at IS NOT NULL " +
+            "ORDER BY review_date DESC")
+    List<LocalDate> getDistinctReviewDates(long userId);
 
     @Select("SELECT AVG(repetitions * 1.0) FROM user_card_srs " +
             "WHERE user_id = #{userId} AND last_reviewed_at BETWEEN #{startTime} AND #{endTime}")

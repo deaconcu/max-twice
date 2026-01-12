@@ -866,4 +866,135 @@ public class ReviewControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
     }
+
+    // ==================== 5. 连续复习天数计算测试 ====================
+
+    /**
+     * 测试场景 5.1：连续复习多天
+     */
+    @Test
+    @DisplayName("连续复习天数 - 连续3天复习")
+    void testCalculateStreakDays_ContinuousReview() {
+        // 准备测试数据
+        UserDO user = createUser("test-streak-1@test.com");
+        CourseDO course = createCourse("Test Course", user.getId());
+        NodeDO node = createNode("Test Node", course.getId(), user.getId());
+        MemoryCardDeckDO deck = createDeck("Test Deck", "Description", course.getId(), node.getId(), user.getId());
+        MemoryCardDO card1 = createCard("Front 1", "Back 1", deck.getId(), user.getId());
+        MemoryCardDO card2 = createCard("Front 2", "Back 2", deck.getId(), user.getId());
+        MemoryCardDO card3 = createCard("Front 3", "Back 3", deck.getId(), user.getId());
+
+        // 创建 SRS 状态，模拟连续3天复习
+        LocalDateTime now = LocalDateTime.now();
+
+        // 今天复习 card1
+        UserCardSrsDO srs1 = createSrsState(user.getId(), card1.getId(), deck.getId(),
+                                            node.getId(), UserCardSrsDO.TYPE_REVIEW, now.plusDays(1));
+        srs1.setLastReviewedAt(now);
+        userCardSrsDataService.insert(srs1);
+
+        // 昨天复习 card2
+        UserCardSrsDO srs2 = createSrsState(user.getId(), card2.getId(), deck.getId(),
+                                            node.getId(), UserCardSrsDO.TYPE_REVIEW, now.plusDays(1));
+        srs2.setLastReviewedAt(now.minusDays(1));
+        userCardSrsDataService.insert(srs2);
+
+        // 前天复习 card3
+        UserCardSrsDO srs3 = createSrsState(user.getId(), card3.getId(), deck.getId(),
+                                            node.getId(), UserCardSrsDO.TYPE_REVIEW, now.plusDays(1));
+        srs3.setLastReviewedAt(now.minusDays(2));
+        userCardSrsDataService.insert(srs3);
+
+        // 执行测试
+        int streakDays = userCardSrsDataService.calculateStreakDays(user.getId());
+
+        // 验证结果：连续3天复习
+        assertThat(streakDays).isEqualTo(3);
+    }
+
+    /**
+     * 测试场景 5.2：中断后继续复习
+     */
+    @Test
+    @DisplayName("连续复习天数 - 中断后重新开始")
+    void testCalculateStreakDays_AfterBreak() {
+        // 准备测试数据
+        UserDO user = createUser("test-streak-2@test.com");
+        CourseDO course = createCourse("Test Course", user.getId());
+        NodeDO node = createNode("Test Node", course.getId(), user.getId());
+        MemoryCardDeckDO deck = createDeck("Test Deck", "Description", course.getId(), node.getId(), user.getId());
+        MemoryCardDO card1 = createCard("Front 1", "Back 1", deck.getId(), user.getId());
+        MemoryCardDO card2 = createCard("Front 2", "Back 2", deck.getId(), user.getId());
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // 今天复习
+        UserCardSrsDO srs1 = createSrsState(user.getId(), card1.getId(), deck.getId(),
+                                            node.getId(), UserCardSrsDO.TYPE_REVIEW, now.plusDays(1));
+        srs1.setLastReviewedAt(now);
+        userCardSrsDataService.insert(srs1);
+
+        // 3天前复习（中间有中断）
+        UserCardSrsDO srs2 = createSrsState(user.getId(), card2.getId(), deck.getId(),
+                                            node.getId(), UserCardSrsDO.TYPE_REVIEW, now.plusDays(1));
+        srs2.setLastReviewedAt(now.minusDays(3));
+        userCardSrsDataService.insert(srs2);
+
+        // 执行测试
+        int streakDays = userCardSrsDataService.calculateStreakDays(user.getId());
+
+        // 验证结果：只有1天（因为中断了）
+        assertThat(streakDays).isEqualTo(1);
+    }
+
+    /**
+     * 测试场景 5.3：没有复习记录
+     */
+    @Test
+    @DisplayName("连续复习天数 - 无复习记录")
+    void testCalculateStreakDays_NoReview() {
+        // 准备测试数据
+        UserDO user = createUser("test-streak-3@test.com");
+
+        // 执行测试
+        int streakDays = userCardSrsDataService.calculateStreakDays(user.getId());
+
+        // 验证结果：0天
+        assertThat(streakDays).isEqualTo(0);
+    }
+
+    /**
+     * 测试场景 5.4：今天没复习，昨天有复习
+     */
+    @Test
+    @DisplayName("连续复习天数 - 今天未复习保持昨天的连续天数")
+    void testCalculateStreakDays_TodayNoReview() {
+        // 准备测试数据
+        UserDO user = createUser("test-streak-4@test.com");
+        CourseDO course = createCourse("Test Course", user.getId());
+        NodeDO node = createNode("Test Node", course.getId(), user.getId());
+        MemoryCardDeckDO deck = createDeck("Test Deck", "Description", course.getId(), node.getId(), user.getId());
+        MemoryCardDO card1 = createCard("Front 1", "Back 1", deck.getId(), user.getId());
+        MemoryCardDO card2 = createCard("Front 2", "Back 2", deck.getId(), user.getId());
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // 昨天复习
+        UserCardSrsDO srs1 = createSrsState(user.getId(), card1.getId(), deck.getId(),
+                                            node.getId(), UserCardSrsDO.TYPE_REVIEW, now.plusDays(1));
+        srs1.setLastReviewedAt(now.minusDays(1));
+        userCardSrsDataService.insert(srs1);
+
+        // 前天复习
+        UserCardSrsDO srs2 = createSrsState(user.getId(), card2.getId(), deck.getId(),
+                                            node.getId(), UserCardSrsDO.TYPE_REVIEW, now.plusDays(1));
+        srs2.setLastReviewedAt(now.minusDays(2));
+        userCardSrsDataService.insert(srs2);
+
+        // 执行测试
+        int streakDays = userCardSrsDataService.calculateStreakDays(user.getId());
+
+        // 验证结果：连续2天（昨天和前天，今天未复习不影响）
+        assertThat(streakDays).isEqualTo(2);
+    }
 }

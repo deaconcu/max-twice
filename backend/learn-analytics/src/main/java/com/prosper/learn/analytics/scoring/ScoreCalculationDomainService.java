@@ -6,6 +6,7 @@ import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyMapper;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyDO;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
@@ -160,7 +161,7 @@ public class ScoreCalculationDomainService {
             return true;
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = TimeZoneUtil.nowDateTime();
         long minutesSinceLastUpdate = ChronoUnit.MINUTES.between(lastCalculatedAt, now);
         return minutesSinceLastUpdate >= SCORE_UPDATE_INTERVAL_MINUTES;
     }
@@ -203,7 +204,7 @@ public class ScoreCalculationDomainService {
 
         double weightedScoreSum = 0.0;
         double weightedSampleSum = 0.0;
-        LocalDate today = LocalDate.now();
+        LocalDate today = TimeZoneUtil.now();
 
         for (Map.Entry<LocalDate, DailyData> entry : dailyData.entrySet()) {
             LocalDate date = entry.getKey();
@@ -222,7 +223,7 @@ public class ScoreCalculationDomainService {
      * 获取内容的每日点赞历史数据
      */
     private Map<LocalDate, DailyData> getDailyUpvoteHistory(long objectId, Enums.ContentType contentType) {
-        LocalDate endDate = LocalDate.now();
+        LocalDate endDate = TimeZoneUtil.now();
         LocalDate startDate = endDate.minusDays(MAX_DAYS_HISTORY);
 
         Map<LocalDate, DailyData> dailyData = new HashMap<>();

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyDO;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyMapper;
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.Cursor;
@@ -142,7 +143,7 @@ public class ContentStatsSyncService {
                 dateStr, totalEntries, totalSaved);
 
             // 同步成功后删除Redis数据（只有非当天的数据才删除）
-            LocalDate today = LocalDate.now();
+            LocalDate today = TimeZoneUtil.now();
             LocalDate syncDate = LocalDate.parse(dateStr);
             if (!syncDate.equals(today)) {
                 redisTemplate.delete(postKey);

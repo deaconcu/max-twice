@@ -444,14 +444,6 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
         return memoryCardDeckMapper.getListByNodeKeyset(nodeId, lastScore, lastId, state, limit);
     }
 
-    /**
-     * 原子操作：减少点赞数（保证不会小于0）
-     */
-    @CacheEvict(value = "memory_card_decks", key = "#id")
-    public boolean decrementUpvoteCount(long id) {
-        return false;
-    }
-
     public int softDelete(long deckId) {
         return memoryCardDeckMapper.softDelete(deckId);
     }

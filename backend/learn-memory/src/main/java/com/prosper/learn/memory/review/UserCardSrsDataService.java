@@ -4,9 +4,11 @@ import com.prosper.learn.shared.dataservice.AbstractDataService;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -114,7 +116,7 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
     /**
      * 更新SRS状态并清除缓存
      */
-    //@CacheEvict(value = "user_card_srs", key = "#state.id")
+    @CacheEvict(value = "user_card_srs", key = "#state.id")
     public void update(UserCardSrsDO state) {
         if (state == null || state.getId() == null) {
             throw new IllegalArgumentException("State or state ID cannot be null");
@@ -338,9 +340,53 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
 
     /**
      * 计算用户的连续复习天数
+     *
+     * 算法说明：
+     * - 从今天开始往前数，连续有复习记录的天数
+     * - 如果今天没复习，从昨天开始算
+     * - 例如：用户在 12/1, 12/2, 12/3, 12/5 复习过
+     *   - 如果今天是 12/3，连续天数 = 3（12/1, 12/2, 12/3）
+     *   - 如果今天是 12/4，连续天数 = 3（12/1, 12/2, 12/3）
+     *   - 如果今天是 12/5，连续天数 = 1（12/5，12/4 中断了）
+     *   - 如果今天是 12/6，连续天数 = 1（12/5）
+     *
+     * @param userId 用户ID
+     * @return 连续复习天数
      */
     public int calculateStreakDays(long userId) {
-        return userCardSrsMapper.calculateStreakDays(userId);
+        // 1. 获取所有复习日期（已去重且降序）
+        List<LocalDate> reviewDates = userCardSrsMapper.getDistinctReviewDates(userId);
+        if (reviewDates == null || reviewDates.isEmpty()) {
+            return 0;
+        }
+
+        // 2. 从今天或昨天开始计算连续天数
+        LocalDate today = LocalDate.now();
+        LocalDate expectedDate;
+
+        // 如果今天有复习，从今天开始；否则从昨天开始
+        if (reviewDates.get(0).equals(today)) {
+            expectedDate = today;
+        } else {
+            expectedDate = today.minusDays(1);
+        }
+
+        // 3. 向前遍历，统计连续天数
+        int streak = 0;
+        for (LocalDate reviewDate : reviewDates) {
+            if (reviewDate.equals(expectedDate)) {
+                // 符合预期，连续天数 +1
+                streak++;
+                // 下一个预期日期是前一天
+                expectedDate = expectedDate.minusDays(1);
+            } else if (reviewDate.isBefore(expectedDate)) {
+                // 中断了，停止统计
+                break;
+            }
+            // 如果 reviewDate.isAfter(expectedDate)，跳过（可能是今天的记录但我们从昨天开始算）
+        }
+
+        return streak;
     }
 
     /**

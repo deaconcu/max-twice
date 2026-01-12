@@ -78,14 +78,37 @@ public interface MemoryCardMapper {
 //    int updateState(long id, int state);
 // --注释掉检查 STOP (2025/12/10 12:01)
 
+    /**
+     * 批量更新卡片
+     *
+     * 使用 CASE WHEN 语法实现真正的批量更新（单条 SQL）
+     * 优势：
+     * - 只需一次数据库往返，性能更好
+     * - 单条 SQL，减少锁竞争
+     * - 避免多条 UPDATE 可能导致的死锁
+     */
     @Update({"<script>" +
-            "<foreach collection='cards' item='card' separator=';'>" +
             "UPDATE memory_card SET " +
-            "current_version_id = #{card.currentVersionId}, " +
-            "state = #{card.state}, " +
-            "updated_at = #{card.updatedAt} " +
-            "WHERE id = #{card.id} AND deleted_at IS NULL" +
+            "current_version_id = CASE id " +
+            "<foreach collection='cards' item='card'>" +
+            "WHEN #{card.id} THEN #{card.currentVersionId} " +
             "</foreach>" +
+            "END, " +
+            "state = CASE id " +
+            "<foreach collection='cards' item='card'>" +
+            "WHEN #{card.id} THEN #{card.state} " +
+            "</foreach>" +
+            "END, " +
+            "updated_at = CASE id " +
+            "<foreach collection='cards' item='card'>" +
+            "WHEN #{card.id} THEN #{card.updatedAt} " +
+            "</foreach>" +
+            "END " +
+            "WHERE id IN " +
+            "<foreach collection='cards' item='card' open='(' separator=',' close=')'>" +
+            "#{card.id}" +
+            "</foreach>" +
+            " AND deleted_at IS NULL" +
             "</script>"})
     int batchUpdate(@Param("cards") List<MemoryCardDO> cards);
 

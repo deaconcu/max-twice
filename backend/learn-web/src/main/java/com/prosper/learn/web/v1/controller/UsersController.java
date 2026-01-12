@@ -147,7 +147,7 @@ public class UsersController {
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
     public ApiResponse<UserProfileDTO> validateEmail(@RequestBody @Valid VerifyEmailRequest request) {
         // Service 负责验证逻辑
-        UserProfileDTO userDTO = userService.validateEmail(request.getEmail(), request.getCode());
+        UserProfileDTO userDTO = userService.verifyEmailWithCode(request.getEmail(), request.getCode());
 
         // Controller 负责认证状态管理（验证成功后自动登录）
         StpUtil.login(userDTO.getId());

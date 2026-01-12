@@ -780,6 +780,41 @@ public class Enums {
     }
 
     /**
+     * 内容操作类型枚举（目录选择、固定等）
+     */
+    public enum ContentAction implements ValueEnum<Integer> {
+        CHOOSE(1, "选择内容"),
+        UNCHOOSE(2, "取消选择"),
+        PIN(3, "固定内容"),
+        UNPIN(4, "取消固定");
+
+        private final int value;
+        private final String description;
+
+        ContentAction(int value, String description) {
+            this.value = value;
+            this.description = description;
+        }
+
+        @Override
+        public Integer value() {
+            return value;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public static ContentAction getByValue(Integer value) {
+            return ValueEnum.getByValue(ContentAction.class, value);
+        }
+
+        public static boolean isValid(int value) {
+            return ValueEnum.isValid(ContentAction.class, value);
+        }
+    }
+
+    /**
      * 累计统计类型枚举
      */
     public enum CumulativeStatType {

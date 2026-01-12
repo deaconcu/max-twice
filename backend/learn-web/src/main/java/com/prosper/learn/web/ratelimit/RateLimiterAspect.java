@@ -33,7 +33,7 @@ public class RateLimiterAspect {
         this.proxyManager = proxyManager;
     }
 
-    @Around("@annotation(com.prosper.learn.api.ratelimit.RateLimit) || @within(com.prosper.learn.api.ratelimit.RateLimit)")
+    @Around("@annotation(com.prosper.learn.web.ratelimit.RateLimit) || @within(com.prosper.learn.web.ratelimit.RateLimit)")
     public Object rateLimit(ProceedingJoinPoint joinPoint) throws Throwable {
         // 明确获取注解：优先使用方法级别的注解，如果没有则使用类级别的注解
         RateLimit rateLimit = null;

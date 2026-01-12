@@ -1,7 +1,12 @@
 # Analytics模块代码审查报告
 
 ## 更新日志
-- **2026-01-10 (下午)**: 完成批量Redis查询优化
+- **2026-01-10 (下午-2)**: 完成时区统一处理
+  - ✅ 创建 TimeZoneUtil 工具类，统一管理系统时区
+  - ✅ 配置文件设置时区为 America/Los_Angeles (旧金山)
+  - ✅ 更新所有8个文件，使用 TimeZoneUtil 替代 LocalDate.now()
+  - ✅ 加强 StatsController 参数校验，增加天数上限
+- **2026-01-10 (下午-1)**: 完成批量Redis查询优化
   - ✅ 优化批量获取内容统计，使用HMGET替代循环查询
   - 性能提升：1000个内容从4000次Redis调用优化为1次调用
   - 整体质量评级从B+提升至A-
@@ -222,15 +227,45 @@ int days
 - 保护系统资源，避免查询过多数据
 - 提供明确的错误提示
 
-#### 时区处理需统一 ⚠️ 需确认
+#### 时区处理 ✅ 已统一
 **位置**: 多处使用 `LocalDate.now()` 和 `LocalDateTime.now()`
-**问题**: 未明确指定时区，可能导致不同环境数据不一致
-**建议**:
-1. 统一使用UTC时区或配置化时区
-2. 在配置文件中设置 `spring.jackson.time-zone=Asia/Shanghai`
+**原问题**: 未明确指定时区，可能导致不同环境数据不一致
+**修复情况**: 已统一使用旧金山时区 (America/Los_Angeles)
+
+**实现方案**:
+1. 创建统一时区工具类 `TimeZoneUtil`
+2. 配置文件设置时区: `spring.jackson.time-zone=America/Los_Angeles`
+3. 更新所有时间相关代码使用 `TimeZoneUtil`
+
+**修改的文件**:
+- ✅ `RedisStatsDomainService.java` - 使用 `TimeZoneUtil.todayString()`
+- ✅ `DailyStatsService.java` - 使用 `TimeZoneUtil.now()`, `TimeZoneUtil.yesterday()`
+- ✅ `UserStatsSyncService.java` - 使用 `TimeZoneUtil.now()`
+- ✅ `ContentStatsSyncService.java` - 使用 `TimeZoneUtil.now()`
+- ✅ `ScoreCalculationDomainService.java` - 使用 `TimeZoneUtil.nowDateTime()`
+- ✅ `OperationLogDomainService.java` - 使用 `TimeZoneUtil.nowDateTime()`
+
+**TimeZoneUtil 提供的方法**:
 ```java
-LocalDate.now(ZoneId.of("Asia/Shanghai"))
+// 获取当前日期/时间（旧金山时区）
+TimeZoneUtil.now()              // LocalDate
+TimeZoneUtil.nowDateTime()      // LocalDateTime
+TimeZoneUtil.yesterday()        // LocalDate
+TimeZoneUtil.todayString()      // String "yyyy-MM-dd"
+
+// 时区转换
+TimeZoneUtil.fromUTC(utcDateTime)   // UTC → 旧金山
+TimeZoneUtil.toUTC(localDateTime)   // 旧金山 → UTC
+
+// 工具方法
+TimeZoneUtil.isToday(date)          // 判断是否今天
+TimeZoneUtil.formatDate(date)       // 格式化日期
 ```
+
+**改进效果**:
+- 确保所有服务器使用相同时区，避免跨环境数据不一致
+- 统一时间获取方式，代码更清晰
+- 方便未来切换时区或支持多时区
 
 ---
 
@@ -576,6 +611,16 @@ learn-analytics
    - ✅ 实现降级机制和错误处理
    - ✅ 增加 parseRedisValue 辅助方法提升健壮性
    - 改进效果：查询1000个内容从4000次调用优化为1次调用（性能提升4000倍）
+
+4. **[2026-01-10] 时区统一处理**
+   - ✅ 创建 TimeZoneUtil 工具类
+   - ✅ 配置文件设置时区为 America/Los_Angeles
+   - ✅ 更新8个文件使用统一时区
+   - 改进效果：确保跨环境数据一致性，代码更清晰
+
+5. **[2026-01-10] 参数校验加强**
+   - ✅ StatsController 增加天数上限校验 (@Max(365))
+   - 改进效果：防止资源滥用，保护系统稳定性
 
 ### 待修复的问题 ❌
 

@@ -3,6 +3,7 @@ package com.prosper.learn.web.v1.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.dto.request.PostContentsRequest;
 import com.prosper.learn.content.toc.TocDomainService;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
@@ -41,17 +42,22 @@ public class ContentsController {
             Model model,
             @CurrentUser UserDO currentUser) {
 
-        switch (request.getAction()) {
-            case 1:
+        Enums.ContentAction action = request.getActionEnum();
+        if (action == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("无效的操作类型");
+        }
+
+        switch (action) {
+            case CHOOSE:
                 tocService.choose(currentUser.getId(), request.getPath(), request.getCourseId(), request.getPostingId());
                 break;
-            case 2:
+            case UNCHOOSE:
                 tocService.unchoose(currentUser.getId(), request.getCourseId(), request.getPath());
                 break;
-            case 3:
+            case PIN:
                 tocService.pin(currentUser.getId(), request.getCourseId(), request.getPath(), request.getPostingId(), true);
                 break;
-            case 4:
+            case UNPIN:
                 tocService.pin(currentUser.getId(), request.getCourseId(), request.getPath(), request.getPostingId(), false);
                 break;
             default:

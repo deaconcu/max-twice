@@ -90,7 +90,7 @@ public class AppConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new SaInterceptor()).addPathPatterns("/**")
+        registry.addInterceptor(saInterceptor()).addPathPatterns("/**")
                 .excludePathPatterns("/login", "/api/v1/public/**");  // 排除登录和公开接口
     }
 

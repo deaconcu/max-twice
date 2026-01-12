@@ -2,6 +2,7 @@ package com.prosper.learn.analytics.monitoring.service;
 
 import com.prosper.learn.analytics.monitoring.OperationLogDO;
 import com.prosper.learn.analytics.monitoring.OperationLogDataService;
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,7 +38,7 @@ public class OperationLogDomainService {
         try {
             // 设置创建时间
             if (logDO.getCreatedAt() == null) {
-                logDO.setCreatedAt(LocalDateTime.now());
+                logDO.setCreatedAt(TimeZoneUtil.nowDateTime());
             }
 
             // 插入数据库

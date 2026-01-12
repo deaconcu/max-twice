@@ -5,6 +5,7 @@ import com.prosper.learn.memory.deck.MemoryCardDeckDataService;
 import com.prosper.learn.memory.review.*;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
+import com.prosper.learn.shared.infrastructure.lock.DistributedLock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,9 @@ public class MemoryBankDomainService {
     /**
      * 添加卡片组到记忆库（领域逻辑）
      *
+     * 使用分布式锁防止并发问题：同一用户同时添加多个卡片组到同一节点时，
+     * 可能导致节点卡片数量超过限制（Check-Then-Act 竞态条件）
+     *
      * @param userId 用户ID
      * @param courseId 课程ID
      * @param deckId 卡片组ID
@@ -45,6 +49,7 @@ public class MemoryBankDomainService {
      * @param nodeId 节点ID
      */
     @Transactional
+    @DistributedLock(key = "'memory:add_deck:' + #userId + ':' + #nodeId", waitTime = 5, leaseTime = 30)
     public void addDeckToMemoryBank(Long userId, Long courseId, Long deckId,
                                      List<MemoryCardDO> cards, Integer deckVersion, Long nodeId) {
         // 1. 检查节点下的卡片数量限制

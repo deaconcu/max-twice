@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
-@RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class ReviewController {
 
     private final ReviewService reviewService;
@@ -75,22 +74,6 @@ public class ReviewController {
         reviewService.submitReview(currentUser.getId(), request);
         return ApiResponse.success();
     }
-
-    /**
-     * 批量提交复习结果
-     *
-     * @deprecated 此接口未被前端使用，且后端实现存在严重bug。
-     *             前端已采用单次提交模式 (POST /submit)，体验更好。
-     *             如需重新启用，必须先修复 ReviewService.batchSubmitReview() 的实现。
-     */
-//    @PostMapping("/batch-submit")
-//    @SaCheckLogin
-//    public ApiResponse<Void> batchSubmitReview(
-//            @Valid @RequestBody ReviewSessionRequest session,
-//            @CurrentUser UserDO currentUser) {
-//        reviewService.batchSubmitReview(currentUser.getId(), session);
-//        return ApiResponse.success();
-//    }
 
     /**
      * 获取复习统计

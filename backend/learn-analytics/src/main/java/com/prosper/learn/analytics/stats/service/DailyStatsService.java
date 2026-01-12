@@ -579,7 +579,7 @@ public class DailyStatsService {
                unless = "#result == null")
     public UserStatsDTO getUserHistoricalStats(long userId) {
         try {
-            LocalDate yesterday = LocalDate.now().minusDays(1);
+            LocalDate yesterday = TimeZoneUtil.yesterday();
             LocalDate startDate = LocalDate.of(2020, 1, 1); // 系统开始日期
 
             // 使用现有的日期范围统计方法
@@ -758,7 +758,7 @@ public class DailyStatsService {
             throw StatusCode.INVALID_DATE.exception();
         }
         LocalDate systemStart = LocalDate.parse(systemProperties.getStats().getSystemStartDate());
-        if (date.isBefore(systemStart) || date.isAfter(LocalDate.now())) {
+        if (date.isBefore(systemStart) || date.isAfter(TimeZoneUtil.now())) {
             throw StatusCode.INVALID_DATE.exception();
         }
     }
@@ -869,7 +869,7 @@ public class DailyStatsService {
             return result;
         }
 
-        String today = LocalDate.now().toString();
+        String today = TimeZoneUtil.todayString();
         String redisKey = STATS_KEY_PREFIX + today + CONTENT_STATS_SUFFIX;
 
         // 检查 Redis key 是否存在

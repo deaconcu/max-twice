@@ -1098,4 +1098,57 @@ public class MemoryBankControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
     }
+
+    // ==================== 5. 并发和分布式锁测试 ====================
+
+    /**
+     * 测试场景 5.1：测试分布式锁防止并发导致的数量限制失效
+     *
+     * 说明：虽然这是集成测试，无法真正测试并发（单线程），
+     * 但可以验证分布式锁的基本功能：同一用户对同一节点的串行操作
+     */
+    @Test
+    @DisplayName("分布式锁验证 - 添加卡片组成功获取和释放锁")
+    void testDistributedLock_AddDeck() throws Exception {
+        // 准备测试数据
+        UserDO user = createUser("test-lock@test.com");
+        CourseDO course = createCourse("Test Course", user.getId());
+        NodeDO node = createNode("Test Node", course.getId(), user.getId());
+        MemoryCardDeckDO deck = createDeck("Test Deck", "Description", course.getId(), node.getId(), user.getId());
+
+        // 创建 10 张卡片
+        for (int i = 0; i < 10; i++) {
+            createCard("Front " + i, "Back " + i, deck.getId(), user.getId());
+        }
+
+        // 登录用户
+        StpUtil.login(user.getId());
+
+        try {
+            // 第一次添加卡片组（应该成功）
+            mockMvc.perform(post("/api/v1/memory/memory-bank/courses/" + course.getId() + "/decks/" + deck.getId())
+                            .header("token", StpUtil.getTokenValue())
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(0));
+
+            // 验证：卡片已添加到记忆库
+            int cardCount = userCardSrsDataService.getByUserAndNodeId(user.getId(), node.getId()).size();
+            assertThat(cardCount).isEqualTo(10);
+
+            // 再次添加相同的卡片组（因为使用 INSERT IGNORE，应该成功但不增加卡片）
+            mockMvc.perform(post("/api/v1/memory/memory-bank/courses/" + course.getId() + "/decks/" + deck.getId())
+                            .header("token", StpUtil.getTokenValue())
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(0));
+
+            // 验证：卡片数量没有增加（幂等性）
+            int cardCount2 = userCardSrsDataService.getByUserAndNodeId(user.getId(), node.getId()).size();
+            assertThat(cardCount2).isEqualTo(10);
+
+        } finally {
+            StpUtil.logout();
+        }
+    }
 }

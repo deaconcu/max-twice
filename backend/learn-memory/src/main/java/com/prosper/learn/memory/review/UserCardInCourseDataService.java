@@ -4,6 +4,7 @@ import com.prosper.learn.shared.dataservice.AbstractDataService;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -334,8 +335,10 @@ public class UserCardInCourseDataService extends AbstractDataService<UserCardInC
 
     /**
      * 批量删除用户指定课程的特定卡片关系
+     *
+     * 注意：批量删除后无法精确清除单个缓存，使用 allEntries = true 清除所有缓存
      */
-    //@CacheEvict(value = "courseStats", key = "{#userId, #courseId}")
+    @CacheEvict(value = "user_card_in_courses", allEntries = true)
     public int batchDeleteByUserCourseAndCards(Long userId, Long courseId, List<Long> cardIds) {
         if (cardIds == null || cardIds.isEmpty()) {
             return 0;

@@ -8,6 +8,7 @@ import com.prosper.learn.memory.card.MemoryCardDataService;
 import com.prosper.learn.memory.card.MemoryCardDO;
 import com.prosper.learn.memory.review.ReviewDomainService;
 import com.prosper.learn.memory.review.UserCardSrsDO;
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
@@ -147,7 +148,7 @@ public class ReviewService {
         }
 
         // 计算时间范围
-        LocalDateTime endTime = LocalDateTime.now();
+        LocalDateTime endTime = TimeZoneUtil.nowDateTime();
         LocalDateTime startTime = reviewDomainService.calculateStartTime(endTime, period.name());
 
         // 委托给 DomainService 获取统计

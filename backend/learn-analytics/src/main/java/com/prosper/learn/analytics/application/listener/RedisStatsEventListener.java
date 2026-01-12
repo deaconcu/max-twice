@@ -2,6 +2,7 @@ package com.prosper.learn.analytics.application.listener;
 
 import com.prosper.learn.analytics.stats.service.RedisStatsDomainService;
 import com.prosper.learn.shared.common.constants.RedisStatsConstants;
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentViewedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.CommentCreatedEvent;
@@ -15,7 +16,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.time.LocalDate;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
@@ -313,7 +313,7 @@ public class RedisStatsEventListener {
      * @param delta 增量值
      */
     private void incrementContentStat(Enums.ContentType contentType, Long contentId, String statType, int delta) {
-        String today = LocalDate.now().toString();
+        String today = TimeZoneUtil.todayString();
         String contentKey = RedisStatsConstants.STATS_KEY_PREFIX + today + RedisStatsConstants.CONTENT_STATS_SUFFIX;
         String contentField = contentType.value() + ":" + contentId + ":" + statType;
 
@@ -333,7 +333,7 @@ public class RedisStatsEventListener {
      * @param delta 增量值
      */
     private void incrementUserStat(Long userId, String statType, int delta) {
-        String today = LocalDate.now().toString();
+        String today = TimeZoneUtil.todayString();
         String userKey = RedisStatsConstants.STATS_KEY_PREFIX + today + RedisStatsConstants.USER_STATS_SUFFIX;
         String userField = userId + ":" + statType;
 

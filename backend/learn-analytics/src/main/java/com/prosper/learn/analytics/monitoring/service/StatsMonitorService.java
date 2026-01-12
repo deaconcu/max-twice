@@ -1,6 +1,7 @@
 package com.prosper.learn.analytics.monitoring.service;
 
 import com.prosper.learn.analytics.stats.service.DailyStatsService;
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
@@ -76,7 +77,7 @@ public class StatsMonitorService {
         if (date == null) {
             throw StatusCode.INVALID_DATE.exception();
         }
-        if (date.isAfter(LocalDate.now())) {
+        if (date.isAfter(TimeZoneUtil.now())) {
             throw StatusCode.INVALID_DATE.exception();
         }
     }
@@ -151,9 +152,9 @@ public class StatsMonitorService {
         if (!systemProperties.getStatsMonitor().isEnableSyncStatusCheck()) {
             return;
         }
-        
+
         try {
-            LocalDate yesterday = LocalDate.now().minusDays(1);
+            LocalDate yesterday = TimeZoneUtil.yesterday();
             validateDate(yesterday);
             
             String yesterdayStr = yesterday.toString();
@@ -190,8 +191,8 @@ public class StatsMonitorService {
             int pendingCount = getPendingDataCount();
             if (pendingCount > 0) {
                 log.warn("发现{}个未同步的统计数据，开始强制同步", pendingCount);
-                
-                LocalDate today = LocalDate.now();
+
+                LocalDate today = TimeZoneUtil.now();
                 validateDate(today);
                 String result = dailyStatsService.syncSpecificDate(today);
                 log.info("强制同步结果: {}", result);

@@ -25,10 +25,11 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * 全局异常处理器
- * 
- * 核心理念：HTTP状态码表示传输层状态，业务状态码表示业务层结果
- * - 业务异常：返回200 + 业务错误码
- * - 其他所有异常：返回500 + 系统繁忙
+ *
+ * 核心理念：统一返回 HTTP 200，通过 ApiResponse.code 字段表示业务状态
+ * - 所有异常：返回 200 + 业务错误码
+ * - 前端通过 response.code 判断业务成功或失败
+ * - 简化前端错误处理，避免浏览器/网关对 4xx/5xx 的特殊处理
  */
 @RestControllerAdvice
 @Slf4j
@@ -154,13 +155,11 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理所有其他异常 - 返回500 + 系统繁忙
+     * 处理所有其他异常 - 返回 200 + 系统繁忙
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Object>> handleException(Exception e, HttpServletRequest request) {
+    public ApiResponse<Object> handleException(Exception e, HttpServletRequest request) {
         log.error("系统异常", e);
-        ApiResponse<Object> response = ApiResponse.error("系统繁忙，请稍后重试")
-                .path(request.getRequestURI());
-        return ResponseEntity.status(500).body(response);
+        return ApiResponse.error("系统繁忙，请稍后重试").path(request.getRequestURI());
     }
 }

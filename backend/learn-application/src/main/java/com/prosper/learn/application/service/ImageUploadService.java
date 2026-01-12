@@ -9,6 +9,7 @@ import com.prosper.learn.infrastructure.image.ImageQuotaService;
 import com.prosper.learn.infrastructure.image.ImageUploadDO;
 import com.prosper.learn.infrastructure.image.ImageUploadDataService;
 import com.prosper.learn.infrastructure.image.R2Service;
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -90,12 +91,12 @@ public class ImageUploadService {
             imageUpload.setFileSize((long) compressedData.length);
             imageUpload.setFileUrl(fileUrl);
             imageUpload.setRefType(refType);
-            imageUpload.setCreatedAt(LocalDateTime.now());
+            imageUpload.setCreatedAt(TimeZoneUtil.nowDateTime());
 
             // avatar/course/roadmap 立即标记为使用中，post/comment 需要等保存时标记
             if (isImmediateUse(refType)) {
                 imageUpload.setStatus(1);
-                imageUpload.setUsedAt(LocalDateTime.now());
+                imageUpload.setUsedAt(TimeZoneUtil.nowDateTime());
 
                 // 删除用户该类型的旧图片
                 deleteOldImage(userId, refType);
@@ -132,7 +133,7 @@ public class ImageUploadService {
                 imageUpload.setStatus(1);
                 imageUpload.setRefType(request.getRefType());
                 imageUpload.setRefId(request.getRefId());
-                imageUpload.setUsedAt(LocalDateTime.now());
+                imageUpload.setUsedAt(TimeZoneUtil.nowDateTime());
                 imageUploadDataService.update(imageUpload);
                 log.info("标记图片为使用中: {}", fileUrl);
             }
@@ -172,7 +173,7 @@ public class ImageUploadService {
      */
     @Transactional
     public void cleanupUnusedImages() {
-        LocalDateTime cutoffTime = LocalDateTime.now().minusHours(24);
+        LocalDateTime cutoffTime = TimeZoneUtil.nowDateTime().minusHours(24);
         List<ImageUploadDO> unusedImages = imageUploadDataService.getByStatusAndCreatedAtBefore(0, cutoffTime);
 
         log.info("开始清理未使用图片，找到{}张", unusedImages.size());

@@ -12,6 +12,7 @@ import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDataService;
+import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
@@ -209,10 +210,10 @@ public class CourseService {
 
         Map<Long, ContentStatsDO> statsMap = new java.util.HashMap<>();
         try {
-            for (Long courseId : courseIds) {
-                contentStatsDataService.getByContent(ContentType.course, courseId)
-                    .ifPresent(stats -> statsMap.put(courseId, stats));
-            }
+            // 使用批量查询避免 N+1 问题
+            List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(ContentType.course, courseIds);
+            statsMap = statsList.stream()
+                .collect(Collectors.toMap(ContentStatsDO::getContentId, stats -> stats));
         } catch (Exception e) {
             log.error("批量获取课程统计信息失败", e);
         }
@@ -227,12 +228,14 @@ public class CourseService {
         // 批量查询用户学习进度（如果已登录）
         Map<Long, Integer> progressMap = new java.util.HashMap<>();
         if (userId != null) {
-            for (Long courseId : courseIds) {
-                Integer progress = userCourseDomainService.getCourseProgress(userId, courseId);
-                if (progress != null) {
-                    progressMap.put(courseId, progress);
-                }
-            }
+            // 使用批量查询避免 N+1 问题
+            Map<Long, UserCourseDO> userCoursesMap = userCourseDomainService.getUserCoursesBatch(userId, courseIds);
+            progressMap = userCoursesMap.entrySet().stream()
+                .collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry -> entry.getValue().getProgressPercent() != null ?
+                            entry.getValue().getProgressPercent() : 0
+                ));
         }
 
         // 转换每个课程

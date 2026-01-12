@@ -11,6 +11,7 @@ import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.interaction.follow.FollowDO;
 import com.prosper.learn.interaction.follow.FollowDataService;
+import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.learning.enrollment.UserCourseDomainService;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentBookmarkedEvent;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentUnbookmarkedEvent;
@@ -22,12 +23,11 @@ import com.prosper.learn.user.profile.UserDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -48,7 +48,7 @@ public class UserService {
     private final FollowDataService followDataService;
     private final ContentStatsDataService contentStatsDataService;
     private final UserCourseDomainService userCourseDomainService;
-    private final JavaMailSender mailSender;
+    private final EmailService emailService;
     private final MessageService messageService;
     private final SystemProperties systemProperties;
     private final UserConverter userConverter;
@@ -226,18 +226,22 @@ public class UserService {
      */
     @Transactional
     public void register(String email, String password) {
-        validateEmail(email);
+        validateEmailFormat(email);
         validatePassword(password);
 
         // 委托给 DomainService 创建用户
         UserDO user = userDomainService.createUser(email, password);
 
-        // 跨域操作：发送验证邮件
+        // 跨域操作：异步发送验证邮件（不阻塞注册流程）
         if (systemProperties.getUser().isEnableEmailValidation()) {
             String code = generateVerificationCode();
             userDomainService.createVerificationCode(email, code);
-            sendVerificationEmail(email, code);
+
+            // 异步发送邮件，失败不影响注册
+            emailService.sendVerificationEmailAsync(email, code);
         }
+
+        log.info("用户注册成功: {}", email);
     }
 
     /**
@@ -245,7 +249,7 @@ public class UserService {
      * 只做业务验证，不操作认证状态
      */
     public UserBriefDTO validateLogin(String email, String password) {
-        validateEmail(email);
+        validateEmailFormat(email);
         validatePassword(password);
 
         // 委托给 DomainService 验证
@@ -255,12 +259,12 @@ public class UserService {
     }
 
     /**
-     * 邮箱验证
+     * 邮箱验证 - 验证邮箱验证码
      * 只做验证逻辑，不操作认证状态
      */
     @Transactional
-    public UserProfileDTO validateEmail(String email, String code) {
-        validateEmail(email);
+    public UserProfileDTO verifyEmailWithCode(String email, String code) {
+        validateEmailFormat(email);
         validateVerificationCode(code);
 
         // 委托给 DomainService 验证
@@ -350,19 +354,11 @@ public class UserService {
 // --注释掉检查 STOP (2025/12/10 11:32)
 
     /**
-     * 发送验证邮件
+     * 生成验证码
+     * 使用 SecureRandom 确保密码学安全
      */
-    private void sendVerificationEmail(String toEmail, String code) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(systemProperties.getUser().getEmailSender());
-        message.setTo(toEmail);
-        message.setSubject(systemProperties.getUser().getEmailSubject());
-        message.setText("Your verification code is: " + code);
-        mailSender.send(message);
-    }
-
     private String generateVerificationCode() {
-        Random random = new Random();
+        SecureRandom random = new SecureRandom();
         int min = systemProperties.getUser().getVerificationCodeMin();
         int max = systemProperties.getUser().getVerificationCodeMax();
         int code = min + random.nextInt(max - min + 1);
@@ -469,7 +465,10 @@ public class UserService {
         }
     }
 
-    private void validateEmail(String email) {
+    /**
+     * 验证邮箱格式
+     */
+    private void validateEmailFormat(String email) {
         if (!StringUtils.hasText(email)) {
             throw StatusCode.INVALID_PARAMETER.exception();
         }
@@ -556,10 +555,14 @@ public class UserService {
 
         // 批量查询学习进度
         Map<Long, Integer> progressMap = new HashMap<>();
-        for (Long courseId : courseIds) {
-            Integer progress = userCourseDomainService.getCourseProgress(userId, courseId);
-            progressMap.put(courseId, progress != null ? progress : 0);
-        }
+        // 使用批量查询避免 N+1 问题
+        Map<Long, UserCourseDO> userCoursesMap = userCourseDomainService.getUserCoursesBatch(userId, courseIds);
+        progressMap = userCoursesMap.entrySet().stream()
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                entry -> entry.getValue().getProgressPercent() != null ?
+                        entry.getValue().getProgressPercent() : 0
+            ));
 
         // 填充每个课程的统计字段和用户字段
         for (CourseSummaryWithStatsAndProgressDTO dto : dtoList) {

@@ -1,8 +1,7 @@
 package com.prosper.learn.application.dto.response;
 
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import lombok.Data;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
  * 平台统计数据DTO
@@ -44,7 +43,7 @@ public class PlatformStatsDTO {
     private String lastUpdated;
     
     public PlatformStatsDTO() {
-        this.lastUpdated = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        this.lastUpdated = TimeZoneUtil.formatDateTime(TimeZoneUtil.nowDateTime());
     }
     
     public PlatformStatsDTO(Long courseCount, Long careerPathCount, Long roadmapCount, Long knowledgeNodeCount, Long articleCount) {
@@ -53,6 +52,6 @@ public class PlatformStatsDTO {
         this.roadmapCount = roadmapCount;
         this.knowledgeNodeCount = knowledgeNodeCount;
         this.articleCount = articleCount;
-        this.lastUpdated = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        this.lastUpdated = TimeZoneUtil.formatDateTime(TimeZoneUtil.nowDateTime());
     }
 }
