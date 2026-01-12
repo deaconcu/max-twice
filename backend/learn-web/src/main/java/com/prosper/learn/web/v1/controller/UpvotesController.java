@@ -30,7 +30,6 @@ import static com.prosper.learn.shared.domain.Enums.ContentType.*;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
-@RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class UpvotesController {
 
     private final UpvoteService upvoteService;
@@ -41,6 +40,7 @@ public class UpvotesController {
      */
     @PostMapping("/upvotes")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<UpvoteStatusDTO> upvote(
             @RequestBody @Valid UpvoteRequest request,
             @CurrentUser UserDO currentUser) {
@@ -73,6 +73,7 @@ public class UpvotesController {
      */
     @GetMapping("/upvotes/status")
     @SaCheckLogin
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<UpvoteStatusDTO> getUpvoteStatus(
             @RequestParam @NotNull(message = "对象ID不能为空")
             @Positive(message = "对象ID必须大于0")

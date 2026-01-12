@@ -36,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @RequiredArgsConstructor
 @Validated
-@RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class UsersController {
 
     private final UserService userService;
@@ -48,6 +47,7 @@ public class UsersController {
      */
     @GetMapping("/users/current")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<UserProfileDTO> getCurrentUser(@CurrentUser UserDO currentUser) {
         UserProfileDTO userDTO = userService.getUser(currentUser.getId());
         return ApiResponse.success(userDTO);
@@ -59,6 +59,7 @@ public class UsersController {
      */
     @PutMapping("/users/current")
     @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> updateCurrentUser(
             @RequestBody @Valid UpdateUserRequest request,
             @CurrentUser UserDO currentUser) {
@@ -94,6 +95,7 @@ public class UsersController {
      */
     @GetMapping("/users/{username}")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<UserPublicDTO> getUser(
             @PathVariable @NotBlank(message = "用户名不能为空") String username,
             @CurrentUser UserDO currentUser) {

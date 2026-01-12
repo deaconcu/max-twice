@@ -8,6 +8,8 @@ import com.prosper.learn.web.v1.annotation.CurrentUser;
 import com.prosper.learn.web.v1.annotation.OperationLog;
 import com.prosper.learn.web.v1.annotation.RequireRole;
 import com.prosper.learn.application.dto.ApiResponse;
+import com.prosper.learn.web.ratelimit.LimitType;
+import com.prosper.learn.web.ratelimit.RateLimit;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -17,6 +19,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
@@ -39,6 +42,7 @@ public class AdminUserController {
      */
     @GetMapping("/users")
     @RequireRole(UserRole.ADMIN)
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<UserProfileDTO>> getUsers(
             @RequestParam(required = false) @Min(value = 0, message = "偏移ID不能小于0") Long offsetId,
             @CurrentUser UserDO currentUser) {
@@ -52,6 +56,7 @@ public class AdminUserController {
      */
     @GetMapping("/users/{userId}")
     @RequireRole(UserRole.ADMIN)
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<UserProfileDTO> getUserById(
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
@@ -68,6 +73,7 @@ public class AdminUserController {
      */
     @GetMapping("/users/search")
     @RequireRole(UserRole.ADMIN)
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<UserBriefDTO>> searchUsers(
             @RequestParam @NotNull(message = "搜索名称不能为空") String name,
             @CurrentUser UserDO currentUser) {
@@ -82,6 +88,7 @@ public class AdminUserController {
      */
     @PostMapping("/users/{id}/role")
     @RequireRole(UserRole.ADMIN)
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
         module = "用户管理",
         type = "修改用户角色",
@@ -106,6 +113,7 @@ public class AdminUserController {
      */
     @PutMapping("/users/{id}/state")
     @RequireRole(UserRole.ADMIN)
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
         module = "用户管理",
         type = "#ban ? '封禁用户' : '解封用户'",
@@ -130,6 +138,7 @@ public class AdminUserController {
      */
     @PostMapping("/users/{id}/ban")
     @RequireRole(UserRole.ADMIN)
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
         module = "用户管理",
         type = "#ban ? '封禁用户' : '解封用户'",

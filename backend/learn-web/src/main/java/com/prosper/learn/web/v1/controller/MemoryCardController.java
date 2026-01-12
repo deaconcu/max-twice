@@ -27,7 +27,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
-@RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class MemoryCardController {
 
     private final MemoryCardService cardService;
@@ -37,6 +36,7 @@ public class MemoryCardController {
      */
     @PostMapping("/cards")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> createCard(
             @Valid @RequestBody CreateCardRequest request,
             @CurrentUser UserDO currentUser) {
@@ -49,6 +49,7 @@ public class MemoryCardController {
      */
     @PutMapping("/cards/{cardId}")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> updateCard(
             @PathVariable @NotNull(message = "卡片ID不能为空")
             @Positive(message = "卡片ID必须大于0")
@@ -65,6 +66,7 @@ public class MemoryCardController {
      */
     @GetMapping("/cards/node/{nodeId}")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<CardWithSrsDTO>> getUserCardsByNode(
             @PathVariable @NotNull(message = "节点ID不能为空")
             @Positive(message = "节点ID必须大于0")
@@ -79,6 +81,7 @@ public class MemoryCardController {
      */
     @GetMapping("/cards/{cardId}/diff")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Object> getCardDiff(
             @PathVariable @NotNull(message = "卡片ID不能为空")
             @Positive(message = "卡片ID必须大于0")
@@ -93,6 +96,7 @@ public class MemoryCardController {
      */
     @DeleteMapping("/cards/{cardId}")
     @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> deleteCard(
             @PathVariable @NotNull(message = "卡片ID不能为空")
             @Positive(message = "卡片ID必须大于0")

@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @RequiredArgsConstructor
 @Validated
-@RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class SubscriptionsController {
 
     private final UserService userService;
@@ -34,6 +33,7 @@ public class SubscriptionsController {
      * 映射: GET /user/subscription → GET /api/v1/users/{userId}/subscriptions
      */
     @GetMapping("/users/{userId}/subscriptions")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Object> getUserSubscriptions(
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
@@ -48,6 +48,7 @@ public class SubscriptionsController {
      */
     @PostMapping("/users/current/subscriptions")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> subscribe(
             @JsonParam("courseId") @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
@@ -63,6 +64,7 @@ public class SubscriptionsController {
      */
     @DeleteMapping("/users/current/subscriptions/{courseId}")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> unsubscribe(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")

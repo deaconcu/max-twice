@@ -5,6 +5,8 @@ import com.prosper.learn.application.dto.response.OperationLogDTO;
 import com.prosper.learn.application.service.OperationLogService;
 import com.prosper.learn.web.v1.annotation.RequireRole;
 import com.prosper.learn.application.dto.ApiResponse;
+import com.prosper.learn.web.ratelimit.LimitType;
+import com.prosper.learn.web.ratelimit.RateLimit;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +14,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
@@ -34,6 +37,7 @@ public class AdminOperationLogController {
      */
     @GetMapping("/operation-logs")
     @RequireRole(UserRole.ADMIN)
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Map<String, Object>> getOperationLogs(OperationLogRequest query) {
         Map<String, Object> result = operationLogService.queryLogs(query);
         return ApiResponse.success(result);
@@ -45,6 +49,7 @@ public class AdminOperationLogController {
      */
     @GetMapping("/operation-logs/{id}")
     @RequireRole(UserRole.ADMIN)
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<OperationLogDTO> getOperationLogById(
             @PathVariable @Positive(message = "日志ID必须大于0") Long id) {
         OperationLogDTO log = operationLogService.getLogById(id);

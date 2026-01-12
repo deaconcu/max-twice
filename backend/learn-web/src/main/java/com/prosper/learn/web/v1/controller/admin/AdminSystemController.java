@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemDataService;
 import com.prosper.learn.application.dto.ApiResponse;
+import com.prosper.learn.web.ratelimit.LimitType;
+import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.annotation.JsonParam;
 import com.prosper.learn.web.v1.annotation.OperationLog;
 import com.prosper.learn.web.v1.annotation.RequireRole;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
@@ -41,6 +44,7 @@ public class AdminSystemController {
      * 映射: GET /system → GET /api/v1/admin/system
      */
     @GetMapping("/system")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<JsonNode> getSystemConfig(@RequestParam(required = false) String part) {
         try {
             if (part != null && !part.isEmpty()) {
@@ -92,6 +96,7 @@ public class AdminSystemController {
      * 映射: POST /system → POST /api/v1/admin/system
      */
     @PostMapping("/system")
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
         module = "系统配置",
         type = "修改系统配置",
@@ -125,6 +130,7 @@ public class AdminSystemController {
      * 删除系统配置
      */
     @DeleteMapping("/system")
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
         module = "系统配置",
         type = "删除系统配置",
@@ -154,6 +160,7 @@ public class AdminSystemController {
      * 获取单个配置值
      */
     @GetMapping("/system/{key}")
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<String> getConfigByKey(
             @PathVariable @NotBlank(message = "配置键不能为空") String key) {
         try {
@@ -174,6 +181,7 @@ public class AdminSystemController {
      * @param enable true=开启，false=关闭
      */
     @PostMapping("/system/readonly-mode")
+    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
         module = "系统配置",
         type = "#enable ? '开启只读模式' : '关闭只读模式'",

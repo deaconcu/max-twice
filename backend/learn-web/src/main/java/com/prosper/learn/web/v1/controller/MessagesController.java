@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
-@RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class MessagesController {
 
     private final MessageService messageService;
@@ -45,6 +44,7 @@ public class MessagesController {
      */
     @GetMapping("/messages/category")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<MessageDTO>> getMessagesByCategory(
             @RequestParam @NotNull(message = "消息分类不能为空")
             @Min(value = 1, message = "消息分类必须为1-3")
@@ -104,6 +104,7 @@ public class MessagesController {
      */
     @PostMapping("/messages/invite")
     @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> inviteUser(
             @RequestBody @Valid CreateNotificationRequest request,
             @CurrentUser UserDO currentUser) {

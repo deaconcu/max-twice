@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/api/v1/admin/auto-author")
 @RequiredArgsConstructor
 @Validated
-@RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class AdminAutoAuthorController {
 
     private final AutoAuthorScanner scanner;
@@ -33,6 +32,7 @@ public class AdminAutoAuthorController {
 
     @PostMapping("/scan")
     @SaCheckLogin
+    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> scan() {
         int total = 0;
         for (int i = 0; i < 10; i++) {
@@ -45,6 +45,7 @@ public class AdminAutoAuthorController {
 
     @PostMapping("/enqueue/{nodeId}")
     @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> enqueue(
             @PathVariable("nodeId") @NotNull(message = "节点ID不能为空")
             @Positive(message = "节点ID必须大于0")
@@ -56,6 +57,7 @@ public class AdminAutoAuthorController {
 
     @PostMapping("/session/reset")
     @SaCheckLogin
+    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> resetSession() {
         generationService.resetSession();
         return ApiResponse.success();
@@ -63,6 +65,7 @@ public class AdminAutoAuthorController {
 
     @DeleteMapping("/queue")
     @SaCheckLogin
+    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<String> clearQueue() {
         long count = queueService.clear();
         String message = count > 0 ?

@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
-@RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class FollowsController {
 
     private final FollowService followService;
@@ -38,6 +37,7 @@ public class FollowsController {
      */
     @PostMapping("/follows")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> follow(
             @JsonParam("followeeId") @NotNull(message = "被关注用户ID不能为空")
             @Positive(message = "被关注用户ID必须大于0")
@@ -53,6 +53,7 @@ public class FollowsController {
      */
     @DeleteMapping("/follows/{followeeId}")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> unfollow(
             @PathVariable @NotNull(message = "被关注用户ID不能为空")
             @Positive(message = "被关注用户ID必须大于0")
@@ -67,6 +68,7 @@ public class FollowsController {
      * 映射: GET /user/followee → GET /api/v1/users/{userId}/followees
      */
     @GetMapping("/users/{userId}/followees")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<FolloweeDTO>> getFollowees(
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")

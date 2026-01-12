@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
-@RateLimit(capacity = 20, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class AiController {
 
     private final AiService aiService;

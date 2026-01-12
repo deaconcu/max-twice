@@ -33,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
-@RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class PostsController {
 
     private final PostService postService;
@@ -48,6 +47,7 @@ public class PostsController {
      */
     @GetMapping("/posts")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> getPosts(
             @RequestParam(value = "ids", required = false) List<Long> ids,
             @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
@@ -77,6 +77,7 @@ public class PostsController {
      */
     @PostMapping("/posts")
     @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> createPost(
             @Valid @RequestBody CreatePostRequest request,
             @CurrentUser UserDO currentUser) {
@@ -90,6 +91,7 @@ public class PostsController {
      */
     @PutMapping("/posts/{id}")
     @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<PostSummaryDTO> updatePost(
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
@@ -106,6 +108,7 @@ public class PostsController {
      */
     @DeleteMapping("/posts/{id}")
     @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> deletePost(
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
@@ -120,6 +123,7 @@ public class PostsController {
      * 映射: GET /posting/{id} → GET /api/v1/posts/{id}
      */
     @GetMapping("/posts/{id}")
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<PostSummaryDTO> getPost(
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
@@ -134,6 +138,7 @@ public class PostsController {
      * 映射: GET /user/contents → GET /api/v1/users/{userId}/posts?type=1
      */
     @GetMapping("/users/{userId}/posts")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<KeysetPageResponse<PostFullDTO>> getUserPosts(
             @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
             @RequestParam(required = false) Long lastId,

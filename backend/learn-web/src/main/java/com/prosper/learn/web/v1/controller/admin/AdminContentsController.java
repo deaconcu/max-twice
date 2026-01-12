@@ -17,12 +17,16 @@ import com.prosper.learn.web.v1.annotation.JsonParam;
 import com.prosper.learn.web.v1.annotation.OperationLog;
 import com.prosper.learn.web.v1.annotation.RequireRole;
 import com.prosper.learn.application.dto.ApiResponse;
+import com.prosper.learn.web.ratelimit.LimitType;
+import com.prosper.learn.web.ratelimit.RateLimit;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.concurrent.TimeUnit;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
@@ -65,6 +69,7 @@ public class AdminContentsController {
      */
     @GetMapping("/{contentType}")
     @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> getContentsByState(
             @PathVariable @NotBlank(message = "内容类型不能为空") String contentType,
             @RequestParam(required = false) String state,
@@ -113,6 +118,7 @@ public class AdminContentsController {
      */
     @GetMapping("/post/filter")
     @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> filterPosts(
             @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
             @RequestParam(value = "creatorId", required = false) @Positive(message = "用户ID必须大于0") Long creatorId,
@@ -127,6 +133,7 @@ public class AdminContentsController {
      */
     @GetMapping("/comment/filter")
     @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> filterComments(
             @RequestParam(value = "objectType", required = false) @Positive(message = "对象类型必须大于0") Integer objectType,
             @RequestParam(value = "objectId", required = false) @Positive(message = "对象ID必须大于0") Long objectId,
@@ -142,6 +149,7 @@ public class AdminContentsController {
      */
     @GetMapping("/roadmap/filter")
     @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> filterRoadmaps(
             @RequestParam(required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state,
             @RequestParam(required = false) @Positive(message = "职业ID必须大于0") Long professionId,
@@ -156,6 +164,7 @@ public class AdminContentsController {
      */
     @GetMapping("/memory_card_deck/filter")
     @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> filterMemoryCardDecks(
             @RequestParam(required = false) @Positive(message = "状态必须大于0") Byte state,
             @RequestParam(required = false) @Positive(message = "帖子ID必须大于0") Long postId,
@@ -170,6 +179,7 @@ public class AdminContentsController {
      */
     @GetMapping("/course/filter")
     @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> filterCourses(
             @RequestParam(required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state,
             @RequestParam(required = false) Long lastId) {
@@ -183,6 +193,7 @@ public class AdminContentsController {
      */
     @GetMapping("/node/filter")
     @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> filterNodes(
             @RequestParam(value = "state", required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state,
             @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
@@ -199,6 +210,7 @@ public class AdminContentsController {
      */
     @GetMapping("/course/{id}")
     @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> getCourseDetail(@PathVariable @Positive(message = "课程ID必须大于0") Long id) {
         return ApiResponse.success(courseService.getCourseById(id));
     }
@@ -209,6 +221,7 @@ public class AdminContentsController {
      */
     @GetMapping("/course/{parentId}/subcourses")
     @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> getSubcourses(
             @PathVariable @Positive(message = "父课程ID必须大于0") Long parentId,
             @RequestParam(required = false) @Positive(message = "状态必须大于0") Integer state) {
@@ -224,6 +237,7 @@ public class AdminContentsController {
      */
     @PutMapping("/roadmap/{id}")
     @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
         module = "内容管理",
         type = "更新路线图信息",
@@ -245,6 +259,7 @@ public class AdminContentsController {
      */
     @PutMapping("/course/{id}")
     @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
         module = "内容管理",
         type = "更新课程信息",
@@ -267,6 +282,7 @@ public class AdminContentsController {
      */
     @PutMapping("/profession/{id}")
     @RequireRole(UserRole.ADMIN)
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
         module = "内容管理",
         type = "更新职业信息",
@@ -289,6 +305,7 @@ public class AdminContentsController {
      */
     @PutMapping("/node/{id}/state")
     @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
         module = "内容管理",
         type = "#state == 2 ? '审核通过节点' : (#state == 3 ? '审核拒绝节点' : '修改节点状态')",
@@ -351,6 +368,7 @@ public class AdminContentsController {
      */
     @PostMapping("/{contentType}/{id}/operate")
     @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     @OperationLog(
         module = "内容管理",
         type = "#request.action == 'APPROVE' ? '审核通过内容' : " +

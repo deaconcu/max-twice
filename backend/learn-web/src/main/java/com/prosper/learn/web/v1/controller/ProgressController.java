@@ -35,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
-@RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class ProgressController {
 
     private final LearningProgressService learningProgressService;
@@ -48,6 +47,7 @@ public class ProgressController {
      */
     @PostMapping("/progress/nodes/{nodeId}/complete")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<NodeProgressResponseDTO> markNodeCompleted(
             @PathVariable @NotNull(message = "节点ID不能为空")
             @Positive(message = "节点ID必须大于0")
@@ -66,6 +66,7 @@ public class ProgressController {
      */
     @DeleteMapping("/progress/nodes/{nodeId}/complete")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<NodeProgressResponseDTO> unmarkNodeCompleted(
             @PathVariable @NotNull(message = "节点ID不能为空")
             @Positive(message = "节点ID必须大于0")
@@ -84,6 +85,7 @@ public class ProgressController {
      */
     @GetMapping("/progress/nodes/{nodeId}/status")
     @SaCheckLogin
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<NodeProgressResponseDTO> getNodeCompletionStatus(
             @PathVariable @NotNull(message = "节点ID不能为空")
             @Positive(message = "节点ID必须大于0")
@@ -99,6 +101,7 @@ public class ProgressController {
      */
     @PostMapping("/progress/courses/{courseId}/enrollment")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<CourseProgressResponseDTO> startCourse(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
@@ -120,6 +123,7 @@ public class ProgressController {
      */
     @DeleteMapping("/progress/courses/{courseId}/enrollment")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<CourseProgressResponseDTO> cancelCourse(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
@@ -141,6 +145,7 @@ public class ProgressController {
      */
     @GetMapping("/progress/courses/{courseId}")
     @SaCheckLogin
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<UserCourseWithCourseDTO> getCourseProgress(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
@@ -156,6 +161,7 @@ public class ProgressController {
      */
     @GetMapping("/progress/courses")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<UserCourseWithCourseDTO>> getAllCoursesProgress(
             @RequestParam(required = false, defaultValue = "0")
             @Min(value = 0, message = "最后ID不能小于0")
@@ -171,6 +177,7 @@ public class ProgressController {
      */
     @PutMapping("/progress/courses/{courseId}")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<UserCourseWithCourseDTO> updateCourseProgress(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
@@ -191,6 +198,7 @@ public class ProgressController {
      */
     @DeleteMapping("/progress/courses/{courseId}")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<CourseProgressResponseDTO> deleteCourseProgress(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
@@ -212,6 +220,7 @@ public class ProgressController {
      */
     @PostMapping("/progress/courses/{courseId}/complete")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<CourseCompletionResponseDTO> markCourseCompleted(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
@@ -229,6 +238,7 @@ public class ProgressController {
      */
     @PostMapping("/progress/roadmaps/{roadmapId}/enrollment")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<RoadmapProgressResponseDTO> startRoadmap(
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")
@@ -250,6 +260,7 @@ public class ProgressController {
      */
     @DeleteMapping("/progress/roadmaps/{roadmapId}/enrollment")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<RoadmapProgressResponseDTO> cancelRoadmap(
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")
@@ -271,6 +282,7 @@ public class ProgressController {
      */
     @GetMapping("/progress/roadmaps/{roadmapId}")
     @SaCheckLogin
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<UserRoadmapWithDetailDTO> getRoadmapProgress(
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")
@@ -286,6 +298,7 @@ public class ProgressController {
      */
     @GetMapping("/progress/roadmaps")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<UserRoadmapWithBriefDTO>> getAllRoadmapsProgress(@CurrentUser UserDO currentUser) {
         List<UserRoadmapWithBriefDTO> progressList = userRoadmapService.getUserAllRoadmapBrief(currentUser.getId());
         return ApiResponse.success(progressList);
@@ -297,6 +310,7 @@ public class ProgressController {
      */
     @PutMapping("/progress/roadmaps/{roadmapId}")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<UserRoadmapSummaryDTO> updateRoadmapProgress(
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")

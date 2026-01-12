@@ -3,6 +3,8 @@ package com.prosper.learn.web.v1.controller;
 import com.prosper.learn.application.dto.response.ValidationRuleDTO;
 import com.prosper.learn.application.service.ValidationConfigService;
 import com.prosper.learn.application.dto.ApiResponse;
+import com.prosper.learn.web.ratelimit.LimitType;
+import com.prosper.learn.web.ratelimit.RateLimit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +55,7 @@ public class ConfigController {
      * - 后续请求：如果 ETag 匹配，返回 304 Not Modified
      */
     @GetMapping("/validation")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
     public ResponseEntity<ApiResponse<Map<String, ValidationRuleDTO>>> getValidationRules(
             @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
 

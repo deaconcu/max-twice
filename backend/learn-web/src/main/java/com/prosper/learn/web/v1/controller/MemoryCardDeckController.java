@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
-@RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class MemoryCardDeckController {
 
     private final MemoryCardDeckService deckService;
@@ -42,6 +41,7 @@ public class MemoryCardDeckController {
      */
     @GetMapping("/posts/{postId}/decks")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getPostPublicDecks(
             @PathVariable @NotNull(message = "帖子ID不能为空") @Positive(message = "帖子ID必须大于0") Long postId,
             @RequestParam(defaultValue = "score") String sortBy,
@@ -61,6 +61,7 @@ public class MemoryCardDeckController {
      */
     @GetMapping("/posts/{postId}/creator-deck")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getPostCreatorDeck(
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
@@ -81,6 +82,7 @@ public class MemoryCardDeckController {
      */
     @GetMapping("/posts/{postId}/my-deck")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getMyPostDeck(
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
@@ -103,6 +105,7 @@ public class MemoryCardDeckController {
      */
     @GetMapping("/users/me/memory-decks")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getCurrentUserAllDecks(
             @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
             @CurrentUser UserDO currentUser) {
@@ -120,6 +123,7 @@ public class MemoryCardDeckController {
      */
     @GetMapping("/users/{userId}/memory-decks")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getUserDecks(
             @PathVariable @NotNull(message = "用户ID不能为空") @Positive(message = "用户ID必须大于0") Long userId,
             @RequestParam(required = false) Long lastId,
@@ -136,6 +140,7 @@ public class MemoryCardDeckController {
      */
     @GetMapping("/decks/{deckId}")
     @SaCheckLogin
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<DeckDetailDTO> getDeckDetail(
             @PathVariable @NotNull(message = "卡片组ID不能为空")
             @Positive(message = "卡片组ID必须大于0")
@@ -150,6 +155,7 @@ public class MemoryCardDeckController {
      */
     @GetMapping("/decks/node/{nodeId}")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<KeysetPageResponse<DeckWithVoteDTO>> getDecksByNode(
             @PathVariable @NotNull(message = "节点ID不能为空")
             @Positive(message = "节点ID必须大于0")
@@ -175,6 +181,7 @@ public class MemoryCardDeckController {
      */
     @PostMapping("/decks")
     @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> createDeck(
             @Valid @RequestBody CreateDeckRequest request,
             @CurrentUser UserDO currentUser) {
@@ -187,6 +194,7 @@ public class MemoryCardDeckController {
      */
     @PutMapping("/decks/{deckId}")
     @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> updateDeck(
             @PathVariable @NotNull(message = "卡片组ID不能为空")
             @Positive(message = "卡片组ID必须大于0")
@@ -203,6 +211,7 @@ public class MemoryCardDeckController {
      */
     @GetMapping("/decks/{deckId}/diff")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Object> getDeckDiff(
             @PathVariable @NotNull(message = "卡片组ID不能为空")
             @Positive(message = "卡片组ID必须大于0")
@@ -218,6 +227,7 @@ public class MemoryCardDeckController {
      */
     @PostMapping("/decks/{deckId}/accept-changes")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> acceptDeckChanges(
             @PathVariable @NotNull(message = "卡片组ID不能为空")
             @Positive(message = "卡片组ID必须大于0")
@@ -233,6 +243,7 @@ public class MemoryCardDeckController {
      */
     @PutMapping("/decks/{deckId}/cards")
     @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> replaceAllCards(
             @PathVariable @NotNull(message = "卡片组ID不能为空")
             @Positive(message = "卡片组ID必须大于0")
@@ -249,6 +260,7 @@ public class MemoryCardDeckController {
      */
     @PostMapping("/decks/{postId}/ai-generate")
     @SaCheckLogin
+    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> createAIDeck(
             @PathVariable @NotNull(message = "帖子ID不能为空")
             @Positive(message = "帖子ID必须大于0")
@@ -264,6 +276,7 @@ public class MemoryCardDeckController {
      */
     @DeleteMapping("/decks/{id}")
     @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> deleteDeck(
             @PathVariable @NotNull(message = "卡片组ID不能为空")
             @Positive(message = "卡片组ID必须大于0")

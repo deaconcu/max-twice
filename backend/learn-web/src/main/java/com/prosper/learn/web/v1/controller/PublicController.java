@@ -39,7 +39,6 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
-@RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
 public class PublicController {
 
     private final SystemDataService systemDataService;
@@ -54,6 +53,7 @@ public class PublicController {
      * GET /api/v1/public/course-categories
      */
     @GetMapping("/course-categories")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
     public ResponseEntity<ApiResponse<JsonNode>> getCourseCategories(HttpServletRequest request) {
         try {
             // 从领域服务获取解析好的数据
@@ -86,6 +86,7 @@ public class PublicController {
      * GET /api/v1/public/profession-categories
      */
     @GetMapping("/profession-categories")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
     public ResponseEntity<ApiResponse<JsonNode>> getProfessionCategories(HttpServletRequest request) {
         try {
             // 从领域服务获取解析好的数据
@@ -133,6 +134,7 @@ public class PublicController {
      * GET /api/v1/public/readonly-mode
      */
     @GetMapping("/readonly-mode")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
     public ApiResponse<Map<String, Object>> getReadOnlyMode() {
         try {
             boolean enabled = systemDataService.isReadOnlyMode();
@@ -152,6 +154,7 @@ public class PublicController {
      * GET /api/v1/public/professions/{id}
      */
     @GetMapping("/professions/{id}")
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
     public ApiResponse<ProfessionDTO> getProfession(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
@@ -173,6 +176,7 @@ public class PublicController {
      * GET /api/v1/public/professions/{professionId}/roadmaps?lastId=123&pageSize=20
      */
     @GetMapping("/professions/{professionId}/roadmaps")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
     public ApiResponse<List<RoadmapSummaryDTO>> getRoadmapsByProfession(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
@@ -196,6 +200,7 @@ public class PublicController {
      * 注意：公开接口返回的数据不包含个性化信息（学习进度、订阅状态等均为默认值）
      */
     @GetMapping("/pages/read")
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
     public ApiResponse<Map<String, Object>> readPage(
             @RequestParam(required = true) @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0") Long courseId,

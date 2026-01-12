@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
-@RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class TocController {
 
     private final TocDomainService tocDomainService;
@@ -39,6 +38,7 @@ public class TocController {
      */
     @PutMapping("/users/current/courses/{courseId}/toc")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> updateUserCourseToc(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
@@ -56,6 +56,7 @@ public class TocController {
      */
     @GetMapping("/users/current/courses/{courseId}/toc")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<String> getUserCourseToc(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")

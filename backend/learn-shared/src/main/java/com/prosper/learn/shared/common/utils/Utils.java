@@ -27,16 +27,8 @@ public class Utils {
     private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss");
     private static final LocalDateTime now = LocalDateTime.now();
 
-    public static String getTimeString() {
-        return dtf.format(now);
-    }
-
     public static String getTimeString(LocalDateTime time) {
         return dtf.format(time);
-    }
-
-    public static LocalDateTime getLocalDateTime() {
-        return now;
     }
 
     public static Pair<Long, JsonNode> getNodeByPath(JsonNode rootNode, String path) {

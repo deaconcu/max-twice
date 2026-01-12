@@ -39,6 +39,7 @@ public class ReviewController {
      */
     @GetMapping("/queue")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<CardWithSrsDTO>> getReviewQueue(
             @RequestParam(required = false) @Positive(message = "课程ID必须大于0") Long courseId,
             @CurrentUser UserDO currentUser) {
@@ -53,6 +54,7 @@ public class ReviewController {
      */
     @GetMapping("/cards")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<CardWithSrsDTO>> getCardList(
             @RequestParam(required = false) @Positive(message = "课程ID必须大于0") Long courseId,
             @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
@@ -68,6 +70,7 @@ public class ReviewController {
      */
     @PostMapping("/submit")
     @SaCheckLogin
+    @RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> submitReview(
             @Valid @RequestBody ReviewCardRequest request,
             @CurrentUser UserDO currentUser) {
@@ -80,6 +83,7 @@ public class ReviewController {
      */
     @GetMapping("/stats")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<ReviewStatsDTO> getReviewStats(
             @RequestParam(defaultValue = "WEEK") Enums.Period period,
             @CurrentUser UserDO currentUser) {

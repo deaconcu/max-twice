@@ -35,7 +35,6 @@ import static com.prosper.learn.shared.domain.Enums.*;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
-@RateLimit(capacity = 40, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class RoadmapsController {
 
     private final RoadmapService roadmapService;
@@ -46,6 +45,7 @@ public class RoadmapsController {
      */
     @GetMapping("/professions/{professionId}/roadmaps")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<RoadmapWithStatusDTO>> getRoadmapsByProfession(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
@@ -65,6 +65,7 @@ public class RoadmapsController {
      */
     @PutMapping("/roadmaps/{id}")
     @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> updateRoadmap(
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")
@@ -82,6 +83,7 @@ public class RoadmapsController {
      */
     @PostMapping("/roadmaps")
     @SaCheckLogin
+    @RateLimit(capacity = 20, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Long> createRoadmap(
             @RequestBody @Valid CreateRoadmapRequest request,
             @CurrentUser UserDO currentUser) {
@@ -96,6 +98,7 @@ public class RoadmapsController {
      */
     @GetMapping("/roadmaps/{id}")
     @SaCheckLogin
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<RoadmapWithStatusDTO> getRoadmap(
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")
@@ -112,6 +115,7 @@ public class RoadmapsController {
      */
     @PostMapping("/roadmaps/pin")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Boolean> pinRoadmap(
             @RequestBody @Valid SetRoadmapProgressRequest request,
             @CurrentUser UserDO currentUser) {

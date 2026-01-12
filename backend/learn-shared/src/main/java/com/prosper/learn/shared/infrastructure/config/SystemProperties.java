@@ -418,12 +418,13 @@ public class SystemProperties {
          * AI服务API URL
          */
         private String apiUrl = "https://openrouter.ai/api/v1/chat/completions";
-        
+
         /**
          * AI服务API密钥
+         * 必须通过环境变量或配置文件设置，不应硬编码
          */
-        private String apiKey = "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";
-        
+        private String apiKey;
+
         /**
          * 默认AI模型
          */

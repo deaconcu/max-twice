@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
-@RateLimit(capacity = 80, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class PagesController {
 
     private final PageService pageService;
@@ -38,6 +37,7 @@ public class PagesController {
      */
     @GetMapping("/pages/read")
     @SaCheckLogin
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Map<String, Object>> read(
             @RequestParam(required = false) @Positive(message = "课程ID必须大于0") Long courseId,
             @RequestParam(required = false) String path,
@@ -71,6 +71,7 @@ public class PagesController {
      */
     @GetMapping("/pages/node")
     @SaCheckLogin
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Map<String, Object>> readNode(
             @RequestParam @NotNull(message = "节点ID不能为空") @Positive(message = "节点ID必须大于0") Long nodeId,
             @CurrentUser UserDO currentUser) {
@@ -86,6 +87,7 @@ public class PagesController {
      */
     @GetMapping("/pages/post")
     @SaCheckLogin
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Map<String, Object>> readPost(
             @RequestParam(required = false) @Positive(message = "帖子ID必须大于0") Long postId,
             @RequestParam(required = false) @Positive(message = "评论ID必须大于0") Long commentId,

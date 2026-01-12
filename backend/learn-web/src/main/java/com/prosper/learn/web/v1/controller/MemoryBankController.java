@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
-@RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class MemoryBankController {
 
     private final MemoryBankService memoryBankService;
@@ -38,6 +37,7 @@ public class MemoryBankController {
      */
     @PostMapping("/decks")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> addDeckToMemoryBank(
             @Valid @RequestBody AddDeckToMemoryBankRequest request,
             @CurrentUser UserDO currentUser) {
@@ -50,6 +50,7 @@ public class MemoryBankController {
      */
     @GetMapping("/courses")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<CourseMemoryBankDTO>> getMemoryBankCourses(
             @RequestParam(required = false) @Min(value = 0, message = "状态不能小于0") Integer status,
             @CurrentUser UserDO currentUser) {
@@ -63,6 +64,7 @@ public class MemoryBankController {
      */
     @PutMapping("/courses/{courseId}/settings")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> updateCourseSetting(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
@@ -79,6 +81,7 @@ public class MemoryBankController {
      */
     @DeleteMapping("/courses/{courseId}/decks/{deckId}")
     @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> removeDeckFromCourse(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")

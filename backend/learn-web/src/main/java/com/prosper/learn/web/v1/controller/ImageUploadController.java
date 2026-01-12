@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
-@RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class ImageUploadController {
 
     private final ImageUploadService imageUploadService;
@@ -48,6 +47,7 @@ public class ImageUploadController {
      */
     @PostMapping("/upload")
     @SaCheckLogin
+    @RateLimit(capacity = 20, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<ImageUploadResponse> upload(
             @RequestParam("file") MultipartFile file,
             @RequestParam("refType") @NotBlank(message = "引用类型不能为空") String refType,
@@ -68,6 +68,7 @@ public class ImageUploadController {
      */
     @PostMapping("/mark-used")
     @RequireRole(UserRole.ADMIN)
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> markAsUsed(
             @Valid @RequestBody MarkImageUsedRequest request,
             @CurrentUser UserDO currentUser) {
@@ -87,6 +88,7 @@ public class ImageUploadController {
      */
     @DeleteMapping
     @RequireRole(UserRole.ADMIN)
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> delete(
             @RequestParam("fileUrl") @NotBlank(message = "图片URL不能为空") String fileUrl,
             @CurrentUser UserDO currentUser) {
@@ -105,6 +107,7 @@ public class ImageUploadController {
      */
     @GetMapping("/quota")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<QuotaUsageDTO> getQuota(@CurrentUser UserDO currentUser) {
         QuotaUsageDTO quota = imageUploadService.getQuotaUsage(currentUser.getId());
         return ApiResponse.success(quota);
@@ -120,6 +123,7 @@ public class ImageUploadController {
      */
     @GetMapping("/history")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<ImageUploadHistoryDTO>> getHistory(
             @RequestParam(value = "limit", defaultValue = "20") int limit,
             @CurrentUser UserDO currentUser) {

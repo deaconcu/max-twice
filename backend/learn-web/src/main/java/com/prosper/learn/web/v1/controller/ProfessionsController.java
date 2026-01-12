@@ -33,7 +33,6 @@ import static com.prosper.learn.shared.domain.Enums.*;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
-@RateLimit(capacity = 40, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class ProfessionsController {
 
     private final ProfessionService professionService;
@@ -45,6 +44,7 @@ public class ProfessionsController {
      * 不传分类参数时返回所有已发布职业
      */
     @GetMapping("/professions")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<KeysetPageResponse<ProfessionDTO>> getProfessions(
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false) @Positive(message = "主分类必须大于0") Integer mainCategory,
@@ -88,6 +88,7 @@ public class ProfessionsController {
      * 映射: GET /profession?id=123 → GET /api/v1/professions/{id}
      */
     @GetMapping("/professions/{id}")
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<ProfessionDTO> getProfession(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
@@ -100,6 +101,7 @@ public class ProfessionsController {
      * 搜索职业
      */
     @GetMapping("/professions/search")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Object> searchProfessions(
             @RequestParam @NotBlank(message = "搜索关键词不能为空") String keyword) {
         List<ProfessionDTO> professionList = professionService.searchByKeyword(keyword);
@@ -112,6 +114,7 @@ public class ProfessionsController {
      */
     @PostMapping("/professions")
     @SaCheckLogin
+    @RateLimit(capacity = 20, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Object> createProfession(
             @Valid @RequestBody CreateProfessionRequest request,
             @CurrentUser UserDO currentUser) {

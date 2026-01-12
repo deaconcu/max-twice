@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
-@RateLimit(capacity = 80, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class ContentsController {
 
     private final TocDomainService tocService;
@@ -37,6 +36,7 @@ public class ContentsController {
      */
     @PostMapping("/contents")
     @SaCheckLogin
+    @RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> postContents(
             @RequestBody @Valid PostContentsRequest request,
             Model model,

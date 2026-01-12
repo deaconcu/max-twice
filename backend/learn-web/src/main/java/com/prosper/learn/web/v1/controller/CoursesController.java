@@ -36,7 +36,6 @@ import static com.prosper.learn.shared.domain.Enums.*;
 @Slf4j
 @RequiredArgsConstructor
 @Validated
-@RateLimit(capacity = 40, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class CoursesController {
 
     private final CourseService courseService;
@@ -48,6 +47,7 @@ public class CoursesController {
      * 返回课程基本信息、统计数据和用户学习状态（如果已登录）
      */
     @GetMapping("/courses/{id}")
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<CourseSummaryWithStatsAndProgressDTO> getCourse(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID不正确") Long id,
@@ -64,6 +64,7 @@ public class CoursesController {
      * 映射: GET /course/search?name=xxx → GET /api/v1/courses/search?name=xxx
      */
     @GetMapping("/courses/search")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<List<CourseBriefDTO>> searchCourses(
             @RequestParam @NotBlank(message = "搜索名称不能为空") String name) {
         List<CourseBriefDTO> courseList = courseService.searchCoursesByName(name);
@@ -83,6 +84,7 @@ public class CoursesController {
      * 返回带统计信息和用户学习状态的课程列表
      */
     @GetMapping("/courses")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<KeysetPageResponse<CourseSummaryWithStatsAndProgressDTO>> getCourses(
             @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
             @RequestParam(required = false) @Positive(message = "主分类必须大于0") Integer mainCategory,
@@ -115,6 +117,7 @@ public class CoursesController {
      * 映射: GET /course/hot → GET /api/v1/courses/hot
      */
     @GetMapping("/courses/hot")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Object> getHotCourses(
             @RequestParam(value = "limit", defaultValue = "10")
             @Positive(message = "限制数量必须大于0")
@@ -131,6 +134,7 @@ public class CoursesController {
      */
     @PostMapping("/courses")
     @SaCheckLogin
+    @RateLimit(capacity = 20, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Object> createCourse(
             @Valid @RequestBody CreateCourseRequest request,
             @CurrentUser UserDO currentUser) {
@@ -144,6 +148,7 @@ public class CoursesController {
      */
     @PostMapping("/courses/{parentId}/subcourses")
     @SaCheckLogin
+    @RateLimit(capacity = 20, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Object> createSubcourse(
             @PathVariable @NotNull(message = "父课程ID不能为空")
             @Positive(message = "父课程ID必须大于0")

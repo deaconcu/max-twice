@@ -33,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @RequiredArgsConstructor
 @Validated
-@RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class StatsController {
 
     private final DailyStatsService dailyStatsService;
@@ -45,6 +44,7 @@ public class StatsController {
      * 映射: POST /api/stats/view → POST /api/v1/stats/views
      */
     @PostMapping("/stats/views")
+    @RateLimit(capacity = 200, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> recordView(@RequestBody @Valid RecordViewRequest request) {
         
         redisStatsService.recordArticleView(request.getArticleId(), request.getUserId());
@@ -56,6 +56,7 @@ public class StatsController {
      * 映射: GET /api/stats/user/{userId}/today → GET /api/v1/stats/users/{userId}/today
      */
     @GetMapping("/stats/users/{userId}/today")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<UserDailyStatsDTO> getUserTodayStats(
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
@@ -69,6 +70,7 @@ public class StatsController {
      * 映射: GET /api/stats/user/{userId}/history → GET /api/v1/stats/users/{userId}/history?days=7
      */
     @GetMapping("/stats/users/{userId}/history")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<UserStatsWithDailyDTO> getUserHistoryStats(
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
@@ -87,6 +89,7 @@ public class StatsController {
      * 映射: GET /api/stats/user/{userId}/all-time → GET /api/v1/stats/users/{userId}/all-time
      */
     @GetMapping("/stats/users/{userId}/all-time")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<UserStatsDTO> getUserAllTimeStats(
             @PathVariable @NotNull(message = "用户ID不能为空")
             @Positive(message = "用户ID必须大于0")
@@ -101,6 +104,7 @@ public class StatsController {
      */
     @RequireRole(UserRole.ADMIN)
     @PostMapping("/stats/sync/manual")
+    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Object> manualSync() {
         dailyStatsService.syncYesterdayStats();
         return ApiResponse.success("同步成功");
@@ -112,6 +116,7 @@ public class StatsController {
      */
     @RequireRole(UserRole.ADMIN)
     @PostMapping("/stats/sync/date")
+    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Object> syncByDate(
             @JsonParam("date") @NotBlank(message = "日期不能为空") String date) {
         LocalDate targetDate = LocalDate.parse(date);
@@ -124,6 +129,7 @@ public class StatsController {
      * 映射: GET /api/platform/stats → GET /api/v1/stats/platform
      */
     @GetMapping("/stats/platform")
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<PlatformStatsDTO> getPlatformStats() {
         PlatformStatsDTO stats = platformStatsService.getPlatformStats();
         return ApiResponse.success(stats);

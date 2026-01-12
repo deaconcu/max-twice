@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
-@RateLimit(capacity = 40, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
 public class CommentsController {
 
     private final CommentService commentService;
@@ -38,6 +37,7 @@ public class CommentsController {
      */
     @PostMapping("/comments")
     @SaCheckLogin
+    @RateLimit(capacity = 40, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<CommentDetailDTO> createComment(
             @Valid @RequestBody CreateCommentRequest request,
             @CurrentUser UserDO currentUser) {
@@ -52,6 +52,7 @@ public class CommentsController {
      */
     @GetMapping("/comments")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<KeysetPageResponse<CommentWithRepliesDTO>> getCommentsByObject(
             @RequestParam @NotNull(message = "对象ID不能为空") @Positive(message = "对象ID必须大于0") Long objectId,
             @RequestParam @NotNull(message = "对象类型不能为空") @Positive(message = "对象类型必须大于0") Integer objectType,
@@ -70,6 +71,7 @@ public class CommentsController {
      */
     @GetMapping("/comments/{id}/replies")
     @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<KeysetPageResponse<CommentDetailDTO>> getCommentReplies(
             @PathVariable @NotNull(message = "评论ID不能为空") @Positive(message = "评论ID必须大于0") Long id,
             @RequestParam(required = false) Double lastScore,
