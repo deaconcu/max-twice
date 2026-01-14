@@ -62,7 +62,7 @@ public class ProfessionsController {
             professionList = professionService.getListByMainCategoryAndLastId(mainCategory, lastId, limit);
         } else {
             // 获取所有已发布职业
-            professionList = professionService.getListByStateAndLastId(ContentState.PUBLISHED, lastId, limit);
+            professionList = professionService.getApprovedByLastId(lastId, limit);
         }
 
         // 判断是否有更多数据

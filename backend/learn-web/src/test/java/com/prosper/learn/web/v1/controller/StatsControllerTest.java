@@ -94,7 +94,7 @@ public class StatsControllerTest extends BaseControllerTest {
         user.setEmailValidated(true);
         user.setBiography("");
         user.setRole(role.value());
-        user.setMsgReadTime(java.time.LocalDateTime.now());
+        user.setLastViewedMessageId(0L);
         userDataService.insert(user);
         return user;
     }

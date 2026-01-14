@@ -17,7 +17,14 @@ public interface CourseMapper {
             "</script>"})
     List<CourseDO> getByIds(List<Long> ids);
 
-    @Select("SELECT * FROM course WHERE name LIKE CONCAT('%', #{name}, '%') limit #{limit}")
+    @Select("SELECT * FROM course " +
+            "WHERE name LIKE CONCAT('%', #{name}, '%') " +
+            "ORDER BY " +
+            "  name = #{name} DESC, " +
+            "  name LIKE CONCAT(#{name}, '%') DESC, " +
+            "  LENGTH(name), " +
+            "  id DESC " +
+            "LIMIT #{limit}")
     List<CourseDO> searchByName(String name, int limit);
 
     @Select("SELECT * FROM course where state = #{state.value} and parent_course_id = #{parentCourseId} ORDER BY created_at DESC")

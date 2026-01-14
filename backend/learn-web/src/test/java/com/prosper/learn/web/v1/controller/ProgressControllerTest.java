@@ -102,7 +102,7 @@ public class ProgressControllerTest extends BaseControllerTest {
         user.setEmailValidated(true);
         user.setBiography("");
         user.setRole(UserRole.USER.value());
-        user.setMsgReadTime(java.time.LocalDateTime.now());
+        user.setLastViewedMessageId(0L);
         userDataService.insert(user);
         return user;
     }

@@ -96,13 +96,15 @@ const {
         state
       )
     } else {
-      return adminApi.getCommentsByState(currentTab.value, params.lastId)
+      // 使用统一接口
+      return adminApi.getContentsByState('comment', state, params.lastId)
     }
   },
   getNextParams: (lastItem) => ({
     lastId: lastItem.id,
   }),
   initialParams: {},
+  immediate: true, // 自动初始加载
 })
 
 // 应用筛选
@@ -113,6 +115,7 @@ const applyFilter = (): void => {
   }
   isFilterMode.value = true
   resetCommentList()
+  loadMore() // 重新加载数据
 }
 
 // 清除筛选
@@ -122,6 +125,7 @@ const clearFilter = (): void => {
   filterCreatorId.value = undefined
   isFilterMode.value = false
   resetCommentList()
+  loadMore() // 重新加载数据
 }
 
 // 使用 useMutation 批准评论
@@ -218,6 +222,7 @@ const unbanComment = async (comment: Comment): Promise<void> => {
 
 const handleTabChange = (newTab: string) => {
   resetCommentList()
+  loadMore() // 重新加载数据
 }
 </script>
 

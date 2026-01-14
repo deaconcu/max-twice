@@ -35,14 +35,14 @@ public interface UserMapper {
     @Select("SELECT * FROM user WHERE name = #{name} limit 1")
     UserDO getByName(String name);
 
-    @Insert("INSERT INTO user(name, password, phone, email, email_validated, biography, avatar, role, state, msg_read_time) " +
-            "VALUES (#{name}, #{password}, #{phone}, #{email}, #{emailValidated}, #{biography}, #{avatar}, #{role}, #{state}, #{msgReadTime})")
+    @Insert("INSERT INTO user(name, password, phone, email, email_validated, biography, avatar, role, state, last_viewed_message_id) " +
+            "VALUES (#{name}, #{password}, #{phone}, #{email}, #{emailValidated}, #{biography}, #{avatar}, #{role}, #{state}, #{lastViewedMessageId})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserDO user);
 
     // 只更新基本信息字段，不更新敏感字段(password, email, email_validated, state, role)
     @Update("UPDATE user SET name = #{name}, phone = #{phone}, biography = #{biography}, " +
-            "avatar = #{avatar}, msg_read_time = #{msgReadTime}, updated_at = #{updatedAt} WHERE id = #{id}")
+            "avatar = #{avatar}, updated_at = #{updatedAt} WHERE id = #{id}")
     void update(UserDO user);
 
     @Update("UPDATE user SET avatar = #{avatar} WHERE id = #{userId}")
@@ -57,6 +57,9 @@ public interface UserMapper {
 
     @Update("UPDATE user SET email_validated = #{emailValidated}, updated_at = #{updatedAt} WHERE id = #{userId}")
     void updateEmailValidated(@Param("userId") long userId, @Param("emailValidated") boolean emailValidated, @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Update("UPDATE user SET last_viewed_message_id = #{lastViewedMessageId} WHERE id = #{userId}")
+    void updateLastViewedMessageId(@Param("userId") long userId, @Param("lastViewedMessageId") long lastViewedMessageId);
 
     @Select("SELECT * FROM user ORDER BY id DESC LIMIT #{count}")
     List<UserDO> getList(int count);

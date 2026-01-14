@@ -102,7 +102,7 @@ app:
     max-name-length: 100
     default-page-size: 20
     # 课程名称搜索结果限制数量
-    search-limit: 20
+    search-limit: 50
     # 热门课程排行榜数量限制
     hot-courses-ranking-limit: 100
     # 是否启用课程状态验证

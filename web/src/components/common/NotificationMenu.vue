@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, inject, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { messageApi } from '@/api'
@@ -16,13 +16,12 @@ const notificationList = ref<HTMLElement | null>(null)
 // 筛选状态
 const filterCategory = ref<'all' | 'interaction' | 'system'>('all')
 
-// 下拉刷新状态
-const isPulling = ref(false)
-const isRefreshing = ref(false)
-const startY = ref(0)
-
 // 底部提示状态
 const showBottomTip = ref(false)
+
+// 下拉刷新状态
+const isRefreshing = ref(false)
+const isPulling = ref(false)
 
 // 消息数据
 const messages = ref<Message[]>([])
@@ -30,8 +29,14 @@ const loading = ref(false)
 const lastId = ref<number | undefined>(undefined)
 const hasMore = ref(true)
 
+// 会话期间的 lastViewedMessageId（用于标记 NEW）
+const sessionLastId = ref<number>(0)
+
+// 菜单状态
+const menuOpen = ref(false)
+
 // 未读通知数量
-const unreadCount = computed(() => messages.value.filter((m) => m.isRead === 0).length)
+const unreadCount = ref<number>(0)
 
 // 根据筛选条件过滤消息
 const filteredMessages = computed(() => {
@@ -377,38 +382,42 @@ const loadMessages = async (reset = false) => {
       hasMore.value = true
     }
 
-    // 获取所有类型的消息（互动 + 系统）
-    const [interactionRes, systemRes] = await Promise.all([
-      messageApi.getMessagesByCategory(MessageCategory.INTERACTION, lastId.value),
-      messageApi.getMessagesByCategory(MessageCategory.SYSTEM, lastId.value),
-    ])
-
-    const newMessages: Message[] = []
-    if (interactionRes.code === 200 && interactionRes.data) {
-      newMessages.push(...interactionRes.data)
-    }
-    if (systemRes.code === 200 && systemRes.data) {
-      newMessages.push(...systemRes.data)
+    // 根据筛选获取消息分类
+    let category = MessageCategory.ALL
+    if (filterCategory.value === 'interaction') {
+      category = MessageCategory.INTERACTION
+    } else if (filterCategory.value === 'system') {
+      category = MessageCategory.SYSTEM
     }
 
-    // 按时间排序
-    newMessages.sort((a, b) => {
-      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0
-      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0
-      return timeB - timeA
-    })
+    // 调用接口（返回 MessageListResponse）
+    const res = await messageApi.getMessagesByCategory(category, lastId.value)
 
-    if (reset) {
-      messages.value = newMessages
-    } else {
-      messages.value.push(...newMessages)
+    if (res.code === 200 && res.data) {
+      const { messages: newMessages, lastViewedMessageId } = res.data
+
+      // 第一页时保存 lastViewedMessageId
+      if (reset && lastViewedMessageId != null) {
+        sessionLastId.value = lastViewedMessageId
+      }
+
+      // 合并消息
+      if (reset) {
+        messages.value = newMessages
+      } else {
+        messages.value.push(...newMessages)
+      }
+
+      // 更新分页信息
+      if (newMessages.length > 0) {
+        lastId.value = newMessages[newMessages.length - 1].id
+      }
+
+      hasMore.value = newMessages.length >= 10
+
+      // 标记新消息
+      markNewMessages()
     }
-
-    if (newMessages.length > 0) {
-      lastId.value = newMessages[newMessages.length - 1].id
-    }
-
-    hasMore.value = newMessages.length >= 10
   } catch (error) {
     console.error('Error loading messages:', error)
     showSnackbar?.('加载消息失败', 'error')
@@ -417,14 +426,41 @@ const loadMessages = async (reset = false) => {
   }
 }
 
-// 触发刷新
-const triggerRefresh = async () => {
-  if (isRefreshing.value) return
+// 标记新消息（id > sessionLastId 显示 NEW 标签）
+const markNewMessages = () => {
+  messages.value.forEach((msg) => {
+    msg.isNew = msg.id! > sessionLastId.value
 
-  isRefreshing.value = true
+    // 30秒后移除 NEW 标签
+    if (msg.isNew) {
+      setTimeout(() => {
+        msg.isNew = false
+      }, 30000)
+    }
+  })
+}
+
+// 监听菜单打开/关闭
+watch(menuOpen, (isOpen) => {
+  if (!isOpen) {
+    // 关闭菜单时清空数据
+    messages.value = []
+    sessionLastId.value = 0
+    lastId.value = undefined
+    hasMore.value = true
+  } else {
+    // 打开菜单时加载第一页
+    loadMessages(true)
+  }
+})
+
+// 触发刷新（等同于关闭再打开）
+const triggerRefresh = async () => {
+  if (loading.value) return
+
+  // 清空数据，重新加载第一页
+  sessionLastId.value = 0
   await loadMessages(true)
-  isRefreshing.value = false
-  isPulling.value = false
 }
 
 // 滚动处理
@@ -451,31 +487,6 @@ const handleScroll = (event: Event) => {
     showBottomTip.value = !hasMore.value
   } else {
     showBottomTip.value = false
-  }
-}
-
-// 监听下拉动作
-const handleTouchStart = (event: TouchEvent) => {
-  const clientY = event.touches[0]?.clientY
-  if (clientY !== undefined) {
-    startY.value = clientY
-  }
-}
-
-const handleTouchMove = (event: TouchEvent) => {
-  if (!notificationList.value) return
-
-  const currentY = event.touches[0]?.clientY
-  if (currentY === undefined) return
-
-  const scrollTop = notificationList.value.scrollTop
-
-  // 只有在顶部且向下滑动时才触发
-  if (scrollTop === 0 && currentY > startY.value) {
-    const distance = currentY - startY.value
-    if (distance > 50 && !isRefreshing.value) {
-      triggerRefresh()
-    }
   }
 }
 
@@ -590,9 +601,24 @@ const handleMessageClick = (message: Message) => {
   }
 }
 
-// 组件挂载时加载消息
+// 获取未读消息数量
+const fetchUnreadCount = async () => {
+  try {
+    const res = await messageApi.getUnreadCount()
+    if (res.code === 200 && res.data != null) {
+      unreadCount.value = res.data
+    }
+  } catch (error) {
+    console.error('获取未读数量失败:', error)
+  }
+}
+
+// 组件挂载时获取未读数量
 onMounted(() => {
-  loadMessages(true)
+  fetchUnreadCount()
+
+  // 每30秒轮询一次未读数量
+  setInterval(fetchUnreadCount, 30000)
 })
 
 defineExpose({
@@ -601,7 +627,7 @@ defineExpose({
 </script>
 
 <template>
-  <v-menu :close-on-content-click="false" location="bottom end" offset="8">
+  <v-menu v-model="menuOpen" :close-on-content-click="false" location="bottom end" offset="8">
     <template #activator="{ props }">
       <button class="icon-btn" :title="t('notification.title')" v-bind="props">
         <v-badge
@@ -617,7 +643,7 @@ defineExpose({
       </button>
     </template>
 
-    <v-card rounded="lg" class="notification-menu" width="380">
+    <v-card rounded="xl" class="notification-menu" width="420">
       <!-- 标题栏 -->
       <v-card-title class="notification-header">
         <span class="notification-title">{{ t('notification.title') }}</span>
@@ -633,32 +659,23 @@ defineExpose({
           <v-chip value="interaction" size="small" variant="flat">互动</v-chip>
           <v-chip value="system" size="small" variant="flat">系统</v-chip>
         </v-chip-group>
+        <v-btn
+          icon
+          size="small"
+          variant="text"
+          color="primary"
+          :loading="loading"
+          @click="triggerRefresh"
+        >
+          <v-icon size="20">mdi-refresh</v-icon>
+        </v-btn>
       </div>
-
-      <v-divider></v-divider>
 
       <div
         ref="notificationList"
         class="notification-list"
         @scroll="handleScroll"
-        @touchstart="handleTouchStart"
-        @touchmove="handleTouchMove"
       >
-        <!-- 下拉刷新提示 -->
-        <div v-if="isPulling" class="pull-to-refresh">
-          <v-progress-circular
-            v-if="isRefreshing"
-            indeterminate
-            size="20"
-            width="2"
-            color="primary"
-          ></v-progress-circular>
-          <v-icon v-else size="20" color="primary">mdi-refresh</v-icon>
-          <span class="ml-2">{{
-            isRefreshing ? t('notification.refreshing') : t('notification.pullToRefresh')
-          }}</span>
-        </div>
-
         <!-- 消息列表 -->
         <div
           v-for="message in filteredMessages"
@@ -672,7 +689,10 @@ defineExpose({
               <v-icon size="18" color="white">{{ getMessageIcon(message).icon }}</v-icon>
             </v-avatar>
             <div class="flex-grow-1">
-              <div class="notification-title">{{ getMessageTitle(message) }}</div>
+              <div class="d-flex align-center mb-1">
+                <div class="notification-title">{{ getMessageTitle(message) }}</div>
+                <v-chip v-if="message.isNew" size="x-small" color="error" class="ml-2">NEW</v-chip>
+              </div>
               <div class="notification-content">{{ getMessageContent(message) }}</div>
               <div class="notification-time">{{ formatTime(message.createdAt) }}</div>
             </div>
@@ -704,13 +724,6 @@ defineExpose({
             <span class="text-caption text-grey ml-1">{{ t('notification.bottomTip') }}</span>
           </div>
         </div>
-      </div>
-
-      <v-divider></v-divider>
-
-      <!-- 底部操作 -->
-      <div class="notification-footer">
-        <v-btn variant="text" size="small" color="primary" block> 查看全部消息 </v-btn>
       </div>
     </v-card>
   </v-menu>
@@ -753,21 +766,33 @@ defineExpose({
 }
 
 .filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 8px 16px;
 }
 
 .notification-list {
-  max-height: 420px;
+  max-height: 640px;
   overflow-y: auto;
 }
 
-.pull-to-refresh {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  font-size: 13px;
-  color: rgb(var(--v-theme-on-surface-variant));
+/* 自定义滚动条样式 */
+.notification-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notification-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+  background-color: rgba(var(--v-theme-on-surface), 0.2);
+  border-radius: 3px;
+}
+
+.notification-list::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(var(--v-theme-on-surface), 0.3);
 }
 
 .notification-item {
@@ -793,7 +818,7 @@ defineExpose({
   font-size: 14px;
   font-weight: 600;
   color: rgb(var(--v-theme-on-surface));
-  margin-bottom: 4px;
+  line-height: 1.4;
 }
 
 .notification-item .notification-content {

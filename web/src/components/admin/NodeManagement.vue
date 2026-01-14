@@ -85,13 +85,8 @@ const {
         params.lastId
       )
     } else {
-      return adminApi.getAdminNodes(
-        currentTabConfig?.state || null,
-        null,
-        null,
-        null,
-        params.lastId
-      )
+      // 普通模式：使用统一的状态筛选接口
+      return adminApi.getContentsByState('node', currentTabConfig?.state, params.lastId)
     }
   },
   getNextParams: (lastItem) => ({
@@ -100,6 +95,7 @@ const {
   initialParams: {
     lastId: null,
   },
+  immediate: true, // 自动初始加载
 })
 
 // 应用筛选
@@ -110,6 +106,7 @@ const applyFilter = (): void => {
   }
   isFilterMode.value = true
   resetNodeList()
+  loadMore() // 重新加载数据
 }
 
 // 清除筛选
@@ -119,11 +116,13 @@ const clearFilter = (): void => {
   filterCreatorId.value = undefined
   isFilterMode.value = false
   resetNodeList()
+  loadMore() // 重新加载数据
 }
 
 // 监听tab切换
 const handleTabChange = (newTab: string) => {
   resetNodeList()
+  loadMore() // 重新加载数据
 }
 
 const getStateColor = (state: ContentState): string => {

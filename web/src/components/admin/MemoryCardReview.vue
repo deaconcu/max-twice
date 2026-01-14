@@ -93,10 +93,12 @@ const {
   initialParams: {
     lastId: undefined,
   },
+  immediate: true, // 自动初始加载
 })
 
 const applyFilter = () => {
   resetDeckList()
+  loadMore() // 重新加载数据
 }
 
 const resetFilter = () => {
@@ -201,6 +203,7 @@ const unbanDeck = async (deck: DeckDetail): Promise<void> => {
 
 const switchTab = (tabKey: string) => {
   resetDeckList()
+  loadMore() // 重新加载数据
 }
 
 const getStateText = (state: number): string => {

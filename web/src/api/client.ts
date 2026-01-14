@@ -76,6 +76,14 @@ const API_DELAY = import.meta.env.DEV ? 500 : 0 // 开发环境延时 500ms
  */
 axiosInstance.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    // 记录请求日志
+    console.log('[API Request]', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      params: config.params,
+      data: config.data,
+    })
+
     // 开发环境：添加延时以便测试 loading 状态
     if (API_DELAY > 0) {
       await new Promise((resolve) => setTimeout(resolve, API_DELAY))

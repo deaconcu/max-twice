@@ -48,7 +48,7 @@ public class KeysetPageResponse<T> {
         response.setItems(items);
         response.setHasMore(hasMore);
         
-        if (hasMore && lastScore != null && lastId != null) {
+        if (hasMore && (lastScore != null || lastId != null)) {
             NextCursor cursor = new NextCursor();
             cursor.setLastScore(lastScore);
             cursor.setLastId(lastId);

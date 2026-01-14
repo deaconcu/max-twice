@@ -98,14 +98,15 @@ export const courseApi = {
   },
 
   /**
-   * 审核课程
+   * 审核课程（管理员操作）
+   * 使用统一的内容管理接口
    */
   approveCourse(
     id: number,
     action: string,
     reason?: string
   ): Promise<ApiResponse<void>> {
-    return apiClient.post(`/v1/courses/${String(id)}/approve`, {
+    return apiClient.post(`/v1/admin/contents/course/${String(id)}/operate`, {
       action,
       reason,
     })

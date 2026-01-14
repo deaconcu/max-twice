@@ -30,13 +30,13 @@ export const adminApi = {
   /**
    * 获取指定类型和状态的内容（统一接口）
    * @param contentType 内容类型
-   * @param state 状态: draft, pending/submitted, approved/published, rejected, banned
+   * @param state 状态值（数字）
    * @param lastId 分页游标
    */
-  getContentsByState(contentType: ContentType, state?: string, lastId?: number): Promise<ApiResponse<any[]>> {
+  getContentsByState(contentType: ContentType, state?: number, lastId?: number): Promise<ApiResponse<any[]>> {
     const params: Record<string, unknown> = {}
-    if (state) params.state = state
-    if (lastId !== undefined) params.lastId = lastId
+    if (state !== undefined && state !== null) params.state = state
+    if (lastId !== undefined && lastId !== null) params.lastId = lastId
     return apiClient.get(`/v1/admin/contents/${contentType}`, { params })
   },
 
@@ -153,7 +153,7 @@ export const adminApi = {
     const params: Record<string, unknown> = {}
     if (state !== undefined) params.state = state
     if (lastId !== undefined) params.lastId = lastId
-    return apiClient.get('/v1/admin/contents/profession/filter', { params })
+    return apiClient.get('/v1/admin/contents/profession', { params })
   },
 
   /**

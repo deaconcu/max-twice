@@ -15,6 +15,7 @@ export interface Message {
   receiver?: User // 接收者
   content?: string // 消息内容（JSON 格式）
   type?: MessageType // 消息类型
-  isRead?: number // 是否已读
+  isRead?: number // 是否已读（已废弃，使用 isNew 代替）
+  isNew?: boolean // 是否为新消息（前端计算）
   createdAt?: string // 创建时间
 }

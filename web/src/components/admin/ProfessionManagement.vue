@@ -139,7 +139,7 @@ const {
 } = useInfiniteScroll({
   fetchFn: (params) => {
     const state = getCurrentState()
-    return adminApi.getAdminProfessions(state, params.lastId)
+    return adminApi.getProfessionsByFilter(state, params.lastId)
   },
   getNextParams: (lastItem) => ({
     lastId: lastItem.id,
@@ -147,11 +147,13 @@ const {
   initialParams: {
     lastId: null,
   },
+  immediate: true, // 自动初始加载
 })
 
 // 状态改变处理
 const onStateChange = (): void => {
   resetProfessionList()
+  loadMoreData() // 重新加载数据
 }
 
 // 使用 useMutation 操作职业申请

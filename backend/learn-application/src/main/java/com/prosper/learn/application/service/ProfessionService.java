@@ -4,6 +4,7 @@ import com.prosper.learn.analytics.ranking.service.ProfessionRankingDomainServic
 import com.prosper.learn.application.converter.ProfessionConverter;
 import com.prosper.learn.application.dto.request.CreateProfessionRequest;
 import com.prosper.learn.application.dto.request.UpdateProfessionRequest;
+import com.prosper.learn.application.dto.response.ProfessionAdminDTO;
 import com.prosper.learn.application.dto.response.ProfessionDTO;
 import com.prosper.learn.content.profession.ProfessionDO;
 import com.prosper.learn.content.profession.ProfessionDomainService;
@@ -75,8 +76,19 @@ public class ProfessionService {
         return toDTO(professionDO);
     }
 
-    public List<ProfessionDTO> getListByStateAndLastId(ContentState state, Long lastId, int limit) {
+    /**
+     * 获取职业列表（管理后台专用，包含状态和原因）
+     */
+    public List<ProfessionAdminDTO> getListByStateAndLastId(ContentState state, Long lastId, int limit) {
         List<ProfessionDO> professionDOList = professionDomainService.listByStateAndLastId(state.value(), lastId, limit);
+        return professionConverter.toAdminDTO(professionDOList);
+    }
+
+    /**
+     * 获取已发布的职业列表（公开接口，只返回已发布状态）
+     */
+    public List<ProfessionDTO> getApprovedByLastId(Long lastId, int limit) {
+        List<ProfessionDO> professionDOList = professionDomainService.listByStateAndLastId(ContentState.PUBLISHED.value(), lastId, limit);
         return toDTO(professionDOList);
     }
 

@@ -72,41 +72,38 @@ public class AdminContentsController {
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> getContentsByState(
             @PathVariable @NotBlank(message = "内容类型不能为空") String contentType,
-            @RequestParam(required = false) String state,
+            @RequestParam(required = false) Byte state,
             @RequestParam(required = false) @Min(value = 0, message = "lastId不能小于0") Long lastId) {
 
-        // 设置默认值
-        Long effectiveLastId = (lastId != null) ? lastId : 0L;
-
         // 解析状态
-        ContentState stateValue = ContentState.valueOf(state);
+        ContentState stateValue = ContentState.getByValue(state);
 
         return switch (contentType.toLowerCase()) {
             case "post" -> ApiResponse.success(
                 postService.getPostsByState(
                     stateValue != null ? stateValue : ContentState.SUBMITTED,
-                    effectiveLastId,
+                    lastId,
                     DEFAULT_PAGE_SIZE
                 )
             );
             case "roadmap" -> ApiResponse.success(
-                roadmapService.listByFilter(stateValue, null, null, effectiveLastId)
+                roadmapService.listByFilter(stateValue, null, null, lastId)
             );
             case "memory_card_deck" -> ApiResponse.success(
-                memoryCardDeckService.getDecksForAdmin(stateValue, null, null, effectiveLastId, DEFAULT_PAGE_SIZE
+                memoryCardDeckService.getDecksForAdmin(stateValue, null, null, lastId, DEFAULT_PAGE_SIZE
                 )
             );
             case "comment" -> ApiResponse.success(
-                commentService.getCommentsByFilter(null, null, null, effectiveLastId, stateValue)
+                commentService.getCommentsByFilter(null, null, null, lastId, stateValue)
             );
             case "course" -> ApiResponse.success(
-                courseService.getListByStateAndLastId(stateValue, effectiveLastId)
+                courseService.getListByStateAndLastId(stateValue, lastId)
             );
             case "profession" -> ApiResponse.success(
-                professionService.getListByStateAndLastId(stateValue, effectiveLastId, DEFAULT_PAGE_SIZE)
+                professionService.getListByStateAndLastId(stateValue, lastId, DEFAULT_PAGE_SIZE)
             );
             case "node" -> ApiResponse.success(
-                nodeService.listByFilter(stateValue, null, null, null, effectiveLastId)
+                nodeService.listByFilter(stateValue, null, null, null, lastId)
             );
             default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的内容类型: " + contentType);
         };

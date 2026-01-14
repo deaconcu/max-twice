@@ -70,7 +70,8 @@ export type ObjectType = (typeof ObjectType)[keyof typeof ObjectType]
 export const MessageCategory = {
   INTERACTION: 1, // 互动消息
   SYSTEM: 2, // 系统消息
-  PRIVATE: 3, // 私信
+  ALL: 3, // 全部（互动+系统）
+  PRIVATE: 4, // 私信
 } as const
 
 export type MessageCategory = (typeof MessageCategory)[keyof typeof MessageCategory]

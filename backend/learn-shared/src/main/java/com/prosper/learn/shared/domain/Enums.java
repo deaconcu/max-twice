@@ -270,6 +270,45 @@ public class Enums {
         }
     }
 
+    /**
+     * 消息分类枚举
+     * INTERACTION=1 互动消息
+     * SYSTEM=2 系统消息
+     * ALL=3 全部（互动+系统，不包括私信）
+     * PRIVATE=4 私信
+     */
+    public enum MessageCategory implements ValueEnum<Integer> {
+        INTERACTION(1, "互动消息"),
+        SYSTEM(2, "系统消息"),
+        ALL(3, "全部"),
+        PRIVATE(4, "私信");
+
+        private final int value;
+        private final String description;
+
+        MessageCategory(int value, String description) {
+            this.value = value;
+            this.description = description;
+        }
+
+        @Override
+        public Integer value() {
+            return value;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public static MessageCategory getByValue(Integer value) {
+            return ValueEnum.getByValue(MessageCategory.class, value);
+        }
+
+        public static boolean isValid(int value) {
+            return ValueEnum.isValid(MessageCategory.class, value);
+        }
+    }
+
     public enum MessageType implements ValueEnum<Integer> {
         applyCourse(1, 2),           // 课程申请 - 系统消息
         follow(2, 1),                // 关注 - 互动消息
@@ -301,7 +340,7 @@ public class Enums {
         professionApproved(26, 2),   // 职业审核通过 - 系统消息
 
         system(99, 2),               // 其他系统消息 - 系统消息
-        other(100, 3);               // 私信 - 私信
+        other(100, 4);               // 私信 - 私信（category=4）
 
         private final int value;
         private final int category;

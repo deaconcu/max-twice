@@ -2,16 +2,14 @@ package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.dto.request.CreateNotificationRequest;
-import com.prosper.learn.application.dto.request.SendMessageRequest;
-import com.prosper.learn.application.dto.response.message.MessageDTO;
+import com.prosper.learn.application.dto.response.message.MessageListResponse;
 import com.prosper.learn.application.service.MessageService;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
-import com.prosper.learn.user.profile.UserMapper;
+import com.prosper.learn.user.profile.UserDataService;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
-import com.prosper.learn.web.v1.annotation.JsonParam;
 import com.prosper.learn.application.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.validation.annotation.Validated;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -33,29 +30,56 @@ import java.util.concurrent.TimeUnit;
 public class MessagesController {
 
     private final MessageService messageService;
-    private final UserMapper userMapper;
+    private final UserDataService userDataService;
 
     /**
      * 按分类获取消息列表
      * 映射: GET /api/v1/messages/category
-     * @param category 消息分类 1=互动消息, 2=系统消息, 3=私信
+     * @param category 消息分类 1=互动消息, 2=系统消息, 3=全部（互动+系统）, 4=私信
      * @param lastId 最后一条消息的ID，用于分页，首次请求可不传
      * @param type 可选的消息类型过滤
      */
     @GetMapping("/messages/category")
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<List<MessageDTO>> getMessagesByCategory(
+    public ApiResponse<MessageListResponse> getMessagesByCategory(
             @RequestParam @NotNull(message = "消息分类不能为空")
-            @Min(value = 1, message = "消息分类必须为1-3")
-            @Max(value = 3, message = "消息分类必须为1-3")
+            @Min(value = 1, message = "消息分类必须为1-4")
+            @Max(value = 4, message = "消息分类必须为1-4")
             int category,
             @RequestParam(required = false) Long lastId,
             @RequestParam(required = false) Integer type,
             @CurrentUser UserDO currentUser) {
 
-        List<MessageDTO> messageDTOList = messageService.getListByCategory(category, currentUser.getId(), lastId, type);
-        return ApiResponse.success(messageDTOList);
+        // 获取消息列表（支持 category=3 查询全部）
+        MessageListResponse response = messageService.getListByCategoryWithLastViewed(
+            category, currentUser.getId(), lastId, type, currentUser
+        );
+
+        // 只在第一页更新 lastViewedMessageId（取第一条消息ID，因为是降序排列）
+        if (lastId == null && !response.getMessages().isEmpty()) {
+            long maxId = response.getMessages().get(0).getId();
+            userDataService.updateLastViewedMessageId(currentUser.getId(), maxId);
+        }
+
+        return ApiResponse.success(response);
+    }
+
+    /**
+     * 获取未读消息数量
+     * 映射: GET /api/v1/messages/unread-count
+     */
+    @GetMapping("/messages/unread-count")
+    @SaCheckLogin
+    @RateLimit(capacity = 200, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<Integer> getUnreadCount(@CurrentUser UserDO currentUser) {
+        Long lastViewedMessageId = currentUser.getLastViewedMessageId();
+        if (lastViewedMessageId == null) {
+            lastViewedMessageId = 0L;
+        }
+
+        int count = messageService.getUnreadCount(currentUser.getId(), lastViewedMessageId);
+        return ApiResponse.success(count);
     }
 
 // --注释掉检查 START (2025/12/29 待私信功能开发时启用)
@@ -109,10 +133,7 @@ public class MessagesController {
             @RequestBody @Valid CreateNotificationRequest request,
             @CurrentUser UserDO currentUser) {
 
-        UserDO userDO = userMapper.getById(request.getUserId());
-        if (userDO == null) {
-            throw StatusCode.USER_NOT_FOUND.exception();
-        }
+        UserDO userDO = userDataService.validateAndGet(request.getUserId());
 
         messageService.createInviteMessage(request.getUserId(), currentUser.getId(), request.getNodeId());
         return ApiResponse.success();

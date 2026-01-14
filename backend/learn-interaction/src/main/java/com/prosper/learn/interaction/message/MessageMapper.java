@@ -74,4 +74,25 @@ public interface MessageMapper {
                                    @Param("category") int category,
                                    @Param("lastId") Long lastId,
                                    @Param("limit") int limit);
+
+    // 新增：查询全部消息（互动+系统，category IN (1, 2)）
+    @Select("<script>" +
+            "SELECT * FROM message " +
+            "WHERE receiver_id = #{receiverId} AND category IN (1, 2) " +
+            "<if test='lastId != null and lastId > 0'>" +
+            "AND id &lt; #{lastId} " +
+            "</if>" +
+            "ORDER BY id DESC LIMIT #{limit}" +
+            "</script>")
+    List<MessageDO> listAllMessages(@Param("receiverId") long receiverId,
+                                    @Param("lastId") Long lastId,
+                                    @Param("limit") int limit);
+
+    // 统计未读消息数量（id > lastViewedMessageId）
+    @Select("SELECT COUNT(*) FROM message " +
+            "WHERE receiver_id = #{receiverId} " +
+            "AND category IN (1, 2) " +
+            "AND id > #{lastViewedMessageId}")
+    int countUnreadMessages(@Param("receiverId") long receiverId,
+                           @Param("lastViewedMessageId") long lastViewedMessageId);
 }

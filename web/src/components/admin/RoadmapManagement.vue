@@ -466,28 +466,29 @@ const {
   loadMore,
   reset: resetList,
 } = useInfiniteScroll<Roadmap>({
-  fetchFn: (params) =>
-    adminApi.getAdminRoadmaps(params.state, params.professionId, params.creatorId, params.lastId),
+  fetchFn: (params) => {
+    // 使用统一接口，state 从当前 tab 获取
+    const currentState = getCurrentState()
+    return adminApi.getContentsByState('roadmap', currentState, params.lastId)
+  },
   getNextParams: (lastItem, currentParams) => ({
     ...currentParams,
     lastId: lastItem.id,
   }),
-  initialParams: computed(() => ({
-    lastId: 0,
-    state: getCurrentState(),
-    professionId: professionIdFilter.value || undefined,
-    creatorId: creatorIdFilter.value || undefined,
-  })),
+  initialParams: {},
+  immediate: true, // 自动初始加载
 })
 
 // 状态改变
 const onStateChange = (): void => {
   resetList()
+  loadMore() // 重新加载数据
 }
 
 // 筛选条件变化
 const onFilterChange = (): void => {
   resetList()
+  loadMore() // 重新加载数据
 }
 
 // 重置筛选

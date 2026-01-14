@@ -1,5 +1,6 @@
 package com.prosper.learn.application.converter;
 
+import com.prosper.learn.application.dto.response.ProfessionAdminDTO;
 import com.prosper.learn.application.dto.response.ProfessionBriefDTO;
 import com.prosper.learn.application.dto.response.ProfessionDTO;
 import com.prosper.learn.content.profession.ProfessionDO;
@@ -21,4 +22,10 @@ public interface ProfessionConverter {
 
     @IterableMapping(qualifiedByName = "toBriefDTO")
     List<ProfessionBriefDTO> toBriefDTO(List<ProfessionDO> professionDOList);
+
+    @Named("toAdminDTO")
+    ProfessionAdminDTO toAdminDTO(ProfessionDO professionDO);
+
+    @IterableMapping(qualifiedByName = "toAdminDTO")
+    List<ProfessionAdminDTO> toAdminDTO(List<ProfessionDO> professionDOList);
 }

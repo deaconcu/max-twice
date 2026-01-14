@@ -81,7 +81,8 @@ const {
         state
       )
     } else {
-      return adminApi.getPostsByState(currentTab.value, params.lastId, 20)
+      // 使用统一接口
+      return adminApi.getContentsByState('post', state, params.lastId)
     }
   },
   getNextParams: (lastItem) => ({
@@ -90,6 +91,7 @@ const {
   initialParams: {
     lastId: undefined,
   },
+  immediate: true, // 自动初始加载
 })
 
 // 应用筛选
@@ -100,6 +102,7 @@ const applyFilter = (): void => {
   }
   isFilterMode.value = true
   resetPostList()
+  loadMore() // 重新加载数据
 }
 
 // 清除筛选
@@ -108,6 +111,7 @@ const clearFilter = (): void => {
   filterCreatorId.value = undefined
   isFilterMode.value = false
   resetPostList()
+  loadMore() // 重新加载数据
 }
 
 // 使用 useMutation 批准/拒绝帖子
@@ -223,6 +227,7 @@ const unbanPost = async (post: Post): Promise<void> => {
 // 监听tab切换，重新加载数据
 const handleTabChange = (newTab: string) => {
   resetPostList()
+  loadMore() // 重新加载数据
 }
 
 // 解析目录内容 JSON

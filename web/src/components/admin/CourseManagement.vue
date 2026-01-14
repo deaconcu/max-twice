@@ -148,18 +148,14 @@ const loadCourses = async (isLoadMore = false): Promise<void> => {
       selectedMainCategory.value &&
       selectedSubCategory.value
     ) {
-      response = await adminApi.getAdminCourses(
-        currentState,
-        null,
-        selectedMainCategory.value,
-        selectedSubCategory.value
-      )
+      // TODO: 后端需要支持分类查询接口
+      response = await adminApi.getCoursesByFilter(currentState, null)
       // 分类查询不支持下拉刷新
       hasMore.value = false
     } else {
-      // 使用lastId进行分页查询
+      // 使用统一接口进行状态分页查询
       const currentLastId = isLoadMore ? lastId.value : null
-      response = await adminApi.getAdminCourses(currentState, currentLastId)
+      response = await adminApi.getContentsByState('course', currentState, currentLastId)
     }
 
     if (response.code === 200) {

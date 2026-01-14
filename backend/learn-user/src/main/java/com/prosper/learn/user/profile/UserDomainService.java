@@ -148,7 +148,7 @@ public class UserDomainService {
         user.setState(UserState.ACTIVE.value());
         user.setRole(UserRole.USER.getCode());
         user.setEmailValidated(false); // 设置邮箱验证状态默认值
-        user.setMsgReadTime(LocalDateTime.now()); // 设置消息已读时间默认值
+        user.setLastViewedMessageId(0L); // 设置最后查看消息ID默认值
         userDataService.insert(user);
 
         log.info("User created: userId={}, email={}", user.getId(), email);

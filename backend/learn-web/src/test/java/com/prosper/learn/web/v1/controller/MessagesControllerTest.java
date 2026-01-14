@@ -694,4 +694,330 @@ public class MessagesControllerTest extends BaseControllerTest {
             StpUtil.logout();
         }
     }
+
+    // ==================== 4. MessageListResponse 和 lastViewedMessageId 测试 ====================
+
+    /**
+     * 测试 4.1: 首次查询返回 lastViewedMessageId
+     */
+    @Test
+    @DisplayName("消息列表响应 - 首次查询返回lastViewedMessageId")
+    void testGetMessagesByCategory_FirstQuery_ReturnsLastViewedMessageId() throws Exception {
+        // 准备测试数据
+        UserDO user = createUser("test-response-1@test.com");
+        UserDO follower = createUser("test-response-2@test.com");
+
+        // 设置用户的 lastViewedMessageId 为 5
+        user.setLastViewedMessageId(5L);
+        userDataService.update(user);
+
+        // 创建消息
+        createFollowMessage(user.getId(), follower.getId());
+
+        StpUtil.login(user.getId());
+
+        try {
+            // 首次查询（不传 lastId）
+            mockMvc.perform(get("/api/v1/messages/category")
+                    .param("category", "1")
+                    .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data.messages").isArray())
+                    .andExpect(jsonPath("$.data.lastViewedMessageId").value(5));
+        } finally {
+            StpUtil.logout();
+        }
+    }
+
+    /**
+     * 测试 4.2: 首次查询时更新 lastViewedMessageId
+     */
+    @Test
+    @DisplayName("消息列表响应 - 首次查询更新lastViewedMessageId")
+    void testGetMessagesByCategory_FirstQuery_UpdatesLastViewedMessageId() throws Exception {
+        // 准备测试数据
+        UserDO user = createUser("test-response-3@test.com");
+        UserDO follower = createUser("test-response-4@test.com");
+
+        // 设置初始 lastViewedMessageId 为 0
+        user.setLastViewedMessageId(0L);
+        userDataService.update(user);
+
+        // 创建多条消息
+        createFollowMessage(user.getId(), follower.getId());
+        createFollowMessage(user.getId(), follower.getId());
+
+        StpUtil.login(user.getId());
+
+        try {
+            // 首次查询
+            mockMvc.perform(get("/api/v1/messages/category")
+                    .param("category", "1")
+                    .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data.messages").isArray());
+
+            // 验证 lastViewedMessageId 已被更新为第一条消息的 ID
+            UserDO updatedUser = userDataService.getById(user.getId());
+            List<MessageDO> messages = messageDataService.listByCategory(user.getId(), 1, null, 20);
+            assertThat(updatedUser.getLastViewedMessageId()).isEqualTo(messages.get(0).getId());
+        } finally {
+            StpUtil.logout();
+        }
+    }
+
+    /**
+     * 测试 4.3: 分页查询不返回 lastViewedMessageId
+     */
+    @Test
+    @DisplayName("消息列表响应 - 分页查询不返回lastViewedMessageId")
+    void testGetMessagesByCategory_PaginatedQuery_NoLastViewedMessageId() throws Exception {
+        // 准备测试数据
+        UserDO user = createUser("test-response-5@test.com");
+        UserDO follower = createUser("test-response-6@test.com");
+
+        // 创建多条消息
+        for (int i = 0; i < 5; i++) {
+            createFollowMessage(user.getId(), follower.getId());
+        }
+
+        StpUtil.login(user.getId());
+
+        try {
+            // 获取第一页消息
+            List<MessageDO> messages = messageDataService.listByCategory(user.getId(), 1, null, 20);
+            Long firstMessageId = messages.get(0).getId();
+
+            // 分页查询（传入 lastId）
+            mockMvc.perform(get("/api/v1/messages/category")
+                    .param("category", "1")
+                    .param("lastId", String.valueOf(firstMessageId))
+                    .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data.messages").isArray())
+                    .andExpect(jsonPath("$.data.lastViewedMessageId").doesNotExist());
+        } finally {
+            StpUtil.logout();
+        }
+    }
+
+    /**
+     * 测试 4.4: 首次查询无消息时不更新 lastViewedMessageId
+     */
+    @Test
+    @DisplayName("消息列表响应 - 无消息时不更新lastViewedMessageId")
+    void testGetMessagesByCategory_NoMessages_DoesNotUpdateLastViewedMessageId() throws Exception {
+        // 准备测试数据
+        UserDO user = createUser("test-response-7@test.com");
+
+        // 设置初始 lastViewedMessageId
+        Long initialLastViewedMessageId = 10L;
+        user.setLastViewedMessageId(initialLastViewedMessageId);
+        userDataService.update(user);
+
+        StpUtil.login(user.getId());
+
+        try {
+            // 首次查询（无消息）
+            mockMvc.perform(get("/api/v1/messages/category")
+                    .param("category", "1")
+                    .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data.messages").isEmpty());
+
+            // 验证 lastViewedMessageId 未被更新
+            UserDO updatedUser = userDataService.getById(user.getId());
+            assertThat(updatedUser.getLastViewedMessageId()).isEqualTo(initialLastViewedMessageId);
+        } finally {
+            StpUtil.logout();
+        }
+    }
+
+    // ==================== 5. 未读数量接口测试 ====================
+
+    /**
+     * 测试 5.1: 获取未读数量 - 有未读消息
+     */
+    @Test
+    @DisplayName("未读数量 - 获取未读数量成功（有未读）")
+    void testGetUnreadCount_HasUnread_Success() throws Exception {
+        // 准备测试数据
+        UserDO user = createUser("test-unread-1@test.com");
+        UserDO follower = createUser("test-unread-2@test.com");
+
+        // 设置 lastViewedMessageId
+        user.setLastViewedMessageId(0L);
+        userDataService.update(user);
+
+        // 创建消息
+        createFollowMessage(user.getId(), follower.getId());
+        createFollowMessage(user.getId(), follower.getId());
+        createFollowMessage(user.getId(), follower.getId());
+
+        StpUtil.login(user.getId());
+
+        try {
+            // 查询未读数量
+            mockMvc.perform(get("/api/v1/messages/unread-count")
+                    .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data").value(3));
+        } finally {
+            StpUtil.logout();
+        }
+    }
+
+    /**
+     * 测试 5.2: 获取未读数量 - 无未读消息
+     */
+    @Test
+    @DisplayName("未读数量 - 获取未读数量成功（无未读）")
+    void testGetUnreadCount_NoUnread_Success() throws Exception {
+        // 准备测试数据
+        UserDO user = createUser("test-unread-3@test.com");
+        UserDO follower = createUser("test-unread-4@test.com");
+
+        // 创建消息
+        createFollowMessage(user.getId(), follower.getId());
+
+        // 获取消息ID并设置为 lastViewedMessageId
+        List<MessageDO> messages = messageDataService.listByCategory(user.getId(), 1, null, 20);
+        user.setLastViewedMessageId(messages.get(0).getId());
+        userDataService.update(user);
+
+        StpUtil.login(user.getId());
+
+        try {
+            // 查询未读数量
+            mockMvc.perform(get("/api/v1/messages/unread-count")
+                    .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data").value(0));
+        } finally {
+            StpUtil.logout();
+        }
+    }
+
+    /**
+     * 测试 5.3: 获取未读数量 - lastViewedMessageId 为 null
+     */
+    @Test
+    @DisplayName("未读数量 - lastViewedMessageId为null时返回全部")
+    void testGetUnreadCount_NullLastViewedMessageId_ReturnsAll() throws Exception {
+        // 准备测试数据
+        UserDO user = createUser("test-unread-5@test.com");
+        UserDO follower = createUser("test-unread-6@test.com");
+
+        // 确保 lastViewedMessageId 为 null
+        user.setLastViewedMessageId(null);
+        userDataService.update(user);
+
+        // 创建消息
+        createFollowMessage(user.getId(), follower.getId());
+        createFollowMessage(user.getId(), follower.getId());
+
+        StpUtil.login(user.getId());
+
+        try {
+            // 查询未读数量
+            mockMvc.perform(get("/api/v1/messages/unread-count")
+                    .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data").value(2));
+        } finally {
+            StpUtil.logout();
+        }
+    }
+
+    /**
+     * 测试 5.4: 获取未读数量 - 未登录失败
+     */
+    @Test
+    @DisplayName("未读数量 - 未登录访问失败")
+    void testGetUnreadCount_NotLoggedIn_Fails() throws Exception {
+        mockMvc.perform(get("/api/v1/messages/unread-count"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
+    }
+
+    /**
+     * 测试 5.5: 获取未读数量 - 包含系统消息和互动消息
+     */
+    @Test
+    @DisplayName("未读数量 - 同时统计系统消息和互动消息")
+    void testGetUnreadCount_IncludesBothCategories_Success() throws Exception {
+        // 准备测试数据
+        UserDO user = createUser("test-unread-7@test.com");
+        UserDO follower = createUser("test-unread-8@test.com");
+
+        // 设置 lastViewedMessageId
+        user.setLastViewedMessageId(0L);
+        userDataService.update(user);
+
+        // 创建互动消息
+        createFollowMessage(user.getId(), follower.getId());
+        createFollowMessage(user.getId(), follower.getId());
+
+        // 创建系统消息
+        String content = "{\"courseId\":100,\"courseName\":\"Java编程\"}";
+        createSystemMessage(user.getId(), MessageType.courseApproved.value(), content);
+
+        StpUtil.login(user.getId());
+
+        try {
+            // 查询未读数量（应该包含互动消息 + 系统消息）
+            mockMvc.perform(get("/api/v1/messages/unread-count")
+                    .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data").value(3));
+        } finally {
+            StpUtil.logout();
+        }
+    }
+
+    /**
+     * 测试 5.6: 获取未读数量 - 只统计新消息
+     */
+    @Test
+    @DisplayName("未读数量 - 只统计id大于lastViewedMessageId的消息")
+    void testGetUnreadCount_OnlyCountNewMessages_Success() throws Exception {
+        // 准备测试数据
+        UserDO user = createUser("test-unread-9@test.com");
+        UserDO follower = createUser("test-unread-10@test.com");
+
+        // 创建旧消息
+        createFollowMessage(user.getId(), follower.getId());
+        createFollowMessage(user.getId(), follower.getId());
+
+        // 获取旧消息的最后ID并设置
+        List<MessageDO> oldMessages = messageDataService.listByCategory(user.getId(), 1, null, 20);
+        user.setLastViewedMessageId(oldMessages.get(0).getId());
+        userDataService.update(user);
+
+        // 创建新消息
+        createFollowMessage(user.getId(), follower.getId());
+        createFollowMessage(user.getId(), follower.getId());
+
+        StpUtil.login(user.getId());
+
+        try {
+            // 查询未读数量（应该只统计新创建的2条消息）
+            mockMvc.perform(get("/api/v1/messages/unread-count")
+                    .header("token", StpUtil.getTokenValue()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
+                    .andExpect(jsonPath("$.data").value(2));
+        } finally {
+            StpUtil.logout();
+        }
+    }
 }
+

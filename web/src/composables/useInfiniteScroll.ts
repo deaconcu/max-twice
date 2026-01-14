@@ -25,6 +25,9 @@ export interface InfiniteScrollOptions<T> {
   // 初始参数
   initialParams: any
 
+  // 是否立即加载（默认 false）
+  immediate?: boolean
+
   // 错误回调
   onError?: (error: Error) => void
 }
@@ -37,7 +40,7 @@ export interface InfiniteScrollReturn<T> {
   loading: Ref<boolean>
   hasMore: Ref<boolean>
   params: Ref
-  loadMore: (options: { done: () => void }) => Promise<void>
+  loadMore: (options?: { done?: () => void }) => Promise<void>
   reset: () => void
 }
 
@@ -48,7 +51,7 @@ export interface InfiniteScrollReturn<T> {
  * @returns 无限滚动功能
  */
 export function useInfiniteScroll<T>(options: InfiniteScrollOptions<T>): InfiniteScrollReturn<T> {
-  const { fetchFn, getNextParams, initialParams, onError } = options
+  const { fetchFn, getNextParams, initialParams, immediate = false, onError } = options
 
   // 状态
   const items = ref<T[]>([]) as Ref<T[]>
@@ -57,9 +60,9 @@ export function useInfiniteScroll<T>(options: InfiniteScrollOptions<T>): Infinit
   const params = ref({ ...initialParams })
 
   // 加载更多数据
-  const loadMore = async (options: { done: () => void }) => {
+  const loadMore = async (options?: { done?: () => void }) => {
     if (loading.value || !hasMore.value) {
-      options.done()
+      options?.done?.()
       return
     }
 
@@ -92,7 +95,7 @@ export function useInfiniteScroll<T>(options: InfiniteScrollOptions<T>): Infinit
       }
     } finally {
       loading.value = false
-      options.done()
+      options?.done?.()
     }
   }
 
@@ -102,6 +105,11 @@ export function useInfiniteScroll<T>(options: InfiniteScrollOptions<T>): Infinit
     loading.value = false
     hasMore.value = true
     params.value = { ...initialParams }
+  }
+
+  // 如果设置了 immediate，自动加载首屏数据
+  if (immediate) {
+    void loadMore()
   }
 
   return {

@@ -239,7 +239,7 @@ public class SystemProperties {
         /**
          * 课程名称搜索结果限制数量
          */
-        private int searchLimit = 20;
+        private int searchLimit = 50;
 
         /**
          * 热门课程排行榜数量限制

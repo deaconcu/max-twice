@@ -4,13 +4,21 @@ import type { Message } from '@/types/message'
 import type { MessageType } from '@/enums'
 
 /**
+ * 消息列表响应
+ */
+export interface MessageListResponse {
+  messages: Message[]
+  lastViewedMessageId?: number
+}
+
+/**
  * 消息管理相关 API
  * 参考：web-ts/src/services/api/v1/apiServiceV1.ts (messageServiceV1)
  */
 export const messageApi = {
   /**
    * 按分类获取消息
-   * @param category 消息分类 (1=互动消息, 2=系统消息, 3=私信)
+   * @param category 消息分类 (1=互动消息, 2=系统消息, 3=全部, 4=私信)
    * @param lastId 最后一条消息的 ID，用于分页
    * @param type 可选的消息类型过滤
    */
@@ -18,7 +26,7 @@ export const messageApi = {
     category: number,
     lastId?: number,
     type?: MessageType
-  ): Promise<ApiResponse<Message[]>> {
+  ): Promise<ApiResponse<MessageListResponse>> {
     const params: Record<string, number> = { category }
     if (lastId != null) {
       params.lastId = lastId
@@ -29,25 +37,12 @@ export const messageApi = {
     return apiClient.get('/v1/messages/category', { params })
   },
 
-  // 注释掉 (2025/12/29 待私信功能开发时启用)
-  // /**
-  //  * 获取所有消息
-  //  */
-  // getMessages(): Promise<ApiResponse<Message[]>> {
-  //   return apiClient.get('/v1/messages')
-  // },
-
-  // 注释掉 (2025/12/29 待管理后台开发时启用)
-  // /**
-  //  * 发送系统消息
-  //  */
-  // sendSystemMessage(type: MessageType, to: number, content: string): Promise<ApiResponse<void>> {
-  //   return apiClient.post('/v1/messages/system', {
-  //     type,
-  //     to,
-  //     content,
-  //   })
-  // },
+  /**
+   * 获取未读消息数量
+   */
+  getUnreadCount(): Promise<ApiResponse<number>> {
+    return apiClient.get('/v1/messages/unread-count')
+  },
 
   /**
    * 邀请用户

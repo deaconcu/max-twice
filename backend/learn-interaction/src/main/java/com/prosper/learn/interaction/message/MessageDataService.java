@@ -116,7 +116,7 @@ public class MessageDataService extends AbstractDataService<MessageDO, MessageMa
 // --注释掉检查 STOP (2025/12/10 11:15)
 
     /**
-     * 按分类查询消息（支持分页）
+     * 按分类查询消息列表
      * @param receiverId 接收者ID
      * @param category 消息分类 1=互动消息, 2=系统消息, 3=私信
      * @param lastId 最后一条消息ID，为null时查询首页
@@ -125,5 +125,26 @@ public class MessageDataService extends AbstractDataService<MessageDO, MessageMa
      */
     public List<MessageDO> listByCategory(long receiverId, int category, Long lastId, int limit) {
         return messageMapper.listByCategory(receiverId, category, lastId, limit);
+    }
+
+    /**
+     * 查询全部消息（互动+系统，category IN (1, 2)）
+     * @param receiverId 接收者ID
+     * @param lastId 最后一条消息ID，为null时查询首页
+     * @param limit 查询数量
+     * @return 消息列表
+     */
+    public List<MessageDO> listAllMessages(long receiverId, Long lastId, int limit) {
+        return messageMapper.listAllMessages(receiverId, lastId, limit);
+    }
+
+    /**
+     * 统计未读消息数量
+     * @param receiverId 接收者ID
+     * @param lastViewedMessageId 最后查看的消息ID
+     * @return 未读消息数量
+     */
+    public int countUnreadMessages(long receiverId, long lastViewedMessageId) {
+        return messageMapper.countUnreadMessages(receiverId, lastViewedMessageId);
     }
 }

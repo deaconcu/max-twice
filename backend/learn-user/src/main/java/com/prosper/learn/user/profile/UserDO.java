@@ -26,9 +26,9 @@ public class UserDO {
 
     private String avatar;
 
-    private LocalDateTime msgReadTime;
-
     private Byte state;
+
+    private Long lastViewedMessageId;  // 最后查看的消息ID
 
     private Integer role;  // 角色代码字段
 

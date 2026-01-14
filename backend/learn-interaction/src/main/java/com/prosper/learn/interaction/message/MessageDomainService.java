@@ -392,7 +392,7 @@ public class MessageDomainService {
      * 按分类获取消息列表（核心查询逻辑）
      *
      * @param receiverId 接收者ID
-     * @param category 消息分类
+     * @param category 消息分类（1=互动, 2=系统, 3=全部, 4=私信）
      * @param lastId 最后一条消息ID
      * @param pageSize 分页大小
      * @param type 可选的消息类型过滤
@@ -402,10 +402,24 @@ public class MessageDomainService {
         if (type != null && type > 0) {
             // 按类型查询
             return messageDataService.listByType(type, receiverId, lastId, pageSize);
+        } else if (category == 3) {
+            // category = 3 表示全部（互动+系统）
+            return messageDataService.listAllMessages(receiverId, lastId, pageSize);
         } else {
             // 按分类查询
             return messageDataService.listByCategory(receiverId, category, lastId, pageSize);
         }
+    }
+
+    /**
+     * 统计未读消息数量
+     *
+     * @param receiverId 接收者ID
+     * @param lastViewedMessageId 最后查看的消息ID
+     * @return 未读消息数量
+     */
+    public int countUnreadMessages(long receiverId, long lastViewedMessageId) {
+        return messageDataService.countUnreadMessages(receiverId, lastViewedMessageId);
     }
 
     /**

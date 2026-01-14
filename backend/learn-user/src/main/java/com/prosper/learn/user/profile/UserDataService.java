@@ -125,7 +125,7 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
 
     /**
      * 更新用户信息并清除缓存
-     * 注意：update方法只更新基本信息字段（name, phone, biography, avatar, msg_read_time）
+     * 注意：update方法只更新基本信息字段（name, phone, biography, avatar）
      * 敏感字段使用专用方法更新
      */
     @CacheEvict(value = {"users", "usersByEmail", "usersByName"}, allEntries = true)
@@ -206,6 +206,14 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
     public void updateEmailValidated(long userId, boolean emailValidated) {
         log.debug("Updating email_validated for user {}: {}", userId, emailValidated);
         userMapper.updateEmailValidated(userId, emailValidated, LocalDateTime.now());
+    }
+
+    /**
+     * 更新最后查看的消息ID
+     */
+    public void updateLastViewedMessageId(long userId, long lastViewedMessageId) {
+        log.debug("Updating last_viewed_message_id for user {}: {}", userId, lastViewedMessageId);
+        userMapper.updateLastViewedMessageId(userId, lastViewedMessageId);
     }
 
     public List<UserDO> getList(int count) {

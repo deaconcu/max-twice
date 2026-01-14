@@ -223,12 +223,39 @@ public class MessageService {
 // --注释掉检查 STOP (2025/12/10 11:16)
 
     /**
+     * 按分类获取消息列表（返回包含 lastViewedMessageId 的响应）
+     *
+     * @param category 消息分类（0=全部, 1=互动, 2=系统, 3=私信）
+     * @param receiverId 接收者ID
+     * @param lastId 最后一条消息ID，用于分页
+     * @param type 可选的消息类型过滤
+     * @param currentUser 当前用户
+     * @return 包含消息列表和 lastViewedMessageId 的响应
+     */
+    public MessageListResponse getListByCategoryWithLastViewed(int category, long receiverId, Long lastId,
+                                                                Integer type, UserDO currentUser) {
+        // 获取消息列表
+        List<MessageDTO> messageDTOs = getListByCategory(category, receiverId, lastId, type);
+
+        // 只在第一页（lastId == null）时返回 lastViewedMessageId
+        Long lastViewedMessageId = null;
+        if (lastId == null) {
+            lastViewedMessageId = currentUser.getLastViewedMessageId();
+            if (lastViewedMessageId == null) {
+                lastViewedMessageId = 0L;
+            }
+        }
+
+        return MessageListResponse.of(messageDTOs, lastViewedMessageId);
+    }
+
+    /**
      * 按分类获取消息列表
      */
     public List<MessageDTO> getListByCategory(int category, long receiverId, Long lastId, Integer type) {
         // 参数校验
-        if (category < 1 || category > 3) {
-            throw StatusCode.INVALID_PARAMETER.exception("消息分类必须为1-3");
+        if (category < 1 || category > 4) {
+            throw StatusCode.INVALID_PARAMETER.exception("消息分类必须为1-4");
         }
 
         // 委托给领域服务获取数据
@@ -236,6 +263,17 @@ public class MessageService {
 
         // 跨域数据聚合和DTO转换
         return convertSystemMessages(messageDOList);
+    }
+
+    /**
+     * 获取未读消息数量
+     *
+     * @param receiverId 接收者ID
+     * @param lastViewedMessageId 最后查看的消息ID
+     * @return 未读消息数量
+     */
+    public int getUnreadCount(long receiverId, long lastViewedMessageId) {
+        return messageDomainService.countUnreadMessages(receiverId, lastViewedMessageId);
     }
 
     // ========== DTO转换方法 ==========
