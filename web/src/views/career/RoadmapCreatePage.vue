@@ -185,17 +185,25 @@
               <!-- 课程列表 -->
               <div v-else class="course-list-wrapper">
                 <div v-if="filteredCourses.length > 0" class="course-list">
-                  <v-chip
+                  <div
                     v-for="course in filteredCourses"
                     :key="course.id"
-                    class="my-1"
-                    color="grey-lighten-4"
-                    variant="flat"
-                    @click="addCourseNode(course)"
+                    class="course-item"
                   >
-                    <v-icon icon="mdi-plus-circle" size="16" class="mr-1" />
-                    {{ course.name }}
-                  </v-chip>
+                    <div class="course-name" @click="goToCourseDetail(course.id)">
+                      <v-icon icon="mdi-book-outline" size="16" class="mr-1" />
+                      {{ course.name }}
+                    </div>
+                    <v-btn
+                      icon
+                      size="x-small"
+                      color="primary"
+                      variant="flat"
+                      @click.stop="addCourseNode(course)"
+                    >
+                      <v-icon size="16">mdi-plus</v-icon>
+                    </v-btn>
+                  </div>
                 </div>
                 <div v-else class="text-center py-6">
                   <v-icon icon="mdi-book-off-outline" size="48" color="grey-lighten-1" class="mb-2" />
@@ -431,6 +439,13 @@ const addCourseNode = (course: Course) => {
       fontSize: '13px',
     },
   })
+}
+
+/**
+ * 跳转到课程详情页
+ */
+const goToCourseDetail = (courseId: number) => {
+  window.open(`/courses/${courseId}`, '_blank')
 }
 
 // 删除选中的节点和边
@@ -827,17 +842,52 @@ onMounted(() => {
 
 .course-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.course-list .v-chip {
-  cursor: pointer;
-  transition: all 0.2s ease;
+.course-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgb(var(--v-theme-grey-lighten-5));
+  border-radius: 12px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 12px;
 }
 
-.course-list .v-chip:hover {
+.course-item:hover {
   transform: translateY(-2px);
+}
+
+.course-name {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: rgb(var(--v-theme-grey-darken-3));
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.course-name:hover {
+  color: rgb(var(--v-theme-primary));
+}
+
+.course-name .v-icon {
+  flex-shrink: 0;
+  color: rgb(var(--v-theme-grey-darken-1));
+}
+
+.course-item:hover .course-name .v-icon {
+  color: rgb(var(--v-theme-primary));
 }
 
 /* 操作指南样式 */
