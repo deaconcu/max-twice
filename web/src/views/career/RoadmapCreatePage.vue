@@ -82,7 +82,7 @@
                     :size="$vuetify.display.mobile ? 16 : 18"
                     class="mr-1"
                   />
-                  <span class="d-none d-sm-inline">重置布局</span>
+                  <span class="d-none d-sm-inline">重置画布</span>
                 </v-btn>
                 <v-btn
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
@@ -125,7 +125,10 @@
                   fit-view-on-init
                   :snap-to-grid="true"
                   :snap-grid="[20, 20]"
+                  :nodes-selectable="true"
                   :edges-selectable="true"
+                  :selection-mode="'partial'"
+                  :multi-selection-key-code="'Shift'"
                   @connect="onConnect"
                   @nodes-change="onNodesChange"
                   @edges-change="onEdgesChange"
@@ -247,6 +250,7 @@
                   <div class="tip-simple">点击课程添加到画布</div>
                   <div class="tip-simple">拖动节点调整位置</div>
                   <div class="tip-simple">连接节点设计路径</div>
+                  <div class="tip-simple">按住 Shift 可多选节点</div>
                   <div class="tip-simple">选中后可删除节点</div>
                 </div>
               </div>
@@ -340,7 +344,7 @@ const categoryStore = useCategoryStore()
 const showSnackbar = inject('showSnackbar') as (message: string, type?: string) => void
 
 // 获取 VueFlow 实例
-const { fitView } = useVueFlow()
+const { fitView, setCenter } = useVueFlow()
 
 // 验证规则
 const roadmapDescriptionRules = useValidationRules('roadmap-description')
@@ -445,9 +449,29 @@ const addCourseNode = (course: Course) => {
     return
   }
 
-  // 计算位置 (随机位置,用户可以拖动调整)
-  const x = 200 + Math.random() * 400
-  const y = 200 + Math.random() * 300
+  // 计算位置
+  let x: number
+  let y: number
+
+  if (nodes.value.length === 1) {
+    // 第一个课程节点：放在根节点下方居中
+    const rootNode = nodes.value[0]
+    x = rootNode.position.x
+    y = rootNode.position.y + 100
+  } else {
+    // 找到 y 坐标最大的节点（最下面的节点）
+    const bottomNode = nodes.value.reduce((lowest, node) => {
+      return node.position.y > lowest.position.y ? node : lowest
+    })
+
+    // 计算所有节点的 x 坐标中心位置
+    const sumX = nodes.value.reduce((sum, node) => sum + node.position.x, 0)
+    const centerX = sumX / nodes.value.length
+
+    // 新节点位置：x 为所有节点中心，y 在最下面节点下方 60px
+    x = centerX
+    y = bottomNode.position.y + 60
+  }
 
   nodes.value.push({
     id: course.id.toString(),
@@ -466,6 +490,11 @@ const addCourseNode = (course: Course) => {
       fontSize: '13px',
     },
   })
+
+  // 聚焦到新节点（使用 nextTick 确保 DOM 更新后再聚焦）
+  setTimeout(() => {
+    setCenter(x, y, { zoom: 1, duration: 300 })
+  }, 50)
 }
 
 /**
@@ -544,7 +573,7 @@ const onConnect = (connection: Connection) => {
   })
 }
 
-// 处理节点变化（包括选中状态）
+// 处理节点变化（包括选中状态和位置）
 const onNodesChange = (changes: any[]) => {
   changes.forEach((change) => {
     if (change.type === 'select') {
@@ -552,7 +581,8 @@ const onNodesChange = (changes: any[]) => {
       if (node) {
         node.selected = change.selected
       }
-    } else if (change.type === 'position' && change.dragging === false) {
+    } else if (change.type === 'position') {
+      // 拖动过程中和拖动结束时都更新位置
       const node = nodes.value.find((n) => n.id === change.id)
       if (node && change.position) {
         node.position = change.position
@@ -693,8 +723,8 @@ const applyAutoLayout = () => {
 // 重置
 const resetAll = () => {
   confirmDialogConfig.value = {
-    title: '重置所有内容',
-    message: '确定要重置所有内容吗？此操作不可撤销。',
+    title: '重置画布',
+    message: '确定要重置吗？此操作会删除所有节点和路径，不可撤销。',
     confirmText: '重置',
     cancelText: '取消',
     confirmColor: 'warning',
