@@ -300,10 +300,10 @@ public class CourseService {
         return toSummaryWithStatsAndProgressDTO(course, userId);
     }
 
-    public List<CourseBriefDTO> searchCoursesByName(String name) {
+    public List<CourseSummaryDTO> searchCoursesByName(String name) {
         int searchLimit = systemProperties.getCourse().getSearchLimit();
         List<CourseDO> courseList = courseDataService.searchByName(name, searchLimit);
-        return toBriefDTO(courseList);
+        return toSummaryDTO(courseList);
     }
 
     /**

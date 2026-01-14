@@ -49,7 +49,12 @@
             <v-card-title
               class="pa-3 pa-sm-4 d-flex flex-row align-center justify-space-between ga-2 ga-sm-3"
             >
-              <span class="text-body-1 font-weight-bold">路径编辑器</span>
+              <div class="d-flex align-center">
+                <span class="text-h6 font-weight-bold me-4">路径编辑器</span>
+                <v-chip v-if="nodes.length > 1" size="small" color="primary" variant="tonal">
+                  {{ nodes.length - 1 }} 个节点
+                </v-chip>
+              </div>
               <div class="d-flex flex-wrap align-center gap-2">
                 <v-btn
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
@@ -145,9 +150,16 @@
                   <v-icon icon="mdi-book-multiple" color="primary" size="20" class="mr-2" />
                   <span class="text-subtitle-1 font-weight-bold text-grey-darken-4">添加课程</span>
                 </div>
-                <v-chip v-if="nodes.length > 1" size="small" color="primary" variant="tonal">
-                  {{ nodes.length - 1 }} 个节点
-                </v-chip>
+                <div class="d-flex align-center gap-2">
+                  <a
+                    href="/courses"
+                    target="_blank"
+                    class="text-body-2 text-primary text-decoration-none"
+                    style="white-space: nowrap"
+                  >
+                    查看全部课程
+                  </a>
+                </div>
               </div>
 
               <!-- 搜索框 -->
@@ -157,13 +169,16 @@
                 variant="outlined"
                 density="comfortable"
                 hide-details
-                clearable
-                class="mb-3 search-field"
+                class="mb-3"
                 rounded="lg"
-                @click:clear="searchText = ''"
+                autocomplete="off"
+                @keydown.enter="handleSearch"
+                @click:clear="searchText = ''; availableCourses = []"
               >
-                <template #prepend-inner>
-                  <v-icon icon="mdi-magnify" size="20" color="grey" />
+                <template #append-inner>
+                  <v-btn icon size="small" variant="text" @click="handleSearch">
+                    <v-icon icon="mdi-magnify" size="20" />
+                  </v-btn>
                 </template>
               </v-text-field>
 
@@ -190,10 +205,21 @@
                     :key="course.id"
                     class="course-item"
                   >
-                    <div class="course-name" @click="goToCourseDetail(course.id)">
-                      <v-icon icon="mdi-book-outline" size="16" class="mr-1" />
-                      {{ course.name }}
-                    </div>
+                    <v-tooltip location="left" max-width="300">
+                      <template #activator="{ props }">
+                        <div class="course-name" v-bind="props" @click="goToCourseDetail(course.id)">
+                          <v-icon icon="mdi-book-outline" size="16" class="mr-1" />
+                          {{ course.name }}
+                        </div>
+                      </template>
+                      <div class="tooltip-content">
+                        <div class="text-subtitle-2 mb-1">{{ course.name }}</div>
+                        <div class="text-caption text-grey-lighten-1 mb-2">
+                          {{ categoryStore.getCourseFullCategoryText(course.mainCategory, course.subCategory) }}
+                        </div>
+                        <div class="text-caption">{{ course.description || '暂无简介' }}</div>
+                      </div>
+                    </v-tooltip>
                     <v-btn
                       icon
                       size="x-small"
@@ -201,7 +227,7 @@
                       variant="flat"
                       @click.stop="addCourseNode(course)"
                     >
-                      <v-icon size="16">mdi-plus</v-icon>
+                      <v-icon size="14">mdi-plus</v-icon>
                     </v-btn>
                   </div>
                 </div>
@@ -302,11 +328,13 @@ import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
+import { useCategoryStore } from '@/stores'
 import { courseApi } from '@/api/modules/course'
 import type { Course } from '@/types/course'
 
 const router = useRouter()
 const route = useRoute()
+const categoryStore = useCategoryStore()
 
 // 注入全局 snackbar
 const showSnackbar = inject('showSnackbar') as (message: string, type?: string) => void
@@ -374,15 +402,14 @@ const searchCourses = async () => {
   }
 }
 
-// 使用 watch 添加防抖
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
+// 手动搜索方法（点击搜索按钮或按下回车触发）
+const handleSearch = () => {
+  searchCourses()
+}
+
+// 监听搜索文本变化，清空旧的搜索结果
 watch(searchText, () => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout)
-  }
-  searchTimeout = setTimeout(() => {
-    searchCourses()
-  }, 500)
+  availableCourses.value = []
 })
 
 const filteredCourses = computed(() => availableCourses.value)
@@ -789,11 +816,7 @@ onMounted(() => {
 /* 搜索框样式 */
 .search-field :deep(.v-field) {
   border-radius: 12px;
-  background-color: rgb(var(--v-theme-grey-lighten-5));
-}
-
-.search-field :deep(.v-field--focused) {
-  background-color: white;
+  background-color: transparent !important;
 }
 
 /* 空状态图标动画 */
@@ -843,16 +866,15 @@ onMounted(() => {
 .course-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0;
 }
 
 .course-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: rgb(var(--v-theme-grey-lighten-5));
-  border-radius: 12px;
+  padding: 12px 16px 12px 0;
+  background: transparent;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   gap: 12px;
 }

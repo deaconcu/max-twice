@@ -7,6 +7,7 @@ import com.prosper.learn.application.dto.request.CreateSubcourseRequest;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.application.dto.response.course.CourseDetailDTO;
+import com.prosper.learn.application.dto.response.course.CourseSummaryDTO;
 import com.prosper.learn.application.dto.response.course.CourseSummaryWithStatsAndProgressDTO;
 import com.prosper.learn.application.dto.response.course.CourseWithStatsDTO;
 import com.prosper.learn.application.service.CourseService;
@@ -67,9 +68,9 @@ public class CoursesController {
      */
     @GetMapping("/courses/search")
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<List<CourseBriefDTO>> searchCourses(
+    public ApiResponse<List<CourseSummaryDTO>> searchCourses(
             @RequestParam @NotBlank(message = "搜索名称不能为空") String name) {
-        List<CourseBriefDTO> courseList = courseService.searchCoursesByName(name);
+        List<CourseSummaryDTO> courseList = courseService.searchCoursesByName(name);
         return ApiResponse.query(courseList);
     }
 

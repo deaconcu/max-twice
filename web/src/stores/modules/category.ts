@@ -231,6 +231,18 @@ export const useCategoryStore = defineStore(
     }
 
     /**
+     * 获取课程完整分类文本
+     */
+    function getCourseFullCategoryText(mainCategoryId?: number, subCategoryId?: number): string {
+      if (!mainCategoryId) return ''
+
+      const mainCategoryName = getCourseMainCategoryName(mainCategoryId)
+      const subCategoryName = subCategoryId ? getSubCategoryName(mainCategoryId, subCategoryId) : ''
+
+      return subCategoryName ? `${mainCategoryName} / ${subCategoryName}` : mainCategoryName
+    }
+
+    /**
      * 清除缓存（供调试使用）
      */
     function clearCache() {
@@ -254,6 +266,7 @@ export const useCategoryStore = defineStore(
       getCourseMainCategoryName,
       getProfessionMainCategoryName,
       getSubCategoryName,
+      getCourseFullCategoryText,
       clearCache,
     }
   },
