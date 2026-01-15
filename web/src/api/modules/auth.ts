@@ -36,4 +36,11 @@ export const authApi = {
       code,
     })
   },
+
+  /**
+   * 重新发送验证码
+   */
+  resendVerificationCode(email: string): Promise<ApiResponse<void>> {
+    return apiClient.post('/v1/auth/resend-verification-code', { email })
+  },
 }

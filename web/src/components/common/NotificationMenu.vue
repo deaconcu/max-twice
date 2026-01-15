@@ -516,15 +516,26 @@ const handleMessageClick = (message: Message) => {
         url = `/user/${message.sender.id}`
       }
     } else if (type === MessageType.UPVOTE) {
-      const objectType = data.objectType
-      const objectId = data.objectId
+      const contentType = data.contentType
 
-      if (objectType === 1 && objectId) {
-        // POST - 跳转到帖子
-        url = `/read?postId=${objectId}`
-      } else if (objectType === 2 && objectId) {
-        // COMMENT - 跳转到评论
-        url = `/read?commentId=${objectId}`
+      if (contentType === 'roadmap') {
+        // 路线图点赞 - 跳转到路线图详情
+        const roadmapId = data.roadmapId
+        if (roadmapId) {
+          url = `/roadmap/${roadmapId}`
+        }
+      } else {
+        // 原有逻辑：帖子和评论点赞
+        const objectType = data.objectType
+        const objectId = data.objectId
+
+        if (objectType === 1 && objectId) {
+          // POST - 跳转到帖子
+          url = `/read?postId=${objectId}`
+        } else if (objectType === 2 && objectId) {
+          // COMMENT - 跳转到评论
+          url = `/read?commentId=${objectId}`
+        }
       }
     } else if (type === MessageType.INVITE) {
       // 邀请回答 - 跳转到节点

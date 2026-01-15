@@ -24,6 +24,7 @@ export const useAuthStore = defineStore(
 
     /**
      * 登录
+     * @throws {Error} 当登录失败时抛出错误，包含错误码和错误信息
      */
     const login = async (email: string, password: string): Promise<boolean> => {
       try {
@@ -50,10 +51,11 @@ export const useAuthStore = defineStore(
 
           return true
         }
-        return false
-      } catch (error) {
-        logger.error('登录失败', error)
-        return false
+
+        // 业务错误：后端返回非 200 的 code
+        const error: any = new Error(response.message || '登录失败')
+        error.code = response.code
+        throw error
       } finally {
         isLoggingIn.value = false
       }
@@ -61,15 +63,20 @@ export const useAuthStore = defineStore(
 
     /**
      * 注册
+     * @throws {Error} 当注册失败时抛出错误，错误信息为后端返回的 message
      */
     const register = async (email: string, password: string): Promise<boolean> => {
       try {
         isRegistering.value = true
         const response = await authApi.register(email, password)
-        return response.code === 200
-      } catch (error) {
-        logger.error('注册失败', error)
-        return false
+
+        // 注册成功
+        if (response.code === 200) {
+          return true
+        }
+
+        // 业务错误：后端返回非 200 的 code
+        throw new Error(response.message || '注册失败')
       } finally {
         isRegistering.value = false
       }

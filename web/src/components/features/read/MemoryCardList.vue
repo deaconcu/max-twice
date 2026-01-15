@@ -10,20 +10,20 @@
       </v-btn>
     </div>
 
-    <!-- 卡片组网格 -->
-    <div v-else class="deck-grid">
+    <!-- 卡片组列表 -->
+    <div v-else class="deck-list">
       <v-card
         v-for="deck in decks"
         :key="deck.id"
         class="deck-card"
         elevation="0"
-        rounded="lg"
-        border
+        rounded="xl"
+        flat
         @click="viewDeckDetail(deck)"
       >
-        <v-card-text class="pa-5">
+        <v-card-text class="pa-4 pa-sm-5">
           <div class="d-flex align-start justify-space-between mb-3">
-            <h4 class="text-h6 font-weight-bold text-grey-darken-3">
+            <h4 class="text-body-1 text-md-h6 font-weight-bold text-grey-darken-3">
               {{ deck.title }}
             </h4>
           </div>
@@ -267,21 +267,21 @@ onBeforeUnmount(() => {
   padding: 16px 0;
 }
 
-.deck-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
+.deck-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .deck-card {
   transition: all 0.2s ease;
   cursor: pointer;
+  background-color: rgb(var(--v-theme-surface));
+  border: 1.5px solid rgb(var(--v-theme-outline));
 }
 
 .deck-card:hover {
   border-color: rgb(var(--v-theme-primary));
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .line-clamp-2 {

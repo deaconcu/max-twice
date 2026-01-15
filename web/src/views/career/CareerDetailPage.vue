@@ -156,6 +156,7 @@
                     <v-btn
                       :color="roadmap.upvoted ? 'primary' : 'grey-lighten-1'"
                       :variant="roadmap.upvoted ? 'flat' : 'outlined'"
+                      :disabled="roadmap.creator?.id === currentUserId"
                       icon
                       size="small"
                       @click="handleVote(roadmap, $event)"
@@ -402,6 +403,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useFetch, useMutation } from '@/composables'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useUserStore } from '@/stores'
 import { professionApi, roadmapApi, progressApi, upvoteApi } from '@/api'
 import { ObjectType, VoteType } from '@/enums'
 import type { Profession } from '@/types/profession'
@@ -411,6 +413,10 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 const router = useRouter()
 const route = useRoute()
+const userStore = useUserStore()
+
+// 当前用户ID
+const currentUserId = computed(() => userStore.currentUser?.id)
 
 // 从路由获取职业ID
 const careerId = computed(() => {

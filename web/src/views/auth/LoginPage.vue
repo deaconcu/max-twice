@@ -167,14 +167,25 @@ const handleLogin = async () => {
 
   try {
     errorMessage.value = ''
-    const success = await login(formData.value.email, formData.value.password)
+    await login(formData.value.email, formData.value.password)
+    // 登录成功后会自动跳转（在 useAuth 中处理）
+  } catch (error: any) {
+    // 检查是否为邮箱未验证错误（错误码 1104）
+    if (error?.code === 1104) {
+      // 跳转到邮箱验证页面
+      await router.push({
+        path: '/verify-email',
+        query: { email: formData.value.email }
+      })
+      return
+    }
 
-    if (!success) {
+    // 其他错误：显示错误信息
+    if (error?.message) {
+      errorMessage.value = error.message
+    } else {
       errorMessage.value = t('user.login.loginFailed')
     }
-    // 登录成功后，useAuth 会自动跳转
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('user.login.loginFailed')
   }
 }
 

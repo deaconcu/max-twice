@@ -306,6 +306,35 @@ public class UserService {
     }
 
     /**
+     * 重新发送验证码
+     *
+     * @param email 邮箱
+     */
+    public void resendVerificationCode(String email) {
+        validateEmailFormat(email);
+
+        // 1. 验证用户是否存在
+        UserDO user = userDataService.getByEmail(email);
+        if (user == null) {
+            throw StatusCode.USER_NOT_FOUND.exception("用户不存在");
+        }
+
+        // 2. 检查邮箱是否已验证
+        if (user.getEmailValidated()) {
+            throw StatusCode.INVALID_PARAMETER.exception("邮箱已验证，无需重新发送");
+        }
+
+        // 3. 生成新验证码并发送
+        String code = generateVerificationCode();
+        userDomainService.createVerificationCode(email, code);
+
+        // 4. 异步发送邮件
+        emailService.sendVerificationEmailAsync(email, code);
+
+        log.info("重新发送验证码成功: {}", email);
+    }
+
+    /**
      * 添加订阅
      */
     @Transactional

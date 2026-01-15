@@ -70,6 +70,11 @@ public class UpvoteService {
         // 验证和获取帖子对象
         PostDO postDO = postDataService.validateAndGet(postId);
 
+        // 防止用户给自己的内容点赞
+        if (postDO.getCreatorId().equals(user.getId())) {
+            throw StatusCode.INTERACTION_CANNOT_UPVOTE_OWN_CONTENT.exception();
+        }
+
         // 验证点赞类型
         if (type != VoteType.twice.value() && type != VoteType.like.value()) {
             throw StatusCode.INVALID_PARAMETER.exception("帖子仅支持 twice 或 like 点赞类型: " + type);
@@ -135,6 +140,11 @@ public class UpvoteService {
         // 验证和获取评论对象
         CommentDO commentDO = commentDataService.validateAndGet(commentId);
 
+        // 防止用户给自己的内容点赞
+        if (commentDO.getCreatorId().equals(user.getId())) {
+            throw StatusCode.INTERACTION_CANNOT_UPVOTE_OWN_CONTENT.exception();
+        }
+
         // 调用 DomainService 执行点赞/取消操作
         boolean added = upvoteDomainService.toggleUpvote(
             user.getId(),
@@ -175,6 +185,11 @@ public class UpvoteService {
         // 验证和获取路线图对象
         RoadmapDO roadmapDO = roadmapDataService.validateAndGet(roadmapId);
 
+        // 防止用户给自己的内容点赞
+        if (roadmapDO.getCreatorId().equals(user.getId())) {
+            throw StatusCode.INTERACTION_CANNOT_UPVOTE_OWN_CONTENT.exception();
+        }
+
         // 调用 DomainService 执行投票/取消操作
         boolean added = upvoteDomainService.toggleUpvote(
             user.getId(),
@@ -213,6 +228,11 @@ public class UpvoteService {
     public boolean upvoteMemoryCardDeck(long deckId, UserDO user) {
         // 验证和获取卡片组对象
         MemoryCardDeckDO deck = deckDataService.validateAndGet(deckId);
+
+        // 防止用户给自己的内容点赞
+        if (deck.getCreatorId().equals(user.getId())) {
+            throw StatusCode.INTERACTION_CANNOT_UPVOTE_OWN_CONTENT.exception();
+        }
 
         // 调用 DomainService 执行点赞/取消操作
         boolean added = upvoteDomainService.toggleUpvote(

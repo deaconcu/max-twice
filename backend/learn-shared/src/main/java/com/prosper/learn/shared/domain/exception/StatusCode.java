@@ -35,7 +35,7 @@ public enum StatusCode {
 
     // 用户认证相关 11xx
     USER_NOT_LOGIN(1101, "用户未登录"),
-    USER_ALREADY_EXISTS(1102, "用户已存在"),
+    USER_ALREADY_EXISTS(1102, "邮箱已被注册"),
     USER_PASSWORD_WRONG(1103, "密码错误"),
     USER_EMAIL_NOT_VALIDATED(1104, "邮箱未验证"),
     USER_INVALID_EMAIL_FORMAT(1105, "邮箱格式不正确"),
@@ -160,6 +160,10 @@ public enum StatusCode {
     UPLOAD_TOO_FREQUENT(2407, "上传过于频繁"),
     UPLOAD_QUOTA_EXCEEDED(2408, "上传配额已用尽"),
     IMAGE_DIMENSION_TOO_LARGE(2409, "图片尺寸超出限制"),
+
+    // 互动相关 25xx
+    INTERACTION_CANNOT_UPVOTE_OWN_CONTENT(2501, "不能给自己的内容点赞"),
+
 
     // 系统错误 9xxx
     SYSTEM_ERROR(9999, "系统繁忙，请稍后重试"),

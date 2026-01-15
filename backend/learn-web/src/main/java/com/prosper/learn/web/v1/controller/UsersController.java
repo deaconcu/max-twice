@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.application.dto.request.LoginRequest;
 import com.prosper.learn.application.dto.request.RegisterRequest;
+import com.prosper.learn.application.dto.request.ResendVerificationCodeRequest;
 import com.prosper.learn.application.dto.request.UpdateUserRequest;
 import com.prosper.learn.application.dto.request.VerifyEmailRequest;
 import com.prosper.learn.application.dto.response.ImageUploadResponse;
@@ -155,5 +156,16 @@ public class UsersController {
         StpUtil.login(userDTO.getId());
 
         return ApiResponse.success(userDTO);
+    }
+
+    /**
+     * 重新发送验证码
+     * POST /api/v1/auth/resend-verification-code
+     */
+    @PostMapping("/auth/resend-verification-code")
+    @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.IP)
+    public ApiResponse<Void> resendVerificationCode(@RequestBody @Valid ResendVerificationCodeRequest request) {
+        userService.resendVerificationCode(request.getEmail());
+        return ApiResponse.success();
     }
 }

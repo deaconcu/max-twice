@@ -1,6 +1,6 @@
 <template>
   <div class="register-page">
-    <AppHeader />
+    <SimpleHeader />
 
     <v-container fluid class="register-container">
       <v-row align="center" justify="center">
@@ -139,7 +139,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useEmailRules, useValidationRules, useMaxLength, confirmPasswordRule } from '@/composables/useValidation'
 import { RIGHTS_DECLARATION } from '@/constants/site'
 import { HEADER_HEIGHT } from '@/constants/layout'
-import AppHeader from '@/components/layout/AppHeader.vue'
+import SimpleHeader from '@/components/layout/SimpleHeader.vue'
 import IntroSection from '@/components/common/IntroSection.vue'
 
 const router = useRouter()
@@ -187,13 +187,19 @@ const handleRegister = async () => {
     const success = await register(formData.value.email, formData.value.password)
 
     if (success) {
-      // TODO: 注册成功后跳转到邮箱验证页面
-      // await router.push({ path: '/verify-email', query: { email: formData.value.email } })
+      // 注册成功后跳转到邮箱验证页面
+      await router.push({
+        path: '/verify-email',
+        query: { email: formData.value.email }
+      })
+    }
+  } catch (error: any) {
+    // 显示后端返回的错误信息
+    if (error?.message) {
+      errorMessage.value = error.message
     } else {
       errorMessage.value = t('user.register.registerFailed')
     }
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('user.register.registerFailed')
   }
 }
 
