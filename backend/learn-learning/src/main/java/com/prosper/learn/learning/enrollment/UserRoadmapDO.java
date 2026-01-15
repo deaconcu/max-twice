@@ -12,6 +12,8 @@ public class UserRoadmapDO {
 
     private Long roadmapId;
 
+    private Long professionId; // 职业ID（冗余字段，避免连表查询）
+
     private Integer progressPercent;
 
     private Byte state; // 原status字段重命名为state，改为 tinyint 类型，支持 NOT_STARTED=0, IN_PROGRESS=1, COMPLETED=2

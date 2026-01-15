@@ -199,6 +199,16 @@ const getMessageContent = (message: Message): string => {
     }
 
     if (type === MessageType.UPVOTE) {
+      const contentType = data.contentType
+
+      if (contentType === 'roadmap') {
+        // 路线图点赞
+        const voterName = data.voterName || '用户'
+        const professionName = data.professionName || '职业'
+        return `${voterName} 点赞了你的${professionName}路线图`
+      }
+
+      // 原有逻辑：帖子和评论
       const objectType = data.objectType
       const voteType = data.voteType
       const nodeName = data.nodeName || '节点'

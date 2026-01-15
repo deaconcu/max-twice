@@ -6,6 +6,7 @@ import com.prosper.learn.application.dto.response.CourseProgressResponseDTO;
 import com.prosper.learn.application.dto.response.NodeProgressResponseDTO;
 import com.prosper.learn.application.dto.response.RoadmapProgressResponseDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithProgressDTO;
+import com.prosper.learn.application.dto.response.roadmap.RoadmapWithStatusDTO;
 import com.prosper.learn.application.dto.response.usercourse.UserCourseWithCourseDTO;
 import com.prosper.learn.application.dto.response.userroadmap.UserRoadmapSummaryDTO;
 import com.prosper.learn.application.dto.response.userroadmap.UserRoadmapWithBriefDTO;
@@ -323,5 +324,22 @@ public class ProgressController {
 
         UserRoadmapSummaryDTO progress = userRoadmapService.updateProgress(currentUser.getId(), roadmapId, progressPercent);
         return ApiResponse.success(progress);
+    }
+
+    /**
+     * 获取用户正在学习的职业路线图（最多20条）
+     * GET /api/v1/progress/professions/{professionId}/roadmaps/learning
+     */
+    @GetMapping("/progress/professions/{professionId}/roadmaps/learning")
+    @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<List<RoadmapWithStatusDTO>> getLearningRoadmapsByProfession(
+            @PathVariable @NotNull(message = "职业ID不能为空")
+            @Positive(message = "职业ID必须大于0")
+            Long professionId,
+            @CurrentUser UserDO currentUser) {
+
+        List<RoadmapWithStatusDTO> roadmaps = userRoadmapService.getLearningRoadmapsByProfession(currentUser.getId(), professionId);
+        return ApiResponse.success(roadmaps);
     }
 }

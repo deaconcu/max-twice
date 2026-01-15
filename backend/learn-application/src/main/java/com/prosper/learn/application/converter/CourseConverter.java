@@ -205,8 +205,8 @@ public interface CourseConverter {
 
     /**
      * 转换为课程摘要（含统计和进度）DTO
-     * 用途：课程详情页面
-     * 注意：learnerCount, subscriptionCount, subscribed, progress 需要在 Service 层额外填充
+     * 用途：课程详情页面、用户订阅列表
+     * 注意：learnerCount, subscriptionCount, subscribed, progress, parentCourseName 需要在 Service 层额外填充
      */
     @Named("toSummaryWithStatsAndProgressDTO")
     @BeanMapping(ignoreByDefault = true)
@@ -215,6 +215,7 @@ public interface CourseConverter {
     @Mapping(target = "description")
     @Mapping(target = "mainCategory")
     @Mapping(target = "subCategory")
+    @Mapping(target = "parentCourseId")
     CourseSummaryWithStatsAndProgressDTO toSummaryWithStatsAndProgressDTO(CourseDO courseDO);
 
     /**

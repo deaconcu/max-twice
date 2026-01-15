@@ -22,6 +22,7 @@ interface Props {
 interface Emits {
   (e: 'switch-tab', tab: string, posting?: any): void
   (e: 'view-deck', deck: MemoryCardDeck): void
+  (e: 'load-data', fields?: string[]): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -218,6 +219,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
               :data="data"
               :is-learning="isLearning"
               @switch-tab="handlePostSwitchTab"
+              @load-data="(fields) => emit('load-data', fields)"
             />
             <v-divider class="mt-11" color="grey-darken-2"></v-divider>
           </div>
@@ -240,6 +242,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
               :data="data"
               :is-learning="isLearning"
               @switch-tab="handlePostSwitchTab"
+              @load-data="(fields) => emit('load-data', fields)"
             />
             <v-divider class="mt-11" color="grey-darken-2"></v-divider>
           </div>
@@ -283,6 +286,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
           :is-learning="isLearning"
           :detail="true"
           @switch-tab="handlePostSwitchTab"
+          @load-data="(fields) => emit('load-data', fields)"
         />
 
         <!-- 评论区 -->

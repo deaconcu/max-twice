@@ -128,4 +128,25 @@ public class UserRoadmapDataService extends AbstractDataService<UserRoadmapDO, U
     public List<Long> getBatchLearningStatus(long userId, List<Long> roadmapIds) {
         return userRoadmapMapper.getBatchLearningStatus(userId, roadmapIds);
     }
+
+    /**
+     * 获取用户正在学习的职业路线图
+     * @param userId 用户ID
+     * @param professionId 职业ID
+     * @param limit 最大返回数量
+     * @return 正在学习的路线图列表
+     */
+    public List<UserRoadmapDO> getLearningByProfession(long userId, long professionId, int limit) {
+        return userRoadmapMapper.getLearningByProfession(userId, professionId, limit);
+    }
+
+    /**
+     * 统计用户在指定职业下正在学习的路线图数量
+     * @param userId 用户ID
+     * @param professionId 职业ID
+     * @return 正在学习的数量
+     */
+    public int countLearningByProfession(long userId, long professionId) {
+        return userRoadmapMapper.countLearningByProfession(userId, professionId);
+    }
 }

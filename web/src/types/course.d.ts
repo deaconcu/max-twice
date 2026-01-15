@@ -17,6 +17,7 @@ export interface Course {
   rootNodeId?: number // 根节点ID
   parentCourseId?: number // 父课程ID（子课程才有）
   parentCourse?: Course // 父课程信息
+  parentCourseName?: string // 父课程名称（子课程才有）
   state?: ContentState // 课程状态
   mainCategory?: number // 主分类ID
   subCategory?: number // 子分类ID

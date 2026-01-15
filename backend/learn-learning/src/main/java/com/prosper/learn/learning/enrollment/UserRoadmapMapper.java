@@ -17,8 +17,8 @@ public interface UserRoadmapMapper {
     /**
      * 插入新的学习进度记录
      */
-    @Insert("INSERT INTO user_roadmap (user_id, roadmap_id, progress_percent, state, started_at) " +
-            "VALUES (#{userId}, #{roadmapId}, #{progressPercent}, #{state}, #{startedAt})")
+    @Insert("INSERT INTO user_roadmap (user_id, roadmap_id, profession_id, progress_percent, state, started_at) " +
+            "VALUES (#{userId}, #{roadmapId}, #{professionId}, #{progressPercent}, #{state}, #{startedAt})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(UserRoadmapDO progressDO);
 
@@ -64,6 +64,23 @@ public interface UserRoadmapMapper {
              "<foreach item='id' collection='roadmapIds' open='(' separator=',' close=')'>#{id}</foreach>",
              "</script>"})
     List<Long> getBatchLearningStatus(long userId, List<Long> roadmapIds);
+
+    /**
+     * 获取用户正在学习的职业路线图（单表查询，使用冗余字段）
+     */
+    @Select("SELECT * FROM user_roadmap " +
+            "WHERE user_id = #{userId} AND profession_id = #{professionId} " +
+            "AND state = " + Enums.UserProgressState.IN_PROGRESS_VALUE + " " +
+            "ORDER BY started_at DESC LIMIT #{limit}")
+    List<UserRoadmapDO> getLearningByProfession(long userId, long professionId, int limit);
+
+    /**
+     * 统计用户在指定职业下正在学习的路线图数量
+     */
+    @Select("SELECT COUNT(*) FROM user_roadmap " +
+            "WHERE user_id = #{userId} AND profession_id = #{professionId} " +
+            "AND state = " + Enums.UserProgressState.IN_PROGRESS_VALUE)
+    int countLearningByProfession(long userId, long professionId);
     
 // --注释掉检查 START (2025/12/10 12:05):
 //    /**

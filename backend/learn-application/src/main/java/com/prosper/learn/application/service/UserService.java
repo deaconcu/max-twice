@@ -196,7 +196,39 @@ public class UserService {
         // 批量填充统计信息和用户信息（learnerCount, subscriptionCount, subscribed, progress）
         fillStatsAndProgressForCourses(dtoList, userId);
 
+        // 填充父课程名称（如果是子课程）
+        fillParentCourseNames(dtoList);
+
         return dtoList;
+    }
+
+    /**
+     * 填充父课程名称
+     * 对于子课程，查询并填充其父课程名称
+     */
+    private void fillParentCourseNames(List<CourseSummaryWithStatsAndProgressDTO> dtoList) {
+        // 收集所有需要查询的父课程ID
+        List<Long> parentCourseIds = dtoList.stream()
+            .filter(dto -> dto.getParentCourseId() != null)
+            .map(CourseSummaryWithStatsAndProgressDTO::getParentCourseId)
+            .distinct()
+            .collect(Collectors.toList());
+
+        if (parentCourseIds.isEmpty()) {
+            return;
+        }
+
+        // 批量查询父课程信息
+        List<CourseDO> parentCourses = courseDataService.getByIds(parentCourseIds);
+        Map<Long, String> parentCourseNameMap = parentCourses.stream()
+            .collect(Collectors.toMap(CourseDO::getId, CourseDO::getName));
+
+        // 填充父课程名称
+        for (CourseSummaryWithStatsAndProgressDTO dto : dtoList) {
+            if (dto.getParentCourseId() != null) {
+                dto.setParentCourseName(parentCourseNameMap.get(dto.getParentCourseId()));
+            }
+        }
     }
 
 

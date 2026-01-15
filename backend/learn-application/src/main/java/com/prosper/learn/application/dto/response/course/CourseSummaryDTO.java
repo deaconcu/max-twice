@@ -52,4 +52,18 @@ public class CourseSummaryDTO {
      * 何时填充：始终填充，用于精细化分类筛选
      */
     private Integer subCategory;
+
+    /**
+     * 父课程ID
+     * 说明：如果是子课程，则记录父课程ID；主课程则为null
+     * 何时填充：从 course 表的 parent_course_id 字段读取
+     */
+    private Long parentCourseId;
+
+    /**
+     * 父课程名称
+     * 说明：如果是子课程，则记录父课程名称；主课程则为null
+     * 何时填充：如果有 parentCourseId，则额外查询父课程名称填充
+     */
+    private String parentCourseName;
 }

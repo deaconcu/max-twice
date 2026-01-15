@@ -2,6 +2,7 @@ package com.prosper.learn.application.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.application.converter.ProfessionConverter;
 import com.prosper.learn.application.converter.RoadmapConverter;
 import com.prosper.learn.application.converter.UserConverter;
@@ -62,6 +63,7 @@ public class RoadmapService {
     private final ProfessionDataService professionDataService;
     private final UserCourseDataService userCourseDataService;
     private final UpvoteDomainService upvoteDomainService;
+    private final ContentStatsDomainService contentStatsDomainService;
     private final ApplicationEventPublisher eventPublisher;
     private final RoadmapConverter roadmapConverter;
     private final UserConverter userConverter;
@@ -174,7 +176,7 @@ public class RoadmapService {
 
     /**
      * 转换为路线图（包含完整业务信息）
-     * 包含：creator + profession + upvoted + pinned + learning + formatted content
+     * 包含：creator + profession + upvoted + pinned + learning + formatted content + likes
      */
     private List<RoadmapWithStatusDTO> toRoadmapWithFullInfo(List<RoadmapDO> roadmapList, long userId, Long professionId, Long lastId, List<Long> pinnedRoadmapIds) {
         List<RoadmapWithStatusDTO> dtoList = roadmapConverter.toWithStatusDTO(roadmapList);
@@ -190,12 +192,18 @@ public class RoadmapService {
             Set<Long> pinnedIds = getPinnedIdsForCurrentRequest(userId, professionId, lastId, pinnedRoadmapIds);
             Set<Long> learningIds = getLearningIds(userId, roadmapIds);
 
+            // 批量获取点赞数
+            Map<Long, Integer> likesMap = contentStatsDomainService.getBatchLikesCount(ContentType.roadmap, roadmapIds);
+
             for (RoadmapWithStatusDTO dto : dtoList) {
                 dto.setProfession(professionConverter.toBriefDTO(professionDO));
                 dto.setCreator(userDTO);
                 dto.setUpvoted(upvotedIds.contains(dto.getId()));
                 dto.setPinned(pinnedIds.contains(dto.getId()));
                 dto.setLearning(learningIds.contains(dto.getId()));
+
+                // 设置点赞数
+                dto.setLikes(likesMap.getOrDefault(dto.getId(), 0));
 
                 if (dto.getContent() != null) {
                     String formattedContent = parseContentToGraphFormat(dto.getContent(), userId);
@@ -376,6 +384,24 @@ public class RoadmapService {
     }
 
     /**
+     * 根据ID列表获取路线图（包含用户状态）
+     * @param roadmapIds 路线图ID列表
+     * @param userId 用户ID
+     * @return 路线图列表（包含用户状态信息）
+     */
+    public List<RoadmapWithStatusDTO> getRoadmapsByIdsWithStatus(List<Long> roadmapIds, Long userId) {
+        if (roadmapIds == null || roadmapIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 从 DomainService 获取路线图列表
+        List<RoadmapDO> roadmapList = domainService.getRoadmapsByIds(roadmapIds);
+
+        // 转换为完整DTO（包含跨域信息）
+        return toRoadmapWithFullInfo(roadmapList, userId, null, null, new ArrayList<>());
+    }
+
+    /**
      * 删除路线图（软删除）
      * @param id 路线图ID
      * @param operator 操作用户
@@ -399,7 +425,7 @@ public class RoadmapService {
      * 更新路线图
      */
     @Transactional
-    public void updateRoadmap(Long id, String content, String description, UserDO operator) {
+    public void updateRoadmap(Long id, String content, String description, Byte state, UserDO operator) {
         validateRoadmapId(id);
         validateContent(content);
 
@@ -411,9 +437,27 @@ public class RoadmapService {
             throw StatusCode.PERMISSION_DENIED.exception();
         }
 
-        // 验证内容格式
-        if (!domainService.isValidContentFormat(content)) {
-            throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
+        // 验证状态：只能是草稿或提交审核
+        if (!state.equals(ContentState.DRAFT.value()) && !state.equals(ContentState.SUBMITTED.value())) {
+            throw StatusCode.INVALID_PARAMETER.exception("状态只能是草稿(0)或提交审核(1)");
+        }
+
+        // 状态转换验证：已发布的内容不能变回草稿
+        if (roadmapDO.getState().equals(ContentState.PUBLISHED.value()) && state.equals(ContentState.DRAFT.value())) {
+            throw StatusCode.INVALID_PARAMETER.exception("已发布的内容不能变回草稿");
+        }
+
+        // 根据状态进行不同的内容格式验证
+        if (state.equals(ContentState.DRAFT.value())) {
+            // 草稿模式：验证基本格式只（允许孤立节点）
+            if (!domainService.isValidContentBasicFormat(content)) {
+                throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
+            }
+        } else {
+            // 提交审核模式：验证完整的树结构
+            if (!domainService.isValidContentFormat(content)) {
+                throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
+            }
         }
 
         // 计算节点数量
@@ -421,6 +465,13 @@ public class RoadmapService {
 
         // 委托给 DomainService 更新内容和节点数量
         domainService.updateRoadmap(id, content, nodeCount);
+
+        // 更新状态：如果原状态是已发布，用户修改后强制变为提交审核
+        Byte newState = roadmapDO.getState().equals(ContentState.PUBLISHED.value())
+            ? ContentState.SUBMITTED.value()
+            : state;
+        roadmapDO.setState(newState);
+        roadmapDataService.update(roadmapDO);
 
         // 如果提供了 description，则更新描述
         if (description != null) {
@@ -432,7 +483,7 @@ public class RoadmapService {
      * 创建路线图
      */
     @Transactional
-    public Long createRoadmap(Long professionId, String content, String description, long userId) {
+    public Long createRoadmap(Long professionId, String content, String description, long userId, Byte state) {
         validateProfessionId(professionId);
         validateContent(content);
         validateUserId(userId);
@@ -441,16 +492,29 @@ public class RoadmapService {
         professionDataService.validateExists(professionId);
         userDataService.validateExists(userId);
 
+        // 验证状态：只能是草稿或提交审核
+        if (!state.equals(ContentState.DRAFT.value()) && !state.equals(ContentState.SUBMITTED.value())) {
+            throw StatusCode.INVALID_PARAMETER.exception("状态只能是草稿(0)或提交审核(1)");
+        }
+
         // 验证内容格式
-        if (!domainService.isValidContentFormat(content)) {
-            throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
+        if (state.equals(ContentState.DRAFT.value())) {
+            // 草稿模式：验证基本格式和边的节点存在性（允许孤立节点）
+            if (!domainService.isValidContentBasicFormat(content)) {
+                throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
+            }
+        } else {
+            // 提交审核模式：验证完整的树结构
+            if (!domainService.isValidContentFormat(content)) {
+                throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
+            }
         }
 
         // 计算节点数量
         Integer nodeCount = countNodesInContent(content);
 
         // 委托给 DomainService
-        return domainService.createRoadmap(professionId, content, description, userId, nodeCount);
+        return domainService.createRoadmap(professionId, content, description, userId, nodeCount, state);
     }
 
     /**

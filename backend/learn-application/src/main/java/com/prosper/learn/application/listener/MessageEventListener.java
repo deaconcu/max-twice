@@ -2,6 +2,8 @@ package com.prosper.learn.application.listener;
 
 import com.prosper.learn.application.service.MessageService;
 import com.prosper.learn.content.post.PostDO;
+import com.prosper.learn.content.profession.ProfessionDO;
+import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.shared.domain.event.content.lifecycle.CommentCreatedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
@@ -9,6 +11,7 @@ import com.prosper.learn.shared.domain.event.content.voting.LikeUpvotedEvent;
 import com.prosper.learn.shared.domain.event.content.voting.TwiceUpvotedEvent;
 import com.prosper.learn.shared.domain.event.content.voting.UpvoteTypeSwitchedEvent;
 import com.prosper.learn.shared.domain.event.user.relationship.UserFollowedEvent;
+import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -75,9 +78,7 @@ public class MessageEventListener {
     //@Async
     public void onLikeUpvoted(LikeUpvotedEvent<?> event) {
         try {
-            // 使用事件中的contextId，避免额外数据库查询
-            Long contextId = event.getContextId();
-            if (contextId == null) {
+            if (event.getContextId() == null) {
                 log.warn("LikeUpvotedEvent缺少contextId: contentType={}, contentId={}",
                     event.getContentType(), event.getContentId());
                 return;
@@ -88,7 +89,7 @@ public class MessageEventListener {
                 messageService.createPostUpvoteMessage(
                     event.getCreatorId(),          // 接收者
                     event.getVoterId(),            // 发送者
-                    contextId,                     // 节点ID
+                    event.getContextId(),          // 节点ID
                     event.getContentId(),          // 帖子ID
                     VoteType.like                  // 点赞类型
                 );
@@ -100,7 +101,7 @@ public class MessageEventListener {
                 messageService.createCommentUpvoteMessage(
                     event.getCreatorId(),          // 接收者
                     event.getVoterId(),            // 发送者
-                    contextId,                     // 节点ID
+                    event.getContextId(),          // 节点ID
                     event.getContentId()          // 评论ID
                 );
                 log.debug("发送评论点赞通知: contentId={}, voterId={}, creatorId={}",
@@ -111,7 +112,7 @@ public class MessageEventListener {
                 messageService.createRoadmapUpvoteMessage(
                     event.getCreatorId(),          // 接收者
                     event.getVoterId(),            // 发送者
-                    contextId,                     // 职业ID
+                    event.getContextId(),          // 职业ID
                     event.getContentId()          // 路线图ID
                 );
                 log.debug("发送路线图投票通知: contentId={}, voterId={}, creatorId={}",
@@ -122,7 +123,7 @@ public class MessageEventListener {
                 messageService.createMemoryDeckUpvoteMessage(
                     event.getCreatorId(),          // 接收者
                     event.getVoterId(),            // 发送者
-                    contextId,                     // 节点ID
+                    event.getContextId(),          // 节点ID
                     event.getContentId()          // 卡片组ID
                 );
                 log.debug("发送记忆卡片组点赞通知: contentId={}, voterId={}, creatorId={}",

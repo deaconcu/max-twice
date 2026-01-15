@@ -29,10 +29,10 @@
             </v-avatar>
             <div style="min-width: 0">
               <h1 class="text-h6 text-md-h5 font-weight-bold text-grey-darken-4 text-truncate">
-                {{ copyId ? '复制学习路径' : '创建学习路径' }}
+                {{ isEditMode ? '编辑学习路径' : (copyId ? '复制学习路径' : '创建学习路径') }}
               </h1>
               <p class="text-caption text-sm-body-2 text-grey-darken-2 text-truncate">
-                为 {{ careerName }} 创建新的学习路径
+                {{ isEditMode ? '修改' : '为' }} {{ careerName }} {{ isEditMode ? '的学习路径' : '创建新的学习路径' }}
               </p>
             </div>
           </div>
@@ -112,6 +112,21 @@
                   />
                   <span class="d-none d-sm-inline">保存</span>
                 </v-btn>
+                <v-divider vertical class="mx-2 toolbar-divider" />
+                <v-btn
+                  :size="$vuetify.display.mobile ? 'small' : 'default'"
+                  variant="tonal"
+                  color="grey-darken-1"
+                  rounded="lg"
+                  @click="goToMyRoadmaps"
+                >
+                  <v-icon
+                    icon="mdi-format-list-bulleted"
+                    :size="$vuetify.display.mobile ? 16 : 18"
+                    class="mr-1"
+                  />
+                  <span class="d-none d-sm-inline">我创建的路线图</span>
+                </v-btn>
               </div>
             </v-card-title>
             <v-card-text class="pa-0">
@@ -145,8 +160,31 @@
         <!-- 右侧：工具面板 -->
         <div class="right-sidebar">
           <!-- 课程搜索区 -->
-          <v-card rounded="xl" class="course-search-card sticky-card no-border" elevation="0">
-            <v-card-text class="pa-4">
+          <v-card class="course-search-card sticky-card no-border" elevation="0">
+            <v-card-text class="pa-0 ps-4">
+              <!-- 草稿描述显示 -->
+              <div v-if="savedDraftDescription" class="draft-description-section mb-4">
+                <div class="d-flex align-start justify-space-between">
+                  <div class="flex-1" style="min-width: 0">
+                    <div class="text-caption text-grey-darken-1 mb-1">路径描述</div>
+                    <div class="text-body-2 font-weight-medium text-grey-darken-3 draft-description-text">
+                      {{ savedDraftDescription }}
+                    </div>
+                  </div>
+                  <v-btn
+                    icon
+                    size="small"
+                    variant="text"
+                    @click="showSaveDialog = true"
+                  >
+                    <v-icon icon="mdi-file-document-edit-outline" color="grey-darken-1" size="20" />
+                  </v-btn>
+                </div>
+              </div>
+
+              <!-- 分隔线 -->
+              <v-divider v-if="savedDraftDescription" class="mt-6 mb-6" />
+
               <!-- 标题和统计 -->
               <div class="d-flex align-center justify-space-between mb-3">
                 <div class="d-flex align-center">
@@ -208,14 +246,14 @@
                     :key="course.id"
                     class="course-item"
                   >
-                    <v-tooltip location="left" max-width="300">
+                    <v-tooltip location="left" max-width="300" content-class="rounded-lg">
                       <template #activator="{ props }">
                         <div class="course-name" v-bind="props" @click="goToCourseDetail(course.id)">
                           <v-icon icon="mdi-book-outline" size="16" class="mr-1" />
                           {{ course.name }}
                         </div>
                       </template>
-                      <div class="tooltip-content">
+                      <div class="tooltip-content pa-1">
                         <div class="text-subtitle-2 mb-1">{{ course.name }}</div>
                         <div class="text-caption text-grey-lighten-1 mb-2">
                           {{ categoryStore.getCourseFullCategoryText(course.mainCategory, course.subCategory) }}
@@ -261,8 +299,16 @@
     </div>
 
     <!-- 保存对话框 -->
-    <v-dialog v-model="showSaveDialog" max-width="600px" persistent>
+    <v-dialog v-model="showSaveDialog" max-width="600px">
       <v-card rounded="xl" border>
+        <!-- 关闭按钮 -->
+        <v-btn
+          icon="mdi-close"
+          variant="text"
+          size="small"
+          class="dialog-close-btn"
+          @click="showSaveDialog = false"
+        />
         <v-card-title class="pa-6">
           <div class="d-flex align-center">
             <v-icon icon="mdi-content-save" color="primary" size="32" class="mr-3" />
@@ -270,7 +316,7 @@
           </div>
         </v-card-title>
         <v-card-text class="px-6 pb-0">
-          <v-text-field
+          <v-textarea
             v-model="roadmapDescription"
             label="路径描述 *"
             placeholder="例如: Vue 3 + TypeScript 全栈开发路线"
@@ -279,24 +325,45 @@
             variant="outlined"
             clearable
             required
+            rows="4"
+            auto-grow
             hint="请输入简洁明了的路径描述"
             persistent-hint
           />
+
+          <!-- 孤立节点提示 -->
+          <v-alert
+            v-if="hasIsolatedNodes"
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="mt-4"
+          >
+            检测到 {{ isolatedNodesCount }} 个未连接的节点。保存并发布时会自动删除这些节点。
+          </v-alert>
         </v-card-text>
         <v-card-actions class="px-6 pb-6 pt-4">
           <v-spacer />
-          <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="showSaveDialog = false">
-            取消
+          <v-btn
+            v-if="canSaveAsDraft"
+            color="grey-darken-1"
+            variant="flat"
+            rounded="lg"
+            :disabled="!roadmapDescription.trim() || saving"
+            :loading="saving && saveType === 'draft'"
+            @click="saveRoadmap('draft')"
+          >
+            保存为草稿
           </v-btn>
           <v-btn
             color="primary"
             variant="flat"
             rounded="lg"
             :disabled="!roadmapDescription.trim() || saving"
-            :loading="saving"
-            @click="saveRoadmap"
+            :loading="saving && saveType === 'publish'"
+            @click="saveRoadmap('publish')"
           >
-            保存路径
+            保存并发布
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -332,8 +399,10 @@ import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
+import { useFetch } from '@/composables'
 import { useCategoryStore } from '@/stores'
 import { courseApi } from '@/api/modules/course'
+import { roadmapApi } from '@/api/modules/roadmap'
 import type { Course } from '@/types/course'
 
 const router = useRouter()
@@ -355,14 +424,57 @@ const careerId = computed(() => {
   const id = route.params.id
   return typeof id === 'string' ? parseInt(id, 10) : 0
 })
+const roadmapId = computed(() => {
+  const id = route.params.roadmapId
+  return id ? (typeof id === 'string' ? parseInt(id, 10) : Number(id)) : null
+})
+const isEditMode = computed(() => roadmapId.value !== null)
 const copyId = ref(route.query.copy ? Number(route.query.copy) : null)
 
 // 状态管理
 const loading = ref(false)
 const saving = ref(false)
+const saveType = ref<'draft' | 'publish' | ''>('') // 保存类型
 const showSaveDialog = ref(false)
 const roadmapDescription = ref('')
+const savedDraftDescription = ref('') // 已保存的草稿描述
+const draftRoadmapId = ref<number | null>(null) // 草稿路线图ID
+const roadmapState = ref<number | null>(null) // 路线图状态：0=草稿，1=审核中，2=已发布
 const careerName = ref('前端工程师') // TODO: 从 API 获取
+
+// 是否可以保存为草稿：只有草稿状态(0)或新建时可以保存为草稿，已发布(2)不能变回草稿
+const canSaveAsDraft = computed(() => {
+  return roadmapState.value === null || roadmapState.value === 0
+})
+
+// 计算孤立节点
+const hasIsolatedNodes = computed(() => {
+  if (nodes.value.length <= 1 || edges.value.length === 0) {
+    return false
+  }
+
+  const connectedNodeIds = new Set<string>()
+  edges.value.forEach((e) => {
+    connectedNodeIds.add(e.source)
+    connectedNodeIds.add(e.target)
+  })
+
+  return nodes.value.some((n) => !connectedNodeIds.has(n.id))
+})
+
+const isolatedNodesCount = computed(() => {
+  if (!hasIsolatedNodes.value) {
+    return 0
+  }
+
+  const connectedNodeIds = new Set<string>()
+  edges.value.forEach((e) => {
+    connectedNodeIds.add(e.source)
+    connectedNodeIds.add(e.target)
+  })
+
+  return nodes.value.filter((n) => !connectedNodeIds.has(n.id)).length
+})
 
 // 确认对话框状态
 const confirmDialogVisible = ref(false)
@@ -418,6 +530,32 @@ watch(searchText, () => {
 
 const filteredCourses = computed(() => availableCourses.value)
 
+// 节点样式常量
+const ROOT_NODE_STYLE = {
+  background: '#616161',
+  color: '#ffffff',
+  border: '2px solid #9e9e9e',
+  borderRadius: '12px',
+  padding: '10px',
+  fontWeight: '600',
+  fontSize: '14px',
+}
+
+const COURSE_NODE_STYLE = {
+  background: '#fafafa',
+  color: '#424242',
+  border: '2px solid #bdbdbd',
+  borderRadius: '12px',
+  padding: '10px',
+  fontWeight: '500',
+  fontSize: '13px',
+}
+
+const EDGE_STYLE = {
+  stroke: '#78909c',
+  strokeWidth: 2,
+}
+
 // 节点和边
 const nodes = ref<Node[]>([
   {
@@ -427,15 +565,7 @@ const nodes = ref<Node[]>([
     position: { x: 400, y: 100 },
     targetPosition: Position.Bottom, // 入口在底部，只能被其他节点指向
     // 没有 sourcePosition，表示不能作为连接起点
-    style: {
-      background: '#616161',
-      color: '#ffffff',
-      border: '2px solid #9e9e9e',
-      borderRadius: '12px',
-      padding: '10px',
-      fontWeight: '600',
-      fontSize: '14px',
-    },
+    style: ROOT_NODE_STYLE,
   },
 ])
 
@@ -480,15 +610,7 @@ const addCourseNode = (course: Course) => {
     position: { x, y },
     sourcePosition: Position.Top,
     targetPosition: Position.Bottom,
-    style: {
-      background: '#fafafa',
-      color: '#424242',
-      border: '2px solid #bdbdbd',
-      borderRadius: '12px',
-      padding: '10px',
-      fontWeight: '500',
-      fontSize: '13px',
-    },
+    style: COURSE_NODE_STYLE,
   })
 
   // 聚焦到新节点（使用 nextTick 确保 DOM 更新后再聚焦）
@@ -502,6 +624,13 @@ const addCourseNode = (course: Course) => {
  */
 const goToCourseDetail = (courseId: number) => {
   window.open(`/courses/${courseId}`, '_blank')
+}
+
+/**
+ * 跳转到我的路线图页面
+ */
+const goToMyRoadmaps = () => {
+  router.push('/users/me?mode=creator&tab=roadmaps')
 }
 
 // 删除选中的节点和边
@@ -566,10 +695,7 @@ const onConnect = (connection: Connection) => {
     target: connection.target ?? '',
     type: 'default',
     animated: true,
-    style: {
-      stroke: '#78909c',
-      strokeWidth: 2,
-    },
+    style: EDGE_STYLE,
   })
 }
 
@@ -635,36 +761,138 @@ const showSave = () => {
 }
 
 // 保存路径
-const saveRoadmap = async () => {
+const saveRoadmap = async (type: 'draft' | 'publish') => {
   if (!roadmapDescription.value.trim()) {
     showSnackbar('请输入路径描述', 'warning')
     return
   }
 
-  saving.value = true
-
-  // 序列化数据
-  const data = {
-    description: roadmapDescription.value.trim(),
-    nodes: nodes.value.map((n) => ({
-      id: n.id,
-      name: n.data.label,
-      position: n.position,
-    })),
-    edges: edges.value.map((e) => ({
-      source: e.source,
-      target: e.target,
-    })),
+  // 验证至少有一个课程节点（除了根节点）
+  if (nodes.value.length <= 1) {
+    showSnackbar('请至少添加一个课程节点', 'warning')
+    return
   }
 
-  // 模拟保存
-  setTimeout(() => {
-    console.log('保存路径:', data)
+  saving.value = true
+  saveType.value = type
+
+  try {
+    // 序列化边数组：[[source, target], ...]
+    const edgeArray = edges.value
+      .map((e) => {
+        const source = parseInt(e.source)
+        const target = parseInt(e.target)
+        if (isNaN(source) || isNaN(target)) {
+          return null
+        }
+        return [source, target]
+      })
+      .filter((edge): edge is [number, number] => edge !== null)
+
+    // 找出所有有连接的节点ID
+    const connectedNodeIds = new Set<number>()
+    edgeArray.forEach(([source, target]) => {
+      connectedNodeIds.add(source)
+      connectedNodeIds.add(target)
+    })
+
+    // 获取所有节点ID
+    const allNodeIds = nodes.value
+      .map((n) => {
+        const id = parseInt(n.id)
+        if (isNaN(id)) {
+          return null
+        }
+        return id
+      })
+      .filter((id): id is number => id !== null)
+
+    let nodeArray: number[]
+
+    if (type === 'draft') {
+      // 草稿模式：保留所有节点（包括孤立节点）
+      nodeArray = allNodeIds
+    } else {
+      // 发布模式：只保留有连接的节点
+      nodeArray = allNodeIds.filter((id) => connectedNodeIds.has(id))
+
+      // 检查是否有有效节点
+      if (nodeArray.length === 0) {
+        showSnackbar('请添加课程并连接它们', 'warning')
+        return
+      }
+
+      // 验证树结构：边数 = 节点数 - 1
+      if (edgeArray.length !== nodeArray.length - 1) {
+        showSnackbar(
+          `路径结构不正确：${nodeArray.length} 个节点需要 ${nodeArray.length - 1} 条连接线，当前有 ${edgeArray.length} 条`,
+          'error'
+        )
+        return
+      }
+    }
+
+    // 后端期望的格式：[边数组, 节点ID数组]
+    const content = JSON.stringify([edgeArray, nodeArray])
+
+    console.log('保存路径数据:', {
+      saveType: type,
+      totalNodes: nodes.value.length,
+      savedNodes: nodeArray.length,
+      edges: edgeArray.length,
+      removedNodes: nodes.value.length - nodeArray.length,
+      edgeArray,
+      nodeArray,
+      content
+    })
+
+    // 调用 API
+    const state = type === 'draft' ? 0 : 1 // 0-草稿，1-提交审核
+    let response
+
+    if (draftRoadmapId.value) {
+      // 已有草稿ID，调用更新接口
+      response = await roadmapApi.updateRoadmap(
+        draftRoadmapId.value,
+        content,
+        roadmapDescription.value.trim(),
+        state
+      )
+    } else {
+      // 首次创建
+      response = await roadmapApi.createRoadmap(
+        careerId.value,
+        content,
+        roadmapDescription.value.trim(),
+        state
+      )
+    }
+
+    if (response.code === 200) {
+      const message = type === 'draft' ? '草稿保存成功' : '路径发布成功'
+      showSnackbar(message, 'success')
+      showSaveDialog.value = false
+
+      // 草稿模式：保存描述和ID，留在当前页面
+      if (type === 'draft') {
+        savedDraftDescription.value = roadmapDescription.value.trim()
+        if (response.data && response.data.id) {
+          draftRoadmapId.value = response.data.id
+        }
+      } else {
+        // 发布模式：返回列表页
+        router.back()
+      }
+    } else {
+      showSnackbar(response.message || '保存失败', 'error')
+    }
+  } catch (error) {
+    console.error('保存路径失败:', error)
+    showSnackbar('保存失败，请稍后重试', 'error')
+  } finally {
     saving.value = false
-    showSaveDialog.value = false
-    showSnackbar('路径保存成功', 'success')
-    router.back()
-  }, 1000)
+    saveType.value = ''
+  }
 }
 
 // 自动布局
@@ -674,43 +902,96 @@ const applyAutoLayout = () => {
     return
   }
 
-  const dagreGraph = new dagre.graphlib.Graph()
-  dagreGraph.setDefaultEdgeLabel(() => ({}))
-  dagreGraph.setGraph({
-    rankdir: 'BT', // Bottom to Top - 根节点在上方
-    nodesep: 150,
-    ranksep: 80,
-    marginx: 20,
-    marginy: 20,
-  })
-
-  const nodeWidth = 120
-  const nodeHeight = 40
-
-  // 添加节点到 dagre 图
-  nodes.value.forEach((node) => {
-    dagreGraph.setNode(node.id.toString(), { width: nodeWidth, height: nodeHeight })
-  })
-
-  // 添加边到 dagre 图
+  // 先找出所有有连接关系的节点ID
+  const connectedNodeIds = new Set<string>()
   edges.value.forEach((edge) => {
-    dagreGraph.setEdge(edge.source.toString(), edge.target.toString())
+    connectedNodeIds.add(edge.source.toString())
+    connectedNodeIds.add(edge.target.toString())
   })
 
-  // 计算布局
-  dagre.layout(dagreGraph)
+  // 分离有连接的节点和无连接的节点
+  const connectedNodes = nodes.value.filter((node) => connectedNodeIds.has(node.id.toString()))
+  const unconnectedNodes = nodes.value.filter((node) => !connectedNodeIds.has(node.id.toString()))
 
-  // 更新节点位置
-  nodes.value = nodes.value.map((node) => {
-    const nodeWithPosition = dagreGraph.node(node.id.toString())
-    return {
-      ...node,
-      position: {
+  // 如果有连接的节点，使用 dagre 布局
+  if (connectedNodes.length > 0) {
+    const dagreGraph = new dagre.graphlib.Graph()
+    dagreGraph.setDefaultEdgeLabel(() => ({}))
+    dagreGraph.setGraph({
+      rankdir: 'BT', // Bottom to Top - 根节点在上方
+      nodesep: 150,
+      ranksep: 80,
+      marginx: 20,
+      marginy: 20,
+    })
+
+    const nodeWidth = 120
+    const nodeHeight = 40
+
+    // 只添加有连接的节点到 dagre 图
+    connectedNodes.forEach((node) => {
+      dagreGraph.setNode(node.id.toString(), { width: nodeWidth, height: nodeHeight })
+    })
+
+    // 添加边到 dagre 图
+    edges.value.forEach((edge) => {
+      dagreGraph.setEdge(edge.source.toString(), edge.target.toString())
+    })
+
+    // 计算布局
+    dagre.layout(dagreGraph)
+
+    // 更新有连接节点的位置
+    connectedNodes.forEach((node) => {
+      const nodeWithPosition = dagreGraph.node(node.id.toString())
+      node.position = {
         x: nodeWithPosition.x - nodeWidth / 2,
         y: nodeWithPosition.y - nodeHeight / 2,
-      },
+      }
+    })
+  }
+
+  // 处理没有连接关系的节点
+  if (unconnectedNodes.length > 0) {
+    // 找到有连接的节点中 y 坐标最大的（最下面的节点）
+    let bottomY = 0
+    let centerX = 400 // 默认中心位置
+
+    if (connectedNodes.length > 0) {
+      const bottomNode = connectedNodes.reduce((lowest, node) => {
+        return node.position.y > lowest.position.y ? node : lowest
+      })
+      bottomY = bottomNode.position.y
+
+      // 计算有连接节点的 x 坐标中心位置
+      const sumX = connectedNodes.reduce((sum, node) => sum + node.position.x, 0)
+      centerX = sumX / connectedNodes.length
     }
-  })
+
+    // 网格布局参数
+    const columns = 3 // 每行3个节点
+    const horizontalSpacing = 200 // 水平间距
+    const verticalSpacing = 100 // 垂直间距
+    const startY = bottomY + 100 // 在最下面节点下方60px开始
+
+    // 排列无连接的节点
+    unconnectedNodes.forEach((node, index) => {
+      const row = Math.floor(index / columns)
+      const col = index % columns
+
+      // 计算该行的起始 x 坐标，使这一行居中对齐
+      const rowWidth = Math.min(unconnectedNodes.length - row * columns, columns) * horizontalSpacing
+      const rowStartX = centerX - rowWidth / 2 + horizontalSpacing / 2
+
+      node.position = {
+        x: rowStartX + col * horizontalSpacing,
+        y: startY + row * verticalSpacing,
+      }
+    })
+  }
+
+  // 重新构建完整的节点数组
+  nodes.value = [...connectedNodes, ...unconnectedNodes]
 
   // 布局完成后，调用 fitView 聚焦到所有节点
   setTimeout(() => {
@@ -738,17 +1019,8 @@ const resetAll = () => {
           type: 'default',
           data: { label: careerName.value },
           position: { x: 400, y: 100 },
-          targetPosition: Position.Bottom, // 入口在底部，只能被其他节点指向
-          // 没有 sourcePosition，表示不能作为连接起点
-          style: {
-            background: '#616161',
-            color: '#ffffff',
-            border: '2px solid #9e9e9e',
-            borderRadius: '12px',
-            padding: '10px',
-            fontWeight: '600',
-            fontSize: '14px',
-          },
+          targetPosition: Position.Bottom,
+          style: ROOT_NODE_STYLE,
         },
       ]
       edges.value = []
@@ -759,13 +1031,96 @@ const resetAll = () => {
   confirmDialogVisible.value = true
 }
 
+// 编辑模式：加载已有路线图数据
+const {
+  data: roadmapData,
+  loading: roadmapLoading,
+} = useFetch({
+  fetchFn: () => roadmapApi.getRoadmap(roadmapId.value!),
+  immediate: isEditMode.value,
+  defaultValue: null,
+})
+
+// 监听加载状态
+watch(roadmapLoading, (isLoading) => {
+  loading.value = isLoading
+})
+
+// 监听路线图数据加载完成
+watch(roadmapData, (newData) => {
+  if (newData && isEditMode.value) {
+    console.log('加载的路线图数据:', newData)
+
+    // 设置描述和状态
+    roadmapDescription.value = newData.description || ''
+    savedDraftDescription.value = newData.description || ''
+    draftRoadmapId.value = newData.id
+    roadmapState.value = newData.state // 保存路线图状态
+
+    // 解析 content 并设置节点和边
+    try {
+      // content 是 JSON 字符串，格式为 {nodes: [], edges: []}
+      const contentData = typeof newData.content === 'string'
+        ? JSON.parse(newData.content)
+        : newData.content
+
+      console.log('解析后的 content:', contentData)
+
+      if (contentData.nodes && contentData.edges) {
+        // 设置边
+        edges.value = contentData.edges.map((edge: any) => ({
+          id: `${edge.source}-${edge.target}`,
+          source: edge.source.toString(),
+          target: edge.target.toString(),
+          type: 'default',
+          animated: true,
+          style: EDGE_STYLE,
+        }))
+
+        // 设置节点
+        nodes.value = contentData.nodes.map((node: any) => {
+          if (node.id === '0' || node.id === 0) {
+            return {
+              id: '0',
+              type: 'default',
+              data: { label: careerName.value },
+              position: { x: 0, y: 0 },
+              targetPosition: Position.Bottom,
+              style: ROOT_NODE_STYLE,
+            }
+          } else {
+            return {
+              id: node.id.toString(),
+              type: 'default',
+              data: { label: node.name || `课程 ${node.id}` },
+              position: { x: 0, y: 0 },
+              sourcePosition: Position.Top,
+              targetPosition: Position.Bottom,
+              style: COURSE_NODE_STYLE,
+            }
+          }
+        })
+
+        console.log('设置的节点:', nodes.value.length, '设置的边:', edges.value.length)
+
+        // 使用自动布局
+        setTimeout(() => {
+          applyAutoLayout()
+        }, 100)
+      }
+    } catch (parseError) {
+      console.error('解析路线图内容失败:', parseError)
+      showSnackbar('加载路线图数据失败', 'error')
+    }
+  }
+})
+
 // 如果是复制模式,加载数据
 onMounted(() => {
   if (copyId.value) {
     loading.value = true
     setTimeout(() => {
       roadmapDescription.value = 'Vue 3 + TypeScript 全栈开发路线 (副本)'
-      // 添加一些示例节点（如果需要）
       loading.value = false
     }, 500)
   }
@@ -775,6 +1130,29 @@ onMounted(() => {
 <style scoped>
 .roadmap-create-page {
   /* 使用 DefaultLayout 的默认 padding */
+}
+
+/* 草稿描述区域样式 */
+.draft-description-section {
+  padding: 0;
+}
+
+/* 草稿描述文本样式 - 最多显示5行 */
+.draft-description-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  line-height: 1.5;
+}
+
+/* 对话框关闭按钮 */
+.dialog-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
 }
 
 /* 宽屏时向左延伸，让后退按钮露出到页面外 */
@@ -903,7 +1281,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px 12px 0;
+  padding: 8px 16px 8px 0;
   background: transparent;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   gap: 12px;
@@ -1032,5 +1410,11 @@ onMounted(() => {
 :deep(.vue-flow__edge.selected .vue-flow__edge-path) {
   stroke: rgb(var(--v-theme-primary)) !important;
   stroke-width: 3px !important;
+}
+
+/* 工具栏分隔符 */
+.toolbar-divider {
+  height: 24px;
+  align-self: center;
 }
 </style>

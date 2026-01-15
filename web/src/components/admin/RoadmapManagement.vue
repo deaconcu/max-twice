@@ -531,7 +531,7 @@ const { execute: updateRoadmapDescription, loading: updating } = useMutation(
 // 使用 useMutation 批准路线图
 const { execute: executeApprove } = useMutation(
   (payload: { id: number; action: string }) =>
-    roadmapApi.approveRoadmap(payload.id, payload.action),
+    adminApi.operateContent('roadmap', payload.id, { action: payload.action }),
   {
     successMessage: '操作成功',
     onSuccess: (result, payload) => {
@@ -570,7 +570,7 @@ const showBanDialog = (roadmap: Roadmap): void => {
 // 使用 useMutation 处理拒绝/屏蔽操作
 const { execute: executeRejectOrBan, loading: submitting } = useMutation(
   (payload: { id: number; action: string; reason: string }) =>
-    roadmapApi.approveRoadmap(payload.id, payload.action, payload.reason),
+    adminApi.operateContent('roadmap', payload.id, { action: payload.action, reason: payload.reason }),
   {
     successMessage: '操作成功',
     onSuccess: (result) => {

@@ -1,6 +1,7 @@
 import apiClient from '../client'
 import type { ApiResponse } from '@/types/api'
 import type { Node, NodeProgressResponse } from '@/types/node'
+import type { Roadmap } from '@/types/roadmap'
 import type { UserCourse } from '@/types/userCourse'
 import type { UserRoadmap, UserRoadmapBrief } from '@/types/userRoadmap'
 import type {
@@ -127,5 +128,12 @@ export const progressApi = {
     progressPercent: number
   ): Promise<ApiResponse<UserRoadmap>> {
     return apiClient.put(`/v1/progress/roadmaps/${String(roadmapId)}`, { progressPercent })
+  },
+
+  /**
+   * 获取用户正在学习的职业路线图（最多20条）
+   */
+  getLearningRoadmapsByProfession(professionId: number): Promise<ApiResponse<Roadmap[]>> {
+    return apiClient.get(`/v1/progress/professions/${String(professionId)}/roadmaps/learning`)
   },
 }

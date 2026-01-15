@@ -29,6 +29,14 @@ export const careerRoutes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/career/:id/roadmap/:roadmapId/edit',
+    name: 'RoadmapEdit',
+    component: () => import('@/views/career/RoadmapCreatePage.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/roadmap/:id',
     name: 'RoadmapDetail',
     component: () => import('@/views/career/RoadmapDetailPage.vue'),

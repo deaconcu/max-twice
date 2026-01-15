@@ -345,4 +345,35 @@ public class RedisStatsDomainService {
         
         performStatsOperation(Enums.ContentType.post, articleId, userId.longValue(), RedisStatsConstants.STAT_TYPE_COMMENT, -1, "删除评论");
     }
+
+    /**
+     * 批量获取今日 Redis 中的点赞增量
+     *
+     * @param contentType 内容类型
+     * @param contentIds 内容ID列表
+     * @return 内容ID到今日点赞增量的映射
+     */
+    public java.util.Map<Long, Integer> getTodayLikesIncrement(Enums.ContentType contentType, java.util.List<Long> contentIds) {
+        java.util.Map<Long, Integer> result = new java.util.HashMap<>();
+        if (contentIds == null || contentIds.isEmpty()) {
+            return result;
+        }
+
+        String todayStr = TimeZoneUtil.todayString();
+        String contentStatsKey = generateContentStatsKey(todayStr);
+
+        for (Long contentId : contentIds) {
+            String fieldName = generateContentStatField(contentType, contentId, RedisStatsConstants.STAT_TYPE_LIKE);
+            try {
+                Object value = redisTemplate.opsForHash().get(contentStatsKey, fieldName);
+                int increment = (value != null) ? Integer.parseInt(value.toString()) : 0;
+                result.put(contentId, increment);
+            } catch (Exception e) {
+                log.warn("获取Redis点赞增量失败: contentType={}, contentId={}", contentType, contentId, e);
+                result.put(contentId, 0);
+            }
+        }
+
+        return result;
+    }
 }

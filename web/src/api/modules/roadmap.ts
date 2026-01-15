@@ -21,8 +21,13 @@ export const roadmapApi = {
   /**
    * 更新路线图
    */
-  updateRoadmap(id: number, content: string): Promise<ApiResponse<Roadmap>> {
-    return apiClient.put(`/v1/roadmaps/${String(id)}`, { content })
+  updateRoadmap(
+    id: number,
+    content: string,
+    description: string,
+    state: number
+  ): Promise<ApiResponse<Roadmap>> {
+    return apiClient.put(`/v1/roadmaps/${String(id)}`, { content, description, state })
   },
 
   /**
@@ -31,12 +36,14 @@ export const roadmapApi = {
   createRoadmap(
     professionId: number,
     content: string,
-    description: string
+    description: string,
+    state: number
   ): Promise<ApiResponse<Roadmap>> {
     return apiClient.post('/v1/roadmaps', {
       professionId,
       content,
       description,
+      state,
     })
   },
 
@@ -54,16 +61,6 @@ export const roadmapApi = {
     return apiClient.post('/v1/roadmaps/pin', {
       professionId,
       roadmapId,
-    })
-  },
-
-  /**
-   * 审核路线图
-   */
-  approveRoadmap(id: number, action: string, reason?: string): Promise<ApiResponse<Roadmap>> {
-    return apiClient.post(`/v1/roadmaps/${String(id)}/approve`, {
-      action,
-      reason,
     })
   },
 

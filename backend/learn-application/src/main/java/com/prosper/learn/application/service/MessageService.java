@@ -8,6 +8,8 @@ import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.content.profession.ProfessionDO;
+import com.prosper.learn.content.profession.ProfessionDataService;
 import com.prosper.learn.interaction.message.MessageDO;
 import com.prosper.learn.interaction.message.MessageDataService;
 import com.prosper.learn.interaction.message.MessageDomainService;
@@ -64,6 +66,7 @@ public class MessageService {
     // 跨域依赖
     private final PostDataService postDataService;
     private final NodeDataService nodeDataService;
+    private final ProfessionDataService professionDataService;
     private final MessageDataService messageDataService;
     private final UserDataService userDataService;
 
@@ -409,6 +412,7 @@ public class MessageService {
         Set<Long> userIdSet = new HashSet<>();
         Set<Long> nodeIdSet = new HashSet<>();
         Set<Long> postingIdSet = new HashSet<>();
+        Set<Long> professionIdSet = new HashSet<>();
 
         for (MessageDO messageDO : messageDOList) {
             userIdSet.add(messageDO.getReceiverId());
@@ -419,8 +423,23 @@ public class MessageService {
                 if (postingId != null) {
                     postingIdSet.add(postingId);
                 }
-                nodeIdSet.add(Utils.getLong(map, "nodeId"));
-                userIdSet.add(Utils.getLong(map, "upvoterId"));
+                Long nodeId = Utils.getLong(map, "nodeId");
+                if (nodeId != null) {
+                    nodeIdSet.add(nodeId);
+                }
+                Long upvoterId = Utils.getLong(map, "upvoterId");
+                if (upvoterId != null) {
+                    userIdSet.add(upvoterId);
+                }
+                // 路线图点赞：收集 voterId 和 professionId
+                Long voterId = Utils.getLong(map, "voterId");
+                if (voterId != null) {
+                    userIdSet.add(voterId);
+                }
+                Long professionId = Utils.getLong(map, "professionId");
+                if (professionId != null) {
+                    professionIdSet.add(professionId);
+                }
             } else if (messageDO.getType() == invite.value()) {
                 nodeIdSet.add(Utils.getLong(map, "nodeId"));
                 userIdSet.add(Utils.getLong(map, "InviterId"));
@@ -435,6 +454,7 @@ public class MessageService {
 
         Map<Long, UserDO> userDOMap = userIdSet.isEmpty() ? new HashMap<>() : userDataService.getMapByIds(userIdSet);
         Map<Long, PostDO> postingDOMap = postingIdSet.isEmpty() ? new HashMap<>() : postDataService.getMapByIds(postingIdSet);
+        Map<Long, ProfessionDO> professionDOMap = professionIdSet.isEmpty() ? new HashMap<>() : professionDataService.getMapByIds(professionIdSet);
 
         for (PostDO postDO : postingDOMap.values()) {
             nodeIdSet.add(postDO.getNodeId());
@@ -444,13 +464,14 @@ public class MessageService {
 
         List<MessageDTO> messageDTOList = new ArrayList<>();
         for (MessageDO messageDO : messageDOList) {
-            messageDTOList.add(convertMessage(messageDO, userDOMap, postingDOMap, nodeDOMap));
+            messageDTOList.add(convertMessage(messageDO, userDOMap, postingDOMap, nodeDOMap, professionDOMap));
         }
         return messageDTOList;
     }
 
     private MessageDTO convertMessage(MessageDO messageDO, Map<Long, UserDO> userDOMap,
-                                      Map<Long, PostDO> postingDOMap, Map<Long, NodeDO> nodeDOMap) {
+                                      Map<Long, PostDO> postingDOMap, Map<Long, NodeDO> nodeDOMap,
+                                      Map<Long, ProfessionDO> professionDOMap) {
         MessageDTO messageDTO;
         Map<String, Object> content = Utils.readValueToMap(messageDO.getContent());
         if (messageDO.getType() == postComment.value() || messageDO.getType() == replyPostingComment.value() ||
@@ -465,6 +486,41 @@ public class MessageService {
             m.setCommenter(userConverter.toDTOV2(userDOMap.get(Utils.getLong(content, "commenterId"))));
             messageDTO = m;
         } else if (messageDO.getType() == upvote.value()) {
+            // 动态填充用户名和上下文名称到 content
+            Map<String, Object> enrichedContent = new HashMap<>(content);
+
+            // 填充点赞者用户名
+            Long voterId = Utils.getLong(content, "voterId");
+            if (voterId != null) {
+                UserDO voter = userDOMap.get(voterId);
+                if (voter != null) {
+                    enrichedContent.put("voterName", voter.getName());
+                }
+            }
+            Long upvoterId = Utils.getLong(content, "upvoterId");
+            if (upvoterId != null) {
+                UserDO upvoter = userDOMap.get(upvoterId);
+                if (upvoter != null) {
+                    enrichedContent.put("upvoterName", upvoter.getName());
+                }
+            }
+
+            // 填充上下文名称
+            Long professionId = Utils.getLong(content, "professionId");
+            if (professionId != null) {
+                ProfessionDO profession = professionDOMap.get(professionId);
+                if (profession != null) {
+                    enrichedContent.put("professionName", profession.getName());
+                }
+            }
+            Long nodeId = Utils.getLong(content, "nodeId");
+            if (nodeId != null) {
+                NodeDO node = nodeDOMap.get(nodeId);
+                if (node != null) {
+                    enrichedContent.put("nodeName", node.getName());
+                }
+            }
+
             UpvoteMessageDTO m = new UpvoteMessageDTO();
             if (content.containsKey("postingId")) {
                 long postId = Utils.getLong(content, "postingId");
@@ -480,6 +536,9 @@ public class MessageService {
             m.setVoteType(Utils.getInteger(content, "type"));
             m.setUpvoter(userConverter.toDTOV2(userDOMap.get(Utils.getLong(content, "upvoterId"))));
             messageDTO = m;
+
+            // 设置填充后的 content
+            messageDTO.setContent(Utils.toJson(enrichedContent));
         } else if (messageDO.getType() == follow.value()) {
             FollowMessageDTO m = new FollowMessageDTO();
             m.setFollower(userConverter.toDTOV2(userDOMap.get(Utils.getLong(content, "followerId"))));

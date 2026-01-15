@@ -238,8 +238,14 @@ public class UserRoadmapService {
         validateUserId(userId);
         validateRoadmapId(roadmapId);
 
-        // 委托给领域服务处理核心逻辑
-        userRoadmapDomainService.startRoadmap(userId, roadmapId);
+        // 获取路线图信息以获取 professionId
+        RoadmapDO roadmapDO = roadmapDataService.getById(roadmapId);
+        if (roadmapDO == null) {
+            throw StatusCode.ROADMAP_NOT_FOUND.exception();
+        }
+
+        // 委托给领域服务处理核心逻辑，传入 professionId
+        userRoadmapDomainService.startRoadmap(userId, roadmapId, roadmapDO.getProfessionId());
     }
 
     /**
@@ -332,6 +338,29 @@ public class UserRoadmapService {
         }
 
         return needUpdate;
+    }
+
+    /**
+     * 获取用户正在学习的职业路线图（最多20条）
+     * @param userId 用户ID
+     * @param professionId 职业ID
+     * @return 正在学习的路线图列表（RoadmapWithStatusDTO格式，与列表接口一致）
+     */
+    public List<RoadmapWithStatusDTO> getLearningRoadmapsByProfession(Long userId, Long professionId) {
+        // 获取用户正在学习的路线图记录
+        List<UserRoadmapDO> userRoadmapList = userRoadmapDomainService.getLearningByProfession(userId, professionId, 20);
+
+        if (userRoadmapList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 提取路线图ID列表
+        List<Long> roadmapIds = userRoadmapList.stream()
+            .map(UserRoadmapDO::getRoadmapId)
+            .collect(Collectors.toList());
+
+        // 调用 RoadmapService 获取路线图详细信息（包含用户状态）
+        return roadmapService.getRoadmapsByIdsWithStatus(roadmapIds, userId);
     }
 
 }

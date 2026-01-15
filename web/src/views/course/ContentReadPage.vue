@@ -193,6 +193,7 @@
                 :is-learning="isLearning"
                 @switch-tab="handleTabSwitch"
                 @view-deck="handleViewDeck"
+                @load-data="loadData"
               />
             </div>
 

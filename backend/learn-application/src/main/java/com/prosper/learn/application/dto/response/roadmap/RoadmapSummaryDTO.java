@@ -25,7 +25,7 @@ public class RoadmapSummaryDTO {
 
     private Byte state;
 
-    private Integer vote;
+    private Integer likes;
 
     private Integer comment;
 

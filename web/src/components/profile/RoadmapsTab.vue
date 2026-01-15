@@ -52,7 +52,7 @@
               border
               elevation="0"
               class="roadmap-card mb-4 mb-md-6 hoverable"
-              @click="goToRoadmap(roadmap.id)"
+              @click="goToRoadmapDetail(roadmap.id)"
             >
               <v-card-text class="pa-4 pa-sm-6">
                 <div class="d-flex align-start justify-space-between mb-3 mb-md-4">
@@ -158,7 +158,7 @@
                       variant="flat"
                       rounded="lg"
                       :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                      @click.stop="goToRoadmap(roadmap.id)"
+                      @click.stop="goToRoadmapDetail(roadmap.id)"
                     >
                       <v-icon
                         icon="mdi-eye"
@@ -172,7 +172,7 @@
                       rounded="lg"
                       :size="$vuetify.display.mobile ? 'x-small' : 'small'"
                       color="grey-darken-2"
-                      @click.stop="goToRoadmap(roadmap.id)"
+                      @click.stop="editRoadmap(roadmap.id, roadmap.professionId)"
                     >
                       <v-icon
                         icon="mdi-pencil"
@@ -293,13 +293,19 @@ const roadmaps = computed(() => {
 
   return roadmapsData.value.map((roadmap) => ({
     id: roadmap.id,
+    professionId: roadmap.profession?.id || roadmap.professionId,
     name: roadmap.profession?.name || '未知职业',
     profession: roadmap.profession?.name || '未知职业',
     description: roadmap.description || '暂无描述',
     usageCount: roadmap.learnerCount || 0,
     starCount: roadmap.vote || 0,
     nodeCount: roadmap.nodeCount || 0,
-    status: roadmap.state === 1 ? 'public' : roadmap.state === 0 ? 'draft' : 'private',
+    status: roadmap.state === 0 ? 'draft'
+          : roadmap.state === 1 ? 'submitted'
+          : roadmap.state === 2 ? 'published'
+          : roadmap.state === 3 ? 'rejected'
+          : roadmap.state === 4 ? 'banned'
+          : 'unknown',
     createdAt: roadmap.createdAt || '',
   }))
 })
@@ -307,9 +313,11 @@ const roadmaps = computed(() => {
 // 获取状态颜色
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
-    public: 'success',
-    private: 'grey',
     draft: 'warning',
+    submitted: 'info',
+    published: 'success',
+    rejected: 'error',
+    banned: 'error',
   }
   return colors[status] || 'grey'
 }
@@ -317,16 +325,29 @@ const getStatusColor = (status: string) => {
 // 获取状态文本
 const getStatusText = (status: string) => {
   const texts: Record<string, string> = {
-    public: '公开',
-    private: '私密',
     draft: '草稿',
+    submitted: '审核中',
+    published: '已发布',
+    rejected: '已拒绝',
+    banned: '已封禁',
   }
   return texts[status] || '未知'
 }
 
 // 跳转到路线图详情
-const goToRoadmap = (roadmapId: number) => {
+const goToRoadmapDetail = (roadmapId: number) => {
   router.push(`/roadmap/${roadmapId}`)
+}
+
+// 编辑路线图
+const editRoadmap = (roadmapId: number, professionId?: number) => {
+  if (professionId) {
+    const editPath = `/career/${professionId}/roadmap/${roadmapId}/edit`
+    console.log('跳转到编辑页面:', editPath)
+    router.push(editPath)
+  } else {
+    console.warn('缺少 professionId，无法跳转到编辑页面')
+  }
 }
 
 // 删除路线图

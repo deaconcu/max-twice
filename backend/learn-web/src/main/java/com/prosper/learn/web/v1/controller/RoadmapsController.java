@@ -73,7 +73,7 @@ public class RoadmapsController {
             @RequestBody @Valid UpdateRoadmapRequest request,
             @CurrentUser UserDO currentUser) {
 
-        roadmapService.updateRoadmap(id, request.getContent(), request.getDescription(), currentUser);
+        roadmapService.updateRoadmap(id, request.getContent(), request.getDescription(), request.getState(), currentUser);
         return ApiResponse.success();
     }
 
@@ -88,7 +88,13 @@ public class RoadmapsController {
             @RequestBody @Valid CreateRoadmapRequest request,
             @CurrentUser UserDO currentUser) {
 
-        Long roadmapId = roadmapService.createRoadmap(request.getProfessionId(), request.getContent(), request.getDescription(), currentUser.getId());
+        Long roadmapId = roadmapService.createRoadmap(
+            request.getProfessionId(),
+            request.getContent(),
+            request.getDescription(),
+            currentUser.getId(),
+            request.getState()
+        );
         return ApiResponse.success(roadmapId);
     }
 

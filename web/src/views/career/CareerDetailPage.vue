@@ -48,29 +48,11 @@
                 </div>
               </div>
 
-              <!-- 简介和统计信息 -->
+              <!-- 简介 -->
               <div>
-                <p class="text-body-2 text-grey-darken-2 mb-3">
+                <p class="text-body-2 text-grey-darken-2 mb-0">
                   {{ career.description }}
                 </p>
-                <div class="d-flex flex-wrap align-center gap-3 gap-md-4">
-                  <div class="d-flex align-center">
-                    <v-icon icon="mdi-map-marker-path" size="18" color="primary" class="mr-1" />
-                    <span class="text-body-2 text-grey-darken-1">
-                      <span class="font-weight-bold text-grey-darken-4">{{ roadmapsCount }}</span>
-                      条学习路径
-                    </span>
-                  </div>
-                  <div class="d-flex align-center">
-                    <v-icon icon="mdi-account-group" size="18" color="success" class="mr-1" />
-                    <span class="text-body-2 text-grey-darken-1">
-                      <span class="font-weight-bold text-grey-darken-4">{{
-                        formatNumber(career.learnerCount)
-                      }}</span>
-                      人学习
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -93,7 +75,7 @@
         <div class="content-layout">
           <div class="main-content">
             <!-- 筛选和搜索 -->
-            <div class="filter-card mb-6">
+            <div class="filter-card mb-2">
               <div
                 class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between ga-3 ga-sm-4"
               >
@@ -112,17 +94,9 @@
                     <v-icon icon="mdi-format-list-bulleted" size="16" class="mr-1" />
                     <span class="d-none d-sm-inline">全部</span>
                   </v-btn>
-                  <v-btn value="pinned" :size="$vuetify.display.mobile ? 'small' : 'default'">
-                    <v-icon icon="mdi-pin" size="16" class="mr-1" />
-                    <span class="d-none d-sm-inline">置顶</span>
-                  </v-btn>
                   <v-btn value="learning" :size="$vuetify.display.mobile ? 'small' : 'default'">
                     <v-icon icon="mdi-school" size="16" class="mr-1" />
                     <span class="d-none d-sm-inline">学习中</span>
-                  </v-btn>
-                  <v-btn value="upvoted" :size="$vuetify.display.mobile ? 'small' : 'default'">
-                    <v-icon icon="mdi-heart" size="16" class="mr-1" />
-                    <span class="d-none d-sm-inline">已点赞</span>
                   </v-btn>
                 </v-btn-toggle>
 
@@ -137,9 +111,6 @@
                   class="sort-select"
                   @update:model-value="filterRoadmaps"
                 >
-                  <template #prepend-inner>
-                    <v-icon icon="mdi-sort" size="18" class="mr-1" />
-                  </template>
                 </v-select>
               </div>
             </div>
@@ -169,16 +140,15 @@
             </div>
 
             <!-- 路线图列表 -->
-            <v-card
-              v-for="roadmap in filteredRoadmaps"
-              v-else
-              :key="roadmap.id"
-              border
-              rounded="xl"
-              class="roadmap-card mb-4"
-              hover
-              @click="handleGoToRoadmap(roadmap)"
-            >
+            <v-infinite-scroll v-else-if="filteredRoadmaps.length > 0" :items="filteredRoadmaps" @load="onLoadMore" empty-text="已经到底了">
+              <template v-for="roadmap in filteredRoadmaps" :key="roadmap.id">
+                <v-card
+                  border
+                  rounded="xl"
+                  class="roadmap-card mb-4"
+                  hover
+                  @click="handleGoToRoadmap(roadmap)"
+                >
               <v-card-text class="pa-4 pa-sm-5">
                 <div class="d-flex align-start">
                   <!-- 左侧：投票区域 -->
@@ -190,14 +160,14 @@
                       size="small"
                       @click="handleVote(roadmap, $event)"
                     >
-                      <v-icon :icon="roadmap.upvoted ? 'mdi-heart' : 'mdi-heart-outline'" />
+                      <v-icon :icon="roadmap.upvoted ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'" />
                     </v-btn>
                     <div class="vote-count text-center mt-1">
                       <span
                         class="text-caption font-weight-bold"
                         :class="roadmap.upvoted ? 'text-primary' : 'text-grey-darken-2'"
                       >
-                        {{ roadmap.vote }}
+                        {{ roadmap.likes }}
                       </span>
                     </div>
                   </div>
@@ -237,7 +207,7 @@
                       <div class="d-flex align-center">
                         <v-icon icon="mdi-account" size="16" color="grey" class="mr-1" />
                         <span class="text-caption text-grey-darken-2">
-                          {{ roadmap.creator.username }}
+                          {{ roadmap.creator?.name || '未知用户' }}
                         </span>
                       </div>
                       <div class="d-flex align-center">
@@ -308,6 +278,8 @@
                 </div>
               </v-card-text>
             </v-card>
+              </template>
+            </v-infinite-scroll>
           </div>
 
           <!-- 右侧：说明卡片 -->
@@ -426,10 +398,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useFetch } from '@/composables'
-import { professionApi, roadmapApi } from '@/api'
+import { useFetch, useMutation } from '@/composables'
+import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { professionApi, roadmapApi, progressApi, upvoteApi } from '@/api'
+import { ObjectType, VoteType } from '@/enums'
 import type { Profession } from '@/types/profession'
 import type { Roadmap } from '@/types/roadmap'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
@@ -455,19 +429,6 @@ const {
   defaultValue: null,
 })
 
-// 使用 useFetch 加载路线图列表
-const {
-  data: roadmapsData,
-  loading: loadingRoadmaps,
-  error: roadmapsError,
-} = useFetch<Roadmap[]>({
-  fetchFn: () => roadmapApi.getProfessionRoadmaps(careerId.value),
-  immediate: true,
-  defaultValue: [],
-})
-
-const allRoadmaps = computed(() => roadmapsData.value ?? [])
-
 // 状态管理
 const searchText = ref('')
 const filterStatus = ref<string>('all')
@@ -476,24 +437,79 @@ const sortBy = ref<string>('latest')
 // 排序选项
 const sortOptions = [
   { title: '最新发布', value: 'latest' },
-  { title: '最受欢迎', value: 'popular' },
-  { title: '学习人数', value: 'learners' },
+  { title: '综合排序', value: 'popular' },
 ]
 
 const error = computed(() => (fetchError.value ? '加载职业信息失败' : null))
 
+// 使用无限滚动加载路线图
+const {
+  items: allRoadmaps,
+  loading: loadingRoadmaps,
+  hasMore,
+  loadMore: loadMoreRoadmaps,
+  reset: resetRoadmaps,
+} = useInfiniteScroll({
+  fetchFn: async (params) => {
+    const response = await roadmapApi.getProfessionRoadmaps(careerId.value, params.lastId)
+    return {
+      code: response.code,
+      data: response.data || [],
+      message: response.message || '',
+      hasMore: response.data?.length === 20, // 假设每页20条
+    }
+  },
+  getNextParams: (lastItem) => ({
+    lastId: lastItem.id,
+  }),
+  initialParams: { lastId: undefined },
+})
+
+// 学习中的路线图（单独接口，不分页）
+const learningRoadmaps = ref<any[]>([])
+
+// 监听筛选状态变化，加载学习中数据
+watch(filterStatus, async (newStatus) => {
+  if (newStatus === 'learning' && learningRoadmaps.value.length === 0) {
+    loadingRoadmaps.value = true
+    try {
+      const response = await progressApi.getLearningRoadmapsByProfession(careerId.value)
+      if (response.code === 200) {
+        learningRoadmaps.value = response.data || []
+      }
+    } finally {
+      loadingRoadmaps.value = false
+    }
+  } else if (newStatus === 'all' && allRoadmaps.value.length === 0) {
+    loadMoreRoadmaps({ done: () => {} })
+  }
+})
+
+// 首次加载数据
+onMounted(() => {
+  if (allRoadmaps.value.length === 0) {
+    loadMoreRoadmaps({ done: () => {} })
+  }
+})
+
+// 加载更多
+const onLoadMore = async ({ done }: { done: (status: string) => void }) => {
+  await loadMoreRoadmaps({
+    done: () => {
+      done(hasMore.value ? 'ok' : 'empty')
+    },
+  })
+}
+
 // 筛选后的路线图
 const filteredRoadmaps = computed(() => {
-  let filtered = [...allRoadmaps.value]
-
-  // 状态筛选
-  if (filterStatus.value === 'pinned') {
-    filtered = filtered.filter((r) => r.pinned)
-  } else if (filterStatus.value === 'learning') {
-    filtered = filtered.filter((r) => r.learning)
-  } else if (filterStatus.value === 'upvoted') {
-    filtered = filtered.filter((r) => r.upvoted)
+  // 学习中状态：使用单独接口的数据（格式与全部列表一致）
+  if (filterStatus.value === 'learning') {
+    return learningRoadmaps.value || []
   }
+
+  // 全部状态：使用滚动加载的数据
+  let filtered = [...allRoadmaps.value]
 
   // 搜索筛选
   if (searchText.value.trim()) {
@@ -505,9 +521,7 @@ const filteredRoadmaps = computed(() => {
   if (sortBy.value === 'latest') {
     filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   } else if (sortBy.value === 'popular') {
-    filtered.sort((a, b) => b.vote - a.vote)
-  } else if (sortBy.value === 'learners') {
-    filtered.sort((a, b) => (b.learnerCount ?? 0) - (a.learnerCount ?? 0))
+    filtered.sort((a, b) => b.likes - a.likes)
   }
 
   // 置顶的始终在前面
@@ -567,10 +581,26 @@ const handleGoToRoadmap = (roadmap: { id: number }): void => {
 }
 
 // 投票
-const handleVote = (roadmap: { upvoted: boolean; vote: number }, event: Event): void => {
+const { execute: toggleUpvote } = useMutation(
+  ({ roadmapId }: { roadmapId: number }) =>
+    upvoteApi.upvote(roadmapId, ObjectType.ROADMAP, VoteType.NORMAL),
+  { showToast: false }
+)
+
+const handleVote = async (
+  roadmap: { id: number; upvoted: boolean; likes: number },
+  event: Event
+): Promise<void> => {
   event.stopPropagation()
-  roadmap.upvoted = !roadmap.upvoted
-  roadmap.vote += roadmap.upvoted ? 1 : -1
+
+  const result = await toggleUpvote({ roadmapId: roadmap.id })
+
+  // 调用成功，更新状态
+  if (result) {
+    roadmap.upvoted = result.likeUpvoted || false
+    roadmap.likes += roadmap.upvoted ? 1 : -1
+  }
+  // 调用失败，不做任何更新
 }
 
 // 开始学习
@@ -676,7 +706,7 @@ const handleCopy = (roadmap: { id: number }, event: Event): void => {
 @media (min-width: 600px) {
   .sort-select {
     width: auto;
-    max-width: 180px;
+    max-width: 127px;
   }
 }
 
@@ -719,6 +749,13 @@ const handleCopy = (roadmap: { id: number }, event: Event): void => {
 .empty-state {
   background-color: rgb(var(--v-theme-surface));
   border: 1px solid rgb(var(--v-theme-outline));
+}
+
+/* 无限滚动底部文本样式 */
+:deep(.v-infinite-scroll__side) {
+  font-size: 14px;
+  color: rgb(var(--v-theme-grey));
+  opacity: 0.6;
 }
 
 /* 移动端 */

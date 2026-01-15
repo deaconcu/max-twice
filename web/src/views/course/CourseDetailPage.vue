@@ -77,35 +77,27 @@
                   </p>
 
                   <!-- 统计信息 -->
-                  <div class="d-flex align-center flex-wrap mb-4 mb-md-6 ga-6 ga-md-12">
+                  <div class="d-flex align-center flex-wrap mb-4 mb-md-6 ga-4 ga-md-6">
                     <div class="d-flex align-center">
                       <v-icon
                         icon="mdi-book-multiple"
-                        :size="$vuetify.display.mobile ? 20 : 24"
-                        color="primary"
-                        class="mr-2 mr-md-4"
+                        :size="$vuetify.display.mobile ? 16 : 18"
+                        color="grey"
+                        class="mr-2"
                       />
-                      <span class="text-body-2 text-md-body-1 text-grey-darken-2">
-                        <span class="font-weight-bold text-grey-darken-4 mr-1">{{
-                          subCourses?.length ?? 0
-                        }}</span>
-                        <span class="text-caption text-md-body-2">{{
-                          t('course.subCourses')
-                        }}</span>
+                      <span class="text-caption text-md-body-2 text-grey">
+                        {{ subCourses?.length ?? 0 }}{{ t('course.subCourses') }}
                       </span>
                     </div>
                     <div class="d-flex align-center">
                       <v-icon
                         icon="mdi-account-group"
-                        :size="$vuetify.display.mobile ? 20 : 24"
-                        color="success"
-                        class="mr-2 mr-md-4"
+                        :size="$vuetify.display.mobile ? 16 : 18"
+                        color="grey"
+                        class="mr-2"
                       />
-                      <span class="text-body-2 text-md-body-1 text-grey-darken-2">
-                        <span class="font-weight-bold text-grey-darken-4 mr-1">{{
-                          formatNumber(course.learnerCount)
-                        }}</span>
-                        <span class="text-caption text-md-body-2">{{ t('course.learning') }}</span>
+                      <span class="text-caption text-md-body-2 text-grey">
+                        {{ formatNumber(course.learnerCount) }}{{ t('course.learning') }}
                       </span>
                     </div>
                   </div>
@@ -181,58 +173,6 @@
 
               <!-- 子课程网格 -->
               <div class="sub-course-grid">
-                <!-- 示例：已创建的子课程 -->
-                <v-card
-                  rounded="xl"
-                  class="sub-course-card hoverable"
-                  elevation="0"
-                  hover
-                  @click="handleGoToSubCourse(0)"
-                >
-                  <v-card-text class="pa-5 pa-sm-6">
-                    <!-- 顶部：序号和操作 -->
-                    <div class="d-flex align-center justify-space-between mb-4">
-                      <div class="course-number">1</div>
-                      <div class="d-flex align-center ga-1">
-                        <v-btn
-                          icon="mdi-book-open-page-variant"
-                          size="small"
-                          variant="text"
-                          color="primary"
-                          @click.stop="handleGoToSubCourse(0)"
-                        ></v-btn>
-                        <v-btn
-                          icon="mdi-heart"
-                          size="small"
-                          variant="text"
-                          color="error"
-                          @click.stop
-                        ></v-btn>
-                      </div>
-                    </div>
-
-                    <!-- 子课程信息 -->
-                    <h3
-                      class="text-h6 text-md-h5 font-weight-bold mb-3 text-grey-darken-4 course-title"
-                    >
-                      Vue 3 核心概念
-                    </h3>
-                    <p class="text-body-2 text-grey-darken-2 mb-4 course-description">
-                      深入学习 Vue 3 的响应式系统、组合式
-                      API、生命周期钩子等核心概念，掌握现代前端框架的核心原理和最佳实践。
-                    </p>
-
-                    <!-- 底部统计 -->
-                    <div class="d-flex align-center">
-                      <v-icon icon="mdi-account-group" size="18" color="grey" class="mr-2" />
-                      <span class="text-body-2 text-grey-darken-1">
-                        1,234
-                        <span class="text-grey">人学习</span>
-                      </span>
-                    </div>
-                  </v-card-text>
-                </v-card>
-
                 <!-- 真实子课程 -->
                 <v-card
                   v-for="(subCourse, index) in subCourses"
@@ -247,7 +187,7 @@
                     <!-- 顶部：序号和操作 -->
                     <div class="d-flex align-center justify-space-between mb-4">
                       <div class="course-number">
-                        {{ index + 2 }}
+                        {{ index + 1 }}
                       </div>
                       <div class="d-flex align-center ga-1">
                         <v-btn
@@ -262,6 +202,7 @@
                           size="small"
                           variant="text"
                           :color="subCourse.subscribed ? 'error' : 'grey'"
+                          :loading="subscribingSubCourseId === subCourse.id"
                           @click.stop="handleToggleSubCourseSubscribe(subCourse.id)"
                         ></v-btn>
                       </div>
@@ -293,6 +234,7 @@
 
                 <!-- 默认待创建卡片：快速入门 -->
                 <v-card
+                  v-if="!hasQuickstartCourse"
                   rounded="xl"
                   class="sub-course-card placeholder-card hoverable"
                   elevation="0"
@@ -319,6 +261,7 @@
 
                 <!-- 默认待创建卡片：习题练习 -->
                 <v-card
+                  v-if="!hasExercisesCourse"
                   rounded="xl"
                   class="sub-course-card placeholder-card hoverable"
                   elevation="0"
@@ -500,10 +443,7 @@ const {
   data: subCoursesResponse,
   loading: _loadingSubCourses,
 } = useFetch<{ items: Course[]; hasMore: boolean }>({
-  fetchFn: async () => {
-    const response = await courseApi.getSubCourses(courseId.value)
-    return response.data ?? { items: [], hasMore: false }
-  },
+  fetchFn: () => courseApi.getSubCourses(courseId.value),
   immediate: true,
   defaultValue: { items: [], hasMore: false },
 })
@@ -511,7 +451,7 @@ const {
 // 计算属性：从响应中提取子课程列表
 const subCourses = computed(() => subCoursesResponse.value?.items ?? [])
 
-// 使用 useMutation 处理订阅/取消订阅
+// 使用 useMutation 处理主课程订阅/取消订阅
 const { execute: executeSubscribe, loading: subscribing } = useMutation(
   (payload: { id: number; action: 'subscribe' | 'unsubscribe' }) =>
     payload.action === 'subscribe'
@@ -522,6 +462,21 @@ const { execute: executeSubscribe, loading: subscribing } = useMutation(
     showToast: false,
   }
 )
+
+// 使用 useMutation 处理子课程订阅/取消订阅
+const { execute: executeSubCourseSubscribe, loading: subscribingSubCourse } = useMutation(
+  (payload: { id: number; action: 'subscribe' | 'unsubscribe' }) =>
+    payload.action === 'subscribe'
+      ? subscriptionApi.subscribe(payload.id)
+      : subscriptionApi.unsubscribe(payload.id),
+  {
+    successMessage: '',
+    showToast: false,
+  }
+)
+
+// 跟踪正在订阅的子课程ID
+const subscribingSubCourseId = ref<number | null>(null)
 
 // 使用 useMutation 处理创建子课程
 const {
@@ -567,6 +522,17 @@ const defaultSubCourses = {
 const error = computed(() => (fetchError.value ? t('course.loadError') : null))
 
 /**
+ * 检查是否已存在某个默认子课程
+ */
+const hasQuickstartCourse = computed(() =>
+  subCourses.value.some(c => c.name === '快速入门' || c.name === 'Quick Start')
+)
+
+const hasExercisesCourse = computed(() =>
+  subCourses.value.some(c => c.name === '习题练习' || c.name === 'Exercises')
+)
+
+/**
  * 格式化数字（千位分隔）
  */
 const formatNumber = (num?: number) => {
@@ -596,11 +562,14 @@ const handleStartReading = () => {
 /**
  * 跳转到子课程阅读页
  */
-const handleGoToSubCourse = (_index: number) => {
+const handleGoToSubCourse = (index: number) => {
+  const subCourse = subCourses.value[index]
+  if (!subCourse) return
+
   void router.push({
     path: '/read',
     query: {
-      courseId: String(courseId.value),
+      courseId: String(subCourse.id),
     },
   })
 }
@@ -614,9 +583,10 @@ const handleToggleSubscribe = async () => {
   const action = course.value.subscribed ? 'unsubscribe' : 'subscribe'
   const result = await executeSubscribe({ id: course.value.id, action })
 
-  if (result && course.value) {
-    course.value.subscribed = !course.value.subscribed
-    if (course.value.subscribed) {
+  if (result !== null && course.value) {
+    // 使用后端返回的状态值
+    course.value.subscribed = result
+    if (result) {
       course.value.subscriptionCount = (course.value.subscriptionCount ?? 0) + 1
     } else {
       course.value.subscriptionCount = Math.max((course.value.subscriptionCount ?? 0) - 1, 0)
@@ -632,17 +602,21 @@ const handleToggleSubCourseSubscribe = async (subCourseId: number) => {
   const subCourse = subCourses.value.find((c) => c.id === subCourseId)
   if (!subCourse) return
 
+  subscribingSubCourseId.value = subCourseId
   const action = subCourse.subscribed ? 'unsubscribe' : 'subscribe'
-  const result = await executeSubscribe({ id: subCourseId, action })
+  const result = await executeSubCourseSubscribe({ id: subCourseId, action })
 
-  if (result && subCourse) {
-    subCourse.subscribed = !subCourse.subscribed
-    if (subCourse.subscribed) {
+  if (result !== null && subCourse) {
+    // 使用后端返回的状态值
+    subCourse.subscribed = result
+    if (result) {
       subCourse.subscriptionCount = (subCourse.subscriptionCount ?? 0) + 1
     } else {
       subCourse.subscriptionCount = Math.max((subCourse.subscriptionCount ?? 0) - 1, 0)
     }
   }
+
+  subscribingSubCourseId.value = null
 }
 
 /**

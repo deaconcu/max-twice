@@ -15,7 +15,9 @@ interface Props {
   contents: any[]
 }
 
-type Emits = (e: 'load-data', data: any[]) => void
+interface Emits {
+  (e: 'load-data'): void
+}
 
 const dialog = defineModel<boolean>({ default: false })
 const list = ref<number[]>([])
@@ -35,10 +37,18 @@ const { execute: submitUpdate, loading: submitting } = useMutation(
   {
     successMessage: '目录更新成功',
     onSuccess: () => {
-      // 首先关闭对话框
-      dialog.value = false
+      console.log('[ConfigContentsDialog] onSuccess 开始')
+      console.log('[ConfigContentsDialog] route.query.path:', route.query.path)
 
-      // 然后处理路由逻辑
+      // 检查是否有 path 参数
+      if (!route.query.path) {
+        console.log('[ConfigContentsDialog] 没有 path 参数，直接 emit 并关闭')
+        emit('load-data')
+        dialog.value = false
+        return
+      }
+
+      // 处理路由逻辑
       const pathParts = (route.query.path as string).split('-')
       const currIndex = Number(pathParts[0])
       const index = list.value.indexOf(currIndex) + 1
@@ -50,14 +60,26 @@ const { execute: submitUpdate, loading: submitting } = useMutation(
         nextPath = `${index}-${pathParts.slice(1).join('-')}`
       }
 
+      console.log('[ConfigContentsDialog] nextPath:', nextPath, 'current:', route.query.path)
+
       if (nextPath === route.query.path) {
-        emit('load-data', [])
+        // 路径没变，先 emit 再关闭对话框
+        console.log('[ConfigContentsDialog] 路径没变，emit load-data')
+        emit('load-data')
+        console.log('[ConfigContentsDialog] emit 完成')
       } else {
+        // 路径改变，跳转到新路径（路由 watch 会自动重新加载）
+        console.log('[ConfigContentsDialog] 路径改变，router.replace')
         router.replace({
           path: '/read',
           query: { courseId: String(props.courseId), path: nextPath },
         })
       }
+
+      // 最后关闭对话框
+      console.log('[ConfigContentsDialog] 准备关闭对话框，当前 dialog.value:', dialog.value)
+      dialog.value = false
+      console.log('[ConfigContentsDialog] 对话框已设置为 false，dialog.value:', dialog.value)
     },
   }
 )

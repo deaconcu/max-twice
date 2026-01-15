@@ -9,7 +9,7 @@
     <!-- 全局 Snackbar 提示 - 只显示队列中的最后一个（最新的） -->
     <v-snackbar
       v-if="currentSnackbar"
-      :model-value="true"
+      v-model="currentSnackbar.visible"
       :timeout="2500"
       location="top"
       rounded="xl"
@@ -17,7 +17,6 @@
       border
       transition="slide-y-transition"
       :class="`snackbar-${currentSnackbar.type}`"
-      @update:model-value="onSnackbarClose"
     >
       <div class="d-flex align-center pa-1">
         <v-avatar :color="getSnackbarIconBg(currentSnackbar.type)" size="32" class="mr-3">
@@ -30,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { provide, ref, onMounted, computed } from 'vue'
+import { provide, ref, onMounted, computed, watch } from 'vue'
 import type { Ref } from 'vue'
 import { setGlobalSnackbar } from '@/composables/utils'
 import { useRouter } from 'vue-router'
@@ -130,14 +129,21 @@ const showSnackbar = (message: string, type = 'info'): void => {
 }
 
 /**
- * 处理 snackbar 关闭事件（由 v-snackbar 的 timeout 或用户手动关闭触发）
+ * 监听当前 snackbar 的 visible 变化，自动清理队列
  */
-const onSnackbarClose = (visible: boolean) => {
-  if (!visible && snackbars.value.length > 0) {
-    // 移除队列中的最后一个（当前显示的）
-    snackbars.value.pop()
+watch(
+  () => currentSnackbar.value?.visible,
+  (newVisible) => {
+    if (newVisible === false && snackbars.value.length > 0) {
+      // visible 变为 false 时，延迟移除消息（等动画结束）
+      setTimeout(() => {
+        if (snackbars.value.length > 0) {
+          snackbars.value.pop()
+        }
+      }, 300)
+    }
   }
-}
+)
 
 /**
  * 根据类型获取图标背景色

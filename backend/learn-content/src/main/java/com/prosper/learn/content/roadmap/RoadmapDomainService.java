@@ -124,6 +124,15 @@ public class RoadmapDomainService {
     }
 
     /**
+     * 根据ID列表批量获取路线图
+     * @param roadmapIds 路线图ID列表
+     * @return 路线图列表
+     */
+    public List<RoadmapDO> getRoadmapsByIds(List<Long> roadmapIds) {
+        return roadmapDataService.getByIds(roadmapIds);
+    }
+
+    /**
      * 标准化content内容并计算hash值
      * @param content 原始content字符串，格式: [[[1,2],[2,3]],[1,2,3]]
      * @return 标准化后的hash值
@@ -180,6 +189,59 @@ public class RoadmapDomainService {
         } catch (Exception e) {
             log.error("内容哈希计算失败: {}", content, e);
             throw StatusCode.CONTENT_HASH_ERROR.exception(e);
+        }
+    }
+
+    /**
+     * 验证content基本格式和边的节点存在性（不验证树结构）
+     * 用于草稿模式，允许有孤立节点，但边必须指向存在的节点
+     */
+    public boolean isValidContentBasicFormat(String content) {
+        try {
+            JsonNode rootNode = objectMapper.readTree(content);
+            if (!rootNode.isArray() || rootNode.size() != 2) {
+                return false;
+            }
+
+            JsonNode edgesNode = rootNode.get(0);
+            JsonNode nodesNode = rootNode.get(1);
+
+            // 验证节点数组格式
+            if (!nodesNode.isArray()) {
+                return false;
+            }
+            Set<Integer> nodeSet = new HashSet<>();
+            for (JsonNode node : nodesNode) {
+                if (!node.isInt()) {
+                    return false;
+                }
+                nodeSet.add(node.asInt());
+            }
+
+            // 验证边数组格式和节点存在性
+            if (!edgesNode.isArray()) {
+                return false;
+            }
+            for (JsonNode edge : edgesNode) {
+                if (!edge.isArray() || edge.size() != 2) {
+                    return false;
+                }
+                if (!edge.get(0).isInt() || !edge.get(1).isInt()) {
+                    return false;
+                }
+                // 验证边的两个节点都在节点集合中
+                int source = edge.get(0).asInt();
+                int target = edge.get(1).asInt();
+                if (!nodeSet.contains(source) || !nodeSet.contains(target)) {
+                    return false;
+                }
+            }
+
+            return true;
+
+        } catch (Exception e) {
+            log.warn("内容基本格式验证失败", e);
+            return false;
         }
     }
 
@@ -283,7 +345,12 @@ public class RoadmapDomainService {
      * 创建路线图
      */
     @Transactional
-    public Long createRoadmap(long professionId, String content, String description, long userId, int nodeCount) {
+    public Long createRoadmap(long professionId, String content, String description, long userId, int nodeCount, Byte state) {
+        // Domain 层安全验证：状态只能是草稿或提交审核
+        if (!ContentState.DRAFT.value().equals(state) && !ContentState.SUBMITTED.value().equals(state)) {
+            throw new IllegalArgumentException("状态非法");
+        }
+
         RoadmapDO roadmapDO = new RoadmapDO();
         roadmapDO.setContent(content);
         roadmapDO.setContentHash(calculateContentHash(content));
@@ -291,11 +358,12 @@ public class RoadmapDomainService {
         roadmapDO.setProfessionId(professionId);
         roadmapDO.setCreatorId(userId);
         roadmapDO.setNodeCount(nodeCount);
-        roadmapDO.setState(ContentState.SUBMITTED.value());
+        roadmapDO.setState(state);
         roadmapDO.setScore(0.0);
 
         roadmapDataService.insert(roadmapDO);
-        log.info("Created roadmap: {} for profession: {} by user: {}", roadmapDO.getId(), professionId, userId);
+        log.info("Created roadmap: {} for profession: {} by user: {} with state: {}",
+            roadmapDO.getId(), professionId, userId, state);
 
         return roadmapDO.getId();
     }

@@ -136,8 +136,9 @@ export const subscriptionApi = {
 
   /**
    * 订阅课程
+   * @returns 订阅后的状态 (true=已订阅)
    */
-  subscribe(courseId: number): Promise<ApiResponse<void>> {
+  subscribe(courseId: number): Promise<ApiResponse<boolean>> {
     return apiClient.post('/v1/users/current/subscriptions', {
       courseId,
     })
@@ -145,8 +146,9 @@ export const subscriptionApi = {
 
   /**
    * 取消订阅课程
+   * @returns 取消订阅后的状态 (false=未订阅)
    */
-  unsubscribe(courseId: number): Promise<ApiResponse<void>> {
+  unsubscribe(courseId: number): Promise<ApiResponse<boolean>> {
     return apiClient.delete(`/v1/users/current/subscriptions/${String(courseId)}`)
   },
 }

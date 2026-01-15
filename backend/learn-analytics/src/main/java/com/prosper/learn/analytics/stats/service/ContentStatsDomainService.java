@@ -9,6 +9,11 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import static com.prosper.learn.shared.domain.Enums.ContentState;
 import static com.prosper.learn.shared.domain.Enums.ContentType;
 
@@ -28,6 +33,54 @@ import static com.prosper.learn.shared.domain.Enums.ContentType;
 public class ContentStatsDomainService {
 
     private final ContentStatsDataService contentStatsDataService;
+    private final RedisStatsDomainService redisStatsDomainService;
+
+    /**
+     * 获取内容的点赞数
+     *
+     * @param contentType 内容类型
+     * @param contentId 内容ID
+     * @return 点赞数，如果没有统计数据则返回0
+     */
+    public Integer getLikesCount(ContentType contentType, Long contentId) {
+        return contentStatsDataService.getByContent(contentType, contentId)
+            .map(stats -> stats.getLikes() != null ? stats.getLikes() : 0)
+            .orElse(0);
+    }
+
+    /**
+     * 批量获取内容的点赞数（包含数据库 + 今日Redis增量）
+     *
+     * @param contentType 内容类型
+     * @param contentIds 内容ID列表
+     * @return 内容ID到点赞数的映射
+     */
+    public Map<Long, Integer> getBatchLikesCount(ContentType contentType, List<Long> contentIds) {
+        if (contentIds == null || contentIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        // 1. 从数据库获取基础统计数据
+        List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(contentType, contentIds);
+        Map<Long, Integer> dbLikesMap = statsList.stream()
+            .collect(Collectors.toMap(
+                ContentStatsDO::getContentId,
+                stats -> stats.getLikes() != null ? stats.getLikes() : 0
+            ));
+
+        // 2. 从Redis获取今日增量
+        Map<Long, Integer> redisIncrementMap = redisStatsDomainService.getTodayLikesIncrement(contentType, contentIds);
+
+        // 3. 合并数据库基数 + Redis增量
+        Map<Long, Integer> result = new HashMap<>();
+        for (Long contentId : contentIds) {
+            int dbCount = dbLikesMap.getOrDefault(contentId, 0);
+            int redisIncrement = redisIncrementMap.getOrDefault(contentId, 0);
+            result.put(contentId, dbCount + redisIncrement);
+        }
+
+        return result;
+    }
 
     /**
      * 获取内容统计数据

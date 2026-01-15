@@ -35,6 +35,8 @@ public class UserRoadmapDomainService {
 
     // 不变常量 - 进度相关
     private static final int INITIAL_PROGRESS = 0;
+    // 同一职业下最多同时学习的路线图数量
+    private static final int MAX_LEARNING_ROADMAPS_PER_PROFESSION = 10;
 
     // ========== Command 方法（写操作）==========
 
@@ -44,9 +46,10 @@ public class UserRoadmapDomainService {
      *
      * @param userId 用户ID
      * @param roadmapId 路线图ID
+     * @param professionId 职业ID（冗余字段）
      * @throws BusinessException 如果路线图已开始学习
      */
-    public void startRoadmap(Long userId, Long roadmapId) {
+    public void startRoadmap(Long userId, Long roadmapId, Long professionId) {
         // 检查是否已经存在学习记录
         UserRoadmapDO existing = userRoadmapDataService.getByUserAndRoadmap(userId, roadmapId);
 
@@ -54,8 +57,15 @@ public class UserRoadmapDomainService {
             throw StatusCode.USER_ROADMAP_ALREADY_STARTED.exception();
         }
 
+        // 检查该职业下正在学习的路线图数量
+        int learningCount = userRoadmapDataService.countLearningByProfession(userId, professionId);
+        if (learningCount >= MAX_LEARNING_ROADMAPS_PER_PROFESSION) {
+            throw StatusCode.LEARNING_ROADMAP_LIMIT_EXCEEDED.exception(
+                "同一职业下最多同时学习" + MAX_LEARNING_ROADMAPS_PER_PROFESSION + "条路线图");
+        }
+
         // 创建新的学习记录
-        UserRoadmapDO userRoadmapDO = createInitialUserRoadmap(userId, roadmapId);
+        UserRoadmapDO userRoadmapDO = createInitialUserRoadmap(userId, roadmapId, professionId);
         userRoadmapDataService.insert(userRoadmapDO);
 
         // 发布学习开始事件
@@ -248,15 +258,27 @@ public class UserRoadmapDomainService {
         return userRoadmapDataService.getByUser(userId);
     }
 
+    /**
+     * 获取用户正在学习的职业路线图
+     * @param userId 用户ID
+     * @param professionId 职业ID
+     * @param limit 最大返回数量
+     * @return 正在学习的路线图列表
+     */
+    public List<UserRoadmapDO> getLearningByProfession(Long userId, Long professionId, int limit) {
+        return userRoadmapDataService.getLearningByProfession(userId, professionId, limit);
+    }
+
     // ========== Private 辅助方法 ==========
 
     /**
      * 创建初始用户路线图记录
      */
-    private UserRoadmapDO createInitialUserRoadmap(Long userId, Long roadmapId) {
+    private UserRoadmapDO createInitialUserRoadmap(Long userId, Long roadmapId, Long professionId) {
         UserRoadmapDO userRoadmapDO = new UserRoadmapDO();
         userRoadmapDO.setUserId(userId);
         userRoadmapDO.setRoadmapId(roadmapId);
+        userRoadmapDO.setProfessionId(professionId);
         userRoadmapDO.setProgressPercent(INITIAL_PROGRESS);
         userRoadmapDO.setState(UserProgressState.IN_PROGRESS.value());
         userRoadmapDO.setStartedAt(LocalDateTime.now());

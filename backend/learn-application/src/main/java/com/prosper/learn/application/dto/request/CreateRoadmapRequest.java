@@ -18,4 +18,11 @@ public class CreateRoadmapRequest {
     @NotBlank(message = "路线图描述不能为空")
     @ConfigurableSize(configKey = "roadmap-description")
     private String description;
+
+    /**
+     * 初始状态：0-草稿，1-提交审核
+     * 必须传递，只能是这两个值
+     */
+    @NotNull(message = "状态不能为空")
+    private Byte state;
 }

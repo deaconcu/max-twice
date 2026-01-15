@@ -1,8 +1,12 @@
 package com.prosper.learn.application.service;
 
 import com.prosper.learn.application.dto.response.UpvoteStatusDTO;
+import com.prosper.learn.content.node.NodeDO;
+import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.content.profession.ProfessionDO;
+import com.prosper.learn.content.profession.ProfessionDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.interaction.comment.CommentDO;
@@ -40,8 +44,10 @@ public class UpvoteService {
 
     private final UpvoteDomainService upvoteDomainService;
     private final PostDataService postDataService;
+    private final NodeDataService nodeDataService;
     private final CommentDataService commentDataService;
     private final RoadmapDataService roadmapDataService;
+    private final ProfessionDataService professionDataService;
     private final MemoryCardDeckDataService deckDataService;
     private final ApplicationEventPublisher eventPublisher;
 

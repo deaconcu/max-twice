@@ -45,32 +45,36 @@ public class SubscriptionsController {
     /**
      * 添加订阅
      * 映射: POST /user/subscription → POST /api/v1/users/current/subscriptions
+     *
+     * @return 订阅后的状态 (true=已订阅)
      */
     @PostMapping("/users/current/subscriptions")
     @SaCheckLogin
     @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<Void> subscribe(
+    public ApiResponse<Boolean> subscribe(
             @JsonParam("courseId") @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
             Long courseId,
             @CurrentUser UserDO currentUser) {
         userService.subscribe(currentUser.getId(), courseId);
-        return ApiResponse.success();
+        return ApiResponse.success(true);
     }
 
     /**
      * 取消订阅
      * 映射: DELETE /user/subscription → DELETE /api/v1/users/current/subscriptions/{courseId}
+     *
+     * @return 取消订阅后的状态 (false=未订阅)
      */
     @DeleteMapping("/users/current/subscriptions/{courseId}")
     @SaCheckLogin
     @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<Void> unsubscribe(
+    public ApiResponse<Boolean> unsubscribe(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
             Long courseId,
             @CurrentUser UserDO currentUser) {
         userService.unsubscribe(currentUser.getId(), courseId);
-        return ApiResponse.success();
+        return ApiResponse.success(false);
     }
 }

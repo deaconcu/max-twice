@@ -87,6 +87,7 @@ public enum StatusCode {
     USER_COURSE_NOT_STARTED(1612, "课程尚未开始学习"),
     USER_ROADMAP_ALREADY_STARTED(1613, "路线图已开始学习"),
     USER_ROADMAP_NOT_STARTED(1614, "路线图尚未开始学习"),
+    LEARNING_ROADMAP_LIMIT_EXCEEDED(1615, "学习路线图数量超过限制"),
     
     // 数据解析相关 17xx
     JSON_PARSE_ERROR(1701, "数据格式解析失败"),
