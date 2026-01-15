@@ -52,13 +52,12 @@ public class RoadmapDomainService {
      */
     public List<RoadmapDO> getRoadmapsByProfessionPublic(Long professionId, Long lastId, int limit) {
         if (lastId == null || lastId == 0) {
-            return roadmapDataService.getListByProfessionExcludingOrderByScore(
-                professionId, limit, new ArrayList<>());
+            return roadmapDataService.getListByProfessionOrderBy(professionId, limit, "score");
         } else {
             RoadmapDO lastRoadmap = roadmapDataService.getById(lastId);
             if (lastRoadmap != null) {
-                return roadmapDataService.getListByProfessionAfterScoreExcluding(
-                    professionId, lastRoadmap.getScore(), lastId, limit, null);
+                return roadmapDataService.getListByProfessionAfterCursorOrderBy(
+                    professionId, lastRoadmap.getScore(), lastRoadmap.getCreatedAt(), lastId, limit, "score");
             } else {
                 return new ArrayList<>();
             }
@@ -75,39 +74,20 @@ public class RoadmapDomainService {
      * @param limit 查询数量限制
      * @return 路线图列表
      */
-    public List<RoadmapDO> getRoadmapsByProfessionWithPinned(Long professionId, Long lastId,
-                                                              List<Long> pinnedRoadmapIds, int limit) {
-        List<RoadmapDO> roadmapList = new ArrayList<>();
-
-        // 首页：先加载置顶路线图
-        if (lastId == null && pinnedRoadmapIds != null && !pinnedRoadmapIds.isEmpty()) {
-            List<RoadmapDO> pinnedRoadmaps = roadmapDataService.getByIds(pinnedRoadmapIds);
-            roadmapList.addAll(pinnedRoadmaps);
-
-            // 加载其他路线图补充到 limit
-            int remainingLimit = limit - roadmapList.size();
-            if (remainingLimit > 0) {
-                List<RoadmapDO> otherRoadmaps = roadmapDataService.getListByProfessionExcludingOrderByScore(
-                    professionId, remainingLimit, pinnedRoadmapIds);
-                roadmapList.addAll(otherRoadmaps);
-            }
-        }
-        // 分页：按分数查询
-        else {
-            if (lastId != null) {
-                RoadmapDO lastRoadmap = roadmapDataService.getById(lastId);
-                if (lastRoadmap != null) {
-                    roadmapList = roadmapDataService.getListByProfessionAfterScoreExcluding(
-                        professionId, lastRoadmap.getScore(), lastId, limit, null);
-                }
-            } else {
-                // lastId 为 null 但没有置顶，直接查询
-                roadmapList = roadmapDataService.getListByProfessionExcludingOrderByScore(
-                    professionId, limit, new ArrayList<>());
+    /**
+     * 获取职业路线图列表（支持动态排序）
+     */
+    public List<RoadmapDO> getRoadmapsByProfession(Long professionId, Long lastId, int limit, String sortBy) {
+        if (lastId != null) {
+            RoadmapDO lastRoadmap = roadmapDataService.getById(lastId);
+            if (lastRoadmap != null) {
+                return roadmapDataService.getListByProfessionAfterCursorOrderBy(
+                    professionId, lastRoadmap.getScore(), lastRoadmap.getCreatedAt(), lastId, limit, sortBy);
             }
         }
 
-        return roadmapList;
+        // 首次加载
+        return roadmapDataService.getListByProfessionOrderBy(professionId, limit, sortBy);
     }
 
     /**

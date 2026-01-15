@@ -9,6 +9,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -114,17 +115,26 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
      */
 
     /**
-     * 根据职业和分数排序获取路线图列表（排除指定路线图）
+     * 根据职业获取路线图列表（支持动态排序）
      */
-    public List<RoadmapDO> getListByProfessionExcludingOrderByScore(long professionId, int limit, List<Long> excludeIds) {
-        return roadmapMapper.getListByProfessionExcludingOrderByScore(professionId, limit, excludeIds);
+    public List<RoadmapDO> getListByProfessionOrderBy(long professionId, int limit, String sortBy) {
+        if ("latest".equals(sortBy)) {
+            return roadmapMapper.getListByProfessionOrderByLatest(professionId, limit);
+        } else {
+            return roadmapMapper.getListByProfessionOrderByScore(professionId, limit);
+        }
     }
 
     /**
-     * 根据职业和分数分页获取路线图列表（排除指定路线图）
+     * 根据职业分页获取路线图列表（支持动态排序，使用游标）
      */
-    public List<RoadmapDO> getListByProfessionAfterScoreExcluding(long professionId, double lastScore, long lastId, int limit, List<Long> excludeIds) {
-        return roadmapMapper.getListByProfessionAfterScoreExcluding(professionId, lastScore, lastId, limit, excludeIds);
+    public List<RoadmapDO> getListByProfessionAfterCursorOrderBy(long professionId, Double lastScore,
+            LocalDateTime lastCreatedAt, long lastId, int limit, String sortBy) {
+        if ("latest".equals(sortBy)) {
+            return roadmapMapper.getListByProfessionAfterCreatedAt(professionId, lastCreatedAt, lastId, limit);
+        } else {
+            return roadmapMapper.getListByProfessionAfterScore(professionId, lastScore, lastId, limit);
+        }
     }
 
     /**

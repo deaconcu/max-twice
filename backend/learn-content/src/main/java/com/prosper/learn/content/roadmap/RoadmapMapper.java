@@ -90,6 +90,48 @@ public interface RoadmapMapper {
 //    List<RoadmapDO> getListByScore(int limit);
 // --注释掉检查 STOP (2025/12/10 12:03)
 
+    /**
+     * 根据职业获取路线图列表（按创建时间排序）
+     */
+    @Select("SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
+            "ORDER BY created_at DESC, id DESC LIMIT #{limit}")
+    List<RoadmapDO> getListByProfessionOrderByLatest(
+            @Param("professionId") long professionId,
+            @Param("limit") int limit);
+
+    /**
+     * 根据职业获取路线图列表（按分数排序）
+     */
+    @Select("SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
+            "ORDER BY score DESC, id DESC LIMIT #{limit}")
+    List<RoadmapDO> getListByProfessionOrderByScore(
+            @Param("professionId") long professionId,
+            @Param("limit") int limit);
+
+    /**
+     * 分页获取职业路线图（按创建时间排序）
+     */
+    @Select("SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
+            "AND (created_at < #{lastCreatedAt} OR (created_at = #{lastCreatedAt} AND id < #{lastId})) " +
+            "ORDER BY created_at DESC, id DESC LIMIT #{limit}")
+    List<RoadmapDO> getListByProfessionAfterCreatedAt(
+            @Param("professionId") long professionId,
+            @Param("lastCreatedAt") java.time.LocalDateTime lastCreatedAt,
+            @Param("lastId") long lastId,
+            @Param("limit") int limit);
+
+    /**
+     * 分页获取职业路线图（按分数排序）
+     */
+    @Select("SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL " +
+            "AND (score < #{lastScore} OR (score = #{lastScore} AND id < #{lastId})) " +
+            "ORDER BY score DESC, id DESC LIMIT #{limit}")
+    List<RoadmapDO> getListByProfessionAfterScore(
+            @Param("professionId") long professionId,
+            @Param("lastScore") Double lastScore,
+            @Param("lastId") long lastId,
+            @Param("limit") int limit);
+
     @Select({"<script>",
              "SELECT * FROM roadmap WHERE profession_id = #{professionId} AND state = " + ContentState.PUBLISHED_VALUE + " AND deleted_at IS NULL",
              "<if test='excludeIds != null and excludeIds.size() > 0'>",

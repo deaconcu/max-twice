@@ -41,7 +41,7 @@ public class RoadmapsController {
 
     /**
      * 获取职业路线图
-     * 映射: GET /roadmap/list/{professionId} → GET /api/v1/professions/{professionId}/roadmaps?lastId=123
+     * 映射: GET /roadmap/list/{professionId} → GET /api/v1/professions/{professionId}/roadmaps?lastId=123&sortBy=latest
      */
     @GetMapping("/professions/{professionId}/roadmaps")
     @SaCheckLogin
@@ -52,9 +52,11 @@ public class RoadmapsController {
             Long professionId,
             @RequestParam(required = false)
             Long lastId,
+            @RequestParam(required = false, defaultValue = "score")
+            String sortBy,
             @CurrentUser UserDO currentUser) {
 
-        List<RoadmapWithStatusDTO> roadmaps = roadmapService.getRoadmapsByProfession(professionId, lastId, currentUser);
+        List<RoadmapWithStatusDTO> roadmaps = roadmapService.getRoadmapsByProfession(professionId, lastId, sortBy, currentUser);
 
         return ApiResponse.success(roadmaps);
     }

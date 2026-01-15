@@ -163,6 +163,7 @@
                   :variant="roadmap.learning ? 'outlined' : 'flat'"
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
                   rounded="lg"
+                  class="mr-3"
                   @click="handleStartLearning"
                 >
                   <v-icon
@@ -209,7 +210,7 @@ import { Position } from '@vue-flow/core'
 import type { Node, Edge } from '@vue-flow/core'
 import dagre from 'dagre'
 import { useFetch, useMutation } from '@/composables'
-import { roadmapApi } from '@/api'
+import { roadmapApi, progressApi } from '@/api'
 import { ObjectType } from '@/enums'
 import type { Roadmap } from '@/types/roadmap'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
@@ -383,9 +384,39 @@ const handleVote = (): void => {
   roadmap.value.vote += roadmap.value.upvoted ? 1 : -1
 }
 
+// 开始学习路线图的 mutation
+const { execute: startRoadmapMutation } = useMutation(progressApi.startRoadmap, {
+  successMessage: '已开始学习',
+  showToast: true,
+})
+
+// 取消学习路线图的 mutation
+const { execute: cancelRoadmapMutation } = useMutation(progressApi.cancelRoadmap, {
+  successMessage: '已取消学习',
+  showToast: true,
+})
+
 // 开始学习
-const handleStartLearning = (): void => {
-  roadmap.value.learning = !roadmap.value.learning
+const handleStartLearning = async (): Promise<void> => {
+  if (!roadmap.value) return
+
+  try {
+    if (roadmap.value.learning) {
+      // 取消学习
+      const result = await cancelRoadmapMutation(roadmapId.value)
+      if (result) {
+        roadmap.value.learning = result.learning
+      }
+    } else {
+      // 开始学习
+      const result = await startRoadmapMutation(roadmapId.value)
+      if (result) {
+        roadmap.value.learning = result.learning
+      }
+    }
+  } catch (error) {
+    console.error('操作失败:', error)
+  }
 }
 
 // 复制路径

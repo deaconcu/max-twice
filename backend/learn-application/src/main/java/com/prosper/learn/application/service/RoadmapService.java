@@ -182,7 +182,7 @@ public class RoadmapService {
      * 转换为路线图（包含完整业务信息）
      * 包含：creator + profession + upvoted + pinned + learning + formatted content + likes
      */
-    private List<RoadmapWithStatusDTO> toRoadmapWithFullInfo(List<RoadmapDO> roadmapList, long userId, Long professionId, Long lastId, List<Long> pinnedRoadmapIds) {
+    private List<RoadmapWithStatusDTO> toRoadmapWithFullInfo(List<RoadmapDO> roadmapList, long userId, Long professionId) {
         List<RoadmapWithStatusDTO> dtoList = roadmapConverter.toWithStatusDTO(roadmapList);
 
         if (!dtoList.isEmpty()) {
@@ -200,7 +200,6 @@ public class RoadmapService {
 
             ProfessionDO professionDO = professionDataService.getById(professionId);
             Set<Long> upvotedIds = upvoteDomainService.getUpvotedIds(roadmapIds, ContentType.roadmap.value(), userId);
-            Set<Long> pinnedIds = getPinnedIdsForCurrentRequest(userId, professionId, lastId, pinnedRoadmapIds);
             Set<Long> learningIds = getLearningIds(userId, roadmapIds);
 
             // 批量获取点赞数
@@ -217,7 +216,6 @@ public class RoadmapService {
                 dto.setProfession(professionConverter.toBriefDTO(professionDO));
                 dto.setCreator(creator != null ? userConverter.toBriefDTO(creator) : null);
                 dto.setUpvoted(upvotedIds.contains(dto.getId()));
-                dto.setPinned(pinnedIds.contains(dto.getId()));
                 dto.setLearning(learningIds.contains(dto.getId()));
 
                 // 设置点赞数
@@ -367,20 +365,22 @@ public class RoadmapService {
     /**
      * 获取职业路线图列表（带置顶和状态信息）
      */
-    public List<RoadmapWithStatusDTO> getRoadmapsByProfession(Long professionId, Long lastId, UserDO currentUser) {
+    public List<RoadmapWithStatusDTO> getRoadmapsByProfession(Long professionId, Long lastId, String sortBy, UserDO currentUser) {
         validateProfessionId(professionId);
+
+        // 默认按 score 排序
+        if (sortBy == null || sortBy.isEmpty() || (!sortBy.equals("latest") && !sortBy.equals("score"))) {
+            sortBy = "score";
+        }
 
         int limit = systemProperties.getRoadmap().getDefaultPageSize();
 
-        // 跨域查询：获取用户的置顶路线图ID列表
-        List<Long> pinnedRoadmapIds = (lastId == null) ? userDomainService.getPinnedRoadmapIds(currentUser.getId(), professionId) : new ArrayList<>();
-
         // 委托给 DomainService 查询路线图列表
-        List<RoadmapDO> roadmapList = domainService.getRoadmapsByProfessionWithPinned(
-            professionId, lastId, pinnedRoadmapIds, limit);
+        List<RoadmapDO> roadmapList = domainService.getRoadmapsByProfession(
+            professionId, lastId, limit, sortBy);
 
         // 转换为完整DTO（包含跨域信息）
-        return toRoadmapWithFullInfo(roadmapList, currentUser.getId(), professionId, lastId, pinnedRoadmapIds);
+        return toRoadmapWithFullInfo(roadmapList, currentUser.getId(), professionId);
     }
 
     /**
@@ -415,8 +415,8 @@ public class RoadmapService {
         // 从 DomainService 获取路线图列表
         List<RoadmapDO> roadmapList = domainService.getRoadmapsByIds(roadmapIds);
 
-        // 转换为完整DTO（包含跨域信息）
-        return toRoadmapWithFullInfo(roadmapList, userId, null, null, new ArrayList<>());
+        // 转换为完整DTO（包含跨域信息），professionId 为 null
+        return toRoadmapWithFullInfo(roadmapList, userId, null);
     }
 
     /**
@@ -586,17 +586,6 @@ public class RoadmapService {
         }
     }
 
-    private Set<Long> getPinnedIdsForCurrentRequest(long userId, Long professionId, Long lastId, List<Long> pinnedRoadmapIds) {
-        Set<Long> pinnedIds = new HashSet<>();
-        if (lastId == null || lastId == 0) {
-            pinnedIds.addAll(pinnedRoadmapIds);
-        } else {
-            List<Long> currentPinnedIds = userDomainService.getPinnedRoadmapIds(userId, professionId);
-            pinnedIds.addAll(currentPinnedIds);
-        }
-        return pinnedIds;
-    }
-    
     private Set<Long> getLearningIds(long userId, List<Long> roadmapIds) {
         if (systemProperties.getRoadmap().isEnableBatchStatusQuery()) {
             List<Long> learningRoadmapIds = userRoadmapDataService.getBatchLearningStatus(userId, roadmapIds);

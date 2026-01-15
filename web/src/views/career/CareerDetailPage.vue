@@ -100,8 +100,9 @@
                   </v-btn>
                 </v-btn-toggle>
 
-                <!-- 排序 -->
+                <!-- 排序（仅在"全部"状态下显示） -->
                 <v-select
+                  v-if="filterStatus === 'all'"
                   v-model="sortBy"
                   :items="sortOptions"
                   variant="solo"
@@ -287,7 +288,7 @@
 
               <!-- 自定义底部提示 -->
               <template #empty>
-                <div class="text-center py-8">
+                <div class="text-center py-10">
                   <p class="text-body-2 text-grey">已经到底了</p>
                 </div>
               </template>
@@ -449,12 +450,12 @@ const {
 // 状态管理
 const searchText = ref('')
 const filterStatus = ref<string>('all')
-const sortBy = ref<string>('latest')
+const sortBy = ref<string>('score')
 
 // 排序选项
 const sortOptions = [
   { title: '最新发布', value: 'latest' },
-  { title: '综合排序', value: 'popular' },
+  { title: '综合排序', value: 'score' },
 ]
 
 const error = computed(() => (fetchError.value ? '加载职业信息失败' : null))
@@ -468,7 +469,7 @@ const {
   reset: resetRoadmaps,
 } = useInfiniteScroll({
   fetchFn: async (params) => {
-    const response = await roadmapApi.getProfessionRoadmaps(careerId.value, params.lastId)
+    const response = await roadmapApi.getProfessionRoadmaps(careerId.value, params.lastId, sortBy.value)
     return {
       code: response.code,
       data: response.data || [],
@@ -480,6 +481,12 @@ const {
     lastId: lastItem.id,
   }),
   initialParams: { lastId: undefined },
+})
+
+// 监听排序变化，重置列表
+watch(sortBy, () => {
+  resetRoadmaps()
+  loadMoreRoadmaps({ done: () => {} })
 })
 
 // 学习中的路线图（单独接口，不分页）
@@ -520,7 +527,7 @@ const onLoadMore = async ({ done }: { done: (status: string) => void }) => {
 
 // 筛选后的路线图
 const filteredRoadmaps = computed(() => {
-  // 学习中状态：使用单独接口的数据（格式与全部列表一致）
+  // 学习中状态：使用单独接口的数据
   if (filterStatus.value === 'learning') {
     return learningRoadmaps.value || []
   }
@@ -533,20 +540,6 @@ const filteredRoadmaps = computed(() => {
     const searchLower = searchText.value.toLowerCase()
     filtered = filtered.filter((r) => r.description?.toLowerCase().includes(searchLower))
   }
-
-  // 排序
-  if (sortBy.value === 'latest') {
-    filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-  } else if (sortBy.value === 'popular') {
-    filtered.sort((a, b) => b.likes - a.likes)
-  }
-
-  // 置顶的始终在前面
-  filtered.sort((a, b) => {
-    if (a.pinned && !b.pinned) return -1
-    if (!a.pinned && b.pinned) return 1
-    return 0
-  })
 
   return filtered
 })

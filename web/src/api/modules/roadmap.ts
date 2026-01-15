@@ -10,10 +10,13 @@ export const roadmapApi = {
   /**
    * 获取职业的路线图列表
    */
-  getProfessionRoadmaps(professionId: number, lastId?: number): Promise<ApiResponse<Roadmap[]>> {
-    const params: Record<string, number> = {}
+  getProfessionRoadmaps(professionId: number, lastId?: number, sortBy?: string): Promise<ApiResponse<Roadmap[]>> {
+    const params: Record<string, string | number> = {}
     if (lastId != null) {
       params.lastId = lastId
+    }
+    if (sortBy) {
+      params.sortBy = sortBy
     }
     return apiClient.get(`/v1/professions/${String(professionId)}/roadmaps`, { params })
   },
