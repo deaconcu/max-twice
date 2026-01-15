@@ -140,14 +140,13 @@
             </div>
 
             <!-- 路线图列表 -->
-            <v-infinite-scroll v-else-if="filteredRoadmaps.length > 0" :items="filteredRoadmaps" @load="onLoadMore" empty-text="已经到底了">
+            <v-infinite-scroll v-else-if="filteredRoadmaps.length > 0" :items="filteredRoadmaps" @load="onLoadMore">
               <template v-for="roadmap in filteredRoadmaps" :key="roadmap.id">
                 <v-card
                   border
                   rounded="xl"
                   class="roadmap-card mb-4"
                   hover
-                  @click="handleGoToRoadmap(roadmap)"
                 >
               <v-card-text class="pa-4 pa-sm-5">
                 <div class="d-flex align-start">
@@ -159,7 +158,7 @@
                       :disabled="roadmap.creator?.id === currentUserId"
                       icon
                       size="small"
-                      @click="handleVote(roadmap, $event)"
+                      @click="handleVote(roadmap)"
                     >
                       <v-icon :icon="roadmap.upvoted ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'" />
                     </v-btn>
@@ -173,8 +172,11 @@
                     </div>
                   </div>
 
-                  <!-- 中间：路径信息 -->
-                  <div class="flex-grow-1" style="min-width: 0">
+                  <!-- 右侧：内容和操作区域 -->
+                  <div class="flex-grow-1">
+                    <!-- 内容区域（可点击跳转） -->
+                    <div class="d-flex align-start">
+                      <div class="content-area flex-grow-1" @click="handleGoToRoadmap(roadmap)">
                     <!-- 标签 -->
                     <div class="d-flex align-center mb-2">
                       <v-chip
@@ -204,81 +206,90 @@
                     </p>
 
                     <!-- 统计信息 -->
-                    <div class="d-flex flex-wrap align-center gap-2 gap-sm-3 gap-md-4 mb-3">
+                    <div class="d-flex flex-wrap align-center gap-4 gap-sm-6 gap-md-8 mb-3">
                       <div class="d-flex align-center">
-                        <v-icon icon="mdi-account" size="16" color="grey" class="mr-1" />
+                        <v-icon icon="mdi-account" size="16" color="grey" class="mr-2" />
                         <span class="text-caption text-grey-darken-2">
                           {{ roadmap.creator?.name || '未知用户' }}
                         </span>
                       </div>
                       <div class="d-flex align-center">
-                        <v-icon icon="mdi-account-group" size="16" color="grey" class="mr-1" />
+                        <v-icon icon="mdi-account-group" size="16" color="grey" class="mr-2" />
                         <span class="text-caption text-grey-darken-2">
                           {{ roadmap.learnerCount ?? 0 }}
                           <span class="d-none d-sm-inline">人学习</span>
                         </span>
                       </div>
                       <div class="d-flex align-center d-none d-sm-flex">
-                        <v-icon icon="mdi-comment-outline" size="16" color="grey" class="mr-1" />
+                        <v-icon icon="mdi-comment-outline" size="16" color="grey" class="mr-2" />
                         <span class="text-caption text-grey-darken-2">
                           {{ roadmap.commentCount ?? 0 }} 评论
                         </span>
                       </div>
                       <div class="d-flex align-center">
-                        <v-icon icon="mdi-circle-medium" size="16" color="grey" class="mr-1" />
+                        <v-icon icon="mdi-circle-medium" size="16" color="grey" class="mr-2" />
                         <span class="text-caption text-grey-darken-2">
                           {{ roadmap.nodeCount }}
                           <span class="d-none d-sm-inline">个</span>节点
                         </span>
                       </div>
                       <div class="d-flex align-center d-none d-md-flex">
-                        <v-icon icon="mdi-clock-outline" size="16" color="grey" class="mr-1" />
+                        <v-icon icon="mdi-clock-outline" size="16" color="grey" class="mr-2" />
                         <span class="text-caption text-grey-darken-2">
                           {{ getTimeDisplay(roadmap.createdAt) }}
                         </span>
                       </div>
                     </div>
+                      </div>
 
-                    <!-- 操作按钮 -->
-                    <div class="d-flex align-center gap-2">
-                      <v-btn
-                        :color="roadmap.learning ? 'success' : 'primary'"
-                        :variant="roadmap.learning ? 'outlined' : 'flat'"
-                        size="small"
-                        rounded="lg"
-                        @click="handleStartLearning(roadmap, $event)"
-                      >
+                      <!-- 右侧：路线图图标 -->
+                      <div class="ml-3 ml-sm-4 d-none d-sm-block roadmap-icon">
                         <v-icon
-                          :icon="roadmap.learning ? 'mdi-check' : 'mdi-play'"
-                          size="16"
-                          class="mr-1"
+                          icon="mdi-graph-outline"
+                          :size="$vuetify.display.mdAndUp ? 80 : 60"
+                          color="grey-lighten-2"
                         />
-                        {{ roadmap.learning ? '正在学习' : '开始学习' }}
-                      </v-btn>
-                      <v-btn
-                        color="grey-darken-2"
-                        variant="outlined"
-                        size="small"
-                        rounded="lg"
-                        @click="handleCopy(roadmap, $event)"
-                      >
-                        <v-icon icon="mdi-content-copy" size="16" class="mr-1" />
-                        复制
-                      </v-btn>
+                      </div>
                     </div>
-                  </div>
 
-                  <!-- 右侧：路线图图标 -->
-                  <div class="ml-3 ml-sm-4 d-none d-sm-block roadmap-icon">
-                    <v-icon
-                      icon="mdi-graph-outline"
-                      :size="$vuetify.display.mdAndUp ? 80 : 60"
-                      color="grey-lighten-2"
-                    />
+                    <!-- 操作按钮区域（独立，不触发跳转） -->
+                    <div class="d-flex align-center gap-3 mt-3">
+                    <v-btn
+                      :color="roadmap.learning ? 'success' : 'primary'"
+                      :variant="roadmap.learning ? 'outlined' : 'flat'"
+                      size="small"
+                      rounded="lg"
+                      @click="handleStartLearning(roadmap)"
+                    >
+                      <v-icon
+                        :icon="roadmap.learning ? 'mdi-check' : 'mdi-play'"
+                        size="16"
+                        class="mr-1"
+                      />
+                      {{ roadmap.learning ? '正在学习' : '开始学习' }}
+                    </v-btn>
+                    <v-btn
+                      color="grey-darken-2"
+                      variant="tonal"
+                      size="small"
+                      rounded="lg"
+                      @click="handleCopy(roadmap)"
+                    >
+                      <v-icon icon="mdi-content-copy" size="16" class="mr-1" />
+                      复制
+                    </v-btn>
                   </div>
                 </div>
+              </div>
               </v-card-text>
             </v-card>
+              </template>
+
+              <!-- 自定义底部提示 -->
+              <template #empty>
+                <div class="text-center py-8">
+                  <p class="text-body-2 text-grey">已经到底了</p>
+                </div>
               </template>
             </v-infinite-scroll>
           </div>
@@ -594,11 +605,8 @@ const { execute: toggleUpvote } = useMutation(
 )
 
 const handleVote = async (
-  roadmap: { id: number; upvoted: boolean; likes: number },
-  event: Event
+  roadmap: { id: number; upvoted: boolean; likes: number }
 ): Promise<void> => {
-  event.stopPropagation()
-
   const result = await toggleUpvote({ roadmapId: roadmap.id })
 
   // 调用成功，更新状态
@@ -609,17 +617,43 @@ const handleVote = async (
   // 调用失败，不做任何更新
 }
 
+// 开始学习路线图的 mutation
+const { execute: startRoadmapMutation } = useMutation(progressApi.startRoadmap, {
+  successMessage: '已开始学习',
+  showToast: true,
+})
+
+// 取消学习路线图的 mutation
+const { execute: cancelRoadmapMutation } = useMutation(progressApi.cancelRoadmap, {
+  successMessage: '已取消学习',
+  showToast: true,
+})
+
 // 开始学习
-const handleStartLearning = (roadmap: { learning: boolean }, event: Event): void => {
-  event.stopPropagation()
-  roadmap.learning = !roadmap.learning
+const handleStartLearning = async (roadmap: { id: number; learning: boolean }): Promise<void> => {
+  try {
+    if (roadmap.learning) {
+      // 取消学习
+      const result = await cancelRoadmapMutation(roadmap.id)
+      if (result) {
+        roadmap.learning = result.learning
+      }
+    } else {
+      // 开始学习
+      const result = await startRoadmapMutation(roadmap.id)
+      if (result) {
+        roadmap.learning = result.learning
+      }
+    }
+  } catch (error) {
+    console.error('操作失败:', error)
+  }
 }
 
 // 复制路径
-const handleCopy = (roadmap: { id: number }, event: Event): void => {
-  event.stopPropagation()
+const handleCopy = (roadmap: { id: number }): void => {
   console.log('复制路径:', roadmap.id)
-  void router.push(`/roadmap/${careerId.value}/create?copy=${roadmap.id}`)
+  void router.push(`/career/${careerId.value}/roadmap/create?copy=${roadmap.id}`)
 }
 </script>
 
@@ -731,7 +765,6 @@ const handleCopy = (roadmap: { id: number }, event: Event): void => {
 .roadmap-card {
   background-color: rgb(var(--v-theme-surface));
   border: 1px solid rgb(var(--v-theme-outline));
-  cursor: pointer;
   transition: all 0.2s ease;
 }
 
@@ -739,6 +772,14 @@ const handleCopy = (roadmap: { id: number }, event: Event): void => {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border-color: rgb(var(--v-theme-primary));
+}
+
+.content-area {
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 4px;
+  margin: -4px;
+  transition: background-color 0.2s;
 }
 
 .vote-section {

@@ -1,9 +1,9 @@
 package com.prosper.learn.application.converter;
 
+import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import org.mapstruct.Mapper;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
  * 通用转换器
@@ -17,9 +17,6 @@ public interface CommonConverter {
      * 格式：yyyy-MM-dd HH:mm:ss
      */
     default String map(LocalDateTime localDateTime) {
-        if (localDateTime == null) {
-            return null;
-        }
-        return localDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        return TimeZoneUtil.formatDateTime(localDateTime);
     }
 }

@@ -143,6 +143,10 @@ public class RoadmapService {
         // 设置点赞状态
         dto.setUpvoted(upvoteDomainService.hasUpvoted(roadmapDO.getId(), ContentType.roadmap.value(), userId));
 
+        // 设置学习状态
+        boolean isLearning = userRoadmapDataService.isLearning(userId, roadmapDO.getId());
+        dto.setLearning(isLearning);
+
         // 设置格式化内容
         if (roadmapDO.getContent() != null) {
             dto.setContent(parseContentToGraphFormat(roadmapDO.getContent(), userId));
@@ -186,7 +190,14 @@ public class RoadmapService {
                     .map(RoadmapSummaryDTO::getId)
                     .collect(Collectors.toList());
 
-            UserBriefDTO userDTO = userConverter.toBriefDTO(userDataService.getById(userId));
+            // 收集所有创建者ID
+            Set<Long> creatorIds = roadmapList.stream()
+                    .map(RoadmapDO::getCreatorId)
+                    .collect(Collectors.toSet());
+
+            // 批量查询创建者信息
+            Map<Long, UserDO> creatorMap = userDataService.getMapByIds(creatorIds);
+
             ProfessionDO professionDO = professionDataService.getById(professionId);
             Set<Long> upvotedIds = upvoteDomainService.getUpvotedIds(roadmapIds, ContentType.roadmap.value(), userId);
             Set<Long> pinnedIds = getPinnedIdsForCurrentRequest(userId, professionId, lastId, pinnedRoadmapIds);
@@ -195,9 +206,16 @@ public class RoadmapService {
             // 批量获取点赞数
             Map<Long, Integer> likesMap = contentStatsDomainService.getBatchLikesCount(ContentType.roadmap, roadmapIds);
 
+            // 创建 roadmapDO 的映射，方便查找 creatorId
+            Map<Long, RoadmapDO> roadmapDOMap = roadmapList.stream()
+                    .collect(Collectors.toMap(RoadmapDO::getId, r -> r));
+
             for (RoadmapWithStatusDTO dto : dtoList) {
+                RoadmapDO roadmapDO = roadmapDOMap.get(dto.getId());
+                UserDO creator = creatorMap.get(roadmapDO.getCreatorId());
+
                 dto.setProfession(professionConverter.toBriefDTO(professionDO));
-                dto.setCreator(userDTO);
+                dto.setCreator(creator != null ? userConverter.toBriefDTO(creator) : null);
                 dto.setUpvoted(upvotedIds.contains(dto.getId()));
                 dto.setPinned(pinnedIds.contains(dto.getId()));
                 dto.setLearning(learningIds.contains(dto.getId()));

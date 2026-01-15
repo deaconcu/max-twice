@@ -73,6 +73,14 @@ public class UserRoadmapDataService extends AbstractDataService<UserRoadmapDO, U
     }
 
     /**
+     * 检查用户是否正在学习指定路线图
+     */
+    public boolean isLearning(long userId, long roadmapId) {
+        UserRoadmapDO userRoadmap = getByUserAndRoadmap(userId, roadmapId);
+        return userRoadmap != null;
+    }
+
+    /**
      * 更新学习进度
      */
     @CacheEvict(value = "userRoadmapByUserAndRoadmap", key = "#progressDO.userId + '_' + #progressDO.roadmapId")

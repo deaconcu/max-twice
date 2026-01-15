@@ -2,8 +2,6 @@ package com.prosper.learn.application.dto.response.roadmap;
 
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 /**
  * 路线图摘要 DTO
  *
@@ -29,6 +27,8 @@ public class RoadmapSummaryDTO {
 
     private Integer comment;
 
+    private Integer nodeCount;
+
     private Long creatorId;
 
     /**
@@ -39,7 +39,7 @@ public class RoadmapSummaryDTO {
      */
     private Boolean available;
 
-    private LocalDateTime updatedAt;
+    private String updatedAt;
 
-    private LocalDateTime createdAt;
+    private String createdAt;
 }

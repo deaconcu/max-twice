@@ -22,6 +22,7 @@ public interface RoadmapConverter {
     @Mapping(target = "creatorId")
     @Mapping(target = "description")
     @Mapping(target = "state")
+    @Mapping(target = "nodeCount")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
     RoadmapSummaryDTO toSummaryDTO(RoadmapDO roadmapDO);
@@ -40,6 +41,7 @@ public interface RoadmapConverter {
     @Mapping(target = "creatorId")
     @Mapping(target = "description")
     @Mapping(target = "state")
+    @Mapping(target = "nodeCount")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
     RoadmapDetailDTO toDetailDTO(RoadmapDO roadmapDO);
@@ -58,6 +60,7 @@ public interface RoadmapConverter {
     @Mapping(target = "creatorId")
     @Mapping(target = "description")
     @Mapping(target = "state")
+    @Mapping(target = "nodeCount")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
     RoadmapWithStatusDTO toWithStatusDTO(RoadmapDO roadmapDO);

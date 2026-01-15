@@ -89,7 +89,7 @@
                   variant="tonal"
                   color="info"
                   rounded="lg"
-                  @click="applyAutoLayout"
+                  @click="applyAutoLayout(true)"
                 >
                   <v-icon
                     icon="mdi-auto-fix"
@@ -896,9 +896,11 @@ const saveRoadmap = async (type: 'draft' | 'publish') => {
 }
 
 // 自动布局
-const applyAutoLayout = () => {
+const applyAutoLayout = (showMessage = false) => {
   if (nodes.value.length <= 1) {
-    showSnackbar('请至少添加一个节点才能使用自动布局', 'warning')
+    if (showMessage) {
+      showSnackbar('请至少添加一个节点才能使用自动布局', 'warning')
+    }
     return
   }
 
@@ -998,7 +1000,9 @@ const applyAutoLayout = () => {
     fitView({ padding: 0.2, duration: 300 })
   }, 50)
 
-  showSnackbar('自动布局完成', 'success')
+  if (showMessage) {
+    showSnackbar('自动布局完成', 'success')
+  }
 }
 
 // 重置
@@ -1041,8 +1045,22 @@ const {
   defaultValue: null,
 })
 
+// 复制模式：加载要复制的路线图数据
+const {
+  data: copyRoadmapData,
+  loading: copyRoadmapLoading,
+} = useFetch({
+  fetchFn: () => roadmapApi.getRoadmap(copyId.value!),
+  immediate: !!copyId.value,
+  defaultValue: null,
+})
+
 // 监听加载状态
 watch(roadmapLoading, (isLoading) => {
+  loading.value = isLoading
+})
+
+watch(copyRoadmapLoading, (isLoading) => {
   loading.value = isLoading
 })
 
@@ -1115,14 +1133,84 @@ watch(roadmapData, (newData) => {
   }
 })
 
+// 监听复制路线图数据加载完成
+watch(copyRoadmapData, (newData) => {
+  if (newData && copyId.value) {
+    console.log('加载的复制路线图数据:', newData)
+
+    // 设置描述（添加"副本"标识）
+    roadmapDescription.value = `${newData.description || '未命名路线图'} (副本)`
+
+    // 解析 content 并设置节点和边
+    try {
+      const contentData = typeof newData.content === 'string'
+        ? JSON.parse(newData.content)
+        : newData.content
+
+      console.log('解析后的 content:', contentData)
+
+      if (contentData.nodes && contentData.edges) {
+        // 重新生成节点ID，避免ID冲突
+        const idMap = new Map<string, string>()
+        const newNodes = contentData.nodes.map((node: any) => {
+          const newId = node.id === '0' || node.id === 0
+            ? '0'
+            : `node-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          idMap.set(node.id.toString(), newId)
+
+          if (node.id === '0' || node.id === 0) {
+            return {
+              id: '0',
+              type: 'default',
+              data: { label: careerName.value },
+              position: { x: 0, y: 0 },
+              targetPosition: Position.Bottom,
+              style: ROOT_NODE_STYLE,
+            }
+          } else {
+            return {
+              id: newId,
+              type: 'default',
+              data: { label: node.name || `课程 ${node.id}` },
+              position: { x: 0, y: 0 },
+              sourcePosition: Position.Top,
+              targetPosition: Position.Bottom,
+              style: COURSE_NODE_STYLE,
+            }
+          }
+        })
+
+        // 更新边的ID引用
+        const newEdges = contentData.edges.map((edge: any) => ({
+          id: `${idMap.get(edge.source.toString())}-${idMap.get(edge.target.toString())}`,
+          source: idMap.get(edge.source.toString()) || edge.source.toString(),
+          target: idMap.get(edge.target.toString()) || edge.target.toString(),
+          type: 'default',
+          animated: true,
+          style: EDGE_STYLE,
+        }))
+
+        nodes.value = newNodes
+        edges.value = newEdges
+
+        console.log('设置的节点:', nodes.value.length, '设置的边:', edges.value.length)
+
+        // 使用自动布局
+        setTimeout(() => {
+          applyAutoLayout()
+        }, 100)
+      }
+    } catch (parseError) {
+      console.error('解析复制路线图内容失败:', parseError)
+      showSnackbar('加载路线图数据失败', 'error')
+    }
+  }
+})
+
 // 如果是复制模式,加载数据
 onMounted(() => {
   if (copyId.value) {
-    loading.value = true
-    setTimeout(() => {
-      roadmapDescription.value = 'Vue 3 + TypeScript 全栈开发路线 (副本)'
-      loading.value = false
-    }, 500)
+    // 数据加载已由 useFetch 处理，这里不需要额外操作
   }
 })
 </script>
