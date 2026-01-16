@@ -5,7 +5,6 @@ import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.MemoryCardDeckConverter;
 import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.request.CreateDeckRequest;
-import com.prosper.learn.application.dto.request.UpdateDeckRequest;
 import com.prosper.learn.application.dto.response.DeckDetailDTO;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.MemoryCardDeckDTO;
@@ -125,8 +124,8 @@ public class MemoryCardDeckService {
 
         // 填充点赞状态（如果提供了用户ID）
         if (userId != null) {
-            boolean hasUpvoted = upvoteService.getUpvoteStatus(deckDO.getId(), Enums.ContentType.memory_card_deck, userId).getLikeUpvoted();
-            dto.setHasUpvoted(hasUpvoted);
+            boolean hasUpvoted = upvoteService.getUpvoteStatus(deckDO.getId(), Enums.ContentType.memory_card_deck, userId).getLiked();
+            dto.setHasLiked(hasUpvoted);
         }
 
         // 填充课程和节点信息
@@ -197,7 +196,7 @@ public class MemoryCardDeckService {
                 .collect(Collectors.toSet());
             // 批量查询点赞状态
             for (Long deckId : deckIds) {
-                boolean hasUpvoted = upvoteService.getUpvoteStatus(deckId, Enums.ContentType.memory_card_deck, userId).getLikeUpvoted();
+                boolean hasUpvoted = upvoteService.getUpvoteStatus(deckId, Enums.ContentType.memory_card_deck, userId).getLiked();
                 upvoteStatusMap.put(deckId, hasUpvoted);
             }
         }
@@ -255,7 +254,7 @@ public class MemoryCardDeckService {
 
                 // 设置点赞状态
                 if (userId != null) {
-                    dto.setHasUpvoted(upvoteStatusMap.get(deck.getId()));
+                    dto.setHasLiked(upvoteStatusMap.get(deck.getId()));
                 }
 
                 // 设置课程和节点信息

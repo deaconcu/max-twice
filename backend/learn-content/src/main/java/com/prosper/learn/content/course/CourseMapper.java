@@ -19,6 +19,7 @@ public interface CourseMapper {
 
     @Select("SELECT * FROM course " +
             "WHERE name LIKE CONCAT('%', #{name}, '%') " +
+            "AND parent_course_id = 0 " +
             "ORDER BY " +
             "  name = #{name} DESC, " +
             "  name LIKE CONCAT(#{name}, '%') DESC, " +
@@ -38,9 +39,10 @@ public interface CourseMapper {
 //    List<CourseDO> list(ContentState state, long creatorId, int limit, int offset);
 // --注释掉检查 STOP (2025/12/10 12:01)
 
-    // 新增：根据状态和lastId获取列表
+    // 新增：根据状态和lastId获取列表（只返回主课程）
     @Select("<script>" +
             "SELECT * FROM course WHERE state = #{state.value} " +
+            "AND parent_course_id = 0 " +
             "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
             "ORDER BY id DESC LIMIT 21" +
             "</script>")

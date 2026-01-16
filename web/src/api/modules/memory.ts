@@ -217,8 +217,8 @@ export function getMyPostDeck(
  */
 export function upvoteDeck(deckId: number): Promise<
   ApiResponse<{
-    upvoted: boolean
-    upvotes: number
+    liked: boolean
+    likeCount: number
   }>
 > {
   return client.post('/v1/upvotes', {

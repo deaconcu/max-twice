@@ -70,7 +70,7 @@ public class CommentSummaryDTO {
      * 点赞数
      * 该评论获得的点赞总数
      */
-    private Integer upvoteCount;
+    private Integer likeCount;
 
     /**
      * 评论状态

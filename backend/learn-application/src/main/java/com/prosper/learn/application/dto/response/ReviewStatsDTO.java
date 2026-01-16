@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class ReviewStatsDTO {
 
-    private Integer totalReviews;
+    private Integer totalReviewCount;
 
     private Integer streakDays;
 

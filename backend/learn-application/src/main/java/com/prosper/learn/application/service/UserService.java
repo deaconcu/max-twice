@@ -630,15 +630,15 @@ public class UserService {
             // 填充统计信息
             ContentStatsDO stats = statsMap.get(dto.getId());
             if (stats != null) {
-                dto.setLearnerCount(stats.getInProgressUsers() != null ? stats.getInProgressUsers() : 0);
-                dto.setSubscriptionCount(stats.getBookmarks() != null ? stats.getBookmarks() : 0);
+                dto.setLearnerCount(stats.getLearnerCount() != null ? stats.getLearnerCount() : 0);
+                dto.setBookmarkCount(stats.getBookmarkCount() != null ? stats.getBookmarkCount() : 0);
             } else {
                 dto.setLearnerCount(0);
-                dto.setSubscriptionCount(0);
+                dto.setBookmarkCount(0);
             }
 
             // 填充用户信息（userId不为null时，说明用户已登录且正在查看自己的订阅，所以subscribed应该是true）
-            dto.setSubscribed(true);  // 用户订阅列表中的课程，subscribed 始终为 true
+            dto.setBookmarked(true);  // 用户订阅列表中的课程，subscribed 始终为 true
             dto.setProgress(progressMap.getOrDefault(dto.getId(), 0));
         }
     }

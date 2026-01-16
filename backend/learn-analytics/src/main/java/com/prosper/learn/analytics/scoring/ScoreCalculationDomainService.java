@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -100,8 +101,8 @@ public class ScoreCalculationDomainService {
             int replyCount = 0;
 
             if (stats != null) {
-                upvoteCount = stats.getLikes() != null ? stats.getLikes() : 0;
-                replyCount = stats.getComments() != null ? stats.getComments() : 0;
+                upvoteCount = stats.getLikeCount() != null ? stats.getLikeCount() : 0;
+                replyCount = stats.getCommentCount() != null ? stats.getCommentCount() : 0;
             }
 
             double upvoteScore = upvoteCount * COMMENT_UPVOTE_WEIGHT;
@@ -130,8 +131,8 @@ public class ScoreCalculationDomainService {
                 .orElse(null);
 
             int upvoteCount = 0;
-            if (stats != null && stats.getLikes() != null) {
-                upvoteCount = stats.getLikes();
+            if (stats != null && stats.getLikeCount() != null) {
+                upvoteCount = stats.getLikeCount();
             }
 
             double upvoteScore = upvoteCount * 1.0;
@@ -237,7 +238,8 @@ public class ScoreCalculationDomainService {
 
             if (yearStats != null) {
                 try {
-                    Map<String, Map<String, Integer>> yearlyData = objectMapper.readValue(
+                    // 解析数组格式：{"1-15": [views, twice, like, comments]}
+                    Map<String, List<Integer>> yearlyData = objectMapper.readValue(
                         yearStats.getStats(), new TypeReference<>() {});
 
                     LocalDate currentDate = (year == startYear) ? startDate : LocalDate.of(year, 1, 1);
@@ -245,14 +247,15 @@ public class ScoreCalculationDomainService {
 
                     while (!currentDate.isAfter(lastDate)) {
                         String dayKey = currentDate.getMonthValue() + "-" + currentDate.getDayOfMonth();
-                        Map<String, Integer> dayStats = yearlyData.get(dayKey);
+                        List<Integer> dayStats = yearlyData.get(dayKey);
 
-                        if (dayStats != null) {
-                            int twice = dayStats.getOrDefault("twice", 0);
-                            int helpful = dayStats.getOrDefault("helpful", 0);
+                        if (dayStats != null && dayStats.size() >= 4) {
+                            // 数组格式：[viewCount, twiceCount, likeCount, commentCount]
+                            int twiceCount = dayStats.get(1);
+                            int likeCount = dayStats.get(2);
 
-                            double dayScore = twice * TWICE_WEIGHT + helpful * HELPFUL_WEIGHT;
-                            int daySampleCount = (twice + helpful);
+                            double dayScore = twiceCount * TWICE_WEIGHT + likeCount * HELPFUL_WEIGHT;
+                            int daySampleCount = (twiceCount + likeCount);
 
                             if (daySampleCount > 0) {
                                 dailyData.put(currentDate, new DailyData(dayScore, daySampleCount));

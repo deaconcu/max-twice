@@ -124,7 +124,7 @@
                         color="grey"
                         class="mr-1"
                       />
-                      {{ article.views }}
+                      {{ article.viewCount }}
                     </div>
                     <div class="d-flex align-center">
                       <v-icon
@@ -133,7 +133,7 @@
                         color="grey"
                         class="mr-1"
                       />
-                      {{ article.likes }}
+                      {{ article.likeCount }}
                     </div>
                     <div class="d-flex align-center">
                       <v-icon
@@ -142,7 +142,7 @@
                         color="grey"
                         class="mr-1"
                       />
-                      {{ article.comments }}
+                      {{ article.commentCount }}
                     </div>
                     <div class="d-flex align-center d-none d-sm-flex">
                       <v-icon
@@ -341,9 +341,9 @@ const articles = computed(() => {
     node: post.node ? { id: post.nodeId, name: post.node.name } : undefined,
     course: post.node?.course?.name || undefined,
     courseId: post.node?.course?.id || undefined,
-    views: post.viewCount || 0,
-    likes: post.helpful || 0,
-    comments: post.commentCount || 0,
+    viewCount: post.viewCount || 0,
+    likeCount: post.likeCount || 0,
+    commentCount: post.commentCount || 0,
     publishedAt: post.createdAt || '',
     hasOverflow: overflowStates.value[post.id] || false,
   }))

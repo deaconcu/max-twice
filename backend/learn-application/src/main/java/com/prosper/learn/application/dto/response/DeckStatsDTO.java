@@ -8,12 +8,12 @@ import lombok.Data;
 @Data
 public class DeckStatsDTO {
 
-    private Integer totalCards;
+    private Integer totalCardCount;
 
-    private Integer newCards;
+    private Integer newCardCount;
 
-    private Integer reviewCards;
+    private Integer reviewCardCount;
 
-    private Integer learnedCards;
+    private Integer learnedCardCount;
 
 }

@@ -76,10 +76,10 @@ export interface UserFollow {
  */
 export interface DailyStatsDTO {
   date: string // 格式: yyyy-MM-dd
-  views: number
-  twice: number
-  likes: number
-  comments: number
+  viewCount: number
+  twiceCount: number
+  likeCount: number
+  commentCount: number
 }
 
 /**
@@ -88,10 +88,10 @@ export interface DailyStatsDTO {
  */
 export interface UserDailyStatsDTO {
   userId: number
-  views: number // 总浏览量
-  twices: number // 总"两次能懂"点赞数
-  likes: number // 总"有用"点赞数
-  comments: number // 总评论数
+  viewCount: number // 总浏览量
+  twiceCount: number // 总"两次能懂"点赞数
+  likeCount: number // 总"有用"点赞数
+  commentCount: number // 总评论数
 }
 
 /**

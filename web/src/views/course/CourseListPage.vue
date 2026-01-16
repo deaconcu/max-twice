@@ -561,7 +561,7 @@ const handleSubscribe = async (courseId: number) => {
     // 更新本地状态
     const course = courses.value.find((c) => c.id === courseId)
     if (course) {
-      course.subscribed = true
+      course.bookmarked = true
       if (course.subscriptionCount) {
         course.subscriptionCount += 1
       }
@@ -569,7 +569,7 @@ const handleSubscribe = async (courseId: number) => {
     // 同时更新热门课程列表中的状态
     const hotCourse = hotCourses.value.find((c) => c.id === courseId)
     if (hotCourse) {
-      hotCourse.subscribed = true
+      hotCourse.bookmarked = true
       if (hotCourse.subscriptionCount) {
         hotCourse.subscriptionCount += 1
       }
@@ -588,7 +588,7 @@ const handleUnsubscribe = async (courseId: number) => {
     // 更新本地状态
     const course = courses.value.find((c) => c.id === courseId)
     if (course) {
-      course.subscribed = false
+      course.bookmarked = false
       if (course.subscriptionCount && course.subscriptionCount > 0) {
         course.subscriptionCount -= 1
       }
@@ -596,7 +596,7 @@ const handleUnsubscribe = async (courseId: number) => {
     // 同时更新热门课程列表中的状态
     const hotCourse = hotCourses.value.find((c) => c.id === courseId)
     if (hotCourse) {
-      hotCourse.subscribed = false
+      hotCourse.bookmarked = false
       if (hotCourse.subscriptionCount && hotCourse.subscriptionCount > 0) {
         hotCourse.subscriptionCount -= 1
       }

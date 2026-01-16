@@ -1,5 +1,7 @@
 package com.prosper.learn.application.service;
 
+import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
+import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.application.dto.response.UpvoteStatusDTO;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
@@ -50,6 +52,7 @@ public class UpvoteService {
     private final ProfessionDataService professionDataService;
     private final MemoryCardDeckDataService deckDataService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ContentStatsDomainService contentStatsDomainService;
 
     // ========== Command 方法（写操作）==========
 
@@ -299,23 +302,30 @@ public class UpvoteService {
         UpvoteDO upvoteDO = upvoteDomainService.getUpvoteRecord(userId, objectId, contentType.value());
 
         // 构建用户点赞状态DTO
-        boolean twiceUpvoted = false;
-        boolean likeUpvoted = false;
+        boolean twiced = false;
+        boolean liked = false;
 
         if (upvoteDO != null) {
             // 帖子特殊处理：支持 twice 和 like 分别统计
             if (contentType == ContentType.post) {
-                twiceUpvoted = upvoteDO.getType() == VoteType.twice.value();
-                likeUpvoted = upvoteDO.getType() == VoteType.like.value();
+                twiced = upvoteDO.getType() == VoteType.twice.value();
+                liked = upvoteDO.getType() == VoteType.like.value();
             } else {
                 // 其他内容类型只有 like 统计
-                likeUpvoted = true;
+                liked = true;
             }
         }
 
+        // 查询点赞数量统计
+        ContentStatsDO stats = contentStatsDomainService.getContentStats(contentType, objectId);
+        Integer twiceCount = stats.getTwiceCount() != null ? stats.getTwiceCount() : 0;
+        Integer likeCount = stats.getLikeCount() != null ? stats.getLikeCount() : 0;
+
         return UpvoteStatusDTO.builder()
-                .twiceUpvoted(twiceUpvoted)
-                .likeUpvoted(likeUpvoted)
+                .twiced(twiced)
+                .liked(liked)
+                .twiceCount(twiceCount)
+                .likeCount(likeCount)
                 .build();
     }
 

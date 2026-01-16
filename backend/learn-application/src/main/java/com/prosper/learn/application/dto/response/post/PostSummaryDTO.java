@@ -44,14 +44,14 @@ public class PostSummaryDTO {
     private Integer type;
 
     /**
-     * 二次评论数
+     * max twice 点赞数
      */
-    private Integer twice;
+    private Integer twiceCount;
 
     /**
-     * 有用评论数
+     * 喜欢点赞数
      */
-    private Integer helpful;
+    private Integer likeCount;
 
     /**
      * 评论数

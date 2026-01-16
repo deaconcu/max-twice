@@ -383,7 +383,7 @@ onBeforeUnmount(() => {
                 @click="handleUpvoteComment(comment.id)"
               >
                 <v-icon icon="mdi-thumb-up-outline" size="16" class="mr-1"></v-icon>
-                {{ comment.vote || 0 }}
+                {{ comment.likeCount || 0 }}
               </v-btn>
               <v-btn
                 size="small"
@@ -473,7 +473,7 @@ onBeforeUnmount(() => {
                         @click="handleUpvoteComment(subComment.id)"
                       >
                         <v-icon icon="mdi-thumb-up-outline" size="16" class="mr-1"></v-icon>
-                        {{ subComment.vote || 0 }}
+                        {{ subComment.likeCount || 0 }}
                       </v-btn>
                       <v-btn
                         size="small"

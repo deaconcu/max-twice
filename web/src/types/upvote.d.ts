@@ -9,14 +9,10 @@ import type { ObjectType, VoteType } from '@/enums'
  * 点赞状态响应
  */
 export interface UpvoteStatusResponse {
-  objectId: number
-  objectType: number
-  upvotes: number
-  upvoted: boolean
-  twiceUpvotes?: number
-  twiceUpvoted?: boolean
-  helpfulUpvotes?: number
-  helpfulUpvoted?: boolean
+  twiced: boolean // 是否已twice点赞
+  liked: boolean // 是否已like点赞
+  twiceCount: number // twice点赞总数
+  likeCount: number // like点赞总数
 }
 
 /**

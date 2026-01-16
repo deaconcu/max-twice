@@ -37,5 +37,5 @@ public class CourseWithStatsDTO extends CourseSummaryDTO {
      * 何时填充：从 Redis 排行榜服务动态查询并填充
      * 数据源：CourseRankingService.getCourseStats()
      */
-    private Integer subscriptionCount;
+    private Integer bookmarkCount;
 }

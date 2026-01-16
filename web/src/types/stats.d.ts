@@ -21,8 +21,8 @@ export interface PlatformStats {
  */
 export interface DailyStats {
   date: string // 格式: yyyy-MM-dd
-  views: number // 浏览量
-  twice: number // "两遍就懂"数量
-  helpful: number // "有帮助"数量
-  comments: number // 评论数量
+  viewCount: number // 浏览量
+  twiceCount: number // "两遍就懂"数量
+  likeCount: number // "喜欢/有帮助"数量
+  commentCount: number // 评论数量
 }

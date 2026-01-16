@@ -117,7 +117,7 @@ const clearFilter = (): void => {
 // 使用 useMutation 批准/拒绝帖子
 const { execute: executeApprovePost } = useMutation(
   (data: { postId: number; approve: boolean }) =>
-    adminApi.approvePost(data.postId, data.approve ? 'APPROVE' : 'REJECT'),
+    adminApi.operateContent('post', data.postId, { action: data.approve ? 'approve' : 'reject' }),
   {
     successMessage: '操作成功',
     onSuccess: (response, data) => {
@@ -156,7 +156,7 @@ const showBanDialog = (post: Post) => {
 // 使用 useMutation 处理拒绝/屏蔽
 const { execute: executeRejectOrBan, loading: submitting } = useMutation(
   (data: { postId: number; action: string; reason: string }) =>
-    adminApi.approvePost(data.postId, data.action, data.reason),
+    adminApi.operateContent('post', data.postId, { action: data.action.toLowerCase(), reason: data.reason }),
   {
     onSuccess: (_, data) => {
       const message = data.action === 'BAN' ? '已屏蔽' : '已拒绝'
@@ -203,7 +203,7 @@ const banPost = async (post: Post): Promise<void> => {
 
 // 使用 useMutation 取消屏蔽文章
 const { execute: executeUnbanPost } = useMutation(
-  (postId: number) => adminApi.approvePost(postId, 'APPROVE'),
+  (postId: number) => adminApi.operateContent('post', postId, { action: 'approve' }),
   {
     successMessage: '已取消屏蔽',
     onSuccess: (_, postId) => {

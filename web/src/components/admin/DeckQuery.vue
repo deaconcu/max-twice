@@ -276,7 +276,7 @@ const canSearch = computed(() => {
                           class="mr-1"
                         ></v-icon>
                         <span class="text-body-2 text-grey-darken-2"
-                          >{{ deck.upvoteCount }} 点赞</span
+                          >{{ deck.likeCount }} 点赞</span
                         >
                       </div>
                     </div>

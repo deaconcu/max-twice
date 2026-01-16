@@ -21,9 +21,9 @@ public class PostDTO {
 
     private Integer type;
 
-    private Integer twice;
+    private Integer twiceCount;
 
-    private Integer helpful;
+    private Integer likeCount;
 
     private Integer commentCount;
 

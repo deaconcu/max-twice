@@ -12,10 +12,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.Arrays;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
@@ -100,8 +102,8 @@ public class RedisStatsEventListener {
                 incrementUserStat(event.getCreatorId(), RedisStatsConstants.STAT_TYPE_TWICE, 1);
             }
 
-            // 3. 点赞关系记录
-            redisStatsService.recordUpvote(event.getContentId(), event.getVoterId(), VoteType.twice);
+            // 3. 点赞关系记录 - 已废弃，统计已由incrementContentStat处理
+            // redisStatsService.recordUpvote(event.getContentId(), event.getVoterId(), VoteType.twice);
 
             log.debug("Redis记录两次能懂点赞: contentType={}, contentId={}, voterId={}, creatorId={}",
                 event.getContentType(), event.getContentId(), event.getVoterId(), event.getCreatorId());
@@ -128,8 +130,8 @@ public class RedisStatsEventListener {
                 incrementUserStat(event.getCreatorId(), RedisStatsConstants.STAT_TYPE_LIKE, 1);
             }
 
-            // 3. 点赞关系记录
-            redisStatsService.recordUpvote(event.getContentId(), event.getVoterId(), VoteType.like);
+            // 3. 点赞关系记录 - 已废弃，统计已由incrementContentStat处理
+            // redisStatsService.recordUpvote(event.getContentId(), event.getVoterId(), VoteType.like);
 
             log.debug("Redis记录有用点赞: contentType={}, contentId={}, voterId={}, creatorId={}",
                 event.getContentType(), event.getContentId(), event.getVoterId(), event.getCreatorId());
@@ -156,8 +158,8 @@ public class RedisStatsEventListener {
                 incrementUserStat(event.getCreatorId(), RedisStatsConstants.STAT_TYPE_TWICE, -1);
             }
 
-            // 3. 点赞关系记录
-            redisStatsService.removeUpvote(event.getContentId(), event.getVoterId(), VoteType.twice);
+            // 3. 点赞关系记录 - 已废弃，统计已由incrementContentStat处理
+            // redisStatsService.removeUpvote(event.getContentId(), event.getVoterId(), VoteType.twice);
 
             log.debug("Redis移除两次能懂点赞: contentType={}, contentId={}, voterId={}, creatorId={}",
                 event.getContentType(), event.getContentId(), event.getVoterId(), event.getCreatorId());
@@ -184,8 +186,8 @@ public class RedisStatsEventListener {
                 incrementUserStat(event.getCreatorId(), RedisStatsConstants.STAT_TYPE_LIKE, -1);
             }
 
-            // 3. 点赞关系记录
-            redisStatsService.removeUpvote(event.getContentId(), event.getVoterId(), VoteType.like);
+            // 3. 点赞关系记录 - 已废弃，统计已由incrementContentStat处理
+            // redisStatsService.removeUpvote(event.getContentId(), event.getVoterId(), VoteType.like);
 
             log.debug("Redis移除有用点赞: contentType={}, contentId={}, voterId={}, creatorId={}",
                 event.getContentType(), event.getContentId(), event.getVoterId(), event.getCreatorId());
@@ -235,11 +237,11 @@ public class RedisStatsEventListener {
                 }
             }
 
-            // 3. 点赞关系记录
-            VoteType oldType = getVoteTypeFromInt(event.getFromType());
-            VoteType newType = getVoteTypeFromInt(event.getToType());
-            redisStatsService.removeUpvote(event.getContentId(), event.getVoterId(), oldType);
-            redisStatsService.recordUpvote(event.getContentId(), event.getVoterId(), newType);
+            // 3. 点赞关系记录 - 已废弃，统计已由incrementContentStat处理
+            // VoteType oldType = getVoteTypeFromInt(event.getFromType());
+            // VoteType newType = getVoteTypeFromInt(event.getToType());
+            // redisStatsService.removeUpvote(event.getContentId(), event.getVoterId(), oldType);
+            // redisStatsService.recordUpvote(event.getContentId(), event.getVoterId(), newType);
 
             log.debug("Redis切换点赞类型: contentType={}, contentId={}, voterId={}, from={}, to={}",
                 event.getContentType(), event.getContentId(), event.getVoterId(),

@@ -237,8 +237,8 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .content(twiceRequest))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.twiceUpvoted").value(true))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(false));
+                    .andExpect(jsonPath("$.data.twiced").value(true))
+                    .andExpect(jsonPath("$.data.liked").value(false));
 
             // 验证：数据库中存在点赞记录
             UpvoteDO upvote = upvoteDataService.getByUserAndObject(
@@ -253,8 +253,8 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .content(twiceRequest))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.twiceUpvoted").value(false))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(false));
+                    .andExpect(jsonPath("$.data.twiced").value(false))
+                    .andExpect(jsonPath("$.data.liked").value(false));
 
             // 验证：数据库中点赞记录已删除
             UpvoteDO cancelledUpvote = upvoteDataService.getByUserAndObject(
@@ -276,8 +276,8 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .content(likeRequest))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.twiceUpvoted").value(false))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(true));
+                    .andExpect(jsonPath("$.data.twiced").value(false))
+                    .andExpect(jsonPath("$.data.liked").value(true));
 
             // 验证：数据库中存在 like 记录
             UpvoteDO likeUpvote = upvoteDataService.getByUserAndObject(
@@ -292,8 +292,8 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .content(likeRequest))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.twiceUpvoted").value(false))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(false));
+                    .andExpect(jsonPath("$.data.twiced").value(false))
+                    .andExpect(jsonPath("$.data.liked").value(false));
 
             // 5. 先点 twice 再点 like - 切换类型
             mockMvc.perform(post("/api/v1/upvotes")
@@ -301,7 +301,7 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(twiceRequest))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.data.twiceUpvoted").value(true));
+                    .andExpect(jsonPath("$.data.twiced").value(true));
 
             mockMvc.perform(post("/api/v1/upvotes")
                     .header("token", StpUtil.getTokenValue())
@@ -309,8 +309,8 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .content(likeRequest))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.twiceUpvoted").value(false))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(true));
+                    .andExpect(jsonPath("$.data.twiced").value(false))
+                    .andExpect(jsonPath("$.data.liked").value(true));
 
             // 验证：数据库中是 like 记录
             UpvoteDO switchedUpvote = upvoteDataService.getByUserAndObject(
@@ -325,8 +325,8 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .content(twiceRequest))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.twiceUpvoted").value(true))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(false));
+                    .andExpect(jsonPath("$.data.twiced").value(true))
+                    .andExpect(jsonPath("$.data.liked").value(false));
 
             // 验证：数据库中是 twice 记录
             UpvoteDO finalUpvote = upvoteDataService.getByUserAndObject(
@@ -372,8 +372,8 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .content(likeRequest))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.twiceUpvoted").value(false))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(true));
+                    .andExpect(jsonPath("$.data.twiced").value(false))
+                    .andExpect(jsonPath("$.data.liked").value(true));
 
             // 验证：数据库中存在点赞记录
             UpvoteDO upvote = upvoteDataService.getByUserAndObject(
@@ -388,8 +388,8 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .content(likeRequest))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.twiceUpvoted").value(false))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(false));
+                    .andExpect(jsonPath("$.data.twiced").value(false))
+                    .andExpect(jsonPath("$.data.liked").value(false));
 
             // 验证：数据库中点赞记录已删除
             UpvoteDO cancelledUpvote = upvoteDataService.getByUserAndObject(
@@ -445,7 +445,7 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .content(likeRequest))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(true));
+                    .andExpect(jsonPath("$.data.liked").value(true));
 
             // 2. 重复点 like
             mockMvc.perform(post("/api/v1/upvotes")
@@ -454,7 +454,7 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .content(likeRequest))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(false));
+                    .andExpect(jsonPath("$.data.liked").value(false));
 
             // 3. 路线图不存在
             String invalidRequest = """
@@ -505,7 +505,7 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .content(likeRequest))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(true));
+                    .andExpect(jsonPath("$.data.liked").value(true));
 
             // 2. 重复点 like
             mockMvc.perform(post("/api/v1/upvotes")
@@ -514,7 +514,7 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .content(likeRequest))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(false));
+                    .andExpect(jsonPath("$.data.liked").value(false));
 
         } finally {
             StpUtil.logout();
@@ -544,8 +544,8 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .header("token", StpUtil.getTokenValue()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.twiceUpvoted").value(false))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(false));
+                    .andExpect(jsonPath("$.data.twiced").value(false))
+                    .andExpect(jsonPath("$.data.liked").value(false));
 
             // 2. 点赞后获取状态（twice）
             String twiceRequest = String.format("""
@@ -568,8 +568,8 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .header("token", StpUtil.getTokenValue()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.twiceUpvoted").value(true))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(false));
+                    .andExpect(jsonPath("$.data.twiced").value(true))
+                    .andExpect(jsonPath("$.data.liked").value(false));
 
             // 3. 切换为 like 后获取状态
             String likeRequest = String.format("""
@@ -592,8 +592,8 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .header("token", StpUtil.getTokenValue()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.twiceUpvoted").value(false))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(true));
+                    .andExpect(jsonPath("$.data.twiced").value(false))
+                    .andExpect(jsonPath("$.data.liked").value(true));
 
             // 4. 获取不存在内容的点赞状态
             mockMvc.perform(get("/api/v1/upvotes/status")
@@ -602,8 +602,8 @@ public class UpvotesControllerTest extends BaseControllerTest {
                     .header("token", StpUtil.getTokenValue()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()))
-                    .andExpect(jsonPath("$.data.twiceUpvoted").value(false))
-                    .andExpect(jsonPath("$.data.likeUpvoted").value(false));
+                    .andExpect(jsonPath("$.data.twiced").value(false))
+                    .andExpect(jsonPath("$.data.liked").value(false));
 
         } finally {
             StpUtil.logout();

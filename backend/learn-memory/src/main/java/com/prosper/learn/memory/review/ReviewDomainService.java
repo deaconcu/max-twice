@@ -328,20 +328,20 @@ public class ReviewDomainService {
      * 复习统计数据（内部使用）
      */
     public static class ReviewStats {
-        private final Long totalReviews;
+        private final Long totalReviewCount;
         private final Integer streakDays;
         private final Double averageScore;
         private final Long timeSpent;
 
-        public ReviewStats(Long totalReviews, Integer streakDays, Double averageScore, Long timeSpent) {
-            this.totalReviews = totalReviews;
+        public ReviewStats(Long totalReviewCount, Integer streakDays, Double averageScore, Long timeSpent) {
+            this.totalReviewCount = totalReviewCount;
             this.streakDays = streakDays;
             this.averageScore = averageScore;
             this.timeSpent = timeSpent;
         }
 
-        public Long getTotalReviews() {
-            return totalReviews;
+        public Long getTotalReviewCount() {
+            return totalReviewCount;
         }
 
         public Integer getStreakDays() {

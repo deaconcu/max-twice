@@ -26,32 +26,32 @@ public class UserDailyStatsDTO {
     /**
      * 总浏览量
      */
-    private Integer views;
+    private Integer viewCount;
 
     /**
      * 总"两次能懂"点赞数
      */
-    private Integer twices;
+    private Integer twiceCount;
 
     /**
      * 总"有用"点赞数
      */
-    private Integer likes;
+    private Integer likeCount;
 
     /**
      * 总评论数
      */
-    private Integer comments;
+    private Integer commentCount;
 
     /**
      * 创建空的统计对象
      */
     public static UserDailyStatsDTO empty() {
         return UserDailyStatsDTO.builder()
-                .views(0)
-                .twices(0)
-                .likes(0)
-                .comments(0)
+                .viewCount(0)
+                .twiceCount(0)
+                .likeCount(0)
+                .commentCount(0)
                 .build();
     }
 }

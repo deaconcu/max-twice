@@ -41,7 +41,7 @@ public class CourseDTO {
     
     // === 统计字段 (V4特有) ===
     private Integer learnerCount;     // 学习人数
-    private Integer subscriptionCount; // 收藏人数
-    private Boolean subscribed;       // 是否已收藏
+    private Integer bookmarkCount; // 收藏人数
+    private Boolean bookmarked;       // 是否已收藏
     private Integer progress;         // 课程进度百分比 (0-100)
 }

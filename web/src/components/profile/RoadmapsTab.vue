@@ -298,7 +298,7 @@ const roadmaps = computed(() => {
     profession: roadmap.profession?.name || '未知职业',
     description: roadmap.description || '暂无描述',
     usageCount: roadmap.learnerCount || 0,
-    starCount: roadmap.vote || 0,
+    starCount: roadmap.likeCount || 0,
     nodeCount: roadmap.nodeCount || 0,
     status: roadmap.state === 0 ? 'draft'
           : roadmap.state === 1 ? 'submitted'

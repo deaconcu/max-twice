@@ -7,7 +7,6 @@ import com.prosper.learn.shared.domain.event.content.lifecycle.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -251,21 +250,21 @@ public class UserStatsDomainService {
 
         return UserStatsDTO.builder()
                 .userId(statsDO.getUserId())
-                .views(statsDO.getViews())
-                .twices(statsDO.getTwices())
-                .likes(statsDO.getLikes())
-                .comments(statsDO.getComments())
-                .learningCourses(statsDO.getLearningCourses())
-                .completedCourses(statsDO.getCompletedCourses())
-                .inProgressProfessions(statsDO.getInProgressProfessions())
-                .completedProfessions(statsDO.getCompletedProfessions())
-                .followingUsers(statsDO.getFollowingUsers())
-                .followingCourses(statsDO.getFollowingCourses())
-                .followingProfessions(statsDO.getFollowingProfessions())
-                .createdArticles(statsDO.getCreatedArticles())
-                .createdIndexs(statsDO.getCreatedIndexs())
-                .createdRoadmaps(statsDO.getCreatedRoadmaps())
-                .createdCardDecks(statsDO.getCreatedCardDecks())
+                .viewCount(statsDO.getViewCount())
+                .twiceCount(statsDO.getTwiceCount())
+                .likeCount(statsDO.getLikeCount())
+                .commentCount(statsDO.getCommentCount())
+                .learningCourseCount(statsDO.getLearningCourseCount())
+                .completedCourseCount(statsDO.getCompletedCourseCount())
+                .inProgressProfessionCount(statsDO.getInProgressProfessionCount())
+                .completedProfessionCount(statsDO.getCompletedProfessionCount())
+                .followingUserCount(statsDO.getFollowingUserCount())
+                .followingCourseCount(statsDO.getFollowingCourseCount())
+                .followingProfessionCount(statsDO.getFollowingProfessionCount())
+                .createdArticleCount(statsDO.getCreatedArticleCount())
+                .createdIndexCount(statsDO.getCreatedIndexCount())
+                .createdRoadmapCount(statsDO.getCreatedRoadmapCount())
+                .createdCardDeckCount(statsDO.getCreatedCardDeckCount())
                 .lastUpdated(statsDO.getUpdatedAt())
                 .build();
     }

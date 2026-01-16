@@ -53,21 +53,21 @@ public class ContentStatsDataService {
         ContentStatsDO stats = new ContentStatsDO();
         stats.setContentType(contentType.value());
         stats.setContentId(contentId);
-        stats.setViews(0);
-        stats.setTwices(0);
-        stats.setLikes(0);
-        stats.setComments(0);
-        stats.setShares(0);
-        stats.setBookmarks(0);
-        stats.setCompletedUsers(0);
-        stats.setInProgressUsers(0);
+        stats.setViewCount(0);
+        stats.setTwiceCount(0);
+        stats.setLikeCount(0);
+        stats.setCommentCount(0);
+        stats.setShareCount(0);
+        stats.setBookmarkCount(0);
+        stats.setCompletedUserCount(0);
+        stats.setLearnerCount(0);
 
         // 对象维度统计字段
-        stats.setPosts(0);
-        stats.setArticles(0);
-        stats.setIndexes(0);
-        stats.setRoadmaps(0);
-        stats.setCardDecks(0);
+        stats.setPostCount(0);
+        stats.setArticleCount(0);
+        stats.setIndexCount(0);
+        stats.setRoadmapCount(0);
+        stats.setCardDeckCount(0);
 
         // 违规统计字段
         stats.setRejectCount(0);
@@ -118,52 +118,52 @@ public class ContentStatsDataService {
 
     /** 增量更新分享数 */
     public boolean incrementShares(Enums.ContentType contentType, long contentId, int delta) {
-        return atomicIncrement(contentType, contentId, "shares", delta);
+        return atomicIncrement(contentType, contentId, "share_count", delta);
     }
 
     /** 增量更新收藏数 */
     public boolean incrementBookmarks(Enums.ContentType contentType, long contentId, int delta) {
-        return atomicIncrement(contentType, contentId, "bookmarks", delta);
+        return atomicIncrement(contentType, contentId, "bookmark_count", delta);
     }
 
     /** 增量更新学习中用户数 */
     public boolean incrementInProgressUsers(Enums.ContentType contentType, long contentId, int delta) {
-        return atomicIncrement(contentType, contentId, "in_progress_users", delta);
+        return atomicIncrement(contentType, contentId, "learner_count", delta);
     }
 
     /** 增量更新已完成用户数 */
     public boolean incrementCompletedUsers(Enums.ContentType contentType, long contentId, int delta) {
-        return atomicIncrement(contentType, contentId, "completed_users", delta);
+        return atomicIncrement(contentType, contentId, "completed_user_count", delta);
     }
 
     /** 增量更新帖子数 */
     public boolean incrementPosts(Enums.ContentType contentType, long contentId, int delta) {
-        return atomicIncrement(contentType, contentId, "posts", delta);
+        return atomicIncrement(contentType, contentId, "post_count", delta);
     }
 
     /** 增量更新文章数 */
     public boolean incrementArticles(Enums.ContentType contentType, long contentId, int delta) {
-        return atomicIncrement(contentType, contentId, "articles", delta);
+        return atomicIncrement(contentType, contentId, "article_count", delta);
     }
 
     /** 增量更新目录数 */
     public boolean incrementIndexes(Enums.ContentType contentType, long contentId, int delta) {
-        return atomicIncrement(contentType, contentId, "indexes", delta);
+        return atomicIncrement(contentType, contentId, "index_count", delta);
     }
 
     /** 增量更新路线图数 */
     public boolean incrementRoadmaps(Enums.ContentType contentType, long contentId, int delta) {
-        return atomicIncrement(contentType, contentId, "roadmaps", delta);
+        return atomicIncrement(contentType, contentId, "roadmap_count", delta);
     }
 
     /** 增量更新卡片组数 */
     public boolean incrementCardDecks(Enums.ContentType contentType, long contentId, int delta) {
-        return atomicIncrement(contentType, contentId, "card_decks", delta);
+        return atomicIncrement(contentType, contentId, "card_deck_count", delta);
     }
 
     /** 增量更新评论数 */
     public boolean incrementComments(Enums.ContentType contentType, long contentId, int delta) {
-        return atomicIncrement(contentType, contentId, "comments", delta);
+        return atomicIncrement(contentType, contentId, "comment_count", delta);
     }
 
     /** 增量更新拒绝次数 */

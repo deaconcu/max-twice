@@ -247,7 +247,7 @@ public class CommentsControllerTest extends BaseControllerTest {
                 .andExpect(jsonPath("$.data.upvoteCount").value(0))
                 .andExpect(jsonPath("$.data.replyCount").value(0))
                 .andExpect(jsonPath("$.data.creatorName").exists())
-                .andExpect(jsonPath("$.data.upvoted").value(false))
+                .andExpect(jsonPath("$.data.liked").value(false))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -646,7 +646,7 @@ public class CommentsControllerTest extends BaseControllerTest {
                         .header("token", StpUtil.getTokenValue()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data.items[0].upvoted").value(true))
+                .andExpect(jsonPath("$.data.items[0].liked").value(true))
                 .andExpect(jsonPath("$.data.items[0].upvoteCount").exists());
 
         StpUtil.logout();

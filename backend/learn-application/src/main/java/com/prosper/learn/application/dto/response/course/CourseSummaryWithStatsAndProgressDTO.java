@@ -36,7 +36,7 @@ public class CourseSummaryWithStatsAndProgressDTO extends CourseSummaryDTO {
      * 说明：订阅（收藏）该课程的总用户数量
      * 何时填充：从 Redis 排行榜服务动态查询并填充
      */
-    private Integer subscriptionCount;
+    private Integer bookmarkCount;
 
     /**
      * 是否已订阅（收藏）
@@ -44,7 +44,7 @@ public class CourseSummaryWithStatsAndProgressDTO extends CourseSummaryDTO {
      * 何时填充：动态查询当前用户与课程的订阅关系填充
      * 未登录时：null 或 false
      */
-    private Boolean subscribed;
+    private Boolean bookmarked;
 
     /**
      * 学习进度

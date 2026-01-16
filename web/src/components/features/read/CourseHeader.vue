@@ -95,9 +95,9 @@ const toggleSubscribe = () => {
           </v-tooltip>
         </v-btn>
         <v-btn
-          :icon="parentCourseInfo?.subscribed ? 'mdi-heart' : 'mdi-heart-outline'"
-          :color="parentCourseInfo?.subscribed ? 'error' : 'grey-lighten-1'"
-          :variant="parentCourseInfo?.subscribed ? 'flat' : 'text'"
+          :icon="parentCourseInfo?.bookmarked ? 'mdi-heart' : 'mdi-heart-outline'"
+          :color="parentCourseInfo?.bookmarked ? 'error' : 'grey-lighten-1'"
+          :variant="parentCourseInfo?.bookmarked ? 'flat' : 'text'"
           density="comfortable"
           rounded="circle"
           @click="toggleSubscribe"

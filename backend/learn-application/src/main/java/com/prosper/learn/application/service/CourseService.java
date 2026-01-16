@@ -115,7 +115,7 @@ public class CourseService {
         dto.setParentCourse(detailDTO.getParentCourse());
 
         // 设置进度信息
-        dto.setSubscribed(subscribed);
+        dto.setBookmarked(subscribed);
         dto.setProgress(progress);
         return dto;
     }
@@ -131,16 +131,16 @@ public class CourseService {
                 .orElse(null);
 
             if (stats != null) {
-                courseDTO.setLearnerCount(stats.getInProgressUsers());
-                courseDTO.setSubscriptionCount(stats.getBookmarks());
+                courseDTO.setLearnerCount(stats.getLearnerCount());
+                courseDTO.setBookmarkCount(stats.getBookmarkCount());
             } else {
                 courseDTO.setLearnerCount(0);
-                courseDTO.setSubscriptionCount(0);
+                courseDTO.setBookmarkCount(0);
             }
         } catch (Exception e) {
             // 统计信息获取失败时设置默认值
             courseDTO.setLearnerCount(0);
-            courseDTO.setSubscriptionCount(0);
+            courseDTO.setBookmarkCount(0);
         }
         return courseDTO;
     }
@@ -165,29 +165,29 @@ public class CourseService {
                 .orElse(null);
 
             if (stats != null) {
-                dto.setLearnerCount(stats.getInProgressUsers());
-                dto.setSubscriptionCount(stats.getBookmarks());
+                dto.setLearnerCount(stats.getLearnerCount());
+                dto.setBookmarkCount(stats.getBookmarkCount());
             } else {
                 dto.setLearnerCount(0);
-                dto.setSubscriptionCount(0);
+                dto.setBookmarkCount(0);
             }
         } catch (Exception e) {
             log.error("获取课程统计信息失败, courseId={}", courseDO.getId(), e);
             dto.setLearnerCount(0);
-            dto.setSubscriptionCount(0);
+            dto.setBookmarkCount(0);
         }
 
         // 填充用户相关信息（subscribed, progress）
         if (userId != null) {
             // 检查订阅状态
-            dto.setSubscribed(userDomainService.isSubscribed(userId, courseDO.getId()));
+            dto.setBookmarked(userDomainService.isSubscribed(userId, courseDO.getId()));
 
             // 获取学习进度
             Integer progress = userCourseDomainService.getCourseProgress(userId, courseDO.getId());
             dto.setProgress(progress != null ? progress : 0);
         } else {
             // 未登录用户
-            dto.setSubscribed(false);
+            dto.setBookmarked(false);
             dto.setProgress(0);
         }
 
@@ -231,19 +231,19 @@ public class CourseService {
                 // 填充统计信息
                 ContentStatsDO stats = statsMap.get(courseDO.getId());
                 if (stats != null) {
-                    dto.setLearnerCount(stats.getInProgressUsers());
-                    dto.setSubscriptionCount(stats.getBookmarks());
+                    dto.setLearnerCount(stats.getLearnerCount());
+                    dto.setBookmarkCount(stats.getBookmarkCount());
                 } else {
                     dto.setLearnerCount(0);
-                    dto.setSubscriptionCount(0);
+                    dto.setBookmarkCount(0);
                 }
 
                 // 填充用户信息
                 if (userId != null) {
-                    dto.setSubscribed(subscribedCourseIds.contains(courseDO.getId()));
+                    dto.setBookmarked(subscribedCourseIds.contains(courseDO.getId()));
                     dto.setProgress(progressMap.getOrDefault(courseDO.getId(), 0));
                 } else {
-                    dto.setSubscribed(false);
+                    dto.setBookmarked(false);
                     dto.setProgress(0);
                 }
 

@@ -29,49 +29,49 @@ public class ContentStatsDO {
      * 总浏览量
      * 记录该内容被访问查看的总次数
      */
-    private Integer views;
+    private Integer viewCount;
 
     /**
      * 总两次能懂数
      * 记录该内容获得的"两次能懂"点赞总数
      */
-    private Integer twices;
+    private Integer twiceCount;
 
     /**
      * 总点赞数
      * 记录该内容获得的普通点赞总数
      */
-    private Integer likes;
+    private Integer likeCount;
 
     /**
      * 总评论数
      * 记录该内容下的评论总数
      */
-    private Integer comments;
+    private Integer commentCount;
 
     /**
      * 总分享数
      * 记录该内容被分享的总次数
      */
-    private Integer shares;
+    private Integer shareCount;
 
     /**
      * 总收藏数
      * 记录该内容被收藏的总次数
      */
-    private Integer bookmarks;
+    private Integer bookmarkCount;
 
     /**
      * 总完成人数
      * 主要用于课程、路线图等学习内容，记录完成学习的用户总数
      */
-    private Integer completedUsers;
+    private Integer completedUserCount;
 
     /**
      * 正在学习人数
      * 主要用于课程、路线图等学习内容，记录当前正在学习的用户数
      */
-    private Integer inProgressUsers;
+    private Integer learnerCount;
 
     // ==================== 对象维度统计字段 ====================
 
@@ -79,31 +79,31 @@ public class ContentStatsDO {
      * 帖子总数
      * 用于 Node 统计其下的帖子总数（articles + indexes）
      */
-    private Integer posts;
+    private Integer postCount;
 
     /**
      * 文章数量
      * 用于 Node 统计其下的文章类型帖子数量
      */
-    private Integer articles;
+    private Integer articleCount;
 
     /**
      * 目录数量
      * 用于 Node 统计其下的目录类型帖子数量
      */
-    private Integer indexes;
+    private Integer indexCount;
 
     /**
      * 路线图数量
      * 用于 Profession 统计其下的路线图数量
      */
-    private Integer roadmaps;
+    private Integer roadmapCount;
 
     /**
      * 记忆卡片组数量
      * 用于 Post/Node 统计其下的卡片组数量
      */
-    private Integer cardDecks;
+    private Integer cardDeckCount;
 
     // ==================== 违规统计字段 ====================
 

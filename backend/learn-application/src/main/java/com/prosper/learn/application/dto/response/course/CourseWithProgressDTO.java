@@ -24,11 +24,11 @@ import lombok.EqualsAndHashCode;
 public class CourseWithProgressDTO extends CourseDetailDTO {
 
     /**
-     * 是否已订阅（收藏）
+     * 是否已收藏
      * 说明：当前用户是否已订阅该课程
      * 何时填充：动态查询当前用户与课程的订阅关系填充
      */
-    private Boolean subscribed;
+    private Boolean bookmarked;
 
     /**
      * 学习进度

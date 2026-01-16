@@ -106,16 +106,16 @@ public class ContentStatsSyncService {
                 // 修复字段名映射：Redis使用单数，数据库使用复数
                 switch (redisStatType) {
                     case STAT_TYPE_VIEW:
-                        dayStats.views += count;
+                        dayStats.viewCount += count;
                         break;
                     case STAT_TYPE_TWICE:
-                        dayStats.twice += count;
+                        dayStats.twiceCount += count;
                         break;
                     case STAT_TYPE_LIKE:
-                        dayStats.like += count;
+                        dayStats.likeCount += count;
                         break;
                     case STAT_TYPE_COMMENT:
-                        dayStats.comments += count;
+                        dayStats.commentCount += count;
                         break;
                     default:
                         log.debug("忽略未知的统计类型: {}", redisStatType);
@@ -187,15 +187,15 @@ public class ContentStatsSyncService {
 
                 // 直接设置当天的完整数据（覆盖而非增量）
                 int updated = contentStatsYearlyMapper.setDayStats(ContentType.post.value(), postId, year, dayKey,
-                    dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
+                    dayStats.viewCount, dayStats.twiceCount, dayStats.likeCount, dayStats.commentCount);
 
                 if (updated > 0) {
                     log.debug("覆盖文章{}在{}的统计数据: views={}, twice={}, like={}, comments={}",
-                        postId, dateStr, dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
+                        postId, dateStr, dayStats.viewCount, dayStats.twiceCount, dayStats.likeCount, dayStats.commentCount);
 
                     // 同步更新内容总计表
                     contentStatsDataService.increase(ContentType.post, postId,
-                        dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
+                        dayStats.viewCount, dayStats.twiceCount, dayStats.likeCount, dayStats.commentCount);
 
                     updateCount++;
                 } else {
@@ -259,9 +259,9 @@ public class ContentStatsSyncService {
      * 文章单日统计数据结构
      */
     private static class PostDayStats {
-        int views = 0;
-        int twice = 0;
-        int like = 0;
-        int comments = 0;
+        int viewCount = 0;
+        int twiceCount = 0;
+        int likeCount = 0;
+        int commentCount = 0;
     }
 }

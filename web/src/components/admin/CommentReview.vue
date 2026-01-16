@@ -130,7 +130,7 @@ const clearFilter = (): void => {
 
 // 使用 useMutation 批准评论
 const { execute: executeApproveComment } = useMutation(
-  (commentId: number) => adminApi.approveComment(commentId, 'APPROVE'),
+  (commentId: number) => adminApi.operateContent('comment', commentId, { action: 'approve' }),
   {
     successMessage: '操作成功',
     onSuccess: (_, commentId) => {
@@ -163,7 +163,7 @@ const showBanDialog = (comment: Comment) => {
 // 使用 useMutation 处理拒绝/屏蔽
 const { execute: executeRejectOrBan, loading: submitting } = useMutation(
   (data: { commentId: number; action: string; reason: string }) =>
-    adminApi.approveComment(data.commentId, data.action, data.reason),
+    adminApi.operateContent('comment', data.commentId, { action: data.action.toLowerCase(), reason: data.reason }),
   {
     onSuccess: (_, data) => {
       const message = data.action === 'BAN' ? '已屏蔽' : '已拒绝'
@@ -204,7 +204,7 @@ const banComment = async (comment: Comment): Promise<void> => {
 
 // 使用 useMutation 取消屏蔽评论
 const { execute: executeUnbanComment } = useMutation(
-  (commentId: number) => adminApi.approveComment(commentId, 'APPROVE'),
+  (commentId: number) => adminApi.operateContent('comment', commentId, { action: 'approve' }),
   {
     successMessage: '已取消屏蔽',
     onSuccess: (_, commentId) => {

@@ -15,9 +15,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class RoadmapWithStatusDTO extends RoadmapDetailDTO {
 
-    private Boolean upvoted;
-
-    private Boolean pinned;
+    private Boolean liked;
 
     private Boolean learning;
 }

@@ -11,7 +11,6 @@ import com.prosper.learn.analytics.dto.UserStatsWithDailyDTO;
 import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.dataservice.UserStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyMapper;
-import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyDO;
 import com.prosper.learn.analytics.stats.mapper.UserStatsYearlyDO;
 import com.prosper.learn.analytics.stats.mapper.UserStatsYearlyMapper;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
@@ -247,10 +246,10 @@ public class DailyStatsService {
                     UserDailyStatsDTO todayStats = getUserTodayStats(userId);
                     dailyStat = DailyStatsDTO.builder()
                         .date(date.toString())
-                        .views(todayStats.getViews())
-                        .twice(todayStats.getTwices())
-                        .likes(todayStats.getLikes())
-                        .comments(todayStats.getComments())
+                        .viewCount(todayStats.getViewCount())
+                        .twiceCount(todayStats.getTwiceCount())
+                        .likeCount(todayStats.getLikeCount())
+                        .commentCount(todayStats.getCommentCount())
                         .build();
                 } else {
                     // 历史数据从数据库获取
@@ -258,28 +257,28 @@ public class DailyStatsService {
 
                     dailyStat = DailyStatsDTO.builder()
                         .date(date.toString())
-                        .views(dayStats.get("views"))
-                        .twice(dayStats.get("twice"))
-                        .likes(dayStats.get("like"))
-                        .comments(dayStats.get("comments"))
+                        .viewCount(dayStats.get("viewCount"))
+                        .twiceCount(dayStats.get("twiceCount"))
+                        .likeCount(dayStats.get("likeCount"))
+                        .commentCount(dayStats.get("commentCount"))
                         .build();
                 }
 
                 dailyStats.add(dailyStat);
 
                 // 累计总数
-                totalViews += dailyStat.getViews();
-                totalTwice += dailyStat.getTwice();
-                totalLikes += dailyStat.getLikes();
-                totalComments += dailyStat.getComments();
+                totalViews += dailyStat.getViewCount();
+                totalTwice += dailyStat.getTwiceCount();
+                totalLikes += dailyStat.getLikeCount();
+                totalComments += dailyStat.getCommentCount();
             }
 
             return UserStatsWithDailyDTO.builder()
                 .userId(userId)
-                .views(totalViews)
-                .twices(totalTwice)
-                .likes(totalLikes)
-                .comments(totalComments)
+                .viewCount(totalViews)
+                .twiceCount(totalTwice)
+                .likeCount(totalLikes)
+                .commentCount(totalComments)
                 .dailyStats(dailyStats)
                 .build();
 
@@ -336,10 +335,10 @@ public class DailyStatsService {
 
         return UserStatsDTO.builder()
             .userId(userId)
-            .views(totalViews)
-            .twices(totalTwice)
-            .likes(totalLikes)
-            .comments(totalComments)
+            .viewCount(totalViews)
+            .twiceCount(totalTwice)
+            .likeCount(totalLikes)
+            .commentCount(totalComments)
             .build();
     }
 
@@ -379,10 +378,10 @@ public class DailyStatsService {
 
         return UserDailyStatsDTO.builder()
             .userId(userId)
-            .views(totalViews)
-            .twices(totalTwice)
-            .likes(totalLikes)
-            .comments(totalComments)
+            .viewCount(totalViews)
+            .twiceCount(totalTwice)
+            .likeCount(totalLikes)
+            .commentCount(totalComments)
             .build();
     }
 
@@ -413,10 +412,10 @@ public class DailyStatsService {
                     List<Integer> statsArray = objectMapper.readValue(dayStatsJson, new TypeReference<List<Integer>>() {});
                     if (statsArray != null && statsArray.size() >= 4) {
                         Map<String, Integer> statsMap = new HashMap<>();
-                        statsMap.put("views", statsArray.get(0));
-                        statsMap.put("twice", statsArray.get(1));
-                        statsMap.put("like", statsArray.get(2));
-                        statsMap.put("comments", statsArray.get(3));
+                        statsMap.put("viewCount", statsArray.get(0));
+                        statsMap.put("twiceCount", statsArray.get(1));
+                        statsMap.put("likeCount", statsArray.get(2));
+                        statsMap.put("commentCount", statsArray.get(3));
                         return statsMap;
                     }
                 } catch (Exception jsonEx) {
@@ -464,10 +463,10 @@ public class DailyStatsService {
                 List<Integer> statsArray = entry.getValue();
                 if (statsArray != null && statsArray.size() >= 4) {
                     Map<String, Integer> dayStats = new HashMap<>();
-                    dayStats.put("views", statsArray.get(0));
-                    dayStats.put("twice", statsArray.get(1));
-                    dayStats.put("like", statsArray.get(2));
-                    dayStats.put("comments", statsArray.get(3));
+                    dayStats.put("viewCount", statsArray.get(0));
+                    dayStats.put("twiceCount", statsArray.get(1));
+                    dayStats.put("likeCount", statsArray.get(2));
+                    dayStats.put("commentCount", statsArray.get(3));
                     result.put(dayKey, dayStats);
                 }
             }
@@ -542,21 +541,21 @@ public class DailyStatsService {
             UserDailyStatsDTO todayStats = getUserTodayStats(userId);
 
             // 3. 合并数据
-            int totalViews = (historicalStats.getViews() != null ? historicalStats.getViews() : 0) +
-                            (todayStats.getViews() != null ? todayStats.getViews() : 0);
-            int totalTwices = (historicalStats.getTwices() != null ? historicalStats.getTwices() : 0) +
-                             (todayStats.getTwices() != null ? todayStats.getTwices() : 0);
-            int totalLikes = (historicalStats.getLikes() != null ? historicalStats.getLikes() : 0) +
-                            (todayStats.getLikes() != null ? todayStats.getLikes() : 0);
-            int totalComments = (historicalStats.getComments() != null ? historicalStats.getComments() : 0) +
-                               (todayStats.getComments() != null ? todayStats.getComments() : 0);
+            int totalViews = (historicalStats.getViewCount() != null ? historicalStats.getViewCount() : 0) +
+                            (todayStats.getViewCount() != null ? todayStats.getViewCount() : 0);
+            int totalTwices = (historicalStats.getTwiceCount() != null ? historicalStats.getTwiceCount() : 0) +
+                             (todayStats.getTwiceCount() != null ? todayStats.getTwiceCount() : 0);
+            int totalLikes = (historicalStats.getLikeCount() != null ? historicalStats.getLikeCount() : 0) +
+                            (todayStats.getLikeCount() != null ? todayStats.getLikeCount() : 0);
+            int totalComments = (historicalStats.getCommentCount() != null ? historicalStats.getCommentCount() : 0) +
+                               (todayStats.getCommentCount() != null ? todayStats.getCommentCount() : 0);
 
             return UserStatsDTO.builder()
                 .userId(userId)
-                .views(totalViews)
-                .twices(totalTwices)
-                .likes(totalLikes)
-                .comments(totalComments)
+                .viewCount(totalViews)
+                .twiceCount(totalTwices)
+                .likeCount(totalLikes)
+                .commentCount(totalComments)
                 .build();
 
         } catch (Exception e) {
@@ -587,10 +586,10 @@ public class DailyStatsService {
 
             return UserStatsDTO.builder()
                 .userId(userId)
-                .views(totalStats.get("views"))
-                .twices(totalStats.get("twice"))
-                .likes(totalStats.get("like"))
-                .comments(totalStats.get("comments"))
+                .viewCount(totalStats.get("viewCount"))
+                .twiceCount(totalStats.get("twiceCount"))
+                .likeCount(totalStats.get("likeCount"))
+                .commentCount(totalStats.get("commentCount"))
                 .build();
 
         } catch (Exception e) {
@@ -660,10 +659,10 @@ public class DailyStatsService {
      */
     private Map<String, Integer> createEmptyUserStatsMap() {
         Map<String, Integer> empty = new HashMap<>();
-        empty.put("views", 0);
-        empty.put("twice", 0);
-        empty.put("like", 0);
-        empty.put("comments", 0);
+        empty.put("viewCount", 0);
+        empty.put("twiceCount", 0);
+        empty.put("likeCount", 0);
+        empty.put("commentCount", 0);
         return empty;
     }
 
@@ -811,33 +810,33 @@ public class DailyStatsService {
                 DailyStatsDTO todayStats = todayStatsMap.get(contentId);
 
                 // 按日统计字段：累计 + 今日增量
-                int baseViews = baseStats != null && baseStats.getViews() != null ? baseStats.getViews() : 0;
-                int baseTwice = baseStats != null && baseStats.getTwices() != null ? baseStats.getTwices() : 0;
-                int baseLikes = baseStats != null && baseStats.getLikes() != null ? baseStats.getLikes() : 0;
-                int baseComments = baseStats != null && baseStats.getComments() != null ? baseStats.getComments() : 0;
+                int baseViews = baseStats != null && baseStats.getViewCount() != null ? baseStats.getViewCount() : 0;
+                int baseTwice = baseStats != null && baseStats.getTwiceCount() != null ? baseStats.getTwiceCount() : 0;
+                int baseLikes = baseStats != null && baseStats.getLikeCount() != null ? baseStats.getLikeCount() : 0;
+                int baseComments = baseStats != null && baseStats.getCommentCount() != null ? baseStats.getCommentCount() : 0;
 
-                int todayViews = todayStats != null && todayStats.getViews() != null ? todayStats.getViews() : 0;
-                int todayTwice = todayStats != null && todayStats.getTwice() != null ? todayStats.getTwice() : 0;
-                int todayLikes = todayStats != null && todayStats.getLikes() != null ? todayStats.getLikes() : 0;
-                int todayComments = todayStats != null && todayStats.getComments() != null ? todayStats.getComments() : 0;
+                int todayViews = todayStats != null && todayStats.getViewCount() != null ? todayStats.getViewCount() : 0;
+                int todayTwice = todayStats != null && todayStats.getTwiceCount() != null ? todayStats.getTwiceCount() : 0;
+                int todayLikes = todayStats != null && todayStats.getLikeCount() != null ? todayStats.getLikeCount() : 0;
+                int todayComments = todayStats != null && todayStats.getCommentCount() != null ? todayStats.getCommentCount() : 0;
 
                 // 非按日统计字段：直接从 content_stats 获取（不加今日增量）
-                int baseShares = baseStats != null && baseStats.getShares() != null ? baseStats.getShares() : 0;
-                int baseBookmarks = baseStats != null && baseStats.getBookmarks() != null ? baseStats.getBookmarks() : 0;
-                int baseCompleted = baseStats != null && baseStats.getCompletedUsers() != null ? baseStats.getCompletedUsers() : 0;
-                int baseInProgress = baseStats != null && baseStats.getInProgressUsers() != null ? baseStats.getInProgressUsers() : 0;
+                int baseShares = baseStats != null && baseStats.getShareCount() != null ? baseStats.getShareCount() : 0;
+                int baseBookmarks = baseStats != null && baseStats.getBookmarkCount() != null ? baseStats.getBookmarkCount() : 0;
+                int baseCompleted = baseStats != null && baseStats.getCompletedUserCount() != null ? baseStats.getCompletedUserCount() : 0;
+                int baseInProgress = baseStats != null && baseStats.getLearnerCount() != null ? baseStats.getLearnerCount() : 0;
 
                 // 构建 DTO
                 ContentStatsDTO dto = ContentStatsDTO.builder()
                     .contentId(contentId)
-                    .views(baseViews + todayViews)              // 累计 + 今日增量
-                    .twiceUpvotes(baseTwice + todayTwice)       // 累计 + 今日增量
-                    .likeUpvotes(baseLikes + todayLikes)        // 累计 + 今日增量
-                    .comments(baseComments + todayComments)     // 累计 + 今日增量
-                    .shares(baseShares)                         // 只用累计值
-                    .bookmarks(baseBookmarks)                   // 只用累计值
-                    .completedUsers(baseCompleted)              // 只用累计值
-                    .inProgressUsers(baseInProgress)            // 只用累计值
+                    .viewCount(baseViews + todayViews)              // 累计 + 今日增量
+                    .twiceCount(baseTwice + todayTwice)       // 累计 + 今日增量
+                    .likeCount(baseLikes + todayLikes)        // 累计 + 今日增量
+                    .commentCount(baseComments + todayComments)     // 累计 + 今日增量
+                    .shareCount(baseShares)                         // 只用累计值
+                    .bookmarkCount(baseBookmarks)                   // 只用累计值
+                    .completedUserCount(baseCompleted)              // 只用累计值
+                    .inProgressUserCount(baseInProgress)            // 只用累计值
                     .build();
 
                 result.put(contentId, dto);
@@ -909,10 +908,10 @@ public class DailyStatsService {
                 int comments = parseRedisValue(values.get(baseIndex + 3));
 
                 DailyStatsDTO stats = DailyStatsDTO.builder()
-                    .views(views)
-                    .twice(twice)
-                    .likes(likes)
-                    .comments(comments)
+                    .viewCount(views)
+                    .twiceCount(twice)
+                    .likeCount(likes)
+                    .commentCount(comments)
                     .build();
 
                 result.put(contentId, stats);
@@ -966,10 +965,10 @@ public class DailyStatsService {
                 int comments = getRedisHashFieldAsInt(redisKey, contentTypeValue + ":" + contentId + ":" + STAT_TYPE_COMMENT);
 
                 DailyStatsDTO stats = DailyStatsDTO.builder()
-                    .views(views)
-                    .twice(twice)
-                    .likes(likes)
-                    .comments(comments)
+                    .viewCount(views)
+                    .twiceCount(twice)
+                    .likeCount(likes)
+                    .commentCount(comments)
                     .build();
 
                 result.put(contentId, stats);

@@ -154,21 +154,21 @@
                   <!-- 左侧：投票区域 -->
                   <div class="vote-section mr-3 mr-sm-4">
                     <v-btn
-                      :color="roadmap.upvoted ? 'primary' : 'grey-lighten-1'"
-                      :variant="roadmap.upvoted ? 'flat' : 'outlined'"
+                      :color="roadmap.liked ? 'primary' : 'grey-lighten-1'"
+                      :variant="roadmap.liked ? 'flat' : 'outlined'"
                       :disabled="roadmap.creator?.id === currentUserId"
                       icon
                       size="small"
                       @click="handleVote(roadmap)"
                     >
-                      <v-icon :icon="roadmap.upvoted ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'" />
+                      <v-icon :icon="roadmap.liked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'" />
                     </v-btn>
                     <div class="vote-count text-center mt-1">
                       <span
                         class="text-caption font-weight-bold"
-                        :class="roadmap.upvoted ? 'text-primary' : 'text-grey-darken-2'"
+                        :class="roadmap.liked ? 'text-primary' : 'text-grey-darken-2'"
                       >
-                        {{ roadmap.likes }}
+                        {{ roadmap.likeCount }}
                       </span>
                     </div>
                   </div>
@@ -598,14 +598,17 @@ const { execute: toggleUpvote } = useMutation(
 )
 
 const handleVote = async (
-  roadmap: { id: number; upvoted: boolean; likes: number }
+  roadmap: { id: number; liked: boolean; likeCount: number }
 ): Promise<void> => {
+  console.log('[点赞前] roadmap:', roadmap.id, 'likeCount:', roadmap.likeCount)
   const result = await toggleUpvote({ roadmapId: roadmap.id })
+  console.log('[点赞后] result:', result)
 
-  // 调用成功，更新状态
+  // 调用成功，更新状态（使用后端返回的点赞数，而不是手动计算）
   if (result) {
-    roadmap.upvoted = result.likeUpvoted || false
-    roadmap.likes += roadmap.upvoted ? 1 : -1
+    roadmap.liked = result.liked || false
+    roadmap.likeCount = result.likeCount || 0
+    console.log('[更新后] liked:', roadmap.liked, 'likeCount:', roadmap.likeCount)
   }
   // 调用失败，不做任何更新
 }

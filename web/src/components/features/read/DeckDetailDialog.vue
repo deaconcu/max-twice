@@ -50,11 +50,11 @@
             </div>
             <div
               class="d-flex align-center upvote-area"
-              :class="{ upvoted: deck.hasUpvoted }"
+              :class="{ upvoted: deck.hasLiked }"
               @click="handleUpvote"
             >
               <span class="text-caption opacity-80 mr-2">点赞</span>
-              <span class="text-subtitle-1 font-weight-bold">{{ deck.upvoteCount || 0 }}</span>
+              <span class="text-subtitle-1 font-weight-bold">{{ deck.likeCount || 0 }}</span>
             </div>
           </div>
         </div>
@@ -1259,8 +1259,8 @@ const { execute: upvoteDeck } = useMutation((deckId: number) => memoryApi.upvote
   showToast: false,
   onSuccess: (result) => {
     if (props.deck && result) {
-      props.deck.hasUpvoted = result.upvoted
-      props.deck.upvoteCount = result.upvotes
+      props.deck.hasLiked = result.liked
+      props.deck.likeCount = result.likeCount
     }
   },
 })

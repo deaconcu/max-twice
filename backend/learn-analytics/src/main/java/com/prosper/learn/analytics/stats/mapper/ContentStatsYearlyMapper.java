@@ -14,75 +14,22 @@ public interface ContentStatsYearlyMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(ContentStatsYearlyDO stats);
 
-// --注释掉检查 START (2025/12/10 11:38):
-//    @Update("UPDATE content_stats_yearly SET stats = #{stats}, updated_at = NOW() " +
-//            "WHERE object_type = #{objectType} AND object_id = #{objectId} AND stat_year = #{statYear}")
-//    int updateStats(ContentStatsYearlyDO stats);
-// --注释掉检查 STOP (2025/12/10 11:38)
-
     @Select("SELECT * FROM content_stats_yearly WHERE object_type = #{objectType} AND object_id = #{objectId} AND stat_year = #{statYear}")
     ContentStatsYearlyDO getByTypeAndObjectIdAndYear(int objectType, long objectId, int statYear);
 
-// --注释掉检查 START (2025/12/10 11:38):
-//    @Select("SELECT * FROM content_stats_yearly WHERE object_type = #{objectType} AND object_id = #{objectId} " +
-//            "AND stat_year >= #{startYear} ORDER BY stat_year DESC")
-//    List<ContentStatsYearlyDO> getStatsInYearRange(int objectType, long objectId, Integer startYear);
-// --注释掉检查 STOP (2025/12/10 11:38)
-
-//    @Select("SELECT DISTINCT object_id FROM content_stats_yearly WHERE object_type = #{objectType}")
-//    List<Long> getAllObjectIdsByType(int objectType);
-
-    // ===== 实时统计操作（增量更新）=====
-
-    /*
-    // 使用MySQL JSON函数直接增加计数（用于实时统计）
-    @Update("UPDATE content_stats_yearly SET " +
-            "stats = JSON_SET(" +
-            "  COALESCE(stats, JSON_OBJECT()), " +
-            "  CONCAT('$.\"', #{dayKey}, '\"'), " +
-            "  JSON_SET(" +
-            "    COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\"')), JSON_OBJECT('twice', 0, 'helpful', 0, 'views', 0, 'comments', 0)), " +
-            "    CONCAT('$.', #{statType}), " +
-            "    CAST(COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\".', #{statType})), 0) AS SIGNED) + #{count}" +
-            "  )" +
-            "), " +
-            "updated_at = NOW() " +
-            "WHERE object_type = #{obejctType} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    int incrementStatsCount(int objectType, long objectId, int statYear, String dayKey, String statType, int count);
-     */
-
-// --注释掉检查 START (2025/12/10 11:38):
-//    // 使用MySQL JSON函数直接减少计数（用于撤销操作）
-//    @Update("UPDATE content_stats_yearly SET " +
-//            "stats = JSON_SET(" +
-//            "  stats, " +
-//            "  CONCAT('$.\"', #{dayKey}, '\".', #{statType}), " +
-//            "  GREATEST(0, CAST(COALESCE(JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\".', #{statType})), 0) AS SIGNED) - #{count})" +
-//            "), " +
-//            "updated_at = NOW() " +
-//            "WHERE object_type = #{objectType} AND object_id = #{objectId} AND stat_year = #{statYear} " +
-//            "AND JSON_EXTRACT(stats, CONCAT('$.\"', #{dayKey}, '\"')) IS NOT NULL")
-//    int decrementStatsCount(int objectType, long objectId, int statYear, String dayKey, String statType, int count);
-// --注释掉检查 STOP (2025/12/10 11:38)
-
     // ===== 同步操作（直接覆盖）=====
     
-    // 直接设置当天完整统计数据（用于同步）
+    // 直接设置当天完整统计数据（用于同步）- 使用数组格式 [views, twice, like, comments]
     @Update("UPDATE content_stats_yearly SET " +
             "stats = JSON_SET(" +
             "  COALESCE(stats, JSON_OBJECT()), " +
             "  CONCAT('$.\"', #{dayKey}, '\"'), " +
-            "  JSON_OBJECT(" +
-            "    'views', #{views}, " +
-            "    'twice', #{twice}, " +
-            "    'helpful', #{helpful}, " +
-            "    'comments', #{comments}" +
-            "  )" +
+            "  JSON_ARRAY(#{viewCount}, #{twiceCount}, #{likeCount}, #{commentCount})" +
             "), " +
             "updated_at = NOW() " +
             "WHERE object_type = #{objectType} AND object_id = #{objectId} AND stat_year = #{statYear}")
-    int setDayStats(int objectType, long objectId, int statYear, String dayKey, int views, int twice,
-                    int helpful, int comments);
+    int setDayStats(int objectType, long objectId, int statYear, String dayKey, int viewCount, int twiceCount,
+                    int likeCount, int commentCount);
 
     // ===== 查询操作 =====
     

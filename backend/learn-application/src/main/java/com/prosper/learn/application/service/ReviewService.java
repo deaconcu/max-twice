@@ -46,7 +46,7 @@ public class ReviewService {
      */
     public ReviewStatsDTO toReviewStatsDTO(ReviewDomainService.ReviewStats stats) {
         ReviewStatsDTO dto = new ReviewStatsDTO();
-        dto.setTotalReviews(stats.getTotalReviews() != null ? stats.getTotalReviews().intValue() : 0);
+        dto.setTotalReviewCount(stats.getTotalReviewCount() != null ? stats.getTotalReviewCount().intValue() : 0);
         dto.setStreakDays(stats.getStreakDays() != null ? stats.getStreakDays() : 0);
         dto.setAverageScore(stats.getAverageScore() != null ? stats.getAverageScore() : 0.0);
         dto.setTimeSpent(stats.getTimeSpent() != null ? stats.getTimeSpent().intValue() : 0);

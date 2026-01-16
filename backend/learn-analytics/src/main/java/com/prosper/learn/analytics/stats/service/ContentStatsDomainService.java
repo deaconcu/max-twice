@@ -44,8 +44,64 @@ public class ContentStatsDomainService {
      */
     public Integer getLikesCount(ContentType contentType, Long contentId) {
         return contentStatsDataService.getByContent(contentType, contentId)
-            .map(stats -> stats.getLikes() != null ? stats.getLikes() : 0)
+            .map(stats -> stats.getLikeCount() != null ? stats.getLikeCount() : 0)
             .orElse(0);
+    }
+
+    /**
+     * 获取内容的完整统计数据（包含数据库 + 今日Redis点赞增量）
+     *
+     * @param contentType 内容类型
+     * @param contentId 内容ID
+     * @return 统计数据，如果没有则返回空对象（各字段为0）
+     */
+    public ContentStatsDO getContentStats(ContentType contentType, Long contentId) {
+        // 从数据库获取基础统计数据
+        ContentStatsDO stats = contentStatsDataService.getByContent(contentType, contentId).orElse(null);
+
+        log.debug("getContentStats - contentType={}, contentId={}, dbStats={}",
+            contentType, contentId, stats != null ? "存在" : "不存在");
+
+        if (stats == null) {
+            // 没有统计数据，创建空对象
+            stats = new ContentStatsDO();
+            stats.setContentId(contentId);
+            stats.setContentType(contentType.value());
+            stats.setLikeCount(0);
+            stats.setCommentCount(0);
+            stats.setLearnerCount(0);
+            log.debug("数据库无记录，创建空对象");
+            // 继续执行，检查Redis增量
+        }
+
+        // 从Redis获取今日点赞增量
+        Map<Long, Integer> redisLikesIncrement = redisStatsDomainService.getTodayLikesIncrement(
+            contentType, List.of(contentId));
+        int redisIncrement = redisLikesIncrement.getOrDefault(contentId, 0);
+
+        log.debug("Redis增量 - contentId={}, increment={}", contentId, redisIncrement);
+
+        if (redisIncrement != 0) {
+            // 需要加上Redis增量（可正可负），创建新对象避免修改原对象
+            ContentStatsDO adjustedStats = new ContentStatsDO();
+            adjustedStats.setContentType(stats.getContentType());
+            adjustedStats.setContentId(stats.getContentId());
+            adjustedStats.setViewCount(stats.getViewCount());
+            adjustedStats.setTwiceCount(stats.getTwiceCount());
+            // 确保最终结果不为负
+            int baseLikeCount = stats.getLikeCount() != null ? stats.getLikeCount() : 0;
+            adjustedStats.setLikeCount(Math.max(0, baseLikeCount + redisIncrement));
+            adjustedStats.setCommentCount(stats.getCommentCount());
+            adjustedStats.setShareCount(stats.getShareCount());
+            adjustedStats.setBookmarkCount(stats.getBookmarkCount());
+            adjustedStats.setCompletedUserCount(stats.getCompletedUserCount());
+            adjustedStats.setLearnerCount(stats.getLearnerCount());
+            log.debug("返回调整后的统计 - likeCount={}", adjustedStats.getLikeCount());
+            return adjustedStats;
+        }
+
+        log.debug("返回原始统计 - likeCount={}", stats.getLikeCount());
+        return stats;
     }
 
     /**
@@ -65,7 +121,7 @@ public class ContentStatsDomainService {
         Map<Long, Integer> dbLikesMap = statsList.stream()
             .collect(Collectors.toMap(
                 ContentStatsDO::getContentId,
-                stats -> stats.getLikes() != null ? stats.getLikes() : 0
+                stats -> stats.getLikeCount() != null ? stats.getLikeCount() : 0
             ));
 
         // 2. 从Redis获取今日增量
@@ -77,6 +133,64 @@ public class ContentStatsDomainService {
             int dbCount = dbLikesMap.getOrDefault(contentId, 0);
             int redisIncrement = redisIncrementMap.getOrDefault(contentId, 0);
             result.put(contentId, dbCount + redisIncrement);
+        }
+
+        return result;
+    }
+
+    /**
+     * 批量获取内容的完整统计数据（包含数据库 + 今日Redis点赞增量）
+     *
+     * @param contentType 内容类型
+     * @param contentIds 内容ID列表
+     * @return 内容ID到统计数据的映射
+     */
+    public Map<Long, ContentStatsDO> getBatchContentStats(ContentType contentType, List<Long> contentIds) {
+        if (contentIds == null || contentIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        // 从数据库获取基础统计数据
+        List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(contentType, contentIds);
+
+        // 从Redis获取今日点赞增量
+        Map<Long, Integer> redisLikesIncrement = redisStatsDomainService.getTodayLikesIncrement(contentType, contentIds);
+
+        // 构建结果，将点赞数加上Redis增量
+        Map<Long, ContentStatsDO> result = new HashMap<>();
+        for (ContentStatsDO stats : statsList) {
+            int redisIncrement = redisLikesIncrement.getOrDefault(stats.getContentId(), 0);
+            if (redisIncrement != 0) {
+                // 需要加上Redis增量（可以是正数或负数），创建新对象避免修改原对象
+                ContentStatsDO adjustedStats = new ContentStatsDO();
+                adjustedStats.setContentType(stats.getContentType());
+                adjustedStats.setContentId(stats.getContentId());
+                adjustedStats.setViewCount(stats.getViewCount());
+                adjustedStats.setTwiceCount(stats.getTwiceCount());
+                adjustedStats.setLikeCount(Math.max(0, (stats.getLikeCount() != null ? stats.getLikeCount() : 0) + redisIncrement));
+                adjustedStats.setCommentCount(stats.getCommentCount());
+                adjustedStats.setShareCount(stats.getShareCount());
+                adjustedStats.setBookmarkCount(stats.getBookmarkCount());
+                adjustedStats.setCompletedUserCount(stats.getCompletedUserCount());
+                adjustedStats.setLearnerCount(stats.getLearnerCount());
+                result.put(stats.getContentId(), adjustedStats);
+            } else {
+                result.put(stats.getContentId(), stats);
+            }
+        }
+
+        // 对于没有统计数据的内容，创建空的统计对象并检查Redis增量
+        for (Long contentId : contentIds) {
+            if (!result.containsKey(contentId)) {
+                int redisIncrement = redisLikesIncrement.getOrDefault(contentId, 0);
+                ContentStatsDO emptyStats = new ContentStatsDO();
+                emptyStats.setContentId(contentId);
+                emptyStats.setContentType(contentType.value());
+                emptyStats.setLikeCount(Math.max(0, redisIncrement));
+                emptyStats.setCommentCount(0);
+                emptyStats.setLearnerCount(0);
+                result.put(contentId, emptyStats);
+            }
         }
 
         return result;

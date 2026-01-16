@@ -28,13 +28,13 @@ public class CommentDTO {
 
     private String toUserName;
 
-    private Integer upvoteCount;
+    private Integer likeCount;
 
     private Integer state;
 
     private Double score;
 
-    private Boolean upvoted;
+    private Boolean liked;
 
     private String createdAt;
 

@@ -85,7 +85,7 @@ public interface CommentConverter {
 
     /**
      * 转换为评论详情 DTO（含用户名和点赞状态）
-     * 注意：creatorName、toUserName、upvoted 需要在 Service 层额外填充
+     * 注意：creatorName、toUserName、liked 需要在 Service 层额外填充
      */
     @Named("toDetailDTO")
     @BeanMapping(ignoreByDefault = true)

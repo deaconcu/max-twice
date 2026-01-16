@@ -78,8 +78,8 @@ export interface MemoryCardDeck {
   courseId?: number // 所属课程ID
   cardCount: number // 卡片数量
   state: number // 状态：1=审核中, 2=已通过, 3=已拒绝, 4=已屏蔽
-  upvoteCount: number // 点赞数
-  hasUpvoted?: boolean // 当前用户是否已点赞
+  likeCount: number // 点赞数
+  hasLiked?: boolean // 当前用户是否已点赞
   creatorId?: number // 创建者ID
   creator?: {
     id: number
@@ -94,10 +94,10 @@ export interface MemoryCardDeck {
  * 卡片组统计信息
  */
 export interface DeckStats {
-  totalCards: number
-  newCards: number
-  reviewCards: number
-  learnedCards: number
+  totalCardCount: number
+  newCardCount: number
+  reviewCardCount: number
+  learnedCardCount: number
 }
 
 /**
@@ -194,7 +194,7 @@ export interface GetCardListParams {
  * 复习统计数据
  */
 export interface ReviewStats {
-  totalReviews: number // 总复习次数
+  totalReviewCount: number // 总复习次数
   streakDays: number // 连续天数
   averageScore: number // 平均正确率
   timeSpent: number // 总学习时长(分钟)

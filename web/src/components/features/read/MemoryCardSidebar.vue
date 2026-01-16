@@ -177,19 +177,19 @@
               </div>
               <div class="d-flex align-center">
                 <v-btn
-                  :color="deck.hasUpvoted ? 'grey-darken-2' : 'grey-darken-2'"
+                  :color="deck.hasLiked ? 'grey-darken-2' : 'grey-darken-2'"
                   variant="text"
                   size="small"
                   rounded="lg"
                   @click="handleUpvote(deck, $event)"
                 >
                   <v-icon
-                    :icon="deck.hasUpvoted ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
-                    :color="deck.hasUpvoted ? 'red' : 'grey-darken-2'"
+                    :icon="deck.hasLiked ? 'mdi-thumb-up' : 'mdi-thumb-up-outline'"
+                    :color="deck.hasLiked ? 'red' : 'grey-darken-2'"
                     size="14"
                     class="mr-2"
                   ></v-icon>
-                  {{ deck.upvoteCount }}
+                  {{ deck.likeCount }}
                 </v-btn>
                 <v-icon
                   icon="mdi-cards-outline"
@@ -293,7 +293,7 @@ const loadDecks = async (reset = false) => {
       if (items.length > 0) {
         const lastItem = items[items.length - 1]
         lastId.value = lastItem.id
-        lastScore.value = lastItem.upvoteCount || 0
+        lastScore.value = lastItem.likeCount || 0
       }
 
       hasMore.value = items.length >= 20
@@ -323,8 +323,8 @@ const { execute: upvoteDeck } = useMutation((deckId: number) => memoryApi.upvote
   onSuccess: (result, deckId) => {
     const deck = decks.value.find((d) => d.id === deckId)
     if (deck && result) {
-      deck.hasUpvoted = result.upvoted
-      deck.upvoteCount = result.upvotes
+      deck.hasLiked = result.liked
+      deck.likeCount = result.likeCount
     }
   },
 })

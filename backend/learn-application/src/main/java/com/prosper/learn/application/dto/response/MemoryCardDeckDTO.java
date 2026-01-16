@@ -27,10 +27,10 @@ public class MemoryCardDeckDTO {
 
     private String createdAt;
 
-    private Integer upvoteCount;
+    private Integer likeCount;
 
     private Integer cardCount;
 
-    private Boolean hasUpvoted;  // 当前用户是否已点赞
+    private Boolean hasLiked;  // 当前用户是否已点赞
 
 }

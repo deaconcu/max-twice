@@ -33,7 +33,7 @@ public class DeckSummaryDTO {
 
     private String createdAt;
 
-    private Integer upvoteCount;
+    private Integer likeCount;
 
     private Integer cardCount;
 

@@ -116,8 +116,8 @@
                       {{ t('course.startReading') }}
                     </v-btn>
                     <v-btn
-                      :color="course.subscribed ? 'error' : 'grey-darken-2'"
-                      :variant="course.subscribed ? 'flat' : 'tonal'"
+                      :color="course.bookmarked ? 'error' : 'grey-darken-2'"
+                      :variant="course.bookmarked ? 'flat' : 'tonal'"
                       :size="$vuetify.display.mobile ? 'default' : 'large'"
                       rounded="lg"
                       class="text-none px-4 px-md-6"
@@ -125,9 +125,9 @@
                       @click.stop="handleToggleSubscribe"
                     >
                       <v-icon size="20" class="mr-2">
-                        {{ course.subscribed ? 'mdi-heart' : 'mdi-heart-outline' }}
+                        {{ course.bookmarked ? 'mdi-heart' : 'mdi-heart-outline' }}
                       </v-icon>
-                      {{ course.subscribed ? t('course.subscribed') : t('course.subscribe') }}
+                      {{ course.bookmarked ? t('course.subscribed') : t('course.subscribe') }}
                     </v-btn>
                   </div>
                 </div>
@@ -198,10 +198,10 @@
                           @click.stop="handleGoToSubCourse(index)"
                         ></v-btn>
                         <v-btn
-                          :icon="subCourse.subscribed ? 'mdi-heart' : 'mdi-heart-outline'"
+                          :icon="subCourse.bookmarked ? 'mdi-heart' : 'mdi-heart-outline'"
                           size="small"
                           variant="text"
-                          :color="subCourse.subscribed ? 'error' : 'grey'"
+                          :color="subCourse.bookmarked ? 'error' : 'grey'"
                           :loading="subscribingSubCourseId === subCourse.id"
                           @click.stop="handleToggleSubCourseSubscribe(subCourse.id)"
                         ></v-btn>
@@ -580,12 +580,12 @@ const handleGoToSubCourse = (index: number) => {
 const handleToggleSubscribe = async () => {
   if (!course.value) return
 
-  const action = course.value.subscribed ? 'unsubscribe' : 'subscribe'
+  const action = course.value.bookmarked ? 'unsubscribe' : 'subscribe'
   const result = await executeSubscribe({ id: course.value.id, action })
 
   if (result !== null && course.value) {
     // 使用后端返回的状态值
-    course.value.subscribed = result
+    course.value.bookmarked = result
     if (result) {
       course.value.subscriptionCount = (course.value.subscriptionCount ?? 0) + 1
     } else {
@@ -603,12 +603,12 @@ const handleToggleSubCourseSubscribe = async (subCourseId: number) => {
   if (!subCourse) return
 
   subscribingSubCourseId.value = subCourseId
-  const action = subCourse.subscribed ? 'unsubscribe' : 'subscribe'
+  const action = subCourse.bookmarked ? 'unsubscribe' : 'subscribe'
   const result = await executeSubCourseSubscribe({ id: subCourseId, action })
 
   if (result !== null && subCourse) {
     // 使用后端返回的状态值
-    subCourse.subscribed = result
+    subCourse.bookmarked = result
     if (result) {
       subCourse.subscriptionCount = (subCourse.subscriptionCount ?? 0) + 1
     } else {

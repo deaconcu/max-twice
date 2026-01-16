@@ -2,7 +2,6 @@ package com.prosper.learn.analytics.stats.mapper;
 
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -12,27 +11,27 @@ public class UserStatsDO {
     private Long userId;
 
     // 累计统计（总计数）
-    private Integer views;          // 总浏览量
-    private Integer twices;         // 总两次能懂点赞数
-    private Integer likes;          // 总有用点赞数
-    private Integer comments;       // 总评论数
+    private Integer viewCount;          // 总浏览量
+    private Integer twiceCount;         // 总两次能懂点赞数
+    private Integer likeCount;          // 总有用点赞数
+    private Integer commentCount;       // 总评论数
 
     // 学习统计（累计快照）
-    private Integer learningCourses;
-    private Integer completedCourses;
-    private Integer inProgressProfessions;
-    private Integer completedProfessions;
+    private Integer learningCourseCount;
+    private Integer completedCourseCount;
+    private Integer inProgressProfessionCount;
+    private Integer completedProfessionCount;
 
     // 社交统计（累计快照）
-    private Integer followingUsers;
-    private Integer followingCourses;
-    private Integer followingProfessions;
+    private Integer followingUserCount;
+    private Integer followingCourseCount;
+    private Integer followingProfessionCount;
 
     // 创作统计（累计快照）
-    private Integer createdArticles;
-    private Integer createdIndexs;
-    private Integer createdRoadmaps;
-    private Integer createdCardDecks;
+    private Integer createdArticleCount;
+    private Integer createdIndexCount;
+    private Integer createdRoadmapCount;
+    private Integer createdCardDeckCount;
 
     private LocalDateTime createdAt;
 

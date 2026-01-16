@@ -41,8 +41,8 @@ export interface ProcessedUserRoadmap {
   creator?: User
   createdAt: string
   addedDate: string
-  vote: number
-  upvoted: boolean
+  likeCount: number
+  liked: boolean
   progress: number
   completedNodes: number
   totalNodes: number

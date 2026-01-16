@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -18,65 +17,65 @@ public class UserStatsDTO {
     private Long userId;
 
     // 累计统计字段（总计数）
-    private Integer views;          // 总浏览量
-    private Integer twices;         // 总两次能懂点赞数
-    private Integer likes;          // 总有用点赞数
-    private Integer comments;       // 总评论数
+    private Integer viewCount;          // 总浏览量
+    private Integer twiceCount;         // 总两次能懂点赞数
+    private Integer likeCount;          // 总有用点赞数
+    private Integer commentCount;       // 总评论数
 
     // 学习进度统计
-    private Integer learningCourses;
-    private Integer completedCourses;
-    private Integer inProgressProfessions;
-    private Integer completedProfessions;
+    private Integer learningCourseCount;
+    private Integer completedCourseCount;
+    private Integer inProgressProfessionCount;
+    private Integer completedProfessionCount;
 
     // 社交关系统计
-    private Integer followingUsers;
-    private Integer followingCourses;
-    private Integer followingProfessions;
+    private Integer followingUserCount;
+    private Integer followingCourseCount;
+    private Integer followingProfessionCount;
 
     // 创作内容统计
-    private Integer createdArticles;
-    private Integer createdIndexs;
-    private Integer createdRoadmaps;
-    private Integer createdCardDecks;
+    private Integer createdArticleCount;
+    private Integer createdIndexCount;
+    private Integer createdRoadmapCount;
+    private Integer createdCardDeckCount;
 
     // 汇总信息
-    private Integer totalLearningItems;
-    private Integer totalCreatedItems;
+    private Integer totalLearningItemCount;
+    private Integer totalCreatedItemCount;
     private LocalDateTime lastUpdated;
 
     public static UserStatsDTO empty() {
         return UserStatsDTO.builder()
-            .views(0)
-            .twices(0)
-            .likes(0)
-            .comments(0)
-            .learningCourses(0)
-            .completedCourses(0)
-            .inProgressProfessions(0)
-            .completedProfessions(0)
-            .followingUsers(0)
-            .followingCourses(0)
-            .followingProfessions(0)
-            .createdArticles(0)
-            .createdIndexs(0)
-            .createdRoadmaps(0)
-            .createdCardDecks(0)
-            .totalLearningItems(0)
-            .totalCreatedItems(0)
+            .viewCount(0)
+            .twiceCount(0)
+            .likeCount(0)
+            .commentCount(0)
+            .learningCourseCount(0)
+            .completedCourseCount(0)
+            .inProgressProfessionCount(0)
+            .completedProfessionCount(0)
+            .followingUserCount(0)
+            .followingCourseCount(0)
+            .followingProfessionCount(0)
+            .createdArticleCount(0)
+            .createdIndexCount(0)
+            .createdRoadmapCount(0)
+            .createdCardDeckCount(0)
+            .totalLearningItemCount(0)
+            .totalCreatedItemCount(0)
             .build();
     }
 
     // 计算汇总统计
     public void calculateTotals() {
-        this.totalLearningItems = (learningCourses != null ? learningCourses : 0) +
-                                 (completedCourses != null ? completedCourses : 0) +
-                                 (inProgressProfessions != null ? inProgressProfessions : 0) +
-                                 (completedProfessions != null ? completedProfessions : 0);
+        this.totalLearningItemCount = (learningCourseCount != null ? learningCourseCount : 0) +
+                                 (completedCourseCount != null ? completedCourseCount : 0) +
+                                 (inProgressProfessionCount != null ? inProgressProfessionCount : 0) +
+                                 (completedProfessionCount != null ? completedProfessionCount : 0);
 
-        this.totalCreatedItems = (createdArticles != null ? createdArticles : 0) +
-                                (createdIndexs != null ? createdIndexs : 0) +
-                                (createdRoadmaps != null ? createdRoadmaps : 0) +
-                                (createdCardDecks != null ? createdCardDecks : 0);
+        this.totalCreatedItemCount = (createdArticleCount != null ? createdArticleCount : 0) +
+                                (createdIndexCount != null ? createdIndexCount : 0) +
+                                (createdRoadmapCount != null ? createdRoadmapCount : 0) +
+                                (createdCardDeckCount != null ? createdCardDeckCount : 0);
     }
 }

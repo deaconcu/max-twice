@@ -229,32 +229,32 @@
                     <div class="d-flex flex-wrap justify-center mb-4 ga-4">
                       <div
                         class="legend-item d-flex align-center"
-                        :class="{ 'legend-item-inactive': !lineVisibility.views }"
-                        @click="toggleLine('views')"
+                        :class="{ 'legend-item-inactive': !lineVisibility.viewCount }"
+                        @click="toggleLine('viewCount')"
                       >
                         <div class="legend-dot bg-blue-darken-2 mr-2"></div>
                         <span class="text-body-2 text-grey-darken-2">阅读量</span>
                       </div>
                       <div
                         class="legend-item d-flex align-center"
-                        :class="{ 'legend-item-inactive': !lineVisibility.twice }"
-                        @click="toggleLine('twice')"
+                        :class="{ 'legend-item-inactive': !lineVisibility.twiceCount }"
+                        @click="toggleLine('twiceCount')"
                       >
                         <div class="legend-dot bg-amber-darken-2 mr-2"></div>
                         <span class="text-body-2 text-grey-darken-2">两遍秒懂</span>
                       </div>
                       <div
                         class="legend-item d-flex align-center"
-                        :class="{ 'legend-item-inactive': !lineVisibility.helpful }"
-                        @click="toggleLine('helpful')"
+                        :class="{ 'legend-item-inactive': !lineVisibility.likeCount }"
+                        @click="toggleLine('likeCount')"
                       >
                         <div class="legend-dot bg-green-darken-2 mr-2"></div>
                         <span class="text-body-2 text-grey-darken-2">有用</span>
                       </div>
                       <div
                         class="legend-item d-flex align-center"
-                        :class="{ 'legend-item-inactive': !lineVisibility.comments }"
-                        @click="toggleLine('comments')"
+                        :class="{ 'legend-item-inactive': !lineVisibility.commentCount }"
+                        @click="toggleLine('commentCount')"
                       >
                         <div class="legend-dot bg-purple-darken-2 mr-2"></div>
                         <span class="text-body-2 text-grey-darken-2">评论</span>
@@ -278,19 +278,19 @@
                           <div class="tooltip-title">{{ tooltip.date }}</div>
                           <div class="tooltip-item">
                             <span class="tooltip-dot bg-blue-darken-2"></span>
-                            阅读量: <strong>{{ tooltip.views }}</strong>
+                            阅读量: <strong>{{ tooltip.viewCount }}</strong>
                           </div>
                           <div class="tooltip-item">
                             <span class="tooltip-dot bg-amber-darken-2"></span>
-                            两遍秒懂: <strong>{{ tooltip.twice }}</strong>
+                            两遍秒懂: <strong>{{ tooltip.twiceCount }}</strong>
                           </div>
                           <div class="tooltip-item">
                             <span class="tooltip-dot bg-green-darken-2"></span>
-                            有用: <strong>{{ tooltip.helpful }}</strong>
+                            有用: <strong>{{ tooltip.likeCount }}</strong>
                           </div>
                           <div class="tooltip-item">
                             <span class="tooltip-dot bg-purple-darken-2"></span>
-                            评论: <strong>{{ tooltip.comments }}</strong>
+                            评论: <strong>{{ tooltip.commentCount }}</strong>
                           </div>
                         </div>
                       </div>
@@ -329,22 +329,22 @@ const tooltip = ref({
   x: 0,
   y: 0,
   date: '',
-  views: 0,
-  twice: 0,
-  helpful: 0,
-  comments: 0,
+  viewCount: 0,
+  twiceCount: 0,
+  likeCount: 0,
+  commentCount: 0,
 })
 
 // 曲线可见性控制
 const lineVisibility = ref({
-  views: true,
-  twice: true,
-  helpful: true,
-  comments: true,
+  viewCount: true,
+  twiceCount: true,
+  likeCount: true,
+  commentCount: true,
 })
 
 // 切换曲线显示
-const toggleLine = (key: 'views' | 'twice' | 'helpful' | 'comments') => {
+const toggleLine = (key: 'viewCount' | 'twiceCount' | 'likeCount' | 'commentCount') => {
   lineVisibility.value[key] = !lineVisibility.value[key]
   nextTick(() => {
     drawChart()
@@ -400,20 +400,20 @@ const dailyStatsItems = computed(() => {
 
   return statsData.value.dailyStats.map((day: DailyStatsDTO) => ({
     date: day.date,
-    views: day.views || 0,
-    twice: day.twice || 0,
-    helpful: day.helpful || 0,
-    comments: day.comments || 0,
+    viewCount: day.viewCount || 0,
+    twiceCount: day.twiceCount || 0,
+    likeCount: day.likeCount || 0,
+    commentCount: day.commentCount || 0,
   }))
 })
 
 // 表格头部配置
 const tableHeaders = [
   { title: '日期', key: 'date', align: 'start' as const },
-  { title: '阅读量', key: 'views', align: 'center' as const },
-  { title: '两遍秒懂', key: 'twice', align: 'center' as const },
-  { title: '有用', key: 'helpful', align: 'center' as const },
-  { title: '评论', key: 'comments', align: 'center' as const },
+  { title: '阅读量', key: 'viewCount', align: 'center' as const },
+  { title: '两遍秒懂', key: 'twiceCount', align: 'center' as const },
+  { title: '有用', key: 'likeCount', align: 'center' as const },
+  { title: '评论', key: 'commentCount', align: 'center' as const },
 ]
 
 // 工具方法
@@ -512,10 +512,10 @@ const drawChart = () => {
 
   // 找到最大值用于缩放（只计算可见的曲线）
   const visibleValues: number[] = []
-  if (lineVisibility.value.views) visibleValues.push(...data.map((d) => d.views))
-  if (lineVisibility.value.twice) visibleValues.push(...data.map((d) => d.twice))
-  if (lineVisibility.value.helpful) visibleValues.push(...data.map((d) => d.helpful))
-  if (lineVisibility.value.comments) visibleValues.push(...data.map((d) => d.comments))
+  if (lineVisibility.value.viewCount) visibleValues.push(...data.map((d) => d.viewCount))
+  if (lineVisibility.value.twiceCount) visibleValues.push(...data.map((d) => d.twiceCount))
+  if (lineVisibility.value.likeCount) visibleValues.push(...data.map((d) => d.likeCount))
+  if (lineVisibility.value.commentCount) visibleValues.push(...data.map((d) => d.commentCount))
 
   const maxValue = visibleValues.length > 0 ? Math.max(...visibleValues, 1) : 1
   const yScale = chartHeight / maxValue
@@ -574,27 +574,27 @@ const drawChart = () => {
   }
 
   // 绘制四条线（根据可见性）
-  if (lineVisibility.value.views) {
+  if (lineVisibility.value.viewCount) {
     drawLine(
-      data.map((d) => d.views),
+      data.map((d) => d.viewCount),
       '#1976D2'
     )
   }
-  if (lineVisibility.value.twice) {
+  if (lineVisibility.value.twiceCount) {
     drawLine(
-      data.map((d) => d.twice),
+      data.map((d) => d.twiceCount),
       '#F57C00'
     )
   }
-  if (lineVisibility.value.helpful) {
+  if (lineVisibility.value.likeCount) {
     drawLine(
-      data.map((d) => d.helpful),
+      data.map((d) => d.likeCount),
       '#388E3C'
     )
   }
-  if (lineVisibility.value.comments) {
+  if (lineVisibility.value.commentCount) {
     drawLine(
-      data.map((d) => d.comments),
+      data.map((d) => d.commentCount),
       '#7B1FA2'
     )
   }
@@ -637,10 +637,10 @@ const handleChartHover = (event: MouseEvent) => {
       x: event.clientX - rect.left + rect.left,
       y: event.clientY - rect.top + rect.top - 20,
       date: formatDate(item.date),
-      views: item.views,
-      twice: item.twice,
-      helpful: item.helpful,
-      comments: item.comments,
+      viewCount: item.viewCount,
+      twiceCount: item.twiceCount,
+      likeCount: item.likeCount,
+      commentCount: item.commentCount,
     }
   }
 }

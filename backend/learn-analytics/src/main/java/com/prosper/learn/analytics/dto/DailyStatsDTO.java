@@ -13,11 +13,11 @@ public class DailyStatsDTO {
     
     private String date; // 格式: yyyy-MM-dd
     
-    private Integer views;
+    private Integer viewCount;
     
-    private Integer twice;
+    private Integer twiceCount;
     
-    private Integer likes;
+    private Integer likeCount;
     
-    private Integer comments;
+    private Integer commentCount;
 }

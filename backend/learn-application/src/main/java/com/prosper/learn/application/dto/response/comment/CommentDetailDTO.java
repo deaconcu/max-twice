@@ -16,7 +16,7 @@ import lombok.EqualsAndHashCode;
  * 与 CommentSummaryDTO 的区别：
  * - 新增：creatorName（创建者用户名）
  * - 新增：toUserName（被回复用户名）
- * - 新增：upvoted（当前用户是否已点赞）
+ * - 新增：liked（当前用户是否已点赞）
  *
  * @author Claude
  * @since 2025-01-18
@@ -45,5 +45,5 @@ public class CommentDetailDTO extends CommentSummaryDTO {
      * - false: 未点赞
      * - null: 未登录用户
      */
-    private Boolean upvoted;
+    private Boolean liked;
 }

@@ -12,8 +12,8 @@ export interface Comment {
   id: number
   content: string
   createdAt: string // 创建时间（必需）
-  upvoteCount: number // 点赞数（必需）
-  upvoted: boolean // 点赞状态（必需）
+  likeCount: number // 点赞数（必需）
+  liked: boolean // 点赞状态（必需）
   type?: ObjectType // 评论类型
   objectId?: number // 被评论对象ID
   replyCount?: number // 回复数量

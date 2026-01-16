@@ -111,7 +111,7 @@ const resetFilter = () => {
 
 // 使用 useMutation 批准卡片组
 const { execute: executeApproveDeck } = useMutation(
-  (deckId: number) => adminApi.approveDeck(deckId, { action: ApprovalAction.APPROVE }),
+  (deckId: number) => adminApi.operateContent('memory_card_deck', deckId, { action: 'approve' }),
   {
     successMessage: '卡片组审核通过',
     onSuccess: (_, deckId) => {
@@ -144,7 +144,7 @@ const showBanDialog = (deck: DeckDetail) => {
 // 使用 useMutation 处理拒绝/屏蔽
 const { execute: executeRejectOrBan, loading: submitting } = useMutation(
   (data: { deckId: number; action: ApprovalAction; reason: string }) =>
-    adminApi.approveDeck(data.deckId, { action: data.action, reason: data.reason }),
+    adminApi.operateContent('memory_card_deck', data.deckId, { action: data.action.toLowerCase(), reason: data.reason }),
   {
     onSuccess: (_, data) => {
       const message = data.action === ApprovalAction.BAN ? '卡片组已屏蔽' : '卡片组已拒绝'
@@ -185,7 +185,7 @@ const banDeck = async (deck: DeckDetail): Promise<void> => {
 
 // 使用 useMutation 取消屏蔽卡片组
 const { execute: executeUnbanDeck } = useMutation(
-  (deckId: number) => adminApi.approveDeck(deckId, { action: ApprovalAction.APPROVE }),
+  (deckId: number) => adminApi.operateContent('memory_card_deck', deckId, { action: 'approve' }),
   {
     successMessage: '卡片组已取消屏蔽',
     onSuccess: (_, deckId) => {
@@ -530,7 +530,7 @@ const getStateColor = (state: number): string => {
                     class="ml-3 mr-1"
                   ></v-icon>
                   <span class="text-body-2 text-grey-darken-2"
-                    >{{ deck.upvoteCount || 0 }} 点赞</span
+                    >{{ deck.likeCount || 0 }} 点赞</span
                   >
                 </div>
               </div>

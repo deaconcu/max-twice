@@ -11,7 +11,6 @@ import com.prosper.learn.application.dto.request.CreatePostRequest;
 import com.prosper.learn.application.dto.request.MarkImageUsedRequest;
 import com.prosper.learn.application.dto.request.UpdatePostRequest;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
-import com.prosper.learn.application.dto.response.NodeDTO;
 import com.prosper.learn.application.dto.response.PostDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithCourseBriefDTO;
 import com.prosper.learn.application.dto.response.post.PostFullDTO;
@@ -167,10 +166,10 @@ public class PostService {
         postDTOList.forEach(post -> {
             ContentStatsDTO stats = statsMap.get(post.getId());
             if (stats != null) {
-                post.setViewCount(stats.getViews());
-                post.setTwice(stats.getTwiceUpvotes());
-                post.setHelpful(stats.getLikeUpvotes());
-                post.setCommentCount(stats.getComments());
+                post.setViewCount(stats.getViewCount());
+                post.setTwiceCount(stats.getTwiceCount());
+                post.setLikeCount(stats.getLikeCount());
+                post.setCommentCount(stats.getCommentCount());
             }
         });
 

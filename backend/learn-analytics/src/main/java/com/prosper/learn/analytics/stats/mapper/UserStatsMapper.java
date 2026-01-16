@@ -10,14 +10,14 @@ public interface UserStatsMapper {
 
     // ===== 基础CRUD操作 =====
 
-    @Insert("INSERT INTO user_stats (user_id, views, twices, likes, comments, " +
-            "learning_courses, completed_courses, in_progress_professions, completed_professions, " +
-            "following_users, following_courses, following_professions, " +
-            "created_articles, created_indexs, created_roadmaps, created_card_decks) " +
-            "VALUES (#{userId}, #{views}, #{twices}, #{likes}, #{comments}, " +
-            "#{learningCourses}, #{completedCourses}, #{inProgressProfessions}, #{completedProfessions}, " +
-            "#{followingUsers}, #{followingCourses}, #{followingProfessions}, " +
-            "#{createdArticles}, #{createdIndexs}, #{createdRoadmaps}, #{createdCardDecks})")
+    @Insert("INSERT INTO user_stats (user_id, view_count, twice_count, like_count, comment_count, " +
+            "learning_course_count, completed_course_count, in_progress_profession_count, completed_profession_count, " +
+            "following_user_count, following_course_count, following_profession_count, " +
+            "created_article_count, created_index_count, created_roadmap_count, created_card_deck_count) " +
+            "VALUES (#{userId}, #{viewCount}, #{twiceCount}, #{likeCount}, #{commentCount}, " +
+            "#{learningCourseCount}, #{completedCourseCount}, #{inProgressProfessionCount}, #{completedProfessionCount}, " +
+            "#{followingUserCount}, #{followingCourseCount}, #{followingProfessionCount}, " +
+            "#{createdArticleCount}, #{createdIndexCount}, #{createdRoadmapCount}, #{createdCardDeckCount})")
     int insert(UserStatsDO userStats);
 
     @Select("SELECT * FROM user_stats WHERE user_id = #{userId}")
@@ -48,10 +48,10 @@ public interface UserStatsMapper {
                 @Param("field") String field, @Param("newValue") int newValue);
 
     @Update("UPDATE user_stats SET " +
-            "views = views + #{viewsDelta}, " +
-            "twices = twices + #{twicesDelta}, " +
-            "likes = likes + #{likesDelta}, " +
-            "comments = comments + #{commentsDelta} " +
+            "view_count = view_count + #{viewsDelta}, " +
+            "twice_count = twice_count + #{twicesDelta}, " +
+            "like_count = like_count + #{likesDelta}, " +
+            "comment_count = comment_count + #{commentsDelta} " +
             "WHERE user_id = #{userId}")
     int increase(@Param("userId") long userId,
                  @Param("viewsDelta") int viewsDelta,

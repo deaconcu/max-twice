@@ -25,22 +25,22 @@ public class UserStatsWithDailyDTO {
     /**
      * 总浏览量（累计）
      */
-    private Integer views;
+    private Integer viewCount;
 
     /**
      * 总"两次能懂"点赞数（累计）
      */
-    private Integer twices;
+    private Integer twiceCount;
 
     /**
      * 总"有用"点赞数（累计）
      */
-    private Integer likes;
+    private Integer likeCount;
 
     /**
      * 总评论数（累计）
      */
-    private Integer comments;
+    private Integer commentCount;
 
     /**
      * 每日明细列表
@@ -52,10 +52,10 @@ public class UserStatsWithDailyDTO {
      */
     public static UserStatsWithDailyDTO empty() {
         return UserStatsWithDailyDTO.builder()
-                .views(0)
-                .twices(0)
-                .likes(0)
-                .comments(0)
+                .viewCount(0)
+                .twiceCount(0)
+                .likeCount(0)
+                .commentCount(0)
                 .dailyStats(List.of())
                 .build();
     }

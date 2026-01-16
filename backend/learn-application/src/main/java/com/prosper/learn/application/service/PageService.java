@@ -234,7 +234,7 @@ public class PageService {
         Map<String, Object> data = new HashMap<>();
         data.put("node", nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted));
         data.put("parentCourse", parentCourse);
-        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getSubscribed(), courseProgress));
+        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getBookmarked(), courseProgress));
         data.put("subCourseList", subCourseList);
         data.put("otherPostings", otherPostingsDTO);
         data.put("users", new ArrayList<>(userMap.values()));
@@ -287,7 +287,7 @@ public class PageService {
         Map<String, Object> data = new HashMap<>();
         data.put("node", nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted));
         data.put("parentCourse", parentCourse);
-        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getSubscribed(), courseProgress));
+        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getBookmarked(), courseProgress));
         data.put("subCourseList", subCourseList);
         data.put("post", postDTO);
         data.put("users", new ArrayList<>(userMap.values()));
@@ -362,7 +362,7 @@ public class PageService {
         Map<String, Object> data = new HashMap<>();
         data.put("node", nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted));
         data.put("parentCourse", parentCourse);
-        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getSubscribed(), courseProgress));
+        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getBookmarked(), courseProgress));
         data.put("subCourseList", subCourseList);
         if (postDTO != null) {
             data.put("post", postDTO);
@@ -720,7 +720,7 @@ public class PageService {
 
         data.put("node", nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted));
         data.put("parentCourse", parentCourse);
-        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getSubscribed(), courseProgress));
+        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getBookmarked(), courseProgress));
         data.put("subCourseList", subCourseList);
         data.put("chosenPosting", chosenPosting);
         data.put("fixedPostings", fixedPostings);

@@ -15,5 +15,5 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class DeckWithVoteDTO extends DeckWithCreatorDTO {
 
-    private Boolean hasUpvoted;
+    private Boolean hasLiked;
 }

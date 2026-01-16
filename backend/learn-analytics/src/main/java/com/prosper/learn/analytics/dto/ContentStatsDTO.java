@@ -23,42 +23,42 @@ public class ContentStatsDTO {
     /**
      * 总浏览量
      */
-    private Integer views;
+    private Integer viewCount;
 
     /**
      * twice类型点赞数
      */
-    private Integer twiceUpvotes;
+    private Integer twiceCount;
 
     /**
      * like类型点赞数
      */
-    private Integer likeUpvotes;
+    private Integer likeCount;
 
     /**
      * 总评论数
      */
-    private Integer comments;
+    private Integer commentCount;
 
     /**
      * 总分享数
      */
-    private Integer shares;
+    private Integer shareCount;
 
     /**
      * 总收藏数
      */
-    private Integer bookmarks;
+    private Integer bookmarkCount;
 
     /**
      * 总完成人数
      * 主要用于课程、路线图等学习内容
      */
-    private Integer completedUsers;
+    private Integer completedUserCount;
 
     /**
      * 正在学习人数
      * 主要用于课程、路线图等学习内容
      */
-    private Integer inProgressUsers;
+    private Integer inProgressUserCount;
 }

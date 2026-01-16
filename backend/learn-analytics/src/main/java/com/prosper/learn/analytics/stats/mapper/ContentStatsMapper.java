@@ -14,12 +14,12 @@ public interface ContentStatsMapper {
     /**
      * 插入内容统计记录
      */
-    @Insert("INSERT INTO content_stats (content_type, content_id, views, twices, likes, " +
-            "comments, shares, bookmarks, completed_users, in_progress_users, " +
-            "posts, articles, indexes, roadmaps, card_decks, reject_count) " +
-            "VALUES (#{contentType}, #{contentId}, #{views}, #{twices}, #{likes}, " +
-            "#{comments}, #{shares}, #{bookmarks}, #{completedUsers}, #{inProgressUsers}, " +
-            "#{posts}, #{articles}, #{indexes}, #{roadmaps}, #{cardDecks}, #{rejectCount})")
+    @Insert("INSERT INTO content_stats (content_type, content_id, view_count, twice_count, like_count, " +
+            "comment_count, share_count, bookmark_count, completed_user_count, learner_count, " +
+            "post_count, article_count, index_count, roadmap_count, card_deck_count, reject_count) " +
+            "VALUES (#{contentType}, #{contentId}, #{viewCount}, #{twiceCount}, #{likeCount}, " +
+            "#{commentCount}, #{shareCount}, #{bookmarkCount}, #{completedUserCount}, #{learnerCount}, " +
+            "#{postCount}, #{articleCount}, #{indexCount}, #{roadmapCount}, #{cardDeckCount}, #{rejectCount})")
     int insert(ContentStatsDO contentStats);
 
     /**
@@ -48,10 +48,10 @@ public interface ContentStatsMapper {
      * 增量更新多个统计字段
      */
     @Update("UPDATE content_stats SET " +
-            "views = views + #{viewsDelta}, " +
-            "twices = twices + #{twicesDelta}, " +
-            "likes = likes + #{likesDelta}, " +
-            "comments = comments + #{commentsDelta}, " +
+            "view_count = view_count + #{viewsDelta}, " +
+            "twice_count = twice_count + #{twicesDelta}, " +
+            "like_count = like_count + #{likesDelta}, " +
+            "comment_count = comment_count + #{commentsDelta}, " +
             "updated_at = NOW() " +
             "WHERE content_type = #{contentType} AND content_id = #{contentId}")
     int increase(@Param("contentType") int contentType,
@@ -84,7 +84,7 @@ public interface ContentStatsMapper {
     @Select("SELECT content_id " +
             "FROM content_stats " +
             "WHERE content_type = #{contentType} " +
-            "ORDER BY (bookmarks + in_progress_users + completed_users) DESC " +
+            "ORDER BY (bookmark_count + learner_count + completed_user_count) DESC " +
             "LIMIT #{limit}")
     List<Long> getTopContentIdsByPopularity(@Param("contentType") int contentType,
                                             @Param("limit") int limit);

@@ -18,8 +18,8 @@ export interface Post {
   creatorId?: number // 创建者ID
   creator?: User // 创建者信息
   type?: PostType // 帖子类型
-  twice?: number // "两遍就懂"票数
-  helpful?: number // "有帮助"票数
+  twiceCount?: number // "两遍就懂"票数
+  likeCount?: number // "喜欢"票数
   commentCount?: number // 评论数量
   viewCount?: number // 浏览量
   state?: ContentState // 帖子状态

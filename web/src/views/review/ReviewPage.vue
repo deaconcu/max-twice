@@ -786,7 +786,7 @@
             </h4>
             <div class="d-flex justify-space-between text-caption text-md-body-2 mb-2">
               <span class="text-grey-darken-2">{{ t('review.totalReviews') }}</span>
-              <span class="font-weight-bold text-primary">{{ stats.totalReviews }}</span>
+              <span class="font-weight-bold text-primary">{{ stats.totalReviewCount }}</span>
             </div>
             <div class="d-flex justify-space-between text-caption text-md-body-2 mb-2">
               <span class="text-grey-darken-2">{{ t('review.streakDays') }}</span>
@@ -845,7 +845,7 @@ const listHasMore = ref(true)
 
 // 统计数据
 const stats = ref<ReviewStats>({
-  totalReviews: 0,
+  totalReviewCount: 0,
   streakDays: 0,
   averageScore: 0,
   timeSpent: 0,

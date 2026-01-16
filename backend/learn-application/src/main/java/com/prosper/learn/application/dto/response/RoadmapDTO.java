@@ -20,11 +20,11 @@ public class RoadmapDTO {
 
     private Byte state;  // 状态：0-待审核，1-已批准，2-已拒绝
 
-    private Integer vote;
+    private Integer likeCount;
 
-    private Integer comment;
+    private Integer commentCount;
 
-    private Boolean upvoted;
+    private Boolean liked;
 
     private Boolean pinned;
 

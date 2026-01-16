@@ -2,6 +2,7 @@ package com.prosper.learn.application.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.application.converter.ProfessionConverter;
 import com.prosper.learn.application.converter.RoadmapConverter;
@@ -9,7 +10,6 @@ import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapDetailDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapWithStatusDTO;
-import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.profession.ProfessionDO;
@@ -122,7 +122,7 @@ public class RoadmapService {
 
     /**
      * 转换为路线图（包含完整业务信息）
-     * 包含：creator + profession + upvoted + formatted content
+     * 包含：creator + profession + liked + learning + likeCount + commentCount + learnerCount + formatted content
      */
     public RoadmapWithStatusDTO toRoadmapWithStatus(RoadmapDO roadmapDO, long userId) {
         if (roadmapDO == null) return null;
@@ -141,11 +141,17 @@ public class RoadmapService {
         }
 
         // 设置点赞状态
-        dto.setUpvoted(upvoteDomainService.hasUpvoted(roadmapDO.getId(), ContentType.roadmap.value(), userId));
+        dto.setLiked(upvoteDomainService.hasUpvoted(roadmapDO.getId(), ContentType.roadmap.value(), userId));
 
         // 设置学习状态
         boolean isLearning = userRoadmapDataService.isLearning(userId, roadmapDO.getId());
         dto.setLearning(isLearning);
+
+        // 查询统计数据
+        ContentStatsDO stats = contentStatsDomainService.getContentStats(ContentType.roadmap, roadmapDO.getId());
+        dto.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
+        dto.setCommentCount(stats.getCommentCount() != null ? stats.getCommentCount() : 0);
+        dto.setLearnerCount(stats.getLearnerCount() != null ? stats.getLearnerCount() : 0);
 
         // 设置格式化内容
         if (roadmapDO.getContent() != null) {
@@ -180,7 +186,7 @@ public class RoadmapService {
 
     /**
      * 转换为路线图（包含完整业务信息）
-     * 包含：creator + profession + upvoted + pinned + learning + formatted content + likes
+     * 包含：creator + profession + liked + pinned + learning + formatted content + likes
      */
     private List<RoadmapWithStatusDTO> toRoadmapWithFullInfo(List<RoadmapDO> roadmapList, long userId, Long professionId) {
         List<RoadmapWithStatusDTO> dtoList = roadmapConverter.toWithStatusDTO(roadmapList);
@@ -202,8 +208,8 @@ public class RoadmapService {
             Set<Long> upvotedIds = upvoteDomainService.getUpvotedIds(roadmapIds, ContentType.roadmap.value(), userId);
             Set<Long> learningIds = getLearningIds(userId, roadmapIds);
 
-            // 批量获取点赞数
-            Map<Long, Integer> likesMap = contentStatsDomainService.getBatchLikesCount(ContentType.roadmap, roadmapIds);
+            // 批量获取统计数据
+            Map<Long, ContentStatsDO> statsMap = contentStatsDomainService.getBatchContentStats(ContentType.roadmap, roadmapIds);
 
             // 创建 roadmapDO 的映射，方便查找 creatorId
             Map<Long, RoadmapDO> roadmapDOMap = roadmapList.stream()
@@ -215,11 +221,20 @@ public class RoadmapService {
 
                 dto.setProfession(professionConverter.toBriefDTO(professionDO));
                 dto.setCreator(creator != null ? userConverter.toBriefDTO(creator) : null);
-                dto.setUpvoted(upvotedIds.contains(dto.getId()));
+                dto.setLiked(upvotedIds.contains(dto.getId()));
                 dto.setLearning(learningIds.contains(dto.getId()));
 
-                // 设置点赞数
-                dto.setLikes(likesMap.getOrDefault(dto.getId(), 0));
+                // 设置统计数据
+                ContentStatsDO stats = statsMap.get(dto.getId());
+                if (stats != null) {
+                    dto.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
+                    dto.setCommentCount(stats.getCommentCount() != null ? stats.getCommentCount() : 0);
+                    dto.setLearnerCount(stats.getLearnerCount() != null ? stats.getLearnerCount() : 0);
+                } else {
+                    dto.setLikeCount(0);
+                    dto.setCommentCount(0);
+                    dto.setLearnerCount(0);
+                }
 
                 if (dto.getContent() != null) {
                     String formattedContent = parseContentToGraphFormat(dto.getContent(), userId);

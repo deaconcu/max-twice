@@ -2,7 +2,7 @@
   <DefaultLayout>
     <div class="roadmap-detail-page">
       <!-- 返回按钮和职业信息 -->
-      <div class="back-button-wrapper mb-6 mb-md-8">
+      <div class="back-button-wrapper mb-4 mb-md-5">
         <div class="d-flex align-center">
           <v-btn
             icon="mdi-arrow-left"
@@ -70,7 +70,7 @@
         <!-- 右侧：路径信息和评论区 -->
         <div class="right-sidebar">
           <!-- 路径信息卡片 -->
-          <v-card rounded="xl" class="roadmap-info-card mb-4 no-border">
+          <v-card rounded="0" class="roadmap-info-card mb-4 no-border">
             <v-card-text class="px-0 pt-0 pb-4 pb-sm-5">
               <!-- 标题和状态 -->
               <div class="d-flex align-center justify-space-between mb-4">
@@ -145,25 +145,24 @@
               <!-- 操作按钮 -->
               <div class="d-flex flex-wrap align-center gap-2">
                 <v-btn
-                  :color="roadmap.upvoted ? 'primary' : 'grey-darken-2'"
-                  :variant="roadmap.upvoted ? 'flat' : 'outlined'"
+                  :color="roadmap.liked ? 'primary' : 'grey-darken-2'"
+                  :variant="roadmap.liked ? 'flat' : 'outlined'"
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
                   rounded="lg"
                   @click="handleVote"
                 >
                   <v-icon
-                    :icon="roadmap.upvoted ? 'mdi-heart' : 'mdi-heart-outline'"
+                    :icon="roadmap.liked ? 'mdi-heart' : 'mdi-heart-outline'"
                     size="18"
                     class="mr-1"
                   />
-                  {{ roadmap.vote }}
+                  {{ roadmap.likeCount }}
                 </v-btn>
                 <v-btn
                   :color="roadmap.learning ? 'success' : 'primary'"
                   :variant="roadmap.learning ? 'outlined' : 'flat'"
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
                   rounded="lg"
-                  class="mr-3"
                   @click="handleStartLearning"
                 >
                   <v-icon
@@ -210,8 +209,8 @@ import { Position } from '@vue-flow/core'
 import type { Node, Edge } from '@vue-flow/core'
 import dagre from 'dagre'
 import { useFetch, useMutation } from '@/composables'
-import { roadmapApi, progressApi } from '@/api'
-import { ObjectType } from '@/enums'
+import { roadmapApi, progressApi, upvoteApi } from '@/api'
+import { ObjectType, VoteType } from '@/enums'
 import type { Roadmap } from '@/types/roadmap'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -379,9 +378,22 @@ const handleBack = (): void => {
 }
 
 // 投票
-const handleVote = (): void => {
-  roadmap.value.upvoted = !roadmap.value.upvoted
-  roadmap.value.vote += roadmap.value.upvoted ? 1 : -1
+const { execute: toggleUpvote } = useMutation(
+  () => upvoteApi.upvote(roadmapId.value, ObjectType.ROADMAP, VoteType.NORMAL),
+  { showToast: false }
+)
+
+const handleVote = async (): Promise<void> => {
+  if (!roadmap.value) return
+
+  const result = await toggleUpvote()
+
+  // 调用成功，更新状态（使用后端返回的点赞数，而不是手动计算）
+  if (result) {
+    roadmap.value.liked = result.liked || false
+    roadmap.value.likeCount = result.likeCount || 0
+  }
+  // 调用失败，不做任何更新
 }
 
 // 开始学习路线图的 mutation
@@ -459,6 +471,16 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
   }
 }
 
+/* 标题固定 */
+@media (min-width: 1280px) {
+  .back-button-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgb(var(--v-theme-background));
+  }
+}
+
 /* 内容布局 */
 .content-layout {
   display: flex;
@@ -470,7 +492,7 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
   .content-layout {
     flex-direction: row;
     gap: 48px;
-    height: calc(100vh - 56px - 40px - 80px - 20px);
+    align-items: flex-start;
   }
 }
 
@@ -481,11 +503,18 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
   flex-direction: column;
 }
 
+/* 左侧流程图固定 */
 @media (min-width: 1280px) {
+  .main-content {
+    position: sticky;
+    top: 80px;
+    align-self: flex-start;
+  }
+
   .flow-card {
     display: flex;
     flex-direction: column;
-    flex: 1;
+    height: calc(100vh - 160px);
   }
 
   .flow-card .v-card-text {

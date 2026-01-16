@@ -273,20 +273,20 @@ const { execute: executeUpvote } = useMutation(
     showToast: false,
     onSuccess: (response: UpvoteStatusResponse) => {
       // 更新帖子的点赞统计数据
-      props.posting.twice = response.twiceUpvotes || 0
-      props.posting.helpful = response.helpfulUpvotes || 0
+      props.posting.twiceCount = response.twiceCount
+      props.posting.likeCount = response.likeCount
 
       // 根据点赞状态设置 voteType
-      if (response.twiceUpvoted) {
+      if (response.twiced) {
         props.posting.voteType = 'twice'
-      } else if (response.helpfulUpvoted) {
+      } else if (response.liked) {
         props.posting.voteType = 'helpful'
       } else {
         props.posting.voteType = null
       }
 
       // 如果是"看两遍就懂"，只有在学习模式下才标记节点完成
-      if (response.twiceUpvoted && props.isLearning) {
+      if (response.twiced && props.isLearning) {
         console.log('看两遍就懂被点击，用户在学习模式下，标记节点完成')
         emit('mark-node-completed')
       }
@@ -496,13 +496,13 @@ watch(
             赞同
           </span>
           <v-chip
-            v-if="posting.helpful > 0"
+            v-if="posting.likeCount > 0"
             size="x-small"
             :color="posting.voteType === 'helpful' ? 'white' : 'grey-darken-1'"
             :text-color="posting.voteType === 'helpful' ? 'primary' : 'white'"
             class="ml-2"
           >
-            {{ posting.helpful }}
+            {{ posting.likeCount }}
           </v-chip>
         </v-btn>
       </template>
@@ -535,13 +535,13 @@ watch(
               两遍秒懂
             </span>
             <v-chip
-              v-if="posting.twice > 0"
+              v-if="posting.twiceCount > 0"
               size="x-small"
               :color="posting.voteType === 'twice' ? 'white' : 'grey-darken-1'"
               :text-color="posting.voteType === 'twice' ? 'primary' : 'white'"
               class="ml-2"
             >
-              {{ posting.twice }}
+              {{ posting.twiceCount }}
             </v-chip>
           </v-btn>
 
@@ -573,13 +573,13 @@ watch(
               有用
             </span>
             <v-chip
-              v-if="posting.helpful > 0"
+              v-if="posting.likeCount > 0"
               size="x-small"
               :color="posting.voteType === 'helpful' ? 'white' : 'grey-darken-1'"
               :text-color="posting.voteType === 'helpful' ? 'primary' : 'white'"
               class="ml-2"
             >
-              {{ posting.helpful }}
+              {{ posting.likeCount }}
             </v-chip>
           </v-btn>
         </div>

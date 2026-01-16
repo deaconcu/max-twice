@@ -21,7 +21,6 @@ import com.prosper.learn.interaction.comment.CommentDataService;
 import com.prosper.learn.interaction.comment.CommentDomainService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
-import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.lifecycle.CommentCreatedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEvent;
@@ -30,7 +29,6 @@ import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
-import lombok.val;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -307,7 +305,7 @@ public class CommentService {
     }
 
     /**
-     * 给commentDTOList查询子评论并填充，每条评论只填充一条子评论，选取分数最高的子评论，并且填充upvoted状态位
+     * 给commentDTOList查询子评论并填充，每条评论只填充一条子评论，选取分数最高的子评论，并且填充liked状态位
      * 转换为 CommentWithRepliesDTO（含子评论+点赞状态+用户名）
      *
      * @param commentDOList 评论DO列表
@@ -380,11 +378,11 @@ public class CommentService {
         for (CommentSummaryDTO commentDTO : commentDTOList) {
             ContentStatsDO stats = statsMap.get(commentDTO.getId());
             if (stats != null) {
-                commentDTO.setUpvoteCount(stats.getLikes() != null ? stats.getLikes() : 0);
-                commentDTO.setReplyCount(stats.getComments() != null ? stats.getComments() : 0);
+                commentDTO.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
+                commentDTO.setReplyCount(stats.getCommentCount() != null ? stats.getCommentCount() : 0);
             } else {
                 // 没有统计记录，设置为0
-                commentDTO.setUpvoteCount(0);
+                commentDTO.setLikeCount(0);
                 commentDTO.setReplyCount(0);
             }
         }
@@ -455,7 +453,7 @@ public class CommentService {
 
         // 填充点赞状态
         for (CommentDetailDTO commentDTO : commentDTOList) {
-            commentDTO.setUpvoted(upvotedSet.contains(commentDTO.getId()));
+            commentDTO.setLiked(upvotedSet.contains(commentDTO.getId()));
         }
     }
 
@@ -469,21 +467,21 @@ public class CommentService {
     private CommentDetailDTO toDetailDTO(CommentDO commentDO, long userId) {
         CommentDetailDTO commentDTO = commentConverter.toDetailDTO(commentDO);
 
-        commentDTO.setUpvoteCount(0);
+        commentDTO.setLikeCount(0);
         commentDTO.setReplyCount(0);
 
         // 填充统计字段
         Optional<ContentStatsDO> contentState = contentStatsDataService.getByContent(comment, commentDO.getId());
         contentState.ifPresent(contentStatsDO -> {
-            commentDTO.setUpvoteCount(contentStatsDO.getLikes());
-            commentDTO.setReplyCount(contentStatsDO.getComments());
+            commentDTO.setLikeCount(contentStatsDO.getLikeCount());
+            commentDTO.setReplyCount(contentStatsDO.getCommentCount());
         });
 
         // 填充点赞状态
-        commentDTO.setUpvoted(false);
+        commentDTO.setLiked(false);
         UpvoteDO upvoteDO = upvoteDataService.getByUserAndObject(userId, commentDO.getId(), comment.value());
         if (upvoteDO != null && upvoteDO.getType() == VoteType.like.value()) {
-            commentDTO.setUpvoted(true);
+            commentDTO.setLiked(true);
         }
 
         // 批量查询用户信息（creatorName 和 toUserName）
@@ -524,14 +522,14 @@ public class CommentService {
      */
     private CommentSummaryDTO toSummaryDTO(CommentDO commentDO) {
         CommentSummaryDTO commentDTO = commentConverter.toSummaryDTO(commentDO);
-        commentDTO.setUpvoteCount(0);
+        commentDTO.setLikeCount(0);
         commentDTO.setReplyCount(0);
 
         // 填充统计字段（刚创建的评论，初始值为0）
         Optional<ContentStatsDO> contentState = contentStatsDataService.getByContent(comment, commentDO.getId());
         contentState.ifPresent(contentStatsDO -> {
-            commentDTO.setUpvoteCount(contentStatsDO.getLikes());
-            commentDTO.setReplyCount(contentStatsDO.getComments());
+            commentDTO.setLikeCount(contentStatsDO.getLikeCount());
+            commentDTO.setReplyCount(contentStatsDO.getCommentCount());
         });
 
         return commentDTO;

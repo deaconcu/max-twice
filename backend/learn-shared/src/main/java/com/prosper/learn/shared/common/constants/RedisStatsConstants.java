@@ -37,22 +37,22 @@ public final class RedisStatsConstants {
     /**
      * 浏览量统计类型
      */
-    public static final String STAT_TYPE_VIEW = "view";
+    public static final String STAT_TYPE_VIEW = "v";
 
     /**
      * twice点赞统计类型
      */
-    public static final String STAT_TYPE_TWICE = "twice";
+    public static final String STAT_TYPE_TWICE = "t";
 
     /**
      * like点赞统计类型
      */
-    public static final String STAT_TYPE_LIKE = "like";
+    public static final String STAT_TYPE_LIKE = "l";
 
     /**
      * 评论统计类型
      */
-    public static final String STAT_TYPE_COMMENT = "comment";
+    public static final String STAT_TYPE_COMMENT = "c";
 
     // ========== Redis配置常量 ==========
 
