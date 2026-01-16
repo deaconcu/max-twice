@@ -248,11 +248,14 @@ const roadmap = computed(() => roadmapData.value)
 const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] } => {
   try {
     const data = typeof content === 'string' ? JSON.parse(content) : content
+    const isLearning = roadmap.value?.learning || false // 用户是否正在学习这个路线图
+
     const nodes = (data.nodes || []).map((node: any): Node => {
-      // 如果是根节点（id=0），设置为职业名称
-      if (node.id === 0 || node.id === '0') {
+      // 如果是根节点（id=0 或 "0"），设置为职业名称
+      const nodeId = String(node.id)
+      if (nodeId === '0') {
         return {
-          id: node.id.toString(),
+          id: nodeId,
           type: 'default',
           data: {
             label: roadmap.value?.profession?.name || '当前职业',
@@ -273,16 +276,30 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
         }
       }
 
+      // 提取进度信息
+      const completed = node.finished || node.completed || false
+      const progress = Number(node.progress) || 0
+
+      // 如果用户正在学习，即使进度为0也显示进度条样式
+      const shouldShowProgress = isLearning && !completed
+
+      // 构建显示的标签（包含进度百分比）
+      // 只要正在学习就显示百分比，即使是0%
+      const displayLabel = shouldShowProgress
+        ? `${node.name} (${Math.round(progress)}%)`
+        : node.name
+
       return {
-        id: node.id.toString(),
+        id: nodeId,
         type: 'default',
         data: {
-          label: node.name,
+          label: displayLabel,
           ...node.data,
         },
         position: node.position || { x: 0, y: 0 },
         sourcePosition: Position.Top,
         targetPosition: Position.Bottom,
+        class: completed ? 'completed-course' : shouldShowProgress ? 'progress-course' : '',
         style: {
           background: '#fafafa',
           color: '#424242',
@@ -291,6 +308,7 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
           padding: '10px',
           fontWeight: '500',
           fontSize: '13px',
+          ...(shouldShowProgress ? { '--progress': `${progress}%` } : {}),
         },
       }
     })
@@ -454,8 +472,9 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
   // 根节点不处理
   if (node.id === '0') return
 
-  // 可以跳转到课程详情
-  console.log('点击节点:', node.data.label)
+  // 在新窗口打开课程阅读页面
+  const courseId = node.id
+  window.open(`/read?courseId=${courseId}`, '_blank')
 }
 </script>
 
@@ -581,7 +600,6 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
 
 :deep(.vue-flow__node:hover) {
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* 根节点样式 */
@@ -599,5 +617,43 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
   height: 0 !important;
   border: none !important;
   background: transparent !important;
+}
+
+/* 已完成课程样式 */
+:deep(.vue-flow__node.completed-course) {
+  background: #e8f5e9 !important;
+  border-color: #4caf50 !important;
+  color: #2e7d32 !important;
+  position: relative;
+}
+
+/* 已完成课程的勾选标记 */
+:deep(.vue-flow__node.completed-course::after) {
+  content: '✓';
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  background: #4caf50;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* 进行中课程的进度条 */
+:deep(.vue-flow__node.progress-course) {
+  background: linear-gradient(
+    to right,
+    #beffb4 var(--progress, 0%),
+    #fafafa var(--progress, 0%)
+  ) !important;
+  border-color: #81c784 !important;
 }
 </style>
