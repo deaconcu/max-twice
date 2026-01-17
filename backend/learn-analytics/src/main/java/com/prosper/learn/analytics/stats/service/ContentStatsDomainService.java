@@ -1,12 +1,12 @@
 package com.prosper.learn.analytics.stats.service;
 
+import com.prosper.learn.analytics.dto.ContentStatsDTO;
+import com.prosper.learn.analytics.dto.DailyStatsDTO;
 import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.shared.domain.event.content.lifecycle.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -35,6 +35,119 @@ public class ContentStatsDomainService {
     private final ContentStatsDataService contentStatsDataService;
     private final RedisStatsDomainService redisStatsDomainService;
 
+    // ==================== 查询方法（从 DailyStatsService 迁移）====================
+
+    /**
+     * 批量获取内容统计数据（统一查询入口）
+     *
+     * 逻辑：
+     * - 按日统计字段（views, twice, likes, comments）: content_stats 累计 + 今日 Redis 增量
+     * - 非按日统计字段（shares, bookmarks, completedUsers, inProgressUsers）: 直接从 content_stats 获取
+     *
+     * @param contentType 内容类型
+     * @param contentIds 内容ID列表
+     * @return Map<ContentId, ContentStatsDTO>
+     */
+    public Map<Long, ContentStatsDTO> batchGetContentStats(ContentType contentType, List<Long> contentIds) {
+        Map<Long, ContentStatsDTO> result = new HashMap<>();
+
+        if (contentIds == null || contentIds.isEmpty()) {
+            return result;
+        }
+
+        log.debug("批量获取 {} 个{}的统计数据", contentIds.size(), contentType);
+
+        try {
+            // 1. 批量查询 content_stats 表的累计数据
+            List<ContentStatsDO> contentStatsList =
+                contentStatsDataService.batchGetByContentIds(contentType, contentIds);
+
+            Map<Long, ContentStatsDO> statsMap = contentStatsList.stream()
+                .collect(Collectors.toMap(ContentStatsDO::getContentId, stats -> stats));
+
+            // 2. 批量获取今日 Redis 实时增量（只有 views, twice, likes, comments 四个字段）
+            Map<Long, DailyStatsDTO> todayStatsMap = redisStatsDomainService.batchGetTodayStatsForContent(contentType, contentIds);
+
+            // 3. 组装返回
+            for (Long contentId : contentIds) {
+                ContentStatsDO baseStats = statsMap.get(contentId);
+                DailyStatsDTO todayStats = todayStatsMap.get(contentId);
+
+                // 按日统计字段：累计 + 今日增量
+                int baseViews = baseStats != null && baseStats.getViewCount() != null ? baseStats.getViewCount() : 0;
+                int baseTwice = baseStats != null && baseStats.getTwiceCount() != null ? baseStats.getTwiceCount() : 0;
+                int baseLikes = baseStats != null && baseStats.getLikeCount() != null ? baseStats.getLikeCount() : 0;
+                int baseComments = baseStats != null && baseStats.getCommentCount() != null ? baseStats.getCommentCount() : 0;
+
+                int todayViews = todayStats != null && todayStats.getViewCount() != null ? todayStats.getViewCount() : 0;
+                int todayTwice = todayStats != null && todayStats.getTwiceCount() != null ? todayStats.getTwiceCount() : 0;
+                int todayLikes = todayStats != null && todayStats.getLikeCount() != null ? todayStats.getLikeCount() : 0;
+                int todayComments = todayStats != null && todayStats.getCommentCount() != null ? todayStats.getCommentCount() : 0;
+
+                // 非按日统计字段：直接从 content_stats 获取（不加今日增量）
+                int baseShares = baseStats != null && baseStats.getShareCount() != null ? baseStats.getShareCount() : 0;
+                int baseBookmarks = baseStats != null && baseStats.getBookmarkCount() != null ? baseStats.getBookmarkCount() : 0;
+                int baseCompleted = baseStats != null && baseStats.getCompletedUserCount() != null ? baseStats.getCompletedUserCount() : 0;
+                int baseInProgress = baseStats != null && baseStats.getLearnerCount() != null ? baseStats.getLearnerCount() : 0;
+
+                // 构建 DTO
+                ContentStatsDTO dto = ContentStatsDTO.builder()
+                    .contentId(contentId)
+                    .viewCount(baseViews + todayViews)              // 累计 + 今日增量
+                    .twiceCount(baseTwice + todayTwice)             // 累计 + 今日增量
+                    .likeCount(baseLikes + todayLikes)              // 累计 + 今日增量
+                    .commentCount(baseComments + todayComments)     // 累计 + 今日增量
+                    .shareCount(baseShares)                         // 只用累计值
+                    .bookmarkCount(baseBookmarks)                   // 只用累计值
+                    .completedUserCount(baseCompleted)              // 只用累计值
+                    .inProgressUserCount(baseInProgress)            // 只用累计值
+                    .build();
+
+                result.put(contentId, dto);
+            }
+
+            log.debug("成功获取 {} 个{}的统计数据", contentIds.size(), contentType);
+
+        } catch (Exception e) {
+            log.error("批量获取统计数据失败: contentType={}", contentType, e);
+        }
+
+        return result;
+    }
+
+    /**
+     * 获取单个内容的统计数据（包含数据库 + 今日Redis增量）
+     *
+     * @param contentType 内容类型
+     * @param contentId 内容ID
+     * @return 统计数据，如果没有则返回空对象（各字段为0）
+     */
+    public ContentStatsDTO getContentStats(ContentType contentType, Long contentId) {
+       // 1. 查询数据库累计数据
+        ContentStatsDO baseStats = contentStatsDataService.getByContent(contentType, contentId).orElse(null);
+
+        // 2. 查询今日Redis增量
+        Map<Long, DailyStatsDTO> todayStatsMap = redisStatsDomainService.batchGetTodayStatsForContent(contentType, List.of(contentId));
+        DailyStatsDTO todayStats = todayStatsMap.get(contentId);
+
+        // 3. 构建返回的DTO（按日统计字段 = 累计 + 今日增量）
+        return ContentStatsDTO.builder()
+            .contentId(contentId)
+            .viewCount((baseStats != null && baseStats.getViewCount() != null ? baseStats.getViewCount() : 0) +
+                      (todayStats != null && todayStats.getViewCount() != null ? todayStats.getViewCount() : 0))
+            .twiceCount((baseStats != null && baseStats.getTwiceCount() != null ? baseStats.getTwiceCount() : 0) +
+                       (todayStats != null && todayStats.getTwiceCount() != null ? todayStats.getTwiceCount() : 0))
+            .likeCount((baseStats != null && baseStats.getLikeCount() != null ? baseStats.getLikeCount() : 0) +
+                      (todayStats != null && todayStats.getLikeCount() != null ? todayStats.getLikeCount() : 0))
+            .commentCount((baseStats != null && baseStats.getCommentCount() != null ? baseStats.getCommentCount() : 0) +
+                         (todayStats != null && todayStats.getCommentCount() != null ? todayStats.getCommentCount() : 0))
+            .shareCount(baseStats != null && baseStats.getShareCount() != null ? baseStats.getShareCount() : 0)
+            .bookmarkCount(baseStats != null && baseStats.getBookmarkCount() != null ? baseStats.getBookmarkCount() : 0)
+            .completedUserCount(baseStats != null && baseStats.getCompletedUserCount() != null ? baseStats.getCompletedUserCount() : 0)
+            .inProgressUserCount(baseStats != null && baseStats.getLearnerCount() != null ? baseStats.getLearnerCount() : 0)
+            .build();
+    }
+
     /**
      * 获取内容的点赞数
      *
@@ -48,325 +161,9 @@ public class ContentStatsDomainService {
             .orElse(0);
     }
 
-    /**
-     * 获取内容的完整统计数据（包含数据库 + 今日Redis点赞增量）
-     *
-     * @param contentType 内容类型
-     * @param contentId 内容ID
-     * @return 统计数据，如果没有则返回空对象（各字段为0）
-     */
-    public ContentStatsDO getContentStats(ContentType contentType, Long contentId) {
-        // 从数据库获取基础统计数据
-        ContentStatsDO stats = contentStatsDataService.getByContent(contentType, contentId).orElse(null);
+    // ==================== 事件处理方法（由 ContentStatsEventListener 调用）====================
 
-        log.debug("getContentStats - contentType={}, contentId={}, dbStats={}",
-            contentType, contentId, stats != null ? "存在" : "不存在");
-
-        if (stats == null) {
-            // 没有统计数据，创建空对象
-            stats = new ContentStatsDO();
-            stats.setContentId(contentId);
-            stats.setContentType(contentType.value());
-            stats.setLikeCount(0);
-            stats.setCommentCount(0);
-            stats.setLearnerCount(0);
-            log.debug("数据库无记录，创建空对象");
-            // 继续执行，检查Redis增量
-        }
-
-        // 从Redis获取今日点赞增量
-        Map<Long, Integer> redisLikesIncrement = redisStatsDomainService.getTodayLikesIncrement(
-            contentType, List.of(contentId));
-        int redisIncrement = redisLikesIncrement.getOrDefault(contentId, 0);
-
-        log.debug("Redis增量 - contentId={}, increment={}", contentId, redisIncrement);
-
-        if (redisIncrement != 0) {
-            // 需要加上Redis增量（可正可负），创建新对象避免修改原对象
-            ContentStatsDO adjustedStats = new ContentStatsDO();
-            adjustedStats.setContentType(stats.getContentType());
-            adjustedStats.setContentId(stats.getContentId());
-            adjustedStats.setViewCount(stats.getViewCount());
-            adjustedStats.setTwiceCount(stats.getTwiceCount());
-            // 确保最终结果不为负
-            int baseLikeCount = stats.getLikeCount() != null ? stats.getLikeCount() : 0;
-            adjustedStats.setLikeCount(Math.max(0, baseLikeCount + redisIncrement));
-            adjustedStats.setCommentCount(stats.getCommentCount());
-            adjustedStats.setShareCount(stats.getShareCount());
-            adjustedStats.setBookmarkCount(stats.getBookmarkCount());
-            adjustedStats.setCompletedUserCount(stats.getCompletedUserCount());
-            adjustedStats.setLearnerCount(stats.getLearnerCount());
-            log.debug("返回调整后的统计 - likeCount={}", adjustedStats.getLikeCount());
-            return adjustedStats;
-        }
-
-        log.debug("返回原始统计 - likeCount={}", stats.getLikeCount());
-        return stats;
-    }
-
-    /**
-     * 批量获取内容的点赞数（包含数据库 + 今日Redis增量）
-     *
-     * @param contentType 内容类型
-     * @param contentIds 内容ID列表
-     * @return 内容ID到点赞数的映射
-     */
-    public Map<Long, Integer> getBatchLikesCount(ContentType contentType, List<Long> contentIds) {
-        if (contentIds == null || contentIds.isEmpty()) {
-            return new HashMap<>();
-        }
-
-        // 1. 从数据库获取基础统计数据
-        List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(contentType, contentIds);
-        Map<Long, Integer> dbLikesMap = statsList.stream()
-            .collect(Collectors.toMap(
-                ContentStatsDO::getContentId,
-                stats -> stats.getLikeCount() != null ? stats.getLikeCount() : 0
-            ));
-
-        // 2. 从Redis获取今日增量
-        Map<Long, Integer> redisIncrementMap = redisStatsDomainService.getTodayLikesIncrement(contentType, contentIds);
-
-        // 3. 合并数据库基数 + Redis增量
-        Map<Long, Integer> result = new HashMap<>();
-        for (Long contentId : contentIds) {
-            int dbCount = dbLikesMap.getOrDefault(contentId, 0);
-            int redisIncrement = redisIncrementMap.getOrDefault(contentId, 0);
-            result.put(contentId, dbCount + redisIncrement);
-        }
-
-        return result;
-    }
-
-    /**
-     * 批量获取内容的完整统计数据（包含数据库 + 今日Redis点赞增量）
-     *
-     * @param contentType 内容类型
-     * @param contentIds 内容ID列表
-     * @return 内容ID到统计数据的映射
-     */
-    public Map<Long, ContentStatsDO> getBatchContentStats(ContentType contentType, List<Long> contentIds) {
-        if (contentIds == null || contentIds.isEmpty()) {
-            return new HashMap<>();
-        }
-
-        // 从数据库获取基础统计数据
-        List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(contentType, contentIds);
-
-        // 从Redis获取今日点赞增量
-        Map<Long, Integer> redisLikesIncrement = redisStatsDomainService.getTodayLikesIncrement(contentType, contentIds);
-
-        // 构建结果，将点赞数加上Redis增量
-        Map<Long, ContentStatsDO> result = new HashMap<>();
-        for (ContentStatsDO stats : statsList) {
-            int redisIncrement = redisLikesIncrement.getOrDefault(stats.getContentId(), 0);
-            if (redisIncrement != 0) {
-                // 需要加上Redis增量（可以是正数或负数），创建新对象避免修改原对象
-                ContentStatsDO adjustedStats = new ContentStatsDO();
-                adjustedStats.setContentType(stats.getContentType());
-                adjustedStats.setContentId(stats.getContentId());
-                adjustedStats.setViewCount(stats.getViewCount());
-                adjustedStats.setTwiceCount(stats.getTwiceCount());
-                adjustedStats.setLikeCount(Math.max(0, (stats.getLikeCount() != null ? stats.getLikeCount() : 0) + redisIncrement));
-                adjustedStats.setCommentCount(stats.getCommentCount());
-                adjustedStats.setShareCount(stats.getShareCount());
-                adjustedStats.setBookmarkCount(stats.getBookmarkCount());
-                adjustedStats.setCompletedUserCount(stats.getCompletedUserCount());
-                adjustedStats.setLearnerCount(stats.getLearnerCount());
-                result.put(stats.getContentId(), adjustedStats);
-            } else {
-                result.put(stats.getContentId(), stats);
-            }
-        }
-
-        // 对于没有统计数据的内容，创建空的统计对象并检查Redis增量
-        for (Long contentId : contentIds) {
-            if (!result.containsKey(contentId)) {
-                int redisIncrement = redisLikesIncrement.getOrDefault(contentId, 0);
-                ContentStatsDO emptyStats = new ContentStatsDO();
-                emptyStats.setContentId(contentId);
-                emptyStats.setContentType(contentType.value());
-                emptyStats.setLikeCount(Math.max(0, redisIncrement));
-                emptyStats.setCommentCount(0);
-                emptyStats.setLearnerCount(0);
-                result.put(contentId, emptyStats);
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * 获取内容统计数据
-     *
-     * @param contentType 内容类型
-     * @param contentId 内容ID
-     * @return 统计数据DTO
-     */
-    /*
-    public ContentStatsDTO getContentStats(Enums.ContentType contentType, Long contentId) {
-        if (contentId == null || contentId <= 0) {
-            throw ErrorCode.INVALID_PARAMETER.exception("内容ID无效: " + contentId);
-        }
-
-        Optional<ContentStatsDO> statsOpt = contentStatsDataService.getByContent(contentType, contentId);
-        ContentStatsDO stats = statsOpt.orElse(new ContentStatsDO());
-
-        // 构建统计DTO
-        ContentStatsDTO.ContentStatsDTOBuilder builder = ContentStatsDTO.builder()
-                .views(stats.getViews() != null ? stats.getViews() : 0)
-                .comments(stats.getComments() != null ? stats.getComments() : 0)
-                .shares(stats.getShares() != null ? stats.getShares() : 0)
-                .bookmarks(stats.getBookmarks() != null ? stats.getBookmarks() : 0)
-                .completedUsers(stats.getCompletedUsers() != null ? stats.getCompletedUsers() : 0)
-                .inProgressUsers(stats.getInProgressUsers() != null ? stats.getInProgressUsers() : 0);
-
-        // 帖子特殊处理：支持 twice 和 like 分别统计
-        if (contentType == Enums.ContentType.post) {
-            builder.twiceUpvotes(stats.getTwices() != null ? stats.getTwices() : 0)
-                   .likeUpvotes(stats.getLikes() != null ? stats.getLikes() : 0);
-        } else {
-            // 其他内容类型只有 like 统计
-            builder.twiceUpvotes(null)
-                   .likeUpvotes(stats.getLikes() != null ? stats.getLikes() : 0);
-        }
-
-        return builder.build();
-    }
-     */
-
-    // ==================== 事件监听：对象维度统计更新 ====================
-
-    /**
-     * 监听内容审核通过事件 - 增加对象维度统计
-     */
-    @EventListener
-    //@Async
-    public void onContentApproved(ContentApprovedEvent event) {
-        try {
-            switch (event.getContentType()) {
-                case post -> handlePostApproved(event);
-                case roadmap -> handleRoadmapApproved(event);
-                case memory_card_deck -> handleCardDeckApproved(event);
-                case comment -> handleCommentApproved(event);
-                default -> log.debug("内容类型 {} 审核通过，无需更新对象统计", event.getContentType());
-            }
-        } catch (Exception e) {
-            log.error("处理内容审核通过事件失败: contentType={}, contentId={}",
-                event.getContentType(), event.getContentId(), e);
-        }
-    }
-
-    /**
-     * 监听内容审核拒绝事件 - 增加 reject_count
-     */
-    @EventListener
-    //@Async
-    public void onContentRejected(ContentRejectedEvent event) {
-        try {
-            // 增加 reject_count
-            contentStatsDataService.incrementRejectCount(event.getContentType(), event.getContentId(), 1);
-
-            // 检查是否需要自动升级为 BANNED
-            ContentStatsDO stats = contentStatsDataService.getByContent(event.getContentType(), event.getContentId()).orElse(null);
-            if (stats != null && stats.getRejectCount() != null && stats.getRejectCount() >= 3) {
-                log.warn("内容 {} 违规次数达到 {}，需要自动升级为 BANNED (需要Service层处理)",
-                    event.getContentId(), stats.getRejectCount());
-            }
-
-            log.debug("内容拒绝，reject_count++: contentType={}, contentId={}", event.getContentType(), event.getContentId());
-        } catch (Exception e) {
-            log.error("处理内容拒绝事件失败: contentType={}, contentId={}",
-                event.getContentType(), event.getContentId(), e);
-        }
-    }
-
-    /**
-     * 监听内容下架事件 - 减少对象维度统计 + reject_count++
-     */
-    @EventListener
-    //@Async
-    public void onContentRemoved(ContentRemovedEvent event) {
-        try {
-            // 增加 reject_count
-            contentStatsDataService.incrementRejectCount(event.getContentType(), event.getContentId(), 1);
-
-            // 检查是否需要自动升级为 BANNED
-            ContentStatsDO stats = contentStatsDataService.getByContent(event.getContentType(), event.getContentId()).orElse(null);
-            if (stats != null && stats.getRejectCount() != null && stats.getRejectCount() >= 3) {
-                log.warn("内容 {} 违规次数达到 {}，需要自动升级为 BANNED (需要Service层处理)",
-                    event.getContentId(), stats.getRejectCount());
-            }
-
-            // 减少对象统计
-            switch (event.getContentType()) {
-                case post -> handlePostRemoved(event);
-                case roadmap -> handleRoadmapRemoved(event);
-                case memory_card_deck -> handleCardDeckRemoved(event);
-                default -> log.warn("内容类型 {} 不支持 REMOVE 操作", event.getContentType());
-            }
-        } catch (Exception e) {
-            log.error("处理内容下架事件失败: contentType={}, contentId={}",
-                event.getContentType(), event.getContentId(), e);
-        }
-    }
-
-    /**
-     * 监听内容封禁事件 - 减少对象维度统计（仅 PUBLISHED 状态）
-     */
-    @EventListener
-    //@Async
-    public void onContentBanned(ContentBannedEvent event) {
-        try {
-            // 只有之前是 PUBLISHED 状态才需要减少统计
-            if (event.getPreviousState() != ContentState.PUBLISHED.value()) {
-                log.debug("内容之前不是PUBLISHED状态，无需减少对象统计: contentType={}, contentId={}, previousState={}",
-                    event.getContentType(), event.getContentId(), event.getPreviousState());
-                return;
-            }
-
-            // 减少对象统计
-            switch (event.getContentType()) {
-                case post -> handlePostBanned(event);
-                case roadmap -> handleRoadmapBanned(event);
-                case memory_card_deck -> handleCardDeckBanned(event);
-                case comment -> handleCommentBanned(event);
-                default -> log.debug("内容类型 {} 封禁，无需更新对象统计", event.getContentType());
-            }
-        } catch (Exception e) {
-            log.error("处理内容封禁事件失败: contentType={}, contentId={}",
-                event.getContentType(), event.getContentId(), e);
-        }
-    }
-
-    /**
-     * 监听内容恢复事件 - 恢复对象维度统计 / reject_count--
-     */
-    @EventListener
-    //@Async
-    public void onContentRestored(ContentRestoredEvent event) {
-        try {
-            // 从 BANNED 恢复，需要恢复统计
-            if (event.getPreviousState() == ContentState.BANNED.value()) {
-                handleRestoreFromBanned(event);
-                return;
-            }
-
-            // 从 REJECTED 恢复，只需 reject_count--
-            if (event.getPreviousState() == ContentState.REJECTED.value()) {
-                contentStatsDataService.incrementRejectCount(event.getContentType(), event.getContentId(), -1);
-                log.debug("从REJECTED恢复，reject_count--: contentType={}, contentId={}",
-                    event.getContentType(), event.getContentId());
-            }
-        } catch (Exception e) {
-            log.error("处理内容恢复事件失败: contentType={}, contentId={}",
-                event.getContentType(), event.getContentId(), e);
-        }
-    }
-
-    // ==================== Post 处理 ====================
-
-    private void handlePostApproved(ContentApprovedEvent event) {
+    public void handlePostApproved(ContentApprovedEvent event) {
         if (event.getNodeId() == null || event.getPostType() == null) {
             log.warn("Post审核通过事件缺少参数: nodeId={}, postType={}", event.getNodeId(), event.getPostType());
             return;
@@ -383,7 +180,7 @@ public class ContentStatsDomainService {
         log.debug("Post统计已增加: nodeId={}, postType={}", event.getNodeId(), event.getPostType());
     }
 
-    private void handlePostRemoved(ContentRemovedEvent event) {
+    public void handlePostRemoved(ContentRemovedEvent event) {
         if (event.getNodeId() == null || event.getPostType() == null) return;
 
         contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), -1);
@@ -397,7 +194,7 @@ public class ContentStatsDomainService {
         log.debug("Post统计已减少: nodeId={}, postType={}", event.getNodeId(), event.getPostType());
     }
 
-    private void handlePostBanned(ContentBannedEvent event) {
+    public void handlePostBanned(ContentBannedEvent event) {
         if (event.getNodeId() == null || event.getPostType() == null) return;
 
         contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), -1);
@@ -411,24 +208,24 @@ public class ContentStatsDomainService {
 
     // ==================== Roadmap 处理 ====================
 
-    private void handleRoadmapApproved(ContentApprovedEvent event) {
+    public void handleRoadmapApproved(ContentApprovedEvent event) {
         if (event.getProfessionId() == null) return;
         contentStatsDataService.incrementRoadmaps(ContentType.profession, event.getProfessionId(), 1);
     }
 
-    private void handleRoadmapRemoved(ContentRemovedEvent event) {
+    public void handleRoadmapRemoved(ContentRemovedEvent event) {
         if (event.getProfessionId() == null) return;
         contentStatsDataService.incrementRoadmaps(ContentType.profession, event.getProfessionId(), -1);
     }
 
-    private void handleRoadmapBanned(ContentBannedEvent event) {
+    public void handleRoadmapBanned(ContentBannedEvent event) {
         if (event.getProfessionId() == null) return;
         contentStatsDataService.incrementRoadmaps(ContentType.profession, event.getProfessionId(), -1);
     }
 
     // ==================== MemoryCardDeck 处理 ====================
 
-    private void handleCardDeckApproved(ContentApprovedEvent event) {
+    public void handleCardDeckApproved(ContentApprovedEvent event) {
         // CardDeck 同时属于 Post 和 Node，需要同时更新两者的统计
         if (event.getPostId() != null) {
             contentStatsDataService.incrementCardDecks(ContentType.post, event.getPostId(), 1);
@@ -438,7 +235,7 @@ public class ContentStatsDomainService {
         }
     }
 
-    private void handleCardDeckRemoved(ContentRemovedEvent event) {
+    public void handleCardDeckRemoved(ContentRemovedEvent event) {
         // CardDeck 同时属于 Post 和 Node，需要同时减少两者的统计
         if (event.getPostId() != null) {
             contentStatsDataService.incrementCardDecks(ContentType.post, event.getPostId(), -1);
@@ -448,7 +245,7 @@ public class ContentStatsDomainService {
         }
     }
 
-    private void handleCardDeckBanned(ContentBannedEvent event) {
+    public void handleCardDeckBanned(ContentBannedEvent event) {
         // CardDeck 同时属于 Post 和 Node，需要同时减少两者的统计
         if (event.getPostId() != null) {
             contentStatsDataService.incrementCardDecks(ContentType.post, event.getPostId(), -1);
@@ -456,23 +253,11 @@ public class ContentStatsDomainService {
         if (event.getNodeId() != null) {
             contentStatsDataService.incrementCardDecks(ContentType.node, event.getNodeId(), -1);
         }
-    }
-
-    // ==================== Comment 处理 ====================
-
-    private void handleCommentApproved(ContentApprovedEvent event) {
-        if (event.getCommentTargetType() == null || event.getCommentTargetId() == null) return;
-        contentStatsDataService.incrementComments(event.getCommentTargetType(), event.getCommentTargetId(), 1);
-    }
-
-    private void handleCommentBanned(ContentBannedEvent event) {
-        if (event.getCommentTargetType() == null || event.getCommentTargetId() == null) return;
-        contentStatsDataService.incrementComments(event.getCommentTargetType(), event.getCommentTargetId(), -1);
     }
 
     // ==================== 恢复处理 ====================
 
-    private void handleRestoreFromBanned(ContentRestoredEvent event) {
+    public void handleRestoreFromBanned(ContentRestoredEvent event) {
         switch (event.getContentType()) {
             case post -> {
                 if (event.getNodeId() != null && event.getPostType() != null) {
@@ -498,11 +283,7 @@ public class ContentStatsDomainService {
                     contentStatsDataService.incrementCardDecks(ContentType.node, event.getNodeId(), 1);
                 }
             }
-            case comment -> {
-                if (event.getCommentTargetType() != null && event.getCommentTargetId() != null) {
-                    contentStatsDataService.incrementComments(event.getCommentTargetType(), event.getCommentTargetId(), 1);
-                }
-            }
+            // comment 的统计由 RedisStatsEventListener 处理，不在这里直接写数据库
         }
     }
 }

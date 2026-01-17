@@ -35,10 +35,6 @@ import static com.prosper.learn.shared.common.constants.RedisStatsConstants.*;
 import static com.prosper.learn.shared.domain.Enums.*;
 
 /**
- * 日常统计数据同步服务
- *
- * 该服务负责将Redis中的实时统计数据同步到数据库进行持久化存储，同时提供统计数据的查询功能。
- *
  * 设计思路:
  * 1. 实时统计数据存储在Redis中，性能高但非持久化
  * 2. 定期将Redis数据同步到数据库，确保数据不丢失
@@ -68,17 +64,23 @@ import static com.prosper.learn.shared.domain.Enums.*;
  * - twice: 两次能懂点赞
  * - like/likes: 有用点赞
  * - comment/comments: 评论数
+ *
+ * @deprecated 本类已废弃，功能已拆分到以下服务：
+ * - Redis 读写: {@link RedisStatsDomainService}
+ * - 内容统计查询: {@link ContentStatsDomainService#batchGetContentStats}
+ * - 用户统计查询: {@link UserStatsDomainService#getUserHistoryStats} 等方法
+ * - 同步调度: {@link StatsSyncScheduler}
+ * - 同步实现: {@link UserStatsSyncService}, {@link ContentStatsSyncService}
  */
+@Deprecated
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DailyStatsService {
 
     private final RedisTemplate<String, String> redisTemplate;
-    private final ContentStatsYearlyMapper contentStatsYearlyMapper;
     private final UserStatsYearlyMapper userStatsYearlyMapper;
     private final ContentStatsDataService contentStatsDataService;
-    private final UserStatsDataService userStatsDataService;
     private final ObjectMapper objectMapper;
     private final SystemProperties systemProperties;
 
@@ -286,60 +288,6 @@ public class DailyStatsService {
             log.error("获取用户{}历史统计失败: days={}", userId, days, e);
             return UserStatsWithDailyDTO.empty();
         }
-    }
-
-    /**
-     * 从Redis数据解析用户统计
-     * 
-     * 解析Redis中的原始统计数据:
-     * 1. 遍历Redis Hash中的所有字段
-     * 2. 过滤出属于指定用户的数据（通过userId前缀）
-     * 3. 按统计类型分类累加
-     * 4. 构造UserStatsDTO对象
-     * 
-     * @param userId 用户ID
-     * @param stats Redis中的原始统计数据
-     * @param date 日期字符串
-     * @return 解析后的用户统计对象
-     */
-    private UserStatsDTO parseUserStatsFromRedis(long userId, Map<Object, Object> stats, String date) {
-        int totalViews = 0;
-        int totalTwice = 0;
-        int totalLikes = 0;
-        int totalComments = 0;
-
-        String userPrefix = userId + ":";  // Redis field格式: "userId:statType"
-
-        for (Map.Entry<Object, Object> entry : stats.entrySet()) {
-            String field = (String) entry.getKey();
-            Integer count = Integer.parseInt((String) entry.getValue());
-
-            if (!field.startsWith(userPrefix)) continue;
-
-            String statType = field.substring(userPrefix.length());
-            switch (statType) {
-                case STAT_TYPE_VIEW:
-                    totalViews += count;
-                    break;
-                case STAT_TYPE_TWICE:
-                    totalTwice += count;
-                    break;
-                case STAT_TYPE_LIKE:
-                    totalLikes += count;
-                    break;
-                case STAT_TYPE_COMMENT:
-                    totalComments += count;
-                    break;
-            }
-        }
-
-        return UserStatsDTO.builder()
-            .userId(userId)
-            .viewCount(totalViews)
-            .twiceCount(totalTwice)
-            .likeCount(totalLikes)
-            .commentCount(totalComments)
-            .build();
     }
 
     /**

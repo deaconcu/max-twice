@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.prosper.learn.analytics.dto.ContentStatsDTO;
+import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.application.converter.NodeConverter;
 import com.prosper.learn.application.converter.PostConverter;
 import com.prosper.learn.application.converter.UserConverter;
@@ -68,6 +70,7 @@ public class PageService {
     private final CourseService courseService;
     private final UserCourseService userCourseService;
     private final ApplicationEventPublisher eventPublisher;
+    private final ContentStatsDomainService contentStatsDomainService;
 
 
     // ========== 常量定义 ==========
@@ -232,7 +235,13 @@ public class PageService {
 
         // 构建响应
         Map<String, Object> data = new HashMap<>();
-        data.put("node", nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted));
+
+        // 填充 node 统计数据
+        NodeWithProgressDTO nodeDTO = nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted);
+        ContentStatsDTO nodeStats = contentStatsDomainService.getContentStats(ContentType.node, nodeDO.getId());
+        nodeDTO.setCommentCount(nodeStats.getCommentCount());
+
+        data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
         data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getBookmarked(), courseProgress));
         data.put("subCourseList", subCourseList);
@@ -285,7 +294,13 @@ public class PageService {
 
         // 构建响应
         Map<String, Object> data = new HashMap<>();
-        data.put("node", nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted));
+
+        // 填充 node 统计数据
+        NodeWithProgressDTO nodeDTO = nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted);
+        ContentStatsDTO nodeStats = contentStatsDomainService.getContentStats(ContentType.node, nodeDO.getId());
+        nodeDTO.setCommentCount(nodeStats.getCommentCount());
+
+        data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
         data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getBookmarked(), courseProgress));
         data.put("subCourseList", subCourseList);
@@ -360,7 +375,13 @@ public class PageService {
 
         // 构建响应
         Map<String, Object> data = new HashMap<>();
-        data.put("node", nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted));
+
+        // 填充 node 统计数据
+        NodeWithProgressDTO nodeDTO = nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted);
+        ContentStatsDTO nodeStats = contentStatsDomainService.getContentStats(ContentType.node, nodeDO.getId());
+        nodeDTO.setCommentCount(nodeStats.getCommentCount());
+
+        data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
         data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getBookmarked(), courseProgress));
         data.put("subCourseList", subCourseList);
@@ -650,6 +671,13 @@ public class PageService {
             }
         }
 
+        // 填充统计数据（累计 + 今日 Redis 增量）
+        ContentStatsDTO stats = contentStatsDomainService.getContentStats(ContentType.post, postDO.getId());
+        postDTO.setViewCount(stats.getViewCount());
+        postDTO.setTwiceCount(stats.getTwiceCount());
+        postDTO.setLikeCount(stats.getLikeCount());
+        postDTO.setCommentCount(stats.getCommentCount());
+
         return postDTO;
     }
 
@@ -718,7 +746,12 @@ public class PageService {
             data.put("toc", new ArrayList<>());
         }
 
-        data.put("node", nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted));
+        // 填充 node 统计数据
+        NodeWithProgressDTO nodeDTO = nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted);
+        ContentStatsDTO nodeStats = contentStatsDomainService.getContentStats(ContentType.node, nodeDO.getId());
+        nodeDTO.setCommentCount(nodeStats.getCommentCount());
+
+        data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
         data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getBookmarked(), courseProgress));
         data.put("subCourseList", subCourseList);
@@ -757,7 +790,12 @@ public class PageService {
             data.put("toc", new ArrayList<>());
         }
 
-        data.put("node", nodeConverter.toWithProgressDTO(nodeDO, false)); // 未完成
+        // 填充 node 统计数据
+        NodeWithProgressDTO nodeDTO = nodeConverter.toWithProgressDTO(nodeDO, false);
+        ContentStatsDTO nodeStats = contentStatsDomainService.getContentStats(ContentType.node, nodeDO.getId());
+        nodeDTO.setCommentCount(nodeStats.getCommentCount());
+
+        data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
         data.put("course", courseService.toWithProgressDTO(courseDO, false, 0)); // 未订阅，进度0
         data.put("subCourseList", subCourseList);

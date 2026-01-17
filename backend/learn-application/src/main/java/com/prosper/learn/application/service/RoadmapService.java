@@ -2,6 +2,7 @@ package com.prosper.learn.application.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.analytics.dto.ContentStatsDTO;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.application.converter.ProfessionConverter;
@@ -148,10 +149,10 @@ public class RoadmapService {
         dto.setLearning(isLearning);
 
         // 查询统计数据
-        ContentStatsDO stats = contentStatsDomainService.getContentStats(ContentType.roadmap, roadmapDO.getId());
+        ContentStatsDTO stats = contentStatsDomainService.getContentStats(ContentType.roadmap, roadmapDO.getId());
         dto.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
         dto.setCommentCount(stats.getCommentCount() != null ? stats.getCommentCount() : 0);
-        dto.setLearnerCount(stats.getLearnerCount() != null ? stats.getLearnerCount() : 0);
+        dto.setLearnerCount(stats.getInProgressUserCount() != null ? stats.getInProgressUserCount() : 0);
 
         // 设置格式化内容
         if (roadmapDO.getContent() != null) {
@@ -209,7 +210,7 @@ public class RoadmapService {
             Set<Long> learningIds = getLearningIds(userId, roadmapIds);
 
             // 批量获取统计数据
-            Map<Long, ContentStatsDO> statsMap = contentStatsDomainService.getBatchContentStats(ContentType.roadmap, roadmapIds);
+            Map<Long, ContentStatsDTO> statsMap = contentStatsDomainService.batchGetContentStats(ContentType.roadmap, roadmapIds);
 
             // 创建 roadmapDO 的映射，方便查找 creatorId
             Map<Long, RoadmapDO> roadmapDOMap = roadmapList.stream()
@@ -225,11 +226,11 @@ public class RoadmapService {
                 dto.setLearning(learningIds.contains(dto.getId()));
 
                 // 设置统计数据
-                ContentStatsDO stats = statsMap.get(dto.getId());
+                ContentStatsDTO stats = statsMap.get(dto.getId());
                 if (stats != null) {
                     dto.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
                     dto.setCommentCount(stats.getCommentCount() != null ? stats.getCommentCount() : 0);
-                    dto.setLearnerCount(stats.getLearnerCount() != null ? stats.getLearnerCount() : 0);
+                    dto.setLearnerCount(stats.getInProgressUserCount() != null ? stats.getInProgressUserCount() : 0);
                 } else {
                     dto.setLikeCount(0);
                     dto.setCommentCount(0);

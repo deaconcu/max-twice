@@ -1,5 +1,6 @@
 package com.prosper.learn.application.service;
 
+import com.prosper.learn.analytics.dto.ContentStatsDTO;
 import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.application.dto.response.UpvoteStatusDTO;
@@ -317,7 +318,7 @@ public class UpvoteService {
         }
 
         // 查询点赞数量统计
-        ContentStatsDO stats = contentStatsDomainService.getContentStats(contentType, objectId);
+        ContentStatsDTO stats = contentStatsDomainService.getContentStats(contentType, objectId);
         Integer twiceCount = stats.getTwiceCount() != null ? stats.getTwiceCount() : 0;
         Integer likeCount = stats.getLikeCount() != null ? stats.getLikeCount() : 0;
 

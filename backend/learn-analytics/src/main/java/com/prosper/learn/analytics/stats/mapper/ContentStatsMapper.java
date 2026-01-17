@@ -45,13 +45,15 @@ public interface ContentStatsMapper {
                        @Param("delta") int delta);
 
     /**
-     * 增量更新多个统计字段
+     * 增量更新多个统计字段并更新同步日期
+     * 用于从 Redis 同步数据时防止重复累加
      */
     @Update("UPDATE content_stats SET " +
             "view_count = view_count + #{viewsDelta}, " +
             "twice_count = twice_count + #{twicesDelta}, " +
             "like_count = like_count + #{likesDelta}, " +
             "comment_count = comment_count + #{commentsDelta}, " +
+            "last_sync_date = #{syncDate}, " +
             "updated_at = NOW() " +
             "WHERE content_type = #{contentType} AND content_id = #{contentId}")
     int increase(@Param("contentType") int contentType,
@@ -59,7 +61,8 @@ public interface ContentStatsMapper {
                  @Param("viewsDelta") int viewsDelta,
                  @Param("twicesDelta") int twicesDelta,
                  @Param("likesDelta") int likesDelta,
-                 @Param("commentsDelta") int commentsDelta);
+                 @Param("commentsDelta") int commentsDelta,
+                 @Param("syncDate") String syncDate);
 
 
     // ==================== 批量查询 ====================

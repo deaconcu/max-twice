@@ -1,25 +1,26 @@
 package com.prosper.learn.web.application;
 
-import com.prosper.learn.analytics.stats.service.DailyStatsService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.prosper.learn.analytics.stats.scheduler.StatsSyncScheduler;
+import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
  * 统一调度器 - 负责所有定时任务的配置
+ * 所有定时任务都在这里统一管理，实际业务逻辑委托给对应的 Scheduler
  */
 @Component
+@RequiredArgsConstructor
 public class Scheduler {
 
-    @Autowired
-    private DailyStatsService dailyStatsService;
+    private final StatsSyncScheduler statsSyncScheduler;
 
     /**
-     * 每天凌晨2:30同步昨天的用户统计数据
+     * 每天凌晨2:30同步昨天的统计数据
      */
     @Scheduled(cron = "0 30 2 * * ?")
     public void syncYesterdayStats() {
-        dailyStatsService.syncYesterdayStats();
+        statsSyncScheduler.syncYesterdayStats();
     }
 
     /**
@@ -27,7 +28,6 @@ public class Scheduler {
      */
     @Scheduled(cron = "0 0 4 * * ?")
     public void checkTodayRedisData() {
-        // 检查今天是否有Redis数据需要同步（通常不应该有，除非系统异常）
-        dailyStatsService.syncSpecificDate(java.time.LocalDate.now());
+        statsSyncScheduler.checkTodayRedisData();
     }
 }

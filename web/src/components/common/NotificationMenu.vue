@@ -191,7 +191,8 @@ const getMessageContent = (message: Message): string => {
   try {
     const data = message.content ? JSON.parse(message.content) : {}
     const type = message.type
-    const senderName = message.sender?.name || '用户'
+    // 优先使用 JSON 中的名称，然后使用 sender.name，最后使用默认值
+    const senderName = data.commenterName || data.voterName || message.sender?.name || '用户'
 
     // 互动消息
     if (type === MessageType.FOLLOW) {

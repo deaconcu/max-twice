@@ -2,7 +2,7 @@ package com.prosper.learn.application.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.analytics.dto.ContentStatsDTO;
-import com.prosper.learn.analytics.stats.service.DailyStatsService;
+import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.NodeConverter;
 import com.prosper.learn.application.converter.PostConverter;
@@ -82,7 +82,7 @@ public class PostService {
     private final CourseDataService courseDataService;
     private final UpvoteDataService upvoteDataService;
     private final UserDataService userDataService;
-    private final DailyStatsService dailyStatsService;
+    private final ContentStatsDomainService contentStatsDomainService;
 
     // 事件发布
     private final ApplicationEventPublisher eventPublisher;
@@ -160,7 +160,7 @@ public class PostService {
 
         // 批量获取统计数据
         List<Long> postIds = postDTOList.stream().map(PostSummaryDTO::getId).collect(Collectors.toList());
-        Map<Long, ContentStatsDTO> statsMap = dailyStatsService.batchGetContentStats(ContentType.post, postIds);
+        Map<Long, ContentStatsDTO> statsMap = contentStatsDomainService.batchGetContentStats(ContentType.post, postIds);
 
         // 填充统计字段
         postDTOList.forEach(post -> {

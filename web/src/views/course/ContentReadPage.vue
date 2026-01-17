@@ -702,7 +702,7 @@ onUnmounted(() => {
 .toc-sidebar {
   flex: 0 1 360px;
   max-width: 360px;
-  padding: 24px 42px 24px 0;
+  padding: 24px 0px 24px 0;
   position: relative;
   margin-right: 20px;
 }
@@ -746,6 +746,7 @@ onUnmounted(() => {
 
 .toc-tree {
   margin-top: 6px;
+  padding-right: 42px;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
@@ -793,6 +794,7 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  padding-right: 47px;
 }
 
 .chip-active .chip-number {

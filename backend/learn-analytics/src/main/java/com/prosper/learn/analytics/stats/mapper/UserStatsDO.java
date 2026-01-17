@@ -33,6 +33,13 @@ public class UserStatsDO {
     private Integer createdRoadmapCount;
     private Integer createdCardDeckCount;
 
+    /**
+     * 最后同步日期
+     * 记录最后一次从 Redis 同步数据的日期（格式：YYYY-MM-DD）
+     * 用于防止重复同步导致数据累加错误
+     */
+    private String lastSyncDate;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

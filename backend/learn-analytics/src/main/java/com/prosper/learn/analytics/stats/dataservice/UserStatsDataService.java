@@ -342,9 +342,12 @@ public class UserStatsDataService {
     }
 
     /**
-     * 增量更新多个统计字段
+     * 增量更新多个统计字段并更新同步日期
+     * 用于从 Redis 同步数据时防止重复累加
+     *
+     * @param syncDate 同步日期（格式：YYYY-MM-DD）
      */
-    public boolean increase(long userId, int viewsDelta, int twicesDelta, int likesDelta, int commentsDelta) {
+    public boolean increase(long userId, int viewsDelta, int twicesDelta, int likesDelta, int commentsDelta, String syncDate) {
         if (viewsDelta == 0 && twicesDelta == 0 && likesDelta == 0 && commentsDelta == 0) {
             return true;
         }
@@ -352,10 +355,10 @@ public class UserStatsDataService {
         // 确保统计记录存在
         getOrCreate(userId);
 
-        int result = userStatsMapper.increase(userId, viewsDelta, twicesDelta, likesDelta, commentsDelta);
+        int result = userStatsMapper.increase(userId, viewsDelta, twicesDelta, likesDelta, commentsDelta, syncDate);
         if (result > 0) {
-            log.debug("增量更新统计字段: userId={}, views+={}, twices+={}, likes+={}, comments+={}",
-                userId, viewsDelta, twicesDelta, likesDelta, commentsDelta);
+            log.debug("增量更新统计字段: userId={}, syncDate={}, views+={}, twices+={}, likes+={}, comments+={}",
+                userId, syncDate, viewsDelta, twicesDelta, likesDelta, commentsDelta);
             return true;
         }
 

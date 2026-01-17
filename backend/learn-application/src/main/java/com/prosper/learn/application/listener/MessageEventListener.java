@@ -171,16 +171,29 @@ public class MessageEventListener {
     //@Async
     public void onCommentCreated(CommentCreatedEvent event) {
         try {
+            // 根据内容类型确定消息类型
+            int messageType;
+            if (event.getContentType() == ContentType.node) {
+                messageType = MessageType.nodeComment.value();
+            } else if (event.getContentType() == ContentType.post) {
+                messageType = MessageType.postComment.value();
+            } else if (event.getContentType() == ContentType.roadmap) {
+                messageType = MessageType.roadmapComment.value();
+            } else {
+                log.warn("不支持的评论内容类型: {}", event.getContentType());
+                return;
+            }
+
             // 发送评论通知给内容创建者
             messageService.createCommentMessage(
                 event.getContentCreatorId(),   // 接收者（内容创建者）
                 event.getCommenterId(),        // 发送者（评论者）
-                event.getContentId(),
+                event.getContentId(),          // 内容ID (nodeId/postId/roadmapId)
                 event.getCommentId(),
-                event.getContentType().value()
+                messageType                    // 消息类型（nodeComment/postComment/roadmapComment）
             );
-            log.debug("发送评论通知: contentId={}, commenterId={}, creatorId={}",
-                event.getContentId(), event.getCommenterId(), event.getContentCreatorId());
+            log.debug("发送评论通知: contentType={}, contentId={}, commenterId={}, creatorId={}",
+                event.getContentType(), event.getContentId(), event.getCommenterId(), event.getContentCreatorId());
         } catch (Exception e) {
             log.error("发送评论通知失败", e);
         }

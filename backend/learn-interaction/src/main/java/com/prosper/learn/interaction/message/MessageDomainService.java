@@ -74,12 +74,30 @@ public class MessageDomainService {
 
     /**
      * 创建评论消息
+     *
+     * @param receiverId 接收者ID
+     * @param commenterId 评论者ID
+     * @param contentId 内容ID（根据type不同含义不同：nodeId/postId/roadmapId）
+     * @param commentId 评论ID
+     * @param type 消息类型（nodeComment/postComment/roadmapComment）
      */
-    public void createCommentMessage(long receiverId, long commenterId, long nodeId, long commentId, int type) {
+    public void createCommentMessage(long receiverId, long commenterId, long contentId, long commentId, int type) {
         Map<String, Object> messageMap = new HashMap<>();
         messageMap.put("commenterId", commenterId);
-        messageMap.put("nodeId", nodeId);
         messageMap.put("commentId", commentId);
+
+        // 根据消息类型使用正确的字段名
+        MessageType messageType = MessageType.getByValue(type);
+        if (messageType == MessageType.nodeComment) {
+            messageMap.put("nodeId", contentId);
+        } else if (messageType == MessageType.postComment) {
+            messageMap.put("postId", contentId);
+        } else if (messageType == MessageType.roadmapComment) {
+            messageMap.put("roadmapId", contentId);
+        } else {
+            // 兼容未知类型，使用通用字段名
+            messageMap.put("contentId", contentId);
+        }
 
         createSystemMessage(type, receiverId, Utils.toJson(messageMap));
     }

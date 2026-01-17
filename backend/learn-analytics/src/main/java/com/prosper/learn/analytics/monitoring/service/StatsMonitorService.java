@@ -1,6 +1,6 @@
 package com.prosper.learn.analytics.monitoring.service;
 
-import com.prosper.learn.analytics.stats.service.DailyStatsService;
+import com.prosper.learn.analytics.stats.scheduler.StatsSyncScheduler;
 import com.prosper.learn.shared.common.util.TimeZoneUtil;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
@@ -20,7 +20,7 @@ import java.time.LocalDate;
 public class StatsMonitorService {
 
     private final RedisTemplate<String, String> redisTemplate;
-    private final DailyStatsService dailyStatsService;
+    private final StatsSyncScheduler statsSyncScheduler;
     private final SystemProperties systemProperties;
 
     // 不变常量 - Redis键名相关
@@ -194,8 +194,8 @@ public class StatsMonitorService {
 
                 LocalDate today = TimeZoneUtil.now();
                 validateDate(today);
-                String result = dailyStatsService.syncSpecificDate(today);
-                log.info("强制同步结果: {}", result);
+                statsSyncScheduler.syncStatsForDate(today);
+                log.info("强制同步完成");
             } else {
                 log.info("没有未同步的数据");
             }

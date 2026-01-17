@@ -10,6 +10,8 @@ import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
 import com.prosper.learn.content.profession.ProfessionDO;
 import com.prosper.learn.content.profession.ProfessionDataService;
+import com.prosper.learn.content.roadmap.RoadmapDO;
+import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.interaction.message.MessageDO;
 import com.prosper.learn.interaction.message.MessageDataService;
 import com.prosper.learn.interaction.message.MessageDomainService;
@@ -69,6 +71,7 @@ public class MessageService {
     private final ProfessionDataService professionDataService;
     private final MessageDataService messageDataService;
     private final UserDataService userDataService;
+    private final RoadmapDataService roadmapDataService;
 
     // 转换器依赖
     private final MessageConverter messageConverter;
@@ -413,6 +416,7 @@ public class MessageService {
         Set<Long> nodeIdSet = new HashSet<>();
         Set<Long> postingIdSet = new HashSet<>();
         Set<Long> professionIdSet = new HashSet<>();
+        Set<Long> roadmapIdSet = new HashSet<>();
 
         for (MessageDO messageDO : messageDOList) {
             userIdSet.add(messageDO.getReceiverId());
@@ -445,9 +449,26 @@ public class MessageService {
                 userIdSet.add(Utils.getLong(map, "InviterId"));
             } else if (messageDO.getType() == follow.value()) {
                 userIdSet.add(Utils.getLong(map, "followerId"));
-            } else if (messageDO.getType() == postComment.value() || messageDO.getType() == replyPostingComment.value() ||
-                       messageDO.getType() == nodeComment.value() || messageDO.getType() == replyNodeComment.value()) {
-                nodeIdSet.add(Utils.getLong(map, "nodeId"));
+            } else if (messageDO.getType() == postComment.value() || messageDO.getType() == replyPostingComment.value()) {
+                // 帖子评论：收集 postId 和 commenterId
+                Long postId = Utils.getLong(map, "postId");
+                if (postId != null) {
+                    postingIdSet.add(postId);
+                }
+                userIdSet.add(Utils.getLong(map, "commenterId"));
+            } else if (messageDO.getType() == nodeComment.value() || messageDO.getType() == replyNodeComment.value()) {
+                // 节点评论：收集 nodeId 和 commenterId
+                Long nodeId = Utils.getLong(map, "nodeId");
+                if (nodeId != null) {
+                    nodeIdSet.add(nodeId);
+                }
+                userIdSet.add(Utils.getLong(map, "commenterId"));
+            } else if (messageDO.getType() == roadmapComment.value() || messageDO.getType() == replyRoadmapComment.value()) {
+                // 路线图评论：收集 roadmapId
+                Long roadmapId = Utils.getLong(map, "roadmapId");
+                if (roadmapId != null) {
+                    roadmapIdSet.add(roadmapId);
+                }
                 userIdSet.add(Utils.getLong(map, "commenterId"));
             }
         }
@@ -455,36 +476,91 @@ public class MessageService {
         Map<Long, UserDO> userDOMap = userIdSet.isEmpty() ? new HashMap<>() : userDataService.getMapByIds(userIdSet);
         Map<Long, PostDO> postingDOMap = postingIdSet.isEmpty() ? new HashMap<>() : postDataService.getMapByIds(postingIdSet);
         Map<Long, ProfessionDO> professionDOMap = professionIdSet.isEmpty() ? new HashMap<>() : professionDataService.getMapByIds(professionIdSet);
+        Map<Long, RoadmapDO> roadmapDOMap = roadmapIdSet.isEmpty() ? new HashMap<>() : roadmapDataService.getMapByIds(roadmapIdSet);
 
+        // 从 post 收集 nodeId
         for (PostDO postDO : postingDOMap.values()) {
             nodeIdSet.add(postDO.getNodeId());
+        }
+
+        // 从 roadmap 收集 professionId
+        for (RoadmapDO roadmapDO : roadmapDOMap.values()) {
+            professionIdSet.add(roadmapDO.getProfessionId());
         }
 
         Map<Long, NodeDO> nodeDOMap = nodeIdSet.isEmpty() ? new HashMap<>() : nodeDataService.getMapByIds(nodeIdSet);
 
         List<MessageDTO> messageDTOList = new ArrayList<>();
         for (MessageDO messageDO : messageDOList) {
-            messageDTOList.add(convertMessage(messageDO, userDOMap, postingDOMap, nodeDOMap, professionDOMap));
+            messageDTOList.add(convertMessage(messageDO, userDOMap, postingDOMap, nodeDOMap, professionDOMap, roadmapDOMap));
         }
         return messageDTOList;
     }
 
     private MessageDTO convertMessage(MessageDO messageDO, Map<Long, UserDO> userDOMap,
                                       Map<Long, PostDO> postingDOMap, Map<Long, NodeDO> nodeDOMap,
-                                      Map<Long, ProfessionDO> professionDOMap) {
+                                      Map<Long, ProfessionDO> professionDOMap, Map<Long, RoadmapDO> roadmapDOMap) {
         MessageDTO messageDTO;
         Map<String, Object> content = Utils.readValueToMap(messageDO.getContent());
+
+        // 处理评论消息
         if (messageDO.getType() == postComment.value() || messageDO.getType() == replyPostingComment.value() ||
-            messageDO.getType() == nodeComment.value() || messageDO.getType() == replyNodeComment.value()) {
+            messageDO.getType() == nodeComment.value() || messageDO.getType() == replyNodeComment.value() ||
+            messageDO.getType() == roadmapComment.value() || messageDO.getType() == replyRoadmapComment.value()) {
 
             CommentMessageDTO m = new CommentMessageDTO();
-            long nodeId = Utils.getLong(content, "nodeId");
-            NodeDO nodeDO = nodeDOMap.get(nodeId);
+            long commenterId = Utils.getLong(content, "commenterId");
+            UserDO commenter = userDOMap.get(commenterId);
 
             m.setCommentId(Utils.getLong(content, "commentId"));
+            m.setCommenter(userConverter.toDTOV2(commenter));
+
+            // 填充 commenterName 到 content JSON
+            Map<String, Object> enrichedContent = new HashMap<>(content);
+            if (commenter != null) {
+                enrichedContent.put("commenterName", commenter.getName());
+            }
+
+            // 根据消息类型，获取对应的上下文信息
+            NodeDO nodeDO = null;
+            if (messageDO.getType() == nodeComment.value() || messageDO.getType() == replyNodeComment.value()) {
+                // 节点评论：直接从 nodeId 获取
+                Long nodeId = Utils.getLong(content, "nodeId");
+                if (nodeId != null) {
+                    nodeDO = nodeDOMap.get(nodeId);
+                    if (nodeDO != null) {
+                        enrichedContent.put("nodeName", nodeDO.getName());
+                    }
+                }
+            } else if (messageDO.getType() == postComment.value() || messageDO.getType() == replyPostingComment.value()) {
+                // 帖子评论：通过 postId 找到 post，再获取 nodeId
+                Long postId = Utils.getLong(content, "postId");
+                if (postId != null) {
+                    PostDO postDO = postingDOMap.get(postId);
+                    if (postDO != null) {
+                        nodeDO = nodeDOMap.get(postDO.getNodeId());
+                        if (nodeDO != null) {
+                            enrichedContent.put("nodeName", nodeDO.getName());
+                        }
+                    }
+                }
+            } else if (messageDO.getType() == roadmapComment.value() || messageDO.getType() == replyRoadmapComment.value()) {
+                // 路线图评论：通过 roadmapId 找到 roadmap，再获取 professionId
+                Long roadmapId = Utils.getLong(content, "roadmapId");
+                if (roadmapId != null) {
+                    RoadmapDO roadmapDO = roadmapDOMap.get(roadmapId);
+                    if (roadmapDO != null) {
+                        ProfessionDO professionDO = professionDOMap.get(roadmapDO.getProfessionId());
+                        if (professionDO != null) {
+                            enrichedContent.put("professionName", professionDO.getName());
+                        }
+                    }
+                }
+            }
+
             m.setNode(nodeConverter.toSummaryDTO(nodeDO));
-            m.setCommenter(userConverter.toDTOV2(userDOMap.get(Utils.getLong(content, "commenterId"))));
             messageDTO = m;
+            messageDTO.setContent(Utils.toJson(enrichedContent));
         } else if (messageDO.getType() == upvote.value()) {
             // 动态填充用户名和上下文名称到 content
             Map<String, Object> enrichedContent = new HashMap<>(content);

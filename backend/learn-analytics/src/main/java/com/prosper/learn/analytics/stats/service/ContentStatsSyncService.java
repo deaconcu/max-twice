@@ -3,6 +3,7 @@ package com.prosper.learn.analytics.stats.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
+import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyDO;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsYearlyMapper;
 import com.prosper.learn.shared.common.util.TimeZoneUtil;
@@ -41,7 +42,7 @@ public class ContentStatsSyncService {
     private static final int DB_SAVE_BATCH_SIZE = 5000;
 
     /**
-     * 同步文章统计数据
+     * 从Redis同步文章统计数据到数据库
      *
      * 处理逻辑:
      * 1. 使用HSCAN从Redis分批获取指定日期的文章统计数据
@@ -182,6 +183,13 @@ public class ContentStatsSyncService {
             PostDayStats dayStats = entry.getValue();
 
             try {
+                // 检查是否已经同步过该日期，防止重复累加
+                ContentStatsDO existingStats = contentStatsDataService.getByContent(ContentType.post, postId).orElse(null);
+                if (existingStats != null && dateStr.equals(existingStats.getLastSyncDate())) {
+                    log.debug("文章{}在{}的统计数据已同步过，跳过", postId, dateStr);
+                    continue;
+                }
+
                 // 确保post_stats年度记录存在
                 ensurePostYearRecord(ContentType.post.value(), postId, year);
 
@@ -193,9 +201,9 @@ public class ContentStatsSyncService {
                     log.debug("覆盖文章{}在{}的统计数据: views={}, twice={}, like={}, comments={}",
                         postId, dateStr, dayStats.viewCount, dayStats.twiceCount, dayStats.likeCount, dayStats.commentCount);
 
-                    // 同步更新内容总计表
+                    // 同步更新内容总计表，并更新 lastSyncDate
                     contentStatsDataService.increase(ContentType.post, postId,
-                        dayStats.viewCount, dayStats.twiceCount, dayStats.likeCount, dayStats.commentCount);
+                        dayStats.viewCount, dayStats.twiceCount, dayStats.likeCount, dayStats.commentCount, dateStr);
 
                     updateCount++;
                 } else {
@@ -223,27 +231,6 @@ public class ContentStatsSyncService {
             contentStatsYearlyMapper.insert(yearRecord);
             log.debug("创建{}对象{}的{}年度统计记录", type, objectId, year);
         }
-    }
-
-    /**
-     * 获取当前post指定日期的统计数据
-     */
-    public Map<String, Integer> getCurrentPostDayStats(byte type, Long objectId, int year, String dayKey) {
-        try {
-            String dayStatsJson = contentStatsYearlyMapper.getDayStats(type, objectId, year, dayKey);
-            if (dayStatsJson != null) {
-                return objectMapper.readValue(dayStatsJson, new TypeReference<Map<String, Integer>>() {});
-            }
-        } catch (Exception e) {
-            log.debug("获取post当日统计失败，使用默认值: type={}, objectId={}, dayKey={}", type, objectId, dayKey);
-        }
-
-        Map<String, Integer> defaultStats = new HashMap<>();
-        defaultStats.put("views", 0);
-        defaultStats.put("twice", 0);
-        defaultStats.put("like", 0);
-        defaultStats.put("comments", 0);
-        return defaultStats;
     }
 
     // ========== 辅助方法 ==========

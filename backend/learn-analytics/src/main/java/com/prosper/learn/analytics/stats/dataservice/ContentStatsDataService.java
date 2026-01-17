@@ -182,9 +182,10 @@ public class ContentStatsDataService {
      * @param twicesDelta 两次能懂增量
      * @param likesDelta 有用点赞增量
      * @param commentsDelta 评论数增量
+     * @param syncDate 同步日期（格式：YYYY-MM-DD），用于防止重复累加
      */
     public boolean increase(Enums.ContentType contentType, long contentId,
-                           int viewsDelta, int twicesDelta, int likesDelta, int commentsDelta) {
+                           int viewsDelta, int twicesDelta, int likesDelta, int commentsDelta, String syncDate) {
         if (viewsDelta == 0 && twicesDelta == 0 && likesDelta == 0 && commentsDelta == 0) {
             return true;
         }
@@ -195,11 +196,11 @@ public class ContentStatsDataService {
         getOrCreate(contentType, contentId);
 
         int result = contentStatsMapper.increase(
-            contentType.value(), contentId, viewsDelta, twicesDelta, likesDelta, commentsDelta);
+            contentType.value(), contentId, viewsDelta, twicesDelta, likesDelta, commentsDelta, syncDate);
 
         if (result > 0) {
-            log.debug("增量更新统计字段: contentType={}, contentId={}, views+={}, twices+={}, likes+={}, comments+={}",
-                contentType, contentId, viewsDelta, twicesDelta, likesDelta, commentsDelta);
+            log.debug("增量更新统计字段: contentType={}, contentId={}, syncDate={}, views+={}, twices+={}, likes+={}, comments+={}",
+                contentType, contentId, syncDate, viewsDelta, twicesDelta, likesDelta, commentsDelta);
             return true;
         }
 

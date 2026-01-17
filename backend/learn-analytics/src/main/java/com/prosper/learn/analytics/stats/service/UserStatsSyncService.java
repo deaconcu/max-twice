@@ -1,6 +1,7 @@
 package com.prosper.learn.analytics.stats.service;
 
 import com.prosper.learn.analytics.stats.dataservice.UserStatsDataService;
+import com.prosper.learn.analytics.stats.mapper.UserStatsDO;
 import com.prosper.learn.analytics.stats.mapper.UserStatsYearlyDO;
 import com.prosper.learn.analytics.stats.mapper.UserStatsYearlyMapper;
 import com.prosper.learn.shared.common.util.TimeZoneUtil;
@@ -37,7 +38,7 @@ public class UserStatsSyncService {
     private static final int DB_SAVE_BATCH_SIZE = 5000;
 
     /**
-     * 同步用户统计数据
+     * 从Redis同步用户每日统计数据到数据库
      *
      * 同步逻辑，直接覆盖当天的完整统计数据:
      * 1. 使用HSCAN从Redis分批获取指定日期的用户统计数据
@@ -170,6 +171,13 @@ public class UserStatsSyncService {
             UserDayStats dayStats = entry.getValue();
 
             try {
+                // 检查是否已经同步过该日期，防止重复累加
+                UserStatsDO existingStats = userStatsDataService.getByUserId(userId);
+                if (existingStats != null && dateStr.equals(existingStats.getLastSyncDate())) {
+                    log.debug("用户{}在{}的统计数据已同步过，跳过", userId, dateStr);
+                    continue;
+                }
+
                 // 确保用户的年度记录存在
                 ensureUserYearRecord(userId, year);
 
@@ -183,8 +191,8 @@ public class UserStatsSyncService {
                     log.debug("覆盖用户{}在{}的统计数据: views={}, twice={}, like={}, comments={}",
                         userId, dateStr, dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
 
-                    // 同步更新用户总计表
-                    userStatsDataService.increase(userId, dayStats.views, dayStats.twice, dayStats.like, dayStats.comments);
+                    // 同步更新用户总计表，并更新 lastSyncDate
+                    userStatsDataService.increase(userId, dayStats.views, dayStats.twice, dayStats.like, dayStats.comments, dateStr);
 
                     updateCount++;
                 } else {

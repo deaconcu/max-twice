@@ -116,6 +116,13 @@ public class ContentStatsDO {
     // ==================== 时间戳字段 ====================
 
     /**
+     * 最后同步日期
+     * 记录最后一次从 Redis 同步数据的日期（格式：YYYY-MM-DD）
+     * 用于防止重复同步导致数据累加错误
+     */
+    private String lastSyncDate;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createdAt;

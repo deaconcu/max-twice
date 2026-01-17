@@ -51,13 +51,16 @@ public interface UserStatsMapper {
             "view_count = view_count + #{viewsDelta}, " +
             "twice_count = twice_count + #{twicesDelta}, " +
             "like_count = like_count + #{likesDelta}, " +
-            "comment_count = comment_count + #{commentsDelta} " +
+            "comment_count = comment_count + #{commentsDelta}, " +
+            "last_sync_date = #{syncDate}, " +
+            "updated_at = NOW() " +
             "WHERE user_id = #{userId}")
     int increase(@Param("userId") long userId,
                  @Param("viewsDelta") int viewsDelta,
                  @Param("twicesDelta") int twicesDelta,
                  @Param("likesDelta") int likesDelta,
-                 @Param("commentsDelta") int commentsDelta);
+                 @Param("commentsDelta") int commentsDelta,
+                 @Param("syncDate") String syncDate);
 
     // ===== 批量查询操作 =====
 
