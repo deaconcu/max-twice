@@ -402,4 +402,11 @@ export const adminApi = {
   clearAutoAuthorQueue(): Promise<ApiResponse<string>> {
     return apiClient.delete('/v1/admin/auto-author/queue')
   },
+
+  /**
+   * 重新计算节点引用数统计
+   */
+  recalculateNodeReferences(): Promise<ApiResponse<{ processedPosts: number; updatedNodes: number }>> {
+    return apiClient.post('/v1/admin/contents/nodes/recalculate-references')
+  },
 }

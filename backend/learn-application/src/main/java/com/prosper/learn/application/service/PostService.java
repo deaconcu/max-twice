@@ -489,7 +489,7 @@ public class PostService {
 
         // 根据类型调用不同的 DomainService 方法
         Long postId;
-        if (postType == PostType.contents) {
+        if (postType == PostType.index) {
             postId = domainService.createContentsPost(userId, request.getNodeId(), request.getContent(), postState);
         } else {
             postId = domainService.createArticlePost(userId, request.getNodeId(), postType.value(), request.getContent(), postState);
@@ -602,16 +602,28 @@ public class PostService {
         // 调用 DomainService 更新状态
         domainService.approve(id);
 
-        // 发布审核通过事件，触发统计更新和通知
-        eventPublisher.publishEvent(ContentApprovedEvent.forPost(
-            postDO.getCreatorId(),
-            postDO.getId(),
-            null,  // postPreview - approve 不需要
-            postDO.getNodeId(),  // nodeId - 用于统计
-            null,  // nodeName
-            null,  // courseName
-            postDO.getType()  // postType - 用于区分 ARTICLE/INDEX
-        ));
+        // 根据 postType 发布不同的事件
+        if (postDO.getType() == PostType.index.value()) {
+            // index 类型：解析引用的节点ID列表
+            List<Long> referencedNodeIds = parseReferencedNodeIds(postDO.getContent());
+            eventPublisher.publishEvent(ContentApprovedEvent.forIndexPost(
+                postDO.getCreatorId(),
+                postDO.getId(),
+                postDO.getNodeId(),
+                referencedNodeIds
+            ));
+        } else {
+            // article 类型：使用原有的事件构造方法
+            eventPublisher.publishEvent(ContentApprovedEvent.forPost(
+                postDO.getCreatorId(),
+                postDO.getId(),
+                null,  // postPreview - approve 不需要
+                postDO.getNodeId(),  // nodeId - 用于统计
+                null,  // nodeName
+                null,  // courseName
+                postDO.getType()  // postType - 用于区分 CONTENTS/ARTICLE
+            ));
+        }
 
         log.info("审核员 {} 批准了帖子 {}", currentUser.getId(), id);
     }
@@ -672,26 +684,38 @@ public class PostService {
         NodeDO nodeDO = nodeDataService.getById(postDO.getNodeId());
         CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
 
-        // 截取内容前50个字符作为预览
-        String contentPreview = Utils.stripFormatting(postDO.getContent());
-        if (contentPreview != null && contentPreview.length() > 50) {
-            contentPreview = contentPreview.substring(0, 50) + "...";
-        }
-
         // 更新状态为 REJECTED
         postDataService.reject(id, reason);
 
-        // 发布内容下架事件，触发统计更新和消息通知
-        eventPublisher.publishEvent(ContentRemovedEvent.forPost(
-            postDO.getCreatorId(),
-            postDO.getId(),
-            postDO.getNodeId(),
-            postDO.getType(),
-            contentPreview,
-            nodeDO != null ? nodeDO.getName() : null,
-            courseDO != null ? courseDO.getName() : null,
-            reason
-        ));
+        // 根据 postType 发布不同的事件
+        if (postDO.getType() == PostType.index.value()) {
+            // index 类型：解析引用的节点ID列表
+            List<Long> referencedNodeIds = parseReferencedNodeIds(postDO.getContent());
+            eventPublisher.publishEvent(ContentRemovedEvent.forIndexPost(
+                postDO.getCreatorId(),
+                postDO.getId(),
+                postDO.getNodeId(),
+                reason,
+                referencedNodeIds
+            ));
+        } else {
+            // article 类型：截取内容预览
+            String contentPreview = Utils.stripFormatting(postDO.getContent());
+            if (contentPreview != null && contentPreview.length() > 50) {
+                contentPreview = contentPreview.substring(0, 50) + "...";
+            }
+
+            eventPublisher.publishEvent(ContentRemovedEvent.forPost(
+                postDO.getCreatorId(),
+                postDO.getId(),
+                postDO.getNodeId(),
+                postDO.getType(),
+                contentPreview,
+                nodeDO != null ? nodeDO.getName() : null,
+                courseDO != null ? courseDO.getName() : null,
+                reason
+            ));
+        }
 
         log.info("审核员 {} 下架了帖子 {}, 原因: {}", currentUser.getId(), id, reason);
     }
@@ -766,27 +790,40 @@ public class PostService {
         NodeDO nodeDO = nodeDataService.getById(postDO.getNodeId());
         CourseDO courseDO = nodeDO != null ? courseDataService.getById(nodeDO.getCourseId()) : null;
 
-        // 截取内容前50个字符作为预览
-        String contentPreview = Utils.stripFormatting(postDO.getContent());
-        if (contentPreview != null && contentPreview.length() > 50) {
-            contentPreview = contentPreview.substring(0, 50) + "...";
-        }
-
         // 更新状态为 BANNED
         postDataService.ban(id, reason);
 
-        // 发布内容封禁事件，触发统计更新和消息通知
-        eventPublisher.publishEvent(ContentBannedEvent.forPost(
-            postDO.getCreatorId(),
-            postDO.getId(),
-            previousState,
-            postDO.getNodeId(),
-            postDO.getType(),
-            contentPreview,
-            nodeDO != null ? nodeDO.getName() : null,
-            courseDO != null ? courseDO.getName() : null,
-            reason
-        ));
+        // 根据 postType 发布不同的事件
+        if (postDO.getType() == PostType.index.value()) {
+            // index 类型：解析引用的节点ID列表
+            List<Long> referencedNodeIds = parseReferencedNodeIds(postDO.getContent());
+            eventPublisher.publishEvent(ContentBannedEvent.forIndexPost(
+                postDO.getCreatorId(),
+                postDO.getId(),
+                previousState,
+                postDO.getNodeId(),
+                reason,
+                referencedNodeIds
+            ));
+        } else {
+            // article 类型：截取内容预览
+            String contentPreview = Utils.stripFormatting(postDO.getContent());
+            if (contentPreview != null && contentPreview.length() > 50) {
+                contentPreview = contentPreview.substring(0, 50) + "...";
+            }
+
+            eventPublisher.publishEvent(ContentBannedEvent.forPost(
+                postDO.getCreatorId(),
+                postDO.getId(),
+                previousState,
+                postDO.getNodeId(),
+                postDO.getType(),
+                contentPreview,
+                nodeDO != null ? nodeDO.getName() : null,
+                courseDO != null ? courseDO.getName() : null,
+                reason
+            ));
+        }
 
         log.info("审核员 {} 封禁了帖子 {}, 原因: {}", currentUser.getId(), id, reason);
     }
@@ -1085,5 +1122,28 @@ public class PostService {
         }
 
         return urls;
+    }
+
+    /**
+     * 解析 contents 类型帖子的引用节点ID列表
+     *
+     * @param content 帖子内容（逗号分隔的节点ID）
+     * @return 节点ID列表，解析失败返回空列表
+     */
+    private List<Long> parseReferencedNodeIds(String content) {
+        if (content == null || content.trim().isEmpty()) {
+            return List.of();
+        }
+
+        try {
+            return Arrays.stream(content.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(Long::parseLong)
+                    .toList();
+        } catch (NumberFormatException e) {
+            log.warn("Failed to parse referenced node IDs from content: {}", content, e);
+            return List.of();
+        }
     }
 }

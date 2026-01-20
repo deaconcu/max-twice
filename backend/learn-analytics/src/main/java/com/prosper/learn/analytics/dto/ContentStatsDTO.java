@@ -61,4 +61,10 @@ public class ContentStatsDTO {
      * 主要用于课程、路线图等学习内容
      */
     private Integer inProgressUserCount;
+
+    /**
+     * 节点被引用次数
+     * 记录节点被多少个目录型帖子引用
+     */
+    private Integer nodeReferenceCount;
 }

@@ -89,6 +89,7 @@ public class ContentStatsDomainService {
                 int baseBookmarks = baseStats != null && baseStats.getBookmarkCount() != null ? baseStats.getBookmarkCount() : 0;
                 int baseCompleted = baseStats != null && baseStats.getCompletedUserCount() != null ? baseStats.getCompletedUserCount() : 0;
                 int baseInProgress = baseStats != null && baseStats.getLearnerCount() != null ? baseStats.getLearnerCount() : 0;
+                int baseNodeRefCount = baseStats != null && baseStats.getNodeReferenceCount() != null ? baseStats.getNodeReferenceCount() : 0;
 
                 // 构建 DTO
                 ContentStatsDTO dto = ContentStatsDTO.builder()
@@ -101,6 +102,7 @@ public class ContentStatsDomainService {
                     .bookmarkCount(baseBookmarks)                   // 只用累计值
                     .completedUserCount(baseCompleted)              // 只用累计值
                     .inProgressUserCount(baseInProgress)            // 只用累计值
+                    .nodeReferenceCount(baseNodeRefCount)           // 只用累计值
                     .build();
 
                 result.put(contentId, dto);
@@ -145,6 +147,7 @@ public class ContentStatsDomainService {
             .bookmarkCount(baseStats != null && baseStats.getBookmarkCount() != null ? baseStats.getBookmarkCount() : 0)
             .completedUserCount(baseStats != null && baseStats.getCompletedUserCount() != null ? baseStats.getCompletedUserCount() : 0)
             .inProgressUserCount(baseStats != null && baseStats.getLearnerCount() != null ? baseStats.getLearnerCount() : 0)
+            .nodeReferenceCount(baseStats != null && baseStats.getNodeReferenceCount() != null ? baseStats.getNodeReferenceCount() : 0)
             .build();
     }
 
@@ -171,10 +174,17 @@ public class ContentStatsDomainService {
 
         contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), 1);
 
-        if (event.getPostType() == 1) { // ARTICLE
-            contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), 1);
-        } else if (event.getPostType() == 2) { // INDEX
+        if (event.getPostType() == 1) { // CONTENTS
             contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), 1);
+
+            // 批量更新被引用节点的引用数统计
+            if (event.getReferencedNodeIds() != null && !event.getReferencedNodeIds().isEmpty()) {
+                contentStatsDataService.batchIncrementNodeReferences(ContentType.node, event.getReferencedNodeIds(), 1);
+                log.debug("批量更新 {} 个节点引用数 +1（被目录帖子 {} 引用）",
+                    event.getReferencedNodeIds().size(), event.getContentId());
+            }
+        } else if (event.getPostType() == 2) { // ARTICLE
+            contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), 1);
         }
 
         log.debug("Post统计已增加: nodeId={}, postType={}", event.getNodeId(), event.getPostType());
@@ -185,10 +195,17 @@ public class ContentStatsDomainService {
 
         contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), -1);
 
-        if (event.getPostType() == 1) {
-            contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), -1);
-        } else if (event.getPostType() == 2) {
+        if (event.getPostType() == 1) { // CONTENTS
             contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), -1);
+
+            // 批量更新被引用节点的引用数统计
+            if (event.getReferencedNodeIds() != null && !event.getReferencedNodeIds().isEmpty()) {
+                contentStatsDataService.batchIncrementNodeReferences(ContentType.node, event.getReferencedNodeIds(), -1);
+                log.debug("批量更新 {} 个节点引用数 -1（目录帖子 {} 被下架）",
+                    event.getReferencedNodeIds().size(), event.getContentId());
+            }
+        } else if (event.getPostType() == 2) { // ARTICLE
+            contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), -1);
         }
 
         log.debug("Post统计已减少: nodeId={}, postType={}", event.getNodeId(), event.getPostType());
@@ -199,10 +216,17 @@ public class ContentStatsDomainService {
 
         contentStatsDataService.incrementPosts(ContentType.node, event.getNodeId(), -1);
 
-        if (event.getPostType() == 1) {
-            contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), -1);
-        } else if (event.getPostType() == 2) {
+        if (event.getPostType() == 1) { // CONTENTS
             contentStatsDataService.incrementIndexes(ContentType.node, event.getNodeId(), -1);
+
+            // 批量更新被引用节点的引用数统计
+            if (event.getReferencedNodeIds() != null && !event.getReferencedNodeIds().isEmpty()) {
+                contentStatsDataService.batchIncrementNodeReferences(ContentType.node, event.getReferencedNodeIds(), -1);
+                log.debug("批量更新 {} 个节点引用数 -1（目录帖子 {} 被封禁）",
+                    event.getReferencedNodeIds().size(), event.getContentId());
+            }
+        } else if (event.getPostType() == 2) { // ARTICLE
+            contentStatsDataService.incrementArticles(ContentType.node, event.getNodeId(), -1);
         }
     }
 

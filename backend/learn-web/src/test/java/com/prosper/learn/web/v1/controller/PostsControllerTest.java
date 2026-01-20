@@ -260,7 +260,7 @@ public class PostsControllerTest extends BaseControllerTest {
                     "nodeId": %d,
                     "type": %d
                 }
-                """, node.getId(), PostType.contents.value());
+                """, node.getId(), PostType.index.value());
 
             mockMvc.perform(post("/api/v1/posts")
                     .header("token", StpUtil.getTokenValue())
@@ -843,7 +843,7 @@ public class PostsControllerTest extends BaseControllerTest {
             createPublishedPost("文章" + i, node.getId(), user.getId(), PostType.article);
         }
         for (int i = 1; i <= 3; i++) {
-            createPublishedPost("内容帖" + i, node.getId(), user.getId(), PostType.contents);
+            createPublishedPost("内容帖" + i, node.getId(), user.getId(), PostType.index);
         }
 
         // 创建2篇待审核文章和1篇已拒绝文章

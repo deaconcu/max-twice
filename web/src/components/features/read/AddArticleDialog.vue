@@ -2,7 +2,7 @@
 import { ref, computed, inject } from 'vue'
 import { useMutation } from '@/composables/useMutation'
 import { postApi } from '@/api'
-import { PostType } from '@/enums'
+import { PostType, ContentState } from '@/enums'
 import TipTapEditor from '@/components/common/TipTapEditor.vue'
 
 // 注入全局 showSnackbar
@@ -44,37 +44,111 @@ const isFormValid = computed(() => {
   return contentLength.value >= MIN_LENGTH && contentLength.value <= MAX_LENGTH
 })
 
-// 使用 useMutation 创建文章
-const { execute: createPost, loading: submitting } = useMutation(
-  (data: { nodeId: number; content: string; type: number }) => postApi.createPost(data),
+// 验证草稿是否有效（保存草稿时需要）
+const isDraftValid = computed(() => {
+  return contentLength.value > 0 && contentLength.value <= MAX_LENGTH
+})
+
+const draftId = ref<number | null>(null) // 草稿ID
+
+// 创建帖子（新增）
+const { execute: executeCreate, loading: creating } = useMutation(
+  (data: { nodeId: number; content: string; type: number; state: number }) =>
+    postApi.createPost(data),
   {
-    successMessage: '文章发布成功',
-    onSuccess: () => {
-      dialog.value = false
-      articleContent.value = ''
-      emit('load-data', [])
+    onSuccess: (response, payload) => {
+      const isDraft = payload.state === ContentState.DRAFT
+      if (isDraft) {
+        draftId.value = response.data.id
+        showSnackbar?.('草稿保存成功', 'success')
+      } else {
+        showSnackbar?.('文章发布成功', 'success')
+        dialog.value = false
+        articleContent.value = ''
+        draftId.value = null
+        emit('load-data', [])
+      }
     },
   }
 )
 
-// 提交文章
+// 更新帖子（更新草稿或发布草稿）
+const { execute: executeUpdate, loading: updating } = useMutation(
+  (data: { id: number; content: string; state?: number }) =>
+    postApi.updatePost(data.id, { content: data.content, state: data.state }),
+  {
+    onSuccess: (_, payload) => {
+      const isPublishing = payload.state === ContentState.SUBMITTED
+      if (isPublishing) {
+        showSnackbar?.('文章发布成功', 'success')
+        dialog.value = false
+        articleContent.value = ''
+        draftId.value = null
+        emit('load-data', [])
+      } else {
+        showSnackbar?.('草稿保存成功', 'success')
+      }
+    },
+  }
+)
+
+const submitting = computed(() => creating.value || updating.value)
+
+// 保存草稿
+const saveDraft = async () => {
+  if (!isDraftValid.value) {
+    showSnackbar?.('内容不能为空', 'warning')
+    return
+  }
+
+  if (draftId.value) {
+    // 更新已有草稿
+    await executeUpdate({
+      id: draftId.value,
+      content: articleContent.value,
+    })
+  } else {
+    // 创建新草稿
+    await executeCreate({
+      nodeId: props.nodeId,
+      content: articleContent.value,
+      type: PostType.ARTICLE,
+      state: ContentState.DRAFT,
+    })
+  }
+}
+
+// 发布文章
 const submitArticle = async () => {
   if (!isFormValid.value) {
     return
   }
 
-  await createPost({
-    nodeId: props.nodeId,
-    content: articleContent.value,
-    type: PostType.ARTICLE, // 文章
-  })
+  if (draftId.value) {
+    // 发布已有草稿（更新状态为待审核）
+    await executeUpdate({
+      id: draftId.value,
+      content: articleContent.value,
+      state: ContentState.SUBMITTED,
+    })
+  } else {
+    // 直接发布（创建待审核帖子）
+    await executeCreate({
+      nodeId: props.nodeId,
+      content: articleContent.value,
+      type: PostType.ARTICLE,
+      state: ContentState.SUBMITTED,
+    })
+  }
 }
 
 // 关闭对话框
 const closeDialog = () => {
   dialog.value = false
   articleContent.value = ''
+  draftId.value = null
 }
+
 </script>
 
 <template>
@@ -113,6 +187,16 @@ const closeDialog = () => {
         <div class="d-flex gap-2">
           <v-btn variant="text" color="grey-darken-2" class="px-4" @click="closeDialog">
             取消
+          </v-btn>
+          <v-btn
+            variant="tonal"
+            color="primary"
+            class="px-4"
+            :loading="submitting"
+            :disabled="!isDraftValid"
+            @click="saveDraft"
+          >
+            保存草稿
           </v-btn>
           <v-btn
             variant="flat"

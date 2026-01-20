@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { inject, ref } from 'vue'
 import { adminApi } from '@/api'
+import { postApi } from '@/api/modules/post'
 import { ContentState } from '@/enums'
 import type { Node } from '@/types/node.d'
 import RejectBanDialog from './RejectBanDialog.vue'
@@ -235,6 +236,30 @@ const handleConfirmAction = async (reason: string) => {
     reason,
   })
 }
+
+// 初始化 Embedding
+const initializingEmbeddings = ref(false)
+const initEmbeddingResult = ref<{ successCount: number; failCount: number; totalProcessed: number } | null>(null)
+
+const initializeEmbeddings = async () => {
+  if (!confirm('确定要初始化所有节点的 embedding 吗？这可能需要几分钟时间。')) {
+    return
+  }
+
+  initializingEmbeddings.value = true
+  initEmbeddingResult.value = null
+
+  try {
+    const response = await postApi.initNodeEmbeddings(20)
+    initEmbeddingResult.value = response.data
+    showSnackbar?.(`初始化完成！成功: ${response.data.successCount}, 失败: ${response.data.failCount}`, 'success')
+  } catch (error) {
+    console.error('初始化 embedding 失败', error)
+    showSnackbar?.('初始化失败', 'error')
+  } finally {
+    initializingEmbeddings.value = false
+  }
+}
 </script>
 
 <template>
@@ -249,10 +274,17 @@ const handleConfirmAction = async (reason: string) => {
           <p class="text-body-2 text-grey-darken-1 mb-0">查询和管理课程节点</p>
         </div>
       </div>
-      <v-chip variant="flat" color="blue-lighten-4" rounded="lg">
-        <v-icon icon="mdi-file-tree" color="blue-darken-2" size="16" class="mr-1"></v-icon>
-        <span class="text-blue-darken-2 text-caption">{{ nodeList.length }}</span>
-      </v-chip>
+      <v-btn
+        variant="outlined"
+        color="purple"
+        rounded="lg"
+        :loading="initializingEmbeddings"
+        :disabled="initializingEmbeddings"
+        @click="initializeEmbeddings"
+      >
+        <v-icon icon="mdi-vector-polyline" class="mr-1"></v-icon>
+        初始化 Embedding
+      </v-btn>
     </div>
 
     <!-- 筛选区域 -->

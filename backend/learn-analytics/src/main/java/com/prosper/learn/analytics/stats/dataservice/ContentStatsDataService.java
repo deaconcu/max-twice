@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 内容统计数据服务
@@ -68,6 +70,7 @@ public class ContentStatsDataService {
         stats.setIndexCount(0);
         stats.setRoadmapCount(0);
         stats.setCardDeckCount(0);
+        stats.setNodeReferenceCount(0);
 
         // 违规统计字段
         stats.setRejectCount(0);
@@ -169,6 +172,67 @@ public class ContentStatsDataService {
     /** 增量更新拒绝次数 */
     public boolean incrementRejectCount(Enums.ContentType contentType, long contentId, int delta) {
         return atomicIncrement(contentType, contentId, "reject_count", delta);
+    }
+
+    /** 增量更新节点引用数 */
+    public boolean incrementNodeReferences(Enums.ContentType contentType, long contentId, int delta) {
+        return atomicIncrement(contentType, contentId, "node_reference_count", delta);
+    }
+
+    /** 批量增量更新节点引用数 */
+    public boolean batchIncrementNodeReferences(Enums.ContentType contentType, List<Long> contentIds, int delta) {
+        if (contentType == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("内容类型不能为空");
+        }
+        if (contentIds == null || contentIds.isEmpty()) {
+            return true;
+        }
+        if (delta == 0) {
+            return true;
+        }
+
+        // 批量查询现有记录
+        List<ContentStatsDO> existingStats = contentStatsMapper.batchGetByContentIds(contentType.name(), contentIds);
+
+        // 找出不存在的记录并创建
+        if (existingStats.size() < contentIds.size()) {
+            Set<Long> existingIds = existingStats.stream()
+                .map(ContentStatsDO::getContentId)
+                .collect(Collectors.toSet());
+
+            for (Long contentId : contentIds) {
+                if (!existingIds.contains(contentId)) {
+                    createInitialStats(contentType, contentId);
+                }
+            }
+        }
+
+        // 批量更新
+        int result = contentStatsMapper.batchAtomicIncrement(contentType.value(), contentIds, "node_reference_count", delta);
+        if (result > 0) {
+            log.debug("批量更新节点引用数: contentType={}, count={}, delta={}", contentType, contentIds.size(), delta);
+            return true;
+        }
+
+        log.warn("批量更新节点引用数失败: contentType={}, count={}", contentType, contentIds.size());
+        return false;
+    }
+
+    /** 设置节点引用数（用于重新计算统计） */
+    public boolean setNodeReferenceCount(Enums.ContentType contentType, long contentId, int count) {
+        validateContentParams(contentType, contentId);
+
+        // 确保统计记录存在
+        getOrCreate(contentType, contentId);
+
+        int result = contentStatsMapper.setFieldValue(contentType.value(), contentId, "node_reference_count", count);
+        if (result > 0) {
+            log.debug("设置节点引用数: contentType={}, contentId={}, count={}", contentType, contentId, count);
+            return true;
+        }
+
+        log.warn("设置节点引用数失败: contentType={}, contentId={}", contentType, contentId);
+        return false;
     }
 
     /**

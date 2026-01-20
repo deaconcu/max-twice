@@ -29,7 +29,28 @@
             <v-btn variant="text" @click="handleCancel">
               取消
             </v-btn>
+            <!-- 如果是草稿，显示"保存草稿"和"发布文章" -->
+            <template v-if="article?.state === ContentState.DRAFT">
+              <v-btn
+                color="primary"
+                variant="tonal"
+                :loading="loading"
+                @click="handleSave"
+              >
+                保存草稿
+              </v-btn>
+              <v-btn
+                color="primary"
+                variant="flat"
+                :loading="loading"
+                @click="handlePublish"
+              >
+                发布文章
+              </v-btn>
+            </template>
+            <!-- 如果不是草稿，只显示"保存" -->
             <v-btn
+              v-else
               color="primary"
               variant="flat"
               :loading="loading"
@@ -47,10 +68,12 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
 import TipTapEditor from '@/components/common/TipTapEditor.vue'
+import { ContentState } from '@/enums'
 
 interface Article {
   id: number
   preview: string
+  state?: number
   node?: { id: number; name: string }
   course?: string
   courseId?: number
@@ -65,6 +88,7 @@ interface Props {
 interface Emits {
   (e: 'update:modelValue', value: boolean): void
   (e: 'save', data: { id: number; content: string }): void
+  (e: 'publish', data: { id: number; content: string }): void
   (e: 'cancel'): void
 }
 
@@ -95,6 +119,20 @@ const handleSave = () => {
   const content = editorRef.value.editor.getHTML()
 
   emit('save', {
+    id: props.article.id,
+    content,
+  })
+}
+
+// 发布文章
+const handlePublish = () => {
+  if (!props.article || !editorRef.value?.editor) {
+    return
+  }
+
+  const content = editorRef.value.editor.getHTML()
+
+  emit('publish', {
     id: props.article.id,
     content,
   })

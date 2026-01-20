@@ -4,11 +4,12 @@ import { useRoute } from 'vue-router'
 import SinglePost from './SinglePost.vue'
 import CommentSection from '@/components/common/CommentSection.vue'
 import MemoryCardList from './MemoryCardList.vue'
-import AddCatalogDialog from './AddCatalogDialog.vue'
+import NodeSelectorDialog from './NodeSelectorDialog.vue'
 import AddArticleDialog from './AddArticleDialog.vue'
 import InviteUserDialog from './InviteUserDialog.vue'
 import { ObjectType } from '@/enums'
 import type { MemoryCardDeck } from '@/types/memory'
+import type { Node } from '@/types/node'
 
 interface Props {
   data: any
@@ -34,7 +35,7 @@ const route = useRoute()
 
 const tab = ref('list')
 const currPosting = ref<any>(null)
-const showAddCatalogDialog = ref(false)
+const nodeSelectorDialog = ref()
 const showAddArticleDialog = ref(false)
 const showInviteUserDialog = ref(false)
 
@@ -71,9 +72,17 @@ const handlePostSwitchTab = (newTab: string, posting?: any) => {
 }
 
 // 处理添加目录后的数据加载
-const handleLoadData = (data: any[]) => {
-  console.log('Reload data after adding catalog:', data)
+const handleNodeConfirm = (nodes: Node[]) => {
+  console.log('选择/创建的节点列表:', nodes)
+  // TODO: 调用 API 批量添加节点到当前目录
   // TODO: 刷新页面数据
+  emit('load-data')
+}
+
+// 处理添加文章后的数据加载
+const handleLoadData = (data?: any[]) => {
+  console.log('Reload data after adding:', data)
+  emit('load-data')
 }
 
 // 处理查看卡片组详情
@@ -89,7 +98,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
       <!-- 节点路径（面包屑） -->
       <v-row
         v-if="nodes && nodes.length > 0"
-        class="node-breadcrumb ma-0 text-grey text-body-2 pb-2"
+        class="node-breadcrumb ma-0 text-grey text-body-2 pb-4"
       >
         <div class="d-flex align-center">
           <template v-for="(item, index) in nodes" :key="item">
@@ -105,6 +114,16 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
           <div class="d-flex align-center">
             <v-icon icon="mdi-list-box-outline" color="primary-darken-1" size="24"></v-icon>
             <h2 class="text-h5 font-weight-bold text-grey-darken-4 ms-3">{{ data.node?.name }}</h2>
+            <v-chip
+              v-if="data.node?.nodeReferenceCount !== undefined && data.node.nodeReferenceCount > 0"
+              size="small"
+              variant="tonal"
+              color="primary"
+              class="ml-3"
+            >
+              <v-icon icon="mdi-link-variant" size="14" class="mr-1"></v-icon>
+              被引用 {{ data.node.nodeReferenceCount }} 次
+            </v-chip>
           </div>
           <div class="d-flex align-center">
             <v-btn
@@ -159,7 +178,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
             rounded="lg"
             class="px-3 me-2"
             density="comfortable"
-            @click="showAddCatalogDialog = true"
+            @click="nodeSelectorDialog?.open()"
           >
             <v-icon
               icon="mdi-format-list-group-plus"
@@ -254,9 +273,32 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
             (!data.fixedPostings || data.fixedPostings.length === 0) &&
             (!data.otherPostings || data.otherPostings.length === 0)
           "
-          class="text-body-2 text-grey py-8 text-center"
+          class="text-center pa-12"
         >
-          - 暂无文章 -
+          <v-icon icon="mdi-text-box-outline" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
+          <h4 class="text-h6 font-weight-medium text-grey-darken-2 mb-2">暂无文章</h4>
+          <p class="text-body-2 text-grey-darken-1 mb-4">还没有人为这个节点创建文章</p>
+          <div class="d-flex justify-center">
+            <v-btn
+              color="primary"
+              variant="tonal"
+              rounded="lg"
+              prepend-icon="mdi-format-list-group-plus"
+              class="mr-4"
+              @click="nodeSelectorDialog?.open()"
+            >
+              添加目录
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="tonal"
+              rounded="lg"
+              prepend-icon="mdi-note-plus-outline"
+              @click="showAddArticleDialog = true"
+            >
+              添加文章
+            </v-btn>
+          </div>
         </div>
       </div>
     </template>
@@ -299,11 +341,12 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
       </div>
     </template>
 
-    <!-- 添加目录对话框 -->
-    <AddCatalogDialog
-      v-model="showAddCatalogDialog"
+    <!-- 节点选择器对话框 -->
+    <NodeSelectorDialog
+      ref="nodeSelectorDialog"
+      :course-id="data.course?.id"
       :node-id="currNodeId"
-      :path-text="pathText"
+      @confirm="handleNodeConfirm"
       @load-data="handleLoadData"
     />
 

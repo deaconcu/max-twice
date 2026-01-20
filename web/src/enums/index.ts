@@ -43,6 +43,7 @@ export type UserProgressState = (typeof UserProgressState)[keyof typeof UserProg
  * 统一用于 Post、Comment、Node、MemoryCardDeck、MemoryCard
  */
 export const ContentState = {
+  DRAFT: 0, // 草稿
   SUBMITTED: 1, // 待审核
   PUBLISHED: 2, // 已批准
   REJECTED: 3, // 审核不通过（可重新提交）

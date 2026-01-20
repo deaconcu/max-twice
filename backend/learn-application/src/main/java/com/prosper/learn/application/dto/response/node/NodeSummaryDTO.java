@@ -17,4 +17,6 @@ public class NodeSummaryDTO {
     private String description;
 
     private Integer commentCount;
+
+    private Integer nodeReferenceCount;
 }

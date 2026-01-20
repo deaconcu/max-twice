@@ -198,7 +198,7 @@ public class Enums {
     }
 
     public enum PostType implements ValueEnum<Integer> {
-        contents(1),
+        index(1),
         article(2);
 
         private final int value;
@@ -222,7 +222,7 @@ public class Enums {
          * @return 对应的 PostType，默认返回 article
          */
         public static PostType fromString(String type) {
-            return "content".equals(type) ? contents : article;
+            return "content".equals(type) ? index : article;
         }
     }
 

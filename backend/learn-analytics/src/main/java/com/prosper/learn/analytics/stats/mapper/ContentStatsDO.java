@@ -94,6 +94,12 @@ public class ContentStatsDO {
     private Integer indexCount;
 
     /**
+     * 节点被引用次数
+     * 用于 Node 统计被多少个 contents 类型的 post 引用
+     */
+    private Integer nodeReferenceCount;
+
+    /**
      * 路线图数量
      * 用于 Profession 统计其下的路线图数量
      */

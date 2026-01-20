@@ -27,33 +27,8 @@
           </div>
         </div>
 
-        <!-- 右侧：搜索栏和操作按钮 -->
+        <!-- 右侧：操作按钮 -->
         <div class="d-flex align-center ga-3 actions-wrapper pb-1">
-          <v-text-field
-            v-model="searchText"
-            placeholder="搜索课程..."
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            class="search-input"
-            color="primary"
-            @keyup.enter="handleSearch"
-          >
-            <template #prepend-inner>
-              <v-icon icon="mdi-magnify" color="grey-darken-1" size="20" />
-            </template>
-            <template #append-inner>
-              <v-btn
-                icon="mdi-arrow-right"
-                color="grey-darken-1"
-                variant="text"
-                size="small"
-                density="comfortable"
-                @click="handleSearch"
-              ></v-btn>
-            </template>
-          </v-text-field>
           <!-- 创建课程按钮（仅在右侧栏隐藏时显示） -->
           <v-btn
             color="primary"

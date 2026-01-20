@@ -46,6 +46,12 @@
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
         </dependency>
+        <!-- Milvus Java SDK -->
+        <dependency>
+            <groupId>io.milvus</groupId>
+            <artifactId>milvus-sdk-java</artifactId>
+            <version>2.6.11</version>
+        </dependency>
         <!--
             <dependency>
                 <groupId>com.sun.jersey.contribs</groupId>

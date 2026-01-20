@@ -91,7 +91,7 @@ public class AutoAuthorGenerationService {
         if (postId != null) {
             // 检查创建的帖子类型，如果是目录类型则将目录节点放入AI生成队列
             PostDO createdPost = postDataService.getById(postId);
-            if (createdPost != null && createdPost.getType() == Enums.PostType.contents.value()) {
+            if (createdPost != null && createdPost.getType() == Enums.PostType.index.value()) {
                 // post.content 存储的是节点ID列表，以逗号分隔
                 if (createdPost.getContent() != null && !createdPost.getContent().isEmpty()) {
                     String[] nodeIds = createdPost.getContent().split(",");
@@ -280,7 +280,7 @@ public class AutoAuthorGenerationService {
             if (content.startsWith("[A]")) {
                 postType = Enums.PostType.article;
             } else if (content.startsWith("[C]")) {
-                postType = Enums.PostType.contents;
+                postType = Enums.PostType.index;
             } else {
                 throw new RuntimeException("unknown content prefix, must start with [A] or [C]");
             }

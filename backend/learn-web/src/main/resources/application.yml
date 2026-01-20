@@ -254,6 +254,37 @@ app:
   data-service:
     # 批量更新最大数量限制
     max-batch-update-size: 50
+  # OpenAI Embedding配置
+  openai:
+    api-key: ${AI_API_KEY:xxxxxxx}
+    api-url: https://openrouter.ai/api/v1/embeddings
+    model: openai/text-embedding-3-small
+    timeout-ms: 30000
+    max-retries: 3
+  # Milvus向量数据库配置
+  milvus:
+    host: ${MILVUS_HOST:localhost}
+    port: ${MILVUS_PORT:19530}
+    collection-name: node_embeddings
+    vector-dim: 1536
+    timeout-ms: 30000
+  # AI服务配置
+
+openrouter:
+  # API密钥（通过环境变量设置）
+  api-key: ${AI_API_KEY:}
+  # API服务地址
+  api-url: https://openrouter.ai/api/v1/chat/completions
+  # 默认使用的AI模型
+  default-model: gpt-3.5-turbo
+  # 温度参数（控制回复随机性，0-2之间）
+  temperature: 0.7
+  # 系统角色提示词
+  system-prompt: "你是一个老师，能把复杂的问题用生动的方式讲的很容易让人理解"
+  # 请求超时时间（毫秒）
+  request-timeout-ms: 30000
+  # 最大重试次数
+  max-retries: 3
 
 # 图片上传配置
 upload:
@@ -299,24 +330,10 @@ cloudflare:
     # 公开域名
     public-domain: ${CLOUDFLARE_R2_PUBLIC_DOMAIN:https://images.maxtwice.com}
 
-  # AI服务配置
-  ai:
-    # API密钥（通过环境变量设置）
-    api-key: ${AI_API_KEY:}
-    # API服务地址
-    api-url: https://openrouter.ai/api/v1/chat/completions
-    # 默认使用的AI模型
-    default-model: gpt-3.5-turbo
-    # 温度参数（控制回复随机性，0-2之间）
-    temperature: 0.7
-    # 系统角色提示词
-    system-prompt: "你是一个老师，能把复杂的问题用生动的方式讲的很容易让人理解"
-    # 请求超时时间（毫秒）
-    request-timeout-ms: 30000
-    # 最大重试次数
-    max-retries: 3
+
 
   # SRS复习算法配置
+  # TODO 位置不对！
   srs:
     algorithm:
       # 学习步骤(分钟): 新卡片的学习步骤，默认[10, 60]表示第一步10分钟后，第二步60分钟后

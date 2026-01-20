@@ -111,4 +111,15 @@ public interface PostMapper {
 
     @Update("UPDATE post SET deleted_at = NOW() WHERE id = #{id} AND deleted_at IS NULL")
     int softDelete(long id);
+
+    /**
+     * 根据类型和状态查询帖子列表（分页）
+     * 用于重新计算统计等批量操作
+     */
+    @Select({"<script>",
+            "SELECT * FROM post WHERE type = #{type} AND state = #{state} AND deleted_at IS NULL",
+            "<if test='lastId != null and lastId > 0'> AND id &gt; #{lastId}</if>",
+            "ORDER BY id ASC LIMIT #{limit}",
+            "</script>"})
+    List<PostDO> getPostsByTypeAndState(@Param("type") Integer type, @Param("state") Byte state, @Param("lastId") Long lastId, @Param("limit") int limit);
 }

@@ -3,6 +3,8 @@ package com.prosper.learn.shared.domain.event.content.lifecycle;
 import static com.prosper.learn.shared.domain.Enums.ContentType;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * 内容封禁事件
  * 当内容被永久封禁时触发（SUBMITTED/PUBLISHED → BANNED）
@@ -29,8 +31,11 @@ public class ContentBannedEvent {
     /** 节点ID（post 类型使用）*/
     private Long nodeId;
 
-    /** 帖子类型（post 类型使用，1=ARTICLE, 2=INDEX）*/
+    /** 帖子类型（post 类型使用，1=CONTENTS, 2=ARTICLE）*/
     private Integer postType;
+
+    /** 目录型帖子引用的节点ID列表（post 类型且 postType=CONTENTS 时使用）*/
+    private List<Long> referencedNodeIds;
 
     /** 职业ID（roadmap 类型使用）*/
     private Long professionId;
@@ -70,6 +75,20 @@ public class ContentBannedEvent {
         event.nodeName = nodeName;
         event.courseName = courseName;
         event.reason = reason;
+        return event;
+    }
+
+    /** Index 类型 Post 构造函数（目录型帖子，只包含必要字段）*/
+    public static ContentBannedEvent forIndexPost(Long creatorId, Long postId, Byte previousState, Long nodeId, String reason, List<Long> referencedNodeIds) {
+        ContentBannedEvent event = new ContentBannedEvent();
+        event.creatorId = creatorId;
+        event.contentId = postId;
+        event.contentType = ContentType.post;
+        event.previousState = previousState;
+        event.nodeId = nodeId;
+        event.postType = 1; // PostType.CONTENTS
+        event.reason = reason;
+        event.referencedNodeIds = referencedNodeIds;
         return event;
     }
 

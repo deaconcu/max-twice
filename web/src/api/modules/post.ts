@@ -1,6 +1,7 @@
 import apiClient from '../client'
 import type { ApiResponse, KeysetPageResponse } from '@/types/api'
 import type { Post } from '@/types/post'
+import type { Node } from '@/types/node'
 
 /**
  * 帖子管理相关 API
@@ -74,5 +75,35 @@ export const postApi = {
     action: number
   }): Promise<ApiResponse<void>> {
     return apiClient.post('/v1/contents', data)
+  },
+
+  /**
+   * 搜索相似节点
+   */
+  searchSimilarNodes(
+    query: string,
+    topK: number = 10,
+    threshold: number = 0.0
+  ): Promise<ApiResponse<Node[]>> {
+    return apiClient.get('/v1/nodes/search', {
+      params: {
+        query,
+        topK,
+        threshold,
+      },
+    })
+  },
+
+  /**
+   * 初始化节点 Embedding（管理员）
+   */
+  initNodeEmbeddings(
+    batchSize: number = 20
+  ): Promise<ApiResponse<{ successCount: number; failCount: number; totalProcessed: number }>> {
+    return apiClient.post('/v1/admin/contents/nodes/init-embeddings', null, {
+      params: {
+        batchSize,
+      },
+    })
   },
 }

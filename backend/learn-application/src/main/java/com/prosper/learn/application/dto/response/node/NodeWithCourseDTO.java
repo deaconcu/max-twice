@@ -14,4 +14,10 @@ import lombok.EqualsAndHashCode;
 public class NodeWithCourseDTO extends NodeDetailDTO {
 
     private CourseSummaryDTO course;
+
+    /**
+     * 相似度分数（仅在搜索时返回）
+     * 范围：0.0-1.0，1.0表示完全匹配
+     */
+    private Float similarityScore;
 }

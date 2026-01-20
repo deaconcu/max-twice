@@ -31,7 +31,7 @@ import { HEADER_HEIGHT, BOTTOM_NAV_HEIGHT, SIDEBAR_WIDTH } from '@/constants/lay
   );
   margin-top: v-bind('`${HEADER_HEIGHT}px`');
   min-height: v-bind('`calc(100vh - ${HEADER_HEIGHT}px)`');
-  padding: 20px 32px;
+  padding: 0 32px 20px 32px;
   max-width: 1550px;
   width: v-bind(
     '`calc(100vw - ${SIDEBAR_WIDTH}px - max(0px, (100vw - ${SIDEBAR_WIDTH}px - 1550px) / 2))`'

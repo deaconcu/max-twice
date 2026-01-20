@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import draggable from 'vuedraggable'
+import { postApi } from '@/api'
+import { useMutation } from '@/composables/useMutation'
+import { PostType } from '@/enums'
 
 interface Props {
   nodeId?: number
@@ -19,8 +22,10 @@ type Emits = (e: 'load-data', data: any[]) => void
 
 const route = useRoute()
 const dialog = defineModel<boolean>({ default: false })
+const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
 interface CatalogItem {
+  id?: number // 可选的节点ID，用于选择已有节点
   name: string
   description: string
 }
@@ -29,7 +34,6 @@ const createTab = ref<string>('one')
 const catalogName = ref('')
 const catalogDescription = ref('')
 const catalogItems = ref<CatalogItem[]>([])
-const submitting = ref(false)
 const aiGenerating = ref(false)
 
 // 监听路由变化，清空数据
@@ -72,27 +76,63 @@ const generateWithAI = () => {
   }, 1000)
 }
 
+// 使用 useMutation 提交目录
+const { execute: executeSubmit, loading: submitting } = useMutation(
+  async () => {
+    // 构建 JSON 格式
+    // 如果有 id，格式：{"id": 123, "name": "节点名", "description": "描述"}
+    // 如果没有 id，格式：{"name": "节点名", "description": "描述"}
+    const jsonContent = catalogItems.value.map((item) => {
+      const obj: any = {
+        name: item.name,
+        description: item.description,
+      }
+      if (item.id) {
+        obj.id = item.id
+      }
+      return obj
+    })
+
+    // 调用创建 contents 类型帖子的接口
+    const response = await postApi.createPost({
+      nodeId: props.nodeId!,
+      type: PostType.CONTENTS,
+      content: JSON.stringify(jsonContent),
+    })
+
+    return response
+  },
+  {
+    onSuccess: () => {
+      showSnackbar?.('目录添加成功', 'success')
+      dialog.value = false
+      emit('load-data', [])
+
+      // 清空数据
+      catalogItems.value = []
+      catalogName.value = ''
+      catalogDescription.value = ''
+    },
+    onError: (error) => {
+      console.error('添加目录失败:', error)
+      showSnackbar?.('添加目录失败', 'error')
+    },
+  }
+)
+
 // 提交目录
-const submitCatalog = () => {
+const submitCatalog = async () => {
   if (catalogItems.value.length < 2) {
-    alert('目录至少需要2个子目录')
+    showSnackbar?.('目录至少需要2个子目录', 'warning')
     return
   }
 
-  submitting.value = true
+  if (!props.nodeId) {
+    showSnackbar?.('缺少节点ID', 'error')
+    return
+  }
 
-  // Mock 提交
-  setTimeout(() => {
-    console.log('提交目录:', catalogItems.value)
-    submitting.value = false
-    dialog.value = false
-    emit('load-data', [])
-
-    // 清空数据
-    catalogItems.value = []
-    catalogName.value = ''
-    catalogDescription.value = ''
-  }, 500)
+  await executeSubmit()
 }
 </script>
 

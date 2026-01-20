@@ -16,10 +16,10 @@ public interface ContentStatsMapper {
      */
     @Insert("INSERT INTO content_stats (content_type, content_id, view_count, twice_count, like_count, " +
             "comment_count, share_count, bookmark_count, completed_user_count, learner_count, " +
-            "post_count, article_count, index_count, roadmap_count, card_deck_count, reject_count) " +
+            "post_count, article_count, index_count, roadmap_count, card_deck_count, node_reference_count, reject_count) " +
             "VALUES (#{contentType}, #{contentId}, #{viewCount}, #{twiceCount}, #{likeCount}, " +
             "#{commentCount}, #{shareCount}, #{bookmarkCount}, #{completedUserCount}, #{learnerCount}, " +
-            "#{postCount}, #{articleCount}, #{indexCount}, #{roadmapCount}, #{cardDeckCount}, #{rejectCount})")
+            "#{postCount}, #{articleCount}, #{indexCount}, #{roadmapCount}, #{cardDeckCount}, #{nodeReferenceCount}, #{rejectCount})")
     int insert(ContentStatsDO contentStats);
 
     /**
@@ -43,6 +43,39 @@ public interface ContentStatsMapper {
                        @Param("contentId") long contentId,
                        @Param("field") String field,
                        @Param("delta") int delta);
+
+    /**
+     * 批量原子增量更新指定字段
+     * @param contentType 内容类型
+     * @param contentIds 内容ID列表
+     * @param field 字段名（如：node_reference_count等）
+     * @param delta 增量值（可正可负）
+     */
+    @Update("<script>" +
+            "UPDATE content_stats SET ${field} = GREATEST(0, ${field} + #{delta}), updated_at = NOW() " +
+            "WHERE content_type = #{contentType} AND content_id IN " +
+            "<foreach collection='contentIds' item='contentId' open='(' close=')' separator=','>" +
+            "#{contentId}" +
+            "</foreach>" +
+            "</script>")
+    int batchAtomicIncrement(@Param("contentType") int contentType,
+                            @Param("contentIds") List<Long> contentIds,
+                            @Param("field") String field,
+                            @Param("delta") int delta);
+
+    /**
+     * 直接设置指定字段的值（用于重新计算统计）
+     * @param contentType 内容类型
+     * @param contentId 内容ID
+     * @param field 字段名
+     * @param value 新值
+     */
+    @Update("UPDATE content_stats SET ${field} = #{value}, updated_at = NOW() " +
+            "WHERE content_type = #{contentType} AND content_id = #{contentId}")
+    int setFieldValue(@Param("contentType") int contentType,
+                     @Param("contentId") long contentId,
+                     @Param("field") String field,
+                     @Param("value") int value);
 
     /**
      * 增量更新多个统计字段并更新同步日期

@@ -10,6 +10,7 @@ import com.prosper.learn.application.service.NodeService;
 import com.prosper.learn.application.service.PostService;
 import com.prosper.learn.application.service.ProfessionService;
 import com.prosper.learn.application.service.RoadmapService;
+import com.prosper.learn.application.service.StatsService;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.v1.annotation.CurrentUser;
@@ -53,6 +54,7 @@ public class AdminContentsController {
     private final CourseService courseService;
     private final ProfessionService professionService;
     private final NodeService nodeService;
+    private final StatsService statsService;
 
     private static final int DEFAULT_PAGE_SIZE = 20;
 
@@ -493,5 +495,48 @@ public class AdminContentsController {
             case "delete" -> professionService.delete(id, currentUser);
             default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的操作类型: " + action);
         }
+    }
+
+    // ==================== 节点Embedding初始化 ====================
+
+    /**
+     * 批量初始化现有节点的embedding
+     * POST /api/v1/admin/contents/nodes/init-embeddings?batchSize=20
+     *
+     * @param batchSize 每批处理数量（默认20）
+     * @return 处理结果统计
+     */
+    @PostMapping("/nodes/init-embeddings")
+    @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.HOURS, limitType = LimitType.GLOBAL)
+    public ApiResponse<?> initializeNodeEmbeddings(
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int batchSize) {
+
+        log.info("Starting batch initialization of node embeddings, batchSize: {}", batchSize);
+
+        var result = nodeService.initializeNodeEmbeddings(batchSize);
+
+        log.info("Node embeddings initialization completed: {}", result);
+
+        return ApiResponse.success(result);
+    }
+
+    // ==================== 节点引用数重新计算 ====================
+
+    /**
+     * 重新计算所有节点的引用数统计
+     * POST /api/v1/admin/contents/nodes/recalculate-references
+     *
+     * @return 处理结果统计
+     */
+    @PostMapping("/nodes/recalculate-references")
+    @RateLimit(capacity = 5, refillPeriod = 1, refillUnit = TimeUnit.HOURS, limitType = LimitType.GLOBAL)
+    public ApiResponse<?> recalculateNodeReferences() {
+        log.info("开始重新计算节点引用数统计");
+
+        var result = statsService.recalculateNodeReferenceCount();
+
+        log.info("节点引用数统计重新计算完成: {}", result);
+
+        return ApiResponse.success(result);
     }
 }

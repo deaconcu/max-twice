@@ -1,7 +1,7 @@
 package com.prosper.learn.web.v1.controller;
 
 import com.prosper.learn.application.service.PlatformStatsService;
-import com.prosper.learn.application.service.StatService;
+import com.prosper.learn.application.service.StatsService;
 import com.prosper.learn.analytics.stats.service.RedisStatsDomainService;
 import com.prosper.learn.analytics.stats.service.UserStatsDomainService;
 import com.prosper.learn.analytics.stats.scheduler.StatsSyncScheduler;
@@ -41,7 +41,7 @@ public class StatsController {
 
     private final UserStatsDomainService userStatsDomainService;
     private final RedisStatsDomainService redisStatsDomainService;
-    private final StatService statService;
+    private final StatsService statsService;
     private final StatsSyncScheduler statsSyncScheduler;
     private final PlatformStatsService platformStatsService;
 
@@ -55,7 +55,7 @@ public class StatsController {
             @RequestBody @Valid RecordViewRequest request,
             @CurrentUser UserDO currentUser) {
 
-        statService.recordPostView(request.getArticleId(), currentUser.getId());
+        statsService.recordPostView(request.getArticleId(), currentUser.getId());
         return ApiResponse.success();
     }
 

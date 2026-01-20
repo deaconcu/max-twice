@@ -1,3 +1,4 @@
+
 package com.prosper.learn.content.post;
 
 import com.prosper.learn.shared.dataservice.AbstractDataService;
@@ -246,5 +247,12 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
     @CacheEvict(value = "posts", key = "#id")
     public int softDelete(long id) {
         return postMapper.softDelete(id);
+    }
+
+    /**
+     * 根据类型和状态查询帖子列表（分页）
+     */
+    public List<PostDO> getPostsByTypeAndState(Integer type, Byte state, Long lastId, int limit) {
+        return postMapper.getPostsByTypeAndState(type, state, lastId, limit);
     }
 }

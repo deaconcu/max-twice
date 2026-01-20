@@ -673,7 +673,6 @@ onUnmounted(() => {
 
 <style scoped>
 .read-page {
-  min-height: 100vh;
   background-color: #ffffff;
 }
 
@@ -683,7 +682,7 @@ onUnmounted(() => {
   top: 56px;
   background-color: white;
   z-index: 999;
-  padding-bottom: 8px;
+  padding-bottom: 0px;
   max-width: 1470px;
   margin: 0 auto;
 }
@@ -702,15 +701,16 @@ onUnmounted(() => {
 .toc-sidebar {
   flex: 0 1 360px;
   max-width: 360px;
-  padding: 24px 0px 24px 0;
+  padding: 6px 0px 24px 0;
   position: relative;
   margin-right: 20px;
+  min-height: calc(100vh - 125px);
 }
 
 .toc-sidebar::after {
   content: '';
   position: absolute;
-  top: 24px;
+  top: 6px;
   right: 0;
   bottom: 24px;
   width: 1px;
@@ -843,12 +843,12 @@ onUnmounted(() => {
 .center-content {
   flex: 1 1 750px;
   max-width: 750px;
-  padding: 24px 26px 40px 26px;
+  padding: 6px 26px 40px 26px;
 }
 
 @media (max-width: 750px) {
   .center-content {
-    padding: 16px 20px 32px 20px;
+    padding: 6px 20px 32px 20px;
   }
 }
 
@@ -856,7 +856,7 @@ onUnmounted(() => {
 .right-sidebar {
   flex: 0 1 360px;
   max-width: 360px;
-  padding: 24px 0 24px 24px;
+  padding: 6px 0 24px 24px;
 }
 
 .sidebar-sticky {

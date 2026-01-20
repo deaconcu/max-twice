@@ -216,6 +216,7 @@
           :article="editingArticle"
           :loading="updateLoading"
           @save="handleSaveArticle"
+          @publish="handlePublishArticle"
           @cancel="handleCancelEdit"
         />
 
@@ -238,7 +239,7 @@ import { useRouter } from 'vue-router'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
 import { userApi, postApi } from '@/api'
-import { PostType } from '@/enums'
+import { PostType, ContentState } from '@/enums'
 
 interface Props {
   userId?: number | null
@@ -412,6 +413,11 @@ const editArticle = (article: any) => {
 // 处理保存文章
 const handleSaveArticle = async (data: { id: number; content: string }) => {
   await updatePost(data)
+}
+
+// 处理发布文章（将草稿发布）
+const handlePublishArticle = async (data: { id: number; content: string }) => {
+  await updatePost({ ...data, state: ContentState.SUBMITTED })
 }
 
 // 取消编辑

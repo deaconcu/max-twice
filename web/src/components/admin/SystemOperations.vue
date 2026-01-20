@@ -273,6 +273,24 @@ const { execute: clearQueueExecute, loading: clearingQueue } = useMutation(
   }
 )
 
+// 重新计算节点引用数
+const recalculateResult = ref<{ processedPosts: number; updatedNodes: number } | null>(null)
+
+const { execute: recalculateReferences, loading: recalculating } = useMutation(
+  adminApi.recalculateNodeReferences,
+  {
+    showToast: false,
+    onSuccess: (result) => {
+      recalculateResult.value = result
+      showSnackbar?.('节点引用数统计已更新', 'success')
+      addOperationToHistory('节点引用数统计', `处理了${result.processedPosts}个目录，更新了${result.updatedNodes}个节点`, true)
+    },
+    onError: (error) => {
+      addOperationToHistory('节点引用数统计', `重新计算失败: ${error.message}`, false)
+    },
+  }
+)
+
 // 初始化时更新只读模式状态
 setTimeout(() => {
   updateReadonlyMode()
@@ -574,6 +592,62 @@ setTimeout(() => {
           <div class="font-weight-bold">功能开发中</div>
           <div class="text-body-2 mt-1">缓存管理功能正在开发中，敬请期待...</div>
         </v-alert>
+      </div>
+    </v-card>
+
+    <!-- 节点引用数统计 -->
+    <v-card flat class="border rounded-lg pa-4 mb-4">
+      <div class="d-flex align-center mb-4">
+        <v-icon icon="mdi-chart-line" color="teal-darken-1" class="mr-2"></v-icon>
+        <h4 class="text-h6 font-weight-bold text-grey-darken-3">节点引用数统计</h4>
+      </div>
+
+      <div class="mb-4">
+        <p class="text-body-2 text-grey-darken-1 mb-4">
+          重新计算所有节点的引用数统计，统计每个节点被多少个目录型帖子引用。适用于数据修复或初始化场景。
+        </p>
+
+        <v-card flat class="pa-4 bg-teal-lighten-5" rounded="lg" elevation="0">
+          <div class="d-flex align-center justify-space-between">
+            <div>
+              <div class="d-flex align-center mb-2">
+                <v-icon icon="mdi-calculator" color="teal-darken-2" size="24" class="mr-2"></v-icon>
+                <h5 class="text-subtitle-1 font-weight-bold text-teal-darken-2">重新计算引用数</h5>
+              </div>
+              <p class="text-body-2 text-grey-darken-1">
+                遍历所有已发布的目录型帖子，统计并更新每个节点的引用次数
+              </p>
+            </div>
+            <v-btn
+              variant="flat"
+              color="teal-darken-1"
+              rounded="lg"
+              size="small"
+              :loading="recalculating"
+              :disabled="recalculating"
+              @click="recalculateReferences"
+            >
+              <v-icon icon="mdi-refresh" size="16" class="mr-2"></v-icon>
+              重新计算
+            </v-btn>
+          </div>
+
+          <!-- 计算结果显示 -->
+          <v-alert
+            v-if="recalculateResult"
+            type="success"
+            variant="tonal"
+            class="mt-4"
+            rounded="lg"
+            closable
+            @click:close="recalculateResult = null"
+          >
+            <div class="font-weight-bold">计算完成</div>
+            <div class="text-body-2 mt-1">
+              处理了 {{ recalculateResult.processedPosts }} 个目录型帖子，更新了 {{ recalculateResult.updatedNodes }} 个节点的引用数统计
+            </div>
+          </v-alert>
+        </v-card>
       </div>
     </v-card>
 

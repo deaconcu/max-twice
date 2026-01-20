@@ -4,9 +4,12 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.dto.request.CreatePostRequest;
 import com.prosper.learn.application.dto.request.UpdatePostRequest;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
+import com.prosper.learn.application.dto.response.node.NodeSearchResultDTO;
+import com.prosper.learn.application.dto.response.node.NodeWithCourseDTO;
 import com.prosper.learn.application.dto.response.post.PostFullDTO;
 import com.prosper.learn.application.dto.response.post.PostSummaryDTO;
 import com.prosper.learn.application.dto.response.post.PostWithVoteDTO;
+import com.prosper.learn.application.service.NodeService;
 import com.prosper.learn.application.service.PostService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.user.profile.UserDO;
@@ -36,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 public class PostsController {
 
     private final PostService postService;
+    private final NodeService nodeService;
 
     /**
      * 批量获取帖子
@@ -171,5 +175,21 @@ public class PostsController {
         }
         KeysetPageResponse<PostFullDTO> result = postService.getUserPostsWithPagination(currentUser.getId(), lastId, postType, null);
         return ApiResponse.success(result);
+    }
+
+    /**
+     * 搜索相似节点
+     * GET /api/v1/nodes/search?query=Java基础&topK=10&threshold=0.0
+     */
+    @GetMapping("/nodes/search")
+    @SaCheckLogin
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<List<NodeSearchResultDTO>> searchSimilarNodes(
+            @RequestParam @NotBlank(message = "查询文本不能为空") String query,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(50) int topK,
+            @RequestParam(defaultValue = "0.2") @DecimalMin("0.0") @DecimalMax("1.0") double threshold) {
+
+        List<NodeSearchResultDTO> nodes = nodeService.searchSimilarNodes(query, topK, threshold);
+        return ApiResponse.success(nodes);
     }
 }

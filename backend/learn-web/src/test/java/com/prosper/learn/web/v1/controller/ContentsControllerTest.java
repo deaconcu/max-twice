@@ -129,7 +129,7 @@ public class ContentsControllerTest extends BaseControllerTest {
         post.setContent(content);
         post.setNodeId(nodeId);
         post.setCreatorId(creatorId);
-        post.setType(PostType.contents.value());
+        post.setType(PostType.index.value());
         post.setState(ContentState.PUBLISHED.value());
         post.setScore(0.0);
         postDataService.insert(post);

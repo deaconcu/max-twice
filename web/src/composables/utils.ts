@@ -78,14 +78,25 @@ export async function handleApiCall<T>(
       }
       return response.data
     } else {
+      console.log('[handleApiCall] 非200响应:', {
+        code: response.code,
+        message: response.message,
+        hasHandler: !!globalConfig.statusHandlers[response.code],
+        allHandlers: Object.keys(globalConfig.statusHandlers),
+      })
+
       // 检查是否有自定义状态码处理器
       const handler = globalConfig.statusHandlers[response.code]
       if (handler) {
+        console.log('[handleApiCall] 找到处理器，准备执行:', response.code)
         const handled = handler(response)
+        console.log('[handleApiCall] 处理器执行完毕，返回:', handled)
         if (handled) {
           // 如果处理器返回 true，表示已完全处理，不再继续
           return null
         }
+      } else {
+        console.log('[handleApiCall] 未找到处理器，使用默认错误处理')
       }
 
       // 默认错误处理
