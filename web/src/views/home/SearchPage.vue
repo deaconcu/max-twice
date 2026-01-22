@@ -13,7 +13,7 @@ const loadMoreTrigger = ref<HTMLElement | null>(null)
 
 // 搜索关键词
 const searchQuery = ref<string>((route.query.q as string) || '')
-const activeTab = ref<string>('users')
+const activeTab = ref<string>('professions')
 
 // 搜索结果
 const courses = ref<SearchResultItem[]>([])
@@ -91,6 +91,19 @@ const performSearch = async () => {
     console.error('搜索失败:', error)
   } finally {
     searching.value = false
+    // 自动切换到第一个有结果的标签
+    const tabs = ['professions', 'courses', 'nodes', 'users']
+    for (const tab of tabs) {
+      if (
+        (tab === 'professions' && professions.value.length > 0) ||
+        (tab === 'courses' && courses.value.length > 0) ||
+        (tab === 'nodes' && nodes.value.length > 0) ||
+        (tab === 'users' && users.value.length > 0)
+      ) {
+        activeTab.value = tab
+        break
+      }
+    }
     // 搜索完成后重新设置滚动监听
     cleanupInfiniteScroll()
     setTimeout(setupInfiniteScroll, 100)
@@ -105,6 +118,10 @@ const loadMoreResults = async () => {
   let offset = 0
 
   switch (activeTab.value) {
+    case 'professions':
+      hasMore = hasMoreProfessions.value
+      offset = professionsOffset.value
+      break
     case 'courses':
       hasMore = hasMoreCourses.value
       offset = coursesOffset.value
@@ -117,10 +134,6 @@ const loadMoreResults = async () => {
       hasMore = hasMoreUsers.value
       offset = usersOffset.value
       break
-    case 'professions':
-      hasMore = hasMoreProfessions.value
-      offset = professionsOffset.value
-      break
   }
 
   if (!hasMore) return
@@ -130,6 +143,14 @@ const loadMoreResults = async () => {
     let response
 
     switch (activeTab.value) {
+      case 'professions':
+        response = await searchApi.searchProfessions(searchQuery.value, 20, professionsOffset.value)
+        if (response.code === 200 && response.data) {
+          professions.value = [...professions.value, ...response.data]
+          professionsOffset.value += response.data.length
+          hasMoreProfessions.value = response.data.length >= 20
+        }
+        break
       case 'courses':
         response = await searchApi.searchCourses(searchQuery.value, 20, coursesOffset.value)
         if (response.code === 200 && response.data) {
@@ -152,14 +173,6 @@ const loadMoreResults = async () => {
           users.value = [...users.value, ...response.data]
           usersOffset.value += response.data.length
           hasMoreUsers.value = response.data.length >= 20
-        }
-        break
-      case 'professions':
-        response = await searchApi.searchProfessions(searchQuery.value, 20, professionsOffset.value)
-        if (response.code === 200 && response.data) {
-          professions.value = [...professions.value, ...response.data]
-          professionsOffset.value += response.data.length
-          hasMoreProfessions.value = response.data.length >= 20
         }
         break
     }
@@ -217,14 +230,14 @@ const hasAnyMore = computed(() => {
 // 当前显示的结果
 const currentResults = computed(() => {
   switch (activeTab.value) {
+    case 'professions':
+      return professions.value
     case 'courses':
       return courses.value
     case 'nodes':
       return nodes.value
     case 'users':
       return users.value
-    case 'professions':
-      return professions.value
     default:
       return []
   }
@@ -233,6 +246,9 @@ const currentResults = computed(() => {
 // 导航到详情
 const navigateTo = (type: string, id: number) => {
   switch (type) {
+    case 'professions':
+      router.push(`/career/${id}`)
+      break
     case 'courses':
       router.push(`/course/${id}`)
       break
@@ -241,9 +257,6 @@ const navigateTo = (type: string, id: number) => {
       break
     case 'users':
       router.push(`/profile/${id}`)
-      break
-    case 'professions':
-      router.push(`/career/${id}`)
       break
   }
 }
@@ -260,10 +273,10 @@ const setupInfiniteScroll = () => {
       const entry = entries[0]
       if (entry?.isIntersecting && !loadingMore.value) {
         const hasMore =
+          (activeTab.value === 'professions' && hasMoreProfessions.value) ||
           (activeTab.value === 'courses' && hasMoreCourses.value) ||
           (activeTab.value === 'nodes' && hasMoreNodes.value) ||
-          (activeTab.value === 'users' && hasMoreUsers.value) ||
-          (activeTab.value === 'professions' && hasMoreProfessions.value)
+          (activeTab.value === 'users' && hasMoreUsers.value)
 
         if (hasMore) {
           loadMoreResults()
@@ -310,48 +323,51 @@ watch(activeTab, () => {
   <DefaultLayout>
     <v-container class="search-page">
       <!-- 搜索框 -->
-      <v-card flat class="mb-6">
-        <v-card-text>
-          <v-text-field
-            v-model="searchQuery"
-            variant="outlined"
-            placeholder="搜索课程、节点、用户、职业..."
-            prepend-inner-icon="mdi-magnify"
-            hide-details
-            @keyup.enter="handleSearch"
-          >
-            <template #append>
-              <v-btn color="primary" variant="flat" @click="handleSearch"> 搜索 </v-btn>
-            </template>
-          </v-text-field>
-        </v-card-text>
-      </v-card>
+      <div class="search-input-wrapper mb-8">
+        <v-text-field
+          v-model="searchQuery"
+          variant="outlined"
+          placeholder="搜索课程、节点、用户、职业..."
+          prepend-inner-icon="mdi-magnify"
+          hide-details
+          density="comfortable"
+          @keyup.enter="handleSearch"
+        >
+          <template #append-inner>
+            <v-btn
+              color="primary"
+              variant="flat"
+              size="small"
+              @click="handleSearch"
+            >
+              搜索
+            </v-btn>
+          </template>
+        </v-text-field>
+      </div>
 
       <!-- 加载状态 -->
-      <div v-if="searching" class="text-center py-8">
+      <div v-if="searching" class="text-center py-12">
         <v-progress-circular indeterminate color="primary"></v-progress-circular>
-        <div class="mt-4 text-grey">搜索中...</div>
+        <div class="mt-4 text-body-2 text-grey">搜索中...</div>
       </div>
 
       <!-- 无结果 -->
-      <v-card v-else-if="!searching && searchQuery && totalResults === 0" flat class="text-center py-8">
-        <v-icon icon="mdi-magnify" size="64" color="grey-lighten-1"></v-icon>
-        <div class="text-h6 mt-4 text-grey">未找到相关结果</div>
+      <div v-else-if="!searching && searchQuery && totalResults === 0" class="text-center py-12">
+        <v-icon icon="mdi-magnify" size="80" color="grey-lighten-2"></v-icon>
+        <div class="text-h6 mt-4 text-grey-darken-1">未找到相关结果</div>
         <div class="text-body-2 text-grey mt-2">试试其他关键词</div>
-      </v-card>
+      </div>
 
       <!-- 搜索结果 -->
       <div v-else-if="!searching && searchQuery && totalResults > 0">
         <!-- 结果统计 -->
-        <div class="text-body-2 text-grey mb-4">
+        <div class="text-body-2 text-grey-darken-1 mb-4">
           找到约 {{ totalResults }}{{ hasAnyMore ? '+' : '' }} 条结果
         </div>
 
         <!-- 标签页 -->
-        <v-tabs v-model="activeTab" class="mb-4">
-          <v-tab value="users" :disabled="users.length === 0">
-            用户 ({{ users.length }}{{ hasMoreUsers ? '+' : '' }})
-          </v-tab>
+        <v-tabs v-model="activeTab" color="primary" class="mb-6">
           <v-tab value="professions" :disabled="professions.length === 0">
             职业 ({{ professions.length }}{{ hasMoreProfessions ? '+' : '' }})
           </v-tab>
@@ -361,55 +377,52 @@ watch(activeTab, () => {
           <v-tab value="nodes" :disabled="nodes.length === 0">
             节点 ({{ nodes.length }}{{ hasMoreNodes ? '+' : '' }})
           </v-tab>
+          <v-tab value="users" :disabled="users.length === 0">
+            用户 ({{ users.length }}{{ hasMoreUsers ? '+' : '' }})
+          </v-tab>
         </v-tabs>
 
         <!-- 分类结果 -->
         <div>
-          <v-card
+          <div
             v-for="item in currentResults"
             :key="item.id"
-            flat
-            class="border mb-2"
-            hover
+            class="result-item"
             @click="navigateTo(activeTab, item.id)"
           >
-            <v-card-text>
-              <div class="font-weight-medium">{{ item.name }}</div>
-              <div v-if="item.description" class="text-body-2 text-grey mt-1">
-                {{ item.description }}
-              </div>
-            </v-card-text>
-          </v-card>
+            <div class="result-title">{{ item.name }}</div>
+            <div v-if="item.description" class="result-description">
+              {{ item.description }}
+            </div>
+          </div>
 
           <!-- 加载触发器 -->
           <div
             v-if="
+              (activeTab === 'professions' && hasMoreProfessions) ||
               (activeTab === 'courses' && hasMoreCourses) ||
               (activeTab === 'nodes' && hasMoreNodes) ||
-              (activeTab === 'users' && hasMoreUsers) ||
-              (activeTab === 'professions' && hasMoreProfessions)
+              (activeTab === 'users' && hasMoreUsers)
             "
             ref="loadMoreTrigger"
-            class="text-center py-4"
+            class="text-center py-6"
           >
             <v-progress-circular v-if="loadingMore" indeterminate size="32" color="primary" />
           </div>
 
           <!-- 没有更多 -->
-          <div
-            v-else-if="currentResults.length > 0"
-            class="text-center py-4 text-body-2 text-grey"
-          >
+          <div v-else-if="currentResults.length > 0" class="text-center py-6 text-body-2 text-grey">
             没有更多结果了
           </div>
         </div>
       </div>
 
       <!-- 空状态 -->
-      <v-card v-else flat class="text-center py-8">
-        <v-icon icon="mdi-magnify" size="64" color="grey-lighten-1"></v-icon>
-        <div class="text-h6 mt-4 text-grey">输入关键词开始搜索</div>
-      </v-card>
+      <div v-else class="text-center py-12">
+        <v-icon icon="mdi-magnify" size="80" color="grey-lighten-2"></v-icon>
+        <div class="text-h6 mt-4 text-grey-darken-1">输入关键词开始搜索</div>
+        <div class="text-body-2 text-grey mt-2">搜索用户、职业、课程或节点</div>
+      </div>
     </v-container>
   </DefaultLayout>
 </template>
@@ -417,10 +430,39 @@ watch(activeTab, () => {
 <style scoped>
 .search-page {
   max-width: 900px;
+  padding-top: 40px;
 }
 
-.border {
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+.result-item {
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.result-item:hover {
+  background: rgba(var(--v-theme-primary), 0.02);
+}
+
+.result-item:last-child {
+  border-bottom: none;
+}
+
+.result-title {
+  font-size: 17px;
+  font-weight: 500;
+  color: rgb(var(--v-theme-on-surface));
+  margin-bottom: 4px;
+}
+
+.result-description {
+  font-size: 15px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 </style>
