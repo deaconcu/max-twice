@@ -1,6 +1,6 @@
 package com.prosper.learn.application.dto.response.message;
 
-import com.prosper.learn.application.dto.response.UserDTO;
+import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import com.prosper.learn.application.dto.response.node.NodeSummaryDTO;
 import lombok.Data;
 
@@ -13,5 +13,5 @@ public class FollowMessageDTO extends MessageDTO {
 
     Integer voteType;
 
-    UserDTO follower;
+    UserBriefDTO follower;
 }

@@ -127,32 +127,31 @@ public class NodeService {
             return similarNodeIds.stream()
                     .map(nodeMap::get)
                     .filter(node -> node != null && node.getState() == ContentState.PUBLISHED.value())
-                    .map(node -> {
-                        NodeSearchResultDTO dto = new NodeSearchResultDTO();
-                        // 复制 NodeWithCourseDTO 的所有字段
-                        NodeWithCourseDTO baseDto = toWithCourseDTO(node);
-                        if (baseDto != null) {
-                            dto.setId(baseDto.getId());
-                            dto.setName(baseDto.getName());
-                            dto.setDescription(baseDto.getDescription());
-                            dto.setCourseId(baseDto.getCourseId());
-                            dto.setCreatorId(baseDto.getCreatorId());
-                            dto.setState(baseDto.getState());
-                            dto.setCommentCount(baseDto.getCommentCount());
-                            dto.setCreatedAt(baseDto.getCreatedAt());
-                            dto.setUpdatedAt(baseDto.getUpdatedAt());
-                            dto.setCourse(baseDto.getCourse());
-                            // 设置相似度分数
-                            dto.setSimilarityScore(scoreMap.get(node.getId()));
-                        }
-                        return dto;
-                    })
+                    .map(node -> toNodeSearchResultDTO(node, scoreMap.get(node.getId())))
                     .toList();
 
         } catch (Exception e) {
             log.error("Failed to search similar nodes for query: {}", query, e);
             return List.of();
         }
+    }
+
+    /**
+     * 检查课程内是否存在同名已发布节点
+     *
+     * @param courseId 课程ID
+     * @param name 节点名称
+     * @return true表示存在重名节点，false表示不存在
+     */
+    public boolean checkDuplicateNode(Long courseId, String name) {
+        if (courseId == null || name == null || name.trim().isEmpty()) {
+            return false;
+        }
+
+        NodeDO node = nodeDataService.getByCourseAndName(courseId, name);
+
+        // 只检查已发布状态的节点
+        return node != null && node.getState() == ContentState.PUBLISHED.value();
     }
 
     // ========== DTO 转换方法 ==========
@@ -169,10 +168,13 @@ public class NodeService {
             dto.setCourse(courseConverter.toSummaryDTO(courseDO));
         }
 
-        // 填充节点引用计数
+        // 填充统计数据（commentCount 和 nodeReferenceCount）
         if (dto != null) {
             ContentStatsDTO stats = contentStatsDomainService.getContentStats(ContentType.node, nodeDO.getId());
-            dto.setNodeReferenceCount(stats.getNodeReferenceCount() != null ? stats.getNodeReferenceCount() : 0);
+            if (stats != null) {
+                dto.setCommentCount(stats.getCommentCount() != null ? stats.getCommentCount() : 0);
+                dto.setNodeReferenceCount(stats.getNodeReferenceCount() != null ? stats.getNodeReferenceCount() : 0);
+            }
         }
 
         return dto;
@@ -194,12 +196,38 @@ public class NodeService {
         for (NodeWithCourseDTO dto : dtoList) {
             dto.setCourse(courseConverter.toSummaryDTO(courseMap.get(dto.getCourseId())));
 
-            // 填充节点引用计数
+            // 填充统计数据（commentCount 和 nodeReferenceCount）
             ContentStatsDTO stats = statsMap.get(dto.getId());
-            dto.setNodeReferenceCount(stats != null && stats.getNodeReferenceCount() != null ?
-                stats.getNodeReferenceCount() : 0);
+            dto.setCommentCount(stats != null && stats.getCommentCount() != null ? stats.getCommentCount() : 0);
+            dto.setNodeReferenceCount(stats != null && stats.getNodeReferenceCount() != null ? stats.getNodeReferenceCount() : 0);
         }
         return dtoList;
+    }
+
+    /**
+     * 转换为带相似度的搜索结果DTO
+     */
+    private NodeSearchResultDTO toNodeSearchResultDTO(NodeDO nodeDO, Float similarityScore) {
+        NodeWithCourseDTO baseDto = toWithCourseDTO(nodeDO);
+        if (baseDto == null) {
+            return null;
+        }
+
+        NodeSearchResultDTO dto = new NodeSearchResultDTO();
+        dto.setId(baseDto.getId());
+        dto.setName(baseDto.getName());
+        dto.setDescription(baseDto.getDescription());
+        dto.setCourseId(baseDto.getCourseId());
+        dto.setCreatorId(baseDto.getCreatorId());
+        dto.setState(baseDto.getState());
+        dto.setCommentCount(baseDto.getCommentCount());
+        dto.setNodeReferenceCount(baseDto.getNodeReferenceCount());
+        dto.setCreatedAt(baseDto.getCreatedAt());
+        dto.setUpdatedAt(baseDto.getUpdatedAt());
+        dto.setCourse(baseDto.getCourse());
+        dto.setSimilarityScore(similarityScore);
+
+        return dto;
     }
 
     // ========== Command 方法（写操作）==========

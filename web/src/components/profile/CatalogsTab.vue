@@ -69,49 +69,96 @@
               @click="goToCatalog(catalog.id)"
             >
               <v-card-text class="pa-4 pa-sm-6 pb-1">
-                <!-- 所属课程和节点 -->
+                <!-- 所属课程和节点 + 状态标签 -->
                 <div v-if="catalog.node || catalog.course" class="mb-3 mb-md-4">
-                  <div class="d-flex align-center ga-1 flex-wrap">
-                    <template v-if="catalog.course">
+                  <div class="d-flex align-center justify-space-between ga-2 flex-wrap">
+                    <!-- 左侧：课程和节点 -->
+                    <div class="d-flex align-center ga-1 flex-wrap">
+                      <template v-if="catalog.course">
+                        <v-chip
+                          :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                          density="comfortable"
+                          color="grey-darken-1"
+                          variant="tonal"
+                        >
+                          课程
+                        </v-chip>
+                        <v-btn
+                          variant="text"
+                          class="course-link-btn px-2 text-caption text-md-body-1"
+                          @click.stop="goToCourse(catalog.course.id)"
+                        >
+                          {{ catalog.course.name }}
+                        </v-btn>
+                      </template>
+                      <template v-if="catalog.node">
+                        <v-icon
+                          icon="mdi-chevron-right"
+                          :size="$vuetify.display.mobile ? 16 : 18"
+                          color="grey-darken-1"
+                          class="mx-1"
+                        />
+                        <v-chip
+                          :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                          density="comfortable"
+                          color="grey-darken-1"
+                          variant="tonal"
+                        >
+                          节点
+                        </v-chip>
+                        <v-btn
+                          variant="text"
+                          class="course-link-btn px-2 text-caption text-md-body-1"
+                          @click.stop="goToCatalog(catalog.id)"
+                        >
+                          {{ catalog.node }}
+                        </v-btn>
+                      </template>
+                    </div>
+
+                    <!-- 右侧：状态标签 -->
+                    <div class="flex-shrink-0">
                       <v-chip
-                        :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                        density="comfortable"
-                        color="grey-darken-1"
+                        v-if="catalog.state === 0"
+                        size="small"
+                        color="grey"
                         variant="tonal"
                       >
-                        课程
+                        草稿
                       </v-chip>
-                      <v-btn
-                        variant="text"
-                        class="course-link-btn px-2 text-caption text-md-body-1"
-                        @click.stop="goToCourse(catalog.course.id)"
-                      >
-                        {{ catalog.course.name }}
-                      </v-btn>
-                    </template>
-                    <template v-if="catalog.node">
-                      <v-icon
-                        icon="mdi-chevron-right"
-                        :size="$vuetify.display.mobile ? 16 : 18"
-                        color="grey-darken-1"
-                        class="mx-1"
-                      />
                       <v-chip
-                        :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                        density="comfortable"
-                        color="grey-darken-1"
+                        v-else-if="catalog.state === 1"
+                        size="small"
+                        color="warning"
                         variant="tonal"
                       >
-                        节点
+                        待审核
                       </v-chip>
-                      <v-btn
-                        variant="text"
-                        class="course-link-btn px-2 text-caption text-md-body-1"
-                        @click.stop="goToCatalog(catalog.id)"
+                      <v-chip
+                        v-else-if="catalog.state === 2"
+                        size="small"
+                        color="success"
+                        variant="tonal"
                       >
-                        {{ catalog.node }}
-                      </v-btn>
-                    </template>
+                        已发布
+                      </v-chip>
+                      <v-chip
+                        v-else-if="catalog.state === 3"
+                        size="small"
+                        color="error"
+                        variant="tonal"
+                      >
+                        已拒绝
+                      </v-chip>
+                      <v-chip
+                        v-else-if="catalog.state === 4"
+                        size="small"
+                        color="error"
+                        variant="tonal"
+                      >
+                        已屏蔽
+                      </v-chip>
+                    </div>
                   </div>
                 </div>
 
@@ -137,8 +184,8 @@
                 <div class="d-flex align-center justify-space-between ga-2">
                   <!-- 统计信息 -->
                   <div
-                    class="d-flex align-center flex-wrap text-body-2 text-md-body-2 text-grey"
-                    style="gap: 8px"
+                    class="d-flex align-center flex-wrap text-body-2 text-md-body-2 text-grey pl-2"
+                    style="gap: 16px"
                   >
                     <div class="d-flex align-center">
                       <v-icon
@@ -178,18 +225,32 @@
                     </div>
                   </div>
 
-                  <!-- 删除按钮 -->
-                  <v-btn
-                    color="grey"
-                    variant="text"
-                    :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                    icon="mdi-delete"
-                    class="flex-shrink-0"
-                    @click.stop="deleteCatalog(catalog.id)"
-                  >
-                    <v-icon>mdi-delete</v-icon>
-                    <v-tooltip activator="parent" location="top">删除目录</v-tooltip>
-                  </v-btn>
+                  <!-- 操作按钮 -->
+                  <div class="d-flex align-center ga-1">
+                    <v-btn
+                      v-if="catalog.state === 0"
+                      color="primary"
+                      variant="text"
+                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                      icon="mdi-pencil"
+                      class="flex-shrink-0"
+                      @click.stop="editCatalog(catalog)"
+                    >
+                      <v-icon>mdi-pencil</v-icon>
+                      <v-tooltip activator="parent" location="top">编辑草稿</v-tooltip>
+                    </v-btn>
+                    <v-btn
+                      color="grey"
+                      variant="text"
+                      :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                      icon="mdi-delete"
+                      class="flex-shrink-0"
+                      @click.stop="deleteCatalog(catalog.id)"
+                    >
+                      <v-icon>mdi-delete</v-icon>
+                      <v-tooltip activator="parent" location="top">删除目录</v-tooltip>
+                    </v-btn>
+                  </div>
                 </div>
               </v-card-text>
             </v-card>
@@ -232,6 +293,16 @@
           confirm-text="确认删除"
           @confirm="confirmDelete"
         />
+
+        <!-- 编辑目录对话框 -->
+        <NodeSelectorDialog
+          v-if="editingCatalog"
+          ref="nodeSelectorDialog"
+          :course-id="editingCatalog.node?.course?.id"
+          :node-id="editingCatalog.nodeId"
+          :draft-post="editingCatalog"
+          @load-data="handleCatalogUpdated"
+        />
       </div>
     </v-col>
   </v-row>
@@ -247,6 +318,7 @@ import { PostType } from '@/enums'
 import { parseContentNodes } from '@/utils/postUtils'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import NodeSelectorDialog from '@/components/features/read/NodeSelectorDialog.vue'
 
 const router = useRouter()
 
@@ -257,15 +329,20 @@ const searchQuery = ref('')
 const showDeleteDialog = ref(false)
 const postToDelete = ref<number | null>(null)
 
+// 编辑目录对话框
+const nodeSelectorDialog = ref()
+const editingCatalog = ref<any>(null)
+
 // 使用 useInfiniteScroll 加载目录列表
 const {
   items: posts,
   loading,
   hasMore,
   loadMore: loadMorePosts,
+  reset: resetPosts,
 } = useInfiniteScroll({
   fetchFn: async (params) => {
-    const response = await userApi.getCurrentUserAllPosts(params.lastId, PostType.CONTENTS)
+    const response = await userApi.getCurrentUserAllPosts(params.lastId, PostType.INDEX)
     return {
       code: response.code,
       data: response.data?.items || [],
@@ -302,6 +379,7 @@ const catalogs = computed(() => {
       commentCount: post.commentCount || 0,
       deckCount: post.deckCount || 0,
       createdAt: post.createdAt || '',
+      state: post.state, // 添加状态字段
       course: post.node?.course
         ? { id: post.node.course.id, name: post.node.course.name }
         : undefined,
@@ -342,6 +420,23 @@ const goToCourse = (courseId: number) => {
 const deleteCatalog = (postId: number) => {
   postToDelete.value = postId
   showDeleteDialog.value = true
+}
+
+// 编辑目录（只能编辑草稿）
+const editCatalog = (catalog: any) => {
+  const post = posts.value?.find((p) => p.id === catalog.id)
+  if (post && post.state === 0) {
+    // DRAFT
+    editingCatalog.value = post
+    nodeSelectorDialog.value?.open()
+  }
+}
+
+// 目录编辑成功后刷新列表
+const handleCatalogUpdated = () => {
+  resetPosts()
+  loadMorePosts({ done: () => {} })
+  editingCatalog.value = null
 }
 
 // 确认删除

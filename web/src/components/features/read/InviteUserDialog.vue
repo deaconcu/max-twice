@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, inject } from 'vue'
+import { userApi } from '@/api/modules/user'
+import { messageApi } from '@/api/modules/message'
+import { useMutation } from '@/composables/useMutation'
 
 interface Props {
   nodeId?: number
@@ -10,63 +13,69 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const dialog = defineModel<boolean>({ default: false })
+const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
 const searchKeyword = ref('')
+const searchResults = ref<any[]>([])
 const searchResultInfo = ref('')
-
-// Mock 用户数据
-const mockUsers = ref<any[]>([])
+const loading = ref(false)
+const invitedUserIds = ref<Set<number>>(new Set())
 
 // 搜索用户
-const handleSearch = () => {
+const handleSearch = async () => {
   if (!searchKeyword.value.trim()) {
-    mockUsers.value = []
+    searchResults.value = []
     searchResultInfo.value = ''
     return
   }
 
-  // Mock 搜索结果
-  mockUsers.value = [
-    {
-      id: 1,
-      name: '张三',
-      avatar: null,
-      disabled: false,
-    },
-    {
-      id: 2,
-      name: '李四',
-      avatar: null,
-      disabled: false,
-    },
-    {
-      id: 3,
-      name: '王五',
-      avatar: null,
-      disabled: false,
-    },
-  ]
-
-  if (mockUsers.value.length === 0) {
-    searchResultInfo.value = '未找到用户'
-  } else {
-    searchResultInfo.value = ''
+  loading.value = true
+  try {
+    const response = await userApi.searchUser(searchKeyword.value)
+    if (response.data && response.data.length > 0) {
+      searchResults.value = response.data
+      searchResultInfo.value = ''
+    } else {
+      searchResults.value = []
+      searchResultInfo.value = '未找到用户'
+    }
+  } catch (error) {
+    console.error('搜索用户失败:', error)
+    searchResults.value = []
+    searchResultInfo.value = '搜索失败，请重试'
+  } finally {
+    loading.value = false
   }
 }
 
+// 邀请用户回答
+const { execute: executeInvite } = useMutation(
+  (userId: number) => messageApi.inviteUser(userId, props.nodeId),
+  {
+    successMessage: '邀请成功',
+    onSuccess: (_, userId) => {
+      invitedUserIds.value.add(userId)
+    },
+  }
+)
+
 // 邀请用户
 const handleInvite = (user: any) => {
-  console.log('邀请用户:', user.id, '回答节点:', props.nodeId)
-  user.disabled = true
-  // TODO: 调用后端 API
+  executeInvite(user.id)
+}
+
+// 检查用户是否已邀请
+const isInvited = (userId: number) => {
+  return invitedUserIds.value.has(userId)
 }
 
 // 关闭对话框
 const closeDialog = () => {
   dialog.value = false
   searchKeyword.value = ''
-  mockUsers.value = []
+  searchResults.value = []
   searchResultInfo.value = ''
+  invitedUserIds.value.clear()
 }
 </script>
 
@@ -91,22 +100,24 @@ const closeDialog = () => {
           variant="outlined"
           density="comfortable"
           hide-details
+          :loading="loading"
           append-inner-icon="mdi-magnify"
           @click:append-inner="handleSearch"
           @keyup.enter="handleSearch"
         ></v-text-field>
 
         <!-- 搜索结果 -->
-        <div v-if="mockUsers.length > 0" class="user-list mt-4">
+        <div v-if="searchResults.length > 0" class="user-list mt-4">
           <div
-            v-for="user in mockUsers"
+            v-for="user in searchResults"
             :key="user.id"
             class="user-item d-flex justify-space-between align-center"
           >
             <!-- 用户信息 -->
             <div class="d-flex align-center">
               <v-avatar size="40" color="grey-lighten-2" class="mr-3">
-                <v-icon icon="mdi-account" color="grey" size="24"></v-icon>
+                <v-img v-if="user.avatar" :src="user.avatar" />
+                <v-icon v-else icon="mdi-account" color="grey" size="24"></v-icon>
               </v-avatar>
               <div>
                 <div class="text-body-2 font-weight-medium text-grey-darken-3">
@@ -120,17 +131,17 @@ const closeDialog = () => {
               variant="flat"
               color="primary"
               size="small"
-              :disabled="user.disabled"
+              :disabled="isInvited(user.id)"
               @click="handleInvite(user)"
             >
-              {{ user.disabled ? '已邀请' : '邀请' }}
+              {{ isInvited(user.id) ? '已邀请' : '邀请' }}
             </v-btn>
           </div>
         </div>
 
         <!-- 空状态 -->
         <div
-          v-if="mockUsers.length === 0 && searchResultInfo"
+          v-if="searchResults.length === 0 && searchResultInfo"
           class="text-body-2 text-grey text-center py-8"
         >
           {{ searchResultInfo }}
@@ -138,7 +149,7 @@ const closeDialog = () => {
 
         <!-- 初始提示 -->
         <div
-          v-if="mockUsers.length === 0 && !searchResultInfo"
+          v-if="searchResults.length === 0 && !searchResultInfo"
           class="text-body-2 text-grey-darken-1 text-center py-8"
         >
           请输入用户名进行搜索

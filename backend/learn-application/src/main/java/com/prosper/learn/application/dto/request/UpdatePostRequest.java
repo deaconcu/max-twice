@@ -18,4 +18,11 @@ public class UpdatePostRequest {
     @NotBlank(message = "帖子内容不能为空")
     @Size(max = 10000, message = "帖子内容长度不能超过10000字符")
     private String content;
+
+    /**
+     * 帖子状态（可选）
+     * 0=DRAFT, 1=SUBMITTED
+     * 如果不传，默认为 DRAFT（草稿）
+     */
+    private Integer state;
 }

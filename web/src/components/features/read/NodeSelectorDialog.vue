@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, inject } from 'vue'
-import { debounce } from 'lodash-es'
+import { ref, computed, inject, watch } from 'vue'
 import draggable from 'vuedraggable'
 import { useRouter } from 'vue-router'
 import { postApi } from '@/api/modules/post'
@@ -10,12 +9,14 @@ import type { Node } from '@/types/node'
 
 interface Props {
   courseId?: number
-  nodeId?: number // 当前节点ID，用于创建 contents post
+  nodeId?: number // 当前节点ID，用于创建 index post
+  draftPost?: any // 已有的草稿post，用于编辑模式
 }
 
 const props = withDefaults(defineProps<Props>(), {
   courseId: 0,
   nodeId: 0,
+  draftPost: null,
 })
 
 const emit = defineEmits<{
@@ -28,82 +29,138 @@ const router = useRouter()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
 // 搜索相关
-const searchQuery = ref('')
 const searchResults = ref<Node[]>([])
 const loading = ref(false)
 const hasSearched = ref(false)  // 是否已执行搜索
 
 // 创建表单
-const showCreateForm = ref(false)
 const newNode = ref({ name: '', description: '' })
-
-// 相似节点提示
-const similarNodes = ref<Node[]>([])
-const showSimilarWarning = ref(false)
 
 // 已选择的节点列表（右侧）
 const selectedNodes = ref<Node[]>([])
 
-// 使用 useMutation 提交目录
+// 当前编辑的草稿（用于创建模式转编辑模式）
+const currentDraft = ref<any>(null)
+
+// 编辑模式标志
+const isEditMode = computed(() => props.draftPost != null || currentDraft.value != null)
+
+// 获取当前草稿对象
+const getCurrentDraft = computed(() => props.draftPost || currentDraft.value)
+
+// 构建 JSON 内容
+const buildJsonContent = () => {
+  return selectedNodes.value.map((node) => {
+    // 如果是已有节点（真实ID），只传id
+    if (node.id && node.id < Date.now() - 1000000) {
+      return { id: node.id }
+    }
+    // 如果是新节点（临时ID），传name和description
+    return {
+      name: node.name,
+      description: node.description,
+    }
+  })
+}
+
+// 保存草稿
+const { execute: executeSaveDraft, loading: savingDraft } = useMutation(
+  async () => {
+    const jsonContent = buildJsonContent()
+
+    if (isEditMode.value) {
+      // 编辑模式：更新现有草稿
+      const draft = getCurrentDraft.value
+      return await postApi.updatePost(draft.id, {
+        content: JSON.stringify(jsonContent),
+      })
+    } else {
+      // 创建模式：创建新草稿
+      return await postApi.createPost({
+        nodeId: props.nodeId!,
+        type: PostType.INDEX,
+        content: JSON.stringify(jsonContent),
+        state: 0, // DRAFT
+      })
+    }
+  },
+  {
+    onSuccess: (response) => {
+      showSnackbar?.('草稿保存成功', 'success')
+
+      // 如果是创建模式，保存返回的草稿信息，转为编辑模式
+      if (!isEditMode.value && response.data) {
+        currentDraft.value = response.data
+      }
+
+      // 不关闭对话框，不刷新列表
+    },
+    onError: (error) => {
+      console.error('保存草稿失败:', error)
+      showSnackbar?.('保存草稿失败', 'error')
+    },
+  }
+)
+
+// 提交审核
 const { execute: executeSubmit, loading: submitting } = useMutation(
   async () => {
-    // 构建 JSON 格式
-    const jsonContent = selectedNodes.value.map((node) => {
-      const obj: any = {
-        name: node.name,
-        description: node.description,
-      }
-      // 如果节点有真实 ID（不是临时ID），则使用现有节点
-      if (node.id && node.id < Date.now() - 1000000) {
-        obj.id = node.id
-      }
-      return obj
-    })
+    const jsonContent = buildJsonContent()
 
-    // 调用创建 contents 类型帖子的接口
-    return await postApi.createPost({
-      nodeId: props.nodeId!,
-      type: PostType.CONTENTS,
-      content: JSON.stringify(jsonContent),
-    })
+    if (isEditMode.value) {
+      // 编辑模式：更新内容并提交审核
+      const draft = getCurrentDraft.value
+      return await postApi.updatePost(draft.id, {
+        content: JSON.stringify(jsonContent),
+        state: 1, // SUBMITTED
+      })
+    } else {
+      // 创建模式：直接创建并提交审核
+      return await postApi.createPost({
+        nodeId: props.nodeId!,
+        type: PostType.INDEX,
+        content: JSON.stringify(jsonContent),
+        state: 1, // SUBMITTED
+      })
+    }
   },
   {
     onSuccess: () => {
-      showSnackbar?.('目录添加成功', 'success')
-      emit('load-data')
+      showSnackbar?.(isEditMode.value ? '目录已提交审核' : '目录提交成功', 'success')
+
+      // 只有编辑模式（从个人页进入）才需要刷新列表
+      // 创建模式（从 read 页进入）不需要刷新
+      if (props.draftPost) {
+        emit('load-data')
+      }
+
       close()
     },
     onError: (error) => {
-      console.error('添加目录失败:', error)
-      showSnackbar?.('添加目录失败', 'error')
+      console.error('提交目录失败:', error)
+      showSnackbar?.('提交目录失败', 'error')
     },
   }
 )
 
 const canConfirm = computed(() => selectedNodes.value.length >= 2)
+const isSubmitting = computed(() => savingDraft.value || submitting.value)
 
-// 检测相似节点（防抖）
-const checkSimilarNodes = debounce(async (name: string) => {
-  if (!name || name.length < 2) {
-    similarNodes.value = []
-    showSimilarWarning.value = false
-    return
-  }
+// 监听输入框变化，清空搜索结果
+watch(() => newNode.value.name, () => {
+  searchResults.value = []
+  hasSearched.value = false
+})
 
-  try {
-    const response = await postApi.searchSimilarNodes(name, 5)
-    similarNodes.value = response.data || []
-    showSimilarWarning.value = similarNodes.value.length > 0
-  } catch (error) {
-    console.error('检测相似节点失败', error)
-    similarNodes.value = []
-    showSimilarWarning.value = false
-  }
-}, 500)
+watch(() => newNode.value.description, () => {
+  searchResults.value = []
+  hasSearched.value = false
+})
 
 // 搜索节点
 const handleSearch = async () => {
-  const query = searchQuery.value.trim()
+  // 使用节点名称和描述进行搜索
+  const query = `${newNode.value.name} ${newNode.value.description}`.trim()
   if (!query || query.length < 2) {
     searchResults.value = []
     hasSearched.value = false
@@ -145,10 +202,28 @@ const addNode = (node: Node, event?: Event) => {
   selectedNodes.value.push(node)
 }
 
-// 添加新创建的节点
-const addNewNode = () => {
+// 添加新创建的节点到列表
+const addNewNode = async () => {
   if (!newNode.value.name || !newNode.value.description || newNode.value.description.length < 20) {
     return
+  }
+
+  // 检查课程内是否有同名已发布节点
+  if (props.courseId) {
+    try {
+      const response = await postApi.checkDuplicateNode(props.courseId, newNode.value.name)
+      if (response.data === true) {
+        showSnackbar?.(
+          `课程中已存在名为"${newNode.value.name}"的节点，请使用已有节点或修改名称`,
+          'error'
+        )
+        return
+      }
+    } catch (error) {
+      console.error('检查节点重名失败', error)
+      showSnackbar?.('检查节点重名失败，请稍后重试', 'error')
+      return
+    }
   }
 
   const node: Node = {
@@ -158,16 +233,8 @@ const addNewNode = () => {
   }
   selectedNodes.value.push(node)
   newNode.value = { name: '', description: '' }
-  similarNodes.value = []
-  showSimilarWarning.value = false
-}
-
-// 直接使用相似节点
-const useSimilarNode = (node: Node) => {
-  addNode(node)
-  newNode.value = { name: '', description: '' }
-  similarNodes.value = []
-  showSimilarWarning.value = false
+  searchResults.value = []
+  hasSearched.value = false
 }
 
 // 删除节点
@@ -175,32 +242,34 @@ const removeNode = (index: number) => {
   selectedNodes.value.splice(index, 1)
 }
 
-// 确认
-const confirm = async () => {
-  if (!canConfirm.value) return
-
-  if (!props.nodeId) {
-    showSnackbar?.('缺少节点ID', 'error')
-    return
-  }
-
-  await executeSubmit()
-}
-
 const close = () => {
   dialog.value = false
   setTimeout(() => {
-    searchQuery.value = ''
     searchResults.value = []
     hasSearched.value = false
     selectedNodes.value = []
-    showCreateForm.value = false
     newNode.value = { name: '', description: '' }
+    currentDraft.value = null // 清空当前草稿
   }, 300)
 }
 
 const open = () => {
   dialog.value = true
+
+  // 加载草稿的节点列表（优先使用 currentDraft，其次是 props.draftPost）
+  const draft = getCurrentDraft.value
+  if (draft && draft.content) {
+    try {
+      const nodes = JSON.parse(draft.content)
+      selectedNodes.value = nodes.map((node: any) => ({
+        id: node.id || Date.now() + Math.random(), // 临时ID
+        name: node.name,
+        description: node.description,
+      }))
+    } catch (e) {
+      console.error('解析草稿内容失败:', e)
+    }
+  }
 }
 
 defineExpose({ open })
@@ -212,51 +281,69 @@ defineExpose({ open })
       <v-card-title class="pa-4 d-flex align-center justify-space-between border-b">
         <div class="d-flex align-center">
           <v-icon icon="mdi-format-list-group-plus" color="primary" class="mr-2" />
-          <span class="text-h6 font-weight-bold">添加目录</span>
+          <span class="text-h6 font-weight-bold">{{ isEditMode ? '编辑目录草稿' : '添加目录' }}</span>
         </div>
         <v-btn icon="mdi-close" variant="text" size="small" @click="close" />
       </v-card-title>
 
       <div class="dialog-body">
         <div class="body-row">
-          <!-- 左侧：搜索/创建 -->
+          <!-- 左侧：搜索/创建合并 -->
           <div :class="['left-panel', { 'full-width': selectedNodes.length === 0 }]">
-            <!-- 创建模式标题 -->
-            <div v-if="showCreateForm" class="panel-header">
-              <span class="text-h6 font-weight-medium">创建新节点</span>
-              <v-btn
-                variant="text"
-                size="small"
-                prepend-icon="mdi-arrow-left"
-                class="ml-4"
-                @click="showCreateForm = false"
-              >
-                返回搜索
-              </v-btn>
-            </div>
-
-            <!-- 搜索模式 -->
-            <div v-if="!showCreateForm" class="search-panel">
+            <div class="search-panel">
               <div class="search-header">
                 <div class="text-body-2 text-grey mb-3">
-                  请输入想要创建的节点描述，系统会查找最相似的已存在节点
+                  输入节点名称和描述，先搜索已存在的节点，没有合适的再创建新节点
                 </div>
+
+                <!-- 节点名称 -->
                 <v-text-field
-                  v-model="searchQuery"
-                  placeholder="搜索节点..."
+                  v-model="newNode.name"
+                  label="节点名称"
+                  placeholder="请输入节点名称（2-50字）"
                   variant="outlined"
                   density="comfortable"
-                  hide-details
-                  @keyup.enter="handleSearch"
-                >
-                  <template #append-inner>
-                    <v-icon
-                      icon="mdi-magnify"
-                      class="cursor-pointer"
-                      @click="handleSearch"
-                    />
-                  </template>
-                </v-text-field>
+                  counter="50"
+                  :hint="`已输入 ${newNode.name.length} 字`"
+                  class="mb-3"
+                />
+
+                <!-- 节点描述 -->
+                <v-textarea
+                  v-model="newNode.description"
+                  label="节点描述"
+                  placeholder="请输入节点描述（至少20字）"
+                  variant="outlined"
+                  density="comfortable"
+                  rows="3"
+                  counter="500"
+                  :hint="`已输入 ${newNode.description.length} 字，至少需要 20 字`"
+                  class="mb-3"
+                />
+
+                <!-- 搜索按钮 -->
+                <div class="d-flex ga-2">
+                  <v-btn
+                    color="primary"
+                    variant="tonal"
+                    :disabled="!newNode.name.trim() || !newNode.description.trim() || newNode.description.length < 20"
+                    @click="handleSearch"
+                  >
+                    <v-icon start>mdi-magnify</v-icon>
+                    搜索已存在节点
+                  </v-btn>
+
+                  <!-- 创建新节点按钮 - 只在有搜索结果时显示 -->
+                  <v-btn
+                    v-if="hasSearched && searchResults.length > 0"
+                    color="grey-darken-1"
+                    variant="outlined"
+                    @click="addNewNode"
+                  >
+                    <v-icon start>mdi-plus</v-icon>
+                    创建新节点
+                  </v-btn>
+                </div>
               </div>
 
               <div class="search-results-container">
@@ -265,6 +352,9 @@ defineExpose({ open })
                 </div>
 
                 <div v-else-if="hasSearched && searchResults.length > 0">
+                  <div class="text-body-2 text-grey-darken-1 font-weight-medium mb-2 mt-4">
+                    找到 {{ searchResults.length }} 个相似节点
+                  </div>
                   <v-card
                     v-for="node in searchResults"
                     :key="node.id"
@@ -297,8 +387,7 @@ defineExpose({ open })
                               variant="tonal"
                               class="ml-2"
                             >
-                              <v-icon icon="mdi-link-variant" size="12" class="mr-1"></v-icon>
-                              {{ node.nodeReferenceCount }}
+                              引用{{ node.nodeReferenceCount }}次
                             </v-chip>
                           </div>
                           <div class="text-caption text-grey">{{ node.description }}</div>
@@ -330,104 +419,12 @@ defineExpose({ open })
 
                 <div
                   v-else-if="hasSearched && searchResults.length === 0"
-                  class="text-center text-grey py-8"
+                  class="text-center py-6"
                 >
-                  没有找到匹配的节点
+                  <v-icon icon="mdi-file-search-outline" size="48" color="grey-lighten-1" class="mb-2" />
+                  <p class="text-body-2 text-grey">没有找到相似的节点，点击上方"创建新节点"按钮添加</p>
                 </div>
               </div>
-
-              <div v-if="hasSearched" class="search-footer">
-                <span class="text-grey text-body-2">没有合适的节点？</span>
-                <a class="text-primary cursor-pointer ml-1 text-body-2" @click="showCreateForm = true">
-                  点击创建新节点
-                </a>
-              </div>
-            </div>
-
-            <!-- 创建模式 -->
-            <div v-else class="create-panel">
-              <v-text-field
-                v-model="newNode.name"
-                label="节点名称"
-                variant="outlined"
-                density="comfortable"
-                hide-details
-                class="mb-3 mt-2"
-                @update:model-value="checkSimilarNodes"
-              />
-
-              <v-expand-transition>
-                <v-alert
-                  v-if="showSimilarWarning && similarNodes.length > 0"
-                  type="warning"
-                  variant="tonal"
-                  density="compact"
-                  class="mb-3"
-                >
-                  <div class="text-body-2">
-                    <strong>💡 发现相似的节点</strong>
-                    <p class="mb-2 mt-1">建议优先使用现有节点，避免知识碎片化</p>
-
-                    <div>
-                      <v-card
-                        v-for="node in similarNodes.slice(0, 3)"
-                        :key="node.id"
-                        class="mb-2"
-                        variant="outlined"
-                        hover
-                        @click="useSimilarNode(node)"
-                      >
-                        <v-card-text class="pa-2">
-                          <div class="d-flex align-center justify-space-between">
-                            <div class="flex-grow-1">
-                              <div class="text-body-2 font-weight-medium">{{ node.name }}</div>
-                              <div class="text-caption text-grey">{{ node.description?.slice(0, 50) }}...</div>
-                            </div>
-                            <v-btn
-                              size="x-small"
-                              color="success"
-                              variant="tonal"
-                              @click.stop="useSimilarNode(node)"
-                            >
-                              使用
-                            </v-btn>
-                          </div>
-                        </v-card-text>
-                      </v-card>
-                    </div>
-
-                    <div class="text-caption text-grey mt-2">
-                      如果这些节点都不合适，你仍然可以创建新节点
-                    </div>
-                  </div>
-                </v-alert>
-              </v-expand-transition>
-
-              <v-textarea
-                v-model="newNode.description"
-                label="节点描述（必填，至少20字）"
-                placeholder="节点描述很重要，清晰的描述能帮助其他人找到并复用这个节点"
-                variant="outlined"
-                density="comfortable"
-                rows="3"
-                hide-details
-                class="mb-3 mt-6"
-              />
-
-              <v-btn
-                color="primary"
-                variant="tonal"
-                class="mt-3"
-                :disabled="
-                  !newNode.name.trim() ||
-                  !newNode.description.trim() ||
-                  newNode.description.length < 20
-                "
-                @click="addNewNode"
-              >
-                <v-icon start>mdi-plus</v-icon>
-                {{ showSimilarWarning ? '仍要创建新节点' : '添加到列表' }}
-              </v-btn>
             </div>
           </div>
 
@@ -472,16 +469,30 @@ defineExpose({ open })
         </div>
       </div>
 
-      <v-card-actions class="pa-4 border-t">
+      <v-card-actions class="pa-4 border-t d-flex ga-3">
         <v-spacer />
-        <v-btn variant="text" @click="close">取消</v-btn>
+        <v-btn variant="tonal" color="grey" class="px-6" @click="close">取消</v-btn>
         <v-btn
+          variant="tonal"
+          color="grey-darken-1"
+          class="px-6"
+          :disabled="!canConfirm"
+          :loading="savingDraft"
+          @click="executeSaveDraft"
+        >
+          <v-icon start>mdi-content-save-outline</v-icon>
+          保存草稿
+        </v-btn>
+        <v-btn
+          variant="tonal"
           color="primary"
+          class="px-6"
           :disabled="!canConfirm"
           :loading="submitting"
-          @click="confirm"
+          @click="executeSubmit"
         >
-          提交目录{{ selectedNodes.length < 2 ? ' (至少需要2个)' : '' }}
+          <v-icon start>mdi-send</v-icon>
+          提交审核{{ selectedNodes.length < 2 ? ' (至少2个)' : '' }}
         </v-btn>
       </v-card-actions>
     </v-card>

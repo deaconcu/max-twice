@@ -240,6 +240,7 @@ public class PageService {
         NodeWithProgressDTO nodeDTO = nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted);
         ContentStatsDTO nodeStats = contentStatsDomainService.getContentStats(ContentType.node, nodeDO.getId());
         nodeDTO.setCommentCount(nodeStats.getCommentCount());
+        nodeDTO.setNodeReferenceCount(nodeStats.getNodeReferenceCount());
 
         data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
@@ -299,6 +300,7 @@ public class PageService {
         NodeWithProgressDTO nodeDTO = nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted);
         ContentStatsDTO nodeStats = contentStatsDomainService.getContentStats(ContentType.node, nodeDO.getId());
         nodeDTO.setCommentCount(nodeStats.getCommentCount());
+        nodeDTO.setNodeReferenceCount(nodeStats.getNodeReferenceCount());
 
         data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
@@ -380,6 +382,7 @@ public class PageService {
         NodeWithProgressDTO nodeDTO = nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted);
         ContentStatsDTO nodeStats = contentStatsDomainService.getContentStats(ContentType.node, nodeDO.getId());
         nodeDTO.setCommentCount(nodeStats.getCommentCount());
+        nodeDTO.setNodeReferenceCount(nodeStats.getNodeReferenceCount());
 
         data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);
@@ -750,6 +753,7 @@ public class PageService {
         NodeWithProgressDTO nodeDTO = nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted);
         ContentStatsDTO nodeStats = contentStatsDomainService.getContentStats(ContentType.node, nodeDO.getId());
         nodeDTO.setCommentCount(nodeStats.getCommentCount());
+        nodeDTO.setNodeReferenceCount(nodeStats.getNodeReferenceCount());
 
         data.put("node", nodeDTO);
         data.put("parentCourse", parentCourse);

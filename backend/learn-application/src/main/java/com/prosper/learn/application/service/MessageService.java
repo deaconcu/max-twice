@@ -1,5 +1,7 @@
 package com.prosper.learn.application.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.application.converter.MessageConverter;
 import com.prosper.learn.application.converter.NodeConverter;
 import com.prosper.learn.application.converter.UserConverter;
@@ -21,6 +23,7 @@ import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -45,6 +48,7 @@ import static com.prosper.learn.shared.domain.Enums.MessageType.*;
  * @author Claude
  * @since 2024-01-20
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MessageService {
@@ -80,6 +84,9 @@ public class MessageService {
 
     /** 系统配置属性 */
     private final SystemProperties systemProperties;
+
+    /** JSON 处理器 */
+    private final ObjectMapper objectMapper;
 
     // ========== Command 方法（写操作）==========
 
@@ -294,8 +301,8 @@ public class MessageService {
         UserDO receiver = messageDO.getReceiverId() != 0 ? userDataService.getById(messageDO.getReceiverId()) : null;
 
         MessageDTO messageDTO = messageConverter.toDTO(messageDO);
-        messageDTO.setSender(sender != null ? userConverter.toDTOV2(sender) : null);
-        messageDTO.setReceiver(receiver != null ? userConverter.toDTOV2(receiver) : null);
+        messageDTO.setSender(sender != null ? userConverter.toBriefDTO(sender) : null);
+        messageDTO.setReceiver(receiver != null ? userConverter.toBriefDTO(receiver) : null);
 
         return messageDTO;
     }
@@ -307,12 +314,31 @@ public class MessageService {
 
         // 收集所有涉及的用户ID
         Set<Long> userIdSet = new HashSet<>();
+        // 收集所有涉及的节点ID（从邀请消息中）
+        Set<Long> nodeIdSet = new HashSet<>();
+
         for (MessageDO messageDO : messageDOList) {
             if (messageDO.getSenderId() != 0) {
                 userIdSet.add(messageDO.getSenderId());
             }
             if (messageDO.getReceiverId() != 0) {
                 userIdSet.add(messageDO.getReceiverId());
+            }
+
+            // 解析邀请消息的 nodeId
+            if (messageDO.getType() == MessageType.invite.value() && messageDO.getContent() != null) {
+                try {
+                    Map<String, Object> contentMap = objectMapper.readValue(
+                            messageDO.getContent(),
+                            new TypeReference<Map<String, Object>>() {}
+                    );
+                    Object nodeIdObj = contentMap.get("nodeId");
+                    if (nodeIdObj != null) {
+                        nodeIdSet.add(((Number) nodeIdObj).longValue());
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to parse invite message content: {}", messageDO.getContent(), e);
+                }
             }
         }
 
@@ -325,6 +351,15 @@ public class MessageService {
             }
         }
 
+        // 批量获取节点信息
+        Map<Long, NodeDO> nodeMap = new HashMap<>();
+        if (!nodeIdSet.isEmpty()) {
+            List<NodeDO> nodeDOList = nodeDataService.getByIds(nodeIdSet);
+            for (NodeDO nodeDO : nodeDOList) {
+                nodeMap.put(nodeDO.getId(), nodeDO);
+            }
+        }
+
         // 转换为DTO
         List<MessageDTO> messageDTOList = new ArrayList<>();
         for (MessageDO messageDO : messageDOList) {
@@ -333,8 +368,30 @@ public class MessageService {
             UserDO sender = userMap.get(messageDO.getSenderId());
             UserDO receiver = userMap.get(messageDO.getReceiverId());
 
-            messageDTO.setSender(sender != null ? userConverter.toDTOV2(sender) : null);
-            messageDTO.setReceiver(receiver != null ? userConverter.toDTOV2(receiver) : null);
+            messageDTO.setSender(sender != null ? userConverter.toBriefDTO(sender) : null);
+            messageDTO.setReceiver(receiver != null ? userConverter.toBriefDTO(receiver) : null);
+
+            // 填充邀请消息的节点名称
+            if (messageDO.getType() == MessageType.invite.value() && messageDO.getContent() != null) {
+                try {
+                    Map<String, Object> contentMap = objectMapper.readValue(
+                            messageDO.getContent(),
+                            new TypeReference<Map<String, Object>>() {}
+                    );
+                    Object nodeIdObj = contentMap.get("nodeId");
+                    if (nodeIdObj != null) {
+                        Long nodeId = ((Number) nodeIdObj).longValue();
+                        NodeDO node = nodeMap.get(nodeId);
+                        if (node != null) {
+                            contentMap.put("nodeName", node.getName());
+                            messageDTO.setContent(objectMapper.writeValueAsString(contentMap));
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to enrich invite message: {}", messageDO.getContent(), e);
+                }
+            }
+
             messageDTOList.add(messageDTO);
         }
         return messageDTOList;
@@ -513,7 +570,7 @@ public class MessageService {
             UserDO commenter = userDOMap.get(commenterId);
 
             m.setCommentId(Utils.getLong(content, "commentId"));
-            m.setCommenter(userConverter.toDTOV2(commenter));
+            m.setCommenter(userConverter.toBriefDTO(commenter));
 
             // 填充 commenterName 到 content JSON
             Map<String, Object> enrichedContent = new HashMap<>(content);
@@ -610,21 +667,35 @@ public class MessageService {
 
             m.setNode(nodeConverter.toSummaryDTO(nodeDOMap.get(Utils.getLong(content, "nodeId"))));
             m.setVoteType(Utils.getInteger(content, "type"));
-            m.setUpvoter(userConverter.toDTOV2(userDOMap.get(Utils.getLong(content, "upvoterId"))));
+            m.setUpvoter(userConverter.toBriefDTO(userDOMap.get(Utils.getLong(content, "upvoterId"))));
             messageDTO = m;
 
             // 设置填充后的 content
             messageDTO.setContent(Utils.toJson(enrichedContent));
         } else if (messageDO.getType() == follow.value()) {
             FollowMessageDTO m = new FollowMessageDTO();
-            m.setFollower(userConverter.toDTOV2(userDOMap.get(Utils.getLong(content, "followerId"))));
+            m.setFollower(userConverter.toBriefDTO(userDOMap.get(Utils.getLong(content, "followerId"))));
             messageDTO = m;
         } else if (messageDO.getType() == invite.value()) {
             InviteMessageDTO m = new InviteMessageDTO();
-            m.setInviter(userConverter.toDTOV2(userDOMap.get(Utils.getLong(content, "inviterId"))));
-            long nodeId = Utils.getLong(content, "nodeId");
-            m.setNode(nodeConverter.toSummaryDTO(nodeDOMap.get(nodeId)));
+            Long inviterId = Utils.getLong(content, "inviterId");
+            UserDO inviter = userDOMap.get(inviterId);
+            m.setInviter(userConverter.toBriefDTO(inviter));
+
+            Long nodeId = Utils.getLong(content, "nodeId");
+            NodeDO node = nodeDOMap.get(nodeId);
+            m.setNode(nodeConverter.toSummaryDTO(node));
+
+            // Enrich content with inviterName and nodeName
+            Map<String, Object> enrichedContent = new HashMap<>(content);
+            if (inviter != null) {
+                enrichedContent.put("inviterName", inviter.getName());
+            }
+            if (node != null) {
+                enrichedContent.put("nodeName", node.getName());
+            }
             messageDTO = m;
+            messageDTO.setContent(Utils.toJson(enrichedContent));
         } else {
             // 其他类型消息(如审核消息)，使用基础 MessageDTO，保留原始 content
             messageDTO = messageConverter.toDTO(messageDO);
@@ -632,7 +703,7 @@ public class MessageService {
 
         messageDTO.setId(messageDO.getId());
         messageDTO.setSender(null);
-        messageDTO.setReceiver(userConverter.toDTOV2(userDOMap.get(messageDO.getReceiverId())));
+        messageDTO.setReceiver(userConverter.toBriefDTO(userDOMap.get(messageDO.getReceiverId())));
         messageDTO.setType(messageDO.getType());
         messageDTO.setCreatedAt(Utils.getTimeString(messageDO.getCreatedAt()));
 

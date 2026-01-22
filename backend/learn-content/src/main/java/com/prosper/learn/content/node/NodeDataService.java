@@ -156,6 +156,13 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
     }
 
     /**
+     * 根据状态分页获取节点列表
+     */
+    public List<NodeDO> listByStateAndLastId(Enums.ContentState state, Long lastId, int limit) {
+        return getListByFilter(null, null, null, state.value(), lastId, limit);
+    }
+
+    /**
      * 审批通过节点
      */
     @CacheEvict(value = "nodes", key = "#id")

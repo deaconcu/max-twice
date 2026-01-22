@@ -55,50 +55,97 @@
               @click="goToArticle(article)"
             >
               <v-card-text class="pa-4 pa-sm-6 pb-1">
-                <!-- 所属课程和节点 -->
+                <!-- 所属课程和节点 + 状态标签 -->
                 <div v-if="article.node || article.course" class="mb-3 mb-md-4">
-                  <div class="d-flex align-center ga-1 flex-wrap">
-                    <template v-if="article.course">
+                  <div class="d-flex align-center justify-space-between ga-2 flex-wrap">
+                    <!-- 左侧：课程和节点 -->
+                    <div class="d-flex align-center ga-1 flex-wrap">
+                      <template v-if="article.course">
+                        <v-chip
+                          :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                          density="comfortable"
+                          color="grey-darken-1"
+                          variant="tonal"
+                        >
+                          课程
+                        </v-chip>
+                        <v-btn
+                          v-if="article.course"
+                          variant="text"
+                          class="course-link-btn px-2 text-caption text-md-body-1"
+                          @click.stop="goToCourse(article.courseId)"
+                        >
+                          {{ article.course }}
+                        </v-btn>
+                      </template>
+                      <template v-if="article.node">
+                        <v-icon
+                          icon="mdi-chevron-right"
+                          :size="$vuetify.display.mobile ? 16 : 18"
+                          color="grey-darken-1"
+                          class="mx-1"
+                        />
+                        <v-chip
+                          :size="$vuetify.display.mobile ? 'x-small' : 'small'"
+                          density="comfortable"
+                          color="grey-darken-1"
+                          variant="tonal"
+                        >
+                          节点
+                        </v-chip>
+                        <v-btn
+                          variant="text"
+                          class="course-link-btn px-2 text-caption text-md-body-1"
+                          @click.stop="goToNode(article.nodeId)"
+                        >
+                          {{ article.node.name }}
+                        </v-btn>
+                      </template>
+                    </div>
+
+                    <!-- 右侧：状态标签 -->
+                    <div class="flex-shrink-0">
                       <v-chip
-                        :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                        density="comfortable"
-                        color="grey-darken-1"
+                        v-if="article.state === 0"
+                        size="small"
+                        color="grey"
                         variant="tonal"
                       >
-                        课程
+                        草稿
                       </v-chip>
-                      <v-btn
-                        v-if="article.course"
-                        variant="text"
-                        class="course-link-btn px-2 text-caption text-md-body-1"
-                        @click.stop="goToCourse(article.courseId)"
-                      >
-                        {{ article.course }}
-                      </v-btn>
-                    </template>
-                    <template v-if="article.node">
-                      <v-icon
-                        icon="mdi-chevron-right"
-                        :size="$vuetify.display.mobile ? 16 : 18"
-                        color="grey-darken-1"
-                        class="mx-1"
-                      />
                       <v-chip
-                        :size="$vuetify.display.mobile ? 'x-small' : 'small'"
-                        density="comfortable"
-                        color="grey-darken-1"
+                        v-else-if="article.state === 1"
+                        size="small"
+                        color="warning"
                         variant="tonal"
                       >
-                        节点
+                        待审核
                       </v-chip>
-                      <v-btn
-                        variant="text"
-                        class="course-link-btn px-2 text-caption text-md-body-1"
-                        @click.stop="goToNode(article.nodeId)"
+                      <v-chip
+                        v-else-if="article.state === 2"
+                        size="small"
+                        color="success"
+                        variant="tonal"
                       >
-                        {{ article.node.name }}
-                      </v-btn>
-                    </template>
+                        已发布
+                      </v-chip>
+                      <v-chip
+                        v-else-if="article.state === 3"
+                        size="small"
+                        color="error"
+                        variant="tonal"
+                      >
+                        已拒绝
+                      </v-chip>
+                      <v-chip
+                        v-else-if="article.state === 4"
+                        size="small"
+                        color="error"
+                        variant="tonal"
+                      >
+                        已屏蔽
+                      </v-chip>
+                    </div>
                   </div>
                 </div>
 
@@ -114,8 +161,8 @@
                 <div class="d-flex align-center justify-space-between ga-2">
                   <!-- 统计信息 -->
                   <div
-                    class="d-flex align-center flex-wrap text-caption text-md-body-2 text-grey"
-                    style="gap: 8px"
+                    class="d-flex align-center flex-wrap text-caption text-md-body-2 text-grey pl-2"
+                    style="gap: 16px"
                   >
                     <div class="d-flex align-center">
                       <v-icon
@@ -214,9 +261,7 @@
         <ArticleEditModal
           v-model="showEditModal"
           :article="editingArticle"
-          :loading="updateLoading"
-          @save="handleSaveArticle"
-          @publish="handlePublishArticle"
+          @success="handleArticleSuccess"
           @cancel="handleCancelEdit"
         />
 
@@ -270,6 +315,7 @@ const {
   loading,
   hasMore,
   loadMore: loadMorePosts,
+  reset: resetPosts,
 } = useInfiniteScroll({
   fetchFn: async (params) => {
     if (props.isOwnProfile || props.userId === null) {
@@ -307,26 +353,41 @@ const { execute: deletePost } = useMutation((postId: number) => postApi.deletePo
   },
 })
 
-// 更新文章
-const { execute: updatePost, loading: updateLoading } = useMutation(
-  (data: { id: number; content: string }) =>
-    postApi.updatePost(data.id, { content: data.content }),
-  {
-    successMessage: '文章已更新',
-    onSuccess: (response) => {
-      if (editingArticle.value && response) {
-        // 更新文章内容
-        const index = posts.value.findIndex(p => p.id === editingArticle.value.id)
-        if (index !== -1) {
-          posts.value[index].content = response.content
-        }
-        // 关闭编辑对话框
-        showEditModal.value = false
-        editingArticle.value = null
-      }
-    },
+// 文章编辑/创建成功后的处理
+const handleArticleSuccess = (updatedArticle: any) => {
+  console.log('handleArticleSuccess called')
+  console.log('updatedArticle:', updatedArticle)
+  console.log('editingArticle.value:', editingArticle.value)
+
+  if (!updatedArticle) {
+    console.log('No updatedArticle, just closing dialog')
+    // 创建并直接发布：文章待审核，列表不变，只关闭对话框
+    showEditModal.value = false
+    editingArticle.value = null
+    return
   }
-)
+
+  if (editingArticle.value) {
+    // 编辑模式：只更新内容和状态，保留原有的 node、course 等信息
+    const index = posts.value.findIndex((p) => p.id === updatedArticle.id)
+    console.log('Editing mode, found index:', index)
+    if (index !== -1) {
+      // 只更新变化的字段，保留原有的嵌套结构
+      posts.value[index].content = updatedArticle.content
+      posts.value[index].state = updatedArticle.state
+      posts.value[index].updatedAt = updatedArticle.updatedAt
+      console.log('After update, state:', posts.value[index].state)
+    }
+  } else {
+    // 创建模式保存草稿：添加到列表顶部
+    console.log('Creating new draft, adding to top')
+    posts.value.unshift(updatedArticle)
+  }
+
+  // 关闭编辑对话框
+  showEditModal.value = false
+  editingArticle.value = null
+}
 
 // 存储每个文章的溢出状态
 const overflowStates = ref<Record<number, boolean>>({})
@@ -347,6 +408,7 @@ const articles = computed(() => {
     commentCount: post.commentCount || 0,
     publishedAt: post.createdAt || '',
     hasOverflow: overflowStates.value[post.id] || false,
+    state: post.state, // 添加状态字段
   }))
 })
 
@@ -366,7 +428,16 @@ const setContentRef = (el: any, index: number) => {
 // 格式化日期
 const formatDate = (date: string) => {
   if (!date) return ''
-  return new Date(date).toLocaleDateString('zh-CN')
+  const d = new Date(date)
+  return d.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  })
 }
 
 // 跳转到课程
@@ -406,18 +477,15 @@ const confirmDelete = async () => {
 
 // 编辑文章
 const editArticle = (article: any) => {
-  editingArticle.value = article
+  editingArticle.value = {
+    id: article.id,
+    preview: article.preview,
+    state: article.state,
+    node: article.node,
+    course: article.course,
+    courseId: article.courseId,
+  }
   showEditModal.value = true
-}
-
-// 处理保存文章
-const handleSaveArticle = async (data: { id: number; content: string }) => {
-  await updatePost(data)
-}
-
-// 处理发布文章（将草稿发布）
-const handlePublishArticle = async (data: { id: number; content: string }) => {
-  await updatePost({ ...data, state: ContentState.SUBMITTED })
 }
 
 // 取消编辑

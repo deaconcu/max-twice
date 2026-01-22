@@ -451,19 +451,30 @@ public class PostService {
     // ========== 公共方法 command ==========
 
     /**
-     * 创建帖子（处理contents类型的特殊逻辑）
+     * 创建帖子（处理index类型的特殊逻辑）
      *
      * @param currentUser 当前用户
      * @param request 帖子创建请求对象
      * @throws BusinessException 当节点不存在或JSON处理失败时抛出异常
      */
     @Transactional
-    public void createPost(UserDO currentUser, CreatePostRequest request) {
-        createPost(currentUser, request, ContentState.SUBMITTED);
+    public PostSummaryDTO createPostAndReturn(UserDO currentUser, CreatePostRequest request) {
+        // 如果 request 中指定了 state，使用它，否则默认为 DRAFT
+        ContentState state = request.getState() != null
+                ? ContentState.getByValue(request.getState().byteValue())
+                : ContentState.DRAFT;
+
+        if (state == null) {
+            state = ContentState.DRAFT;
+        }
+
+        Long postId = createPost(currentUser, request, state);
+        PostDO postDO = domainService.getWithIdToName(postId);
+        return postConverter.toSummaryDTO(postDO);
     }
 
     /**
-     * 创建帖子（处理contents类型的特殊逻辑）
+     * 创建帖子（处理index类型的特殊逻辑）
      *
      * @param currentUser 当前用户
      * @param request 帖子创建请求对象
@@ -490,7 +501,7 @@ public class PostService {
         // 根据类型调用不同的 DomainService 方法
         Long postId;
         if (postType == PostType.index) {
-            postId = domainService.createContentsPost(userId, request.getNodeId(), request.getContent(), postState);
+            postId = domainService.createIndexPost(userId, request.getNodeId(), request.getContent(), postState);
         } else {
             postId = domainService.createArticlePost(userId, request.getNodeId(), postType.value(), request.getContent(), postState);
         }
@@ -525,8 +536,19 @@ public class PostService {
         // 调用 DomainService 更新
         domainService.updatePost(id, request.getContent());
 
-        // 修改后重新设置为待审核状态
-        domainService.updateState(id, ContentState.SUBMITTED, null);
+        // 根据请求中的 state 字段更新状态，默认为 DRAFT
+        ContentState targetState = ContentState.DRAFT;
+
+        if (request.getState() != null) {
+            targetState = ContentState.getByValue(request.getState().byteValue());
+
+            // 验证：只允许 DRAFT 或 SUBMITTED 状态
+            if (targetState != ContentState.DRAFT && targetState != ContentState.SUBMITTED) {
+                throw StatusCode.INVALID_PARAMETER.exception("目标状态非法");
+            }
+        }
+
+        domainService.updateState(id, targetState, null);
 
         // 自动标记内容中的图片为使用中
         markImagesAsUsed(request.getContent(), "post", id);
@@ -599,13 +621,21 @@ public class PostService {
     public void approve(Long id, UserDO currentUser) {
         PostDO postDO = domainService.validateAndGet(id);
 
-        // 调用 DomainService 更新状态
-        domainService.approve(id);
-
-        // 根据 postType 发布不同的事件
+        // 如果是index类型，需要先处理节点创建
         if (postDO.getType() == PostType.index.value()) {
-            // index 类型：解析引用的节点ID列表
-            List<Long> referencedNodeIds = parseReferencedNodeIds(postDO.getContent());
+            // 处理节点创建并获取节点ID列表
+            List<Long> referencedNodeIds = processIndexPostNodes(postDO);
+
+            // 更新post的content为节点ID列表
+            postDO.setContent(referencedNodeIds.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(",")));
+            postDataService.update(postDO);
+
+            // 调用 DomainService 更新状态
+            domainService.approve(id);
+
+            // 发布事件
             eventPublisher.publishEvent(ContentApprovedEvent.forIndexPost(
                 postDO.getCreatorId(),
                 postDO.getId(),
@@ -613,7 +643,9 @@ public class PostService {
                 referencedNodeIds
             ));
         } else {
-            // article 类型：使用原有的事件构造方法
+            // article 类型：原有逻辑
+            domainService.approve(id);
+
             eventPublisher.publishEvent(ContentApprovedEvent.forPost(
                 postDO.getCreatorId(),
                 postDO.getId(),
@@ -1125,7 +1157,7 @@ public class PostService {
     }
 
     /**
-     * 解析 contents 类型帖子的引用节点ID列表
+     * 解析 index post 的引用节点ID列表（从逗号分隔的ID字符串）
      *
      * @param content 帖子内容（逗号分隔的节点ID）
      * @return 节点ID列表，解析失败返回空列表
@@ -1146,4 +1178,68 @@ public class PostService {
             return List.of();
         }
     }
+
+    /**
+     * 处理 index post 的节点创建
+     * 解析JSON，检查重名，创建新节点，返回节点ID列表
+     *
+     * @param postDO index类型的post
+     * @return 节点ID列表
+     */
+    private List<Long> processIndexPostNodes(PostDO postDO) {
+        String jsonContent = postDO.getContent();
+        NodeDO parentNode = nodeDataService.validateAndGet(postDO.getNodeId());
+        Long courseId = parentNode.getCourseId();
+        Long userId = postDO.getCreatorId();
+
+        // 解析JSON
+        List<ChapterInfo> chapterInfos;
+        try {
+            chapterInfos = objectMapper.readValue(jsonContent,
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, ChapterInfo.class));
+        } catch (Exception e) {
+            log.error("Failed to parse index post JSON: {}", jsonContent, e);
+            throw StatusCode.JSON_PROCESSING_ERROR.exception("解析目录数据失败");
+        }
+
+        List<Long> nodeIds = new ArrayList<>();
+
+        for (ChapterInfo chapterInfo : chapterInfos) {
+            if (chapterInfo.id() != null) {
+                // 使用已有节点
+                nodeIds.add(chapterInfo.id());
+            } else {
+                // 创建新节点，先检查重名
+                String nodeName = chapterInfo.name();
+                NodeDO existingNode = nodeDataService.getByCourseAndName(courseId, nodeName);
+
+                if (existingNode != null && existingNode.getState() == ContentState.PUBLISHED.value()) {
+                    // 发现重名，拒绝审批
+                    String reason = String.format("节点'%s'与已存在节点(ID:%d)重名，请修改后重新提交",
+                            nodeName, existingNode.getId());
+                    domainService.reject(postDO.getId(), reason);
+                    throw StatusCode.INVALID_PARAMETER.exception(reason);
+                }
+
+                // 创建新节点
+                NodeDO newNode = new NodeDO();
+                newNode.setName(nodeName);
+                newNode.setDescription(chapterInfo.description());
+                newNode.setCourseId(courseId);
+                newNode.setCreatorId(userId);
+                newNode.setState(ContentState.PUBLISHED.value());
+                nodeDataService.insert(newNode);
+
+                nodeIds.add(newNode.getId());
+                log.info("Created new node: {} (id: {}) in course: {}", nodeName, newNode.getId(), courseId);
+            }
+        }
+
+        return nodeIds;
+    }
+
+    /**
+     * 章节信息（用于JSON解析）
+     */
+    private record ChapterInfo(Long id, String name, String description) {}
 }

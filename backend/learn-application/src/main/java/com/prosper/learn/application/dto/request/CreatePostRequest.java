@@ -31,4 +31,10 @@ public class CreatePostRequest {
      */
     @NotNull(message = "帖子类型不能为空")
     private Integer type;
+
+    /**
+     * 帖子状态（可选，默认为SUBMITTED）
+     * 0=DRAFT, 1=SUBMITTED
+     */
+    private Integer state;
 }

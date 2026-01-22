@@ -1,11 +1,11 @@
 <template>
   <v-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" width="800" height="1200px" persistent>
     <v-card rounded="xl">
-      <v-card-item>
-        <v-card-title class="d-flex align-center justify-space-between">
+      <v-card-item class="px-4 py-3">
+        <v-card-title class="d-flex align-center justify-space-between pa-0">
           <div class="d-flex align-center">
             <v-icon size="small" class="px-4" icon="mdi-account"></v-icon>
-            <span class="ps-2 font-weight-medium">编辑文章</span>
+            <span class="ps-2 font-weight-medium">{{ isEditMode ? '编辑文章' : '创建文章' }}</span>
           </div>
           <v-btn icon="mdi-close" variant="text" size="small" @click="handleCancel"></v-btn>
         </v-card-title>
@@ -13,28 +13,28 @@
       <div class="overflow-y-auto dialog-content">
         <TipTapEditor
           ref="editorRef"
-          :model-value="article?.preview || ''"
+          :model-value="getCurrentArticle?.preview || ''"
           :editable="true"
           placeholder="在这里编写您的文章内容..."
-          class="px-3"
-          @update="updateContentLength"
+          @update:model-value="updateContentLength"
         />
       </div>
-      <div class="px-6 pb-6 pt-4 action-bottom">
+      <div class="px-4 pb-4 pt-4 action-bottom">
         <div class="d-flex align-center justify-space-between">
-          <div class="text-caption text-grey">
+          <div class="text-caption text-grey px-2">
             {{ contentLength }} 字符
           </div>
           <div class="d-flex gap-2">
             <v-btn variant="text" @click="handleCancel">
               取消
             </v-btn>
-            <!-- 如果是草稿，显示"保存草稿"和"发布文章" -->
-            <template v-if="article?.state === ContentState.DRAFT">
+            <!-- 创建模式 或 编辑草稿模式 -->
+            <template v-if="!isEditMode || getCurrentArticle?.state === ContentState.DRAFT">
               <v-btn
                 color="primary"
                 variant="tonal"
-                :loading="loading"
+                :loading="savingDraft"
+                :disabled="!isDraftValid"
                 @click="handleSave"
               >
                 保存草稿
@@ -42,18 +42,19 @@
               <v-btn
                 color="primary"
                 variant="flat"
-                :loading="loading"
+                :loading="publishing"
+                :disabled="!isFormValid"
                 @click="handlePublish"
               >
                 发布文章
               </v-btn>
             </template>
-            <!-- 如果不是草稿，只显示"保存" -->
+            <!-- 编辑模式 - 如果不是草稿，只显示"保存" -->
             <v-btn
               v-else
               color="primary"
               variant="flat"
-              :loading="loading"
+              :loading="savingDraft"
               @click="handleSave"
             >
               保存
@@ -66,9 +67,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, computed, inject } from 'vue'
 import TipTapEditor from '@/components/common/TipTapEditor.vue'
-import { ContentState } from '@/enums'
+import { ContentState, PostType } from '@/enums'
+import { postApi } from '@/api'
+import { useMutation } from '@/composables/useMutation'
+
+const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
 interface Article {
   id: number
@@ -83,17 +88,18 @@ interface Props {
   modelValue: boolean
   article: Article | null
   loading?: boolean
+  nodeId?: number  // 创建新文章时需要的 nodeId
 }
 
 interface Emits {
   (e: 'update:modelValue', value: boolean): void
-  (e: 'save', data: { id: number; content: string }): void
-  (e: 'publish', data: { id: number; content: string }): void
+  (e: 'success', article: Article | null): void  // 传递更新后的文章数据
   (e: 'cancel'): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
+  nodeId: 0,
 })
 
 const emit = defineEmits<Emits>()
@@ -101,6 +107,11 @@ const emit = defineEmits<Emits>()
 // 编辑器引用和字符统计
 const editorRef = ref<InstanceType<typeof TipTapEditor> | null>(null)
 const contentLength = ref(0)
+const currentArticle = ref<Article | null>(null)  // 当前编辑的文章（用于创建后转编辑模式）
+
+// 字符限制
+const MIN_LENGTH = 100
+const MAX_LENGTH = 10000
 
 // 更新字符计数
 const updateContentLength = () => {
@@ -110,38 +121,190 @@ const updateContentLength = () => {
   }
 }
 
+// 验证表单是否有效（发布）
+const isFormValid = computed(() => {
+  return contentLength.value >= MIN_LENGTH && contentLength.value <= MAX_LENGTH
+})
+
+// 验证草稿是否有效（保存草稿）
+const isDraftValid = computed(() => {
+  return contentLength.value > 0 && contentLength.value <= MAX_LENGTH
+})
+
+// 判断是否是编辑模式
+const isEditMode = computed(() => props.article != null || currentArticle.value != null)
+
+// 获取当前文章
+const getCurrentArticle = computed(() => props.article || currentArticle.value)
+
+// 创建帖子
+const { execute: executeCreate, loading: creating } = useMutation(
+  (data: { nodeId: number; content: string; type: number; state: number }) =>
+    postApi.createPost(data),
+  {
+    successMessage: '操作成功',
+    onSuccess: (result, payload) => {
+      const isDraft = payload.state === ContentState.DRAFT
+      if (isDraft) {
+        // 保存草稿：保存返回的文章数据，转为编辑模式，通知父组件添加到列表
+        currentArticle.value = result
+        emit('success', result)
+        // 不关闭窗口
+      } else {
+        // 发布文章：关闭窗口，不更新列表（文章待审核，列表不变）
+        emit('update:modelValue', false)
+        emit('success', null)
+        currentArticle.value = null
+      }
+    },
+  }
+)
+
+// 更新帖子
+const { execute: executeUpdate, loading: updating } = useMutation(
+  (data: { id: number; content: string; state?: number }) =>
+    postApi.updatePost(data.id, { content: data.content, state: data.state }),
+  {
+    successMessage: '操作成功',
+    onSuccess: (result, payload) => {
+      console.log('executeUpdate onSuccess', { result, payload })
+      const isPublishing = payload.state === ContentState.SUBMITTED
+      if (isPublishing) {
+        // 发布文章：关闭窗口，通知父组件更新该文章状态
+        console.log('Publishing, emitting success with:', result)
+        emit('update:modelValue', false)
+        emit('success', result)
+        currentArticle.value = null
+      } else {
+        // 保存草稿：更新当前文章数据，通知父组件更新列表中的数据
+        console.log('Saving draft, emitting success with:', result)
+        if (result) {
+          currentArticle.value = result
+        }
+        emit('success', result)
+        // 不关闭窗口
+      }
+    },
+  }
+)
+
+const submitting = computed(() => creating.value || updating.value)
+const savingDraft = ref(false)  // 保存草稿的 loading 状态
+const publishing = ref(false)   // 发布文章的 loading 状态
+
 // 保存文章
-const handleSave = () => {
-  if (!props.article || !editorRef.value?.editor) {
+const handleSave = async () => {
+  if (!editorRef.value?.editor) {
     return
   }
 
   const content = editorRef.value.editor.getHTML()
+  const article = getCurrentArticle.value
 
-  emit('save', {
-    id: props.article.id,
-    content,
-  })
+  savingDraft.value = true
+  try {
+    // 编辑模式（包括创建后转换的编辑模式）
+    if (article) {
+      await executeUpdate({
+        id: article.id,
+        content,
+        state: ContentState.DRAFT,
+      })
+      return
+    }
+
+    // 创建模式
+    if (!props.nodeId) {
+      showSnackbar?.('缺少节点ID', 'error')
+      return
+    }
+    if (!isDraftValid.value) {
+      showSnackbar?.('内容不能为空', 'warning')
+      return
+    }
+
+    // 创建新草稿
+    await executeCreate({
+      nodeId: props.nodeId,
+      content,
+      type: PostType.ARTICLE,
+      state: ContentState.DRAFT,
+    })
+  } finally {
+    savingDraft.value = false
+  }
 }
 
 // 发布文章
-const handlePublish = () => {
-  if (!props.article || !editorRef.value?.editor) {
+const handlePublish = async () => {
+  if (!editorRef.value?.editor) {
     return
   }
 
   const content = editorRef.value.editor.getHTML()
+  const article = getCurrentArticle.value
 
-  emit('publish', {
-    id: props.article.id,
-    content,
-  })
+  if (!isFormValid.value) {
+    showSnackbar?.(`文章内容需要在 ${MIN_LENGTH} 到 ${MAX_LENGTH} 字符之间`, 'warning')
+    return
+  }
+
+  publishing.value = true
+  try {
+    // 编辑模式（包括创建后转换的编辑模式）
+    if (article) {
+      await executeUpdate({
+        id: article.id,
+        content,
+        state: ContentState.SUBMITTED,
+      })
+      return
+    }
+
+    // 创建模式
+    if (!props.nodeId) {
+      showSnackbar?.('缺少节点ID', 'error')
+      return
+    }
+
+    // 直接发布
+    await executeCreate({
+      nodeId: props.nodeId,
+      content,
+      type: PostType.ARTICLE,
+      state: ContentState.SUBMITTED,
+    })
+  } finally {
+    publishing.value = false
+  }
 }
 
 // 取消编辑
 const handleCancel = () => {
   emit('update:modelValue', false)
+  emit('cancel')
 }
+
+// 监听对话框打开，初始化字符计数
+watch(() => props.modelValue, (newVal) => {
+  if (newVal) {
+    // 对话框打开时，延迟更新字符计数（等待编辑器初始化）
+    nextTick(() => {
+      setTimeout(() => {
+        updateContentLength()
+      }, 100)
+    })
+  } else {
+    // 对话框关闭时，重置状态
+    setTimeout(() => {
+      currentArticle.value = null
+      contentLength.value = 0
+      if (editorRef.value?.editor) {
+        editorRef.value.editor.commands.setContent('')
+      }
+    }, 300)
+  }
+})
 </script>
 
 <style scoped>

@@ -93,41 +93,6 @@ const { execute: saveConfig, loading: saving } = useMutation(
   }
 )
 
-// 计算属性：配置是否有效
-const isValidConfig = computed<boolean>(() => {
-  try {
-    if (courseCategories.value.trim()) {
-      JSON.parse(courseCategories.value)
-    }
-    if (professionCategories.value.trim()) {
-      JSON.parse(professionCategories.value)
-    }
-    return true
-  } catch (error) {
-    console.error('配置格式错误:', error)
-    return false
-  }
-})
-
-// 格式化配置
-const formatConfig = (): void => {
-  try {
-    if (courseCategories.value.trim()) {
-      const parsedCourse = JSON.parse(courseCategories.value)
-      courseCategories.value = JSON.stringify(parsedCourse, null, 2)
-    }
-
-    if (professionCategories.value.trim()) {
-      const parsedProfession = JSON.parse(professionCategories.value)
-      professionCategories.value = JSON.stringify(parsedProfession, null, 2)
-    }
-
-    showSnackbar?.('格式化成功', 'success')
-  } catch (error: any) {
-    showSnackbar?.(`格式化失败: ${error.message}`, 'error')
-  }
-}
-
 // 保存配置
 const saveConfiguration = async (): Promise<void> => {
   if (!isValidConfig.value) {

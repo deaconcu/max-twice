@@ -1,6 +1,6 @@
 package com.prosper.learn.application.dto.response.message;
 
-import com.prosper.learn.application.dto.response.UserDTO;
+import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import lombok.Data;
 
 @Data
@@ -10,11 +10,11 @@ public class MessageDTO {
 
     private Long senderId;
 
-    private UserDTO sender;
+    private UserBriefDTO sender;
 
     private long receiverId;
 
-    private UserDTO receiver;
+    private UserBriefDTO receiver;
 
     private String content;
 

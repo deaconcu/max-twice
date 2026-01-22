@@ -8,7 +8,6 @@ import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.shared.domain.Enums.ContentState;
 import com.prosper.learn.shared.domain.Enums.PostType;
-import com.prosper.learn.shared.domain.event.content.lifecycle.NodeCreatedEvent;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -174,10 +173,12 @@ public class PostDomainService {
     }
 
     /**
-     * 创建目录型帖子（contents类型）
+     * 创建目录型帖子（index类型）
+     * 创建时不创建节点，只保存JSON格式的节点信息
+     * 节点将在审批通过时创建
      */
     @Transactional
-    public Long createContentsPost(long userId, long nodeId, String jsonContent, ContentState state) {
+    public Long createIndexPost(long userId, long nodeId, String jsonContent, ContentState state) {
         NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
 
         // 验证节点状态是否为已发布
@@ -185,92 +186,124 @@ public class PostDomainService {
             throw StatusCode.NODE_STATE_INVALID.exception();
         }
 
-        log.info("Creating contents post with content: {}", jsonContent);
+        log.info("Creating index post with content: {}", jsonContent);
+
+        // 验证JSON格式并解析
         List<ChapterInfo> chapterInfos = parseJsonToChapterInfoList(jsonContent);
 
         if (chapterInfos.size() < 2) {
             throw StatusCode.INVALID_PARAMETER.exception("至少需要2个子目录");
         }
 
-        String[] ids = new String[chapterInfos.size()];
         Long courseId = nodeDO.getCourseId();
 
-        for (int i = 0; i < chapterInfos.size(); i++) {
-            ChapterInfo chapterInfo = chapterInfos.get(i);
-
-            // 如果提供了节点ID，直接使用（用于选择已有节点）
+        // 验证引用的已有节点是否存在且已发布
+        for (ChapterInfo chapterInfo : chapterInfos) {
             if (chapterInfo.id() != null) {
                 NodeDO existingNode = nodeDataService.validateAndGet(chapterInfo.id());
 
                 // 验证节点状态为已发布
                 if (existingNode.getState() != ContentState.PUBLISHED.value()) {
-                    throw StatusCode.NODE_STATE_INVALID.exception();
+                    throw StatusCode.NODE_STATE_INVALID.exception("引用的节点不是正常状态");
                 }
-
-                ids[i] = Long.toString(existingNode.getId());
-                log.info("Using existing node: {} (id: {}) from course: {}", existingNode.getName(), existingNode.getId(), existingNode.getCourseId());
             } else {
-                // 没有提供ID，按节点名称创建
-                String nodeName = chapterInfo.name();
-
-                // 检查本课程是否已存在同名节点
-                NodeDO existingNode = nodeDataService.getByCourseAndName(courseId, nodeName);
-
-                if (existingNode != null) {
-                    // 存在同名节点，抛错让用户手动选择
-                    throw StatusCode.INVALID_PARAMETER.exception(
-                            String.format("课程中已存在名为'%s'的节点(ID:%d)，请使用「选择现有」功能手动选择该节点",
-                                    nodeName, existingNode.getId()));
+                // 验证新节点的名称和描述不为空
+                if (chapterInfo.name() == null || chapterInfo.name().trim().isEmpty()) {
+                    throw StatusCode.INVALID_PARAMETER.exception("节点名称不能为空");
                 }
-
-                // 创建新节点
-                NodeDO newNode = new NodeDO();
-                newNode.setName(nodeName);
-                newNode.setDescription(chapterInfo.description());
-                newNode.setCourseId(courseId);
-                newNode.setCreatorId(userId);
-                newNode.setState(ContentState.PUBLISHED.value());
-                nodeDataService.insert(newNode);
-                ids[i] = Long.toString(newNode.getId());
-                log.info("Created new node: {} (id: {}) in course: {}", nodeName, newNode.getId(), courseId);
-
-                // 发布节点创建事件
-                eventPublisher.publishEvent(new NodeCreatedEvent(
-                        newNode.getId(),
-                        newNode.getName(),
-                        newNode.getDescription()
-                ));
+                if (chapterInfo.description() == null || chapterInfo.description().trim().isEmpty()) {
+                    throw StatusCode.INVALID_PARAMETER.exception("节点描述不能为空");
+                }
             }
         }
 
-        // 创建 PostDO
+        // 创建 PostDO，直接保存JSON内容
+        // 节点将在审批时创建
         PostDO postDO = new PostDO();
         postDO.setNodeId(nodeId);
         postDO.setCreatorId(userId);
         postDO.setType(PostType.index.value());
-        postDO.setContent(String.join(",", ids));
+        postDO.setContent(jsonContent);  // 保存原始JSON
         postDO.setState(state.value());
         postDataService.insert(postDO);
 
-        log.info("Created contents post: {} in node: {} by user: {}", postDO.getId(), nodeId, userId);
+        log.info("Created index post: {} in node: {} by user: {}", postDO.getId(), nodeId, userId);
         return postDO.getId();
     }
 
     /**
-     * 更新帖子内容
+     * 更新帖子内容（根据类型自动分发）
      */
     @Transactional
     public void updatePost(long id, String content) {
         PostDO postDO = validateAndGet(id);
 
         if (postDO.getType() == PostType.index.value()) {
-            throw StatusCode.INVALID_PARAMETER.exception("目录类型帖子不支持修改");
+            updateIndexPost(postDO, content);
+        } else {
+            updateArticlePost(postDO, content);
         }
+    }
 
+    /**
+     * 更新文章类型帖子
+     */
+    private void updateArticlePost(PostDO postDO, String content) {
         postDO.setContent(content);
         postDataService.update(postDO);
+        log.info("Updated article post: {}", postDO.getId());
+    }
 
-        log.info("Updated post: {}", id);
+    /**
+     * 更新index类型帖子
+     * 只允许在DRAFT状态下修改，且需要检查节点重名
+     */
+    private void updateIndexPost(PostDO postDO, String jsonContent) {
+        // 只允许草稿状态修改
+        if (postDO.getState() != ContentState.DRAFT.value()) {
+            throw StatusCode.INVALID_PARAMETER.exception("目录类型帖子只能在草稿状态下修改");
+        }
+
+        // 验证JSON格式
+        List<ChapterInfo> chapterInfos = parseJsonToChapterInfoList(jsonContent);
+        if (chapterInfos.size() < 2) {
+            throw StatusCode.INVALID_PARAMETER.exception("至少需要2个子目录");
+        }
+
+        NodeDO parentNode = nodeDataService.validateAndGet(postDO.getNodeId());
+        Long courseId = parentNode.getCourseId();
+
+        // 检查新节点是否重名
+        for (ChapterInfo chapterInfo : chapterInfos) {
+            if (chapterInfo.id() == null) {
+                // 新节点，检查课程内是否有同名的PUBLISHED节点
+                String nodeName = chapterInfo.name();
+                if (nodeName == null || nodeName.trim().isEmpty()) {
+                    throw StatusCode.INVALID_PARAMETER.exception("节点名称不能为空");
+                }
+                if (chapterInfo.description() == null || chapterInfo.description().trim().isEmpty()) {
+                    throw StatusCode.INVALID_PARAMETER.exception("节点描述不能为空");
+                }
+
+                NodeDO existingNode = nodeDataService.getByCourseAndName(courseId, nodeName);
+                if (existingNode != null && existingNode.getState() == ContentState.PUBLISHED.value()) {
+                    throw StatusCode.INVALID_PARAMETER.exception(
+                        String.format("课程中已存在名为'%s'的节点(ID:%d)，请使用已有节点或修改节点名称",
+                            nodeName, existingNode.getId())
+                    );
+                }
+            } else {
+                // 引用已有节点，验证存在且已发布
+                NodeDO existingNode = nodeDataService.validateAndGet(chapterInfo.id());
+                if (existingNode.getState() != ContentState.PUBLISHED.value()) {
+                    throw StatusCode.NODE_STATE_INVALID.exception("引用的节点不是正常状态");
+                }
+            }
+        }
+
+        postDO.setContent(jsonContent);
+        postDataService.update(postDO);
+        log.info("Updated index post: {}", postDO.getId());
     }
 
     /**

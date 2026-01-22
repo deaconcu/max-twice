@@ -95,6 +95,18 @@ export const postApi = {
   },
 
   /**
+   * 检查课程内是否存在同名已发布节点
+   */
+  checkDuplicateNode(courseId: number, name: string): Promise<ApiResponse<boolean>> {
+    return apiClient.get('/v1/nodes/check-duplicate', {
+      params: {
+        courseId,
+        name,
+      },
+    })
+  },
+
+  /**
    * 初始化节点 Embedding（管理员）
    */
   initNodeEmbeddings(

@@ -17,6 +17,7 @@
       border
       transition="slide-y-transition"
       :class="`snackbar-${currentSnackbar.type}`"
+      style="z-index: 9999"
     >
       <div class="d-flex align-center pa-1">
         <v-avatar :color="getSnackbarIconBg(currentSnackbar.type)" size="32" class="mr-3">

@@ -50,6 +50,11 @@ spring:
       host: 127.0.0.1
       port: 6379
 
+# Meilisearch 配置
+meilisearch:
+  host: http://localhost:7700
+  api-key: your_master_key_change_this_in_production
+
 server:
   port: ${PORT:9202}
   servlet:

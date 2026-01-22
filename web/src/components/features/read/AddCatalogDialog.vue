@@ -96,7 +96,7 @@ const { execute: executeSubmit, loading: submitting } = useMutation(
     // 调用创建 contents 类型帖子的接口
     const response = await postApi.createPost({
       nodeId: props.nodeId!,
-      type: PostType.CONTENTS,
+      type: PostType.INDEX,
       content: JSON.stringify(jsonContent),
     })
 

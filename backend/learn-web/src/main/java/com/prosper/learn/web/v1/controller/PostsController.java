@@ -82,11 +82,11 @@ public class PostsController {
     @PostMapping("/posts")
     @SaCheckLogin
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<Void> createPost(
+    public ApiResponse<PostSummaryDTO> createPost(
             @Valid @RequestBody CreatePostRequest request,
             @CurrentUser UserDO currentUser) {
-        postService.createPost(currentUser, request);
-        return ApiResponse.success();
+        PostSummaryDTO postDTO = postService.createPostAndReturn(currentUser, request);
+        return ApiResponse.success(postDTO);
     }
 
     /**
@@ -191,5 +191,20 @@ public class PostsController {
 
         List<NodeSearchResultDTO> nodes = nodeService.searchSimilarNodes(query, topK, threshold);
         return ApiResponse.success(nodes);
+    }
+
+    /**
+     * 检查课程内是否存在同名已发布节点
+     * GET /api/v1/nodes/check-duplicate?courseId=1&name=Java基础
+     */
+    @GetMapping("/nodes/check-duplicate")
+    @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<Boolean> checkDuplicateNode(
+            @RequestParam @NotNull(message = "课程ID不能为空") @Positive(message = "课程ID必须大于0") Long courseId,
+            @RequestParam @NotBlank(message = "节点名称不能为空") String name) {
+
+        boolean isDuplicate = nodeService.checkDuplicateNode(courseId, name);
+        return ApiResponse.success(isDuplicate);
     }
 }

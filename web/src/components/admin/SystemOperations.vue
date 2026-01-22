@@ -291,6 +291,77 @@ const { execute: recalculateReferences, loading: recalculating } = useMutation(
   }
 )
 
+// 搜索索引同步
+const { execute: syncAllIndexes, loading: syncingAll } = useMutation(
+  adminApi.syncAllSearchIndexes,
+  {
+    showToast: false,
+    onSuccess: () => {
+      showSnackbar?.('全量同步已开始，请查看日志', 'success')
+      addOperationToHistory('搜索索引同步', '全量同步所有搜索索引', true)
+    },
+    onError: (error) => {
+      addOperationToHistory('搜索索引同步', `全量同步失败: ${error.message}`, false)
+    },
+  }
+)
+
+const { execute: syncCourses, loading: syncingCourses } = useMutation(
+  adminApi.syncCourseIndexes,
+  {
+    showToast: false,
+    onSuccess: (result) => {
+      showSnackbar?.(`课程索引同步完成，共${result}条`, 'success')
+      addOperationToHistory('搜索索引同步', `同步了${result}个课程`, true)
+    },
+    onError: (error) => {
+      addOperationToHistory('搜索索引同步', `课程同步失败: ${error.message}`, false)
+    },
+  }
+)
+
+const { execute: syncNodes, loading: syncingNodes } = useMutation(
+  adminApi.syncNodeIndexes,
+  {
+    showToast: false,
+    onSuccess: (result) => {
+      showSnackbar?.(`节点索引同步完成，共${result}条`, 'success')
+      addOperationToHistory('搜索索引同步', `同步了${result}个节点`, true)
+    },
+    onError: (error) => {
+      addOperationToHistory('搜索索引同步', `节点同步失败: ${error.message}`, false)
+    },
+  }
+)
+
+const { execute: syncUsers, loading: syncingUsers } = useMutation(
+  adminApi.syncUserIndexes,
+  {
+    showToast: false,
+    onSuccess: (result) => {
+      showSnackbar?.(`用户索引同步完成，共${result}条`, 'success')
+      addOperationToHistory('搜索索引同步', `同步了${result}个用户`, true)
+    },
+    onError: (error) => {
+      addOperationToHistory('搜索索引同步', `用户同步失败: ${error.message}`, false)
+    },
+  }
+)
+
+const { execute: syncProfessions, loading: syncingProfessions } = useMutation(
+  adminApi.syncProfessionIndexes,
+  {
+    showToast: false,
+    onSuccess: (result) => {
+      showSnackbar?.(`职业索引同步完成，共${result}条`, 'success')
+      addOperationToHistory('搜索索引同步', `同步了${result}个职业`, true)
+    },
+    onError: (error) => {
+      addOperationToHistory('搜索索引同步', `职业同步失败: ${error.message}`, false)
+    },
+  }
+)
+
 // 初始化时更新只读模式状态
 setTimeout(() => {
   updateReadonlyMode()
@@ -648,6 +719,134 @@ setTimeout(() => {
             </div>
           </v-alert>
         </v-card>
+      </div>
+    </v-card>
+
+    <!-- 搜索索引同步 -->
+    <v-card flat class="border rounded-lg pa-4 mb-4">
+      <div class="d-flex align-center mb-4">
+        <v-icon icon="mdi-magnify-scan" color="purple-darken-1" class="mr-2"></v-icon>
+        <h4 class="text-h6 font-weight-bold text-grey-darken-3">搜索索引同步</h4>
+      </div>
+
+      <div class="mb-4">
+        <p class="text-body-2 text-grey-darken-1 mb-4">
+          同步数据到搜索引擎（Meilisearch），只同步已发布状态的内容。
+        </p>
+
+        <v-row class="mb-4">
+          <!-- 全量同步 -->
+          <v-col cols="12" md="4">
+            <v-card flat class="pa-4 bg-purple-lighten-5" rounded="lg" elevation="0">
+              <div class="d-flex align-center mb-3">
+                <v-icon icon="mdi-sync" color="purple-darken-2" size="20" class="mr-2"></v-icon>
+                <h5 class="text-subtitle-1 font-weight-bold text-purple-darken-2">全量同步</h5>
+              </div>
+              <p class="text-body-2 text-grey-darken-1 mb-3">同步所有已发布的数据（删除并重建索引）</p>
+              <v-btn
+                variant="flat"
+                color="purple-darken-1"
+                rounded="lg"
+                density="compact"
+                :loading="syncingAll"
+                :disabled="syncingAll"
+                @click="syncAllIndexes"
+              >
+                <v-icon icon="mdi-database-sync" size="16" class="mr-2"></v-icon>
+                全量同步
+              </v-btn>
+            </v-card>
+          </v-col>
+
+          <!-- 同步课程 -->
+          <v-col cols="12" md="2">
+            <v-card flat class="pa-4 bg-blue-lighten-5" rounded="lg" elevation="0">
+              <div class="text-center">
+                <v-icon icon="mdi-book-sync" color="blue-darken-2" size="24" class="mb-2"></v-icon>
+                <h6 class="text-subtitle-2 font-weight-bold text-blue-darken-2 mb-2">课程</h6>
+                <v-btn
+                  variant="flat"
+                  color="blue-darken-1"
+                  rounded="lg"
+                  size="x-small"
+                  :loading="syncingCourses"
+                  @click="syncCourses"
+                >
+                  同步
+                </v-btn>
+              </div>
+            </v-card>
+          </v-col>
+
+          <!-- 同步节点 -->
+          <v-col cols="12" md="2">
+            <v-card flat class="pa-4 bg-green-lighten-5" rounded="lg" elevation="0">
+              <div class="text-center">
+                <v-icon icon="mdi-file-tree" color="green-darken-2" size="24" class="mb-2"></v-icon>
+                <h6 class="text-subtitle-2 font-weight-bold text-green-darken-2 mb-2">节点</h6>
+                <v-btn
+                  variant="flat"
+                  color="green-darken-1"
+                  rounded="lg"
+                  size="x-small"
+                  :loading="syncingNodes"
+                  @click="syncNodes"
+                >
+                  同步
+                </v-btn>
+              </div>
+            </v-card>
+          </v-col>
+
+          <!-- 同步用户 -->
+          <v-col cols="12" md="2">
+            <v-card flat class="pa-4 bg-orange-lighten-5" rounded="lg" elevation="0">
+              <div class="text-center">
+                <v-icon icon="mdi-account-sync" color="orange-darken-2" size="24" class="mb-2"></v-icon>
+                <h6 class="text-subtitle-2 font-weight-bold text-orange-darken-2 mb-2">用户</h6>
+                <v-btn
+                  variant="flat"
+                  color="orange-darken-1"
+                  rounded="lg"
+                  size="x-small"
+                  :loading="syncingUsers"
+                  @click="syncUsers"
+                >
+                  同步
+                </v-btn>
+              </div>
+            </v-card>
+          </v-col>
+
+          <!-- 同步职业 -->
+          <v-col cols="12" md="2">
+            <v-card flat class="pa-4 bg-teal-lighten-5" rounded="lg" elevation="0">
+              <div class="text-center">
+                <v-icon icon="mdi-briefcase-sync" color="teal-darken-2" size="24" class="mb-2"></v-icon>
+                <h6 class="text-subtitle-2 font-weight-bold text-teal-darken-2 mb-2">职业</h6>
+                <v-btn
+                  variant="flat"
+                  color="teal-darken-1"
+                  rounded="lg"
+                  size="x-small"
+                  :loading="syncingProfessions"
+                  @click="syncProfessions"
+                >
+                  同步
+                </v-btn>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <v-alert type="info" variant="tonal" rounded="lg" density="compact">
+          <div class="text-body-2">
+            <div class="font-weight-bold mb-1">说明：</div>
+            <div>• 全量同步会删除并重建索引，耗时较长，请查看服务器日志了解进度</div>
+            <div>• 单项同步仅同步对应类型的数据</div>
+            <div>• 只有已发布（PUBLISHED）状态的内容会被索引</div>
+          </div>
+        </v-alert>
       </div>
     </v-card>
 

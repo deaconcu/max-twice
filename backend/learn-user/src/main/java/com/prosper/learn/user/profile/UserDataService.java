@@ -223,4 +223,14 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
     public List<UserDO> getListPaginated(long offsetId, int count) {
         return userMapper.getListPaginated(offsetId, count);
     }
+
+    /**
+     * 根据状态分页获取用户列表
+     */
+    public List<UserDO> listByStateAndLastId(Byte state, Long lastId, int limit) {
+        if (lastId == null || lastId == 0) {
+            lastId = Long.MAX_VALUE;
+        }
+        return userMapper.listByStateAndLastId(state, lastId, limit);
+    }
 }

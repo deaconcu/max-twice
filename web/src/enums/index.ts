@@ -20,7 +20,7 @@ export type VoteType = (typeof VoteType)[keyof typeof VoteType]
  * 帖子类型常量
  */
 export const PostType = {
-  CONTENTS: 1, // 内容
+  INDEX: 1, // 目录/索引
   ARTICLE: 2, // 文章
 } as const
 

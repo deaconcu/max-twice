@@ -409,4 +409,41 @@ export const adminApi = {
   recalculateNodeReferences(): Promise<ApiResponse<{ processedPosts: number; updatedNodes: number }>> {
     return apiClient.post('/v1/admin/contents/nodes/recalculate-references')
   },
+
+  // ========== 搜索索引同步 ==========
+
+  /**
+   * 全量同步所有搜索索引
+   */
+  syncAllSearchIndexes(): Promise<ApiResponse<string>> {
+    return apiClient.post('/v1/admin/search/sync-all')
+  },
+
+  /**
+   * 同步课程索引
+   */
+  syncCourseIndexes(): Promise<ApiResponse<number>> {
+    return apiClient.post('/v1/admin/search/sync-courses')
+  },
+
+  /**
+   * 同步节点索引
+   */
+  syncNodeIndexes(): Promise<ApiResponse<number>> {
+    return apiClient.post('/v1/admin/search/sync-nodes')
+  },
+
+  /**
+   * 同步用户索引
+   */
+  syncUserIndexes(): Promise<ApiResponse<number>> {
+    return apiClient.post('/v1/admin/search/sync-users')
+  },
+
+  /**
+   * 同步职业索引
+   */
+  syncProfessionIndexes(): Promise<ApiResponse<number>> {
+    return apiClient.post('/v1/admin/search/sync-professions')
+  },
 }

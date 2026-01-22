@@ -66,4 +66,7 @@ public interface UserMapper {
 
     @Select("SELECT * FROM user WHERE id < #{offsetId} ORDER BY id DESC LIMIT #{count}")
     List<UserDO> getListPaginated(long offsetId, int count);
+
+    @Select("SELECT * FROM user WHERE state = #{state} AND id < #{lastId} ORDER BY id DESC LIMIT #{limit}")
+    List<UserDO> listByStateAndLastId(@Param("state") Byte state, @Param("lastId") Long lastId, @Param("limit") int limit);
 }

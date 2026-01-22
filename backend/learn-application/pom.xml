@@ -50,6 +50,13 @@
             <artifactId>learn-infrastructure</artifactId>
             <version>0.0.1</version>
         </dependency>
+
+        <!-- Meilisearch -->
+        <dependency>
+            <groupId>com.meilisearch.sdk</groupId>
+            <artifactId>meilisearch-java</artifactId>
+            <version>0.18.0</version>
+        </dependency>
     </dependencies>
 
 </project>

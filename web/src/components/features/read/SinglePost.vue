@@ -64,13 +64,13 @@ const handleContentClick = (event: MouseEvent) => {
 
 // PostType 枚举
 const PostType = {
-  CONTENTS: 1,
+  INDEX: 1,
   ARTICLE: 2,
 }
 
 // 解析目录内容
 const contentNodes = computed<NodeInfo[]>(() => {
-  if (props.posting.type !== PostType.CONTENTS) {
+  if (props.posting.type !== PostType.INDEX) {
     return []
   }
 
@@ -403,7 +403,7 @@ watch(
     <!-- 文章内容 -->
     <v-row class="ma-0 pa-0 pt-2">
       <!-- 目录型 Post -->
-      <template v-if="posting.type === PostType.CONTENTS">
+      <template v-if="posting.type === PostType.INDEX">
         <div class="w-100 d-flex justify-space-between align-end">
           <v-list class="w-100">
             <v-list-item
@@ -471,7 +471,7 @@ watch(
       align="center"
     >
       <!-- 目录型 Post：只显示"赞同"按钮 -->
-      <template v-if="posting.type === PostType.CONTENTS">
+      <template v-if="posting.type === PostType.INDEX">
         <v-btn
           :variant="posting.voteType === 'helpful' ? 'flat' : 'tonal'"
           rounded="pill"
@@ -639,7 +639,7 @@ watch(
       </v-btn>
 
       <!-- 目录型 Post 管理按钮：设置/取消设置为目录 -->
-      <template v-if="posting.type === PostType.CONTENTS">
+      <template v-if="posting.type === PostType.INDEX">
         <v-btn
           variant="text"
           rounded="lg"

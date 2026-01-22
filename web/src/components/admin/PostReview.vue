@@ -552,7 +552,7 @@ const parseContents = (content: string) => {
                 class="tiptap post-content"
                 v-html="post.content"
               ></div>
-              <div v-if="post.type == PostType.CONTENTS">
+              <div v-if="post.type == PostType.INDEX">
                 <div class="text-caption text-grey-darken-1 mb-3">目录</div>
                 <div class="contents-list">
                   <div

@@ -5,7 +5,7 @@ import SinglePost from './SinglePost.vue'
 import CommentSection from '@/components/common/CommentSection.vue'
 import MemoryCardList from './MemoryCardList.vue'
 import NodeSelectorDialog from './NodeSelectorDialog.vue'
-import AddArticleDialog from './AddArticleDialog.vue'
+import ArticleEditModal from '@/components/profile/ArticleEditModal.vue'
 import InviteUserDialog from './InviteUserDialog.vue'
 import { ObjectType } from '@/enums'
 import type { MemoryCardDeck } from '@/types/memory'
@@ -114,18 +114,20 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
           <div class="d-flex align-center">
             <v-icon icon="mdi-list-box-outline" color="primary-darken-1" size="24"></v-icon>
             <h2 class="text-h5 font-weight-bold text-grey-darken-4 ms-3">{{ data.node?.name }}</h2>
-            <v-chip
-              v-if="data.node?.nodeReferenceCount !== undefined && data.node.nodeReferenceCount > 0"
-              size="small"
-              variant="tonal"
-              color="primary"
-              class="ml-3"
-            >
-              <v-icon icon="mdi-link-variant" size="14" class="mr-1"></v-icon>
-              被引用 {{ data.node.nodeReferenceCount }} 次
-            </v-chip>
           </div>
-          <div class="d-flex align-center">
+          <div class="d-flex align-center ga-2">
+            <!-- 引用次数 -->
+            <div
+              v-if="data.node?.nodeReferenceCount !== undefined && data.node.nodeReferenceCount > 0"
+              class="d-flex align-center text-body-2 text-grey-darken-2 px-3 py-1 bg-grey-lighten-5 rounded-lg"
+            >
+              <v-icon icon="mdi-link-variant" size="small" color="grey-darken-1" class="mr-1"></v-icon>
+              {{ data.node.nodeReferenceCount }}
+              <v-tooltip activator="parent" location="top">
+                被引用次数：{{ data.node.nodeReferenceCount }}
+              </v-tooltip>
+            </div>
+            <!-- 完成学习按钮 -->
             <v-btn
               v-if="isLearning"
               :color="data.node?.isCompleted ? 'grey-lighten-2' : 'success'"
@@ -351,11 +353,11 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
     />
 
     <!-- 添加文章对话框 -->
-    <AddArticleDialog
+    <ArticleEditModal
       v-model="showAddArticleDialog"
+      :article="null"
       :node-id="currNodeId"
-      :path-text="pathText"
-      @load-data="handleLoadData"
+      @success="handleLoadData"
     />
 
     <!-- 邀请回答对话框 -->

@@ -124,7 +124,7 @@ public class ContentsControllerTest extends BaseControllerTest {
     /**
      * 创建内容型帖子（目录型）
      */
-    private PostDO createContentsPost(String content, Long nodeId, Long creatorId) {
+    private PostDO createIndexPost(String content, Long nodeId, Long creatorId) {
         PostDO post = new PostDO();
         post.setContent(content);
         post.setNodeId(nodeId);
@@ -195,7 +195,7 @@ public class ContentsControllerTest extends BaseControllerTest {
 
         // 创建内容型帖子，内容是节点ID列表
         String tocContent = node1.getId() + "," + node2.getId();
-        PostDO contentsPost = createContentsPost(tocContent, course.getRootNodeId(), user.getId());
+        PostDO contentsPost = createIndexPost(tocContent, course.getRootNodeId(), user.getId());
 
         // 初始化用户目录
         initUserCourseToc(user.getId(), course.getId());
@@ -566,7 +566,7 @@ public class ContentsControllerTest extends BaseControllerTest {
         UserDO user = createUser("user@example.com");
         CourseDO course = createPublishedCourse("测试课程", user.getId());
         NodeDO node = createPublishedNode("节点1", course.getId(), user.getId());
-        PostDO contentsPost = createContentsPost(node.getId().toString(), course.getRootNodeId(), user.getId());
+        PostDO contentsPost = createIndexPost(node.getId().toString(), course.getRootNodeId(), user.getId());
 
         // 不初始化用户目录
 
@@ -624,7 +624,7 @@ public class ContentsControllerTest extends BaseControllerTest {
         UserDO user = createUser("user@example.com");
         CourseDO course = createPublishedCourse("测试课程", user.getId());
         NodeDO node = createPublishedNode("节点1", course.getId(), user.getId());
-        PostDO contentsPost = createContentsPost(node.getId().toString(), course.getRootNodeId(), user.getId());
+        PostDO contentsPost = createIndexPost(node.getId().toString(), course.getRootNodeId(), user.getId());
         initUserCourseToc(user.getId(), course.getId());
 
         StpUtil.login(user.getId());
