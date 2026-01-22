@@ -374,40 +374,40 @@ public class MeilisearchService {
 
     // ========== 搜索 ==========
 
-    public Searchable searchCourses(String query, int limit) {
+    public Searchable searchCourses(String query, int limit, int offset) {
         try {
             return meilisearchClient.index(INDEX_COURSES)
-                .search(SearchRequest.builder().q(query).limit(limit).build());
+                .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
         } catch (Exception e) {
             log.error("Search courses failed", e);
             return null;
         }
     }
 
-    public Searchable searchNodes(String query, int limit) {
+    public Searchable searchNodes(String query, int limit, int offset) {
         try {
             return meilisearchClient.index(INDEX_NODES)
-                .search(SearchRequest.builder().q(query).limit(limit).build());
+                .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
         } catch (Exception e) {
             log.error("Search nodes failed", e);
             return null;
         }
     }
 
-    public Searchable searchUsers(String query, int limit) {
+    public Searchable searchUsers(String query, int limit, int offset) {
         try {
             return meilisearchClient.index(INDEX_USERS)
-                .search(SearchRequest.builder().q(query).limit(limit).build());
+                .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
         } catch (Exception e) {
             log.error("Search users failed", e);
             return null;
         }
     }
 
-    public Searchable searchProfessions(String query, int limit) {
+    public Searchable searchProfessions(String query, int limit, int offset) {
         try {
             return meilisearchClient.index(INDEX_PROFESSIONS)
-                .search(SearchRequest.builder().q(query).limit(limit).build());
+                .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
         } catch (Exception e) {
             log.error("Search professions failed", e);
             return null;

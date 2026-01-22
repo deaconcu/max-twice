@@ -11,6 +11,11 @@ export const baseRoutes: RouteRecordRaw[] = [
     component: () => import('@/views/home/HomePage.vue'),
   },
   {
+    path: '/search',
+    name: 'search',
+    component: () => import('@/views/home/SearchPage.vue'),
+  },
+  {
     path: '/users/:id',
     name: 'UserProfile',
     component: () => import('@/views/profile/ProfilePage.vue'),

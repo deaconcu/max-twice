@@ -1,7 +1,21 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import NotificationMenu from '@/components/common/NotificationMenu.vue'
 import UserMenu from '@/components/common/UserMenu.vue'
 import { HEADER_HEIGHT } from '@/constants/layout'
+
+const router = useRouter()
+const searchQuery = ref('')
+
+const handleSearch = () => {
+  if (!searchQuery.value.trim()) return
+  router.push({
+    path: '/search',
+    query: { q: searchQuery.value },
+  })
+  searchQuery.value = ''
+}
 </script>
 
 <template>
@@ -25,6 +39,7 @@ import { HEADER_HEIGHT } from '@/constants/layout'
         <v-col cols="auto" class="d-none d-md-block">
           <div class="search-container">
             <v-text-field
+              v-model="searchQuery"
               density="compact"
               variant="solo"
               placeholder="搜索课程、职业、文章..."
@@ -33,6 +48,7 @@ import { HEADER_HEIGHT } from '@/constants/layout'
               single-line
               class="search-field"
               style="width: 480px"
+              @keyup.enter="handleSearch"
             ></v-text-field>
           </div>
         </v-col>

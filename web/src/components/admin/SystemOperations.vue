@@ -5,7 +5,7 @@ import { useFetch, useMutation } from '@/composables'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
-// 操作历史记录类型
+// 操作历史
 interface OperationRecord {
   title: string
   description: string
@@ -13,81 +13,37 @@ interface OperationRecord {
   time: string
 }
 
-// 同步结果类型
-interface SyncResult {
-  type: 'success' | 'error' | 'warning' | 'info'
-  title: string
-  message: string
-  details?: string
-}
-
-// 健康检查结果类型
-interface HealthResult {
-  type: 'success' | 'error' | 'warning' | 'info'
-  title: string
-  message: string
-  details?: string
-}
-
-// 操作历史记录
 const operationHistory = ref<OperationRecord[]>([])
 
-// 同步相关
-const syncDate = ref<string>('')
-const syncResult = ref<SyncResult | null>(null)
-
-// 健康检查相关
-const healthResult = ref<HealthResult | null>(null)
-const lastHealthCheck = ref<string>('')
-
-// AutoAuthor 相关
-const nodeId = ref<string>('')
-
-/**
- * 添加操作记录到历史
- */
 const addOperationToHistory = (title: string, description: string, success = true): void => {
-  const operation: OperationRecord = {
+  operationHistory.value.unshift({
     title,
     description,
     success,
     time: new Date().toLocaleString(),
-  }
-
-  operationHistory.value.unshift(operation)
-
-  // 只保留最近20条记录
+  })
   if (operationHistory.value.length > 20) {
     operationHistory.value = operationHistory.value.slice(0, 20)
   }
 }
 
-// 使用 useFetch 加载只读模式状态
-const { data: readonlyModeData, refresh: loadReadonlyMode } = useFetch({
+// 只读模式
+const { data: readonlyModeData } = useFetch({
   fetchFn: async () => {
     const response = await systemApi.getReadonlyMode()
-    if (response.code === 200 && response.data) {
-      return response.data
-    }
-    return null
+    return response.code === 200 && response.data ? response.data : null
   },
   immediate: true,
-  onError: (error) => {
-    console.error('加载只读模式状态失败:', error)
-  },
 })
 
-// 响应式只读模式开关
 const readonlyModeEnabled = ref<boolean>(false)
 
-// 监听数据变化更新 switch 状态
 const updateReadonlyMode = () => {
   if (readonlyModeData.value) {
     readonlyModeEnabled.value = readonlyModeData.value.enabled
   }
 }
 
-// 切换只读模式
 const { execute: toggleReadonlyModeExecute, loading: togglingReadonlyMode } = useMutation(
   (enabled: boolean) => systemApi.setReadonlyMode(enabled),
   {
@@ -95,12 +51,10 @@ const { execute: toggleReadonlyModeExecute, loading: togglingReadonlyMode } = us
     showToast: false,
     onSuccess: (result, enabled) => {
       showSnackbar?.(enabled ? '只读模式已开启' : '只读模式已关闭', 'success')
-      addOperationToHistory('只读模式', enabled ? '开启系统只读模式' : '关闭系统只读模式', true)
+      addOperationToHistory('只读模式', enabled ? '开启' : '关闭', true)
       readonlyModeEnabled.value = enabled
     },
     onError: (error) => {
-      console.error('切换只读模式失败:', error)
-      // 恢复原状态
       readonlyModeEnabled.value = !readonlyModeEnabled.value
       addOperationToHistory('只读模式', `切换失败: ${error.message}`, false)
     },
@@ -111,108 +65,64 @@ const toggleReadonlyMode = (enabled: boolean) => {
   toggleReadonlyModeExecute(enabled)
 }
 
-// 手动同步Redis统计数据
+// Redis 同步
+const syncDate = ref<string>('')
+
 const { execute: syncStatsManual, loading: syncingManual } = useMutation(statsApi.syncManual, {
-  showToast: false,
-  onSuccess: (result) => {
-    syncResult.value = {
-      type: 'success',
-      title: '同步成功',
-      message: 'Redis统计数据已成功同步到数据库',
-      details: `同步时间: ${new Date().toLocaleString()}`,
-    }
-    showSnackbar?.('统计数据同步成功', 'success')
-    addOperationToHistory('Redis数据同步', '手动同步Redis统计数据到数据库', true)
+  successMessage: '统计数据同步成功',
+  onSuccess: () => {
+    addOperationToHistory('Redis同步', '手动同步成功', true)
   },
   onError: (error) => {
-    console.error('Redis统计数据同步失败:', error)
-    syncResult.value = {
-      type: 'error',
-      title: '同步失败',
-      message: error.message || '同步过程中发生错误',
-      details: `错误时间: ${new Date().toLocaleString()}`,
-    }
-    addOperationToHistory('Redis数据同步', `同步失败: ${error.message}`, false)
+    addOperationToHistory('Redis同步', `失败: ${error.message}`, false)
   },
 })
 
-// 同步指定日期的Redis统计数据
 const { execute: syncStatsSpecificDateExecute, loading: syncingSpecific } = useMutation(
   (targetDate: string | null) => statsApi.syncDate(targetDate),
   {
-    showToast: false,
+    successMessage: '统计数据同步成功',
     onSuccess: (result, targetDate) => {
-      const displayDate = targetDate || '昨日'
-      syncResult.value = {
-        type: 'success',
-        title: '同步成功',
-        message: `${displayDate}的统计数据已成功同步到数据库`,
-        details: result || `同步时间: ${new Date().toLocaleString()}`,
-      }
-      showSnackbar?.(`${displayDate}统计数据同步成功`, 'success')
-      addOperationToHistory('指定日期数据同步', `同步${displayDate}的统计数据`, true)
+      addOperationToHistory('Redis同步', `同步${targetDate || '昨日'}数据`, true)
     },
     onError: (error) => {
-      console.error('指定日期统计数据同步失败:', error)
-      const displayDate = syncDate.value || '昨日'
-      syncResult.value = {
-        type: 'error',
-        title: '同步失败',
-        message: `${displayDate}数据同步失败: ${error.message || '同步过程中发生错误'}`,
-        details: `错误时间: ${new Date().toLocaleString()}`,
-      }
-      addOperationToHistory('指定日期数据同步', `${displayDate}同步失败: ${error.message}`, false)
+      addOperationToHistory('Redis同步', `失败: ${error.message}`, false)
     },
   }
 )
 
 const syncStatsSpecificDate = () => {
-  const targetDate = syncDate.value || null
-  syncStatsSpecificDateExecute(targetDate)
+  syncStatsSpecificDateExecute(syncDate.value || null)
 }
 
-// 检查系统健康状态
+// 健康检查
+const lastHealthCheck = ref<string>('')
+
 const { execute: checkSystemHealth, loading: checkingHealth } = useMutation(statsApi.getHealth, {
-  showToast: false,
-  onSuccess: (result) => {
-    healthResult.value = {
-      type: 'success',
-      title: '系统健康',
-      message: '所有系统组件运行正常',
-      details: typeof result === 'string' ? result : JSON.stringify(result, null, 2),
-    }
+  successMessage: '系统健康',
+  onSuccess: () => {
     lastHealthCheck.value = new Date().toLocaleString()
-    addOperationToHistory('系统健康检查', '系统运行状态正常', true)
+    addOperationToHistory('健康检查', '系统正常', true)
   },
   onError: (error) => {
-    console.error('系统健康检查失败:', error)
-    healthResult.value = {
-      type: 'warning',
-      title: '健康检查异常',
-      message: error.message || '健康检查过程中发生错误',
-      details: `检查时间: ${new Date().toLocaleString()}`,
-    }
     lastHealthCheck.value = new Date().toLocaleString()
-    addOperationToHistory('系统健康检查', `检查异常: ${error.message}`, false)
+    addOperationToHistory('健康检查', `异常: ${error.message}`, false)
   },
 })
 
-// 将节点加入到 AutoAuthor 队列
+// AutoAuthor
+const nodeId = ref<string>('')
+
 const { execute: enqueueNodeExecute, loading: enqueuingNode } = useMutation(
   (nodeIdNumber: number) => adminApi.enqueueAutoAuthorNode(nodeIdNumber),
   {
-    showToast: false,
-    onSuccess: (result, nodeIdNumber) => {
-      showSnackbar?.('节点已加入创作队列', 'success')
-      addOperationToHistory('AutoAuthor队列', `节点 ${nodeIdNumber} 加入创作队列`, true)
+    successMessage: '节点已加入队列',
+    onSuccess: () => {
+      addOperationToHistory('AutoAuthor', `节点${nodeId.value}加入队列`, true)
       nodeId.value = ''
     },
     onError: (error) => {
-      addOperationToHistory(
-        'AutoAuthor队列',
-        `节点 ${nodeId.value} 加入队列失败: ${error.message}`,
-        false
-      )
+      addOperationToHistory('AutoAuthor', `失败: ${error.message}`, false)
     },
   }
 )
@@ -222,58 +132,52 @@ const enqueueNode = () => {
     showSnackbar?.('请输入节点ID', 'error')
     return
   }
-  const nodeIdNumber = parseInt(nodeId.value, 10)
-  enqueueNodeExecute(nodeIdNumber)
+  enqueueNodeExecute(parseInt(nodeId.value, 10))
 }
 
-// 扫描节点并批量加入队列
 const { execute: scanNodes, loading: scanningNodes } = useMutation(adminApi.scanAutoAuthorNodes, {
   successMessage: '扫描已开始',
   onSuccess: () => {
-    addOperationToHistory('AutoAuthor扫描', '开始扫描缺少AI内容的节点', true)
+    addOperationToHistory('AutoAuthor', '开始扫描节点', true)
   },
   onError: (error) => {
-    addOperationToHistory('AutoAuthor扫描', `扫描失败: ${error.message}`, false)
+    addOperationToHistory('AutoAuthor', `扫描失败: ${error.message}`, false)
   },
 })
 
-// 重置 opencode 会话
 const { execute: resetSession, loading: resettingSession } = useMutation(
   adminApi.resetAutoAuthorSession,
   {
     successMessage: '会话已重置',
     onSuccess: () => {
-      addOperationToHistory('AutoAuthor会话', '重置opencode会话成功', true)
+      addOperationToHistory('AutoAuthor', '重置会话', true)
     },
     onError: (error) => {
-      addOperationToHistory('AutoAuthor会话', `重置失败: ${error.message}`, false)
+      addOperationToHistory('AutoAuthor', `重置失败: ${error.message}`, false)
     },
   }
 )
 
-// 确认清空队列
 const confirmClearQueue = (): void => {
-  if (confirm('确定要清空所有AutoAuthor队列吗？此操作不可撤销。')) {
+  if (confirm('确定要清空所有AutoAuthor队列吗？')) {
     clearQueueExecute()
   }
 }
 
-// 清空 AutoAuthor 队列
 const { execute: clearQueueExecute, loading: clearingQueue } = useMutation(
   adminApi.clearAutoAuthorQueue,
   {
-    showToast: false,
-    onSuccess: (result) => {
-      showSnackbar?.(result || '队列已清空', 'success')
-      addOperationToHistory('AutoAuthor队列', '清空所有待处理队列', true)
+    successMessage: '队列已清空',
+    onSuccess: () => {
+      addOperationToHistory('AutoAuthor', '清空队列', true)
     },
     onError: (error) => {
-      addOperationToHistory('AutoAuthor队列', `清空队列失败: ${error.message}`, false)
+      addOperationToHistory('AutoAuthor', `清空失败: ${error.message}`, false)
     },
   }
 )
 
-// 重新计算节点引用数
+// 节点引用数统计
 const recalculateResult = ref<{ processedPosts: number; updatedNodes: number } | null>(null)
 
 const { execute: recalculateReferences, loading: recalculating } = useMutation(
@@ -283,10 +187,14 @@ const { execute: recalculateReferences, loading: recalculating } = useMutation(
     onSuccess: (result) => {
       recalculateResult.value = result
       showSnackbar?.('节点引用数统计已更新', 'success')
-      addOperationToHistory('节点引用数统计', `处理了${result.processedPosts}个目录，更新了${result.updatedNodes}个节点`, true)
+      addOperationToHistory(
+        '节点引用数统计',
+        `处理${result.processedPosts}个目录，更新${result.updatedNodes}个节点`,
+        true
+      )
     },
     onError: (error) => {
-      addOperationToHistory('节点引用数统计', `重新计算失败: ${error.message}`, false)
+      addOperationToHistory('节点引用数统计', `失败: ${error.message}`, false)
     },
   }
 )
@@ -295,13 +203,12 @@ const { execute: recalculateReferences, loading: recalculating } = useMutation(
 const { execute: syncAllIndexes, loading: syncingAll } = useMutation(
   adminApi.syncAllSearchIndexes,
   {
-    showToast: false,
+    successMessage: '全量同步已开始',
     onSuccess: () => {
-      showSnackbar?.('全量同步已开始，请查看日志', 'success')
-      addOperationToHistory('搜索索引同步', '全量同步所有搜索索引', true)
+      addOperationToHistory('搜索索引', '全量同步', true)
     },
     onError: (error) => {
-      addOperationToHistory('搜索索引同步', `全量同步失败: ${error.message}`, false)
+      addOperationToHistory('搜索索引', `全量同步失败: ${error.message}`, false)
     },
   }
 )
@@ -311,11 +218,11 @@ const { execute: syncCourses, loading: syncingCourses } = useMutation(
   {
     showToast: false,
     onSuccess: (result) => {
-      showSnackbar?.(`课程索引同步完成，共${result}条`, 'success')
-      addOperationToHistory('搜索索引同步', `同步了${result}个课程`, true)
+      showSnackbar?.(`同步了${result}个课程`, 'success')
+      addOperationToHistory('搜索索引', `同步${result}个课程`, true)
     },
     onError: (error) => {
-      addOperationToHistory('搜索索引同步', `课程同步失败: ${error.message}`, false)
+      addOperationToHistory('搜索索引', `课程同步失败: ${error.message}`, false)
     },
   }
 )
@@ -325,11 +232,11 @@ const { execute: syncNodes, loading: syncingNodes } = useMutation(
   {
     showToast: false,
     onSuccess: (result) => {
-      showSnackbar?.(`节点索引同步完成，共${result}条`, 'success')
-      addOperationToHistory('搜索索引同步', `同步了${result}个节点`, true)
+      showSnackbar?.(`同步了${result}个节点`, 'success')
+      addOperationToHistory('搜索索引', `同步${result}个节点`, true)
     },
     onError: (error) => {
-      addOperationToHistory('搜索索引同步', `节点同步失败: ${error.message}`, false)
+      addOperationToHistory('搜索索引', `节点同步失败: ${error.message}`, false)
     },
   }
 )
@@ -339,11 +246,11 @@ const { execute: syncUsers, loading: syncingUsers } = useMutation(
   {
     showToast: false,
     onSuccess: (result) => {
-      showSnackbar?.(`用户索引同步完成，共${result}条`, 'success')
-      addOperationToHistory('搜索索引同步', `同步了${result}个用户`, true)
+      showSnackbar?.(`同步了${result}个用户`, 'success')
+      addOperationToHistory('搜索索引', `同步${result}个用户`, true)
     },
     onError: (error) => {
-      addOperationToHistory('搜索索引同步', `用户同步失败: ${error.message}`, false)
+      addOperationToHistory('搜索索引', `用户同步失败: ${error.message}`, false)
     },
   }
 )
@@ -353,16 +260,15 @@ const { execute: syncProfessions, loading: syncingProfessions } = useMutation(
   {
     showToast: false,
     onSuccess: (result) => {
-      showSnackbar?.(`职业索引同步完成，共${result}条`, 'success')
-      addOperationToHistory('搜索索引同步', `同步了${result}个职业`, true)
+      showSnackbar?.(`同步了${result}个职业`, 'success')
+      addOperationToHistory('搜索索引', `同步${result}个职业`, true)
     },
     onError: (error) => {
-      addOperationToHistory('搜索索引同步', `职业同步失败: ${error.message}`, false)
+      addOperationToHistory('搜索索引', `职业同步失败: ${error.message}`, false)
     },
   }
 )
 
-// 初始化时更新只读模式状态
 setTimeout(() => {
   updateReadonlyMode()
 }, 100)
@@ -370,684 +276,217 @@ setTimeout(() => {
 
 <template>
   <div class="system-operations">
-    <!-- 页面头部 -->
-    <div class="d-flex align-center justify-space-between mb-6">
-      <div class="d-flex align-center">
-        <div class="pa-3 rounded-lg bg-purple-lighten-5 mr-3">
-          <v-icon icon="mdi-cog-sync" color="purple-darken-1" size="20"></v-icon>
-        </div>
-        <div>
-          <h3 class="text-h6 font-weight-bold text-grey-darken-3">系统操作</h3>
-          <p class="text-body-2 text-grey-darken-1 mb-0">管理系统运维操作</p>
-        </div>
-      </div>
-      <v-chip variant="flat" color="purple-lighten-4" rounded="lg">
-        <v-icon icon="mdi-tools" color="purple-darken-2" size="16" class="mr-1"></v-icon>
-        <span class="text-purple-darken-2 text-caption">管理工具</span>
-      </v-chip>
-    </div>
+    <h2 class="text-h5 font-weight-bold mb-6">系统操作</h2>
 
-    <!-- 只读模式控制 -->
-    <v-card flat class="border rounded-lg pa-4 mb-4">
-      <div class="d-flex align-center mb-4">
-        <v-icon icon="mdi-shield-lock-outline" color="deep-orange-darken-1" class="mr-2"></v-icon>
-        <h4 class="text-h6 font-weight-bold text-grey-darken-3">只读模式</h4>
-      </div>
-
-      <div class="mb-4">
-        <p class="text-body-2 text-grey-darken-1 mb-4">
-          开启只读模式后，系统将禁止所有写操作（创建、修改、删除），适用于系统维护、数据迁移等场景。登录、注册等基础功能不受影响。
+    <!-- 只读模式 -->
+    <v-card flat class="border mb-4">
+      <v-card-title class="d-flex align-center">
+        <v-icon icon="mdi-shield-lock-outline" class="mr-2"></v-icon>
+        只读模式
+      </v-card-title>
+      <v-card-text>
+        <p class="text-body-2 text-grey mb-4">
+          开启后禁止所有写操作，适用于系统维护、数据迁移等场景
         </p>
-
-        <v-card
-          flat
-          class="pa-4"
-          rounded="lg"
-          elevation="0"
-          :color="readonlyModeEnabled ? 'red-lighten-5' : 'green-lighten-5'"
-        >
-          <div class="d-flex align-center justify-space-between">
-            <div>
-              <div class="d-flex align-center mb-2">
-                <v-icon
-                  :icon="readonlyModeEnabled ? 'mdi-lock' : 'mdi-lock-open'"
-                  :color="readonlyModeEnabled ? 'red-darken-2' : 'green-darken-2'"
-                  size="24"
-                  class="mr-2"
-                ></v-icon>
-                <h5
-                  class="text-subtitle-1 font-weight-bold"
-                  :class="readonlyModeEnabled ? 'text-red-darken-2' : 'text-green-darken-2'"
-                >
-                  当前状态
-                </h5>
-              </div>
-              <p
-                class="text-h6 font-weight-bold"
-                :class="readonlyModeEnabled ? 'text-red-darken-2' : 'text-green-darken-2'"
-              >
-                {{ readonlyModeEnabled ? '只读模式已开启' : '正常运行中' }}
-              </p>
-              <p class="text-caption text-grey-darken-1">
-                {{ readonlyModeEnabled ? '所有写操作已被禁止' : '系统可正常读写' }}
-              </p>
+        <div class="d-flex align-center justify-space-between pa-3 border rounded">
+          <div>
+            <div class="font-weight-medium">
+              {{ readonlyModeEnabled ? '只读模式已开启' : '正常运行中' }}
             </div>
-            <v-switch
-              v-model="readonlyModeEnabled"
-              color="red-darken-1"
-              :loading="togglingReadonlyMode"
-              :disabled="togglingReadonlyMode"
-              hide-details
-              @update:model-value="toggleReadonlyMode"
-            ></v-switch>
+            <div class="text-caption text-grey">
+              {{ readonlyModeEnabled ? '所有写操作已禁止' : '系统可正常读写' }}
+            </div>
           </div>
-        </v-card>
-      </div>
+          <v-switch
+            v-model="readonlyModeEnabled"
+            color="primary"
+            :loading="togglingReadonlyMode"
+            hide-details
+            @update:model-value="toggleReadonlyMode"
+          ></v-switch>
+        </div>
+      </v-card-text>
     </v-card>
 
     <!-- Redis 统计数据同步 -->
-    <v-card flat class="border rounded-lg pa-4 mb-4">
-      <div class="d-flex align-center mb-4">
-        <v-icon icon="mdi-database-sync" color="red-darken-1" class="mr-2"></v-icon>
-        <h4 class="text-h6 font-weight-bold text-grey-darken-3">Redis 统计数据同步</h4>
-      </div>
-
-      <div class="mb-4">
-        <p class="text-body-2 text-grey-darken-1 mb-4">
-          将 Redis 中的统计数据同步到数据库，支持手动同步和指定日期同步。
-        </p>
-
-        <v-row class="mb-4">
-          <!-- 手动同步 -->
-          <v-col cols="12" md="6">
-            <v-card flat class="pa-4 bg-orange-lighten-5" rounded="lg" elevation="0">
-              <div class="d-flex align-center mb-3">
-                <v-icon icon="mdi-sync" color="orange-darken-2" size="20" class="mr-2"></v-icon>
-                <h5 class="text-subtitle-1 font-weight-bold text-orange-darken-2">手动同步</h5>
-              </div>
-              <p class="text-body-2 text-grey-darken-1 mb-3">立即同步 Redis 中的统计数据到数据库</p>
-              <v-btn
-                variant="flat"
-                color="orange-darken-1"
-                rounded="lg"
-                size="small"
-                :loading="syncingManual"
-                :disabled="syncingManual || syncingSpecific"
-                @click="syncStatsManual"
-              >
-                <v-icon icon="mdi-play" size="16" class="mr-2"></v-icon>
-                立即同步
-              </v-btn>
-            </v-card>
-          </v-col>
-
-          <!-- 指定日期同步 -->
-          <v-col cols="12" md="6">
-            <v-card flat class="pa-4 bg-blue-lighten-5" rounded="lg" elevation="0">
-              <div class="d-flex align-center mb-3">
-                <v-icon
-                  icon="mdi-calendar-sync"
-                  color="blue-darken-2"
-                  size="20"
-                  class="mr-2"
-                ></v-icon>
-                <h5 class="text-subtitle-1 font-weight-bold text-blue-darken-2">指定日期同步</h5>
-              </div>
-              <p class="text-body-2 text-grey-darken-1 mb-3">
-                同步指定日期的统计数据，留空则同步昨日数据
-              </p>
-              <div class="d-flex align-center" style="gap: 12px">
-                <v-text-field
-                  v-model="syncDate"
-                  type="date"
-                  variant="outlined"
-                  density="compact"
-                  rounded="lg"
-                  bg-color="white"
-                  hide-details
-                  class="date-input"
-                  placeholder="选择日期"
-                ></v-text-field>
-                <v-btn
-                  variant="flat"
-                  color="blue-darken-1"
-                  rounded="lg"
-                  density="compact"
-                  :loading="syncingSpecific"
-                  :disabled="syncingManual || syncingSpecific"
-                  class="sync-button"
-                  @click="syncStatsSpecificDate"
-                >
-                  <v-icon icon="mdi-play" size="16" class="mr-2"></v-icon>
-                  同步
-                </v-btn>
-              </div>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <!-- 同步状态显示 -->
-        <v-alert
-          v-if="syncResult"
-          :type="syncResult.type"
-          variant="tonal"
-          class="mt-3"
-          rounded="lg"
-          closable
-          @click:close="syncResult = null"
-        >
-          <div class="font-weight-bold">{{ syncResult.title }}</div>
-          <div class="text-body-2 mt-1">{{ syncResult.message }}</div>
-          <div v-if="syncResult.details" class="text-caption mt-2 text-grey-darken-1">
-            {{ syncResult.details }}
-          </div>
-        </v-alert>
-      </div>
+    <v-card flat class="border mb-4">
+      <v-card-title class="d-flex align-center">
+        <v-icon icon="mdi-database-sync" class="mr-2"></v-icon>
+        Redis 统计数据同步
+      </v-card-title>
+      <v-card-text>
+        <p class="text-body-2 text-grey mb-4">将 Redis 中的统计数据同步到数据库</p>
+        <div class="d-flex ga-3 flex-wrap">
+          <v-btn
+            variant="tonal"
+            :loading="syncingManual"
+            :disabled="syncingSpecific"
+            @click="syncStatsManual"
+          >
+            <v-icon icon="mdi-sync" class="mr-2"></v-icon>
+            立即同步
+          </v-btn>
+          <v-text-field
+            v-model="syncDate"
+            type="date"
+            variant="outlined"
+            density="compact"
+            hide-details
+            style="max-width: 200px"
+          ></v-text-field>
+          <v-btn
+            variant="tonal"
+            :loading="syncingSpecific"
+            :disabled="syncingManual"
+            @click="syncStatsSpecificDate"
+          >
+            同步指定日期
+          </v-btn>
+        </div>
+      </v-card-text>
     </v-card>
 
     <!-- 系统健康检查 -->
-    <v-card flat class="border rounded-lg pa-4 mb-4">
-      <div class="d-flex align-center mb-4">
-        <v-icon icon="mdi-heart-pulse" color="green-darken-1" class="mr-2"></v-icon>
-        <h4 class="text-h6 font-weight-bold text-grey-darken-3">系统健康检查</h4>
-      </div>
-
-      <div class="mb-4">
-        <p class="text-body-2 text-grey-darken-1 mb-4">
-          检查系统各个组件的运行状态，包括数据库连接、Redis连接、统计服务等。
-        </p>
-
+    <v-card flat class="border mb-4">
+      <v-card-title class="d-flex align-center">
+        <v-icon icon="mdi-heart-pulse" class="mr-2"></v-icon>
+        系统健康检查
+      </v-card-title>
+      <v-card-text>
+        <p class="text-body-2 text-grey mb-4">检查系统各组件运行状态</p>
         <div class="d-flex align-center justify-space-between">
-          <v-btn
-            variant="flat"
-            color="green-darken-1"
-            rounded="lg"
-            size="small"
-            :loading="checkingHealth"
-            @click="checkSystemHealth"
-          >
-            <v-icon icon="mdi-stethoscope" size="16" class="mr-2"></v-icon>
-            检查系统健康状态
+          <v-btn variant="tonal" :loading="checkingHealth" @click="checkSystemHealth">
+            <v-icon icon="mdi-stethoscope" class="mr-2"></v-icon>
+            检查系统健康
           </v-btn>
-
-          <div v-if="lastHealthCheck" class="text-caption text-grey-darken-1">
+          <div v-if="lastHealthCheck" class="text-caption text-grey">
             上次检查：{{ lastHealthCheck }}
           </div>
         </div>
-
-        <!-- 健康检查结果 -->
-        <v-alert
-          v-if="healthResult"
-          :type="healthResult.type"
-          variant="tonal"
-          class="mt-4"
-          rounded="lg"
-          closable
-          @click:close="healthResult = null"
-        >
-          <div class="font-weight-bold">{{ healthResult.title }}</div>
-          <div class="text-body-2 mt-1">{{ healthResult.message }}</div>
-          <div v-if="healthResult.details" class="text-caption mt-2 text-grey-darken-1">
-            <pre class="text-caption">{{ healthResult.details }}</pre>
-          </div>
-        </v-alert>
-      </div>
-    </v-card>
-
-    <!-- 缓存管理 -->
-    <v-card flat class="border rounded-lg pa-4 mb-4">
-      <div class="d-flex align-center mb-4">
-        <v-icon icon="mdi-cached" color="indigo-darken-1" class="mr-2"></v-icon>
-        <h4 class="text-h6 font-weight-bold text-grey-darken-3">缓存管理</h4>
-      </div>
-
-      <div class="mb-4">
-        <p class="text-body-2 text-grey-darken-1 mb-4">
-          管理系统缓存，包括清理过期缓存、重置缓存等操作。
-        </p>
-
-        <v-row>
-          <v-col cols="12" md="4">
-            <v-card flat class="pa-3 bg-indigo-lighten-5" rounded="lg" elevation="0">
-              <div class="text-center">
-                <v-icon
-                  icon="mdi-delete-sweep"
-                  color="indigo-darken-2"
-                  size="24"
-                  class="mb-2"
-                ></v-icon>
-                <h6 class="text-subtitle-2 font-weight-bold text-indigo-darken-2 mb-2">
-                  清理过期缓存
-                </h6>
-                <v-btn variant="flat" color="indigo-darken-1" rounded="lg" size="x-small" disabled>
-                  <v-icon icon="mdi-broom" size="14" class="mr-1"></v-icon>
-                  清理
-                </v-btn>
-              </div>
-            </v-card>
-          </v-col>
-
-          <v-col cols="12" md="4">
-            <v-card flat class="pa-3 bg-indigo-lighten-5" rounded="lg" elevation="0">
-              <div class="text-center">
-                <v-icon icon="mdi-refresh" color="indigo-darken-2" size="24" class="mb-2"></v-icon>
-                <h6 class="text-subtitle-2 font-weight-bold text-indigo-darken-2 mb-2">重置缓存</h6>
-                <v-btn variant="flat" color="indigo-darken-1" rounded="lg" size="x-small" disabled>
-                  <v-icon icon="mdi-restart" size="14" class="mr-1"></v-icon>
-                  重置
-                </v-btn>
-              </div>
-            </v-card>
-          </v-col>
-
-          <v-col cols="12" md="4">
-            <v-card flat class="pa-3 bg-indigo-lighten-5" rounded="lg" elevation="0">
-              <div class="text-center">
-                <v-icon
-                  icon="mdi-information"
-                  color="indigo-darken-2"
-                  size="24"
-                  class="mb-2"
-                ></v-icon>
-                <h6 class="text-subtitle-2 font-weight-bold text-indigo-darken-2 mb-2">缓存信息</h6>
-                <v-btn variant="flat" color="indigo-darken-1" rounded="lg" size="x-small" disabled>
-                  <v-icon icon="mdi-eye" size="14" class="mr-1"></v-icon>
-                  查看
-                </v-btn>
-              </div>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <v-alert type="info" variant="tonal" class="mt-3" rounded="lg">
-          <div class="font-weight-bold">功能开发中</div>
-          <div class="text-body-2 mt-1">缓存管理功能正在开发中，敬请期待...</div>
-        </v-alert>
-      </div>
+      </v-card-text>
     </v-card>
 
     <!-- 节点引用数统计 -->
-    <v-card flat class="border rounded-lg pa-4 mb-4">
-      <div class="d-flex align-center mb-4">
-        <v-icon icon="mdi-chart-line" color="teal-darken-1" class="mr-2"></v-icon>
-        <h4 class="text-h6 font-weight-bold text-grey-darken-3">节点引用数统计</h4>
-      </div>
-
-      <div class="mb-4">
-        <p class="text-body-2 text-grey-darken-1 mb-4">
-          重新计算所有节点的引用数统计，统计每个节点被多少个目录型帖子引用。适用于数据修复或初始化场景。
-        </p>
-
-        <v-card flat class="pa-4 bg-teal-lighten-5" rounded="lg" elevation="0">
-          <div class="d-flex align-center justify-space-between">
-            <div>
-              <div class="d-flex align-center mb-2">
-                <v-icon icon="mdi-calculator" color="teal-darken-2" size="24" class="mr-2"></v-icon>
-                <h5 class="text-subtitle-1 font-weight-bold text-teal-darken-2">重新计算引用数</h5>
-              </div>
-              <p class="text-body-2 text-grey-darken-1">
-                遍历所有已发布的目录型帖子，统计并更新每个节点的引用次数
-              </p>
-            </div>
-            <v-btn
-              variant="flat"
-              color="teal-darken-1"
-              rounded="lg"
-              size="small"
-              :loading="recalculating"
-              :disabled="recalculating"
-              @click="recalculateReferences"
-            >
-              <v-icon icon="mdi-refresh" size="16" class="mr-2"></v-icon>
-              重新计算
-            </v-btn>
+    <v-card flat class="border mb-4">
+      <v-card-title class="d-flex align-center">
+        <v-icon icon="mdi-chart-line" class="mr-2"></v-icon>
+        节点引用数统计
+      </v-card-title>
+      <v-card-text>
+        <p class="text-body-2 text-grey mb-4">重新计算所有节点的引用次数</p>
+        <v-btn variant="tonal" :loading="recalculating" @click="recalculateReferences">
+          <v-icon icon="mdi-refresh" class="mr-2"></v-icon>
+          重新计算
+        </v-btn>
+        <div v-if="recalculateResult" class="mt-3 pa-3 bg-grey-lighten-4 rounded">
+          <div class="text-body-2">
+            处理了 {{ recalculateResult.processedPosts }} 个目录，更新了
+            {{ recalculateResult.updatedNodes }} 个节点
           </div>
-
-          <!-- 计算结果显示 -->
-          <v-alert
-            v-if="recalculateResult"
-            type="success"
-            variant="tonal"
-            class="mt-4"
-            rounded="lg"
-            closable
-            @click:close="recalculateResult = null"
-          >
-            <div class="font-weight-bold">计算完成</div>
-            <div class="text-body-2 mt-1">
-              处理了 {{ recalculateResult.processedPosts }} 个目录型帖子，更新了 {{ recalculateResult.updatedNodes }} 个节点的引用数统计
-            </div>
-          </v-alert>
-        </v-card>
-      </div>
+        </div>
+      </v-card-text>
     </v-card>
 
     <!-- 搜索索引同步 -->
-    <v-card flat class="border rounded-lg pa-4 mb-4">
-      <div class="d-flex align-center mb-4">
-        <v-icon icon="mdi-magnify-scan" color="purple-darken-1" class="mr-2"></v-icon>
-        <h4 class="text-h6 font-weight-bold text-grey-darken-3">搜索索引同步</h4>
-      </div>
-
-      <div class="mb-4">
-        <p class="text-body-2 text-grey-darken-1 mb-4">
-          同步数据到搜索引擎（Meilisearch），只同步已发布状态的内容。
-        </p>
-
-        <v-row class="mb-4">
-          <!-- 全量同步 -->
-          <v-col cols="12" md="4">
-            <v-card flat class="pa-4 bg-purple-lighten-5" rounded="lg" elevation="0">
-              <div class="d-flex align-center mb-3">
-                <v-icon icon="mdi-sync" color="purple-darken-2" size="20" class="mr-2"></v-icon>
-                <h5 class="text-subtitle-1 font-weight-bold text-purple-darken-2">全量同步</h5>
-              </div>
-              <p class="text-body-2 text-grey-darken-1 mb-3">同步所有已发布的数据（删除并重建索引）</p>
-              <v-btn
-                variant="flat"
-                color="purple-darken-1"
-                rounded="lg"
-                density="compact"
-                :loading="syncingAll"
-                :disabled="syncingAll"
-                @click="syncAllIndexes"
-              >
-                <v-icon icon="mdi-database-sync" size="16" class="mr-2"></v-icon>
-                全量同步
-              </v-btn>
-            </v-card>
-          </v-col>
-
-          <!-- 同步课程 -->
-          <v-col cols="12" md="2">
-            <v-card flat class="pa-4 bg-blue-lighten-5" rounded="lg" elevation="0">
-              <div class="text-center">
-                <v-icon icon="mdi-book-sync" color="blue-darken-2" size="24" class="mb-2"></v-icon>
-                <h6 class="text-subtitle-2 font-weight-bold text-blue-darken-2 mb-2">课程</h6>
-                <v-btn
-                  variant="flat"
-                  color="blue-darken-1"
-                  rounded="lg"
-                  size="x-small"
-                  :loading="syncingCourses"
-                  @click="syncCourses"
-                >
-                  同步
-                </v-btn>
-              </div>
-            </v-card>
-          </v-col>
-
-          <!-- 同步节点 -->
-          <v-col cols="12" md="2">
-            <v-card flat class="pa-4 bg-green-lighten-5" rounded="lg" elevation="0">
-              <div class="text-center">
-                <v-icon icon="mdi-file-tree" color="green-darken-2" size="24" class="mb-2"></v-icon>
-                <h6 class="text-subtitle-2 font-weight-bold text-green-darken-2 mb-2">节点</h6>
-                <v-btn
-                  variant="flat"
-                  color="green-darken-1"
-                  rounded="lg"
-                  size="x-small"
-                  :loading="syncingNodes"
-                  @click="syncNodes"
-                >
-                  同步
-                </v-btn>
-              </div>
-            </v-card>
-          </v-col>
-
-          <!-- 同步用户 -->
-          <v-col cols="12" md="2">
-            <v-card flat class="pa-4 bg-orange-lighten-5" rounded="lg" elevation="0">
-              <div class="text-center">
-                <v-icon icon="mdi-account-sync" color="orange-darken-2" size="24" class="mb-2"></v-icon>
-                <h6 class="text-subtitle-2 font-weight-bold text-orange-darken-2 mb-2">用户</h6>
-                <v-btn
-                  variant="flat"
-                  color="orange-darken-1"
-                  rounded="lg"
-                  size="x-small"
-                  :loading="syncingUsers"
-                  @click="syncUsers"
-                >
-                  同步
-                </v-btn>
-              </div>
-            </v-card>
-          </v-col>
-
-          <!-- 同步职业 -->
-          <v-col cols="12" md="2">
-            <v-card flat class="pa-4 bg-teal-lighten-5" rounded="lg" elevation="0">
-              <div class="text-center">
-                <v-icon icon="mdi-briefcase-sync" color="teal-darken-2" size="24" class="mb-2"></v-icon>
-                <h6 class="text-subtitle-2 font-weight-bold text-teal-darken-2 mb-2">职业</h6>
-                <v-btn
-                  variant="flat"
-                  color="teal-darken-1"
-                  rounded="lg"
-                  size="x-small"
-                  :loading="syncingProfessions"
-                  @click="syncProfessions"
-                >
-                  同步
-                </v-btn>
-              </div>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <v-alert type="info" variant="tonal" rounded="lg" density="compact">
-          <div class="text-body-2">
-            <div class="font-weight-bold mb-1">说明：</div>
-            <div>• 全量同步会删除并重建索引，耗时较长，请查看服务器日志了解进度</div>
-            <div>• 单项同步仅同步对应类型的数据</div>
-            <div>• 只有已发布（PUBLISHED）状态的内容会被索引</div>
-          </div>
-        </v-alert>
-      </div>
+    <v-card flat class="border mb-4">
+      <v-card-title class="d-flex align-center">
+        <v-icon icon="mdi-magnify-scan" class="mr-2"></v-icon>
+        搜索索引同步
+      </v-card-title>
+      <v-card-text>
+        <p class="text-body-2 text-grey mb-4">同步数据到 Meilisearch（仅同步已发布内容）</p>
+        <div class="d-flex ga-2 flex-wrap mb-3">
+          <v-btn variant="flat" color="primary" :loading="syncingAll" @click="syncAllIndexes">
+            <v-icon icon="mdi-sync" class="mr-2"></v-icon>
+            全量同步
+          </v-btn>
+          <v-btn variant="tonal" :loading="syncingCourses" @click="syncCourses">
+            课程
+          </v-btn>
+          <v-btn variant="tonal" :loading="syncingNodes" @click="syncNodes"> 节点 </v-btn>
+          <v-btn variant="tonal" :loading="syncingUsers" @click="syncUsers"> 用户 </v-btn>
+          <v-btn variant="tonal" :loading="syncingProfessions" @click="syncProfessions">
+            职业
+          </v-btn>
+        </div>
+        <div class="text-caption text-grey">
+          提示：全量同步会删除并重建索引，请查看服务器日志了解进度
+        </div>
+      </v-card-text>
     </v-card>
 
     <!-- AutoAuthor 队列管理 -->
-    <v-card flat class="border rounded-lg pa-4 mb-4">
-      <div class="d-flex align-center mb-4">
-        <v-icon icon="mdi-robot" color="purple-darken-1" class="mr-2"></v-icon>
-        <h4 class="text-h6 font-weight-bold text-grey-darken-3">AutoAuthor 队列管理</h4>
-      </div>
-
-      <div class="mb-4">
-        <p class="text-body-2 text-grey-darken-1 mb-4">
-          将指定的节点（Node）加入到 AutoAuthor 自动创作队列中，系统将自动为该节点生成内容。
-        </p>
-
-        <v-row class="mb-4">
-          <!-- 手动入队 -->
-          <v-col cols="12" md="3">
-            <v-card flat class="pa-4 bg-purple-lighten-5" rounded="lg" elevation="0">
-              <div class="d-flex align-center mb-3">
-                <v-icon
-                  icon="mdi-playlist-plus"
-                  color="purple-darken-2"
-                  size="20"
-                  class="mr-2"
-                ></v-icon>
-                <h5 class="text-subtitle-1 font-weight-bold text-purple-darken-2">加入创作队列</h5>
-              </div>
-              <p class="text-body-2 text-grey-darken-1 mb-3">将节点ID加入到AutoAuthor队列中</p>
-              <div class="d-flex align-center" style="gap: 12px">
-                <v-text-field
-                  v-model="nodeId"
-                  label="节点ID"
-                  type="number"
-                  variant="outlined"
-                  density="compact"
-                  rounded="lg"
-                  bg-color="white"
-                  hide-details
-                  class="node-id-input"
-                  placeholder="请输入节点ID"
-                ></v-text-field>
-                <v-btn
-                  variant="flat"
-                  color="purple-darken-1"
-                  rounded="lg"
-                  density="compact"
-                  :loading="enqueuingNode"
-                  :disabled="!nodeId || enqueuingNode"
-                  class="enqueue-button"
-                  @click="enqueueNode"
-                >
-                  <v-icon icon="mdi-plus" size="16" class="mr-2"></v-icon>
-                  加入
-                </v-btn>
-              </div>
-            </v-card>
-          </v-col>
-
-          <!-- 扫描节点 -->
-          <v-col cols="12" md="3">
-            <v-card flat class="pa-4 bg-green-lighten-5" rounded="lg" elevation="0">
-              <div class="d-flex align-center mb-3">
-                <v-icon
-                  icon="mdi-magnify-scan"
-                  color="green-darken-2"
-                  size="20"
-                  class="mr-2"
-                ></v-icon>
-                <h5 class="text-subtitle-1 font-weight-bold text-green-darken-2">扫描节点</h5>
-              </div>
-              <p class="text-body-2 text-grey-darken-1 mb-3">扫描缺少AI内容的节点并批量加入队列</p>
-              <v-btn
-                variant="flat"
-                color="green-darken-1"
-                rounded="lg"
-                density="compact"
-                :loading="scanningNodes"
-                :disabled="scanningNodes"
-                class="scan-button"
-                @click="scanNodes"
-              >
-                <v-icon icon="mdi-radar" size="16" class="mr-2"></v-icon>
-                开始扫描
-              </v-btn>
-            </v-card>
-          </v-col>
-
-          <!-- 重置会话 -->
-          <v-col cols="12" md="3">
-            <v-card flat class="pa-4 bg-orange-lighten-5" rounded="lg" elevation="0">
-              <div class="d-flex align-center mb-3">
-                <v-icon
-                  icon="mdi-refresh-auto"
-                  color="orange-darken-2"
-                  size="20"
-                  class="mr-2"
-                ></v-icon>
-                <h5 class="text-subtitle-1 font-weight-bold text-orange-darken-2">重置会话</h5>
-              </div>
-              <p class="text-body-2 text-grey-darken-1 mb-3">重置与opencode的连接会话</p>
-              <v-btn
-                variant="flat"
-                color="orange-darken-1"
-                rounded="lg"
-                density="compact"
-                :loading="resettingSession"
-                :disabled="resettingSession"
-                class="reset-button"
-                @click="resetSession"
-              >
-                <v-icon icon="mdi-connection" size="16" class="mr-2"></v-icon>
-                重置会话
-              </v-btn>
-            </v-card>
-          </v-col>
-
-          <!-- 清空队列 -->
-          <v-col cols="12" md="3">
-            <v-card flat class="pa-4 bg-red-lighten-5" rounded="lg" elevation="0">
-              <div class="d-flex align-center mb-3">
-                <v-icon
-                  icon="mdi-delete-sweep"
-                  color="red-darken-2"
-                  size="20"
-                  class="mr-2"
-                ></v-icon>
-                <h5 class="text-subtitle-1 font-weight-bold text-red-darken-2">清空队列</h5>
-              </div>
-              <p class="text-body-2 text-grey-darken-1 mb-3">清空所有待处理的AutoAuthor创作队列</p>
-              <v-btn
-                variant="flat"
-                color="red-darken-1"
-                rounded="lg"
-                density="compact"
-                :loading="clearingQueue"
-                :disabled="clearingQueue"
-                class="clear-button"
-                @click="confirmClearQueue"
-              >
-                <v-icon icon="mdi-trash-can" size="16" class="mr-2"></v-icon>
-                清空队列
-              </v-btn>
-            </v-card>
-          </v-col>
-        </v-row>
-      </div>
+    <v-card flat class="border mb-4">
+      <v-card-title class="d-flex align-center">
+        <v-icon icon="mdi-robot" class="mr-2"></v-icon>
+        AutoAuthor 队列管理
+      </v-card-title>
+      <v-card-text>
+        <p class="text-body-2 text-grey mb-4">AI 自动创作队列管理</p>
+        <div class="d-flex ga-3 flex-wrap mb-3">
+          <v-text-field
+            v-model="nodeId"
+            label="节点ID"
+            type="number"
+            variant="outlined"
+            density="compact"
+            hide-details
+            style="max-width: 150px"
+          ></v-text-field>
+          <v-btn variant="tonal" :loading="enqueuingNode" :disabled="!nodeId" @click="enqueueNode">
+            <v-icon icon="mdi-plus" class="mr-2"></v-icon>
+            加入队列
+          </v-btn>
+        </div>
+        <div class="d-flex ga-2 flex-wrap">
+          <v-btn variant="tonal" :loading="scanningNodes" @click="scanNodes">
+            <v-icon icon="mdi-radar" class="mr-2"></v-icon>
+            扫描节点
+          </v-btn>
+          <v-btn variant="tonal" :loading="resettingSession" @click="resetSession">
+            <v-icon icon="mdi-refresh-auto" class="mr-2"></v-icon>
+            重置会话
+          </v-btn>
+          <v-btn variant="tonal" color="error" :loading="clearingQueue" @click="confirmClearQueue">
+            <v-icon icon="mdi-delete-sweep" class="mr-2"></v-icon>
+            清空队列
+          </v-btn>
+        </div>
+      </v-card-text>
     </v-card>
 
-    <!-- 最近的系统操作 -->
-    <v-card flat class="border rounded-lg pa-4">
-      <div class="d-flex align-center mb-4">
-        <v-icon icon="mdi-history" color="grey-darken-1" class="mr-2"></v-icon>
-        <h4 class="text-h6 font-weight-bold text-grey-darken-3">最近的系统操作</h4>
-      </div>
-
-      <div class="mb-4">
-        <p class="text-body-2 text-grey-darken-1 mb-4">
-          最近的系统操作记录，包括同步操作、健康检查等。
-        </p>
-
-        <div v-if="operationHistory.length === 0" class="text-center py-8">
-          <v-icon icon="mdi-history" size="48" color="grey-lighten-1" class="mb-3"></v-icon>
-          <p class="text-body-2 text-grey-darken-1">暂无操作记录</p>
+    <!-- 操作历史 -->
+    <v-card flat class="border">
+      <v-card-title class="d-flex align-center">
+        <v-icon icon="mdi-history" class="mr-2"></v-icon>
+        操作历史
+      </v-card-title>
+      <v-card-text>
+        <div v-if="operationHistory.length === 0" class="text-center py-8 text-grey">
+          暂无操作记录
         </div>
-
-        <v-timeline v-else density="compact" side="end">
-          <v-timeline-item
-            v-for="(operation, index) in operationHistory"
+        <div v-else>
+          <div
+            v-for="(op, index) in operationHistory"
             :key="index"
-            :dot-color="operation.success ? 'success' : 'error'"
-            size="small"
+            class="d-flex align-center justify-space-between py-2 border-b"
           >
-            <template #opposite>
-              <div class="text-caption text-grey-darken-1">
-                {{ operation.time }}
+            <div class="d-flex align-center">
+              <v-icon
+                :icon="op.success ? 'mdi-check-circle' : 'mdi-alert-circle'"
+                :color="op.success ? 'success' : 'error'"
+                size="18"
+                class="mr-2"
+              ></v-icon>
+              <div>
+                <div class="text-body-2 font-weight-medium">{{ op.title }}</div>
+                <div class="text-caption text-grey">{{ op.description }}</div>
               </div>
-            </template>
-
-            <v-card
-              flat
-              class="pa-3"
-              rounded="lg"
-              :color="operation.success ? 'success-lighten-5' : 'error-lighten-5'"
-            >
-              <div class="d-flex align-center">
-                <v-icon
-                  :icon="operation.success ? 'mdi-check-circle' : 'mdi-alert-circle'"
-                  :color="operation.success ? 'success-darken-1' : 'error-darken-1'"
-                  size="20"
-                  class="mr-2"
-                ></v-icon>
-                <div>
-                  <div class="text-subtitle-2 font-weight-bold">{{ operation.title }}</div>
-                  <div class="text-caption text-grey-darken-1">{{ operation.description }}</div>
-                </div>
-              </div>
-            </v-card>
-          </v-timeline-item>
-        </v-timeline>
-      </div>
+            </div>
+            <div class="text-caption text-grey">{{ op.time }}</div>
+          </div>
+        </div>
+      </v-card-text>
     </v-card>
   </div>
 </template>
@@ -1061,46 +500,7 @@ setTimeout(() => {
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
-/* 日期输入框样式 */
-.date-input {
-  min-width: 40px;
-  max-width: 180px;
-}
-
-/* 节点ID输入框样式 */
-.node-id-input {
-  min-width: 80px;
-  max-width: 280px;
-  flex-shrink: 1;
-}
-
-/* 同步按钮样式 */
-.sync-button {
-  height: 40px;
-  min-width: 80px;
-}
-
-/* 队列按钮样式 */
-.enqueue-button,
-.scan-button,
-.reset-button,
-.clear-button {
-  height: 40px;
-  min-width: 100px;
-}
-
-/* 时间线样式优化 */
-:deep(.v-timeline-item__body) {
-  padding-left: 16px;
-}
-
-/* 预格式化文本样式 */
-pre {
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-  font-size: 12px;
-  line-height: 1.4;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  margin: 0;
+.border-b {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 </style>
