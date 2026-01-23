@@ -535,11 +535,6 @@ public class SystemProperties {
         private int defaultPageSize = 20;
 
         /**
-         * 最大置顶路线图数量
-         */
-        private int maxPinnedCount = 19;
-
-        /**
          * 完成进度阈值（基点，10000=100%）
          */
         private int completionThreshold = 10000;

@@ -187,7 +187,7 @@ public class RoadmapService {
 
     /**
      * 转换为路线图（包含完整业务信息）
-     * 包含：creator + profession + liked + pinned + learning + formatted content + likes
+     * 包含：creator + profession + liked + learning + formatted content + likes
      */
     private List<RoadmapWithStatusDTO> toRoadmapWithFullInfo(List<RoadmapDO> roadmapList, long userId, Long professionId) {
         List<RoadmapWithStatusDTO> dtoList = roadmapConverter.toWithStatusDTO(roadmapList);
@@ -567,15 +567,6 @@ public class RoadmapService {
         return roadmapDTO;
     }
 
-    /**
-     * 置顶/取消置顶路线图
-     */
-    @Transactional
-    public Boolean pinRoadmap(Long professionId, Long roadmapId, long userId) {
-        // 委托给 UserDomainService 处理置顶逻辑
-        return userDomainService.toggleRoadmapPin(userId, professionId, roadmapId);
-    }
-    
     // ========== 私有辅助方法 ==========
     
     private void validateUserId(long userId) {

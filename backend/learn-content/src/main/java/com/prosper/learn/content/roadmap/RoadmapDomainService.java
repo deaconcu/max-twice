@@ -65,16 +65,6 @@ public class RoadmapDomainService {
     }
 
     /**
-     * 获取职业路线图列表（带置顶）
-     * 支持首页置顶和分页查询
-     *
-     * @param professionId 职业ID
-     * @param lastId 最后一个路线图ID（分页游标，null表示首页）
-     * @param pinnedRoadmapIds 置顶的路线图ID列表（由外部提供）
-     * @param limit 查询数量限制
-     * @return 路线图列表
-     */
-    /**
      * 获取职业路线图列表（支持动态排序）
      */
     public List<RoadmapDO> getRoadmapsByProfession(Long professionId, Long lastId, int limit, String sortBy) {

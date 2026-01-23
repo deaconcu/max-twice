@@ -162,7 +162,6 @@ public class RoadmapsControllerTest extends BaseControllerTest {
                 .andExpect(jsonPath("$.data[0].profession").exists())
                 .andExpect(jsonPath("$.data[0].profession.name").value(profession.getName()))
                 .andExpect(jsonPath("$.data[0].upvoted").exists())
-                .andExpect(jsonPath("$.data[0].pinned").exists())
                 .andExpect(jsonPath("$.data[0].learning").exists());
 
         StpUtil.logout();
@@ -587,114 +586,6 @@ public class RoadmapsControllerTest extends BaseControllerTest {
     @DisplayName("权限验证 - 未登录获取路线图详情")
     void testGetRoadmap_NotLoggedIn_Fail() throws Exception {
         mockMvc.perform(get("/api/v1/roadmaps/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
-    }
-
-    // ==================== 接口5: 置顶/取消置顶路线图 ====================
-
-    /**
-     * 5.1 成功置顶路线图
-     */
-    @Test
-    @DisplayName("成功置顶路线图")
-    void testPinRoadmap_Success() throws Exception {
-        UserDO user = createUser("user18@test.com");
-        ProfessionDO profession = createProfession("专业9", user.getId());
-        RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), user.getId(), "置顶测试");
-
-        StpUtil.login(user.getId());
-
-        mockMvc.perform(post("/api/v1/roadmaps/pin")
-                        .header("token", StpUtil.getTokenValue())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"professionId\": " + profession.getId() + ", \"roadmapId\": " + roadmap.getId() + "}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data").value(true));
-
-        StpUtil.logout();
-    }
-
-    /**
-     * 5.2 成功取消置顶路线图
-     */
-    @Test
-    @DisplayName("成功取消置顶路线图")
-    void testUnpinRoadmap_Success() throws Exception {
-        UserDO user = createUser("user19@test.com");
-        ProfessionDO profession = createProfession("专业10", user.getId());
-        RoadmapDO roadmap = createPublishedRoadmap(profession.getId(), user.getId(), "取消置顶测试");
-
-        StpUtil.login(user.getId());
-
-        // 先置顶
-        mockMvc.perform(post("/api/v1/roadmaps/pin")
-                        .header("token", StpUtil.getTokenValue())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"professionId\": " + profession.getId() + ", \"roadmapId\": " + roadmap.getId() + "}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").value(true));
-
-        // 再取消置顶
-        mockMvc.perform(post("/api/v1/roadmaps/pin")
-                        .header("token", StpUtil.getTokenValue())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"professionId\": " + profession.getId() + ", \"roadmapId\": " + roadmap.getId() + "}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.data").value(false));
-
-        StpUtil.logout();
-    }
-
-    /**
-     * 5.3 字段验证 - professionId 缺失
-     */
-    @Test
-    @DisplayName("字段验证 - professionId 缺失")
-    void testPinRoadmap_ProfessionIdMissing_Fail() throws Exception {
-        UserDO user = createUser("user20@test.com");
-        StpUtil.login(user.getId());
-
-        mockMvc.perform(post("/api/v1/roadmaps/pin")
-                        .header("token", StpUtil.getTokenValue())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"roadmapId\": 1}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
-
-        StpUtil.logout();
-    }
-
-    /**
-     * 5.4 字段验证 - roadmapId 缺失
-     */
-    @Test
-    @DisplayName("字段验证 - roadmapId 缺失")
-    void testPinRoadmap_RoadmapIdMissing_Fail() throws Exception {
-        UserDO user = createUser("user21@test.com");
-        StpUtil.login(user.getId());
-
-        mockMvc.perform(post("/api/v1/roadmaps/pin")
-                        .header("token", StpUtil.getTokenValue())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"professionId\": 1}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(StatusCode.INVALID_PARAMETER.getCode()));
-
-        StpUtil.logout();
-    }
-
-    /**
-     * 5.5 权限验证 - 未登录
-     */
-    @Test
-    @DisplayName("权限验证 - 未登录置顶路线图")
-    void testPinRoadmap_NotLoggedIn_Fail() throws Exception {
-        mockMvc.perform(post("/api/v1/roadmaps/pin")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"professionId\": 1, \"roadmapId\": 1}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
     }

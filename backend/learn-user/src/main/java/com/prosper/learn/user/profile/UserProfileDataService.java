@@ -93,24 +93,6 @@ public class UserProfileDataService extends AbstractDataService<UserProfileDO, U
     }
 
     /**
-     * 更新路线图置顶
-     */
-    @CacheEvict(value = "userProfiles", key = "#userId")
-    public void updateRoadmapPin(long userId, String roadmapPin) {
-        // 查询现有数据
-        UserProfileDO userProfile = getById(userId);
-        if (userProfile == null) {
-            throw StatusCode.USER_PROFILE_NOT_FOUND.exception();
-        }
-
-        // 更新字段
-        userProfile.setRoadmapPin(roadmapPin);
-
-        // 调用update方法，TimestampInterceptor会自动设置updatedAt
-        update(userProfile);
-    }
-
-    /**
      * 插入新用户档案
      */
     public void insert(UserProfileDO userProfileDO) {

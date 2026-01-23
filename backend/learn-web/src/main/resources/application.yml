@@ -201,8 +201,6 @@ app:
   roadmap:
     # 默认分页大小
     default-page-size: 20
-    # 最大置顶路线图数量
-    max-pinned-count: 19
     # 完成进度阈值（基点，10000=100%）
     completion-threshold: 10000
     # 进度精度倍数（基点转换）

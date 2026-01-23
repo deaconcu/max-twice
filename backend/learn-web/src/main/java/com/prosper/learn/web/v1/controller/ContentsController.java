@@ -31,7 +31,7 @@ public class ContentsController {
     private final TocDomainService tocService;
 
     /**
-     * 内容操作（选择、固定等）
+     * 内容操作（选择等）
      * 映射: POST /contents → POST /api/v1/contents
      */
     @PostMapping("/contents")
@@ -53,12 +53,6 @@ public class ContentsController {
                 break;
             case UNCHOOSE:
                 tocService.unchoose(currentUser.getId(), request.getCourseId(), request.getPath());
-                break;
-            case PIN:
-                tocService.pin(currentUser.getId(), request.getCourseId(), request.getPath(), request.getPostingId(), true);
-                break;
-            case UNPIN:
-                tocService.pin(currentUser.getId(), request.getCourseId(), request.getPath(), request.getPostingId(), false);
                 break;
             default:
                 throw StatusCode.NOT_SUPPORTED.exception();

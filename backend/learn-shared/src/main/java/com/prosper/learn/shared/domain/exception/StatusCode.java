@@ -70,7 +70,6 @@ public enum StatusCode {
     // 路线图相关 15xx
     ROADMAP_NOT_FOUND(1501, "路线图不存在"),
     ROADMAP_CONTENT_INVALID(1502, "路线图内容格式不正确"),
-    ROADMAP_PIN_LIMIT_EXCEEDED(1503, "最多只能置顶19个路线图"),
     
     // 学习进度相关 16xx
     USER_ROADMAP_NOT_FOUND(1601, "学习记录不存在"),
@@ -102,7 +101,6 @@ public enum StatusCode {
     // 内容管理相关 13xx
     POST_NOT_FOUND(1301, "帖子不存在"),
     NODE_NOT_FOUND(1302, "节点不存在"),
-    TOC_PINNED_ITEMS_LIMIT_EXCEEDED(1303, "置顶帖子数量超限"),
     INVALID_POST_TYPE(1304, "无效的帖子类型"),
     POST_INVALID_PARAMETER(1305, "帖子参数无效"),
     POST_CONTENT_PARSE_FAILED(1306, "帖子内容解析失败"),

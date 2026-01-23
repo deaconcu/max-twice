@@ -35,7 +35,6 @@ public class UserDomainService {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final String DEFAULT_EMPTY_STRING = "";
-    private static final int MAX_PINNED_ROADMAPS = 19;
     private static final String BASE62_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -377,124 +376,7 @@ public class UserDomainService {
         return subscriptionIds.contains(courseId);
     }
 
-    // ========== 路线图置顶相关方法 ==========
-
-    /**
-     * 切换路线图置顶状态
-     *
-     * @param userId 用户ID
-     * @param professionId 职业ID
-     * @param roadmapId 路线图ID
-     * @return true表示置顶，false表示取消置顶
-     */
-    @Transactional
-    public boolean toggleRoadmapPin(Long userId, Long professionId, Long roadmapId) {
-        // 获取用户配置
-        UserProfileDO userProfile = userProfileDataService.getById(userId);
-
-        // 解析置顶数据
-        Map<String, List<Long>> pinMap = parsePinMap(userProfile);
-
-        // 更新置顶列表
-        String professionKey = String.valueOf(professionId);
-        List<Long> professionPins = pinMap.getOrDefault(professionKey, new ArrayList<>());
-        boolean isPinned = professionPins.contains(roadmapId);
-        boolean result;
-
-        if (isPinned) {
-            // 取消置顶 - 使用对象方式remove，避免被当作索引
-            professionPins.remove((Object) roadmapId);
-            result = false;
-        } else {
-            // 添加置顶
-            if (professionPins.size() >= MAX_PINNED_ROADMAPS) {
-                throw StatusCode.ROADMAP_PIN_LIMIT_EXCEEDED.exception();
-            }
-            professionPins.add(roadmapId);
-            result = true;
-        }
-
-        // 清理空列表
-        if (professionPins.isEmpty()) {
-            pinMap.remove(professionKey);
-        } else {
-            pinMap.put(professionKey, professionPins);
-        }
-
-        // 保存更新后的置顶数据
-        savePinMap(userId, userProfile, pinMap);
-
-        log.info("User {} {} roadmap {} in profession {}",
-            userId, result ? "pinned" : "unpinned", roadmapId, professionId);
-
-        return result;
-    }
-
-    /**
-     * 获取用户在某个职业下置顶的路线图ID列表
-     *
-     * @param userId 用户ID
-     * @param professionId 职业ID
-     * @return 置顶的路线图ID列表
-     */
-    public List<Long> getPinnedRoadmapIds(Long userId, Long professionId) {
-        UserProfileDO userProfile = userProfileDataService.getById(userId);
-        if (userProfile == null || userProfile.getRoadmapPin() == null) {
-            return new ArrayList<>();
-        }
-
-        try {
-            Map<String, List<Long>> pinMap = objectMapper.readValue(
-                userProfile.getRoadmapPin(), new TypeReference<>() {});
-            List<Long> professionPins = pinMap.get(professionId.toString());
-            return professionPins != null ? professionPins : new ArrayList<>();
-        } catch (JsonProcessingException e) {
-            log.error("解析置顶数据失败: userId={}, professionId={}", userId, professionId, e);
-            return new ArrayList<>();
-        }
-    }
-
     // ========== 私有辅助方法 ==========
-
-    /**
-     * 解析用户的路线图置顶数据
-     */
-    private Map<String, List<Long>> parsePinMap(UserProfileDO userProfile) {
-        if (userProfile == null || userProfile.getRoadmapPin() == null) {
-            return new HashMap<>();
-        }
-
-        try {
-            return objectMapper.readValue(userProfile.getRoadmapPin(), new TypeReference<>() {});
-        } catch (JsonProcessingException e) {
-            log.error("解析置顶数据失败: userId={}", userProfile.getUserId(), e);
-            throw StatusCode.SYSTEM_ERROR.exception(e);
-        }
-    }
-
-    /**
-     * 保存用户的路线图置顶数据
-     */
-    private void savePinMap(Long userId, UserProfileDO userProfile, Map<String, List<Long>> pinMap) {
-        try {
-            String updatedPinJson = objectMapper.writeValueAsString(pinMap);
-
-            if (userProfile == null) {
-                // 创建新的用户配置
-                userProfile = new UserProfileDO();
-                userProfile.setUserId(userId);
-                userProfile.setRoadmapPin(updatedPinJson);
-                userProfile.setSubscription(DEFAULT_EMPTY_STRING);
-                userProfileDataService.insert(userProfile);
-            } else {
-                // 更新现有配置
-                userProfileDataService.updateRoadmapPin(userId, updatedPinJson);
-            }
-        } catch (JsonProcessingException e) {
-            log.error("保存置顶数据失败: userId={}", userId, e);
-            throw StatusCode.SYSTEM_ERROR.exception(e);
-        }
-    }
 
     /**
      * 解析订阅ID列表

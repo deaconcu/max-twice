@@ -26,8 +26,6 @@ public class RoadmapDTO {
 
     private Boolean liked;
 
-    private Boolean pinned;
-
     private Boolean learning;
 
     private Long creatorId;

@@ -23,17 +23,16 @@ import java.util.*;
 
 /**
  * 内容管理服务
- * 
+ *
  * 负责管理用户课程目录的增删改查操作，包括：
  * - 目录结构的获取和创建
  * - 目录类型的帖子可以加入到左侧目录中
- * - 帖子的置顶和取消置顶
- * 
+ *
  * 核心概念：
  * - 每个用户对每个课程都有独立的目录结构
  * - 目录内容采用引用计数机制管理，支持多用户共享相同的目录版本
  * - 目录以 JSON 格式存储，支持嵌套结构
- * 
+ *
  * @author Claude
  * @since 2024-01-20
  */
@@ -448,44 +447,12 @@ public class TocDomainService {
             currentTocContent -> updateContents(currentTocContent, pathParts[1], objectMapper.createObjectNode()));
     }
 
-    /**
-     * 管理帖子在指定路径下的置顶状态
-     * 
-     * 置顶功能说明：
-     * - 置顶的帖子存储在目录节点的特殊字段中（配置为 "^"）
-     * - 每个节点最多可以置顶配置数量的帖子（默认10个）
-     * - 支持添加和取消置顶操作
-     * 
-     * @param userId 用户ID
-     * @param courseId 课程ID
-     * @param path 目录路径，格式：{tocIndex}-{nodePath}
-     * @param postId 要置顶的帖子ID
-     * @param add true=添加置顶，false=取消置顶
-     * @throws BusinessException 当课程不存在、置顶数量超限等情况时抛出异常
-     */
-    public void pin(long userId, long courseId, String path, long postId, boolean add) {
-        CourseDO courseDO = validateCourseExists(courseId);
-
-        String[] pathParts = path.split("-", 2);
-        int tocIndex = Integer.parseInt(pathParts[0]);
-
-        // get user toc hash
-        UserCourseTocDO userCourseTocDO = validateUserTocExists(userId, courseId);
-
-        String[] tocHashArr = userCourseTocDO.getToc().split(",");
-        validateTocIndex(tocIndex, tocHashArr);
-
-        // 使用通用方法完成目录更新
-        getCurrentTocAndUpdate(tocHashArr, tocIndex, userCourseTocDO,
-            currentTocContent -> modifyPinOfContents(currentTocContent, pathParts[1], postId, add));
-    }
 
     /**
      * 更新目录结构中指定路径的节点内容
-     * 
+     *
      * 核心的目录更新逻辑，支持嵌套路径的导航和节点替换。
-     * 在替换节点时会保留原节点的置顶信息。
-     * 
+     *
      * @param contents 当前目录的JSON字符串
      * @param path 节点路径，支持嵌套如 "chapter1-section1-lesson1"
      * @param newNode 要设置的新节点内容
@@ -508,11 +475,6 @@ public class TocDomainService {
 
             // 设置或替换目标节点
             String finalPart = pathParts[pathParts.length - 1];
-            // 设置之前置顶的帖子
-            JsonNode finalNode = node.get(finalPart);
-            if (finalNode != null && finalNode.has(systemProperties.getContents().getPinField())) {
-                newNode.put(systemProperties.getContents().getPinField(), node.get(finalPart).get(systemProperties.getContents().getPinField()));
-            }
             node.set(finalPart, newNode);
             return objectMapper.writeValueAsString(rootNode);
         } catch (JsonProcessingException e) {
@@ -520,62 +482,4 @@ public class TocDomainService {
         }
     }
 
-    /**
-     * 管理目录节点的置顶帖子列表
-     * 
-     * 置顶帖子存储在节点的特殊字段中，支持添加和删除操作。
-     * 实现了重复检查和数量限制控制。
-     * 
-     * @param contents 当前目录的JSON字符串
-     * @param path 节点路径
-     * @param value 帖子ID
-     * @param add true=添加置顶，false=取消置顶
-     * @return 更新后的目录JSON字符串
-     * @throws BusinessException 当JSON处理失败或置顶数量超限时抛出异常
-     */
-    private String modifyPinOfContents(String contents, String path, long value, boolean add) {
-        try {
-            ObjectNode rootNode = (ObjectNode)objectMapper.readTree(contents);
-            ObjectNode node = rootNode;
-
-            String[] pathParts = path.split("-");
-
-            for (int i = 0; i <= pathParts.length - 1; i++) {
-                String part = pathParts[i];
-                if (!node.has(part)) {
-                    node.set(part, objectMapper.createObjectNode()); // 如果路径不存在，创建
-                }
-                node = (ObjectNode) node.get(part);
-            }
-
-            // 设置或替换目标节点
-            ArrayNode pinedArray = ((ArrayNode)node.get(systemProperties.getContents().getPinField()));
-            if (pinedArray == null) {
-                pinedArray = objectMapper.createArrayNode();
-                node.put(systemProperties.getContents().getPinField(), pinedArray);
-            }
-            if (add) {
-                boolean exist = false;
-                for (int i = 0; i < pinedArray.size(); i++) {
-                    if (pinedArray.get(i).asInt() == value) {
-                        exist = true;
-                    }
-                }
-                if (pinedArray.size() >= systemProperties.getContents().getMaxPinnedItems()) {
-                    throw StatusCode.TOC_PINNED_ITEMS_LIMIT_EXCEEDED.exception();
-                }
-                if (!exist) pinedArray.add(value);
-            } else {
-                for (int i = 0; i < pinedArray.size(); i++) {
-                    if (pinedArray.get(i).asInt() == value) {
-                        pinedArray.remove(i);
-                        break;
-                    }
-                }
-            }
-            return objectMapper.writeValueAsString(rootNode);
-        } catch (JsonProcessingException e) {
-            throw StatusCode.JSON_PROCESSING_ERROR.exception(e);
-        }
-    }
 }

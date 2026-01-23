@@ -50,7 +50,7 @@ public interface RoadmapConverter {
     List<RoadmapDetailDTO> toDetailDTO(List<RoadmapDO> roadmapDOList);
 
     /**
-     * 转换为带状态的DTO（需要在 Service 层填充 creator, profession, liked, pinned, learning）
+     * 转换为带状态的DTO（需要在 Service 层填充 creator, profession, liked, learning）
      */
     @Named("toWithStatusDTO")
     @BeanMapping(ignoreByDefault = true)

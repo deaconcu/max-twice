@@ -118,22 +118,6 @@ public class RoadmapsController {
     }
 
     /**
-     * 置顶路线图
-     * 映射: POST /roadmap/pin → POST /api/v1/roadmaps/pin
-     */
-    @PostMapping("/roadmaps/pin")
-    @SaCheckLogin
-    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<Boolean> pinRoadmap(
-            @RequestBody @Valid SetRoadmapProgressRequest request,
-            @CurrentUser UserDO currentUser) {
-
-        Boolean pinned = roadmapService.pinRoadmap(request.getProfessionId(), request.getRoadmapId(), currentUser.getId());
-
-        return ApiResponse.success(pinned);
-    }
-
-    /**
      * 获取当前登录用户创建的路线图（所有状态）
      * 包含：待审核、已发布、审核拒绝、已屏蔽
      * GET /api/v1/users/me/roadmaps?lastId=123

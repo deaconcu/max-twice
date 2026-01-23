@@ -823,9 +823,7 @@ public class Enums {
      */
     public enum ContentAction implements ValueEnum<Integer> {
         CHOOSE(1, "选择内容"),
-        UNCHOOSE(2, "取消选择"),
-        PIN(3, "固定内容"),
-        UNPIN(4, "取消固定");
+        UNCHOOSE(2, "取消选择");
 
         private final int value;
         private final String description;
