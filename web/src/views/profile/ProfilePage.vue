@@ -24,6 +24,7 @@ import CatalogsTab from '@/components/profile/CatalogsTab.vue'
 import ArticlesTab from '@/components/profile/ArticlesTab.vue'
 import MemoryDecksTab from '@/components/profile/MemoryDecksTab.vue'
 import RoadmapsTab from '@/components/profile/RoadmapsTab.vue'
+import BookmarksTab from '@/components/profile/BookmarksTab.vue'
 
 interface Props {
   id: string
@@ -387,6 +388,15 @@ watch(activeTab, (newTab) => {
             <span class="d-none d-sm-inline">关注的课程</span>
             <span class="d-sm-none">关注</span>
           </v-tab>
+          <v-tab v-if="isOwnProfile" value="bookmarks" rounded="lg">
+            <v-icon
+              icon="mdi-bookmark"
+              :size="$vuetify.display.mobile ? 16 : 18"
+              :class="$vuetify.display.mobile ? 'mr-1' : 'mr-2'"
+            />
+            <span class="d-none d-sm-inline">我的收藏</span>
+            <span class="d-sm-none">收藏</span>
+          </v-tab>
           <v-tab value="people" rounded="lg">
             <v-icon
               icon="mdi-account-multiple"
@@ -487,6 +497,11 @@ watch(activeTab, (newTab) => {
           <!-- 关注的人 -->
           <v-window-item value="people">
             <FollowingTab />
+          </v-window-item>
+
+          <!-- 我的收藏 -->
+          <v-window-item v-if="isOwnProfile" value="bookmarks">
+            <BookmarksTab />
           </v-window-item>
 
           <!-- 个人信息 -->

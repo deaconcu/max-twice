@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import renderMathInElement from 'katex/contrib/auto-render'
 import 'katex/dist/katex.min.css'
 import mermaid from 'mermaid'
-import { upvoteApi, postApi } from '@/api'
+import { upvoteApi, postApi, bookmarkApi } from '@/api'
 import { useMutation } from '@/composables'
 import { ObjectType, VoteType } from '@/enums'
 import type { UpvoteStatusResponse } from '@/types/upvote'
@@ -300,6 +300,22 @@ const handleUpvote = async (type: string) => {
   await executeUpvote(voteType)
 }
 
+// 切换收藏状态
+const { execute: executeToggleBookmark, loading: bookmarking } = useMutation(
+  () => bookmarkApi.toggle('post', props.posting.id),
+  {
+    successMessage: '',
+    showToast: false,
+  }
+)
+
+const handleToggleBookmark = async () => {
+  const result = await executeToggleBookmark()
+  if (result !== null) {
+    props.posting.bookmarked = result
+  }
+}
+
 // 使用 useMutation 修改内容操作
 const { execute: executeModifyContents } = useMutation(
   (data: { postingId: number; action: number }) =>
@@ -587,57 +603,6 @@ watch(
 
       <v-spacer></v-spacer>
 
-      <!-- 记忆卡片数量按钮 -->
-      <v-tooltip location="top">
-        <template v-slot:activator="{ props: tooltipProps }">
-          <v-btn
-            v-bind="tooltipProps"
-            variant="text"
-            color="grey-lighten-3"
-            rounded="lg"
-            size="default"
-            class="px-3"
-          >
-            <v-icon icon="mdi-cards-outline" size="18" class="mr-2" color="purple-darken-2"></v-icon>
-            <span class="font-weight-medium text-purple-darken-2">
-              {{ posting.deckCount || 0 }}
-            </span>
-          </v-btn>
-        </template>
-        <span>查看详情页以浏览和添加记忆卡片组</span>
-      </v-tooltip>
-
-      <!-- 评论按钮（列表模式） -->
-      <v-btn
-        v-if="!detail"
-        variant="text"
-        rounded="lg"
-        size="default"
-        class="px-3 ms-3"
-        @click="handleViewComments"
-      >
-        <v-icon icon="mdi-comment-outline" size="18" class="mr-2" color="grey-darken-2"></v-icon>
-        <span class="font-weight-medium text-grey-darken-2">
-          {{ posting.commentCount || 0 }}
-        </span>
-      </v-btn>
-
-      <!-- 评论按钮（详情模式） - 不可点击 -->
-      <v-btn
-        v-if="detail"
-        variant="text"
-        rounded="lg"
-        size="default"
-        class="px-3 ms-3"
-        :ripple="false"
-        @click.stop.prevent="null"
-      >
-        <v-icon icon="mdi-comment-outline" size="18" class="mr-2" color="grey-darken-2"></v-icon>
-        <span class="font-weight-medium text-grey-darken-2">
-          {{ posting.commentCount || 0 }}
-        </span>
-      </v-btn>
-
       <!-- 目录型 Post 管理按钮：设置/取消设置为目录 -->
       <template v-if="posting.type === PostType.INDEX">
         <v-btn
@@ -649,7 +614,7 @@ watch(
               : 'grey-lighten-3'
           "
           size="default"
-          class="px-3 mx-3"
+          class="px-3 ms-2"
           @click="
             handleModifyContents(
               posting.id,
@@ -687,52 +652,73 @@ watch(
         </v-btn>
       </template>
 
-      <!-- 文章型 Post 管理按钮：置顶/取消置顶 -->
-      <template v-else>
-        <v-btn
-          variant="text"
-          rounded="lg"
-          :color="
-            currNode && currNode['^'] && currNode['^'].includes(posting.id)
-              ? 'orange-lighten-4'
-              : 'grey-lighten-3'
-          "
-          size="default"
-          class="px-3 ms-3"
-          @click="
-            handleModifyContents(
-              posting.id,
-              currNode && currNode['^'] && currNode['^'].includes(posting.id) ? 4 : 3
-            )
-          "
-        >
-          <v-icon
-            :icon="
-              currNode && currNode['^'] && currNode['^'].includes(posting.id)
-                ? 'mdi-arrow-collapse-down'
-                : 'mdi-arrow-collapse-up'
-            "
-            size="18"
-            class="mr-2"
-            :color="
-              currNode && currNode['^'] && currNode['^'].includes(posting.id)
-                ? 'orange-darken-2'
-                : 'grey-darken-2'
-            "
-          ></v-icon>
-          <span
-            :class="
-              currNode && currNode['^'] && currNode['^'].includes(posting.id)
-                ? 'font-weight-medium text-orange-darken-2'
-                : 'font-weight-medium text-grey-darken-2'
-            "
+      <!-- 评论按钮（列表模式） -->
+      <v-btn
+        v-if="!detail"
+        variant="text"
+        rounded="lg"
+        size="default"
+        class="px-3 ms-2"
+        @click="handleViewComments"
+      >
+        <v-icon icon="mdi-comment-outline" size="18" class="mr-2" color="grey-darken-2"></v-icon>
+        <span class="font-weight-medium text-grey-darken-2">
+          {{ posting.commentCount || 0 }}
+        </span>
+      </v-btn>
+
+      <!-- 评论按钮（详情模式） - 不可点击 -->
+      <v-btn
+        v-if="detail"
+        variant="text"
+        rounded="lg"
+        size="default"
+        class="px-3 ms-2"
+        :ripple="false"
+        @click.stop.prevent="null"
+      >
+        <v-icon icon="mdi-comment-outline" size="18" class="mr-2" color="grey-darken-2"></v-icon>
+        <span class="font-weight-medium text-grey-darken-2">
+          {{ posting.commentCount || 0 }}
+        </span>
+      </v-btn>
+
+      <!-- 记忆卡片数量按钮 -->
+      <v-tooltip location="top">
+        <template v-slot:activator="{ props: tooltipProps }">
+          <v-btn
+            v-bind="tooltipProps"
+            variant="text"
+            color="grey-lighten-3"
+            rounded="lg"
+            size="default"
+            class="px-3 ms-2"
           >
-            {{
-              currNode && currNode['^'] && currNode['^'].includes(posting.id) ? '取消置顶' : '置顶'
-            }}
-          </span>
-        </v-btn>
-      </template>
+            <v-icon icon="mdi-cards-outline" size="18" class="mr-2" color="purple-darken-2"></v-icon>
+            <span class="font-weight-medium text-purple-darken-2">
+              {{ posting.deckCount || 0 }}
+            </span>
+          </v-btn>
+        </template>
+        <span>查看详情页以浏览和添加记忆卡片组</span>
+      </v-tooltip>
+
+      <!-- 收藏按钮 -->
+      <v-tooltip location="top">
+        <template #activator="{ props: tooltipProps }">
+          <v-btn
+            v-bind="tooltipProps"
+            :icon="posting.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+            :color="posting.bookmarked ? 'primary' : 'grey-darken-1'"
+            variant="text"
+            size="small"
+            rounded="lg"
+            class="ms-2"
+            @click="handleToggleBookmark"
+          />
+        </template>
+        {{ posting.bookmarked ? '取消收藏' : '收藏文章' }}
+      </v-tooltip>
     </v-row>
 
     <!-- 图片查看器 -->

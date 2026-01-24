@@ -18,4 +18,6 @@ public class RoadmapWithStatusDTO extends RoadmapDetailDTO {
     private Boolean liked;
 
     private Boolean learning;
+
+    private Boolean bookmarked;
 }

@@ -21,6 +21,7 @@
 - 避免在 Controller 写业务逻辑
 - Service 层处理事务
 - 使用 Optional 处理可能为空的返回值
+- 提前 import 所有必要的类
 
 ### Vue 3 前端
 - **严格遵循 ESLint 和 Prettier 规则** - 详见 `web/CODE_STANDARDS.md`

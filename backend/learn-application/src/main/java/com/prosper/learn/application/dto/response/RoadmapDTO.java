@@ -28,6 +28,8 @@ public class RoadmapDTO {
 
     private Boolean learning;
 
+    private Boolean bookmarked;
+
     private Long creatorId;
 
     private UserBriefDTO creator;

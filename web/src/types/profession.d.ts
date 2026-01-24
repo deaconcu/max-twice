@@ -17,6 +17,7 @@ export interface Profession {
   icon?: string // 图标
   learnerCount?: number // 学习人数
   createdAt?: string // 创建时间
+  bookmarked?: boolean // 是否已收藏
 }
 
 /**

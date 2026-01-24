@@ -24,5 +24,7 @@ public class ProfessionDTO {
 
     private Integer learnerCount; // 学习人数
 
+    private Boolean bookmarked; // 是否已收藏
+
     private LocalDateTime createdAt;
 }

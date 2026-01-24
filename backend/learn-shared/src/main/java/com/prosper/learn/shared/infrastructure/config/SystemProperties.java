@@ -97,6 +97,11 @@ public class SystemProperties {
      */
     private DataService dataService = new DataService();
 
+    /**
+     * 收藏相关配置
+     */
+    private Bookmark bookmark = new Bookmark();
+
     private AutoAuthor autoAuthor = new AutoAuthor();
 
     /**
@@ -742,5 +747,13 @@ public class SystemProperties {
          * 批量更新最大数量限制
          */
         private int maxBatchUpdateSize = 50;
+    }
+
+    @Data
+    public static class Bookmark {
+        /**
+         * 每个用户每种类型最大收藏数量
+         */
+        private int maxBookmarksPerType = 1000;
     }
 }

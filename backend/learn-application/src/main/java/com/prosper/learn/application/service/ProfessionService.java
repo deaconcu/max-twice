@@ -20,7 +20,10 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
@@ -45,6 +48,7 @@ public class ProfessionService {
 
     // 跨域服务依赖
     private final ProfessionRankingDomainService professionRankingService;
+    private final BookmarkService bookmarkService;
 
     // 事件发布
     private final ApplicationEventPublisher eventPublisher;
@@ -65,7 +69,7 @@ public class ProfessionService {
      * 返回正常状态的职业信息
      * 职业被拒绝或屏蔽时抛出异常
      */
-    public ProfessionDTO getById(long id, boolean published) {
+    public ProfessionDTO getById(long id, boolean published, Long userId) {
         ProfessionDO professionDO = professionDomainService.validateAndGet(id);
         if (professionDO == null) return null;
         if (published &&
@@ -73,7 +77,7 @@ public class ProfessionService {
              professionDO.getState() == ContentState.BANNED.value())) {
             throw StatusCode.PROFESSION_BLOCKED.exception();
         }
-        return toDTO(professionDO);
+        return toDTO(professionDO, userId);
     }
 
     /**
@@ -265,10 +269,46 @@ public class ProfessionService {
     }
 
     /**
+     * 转换单个对象为DTO（含收藏状态）
+     */
+    public ProfessionDTO toDTO(ProfessionDO professionDO, Long userId) {
+        ProfessionDTO dto = professionConverter.toDTO(professionDO);
+
+        // 填充收藏状态
+        if (userId != null) {
+            dto.setBookmarked(bookmarkService.isBookmarked(userId, professionDO.getId(), ContentType.profession));
+        } else {
+            dto.setBookmarked(false);
+        }
+
+        return dto;
+    }
+
+    /**
      * 转换列表为DTO列表
      */
     public List<ProfessionDTO> toDTO(List<ProfessionDO> professionDOList) {
         return professionConverter.toDTO(professionDOList);
+    }
+
+    /**
+     * 转换列表为DTO列表（含收藏状态）
+     */
+    public List<ProfessionDTO> toDTO(List<ProfessionDO> professionDOList, Long userId) {
+        List<ProfessionDTO> dtos = professionConverter.toDTO(professionDOList);
+
+        // 批量填充收藏状态
+        if (userId != null && !dtos.isEmpty()) {
+            List<Long> ids = dtos.stream().map(ProfessionDTO::getId).collect(Collectors.toList());
+            List<Long> bookmarkedIds = bookmarkService.getBookmarkedIds(userId, ids, ContentType.profession);
+            Set<Long> bookmarkedSet = new HashSet<>(bookmarkedIds);
+
+            dtos.forEach(dto -> dto.setBookmarked(bookmarkedSet.contains(dto.getId())));
+        } else {
+            dtos.forEach(dto -> dto.setBookmarked(false));
+        }
+
+        return dtos;
     }
 
     // ========== Private 辅助方法 ==========

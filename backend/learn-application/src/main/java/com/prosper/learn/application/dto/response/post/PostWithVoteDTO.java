@@ -28,4 +28,10 @@ public class PostWithVoteDTO extends PostWithCreatorDTO {
      * 何时填充：需要显示用户投票状态时
      */
     private Integer voteType;
+
+    /**
+     * 是否已收藏
+     * 何时填充：用户已登录且需要显示收藏状态时
+     */
+    private Boolean bookmarked;
 }

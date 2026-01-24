@@ -1,181 +1,106 @@
 <template>
   <DefaultLayout>
     <div class="roadmap-detail-page">
-      <!-- 返回按钮和职业信息 -->
-      <div class="back-button-wrapper mb-4 mb-md-5">
-        <div class="d-flex align-center">
-          <v-btn
-            icon="mdi-arrow-left"
-            variant="flat"
-            color="grey-lighten-5"
-            :size="$vuetify.display.mobile ? 'small' : 'default'"
-            class="back-button mr-3 mr-md-4 flex-shrink-0"
-            @click="handleBack"
-          ></v-btn>
-
-          <!-- 职业信息 -->
-          <div v-if="roadmap?.profession" class="d-flex align-center">
-            <v-avatar
-              color="primary"
-              :size="$vuetify.display.mobile ? 36 : 40"
-              class="mr-3 flex-shrink-0"
-            >
-              <v-icon
-                icon="mdi-briefcase-outline"
-                color="white"
-                :size="$vuetify.display.mobile ? 18 : 20"
-              />
-            </v-avatar>
-            <span class="text-subtitle-1 text-md-h6 font-weight-bold text-grey-darken-4">
-              {{ roadmap.profession.name }}
-            </span>
-          </div>
-        </div>
-      </div>
-
       <!-- 加载状态 -->
       <LoadingSpinner v-if="loading" />
 
-      <div v-else-if="roadmap" class="content-layout">
-        <!-- 左侧：流程图 -->
-        <div class="main-content">
-          <!-- 流程图 -->
-          <v-card border rounded="xl" class="flow-card">
-            <v-card-title class="pa-4 pa-sm-6 d-flex align-center justify-space-between">
-              <span class="text-body-1 font-weight-bold">学习路线图</span>
-            </v-card-title>
-            <v-card-text class="pa-0">
-              <div class="vue-flow-container">
-                <VueFlow
-                  :nodes="flowNodes"
-                  :edges="flowEdges"
-                  fit-view-on-init
-                  :nodes-draggable="false"
-                  :nodes-connectable="false"
-                  :elements-selectable="false"
-                  :min-zoom="0.7"
-                  :max-zoom="1.2"
-                  :default-zoom="1.0"
-                  :zoom-on-scroll="false"
-                  @node-click="handleNodeClick"
+      <div v-else-if="roadmap">
+        <!-- 返回按钮和职业信息 -->
+        <div class="back-button-wrapper mb-4 mb-md-5 sticky-header">
+          <div class="d-flex align-center justify-space-between">
+            <div class="d-flex align-center">
+              <v-btn
+                icon="mdi-arrow-left"
+                variant="flat"
+                color="grey-lighten-5"
+                :size="$vuetify.display.mobile ? 'small' : 'default'"
+                class="back-button mr-3 mr-md-4 flex-shrink-0"
+                @click="handleBack"
+              ></v-btn>
+
+              <!-- 职业信息 -->
+              <div v-if="roadmap?.profession" class="d-flex align-center">
+                <v-avatar
+                  color="primary"
+                  :size="$vuetify.display.mobile ? 36 : 40"
+                  class="mr-3 flex-shrink-0"
                 >
-                  <Background pattern-color="#bdbdbd" :gap="30" :size="2" variant="dots" />
-                  <Controls :show-interactive="false" />
-                </VueFlow>
+                  <v-icon
+                    icon="mdi-briefcase-outline"
+                    color="white"
+                    :size="$vuetify.display.mobile ? 18 : 20"
+                  />
+                </v-avatar>
+                <span class="text-subtitle-1 text-md-h6 font-weight-bold text-grey-darken-4">
+                  {{ roadmap.profession.name }}
+                </span>
               </div>
-            </v-card-text>
-          </v-card>
+            </div>
+
+            <!-- 点赞和收藏按钮 -->
+            <div class="d-flex align-center gap-2">
+              <v-btn
+                :color="roadmap.learning ? 'success' : 'primary'"
+                :variant="roadmap.learning ? 'outlined' : 'flat'"
+                :size="$vuetify.display.mobile ? 'small' : 'default'"
+                rounded="lg"
+                @click="handleStartLearning"
+              >
+                <v-icon
+                  :icon="roadmap.learning ? 'mdi-check' : 'mdi-play'"
+                  size="18"
+                  class="mr-1"
+                />
+                {{ roadmap.learning ? '正在学习' : '开始学习' }}
+              </v-btn>
+
+              <!-- 分隔线 -->
+              <v-divider vertical class="mx-1 align-self-center" style="height: 28px" />
+
+              <v-btn
+                :color="roadmap.liked ? 'primary' : 'grey-darken-1'"
+                variant="tonal"
+                :size="$vuetify.display.mobile ? 'small' : 'default'"
+                rounded="lg"
+                @click="handleVote"
+              >
+                <v-icon
+                  :icon="roadmap.liked ? 'mdi-heart' : 'mdi-heart-outline'"
+                  size="18"
+                  class="mr-1"
+                />
+                {{ roadmap.likeCount }}
+              </v-btn>
+              <v-tooltip location="bottom">
+                <template #activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    :icon="roadmap.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+                    :color="roadmap.bookmarked ? 'primary' : 'grey-darken-1'"
+                    variant="tonal"
+                    density="comfortable"
+                    :size="$vuetify.display.mobile ? 'small' : 'default'"
+                    rounded="lg"
+                    @click="handleToggleBookmark"
+                  />
+                </template>
+                {{ roadmap.bookmarked ? '取消收藏' : '收藏路线图' }}
+              </v-tooltip>
+            </div>
+          </div>
         </div>
 
-        <!-- 右侧：路径信息和评论区 -->
-        <div class="right-sidebar">
-          <!-- 路径信息卡片 -->
-          <v-card rounded="0" class="roadmap-info-card mb-4 no-border">
-            <v-card-text class="px-0 pt-0 pb-4 pb-sm-5">
-              <!-- 标题和状态 -->
-              <div class="d-flex align-center justify-space-between mb-4">
-                <div class="flex-grow-1">
-                  <div class="d-flex align-center mb-2">
-                    <v-chip
-                      v-if="roadmap.pinned"
-                      color="warning"
-                      size="small"
-                      variant="flat"
-                      class="mr-2"
-                    >
-                      <v-icon icon="mdi-pin" size="14" class="mr-1" />
-                      置顶
-                    </v-chip>
-                    <v-chip v-if="roadmap.learning" color="success" size="small" variant="flat">
-                      <v-icon icon="mdi-school" size="14" class="mr-1" />
-                      学习中
-                    </v-chip>
-                  </div>
-
-                  <!-- 创建者信息 -->
-                  <div class="d-flex align-center mb-3">
-                    <v-avatar size="24" color="grey-lighten-2" class="mr-2">
-                      <v-icon
-                        v-if="!roadmap.creator?.avatar"
-                        icon="mdi-account"
-                        color="grey"
-                        size="14"
-                      />
-                    </v-avatar>
-                    <span class="text-body-2 text-grey-darken-3">
-                      {{ roadmap.creator?.name }}
-                    </span>
-                    <span class="text-caption text-grey mx-2">·</span>
-                    <span class="text-caption text-grey">
-                      {{ getTimeDisplay(roadmap.createdAt) }}
-                    </span>
-                  </div>
-
-                  <!-- 描述 -->
-                  <div class="text-body-1 text-grey-darken-4 mb-3">
-                    {{ roadmap.description }}
-                  </div>
-
-                  <!-- 统计信息 -->
-                  <div class="d-flex flex-wrap align-center gap-4 gap-md-5">
-                    <div class="d-flex align-center">
-                      <v-icon icon="mdi-account-group" size="18" color="grey" class="mr-2" />
-                      <span class="text-body-2 text-grey-darken-2">
-                        {{ roadmap.learnerCount ?? 0 }}
-                        <span class="d-none d-sm-inline">人学习</span>
-                      </span>
-                    </div>
-                    <div class="d-flex align-center d-none d-sm-flex">
-                      <v-icon icon="mdi-comment-outline" size="18" color="grey" class="mr-2" />
-                      <span class="text-body-2 text-grey-darken-2">
-                        {{ roadmap.commentCount ?? 0 }} 评论
-                      </span>
-                    </div>
-                    <div class="d-flex align-center">
-                      <v-icon icon="mdi-graph-outline" size="18" color="grey" class="mr-2" />
-                      <span class="text-body-2 text-grey-darken-2">
-                        {{ roadmap.nodeCount }}
-                        <span class="d-none d-sm-inline">个</span>节点
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 操作按钮 -->
-              <div class="d-flex flex-wrap align-center gap-2">
-                <v-btn
-                  :color="roadmap.liked ? 'primary' : 'grey-darken-2'"
-                  :variant="roadmap.liked ? 'flat' : 'outlined'"
-                  :size="$vuetify.display.mobile ? 'small' : 'default'"
-                  rounded="lg"
-                  @click="handleVote"
-                >
-                  <v-icon
-                    :icon="roadmap.liked ? 'mdi-heart' : 'mdi-heart-outline'"
-                    size="18"
-                    class="mr-1"
-                  />
-                  {{ roadmap.likeCount }}
-                </v-btn>
-                <v-btn
-                  :color="roadmap.learning ? 'success' : 'primary'"
-                  :variant="roadmap.learning ? 'outlined' : 'flat'"
-                  :size="$vuetify.display.mobile ? 'small' : 'default'"
-                  rounded="lg"
-                  @click="handleStartLearning"
-                >
-                  <v-icon
-                    :icon="roadmap.learning ? 'mdi-check' : 'mdi-play'"
-                    size="18"
-                    class="mr-1"
-                  />
-                  {{ roadmap.learning ? '正在学习' : '开始学习' }}
-                </v-btn>
+        <div class="content-layout">
+          <!-- 左侧：流程图 -->
+          <div class="main-content">
+            <!-- 流程图 -->
+            <v-card border rounded="xl" class="flow-card">
+              <v-card-title class="pa-3 pa-sm-4 d-flex align-center justify-space-between">
+                <span class="text-body-1 font-weight-bold ps-2">学习路线图</span>
                 <v-btn
                   color="grey-darken-2"
                   variant="outlined"
-                  :size="$vuetify.display.mobile ? 'small' : 'default'"
+                  size="default"
                   rounded="lg"
                   @click="handleCopy"
                 >
@@ -183,16 +108,114 @@
                   <span class="d-none d-sm-inline">复制路径</span>
                   <span class="d-sm-none">复制</span>
                 </v-btn>
-              </div>
-            </v-card-text>
-          </v-card>
+              </v-card-title>
+              <v-card-text class="pa-0">
+                <div class="vue-flow-container">
+                  <VueFlow
+                    :nodes="flowNodes"
+                    :edges="flowEdges"
+                    fit-view-on-init
+                    :nodes-draggable="false"
+                    :nodes-connectable="false"
+                    :elements-selectable="false"
+                    :min-zoom="0.7"
+                    :max-zoom="1.2"
+                    :default-zoom="1.0"
+                    :zoom-on-scroll="false"
+                    @node-click="handleNodeClick"
+                  >
+                    <Background pattern-color="#bdbdbd" :gap="30" :size="2" variant="dots" />
+                    <Controls :show-interactive="false" />
+                  </VueFlow>
+                </div>
+              </v-card-text>
+            </v-card>
+          </div>
 
-          <!-- 评论区 -->
-          <CommentSection
-            :post-id="roadmapId"
-            :object-type="ObjectType.ROADMAP"
-            :comment-count="roadmap.commentCount"
-          />
+          <!-- 右侧：路径信息和评论区 -->
+          <div class="right-sidebar">
+            <!-- 路径信息卡片 -->
+            <v-card rounded="0" class="roadmap-info-card mb-0 no-border">
+              <v-card-text class="px-0 pt-0 pb-2 pb-sm-2">
+                <!-- 标题和状态 -->
+                <div class="d-flex align-center justify-space-between mb-4">
+                  <div class="flex-grow-1">
+                    <div class="d-flex align-center mb-2">
+                      <v-chip
+                        v-if="roadmap.pinned"
+                        color="warning"
+                        size="small"
+                        variant="flat"
+                        class="mr-2"
+                      >
+                        <v-icon icon="mdi-pin" size="14" class="mr-1" />
+                        置顶
+                      </v-chip>
+                      <v-chip v-if="roadmap.learning" color="success" size="small" variant="flat">
+                        <v-icon icon="mdi-school" size="14" class="mr-1" />
+                        学习中
+                      </v-chip>
+                    </div>
+
+                    <!-- 创建者信息 -->
+                    <div class="d-flex align-center mb-3">
+                      <v-avatar size="24" color="grey-lighten-2" class="mr-2">
+                        <v-icon
+                          v-if="!roadmap.creator?.avatar"
+                          icon="mdi-account"
+                          color="grey"
+                          size="14"
+                        />
+                      </v-avatar>
+                      <span class="text-body-2 text-grey-darken-3">
+                        {{ roadmap.creator?.name }}
+                      </span>
+                      <span class="text-caption text-grey mx-2">·</span>
+                      <span class="text-caption text-grey">
+                        {{ getTimeDisplay(roadmap.createdAt) }}
+                      </span>
+                    </div>
+
+                    <!-- 描述 -->
+                    <div class="text-body-1 text-grey-darken-4 mb-3">
+                      {{ roadmap.description }}
+                    </div>
+
+                    <!-- 统计信息 -->
+                    <div class="d-flex flex-wrap align-center gap-4 gap-md-5">
+                      <div class="d-flex align-center">
+                        <v-icon icon="mdi-account-group" size="18" color="grey" class="mr-2" />
+                        <span class="text-body-2 text-grey-darken-2">
+                          {{ roadmap.learnerCount ?? 0 }}
+                          <span class="d-none d-sm-inline">人学习</span>
+                        </span>
+                      </div>
+                      <div class="d-flex align-center d-none d-sm-flex">
+                        <v-icon icon="mdi-comment-outline" size="18" color="grey" class="mr-2" />
+                        <span class="text-body-2 text-grey-darken-2">
+                          {{ roadmap.commentCount ?? 0 }} 评论
+                        </span>
+                      </div>
+                      <div class="d-flex align-center">
+                        <v-icon icon="mdi-graph-outline" size="18" color="grey" class="mr-2" />
+                        <span class="text-body-2 text-grey-darken-2">
+                          {{ roadmap.nodeCount }}
+                          <span class="d-none d-sm-inline">个</span>节点
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </v-card-text>
+            </v-card>
+
+            <!-- 评论区 -->
+            <CommentSection
+              :post-id="roadmapId"
+              :object-type="ObjectType.ROADMAP"
+              :comment-count="roadmap.commentCount"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -209,7 +232,7 @@ import { Position } from '@vue-flow/core'
 import type { Node, Edge } from '@vue-flow/core'
 import dagre from 'dagre'
 import { useFetch, useMutation } from '@/composables'
-import { roadmapApi, progressApi, upvoteApi } from '@/api'
+import { roadmapApi, progressApi, upvoteApi, bookmarkApi } from '@/api'
 import { ObjectType, VoteType } from '@/enums'
 import type { Roadmap } from '@/types/roadmap'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
@@ -454,6 +477,24 @@ const handleCopy = (): void => {
   void router.push(`/career/${careerId.value}/roadmap/create?copy=${roadmapId.value}`)
 }
 
+// 切换收藏状态
+const { execute: executeToggleBookmark, loading: bookmarking } = useMutation(
+  () => bookmarkApi.toggle('roadmap', roadmapId.value),
+  {
+    successMessage: '',
+    showToast: false,
+  }
+)
+
+const handleToggleBookmark = async () => {
+  if (!roadmap.value) return
+
+  const result = await executeToggleBookmark()
+  if (result !== null && roadmap.value) {
+    roadmap.value.bookmarked = result
+  }
+}
+
 // 获取时间显示
 const getTimeDisplay = (date: string): string => {
   const now = new Date()
@@ -526,7 +567,7 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
 @media (min-width: 1280px) {
   .main-content {
     position: sticky;
-    top: 80px;
+    top: 140px;
     align-self: flex-start;
   }
 
@@ -655,5 +696,16 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
     #fafafa var(--progress, 0%)
   ) !important;
   border-color: #81c784 !important;
+}
+
+/* 顶部固定 */
+.sticky-header {
+  position: sticky;
+  top: 56px;
+  z-index: 10;
+  background: white;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  margin-top: -16px;
 }
 </style>

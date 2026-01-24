@@ -65,6 +65,7 @@ public class RoadmapService {
     private final UserCourseDataService userCourseDataService;
     private final UpvoteDomainService upvoteDomainService;
     private final ContentStatsDomainService contentStatsDomainService;
+    private final BookmarkService bookmarkService;
     private final ApplicationEventPublisher eventPublisher;
     private final RoadmapConverter roadmapConverter;
     private final UserConverter userConverter;
@@ -148,6 +149,9 @@ public class RoadmapService {
         boolean isLearning = userRoadmapDataService.isLearning(userId, roadmapDO.getId());
         dto.setLearning(isLearning);
 
+        // 设置收藏状态
+        dto.setBookmarked(bookmarkService.isBookmarked(userId, roadmapDO.getId(), ContentType.roadmap));
+
         // 查询统计数据
         ContentStatsDTO stats = contentStatsDomainService.getContentStats(ContentType.roadmap, roadmapDO.getId());
         dto.setLikeCount(stats.getLikeCount() != null ? stats.getLikeCount() : 0);
@@ -208,6 +212,8 @@ public class RoadmapService {
             ProfessionDO professionDO = professionDataService.getById(professionId);
             Set<Long> upvotedIds = upvoteDomainService.getUpvotedIds(roadmapIds, ContentType.roadmap.value(), userId);
             Set<Long> learningIds = getLearningIds(userId, roadmapIds);
+            List<Long> bookmarkedIds = bookmarkService.getBookmarkedIds(userId, roadmapIds, ContentType.roadmap);
+            Set<Long> bookmarkedSet = new HashSet<>(bookmarkedIds);
 
             // 批量获取统计数据
             Map<Long, ContentStatsDTO> statsMap = contentStatsDomainService.batchGetContentStats(ContentType.roadmap, roadmapIds);
@@ -224,6 +230,7 @@ public class RoadmapService {
                 dto.setCreator(creator != null ? userConverter.toBriefDTO(creator) : null);
                 dto.setLiked(upvotedIds.contains(dto.getId()));
                 dto.setLearning(learningIds.contains(dto.getId()));
+                dto.setBookmarked(bookmarkedSet.contains(dto.getId()));
 
                 // 设置统计数据
                 ContentStatsDTO stats = statsMap.get(dto.getId());

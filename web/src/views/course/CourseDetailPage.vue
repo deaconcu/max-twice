@@ -411,7 +411,7 @@ import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useFetch, useMutation } from '@/composables'
-import { courseApi, subscriptionApi } from '@/api'
+import { courseApi, bookmarkApi } from '@/api'
 import type { Course } from '@/types/course'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -451,24 +451,18 @@ const {
 // 计算属性：从响应中提取子课程列表
 const subCourses = computed(() => subCoursesResponse.value?.items ?? [])
 
-// 使用 useMutation 处理主课程订阅/取消订阅
-const { execute: executeSubscribe, loading: subscribing } = useMutation(
-  (payload: { id: number; action: 'subscribe' | 'unsubscribe' }) =>
-    payload.action === 'subscribe'
-      ? subscriptionApi.subscribe(payload.id)
-      : subscriptionApi.unsubscribe(payload.id),
+// 使用 useMutation 处理主课程收藏/取消收藏
+const { execute: executeBookmark, loading: subscribing } = useMutation(
+  (payload: { id: number }) => bookmarkApi.toggle('course', payload.id),
   {
     successMessage: '',
     showToast: false,
   }
 )
 
-// 使用 useMutation 处理子课程订阅/取消订阅
-const { execute: executeSubCourseSubscribe, loading: subscribingSubCourse } = useMutation(
-  (payload: { id: number; action: 'subscribe' | 'unsubscribe' }) =>
-    payload.action === 'subscribe'
-      ? subscriptionApi.subscribe(payload.id)
-      : subscriptionApi.unsubscribe(payload.id),
+// 使用 useMutation 处理子课程收藏/取消收藏
+const { execute: executeSubCourseBookmark, loading: subscribingSubCourse } = useMutation(
+  (payload: { id: number }) => bookmarkApi.toggle('course', payload.id),
   {
     successMessage: '',
     showToast: false,
@@ -580,22 +574,16 @@ const handleGoToSubCourse = (index: number) => {
 const handleToggleSubscribe = async () => {
   if (!course.value) return
 
-  const action = course.value.bookmarked ? 'unsubscribe' : 'subscribe'
-  const result = await executeSubscribe({ id: course.value.id, action })
+  const result = await executeBookmark({ id: course.value.id })
 
   if (result !== null && course.value) {
-    // 使用后端返回的状态值
+    // 切换收藏状态
     course.value.bookmarked = result
-    if (result) {
-      course.value.subscriptionCount = (course.value.subscriptionCount ?? 0) + 1
-    } else {
-      course.value.subscriptionCount = Math.max((course.value.subscriptionCount ?? 0) - 1, 0)
-    }
   }
 }
 
 /**
- * 切换子课程订阅状态
+ * 切换子课程收藏状态
  */
 const handleToggleSubCourseSubscribe = async (subCourseId: number) => {
   if (!subCourses.value) return
@@ -603,17 +591,11 @@ const handleToggleSubCourseSubscribe = async (subCourseId: number) => {
   if (!subCourse) return
 
   subscribingSubCourseId.value = subCourseId
-  const action = subCourse.bookmarked ? 'unsubscribe' : 'subscribe'
-  const result = await executeSubCourseSubscribe({ id: subCourseId, action })
+  const result = await executeSubCourseBookmark({ id: subCourseId })
 
   if (result !== null && subCourse) {
-    // 使用后端返回的状态值
+    // 切换收藏状态
     subCourse.bookmarked = result
-    if (result) {
-      subCourse.subscriptionCount = (subCourse.subscriptionCount ?? 0) + 1
-    } else {
-      subCourse.subscriptionCount = Math.max((subCourse.subscriptionCount ?? 0) - 1, 0)
-    }
   }
 
   subscribingSubCourseId.value = null

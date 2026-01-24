@@ -22,6 +22,7 @@ export interface Roadmap {
   liked?: boolean // 是否已点赞
   pinned?: boolean // 是否置顶
   learning?: boolean // 是否正在学习
+  bookmarked?: boolean // 是否已收藏
   creator?: User // 创建者信息
   updatedAt?: string // 更新时间
   createdAt?: string // 创建时间

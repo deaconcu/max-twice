@@ -1,5 +1,7 @@
 package com.prosper.learn.shared.domain;
 
+import com.prosper.learn.shared.domain.exception.StatusCode;
+
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -155,6 +157,14 @@ public class Enums {
 
         public static ContentType getByValue(Integer value) {
             return ValueEnum.getByValue(ContentType.class, value);
+        }
+
+        public static ContentType parse(String name) {
+            try {
+                return ContentType.valueOf(name.toLowerCase());
+            } catch (IllegalArgumentException e) {
+                throw StatusCode.INVALID_PARAMETER.exception("不支持的内容类型: " + name);
+            }
         }
 
         public static boolean isValid(int value) {

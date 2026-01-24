@@ -56,18 +56,34 @@
               </div>
             </div>
 
-            <!-- 右侧：创建按钮 -->
-            <v-btn
-              color="primary"
-              variant="flat"
-              :size="$vuetify.display.mobile ? 'default' : 'large'"
-              rounded="lg"
-              class="flex-shrink-0"
-              @click="handleCreateRoadmap"
-            >
-              <v-icon icon="mdi-plus" size="20" class="mr-1" />
-              创建路径
-            </v-btn>
+            <!-- 右侧：操作按钮 -->
+            <div class="d-flex align-center ga-4 flex-shrink-0">
+              <v-tooltip location="bottom">
+                <template #activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    :icon="career.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+                    :color="career.bookmarked ? 'primary' : 'grey-darken-1'"
+                    variant="tonal"
+                    density="comfortable"
+                    :size="$vuetify.display.mobile ? 'default' : 'large'"
+                    rounded="lg"
+                    @click="handleToggleBookmark"
+                  />
+                </template>
+                {{ career.bookmarked ? '取消收藏' : '收藏职业' }}
+              </v-tooltip>
+              <v-btn
+                color="primary"
+                variant="flat"
+                :size="$vuetify.display.mobile ? 'default' : 'large'"
+                rounded="lg"
+                @click="handleCreateRoadmap"
+              >
+                <v-icon icon="mdi-plus" size="20" class="mr-1" />
+                创建路径
+              </v-btn>
+            </div>
           </div>
         </div>
 
@@ -416,7 +432,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useFetch, useMutation } from '@/composables'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useUserStore } from '@/stores'
-import { professionApi, roadmapApi, progressApi, upvoteApi } from '@/api'
+import { professionApi, roadmapApi, progressApi, upvoteApi, bookmarkApi } from '@/api'
 import { ObjectType, VoteType } from '@/enums'
 import type { Profession } from '@/types/profession'
 import type { Roadmap } from '@/types/roadmap'
@@ -583,6 +599,24 @@ const handleBack = (): void => {
 // 创建新路径
 const handleCreateRoadmap = (): void => {
   void router.push(`/career/${careerId.value}/roadmap/create`)
+}
+
+// 切换职业收藏状态
+const { execute: executeToggleBookmark, loading: bookmarking } = useMutation(
+  () => bookmarkApi.toggle('profession', careerId.value),
+  {
+    successMessage: '',
+    showToast: false,
+  }
+)
+
+const handleToggleBookmark = async () => {
+  if (!career.value) return
+
+  const result = await executeToggleBookmark()
+  if (result !== null && career.value) {
+    career.value.bookmarked = result
+  }
 }
 
 // 打开路径详情

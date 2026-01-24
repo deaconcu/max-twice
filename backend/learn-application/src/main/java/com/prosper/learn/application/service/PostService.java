@@ -83,6 +83,7 @@ public class PostService {
     private final UpvoteDataService upvoteDataService;
     private final UserDataService userDataService;
     private final ContentStatsDomainService contentStatsDomainService;
+    private final BookmarkService bookmarkService;
 
     // 事件发布
     private final ApplicationEventPublisher eventPublisher;
@@ -188,6 +189,10 @@ public class PostService {
             }
         }
 
+        // 批量查询收藏状态
+        List<Long> bookmarkedIds = bookmarkService.getBookmarkedIds(userId, allPostingIds, ContentType.post);
+        Set<Long> bookmarkedSet = new HashSet<>(bookmarkedIds);
+
         // get all user
         List<Long> userIds = postDTOList.stream().map(PostSummaryDTO::getCreatorId).collect(Collectors.toList());
         List<UserDO> userList = userDataService.getByIds(userIds);
@@ -210,6 +215,9 @@ public class PostService {
             if (types.containsKey(postDTO.getId())) {
                 postDTO.setVoteType(types.get(postDTO.getId()));
             }
+
+            // 填充收藏状态
+            postDTO.setBookmarked(bookmarkedSet.contains(postDTO.getId()));
 
             // 填充创建者信息
             postDTO.setCreator(userConverter.toBriefDTO(userMap.get(postDTO.getCreatorId())));
@@ -250,9 +258,14 @@ public class PostService {
                 types.put(upvote.getObjectId(), upvote.getType());
             }
 
+            // 批量查询收藏状态
+            List<Long> bookmarkedIds = bookmarkService.getBookmarkedIds(userId, allPostingIds, ContentType.post);
+            Set<Long> bookmarkedSet = new HashSet<>(bookmarkedIds);
+
             for (PostWithVoteDTO posting : postDTOList) {
                 if (types.containsKey(posting.getId()))
                     posting.setVoteType(types.get(posting.getId()));
+                posting.setBookmarked(bookmarkedSet.contains(posting.getId()));
             }
         }
 

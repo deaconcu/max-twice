@@ -64,6 +64,7 @@ export interface MemoryCardView {
   srsState?: UserCardSRSState // SRS 状态
   hasDeckUpdate?: boolean // 卡片组是否有更新
   hasCardUpdate?: boolean // 卡片内容是否有更新
+  bookmarked?: boolean // 是否已收藏
 }
 
 /**

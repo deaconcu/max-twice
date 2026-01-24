@@ -38,6 +38,9 @@ const currPosting = ref<any>(null)
 const nodeSelectorDialog = ref()
 const showAddArticleDialog = ref(false)
 const showInviteUserDialog = ref(false)
+const showFavoritePosts = ref(false)
+const showFavoriteDecks = ref(false)
+const showCreateDeckDialog = ref(false)
 
 // 监听路由变化，重置 tab 为 list
 watch(
@@ -154,12 +157,16 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
       </div>
 
       <!-- Tab栏和操作按钮 -->
-      <v-row class="tabs-actions-bar mt-4 mb-0 mx-0 justify-space-between">
+      <v-row class="tabs-actions-bar mt-4 mb-0 mx-0 justify-space-between align-center">
         <div>
           <v-tabs v-model="tab" density="compact" color="primary">
             <v-tab value="list" class="px-3" @click="switchTab('list')">
               <v-icon icon="mdi-list-box-outline" size="16" class="mr-2"></v-icon>
               <span class="font-weight-medium text-grey-darken-3">文章列表</span>
+            </v-tab>
+            <v-tab value="memoryCards" class="px-3" @click="switchTab('memoryCards')">
+              <v-icon icon="mdi-cards-outline" size="16" class="mr-2"></v-icon>
+              <span class="font-weight-medium text-grey-darken-3">记忆卡片</span>
             </v-tab>
             <v-tab value="comment" class="px-3" @click="switchTab('comment')">
               <v-icon icon="mdi-comment-outline" size="16" class="mr-2"></v-icon>
@@ -167,63 +174,171 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
                 >{{ data.node?.commentCount || 0 }} 评论</span
               >
             </v-tab>
-            <v-tab value="memoryCards" class="px-3" @click="switchTab('memoryCards')">
-              <v-icon icon="mdi-cards-outline" size="16" class="mr-2"></v-icon>
-              <span class="font-weight-medium text-grey-darken-3">记忆卡片</span>
-            </v-tab>
           </v-tabs>
         </div>
-        <div class="d-flex align-center action-buttons">
-          <v-btn
-            variant="flat"
-            color="surface-variant"
-            rounded="lg"
-            class="px-3 me-2"
-            density="comfortable"
-            @click="nodeSelectorDialog?.open()"
-          >
-            <v-icon
-              icon="mdi-format-list-group-plus"
-              size="14"
-              class="mr-2"
-              color="grey-darken-3"
-            ></v-icon>
-            <span class="font-weight-medium text-grey-darken-3">添加目录</span>
-          </v-btn>
 
-          <v-btn
-            variant="flat"
-            color="surface-variant"
-            rounded="lg"
-            density="comfortable"
-            class="px-3 me-2"
-            @click="showAddArticleDialog = true"
-          >
-            <v-icon
-              icon="mdi-note-plus-outline"
-              size="14"
-              class="mr-2"
-              color="grey-darken-3"
-            ></v-icon>
-            <span class="font-weight-medium text-grey-darken-3">添加文章</span>
-          </v-btn>
+        <!-- 右侧：精简操作按钮（根据 tab 动态显示） -->
+        <div class="d-flex align-center ga-2">
+          <!-- 文章列表 Tab：主按钮 + 更多菜单 -->
+          <template v-if="tab === 'list'">
+            <!-- 添加目录按钮：桌面端显示文字，移动端只显示图标 -->
+            <v-btn
+              variant="flat"
+              color="surface-variant"
+              rounded="lg"
+              size="default"
+              :class="$vuetify.display.smAndDown ? 'px-2' : 'px-3'"
+              @click="nodeSelectorDialog?.open()"
+            >
+              <v-icon icon="mdi-format-list-group-plus" size="16" :class="$vuetify.display.mdAndUp ? 'mr-1' : ''"></v-icon>
+              <span v-if="$vuetify.display.mdAndUp" class="font-weight-medium text-grey-darken-3">添加目录</span>
+            </v-btn>
 
-          <v-btn
-            variant="flat"
-            color="surface-variant"
-            rounded="lg"
-            class="px-3"
-            density="comfortable"
-            @click="showInviteUserDialog = true"
-          >
-            <v-icon
-              icon="mdi-account-plus-outline"
-              size="14"
-              class="mr-2"
-              color="grey-darken-3"
-            ></v-icon>
-            <span class="font-weight-medium text-grey-darken-3">邀请回答</span>
-          </v-btn>
+            <!-- 添加文章按钮：桌面端显示文字，移动端只显示图标 -->
+            <v-btn
+              variant="flat"
+              color="surface-variant"
+              rounded="lg"
+              size="default"
+              :class="$vuetify.display.smAndDown ? 'px-2' : 'px-3'"
+              @click="showAddArticleDialog = true"
+            >
+              <v-icon icon="mdi-note-plus-outline" size="16" :class="$vuetify.display.mdAndUp ? 'mr-1' : ''"></v-icon>
+              <span v-if="$vuetify.display.mdAndUp" class="font-weight-medium text-grey-darken-3">添加文章</span>
+            </v-btn>
+
+            <!-- 桌面端（md及以上）：显示更多按钮 -->
+            <template v-if="$vuetify.display.mdAndUp">
+              <v-menu>
+                <template #activator="{ props }">
+                  <v-btn v-bind="props" variant="text" rounded="lg" density="comfortable" icon>
+                    <v-icon size="16">mdi-dots-vertical</v-icon>
+                  </v-btn>
+                </template>
+                <v-card rounded="lg" class="elevation-0 mt-2 menu-card">
+                  <v-list density="compact" min-width="160" class="elevation-0 py-0">
+                    <v-list-item class="border-b" @click="showInviteUserDialog = true">
+                      <template #prepend>
+                        <v-icon icon="mdi-account-plus-outline" size="18"></v-icon>
+                      </template>
+                      <v-list-item-title>邀请回答</v-list-item-title>
+                    </v-list-item>
+                    <v-list-item @click="showFavoritePosts = true">
+                      <template #prepend>
+                        <v-icon icon="mdi-star-outline" size="18"></v-icon>
+                      </template>
+                      <v-list-item-title>收藏的文章</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-card>
+              </v-menu>
+            </template>
+
+            <!-- 移动端（sm及以下）-->
+            <template v-else>
+              <v-menu>
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    variant="text"
+                    rounded="lg"
+                    size="small"
+                    icon
+                  >
+                    <v-icon>mdi-dots-vertical</v-icon>
+                  </v-btn>
+                </template>
+                <v-card rounded="lg" class="elevation-0 mt-2 menu-card">
+                  <v-list density="compact" min-width="160" class="elevation-0 py-0">
+                    <v-list-item @click="showInviteUserDialog = true">
+                      <template v-slot:prepend>
+                        <v-icon icon="mdi-account-plus-outline" size="18"></v-icon>
+                      </template>
+                      <v-list-item-title>邀请回答</v-list-item-title>
+                    </v-list-item>
+                    <v-list-item @click="showFavoritePosts = true">
+                      <template v-slot:prepend>
+                        <v-icon icon="mdi-star-outline" size="18"></v-icon>
+                      </template>
+                      <v-list-item-title>收藏的文章</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-card>
+              </v-menu>
+            </template>
+          </template>
+
+          <!-- 记忆卡片 Tab：主按钮 + 更多菜单 -->
+          <template v-else-if="tab === 'memoryCards'">
+            <!-- 主按钮：桌面端显示文字，移动端只显示图标 -->
+            <v-btn
+              variant="flat"
+              color="surface-variant"
+              rounded="lg"
+              size="default"
+              :class="$vuetify.display.smAndDown ? 'px-2' : 'px-3'"
+              @click="showCreateDeckDialog = true"
+            >
+              <v-icon icon="mdi-plus" size="16" :class="$vuetify.display.mdAndUp ? 'mr-1' : ''"></v-icon>
+              <span v-if="$vuetify.display.mdAndUp" class="font-weight-medium text-grey-darken-3">新增卡片组</span>
+            </v-btn>
+
+            <!-- 桌面端（md及以上）：显示更多按钮 -->
+            <template v-if="$vuetify.display.mdAndUp">
+              <v-menu>
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    variant="text"
+                    rounded="lg"
+                    density="comfortable"
+                    icon
+                  >
+                    <v-icon size="16">mdi-dots-vertical</v-icon>
+                  </v-btn>
+                </template>
+                <v-card rounded="lg" class="elevation-0 mt-2 menu-card">
+                  <v-list density="compact" min-width="160" class="elevation-0 py-0">
+                    <v-list-item @click="showFavoriteDecks = true">
+                      <template v-slot:prepend>
+                        <v-icon icon="mdi-star-outline" size="18"></v-icon>
+                      </template>
+                      <v-list-item-title>收藏的卡片组</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-card>
+              </v-menu>
+            </template>
+
+            <!-- 移动端（sm及以下）-->
+            <template v-else>
+              <v-menu>
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    variant="text"
+                    rounded="lg"
+                    size="small"
+                    icon
+                  >
+                    <v-icon>mdi-dots-vertical</v-icon>
+                  </v-btn>
+                </template>
+                <v-card rounded="lg" class="elevation-0 mt-2 menu-card">
+                  <v-list density="compact" min-width="160" class="elevation-0 py-0">
+                    <v-list-item @click="showFavoriteDecks = true">
+                      <template v-slot:prepend>
+                        <v-icon icon="mdi-star-outline" size="18"></v-icon>
+                      </template>
+                      <v-list-item-title>收藏的卡片组</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-card>
+              </v-menu>
+            </template>
+          </template>
+
+          <!-- 评论 Tab：无操作按钮 -->
         </div>
       </v-row>
     </template>
@@ -362,6 +477,60 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
 
     <!-- 邀请回答对话框 -->
     <InviteUserDialog v-model="showInviteUserDialog" :node-id="currNodeId" />
+
+    <!-- TODO: 收藏的文章对话框（待实现） -->
+    <v-dialog v-model="showFavoritePosts" max-width="800">
+      <v-card rounded="xl">
+        <v-card-title class="pa-4">
+          <div class="d-flex align-center justify-space-between">
+            <span>收藏的文章</span>
+            <v-btn icon="mdi-close" variant="text" size="small" @click="showFavoritePosts = false"></v-btn>
+          </div>
+        </v-card-title>
+        <v-card-text class="pa-4">
+          <div class="text-center py-8">
+            <v-icon icon="mdi-note-text-outline" size="64" color="grey-lighten-2"></v-icon>
+            <p class="text-body-1 text-grey-darken-1 mt-4">收藏功能开发中...</p>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- TODO: 收藏的卡片组对话框（待实现） -->
+    <v-dialog v-model="showFavoriteDecks" max-width="800">
+      <v-card rounded="xl">
+        <v-card-title class="pa-4">
+          <div class="d-flex align-center justify-space-between">
+            <span>收藏的卡片组</span>
+            <v-btn icon="mdi-close" variant="text" size="small" @click="showFavoriteDecks = false"></v-btn>
+          </div>
+        </v-card-title>
+        <v-card-text class="pa-4">
+          <div class="text-center py-8">
+            <v-icon icon="mdi-cards-outline" size="64" color="grey-lighten-2"></v-icon>
+            <p class="text-body-1 text-grey-darken-1 mt-4">收藏功能开发中...</p>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- TODO: 新增卡片组对话框（待实现） -->
+    <v-dialog v-model="showCreateDeckDialog" max-width="600">
+      <v-card rounded="xl">
+        <v-card-title class="pa-4">
+          <div class="d-flex align-center justify-space-between">
+            <span>新增卡片组</span>
+            <v-btn icon="mdi-close" variant="text" size="small" @click="showCreateDeckDialog = false"></v-btn>
+          </div>
+        </v-card-title>
+        <v-card-text class="pa-4">
+          <div class="text-center py-8">
+            <v-icon icon="mdi-cards-plus-outline" size="64" color="grey-lighten-2"></v-icon>
+            <p class="text-body-1 text-grey-darken-1 mt-4">新增卡片组功能开发中...</p>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -377,6 +546,11 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
   background-color: white;
   z-index: 900;
   padding: 12px 0 !important;
+}
+
+/* 更多菜单卡片边框 */
+.menu-card {
+  border: 1px solid rgb(var(--v-theme-border)) !important;
 }
 
 /* 移动端：面包屑增加上边距 */

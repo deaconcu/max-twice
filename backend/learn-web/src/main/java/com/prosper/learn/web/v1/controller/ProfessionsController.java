@@ -88,12 +88,14 @@ public class ProfessionsController {
      * 映射: GET /profession?id=123 → GET /api/v1/professions/{id}
      */
     @GetMapping("/professions/{id}")
+    @SaCheckLogin
     @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<ProfessionDTO> getProfession(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
-            Long id) {
-        ProfessionDTO profession = professionService.getById(id, true);
+            Long id,
+            @CurrentUser UserDO currentUser) {
+        ProfessionDTO profession = professionService.getById(id, true, currentUser.getId());
         return ApiResponse.query(profession);
     }
 

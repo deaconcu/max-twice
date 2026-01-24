@@ -28,6 +28,7 @@ export interface Post {
   updatedAt?: string // 更新时间
   voteType?: VoteType | null // 当前用户投票状态
   deckCount?: number // 记忆卡片组数量
+  bookmarked?: boolean // 是否已收藏
 }
 
 /**
