@@ -75,6 +75,7 @@ public class MemoryCardDeckService {
     private final MemoryCardService memoryCardService;
     private final ScoreCalculationService scoreCalculationService;
     private final AutoAuthorQueueService autoAuthorQueueService;
+    private final BookmarkService bookmarkService;
 
     // 事件发布
     private final ApplicationEventPublisher eventPublisher;
@@ -126,6 +127,10 @@ public class MemoryCardDeckService {
         if (userId != null) {
             boolean hasUpvoted = upvoteService.getUpvoteStatus(deckDO.getId(), Enums.ContentType.memory_card_deck, userId).getLiked();
             dto.setHasLiked(hasUpvoted);
+            // 填充收藏状态
+            dto.setBookmarked(bookmarkService.isBookmarked(userId, deckDO.getId(), Enums.ContentType.memory_card));
+        } else {
+            dto.setBookmarked(false);
         }
 
         // 填充课程和节点信息
@@ -190,6 +195,7 @@ public class MemoryCardDeckService {
 
         // 批量获取点赞状态（如果提供了用户ID）
         Map<Long, Boolean> upvoteStatusMap = new HashMap<>();
+        Set<Long> bookmarkedSet;
         if (userId != null) {
             Set<Long> deckIds = deckDOList.stream()
                 .map(MemoryCardDeckDO::getId)
@@ -199,6 +205,12 @@ public class MemoryCardDeckService {
                 boolean hasUpvoted = upvoteService.getUpvoteStatus(deckId, Enums.ContentType.memory_card_deck, userId).getLiked();
                 upvoteStatusMap.put(deckId, hasUpvoted);
             }
+            // 批量查询收藏状态
+            List<Long> deckIdList = new ArrayList<>(deckIds);
+            List<Long> bookmarkedIds = bookmarkService.getBookmarkedIds(userId, deckIdList, Enums.ContentType.memory_card);
+            bookmarkedSet = new HashSet<>(bookmarkedIds);
+        } else {
+            bookmarkedSet = new HashSet<>();
         }
 
         // 批量获取课程和节点信息
@@ -255,6 +267,10 @@ public class MemoryCardDeckService {
                 // 设置点赞状态
                 if (userId != null) {
                     dto.setHasLiked(upvoteStatusMap.get(deck.getId()));
+                    // 设置收藏状态
+                    dto.setBookmarked(bookmarkedSet.contains(deck.getId()));
+                } else {
+                    dto.setBookmarked(false);
                 }
 
                 // 设置课程和节点信息

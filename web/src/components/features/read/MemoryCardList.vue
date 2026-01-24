@@ -61,6 +61,15 @@
                 ></v-icon>
                 {{ deck.likeCount }}
               </v-btn>
+              <v-btn
+                :icon="deck.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+                :color="deck.bookmarked ? 'primary' : 'grey-darken-2'"
+                variant="text"
+                size="small"
+                rounded="lg"
+                class="ml-1"
+                @click.stop="handleToggleBookmark(deck)"
+              />
               <v-icon
                 icon="mdi-cards-outline"
                 size="14"
@@ -89,7 +98,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
-import { memoryApi } from '@/api'
+import { memoryApi, bookmarkApi } from '@/api'
 import { useMutation } from '@/composables'
 import { useUserStore } from '@/stores'
 import UserAvatar from '@/components/common/UserAvatar.vue'
@@ -175,6 +184,24 @@ const { execute: upvoteDeck } = useMutation((deckId: number) => memoryApi.upvote
 
 const handleUpvote = async (deck: MemoryCardDeck) => {
   await upvoteDeck(deck.id)
+}
+
+// 使用 useMutation 处理收藏
+const { execute: toggleBookmark } = useMutation(
+  (deckId: number) => bookmarkApi.toggle('memory_card', deckId),
+  {
+    showToast: false,
+    onSuccess: (result, deckId) => {
+      const deck = decks.value.find((d) => d.id === deckId)
+      if (deck && result !== null) {
+        deck.bookmarked = result
+      }
+    },
+  }
+)
+
+const handleToggleBookmark = async (deck: MemoryCardDeck) => {
+  await toggleBookmark(deck.id)
 }
 
 const viewDeckDetail = (deck: MemoryCardDeck) => {

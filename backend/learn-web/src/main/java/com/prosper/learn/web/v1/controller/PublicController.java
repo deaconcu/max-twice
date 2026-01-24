@@ -166,7 +166,7 @@ public class PublicController {
             @Positive(message = "职业ID必须大于0")
             Long id) {
         try {
-            ProfessionDTO profession = professionService.getById(id, true);
+            ProfessionDTO profession = professionService.getById(id, true, null);
             if (profession == null) {
                 return ApiResponse.error(StatusCode.PROFESSION_NOT_FOUND.getCode(), "职业不存在");
             }

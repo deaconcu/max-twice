@@ -21,7 +21,6 @@ import com.prosper.learn.application.dto.request.UpdateCourseRequest;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.shared.infrastructure.config.SystemDomainService;
 import com.prosper.learn.user.profile.UserDO;
-import com.prosper.learn.user.profile.UserDomainService;
 import com.prosper.learn.learning.enrollment.UserCourseDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,8 +29,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.prosper.learn.shared.domain.Enums.*;
@@ -51,7 +52,7 @@ public class CourseService {
     private final SystemDomainService systemDomainService;
     private final CourseConverter courseConverter;
     private final UserCourseDomainService userCourseDomainService;
-    private final UserDomainService userDomainService;
+    private final BookmarkService bookmarkService;
 
 
     // ========== DTO 转换方法 ==========
@@ -179,8 +180,8 @@ public class CourseService {
 
         // 填充用户相关信息（subscribed, progress）
         if (userId != null) {
-            // 检查订阅状态
-            dto.setBookmarked(userDomainService.isSubscribed(userId, courseDO.getId()));
+            // 检查收藏状态
+            dto.setBookmarked(bookmarkService.isBookmarked(userId, courseDO.getId(), ContentType.course));
 
             // 获取学习进度
             Integer progress = userCourseDomainService.getCourseProgress(userId, courseDO.getId());
@@ -211,13 +212,13 @@ public class CourseService {
         // 批量查询统计信息（异常时返回空 Map）
         final Map<Long, ContentStatsDO> statsMap = getBatchStats(courseIds);
 
-        // 批量查询用户订阅状态（如果已登录）
-        final java.util.Set<Long> subscribedCourseIds;
+        // 批量查询用户收藏状态（如果已登录）
+        final Set<Long> subscribedCourseIds;
         if (userId != null) {
-            List<Long> userSubscriptions = userDomainService.getSubscriptionIds(userId);
-            subscribedCourseIds = new java.util.HashSet<>(userSubscriptions);
+            List<Long> bookmarkedIds = bookmarkService.getBookmarkedIds(userId, courseIds, ContentType.course);
+            subscribedCourseIds = new HashSet<>(bookmarkedIds);
         } else {
-            subscribedCourseIds = new java.util.HashSet<>();
+            subscribedCourseIds = new HashSet<>();
         }
 
         // 批量查询用户学习进度（如果已登录）

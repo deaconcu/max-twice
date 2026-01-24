@@ -244,7 +244,7 @@ const replyToSubComment = (parentCommentIdParam: number, subComment: any) => {
   activeReplyId.value = subComment.id // 用于控制输入框显示在子评论下方
   parentCommentId.value = parentCommentIdParam // 用于API提交，父评论ID
   replyToUserId.value = subComment.creatorId || null
-  replyToUserName.value = subComment.creatorName || '匿名用户'
+  replyToUserName.value = subComment.creator?.name || '匿名用户'
   replyContent.value = ''
 }
 
@@ -363,7 +363,7 @@ onBeforeUnmount(() => {
           <div class="flex-grow-1">
             <div class="d-flex align-center mb-2">
               <span class="text-body-2 font-weight-medium text-grey-darken-3">
-                {{ comment.creatorName || '匿名用户' }}
+                {{ comment.creator?.name || '匿名用户' }}
               </span>
               <span class="text-caption text-grey mx-2">·</span>
               <span class="text-caption text-grey">
@@ -452,7 +452,7 @@ onBeforeUnmount(() => {
                   <div class="flex-grow-1">
                     <div class="d-flex align-center mb-2">
                       <span class="text-body-2 font-weight-medium text-grey-darken-3">
-                        {{ subComment.creatorName || '匿名用户' }}
+                        {{ subComment.creator?.name || '匿名用户' }}
                       </span>
                       <span class="text-caption text-grey mx-2">·</span>
                       <span class="text-caption text-grey">
@@ -460,8 +460,8 @@ onBeforeUnmount(() => {
                       </span>
                     </div>
                     <p class="text-body-1 mb-2">
-                      <span v-if="subComment.toUserName" class="text-primary font-weight-medium">
-                        @{{ subComment.toUserName }}
+                      <span v-if="subComment.toUser?.name" class="text-primary font-weight-medium">
+                        @{{ subComment.toUser.name }}
                       </span>
                       {{ subComment.content }}
                     </p>
@@ -491,7 +491,7 @@ onBeforeUnmount(() => {
                     <div v-if="activeReplyId === subComment.id" class="mt-2">
                       <v-textarea
                         v-model="replyContent"
-                        :placeholder="`回复 @${subComment.creatorName || '匿名用户'}...`"
+                        :placeholder="`回复 @${subComment.creator?.name || '匿名用户'}...`"
                         variant="outlined"
                         density="comfortable"
                         rounded="lg"

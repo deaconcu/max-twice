@@ -174,35 +174,6 @@ public class UserService {
     }
 
     /**
-     * 获取用户订阅
-     */
-    public Object getUserSubscriptions(Long userId) {
-        userDataService.validateAndGet(userId);
-
-        // 获取订阅ID列表
-        List<Long> subscriptionIds = userDomainService.getSubscriptionIds(userId);
-        if (subscriptionIds.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        // 跨域查询：获取课程信息
-        List<CourseDO> courseDOList = courseDataService.getByIds(subscriptionIds);
-        log.info("查询到{}个收藏课程，课程信息: {}", courseDOList.size(),
-            courseDOList.stream().map(c -> "id=" + c.getId() + ",name=" + c.getName()).collect(Collectors.toList()));
-
-        // 转换为DTO（包含统计字段）
-        List<CourseSummaryWithStatsAndProgressDTO> dtoList = courseConverter.toSummaryWithStatsAndProgressDTO(courseDOList);
-
-        // 批量填充统计信息和用户信息（learnerCount, subscriptionCount, subscribed, progress）
-        fillStatsAndProgressForCourses(dtoList, userId);
-
-        // 填充父课程名称（如果是子课程）
-        fillParentCourseNames(dtoList);
-
-        return dtoList;
-    }
-
-    /**
      * 填充父课程名称
      * 对于子课程，查询并填充其父课程名称
      */
@@ -334,44 +305,6 @@ public class UserService {
         log.info("重新发送验证码成功: {}", email);
     }
 
-    /**
-     * 添加订阅
-     */
-    @Transactional
-    public void subscribe(Long userId, Long courseId) {
-        courseDataService.validateAndGet(courseId);
-        validateUserId(userId);
-
-        // 委托给 DomainService 添加订阅
-        userDomainService.addSubscription(userId, courseId);
-
-        // 发布收藏事件
-        eventPublisher.publishEvent(new ContentBookmarkedEvent(
-            userId,
-            courseId,
-            ContentType.course
-        ));
-    }
-
-    /**
-     * 取消订阅
-     */
-    @Transactional
-    public void unsubscribe(Long userId, Long courseId) {
-        courseDataService.validateAndGet(courseId);
-        validateUserId(userId);
-
-        // 委托给 DomainService 取消订阅
-        userDomainService.removeSubscription(userId, courseId);
-
-        // 发布取消收藏事件
-        eventPublisher.publishEvent(new ContentUnbookmarkedEvent(
-            userId,
-            courseId,
-            ContentType.course
-        ));
-    }
-
 // --注释掉检查 START (2025/12/10 11:32):
 //    /**
 //     * 关注用户
@@ -493,32 +426,11 @@ public class UserService {
         if (userDO == null) return null;
 
         UserProfileDTO dto = userConverter.toProfileDTO(userDO);
-        dto.setSubscriptions(getSubscriptions(userDO.getId()));
         return dto;
     }
 
 
     // ========== 私有辅助方法 ==========
-
-    /**
-     * 获取用户订阅信息
-     */
-    private SubscriptionDTO[] getSubscriptions(Long userId) {
-        // 使用 DomainService 获取订阅ID列表
-        List<Long> ids = userDomainService.getSubscriptionIds(userId);
-        if (ids.isEmpty()) {
-            return new SubscriptionDTO[0];
-        }
-
-        // 跨域查询：获取课程信息
-        List<CourseDO> courseDOList = courseDataService.getByIds(ids);
-        SubscriptionDTO[] subscriptionDTOS = new SubscriptionDTO[courseDOList.size()];
-        int i = 0;
-        for (CourseDO courseDO : courseDOList) {
-            subscriptionDTOS[i++] = new SubscriptionDTO(courseDO.getId(), courseDO.getName());
-        }
-        return subscriptionDTOS;
-    }
 
     private void validateUserId(Long userId) {
         if (userId == null || userId <= 0) {

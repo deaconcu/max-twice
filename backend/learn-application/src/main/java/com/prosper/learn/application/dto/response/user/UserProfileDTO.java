@@ -1,6 +1,5 @@
 package com.prosper.learn.application.dto.response.user;
 
-import com.prosper.learn.application.dto.response.SubscriptionDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -54,13 +53,6 @@ public class UserProfileDTO extends UserSummaryDTO {
      * 说明：USER(0), MODERATOR(1), ADMIN(2), SUPER_ADMIN(3)
      */
     private Integer role;
-
-    /**
-     * 订阅信息
-     * 说明：用户订阅的课程和路线图列表
-     * 何时填充：从用户配置表动态查询
-     */
-    private SubscriptionDTO[] subscriptions;
 
     /**
      * 创建时间

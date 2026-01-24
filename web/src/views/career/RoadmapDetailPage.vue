@@ -5,94 +5,94 @@
       <LoadingSpinner v-if="loading" />
 
       <div v-else-if="roadmap">
-        <!-- 返回按钮和职业信息 -->
-        <div class="back-button-wrapper mb-4 mb-md-5 sticky-header">
-          <div class="d-flex align-center justify-space-between">
-            <div class="d-flex align-center">
-              <v-btn
-                icon="mdi-arrow-left"
-                variant="flat"
-                color="grey-lighten-5"
-                :size="$vuetify.display.mobile ? 'small' : 'default'"
-                class="back-button mr-3 mr-md-4 flex-shrink-0"
-                @click="handleBack"
-              ></v-btn>
+        <div class="content-layout pt-4 pt-md-5">
+          <!-- 左侧：Header + 流程图 -->
+          <div class="main-content">
+            <!-- 返回按钮和职业信息 -->
+            <div class="back-button-wrapper mb-2 mb-md-2 sticky-header">
+              <div class="d-flex align-center justify-space-between">
+                <div class="d-flex align-center">
+                  <v-btn
+                    icon="mdi-arrow-left"
+                    variant="flat"
+                    color="grey-lighten-5"
+                    :size="$vuetify.display.mobile ? 'small' : 'default'"
+                    class="back-button mr-3 mr-md-4 flex-shrink-0"
+                    @click="handleBack"
+                  ></v-btn>
 
-              <!-- 职业信息 -->
-              <div v-if="roadmap?.profession" class="d-flex align-center">
-                <v-avatar
-                  color="primary"
-                  :size="$vuetify.display.mobile ? 36 : 40"
-                  class="mr-3 flex-shrink-0"
-                >
-                  <v-icon
-                    icon="mdi-briefcase-outline"
-                    color="white"
-                    :size="$vuetify.display.mobile ? 18 : 20"
-                  />
-                </v-avatar>
-                <span class="text-subtitle-1 text-md-h6 font-weight-bold text-grey-darken-4">
-                  {{ roadmap.profession.name }}
-                </span>
+                  <!-- 职业信息 -->
+                  <div v-if="roadmap?.profession" class="d-flex align-center">
+                    <v-avatar
+                      color="primary"
+                      :size="$vuetify.display.mobile ? 36 : 40"
+                      class="mr-3 flex-shrink-0"
+                    >
+                      <v-icon
+                        icon="mdi-briefcase-outline"
+                        color="white"
+                        :size="$vuetify.display.mobile ? 18 : 20"
+                      />
+                    </v-avatar>
+                    <span class="text-subtitle-1 text-md-h6 font-weight-bold text-grey-darken-4">
+                      {{ roadmap.profession.name }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- 点赞和收藏按钮 -->
+                <div class="d-flex align-center gap-2">
+                  <v-btn
+                    :color="roadmap.learning ? 'success' : 'primary'"
+                    :variant="roadmap.learning ? 'outlined' : 'flat'"
+                    :size="$vuetify.display.mobile ? 'small' : 'default'"
+                    rounded="lg"
+                    @click="handleStartLearning"
+                  >
+                    <v-icon
+                      :icon="roadmap.learning ? 'mdi-check' : 'mdi-play'"
+                      size="18"
+                      class="mr-1"
+                    />
+                    {{ roadmap.learning ? '正在学习' : '开始学习' }}
+                  </v-btn>
+
+                  <!-- 分隔线 -->
+                  <v-divider vertical class="mx-1 align-self-center" style="height: 28px" />
+
+                  <v-btn
+                    :color="roadmap.liked ? 'primary' : 'grey-darken-1'"
+                    variant="tonal"
+                    :size="$vuetify.display.mobile ? 'small' : 'default'"
+                    rounded="lg"
+                    @click="handleVote"
+                  >
+                    <v-icon
+                      :icon="roadmap.liked ? 'mdi-heart' : 'mdi-heart-outline'"
+                      size="18"
+                      class="mr-1"
+                    />
+                    {{ roadmap.likeCount }}
+                  </v-btn>
+                  <v-tooltip location="bottom">
+                    <template #activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        :icon="roadmap.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+                        :color="roadmap.bookmarked ? 'primary' : 'grey-darken-1'"
+                        variant="tonal"
+                        density="comfortable"
+                        :size="$vuetify.display.mobile ? 'small' : 'default'"
+                        rounded="lg"
+                        @click="handleToggleBookmark"
+                      />
+                    </template>
+                    {{ roadmap.bookmarked ? '取消收藏' : '收藏路线图' }}
+                  </v-tooltip>
+                </div>
               </div>
             </div>
 
-            <!-- 点赞和收藏按钮 -->
-            <div class="d-flex align-center gap-2">
-              <v-btn
-                :color="roadmap.learning ? 'success' : 'primary'"
-                :variant="roadmap.learning ? 'outlined' : 'flat'"
-                :size="$vuetify.display.mobile ? 'small' : 'default'"
-                rounded="lg"
-                @click="handleStartLearning"
-              >
-                <v-icon
-                  :icon="roadmap.learning ? 'mdi-check' : 'mdi-play'"
-                  size="18"
-                  class="mr-1"
-                />
-                {{ roadmap.learning ? '正在学习' : '开始学习' }}
-              </v-btn>
-
-              <!-- 分隔线 -->
-              <v-divider vertical class="mx-1 align-self-center" style="height: 28px" />
-
-              <v-btn
-                :color="roadmap.liked ? 'primary' : 'grey-darken-1'"
-                variant="tonal"
-                :size="$vuetify.display.mobile ? 'small' : 'default'"
-                rounded="lg"
-                @click="handleVote"
-              >
-                <v-icon
-                  :icon="roadmap.liked ? 'mdi-heart' : 'mdi-heart-outline'"
-                  size="18"
-                  class="mr-1"
-                />
-                {{ roadmap.likeCount }}
-              </v-btn>
-              <v-tooltip location="bottom">
-                <template #activator="{ props }">
-                  <v-btn
-                    v-bind="props"
-                    :icon="roadmap.bookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
-                    :color="roadmap.bookmarked ? 'primary' : 'grey-darken-1'"
-                    variant="tonal"
-                    density="comfortable"
-                    :size="$vuetify.display.mobile ? 'small' : 'default'"
-                    rounded="lg"
-                    @click="handleToggleBookmark"
-                  />
-                </template>
-                {{ roadmap.bookmarked ? '取消收藏' : '收藏路线图' }}
-              </v-tooltip>
-            </div>
-          </div>
-        </div>
-
-        <div class="content-layout">
-          <!-- 左侧：流程图 -->
-          <div class="main-content">
             <!-- 流程图 -->
             <v-card border rounded="xl" class="flow-card">
               <v-card-title class="pa-3 pa-sm-4 d-flex align-center justify-space-between">
@@ -133,7 +133,7 @@
           </div>
 
           <!-- 右侧：路径信息和评论区 -->
-          <div class="right-sidebar">
+          <div class="right-sidebar pt-1">
             <!-- 路径信息卡片 -->
             <v-card rounded="0" class="roadmap-info-card mb-0 no-border">
               <v-card-text class="px-0 pt-0 pb-2 pb-sm-2">
@@ -159,14 +159,13 @@
 
                     <!-- 创建者信息 -->
                     <div class="d-flex align-center mb-3">
-                      <v-avatar size="24" color="grey-lighten-2" class="mr-2">
-                        <v-icon
-                          v-if="!roadmap.creator?.avatar"
-                          icon="mdi-account"
-                          color="grey"
-                          size="14"
-                        />
-                      </v-avatar>
+                      <UserAvatar
+                        :name="roadmap.creator?.name || '匿名用户'"
+                        :avatar-url="roadmap.creator?.avatar"
+                        size="24"
+                        rounded="lg"
+                        class="mr-2"
+                      />
                       <span class="text-body-2 text-grey-darken-3">
                         {{ roadmap.creator?.name }}
                       </span>
@@ -238,6 +237,7 @@ import type { Roadmap } from '@/types/roadmap'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import CommentSection from '@/components/common/CommentSection.vue'
+import UserAvatar from '@/components/common/UserAvatar.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -524,23 +524,6 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
   /* 使用 DefaultLayout 的默认 padding */
 }
 
-/* 宽屏时向左延伸，让后退按钮露出到页面外 */
-@media (min-width: 1800px) {
-  .back-button-wrapper {
-    margin-left: -56px;
-  }
-}
-
-/* 标题固定 */
-@media (min-width: 1280px) {
-  .back-button-wrapper {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: rgb(var(--v-theme-background));
-  }
-}
-
 /* 内容布局 */
 .content-layout {
   display: flex;
@@ -563,24 +546,35 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
   flex-direction: column;
 }
 
-/* 左侧流程图固定 */
+/* 左侧 header 和流程图 - 整体 sticky */
 @media (min-width: 1280px) {
   .main-content {
     position: sticky;
-    top: 140px;
+    top: 76px;
     align-self: flex-start;
+    height: calc(100vh - 96px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sticky-header {
+    flex-shrink: 0;
+    background: rgb(var(--v-theme-background));
+    padding-bottom: 16px;
   }
 
   .flow-card {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 160px);
+    min-height: 0;
   }
 
   .flow-card .v-card-text {
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0;
   }
 }
 
@@ -617,7 +611,7 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
 @media (min-width: 1280px) {
   .vue-flow-container {
     height: 100%;
-    min-height: 600px;
+    min-height: 0;
   }
 }
 
@@ -696,16 +690,5 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
     #fafafa var(--progress, 0%)
   ) !important;
   border-color: #81c784 !important;
-}
-
-/* 顶部固定 */
-.sticky-header {
-  position: sticky;
-  top: 56px;
-  z-index: 10;
-  background: white;
-  padding-top: 16px;
-  padding-bottom: 16px;
-  margin-top: -16px;
 }
 </style>

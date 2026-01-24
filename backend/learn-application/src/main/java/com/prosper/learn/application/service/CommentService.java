@@ -3,6 +3,7 @@ package com.prosper.learn.application.service;
 import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.application.converter.CommentConverter;
+import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.request.CreateCommentRequest;
 import com.prosper.learn.application.dto.response.CommentDTO;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
@@ -10,6 +11,7 @@ import com.prosper.learn.application.dto.response.comment.CommentAdminDTO;
 import com.prosper.learn.application.dto.response.comment.CommentDetailDTO;
 import com.prosper.learn.application.dto.response.comment.CommentSummaryDTO;
 import com.prosper.learn.application.dto.response.comment.CommentWithRepliesDTO;
+import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
@@ -56,6 +58,7 @@ public class CommentService {
     private final RoadmapDataService roadmapDataService;
     private final SystemProperties systemProperties;
     private final CommentConverter commentConverter;
+    private final UserConverter userConverter;
     private final ApplicationEventPublisher eventPublisher;
     private final ContentStatsDataService contentStatsDataService;
 
@@ -389,7 +392,7 @@ public class CommentService {
     }
 
     /**
-     * 批量填充评论的用户名（creatorName 和 toUserName）
+     * 批量填充评论的用户信息（creator 和 toUser）
      */
     private void fillUserNamesForComments(List<? extends CommentDetailDTO> commentDTOList) {
         if (commentDTOList == null || commentDTOList.isEmpty()) {
@@ -414,18 +417,18 @@ public class CommentService {
         // 批量查询用户信息
         Map<Long, UserDO> userMap = userDataService.getMapByIds(new ArrayList<>(userIds));
 
-        // 填充用户名
+        // 填充用户信息
         for (CommentDetailDTO commentDTO : commentDTOList) {
             if (commentDTO.getCreatorId() != null && commentDTO.getCreatorId() > 0) {
                 UserDO creator = userMap.get(commentDTO.getCreatorId());
                 if (creator != null) {
-                    commentDTO.setCreatorName(creator.getName());
+                    commentDTO.setCreator(userConverter.toBriefDTO(creator));
                 }
             }
             if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0) {
                 UserDO toUser = userMap.get(commentDTO.getToUserId());
                 if (toUser != null) {
-                    commentDTO.setToUserName(toUser.getName());
+                    commentDTO.setToUser(userConverter.toBriefDTO(toUser));
                 }
             }
         }
@@ -458,11 +461,11 @@ public class CommentService {
     }
 
     /**
-     * 转换单个评论为 DTO 并填充 toUserName（用于创建评论后返回）
-     * 转换为 CommentDetailDTO（用户名）
+     * 转换单个评论为 DTO 并填充用户信息（用于创建评论后返回）
+     * 转换为 CommentDetailDTO（用户信息）
      *
      * @param commentDO 评论DO
-     * @return 填充了用户名的评论DTO
+     * @return 填充了用户信息的评论DTO
      */
     private CommentDetailDTO toDetailDTO(CommentDO commentDO, long userId) {
         CommentDetailDTO commentDTO = commentConverter.toDetailDTO(commentDO);
@@ -484,7 +487,7 @@ public class CommentService {
             commentDTO.setLiked(true);
         }
 
-        // 批量查询用户信息（creatorName 和 toUserName）
+        // 批量查询用户信息（creator 和 toUser）
         List<Long> userIds = new ArrayList<>();
         if (commentDTO.getCreatorId() != null && commentDTO.getCreatorId() > 0) {
             userIds.add(commentDTO.getCreatorId());
@@ -496,19 +499,19 @@ public class CommentService {
         if (!userIds.isEmpty()) {
             Map<Long, UserDO> userMap = userDataService.getMapByIds(userIds);
 
-            // 填充 creatorName
+            // 填充 creator
             if (commentDTO.getCreatorId() != null && commentDTO.getCreatorId() > 0) {
                 UserDO creator = userMap.get(commentDTO.getCreatorId());
                 if (creator != null) {
-                    commentDTO.setCreatorName(creator.getName());
+                    commentDTO.setCreator(userConverter.toBriefDTO(creator));
                 }
             }
 
-            // 填充 toUserName
+            // 填充 toUser
             if (commentDTO.getToUserId() != null && commentDTO.getToUserId() > 0) {
                 UserDO toUser = userMap.get(commentDTO.getToUserId());
                 if (toUser != null) {
-                    commentDTO.setToUserName(toUser.getName());
+                    commentDTO.setToUser(userConverter.toBriefDTO(toUser));
                 }
             }
         }

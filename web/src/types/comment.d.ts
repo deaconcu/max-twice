@@ -6,6 +6,15 @@ import type { ObjectType, ContentState } from '@/enums'
  */
 
 /**
+ * 用户简要信息接口
+ */
+export interface UserBrief {
+  id: number
+  name: string
+  avatar?: string
+}
+
+/**
  * 评论信息接口
  */
 export interface Comment {
@@ -19,9 +28,9 @@ export interface Comment {
   replyCount?: number // 回复数量
   replyToCommentId?: number // 回复的评论ID
   creatorId?: number // 评论者ID
-  creatorName?: string // 评论者用户名
+  creator?: UserBrief // 评论者信息（包含头像）
   toUserId?: number // 被回复者ID
-  toUserName?: string // 被回复者用户名
+  toUser?: UserBrief // 被回复者信息（包含头像）
   state?: ContentState // 评论状态
   children?: Comment[] | null // 子评论列表
 }
