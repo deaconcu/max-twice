@@ -151,10 +151,6 @@
                         <v-icon icon="mdi-pin" size="14" class="mr-1" />
                         置顶
                       </v-chip>
-                      <v-chip v-if="roadmap.learning" color="success" size="small" variant="flat">
-                        <v-icon icon="mdi-school" size="14" class="mr-1" />
-                        学习中
-                      </v-chip>
                     </div>
 
                     <!-- 创建者信息 -->
@@ -659,7 +655,6 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
   background: #e8f5e9 !important;
   border-color: #4caf50 !important;
   color: #2e7d32 !important;
-  position: relative;
 }
 
 /* 已完成课程的勾选标记 */
