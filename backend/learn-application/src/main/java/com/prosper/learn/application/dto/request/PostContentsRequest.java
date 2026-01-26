@@ -10,9 +10,9 @@ public class PostContentsRequest {
     @NotBlank(message = "路径不能为空")
     private String path;
 
-    @NotNull(message = "课程ID不能为空")
-    @Positive(message = "课程ID必须为正数")
-    private Long courseId;
+    @NotNull(message = "节点ID不能为空")
+    @Positive(message = "节点ID必须为正数")
+    private Long nodeId;
 
     @NotNull(message = "帖子ID不能为空")
     @Positive(message = "帖子ID必须为正数")

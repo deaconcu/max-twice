@@ -66,6 +66,14 @@ public interface CourseMapper {
             "</script>")
     List<CourseDO> listRootByCategory(int mainCategory, int subCategory, Long lastId);
 
+    // 新增：根据 lastId 获取所有课程列表（不过滤状态，用于数据迁移）
+    @Select("<script>" +
+            "SELECT * FROM course " +
+            "<if test='lastId != null'>WHERE id &lt; #{lastId}</if> " +
+            "ORDER BY id DESC LIMIT 100" +
+            "</script>")
+    List<CourseDO> listByLastId(Long lastId);
+
     @Insert("INSERT INTO course(name, description, creator_id, parent_course_id, state, root_node_id, main_category, sub_category) " +
             "VALUES (#{name}, #{description}, #{creatorId}, #{parentCourseId}, #{state}, #{rootNodeId}, #{mainCategory}, #{subCategory})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")

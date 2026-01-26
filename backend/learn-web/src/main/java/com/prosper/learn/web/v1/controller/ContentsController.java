@@ -49,10 +49,10 @@ public class ContentsController {
 
         switch (action) {
             case CHOOSE:
-                tocService.choose(currentUser.getId(), request.getPath(), request.getCourseId(), request.getPostingId());
+                tocService.choose(currentUser.getId(), request.getPath(), request.getNodeId(), request.getPostingId());
                 break;
             case UNCHOOSE:
-                tocService.unchoose(currentUser.getId(), request.getCourseId(), request.getPath());
+                tocService.unchoose(currentUser.getId(), request.getNodeId(), request.getPath());
                 break;
             default:
                 throw StatusCode.NOT_SUPPORTED.exception();

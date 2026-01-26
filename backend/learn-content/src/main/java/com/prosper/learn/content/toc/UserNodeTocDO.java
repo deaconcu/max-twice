@@ -5,13 +5,13 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class UserCourseTocDO {
+public class UserNodeTocDO {
 
     private Long id;
 
     private Long userId;
 
-    private Long courseId;
+    private Long nodeId;
 
     private String toc;
 

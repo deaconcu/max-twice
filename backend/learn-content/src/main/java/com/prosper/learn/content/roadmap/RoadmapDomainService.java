@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.shared.common.utils.UnionFind;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.exception.StatusCode;
@@ -446,13 +447,13 @@ public class RoadmapDomainService {
      * 解析路线图内容为图形格式
      *
      * @param content 原始内容
-     * @param courseNames 课程ID到名称的映射
-     * @param courseProgress 课程ID到进度信息的映射（完成状态、进度百分比）
+     * @param nodeProgress 节点ID到进度百分比的映射（0-10000）
+     * @param nodeMap 节点ID到节点实体的映射（包含 name, is_course_root, course_id 等）
      * @return JSON格式的图形数据
      */
     public String parseContentToGraphFormat(String content,
-                                           Map<Long, String> courseNames,
-                                           Map<Long, CourseProgress> courseProgress) {
+                                           Map<Long, Integer> nodeProgress,
+                                           Map<Long, NodeDO> nodeMap) {
         try {
             List<List<Object>> contentData = objectMapper.readValue(content, new TypeReference<>() {});
 
@@ -462,7 +463,7 @@ public class RoadmapDomainService {
 
             if (contentData.size() >= 2) {
                 edges = parseEdges(contentData.get(0));
-                nodes = parseNodes(contentData.get(1), courseNames, courseProgress);
+                nodes = parseNodes(contentData.get(1), nodeProgress, nodeMap);
             }
 
             graphData.put("edges", edges);
@@ -498,13 +499,13 @@ public class RoadmapDomainService {
      * 解析节点数据
      *
      * @param nodeIdsRaw 原始节点ID列表
-     * @param courseNames 课程名称映射
-     * @param courseProgress 课程进度映射
+     * @param nodeProgress 节点进度映射（0-10000）
+     * @param nodeDataMap 节点实体映射（包含所有元数据）
      * @return 节点列表
      */
     private List<Map<String, Object>> parseNodes(List<Object> nodeIdsRaw,
-                                                 Map<Long, String> courseNames,
-                                                 Map<Long, CourseProgress> courseProgress) {
+                                                 Map<Long, Integer> nodeProgress,
+                                                 Map<Long, NodeDO> nodeDataMap) {
         List<Long> nodeIds = new ArrayList<>();
         for (Object nodeIdObj : nodeIdsRaw) {
             if (nodeIdObj instanceof Number) {
@@ -514,41 +515,31 @@ public class RoadmapDomainService {
 
         List<Map<String, Object>> nodes = new ArrayList<>();
         for (long nodeId : nodeIds) {
-            String courseName = courseNames.getOrDefault(nodeId, "课程" + nodeId);
+            // 获取节点实体
+            NodeDO nodeDO = nodeDataMap.get(nodeId);
+            String nodeName = nodeDO != null && nodeDO.getName() != null ? nodeDO.getName() : "节点" + nodeId;
 
-            CourseProgress progress = courseProgress.get(nodeId);
-            boolean finished = progress != null && progress.isFinished();
-            double progressPercent = progress != null ? progress.getProgressPercent() : 0.0;
+            // 获取进度信息（0-10000，转换为 0.0-100.0）
+            Integer progressInt = nodeProgress.get(nodeId);
+            double progressPercent = progressInt != null ? progressInt / 100.0 : 0.0;
 
+            // 获取节点元数据
+            boolean isCourseRoot = nodeDO != null && nodeDO.getIsCourseRoot() != null && nodeDO.getIsCourseRoot() == 1;
+            Long courseId = nodeDO != null ? nodeDO.getCourseId() : null;
+
+            // 构建节点数据
             Map<String, Object> nodeMap = new HashMap<>();
             nodeMap.put("id", String.valueOf(nodeId));
-            nodeMap.put("name", courseName);
-            nodeMap.put("finished", finished);
+            nodeMap.put("name", nodeName);
             nodeMap.put("progress", progressPercent);
+            nodeMap.put("isCourseRoot", isCourseRoot);
+            if (courseId != null) {
+                nodeMap.put("courseId", courseId);
+            }
             nodes.add(nodeMap);
         }
 
         return nodes;
     }
 
-    /**
-     * 课程进度信息（内部使用）
-     */
-    public static class CourseProgress {
-        private final boolean finished;
-        private final double progressPercent;
-
-        public CourseProgress(boolean finished, double progressPercent) {
-            this.finished = finished;
-            this.progressPercent = progressPercent;
-        }
-
-        public boolean isFinished() {
-            return finished;
-        }
-
-        public double getProgressPercent() {
-            return progressPercent;
-        }
-    }
 }

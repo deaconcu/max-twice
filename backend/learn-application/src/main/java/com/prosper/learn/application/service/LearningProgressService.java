@@ -6,6 +6,7 @@ import com.prosper.learn.application.converter.NodeConverter;
 import com.prosper.learn.application.dto.response.CourseCompletionResponseDTO;
 import com.prosper.learn.application.dto.response.NodeProgressResponseDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithProgressDTO;
+import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
@@ -62,10 +63,7 @@ public class LearningProgressService {
         // 调用领域服务处理核心逻辑
         domainService.markNodeCompleted(userId, nodeId, courseId);
 
-        // 如果启用层级进度，更新课程进度
-        if (systemProperties.getLearningProgress().isEnableHierarchicalProgress()) {
-            updateCourseProgress(userId, nodeId, courseId);
-        }
+        // 注意：课程进度现在采用实时计算，不再主动更新 user_course.progress_percent
 
         // 构建响应DTO
         return NodeProgressResponseDTO.builder()
@@ -87,10 +85,7 @@ public class LearningProgressService {
         // 调用领域服务处理核心逻辑
         domainService.unmarkNodeCompleted(userId, nodeId, courseId);
 
-        // 如果启用层级进度，更新课程进度
-        if (systemProperties.getLearningProgress().isEnableHierarchicalProgress()) {
-            updateCourseProgress(userId, nodeId, courseId);
-        }
+        // 注意：课程进度现在采用实时计算，不再主动更新 user_course.progress_percent
 
         // 构建响应DTO
         return NodeProgressResponseDTO.builder()
@@ -155,6 +150,85 @@ public class LearningProgressService {
         return domainService.getUserCompletedNodes(userId);
     }
 
+    /**
+     * 计算节点进度（实时计算）
+     *
+     * @param userId 用户ID
+     * @param nodeId 节点ID（可以是课程根节点或普通节点）
+     * @return 进度百分比 (0-10000，精度到万分位)
+     */
+    public Integer calculateNodeProgress(long userId, long nodeId) {
+        try {
+            // 1. 获取用户目录的内容
+            String tocContent = tocService.getToc(userId, nodeId, 1);
+            if (tocContent == null || tocContent.trim().isEmpty()) {
+                return 0;
+            }
+
+            // 2. 解析目录结构
+            JsonNode tocNode = objectMapper.readTree(tocContent);
+
+            // 3. 获取用户已完成的节点
+            Set<Long> userCompletedNodes = domainService.getUserCompletedNodes(userId);
+
+            // 4. 递归计算层级进度
+            double progressPercent = calculateHierarchicalProgress(tocNode, userCompletedNodes) * 10000;
+            return (int) Math.floor(progressPercent);
+
+        } catch (Exception e) {
+            log.error("计算节点 {} 进度失败: {}", nodeId, e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * 批量计算节点进度（实时计算）
+     *
+     * @param userId 用户ID
+     * @param nodeIds 节点ID列表
+     * @return Map<nodeId, progress> 进度百分比 (0-10000)
+     */
+    public Map<Long, Integer> batchCalculateNodeProgress(long userId, List<Long> nodeIds) {
+        Map<Long, Integer> progressMap = new HashMap<>();
+
+        if (nodeIds == null || nodeIds.isEmpty()) {
+            return progressMap;
+        }
+
+        try {
+            // 1. 一次性获取用户已完成的节点（避免重复查询）
+            Set<Long> userCompletedNodes = domainService.getUserCompletedNodes(userId);
+
+            // 2. 批量获取所有节点的 ToC
+            Map<Long, String> tocMap = tocService.batchGetToc(userId, nodeIds);
+
+            // 3. 遍历每个节点计算进度
+            for (Long nodeId : nodeIds) {
+                try {
+                    String tocContent = tocMap.get(nodeId);
+                    if (tocContent == null || tocContent.trim().isEmpty()) {
+                        progressMap.put(nodeId, 0);
+                        continue;
+                    }
+
+                    // 解析并计算进度
+                    JsonNode tocNode = objectMapper.readTree(tocContent);
+                    double progressPercent = calculateHierarchicalProgress(tocNode, userCompletedNodes) * 10000;
+                    progressMap.put(nodeId, (int) Math.floor(progressPercent));
+
+                } catch (Exception e) {
+                    log.error("计算节点 {} 进度失败: {}", nodeId, e.getMessage());
+                    progressMap.put(nodeId, 0);
+                }
+            }
+
+        } catch (Exception e) {
+            log.error("批量计算节点进度失败", e);
+        }
+
+        return progressMap;
+    }
+
 // --注释掉检查 START (2025/12/10 11:12):
 //    /**
 //     * 获取用户完成的节点总数
@@ -212,8 +286,11 @@ public class LearningProgressService {
      */
     private void updateCourseProgress(long userId, long nodeId, long courseId) {
         try {
-            // 1. 获取用户目录1的内容（跨域依赖：content领域）
-            String toc1Content = tocService.getToc(userId, courseId, 1);
+            // 获取课程的根节点ID
+            CourseDO course = courseDataService.validateAndGet(courseId);
+
+            // 1. 获取用户目录1的内容（跨域依赖：content领域，使用根节点ID）
+            String toc1Content = tocService.getToc(userId, course.getRootNodeId(), 1);
             if (toc1Content == null) return;
 
             // 2. 解析目录结构

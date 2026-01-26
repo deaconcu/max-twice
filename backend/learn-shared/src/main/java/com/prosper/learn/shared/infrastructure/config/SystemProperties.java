@@ -538,31 +538,6 @@ public class SystemProperties {
          * 默认分页大小
          */
         private int defaultPageSize = 20;
-
-        /**
-         * 完成进度阈值（基点，10000=100%）
-         */
-        private int completionThreshold = 10000;
-
-        /**
-         * 进度精度倍数（基点转换）
-         */
-        private double progressPrecisionDivisor = 100.0;
-
-        /**
-         * 是否启用内容格式验证
-         */
-        private boolean enableContentValidation = true;
-
-        /**
-         * 是否启用权限检查
-         */
-        private boolean enablePermissionCheck = true;
-
-        /**
-         * 是否启用批量状态查询优化
-         */
-        private boolean enableBatchStatusQuery = true;
     }
 
     @Data

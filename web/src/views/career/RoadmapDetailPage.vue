@@ -313,6 +313,9 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
         type: 'default',
         data: {
           label: displayLabel,
+          isCourseRoot: node.isCourseRoot || false,
+          courseId: node.courseId,
+          progress: progress,
           ...node.data,
         },
         position: node.position || { x: 0, y: 0 },
@@ -509,9 +512,15 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
   // 根节点不处理
   if (node.id === '0') return
 
-  // 在新窗口打开课程阅读页面
-  const courseId = node.id
-  window.open(`/read?courseId=${courseId}`, '_blank')
+  // 根据节点类型跳转不同的页面
+  const nodeData = node.data as any
+  if (nodeData.isCourseRoot && nodeData.courseId) {
+    // 课程根节点：跳转课程页面
+    window.open(`/read?courseId=${nodeData.courseId}`, '_blank')
+  } else {
+    // 普通节点：跳转节点页面
+    window.open(`/read?nodeId=${node.id}`, '_blank')
+  }
 }
 </script>
 

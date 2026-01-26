@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.prosper</groupId>
+        <artifactId>Learn</artifactId>
+        <version>0.0.1</version>
+    </parent>
+
+    <artifactId>learn-tools</artifactId>
+    <version>0.0.1</version>
+    <packaging>jar</packaging>
+    <name>learn-tools</name>
+    <description>数据迁移和运维工具</description>
+
+    <dependencies>
+        <!-- 依赖业务模块 -->
+        <dependency>
+            <groupId>com.prosper</groupId>
+            <artifactId>learn-content</artifactId>
+            <version>0.0.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.prosper</groupId>
+            <artifactId>learn-shared</artifactId>
+            <version>0.0.1</version>
+        </dependency>
+
+        <!-- Spring Boot -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- MyBatis -->
+        <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+
+        <!-- MySQL -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <mainClass>com.prosper.learn.tools.runner.SpringMethodRunner</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

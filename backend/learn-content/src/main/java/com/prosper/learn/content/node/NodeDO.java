@@ -1,5 +1,6 @@
 package com.prosper.learn.content.node;
 
+import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.shared.domain.Enums;
 import lombok.Data;
 
@@ -20,19 +21,22 @@ public class NodeDO {
 
     private Byte state;
 
+    private Byte isCourseRoot;  // 是否为课程根节点：0=普通节点, 1=课程根节点
+
     private String reason;  // 拒绝/封禁原因
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
-    public static NodeDO createRoot(Long creator, Long courseId) {
-        NodeDO node = new NodeDO();
-        node.setName("课程根目录");
-        node.setDescription("");
-        node.setCourseId(courseId);
-        node.setCreatorId(creator);
-        node.setState(Enums.ContentState.PUBLISHED.value());
-        return node;
+    public NodeDO() {}
+
+    public NodeDO(Long creator, Long courseId, String name, String description, Byte state, Byte isCourseRoot) {
+        setName(name);
+        setDescription(description);
+        setCourseId(courseId);
+        setCreatorId(creator);
+        setState(state);
+        setIsCourseRoot(isCourseRoot);  // 标记为课程根节点
     }
 }

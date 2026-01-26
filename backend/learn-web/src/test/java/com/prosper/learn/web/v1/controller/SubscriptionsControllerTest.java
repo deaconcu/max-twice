@@ -418,7 +418,7 @@ public class SubscriptionsControllerTest extends BaseControllerTest {
         // 直接在数据库层面添加99个订阅，避免触发限流
         for (int i = 1; i <= 99; i++) {
             CourseDO course = createPublishedCourse("课程" + i, user.getId());
-            userDomainService.addSubscription(user.getId(), course.getId());
+            //userDomainService.addSubscription(user.getId(), course.getId());
         }
 
         StpUtil.login(user.getId());

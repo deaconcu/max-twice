@@ -7,10 +7,10 @@ import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.node.NodeDO;
-import com.prosper.learn.content.toc.CourseTocDO;
-import com.prosper.learn.content.toc.CourseTocDataService;
-import com.prosper.learn.content.toc.UserCourseTocDO;
-import com.prosper.learn.content.toc.UserCourseTocDataService;
+import com.prosper.learn.content.toc.NodeTocDO;
+import com.prosper.learn.content.toc.NodeTocDataService;
+import com.prosper.learn.content.toc.UserNodeTocDO;
+import com.prosper.learn.content.toc.UserNodeTocDataService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums.ContentState;
 import com.prosper.learn.shared.domain.exception.StatusCode;
@@ -55,10 +55,10 @@ public class TocControllerTest extends BaseControllerTest {
     private NodeDataService nodeDataService;
 
     @Autowired
-    private UserCourseTocDataService userCourseTocDataService;
+    private UserNodeTocDataService userNodeTocDataService;
 
     @Autowired
-    private CourseTocDataService courseTocDataService;
+    private NodeTocDataService nodeTocDataService;
 
     @BeforeEach
     void setUp() {
@@ -91,7 +91,7 @@ public class TocControllerTest extends BaseControllerTest {
 
         // 创建根节点
         NodeDO rootNode = new NodeDO();
-        rootNode.setCourseId(course.getId());
+        rootNode.setNodeId(course.getId());
         rootNode.setName("根节点");
         rootNode.setDescription("根节点描述");
         rootNode.setCreatorId(creatorId);
@@ -108,22 +108,22 @@ public class TocControllerTest extends BaseControllerTest {
     /**
      * 创建用户课程目录
      */
-    private UserCourseTocDO createUserCourseToc(Long userId, Long courseId, String tocHashes) {
-        UserCourseTocDO userCourseTocDO = new UserCourseTocDO();
-        userCourseTocDO.setUserId(userId);
-        userCourseTocDO.setCourseId(courseId);
-        userCourseTocDO.setToc(tocHashes);
-        userCourseTocDataService.insert(userCourseTocDO);
-        return userCourseTocDO;
+    private UserNodeTocDO createUserNodeToc(Long userId, Long courseId, String tocHashes) {
+        UserNodeTocDO userNodeTocDO = new UserNodeTocDO();
+        userNodeTocDO.setUserId(userId);
+        userNodeTocDO.setNodeId(courseId);
+        userNodeTocDO.setToc(tocHashes);
+        userNodeTocDataService.insert(userNodeTocDO);
+        return userNodeTocDO;
     }
 
     /**
      * 创建课程目录版本
      */
-    private CourseTocDO createCourseToc(String hash, String tocContent) {
-        CourseTocDO courseTocDO = new CourseTocDO(hash, tocContent);
-        courseTocDataService.insert(courseTocDO);
-        return courseTocDO;
+    private NodeTocDO createNodeToc(String hash, String tocContent) {
+        NodeTocDO nodeTocDO = new NodeTocDO(hash, tocContent);
+        nodeTocDataService.insert(nodeTocDO);
+        return nodeTocDO;
     }
 
     /**
@@ -155,12 +155,12 @@ public class TocControllerTest extends BaseControllerTest {
         String hashB = Utils.hashSHA(tocB);
         String hashC = Utils.hashSHA(tocC);
 
-        createCourseToc(hashA, tocA);
-        createCourseToc(hashB, tocB);
-        createCourseToc(hashC, tocC);
+        createNodeToc(hashA, tocA);
+        createNodeToc(hashB, tocB);
+        createNodeToc(hashC, tocC);
 
         // 创建用户目录
-        createUserCourseToc(user.getId(), course.getId(), hashA + "," + hashB + "," + hashC);
+        createUserNodeToc(user.getId(), course.getId(), hashA + "," + hashB + "," + hashC);
 
         StpUtil.login(user.getId());
 
@@ -177,7 +177,7 @@ public class TocControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.message").value("目录更新成功"));
 
             // 验证数据库更新
-            UserCourseTocDO updated = userCourseTocDataService.getByUserAndCourse(user.getId(), course.getId());
+            UserNodeTocDO updated = userNodeTocDataService.getByUserAndNode(user.getId(), course.getId());
             assertThat(updated.getToc()).isEqualTo(hashC + "," + hashB + "," + hashA);
 
         } finally {
@@ -200,10 +200,10 @@ public class TocControllerTest extends BaseControllerTest {
         String hashA = Utils.hashSHA(tocA);
         String hashB = Utils.hashSHA(tocB);
 
-        createCourseToc(hashA, tocA);
-        createCourseToc(hashB, tocB);
+        createNodeToc(hashA, tocA);
+        createNodeToc(hashB, tocB);
 
-        createUserCourseToc(user.getId(), course.getId(), hashA + "," + hashB);
+        createUserNodeToc(user.getId(), course.getId(), hashA + "," + hashB);
 
         StpUtil.login(user.getId());
 
@@ -219,7 +219,7 @@ public class TocControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 验证数据库
-            UserCourseTocDO updated = userCourseTocDataService.getByUserAndCourse(user.getId(), course.getId());
+            UserNodeTocDO updated = userNodeTocDataService.getByUserAndNode(user.getId(), course.getId());
             String[] hashes = updated.getToc().split(",");
             assertThat(hashes).hasSize(3);
             assertThat(hashes[0]).isEqualTo(hashA);
@@ -230,7 +230,7 @@ public class TocControllerTest extends BaseControllerTest {
             assertThat(hashes[1]).isEqualTo(defaultHash);
 
             // 验证引用计数
-            CourseTocDO defaultTocDO = courseTocDataService.get(defaultHash);
+            NodeTocDO defaultTocDO = nodeTocDataService.get(defaultHash);
             assertThat(defaultTocDO).isNotNull();
             assertThat(defaultTocDO.getRefCount()).isGreaterThan(0);
 
@@ -250,8 +250,8 @@ public class TocControllerTest extends BaseControllerTest {
 
         String tocA = createTocJson(1L);
         String hashA = Utils.hashSHA(tocA);
-        createCourseToc(hashA, tocA);
-        createUserCourseToc(user.getId(), course.getId(), hashA);
+        createNodeToc(hashA, tocA);
+        createUserNodeToc(user.getId(), course.getId(), hashA);
 
         StpUtil.login(user.getId());
 
@@ -266,7 +266,7 @@ public class TocControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 验证
-            UserCourseTocDO updated = userCourseTocDataService.getByUserAndCourse(user.getId(), course.getId());
+            UserNodeTocDO updated = userNodeTocDataService.getByUserAndNode(user.getId(), course.getId());
             String[] hashes = updated.getToc().split(",");
             assertThat(hashes).hasSize(3);
 
@@ -294,12 +294,12 @@ public class TocControllerTest extends BaseControllerTest {
         for (int i = 1; i <= 9; i++) {
             String toc = createTocJson((long) i);
             String hash = Utils.hashSHA(toc);
-            createCourseToc(hash, toc);
+            createNodeToc(hash, toc);
             if (i > 1) tocHashes.append(",");
             tocHashes.append(hash);
         }
 
-        createUserCourseToc(user.getId(), course.getId(), tocHashes.toString());
+        createUserNodeToc(user.getId(), course.getId(), tocHashes.toString());
 
         StpUtil.login(user.getId());
 
@@ -455,8 +455,8 @@ public class TocControllerTest extends BaseControllerTest {
 
         String toc = createTocJson(1L);
         String hash = Utils.hashSHA(toc);
-        createCourseToc(hash, toc);
-        createUserCourseToc(user.getId(), course.getId(), hash);
+        createNodeToc(hash, toc);
+        createUserNodeToc(user.getId(), course.getId(), hash);
 
         StpUtil.login(user.getId());
 
@@ -486,8 +486,8 @@ public class TocControllerTest extends BaseControllerTest {
 
         String toc = createTocJson(1L);
         String hash = Utils.hashSHA(toc);
-        createCourseToc(hash, toc);
-        createUserCourseToc(user.getId(), course.getId(), hash);
+        createNodeToc(hash, toc);
+        createUserNodeToc(user.getId(), course.getId(), hash);
 
         StpUtil.login(user.getId());
 
@@ -520,11 +520,11 @@ public class TocControllerTest extends BaseControllerTest {
         for (int i = 1; i <= 3; i++) {
             String toc = createTocJson((long) i);
             String hash = Utils.hashSHA(toc);
-            createCourseToc(hash, toc);
+            createNodeToc(hash, toc);
             if (i > 1) tocHashes.append(",");
             tocHashes.append(hash);
         }
-        createUserCourseToc(user.getId(), course.getId(), tocHashes.toString());
+        createUserNodeToc(user.getId(), course.getId(), tocHashes.toString());
 
         StpUtil.login(user.getId());
 
@@ -615,14 +615,14 @@ public class TocControllerTest extends BaseControllerTest {
      */
     @Test
     @DisplayName("获取目录 - 成功获取")
-    void testGetUserCourseToc_Success() throws Exception {
+    void testGetUserNodeToc_Success() throws Exception {
         UserDO user = createUser("test-toc-16@test.com");
         CourseDO course = createCourse(user.getId());
 
         String toc = createTocJson(1L);
         String hash = Utils.hashSHA(toc);
-        createCourseToc(hash, toc);
-        createUserCourseToc(user.getId(), course.getId(), hash + "," + hash);
+        createNodeToc(hash, toc);
+        createUserNodeToc(user.getId(), course.getId(), hash + "," + hash);
 
         StpUtil.login(user.getId());
 
@@ -643,7 +643,7 @@ public class TocControllerTest extends BaseControllerTest {
      */
     @Test
     @DisplayName("获取目录 - 用户目录不存在返回null")
-    void testGetUserCourseToc_NotFoundReturnsNull() throws Exception {
+    void testGetUserNodeToc_NotFoundReturnsNull() throws Exception {
         UserDO user = createUser("test-toc-17@test.com");
         CourseDO course = createCourse(user.getId());
         // 不创建用户目录
@@ -667,7 +667,7 @@ public class TocControllerTest extends BaseControllerTest {
      */
     @Test
     @DisplayName("获取目录 - 未登录访问")
-    void testGetUserCourseToc_NotLogin() throws Exception {
+    void testGetUserNodeToc_NotLogin() throws Exception {
         mockMvc.perform(get("/api/v1/users/current/courses/1/toc"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(StatusCode.USER_NOT_LOGIN.getCode()));
@@ -684,8 +684,8 @@ public class TocControllerTest extends BaseControllerTest {
 
         String toc = createTocJson(1L);
         String hash = Utils.hashSHA(toc);
-        createCourseToc(hash, toc);
-        createUserCourseToc(user.getId(), course.getId(), hash);
+        createNodeToc(hash, toc);
+        createUserNodeToc(user.getId(), course.getId(), hash);
 
         StpUtil.login(user.getId());
 
@@ -715,8 +715,8 @@ public class TocControllerTest extends BaseControllerTest {
 
         String toc = createTocJson(1L);
         String hash = Utils.hashSHA(toc);
-        createCourseToc(hash, toc);
-        createUserCourseToc(user.getId(), course.getId(), hash);
+        createNodeToc(hash, toc);
+        createUserNodeToc(user.getId(), course.getId(), hash);
 
         StpUtil.login(user.getId());
 
@@ -731,7 +731,7 @@ public class TocControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 验证目录都是相同的哈希
-            UserCourseTocDO updated = userCourseTocDataService.getByUserAndCourse(user.getId(), course.getId());
+            UserNodeTocDO updated = userNodeTocDataService.getByUserAndNode(user.getId(), course.getId());
             assertThat(updated.getToc()).isEqualTo(hash + "," + hash + "," + hash);
 
         } finally {

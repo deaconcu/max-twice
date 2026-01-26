@@ -39,8 +39,8 @@ public interface NodeMapper {
     @Select("SELECT * FROM node WHERE course_id = #{courseId} AND name = #{name} LIMIT 1")
     NodeDO getByCourseAndName(@Param("courseId") long courseId, @Param("name") String name);
 
-    @Insert("INSERT INTO node(name, description, course_id, creator_id, state) " +
-            "VALUES (#{name}, #{description}, #{courseId}, #{creatorId}, #{state})")
+    @Insert("INSERT INTO node(name, description, course_id, creator_id, state, is_course_root) " +
+            "VALUES (#{name}, #{description}, #{courseId}, #{creatorId}, #{state}, #{isCourseRoot})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(NodeDO Node);
 

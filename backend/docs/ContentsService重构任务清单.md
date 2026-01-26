@@ -135,8 +135,8 @@ CONTENTS_INVALID_POST_TYPE("B0606", "无效的帖子类型"),
 4. **目录更新流程模式**（出现3次）
    ```java
    // 获取并减少引用计数
-   CourseTocDO courseTocDO = courseTocMapper.get(tocHashArr[tocIndex - 1]);
-   courseTocMapper.incrRef(courseTocDO.getHash(), -1);
+   CourseTocDO nodeTocDO = courseTocMapper.get(tocHashArr[tocIndex - 1]);
+   courseTocMapper.incrRef(nodeTocDO.getHash(), -1);
    
    // 更新目录内容
    String toc = updateContents(...);

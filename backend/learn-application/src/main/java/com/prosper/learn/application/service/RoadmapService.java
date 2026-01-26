@@ -13,6 +13,8 @@ import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapWithStatusDTO;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
+import com.prosper.learn.content.node.NodeDO;
+import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.profession.ProfessionDO;
 import com.prosper.learn.content.profession.ProfessionDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
@@ -57,15 +59,15 @@ public class RoadmapService {
 
     private final RoadmapDomainService domainService;
     private final RoadmapDataService roadmapDataService;
-    private final CourseDataService courseDataService;
+    private final NodeDataService nodeDataService;
     private final UserDataService userDataService;
     private final UserDomainService userDomainService;
     private final UserRoadmapDataService userRoadmapDataService;
     private final ProfessionDataService professionDataService;
-    private final UserCourseDataService userCourseDataService;
     private final UpvoteDomainService upvoteDomainService;
     private final ContentStatsDomainService contentStatsDomainService;
     private final BookmarkService bookmarkService;
+    private final LearningProgressService learningProgressService;
     private final ApplicationEventPublisher eventPublisher;
     private final RoadmapConverter roadmapConverter;
     private final UserConverter userConverter;
@@ -305,16 +307,16 @@ public class RoadmapService {
         try {
             // 解析内容获取节点ID列表
             List<List<Object>> contentData = objectMapper.readValue(content, new TypeReference<>() {});
-            List<Long> courseIds = extractCourseIds(contentData);
+            List<Long> nodeIds = extractNodeIds(contentData);
 
-            // 跨域查询：获取课程名称
-            Map<Long, String> courseNames = getCourseNames(courseIds);
+            // 批量查询节点信息
+            Map<Long, NodeDO> nodeMap = nodeDataService.getMapByIds(nodeIds);
 
-            // 跨域查询：获取用户课程进度
-            Map<Long, RoadmapDomainService.CourseProgress> courseProgress = getCourseProgress(userId, courseIds);
+            // 跨域查询：获取节点进度（返回 Map<nodeId, progressPercent>）
+            Map<Long, Integer> nodeProgress = learningProgressService.batchCalculateNodeProgress(userId, nodeIds);
 
             // 委托给 DomainService 进行纯粹的内容转换
-            return domainService.parseContentToGraphFormat(content, courseNames, courseProgress);
+            return domainService.parseContentToGraphFormat(content, nodeProgress, nodeMap);
         } catch (Exception e) {
             log.error("内容解析为图形格式失败", e);
             throw StatusCode.JSON_PROCESSING_ERROR.exception(e);
@@ -322,67 +324,19 @@ public class RoadmapService {
     }
 
     /**
-     * 从内容数据中提取课程ID列表
+     * 从内容数据中提取节点ID列表
      */
-    private List<Long> extractCourseIds(List<List<Object>> contentData) {
-        List<Long> courseIds = new ArrayList<>();
+    private List<Long> extractNodeIds(List<List<Object>> contentData) {
+        List<Long> nodeIds = new ArrayList<>();
         if (contentData.size() >= 2) {
             List<Object> nodeIdsRaw = contentData.get(1);
             for (Object nodeIdObj : nodeIdsRaw) {
                 if (nodeIdObj instanceof Number) {
-                    courseIds.add(((Number) nodeIdObj).longValue());
+                    nodeIds.add(((Number) nodeIdObj).longValue());
                 }
             }
         }
-        return courseIds;
-    }
-
-    /**
-     * 获取课程名称映射（跨域查询）
-     */
-    private Map<Long, String> getCourseNames(List<Long> courseIds) {
-        Map<Long, String> courseNames = new HashMap<>();
-        if (courseIds.isEmpty()) {
-            return courseNames;
-        }
-
-        try {
-            List<CourseDO> courses = courseDataService.getByIds(courseIds);
-            for (CourseDO course : courses) {
-                courseNames.put(course.getId(), course.getName());
-            }
-        } catch (Exception e) {
-            log.error("Failed to get course names for courseIds: {}", courseIds, e);
-            // 如果查询失败，使用默认名称
-            for (long id : courseIds) {
-                courseNames.put(id, "课程" + id);
-            }
-        }
-
-        return courseNames;
-    }
-
-    /**
-     * 获取用户课程进度映射（跨域查询）
-     */
-    private Map<Long, RoadmapDomainService.CourseProgress> getCourseProgress(long userId, List<Long> courseIds) {
-        Map<Long, RoadmapDomainService.CourseProgress> progressMap = new HashMap<>();
-
-        if (systemProperties.getRoadmap().isEnableBatchStatusQuery() && !courseIds.isEmpty()) {
-            Map<Long, UserCourseDO> userCourseMap = userCourseDataService.getByUserIdAndCourseIdsAsMap(userId, courseIds);
-
-            for (long courseId : courseIds) {
-                UserCourseDO userCourse = userCourseMap.get(courseId);
-                boolean finished = userCourse != null &&
-                    userCourse.getProgressPercent() >= systemProperties.getRoadmap().getCompletionThreshold();
-                double progress = userCourse != null ?
-                    userCourse.getProgressPercent() / systemProperties.getRoadmap().getProgressPrecisionDivisor() : 0.0;
-
-                progressMap.put(courseId, new RoadmapDomainService.CourseProgress(finished, progress));
-            }
-        }
-
-        return progressMap;
+        return nodeIds;
     }
 
     /**
@@ -601,11 +555,8 @@ public class RoadmapService {
     }
 
     private Set<Long> getLearningIds(long userId, List<Long> roadmapIds) {
-        if (systemProperties.getRoadmap().isEnableBatchStatusQuery()) {
-            List<Long> learningRoadmapIds = userRoadmapDataService.getBatchLearningStatus(userId, roadmapIds);
-            return new HashSet<>(learningRoadmapIds);
-        }
-        return new HashSet<>();
+        List<Long> learningRoadmapIds = userRoadmapDataService.getBatchLearningStatus(userId, roadmapIds);
+        return new HashSet<>(learningRoadmapIds);
     }
 
     // ========== Admin管理方法 ==========

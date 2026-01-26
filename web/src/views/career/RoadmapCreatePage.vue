@@ -266,9 +266,10 @@
                       size="x-small"
                       color="primary"
                       variant="flat"
+                      :disabled="isNodeAdded(course.rootNodeId)"
                       @click.stop="addCourseNode(course)"
                     >
-                      <v-icon size="14">mdi-plus</v-icon>
+                      <v-icon size="14">{{ isNodeAdded(course.rootNodeId) ? 'mdi-check' : 'mdi-plus' }}</v-icon>
                     </v-btn>
                   </div>
                 </div>
@@ -573,8 +574,10 @@ const edges = ref<Edge[]>([])
 
 // 添加课程节点
 const addCourseNode = (course: Course) => {
+  const nodeId = course.rootNodeId.toString()
+
   // 检查是否已存在
-  if (nodes.value.find((n) => n.id === course.id.toString())) {
+  if (nodes.value.find((n) => n.id === nodeId)) {
     showSnackbar('该课程已添加', 'warning')
     return
   }
@@ -604,7 +607,7 @@ const addCourseNode = (course: Course) => {
   }
 
   nodes.value.push({
-    id: course.id.toString(),
+    id: nodeId, // 使用 rootNodeId
     type: 'default',
     data: { label: course.name },
     position: { x, y },
@@ -617,6 +620,14 @@ const addCourseNode = (course: Course) => {
   setTimeout(() => {
     setCenter(x, y, { zoom: 1, duration: 300 })
   }, 50)
+}
+
+/**
+ * 检查节点是否已添加
+ */
+const isNodeAdded = (nodeId: number | undefined): boolean => {
+  if (!nodeId) return false
+  return nodes.value.some((n) => n.id === nodeId.toString())
 }
 
 /**

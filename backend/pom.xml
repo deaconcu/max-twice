@@ -19,6 +19,7 @@
         <module>learn-user</module>
         <module>learn-analytics</module>
         <module>learn-application</module>
+        <module>learn-tools</module>
     </modules>
 
     <properties>

@@ -4,21 +4,21 @@ import org.apache.ibatis.annotations.*;
 import java.util.Map;
 
 @Mapper
-public interface CourseTocMapper {
+public interface NodeTocMapper {
 
-    @Select("SELECT * FROM course_toc WHERE hash = #{hash}")
-    CourseTocDO get(String hash);
+    @Select("SELECT * FROM node_toc WHERE hash = #{hash}")
+    NodeTocDO get(String hash);
 
-    @Select({"<script>SELECT * FROM course_toc where hash in " +
+    @Select({"<script>SELECT * FROM node_toc where hash in " +
             "<foreach item='hash' collection='hashes' open='(' separator=', ' close=')'>#{hash}</foreach>" +
             "</script>"})
     @MapKey("hash")
-    Map<String, CourseTocDO> getByHashes(String[] hashes);
+    Map<String, NodeTocDO> getByHashes(String[] hashes);
 
-    @Insert("INSERT INTO course_toc(hash, toc, ref_count) VALUES (#{hash}, #{toc}, #{refCount})")
-    int insert(CourseTocDO courseTocDO);
+    @Insert("INSERT INTO node_toc(hash, toc, ref_count) VALUES (#{hash}, #{toc}, #{refCount})")
+    int insert(NodeTocDO nodeTocDO);
 
-    @Update("UPDATE course_toc SET ref_count = ref_count + #{n} where hash = #{hash}")
+    @Update("UPDATE node_toc SET ref_count = ref_count + #{n} where hash = #{hash}")
     void incrRef(String hash, int n);
 
 // --注释掉检查 START (2025/12/10 12:02):

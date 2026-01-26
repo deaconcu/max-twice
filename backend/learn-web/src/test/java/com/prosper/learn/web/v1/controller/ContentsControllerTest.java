@@ -8,10 +8,10 @@ import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
-import com.prosper.learn.content.toc.CourseTocDO;
-import com.prosper.learn.content.toc.CourseTocDataService;
-import com.prosper.learn.content.toc.UserCourseTocDO;
-import com.prosper.learn.content.toc.UserCourseTocDataService;
+import com.prosper.learn.content.toc.NodeTocDO;
+import com.prosper.learn.content.toc.NodeTocDataService;
+import com.prosper.learn.content.toc.UserNodeTocDO;
+import com.prosper.learn.content.toc.UserNodeTocDataService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums.ContentState;
 import com.prosper.learn.shared.domain.Enums.PostType;
@@ -62,10 +62,10 @@ public class ContentsControllerTest extends BaseControllerTest {
     private PostDataService postDataService;
 
     @Autowired
-    private UserCourseTocDataService userCourseTocDataService;
+    private UserNodeTocDataService userNodeTocDataService;
 
     @Autowired
-    private CourseTocDataService courseTocDataService;
+    private NodeTocDataService nodeTocDataService;
 
     @BeforeEach
     void setUp() {
@@ -114,7 +114,7 @@ public class ContentsControllerTest extends BaseControllerTest {
         NodeDO node = new NodeDO();
         node.setName(name);
         node.setDescription("节点描述");
-        node.setCourseId(courseId);
+        node.setNodeId(courseId);
         node.setCreatorId(creatorId);
         node.setState(ContentState.PUBLISHED.value());
         nodeDataService.insert(node);
@@ -155,29 +155,29 @@ public class ContentsControllerTest extends BaseControllerTest {
      * 初始化用户课程目录
      * 创建一个空的目录结构
      */
-    private UserCourseTocDO initUserCourseToc(Long userId, Long courseId) {
+    private UserNodeTocDO initUserNodeToc(Long userId, Long courseId) {
         // 创建一个空的目录 JSON
         String emptyTocJson = "{}";
         String tocHash = Utils.hashSHA(emptyTocJson);
 
         // 创建 CourseTocDO
-        CourseTocDO courseToc = courseTocDataService.get(tocHash);
+        NodeTocDO courseToc = nodeTocDataService.get(tocHash);
         if (courseToc == null) {
-            courseToc = new CourseTocDO();
+            courseToc = new NodeTocDO();
             courseToc.setHash(tocHash);
             courseToc.setToc(emptyTocJson);
             courseToc.setRefCount(0);
-            courseTocDataService.insert(courseToc);
+            nodeTocDataService.insert(courseToc);
         }
 
-        // 创建 UserCourseTocDO
-        UserCourseTocDO userCourseToc = new UserCourseTocDO();
-        userCourseToc.setUserId(userId);
-        userCourseToc.setCourseId(courseId);
-        userCourseToc.setToc(tocHash);
-        userCourseTocDataService.insert(userCourseToc);
+        // 创建 UserNodeTocDO
+        UserNodeTocDO userNodeToc = new UserNodeTocDO();
+        userNodeToc.setUserId(userId);
+        userNodeToc.setNodeId(courseId);
+        userNodeToc.setToc(tocHash);
+        userNodeTocDataService.insert(userNodeToc);
 
-        return userCourseToc;
+        return userNodeToc;
     }
 
     // ==================== Command 测试（写操作） ====================
@@ -198,7 +198,7 @@ public class ContentsControllerTest extends BaseControllerTest {
         PostDO contentsPost = createIndexPost(tocContent, course.getRootNodeId(), user.getId());
 
         // 初始化用户目录
-        initUserCourseToc(user.getId(), course.getId());
+        initUserNodeToc(user.getId(), course.getId());
 
         StpUtil.login(user.getId());
 
@@ -220,7 +220,7 @@ public class ContentsControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 验证用户目录已更新
-            UserCourseTocDO updatedToc = userCourseTocDataService.getByUserAndCourse(user.getId(), course.getId());
+            UserNodeTocDO updatedToc = userNodeTocDataService.getByUserAndNode(user.getId(), course.getId());
             assertThat(updatedToc).isNotNull();
         } finally {
             StpUtil.logout();
@@ -532,7 +532,7 @@ public class ContentsControllerTest extends BaseControllerTest {
     void testChooseContents_PostNotFound() throws Exception {
         UserDO user = createUser("user@example.com");
         CourseDO course = createPublishedCourse("测试课程", user.getId());
-        initUserCourseToc(user.getId(), course.getId());
+        initUserNodeToc(user.getId(), course.getId());
 
         StpUtil.login(user.getId());
 
@@ -625,7 +625,7 @@ public class ContentsControllerTest extends BaseControllerTest {
         CourseDO course = createPublishedCourse("测试课程", user.getId());
         NodeDO node = createPublishedNode("节点1", course.getId(), user.getId());
         PostDO contentsPost = createIndexPost(node.getId().toString(), course.getRootNodeId(), user.getId());
-        initUserCourseToc(user.getId(), course.getId());
+        initUserNodeToc(user.getId(), course.getId());
 
         StpUtil.login(user.getId());
 
@@ -665,7 +665,7 @@ public class ContentsControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 验证目录已更新
-            UserCourseTocDO updatedToc = userCourseTocDataService.getByUserAndCourse(user.getId(), course.getId());
+            UserNodeTocDO updatedToc = userNodeTocDataService.getByUserAndNode(user.getId(), course.getId());
             assertThat(updatedToc).isNotNull();
         } finally {
             StpUtil.logout();
@@ -680,7 +680,7 @@ public class ContentsControllerTest extends BaseControllerTest {
     void testUnchooseContents_Idempotent() throws Exception {
         UserDO user = createUser("user@example.com");
         CourseDO course = createPublishedCourse("测试课程", user.getId());
-        initUserCourseToc(user.getId(), course.getId());
+        initUserNodeToc(user.getId(), course.getId());
 
         StpUtil.login(user.getId());
 
@@ -716,7 +716,7 @@ public class ContentsControllerTest extends BaseControllerTest {
         CourseDO course = createPublishedCourse("测试课程", user.getId());
         NodeDO node = createPublishedNode("节点1", course.getId(), user.getId());
         PostDO post = createPublishedPost("测试帖子内容", node.getId(), user.getId());
-        initUserCourseToc(user.getId(), course.getId());
+        initUserNodeToc(user.getId(), course.getId());
 
         StpUtil.login(user.getId());
 
@@ -738,7 +738,7 @@ public class ContentsControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 验证目录已更新
-            UserCourseTocDO updatedToc = userCourseTocDataService.getByUserAndCourse(user.getId(), course.getId());
+            UserNodeTocDO updatedToc = userNodeTocDataService.getByUserAndNode(user.getId(), course.getId());
             assertThat(updatedToc).isNotNull();
         } finally {
             StpUtil.logout();
@@ -757,7 +757,7 @@ public class ContentsControllerTest extends BaseControllerTest {
         PostDO post1 = createPublishedPost("帖子1", node.getId(), user.getId());
         PostDO post2 = createPublishedPost("帖子2", node.getId(), user.getId());
         PostDO post3 = createPublishedPost("帖子3", node.getId(), user.getId());
-        initUserCourseToc(user.getId(), course.getId());
+        initUserNodeToc(user.getId(), course.getId());
 
         StpUtil.login(user.getId());
 
@@ -814,7 +814,7 @@ public class ContentsControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 验证目录已更新
-            UserCourseTocDO updatedToc = userCourseTocDataService.getByUserAndCourse(user.getId(), course.getId());
+            UserNodeTocDO updatedToc = userNodeTocDataService.getByUserAndNode(user.getId(), course.getId());
             assertThat(updatedToc).isNotNull();
         } finally {
             StpUtil.logout();
@@ -830,7 +830,7 @@ public class ContentsControllerTest extends BaseControllerTest {
         UserDO user = createUser("user@example.com");
         CourseDO course = createPublishedCourse("测试课程", user.getId());
         PostDO post = createPublishedPost("测试帖子", course.getRootNodeId(), user.getId());
-        initUserCourseToc(user.getId(), course.getId());
+        initUserNodeToc(user.getId(), course.getId());
 
         StpUtil.login(user.getId());
 
@@ -873,7 +873,7 @@ public class ContentsControllerTest extends BaseControllerTest {
         UserDO user = createUser("user@example.com");
         CourseDO course = createPublishedCourse("测试课程", user.getId());
         PostDO post = createPublishedPost("测试帖子", course.getRootNodeId(), user.getId());
-        initUserCourseToc(user.getId(), course.getId());
+        initUserNodeToc(user.getId(), course.getId());
 
         StpUtil.login(user.getId());
 
@@ -913,7 +913,7 @@ public class ContentsControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 验证目录已更新
-            UserCourseTocDO updatedToc = userCourseTocDataService.getByUserAndCourse(user.getId(), course.getId());
+            UserNodeTocDO updatedToc = userNodeTocDataService.getByUserAndNode(user.getId(), course.getId());
             assertThat(updatedToc).isNotNull();
         } finally {
             StpUtil.logout();
@@ -931,7 +931,7 @@ public class ContentsControllerTest extends BaseControllerTest {
         PostDO post1 = createPublishedPost("帖子1", course.getRootNodeId(), user.getId());
         PostDO post2 = createPublishedPost("帖子2", course.getRootNodeId(), user.getId());
         PostDO post3 = createPublishedPost("帖子3", course.getRootNodeId(), user.getId());
-        initUserCourseToc(user.getId(), course.getId());
+        initUserNodeToc(user.getId(), course.getId());
 
         StpUtil.login(user.getId());
 
@@ -973,7 +973,7 @@ public class ContentsControllerTest extends BaseControllerTest {
                     .andExpect(jsonPath("$.code").value(StatusCode.OK.getCode()));
 
             // 验证目录已更新
-            UserCourseTocDO updatedToc = userCourseTocDataService.getByUserAndCourse(user.getId(), course.getId());
+            UserNodeTocDO updatedToc = userNodeTocDataService.getByUserAndNode(user.getId(), course.getId());
             assertThat(updatedToc).isNotNull();
         } finally {
             StpUtil.logout();
@@ -988,7 +988,7 @@ public class ContentsControllerTest extends BaseControllerTest {
     void testUnpinPost_Idempotent() throws Exception {
         UserDO user = createUser("user@example.com");
         CourseDO course = createPublishedCourse("测试课程", user.getId());
-        initUserCourseToc(user.getId(), course.getId());
+        initUserNodeToc(user.getId(), course.getId());
 
         StpUtil.login(user.getId());
 

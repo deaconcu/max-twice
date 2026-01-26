@@ -1,12 +1,9 @@
 package com.prosper.learn.content.toc;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.prosper.learn.content.course.CourseDO;
-import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
 import com.prosper.learn.shared.common.utils.Utils;
@@ -22,14 +19,14 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * 内容管理服务
+ * 目录管理服务
  *
- * 负责管理用户课程目录的增删改查操作，包括：
+ * 负责管理用户节点目录的增删改查操作，包括：
  * - 目录结构的获取和创建
  * - 目录类型的帖子可以加入到左侧目录中
  *
  * 核心概念：
- * - 每个用户对每个课程都有独立的目录结构
+ * - 每个用户对每个节点都有独立的目录结构
  * - 目录内容采用引用计数机制管理，支持多用户共享相同的目录版本
  * - 目录以 JSON 格式存储，支持嵌套结构
  *
@@ -40,38 +37,20 @@ import java.util.*;
 @RequiredArgsConstructor
 public class TocDomainService {
 
-    /** 课程数据访问接口 */
-    private final CourseDataService courseDataService;
-    
     /** JSON 对象映射器，用于目录结构的序列化和反序列化 */
     private final ObjectMapper objectMapper;
-    
+
     /** 帖子数据访问接口 */
     private final PostDataService postDataService;
-    
-    /** 用户课程目录数据访问接口 */
-    private final UserCourseTocDataService userCourseTocDataService;
-    
-    /** 课程目录数据访问接口，管理目录内容和引用计数 */
-    private final CourseTocDataService courseTocDataService;
-    
+
+    /** 用户节点目录数据访问接口 */
+    private final UserNodeTocDataService userNodeTocDataService;
+
+    /** 节点目录数据访问接口，管理目录内容和引用计数 */
+    private final NodeTocDataService nodeTocDataService;
+
     /** 内容管理相关配置属性 */
     private final SystemProperties systemProperties;
-
-    /**
-     * 验证课程存在性
-     * 
-     * @param courseId 课程ID
-     * @return 课程实体对象
-     * @throws BusinessException 当课程不存在时抛出 CONTENTS_COURSE_NOT_FOUND 异常
-     */
-    private CourseDO validateCourseExists(long courseId) {
-        CourseDO courseDO = courseDataService.getById(courseId);
-        if (courseDO == null) {
-            throw StatusCode.COURSE_NOT_FOUND.exception();
-        }
-        return courseDO;
-    }
 
     /**
      * 验证帖子存在性并检查类型
@@ -94,20 +73,20 @@ public class TocDomainService {
 
     /**
      * 验证用户目录存在性
-     * 
-     * 检查指定用户在指定课程下是否已经创建了目录结构。
-     * 
+     *
+     * 检查指定用户在指定节点下是否已经创建了目录结构。
+     *
      * @param userId 用户ID
-     * @param courseId 课程ID
-     * @return 用户课程目录实体对象
+     * @param nodeId 节点ID
+     * @return 用户节点目录实体对象
      * @throws BusinessException 当用户目录不存在时抛出 TOC_USER_TOC_NOT_FOUND 异常
      */
-    private UserCourseTocDO validateUserTocExists(long userId, long courseId) {
-        UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(userId, courseId);
-        if (userCourseTocDO == null) {
+    private UserNodeTocDO validateUserTocExists(long userId, long nodeId) {
+        UserNodeTocDO userNodeTocDO = userNodeTocDataService.getByUserAndNode(userId, nodeId);
+        if (userNodeTocDO == null) {
             throw StatusCode.TOC_USER_TOC_NOT_FOUND.exception();
         }
-        return userCourseTocDO;
+        return userNodeTocDO;
     }
 
     /**
@@ -160,46 +139,43 @@ public class TocDomainService {
     }
 
     /**
-     * 更新用户课程目录
+     * 更新用户节点目录
      *
-     * 根据提供的索引数组重新组织用户的课程目录结构。
+     * 根据提供的索引数组重新组织用户的节点目录结构。
      * 索引数组中的每个值对应当前目录哈希数组中的位置（从1开始），
-     * 特殊值0表示使用默认目录（只包含根节点）。
+     * 特殊值0表示使用默认目录（只包含该节点）。
      *
      * @param userId 用户ID
-     * @param courseId 课程ID
+     * @param nodeId 节点ID
      * @param indexArray 索引数组字符串（逗号分隔），如 "1,2,0,3"
      *                   - 0: 使用默认目录
      *                   - 正整数: 使用现有目录数组中对应位置的哈希（从1开始）
-     * @throws BusinessException 当课程不存在、用户目录不存在、索引无效等情况时抛出异常
+     * @throws BusinessException 当节点不存在、用户目录不存在、索引无效等情况时抛出异常
      */
     @Transactional
-    public void updateUserCourseToc(long userId, long courseId, String indexArray) {
-        // 1. 验证课程存在性
-        CourseDO courseDO = courseDataService.validateAndGet(courseId);
+    public void updateUserNodeToc(long userId, long nodeId, String indexArray) {
+        // 1. 验证用户目录存在性
+        UserNodeTocDO userNodeTocDO = validateUserTocExists(userId, nodeId);
 
-        // 2. 验证用户目录存在性
-        UserCourseTocDO userCourseTocDO = validateUserTocExists(userId, courseId);
-
-        // 3. 解析当前目录哈希数组
-        String toc = userCourseTocDO.getToc();
+        // 2. 解析当前目录哈希数组
+        String toc = userNodeTocDO.getToc();
         String[] tocHashes = toc.split(",");
 
-        // 4. 验证并解析索引数组
+        // 3. 验证并解析索引数组
         int[] indexes = validateAndParseIndexArray(indexArray, 9, tocHashes.length);
 
-        // 5. 生成默认目录结构
+        // 4. 生成默认目录结构
         ObjectNode defaultTocNode = objectMapper.createObjectNode();
-        defaultTocNode.set(Long.toString(courseDO.getRootNodeId()), objectMapper.createObjectNode());
+        defaultTocNode.set(Long.toString(nodeId), objectMapper.createObjectNode());
         String defaultTocStr = defaultTocNode.toString();
         String defaultTocHash = Utils.hashSHA(defaultTocStr);
 
-        // 6. 如果默认目录不存在则创建
-        if (courseTocDataService.get(defaultTocHash) == null) {
-            courseTocDataService.insert(new CourseTocDO(defaultTocHash, defaultTocStr));
+        // 5. 如果默认目录不存在则创建
+        if (nodeTocDataService.get(defaultTocHash) == null) {
+            nodeTocDataService.insert(new NodeTocDO(defaultTocHash, defaultTocStr));
         }
 
-        // 7. 构建新的目录数组
+        // 6. 构建新的目录数组
         String[] newTocArr = new String[indexes.length];
         int defaultCount = 0;
         for (int i = 0; i < indexes.length; i++) {
@@ -211,85 +187,82 @@ public class TocDomainService {
             }
         }
 
-        // 8. 增加默认目录的引用计数
+        // 7. 增加默认目录的引用计数
         if (defaultCount > 0) {
-            courseTocDataService.incrRef(defaultTocHash, defaultCount);
+            nodeTocDataService.incrRef(defaultTocHash, defaultCount);
         }
 
-        // 9. 更新用户课程目录
+        // 8. 更新用户节点目录
         String newToc = String.join(",", newTocArr);
-        userCourseTocDO.setToc(newToc);
-        userCourseTocDataService.update(userCourseTocDO);
+        userNodeTocDO.setToc(newToc);
+        userNodeTocDataService.update(userNodeTocDO);
     }
 
     /**
      * 获取当前目录内容并完成更新流程的通用方法
-     * 
+     *
      * 这是目录更新的核心模板方法，处理：
      * 1. 获取当前目录内容并减少旧版本引用计数
      * 2. 应用内容更新操作
      * 3. 保存新版本并增加引用计数
      * 4. 更新用户目录指向
-     * 
+     *
      * @param tocHashArr 目录哈希数组
      * @param tocIndex 目录索引（从1开始）
-     * @param userCourseTocDO 用户课程目录对象
+     * @param userNodeTocDO 用户节点目录对象
      * @param contentUpdater 内容更新函数，接收当前目录内容，返回新的目录内容
      */
-    private void getCurrentTocAndUpdate(String[] tocHashArr, int tocIndex, UserCourseTocDO userCourseTocDO, 
+    private void getCurrentTocAndUpdate(String[] tocHashArr, int tocIndex, UserNodeTocDO userNodeTocDO, 
                                        java.util.function.Function<String, String> contentUpdater) {
         // 1. 获取当前目录内容并减少引用计数
-        CourseTocDO courseTocDO = courseTocDataService.get(tocHashArr[tocIndex - 1]);
-        courseTocDataService.incrRef(courseTocDO.getHash(), -1);
-        String currentTocContent = courseTocDO.getToc();
+        NodeTocDO nodeTocDO = nodeTocDataService.get(tocHashArr[tocIndex - 1]);
+        nodeTocDataService.incrRef(nodeTocDO.getHash(), -1);
+        String currentTocContent = nodeTocDO.getToc();
         
         // 2. 应用内容更新操作
         String newTocContent = contentUpdater.apply(currentTocContent);
         
         // 3. 保存新版本并增加引用计数
         String hash = Utils.hashSHA(newTocContent);
-        if (courseTocDataService.get(hash) == null) {
-            courseTocDataService.insert(new CourseTocDO(hash, newTocContent));
+        if (nodeTocDataService.get(hash) == null) {
+            nodeTocDataService.insert(new NodeTocDO(hash, newTocContent));
         }
-        courseTocDataService.incrRef(hash, 1);
+        nodeTocDataService.incrRef(hash, 1);
 
         // 4. 更新用户目录指向
         tocHashArr[tocIndex - 1] = hash;
-        userCourseTocDO.setToc(String.join(",", tocHashArr));
-        userCourseTocDataService.update(userCourseTocDO);
+        userNodeTocDO.setToc(String.join(",", tocHashArr));
+        userNodeTocDataService.update(userNodeTocDO);
     }
 
     /**
-     * 获取用户在指定课程下的完整目录结构
-     * 
+     * 获取用户在指定节点下的完整目录结构
+     *
      * 目录结构采用分层设计：
-     * 1. 每个用户课程有一个目录哈希列表，支持多版本目录
+     * 1. 每个用户节点有一个目录哈希列表，支持多版本目录
      * 2. 每个哈希对应一个具体的目录JSON内容
      * 3. 目录内容使用引用计数管理，支持多用户共享
-     * 
+     *
      * @param userId 用户ID
-     * @param courseId 课程ID  
+     * @param nodeId 节点ID
      * @param create 当用户目录不存在时是否自动创建
      * @return 目录结构的JSON数组，如果不存在且不创建则返回null
-     * @throws BusinessException 当课程不存在时抛出异常
      */
-    public ArrayNode getToc(long userId, long courseId, boolean create) {
-        CourseDO courseDO = validateCourseExists(courseId);
-
-        UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(userId, courseId);
+    public ArrayNode getToc(long userId, long nodeId, boolean create) {
+        UserNodeTocDO userNodeTocDO = userNodeTocDataService.getByUserAndNode(userId, nodeId);
         String tocHashStr = "";
 
         // 如果用户目录不存在且不需要创建，直接返回null
-        if (userCourseTocDO == null && !create) return null;
+        if (userNodeTocDO == null && !create) return null;
 
-        if (userCourseTocDO == null) {
+        if (userNodeTocDO == null) {
             // 创建根目录结构：包含课程根节点的目录
             ObjectNode s = objectMapper.createObjectNode();
             ObjectNode rootNodeContent = objectMapper.createObjectNode();
 
-            // 自动生成默认目录：查找根节点下 score 最高的 contents 类型 Post
+            // 自动生成默认目录：查找该节点下 score 最高的 index 类型 Post
             List<PostDO> topPosts = postDataService.getListByNodeAndScore(
-                    courseDO.getRootNodeId(), 1, Enums.ContentState.PUBLISHED.value());
+                    nodeId, 1, Enums.ContentState.PUBLISHED.value());
 
             if (!topPosts.isEmpty()) {
                 PostDO topPost = topPosts.get(0);
@@ -303,46 +276,46 @@ public class TocDomainService {
                 }
             }
 
-            s.put(Long.toString(courseDO.getRootNodeId()), rootNodeContent);
+            s.put(Long.toString(nodeId), rootNodeContent);
 
             String tocStr = s.toString();
             tocHashStr = Utils.hashSHA(tocStr);
 
             // 检查是否已存在相同内容的目录，避免重复存储
-            CourseTocDO courseTocDO = courseTocDataService.get(tocHashStr);
-            if (courseTocDO == null) {
-                CourseTocDO newToc = new CourseTocDO();
+            NodeTocDO nodeTocDO = nodeTocDataService.get(tocHashStr);
+            if (nodeTocDO == null) {
+                NodeTocDO newToc = new NodeTocDO();
                 newToc.setHash(tocHashStr);
                 newToc.setToc(tocStr);
                 newToc.setRefCount(1);
-                courseTocDataService.insert(newToc);
+                nodeTocDataService.insert(newToc);
             }
 
             // 为用户创建目录记录，指向刚创建的目录版本
-            userCourseTocDO = new UserCourseTocDO();
-            userCourseTocDO.setUserId(userId);
-            userCourseTocDO.setCourseId(courseId);
-            userCourseTocDO.setToc(tocHashStr);
+            userNodeTocDO = new UserNodeTocDO();
+            userNodeTocDO.setUserId(userId);
+            userNodeTocDO.setNodeId(nodeId);
+            userNodeTocDO.setToc(tocHashStr);
 
-            userCourseTocDataService.insert(userCourseTocDO);
+            userNodeTocDataService.insert(userNodeTocDO);
         } else {
             // 用户目录已存在，获取目录哈希列表
-            tocHashStr = userCourseTocDO.getToc();
+            tocHashStr = userNodeTocDO.getToc();
         }
 
         ArrayNode arrayNode = objectMapper.createArrayNode();
         String[] tocHashArr = tocHashStr.split(",");
 
         // 批量获取所有目录版本的内容
-        Map<String, CourseTocDO> map = courseTocDataService.getByHashes(tocHashArr);
+        Map<String, NodeTocDO> map = nodeTocDataService.getByHashes(tocHashArr);
         for(String tocHash: tocHashArr) {
             try {
-                CourseTocDO courseTocDO = map.get(tocHash);
-                if (courseTocDO == null) {
+                NodeTocDO nodeTocDO = map.get(tocHash);
+                if (nodeTocDO == null) {
                     // 数据不一致：目录哈希在数据库中不存在
                     throw StatusCode.TOC_USER_TOC_NOT_FOUND.exception();
                 }
-                arrayNode.add(objectMapper.readTree(courseTocDO.getToc()));
+                arrayNode.add(objectMapper.readTree(nodeTocDO.getToc()));
             } catch (IOException e) {
                 throw StatusCode.JSON_PROCESSING_ERROR.exception(e);
             }
@@ -352,52 +325,49 @@ public class TocDomainService {
     }
 
     /**
-     * 获取用户在指定课程下特定索引位置的目录内容
-     * 
+     * 获取用户在指定节点下特定索引位置的目录内容
+     *
      * @param userId 用户ID
-     * @param courseId 课程ID
+     * @param nodeId 节点ID
      * @param tocIndex 目录索引（从1开始）
      * @return 指定索引位置的目录JSON字符串，如果用户目录不存在则返回null
-     * @throws BusinessException 当课程不存在或索引越界时抛出异常
+     * @throws BusinessException 当索引越界时抛出异常
      */
-    public String getToc(long userId, long courseId, int tocIndex) {
-        CourseDO courseDO = validateCourseExists(courseId);
-
-        UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(userId, courseId);
+    public String getToc(long userId, long nodeId, int tocIndex) {
+        UserNodeTocDO userNodeTocDO = userNodeTocDataService.getByUserAndNode(userId, nodeId);
         String tocStr = "";
-        if (userCourseTocDO == null) return null;
+        if (userNodeTocDO == null) return null;
 
-        tocStr = userCourseTocDO.getToc();
+        tocStr = userNodeTocDO.getToc();
 
         ArrayNode arrayNode = objectMapper.createArrayNode();
         String[] tocHashArr = tocStr.split(",");
 
         validateTocIndex(tocIndex, tocHashArr);
 
-        CourseTocDO courseTocDO = courseTocDataService.get(tocHashArr[tocIndex - 1]);
-        return courseTocDO.getToc();
+        NodeTocDO nodeTocDO = nodeTocDataService.get(tocHashArr[tocIndex - 1]);
+        return nodeTocDO.getToc();
     }
 
     /**
-     * 将帖子内容选择添加到用户课程目录的指定路径下
-     * 
+     * 将帖子内容选择添加到用户节点目录的指定路径下
+     *
      * 业务流程：
-     * 1. 验证帖子和课程的有效性
+     * 1. 验证帖子的有效性
      * 2. 创建包含帖子内容的子节点
      * 3. 获取用户当前目录并减少旧版本引用计数
      * 4. 更新目录结构并保存新版本
      * 5. 增加新版本引用计数并更新用户目录指向
-     * 
+     *
      * @param userId 用户ID
      * @param path 目录路径，格式：{tocIndex}-{nodePath}，如 "1-chapter1-section1"
-     * @param courseId 课程ID
+     * @param nodeId 节点ID
      * @param postId 帖子ID（必须是内容类型，不能是文章类型）
-     * @throws BusinessException 当课程、帖子不存在或帖子类型无效时抛出异常
+     * @throws BusinessException 当帖子不存在或帖子类型无效时抛出异常
      */
     @Transactional
-    public void choose(long userId, String path, long courseId, long postId) {
-        // validate - 先验证课程，再验证帖子
-        CourseDO courseDO = validateCourseExists(courseId);
+    public void choose(long userId, String path, long nodeId, long postId) {
+        // validate - 验证帖子
         PostDO postDO = validatePostForContents(postId);
 
         // 创建childNode
@@ -409,41 +379,39 @@ public class TocDomainService {
         int tocIndex = Integer.parseInt(pathParts[0]);
 
         // get user toc hash
-        UserCourseTocDO userCourseTocDO = validateUserTocExists(userId, courseId);
+        UserNodeTocDO userNodeTocDO = validateUserTocExists(userId, nodeId);
 
-        String[] tocHashArr = userCourseTocDO.getToc().split(",");
+        String[] tocHashArr = userNodeTocDO.getToc().split(",");
         validateTocIndex(tocIndex, tocHashArr);
 
         // 使用通用方法完成目录更新
-        getCurrentTocAndUpdate(tocHashArr, tocIndex, userCourseTocDO, 
+        getCurrentTocAndUpdate(tocHashArr, tocIndex, userNodeTocDO, 
             currentTocContent -> updateContents(currentTocContent, pathParts[1], childNode));
     }
 
     /**
-     * 取消选择用户课程目录指定路径下的内容
-     * 
+     * 取消选择用户节点目录指定路径下的内容
+     *
      * 将指定路径下的内容清空，用空的JSON对象替换原有内容。
      * 采用与choose相同的引用计数管理机制。
-     * 
+     *
      * @param userId 用户ID
-     * @param courseId 课程ID
+     * @param nodeId 节点ID
      * @param path 目录路径，格式：{tocIndex}-{nodePath}
-     * @throws BusinessException 当课程不存在、用户目录不存在或索引越界时抛出异常
+     * @throws BusinessException 当用户目录不存在或索引越界时抛出异常
      */
-    public void unchoose(long userId, long courseId, String path) {
-        CourseDO courseDO = validateCourseExists(courseId);
-
+    public void unchoose(long userId, long nodeId, String path) {
         String[] pathParts = path.split("-", 2);
         int tocIndex = Integer.parseInt(pathParts[0]);
 
         // get user toc hash
-        UserCourseTocDO userCourseTocDO = validateUserTocExists(userId, courseId);
+        UserNodeTocDO userNodeTocDO = validateUserTocExists(userId, nodeId);
 
-        String[] tocHashArr = userCourseTocDO.getToc().split(",");
+        String[] tocHashArr = userNodeTocDO.getToc().split(",");
         validateTocIndex(tocIndex, tocHashArr);
 
         // 使用通用方法完成目录更新
-        getCurrentTocAndUpdate(tocHashArr, tocIndex, userCourseTocDO,
+        getCurrentTocAndUpdate(tocHashArr, tocIndex, userNodeTocDO,
             currentTocContent -> updateContents(currentTocContent, pathParts[1], objectMapper.createObjectNode()));
     }
 
@@ -480,6 +448,66 @@ public class TocDomainService {
         } catch (JsonProcessingException e) {
             throw StatusCode.JSON_PROCESSING_ERROR.exception(e);
         }
+    }
+
+    /**
+     * 批量获取用户节点目录内容（目录索引固定为1）
+     *
+     * @param userId 用户ID
+     * @param nodeIds 节点ID列表
+     * @return Map<nodeId, tocContent> 节点ID到目录内容的映射
+     */
+    public Map<Long, String> batchGetToc(long userId, List<Long> nodeIds) {
+        Map<Long, String> result = new HashMap<>();
+
+        if (nodeIds == null || nodeIds.isEmpty()) {
+            return result;
+        }
+
+        // 1. 批量查询用户节点目录
+        Map<Long, UserNodeTocDO> userTocMap = userNodeTocDataService.getByUserAndNodes(userId, nodeIds);
+
+        // 2. 收集所有需要查询的 hash（固定使用索引1）
+        Set<String> hashesToFetch = new HashSet<>();
+        Map<Long, String> nodeIdToHash = new HashMap<>();
+
+        for (Map.Entry<Long, UserNodeTocDO> entry : userTocMap.entrySet()) {
+            Long nodeId = entry.getKey();
+            UserNodeTocDO userNodeTocDO = entry.getValue();
+
+            if (userNodeTocDO == null || userNodeTocDO.getToc() == null) {
+                continue;
+            }
+
+            String[] tocHashArr = userNodeTocDO.getToc().split(",");
+
+            // 索引1对应数组下标0
+            if (tocHashArr.length > 0) {
+                String hash = tocHashArr[0];
+                hashesToFetch.add(hash);
+                nodeIdToHash.put(nodeId, hash);
+            }
+        }
+
+        // 3. 批量查询 node_toc
+        if (!hashesToFetch.isEmpty()) {
+            Map<String, NodeTocDO> nodeTocMap = nodeTocDataService.getByHashes(
+                hashesToFetch.toArray(new String[0])
+            );
+
+            // 4. 组装结果
+            for (Map.Entry<Long, String> entry : nodeIdToHash.entrySet()) {
+                Long nodeId = entry.getKey();
+                String hash = entry.getValue();
+                NodeTocDO nodeTocDO = nodeTocMap.get(hash);
+
+                if (nodeTocDO != null && nodeTocDO.getToc() != null) {
+                    result.put(nodeId, nodeTocDO.getToc());
+                }
+            }
+        }
+
+        return result;
     }
 
 }

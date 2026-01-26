@@ -115,6 +115,13 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
     }
 
     /**
+     * 根据最后ID获取课程列表（不缓存，不过滤状态）
+     */
+    public List<CourseDO> listByLastId(Long lastId) {
+        return courseMapper.listByLastId(lastId);
+    }
+
+    /**
      * 根据主分类获取根课程列表（不缓存，支持分页）
      */
     public List<CourseDO> listRootByMainCategory(int mainCategory, Long lastId) {

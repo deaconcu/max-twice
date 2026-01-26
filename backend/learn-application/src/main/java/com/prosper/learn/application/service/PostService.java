@@ -27,6 +27,7 @@ import com.prosper.learn.content.post.PostDomainService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
 import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
@@ -1235,12 +1236,8 @@ public class PostService {
                 }
 
                 // 创建新节点
-                NodeDO newNode = new NodeDO();
-                newNode.setName(nodeName);
-                newNode.setDescription(chapterInfo.description());
-                newNode.setCourseId(courseId);
-                newNode.setCreatorId(userId);
-                newNode.setState(ContentState.PUBLISHED.value());
+                NodeDO newNode = new NodeDO(userId, courseId, nodeName,
+                        chapterInfo.description, ContentState.PUBLISHED.value(), Bool.FALSE.value());
                 nodeDataService.insert(newNode);
 
                 nodeIds.add(newNode.getId());

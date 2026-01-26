@@ -94,6 +94,8 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
           data: {
             label: profession.value?.name || '当前职业', // 使用动态职业名称
             link: null, // 根节点不跳转
+            progress: 0,
+            isCourseRoot: false,
             ...node.data,
           },
           position: node.position || { x: 0, y: 0 },
@@ -101,12 +103,20 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
         }
       }
 
+      // 根据 isCourseRoot 确定跳转链接
+      const link = node.isCourseRoot
+        ? `/read?courseId=${node.courseId}` // 课程根节点：跳转课程
+        : `/read?nodeId=${node.id}` // 普通节点：跳转节点
+
       return {
         id: node.id,
         type: 'default', // 使用默认节点类型
         data: {
           label: node.name, // 使用 name 字段
-          link: `/read?courseId=${node.id}`, // 默认链接
+          link: link,
+          progress: node.progress || 0, // 进度百分比 (0.0-100.0)
+          isCourseRoot: node.isCourseRoot || false,
+          courseId: node.courseId,
           ...node.data,
         },
         position: node.position || { x: 0, y: 0 },

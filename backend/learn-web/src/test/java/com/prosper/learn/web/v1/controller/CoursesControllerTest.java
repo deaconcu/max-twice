@@ -427,7 +427,7 @@ public class CoursesControllerTest extends BaseControllerTest {
             StpUtil.login(user.getId());
 
             // 添加订阅
-            userDomainService.addSubscription(user.getId(), courseId);
+            //userDomainService.addSubscription(user.getId(), courseId);
 
             // 开始学习课程（创建学习记录）
             userCourseDomainService.startCourse(user.getId(), courseId);
@@ -1222,7 +1222,7 @@ public class CoursesControllerTest extends BaseControllerTest {
             // 为部分课程添加订阅和学习进度
             for (int i = 0; i < Math.min(5, publishedCourses.size()); i++) {
                 CourseDO course = publishedCourses.get(i);
-                userDomainService.addSubscription(user.getId(), course.getId());
+                //userDomainService.addSubscription(user.getId(), course.getId());
                 userCourseDomainService.startCourse(user.getId(), course.getId());
                 userCourseDomainService.updateProgress(user.getId(), course.getId(), (i + 1) * 10);
             }

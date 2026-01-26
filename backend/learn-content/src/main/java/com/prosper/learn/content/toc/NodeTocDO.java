@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class CourseTocDO {
+public class NodeTocDO {
 
     private String hash;
 
@@ -15,9 +15,9 @@ public class CourseTocDO {
 
     private LocalDateTime createdAt;
 
-    public CourseTocDO() {}
+    public NodeTocDO() {}
 
-    public CourseTocDO(String hash, String toc) {
+    public NodeTocDO(String hash, String toc) {
         this.hash = hash;
         this.toc = toc;
         this.refCount = 0;

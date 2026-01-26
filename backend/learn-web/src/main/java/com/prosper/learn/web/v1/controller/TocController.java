@@ -2,8 +2,8 @@ package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.content.toc.TocDomainService;
-import com.prosper.learn.content.toc.UserCourseTocDO;
-import com.prosper.learn.content.toc.UserCourseTocDataService;
+import com.prosper.learn.content.toc.UserNodeTocDO;
+import com.prosper.learn.content.toc.UserNodeTocDataService;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
@@ -19,8 +19,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 课程目录接口
- * 处理用户课程目录的相关操作
+ * 节点目录接口
+ * 处理用户节点目录的相关操作
  */
 @Slf4j
 @RestController
@@ -30,44 +30,44 @@ import java.util.concurrent.TimeUnit;
 public class TocController {
 
     private final TocDomainService tocDomainService;
-    private final UserCourseTocDataService userCourseTocDataService;
+    private final UserNodeTocDataService userNodeTocDataService;
 
     /**
-     * 更新用户课程目录
-     * 映射: POST /toc → PUT /api/v1/users/current/courses/{courseId}/toc
+     * 更新用户节点目录
+     * 映射: PUT /api/v1/users/current/nodes/{nodeId}/toc
      */
-    @PutMapping("/users/current/courses/{courseId}/toc")
+    @PutMapping("/users/current/nodes/{nodeId}/toc")
     @SaCheckLogin
     @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<Void> updateUserCourseToc(
-            @PathVariable @NotNull(message = "课程ID不能为空")
-            @Positive(message = "课程ID必须大于0")
-            Long courseId,
+    public ApiResponse<Void> updateUserNodeToc(
+            @PathVariable @NotNull(message = "节点ID不能为空")
+            @Positive(message = "节点ID必须大于0")
+            Long nodeId,
             @JsonParam("indexArray") @NotBlank(message = "索引数组不能为空") String indexArray,
             @CurrentUser UserDO currentUser) {
 
-        tocDomainService.updateUserCourseToc(currentUser.getId(), courseId, indexArray);
+        tocDomainService.updateUserNodeToc(currentUser.getId(), nodeId, indexArray);
         return ApiResponse.success("目录更新成功", null);
     }
 
     /**
-     * 获取用户课程目录
-     * 新增接口: GET /api/v1/users/current/courses/{courseId}/toc
+     * 获取用户节点目录
+     * GET /api/v1/users/current/nodes/{nodeId}/toc
      */
-    @GetMapping("/users/current/courses/{courseId}/toc")
+    @GetMapping("/users/current/nodes/{nodeId}/toc")
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<String> getUserCourseToc(
-            @PathVariable @NotNull(message = "课程ID不能为空")
-            @Positive(message = "课程ID必须大于0")
-            Long courseId,
+    public ApiResponse<String> getUserNodeToc(
+            @PathVariable @NotNull(message = "节点ID不能为空")
+            @Positive(message = "节点ID必须大于0")
+            Long nodeId,
             @CurrentUser UserDO currentUser) {
 
-        UserCourseTocDO userCourseTocDO = userCourseTocDataService.getByUserAndCourse(currentUser.getId(), courseId);
-        if (userCourseTocDO == null) {
+        UserNodeTocDO userNodeTocDO = userNodeTocDataService.getByUserAndNode(currentUser.getId(), nodeId);
+        if (userNodeTocDO == null) {
             return ApiResponse.success(null);
         }
 
-        return ApiResponse.success(userCourseTocDO.getToc());
+        return ApiResponse.success(userNodeTocDO.getToc());
     }
 }

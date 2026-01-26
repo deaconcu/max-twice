@@ -18,11 +18,13 @@ export interface Node {
   creatorId?: number // 创建者ID
   commentCount?: number // 评论数量
   state?: number // 节点状态: 0=待审核, 1=正常, 2=已屏蔽
+  isCourseRoot?: boolean // 是否为课程根节点（用于 Roadmap 区分课程和普通节点）
   createdAt?: string // 创建时间
   updatedAt?: string // 更新时间
 
   // 学习进度相关
   isCompleted?: boolean // 是否已完成
+  progress?: number // 进度百分比 (0.0-100.0)
 }
 
 /**

@@ -289,8 +289,25 @@
 
   // 编辑相关方法
   const addCourseNode = (course: Course): void => {
-    const node = internalNodes.value.find((node) => node.id === course.id.toString())
+    // 验证 rootNodeId 是否存在
+    if (!course.rootNodeId) {
+      console.error('课程缺少 rootNodeId:', course)
+      showSnackbar?.(t('roadmapCreate.courseDataError') || '课程数据错误：缺少 rootNodeId')
+      return
+    }
+
+    // 使用 rootNodeId 作为节点 ID
+    const nodeId = course.rootNodeId.toString()
+    console.log('添加课程节点:', {
+      courseName: course.name,
+      courseId: course.id,
+      rootNodeId: course.rootNodeId,
+      nodeId: nodeId
+    })
+
+    const node = internalNodes.value.find((node) => node.id === nodeId)
     if (node) {
+      showSnackbar?.(t('roadmapCreate.courseAlreadyAdded'))
       return
     }
 
@@ -315,7 +332,7 @@
     }
 
     const newNode: RoadmapNode = {
-      id: course.id.toString(), // 确保 id 是字符串
+      id: nodeId, // 使用 rootNodeId
       type: 'default', // 使用默认节点类型
       data: {
         label: course.name,

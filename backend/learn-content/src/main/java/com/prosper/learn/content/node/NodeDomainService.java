@@ -1,6 +1,8 @@
 package com.prosper.learn.content.node;
 
+import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.Enums;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

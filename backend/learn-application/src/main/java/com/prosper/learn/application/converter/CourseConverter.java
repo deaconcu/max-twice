@@ -117,6 +117,7 @@ public interface CourseConverter {
     @Named("toSummaryDTO")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id")
+    @Mapping(target = "rootNodeId")
     @Mapping(target = "name")
     @Mapping(target = "description")
     @Mapping(target = "mainCategory")

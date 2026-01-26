@@ -14,6 +14,7 @@ import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.learning.enrollment.UserCourseDO;
 import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
 import com.prosper.learn.shared.domain.exception.StatusCode;
@@ -566,7 +567,8 @@ public class CourseService {
         course.setSubCategory(request.getSubCategory());
         courseDataService.insert(course);
 
-        NodeDO nodeDO = NodeDO.createRoot(creator.getId(), course.getId());
+        NodeDO nodeDO = new NodeDO(creator.getId(), course.getId(), course.getName(),
+                course.getDescription(), ContentState.PUBLISHED.value(), Bool.TRUE.value());
         nodeDataService.insert(nodeDO);
 
         course.setRootNodeId(nodeDO.getId());
@@ -592,7 +594,8 @@ public class CourseService {
 
         courseDataService.insert(subCourse);
 
-        NodeDO nodeDO = NodeDO.createRoot(creator.getId(), subCourse.getId());
+        NodeDO nodeDO = new NodeDO(creator.getId(), subCourse.getId(), subCourse.getName(),
+                subCourse.getDescription(), ContentState.PUBLISHED.value(), Bool.TRUE.value());
         nodeDataService.insert(nodeDO);
 
         subCourse.setRootNodeId(nodeDO.getId());

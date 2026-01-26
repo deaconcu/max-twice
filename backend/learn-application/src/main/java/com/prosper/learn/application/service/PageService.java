@@ -9,7 +9,7 @@ import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.application.converter.NodeConverter;
 import com.prosper.learn.application.converter.PostConverter;
 import com.prosper.learn.application.converter.UserConverter;
-import com.prosper.learn.application.dto.response.CourseTocDTO;
+import com.prosper.learn.application.dto.response.NodeTocDTO;
 import com.prosper.learn.application.dto.response.course.CourseSummaryDTO;
 import com.prosper.learn.application.dto.response.course.CourseWithProgressDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithProgressDTO;
@@ -85,8 +85,10 @@ public class PageService {
     // ========== 公共方法 ==========
 
     public Utils.Pair<String, Map<Long, NodeWithProgressDTO>> getToc(long userId, long courseId, boolean create) {
+        // 获取课程的根节点ID
+        CourseDO course = courseDataService.validateAndGet(courseId);
 
-        ArrayNode arrayNode = tocService.getToc(userId, courseId, create);
+        ArrayNode arrayNode = tocService.getToc(userId, course.getRootNodeId(), create);
 
         Set<Long> keys = new HashSet<>();
         Utils.collectKeys(arrayNode, keys);
@@ -112,7 +114,10 @@ public class PageService {
      * 所有节点的完成状态都为false
      */
     public Utils.Pair<String, Map<Long, NodeWithProgressDTO>> getTocPublic(long courseId) {
-        ArrayNode arrayNode = tocService.getToc(0L, courseId, true);
+        // 获取课程的根节点ID
+        CourseDO course = courseDataService.validateAndGet(courseId);
+
+        ArrayNode arrayNode = tocService.getToc(0L, course.getRootNodeId(), true);
 
         Set<Long> keys = new HashSet<>();
         Utils.collectKeys(arrayNode, keys);
@@ -421,9 +426,9 @@ public class PageService {
      */
     private Map<String, Object> readPageData(CourseDO courseDO, String path, NodeDO nodeDO, PostDO postDO, long userId) {
         Utils.Pair<String, Map<Long, NodeWithProgressDTO>> response = getToc(userId, courseDO.getId(), true);
-        CourseTocDTO courseTocDTO = new CourseTocDTO(response.left(), response.right());
+        NodeTocDTO nodeTocDTO = new NodeTocDTO(response.left(), response.right());
 
-        JsonNode rootNode = parseJsonSafely(courseTocDTO.getContents());
+        JsonNode rootNode = parseJsonSafely(nodeTocDTO.getContents());
         path = sanitizePath(path, courseDO.getRootNodeId());
 
         Utils.Pair<Long, JsonNode> pair = getNodeByPath(rootNode, path, courseDO.getRootNodeId());
@@ -460,7 +465,7 @@ public class PageService {
         boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
         Integer courseProgress = userCourseService.getCourseProgress(userId, courseDO.getId());
 
-        return buildPageDataResponse(courseTocDTO, nodeDO, parentCourse, courseDO, subCourseList,
+        return buildPageDataResponse(nodeTocDTO, nodeDO, parentCourse, courseDO, subCourseList,
                 chosenPostingDTO, fixedPostingsDTO, otherPostingsDTO, lastId, path, userMap.values(),
                 learning, postDTO, nodeCompleted, courseProgress);
     }
@@ -472,9 +477,9 @@ public class PageService {
     private Map<String, Object> readPageDataPublic(CourseDO courseDO, String path) {
         // 使用假的userId=0来获取TOC（不包含完成状态）
         Utils.Pair<String, Map<Long, NodeWithProgressDTO>> response = getTocPublic(courseDO.getId());
-        CourseTocDTO courseTocDTO = new CourseTocDTO(response.left(), response.right());
+        NodeTocDTO nodeTocDTO = new NodeTocDTO(response.left(), response.right());
 
-        JsonNode rootNode = parseJsonSafely(courseTocDTO.getContents());
+        JsonNode rootNode = parseJsonSafely(nodeTocDTO.getContents());
         path = sanitizePath(path, courseDO.getRootNodeId());
 
         Utils.Pair<Long, JsonNode> pair = getNodeByPath(rootNode, path, courseDO.getRootNodeId());
@@ -511,7 +516,7 @@ public class PageService {
 
         List<CourseSummaryDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
 
-        return buildPageDataResponsePublic(courseTocDTO, nodeDO, parentCourse, courseDO, subCourseList,
+        return buildPageDataResponsePublic(nodeTocDTO, nodeDO, parentCourse, courseDO, subCourseList,
                 chosenPostingDTO, fixedPostingsDTO, otherPostingsDTO, lastId, path, userMap.values());
     }
 
@@ -733,7 +738,7 @@ public class PageService {
         }
     }
     
-    private Map<String, Object> buildPageDataResponse(CourseTocDTO courseTocDTO, NodeDO nodeDO,
+    private Map<String, Object> buildPageDataResponse(NodeTocDTO nodeTocDTO, NodeDO nodeDO,
                                                       CourseWithProgressDTO parentCourse, CourseDO courseDO, List<CourseSummaryDTO> subCourseList,
                                                       PostWithVoteDTO chosenPosting, List<PostWithVoteDTO> fixedPostings, List<PostWithVoteDTO> otherPostings,
                                                       long lastId, String path, Collection<UserBriefDTO> users, boolean learning,
@@ -742,7 +747,7 @@ public class PageService {
         Map<String, Object> data = new HashMap<>();
 
         try {
-            List<Object> contents = objectMapper.readValue(courseTocDTO.getContents(), List.class);
+            List<Object> contents = objectMapper.readValue(nodeTocDTO.getContents(), List.class);
             data.put("toc", contents);
         } catch (JsonProcessingException e) {
             log.error("TOC内容解析失败", e);
@@ -763,7 +768,7 @@ public class PageService {
         data.put("fixedPostings", fixedPostings);
         data.put("otherPostings", otherPostings);
         data.put("lastId", lastId);
-        data.put("tocNodeInfos", courseTocDTO.getNodeInfos());
+        data.put("tocNodeInfos", nodeTocDTO.getNodeInfos());
         data.put("path", path);
         data.put("users", new ArrayList<>(users));
         data.put("learning", learning);
@@ -779,7 +784,7 @@ public class PageService {
      * 构建页面数据响应（公开版本）
      * 不包含个性化字段：learning=false, nodeCompleted=false, courseProgress=0
      */
-    private Map<String, Object> buildPageDataResponsePublic(CourseTocDTO courseTocDTO, NodeDO nodeDO,
+    private Map<String, Object> buildPageDataResponsePublic(NodeTocDTO nodeTocDTO, NodeDO nodeDO,
                                                             CourseWithProgressDTO parentCourse, CourseDO courseDO, List<CourseSummaryDTO> subCourseList,
                                                             PostWithVoteDTO chosenPosting, List<PostWithVoteDTO> fixedPostings, List<PostWithVoteDTO> otherPostings,
                                                             long lastId, String path, Collection<UserBriefDTO> users) {
@@ -787,7 +792,7 @@ public class PageService {
         Map<String, Object> data = new HashMap<>();
 
         try {
-            List<Object> contents = objectMapper.readValue(courseTocDTO.getContents(), List.class);
+            List<Object> contents = objectMapper.readValue(nodeTocDTO.getContents(), List.class);
             data.put("toc", contents);
         } catch (JsonProcessingException e) {
             log.error("TOC内容解析失败", e);
@@ -807,7 +812,7 @@ public class PageService {
         data.put("fixedPostings", fixedPostings);
         data.put("otherPostings", otherPostings);
         data.put("lastId", lastId);
-        data.put("tocNodeInfos", courseTocDTO.getNodeInfos());
+        data.put("tocNodeInfos", nodeTocDTO.getNodeInfos());
         data.put("path", path);
         data.put("users", new ArrayList<>(users));
         data.put("learning", false); // 未学习

@@ -28,6 +28,12 @@ public class CourseSummaryDTO {
     private Long id;
 
     /**
+     * 根节点ID
+     * 说明：课程的根节点ID，用于 Roadmap 等需要使用 nodeId 的场景
+     */
+    private Long rootNodeId;
+
+    /**
      * 课程名称
      * 说明：课程的显示名称
      */
