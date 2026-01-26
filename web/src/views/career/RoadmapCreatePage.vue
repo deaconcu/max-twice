@@ -159,7 +159,7 @@
 
         <!-- 右侧：工具面板 -->
         <div class="right-sidebar">
-          <!-- 课程搜索区 -->
+          <!-- 课程/节点搜索区 -->
           <v-card class="course-search-card sticky-card no-border" elevation="0">
             <v-card-text class="pa-0 ps-4">
               <!-- 草稿描述显示 -->
@@ -185,97 +185,195 @@
               <!-- 分隔线 -->
               <v-divider v-if="savedDraftDescription" class="mt-6 mb-6" />
 
-              <!-- 标题和统计 -->
-              <div class="d-flex align-center justify-space-between mb-3">
-                <div class="d-flex align-center">
-                  <v-icon icon="mdi-book-multiple" color="primary" size="20" class="mr-2" />
-                  <span class="text-subtitle-1 font-weight-bold text-grey-darken-4">添加课程</span>
-                </div>
-                <div class="d-flex align-center gap-2">
+              <!-- Tab 切换 -->
+              <v-tabs v-model="searchTab" color="primary" density="compact" class="mb-3">
+                <v-tab value="course">
+                  <v-icon icon="mdi-book-multiple" size="18" class="mr-1" />
+                  添加课程
+                </v-tab>
+                <v-tab value="node">
+                  <v-icon icon="mdi-file-tree-outline" size="18" class="mr-1" />
+                  添加节点
+                </v-tab>
+              </v-tabs>
+
+              <!-- 课程搜索 Tab -->
+              <div v-show="searchTab === 'course'">
+                <!-- 标题和统计 -->
+                <div class="d-flex align-center justify-space-between mb-3">
+                  <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">搜索课程</span>
                   <a
                     href="/courses"
                     target="_blank"
-                    class="text-body-2 text-primary text-decoration-none"
-                    style="white-space: nowrap"
+                    class="text-caption text-primary text-decoration-none"
                   >
-                    查看全部课程
+                    查看全部
                   </a>
                 </div>
-              </div>
 
-              <!-- 搜索框 -->
-              <v-text-field
-                v-model="searchText"
-                placeholder="搜索课程名称..."
-                variant="outlined"
-                density="comfortable"
-                hide-details
-                class="mb-3"
-                rounded="lg"
-                autocomplete="off"
-                @keydown.enter="handleSearch"
-                @click:clear="searchText = ''; availableCourses = []"
-              >
-                <template #append-inner>
-                  <v-btn icon size="small" variant="text" @click="handleSearch">
-                    <v-icon icon="mdi-magnify" size="20" />
-                  </v-btn>
-                </template>
-              </v-text-field>
-
-              <!-- 加载状态 -->
-              <div v-if="coursesLoading" class="text-center py-8">
-                <v-progress-circular indeterminate color="primary" size="40" width="3" />
-                <p class="text-body-2 text-grey-darken-1 mt-3">搜索中...</p>
-              </div>
-
-              <!-- 空状态 -->
-              <div v-else-if="!searchText.trim()" class="empty-state text-center py-8">
-                <div class="empty-icon-wrapper mb-3">
-                  <v-icon icon="mdi-magnify" size="56" color="grey-lighten-1" />
-                </div>
-                <p class="text-body-2 text-grey-darken-1 mb-1">开始搜索课程</p>
-                <p class="text-caption text-grey">输入课程名称进行搜索</p>
-              </div>
-
-              <!-- 课程列表 -->
-              <div v-else class="course-list-wrapper">
-                <div v-if="filteredCourses.length > 0" class="course-list">
-                  <div
-                    v-for="course in filteredCourses"
-                    :key="course.id"
-                    class="course-item"
-                  >
-                    <v-tooltip location="left" max-width="300" content-class="rounded-lg">
-                      <template #activator="{ props }">
-                        <div class="course-name" v-bind="props" @click="goToCourseDetail(course.id)">
-                          <v-icon icon="mdi-book-outline" size="16" class="mr-1" />
-                          {{ course.name }}
-                        </div>
-                      </template>
-                      <div class="tooltip-content pa-1">
-                        <div class="text-subtitle-2 mb-1">{{ course.name }}</div>
-                        <div class="text-caption text-grey-lighten-1 mb-2">
-                          {{ categoryStore.getCourseFullCategoryText(course.mainCategory, course.subCategory) }}
-                        </div>
-                        <div class="text-caption">{{ course.description || '暂无简介' }}</div>
-                      </div>
-                    </v-tooltip>
-                    <v-btn
-                      icon
-                      size="x-small"
-                      color="primary"
-                      variant="flat"
-                      :disabled="isNodeAdded(course.rootNodeId)"
-                      @click.stop="addCourseNode(course)"
-                    >
-                      <v-icon size="14">{{ isNodeAdded(course.rootNodeId) ? 'mdi-check' : 'mdi-plus' }}</v-icon>
+                <!-- 搜索框 -->
+                <v-text-field
+                  v-model="searchText"
+                  placeholder="搜索课程名称..."
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
+                  class="mb-3"
+                  rounded="lg"
+                  autocomplete="off"
+                  @keydown.enter="handleSearch"
+                  @click:clear="searchText = ''; availableCourses = []"
+                >
+                  <template #append-inner>
+                    <v-btn icon size="small" variant="text" @click="handleSearch">
+                      <v-icon icon="mdi-magnify" size="20" />
                     </v-btn>
+                  </template>
+                </v-text-field>
+
+                <!-- 加载状态 -->
+                <div v-if="coursesLoading" class="text-center py-8">
+                  <v-progress-circular indeterminate color="primary" size="40" width="3" />
+                  <p class="text-body-2 text-grey-darken-1 mt-3">搜索中...</p>
+                </div>
+
+                <!-- 空状态 -->
+                <div v-else-if="!searchText.trim()" class="empty-state text-center py-8">
+                  <div class="empty-icon-wrapper mb-3">
+                    <v-icon icon="mdi-magnify" size="56" color="grey-lighten-1" />
+                  </div>
+                  <p class="text-body-2 text-grey-darken-1 mb-1">开始搜索课程</p>
+                  <p class="text-caption text-grey">输入课程名称进行搜索</p>
+                </div>
+
+                <!-- 课程列表 -->
+                <div v-else class="course-list-wrapper">
+                  <div v-if="filteredCourses.length > 0" class="course-list">
+                    <div
+                      v-for="course in filteredCourses"
+                      :key="course.id"
+                      class="course-item"
+                    >
+                      <v-tooltip location="left" max-width="300" content-class="rounded-lg">
+                        <template #activator="{ props }">
+                          <div class="course-name" v-bind="props" @click="goToCourseDetail(course.id)">
+                            <v-icon icon="mdi-book-outline" size="16" class="mr-1" />
+                            {{ course.name }}
+                          </div>
+                        </template>
+                        <div class="tooltip-content pa-1">
+                          <div class="text-subtitle-2 mb-1">{{ course.name }}</div>
+                          <div class="text-caption text-grey-lighten-1 mb-2">
+                            {{ categoryStore.getCourseFullCategoryText(course.mainCategory, course.subCategory) }}
+                          </div>
+                          <div class="text-caption">{{ course.description || '暂无简介' }}</div>
+                        </div>
+                      </v-tooltip>
+                      <v-btn
+                        icon
+                        size="x-small"
+                        color="primary"
+                        variant="flat"
+                        :disabled="isNodeAdded(course.rootNodeId)"
+                        @click.stop="addCourseNode(course)"
+                      >
+                        <v-icon size="14">{{ isNodeAdded(course.rootNodeId) ? 'mdi-check' : 'mdi-plus' }}</v-icon>
+                      </v-btn>
+                    </div>
+                  </div>
+                  <div v-else class="text-center py-6">
+                    <v-icon icon="mdi-book-off-outline" size="48" color="grey-lighten-1" class="mb-2" />
+                    <p class="text-body-2 text-grey">未找到相关课程</p>
                   </div>
                 </div>
-                <div v-else class="text-center py-6">
-                  <v-icon icon="mdi-book-off-outline" size="48" color="grey-lighten-1" class="mb-2" />
-                  <p class="text-body-2 text-grey">未找到相关课程</p>
+              </div>
+
+              <!-- 节点搜索 Tab -->
+              <div v-show="searchTab === 'node'">
+                <!-- 标题 -->
+                <div class="mb-3">
+                  <span class="text-subtitle-2 font-weight-bold text-grey-darken-4">搜索节点</span>
+                </div>
+
+                <!-- 搜索框 -->
+                <v-text-field
+                  v-model="nodeSearchText"
+                  placeholder="搜索节点名称..."
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
+                  class="mb-3"
+                  rounded="lg"
+                  autocomplete="off"
+                  @keydown.enter="handleNodeSearch"
+                  @click:clear="nodeSearchText = ''; availableNodes = []"
+                >
+                  <template #append-inner>
+                    <v-btn icon size="small" variant="text" @click="handleNodeSearch">
+                      <v-icon icon="mdi-magnify" size="20" />
+                    </v-btn>
+                  </template>
+                </v-text-field>
+
+                <!-- 加载状态 -->
+                <div v-if="nodesLoading" class="text-center py-8">
+                  <v-progress-circular indeterminate color="success" size="40" width="3" />
+                  <p class="text-body-2 text-grey-darken-1 mt-3">搜索中...</p>
+                </div>
+
+                <!-- 空状态 -->
+                <div v-else-if="!nodeSearchText.trim()" class="empty-state text-center py-8">
+                  <div class="empty-icon-wrapper mb-3">
+                    <v-icon icon="mdi-magnify" size="56" color="grey-lighten-1" />
+                  </div>
+                  <p class="text-body-2 text-grey-darken-1 mb-1">开始搜索节点</p>
+                  <p class="text-caption text-grey">输入节点名称进行搜索</p>
+                </div>
+
+                <!-- 节点列表 -->
+                <div v-else class="course-list-wrapper">
+                  <div v-if="filteredNodes.length > 0" class="course-list">
+                    <div
+                      v-for="node in filteredNodes"
+                      :key="node.id"
+                      class="course-item"
+                    >
+                      <v-tooltip location="left" max-width="300" content-class="rounded-lg">
+                        <template #activator="{ props }">
+                          <div class="node-content" v-bind="props">
+                            <div class="course-name" @click="goToNodeDetail(node.id)">
+                              <v-icon icon="mdi-file-document-outline" size="16" class="mr-1" color="success" />
+                              {{ node.name }}
+                            </div>
+                            <div v-if="node.courseName" class="text-caption text-grey ps-6">
+                              来自《{{ node.courseName }}》
+                            </div>
+                          </div>
+                        </template>
+                        <div class="tooltip-content pa-1">
+                          <div class="text-subtitle-2 mb-1">{{ node.name }}</div>
+                          <div v-if="node.courseName" class="text-caption text-success mb-2">
+                            来自《{{ node.courseName }}》
+                          </div>
+                          <div class="text-caption">{{ node.description || '暂无描述' }}</div>
+                        </div>
+                      </v-tooltip>
+                      <v-btn
+                        icon
+                        size="x-small"
+                        color="success"
+                        variant="flat"
+                        :disabled="isNodeAdded(node.id)"
+                        @click.stop="addNode(node)"
+                      >
+                        <v-icon size="14">{{ isNodeAdded(node.id) ? 'mdi-check' : 'mdi-plus' }}</v-icon>
+                      </v-btn>
+                    </div>
+                  </div>
+                  <div v-else class="text-center py-6">
+                    <v-icon icon="mdi-file-document-off-outline" size="48" color="grey-lighten-1" class="mb-2" />
+                    <p class="text-body-2 text-grey">未找到相关节点</p>
+                  </div>
                 </div>
               </div>
 
@@ -286,7 +384,7 @@
                   <span class="text-caption text-grey-darken-1">操作指南</span>
                 </div>
                 <div class="tips-list-simple">
-                  <div class="tip-simple">点击课程添加到画布</div>
+                  <div class="tip-simple">点击课程/节点添加到画布</div>
                   <div class="tip-simple">拖动节点调整位置</div>
                   <div class="tip-simple">连接节点设计路径</div>
                   <div class="tip-simple">按住 Shift 可多选节点</div>
@@ -404,7 +502,9 @@ import { useFetch } from '@/composables'
 import { useCategoryStore } from '@/stores'
 import { courseApi } from '@/api/modules/course'
 import { roadmapApi } from '@/api/modules/roadmap'
+import { searchApi } from '@/api/modules/search'
 import type { Course } from '@/types/course'
+import type { SearchResultItem } from '@/api/modules/search'
 
 const router = useRouter()
 const route = useRoute()
@@ -442,6 +542,10 @@ const savedDraftDescription = ref('') // 已保存的草稿描述
 const draftRoadmapId = ref<number | null>(null) // 草稿路线图ID
 const roadmapState = ref<number | null>(null) // 路线图状态：0=草稿，1=审核中，2=已发布
 const careerName = ref('前端工程师') // TODO: 从 API 获取
+
+// Tab 切换状态
+const searchTab = ref<'course' | 'node'>('course')
+const nodeSearchText = ref('')
 
 // 是否可以保存为草稿：只有草稿状态(0)或新建时可以保存为草稿，已发布(2)不能变回草稿
 const canSaveAsDraft = computed(() => {
@@ -531,6 +635,37 @@ watch(searchText, () => {
 
 const filteredCourses = computed(() => availableCourses.value)
 
+// 节点搜索
+const {
+  data: availableNodes,
+  loading: nodesLoading,
+  execute: loadAvailableNodes,
+} = useFetch<SearchResultItem[]>({
+  fetchFn: () => searchApi.searchNodes(nodeSearchText.value.trim()),
+  immediate: false,
+  defaultValue: [],
+  onError: (error) => {
+    console.error('搜索节点失败:', error)
+    showSnackbar('搜索节点失败', 'error')
+  },
+})
+
+// 手动搜索节点
+const handleNodeSearch = () => {
+  if (!nodeSearchText.value.trim()) {
+    availableNodes.value = []
+    return
+  }
+  loadAvailableNodes()
+}
+
+// 监听节点搜索文本变化，清空旧的搜索结果
+watch(nodeSearchText, () => {
+  availableNodes.value = []
+})
+
+const filteredNodes = computed(() => availableNodes.value)
+
 // 节点样式常量
 const ROOT_NODE_STYLE = {
   background: '#616161',
@@ -546,6 +681,17 @@ const COURSE_NODE_STYLE = {
   background: '#fafafa',
   color: '#424242',
   border: '2px solid #bdbdbd',
+  borderRadius: '12px',
+  padding: '10px',
+  fontWeight: '500',
+  fontSize: '13px',
+}
+
+// 普通节点样式（绿色，区别于课程节点）
+const NODE_STYLE = {
+  background: '#f1f8e9',
+  color: '#33691e',
+  border: '2px solid #aed581',
   borderRadius: '12px',
   padding: '10px',
   fontWeight: '500',
@@ -572,22 +718,13 @@ const nodes = ref<Node[]>([
 
 const edges = ref<Edge[]>([])
 
-// 添加课程节点
-const addCourseNode = (course: Course) => {
-  const nodeId = course.rootNodeId.toString()
-
-  // 检查是否已存在
-  if (nodes.value.find((n) => n.id === nodeId)) {
-    showSnackbar('该课程已添加', 'warning')
-    return
-  }
-
-  // 计算位置
+// 计算新节点位置的公共方法
+const calculateNodePosition = (): { x: number; y: number } => {
   let x: number
   let y: number
 
   if (nodes.value.length === 1) {
-    // 第一个课程节点：放在根节点下方居中
+    // 第一个节点：放在根节点下方居中
     const rootNode = nodes.value[0]
     x = rootNode.position.x
     y = rootNode.position.y + 100
@@ -606,10 +743,26 @@ const addCourseNode = (course: Course) => {
     y = bottomNode.position.y + 60
   }
 
+  return { x, y }
+}
+
+// 添加课程节点
+const addCourseNode = (course: Course) => {
+  const nodeId = course.rootNodeId.toString()
+
+  // 检查是否已存在
+  if (nodes.value.find((n) => n.id === nodeId)) {
+    showSnackbar('该课程已添加', 'warning')
+    return
+  }
+
+  // 计算位置
+  const { x, y } = calculateNodePosition()
+
   nodes.value.push({
     id: nodeId, // 使用 rootNodeId
     type: 'default',
-    data: { label: course.name },
+    data: { label: `[课程] ${course.name}` }, // 课程前面加文字标识
     position: { x, y },
     sourcePosition: Position.Top,
     targetPosition: Position.Bottom,
@@ -635,6 +788,44 @@ const isNodeAdded = (nodeId: number | undefined): boolean => {
  */
 const goToCourseDetail = (courseId: number) => {
   window.open(`/courses/${courseId}`, '_blank')
+}
+
+/**
+ * 跳转到节点详情页
+ */
+const goToNodeDetail = (nodeId: number) => {
+  window.open(`/read?nodeId=${nodeId}`, '_blank')
+}
+
+/**
+ * 添加普通节点
+ */
+const addNode = (node: SearchResultItem) => {
+  const nodeId = node.id.toString()
+
+  // 检查是否已存在
+  if (nodes.value.find((n) => n.id === nodeId)) {
+    showSnackbar('该节点已添加', 'warning')
+    return
+  }
+
+  // 计算位置
+  const { x, y } = calculateNodePosition()
+
+  nodes.value.push({
+    id: nodeId,
+    type: 'default',
+    data: { label: `[节点] ${node.name}` }, // 节点前面加文字标识
+    position: { x, y },
+    sourcePosition: Position.Top,
+    targetPosition: Position.Bottom,
+    style: NODE_STYLE, // 使用绿色节点样式
+  })
+
+  // 聚焦到新节点
+  setTimeout(() => {
+    setCenter(x, y, { zoom: 1, duration: 300 })
+  }, 50)
 }
 
 /**
@@ -691,8 +882,12 @@ const onConnect = (connection: Connection) => {
   // 不允许从根节点出发的连接（根节点只有入口，没有出口）
   if (connection.source === '0') return
 
-  // 允许连接到根节点（根节点作为终点）
-  // if (connection.target === '0') return  // 删除这行限制
+  // 检查该源节点是否已经有出口连接
+  const hasSourceConnection = edges.value.find((e) => e.source === connection.source)
+  if (hasSourceConnection) {
+    showSnackbar('每个节点的出口只能连接一条线', 'warning')
+    return
+  }
 
   // 检查是否已存在相同的连接
   const exists = edges.value.find(
@@ -854,7 +1049,7 @@ const saveRoadmap = async (type: 'draft' | 'publish') => {
       removedNodes: nodes.value.length - nodeArray.length,
       edgeArray,
       nodeArray,
-      content
+      content,
     })
 
     // 调用 API
