@@ -54,9 +54,11 @@ public class PagesController {
         } else if (postId != null) {
             result = pageService.readPageByPost(postId, currentUser.getId());
         } else if (nodeId != null) {
-            result = pageService.readPageByNode(nodeId, currentUser.getId());
+            // nodeId 可以配合 path 使用，也可以单独使用
+            result = pageService.readPageByNode(nodeId, path, currentUser.getId());
         } else if (courseId != null) {
-            result = pageService.readPageByPath(courseId, path, currentUser.getId());
+            // Course 是特殊的 Root Node，转换 courseId 为 rootNodeId 后使用统一的 Node 访问方式
+            result = pageService.readPageByCourse(courseId, path, currentUser.getId());
         } else {
             throw StatusCode.INVALID_PARAMETER.exception();
         }
@@ -75,7 +77,8 @@ public class PagesController {
     public ApiResponse<Map<String, Object>> readNode(
             @RequestParam @NotNull(message = "节点ID不能为空") @Positive(message = "节点ID必须大于0") Long nodeId,
             @CurrentUser UserDO currentUser) {
-        Map<String, Object> result = pageService.readPageForNode(nodeId, currentUser.getId());
+        // 使用统一的 readPageByNode 方法，path 为 null 表示访问根节点
+        Map<String, Object> result = pageService.readPageByNode(nodeId, null, currentUser.getId());
         return ApiResponse.success(result);
     }
 

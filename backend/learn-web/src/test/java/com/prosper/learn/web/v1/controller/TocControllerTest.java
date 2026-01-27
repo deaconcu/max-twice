@@ -91,7 +91,7 @@ public class TocControllerTest extends BaseControllerTest {
 
         // 创建根节点
         NodeDO rootNode = new NodeDO();
-        rootNode.setNodeId(course.getId());
+        rootNode.setCourseId(course.getId());
         rootNode.setName("根节点");
         rootNode.setDescription("根节点描述");
         rootNode.setCreatorId(creatorId);

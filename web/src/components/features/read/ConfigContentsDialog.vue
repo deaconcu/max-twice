@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import draggable from 'vuedraggable'
-import { courseApi } from '@/api'
+import { tocApi } from '@/api'
 import { useMutation } from '@/composables'
 
 const props = defineProps<Props>()
@@ -11,7 +11,7 @@ const route = useRoute()
 const router = useRouter()
 
 interface Props {
-  courseId: number
+  nodeId: number
   contents: any[]
 }
 
@@ -33,7 +33,7 @@ watch(
 
 // 使用 useMutation 提交目录更新
 const { execute: submitUpdate, loading: submitting } = useMutation(
-  () => courseApi.updateUserCourseToc(props.courseId, list.value.join(',')),
+  () => tocApi.updateUserNodeToc(props.nodeId, list.value.join(',')),
   {
     successMessage: '目录更新成功',
     onSuccess: () => {
@@ -72,7 +72,7 @@ const { execute: submitUpdate, loading: submitting } = useMutation(
         console.log('[ConfigContentsDialog] 路径改变，router.replace')
         router.replace({
           path: '/read',
-          query: { courseId: String(props.courseId), path: nextPath },
+          query: { nodeId: String(props.nodeId), path: nextPath },
         })
       }
 

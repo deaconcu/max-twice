@@ -16,9 +16,30 @@
         <v-card class="drawer-card">
           <v-card-text class="pa-0 drawer-card-content">
             <div class="drawer-container">
+              <!-- 目录为空的提示 -->
+              <div
+                v-if="data && (!data.toc || data.toc.length === 0)"
+                class="pa-8 text-center"
+              >
+                <v-icon icon="mdi-compass-outline" size="56" color="primary" class="mb-4"></v-icon>
+                <div class="text-h6 text-medium-emphasis mb-3">开启目录导航</div>
+                <div class="text-body-2 text-medium-emphasis mb-4">
+                  在文章列表中选择一篇目录帖子
+                  <br />
+                  即可开启目录树导航功能
+                </div>
+                <v-btn
+                  variant="tonal"
+                  color="primary"
+                  @click="drawerOpen = false"
+                >
+                  知道了
+                </v-btn>
+              </div>
+
               <!-- 目录组选择和关闭按钮 -->
               <div
-                v-if="data && data.toc"
+                v-if="data && data.toc && data.toc.length > 0"
                 class="toc-chips-row pa-4 pa-md-4 d-flex align-items-center flex-wrap"
               >
                 <v-chip
@@ -71,7 +92,8 @@
                   v-if="data && data.toc && data.toc[currContentsIndex]"
                   :node-data="data.toc[currContentsIndex]"
                   :node-infos="data.tocNodeInfos"
-                  :course-id="data.course?.id"
+                  :course-id="route.query.courseId ? data.course?.id : undefined"
+                  :node-id="route.query.nodeId ? data.rootNodeId : undefined"
                   :path="data.path"
                   :curr-path="String(currContentsIndex + 1)"
                   :depth="1"
@@ -100,8 +122,28 @@
         <!-- 左侧目录 -->
         <div class="toc-sidebar">
           <div class="toc-sticky-wrapper">
+            <!-- 目录为空的占位 -->
+            <div v-if="data && (!data.toc || data.toc.length === 0)" class="toc-placeholder">
+              <!-- 目录组占位 -->
+              <div class="placeholder-chips mb-4">
+                <div class="placeholder-chip"></div>
+                <div class="placeholder-chip"></div>
+                <div class="placeholder-chip"></div>
+                <div class="placeholder-chip-btn"></div>
+              </div>
+              <!-- 目录树占位 -->
+              <div class="placeholder-item mb-2"></div>
+              <div class="placeholder-item mb-2" style="width: 85%"></div>
+              <div class="placeholder-item mb-2" style="width: 70%"></div>
+              <div class="placeholder-item mb-2"></div>
+              <div class="placeholder-item mb-2" style="width: 90%"></div>
+              <div class="placeholder-hint mt-5 text-center text-caption text-medium-emphasis">
+                选择目录帖子开启导航
+              </div>
+            </div>
+
             <!-- 目录组选择卡片 -->
-            <div v-if="data && data.toc" class="toc-groups-card">
+            <div v-if="data && data.toc && data.toc.length > 0" class="toc-groups-card">
               <div class="toc-chips">
                 <v-chip
                   size="default"
@@ -162,7 +204,8 @@
                   v-if="data && data.toc && data.toc[currContentsIndex]"
                   :node-data="data.toc[currContentsIndex]"
                   :node-infos="data.tocNodeInfos"
-                  :course-id="data.course?.id"
+                  :course-id="route.query.courseId ? data.course?.id : undefined"
+                  :node-id="route.query.nodeId ? data.rootNodeId : undefined"
                   :path="data.path"
                   :curr-path="String(currContentsIndex + 1)"
                   :depth="1"
@@ -299,7 +342,7 @@
     <ConfigContentsDialog
       v-if="data"
       v-model="configContents"
-      :course-id="data.course?.id"
+      :node-id="data.rootNodeId"
       :contents="data.toc || []"
       @load-data="loadData"
     />
@@ -347,6 +390,7 @@ import { useRouter, useRoute } from 'vue-router'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import CourseHeader from '@/components/features/read/CourseHeader.vue'
+import TocSidebar from '@/components/features/read/TocSidebar.vue'
 import TreeNode from '@/components/common/TreeNode.vue'
 import PostingList from '@/components/features/read/PostingList.vue'
 import ConfigContentsDialog from '@/components/features/read/ConfigContentsDialog.vue'
@@ -405,8 +449,10 @@ const {
       return pageApi.readByComment(Number(route.query.commentId))
     } else if (route.query.postId) {
       return pageApi.readByPost(Number(route.query.postId))
+    } else if (route.query.nodeId && route.query.path) {
+      return pageApi.readByNode(Number(route.query.nodeId), route.query.path as string)
     } else if (route.query.nodeId) {
-      return pageApi.readByNode(Number(route.query.nodeId))
+      return pageApi.readByNode(Number(route.query.nodeId), '')
     } else if (route.query.courseId && route.query.path) {
       return pageApi.readByCoursePath(Number(route.query.courseId), route.query.path as string)
     } else if (route.query.courseId) {
@@ -418,6 +464,10 @@ const {
   onDataReady: () => {
     // 首次加载完成后，标记为非首次
     isInitialLoad.value = false
+    // 处理 toc 为 null 的情况，转换为空数组
+    if (!data.value.toc) {
+      data.value.toc = []
+    }
     // 处理投票类型
     data.value.otherPostings?.forEach((posting: any) => {
       if (posting.voteType === 0) {
@@ -523,6 +573,13 @@ const handleDeckCreated = (deck: MemoryCardDeck) => {
 const processData = () => {
   console.log('data:', data.value)
   if (!data.value?.path) return
+
+  // 如果目录为空，跳过目录相关处理
+  if (!data.value.toc || data.value.toc.length === 0) {
+    currNodeId.value = data.value.node?.id || 0
+    isLearning.value = data.value.learning || false
+    return
+  }
 
   // 解析路径
   nodes.value = data.value.path.split('-')
@@ -823,6 +880,42 @@ onUnmounted(() => {
 
 .config-btn:hover {
   opacity: 1;
+}
+
+/* 目录占位符 */
+.toc-placeholder {
+  padding: 0 42px 0 0;
+}
+
+.placeholder-chips {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.placeholder-chip {
+  width: 32px;
+  height: 32px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.placeholder-chip-btn {
+  width: 24px;
+  height: 24px;
+  background-color: #f5f5f5;
+  border-radius: 50%;
+  margin-left: auto;
+}
+
+.placeholder-item {
+  height: 16px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.placeholder-hint {
+  opacity: 0.6;
 }
 
 /* 中间+右侧容器包装 */

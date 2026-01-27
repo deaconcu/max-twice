@@ -74,21 +74,22 @@ public class PageService {
 
 
     // ========== 常量定义 ==========
-    
+
     private static final String DEFAULT_PATH_PREFIX = "1-";
     private static final String PATH_SEPARATOR = "-";
-    private static final String FIXED_POSTS_FIELD = "^";
     private static final String CHOSEN_POST_FIELD = "+";
     private static final Pattern PATH_PATTERN = Pattern.compile("^\\d+(\\-\\d+)*$");
 
     
     // ========== 公共方法 ==========
 
-    public Utils.Pair<String, Map<Long, NodeWithProgressDTO>> getToc(long userId, long courseId, boolean create) {
-        // 获取课程的根节点ID
-        CourseDO course = courseDataService.validateAndGet(courseId);
+    public Utils.Pair<String, Map<Long, NodeWithProgressDTO>> getToc(long userId, long nodeId, boolean create) {
+        ArrayNode arrayNode = tocService.getToc(userId, nodeId, create);
 
-        ArrayNode arrayNode = tocService.getToc(userId, course.getRootNodeId(), create);
+        // 如果目录为空（用户未初始化），返回空结构
+        if (arrayNode == null) {
+            return new Utils.Pair<>("[]", new HashMap<>());
+        }
 
         Set<Long> keys = new HashSet<>();
         Utils.collectKeys(arrayNode, keys);
@@ -198,40 +199,85 @@ public class PageService {
     }
 
     /**
-     * 根据节点ID读取页面数据
+     * 根据节点ID和路径读取页面数据（旧实现，已废弃）
      */
-    public Map<String, Object> readPageByNode(Long nodeId, long userId) {
-        NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
-        CourseDO courseDO = validateCourseExists(nodeDO.getCourseId());
-        String path = generateDefaultPath(courseDO.getRootNodeId());
-
-        return readPageData(courseDO, path, nodeDO, null, userId);
-    }
+//    public Map<String, Object> readPageByNode(Long nodeId, String path, long userId) {
+//        NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
+//        CourseDO courseDO = validateCourseExists(nodeDO.getCourseId());
+//
+//        // 如果没有提供 path，使用节点ID作为根路径
+//        if (path == null || path.isEmpty()) {
+//            path = generateDefaultPath(nodeId);
+//        }
+//
+//        return readPageData(courseDO, path, nodeDO, null, userId);
+//    }
 
     /**
-     * 根据节点ID读取页面数据（仅返回节点帖子列表需要的数据）
-     * 用于 NodePostsPage，不返回 TOC、fixedPostings、chosenPosting
+     * 根据节点ID和路径读取页面数据（新实现）
+     * 以 Node 为中心，支持通过 path 访问子节点
      */
-    public Map<String, Object> readPageForNode(Long nodeId, long userId) {
-        NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
+    public Map<String, Object> readPageByNode(Long nodeId, String path, long userId) {
+        NodeDO rootNodeDO = nodeDataService.validateAndGet(nodeId);
 
-        if (nodeDO.getState() != null && nodeDO.getState() != ContentState.PUBLISHED.value()) {
+        if (rootNodeDO.getState() != null && rootNodeDO.getState() != ContentState.PUBLISHED.value()) {
             throw StatusCode.NODE_STATE_INVALID.exception();
         }
 
-        CourseDO courseDO = validateCourseExists(nodeDO.getCourseId());
+        CourseDO courseDO = validateCourseExists(rootNodeDO.getCourseId());
+
+        // 获取以 nodeId 为根的 TOC（目录树），不自动创建
+        Utils.Pair<String, Map<Long, NodeWithProgressDTO>> tocResponse = getToc(userId, nodeId, false);
+        NodeTocDTO nodeTocDTO = new NodeTocDTO(tocResponse.left(), tocResponse.right());
+
+        JsonNode rootNode = parseJsonSafely(nodeTocDTO.getContents());
+
+        // 处理路径
+        path = sanitizePath(path, nodeId);
+
+        // 根据 path 定位到目标节点
+        Utils.Pair<Long, JsonNode> pair = getNodeByPath(rootNode, path, nodeId);
+
+        // 如果目录为空，pair 会是 null，直接使用根节点
+        NodeDO targetNodeDO;
+        JsonNode targetNodeJson = null;
+        PostDO chosenPosting = null;
+
+        if (pair == null) {
+            // 目录为空，使用根节点
+            targetNodeDO = rootNodeDO;
+        } else {
+            long targetNodeId = pair.left();
+            targetNodeJson = pair.right();
+            targetNodeDO = nodeDataService.validateAndGet(targetNodeId);
+
+            if (targetNodeDO.getState() != null && targetNodeDO.getState() != ContentState.PUBLISHED.value()) {
+                throw StatusCode.NODE_STATE_INVALID.exception();
+            }
+
+            // 从目录中提取选中的帖子
+            List<Long> chosenUserIds = new LinkedList<>();
+            chosenPosting = extractChosenPosting(targetNodeJson, chosenUserIds);
+        }
 
         // 获取帖子列表
         List<Long> userIds = new LinkedList<>();
-        List<PostDO> otherPostings = getOtherPostings(nodeDO.getId(), userIds);
+        if (chosenPosting != null) {
+            userIds.add(chosenPosting.getCreatorId());
+        }
+        List<PostDO> otherPostings = getOtherPostings(targetNodeDO.getId(), userIds);
+
         Map<Long, UserBriefDTO> userMap = buildUserMap(userIds);
 
         // 转换帖子为 DTO
+        PostWithVoteDTO chosenPostingDTO = convertPostToDTO(chosenPosting, userMap, userId);
         List<PostWithVoteDTO> otherPostingsDTO = convertPostListToDTO(otherPostings, userMap, userId);
+
+        long lastId = calculateLastId(chosenPosting, otherPostings);
 
         // 获取学习状态
         boolean learning = checkLearningStatus(userId, courseDO.getId());
-        boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
+        boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, targetNodeDO.getId());
         Integer courseProgress = userCourseService.getCourseProgress(userId, courseDO.getId());
 
         // 构建课程信息
@@ -239,24 +285,74 @@ public class PageService {
         List<CourseSummaryDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
 
         // 构建响应
-        Map<String, Object> data = new HashMap<>();
-
-        // 填充 node 统计数据
-        NodeWithProgressDTO nodeDTO = nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted);
-        ContentStatsDTO nodeStats = contentStatsDomainService.getContentStats(ContentType.node, nodeDO.getId());
-        nodeDTO.setCommentCount(nodeStats.getCommentCount());
-        nodeDTO.setNodeReferenceCount(nodeStats.getNodeReferenceCount());
-
-        data.put("node", nodeDTO);
-        data.put("parentCourse", parentCourse);
-        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getBookmarked(), courseProgress));
-        data.put("subCourseList", subCourseList);
-        data.put("otherPostings", otherPostingsDTO);
-        data.put("users", new ArrayList<>(userMap.values()));
-        data.put("learning", learning);
-
-        return data;
+        return buildPageDataResponse(nodeTocDTO, targetNodeDO, parentCourse, courseDO, subCourseList,
+                chosenPostingDTO, otherPostingsDTO, lastId, path, userMap.values(),
+                learning, null, nodeCompleted, courseProgress, nodeId); // nodeId 是 TOC 的根节点
     }
+
+    /**
+     * 根据节点ID读取页面数据（已废弃，使用 readPageByNode 代替）
+     * 用于 NodePostsPage，不返回 TOC、fixedPostings、chosenPosting
+     */
+//    public Map<String, Object> readPageForNode(Long nodeId, long userId) {
+//        NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
+//
+//        if (nodeDO.getState() != null && nodeDO.getState() != ContentState.PUBLISHED.value()) {
+//            throw StatusCode.NODE_STATE_INVALID.exception();
+//        }
+//
+//        CourseDO courseDO = validateCourseExists(nodeDO.getCourseId());
+//
+//        // 获取 TOC（目录树）
+//        Utils.Pair<String, Map<Long, NodeWithProgressDTO>> tocResponse = getToc(userId, nodeId, true);
+//        NodeTocDTO nodeTocDTO = new NodeTocDTO(tocResponse.left(), tocResponse.right());
+//
+//        // 获取帖子列表
+//        List<Long> userIds = new LinkedList<>();
+//        List<PostDO> otherPostings = getOtherPostings(nodeDO.getId(), userIds);
+//        Map<Long, UserBriefDTO> userMap = buildUserMap(userIds);
+//
+//        // 转换帖子为 DTO
+//        List<PostWithVoteDTO> otherPostingsDTO = convertPostListToDTO(otherPostings, userMap, userId);
+//
+//        // 获取学习状态
+//        boolean learning = checkLearningStatus(userId, courseDO.getId());
+//        boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
+//        Integer courseProgress = userCourseService.getCourseProgress(userId, courseDO.getId());
+//
+//        // 构建课程信息
+//        CourseWithProgressDTO parentCourse = buildParentCourse(courseDO, userId);
+//        List<CourseSummaryDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
+//
+//        // 构建响应
+//        Map<String, Object> data = new HashMap<>();
+//
+//        // 填充 node 统计数据
+//        NodeWithProgressDTO nodeDTO = nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted);
+//        ContentStatsDTO nodeStats = contentStatsDomainService.getContentStats(ContentType.node, nodeDO.getId());
+//        nodeDTO.setCommentCount(nodeStats.getCommentCount());
+//        nodeDTO.setNodeReferenceCount(nodeStats.getNodeReferenceCount());
+//
+//        data.put("node", nodeDTO);
+//        data.put("parentCourse", parentCourse);
+//        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getBookmarked(), courseProgress));
+//        data.put("subCourseList", subCourseList);
+//        data.put("otherPostings", otherPostingsDTO);
+//        data.put("users", new ArrayList<>(userMap.values()));
+//        data.put("learning", learning);
+//
+//        // 添加 TOC 数据
+//        try {
+//            List<Object> contents = objectMapper.readValue(nodeTocDTO.getContents(), List.class);
+//            data.put("toc", contents);
+//        } catch (JsonProcessingException e) {
+//            log.error("TOC内容解析失败", e);
+//            data.put("toc", new ArrayList<>());
+//        }
+//        data.put("tocNodeInfos", nodeTocDTO.getNodeInfos());
+//
+//        return data;
+//    }
 
     /**
      * 根据帖子ID读取页面数据（仅返回帖子详情页需要的数据）
@@ -402,6 +498,17 @@ public class PageService {
         return data;
     }
 
+
+    /**
+     * 根据课程ID和路径读取页面数据
+     * Course 是特殊的 Root Node，内部转换为使用 readPageByNode
+     */
+    public Map<String, Object> readPageByCourse(Long courseId, String path, long userId) {
+        CourseDO courseDO = validateCourseExists(courseId);
+        // Course 是 Root Node，使用 rootNodeId 访问
+        return readPageByNode(courseDO.getRootNodeId(), path, userId);
+    }
+
     /**
      * 根据课程ID和路径读取页面数据
      */
@@ -425,7 +532,10 @@ public class PageService {
      * 核心页面数据聚合逻辑
      */
     private Map<String, Object> readPageData(CourseDO courseDO, String path, NodeDO nodeDO, PostDO postDO, long userId) {
-        Utils.Pair<String, Map<Long, NodeWithProgressDTO>> response = getToc(userId, courseDO.getId(), true);
+        if (courseDO == null) {
+            throw StatusCode.COURSE_NOT_FOUND.exception();
+        }
+        Utils.Pair<String, Map<Long, NodeWithProgressDTO>> response = getToc(userId, courseDO.getRootNodeId(), false);
         NodeTocDTO nodeTocDTO = new NodeTocDTO(response.left(), response.right());
 
         JsonNode rootNode = parseJsonSafely(nodeTocDTO.getContents());
@@ -435,7 +545,6 @@ public class PageService {
 
         List<Long> userIds = new LinkedList<>();
         PostDO chosenPosting = extractChosenPosting(pair.right(), userIds);
-        List<PostDO> fixedPostings = extractFixedPostings(pair.right(), userIds);
 
         if (nodeDO == null) {
             long nodeId = pair.left();
@@ -453,10 +562,9 @@ public class PageService {
 
         // 转换帖子为 DTO 并填充关联信息
         PostWithVoteDTO chosenPostingDTO = convertPostToDTO(chosenPosting, userMap, userId);
-        List<PostWithVoteDTO> fixedPostingsDTO = convertPostListToDTO(fixedPostings, userMap, userId);
         List<PostWithVoteDTO> otherPostingsDTO = convertPostListToDTO(otherPostings, userMap, userId);
 
-        long lastId = calculateLastId(chosenPosting, fixedPostings, otherPostings);
+        long lastId = calculateLastId(chosenPosting, otherPostings);
 
         boolean learning = checkLearningStatus(userId, courseDO.getId());
         CourseWithProgressDTO parentCourse = buildParentCourse(courseDO, userId);
@@ -466,8 +574,8 @@ public class PageService {
         Integer courseProgress = userCourseService.getCourseProgress(userId, courseDO.getId());
 
         return buildPageDataResponse(nodeTocDTO, nodeDO, parentCourse, courseDO, subCourseList,
-                chosenPostingDTO, fixedPostingsDTO, otherPostingsDTO, lastId, path, userMap.values(),
-                learning, postDTO, nodeCompleted, courseProgress);
+                chosenPostingDTO, otherPostingsDTO, lastId, path, userMap.values(),
+                learning, postDTO, nodeCompleted, courseProgress, courseDO.getRootNodeId()); // course 的 rootNodeId
     }
 
     /**
@@ -486,7 +594,6 @@ public class PageService {
 
         List<Long> userIds = new LinkedList<>();
         PostDO chosenPosting = extractChosenPosting(pair.right(), userIds);
-        List<PostDO> fixedPostings = extractFixedPostings(pair.right(), userIds);
 
         long nodeId = pair.left();
         NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
@@ -500,10 +607,9 @@ public class PageService {
 
         // 转换帖子为 DTO 并填充关联信息（公开版本不需要投票信息）
         PostWithVoteDTO chosenPostingDTO = convertPostToDTO(chosenPosting, userMap, null);
-        List<PostWithVoteDTO> fixedPostingsDTO = convertPostListToDTO(fixedPostings, userMap, null);
         List<PostWithVoteDTO> otherPostingsDTO = convertPostListToDTO(otherPostings, userMap, null);
 
-        long lastId = calculateLastId(chosenPosting, fixedPostings, otherPostings);
+        long lastId = calculateLastId(chosenPosting, otherPostings);
 
         // 构建父课程（无个性化信息）
         CourseWithProgressDTO parentCourse;
@@ -517,7 +623,7 @@ public class PageService {
         List<CourseSummaryDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
 
         return buildPageDataResponsePublic(nodeTocDTO, nodeDO, parentCourse, courseDO, subCourseList,
-                chosenPostingDTO, fixedPostingsDTO, otherPostingsDTO, lastId, path, userMap.values());
+                chosenPostingDTO, otherPostingsDTO, lastId, path, userMap.values(), courseDO.getRootNodeId());
     }
 
     // ========== 私有辅助方法 ==========
@@ -585,19 +691,7 @@ public class PageService {
         return null;
     }
 
-    private List<PostDO> extractFixedPostings(JsonNode currentNode, List<Long> userIds) {
-        if (currentNode != null && currentNode.has(FIXED_POSTS_FIELD)) {
-            ArrayNode idsNode = (ArrayNode) currentNode.get(FIXED_POSTS_FIELD);
-            List<Long> fixedIds = objectMapper.convertValue(idsNode, List.class);
-            
-            List<PostDO> postDOList = postDataService.getByIds(fixedIds);
-            postDOList.forEach(postDO -> userIds.add(postDO.getCreatorId()));
-            
-            return postDOList;
-        }
-        return null;
-    }
-    
+
     private List<PostDO> getOtherPostings(Long nodeId, List<Long> userIds) {
         List<PostDO> postDOList = postService.getList(nodeId);
         postDOList.forEach(postDO -> userIds.add(postDO.getCreatorId()));
@@ -689,13 +783,10 @@ public class PageService {
         return postDTO;
     }
 
-    private long calculateLastId(PostDO chosenPosting, List<PostDO> fixedPostings, List<PostDO> otherPostings) {
+    private long calculateLastId(PostDO chosenPosting, List<PostDO> otherPostings) {
         long lastId = -1;
 
         if (chosenPosting != null) lastId = Math.max(lastId, chosenPosting.getId());
-        if (fixedPostings != null) {
-            lastId = Math.max(lastId, fixedPostings.stream().mapToLong(PostDO::getId).max().orElse(-1));
-        }
         if (otherPostings != null) {
             lastId = Math.max(lastId, otherPostings.stream().mapToLong(PostDO::getId).max().orElse(-1));
         }
@@ -740,9 +831,9 @@ public class PageService {
     
     private Map<String, Object> buildPageDataResponse(NodeTocDTO nodeTocDTO, NodeDO nodeDO,
                                                       CourseWithProgressDTO parentCourse, CourseDO courseDO, List<CourseSummaryDTO> subCourseList,
-                                                      PostWithVoteDTO chosenPosting, List<PostWithVoteDTO> fixedPostings, List<PostWithVoteDTO> otherPostings,
+                                                      PostWithVoteDTO chosenPosting, List<PostWithVoteDTO> otherPostings,
                                                       long lastId, String path, Collection<UserBriefDTO> users, boolean learning,
-                                                      PostWithVoteDTO postDTO, boolean nodeCompleted, Integer courseProgress) {
+                                                      PostWithVoteDTO postDTO, boolean nodeCompleted, Integer courseProgress, Long rootNodeId) {
 
         Map<String, Object> data = new HashMap<>();
 
@@ -765,13 +856,13 @@ public class PageService {
         data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getBookmarked(), courseProgress));
         data.put("subCourseList", subCourseList);
         data.put("chosenPosting", chosenPosting);
-        data.put("fixedPostings", fixedPostings);
         data.put("otherPostings", otherPostings);
         data.put("lastId", lastId);
         data.put("tocNodeInfos", nodeTocDTO.getNodeInfos());
         data.put("path", path);
         data.put("users", new ArrayList<>(users));
         data.put("learning", learning);
+        data.put("rootNodeId", rootNodeId); // TOC 是基于此 nodeId 创建的
 
         if (postDTO != null) {
             data.put("post", postDTO);
@@ -786,8 +877,8 @@ public class PageService {
      */
     private Map<String, Object> buildPageDataResponsePublic(NodeTocDTO nodeTocDTO, NodeDO nodeDO,
                                                             CourseWithProgressDTO parentCourse, CourseDO courseDO, List<CourseSummaryDTO> subCourseList,
-                                                            PostWithVoteDTO chosenPosting, List<PostWithVoteDTO> fixedPostings, List<PostWithVoteDTO> otherPostings,
-                                                            long lastId, String path, Collection<UserBriefDTO> users) {
+                                                            PostWithVoteDTO chosenPosting, List<PostWithVoteDTO> otherPostings,
+                                                            long lastId, String path, Collection<UserBriefDTO> users, Long rootNodeId) {
 
         Map<String, Object> data = new HashMap<>();
 
@@ -809,13 +900,13 @@ public class PageService {
         data.put("course", courseService.toWithProgressDTO(courseDO, false, 0)); // 未订阅，进度0
         data.put("subCourseList", subCourseList);
         data.put("chosenPosting", chosenPosting);
-        data.put("fixedPostings", fixedPostings);
         data.put("otherPostings", otherPostings);
         data.put("lastId", lastId);
         data.put("tocNodeInfos", nodeTocDTO.getNodeInfos());
         data.put("path", path);
         data.put("users", new ArrayList<>(users));
         data.put("learning", false); // 未学习
+        data.put("rootNodeId", rootNodeId); // TOC 是基于此 nodeId 创建的
 
         return data;
     }

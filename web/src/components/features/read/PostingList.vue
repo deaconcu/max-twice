@@ -346,32 +346,9 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
     <!-- 内容区域 -->
     <template v-if="tab === 'list'">
       <div class="mt-4">
-        <!-- 固定文章 -->
-        <div v-if="data.fixedPostings && data.fixedPostings.length > 0">
-          <div v-for="(posting, key) in data.fixedPostings" :key="key" class="pt-8">
-            <SinglePost
-              :posting="posting"
-              :curr-node="currNode"
-              :data="data"
-              :is-learning="isLearning"
-              @switch-tab="handlePostSwitchTab"
-              @load-data="(fields) => emit('load-data', fields)"
-            />
-            <v-divider class="mt-11" color="grey-darken-2"></v-divider>
-          </div>
-        </div>
-
         <!-- 其他文章 -->
         <div v-if="data.otherPostings && data.otherPostings.length > 0">
-          <div
-            v-for="(posting, index) in data.otherPostings"
-            :key="posting.id"
-            :class="
-              index == 0 && (!data.fixedPostings || data.fixedPostings.length === 0)
-                ? 'pt-4'
-                : 'pt-8'
-            "
-          >
+          <div v-for="(posting, index) in data.otherPostings" :key="posting.id" :class="index == 0 ? 'pt-4' : 'pt-8'">
             <SinglePost
               :posting="posting"
               :curr-node="currNode"
@@ -385,13 +362,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
         </div>
 
         <!-- 空状态 -->
-        <div
-          v-if="
-            (!data.fixedPostings || data.fixedPostings.length === 0) &&
-            (!data.otherPostings || data.otherPostings.length === 0)
-          "
-          class="text-center pa-12"
-        >
+        <div v-if="!data.otherPostings || data.otherPostings.length === 0" class="text-center pa-12">
           <v-icon icon="mdi-text-box-outline" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
           <h4 class="text-h6 font-weight-medium text-grey-darken-2 mb-2">暂无文章</h4>
           <p class="text-body-2 text-grey-darken-1 mb-4">还没有人为这个节点创建文章</p>

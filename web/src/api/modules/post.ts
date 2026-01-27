@@ -65,12 +65,12 @@ export const postApi = {
   },
 
   /**
-   * 内容操作（选择目录、固定等）
-   * action: 1=设置为目录, 2=取消设置为目录, 3=置顶, 4=取消置顶
+   * 内容操作（选择目录）
+   * action: 1=设置为目录, 2=取消设置为目录
    */
   operateContent(data: {
     path: string
-    courseId: number
+    nodeId: number
     postingId: number
     action: number
   }): Promise<ApiResponse<void>> {

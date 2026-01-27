@@ -34,7 +34,6 @@ export interface ReadResponse {
 
   // 帖子相关
   chosenPosting?: Post
-  fixedPostings?: Post[]
   otherPostings?: Post[]
   lastId?: number
 
@@ -49,4 +48,5 @@ export interface ReadResponse {
   post?: Post
   commentId?: number
   subCommentId?: number
+  rootNodeId?: number // TOC 是基于此 nodeId 创建的
 }

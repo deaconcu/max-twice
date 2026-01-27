@@ -298,22 +298,53 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
       // 提取进度信息
       const completed = node.finished || node.completed || false
       const progress = Number(node.progress) || 0
+      const isCourseRoot = node.isCourseRoot || false
 
       // 如果用户正在学习，即使进度为0也显示进度条样式
       const shouldShowProgress = isLearning && !completed
 
-      // 构建显示的标签（包含进度百分比）
-      // 只要正在学习就显示百分比，即使是0%
-      const displayLabel = shouldShowProgress
-        ? `${node.name} (${Math.round(progress)}%)`
-        : node.name
+      // 构建显示的标签（包含进度百分比和类型标识）
+      let displayLabel = node.name
+
+      // 添加类型标识
+      if (isCourseRoot) {
+        displayLabel = `[课程] ${displayLabel}`
+      } else {
+        displayLabel = `[节点] ${displayLabel}`
+      }
+
+      // 添加进度百分比
+      if (shouldShowProgress) {
+        displayLabel = `${displayLabel} (${Math.round(progress)}%)`
+      }
+
+      // 根据是否为课程根节点选择不同的样式
+      const nodeStyle = isCourseRoot
+        ? {
+            background: '#fafafa',
+            color: '#424242',
+            border: '2px solid #bdbdbd',
+            borderRadius: '12px',
+            padding: '10px',
+            fontWeight: '500',
+            fontSize: '13px',
+          }
+        : {
+            background: '#f1f8e9',
+            color: '#33691e',
+            border: '2px solid #aed581',
+            borderRadius: '12px',
+            padding: '10px',
+            fontWeight: '500',
+            fontSize: '13px',
+          }
 
       return {
         id: nodeId,
         type: 'default',
         data: {
           label: displayLabel,
-          isCourseRoot: node.isCourseRoot || false,
+          isCourseRoot: isCourseRoot,
           courseId: node.courseId,
           progress: progress,
           ...node.data,
@@ -323,13 +354,7 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
         targetPosition: Position.Bottom,
         class: completed ? 'completed-course' : shouldShowProgress ? 'progress-course' : '',
         style: {
-          background: '#fafafa',
-          color: '#424242',
-          border: '2px solid #bdbdbd',
-          borderRadius: '12px',
-          padding: '10px',
-          fontWeight: '500',
-          fontSize: '13px',
+          ...nodeStyle,
           ...(shouldShowProgress ? { '--progress': `${progress}%` } : {}),
         },
       }

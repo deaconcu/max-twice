@@ -11,6 +11,7 @@ type NodeData = Record<string, any>
 interface Props {
   nodeData: NodeData
   nodeInfos: Record<string, NodeInfo>
+  nodeId?: number | null
   courseId?: number | null
   path: string
   currPath?: string
@@ -19,6 +20,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  nodeId: null,
   courseId: null,
   currPath: '',
   depth: 0,
@@ -51,6 +53,7 @@ const expandNode = (key: string): void => {
 watch(
   () => [props.nodeData, props.path, props.currPath],
   () => {
+    if (!props.path) return // path 为空时不处理
     Object.keys(props.nodeData).forEach((key) => {
       if (props.path.startsWith(`${props.currPath}-${key}`)) {
         expandNode(key)
@@ -82,7 +85,9 @@ const scrollToTop = (): void => {
           <router-link
             :to="{
               path: '/read',
-              query: { courseId: String(courseId), path: calculatePath(currPath, key as string) },
+              query: courseId
+                ? { courseId: String(courseId), path: calculatePath(currPath, key as string) }
+                : { nodeId: String(nodeId), path: calculatePath(currPath, key as string) },
             }"
             class="custom-link"
             @click="scrollToTop"
@@ -146,6 +151,7 @@ const scrollToTop = (): void => {
               <TreeNode
                 :node-data="node"
                 :node-infos="nodeInfos"
+                :node-id="nodeId"
                 :course-id="courseId"
                 :path="path"
                 :curr-path="calculatePath(currPath, key as string)"

@@ -12,7 +12,6 @@ export interface ReadResponse {
   course?: any
   subCourseList?: any[]
   chosenPosting?: any
-  fixedPostings?: any[]
   otherPostings?: any[]
   lastId?: number
   lastScore?: number
@@ -44,11 +43,16 @@ export const pageApi = {
 
   /**
    * 根据节点ID读取内容（完整版）
-   * @deprecated 使用 readNodePosts 代替，性能更好
+   * 支持 path 参数用于访问子节点
    */
-  readByNode(nodeId: number, lastScore?: number, lastId?: number): Promise<ApiResponse<ReadResponse>> {
+  readByNode(
+    nodeId: number,
+    path?: string,
+    lastScore?: number,
+    lastId?: number
+  ): Promise<ApiResponse<ReadResponse>> {
     return apiClient.get('/v1/pages/read', {
-      params: { nodeId, lastScore, lastId },
+      params: { nodeId, path, lastScore, lastId },
     })
   },
 

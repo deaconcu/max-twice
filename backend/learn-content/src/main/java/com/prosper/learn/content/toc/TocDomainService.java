@@ -367,26 +367,48 @@ public class TocDomainService {
      */
     @Transactional
     public void choose(long userId, String path, long nodeId, long postId) {
-        // validate - 验证帖子
+        // 1. 验证帖子
         PostDO postDO = validatePostForContents(postId);
 
-        // 创建childNode
+        // 2. 解析路径，提取最后一个节点ID
+        String[] pathParts = path.split("-");
+        long lastNodeId = Long.parseLong(pathParts[pathParts.length - 1]);
+
+        // 3. 验证：帖子必须属于路径的最后一个节点
+        if (postDO.getNodeId() != lastNodeId) {
+            throw StatusCode.INVALID_PARAMETER.exception(
+                "帖子必须属于节点 " + lastNodeId + "，当前帖子属于节点 " + postDO.getNodeId()
+            );
+        }
+
+        // 4. 创建childNode
         ObjectNode childNode = objectMapper.createObjectNode();
         Arrays.stream(postDO.getContent().split(",")).forEach(id->childNode.putObject((id)));
         childNode.put(systemProperties.getContents().getChosenField(), postId);
 
-        String[] pathParts = path.split("-", 2);
-        int tocIndex = Integer.parseInt(pathParts[0]);
+        String[] pathSplit = path.split("-", 2);
+        int tocIndex = Integer.parseInt(pathSplit[0]);
 
-        // get user toc hash
-        UserNodeTocDO userNodeTocDO = validateUserTocExists(userId, nodeId);
+        // 5. 检查用户目录是否存在
+        UserNodeTocDO userNodeTocDO = userNodeTocDataService.getByUserAndNode(userId, nodeId);
+        if (userNodeTocDO == null) {
+            // 目录不存在，首次创建时只允许单层路径 "1-X"
+            if (pathParts.length > 2) {
+                throw StatusCode.INVALID_PARAMETER.exception(
+                    "首次创建目录时只能设置根节点的直接子节点，不支持深层路径"
+                );
+            }
+            // 创建用户目录
+            getToc(userId, nodeId, true);
+            userNodeTocDO = validateUserTocExists(userId, nodeId);
+        }
 
         String[] tocHashArr = userNodeTocDO.getToc().split(",");
         validateTocIndex(tocIndex, tocHashArr);
 
-        // 使用通用方法完成目录更新
-        getCurrentTocAndUpdate(tocHashArr, tocIndex, userNodeTocDO, 
-            currentTocContent -> updateContents(currentTocContent, pathParts[1], childNode));
+        // 6. 使用通用方法完成目录更新
+        getCurrentTocAndUpdate(tocHashArr, tocIndex, userNodeTocDO,
+            currentTocContent -> updateContents(currentTocContent, pathSplit[1], childNode));
     }
 
     /**

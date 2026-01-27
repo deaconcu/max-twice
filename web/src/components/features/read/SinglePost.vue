@@ -321,7 +321,7 @@ const { execute: executeModifyContents } = useMutation(
   (data: { postingId: number; action: number }) =>
     postApi.operateContent({
       path: props.data?.path || '',
-      courseId: props.data?.course?.id || 0,
+      nodeId: props.data?.rootNodeId || 0,
       postingId: data.postingId,
       action: data.action,
     }),
@@ -330,8 +330,6 @@ const { execute: executeModifyContents } = useMutation(
     onSuccess: (_, data) => {
       if (data.action === 1 || data.action === 2) {
         emit('load-data', ['contents', 'chosenPosting'])
-      } else if (data.action === 3 || data.action === 4) {
-        emit('load-data', ['contents', 'fixedPostings'])
       }
     },
   }

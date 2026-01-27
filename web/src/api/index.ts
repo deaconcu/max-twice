@@ -21,6 +21,7 @@ export { adminApi } from './modules/admin'
 export { imageApi } from './modules/image'
 export { searchApi } from './modules/search'
 export { bookmarkApi } from './modules/bookmark'
+export { tocApi } from './modules/toc'
 
 // 导出 apiClient 和 ApiError 供特殊场景使用
 export { default as apiClient } from './client'

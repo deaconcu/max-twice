@@ -9,7 +9,6 @@ export interface ReadResponse {
   course?: Course
   subCourseList?: Course[]
   chosenPosting?: Post
-  fixedPostings?: Post[]
   otherPostings?: Post[]
   lastId?: number
   toc?: any[]
@@ -20,4 +19,5 @@ export interface ReadResponse {
   post?: Post
   commentId?: number
   subCommentId?: number
+  rootNodeId?: number
 }

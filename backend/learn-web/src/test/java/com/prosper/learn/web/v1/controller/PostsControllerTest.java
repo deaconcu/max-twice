@@ -99,7 +99,8 @@ public class PostsControllerTest extends BaseControllerTest {
         courseDataService.insert(course);
 
         // 创建根节点
-        NodeDO rootNode = NodeDO.createRoot(creatorId, course.getId());
+        NodeDO rootNode = new NodeDO(creatorId, course.getId(), course.getName(),
+                course.getDescription(), ContentState.PUBLISHED.value(), (byte)1);
         nodeDataService.insert(rootNode);
 
         // 更新课程的 rootNodeId

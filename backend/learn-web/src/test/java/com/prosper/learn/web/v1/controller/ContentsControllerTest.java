@@ -97,7 +97,8 @@ public class ContentsControllerTest extends BaseControllerTest {
         courseDataService.insert(course);
 
         // 创建根节点
-        NodeDO rootNode = NodeDO.createRoot(creatorId, course.getId());
+        NodeDO rootNode = new NodeDO(creatorId, course.getId(), course.getName(),
+                course.getDescription(), ContentState.PUBLISHED.value(), (byte)1);
         nodeDataService.insert(rootNode);
 
         // 更新课程的 rootNodeId
@@ -114,7 +115,7 @@ public class ContentsControllerTest extends BaseControllerTest {
         NodeDO node = new NodeDO();
         node.setName(name);
         node.setDescription("节点描述");
-        node.setNodeId(courseId);
+        node.setCourseId(courseId);
         node.setCreatorId(creatorId);
         node.setState(ContentState.PUBLISHED.value());
         nodeDataService.insert(node);
