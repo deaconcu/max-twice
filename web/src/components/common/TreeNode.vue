@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 
 interface NodeInfo {
   name?: string
@@ -17,6 +17,7 @@ interface Props {
   currPath?: string
   depth?: number
   isLearning?: boolean
+  parentPath?: string // 父节点路径，用于判断是否被覆盖
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -25,12 +26,30 @@ const props = withDefaults(defineProps<Props>(), {
   currPath: '',
   depth: 0,
   isLearning: false,
+  parentPath: '',
 })
 
 const expandedNodes = ref<string[]>([])
 
 const calculatePath = (currPath: string, key: string): string => {
   return `${currPath}-${key}`
+}
+
+// 判断节点是否被父节点覆盖
+const isNodeCovered = (nodeKey: string): boolean => {
+  if (!props.parentPath) return false
+
+  // 获取从根到当前节点的路径上所有父节点
+  const pathParts = props.parentPath.split('-').filter(p => p)
+
+  // 检查路径上的每个父节点是否已完成
+  for (const part of pathParts) {
+    if (props.nodeInfos[part]?.isCompleted) {
+      return true // 被父节点覆盖
+    }
+  }
+
+  return false
 }
 
 // 切换节点展开/收起
@@ -94,19 +113,39 @@ const scrollToTop = (): void => {
           >
             <div class="d-flex align-center flex-grow-1">
               <!-- 完成状态图标 - 只在学习模式下显示 -->
-              <template v-if="isLearning">
-                <!-- 有子节点的显示横线，但如果是根目录层级(depth=1)则不显示 -->
-                <template v-if="Object.keys(node).filter((key) => key !== '^').length > 0">
+              <template v-if="isLearning && depth !== 1">
+                <!-- 判断是否被父节点覆盖 -->
+                <template v-if="isNodeCovered(key as string)">
+                  <!-- 被覆盖：全部灰色 -->
+                  <!-- 已完成：灰色勾 -->
                   <v-icon
-                    v-if="depth !== 1"
-                    icon="mdi-minus"
-                    color="grey-darken-1"
+                    v-if="nodeInfos[key]?.isCompleted"
+                    icon="mdi-check-circle"
+                    color="grey-lighten-1"
                     size="16"
                   ></v-icon>
+                  <!-- 未完成：灰色横线（无论目录还是叶子） -->
+                  <v-icon v-else icon="mdi-minus" color="grey-lighten-1" size="16"></v-icon>
                 </template>
-                <!-- 叶子节点显示完成状态，但如果是根目录层级(depth=1)则不显示 -->
+                <!-- 未被覆盖：正常显示 -->
                 <template v-else>
-                  <template v-if="depth !== 1">
+                  <!-- 目录节点（有子节点） -->
+                  <template v-if="Object.keys(node).filter((k) => k !== '^').length > 0">
+                    <v-icon
+                      v-if="nodeInfos[key]?.isCompleted"
+                      icon="mdi-check-circle"
+                      color="success"
+                      size="16"
+                    ></v-icon>
+                    <v-icon
+                      v-else
+                      icon="mdi-minus"
+                      color="grey-lighten-1"
+                      size="16"
+                    ></v-icon>
+                  </template>
+                  <!-- 叶子节点 -->
+                  <template v-else>
                     <v-icon
                       v-if="nodeInfos[key]?.isCompleted"
                       icon="mdi-check-circle"
@@ -116,7 +155,7 @@ const scrollToTop = (): void => {
                     <v-icon
                       v-else
                       icon="mdi-circle-outline"
-                      color="grey-lighten-2"
+                      color="grey-lighten-1"
                       size="16"
                     ></v-icon>
                   </template>
@@ -155,6 +194,7 @@ const scrollToTop = (): void => {
                 :course-id="courseId"
                 :path="path"
                 :curr-path="calculatePath(currPath, key as string)"
+                :parent-path="currPath ? `${currPath}-${key}` : String(key)"
                 :depth="depth + 1"
                 :is-learning="isLearning"
               />
