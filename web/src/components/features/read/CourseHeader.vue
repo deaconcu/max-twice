@@ -83,16 +83,18 @@ const toggleSubscribe = () => {
       <!-- 右侧按钮 -->
       <div class="d-flex align-center flex-shrink-0" style="gap: 8px">
         <!-- 学习进度显示（只在学习中时显示） -->
-        <div v-if="isLearning" class="d-flex align-center mr-2">
-          <v-progress-circular
+        <div v-if="isLearning" class="progress-container me-3">
+          <div class="d-flex align-center justify-space-between mb-1">
+            <span class="progress-label">进度</span>
+            <span class="progress-value">{{ Math.round(progressPercent) }}%</span>
+          </div>
+          <v-progress-linear
             :model-value="progressPercent"
-            :size="$vuetify.display.smAndDown ? 32 : 36"
-            :width="3"
+            height="4"
+            rounded
             color="primary"
-            class="mr-2"
-          >
-            <span class="text-caption font-weight-bold">{{ Math.round(progressPercent) }}%</span>
-          </v-progress-circular>
+            bg-color="grey-lighten-3"
+          ></v-progress-linear>
         </div>
 
         <v-btn
@@ -134,10 +136,34 @@ const toggleSubscribe = () => {
   align-items: center;
 }
 
+/* 进度容器 */
+.progress-container {
+  min-width: 140px;
+}
+
+.progress-label {
+  font-size: 12px;
+  color: #999;
+  font-weight: 500;
+}
+
+.progress-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
 /* 宽屏时向左延伸，让后退按钮露出到页面外 */
 @media (min-width: 1500px) {
   .subcourse-info-section {
     margin-left: -56px;
+  }
+}
+
+/* 中等屏幕隐藏进度条 */
+@media (max-width: 1280px) {
+  .progress-container {
+    display: none;
   }
 }
 
