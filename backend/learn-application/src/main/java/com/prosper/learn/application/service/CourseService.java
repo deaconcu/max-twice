@@ -12,7 +12,8 @@ import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDataService;
-import com.prosper.learn.learning.enrollment.UserCourseDO;
+import com.prosper.learn.learning.enrollment.UserLearningDO;
+import com.prosper.learn.learning.enrollment.UserLearningDomainService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
@@ -22,7 +23,6 @@ import com.prosper.learn.application.dto.request.UpdateCourseRequest;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.shared.infrastructure.config.SystemDomainService;
 import com.prosper.learn.user.profile.UserDO;
-import com.prosper.learn.learning.enrollment.UserCourseDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +53,7 @@ public class CourseService {
     private final SystemProperties systemProperties;
     private final SystemDomainService systemDomainService;
     private final CourseConverter courseConverter;
-    private final UserCourseDomainService userCourseDomainService;
+    private final UserLearningDomainService userLearningDomainService;
     private final BookmarkService bookmarkService;
 
 
@@ -184,8 +185,8 @@ public class CourseService {
             // 检查收藏状态
             dto.setBookmarked(bookmarkService.isBookmarked(userId, courseDO.getId(), ContentType.course));
 
-            // 获取学习进度
-            Integer progress = userCourseDomainService.getCourseProgress(userId, courseDO.getId());
+            // 获取学习进度（直接使用 rootNodeId）
+            Integer progress = userLearningDomainService.getProgress(userId, Enums.ContentType.node, courseDO.getRootNodeId());
             dto.setProgress(progress != null ? progress : 0);
         } else {
             // 未登录用户
@@ -276,14 +277,32 @@ public class CourseService {
             return new java.util.HashMap<>();
         }
 
-        // 使用批量查询避免 N+1 问题
-        Map<Long, UserCourseDO> userCoursesMap = userCourseDomainService.getUserCoursesBatch(userId, courseIds);
-        return userCoursesMap.entrySet().stream()
-            .collect(Collectors.toMap(
-                Map.Entry::getKey,
-                entry -> entry.getValue().getProgressPercent() != null ?
-                        entry.getValue().getProgressPercent() : 0
-            ));
+        // 批量查询课程信息，提取 rootNodeIds
+        List<CourseDO> courses = courseDataService.getByIds(courseIds);
+        Map<Long, Long> courseToRootNodeMap = courses.stream()
+            .filter(c -> c.getRootNodeId() != null)
+            .collect(Collectors.toMap(CourseDO::getId, CourseDO::getRootNodeId));
+
+        List<Long> rootNodeIds = new ArrayList<>(courseToRootNodeMap.values());
+
+        // 使用批量查询避免 N+1 问题（查询 node 类型的学习记录）
+        Map<Long, UserLearningDO> nodeProgressMap = userLearningDomainService.getBatch(
+            userId,
+            Enums.ContentType.node,
+            rootNodeIds
+        );
+
+        // 将 rootNodeId → progress 映射转换为 courseId → progress
+        Map<Long, Integer> result = new HashMap<>();
+        for (Map.Entry<Long, Long> entry : courseToRootNodeMap.entrySet()) {
+            Long courseId = entry.getKey();
+            Long rootNodeId = entry.getValue();
+            UserLearningDO learning = nodeProgressMap.get(rootNodeId);
+            result.put(courseId, learning != null && learning.getProgressPercent() != null
+                ? learning.getProgressPercent() : 0);
+        }
+
+        return result;
     }
 
     // ========== 公共业务方法 ==========

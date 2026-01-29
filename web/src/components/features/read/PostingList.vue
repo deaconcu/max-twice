@@ -24,6 +24,7 @@ interface Emits {
   (e: 'switch-tab', tab: string, posting?: any): void
   (e: 'view-deck', deck: MemoryCardDeck): void
   (e: 'load-data', fields?: string[]): void
+  (e: 'mark-node-completed'): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -92,6 +93,12 @@ const handleLoadData = (data?: any[]) => {
 const handleViewDeck = (deck: MemoryCardDeck) => {
   emit('view-deck', deck)
 }
+
+// 处理节点完成
+const handleMarkNodeCompleted = () => {
+  console.log('PostingList: 接收到 mark-node-completed 事件，向上传递')
+  emit('mark-node-completed')
+}
 </script>
 
 <template>
@@ -139,6 +146,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
               size="small"
               class="px-4"
               :prepend-icon="data.node?.isCompleted ? 'mdi-check-circle' : 'mdi-circle-outline'"
+              @click="emit('mark-node-completed')"
             >
               <span
                 class="font-weight-medium"
@@ -356,6 +364,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
               :is-learning="isLearning"
               @switch-tab="handlePostSwitchTab"
               @load-data="(fields) => emit('load-data', fields)"
+              @mark-node-completed="emit('mark-node-completed')"
             />
             <v-divider class="mt-11" color="grey-darken-2"></v-divider>
           </div>
@@ -417,6 +426,7 @@ const handleViewDeck = (deck: MemoryCardDeck) => {
           :detail="true"
           @switch-tab="handlePostSwitchTab"
           @load-data="(fields) => emit('load-data', fields)"
+          @mark-node-completed="emit('mark-node-completed')"
         />
 
         <!-- 评论区 -->

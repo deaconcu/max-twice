@@ -26,9 +26,9 @@ import com.prosper.learn.interaction.comment.CommentDO;
 import com.prosper.learn.interaction.comment.CommentDataService;
 import com.prosper.learn.interaction.upvote.UpvoteDO;
 import com.prosper.learn.interaction.upvote.UpvoteDataService;
-import com.prosper.learn.learning.enrollment.UserCourseDO;
-import com.prosper.learn.learning.enrollment.UserCourseDataService;
+import com.prosper.learn.learning.enrollment.UserLearningDomainService;
 import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentViewedEvent;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
@@ -61,14 +61,14 @@ public class PageService {
     private final CourseDataService courseDataService;
     private final UserDataService userDataService;
     private final CommentDataService commentDataService;
-    private final UserCourseDataService userCourseDataService;
+    private final UserLearningDomainService userLearningDomainService;
     private final UserProfileDataService userProfileDataService;
     private final SystemProperties systemProperties;
     private final NodeConverter nodeConverter;
     private final PostConverter postConverter;
     private final UserConverter userConverter;
     private final CourseService courseService;
-    private final UserCourseService userCourseService;
+    private final UserLearningService userLearningService;
     private final ApplicationEventPublisher eventPublisher;
     private final ContentStatsDomainService contentStatsDomainService;
 
@@ -96,8 +96,8 @@ public class PageService {
 
         List<NodeDO> nodeList = keys.isEmpty() ? new ArrayList<>() : nodeDataService.getByIds(keys.stream().toList());
 
-        // 获取用户完成的节点集合
-        Set<Long> completedNodes = learningProgressService.getUserCompletedNodes(userId);
+        // 批量检查这些节点中哪些已完成（只查询需要的节点，而不是用户所有完成的节点）
+        Set<Long> completedNodes = keys.isEmpty() ? Set.of() : learningProgressService.getCompletedNodesInList(userId, keys);
 
         // 构建包含完成状态的节点信息
         Map<Long, NodeWithProgressDTO> nodeInfos = nodeList.stream()
@@ -278,7 +278,7 @@ public class PageService {
         // 获取学习状态
         boolean learning = checkLearningStatus(userId, courseDO.getId());
         boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, targetNodeDO.getId());
-        Integer courseProgress = userCourseService.getCourseProgress(userId, courseDO.getId());
+        Integer courseProgress = userLearningService.getProgress(userId, Enums.ContentType.node, courseDO.getRootNodeId());
 
         // 构建课程信息
         CourseWithProgressDTO parentCourse = buildParentCourse(courseDO, userId);
@@ -318,7 +318,7 @@ public class PageService {
 //        // 获取学习状态
 //        boolean learning = checkLearningStatus(userId, courseDO.getId());
 //        boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
-//        Integer courseProgress = userCourseService.getCourseProgress(userId, courseDO.getId());
+//        Integer courseProgress = userLearningService.getProgress(userId, Enums.ContentType.node, courseDO.getRootNodeId());
 //
 //        // 构建课程信息
 //        CourseWithProgressDTO parentCourse = buildParentCourse(courseDO, userId);
@@ -388,7 +388,7 @@ public class PageService {
         // 获取学习状态
         boolean learning = checkLearningStatus(userId, courseDO.getId());
         boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
-        Integer courseProgress = userCourseService.getCourseProgress(userId, courseDO.getId());
+        Integer courseProgress = userLearningService.getProgress(userId, Enums.ContentType.node, courseDO.getRootNodeId());
 
         // 构建课程信息
         CourseWithProgressDTO parentCourse = buildParentCourse(courseDO, userId);
@@ -470,7 +470,7 @@ public class PageService {
         // 获取学习状态
         boolean learning = checkLearningStatus(userId, courseDO.getId());
         boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
-        Integer courseProgress = userCourseService.getCourseProgress(userId, courseDO.getId());
+        Integer courseProgress = userLearningService.getProgress(userId, Enums.ContentType.node, courseDO.getRootNodeId());
 
         // 构建课程信息
         CourseWithProgressDTO parentCourse = buildParentCourse(courseDO, userId);
@@ -571,7 +571,7 @@ public class PageService {
         List<CourseSummaryDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
 
         boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
-        Integer courseProgress = userCourseService.getCourseProgress(userId, courseDO.getId());
+        Integer courseProgress = userLearningService.getProgress(userId, Enums.ContentType.node, courseDO.getRootNodeId());
 
         return buildPageDataResponse(nodeTocDTO, nodeDO, parentCourse, courseDO, subCourseList,
                 chosenPostingDTO, otherPostingsDTO, lastId, path, userMap.values(),
@@ -793,12 +793,11 @@ public class PageService {
 
         return lastId;
     }
-    
+
     private boolean checkLearningStatus(long userId, Long courseId) {
-        UserCourseDO userCourseDo = userCourseDataService.getByUserIdAndCourseId(userId, courseId);
-        return userCourseDo != null;
+        return userLearningService.isLearningCourse(userId, courseId);
     }
-    
+
     private CourseWithProgressDTO buildParentCourse(CourseDO courseDO, long userId) {
         boolean subscribed = checkSubscriptionStatus(userId, courseDO.getParentCourseId() != 0 ? courseDO.getParentCourseId() : courseDO.getId());
 

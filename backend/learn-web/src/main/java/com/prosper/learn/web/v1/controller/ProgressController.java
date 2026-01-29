@@ -7,13 +7,10 @@ import com.prosper.learn.application.dto.response.NodeProgressResponseDTO;
 import com.prosper.learn.application.dto.response.RoadmapProgressResponseDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithProgressDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapWithStatusDTO;
-import com.prosper.learn.application.dto.response.usercourse.UserCourseWithCourseDTO;
-import com.prosper.learn.application.dto.response.userroadmap.UserRoadmapSummaryDTO;
-import com.prosper.learn.application.dto.response.userroadmap.UserRoadmapWithBriefDTO;
-import com.prosper.learn.application.dto.response.userroadmap.UserRoadmapWithDetailDTO;
+import com.prosper.learn.application.dto.response.userlearning.UserLearningDTO;
 import com.prosper.learn.application.service.LearningProgressService;
-import com.prosper.learn.application.service.UserCourseService;
-import com.prosper.learn.application.service.UserRoadmapService;
+import com.prosper.learn.application.service.UserLearningService;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
@@ -39,8 +36,7 @@ import java.util.concurrent.TimeUnit;
 public class ProgressController {
 
     private final LearningProgressService learningProgressService;
-    private final UserCourseService userCourseService;
-    private final UserRoadmapService userRoadmapService;
+    private final UserLearningService userLearningService;
 
     /**
      * 标记节点完成
@@ -108,7 +104,7 @@ public class ProgressController {
             @Positive(message = "课程ID必须大于0")
             Long courseId,
             @CurrentUser UserDO currentUser) {
-        userCourseService.startCourse(currentUser.getId(), courseId);
+        userLearningService.startLearningCourse(currentUser.getId(), courseId);
 
         CourseProgressResponseDTO response = CourseProgressResponseDTO.builder()
                 .courseId(courseId)
@@ -130,7 +126,7 @@ public class ProgressController {
             @Positive(message = "课程ID必须大于0")
             Long courseId,
             @CurrentUser UserDO currentUser) {
-        userCourseService.cancelCourse(currentUser.getId(), courseId);
+        userLearningService.cancelLearningCourse(currentUser.getId(), courseId);
 
         CourseProgressResponseDTO response = CourseProgressResponseDTO.builder()
                 .courseId(courseId)
@@ -147,12 +143,12 @@ public class ProgressController {
     @GetMapping("/progress/courses/{courseId}")
     @SaCheckLogin
     @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<UserCourseWithCourseDTO> getCourseProgress(
+    public ApiResponse<UserLearningDTO<Object>> getCourseProgress(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
             Long courseId,
             @CurrentUser UserDO currentUser) {
-        UserCourseWithCourseDTO progress = userCourseService.getUserCourse(currentUser.getId(), courseId);
+        UserLearningDTO<Object> progress = userLearningService.getCourseWithObject(currentUser.getId(), courseId);
         return ApiResponse.success(progress);
     }
 
@@ -163,12 +159,14 @@ public class ProgressController {
     @GetMapping("/progress/courses")
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<List<UserCourseWithCourseDTO>> getAllCoursesProgress(
-            @RequestParam(required = false, defaultValue = "0")
-            @Min(value = 0, message = "最后ID不能小于0")
+    public ApiResponse<List<UserLearningDTO<Object>>> getAllCoursesProgress(
+            @RequestParam(required = false)
+            @Min(value = 1, message = "lastId必须大于0")
             Long lastId,
             @CurrentUser UserDO currentUser) {
-        List<UserCourseWithCourseDTO> progressList = userCourseService.getUserCourseList(currentUser.getId(), lastId);
+        List<UserLearningDTO<Object>> progressList = userLearningService.getAllCoursesProgress(
+            currentUser.getId(), lastId, 20
+        );
         return ApiResponse.success(progressList);
     }
 
@@ -179,7 +177,7 @@ public class ProgressController {
     @PutMapping("/progress/courses/{courseId}")
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<UserCourseWithCourseDTO> updateCourseProgress(
+    public ApiResponse<UserLearningDTO<Object>> updateCourseProgress(
             @PathVariable @NotNull(message = "课程ID不能为空")
             @Positive(message = "课程ID必须大于0")
             Long courseId,
@@ -189,7 +187,11 @@ public class ProgressController {
             Integer progressPercent,
             @CurrentUser UserDO currentUser) {
 
-        UserCourseWithCourseDTO progress = userCourseService.update(currentUser.getId(), courseId, progressPercent);
+        // 转换为万分位并更新
+        userLearningService.updateCourseProgress(currentUser.getId(), courseId, progressPercent * 100);
+
+        // 返回最新的学习记录
+        UserLearningDTO<Object> progress = userLearningService.getCourseWithObject(currentUser.getId(), courseId);
         return ApiResponse.success(progress);
     }
 
@@ -205,7 +207,8 @@ public class ProgressController {
             @Positive(message = "课程ID必须大于0")
             Long courseId,
             @CurrentUser UserDO currentUser) {
-        userCourseService.delete(currentUser.getId(), courseId);
+        // 删除课程进度就是取消学习课程
+        userLearningService.cancelLearningCourse(currentUser.getId(), courseId);
 
         CourseProgressResponseDTO response = CourseProgressResponseDTO.builder()
                 .courseId(courseId)
@@ -214,24 +217,6 @@ public class ProgressController {
 
         return ApiResponse.success(response);
     }
-
-    /**
-     * 标记课程完成
-     * 映射: POST /user/complete/course/{courseId} → POST /api/v1/progress/courses/{courseId}/complete
-     */
-    @PostMapping("/progress/courses/{courseId}/complete")
-    @SaCheckLogin
-    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<CourseCompletionResponseDTO> markCourseCompleted(
-            @PathVariable @NotNull(message = "课程ID不能为空")
-            @Positive(message = "课程ID必须大于0")
-            Long courseId,
-            @CurrentUser UserDO currentUser) {
-        CourseCompletionResponseDTO result = learningProgressService.markCourseCompletedWithResponse(currentUser.getId(), courseId);
-        return ApiResponse.success(result);
-    }
-
-    // =================== 路线图进度相关接口 ===================
 
     /**
      * 注册学习路线图
@@ -245,7 +230,7 @@ public class ProgressController {
             @Positive(message = "路线图ID必须大于0")
             Long roadmapId,
             @CurrentUser UserDO currentUser) {
-        userRoadmapService.startRoadmap(currentUser.getId(), roadmapId);
+        userLearningService.startLearning(currentUser.getId(), Enums.ContentType.roadmap, roadmapId);
 
         RoadmapProgressResponseDTO response = RoadmapProgressResponseDTO.builder()
                 .roadmapId(roadmapId)
@@ -267,7 +252,7 @@ public class ProgressController {
             @Positive(message = "路线图ID必须大于0")
             Long roadmapId,
             @CurrentUser UserDO currentUser) {
-        userRoadmapService.cancelRoadmap(currentUser.getId(), roadmapId);
+        userLearningService.cancelLearning(currentUser.getId(), Enums.ContentType.roadmap, roadmapId);
 
         RoadmapProgressResponseDTO response = RoadmapProgressResponseDTO.builder()
                 .roadmapId(roadmapId)
@@ -284,12 +269,12 @@ public class ProgressController {
     @GetMapping("/progress/roadmaps/{roadmapId}")
     @SaCheckLogin
     @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<UserRoadmapWithDetailDTO> getRoadmapProgress(
+    public ApiResponse<UserLearningDTO<Object>> getRoadmapProgress(
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")
             Long roadmapId,
             @CurrentUser UserDO currentUser) {
-        UserRoadmapWithDetailDTO progress = userRoadmapService.getUserRoadmap(currentUser.getId(), roadmapId);
+        UserLearningDTO<Object> progress = userLearningService.getRoadmapWithObject(currentUser.getId(), roadmapId);
         return ApiResponse.success(progress);
     }
 
@@ -300,8 +285,14 @@ public class ProgressController {
     @GetMapping("/progress/roadmaps")
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<List<UserRoadmapWithBriefDTO>> getAllRoadmapsProgress(@CurrentUser UserDO currentUser) {
-        List<UserRoadmapWithBriefDTO> progressList = userRoadmapService.getUserAllRoadmapBrief(currentUser.getId());
+    public ApiResponse<List<UserLearningDTO<Object>>> getAllRoadmapsProgress(
+            @RequestParam(required = false)
+            @Min(value = 1, message = "lastId必须大于0")
+            Long lastId,
+            @CurrentUser UserDO currentUser) {
+        List<UserLearningDTO<Object>> progressList = userLearningService.getByUserWithObjects(
+            currentUser.getId(), Enums.ContentType.roadmap, null, lastId, 20
+        );
         return ApiResponse.success(progressList);
     }
 
@@ -312,7 +303,7 @@ public class ProgressController {
     @PutMapping("/progress/roadmaps/{roadmapId}")
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<UserRoadmapSummaryDTO> updateRoadmapProgress(
+    public ApiResponse<UserLearningDTO<Object>> updateRoadmapProgress(
             @PathVariable @NotNull(message = "路线图ID不能为空")
             @Positive(message = "路线图ID必须大于0")
             Long roadmapId,
@@ -322,7 +313,9 @@ public class ProgressController {
             Integer progressPercent,
             @CurrentUser UserDO currentUser) {
 
-        UserRoadmapSummaryDTO progress = userRoadmapService.updateProgress(currentUser.getId(), roadmapId, progressPercent);
+        // 转换为万分位
+        userLearningService.updateProgress(currentUser.getId(), Enums.ContentType.roadmap, roadmapId, progressPercent * 100);
+        UserLearningDTO<Object> progress = userLearningService.getRoadmapWithObject(currentUser.getId(), roadmapId);
         return ApiResponse.success(progress);
     }
 
@@ -333,13 +326,18 @@ public class ProgressController {
     @GetMapping("/progress/professions/{professionId}/roadmaps/learning")
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<List<RoadmapWithStatusDTO>> getLearningRoadmapsByProfession(
+    public ApiResponse<List<UserLearningDTO<Object>>> getLearningRoadmapsByProfession(
             @PathVariable @NotNull(message = "职业ID不能为空")
             @Positive(message = "职业ID必须大于0")
             Long professionId,
+            @RequestParam(required = false)
+            @Min(value = 1, message = "lastId必须大于0")
+            Long lastId,
             @CurrentUser UserDO currentUser) {
 
-        List<RoadmapWithStatusDTO> roadmaps = userRoadmapService.getLearningRoadmapsByProfession(currentUser.getId(), professionId);
+        List<UserLearningDTO<Object>> roadmaps = userLearningService.getRoadmapListByUserWithParent(
+            currentUser.getId(), professionId, null, lastId, 20
+        );
         return ApiResponse.success(roadmaps);
     }
 }

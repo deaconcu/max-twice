@@ -114,7 +114,8 @@
           :sub-course-list="data.subCourseList"
           :is-main-course="isMainCourse"
           :is-learning="isLearning"
-          @start-learning="isLearning = $event"
+          :course-progress="data.course?.progressPercent || 0"
+          @start-learning="handleToggleLearning"
         />
       </div>
 
@@ -237,6 +238,7 @@
                 @switch-tab="handleTabSwitch"
                 @view-deck="handleViewDeck"
                 @load-data="loadData"
+                @mark-node-completed="handleNodeCompleted"
               />
             </div>
 
@@ -397,10 +399,11 @@ import ConfigContentsDialog from '@/components/features/read/ConfigContentsDialo
 import CreateDeckDialog from '@/components/features/read/CreateDeckDialog.vue'
 import MemoryCardSidebar from '@/components/features/read/MemoryCardSidebar.vue'
 import DeckDetailDialog from '@/components/features/read/DeckDetailDialog.vue'
-import { pageApi, memoryApi, postApi } from '@/api'
+import { pageApi, memoryApi, postApi, progressApi } from '@/api'
 import type { ReadResponse } from '@/api/modules/page'
 import type { MemoryCardDeck } from '@/types/memory'
 import { useFetch } from '@/composables/useFetch'
+import { useMutation } from '@/composables/useMutation'
 
 const router = useRouter()
 const route = useRoute()
@@ -423,6 +426,122 @@ const isTocHovering = ref(false)
 const drawerOpen = ref(false)
 const loadingMore = ref(false)
 const hasMore = ref(true)
+
+// 获取课程ID
+const courseId = computed(() => data.value?.course?.id)
+
+// 开始学习课程
+const { execute: startLearning, loading: startingLearning } = useMutation(
+  () => progressApi.startCourse(courseId.value!),
+  {
+    onSuccess: () => {
+      isLearning.value = true
+    },
+  }
+)
+
+// 取消学习课程
+const { execute: cancelLearning, loading: cancelingLearning } = useMutation(
+  () => progressApi.cancelCourse(courseId.value!),
+  {
+    onSuccess: () => {
+      isLearning.value = false
+    },
+  }
+)
+
+// 处理开始/取消学习
+const handleToggleLearning = async (shouldStart: boolean) => {
+  if (!courseId.value) return
+
+  if (shouldStart) {
+    await startLearning()
+  } else {
+    await cancelLearning()
+  }
+}
+
+// 标记节点完成
+const { execute: markNodeCompleted, loading: markingNode } = useMutation(
+  () => {
+    const nodeId = data.value?.node?.id
+    if (!nodeId || !courseId.value) {
+      throw new Error('节点ID或课程ID不存在')
+    }
+    return progressApi.markNodeComplete(nodeId, courseId.value)
+  },
+  {
+    successMessage: '已标记节点完成',
+    onSuccess: (response) => {
+      // 更新当前节点的完成状态
+      if (data.value && data.value.node) {
+        data.value.node.isCompleted = response.completed
+      }
+
+      // 更新课程进度
+      if (data.value && data.value.course && response.courseProgressPercent !== undefined) {
+        data.value.course.progressPercent = response.courseProgressPercent
+      }
+
+      // 更新目录树中该节点的完成状态
+      if (data.value && data.value.tocNodeInfos && response.nodeId) {
+        const nodeInfo = data.value.tocNodeInfos[response.nodeId]
+        if (nodeInfo) {
+          nodeInfo.isCompleted = response.completed
+        }
+      }
+    },
+  }
+)
+
+// 取消节点完成
+const { execute: unmarkNodeCompleted, loading: unmarkingNode } = useMutation(
+  () => {
+    const nodeId = data.value?.node?.id
+    if (!nodeId || !courseId.value) {
+      throw new Error('节点ID或课程ID不存在')
+    }
+    return progressApi.unmarkNodeComplete(nodeId, courseId.value)
+  },
+  {
+    successMessage: '已取消节点完成',
+    onSuccess: (response) => {
+      // 更新当前节点的完成状态
+      if (data.value && data.value.node) {
+        data.value.node.isCompleted = response.completed
+      }
+
+      // 更新课程进度
+      if (data.value && data.value.course && response.courseProgressPercent !== undefined) {
+        data.value.course.progressPercent = response.courseProgressPercent
+      }
+
+      // 更新目录树中该节点的完成状态
+      if (data.value && data.value.tocNodeInfos && response.nodeId) {
+        const nodeInfo = data.value.tocNodeInfos[response.nodeId]
+        if (nodeInfo) {
+          nodeInfo.isCompleted = response.completed
+        }
+      }
+    },
+  }
+)
+
+// 处理节点完成
+const handleNodeCompleted = async () => {
+  console.log('ContentReadPage: handleNodeCompleted 被调用', {
+    nodeId: data.value?.node?.id,
+    courseId: courseId.value,
+    currentCompleted: data.value?.node?.isCompleted
+  })
+
+  // 如果已完成，则取消完成；如果未完成，则标记完成
+  if (data.value?.node?.isCompleted) {
+    await unmarkNodeCompleted()
+  } else {
+    await markNodeCompleted()
+  }
+}
 
 // 关闭drawer
 const closeDrawer = () => {

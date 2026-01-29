@@ -4,14 +4,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
 import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums;
+import com.prosper.learn.shared.domain.event.content.toc.TocChosenEvent;
 import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +37,7 @@ import java.util.*;
  * @author Claude
  * @since 2024-01-20
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TocDomainService {
@@ -49,7 +54,13 @@ public class TocDomainService {
     /** 节点目录数据访问接口，管理目录内容和引用计数 */
     private final NodeTocDataService nodeTocDataService;
 
-    /** 内容管理相关配置属性 */
+    /** 节点数据访问接口，用于查询节点所属课程 */
+    private final NodeDataService nodeDataService;
+
+    /** 事件发布器 */
+    private final ApplicationEventPublisher eventPublisher;
+
+    /** 系统配置 */
     private final SystemProperties systemProperties;
 
     /**
@@ -196,6 +207,15 @@ public class TocDomainService {
         String newToc = String.join(",", newTocArr);
         userNodeTocDO.setToc(newToc);
         userNodeTocDataService.update(userNodeTocDO);
+
+        // 9. 检查第一个目录是否发生变化
+        String oldFirstHash = tocHashes.length > 0 ? tocHashes[0] : null;
+        String newFirstHash = newTocArr.length > 0 ? newTocArr[0] : null;
+
+        // 如果第一个目录变了（交换顺序或替换），发布事件通知更新 nodes 字段
+        if (!Objects.equals(oldFirstHash, newFirstHash)) {
+            publishTocUpdatedEvent(userId, nodeId, newFirstHash);
+        }
     }
 
     /**
@@ -409,6 +429,11 @@ public class TocDomainService {
         // 6. 使用通用方法完成目录更新
         getCurrentTocAndUpdate(tocHashArr, tocIndex, userNodeTocDO,
             currentTocContent -> updateContents(currentTocContent, pathSplit[1], childNode));
+
+        // 7. 如果修改的是第一个目录（tocIndex=0），发布事件通知更新 nodes 字段
+        if (tocIndex == 0) {
+            publishTocUpdatedEvent(userId, nodeId, tocHashArr[0]);
+        }
     }
 
     /**
@@ -435,6 +460,11 @@ public class TocDomainService {
         // 使用通用方法完成目录更新
         getCurrentTocAndUpdate(tocHashArr, tocIndex, userNodeTocDO,
             currentTocContent -> updateContents(currentTocContent, pathParts[1], objectMapper.createObjectNode()));
+
+        // 如果修改的是第一个目录（tocIndex=1），发布事件通知更新 nodes 字段
+        if (tocIndex == 1) {
+            publishTocUpdatedEvent(userId, nodeId, tocHashArr[0]);
+        }
     }
 
 
@@ -532,4 +562,20 @@ public class TocDomainService {
         return result;
     }
 
+    /**
+     * 发布ToC更新事件
+     * 当第一个目录被修改时，通知更新 user_learning.nodes 字段
+     *
+     * @param userId 用户ID
+     * @param nodeId 节点ID（课程根节点）
+     * @param newFirstTocHash 新的第一个目录的哈希值
+     */
+    private void publishTocUpdatedEvent(long userId, long nodeId, String newFirstTocHash) {
+        try {
+            eventPublisher.publishEvent(new TocChosenEvent(userId, nodeId, newFirstTocHash));
+        } catch (Exception e) {
+            // 事件发布失败不应该影响主流程
+            log.error("发布ToC更新事件失败: userId={}, nodeId={}", userId, nodeId, e);
+        }
+    }
 }

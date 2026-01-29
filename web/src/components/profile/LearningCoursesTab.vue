@@ -234,8 +234,10 @@ const courses = computed(() => {
 
   return userCourses.value.map((userCourse) => {
     const course = userCourse.course
-    const progress = userCourse.progressPercent || 0
-    const state = userCourse.state || UserProgressState.NOT_STARTED
+    // 后端返回的是万分位（0-10000），转换为百分比（0-100）
+    const progress = userCourse.progressPercent ? userCourse.progressPercent / 100 : 0
+    // 后端返回的 state：1=进行中, 2=已完成（没有0=未开始，因为没记录就是未开始）
+    const state = userCourse.state || UserProgressState.IN_PROGRESS
     const isCompleted = state === UserProgressState.COMPLETED
 
     // 计算最后活动时间

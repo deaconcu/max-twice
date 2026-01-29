@@ -99,4 +99,12 @@ public interface CourseMapper {
     // 平台统计相关方法
     @Select("SELECT COUNT(*) FROM course WHERE state = " + ContentState.PUBLISHED_VALUE)
     Long countActiveCourses();
+
+    /**
+     * 根据根节点ID列表批量查询课程
+     */
+    @Select({"<script>SELECT * FROM course WHERE root_node_id IN " +
+            "<foreach item='id' collection='rootNodeIds' open='(' separator=',' close=')'>#{id}</foreach>" +
+            "</script>"})
+    List<CourseDO> getByRootNodeIds(@Param("rootNodeIds") List<Long> rootNodeIds);
 }

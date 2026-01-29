@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 interface Props {
@@ -8,6 +9,7 @@ interface Props {
   isMainCourse?: boolean
   isLearning?: boolean
   showBackButton?: boolean
+  courseProgress?: number // 课程进度（万分位：0-10000）
 }
 
 type Emits = (e: 'start-learning', data: any) => void
@@ -19,10 +21,16 @@ const props = withDefaults(defineProps<Props>(), {
   isMainCourse: true,
   isLearning: false,
   showBackButton: true,
+  courseProgress: 0,
 })
 
 const emit = defineEmits<Emits>()
 const router = useRouter()
+
+// 将万分位转换为百分比（0-100）
+const progressPercent = computed(() => {
+  return props.courseProgress ? props.courseProgress / 100 : 0
+})
 
 const goBackToCourse = () => {
   router.back()
@@ -74,6 +82,19 @@ const toggleSubscribe = () => {
 
       <!-- 右侧按钮 -->
       <div class="d-flex align-center flex-shrink-0" style="gap: 8px">
+        <!-- 学习进度显示（只在学习中时显示） -->
+        <div v-if="isLearning" class="d-flex align-center mr-2">
+          <v-progress-circular
+            :model-value="progressPercent"
+            :size="$vuetify.display.smAndDown ? 32 : 36"
+            :width="3"
+            color="primary"
+            class="mr-2"
+          >
+            <span class="text-caption font-weight-bold">{{ Math.round(progressPercent) }}%</span>
+          </v-progress-circular>
+        </div>
+
         <v-btn
           :color="isLearning ? 'success' : 'primary'"
           :variant="isLearning ? 'tonal' : 'flat'"

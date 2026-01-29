@@ -156,6 +156,16 @@ public class CourseDataService extends AbstractDataService<CourseDO, CourseMappe
         return courseMapper.countActiveCourses();
     }
 
+    /**
+     * 根据根节点ID列表批量查询课程
+     */
+    public List<CourseDO> getByRootNodeIds(List<Long> rootNodeIds) {
+        if (rootNodeIds == null || rootNodeIds.isEmpty()) {
+            return List.of();
+        }
+        return courseMapper.getByRootNodeIds(rootNodeIds);
+    }
+
     // ========== COMMAND 命令操作 ==========
 
     /**

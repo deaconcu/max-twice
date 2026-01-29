@@ -8,6 +8,7 @@ import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.application.converter.ProfessionConverter;
 import com.prosper.learn.application.converter.RoadmapConverter;
 import com.prosper.learn.application.converter.UserConverter;
+import com.prosper.learn.application.dto.response.roadmap.RoadmapBriefDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapDetailDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapWithStatusDTO;
@@ -21,9 +22,9 @@ import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
 import com.prosper.learn.content.roadmap.RoadmapDomainService;
 import com.prosper.learn.interaction.upvote.UpvoteDomainService;
-import com.prosper.learn.learning.enrollment.UserCourseDO;
-import com.prosper.learn.learning.enrollment.UserCourseDataService;
-import com.prosper.learn.learning.enrollment.UserRoadmapDataService;
+import com.prosper.learn.learning.enrollment.UserLearningDO;
+import com.prosper.learn.learning.enrollment.UserLearningDomainService;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentApprovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
@@ -62,7 +63,7 @@ public class RoadmapService {
     private final NodeDataService nodeDataService;
     private final UserDataService userDataService;
     private final UserDomainService userDomainService;
-    private final UserRoadmapDataService userRoadmapDataService;
+    private final UserLearningDomainService userLearningDomainService;
     private final ProfessionDataService professionDataService;
     private final UpvoteDomainService upvoteDomainService;
     private final ContentStatsDomainService contentStatsDomainService;
@@ -88,6 +89,64 @@ public class RoadmapService {
      */
     public List<RoadmapSummaryDTO> toSummaryDTO(List<RoadmapDO> roadmapDOList) {
         return roadmapConverter.toSummaryDTO(roadmapDOList);
+    }
+
+    /**
+     * 转换为简要DTO（包含profession name）
+     */
+    public RoadmapBriefDTO toBriefDTO(RoadmapDO roadmapDO) {
+        if (roadmapDO == null) {
+            return null;
+        }
+
+        RoadmapBriefDTO dto = new RoadmapBriefDTO();
+        dto.setId(roadmapDO.getId());
+        dto.setNodeCount(roadmapDO.getNodeCount());
+
+        // 填充profession name
+        if (roadmapDO.getProfessionId() != null) {
+            ProfessionDO profession = professionDataService.getById(roadmapDO.getProfessionId());
+            if (profession != null) {
+                dto.setProfessionName(profession.getName());
+            }
+        }
+
+        return dto;
+    }
+
+    /**
+     * 批量转换为简要DTO列表
+     */
+    public List<RoadmapBriefDTO> toBriefDTO(List<RoadmapDO> roadmapDOList) {
+        if (roadmapDOList == null || roadmapDOList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 提取所有 profession IDs
+        List<Long> professionIds = roadmapDOList.stream()
+            .map(RoadmapDO::getProfessionId)
+            .filter(Objects::nonNull)
+            .distinct()
+            .collect(Collectors.toList());
+
+        // 批量查询 profession
+        Map<Long, String> professionNameMap = professionIds.isEmpty()
+            ? Map.of()
+            : professionDataService.getByIds(professionIds).stream()
+                .collect(Collectors.toMap(ProfessionDO::getId, ProfessionDO::getName));
+
+        // 组装 DTO
+        return roadmapDOList.stream()
+            .map(roadmap -> {
+                RoadmapBriefDTO dto = new RoadmapBriefDTO();
+                dto.setId(roadmap.getId());
+                dto.setNodeCount(roadmap.getNodeCount());
+                if (roadmap.getProfessionId() != null) {
+                    dto.setProfessionName(professionNameMap.get(roadmap.getProfessionId()));
+                }
+                return dto;
+            })
+            .collect(Collectors.toList());
     }
 
     /**
@@ -148,7 +207,7 @@ public class RoadmapService {
         dto.setLiked(upvoteDomainService.hasUpvoted(roadmapDO.getId(), ContentType.roadmap.value(), userId));
 
         // 设置学习状态
-        boolean isLearning = userRoadmapDataService.isLearning(userId, roadmapDO.getId());
+        boolean isLearning = userLearningDomainService.isLearning(userId, Enums.ContentType.roadmap, roadmapDO.getId());
         dto.setLearning(isLearning);
 
         // 设置收藏状态
@@ -555,8 +614,8 @@ public class RoadmapService {
     }
 
     private Set<Long> getLearningIds(long userId, List<Long> roadmapIds) {
-        List<Long> learningRoadmapIds = userRoadmapDataService.getBatchLearningStatus(userId, roadmapIds);
-        return new HashSet<>(learningRoadmapIds);
+        Map<Long, UserLearningDO> learningMap = userLearningDomainService.getBatch(userId, Enums.ContentType.roadmap, roadmapIds);
+        return learningMap.keySet();
     }
 
     // ========== Admin管理方法 ==========

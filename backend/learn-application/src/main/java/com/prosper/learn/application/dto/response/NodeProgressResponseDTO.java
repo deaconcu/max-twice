@@ -19,4 +19,14 @@ public class NodeProgressResponseDTO {
      * 是否已完成
      */
     private Boolean completed;
+
+    /**
+     * 课程ID
+     */
+    private Long courseId;
+
+    /**
+     * 课程进度（万分位：0-10000）
+     */
+    private Integer courseProgressPercent;
 }

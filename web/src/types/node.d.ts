@@ -34,4 +34,6 @@ export interface Node {
 export interface NodeProgressResponse {
   nodeId: number
   completed: boolean
+  courseId?: number
+  courseProgressPercent?: number
 }

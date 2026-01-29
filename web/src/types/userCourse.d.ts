@@ -13,7 +13,7 @@ export interface UserCourse {
   id: number
   userId?: number // 用户ID
   course?: Course // 课程信息
-  progressPercent?: number // 进度百分比
+  progressPercent?: number // 进度（万分位：0-10000）
   state?: UserProgressState // 状态：NOT_STARTED(0), IN_PROGRESS(1), COMPLETED(2)
   startedAt?: string // 开始时间
   completedAt?: string // 完成时间

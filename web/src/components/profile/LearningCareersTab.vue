@@ -234,8 +234,10 @@ const careers = computed(() => {
 
   return roadmaps.value.map((userRoadmap) => {
     const roadmap = userRoadmap.roadmap
-    const progress = userRoadmap.progressPercent || 0
-    const state = userRoadmap.state || UserProgressState.NOT_STARTED
+    // 后端返回的是万分位（0-10000），转换为百分比（0-100）
+    const progress = userRoadmap.progressPercent ? userRoadmap.progressPercent / 100 : 0
+    // 后端返回的 state：1=进行中, 2=已完成
+    const state = userRoadmap.state || UserProgressState.IN_PROGRESS
     const isCompleted = state === UserProgressState.COMPLETED
 
     // 计算最后活动时间

@@ -286,8 +286,14 @@ const { execute: executeUpvote } = useMutation(
       }
 
       // 如果是"看两遍就懂"，只有在学习模式下才标记节点完成
+      console.log('投票成功回调:', {
+        twiced: response.twiced,
+        isLearning: props.isLearning,
+        shouldMarkCompleted: response.twiced && props.isLearning
+      })
+
       if (response.twiced && props.isLearning) {
-        console.log('看两遍就懂被点击，用户在学习模式下，标记节点完成')
+        console.log('触发 mark-node-completed 事件')
         emit('mark-node-completed')
       }
     },

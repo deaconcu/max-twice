@@ -29,7 +29,7 @@ export interface Course {
   learnerCount?: number // 学习人数
   subscriptionCount?: number // 收藏人数
   bookmarked?: boolean // 是否已收藏
-  progress?: number // 课程进度百分比 0-100
+  progress?: number // 课程进度（万分位：0-10000）
 }
 
 /**

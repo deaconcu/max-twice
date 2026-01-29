@@ -11,8 +11,9 @@ import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.interaction.follow.FollowDO;
 import com.prosper.learn.interaction.follow.FollowDataService;
-import com.prosper.learn.learning.enrollment.UserCourseDO;
-import com.prosper.learn.learning.enrollment.UserCourseDomainService;
+import com.prosper.learn.learning.enrollment.UserLearningDO;
+import com.prosper.learn.learning.enrollment.UserLearningDomainService;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentBookmarkedEvent;
 import com.prosper.learn.shared.domain.event.content.interaction.ContentUnbookmarkedEvent;
 import com.prosper.learn.shared.domain.exception.StatusCode;
@@ -47,7 +48,7 @@ public class UserService {
     private final CourseDataService courseDataService;
     private final FollowDataService followDataService;
     private final ContentStatsDataService contentStatsDataService;
-    private final UserCourseDomainService userCourseDomainService;
+    private final UserLearningDomainService userLearningDomainService;
     private final EmailService emailService;
     private final MessageService messageService;
     private final SystemProperties systemProperties;
@@ -521,21 +522,38 @@ public class UserService {
                 .map(CourseSummaryWithStatsAndProgressDTO::getId)
                 .toList();
 
+        // 批量查询课程实体（获取 rootNodeId）
+        List<CourseDO> courseDOList = courseDataService.getByIds(courseIds);
+
         // 批量查询统计数据
         List<ContentStatsDO> statsList = contentStatsDataService.batchGetByContentIds(ContentType.course, courseIds);
         Map<Long, ContentStatsDO> statsMap = statsList.stream()
                 .collect(Collectors.toMap(ContentStatsDO::getContentId, stats -> stats, (a, b) -> a));
 
         // 批量查询学习进度
+        // 1. 提取所有课程的 rootNodeIds
+        Map<Long, Long> courseToRootNodeMap = courseDOList.stream()
+            .filter(c -> c.getRootNodeId() != null)
+            .collect(Collectors.toMap(CourseDO::getId, CourseDO::getRootNodeId));
+
+        List<Long> rootNodeIds = new ArrayList<>(courseToRootNodeMap.values());
+
+        // 2. 批量查询 node 类型的学习记录
+        Map<Long, UserLearningDO> nodeProgressMap = userLearningDomainService.getBatch(
+            userId,
+            Enums.ContentType.node,
+            rootNodeIds
+        );
+
+        // 3. 转换为 courseId → progress 映射
         Map<Long, Integer> progressMap = new HashMap<>();
-        // 使用批量查询避免 N+1 问题
-        Map<Long, UserCourseDO> userCoursesMap = userCourseDomainService.getUserCoursesBatch(userId, courseIds);
-        progressMap = userCoursesMap.entrySet().stream()
-            .collect(Collectors.toMap(
-                Map.Entry::getKey,
-                entry -> entry.getValue().getProgressPercent() != null ?
-                        entry.getValue().getProgressPercent() : 0
-            ));
+        for (Map.Entry<Long, Long> entry : courseToRootNodeMap.entrySet()) {
+            Long courseId = entry.getKey();
+            Long rootNodeId = entry.getValue();
+            UserLearningDO learning = nodeProgressMap.get(rootNodeId);
+            progressMap.put(courseId, learning != null && learning.getProgressPercent() != null
+                ? learning.getProgressPercent() : 0);
+        }
 
         // 填充每个课程的统计字段和用户字段
         for (CourseSummaryWithStatsAndProgressDTO dto : dtoList) {

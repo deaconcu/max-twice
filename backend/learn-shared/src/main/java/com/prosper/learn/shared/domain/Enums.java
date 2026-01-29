@@ -144,6 +144,16 @@ public class Enums {
         profession(7),
         course(8);
 
+        // 静态常量用于 MyBatis 注解（注解需要编译时常量）
+        public static final byte POST_VALUE = 1;
+        public static final byte NODE_VALUE = 2;
+        public static final byte COMMENT_VALUE = 3;
+        public static final byte ROADMAP_VALUE = 4;
+        public static final byte MEMORY_CARD_DECK_VALUE = 5;
+        public static final byte MEMORY_CARD_VALUE = 6;
+        public static final byte PROFESSION_VALUE = 7;
+        public static final byte COURSE_VALUE = 8;
+
         private final int value;
 
         ContentType(int value) {
@@ -153,6 +163,10 @@ public class Enums {
         @Override
         public Integer value() {
             return value;
+        }
+
+        public byte byteValue() {
+            return (byte) value;
         }
 
         public static ContentType getByValue(Integer value) {

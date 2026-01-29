@@ -7,7 +7,8 @@ import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
-import com.prosper.learn.learning.enrollment.UserCourseDomainService;
+import com.prosper.learn.learning.enrollment.UserLearningDomainService;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.Enums.ContentState;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.user.profile.UserDO;
@@ -63,7 +64,7 @@ public class CoursesControllerTest extends BaseControllerTest {
     private RedisTemplate<String, Object> redisTemplate;
 
     @Autowired
-    private UserCourseDomainService userCourseDomainService;
+    private UserLearningDomainService userLearningDomainService;
 
     @BeforeEach
     void setUp() {
@@ -429,11 +430,12 @@ public class CoursesControllerTest extends BaseControllerTest {
             // 添加订阅
             //userDomainService.addSubscription(user.getId(), courseId);
 
-            // 开始学习课程（创建学习记录）
-            userCourseDomainService.startCourse(user.getId(), courseId);
+            // 开始学习课程（创建学习记录，使用 rootNodeId）
+            Long rootNodeId = course.getRootNodeId();
+            userLearningDomainService.startLearning(user.getId(), Enums.ContentType.node, rootNodeId, Enums.Bool.TRUE.value());
 
             // 设置学习进度
-            userCourseDomainService.updateProgress(user.getId(), courseId, 50);
+            userLearningDomainService.updateProgress(user.getId(), Enums.ContentType.node, rootNodeId, 5000);
 
             // 获取课程详情
             mockMvc.perform(get("/api/v1/courses/{id}", courseId)
@@ -1222,9 +1224,10 @@ public class CoursesControllerTest extends BaseControllerTest {
             // 为部分课程添加订阅和学习进度
             for (int i = 0; i < Math.min(5, publishedCourses.size()); i++) {
                 CourseDO course = publishedCourses.get(i);
+                Long rootNodeId = course.getRootNodeId();
                 //userDomainService.addSubscription(user.getId(), course.getId());
-                userCourseDomainService.startCourse(user.getId(), course.getId());
-                userCourseDomainService.updateProgress(user.getId(), course.getId(), (i + 1) * 10);
+                userLearningDomainService.startLearning(user.getId(), Enums.ContentType.node, rootNodeId, Enums.Bool.TRUE.value());
+                userLearningDomainService.updateProgress(user.getId(), Enums.ContentType.node, rootNodeId, (i + 1) * 1000);
             }
 
             // 1. 批量查询课程列表（包含订阅状态、学习进度、统计数据）

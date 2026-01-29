@@ -11,10 +11,9 @@ import com.prosper.learn.content.profession.ProfessionDO;
 import com.prosper.learn.content.profession.ProfessionDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
-import com.prosper.learn.learning.enrollment.UserCourseDO;
-import com.prosper.learn.learning.enrollment.UserCourseDataService;
-import com.prosper.learn.learning.enrollment.UserRoadmapDO;
-import com.prosper.learn.learning.enrollment.UserRoadmapDataService;
+import com.prosper.learn.learning.enrollment.UserLearningDO;
+import com.prosper.learn.learning.enrollment.UserLearningDataService;
+import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.Enums.UserProgressState;
 import com.prosper.learn.shared.domain.Enums.UserState;
 import com.prosper.learn.shared.domain.Enums.UserRole;
@@ -62,16 +61,13 @@ public class ProgressControllerTest extends BaseControllerTest {
     private NodeDataService nodeDataService;
 
     @Autowired
-    private UserCourseDataService userCourseDataService;
+    private UserLearningDataService userLearningDataService;
 
     @Autowired
     private ProfessionDataService professionDataService;
 
     @Autowired
     private RoadmapDataService roadmapDataService;
-
-    @Autowired
-    private UserRoadmapDataService userRoadmapDataService;
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
@@ -370,8 +366,8 @@ public class ProgressControllerTest extends BaseControllerTest {
             .andExpect(jsonPath("$.data.courseId").value(course.getId()))
             .andExpect(jsonPath("$.data.learning").value(true));
 
-        // 验证数据库
-        UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId(user.getId(), course.getId());
+        // 验证数据库（使用 rootNodeId 查询）
+        UserLearningDO userCourse = userLearningDataService.getByUserAndObject(user.getId(), Enums.ContentType.node.byteValue(), course.getRootNodeId());
         assertNotNull(userCourse);
         assertEquals(0, userCourse.getProgressPercent());
     }
@@ -417,7 +413,7 @@ public class ProgressControllerTest extends BaseControllerTest {
             .andExpect(jsonPath("$.data.learning").value(false));
 
         // 验证数据库 - 记录应该被删除
-        UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId(user.getId(), course.getId());
+        UserLearningDO userCourse = userLearningDataService.getByUserAndObject(user.getId(), Enums.ContentType.course.byteValue(), course.getId());
         assertNull(userCourse);
     }
 
@@ -538,8 +534,8 @@ public class ProgressControllerTest extends BaseControllerTest {
             .andExpect(jsonPath("$.data.progressPercent").value(60));
 
         // 验证数据库
-        UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId(user.getId(), course.getId());
-        assertEquals(60, userCourse.getProgressPercent());
+        UserLearningDO userCourse = userLearningDataService.getByUserAndObject(user.getId(), Enums.ContentType.course.byteValue(), course.getId());
+        assertEquals(6000, userCourse.getProgressPercent());
     }
 
     @Test
@@ -567,8 +563,8 @@ public class ProgressControllerTest extends BaseControllerTest {
             .andExpect(jsonPath("$.data.completedAt").isNotEmpty());
 
         // 验证数据库
-        UserCourseDO userCourse = userCourseDataService.getByUserIdAndCourseId(user.getId(), course.getId());
-        assertEquals(100, userCourse.getProgressPercent());
+        UserLearningDO userCourse = userLearningDataService.getByUserAndObject(user.getId(), Enums.ContentType.course.byteValue(), course.getId());
+        assertEquals(10000, userCourse.getProgressPercent());
         assertEquals(UserProgressState.COMPLETED.value(), userCourse.getState());
         assertNotNull(userCourse.getCompletedAt());
     }
@@ -641,7 +637,7 @@ public class ProgressControllerTest extends BaseControllerTest {
             .andExpect(jsonPath("$.data.learning").value(true));
 
         // 验证数据库
-        UserRoadmapDO userRoadmap = userRoadmapDataService.getByUserAndRoadmap(user.getId(), roadmap.getId());
+        UserLearningDO userRoadmap = userLearningDataService.getByUserAndObject(user.getId(), Enums.ContentType.roadmap.byteValue(), roadmap.getId());
         assertNotNull(userRoadmap);
         assertEquals(0, userRoadmap.getProgressPercent());
         assertEquals(UserProgressState.IN_PROGRESS.value(), userRoadmap.getState());
@@ -690,7 +686,7 @@ public class ProgressControllerTest extends BaseControllerTest {
             .andExpect(jsonPath("$.data.learning").value(false));
 
         // 验证数据库 - 记录应该被删除
-        UserRoadmapDO userRoadmap = userRoadmapDataService.getByUserAndRoadmap(user.getId(), roadmap.getId());
+        UserLearningDO userRoadmap = userLearningDataService.getByUserAndObject(user.getId(), Enums.ContentType.roadmap.byteValue(), roadmap.getId());
         assertNull(userRoadmap);
     }
 
@@ -832,8 +828,8 @@ public class ProgressControllerTest extends BaseControllerTest {
             .andExpect(jsonPath("$.data.progressPercent").value(60));
 
         // 验证数据库
-        UserRoadmapDO userRoadmap = userRoadmapDataService.getByUserAndRoadmap(user.getId(), roadmap.getId());
-        assertEquals(60, userRoadmap.getProgressPercent());
+        UserLearningDO userRoadmap = userLearningDataService.getByUserAndObject(user.getId(), Enums.ContentType.roadmap.byteValue(), roadmap.getId());
+        assertEquals(6000, userRoadmap.getProgressPercent());
     }
 
     @Test
@@ -862,8 +858,8 @@ public class ProgressControllerTest extends BaseControllerTest {
             .andExpect(jsonPath("$.data.completedAt").isNotEmpty());
 
         // 验证数据库
-        UserRoadmapDO userRoadmap = userRoadmapDataService.getByUserAndRoadmap(user.getId(), roadmap.getId());
-        assertEquals(100, userRoadmap.getProgressPercent());
+        UserLearningDO userRoadmap = userLearningDataService.getByUserAndObject(user.getId(), Enums.ContentType.roadmap.byteValue(), roadmap.getId());
+        assertEquals(10000, userRoadmap.getProgressPercent());
         assertEquals(UserProgressState.COMPLETED.value(), userRoadmap.getState());
         assertNotNull(userRoadmap.getCompletedAt());
     }
