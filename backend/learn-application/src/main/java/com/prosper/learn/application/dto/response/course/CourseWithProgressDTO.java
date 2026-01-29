@@ -31,10 +31,20 @@ public class CourseWithProgressDTO extends CourseDetailDTO {
     private Boolean bookmarked;
 
     /**
-     * 学习进度
+     * 学习进度（百分比：0-100）
      * 说明：课程完成百分比（0-100）
      * 何时填充：动态计算当前用户的学习进度填充
      * 计算规则：已完成节点数 / 总节点数 * 100
+     * @deprecated 使用 progressPercent（万分位）代替
      */
+    @Deprecated
     private Integer progress;
+
+    /**
+     * 学习进度（万分位：0-10000）
+     * 说明：课程完成进度，万分位精度
+     * 何时填充：动态计算当前用户的学习进度填充
+     * 前端转换：progressPercent / 100 = 百分比（0-100）
+     */
+    private Integer progressPercent;
 }

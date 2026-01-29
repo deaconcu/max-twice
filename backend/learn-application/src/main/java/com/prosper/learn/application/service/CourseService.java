@@ -119,7 +119,7 @@ public class CourseService {
 
         // 设置进度信息
         dto.setBookmarked(subscribed);
-        dto.setProgress(progress);
+        dto.setProgressPercent(progress); // 万分位（0-10000）
         return dto;
     }
 
