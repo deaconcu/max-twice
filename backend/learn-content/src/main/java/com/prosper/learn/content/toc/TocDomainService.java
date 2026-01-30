@@ -1,6 +1,7 @@
 package com.prosper.learn.content.toc;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -214,7 +215,7 @@ public class TocDomainService {
 
         // 如果第一个目录变了（交换顺序或替换），发布事件通知更新 nodes 字段
         if (!Objects.equals(oldFirstHash, newFirstHash)) {
-            publishTocUpdatedEvent(userId, nodeId, newFirstHash);
+            eventPublisher.publishEvent(new TocChosenEvent(userId, nodeId, newFirstHash));
         }
     }
 
@@ -432,7 +433,7 @@ public class TocDomainService {
 
         // 7. 如果修改的是第一个目录（tocIndex=0），发布事件通知更新 nodes 字段
         if (tocIndex == 0) {
-            publishTocUpdatedEvent(userId, nodeId, tocHashArr[0]);
+            eventPublisher.publishEvent(new TocChosenEvent(userId, nodeId, tocHashArr[0]));
         }
     }
 
@@ -463,7 +464,7 @@ public class TocDomainService {
 
         // 如果修改的是第一个目录（tocIndex=1），发布事件通知更新 nodes 字段
         if (tocIndex == 1) {
-            publishTocUpdatedEvent(userId, nodeId, tocHashArr[0]);
+            eventPublisher.publishEvent(new TocChosenEvent(userId, nodeId, tocHashArr[0]));
         }
     }
 
@@ -563,19 +564,82 @@ public class TocDomainService {
     }
 
     /**
-     * 发布ToC更新事件
-     * 当第一个目录被修改时，通知更新 user_learning.nodes 字段
+     * 获取指定用户和根节点的某个目录组中的所有节点ID
      *
      * @param userId 用户ID
-     * @param nodeId 节点ID（课程根节点）
-     * @param newFirstTocHash 新的第一个目录的哈希值
+     * @param rootNodeId 根节点ID
+     * @param tocIndex 目录组索引（1-based）
+     * @return 节点ID集合
      */
-    private void publishTocUpdatedEvent(long userId, long nodeId, String newFirstTocHash) {
+    public Set<Long> getNodeIdsInToc(long userId, long rootNodeId, int tocIndex) {
+        Set<Long> nodeIds = new HashSet<>();
+
         try {
-            eventPublisher.publishEvent(new TocChosenEvent(userId, nodeId, newFirstTocHash));
+            // 获取指定目录组的内容
+            String tocContent = getToc(userId, rootNodeId, tocIndex);
+            if (tocContent == null || tocContent.trim().isEmpty()) {
+                return nodeIds;
+            }
+
+            // 解析并收集节点ID
+            JsonNode rootNode = objectMapper.readTree(tocContent);
+            collectNodeIdsRecursive(rootNode, nodeIds);
+
         } catch (Exception e) {
-            // 事件发布失败不应该影响主流程
-            log.error("发布ToC更新事件失败: userId={}, nodeId={}", userId, nodeId, e);
+            log.error("获取目录 {} 的节点ID失败: {}", tocIndex, e.getMessage());
         }
+
+        return nodeIds;
+    }
+
+    /**
+     * 递归收集节点ID
+     */
+    private void collectNodeIdsRecursive(JsonNode node, Set<Long> nodeIds) {
+        if (node == null || !node.isObject()) {
+            return;
+        }
+
+        node.fieldNames().forEachRemaining(fieldName -> {
+            // 跳过特殊字段
+            if ("+".equals(fieldName) || "^".equals(fieldName)) {
+                return;
+            }
+
+            try {
+                Long nodeId = Long.parseLong(fieldName);
+                nodeIds.add(nodeId);
+
+                // 递归处理子节点
+                JsonNode childNode = node.get(fieldName);
+                if (childNode != null && childNode.isObject()) {
+                    collectNodeIdsRecursive(childNode, nodeIds);
+                }
+            } catch (NumberFormatException e) {
+                // 不是节点ID的字段，忽略
+            }
+        });
+    }
+
+    /**
+     * 从ToC内容中收集所有节点ID
+     *
+     * @param tocContent 目录JSON字符串
+     * @return 节点ID集合
+     */
+    public Set<Long> collectNodeIdsFromToc(String tocContent) {
+        Set<Long> nodeIds = new HashSet<>();
+        if (tocContent == null || tocContent.trim().isEmpty()) {
+            return nodeIds;
+        }
+
+        try {
+            JsonNode rootNode = objectMapper.readTree(tocContent);
+            collectNodeIdsRecursive(rootNode, nodeIds);
+        } catch (Exception e) {
+            log.error("解析ToC内容失败: {}", e.getMessage());
+        }
+
+        return nodeIds;
     }
 }

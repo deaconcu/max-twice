@@ -171,6 +171,20 @@ const scrollToTop = (): void => {
               <span v-else class="tree-node-text">
                 {{ nodeInfos[key]?.name || key }}
               </span>
+
+              <!-- 可完成标识 - 只在学习模式下显示 -->
+              <v-chip
+                v-if="isLearning && nodeInfos[key]?.canComplete"
+                size="x-small"
+                color="primary"
+                variant="tonal"
+                class="ml-2"
+              >
+                可完成
+                <v-tooltip activator="parent" location="top">
+                  该目录下的所有节点都已完成，可以标记当前目录为已完成了！
+                </v-tooltip>
+              </v-chip>
             </div>
           </router-link>
           <v-btn

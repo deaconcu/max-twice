@@ -49,11 +49,11 @@ public class ProgressController {
             @PathVariable @NotNull(message = "节点ID不能为空")
             @Positive(message = "节点ID必须大于0")
             Long nodeId,
-            @JsonParam("courseId") @NotNull(message = "课程ID不能为空")
-            @Positive(message = "课程ID必须大于0")
-            Long courseId,
+            @JsonParam("rootNodeId") @NotNull(message = "根节点ID不能为空")
+            @Positive(message = "根节点ID必须大于0")
+            Long rootNodeId,
             @CurrentUser UserDO currentUser) {
-        NodeProgressResponseDTO result = learningProgressService.markNodeCompletedWithResponse(currentUser.getId(), nodeId, courseId);
+        NodeProgressResponseDTO result = learningProgressService.markNodeCompletedWithResponse(currentUser.getId(), nodeId, rootNodeId);
         return ApiResponse.success(result);
     }
 
@@ -68,11 +68,11 @@ public class ProgressController {
             @PathVariable @NotNull(message = "节点ID不能为空")
             @Positive(message = "节点ID必须大于0")
             Long nodeId,
-            @JsonParam("courseId") @NotNull(message = "课程ID不能为空")
-            @Positive(message = "课程ID必须大于0")
-            Long courseId,
+            @JsonParam("rootNodeId") @NotNull(message = "根节点ID不能为空")
+            @Positive(message = "根节点ID必须大于0")
+            Long rootNodeId,
             @CurrentUser UserDO currentUser) {
-        NodeProgressResponseDTO result = learningProgressService.unmarkNodeCompletedWithResponse(currentUser.getId(), nodeId, courseId);
+        NodeProgressResponseDTO result = learningProgressService.unmarkNodeCompletedWithResponse(currentUser.getId(), nodeId, rootNodeId);
         return ApiResponse.success(result);
     }
 

@@ -284,4 +284,21 @@ public class Utils {
             );
         }
     }
+
+    /**
+     * 将节点ID集合转换为JSON数组字符串
+     * 例如: {1, 2, 3} → "[1,2,3]"
+     *
+     * @param nodeIds 节点ID集合
+     * @return JSON数组字符串
+     */
+    public static String nodeIdsToJsonArray(Set<Long> nodeIds) {
+        if (nodeIds == null || nodeIds.isEmpty()) {
+            return "[]";
+        }
+
+        return nodeIds.stream()
+            .map(String::valueOf)
+            .collect(Collectors.joining(",", "[", "]"));
+    }
 }

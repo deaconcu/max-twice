@@ -287,7 +287,7 @@ public class PageService {
         // 构建响应
         return buildPageDataResponse(nodeTocDTO, targetNodeDO, parentCourse, courseDO, subCourseList,
                 chosenPostingDTO, otherPostingsDTO, lastId, path, userMap.values(),
-                learning, null, nodeCompleted, courseProgress, nodeId); // nodeId 是 TOC 的根节点
+                learning, null, nodeCompleted, courseProgress, nodeId, userId); // nodeId 是 TOC 的根节点
     }
 
     /**
@@ -575,7 +575,7 @@ public class PageService {
 
         return buildPageDataResponse(nodeTocDTO, nodeDO, parentCourse, courseDO, subCourseList,
                 chosenPostingDTO, otherPostingsDTO, lastId, path, userMap.values(),
-                learning, postDTO, nodeCompleted, courseProgress, courseDO.getRootNodeId()); // course 的 rootNodeId
+                learning, postDTO, nodeCompleted, courseProgress, courseDO.getRootNodeId(), userId); // course 的 rootNodeId
     }
 
     /**
@@ -832,7 +832,7 @@ public class PageService {
                                                       CourseWithProgressDTO parentCourse, CourseDO courseDO, List<CourseSummaryDTO> subCourseList,
                                                       PostWithVoteDTO chosenPosting, List<PostWithVoteDTO> otherPostings,
                                                       long lastId, String path, Collection<UserBriefDTO> users, boolean learning,
-                                                      PostWithVoteDTO postDTO, boolean nodeCompleted, Integer courseProgress, Long rootNodeId) {
+                                                      PostWithVoteDTO postDTO, boolean nodeCompleted, Integer courseProgress, Long rootNodeId, Long userId) {
 
         Map<String, Object> data = new HashMap<>();
 
@@ -862,6 +862,14 @@ public class PageService {
         data.put("users", new ArrayList<>(users));
         data.put("learning", learning);
         data.put("rootNodeId", rootNodeId); // TOC 是基于此 nodeId 创建的
+
+        // 如果正在学习，计算可完成的节点列表
+        if (learning && rootNodeId != null && userId != null) {
+            List<Long> completableNodeIds = learningProgressService.findCompletableNodes(userId, rootNodeId);
+            data.put("completableNodeIds", completableNodeIds);
+        } else {
+            data.put("completableNodeIds", new ArrayList<>());
+        }
 
         if (postDTO != null) {
             data.put("post", postDTO);

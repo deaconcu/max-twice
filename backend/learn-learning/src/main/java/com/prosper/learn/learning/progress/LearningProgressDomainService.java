@@ -57,12 +57,12 @@ public class LearningProgressDomainService {
      *
      * @param userId 用户ID
      * @param nodeId 节点ID
-     * @param courseId 课程ID（当前正在学习的课程，前端传入）
+     * @param rootNodeId 根节点ID（用于验证）
      */
-    public void unmarkNodeCompleted(long userId, long nodeId, long courseId) {
+    public void unmarkNodeCompleted(long userId, long nodeId, long rootNodeId) {
         ValidationUtils.requirePositiveId(userId);
         ValidationUtils.requirePositiveId(nodeId);
-        ValidationUtils.requirePositiveId(courseId);
+        ValidationUtils.requirePositiveId(rootNodeId);
 
         // 检查是否未完成
         if (!userNodeCompletionDataService.isCompleted(userId, nodeId)) {

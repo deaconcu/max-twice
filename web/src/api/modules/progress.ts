@@ -18,16 +18,16 @@ export const progressApi = {
   /**
    * 标记节点为完成
    */
-  markNodeComplete(nodeId: number, courseId: number): Promise<ApiResponse<NodeProgressResponse>> {
-    return apiClient.post(`/v1/progress/nodes/${String(nodeId)}/complete`, { courseId })
+  markNodeComplete(nodeId: number, rootNodeId: number): Promise<ApiResponse<NodeProgressResponse>> {
+    return apiClient.post(`/v1/progress/nodes/${String(nodeId)}/complete`, { rootNodeId })
   },
 
   /**
    * 取消节点完成标记
    */
-  unmarkNodeComplete(nodeId: number, courseId: number): Promise<ApiResponse<NodeProgressResponse>> {
+  unmarkNodeComplete(nodeId: number, rootNodeId: number): Promise<ApiResponse<NodeProgressResponse>> {
     return apiClient.delete(`/v1/progress/nodes/${String(nodeId)}/complete`, {
-      data: { courseId },
+      data: { rootNodeId },
     })
   },
 

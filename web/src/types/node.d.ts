@@ -25,6 +25,7 @@ export interface Node {
   // 学习进度相关
   isCompleted?: boolean // 是否已完成
   progress?: number // 进度百分比 (0.0-100.0)
+  canComplete?: boolean // 递归完成度100%但节点本身未完成，可以提示用户标记完成
 }
 
 /**
@@ -36,4 +37,5 @@ export interface NodeProgressResponse {
   completed: boolean
   courseId?: number
   courseProgressPercent?: number
+  completableNodeIds?: number[] // 可完成的节点ID列表
 }

@@ -1,5 +1,7 @@
 package com.prosper.learn.application.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.application.converter.RoadmapConverter;
 import com.prosper.learn.application.converter.UserLearningConverter;
 import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
@@ -9,8 +11,10 @@ import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.roadmap.RoadmapDO;
 import com.prosper.learn.content.roadmap.RoadmapDataService;
+import com.prosper.learn.content.toc.TocDomainService;
 import com.prosper.learn.learning.enrollment.UserLearningDO;
 import com.prosper.learn.learning.enrollment.UserLearningDomainService;
+import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.user.learning.LearningStartedEvent;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +24,13 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.prosper.learn.shared.domain.exception.StatusCode.COURSE_NOT_FOUND;
 
 /**
  * 用户学习记录应用服务
@@ -38,6 +46,8 @@ public class UserLearningService {
     private final CourseDataService courseDataService;
     private final RoadmapDataService roadmapDataService;
     private final CourseService courseService;
+    private final TocDomainService tocDomainService;
+    private final ObjectMapper objectMapper;
     //private final RoadmapService roadmapService;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -223,6 +233,20 @@ public class UserLearningService {
         // 默认 isRootNode=FALSE（普通节点或路线图）
         userLearningDomainService.startLearning(userId, objectType, objectId, Enums.Bool.FALSE.value());
 
+        // 如果是学习节点，初始化 nodes 字段
+        if (objectType == Enums.ContentType.node) {
+            try {
+                Set<Long> nodeIds = tocDomainService.getNodeIdsInToc(userId, objectId, 1);
+                if (!nodeIds.isEmpty()) {
+                    String nodesJson = Utils.nodeIdsToJsonArray(nodeIds);
+                    userLearningDomainService.updateNodes(userId, objectType, objectId, nodesJson);
+                    log.info("初始化节点 {} 的节点列表: {} 个节点", objectId, nodeIds.size());
+                }
+            } catch (Exception e) {
+                log.error("初始化 nodes 字段失败", e);
+            }
+        }
+
         // 发布学习开始事件
         eventPublisher.publishEvent(new LearningStartedEvent(userId, objectId, objectType));
 
@@ -237,13 +261,35 @@ public class UserLearningService {
         // 1. 获取课程的根节点ID
         CourseDO course = courseDataService.getById(courseId);
         if (course == null || course.getRootNodeId() == null) {
-            throw com.prosper.learn.shared.domain.exception.StatusCode.COURSE_NOT_FOUND.exception();
+            throw COURSE_NOT_FOUND.exception();
         }
 
         // 2. 开始学习节点（objectType=node, objectId=rootNodeId, isRootNode=TRUE）
         userLearningDomainService.startLearning(userId, Enums.ContentType.node, course.getRootNodeId(), Enums.Bool.TRUE.value());
 
-        // 3. 发布学习开始事件（事件中使用 courseId）
+        // 3. 初始化 nodes 字段（从第一个目录中提取所有节点ID）
+        try {
+            Set<Long> nodeIds = tocDomainService.getNodeIdsInToc(userId, course.getRootNodeId(), 1);
+
+            if (!nodeIds.isEmpty()) {
+                // 转换为JSON数组字符串 "[1,2,3]"
+                String nodesJson = Utils.nodeIdsToJsonArray(nodeIds);
+
+                // 更新 nodes 字段
+                userLearningDomainService.updateNodes(
+                    userId,
+                    Enums.ContentType.node,
+                    course.getRootNodeId(),
+                    nodesJson
+                );
+
+                log.info("初始化课程 {} 的节点列表: {} 个节点", courseId, nodeIds.size());
+            }
+        } catch (Exception e) {
+            log.error("初始化 nodes 字段失败", e);
+        }
+
+        // 4. 发布学习开始事件（事件中使用 courseId）
         eventPublisher.publishEvent(new LearningStartedEvent(userId, courseId, Enums.ContentType.course));
 
         log.info("用户 {} 开始学习课程 {} (rootNodeId={})", userId, courseId, course.getRootNodeId());
@@ -264,7 +310,7 @@ public class UserLearningService {
         // 1. 获取课程的根节点ID
         CourseDO course = courseDataService.getById(courseId);
         if (course == null || course.getRootNodeId() == null) {
-            throw com.prosper.learn.shared.domain.exception.StatusCode.COURSE_NOT_FOUND.exception();
+            throw COURSE_NOT_FOUND.exception();
         }
 
         // 2. 取消学习节点
@@ -288,7 +334,7 @@ public class UserLearningService {
         // 1. 获取课程的根节点ID
         CourseDO course = courseDataService.getById(courseId);
         if (course == null || course.getRootNodeId() == null) {
-            throw com.prosper.learn.shared.domain.exception.StatusCode.COURSE_NOT_FOUND.exception();
+            throw COURSE_NOT_FOUND.exception();
         }
 
         // 2. 更新节点学习进度

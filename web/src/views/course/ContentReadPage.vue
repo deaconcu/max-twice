@@ -465,10 +465,11 @@ const handleToggleLearning = async (shouldStart: boolean) => {
 const { execute: markNodeCompleted, loading: markingNode } = useMutation(
   () => {
     const nodeId = data.value?.node?.id
-    if (!nodeId || !courseId.value) {
-      throw new Error('节点ID或课程ID不存在')
+    const rootNodeId = data.value?.rootNodeId
+    if (!nodeId || !rootNodeId) {
+      throw new Error('节点ID或根节点ID不存在')
     }
-    return progressApi.markNodeComplete(nodeId, courseId.value)
+    return progressApi.markNodeComplete(nodeId, rootNodeId)
   },
   {
     successMessage: '已标记节点完成',
@@ -490,6 +491,21 @@ const { execute: markNodeCompleted, loading: markingNode } = useMutation(
           nodeInfo.isCompleted = response.completed
         }
       }
+
+      // 更新可完成节点标识
+      if (data.value && data.value.tocNodeInfos && response.completableNodeIds) {
+        // 先清除所有节点的 canComplete 标识
+        Object.values(data.value.tocNodeInfos).forEach((info: any) => {
+          info.canComplete = false
+        })
+        // 设置新的可完成节点
+        response.completableNodeIds.forEach((nodeId: number) => {
+          const nodeInfo = data.value!.tocNodeInfos[nodeId]
+          if (nodeInfo) {
+            nodeInfo.canComplete = true
+          }
+        })
+      }
     },
   }
 )
@@ -498,10 +514,11 @@ const { execute: markNodeCompleted, loading: markingNode } = useMutation(
 const { execute: unmarkNodeCompleted, loading: unmarkingNode } = useMutation(
   () => {
     const nodeId = data.value?.node?.id
-    if (!nodeId || !courseId.value) {
-      throw new Error('节点ID或课程ID不存在')
+    const rootNodeId = data.value?.rootNodeId
+    if (!nodeId || !rootNodeId) {
+      throw new Error('节点ID或根节点ID不存在')
     }
-    return progressApi.unmarkNodeComplete(nodeId, courseId.value)
+    return progressApi.unmarkNodeComplete(nodeId, rootNodeId)
   },
   {
     successMessage: '已取消节点完成',
@@ -522,6 +539,21 @@ const { execute: unmarkNodeCompleted, loading: unmarkingNode } = useMutation(
         if (nodeInfo) {
           nodeInfo.isCompleted = response.completed
         }
+      }
+
+      // 更新可完成节点标识
+      if (data.value && data.value.tocNodeInfos && response.completableNodeIds) {
+        // 先清除所有节点的 canComplete 标识
+        Object.values(data.value.tocNodeInfos).forEach((info: any) => {
+          info.canComplete = false
+        })
+        // 设置新的可完成节点
+        response.completableNodeIds.forEach((nodeId: number) => {
+          const nodeInfo = data.value!.tocNodeInfos[nodeId]
+          if (nodeInfo) {
+            nodeInfo.canComplete = true
+          }
+        })
       }
     },
   }
@@ -595,6 +627,22 @@ const {
     })
     // 设置学习状态
     isLearning.value = data.value.learning || false
+
+    // 处理可完成节点标识
+    if (data.value.completableNodeIds && data.value.tocNodeInfos) {
+      // 先清除所有节点的 canComplete 标识
+      Object.values(data.value.tocNodeInfos).forEach((info: any) => {
+        info.canComplete = false
+      })
+      // 设置新的可完成节点
+      data.value.completableNodeIds.forEach((nodeId: number) => {
+        const nodeInfo = data.value.tocNodeInfos[nodeId]
+        if (nodeInfo) {
+          nodeInfo.canComplete = true
+        }
+      })
+    }
+
     // 数据赋值完成后处理数据
     processData()
     // 检查是否有更多数据

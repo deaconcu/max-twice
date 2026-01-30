@@ -1,11 +1,13 @@
 package com.prosper.learn.application.listener;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.application.service.LearningProgressService;
 import com.prosper.learn.content.toc.NodeTocDO;
 import com.prosper.learn.content.toc.NodeTocDataService;
+import com.prosper.learn.content.toc.TocDomainService;
 import com.prosper.learn.learning.enrollment.UserLearningDO;
 import com.prosper.learn.learning.enrollment.UserLearningDataService;
+import com.prosper.learn.learning.enrollment.UserLearningDomainService;
+import com.prosper.learn.shared.common.utils.Utils;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.domain.event.content.toc.TocChosenEvent;
 import lombok.RequiredArgsConstructor;
@@ -13,9 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * ToC事件监听器
@@ -28,7 +28,9 @@ public class TocEventListener {
 
     private final NodeTocDataService nodeTocDataService;
     private final UserLearningDataService userLearningDataService;
-    private final ObjectMapper objectMapper;
+    private final TocDomainService tocDomainService;
+    private final LearningProgressService learningProgressService;
+    private final UserLearningDomainService userLearningDomainService;
 
     /**
      * 监听ToC更新事件
@@ -66,14 +68,11 @@ public class TocEventListener {
                 return;
             }
 
-            // 3. 解析目录内容，提取所有节点ID
-            Set<Long> nodeIds = new HashSet<>();
-            collectNodeIds(nodeTocDO.getToc(), nodeIds);
+            // 3. 收集节点ID
+            Set<Long> nodeIds = tocDomainService.collectNodeIdsFromToc(nodeTocDO.getToc());
 
             // 4. 转换为JSON数组字符串 "[1,2,3]"
-            String nodesJson = nodeIds.stream()
-                .map(String::valueOf)
-                .collect(Collectors.joining(",", "[", "]"));
+            String nodesJson = Utils.nodeIdsToJsonArray(nodeIds);
 
             // 5. 更新 user_learning.nodes 字段
             int updated = userLearningDataService.updateNodes(
@@ -87,44 +86,13 @@ public class TocEventListener {
                 log.info("更新节点 {} 的节点列表: {} 个节点", nodeId, nodeIds.size());
             }
 
+            // 6. 重新计算并更新进度
+            Integer newProgress = learningProgressService.calculateNodeProgress(userId, nodeId);
+            userLearningDomainService.updateProgress(userId, Enums.ContentType.node, nodeId, newProgress);
+            log.info("重新计算节点 {} 的进度: {}", nodeId, newProgress);
+
         } catch (Exception e) {
             log.error("处理ToC更新事件失败", e);
         }
-    }
-
-    /**
-     * 从ToC内容中收集所有节点ID
-     */
-    private void collectNodeIds(String tocContent, Set<Long> nodeIds) {
-        try {
-            JsonNode rootNode = objectMapper.readTree(tocContent);
-            collectNodeIdsRecursive(rootNode, nodeIds);
-        } catch (Exception e) {
-            log.error("解析ToC内容失败: {}", e.getMessage());
-        }
-    }
-
-    /**
-     * 递归收集节点ID
-     */
-    private void collectNodeIdsRecursive(JsonNode node, Set<Long> nodeIds) {
-        if (node == null || !node.isObject()) {
-            return;
-        }
-
-        node.fieldNames().forEachRemaining(fieldName -> {
-            try {
-                Long nodeId = Long.parseLong(fieldName);
-                nodeIds.add(nodeId);
-
-                // 递归处理子节点
-                JsonNode childNode = node.get(fieldName);
-                if (childNode != null && childNode.isObject()) {
-                    collectNodeIdsRecursive(childNode, nodeIds);
-                }
-            } catch (NumberFormatException e) {
-                // 不是节点ID的字段（如 _chosen），忽略
-            }
-        });
     }
 }

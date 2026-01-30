@@ -54,12 +54,10 @@ public class LearningProgressService {
     /**
      * 标记节点完成并返回完整的响应数据
      */
-    public NodeProgressResponseDTO markNodeCompletedWithResponse(long userId, long nodeId, long courseId) {
+    public NodeProgressResponseDTO markNodeCompletedWithResponse(long userId, long nodeId, long rootNodeId) {
         // 验证节点是否存在
         nodeDataService.validateAndGet(nodeId);
-
-        // 验证课程是否存在
-        CourseDO course = courseDataService.validateAndGet(courseId);
+        nodeDataService.validateAndGet(rootNodeId);
 
         // 调用领域服务处理核心逻辑（标记节点完成）
         domainService.markNodeCompleted(userId, nodeId);
@@ -67,47 +65,51 @@ public class LearningProgressService {
         // 更新所有受影响课程的进度
         updateAffectedCoursesProgress(userId, nodeId);
 
-        // 获取更新后的课程进度
+        // 获取更新后的课程进度（使用根节点）
         UserLearningDO learning = userLearningDomainService.getByUserAndType(
-                userId, Enums.ContentType.node, course.getRootNodeId());
+                userId, Enums.ContentType.node, rootNodeId);
         Integer courseProgress = learning != null ? learning.getProgressPercent() : 0;
+
+        // 计算可完成的节点列表（基于根节点的目录1）
+        List<Long> completableNodeIds = findCompletableNodes(userId, rootNodeId);
 
         // 构建响应DTO
         return NodeProgressResponseDTO.builder()
                 .nodeId(nodeId)
                 .completed(true)
-                .courseId(courseId)
                 .courseProgressPercent(courseProgress)
+                .completableNodeIds(completableNodeIds)
                 .build();
     }
 
     /**
      * 取消节点完成并返回完整的响应数据
      */
-    public NodeProgressResponseDTO unmarkNodeCompletedWithResponse(long userId, long nodeId, long courseId) {
+    public NodeProgressResponseDTO unmarkNodeCompletedWithResponse(long userId, long nodeId, long rootNodeId) {
         // 验证节点是否存在
         nodeDataService.validateAndGet(nodeId);
-
-        // 验证课程是否存在
-        CourseDO course = courseDataService.validateAndGet(courseId);
+        nodeDataService.validateAndGet(rootNodeId);
 
         // 调用领域服务处理核心逻辑（取消节点完成）
-        domainService.unmarkNodeCompleted(userId, nodeId, courseId);
+        domainService.unmarkNodeCompleted(userId, nodeId, rootNodeId);
 
         // 更新所有受影响课程的进度
         updateAffectedCoursesProgress(userId, nodeId);
 
-        // 获取更新后的课程进度
+        // 获取更新后的课程进度（使用根节点）
         UserLearningDO learning = userLearningDomainService.getByUserAndType(
-                userId, Enums.ContentType.node, course.getRootNodeId());
+                userId, Enums.ContentType.node, rootNodeId);
         Integer courseProgress = learning != null ? learning.getProgressPercent() : 0;
+
+        // 计算可完成的节点列表（基于根节点的目录1）
+        List<Long> completableNodeIds = findCompletableNodes(userId, rootNodeId);
 
         // 构建响应DTO
         return NodeProgressResponseDTO.builder()
                 .nodeId(nodeId)
                 .completed(false)
-                .courseId(courseId)
                 .courseProgressPercent(courseProgress)
+                .completableNodeIds(completableNodeIds)
                 .build();
     }
 
@@ -179,11 +181,10 @@ public class LearningProgressService {
             // 2. 解析目录结构
             JsonNode tocNode = objectMapper.readTree(tocContent);
 
-            // 3. 收集目录中的所有节点ID
-            Set<Long> nodeIdsInToc = new HashSet<>();
-            collectNodeIds(tocNode, nodeIdsInToc);
+            // 3. 收集目录中的所有节点ID（使用 TocDomainService）
+            Set<Long> nodeIdsInToc = tocService.collectNodeIdsFromToc(tocContent);
 
-            // 4. 批量检查哪些节点已完成（优化：只查询目录中的节点）
+            // 4. 批量检查哪些节点已完成
             Set<Long> completedNodes = domainService.getCompletedNodesInList(userId, nodeIdsInToc);
 
             // 5. 递归计算层级进度
@@ -222,9 +223,7 @@ public class LearningProgressService {
                 String tocContent = tocMap.get(nodeId);
                 if (tocContent != null && !tocContent.trim().isEmpty()) {
                     try {
-                        JsonNode tocNode = objectMapper.readTree(tocContent);
-                        Set<Long> nodeIdsInToc = new HashSet<>();
-                        collectNodeIds(tocNode, nodeIdsInToc);
+                        Set<Long> nodeIdsInToc = tocService.collectNodeIdsFromToc(tocContent);
                         tocNodeIdsMap.put(nodeId, nodeIdsInToc);
                         allNodeIdsInTocs.addAll(nodeIdsInToc);
                     } catch (Exception e) {
@@ -311,39 +310,6 @@ public class LearningProgressService {
     // ========== 私有辅助方法（跨域逻辑）==========
 
     /**
-     * 收集目录中的所有节点ID
-     *
-     * @param node 目录节点
-     * @param nodeIds 用于收集节点ID的集合
-     */
-    private void collectNodeIds(JsonNode node, Set<Long> nodeIds) {
-        if (node == null || !node.isObject()) {
-            return;
-        }
-
-        node.fieldNames().forEachRemaining(fieldName -> {
-            // 跳过特殊字段
-            if ("+".equals(fieldName) || "^".equals(fieldName)) {
-                return;
-            }
-
-            try {
-                // 尝试解析为节点ID
-                long nodeId = Long.parseLong(fieldName);
-                nodeIds.add(nodeId);
-
-                // 递归处理子节点
-                JsonNode childNode = node.get(fieldName);
-                if (childNode != null && childNode.isObject()) {
-                    collectNodeIds(childNode, nodeIds);
-                }
-            } catch (NumberFormatException e) {
-                // 不是数字的字段名，跳过
-            }
-        });
-    }
-
-    /**
      * 更新课程进度
      * 基于用户目录1中的节点层级结构计算进度
      *
@@ -363,11 +329,10 @@ public class LearningProgressService {
             // 2. 解析目录结构
             JsonNode tocNode = objectMapper.readTree(toc1Content);
 
-            // 3. 收集目录中的所有节点ID
-            Set<Long> nodeIdsInToc = new HashSet<>();
-            collectNodeIds(tocNode, nodeIdsInToc);
+            // 3. 收集目录中的所有节点ID（使用 TocDomainService）
+            Set<Long> nodeIdsInToc = tocService.collectNodeIdsFromToc(toc1Content);
 
-            // 4. 批量检查哪些节点已完成（优化：只查询目录中的节点）
+            // 4. 批量检查哪些节点已完成
             Set<Long> completedNodes = domainService.getCompletedNodesInList(userId, nodeIdsInToc);
 
             // 5. 递归计算层级进度
@@ -535,5 +500,88 @@ public class LearningProgressService {
         } catch (Exception e) {
             log.error("更新节点 {} 进度失败：{}", learning.getObjectId(), e.getMessage(), e);
         }
+    }
+
+    /**
+     * 查找可完成的节点列表
+     * 这些节点的递归完成度达到100%但节点本身未完成
+     *
+     * @param userId 用户ID
+     * @param rootNodeId 根节点ID
+     * @return 可完成的节点ID列表
+     */
+    public List<Long> findCompletableNodes(long userId, long rootNodeId) {
+        List<Long> completableNodeIds = new ArrayList<>();
+
+        try {
+            // 1. 获取用户目录1的内容
+            String tocContent = tocService.getToc(userId, rootNodeId, 1);
+            if (tocContent == null || tocContent.trim().isEmpty()) {
+                return completableNodeIds;
+            }
+
+            // 2. 解析目录结构
+            JsonNode tocNode = objectMapper.readTree(tocContent);
+
+            // 3. 收集目录中的所有节点ID（使用 TocDomainService）
+            Set<Long> nodeIdsInToc = tocService.collectNodeIdsFromToc(tocContent);
+
+            // 4. 批量检查哪些节点已完成
+            Set<Long> completedNodes = domainService.getCompletedNodesInList(userId, nodeIdsInToc);
+
+            // 5. 递归查找可完成的节点
+            findCompletableNodesRecursive(tocNode, completedNodes, completableNodeIds);
+
+        } catch (Exception e) {
+            log.error("查找可完成节点失败: {}", e.getMessage(), e);
+        }
+
+        return completableNodeIds;
+    }
+
+    /**
+     * 递归查找可完成的节点
+     *
+     * @param node 当前节点
+     * @param completedNodes 已完成的节点集合
+     * @param completableNodeIds 用于收集可完成节点ID的列表
+     */
+    private void findCompletableNodesRecursive(
+            JsonNode node,
+            Set<Long> completedNodes,
+            List<Long> completableNodeIds) {
+        if (node == null || !node.isObject()) {
+            return;
+        }
+
+        node.fieldNames().forEachRemaining(fieldName -> {
+            // 跳过特殊字段
+            if ("+".equals(fieldName) || "^".equals(fieldName)) {
+                return;
+            }
+
+            try {
+                long nodeId = Long.parseLong(fieldName);
+                JsonNode childNode = node.get(fieldName);
+
+                // 检查是否有子节点
+                boolean hasChildren = childNode != null && childNode.isObject() && childNode.size() > 0;
+
+                if (hasChildren) {
+                    // 如果节点未完成，且所有子节点都完成了，标记为可完成
+                    if (!completedNodes.contains(nodeId)) {
+                        double progress = calculateHierarchicalProgress(childNode, completedNodes);
+                        if (progress >= 0.999999) {
+                            completableNodeIds.add(nodeId);
+                        }
+                    }
+
+                    // 无论节点是否完成，都继续递归检查子节点
+                    findCompletableNodesRecursive(childNode, completedNodes, completableNodeIds);
+                }
+            } catch (NumberFormatException e) {
+                // 不是数字的字段名，跳过
+            }
+        });
     }
 }

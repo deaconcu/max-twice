@@ -221,4 +221,17 @@ public class UserLearningDomainService {
         ValidationUtils.requirePositiveId(userId);
         return userLearningDataService.getCoursesByUser(userId, lastId, limit);
     }
+
+    /**
+     * 更新学习记录的 nodes 字段
+     */
+    @Transactional
+    public void updateNodes(Long userId, Enums.ContentType objectType, Long objectId, String nodes) {
+        ValidationUtils.requirePositiveId(userId);
+        ValidationUtils.requirePositiveId(objectId);
+
+        userLearningDataService.updateNodes(userId, objectType.byteValue(), objectId, nodes);
+
+        log.debug("更新用户 {} 的学习记录 {} 节点列表", userId, objectId);
+    }
 }
