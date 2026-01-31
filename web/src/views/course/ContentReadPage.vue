@@ -69,10 +69,10 @@
                   >
                     {{ index + 1 }}
                   </v-chip>
-                  <div v-if="index === 0" class="corner-badge">
+                  <div v-if="index === 0 && isLearning" class="corner-badge">
                     <v-icon
-                      :icon="'mdi-chart-line-variant'"
-                      :size="$vuetify.display.mobile ? 6 : 8"
+                      icon="mdi-check"
+                      :size="$vuetify.display.mobile ? 8 : 10"
                       color="white"
                     />
                   </div>
@@ -98,6 +98,7 @@
                   :curr-path="String(currContentsIndex + 1)"
                   :depth="1"
                   :is-learning="isLearning"
+                  :toc-index="currContentsIndex"
                   @node-click="drawerOpen = false"
                 />
               </div>
@@ -173,10 +174,10 @@
                   >
                     {{ index + 1 }}
                   </v-chip>
-                  <div v-if="index === 0" class="corner-badge">
+                  <div v-if="index === 0 && isLearning" class="corner-badge">
                     <v-icon
-                      icon="mdi-chart-line-variant"
-                      :size="$vuetify.display.mobile ? 6 : 8"
+                      icon="mdi-check"
+                      :size="$vuetify.display.mobile ? 8 : 10"
                       color="white"
                     />
                   </div>
@@ -211,6 +212,7 @@
                   :curr-path="String(currContentsIndex + 1)"
                   :depth="1"
                   :is-learning="isLearning"
+                  :toc-index="currContentsIndex"
                 />
               </div>
             </div>
@@ -505,6 +507,14 @@ const { execute: markNodeCompleted, loading: markingNode } = useMutation(
             nodeInfo.canComplete = true
           }
         })
+
+        // 同时更新当前节点的 canComplete 状态
+        if (data.value.node) {
+          const currentNodeInfo = data.value.tocNodeInfos[data.value.node.id]
+          if (currentNodeInfo) {
+            data.value.node.canComplete = currentNodeInfo.canComplete
+          }
+        }
       }
     },
   }
@@ -641,6 +651,14 @@ const {
           nodeInfo.canComplete = true
         }
       })
+
+      // 同时更新当前节点的 canComplete 状态
+      if (data.value.node) {
+        const currentNodeInfo = data.value.tocNodeInfos[data.value.node.id]
+        if (currentNodeInfo) {
+          data.value.node.canComplete = currentNodeInfo.canComplete
+        }
+      }
     }
 
     // 数据赋值完成后处理数据
@@ -1037,7 +1055,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid white;
+  border: 1px solid white;
 }
 
 .config-btn {

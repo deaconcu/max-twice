@@ -99,6 +99,39 @@ const handleMarkNodeCompleted = () => {
   console.log('PostingList: 接收到 mark-node-completed 事件，向上传递')
   emit('mark-node-completed')
 }
+
+// 判断当前节点是否可以完成
+// 如果是目录节点且不在可完成列表中，则不允许完成
+const canCompleteNode = () => {
+  if (!props.data?.node) return false
+
+  // 如果节点已完成，允许取消完成
+  if (props.data.node.isCompleted) return true
+
+  // 检查是否是目录节点（有子节点）
+  const hasChildren = props.currNode && Object.keys(props.currNode).some(k => k !== '^' && k !== '+')
+
+  // 如果是叶子节点，允许完成
+  if (!hasChildren) return true
+
+  // 如果是目录节点，检查是否在可完成列表中
+  return props.data.node.canComplete === true
+}
+
+// 完成按钮的禁用提示
+const completeButtonTooltip = () => {
+  if (!props.data?.node) return ''
+
+  if (props.data.node.isCompleted) return '点击取消完成'
+
+  const hasChildren = props.currNode && Object.keys(props.currNode).some(k => k !== '^' && k !== '+')
+
+  if (hasChildren && !props.data.node.canComplete) {
+    return '请先完成该目录下的所有节点'
+  }
+
+  return '标记节点为已完成'
+}
 </script>
 
 <template>
@@ -138,23 +171,28 @@ const handleMarkNodeCompleted = () => {
               </v-tooltip>
             </div>
             <!-- 完成学习按钮 -->
-            <v-btn
-              v-if="isLearning"
-              :color="data.node?.isCompleted ? 'grey-lighten-2' : 'success'"
-              :variant="data.node?.isCompleted ? 'outlined' : 'flat'"
-              rounded="lg"
-              size="small"
-              class="px-4"
-              :prepend-icon="data.node?.isCompleted ? 'mdi-check-circle' : 'mdi-circle-outline'"
-              @click="emit('mark-node-completed')"
-            >
-              <span
-                class="font-weight-medium"
-                :class="data.node?.isCompleted ? 'text-grey-darken-2' : 'text-white'"
+            <div v-if="isLearning" class="d-inline-block">
+              <v-btn
+                :color="data.node?.isCompleted ? 'grey-lighten-2' : 'success'"
+                :variant="data.node?.isCompleted ? 'outlined' : 'flat'"
+                :disabled="!canCompleteNode()"
+                rounded="lg"
+                size="small"
+                class="px-4"
+                :prepend-icon="data.node?.isCompleted ? 'mdi-check-circle' : 'mdi-circle-outline'"
+                @click="emit('mark-node-completed')"
               >
-                {{ data.node?.isCompleted ? '已完成' : '完成学习' }}
-              </span>
-            </v-btn>
+                <span
+                  class="font-weight-medium"
+                  :class="data.node?.isCompleted ? 'text-grey-darken-2' : 'text-white'"
+                >
+                  {{ data.node?.isCompleted ? '已完成' : '完成学习' }}
+                </span>
+              </v-btn>
+              <v-tooltip activator="parent" location="bottom">
+                {{ completeButtonTooltip() }}
+              </v-tooltip>
+            </div>
           </div>
         </div>
         <div v-if="data.node?.description" class="ms-0 mt-4">

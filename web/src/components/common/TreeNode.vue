@@ -18,6 +18,7 @@ interface Props {
   depth?: number
   isLearning?: boolean
   parentPath?: string // 父节点路径，用于判断是否被覆盖
+  tocIndex?: number // 当前目录组索引（0=第一个目录）
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -27,6 +28,7 @@ const props = withDefaults(defineProps<Props>(), {
   depth: 0,
   isLearning: false,
   parentPath: '',
+  tocIndex: 0,
 })
 
 const expandedNodes = ref<string[]>([])
@@ -112,8 +114,8 @@ const scrollToTop = (): void => {
             @click="scrollToTop"
           >
             <div class="d-flex align-center flex-grow-1">
-              <!-- 完成状态图标 - 只在学习模式下显示 -->
-              <template v-if="isLearning && depth !== 1">
+              <!-- 完成状态图标 - 只在学习模式下且是第一个目录时显示 -->
+              <template v-if="isLearning && depth !== 1 && tocIndex === 0">
                 <!-- 判断是否被父节点覆盖 -->
                 <template v-if="isNodeCovered(key as string)">
                   <!-- 被覆盖：全部灰色 -->
@@ -172,19 +174,21 @@ const scrollToTop = (): void => {
                 {{ nodeInfos[key]?.name || key }}
               </span>
 
-              <!-- 可完成标识 - 只在学习模式下显示 -->
-              <v-chip
-                v-if="isLearning && nodeInfos[key]?.canComplete"
-                size="x-small"
-                color="primary"
-                variant="tonal"
-                class="ml-2"
+              <!-- 可完成标识 - 只在学习模式下且是第一个目录时显示 -->
+              <div
+                v-if="isLearning && nodeInfos[key]?.canComplete && tocIndex === 0"
+                class="d-inline-block"
               >
-                可完成
+                <v-icon
+                  icon="mdi-playlist-check"
+                  color="green"
+                  size="18"
+                  class="ml-2"
+                ></v-icon>
                 <v-tooltip activator="parent" location="top">
                   该目录下的所有节点都已完成，可以标记当前目录为已完成了！
                 </v-tooltip>
-              </v-chip>
+              </div>
             </div>
           </router-link>
           <v-btn
@@ -211,6 +215,7 @@ const scrollToTop = (): void => {
                 :parent-path="currPath ? `${currPath}-${key}` : String(key)"
                 :depth="depth + 1"
                 :is-learning="isLearning"
+                :toc-index="tocIndex"
               />
             </div>
           </v-scroll-x-transition>
