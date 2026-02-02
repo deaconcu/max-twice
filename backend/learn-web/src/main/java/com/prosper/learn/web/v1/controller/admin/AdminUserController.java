@@ -1,5 +1,6 @@
 package com.prosper.learn.web.v1.controller.admin;
 
+import com.prosper.learn.application.dto.request.CreateVirtualUserRequest;
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import com.prosper.learn.application.dto.response.user.UserProfileDTO;
 import com.prosper.learn.application.service.UserService;
@@ -10,6 +11,7 @@ import com.prosper.learn.web.v1.annotation.RequireRole;
 import com.prosper.learn.application.dto.ApiResponse;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -154,6 +156,32 @@ public class AdminUserController {
             @CurrentUser UserDO currentUser) {
 
         UserProfileDTO user = userService.updateUserState(id, ban, currentUser);
+        return ApiResponse.success(user);
+    }
+
+    /**
+     * 创建虚拟用户（用于内容生成工具）
+     * POST /api/v1/admin/users/create-virtual
+     */
+    @PostMapping("/users/create-virtual")
+    @RequireRole(UserRole.ADMIN)
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    @OperationLog(
+        module = "用户管理",
+        type = "创建虚拟用户",
+        level = OperationLevel.MEDIUM,
+        targetType = "User",
+        targetId = "0"
+    )
+    public ApiResponse<UserBriefDTO> createVirtualUser(
+            @RequestBody @Valid CreateVirtualUserRequest request,
+            @CurrentUser UserDO currentUser) {
+
+        UserBriefDTO user = userService.createVirtualUser(
+            request.getUsername(),
+            request.getEmail(),
+            request.getPassword()
+        );
         return ApiResponse.success(user);
     }
 }

@@ -249,6 +249,31 @@ public class UserService {
     }
 
     /**
+     * 管理员创建虚拟用户（跳过邮箱验证）
+     * 用于内容生成工具
+     */
+    @Transactional
+    public UserBriefDTO createVirtualUser(String username, String email, String password) {
+        validateEmailFormat(email);
+        validatePassword(password);
+
+        // 创建用户
+        UserDO user = userDomainService.createUser(email, password);
+
+        // 设置用户名
+        updateCurrentUser(user.getId(), username, null);
+
+        // 直接激活用户，跳过邮箱验证
+        userDataService.updateEmailValidated(user.getId(), true);
+
+        log.info("管理员创建虚拟用户成功: username={}, email={}", username, email);
+
+        // 重新获取更新后的用户
+        user = userDataService.getById(user.getId());
+        return toBriefDTO(user);
+    }
+
+    /**
      * 用户登录验证
      * 只做业务验证，不操作认证状态
      */
