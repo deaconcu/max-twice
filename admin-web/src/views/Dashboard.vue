@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/modules/auth'
+import { useUserStore } from '@/stores/modules/user'
+import { UserRole } from '@/enums'
+import { userApi } from '@/api'
 import ProfessionManagement from '@/components/admin/ProfessionManagement.vue'
 import SystemConfiguration from '@/components/admin/SystemConfiguration.vue'
 import SystemOperations from '@/components/admin/SystemOperations.vue'
@@ -18,6 +22,29 @@ import ContentGenerator from '@/components/admin/ContentGenerator.vue'
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
+const userStore = useUserStore()
+
+// 登出
+const handleLogout = () => {
+  authStore.logout()
+  router.push('/login')
+}
+
+// 角色显示名称
+const roleName = computed(() => {
+  const role = userStore.userRole
+  switch (role) {
+    case UserRole.SUPER_ADMIN:
+      return '超级管理员'
+    case UserRole.ADMIN:
+      return '管理员'
+    case UserRole.MODERATOR:
+      return '审核员'
+    default:
+      return '普通用户'
+  }
+})
 
 // 有效的 tab 值列表
 const validTabs = [
@@ -52,7 +79,6 @@ const menuItems = [
   { icon: 'mdi-clipboard-text-clock', text: '操作日志', value: 'operation-logs' },
   { divider: true },
   { icon: 'mdi-account-multiple', text: '用户管理', value: 'user-management' },
-  { icon: 'mdi-robot', text: '内容生成', value: 'content-generator' },
   { icon: 'mdi-briefcase-check-outline', text: '职业管理', value: 'profession-management' },
   { icon: 'mdi-book-check-outline', text: '课程管理', value: 'course-management' },
   { divider: true },
@@ -61,6 +87,8 @@ const menuItems = [
   { icon: 'mdi-note-check-outline', text: '文章审核', value: 'post-review' },
   { icon: 'mdi-comment-check-outline', text: '评论审核', value: 'comment-review' },
   { icon: 'mdi-cards-variant', text: '记忆卡片管理', value: 'memory-card-review' },
+  { divider: true },
+  { icon: 'mdi-robot', text: '内容生成', value: 'content-generator' },
 ]
 
 // 监听 tab 变化,同步更新 URL 参数
@@ -81,35 +109,84 @@ watch(
 )
 
 onMounted(async () => {
-  // 组件挂载时的初始化逻辑
+  // 获取当前用户信息
+  if (!userStore.currentUser) {
+    try {
+      const response = await userApi.getCurrentUser()
+      if (response.code === 200 && response.data) {
+        userStore.setUser(response.data)
+      }
+    } catch (error) {
+      console.error('获取用户信息失败:', error)
+    }
+  }
+
   console.log('Admin view mounted, current tab:', tab.value)
 })
 </script>
 
 <template>
-  <v-container class="ma-0 pa-0 bg-white" fluid>
+  <v-container class="ma-0 pa-0" fluid>
     <div class="d-flex flex-row" style="min-height: 100vh">
-      <!-- 左侧边栏 -->
+      <!-- 左侧导航栏 -->
       <div class="sidebar-container">
-        <v-list density="comfortable" nav class="pa-4">
+        <!-- Logo区域 -->
+        <div class="logo-section">
+          <v-avatar color="primary" size="40" class="mr-3">
+            <v-icon icon="mdi-cog" color="white" size="24"></v-icon>
+          </v-avatar>
+          <div>
+            <div class="text-h6 font-weight-bold">MaxTwice</div>
+            <div class="text-caption text-grey">管理后台</div>
+          </div>
+        </div>
+
+        <v-divider class="my-4"></v-divider>
+
+        <!-- 菜单列表 -->
+        <v-list density="comfortable" nav class="pa-0">
           <template v-for="item in menuItems" :key="item.value">
-            <v-divider v-if="item.divider" class="my-4"></v-divider>
+            <v-divider v-if="item.divider" class="my-3"></v-divider>
             <v-list-item
               v-else
               :value="item.value"
               :active="tab === item.value"
               :prepend-icon="item.icon"
               :title="item.text"
+              :ripple="false"
               rounded="lg"
-              class="mb-2"
+              class="mb-1 menu-item"
               @click="tab = item.value"
             ></v-list-item>
           </template>
         </v-list>
+
+        <!-- 用户信息区域 -->
+        <div class="user-section">
+          <v-divider class="mb-3"></v-divider>
+          <div class="d-flex align-center justify-space-between px-3 py-2">
+            <div class="d-flex align-center">
+              <v-avatar size="32" color="grey-lighten-2" class="mr-2">
+                <v-icon icon="mdi-account" size="18"></v-icon>
+              </v-avatar>
+              <div class="user-info">
+                <div class="text-body-2 font-weight-medium">{{ userStore.userName }}</div>
+                <div class="text-caption text-grey">{{ roleName }}</div>
+              </div>
+            </div>
+            <v-btn
+              icon="mdi-logout"
+              variant="text"
+              size="small"
+              @click="handleLogout"
+              title="退出登录"
+            ></v-btn>
+          </div>
+        </div>
       </div>
 
       <!-- 右侧主内容区域 -->
-      <div class="flex-grow-1 px-4 py-4">
+      <div class="flex-grow-1 content-area">
         <!-- 系统配置 -->
         <v-card v-if="tab == 'system-config'" class="px-6 pt-2 pb-6 no-border" rounded="lg">
           <SystemConfiguration />
@@ -177,23 +254,69 @@ onMounted(async () => {
 <style scoped>
 /* 侧边栏样式 */
 .sidebar-container {
-  border-right: 1px solid rgba(0, 0, 0, 0.08);
-  min-width: 240px;
-  background-color: #fafafa;
+  min-width: 260px;
+  max-width: 260px;
+  background-color: #f5f5f5;
+  padding: 24px 16px;
+  height: 100vh;
+  overflow-y: hidden;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-/* 列表项激活状态 */
+/* Logo区域 */
+.logo-section {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+}
+
+/* 用户信息区域 */
+.user-section {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.user-info {
+  max-width: 120px;
+  overflow: hidden;
+}
+
+.user-info .text-body-2 {
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* v-list去掉背景色 */
+:deep(.v-list) {
+  background-color: transparent !important;
+}
+
+/* 主内容区域 */
+.content-area {
+  background-color: #fdfdfd;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* 菜单项样式 */
+.menu-item {
+  margin: 0 8px 4px 8px;
+  transition: all 0.2s ease;
+}
+
+/* 列表项激活状态 - 去掉背景色 */
 :deep(.v-list-item--active) {
-  background-color: rgb(var(--v-theme-teal-lighten-5)) !important;
-  color: rgb(var(--v-theme-teal-darken-2)) !important;
-}
-
-:deep(.v-list-item--active .v-list-item__prepend .v-icon) {
-  color: rgb(var(--v-theme-teal-darken-2)) !important;
+  background-color: #fefefe;
+  font-weight: 600 !important;
 }
 
 :deep(.v-list-item .v-list-item-title) {
-  font-size: 16px !important;
+  font-size: 14px !important;
   font-weight: 500 !important;
 }
 
