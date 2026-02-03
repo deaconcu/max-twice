@@ -74,20 +74,21 @@ const tab = ref<string>(getInitialTab())
 
 // 菜单项配置
 const menuItems = [
+  { header: '系统' },
   { icon: 'mdi-cog-outline', text: '系统配置', value: 'system-config' },
   { icon: 'mdi-cog-sync', text: '系统操作', value: 'system-operations' },
   { icon: 'mdi-clipboard-text-clock', text: '操作日志', value: 'operation-logs' },
-  { divider: true },
-  { icon: 'mdi-account-multiple', text: '用户管理', value: 'user-management' },
-  { icon: 'mdi-briefcase-check-outline', text: '职业管理', value: 'profession-management' },
-  { icon: 'mdi-book-check-outline', text: '课程管理', value: 'course-management' },
-  { divider: true },
-  { icon: 'mdi-map-marker-path', text: '路线图管理', value: 'roadmap-management' },
-  { icon: 'mdi-file-tree-outline', text: '节点管理', value: 'node-management' },
-  { icon: 'mdi-note-check-outline', text: '文章审核', value: 'post-review' },
-  { icon: 'mdi-comment-check-outline', text: '评论审核', value: 'comment-review' },
-  { icon: 'mdi-cards-variant', text: '记忆卡片管理', value: 'memory-card-review' },
-  { divider: true },
+  { header: '全局内容管理' },
+  { icon: 'mdi-account-multiple', text: '用户', value: 'user-management' },
+  { icon: 'mdi-briefcase-check-outline', text: '职业', value: 'profession-management' },
+  { icon: 'mdi-book-check-outline', text: '课程', value: 'course-management' },
+  { icon: 'mdi-file-tree-outline', text: '节点', value: 'node-management' },
+  { header: '用户内容管理' },
+  { icon: 'mdi-map-marker-path', text: '路线图', value: 'roadmap-management' },
+  { icon: 'mdi-note-check-outline', text: '文章', value: 'post-review' },
+  { icon: 'mdi-comment-check-outline', text: '评论', value: 'comment-review' },
+  { icon: 'mdi-cards-variant', text: '记忆卡片', value: 'memory-card-review' },
+  { header: 'AI 内容生成' },
   { icon: 'mdi-robot', text: '内容生成', value: 'content-generator' },
 ]
 
@@ -136,17 +137,20 @@ onMounted(async () => {
             <v-icon icon="mdi-cog" color="white" size="24"></v-icon>
           </v-avatar>
           <div>
-            <div class="text-h6 font-weight-bold">MaxTwice</div>
+            <div class="text-body-1 font-weight-bold">MaxTwice</div>
             <div class="text-caption text-grey">管理后台</div>
           </div>
         </div>
 
-        <v-divider class="my-4"></v-divider>
+        <div class="my-3"></div>
 
         <!-- 菜单列表 -->
         <v-list density="comfortable" nav class="pa-0">
-          <template v-for="item in menuItems" :key="item.value">
-            <v-divider v-if="item.divider" class="my-3"></v-divider>
+          <template v-for="(item, index) in menuItems" :key="index">
+            <v-list-subheader v-if="item.header" class="text-caption font-weight-bold px-4 mt-2">
+              {{ item.header }}
+            </v-list-subheader>
+            <v-divider v-else-if="item.divider" class="my-2"></v-divider>
             <v-list-item
               v-else
               :value="item.value"
@@ -254,8 +258,8 @@ onMounted(async () => {
 <style scoped>
 /* 侧边栏样式 */
 .sidebar-container {
-  min-width: 260px;
-  max-width: 260px;
+  min-width: 200px;
+  max-width: 200px;
   background-color: #f5f5f5;
   padding: 24px 16px;
   height: 100vh;
@@ -296,6 +300,16 @@ onMounted(async () => {
   background-color: transparent !important;
 }
 
+/* 菜单分组标题 */
+:deep(.v-list-subheader) {
+  color: rgba(0, 0, 0, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 11px;
+  height: 32px;
+  line-height: 32px;
+}
+
 /* 主内容区域 */
 .content-area {
   background-color: #fdfdfd;
@@ -305,7 +319,7 @@ onMounted(async () => {
 
 /* 菜单项样式 */
 .menu-item {
-  margin: 0 8px 4px 8px;
+  margin: 0 2px 4px 2px;
   transition: all 0.2s ease;
 }
 
