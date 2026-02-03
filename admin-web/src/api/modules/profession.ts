@@ -1,0 +1,82 @@
+import apiClient from '../client'
+import type { ApiResponse, KeysetPageResponse } from '@/types/api'
+import type { Profession } from '@/types/profession'
+
+/**
+ * 职业管理相关 API
+ * 参考：web-ts/src/services/api/v1/apiServiceV1.ts (professionServiceV1)
+ */
+export const professionApi = {
+  /**
+   * 获取职业列表（分页）
+   * @param lastId 分页游标
+   * @param mainCategory 主分类ID（可选）
+   * @param subCategory 子分类ID（可选）
+   * 不传分类参数时返回所有已发布职业
+   */
+  getProfessionsByCategory(
+    lastId?: number,
+    mainCategory?: number,
+    subCategory?: number
+  ): Promise<ApiResponse<KeysetPageResponse<Profession>>> {
+    return apiClient.get('/v1/professions', {
+      params: { lastId, mainCategory, subCategory },
+    })
+  },
+
+  /**
+   * 获取职业详情
+   */
+  getProfession(id: number): Promise<ApiResponse<Profession>> {
+    return apiClient.get(`/v1/professions/${String(id)}`)
+  },
+
+  /**
+   * 创建职业
+   */
+  createProfession(professionData: Partial<Profession>): Promise<ApiResponse<Profession>> {
+    return apiClient.post('/v1/professions', professionData)
+  },
+
+  /**
+   * 更新职业（管理接口）
+   */
+  updateProfession(
+    id: number,
+    professionData: Partial<Profession>
+  ): Promise<ApiResponse<Profession>> {
+    return apiClient.put(`/v1/admin/contents/profession/${String(id)}`, professionData)
+  },
+
+  /**
+   * 审核职业（管理接口）
+   */
+  approveProfession(
+    id: number,
+    action: string,
+    reason?: string
+  ): Promise<ApiResponse<void>> {
+    return apiClient.post(`/v1/admin/contents/profession/${String(id)}/operate`, {
+      action,
+      reason,
+    })
+  },
+
+  /**
+   * 获取热门职业
+   */
+  getHotProfessions(limit = 10): Promise<ApiResponse<Profession[]>> {
+    return apiClient.get('/v1/professions/hot', {
+      params: { limit },
+    })
+  },
+
+  /**
+   * 搜索职业
+   */
+  searchProfessions(keyword: string): Promise<ApiResponse<Profession[]>> {
+    return apiClient.get('/v1/professions/search', {
+      params: { keyword },
+    })
+  },
+}
