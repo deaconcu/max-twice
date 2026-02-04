@@ -7,7 +7,6 @@ import { useMutation } from '@/composables'
 const rootIdType = ref<'course' | 'node'>('course')
 const rootNodeId = ref<string>('')
 const rootContentType = ref<'auto' | 'index' | 'article'>('auto')
-const rootEnqueueChildren = ref<boolean>(true)
 
 // 单节点生成
 const nodeId = ref<string>('')
@@ -77,7 +76,7 @@ const { execute: scanNodes, loading: scanningNodes } = useMutation(adminApi.scan
       </v-card-title>
       <v-card-text>
         <p class="text-body-2 text-grey mb-4">
-          为指定的课程或节点生成内容，可选择让 AI 自动判断生成目录或文章，生成目录时会递归创建子节点
+          为指定的课程或节点生成内容，可选择让 AI 自动判断生成目录或文章，生成目录时会递归创建子节点并提交队列
         </p>
 
 
@@ -103,22 +102,14 @@ const { execute: scanNodes, loading: scanningNodes } = useMutation(adminApi.scan
 
         <v-row class="mt-2">
           <v-col cols="12" md="6">
-            <v-radio-group v-model="rootContentType" inline label="内容类型" hide-details>
-              <v-radio label="自动判断" value="auto"></v-radio>
-              <v-radio label="目录" value="index"></v-radio>
-              <v-radio label="文章" value="article"></v-radio>
-            </v-radio-group>
-          </v-col>
-        </v-row>
-
-        <v-row class="mt-2">
-          <v-col cols="12">
-            <v-checkbox
-              v-model="rootEnqueueChildren"
-              label="生成目录时，将子节点加入队列"
-              hide-details
-              density="compact"
-            ></v-checkbox>
+            <div class="d-flex align-center">
+              <span class="text-body-1 mr-0" style="min-width: 70px">内容类型：</span>
+              <v-radio-group v-model="rootContentType" inline hide-details>
+                <v-radio label="自动判断" value="auto"></v-radio>
+                <v-radio label="目录" value="index"></v-radio>
+                <v-radio label="文章" value="article"></v-radio>
+              </v-radio-group>
+            </div>
           </v-col>
         </v-row>
 
@@ -130,7 +121,7 @@ const { execute: scanNodes, loading: scanningNodes } = useMutation(adminApi.scan
             @click="startGenerateRoot"
           >
             <v-icon icon="mdi-play" class="mr-2"></v-icon>
-            提交节点
+            提交
           </v-btn>
         </div>
       </v-card-text>
@@ -161,11 +152,14 @@ const { execute: scanNodes, loading: scanningNodes } = useMutation(adminApi.scan
 
         <v-row class="mt-2">
           <v-col cols="12" md="6">
-            <v-radio-group v-model="nodeContentType" inline label="内容类型" hide-details>
-              <v-radio label="自动判断" value="auto"></v-radio>
-              <v-radio label="目录" value="index"></v-radio>
-              <v-radio label="文章" value="article"></v-radio>
-            </v-radio-group>
+            <div class="d-flex align-center">
+              <span class="text-body-1 mr-0" style="min-width: 70px">内容类型：</span>
+              <v-radio-group v-model="nodeContentType" inline hide-details>
+                <v-radio label="自动判断" value="auto"></v-radio>
+                <v-radio label="目录" value="index"></v-radio>
+                <v-radio label="文章" value="article"></v-radio>
+              </v-radio-group>
+            </div>
           </v-col>
         </v-row>
 
@@ -177,7 +171,7 @@ const { execute: scanNodes, loading: scanningNodes } = useMutation(adminApi.scan
             @click="startGenerateNode"
           >
             <v-icon icon="mdi-play" class="mr-2"></v-icon>
-            提交节点
+            提交
           </v-btn>
         </div>
       </v-card-text>
