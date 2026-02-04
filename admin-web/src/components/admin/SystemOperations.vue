@@ -110,73 +110,6 @@ const { execute: checkSystemHealth, loading: checkingHealth } = useMutation(stat
   },
 })
 
-// AutoAuthor
-const nodeId = ref<string>('')
-
-const { execute: enqueueNodeExecute, loading: enqueuingNode } = useMutation(
-  (nodeIdNumber: number) => adminApi.enqueueAutoAuthorNode(nodeIdNumber),
-  {
-    successMessage: '节点已加入队列',
-    onSuccess: () => {
-      addOperationToHistory('AutoAuthor', `节点${nodeId.value}加入队列`, true)
-      nodeId.value = ''
-    },
-    onError: (error) => {
-      addOperationToHistory('AutoAuthor', `失败: ${error.message}`, false)
-    },
-  }
-)
-
-const enqueueNode = () => {
-  if (!nodeId.value) {
-    showSnackbar?.('请输入节点ID', 'error')
-    return
-  }
-  enqueueNodeExecute(parseInt(nodeId.value, 10))
-}
-
-const { execute: scanNodes, loading: scanningNodes } = useMutation(adminApi.scanAutoAuthorNodes, {
-  successMessage: '扫描已开始',
-  onSuccess: () => {
-    addOperationToHistory('AutoAuthor', '开始扫描节点', true)
-  },
-  onError: (error) => {
-    addOperationToHistory('AutoAuthor', `扫描失败: ${error.message}`, false)
-  },
-})
-
-const { execute: resetSession, loading: resettingSession } = useMutation(
-  adminApi.resetAutoAuthorSession,
-  {
-    successMessage: '会话已重置',
-    onSuccess: () => {
-      addOperationToHistory('AutoAuthor', '重置会话', true)
-    },
-    onError: (error) => {
-      addOperationToHistory('AutoAuthor', `重置失败: ${error.message}`, false)
-    },
-  }
-)
-
-const confirmClearQueue = (): void => {
-  if (confirm('确定要清空所有AutoAuthor队列吗？')) {
-    clearQueueExecute()
-  }
-}
-
-const { execute: clearQueueExecute, loading: clearingQueue } = useMutation(
-  adminApi.clearAutoAuthorQueue,
-  {
-    successMessage: '队列已清空',
-    onSuccess: () => {
-      addOperationToHistory('AutoAuthor', '清空队列', true)
-    },
-    onError: (error) => {
-      addOperationToHistory('AutoAuthor', `清空失败: ${error.message}`, false)
-    },
-  }
-)
-
 // 节点引用数统计
 const recalculateResult = ref<{ processedPosts: number; updatedNodes: number } | null>(null)
 
@@ -411,46 +344,6 @@ setTimeout(() => {
         </div>
         <div class="text-caption text-grey">
           提示：全量同步会删除并重建索引，请查看服务器日志了解进度
-        </div>
-      </v-card-text>
-    </v-card>
-
-    <!-- AutoAuthor 队列管理 -->
-    <v-card flat class="border mb-4">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-robot" class="mr-2"></v-icon>
-        AutoAuthor 队列管理
-      </v-card-title>
-      <v-card-text>
-        <p class="text-body-2 text-grey mb-4">AI 自动创作队列管理</p>
-        <div class="d-flex ga-3 flex-wrap mb-3">
-          <v-text-field
-            v-model="nodeId"
-            label="节点ID"
-            type="number"
-            variant="outlined"
-            density="compact"
-            hide-details
-            style="max-width: 150px"
-          ></v-text-field>
-          <v-btn variant="tonal" :loading="enqueuingNode" :disabled="!nodeId" @click="enqueueNode">
-            <v-icon icon="mdi-plus" class="mr-2"></v-icon>
-            加入队列
-          </v-btn>
-        </div>
-        <div class="d-flex ga-2 flex-wrap">
-          <v-btn variant="tonal" :loading="scanningNodes" @click="scanNodes">
-            <v-icon icon="mdi-radar" class="mr-2"></v-icon>
-            扫描节点
-          </v-btn>
-          <v-btn variant="tonal" :loading="resettingSession" @click="resetSession">
-            <v-icon icon="mdi-refresh-auto" class="mr-2"></v-icon>
-            重置会话
-          </v-btn>
-          <v-btn variant="tonal" color="error" :loading="clearingQueue" @click="confirmClearQueue">
-            <v-icon icon="mdi-delete-sweep" class="mr-2"></v-icon>
-            清空队列
-          </v-btn>
         </div>
       </v-card-text>
     </v-card>

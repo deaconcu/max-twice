@@ -18,6 +18,7 @@ import MemoryCardReview from '@/components/admin/MemoryCardReview.vue'
 import UserManagement from '@/components/admin/UserManagement.vue'
 import OperationLogManagement from '@/components/admin/OperationLogManagement.vue'
 import ContentGenerator from '@/components/admin/ContentGenerator.vue'
+import ContentGeneratorQueue from '@/components/admin/ContentGeneratorQueue.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -52,7 +53,9 @@ const validTabs = [
   'system-operations',
   'operation-logs',
   'user-management',
-  'content-generator',
+  'content-generator-node',
+  'content-generator-path',
+  'content-generator-management',
   'profession-management',
   'course-management',
   'roadmap-management',
@@ -89,7 +92,9 @@ const menuItems = [
   { icon: 'mdi-comment-check-outline', text: '评论', value: 'comment-review' },
   { icon: 'mdi-cards-variant', text: '记忆卡片', value: 'memory-card-review' },
   { header: 'AI 内容生成' },
-  { icon: 'mdi-robot', text: '内容生成', value: 'content-generator' },
+  { icon: 'mdi-file-document-edit', text: '节点', value: 'content-generator-node' },
+  { icon: 'mdi-graph-outline', text: '路径', value: 'content-generator-path' },
+  { icon: 'mdi-cog', text: '队列与配置', value: 'content-generator-management' },
 ]
 
 // 监听 tab 变化,同步更新 URL 参数
@@ -133,9 +138,6 @@ onMounted(async () => {
       <div class="sidebar-container">
         <!-- Logo区域 -->
         <div class="logo-section">
-          <v-avatar color="primary" size="40" class="mr-3">
-            <v-icon icon="mdi-cog" color="white" size="24"></v-icon>
-          </v-avatar>
           <div>
             <div class="text-body-1 font-weight-bold">MaxTwice</div>
             <div class="text-caption text-grey">管理后台</div>
@@ -246,9 +248,30 @@ onMounted(async () => {
           <UserManagement />
         </v-card>
 
-        <!-- 内容生成 -->
-        <v-card v-if="tab == 'content-generator'" class="px-6 pt-2 pb-6 no-border" rounded="lg">
+        <!-- AI 内容生成 - 节点内容 -->
+        <v-card v-if="tab == 'content-generator-node'" class="px-6 pt-2 pb-6 no-border" rounded="lg">
           <ContentGenerator />
+        </v-card>
+
+        <!-- AI 内容生成 - 学习路径 -->
+        <v-card
+          v-if="tab == 'content-generator-path'"
+          class="px-6 pt-2 pb-6 no-border"
+          rounded="lg"
+        >
+          <div>
+            <h3 class="text-h6 font-weight-bold mb-1">学习路径生成</h3>
+            <p class="text-body-2 text-medium-emphasis">功能开发中...</p>
+          </div>
+        </v-card>
+
+        <!-- AI 内容生成 - 队列与配置 -->
+        <v-card
+          v-if="tab == 'content-generator-management'"
+          class="px-6 pt-2 pb-6 no-border"
+          rounded="lg"
+        >
+          <ContentGeneratorQueue />
         </v-card>
       </div>
     </div>
@@ -274,7 +297,7 @@ onMounted(async () => {
 .logo-section {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
+  padding: 8px 8px;
 }
 
 /* 用户信息区域 */
