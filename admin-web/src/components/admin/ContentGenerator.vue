@@ -7,21 +7,27 @@ import { useMutation } from '@/composables'
 const rootIdType = ref<'course' | 'node'>('course')
 const rootNodeId = ref<string>('')
 const rootContentType = ref<'auto' | 'index' | 'article'>('auto')
+const rootDeleteExisting = ref<boolean>(true)
 
 // 单节点生成
 const nodeId = ref<string>('')
 const nodeContentType = ref<'auto' | 'index' | 'article'>('auto')
+const nodeDeleteExisting = ref<boolean>(true)
 
 // 生成根节点内容
 const { execute: generateRootContent, loading: generatingRoot } = useMutation(
   async () => {
-    // TODO: 调用根节点内容生成接口
-    // 目前使用 enqueue 接口作为占位
     const id = parseInt(rootNodeId.value, 10)
-    return adminApi.enqueueAutoAuthorNode(id)
+    return adminApi.enqueueAutoAuthorNode(
+      id,
+      rootIdType.value,
+      rootContentType.value,
+      true,
+      rootDeleteExisting.value
+    )
   },
   {
-    successMessage: '根节点内容生成已启动',
+    successMessage: '根节点内容生成已加入队列',
     onSuccess: () => {
       rootNodeId.value = ''
     },
@@ -38,13 +44,17 @@ const startGenerateRoot = () => {
 // 生成单节点内容
 const { execute: generateNodeContent, loading: generatingNode } = useMutation(
   async () => {
-    // TODO: 调用单节点生成接口
-    // 目前使用 enqueue 接口作为占位
     const id = parseInt(nodeId.value, 10)
-    return adminApi.enqueueAutoAuthorNode(id)
+    return adminApi.enqueueAutoAuthorNode(
+      id,
+      'node',
+      nodeContentType.value,
+      false,
+      nodeDeleteExisting.value
+    )
   },
   {
-    successMessage: '节点内容生成已启动',
+    successMessage: '节点内容生成已加入队列',
     onSuccess: () => {
       nodeId.value = ''
     },
@@ -113,6 +123,17 @@ const { execute: scanNodes, loading: scanningNodes } = useMutation(adminApi.scan
           </v-col>
         </v-row>
 
+        <v-row class="mt-2">
+          <v-col cols="12">
+            <v-checkbox
+              v-model="rootDeleteExisting"
+              label="删除已存在的内容后重新生成"
+              density="compact"
+              hide-details
+            ></v-checkbox>
+          </v-col>
+        </v-row>
+
         <div class="mt-4">
           <v-btn
             variant="tonal"
@@ -160,6 +181,17 @@ const { execute: scanNodes, loading: scanningNodes } = useMutation(adminApi.scan
                 <v-radio label="文章" value="article"></v-radio>
               </v-radio-group>
             </div>
+          </v-col>
+        </v-row>
+
+        <v-row class="mt-2">
+          <v-col cols="12">
+            <v-checkbox
+              v-model="nodeDeleteExisting"
+              label="删除已存在的内容后重新生成"
+              density="compact"
+              hide-details
+            ></v-checkbox>
           </v-col>
         </v-row>
 

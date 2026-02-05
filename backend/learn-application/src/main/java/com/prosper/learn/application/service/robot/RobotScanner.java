@@ -1,4 +1,4 @@
-package com.prosper.learn.application.service.autoauthor;
+package com.prosper.learn.application.service.robot;
 
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
@@ -11,29 +11,29 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * AutoAuthor 兜底扫描器（分页扫描）
+ * Robot 兜底扫描器（分页扫描）
  *
  * 段落说明：
- * 1) 维护扫描游标：Redis key autoAuthor:scan:lastId
+ * 1) 维护扫描游标：Redis key robot:scan:lastId
  * 2) 每次按 id 递增获取一页缺少指定用户帖子（未删除）的节点
  * 3) 逐个入就绪队列；更新游标；到尾部则重置为0
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AutoAuthorScanner {
+public class RobotScanner {
 
     // ========= 依赖 =========
 
     private final NodeDataService nodeDataService;
-    private final AutoAuthorQueueService queueService;
+    private final RobotQueueService queueService;
     private final RedisTemplate<String, Object> redisTemplate;
     private final SystemProperties systemProperties;
 
     // ========= 进度游标 =========
 
     private String progressKey() {
-        return systemProperties.getAutoAuthor().getRedisKeyPrefix() + "scan:lastId";
+        return systemProperties.getRobot().getRedisKeyPrefix() + "scan:lastId";
     }
 
     private long getLastId() {
@@ -53,8 +53,8 @@ public class AutoAuthorScanner {
      * 扫描一页并入队，返回入队数量
      */
     public int scanOnePage() {
-        if (!systemProperties.getAutoAuthor().isEnabled()) return 0;
-        long userId = systemProperties.getAutoAuthor().getAiUserId();
+        if (!systemProperties.getRobot().isEnabled()) return 0;
+        long userId = systemProperties.getRobot().getAiUserId();
         long afterId = getLastId();
         int limit = 1000;
         List<Long> ids = nodeDataService.selectIdsByUserIdAndPost(afterId, userId, limit);
@@ -66,7 +66,7 @@ public class AutoAuthorScanner {
         long last = afterId;
         for (Long id : ids) {
             if (id == null || id <= 0) continue;
-            queueService.enqueue(id);
+            queueService.enqueue(id, "auto", true, false);
             enqueued++;
             last = id;
         }
@@ -77,7 +77,7 @@ public class AutoAuthorScanner {
     /**
      * 定时扫描：限制最多10页，避免长时间占用
      */
-    @Scheduled(cron = "#{systemProperties.autoAuthor.scanCron}")
+    //@Scheduled(cron = "#{systemProperties.robot.scanCron}")
     public void scheduledScan() {
         int total = 0;
         for (int i = 0; i < 10; i++) {
@@ -85,6 +85,6 @@ public class AutoAuthorScanner {
             total += c;
             if (c == 0) break;
         }
-        if (total > 0) log.info("auto-author scan enqueued {} nodes", total);
+        if (total > 0) log.info("robot scan enqueued {} nodes", total);
     }
 }

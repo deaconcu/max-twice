@@ -102,7 +102,7 @@ public class SystemProperties {
      */
     private Bookmark bookmark = new Bookmark();
 
-    private AutoAuthor autoAuthor = new AutoAuthor();
+    private Robot robot = new Robot();
 
     /**
      * 验证规则相关配置
@@ -551,7 +551,7 @@ public class SystemProperties {
     }
 
     @Data
-    public static class AutoAuthor {
+    public static class Robot {
         /** 是否启用自动作者功能 */
         private boolean enabled = true;
         /** 用于创建AI帖子/目录的系统AI用户ID */
@@ -562,8 +562,8 @@ public class SystemProperties {
         private int maxChildrenPerNode = 30;
         /** 兜底扫描CRON表达式（默认每日03:00） */
         private String scanCron = "0 0 3 * * ?";
-        /** Redis键前缀，例如 autoAuthor:ready */
-        private String redisKeyPrefix = "autoAuthor:";
+        /** Redis键前缀，例如 robot:ready */
+        private String redisKeyPrefix = "robot:";
         /** OpenCode 本地服务基础URL，用于调用生成接口 */
         private String opencodeBaseUrl = "http://127.0.0.1:4096";
         private String providerId = "github-copilot";

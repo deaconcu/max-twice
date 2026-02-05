@@ -1,4 +1,4 @@
-package com.prosper.learn.application.service.autoauthor;
+package com.prosper.learn.application.service.robot;
 
 import com.prosper.learn.application.dto.request.CreateDeckRequest;
 import com.prosper.learn.application.service.MemoryCardDeckService;
@@ -19,7 +19,7 @@ import java.util.List;
 
 
 /**
- * AutoAuthor 执行器
+ * Robot 执行器
  *
  * 轮询 Redis ZSET 队列：
  * - 取队首任务ID（N:nodeId 或 C:postId）
@@ -29,10 +29,10 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AutoAuthorExecutor {
+public class RobotExecutor {
 
-    private final AutoAuthorQueueService queueService;
-    private final AutoAuthorGenerationService generationService;
+    private final RobotQueueService queueService;
+    private final RobotGenerationService generationService;
     private final PostDataService postDataService;
     private final PostService postService;
     private final UserDataService userDataService;
@@ -40,37 +40,72 @@ public class AutoAuthorExecutor {
     private final MemoryCardDeckService memoryCardDeckService;
     private final SystemProperties systemProperties;
 
-    //@Scheduled(fixedDelayString = "#{systemProperties.autoAuthor.pollIntervalSec * 1000}")
+    @Scheduled(fixedDelayString = "#{systemProperties.robot.pollIntervalSec * 1000}")
     public void poll() {
-        log.info("Auto Author Poll Start");
-        if (!systemProperties.getAutoAuthor().isEnabled()) return;
+        log.info("Robot Poll Start");
+        if (!systemProperties.getRobot().isEnabled()) return;
+        if (queueService.isPaused()) {
+            log.info("Robot queue is paused, skipping poll");
+            return;
+        }
 
-        long aiUserId = systemProperties.getAutoAuthor().getAiUserId();
+        long aiUserId = systemProperties.getRobot().getAiUserId();
         int processedCount = 0;
 
         // 循环执行直到队列为空
         while (true) {
             String taskId = queueService.peek();
             if (taskId == null) {
-                log.info("Auto Author Poll End - processed {} tasks", processedCount);
+                log.info("Robot Poll End - processed {} tasks", processedCount);
                 break;
             }
 
-            try {
-                if (taskId.startsWith("N:")) {
-                    // 节点内容生成任务
-                    handleNodeTask(taskId, aiUserId);
-                } else if (taskId.startsWith("C:")) {
-                    // 记忆卡片生成任务
-                    handleMemoryCardTask(taskId, aiUserId);
-                } else {
-                    log.warn("Unknown task format: {}, removing from queue", taskId);
-                    queueService.remove(taskId);
+            boolean success = false;
+            Exception lastException = null;
+
+            // 尝试执行任务，失败时立即重试一次
+            for (int attempt = 0; attempt < 2; attempt++) {
+                try {
+                    if (taskId.startsWith("N:")) {
+                        // 节点内容生成任务
+                        handleNodeTask(taskId, aiUserId);
+                        queueService.recordCompletion();
+                    } else if (taskId.startsWith("C:")) {
+                        // 记忆卡片生成任务
+                        handleMemoryCardTask(taskId, aiUserId);
+                        queueService.recordCompletion();
+                    } else {
+                        log.warn("Unknown task format: {}, removing from queue", taskId);
+                        queueService.remove(taskId);
+                    }
+                    success = true;
+                    break; // 成功则跳出重试循环
+                } catch (Exception e) {
+                    lastException = e;
+                    if (attempt == 0) {
+                        log.warn("Task {} failed on first attempt, retrying immediately", taskId);
+                    }
                 }
+            }
+
+            if (success) {
                 processedCount++;
-            } catch (Exception e) {
-                log.error("auto-author failed for task {}, stopping poll cycle", taskId, e);
-                break;
+                queueService.resetFailures(); // 成功则重置连续失败计数
+            } else {
+                // 两次尝试都失败，移到队列尾部
+                log.error("Task {} failed after 2 attempts, moving to end of queue", taskId, lastException);
+                queueService.moveToEnd(taskId);
+
+                // 记录连续失败
+                int consecutiveFailures = queueService.recordFailure();
+                log.warn("Consecutive failures: {}", consecutiveFailures);
+
+                // 检查是否应该自动暂停
+                if (queueService.shouldAutoPause()) {
+                    log.error("连续失败次数达到上限({}次)，自动暂停队列执行", consecutiveFailures);
+                    queueService.pause();
+                    break;
+                }
             }
         }
     }
@@ -79,9 +114,20 @@ public class AutoAuthorExecutor {
      * 处理节点内容生成任务
      */
     private void handleNodeTask(String taskId, long aiUserId) {
-        long nodeId = Long.parseLong(taskId.substring(2)); // 去掉 "N:" 前缀
+        // 解析任务格式：N:{nodeId}:{contentType}:{recursive}:{deleteExisting}
+        String[] parts = taskId.split(":");
+        if (parts.length != 5) {
+            log.warn("Invalid task format: {}, removing from queue", taskId);
+            queueService.remove(taskId);
+            return;
+        }
 
-        if (postDataService.existPost(nodeId, aiUserId)) {
+        long nodeId = Long.parseLong(parts[1]);
+        String contentType = parts[2];
+        boolean recursive = Boolean.parseBoolean(parts[3]);
+        boolean deleteExisting = Boolean.parseBoolean(parts[4]);
+
+        if (deleteExisting && postDataService.existPost(nodeId, aiUserId)) {
             log.info("Node {} already has AI post, soft deleting existing post before regeneration", nodeId);
 
             // 查找并软删除现有的AI帖子
@@ -95,9 +141,10 @@ public class AutoAuthorExecutor {
         }
 
         // 重新生成内容
-        generationService.generateForNode(nodeId);
+        generationService.generateForNode(nodeId, contentType, recursive);
         queueService.remove(taskId);
-        log.info("Successfully generated/updated content for node {}", nodeId);
+        log.info("Successfully generated/updated content for node {} with contentType={}, recursive={}, deleteExisting={}",
+            nodeId, contentType, recursive, deleteExisting);
     }
 
     /**

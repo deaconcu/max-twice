@@ -1,28 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { adminApi } from '@/api'
-import { useMutation } from '@/composables'
+import { useMutation, useFetch } from '@/composables'
 
 // AI 用户 ID 配置
 const aiUserId = ref<string>('')
 const originalAiUserId = ref<string>('')
 
-// 加载 AI 用户 ID
-onMounted(async () => {
-  try {
-    const response = await adminApi.getConfigByKey('autoAuthor.aiUserId')
-    if (response.code === 200 && response.data) {
-      aiUserId.value = response.data
-      originalAiUserId.value = response.data
-    }
-  } catch (error) {
-    console.error('加载 AI 用户 ID 失败:', error)
-  }
-})
-
 // 保存 AI 用户 ID
 const { execute: saveAiUserId, loading: savingAiUserId } = useMutation(
-  () => adminApi.updateConfigByKey('autoAuthor.aiUserId', aiUserId.value),
+  () => adminApi.updateConfigByKey('robot.aiUserId', aiUserId.value),
   {
     successMessage: 'AI 用户 ID 已保存',
     onSuccess: () => {
@@ -35,27 +22,60 @@ const hasAiUserIdChanged = () => {
   return aiUserId.value !== originalAiUserId.value
 }
 
-// 扫描节点
-const queuePaused = ref<boolean>(false)
-
-// 暂停/恢复执行
-const { execute: toggleQueuePause, loading: togglingPause } = useMutation(
-  async () => {
-    // TODO: 调用暂停/恢复队列接口
-    // 目前使用占位逻辑
-    queuePaused.value = !queuePaused.value
-    return Promise.resolve({ code: 200, message: '操作成功', data: null })
+// 队列状态
+const { data: queueStats, loading: loadingStats, execute: fetchQueueStats } = useFetch({
+  fetchFn: adminApi.getRobotQueueStats,
+  immediate: false,
+  defaultValue: {
+    pendingCount: 0,
+    todayCompletedCount: 0,
+    lastExecuteTime: null,
+    status: 'IDLE',
   },
-  {
-    successMessage: queuePaused.value ? '队列已暂停' : '队列已恢复执行',
+})
+
+// 暂停/恢复队列
+const { execute: pauseQueue, loading: pausing } = useMutation(adminApi.pauseRobotQueue, {
+  successMessage: '队列已暂停',
+  onSuccess: () => {
+    fetchQueueStats()
+  },
+})
+
+const { execute: resumeQueue, loading: resuming } = useMutation(adminApi.resumeRobotQueue, {
+  successMessage: '队列已恢复',
+  onSuccess: () => {
+    fetchQueueStats()
+  },
+})
+
+const togglingPause = ref(false)
+const toggleQueuePause = async () => {
+  togglingPause.value = true
+  try {
+    if (queueStats.value.status === 'PAUSED') {
+      await resumeQueue()
+    } else {
+      await pauseQueue()
+    }
+  } finally {
+    togglingPause.value = false
   }
-)
+}
 
 // 重置会话
 const { execute: resetSession, loading: resettingSession } = useMutation(
   adminApi.resetAutoAuthorSession,
   {
     successMessage: 'OpenCode 会话已重置',
+  }
+)
+
+// 压缩会话
+const { execute: summarizeSession, loading: summarizingSession } = useMutation(
+  adminApi.summarizeAutoAuthorSession,
+  {
+    successMessage: 'OpenCode 会话已压缩',
   }
 )
 
@@ -70,8 +90,28 @@ const { execute: clearQueueExecute, loading: clearingQueue } = useMutation(
   adminApi.clearAutoAuthorQueue,
   {
     successMessage: '队列已清空',
+    onSuccess: () => {
+      fetchQueueStats()
+    },
   }
 )
+
+// 组件加载时
+onMounted(async () => {
+  // 加载 AI 用户 ID
+  try {
+    const response = await adminApi.getConfigByKey('robot.aiUserId')
+    if (response.code === 200 && response.data) {
+      aiUserId.value = response.data
+      originalAiUserId.value = response.data
+    }
+  } catch (error) {
+    console.error('加载 AI 用户 ID 失败:', error)
+  }
+
+  // 获取队列状态
+  fetchQueueStats()
+})
 </script>
 
 <template>
@@ -115,16 +155,77 @@ const { execute: clearQueueExecute, loading: clearingQueue } = useMutation(
 
     <!-- 队列操作 -->
     <v-card flat class="border mb-4">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-cog-outline" class="mr-2"></v-icon>
-        队列操作
+      <v-card-title class="d-flex align-center justify-space-between">
+        <div class="d-flex align-center">
+          <v-icon icon="mdi-cog-outline" class="mr-2"></v-icon>
+          队列操作
+        </div>
+        <v-btn
+          variant="text"
+          size="small"
+          :loading="loadingStats"
+          @click="fetchQueueStats"
+          icon="mdi-refresh"
+        ></v-btn>
       </v-card-title>
       <v-card-text>
         <p class="text-body-2 text-grey mb-4">批量管理生成队列</p>
+
+        <!-- 队列统计 -->
+        <div class="d-flex ga-4 mb-4">
+          <div class="stat-item-compact">
+            <div class="text-caption text-grey mb-1">队列状态</div>
+            <div class="d-flex align-center">
+              <v-chip
+                :color="
+                  queueStats.status === 'RUNNING'
+                    ? 'success'
+                    : queueStats.status === 'PAUSED'
+                      ? 'warning'
+                      : 'grey'
+                "
+                size="small"
+                variant="flat"
+              >
+                {{
+                  queueStats.status === 'RUNNING'
+                    ? '执行中'
+                    : queueStats.status === 'PAUSED'
+                      ? '已暂停'
+                      : '空闲'
+                }}
+              </v-chip>
+            </div>
+          </div>
+          <div class="stat-item-compact">
+            <div class="text-caption text-grey mb-1">当前任务数</div>
+            <div class="text-h6 font-weight-bold">{{ queueStats.pendingCount }}</div>
+          </div>
+          <div class="stat-item-compact">
+            <div class="text-caption text-grey mb-1">今天完成数</div>
+            <div class="text-h6 font-weight-bold">{{ queueStats.todayCompletedCount }}</div>
+          </div>
+          <div class="stat-item-compact">
+            <div class="text-caption text-grey mb-1">最后执行时间</div>
+            <div class="text-body-2 font-weight-medium">
+              {{ queueStats.lastExecuteTime || '暂无' }}
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作按钮 -->
         <div class="d-flex ga-2 flex-wrap">
-          <v-btn variant="tonal" :loading="togglingPause" @click="toggleQueuePause">
-            <v-icon :icon="queuePaused ? 'mdi-play' : 'mdi-pause'" class="mr-2"></v-icon>
-            {{ queuePaused ? '恢复执行' : '暂停执行' }}
+          <v-btn
+            variant="tonal"
+            :loading="togglingPause"
+            :disabled="queueStats.status === 'IDLE'"
+            @click="toggleQueuePause"
+          >
+            <v-icon
+              :icon="queueStats.status === 'PAUSED' ? 'mdi-play' : 'mdi-pause'"
+              class="mr-2"
+            ></v-icon>
+            {{ queueStats.status === 'PAUSED' ? '恢复执行' : '暂停执行' }}
           </v-btn>
           <v-btn variant="tonal" color="error" :loading="clearingQueue" @click="confirmClearQueue">
             <v-icon icon="mdi-delete-sweep" class="mr-2"></v-icon>
@@ -142,25 +243,15 @@ const { execute: clearQueueExecute, loading: clearingQueue } = useMutation(
       </v-card-title>
       <v-card-text>
         <p class="text-body-2 text-grey mb-4">管理 OpenCode AI 会话状态</p>
-        <v-btn variant="tonal" :loading="resettingSession" @click="resetSession">
-          <v-icon icon="mdi-refresh-auto" class="mr-2"></v-icon>
-          重置会话
-        </v-btn>
-      </v-card-text>
-    </v-card>
-
-    <!-- 队列状态 -->
-    <v-card flat class="border mb-4">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-format-list-checks" class="mr-2"></v-icon>
-        队列状态
-      </v-card-title>
-      <v-card-text>
-        <p class="text-body-2 text-grey mb-4">查看当前队列中的任务</p>
-        <div class="pa-4 bg-grey-lighten-4 rounded">
-          <div class="text-body-2 text-grey text-center">
-            队列查看功能开发中，需要后端提供队列查询接口
-          </div>
+        <div class="d-flex ga-2">
+          <v-btn variant="tonal" :loading="summarizingSession" @click="summarizeSession">
+            <v-icon icon="mdi-arrow-collapse-all" class="mr-2"></v-icon>
+            压缩上下文
+          </v-btn>
+          <v-btn variant="tonal" :loading="resettingSession" @click="resetSession">
+            <v-icon icon="mdi-refresh-auto" class="mr-2"></v-icon>
+            重置会话
+          </v-btn>
         </div>
       </v-card-text>
     </v-card>
@@ -174,6 +265,13 @@ const { execute: clearQueueExecute, loading: clearingQueue } = useMutation(
 
 .border {
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.stat-item-compact {
+  padding: 8px 12px;
+  background-color: #fafafa;
+  border-radius: 6px;
+  min-width: 120px;
 }
 
 .border-b {

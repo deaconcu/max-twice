@@ -373,34 +373,77 @@ export const adminApi = {
     return apiClient.delete('/v1/admin/system', { params: { key } })
   },
 
-  // ========== AutoAuthor 管理 ==========
+  // ========== Robot 内容生成管理 ==========
 
   /**
    * 扫描节点并加入队列
    */
   scanAutoAuthorNodes(): Promise<ApiResponse<void>> {
-    return apiClient.post('/v1/admin/auto-author/scan')
+    return apiClient.post('/v1/admin/robot/scan')
   },
 
   /**
-   * 将节点加入到 AutoAuthor 队列
+   * 将节点加入到 Robot 队列
    */
-  enqueueAutoAuthorNode(nodeId: number): Promise<ApiResponse<void>> {
-    return apiClient.post(`/v1/admin/auto-author/enqueue/${nodeId}`)
+  enqueueAutoAuthorNode(
+    id: number,
+    idType: 'course' | 'node',
+    contentType: 'auto' | 'index' | 'article',
+    recursive: boolean,
+    deleteExisting: boolean
+  ): Promise<ApiResponse<void>> {
+    return apiClient.post(`/v1/admin/robot/enqueue/${id}`, null, {
+      params: { idType, contentType, recursive, deleteExisting },
+    })
   },
 
   /**
    * 重置 opencode 会话
    */
   resetAutoAuthorSession(): Promise<ApiResponse<void>> {
-    return apiClient.post('/v1/admin/auto-author/session/reset')
+    return apiClient.post('/v1/admin/robot/session/reset')
   },
 
   /**
-   * 清空 AutoAuthor 队列
+   * 压缩 opencode 会话上下文
+   */
+  summarizeAutoAuthorSession(): Promise<ApiResponse<void>> {
+    return apiClient.post('/v1/admin/robot/session/summarize')
+  },
+
+  /**
+   * 清空 Robot 队列
    */
   clearAutoAuthorQueue(): Promise<ApiResponse<string>> {
-    return apiClient.delete('/v1/admin/auto-author/queue')
+    return apiClient.delete('/v1/admin/robot/queue')
+  },
+
+  /**
+   * 获取队列统计信息
+   */
+  getRobotQueueStats(): Promise<
+    ApiResponse<{
+      pendingCount: number
+      todayCompletedCount: number
+      lastExecuteTime: string | null
+      status: string
+    }>
+  > {
+    return apiClient.get('/v1/admin/robot/queue/stats')
+  },
+
+  /**
+   * 暂停队列
+   */
+  pauseRobotQueue(): Promise<ApiResponse<void>> {
+    return apiClient.post('/v1/admin/robot/queue/pause')
+  },
+
+  /**
+   * 恢复队列
+   */
+  resumeRobotQueue(): Promise<ApiResponse<void>> {
+    return apiClient.post('/v1/admin/robot/queue/resume')
   },
 
   /**

@@ -1,4 +1,4 @@
-package com.prosper.learn.application.service.autoauthor;
+package com.prosper.learn.application.service.robot;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +16,7 @@ import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
+import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,7 @@ import java.util.ArrayList;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * AutoAuthor 生成服务
+ * Robot 生成服务
  *
  * 段落说明：
  * 1) 对接本地 opencode：先创建 session，再发送 ChatInput 获取模型输出
@@ -47,7 +48,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AutoAuthorGenerationService {
+public class RobotGenerationService {
 
     // ========= 依赖与配置 =========
 
@@ -58,37 +59,68 @@ public class AutoAuthorGenerationService {
     private final PostDataService postDataService;
     private final UserDataService userDataService;
     private final MemoryCardDeckService memoryCardDeckService;
-    private final AutoAuthorQueueService autoAuthorQueueService;
+    private final RobotQueueService robotQueueService;
     private final ObjectMapper objectMapper;
     private final RedisTemplate<String, String> redisTemplate;
 
-    private static final String SESSION_KEY = "autoauthor:session:id";
+    private static final String SESSION_KEY = "robot:session:id";
     private static final long SESSION_EXPIRE_HOURS = 24;
+    private static final String SESSION_USE_COUNT_KEY = "robot:session:useCount";
+    private static final int MAX_SESSION_USES_BEFORE_SUMMARIZE = 5;
 
     // ========= 对外入口 =========
 
     /**
-     * 重置会话：删除 Redis 中的会话键
+     * 重置会话：删除 Redis 中的会话键和使用计数
      */
     public void resetSession() {
         redisTemplate.delete(SESSION_KEY);
-        log.info("session reset, deleted key: {}", SESSION_KEY);
+        redisTemplate.delete(SESSION_USE_COUNT_KEY);
+        log.info("session reset, deleted keys: {}, {}", SESSION_KEY, SESSION_USE_COUNT_KEY);
+    }
+
+    /**
+     * 压缩当前session的上下文
+     */
+    public void summarizeCurrentSession() {
+        String sessionId = redisTemplate.opsForValue().get(SESSION_KEY);
+        if (sessionId == null || sessionId.isEmpty()) {
+            log.warn("No active session to summarize");
+            return;
+        }
+        summarizeSession(sessionId);
     }
 
     /**
      * 为指定节点生成内容（外层执行器负责幂等与重试）
+     * @param nodeId 节点ID
+     * @param contentType 内容类型 (auto/index/article)
+     * @param recursive 是否递归生成子节点
      */
-    public void generateForNode(long nodeId) {
-        long aiUserId = systemProperties.getAutoAuthor().getAiUserId();
+    public void generateForNode(long nodeId, String contentType, boolean recursive) {
+        long aiUserId = systemProperties.getRobot().getAiUserId();
         NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
         CourseDO courseDO = courseDataService.validateAndGet(nodeDO.getCourseId());
 
         String sessionId = getOrCreateSession();
-        String response = sendMessageWithRetry(sessionId, buildPrompt(nodeDO, courseDO));
+
+        // 增加使用计数并检查是否需要压缩上下文
+        Long useCount = redisTemplate.opsForValue().increment(SESSION_USE_COUNT_KEY);
+        if (useCount != null && useCount % MAX_SESSION_USES_BEFORE_SUMMARIZE == 0) {
+            log.info("Session used {} times, summarizing to compress context", useCount);
+            summarizeSession(sessionId);
+        }
+
+        String prompt = switch (contentType) {
+            case "index" -> buildPromptForIndex(nodeDO, courseDO);
+            case "article" -> buildPromptForArticle(nodeDO, courseDO);
+            default -> buildPromptForAuto(nodeDO, courseDO);
+        };
+        String response = sendMessageWithRetry(sessionId, prompt);
         log.info("sessionId={}, response={}", sessionId, response);
         Long postId = handleResponse(nodeId, aiUserId, response);
 
-        if (postId != null) {
+        if (postId != null && recursive) {
             // 检查创建的帖子类型，如果是目录类型则将目录节点放入AI生成队列
             PostDO createdPost = postDataService.getById(postId);
             if (createdPost != null && createdPost.getType() == Enums.PostType.index.value()) {
@@ -102,8 +134,8 @@ public class AutoAuthorGenerationService {
                             // 检查该节点是否已经有AI创建的post
                             boolean hasAiPost = postDataService.existPost(childNodeId, aiUserId);
                             if (!hasAiPost) {
-                                // 只有没有AI post的节点才加入队列
-                                autoAuthorQueueService.enqueue(childNodeId);
+                                // 只有没有AI post的节点才加入队列，继承父节点的contentType和recursive
+                                robotQueueService.enqueue(childNodeId, contentType, true, false);
                                 log.info("Added child node {} to AI generation queue from contents post {}", childNodeId, postId);
                             } else {
                                 log.info("Child node {} already has AI post, skipping queue", childNodeId);
@@ -117,7 +149,7 @@ public class AutoAuthorGenerationService {
 
             // 为创建的帖子生成记忆卡片组
             try {
-                createMemoryCardsForPost(postId, aiUserId, response);
+                //createMemoryCardsForPost(postId, aiUserId, response);
                 log.info("Successfully created memory cards for post: {}", postId);
             } catch (Exception e) {
                 log.warn("Failed to create memory cards for post: {}, error: {}", postId, e.getMessage());
@@ -174,7 +206,7 @@ public class AutoAuthorGenerationService {
             ObjectNode body = objectMapper.createObjectNode();
             body.put("title", "auto-author");
             HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(systemProperties.getAutoAuthor().getOpencodeBaseUrl() + "/session"))
+                    .uri(URI.create(systemProperties.getRobot().getOpencodeBaseUrl() + "/session"))
                     .header("Content-Type", "application/json")
                     .timeout(Duration.ofSeconds(15))
                     .POST(HttpRequest.BodyPublishers.ofString(body.toString(), StandardCharsets.UTF_8))
@@ -191,13 +223,41 @@ public class AutoAuthorGenerationService {
     }
 
     /**
+     * 压缩session上下文（调用summarize接口）
+     */
+    private void summarizeSession(String sessionId) {
+        try {
+            ObjectNode body = objectMapper.createObjectNode();
+            body.put("providerID", systemProperties.getRobot().getProviderId());
+            body.put("modelID", systemProperties.getRobot().getModelId());
+            body.put("auto", false);
+
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create(systemProperties.getRobot().getOpencodeBaseUrl() + "/session/" + sessionId + "/summarize"))
+                    .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(60))
+                    .POST(HttpRequest.BodyPublishers.ofString(body.toString(), StandardCharsets.UTF_8))
+                    .build();
+            HttpResponse<String> resp = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() / 100 != 2) {
+                log.warn("summarize session failed: {}", resp.statusCode());
+            } else {
+                log.info("Session summarized successfully");
+            }
+        } catch (Exception e) {
+            log.warn("Failed to summarize session", e);
+            // 不抛出异常，summarize失败不影响主流程
+        }
+    }
+
+    /**
      * 发送 ChatInput（POST /session/:id/message）并返回原始响应
      */
     private String sendMessage(String sessionId, String prompt) {
         try {
             ObjectNode model = objectMapper.createObjectNode();
-            model.put("providerID", systemProperties.getAutoAuthor().getProviderId());
-            model.put("modelID", systemProperties.getAutoAuthor().getModelId());
+            model.put("providerID", systemProperties.getRobot().getProviderId());
+            model.put("modelID", systemProperties.getRobot().getModelId());
 
             ArrayNode parts = objectMapper.createArrayNode();
             ObjectNode part = objectMapper.createObjectNode();
@@ -211,9 +271,9 @@ public class AutoAuthorGenerationService {
 
             log.info("send to opencode: {}", root);
             HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(systemProperties.getAutoAuthor().getOpencodeBaseUrl() + "/session/" + sessionId + "/message"))
+                    .uri(URI.create(systemProperties.getRobot().getOpencodeBaseUrl() + "/session/" + sessionId + "/message"))
                     .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(60))
+                    .timeout(Duration.ofSeconds(300)) // 5分钟超时
                     .POST(HttpRequest.BodyPublishers.ofString(root.toString(), StandardCharsets.UTF_8))
                     .build();
             HttpResponse<String> resp = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
@@ -225,9 +285,9 @@ public class AutoAuthorGenerationService {
     }
 
     /**
-     * 构造提示词，要求返回严格 JSON（decision/articleMd/children[]）
+     * 构造提示词：自动判断生成文章或目录
      */
-    private String buildPrompt(NodeDO nodeDO, CourseDO courseDO) {
+    private String buildPromptForAuto(NodeDO nodeDO, CourseDO courseDO) {
         return """
                 请忽略之前所有对话内容，独立回答
                 我在写一本教材，教材名称是："%s", 我当前在 "%s" 这个目录下，这个目录是这么定义的：%s
@@ -250,13 +310,57 @@ public class AutoAuthorGenerationService {
                    不要添加任何js代码，不要在[A]后添加换行
                    示例：[A]文章内容
                 2. 如果这个目录下的内容比较多，不能用一篇文章说清楚，就生成一个子目录列表:
-                   目录前用"[C]"来标注这是一个目录，目录列表使用[{"目录名1": "目录描述"}, {"目录名2": "目录描述"}, ...]的JSON格式，请输出合法的JSON数组
-                   每一个对象中只有一个键值对，不要在一个对象中放多个键值对
-                   目录名是子节点名称，目录描述是对这个子节点的介绍。
-                   1. 目录名不允许重复，
+                   目录前用"[C]"来标注这是一个目录，目录列表使用[{"name": "目录名1", "description": "目录描述1"}, {"name": "目录名2", "description": "目录描述2"}, ...]的JSON格式，请输出合法的JSON数组
+                   1. 目录名不允许重复，必须使用具体的名称，不能用：“绪论”，“基础知识” 这种宽泛的名称，必须能让人不知道课程名时，一看目录名，也知道这个目录讲的是什么内容
                    2. 目录描述是对这个目录的完整定义，非常重要, 要精确描述这个目录要讲述的知识的范围，要让用户容易理解，不容易有歧义，而且要概括完整，不要遗漏
                    3. 前后不要附加任何文字，目录中不要添加章节序号，不要添加无关的内容，比如欢迎语，只有目录名称和目录描述
-                   目录示例：[C][{"绪论": "介绍这门课程"}, {"基础知识": "讲解这门课程的基础知识, ..."}, {"进阶篇": "讲解这门课程的进阶知识, ..."}]
+                   目录示例：[C][{"name": "绪论", "description": "介绍这门课程"}, {"name": "基础知识", "description": "讲解这门课程的基础知识, ..."}, {"name": "进阶篇", "description": "讲解这门课程的进阶知识, ..."}]
+                输出完整内容，不要截断
+               """.formatted(courseDO.getName(), nodeDO.getName(), nodeDO.getDescription());
+    }
+
+    /**
+     * 构造提示词：生成文章
+     */
+    private String buildPromptForArticle(NodeDO nodeDO, CourseDO courseDO) {
+        return """
+                请忽略之前所有对话内容，独立回答
+                我在写一本教材，教材名称是："%s", 我当前在 "%s" 这个目录下，这个目录是这么定义的：%s
+                请生成一篇文章，尽量做到一篇文章只讲一个知识点
+                文章前用"[A]"开标注这是一篇文章，需要使用容易让人理解的方式，返回的内容使用HTML格式，不要带样式，不要有和内容无关的语言，请根据实际情况调整长度；
+                文章一般采用如下结构：
+                   1. 先介绍为什么要学习这个知识点，这个知识点有什么用处，能解决什么问题，是从一个什么原因才引出的这个知识点
+                   2. 使用通俗的语言从最初的思路开始讲解这个知识点，因为读者是来学习的，不要用一个未知的东西去解释另一个未知的东西，尽可能使用类比，图表来让读者能从一个已熟悉的角度去理解新的知识点
+                   3. 然后再介绍相关的公式，定理，规范，让读者在理解的基础上去学习形式化的内容
+                切记不要一上来放一堆公式，初学者不知道这些公式是干嘛的，这种书不是给读者自己看的，而是必须有个老师讲解，我们要做能让人自己看懂的书
+                文章要非常的侧重清楚明白，容易理解，
+                文章内容要有条理，有逻辑，内容要丰富，尽量多的覆盖这个目录下的知识点，内容要准确，不要有错误，
+                数学相关内容请使用LaTeX语法，
+                图表相关内容请使用Mermaid语法
+                    1. 图表不要太复杂，尽量简单易懂，图表要占满行宽，节点要使用与之适配的图形，比如不要在没有判断的地方使用菱形节点
+                    2. 节点名称要整体用双引号包含, 比如：节点 B1["1. xxx"]，不要在双引号中使用双引号，比如: subgraph "空间 B = {"α₁, α₂"}, 原色 {"红, 绿, 蓝"})"，P1["\"系数位置 A[i, i"]"]，都是错误的写法
+                    3. 灵活使用图表生成方向 graph TB/LR，保证生成的图表宽小于高，不要使用direction xx，没有作用
+                中文和数字，英文之间添加空格
+                不要添加任何js代码，不要在[A]后添加换行
+                示例：[A]文章内容
+                输出完整内容，不要截断
+               """.formatted(courseDO.getName(), nodeDO.getName(), nodeDO.getDescription());
+    }
+
+    /**
+     * 构造提示词：生成目录
+     */
+    private String buildPromptForIndex(NodeDO nodeDO, CourseDO courseDO) {
+        return """
+                请忽略之前所有对话内容，独立回答
+                我在写一本教材，教材名称是："%s", 我当前在 "%s" 这个目录下，这个目录是这么定义的：%s
+                请生成一个子目录列表:
+                目录前用"[C]"来标注这是一个目录，目录列表使用[{"name": "目录名1", "description": "目录描述1"}, {"name": "目录名2", "description": "目录描述2"}, ...]的JSON格式，请输出合法的JSON数组
+                1. 目录名不允许重复，必须使用具体的名称，不能用：“绪论”，“基础知识” 这种宽泛的名称，必须能让人不知道课程名时，一看目录名，也知道这个目录讲的是什么内容
+                2. 目录描述是对这个目录的完整定义，非常重要, 要精确描述这个目录要讲述的知识的范围，要让用户容易理解，不容易有歧义，而且要概括完整，不要遗漏
+                3. 前后不要附加任何文字，目录中不要添加章节序号，不要添加无关的内容，比如欢迎语，只有目录名称和目录描述
+                目录示例：[C][{"name": "函数", "description": "介绍这门课程"}, {"name": "光的干涉", "description": "讲解这门课程的基础知识, ..."}, {"name": "进阶篇", "description": "讲解这门课程的进阶知识, ..."}]
+                输出完整内容，不要截断
                """.formatted(courseDO.getName(), nodeDO.getName(), nodeDO.getDescription());
     }
 
@@ -272,7 +376,7 @@ public class AutoAuthorGenerationService {
             JsonNode root = objectMapper.readTree(responseBody);
             JsonNode parts = root.path("parts");
             String content;
-            if (parts.isArray() && parts.size() > 0) content = parts.get(1).path("text").asText();
+            if (parts.isArray() && parts.size() > 0) content = parts.get(2).path("text").asText();
             else content = root.path("text").asText();
             if (content == null || content.isEmpty()) throw new RuntimeException("empty result content");
 
@@ -289,7 +393,18 @@ public class AutoAuthorGenerationService {
             req.setNodeId(nodeId);
             req.setType(postType.value());
             req.setContent(content.substring(3));
-            return postService.createPost(userDataService.getById(aiUserId), req, Enums.ContentState.PUBLISHED);
+
+            UserDO userDO = userDataService.getById(aiUserId);
+
+            // index类型需要先创建为SUBMITTED，然后approve来处理子节点创建
+            if (postType == Enums.PostType.index) {
+                Long postId = postService.createPost(userDO, req, Enums.ContentState.SUBMITTED);
+                postService.approve(postId, userDO);
+                return postId;
+            } else {
+                // article类型直接创建为PUBLISHED
+                return postService.createPost(userDO, req, Enums.ContentState.PUBLISHED);
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

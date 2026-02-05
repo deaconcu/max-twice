@@ -11,6 +11,7 @@ import com.prosper.learn.shared.domain.event.content.voting.LikeUpvotedEvent;
 import com.prosper.learn.shared.domain.event.content.voting.TwiceUpvotedEvent;
 import com.prosper.learn.shared.domain.event.content.voting.UpvoteTypeSwitchedEvent;
 import com.prosper.learn.shared.domain.event.user.relationship.UserFollowedEvent;
+import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,15 @@ import static com.prosper.learn.shared.domain.Enums.*;
 public class MessageEventListener {
 
     private final MessageService messageService;
+    private final SystemProperties systemProperties;
+
+    /**
+     * 判断是否为机器人用户
+     */
+    private boolean isRobotUser(long userId) {
+        return systemProperties.getRobot().isEnabled()
+            && userId == systemProperties.getRobot().getAiUserId();
+    }
 
     // ==================== 内容互动通知 ====================
 
@@ -54,6 +64,11 @@ public class MessageEventListener {
     //@Async
     public void onTwiceUpvoted(TwiceUpvotedEvent<PostDO> event) {
         try {
+            // 忽略发送给机器人的通知
+            if (isRobotUser(event.getCreatorId())) {
+                return;
+            }
+
             // 两次能懂点赞只对帖子有效
             PostDO post = event.getContentObject();
 
@@ -78,6 +93,11 @@ public class MessageEventListener {
     //@Async
     public void onLikeUpvoted(LikeUpvotedEvent<?> event) {
         try {
+            // 忽略发送给机器人的通知
+            if (isRobotUser(event.getCreatorId())) {
+                return;
+            }
+
             if (event.getContextId() == null) {
                 log.warn("LikeUpvotedEvent缺少contextId: contentType={}, contentId={}",
                     event.getContentType(), event.getContentId());
@@ -144,6 +164,11 @@ public class MessageEventListener {
     //@Async
     public void onUpvoteTypeSwitched(UpvoteTypeSwitchedEvent<PostDO> event) {
         try {
+            // 忽略发送给机器人的通知
+            if (isRobotUser(event.getCreatorId())) {
+                return;
+            }
+
             // 点赞类型切换只对帖子有效
             PostDO post = event.getContentObject();
 
@@ -171,6 +196,11 @@ public class MessageEventListener {
     //@Async
     public void onCommentCreated(CommentCreatedEvent event) {
         try {
+            // 忽略发送给机器人的通知
+            if (isRobotUser(event.getContentCreatorId())) {
+                return;
+            }
+
             // 根据内容类型确定消息类型
             int messageType;
             if (event.getContentType() == ContentType.node) {
@@ -208,6 +238,11 @@ public class MessageEventListener {
     //@Async
     public void onUserFollowed(UserFollowedEvent event) {
         try {
+            // 忽略发送给机器人的通知
+            if (isRobotUser(event.getFolloweeId())) {
+                return;
+            }
+
             // 发送关注通知给被关注者
             messageService.createFollowMessage(
                 event.getFolloweeId(),         // 接收者（被关注者）
@@ -231,6 +266,11 @@ public class MessageEventListener {
     //@Async
     public void onContentApproved(ContentApprovedEvent event) {
         try {
+            // 忽略发送给机器人的通知
+            if (isRobotUser(event.getCreatorId())) {
+                return;
+            }
+
             switch (event.getContentType()) {
                 case profession -> {
                     messageService.sendProfessionModeration(
@@ -271,6 +311,11 @@ public class MessageEventListener {
     //@Async
     public void onContentRejected(ContentRejectedEvent event) {
         try {
+            // 忽略发送给机器人的通知
+            if (isRobotUser(event.getCreatorId())) {
+                return;
+            }
+
             switch (event.getContentType()) {
                 case profession -> {
                     messageService.sendProfessionModeration(
