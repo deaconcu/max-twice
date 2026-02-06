@@ -291,70 +291,6 @@ public class PageService {
     }
 
     /**
-     * 根据节点ID读取页面数据（已废弃，使用 readPageByNode 代替）
-     * 用于 NodePostsPage，不返回 TOC、fixedPostings、chosenPosting
-     */
-//    public Map<String, Object> readPageForNode(Long nodeId, long userId) {
-//        NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
-//
-//        if (nodeDO.getState() != null && nodeDO.getState() != ContentState.PUBLISHED.value()) {
-//            throw StatusCode.NODE_STATE_INVALID.exception();
-//        }
-//
-//        CourseDO courseDO = validateCourseExists(nodeDO.getCourseId());
-//
-//        // 获取 TOC（目录树）
-//        Utils.Pair<String, Map<Long, NodeWithProgressDTO>> tocResponse = getToc(userId, nodeId, true);
-//        NodeTocDTO nodeTocDTO = new NodeTocDTO(tocResponse.left(), tocResponse.right());
-//
-//        // 获取帖子列表
-//        List<Long> userIds = new LinkedList<>();
-//        List<PostDO> otherPostings = getOtherPostings(nodeDO.getId(), userIds);
-//        Map<Long, UserBriefDTO> userMap = buildUserMap(userIds);
-//
-//        // 转换帖子为 DTO
-//        List<PostWithVoteDTO> otherPostingsDTO = convertPostListToDTO(otherPostings, userMap, userId);
-//
-//        // 获取学习状态
-//        boolean learning = checkLearningStatus(userId, courseDO.getId());
-//        boolean nodeCompleted = learningProgressService.isNodeCompleted(userId, nodeDO.getId());
-//        Integer courseProgress = userLearningService.getProgress(userId, Enums.ContentType.node, courseDO.getRootNodeId());
-//
-//        // 构建课程信息
-//        CourseWithProgressDTO parentCourse = buildParentCourse(courseDO, userId);
-//        List<CourseSummaryDTO> subCourseList = courseService.getSubCourses(parentCourse.getId());
-//
-//        // 构建响应
-//        Map<String, Object> data = new HashMap<>();
-//
-//        // 填充 node 统计数据
-//        NodeWithProgressDTO nodeDTO = nodeConverter.toWithProgressDTO(nodeDO, nodeCompleted);
-//        ContentStatsDTO nodeStats = contentStatsDomainService.getContentStats(ContentType.node, nodeDO.getId());
-//        nodeDTO.setCommentCount(nodeStats.getCommentCount());
-//        nodeDTO.setNodeReferenceCount(nodeStats.getNodeReferenceCount());
-//
-//        data.put("node", nodeDTO);
-//        data.put("parentCourse", parentCourse);
-//        data.put("course", courseService.toWithProgressDTO(courseDO, parentCourse.getBookmarked(), courseProgress));
-//        data.put("subCourseList", subCourseList);
-//        data.put("otherPostings", otherPostingsDTO);
-//        data.put("users", new ArrayList<>(userMap.values()));
-//        data.put("learning", learning);
-//
-//        // 添加 TOC 数据
-//        try {
-//            List<Object> contents = objectMapper.readValue(nodeTocDTO.getContents(), List.class);
-//            data.put("toc", contents);
-//        } catch (JsonProcessingException e) {
-//            log.error("TOC内容解析失败", e);
-//            data.put("toc", new ArrayList<>());
-//        }
-//        data.put("tocNodeInfos", nodeTocDTO.getNodeInfos());
-//
-//        return data;
-//    }
-
-    /**
      * 根据帖子ID读取页面数据（仅返回帖子详情页需要的数据）
      * 用于 PostDetailPage，不返回 TOC、fixedPostings、otherPostings
      */
@@ -725,6 +661,13 @@ public class PageService {
             }
         }
 
+        // 填充统计数据（累计 + 今日 Redis 增量）
+        ContentStatsDTO stats = contentStatsDomainService.getContentStats(ContentType.post, postDO.getId());
+        dto.setViewCount(stats.getViewCount());
+        dto.setTwiceCount(stats.getTwiceCount());
+        dto.setLikeCount(stats.getLikeCount());
+        dto.setCommentCount(stats.getCommentCount());
+
         return dto;
     }
 
@@ -737,13 +680,13 @@ public class PageService {
         }
 
         List<PostWithVoteDTO> dtoList = postConverter.toWithVoteDTO(postDOList);
+        List<Long> postIds = postDOList.stream().map(PostDO::getId).collect(Collectors.toList());
 
         // 填充创建者信息
         dtoList.forEach(dto -> dto.setCreator(userMap.get(dto.getCreatorId())));
 
         // 填充投票信息
         if (userId != null) {
-            List<Long> postIds = postDOList.stream().map(PostDO::getId).collect(Collectors.toList());
             List<UpvoteDO> upvotes = upvoteDataService.getList(userId, postIds, ContentType.post.value());
             Map<Long, Integer> voteTypes = upvotes.stream()
                     .collect(Collectors.toMap(UpvoteDO::getObjectId, UpvoteDO::getType));
@@ -754,6 +697,18 @@ public class PageService {
                 }
             });
         }
+
+        // 批量填充统计数据（累计 + 今日 Redis 增量）
+        Map<Long, ContentStatsDTO> statsMap = contentStatsDomainService.batchGetContentStats(ContentType.post, postIds);
+        dtoList.forEach(dto -> {
+            ContentStatsDTO stats = statsMap.get(dto.getId());
+            if (stats != null) {
+                dto.setViewCount(stats.getViewCount());
+                dto.setTwiceCount(stats.getTwiceCount());
+                dto.setLikeCount(stats.getLikeCount());
+                dto.setCommentCount(stats.getCommentCount());
+            }
+        });
 
         return dtoList;
     }

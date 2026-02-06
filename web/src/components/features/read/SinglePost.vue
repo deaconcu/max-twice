@@ -16,6 +16,7 @@ import { ObjectType, VoteType } from '@/enums'
 import type { UpvoteStatusResponse } from '@/types/upvote'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import ImageViewer from '@/components/common/ImageViewer.vue'
+import ChartViewer from '@/components/common/ChartViewer.vue'
 
 interface NodeInfo {
   id: number
@@ -55,15 +56,35 @@ let mermaidInitialized = false
 const imageViewerVisible = ref(false)
 const viewerImageSrc = ref('')
 
+// 图表查看器
+const chartViewerVisible = ref(false)
+const viewerChartSvg = ref('')
+
 // 处理内容点击事件（图片点击放大）
 const handleContentClick = (event: MouseEvent) => {
   const target = event.target as HTMLElement
+
+  // 图片点击放大
   if (target.tagName === 'IMG') {
     event.preventDefault()
     event.stopPropagation()
     const img = target as HTMLImageElement
     viewerImageSrc.value = img.src
     imageViewerVisible.value = true
+    return
+  }
+
+  // Mermaid 图表点击放大
+  const mermaidContainer = target.closest('.mermaid[data-processed="true"]')
+  if (mermaidContainer) {
+    event.preventDefault()
+    event.stopPropagation()
+
+    const svg = mermaidContainer.querySelector('svg')
+    if (svg) {
+      viewerChartSvg.value = svg.outerHTML
+      chartViewerVisible.value = true
+    }
   }
 }
 
@@ -289,25 +310,13 @@ const { execute: executeUpvote } = useMutation(
       } else {
         props.posting.voteType = null
       }
-
-      // 如果是"看两遍就懂"，只有在学习模式下才标记节点完成
-      console.log('投票成功回调:', {
-        twiced: response.twiced,
-        isLearning: props.isLearning,
-        shouldMarkCompleted: response.twiced && props.isLearning
-      })
-
-      if (response.twiced && props.isLearning) {
-        console.log('触发 mark-node-completed 事件')
-        emit('mark-node-completed')
-      }
     },
   }
 )
 
 // 点赞
 const handleUpvote = async (type: string) => {
-  const voteType = type === 'twice' ? VoteType.TWICE : VoteType.HELPFUL
+  const voteType = type === 'twice' ? VoteType.TWICE : VoteType.LIKE
   await executeUpvote(voteType)
 }
 
@@ -732,6 +741,9 @@ watch(
 
     <!-- 图片查看器 -->
     <ImageViewer v-model="imageViewerVisible" :src="viewerImageSrc" />
+
+    <!-- 图表查看器 -->
+    <ChartViewer v-model="chartViewerVisible" :svg-content="viewerChartSvg" />
   </div>
 </template>
 
@@ -899,6 +911,12 @@ watch(
 .article-content :deep(.mermaid) {
   max-width: 100%;
   overflow: auto;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.article-content :deep(.mermaid:hover) {
+  opacity: 0.8;
 }
 
 .article-content :deep(.mermaid-error) {

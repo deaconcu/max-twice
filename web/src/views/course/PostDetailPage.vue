@@ -300,7 +300,8 @@ import { pageApi, memoryApi } from '@/api'
 import type { ReadResponse } from '@/api/modules/page'
 import type { MemoryCardDeck } from '@/types/memory'
 import { useFetch } from '@/composables/useFetch'
-import { ObjectType } from '@/enums'
+import { ObjectType, VoteType } from '@/enums'
+import { convertVoteType } from '@/utils/postUtils'
 
 const router = useRouter()
 const route = useRoute()
@@ -351,15 +352,13 @@ const {
 
     // 处理投票类型
     const posting = data.value.currPosting || data.value.post
-    if (posting?.voteType === 0) {
-      posting.voteType = null
+    if (posting) {
+      posting.voteType = convertVoteType(posting.voteType)
     }
 
     // 处理 otherPostings（新接口不返回 otherPostings，这里保留兼容性）
     data.value.otherPostings?.forEach((posting: any) => {
-      if (posting.voteType === 0) {
-        posting.voteType = null
-      }
+      posting.voteType = convertVoteType(posting.voteType)
     })
   },
 })

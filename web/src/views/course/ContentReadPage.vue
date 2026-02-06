@@ -409,6 +409,16 @@ import type { MemoryCardDeck } from '@/types/memory'
 import type { KeysetPageResponse } from '@/types/api'
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
+import { VoteType } from '@/enums'
+import { convertVoteType } from '@/utils/postUtils'
+
+// 将后端返回的数字类型转换为前端使用的字符串类型
+const convertVoteType = (voteType: number | null | undefined): string | null => {
+  if (!voteType || voteType === VoteType.NONE) return null
+  if (voteType === VoteType.TWICE) return 'twice'
+  if (voteType === VoteType.LIKE) return 'helpful'
+  return null
+}
 
 const router = useRouter()
 const route = useRoute()
@@ -645,9 +655,7 @@ const {
     }
     // 处理投票类型
     data.value.otherPostings?.forEach((posting: any) => {
-      if (posting.voteType === 0) {
-        posting.voteType = null
-      }
+      posting.voteType = convertVoteType(posting.voteType)
     })
     // 设置学习状态
     isLearning.value = data.value.learning || false
@@ -701,9 +709,7 @@ const {
     if (morePosts.value && morePosts.value.items && morePosts.value.items.length > 0) {
       // 处理投票类型
       morePosts.value.items.forEach((posting: any) => {
-        if (posting.voteType === 0) {
-          posting.voteType = null
-        }
+        posting.voteType = convertVoteType(posting.voteType)
       })
       // 追加到现有列表
       data.value.otherPostings = [...(data.value.otherPostings || []), ...morePosts.value.items]

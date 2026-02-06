@@ -9,14 +9,15 @@
         @click="close"
       ></v-btn>
       <div class="image-content" @click="close">
-        <img :src="imageSrc" alt="预览图片" class="preview-image" />
+        <div v-if="isSvg" class="svg-container" v-html="imageSrc"></div>
+        <img v-else :src="imageSrc" alt="预览图片" class="preview-image" />
       </div>
     </div>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 
 const props = defineProps<{
   modelValue: boolean
@@ -29,6 +30,11 @@ const emit = defineEmits<{
 
 const visible = ref(props.modelValue)
 const imageSrc = ref(props.src)
+
+// 判断是否是 SVG 内容
+const isSvg = computed(() => {
+  return typeof imageSrc.value === 'string' && imageSrc.value.trim().startsWith('<svg')
+})
 
 watch(
   () => props.modelValue,
@@ -89,5 +95,19 @@ const close = () => {
   max-height: 100%;
   object-fit: contain;
   cursor: zoom-out;
+}
+
+.svg-container {
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+}
+
+.svg-container :deep(svg) {
+  max-width: 100%;
+  max-height: 100%;
 }
 </style>
