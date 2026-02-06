@@ -1,3 +1,9 @@
+<script lang="ts">
+// 全局 Mermaid ID 计数器（模块级别，所有组件实例共享）
+// 避免不同 SinglePost 实例生成重复的 Mermaid ID
+let globalMermaidIdCounter = 0
+</script>
+
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -44,7 +50,6 @@ const router = useRouter()
 const isOverflow = ref(false)
 const contentRef = ref<HTMLElement | null>(null)
 let mermaidInitialized = false
-let mermaidIdCounter = 0
 
 // 图片查看器
 const imageViewerVisible = ref(false)
@@ -212,7 +217,7 @@ const renderMermaidDiagrams = async (root: HTMLElement) => {
       }
       const normalized = normalizeMermaidDefinition(definition)
       try {
-        const { svg } = await mermaid.render(`mermaid-${mermaidIdCounter++}`, normalized)
+        const { svg } = await mermaid.render(`mermaid-${globalMermaidIdCounter++}`, normalized)
         el.innerHTML = svg
         el.dataset.processed = 'true'
       } catch (error) {
@@ -852,7 +857,7 @@ watch(
 }
 
 .article-content :deep(pre) {
-  background-color: #f6f6f6;
+  background-color: transparent;
   padding: 1rem;
   border-radius: 8px;
   overflow-x: auto;

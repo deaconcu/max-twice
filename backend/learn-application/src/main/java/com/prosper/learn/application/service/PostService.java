@@ -290,20 +290,6 @@ public class PostService {
         return postConverter.toSummaryDTO(post);
     }
 
-// --注释掉检查 START (2025/12/10 11:17):
-//    /**
-//     * 批量获取帖子列表
-//     */
-//    public List<PostSummaryDTO> getDTOList(List<Long> ids) {
-//        if (ids == null || ids.isEmpty()) {
-//            return new ArrayList<>();
-//        }
-//
-//        List<PostDO> postings = domainService.getByIdsWithIdToName(ids);
-//        return postConverter.toSummaryDTO(postings);
-//    }
-// --注释掉检查 STOP (2025/12/10 11:17)
-
     /**
      * 获取节点下的帖子列表（按分数排序），获取前 N 条
      */

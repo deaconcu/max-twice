@@ -18,6 +18,8 @@ interface Props {
   currNode: any
   pathText: string
   isLearning?: boolean
+  loadingMore?: boolean
+  hasMore?: boolean
 }
 
 interface Emits {
@@ -29,6 +31,8 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   isLearning: false,
+  loadingMore: false,
+  hasMore: true,
 })
 
 const emit = defineEmits<Emits>()
@@ -407,6 +411,20 @@ const completeButtonTooltip = () => {
               @mark-node-completed="emit('mark-node-completed')"
             />
             <v-divider class="mt-11" color="grey-darken-2"></v-divider>
+          </div>
+
+          <!-- 加载更多状态 -->
+          <div class="text-center py-8">
+            <!-- 加载中 -->
+            <div v-if="loadingMore" class="d-flex flex-column align-center">
+              <v-progress-circular indeterminate color="primary" size="32"></v-progress-circular>
+              <p class="text-body-2 text-grey mt-4">加载中...</p>
+            </div>
+            <!-- 已到底 -->
+            <div v-else-if="!hasMore" class="text-grey">
+              <v-icon icon="mdi-check-circle-outline" size="20" class="mr-1"></v-icon>
+              <span class="text-body-2">已经到底了</span>
+            </div>
           </div>
         </div>
 

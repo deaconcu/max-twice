@@ -237,6 +237,8 @@
                 :curr-node="lastPathNode"
                 :path-text="pathText"
                 :is-learning="isLearning"
+                :loading-more="loadingMore"
+                :has-more="hasMore"
                 @switch-tab="handleTabSwitch"
                 @view-deck="handleViewDeck"
                 @load-data="loadData"
@@ -404,6 +406,7 @@ import DeckDetailDialog from '@/components/features/read/DeckDetailDialog.vue'
 import { pageApi, memoryApi, postApi, progressApi } from '@/api'
 import type { ReadResponse } from '@/api/modules/page'
 import type { MemoryCardDeck } from '@/types/memory'
+import type { KeysetPageResponse } from '@/types/api'
 import { useFetch } from '@/composables/useFetch'
 import { useMutation } from '@/composables/useMutation'
 
@@ -599,6 +602,13 @@ const pathText = ref('')
 // 标记是否为首次加载
 const isInitialLoad = ref(true)
 
+// 记录上次加载的参数
+const lastLoadedParams = ref({
+  nodeId: route.query.nodeId,
+  path: route.query.path,
+  courseId: route.query.courseId,
+})
+
 // 使用 useFetch 加载页面数据
 const {
   data,
@@ -606,11 +616,7 @@ const {
   execute: loadData,
 } = useFetch<ReadResponse>({
   fetchFn: () => {
-    if (route.query.commentId) {
-      return pageApi.readByComment(Number(route.query.commentId))
-    } else if (route.query.postId) {
-      return pageApi.readByPost(Number(route.query.postId))
-    } else if (route.query.nodeId && route.query.path) {
+    if (route.query.nodeId && route.query.path) {
       return pageApi.readByNode(Number(route.query.nodeId), route.query.path as string)
     } else if (route.query.nodeId) {
       return pageApi.readByNode(Number(route.query.nodeId), '')
@@ -625,6 +631,14 @@ const {
   onDataReady: () => {
     // 首次加载完成后，标记为非首次
     isInitialLoad.value = false
+
+    // 更新上次加载的参数
+    lastLoadedParams.value = {
+      nodeId: route.query.nodeId,
+      path: route.query.path,
+      courseId: route.query.courseId,
+    }
+
     // 处理 toc 为 null 的情况，转换为空数组
     if (!data.value.toc) {
       data.value.toc = []
@@ -673,27 +687,27 @@ const {
   data: morePosts,
   loading: loadingMorePosts,
   execute: loadMorePosts,
-} = useFetch<any[]>({
+} = useFetch<KeysetPageResponse<any>>({
   fetchFn: () => {
     if (!data.value || !data.value.otherPostings || !data.value.node) {
       return Promise.reject(new Error('No data'))
     }
     const lastPosting = data.value.otherPostings[data.value.otherPostings.length - 1]
     const nodeId = data.value.node.id
-    return postApi.getPosts(undefined, nodeId, lastPosting.score, lastPosting.id)
+    return postApi.getNodePosts(nodeId, lastPosting.score, lastPosting.id)
   },
   immediate: false,
   onDataReady: () => {
-    if (morePosts.value && morePosts.value.length > 0) {
+    if (morePosts.value && morePosts.value.items && morePosts.value.items.length > 0) {
       // 处理投票类型
-      morePosts.value.forEach((posting: any) => {
+      morePosts.value.items.forEach((posting: any) => {
         if (posting.voteType === 0) {
           posting.voteType = null
         }
       })
       // 追加到现有列表
-      data.value.otherPostings = [...(data.value.otherPostings || []), ...morePosts.value]
-      hasMore.value = true
+      data.value.otherPostings = [...(data.value.otherPostings || []), ...morePosts.value.items]
+      hasMore.value = morePosts.value.hasMore
     } else {
       hasMore.value = false
     }
@@ -710,14 +724,10 @@ const loadMore = async () => {
   loadingMore.value = true
   try {
     await loadMorePosts()
-
-    if (morePosts.value && morePosts.value.length > 0) {
-      // 成功加载
-    } else {
-      hasMore.value = false
-    }
+    // hasMore 已在 onDataReady 中更新
   } catch (error) {
     console.error('Failed to load more posts:', error)
+    hasMore.value = false
   } finally {
     loadingMore.value = false
   }
@@ -899,11 +909,24 @@ watch(
     route.params.id,
     route.query.path,
     route.query.nodeId,
-    route.query.postId,
-    route.query.commentId,
+    route.query.courseId,
   ],
   () => {
+    // 检查参数是否与上次加载的相同
+    const nodeIdSame = lastLoadedParams.value.nodeId === route.query.nodeId
+    const pathSame = lastLoadedParams.value.path === route.query.path
+    const courseIdSame = lastLoadedParams.value.courseId === route.query.courseId
+
+    const isSame = nodeIdSame && pathSame && courseIdSame
+
+    // 参数相同，不重新加载（使用缓存）
+    if (isSame) {
+      return
+    }
+
+    // 参数变化了，重新加载数据
     loadData()
+    // 注意：参数会在 onDataReady 回调中更新
   },
   { deep: true }
 )

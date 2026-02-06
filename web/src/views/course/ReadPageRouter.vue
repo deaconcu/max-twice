@@ -25,5 +25,7 @@ const currentComponent = computed(() => {
 </script>
 
 <template>
-  <component :is="currentComponent" />
+  <keep-alive :include="['ContentReadPage']">
+    <component :is="currentComponent" />
+  </keep-alive>
 </template>
