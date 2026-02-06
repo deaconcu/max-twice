@@ -2,8 +2,6 @@ package com.prosper.learn.application.service.robot;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.prosper.learn.application.dto.request.CreateDeckRequest;
 import com.prosper.learn.application.dto.request.CreatePostRequest;
 import com.prosper.learn.application.service.MemoryCardDeckService;
@@ -14,26 +12,18 @@ import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
+import com.prosper.learn.infrastructure.ai.GeminiService;
+import com.prosper.learn.infrastructure.ai.OpencodeService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 import java.util.List;
 import java.util.ArrayList;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Robot 生成服务
@@ -61,34 +51,35 @@ public class RobotGenerationService {
     private final MemoryCardDeckService memoryCardDeckService;
     private final RobotQueueService robotQueueService;
     private final ObjectMapper objectMapper;
-    private final RedisTemplate<String, String> redisTemplate;
 
-    private static final String SESSION_KEY = "robot:session:id";
-    private static final long SESSION_EXPIRE_HOURS = 24;
-    private static final String SESSION_USE_COUNT_KEY = "robot:session:useCount";
-    private static final int MAX_SESSION_USES_BEFORE_SUMMARIZE = 5;
+    // AI 服务
+    private final GeminiService geminiService;
+    private final OpencodeService opencodeService;
 
     // ========= 对外入口 =========
 
     /**
-     * 重置会话：删除 Redis 中的会话键和使用计数
+     * 重置会话
      */
     public void resetSession() {
-        redisTemplate.delete(SESSION_KEY);
-        redisTemplate.delete(SESSION_USE_COUNT_KEY);
-        log.info("session reset, deleted keys: {}, {}", SESSION_KEY, SESSION_USE_COUNT_KEY);
+        String provider = systemProperties.getRobot().getProvider();
+        if ("gemini".equalsIgnoreCase(provider)) {
+            log.info("Gemini provider does not have session, reset ignored");
+        } else {
+            opencodeService.resetSession();
+        }
     }
 
     /**
-     * 压缩当前session的上下文
+     * 压缩当前 session 的上下文
      */
     public void summarizeCurrentSession() {
-        String sessionId = redisTemplate.opsForValue().get(SESSION_KEY);
-        if (sessionId == null || sessionId.isEmpty()) {
-            log.warn("No active session to summarize");
-            return;
+        String provider = systemProperties.getRobot().getProvider();
+        if ("gemini".equalsIgnoreCase(provider)) {
+            log.info("Gemini provider does not have session, summarize ignored");
+        } else {
+            opencodeService.summarizeSession();
         }
-        summarizeSession(sessionId);
     }
 
     /**
@@ -102,22 +93,17 @@ public class RobotGenerationService {
         NodeDO nodeDO = nodeDataService.validateAndGet(nodeId);
         CourseDO courseDO = courseDataService.validateAndGet(nodeDO.getCourseId());
 
-        String sessionId = getOrCreateSession();
-
-        // 增加使用计数并检查是否需要压缩上下文
-        Long useCount = redisTemplate.opsForValue().increment(SESSION_USE_COUNT_KEY);
-        if (useCount != null && useCount % MAX_SESSION_USES_BEFORE_SUMMARIZE == 0) {
-            log.info("Session used {} times, summarizing to compress context", useCount);
-            summarizeSession(sessionId);
-        }
-
+        String systemPrompt = buildSystemPrompt(contentType);
         String prompt = switch (contentType) {
             case "index" -> buildPromptForIndex(nodeDO, courseDO);
             case "article" -> buildPromptForArticle(nodeDO, courseDO);
             default -> buildPromptForAuto(nodeDO, courseDO);
         };
-        String response = sendMessageWithRetry(sessionId, prompt);
-        log.info("sessionId={}, response={}", sessionId, response);
+
+        // 根据配置选择 AI provider
+        String response = generateContent(prompt, systemPrompt);
+        log.info("AI response length: {}", response != null ? response.length() : 0);
+
         Long postId = handleResponse(nodeId, aiUserId, response);
 
         if (postId != null && recursive) {
@@ -158,164 +144,106 @@ public class RobotGenerationService {
         }
     }
 
-    // ========= 与 opencode 通信 =========
-
     /**
-     * 获取或创建 sessionId
+     * 使用配置的 AI provider 生成内容
      */
-    private String getOrCreateSession() {
-        String sessionId = redisTemplate.opsForValue().get(SESSION_KEY);
-        if (sessionId != null && !sessionId.isEmpty()) {
-            log.debug("reusing existing session: {}", sessionId);
-            return sessionId;
-        }
+    private String generateContent(String prompt, String systemPrompt) {
+        String provider = systemProperties.getRobot().getProvider();
 
-        sessionId = createSession();
-        redisTemplate.opsForValue().set(SESSION_KEY, sessionId, SESSION_EXPIRE_HOURS, TimeUnit.HOURS);
-        log.info("created new session: {}", sessionId);
-        return sessionId;
-    }
-
-    /**
-     * 发送消息（不重连，有 sessionId 就继续使用）
-     */
-    private String sendMessageWithRetry(String sessionId, String prompt) {
-        try {
-            return sendMessage(sessionId, prompt);
-        } catch (Exception e) {
-            log.warn("send message failed with session {}: {}", sessionId, e.getMessage());
-            // 检查 Redis 中是否还有 sessionId，有的话就抛出异常不重连
-            String existingSessionId = redisTemplate.opsForValue().get(SESSION_KEY);
-            if (existingSessionId != null && !existingSessionId.isEmpty()) {
-                log.info("session exists in redis, not reconnecting");
-                throw e;
-            }
-
-            // Redis 中没有 sessionId 时才重新创建
-            log.info("no session in redis, creating new session");
-            String newSessionId = getOrCreateSession();
-            return sendMessage(newSessionId, prompt);
+        if ("gemini".equalsIgnoreCase(provider)) {
+            return geminiService.generateContent(prompt, systemPrompt);
+        } else {
+            // 默认使用 opencode
+            return opencodeService.generateContent(prompt, systemPrompt);
         }
     }
 
-    /**
-     * 创建 opencode 会话（POST /session）
-     */
-    private String createSession() {
-        try {
-            ObjectNode body = objectMapper.createObjectNode();
-            body.put("title", "auto-author");
-            HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(systemProperties.getRobot().getOpencodeBaseUrl() + "/session"))
-                    .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(15))
-                    .POST(HttpRequest.BodyPublishers.ofString(body.toString(), StandardCharsets.UTF_8))
-                    .build();
-            HttpResponse<String> resp = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
-            if (resp.statusCode() / 100 != 2) throw new RuntimeException("create session failed: " + resp.statusCode());
-            JsonNode json = objectMapper.readTree(resp.body());
-            String id = json.path("id").asText();
-            if (id == null || id.isEmpty()) throw new RuntimeException("empty session id");
-            return id;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+    // ========= 构建系统提示词 =========
 
     /**
-     * 压缩session上下文（调用summarize接口）
+     * 构建系统提示词（通用规范和要求）
      */
-    private void summarizeSession(String sessionId) {
-        try {
-            ObjectNode body = objectMapper.createObjectNode();
-            body.put("providerID", systemProperties.getRobot().getProviderId());
-            body.put("modelID", systemProperties.getRobot().getModelId());
-            body.put("auto", false);
+    private String buildSystemPrompt(String contentType) {
+        return """
+                你是一位教材内容生成专家。请严格遵守以下规范：
 
-            HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(systemProperties.getRobot().getOpencodeBaseUrl() + "/session/" + sessionId + "/summarize"))
-                    .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(60))
-                    .POST(HttpRequest.BodyPublishers.ofString(body.toString(), StandardCharsets.UTF_8))
-                    .build();
-            HttpResponse<String> resp = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
-            if (resp.statusCode() / 100 != 2) {
-                log.warn("summarize session failed: {}", resp.statusCode());
-            } else {
-                log.info("Session summarized successfully");
-            }
-        } catch (Exception e) {
-            log.warn("Failed to summarize session", e);
-            // 不抛出异常，summarize失败不影响主流程
-        }
+                【重要】每一次请求都是全新的独立任务：
+                - 不要检测或判断是否是重复请求
+                - 不要尝试复用之前的生成结果
+                - 每次都必须生成完整的新内容
+                - 即使主题相似，也要重新生成完整内容
+
+                只根据当前提示词要求生成内容，并确保输出格式正确、内容完整。
+
+                ## 输出格式规范
+                1. 文章类型：必须以"[A]"开头，后跟纯HTML格式内容
+                   - 使用HTML标签：<h1>, <h2>, <h3>, <p>, <ul>, <ol>, <li>, <table>, <pre> 等
+                   - 不要使用 Markdown 语法（禁止使用 #, ##, *, -, `, ```, 等）
+                   - 不要添加 style 属性或 CSS 样式
+                   - 数学公式使用 LaTeX：<span>$公式$</span> 或 <div>$$公式$$</div>
+                   - Mermaid 图表用 <pre class="mermaid">...</pre> 包裹
+                2. 目录类型：以"[C]"开头，后跟合法的JSON数组
+                3. JSON格式：必须使用双引号，格式为 [{"name": "...", "description": "..."}, ...]
+                4. 不要在输出前后添加任何额外文字、代码块标记或换行
+
+                ## 文章写作规范
+                1. 结构：先讲为什么学（动机）→ 通俗讲解（类比）→ 形式化内容（公式定理）
+                2. 避免一开始就放公式，要让读者能自学理解
+                3. 使用通俗语言，不要用未知解释未知
+                4. 内容要有条理、逻辑清晰、准确无误
+                5. 数学内容使用 LaTeX 语法
+                6. 图表使用 Mermaid 语法，必须严格遵守以下规则：
+                   - 保持简单易懂，不要过于复杂
+                   - 使用 graph TB 或 graph LR 指定方向
+                   - 节点ID使用简单字母数字组合，如 A, B1, C2
+                   - 节点显示文本用方括号和双引号包裹，格式：A["文本内容"]
+                   - 节点文本内容中不要使用特殊字符：双引号、方括号、圆括号、下标等
+                   - 节点文本保持简短，复杂说明用多个节点表达
+                   - subgraph 名称必须是纯英文或数字，不能有空格、中文、圆括号
+                   - 正确示例：
+                     ```
+                     graph TB
+                       subgraph group1
+                         A["起点"] --> B["中间点"]
+                       end
+                       subgraph group2
+                         C["终点"]
+                       end
+                     ```
+                   - 错误示例（禁止使用）：
+                     * subgraph 理论预测 (基于可见物质) - 包含中文、空格、圆括号
+                     * A["光束 I₀(一群探险者)"] - 节点文本包含圆括号和下标
+                     * B1["系数位置 A[i, i]"] - 节点文本包含方括号
+                7. 中文和数字、英文之间添加空格
+                8. 不添加 JavaScript 代码
+
+                ## 目录生成规范
+                1. 目录名必须具体，不能用"绪论"、"基础知识"等宽泛名称
+                2. 目录描述要完整定义该目录的知识范围
+                3. 目录名不允许重复
+                4. 目录必须包括两个或者两个以上的子目录，否则应该输出为文章
+                5. 不添加章节序号
+
+                请严格按照上述规范输出，确保 JSON 格式正确（使用双引号），Mermaid 图表格式正确。
+                """;
     }
 
-    /**
-     * 发送 ChatInput（POST /session/:id/message）并返回原始响应
-     */
-    private String sendMessage(String sessionId, String prompt) {
-        try {
-            ObjectNode model = objectMapper.createObjectNode();
-            model.put("providerID", systemProperties.getRobot().getProviderId());
-            model.put("modelID", systemProperties.getRobot().getModelId());
-
-            ArrayNode parts = objectMapper.createArrayNode();
-            ObjectNode part = objectMapper.createObjectNode();
-            part.put("type", "text");
-            part.put("text", prompt);
-            parts.add(part);
-
-            ObjectNode root = objectMapper.createObjectNode();
-            root.set("model", model);
-            root.set("parts", parts);
-
-            log.info("send to opencode: {}", root);
-            HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(systemProperties.getRobot().getOpencodeBaseUrl() + "/session/" + sessionId + "/message"))
-                    .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(300)) // 5分钟超时
-                    .POST(HttpRequest.BodyPublishers.ofString(root.toString(), StandardCharsets.UTF_8))
-                    .build();
-            HttpResponse<String> resp = HttpClient.newHttpClient().send(req, HttpResponse.BodyHandlers.ofString());
-            if (resp.statusCode() / 100 != 2) throw new RuntimeException("send message failed: " + resp.statusCode());
-            return resp.body();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+    // ========= 构造提示词 =========
 
     /**
      * 构造提示词：自动判断生成文章或目录
      */
     private String buildPromptForAuto(NodeDO nodeDO, CourseDO courseDO) {
         return """
-                请忽略之前所有对话内容，独立回答
-                我在写一本教材，教材名称是："%s", 我当前在 "%s" 这个目录下，这个目录是这么定义的：%s
-                请你判断并给出回答：
-                1. 如果能用一篇文章说清楚这个目录的内容，就生成一篇文章，尽量做到一篇文章只讲一个知识点
-                   文章前用"[A]"开标注这是一篇文章，需要使用容易让人理解的方式，返回的内容使用HTML格式，不要带样式，不要有和内容无关的语言，请根据实际情况调整长度；
-                   文章一般采用如下结构：
-                      1. 先介绍为什么要学习这个知识点，这个知识点有什么用处，能解决什么问题，是从一个什么原因才引出的这个知识点
-                      2. 使用通俗的语言从最初的思路开始讲解这个知识点，因为读者是来学习的，不要用一个未知的东西去解释另一个未知的东西，尽可能使用类比，图表来让读者能从一个已熟悉的角度去理解新的知识点
-                      3. 然后再介绍相关的公式，定理，规范，让读者在理解的基础上去学习形式化的内容
-                   切记不要一上来放一堆公式，初学者不知道这些公式是干嘛的，这种书不是给读者自己看的，而是必须有个老师讲解，我们要做能让人自己看懂的书
-                   文章要非常的侧重清楚明白，容易理解，
-                   文章内容要有条理，有逻辑，内容要丰富，尽量多的覆盖这个目录下的知识点，内容要准确，不要有错误，
-                   数学相关内容请使用LaTeX语法，
-                   图表相关内容请使用Mermaid语法
-                       1. 图表不要太复杂，尽量简单易懂，图表要占满行宽，节点要使用与之适配的图形，比如不要在没有判断的地方使用菱形节点
-                       2. 节点名称要整体用双引号包含, 比如：节点 B1["1. xxx"]，不要在双引号中使用双引号，比如: subgraph "空间 B = {"α₁, α₂"}, 原色 {"红, 绿, 蓝"})"，P1["\"系数位置 A[i, i"]"]，都是错误的写法
-                       3. 灵活使用图表生成方向 graph TB/LR，保证生成的图表宽小于高，不要使用direction xx，没有作用
-                   中文和数字，英文之间添加空格
-                   不要添加任何js代码，不要在[A]后添加换行
-                   示例：[A]文章内容
-                2. 如果这个目录下的内容比较多，不能用一篇文章说清楚，就生成一个子目录列表:
-                   目录前用"[C]"来标注这是一个目录，目录列表使用[{"name": "目录名1", "description": "目录描述1"}, {"name": "目录名2", "description": "目录描述2"}, ...]的JSON格式，请输出合法的JSON数组
-                   1. 目录名不允许重复，必须使用具体的名称，不能用：“绪论”，“基础知识” 这种宽泛的名称，必须能让人不知道课程名时，一看目录名，也知道这个目录讲的是什么内容
-                   2. 目录描述是对这个目录的完整定义，非常重要, 要精确描述这个目录要讲述的知识的范围，要让用户容易理解，不容易有歧义，而且要概括完整，不要遗漏
-                   3. 前后不要附加任何文字，目录中不要添加章节序号，不要添加无关的内容，比如欢迎语，只有目录名称和目录描述
-                   目录示例：[C][{"name": "绪论", "description": "介绍这门课程"}, {"name": "基础知识", "description": "讲解这门课程的基础知识, ..."}, {"name": "进阶篇", "description": "讲解这门课程的进阶知识, ..."}]
-                输出完整内容，不要截断
+                教材名称：%s
+                当前目录：%s
+                目录定义：%s
+
+                任务：请判断该目录内容的复杂度，并选择合适的方式：
+                1. 如果内容可以用一篇文章讲清楚（单一知识点），则生成文章，以 [A] 开头
+                2. 如果内容较多需要拆分，则生成子目录列表，以 [C] 开头
+
+                请直接输出结果，不要附加任何说明。
                """.formatted(courseDO.getName(), nodeDO.getName(), nodeDO.getDescription());
     }
 
@@ -324,26 +252,11 @@ public class RobotGenerationService {
      */
     private String buildPromptForArticle(NodeDO nodeDO, CourseDO courseDO) {
         return """
-                请忽略之前所有对话内容，独立回答
-                我在写一本教材，教材名称是："%s", 我当前在 "%s" 这个目录下，这个目录是这么定义的：%s
-                请生成一篇文章，尽量做到一篇文章只讲一个知识点
-                文章前用"[A]"开标注这是一篇文章，需要使用容易让人理解的方式，返回的内容使用HTML格式，不要带样式，不要有和内容无关的语言，请根据实际情况调整长度；
-                文章一般采用如下结构：
-                   1. 先介绍为什么要学习这个知识点，这个知识点有什么用处，能解决什么问题，是从一个什么原因才引出的这个知识点
-                   2. 使用通俗的语言从最初的思路开始讲解这个知识点，因为读者是来学习的，不要用一个未知的东西去解释另一个未知的东西，尽可能使用类比，图表来让读者能从一个已熟悉的角度去理解新的知识点
-                   3. 然后再介绍相关的公式，定理，规范，让读者在理解的基础上去学习形式化的内容
-                切记不要一上来放一堆公式，初学者不知道这些公式是干嘛的，这种书不是给读者自己看的，而是必须有个老师讲解，我们要做能让人自己看懂的书
-                文章要非常的侧重清楚明白，容易理解，
-                文章内容要有条理，有逻辑，内容要丰富，尽量多的覆盖这个目录下的知识点，内容要准确，不要有错误，
-                数学相关内容请使用LaTeX语法，
-                图表相关内容请使用Mermaid语法
-                    1. 图表不要太复杂，尽量简单易懂，图表要占满行宽，节点要使用与之适配的图形，比如不要在没有判断的地方使用菱形节点
-                    2. 节点名称要整体用双引号包含, 比如：节点 B1["1. xxx"]，不要在双引号中使用双引号，比如: subgraph "空间 B = {"α₁, α₂"}, 原色 {"红, 绿, 蓝"})"，P1["\"系数位置 A[i, i"]"]，都是错误的写法
-                    3. 灵活使用图表生成方向 graph TB/LR，保证生成的图表宽小于高，不要使用direction xx，没有作用
-                中文和数字，英文之间添加空格
-                不要添加任何js代码，不要在[A]后添加换行
-                示例：[A]文章内容
-                输出完整内容，不要截断
+                教材名称：%s
+                当前目录：%s
+                目录定义：%s
+
+                任务：为该目录生成一篇文章，以 [A] 开头。
                """.formatted(courseDO.getName(), nodeDO.getName(), nodeDO.getDescription());
     }
 
@@ -352,33 +265,26 @@ public class RobotGenerationService {
      */
     private String buildPromptForIndex(NodeDO nodeDO, CourseDO courseDO) {
         return """
-                请忽略之前所有对话内容，独立回答
-                我在写一本教材，教材名称是："%s", 我当前在 "%s" 这个目录下，这个目录是这么定义的：%s
-                请生成一个子目录列表:
-                目录前用"[C]"来标注这是一个目录，目录列表使用[{"name": "目录名1", "description": "目录描述1"}, {"name": "目录名2", "description": "目录描述2"}, ...]的JSON格式，请输出合法的JSON数组
-                1. 目录名不允许重复，必须使用具体的名称，不能用：“绪论”，“基础知识” 这种宽泛的名称，必须能让人不知道课程名时，一看目录名，也知道这个目录讲的是什么内容
-                2. 目录描述是对这个目录的完整定义，非常重要, 要精确描述这个目录要讲述的知识的范围，要让用户容易理解，不容易有歧义，而且要概括完整，不要遗漏
-                3. 前后不要附加任何文字，目录中不要添加章节序号，不要添加无关的内容，比如欢迎语，只有目录名称和目录描述
-                目录示例：[C][{"name": "函数", "description": "介绍这门课程"}, {"name": "光的干涉", "description": "讲解这门课程的基础知识, ..."}, {"name": "进阶篇", "description": "讲解这门课程的进阶知识, ..."}]
-                输出完整内容，不要截断
+                教材名称：%s
+                当前目录：%s
+                目录定义：%s
+
+                任务：为该目录生成子目录列表，以 [C] 开头。
                """.formatted(courseDO.getName(), nodeDO.getName(), nodeDO.getDescription());
     }
 
     // ========= 结果解析与入库 =========
 
     /**
-     * 解析 opencode 响应，调用 PostService 创建文章/目录帖
+     * 解析 AI 响应，调用 PostService 创建文章/目录帖
      * @return 创建的帖子ID
      */
     private Long handleResponse(long nodeId, long aiUserId, String responseBody) {
         try {
-            // opencode Message 结构：parts[0].text 存放模型输出
-            JsonNode root = objectMapper.readTree(responseBody);
-            JsonNode parts = root.path("parts");
-            String content;
-            if (parts.isArray() && parts.size() > 0) content = parts.get(2).path("text").asText();
-            else content = root.path("text").asText();
-            if (content == null || content.isEmpty()) throw new RuntimeException("empty result content");
+            String content = extractContent(responseBody);
+            if (content == null || content.isEmpty()) {
+                throw new RuntimeException("empty result content");
+            }
 
             Enums.PostType postType;
             if (content.startsWith("[A]")) {
@@ -407,6 +313,31 @@ public class RobotGenerationService {
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 从响应中提取内容（兼容 Gemini 和 OpenCode 两种格式）
+     */
+    private String extractContent(String responseBody) {
+        String provider = systemProperties.getRobot().getProvider();
+
+        if ("gemini".equalsIgnoreCase(provider)) {
+            // Gemini 直接返回文本
+            return responseBody;
+        } else {
+            // OpenCode 返回 JSON 结构：parts[2].text
+            try {
+                JsonNode root = objectMapper.readTree(responseBody);
+                JsonNode parts = root.path("parts");
+                if (parts.isArray() && parts.size() > 0) {
+                    return parts.get(2).path("text").asText();
+                } else {
+                    return root.path("text").asText();
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse OpenCode response", e);
+            }
         }
     }
 
@@ -454,16 +385,50 @@ public class RobotGenerationService {
      */
     private List<CreateDeckRequest.CardInfo> generateMemoryCards(String articleContent) {
         try {
-            String sessionId = getOrCreateSession();
+            String systemPrompt = buildMemoryCardSystemPrompt();
             String prompt = buildMemoryCardPrompt(articleContent);
-            String response = sendMessage(sessionId, prompt);
+            String response = generateContent(prompt, systemPrompt);
 
-            log.info("response:" + response);
+            log.info("Memory card generation response length: {}", response.length());
             return parseMemoryCardResponse(response);
         } catch (Exception e) {
-            log.warn("Failed to generate AI memory cards, falling back to default cards: {}", e.getMessage());
+            log.warn("Failed to generate AI memory cards: {}", e.getMessage());
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * 构建记忆卡片系统提示词
+     */
+    private String buildMemoryCardSystemPrompt() {
+        return """
+                你是记忆卡片生成专家。请严格遵守以下规范：
+
+                ## 输出格式
+                1. 必须输出合法的 JSON 数组
+                2. 使用双引号，格式：[{"front": "问题", "back": "答案"}, ...]
+                3. 直接输出 JSON，不要添加代码块标记、说明文字或其他内容
+                4. 以 '[' 开头，以 ']' 结尾
+
+                ## 卡片内容选取标准
+                1. 重要的概念、定义、公式
+                2. 专有名词
+                3. 比较难理解的知识点
+
+                ## 卡片形式
+                1. 问答题
+                2. 选择题
+                3. 填空题
+                4. 判断题
+
+                ## 质量要求
+                1. 问题要具体明确
+                2. 答案要准确完整且简洁
+                3. 避免答案长篇大论
+                4. 如果问答题答案不够简洁，使用其他形式（选择、填空、判断）
+
+                请严格按照 JSON 格式输出，确保使用双引号。
+                """;
     }
 
     /**
@@ -471,36 +436,11 @@ public class RobotGenerationService {
      */
     private String buildMemoryCardPrompt(String articleContent) {
         return String.format("""
-            请忽略之前所有对话内容，独立回答
-            基于以下文章内容，生成记忆卡片组，每张卡片包含问题(front)和答案(back)。
+            基于以下文章内容生成记忆卡片组：
 
-            要求：
-            1. 卡片的内容选取参照以下标准：
-                1). 需要记忆的内容
-                    * 重要的概念、定义、公式
-                    * 专有名词
-                2). 比较难理解的地方
-            2. 卡片的形式
-                1）问答
-                2）选择题
-                3）填空题
-                4）判断题
-            3. 问题要具体明确
-            4. 答案要准确完整，而且要尽量简洁，答案长篇大论的卡片没有意义，卡片是需要记忆的
-            5. 如果问答题做不到答案简洁，可以使用别的卡片形式（选择，填空，判断）
-            6. 严格按照JSON格式返回，格式如下：
-            [{"front": "问题", "back": "答案"}, ...]
-
-            文章内容：
             %s
-            
-            示例Output:
-            [
-              {"front": "问题1", "back": "答案1"},
-              {"front": "问题2", "back": "答案2"},
-              {"front": "问题3", "back": "答案3"}
-            ]
-            你的回应以'['开头，以']'结尾，中间是合法的JSON对象
+
+            请直接输出 JSON 数组。
             """, articleContent);
     }
 
@@ -509,15 +449,8 @@ public class RobotGenerationService {
      */
     private List<CreateDeckRequest.CardInfo> parseMemoryCardResponse(String responseBody) {
         try {
-            // 解析opencode响应格式
-            JsonNode root = objectMapper.readTree(responseBody);
-            JsonNode parts = root.path("parts");
-            String content;
-            if (parts.isArray() && parts.size() > 0) {
-                content = parts.get(1).path("text").asText();
-            } else {
-                content = root.path("text").asText();
-            }
+            // 提取内容（兼容 Gemini 和 OpenCode）
+            String content = extractContent(responseBody);
 
             if (content == null || content.isEmpty()) {
                 throw new RuntimeException("Empty AI response");
@@ -527,7 +460,7 @@ public class RobotGenerationService {
                 content = content.substring(7, content.length() - 3).trim();
             }
             // 尝试解析JSON数组
-            log.info("content:" + content);
+            log.info("Parsing memory card content length: {}", content.length());
             JsonNode cardsArray = objectMapper.readTree(content);
             if (!cardsArray.isArray()) {
                 throw new RuntimeException("Response is not a JSON array");

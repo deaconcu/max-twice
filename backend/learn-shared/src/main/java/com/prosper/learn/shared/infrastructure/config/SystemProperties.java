@@ -564,10 +564,24 @@ public class SystemProperties {
         private String scanCron = "0 0 3 * * ?";
         /** Redis键前缀，例如 robot:ready */
         private String redisKeyPrefix = "robot:";
+
+        /** AI服务提供商类型: opencode 或 gemini */
+        private String provider = "gemini";
+
+        // ========== OpenCode 相关配置 ==========
         /** OpenCode 本地服务基础URL，用于调用生成接口 */
         private String opencodeBaseUrl = "http://127.0.0.1:4096";
+        /** OpenCode 的 provider ID */
         private String providerId = "github-copilot";
+        /** OpenCode 的 model ID */
         private String modelId = "gemini-2.5-pro";
+
+        // ========== Gemini API 相关配置 ==========
+        /** Gemini API Key */
+        private String geminiApiKey;
+        /** Gemini 模型名称 */
+        //private String geminiModel = "gemini-2.5-pro";
+        private String geminiModel = "gemini-3-flash-preview";
     }
 
     @Data

@@ -143,10 +143,12 @@ const completeButtonTooltip = () => {
         v-if="nodes && nodes.length > 0"
         class="node-breadcrumb ma-0 text-grey text-body-2 pb-4"
       >
-        <div class="d-flex align-center">
+        <div class="breadcrumb-wrapper d-flex align-center flex-wrap">
           <template v-for="(item, index) in nodes" :key="item">
-            {{ data.tocNodeInfos?.[item]?.name || item }}
-            <v-icon v-if="index < nodes.length - 1" icon="mdi-chevron-right" class="px-5"></v-icon>
+            <span class="breadcrumb-item">
+              {{ data.tocNodeInfos?.[item]?.name || item }}
+              <v-icon v-if="index < nodes.length - 1" icon="mdi-chevron-right" class="px-5"></v-icon>
+            </span>
           </template>
         </div>
       </v-row>
@@ -556,6 +558,19 @@ const completeButtonTooltip = () => {
 <style scoped>
 .posting-list {
   width: 100%;
+}
+
+/* 面包屑容器 - 增加行间距 */
+.breadcrumb-wrapper {
+  gap: 0;
+  row-gap: 6px;
+}
+
+/* 面包屑项 - 防止内部换行 */
+.breadcrumb-item {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
 }
 
 /* Tab栏和操作按钮行 - 固定在顶部 */

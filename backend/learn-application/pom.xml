@@ -57,6 +57,7 @@
             <artifactId>meilisearch-java</artifactId>
             <version>0.18.0</version>
         </dependency>
+
     </dependencies>
 
 </project>
