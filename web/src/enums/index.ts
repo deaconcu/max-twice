@@ -9,9 +9,8 @@
  */
 export const VoteType = {
   NONE: 0, // 无投票
-  NORMAL: 1, // 普通投票
-  TWICE: 2, // 二次投票
-  HELPFUL: 3, // 有帮助
+  TWICE: 1, // 二次投票（两遍秒懂）
+  LIKE: 2, // 喜欢/有帮助
 } as const
 
 export type VoteType = (typeof VoteType)[keyof typeof VoteType]

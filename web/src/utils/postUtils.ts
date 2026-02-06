@@ -2,6 +2,20 @@
  * 帖子相关的工具函数
  */
 
+import { VoteType } from '@/enums'
+
+/**
+ * 将后端返回的数字类型转换为前端使用的字符串类型
+ * @param voteType - 后端返回的投票类型（0/1/2）
+ * @returns 前端使用的字符串类型（null/'twice'/'helpful'）
+ */
+export function convertVoteType(voteType: number | null | undefined): string | null {
+  if (!voteType || voteType === VoteType.NONE) return null
+  if (voteType === VoteType.TWICE) return 'twice'
+  if (voteType === VoteType.LIKE) return 'helpful'
+  return null
+}
+
 /**
  * 节点信息接口
  */

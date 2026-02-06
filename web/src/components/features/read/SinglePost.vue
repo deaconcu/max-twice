@@ -531,10 +531,9 @@ watch(
           </span>
           <v-chip
             v-if="posting.likeCount > 0"
-            size="x-small"
-            :color="posting.voteType === 'helpful' ? 'white' : 'grey-darken-1'"
-            :text-color="posting.voteType === 'helpful' ? 'primary' : 'white'"
-            class="ml-2"
+            size="small"
+            color="white"
+            class="ml-2 font-weight-bold"
           >
             {{ posting.likeCount }}
           </v-chip>
@@ -570,10 +569,9 @@ watch(
             </span>
             <v-chip
               v-if="posting.twiceCount > 0"
-              size="x-small"
-              :color="posting.voteType === 'twice' ? 'white' : 'grey-darken-1'"
-              :text-color="posting.voteType === 'twice' ? 'primary' : 'white'"
-              class="ml-2"
+              size="small"
+              color="white"
+              class="ml-2 font-weight-bold"
             >
               {{ posting.twiceCount }}
             </v-chip>
