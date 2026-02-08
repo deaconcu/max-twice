@@ -12,8 +12,7 @@ import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.content.node.NodeDataService;
 import com.prosper.learn.content.post.PostDO;
 import com.prosper.learn.content.post.PostDataService;
-import com.prosper.learn.infrastructure.ai.GeminiService;
-import com.prosper.learn.infrastructure.ai.OpencodeService;
+import com.prosper.learn.infrastructure.ai.AIService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
@@ -38,7 +37,7 @@ import java.util.ArrayList;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class RobotGenerationService {
+public class PostGenerationService {
 
     // ========= 依赖与配置 =========
 
@@ -49,38 +48,13 @@ public class RobotGenerationService {
     private final PostDataService postDataService;
     private final UserDataService userDataService;
     private final MemoryCardDeckService memoryCardDeckService;
-    private final RobotQueueService robotQueueService;
+    private final PostQueueService postQueueService;
     private final ObjectMapper objectMapper;
 
     // AI 服务
-    private final GeminiService geminiService;
-    private final OpencodeService opencodeService;
+    private final AIService aiService;
 
     // ========= 对外入口 =========
-
-    /**
-     * 重置会话
-     */
-    public void resetSession() {
-        String provider = systemProperties.getRobot().getProvider();
-        if ("gemini".equalsIgnoreCase(provider)) {
-            log.info("Gemini provider does not have session, reset ignored");
-        } else {
-            opencodeService.resetSession();
-        }
-    }
-
-    /**
-     * 压缩当前 session 的上下文
-     */
-    public void summarizeCurrentSession() {
-        String provider = systemProperties.getRobot().getProvider();
-        if ("gemini".equalsIgnoreCase(provider)) {
-            log.info("Gemini provider does not have session, summarize ignored");
-        } else {
-            opencodeService.summarizeSession();
-        }
-    }
 
     /**
      * 为指定节点生成内容（外层执行器负责幂等与重试）
@@ -101,7 +75,7 @@ public class RobotGenerationService {
         };
 
         // 根据配置选择 AI provider
-        String response = generateContent(prompt, systemPrompt);
+        String response = aiService.generateContent(prompt, systemPrompt);
         log.info("AI response length: {}", response != null ? response.length() : 0);
 
         Long postId = handleResponse(nodeId, aiUserId, response);
@@ -121,7 +95,7 @@ public class RobotGenerationService {
                             boolean hasAiPost = postDataService.existPost(childNodeId, aiUserId);
                             if (!hasAiPost) {
                                 // 只有没有AI post的节点才加入队列，继承父节点的contentType和recursive
-                                robotQueueService.enqueue(childNodeId, contentType, true, false);
+                                postQueueService.enqueue(childNodeId, contentType, true, false);
                                 log.info("Added child node {} to AI generation queue from contents post {}", childNodeId, postId);
                             } else {
                                 log.info("Child node {} already has AI post, skipping queue", childNodeId);
@@ -141,20 +115,6 @@ public class RobotGenerationService {
                 log.warn("Failed to create memory cards for post: {}, error: {}", postId, e.getMessage());
                 // 不抛出异常，避免影响主要的帖子创建功能
             }
-        }
-    }
-
-    /**
-     * 使用配置的 AI provider 生成内容
-     */
-    private String generateContent(String prompt, String systemPrompt) {
-        String provider = systemProperties.getRobot().getProvider();
-
-        if ("gemini".equalsIgnoreCase(provider)) {
-            return geminiService.generateContent(prompt, systemPrompt);
-        } else {
-            // 默认使用 opencode
-            return opencodeService.generateContent(prompt, systemPrompt);
         }
     }
 
@@ -317,13 +277,13 @@ public class RobotGenerationService {
     }
 
     /**
-     * 从响应中提取内容（兼容 Gemini 和 OpenCode 两种格式）
+     * 从响应中提取内容（兼容 Gemini、OpenRouter 和 OpenCode 格式）
      */
     private String extractContent(String responseBody) {
-        String provider = systemProperties.getRobot().getProvider();
+        String aiService = systemProperties.getRobot().getAiService();
 
-        if ("gemini".equalsIgnoreCase(provider)) {
-            // Gemini 直接返回文本
+        if ("gemini".equalsIgnoreCase(aiService) || "openrouter".equalsIgnoreCase(aiService)) {
+            // Gemini 和 OpenRouter 直接返回文本
             return responseBody;
         } else {
             // OpenCode 返回 JSON 结构：parts[2].text
@@ -387,7 +347,7 @@ public class RobotGenerationService {
         try {
             String systemPrompt = buildMemoryCardSystemPrompt();
             String prompt = buildMemoryCardPrompt(articleContent);
-            String response = generateContent(prompt, systemPrompt);
+            String response = aiService.generateContent(prompt, systemPrompt);
 
             log.info("Memory card generation response length: {}", response.length());
             return parseMemoryCardResponse(response);

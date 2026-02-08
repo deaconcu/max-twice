@@ -35,7 +35,7 @@ public class GeminiService {
     public String generateContent(String prompt, String systemPrompt) {
         try {
             Client client = getOrCreateClient();
-            String modelName = systemProperties.getRobot().getGeminiModel();
+            String modelName = systemProperties.getRobot().getModel();
 
             // 构建配置
             GenerateContentConfig.Builder configBuilder = GenerateContentConfig.builder();

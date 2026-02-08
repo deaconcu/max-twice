@@ -19,6 +19,7 @@ import UserManagement from '@/components/admin/UserManagement.vue'
 import OperationLogManagement from '@/components/admin/OperationLogManagement.vue'
 import ContentGenerator from '@/components/admin/ContentGenerator.vue'
 import ContentGeneratorQueue from '@/components/admin/ContentGeneratorQueue.vue'
+import ContentGeneratorRoadmap from '@/components/admin/ContentGeneratorRoadmap.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -144,8 +145,6 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div class="my-3"></div>
-
         <!-- 菜单列表 -->
         <v-list density="comfortable" nav class="pa-0">
           <template v-for="(item, index) in menuItems" :key="index">
@@ -170,7 +169,7 @@ onMounted(async () => {
         <!-- 用户信息区域 -->
         <div class="user-section">
           <v-divider class="mb-3"></v-divider>
-          <div class="d-flex align-center justify-space-between px-3 py-2">
+          <div class="d-flex align-center justify-space-between pt-2">
             <div class="d-flex align-center">
               <v-avatar size="32" color="grey-lighten-2" class="mr-2">
                 <v-icon icon="mdi-account" size="18"></v-icon>
@@ -259,10 +258,7 @@ onMounted(async () => {
           class="px-6 pt-2 pb-6 no-border"
           rounded="lg"
         >
-          <div>
-            <h3 class="text-h6 font-weight-bold mb-1">学习路径生成</h3>
-            <p class="text-body-2 text-medium-emphasis">功能开发中...</p>
-          </div>
+          <ContentGeneratorRoadmap />
         </v-card>
 
         <!-- AI 内容生成 - 队列与配置 -->
@@ -297,7 +293,7 @@ onMounted(async () => {
 .logo-section {
   display: flex;
   align-items: center;
-  padding: 8px 8px;
+  padding: 0px 8px 8px 8px;
 }
 
 /* 用户信息区域 */

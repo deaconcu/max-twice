@@ -68,11 +68,6 @@ public class SystemProperties {
     private Page page = new Page();
 
     /**
-     * AI服务相关配置
-     */
-    private Ai ai = new Ai();
-
-    /**
      * 帖子服务相关配置
      */
     private Posting posting = new Posting();
@@ -418,50 +413,6 @@ public class SystemProperties {
     }
     
     @Data
-    public static class Ai {
-        /**
-         * AI服务API URL
-         */
-        private String apiUrl = "https://openrouter.ai/api/v1/chat/completions";
-
-        /**
-         * AI服务API密钥
-         * 必须通过环境变量或配置文件设置，不应硬编码
-         */
-        private String apiKey;
-
-        /**
-         * 默认AI模型
-         */
-        private String defaultModel = "gpt-3.5-turbo";
-        
-        /**
-         * 温度参数（控制回复的随机性）
-         */
-        private double temperature = 0.7;
-        
-        /**
-         * 系统角色提示词
-         */
-        private String systemPrompt = "你是一个老师，能把复杂的问题用生动的方式讲的很容易让人理解";
-        
-        /**
-         * 请求超时时间（毫秒）
-         */
-        private long requestTimeoutMs = 30000;
-        
-        /**
-         * 最大重试次数
-         */
-        private int maxRetryAttempts = 3;
-        
-        /**
-         * 是否启用请求日志
-         */
-        private boolean enableRequestLogging = false;
-    }
-    
-    @Data
     public static class Posting {
         /**
          * 默认分页大小
@@ -565,23 +516,24 @@ public class SystemProperties {
         /** Redis键前缀，例如 robot:ready */
         private String redisKeyPrefix = "robot:";
 
-        /** AI服务提供商类型: opencode 或 gemini */
-        private String provider = "gemini";
+        /** AI服务: opencode, gemini, openrouter */
+        private String aiService = "openrouter";
+        /** AI模型名称 */
+        private String model = "deepseek/deepseek-chat";
 
         // ========== OpenCode 相关配置 ==========
         /** OpenCode 本地服务基础URL，用于调用生成接口 */
         private String opencodeBaseUrl = "http://127.0.0.1:4096";
         /** OpenCode 的 provider ID */
         private String providerId = "github-copilot";
-        /** OpenCode 的 model ID */
-        private String modelId = "gemini-2.5-pro";
 
         // ========== Gemini API 相关配置 ==========
         /** Gemini API Key */
         private String geminiApiKey;
-        /** Gemini 模型名称 */
-        //private String geminiModel = "gemini-2.5-pro";
-        private String geminiModel = "gemini-3-flash-preview";
+
+        // ========== OpenRouter 相关配置 ==========
+        /** OpenRouter API Key */
+        private String openrouterApiKey;
     }
 
     @Data

@@ -31,8 +31,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RobotExecutor {
 
-    private final RobotQueueService queueService;
-    private final RobotGenerationService generationService;
+    private final PostQueueService queueService;
+    private final PostGenerationService generationService;
     private final PostDataService postDataService;
     private final PostService postService;
     private final UserDataService userDataService;
@@ -54,6 +54,12 @@ public class RobotExecutor {
 
         // 循环执行直到队列为空
         while (true) {
+            // 在每次循环时检查暂停状态，实时响应暂停操作
+            if (queueService.isPaused()) {
+                log.info("Robot queue paused during execution, stopping poll. Processed {} tasks", processedCount);
+                break;
+            }
+
             String taskId = queueService.peek();
             if (taskId == null) {
                 log.info("Robot Poll End - processed {} tasks", processedCount);

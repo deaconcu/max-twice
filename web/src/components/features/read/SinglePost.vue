@@ -567,14 +567,17 @@ watch(
             >
               两遍秒懂
             </span>
-            <v-chip
+            <span
               v-if="posting.twiceCount > 0"
-              size="small"
-              color="white"
-              class="ml-2 font-weight-bold"
+              :class="[
+                'vote-count ml-2',
+                posting.voteType === 'twice'
+                  ? 'text-white'
+                  : 'text-grey-darken-1'
+              ]"
             >
               {{ posting.twiceCount }}
-            </v-chip>
+            </span>
           </v-btn>
 
           <!-- 有用按钮 -->
@@ -604,15 +607,17 @@ watch(
             >
               有用
             </span>
-            <v-chip
+            <span
               v-if="posting.likeCount > 0"
-              size="x-small"
-              :color="posting.voteType === 'helpful' ? 'white' : 'grey-darken-1'"
-              :text-color="posting.voteType === 'helpful' ? 'primary' : 'white'"
-              class="ml-2"
+              :class="[
+                'vote-count ml-2',
+                posting.voteType === 'helpful'
+                  ? 'text-white'
+                  : 'text-grey-darken-1'
+              ]"
             >
               {{ posting.likeCount }}
-            </v-chip>
+            </span>
           </v-btn>
         </div>
       </template>
@@ -978,5 +983,10 @@ watch(
 
 .full-article {
   max-height: none;
+}
+
+.vote-count {
+  font-size: 1rem;
+  font-weight: bold;
 }
 </style>

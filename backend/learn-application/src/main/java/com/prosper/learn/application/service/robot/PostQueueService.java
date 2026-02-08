@@ -1,6 +1,5 @@
 package com.prosper.learn.application.service.robot;
 
-import com.prosper.learn.application.dto.response.RobotQueueStatsDTO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
@@ -28,7 +27,7 @@ import java.util.Set;
  */
 @Service
 @RequiredArgsConstructor
-public class RobotQueueService {
+public class PostQueueService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final SystemProperties systemProperties;

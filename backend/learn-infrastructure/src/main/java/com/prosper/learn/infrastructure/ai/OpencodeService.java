@@ -113,7 +113,7 @@ public class OpencodeService {
         try {
             ObjectNode body = objectMapper.createObjectNode();
             body.put("providerID", systemProperties.getRobot().getProviderId());
-            body.put("modelID", systemProperties.getRobot().getModelId());
+            body.put("modelID", systemProperties.getRobot().getModel());
             body.put("auto", false);
 
             HttpRequest req = HttpRequest.newBuilder()
@@ -163,7 +163,7 @@ public class OpencodeService {
         try {
             ObjectNode model = objectMapper.createObjectNode();
             model.put("providerID", systemProperties.getRobot().getProviderId());
-            model.put("modelID", systemProperties.getRobot().getModelId());
+            model.put("modelID", systemProperties.getRobot().getModel());
 
             ArrayNode parts = objectMapper.createArrayNode();
             ObjectNode part = objectMapper.createObjectNode();

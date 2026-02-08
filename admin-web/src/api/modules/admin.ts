@@ -447,6 +447,77 @@ export const adminApi = {
   },
 
   /**
+   * 获取 Robot 配置
+   */
+  getRobotConfig(): Promise<
+    ApiResponse<{
+      aiService: string
+      model: string
+    }>
+  > {
+    return apiClient.get('/v1/admin/robot/config')
+  },
+
+  /**
+   * 更新 Robot 配置
+   */
+  updateRobotConfig(config: { aiService?: string; model?: string }): Promise<ApiResponse<void>> {
+    return apiClient.post('/v1/admin/robot/config', config)
+  },
+
+  // ========== Robot 路径生成 ==========
+
+  /**
+   * 生成学习路径
+   */
+  generateRoadmap(professionId: number): Promise<
+    ApiResponse<{
+      taskId: string
+      status: string
+    }>
+  > {
+    return apiClient.post(`/v1/admin/robot/roadmap/generate/${professionId}`)
+  },
+
+  /**
+   * 获取路径生成任务状态
+   */
+  getRoadmapTask(taskId: string): Promise<
+    ApiResponse<{
+      taskId: string
+      professionId?: number
+      userId?: number
+      status: string
+      result?: string
+      error?: string
+      createdAt?: string
+      completedAt?: string
+    }>
+  > {
+    return apiClient.get(`/v1/admin/robot/roadmap/task/${taskId}`)
+  },
+
+  /**
+   * 获取路径生成历史记录
+   */
+  getRoadmapHistory(): Promise<
+    ApiResponse<
+      Array<{
+        taskId: string
+        professionId?: number
+        userId?: number
+        status: string
+        result?: string
+        error?: string
+        createdAt?: string
+        completedAt?: string
+      }>
+    >
+  > {
+    return apiClient.get('/v1/admin/robot/roadmap/history')
+  },
+
+  /**
    * 重新计算节点引用数统计
    */
   recalculateNodeReferences(): Promise<ApiResponse<{ processedPosts: number; updatedNodes: number }>> {

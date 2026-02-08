@@ -272,22 +272,15 @@ app:
     vector-dim: 1536
     timeout-ms: 30000
   # AI服务配置
-
-openrouter:
-  # API密钥（通过环境变量设置）
-  api-key: ${AI_API_KEY:}
-  # API服务地址
-  api-url: https://openrouter.ai/api/v1/chat/completions
-  # 默认使用的AI模型
-  default-model: gpt-3.5-turbo
-  # 温度参数（控制回复随机性，0-2之间）
-  temperature: 0.7
-  # 系统角色提示词
-  system-prompt: "你是一个老师，能把复杂的问题用生动的方式讲的很容易让人理解"
-  # 请求超时时间（毫秒）
-  request-timeout-ms: 30000
-  # 最大重试次数
-  max-retries: 3
+  robot:
+    # AI服务: opencode, gemini, openrouter
+    ai-service: gemini
+    # AI模型
+    model: gemini-3-flash-preview
+    # Gemini API Key（从环境变量读取）
+    gemini-api-key: ${GEMINI_API_KEY:}
+    # OpenRouter API Key（从环境变量读取）
+    openrouter-api-key: ${AI_API_KEY:}
 
 # 图片上传配置
 upload:

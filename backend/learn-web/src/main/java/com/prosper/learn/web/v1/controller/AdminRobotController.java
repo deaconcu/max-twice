@@ -1,10 +1,13 @@
 package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.application.dto.response.RobotQueueStatsDTO;
-import com.prosper.learn.application.service.robot.RobotGenerationService;
-import com.prosper.learn.application.service.robot.RobotQueueService;
+import com.prosper.learn.application.dto.response.RobotRoadmapTaskDTO;
+import com.prosper.learn.application.service.robot.PostQueueService;
 import com.prosper.learn.application.service.robot.RobotScanner;
+import com.prosper.learn.application.service.robot.RobotRoadmapGenerationService;
+import com.prosper.learn.infrastructure.ai.AIService;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.web.ratelimit.LimitType;
 import com.prosper.learn.web.ratelimit.RateLimit;
@@ -16,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 /**
  * Robot 内容生成管理接口
@@ -27,8 +31,9 @@ import java.util.concurrent.TimeUnit;
 public class AdminRobotController {
 
     private final RobotScanner scanner;
-    private final RobotQueueService queueService;
-    private final RobotGenerationService generationService;
+    private final PostQueueService postQueueService;
+    private final AIService aiService;
+    private final RobotRoadmapGenerationService roadmapGenerationService;
     private final SystemProperties systemProperties;
 
     @PostMapping("/scan")
@@ -57,9 +62,9 @@ public class AdminRobotController {
             @RequestParam(value = "deleteExisting", defaultValue = "true") boolean deleteExisting) {
         if (!systemProperties.getRobot().isEnabled()) return ApiResponse.success();
         if ("course".equals(idType)) {
-            queueService.enqueueByCourseId(id, contentType, recursive, deleteExisting);
+            postQueueService.enqueueByCourseId(id, contentType, recursive, deleteExisting);
         } else {
-            queueService.enqueue(id, contentType, recursive, deleteExisting);
+            postQueueService.enqueue(id, contentType, recursive, deleteExisting);
         }
         return ApiResponse.success();
     }
@@ -68,7 +73,7 @@ public class AdminRobotController {
     @SaCheckLogin
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> resetSession() {
-        generationService.resetSession();
+        aiService.resetSession();
         return ApiResponse.success();
     }
 
@@ -76,7 +81,7 @@ public class AdminRobotController {
     @SaCheckLogin
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> summarizeSession() {
-        generationService.summarizeCurrentSession();
+        aiService.summarizeCurrentSession();
         return ApiResponse.success();
     }
 
@@ -84,7 +89,7 @@ public class AdminRobotController {
     @SaCheckLogin
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<String> clearQueue() {
-        long count = queueService.clear();
+        long count = postQueueService.clear();
         String message = count > 0 ?
             String.format("已清空队列，共删除 %d 个待处理节点", count) :
             "队列已经是空的";
@@ -96,10 +101,10 @@ public class AdminRobotController {
     @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<RobotQueueStatsDTO> getQueueStats() {
         RobotQueueStatsDTO stats = RobotQueueStatsDTO.builder()
-            .pendingCount(queueService.getPendingCount())
-            .todayCompletedCount(queueService.getTodayCompletedCount())
-            .lastExecuteTime(queueService.getLastExecuteTime())
-            .status(queueService.getStatus())
+            .pendingCount(postQueueService.getPendingCount())
+            .todayCompletedCount(postQueueService.getTodayCompletedCount())
+            .lastExecuteTime(postQueueService.getLastExecuteTime())
+            .status(postQueueService.getStatus())
             .build();
         return ApiResponse.success(stats);
     }
@@ -108,7 +113,7 @@ public class AdminRobotController {
     @SaCheckLogin
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> pauseQueue() {
-        queueService.pause();
+        postQueueService.pause();
         return ApiResponse.success();
     }
 
@@ -116,7 +121,71 @@ public class AdminRobotController {
     @SaCheckLogin
     @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<Void> resumeQueue() {
-        queueService.resume();
+        postQueueService.resume();
         return ApiResponse.success();
+    }
+
+    @GetMapping("/config")
+    @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<RobotConfigDTO> getConfig() {
+        SystemProperties.Robot robot = systemProperties.getRobot();
+        RobotConfigDTO config = RobotConfigDTO.builder()
+            .aiService(robot.getAiService())
+            .model(robot.getModel())
+            .build();
+        return ApiResponse.success(config);
+    }
+
+    @PostMapping("/config")
+    @SaCheckLogin
+    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<Void> updateConfig(@RequestBody RobotConfigDTO config) {
+        SystemProperties.Robot robot = systemProperties.getRobot();
+        if (config.getAiService() != null) {
+            robot.setAiService(config.getAiService());
+        }
+        if (config.getModel() != null) {
+            robot.setModel(config.getModel());
+        }
+        return ApiResponse.success();
+    }
+
+    // DTO 类
+    @lombok.Data
+    @lombok.Builder
+    public static class RobotConfigDTO {
+        private String aiService;
+        private String model;
+    }
+
+    // ========== 路径生成 ==========
+
+    @PostMapping("/roadmap/generate/{professionId}")
+    @SaCheckLogin
+    @RateLimit(capacity = 10, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<RobotRoadmapTaskDTO> generateRoadmap(
+            @PathVariable @NotNull @Positive Long professionId) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        String taskId = roadmapGenerationService.submitGenerateTask(professionId, userId);
+        return ApiResponse.success(RobotRoadmapTaskDTO.builder()
+            .taskId(taskId)
+            .status("PENDING")
+            .build());
+    }
+
+    @GetMapping("/roadmap/task/{taskId}")
+    @SaCheckLogin
+    @RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<RobotRoadmapTaskDTO> getRoadmapTask(@PathVariable String taskId) {
+        return ApiResponse.success(roadmapGenerationService.getTaskStatus(taskId));
+    }
+
+    @GetMapping("/roadmap/history")
+    @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<List<RobotRoadmapTaskDTO>> getRoadmapHistory() {
+        Long userId = StpUtil.getLoginIdAsLong();
+        return ApiResponse.success(roadmapGenerationService.getHistory(userId));
     }
 }

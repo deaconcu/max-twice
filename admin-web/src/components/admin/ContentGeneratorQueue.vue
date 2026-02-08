@@ -1,11 +1,58 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { adminApi } from '@/api'
 import { useMutation, useFetch } from '@/composables'
 
 // AI 用户 ID 配置
 const aiUserId = ref<string>('')
 const originalAiUserId = ref<string>('')
+
+// AI 服务配置
+const aiService = ref<string>('openrouter')
+const model = ref<string>('deepseek/deepseek-chat')
+const originalAiService = ref<string>('')
+const originalModel = ref<string>('')
+
+// AI 服务选项
+const aiServiceOptions = [
+  { label: 'OpenRouter', value: 'openrouter' },
+  { label: 'Gemini', value: 'gemini' },
+  { label: 'OpenCode (本地)', value: 'opencode' },
+]
+
+// 模型选项（根据不同的 AI 服务）
+const modelOptions = computed(() => {
+  switch (aiService.value) {
+    case 'openrouter':
+      return [
+        { label: 'Google Gemini 3.0 Flash', value: 'google/gemini-3-flash-preview' },
+        { label: 'Google Gemini 3.0 Pro', value: 'google/gemini-3-pro-preview' },
+        { label: 'GPT 5.2', value: 'openai/gpt-5.2' },
+        { label: 'GPT5 mini', value: 'openai/gpt-5-mini' },
+        { label: 'Claude Sonnet 4.5', value: 'anthropic/claude-sonnet-4.5' },
+        { label: 'Claude Opus 4.6', value: 'anthropic/claude-opus-4.6' },
+        { label: 'DeepSeek V3.2', value: 'deepseek/deepseek-v3.2' },
+      ]
+    case 'gemini':
+      return [
+        { label: 'Gemini 3.0 Flash Preview', value: 'gemini-3-flash-preview' },
+        { label: 'Gemini 3.0 Pro Preview', value: 'gemini-3-pro-preview' },
+        { label: 'Gemini 2.5 Pro ', value: 'gemini-2.5-pro' },
+      ]
+    case 'opencode':
+      return [
+        { label: 'Gemini 3.0 Pro Preview', value: 'gemini-3-pro-preview' },
+        { label: 'Gemini 3.0 Flash Preview', value: 'gemini-3-flash-preview' },
+        { label: 'Gemini 2.5 Pro', value: 'gemini-2.5-pro' },
+        { label: 'GPT 5.2', value: 'gpt-5.2' },
+        { label: 'GPT 5 mini', value: 'gpt-5-mini' },
+        { label: 'Claude Sonnet 4.5', value: 'claude-sonnet-4.5' },
+        { label: 'Claude Sonnet 4.5', value: 'claude-sonnet-4.5' },
+      ]
+    default:
+      return []
+  }
+})
 
 // 保存 AI 用户 ID
 const { execute: saveAiUserId, loading: savingAiUserId } = useMutation(
@@ -21,6 +68,49 @@ const { execute: saveAiUserId, loading: savingAiUserId } = useMutation(
 const hasAiUserIdChanged = () => {
   return aiUserId.value !== originalAiUserId.value
 }
+
+// 保存 AI 服务配置
+const { execute: saveAiConfig, loading: savingAiConfig } = useMutation(
+  () => adminApi.updateRobotConfig({ aiService: aiService.value, model: model.value }),
+  {
+    successMessage: 'AI 配置已保存',
+    onSuccess: () => {
+      originalAiService.value = aiService.value
+      originalModel.value = model.value
+    },
+  }
+)
+
+const hasAiConfigChanged = () => {
+  return aiService.value !== originalAiService.value || model.value !== originalModel.value
+}
+
+// 监听 AI 服务切换，自动更新模型选项
+watch(aiService, (newService) => {
+  const options = modelOptions.value
+  if (options.length > 0) {
+    // 检查当前model是否在新的选项列表中
+    const modelExists = options.some((opt) => opt.value === model.value)
+    if (!modelExists) {
+      // 如果当前model不在新列表中，选择第一个选项
+      model.value = options[0].value
+    }
+  }
+})
+
+// 加载 AI 服务配置
+const { data: robotConfig, loading: loadingRobotConfig } = useFetch({
+  fetchFn: adminApi.getRobotConfig,
+  immediate: true,
+  onSuccess: (data) => {
+    if (data) {
+      aiService.value = data.aiService || 'openrouter'
+      model.value = data.model || 'deepseek/deepseek-chat'
+      originalAiService.value = data.aiService || 'openrouter'
+      originalModel.value = data.model || 'deepseek/deepseek-chat'
+    }
+  },
+})
 
 // 队列状态
 const { data: queueStats, loading: loadingStats, execute: fetchQueueStats } = useFetch({
@@ -145,6 +235,54 @@ onMounted(async () => {
             :loading="savingAiUserId"
             :disabled="!hasAiUserIdChanged()"
             @click="saveAiUserId"
+          >
+            <v-icon icon="mdi-content-save" class="mr-2"></v-icon>
+            保存配置
+          </v-btn>
+        </div>
+      </v-card-text>
+    </v-card>
+
+    <!-- AI 服务配置 -->
+    <v-card flat class="border mb-4">
+      <v-card-title class="d-flex align-center">
+        <v-icon icon="mdi-robot" class="mr-2"></v-icon>
+        AI 服务配置
+      </v-card-title>
+      <v-card-text>
+        <p class="text-body-2 text-grey mb-4">选择 AI 服务提供商和模型</p>
+        <v-row>
+          <v-col cols="12" md="2">
+            <v-select
+              v-model="aiService"
+              :items="aiServiceOptions"
+              item-title="label"
+              item-value="value"
+              label="AI 服务"
+              variant="outlined"
+              density="compact"
+              hide-details
+            ></v-select>
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-select
+              v-model="model"
+              :items="modelOptions"
+              item-title="label"
+              item-value="value"
+              label="模型名称"
+              variant="outlined"
+              density="compact"
+              hide-details
+            ></v-select>
+          </v-col>
+        </v-row>
+        <div class="mt-4">
+          <v-btn
+            variant="tonal"
+            :loading="savingAiConfig"
+            :disabled="!hasAiConfigChanged()"
+            @click="saveAiConfig"
           >
             <v-icon icon="mdi-content-save" class="mr-2"></v-icon>
             保存配置

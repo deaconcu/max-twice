@@ -13,7 +13,7 @@ import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.application.dto.response.deck.DeckWithCreatorDTO;
 import com.prosper.learn.application.dto.response.deck.DeckWithVoteDTO;
 import com.prosper.learn.application.dto.response.node.NodeBriefDTO;
-import com.prosper.learn.application.service.robot.RobotQueueService;
+import com.prosper.learn.application.service.robot.PostQueueService;
 import com.prosper.learn.content.course.CourseDO;
 import com.prosper.learn.content.course.CourseDataService;
 import com.prosper.learn.content.node.NodeDO;
@@ -74,7 +74,7 @@ public class MemoryCardDeckService {
     private final UserService userService;
     private final MemoryCardService memoryCardService;
     private final ScoreCalculationService scoreCalculationService;
-    private final RobotQueueService robotQueueService;
+    private final PostQueueService postQueueService;
     private final BookmarkService bookmarkService;
 
     // 事件发布
@@ -972,7 +972,7 @@ public class MemoryCardDeckService {
         }
 
         // 将任务加入队列（跨域服务）
-        robotQueueService.enqueueMemoryCards(postId);
+        postQueueService.enqueueMemoryCards(postId);
 
         log.info("Queued AI memory card generation task for post {} requested by user {}", postId, userId);
     }

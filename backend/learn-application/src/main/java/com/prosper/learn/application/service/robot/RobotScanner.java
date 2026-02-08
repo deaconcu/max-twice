@@ -5,7 +5,6 @@ import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,7 +25,7 @@ public class RobotScanner {
     // ========= 依赖 =========
 
     private final NodeDataService nodeDataService;
-    private final RobotQueueService queueService;
+    private final PostQueueService queueService;
     private final RedisTemplate<String, Object> redisTemplate;
     private final SystemProperties systemProperties;
 
