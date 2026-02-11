@@ -249,8 +249,8 @@ const getStateColor = (state: number): string => {
           <v-icon icon="mdi-cards-variant" color="purple-darken-1" size="20"></v-icon>
         </div>
         <div>
-          <h3 class="text-h6 font-weight-bold text-grey-darken-3">记忆卡片审核</h3>
-          <p class="text-body-2 text-grey-darken-1 mb-0">审核用户提交的记忆卡片组</p>
+          <h3 class="text-h6 font-weight-bold text-grey-darken-3">记忆卡片管理</h3>
+          <p class="text-body-2 text-grey-darken-1 mb-0">管理用户提交的记忆卡片组</p>
         </div>
       </div>
       <v-chip variant="flat" color="purple-lighten-4" rounded="lg">
@@ -260,44 +260,37 @@ const getStateColor = (state: number): string => {
     </div>
 
     <!-- 筛选区域 -->
-    <v-row dense class="mb-6">
-        <v-col cols="12" md="4">
-          <v-text-field
-            v-model.number="filterForm.postId"
-            label="帖子ID"
-            type="number"
-            variant="outlined"
-            density="compact"
-            rounded="lg"
-            hide-details
-            clearable
-          ></v-text-field>
-        </v-col>
-        <v-col cols="12" md="4">
-          <v-text-field
-            v-model.number="filterForm.creatorId"
-            label="用户ID"
-            type="number"
-            variant="outlined"
-            density="compact"
-            rounded="lg"
-            hide-details
-            clearable
-          ></v-text-field>
-        </v-col>
-        <v-col cols="12" md="4">
-          <div class="d-flex gap-2">
-            <v-btn variant="flat" color="primary" rounded="lg" @click="applyFilter">
-              <v-icon icon="mdi-magnify" class="mr-1"></v-icon>
-              筛选
-            </v-btn>
-            <v-btn variant="outlined" color="grey" rounded="lg" @click="resetFilter">
-              <v-icon icon="mdi-refresh" class="mr-1"></v-icon>
-              重置
-            </v-btn>
-          </div>
-        </v-col>
-      </v-row>
+    <div class="d-flex align-center ga-3 mb-6">
+      <v-text-field
+        v-model.number="filterForm.postId"
+        label="帖子ID"
+        type="number"
+        variant="outlined"
+        density="compact"
+        rounded="lg"
+        hide-details
+        clearable
+        style="max-width: 180px"
+      ></v-text-field>
+      <v-text-field
+        v-model.number="filterForm.creatorId"
+        label="用户ID"
+        type="number"
+        variant="outlined"
+        density="compact"
+        rounded="lg"
+        hide-details
+        clearable
+        style="max-width: 180px"
+      ></v-text-field>
+      <v-btn variant="flat" color="primary" rounded="lg" size="small" @click="applyFilter">
+        <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
+        筛选
+      </v-btn>
+      <v-btn variant="text" color="grey" rounded="lg" size="small" @click="resetFilter">
+        重置
+      </v-btn>
+    </div>
 
     <!-- 状态标签 -->
     <v-tabs

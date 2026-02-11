@@ -41,11 +41,15 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "description")
     @Mapping(target = "postId")
     @Mapping(target = "nodeId")
+    @Mapping(target = "courseId")
     @Mapping(target = "state")
     @Mapping(target = "cardCount")
+    @Mapping(target = "likeCount")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
     @Mapping(target = "creator")
+    @Mapping(target = "course")
+    @Mapping(target = "node")
     DeckDetailDTO toDeckDetailDTO(DeckWithCreatorDTO deckDTO);
 
     // ==================== 新版语义化方法 ====================
