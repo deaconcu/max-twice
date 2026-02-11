@@ -33,7 +33,7 @@ public class PostQueueService {
     private final SystemProperties systemProperties;
     private final CourseDataService courseDataService;
 
-    private static final int MAX_CONSECUTIVE_FAILURES = 3;
+    private static final int MAX_CONSECUTIVE_FAILURES = 2;
 
     /** 计算 ready 集合的完整 key */
     private String readyKey() {
