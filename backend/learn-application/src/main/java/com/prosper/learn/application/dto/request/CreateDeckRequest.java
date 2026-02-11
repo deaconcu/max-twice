@@ -15,8 +15,16 @@ import java.util.List;
 @Data
 public class CreateDeckRequest {
 
-    @NotNull(message = "源帖子ID不能为空")
+    /**
+     * 源帖子ID，可选字段
+     * 如果为 null 或 0，表示该卡片组不关联来源文章
+     */
     private Long sourcePostId;
+
+    /**
+     * 节点ID，当 sourcePostId 为 null 或 0 时必填
+     */
+    private Long nodeId;
 
     @ConfigurableSize(configKey = "deck-description")
     private String description;

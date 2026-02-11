@@ -611,18 +611,26 @@ public class MemoryCardDeckService {
         // 验证用户存在性（跨域查询）
         userDataService.validateExists(userId);
 
-        // 验证源帖子存在（跨域查询）
-        Long nodeId = null;
-        if (request.getSourcePostId() != null) {
-            PostDO post = postDataService.validateAndGet(request.getSourcePostId());
+        // 确定 postId 和 nodeId
+        Long postId = request.getSourcePostId();
+        Long nodeId;
+
+        if (postId != null && postId > 0) {
+            // 有来源文章：从帖子获取 nodeId
+            PostDO post = postDataService.validateAndGet(postId);
             nodeId = post.getNodeId();
+        } else {
+            // 无来源文章：postId 设为 0，nodeId 从请求中获取
+            postId = 0L;
+            nodeId = request.getNodeId();
+            checkNotNull(nodeId, "无来源文章时，节点ID不能为空");
+            nodeDataService.validateAndGet(nodeId);
         }
-        checkNotNull(nodeId, "无法获取卡片组关联的节点ID");
 
         // 调用 DomainService 创建卡片组
         MemoryCardDeckDO deck = deckDomainService.createDeck(
             userId,
-            request.getSourcePostId(),
+            postId,
             nodeId,
             request.getDescription(),
             request.getCards() != null ? request.getCards().size() : 0

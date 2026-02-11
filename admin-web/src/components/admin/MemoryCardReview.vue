@@ -85,7 +85,13 @@ const {
       params.lastId
     )
 
-    return response.data
+    const pageData = response.data
+    return {
+      code: response.code,
+      data: pageData?.items || [],
+      message: response.message || '',
+      hasMore: pageData?.hasMore ?? false,
+    }
   },
   getNextParams: (lastItem) => ({
     lastId: lastItem.id,
@@ -317,14 +323,8 @@ const getStateColor = (state: number): string => {
       </v-tab>
     </v-tabs>
 
-    <!-- 加载状态 -->
-    <div v-if="loading && deckList.length === 0" class="text-center py-12">
-      <v-progress-circular indeterminate color="purple" size="48"></v-progress-circular>
-      <p class="text-body-1 text-grey-darken-1 mt-4">正在加载待审核卡片组...</p>
-    </div>
-
     <!-- 空状态 -->
-    <div v-else-if="!loading && deckList.length === 0" class="text-center py-12">
+    <div v-if="!loading && deckList.length === 0" class="text-center py-12">
       <v-icon icon="mdi-cards-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
       <p class="text-body-1 text-grey-darken-1">暂无需要审核的记忆卡片组</p>
     </div>

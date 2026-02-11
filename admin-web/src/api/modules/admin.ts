@@ -1,5 +1,5 @@
 import apiClient from '../client'
-import type { ApiResponse } from '@/types/api'
+import type { ApiResponse, KeysetPageResponse } from '@/types/api'
 import type { Comment } from '@/types/comment'
 import type { Post } from '@/types/post'
 import type {
@@ -100,7 +100,7 @@ export const adminApi = {
     creatorId?: number,
     state?: number,
     lastId?: number
-  ): Promise<ApiResponse<any[]>> {
+  ): Promise<ApiResponse<KeysetPageResponse<any>>> {
     const params: Record<string, unknown> = {}
     if (postId !== undefined) params.postId = postId
     if (creatorId !== undefined) params.creatorId = creatorId

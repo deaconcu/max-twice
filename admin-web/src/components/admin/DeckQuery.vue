@@ -34,18 +34,13 @@ const {
       currentParams.lastId
     )
 
-    if (response.code === 200) {
-      const responseData = response.data as DeckDetail[]
-      return {
-        code: 200,
-        data: responseData || [],
-        message: '',
-        hasMore: responseData.length === 20, // 假设每页20条
-        nextCursor: undefined,
-      }
+    const pageData = response.data
+    return {
+      code: response.code,
+      data: pageData?.items || [],
+      message: response.message || '',
+      hasMore: pageData?.hasMore ?? false,
     }
-
-    throw new Error(response.message || '查询失败')
   },
   getNextParams: (lastItem, currentParams) => ({
     ...currentParams,

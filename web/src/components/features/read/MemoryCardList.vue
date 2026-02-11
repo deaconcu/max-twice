@@ -5,7 +5,7 @@
       <v-icon icon="mdi-cards-outline" size="64" color="grey-lighten-2" class="mb-4"></v-icon>
       <h4 class="text-h6 font-weight-medium text-grey-darken-2 mb-2">暂无记忆卡片组</h4>
       <p class="text-body-2 text-grey-darken-1 mb-4">还没有人为这个节点创建记忆卡片组</p>
-      <v-btn color="primary" variant="tonal" rounded="lg" prepend-icon="mdi-plus">
+      <v-btn color="primary" variant="tonal" rounded="lg" prepend-icon="mdi-plus" @click="emit('createDeck')">
         创建第一个卡片组
       </v-btn>
     </div>
@@ -108,7 +108,10 @@ interface Props {
   nodeId: number
 }
 
-type Emits = (e: 'viewDeck', deck: MemoryCardDeck) => void
+type Emits = {
+  (e: 'viewDeck', deck: MemoryCardDeck): void
+  (e: 'createDeck'): void
+}
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()

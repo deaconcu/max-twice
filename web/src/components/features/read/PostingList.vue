@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import SinglePost from './SinglePost.vue'
 import CommentSection from '@/components/common/CommentSection.vue'
 import MemoryCardList from './MemoryCardList.vue'
+import CreateDeckDialog from './CreateDeckDialog.vue'
 import NodeSelectorDialog from './NodeSelectorDialog.vue'
 import ArticleEditModal from '@/components/profile/ArticleEditModal.vue'
 import InviteUserDialog from './InviteUserDialog.vue'
@@ -96,6 +97,12 @@ const handleLoadData = (data?: any[]) => {
 // 处理查看卡片组详情
 const handleViewDeck = (deck: MemoryCardDeck) => {
   emit('view-deck', deck)
+}
+
+// 处理卡片组创建成功
+const handleDeckCreated = (_deck: MemoryCardDeck) => {
+  // 刷新数据
+  emit('load-data')
 }
 
 // 处理节点完成
@@ -468,7 +475,7 @@ const completeButtonTooltip = () => {
 
     <!-- 记忆卡片 -->
     <template v-else-if="tab === 'memoryCards'">
-      <MemoryCardList :node-id="currNodeId" @view-deck="handleViewDeck" />
+      <MemoryCardList :node-id="currNodeId" @view-deck="handleViewDeck" @create-deck="showCreateDeckDialog = true" />
     </template>
 
     <!-- 文章详情 -->
@@ -551,23 +558,12 @@ const completeButtonTooltip = () => {
       </v-card>
     </v-dialog>
 
-    <!-- TODO: 新增卡片组对话框（待实现） -->
-    <v-dialog v-model="showCreateDeckDialog" max-width="600">
-      <v-card rounded="xl">
-        <v-card-title class="pa-4">
-          <div class="d-flex align-center justify-space-between">
-            <span>新增卡片组</span>
-            <v-btn icon="mdi-close" variant="text" size="small" @click="showCreateDeckDialog = false"></v-btn>
-          </div>
-        </v-card-title>
-        <v-card-text class="pa-4">
-          <div class="text-center py-8">
-            <v-icon icon="mdi-cards-plus-outline" size="64" color="grey-lighten-2"></v-icon>
-            <p class="text-body-1 text-grey-darken-1 mt-4">新增卡片组功能开发中...</p>
-          </div>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
+    <!-- 新增卡片组对话框 -->
+    <CreateDeckDialog
+      v-model="showCreateDeckDialog"
+      :node-id="currNodeId"
+      @created="handleDeckCreated"
+    />
   </div>
 </template>
 

@@ -11,7 +11,8 @@ interface Card {
 }
 
 interface Props {
-  postId: number
+  postId?: number
+  nodeId?: number
 }
 
 type Emits = (e: 'created', deck: MemoryCardDeck) => void
@@ -25,17 +26,29 @@ const step = ref(1) // 1: 添加卡片, 2: 填写说明
 // 获取验证配置
 const validationStore = useValidationConfigStore()
 
-// 生成验证规则
-const frontRules = computed(() => validationStore.createRules('card-front'))
-const backRules = computed(() => validationStore.createRules('card-back'))
-const descriptionRules = computed(() => validationStore.createRules('deck-description'))
-
-// 获取最大长度（用于 counter）
+// 获取长度配置
+const frontMinLength = computed(() => validationStore.getRule('card-front')?.minLength || 1)
 const frontMaxLength = computed(() => validationStore.getRule('card-front')?.maxLength || 500)
+const backMinLength = computed(() => validationStore.getRule('card-back')?.minLength || 1)
 const backMaxLength = computed(() => validationStore.getRule('card-back')?.maxLength || 500)
+const descriptionRules = computed(() => validationStore.createRules('deck-description'))
 const descriptionMaxLength = computed(
   () => validationStore.getRule('deck-description')?.maxLength || 200
 )
+
+// 灰色提示：空或长度不够时显示
+const frontHint = computed(() => {
+  const val = cardForm.value.front.trim()
+  if (!val) return `至少输入${frontMinLength.value}个字符`
+  if (val.length < frontMinLength.value) return `还需输入${frontMinLength.value - val.length}个字符`
+  return ''
+})
+const backHint = computed(() => {
+  const val = cardForm.value.back.trim()
+  if (!val) return `至少输入${backMinLength.value}个字符`
+  if (val.length < backMinLength.value) return `还需输入${backMinLength.value - val.length}个字符`
+  return ''
+})
 
 // 卡片组表单
 const deckForm = ref({
@@ -70,15 +83,29 @@ const cardFormValid = computed(() => {
 
 // 使用 useMutation 处理创建卡片组
 const { execute: createDeckMutation, loading } = useMutation(
-  () =>
-    memoryApi.createDeck({
-      sourcePostId: props.postId,
+  () => {
+    const requestData: {
+      sourcePostId?: number
+      nodeId?: number
+      description?: string
+      cards: { front: string; back: string }[]
+    } = {
       description: deckForm.value.description || undefined,
       cards: cards.value.map((card) => ({
         front: card.front,
         back: card.back,
       })),
-    }),
+    }
+
+    if (props.postId) {
+      requestData.sourcePostId = props.postId
+    } else if (props.nodeId) {
+      requestData.sourcePostId = 0
+      requestData.nodeId = props.nodeId
+    }
+
+    return memoryApi.createDeck(requestData)
+  },
   {
     successMessage: '创建成功',
     onSuccess: (result) => {
@@ -161,9 +188,18 @@ const closeDialog = () => {
 
 <template>
   <v-dialog v-model="dialog" width="600" persistent>
-    <v-card rounded="xl" elevation="8">
+    <v-card rounded="xl" elevation="8" class="position-relative">
+      <!-- 关闭按钮 -->
+      <v-btn
+        icon="mdi-close"
+        variant="text"
+        size="small"
+        class="close-btn"
+        @click="closeDialog"
+      ></v-btn>
+
       <!-- 头部 -->
-      <div class="d-flex align-center justify-space-between pa-6 pb-2">
+      <div class="pa-6 pb-2">
         <div class="d-flex align-center">
           <v-btn
             v-if="step === 2"
@@ -182,7 +218,6 @@ const closeDialog = () => {
             </p>
           </div>
         </div>
-        <v-btn icon="mdi-close" variant="text" @click="closeDialog"></v-btn>
       </div>
 
       <!-- 步骤1: 添加卡片 -->
@@ -193,8 +228,10 @@ const closeDialog = () => {
             v-model="cardForm.front"
             label="问题（卡片正面）"
             placeholder="输入问题..."
-            :rules="frontRules"
+            :maxlength="frontMaxLength"
             :counter="frontMaxLength"
+            :hint="frontHint"
+            :persistent-hint="!!frontHint"
             variant="outlined"
             rounded="lg"
             rows="2"
@@ -206,8 +243,10 @@ const closeDialog = () => {
             v-model="cardForm.back"
             label="答案（卡片背面）"
             placeholder="输入答案..."
-            :rules="backRules"
+            :maxlength="backMaxLength"
             :counter="backMaxLength"
+            :hint="backHint"
+            :persistent-hint="!!backHint"
             variant="outlined"
             rounded="lg"
             rows="3"
@@ -221,6 +260,7 @@ const closeDialog = () => {
             variant="outlined"
             rounded="lg"
             prepend-icon="mdi-plus"
+            :disabled="!cardFormValid"
             block
           >
             添加卡片
@@ -344,6 +384,13 @@ const closeDialog = () => {
 </template>
 
 <style scoped>
+.close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+}
+
 .v-form {
   width: 100%;
 }

@@ -40,7 +40,8 @@ export function getDecksByNode(
  * 创建卡片组
  */
 export function createDeck(data: {
-  sourcePostId: number
+  sourcePostId?: number
+  nodeId?: number
   description?: string
   cards: {
     front: string
