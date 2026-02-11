@@ -94,8 +94,10 @@ public class AdminContentsController {
                 roadmapService.listByFilter(stateValue, null, null, lastId)
             );
             case "memory_card_deck" -> ApiResponse.success(
-                memoryCardDeckService.getDecksForAdmin(stateValue, null, null, lastId, DEFAULT_PAGE_SIZE
-                )
+                memoryCardDeckService.getDecksForReview(
+                    null, null,
+                    stateValue != null ? (int) stateValue.value() : null,
+                    lastId, null)
             );
             case "comment" -> ApiResponse.success(
                 commentService.getCommentsByFilter(null, null, null, lastId, stateValue)
@@ -171,7 +173,8 @@ public class AdminContentsController {
             @RequestParam(required = false) @Positive(message = "帖子ID必须大于0") Long postId,
             @RequestParam(required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
             @RequestParam(required = false) Long lastId) {
-        return ApiResponse.success(memoryCardDeckService.getDecksForAdmin(ContentState.getByValue(state), postId, creatorId, lastId, DEFAULT_PAGE_SIZE));
+        return ApiResponse.success(memoryCardDeckService.getDecksForReview(
+                postId, creatorId, state != null ? state.intValue() : null, lastId, null));
     }
 
     /**
