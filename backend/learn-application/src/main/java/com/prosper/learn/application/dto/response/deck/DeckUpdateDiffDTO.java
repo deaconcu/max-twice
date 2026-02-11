@@ -1,5 +1,6 @@
-package com.prosper.learn.application.dto.response;
+package com.prosper.learn.application.dto.response.deck;
 
+import com.prosper.learn.application.dto.response.card.CardDiffDTO;
 import lombok.Data;
 
 import java.util.List;

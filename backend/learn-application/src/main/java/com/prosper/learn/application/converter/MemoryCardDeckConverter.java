@@ -1,6 +1,6 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.application.dto.response.DeckDetailDTO;
+import com.prosper.learn.application.dto.response.deck.DeckDetailDTO;
 import com.prosper.learn.application.dto.response.MemoryCardDeckDTO;
 import com.prosper.learn.application.dto.response.deck.DeckSummaryDTO;
 import com.prosper.learn.application.dto.response.deck.DeckWithCreatorDTO;

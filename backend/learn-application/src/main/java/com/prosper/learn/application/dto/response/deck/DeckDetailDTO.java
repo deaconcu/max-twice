@@ -1,7 +1,6 @@
-package com.prosper.learn.application.dto.response;
+package com.prosper.learn.application.dto.response.deck;
 
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
-import com.prosper.learn.application.dto.response.deck.DeckWithCreatorDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

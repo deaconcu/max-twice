@@ -1,4 +1,4 @@
-package com.prosper.learn.application.dto.response;
+package com.prosper.learn.application.dto.response.card;
 
 import lombok.Data;
 
