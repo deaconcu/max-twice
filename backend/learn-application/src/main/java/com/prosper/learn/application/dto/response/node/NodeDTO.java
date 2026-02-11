@@ -1,6 +1,5 @@
-package com.prosper.learn.application.dto.response;
+package com.prosper.learn.application.dto.response.node;
 
-import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import lombok.Data;
 
 import java.util.List;

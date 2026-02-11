@@ -1,4 +1,4 @@
-package com.prosper.learn.application.dto.response;
+package com.prosper.learn.application.dto.response.deck;
 
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import lombok.Data;

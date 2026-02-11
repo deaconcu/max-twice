@@ -1,6 +1,6 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.application.dto.response.CourseDTO;
+import com.prosper.learn.application.dto.response.course.CourseDTO;
 import com.prosper.learn.application.dto.response.course.*;
 import com.prosper.learn.content.course.CourseDO;
 import org.mapstruct.*;

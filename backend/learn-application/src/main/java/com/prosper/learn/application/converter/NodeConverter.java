@@ -1,6 +1,6 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.application.dto.response.NodeDTO;
+import com.prosper.learn.application.dto.response.node.NodeDTO;
 import com.prosper.learn.application.dto.response.node.NodeBriefDTO;
 import com.prosper.learn.application.dto.response.node.NodeDetailDTO;
 import com.prosper.learn.application.dto.response.node.NodeSummaryDTO;

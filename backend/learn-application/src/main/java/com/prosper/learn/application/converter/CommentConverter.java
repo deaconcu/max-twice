@@ -1,6 +1,6 @@
 package com.prosper.learn.application.converter;
 
-import com.prosper.learn.application.dto.response.CommentDTO;
+import com.prosper.learn.application.dto.response.comment.CommentDTO;
 import com.prosper.learn.application.dto.response.comment.CommentAdminDTO;
 import com.prosper.learn.application.dto.response.comment.CommentDetailDTO;
 import com.prosper.learn.application.dto.response.comment.CommentSummaryDTO;

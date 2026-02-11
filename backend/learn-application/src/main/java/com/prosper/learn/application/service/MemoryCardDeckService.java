@@ -7,7 +7,7 @@ import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.request.CreateDeckRequest;
 import com.prosper.learn.application.dto.response.deck.DeckDetailDTO;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
-import com.prosper.learn.application.dto.response.MemoryCardDeckDTO;
+import com.prosper.learn.application.dto.response.deck.MemoryCardDeckDTO;
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.application.dto.response.course.CourseBriefDTO;
 import com.prosper.learn.application.dto.response.deck.DeckWithCreatorDTO;
