@@ -129,6 +129,13 @@ export const adminApi = {
   },
 
   /**
+   * 获取节点详情
+   */
+  getNodeDetail(id: number): Promise<ApiResponse<any>> {
+    return apiClient.get(`/v1/admin/contents/node/${id}`)
+  },
+
+  /**
    * 获取子课程列表
    */
   getSubcourses(parentId: number, state?: number): Promise<ApiResponse<any[]>> {
@@ -515,6 +522,81 @@ export const adminApi = {
     >
   > {
     return apiClient.get('/v1/admin/robot/roadmap/history')
+  },
+
+  /**
+   * 保存路径草稿
+   */
+  saveRoadmapDraft(professionId: number, draftContent: string): Promise<ApiResponse<string>> {
+    return apiClient.post('/v1/admin/robot/roadmap/draft', draftContent, {
+      params: { professionId },
+      headers: { 'Content-Type': 'application/json' },
+    })
+  },
+
+  /**
+   * 获取路径草稿
+   */
+  getRoadmapDraft(draftId: string): Promise<ApiResponse<string>> {
+    return apiClient.get(`/v1/admin/robot/roadmap/draft/${draftId}`)
+  },
+
+  /**
+   * 删除路径草稿
+   */
+  deleteRoadmapDraft(draftId: string): Promise<ApiResponse<void>> {
+    return apiClient.delete(`/v1/admin/robot/roadmap/draft/${draftId}`)
+  },
+
+  /**
+   * 获取草稿列表
+   */
+  getRoadmapDrafts(): Promise<
+    ApiResponse<
+      Array<{
+        draftId: string
+        professionId?: number
+        userId?: number
+        createdAt?: string
+      }>
+    >
+  > {
+    return apiClient.get('/v1/admin/robot/roadmap/drafts')
+  },
+
+  /**
+   * 创建路线图
+   */
+  createRoadmap(data: {
+    professionId: number
+    content: string
+    description: string
+    state: number
+  }): Promise<ApiResponse<number>> {
+    return apiClient.post('/v1/roadmaps', data)
+  },
+
+  /**
+   * 创建课程并自动审核通过
+   */
+  createCourse(data: {
+    name: string
+    description: string
+    mainCategory: number
+    subCategory: number
+  }): Promise<ApiResponse<number>> {
+    return apiClient.post('/v1/admin/contents/course/create', data)
+  },
+
+  /**
+   * 创建节点并自动审核通过
+   */
+  createNode(data: {
+    name: string
+    description: string
+    courseId: number
+  }): Promise<ApiResponse<number>> {
+    return apiClient.post('/v1/admin/contents/node/create', data)
   },
 
   /**

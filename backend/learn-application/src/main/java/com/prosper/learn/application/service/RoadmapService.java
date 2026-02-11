@@ -30,6 +30,7 @@ import com.prosper.learn.shared.domain.event.content.lifecycle.ContentBannedEven
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRejectedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRemovedEvent;
 import com.prosper.learn.shared.domain.event.content.lifecycle.ContentRestoredEvent;
+import com.prosper.learn.shared.domain.exception.BusinessException;
 import com.prosper.learn.shared.domain.exception.StatusCode;
 import com.prosper.learn.shared.infrastructure.config.SystemProperties;
 import com.prosper.learn.user.profile.UserDO;
@@ -562,6 +563,42 @@ public class RoadmapService {
             if (!domainService.isValidContentFormat(content)) {
                 throw StatusCode.ROADMAP_CONTENT_INVALID.exception();
             }
+        }
+
+        // 验证节点在数据库中的存在性
+        try {
+            List<List<Object>> contentData = objectMapper.readValue(content, new TypeReference<List<List<Object>>>() {});
+            List<Long> nodeIds = extractNodeIds(contentData);
+
+            if (!nodeIds.isEmpty()) {
+                // 过滤掉ID为0的根节点（代表职业本身，不需要验证）
+                List<Long> nodeIdsToValidate = nodeIds.stream()
+                    .filter(id -> id != 0)
+                    .collect(Collectors.toList());
+
+                if (!nodeIdsToValidate.isEmpty()) {
+                    // 批量查询节点，检查是否都存在
+                    Map<Long, NodeDO> nodeMap = nodeDataService.getMapByIds(nodeIdsToValidate);
+                    List<Long> missingNodeIds = new ArrayList<>();
+
+                    for (Long nodeId : nodeIdsToValidate) {
+                        if (!nodeMap.containsKey(nodeId)) {
+                            missingNodeIds.add(nodeId);
+                        }
+                    }
+
+                    if (!missingNodeIds.isEmpty()) {
+                        throw StatusCode.INVALID_PARAMETER.exception(
+                            "路径中包含不存在的节点ID: " + missingNodeIds
+                        );
+                    }
+                }
+            }
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("验证节点存在性失败", e);
+            throw StatusCode.ROADMAP_CONTENT_INVALID.exception("路径内容格式错误");
         }
 
         // 计算节点数量

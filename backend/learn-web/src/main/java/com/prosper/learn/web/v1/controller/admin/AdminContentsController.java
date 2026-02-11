@@ -1,5 +1,7 @@
 package com.prosper.learn.web.v1.controller.admin;
 
+import com.prosper.learn.application.dto.request.CreateCourseRequest;
+import com.prosper.learn.application.dto.request.CreateNodeRequest;
 import com.prosper.learn.application.dto.request.OperateRequest;
 import com.prosper.learn.application.dto.request.UpdateCourseRequest;
 import com.prosper.learn.application.dto.request.UpdateProfessionRequest;
@@ -212,6 +214,17 @@ public class AdminContentsController {
     @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> getCourseDetail(@PathVariable @Positive(message = "课程ID必须大于0") Long id) {
         return ApiResponse.success(courseService.getCourseById(id));
+    }
+
+    /**
+     * 获取节点详情
+     * GET /api/v1/admin/contents/node/{id}
+     */
+    @GetMapping("/node/{id}")
+    @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<?> getNodeDetail(@PathVariable @Positive(message = "节点ID必须大于0") Long id) {
+        return ApiResponse.success(nodeService.getById(id));
     }
 
     /**
@@ -538,5 +551,37 @@ public class AdminContentsController {
         log.info("节点引用数统计重新计算完成: {}", result);
 
         return ApiResponse.success(result);
+    }
+
+    // ==================== 创建课程和节点（Admin专用） ====================
+
+    /**
+     * 创建课程并自动审核通过
+     * POST /api/v1/admin/contents/course/create
+     */
+    @PostMapping("/course/create")
+    @OperationLog(module = "课程管理", type = "创建", targetType = "course", targetId = "#result")
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<Long> createCourse(
+            @RequestBody @Valid CreateCourseRequest request,
+            @CurrentUser UserDO currentUser) {
+
+        Long courseId = courseService.createAndApprove(request, currentUser);
+        return ApiResponse.success(courseId);
+    }
+
+    /**
+     * 创建节点并自动审核通过
+     * POST /api/v1/admin/contents/node/create
+     */
+    @PostMapping("/node/create")
+    @OperationLog(module = "节点管理", type = "创建", targetType = "node", targetId = "#result")
+    @RateLimit(capacity = 50, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<Long> createNode(
+            @RequestBody @Valid CreateNodeRequest request,
+            @CurrentUser UserDO currentUser) {
+
+        Long nodeId = nodeService.createAndApprove(request, currentUser);
+        return ApiResponse.success(nodeId);
     }
 }

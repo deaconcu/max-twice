@@ -24,6 +24,7 @@ const commentMaxLength = useMaxLength('comment-content')
 
 const newComment = ref('')
 const isCommentFocused = ref(false)
+const isReplyFocused = ref(false)
 const activeReplyId = ref<number | null>(null) // 控制输入框显示位置（主评论ID或子评论ID）
 const parentCommentId = ref<number | null>(null) // API提交时使用的父评论ID
 const replyContent = ref('')
@@ -318,7 +319,7 @@ onBeforeUnmount(() => {
         density="comfortable"
         rounded="lg"
         :rows="isCommentFocused ? 3 : 1"
-        :rules="commentRules"
+        :rules="isCommentFocused ? commentRules : []"
         :counter="commentMaxLength"
         auto-grow
         class="mb-3"
@@ -406,10 +407,12 @@ onBeforeUnmount(() => {
                 density="comfortable"
                 rounded="lg"
                 rows="2"
-                :rules="commentRules"
+                :rules="isReplyFocused ? commentRules : []"
                 :counter="commentMaxLength"
                 auto-grow
                 class="mb-2"
+                @focus="isReplyFocused = true"
+                @blur="isReplyFocused = false"
               ></v-textarea>
               <div class="d-flex justify-end">
                 <v-btn
@@ -496,10 +499,12 @@ onBeforeUnmount(() => {
                         density="comfortable"
                         rounded="lg"
                         rows="2"
-                        :rules="commentRules"
+                        :rules="isReplyFocused ? commentRules : []"
                         :counter="commentMaxLength"
                         auto-grow
                         class="mb-2"
+                        @focus="isReplyFocused = true"
+                        @blur="isReplyFocused = false"
                       ></v-textarea>
                       <div class="d-flex justify-end">
                         <v-btn

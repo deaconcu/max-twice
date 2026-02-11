@@ -1,6 +1,7 @@
 package com.prosper.learn.application.service.robot;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.learn.application.dto.response.RobotRoadmapDraftDTO;
 import com.prosper.learn.application.dto.response.RobotRoadmapTaskDTO;
 import com.prosper.learn.content.profession.ProfessionDO;
 import com.prosper.learn.content.profession.ProfessionDataService;
@@ -13,10 +14,17 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Robot 路径生成服务
@@ -36,8 +44,12 @@ public class RobotRoadmapGenerationService {
 
     private static final String TASK_KEY_PREFIX = "roadmap:task:";
     private static final String HISTORY_KEY_PREFIX = "roadmap:history:";
+    private static final String DRAFT_KEY_PREFIX = "roadmap:draft:";
+    private static final String DRAFT_LIST_KEY_PREFIX = "roadmap:drafts:";
     private static final int TASK_EXPIRE_DAYS = 30;  // 改为30天
+    private static final int DRAFT_EXPIRE_DAYS = 7;  // 草稿保存7天
     private static final int MAX_HISTORY_SIZE = 50;
+    private static final int MAX_DRAFT_SIZE = 100;
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     /**
@@ -197,6 +209,123 @@ public class RobotRoadmapGenerationService {
     }
 
     /**
+     * 保存草稿
+     */
+    public String saveDraft(Long professionId, Long userId, String draftContent) {
+        try {
+            // 生成唯一的草稿ID
+            String draftId = "draft-" + UUID.randomUUID().toString();
+
+            // 保存草稿内容
+            String draftKey = DRAFT_KEY_PREFIX + draftId;
+            redisTemplate.opsForValue().set(
+                draftKey,
+                draftContent,
+                DRAFT_EXPIRE_DAYS,
+                TimeUnit.DAYS
+            );
+
+            // 添加到用户的草稿列表
+            String listKey = DRAFT_LIST_KEY_PREFIX + userId;
+            long timestamp = System.currentTimeMillis();
+            String listValue = professionId + ":" + draftId;
+            redisTemplate.opsForZSet().add(listKey, listValue, timestamp);
+
+            // 保留最近100条草稿
+            Long count = redisTemplate.opsForZSet().zCard(listKey);
+            if (count != null && count > MAX_DRAFT_SIZE) {
+                // 删除最早的草稿
+                Set<String> oldDrafts = redisTemplate.opsForZSet().range(listKey, 0, count - MAX_DRAFT_SIZE - 1);
+                if (oldDrafts != null) {
+                    for (String old : oldDrafts) {
+                        String oldDraftId = old.split(":")[1];
+                        redisTemplate.delete(DRAFT_KEY_PREFIX + oldDraftId);
+                    }
+                }
+                redisTemplate.opsForZSet().removeRange(listKey, 0, count - MAX_DRAFT_SIZE - 1);
+            }
+
+            log.info("Saved draft {} for profession {} user {}", draftId, professionId, userId);
+            return draftId;
+        } catch (Exception e) {
+            log.error("Failed to save draft", e);
+            throw new RuntimeException("保存草稿失败", e);
+        }
+    }
+
+    /**
+     * 获取草稿
+     */
+    public String getDraft(String draftId) {
+        String draftKey = DRAFT_KEY_PREFIX + draftId;
+        return redisTemplate.opsForValue().get(draftKey);
+    }
+
+    /**
+     * 删除草稿
+     */
+    public void deleteDraft(Long userId, String draftId) {
+        // 删除草稿内容
+        String draftKey = DRAFT_KEY_PREFIX + draftId;
+        redisTemplate.delete(draftKey);
+
+        // 从用户的草稿列表中删除
+        String listKey = DRAFT_LIST_KEY_PREFIX + userId;
+        Set<String> allDrafts = redisTemplate.opsForZSet().range(listKey, 0, -1);
+        if (allDrafts != null) {
+            for (String value : allDrafts) {
+                if (value.endsWith(":" + draftId)) {
+                    redisTemplate.opsForZSet().remove(listKey, value);
+                    break;
+                }
+            }
+        }
+
+        log.info("Deleted draft {} for user {}", draftId, userId);
+    }
+
+    /**
+     * 获取用户的草稿列表
+     */
+    public List<RobotRoadmapDraftDTO> getDraftList(Long userId) {
+        String listKey = DRAFT_LIST_KEY_PREFIX + userId;
+        Set<String> draftValues = redisTemplate.opsForZSet().reverseRange(listKey, 0, -1);
+
+        if (draftValues == null || draftValues.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return draftValues.stream()
+            .map(value -> {
+                try {
+                    String[] parts = value.split(":");
+                    Long professionId = Long.parseLong(parts[0]);
+                    String draftId = parts[1];
+
+                    // 获取保存时间
+                    Double score = redisTemplate.opsForZSet().score(listKey, value);
+                    String createdAt = score != null ?
+                        LocalDateTime.ofInstant(
+                            Instant.ofEpochMilli(score.longValue()),
+                            ZoneId.systemDefault()
+                        ).format(formatter) : null;
+
+                    return RobotRoadmapDraftDTO.builder()
+                        .draftId(draftId)
+                        .professionId(professionId)
+                        .userId(userId)
+                        .createdAt(createdAt)
+                        .build();
+                } catch (Exception e) {
+                    log.warn("Failed to parse draft value {}: {}", value, e.getMessage());
+                    return null;
+                }
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    }
+
+    /**
      * 构建路径生成的系统提示词
      */
     private String buildRoadmapSystemPrompt() {
@@ -213,7 +342,7 @@ public class RobotRoadmapGenerationService {
                 ## 节点格式
                 nodes 数组中的每个节点：
                 {
-                  "id": "temp-0",           // 临时ID，从 temp-0 开始递增
+                  "id": "temp-0",           // 根节点id为 0，其它节点为临时ID，从 temp-1 开始递增
                   "type": "course",         // 类型：course（完整课程）或 node（知识点片段）
                   "name": "课程名称",
                   "description": "课程描述"
@@ -236,7 +365,7 @@ public class RobotRoadmapGenerationService {
                 ## 路径设计原则
 
                 ### 1. 根节点（职业目标）
-                - 第一个节点(temp-0)是根节点，代表职业本身（如"Vue.js开发工程师"）
+                - 第一个节点(id:0)是根节点，代表职业本身（如"Vue.js开发工程师"）
                 - 根节点是学习路径的**终点目标**
                 - **根节点只有输入边，没有输出边**（有入无出）
                 - 所有学习路径最终汇聚到根节点

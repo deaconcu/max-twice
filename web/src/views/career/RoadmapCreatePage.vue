@@ -710,8 +710,8 @@ const nodes = ref<Node[]>([
     type: 'default',
     data: { label: careerName.value },
     position: { x: 400, y: 100 },
-    targetPosition: Position.Bottom, // 入口在底部，只能被其他节点指向
-    // 没有 sourcePosition，表示不能作为连接起点
+    sourcePosition: undefined,
+    targetPosition: Position.Left,
     style: ROOT_NODE_STYLE,
   },
 ])
@@ -764,8 +764,8 @@ const addCourseNode = (course: Course) => {
     type: 'default',
     data: { label: `[课程] ${course.name}` }, // 课程前面加文字标识
     position: { x, y },
-    sourcePosition: Position.Top,
-    targetPosition: Position.Bottom,
+    sourcePosition: Position.Right,
+    targetPosition: Position.Left,
     style: COURSE_NODE_STYLE,
   })
 
@@ -817,8 +817,8 @@ const addNode = (node: SearchResultItem) => {
     type: 'default',
     data: { label: `[节点] ${node.name}` }, // 节点前面加文字标识
     position: { x, y },
-    sourcePosition: Position.Top,
-    targetPosition: Position.Bottom,
+    sourcePosition: Position.Right,
+    targetPosition: Position.Left,
     style: NODE_STYLE, // 使用绿色节点样式
   })
 
@@ -1126,9 +1126,9 @@ const applyAutoLayout = (showMessage = false) => {
     const dagreGraph = new dagre.graphlib.Graph()
     dagreGraph.setDefaultEdgeLabel(() => ({}))
     dagreGraph.setGraph({
-      rankdir: 'BT', // Bottom to Top - 根节点在上方
-      nodesep: 150,
-      ranksep: 80,
+      rankdir: 'LR', // Left to Right - 叶子节点在左边，根节点在右边
+      nodesep: 20,
+      ranksep: 150,
       marginx: 20,
       marginy: 20,
     })
@@ -1161,39 +1161,39 @@ const applyAutoLayout = (showMessage = false) => {
 
   // 处理没有连接关系的节点
   if (unconnectedNodes.length > 0) {
-    // 找到有连接的节点中 y 坐标最大的（最下面的节点）
-    let bottomY = 0
-    let centerX = 400 // 默认中心位置
+    // 找到有连接的节点中 x 坐标最大的（最右边的节点）
+    let rightX = 0
+    let centerY = 400 // 默认中心位置
 
     if (connectedNodes.length > 0) {
-      const bottomNode = connectedNodes.reduce((lowest, node) => {
-        return node.position.y > lowest.position.y ? node : lowest
+      const rightNode = connectedNodes.reduce((rightmost, node) => {
+        return node.position.x > rightmost.position.x ? node : rightmost
       })
-      bottomY = bottomNode.position.y
+      rightX = rightNode.position.x
 
-      // 计算有连接节点的 x 坐标中心位置
-      const sumX = connectedNodes.reduce((sum, node) => sum + node.position.x, 0)
-      centerX = sumX / connectedNodes.length
+      // 计算有连接节点的 y 坐标中心位置
+      const sumY = connectedNodes.reduce((sum, node) => sum + node.position.y, 0)
+      centerY = sumY / connectedNodes.length
     }
 
     // 网格布局参数
-    const columns = 3 // 每行3个节点
+    const rows = 3 // 每列3个节点
     const horizontalSpacing = 200 // 水平间距
     const verticalSpacing = 100 // 垂直间距
-    const startY = bottomY + 100 // 在最下面节点下方60px开始
+    const startX = rightX + 200 // 在最右边节点右侧200px开始
 
     // 排列无连接的节点
     unconnectedNodes.forEach((node, index) => {
-      const row = Math.floor(index / columns)
-      const col = index % columns
+      const col = Math.floor(index / rows)
+      const row = index % rows
 
-      // 计算该行的起始 x 坐标，使这一行居中对齐
-      const rowWidth = Math.min(unconnectedNodes.length - row * columns, columns) * horizontalSpacing
-      const rowStartX = centerX - rowWidth / 2 + horizontalSpacing / 2
+      // 计算该列的起始 y 坐标，使这一列居中对齐
+      const colHeight = Math.min(unconnectedNodes.length - col * rows, rows) * verticalSpacing
+      const colStartY = centerY - colHeight / 2 + verticalSpacing / 2
 
       node.position = {
-        x: rowStartX + col * horizontalSpacing,
-        y: startY + row * verticalSpacing,
+        x: startX + col * horizontalSpacing,
+        y: colStartY + row * verticalSpacing,
       }
     })
   }
@@ -1229,7 +1229,8 @@ const resetAll = () => {
           type: 'default',
           data: { label: careerName.value },
           position: { x: 400, y: 100 },
-          targetPosition: Position.Bottom,
+          sourcePosition: undefined,
+          targetPosition: Position.Left,
           style: ROOT_NODE_STYLE,
         },
       ]
@@ -1309,7 +1310,8 @@ watch(roadmapData, (newData) => {
               type: 'default',
               data: { label: careerName.value },
               position: { x: 0, y: 0 },
-              targetPosition: Position.Bottom,
+              sourcePosition: undefined,
+              targetPosition: Position.Left,
               style: ROOT_NODE_STYLE,
             }
           } else {
@@ -1318,8 +1320,8 @@ watch(roadmapData, (newData) => {
               type: 'default',
               data: { label: node.name || `课程 ${node.id}` },
               position: { x: 0, y: 0 },
-              sourcePosition: Position.Top,
-              targetPosition: Position.Bottom,
+              sourcePosition: Position.Right,
+              targetPosition: Position.Left,
               style: COURSE_NODE_STYLE,
             }
           }
@@ -1370,7 +1372,8 @@ watch(copyRoadmapData, (newData) => {
               type: 'default',
               data: { label: careerName.value },
               position: { x: 0, y: 0 },
-              targetPosition: Position.Bottom,
+              sourcePosition: undefined,
+              targetPosition: Position.Left,
               style: ROOT_NODE_STYLE,
             }
           } else {
@@ -1379,8 +1382,8 @@ watch(copyRoadmapData, (newData) => {
               type: 'default',
               data: { label: node.name || `课程 ${node.id}` },
               position: { x: 0, y: 0 },
-              sourcePosition: Position.Top,
-              targetPosition: Position.Bottom,
+              sourcePosition: Position.Right,
+              targetPosition: Position.Left,
               style: COURSE_NODE_STYLE,
             }
           }
@@ -1710,5 +1713,12 @@ onMounted(() => {
 .toolbar-divider {
   height: 24px;
   align-self: center;
+}
+
+/* 隐藏根节点的 source handle */
+:deep(.vue-flow__node[data-id='0'] .vue-flow__handle.source),
+:deep(.vue-flow__node[data-id='0'] .vue-flow__handle-right),
+:deep(.vue-flow__node[data-id='0'] .vue-flow__handle-bottom) {
+  display: none !important;
 }
 </style>

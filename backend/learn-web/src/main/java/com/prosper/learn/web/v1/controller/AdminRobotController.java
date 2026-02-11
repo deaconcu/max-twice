@@ -3,7 +3,10 @@ package com.prosper.learn.web.v1.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import com.prosper.learn.application.dto.response.RobotQueueStatsDTO;
+import com.prosper.learn.application.dto.response.RobotRoadmapDraftDTO;
 import com.prosper.learn.application.dto.response.RobotRoadmapTaskDTO;
+import com.prosper.learn.application.service.CourseService;
+import com.prosper.learn.application.service.NodeService;
 import com.prosper.learn.application.service.robot.PostQueueService;
 import com.prosper.learn.application.service.robot.RobotScanner;
 import com.prosper.learn.application.service.robot.RobotRoadmapGenerationService;
@@ -35,6 +38,8 @@ public class AdminRobotController {
     private final AIService aiService;
     private final RobotRoadmapGenerationService roadmapGenerationService;
     private final SystemProperties systemProperties;
+    private final CourseService courseService;
+    private final NodeService nodeService;
 
     @PostMapping("/scan")
     @SaCheckLogin
@@ -187,5 +192,41 @@ public class AdminRobotController {
     public ApiResponse<List<RobotRoadmapTaskDTO>> getRoadmapHistory() {
         Long userId = StpUtil.getLoginIdAsLong();
         return ApiResponse.success(roadmapGenerationService.getHistory(userId));
+    }
+
+    @PostMapping("/roadmap/draft")
+    @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<String> saveRoadmapDraft(
+            @RequestParam @NotNull @Positive Long professionId,
+            @RequestBody @NotBlank String draftContent) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        String draftId = roadmapGenerationService.saveDraft(professionId, userId, draftContent);
+        return ApiResponse.success(draftId);
+    }
+
+    @GetMapping("/roadmap/draft/{draftId}")
+    @SaCheckLogin
+    @RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<String> getRoadmapDraft(@PathVariable @NotBlank String draftId) {
+        String draft = roadmapGenerationService.getDraft(draftId);
+        return ApiResponse.success(draft);
+    }
+
+    @DeleteMapping("/roadmap/draft/{draftId}")
+    @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<Void> deleteRoadmapDraft(@PathVariable @NotBlank String draftId) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        roadmapGenerationService.deleteDraft(userId, draftId);
+        return ApiResponse.success();
+    }
+
+    @GetMapping("/roadmap/drafts")
+    @SaCheckLogin
+    @RateLimit(capacity = 30, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<List<RobotRoadmapDraftDTO>> getRoadmapDrafts() {
+        Long userId = StpUtil.getLoginIdAsLong();
+        return ApiResponse.success(roadmapGenerationService.getDraftList(userId));
     }
 }

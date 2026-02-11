@@ -281,8 +281,8 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
             ...node.data,
           },
           position: node.position || { x: 0, y: 0 },
-          sourcePosition: Position.Top,
-          targetPosition: Position.Bottom,
+          sourcePosition: undefined,
+          targetPosition: Position.Left,
           style: {
             background: '#616161',
             color: '#ffffff',
@@ -350,8 +350,8 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
           ...node.data,
         },
         position: node.position || { x: 0, y: 0 },
-        sourcePosition: Position.Top,
-        targetPosition: Position.Bottom,
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
         class: completed ? 'completed-course' : shouldShowProgress ? 'progress-course' : '',
         style: {
           ...nodeStyle,
@@ -382,13 +382,13 @@ const parseContent = (content: string | object): { nodes: Node[]; edges: Edge[] 
 }
 
 // 自动布局函数
-const applyAutoLayout = (nodeList: Node[], edgeList: Edge[], direction = 'TB'): Node[] => {
+const applyAutoLayout = (nodeList: Node[], edgeList: Edge[], direction = 'LR'): Node[] => {
   const dagreGraph = new dagre.graphlib.Graph()
   dagreGraph.setDefaultEdgeLabel(() => ({}))
   dagreGraph.setGraph({
     rankdir: direction,
-    nodesep: 150,
-    ranksep: 50,
+    nodesep: 20,     // 上下间距
+    ranksep: 150,    // 左右间距
     marginx: 20,
     marginy: 20,
   })
@@ -426,8 +426,8 @@ const flowNodes = computed<Node[]>(() => {
 
   const { nodes, edges } = parseContent(roadmap.value.content)
 
-  // 应用自动布局 - 使用 BT (Bottom to Top) 让根节点在上面
-  return applyAutoLayout(nodes, edges, 'BT')
+  // 应用自动布局 - 使用 LR (Left to Right) 让叶子节点在左边，根节点在右边
+  return applyAutoLayout(nodes, edges, 'LR')
 })
 
 const flowEdges = computed<Edge[]>(() => {
@@ -719,5 +719,12 @@ const handleNodeClick = ({ node }: { node: Node }): void => {
     #fafafa var(--progress, 0%)
   ) !important;
   border-color: #81c784 !important;
+}
+
+/* 隐藏根节点的 source handle */
+:deep(.vue-flow__node[data-id='0'] .vue-flow__handle.source),
+:deep(.vue-flow__node[data-id='0'] .vue-flow__handle-right),
+:deep(.vue-flow__node[data-id='0'] .vue-flow__handle-bottom) {
+  display: none !important;
 }
 </style>

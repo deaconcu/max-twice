@@ -22,6 +22,7 @@ public interface NodeConverter {
     @Mapping(target = "name")
     @Mapping(target = "description")
     @Mapping(target = "courseId")
+    @Mapping(target = "isCourseRoot")
     @Mapping(target = "creatorId")
     @Mapping(target = "state")
     @Mapping(target = "createdAt")
@@ -53,34 +54,6 @@ public interface NodeConverter {
     @Mapping(target = "name")
     @Mapping(target = "description")
     NodeDTO toDTOV1Internal(NodeDO nodeDO);
-
-    default NodeDTO toDTOV1(NodeDO nodeDO) {
-        if (nodeDO == null) return null;
-
-        NodeDTO dto = toDTOV1Internal(nodeDO);
-
-        if (nodeDO.getState() != null && nodeDO.getState() == Enums.ContentState.BANNED.value()) {
-            dto.setName("目录节点已被屏蔽");
-            dto.setDescription("");
-        }
-
-        return dto;
-    }
-
-    @IterableMapping(qualifiedByName = "toDTOV1")
-    default List<NodeDTO> toDTOV1(List<NodeDO> nodeDOList) {
-        if (nodeDOList == null) return null;
-        return nodeDOList.stream().map(this::toDTOV1).toList();
-    }
-
-    default NodeDTO toDTOV2(NodeDO nodeDO, boolean isCompleted) {
-        if (nodeDO == null) return null;
-
-        NodeDTO dto = toDTOV1(nodeDO);
-        dto.setIsCompleted(isCompleted);
-
-        return dto;
-    }
 
     // ========== 新版语义化方法 ==========
 
@@ -232,5 +205,32 @@ public interface NodeConverter {
     default List<NodeWithCourseBriefDTO> toWithCourseBriefDTO(List<NodeDO> nodeDOList) {
         if (nodeDOList == null) return null;
         return nodeDOList.stream().map(this::toWithCourseBriefDTO).toList();
+    }
+
+    /**
+     * 转换为 NodeBriefDTO（ID + 名称）
+     */
+    @Named("toBriefDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    NodeBriefDTO toBriefDTOInternal(NodeDO nodeDO);
+
+    default NodeBriefDTO toBriefDTO(NodeDO nodeDO) {
+        if (nodeDO == null) return null;
+
+        NodeBriefDTO dto = toBriefDTOInternal(nodeDO);
+
+        if (nodeDO.getState() != null && nodeDO.getState() == Enums.ContentState.BANNED.value()) {
+            dto.setName("目录节点已被屏蔽");
+        }
+
+        return dto;
+    }
+
+    @IterableMapping(qualifiedByName = "toBriefDTO")
+    default List<NodeBriefDTO> toBriefDTO(List<NodeDO> nodeDOList) {
+        if (nodeDOList == null) return null;
+        return nodeDOList.stream().map(this::toBriefDTO).toList();
     }
 }

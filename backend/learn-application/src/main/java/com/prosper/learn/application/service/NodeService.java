@@ -4,6 +4,9 @@ import com.prosper.learn.analytics.dto.ContentStatsDTO;
 import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.NodeConverter;
+import com.prosper.learn.application.dto.request.CreateNodeRequest;
+import com.prosper.learn.application.dto.response.NodeDTO;
+import com.prosper.learn.application.dto.response.node.NodeBriefDTO;
 import com.prosper.learn.application.dto.response.node.NodeDetailDTO;
 import com.prosper.learn.application.dto.response.node.NodeSearchResultDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithCourseDTO;
@@ -15,6 +18,8 @@ import com.prosper.learn.content.node.NodeDomainService;
 import com.prosper.learn.infrastructure.embedding.EmbeddingService;
 import com.prosper.learn.infrastructure.embedding.MilvusService;
 import com.prosper.learn.shared.common.utils.Utils;
+import com.prosper.learn.shared.domain.exception.StatusCode;
+import com.prosper.learn.user.profile.UserDO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,17 +53,13 @@ public class NodeService {
 
     // ========== Query 方法（读操作）==========
 
-    public NodeWithCourseDTO getById(Long id, DTOVersion dtoVersion) {
+    public NodeDTO getById(Long id) {
         if (id == null || id <= 0) {
             throw new IllegalArgumentException("Invalid node ID");
         }
         NodeDO nodeDO = nodeDataService.getById(id);
-        switch (dtoVersion) {
-            case V3 -> {
-                return toWithCourseDTO(nodeDO);
-            }
-            default -> throw new IllegalArgumentException("Unsupported DTO version: " + dtoVersion);
-        }
+        //return toWithCourseDTO(nodeDO);
+        return toDTO(nodeDO);
     }
 
     /**
@@ -156,9 +157,12 @@ public class NodeService {
 
     // ========== DTO 转换方法 ==========
 
-    /**
-     * v3 = 包含课程对象的节点
-     */
+    public NodeDTO toDTO(NodeDO nodeDO) {
+        if (nodeDO == null) return null;
+        return nodeConverter.toDTO(nodeDO);
+
+    }
+
     public NodeWithCourseDTO toWithCourseDTO(NodeDO nodeDO) {
         if (nodeDO == null)  return null;
 
@@ -347,5 +351,45 @@ public class NodeService {
                 "failCount", failCount,
                 "totalProcessed", successCount + failCount
         );
+    }
+
+    /**
+     * 创建节点并自动审核通过（Admin专用）
+     */
+    @Transactional
+    public Long createAndApprove(CreateNodeRequest request, UserDO creator) {
+        // 验证参数
+        if (request == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("节点创建请求不能为空");
+        }
+
+        // 验证课程存在
+        CourseDO course = courseDataService.getById(request.getCourseId());
+        if (course == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("课程不存在");
+        }
+
+        // 检查同一课程下是否已存在同名节点
+        if (checkDuplicateNode(request.getCourseId(), request.getName())) {
+            throw StatusCode.INVALID_PARAMETER.exception(
+                "课程《" + course.getName() + "》下已存在名为《" + request.getName() + "》的节点"
+            );
+        }
+
+        // 创建节点（状态为SUBMITTED）
+        NodeDO node = new NodeDO(
+                creator.getId(),
+                request.getCourseId(),
+                request.getName(),
+                request.getDescription(),
+                ContentState.SUBMITTED.value(), // 先设置为待审核
+                Bool.FALSE.value() // isCourseRoot = false
+        );
+        nodeDataService.insert(node);
+
+        // 审核通过
+        domainService.approve(node.getId());
+
+        return node.getId();
     }
 }

@@ -910,6 +910,26 @@ watch(
   text-decoration: underline;
 }
 
+/* 表格样式 */
+.article-content :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.95rem;
+}
+
+.article-content :deep(table th),
+.article-content :deep(table td) {
+  border: 1px solid #e0e0e0;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.article-content :deep(table th) {
+  background-color: #f5f5f5;
+  font-weight: 600;
+}
+
 /* Mermaid 图表和错误内容宽度限制 */
 .article-content :deep(.mermaid) {
   max-width: 100%;

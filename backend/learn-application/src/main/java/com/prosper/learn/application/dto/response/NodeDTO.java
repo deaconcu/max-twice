@@ -16,11 +16,7 @@ public class NodeDTO {
 
     private Long courseId;
 
-    /**
-     * 课程简要信息
-     * 说明：包含课程的 id 和 name，用于显示节点所属课程
-     */
-    private CourseBriefDTO course;
+    private Byte isCourseRoot;
 
     private List<NodeDTO> children;
 

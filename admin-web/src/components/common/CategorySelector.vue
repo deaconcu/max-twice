@@ -99,7 +99,6 @@ const { loading } = useFetch({
   fetchFn: systemApi.getProfessionCategories,
   immediate: true,
   onSuccess: (data) => {
-    console.log('Loaded profession categories:', data)
     mainCategories.value = data.mainCategories || []
     categoryMapping.value = data.categoryMapping || []
   },
@@ -110,7 +109,7 @@ const formMainCategories = computed(() => {
   return mainCategories.value
     .filter((cat) => cat.id !== 0) // 使用数字0而不是字符串'all'
     .map((cat) => ({
-      title: cat.name,
+      title: cat.title, // 使用 cat.title 而不是 cat.name
       value: cat.id,
     }))
 })

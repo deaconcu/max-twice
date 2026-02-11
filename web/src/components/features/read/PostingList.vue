@@ -147,12 +147,10 @@ const completeButtonTooltip = () => {
         v-if="nodes && nodes.length > 0"
         class="node-breadcrumb ma-0 text-grey text-body-2 pb-4"
       >
-        <div class="breadcrumb-wrapper d-flex align-center flex-wrap">
+        <div class="breadcrumb-wrapper">
           <template v-for="(item, index) in nodes" :key="item">
-            <span class="breadcrumb-item">
-              {{ data.tocNodeInfos?.[item]?.name || item }}
-              <v-icon v-if="index < nodes.length - 1" icon="mdi-chevron-right" class="px-5"></v-icon>
-            </span>
+            <span class="breadcrumb-text">{{ data.tocNodeInfos?.[item]?.name || item }}</span
+            ><v-icon v-if="index < nodes.length - 1" icon="mdi-chevron-right" class="breadcrumb-separator"></v-icon>
           </template>
         </div>
       </v-row>
@@ -578,17 +576,23 @@ const completeButtonTooltip = () => {
   width: 100%;
 }
 
-/* 面包屑容器 - 增加行间距 */
+/* 面包屑容器 - 允许自然换行 */
 .breadcrumb-wrapper {
-  gap: 0;
-  row-gap: 6px;
+  display: block;
+  line-height: 2;
 }
 
-/* 面包屑项 - 防止内部换行 */
-.breadcrumb-item {
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
+/* 面包屑文字 - 允许换行 */
+.breadcrumb-text {
+  display: inline;
+}
+
+/* 面包屑分隔符 - 保持和文字对齐 */
+.breadcrumb-separator {
+  display: inline-block;
+  margin: 0 6px;
+  font-size: 14px;
+  vertical-align: baseline;
 }
 
 /* Tab栏和操作按钮行 - 固定在顶部 */

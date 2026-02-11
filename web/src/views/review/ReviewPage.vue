@@ -233,7 +233,7 @@
 
           <!-- 空队列状态 -->
           <div v-else-if="!isReviewing && reviewCards.length === 0" class="text-center">
-            <v-card border rounded="lg" class="pa-8">
+            <v-card rounded="lg" class="pa-8" elevation="0">
               <v-icon icon="mdi-check-circle" size="64" color="success" class="mb-4"></v-icon>
               <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">
                 {{ t('review.excellent') }}
@@ -291,7 +291,7 @@
             <v-card rounded="lg" class="mb-4">
               <div
                 class="card-container pa-8 d-flex align-center justify-center"
-                style="min-height: 500px"
+                :style="{ minHeight: `${cardHeight}px` }"
               >
                 <!-- 问题面 -->
                 <div v-if="!showAnswer" class="text-center">
@@ -812,7 +812,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useFetch, useMutation } from '@/composables'
 import { memoryApi } from '@/api'
@@ -836,6 +836,9 @@ const showAnswer = ref(false)
 const currentCardIndex = ref(0)
 const selectedCards = ref<number[]>([])
 const expansionPanel = ref<number[]>([]) // 控制展开面板状态
+
+// 动态卡片高度
+const cardHeight = ref(800)
 
 // 列表分页
 const listCards = ref<MemoryCardView[]>([])
@@ -1206,14 +1209,34 @@ const formatDueDate = (dateString: string): string => {
   })
 }
 
+// 计算卡片高度
+const calculateCardHeight = () => {
+  const windowHeight = window.innerHeight
+  // 减去其他元素的高度（标题、进度条、按钮等），估算约 400px
+  const availableHeight = windowHeight - 400
+  // 最小 500px，最大 800px
+  cardHeight.value = Math.max(500, Math.min(800, availableHeight))
+}
+
 // 组件挂载
 onMounted(() => {
+  // 计算初始高度
+  calculateCardHeight()
+
+  // 监听窗口大小变化
+  window.addEventListener('resize', calculateCardHeight)
+
   // 可以加载统计数据
   void memoryApi.getReviewStats().then((res) => {
     if (res.code === 200 && res.data) {
       stats.value = res.data
     }
   })
+})
+
+// 组件卸载
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', calculateCardHeight)
 })
 </script>
 

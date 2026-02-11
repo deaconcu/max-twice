@@ -565,7 +565,7 @@ public class CourseService {
     }
 
     @Transactional
-    public void createCourse(CreateCourseRequest request, UserDO creator) {
+    public Long createCourse(CreateCourseRequest request, UserDO creator) {
         // 先验证参数
         if (request == null) {
             throw StatusCode.INVALID_PARAMETER.exception("课程创建请求不能为空");
@@ -592,6 +592,22 @@ public class CourseService {
 
         course.setRootNodeId(nodeDO.getId());
         courseDataService.update(course);
+
+        return course.getId();
+    }
+
+    /**
+     * 创建课程并自动审核通过（Admin专用）
+     */
+    @Transactional
+    public Long createAndApprove(CreateCourseRequest request, UserDO creator) {
+        // 先创建课程（状态为SUBMITTED）
+        Long courseId = createCourse(request, creator);
+
+        // 审核通过
+        approve(courseId, creator);
+
+        return courseId;
     }
 
     @Transactional
