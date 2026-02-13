@@ -46,8 +46,16 @@ public class MilvusService {
     @Value("${app.milvus.vector-dim}")
     private int vectorDim;
 
+    @Value("${app.milvus.enabled:true}")
+    private boolean enabled;
+
     @PostConstruct
     public void init() {
+        if (!enabled) {
+            log.info("Milvus is disabled, skipping initialization");
+            return;
+        }
+
         try {
             // 创建连接配置
             ConnectConfig config = ConnectConfig.builder()
@@ -140,6 +148,11 @@ public class MilvusService {
      * 插入单个向量（如果已存在则更新）
      */
     public void upsert(long nodeId, float[] embedding) {
+        if (!enabled) {
+            log.debug("Milvus is disabled, skipping upsert for node: {}", nodeId);
+            return;
+        }
+
         if (embedding.length != vectorDim) {
             throw new IllegalArgumentException(
                     String.format("Embedding dimension mismatch: expected %d, got %d", vectorDim, embedding.length)
@@ -170,6 +183,11 @@ public class MilvusService {
      * 批量插入向量（如果已存在则更新）
      */
     public void upsertBatch(List<Long> nodeIds, List<float[]> embeddings) {
+        if (!enabled) {
+            log.debug("Milvus is disabled, skipping batch upsert for {} nodes", nodeIds.size());
+            return;
+        }
+
         if (nodeIds.size() != embeddings.size()) {
             throw new IllegalArgumentException("NodeIds and embeddings size mismatch");
         }
@@ -211,6 +229,11 @@ public class MilvusService {
      * 搜索相似向量
      */
     public List<SearchResult> searchSimilar(float[] queryEmbedding, int topK, double threshold) {
+        if (!enabled) {
+            log.debug("Milvus is disabled, returning empty search results");
+            return Collections.emptyList();
+        }
+
         if (queryEmbedding.length != vectorDim) {
             throw new IllegalArgumentException("Query embedding dimension mismatch");
         }
@@ -276,6 +299,11 @@ public class MilvusService {
      * 删除单个向量
      */
     public void delete(long nodeId) {
+        if (!enabled) {
+            log.debug("Milvus is disabled, skipping delete for node: {}", nodeId);
+            return;
+        }
+
         try {
             DeleteReq deleteReq = DeleteReq.builder()
                     .collectionName(collectionName)
@@ -295,6 +323,11 @@ public class MilvusService {
      * 批量删除向量
      */
     public void deleteBatch(List<Long> nodeIds) {
+        if (!enabled) {
+            log.debug("Milvus is disabled, skipping batch delete for {} nodes", nodeIds != null ? nodeIds.size() : 0);
+            return;
+        }
+
         if (nodeIds == null || nodeIds.isEmpty()) {
             return;
         }

@@ -3,7 +3,10 @@ package com.prosper.learn.application.dto.request;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
+
+import java.util.List;
 
 /**
  * 复习卡片请求DTO
@@ -20,5 +23,12 @@ public class ReviewCardRequest {
     private Integer result;
 
     private Integer timeSpent;
+
+    /**
+     * 当前学习队列（卡片ID列表）
+     * LEARNING/RELEARNING 阶段，前端维护队列顺序，提交时一并传递
+     */
+    @Size(max = 100, message = "队列长度不能超过100")
+    private List<Long> queue;
 
 }

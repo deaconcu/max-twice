@@ -6,6 +6,7 @@ import com.prosper.learn.application.dto.response.ReviewStatsDTO;
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.memory.card.MemoryCardDataService;
 import com.prosper.learn.memory.card.MemoryCardDO;
+import com.prosper.learn.memory.review.LearningQueueService;
 import com.prosper.learn.memory.review.ReviewDomainService;
 import com.prosper.learn.memory.review.UserCardSrsDO;
 import com.prosper.learn.shared.common.util.TimeZoneUtil;
@@ -37,6 +38,7 @@ public class ReviewService {
     private final UserDataService userDataService;
     private final UserCardSrsConverter srsStateConverter;
     private final MemoryCardService memoryCardService;
+    private final LearningQueueService learningQueueService;
 
 
     // ========== toDTO ==========
@@ -57,13 +59,48 @@ public class ReviewService {
 
     /**
      * 获取复习队列
+     *
+     * 优先从 Redis 加载队列顺序（LEARNING/RELEARNING 阶段的交错复习支持）
+     * 如果 Redis 中没有队列，则按原规则查询
      */
     public List<CardWithSrsDTO> getReviewQueue(Long userId, Boolean dueOnly, Long courseId, Integer limit, Long lastId) {
         if (userId == null) {
             throw StatusCode.INVALID_PARAMETER.exception("用户ID不能为空");
         }
 
-        // 委托给 DomainService 查询复习队列
+        // 首次加载（无 lastId）时，尝试从 Redis 获取队列顺序
+        if (lastId == null && dueOnly) {
+            List<Long> cachedQueue = learningQueueService.getQueue(userId);
+            if (!cachedQueue.isEmpty()) {
+                // 验证并过滤队列中的卡片（只保留 LEARNING/RELEARNING 状态）
+                List<Long> validQueue = learningQueueService.validateAndFilterQueue(userId, cachedQueue);
+                if (!validQueue.isEmpty()) {
+                    // 按队列顺序加载卡片
+                    List<MemoryCardDO> cardList = cardDataService.getByIds(new HashSet<>(validQueue));
+
+                    // 使用 MemoryCardService 转换为 DTO
+                    List<CardWithSrsDTO> result = memoryCardService.toCardViewWithSrs(cardList, userId);
+
+                    // 按队列顺序排序
+                    Map<Long, CardWithSrsDTO> cardMap = result.stream()
+                            .collect(Collectors.toMap(CardWithSrsDTO::getId, c -> c));
+
+                    List<CardWithSrsDTO> orderedResult = validQueue.stream()
+                            .map(cardMap::get)
+                            .filter(c -> c != null)
+                            .collect(Collectors.toList());
+
+                    // 如果队列有变化，更新 Redis
+                    if (validQueue.size() != cachedQueue.size()) {
+                        learningQueueService.saveQueue(userId, validQueue);
+                    }
+
+                    return orderedResult;
+                }
+            }
+        }
+
+        // 委托给 DomainService 查询复习队列（原逻辑）
         List<UserCardSrsDO> userCardList = reviewDomainService.getReviewQueue(userId, dueOnly, courseId, limit, lastId);
 
         if (userCardList.isEmpty()) {
@@ -83,6 +120,8 @@ public class ReviewService {
 
     /**
      * 提交复习结果 - Anki 算法实现
+     *
+     * 同时保存前端传来的学习队列顺序到 Redis
      */
     @Transactional
     public void submitReview(Long userId, ReviewCardRequest request) {
@@ -95,6 +134,18 @@ public class ReviewService {
 
         // 委托给 DomainService 处理复习逻辑
         reviewDomainService.submitReview(userId, request.getCardId(), request.getResult());
+
+        // 保存学习队列顺序到 Redis（如果前端传了队列）
+        if (request.getQueue() != null && !request.getQueue().isEmpty()) {
+            // 验证并过滤队列，防止恶意数据
+            List<Long> validQueue = learningQueueService.validateAndFilterQueue(userId, request.getQueue());
+            if (!validQueue.isEmpty()) {
+                learningQueueService.saveQueue(userId, validQueue);
+            } else {
+                // 队列为空，清除 Redis
+                learningQueueService.clearQueue(userId);
+            }
+        }
     }
 
     /**

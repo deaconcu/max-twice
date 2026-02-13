@@ -74,6 +74,7 @@ export function reviewCard(params: {
   cardId: number
   result: ReviewResult
   timeSpent: number
+  queue?: number[] // 当前学习队列（卡片ID列表）
 }): Promise<ApiResponse<void>> {
   return client.post('/v1/memory/review/submit', params)
 }

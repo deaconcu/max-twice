@@ -14,8 +14,8 @@ import com.prosper.learn.content.profession.ProfessionDataService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.user.profile.UserDO;
 import com.prosper.learn.user.profile.UserDataService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -28,15 +28,20 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class MeilisearchService {
 
-    private final Client meilisearchClient;
-    private final ObjectMapper objectMapper;
-    private final CourseDataService courseDataService;
-    private final NodeDataService nodeDataService;
-    private final UserDataService userDataService;
-    private final ProfessionDataService professionDataService;
+    @Autowired(required = false)
+    private Client meilisearchClient;
+    @Autowired
+    private ObjectMapper objectMapper;
+    @Autowired
+    private CourseDataService courseDataService;
+    @Autowired
+    private NodeDataService nodeDataService;
+    @Autowired
+    private UserDataService userDataService;
+    @Autowired
+    private ProfessionDataService professionDataService;
 
     private static final String INDEX_COURSES = "courses";
     private static final String INDEX_NODES = "nodes";
@@ -46,6 +51,10 @@ public class MeilisearchService {
     // ========== 初始化 ==========
 
     public void initializeIndexes() {
+        if (meilisearchClient == null) {
+            log.info("Meilisearch is disabled, skipping initialization");
+            return;
+        }
         try {
             createIndexIfNotExists(INDEX_COURSES, "id");
             createIndexIfNotExists(INDEX_NODES, "id");
@@ -89,6 +98,7 @@ public class MeilisearchService {
     // ========== 全量同步 ==========
 
     public void syncAll() {
+        if (meilisearchClient == null) return;
         log.info("Starting full sync...");
         long start = System.currentTimeMillis();
 
@@ -102,6 +112,7 @@ public class MeilisearchService {
     }
 
     public int syncAllCourses() {
+        if (meilisearchClient == null) return 0;
         try {
             log.info("Syncing courses...");
             meilisearchClient.deleteIndex(INDEX_COURSES);
@@ -133,6 +144,7 @@ public class MeilisearchService {
     }
 
     public int syncAllNodes() {
+        if (meilisearchClient == null) return 0;
         try {
             log.info("Syncing nodes...");
             meilisearchClient.deleteIndex(INDEX_NODES);
@@ -164,6 +176,7 @@ public class MeilisearchService {
     }
 
     public int syncAllUsers() {
+        if (meilisearchClient == null) return 0;
         try {
             log.info("Syncing users...");
             meilisearchClient.deleteIndex(INDEX_USERS);
@@ -195,6 +208,7 @@ public class MeilisearchService {
     }
 
     public int syncAllProfessions() {
+        if (meilisearchClient == null) return 0;
         try {
             log.info("Syncing professions...");
             meilisearchClient.deleteIndex(INDEX_PROFESSIONS);
@@ -274,6 +288,7 @@ public class MeilisearchService {
 
     @Async
     public void indexCourse(CourseDO course) {
+        if (meilisearchClient == null) return;
         if (course.getState() != Enums.ContentState.PUBLISHED.value()) {
             deleteCourse(course.getId());
             return;
@@ -292,6 +307,7 @@ public class MeilisearchService {
 
     @Async
     public void deleteCourse(Long id) {
+        if (meilisearchClient == null) return;
         try {
             meilisearchClient.index(INDEX_COURSES).deleteDocument(String.valueOf(id));
         } catch (Exception e) {
@@ -301,6 +317,7 @@ public class MeilisearchService {
 
     @Async
     public void indexNode(NodeDO node) {
+        if (meilisearchClient == null) return;
         if (node.getState() != Enums.ContentState.PUBLISHED.value()) {
             deleteNode(node.getId());
             return;
@@ -319,6 +336,7 @@ public class MeilisearchService {
 
     @Async
     public void deleteNode(Long id) {
+        if (meilisearchClient == null) return;
         try {
             meilisearchClient.index(INDEX_NODES).deleteDocument(String.valueOf(id));
         } catch (Exception e) {
@@ -328,6 +346,7 @@ public class MeilisearchService {
 
     @Async
     public void indexUser(UserDO user) {
+        if (meilisearchClient == null) return;
         try {
             Map<String, Object> doc = Map.of("id", user.getId(), "name", user.getName());
             meilisearchClient.index(INDEX_USERS).addDocuments(objectMapper.writeValueAsString(List.of(doc)));
@@ -338,6 +357,7 @@ public class MeilisearchService {
 
     @Async
     public void deleteUser(Long id) {
+        if (meilisearchClient == null) return;
         try {
             meilisearchClient.index(INDEX_USERS).deleteDocument(String.valueOf(id));
         } catch (Exception e) {
@@ -347,6 +367,7 @@ public class MeilisearchService {
 
     @Async
     public void indexProfession(ProfessionDO profession) {
+        if (meilisearchClient == null) return;
         if (profession.getState() != Enums.ContentState.PUBLISHED.value()) {
             deleteProfession(profession.getId());
             return;
@@ -365,6 +386,7 @@ public class MeilisearchService {
 
     @Async
     public void deleteProfession(Long id) {
+        if (meilisearchClient == null) return;
         try {
             meilisearchClient.index(INDEX_PROFESSIONS).deleteDocument(String.valueOf(id));
         } catch (Exception e) {
@@ -375,6 +397,7 @@ public class MeilisearchService {
     // ========== 搜索 ==========
 
     public Searchable searchCourses(String query, int limit, int offset) {
+        if (meilisearchClient == null) return null;
         try {
             return meilisearchClient.index(INDEX_COURSES)
                 .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
@@ -385,6 +408,7 @@ public class MeilisearchService {
     }
 
     public Searchable searchNodes(String query, int limit, int offset) {
+        if (meilisearchClient == null) return null;
         try {
             return meilisearchClient.index(INDEX_NODES)
                 .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
@@ -395,6 +419,7 @@ public class MeilisearchService {
     }
 
     public Searchable searchUsers(String query, int limit, int offset) {
+        if (meilisearchClient == null) return null;
         try {
             return meilisearchClient.index(INDEX_USERS)
                 .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());
@@ -405,6 +430,7 @@ public class MeilisearchService {
     }
 
     public Searchable searchProfessions(String query, int limit, int offset) {
+        if (meilisearchClient == null) return null;
         try {
             return meilisearchClient.index(INDEX_PROFESSIONS)
                 .search(SearchRequest.builder().q(query).limit(limit).offset(offset).build());

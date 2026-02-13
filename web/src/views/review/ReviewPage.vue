@@ -822,7 +822,7 @@ import type {
   ReviewStats,
   CourseStudyStatus,
 } from '@/types/memory'
-import { ReviewResult, FrequencySetting, CourseStudyStatus as Status } from '@/types/memory'
+import { ReviewResult, FrequencySetting, CourseStudyStatus as Status, CardType } from '@/types/memory'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
@@ -964,35 +964,102 @@ const skipCard = () => {
   }
 }
 
+// LEARNING 阶段的插入间隔配置
+const QUEUE_INSERT_OFFSET = {
+  AGAIN: 3, // 忘记：插入到 3 张后
+  HARD: 5, // 困难：插入到 5 张后
+  GOOD: 8, // 良好：插入到 8 张后
+}
+
+// 判断卡片是否应该毕业（从队列移除）
+const shouldGraduate = (card: MemoryCardView, result: ReviewResult): boolean => {
+  // 简单：直接毕业
+  if (result === ReviewResult.EASY) {
+    return true
+  }
+
+  // REVIEW 状态的卡片，任何非忘记操作都保持在 REVIEW，直接移除
+  if (card.srsState?.type === CardType.REVIEW) {
+    return result !== ReviewResult.AGAIN
+  }
+
+  // LEARNING/RELEARNING 状态，良好且已经是最后一步（currentStep >= 1）才毕业
+  if (result === ReviewResult.GOOD) {
+    const currentStep = card.srsState?.currentStep ?? 0
+    // 默认 learningSteps = [10, 60]，需要 2 次良好才毕业
+    return currentStep >= 1
+  }
+
+  return false
+}
+
+// 计算插入位置
+const calculateInsertPosition = (currentIndex: number, result: ReviewResult): number => {
+  let offset = QUEUE_INSERT_OFFSET.AGAIN
+  if (result === ReviewResult.HARD) {
+    offset = QUEUE_INSERT_OFFSET.HARD
+  } else if (result === ReviewResult.GOOD) {
+    offset = QUEUE_INSERT_OFFSET.GOOD
+  }
+  return currentIndex + offset
+}
+
 // 提交复习
 const { execute: executeReview } = useMutation(
-  (params: { cardId: number; result: ReviewResult; timeSpent: number }) => {
+  (params: { cardId: number; result: ReviewResult; timeSpent: number; queue?: number[] }) => {
     return memoryApi.reviewCard(params)
   },
   {
     showToast: false,
     onSuccess: () => {
-      const currentCardId = currentCard.value?.id
-      reviewCards.value = reviewCards.value.filter((card) => card.id !== currentCardId)
-
-      if (reviewCards.value.length === 0) {
-        void completeReview()
-      } else {
-        if (currentCardIndex.value >= reviewCards.value.length) {
-          currentCardIndex.value = reviewCards.value.length - 1
-        }
-        showAnswer.value = false
-      }
+      // 不在这里处理队列，因为 submitReview 已经处理好了
     },
   }
 )
 
 const submitReview = (result: ReviewResult) => {
   if (!currentCard.value) return
+
+  const card = currentCard.value
+  const cardId = card.id
+
+  // 判断是否毕业
+  if (shouldGraduate(card, result)) {
+    // 毕业：从队列移除
+    reviewCards.value = reviewCards.value.filter((c) => c.id !== cardId)
+  } else {
+    // 未毕业：计算插入位置，重新排列队列
+    const currentIndex = currentCardIndex.value
+    const insertPos = calculateInsertPosition(currentIndex, result)
+
+    // 从当前位置移除卡片
+    const cards = [...reviewCards.value]
+    cards.splice(currentIndex, 1)
+
+    // 插入到新位置（如果超出队列长度，插入到末尾）
+    const actualInsertPos = Math.min(insertPos - 1, cards.length) // -1 因为已经移除了当前卡片
+    cards.splice(actualInsertPos, 0, card)
+
+    reviewCards.value = cards
+  }
+
+  // 处理索引
+  if (reviewCards.value.length === 0) {
+    void completeReview()
+  } else {
+    if (currentCardIndex.value >= reviewCards.value.length) {
+      currentCardIndex.value = 0
+    }
+    showAnswer.value = false
+  }
+
+  // 提交到后端，携带队列顺序
+  const queueIds = reviewCards.value.map((c) => c.id)
   void executeReview({
-    cardId: currentCard.value.id,
+    cardId,
     result,
     timeSpent: 5,
+    queue: queueIds.length > 0 ? queueIds : undefined,
   })
 }
 
