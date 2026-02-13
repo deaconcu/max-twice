@@ -43,14 +43,28 @@ export const DeckState = {
 export type DeckState = (typeof DeckState)[keyof typeof DeckState]
 
 /**
+ * 卡片状态类型
+ */
+export enum CardType {
+  NEW = 0, // 新卡片
+  LEARNING = 1, // 学习中
+  REVIEW = 2, // 复习
+  RELEARNING = 3, // 重新学习
+}
+
+/**
  * SRS 状态
  */
 export interface UserCardSRSState {
+  type?: CardType // 卡片状态
+  currentStep?: number // 当前学习/重学步骤索引
+  interval?: number // 复习间隔（LEARNING/RELEARNING 为分钟，REVIEW 为天）
   repetitions: number // 重复次数
-  intervalDays: number // 间隔天数
+  intervalDays: number // 间隔天数（兼容旧字段）
   easeFactor: number // 简易因子
   reviewDueAt: string // 下次复习时间
   lastReviewAt?: string // 上次复习时间
+  lapseCount?: number // 遗忘次数
 }
 
 /**
