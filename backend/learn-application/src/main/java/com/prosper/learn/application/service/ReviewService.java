@@ -3,6 +3,8 @@ package com.prosper.learn.application.service;
 import com.prosper.learn.application.converter.UserCardSrsConverter;
 import com.prosper.learn.application.dto.request.ReviewCardRequest;
 import com.prosper.learn.application.dto.response.ReviewStatsDTO;
+import com.prosper.learn.application.dto.response.ReviewSubmitResultDTO;
+import com.prosper.learn.application.dto.response.UserCardSrsDTO;
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.memory.card.MemoryCardDataService;
 import com.prosper.learn.memory.card.MemoryCardDO;
@@ -119,12 +121,14 @@ public class ReviewService {
     }
 
     /**
-     * 提交复习结果 - Anki 算法实现
+     * 提交复习结果
      *
-     * 同时保存前端传来的学习队列顺序到 Redis
+     * 后端维护队列，返回下一张卡片
+     *
+     * @return 下一张卡片和队列信息
      */
     @Transactional
-    public void submitReview(Long userId, ReviewCardRequest request) {
+    public ReviewSubmitResultDTO submitReview(Long userId, ReviewCardRequest request) {
         if (userId == null) {
             throw StatusCode.INVALID_PARAMETER.exception("用户ID不能为空");
         }
@@ -132,20 +136,113 @@ public class ReviewService {
             throw StatusCode.INVALID_PARAMETER.exception("请求参数不能为空");
         }
 
-        // 委托给 DomainService 处理复习逻辑
-        reviewDomainService.submitReview(userId, request.getCardId(), request.getResult());
+        Long cardId = request.getCardId();
+        int rating = request.getResult();
 
-        // 保存学习队列顺序到 Redis（如果前端传了队列）
-        if (request.getQueue() != null && !request.getQueue().isEmpty()) {
-            // 验证并过滤队列，防止恶意数据
-            List<Long> validQueue = learningQueueService.validateAndFilterQueue(userId, request.getQueue());
-            if (!validQueue.isEmpty()) {
-                learningQueueService.saveQueue(userId, validQueue);
-            } else {
-                // 队列为空，清除 Redis
-                learningQueueService.clearQueue(userId);
-            }
+        // 1. 处理 SRS 算法，返回更新后的状态
+        UserCardSrsDO updatedSrs = reviewDomainService.submitReview(userId, cardId, rating);
+
+        // 2. 根据新状态处理队列
+        boolean graduated = (updatedSrs.getType() == UserCardSrsDO.TYPE_REVIEW);
+
+        if (graduated) {
+            // 毕业：从队列移除
+            learningQueueService.removeFromQueue(userId, cardId);
+        } else {
+            // 未毕业：重排队列
+            learningQueueService.reorderQueue(userId, cardId, rating);
         }
+
+        // 3. 检查是否需要加载更多卡片
+        if (learningQueueService.needLoadMore(userId)) {
+            loadMoreCardsToQueue(userId);
+        }
+
+        // 4. 获取下一张卡片
+        Long nextCardId = learningQueueService.getFirstCardId(userId);
+        int queueSize = learningQueueService.getQueueSize(userId);
+
+        if (nextCardId == null) {
+            return ReviewSubmitResultDTO.empty();
+        }
+
+        // 加载下一张卡片的完整信息
+        MemoryCardDO nextCard = cardDataService.getById(nextCardId);
+        if (nextCard == null) {
+            return ReviewSubmitResultDTO.empty();
+        }
+
+        CardWithSrsDTO nextCardDto = memoryCardService.toCardViewWithSrs(nextCard, userId);
+
+        return ReviewSubmitResultDTO.of(nextCardDto, queueSize, 1);
+    }
+
+    /**
+     * 加载更多卡片到队列
+     */
+    private void loadMoreCardsToQueue(Long userId) {
+        // 获取当前队列中的卡片ID
+        List<Long> existingIds = learningQueueService.getQueue(userId);
+
+        // 每次加载 LOAD_THRESHOLD 张
+        int loadCount = LearningQueueService.LOAD_THRESHOLD;
+
+        // 从数据库查询更多到期卡片，排除已在队列中的
+        List<UserCardSrsDO> moreCards = reviewDomainService.getReviewQueueExcluding(
+            userId, existingIds, loadCount
+        );
+
+        if (!moreCards.isEmpty()) {
+            List<Long> newCardIds = moreCards.stream()
+                .map(UserCardSrsDO::getCardId)
+                .collect(Collectors.toList());
+            learningQueueService.loadMore(userId, newCardIds);
+        }
+    }
+
+    /**
+     * 获取当前待复习卡片（开始复习时调用）
+     *
+     * 初始化队列并返回第一张卡片
+     */
+    public ReviewSubmitResultDTO getCurrentCard(Long userId) {
+        if (userId == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("用户ID不能为空");
+        }
+
+        // 检查队列是否为空或需要初始化
+        List<Long> queue = learningQueueService.getQueue(userId);
+        if (queue.isEmpty()) {
+            // 从数据库加载到期卡片初始化队列
+            List<UserCardSrsDO> dueCards = reviewDomainService.getReviewQueue(
+                userId, true, null, LearningQueueService.LOAD_THRESHOLD, null
+            );
+
+            if (dueCards.isEmpty()) {
+                return ReviewSubmitResultDTO.empty();
+            }
+
+            List<Long> cardIds = dueCards.stream()
+                .map(UserCardSrsDO::getCardId)
+                .collect(Collectors.toList());
+            learningQueueService.initQueue(userId, cardIds);
+        }
+
+        // 获取第一张卡片
+        Long firstCardId = learningQueueService.getFirstCardId(userId);
+        int queueSize = learningQueueService.getQueueSize(userId);
+
+        if (firstCardId == null) {
+            return ReviewSubmitResultDTO.empty();
+        }
+
+        MemoryCardDO card = cardDataService.getById(firstCardId);
+        if (card == null) {
+            return ReviewSubmitResultDTO.empty();
+        }
+
+        CardWithSrsDTO cardDto = memoryCardService.toCardViewWithSrs(card, userId);
+        return ReviewSubmitResultDTO.of(cardDto, queueSize, 1);
     }
 
     /**

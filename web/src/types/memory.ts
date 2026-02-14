@@ -214,3 +214,12 @@ export interface ReviewStats {
   averageScore: number // 平均正确率
   timeSpent: number // 总学习时长(分钟)
 }
+
+/**
+ * 复习提交结果
+ */
+export interface ReviewSubmitResult {
+  nextCard: MemoryCardView | null // 下一张待复习卡片
+  queueSize: number // 队列剩余卡片数量
+  position: number // 当前位置
+}

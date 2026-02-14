@@ -13,6 +13,7 @@ import type {
   ReviewStats,
   DeckUpdateDiff,
   CardContentDiff,
+  ReviewSubmitResult,
 } from '@/types/memory'
 
 /**
@@ -68,14 +69,21 @@ export function getCardList(params: GetCardListParams): Promise<ApiResponse<Memo
 }
 
 /**
+ * 获取当前待复习卡片（开始复习时调用）
+ */
+export function getCurrentCard(): Promise<ApiResponse<ReviewSubmitResult>> {
+  return client.get('/v1/memory/review/current')
+}
+
+/**
  * 提交卡片复习结果
+ * @returns 下一张卡片和队列信息
  */
 export function reviewCard(params: {
   cardId: number
   result: ReviewResult
   timeSpent: number
-  queue?: number[] // 当前学习队列（卡片ID列表）
-}): Promise<ApiResponse<void>> {
+}): Promise<ApiResponse<ReviewSubmitResult>> {
   return client.post('/v1/memory/review/submit', params)
 }
 

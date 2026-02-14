@@ -56,6 +56,18 @@ public class ReviewDomainService {
     }
 
     /**
+     * 获取复习队列，排除指定卡片
+     *
+     * @param userId 用户ID
+     * @param excludeCardIds 要排除的卡片ID列表
+     * @param limit 数量限制
+     * @return SRS 状态列表
+     */
+    public List<UserCardSrsDO> getReviewQueueExcluding(Long userId, List<Long> excludeCardIds, int limit) {
+        return srsStateDataService.getReviewQueueExcluding(userId, excludeCardIds, limit);
+    }
+
+    /**
      * 获取复习统计
      *
      * @param userId 用户ID
@@ -80,9 +92,10 @@ public class ReviewDomainService {
      * @param userId 用户ID
      * @param cardId 卡片ID
      * @param rating 评级（1-4）
+     * @return 更新后的 SRS 状态
      */
     @Transactional
-    public void submitReview(Long userId, Long cardId, int rating) {
+    public UserCardSrsDO submitReview(Long userId, Long cardId, int rating) {
         // 获取SRS状态
         UserCardSrsDO card = srsStateDataService.getByUserAndCard(userId, cardId);
         if (card == null) {
@@ -116,6 +129,8 @@ public class ReviewDomainService {
 
         log.info("Submitted review for user: {} card: {} type: {} rating: {} nextDue: {}",
             userId, cardId, card.getType(), rating, card.getReviewDueAt());
+
+        return card;
     }
 
     // ========== Anki 算法核心实现 ==========

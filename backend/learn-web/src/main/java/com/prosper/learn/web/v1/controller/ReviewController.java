@@ -3,6 +3,7 @@ package com.prosper.learn.web.v1.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.dto.request.ReviewCardRequest;
 import com.prosper.learn.application.dto.request.ReviewSessionRequest;
+import com.prosper.learn.application.dto.response.ReviewSubmitResultDTO;
 import com.prosper.learn.application.dto.response.ReviewStatsDTO;
 import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.application.service.ReviewService;
@@ -66,16 +67,27 @@ public class ReviewController {
     }
 
     /**
+     * 获取当前待复习卡片（开始复习时调用）
+     */
+    @GetMapping("/current")
+    @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<ReviewSubmitResultDTO> getCurrentCard(@CurrentUser UserDO currentUser) {
+        ReviewSubmitResultDTO result = reviewService.getCurrentCard(currentUser.getId());
+        return ApiResponse.success(result);
+    }
+
+    /**
      * 提交复习结果
      */
     @PostMapping("/submit")
     @SaCheckLogin
     @RateLimit(capacity = 60, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<Void> submitReview(
+    public ApiResponse<ReviewSubmitResultDTO> submitReview(
             @Valid @RequestBody ReviewCardRequest request,
             @CurrentUser UserDO currentUser) {
-        reviewService.submitReview(currentUser.getId(), request);
-        return ApiResponse.success();
+        ReviewSubmitResultDTO result = reviewService.submitReview(currentUser.getId(), request);
+        return ApiResponse.success(result);
     }
 
     /**

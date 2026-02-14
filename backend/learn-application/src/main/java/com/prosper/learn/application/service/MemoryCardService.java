@@ -227,6 +227,17 @@ public class MemoryCardService {
         return toCardViewWithSrs(cardDOList, srsStateMap, userId);
     }
 
+    /**
+     * 单张卡片转换为包含SRS状态的DTO
+     */
+    public CardWithSrsDTO toCardViewWithSrs(MemoryCardDO cardDO, Long userId) {
+        if (cardDO == null) {
+            return null;
+        }
+        List<CardWithSrsDTO> result = toCardViewWithSrs(List.of(cardDO), userId);
+        return result.isEmpty() ? null : result.get(0);
+    }
+
 
     // ========== 业务方法(Query) ==========
 

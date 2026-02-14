@@ -332,6 +332,18 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
     }
 
     /**
+     * 获取复习队列，排除指定卡片
+     *
+     * @param userId 用户ID
+     * @param excludeCardIds 要排除的卡片ID列表
+     * @param limit 数量限制
+     * @return SRS 状态列表
+     */
+    public List<UserCardSrsDO> getReviewQueueExcluding(long userId, List<Long> excludeCardIds, int limit) {
+        return userCardSrsMapper.getDueCardsExcluding(userId, LocalDateTime.now(), excludeCardIds, limit);
+    }
+
+    /**
      * 统计指定时间段内的复习次数
      */
     public long countReviewsInPeriod(long userId, LocalDateTime startTime, LocalDateTime endTime) {

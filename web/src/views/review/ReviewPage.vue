@@ -229,10 +229,10 @@
         <!-- 复习模式 -->
         <div v-if="viewMode === 'review'">
           <!-- 加载状态 -->
-          <LoadingSpinner v-if="loading" />
+          <LoadingSpinner v-if="reviewLoading" />
 
           <!-- 空队列状态 -->
-          <div v-else-if="!isReviewing && reviewCards.length === 0" class="text-center">
+          <div v-else-if="!isReviewing && totalDueCards === 0" class="text-center">
             <v-card rounded="lg" class="pa-8" elevation="0">
               <v-icon icon="mdi-check-circle" size="64" color="success" class="mb-4"></v-icon>
               <h3 class="text-h5 font-weight-bold text-grey-darken-2 mb-2">
@@ -276,14 +276,11 @@
             <v-card rounded="lg" class="mb-0 py-1 pb-2 no-border">
               <div class="d-flex align-center justify-space-between">
                 <span class="text-caption text-grey-darken-1">
-                  {{
-                    t('review.cardProgress', {
-                      current: currentCardIndex + 1,
-                      total: reviewCards.length,
-                    })
-                  }}
+                  {{ t('review.remaining', { count: queueSize }) }}
                 </span>
-                <span class="text-caption text-grey-darken-1">{{ reviewProgress }}%</span>
+                <span v-if="submitting" class="text-caption text-grey-darken-1">
+                  {{ t('review.submitting') }}
+                </span>
               </div>
             </v-card>
 
@@ -401,7 +398,7 @@
                 {{ t('review.stopReview') }}
               </v-btn>
 
-              <v-btn variant="text" rounded="lg" :disabled="!showAnswer" @click="skipCard">
+              <v-btn variant="text" rounded="lg" disabled @click="skipCard">
                 {{ t('review.skip') }}
                 <v-icon icon="mdi-skip-next" class="ml-2"></v-icon>
               </v-btn>
@@ -426,6 +423,7 @@
                   color="primary"
                   variant="tonal"
                   rounded="lg"
+                  disabled
                   :size="$vuetify.display.mobile ? 'small' : 'default'"
                   @click="reviewSelectedCards"
                 >
@@ -822,7 +820,7 @@ import type {
   ReviewStats,
   CourseStudyStatus,
 } from '@/types/memory'
-import { ReviewResult, FrequencySetting, CourseStudyStatus as Status, CardType } from '@/types/memory'
+import { ReviewResult, FrequencySetting, CourseStudyStatus as Status } from '@/types/memory'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
@@ -833,9 +831,13 @@ const activeTab = ref<string>('all')
 const viewMode = ref<'review' | 'list' | 'manage'>('review')
 const isReviewing = ref(false)
 const showAnswer = ref(false)
-const currentCardIndex = ref(0)
 const selectedCards = ref<number[]>([])
 const expansionPanel = ref<number[]>([]) // 控制展开面板状态
+
+// 当前卡片和队列信息（由后端维护）
+const currentCard = ref<MemoryCardView | null>(null)
+const queueSize = ref(0)
+const reviewLoading = ref(false)
 
 // 动态卡片高度
 const cardHeight = ref(800)
@@ -855,27 +857,8 @@ const stats = ref<ReviewStats>({
 })
 
 // 使用 useFetch 加载记忆库课程
-const {
-  data: courseMemoryBanks,
-  loading: _loadingCourses,
-  refresh: refreshCourses,
-} = useFetch<CourseMemoryBank[]>({
+const { data: courseMemoryBanks, refresh: refreshCourses } = useFetch<CourseMemoryBank[]>({
   fetchFn: memoryApi.getMemoryBankCourses,
-  immediate: true,
-  defaultValue: [],
-})
-
-// 使用 useFetch 加载复习队列
-const {
-  data: reviewCards,
-  loading,
-  refresh: refreshReviewQueue,
-} = useFetch<MemoryCardView[]>({
-  fetchFn: async () => {
-    return memoryApi.getReviewQueue({
-      courseId: selectedCourse.value?.course.id,
-    })
-  },
   immediate: true,
   defaultValue: [],
 })
@@ -889,18 +872,6 @@ const selectedCourse = computed(() => {
   if (activeTab.value === 'all') return null
   const courseId = parseInt(activeTab.value)
   return courseMemoryBanks.value.find((bank) => bank.course.id === courseId)
-})
-
-const currentCard = computed(() => {
-  if (reviewCards.value.length === 0 || currentCardIndex.value >= reviewCards.value.length) {
-    return null
-  }
-  return reviewCards.value[currentCardIndex.value]
-})
-
-const reviewProgress = computed(() => {
-  if (reviewCards.value.length === 0) return 0
-  return Math.round((currentCardIndex.value / reviewCards.value.length) * 100)
 })
 
 const frequencyOptions = computed(() => [
@@ -922,7 +893,7 @@ const switchTab = (tabValue: string) => {
 
   if (viewMode.value === 'review') {
     resetReview()
-    void refreshReviewQueue()
+    // 切换课程时重置复习状态，用户需要点击开始复习按钮
   } else if (viewMode.value === 'list') {
     listLastId.value = undefined
     listHasMore.value = true
@@ -940,16 +911,28 @@ const switchViewMode = (mode: 'review' | 'list' | 'manage') => {
   }
 }
 
-const startReview = () => {
-  if (reviewCards.value.length === 0) return
-  isReviewing.value = true
-  currentCardIndex.value = 0
-  showAnswer.value = false
+const startReview = async () => {
+  if (totalDueCards.value === 0) return
+  reviewLoading.value = true
+  try {
+    const response = await memoryApi.getCurrentCard()
+    if (response.code === 200 && response.data) {
+      currentCard.value = response.data.nextCard
+      queueSize.value = response.data.queueSize
+      if (currentCard.value) {
+        isReviewing.value = true
+        showAnswer.value = false
+      }
+    }
+  } finally {
+    reviewLoading.value = false
+  }
 }
 
 const resetReview = () => {
   isReviewing.value = false
-  currentCardIndex.value = 0
+  currentCard.value = null
+  queueSize.value = 0
   showAnswer.value = false
 }
 
@@ -958,121 +941,48 @@ const revealAnswer = () => {
 }
 
 const skipCard = () => {
-  if (currentCardIndex.value < reviewCards.value.length - 1) {
-    currentCardIndex.value++
-    showAnswer.value = false
-  }
-}
-
-// LEARNING 阶段的插入间隔配置
-const QUEUE_INSERT_OFFSET = {
-  AGAIN: 3, // 忘记：插入到 3 张后
-  HARD: 5, // 困难：插入到 5 张后
-  GOOD: 8, // 良好：插入到 8 张后
-}
-
-// 判断卡片是否应该毕业（从队列移除）
-const shouldGraduate = (card: MemoryCardView, result: ReviewResult): boolean => {
-  // 简单：直接毕业
-  if (result === ReviewResult.EASY) {
-    return true
-  }
-
-  // REVIEW 状态的卡片，任何非忘记操作都保持在 REVIEW，直接移除
-  if (card.srsState?.type === CardType.REVIEW) {
-    return result !== ReviewResult.AGAIN
-  }
-
-  // LEARNING/RELEARNING 状态，良好且已经是最后一步（currentStep >= 1）才毕业
-  if (result === ReviewResult.GOOD) {
-    const currentStep = card.srsState?.currentStep ?? 0
-    // 默认 learningSteps = [10, 60]，需要 2 次良好才毕业
-    return currentStep >= 1
-  }
-
-  return false
-}
-
-// 计算插入位置
-const calculateInsertPosition = (currentIndex: number, result: ReviewResult): number => {
-  let offset = QUEUE_INSERT_OFFSET.AGAIN
-  if (result === ReviewResult.HARD) {
-    offset = QUEUE_INSERT_OFFSET.HARD
-  } else if (result === ReviewResult.GOOD) {
-    offset = QUEUE_INSERT_OFFSET.GOOD
-  }
-  return currentIndex + offset
+  // 后端维护队列，跳过功能暂不支持
 }
 
 // 提交复习
-const { execute: executeReview } = useMutation(
-  (params: { cardId: number; result: ReviewResult; timeSpent: number; queue?: number[] }) => {
+const { execute: executeReview, loading: submitting } = useMutation(
+  (params: { cardId: number; result: ReviewResult; timeSpent: number }) => {
     return memoryApi.reviewCard(params)
   },
   {
     showToast: false,
-    onSuccess: () => {
-      // 不在这里处理队列，因为 submitReview 已经处理好了
+    onSuccess: (result) => {
+      if (!result) return
+
+      // 后端返回下一张卡片
+      currentCard.value = result.nextCard
+      queueSize.value = result.queueSize
+
+      if (!currentCard.value) {
+        // 队列已空，复习完成
+        void completeReview()
+      } else {
+        showAnswer.value = false
+      }
     },
   }
 )
 
 const submitReview = (result: ReviewResult) => {
-  if (!currentCard.value) return
+  if (!currentCard.value || submitting.value) return
 
-  const card = currentCard.value
-  const cardId = card.id
-
-  // 判断是否毕业
-  if (shouldGraduate(card, result)) {
-    // 毕业：从队列移除
-    reviewCards.value = reviewCards.value.filter((c) => c.id !== cardId)
-  } else {
-    // 未毕业：计算插入位置，重新排列队列
-    const currentIndex = currentCardIndex.value
-    const insertPos = calculateInsertPosition(currentIndex, result)
-
-    // 从当前位置移除卡片
-    const cards = [...reviewCards.value]
-    cards.splice(currentIndex, 1)
-
-    // 插入到新位置（如果超出队列长度，插入到末尾）
-    const actualInsertPos = Math.min(insertPos - 1, cards.length) // -1 因为已经移除了当前卡片
-    cards.splice(actualInsertPos, 0, card)
-
-    reviewCards.value = cards
-  }
-
-  // 处理索引
-  if (reviewCards.value.length === 0) {
-    void completeReview()
-  } else {
-    if (currentCardIndex.value >= reviewCards.value.length) {
-      currentCardIndex.value = 0
-    }
-    showAnswer.value = false
-  }
-
-  // 提交到后端，携带队列顺序
-  const queueIds = reviewCards.value.map((c) => c.id)
   void executeReview({
-    cardId,
+    cardId: currentCard.value.id,
     result,
     timeSpent: 5,
-    queue: queueIds.length > 0 ? queueIds : undefined,
   })
 }
 
 const completeReview = async () => {
   isReviewing.value = false
-  await refreshReviewQueue()
+  currentCard.value = null
+  queueSize.value = 0
   await refreshCourses()
-
-  if (reviewCards.value.length > 0) {
-    setTimeout(() => {
-      startReview()
-    }, 1000)
-  }
 }
 
 // 列表卡片
@@ -1137,7 +1047,7 @@ const { execute: executeDelete } = useMutation(memoryApi.deleteCards, {
   onSuccess: () => {
     listCards.value = listCards.value.filter((card) => !selectedCards.value.includes(card.id))
     selectedCards.value = []
-    void refreshReviewQueue()
+    void refreshCourses() // 刷新课程列表以更新待复习数量
   },
 })
 
@@ -1150,7 +1060,7 @@ const { execute: executeReset } = useMutation(memoryApi.resetCardProgress, {
   successMessage: t('review.resetSuccess'),
   onSuccess: () => {
     selectedCards.value = []
-    void refreshReviewQueue()
+    void refreshCourses() // 刷新课程列表以更新待复习数量
     if (viewMode.value === 'list') {
       void loadListCards(true)
     }
@@ -1163,10 +1073,7 @@ const resetSelectedCards = () => {
 }
 
 const reviewSelectedCards = () => {
-  if (selectedCards.value.length === 0) return
-  reviewCards.value = listCards.value.filter((card) => selectedCards.value.includes(card.id))
-  viewMode.value = 'review'
-  startReview()
+  // TODO: 后端暂不支持按指定卡片列表复习
 }
 
 // 更新课程设置
