@@ -637,9 +637,12 @@
               {{ selectedCourse.course.name }} - {{ t('review.reviewSettings') }}
             </h3>
 
-            <div class="d-flex flex-column ga-4">
-              <div class="d-flex align-center">
-                <span class="text-body-2 text-grey-darken-2" style="min-width: 100px">{{
+            <div
+              class="pa-3 pa-sm-4 rounded-lg mb-4"
+              style="background-color: rgb(var(--v-theme-surface))"
+            >
+              <div class="d-flex justify-space-between align-center mb-3">
+                <span class="text-body-2 text-grey-darken-2">{{
                   t('review.reviewFrequency')
                 }}</span>
                 <v-select
@@ -648,13 +651,13 @@
                   variant="outlined"
                   rounded="lg"
                   hide-details
-                  :density="$vuetify.display.mobile ? 'comfortable' : 'default'"
-                  style="max-width: 200px"
+                  density="compact"
+                  style="max-width: 160px"
                 ></v-select>
               </div>
 
-              <div class="d-flex align-center">
-                <span class="text-body-2 text-grey-darken-2" style="min-width: 100px">{{
+              <div class="d-flex justify-space-between align-center mb-3">
+                <span class="text-body-2 text-grey-darken-2">{{
                   t('review.learningStatus')
                 }}</span>
                 <v-select
@@ -663,13 +666,13 @@
                   variant="outlined"
                   rounded="lg"
                   hide-details
-                  :density="$vuetify.display.mobile ? 'comfortable' : 'default'"
-                  style="max-width: 200px"
+                  density="compact"
+                  style="max-width: 160px"
                 ></v-select>
               </div>
 
-              <div class="d-flex align-center">
-                <span class="text-body-2 text-grey-darken-2" style="min-width: 100px">{{
+              <div class="d-flex justify-space-between align-center">
+                <span class="text-body-2 text-grey-darken-2">{{
                   t('review.cardOrder')
                 }}</span>
                 <v-select
@@ -678,18 +681,17 @@
                   variant="outlined"
                   rounded="lg"
                   hide-details
-                  :density="$vuetify.display.mobile ? 'comfortable' : 'default'"
-                  style="max-width: 200px"
+                  density="compact"
+                  style="max-width: 160px"
                 ></v-select>
               </div>
             </div>
 
-            <div class="mt-6 d-flex flex-column flex-sm-row ga-3">
+            <div class="d-flex ga-3">
               <v-btn
                 color="primary"
                 variant="flat"
                 rounded="lg"
-                :size="$vuetify.display.mobile ? 'default' : 'large'"
                 @click="updateCourseSetting"
               >
                 {{ t('common.saveSettings') }}
@@ -698,7 +700,6 @@
                 color="error"
                 variant="outlined"
                 rounded="lg"
-                :size="$vuetify.display.mobile ? 'default' : 'large'"
                 @click="removeCourse"
               >
                 {{ t('review.removeCourse') }}
