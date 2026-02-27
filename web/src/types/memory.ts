@@ -16,18 +16,18 @@ export enum ReviewResult {
  * 复习频率设置
  */
 export enum FrequencySetting {
-  HIGH = 'HIGH', // 高频
-  NORMAL = 'NORMAL', // 普通
-  LOW = 'LOW', // 低频
+  HIGH = 1, // 高频
+  NORMAL = 2, // 普通
+  LOW = 3, // 低频
 }
 
 /**
  * 课程学习状态
  */
 export enum CourseStudyStatus {
-  STUDYING = 'STUDYING', // 学习中
-  PAUSED = 'PAUSED', // 已暂停
-  ARCHIVED = 'ARCHIVED', // 已归档
+  STUDYING = 1, // 学习中
+  PAUSED = 2, // 已暂停
+  ARCHIVED = 3, // 已归档
 }
 
 /**
