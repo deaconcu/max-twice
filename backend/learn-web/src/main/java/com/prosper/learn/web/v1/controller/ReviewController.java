@@ -2,10 +2,8 @@ package com.prosper.learn.web.v1.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.dto.request.ReviewCardRequest;
-import com.prosper.learn.application.dto.request.ReviewSessionRequest;
 import com.prosper.learn.application.dto.response.ReviewSubmitResultDTO;
 import com.prosper.learn.application.dto.response.ReviewStatsDTO;
-import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.application.service.ReviewService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.user.profile.UserDO;
@@ -20,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -36,49 +33,21 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     /**
-     * 获取复习队列 - 只查询到期的卡片，限制20个
+     * 获取下一张待复习卡片
      */
-    @GetMapping("/queue")
+    @GetMapping("/next")
     @SaCheckLogin
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<List<CardWithSrsDTO>> getReviewQueue(
+    public ApiResponse<ReviewSubmitResultDTO> getNextCard(
             @RequestParam(required = false) @Positive(message = "课程ID必须大于0") Long courseId,
             @CurrentUser UserDO currentUser) {
 
-        // 固定参数：只查询到期的，限制20个
-        List<CardWithSrsDTO> result = reviewService.getReviewQueue(currentUser.getId(), true, courseId, 20, null);
+        ReviewSubmitResultDTO result = reviewService.getNextCard(currentUser.getId(), courseId);
         return ApiResponse.success(result);
     }
 
     /**
-     * 获取卡片列表 - 支持分页查询全部卡片
-     */
-    @GetMapping("/cards")
-    @SaCheckLogin
-    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<List<CardWithSrsDTO>> getCardList(
-            @RequestParam(required = false) @Positive(message = "课程ID必须大于0") Long courseId,
-            @RequestParam(required = false) @Positive(message = "最后ID必须大于0") Long lastId,
-            @CurrentUser UserDO currentUser) {
-
-        // 固定参数：查询全部卡片（不限制到期），每次返回20个
-        List<CardWithSrsDTO> result = reviewService.getReviewQueue(currentUser.getId(), false, courseId, 20, lastId);
-        return ApiResponse.success(result);
-    }
-
-    /**
-     * 获取当前待复习卡片（开始复习时调用）
-     */
-    @GetMapping("/current")
-    @SaCheckLogin
-    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<ReviewSubmitResultDTO> getCurrentCard(@CurrentUser UserDO currentUser) {
-        ReviewSubmitResultDTO result = reviewService.getCurrentCard(currentUser.getId());
-        return ApiResponse.success(result);
-    }
-
-    /**
-     * 提交复习结果
+     * 提交复习结果并返回下一张卡片
      */
     @PostMapping("/submit")
     @SaCheckLogin

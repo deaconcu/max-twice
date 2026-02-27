@@ -16,4 +16,9 @@ public class UpdateCourseSettingRequest {
 
     private Integer status;
 
+    /**
+     * 卡片顺序：0=先复习后新卡，1=先新卡后复习
+     */
+    private Integer cardOrder;
+
 }

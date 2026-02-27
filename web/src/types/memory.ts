@@ -58,7 +58,8 @@ export enum CardType {
 export interface UserCardSRSState {
   type?: CardType // 卡片状态
   currentStep?: number // 当前学习/重学步骤索引
-  interval?: number // 复习间隔（LEARNING/RELEARNING 为分钟，REVIEW 为天）
+  interval?: number // REVIEW阶段的复习间隔（天）
+  reappearAt?: number // LEARNING/RELEARNING的下次再现计数
   repetitions: number // 重复次数
   intervalDays: number // 间隔天数（兼容旧字段）
   easeFactor: number // 简易因子
@@ -124,6 +125,14 @@ export interface DeckDetail extends MemoryCardDeck {
 }
 
 /**
+ * 卡片顺序枚举
+ */
+export enum CardOrder {
+  REVIEW_FIRST = 0, // 先复习后新卡
+  NEW_FIRST = 1, // 先新卡后复习
+}
+
+/**
  * 课程记忆库
  */
 export interface CourseMemoryBank {
@@ -143,6 +152,7 @@ export interface CourseMemorySetting {
   courseId: number
   status: CourseStudyStatus // 学习状态
   frequencySetting: FrequencySetting // 复习频率
+  cardOrder: CardOrder // 卡片顺序
 }
 
 /**
@@ -220,6 +230,4 @@ export interface ReviewStats {
  */
 export interface ReviewSubmitResult {
   nextCard: MemoryCardView | null // 下一张待复习卡片
-  queueSize: number // 队列剩余卡片数量
-  position: number // 当前位置
 }

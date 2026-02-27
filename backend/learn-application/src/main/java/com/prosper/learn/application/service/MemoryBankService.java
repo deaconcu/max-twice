@@ -193,7 +193,7 @@ public class MemoryBankService {
      *
      * @param userId 用户ID
      * @param courseId 课程ID
-     * @param request 更新请求，包含 frequencySetting 和/或 status
+     * @param request 更新请求，包含 frequencySetting、status 和/或 cardOrder
      */
     @Transactional
     public void updateCourseSetting(Long userId, Long courseId, UpdateCourseSettingRequest request) {
@@ -209,7 +209,8 @@ public class MemoryBankService {
             userId,
             courseId,
             request.getFrequencySetting(),
-            request.getStatus() != null ? request.getStatus().byteValue() : null
+            request.getStatus() != null ? request.getStatus().byteValue() : null,
+            request.getCardOrder() != null ? request.getCardOrder().byteValue() : null
         );
     }
 

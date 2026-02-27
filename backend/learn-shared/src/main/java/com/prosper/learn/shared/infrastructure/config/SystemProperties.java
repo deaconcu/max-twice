@@ -639,16 +639,11 @@ public class SystemProperties {
         @Data
         public static class Algorithm {
             /**
-             * 学习步骤(分钟)
-             * 新卡片的学习步骤，默认[10, 60]表示第一步10分钟后，第二步60分钟后
+             * 卡片间隔数组
+             * LEARNING/RELEARNING 阶段共用，表示每个步骤需要间隔多少张卡片
+             * 默认 [3, 8] 表示 Step 0 间隔 3 张，Step 1 间隔 8 张
              */
-            private int[] learningSteps = {10, 60};
-
-            /**
-             * 重学步骤(分钟)
-             * 遗忘卡的重新学习步骤，默认[20]表示20分钟后
-             */
-            private int[] relearningSteps = {20};
+            private int[] cardGaps = {3, 8};
 
             /**
              * 毕业间隔(天)

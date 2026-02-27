@@ -758,6 +758,35 @@ public class Enums {
     }
 
     /**
+     * 卡片顺序枚举
+     * REVIEW_FIRST=0 先复习后新卡（默认）
+     * NEW_FIRST=1 先新卡后复习
+     */
+    public enum CardOrder implements ValueEnum<Byte> {
+        REVIEW_FIRST((byte) 0),   // 先复习后新卡
+        NEW_FIRST((byte) 1);      // 先新卡后复习
+
+        private final byte value;
+
+        CardOrder(byte value) {
+            this.value = value;
+        }
+
+        @Override
+        public Byte value() {
+            return value;
+        }
+
+        public static CardOrder getByValue(Byte value) {
+            return value == null ? REVIEW_FIRST : ValueEnum.getByValue(CardOrder.class, value);
+        }
+
+        public static boolean isValid(int value) {
+            return ValueEnum.isValid(CardOrder.class, (byte)value);
+        }
+    }
+
+    /**
      * 复习结果枚举
      * FAILED=0, HARD=1, GOOD=2, EASY=3
      */

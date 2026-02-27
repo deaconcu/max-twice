@@ -473,10 +473,37 @@ public class UserCardSrsDataService extends AbstractDataService<UserCardSrsDO, U
             log.debug("Batch deleted {} SRS states for user: {}", result, userId);
             return result;
         } catch (Exception e) {
-            log.error("Error batch deleting SRS states: userId={}, cardCount={}", 
+            log.error("Error batch deleting SRS states: userId={}, cardCount={}",
                      userId, cardIds.size(), e);
             throw StatusCode.DATABASE_ERROR.exception(e);
         }
+    }
+
+    // ========== 新的复习逻辑：基于卡片计数的调度 ==========
+
+    /**
+     * 获取下一张待复习卡片（全部课程）
+     *
+     * @param userId 用户ID
+     * @param reviewCardCount 用户当前的复习卡片计数
+     * @param newFirst true=先新卡后复习，false=先复习后新卡
+     * @return 下一张卡片的SRS状态，无卡片时返回null
+     */
+    public UserCardSrsDO getNextCard(long userId, long reviewCardCount, boolean newFirst) {
+        return userCardSrsMapper.getNextCard(userId, reviewCardCount, newFirst);
+    }
+
+    /**
+     * 获取下一张待复习卡片（指定课程）
+     *
+     * @param userId 用户ID
+     * @param courseId 课程ID
+     * @param reviewCardCount 用户当前的复习卡片计数
+     * @param newFirst true=先新卡后复习，false=先复习后新卡
+     * @return 下一张卡片的SRS状态，无卡片时返回null
+     */
+    public UserCardSrsDO getNextCardByCourse(long userId, long courseId, long reviewCardCount, boolean newFirst) {
+        return userCardSrsMapper.getNextCardByCourse(userId, courseId, reviewCardCount, newFirst);
     }
 
 }

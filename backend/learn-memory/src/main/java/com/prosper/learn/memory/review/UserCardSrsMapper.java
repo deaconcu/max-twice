@@ -82,17 +82,17 @@ public interface UserCardSrsMapper {
 
     @Insert("INSERT INTO user_card_srs " +
             "(user_id, card_id, node_id, deck_id, deck_version, card_version_id, review_due_at, last_reviewed_at, " +
-            "type, current_step, `interval`, lapse_old_interval, ease_factor, repetitions, lapse_count, created_at, updated_at) " +
+            "type, current_step, `interval`, reappear_at, lapse_old_interval, ease_factor, repetitions, lapse_count, created_at, updated_at) " +
             "VALUES " +
             "(#{userId}, #{cardId}, #{nodeId}, #{deckId}, #{deckVersion}, #{cardVersionId}, #{reviewDueAt}, #{lastReviewedAt}, " +
-            "#{type}, #{currentStep}, #{interval}, #{lapseOldInterval}, #{easeFactor}, #{repetitions}, #{lapseCount}, NOW(), NOW())")
+            "#{type}, #{currentStep}, #{interval}, #{reappearAt}, #{lapseOldInterval}, #{easeFactor}, #{repetitions}, #{lapseCount}, NOW(), NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(UserCardSrsDO state);
 
     @Update("UPDATE user_card_srs SET " +
             "node_id = #{nodeId}, deck_id = #{deckId}, deck_version = #{deckVersion}, card_version_id = #{cardVersionId}, " +
             "review_due_at = #{reviewDueAt}, last_reviewed_at = #{lastReviewedAt}, " +
-            "type = #{type}, current_step = #{currentStep}, `interval` = #{interval}, lapse_old_interval = #{lapseOldInterval}, " +
+            "type = #{type}, current_step = #{currentStep}, `interval` = #{interval}, reappear_at = #{reappearAt}, lapse_old_interval = #{lapseOldInterval}, " +
             "ease_factor = #{easeFactor}, repetitions = #{repetitions}, lapse_count = #{lapseCount}, " +
             "updated_at = #{updatedAt} " +
             "WHERE id = #{id}")
@@ -164,11 +164,11 @@ public interface UserCardSrsMapper {
           <script>
           INSERT IGNORE INTO user_card_srs
           (user_id, card_id, node_id, deck_id, deck_version, card_version_id, review_due_at,
-           type, current_step, `interval`, lapse_old_interval, ease_factor, repetitions, lapse_count, created_at, updated_at)
+           type, current_step, `interval`, reappear_at, lapse_old_interval, ease_factor, repetitions, lapse_count, created_at, updated_at)
           VALUES
           <foreach collection="states" item="state" separator=",">
               (#{state.userId}, #{state.cardId}, #{state.nodeId}, #{state.deckId}, #{state.deckVersion}, #{state.cardVersionId},
-               #{state.reviewDueAt}, #{state.type}, #{state.currentStep}, #{state.interval}, #{state.lapseOldInterval},
+               #{state.reviewDueAt}, #{state.type}, #{state.currentStep}, #{state.interval}, #{state.reappearAt}, #{state.lapseOldInterval},
                #{state.easeFactor}, #{state.repetitions}, #{state.lapseCount}, NOW(), NOW())
           </foreach>
           </script>
@@ -352,5 +352,78 @@ public interface UserCardSrsMapper {
                                               @Param("dueTime") LocalDateTime dueTime,
                                               @Param("excludeCardIds") List<Long> excludeCardIds,
                                               @Param("limit") int limit);
+
+    // ========== 新的复习逻辑：基于卡片计数的调度 ==========
+
+    /**
+     * 获取下一张待复习卡片（全部课程）
+     * 优先级：
+     * 1. LEARNING/RELEARNING 且 reappear_at <= reviewCardCount
+     * 2. REVIEW 或 NEW（根据 newFirst 参数决定顺序）
+     * 3. LEARNING/RELEARNING 未到计数（兜底）
+     *
+     * @param newFirst true=先新卡后复习，false=先复习后新卡
+     */
+    @Select({"<script>",
+            "SELECT srs.* FROM user_card_srs srs",
+            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
+            "WHERE srs.user_id = #{userId}",
+            "AND deck.state = " + ContentState.PUBLISHED_VALUE,
+            "ORDER BY",
+            "  CASE",
+            "    WHEN srs.type IN (1, 3) AND srs.reappear_at &lt;= #{reviewCardCount} THEN 0",
+            "    <if test='newFirst'>",
+            "    WHEN srs.type = 0 THEN 1",
+            "    WHEN srs.type = 2 AND srs.review_due_at &lt;= NOW() THEN 2",
+            "    </if>",
+            "    <if test='!newFirst'>",
+            "    WHEN srs.type = 2 AND srs.review_due_at &lt;= NOW() THEN 1",
+            "    WHEN srs.type = 0 THEN 2",
+            "    </if>",
+            "    WHEN srs.type IN (1, 3) THEN 3",
+            "    ELSE 4",
+            "  END,",
+            "  srs.reappear_at ASC,",
+            "  srs.review_due_at ASC,",
+            "  srs.id ASC",
+            "LIMIT 1",
+            "</script>"})
+    UserCardSrsDO getNextCard(@Param("userId") long userId,
+                              @Param("reviewCardCount") long reviewCardCount,
+                              @Param("newFirst") boolean newFirst);
+
+    /**
+     * 获取下一张待复习卡片（指定课程）
+     */
+    @Select({"<script>",
+            "SELECT srs.* FROM user_card_srs srs",
+            "INNER JOIN user_card_in_course ucc ON srs.card_id = ucc.card_id AND srs.user_id = ucc.user_id",
+            "INNER JOIN memory_card_deck deck ON srs.deck_id = deck.id",
+            "WHERE srs.user_id = #{userId}",
+            "AND ucc.course_id = #{courseId}",
+            "AND deck.state = " + ContentState.PUBLISHED_VALUE,
+            "ORDER BY",
+            "  CASE",
+            "    WHEN srs.type IN (1, 3) AND srs.reappear_at &lt;= #{reviewCardCount} THEN 0",
+            "    <if test='newFirst'>",
+            "    WHEN srs.type = 0 THEN 1",
+            "    WHEN srs.type = 2 AND srs.review_due_at &lt;= NOW() THEN 2",
+            "    </if>",
+            "    <if test='!newFirst'>",
+            "    WHEN srs.type = 2 AND srs.review_due_at &lt;= NOW() THEN 1",
+            "    WHEN srs.type = 0 THEN 2",
+            "    </if>",
+            "    WHEN srs.type IN (1, 3) THEN 3",
+            "    ELSE 4",
+            "  END,",
+            "  srs.reappear_at ASC,",
+            "  srs.review_due_at ASC,",
+            "  srs.id ASC",
+            "LIMIT 1",
+            "</script>"})
+    UserCardSrsDO getNextCardByCourse(@Param("userId") long userId,
+                                       @Param("courseId") long courseId,
+                                       @Param("reviewCardCount") long reviewCardCount,
+                                       @Param("newFirst") boolean newFirst);
 
 }

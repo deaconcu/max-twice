@@ -111,10 +111,11 @@ public class MemoryBankDomainService {
      * @param courseId 课程ID
      * @param frequencySetting 频率设置（可选）
      * @param state 状态（可选）
+     * @param cardOrder 卡片顺序（可选）
      */
     @Transactional
     public void updateCourseSetting(Long userId, Long courseId,
-                                     Integer frequencySetting, Byte state) {
+                                     Integer frequencySetting, Byte state, Byte cardOrder) {
         // 获取现有设置
         UserCourseSrsSettingDO existingSetting = courseSrsSettingDataService.getByUserAndCourse(userId, courseId);
         if (existingSetting == null) {
@@ -127,6 +128,9 @@ public class MemoryBankDomainService {
         }
         if (state != null) {
             existingSetting.setState(state);
+        }
+        if (cardOrder != null) {
+            existingSetting.setCardOrder(cardOrder);
         }
         existingSetting.setUpdatedAt(LocalDateTime.now());
         courseSrsSettingDataService.update(existingSetting);

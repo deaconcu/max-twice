@@ -45,12 +45,17 @@ public class UserCardSrsDO {
     private Byte currentStep;
 
     /**
-     * 复习间隔
-     * 单位由 type 决定:
-     * - type=LEARNING(1) 或 RELEARNING(3): 单位为分钟
-     * - type=REVIEW(2): 单位为天
+     * 复习间隔（天）
+     * 仅在 type=REVIEW(2) 时有意义
      */
     private Integer interval;
+
+    /**
+     * 下次再现的复习卡片计数
+     * 仅在 type=LEARNING(1) 或 type=RELEARNING(3) 时有意义
+     * 当用户的 reviewCardCount >= reappearAt 时，卡片可展现
+     */
+    private Long reappearAt;
 
     /**
      * 遗忘前的间隔(天)

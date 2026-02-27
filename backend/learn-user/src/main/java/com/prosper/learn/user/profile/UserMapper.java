@@ -61,6 +61,12 @@ public interface UserMapper {
     @Update("UPDATE user SET last_viewed_message_id = #{lastViewedMessageId} WHERE id = #{userId}")
     void updateLastViewedMessageId(@Param("userId") long userId, @Param("lastViewedMessageId") long lastViewedMessageId);
 
+    /**
+     * 原子递增复习卡片计数器并返回新值
+     */
+    @Update("UPDATE user SET review_card_count = COALESCE(review_card_count, 0) + 1 WHERE id = #{userId}")
+    int incrementReviewCardCount(@Param("userId") long userId);
+
     @Select("SELECT * FROM user ORDER BY id DESC LIMIT #{count}")
     List<UserDO> getList(int count);
 

@@ -69,20 +69,21 @@ export function getCardList(params: GetCardListParams): Promise<ApiResponse<Memo
 }
 
 /**
- * 获取当前待复习卡片（开始复习时调用）
+ * 获取下一张待复习卡片
  */
-export function getCurrentCard(): Promise<ApiResponse<ReviewSubmitResult>> {
-  return client.get('/v1/memory/review/current')
+export function getNextCard(params?: { courseId?: number }): Promise<ApiResponse<ReviewSubmitResult>> {
+  return client.get('/v1/memory/review/next', { params })
 }
 
 /**
  * 提交卡片复习结果
- * @returns 下一张卡片和队列信息
+ * @returns 下一张卡片
  */
 export function reviewCard(params: {
   cardId: number
   result: ReviewResult
-  timeSpent: number
+  courseId?: number
+  timeSpent?: number
 }): Promise<ApiResponse<ReviewSubmitResult>> {
   return client.post('/v1/memory/review/submit', params)
 }
@@ -136,6 +137,7 @@ export function updateCourseMemorySetting(params: {
   courseId: number
   status?: string
   frequencySetting?: string
+  cardOrder?: number
 }): Promise<ApiResponse<void>> {
   return client.put(`/v1/memory/memory-bank/courses/${String(params.courseId)}/settings`, params)
 }

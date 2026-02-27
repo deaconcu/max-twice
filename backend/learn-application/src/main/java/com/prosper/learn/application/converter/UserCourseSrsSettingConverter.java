@@ -17,6 +17,7 @@ public interface UserCourseSrsSettingConverter {
     @Mapping(target = "id")
     @Mapping(target = "frequencySetting")
     @Mapping(target = "state")
+    @Mapping(target = "cardOrder")
     UserCourseSrsSettingDTO toDTO(UserCourseSrsSettingDO settingDO);
 
     @IterableMapping(qualifiedByName = "toDTO")

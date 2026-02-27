@@ -216,6 +216,22 @@ public class UserDataService extends AbstractDataService<UserDO, UserMapper, Lon
         userMapper.updateLastViewedMessageId(userId, lastViewedMessageId);
     }
 
+    /**
+     * 原子递增复习卡片计数器
+     * 每次复习一张卡片时调用
+     *
+     * @param userId 用户ID
+     * @return 更新后的计数值
+     */
+    public long incrementReviewCardCount(long userId) {
+        userMapper.incrementReviewCardCount(userId);
+        // 重新查询获取最新值
+        UserDO user = userMapper.getById(userId);
+        long newCount = user.getReviewCardCount() != null ? user.getReviewCardCount() : 0L;
+        log.debug("Incremented review_card_count for user {}: {}", userId, newCount);
+        return newCount;
+    }
+
     public List<UserDO> getList(int count) {
         return userMapper.getList(count);
     }

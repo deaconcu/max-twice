@@ -14,4 +14,9 @@ public class UserCourseSrsSettingDTO {
 
     private Integer state;
 
+    /**
+     * 卡片顺序：0=先复习后新卡，1=先新卡后复习
+     */
+    private Integer cardOrder;
+
 }

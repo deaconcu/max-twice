@@ -46,7 +46,8 @@ User (用户)
 
 **user_card_srs（SRS 状态）：**
 - `type` — 卡片状态：0=NEW, 1=LEARNING, 2=REVIEW, 3=RELEARNING
-- `interval` — 复习间隔，LEARNING/RELEARNING 时单位为**分钟**，REVIEW 时单位为**天**
+- `reappear_at` — LEARNING/RELEARNING 卡片的下次展现计数
+- `interval` — REVIEW 阶段的复习间隔（天）
 - `ease_factor` — 难度系数，默认 2.50，根据复习表现动态调整
 - `card_version_id` — 用户学习的卡片版本ID，与 card.current_version_id 对比可检测内容更新
 - `deck_version` — 加入时的卡片组版本，用于检测卡片组结构更新
@@ -81,7 +82,7 @@ Database
 |------|------|---------|
 | **MemoryCardDomainService** | 卡片 CRUD、版本管理 | `createCard`, `batchCreateCards`, `updateCard`(创建新版本), `deleteCard`, `getCardContentDiff` |
 | **MemoryCardDeckDomainService** | 卡片组 CRUD、审核状态流转 | `createDeck`, `updateDeck`, `deleteDeck`, `approve`, `reject`, `ban`, `restore` |
-| **ReviewDomainService** | Anki 复习算法核心 | `getReviewQueue`, `submitReview`, `getReviewStats` |
+| **ReviewDomainService** | Anki 复习算法核心 | `getNextCard`, `submitReview`, `getReviewStats` |
 | **MemoryBankDomainService** | 记忆库管理（加入/移除卡片组） | `addDeckToMemoryBank`(分布式锁), `removeDeckFromCourse`, `updateCourseSetting` |
 
 ### 3.3 应用服务
@@ -103,14 +104,17 @@ SUBMITTED (1) ──批准──→ PUBLISHED (2) ──封禁──→ BANNED (
 
 本系统采用改良的 **Anki 算法**（基于 SM-2），通过科学的间隔重复帮助用户高效记忆。
 
+**核心改进**：LEARNING/RELEARNING 阶段采用**卡片计数**而非时间间隔，避免用户等待，提升复习体验。
+
 ### 4.1 核心概念
 
 | 概念 | 说明 |
 |------|------|
 | **type（卡片状态）** | 0=NEW, 1=LEARNING, 2=REVIEW, 3=RELEARNING |
-| **interval（间隔）** | LEARNING/RELEARNING 时单位为**分钟**，REVIEW 时单位为**天** |
+| **reviewCount（复习计数）** | 用户全局复习计数器，每复习一张卡片 +1，永不重置 |
+| **reappearAt（再现计数）** | LEARNING/RELEARNING 卡片的下次展现计数（当 `reviewCount >= reappearAt` 时可展现） |
 | **currentStep（当前步骤）** | 学习/重学阶段的步骤索引（从 0 开始） |
-| **easeFactor（难度因子）** | 默认 2.50，影响复习间隔的增长速度 |
+| **easeFactor（难度因子）** | 默认 2.50，影响 REVIEW 阶段复习间隔的增长速度 |
 | **repetitions（连续正确次数）** | 在 REVIEW 阶段连续答对的次数 |
 | **lapseCount（遗忘次数）** | 从 REVIEW 掉回 RELEARNING 的总次数 |
 
@@ -120,8 +124,7 @@ SUBMITTED (1) ──批准──→ PUBLISHED (2) ──封禁──→ BANNED (
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `learningSteps` | `[10, 60]` | 新卡学习步骤（分钟）。第一步 10 分钟，第二步 60 分钟 |
-| `relearningSteps` | `[20]` | 遗忘后重学步骤（分钟）。只有一步，20 分钟 |
+| `cardGaps` | `[3, 8]` | LEARNING/RELEARNING 阶段的卡片间隔。Step 0 间隔 3 张，Step 1 间隔 8 张 |
 | `graduatingInterval` | `1` | 学习完成后首次进入复习的间隔（天） |
 | `easyInterval` | `4` | 点击"简单"直接毕业时的间隔（天） |
 | `easyBonus` | `1.3` | 复习时点击"简单"的额外奖励乘数 |
@@ -143,11 +146,11 @@ SUBMITTED (1) ──批准──→ PUBLISHED (2) ──封禁──→ BANNED (
 │  ┌─────────────────────────────────────────────────────────────────────────┐    │
 │  │                         LEARNING (1) 学习中                              │    │
 │  │                                                                         │    │
-│  │   步骤: learningSteps = [10, 60] 分钟                                    │    │
+│  │   步骤: cardGaps = [3, 8] 张卡片                                         │    │
 │  │                                                                         │    │
-│  │   ┌────────┐    良好/简单     ┌────────┐    良好/简单     ┌─────────┐    │    │
+│  │   ┌────────┐      良好        ┌────────┐      良好        ┌─────────┐    │    │
 │  │   │ Step 0 │ ───────────────→ │ Step 1 │ ───────────────→ │  毕业   │    │    │
-│  │   │ 10分钟 │                  │ 60分钟 │                  │         │    │    │
+│  │   │ +3张   │                  │ +8张   │                  │         │    │    │
 │  │   └────────┘                  └────────┘                  └────┬────┘    │    │
 │  │        ▲                           ▲                           │         │    │
 │  │        │ 忘记                       │ 忘记                       │         │    │
@@ -171,20 +174,24 @@ SUBMITTED (1) ──批准──→ PUBLISHED (2) ──封禁──→ BANNED (
 │  ┌─────────────────────────────────────────────────────────────────────────┐     │
 │  │                       RELEARNING (3) 重新学习                            │     │
 │  │                                                                         │     │
-│  │   步骤: relearningSteps = [20] 分钟                                      │     │
+│  │   步骤: cardGaps = [3, 8] 张卡片（与 LEARNING 共用配置）                   │     │
 │  │   影响: lapseCount +1, easeFactor -0.20                                  │     │
 │  │                                                                         │     │
-│  │   ┌────────┐    良好/简单     ┌─────────┐                                │     │
-│  │   │ Step 0 │ ───────────────→ │ 重新毕业 │ ──────→ 回到 REVIEW           │     │
-│  │   │ 20分钟 │                  │         │        (间隔有所缩短)          │     │
-│  │   └────────┘                  └─────────┘                                │     │
-│  │        ▲                                                                │     │
-│  │        │ 忘记                                                            │     │
-│  │        └─────────────────────────────────────────────────────────────────│     │
-│  │                     重置到 Step 0                                        │     │
-│  └─────────────────────────────────────────────────────────────────────────┘     │
-│                                                                                  │
-└──────────────────────────────────────────────────────────────────────────────────┘
+│  │   ┌────────┐      良好        ┌────────┐      良好        ┌─────────┐    │     │
+│  │   │ Step 0 │ ───────────────→ │ Step 1 │ ───────────────→ │ 重新毕业 │    │     │
+│  │   │ +3张   │                  │ +8张   │                  │         │    │     │
+│  │   └────────┘                  └────────┘                  └────┬────┘    │     │
+│  │        ▲                           ▲                           │         │     │
+│  │        │ 忘记                       │ 忘记                       │         │     │
+│  │        └───────────────────────────┴───────────────────────────│         │     │
+│  │                     重置到 Step 0                               │         │     │
+│  └─────────────────────────────────────────────────────────────────│─────────┘     │
+│                                                                    │               │
+│                                                                    ▼               │
+│                                                          回到 REVIEW              │
+│                                                         (间隔有所缩短)            │
+│                                                                                   │
+└───────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 4.4 用户评级按钮
@@ -202,23 +209,25 @@ SUBMITTED (1) ──批准──→ PUBLISHED (2) ──封禁──→ BANNED (
 
 #### 4.5.1 NEW 卡片（首次复习）
 
-| 评级 | 状态变化 | 下次复习时间 |
-|------|----------|--------------|
-| 忘记 | → LEARNING Step 0 | **+10 分钟** |
-| 困难 | → LEARNING Step 0 | **+10 分钟** |
-| 良好 | → LEARNING Step 1（跳过第一步） | **+60 分钟** |
+| 评级 | 状态变化 | 下次展现 |
+|------|----------|----------|
+| 忘记 | → LEARNING Step 0 | **+3 张卡片后** |
+| 困难 | → LEARNING Step 0 | **+3 张卡片后** |
+| 良好 | → LEARNING Step 1（跳过第一步） | **+8 张卡片后** |
 | 简单 | → REVIEW（直接毕业） | **+4 天** |
 
-#### 4.5.2 LEARNING 卡片（学习中）
+#### 4.5.2 LEARNING/RELEARNING 卡片（学习中）
 
-以 `learningSteps = [10, 60]` 为例：
+以 `cardGaps = [3, 8]` 为例：
 
-| 评级 | 效果 | 下次复习时间 |
-|------|------|--------------|
-| 忘记 | 重置到 Step 0 | **+10 分钟** |
-| 困难 | 停留当前步骤，间隔略延长 | 当前与下一步的平均值 |
-| 良好 | 推进到下一步，或毕业 | Step 0→+60分钟，Step 1→+1天（毕业） |
-| 简单 | 立即毕业到 REVIEW | **+4 天** |
+| 评级 | Step 0 效果 | Step 1 效果 |
+|------|-------------|-------------|
+| 忘记 | 保持 Step 0，**+3 张** | 重置到 Step 0，**+3 张** |
+| 困难 | 保持 Step 0，**+5 张**（平均值） | 保持 Step 1，**+8 张** |
+| 良好 | 进入 Step 1，**+8 张** | 毕业 |
+| 简单 | 立即毕业，**+4 天** | 立即毕业，**+4 天** |
+
+**说明**：困难时取当前步骤和下一步骤间隔的平均值；最后一步时保持当前间隔。
 
 #### 4.5.3 REVIEW 卡片（复习阶段）
 
@@ -234,52 +243,57 @@ SUBMITTED (1) ──批准──→ PUBLISHED (2) ──封禁──→ BANNED (
 - 良好：7 × 2.5 = **17.5 天**
 - 简单：7 × 2.5 × 1.3 = **22.75 天**
 
-#### 4.5.4 RELEARNING 卡片（重新学习）
-
-以 `relearningSteps = [20]` 为例：
-
-| 评级 | 效果 | 下次复习时间 |
-|------|------|--------------|
-| 忘记 | 重置到 Step 0 | **+20 分钟** |
-| 困难 | 停留当前步骤 | +20 分钟 |
-| 良好 | 毕业回到 REVIEW | 恢复间隔（原间隔 × 0.5，至少 1 天） |
-| 简单 | 毕业回到 REVIEW | 恢复间隔（原间隔 × 0.5，至少 4 天） |
-
 ### 4.6 关键数据库字段
 
-`user_card_srs` 表的核心字段：
+**user 表新增字段：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `review_count` | bigint | 用户全局复习计数器，每复习一张卡片 +1，永不重置 |
+
+**user_card_srs 表核心字段：**
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `type` | tinyint | 卡片状态：0=NEW, 1=LEARNING, 2=REVIEW, 3=RELEARNING |
 | `current_step` | tinyint | 当前学习步骤索引（仅 type=1/3 时有意义） |
-| `interval` | int | 复习间隔（type=1/3 时为分钟，type=2 时为天） |
+| `reappear_at` | bigint | LEARNING/RELEARNING 卡片的下次展现计数（`reviewCount >= reappearAt` 时可展现）|
+| `interval` | int | REVIEW 阶段的复习间隔（天） |
 | `lapse_old_interval` | smallint | 遗忘前的间隔天数（仅 type=3 时使用，用于计算恢复间隔） |
-| `review_due_at` | datetime | **核心字段**：下次复习到期时间 |
+| `review_due_at` | datetime | REVIEW/NEW 卡片的下次复习到期时间 |
 | `ease_factor` | decimal(4,2) | 难度因子，默认 2.50，最小 1.30 |
 | `repetitions` | int | REVIEW 阶段连续正确次数 |
 | `lapse_count` | int | 遗忘总次数（从 REVIEW 掉回 RELEARNING 的次数） |
 
-### 4.7 复习队列查询逻辑
-
-系统通过以下条件获取待复习卡片：
+### 4.7 获取下一张卡片逻辑
 
 ```sql
 SELECT * FROM user_card_srs
 WHERE user_id = ?
-  AND review_due_at <= NOW()           -- 已到期
-  AND type IN (0, 1, 2, 3)             -- 所有状态
+  AND (course_id = ? OR ?)  -- 可选课程筛选
 ORDER BY
-  CASE type
-    WHEN 1 THEN 0   -- LEARNING 优先
-    WHEN 3 THEN 1   -- RELEARNING 次之
-    WHEN 2 THEN 2   -- REVIEW 再次
-    WHEN 0 THEN 3   -- NEW 最后
+  CASE
+    -- 1. LEARNING/RELEARNING 且已到展现计数
+    WHEN type IN (1, 3) AND reappear_at <= ? THEN 0
+    -- 2. REVIEW 且已到期
+    WHEN type = 2 AND review_due_at <= NOW() THEN 1
+    -- 3. NEW 卡片
+    WHEN type = 0 THEN 2
+    -- 4. LEARNING/RELEARNING 未到计数（无其他卡片时也返回）
+    WHEN type IN (1, 3) THEN 3
+    -- 5. 其他（未到期的 REVIEW）
+    ELSE 4
   END,
-  review_due_at ASC
+  reappear_at ASC,      -- LEARNING/RELEARNING 按计数排序（小的优先）
+  review_due_at ASC     -- REVIEW 按时间排序
+LIMIT 1
 ```
 
-**重要：** 只有 `review_due_at <= NOW()` 的卡片才会出现在复习队列中。如果点击"忘记"后立即刷新页面，卡片需要等待指定的分钟数（如 10 分钟）后才会再次出现。
+**说明**：
+- 优先返回已到展现计数的 LEARNING/RELEARNING 卡片
+- 其次返回已到期的 REVIEW 卡片
+- 然后是 NEW 卡片
+- 如果只剩 LEARNING/RELEARNING 卡片且未到计数，也直接返回（避免用户无卡可复习）
 
 ### 4.8 配置示例
 
@@ -289,30 +303,37 @@ app:
   srs:
     max-cards-per-node: 200
     algorithm:
-      learning-steps: [10, 60]        # 新卡学习步骤：10分钟, 60分钟
-      relearning-steps: [20]          # 遗忘重学步骤：20分钟
-      graduating-interval: 1          # 毕业间隔：1天
-      easy-interval: 4                # 简单直接毕业：4天
-      easy-bonus: 1.3                 # 简单奖励乘数
-      new-interval-multiplier: 0.5    # 遗忘后恢复比例
-      min-ease-factor: 1.3            # 最小难度因子
+      card-gaps: [3, 8]             # LEARNING/RELEARNING 阶段的卡片间隔
+      graduating-interval: 1        # 毕业间隔：1天
+      easy-interval: 4              # 简单直接毕业：4天
+      easy-bonus: 1.3               # 简单奖励乘数
+      new-interval-multiplier: 0.5  # 遗忘后恢复比例
+      min-ease-factor: 1.3          # 最小难度因子
 ```
 
 ### 4.9 常见问题
 
-**Q: 点击"忘记"后卡片为什么不立即再出现？**
+**Q: LEARNING/RELEARNING 卡片为什么用卡片计数而不是时间间隔？**
 
-A: 这是设计行为。点击"忘记"后，卡片的 `review_due_at` 会设置为当前时间 + 学习步骤间隔（如 10 分钟）。系统认为用户需要一定时间来消化信息后再次尝试。刷新页面后需要等待该时间过后卡片才会再次出现。
+A: 传统 Anki 使用时间间隔（如 10 分钟后再现），但这要求用户等待，体验不佳。改用卡片计数后，用户可以连续复习，LEARNING 卡片会在复习若干张其他卡片后自动再现，既保证了间隔效果，又不打断复习流程。
+
+**Q: 如果只剩 LEARNING 卡片且未到展现计数怎么办？**
+
+A: 系统会直接返回该卡片，避免用户无卡可复习。这种情况通常发生在用户只有少量卡片时。
+
+**Q: 按课程复习时，卡片计数是全局的还是按课程的？**
+
+A: **全局计数**。从记忆角度，间隔复习的本质是让大脑经历「遗忘-重新提取」过程，复习其他课程的卡片同样能产生干扰效应。因此无论复习哪个课程，计数器都会递增。
 
 **Q: NEW 和 REVIEW 卡片点击"忘记"有什么区别？**
 
 A:
-- **NEW → LEARNING**：使用 `learningSteps`（如 10 分钟），不影响 easeFactor
-- **REVIEW → RELEARNING**：使用 `relearningSteps`（如 20 分钟），easeFactor -0.20，lapseCount +1
+- **NEW → LEARNING**：使用 `cardGaps[0]`（如 3 张卡片后再现），不影响 easeFactor
+- **REVIEW → RELEARNING**：使用 `cardGaps[0]`，easeFactor -0.20，lapseCount +1
 
 **Q: easeFactor 有什么作用？**
 
-A: easeFactor 决定了复习间隔的增长速度。默认 2.5 意味着每次正确回答后，间隔大约翻 2.5 倍。频繁忘记的卡片 easeFactor 会降低（最低 1.3），导致间隔增长更慢，复习更频繁。
+A: easeFactor 决定了 REVIEW 阶段复习间隔的增长速度。默认 2.5 意味着每次正确回答后，间隔大约翻 2.5 倍。频繁忘记的卡片 easeFactor 会降低（最低 1.3），导致间隔增长更慢，复习更频繁。
 
 ## 5. 前端架构
 
@@ -336,7 +357,7 @@ ContentReadPage.vue (Read 页面)
 |---------|-----|
 | **卡片组** | createDeck, getDeckDetail, deleteDeck, getDecksByNode, getPostPublicDecks, upvoteDeck |
 | **卡片** | createCard, updateCard, deleteCard |
-| **复习** | getReviewQueue, reviewCard, getReviewStats |
+| **复习** | getNextCard, submitReview, getReviewStats |
 | **记忆库** | addDeckToMemoryBank, getMemoryBankCourses, removeCourseMemoryBank |
 | **更新检测** | getDeckDiff, getCardDiff, acceptDeckChanges |
 | **管理** | approveDeck, rejectDeck, banDeck, restoreDeck |
@@ -368,13 +389,16 @@ ContentReadPage.vue (Read 页面)
 ### 6.3 复习流程
 
 ```
-进入复习页 → getReviewQueue（获取到期卡片）
+进入复习页 → getNextCard（获取下一张卡片）
   → 展示正面（问题）→ 用户点击"显示答案"
-  → 展示背面 + 4个评级按钮 → reviewCard API
+  → 展示背面 + 4个评级按钮 → submitReview API
   → ReviewDomainService.submitReview()
+    → user.reviewCount++
     → 根据 type 分发到不同处理逻辑
-    → 计算新间隔、ease_factor、下次复习时间
+    → LEARNING/RELEARNING: 计算 reappearAt = reviewCount + gap
+    → REVIEW: 计算 interval、reviewDueAt
     → 更新 UserCardSrs
+    → 返回下一张卡片
 ```
 
 ### 6.4 卡片更新检测
@@ -393,3 +417,5 @@ ContentReadPage.vue (Read 页面)
 4. **分布式锁**：addDeckToMemoryBank 使用分布式锁（key=userId+nodeId），防止并发超限
 5. **孤立卡片清理**：从课程移除卡片组时只删关系，所有课程都移除后才删 SRS 状态
 6. **内容审核**：卡片组创建后默认 SUBMITTED 状态，需审核通过才对外可见
+7. **卡片计数替代时间间隔**：LEARNING/RELEARNING 阶段使用全局复习计数（reviewCount）和再现计数（reappearAt）调度卡片，避免用户等待，提升复习体验
+8. **全局计数器**：reviewCount 为用户全局计数器，跨课程共享，因为记忆干扰效应不分课程

@@ -17,6 +17,12 @@ public class UserCourseSrsSettingDO {
 
     private Byte state;
 
+    /**
+     * 新卡与复习卡顺序
+     * @see com.prosper.learn.shared.domain.Enums.CardOrder
+     */
+    private Byte cardOrder;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

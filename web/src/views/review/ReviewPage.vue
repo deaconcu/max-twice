@@ -276,7 +276,7 @@
             <v-card rounded="lg" class="mb-0 py-1 pb-2 no-border">
               <div class="d-flex align-center justify-space-between">
                 <span class="text-caption text-grey-darken-1">
-                  {{ t('review.remaining', { count: queueSize }) }}
+                  {{ t('review.inProgress') }}
                 </span>
                 <span v-if="submitting" class="text-caption text-grey-darken-1">
                   {{ t('review.submitting') }}
@@ -637,31 +637,54 @@
               {{ selectedCourse.course.name }} - {{ t('review.reviewSettings') }}
             </h3>
 
-            <v-row>
-              <v-col cols="12" md="6">
+            <div class="d-flex flex-column ga-4">
+              <div class="d-flex align-center">
+                <span class="text-body-2 text-grey-darken-2" style="min-width: 100px">{{
+                  t('review.reviewFrequency')
+                }}</span>
                 <v-select
                   v-model="selectedCourse.setting.frequencySetting"
                   :items="frequencyOptions"
-                  :label="t('review.reviewFrequency')"
                   variant="outlined"
                   rounded="lg"
+                  hide-details
                   :density="$vuetify.display.mobile ? 'comfortable' : 'default'"
+                  style="max-width: 200px"
                 ></v-select>
-              </v-col>
+              </div>
 
-              <v-col cols="12" md="6">
+              <div class="d-flex align-center">
+                <span class="text-body-2 text-grey-darken-2" style="min-width: 100px">{{
+                  t('review.learningStatus')
+                }}</span>
                 <v-select
                   v-model="selectedCourse.setting.status"
                   :items="statusOptions"
-                  :label="t('review.learningStatus')"
                   variant="outlined"
                   rounded="lg"
+                  hide-details
                   :density="$vuetify.display.mobile ? 'comfortable' : 'default'"
+                  style="max-width: 200px"
                 ></v-select>
-              </v-col>
-            </v-row>
+              </div>
 
-            <div class="mt-4 d-flex flex-column flex-sm-row ga-3">
+              <div class="d-flex align-center">
+                <span class="text-body-2 text-grey-darken-2" style="min-width: 100px">{{
+                  t('review.cardOrder')
+                }}</span>
+                <v-select
+                  v-model="selectedCourse.setting.cardOrder"
+                  :items="cardOrderOptions"
+                  variant="outlined"
+                  rounded="lg"
+                  hide-details
+                  :density="$vuetify.display.mobile ? 'comfortable' : 'default'"
+                  style="max-width: 200px"
+                ></v-select>
+              </div>
+            </div>
+
+            <div class="mt-6 d-flex flex-column flex-sm-row ga-3">
               <v-btn
                 color="primary"
                 variant="flat"
@@ -820,7 +843,7 @@ import type {
   ReviewStats,
   CourseStudyStatus,
 } from '@/types/memory'
-import { ReviewResult, FrequencySetting, CourseStudyStatus as Status } from '@/types/memory'
+import { ReviewResult, FrequencySetting, CourseStudyStatus as Status, CardOrder } from '@/types/memory'
 import DefaultLayout from '@/components/layout/DefaultLayout.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
@@ -834,9 +857,8 @@ const showAnswer = ref(false)
 const selectedCards = ref<number[]>([])
 const expansionPanel = ref<number[]>([]) // 控制展开面板状态
 
-// 当前卡片和队列信息（由后端维护）
+// 当前卡片（由后端维护）
 const currentCard = ref<MemoryCardView | null>(null)
-const queueSize = ref(0)
 const reviewLoading = ref(false)
 
 // 动态卡片高度
@@ -886,6 +908,11 @@ const statusOptions = computed(() => [
   { title: t('review.statusArchived'), value: Status.ARCHIVED },
 ])
 
+const cardOrderOptions = computed(() => [
+  { title: t('review.cardOrderReviewFirst'), value: CardOrder.REVIEW_FIRST },
+  { title: t('review.cardOrderNewFirst'), value: CardOrder.NEW_FIRST },
+])
+
 // 方法
 const switchTab = (tabValue: string) => {
   activeTab.value = tabValue
@@ -915,10 +942,10 @@ const startReview = async () => {
   if (totalDueCards.value === 0) return
   reviewLoading.value = true
   try {
-    const response = await memoryApi.getCurrentCard()
+    const courseId = selectedCourse.value?.course.id
+    const response = await memoryApi.getNextCard({ courseId })
     if (response.code === 200 && response.data) {
       currentCard.value = response.data.nextCard
-      queueSize.value = response.data.queueSize
       if (currentCard.value) {
         isReviewing.value = true
         showAnswer.value = false
@@ -932,7 +959,6 @@ const startReview = async () => {
 const resetReview = () => {
   isReviewing.value = false
   currentCard.value = null
-  queueSize.value = 0
   showAnswer.value = false
 }
 
@@ -946,7 +972,7 @@ const skipCard = () => {
 
 // 提交复习
 const { execute: executeReview, loading: submitting } = useMutation(
-  (params: { cardId: number; result: ReviewResult; timeSpent: number }) => {
+  (params: { cardId: number; result: ReviewResult; courseId?: number; timeSpent?: number }) => {
     return memoryApi.reviewCard(params)
   },
   {
@@ -956,10 +982,9 @@ const { execute: executeReview, loading: submitting } = useMutation(
 
       // 后端返回下一张卡片
       currentCard.value = result.nextCard
-      queueSize.value = result.queueSize
 
       if (!currentCard.value) {
-        // 队列已空，复习完成
+        // 无更多卡片，复习完成
         void completeReview()
       } else {
         showAnswer.value = false
@@ -971,9 +996,11 @@ const { execute: executeReview, loading: submitting } = useMutation(
 const submitReview = (result: ReviewResult) => {
   if (!currentCard.value || submitting.value) return
 
+  const courseId = selectedCourse.value?.course.id
   void executeReview({
     cardId: currentCard.value.id,
     result,
+    courseId,
     timeSpent: 5,
   })
 }
@@ -981,7 +1008,6 @@ const submitReview = (result: ReviewResult) => {
 const completeReview = async () => {
   isReviewing.value = false
   currentCard.value = null
-  queueSize.value = 0
   await refreshCourses()
 }
 
@@ -1084,6 +1110,7 @@ const { execute: executeUpdateSetting } = useMutation(
       courseId: selectedCourse.value.course.id,
       status: selectedCourse.value.setting.status,
       frequencySetting: selectedCourse.value.setting.frequencySetting,
+      cardOrder: selectedCourse.value.setting.cardOrder,
     })
   },
   {
