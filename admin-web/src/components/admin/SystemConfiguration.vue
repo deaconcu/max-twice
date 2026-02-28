@@ -120,52 +120,32 @@ const saveDialogConfig = async (): Promise<void> => {
           <span class="ml-2 text-grey-darken-1">加载中...</span>
         </div>
 
-        <v-list v-else>
+        <v-list v-else class="pa-2">
           <!-- 课程分类 -->
           <v-list-item
             prepend-icon="mdi-book-outline"
             title="课程分类"
             :subtitle="courseUpdatedAt ? `上次更新: ${new Date(courseUpdatedAt).toLocaleString('zh-CN')}` : '课程主分类与子分类 JSON 配置'"
+            rounded="lg"
+            class="config-item mb-2 px-4"
             @click="openDialog('courseCategories')"
           >
             <template #append>
-              <div class="d-flex align-center ga-2">
-                <v-chip
-                  v-if="courseCategories"
-                  size="x-small"
-                  variant="tonal"
-                  color="green"
-                >
-                  已配置
-                </v-chip>
-                <v-chip v-else size="x-small" variant="tonal" color="orange">未配置</v-chip>
-                <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
-              </div>
+              <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
             </template>
           </v-list-item>
-
-          <v-divider></v-divider>
 
           <!-- 职业分类 -->
           <v-list-item
             prepend-icon="mdi-briefcase-outline"
             title="职业分类"
             :subtitle="professionUpdatedAt ? `上次更新: ${new Date(professionUpdatedAt).toLocaleString('zh-CN')}` : '职业主分类与子分类 JSON 配置'"
+            rounded="lg"
+            class="config-item px-4"
             @click="openDialog('professionCategories')"
           >
             <template #append>
-              <div class="d-flex align-center ga-2">
-                <v-chip
-                  v-if="professionCategories"
-                  size="x-small"
-                  variant="tonal"
-                  color="green"
-                >
-                  已配置
-                </v-chip>
-                <v-chip v-else size="x-small" variant="tonal" color="orange">未配置</v-chip>
-                <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
-              </div>
+              <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
             </template>
           </v-list-item>
         </v-list>
@@ -226,6 +206,16 @@ const saveDialogConfig = async (): Promise<void> => {
 <style scoped>
 .border {
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.config-item {
+  min-height: 64px;
+  cursor: pointer;
+  background-color: #fafafa;
+}
+
+.config-item:hover {
+  background-color: #f0f0f0;
 }
 
 .config-textarea :deep(.v-field__input) {
