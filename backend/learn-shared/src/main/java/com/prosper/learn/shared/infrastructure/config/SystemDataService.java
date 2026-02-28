@@ -28,6 +28,14 @@ public class SystemDataService {
     }
 
     /**
+     * 获取所有配置（含元数据）
+     */
+    @Cacheable(value = "system", key = "'allWithMeta'")
+    public List<SystemDO> getAllConfigsWithMeta() {
+        return systemMapper.getAll();
+    }
+
+    /**
      * 获取所有配置
      */
     @Cacheable(value = "system", key = "'all'")

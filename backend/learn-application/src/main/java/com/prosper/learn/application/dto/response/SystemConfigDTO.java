@@ -1,16 +1,15 @@
-package com.prosper.learn.shared.infrastructure.config;
+package com.prosper.learn.application.dto.response;
 
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
-public class SystemDO {
+public class SystemConfigDTO {
 
     private String key;
 
     private String value;
 
     private LocalDateTime updatedAt;
-
 }

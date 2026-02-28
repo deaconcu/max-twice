@@ -4,7 +4,10 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.learn.shared.domain.exception.StatusCode;
+import com.prosper.learn.shared.infrastructure.config.SystemDO;
 import com.prosper.learn.shared.infrastructure.config.SystemDataService;
+import com.prosper.learn.application.dto.response.SystemConfigDTO;
+import com.prosper.learn.application.converter.SystemConfigConverter;
 import com.prosper.learn.shared.infrastructure.config.SystemDomainService;
 import com.prosper.learn.application.dto.ApiResponse;
 import com.prosper.learn.web.ratelimit.LimitType;
@@ -19,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.prosper.learn.shared.domain.Enums.*;
@@ -39,6 +42,7 @@ public class AdminSystemController {
 
     private final SystemDataService systemDataService;
     private final SystemDomainService systemDomainService;
+    private final SystemConfigConverter systemConfigConverter;
     private final ObjectMapper objectMapper;
 
     /**
@@ -54,11 +58,12 @@ public class AdminSystemController {
                 return getSystemConfigPart(part);
             } else {
                 // 获取完整系统配置
-                Map<String, String> allConfigs = systemDataService.getAllConfigs();
+                List<SystemDO> allConfigs = systemDataService.getAllConfigsWithMeta();
                 if (allConfigs.isEmpty()) {
                     return ApiResponse.error("系统配置不存在");
                 }
-                JsonNode config = objectMapper.valueToTree(allConfigs);
+                List<SystemConfigDTO> result = systemConfigConverter.toDTOList(allConfigs);
+                JsonNode config = objectMapper.valueToTree(result);
                 return ApiResponse.success(config);
             }
         } catch (Exception e) {
