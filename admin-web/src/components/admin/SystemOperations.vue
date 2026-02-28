@@ -208,8 +208,8 @@ setTimeout(() => {
 </script>
 
 <template>
-  <div class="system-operations">
-    <h2 class="text-h5 font-weight-bold mb-6">系统操作</h2>
+  <div>
+    <h2 class="text-h5 font-weight-bold mb-4">系统操作</h2>
 
     <!-- 只读模式 -->
     <v-card flat class="border mb-4">
@@ -385,10 +385,6 @@ setTimeout(() => {
 </template>
 
 <style scoped>
-.system-operations {
-  max-width: 100%;
-}
-
 .border {
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }

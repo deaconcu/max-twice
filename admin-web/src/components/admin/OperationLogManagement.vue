@@ -180,229 +180,231 @@ fetchLogs(true)
 </script>
 
 <template>
-  <div class="operation-log-management">
+  <div>
+    <h2 class="text-h5 font-weight-bold mb-4">操作日志</h2>
+
     <!-- 筛选区域 -->
-    <v-card flat class="pa-4 mb-4 bg-grey-lighten-5" rounded="lg" elevation="0">
-      <v-row dense>
-        <!-- 时间范围选择 -->
-        <v-col cols="12" md="3">
-          <v-text-field
-            v-model="filters.startTime"
-            label="开始时间"
-            type="datetime-local"
-            variant="outlined"
-            density="compact"
-            rounded="lg"
-            bg-color="white"
-            hide-details
-            clearable
-          ></v-text-field>
-        </v-col>
-        <v-col cols="12" md="3">
-          <v-text-field
-            v-model="filters.endTime"
-            label="结束时间"
-            type="datetime-local"
-            variant="outlined"
-            density="compact"
-            rounded="lg"
-            bg-color="white"
-            hide-details
-            clearable
-          ></v-text-field>
-        </v-col>
-
-        <!-- 操作人ID -->
-        <v-col cols="12" md="2">
-          <v-text-field
-            v-model="filters.operatorId"
-            label="操作人ID"
-            type="number"
-            variant="outlined"
-            density="compact"
-            rounded="lg"
-            bg-color="white"
-            hide-details
-            clearable
-          ></v-text-field>
-        </v-col>
-
-        <!-- 操作级别 -->
-        <v-col cols="12" md="2">
-          <v-select
-            v-model="filters.operationLevel"
-            label="操作级别"
-            :items="operationLevels"
-            item-title="text"
-            item-value="value"
-            variant="outlined"
-            density="compact"
-            rounded="lg"
-            bg-color="white"
-            hide-details
-            clearable
-          ></v-select>
-        </v-col>
-
-        <!-- 查询按钮 -->
-        <v-col cols="12" md="2">
-          <div class="d-flex gap-2">
+    <v-card flat class="border mb-4">
+      <v-card-title class="d-flex align-center">
+        <v-icon icon="mdi-filter-variant" size="18" class="mr-2"></v-icon>
+        筛选条件
+      </v-card-title>
+      <v-card-text>
+        <v-row dense>
+          <v-col cols="12" md="3">
+            <v-text-field
+              v-model="filters.startTime"
+              label="开始时间"
+              type="datetime-local"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="3">
+            <v-text-field
+              v-model="filters.endTime"
+              label="结束时间"
+              type="datetime-local"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-text-field
+              v-model="filters.operatorId"
+              label="操作人ID"
+              type="number"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="2">
+            <v-select
+              v-model="filters.operationLevel"
+              label="操作级别"
+              :items="operationLevels"
+              item-title="text"
+              item-value="value"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+            ></v-select>
+          </v-col>
+          <v-col cols="12" md="2">
             <v-btn
-              variant="flat"
+              variant="tonal"
               color="primary"
-              rounded="lg"
               :loading="loading"
               block
               @click="fetchLogs(true)"
             >
-              <v-icon icon="mdi-magnify" size="16" class="mr-2"></v-icon>
+              <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
               查询
             </v-btn>
-          </div>
-        </v-col>
-      </v-row>
+          </v-col>
+        </v-row>
 
-      <!-- 模块和操作类型筛选 -->
-      <v-row dense class="mt-2">
-        <v-col cols="12" md="3">
-          <v-text-field
-            v-model="filters.module"
-            label="模块"
-            variant="outlined"
-            density="compact"
-            rounded="lg"
-            bg-color="white"
-            hide-details
-            clearable
-          ></v-text-field>
-        </v-col>
-        <v-col cols="12" md="3">
-          <v-text-field
-            v-model="filters.operationType"
-            label="操作类型"
-            variant="outlined"
-            density="compact"
-            rounded="lg"
-            bg-color="white"
-            hide-details
-            clearable
-          ></v-text-field>
-        </v-col>
-        <v-col cols="12" md="3">
-          <v-text-field
-            v-model="filters.targetType"
-            label="目标类型"
-            variant="outlined"
-            density="compact"
-            rounded="lg"
-            bg-color="white"
-            hide-details
-            clearable
-          ></v-text-field>
-        </v-col>
-      </v-row>
+        <v-row dense class="mt-2">
+          <v-col cols="12" md="3">
+            <v-text-field
+              v-model="filters.module"
+              label="模块"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="3">
+            <v-text-field
+              v-model="filters.operationType"
+              label="操作类型"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" md="3">
+            <v-text-field
+              v-model="filters.targetType"
+              label="目标类型"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+            ></v-text-field>
+          </v-col>
+        </v-row>
+      </v-card-text>
     </v-card>
 
-    <!-- 操作日志列表 -->
-    <div v-if="logs.length === 0 && !loading" class="text-center py-12">
-      <v-icon
-        icon="mdi-clipboard-text-outline"
-        size="64"
-        color="grey-lighten-1"
-        class="mb-4"
-      ></v-icon>
-      <p class="text-h6 text-grey-darken-1 mb-2">暂无操作日志</p>
-      <p class="text-body-2 text-grey">请调整筛选条件后重新查询</p>
-    </div>
+    <!-- 日志列表 -->
+    <v-card flat class="border">
+      <v-card-title class="d-flex align-center">
+        <v-icon icon="mdi-clipboard-text" size="18" class="mr-2"></v-icon>
+        操作日志列表
+      </v-card-title>
+      <v-card-text>
+        <!-- 空状态 -->
+        <div v-if="logs.length === 0 && !loading" class="text-center py-12">
+          <v-icon icon="mdi-clipboard-text-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
+          <p class="text-body-1 text-grey-darken-1">暂无操作日志</p>
+          <p class="text-body-2 text-grey">请调整筛选条件后重新查询</p>
+        </div>
 
-    <!-- 日志列表 - 使用 v-infinite-scroll -->
-    <v-infinite-scroll v-else :items="logs" :on-load="loadMore" class="logs-infinite-scroll">
-      <template v-for="log in logs" :key="log.id">
-        <div class="log-item">
-          <div class="d-flex align-start justify-space-between">
-            <!-- 左侧：操作信息 -->
-            <div class="flex-grow-1">
-              <div class="d-flex align-center mb-2">
-                <!-- 操作级别标签 -->
-                <v-chip
-                  :color="getLevelColor(log.operationLevel)"
-                  size="small"
-                  variant="flat"
-                  class="mr-2"
-                >
-                  {{ getLevelText(log.operationLevel) }}
-                </v-chip>
+        <!-- 列表 -->
+        <div v-if="logs.length > 0">
+          <div
+            v-for="log in logs"
+            :key="log.id"
+            v-intersect="{
+              handler: (isIntersecting: boolean) => {
+                if (isIntersecting && log === logs[logs.length - 1] && hasMore && !loading) {
+                  loadMoreLogs({ done: () => {} } as any)
+                }
+              },
+            }"
+            class="list-item mb-3"
+          >
+            <div class="d-flex align-start justify-space-between">
+              <!-- 左侧：操作信息 -->
+              <div class="flex-grow-1">
+                <div class="d-flex align-center mb-2">
+                  <v-chip
+                    :color="getLevelColor(log.operationLevel)"
+                    size="small"
+                    variant="flat"
+                    class="mr-2"
+                  >
+                    {{ getLevelText(log.operationLevel) }}
+                  </v-chip>
+                  <v-chip size="small" variant="tonal" color="grey" class="mr-2">
+                    {{ log.module }}
+                  </v-chip>
+                  <span class="text-subtitle-1 font-weight-bold text-grey-darken-3">
+                    {{ log.operationType }}
+                  </span>
+                </div>
 
-                <!-- 模块 -->
-                <v-chip size="small" variant="outlined" class="mr-2">
-                  {{ log.module }}
-                </v-chip>
+                <div class="content-wrapper">
+                  <div class="text-body-2 text-grey-darken-1 mb-2">
+                    <v-icon icon="mdi-account" size="16" class="mr-1"></v-icon>
+                    <strong>{{ log.operatorName }}</strong> (ID: {{ log.operatorId }})
+                    <v-chip size="x-small" variant="flat" color="grey-lighten-2" class="ml-2">
+                      {{ getRoleText(log.operatorRole) }}
+                    </v-chip>
+                  </div>
 
-                <!-- 操作类型 -->
-                <span class="text-subtitle-1 font-weight-bold text-grey-darken-3">
-                  {{ log.operationType }}
-                </span>
+                  <div class="text-body-2 text-grey-darken-1 mb-2">
+                    <v-icon icon="mdi-target" size="16" class="mr-1"></v-icon>
+                    目标: <strong>{{ log.targetType }}</strong> (ID: {{ log.targetId }})
+                    <span v-if="log.targetName" class="ml-1">- {{ log.targetName }}</span>
+                  </div>
+
+                  <div v-if="log.reason" class="text-body-2 text-grey-darken-1 mb-2">
+                    <v-icon icon="mdi-comment-text" size="16" class="mr-1"></v-icon>
+                    原因: {{ log.reason }}
+                  </div>
+
+                  <div class="text-body-2 text-grey">
+                    <v-icon icon="mdi-clock-outline" size="16" class="mr-1"></v-icon>
+                    {{ formatDateTime(log.createdAt) }}
+                    <span v-if="log.ipAddress" class="ml-3">
+                      <v-icon icon="mdi-ip" size="16" class="mr-1"></v-icon>
+                      {{ log.ipAddress }}
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <!-- 操作详情 -->
-              <div class="text-body-2 text-grey-darken-1 mb-2">
-                <v-icon icon="mdi-account" size="16" class="mr-1"></v-icon>
-                <strong>{{ log.operatorName }}</strong> (ID: {{ log.operatorId }})
-                <v-chip size="x-small" variant="flat" color="grey-lighten-2" class="ml-2">
-                  {{ getRoleText(log.operatorRole) }}
-                </v-chip>
+              <!-- 右侧：查看详情 -->
+              <div class="ml-3">
+                <v-btn variant="tonal" color="info" size="small" @click="showDetail(log)">
+                  <v-icon icon="mdi-eye" size="16" class="mr-1"></v-icon>
+                  详情
+                </v-btn>
               </div>
-
-              <div class="text-body-2 text-grey-darken-1 mb-2">
-                <v-icon icon="mdi-target" size="16" class="mr-1"></v-icon>
-                目标: <strong>{{ log.targetType }}</strong> (ID: {{ log.targetId }})
-                <span v-if="log.targetName" class="ml-1">- {{ log.targetName }}</span>
-              </div>
-
-              <div v-if="log.reason" class="text-body-2 text-grey-darken-1 mb-2">
-                <v-icon icon="mdi-comment-text" size="16" class="mr-1"></v-icon>
-                原因: {{ log.reason }}
-              </div>
-
-              <div class="text-body-2 text-grey">
-                <v-icon icon="mdi-clock-outline" size="16" class="mr-1"></v-icon>
-                {{ formatDateTime(log.createdAt) }}
-                <span v-if="log.ipAddress" class="ml-3">
-                  <v-icon icon="mdi-ip" size="16" class="mr-1"></v-icon>
-                  {{ log.ipAddress }}
-                </span>
-              </div>
-            </div>
-
-            <!-- 右侧：操作按钮 -->
-            <div>
-              <v-btn icon variant="text" size="small" @click="showDetail(log)">
-                <v-icon icon="mdi-eye" size="20"></v-icon>
-              </v-btn>
             </div>
           </div>
         </div>
-      </template>
 
-      <!-- 没有更多数据提示 -->
-      <template #empty>
-        <div v-if="!hasMore && logs.length > 0" class="text-center py-4">
-          <p class="text-body-2 text-grey">没有更多数据了</p>
+        <!-- 加载指示器 -->
+        <div v-if="loading" class="text-center py-4">
+          <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+          <span class="ml-2 text-grey-darken-1">加载中...</span>
         </div>
-      </template>
-    </v-infinite-scroll>
+
+        <!-- 没有更多 -->
+        <div v-if="!hasMore && logs.length > 0" class="text-center py-4 text-caption text-grey">
+          没有更多了
+        </div>
+      </v-card-text>
+    </v-card>
 
     <!-- 详情对话框 -->
     <v-dialog v-model="detailDialog" max-width="800">
-      <v-card rounded="lg">
-        <v-card-title class="d-flex align-center justify-space-between bg-grey-lighten-4">
-          <span class="text-h6">操作日志详情</span>
-          <v-btn icon variant="text" @click="detailDialog = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
+      <v-card rounded="lg" variant="flat">
+        <v-card-title class="pa-6 pb-4">
+          <div class="d-flex align-center justify-space-between">
+            <div class="d-flex align-center">
+              <v-icon icon="mdi-clipboard-text-outline" color="blue-darken-1" class="mr-3"></v-icon>
+              <span class="text-h6 font-weight-bold">操作日志详情</span>
+            </div>
+            <v-btn icon variant="text" @click="detailDialog = false">
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </div>
         </v-card-title>
 
-        <v-card-text v-if="selectedLog" class="pt-4">
+        <v-card-text v-if="selectedLog" class="pa-6 pt-2">
           <v-list lines="two">
             <v-list-item>
               <v-list-item-title class="font-weight-bold">日志ID</v-list-item-title>
@@ -430,7 +432,7 @@ fetchLogs(true)
             <v-list-item>
               <v-list-item-title class="font-weight-bold">操作级别</v-list-item-title>
               <v-list-item-subtitle>
-                <v-chip :color="getLevelColor(selectedLog.operationLevel)" size="small">
+                <v-chip :color="getLevelColor(selectedLog.operationLevel)" size="small" variant="flat">
                   {{ getLevelText(selectedLog.operationLevel) }}
                 </v-chip>
               </v-list-item-subtitle>
@@ -463,17 +465,13 @@ fetchLogs(true)
 
             <v-list-item>
               <v-list-item-title class="font-weight-bold">操作时间</v-list-item-title>
-              <v-list-item-subtitle>{{
-                formatDateTime(selectedLog.createdAt)
-              }}</v-list-item-subtitle>
+              <v-list-item-subtitle>{{ formatDateTime(selectedLog.createdAt) }}</v-list-item-subtitle>
             </v-list-item>
 
             <v-list-item v-if="selectedLog.extraData">
               <v-list-item-title class="font-weight-bold">额外数据</v-list-item-title>
               <v-list-item-subtitle>
-                <pre class="text-caption mt-2">{{
-                  JSON.stringify(selectedLog.extraData, null, 2)
-                }}</pre>
+                <pre class="text-caption mt-2">{{ JSON.stringify(selectedLog.extraData, null, 2) }}</pre>
               </v-list-item-subtitle>
             </v-list-item>
           </v-list>
@@ -484,26 +482,21 @@ fetchLogs(true)
 </template>
 
 <style scoped>
-.operation-log-management {
-  width: 100%;
+.border {
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
-.logs-infinite-scroll {
-  width: 100%;
-}
-
-.log-item {
-  padding: 24px 16px;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.15s ease;
-}
-
-.log-item:hover {
+.list-item {
+  padding: 16px;
+  border-radius: 8px;
   background-color: #fafafa;
 }
 
-.log-item:last-child {
-  border-bottom: none;
+.content-wrapper {
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 12px;
+  background-color: white;
 }
 
 pre {

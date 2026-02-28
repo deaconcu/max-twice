@@ -103,78 +103,64 @@ const saveConfiguration = async (): Promise<void> => {
 </script>
 
 <template>
-  <div class="system-configuration">
-    <!-- 页面头部 -->
-    <div class="d-flex align-center justify-space-between mb-6">
-      <div class="d-flex align-center">
-        <div class="pa-3 rounded-lg bg-teal-lighten-5 mr-3">
-          <v-icon icon="mdi-cog-outline" color="teal-darken-1" size="20"></v-icon>
-        </div>
-        <div>
-          <h3 class="text-h6 font-weight-bold text-grey-darken-3">系统配置</h3>
-          <p class="text-body-2 text-grey-darken-1 mb-0">管理系统设置和参数</p>
-        </div>
-      </div>
-      <v-chip variant="flat" color="green-lighten-4" rounded="lg">
-        <v-icon icon="mdi-check-circle" color="green-darken-2" size="16" class="mr-1"></v-icon>
-        <span class="text-green-darken-2 text-caption">配置有效</span>
-      </v-chip>
-    </div>
+  <div>
+    <h2 class="text-h5 font-weight-bold mb-4">系统配置</h2>
 
     <v-row>
       <!-- 课程类别配置 -->
       <v-col cols="12" md="6">
-        <v-card flat class="border rounded-lg pa-4">
-          <div class="d-flex align-center mb-4">
-            <v-icon icon="mdi-book-outline" color="blue-darken-1" class="mr-2"></v-icon>
-            <h4 class="text-h6 font-weight-bold text-grey-darken-3">课程分类</h4>
-          </div>
-          <v-textarea
-            v-model="courseCategories"
-            label="课程分类 JSON 配置"
-            variant="outlined"
-            rows="30"
-            rounded="lg"
-            bg-color="grey-lighten-5"
-            placeholder='请输入课程分类 JSON 配置，例如：&#10;{&#10;  "backend": "后端开发",&#10;  "frontend": "前端开发"&#10;}'
-            hint="请输入有效的 JSON 格式配置"
-            persistent-hint
-            class="config-textarea"
-          ></v-textarea>
+        <v-card flat class="border">
+          <v-card-title class="d-flex align-center">
+            <v-icon icon="mdi-book-outline" color="blue-darken-1" size="18" class="mr-2"></v-icon>
+            课程分类
+          </v-card-title>
+          <v-card-text>
+            <v-textarea
+              v-model="courseCategories"
+              label="课程分类 JSON 配置"
+              variant="outlined"
+              rounded="lg"
+              bg-color="grey-lighten-5"
+              placeholder='请输入课程分类 JSON 配置，例如：&#10;{&#10;  "backend": "后端开发",&#10;  "frontend": "前端开发"&#10;}'
+              hint="请输入有效的 JSON 格式配置"
+              persistent-hint
+              class="config-textarea"
+            ></v-textarea>
+          </v-card-text>
         </v-card>
       </v-col>
 
       <!-- 职业类别配置 -->
       <v-col cols="12" md="6">
-        <v-card flat class="border rounded-lg pa-4">
-          <div class="d-flex align-center mb-4">
-            <v-icon icon="mdi-briefcase-outline" color="orange-darken-1" class="mr-2"></v-icon>
-            <h4 class="text-h6 font-weight-bold text-grey-darken-3">职业分类</h4>
-          </div>
-          <v-textarea
-            v-model="professionCategories"
-            label="职业分类 JSON 配置"
-            variant="outlined"
-            rows="30"
-            rounded="lg"
-            bg-color="grey-lighten-5"
-            placeholder='请输入职业分类 JSON 配置，例如：&#10;{&#10;  "engineer": "软件工程师",&#10;  "designer": "设计师"&#10;}'
-            hint="请输入有效的 JSON 格式配置"
-            persistent-hint
-            class="config-textarea"
-          ></v-textarea>
+        <v-card flat class="border">
+          <v-card-title class="d-flex align-center">
+            <v-icon icon="mdi-briefcase-outline" color="orange-darken-1" size="18" class="mr-2"></v-icon>
+            职业分类
+          </v-card-title>
+          <v-card-text>
+            <v-textarea
+              v-model="professionCategories"
+              label="职业分类 JSON 配置"
+              variant="outlined"
+              rounded="lg"
+              bg-color="grey-lighten-5"
+              placeholder='请输入职业分类 JSON 配置，例如：&#10;{&#10;  "engineer": "软件工程师",&#10;  "designer": "设计师"&#10;}'
+              hint="请输入有效的 JSON 格式配置"
+              persistent-hint
+              class="config-textarea"
+            ></v-textarea>
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
     <!-- 操作按钮 -->
-    <div class="d-flex align-center justify-space-between mt-6">
+    <div class="d-flex align-center justify-space-between mt-4">
       <div>
         <v-btn
-          variant="flat"
+          variant="tonal"
           color="teal"
           class="mr-3"
-          rounded="lg"
           :loading="saving"
           :disabled="!isValidConfig"
           @click="saveConfiguration"
@@ -182,7 +168,7 @@ const saveConfiguration = async (): Promise<void> => {
           <v-icon icon="mdi-content-save" class="mr-2"></v-icon>
           保存配置
         </v-btn>
-        <v-btn variant="flat" color="grey-lighten-3" rounded="lg" @click="formatConfig">
+        <v-btn variant="tonal" color="grey" @click="formatConfig">
           <v-icon icon="mdi-code-json" class="mr-2"></v-icon>
           格式化
         </v-btn>
@@ -195,11 +181,6 @@ const saveConfiguration = async (): Promise<void> => {
 </template>
 
 <style scoped>
-.system-configuration {
-  max-width: 100%;
-  padding: 0;
-}
-
 .border {
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
@@ -209,5 +190,6 @@ const saveConfiguration = async (): Promise<void> => {
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
   font-size: 13px !important;
   line-height: 1.4 !important;
+  min-height: calc(100vh - 300px) !important;
 }
 </style>
