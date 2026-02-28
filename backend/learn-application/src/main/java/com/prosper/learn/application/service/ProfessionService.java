@@ -6,6 +6,7 @@ import com.prosper.learn.application.dto.request.CreateProfessionRequest;
 import com.prosper.learn.application.dto.request.UpdateProfessionRequest;
 import com.prosper.learn.application.dto.response.ProfessionAdminDTO;
 import com.prosper.learn.application.dto.response.ProfessionDTO;
+import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import com.prosper.learn.content.profession.ProfessionDO;
 import com.prosper.learn.content.profession.ProfessionDomainService;
 import com.prosper.learn.shared.common.utils.ValidationUtils;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -49,6 +51,7 @@ public class ProfessionService {
     // 跨域服务依赖
     private final ProfessionRankingDomainService professionRankingService;
     private final BookmarkService bookmarkService;
+    private final UserService userService;
 
     // 事件发布
     private final ApplicationEventPublisher eventPublisher;
@@ -85,7 +88,24 @@ public class ProfessionService {
      */
     public List<ProfessionAdminDTO> getListByStateAndLastId(ContentState state, Long lastId, int limit) {
         List<ProfessionDO> professionDOList = professionDomainService.listByStateAndLastId(state.value(), lastId, limit);
-        return professionConverter.toAdminDTO(professionDOList);
+        List<ProfessionAdminDTO> dtoList = professionConverter.toAdminDTO(professionDOList);
+
+        // 填充 creator
+        Set<Long> creatorIds = professionDOList.stream()
+                .map(ProfessionDO::getCreatorId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+        if (!creatorIds.isEmpty()) {
+            Map<Long, UserBriefDTO> creatorMap = userService.getUserBriefMapByIds(creatorIds);
+            for (int i = 0; i < dtoList.size(); i++) {
+                Long creatorId = professionDOList.get(i).getCreatorId();
+                if (creatorId != null) {
+                    dtoList.get(i).setCreator(creatorMap.get(creatorId));
+                }
+            }
+        }
+
+        return dtoList;
     }
 
     /**

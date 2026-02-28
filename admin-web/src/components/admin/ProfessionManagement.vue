@@ -10,8 +10,10 @@ import { professionNameRules, professionDescriptionRules } from '@/utils/validat
 import { PROFESSION_VALIDATION } from '@/types/validation'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
+import { useReviewReasonsStore } from '@/stores'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
+const reviewReasonsStore = useReviewReasonsStore()
 
 // 扩展 Profession 接口以包含UI状态
 interface ProfessionWithUIState extends Profession {
@@ -370,6 +372,7 @@ const updateProfession = async (): Promise<void> => {
 // 组件挂载时加载数据
 onMounted(() => {
   loadProfessionCategories()
+  reviewReasonsStore.checkAndLoad()
 })
 </script>
 
@@ -439,7 +442,7 @@ onMounted(() => {
                 </v-chip>
 
                 <!-- 待审核 -->
-                <div v-if="profession.state === ContentState.SUBMITTED" class="d-flex flex-column ga-3">
+                <div v-if="profession.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="success" size="small" block :loading="profession.approving" @click="approveProfession(profession)">
                     批准
                   </v-btn>
@@ -452,7 +455,7 @@ onMounted(() => {
                 </div>
 
                 <!-- 已通过 -->
-                <div v-if="profession.state === ContentState.PUBLISHED" class="d-flex flex-column ga-3">
+                <div v-if="profession.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="warning" size="small" block @click="showRejectModal(profession)">
                     撤回
                   </v-btn>
@@ -465,7 +468,7 @@ onMounted(() => {
                 </div>
 
                 <!-- 已拒绝 -->
-                <div v-if="profession.state === ContentState.REJECTED" class="d-flex flex-column ga-3">
+                <div v-if="profession.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="success" size="small" block :loading="profession.restoring" @click="restoreProfession(profession)">
                     通过
                   </v-btn>
@@ -475,7 +478,7 @@ onMounted(() => {
                 </div>
 
                 <!-- 已屏蔽 -->
-                <div v-if="profession.state === ContentState.BANNED" class="d-flex flex-column ga-3">
+                <div v-if="profession.state === ContentState.BANNED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="info" size="small" block @click="unbanProfession(profession)">
                     解封
                   </v-btn>
@@ -485,7 +488,7 @@ onMounted(() => {
                 </div>
 
                 <!-- 编辑按钮（非已通过状态） -->
-                <div v-if="profession.state !== ContentState.PUBLISHED" class="mt-3">
+                <div v-if="profession.state !== ContentState.PUBLISHED" class="mt-2">
                   <v-btn variant="tonal" color="info" size="small" block @click="showEditModal(profession)">
                     编辑
                   </v-btn>
@@ -497,9 +500,6 @@ onMounted(() => {
                 <!-- 标题行 -->
                 <div class="d-flex align-center justify-space-between mb-2">
                   <div class="d-flex align-center">
-                    <v-avatar size="32" color="grey-lighten-3" class="mr-2">
-                      <v-icon :icon="profession.icon || 'mdi-briefcase'" color="grey-darken-1" size="18"></v-icon>
-                    </v-avatar>
                     <div class="text-body-1 font-weight-medium text-grey-darken-3">
                       {{ profession.name || '职业名称' }}
                     </div>
@@ -513,8 +513,10 @@ onMounted(() => {
                 <!-- 元信息 -->
                 <div class="d-flex align-center mb-2 text-caption text-grey-darken-1">
                   <v-icon icon="mdi-account-outline" size="14" class="mr-1"></v-icon>
-                  <span>创建者 #{{ profession.creator }}</span>
-                  <span class="ml-2">{{ profession.createdAt }}</span>
+                  <a v-if="profession.creator" :href="`/user/${profession.creator.id}`" target="_blank" class="text-grey-darken-1">{{ profession.creator.name }}</a>
+                  <span v-else>未知</span>
+                  <span class="mx-2">·</span>
+                  <span>{{ profession.createdAt }}</span>
                 </div>
 
                 <!-- 内容 -->
@@ -530,7 +532,7 @@ onMounted(() => {
                       v-for="skill in getSkillsArray(profession.skills)"
                       :key="skill"
                       variant="flat"
-                      color="grey-lighten-3"
+                      color="grey-lighten-4"
                       size="x-small"
                       class="mr-1 mb-1"
                     >
@@ -539,14 +541,11 @@ onMounted(() => {
                   </div>
 
                   <!-- 分类信息 -->
-                  <div v-if="profession.mainCategory || profession.subCategory" class="d-flex align-center flex-wrap">
-                    <span class="text-caption text-grey-darken-1 mr-2">分类：</span>
-                    <v-chip v-if="profession.mainCategory" variant="tonal" color="purple" size="x-small" class="mr-1">
-                      {{ getCategoryName(profession.mainCategory) }}
-                    </v-chip>
-                    <v-chip v-if="profession.subCategory" variant="tonal" color="orange" size="x-small">
-                      {{ getSubCategoryName(profession.mainCategory, profession.subCategory) }}
-                    </v-chip>
+                  <div v-if="profession.mainCategory || profession.subCategory" class="text-caption text-grey-darken-1">
+                    <span>分类：</span>
+                    <span v-if="profession.mainCategory">{{ getCategoryName(profession.mainCategory) }}</span>
+                    <span v-if="profession.mainCategory && profession.subCategory"> | </span>
+                    <span v-if="profession.subCategory">{{ getSubCategoryName(profession.mainCategory, profession.subCategory) }}</span>
                   </div>
 
                   <!-- 拒绝原因 -->

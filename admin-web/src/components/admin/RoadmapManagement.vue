@@ -100,7 +100,7 @@
                 </v-chip>
 
                 <!-- 待审核 -->
-                <div v-if="roadmap.state === ContentState.SUBMITTED" class="d-flex flex-column ga-3">
+                <div v-if="roadmap.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="success" size="small" block :loading="roadmap.approving" @click="approveRoadmap(roadmap, 'APPROVE')">
                     通过
                   </v-btn>
@@ -113,7 +113,7 @@
                 </div>
 
                 <!-- 已通过 -->
-                <div v-if="roadmap.state === ContentState.PUBLISHED" class="d-flex flex-column ga-3">
+                <div v-if="roadmap.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="warning" size="small" block @click="rejectRoadmap(roadmap)">
                     撤销通过
                   </v-btn>
@@ -126,7 +126,7 @@
                 </div>
 
                 <!-- 已拒绝 -->
-                <div v-if="roadmap.state === ContentState.REJECTED" class="d-flex flex-column ga-3">
+                <div v-if="roadmap.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="success" size="small" block :loading="roadmap.restoring" @click="approveRoadmap(roadmap, 'APPROVE')">
                     重新通过
                   </v-btn>
@@ -136,7 +136,7 @@
                 </div>
 
                 <!-- 已屏蔽 -->
-                <div v-if="roadmap.state === ContentState.BANNED" class="d-flex flex-column ga-3">
+                <div v-if="roadmap.state === ContentState.BANNED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="info" size="small" block @click="unbanRoadmap(roadmap)">
                     取消屏蔽
                   </v-btn>

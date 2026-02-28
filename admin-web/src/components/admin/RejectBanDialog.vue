@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { REJECT_REASONS, BAN_REASONS } from '@/constants/adminReasons'
 import { ContentState } from '@/enums'
 
 interface Props {
@@ -10,6 +9,8 @@ interface Props {
   itemType?: string
   itemState?: number
   loading?: boolean
+  rejectReasons?: string[]
+  banReasons?: string[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -19,6 +20,8 @@ const props = withDefaults(defineProps<Props>(), {
   itemType: '内容',
   itemState: ContentState.SUBMITTED,
   loading: false,
+  rejectReasons: () => [],
+  banReasons: () => [],
 })
 
 const emit = defineEmits<{
@@ -37,7 +40,7 @@ const dialogVisible = computed({
 })
 
 const reasonOptions = computed(() => {
-  return props.type === 'reject' ? REJECT_REASONS : BAN_REASONS
+  return props.type === 'reject' ? props.rejectReasons : props.banReasons
 })
 
 const dialogTitle = computed(() => {

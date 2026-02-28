@@ -400,6 +400,20 @@ public class UserService {
     }
 
     /**
+     * 批量获取用户简要信息 Map
+     * 用途：批量填充 creator 字段
+     */
+    public Map<Long, UserBriefDTO> getUserBriefMapByIds(Set<Long> ids) {
+        List<UserDO> userDOList = userDataService.getByIds(new ArrayList<>(ids));
+        List<UserBriefDTO> dtoList = userConverter.toBriefDTO(userDOList);
+        Map<Long, UserBriefDTO> result = new HashMap<>();
+        for (int i = 0; i < userDOList.size(); i++) {
+            result.put(userDOList.get(i).getId(), dtoList.get(i));
+        }
+        return result;
+    }
+
+    /**
      * 转换为用户摘要 DTO（公开信息）
      * 用途：用户列表、作者信息
      * 替代：原 V1

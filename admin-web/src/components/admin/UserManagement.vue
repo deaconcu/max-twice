@@ -219,7 +219,7 @@ const getStateColor = (state: number): string => {
                   {{ getStateText(user.state) }}
                 </v-chip>
 
-                <div class="d-flex flex-column ga-3">
+                <div class="d-flex flex-column ga-2">
                   <v-btn
                     v-if="user.state === 1"
                     variant="tonal"

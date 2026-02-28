@@ -1,7 +1,7 @@
 package com.prosper.learn.application.dto.response;
 
+import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import lombok.Data;
-import java.time.LocalDateTime;
 
 /**
  * 职业管理后台 DTO
@@ -26,11 +26,13 @@ public class ProfessionAdminDTO {
 
     private String icon;
 
-    private Byte state; // 职业状态（管理员可见）
+    private Byte state;
 
-    private String reason; // 拒绝/封禁原因（管理员可见）
+    private String reason;
 
-    private LocalDateTime createdAt;
+    private UserBriefDTO creator;
 
-    private LocalDateTime updatedAt;
+    private String createdAt;
+
+    private String updatedAt;
 }

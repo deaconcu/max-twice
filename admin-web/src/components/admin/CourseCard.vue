@@ -48,8 +48,8 @@ const getMainCategoryName = (mainCategoryId?: number): string | null => {
 const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): string | null => {
   if (!mainCategoryId || !subCategoryId || !props.categoryMapping) return null
   const mapping = props.categoryMapping.find((m) => m.mainCategoryId === mainCategoryId)
-  if (!mapping || !mapping.subCategories) return null
-  const subCategory = mapping.subCategories.find((sub) => sub.id === subCategoryId)
+  if (!mapping || !mapping.subcategories) return null
+  const subCategory = mapping.subcategories.find((sub) => sub.id === subCategoryId)
   return subCategory ? subCategory.name : null
 }
 </script>
@@ -64,7 +64,7 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
         </v-chip>
 
         <!-- 待审核 -->
-        <div v-if="course.state === ContentState.SUBMITTED" class="d-flex flex-column ga-3">
+        <div v-if="course.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
           <v-btn variant="tonal" color="success" size="small" block @click="$emit('approve', course)">
             批准
           </v-btn>
@@ -77,7 +77,7 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
         </div>
 
         <!-- 已通过 -->
-        <div v-if="course.state === ContentState.PUBLISHED" class="d-flex flex-column ga-3">
+        <div v-if="course.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
           <v-btn variant="tonal" color="warning" size="small" block @click="$emit('reject', course)">
             撤回
           </v-btn>
@@ -87,7 +87,7 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
         </div>
 
         <!-- 已拒绝 -->
-        <div v-if="course.state === ContentState.REJECTED" class="d-flex flex-column ga-3">
+        <div v-if="course.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
           <v-btn variant="tonal" color="success" size="small" block @click="$emit('approve', course)">
             通过
           </v-btn>
@@ -97,7 +97,7 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
         </div>
 
         <!-- 已屏蔽 -->
-        <div v-if="course.state === ContentState.BANNED" class="d-flex flex-column ga-3">
+        <div v-if="course.state === ContentState.BANNED" class="d-flex flex-column ga-2">
           <v-btn variant="tonal" color="info" size="small" block @click="$emit('unban', course)">
             解封
           </v-btn>
@@ -107,7 +107,7 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
         </div>
 
         <!-- 编辑按钮 -->
-        <div class="mt-3">
+        <div class="mt-2">
           <v-btn variant="tonal" color="info" size="small" block @click="$emit('edit', course)">
             编辑
           </v-btn>
@@ -139,14 +139,11 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
         <!-- 内容 -->
         <div class="content-wrapper">
           <!-- 分类信息 -->
-          <div v-if="course.mainCategory || course.subCategory" class="d-flex align-center flex-wrap mb-2">
-            <span class="text-caption text-grey-darken-1 mr-2">分类：</span>
-            <v-chip v-if="course.mainCategory" variant="tonal" color="purple" size="x-small" class="mr-1">
-              {{ getMainCategoryName(course.mainCategory) }}
-            </v-chip>
-            <v-chip v-if="course.subCategory" variant="tonal" color="orange" size="x-small">
-              {{ getSubCategoryName(course.mainCategory, course.subCategory) }}
-            </v-chip>
+          <div v-if="course.mainCategory || course.subCategory" class="text-caption text-grey-darken-1 mb-2">
+            <span>分类：</span>
+            <span v-if="course.mainCategory">{{ getMainCategoryName(course.mainCategory) }}</span>
+            <span v-if="course.mainCategory && course.subCategory"> | </span>
+            <span v-if="course.subCategory">{{ getSubCategoryName(course.mainCategory, course.subCategory) }}</span>
           </div>
 
           <!-- 描述 -->

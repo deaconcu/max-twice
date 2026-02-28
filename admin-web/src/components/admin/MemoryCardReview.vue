@@ -328,7 +328,7 @@ const getStateColor = (state: number): string => {
                 </v-chip>
 
                 <!-- 待审核 -->
-                <div v-if="deck.state === ContentState.SUBMITTED" class="d-flex flex-column ga-3">
+                <div v-if="deck.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="success" size="small" block @click="approveDeck(deck)">
                     批准
                   </v-btn>
@@ -341,7 +341,7 @@ const getStateColor = (state: number): string => {
                 </div>
 
                 <!-- 已通过 -->
-                <div v-if="deck.state === ContentState.PUBLISHED" class="d-flex flex-column ga-3">
+                <div v-if="deck.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="warning" size="small" block @click="rejectDeck(deck)">
                     撤回
                   </v-btn>
@@ -351,7 +351,7 @@ const getStateColor = (state: number): string => {
                 </div>
 
                 <!-- 已拒绝 -->
-                <div v-if="deck.state === ContentState.REJECTED" class="d-flex flex-column ga-3">
+                <div v-if="deck.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="success" size="small" block @click="approveDeck(deck)">
                     批准
                   </v-btn>
@@ -361,7 +361,7 @@ const getStateColor = (state: number): string => {
                 </div>
 
                 <!-- 已封禁 -->
-                <div v-if="deck.state === ContentState.BANNED" class="d-flex flex-column ga-3">
+                <div v-if="deck.state === ContentState.BANNED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="info" size="small" block @click="unbanDeck(deck)">
                     解封
                   </v-btn>

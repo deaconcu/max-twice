@@ -261,7 +261,7 @@ const loadCourseCategories = async (): Promise<void> => {
 
       if (categories.length > 0) {
         const firstMapping = mapping.find((m: any) => m.mainCategoryId === categories[0].id)
-        subCategories.value = firstMapping ? firstMapping.subCategories : []
+        subCategories.value = firstMapping ? firstMapping.subcategories : []
       }
     }
   } catch (error) {
@@ -290,14 +290,14 @@ const clearCategoryFilter = (): void => {
   selectedMainCategory.value = null
   selectedSubCategory.value = null
   subCategories.value =
-    categoryMapping.value.length > 0 ? categoryMapping.value[0].subCategories : []
+    categoryMapping.value.length > 0 ? categoryMapping.value[0].subcategories : []
   loadCourses()
 }
 
 // 主分类变化时更新子分类
 const updateSubCategories = (mainCategoryId: number): void => {
   const mapping = categoryMapping.value.find((m) => m.mainCategoryId === mainCategoryId)
-  subCategories.value = mapping ? mapping.subCategories : []
+  subCategories.value = mapping ? mapping.subcategories : []
 
   if (subCategories.value.length > 0) {
     selectedSubCategory.value = subCategories.value[0].id
@@ -455,7 +455,7 @@ const onEditMainCategoryChange = (): void => {
   const mapping = categoryMapping.value.find(
     (m) => m.mainCategoryId === editCourseData.value.mainCategory
   )
-  editSubCategories.value = mapping ? mapping.subCategories : []
+  editSubCategories.value = mapping ? mapping.subcategories : []
 
   if (
     editCourseData.value.subCategory &&

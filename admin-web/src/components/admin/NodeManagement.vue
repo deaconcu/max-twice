@@ -397,7 +397,7 @@ const initializeEmbeddings = async () => {
                 </v-chip>
 
                 <!-- 待审核 -->
-                <div v-if="node.state === ContentState.SUBMITTED" class="d-flex flex-column ga-3">
+                <div v-if="node.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="success" size="small" block @click="updateNodeState(node, ContentState.PUBLISHED)">
                     批准
                   </v-btn>
@@ -410,7 +410,7 @@ const initializeEmbeddings = async () => {
                 </div>
 
                 <!-- 已通过 -->
-                <div v-if="node.state === ContentState.PUBLISHED" class="d-flex flex-column ga-3">
+                <div v-if="node.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="warning" size="small" block @click="showRejectDialog(node)">
                     撤回
                   </v-btn>
@@ -420,7 +420,7 @@ const initializeEmbeddings = async () => {
                 </div>
 
                 <!-- 已拒绝 -->
-                <div v-if="node.state === ContentState.REJECTED" class="d-flex flex-column ga-3">
+                <div v-if="node.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="success" size="small" block @click="updateNodeState(node, ContentState.PUBLISHED)">
                     通过
                   </v-btn>
@@ -430,7 +430,7 @@ const initializeEmbeddings = async () => {
                 </div>
 
                 <!-- 已屏蔽 -->
-                <div v-if="node.state === ContentState.BANNED" class="d-flex flex-column ga-3">
+                <div v-if="node.state === ContentState.BANNED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="info" size="small" block @click="updateNodeState(node, ContentState.PUBLISHED)">
                     解封
                   </v-btn>

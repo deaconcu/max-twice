@@ -5,15 +5,22 @@ import { useFetch, useMutation } from '@/composables'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
 
+// 配置项类型
+type ConfigKey = 'courseCategories' | 'professionCategories' | 'rejectReasons' | 'banReasons'
+
 // 响应式数据
 const courseCategories = ref<string>('')
 const professionCategories = ref<string>('')
+const rejectReasons = ref<string>('')
+const banReasons = ref<string>('')
 const courseUpdatedAt = ref<string>('')
 const professionUpdatedAt = ref<string>('')
+const rejectReasonsUpdatedAt = ref<string>('')
+const banReasonsUpdatedAt = ref<string>('')
 
 // 对话框状态
 const dialog = ref(false)
-const dialogKey = ref<'courseCategories' | 'professionCategories'>('courseCategories')
+const dialogKey = ref<ConfigKey>('courseCategories')
 const dialogTitle = ref('')
 const dialogValue = ref('')
 
@@ -39,6 +46,12 @@ const { loading: loadingConfig } = useFetch({
         } else if (item.key === 'professionCategories') {
           professionCategories.value = formatted
           professionUpdatedAt.value = item.updatedAt
+        } else if (item.key === 'rejectReasons') {
+          rejectReasons.value = formatted
+          rejectReasonsUpdatedAt.value = item.updatedAt
+        } else if (item.key === 'banReasons') {
+          banReasons.value = formatted
+          banReasonsUpdatedAt.value = item.updatedAt
         }
       }
     }
@@ -49,10 +62,22 @@ const { loading: loadingConfig } = useFetch({
 })
 
 // 打开对话框
-const openDialog = (key: 'courseCategories' | 'professionCategories'): void => {
+const openDialog = (key: ConfigKey): void => {
   dialogKey.value = key
-  dialogTitle.value = key === 'courseCategories' ? '课程分类' : '职业分类'
-  dialogValue.value = key === 'courseCategories' ? courseCategories.value : professionCategories.value
+  const titleMap: Record<ConfigKey, string> = {
+    courseCategories: '课程分类',
+    professionCategories: '职业分类',
+    rejectReasons: '拒绝理由',
+    banReasons: '屏蔽理由',
+  }
+  const valueMap: Record<ConfigKey, string> = {
+    courseCategories: courseCategories.value,
+    professionCategories: professionCategories.value,
+    rejectReasons: rejectReasons.value,
+    banReasons: banReasons.value,
+  }
+  dialogTitle.value = titleMap[key]
+  dialogValue.value = valueMap[key]
   dialog.value = true
 }
 
@@ -83,12 +108,19 @@ const { execute: saveConfig, loading: saving } = useMutation(
   {
     successMessage: '配置已保存',
     onSuccess: (_, data) => {
+      const now = new Date().toISOString()
       if (data.key === 'courseCategories') {
         courseCategories.value = dialogValue.value
-        courseUpdatedAt.value = new Date().toISOString()
-      } else {
+        courseUpdatedAt.value = now
+      } else if (data.key === 'professionCategories') {
         professionCategories.value = dialogValue.value
-        professionUpdatedAt.value = new Date().toISOString()
+        professionUpdatedAt.value = now
+      } else if (data.key === 'rejectReasons') {
+        rejectReasons.value = dialogValue.value
+        rejectReasonsUpdatedAt.value = now
+      } else if (data.key === 'banReasons') {
+        banReasons.value = dialogValue.value
+        banReasonsUpdatedAt.value = now
       }
       dialog.value = false
     },
@@ -141,8 +173,36 @@ const saveDialogConfig = async (): Promise<void> => {
             title="职业分类"
             :subtitle="professionUpdatedAt ? `上次更新: ${new Date(professionUpdatedAt).toLocaleString('zh-CN')}` : '职业主分类与子分类 JSON 配置'"
             rounded="lg"
-            class="config-item px-4"
+            class="config-item mb-2 px-4"
             @click="openDialog('professionCategories')"
+          >
+            <template #append>
+              <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
+            </template>
+          </v-list-item>
+
+          <!-- 拒绝理由 -->
+          <v-list-item
+            prepend-icon="mdi-close-circle-outline"
+            title="拒绝理由"
+            :subtitle="rejectReasonsUpdatedAt ? `上次更新: ${new Date(rejectReasonsUpdatedAt).toLocaleString('zh-CN')}` : '审核拒绝时可选的预设理由'"
+            rounded="lg"
+            class="config-item mb-2 px-4"
+            @click="openDialog('rejectReasons')"
+          >
+            <template #append>
+              <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
+            </template>
+          </v-list-item>
+
+          <!-- 屏蔽理由 -->
+          <v-list-item
+            prepend-icon="mdi-cancel"
+            title="屏蔽理由"
+            :subtitle="banReasonsUpdatedAt ? `上次更新: ${new Date(banReasonsUpdatedAt).toLocaleString('zh-CN')}` : '内容屏蔽时可选的预设理由'"
+            rounded="lg"
+            class="config-item px-4"
+            @click="openDialog('banReasons')"
           >
             <template #append>
               <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
