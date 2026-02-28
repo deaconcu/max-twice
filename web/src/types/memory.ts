@@ -150,7 +150,7 @@ export interface CourseMemoryBank {
  */
 export interface CourseMemorySetting {
   courseId: number
-  status: CourseStudyStatus // 学习状态
+  state: CourseStudyStatus // 学习状态
   frequencySetting: FrequencySetting // 复习频率
   cardOrder: CardOrder // 卡片顺序
 }

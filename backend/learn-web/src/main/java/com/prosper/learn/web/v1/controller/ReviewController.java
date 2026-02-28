@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.prosper.learn.application.dto.request.ReviewCardRequest;
 import com.prosper.learn.application.dto.response.ReviewSubmitResultDTO;
 import com.prosper.learn.application.dto.response.ReviewStatsDTO;
+import com.prosper.learn.application.dto.response.card.CardWithSrsDTO;
 import com.prosper.learn.application.service.ReviewService;
 import com.prosper.learn.shared.domain.Enums;
 import com.prosper.learn.user.profile.UserDO;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -31,6 +33,21 @@ import java.util.concurrent.TimeUnit;
 public class ReviewController {
 
     private final ReviewService reviewService;
+
+    /**
+     * 获取卡片列表（管理界面用）
+     */
+    @GetMapping("/cards")
+    @SaCheckLogin
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<List<CardWithSrsDTO>> getCardList(
+            @RequestParam(required = false) @Positive(message = "课程ID必须大于0") Long courseId,
+            @RequestParam(required = false) @Positive(message = "lastId必须大于0") Long lastId,
+            @CurrentUser UserDO currentUser) {
+
+        List<CardWithSrsDTO> result = reviewService.getCardList(currentUser.getId(), courseId, lastId);
+        return ApiResponse.success(result);
+    }
 
     /**
      * 获取下一张待复习卡片

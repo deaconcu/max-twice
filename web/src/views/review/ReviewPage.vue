@@ -95,7 +95,7 @@
                     :color="
                       activeTab === 'all'
                         ? 'primary'
-                        : getCourseStatusColor(selectedCourse?.setting.status || 'STUDYING')
+                        : getCourseStatusColor(selectedCourse?.setting.state || 1)
                     "
                     size="36"
                     class="mr-3 flex-shrink-0"
@@ -189,7 +189,7 @@
                       :color="
                         activeTab === bank.course.id.toString()
                           ? 'primary'
-                          : getCourseStatusColor(bank.setting.status)
+                          : getCourseStatusColor(bank.setting.state)
                       "
                       size="32"
                       class="mr-2 mr-sm-3"
@@ -408,7 +408,10 @@
 
         <!-- 列表模式 -->
         <div v-else-if="viewMode === 'list'">
-          <div>
+          <!-- 加载状态 -->
+          <LoadingSpinner v-if="listLoading && listCards.length === 0" />
+
+          <div v-else>
             <div
               class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between mb-4 ga-3"
             >
@@ -638,13 +641,18 @@
             </h3>
 
             <div
-              class="pa-3 pa-sm-4 rounded-lg mb-4"
+              class="py-3 py-sm-4 rounded-lg mb-4"
               style="background-color: rgb(var(--v-theme-surface))"
             >
               <div class="d-flex justify-space-between align-center mb-3">
-                <span class="text-body-2 text-grey-darken-2">{{
-                  t('review.reviewFrequency')
-                }}</span>
+                <div>
+                  <div class="text-body-2 font-weight-medium text-grey-darken-3">
+                    {{ t('review.reviewFrequency') }}
+                  </div>
+                  <div class="text-caption text-grey-darken-1">
+                    {{ t('review.reviewFrequencyHint') }}
+                  </div>
+                </div>
                 <v-select
                   v-model="selectedCourse.setting.frequencySetting"
                   :items="frequencyOptions"
@@ -657,11 +665,16 @@
               </div>
 
               <div class="d-flex justify-space-between align-center mb-3">
-                <span class="text-body-2 text-grey-darken-2">{{
-                  t('review.learningStatus')
-                }}</span>
+                <div>
+                  <div class="text-body-2 font-weight-medium text-grey-darken-3">
+                    {{ t('review.learningStatus') }}
+                  </div>
+                  <div class="text-caption text-grey-darken-1">
+                    {{ t('review.learningStatusHint') }}
+                  </div>
+                </div>
                 <v-select
-                  v-model="selectedCourse.setting.status"
+                  v-model="selectedCourse.setting.state"
                   :items="statusOptions"
                   variant="outlined"
                   rounded="lg"
@@ -672,9 +685,14 @@
               </div>
 
               <div class="d-flex justify-space-between align-center">
-                <span class="text-body-2 text-grey-darken-2">{{
-                  t('review.cardOrder')
-                }}</span>
+                <div>
+                  <div class="text-body-2 font-weight-medium text-grey-darken-3">
+                    {{ t('review.cardOrder') }}
+                  </div>
+                  <div class="text-caption text-grey-darken-1">
+                    {{ t('review.cardOrderHint') }}
+                  </div>
+                </div>
                 <v-select
                   v-model="selectedCourse.setting.cardOrder"
                   :items="cardOrderOptions"
@@ -695,14 +713,6 @@
                 @click="updateCourseSetting"
               >
                 {{ t('common.saveSettings') }}
-              </v-btn>
-              <v-btn
-                color="error"
-                variant="outlined"
-                rounded="lg"
-                @click="removeCourse"
-              >
-                {{ t('review.removeCourse') }}
               </v-btn>
             </div>
           </v-card>
@@ -765,7 +775,7 @@
                 :color="
                   activeTab === bank.course.id.toString()
                     ? 'primary'
-                    : getCourseStatusColor(bank.setting.status)
+                    : getCourseStatusColor(bank.setting.state)
                 "
                 size="32"
                 class="mr-2 mr-sm-3"
@@ -795,38 +805,6 @@
               </v-chip>
             </div>
           </div>
-
-          <!-- 统计信息 -->
-          <div
-            class="mt-3 mt-md-4 pa-2 pa-sm-3 rounded-lg"
-            style="background-color: rgb(var(--v-theme-surface))"
-          >
-            <h4
-              class="text-caption text-md-body-1 font-weight-bold text-grey-darken-4 mb-2 mb-md-3"
-            >
-              {{ t('review.learningStats') }}
-            </h4>
-            <div class="d-flex justify-space-between text-caption text-md-body-2 mb-2">
-              <span class="text-grey-darken-2">{{ t('review.totalReviews') }}</span>
-              <span class="font-weight-bold text-primary">{{ stats.totalReviewCount }}</span>
-            </div>
-            <div class="d-flex justify-space-between text-caption text-md-body-2 mb-2">
-              <span class="text-grey-darken-2">{{ t('review.streakDays') }}</span>
-              <span class="font-weight-bold text-success"
-                >{{ stats.streakDays }}{{ t('review.days') }}</span
-              >
-            </div>
-            <div class="d-flex justify-space-between text-caption text-md-body-2 mb-2">
-              <span class="text-grey-darken-2">{{ t('review.avgAccuracy') }}</span>
-              <span class="font-weight-bold text-warning">{{ stats.averageScore }}%</span>
-            </div>
-            <div class="d-flex justify-space-between text-caption text-md-body-2">
-              <span class="text-grey-darken-2">{{ t('review.totalTime') }}</span>
-              <span class="font-weight-bold text-info"
-                >{{ stats.timeSpent }}{{ t('review.minutes') }}</span
-              >
-            </div>
-          </div>
         </v-card>
       </v-col>
     </v-row>
@@ -841,7 +819,6 @@ import { memoryApi } from '@/api'
 import type {
   CourseMemoryBank,
   MemoryCardView,
-  ReviewStats,
   CourseStudyStatus,
 } from '@/types/memory'
 import { ReviewResult, FrequencySetting, CourseStudyStatus as Status, CardOrder } from '@/types/memory'
@@ -870,14 +847,6 @@ const listCards = ref<MemoryCardView[]>([])
 const listLoading = ref(false)
 const listLastId = ref<number | undefined>(undefined)
 const listHasMore = ref(true)
-
-// 统计数据
-const stats = ref<ReviewStats>({
-  totalReviewCount: 0,
-  streakDays: 0,
-  averageScore: 0,
-  timeSpent: 0,
-})
 
 // 使用 useFetch 加载记忆库课程
 const { data: courseMemoryBanks, refresh: refreshCourses } = useFetch<CourseMemoryBank[]>({
@@ -923,6 +892,7 @@ const switchTab = (tabValue: string) => {
     resetReview()
     // 切换课程时重置复习状态，用户需要点击开始复习按钮
   } else if (viewMode.value === 'list') {
+    listCards.value = []
     listLastId.value = undefined
     listHasMore.value = true
     void loadListCards(true)
@@ -935,6 +905,9 @@ const switchViewMode = (mode: 'review' | 'list' | 'manage') => {
   if (mode === 'review') {
     resetReview()
   } else if (mode === 'list') {
+    listCards.value = []
+    listLastId.value = undefined
+    listHasMore.value = true
     void loadListCards(true)
   }
 }
@@ -1109,7 +1082,7 @@ const { execute: executeUpdateSetting } = useMutation(
     if (!selectedCourse.value) throw new Error('No course selected')
     return memoryApi.updateCourseMemorySetting({
       courseId: selectedCourse.value.course.id,
-      status: selectedCourse.value.setting.status,
+      status: selectedCourse.value.setting.state,
       frequencySetting: selectedCourse.value.setting.frequencySetting,
       cardOrder: selectedCourse.value.setting.cardOrder,
     })
@@ -1227,13 +1200,6 @@ onMounted(() => {
 
   // 监听窗口大小变化
   window.addEventListener('resize', calculateCardHeight)
-
-  // 可以加载统计数据
-  void memoryApi.getReviewStats().then((res) => {
-    if (res.code === 200 && res.data) {
-      stats.value = res.data
-    }
-  })
 })
 
 // 组件卸载

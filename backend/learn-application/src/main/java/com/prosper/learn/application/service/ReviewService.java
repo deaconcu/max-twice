@@ -8,6 +8,7 @@ import com.prosper.learn.memory.card.MemoryCardDataService;
 import com.prosper.learn.memory.card.MemoryCardDO;
 import com.prosper.learn.memory.review.ReviewDomainService;
 import com.prosper.learn.memory.review.UserCardSrsDO;
+import com.prosper.learn.memory.review.UserCardSrsDataService;
 import com.prosper.learn.memory.review.UserCourseSrsSettingDO;
 import com.prosper.learn.memory.review.UserCourseSrsSettingDataService;
 import com.prosper.learn.shared.common.util.TimeZoneUtil;
@@ -21,6 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.prosper.learn.shared.domain.Enums.*;
 
@@ -39,6 +44,7 @@ public class ReviewService {
     private final UserDataService userDataService;
     private final MemoryCardService memoryCardService;
     private final UserCourseSrsSettingDataService courseSettingDataService;
+    private final UserCardSrsDataService srsDataService;
 
     // ========== 业务方法 ==========
 
@@ -120,6 +126,51 @@ public class ReviewService {
 
         CardWithSrsDTO nextCardDto = memoryCardService.toCardViewWithSrs(nextCard, userId);
         return ReviewSubmitResultDTO.of(nextCardDto);
+    }
+
+    /**
+     * 获取卡片列表（管理界面用）
+     *
+     * @param userId 用户ID
+     * @param courseId 课程ID（可选，null 表示全部课程）
+     * @param lastId 分页游标
+     * @return 卡片列表
+     */
+    public List<CardWithSrsDTO> getCardList(Long userId, Long courseId, Long lastId) {
+        if (userId == null) {
+            throw StatusCode.INVALID_PARAMETER.exception("用户ID不能为空");
+        }
+
+        int limit = 20;
+
+        // 获取卡片 SRS 列表
+        List<UserCardSrsDO> srsList;
+        if (courseId != null) {
+            srsList = srsDataService.getReviewQueueByCourse(userId, courseId, false, limit, lastId);
+        } else {
+            srsList = srsDataService.getReviewQueue(userId, false, limit, lastId);
+        }
+
+        if (srsList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 获取卡片 ID 列表
+        Set<Long> cardIds = srsList.stream()
+                .map(UserCardSrsDO::getCardId)
+                .collect(Collectors.toSet());
+
+        // 批量获取卡片信息
+        List<MemoryCardDO> cards = cardDataService.getByIds(cardIds);
+
+        // 转换为 DTO
+        List<CardWithSrsDTO> result = new ArrayList<>();
+        for (MemoryCardDO card : cards) {
+            CardWithSrsDTO dto = memoryCardService.toCardViewWithSrs(card, userId);
+            result.add(dto);
+        }
+
+        return result;
     }
 
     /**
