@@ -134,7 +134,7 @@ const handleConfirm = () => {
 
 <template>
   <v-dialog v-model="dialogVisible" max-width="500px" persistent>
-    <v-card rounded="lg">
+    <v-card rounded="lg" variant="flat">
       <v-card-title class="text-h6 font-weight-bold pa-6 pb-4">
         <v-icon :icon="dialogIcon" :color="dialogIconColor" class="mr-3"></v-icon>
         {{ dialogTitle }}

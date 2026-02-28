@@ -323,7 +323,7 @@ const getStateColor = (state: number): string => {
             <div class="d-flex align-start">
               <!-- 操作区 -->
               <div class="action-area mr-4">
-                <v-chip variant="flat" :color="getStateColor(deck.state)" size="small" class="mb-4">
+                <v-chip variant="flat" :color="getStateColor(deck.state)" size="small" class="mb-4 d-flex justify-center">
                   {{ getStateText(deck.state) }}
                 </v-chip>
 
@@ -468,7 +468,8 @@ const getStateColor = (state: number): string => {
 }
 
 .action-area {
-  min-width: 60px;
+  width: 70px;
+  flex-shrink: 0;
 }
 
 .cards-area {

@@ -1,343 +1,204 @@
 <template>
-  <div class="roadmap-management">
-    <!-- 页面头部 -->
-    <div class="d-flex align-center justify-space-between mb-6">
-      <div class="d-flex align-center">
-        <div class="pa-3 rounded-lg bg-blue-lighten-5 mr-3">
-          <v-icon icon="mdi-map-marker-path" color="blue-darken-1" size="20"></v-icon>
-        </div>
-        <div>
-          <h3 class="text-h6 font-weight-bold text-grey-darken-3">路线图管理</h3>
-          <p class="text-body-2 text-grey-darken-1 mb-0">管理和审核学习路线图</p>
-        </div>
-      </div>
-      <v-chip variant="flat" color="blue-lighten-4" rounded="lg">
-        <v-icon icon="mdi-map-marker-path" color="blue-darken-2" size="16" class="mr-2"></v-icon>
-        <span class="text-blue-darken-2 text-caption">{{ roadmapList.length }}个路线图</span>
-      </v-chip>
-    </div>
+  <div>
+    <h2 class="text-h5 font-weight-bold mb-4">路线图管理</h2>
 
-    <!-- 筛选区域 -->
-    <v-card flat class="pa-4 bg-grey-lighten-5 rounded-lg mb-6">
-      <h4 class="text-subtitle-2 text-grey-darken-2 mb-3 d-flex align-center">
-        <v-icon icon="mdi-filter-outline" size="16" class="mr-2"></v-icon>
-        高级筛选
-      </h4>
-      <v-row dense>
-        <v-col cols="12" sm="4">
+    <!-- 筛选与状态 -->
+    <v-card flat class="border mb-4">
+      <v-card-title class="d-flex align-center">
+        <v-icon icon="mdi-filter-variant" size="18" class="mr-2"></v-icon>
+        筛选与状态
+      </v-card-title>
+      <v-card-text>
+        <!-- 筛选条件 -->
+        <div class="d-flex align-center ga-3 mb-4 mt-2">
           <v-text-field
             v-model.number="professionIdFilter"
             label="职业ID"
             type="number"
             variant="outlined"
             density="compact"
-            rounded="lg"
-            bg-color="white"
             hide-details
             clearable
+            style="max-width: 180px"
           ></v-text-field>
-        </v-col>
-        <v-col cols="12" sm="4">
           <v-text-field
             v-model.number="creatorIdFilter"
             label="创建者ID"
             type="number"
             variant="outlined"
             density="compact"
-            rounded="lg"
-            bg-color="white"
             hide-details
             clearable
+            style="max-width: 180px"
           ></v-text-field>
-        </v-col>
-        <v-col cols="12" sm="4">
-          <div class="d-flex gap-2">
-            <v-btn variant="flat" color="primary" rounded="lg" @click="onFilterChange">
-              <v-icon icon="mdi-magnify" class="mr-1"></v-icon>
-              筛选
-            </v-btn>
-            <v-btn variant="outlined" color="grey" rounded="lg" @click="onResetFilter">
-              <v-icon icon="mdi-refresh" class="mr-1"></v-icon>
-              重置
-            </v-btn>
-          </div>
-        </v-col>
-      </v-row>
+          <v-btn variant="tonal" size="default" @click="onFilterChange">
+            <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
+            筛选
+          </v-btn>
+          <v-btn variant="text" size="default" @click="onResetFilter">
+            重置
+          </v-btn>
+        </div>
+
+        <!-- 状态标签 -->
+        <v-tabs
+          v-model="selectedStateIndex"
+          color="primary"
+          show-arrows
+          @update:model-value="onStateChange"
+        >
+          <v-tab
+            v-for="(state, index) in stateOptions"
+            :key="state.value"
+            :value="index"
+            class="text-none"
+          >
+            <v-icon :icon="state.icon" size="16" class="mr-2"></v-icon>
+            {{ state.text }}
+          </v-tab>
+        </v-tabs>
+      </v-card-text>
     </v-card>
 
-    <!-- 状态标签 -->
-    <v-tabs
-      v-model="selectedStateIndex"
-      color="primary"
-      class="mb-6"
-      show-arrows
-      @update:model-value="onStateChange"
-    >
-      <v-tab
-        v-for="(state, index) in stateOptions"
-        :key="state.value"
-        :value="index"
-        class="text-none"
-      >
-        <v-icon
-          :icon="state.icon"
-          :color="
-            state.value === ContentState.SUBMITTED
-              ? 'orange-darken-1'
-              : state.value === ContentState.PUBLISHED
-                ? 'green-darken-1'
-                : state.value === ContentState.REJECTED
-                  ? 'red-darken-1'
-                  : 'grey-darken-1'
-          "
-          size="18"
-          class="mr-2"
-        ></v-icon>
-        {{ state.text }}
-      </v-tab>
-    </v-tabs>
-
-    <!-- 加载状态 -->
-    <div v-if="loading && roadmapList.length === 0" class="text-center py-8">
-      <v-progress-circular indeterminate color="primary"></v-progress-circular>
-      <p class="mt-3 text-grey-darken-1">加载中...</p>
-    </div>
-
-    <!-- 空状态 -->
-    <div v-else-if="roadmapList.length === 0" class="text-center py-12">
-      <v-icon icon="mdi-map-marker-path" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
-      <p class="text-body-1 text-grey-darken-1">暂无路线图</p>
-    </div>
-
     <!-- 路线图列表 -->
-    <div v-else>
-      <v-card
-        v-for="roadmap in roadmapList"
-        :key="roadmap.id"
-        v-intersect="{
-          handler: (isIntersecting) => {
-            if (
-              isIntersecting &&
-              roadmap === roadmapList[roadmapList.length - 1] &&
-              hasMoreData &&
-              !loading
-            ) {
-              loadMore()
-            }
-          },
-        }"
-        flat
-        class="border rounded-lg pa-5 mb-4"
-        hover
-      >
-        <div class="d-flex align-start">
-          <!-- 状态和操作区域 -->
-          <div class="mr-4 status-actions-area">
-            <div class="mb-3">
-              <v-chip
-                :color="getStateConfig(roadmap.state).color"
-                variant="flat"
-                rounded="lg"
-                size="small"
-              >
-                <v-icon :icon="getStateConfig(roadmap.state).icon" size="14" class="mr-1"></v-icon>
-                {{ getStateConfig(roadmap.state).text }}
-              </v-chip>
-            </div>
+    <v-card flat class="border">
+      <v-card-title class="d-flex align-center">
+        <v-icon icon="mdi-map-marker-path" size="18" class="mr-2"></v-icon>
+        路线图列表
+      </v-card-title>
+      <v-card-text>
+        <!-- 空状态 -->
+        <div v-if="!loading && roadmapList.length === 0" class="text-center py-12">
+          <v-icon icon="mdi-map-marker-path" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
+          <p class="text-body-1 text-grey-darken-1">暂无路线图</p>
+        </div>
 
-            <!-- 审核操作按钮 -->
-            <div class="d-flex flex-column ga-2">
-              <!-- 待审核状态：通过、拒绝、屏蔽 -->
-              <template v-if="roadmap.state === ContentState.SUBMITTED">
-                <v-btn
-                  variant="flat"
-                  color="green-lighten-4"
-                  rounded="lg"
-                  size="small"
-                  :loading="roadmap.approving"
-                  @click="approveRoadmap(roadmap, 'APPROVE')"
-                >
-                  <v-icon icon="mdi-check" color="green-darken-2" size="16" class="mr-1"></v-icon>
-                  通过
-                </v-btn>
-                <v-btn
-                  variant="flat"
-                  color="red-lighten-4"
-                  rounded="lg"
-                  size="small"
-                  @click="rejectRoadmap(roadmap)"
-                >
-                  <v-icon icon="mdi-close" color="red-darken-2" size="16" class="mr-1"></v-icon>
-                  拒绝
-                </v-btn>
-                <v-btn
-                  variant="flat"
-                  color="grey-lighten-2"
-                  rounded="lg"
-                  size="small"
-                  @click="showBanModal(roadmap)"
-                >
-                  <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
-                  屏蔽
-                </v-btn>
-              </template>
-
-              <!-- 已通过状态：撤销通过、修改、屏蔽 -->
-              <template v-if="roadmap.state === ContentState.PUBLISHED">
-                <v-btn
-                  variant="flat"
-                  color="orange-lighten-4"
-                  rounded="lg"
-                  size="small"
-                  @click="rejectRoadmap(roadmap)"
-                >
-                  <v-icon icon="mdi-undo" color="orange-darken-2" size="16" class="mr-1"></v-icon>
-                  撤销通过
-                </v-btn>
-                <v-btn
-                  variant="flat"
-                  color="blue-lighten-4"
-                  rounded="lg"
-                  size="small"
-                  @click="showEditModal(roadmap)"
-                >
-                  <v-icon icon="mdi-pencil" color="blue-darken-2" size="16" class="mr-1"></v-icon>
-                  修改
-                </v-btn>
-                <v-btn
-                  variant="flat"
-                  color="grey-lighten-2"
-                  rounded="lg"
-                  size="small"
-                  @click="showBanModal(roadmap)"
-                >
-                  <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
-                  屏蔽
-                </v-btn>
-              </template>
-
-              <!-- 已拒绝状态：恢复、屏蔽 -->
-              <template v-if="roadmap.state === ContentState.REJECTED">
-                <v-btn
-                  variant="flat"
-                  color="orange-lighten-4"
-                  rounded="lg"
-                  size="small"
-                  :loading="roadmap.restoring"
-                  @click="approveRoadmap(roadmap, 'APPROVE')"
-                >
-                  <v-icon icon="mdi-check" color="orange-darken-2" size="16" class="mr-1"></v-icon>
-                  重新通过
-                </v-btn>
-                <v-btn
-                  variant="flat"
-                  color="grey-lighten-2"
-                  rounded="lg"
-                  size="small"
-                  @click="showBanModal(roadmap)"
-                >
-                  <v-icon icon="mdi-cancel" color="grey-darken-2" size="16" class="mr-1"></v-icon>
-                  屏蔽
-                </v-btn>
-              </template>
-
-              <!-- 已屏蔽状态：取消屏蔽、降级为拒绝 -->
-              <template v-if="roadmap.state === ContentState.BANNED">
-                <v-btn
-                  variant="flat"
-                  color="blue-lighten-4"
-                  rounded="lg"
-                  size="small"
-                  @click="unbanRoadmap(roadmap)"
-                >
-                  <v-icon
-                    icon="mdi-lock-open"
-                    color="blue-darken-2"
-                    size="16"
-                    class="mr-1"
-                  ></v-icon>
-                  取消屏蔽
-                </v-btn>
-                <v-btn
-                  variant="flat"
-                  color="orange-lighten-4"
-                  rounded="lg"
-                  size="small"
-                  @click="downgradeToRejected(roadmap)"
-                >
-                  <v-icon
-                    icon="mdi-arrow-down"
-                    color="orange-darken-2"
-                    size="16"
-                    class="mr-1"
-                  ></v-icon>
-                  降级为拒绝
-                </v-btn>
-              </template>
-            </div>
-          </div>
-
-          <!-- 内容区域 -->
-          <div class="flex-grow-1">
-            <div class="d-flex align-center mb-3">
-              <v-avatar size="32" color="grey-lighten-3" class="mr-3">
-                <v-icon icon="mdi-map-marker-path" color="grey-darken-1" size="18"></v-icon>
-              </v-avatar>
-              <div>
-                <div class="text-body-2 font-weight-medium text-grey-darken-2">
-                  路线图 ID: {{ roadmap.id }}
-                </div>
-                <div class="text-caption text-grey-darken-1">
-                  {{ roadmap.createdAt || '未知时间' }}
-                </div>
-              </div>
-            </div>
-
-            <div class="bg-grey-lighten-5 rounded-lg pa-4">
-              <!-- 职业信息 -->
-              <div v-if="roadmap.profession" class="mb-3">
-                <v-chip variant="tonal" color="purple-lighten-1" size="small" rounded="lg">
-                  <v-icon icon="mdi-briefcase" size="14" class="mr-1"></v-icon>
-                  {{ roadmap.profession.name }}
+        <!-- 列表 -->
+        <div v-if="roadmapList.length > 0">
+          <div
+            v-for="roadmap in roadmapList"
+            :key="roadmap.id"
+            v-intersect="{
+              handler: (isIntersecting) => {
+                if (
+                  isIntersecting &&
+                  roadmap === roadmapList[roadmapList.length - 1] &&
+                  hasMoreData &&
+                  !loading
+                ) {
+                  loadMore()
+                }
+              },
+            }"
+            class="list-item mb-3"
+          >
+            <div class="d-flex align-start">
+              <!-- 操作区 -->
+              <div class="action-area mr-4">
+                <v-chip variant="flat" :color="getStateConfig(roadmap.state).color" size="small" class="mb-4 d-flex justify-center">
+                  {{ getStateConfig(roadmap.state).text }}
                 </v-chip>
-              </div>
 
-              <!-- 路线图描述 -->
-              <div class="mb-3">
-                <div class="text-caption text-grey-darken-1 mb-1">路线图描述：</div>
-                <div class="text-body-2 text-grey-darken-3">
-                  {{ roadmap.description || '暂无描述' }}
+                <!-- 待审核 -->
+                <div v-if="roadmap.state === ContentState.SUBMITTED" class="d-flex flex-column ga-3">
+                  <v-btn variant="tonal" color="success" size="small" block :loading="roadmap.approving" @click="approveRoadmap(roadmap, 'APPROVE')">
+                    通过
+                  </v-btn>
+                  <v-btn variant="tonal" color="error" size="small" block @click="rejectRoadmap(roadmap)">
+                    拒绝
+                  </v-btn>
+                  <v-btn variant="tonal" color="grey" size="small" block @click="showBanModal(roadmap)">
+                    屏蔽
+                  </v-btn>
+                </div>
+
+                <!-- 已通过 -->
+                <div v-if="roadmap.state === ContentState.PUBLISHED" class="d-flex flex-column ga-3">
+                  <v-btn variant="tonal" color="warning" size="small" block @click="rejectRoadmap(roadmap)">
+                    撤销通过
+                  </v-btn>
+                  <v-btn variant="tonal" color="info" size="small" block @click="showEditModal(roadmap)">
+                    修改
+                  </v-btn>
+                  <v-btn variant="tonal" color="grey" size="small" block @click="showBanModal(roadmap)">
+                    屏蔽
+                  </v-btn>
+                </div>
+
+                <!-- 已拒绝 -->
+                <div v-if="roadmap.state === ContentState.REJECTED" class="d-flex flex-column ga-3">
+                  <v-btn variant="tonal" color="success" size="small" block :loading="roadmap.restoring" @click="approveRoadmap(roadmap, 'APPROVE')">
+                    重新通过
+                  </v-btn>
+                  <v-btn variant="tonal" color="grey" size="small" block @click="showBanModal(roadmap)">
+                    屏蔽
+                  </v-btn>
+                </div>
+
+                <!-- 已屏蔽 -->
+                <div v-if="roadmap.state === ContentState.BANNED" class="d-flex flex-column ga-3">
+                  <v-btn variant="tonal" color="info" size="small" block @click="unbanRoadmap(roadmap)">
+                    取消屏蔽
+                  </v-btn>
+                  <v-btn variant="tonal" color="warning" size="small" block @click="downgradeToRejected(roadmap)">
+                    降级为拒绝
+                  </v-btn>
                 </div>
               </div>
 
-              <!-- 创建者信息 -->
-              <div class="d-flex align-center text-caption text-grey-darken-1">
-                <v-icon icon="mdi-account-outline" size="14" class="mr-1"></v-icon>
-                创建者: {{ roadmap.creator?.name || '未知' }}
-                <span class="mx-3">|</span>
-                <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
-                更新时间: {{ roadmap.updatedAt || '未知' }}
+              <!-- 内容区 -->
+              <div class="flex-grow-1">
+                <!-- 标题行 -->
+                <div class="d-flex align-center justify-space-between mb-2">
+                  <div class="text-body-1 font-weight-medium text-grey-darken-3">
+                    路线图 ID: {{ roadmap.id }}
+                  </div>
+                  <div class="text-caption text-grey-darken-1">
+                    {{ roadmap.createdAt || '未知时间' }}
+                  </div>
+                </div>
+
+                <!-- 元信息 -->
+                <div class="d-flex align-center mb-2 text-caption text-grey-darken-1">
+                  <v-icon icon="mdi-account-outline" size="14" class="mr-1"></v-icon>
+                  <span>{{ roadmap.creator?.name || '未知' }}</span>
+                  <span class="ml-2">更新: {{ roadmap.updatedAt || '未知' }}</span>
+                </div>
+
+                <!-- 职业信息 -->
+                <div v-if="roadmap.profession" class="mb-2">
+                  <v-chip variant="tonal" color="purple" size="small">
+                    <v-icon icon="mdi-briefcase" size="14" class="mr-1"></v-icon>
+                    {{ roadmap.profession.name }}
+                  </v-chip>
+                </div>
+
+                <!-- 描述 -->
+                <div v-if="roadmap.description" class="text-body-2 text-grey-darken-1">
+                  {{ roadmap.description }}
+                </div>
+                <div v-else class="text-body-2 text-grey">暂无描述</div>
               </div>
             </div>
           </div>
         </div>
-      </v-card>
 
-      <!-- 加载更多状态 -->
-      <div v-if="loading && roadmapList.length > 0" class="text-center py-4">
-        <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
-        <p class="mt-2 text-body-2 text-grey-darken-1">加载更多中...</p>
-      </div>
+        <!-- 加载指示器 -->
+        <div v-if="loading" class="text-center py-4">
+          <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+          <span class="ml-2 text-grey-darken-1">加载中...</span>
+        </div>
 
-      <!-- 没有更多数据提示 -->
-      <div v-else-if="!hasMoreData && roadmapList.length > 0" class="text-center py-4">
-        <p class="text-body-2 text-grey-darken-1">已加载全部数据</p>
-      </div>
-    </div>
+        <!-- 没有更多 -->
+        <div v-if="!hasMoreData && roadmapList.length > 0" class="text-center py-4 text-caption text-grey">
+          没有更多了
+        </div>
+      </v-card-text>
+    </v-card>
 
     <!-- 编辑描述对话框 -->
     <v-dialog v-model="showEditDialog" max-width="700px" persistent>
-      <v-card rounded="lg">
+      <v-card rounded="lg" variant="flat">
         <v-card-title class="text-h6 font-weight-bold pa-6 pb-4">
           <v-icon icon="mdi-pencil-outline" color="blue-darken-2" class="mr-3"></v-icon>
           编辑路线图描述
@@ -367,12 +228,12 @@
           </v-btn>
           <v-btn
             variant="flat"
-            color="blue-lighten-4"
+            color="primary"
             rounded="lg"
             :loading="updating"
             @click="updateRoadmapDescription"
           >
-            <v-icon icon="mdi-content-save" color="blue-darken-2" class="mr-2"></v-icon>
+            <v-icon icon="mdi-content-save" class="mr-2"></v-icon>
             保存修改
           </v-btn>
         </v-card-actions>
@@ -393,8 +254,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, computed } from 'vue'
-import { roadmapApi, adminApi } from '@/api'
+import { ref } from 'vue'
+import { adminApi } from '@/api'
 import { ContentState } from '@/enums'
 import type { Roadmap } from '@/types/roadmap.d'
 import type { StateOption } from '@/types/common.d'
@@ -467,7 +328,6 @@ const {
   reset: resetList,
 } = useInfiniteScroll<Roadmap>({
   fetchFn: (params) => {
-    // 使用统一接口，state 从当前 tab 获取
     const currentState = getCurrentState()
     return adminApi.getContentsByState('roadmap', currentState, params.lastId)
   },
@@ -476,19 +336,19 @@ const {
     lastId: lastItem.id,
   }),
   initialParams: {},
-  immediate: true, // 自动初始加载
+  immediate: true,
 })
 
 // 状态改变
 const onStateChange = (): void => {
   resetList()
-  loadMore() // 重新加载数据
+  loadMore()
 }
 
 // 筛选条件变化
 const onFilterChange = (): void => {
   resetList()
-  loadMore() // 重新加载数据
+  loadMore()
 }
 
 // 重置筛选
@@ -623,21 +483,18 @@ const showBanModal = (roadmap: Roadmap): void => {
 </script>
 
 <style scoped>
-.roadmap-management {
-  padding: 0;
-}
-
-.status-actions-area {
-  min-width: 130px;
-}
-
-:deep(.v-card[hover]:hover) {
-  transform: translateY(-2px);
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-}
-
 .border {
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.list-item {
+  padding: 16px;
+  border-radius: 8px;
+  background-color: #fafafa;
+}
+
+.action-area {
+  width: 70px;
+  flex-shrink: 0;
 }
 </style>
