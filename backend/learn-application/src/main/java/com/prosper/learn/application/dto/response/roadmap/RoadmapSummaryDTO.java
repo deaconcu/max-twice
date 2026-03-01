@@ -1,5 +1,7 @@
 package com.prosper.learn.application.dto.response.roadmap;
 
+import com.prosper.learn.application.dto.response.ProfessionBriefDTO;
+import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import lombok.Data;
 
 /**
@@ -19,6 +21,8 @@ public class RoadmapSummaryDTO {
 
     private Long professionId;
 
+    private ProfessionBriefDTO profession;
+
     private String description;
 
     private Byte state;
@@ -34,6 +38,8 @@ public class RoadmapSummaryDTO {
     private Integer nodeCount;
 
     private Long creatorId;
+
+    private UserBriefDTO creator;
 
     /**
      * 内容是否可用

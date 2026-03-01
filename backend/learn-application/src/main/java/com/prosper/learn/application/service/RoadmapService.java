@@ -673,6 +673,50 @@ public class RoadmapService {
         }
 
         List<RoadmapSummaryDTO> items = toSummaryDTO(roadmapDOList);
+
+        // 批量填充 profession 信息
+        Set<Long> professionIds = roadmapDOList.stream()
+            .map(RoadmapDO::getProfessionId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        Map<Long, ProfessionDO> professionMap = professionIds.isEmpty()
+            ? Map.of()
+            : professionDataService.getByIds(new ArrayList<>(professionIds)).stream()
+                .collect(Collectors.toMap(ProfessionDO::getId, p -> p));
+
+        // 批量填充 creator 信息
+        Set<Long> creatorIds = roadmapDOList.stream()
+            .map(RoadmapDO::getCreatorId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        Map<Long, UserDO> creatorMap = creatorIds.isEmpty()
+            ? Map.of()
+            : userDataService.getMapByIds(creatorIds);
+
+        // 创建 roadmapDO 映射
+        Map<Long, RoadmapDO> roadmapDOMap = roadmapDOList.stream()
+            .collect(Collectors.toMap(RoadmapDO::getId, r -> r));
+
+        for (RoadmapSummaryDTO dto : items) {
+            RoadmapDO roadmapDO = roadmapDOMap.get(dto.getId());
+            if (roadmapDO != null) {
+                if (roadmapDO.getProfessionId() != null) {
+                    ProfessionDO profession = professionMap.get(roadmapDO.getProfessionId());
+                    if (profession != null) {
+                        dto.setProfession(professionConverter.toBriefDTO(profession));
+                    }
+                }
+                if (roadmapDO.getCreatorId() != null) {
+                    UserDO creator = creatorMap.get(roadmapDO.getCreatorId());
+                    if (creator != null) {
+                        dto.setCreator(userConverter.toBriefDTO(creator));
+                    }
+                }
+            }
+        }
+
         Long nextLastId = hasMore && !items.isEmpty() ? items.get(items.size() - 1).getId() : null;
 
         return KeysetPageResponse.of(items, hasMore, null, nextLastId);

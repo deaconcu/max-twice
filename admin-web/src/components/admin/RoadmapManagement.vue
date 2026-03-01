@@ -162,14 +162,11 @@
                 <div class="d-flex align-center justify-space-between mb-2">
                   <div class="d-flex align-center">
                     <div class="text-body-1 font-weight-medium text-grey-darken-3">
-                      路线图 #{{ roadmap.id }}
+                      {{ roadmap.profession?.name || '未知职业' }}
                     </div>
                     <v-chip variant="flat" :color="getStateConfig(roadmap.state).color" size="x-small" class="ml-2">
                       {{ getStateConfig(roadmap.state).text }}
                     </v-chip>
-                    <span v-if="roadmap.profession" class="ml-2 text-body-2 text-grey-darken-1">
-                      | {{ roadmap.profession.name }}
-                    </span>
                   </div>
                   <div class="d-flex align-center text-caption text-grey-darken-1">
                     <span>{{ roadmap.creator?.name || '未知' }}</span>

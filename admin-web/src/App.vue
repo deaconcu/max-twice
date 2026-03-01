@@ -3,6 +3,7 @@ import { RouterView } from 'vue-router'
 import { ref, computed, watch, onMounted } from 'vue'
 import type { Ref } from 'vue'
 import { setGlobalSnackbar } from '@/composables/utils'
+import { useSystemConfigStore } from '@/stores'
 
 interface Snackbar {
   text: string
@@ -81,6 +82,10 @@ const getSnackbarIcon = (type: string): string => {
 // 设置全局 snackbar 给 utils 使用
 onMounted(() => {
   setGlobalSnackbar(showSnackbar)
+
+  // 初始化系统配置
+  const systemConfigStore = useSystemConfigStore()
+  systemConfigStore.init()
 })
 </script>
 

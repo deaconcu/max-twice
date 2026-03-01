@@ -428,6 +428,9 @@ const getStateColor = (state: number): string => {
                     <v-chip variant="flat" :color="getStateColor(post.state)" size="x-small" class="ml-2">
                       {{ getStateText(post.state) }}
                     </v-chip>
+                    <span v-if="post.node" class="ml-2 text-caption text-grey-darken-1">
+                      节点：{{ post.node.name }}
+                    </span>
                   </div>
                   <div class="d-flex align-center text-caption text-grey-darken-1">
                     <span>用户 #{{ post.creatorId }}</span>

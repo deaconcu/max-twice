@@ -4,7 +4,7 @@ import { useI18n } from '@/composables/useI18n'
 import { adminApi } from '@/api/modules/admin'
 import { DeckState } from '@/types/memory'
 import type { DeckDetail } from '@/types/memory'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useFetchForScroll } from '@/composables/useFetchForScroll'
 
 const { t } = useI18n()
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
@@ -17,7 +17,7 @@ const searchForm = ref({
   keyword: '',
 })
 
-// 使用 useInfiniteScroll 管理分页数据
+// 使用 useFetchForScroll 管理分页数据
 const {
   items: deckList,
   loading,
@@ -25,29 +25,17 @@ const {
   params,
   loadMore,
   reset: resetList,
-} = useInfiniteScroll<DeckDetail>({
-  fetchFn: async (currentParams) => {
-    const response = await adminApi.getDecksByFilter(
+} = useFetchForScroll<DeckDetail>({
+  fetchFn: (currentParams) => {
+    return adminApi.getDecksByFilter(
       searchForm.value.nodeId || undefined,
       searchForm.value.creatorId || undefined,
       searchForm.value.state !== null ? searchForm.value.state : undefined,
-      currentParams.lastId
+      currentParams.lastId ?? undefined
     )
-
-    const pageData = response.data
-    return {
-      code: response.code,
-      data: pageData?.items || [],
-      message: response.message || '',
-      hasMore: pageData?.hasMore ?? false,
-    }
   },
-  getNextParams: (lastItem, currentParams) => ({
-    ...currentParams,
-    lastId: lastItem.id,
-  }),
   initialParams: {
-    lastId: undefined,
+    lastId: null,
   },
   onError: (error) => {
     console.error('Error searching decks:', error)
@@ -69,7 +57,7 @@ const resetSearch = () => {
 // 搜索
 const handleSearch = () => {
   resetList()
-  loadMore({ done: () => {} } as any)
+  loadMore()
 }
 
 // 状态文本

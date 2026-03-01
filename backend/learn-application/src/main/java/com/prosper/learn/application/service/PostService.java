@@ -430,6 +430,10 @@ public class PostService {
         }
 
         List<PostSummaryDTO> items = toSummaryDTO(postDOList);
+
+        // 批量填充 node 信息
+        fillNodeInfo(postDOList, items);
+
         Long nextLastId = hasMore && !items.isEmpty() ? items.get(items.size() - 1).getId() : null;
 
         return KeysetPageResponse.of(items, hasMore, null, nextLastId);
@@ -457,9 +461,43 @@ public class PostService {
         }
 
         List<PostSummaryDTO> items = toSummaryDTO(postDOList);
+
+        // 批量填充 node 信息
+        fillNodeInfo(postDOList, items);
+
         Long nextLastId = hasMore && !items.isEmpty() ? items.get(items.size() - 1).getId() : null;
 
         return KeysetPageResponse.of(items, hasMore, null, nextLastId);
+    }
+
+    /**
+     * 批量填充帖子的 node 信息
+     */
+    private void fillNodeInfo(List<PostDO> postDOList, List<PostSummaryDTO> items) {
+        Set<Long> nodeIds = postDOList.stream()
+                .map(PostDO::getNodeId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (nodeIds.isEmpty()) {
+            return;
+        }
+
+        Map<Long, NodeDO> nodeMap = nodeDataService.getByIds(new ArrayList<>(nodeIds)).stream()
+                .collect(Collectors.toMap(NodeDO::getId, n -> n));
+
+        Map<Long, PostDO> postDOMap = postDOList.stream()
+                .collect(Collectors.toMap(PostDO::getId, p -> p));
+
+        for (PostSummaryDTO dto : items) {
+            PostDO postDO = postDOMap.get(dto.getId());
+            if (postDO != null && postDO.getNodeId() != null) {
+                NodeDO nodeDO = nodeMap.get(postDO.getNodeId());
+                if (nodeDO != null) {
+                    dto.setNode(nodeConverter.toBriefDTO(nodeDO));
+                }
+            }
+        }
     }
 
 
