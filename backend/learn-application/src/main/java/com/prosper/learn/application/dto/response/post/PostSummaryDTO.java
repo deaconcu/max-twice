@@ -70,6 +70,11 @@ public class PostSummaryDTO {
     private Integer state;
 
     /**
+     * 拒绝/封禁原因
+     */
+    private String reason;
+
+    /**
      * 分数
      */
     private Double score;

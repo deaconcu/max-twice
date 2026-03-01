@@ -23,6 +23,8 @@ public class RoadmapSummaryDTO {
 
     private Byte state;
 
+    private String reason;
+
     private Integer likeCount;
 
     private Integer commentCount;

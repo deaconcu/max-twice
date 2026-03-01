@@ -18,6 +18,8 @@ public class NodeDetailDTO extends NodeSummaryDTO {
 
     private Byte state;
 
+    private String reason;
+
     private String createdAt;
 
     private String updatedAt;

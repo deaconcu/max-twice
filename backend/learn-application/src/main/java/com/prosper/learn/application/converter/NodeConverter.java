@@ -97,6 +97,7 @@ public interface NodeConverter {
     @Mapping(target = "courseId")
     @Mapping(target = "creatorId")
     @Mapping(target = "state")
+    @Mapping(target = "reason")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
     NodeDetailDTO toDetailDTOInternal(NodeDO nodeDO);
