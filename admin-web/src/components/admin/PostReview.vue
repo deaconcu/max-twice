@@ -479,6 +479,11 @@ const getStateColor = (state: number): string => {
                       </div>
                     </div>
                   </div>
+
+                  <!-- 拒绝/封禁原因 -->
+                  <div v-if="(post.state === ContentState.REJECTED || post.state === ContentState.BANNED) && post.reason" class="mt-2">
+                    <span class="text-caption text-red-darken-2">{{ post.state === ContentState.BANNED ? '封禁' : '拒绝' }}原因：{{ post.reason }}</span>
+                  </div>
                 </div>
               </div>
             </div>

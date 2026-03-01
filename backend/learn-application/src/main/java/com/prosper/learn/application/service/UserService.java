@@ -414,6 +414,16 @@ public class UserService {
     }
 
     /**
+     * 获取单个用户简要信息
+     */
+    public UserBriefDTO getUserBriefById(Long id) {
+        if (id == null) return null;
+        UserDO userDO = userDataService.getById(id);
+        if (userDO == null) return null;
+        return userConverter.toBriefDTO(userDO);
+    }
+
+    /**
      * 转换为用户摘要 DTO（公开信息）
      * 用途：用户列表、作者信息
      * 替代：原 V1

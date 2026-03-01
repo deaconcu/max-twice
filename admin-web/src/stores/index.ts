@@ -6,4 +6,5 @@
 export { useAuthStore } from './modules/auth'
 export { useUserStore } from './modules/user'
 export { useCategoryStore } from './modules/category'
+export { useReviewReasonsStore } from './modules/reviewReasons'
 export { useValidationConfigStore } from './validationConfig'

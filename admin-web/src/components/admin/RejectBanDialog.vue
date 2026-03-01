@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { ContentState } from '@/enums'
+import { useReviewReasonsStore } from '@/stores'
+
+const reviewReasonsStore = useReviewReasonsStore()
 
 interface Props {
   modelValue: boolean
@@ -9,8 +12,6 @@ interface Props {
   itemType?: string
   itemState?: number
   loading?: boolean
-  rejectReasons?: string[]
-  banReasons?: string[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -20,8 +21,10 @@ const props = withDefaults(defineProps<Props>(), {
   itemType: '内容',
   itemState: ContentState.SUBMITTED,
   loading: false,
-  rejectReasons: () => [],
-  banReasons: () => [],
+})
+
+onMounted(() => {
+  reviewReasonsStore.checkAndLoad()
 })
 
 const emit = defineEmits<{
@@ -40,7 +43,7 @@ const dialogVisible = computed({
 })
 
 const reasonOptions = computed(() => {
-  return props.type === 'reject' ? props.rejectReasons : props.banReasons
+  return props.type === 'reject' ? reviewReasonsStore.rejectReasons : reviewReasonsStore.banReasons
 })
 
 const dialogTitle = computed(() => {

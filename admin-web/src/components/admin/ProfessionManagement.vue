@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, ref, onMounted } from 'vue'
+import { inject, ref, onMounted, nextTick } from 'vue'
 import { adminApi, systemApi, professionApi } from '@/api'
 import { ContentState } from '@/enums'
 import type { Profession, ProfessionCategory, CategoryMapping } from '@/types/profession.d'
@@ -10,10 +10,8 @@ import { professionNameRules, professionDescriptionRules } from '@/utils/validat
 import { PROFESSION_VALIDATION } from '@/types/validation'
 import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
 import { useMutation } from '@/composables/useMutation'
-import { useReviewReasonsStore } from '@/stores'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
-const reviewReasonsStore = useReviewReasonsStore()
 
 // 扩展 Profession 接口以包含UI状态
 interface ProfessionWithUIState extends Profession {
@@ -37,6 +35,11 @@ interface EditProfessionForm {
 }
 
 const selectedStateIndex = ref<number>(0)
+
+// 筛选条件
+const filterProfessionId = ref<number | null>(null)
+const isFilterMode = ref<boolean>(false)
+const filterResult = ref<ProfessionWithUIState | null>(null)
 
 // 拒绝/屏蔽对话框
 const showReasonDialog = ref<boolean>(false)
@@ -155,6 +158,32 @@ const {
 const onStateChange = (): void => {
   resetProfessionList()
   loadMoreData()
+}
+
+// 按ID筛选职业
+const searchById = async (): Promise<void> => {
+  if (!filterProfessionId.value) {
+    showSnackbar?.('请输入职业ID', 'warning')
+    return
+  }
+  try {
+    const response = await adminApi.getProfessionById(filterProfessionId.value)
+    if (response.data) {
+      filterResult.value = response.data
+      isFilterMode.value = true
+    } else {
+      showSnackbar?.('未找到该职业', 'warning')
+    }
+  } catch {
+    showSnackbar?.('查询失败', 'error')
+  }
+}
+
+// 清除筛选
+const clearFilter = (): void => {
+  filterProfessionId.value = null
+  filterResult.value = null
+  isFilterMode.value = false
 }
 
 // 使用 useMutation 操作职业申请
@@ -312,12 +341,16 @@ const showEditModal = (profession: ProfessionWithUIState): void => {
     skillsText: profession.skills || '',
     mainCategory: profession.mainCategory || null,
     subCategory: profession.subCategory || null,
-    icon: profession.icon || 'mdi-briefcase',
+    icon: profession.icon || '',
     reason: profession.reason || '',
     state: profession.state,
   }
 
   showEditDialog.value = true
+
+  nextTick(() => {
+    ;(editForm.value as any)?.validate()
+  })
 }
 
 // 关闭编辑对话框
@@ -352,14 +385,13 @@ const updateProfession = async (): Promise<void> => {
   if (!editFormValid.value) return
 
   const updateData = {
-    id: editProfession.value.id!,
     name: editProfession.value.name!,
     description: editProfession.value.description!,
     price: editProfession.value.price || '',
     skills: editProfession.value.skillsText || '',
-    mainCategory: editProfession.value.mainCategory || 0,
-    subCategory: editProfession.value.subCategory || 0,
-    icon: editProfession.value.icon || 'mdi-briefcase',
+    mainCategory: editProfession.value.mainCategory || null,
+    subCategory: editProfession.value.subCategory || null,
+    icon: editProfession.value.icon || '',
     reason: editProfession.value.reason || '',
   }
 
@@ -372,7 +404,6 @@ const updateProfession = async (): Promise<void> => {
 // 组件挂载时加载数据
 onMounted(() => {
   loadProfessionCategories()
-  reviewReasonsStore.checkAndLoad()
 })
 </script>
 
@@ -387,8 +418,45 @@ onMounted(() => {
         筛选与状态
       </v-card-title>
       <v-card-text>
+        <!-- 筛选条件 -->
+        <div v-if="!isFilterMode" class="d-flex align-center ga-3 mb-4">
+          <v-text-field
+            v-model.number="filterProfessionId"
+            type="number"
+            label="职业 ID"
+            variant="outlined"
+            density="compact"
+            hide-details
+            clearable
+            style="max-width: 180px"
+          ></v-text-field>
+          <v-btn variant="tonal" size="default" @click="searchById">
+            <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
+            查询
+          </v-btn>
+        </div>
+
+        <!-- 筛选结果提示 -->
+        <v-alert
+          v-if="isFilterMode"
+          type="info"
+          color="teal"
+          variant="outlined"
+          class="mb-4"
+          border="top"
+          rounded="lg"
+          closable
+          @click:close="clearFilter"
+        >
+          <div class="d-flex align-center">
+            <span class="font-weight-medium">筛选条件：</span>
+            <v-chip size="small" class="mx-1">职业 ID: {{ filterProfessionId }}</v-chip>
+          </div>
+        </v-alert>
+
         <!-- 状态标签 -->
         <v-tabs
+          v-if="!isFilterMode"
           v-model="selectedStateIndex"
           color="primary"
           show-arrows
@@ -500,6 +568,7 @@ onMounted(() => {
                 <!-- 标题行 -->
                 <div class="d-flex align-center justify-space-between mb-2">
                   <div class="d-flex align-center">
+                    <v-icon v-if="profession.icon" :icon="profession.icon" size="18" class="mr-2 text-grey-darken-2"></v-icon>
                     <div class="text-body-1 font-weight-medium text-grey-darken-3">
                       {{ profession.name || '职业名称' }}
                     </div>
@@ -527,7 +596,7 @@ onMounted(() => {
 
                   <!-- 技能要求 -->
                   <div v-if="profession.skills" class="mb-2 d-flex align-center flex-wrap">
-                    <span class="text-caption text-grey-darken-1 mr-2">技能：</span>
+                    <span class="text-caption text-grey-darken-1 mr-2 mb-1">技能：</span>
                     <v-chip
                       v-for="skill in getSkillsArray(profession.skills)"
                       :key="skill"
@@ -548,9 +617,9 @@ onMounted(() => {
                     <span v-if="profession.subCategory">{{ getSubCategoryName(profession.mainCategory, profession.subCategory) }}</span>
                   </div>
 
-                  <!-- 拒绝原因 -->
-                  <div v-if="profession.state === ContentState.REJECTED && profession.reason" class="mt-2">
-                    <span class="text-caption text-red-darken-2">拒绝原因：{{ profession.reason }}</span>
+                  <!-- 拒绝/封禁原因 -->
+                  <div v-if="(profession.state === ContentState.REJECTED || profession.state === ContentState.BANNED) && profession.reason" class="mt-2">
+                    <span class="text-caption text-red-darken-2">{{ profession.state === ContentState.BANNED ? '封禁' : '拒绝' }}原因：{{ profession.reason }}</span>
                   </div>
                 </div>
               </div>

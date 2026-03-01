@@ -315,6 +315,19 @@ public class AdminContentsController {
     }
 
     /**
+     * 获取职业详情（管理后台）
+     * GET /api/v1/admin/contents/profession/{id}
+     */
+    @GetMapping("/profession/{id}")
+    @RequireRole(UserRole.MODERATOR)
+    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
+    public ApiResponse<?> getProfessionById(
+            @PathVariable @NotNull(message = "职业ID不能为空")
+            @Positive(message = "职业ID必须大于0") Long id) {
+        return ApiResponse.query(professionService.getAdminById(id));
+    }
+
+    /**
      * 更新节点状态
      * PUT /api/v1/admin/contents/node/{id}/state?state=xxx&reason=xxx
      */

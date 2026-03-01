@@ -16,6 +16,13 @@ export interface Profession {
   subCategory?: number // 子分类
   icon?: string // 图标
   learnerCount?: number // 学习人数
+  state?: number // 状态
+  reason?: string // 拒绝/屏蔽原因
+  creator?: {
+    id: number
+    name: string
+    avatar?: string
+  }
   createdAt?: string // 创建时间
   bookmarked?: boolean // 是否已收藏
 }

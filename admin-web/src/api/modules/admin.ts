@@ -164,6 +164,13 @@ export const adminApi = {
   },
 
   /**
+   * 获取职业详情（管理后台）
+   */
+  getProfessionById(id: number): Promise<ApiResponse<any>> {
+    return apiClient.get(`/v1/admin/contents/profession/${id}`)
+  },
+
+  /**
    * 更新职业信息
    */
   updateProfession(id: number, request: any): Promise<ApiResponse<void>> {

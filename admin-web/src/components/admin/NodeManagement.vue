@@ -460,6 +460,11 @@ const initializeEmbeddings = async () => {
                   <div v-if="node.description" class="text-body-2 text-grey-darken-1">
                     {{ node.description }}
                   </div>
+
+                  <!-- 拒绝/封禁原因 -->
+                  <div v-if="(node.state === ContentState.REJECTED || node.state === ContentState.BANNED) && node.reason" class="mt-2">
+                    <span class="text-caption text-red-darken-2">{{ node.state === ContentState.BANNED ? '封禁' : '拒绝' }}原因：{{ node.reason }}</span>
+                  </div>
                 </div>
               </div>
             </div>

@@ -156,9 +156,9 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
             父课程：<a :href="`/read?courseId=${course.parentCourse.id}`" target="_blank">{{ course.parentCourse.name }}</a>
           </div>
 
-          <!-- 拒绝原因 -->
+          <!-- 拒绝/封禁原因 -->
           <div v-if="course.reason" class="mt-2">
-            <span class="text-caption text-red-darken-2">拒绝原因：{{ course.reason }}</span>
+            <span class="text-caption text-red-darken-2">{{ course.state === ContentState.BANNED ? '封禁' : '拒绝' }}原因：{{ course.reason }}</span>
           </div>
         </div>
       </div>

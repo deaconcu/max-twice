@@ -178,6 +178,11 @@
                   {{ roadmap.description }}
                 </div>
                 <div v-else class="text-body-2 text-grey">暂无描述</div>
+
+                <!-- 拒绝/封禁原因 -->
+                <div v-if="(roadmap.state === ContentState.REJECTED || roadmap.state === ContentState.BANNED) && roadmap.reason" class="mt-2">
+                  <span class="text-caption text-red-darken-2">{{ roadmap.state === ContentState.BANNED ? '封禁' : '拒绝' }}原因：{{ roadmap.reason }}</span>
+                </div>
               </div>
             </div>
           </div>

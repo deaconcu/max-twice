@@ -425,6 +425,11 @@ const getStateColor = (state: number): string => {
                     </div>
                   </div>
                 </div>
+
+                <!-- 拒绝/封禁原因 -->
+                <div v-if="(deck.state === ContentState.REJECTED || deck.state === ContentState.BANNED) && deck.reason" class="mt-2">
+                  <span class="text-caption text-red-darken-2">{{ deck.state === ContentState.BANNED ? '封禁' : '拒绝' }}原因：{{ deck.reason }}</span>
+                </div>
               </div>
             </div>
           </div>

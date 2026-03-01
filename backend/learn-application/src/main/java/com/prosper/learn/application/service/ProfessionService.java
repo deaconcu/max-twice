@@ -109,6 +109,19 @@ public class ProfessionService {
     }
 
     /**
+     * 获取职业详情（管理后台专用，任意状态）
+     */
+    public ProfessionAdminDTO getAdminById(Long id) {
+        ProfessionDO professionDO = professionDomainService.getById(id);
+        if (professionDO == null) {
+            return null;
+        }
+        ProfessionAdminDTO dto = professionConverter.toAdminDTO(professionDO);
+        dto.setCreator(userService.getUserBriefById(professionDO.getCreatorId()));
+        return dto;
+    }
+
+    /**
      * 获取已发布的职业列表（公开接口，只返回已发布状态）
      */
     public List<ProfessionDTO> getApprovedByLastId(Long lastId, int limit) {
