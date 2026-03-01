@@ -112,16 +112,6 @@ export const adminApi = {
   // ========== 课程管理 ==========
 
   /**
-   * 根据筛选条件获取课程
-   */
-  getCoursesByFilter(state?: number, lastId?: number): Promise<ApiResponse<any[]>> {
-    const params: Record<string, unknown> = {}
-    if (state !== undefined) params.state = state
-    if (lastId !== undefined) params.lastId = lastId
-    return apiClient.get('/v1/admin/contents/course/filter', { params })
-  },
-
-  /**
    * 获取课程详情
    */
   getCourseDetail(id: number): Promise<ApiResponse<any>> {

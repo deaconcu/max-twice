@@ -178,20 +178,6 @@ public class AdminContentsController {
     }
 
     /**
-     * 课程高级筛选
-     * GET /api/v1/admin/contents/course/filter?state=xxx&parentId=xxx&lastId=xxx
-     */
-    @GetMapping("/course/filter")
-    @RequireRole(UserRole.MODERATOR)
-    @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<?> filterCourses(
-            @RequestParam(required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state,
-            @RequestParam(required = false) Long lastId) {
-        ContentState courseState = state != null ? ContentState.getByValue(state) : null;
-        return ApiResponse.success(courseService.getListByStateAndLastId(courseState, lastId));
-    }
-
-    /**
      * 节点高级筛选
      * GET /api/v1/admin/contents/node/filter?state=xxx&nodeId=xxx&courseId=xxx&creatorId=xxx&lastId=xxx
      */

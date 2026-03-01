@@ -136,20 +136,17 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
 
         <!-- 内容 -->
         <div class="content-wrapper">
-          <!-- 分类信息 -->
-          <div v-if="course.mainCategory || course.subCategory" class="d-flex align-center flex-wrap mb-2">
-            <span class="text-caption text-grey-darken-1 mr-2">分类：</span>
-            <v-chip v-if="course.mainCategory" variant="tonal" color="purple" size="x-small" class="mr-1">
-              {{ getMainCategoryName(course.mainCategory) }}
-            </v-chip>
-            <v-chip v-if="course.subCategory" variant="tonal" color="orange" size="x-small">
-              {{ getSubCategoryName(course.mainCategory, course.subCategory) }}
-            </v-chip>
-          </div>
-
           <!-- 描述 -->
           <div class="text-body-2 text-grey-darken-1 mb-2">
             {{ course.description || '暂无描述' }}
+          </div>
+
+          <!-- 分类信息 -->
+          <div v-if="course.mainCategory || course.subCategory" class="text-caption text-grey-darken-1">
+            <span>分类：</span>
+            <span v-if="course.mainCategory">{{ getMainCategoryName(course.mainCategory) }}</span>
+            <span v-if="course.mainCategory && course.subCategory"> | </span>
+            <span v-if="course.subCategory">{{ getSubCategoryName(course.mainCategory, course.subCategory) }}</span>
           </div>
 
           <!-- 父课程 -->

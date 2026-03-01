@@ -1,5 +1,6 @@
 package com.prosper.learn.application.dto.response.course;
 
+import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -30,6 +31,13 @@ public class CourseDetailDTO extends CourseSummaryDTO {
      * 何时填充：始终填充，用于权限校验和显示创建者信息
      */
     private Long creatorId;
+
+    /**
+     * 创建者信息
+     * 说明：创建该课程的用户信息（仅 id 和 name）
+     * 何时填充：管理后台列表接口填充
+     */
+    private UserBriefDTO creator;
 
     /**
      * 根节点ID

@@ -6,6 +6,7 @@ import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.application.dto.request.CreateCourseRequest;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.course.*;
+import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import com.prosper.learn.content.course.CourseDomainService;
 import com.prosper.learn.content.node.NodeDO;
 import com.prosper.learn.application.converter.CourseConverter;
@@ -55,6 +56,9 @@ public class CourseService {
     private final CourseConverter courseConverter;
     private final UserLearningDomainService userLearningDomainService;
     private final BookmarkService bookmarkService;
+    private final UserService userService;
+
+    private static final int DEFAULT_PAGE_SIZE = 20;
 
 
     // ========== DTO 转换方法 ==========
@@ -454,13 +458,36 @@ public class CourseService {
         return KeysetPageResponse.of(items, hasMore, null, nextLastId);
     }
 
-    // 保留旧方法用于管理后台
-    // 新增：根据状态和lastId获取课程列表
-    public List<CourseDetailDTO> getListByStateAndLastId(ContentState state, Long lastId) {
-        List<CourseDO> courseDOList = courseDataService.listByStateAndLastId(state, lastId);
-        return courseDOList.stream()
+    // 管理后台：根据状态和lastId获取课程列表（返回分页响应）
+    public KeysetPageResponse<CourseDetailDTO> getListByStateAndLastId(ContentState state, Long lastId) {
+        List<CourseDO> courseDOList = courseDataService.listByStateAndLastId(state, lastId, DEFAULT_PAGE_SIZE + 1);
+
+        boolean hasMore = courseDOList.size() > DEFAULT_PAGE_SIZE;
+        if (hasMore) {
+            courseDOList = courseDOList.subList(0, DEFAULT_PAGE_SIZE);
+        }
+
+        List<CourseDetailDTO> dtoList = courseDOList.stream()
                 .map(this::toDetailDTO)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
+
+        // 填充 creator
+        Set<Long> creatorIds = courseDOList.stream()
+                .map(CourseDO::getCreatorId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+        if (!creatorIds.isEmpty()) {
+            Map<Long, UserBriefDTO> creatorMap = userService.getUserBriefMapByIds(creatorIds);
+            for (int i = 0; i < dtoList.size(); i++) {
+                Long creatorId = courseDOList.get(i).getCreatorId();
+                if (creatorId != null) {
+                    dtoList.get(i).setCreator(creatorMap.get(creatorId));
+                }
+            }
+        }
+
+        Long nextLastId = dtoList.isEmpty() ? null : dtoList.get(dtoList.size() - 1).getId();
+        return KeysetPageResponse.of(dtoList, hasMore, null, nextLastId);
     }
 
     // 新增：根据分类获取已批准的课程列表（支持只传主分类，支持分页）

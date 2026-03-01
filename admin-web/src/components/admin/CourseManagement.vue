@@ -66,11 +66,8 @@ const searchAttempted = ref<boolean>(false)
 // 子课程列表（用于显示查询课程的子课程）
 const subcourseList = ref<Course[]>([])
 
-// 分类数据
+// 分类数据（用于编辑对话框和CourseCard显示）
 const mainCategories = ref<any[]>([])
-const subCategories = ref<any[]>([])
-const selectedMainCategory = ref<number | null>(null)
-const selectedSubCategory = ref<number | null>(null)
 const categoryMapping = ref<any[]>([])
 
 // 拒绝/屏蔽对话框
@@ -115,34 +112,12 @@ const loadCourses = async (isLoadMore = false): Promise<void> => {
     }
 
     const currentState = getCurrentState()
-    let response
-
-    if (
-      currentState === ContentState.PUBLISHED &&
-      selectedMainCategory.value &&
-      !selectedSubCategory.value
-    ) {
-      courseList.value = []
-      hasMore.value = false
-      loading.value = false
-      loadingMore.value = false
-      return
-    }
-
-    if (
-      currentState === ContentState.PUBLISHED &&
-      selectedMainCategory.value &&
-      selectedSubCategory.value
-    ) {
-      response = await adminApi.getCoursesByFilter(currentState, null)
-      hasMore.value = false
-    } else {
-      const currentLastId = isLoadMore ? lastId.value : null
-      response = await adminApi.getContentsByState('course', currentState, currentLastId)
-    }
+    const currentLastId = isLoadMore ? lastId.value : null
+    const response = await adminApi.getContentsByState('course', currentState, currentLastId)
 
     if (response.code === 200) {
-      const newCourses = response.data || []
+      const pageData = response.data
+      const newCourses = pageData?.items || []
 
       if (isLoadMore) {
         courseList.value.push(...newCourses)
@@ -150,18 +125,10 @@ const loadCourses = async (isLoadMore = false): Promise<void> => {
         courseList.value = newCourses
       }
 
-      if (
-        currentState !== ContentState.PUBLISHED ||
-        !selectedMainCategory.value ||
-        !selectedSubCategory.value
-      ) {
-        if (newCourses.length > 0) {
-          lastId.value = newCourses[newCourses.length - 1].id
-          hasMore.value = newCourses.length >= 10
-        } else {
-          hasMore.value = false
-        }
+      if (newCourses.length > 0) {
+        lastId.value = newCourses[newCourses.length - 1].id
       }
+      hasMore.value = pageData?.hasMore ?? false
     } else {
       showSnackbar?.('加载课程失败: ' + (response.msg || '未知错误'))
     }
@@ -213,13 +180,13 @@ const searchCourseById = async (): Promise<void> => {
   subcourseList.value = []
 
   try {
-    const response = await adminApi.getAdminCourse(Number(searchCourseId.value))
+    const response = await adminApi.getCourseDetail(Number(searchCourseId.value))
 
     if (response.code === 200) {
       searchedCourse.value = response.data
 
       try {
-        const subcourseResponse = await adminApi.getAdminSubcourses(
+        const subcourseResponse = await adminApi.getSubcourses(
           Number(searchCourseId.value),
           undefined
         )
@@ -248,7 +215,7 @@ const searchCourseById = async (): Promise<void> => {
   }
 }
 
-// 加载课程分类数据
+// 加载课程分类数据（用于编辑对话框和CourseCard显示）
 const loadCourseCategories = async (): Promise<void> => {
   try {
     const response = await systemApi.getCourseCategories()
@@ -258,11 +225,6 @@ const loadCourseCategories = async (): Promise<void> => {
 
       mainCategories.value = categories
       categoryMapping.value = mapping
-
-      if (categories.length > 0) {
-        const firstMapping = mapping.find((m: any) => m.mainCategoryId === categories[0].id)
-        subCategories.value = firstMapping ? firstMapping.subcategories : []
-      }
     }
   } catch (error) {
     console.error('Error loading course categories:', error)
@@ -271,58 +233,7 @@ const loadCourseCategories = async (): Promise<void> => {
 
 // 状态变化处理
 const onStateChange = (): void => {
-  selectedMainCategory.value = null
-  selectedSubCategory.value = null
   loadCourses()
-}
-
-// 分类变化处理
-const onCategoryChange = (): void => {
-  if (getCurrentState() === ContentState.PUBLISHED) {
-    if (selectedMainCategory.value && selectedSubCategory.value) {
-      loadCourses()
-    }
-  }
-}
-
-// 清除分类筛选
-const clearCategoryFilter = (): void => {
-  selectedMainCategory.value = null
-  selectedSubCategory.value = null
-  subCategories.value =
-    categoryMapping.value.length > 0 ? categoryMapping.value[0].subcategories : []
-  loadCourses()
-}
-
-// 主分类变化时更新子分类
-const updateSubCategories = (mainCategoryId: number): void => {
-  const mapping = categoryMapping.value.find((m) => m.mainCategoryId === mainCategoryId)
-  subCategories.value = mapping ? mapping.subcategories : []
-
-  if (subCategories.value.length > 0) {
-    selectedSubCategory.value = subCategories.value[0].id
-  } else {
-    selectedSubCategory.value = null
-  }
-}
-
-// 主分类变化事件处理
-const onMainCategoryChange = (newValue: number | null): void => {
-  selectedMainCategory.value = newValue
-  if (newValue) {
-    updateSubCategories(newValue)
-    if (getCurrentState() === ContentState.PUBLISHED && selectedSubCategory.value) {
-      loadCourses()
-    } else if (getCurrentState() === ContentState.PUBLISHED) {
-      courseList.value = []
-    }
-  } else {
-    subCategories.value = []
-    selectedSubCategory.value = null
-    if (getCurrentState() === ContentState.PUBLISHED) {
-      loadCourses()
-    }
-  }
 }
 
 // 使用 useMutation 通过课程
@@ -562,49 +473,10 @@ onMounted(() => {
         </div>
 
         <!-- 筛选结果提示 -->
-        <div v-if="searchedCourse" class="mb-4">
+        <div v-if="searchedCourse">
           <v-chip variant="tonal" closable @click:close="clearSearch">
             课程 ID: {{ searchCourseId }}
           </v-chip>
-        </div>
-
-        <!-- 分类筛选 - 只在已通过状态且非搜索模式时显示 -->
-        <div v-if="!searchedCourse && getCurrentState() === ContentState.PUBLISHED" class="d-flex align-center ga-3 mb-4">
-          <v-select
-            v-model="selectedMainCategory"
-            :items="mainCategories"
-            item-title="name"
-            item-value="id"
-            label="主分类"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            style="max-width: 180px"
-            @update:model-value="onMainCategoryChange"
-          ></v-select>
-          <v-select
-            v-model="selectedSubCategory"
-            :items="subCategories"
-            item-title="name"
-            item-value="id"
-            label="子分类"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            :disabled="!selectedMainCategory"
-            style="max-width: 180px"
-            @update:model-value="onCategoryChange"
-          ></v-select>
-          <v-btn
-            v-if="selectedMainCategory || selectedSubCategory"
-            variant="text"
-            size="default"
-            @click="clearCategoryFilter"
-          >
-            清除筛选
-          </v-btn>
         </div>
 
         <!-- 状态标签 -->
@@ -682,40 +554,23 @@ onMounted(() => {
 
         <!-- 正常列表模式 -->
         <template v-else>
+          <!-- 首次加载状态 -->
+          <div v-if="loading && courseList.length === 0" class="text-center py-8">
+            <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+            <span class="ml-2 text-grey-darken-1">加载中...</span>
+          </div>
+
           <!-- 空状态 -->
-          <div v-if="!loading && courseList.length === 0" class="text-center py-12">
+          <div v-else-if="!loading && courseList.length === 0" class="text-center py-12">
             <v-icon icon="mdi-book-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
             <p class="text-body-1 text-grey-darken-1">
-              <template v-if="getCurrentState() === ContentState.PUBLISHED && selectedMainCategory && !selectedSubCategory">
-                请选择子分类
-              </template>
-              <template v-else>
-                暂无{{ getCurrentStateText() }}的课程
-              </template>
+              暂无{{ getCurrentStateText() }}的课程
             </p>
           </div>
 
           <!-- 列表 -->
           <div v-else>
-            <!-- 使用分类筛选时不启用无限滚动 -->
-            <template v-if="getCurrentState() === ContentState.PUBLISHED && selectedMainCategory && selectedSubCategory">
-              <CourseCard
-                v-for="course in courseList"
-                :key="course.id"
-                :course="course"
-                :main-categories="mainCategories"
-                :category-mapping="categoryMapping"
-                @edit="showEditModal"
-                @approve="approveCourse"
-                @reject="showRejectDialog"
-                @ban="banCourse"
-                @unban="unbanCourse"
-              />
-            </template>
-
-            <!-- 正常状态使用无限滚动 -->
             <v-infinite-scroll
-              v-else
               :empty="!hasMore"
               @load="onLoadMore"
             >
@@ -745,12 +600,6 @@ onMounted(() => {
                 </div>
               </template>
             </v-infinite-scroll>
-          </div>
-
-          <!-- 加载指示器 -->
-          <div v-if="loading && courseList.length === 0" class="text-center py-4">
-            <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
-            <span class="ml-2 text-grey-darken-1">加载中...</span>
           </div>
         </template>
       </v-card-text>

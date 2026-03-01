@@ -39,14 +39,14 @@ public interface CourseMapper {
 //    List<CourseDO> list(ContentState state, long creatorId, int limit, int offset);
 // --注释掉检查 STOP (2025/12/10 12:01)
 
-    // 新增：根据状态和lastId获取列表（只返回主课程）
+    // 根据状态和lastId获取列表，支持limit参数（只返回主课程）
     @Select("<script>" +
             "SELECT * FROM course WHERE state = #{state.value} " +
             "AND parent_course_id = 0 " +
             "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
-            "ORDER BY id DESC LIMIT 21" +
+            "ORDER BY id DESC LIMIT #{limit}" +
             "</script>")
-    List<CourseDO> listByStateAndLastId(ContentState state, Long lastId);
+    List<CourseDO> listByStateAndLastId(ContentState state, Long lastId, int limit);
 
     // 新增：根据主分类获取已批准的课程列表（支持分页）
     @Select("<script>" +
