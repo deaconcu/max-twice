@@ -245,69 +245,85 @@ const getStateColor = (state: number): string => {
   <div>
     <h2 class="text-h5 font-weight-bold mb-4">记忆卡片管理</h2>
 
-    <!-- 筛选与状态 -->
+    <!-- ID查询 -->
     <v-card flat class="border mb-4">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-filter-variant" size="18" class="mr-2"></v-icon>
-        筛选与状态
-      </v-card-title>
       <v-card-text>
-        <!-- 筛选条件 -->
-        <div class="d-flex align-center ga-3 mb-4 mt-2">
-          <v-text-field
-            v-model.number="filterForm.postId"
-            label="帖子ID"
-            type="number"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            style="max-width: 180px"
-          ></v-text-field>
-          <v-text-field
-            v-model.number="filterForm.creatorId"
-            label="用户ID"
-            type="number"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            style="max-width: 180px"
-          ></v-text-field>
-          <v-btn variant="tonal" size="default" @click="applyFilter">
-            <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
-            筛选
-          </v-btn>
-          <v-btn variant="text" size="default" @click="resetFilter">
-            重置
-          </v-btn>
-        </div>
-
-        <!-- 状态标签 -->
-        <v-tabs v-model="activeTab" color="primary" show-arrows @update:model-value="switchTab">
-          <v-tab v-for="tab in tabs" :key="tab.key" :value="tab.key" class="text-none">
-            <v-icon :icon="tab.icon" size="16" class="mr-2"></v-icon>
-            {{ tab.label }}
-          </v-tab>
-        </v-tabs>
+        <v-row align="center">
+          <v-col cols="3">
+            <v-text-field
+              v-model.number="filterForm.postId"
+              label="帖子 ID"
+              type="number"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              @keyup.enter="applyFilter"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="3">
+            <v-text-field
+              v-model.number="filterForm.creatorId"
+              label="用户 ID"
+              type="number"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              @keyup.enter="applyFilter"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn variant="tonal" size="default" @click="applyFilter">
+              <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
+              筛选
+            </v-btn>
+            <v-btn
+              v-if="filterForm.postId || filterForm.creatorId"
+              variant="text"
+              size="default"
+              @click="resetFilter"
+            >
+              清除
+            </v-btn>
+          </v-col>
+        </v-row>
       </v-card-text>
     </v-card>
 
     <!-- 卡片组列表 -->
     <v-card flat class="border">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-cards-variant" size="18" class="mr-2"></v-icon>
-        卡片组列表
-      </v-card-title>
       <v-card-text>
+        <!-- 状态标签 -->
+        <v-tabs
+          v-model="activeTab"
+          color="primary"
+          density="compact"
+          @update:model-value="switchTab"
+          class="mb-4"
+        >
+          <v-tab v-for="tab in tabs" :key="tab.key" :value="tab.key" class="text-none" size="small">
+            <v-icon :icon="tab.icon" size="14" class="mr-1"></v-icon>
+            {{ tab.label }}
+          </v-tab>
+        </v-tabs>
+
+        <!-- 首次加载状态 -->
+        <div v-if="loading && deckList.length === 0" class="text-center py-8">
+          <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+          <span class="ml-2 text-grey-darken-1">加载中...</span>
+        </div>
+
         <!-- 空状态 -->
-        <div v-if="!loading && deckList.length === 0" class="text-center py-12">
+        <div v-else-if="!loading && deckList.length === 0" class="text-center py-12">
           <v-icon icon="mdi-cards-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
-          <p class="text-body-1 text-grey-darken-1">暂无卡片组</p>
+          <p class="text-body-1 text-grey-darken-1">
+            暂无{{ tabs.find((tab) => tab.key === activeTab)?.label }}的卡片组
+          </p>
         </div>
 
         <!-- 列表 -->
-        <div v-if="deckList.length > 0">
+        <div v-else>
           <div
             v-for="deck in deckList"
             :key="deck.id"
@@ -318,15 +334,11 @@ const getStateColor = (state: number): string => {
                 }
               },
             }"
-            class="deck-item mb-3"
+            class="list-item mb-3"
           >
             <div class="d-flex align-start">
               <!-- 操作区 -->
               <div class="action-area mr-4">
-                <v-chip variant="flat" :color="getStateColor(deck.state)" size="small" class="mb-4 d-flex justify-center">
-                  {{ getStateText(deck.state) }}
-                </v-chip>
-
                 <!-- 待审核 -->
                 <div v-if="deck.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="success" size="small" block @click="approveDeck(deck)">
@@ -336,7 +348,7 @@ const getStateColor = (state: number): string => {
                     拒绝
                   </v-btn>
                   <v-btn variant="tonal" color="grey" size="small" block @click="banDeck(deck)">
-                    封禁
+                    屏蔽
                   </v-btn>
                 </div>
 
@@ -346,17 +358,17 @@ const getStateColor = (state: number): string => {
                     撤回
                   </v-btn>
                   <v-btn variant="tonal" color="grey" size="small" block @click="banDeck(deck)">
-                    封禁
+                    屏蔽
                   </v-btn>
                 </div>
 
                 <!-- 已拒绝 -->
                 <div v-if="deck.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="success" size="small" block @click="approveDeck(deck)">
-                    批准
+                    通过
                   </v-btn>
                   <v-btn variant="tonal" color="grey" size="small" block @click="banDeck(deck)">
-                    封禁
+                    屏蔽
                   </v-btn>
                 </div>
 
@@ -375,68 +387,76 @@ const getStateColor = (state: number): string => {
               <div class="flex-grow-1">
                 <!-- 标题行 -->
                 <div class="d-flex align-center justify-space-between mb-2">
-                  <div class="text-body-1 font-weight-medium text-grey-darken-3">
-                    <template v-if="deck.course || deck.node">
-                      <span v-if="deck.course">{{ deck.course.name }}</span>
-                      <v-icon v-if="deck.course && deck.node" icon="mdi-chevron-right" size="16" class="mx-1"></v-icon>
-                      <span v-if="deck.node">{{ deck.node.name }}</span>
-                    </template>
-                    <span v-else class="text-grey-darken-1">帖子 #{{ deck.postId }}</span>
+                  <div class="d-flex align-center">
+                    <div class="text-body-1 font-weight-medium text-grey-darken-3">
+                      <template v-if="deck.course || deck.node">
+                        <span v-if="deck.course">{{ deck.course.name }}</span>
+                        <span v-if="deck.course && deck.node" class="mx-1">/</span>
+                        <span v-if="deck.node">{{ deck.node.name }}</span>
+                      </template>
+                      <span v-else>卡片组 #{{ deck.id }}</span>
+                    </div>
+                    <v-chip variant="flat" :color="getStateColor(deck.state)" size="x-small" class="ml-2">
+                      {{ getStateText(deck.state) }}
+                    </v-chip>
                   </div>
-                  <div class="text-caption text-grey-darken-1">
-                    {{ deck.cardCount || 0 }} 张 · {{ deck.likeCount || 0 }} 赞
+                  <div class="d-flex align-center text-caption text-grey-darken-1">
+                    <span>{{ deck.creator?.name || '匿名' }}</span>
+                    <span class="mx-1">·</span>
+                    <span>{{ new Date(deck.createdAt).toLocaleDateString() }}</span>
+                    <span class="mx-1">·</span>
+                    <span>ID: {{ deck.id }}</span>
+                    <span v-if="deck.postId" class="mx-1">·</span>
+                    <span v-if="deck.postId">帖子 #{{ deck.postId }}</span>
                   </div>
                 </div>
 
-                <!-- 元信息 -->
-                <div class="d-flex align-center mb-2 text-caption text-grey-darken-1">
-                  <v-avatar size="16" class="mr-1">
-                    <v-img v-if="deck.creator?.avatar" :src="deck.creator.avatar" />
-                    <v-icon v-else icon="mdi-account-circle" size="16"></v-icon>
-                  </v-avatar>
-                  <span>{{ deck.creator?.name || '匿名' }}</span>
-                  <span v-if="deck.postId" class="ml-2">帖子 #{{ deck.postId }}</span>
-                  <span class="ml-2">{{ new Date(deck.createdAt).toLocaleDateString() }}</span>
-                </div>
+                <!-- 内容 -->
+                <div class="content-wrapper">
+                  <!-- 描述 -->
+                  <div v-if="deck.description" class="text-body-2 text-grey-darken-1 mb-2">
+                    {{ deck.description }}
+                  </div>
 
-                <!-- 描述 -->
-                <div v-if="deck.description" class="text-body-2 text-grey-darken-1 mb-2">
-                  {{ deck.description }}
-                </div>
+                  <!-- 统计信息 -->
+                  <div class="text-caption text-grey-darken-1 mb-2">
+                    {{ deck.cardCount || 0 }} 张卡片 · {{ deck.likeCount || 0 }} 赞
+                  </div>
 
-                <!-- 卡片列表 -->
-                <div v-if="deck.cards && deck.cards.length > 0" class="cards-area">
-                  <div
-                    v-for="(card, index) in deck.cards"
-                    :key="card.id"
-                    class="card-row"
-                    :class="{ 'border-bottom': index < deck.cards.length - 1 }"
-                  >
-                    <div class="card-index">{{ index + 1 }}</div>
-                    <div class="card-qa">
-                      <div class="qa-line">
-                        <span class="qa-tag q">Q</span>
-                        <span>{{ card.front }}</span>
-                      </div>
-                      <div class="qa-line">
-                        <span class="qa-tag a">A</span>
-                        <span>{{ card.back }}</span>
+                  <!-- 卡片列表 -->
+                  <div v-if="deck.cards && deck.cards.length > 0" class="cards-area">
+                    <div
+                      v-for="(card, index) in deck.cards"
+                      :key="card.id"
+                      class="card-row"
+                      :class="{ 'border-bottom': index < deck.cards.length - 1 }"
+                    >
+                      <div class="card-index">{{ index + 1 }}</div>
+                      <div class="card-qa">
+                        <div class="qa-line">
+                          <span class="qa-tag q">Q</span>
+                          <span>{{ card.front }}</span>
+                        </div>
+                        <div class="qa-line">
+                          <span class="qa-tag a">A</span>
+                          <span>{{ card.back }}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <!-- 拒绝/封禁原因 -->
-                <div v-if="(deck.state === ContentState.REJECTED || deck.state === ContentState.BANNED) && deck.reason" class="mt-2">
-                  <span class="text-caption text-red-darken-2">{{ deck.state === ContentState.BANNED ? '封禁' : '拒绝' }}原因：{{ deck.reason }}</span>
+                  <!-- 拒绝/封禁原因 -->
+                  <div v-if="(deck.state === ContentState.REJECTED || deck.state === ContentState.BANNED) && deck.reason" class="mt-2">
+                    <span class="text-caption text-red-darken-2">{{ deck.state === ContentState.BANNED ? '封禁' : '拒绝' }}原因：{{ deck.reason }}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 加载指示器 -->
-        <div v-if="loading" class="text-center py-4">
+        <!-- 加载更多指示器 -->
+        <div v-if="loading && deckList.length > 0" class="text-center py-4">
           <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
           <span class="ml-2 text-grey-darken-1">加载中...</span>
         </div>
@@ -466,7 +486,7 @@ const getStateColor = (state: number): string => {
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
-.deck-item {
+.list-item {
   padding: 16px;
   border-radius: 8px;
   background-color: #fafafa;
@@ -475,6 +495,13 @@ const getStateColor = (state: number): string => {
 .action-area {
   width: 70px;
   flex-shrink: 0;
+}
+
+.content-wrapper {
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 12px;
+  background-color: white;
 }
 
 .cards-area {

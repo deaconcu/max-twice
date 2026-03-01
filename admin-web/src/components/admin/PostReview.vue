@@ -281,92 +281,85 @@ const getStateColor = (state: number): string => {
   <div>
     <h2 class="text-h5 font-weight-bold mb-4">文章审核</h2>
 
-    <!-- 筛选与状态 -->
+    <!-- ID查询 -->
     <v-card flat class="border mb-4">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-filter-variant" size="18" class="mr-2"></v-icon>
-        筛选与状态
-      </v-card-title>
       <v-card-text>
-        <!-- 筛选条件 -->
-        <div v-if="!isFilterMode" class="d-flex align-center ga-3 mb-4 mt-2">
-          <v-text-field
-            v-model.number="filterNodeId"
-            type="number"
-            label="节点 ID"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            style="max-width: 180px"
-          ></v-text-field>
-          <v-text-field
-            v-model.number="filterCreatorId"
-            type="number"
-            label="用户 ID"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            style="max-width: 180px"
-          ></v-text-field>
-          <v-btn variant="tonal" size="default" @click="applyFilter">
-            <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
-            筛选
-          </v-btn>
-        </div>
-
-        <!-- 筛选结果提示 -->
-        <v-alert
-          v-if="isFilterMode"
-          type="info"
-          color="teal"
-          variant="outlined"
-          class="mb-4"
-          border="top"
-          rounded="lg"
-          closable
-          @click:close="clearFilter"
-        >
-          <div class="d-flex align-center">
-            <span class="font-weight-medium">筛选条件：</span>
-            <v-chip v-if="filterNodeId" size="small" class="mx-1">节点 ID: {{ filterNodeId }}</v-chip>
-            <v-chip v-if="filterCreatorId" size="small" class="mx-1">用户 ID: {{ filterCreatorId }}</v-chip>
-          </div>
-        </v-alert>
-
-        <!-- 状态标签 -->
-        <v-tabs
-          v-model="currentTab"
-          color="primary"
-          show-arrows
-          @update:model-value="handleTabChange"
-        >
-          <v-tab v-for="tab in tabs" :key="tab.key" :value="tab.key" class="text-none">
-            <v-icon :icon="tab.icon" size="16" class="mr-2"></v-icon>
-            {{ tab.label }}
-          </v-tab>
-        </v-tabs>
+        <v-row align="center">
+          <v-col cols="3">
+            <v-text-field
+              v-model.number="filterNodeId"
+              type="number"
+              label="节点 ID"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              @keyup.enter="applyFilter"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="3">
+            <v-text-field
+              v-model.number="filterCreatorId"
+              type="number"
+              label="用户 ID"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              @keyup.enter="applyFilter"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn variant="tonal" size="default" @click="applyFilter">
+              <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
+              筛选
+            </v-btn>
+            <v-btn
+              v-if="isFilterMode"
+              variant="text"
+              size="default"
+              @click="clearFilter"
+            >
+              清除
+            </v-btn>
+          </v-col>
+        </v-row>
       </v-card-text>
     </v-card>
 
     <!-- 文章列表 -->
     <v-card flat class="border">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-file-document-multiple" size="18" class="mr-2"></v-icon>
-        文章列表
-      </v-card-title>
       <v-card-text>
+        <!-- 状态标签 -->
+        <v-tabs
+          v-model="currentTab"
+          color="primary"
+          density="compact"
+          @update:model-value="handleTabChange"
+          class="mb-4"
+        >
+          <v-tab v-for="tab in tabs" :key="tab.key" :value="tab.key" class="text-none" size="small">
+            <v-icon :icon="tab.icon" size="14" class="mr-1"></v-icon>
+            {{ tab.label }}
+          </v-tab>
+        </v-tabs>
+
+        <!-- 首次加载状态 -->
+        <div v-if="loading && postList.length === 0" class="text-center py-8">
+          <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+          <span class="ml-2 text-grey-darken-1">加载中...</span>
+        </div>
+
         <!-- 空状态 -->
-        <div v-if="!loading && postList.length === 0" class="text-center py-12">
+        <div v-else-if="!loading && postList.length === 0" class="text-center py-12">
           <v-icon icon="mdi-file-document-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
           <p class="text-body-1 text-grey-darken-1">
-            {{ currentTab === 'pending' ? '暂无待审核的文章' : `暂无${tabs.find((tab) => tab.key === currentTab)?.label}的文章` }}
+            暂无{{ tabs.find((tab) => tab.key === currentTab)?.label }}的文章
           </p>
         </div>
 
         <!-- 列表 -->
-        <div v-if="postList.length > 0">
+        <div v-else>
           <div
             v-for="post in postList"
             :key="post.id"
@@ -382,10 +375,6 @@ const getStateColor = (state: number): string => {
             <div class="d-flex align-start">
               <!-- 操作区 -->
               <div class="action-area mr-4">
-                <v-chip variant="flat" :color="getStateColor(post.state)" size="small" class="mb-4 d-flex justify-center">
-                  {{ getStateText(post.state) }}
-                </v-chip>
-
                 <!-- 待审核 -->
                 <div v-if="post.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="success" size="small" block @click="approvePost(post, true)">
@@ -402,7 +391,7 @@ const getStateColor = (state: number): string => {
                 <!-- 已通过 -->
                 <div v-if="post.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="warning" size="small" block @click="rejectPost(post)">
-                    撤销通过
+                    撤回
                   </v-btn>
                   <v-btn variant="tonal" color="grey" size="small" block @click="banPost(post)">
                     屏蔽
@@ -422,10 +411,10 @@ const getStateColor = (state: number): string => {
                 <!-- 已屏蔽 -->
                 <div v-if="post.state === ContentState.BANNED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="info" size="small" block @click="unbanPost(post)">
-                    取消屏蔽
+                    解封
                   </v-btn>
                   <v-btn variant="tonal" color="warning" size="small" block @click="rejectPost(post)">
-                    降级为拒绝
+                    降级
                   </v-btn>
                 </div>
               </div>
@@ -434,18 +423,21 @@ const getStateColor = (state: number): string => {
               <div class="flex-grow-1 content-area">
                 <!-- 标题行 -->
                 <div class="d-flex align-center justify-space-between mb-2">
-                  <div class="text-body-1 font-weight-medium text-grey-darken-3">
-                    文章 ID: {{ post.id }}
+                  <div class="d-flex align-center">
+                    <div class="text-body-1 font-weight-medium text-grey-darken-3">
+                      文章 #{{ post.id }}
+                    </div>
+                    <v-chip variant="flat" :color="getStateColor(post.state)" size="x-small" class="ml-2">
+                      {{ getStateText(post.state) }}
+                    </v-chip>
                   </div>
-                  <div class="text-caption text-grey-darken-1">
-                    {{ post.createdAt }}
+                  <div class="d-flex align-center text-caption text-grey-darken-1">
+                    <span>用户 #{{ post.creatorId }}</span>
+                    <span class="mx-1">·</span>
+                    <span>{{ post.createdAt }}</span>
+                    <span class="mx-1">·</span>
+                    <span>ID: {{ post.id }}</span>
                   </div>
-                </div>
-
-                <!-- 元信息 -->
-                <div class="d-flex align-center mb-2 text-caption text-grey-darken-1">
-                  <v-icon icon="mdi-account-outline" size="14" class="mr-1"></v-icon>
-                  <span>用户 #{{ post.creatorId }}</span>
                 </div>
 
                 <!-- 内容 -->
@@ -490,8 +482,8 @@ const getStateColor = (state: number): string => {
           </div>
         </div>
 
-        <!-- 加载指示器 -->
-        <div v-if="loading" class="text-center py-4">
+        <!-- 加载更多指示器 -->
+        <div v-if="loading && postList.length > 0" class="text-center py-4">
           <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
           <span class="ml-2 text-grey-darken-1">加载中...</span>
         </div>

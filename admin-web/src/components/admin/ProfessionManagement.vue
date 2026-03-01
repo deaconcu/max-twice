@@ -634,8 +634,8 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- 加载指示器 -->
-        <div v-if="loading" class="text-center py-4">
+        <!-- 加载指示器（加载更多时显示） -->
+        <div v-if="loading && displayList.length > 0" class="text-center py-4">
           <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
           <span class="ml-2 text-grey-darken-1">加载中...</span>
         </div>

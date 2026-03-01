@@ -140,72 +140,73 @@ const getStateColor = (state: number): string => {
   <div>
     <h2 class="text-h5 font-weight-bold mb-4">用户管理</h2>
 
-    <!-- 筛选区域 -->
+    <!-- ID查询 -->
     <v-card flat class="border mb-4">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-filter-variant" size="18" class="mr-2"></v-icon>
-        搜索用户
-      </v-card-title>
       <v-card-text>
-        <div class="d-flex align-center ga-3">
-          <v-text-field
-            v-model="searchId"
-            placeholder="按用户ID搜索"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            style="max-width: 200px"
-            @keydown.enter="searchById"
-          ></v-text-field>
-          <v-btn variant="tonal" size="default" @click="searchById">
-            <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
-            搜索
-          </v-btn>
-
-          <v-text-field
-            v-model="searchName"
-            placeholder="按用户名搜索"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            style="max-width: 200px"
-            @keydown.enter="searchByName"
-          ></v-text-field>
-          <v-btn variant="tonal" size="default" @click="searchByName">
-            <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
-            搜索
-          </v-btn>
-
-          <v-btn variant="text" size="default" @click="clearSearch">
-            重置
-          </v-btn>
-        </div>
+        <v-row align="center">
+          <v-col cols="3">
+            <v-text-field
+              v-model="searchId"
+              label="用户 ID"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              @keyup.enter="searchById"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="3">
+            <v-text-field
+              v-model="searchName"
+              label="用户名"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              @keyup.enter="searchByName"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn variant="tonal" size="default" @click="searchId ? searchById() : searchByName()">
+              <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
+              查询
+            </v-btn>
+            <v-btn
+              v-if="isSearchMode"
+              variant="text"
+              size="default"
+              @click="clearSearch"
+            >
+              清除
+            </v-btn>
+          </v-col>
+        </v-row>
       </v-card-text>
     </v-card>
 
     <!-- 用户列表 -->
     <v-card flat class="border">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-account-multiple" size="18" class="mr-2"></v-icon>
-        用户列表
-      </v-card-title>
       <v-card-text>
+        <!-- 首次加载状态 -->
+        <div v-if="loading && userList.length === 0" class="text-center py-8">
+          <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+          <span class="ml-2 text-grey-darken-1">加载中...</span>
+        </div>
+
         <!-- 空状态 -->
-        <div v-if="!loading && userList.length === 0" class="text-center py-12">
+        <div v-else-if="!loading && userList.length === 0" class="text-center py-12">
           <v-icon icon="mdi-account-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
           <p class="text-body-1 text-grey-darken-1">暂无用户</p>
         </div>
 
         <!-- 列表 -->
-        <div v-if="userList.length > 0">
+        <div v-else>
           <div
             v-for="user in userList"
             :key="user.id"
             v-intersect="{
               handler: (isIntersecting: boolean) => {
-                if (isIntersecting && user === userList[userList.length - 1] && hasMore && !loading) {
+                if (isIntersecting && user === userList[userList.length - 1] && hasMore && !loading && !isSearchMode) {
                   loadMore()
                 }
               },
@@ -215,10 +216,6 @@ const getStateColor = (state: number): string => {
             <div class="d-flex align-start">
               <!-- 操作区 -->
               <div class="action-area mr-4">
-                <v-chip variant="flat" :color="getStateColor(user.state)" size="small" class="mb-4 d-flex justify-center">
-                  {{ getStateText(user.state) }}
-                </v-chip>
-
                 <div class="d-flex flex-column ga-2">
                   <v-btn
                     v-if="user.state === 1"
@@ -238,7 +235,7 @@ const getStateColor = (state: number): string => {
                     block
                     @click="updateUserState(user, false)"
                   >
-                    恢复
+                    解封
                   </v-btn>
                 </div>
               </div>
@@ -248,18 +245,33 @@ const getStateColor = (state: number): string => {
                 <!-- 标题行 -->
                 <div class="d-flex align-center justify-space-between mb-2">
                   <div class="d-flex align-center">
-                    <UserAvatar
-                      :name="user.name"
-                      :avatar-url="user.avatar"
-                      size="32"
-                      rounded="lg"
-                      class="mr-2"
-                    />
+                    <v-menu open-on-hover location="bottom" :close-on-content-click="false">
+                      <template #activator="{ props }">
+                        <div v-bind="props" class="avatar-wrapper mr-2">
+                          <UserAvatar
+                            :name="user.name"
+                            :avatar-url="user.avatar"
+                            size="24"
+                            rounded="lg"
+                          />
+                        </div>
+                      </template>
+                      <v-card v-if="user.avatar" class="pa-1" rounded="lg">
+                        <v-img :src="user.avatar" width="120" height="120" cover rounded="lg" />
+                      </v-card>
+                    </v-menu>
                     <div class="text-body-1 font-weight-medium text-grey-darken-3">
                       {{ user.name }}
                     </div>
+                    <v-chip variant="flat" :color="getStateColor(user.state)" size="x-small" class="ml-2">
+                      {{ getStateText(user.state) }}
+                    </v-chip>
                   </div>
-                  <div class="text-caption text-grey-darken-1">ID: {{ user.id }}</div>
+                  <div class="d-flex align-center text-caption text-grey-darken-1">
+                    <span>{{ user.createdAt }}</span>
+                    <span class="mx-1">·</span>
+                    <span>ID: {{ user.id }}</span>
+                  </div>
                 </div>
 
                 <!-- 用户信息 -->
@@ -284,13 +296,9 @@ const getStateColor = (state: number): string => {
                     <v-icon icon="mdi-phone" size="14" color="grey-darken-1" class="mr-2"></v-icon>
                     <span class="text-body-2 text-grey-darken-2">{{ user.phone }}</span>
                   </div>
-                  <div v-if="user.biography" class="d-flex align-start mb-2">
+                  <div v-if="user.biography" class="d-flex align-start">
                     <v-icon icon="mdi-text" size="14" color="grey-darken-1" class="mr-2 mt-1"></v-icon>
                     <span class="text-body-2 text-grey-darken-2">{{ user.biography }}</span>
-                  </div>
-                  <div class="d-flex align-center text-caption text-grey-darken-1">
-                    <v-icon icon="mdi-clock-outline" size="14" class="mr-1"></v-icon>
-                    注册时间: {{ user.createdAt }}
                   </div>
                 </div>
               </div>
@@ -298,14 +306,14 @@ const getStateColor = (state: number): string => {
           </div>
         </div>
 
-        <!-- 加载指示器 -->
-        <div v-if="loading" class="text-center py-4">
+        <!-- 加载更多指示器 -->
+        <div v-if="loading && userList.length > 0" class="text-center py-4">
           <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
           <span class="ml-2 text-grey-darken-1">加载中...</span>
         </div>
 
         <!-- 没有更多 -->
-        <div v-if="!hasMore && userList.length > 0" class="text-center py-4 text-caption text-grey">
+        <div v-if="!isSearchMode && !hasMore && userList.length > 0" class="text-center py-4 text-caption text-grey">
           没有更多了
         </div>
       </v-card-text>
@@ -334,5 +342,9 @@ const getStateColor = (state: number): string => {
   border-radius: 8px;
   padding: 12px;
   background-color: white;
+}
+
+.avatar-wrapper {
+  cursor: pointer;
 }
 </style>
