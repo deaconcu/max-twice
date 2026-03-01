@@ -4,7 +4,7 @@ import { adminApi } from '@/api'
 import { ContentState, ObjectType } from '@/enums'
 import type { Comment } from '@/types/comment.d'
 import RejectBanDialog from './RejectBanDialog.vue'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useFetchForScroll } from '@/composables/useFetchForScroll'
 import { useMutation } from '@/composables/useMutation'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
@@ -75,34 +75,34 @@ const tabs: TabConfig[] = [
   },
 ]
 
-// 使用 useInfiniteScroll 加载评论列表
+// 获取当前状态
+const getCurrentState = () => tabs.find((tab) => tab.key === currentTab.value)?.state
+
+// 使用 useFetchForScroll 加载评论列表
 const {
   items: commentList,
   loading,
   hasMore,
   loadMore,
   reset: resetCommentList,
-} = useInfiniteScroll({
+} = useFetchForScroll<Comment>({
   fetchFn: (params) => {
-    const currentTabConfig = tabs.find((tab) => tab.key === currentTab.value)
-    const state = currentTabConfig?.state
-
+    const state = getCurrentState()
     if (isFilterMode.value) {
       return adminApi.getCommentsByFilter(
         filterObjectType.value,
         filterObjectId.value,
         filterCreatorId.value,
-        params.lastId,
+        params.lastId ?? undefined,
         state
       )
     } else {
-      return adminApi.getContentsByState('comment', state, params.lastId)
+      return adminApi.getContentsByState('comment', state, params.lastId ?? undefined)
     }
   },
-  getNextParams: (lastItem) => ({
-    lastId: lastItem.id,
-  }),
-  initialParams: {},
+  initialParams: {
+    lastId: null,
+  },
   immediate: true,
 })
 

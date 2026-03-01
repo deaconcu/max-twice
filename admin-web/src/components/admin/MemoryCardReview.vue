@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { inject, ref } from 'vue'
 import { adminApi } from '@/api'
-import { ContentState, ApprovalAction } from '@/enums'
+import { ContentState } from '@/enums'
 import type { DeckDetail } from '@/types/memoryCard'
 import RejectBanDialog from './RejectBanDialog.vue'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useFetchForScroll } from '@/composables/useFetchForScroll'
 import { useMutation } from '@/composables/useMutation'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
@@ -64,45 +64,34 @@ const filterForm = ref({
 
 const getCurrentTab = () => tabs.find((tab) => tab.key === activeTab.value) || tabs[0]
 
-// 使用 useInfiniteScroll 加载卡片组列表
+// 使用 useFetchForScroll 加载卡片组列表
 const {
   items: deckList,
   loading,
   hasMore,
   loadMore,
   reset: resetDeckList,
-} = useInfiniteScroll({
-  fetchFn: async (params) => {
+} = useFetchForScroll<DeckDetail>({
+  fetchFn: (params) => {
     const currentTab = getCurrentTab()
     const state = currentTab.state
 
-    const response = await adminApi.getDecksByFilter(
+    return adminApi.getDecksByFilter(
       filterForm.value.postId || undefined,
       filterForm.value.creatorId || undefined,
       state,
-      params.lastId
+      params.lastId ?? undefined
     )
-
-    const pageData = response.data
-    return {
-      code: response.code,
-      data: pageData?.items || [],
-      message: response.message || '',
-      hasMore: pageData?.hasMore ?? false,
-    }
   },
-  getNextParams: (lastItem) => ({
-    lastId: lastItem.id,
-  }),
   initialParams: {
-    lastId: undefined,
+    lastId: null,
   },
-  immediate: true, // 自动初始加载
+  immediate: true,
 })
 
 const applyFilter = () => {
   resetDeckList()
-  loadMore() // 重新加载数据
+  loadMore()
 }
 
 const resetFilter = () => {

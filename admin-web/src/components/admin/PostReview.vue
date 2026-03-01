@@ -4,7 +4,7 @@ import { adminApi } from '@/api'
 import { ContentState, PostType } from '@/enums'
 import type { Post } from '@/types/post.d'
 import RejectBanDialog from './RejectBanDialog.vue'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useFetchForScroll } from '@/composables/useFetchForScroll'
 import { useMutation } from '@/composables/useMutation'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
@@ -61,34 +61,32 @@ const tabs: TabConfig[] = [
   },
 ]
 
-// 使用 useInfiniteScroll 加载帖子列表
+// 获取当前状态
+const getCurrentState = () => tabs.find((tab) => tab.key === currentTab.value)?.state
+
+// 使用 useFetchForScroll 加载帖子列表
 const {
   items: postList,
   loading,
   hasMore,
   loadMore,
   reset: resetPostList,
-} = useInfiniteScroll({
+} = useFetchForScroll<Post>({
   fetchFn: (params) => {
-    const currentTabConfig = tabs.find((tab) => tab.key === currentTab.value)
-    const state = currentTabConfig?.state
-
+    const state = getCurrentState()
     if (isFilterMode.value) {
       return adminApi.getPostsByFilter(
         filterNodeId.value,
         filterCreatorId.value,
-        params.lastId,
+        params.lastId ?? undefined,
         state
       )
     } else {
-      return adminApi.getContentsByState('post', state, params.lastId)
+      return adminApi.getContentsByState('post', state, params.lastId ?? undefined)
     }
   },
-  getNextParams: (lastItem) => ({
-    lastId: lastItem.id,
-  }),
   initialParams: {
-    lastId: undefined,
+    lastId: null,
   },
   immediate: true,
 })

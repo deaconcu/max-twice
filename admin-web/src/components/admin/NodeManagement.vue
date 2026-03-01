@@ -5,7 +5,7 @@ import { postApi } from '@/api/modules/post'
 import { ContentState } from '@/enums'
 import type { Node } from '@/types/node.d'
 import RejectBanDialog from './RejectBanDialog.vue'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useFetchForScroll } from '@/composables/useFetchForScroll'
 import { useMutation } from '@/composables/useMutation'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
@@ -64,49 +64,32 @@ const showReasonDialog = ref<boolean>(false)
 const currentNode = ref<Node | null>(null)
 const dialogType = ref<'reject' | 'ban'>('reject')
 
-// 使用 useInfiniteScroll 加载节点列表
+// 使用 useFetchForScroll 加载节点列表
 const {
   items: nodeList,
   loading,
   hasMore,
   loadMore,
   reset: resetNodeList,
-} = useInfiniteScroll({
-  fetchFn: async (params) => {
+} = useFetchForScroll<Node>({
+  fetchFn: (params) => {
     const currentTabConfig = tabs.find((tab) => tab.key === currentTab.value)
 
     if (isFilterMode.value) {
       // 筛选模式：使用筛选接口
       const state = filterNodeId.value ? undefined : currentTabConfig?.state
-      const response = await adminApi.getNodesByFilter(
+      return adminApi.getNodesByFilter(
         state,
         filterNodeId.value,
         filterCourseId.value,
         filterCreatorId.value,
-        params.lastId
+        params.lastId ?? undefined
       )
-      const pageData = response.data
-      return {
-        code: response.code,
-        data: pageData?.items || [],
-        message: response.message || '',
-        hasMore: pageData?.hasMore ?? false,
-      }
     } else {
       // 普通模式：使用统一的状态筛选接口
-      const response = await adminApi.getContentsByState('node', currentTabConfig?.state, params.lastId)
-      const pageData = response.data
-      return {
-        code: response.code,
-        data: pageData?.items || [],
-        message: response.message || '',
-        hasMore: pageData?.hasMore ?? false,
-      }
+      return adminApi.getContentsByState('node', currentTabConfig?.state, params.lastId ?? undefined)
     }
   },
-  getNextParams: (lastItem) => ({
-    lastId: lastItem.id,
-  }),
   initialParams: {
     lastId: null,
   },
@@ -476,6 +459,9 @@ const initializeEmbeddings = async () => {
                       </v-chip>
                     </div>
                     <div class="d-flex align-center text-caption text-grey-darken-1">
+                      <a v-if="node.creator" :href="`/user/${node.creator.id}`" target="_blank" class="text-grey-darken-1">{{ node.creator.name }}</a>
+                      <span v-else>未知</span>
+                      <span class="mx-1">·</span>
                       <span>{{ node.createdAt }}</span>
                       <span class="mx-1">·</span>
                       <span>ID: {{ node.id }}</span>

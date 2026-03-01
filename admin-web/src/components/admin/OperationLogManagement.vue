@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, inject } from 'vue'
 import { adminApi } from '@/api'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useFetchForScroll } from '@/composables/useFetchForScroll'
 import type { OperationLogDTO, OperationLogQueryRequest } from '@/types/operationLog'
 import { OperationLevel } from '@/types/operationLog'
 import { UserRole } from '@/enums'
@@ -30,18 +30,18 @@ const operationLevels = [
   { text: '高', value: OperationLevel.HIGH },
 ]
 
-// 使用 useInfiniteScroll 管理分页数据
+// 使用 useFetchForScroll 管理分页数据
 const {
   items: logs,
   loading,
   hasMore,
   loadMore: loadMoreLogs,
   reset: resetLogs,
-} = useInfiniteScroll<OperationLogDTO>({
-  fetchFn: async (params) => {
+} = useFetchForScroll<OperationLogDTO>({
+  fetchFn: (params) => {
     const query: OperationLogQueryRequest = {
       ...filters,
-      ...params,
+      lastId: params.lastId ?? undefined,
       limit: 20,
     }
 
@@ -52,26 +52,10 @@ const {
     if (query.startTime === '') delete query.startTime
     if (query.endTime === '') delete query.endTime
 
-    const response = await adminApi.getOperationLogs(query)
-
-    if (response.code === 200 && response.data) {
-      return {
-        code: 200,
-        data: response.data.items || [],
-        message: '',
-        hasMore: response.data.hasMore,
-        nextLastId: response.data.nextLastId,
-      }
-    }
-
-    throw new Error(response.message || '获取操作日志失败')
+    return adminApi.getOperationLogs(query)
   },
-  getNextParams: (lastItem, currentParams) => ({
-    ...currentParams,
-    lastId: lastItem.id,
-  }),
   initialParams: {
-    lastId: undefined,
+    lastId: null,
   },
   onError: (error) => {
     console.error('获取操作日志失败:', error)

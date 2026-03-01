@@ -2,7 +2,7 @@
 import { inject, ref } from 'vue'
 import { adminApi } from '@/api'
 import type { User } from '@/types/user.d'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useFetchForScroll } from '@/composables/useFetchForScroll'
 import { useMutation } from '@/composables/useMutation'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 
@@ -12,24 +12,21 @@ const searchId = ref<string>('')
 const searchName = ref<string>('')
 const isSearchMode = ref<boolean>(false)
 
-// 使用 useInfiniteScroll 加载用户列表
+// 使用 useFetchForScroll 加载用户列表
 const {
   items: userList,
   loading,
   hasMore,
   loadMore,
   reset: resetUserList,
-} = useInfiniteScroll({
+} = useFetchForScroll<User>({
   fetchFn: (params) => {
     return adminApi.getUsers(params.lastId)
   },
-  getNextParams: (lastItem) => ({
-    lastId: lastItem.id,
-  }),
   initialParams: {
     lastId: null,
   },
-  enabled: !isSearchMode.value,
+  immediate: true,
 })
 
 const searchById = async (): Promise<void> => {

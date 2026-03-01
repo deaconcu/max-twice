@@ -166,9 +166,9 @@ public interface RoadmapMapper {
             "<if test='professionId != null'>AND profession_id = #{professionId}</if> " +
             "<if test='creatorId != null'>AND creator_id = #{creatorId}</if> " +
             "<if test='lastId != null'>AND id &lt; #{lastId}</if> " +
-            "ORDER BY id DESC LIMIT 20" +
+            "ORDER BY id DESC LIMIT #{limit}" +
             "</script>")
-    List<RoadmapDO> listByFilter(Byte state, Long professionId, Long creatorId, Long lastId);
+    List<RoadmapDO> listByFilter(Byte state, Long professionId, Long creatorId, Long lastId, @Param("limit") int limit);
 
     @Update("UPDATE roadmap SET state = #{state}, reason = #{reason} WHERE id = #{id}")
     int updateStateAndReason(@Param("id") long id, @Param("state") byte state, @Param("reason") String reason);

@@ -8,10 +8,12 @@ import CategorySelector from '../common/CategorySelector.vue'
 import RejectBanDialog from './RejectBanDialog.vue'
 import { professionNameRules, professionDescriptionRules } from '@/utils/validationRules'
 import { PROFESSION_VALIDATION } from '@/types/validation'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useFetchForScroll } from '@/composables/useFetchForScroll'
 import { useMutation } from '@/composables/useMutation'
+import { useSystemConfigStore } from '@/stores'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
+const systemConfigStore = useSystemConfigStore()
 
 // 扩展 Profession 接口以包含UI状态
 interface ProfessionWithUIState extends Profession {
@@ -141,28 +143,18 @@ const getSkillsArray = (skills?: string): string[] => {
   return Array.isArray(skills) ? skills : []
 }
 
-// 使用 useInfiniteScroll 加载职业列表
+// 使用 useFetchForScroll 加载职业列表
 const {
   items: professionList,
   loading,
   hasMore: hasMoreData,
   loadMore: loadMoreData,
   reset: resetProfessionList,
-} = useInfiniteScroll({
-  fetchFn: async (params) => {
+} = useFetchForScroll<ProfessionWithUIState>({
+  fetchFn: (params) => {
     const state = getCurrentState()
-    const response = await adminApi.getProfessionsByFilter(state, params.lastId)
-    const pageData = response.data
-    return {
-      code: response.code,
-      data: pageData?.items || [],
-      message: response.message || '',
-      hasMore: pageData?.hasMore ?? false,
-    }
+    return adminApi.getProfessionsByFilter(state, params.lastId ?? undefined)
   },
-  getNextParams: (lastItem) => ({
-    lastId: lastItem.id,
-  }),
   initialParams: {
     lastId: null,
   },
@@ -578,6 +570,9 @@ onMounted(() => {
                     <div class="text-body-1 font-weight-medium text-grey-darken-3">
                       {{ profession.name || '职业名称' }}
                     </div>
+                    <a :href="systemConfigStore.getProfessionUrl(profession.id)" target="_blank" class="ml-1">
+                      <v-icon icon="mdi-open-in-new" size="14" color="grey"></v-icon>
+                    </a>
                     <v-chip variant="flat" :color="getStateConfig(profession.state).color" size="x-small" class="ml-2">
                       {{ getStateConfig(profession.state).text }}
                     </v-chip>

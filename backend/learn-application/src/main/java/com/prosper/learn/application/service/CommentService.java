@@ -283,16 +283,23 @@ public class CommentService {
     /**
      * 根据对象类型、对象ID、创建者和状态筛选评论列表
      * 仅管理员调用
-     * @return List<CommentAdminDTO> 管理员视图（含审核原因）
+     * @return KeysetPageResponse<CommentAdminDTO> 管理员视图（含审核原因）
      */
-    public List<CommentAdminDTO> getCommentsByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId, ContentState state) {
+    public KeysetPageResponse<CommentAdminDTO> getCommentsByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId, ContentState state) {
         int pageSize = systemProperties.getComment().getDefaultPageSize();
 
-        // 调用 DomainService 获取评论列表
-        List<CommentDO> commentDOList = commentDomainService.getCommentsByFilter(objectType, objectId, creatorId, lastId, state, pageSize);
+        // 多查询一条用于判断 hasMore
+        List<CommentDO> commentDOList = commentDomainService.getCommentsByFilter(objectType, objectId, creatorId, lastId, state, pageSize + 1);
 
-        // DTO转换
-        return commentConverter.toAdminDTO(commentDOList);
+        boolean hasMore = commentDOList.size() > pageSize;
+        if (hasMore) {
+            commentDOList = commentDOList.subList(0, pageSize);
+        }
+
+        List<CommentAdminDTO> items = commentConverter.toAdminDTO(commentDOList);
+        Long nextLastId = hasMore && !items.isEmpty() ? items.get(items.size() - 1).getId() : null;
+
+        return KeysetPageResponse.of(items, hasMore, null, nextLastId);
     }
 
     // ========== DTO 转换方法 ==========

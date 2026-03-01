@@ -8,6 +8,7 @@ import com.prosper.learn.analytics.stats.service.ContentStatsDomainService;
 import com.prosper.learn.application.converter.ProfessionConverter;
 import com.prosper.learn.application.converter.RoadmapConverter;
 import com.prosper.learn.application.converter.UserConverter;
+import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapBriefDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapDetailDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
@@ -657,12 +658,24 @@ public class RoadmapService {
 
     // ========== Admin管理方法 ==========
 
+    private static final int DEFAULT_PAGE_SIZE = 20;
+
     /**
      * Admin管理：按条件获取路线图列表
      */
-    public List<RoadmapSummaryDTO> listByFilter(ContentState state, Long professionId, Long creatorId, Long lastId) {
-        List<RoadmapDO> roadmapDOList = domainService.listByFilter(state, professionId, creatorId, lastId);
-        return toSummaryDTO(roadmapDOList);
+    public KeysetPageResponse<RoadmapSummaryDTO> listByFilter(ContentState state, Long professionId, Long creatorId, Long lastId) {
+        // 多查询一条用于判断 hasMore
+        List<RoadmapDO> roadmapDOList = domainService.listByFilter(state, professionId, creatorId, lastId, DEFAULT_PAGE_SIZE + 1);
+
+        boolean hasMore = roadmapDOList.size() > DEFAULT_PAGE_SIZE;
+        if (hasMore) {
+            roadmapDOList = roadmapDOList.subList(0, DEFAULT_PAGE_SIZE);
+        }
+
+        List<RoadmapSummaryDTO> items = toSummaryDTO(roadmapDOList);
+        Long nextLastId = hasMore && !items.isEmpty() ? items.get(items.size() - 1).getId() : null;
+
+        return KeysetPageResponse.of(items, hasMore, null, nextLastId);
     }
 
     /**

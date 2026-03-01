@@ -61,7 +61,7 @@ export const adminApi = {
     creatorId?: number,
     lastId?: number,
     state?: number
-  ): Promise<ApiResponse<Comment[]>> {
+  ): Promise<ApiResponse<KeysetPageResponse<Comment>>> {
     const params: Record<string, unknown> = {}
     if (objectType !== undefined) params.objectType = objectType
     if (objectId !== undefined) params.objectId = objectId
@@ -81,7 +81,7 @@ export const adminApi = {
     creatorId?: number,
     lastId?: number,
     state?: number
-  ): Promise<ApiResponse<Post[]>> {
+  ): Promise<ApiResponse<KeysetPageResponse<Post>>> {
     const params: Record<string, unknown> = {}
     if (nodeId !== undefined) params.nodeId = nodeId
     if (creatorId !== undefined) params.creatorId = creatorId
@@ -146,7 +146,7 @@ export const adminApi = {
   /**
    * 根据筛选条件获取职业
    */
-  getProfessionsByFilter(state?: number, lastId?: number): Promise<ApiResponse<any[]>> {
+  getProfessionsByFilter(state?: number, lastId?: number): Promise<ApiResponse<KeysetPageResponse<any>>> {
     const params: Record<string, unknown> = {}
     if (state !== undefined) params.state = state
     if (lastId !== undefined) params.lastId = lastId
@@ -177,7 +177,7 @@ export const adminApi = {
     professionId?: number,
     creatorId?: number,
     lastId?: number
-  ): Promise<ApiResponse<any[]>> {
+  ): Promise<ApiResponse<KeysetPageResponse<any>>> {
     const params: Record<string, unknown> = {}
     if (state !== undefined) params.state = state
     if (professionId !== undefined) params.professionId = professionId
@@ -228,7 +228,7 @@ export const adminApi = {
   /**
    * 获取用户列表
    */
-  getUsers(offsetId?: number | null): Promise<ApiResponse<any[]>> {
+  getUsers(offsetId?: number | null): Promise<ApiResponse<KeysetPageResponse<any>>> {
     const params: Record<string, unknown> = {}
     if (offsetId !== null && offsetId !== undefined) {
       params.offsetId = offsetId

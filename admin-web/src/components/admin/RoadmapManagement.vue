@@ -274,7 +274,7 @@ import { ContentState } from '@/enums'
 import type { Roadmap } from '@/types/roadmap.d'
 import type { StateOption } from '@/types/common.d'
 import RejectBanDialog from './RejectBanDialog.vue'
-import { useInfiniteScroll } from '@/composables/useInfiniteScroll'
+import { useFetchForScroll } from '@/composables/useFetchForScroll'
 import { useMutation } from '@/composables/useMutation'
 import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 
@@ -333,23 +333,21 @@ const getStateConfig = (state?: number): StateOption => {
   return stateOptions.find((option) => option.value === state) || stateOptions[0]
 }
 
-// 使用 useInfiniteScroll 进行列表加载
+// 使用 useFetchForScroll 进行列表加载
 const {
   items: roadmapList,
   loading,
   hasMore: hasMoreData,
   loadMore,
   reset: resetList,
-} = useInfiniteScroll<Roadmap>({
+} = useFetchForScroll<Roadmap>({
   fetchFn: (params) => {
     const currentState = getCurrentState()
-    return adminApi.getContentsByState('roadmap', currentState, params.lastId)
+    return adminApi.getContentsByState('roadmap', currentState, params.lastId ?? undefined)
   },
-  getNextParams: (lastItem, currentParams) => ({
-    ...currentParams,
-    lastId: lastItem.id,
-  }),
-  initialParams: {},
+  initialParams: {
+    lastId: null,
+  },
   immediate: true,
 })
 

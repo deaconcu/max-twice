@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { ContentState } from '@/enums'
-import { useReviewReasonsStore } from '@/stores'
+import { useSystemConfigStore } from '@/stores'
 
-const reviewReasonsStore = useReviewReasonsStore()
+const systemConfigStore = useSystemConfigStore()
 
 interface Props {
   modelValue: boolean
@@ -23,10 +23,6 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
 })
 
-onMounted(() => {
-  reviewReasonsStore.checkAndLoad()
-})
-
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
   confirm: [reason: string]
@@ -43,7 +39,7 @@ const dialogVisible = computed({
 })
 
 const reasonOptions = computed(() => {
-  return props.type === 'reject' ? reviewReasonsStore.rejectReasons : reviewReasonsStore.banReasons
+  return props.type === 'reject' ? systemConfigStore.rejectReasons : systemConfigStore.banReasons
 })
 
 const dialogTitle = computed(() => {

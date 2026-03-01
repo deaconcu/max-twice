@@ -420,11 +420,19 @@ public class PostService {
     /**
      * 根据状态获取帖子列表（支持分页）
      */
-    public List<PostSummaryDTO> getPostsByState(ContentState state, Long lastId, Integer limit) {
-        // 调用 DomainService 查询（包含 idToName 处理）
-        List<PostDO> postDOList = domainService.getListByState(state.value(), lastId, limit);
+    public KeysetPageResponse<PostSummaryDTO> getPostsByState(ContentState state, Long lastId, Integer limit) {
+        // 多查询一条用于判断 hasMore
+        List<PostDO> postDOList = domainService.getListByState(state.value(), lastId, limit + 1);
 
-        return toSummaryDTO(postDOList);
+        boolean hasMore = postDOList.size() > limit;
+        if (hasMore) {
+            postDOList = postDOList.subList(0, limit);
+        }
+
+        List<PostSummaryDTO> items = toSummaryDTO(postDOList);
+        Long nextLastId = hasMore && !items.isEmpty() ? items.get(items.size() - 1).getId() : null;
+
+        return KeysetPageResponse.of(items, hasMore, null, nextLastId);
     }
 
     /**
@@ -437,13 +445,21 @@ public class PostService {
     /**
      * 根据节点、用户和状态筛选帖子列表
      */
-    public List<PostSummaryDTO> getPostsByNodeAndCreator(Long nodeId, Long creatorId, Long lastId, Byte state) {
+    public KeysetPageResponse<PostSummaryDTO> getPostsByNodeAndCreator(Long nodeId, Long creatorId, Long lastId, Byte state) {
         int limit = systemProperties.getPosting().getPendingPostsLimit();
 
-        // 调用 DomainService 查询（已包含 idToName 处理）
-        List<PostDO> postDOList = domainService.getListByNodeAndCreator(nodeId, creatorId, lastId, state, limit);
+        // 多查询一条用于判断 hasMore
+        List<PostDO> postDOList = domainService.getListByNodeAndCreator(nodeId, creatorId, lastId, state, limit + 1);
 
-        return toSummaryDTO(postDOList);
+        boolean hasMore = postDOList.size() > limit;
+        if (hasMore) {
+            postDOList = postDOList.subList(0, limit);
+        }
+
+        List<PostSummaryDTO> items = toSummaryDTO(postDOList);
+        Long nextLastId = hasMore && !items.isEmpty() ? items.get(items.size() - 1).getId() : null;
+
+        return KeysetPageResponse.of(items, hasMore, null, nextLastId);
     }
 
 

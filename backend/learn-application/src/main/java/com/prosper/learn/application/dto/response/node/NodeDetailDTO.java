@@ -1,5 +1,6 @@
 package com.prosper.learn.application.dto.response.node;
 
+import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -15,6 +16,8 @@ public class NodeDetailDTO extends NodeSummaryDTO {
     private Long courseId;
 
     private Long creatorId;
+
+    private UserBriefDTO creator;
 
     private Byte state;
 

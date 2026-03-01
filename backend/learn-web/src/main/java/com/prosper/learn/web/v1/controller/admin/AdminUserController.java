@@ -1,6 +1,7 @@
 package com.prosper.learn.web.v1.controller.admin;
 
 import com.prosper.learn.application.dto.request.CreateVirtualUserRequest;
+import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import com.prosper.learn.application.dto.response.user.UserProfileDTO;
 import com.prosper.learn.application.service.UserService;
@@ -45,10 +46,10 @@ public class AdminUserController {
     @GetMapping("/users")
     @RequireRole(UserRole.ADMIN)
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
-    public ApiResponse<List<UserProfileDTO>> getUsers(
+    public ApiResponse<KeysetPageResponse<UserProfileDTO>> getUsers(
             @RequestParam(required = false) @Min(value = 0, message = "偏移ID不能小于0") Long offsetId,
             @CurrentUser UserDO currentUser) {
-        List<UserProfileDTO> users = userService.getUsers(offsetId, 20);
+        KeysetPageResponse<UserProfileDTO> users = userService.getUsers(offsetId, 20);
         return ApiResponse.success(users);
     }
 

@@ -4,6 +4,7 @@ import com.prosper.learn.analytics.stats.dataservice.ContentStatsDataService;
 import com.prosper.learn.analytics.stats.mapper.ContentStatsDO;
 import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.UserConverter;
+import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.SubscriptionDTO;
 import com.prosper.learn.application.dto.response.course.CourseSummaryWithStatsAndProgressDTO;
 import com.prosper.learn.application.dto.response.user.*;
@@ -129,15 +130,23 @@ public class UserService {
     /**
      * 获取用户列表（管理员使用，返回完整信息）
      */
-    public List<UserProfileDTO> getUsers(Long offsetId, int pageSize) {
+    public KeysetPageResponse<UserProfileDTO> getUsers(Long offsetId, int pageSize) {
         List<UserDO> userDOList;
         if (offsetId == null) {
-            userDOList = userDataService.getList(pageSize);
+            userDOList = userDataService.getList(pageSize + 1);
         } else {
-            userDOList = userDataService.getListPaginated(offsetId, pageSize);
+            userDOList = userDataService.getListPaginated(offsetId, pageSize + 1);
         }
-        // Note: 这里不填充 subscriptions，如需要可在 Controller 层调用
-        return userConverter.toProfileDTO(userDOList);
+
+        boolean hasMore = userDOList.size() > pageSize;
+        if (hasMore) {
+            userDOList = userDOList.subList(0, pageSize);
+        }
+
+        List<UserProfileDTO> items = userConverter.toProfileDTO(userDOList);
+        Long nextLastId = hasMore && !items.isEmpty() ? items.get(items.size() - 1).getId() : null;
+
+        return KeysetPageResponse.of(items, hasMore, null, nextLastId);
     }
 
     /**

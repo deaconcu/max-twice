@@ -29,6 +29,7 @@ import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.prosper.learn.shared.domain.Enums.*;
@@ -53,6 +54,7 @@ public class NodeService {
     private final EmbeddingService embeddingService;
     private final MilvusService milvusService;
     private final ContentStatsDomainService contentStatsDomainService;
+    private final UserService userService;
 
     // ========== Query 方法（读操作）==========
 
@@ -93,6 +95,21 @@ public class NodeService {
         List<NodeDetailDTO> dtoList = nodeDOList.stream()
                 .map(nodeConverter::toDetailDTOInternal)
                 .toList();
+
+        // 填充 creator
+        Set<Long> creatorIds = nodeDOList.stream()
+                .map(NodeDO::getCreatorId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+        if (!creatorIds.isEmpty()) {
+            var creatorMap = userService.getUserBriefMapByIds(creatorIds);
+            for (int i = 0; i < dtoList.size(); i++) {
+                Long nodeCreatorId = nodeDOList.get(i).getCreatorId();
+                if (nodeCreatorId != null) {
+                    dtoList.get(i).setCreator(creatorMap.get(nodeCreatorId));
+                }
+            }
+        }
 
         Long nextLastId = dtoList.isEmpty() ? null : dtoList.get(dtoList.size() - 1).getId();
         return KeysetPageResponse.of(dtoList, hasMore, null, nextLastId);

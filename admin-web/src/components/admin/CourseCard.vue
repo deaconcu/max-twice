@@ -3,6 +3,9 @@ import { defineEmits, defineProps } from 'vue'
 import { ContentState } from '@/enums'
 import type { Course } from '@/types/course'
 import type { MainCategory, SubCategory, CategoryMapping, StateConfig } from '@/types/common'
+import { useSystemConfigStore } from '@/stores'
+
+const systemConfigStore = useSystemConfigStore()
 
 interface Props {
   course: Course
@@ -122,6 +125,9 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
             <div class="text-body-1 font-weight-medium text-grey-darken-3">
               {{ course.name }}
             </div>
+            <a :href="systemConfigStore.getCourseUrl(course.id)" target="_blank" class="ml-1">
+              <v-icon icon="mdi-open-in-new" size="14" color="grey"></v-icon>
+            </a>
             <v-chip variant="flat" :color="getStateConfig(course.state || 0).color" size="x-small" class="ml-2">
               {{ getStateConfig(course.state || 0).text }}
             </v-chip>

@@ -2,8 +2,10 @@
 import { inject, ref } from 'vue'
 import { adminApi } from '@/api'
 import { useFetch, useMutation } from '@/composables'
+import { useSystemConfigStore } from '@/stores'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
+const systemConfigStore = useSystemConfigStore()
 
 // 配置项类型
 type ConfigKey = 'courseCategories' | 'professionCategories' | 'rejectReasons' | 'banReasons'
@@ -13,10 +15,13 @@ const courseCategories = ref<string>('')
 const professionCategories = ref<string>('')
 const rejectReasons = ref<string>('')
 const banReasons = ref<string>('')
+const frontendUrl = ref<string>('')
+const frontendUrlOriginal = ref<string>('')  // 原始值，用于对比是否修改
 const courseUpdatedAt = ref<string>('')
 const professionUpdatedAt = ref<string>('')
 const rejectReasonsUpdatedAt = ref<string>('')
 const banReasonsUpdatedAt = ref<string>('')
+const frontendUrlUpdatedAt = ref<string>('')
 
 // 对话框状态
 const dialog = ref(false)
@@ -52,6 +57,10 @@ const { loading: loadingConfig } = useFetch({
         } else if (item.key === 'banReasons') {
           banReasons.value = formatted
           banReasonsUpdatedAt.value = item.updatedAt
+        } else if (item.key === 'frontendUrl') {
+          frontendUrl.value = item.value
+          frontendUrlOriginal.value = item.value
+          frontendUrlUpdatedAt.value = item.updatedAt
         }
       }
     }
@@ -118,9 +127,23 @@ const { execute: saveConfig, loading: saving } = useMutation(
       } else if (data.key === 'rejectReasons') {
         rejectReasons.value = dialogValue.value
         rejectReasonsUpdatedAt.value = now
+        // 同步更新 store
+        try {
+          const parsed = JSON.parse(dialogValue.value)
+          if (Array.isArray(parsed)) {
+            systemConfigStore.setRejectReasons(parsed)
+          }
+        } catch { /* ignore */ }
       } else if (data.key === 'banReasons') {
         banReasons.value = dialogValue.value
         banReasonsUpdatedAt.value = now
+        // 同步更新 store
+        try {
+          const parsed = JSON.parse(dialogValue.value)
+          if (Array.isArray(parsed)) {
+            systemConfigStore.setBanReasons(parsed)
+          }
+        } catch { /* ignore */ }
       }
       dialog.value = false
     },
@@ -133,6 +156,31 @@ const saveDialogConfig = async (): Promise<void> => {
     return
   }
   await saveConfig({ key: dialogKey.value, value: dialogValue.value })
+}
+
+// 保存前端 URL
+const savingFrontendUrl = ref(false)
+const frontendUrlChanged = (): boolean => {
+  return frontendUrl.value.trim() !== frontendUrlOriginal.value
+}
+const saveFrontendUrl = async (): Promise<void> => {
+  if (!frontendUrl.value.trim()) {
+    showSnackbar?.('请输入前端 URL', 'warning')
+    return
+  }
+  savingFrontendUrl.value = true
+  try {
+    await adminApi.updateConfigByKey('frontendUrl', frontendUrl.value.trim())
+    frontendUrlOriginal.value = frontendUrl.value.trim()
+    frontendUrlUpdatedAt.value = new Date().toISOString()
+    // 同步更新 store
+    systemConfigStore.setFrontendUrl(frontendUrl.value.trim())
+    showSnackbar?.('配置已保存', 'success')
+  } catch {
+    showSnackbar?.('保存失败', 'error')
+  } finally {
+    savingFrontendUrl.value = false
+  }
 }
 </script>
 
@@ -201,11 +249,45 @@ const saveDialogConfig = async (): Promise<void> => {
             title="屏蔽理由"
             :subtitle="banReasonsUpdatedAt ? `上次更新: ${new Date(banReasonsUpdatedAt).toLocaleString('zh-CN')}` : '内容屏蔽时可选的预设理由'"
             rounded="lg"
-            class="config-item px-4"
+            class="config-item mb-2 px-4"
             @click="openDialog('banReasons')"
           >
             <template #append>
               <v-icon icon="mdi-chevron-right" size="18" color="grey"></v-icon>
+            </template>
+          </v-list-item>
+
+          <!-- 前端 URL -->
+          <v-list-item
+            prepend-icon="mdi-web"
+            title="前端 URL"
+            :subtitle="frontendUrlUpdatedAt ? `上次更新: ${new Date(frontendUrlUpdatedAt).toLocaleString('zh-CN')}` : '前端网站的 URL 地址'"
+            rounded="lg"
+            class="config-item px-4"
+          >
+            <template #append>
+              <div class="d-flex align-center">
+                <v-text-field
+                  v-model="frontendUrl"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  placeholder="https://example.com"
+                  style="width: 300px"
+                  @keyup.enter="saveFrontendUrl"
+                ></v-text-field>
+                <v-btn
+                  v-if="frontendUrlChanged()"
+                  variant="tonal"
+                  color="primary"
+                  size="small"
+                  class="ml-2"
+                  :loading="savingFrontendUrl"
+                  @click="saveFrontendUrl"
+                >
+                  保存
+                </v-btn>
+              </div>
             </template>
           </v-list-item>
         </v-list>
