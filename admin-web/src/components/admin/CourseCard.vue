@@ -115,6 +115,10 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
         <!-- 标题行 -->
         <div class="d-flex align-center justify-space-between mb-2">
           <div class="d-flex align-center">
+            <a v-if="course.parentCourse" :href="`/read?courseId=${course.parentCourse.id}`" target="_blank" class="text-body-1 text-grey-darken-1 mr-1">
+              {{ course.parentCourse.name }}
+            </a>
+            <span v-if="course.parentCourse" class="text-body-1 text-grey-darken-1 mr-1">/</span>
             <div class="text-body-1 font-weight-medium text-grey-darken-3">
               {{ course.name }}
             </div>
@@ -147,11 +151,6 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
             <span v-if="course.mainCategory">{{ getMainCategoryName(course.mainCategory) }}</span>
             <span v-if="course.mainCategory && course.subCategory"> | </span>
             <span v-if="course.subCategory">{{ getSubCategoryName(course.mainCategory, course.subCategory) }}</span>
-          </div>
-
-          <!-- 父课程 -->
-          <div v-if="course.parentCourse" class="text-caption text-grey-darken-1">
-            父课程：<a :href="`/read?courseId=${course.parentCourse.id}`" target="_blank">{{ course.parentCourse.name }}</a>
           </div>
 
           <!-- 拒绝/封禁原因 -->

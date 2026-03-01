@@ -317,6 +317,18 @@ public class CourseService {
     }
 
     /**
+     * 获取课程详情（管理后台专用，包含 creator）
+     */
+    public CourseDetailDTO getAdminCourseById(Long id) {
+        CourseDO course = courseDataService.validateAndGet(id);
+        CourseDetailDTO dto = toDetailDTO(course);
+        if (course.getCreatorId() != null) {
+            dto.setCreator(userService.getUserBriefById(course.getCreatorId()));
+        }
+        return dto;
+    }
+
+    /**
      * 获取课程详情（含统计和用户数据）
      * 用于课程详情页面
      */
@@ -508,7 +520,7 @@ public class CourseService {
                 .collect(java.util.stream.Collectors.toList());
     }
 
-    // 新增：根据父课程ID获取子课程列表
+    // 管理后台：根据父课程ID获取子课程列表（包含 creator）
     public List<CourseDetailDTO> getListByParent(long parentId, ContentState state) {
         List<CourseDO> courseDOList;
         if (state == null) { // null表示获取所有状态
@@ -516,9 +528,27 @@ public class CourseService {
         } else {
             courseDOList = courseDataService.listByParentAndState(state, parentId);
         }
-        return courseDOList.stream()
+
+        List<CourseDetailDTO> dtoList = courseDOList.stream()
                 .map(this::toDetailDTO)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
+
+        // 填充 creator
+        Set<Long> creatorIds = courseDOList.stream()
+                .map(CourseDO::getCreatorId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+        if (!creatorIds.isEmpty()) {
+            Map<Long, UserBriefDTO> creatorMap = userService.getUserBriefMapByIds(creatorIds);
+            for (int i = 0; i < dtoList.size(); i++) {
+                Long creatorId = courseDOList.get(i).getCreatorId();
+                if (creatorId != null) {
+                    dtoList.get(i).setCreator(creatorMap.get(creatorId));
+                }
+            }
+        }
+
+        return dtoList;
     }
 
     /**

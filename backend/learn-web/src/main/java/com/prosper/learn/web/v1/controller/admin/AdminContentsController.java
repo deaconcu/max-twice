@@ -202,7 +202,7 @@ public class AdminContentsController {
     @RequireRole(UserRole.MODERATOR)
     @RateLimit(capacity = 150, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> getCourseDetail(@PathVariable @Positive(message = "课程ID必须大于0") Long id) {
-        return ApiResponse.success(courseService.getCourseById(id));
+        return ApiResponse.success(courseService.getAdminCourseById(id));
     }
 
     /**

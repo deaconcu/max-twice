@@ -449,7 +449,7 @@ onMounted(() => {
       </v-card-title>
       <v-card-text>
         <!-- ID查询 -->
-        <div v-if="!searchedCourse" class="d-flex align-center ga-3 mb-4">
+        <div class="d-flex align-center ga-3 mt-2">
           <v-text-field
             v-model="searchCourseId"
             label="课程 ID"
@@ -470,13 +470,14 @@ onMounted(() => {
             <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
             查询
           </v-btn>
-        </div>
-
-        <!-- 筛选结果提示 -->
-        <div v-if="searchedCourse">
-          <v-chip variant="tonal" closable @click:close="clearSearch">
-            课程 ID: {{ searchCourseId }}
-          </v-chip>
+          <v-btn
+            v-if="searchedCourse"
+            variant="text"
+            size="default"
+            @click="clearSearch"
+          >
+            清除
+          </v-btn>
         </div>
 
         <!-- 状态标签 -->
@@ -486,6 +487,7 @@ onMounted(() => {
           color="primary"
           show-arrows
           @update:model-value="onStateChange"
+          class="mt-4"
         >
           <v-tab
             v-for="(state, index) in stateOptions"
