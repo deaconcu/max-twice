@@ -24,6 +24,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.prosper.learn.application.dto.response.KeysetPageResponse;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +42,8 @@ import static com.prosper.learn.shared.domain.Enums.*;
 @Service
 @RequiredArgsConstructor
 public class NodeService {
+
+    private static final int DEFAULT_PAGE_SIZE = 20;
 
     private final NodeDomainService domainService;
     private final NodeDataService nodeDataService;
@@ -75,14 +79,22 @@ public class NodeService {
     /**
      * 管理后台：按条件筛选节点列表
      */
-    public List<NodeDetailDTO> listByFilter(ContentState state, Long nodeId, Long courseId, Long creatorId, Long lastId) {
-        // 调用 DomainService 查询
-        List<NodeDO> nodeDOList = domainService.listByFilter(nodeId, courseId, creatorId, state, lastId);
+    public KeysetPageResponse<NodeDetailDTO> listByFilter(ContentState state, Long nodeId, Long courseId, Long creatorId, Long lastId) {
+        // 查询 limit + 1 条数据来判断 hasMore
+        List<NodeDO> nodeDOList = nodeDataService.getListByFilter(nodeId, courseId, creatorId, state.value(), lastId, DEFAULT_PAGE_SIZE + 1);
+
+        boolean hasMore = nodeDOList.size() > DEFAULT_PAGE_SIZE;
+        if (hasMore) {
+            nodeDOList = nodeDOList.subList(0, DEFAULT_PAGE_SIZE);
+        }
 
         // 管理后台使用 toDetailDTOInternal，返回原始数据，不做屏蔽处理
-        return nodeDOList.stream()
+        List<NodeDetailDTO> dtoList = nodeDOList.stream()
                 .map(nodeConverter::toDetailDTOInternal)
                 .toList();
+
+        Long nextLastId = dtoList.isEmpty() ? null : dtoList.get(dtoList.size() - 1).getId();
+        return KeysetPageResponse.of(dtoList, hasMore, null, nextLastId);
     }
 
     /**

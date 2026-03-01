@@ -135,6 +135,10 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
             <span>{{ course.createdAt }}</span>
             <span class="mx-1">·</span>
             <span>ID: {{ course.id }}</span>
+            <template v-if="course.rootNodeId">
+              <span class="mx-1">·</span>
+              <span>根节点 ID: {{ course.rootNodeId }}</span>
+            </template>
           </div>
         </div>
 

@@ -9,6 +9,16 @@ html {
   scrollbar-gutter: auto;
 }
 
+/* 链接样式 */
+a {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* 通用工具类 */
 .no-border {
   border: none !important;

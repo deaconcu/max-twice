@@ -120,6 +120,28 @@ const clearFilter = (): void => {
   loadMore()
 }
 
+// 无限滚动回调接口
+type InfiniteScrollCallback = (status: 'ok' | 'empty' | 'error') => void
+
+// v-infinite-scroll 加载更多回调
+const onLoadMore = async ({ done }: { done: InfiniteScrollCallback }): Promise<void> => {
+  if (!hasMore.value || loading.value) {
+    done('empty')
+    return
+  }
+
+  try {
+    await loadMore()
+    if (hasMore.value) {
+      done('ok')
+    } else {
+      done('empty')
+    }
+  } catch (error) {
+    done('error')
+  }
+}
+
 // 监听tab切换
 const handleTabChange = () => {
   resetNodeList()
@@ -279,96 +301,90 @@ const initializeEmbeddings = async () => {
       </v-btn>
     </div>
 
-    <!-- 筛选与状态 -->
+    <!-- ID查询 -->
     <v-card flat class="border mb-4">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-filter-variant" size="18" class="mr-2"></v-icon>
-        筛选与状态
-      </v-card-title>
       <v-card-text>
-        <!-- 筛选条件 -->
-        <div v-if="!isFilterMode" class="d-flex align-center ga-3 mb-4 mt-2">
-          <v-text-field
-            v-model.number="filterNodeId"
-            type="number"
-            label="节点 ID"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            style="max-width: 140px"
-          ></v-text-field>
-          <v-text-field
-            v-model.number="filterCourseId"
-            type="number"
-            label="课程 ID"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            style="max-width: 140px"
-          ></v-text-field>
-          <v-text-field
-            v-model.number="filterCreatorId"
-            type="number"
-            label="创建者 ID"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            style="max-width: 140px"
-          ></v-text-field>
-          <v-btn variant="tonal" size="default" @click="applyFilter">
-            <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
-            筛选
-          </v-btn>
-        </div>
-
-        <!-- 筛选结果提示 -->
-        <v-alert
-          v-if="isFilterMode"
-          type="info"
-          color="teal"
-          variant="outlined"
-          class="mb-4"
-          border="top"
-          rounded="lg"
-          closable
-          @click:close="clearFilter"
-        >
-          <div class="d-flex align-center">
-            <span class="font-weight-medium">筛选条件：</span>
-            <v-chip v-if="filterNodeId" size="small" class="mx-1">节点 ID: {{ filterNodeId }}</v-chip>
-            <v-chip v-if="filterCourseId" size="small" class="mx-1">课程 ID: {{ filterCourseId }}</v-chip>
-            <v-chip v-if="filterCreatorId" size="small" class="mx-1">创建者 ID: {{ filterCreatorId }}</v-chip>
-          </div>
-        </v-alert>
-
-        <!-- 状态标签 -->
-        <v-tabs
-          v-if="!filterNodeId"
-          v-model="currentTab"
-          color="primary"
-          show-arrows
-          @update:model-value="handleTabChange"
-        >
-          <v-tab v-for="tab in tabs" :key="tab.key" :value="tab.key" class="text-none">
-            <v-icon :icon="tab.icon" size="16" class="mr-2"></v-icon>
-            {{ tab.label }}
-          </v-tab>
-        </v-tabs>
+        <v-row align="center">
+          <v-col cols="2">
+            <v-text-field
+              v-model.number="filterNodeId"
+              type="number"
+              label="节点 ID"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              @keyup.enter="applyFilter"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="2">
+            <v-text-field
+              v-model.number="filterCourseId"
+              type="number"
+              label="课程 ID"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              @keyup.enter="applyFilter"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="2">
+            <v-text-field
+              v-model.number="filterCreatorId"
+              type="number"
+              label="创建者 ID"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              @keyup.enter="applyFilter"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn variant="tonal" size="default" @click="applyFilter">
+              <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
+              查询
+            </v-btn>
+            <v-btn
+              v-if="isFilterMode"
+              variant="text"
+              size="default"
+              @click="clearFilter"
+            >
+              清除
+            </v-btn>
+          </v-col>
+        </v-row>
       </v-card-text>
     </v-card>
 
     <!-- 节点列表 -->
     <v-card flat class="border">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-file-tree" size="18" class="mr-2"></v-icon>
-        节点列表
-      </v-card-title>
       <v-card-text>
+        <!-- 状态标签 -->
+        <v-tabs
+          v-if="!isFilterMode"
+          v-model="currentTab"
+          color="primary"
+          density="compact"
+          @update:model-value="handleTabChange"
+          class="mb-4"
+        >
+          <v-tab v-for="tab in tabs" :key="tab.key" :value="tab.key" class="text-none" size="small">
+            <v-icon :icon="tab.icon" size="14" class="mr-1"></v-icon>
+            {{ tab.label }}
+          </v-tab>
+        </v-tabs>
+
+        <!-- 首次加载状态 -->
+        <div v-if="loading && nodeList.length === 0" class="text-center py-8">
+          <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+          <span class="ml-2 text-grey-darken-1">加载中...</span>
+        </div>
+
         <!-- 空状态 -->
-        <div v-if="!loading && nodeList.length === 0" class="text-center py-12">
+        <div v-else-if="!loading && nodeList.length === 0" class="text-center py-12">
           <v-icon icon="mdi-file-tree-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
           <p class="text-body-1 text-grey-darken-1">
             {{ isFilterMode ? '未找到符合条件的节点' : `暂无${tabs.find((tab) => tab.key === currentTab)?.label}的节点` }}
@@ -376,110 +392,115 @@ const initializeEmbeddings = async () => {
         </div>
 
         <!-- 列表 -->
-        <div v-if="nodeList.length > 0">
-          <div
-            v-for="node in nodeList"
-            :key="node.id"
-            v-intersect="{
-              handler: (isIntersecting: boolean) => {
-                if (isIntersecting && node === nodeList[nodeList.length - 1] && hasMore && !loading) {
-                  loadMore()
-                }
-              },
-            }"
-            class="list-item mb-3"
+        <div v-else>
+          <v-infinite-scroll
+            :empty="!hasMore"
+            @load="onLoadMore"
           >
-            <div class="d-flex align-start">
-              <!-- 操作区 -->
-              <div class="action-area mr-4">
-                <v-chip variant="flat" :color="getStateColor(node.state)" size="small" class="mb-4 d-flex justify-center">
-                  {{ getStateText(node.state) }}
-                </v-chip>
-
-                <!-- 待审核 -->
-                <div v-if="node.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
-                  <v-btn variant="tonal" color="success" size="small" block @click="updateNodeState(node, ContentState.PUBLISHED)">
-                    批准
-                  </v-btn>
-                  <v-btn variant="tonal" color="error" size="small" block @click="showRejectDialog(node)">
-                    拒绝
-                  </v-btn>
-                  <v-btn variant="tonal" color="grey" size="small" block @click="showBanDialog(node)">
-                    屏蔽
-                  </v-btn>
-                </div>
-
-                <!-- 已通过 -->
-                <div v-if="node.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
-                  <v-btn variant="tonal" color="warning" size="small" block @click="showRejectDialog(node)">
-                    撤回
-                  </v-btn>
-                  <v-btn variant="tonal" color="grey" size="small" block @click="showBanDialog(node)">
-                    屏蔽
-                  </v-btn>
-                </div>
-
-                <!-- 已拒绝 -->
-                <div v-if="node.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
-                  <v-btn variant="tonal" color="success" size="small" block @click="updateNodeState(node, ContentState.PUBLISHED)">
-                    通过
-                  </v-btn>
-                  <v-btn variant="tonal" color="grey" size="small" block @click="showBanDialog(node)">
-                    屏蔽
-                  </v-btn>
-                </div>
-
-                <!-- 已屏蔽 -->
-                <div v-if="node.state === ContentState.BANNED" class="d-flex flex-column ga-2">
-                  <v-btn variant="tonal" color="info" size="small" block @click="updateNodeState(node, ContentState.PUBLISHED)">
-                    解封
-                  </v-btn>
-                  <v-btn variant="tonal" color="warning" size="small" block @click="updateNodeState(node, ContentState.REJECTED)">
-                    降级
-                  </v-btn>
-                </div>
-              </div>
-
-              <!-- 内容区 -->
-              <div class="flex-grow-1">
-                <!-- 标题行 -->
-                <div class="d-flex align-center justify-space-between mb-2">
-                  <div class="text-body-1 font-weight-medium text-grey-darken-3">
-                    节点 ID: {{ node.id }} | 课程 ID: {{ node.courseId }}
+            <div
+              v-for="node in nodeList"
+              :key="node.id"
+              class="list-item mb-3"
+            >
+              <div class="d-flex align-start">
+                <!-- 操作区 -->
+                <div class="action-area mr-4">
+                  <!-- 待审核 -->
+                  <div v-if="node.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
+                    <v-btn variant="tonal" color="success" size="small" block @click="updateNodeState(node, ContentState.PUBLISHED)">
+                      批准
+                    </v-btn>
+                    <v-btn variant="tonal" color="error" size="small" block @click="showRejectDialog(node)">
+                      拒绝
+                    </v-btn>
+                    <v-btn variant="tonal" color="grey" size="small" block @click="showBanDialog(node)">
+                      屏蔽
+                    </v-btn>
                   </div>
-                  <div class="text-caption text-grey-darken-1">
-                    {{ node.createdAt }}
+
+                  <!-- 已通过 -->
+                  <div v-if="node.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
+                    <v-btn variant="tonal" color="warning" size="small" block @click="showRejectDialog(node)">
+                      撤回
+                    </v-btn>
+                    <v-btn variant="tonal" color="grey" size="small" block @click="showBanDialog(node)">
+                      屏蔽
+                    </v-btn>
+                  </div>
+
+                  <!-- 已拒绝 -->
+                  <div v-if="node.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
+                    <v-btn variant="tonal" color="success" size="small" block @click="updateNodeState(node, ContentState.PUBLISHED)">
+                      通过
+                    </v-btn>
+                    <v-btn variant="tonal" color="grey" size="small" block @click="showBanDialog(node)">
+                      屏蔽
+                    </v-btn>
+                  </div>
+
+                  <!-- 已屏蔽 -->
+                  <div v-if="node.state === ContentState.BANNED" class="d-flex flex-column ga-2">
+                    <v-btn variant="tonal" color="info" size="small" block @click="updateNodeState(node, ContentState.PUBLISHED)">
+                      解封
+                    </v-btn>
+                    <v-btn variant="tonal" color="warning" size="small" block @click="updateNodeState(node, ContentState.REJECTED)">
+                      降级
+                    </v-btn>
                   </div>
                 </div>
 
-                <!-- 内容 -->
-                <div class="content-wrapper">
-                  <div class="text-h6 font-weight-bold text-grey-darken-3 mb-2">
-                    {{ node.name }}
-                  </div>
-                  <div v-if="node.description" class="text-body-2 text-grey-darken-1">
-                    {{ node.description }}
+                <!-- 内容区 -->
+                <div class="flex-grow-1">
+                  <!-- 标题行 -->
+                  <div class="d-flex align-center justify-space-between mb-2">
+                    <div class="d-flex align-center">
+                      <div class="text-body-1 font-weight-medium text-grey-darken-3">
+                        {{ node.name }}
+                      </div>
+                      <v-chip variant="flat" :color="getStateColor(node.state)" size="x-small" class="ml-2">
+                        {{ getStateText(node.state) }}
+                      </v-chip>
+                    </div>
+                    <div class="d-flex align-center text-caption text-grey-darken-1">
+                      <span>{{ node.createdAt }}</span>
+                      <span class="mx-1">·</span>
+                      <span>ID: {{ node.id }}</span>
+                      <span class="mx-1">·</span>
+                      <span>课程 ID: {{ node.courseId }}</span>
+                    </div>
                   </div>
 
-                  <!-- 拒绝/封禁原因 -->
-                  <div v-if="(node.state === ContentState.REJECTED || node.state === ContentState.BANNED) && node.reason" class="mt-2">
-                    <span class="text-caption text-red-darken-2">{{ node.state === ContentState.BANNED ? '封禁' : '拒绝' }}原因：{{ node.reason }}</span>
+                  <!-- 内容 -->
+                  <div class="content-wrapper">
+                    <div v-if="node.description" class="text-body-2 text-grey-darken-1">
+                      {{ node.description }}
+                    </div>
+                    <div v-else class="text-body-2 text-grey-darken-1">
+                      暂无描述
+                    </div>
+
+                    <!-- 拒绝/封禁原因 -->
+                    <div v-if="(node.state === ContentState.REJECTED || node.state === ContentState.BANNED) && node.reason" class="mt-2">
+                      <span class="text-caption text-red-darken-2">{{ node.state === ContentState.BANNED ? '封禁' : '拒绝' }}原因：{{ node.reason }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- 加载指示器 -->
-        <div v-if="loading" class="text-center py-4">
-          <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
-          <span class="ml-2 text-grey-darken-1">加载中...</span>
-        </div>
+            <template #empty>
+              <div class="text-center py-4 text-caption text-grey">
+                没有更多了
+              </div>
+            </template>
 
-        <!-- 没有更多 -->
-        <div v-if="!hasMore && nodeList.length > 0" class="text-center py-4 text-caption text-grey">
-          没有更多了
+            <template #loading>
+              <div class="text-center py-4">
+                <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+                <span class="ml-2 text-grey-darken-1">加载中...</span>
+              </div>
+            </template>
+          </v-infinite-scroll>
         </div>
       </v-card-text>
     </v-card>

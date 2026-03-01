@@ -95,10 +95,6 @@
             <div class="d-flex align-start">
               <!-- 操作区 -->
               <div class="action-area mr-4">
-                <v-chip variant="flat" :color="getStateConfig(roadmap.state).color" size="small" class="mb-4 d-flex justify-center">
-                  {{ getStateConfig(roadmap.state).text }}
-                </v-chip>
-
                 <!-- 待审核 -->
                 <div v-if="roadmap.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="success" size="small" block :loading="roadmap.approving" @click="approveRoadmap(roadmap, 'APPROVE')">
@@ -115,10 +111,7 @@
                 <!-- 已通过 -->
                 <div v-if="roadmap.state === ContentState.PUBLISHED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="warning" size="small" block @click="rejectRoadmap(roadmap)">
-                    撤销通过
-                  </v-btn>
-                  <v-btn variant="tonal" color="info" size="small" block @click="showEditModal(roadmap)">
-                    修改
+                    撤回
                   </v-btn>
                   <v-btn variant="tonal" color="grey" size="small" block @click="showBanModal(roadmap)">
                     屏蔽
@@ -128,7 +121,7 @@
                 <!-- 已拒绝 -->
                 <div v-if="roadmap.state === ContentState.REJECTED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="success" size="small" block :loading="roadmap.restoring" @click="approveRoadmap(roadmap, 'APPROVE')">
-                    重新通过
+                    通过
                   </v-btn>
                   <v-btn variant="tonal" color="grey" size="small" block @click="showBanModal(roadmap)">
                     屏蔽
@@ -138,10 +131,17 @@
                 <!-- 已屏蔽 -->
                 <div v-if="roadmap.state === ContentState.BANNED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="info" size="small" block @click="unbanRoadmap(roadmap)">
-                    取消屏蔽
+                    解封
                   </v-btn>
                   <v-btn variant="tonal" color="warning" size="small" block @click="downgradeToRejected(roadmap)">
-                    降级为拒绝
+                    降级
+                  </v-btn>
+                </div>
+
+                <!-- 编辑按钮 -->
+                <div class="mt-2">
+                  <v-btn variant="tonal" color="info" size="small" block @click="showEditModal(roadmap)">
+                    编辑
                   </v-btn>
                 </div>
               </div>
@@ -150,38 +150,37 @@
               <div class="flex-grow-1">
                 <!-- 标题行 -->
                 <div class="d-flex align-center justify-space-between mb-2">
-                  <div class="text-body-1 font-weight-medium text-grey-darken-3">
-                    路线图 ID: {{ roadmap.id }}
+                  <div class="d-flex align-center">
+                    <div class="text-body-1 font-weight-medium text-grey-darken-3">
+                      路线图 #{{ roadmap.id }}
+                    </div>
+                    <v-chip variant="flat" :color="getStateConfig(roadmap.state).color" size="x-small" class="ml-2">
+                      {{ getStateConfig(roadmap.state).text }}
+                    </v-chip>
+                    <span v-if="roadmap.profession" class="ml-2 text-body-2 text-grey-darken-1">
+                      | {{ roadmap.profession.name }}
+                    </span>
                   </div>
-                  <div class="text-caption text-grey-darken-1">
-                    {{ roadmap.createdAt || '未知时间' }}
+                  <div class="d-flex align-center text-caption text-grey-darken-1">
+                    <span>{{ roadmap.creator?.name || '未知' }}</span>
+                    <span class="mx-1">·</span>
+                    <span>{{ roadmap.createdAt || '未知时间' }}</span>
+                    <span class="mx-1">·</span>
+                    <span>ID: {{ roadmap.id }}</span>
                   </div>
                 </div>
 
-                <!-- 元信息 -->
-                <div class="d-flex align-center mb-2 text-caption text-grey-darken-1">
-                  <v-icon icon="mdi-account-outline" size="14" class="mr-1"></v-icon>
-                  <span>{{ roadmap.creator?.name || '未知' }}</span>
-                  <span class="ml-2">更新: {{ roadmap.updatedAt || '未知' }}</span>
-                </div>
+                <!-- 内容 -->
+                <div class="content-wrapper">
+                  <!-- 描述 -->
+                  <div class="text-body-2 text-grey-darken-1 mb-2">
+                    {{ roadmap.description || '暂无描述' }}
+                  </div>
 
-                <!-- 职业信息 -->
-                <div v-if="roadmap.profession" class="mb-2">
-                  <v-chip variant="tonal" color="purple" size="small">
-                    <v-icon icon="mdi-briefcase" size="14" class="mr-1"></v-icon>
-                    {{ roadmap.profession.name }}
-                  </v-chip>
-                </div>
-
-                <!-- 描述 -->
-                <div v-if="roadmap.description" class="text-body-2 text-grey-darken-1">
-                  {{ roadmap.description }}
-                </div>
-                <div v-else class="text-body-2 text-grey">暂无描述</div>
-
-                <!-- 拒绝/封禁原因 -->
-                <div v-if="(roadmap.state === ContentState.REJECTED || roadmap.state === ContentState.BANNED) && roadmap.reason" class="mt-2">
-                  <span class="text-caption text-red-darken-2">{{ roadmap.state === ContentState.BANNED ? '封禁' : '拒绝' }}原因：{{ roadmap.reason }}</span>
+                  <!-- 拒绝/封禁原因 -->
+                  <div v-if="(roadmap.state === ContentState.REJECTED || roadmap.state === ContentState.BANNED) && roadmap.reason" class="mt-2">
+                    <span class="text-caption text-red-darken-2">{{ roadmap.state === ContentState.BANNED ? '封禁' : '拒绝' }}原因：{{ roadmap.reason }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -501,5 +500,12 @@ const showBanModal = (roadmap: Roadmap): void => {
 .action-area {
   width: 70px;
   flex-shrink: 0;
+}
+
+.content-wrapper {
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 12px;
+  background-color: white;
 }
 </style>

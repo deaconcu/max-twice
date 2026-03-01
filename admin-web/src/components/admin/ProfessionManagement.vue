@@ -426,68 +426,72 @@ onMounted(() => {
   <div>
     <h2 class="text-h5 font-weight-bold mb-4">职业管理</h2>
 
-    <!-- 筛选与状态 -->
+    <!-- ID查询 -->
     <v-card flat class="border mb-4">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-filter-variant" size="18" class="mr-2"></v-icon>
-        筛选与状态
-      </v-card-title>
       <v-card-text>
-        <!-- 筛选条件 -->
-        <div v-if="!isFilterMode" class="d-flex align-center ga-3 mb-4">
-          <v-text-field
-            v-model.number="filterProfessionId"
-            type="number"
-            label="职业 ID"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            style="max-width: 180px"
-          ></v-text-field>
-          <v-btn variant="tonal" size="default" @click="searchById">
-            <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
-            查询
-          </v-btn>
-        </div>
+        <v-row align="center">
+          <v-col cols="3">
+            <v-text-field
+              v-model.number="filterProfessionId"
+              type="number"
+              label="职业 ID"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              @keyup.enter="searchById"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn variant="tonal" size="default" @click="searchById">
+              <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
+              查询
+            </v-btn>
+            <v-btn
+              v-if="isFilterMode"
+              variant="text"
+              size="default"
+              @click="clearFilter"
+            >
+              清除
+            </v-btn>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
 
-        <!-- 筛选结果提示 -->
-        <div v-if="isFilterMode">
-          <v-chip variant="tonal" closable @click:close="clearFilter">
-            职业 ID: {{ filterProfessionId }}
-          </v-chip>
-        </div>
-
+    <!-- 职业列表 -->
+    <v-card flat class="border">
+      <v-card-text>
         <!-- 状态标签 -->
         <v-tabs
           v-if="!isFilterMode"
           v-model="selectedStateIndex"
           color="primary"
-          show-arrows
+          density="compact"
           @update:model-value="onStateChange"
+          class="mb-4"
         >
           <v-tab
             v-for="(state, index) in stateOptions"
             :key="state.value"
             :value="index"
             class="text-none"
+            size="small"
           >
-            <v-icon :icon="state.icon" size="16" class="mr-2"></v-icon>
+            <v-icon :icon="state.icon" size="14" class="mr-1"></v-icon>
             {{ state.text }}
           </v-tab>
         </v-tabs>
-      </v-card-text>
-    </v-card>
 
-    <!-- 职业列表 -->
-    <v-card flat class="border">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-briefcase" size="18" class="mr-2"></v-icon>
-        职业列表
-      </v-card-title>
-      <v-card-text>
+        <!-- 首次加载状态 -->
+        <div v-if="loading && displayList.length === 0" class="text-center py-8">
+          <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+          <span class="ml-2 text-grey-darken-1">加载中...</span>
+        </div>
+
         <!-- 空状态 -->
-        <div v-if="!loading && displayList.length === 0" class="text-center py-12">
+        <div v-else-if="!loading && displayList.length === 0" class="text-center py-12">
           <v-icon icon="mdi-briefcase-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
           <p class="text-body-1 text-grey-darken-1">
             {{ isFilterMode ? '未找到该职业' : `暂无${stateOptions[selectedStateIndex]?.text}的职业` }}
@@ -495,7 +499,7 @@ onMounted(() => {
         </div>
 
         <!-- 列表 -->
-        <div v-if="displayList.length > 0">
+        <div v-else>
           <div
             v-for="profession in displayList"
             :key="profession.id"

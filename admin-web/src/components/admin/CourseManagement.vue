@@ -441,74 +441,69 @@ onMounted(() => {
   <div>
     <h2 class="text-h5 font-weight-bold mb-4">课程管理</h2>
 
-    <!-- 筛选与状态 -->
+    <!-- ID查询 -->
     <v-card flat class="border mb-4">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-filter-variant" size="18" class="mr-2"></v-icon>
-        筛选与状态
-      </v-card-title>
       <v-card-text>
-        <!-- ID查询 -->
-        <div class="d-flex align-center ga-3 mt-2">
-          <v-text-field
-            v-model="searchCourseId"
-            label="课程 ID"
-            variant="outlined"
-            density="compact"
-            hide-details
-            type="number"
-            clearable
-            style="max-width: 180px"
-            @keyup.enter="searchCourseById"
-          ></v-text-field>
-          <v-btn
-            variant="tonal"
-            size="default"
-            :loading="searchLoading"
-            @click="searchCourseById"
-          >
-            <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
-            查询
-          </v-btn>
-          <v-btn
-            v-if="searchedCourse"
-            variant="text"
-            size="default"
-            @click="clearSearch"
-          >
-            清除
-          </v-btn>
-        </div>
+        <v-row align="center">
+          <v-col cols="3">
+            <v-text-field
+              v-model="searchCourseId"
+              label="课程 ID"
+              variant="outlined"
+              density="compact"
+              hide-details
+              type="number"
+              clearable
+              @keyup.enter="searchCourseById"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn
+              variant="tonal"
+              size="default"
+              :loading="searchLoading"
+              @click="searchCourseById"
+            >
+              <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
+              查询
+            </v-btn>
+            <v-btn
+              v-if="searchedCourse"
+              variant="text"
+              size="default"
+              @click="clearSearch"
+            >
+              清除
+            </v-btn>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
 
+    <!-- 课程列表 -->
+    <v-card flat class="border">
+      <v-card-text>
         <!-- 状态标签 -->
         <v-tabs
           v-if="!searchedCourse"
           v-model="selectedStateIndex"
           color="primary"
-          show-arrows
+          density="compact"
           @update:model-value="onStateChange"
-          class="mt-4"
+          class="mb-4"
         >
           <v-tab
             v-for="(state, index) in stateOptions"
             :key="state.value"
             :value="index"
             class="text-none"
+            size="small"
           >
-            <v-icon :icon="state.icon" size="16" class="mr-2"></v-icon>
+            <v-icon :icon="state.icon" size="14" class="mr-1"></v-icon>
             {{ state.text }}
           </v-tab>
         </v-tabs>
-      </v-card-text>
-    </v-card>
 
-    <!-- 课程列表 -->
-    <v-card flat class="border">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-book-multiple" size="18" class="mr-2"></v-icon>
-        {{ searchedCourse ? '查询结果' : '课程列表' }}
-      </v-card-title>
-      <v-card-text>
         <!-- 搜索加载状态 -->
         <div v-if="searchLoading" class="text-center py-8">
           <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
