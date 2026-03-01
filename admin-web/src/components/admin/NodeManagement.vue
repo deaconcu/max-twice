@@ -72,22 +72,36 @@ const {
   loadMore,
   reset: resetNodeList,
 } = useInfiniteScroll({
-  fetchFn: (params) => {
+  fetchFn: async (params) => {
     const currentTabConfig = tabs.find((tab) => tab.key === currentTab.value)
 
     if (isFilterMode.value) {
-      // 筛选模式：如果使用节点 ID 筛选则不传递状态（节点 ID 唯一）
-      const state = filterNodeId.value ? null : currentTabConfig?.state || null
-      return adminApi.getAdminNodes(
+      // 筛选模式：使用筛选接口
+      const state = filterNodeId.value ? undefined : currentTabConfig?.state
+      const response = await adminApi.getNodesByFilter(
         state,
-        filterNodeId.value || null,
-        filterCourseId.value || null,
-        filterCreatorId.value || null,
+        filterNodeId.value,
+        filterCourseId.value,
+        filterCreatorId.value,
         params.lastId
       )
+      const pageData = response.data
+      return {
+        code: response.code,
+        data: pageData?.items || [],
+        message: response.message || '',
+        hasMore: pageData?.hasMore ?? false,
+      }
     } else {
       // 普通模式：使用统一的状态筛选接口
-      return adminApi.getContentsByState('node', currentTabConfig?.state, params.lastId)
+      const response = await adminApi.getContentsByState('node', currentTabConfig?.state, params.lastId)
+      const pageData = response.data
+      return {
+        code: response.code,
+        data: pageData?.items || [],
+        message: response.message || '',
+        hasMore: pageData?.hasMore ?? false,
+      }
     }
   },
   getNextParams: (lastItem) => ({

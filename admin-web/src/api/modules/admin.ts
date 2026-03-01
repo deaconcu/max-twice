@@ -33,7 +33,7 @@ export const adminApi = {
    * @param state 状态值（数字）
    * @param lastId 分页游标
    */
-  getContentsByState(contentType: ContentType, state?: number, lastId?: number): Promise<ApiResponse<any[]>> {
+  getContentsByState(contentType: ContentType, state?: number, lastId?: number): Promise<ApiResponse<KeysetPageResponse<any>>> {
     const params: Record<string, unknown> = {}
     if (state !== undefined && state !== null) params.state = state
     if (lastId !== undefined && lastId !== null) params.lastId = lastId
@@ -204,7 +204,7 @@ export const adminApi = {
     courseId?: number,
     creatorId?: number,
     lastId?: number
-  ): Promise<ApiResponse<any[]>> {
+  ): Promise<ApiResponse<KeysetPageResponse<any>>> {
     const params: Record<string, unknown> = {}
     if (state !== undefined) params.state = state
     if (nodeId !== undefined) params.nodeId = nodeId

@@ -2,79 +2,89 @@
   <div>
     <h2 class="text-h5 font-weight-bold mb-4">路线图管理</h2>
 
-    <!-- 筛选与状态 -->
+    <!-- ID查询 -->
     <v-card flat class="border mb-4">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-filter-variant" size="18" class="mr-2"></v-icon>
-        筛选与状态
-      </v-card-title>
       <v-card-text>
-        <!-- 筛选条件 -->
-        <div class="d-flex align-center ga-3 mb-4 mt-2">
-          <v-text-field
-            v-model.number="professionIdFilter"
-            label="职业ID"
-            type="number"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            style="max-width: 180px"
-          ></v-text-field>
-          <v-text-field
-            v-model.number="creatorIdFilter"
-            label="创建者ID"
-            type="number"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            style="max-width: 180px"
-          ></v-text-field>
-          <v-btn variant="tonal" size="default" @click="onFilterChange">
-            <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
-            筛选
-          </v-btn>
-          <v-btn variant="text" size="default" @click="onResetFilter">
-            重置
-          </v-btn>
-        </div>
+        <v-row align="center">
+          <v-col cols="3">
+            <v-text-field
+              v-model.number="professionIdFilter"
+              label="职业 ID"
+              type="number"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              @keyup.enter="onFilterChange"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="3">
+            <v-text-field
+              v-model.number="creatorIdFilter"
+              label="创建者 ID"
+              type="number"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              @keyup.enter="onFilterChange"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn variant="tonal" size="default" @click="onFilterChange">
+              <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
+              筛选
+            </v-btn>
+            <v-btn
+              v-if="professionIdFilter || creatorIdFilter"
+              variant="text"
+              size="default"
+              @click="onResetFilter"
+            >
+              清除
+            </v-btn>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
 
+    <!-- 路线图列表 -->
+    <v-card flat class="border">
+      <v-card-text>
         <!-- 状态标签 -->
         <v-tabs
           v-model="selectedStateIndex"
           color="primary"
-          show-arrows
+          density="compact"
           @update:model-value="onStateChange"
+          class="mb-4"
         >
           <v-tab
             v-for="(state, index) in stateOptions"
             :key="state.value"
             :value="index"
             class="text-none"
+            size="small"
           >
-            <v-icon :icon="state.icon" size="16" class="mr-2"></v-icon>
+            <v-icon :icon="state.icon" size="14" class="mr-1"></v-icon>
             {{ state.text }}
           </v-tab>
         </v-tabs>
-      </v-card-text>
-    </v-card>
 
-    <!-- 路线图列表 -->
-    <v-card flat class="border">
-      <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-map-marker-path" size="18" class="mr-2"></v-icon>
-        路线图列表
-      </v-card-title>
-      <v-card-text>
+        <!-- 首次加载状态 -->
+        <div v-if="loading && roadmapList.length === 0" class="text-center py-8">
+          <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+          <span class="ml-2 text-grey-darken-1">加载中...</span>
+        </div>
+
         <!-- 空状态 -->
-        <div v-if="!loading && roadmapList.length === 0" class="text-center py-12">
+        <div v-else-if="!loading && roadmapList.length === 0" class="text-center py-12">
           <v-icon icon="mdi-map-marker-path" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
           <p class="text-body-1 text-grey-darken-1">暂无路线图</p>
         </div>
 
         <!-- 列表 -->
-        <div v-if="roadmapList.length > 0">
+        <div v-else>
           <div
             v-for="roadmap in roadmapList"
             :key="roadmap.id"
@@ -187,8 +197,8 @@
           </div>
         </div>
 
-        <!-- 加载指示器 -->
-        <div v-if="loading" class="text-center py-4">
+        <!-- 加载更多指示器 -->
+        <div v-if="loading && roadmapList.length > 0" class="text-center py-4">
           <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
           <span class="ml-2 text-grey-darken-1">加载中...</span>
         </div>

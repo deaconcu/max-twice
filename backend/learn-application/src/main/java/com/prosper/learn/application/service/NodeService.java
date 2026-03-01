@@ -81,7 +81,8 @@ public class NodeService {
      */
     public KeysetPageResponse<NodeDetailDTO> listByFilter(ContentState state, Long nodeId, Long courseId, Long creatorId, Long lastId) {
         // 查询 limit + 1 条数据来判断 hasMore
-        List<NodeDO> nodeDOList = nodeDataService.getListByFilter(nodeId, courseId, creatorId, state.value(), lastId, DEFAULT_PAGE_SIZE + 1);
+        Byte stateValue = state != null ? state.value() : null;
+        List<NodeDO> nodeDOList = nodeDataService.getListByFilter(nodeId, courseId, creatorId, stateValue, lastId, DEFAULT_PAGE_SIZE + 1);
 
         boolean hasMore = nodeDOList.size() > DEFAULT_PAGE_SIZE;
         if (hasMore) {
