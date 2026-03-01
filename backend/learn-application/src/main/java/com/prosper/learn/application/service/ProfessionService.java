@@ -4,6 +4,7 @@ import com.prosper.learn.analytics.ranking.service.ProfessionRankingDomainServic
 import com.prosper.learn.application.converter.ProfessionConverter;
 import com.prosper.learn.application.dto.request.CreateProfessionRequest;
 import com.prosper.learn.application.dto.request.UpdateProfessionRequest;
+import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.ProfessionAdminDTO;
 import com.prosper.learn.application.dto.response.ProfessionDTO;
 import com.prosper.learn.application.dto.response.user.UserBriefDTO;
@@ -86,8 +87,14 @@ public class ProfessionService {
     /**
      * 获取职业列表（管理后台专用，包含状态和原因）
      */
-    public List<ProfessionAdminDTO> getListByStateAndLastId(ContentState state, Long lastId, int limit) {
-        List<ProfessionDO> professionDOList = professionDomainService.listByStateAndLastId(state.value(), lastId, limit);
+    public KeysetPageResponse<ProfessionAdminDTO> getListByStateAndLastId(ContentState state, Long lastId, int limit) {
+        List<ProfessionDO> professionDOList = professionDomainService.listByStateAndLastId(state.value(), lastId, limit + 1);
+
+        boolean hasMore = professionDOList.size() > limit;
+        if (hasMore) {
+            professionDOList = professionDOList.subList(0, limit);
+        }
+
         List<ProfessionAdminDTO> dtoList = professionConverter.toAdminDTO(professionDOList);
 
         // 填充 creator
@@ -105,7 +112,8 @@ public class ProfessionService {
             }
         }
 
-        return dtoList;
+        Long nextLastId = dtoList.isEmpty() ? null : dtoList.get(dtoList.size() - 1).getId();
+        return KeysetPageResponse.of(dtoList, hasMore, null, nextLastId);
     }
 
     /**

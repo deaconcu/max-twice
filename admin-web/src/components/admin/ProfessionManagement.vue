@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, ref, onMounted, nextTick } from 'vue'
+import { inject, ref, onMounted, nextTick, computed } from 'vue'
 import { adminApi, systemApi, professionApi } from '@/api'
 import { ContentState } from '@/enums'
 import type { Profession, ProfessionCategory, CategoryMapping } from '@/types/profession.d'
@@ -40,6 +40,14 @@ const selectedStateIndex = ref<number>(0)
 const filterProfessionId = ref<number | null>(null)
 const isFilterMode = ref<boolean>(false)
 const filterResult = ref<ProfessionWithUIState | null>(null)
+
+// 显示的职业列表
+const displayList = computed<ProfessionWithUIState[]>(() => {
+  if (isFilterMode.value && filterResult.value) {
+    return [filterResult.value]
+  }
+  return professionList.value
+})
 
 // 拒绝/屏蔽对话框
 const showReasonDialog = ref<boolean>(false)
@@ -141,9 +149,16 @@ const {
   loadMore: loadMoreData,
   reset: resetProfessionList,
 } = useInfiniteScroll({
-  fetchFn: (params) => {
+  fetchFn: async (params) => {
     const state = getCurrentState()
-    return adminApi.getProfessionsByFilter(state, params.lastId)
+    const response = await adminApi.getProfessionsByFilter(state, params.lastId)
+    const pageData = response.data
+    return {
+      code: response.code,
+      data: pageData?.items || [],
+      message: response.message || '',
+      hasMore: pageData?.hasMore ?? false,
+    }
   },
   getNextParams: (lastItem) => ({
     lastId: lastItem.id,
@@ -437,22 +452,11 @@ onMounted(() => {
         </div>
 
         <!-- 筛选结果提示 -->
-        <v-alert
-          v-if="isFilterMode"
-          type="info"
-          color="teal"
-          variant="outlined"
-          class="mb-4"
-          border="top"
-          rounded="lg"
-          closable
-          @click:close="clearFilter"
-        >
-          <div class="d-flex align-center">
-            <span class="font-weight-medium">筛选条件：</span>
-            <v-chip size="small" class="mx-1">职业 ID: {{ filterProfessionId }}</v-chip>
-          </div>
-        </v-alert>
+        <div v-if="isFilterMode">
+          <v-chip variant="tonal" closable @click:close="clearFilter">
+            职业 ID: {{ filterProfessionId }}
+          </v-chip>
+        </div>
 
         <!-- 状态标签 -->
         <v-tabs
@@ -483,19 +487,21 @@ onMounted(() => {
       </v-card-title>
       <v-card-text>
         <!-- 空状态 -->
-        <div v-if="!loading && professionList.length === 0" class="text-center py-12">
+        <div v-if="!loading && displayList.length === 0" class="text-center py-12">
           <v-icon icon="mdi-briefcase-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
-          <p class="text-body-1 text-grey-darken-1">暂无{{ stateOptions[selectedStateIndex]?.text }}的职业</p>
+          <p class="text-body-1 text-grey-darken-1">
+            {{ isFilterMode ? '未找到该职业' : `暂无${stateOptions[selectedStateIndex]?.text}的职业` }}
+          </p>
         </div>
 
         <!-- 列表 -->
-        <div v-if="professionList.length > 0">
+        <div v-if="displayList.length > 0">
           <div
-            v-for="profession in professionList"
+            v-for="profession in displayList"
             :key="profession.id"
             v-intersect="{
               handler: (isIntersecting: boolean) => {
-                if (isIntersecting && profession === professionList[professionList.length - 1] && hasMoreData && !loading) {
+                if (!isFilterMode && isIntersecting && profession === displayList[displayList.length - 1] && hasMoreData && !loading) {
                   loadMoreData()
                 }
               },
@@ -634,7 +640,7 @@ onMounted(() => {
         </div>
 
         <!-- 没有更多 -->
-        <div v-if="!hasMoreData && professionList.length > 0" class="text-center py-4 text-caption text-grey">
+        <div v-if="!isFilterMode && !hasMoreData && displayList.length > 0" class="text-center py-4 text-caption text-grey">
           没有更多了
         </div>
       </v-card-text>
