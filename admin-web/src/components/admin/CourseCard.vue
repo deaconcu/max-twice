@@ -59,10 +59,6 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
     <div class="d-flex align-start">
       <!-- 操作区 -->
       <div class="action-area mr-4">
-        <v-chip variant="flat" :color="getStateConfig(course.state || 0).color" size="small" class="mb-4 d-flex justify-center">
-          {{ getStateConfig(course.state || 0).text }}
-        </v-chip>
-
         <!-- 待审核 -->
         <div v-if="course.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
           <v-btn variant="tonal" color="success" size="small" block @click="$emit('approve', course)">
@@ -122,28 +118,33 @@ const getSubCategoryName = (mainCategoryId?: number, subCategoryId?: number): st
             <div class="text-body-1 font-weight-medium text-grey-darken-3">
               {{ course.name }}
             </div>
-            <v-chip v-if="course.parentCourse" variant="flat" color="teal-lighten-4" size="x-small" class="ml-2">
+            <v-chip variant="flat" :color="getStateConfig(course.state || 0).color" size="x-small" class="ml-2">
+              {{ getStateConfig(course.state || 0).text }}
+            </v-chip>
+            <v-chip v-if="course.parentCourse" variant="flat" color="teal-lighten-4" size="x-small" class="ml-1">
               子课程
             </v-chip>
           </div>
-          <div class="text-caption text-grey-darken-1">ID: {{ course.id }}</div>
-        </div>
-
-        <!-- 元信息 -->
-        <div class="d-flex align-center mb-2 text-caption text-grey-darken-1">
-          <v-icon icon="mdi-account-outline" size="14" class="mr-1"></v-icon>
-          <span>{{ course.creator?.name || '系统' }}</span>
-          <span class="ml-2">{{ course.createdAt }}</span>
+          <div class="d-flex align-center text-caption text-grey-darken-1">
+            <span>{{ course.creator?.name || '系统' }}</span>
+            <span class="mx-1">·</span>
+            <span>{{ course.createdAt }}</span>
+            <span class="mx-1">·</span>
+            <span>ID: {{ course.id }}</span>
+          </div>
         </div>
 
         <!-- 内容 -->
         <div class="content-wrapper">
           <!-- 分类信息 -->
-          <div v-if="course.mainCategory || course.subCategory" class="text-caption text-grey-darken-1 mb-2">
-            <span>分类：</span>
-            <span v-if="course.mainCategory">{{ getMainCategoryName(course.mainCategory) }}</span>
-            <span v-if="course.mainCategory && course.subCategory"> | </span>
-            <span v-if="course.subCategory">{{ getSubCategoryName(course.mainCategory, course.subCategory) }}</span>
+          <div v-if="course.mainCategory || course.subCategory" class="d-flex align-center flex-wrap mb-2">
+            <span class="text-caption text-grey-darken-1 mr-2">分类：</span>
+            <v-chip v-if="course.mainCategory" variant="tonal" color="purple" size="x-small" class="mr-1">
+              {{ getMainCategoryName(course.mainCategory) }}
+            </v-chip>
+            <v-chip v-if="course.subCategory" variant="tonal" color="orange" size="x-small">
+              {{ getSubCategoryName(course.mainCategory, course.subCategory) }}
+            </v-chip>
           </div>
 
           <!-- 描述 -->

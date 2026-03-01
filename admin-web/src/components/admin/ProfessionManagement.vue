@@ -511,10 +511,6 @@ onMounted(() => {
             <div class="d-flex align-start">
               <!-- 操作区 -->
               <div class="action-area mr-4">
-                <v-chip variant="flat" :color="getStateConfig(profession.state).color" size="small" class="mb-4 d-flex justify-center">
-                  {{ getStateConfig(profession.state).text }}
-                </v-chip>
-
                 <!-- 待审核 -->
                 <div v-if="profession.state === ContentState.SUBMITTED" class="d-flex flex-column ga-2">
                   <v-btn variant="tonal" color="success" size="small" block :loading="profession.approving" @click="approveProfession(profession)">
@@ -578,20 +574,21 @@ onMounted(() => {
                     <div class="text-body-1 font-weight-medium text-grey-darken-3">
                       {{ profession.name || '职业名称' }}
                     </div>
-                    <v-chip v-if="profession.price" variant="flat" color="green-lighten-4" size="x-small" class="ml-2">
+                    <v-chip variant="flat" :color="getStateConfig(profession.state).color" size="x-small" class="ml-2">
+                      {{ getStateConfig(profession.state).text }}
+                    </v-chip>
+                    <v-chip v-if="profession.price" variant="flat" color="green-lighten-4" size="x-small" class="ml-1">
                       $ {{ profession.price }}
                     </v-chip>
                   </div>
-                  <div class="text-caption text-grey-darken-1">ID: {{ profession.id }}</div>
-                </div>
-
-                <!-- 元信息 -->
-                <div class="d-flex align-center mb-2 text-caption text-grey-darken-1">
-                  <v-icon icon="mdi-account-outline" size="14" class="mr-1"></v-icon>
-                  <a v-if="profession.creator" :href="`/user/${profession.creator.id}`" target="_blank" class="text-grey-darken-1">{{ profession.creator.name }}</a>
-                  <span v-else>未知</span>
-                  <span class="mx-2">·</span>
-                  <span>{{ profession.createdAt }}</span>
+                  <div class="d-flex align-center text-caption text-grey-darken-1">
+                    <a v-if="profession.creator" :href="`/user/${profession.creator.id}`" target="_blank" class="text-grey-darken-1">{{ profession.creator.name }}</a>
+                    <span v-else>未知</span>
+                    <span class="mx-1">·</span>
+                    <span>{{ profession.createdAt }}</span>
+                    <span class="mx-1">·</span>
+                    <span>ID: {{ profession.id }}</span>
+                  </div>
                 </div>
 
                 <!-- 内容 -->

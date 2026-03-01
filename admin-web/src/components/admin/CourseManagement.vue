@@ -530,61 +530,119 @@ onMounted(() => {
   <div>
     <h2 class="text-h5 font-weight-bold mb-4">课程管理</h2>
 
-    <!-- 搜索区域 -->
+    <!-- 筛选与状态 -->
     <v-card flat class="border mb-4">
       <v-card-title class="d-flex align-center">
-        <v-icon icon="mdi-magnify" size="18" class="mr-2"></v-icon>
-        通过ID查询课程
+        <v-icon icon="mdi-filter-variant" size="18" class="mr-2"></v-icon>
+        筛选与状态
       </v-card-title>
       <v-card-text>
-        <div class="d-flex align-center ga-3">
+        <!-- ID查询 -->
+        <div v-if="!searchedCourse" class="d-flex align-center ga-3 mb-4">
           <v-text-field
             v-model="searchCourseId"
-            label="输入课程ID"
+            label="课程 ID"
             variant="outlined"
             density="compact"
             hide-details
             type="number"
-            style="max-width: 200px"
+            clearable
+            style="max-width: 180px"
             @keyup.enter="searchCourseById"
           ></v-text-field>
           <v-btn
             variant="tonal"
             size="default"
             :loading="searchLoading"
-            :disabled="!searchCourseId || Number(searchCourseId) <= 0"
             @click="searchCourseById"
           >
             <v-icon icon="mdi-magnify" size="16" class="mr-1"></v-icon>
             查询
           </v-btn>
+        </div>
+
+        <!-- 筛选结果提示 -->
+        <div v-if="searchedCourse" class="mb-4">
+          <v-chip variant="tonal" closable @click:close="clearSearch">
+            课程 ID: {{ searchCourseId }}
+          </v-chip>
+        </div>
+
+        <!-- 分类筛选 - 只在已通过状态且非搜索模式时显示 -->
+        <div v-if="!searchedCourse && getCurrentState() === ContentState.PUBLISHED" class="d-flex align-center ga-3 mb-4">
+          <v-select
+            v-model="selectedMainCategory"
+            :items="mainCategories"
+            item-title="name"
+            item-value="id"
+            label="主分类"
+            variant="outlined"
+            density="compact"
+            hide-details
+            clearable
+            style="max-width: 180px"
+            @update:model-value="onMainCategoryChange"
+          ></v-select>
+          <v-select
+            v-model="selectedSubCategory"
+            :items="subCategories"
+            item-title="name"
+            item-value="id"
+            label="子分类"
+            variant="outlined"
+            density="compact"
+            hide-details
+            clearable
+            :disabled="!selectedMainCategory"
+            style="max-width: 180px"
+            @update:model-value="onCategoryChange"
+          ></v-select>
           <v-btn
-            v-if="searchedCourse || searchAttempted"
+            v-if="selectedMainCategory || selectedSubCategory"
             variant="text"
             size="default"
-            @click="clearSearch"
+            @click="clearCategoryFilter"
           >
-            清除
+            清除筛选
           </v-btn>
         </div>
+
+        <!-- 状态标签 -->
+        <v-tabs
+          v-if="!searchedCourse"
+          v-model="selectedStateIndex"
+          color="primary"
+          show-arrows
+          @update:model-value="onStateChange"
+        >
+          <v-tab
+            v-for="(state, index) in stateOptions"
+            :key="state.value"
+            :value="index"
+            class="text-none"
+          >
+            <v-icon :icon="state.icon" size="16" class="mr-2"></v-icon>
+            {{ state.text }}
+          </v-tab>
+        </v-tabs>
       </v-card-text>
     </v-card>
 
-    <!-- 查询结果显示 -->
-    <div v-if="searchedCourse || searchAttempted || searchLoading">
-      <!-- 搜索加载状态 -->
-      <div v-if="searchLoading" class="text-center py-8">
-        <v-progress-circular indeterminate color="primary"></v-progress-circular>
-        <p class="mt-3 text-grey-darken-1">查询中...</p>
-      </div>
+    <!-- 课程列表 -->
+    <v-card flat class="border">
+      <v-card-title class="d-flex align-center">
+        <v-icon icon="mdi-book-multiple" size="18" class="mr-2"></v-icon>
+        {{ searchedCourse ? '查询结果' : '课程列表' }}
+      </v-card-title>
+      <v-card-text>
+        <!-- 搜索加载状态 -->
+        <div v-if="searchLoading" class="text-center py-8">
+          <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+          <span class="ml-2 text-grey-darken-1">查询中...</span>
+        </div>
 
-      <!-- 搜索结果 -->
-      <v-card v-else-if="searchedCourse" flat class="border mb-4">
-        <v-card-title class="d-flex align-center">
-          <v-icon icon="mdi-book" size="18" class="mr-2"></v-icon>
-          查询结果
-        </v-card-title>
-        <v-card-text>
+        <!-- 搜索结果 -->
+        <template v-else-if="searchedCourse">
           <CourseCard
             :course="searchedCourse"
             :main-categories="mainCategories"
@@ -614,91 +672,16 @@ onMounted(() => {
               @unban="unbanCourse"
             />
           </div>
-        </v-card-text>
-      </v-card>
+        </template>
 
-      <!-- 搜索空状态 -->
-      <div v-else-if="searchAttempted" class="text-center py-12">
-        <v-icon icon="mdi-file-search-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
-        <p class="text-body-1 text-grey-darken-1">未找到ID为 {{ searchCourseId }} 的课程</p>
-      </div>
-    </div>
+        <!-- 搜索空状态 -->
+        <div v-else-if="searchAttempted && !searchedCourse && !searchLoading" class="text-center py-12">
+          <v-icon icon="mdi-file-search-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
+          <p class="text-body-1 text-grey-darken-1">未找到ID为 {{ searchCourseId }} 的课程</p>
+        </div>
 
-    <!-- 状态管理内容（无查询时显示） -->
-    <div v-else>
-      <!-- 筛选与状态 -->
-      <v-card flat class="border mb-4">
-        <v-card-title class="d-flex align-center">
-          <v-icon icon="mdi-filter-variant" size="18" class="mr-2"></v-icon>
-          筛选与状态
-        </v-card-title>
-        <v-card-text>
-          <!-- 分类筛选 - 只在已通过状态显示 -->
-          <div v-if="getCurrentState() === ContentState.PUBLISHED" class="d-flex align-center ga-3 mb-4">
-            <v-select
-              v-model="selectedMainCategory"
-              :items="mainCategories"
-              item-title="name"
-              item-value="id"
-              label="主分类"
-              variant="outlined"
-              density="compact"
-              hide-details
-              clearable
-              style="max-width: 180px"
-              @update:model-value="onMainCategoryChange"
-            ></v-select>
-            <v-select
-              v-model="selectedSubCategory"
-              :items="subCategories"
-              item-title="name"
-              item-value="id"
-              label="子分类"
-              variant="outlined"
-              density="compact"
-              hide-details
-              clearable
-              :disabled="!selectedMainCategory"
-              style="max-width: 180px"
-              @update:model-value="onCategoryChange"
-            ></v-select>
-            <v-btn
-              v-if="selectedMainCategory || selectedSubCategory"
-              variant="text"
-              size="default"
-              @click="clearCategoryFilter"
-            >
-              清除筛选
-            </v-btn>
-          </div>
-
-          <!-- 状态标签 -->
-          <v-tabs
-            v-model="selectedStateIndex"
-            color="primary"
-            show-arrows
-            @update:model-value="onStateChange"
-          >
-            <v-tab
-              v-for="(state, index) in stateOptions"
-              :key="state.value"
-              :value="index"
-              class="text-none"
-            >
-              <v-icon :icon="state.icon" size="16" class="mr-2"></v-icon>
-              {{ state.text }}
-            </v-tab>
-          </v-tabs>
-        </v-card-text>
-      </v-card>
-
-      <!-- 课程列表 -->
-      <v-card flat class="border">
-        <v-card-title class="d-flex align-center">
-          <v-icon icon="mdi-book-multiple" size="18" class="mr-2"></v-icon>
-          课程列表
-        </v-card-title>
-        <v-card-text>
+        <!-- 正常列表模式 -->
+        <template v-else>
           <!-- 空状态 -->
           <div v-if="!loading && courseList.length === 0" class="text-center py-12">
             <v-icon icon="mdi-book-outline" size="48" color="grey-lighten-1" class="mb-4"></v-icon>
@@ -769,9 +752,9 @@ onMounted(() => {
             <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
             <span class="ml-2 text-grey-darken-1">加载中...</span>
           </div>
-        </v-card-text>
-      </v-card>
-    </div>
+        </template>
+      </v-card-text>
+    </v-card>
 
     <!-- 拒绝/屏蔽对话框 -->
     <RejectBanDialog
