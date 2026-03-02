@@ -154,7 +154,7 @@ public class MeilisearchService {
             int total = 0;
             Long lastId = null;
             while (true) {
-                List<NodeDO> list = nodeDataService.listByStateAndLastId(Enums.ContentState.PUBLISHED, lastId, 1000);
+                List<NodeDO> list = nodeDataService.listByState(Enums.ContentState.PUBLISHED.value(), lastId, 1000, true);
                 if (list.isEmpty()) break;
 
                 bulkIndexNodes(list);

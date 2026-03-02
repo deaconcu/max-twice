@@ -448,13 +448,12 @@ public class PostService {
     }
 
     /**
-     * 根据节点、用户和状态筛选帖子列表 - 管理后台使用
+     * Admin - 高级筛选帖子列表
      */
-    public KeysetPageResponse<PostAdminDTO> getPostsByNodeAndCreator(Long nodeId, Long creatorId, Long lastId, Byte state) {
+    public KeysetPageResponse<PostAdminDTO> listByFilter(Long nodeId, Long creatorId, Long lastId) {
         int limit = systemProperties.getPosting().getPendingPostsLimit();
 
-        // 多查询一条用于判断 hasMore
-        List<PostDO> postDOList = domainService.getListByNodeAndCreator(nodeId, creatorId, lastId, state, limit + 1);
+        List<PostDO> postDOList = domainService.listByFilter(nodeId, creatorId, lastId, limit + 1);
 
         boolean hasMore = postDOList.size() > limit;
         if (hasMore) {
@@ -462,8 +461,6 @@ public class PostService {
         }
 
         List<PostAdminDTO> items = postConverter.toAdminDTO(postDOList);
-
-        // 批量填充 node 信息
         fillNodeInfo(postDOList, items);
 
         Long nextLastId = hasMore && !items.isEmpty() ? items.get(items.size() - 1).getId() : null;

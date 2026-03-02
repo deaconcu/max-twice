@@ -145,10 +145,17 @@ public class RoadmapDataService extends AbstractDataService<RoadmapDO, RoadmapMa
     }
 
     /**
-     * Admin管理：按条件筛选路线图列表
+     * Admin管理：按状态查询路线图列表
      */
-    public List<RoadmapDO> listByFilter(Byte state, Long professionId, Long creatorId, Long lastId, int limit) {
-        return roadmapMapper.listByFilter(state, professionId, creatorId, lastId, limit);
+    public List<RoadmapDO> listByState(Byte state, Long lastId, int limit) {
+        return roadmapMapper.listByState(state, lastId, limit);
+    }
+
+    /**
+     * Admin管理：高级筛选路线图列表
+     */
+    public List<RoadmapDO> listByFilter(Long roadmapId, Long professionId, Long creatorId, Long lastId, int limit) {
+        return roadmapMapper.listByFilter(roadmapId, professionId, creatorId, lastId, limit);
     }
 
     /**

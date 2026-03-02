@@ -173,13 +173,13 @@ export const adminApi = {
    * 根据筛选条件获取路线图
    */
   getRoadmapsByFilter(
-    state?: number,
+    roadmapId?: number,
     professionId?: number,
     creatorId?: number,
     lastId?: number
   ): Promise<ApiResponse<KeysetPageResponse<any>>> {
     const params: Record<string, unknown> = {}
-    if (state !== undefined) params.state = state
+    if (roadmapId !== undefined) params.roadmapId = roadmapId
     if (professionId !== undefined) params.professionId = professionId
     if (creatorId !== undefined) params.creatorId = creatorId
     if (lastId !== undefined) params.lastId = lastId

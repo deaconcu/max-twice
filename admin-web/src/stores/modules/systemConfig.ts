@@ -13,22 +13,18 @@ export const useSystemConfigStore = defineStore(
     const rejectReasons = ref<string[]>([])
     const banReasons = ref<string[]>([])
     const loading = ref(false)
-    const initialized = ref(false)
 
     /**
-     * 初始化配置（应用启动时调用一次）
+     * 初始化配置（登录后调用，每次登录都会重新加载）
      */
     async function init() {
-      if (initialized.value) return
-
       await loadConfig()
-      initialized.value = true
     }
 
     /**
      * 加载配置
      */
-    async function loadConfig() {
+    async function loadConfig(): Promise<boolean> {
       loading.value = true
       try {
         const response = await adminApi.getSystemConfig()
@@ -38,27 +34,40 @@ export const useSystemConfigStore = defineStore(
               frontendUrl.value = item.value || ''
             } else if (item.key === 'rejectReasons') {
               try {
-                const parsed = typeof item.value === 'string' ? JSON.parse(item.value) : item.value
-                if (Array.isArray(parsed)) {
-                  rejectReasons.value = parsed
+                const value = item.value
+                if (Array.isArray(value)) {
+                  rejectReasons.value = value
+                } else if (typeof value === 'string') {
+                  const parsed = JSON.parse(value)
+                  if (Array.isArray(parsed)) {
+                    rejectReasons.value = parsed
+                  }
                 }
-              } catch {
-                console.error('[SystemConfig] 解析 rejectReasons 失败')
+              } catch (e) {
+                console.error('[SystemConfig] 解析 rejectReasons 失败', e)
               }
             } else if (item.key === 'banReasons') {
               try {
-                const parsed = typeof item.value === 'string' ? JSON.parse(item.value) : item.value
-                if (Array.isArray(parsed)) {
-                  banReasons.value = parsed
+                const value = item.value
+                if (Array.isArray(value)) {
+                  banReasons.value = value
+                } else if (typeof value === 'string') {
+                  const parsed = JSON.parse(value)
+                  if (Array.isArray(parsed)) {
+                    banReasons.value = parsed
+                  }
                 }
-              } catch {
-                console.error('[SystemConfig] 解析 banReasons 失败')
+              } catch (e) {
+                console.error('[SystemConfig] 解析 banReasons 失败', e)
               }
             }
           }
+          return true
         }
+        return false
       } catch (error) {
         console.error('[SystemConfig] 加载配置失败', error)
+        return false
       } finally {
         loading.value = false
       }
@@ -125,7 +134,6 @@ export const useSystemConfigStore = defineStore(
       rejectReasons,
       banReasons,
       loading,
-      initialized,
       init,
       loadConfig,
       setFrontendUrl,
@@ -141,7 +149,7 @@ export const useSystemConfigStore = defineStore(
   {
     persist: {
       key: 'systemConfig',
-      paths: ['frontendUrl', 'rejectReasons', 'banReasons'],
+      pick: ['frontendUrl', 'rejectReasons', 'banReasons'],
     },
   }
 )

@@ -6,6 +6,7 @@ import com.prosper.learn.application.converter.CourseConverter;
 import com.prosper.learn.application.converter.NodeConverter;
 import com.prosper.learn.application.dto.request.CreateNodeRequest;
 import com.prosper.learn.application.dto.response.node.NodeDTO;
+import com.prosper.learn.application.dto.response.node.NodeAdminDTO;
 import com.prosper.learn.application.dto.response.node.NodeDetailDTO;
 import com.prosper.learn.application.dto.response.node.NodeSearchResultDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithCourseDTO;
@@ -79,22 +80,29 @@ public class NodeService {
     }
 
     /**
-     * 管理后台：按条件筛选节点列表
+     * 管理后台：按状态获取节点列表
      */
-    public KeysetPageResponse<NodeDetailDTO> listByFilter(ContentState state, Long nodeId, Long courseId, Long creatorId, Long lastId) {
-        // 查询 limit + 1 条数据来判断 hasMore
+    public KeysetPageResponse<NodeAdminDTO> listByState(ContentState state, Long lastId) {
         Byte stateValue = state != null ? state.value() : null;
-        List<NodeDO> nodeDOList = nodeDataService.getListByFilter(nodeId, courseId, creatorId, stateValue, lastId, DEFAULT_PAGE_SIZE + 1);
+        List<NodeDO> nodeDOList = nodeDataService.listByState(stateValue, lastId, DEFAULT_PAGE_SIZE + 1, false);
+        return buildAdminResponse(nodeDOList);
+    }
 
+    /**
+     * 管理后台：高级筛选节点列表
+     */
+    public KeysetPageResponse<NodeAdminDTO> listByFilter(Long nodeId, Long courseId, Long creatorId, Long lastId) {
+        List<NodeDO> nodeDOList = nodeDataService.listByFilter(nodeId, courseId, creatorId, lastId, DEFAULT_PAGE_SIZE + 1);
+        return buildAdminResponse(nodeDOList);
+    }
+
+    private KeysetPageResponse<NodeAdminDTO> buildAdminResponse(List<NodeDO> nodeDOList) {
         boolean hasMore = nodeDOList.size() > DEFAULT_PAGE_SIZE;
         if (hasMore) {
             nodeDOList = nodeDOList.subList(0, DEFAULT_PAGE_SIZE);
         }
 
-        // 管理后台使用 toDetailDTOInternal，返回原始数据，不做屏蔽处理
-        List<NodeDetailDTO> dtoList = nodeDOList.stream()
-                .map(nodeConverter::toDetailDTOInternal)
-                .toList();
+        List<NodeAdminDTO> dtoList = nodeConverter.toAdminDTO(nodeDOList);
 
         // 填充 creator
         Set<Long> creatorIds = nodeDOList.stream()
@@ -317,8 +325,8 @@ public class NodeService {
         try {
             while (true) {
                 // 分批查询已发布的节点
-                List<NodeDO> nodes = nodeDataService.getListByFilter(null, null, null,
-                        ContentState.PUBLISHED.value(), lastId, batchSize);
+                List<NodeDO> nodes = nodeDataService.listByState(
+                        ContentState.PUBLISHED.value(), lastId, batchSize, true);
 
                 if (nodes.isEmpty()) {
                     break;

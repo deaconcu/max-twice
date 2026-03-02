@@ -94,14 +94,15 @@ public interface PostMapper {
     @Select("SELECT * FROM post WHERE node_id = #{nodeId} AND creator_id = #{creatorId} AND state != #{excludeState} AND deleted_at IS NULL ORDER BY created_at DESC")
     List<PostDO> getListByNodeAndCreator(@Param("nodeId") long nodeId, @Param("creatorId") long creatorId, @Param("excludeState") byte excludeState);
 
+    // Admin - 高级筛选（不含 state）
     @Select({"<script>",
-            "SELECT * FROM post WHERE id &lt; #{lastId} AND deleted_at IS NULL",
+            "SELECT * FROM post WHERE deleted_at IS NULL",
             "<if test='nodeId != null'> AND node_id = #{nodeId}</if>",
             "<if test='creatorId != null'> AND creator_id = #{creatorId}</if>",
-            "<if test='state != null'> AND state = #{state}</if>",
+            "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
             "ORDER BY id DESC LIMIT #{limit}",
             "</script>"})
-    List<PostDO> getListByNodeAndCreatorWithPagination(@Param("nodeId") Long nodeId, @Param("creatorId") Long creatorId, @Param("lastId") Long lastId, @Param("state") Byte state, @Param("limit") int limit);
+    List<PostDO> listByFilter(@Param("nodeId") Long nodeId, @Param("creatorId") Long creatorId, @Param("lastId") Long lastId, @Param("limit") int limit);
 
     @Update("UPDATE post SET state = #{state} WHERE id = #{id}")
     int updateState(@Param("id") long id, @Param("state") byte state);

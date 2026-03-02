@@ -60,15 +60,6 @@ public class PostDomainService {
     }
 
     /**
-     * 根据节点和创建者获取帖子列表
-     */
-    public List<PostDO> getListByNodeAndCreator(Long nodeId, Long creatorId, Long lastId, Byte state, int limit) {
-        List<PostDO> posts = postDataService.getListByNodeAndCreator(nodeId, creatorId, lastId, state, limit);
-        posts.forEach(this::processIdToName);
-        return posts;
-    }
-
-    /**
      * 获取用户的帖子列表
      */
     public List<PostDO> getUserPosts(Long userId, Integer type, Long lastId, Byte state, int count) {
@@ -118,6 +109,15 @@ public class PostDomainService {
      */
     public List<PostDO> getListByState(Byte state, Long lastId, Integer limit) {
         List<PostDO> posts = postDataService.getListByState(state, lastId, limit);
+        posts.forEach(this::processIdToName);
+        return posts;
+    }
+
+    /**
+     * Admin - 高级筛选帖子列表（不含 state）
+     */
+    public List<PostDO> listByFilter(Long nodeId, Long creatorId, Long lastId, int limit) {
+        List<PostDO> posts = postDataService.listByFilter(nodeId, creatorId, lastId, limit);
         posts.forEach(this::processIdToName);
         return posts;
     }

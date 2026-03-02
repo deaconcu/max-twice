@@ -139,27 +139,17 @@ public class NodeDataService extends AbstractDataService<NodeDO, NodeMapper, Lon
     }
 
     /**
-     * 根据筛选条件获取节点列表（支持分页）
+     * 按状态获取节点列表（支持正序/倒序分页）
      */
-    public List<NodeDO> getListByFilter(Long nodeId, Long courseId, Long creatorId, Byte state, Long lastId) {
-        return getListByFilter(nodeId, courseId, creatorId, state, lastId, 20);
+    public List<NodeDO> listByState(Byte state, Long lastId, int limit, boolean orderAsc) {
+        return nodeMapper.listByState(state, lastId, limit, orderAsc);
     }
 
     /**
-     * 根据筛选条件获取节点列表（支持分页和自定义limit）
+     * Admin - 高级筛选节点列表（不含 state）
      */
-    public List<NodeDO> getListByFilter(Long nodeId, Long courseId, Long creatorId, Byte state, Long lastId, int limit) {
-        if (lastId == null || lastId == 0) {
-            lastId = Long.MAX_VALUE;
-        }
-        return nodeMapper.getListByFilterWithPagination(nodeId, courseId, creatorId, state, lastId, limit);
-    }
-
-    /**
-     * 根据状态分页获取节点列表
-     */
-    public List<NodeDO> listByStateAndLastId(Enums.ContentState state, Long lastId, int limit) {
-        return getListByFilter(null, null, null, state.value(), lastId, limit);
+    public List<NodeDO> listByFilter(Long nodeId, Long courseId, Long creatorId, Long lastId, int limit) {
+        return nodeMapper.listByFilter(nodeId, courseId, creatorId, lastId, limit);
     }
 
     /**

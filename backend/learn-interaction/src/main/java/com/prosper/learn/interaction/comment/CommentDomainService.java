@@ -193,10 +193,16 @@ public class CommentDomainService {
     }
 
     /**
-     * 根据筛选条件获取评论列表
-     * @return List<CommentDO>
+     * 按状态获取评论列表
      */
-    public List<CommentDO> getCommentsByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId, Enums.ContentState state, int pageSize) {
-        return commentDataService.getListByFilter(objectType, objectId, creatorId, lastId, state.value(), pageSize);
+    public List<CommentDO> listByState(Enums.ContentState state, Long lastId, int pageSize) {
+        return commentDataService.listByState(state.value(), lastId, pageSize);
+    }
+
+    /**
+     * 高级筛选评论列表
+     */
+    public List<CommentDO> listByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId, int pageSize) {
+        return commentDataService.listByFilter(objectType, objectId, creatorId, lastId, pageSize);
     }
 }

@@ -281,16 +281,24 @@ public class CommentService {
     }
 
     /**
-     * 根据对象类型、对象ID、创建者和状态筛选评论列表
-     * 仅管理员调用
-     * @return KeysetPageResponse<CommentAdminDTO> 管理员视图（含审核原因）
+     * 管理后台：按状态获取评论列表
      */
-    public KeysetPageResponse<CommentAdminDTO> getCommentsByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId, ContentState state) {
+    public KeysetPageResponse<CommentAdminDTO> listByState(ContentState state, Long lastId) {
         int pageSize = systemProperties.getComment().getDefaultPageSize();
+        List<CommentDO> commentDOList = commentDomainService.listByState(state, lastId, pageSize + 1);
+        return buildAdminResponse(commentDOList, pageSize);
+    }
 
-        // 多查询一条用于判断 hasMore
-        List<CommentDO> commentDOList = commentDomainService.getCommentsByFilter(objectType, objectId, creatorId, lastId, state, pageSize + 1);
+    /**
+     * 管理后台：高级筛选评论列表
+     */
+    public KeysetPageResponse<CommentAdminDTO> listByFilter(Integer objectType, Long objectId, Long creatorId, Long lastId) {
+        int pageSize = systemProperties.getComment().getDefaultPageSize();
+        List<CommentDO> commentDOList = commentDomainService.listByFilter(objectType, objectId, creatorId, lastId, pageSize + 1);
+        return buildAdminResponse(commentDOList, pageSize);
+    }
 
+    private KeysetPageResponse<CommentAdminDTO> buildAdminResponse(List<CommentDO> commentDOList, int pageSize) {
         boolean hasMore = commentDOList.size() > pageSize;
         if (hasMore) {
             commentDOList = commentDOList.subList(0, pageSize);

@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, provide } from 'vue'
 import type { Ref } from 'vue'
 import { setGlobalSnackbar } from '@/composables/utils'
-import { useSystemConfigStore } from '@/stores'
 
 interface Snackbar {
   text: string
@@ -27,6 +26,9 @@ const showSnackbar = (message: string, type = 'info'): void => {
   }
   snackbars.value.push(newSnackbar)
 }
+
+// 提供给子组件使用
+provide('showSnackbar', showSnackbar)
 
 /**
  * 监听当前 snackbar 的 visible 变化，自动清理队列
@@ -82,10 +84,6 @@ const getSnackbarIcon = (type: string): string => {
 // 设置全局 snackbar 给 utils 使用
 onMounted(() => {
   setGlobalSnackbar(showSnackbar)
-
-  // 初始化系统配置
-  const systemConfigStore = useSystemConfigStore()
-  systemConfigStore.init()
 })
 </script>
 

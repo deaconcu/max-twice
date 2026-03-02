@@ -98,11 +98,11 @@ const warningColor = computed(() => {
 })
 
 const buttonColor = computed(() => {
-  return props.type === 'ban' ? 'grey-lighten-2' : 'red-lighten-4'
+  return props.type === 'ban' ? 'grey-darken-1' : 'red'
 })
 
 const buttonIconColor = computed(() => {
-  return props.type === 'ban' ? 'grey-darken-2' : 'red-darken-2'
+  return 'white'
 })
 
 const confirmButtonText = computed(() => {
@@ -153,12 +153,13 @@ const handleConfirm = () => {
           </div>
         </div>
 
-        <div class="mb-4">
-          <div class="text-body-2 font-weight-medium mb-2">{{ reasonLabel }}</div>
+        <div class="mb-2">
+          <div class="text-body-2 font-weight-medium">{{ reasonLabel }}</div>
           <v-chip-group
             v-model="selectedReason"
-            :color="type === 'ban' ? 'grey-darken-1' : 'red-lighten-3'"
+            color="grey"
             variant="flat"
+            column
           >
             <v-chip
               v-for="presetReason in reasonOptions"
@@ -166,7 +167,7 @@ const handleConfirm = () => {
               :value="presetReason"
               rounded="lg"
               size="small"
-              class="mb-2"
+              class="mr-1 mb-1"
             >
               {{ presetReason }}
             </v-chip>

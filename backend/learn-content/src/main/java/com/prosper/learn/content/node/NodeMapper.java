@@ -55,19 +55,33 @@ public interface NodeMapper {
     @Select("SELECT COUNT(*) FROM node WHERE course_id > 0")
     Long countActiveNodes();
 
+    // 按状态查询（支持正序/倒序分页）
     @Select({"<script>",
-            "SELECT * FROM node WHERE id &lt; #{lastId}",
+            "SELECT * FROM node WHERE 1=1",
+            "<if test='state != null'> AND state = #{state}</if>",
+            "<if test='lastId != null'>",
+            "  <if test='orderAsc'> AND id &gt; #{lastId}</if>",
+            "  <if test='!orderAsc'> AND id &lt; #{lastId}</if>",
+            "</if>",
+            "<if test='orderAsc'> ORDER BY id ASC</if>",
+            "<if test='!orderAsc'> ORDER BY id DESC</if>",
+            "LIMIT #{limit}",
+            "</script>"})
+    List<NodeDO> listByState(@Param("state") Byte state, @Param("lastId") Long lastId, @Param("limit") int limit, @Param("orderAsc") boolean orderAsc);
+
+    // Admin - 高级筛选（不含 state）
+    @Select({"<script>",
+            "SELECT * FROM node WHERE 1=1",
             "<if test='nodeId != null'> AND id = #{nodeId}</if>",
             "<if test='courseId != null'> AND course_id = #{courseId}</if>",
             "<if test='creatorId != null'> AND creator_id = #{creatorId}</if>",
-            "<if test='state != null'> AND state = #{state}</if>",
+            "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
             "ORDER BY id DESC LIMIT #{limit}",
             "</script>"})
-    List<NodeDO> getListByFilterWithPagination(
+    List<NodeDO> listByFilter(
             @Param("nodeId") Long nodeId,
             @Param("courseId") Long courseId,
             @Param("creatorId") Long creatorId,
-            @Param("state") Byte state,
             @Param("lastId") Long lastId,
             @Param("limit") int limit);
 

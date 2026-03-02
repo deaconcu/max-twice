@@ -82,7 +82,7 @@ public class CourseRootNodeFixMigration {
         log.info("\n步骤1: 查找所有根节点并同步 name/description");
 
         // 查询所有根节点（is_course_root = 1）
-        List<NodeDO> allRootNodes = nodeDataService.getListByFilter(null, null, null, null, null, 10000)
+        List<NodeDO> allRootNodes = nodeDataService.listByState(null, null, 10000, true)
             .stream()
             .filter(node -> node.getIsCourseRoot() != null && node.getIsCourseRoot() == 1)
             .collect(Collectors.toList());

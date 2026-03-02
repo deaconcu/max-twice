@@ -36,10 +36,17 @@ public class RoadmapDomainService {
     // ========== Query 方法 ==========
 
     /**
-     * 按条件筛选路线图列表
+     * 按状态查询路线图列表
      */
-    public List<RoadmapDO> listByFilter(ContentState state, Long professionId, Long creatorId, Long lastId, int limit) {
-        return roadmapDataService.listByFilter(state != null ? state.value() : null, professionId, creatorId, lastId, limit);
+    public List<RoadmapDO> listByState(ContentState state, Long lastId, int limit) {
+        return roadmapDataService.listByState(state != null ? state.value() : null, lastId, limit);
+    }
+
+    /**
+     * 高级筛选路线图列表
+     */
+    public List<RoadmapDO> listByFilter(Long roadmapId, Long professionId, Long creatorId, Long lastId, int limit) {
+        return roadmapDataService.listByFilter(roadmapId, professionId, creatorId, lastId, limit);
     }
 
     /**

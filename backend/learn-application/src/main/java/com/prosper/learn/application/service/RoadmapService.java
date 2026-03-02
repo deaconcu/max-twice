@@ -9,6 +9,7 @@ import com.prosper.learn.application.converter.ProfessionConverter;
 import com.prosper.learn.application.converter.RoadmapConverter;
 import com.prosper.learn.application.converter.UserConverter;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
+import com.prosper.learn.application.dto.response.roadmap.RoadmapAdminDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapBriefDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapDetailDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
@@ -661,18 +662,28 @@ public class RoadmapService {
     private static final int DEFAULT_PAGE_SIZE = 20;
 
     /**
-     * Admin管理：按条件获取路线图列表
+     * Admin管理：按状态获取路线图列表
      */
-    public KeysetPageResponse<RoadmapSummaryDTO> listByFilter(ContentState state, Long professionId, Long creatorId, Long lastId) {
-        // 多查询一条用于判断 hasMore
-        List<RoadmapDO> roadmapDOList = domainService.listByFilter(state, professionId, creatorId, lastId, DEFAULT_PAGE_SIZE + 1);
+    public KeysetPageResponse<RoadmapAdminDTO> listByState(ContentState state, Long lastId) {
+        List<RoadmapDO> roadmapDOList = domainService.listByState(state, lastId, DEFAULT_PAGE_SIZE + 1);
+        return buildAdminResponse(roadmapDOList);
+    }
 
+    /**
+     * Admin管理：高级筛选路线图列表
+     */
+    public KeysetPageResponse<RoadmapAdminDTO> listByFilter(Long roadmapId, Long professionId, Long creatorId, Long lastId) {
+        List<RoadmapDO> roadmapDOList = domainService.listByFilter(roadmapId, professionId, creatorId, lastId, DEFAULT_PAGE_SIZE + 1);
+        return buildAdminResponse(roadmapDOList);
+    }
+
+    private KeysetPageResponse<RoadmapAdminDTO> buildAdminResponse(List<RoadmapDO> roadmapDOList) {
         boolean hasMore = roadmapDOList.size() > DEFAULT_PAGE_SIZE;
         if (hasMore) {
             roadmapDOList = roadmapDOList.subList(0, DEFAULT_PAGE_SIZE);
         }
 
-        List<RoadmapSummaryDTO> items = toSummaryDTO(roadmapDOList);
+        List<RoadmapAdminDTO> items = roadmapConverter.toAdminDTO(roadmapDOList);
 
         // 批量填充 profession 信息
         Set<Long> professionIds = roadmapDOList.stream()
@@ -699,7 +710,7 @@ public class RoadmapService {
         Map<Long, RoadmapDO> roadmapDOMap = roadmapDOList.stream()
             .collect(Collectors.toMap(RoadmapDO::getId, r -> r));
 
-        for (RoadmapSummaryDTO dto : items) {
+        for (RoadmapAdminDTO dto : items) {
             RoadmapDO roadmapDO = roadmapDOMap.get(dto.getId());
             if (roadmapDO != null) {
                 if (roadmapDO.getProfessionId() != null) {

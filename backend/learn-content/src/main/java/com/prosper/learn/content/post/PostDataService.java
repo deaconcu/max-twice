@@ -139,13 +139,10 @@ public class PostDataService extends AbstractDataService<PostDO, PostMapper, Lon
     }
 
     /**
-     * 根据节点、创建者和状态筛选帖子列表（支持分页）
+     * Admin - 高级筛选帖子列表
      */
-    public List<PostDO> getListByNodeAndCreator(Long nodeId, Long creatorId, Long lastId, Byte state, int limit) {
-        if (lastId == null || lastId == 0) {
-            lastId = Long.MAX_VALUE;
-        }
-        return postMapper.getListByNodeAndCreatorWithPagination(nodeId, creatorId, lastId, state, limit);
+    public List<PostDO> listByFilter(Long nodeId, Long creatorId, Long lastId, int limit) {
+        return postMapper.listByFilter(nodeId, creatorId, lastId, limit);
     }
 
     /**

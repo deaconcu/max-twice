@@ -91,7 +91,7 @@ public class AdminContentsController {
                 )
             );
             case "roadmap" -> ApiResponse.success(
-                roadmapService.listByFilter(stateValue, null, null, lastId)
+                roadmapService.listByState(stateValue, lastId)
             );
             case "memory_card_deck" -> ApiResponse.success(
                 memoryCardDeckService.getDecksForReview(
@@ -100,7 +100,7 @@ public class AdminContentsController {
                     lastId, null)
             );
             case "comment" -> ApiResponse.success(
-                commentService.getCommentsByFilter(null, null, null, lastId, stateValue)
+                commentService.listByState(stateValue, lastId)
             );
             case "course" -> ApiResponse.success(
                 courseService.getListByStateAndLastId(stateValue, lastId)
@@ -109,7 +109,7 @@ public class AdminContentsController {
                 professionService.getListByStateAndLastId(stateValue, lastId, DEFAULT_PAGE_SIZE)
             );
             case "node" -> ApiResponse.success(
-                nodeService.listByFilter(stateValue, null, null, null, lastId)
+                nodeService.listByState(stateValue, lastId)
             );
             default -> throw StatusCode.INVALID_PARAMETER.exception("不支持的内容类型: " + contentType);
         };
@@ -117,7 +117,7 @@ public class AdminContentsController {
 
     /**
      * 帖子高级筛选
-     * GET /api/v1/admin/contents/post/filter?nodeId=xxx&creatorId=xxx&state=xxx&lastId=xxx
+     * GET /api/v1/admin/contents/post/filter?nodeId=xxx&creatorId=xxx&lastId=xxx
      */
     @GetMapping("/post/filter")
     @RequireRole(UserRole.MODERATOR)
@@ -125,14 +125,13 @@ public class AdminContentsController {
     public ApiResponse<?> filterPosts(
             @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
             @RequestParam(value = "creatorId", required = false) @Positive(message = "用户ID必须大于0") Long creatorId,
-            @RequestParam(value = "lastId", defaultValue = "0") @Min(value = 0, message = "最后ID不能小于0") Long lastId,
-            @RequestParam(value = "state", required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state) {
-        return ApiResponse.success(postService.getPostsByNodeAndCreator(nodeId, creatorId, lastId, state));
+            @RequestParam(value = "lastId", required = false) @Min(value = 0, message = "最后ID不能小于0") Long lastId) {
+        return ApiResponse.success(postService.listByFilter(nodeId, creatorId, lastId));
     }
 
     /**
      * 评论高级筛选
-     * GET /api/v1/admin/contents/comment/filter?objectType=xxx&objectId=xxx&creatorId=xxx&state=xxx&lastId=xxx
+     * GET /api/v1/admin/contents/comment/filter?objectType=xxx&objectId=xxx&creatorId=xxx&lastId=xxx
      */
     @GetMapping("/comment/filter")
     @RequireRole(UserRole.MODERATOR)
@@ -141,24 +140,23 @@ public class AdminContentsController {
             @RequestParam(value = "objectType", required = false) @Positive(message = "对象类型必须大于0") Integer objectType,
             @RequestParam(value = "objectId", required = false) @Positive(message = "对象ID必须大于0") Long objectId,
             @RequestParam(value = "creatorId", required = false) @Positive(message = "用户ID必须大于0") Long creatorId,
-            @RequestParam(value = "lastId", required = false) @Min(value = 0, message = "最后ID不能小于0") Long lastId,
-            @RequestParam(value = "state", required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state) {
-        return ApiResponse.success(commentService.getCommentsByFilter(objectType, objectId, creatorId, lastId, ContentState.getByValue(state)));
+            @RequestParam(value = "lastId", required = false) @Min(value = 0, message = "最后ID不能小于0") Long lastId) {
+        return ApiResponse.success(commentService.listByFilter(objectType, objectId, creatorId, lastId));
     }
 
     /**
      * 路线图高级筛选
-     * GET /api/v1/admin/contents/roadmap/filter?professionId=xxx&creatorId=xxx&state=xxx&lastId=xxx
+     * GET /api/v1/admin/contents/roadmap/filter?roadmapId=xxx&professionId=xxx&creatorId=xxx&lastId=xxx
      */
     @GetMapping("/roadmap/filter")
     @RequireRole(UserRole.MODERATOR)
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> filterRoadmaps(
-            @RequestParam(required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state,
+            @RequestParam(required = false) @Positive(message = "路线图ID必须大于0") Long roadmapId,
             @RequestParam(required = false) @Positive(message = "职业ID必须大于0") Long professionId,
             @RequestParam(required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
             @RequestParam(required = false) Long lastId) {
-        return ApiResponse.success(roadmapService.listByFilter(ContentState.getByValue(state), professionId, creatorId, lastId));
+        return ApiResponse.success(roadmapService.listByFilter(roadmapId, professionId, creatorId, lastId));
     }
 
     /**
@@ -179,19 +177,17 @@ public class AdminContentsController {
 
     /**
      * 节点高级筛选
-     * GET /api/v1/admin/contents/node/filter?state=xxx&nodeId=xxx&courseId=xxx&creatorId=xxx&lastId=xxx
+     * GET /api/v1/admin/contents/node/filter?nodeId=xxx&courseId=xxx&creatorId=xxx&lastId=xxx
      */
     @GetMapping("/node/filter")
     @RequireRole(UserRole.MODERATOR)
     @RateLimit(capacity = 100, refillPeriod = 1, refillUnit = TimeUnit.MINUTES, limitType = LimitType.USER)
     public ApiResponse<?> filterNodes(
-            @RequestParam(value = "state", required = false) @Min(value = 0, message = "状态必须大于等于0") Byte state,
             @RequestParam(value = "nodeId", required = false) @Positive(message = "节点ID必须大于0") Long nodeId,
             @RequestParam(value = "courseId", required = false) @Positive(message = "课程ID必须大于0") Long courseId,
             @RequestParam(value = "creatorId", required = false) @Positive(message = "创建者ID必须大于0") Long creatorId,
             @RequestParam(value = "lastId", required = false) Long lastId) {
-        return ApiResponse.success(nodeService.listByFilter(
-                ContentState.getByValue(state), nodeId, courseId, creatorId, lastId));
+        return ApiResponse.success(nodeService.listByFilter(nodeId, courseId, creatorId, lastId));
     }
 
     /**

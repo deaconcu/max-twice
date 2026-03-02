@@ -6,7 +6,19 @@
     <v-card flat class="border mb-4">
       <v-card-text>
         <v-row align="center">
-          <v-col cols="3">
+          <v-col cols="2">
+            <v-text-field
+              v-model.number="roadmapIdFilter"
+              label="路线图 ID"
+              type="number"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              @keyup.enter="onFilterChange"
+            ></v-text-field>
+          </v-col>
+          <v-col cols="2">
             <v-text-field
               v-model.number="professionIdFilter"
               label="职业 ID"
@@ -18,7 +30,7 @@
               @keyup.enter="onFilterChange"
             ></v-text-field>
           </v-col>
-          <v-col cols="3">
+          <v-col cols="2">
             <v-text-field
               v-model.number="creatorIdFilter"
               label="创建者 ID"
@@ -36,7 +48,7 @@
               筛选
             </v-btn>
             <v-btn
-              v-if="professionIdFilter || creatorIdFilter"
+              v-if="roadmapIdFilter || professionIdFilter || creatorIdFilter"
               variant="text"
               size="default"
               @click="onResetFilter"
@@ -330,6 +342,7 @@ interface RoadmapWithGraph extends Roadmap {
   parsedEdges?: Edge[]
 }
 
+const roadmapIdFilter = ref<number | null>(null)
 const professionIdFilter = ref<number | null>(null)
 const creatorIdFilter = ref<number | null>(null)
 const selectedStateIndex = ref<number>(0)
@@ -551,6 +564,11 @@ const getStateConfig = (state?: number): StateOption => {
   return stateOptions.find((option) => option.value === state) || stateOptions[0]
 }
 
+// 是否有筛选条件
+const hasFilter = (): boolean => {
+  return !!(roadmapIdFilter.value || professionIdFilter.value || creatorIdFilter.value)
+}
+
 // 使用 useFetchForScroll 进行列表加载
 const {
   items: rawRoadmapList,
@@ -560,6 +578,14 @@ const {
   reset: resetList,
 } = useFetchForScroll<Roadmap>({
   fetchFn: (params) => {
+    if (hasFilter()) {
+      return adminApi.getRoadmapsByFilter(
+        roadmapIdFilter.value ?? undefined,
+        professionIdFilter.value ?? undefined,
+        creatorIdFilter.value ?? undefined,
+        params.lastId ?? undefined
+      )
+    }
     const currentState = getCurrentState()
     return adminApi.getContentsByState('roadmap', currentState, params.lastId ?? undefined)
   },
@@ -588,9 +614,11 @@ const onFilterChange = (): void => {
 
 // 重置筛选
 const onResetFilter = (): void => {
+  roadmapIdFilter.value = null
   professionIdFilter.value = null
   creatorIdFilter.value = null
   resetList()
+  loadMore()
 }
 
 // 显示编辑对话框
