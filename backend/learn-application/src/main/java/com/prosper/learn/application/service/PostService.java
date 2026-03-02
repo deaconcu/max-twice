@@ -13,6 +13,7 @@ import com.prosper.learn.application.dto.request.UpdatePostRequest;
 import com.prosper.learn.application.dto.response.KeysetPageResponse;
 import com.prosper.learn.application.dto.response.PostDTO;
 import com.prosper.learn.application.dto.response.node.NodeWithCourseBriefDTO;
+import com.prosper.learn.application.dto.response.post.PostAdminDTO;
 import com.prosper.learn.application.dto.response.post.PostFullDTO;
 import com.prosper.learn.application.dto.response.post.PostSummaryDTO;
 import com.prosper.learn.application.dto.response.post.PostWithVoteDTO;
@@ -418,9 +419,9 @@ public class PostService {
     }
 
     /**
-     * 根据状态获取帖子列表（支持分页）
+     * 根据状态获取帖子列表（支持分页）- 管理后台使用
      */
-    public KeysetPageResponse<PostSummaryDTO> getPostsByState(ContentState state, Long lastId, Integer limit) {
+    public KeysetPageResponse<PostAdminDTO> getPostsByState(ContentState state, Long lastId, Integer limit) {
         // 多查询一条用于判断 hasMore
         List<PostDO> postDOList = domainService.getListByState(state.value(), lastId, limit + 1);
 
@@ -429,7 +430,7 @@ public class PostService {
             postDOList = postDOList.subList(0, limit);
         }
 
-        List<PostSummaryDTO> items = toSummaryDTO(postDOList);
+        List<PostAdminDTO> items = postConverter.toAdminDTO(postDOList);
 
         // 批量填充 node 信息
         fillNodeInfo(postDOList, items);
@@ -447,9 +448,9 @@ public class PostService {
     }
 
     /**
-     * 根据节点、用户和状态筛选帖子列表
+     * 根据节点、用户和状态筛选帖子列表 - 管理后台使用
      */
-    public KeysetPageResponse<PostSummaryDTO> getPostsByNodeAndCreator(Long nodeId, Long creatorId, Long lastId, Byte state) {
+    public KeysetPageResponse<PostAdminDTO> getPostsByNodeAndCreator(Long nodeId, Long creatorId, Long lastId, Byte state) {
         int limit = systemProperties.getPosting().getPendingPostsLimit();
 
         // 多查询一条用于判断 hasMore
@@ -460,7 +461,7 @@ public class PostService {
             postDOList = postDOList.subList(0, limit);
         }
 
-        List<PostSummaryDTO> items = toSummaryDTO(postDOList);
+        List<PostAdminDTO> items = postConverter.toAdminDTO(postDOList);
 
         // 批量填充 node 信息
         fillNodeInfo(postDOList, items);
@@ -471,30 +472,51 @@ public class PostService {
     }
 
     /**
-     * 批量填充帖子的 node 信息
+     * 批量填充帖子的 node 和 creator 信息
      */
-    private void fillNodeInfo(List<PostDO> postDOList, List<PostSummaryDTO> items) {
+    private void fillNodeInfo(List<PostDO> postDOList, List<PostAdminDTO> items) {
+        // 收集 nodeId
         Set<Long> nodeIds = postDOList.stream()
                 .map(PostDO::getNodeId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        if (nodeIds.isEmpty()) {
-            return;
-        }
+        // 收集 creatorId
+        Set<Long> creatorIds = postDOList.stream()
+                .map(PostDO::getCreatorId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
 
-        Map<Long, NodeDO> nodeMap = nodeDataService.getByIds(new ArrayList<>(nodeIds)).stream()
-                .collect(Collectors.toMap(NodeDO::getId, n -> n));
+        // 批量查询 node
+        Map<Long, NodeDO> nodeMap = nodeIds.isEmpty() ? Map.of() :
+                nodeDataService.getByIds(new ArrayList<>(nodeIds)).stream()
+                        .collect(Collectors.toMap(NodeDO::getId, n -> n));
 
+        // 批量查询 creator
+        Map<Long, UserDO> creatorMap = creatorIds.isEmpty() ? Map.of() :
+                userDataService.getMapByIds(creatorIds);
+
+        // 创建 postDO 映射
         Map<Long, PostDO> postDOMap = postDOList.stream()
                 .collect(Collectors.toMap(PostDO::getId, p -> p));
 
-        for (PostSummaryDTO dto : items) {
+        // 填充信息
+        for (PostAdminDTO dto : items) {
             PostDO postDO = postDOMap.get(dto.getId());
-            if (postDO != null && postDO.getNodeId() != null) {
-                NodeDO nodeDO = nodeMap.get(postDO.getNodeId());
-                if (nodeDO != null) {
-                    dto.setNode(nodeConverter.toBriefDTO(nodeDO));
+            if (postDO != null) {
+                // 填充 node
+                if (postDO.getNodeId() != null) {
+                    NodeDO nodeDO = nodeMap.get(postDO.getNodeId());
+                    if (nodeDO != null) {
+                        dto.setNode(nodeConverter.toBriefDTO(nodeDO));
+                    }
+                }
+                // 填充 creator
+                if (postDO.getCreatorId() != null) {
+                    UserDO userDO = creatorMap.get(postDO.getCreatorId());
+                    if (userDO != null) {
+                        dto.setCreator(userConverter.toBriefDTO(userDO));
+                    }
                 }
             }
         }

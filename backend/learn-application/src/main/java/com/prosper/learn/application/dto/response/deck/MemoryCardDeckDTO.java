@@ -23,8 +23,6 @@ public class MemoryCardDeckDTO {
 
     private Integer state;
 
-    private String reason;
-
     private String updatedAt;
 
     private String createdAt;

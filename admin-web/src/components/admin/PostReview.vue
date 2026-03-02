@@ -6,8 +6,10 @@ import type { Post } from '@/types/post.d'
 import RejectBanDialog from './RejectBanDialog.vue'
 import { useFetchForScroll } from '@/composables/useFetchForScroll'
 import { useMutation } from '@/composables/useMutation'
+import { useSystemConfigStore } from '@/stores'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
+const systemConfigStore = useSystemConfigStore()
 
 const currentTab = ref<string>('pending')
 
@@ -423,17 +425,15 @@ const getStateColor = (state: number): string => {
                 <div class="d-flex align-center justify-space-between mb-2">
                   <div class="d-flex align-center">
                     <div class="text-body-1 font-weight-medium text-grey-darken-3">
-                      文章 #{{ post.id }}
+                      {{ post.node?.name || `文章 #${post.id}` }}
                     </div>
                     <v-chip variant="flat" :color="getStateColor(post.state)" size="x-small" class="ml-2">
                       {{ getStateText(post.state) }}
                     </v-chip>
-                    <span v-if="post.node" class="ml-2 text-caption text-grey-darken-1">
-                      节点：{{ post.node.name }}
-                    </span>
                   </div>
                   <div class="d-flex align-center text-caption text-grey-darken-1">
-                    <span>用户 #{{ post.creatorId }}</span>
+                    <a v-if="post.creator" :href="systemConfigStore.getUserUrl(post.creator.id)" target="_blank" class="text-grey-darken-1">{{ post.creator.name }}</a>
+                    <span v-else>用户 #{{ post.creatorId }}</span>
                     <span class="mx-1">·</span>
                     <span>{{ post.createdAt }}</span>
                     <span class="mx-1">·</span>

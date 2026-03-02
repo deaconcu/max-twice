@@ -69,13 +69,6 @@ public class CourseDetailDTO extends CourseSummaryDTO {
     private Byte state;
 
     /**
-     * 审核原因
-     * 说明：拒绝或封禁的原因
-     * 何时填充：仅在课程被拒绝或封禁时填充，其他状态为 null
-     */
-    private String reason;
-
-    /**
      * 创建时间
      * 说明：课程创建时间，ISO 8601 格式字符串
      * 何时填充：始终填充

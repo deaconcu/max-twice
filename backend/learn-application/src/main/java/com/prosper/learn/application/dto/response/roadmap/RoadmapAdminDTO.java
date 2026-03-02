@@ -5,15 +5,19 @@ import com.prosper.learn.application.dto.response.user.UserBriefDTO;
 import lombok.Data;
 
 /**
- * 路线图摘要 DTO
+ * 路线图管理 DTO
  *
- * 用途：基础路线图信息
+ * 用途：管理后台使用的路线图信息
+ *
+ * 使用场景：
+ * - 管理后台路线图审核列表
+ * - 需要显示拒绝/封禁原因的场景
  *
  * @author Claude
  * @since 2025-01-18
  */
 @Data
-public class RoadmapSummaryDTO {
+public class RoadmapAdminDTO {
 
     private Long id;
 
@@ -27,25 +31,16 @@ public class RoadmapSummaryDTO {
 
     private Byte state;
 
-    private Integer likeCount;
-
-    private Integer commentCount;
-
-    private Integer learnerCount;
+    /**
+     * 拒绝/封禁原因
+     */
+    private String reason;
 
     private Integer nodeCount;
 
     private Long creatorId;
 
     private UserBriefDTO creator;
-
-    /**
-     * 内容是否可用
-     * true: 内容可用
-     * false: 内容不可用（已删除、已屏蔽、已拒绝等）
-     * null: 默认可用
-     */
-    private Boolean available;
 
     private String updatedAt;
 

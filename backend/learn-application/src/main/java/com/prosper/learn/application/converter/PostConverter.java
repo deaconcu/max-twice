@@ -61,7 +61,6 @@ public interface PostConverter {
     @Mapping(target = "creatorId")
     @Mapping(target = "type")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "score")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
@@ -72,6 +71,29 @@ public interface PostConverter {
      */
     @IterableMapping(qualifiedByName = "toSummaryDTO")
     List<PostSummaryDTO> toSummaryDTO(List<PostDO> postDOList);
+
+    /**
+     * 转换为帖子管理 DTO
+     * 用途：管理后台使用，包含节点信息和审核原因
+     * 注意：node 需要在 Service 层额外填充
+     */
+    @Named("toAdminDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "content")
+    @Mapping(target = "nodeId")
+    @Mapping(target = "creatorId")
+    @Mapping(target = "type")
+    @Mapping(target = "state")
+    @Mapping(target = "reason")
+    @Mapping(target = "createdAt")
+    PostAdminDTO toAdminDTO(PostDO postDO);
+
+    /**
+     * 批量转换为帖子管理 DTO
+     */
+    @IterableMapping(qualifiedByName = "toAdminDTO")
+    List<PostAdminDTO> toAdminDTO(List<PostDO> postDOList);
 
     /**
      * 转换为帖子（含创建者）DTO
@@ -86,7 +108,6 @@ public interface PostConverter {
     @Mapping(target = "creatorId")
     @Mapping(target = "type")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "score")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
@@ -111,7 +132,6 @@ public interface PostConverter {
     @Mapping(target = "creatorId")
     @Mapping(target = "type")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "score")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
@@ -136,7 +156,6 @@ public interface PostConverter {
     @Mapping(target = "creatorId")
     @Mapping(target = "type")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "score")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
@@ -161,7 +180,6 @@ public interface PostConverter {
     @Mapping(target = "creatorId")
     @Mapping(target = "type")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "score")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")

@@ -1,6 +1,5 @@
 package com.prosper.learn.application.dto.response.post;
 
-import com.prosper.learn.application.dto.response.node.NodeBriefDTO;
 import lombok.Data;
 
 /**
@@ -32,11 +31,6 @@ public class PostSummaryDTO {
      * 节点ID
      */
     private Long nodeId;
-
-    /**
-     * 节点信息
-     */
-    private NodeBriefDTO node;
 
     /**
      * 创建者ID
@@ -74,11 +68,6 @@ public class PostSummaryDTO {
      * 说明：0-待审核，1-已发布，2-已拒绝
      */
     private Integer state;
-
-    /**
-     * 拒绝/封禁原因
-     */
-    private String reason;
 
     /**
      * 分数

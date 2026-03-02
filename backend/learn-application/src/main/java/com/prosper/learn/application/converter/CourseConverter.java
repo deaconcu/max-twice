@@ -37,7 +37,6 @@ public interface CourseConverter {
     @Mapping(target = "state")
     @Mapping(target = "mainCategory")
     @Mapping(target = "subCategory")
-    @Mapping(target = "reason")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
     CourseDTO toDTO(CourseDO courseDO);
@@ -146,7 +145,6 @@ public interface CourseConverter {
     @Mapping(target = "rootNodeId")
     @Mapping(target = "parentCourseId")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
     CourseDetailDTO toDetailDTO(CourseDO courseDO);
@@ -173,7 +171,6 @@ public interface CourseConverter {
     @Mapping(target = "rootNodeId")
     @Mapping(target = "parentCourseId")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
     CourseWithProgressDTO toWithProgressDTO(CourseDO courseDO);
@@ -224,4 +221,30 @@ public interface CourseConverter {
      */
     @IterableMapping(qualifiedByName = "toSummaryWithStatsAndProgressDTO")
     List<CourseSummaryWithStatsAndProgressDTO> toSummaryWithStatsAndProgressDTO(List<CourseDO> courseDOList);
+
+    /**
+     * 转换为管理后台DTO（包含 reason）
+     * 注意：creator 和 parentCourse 需要在 Service 层额外填充
+     */
+    @Named("toAdminDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    @Mapping(target = "description")
+    @Mapping(target = "mainCategory")
+    @Mapping(target = "subCategory")
+    @Mapping(target = "creatorId")
+    @Mapping(target = "rootNodeId")
+    @Mapping(target = "parentCourseId")
+    @Mapping(target = "state")
+    @Mapping(target = "reason")
+    @Mapping(target = "createdAt")
+    @Mapping(target = "updatedAt")
+    CourseAdminDTO toAdminDTO(CourseDO courseDO);
+
+    /**
+     * 批量转换为管理后台DTO
+     */
+    @IterableMapping(qualifiedByName = "toAdminDTO")
+    List<CourseAdminDTO> toAdminDTO(List<CourseDO> courseDOList);
 }

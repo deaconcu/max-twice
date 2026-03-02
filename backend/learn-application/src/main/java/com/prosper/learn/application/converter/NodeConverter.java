@@ -1,5 +1,6 @@
 package com.prosper.learn.application.converter;
 
+import com.prosper.learn.application.dto.response.node.NodeAdminDTO;
 import com.prosper.learn.application.dto.response.node.NodeDTO;
 import com.prosper.learn.application.dto.response.node.NodeBriefDTO;
 import com.prosper.learn.application.dto.response.node.NodeDetailDTO;
@@ -97,7 +98,6 @@ public interface NodeConverter {
     @Mapping(target = "courseId")
     @Mapping(target = "creatorId")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "createdAt")
     @Mapping(target = "updatedAt")
     NodeDetailDTO toDetailDTOInternal(NodeDO nodeDO);
@@ -233,5 +233,33 @@ public interface NodeConverter {
     default List<NodeBriefDTO> toBriefDTO(List<NodeDO> nodeDOList) {
         if (nodeDOList == null) return null;
         return nodeDOList.stream().map(this::toBriefDTO).toList();
+    }
+
+    /**
+     * 转换为管理后台DTO（包含 reason）
+     * 注意：creator 需要在 Service 层额外填充
+     */
+    @Named("toAdminDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "name")
+    @Mapping(target = "description")
+    @Mapping(target = "courseId")
+    @Mapping(target = "creatorId")
+    @Mapping(target = "state")
+    @Mapping(target = "reason")
+    @Mapping(target = "createdAt")
+    @Mapping(target = "updatedAt")
+    NodeAdminDTO toAdminDTOInternal(NodeDO nodeDO);
+
+    default NodeAdminDTO toAdminDTO(NodeDO nodeDO) {
+        if (nodeDO == null) return null;
+        return toAdminDTOInternal(nodeDO);
+    }
+
+    @IterableMapping(qualifiedByName = "toAdminDTO")
+    default List<NodeAdminDTO> toAdminDTO(List<NodeDO> nodeDOList) {
+        if (nodeDOList == null) return null;
+        return nodeDOList.stream().map(this::toAdminDTO).toList();
     }
 }

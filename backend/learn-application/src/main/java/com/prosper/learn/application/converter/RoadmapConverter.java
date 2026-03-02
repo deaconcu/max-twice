@@ -1,5 +1,6 @@
 package com.prosper.learn.application.converter;
 
+import com.prosper.learn.application.dto.response.roadmap.RoadmapAdminDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapDetailDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapSummaryDTO;
 import com.prosper.learn.application.dto.response.roadmap.RoadmapWithStatusDTO;
@@ -22,7 +23,6 @@ public interface RoadmapConverter {
     @Mapping(target = "creatorId")
     @Mapping(target = "description")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "nodeCount")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
@@ -42,7 +42,6 @@ public interface RoadmapConverter {
     @Mapping(target = "creatorId")
     @Mapping(target = "description")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "nodeCount")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
@@ -62,7 +61,6 @@ public interface RoadmapConverter {
     @Mapping(target = "creatorId")
     @Mapping(target = "description")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "nodeCount")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
@@ -70,4 +68,24 @@ public interface RoadmapConverter {
 
     @IterableMapping(qualifiedByName = "toWithStatusDTO")
     List<RoadmapWithStatusDTO> toWithStatusDTO(List<RoadmapDO> roadmapDOList);
+
+    /**
+     * 转换为管理后台DTO（包含 reason，需要在 Service 层填充 profession 和 creator）
+     */
+    @Named("toAdminDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "content")
+    @Mapping(target = "professionId")
+    @Mapping(target = "creatorId")
+    @Mapping(target = "description")
+    @Mapping(target = "state")
+    @Mapping(target = "reason")
+    @Mapping(target = "nodeCount")
+    @Mapping(target = "updatedAt")
+    @Mapping(target = "createdAt")
+    RoadmapAdminDTO toAdminDTO(RoadmapDO roadmapDO);
+
+    @IterableMapping(qualifiedByName = "toAdminDTO")
+    List<RoadmapAdminDTO> toAdminDTO(List<RoadmapDO> roadmapDOList);
 }

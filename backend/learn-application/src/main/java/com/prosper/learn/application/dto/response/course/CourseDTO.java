@@ -27,14 +27,11 @@ public class CourseDTO {
     
     // === 状态字段 (V1, V4有) ===
     private Byte state; // SUBMITTED, APPROVED, REJECTED
-    
+
     // === 分类字段 (V1, V2, V4有) ===
     private Integer mainCategory;
     private Integer subCategory;
-    
-    // === 管理字段 (V1, V4有) ===
-    private String reason;
-    
+
     // === 时间字段 (V1, V4有) ===
     private String createdAt;
     private String updatedAt;

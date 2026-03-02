@@ -1,5 +1,6 @@
 package com.prosper.learn.application.converter;
 
+import com.prosper.learn.application.dto.response.deck.DeckAdminDTO;
 import com.prosper.learn.application.dto.response.deck.DeckDetailDTO;
 import com.prosper.learn.application.dto.response.deck.MemoryCardDeckDTO;
 import com.prosper.learn.application.dto.response.deck.DeckSummaryDTO;
@@ -26,7 +27,6 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "title")
     @Mapping(target = "description")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
     @Mapping(target = "cardCount")
@@ -44,7 +44,6 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "nodeId")
     @Mapping(target = "courseId")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "cardCount")
     @Mapping(target = "likeCount")
     @Mapping(target = "createdAt")
@@ -64,7 +63,6 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "title")
     @Mapping(target = "description")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
     @Mapping(target = "cardCount")
@@ -81,7 +79,6 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "title")
     @Mapping(target = "description")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
     @Mapping(target = "cardCount")
@@ -98,7 +95,6 @@ public interface MemoryCardDeckConverter {
     @Mapping(target = "title")
     @Mapping(target = "description")
     @Mapping(target = "state")
-    @Mapping(target = "reason")
     @Mapping(target = "updatedAt")
     @Mapping(target = "createdAt")
     @Mapping(target = "cardCount")
@@ -106,4 +102,25 @@ public interface MemoryCardDeckConverter {
 
     @IterableMapping(qualifiedByName = "toWithVoteDTO")
     List<DeckWithVoteDTO> toWithVoteDTO(List<MemoryCardDeckDO> deckDOList);
+
+    /**
+     * 转换为管理后台DTO（包含 reason）
+     * 注意：creator, course, node, cards, courseId, likeCount 需要在 Service 层额外填充
+     */
+    @Named("toAdminDTO")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id")
+    @Mapping(target = "postId")
+    @Mapping(target = "nodeId")
+    @Mapping(target = "title")
+    @Mapping(target = "description")
+    @Mapping(target = "state")
+    @Mapping(target = "reason")
+    @Mapping(target = "updatedAt")
+    @Mapping(target = "createdAt")
+    @Mapping(target = "cardCount")
+    DeckAdminDTO toAdminDTO(MemoryCardDeckDO deckDO);
+
+    @IterableMapping(qualifiedByName = "toAdminDTO")
+    List<DeckAdminDTO> toAdminDTO(List<MemoryCardDeckDO> deckDOList);
 }

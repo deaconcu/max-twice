@@ -106,6 +106,20 @@ export const useSystemConfigStore = defineStore(
       return `${frontendUrl.value}/node/${nodeId}`
     }
 
+    /**
+     * 获取用户前台链接
+     */
+    function getUserUrl(userId: number): string {
+      return `${frontendUrl.value}/user/${userId}`
+    }
+
+    /**
+     * 获取路线图前台链接
+     */
+    function getRoadmapUrl(roadmapId: number): string {
+      return `${frontendUrl.value}/roadmap/${roadmapId}`
+    }
+
     return {
       frontendUrl,
       rejectReasons,
@@ -120,6 +134,8 @@ export const useSystemConfigStore = defineStore(
       getProfessionUrl,
       getCourseUrl,
       getNodeUrl,
+      getUserUrl,
+      getRoadmapUrl,
     }
   },
   {
