@@ -112,7 +112,7 @@ export const useSystemConfigStore = defineStore(
      * 获取节点前台链接
      */
     function getNodeUrl(nodeId: number): string {
-      return `${frontendUrl.value}/node/${nodeId}`
+      return `${frontendUrl.value}/read?nodeId=${nodeId}`
     }
 
     /**
@@ -127,6 +127,13 @@ export const useSystemConfigStore = defineStore(
      */
     function getRoadmapUrl(roadmapId: number): string {
       return `${frontendUrl.value}/roadmap/${roadmapId}`
+    }
+
+    /**
+     * 获取评论前台链接
+     */
+    function getCommentUrl(commentId: number): string {
+      return `${frontendUrl.value}/read?commentId=${commentId}`
     }
 
     return {
@@ -144,6 +151,7 @@ export const useSystemConfigStore = defineStore(
       getNodeUrl,
       getUserUrl,
       getRoadmapUrl,
+      getCommentUrl,
     }
   },
   {

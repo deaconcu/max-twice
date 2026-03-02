@@ -6,8 +6,10 @@ import type { Comment } from '@/types/comment.d'
 import RejectBanDialog from './RejectBanDialog.vue'
 import { useFetchForScroll } from '@/composables/useFetchForScroll'
 import { useMutation } from '@/composables/useMutation'
+import { useSystemConfigStore } from '@/stores'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
+const systemConfigStore = useSystemConfigStore()
 
 const currentTab = ref<string>('pending')
 
@@ -413,9 +415,14 @@ const getStateColor = (state: number): string => {
                 <!-- 标题行 -->
                 <div class="d-flex align-center justify-space-between mb-2">
                   <div class="d-flex align-center">
-                    <div class="text-body-1 font-weight-medium text-grey-darken-3">
+                    <a
+                      :href="systemConfigStore.getCommentUrl(comment.id)"
+                      target="_blank"
+                      class="text-body-1 font-weight-medium text-grey-darken-3 text-decoration-none"
+                    >
                       评论 #{{ comment.id }}
-                    </div>
+                      <v-icon icon="mdi-open-in-new" size="14" color="grey" class="ml-1"></v-icon>
+                    </a>
                     <v-chip variant="flat" :color="getStateColor(comment.state)" size="x-small" class="ml-2">
                       {{ getStateText(comment.state) }}
                     </v-chip>

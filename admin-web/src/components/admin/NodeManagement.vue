@@ -7,8 +7,10 @@ import type { Node } from '@/types/node.d'
 import RejectBanDialog from './RejectBanDialog.vue'
 import { useFetchForScroll } from '@/composables/useFetchForScroll'
 import { useMutation } from '@/composables/useMutation'
+import { useSystemConfigStore } from '@/stores'
 
 const showSnackbar = inject<(message: string, type?: string) => void>('showSnackbar')
+const systemConfigStore = useSystemConfigStore()
 
 // 当前选中的tab
 const currentTab = ref<string>('pending')
@@ -451,9 +453,14 @@ const initializeEmbeddings = async () => {
                   <!-- 标题行 -->
                   <div class="d-flex align-center justify-space-between mb-2">
                     <div class="d-flex align-center">
-                      <div class="text-body-1 font-weight-medium text-grey-darken-3">
+                      <a
+                        :href="systemConfigStore.getNodeUrl(node.id)"
+                        target="_blank"
+                        class="text-body-1 font-weight-medium text-grey-darken-3 text-decoration-none"
+                      >
                         {{ node.name }}
-                      </div>
+                        <v-icon icon="mdi-open-in-new" size="14" color="grey" class="ml-1"></v-icon>
+                      </a>
                       <v-chip variant="flat" :color="getStateColor(node.state)" size="x-small" class="ml-2">
                         {{ getStateText(node.state) }}
                       </v-chip>

@@ -48,7 +48,7 @@
               筛选
             </v-btn>
             <v-btn
-              v-if="roadmapIdFilter || professionIdFilter || creatorIdFilter"
+              v-if="isFilterMode"
               variant="text"
               size="default"
               @click="onResetFilter"
@@ -63,8 +63,9 @@
     <!-- 路线图列表 -->
     <v-card flat class="border">
       <v-card-text>
-        <!-- 状态标签 -->
+        <!-- 状态标签（筛选模式时隐藏） -->
         <v-tabs
+          v-if="!isFilterMode"
           v-model="selectedStateIndex"
           color="primary"
           density="compact"
@@ -192,6 +193,9 @@
                     <span>{{ roadmap.createdAt || '未知时间' }}</span>
                     <span class="mx-1">·</span>
                     <span>ID: {{ roadmap.id }}</span>
+                    <span class="mx-1">·</span>
+                    <a v-if="roadmap.profession" :href="systemConfigStore.getProfessionUrl(roadmap.profession.id)" target="_blank" class="text-grey-darken-1">职业 ID: {{ roadmap.profession.id }}</a>
+                    <span v-else>职业: 未知</span>
                   </div>
                 </div>
 
@@ -346,6 +350,7 @@ const roadmapIdFilter = ref<number | null>(null)
 const professionIdFilter = ref<number | null>(null)
 const creatorIdFilter = ref<number | null>(null)
 const selectedStateIndex = ref<number>(0)
+const isFilterMode = ref<boolean>(false)
 
 // 验证规则
 const roadmapContentRules = useValidationRules('roadmap-content')
@@ -530,6 +535,12 @@ const processRoadmapData = (roadmap: Roadmap): RoadmapWithGraph => {
 // 状态选项
 const stateOptions: StateOption[] = [
   {
+    value: ContentState.DRAFT,
+    text: '草稿',
+    color: 'blue-grey-lighten-4',
+    icon: 'mdi-file-edit-outline',
+  },
+  {
     value: ContentState.SUBMITTED,
     text: '待审核',
     color: 'orange-lighten-4',
@@ -557,16 +568,11 @@ const stateOptions: StateOption[] = [
 
 // 获取当前选中的状态
 const getCurrentState = (): number =>
-  stateOptions[selectedStateIndex.value]?.value || ContentState.SUBMITTED
+  stateOptions[selectedStateIndex.value]?.value ?? ContentState.DRAFT
 
 // 根据状态获取配置
 const getStateConfig = (state?: number): StateOption => {
   return stateOptions.find((option) => option.value === state) || stateOptions[0]
-}
-
-// 是否有筛选条件
-const hasFilter = (): boolean => {
-  return !!(roadmapIdFilter.value || professionIdFilter.value || creatorIdFilter.value)
 }
 
 // 使用 useFetchForScroll 进行列表加载
@@ -578,7 +584,7 @@ const {
   reset: resetList,
 } = useFetchForScroll<Roadmap>({
   fetchFn: (params) => {
-    if (hasFilter()) {
+    if (isFilterMode.value) {
       return adminApi.getRoadmapsByFilter(
         roadmapIdFilter.value ?? undefined,
         professionIdFilter.value ?? undefined,
@@ -608,6 +614,7 @@ const onStateChange = (): void => {
 
 // 筛选条件变化
 const onFilterChange = (): void => {
+  isFilterMode.value = true
   resetList()
   loadMore()
 }
@@ -617,6 +624,7 @@ const onResetFilter = (): void => {
   roadmapIdFilter.value = null
   professionIdFilter.value = null
   creatorIdFilter.value = null
+  isFilterMode.value = false
   resetList()
   loadMore()
 }
