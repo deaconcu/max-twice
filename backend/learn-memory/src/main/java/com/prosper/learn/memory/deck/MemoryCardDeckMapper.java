@@ -91,7 +91,7 @@ public interface MemoryCardDeckMapper {
             "<if test='lastId != null'> AND id &lt; #{lastId}</if>",
             " AND deleted_at IS NULL ORDER BY id DESC LIMIT #{limit}",
             "</script>"})
-    List<MemoryCardDeckDO> getListByStateWithIdPaging(int state, Long lastId, int limit);
+    List<MemoryCardDeckDO> listByState(int state, Long lastId, int limit);
 
     @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND state = #{state} AND deleted_at IS NULL " +
             "ORDER BY id DESC LIMIT #{limit}")
@@ -100,10 +100,6 @@ public interface MemoryCardDeckMapper {
     @Select("SELECT * FROM memory_card_deck WHERE creator_id = #{creatorId} AND state = #{state} AND deleted_at IS NULL " +
             "ORDER BY id DESC LIMIT #{limit}")
     List<MemoryCardDeckDO> getListByCreatorForReview(long creatorId, int state, int limit);
-
-    @Select("SELECT * FROM memory_card_deck WHERE state = #{state} AND deleted_at IS NULL " +
-            "ORDER BY id DESC LIMIT #{limit}")
-    List<MemoryCardDeckDO> getListByStateForReview(int state, int limit);
 
     @Select("SELECT * FROM memory_card_deck WHERE post_id = #{postId} AND creator_id = #{creatorId} AND state = #{state} AND deleted_at IS NULL " +
             "ORDER BY id DESC LIMIT #{limit}")

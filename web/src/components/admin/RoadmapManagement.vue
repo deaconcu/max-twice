@@ -24,7 +24,20 @@
         高级筛选
       </h4>
       <v-row dense>
-        <v-col cols="12" sm="4">
+        <v-col cols="12" sm="3">
+          <v-text-field
+            v-model.number="roadmapIdFilter"
+            label="路线图ID"
+            type="number"
+            variant="outlined"
+            density="compact"
+            rounded="lg"
+            bg-color="white"
+            hide-details
+            clearable
+          ></v-text-field>
+        </v-col>
+        <v-col cols="12" sm="3">
           <v-text-field
             v-model.number="professionIdFilter"
             label="职业ID"
@@ -37,7 +50,7 @@
             clearable
           ></v-text-field>
         </v-col>
-        <v-col cols="12" sm="4">
+        <v-col cols="12" sm="3">
           <v-text-field
             v-model.number="creatorIdFilter"
             label="创建者ID"
@@ -50,7 +63,7 @@
             clearable
           ></v-text-field>
         </v-col>
-        <v-col cols="12" sm="4">
+        <v-col cols="12" sm="3">
           <div class="d-flex gap-2">
             <v-btn variant="flat" color="primary" rounded="lg" @click="onFilterChange">
               <v-icon icon="mdi-magnify" class="mr-1"></v-icon>
@@ -65,8 +78,9 @@
       </v-row>
     </v-card>
 
-    <!-- 状态标签 -->
+    <!-- 状态标签（筛选时隐藏） -->
     <v-tabs
+      v-if="!hasFilter"
       v-model="selectedStateIndex"
       color="primary"
       class="mb-6"
@@ -405,7 +419,13 @@ import { useValidationRules, useMaxLength } from '@/composables/useValidation'
 
 const professionIdFilter = ref<number | null>(null)
 const creatorIdFilter = ref<number | null>(null)
+const roadmapIdFilter = ref<number | null>(null)
 const selectedStateIndex = ref<number>(0)
+
+// 是否有筛选条件
+const hasFilter = computed(
+  () => !!(professionIdFilter.value || creatorIdFilter.value || roadmapIdFilter.value)
+)
 
 // 验证规则
 const roadmapContentRules = useValidationRules('roadmap-content')
@@ -467,7 +487,16 @@ const {
   reset: resetList,
 } = useInfiniteScroll<Roadmap>({
   fetchFn: (params) => {
-    // 使用统一接口，state 从当前 tab 获取
+    // 有筛选条件时使用 filter 接口
+    if (hasFilter.value) {
+      return adminApi.getRoadmapsByFilter(
+        roadmapIdFilter.value ?? undefined,
+        professionIdFilter.value ?? undefined,
+        creatorIdFilter.value ?? undefined,
+        params.lastId ?? undefined
+      )
+    }
+    // 否则使用状态接口
     const currentState = getCurrentState()
     return adminApi.getContentsByState('roadmap', currentState, params.lastId)
   },
@@ -493,9 +522,11 @@ const onFilterChange = (): void => {
 
 // 重置筛选
 const onResetFilter = (): void => {
+  roadmapIdFilter.value = null
   professionIdFilter.value = null
   creatorIdFilter.value = null
   resetList()
+  loadMore()
 }
 
 // 显示编辑对话框

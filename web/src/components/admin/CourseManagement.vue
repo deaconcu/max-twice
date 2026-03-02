@@ -254,12 +254,6 @@ const searchCourseById = async (): Promise<void> => {
         console.warn('查询子课程失败:', error)
         subcourseList.value = []
       }
-
-      if (subcourseList.value.length > 0) {
-        showSnackbar?.(`查询成功，找到 ${subcourseList.value.length} 个子课程`, 'success')
-      } else {
-        showSnackbar?.('查询成功', 'success')
-      }
     } else {
       searchedCourse.value = null
       showSnackbar?.('未找到该课程', 'warning')

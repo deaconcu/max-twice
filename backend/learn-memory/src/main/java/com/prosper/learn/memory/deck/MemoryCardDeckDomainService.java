@@ -400,15 +400,8 @@ public class MemoryCardDeckDomainService {
     /**
      * 根据状态获取卡片组列表 - ID分页
      */
-    public List<MemoryCardDeckDO> getListByStateWithIdPaging(ContentState state, Long lastId, Integer limit) {
-        return deckDataService.getListByStateWithIdPaging(state.value(), lastId, limit);
-    }
-
-    /**
-     * 根据状态获取卡片组列表 - 用于审核
-     */
-    public List<MemoryCardDeckDO> getListByStateForReview(ContentState state, Integer limit) {
-        return deckDataService.getListByStateForReview(state.value(), limit);
+    public List<MemoryCardDeckDO> listByState(ContentState state, Long lastId, Integer limit) {
+        return deckDataService.listByState(state.value(), lastId, limit);
     }
 
     /**

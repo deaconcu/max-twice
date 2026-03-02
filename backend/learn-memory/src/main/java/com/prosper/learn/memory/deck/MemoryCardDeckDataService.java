@@ -328,8 +328,8 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
     /**
      * 根据状态获取卡片组列表 - ID分页
      */
-    public List<MemoryCardDeckDO> getListByStateWithIdPaging(int state, Long lastId, int limit) {
-        return memoryCardDeckMapper.getListByStateWithIdPaging(state, lastId, limit);
+    public List<MemoryCardDeckDO> listByState(int state, Long lastId, int limit) {
+        return memoryCardDeckMapper.listByState(state, lastId, limit);
     }
 
     /**
@@ -344,13 +344,6 @@ public class MemoryCardDeckDataService extends AbstractDataService<MemoryCardDec
      */
     public List<MemoryCardDeckDO> getListByCreatorForReview(long creatorId, int state, int limit) {
         return memoryCardDeckMapper.getListByCreatorForReview(creatorId, state, limit);
-    }
-
-    /**
-     * 根据状态获取卡片组列表 - 审核专用
-     */
-    public List<MemoryCardDeckDO> getListByStateForReview(int state, int limit) {
-        return memoryCardDeckMapper.getListByStateForReview(state, limit);
     }
 
     /**
